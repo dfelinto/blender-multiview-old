@@ -8,22 +8,16 @@ endif
 
 if WIN32
 icondir = icons
-else
+else 
 icondir =
 endif
 
-# blender will always be built, check for the plugin option only
-if BlenderPLUGIN
-bin_PROGRAMS = blender.bin blenderplayer.bin
-else
-bin_PROGRAMS = blender.bin
-endif
-
 SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
-## Took out ode since not sure what to do with it yet.
 
 ## Assuming no reason to build creator anymore lets just call publisher blender
 if CARBON
+## bin_PROGRAMS = blender.app blenderplayer.app plugin.app
+bin_PROGRAMS = blender.app blenderplayer.app
 
 blender_app_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
 
@@ -42,12 +36,16 @@ blender_app_LDADD = \
 
 blenderplayer_app_LDADD =
 
-else # CARBON
+else
+## bin_PROGRAMS = blender blenderplayer plugin
+bin_PROGRAMS = blender.bin blenderplayer.bin
 
 blender_bin_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
-                      $(X_LIBS)
+	 $(X_LIBS)
 
 blender_bin_SOURCES = 
+
+blenderplayer_bin_SOURCES =
 
 blender_bin_LDADD = \
 	-lpython@PYTHON_VERSION@ \
@@ -58,12 +56,6 @@ blender_bin_LDADD = \
 	../intern/libblender_intern.la \
 	../intern/python/frozen/libfrozen.a
 
-if BlenderPLUGIN
-
-blenderplayer_bin_SOURCES =
-
 blenderplayer_bin_LDADD =
 
-endif # BlenderPLUGIN
-
-endif # CARBON
+endif
