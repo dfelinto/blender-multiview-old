@@ -197,7 +197,6 @@ static void rvk_slider_func(void *voidkey, void *voidkeynum) {
 	 * displists
 	 */
 	makeDispList(OBACT);
-	update_for_newframe();
 
 	/* if I'm a lattice, update the displists of
 	 * my children
