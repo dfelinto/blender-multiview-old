@@ -24,6 +24,8 @@ dnl -------------------
   AC_PROG_RANLIB
   AC_CHECK_TOOL([STRIP],[strip])
   AC_PROG_AWK
+  AC_FIND_X
+  AC_FIND_XTRA
 
 dnl -----------------------------
 dnl Debug builds & compiler flags
@@ -33,14 +35,14 @@ dnl -----------------------------
      [  --with-cxxflags         Override default compiler flags],
      [ CXXFLAGS="$withval" ],
 dnl     [ CXXFLAGS="-g -O3 -Wall -funsigned-char" ]
-     [ CXXFLAGS="-funsigned-char" ]
+     [ CXXFLAGS="-g -funsigned-char" ]
   )
 
 case "$target" in
   *sparc* )
         AC_DEFINE(SUN_OGL_NO_VERTEX_MACROS,1,[Fix for Sun's GL])
   ;;  
-  *-apple-darwin*)
+  *darwin*)
   	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
   	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
   ;;
@@ -229,7 +231,7 @@ dnl  AC_FUNC_REALLOC
 dnl --------------------------
 dnl Checks for extra libraries
 dnl --------------------------
-
+  AC_CHECK_LIB([z], [gzopen])
   AC_LANG_PUSH([C++])
   AC_CHECK_LIB([stdc++], [printf]) dnl  Zarquon's knees, this is an evil hack.
   AC_LANG_POP([C++])
@@ -237,18 +239,15 @@ dnl --------------------------
   AC_CHECK_LIB([pthread], [pthread_exit])
   AC_CHECK_LIB([ssl], [SSL_new])
   AC_CHECK_LIB([crypto], [CRYPTO_lock])
-  #AC_CHECK_LIB([e], [main])
-  #AC_CHECK_LIB([inks], [main])
+  AC_CHECK_LIB([png], [png_get_header_version])
   AC_CHECK_LIB([jpeg], [jpeg_destroy])
   AC_CHECK_LIB([m], [acos])
-  AC_CHECK_LIB([png], [png_uint_32])
   AC_CHECK_LIB([util], [openpty])
-  AC_CHECK_LIB([z], [gzopen])
   AC_CHECK_LIB([SDL], [SDL_Init])
+  AC_CHECK_LIB([ode], [dJointGetAMotorAngle])
 if test x"$enable_openal" = x"yes"; then
   AC_CHECK_LIB([smpeg], [SMPEG_getinfo])
   AC_CHECK_LIB([esd], [esd_close])
-  AC_CHECK_LIB([ode], [dJointGetAMotorAngle])
   AC_CHECK_LIB([ogg], [ogg_stream_destroy])
   AC_CHECK_LIB([vorbis], [vorbis_info_init])
   AC_CHECK_LIB([vorbisfile], [ov_open])
@@ -256,11 +255,9 @@ if test x"$enable_openal" = x"yes"; then
    , dnl found -- nop
    [enable_openal=no] )  dnl not found -- disable openal
 fi
-  AC_CHECK_LIB([GL], [glIsTexture])
-  AC_CHECK_LIB([GLU], [gluErrorString])
+  AC_CHECK_LIB([GL], [glIsTexture],,,$X_LIBS)
+  AC_CHECK_LIB([GLU], [gluGetString],,,$X_LIBS)
   AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes],,,$X_LIBS)
-
-
 
 dnl ---------------------
 dnl Checks for data types
