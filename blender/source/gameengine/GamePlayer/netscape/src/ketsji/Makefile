@@ -66,11 +66,10 @@ CPPFLAGS += -I../../../../Network
 CPPFLAGS += -I../../../../Network/LoopBackNetwork
 
 # physics
-CPPFLAGS += -I../../../../../sumo/Fuzzics/include
+CPPFLAGS += -I$(NAN_FUZZICS)/include
 
 # moto
-CPPFLAGS += -I../../../../../sumo/Fuzzics/include
-CPPFLAGS += -I../../../../../sumo/include
+CPPFLAGS += -I$(NAN_SUMO)/include
 CPPFLAGS += -I$(NAN_MOTO)/include
 
 # player dirs:
