@@ -390,7 +390,6 @@ AC_CONFIG_FILES([source/blender/decrypt/Makefile
 		source/blender/inflate/Makefile
 		source/blender/makesdna/Makefile
 		source/blender/makesdna/intern/Makefile
-		source/blender/misc/Makefile
 		source/blender/radiosity/Makefile
 		source/blender/readblenfile/Makefile
 		source/blender/readstreamglue/Makefile
