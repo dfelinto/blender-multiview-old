@@ -622,6 +622,7 @@ AC_CONFIG_FILES([Makefile
 		source/blender/writeblenfile/Makefile
 		source/blender/writestreamglue/Makefile
 		source/blender/quicktime/Makefile
+		source/blender/yafray/Makefile
 		source/blender/Makefile
 		source/creator/Makefile
 		source/kernel/Makefile

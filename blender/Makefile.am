@@ -118,7 +118,7 @@ blender_LDADD = \
 		$(internlibs) \
 		-lpython@PYTHON_VERSION@ \
 		@LIBM@ \
-        $(blib_png) $(blib_jpeg) $(blib_sdl)
+        $(blib_png) $(blib_jpeg) $(blib_sdl) source/blender/yafray/libblender_yafrayexport.la
  
 blenderplayer_LDADD = \
 	source/libblender_player.la \
