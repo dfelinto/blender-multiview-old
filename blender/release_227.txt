@@ -1,47 +1,75 @@
 New features of Blender 2.27:
 -----------------------------
 
-- source code: all Dutch comments have been translated to English
-- new & antialised fonts in interface (Freetype)
-- translation system for tooltips, buttons and menus, with support for non-latin character sets. 
+All platforms:
+--------------
+
+- International Language support for the Blender interface. A translation system
+  for tooltips, buttons and menus, with support for non-latin character sets.
   Instructions for how to work with this will be at the www.blender.org frontpage.
-- 'rename file' (NKEY) option in FileSelect and ImageSelect windows
-- 'remove file' (XKEY) option in ImageSelect
-- rightmouse menu in Text window, for open/save file.
-- Alt-M in TextWindow: copies the text to the active (3d) Font Object in 3D window
-- support for Freetype fonts in 3D Font Object
-- redesigned user pref buttons
-- autoskinning for Armatures, when parenting a Mesh to an Armature it gives a menu
-- new (larger) icons for Windows XP
-- new draw mode for Lamps in 3D window
-- new menu for window-type
+
+- User definable (antialiased) fonts for the interface. (Freetype)
+
+- A restyled userpreferences menu, which adds more space for all the new buttons.
+
+- autoskinning for Armatures, when parenting a Mesh to an Armature it gives a menu.
+
 - shadowbuffers now can have any size (with number-button)
-- Windows & OSX: support for QuickTime image (gif, tiff, psd) and movie (.mov) in/out
-  --------------------------------------------------------------
-  Please note! The selected Quicktime codec does *not* get saved
-  in the blendfile. Each time you startup Blender you have to
-  reselect the codec from the codec dialog. Background rendering
-  displays a codec dialog first when you start a render process.
-  --------------------------------------------------------------
-- The rendermenu now shows which codec is set for rendering.
+
+- Freetype2 support added for importing almost every font format for a 3D text object.
+
+- Pressing alt-m in the texteditor window generates a 3D text from the current textfile.
+  (up to 1000 characters)
+
+- The texteditor window is enhanced with a rightmouse menu for opening and saving files.
+
+- The windowtype button has been redesigned, it now displays a textual description for
+  the windowtypes next to the icons.
+
 - A small button has been added that toggles the visibility of the pulldown menu titles.
+
+- rename/delete menu's are added to the file and image browsers. Try NKEY and RKEY/XKEY.
+
+
+Win32 and OSX:
+--------------
+
+- Support for Quicktime has been added. Quicktime can be used to import (gif, tiff, psd)
+  images and movies as textures, and allows you to render animations to the Quicktime
+  movie format. (.mov)
+  -------------------------------------------------------------------------------------
+  Please note! The selected Quicktime codec does *not* get saved in the blendfile.
+  Each time you startup Blender you have to (re)select the codec from the codec dialog.
+  Background rendering is possible, it displays a codec dialog first when you start a
+  render process.
+  And on OSX Blender freezes when you press the "Options" button in the codec dialog !!
+  -------------------------------------------------------------------------------------
+
+- The rendermenu now shows which codec is selected for rendering.
 
 
 Win32 only:
 -----------
-- Clipboard support to copy/paste text from and to the texteditor.
-  Try with alt-shift-c and alt-shift-v.
 
-- A button has been added to the top header which allows runtime
-  switching between windowed and fullscreen mode. Commandline
-  options -w/-W for these two screenmodes are also available.
+- New application and installer icons.
 
-- During animation playback, the current framenumber gets displayed
-  in the animwindow header.
+- Clipboard support to copy/paste text from and to the texteditor. Try with alt-shift-c
+  and alt-shift-v.
 
-- (Experimental) A button has been added which allows you to list
-  all available codecs in the avi codec dialog, instead of listing
-  only certified codecs.
+- A button has been added to the top header which allows runtime switching between
+  windowed and fullscreen mode. Commandline options -w/-W for these two screenmodes are
+  also available.
+
+- During animation playback, the framenumber gets displayed in the animwindow header.
+
+- (Experimental) A button has been added which allows you to list all available codecs
+  in the avi codec dialog, instead of listing only certified codecs.
+
+
+Sourcecode:
+-----------
+
+- all Dutch comments have been translated to English.
 
 
 Bugfixes:
@@ -64,6 +92,7 @@ Work Arounds:
 Didn't make it:
 ------------
 - advanced shading support (Blinn, cartoon rendering)
+- new draw mode for Lamps in 3D window
 
 Still Not working:
 -----------------
