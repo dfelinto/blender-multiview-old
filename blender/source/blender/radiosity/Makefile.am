@@ -7,6 +7,7 @@ libblender_radiosity_la_SOURCES = \
 	extern/include/radio_types.h \
 	intern/source/raddisplay.c \
 	intern/source/radfactors.c \
+	intern/source/radrender.c \
 	intern/source/radio.c \
 	intern/source/radnode.c \
 	intern/source/radpostprocess.c \
