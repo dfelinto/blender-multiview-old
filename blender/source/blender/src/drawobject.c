@@ -3514,7 +3514,7 @@ void draw_object(Base *base)
 			// the only 2 extra drawtypes alowed in editmode
 			dtx= dtx & (OB_DRAWWIRE|OB_TEXSPACE);
 		}
-		else if(G.f & (G_FACESELECT) {
+		else if(G.f & (G_FACESELECT)) {
 			// unwanted combo
 			dtx &= ~OB_DRAWWIRE;
 		}
