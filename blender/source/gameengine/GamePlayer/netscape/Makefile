@@ -36,18 +36,19 @@ include nan_definitions.mk
 SOURCEDIR = source/gameengine/GamePlayer/netscape
 DIR = $(OCGDIR)/gameengine/GamePlayer/netscape
 
-ifeq ($(OS),$(findstring $(OS), "windows"))
-DIRS = src
+ifeq ($(OS),$(findstring $(OS), "windows irix"))
+    DIRS = src
 endif
 
-ifeq ($(OS),$(findstring $(OS), "freebsd irix solaris"))
-DIRS = src test
+ifeq ($(OS),$(findstring $(OS), "freebsd solaris"))
+    DIRS = src test
 endif
 
 ifeq ($(OS),$(findstring $(OS), "linux"))
   ifeq ($(CPU),i386)
-DIRS = src test
+    DIRS = src test
   endif
 endif
 
 include nan_subdirs.mk
+
