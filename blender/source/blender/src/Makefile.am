@@ -55,6 +55,19 @@ libblender_blendersrc_la_SOURCES = \
 	ghostwinlay.c \
 	glutil.c \
 	headerbuttons.c \
+	header_action.c \
+	header_buttonswin.c \
+	header_filesel.c \
+	header_image.c \
+	header_imasel.c \
+	header_info.c \
+	header_ipo.c \
+	header_nla.c \
+	header_oops.c \
+	header_seq.c \
+	header_sound.c \
+	header_text.c \
+	header_view3d.c \
 	imasel.c \
 	interface.c \
 	keyval.c \
