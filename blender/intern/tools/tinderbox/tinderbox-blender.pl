@@ -152,11 +152,11 @@ sub InitVars {
 		$BinaryName{'blenderdynamic'} = 'bin/blender';
 #		$BinaryName{'Dblenderplayer'} = 'debug/bin/blenderplayer';
 	} elsif ($UNAME eq 'CYGWIN_NT-5.0') {
-#		$BinaryName{'blenderdynamic'} = 'blender.exe';
+		$BinaryName{'blenderdynamic'} = 'bin/blender.exe';
 #		$BinaryName{'Dblenderdynamic'} = 'debug/blender.exe';
 #		$BinaryName{'blenderplugin'} = 'npB3DPlg.dll';
 	} else {
-#		$BinaryName{'blenderdynamic'} = 'blender';
+		$BinaryName{'blenderdynamic'} = 'bin/blender';
 #		$BinaryName{'Dblenderdynamic'} = 'debug/blender';
 #		$BinaryName{'blenderplugin'} = 'npBlender3DPlugin.so';
 #		$BinaryName{'blenderpluginXPCOM'} = 'Blender3DPlugin.so';
