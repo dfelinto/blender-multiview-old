@@ -1,0 +1,651 @@
+# translation of cz.po to Czech
+# Jiri Hnidek <jiri.hnidek@vslib.cz>, 2003
+msgid ""
+msgstr ""
+""
+"Last-Translator: Karlos <jiri.hnidek@vslib.cz>\n"
+"PO-Revision-Date: 2003-05-16 20:22+0200\n"
+"Project-Id-Version: cz\n"
+"Language-Team: Český <cs@li.org>\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# Copyright (C) 2003 Free Software Foundation, Inc.
+# snts &lt;snutlix@hotmail.com&gt;, 2003.
+#
+###########################################################
+###
+###  Render Window
+###
+###########################################################
+msgid "Start the rendering"
+msgstr "Spustit renderování"
+
+msgid "Display edge settings"
+msgstr "Zobrazit nastavení hran"
+
+msgid "Enable shadow calculation"
+msgstr "Povolit výpočet stínů"
+
+msgid "Start rendering a sequence"
+msgstr "Spustit renderování animace"
+
+###########################################################
+###
+###  ToolBox (Popup Menu)
+###
+###########################################################
+msgid "ADD"
+msgstr "PŘIDAT"
+
+msgid "FILE"
+msgstr "SOUBOR"
+
+msgid "EDIT"
+msgstr "UPRAVIT"
+
+msgid "OBJECT"
+msgstr "OBJEKT"
+
+msgid "MESH"
+msgstr "PLÁŠŤ"
+
+msgid "CURVE"
+msgstr "KŘIVKY"
+
+msgid "KEY"
+msgstr "KLÍČ"
+
+msgid "VIEW"
+msgstr "POHLED"
+
+msgid "RENDER"
+msgstr "RENDEROVÁNÍ"
+
+msgid "SEQUENCE"
+msgstr "ANIMACE"
+
+###########################################################
+###
+###  General Messages
+###
+###########################################################
+msgid "QUIT BLENDER"
+msgstr "UKONČIT BLENDER"
+
+msgid "Not allowed"
+msgstr "Není povoleno"
+
+msgid "ERASE ALL"
+msgstr "SMAZAT VŠE"
+
+###########################################################
+###
+###  General Terms
+###
+###########################################################
+
+###########################################################
+###
+###  FileSelect Commands
+###
+###########################################################
+msgid "LOAD FILE"
+msgstr "NAČÍST SOUBOR"
+
+msgid "SAVE FILE"
+msgstr "ULOŽIT SOUBOR"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD
+###
+###########################################################
+msgid "Mesh"
+msgstr "Plášť"
+
+msgid "Curve"
+msgstr "Křivka"
+
+msgid "Surface"
+msgstr "Povrch"
+
+msgid "Text"
+msgstr "Text"
+
+msgid "Camera"
+msgstr "Kamera"
+
+msgid "Lamp"
+msgstr "Lampa"
+
+msgid "Armature"
+msgstr "Armatura"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Mesh
+###
+###########################################################
+msgid "&gt;Plane"
+msgstr "&gt;Čtverec"
+
+msgid "&gt;Cube"
+msgstr "&gt;Krychle"
+
+msgid "&gt;UVsphere"
+msgstr "&gt;UVKoule"
+
+msgid "&gt;Icosphere"
+msgstr "&gt;IcoKoule"
+
+msgid "&gt;Cylinder"
+msgstr "&gt;Válec"
+
+msgid "&gt;Tube"
+msgstr "&gt;Trubka"
+
+msgid "&gt;Cone"
+msgstr "&gt;Kužel"
+
+msgid "&gt;Grid"
+msgstr "&gt;Mřížka"
+
+msgid "&gt;Monkey"
+msgstr "&gt;Opička"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Curve
+###
+###########################################################
+msgid "&gt;Bezier Curve"
+msgstr "&gt;Bezierova Křivka"
+
+msgid "&gt;Bezier Circle"
+msgstr "&gt;Bezierův Kruh"
+
+msgid "&gt;Nurbs Curve"
+msgstr "&gt;Nurbs Křivka"
+
+msgid "&gt;Nurbs Circle"
+msgstr "&gt;Nurbs Kruh"
+
+msgid "&gt;Path"
+msgstr "&gt;Cesta"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Surface
+###
+###########################################################
+msgid "&gt;Curve"
+msgstr "&gt;Křivka"
+
+msgid "&gt;Circle"
+msgstr "&gt;Kruh"
+
+msgid "&gt;Surface"
+msgstr "&gt;Povrch"
+
+msgid "&gt;Sphere"
+msgstr "&gt;Koule"
+
+msgid "&gt;Donut"
+msgstr "&gt;Prstenec"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; FILE
+###
+###########################################################
+msgid "New"
+msgstr "Nový"
+
+msgid "Open"
+msgstr "Otevřít"
+
+msgid "Reopen Last"
+msgstr "Otevřít poslední"
+
+msgid "Append"
+msgstr "Přidat"
+
+msgid "Save As"
+msgstr "Uložit jako"
+
+msgid "Save"
+msgstr "Uložit"
+
+msgid "Save Image"
+msgstr "Uložit obrázek"
+
+msgid "Save VRML"
+msgstr "Uložit jako VRML"
+
+msgid "Save DXF"
+msgstr "Uložit jako DXF"
+
+msgid "Save VideoScape"
+msgstr "Uložit Animaci"
+
+msgid "Save UserPrefs"
+msgstr "Uložit nastavení"
+
+msgid "Quit"
+msgstr "Konec"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Edit
+###
+###########################################################
+msgid "(De)Select All"
+msgstr "O(d)značit vše"
+
+msgid "Select Linked"
+msgstr "Označit spojené"
+
+msgid "Hide Selected"
+msgstr "Skrýt vše"
+
+msgid "Border Select"
+msgstr "Hraniční označení"
+
+msgid "Duplicate"
+msgstr "Duplikovat"
+
+msgid "Delete"
+msgstr "Smazat"
+
+msgid "Edit Mode"
+msgstr "Editační mód"
+
+msgid "Grabber"
+msgstr "Posun"
+
+msgid "Rotate"
+msgstr "Rotace"
+
+msgid "Scale"
+msgstr "Změna velikosti"
+
+msgid "Shrink/Fatten"
+msgstr "Smršit/roztáhnout"
+
+msgid "Shear"
+msgstr "Zkosit"
+
+msgid "Warp/Bend"
+msgstr "Zbortit/pokřivit"
+
+msgid "Snap Menu"
+msgstr "Zarovnávací menu"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (1)
+###
+###########################################################
+msgid "Clear Size"
+msgstr "Původní velikost"
+
+msgid "Clear Rotation"
+msgstr "Původní rotace"
+
+msgid "Clear Location"
+msgstr "Původní pozice"
+
+msgid "Clear Origin"
+msgstr "Původní Origin"
+
+msgid "Make Parent"
+msgstr "Vytvořit rodiče"
+
+msgid "Clear Parent"
+msgstr "Smazat rodiče"
+
+msgid "Make Track"
+msgstr "Přidat dráhu"
+
+msgid "Clear Track"
+msgstr "Odstranit dráhu"
+
+msgid "Image Displist"
+msgstr "Image Displist"
+
+msgid "Image Aspect"
+msgstr "Image Aspekt"
+
+msgid "Vect Paint"
+msgstr "Vect Paint"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (2)
+###
+###########################################################
+msgid "Move To Layer"
+msgstr "Přesunout do vrstvy"
+
+msgid "Delete All"
+msgstr "Smazat vše"
+
+msgid "Apply Size/Rot"
+msgstr "Aplikace Zvětšení/Rot"
+
+msgid "Apply Deform"
+msgstr "Aplikace deformace"
+
+msgid "Join"
+msgstr "Spojit"
+
+#msgid "Make Local"
+#msgstr "Mache Lokal"
+#msgid "Select Linked"
+#msgstr "Selektiere verknĂÂźpfte"
+#msgid "Make Links"
+#msgstr "Erstelle Links"
+#msgid "Copy Menu"
+#msgstr "MenĂÂź Kopieren"
+#msgid "Convert Menu"
+#msgstr "MenĂÂź Konvertieren"
+
+msgid "Boolean Op"
+msgstr "Boolean Operace"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Mesh
+###
+###########################################################
+msgid "Make edge/face"
+msgstr "Vytvořit hranu/plošku"
+
+msgid "Fill"
+msgstr "Vyplnit"
+
+msgid "Split"
+msgstr "Rozdělit"
+
+msgid "Undo/reload"
+msgstr "Zpět/původní"
+
+msgid "Calc Normals"
+msgstr "Vypočítat normály"
+
+msgid "Separete"
+msgstr "Rozdělit"
+
+msgid "Write Videosc"
+msgstr "Zapsat animaci"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Curve
+###
+###########################################################
+msgid "Deselect Linked"
+msgstr "Odznačit Spojené"
+
+msgid "Extrude"
+msgstr "Tažení"
+
+msgid "Delete Menu"
+msgstr "Smazat menu"
+
+msgid "Make Segment"
+msgstr "Vytvořit Segment"
+
+msgid "Cyclic"
+msgstr "Uzavřít"
+
+msgid "Select Row"
+msgstr "Vybrat Řadu"
+
+msgid "Calc Handle"
+msgstr "Spočítat Handle"
+
+msgid "Auto Handle"
+msgstr "Auto Handle"
+
+msgid "Vect Handle"
+msgstr "Vektor Handle"
+
+msgid "Specials"
+msgstr "Specialitky"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Key
+###
+###########################################################
+msgid "Insert"
+msgstr "Vložit"
+
+msgid "Show"
+msgstr "Ukázat"
+
+msgid "Next"
+msgstr "Další"
+
+msgid "Prev"
+msgstr "Předchozí"
+
+msgid "Show+Sel"
+msgstr "Ukáz+Ozn"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; RENDER
+###
+###########################################################
+msgid "Render Window"
+msgstr "Renderovací okno"
+
+msgid "Render"
+msgstr "Renderovat"
+
+msgid "Set Border"
+msgstr "Označit okraje"
+
+msgid "Image Zoom"
+msgstr "Image Zoom"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; VIEW
+###
+###########################################################
+msgid "Centre"
+msgstr "Vycentrovat"
+
+msgid "Home"
+msgstr "Home"
+
+msgid "Z-Buffer"
+msgstr "Z-Buffer"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; SEQUENCE
+###
+###########################################################
+msgid "Add Strip"
+msgstr "Přidat Strip"
+
+msgid "Change Str"
+msgstr "Změnit Strip"
+
+msgid "Delete Str"
+msgstr "Smazat Strip"
+
+msgid "Make Meta"
+msgstr "Vytvořit Meta"
+
+msgid "Str Params"
+msgstr "Strip Parametry"
+
+###########################################################
+###
+###  Menu bar
+###
+###########################################################
+msgid "File"
+msgstr "Soubor"
+
+msgid "Edit"
+msgstr "Upravit"
+
+msgid "Add"
+msgstr "Přidat"
+
+msgid "View"
+msgstr "Pohled"
+
+msgid "Game"
+msgstr "Hra"
+
+msgid "Tools"
+msgstr "Nástroje"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add
+###
+###########################################################
+msgid "MetaBall"
+msgstr "Metaball"
+
+msgid "Empty"
+msgstr "Prázdný"
+
+msgid "Lattice"
+msgstr "Lattice"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Mesh
+###
+###########################################################
+msgid "Plane"
+msgstr "Čtverec"
+
+msgid "Cube"
+msgstr "Krychle"
+
+msgid "Circle"
+msgstr "Kruh"
+
+msgid "UVsphere"
+msgstr "UVkoule"
+
+msgid "IcoSphere"
+msgstr "IcoKoule"
+
+msgid "Cylinder"
+msgstr "Válec"
+
+msgid "Tube"
+msgstr "Trubka"
+
+msgid "Cone"
+msgstr "Kužel"
+
+msgid "Grid"
+msgstr "Mřížka"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Curve
+###
+###########################################################
+msgid "Bezier Curve"
+msgstr "Bezierova Křivka"
+
+msgid "Bezier Circle"
+msgstr "Bezierův Kruh"
+
+msgid "NURBS Curve"
+msgstr "NURBS Křivka"
+
+msgid "NURBS Circle"
+msgstr "NURBS Kruh"
+
+msgid "Path"
+msgstr "Cesta"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Surface
+###
+###########################################################
+msgid "NURBS Suface"
+msgstr "NURBS Povrch"
+
+msgid "NURBS Tube"
+msgstr "NURBS Trubka"
+
+msgid "NURBS Sphere"
+msgstr "NURBS Koule"
+
+msgid "NURBS Donut"
+msgstr "NURBS Prstenec"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; View
+###
+###########################################################
+msgid "Front"
+msgstr "Čelní"
+
+msgid "Right"
+msgstr "Boční"
+
+msgid "Top"
+msgstr "Ze zhora"
+
+msgid "Zoom In"
+msgstr "Zoom In"
+
+msgid "Zoom Out"
+msgstr "Zoom Out"
+
+msgid "Center"
+msgstr "Vycentrovat"
+
+msgid "View All"
+msgstr "Zobrazit vše"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Game
+###
+###########################################################
+msgid "Start Game"
+msgstr "Spustit hru"
+
+msgid "Enable All Frame"
+msgstr "Povolit všechny framy"
+
+msgid "Show framerate and profile"
+msgstr "Zobrazit fps a profil"
+
+msgid "Autostart"
+msgstr "Autostart"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Tools
+###
+###########################################################
+msgid "Pack Data"
+msgstr "Zabalit Data"
+
+msgid "Unpack Data to current dir"
+msgstr "Rozbalit data do aktuálního adresáře"
+
+msgid "Advanced Unpack"
+msgstr "Pokročilé rozbalení"
+
