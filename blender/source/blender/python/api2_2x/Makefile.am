@@ -23,6 +23,10 @@ libblender_api2_2x_la_SOURCES = \
   Armature.h \
   Bone.c \
   Bone.h \
+  Ipo.c \
+  Ipo.h \
+  Metaball.c \
+  Metaball.h \
   Image.c \
   Image.h \
   Window.c \
