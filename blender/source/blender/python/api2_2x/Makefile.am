@@ -13,6 +13,8 @@ libblender_api2_2x_la_SOURCES = \
   Camera.h \
   Lamp.c \
   Lamp.h \
+  Curve.c \
+  Curve.h \
   Image.c \
   Image.h \
   Window.c \
