@@ -33,6 +33,10 @@
 
 #include <iostream>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 // for Lower Upper decompostion code.
 #include "TNT/lu.h"
 

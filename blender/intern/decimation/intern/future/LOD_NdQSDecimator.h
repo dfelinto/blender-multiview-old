@@ -33,6 +33,10 @@
 
 #define NAN_INCLUDED_LOD_NdQSDecimator_H
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "common/NonCopyable.h"
 #include "LOD_ManMesh2.h"
 

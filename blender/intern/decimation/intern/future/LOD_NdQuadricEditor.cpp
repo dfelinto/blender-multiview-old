@@ -29,8 +29,11 @@
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
  */
 
-#include "LOD_NdQuadricEditor.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
+#include "LOD_NdQuadricEditor.h"
 #include "LOD_ExternNormalEditor.h"
 #include "LOD_ExternVColorEditor.h"
 

@@ -30,8 +30,12 @@
  */
 
 #ifndef LOD_GhostTestApp_h
-
 #define LOD_GhostTestApp_h
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 
 #include "GHOST_IEventConsumer.h"
 #include "MT_Vector3.h"

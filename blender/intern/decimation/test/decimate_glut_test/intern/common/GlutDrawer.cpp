@@ -29,8 +29,11 @@
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
  */
 
-#include "GlutDrawer.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
+#include "GlutDrawer.h"
 #include "MT_assert.h"
 
 MEM_SmartPtr<GlutDrawManager> GlutDrawManager::m_s_instance = MEM_SmartPtr<GlutDrawManager>();

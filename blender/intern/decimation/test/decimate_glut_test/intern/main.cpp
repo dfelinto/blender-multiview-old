@@ -29,8 +29,11 @@
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
  */
 
-#include "LOD_decimation.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
+#include "LOD_decimation.h"
 #include "ply/ply.h"
 #include "MEM_SmartPtr.h"
 #include "common/GlutDrawer.h"
