@@ -443,6 +443,16 @@ dnl  AC_FUNC_VPRINTF
 dnl  AC_CHECK_FUNCS([endpwent floor getcwd gettimeofday memmove memset mkdir munmap pow select sqrt strcasecmp strchr strdup strncasecmp strpbrk strrchr strstr strtoul atexit fdatasync gethostname])
 
 dnl --------------------------------------------------------------------------
+dnl Check for necessary libraries.
+dnl Note that this section still needs some work to figure out the best order
+dnl of checking. TODO!!!
+dnl --------------------------------------------------------------------------
+  AC_CHECK_LIBM  dnl Use libtool.m4's provided macro to get the math library 
+  AC_SUBST(LIBM)
+  AC_CHECK_LIB([z], [gzopen])
+  AC_CHECK_LIB([pthread], [pthread_exit])
+
+dnl --------------------------------------------------------------------------
 dnl Set default library paths when using the precompiled libraries.
 dnl If not available, try to find the one on the system.
 dnl --------------------------------------------------------------------------
@@ -471,6 +481,7 @@ if test x"$enable_precompiled" = x"yes"; then
       AM_CONDITIONAL(b_sdl, false)
       AM_PATH_SDL(1.0.0)
       AC_CHECK_LIB([SDL], [SDL_Init])
+      LIBS="$LIBS $SDL_LIBS"
     ;;
   esac
   AC_SUBST(BLIB_PNG)
@@ -484,20 +495,17 @@ else
   AC_CHECK_LIB([jpeg], [jpeg_destroy])
   AM_PATH_SDL(1.0.0)
   AC_CHECK_LIB([SDL], [SDL_Init])
+  LIBS="$LIBS $SDL_LIBS"
 fi
 
 dnl --------------------------
 dnl Checks for extra libraries
 dnl --------------------------
 
-  AC_CHECK_LIBM  dnl Use libtool.m4's provided macro to get the math library 
-  AC_SUBST(LIBM)
-  AC_CHECK_LIB([z], [gzopen])
   AC_LANG_PUSH([C++])
   AC_CHECK_LIB([stdc++], [printf]) dnl  Zarquon's knees, this is an evil hack.
   AC_LANG_POP([C++])
   AC_CHECK_LIB([dl], [dlopen])
-  AC_CHECK_LIB([pthread], [pthread_exit])
   AC_CHECK_LIB([util], [openpty])
 if test x"$enable_gameblender" = x"yes"; then
   AC_CHECK_LIB([ode], [dJointGetAMotorAngle],,
