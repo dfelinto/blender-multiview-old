@@ -4,7 +4,7 @@ import time
 import sys
 from distutils import sysconfig
 
-if sys.hexversion < 0x2040000:
+if sys.hexversion < 0x2030000:
 	print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
 	print
 	print "You need at least Python 2.3 to build Blender with SCons"
@@ -1322,6 +1322,13 @@ def printadd(env, target, source):
 def noaction(env, target, source):
 	print "Empty action"
 
+def DistClean(dir2clean):
+	"""
+	Do a removal of the root_build_dir the fast way
+	"""
+	print "distcleaning... %s"%dir2clean
+	print "done"
+
 def BlenderDefault(target):
 	"""
 	The default Blender build.
@@ -1541,6 +1548,7 @@ if user_options_dict['BUILD_BLENDER_PLAYER'] == 1 and user_options_dict['BUILD_G
 release_target = env.Alias("release", BlenderRelease('blender$PROGSUFFIX'))
 default_target = env.Alias("default", BlenderDefault('blender$PROGSUFFIX'))
 wininst_target = env.Alias("winist", BlenderNSIS('blender$PROGSUFFIX'))
+distclean_target = env.Alias("distclean", DistClean(root_build_dir))
 
 Default("default")
 
