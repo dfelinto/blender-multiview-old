@@ -319,6 +319,7 @@ dnl ---------------------
 dnl ---  eh... i dunno... -PH  ----
 if test x$with_gameblender = x"yes"; then
   use_gameblender=1
+  CFLAGS="$CFLAGS -DGAMEBLENDER=1"
 else
   use_gameblender=0
 fi
