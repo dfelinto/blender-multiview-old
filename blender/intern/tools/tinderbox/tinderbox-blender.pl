@@ -85,6 +85,8 @@ sub InitVars {
     $ReportStatus = 1;  # Send results to server or not
     $BuildOnce = 0;     # Build once, don't send results to server
     $BuildClassic = 0;  # Build classic source
+    $BuildAutotools = 0;# Build with the autotools
+    $BuildType = 'traditional'; # Description for the traditional build
 
     #relative path to binary
 	if ($UNAME eq 'Darwin') {
@@ -105,6 +107,10 @@ sub InitVars {
 #		$BinaryName{'Dblenderpublisher'} = 'debug/blenderpublisher';
 #		$BinaryName{'blenderplugin'} = 'npBlender3DPlugin.so';
 #		$BinaryName{'blenderpluginXPCOM'} = 'Blender3DPlugin.so';
+	}
+	if ($BuildAutotools) {
+		$BinaryName{'blendercreator'} = 'blender';
+		$BuildType = 'autotoolized';
 	}
 
     # Set these to what makes sense for your system
@@ -297,7 +303,11 @@ sub BuildIt {
 
 	# Set GuessConfig and ConfigGuess
 	print LOG "ConfigGuess = $ConfigGuess\n";
+	if ($BuildAutotools) {
+		$BuildObjDir = "$ENV{'HOME'}/develop/";
+	} else {
 	$BuildObjDir = "$ENV{'HOME'}/develop/blender/obj/";
+	}
 	open (GETOBJ, "$ConfigGuess 2>&1 |") || die "$ConfigGuess: $!\n";
 	while (<GETOBJ>) {
 	    $GuessConfig = $_;
@@ -320,6 +330,16 @@ sub BuildIt {
 		close(PULL);
 	}
 
+	if ($BuildAutotools) {
+		chdir("blender") || die "chdir(blender): $!\n";
+		print `pwd` . " -> chdir(blender)\n";
+		system("./bootstrap");
+		$Topsrcdir = $BuildObjName;
+		mkdir($Topsrcdir, 0777);
+		chdir($Topsrcdir) || die "chdir($Topsrcdir): $1\n";
+		print `pwd` . " -> chdir($Topsrcdir)\n";
+		system("../blender/configure");
+	} else {
 	chdir($Topinterndir) || die "chdir($Topinterndir): $!\n";
 	print `pwd` . " -> chdir($Topinterndir)\n";
 
@@ -338,6 +358,7 @@ sub BuildIt {
 
 	chdir($Topsrcdir) || die "chdir($Topsrcdir): $!\n";
 	print `pwd` . " -> chdir($Topsrcdir)\n";
+	}
 
 	@felist = split(/,/, $FE);
 
@@ -415,7 +436,7 @@ sub BuildIt {
 	    print LOG "tinderbox: tree: $BuildTree\n";
 	    print LOG "tinderbox: builddate: $StartTime\n";
 	    print LOG "tinderbox: status: $BuildStatusStr\n";
-	    print LOG "tinderbox: build: $BuildName ($Hostname) $fe\n";
+	    print LOG "tinderbox: build: $BuildName ($Hostname) $BuildType $fe\n";
 	    print LOG "tinderbox: errorparser: unix\n";
 	    print LOG "tinderbox: buildfamily: unix\n";
 	    print LOG "tinderbox: END\n\n";	    
@@ -519,7 +540,7 @@ sub StartBuild {
 		print $fh "tinderbox: tree: $BuildTree\n";
 		print $fh "tinderbox: builddate: $StartTime\n";
 		print $fh "tinderbox: status: building\n";
-		print $fh "tinderbox: build: $BuildName ($Hostname) $fe\n";
+		print $fh "tinderbox: build: $BuildName ($Hostname) $BuildType $fe\n";
 		print $fh "tinderbox: errorparser: unix\n";
 		print $fh "tinderbox: buildfamily: unix\n";
 		print $fh "tinderbox: END\n";
