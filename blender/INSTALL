@@ -242,12 +242,11 @@ should contain the directories CIncludes and Libraries.
 ----------------------Mac OSX TIPS--------------------------------------
 When building Blender on OSX you have three choices:
 METHOD 1. Build using the old NaN Makefiles.
-METHOD 2. Build using the new automake/autoconf files
-METHOD 3. Use the Project Builder project
+METHOD 2. Use the Project Builder project
 METHOD 4. Use the SCons build system (see above)
 
-METHOD 1 and 3
-The first 4 steps are th same for methods 1 and 3. Only the actual Blender 
+METHOD 1 and 2
+The first 4 steps are th same for methods 1 and 2. Only the actual Blender 
 build step number 5 is different.
 
 Step1:
