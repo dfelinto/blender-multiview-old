@@ -58,6 +58,12 @@ dnl -----------------------
    [ with_gameblender=no ]  dnl default setting.
   )
 
+  AC_ARG_ENABLE(gameplayer,
+   AC_HELP_STRING([--enable-gameplayer],[Build web plugin (default=disable)]),
+   ,dnl default assign.
+   [ enable_gameplayer=no ]  dnl default setting.
+  )
+
 dnl ----------------------
 dnl ssl
 dnl ----------------------
@@ -192,6 +198,7 @@ dnl ----------------
   AM_CONDITIONAL([BlenderSTATIC],[test x$enable_blenderstatic = x"yes"])
   AM_CONDITIONAL([BlenderGAME],[test x$with_gameblender = x"yes"])
   AM_CONDITIONAL([BlenderOPENAL],[test x$enable_openal = x"yes"])
+  AM_CONDITIONAL([BlenderPLUGIN],[test x$enable_gameplayer = x"yes"])
 
 
 dnl -----------------------------------

@@ -1,5 +1,11 @@
+if BlenderPLUGIN
+gameplayerdir = GamePlayer
+else
+gameplayerdir =
+endif
+
 SUBDIRS = BlenderRoutines Converter Expressions GameLogic Ketsji \
-	Rasterizer SceneGraph SoundSystem Network GamePlayer Physics
+	Rasterizer SceneGraph SoundSystem Network Physics $(gameplayerdir)
 
 noinst_LTLIBRARIES = libblender_gameengine.la
 
