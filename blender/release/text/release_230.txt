@@ -1,0 +1,12 @@
+
+Changelog Blender 2.30 release
+
+This is the first release reflecting the progress of GUI projects as scheduled for the 2.3x series.
+
+The huge amount of changes and new additions don't present well in a regular text file. For the full picture, please visit http://www.blender3d.org
+Links to changelogs and documentation can be found at the frontpage.
+
+
+Amsterdam, october 30, 2003
+
+-Ton Roosendaal-
