@@ -17981,17 +17981,17 @@
 			isa = PBXFileReference;
 			lastKnownFileType = image.icns;
 			name = "blender icon.icns";
-			path = "/Users/luke/dev/bf_copy_tree/blender/source/darwin/blender.app/Contents/Resources/blender icon.icns";
-			refType = 0;
-			sourceTree = "<absolute>";
+			path = "../../source/darwin/blender.app/Contents/Resources/blender icon.icns";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		A3B3639407E4F13200AE0C8B = {
 			isa = PBXFileReference;
 			lastKnownFileType = image.icns;
 			name = "blender file icon.icns";
-			path = "/Users/luke/dev/bf_copy_tree/blender/source/darwin/blender.app/Contents/Resources/blender file icon.icns";
-			refType = 0;
-			sourceTree = "<absolute>";
+			path = "../../source/darwin/blender.app/Contents/Resources/blender file icon.icns";
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 		A3B363A807E4FA8A00AE0C8B = {
 			buildActionMask = 2147483647;
@@ -18753,7 +18753,7 @@
 			buildSettings = {
 				GCC_PREPROCESSOR_DEFINITIONS = "FTGL_STATIC_LIBRARY GAMEBLENDER=1 INTERNATIONAL NDEBUG USE_SUMO_SOLID WITH_QUICKTIME NEWTRANSFORM _THREAD_SAFE";
 				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = "/Users/luke/dev/bf_copy_tree/lib/darwin-6.1-powerpc/solid/lib /Users/luke/dev/bf_copy_tree/lib/darwin-6.1-powerpc/qhull/lib /Users/luke/dev/bf_copy_tree/lib/darwin-6.1-powerpc/sdl/lib /Users/luke/dev/bf_copy_tree/lib/darwin-6.1-powerpc/png/lib /Users/luke/dev/bf_copy_tree/lib/darwin-6.1-powerpc/jpeg/lib /Users/luke/dev/bf_copy_tree/lib/darwin-6.1-powerpc/freetype/lib /Users/luke/dev/bf_copy_tree/lib/darwin-6.1-powerpc/ftgl/lib /Users/luke/dev/bf_copy_tree/lib/darwin-6.1-powerpc/gettext/lib /Users/luke/dev/bf_copy_tree/lib/darwin-6.1-powerpc/openal/lib";
+				LIBRARY_SEARCH_PATHS = "../../../lib/darwin-6.1-powerpc/solid/lib ../../../lib/darwin-6.1-powerpc/qhull/lib ../../../lib/darwin-6.1-powerpc/sdl/lib ../../../lib/darwin-6.1-powerpc/png/lib ../../../lib/darwin-6.1-powerpc/jpeg/lib ../../../lib/darwin-6.1-powerpc/freetype/lib ../../../lib/darwin-6.1-powerpc/ftgl/lib ../../../lib/darwin-6.1-powerpc/gettext/lib ../../../lib/darwin-6.1-powerpc/openal/lib";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
