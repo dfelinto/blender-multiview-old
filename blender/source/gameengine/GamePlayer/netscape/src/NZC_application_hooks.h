@@ -1,0 +1,127 @@
+/**
+ * $Id$
+ *
+ * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
+ *
+ * The contents of this file may be used under the terms of either the GNU
+ * General Public License Version 2 or later (the "GPL", see
+ * http://www.gnu.org/licenses/gpl.html ), or the Blender License 1.0 or
+ * later (the "BL", see http://www.blender.org/BL/ ) which has to be
+ * bought from the Blender Foundation to become active, in which case the
+ * above mentioned GPL option does not apply.
+ *
+ * The Original Code is Copyright (C) 2002 by NaN Holding BV.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL/BL DUAL LICENSE BLOCK *****
+ * Wrapper to communicate with a threaded application from the plugin.
+ */
+
+#ifndef APH_APPLICATION_HOOKS_H
+#define APH_APPLICATION_HOOKS_H
+
+#include "npapi.h"
+#include "prthread.h"
+#include "prlock.h"
+#include "PLG_plugin_handles.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+	/* ----------------------------------------------------------------- */
+	/* Initialization and stuff                                          */
+	/* ----------------------------------------------------------------- */
+
+	/** Create a new application instance. */
+	APH_application_handle 
+	APH_create_application(
+		PLA_plugin_handle h
+		);
+
+	/** Reset the viewport because of changes in geometry etc. */
+	void
+	APH_reset_viewport(
+		APH_application_handle h,
+		int x,
+		int y
+		);
+
+	/** Redraw the application. */
+	void
+	APH_redraw(
+		APH_application_handle h
+		);
+
+	/** Terminate the application. */
+	void
+	APH_terminate_application(
+		APH_application_handle h
+		);
+
+	/** Pass the result of the loading of the main file. */
+	void
+	APH_main_file_loaded(
+		APH_application_handle h,
+		unsigned char * buffer,
+		int size
+		);
+
+	/** Pass the result of the loading of the loading anim
+	 * file. */
+	void
+	APH_loading_anim_loaded(
+		APH_application_handle h,
+		unsigned char * buffer,
+		int size
+		);
+	
+	/** Signal failure during loading of the main blend file. */
+	void
+	APH_main_file_failed(
+		APH_application_handle h
+		);
+
+	/** Signal failure during loading of the loading animation
+	 * blend file.*/
+	void
+	APH_loading_anim_failed(
+		APH_application_handle h
+		);
+
+	/* ----------------------------------------------------------------- */
+	/* Hooks for event handling                                          */
+	/* ----------------------------------------------------------------- */
+
+	/** send a message to the current gameworld*/
+	void
+	APH_send_message(
+		APH_application_handle h, 
+		char* to, 
+		char* from, 
+		char* subject, 
+		char* body
+		);
+
+	/** Prepare to restart with a new url. Streaming is started
+	 * elsewhere. */
+	void
+	APH_restart_with_url(
+		APH_application_handle h
+		);
+  
+#ifdef __cplusplus
+}
+#endif
+
+
+# endif
+
+
+
+
+

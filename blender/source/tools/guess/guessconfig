@@ -1,0 +1,106 @@
+#!/bin/sh
+#
+# $Id$
+#
+# ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
+#
+# The contents of this file may be used under the terms of either the GNU
+# General Public License Version 2 or later (the "GPL", see
+# http://www.gnu.org/licenses/gpl.html ), or the Blender License 1.0 or
+# later (the "BL", see http://www.blender.org/BL/ ) which has to be
+# bought from the Blender Foundation to become active, in which case the
+# above mentioned GPL option does not apply.
+#
+# The Original Code is Copyright (C) 2002 by NaN Holding BV.
+# All rights reserved.
+#
+# The Original Code is: all of this file.
+#
+# Contributor(s): none yet.
+#
+# ***** END GPL/BL DUAL LICENSE BLOCK *****
+
+# If we were here before, then there is no need to run config.guess again
+TMP=/tmp
+if [ -f $TMP/.nanguess ]; then
+    cat $TMP/.nanguess
+    exit 0;
+fi
+
+# Be kind, temporarily ...
+if [ -z "$SRCHOME" ]; then
+    SRCHOME="$HOME/develop/source"
+    export SRCHOME
+fi
+
+# CG format: CPU-MANUFACTURER-OS(VERSION)-PossibleOtherStuff
+CG=`$SRCHOME/tools/guess/config.guess`
+# NaN format: OS-VERSION-CPU
+
+CPU=`echo $CG|sed -e 's/^\([^-]*\)-\([^-]*\)-\([^-]*\).*$/\1/' \
+	-e 's/i.86/i386/' -e 's/ev56//'`
+MANUFACTURER=`echo $CG|sed -e 's/^\([^-]*\)-\([^-]*\)-\([^-]*\).*$/\2/'`
+OS=`echo $CG|sed -e 's/^\([^-]*\)-\([^-]*\)-\([^-]*\).*$/\3/' \
+	-e 's/[0-9\.]*$//' -e 's/elf$//'`
+OS_VERSION=`echo $CG|sed -e 's/^\([^-]*\)-\([^-]*\)-\([^-]*\).*$/\3/' \
+	-e 's/[^0-9]*//'`
+
+# Patch BeOS
+if [ "$OS" = "beos" -a  -z "$OS_VERSION" ]; then
+    OS_VERSION=`/bin/uname -r`
+fi
+
+# Patch mips
+if [ "$CPU" = "mips" -a ! -z "$NAN_MIPS" ]; then
+    CPU="$NAN_MIPS"
+fi
+
+# Patch Linux
+if [ "$OS" = "linux" ]; then
+    dummydir=/tmp/
+    dummy=${dummydir}dummy-$$
+    trap 'rm -f $dummy.c $dummy.o $dummy; exit 1' 1 2 15
+    sed 's/^	//' << EOF >$dummy.c
+	#include <stdio.h>
+	#include <gnu/libc-version.h>
+	int main (void) {
+	    printf("%s", gnu_get_libc_version());
+	}
+EOF
+    gcc $dummy.c -o $dummy
+    OS_VERSION=`$dummy | sed -e 's/^/glibc/'`
+    rm -f $dummy.c $dummy
+fi
+
+# Patch Windows
+if [ "$OS" = "cygwin" ]; then
+    OS="windows"
+    CPU=""
+fi
+
+# Create NANGUESS string
+if [ -z "$OS_VERSION" ]; then
+    if [ -z "$CPU" ]; then
+	NANGUESS="$OS"
+    else
+	NANGUESS="$OS-$CPU"
+    fi
+else
+    NANGUESS="$OS-$OS_VERSION-$CPU"
+fi
+
+# Parse arguments
+if [ -z "$1" ]; then
+    # No arguments, just echo OS-VERSION-CPU
+    echo $NANGUESS > $TMP/.nanguess
+    chmod 666 $TMP/.nanguess
+    chgrp cvs $TMP/.nanguess
+    echo $NANGUESS
+elif [ "$1" = "-s" ]; then
+    # bourne shell output style
+    echo "CONFIG_GUESS=$NANGUESS; export CONFIG_GUESS;"
+    echo "CPU=$CPU; export CPU;"
+    echo "MANUFACTURER=$MANUFACTURER; export MANUFACTURER;"
+    echo "OS=$OS; export OS;"
+    echo "OS_VERSION=$OS_VERSION; export OS_VERSION;"
+fi

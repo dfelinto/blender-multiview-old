@@ -1,0 +1,20 @@
+[OPTIONS]
+CONTENTS=main_index
+TITLE=ACTIVEXGP Control Help
+COMPRESS=true
+WARNING=2
+HLP=ActiveXgp.hlp
+ERRORLOG=ActiveXgp.log
+
+[FILES]
+hlp\ActiveXgp.rtf
+
+[BITMAPS]
+; miscellaneous
+hlp\Bullet.bmp
+
+[ALIAS]
+HIDD_ABOUTBOX_ACTIVEXGP = HID_APP_ABOUT_ACTIVEXGP
+
+[MAP]
+#include <hlp\ActiveXgp.hm>

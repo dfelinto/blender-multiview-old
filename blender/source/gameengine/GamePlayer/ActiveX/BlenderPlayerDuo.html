@@ -1,0 +1,111 @@
+<HTML>
+
+<HEAD>
+<TITLE>Blender Player Active X Control Duo</TITLE>
+
+<script language="JavaScript">
+<!-- hide me
+
+function setURL(thePlayer)
+{
+	var the_url = window.document.the_form.the_url.value;
+    var good_url = the_url; //fixURL(the_url);
+	window.document.thePlayer.blenderURL=good_url
+	// alert("URL set");
+}
+
+function fixURL(the_url)
+{
+    var the_first_seven = the_url.substring(0,7);
+    the_first_seven = the_first_seven.toLowerCase();
+    if (the_first_seven != 'http://') 
+    {
+            the_url = "http://" + the_url;
+    }
+    return the_url;
+}
+
+// show me -->
+</script>
+
+</HEAD>
+
+<BODY BGCOLOR="#3F3FFF">
+<CENTER>
+
+<FONT SIZE=6><B>Duel of the Blender Player Active X Controls</B></FONT><BR>
+<FONT SIZE=3>NaN Technologies BV</FONT><BR>
+<FONT SIZE=3>Maarten Gribnau</FONT>
+<P>
+
+<TABLE>
+<TR>
+
+<TD>
+<OBJECT
+    classid="clsid:5DB05CB8-7751-469D-A1DD-45C8C201C013"
+    id=BlenderPlayer1
+    width = 200
+    height = 200>
+   <PARAM NAME="blenderURL" VALUE="c:\blend\skategirl.blend">
+</OBJECT>
+<form>
+<p>
+<input type="button" value="frame count" onClick="BlenderPlayer1.showFrameCount=!BlenderPlayer1.showFrameCount;">
+</p>
+<p>
+<input type="button" value="pause" onClick="BlenderPlayer1.pause=!BlenderPlayer1.pause;">
+</p>
+<p>
+<input type="button" value="rewind" onClick="BlenderPlayer1.Rewind();">
+</p>
+<p>
+<input type="button" value="load from TU Delft" onClick="BlenderPlayer1.blenderURL='http://www.io.tudelft.nl/id-studiolab/gribnau/downloads/skategirl-loadtest.blend';">
+</p>
+</form>
+<p>
+<form name="the_form" onSubmit="setURL(BlenderPlayer1); return false;">
+<input type="text" name="the_url" value="file://c:\blend\clown.blend" size=40>
+<input type="button" value="load" onClick="setURL();">
+</form>
+</p>
+</TD>
+
+<TD>
+<OBJECT
+    classid="clsid:5DB05CB8-7751-469D-A1DD-45C8C201C013"
+    id=BlenderPlayer2
+    width = 200
+    height = 200>
+   <PARAM NAME="blenderURL" VALUE="c:\blend\skategirl.blend">
+</OBJECT>
+<form>
+<p>
+<input type="button" value="frame count" onClick="BlenderPlayer2.showFrameCount=!BlenderPlayer2.showFrameCount;">
+</p>
+<p>
+<input type="button" value="pause" onClick="BlenderPlayer2.pause=!BlenderPlayer2.pause;">
+</p>
+<p>
+<input type="button" value="rewind" onClick="BlenderPlayer2.Rewind();">
+</p>
+<p>
+<input type="button" value="load from TU Delft" onClick="BlenderPlayer2.blenderURL='http://www.io.tudelft.nl/id-studiolab/gribnau/downloads/skategirl-loadtest.blend';">
+</p>
+</form>
+
+<p>
+<form name="the_form" onSubmit="setURL(BlenderPlayer2); return false;">
+<input type="text" name="the_url" value="file://c:\blend\loadtest.blend" size=40>
+<input type="button" value="load" onClick="setURL();">
+</form>
+</p>
+
+</TD>
+</TR>
+
+
+</CENTER>
+</BODY>
+</HTML>
+
