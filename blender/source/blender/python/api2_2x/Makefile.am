@@ -53,6 +53,7 @@ libblender_api2_2x_la_SOURCES = \
   vector.h \
   constant.c \
   constant.h \
+  matrix.c \
   rgbTuple.c \
   rgbTuple.h \
   gen_utils.c \
