@@ -112,6 +112,7 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/verify \
 	-I$(top_srcdir)/source/blender/readstreamglue \
 	-I$(top_srcdir)/source/blender/img \
+	-I$(top_srcdir)/source/blender/quicktime \
 	-I$(top_srcdir)/intern/ghost
 
 EXTRA_DIST = \

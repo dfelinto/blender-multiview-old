@@ -46,8 +46,15 @@ endif
 ## Assuming no reason to build creator anymore lets just call publisher blender
 if CARBON
 
+if BlenderQUICKTIME
+quicktimeldflags = -framework QuickTime
+else
+quicktimeldflags = 
+endif
+
 blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
-				  -framework OpenGL -framework AGL -framework Carbon
+				  -framework OpenGL -framework AGL -framework Carbon \
+				  $(quicktimeldflags)
 
 blender_SOURCES =
 

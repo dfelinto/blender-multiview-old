@@ -6,12 +6,18 @@ else
   blenpythonlib = bpython/libblender_bpython.la
 endif
 
+if BlenderQUICKTIME
+  quicktimedir = quicktime
+else
+  quicktimedir = 
+endif
+
 LIBS =
 
 SUBDIRS = blenloader deflate inflate encrypt decrypt sign verify \
 	writestreamglue readstreamglue writeblenfile readblenfile \
 	avi imbuf img render radiosity blenlib blenkernel blenpluginapi \
-	$(blenpythondir) makesdna src renderconverter
+	$(blenpythondir) makesdna src renderconverter $(quicktimedir)
 
 EXTRA_DIST = \
 	include/BDR_drawaction.h \

@@ -59,9 +59,9 @@ case "$target" in
   ;;
   *-*-darwin* )
 dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
-dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
-     SYSTEM_LIBS="$SYSTEM_LIBS -framework OpenGL -framework AGL"
-     CPPFLAGS="$CPPFLAGS -D_THREAD_SAFE"
+dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h])
+	 SYSTEM_LIBS="$SYSTEM_LIBS -framework OpenGL -framework AGL"
+     CPPFLAGS="$CPPFLAGS -D_THREAD_SAFE -I/System/Library/Frameworks/Quicktime.framework/Headers"
   ;;
   *-*-openbsd* )
      CPPFLAGS="$CPPFLAGS -DFreeBSD"
@@ -101,6 +101,11 @@ dnl -----------------------
    AC_HELP_STRING([--enable-exppython],[Build experimental Python(default=disable)]),
    ,dnl default assign.
    [ enable_exppython=no ]  dnl default setting.
+  )
+  AC_ARG_ENABLE(quicktime,
+   AC_HELP_STRING([--enable-quicktime],[Build with support for QuickTime (default=disable)]),
+   ,dnl default assign.
+   [ enable_quicktime=no ]  dnl default setting.
   )
 
 AC_ARG_ENABLE(debug,
@@ -258,6 +263,8 @@ dnl ----------------
   AM_CONDITIONAL([BlenderPLUGIN],[test x$enable_blenderplugin = x"yes"])
   AM_CONDITIONAL([BlenderOPENAL],[test x$enable_openal = x"yes"])
   AM_CONDITIONAL([BlenderFMOD],[test x$enable_fmod = x"yes"])
+  AM_CONDITIONAL([BlenderQUICKTIME],[test x$enable_quicktime = x"yes"])
+
 
 
 dnl --------------------------
@@ -318,6 +325,10 @@ if test x$ac_cv_header_Carbon_Carbon_h != xyes; then
   AC_CHECK_LIB([X11], [XOpenDisplay],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
   AC_CHECK_LIB([GL], [glIsTexture],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
   AC_CHECK_LIB([GLU], [gluGetString],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
+else
+  if test x"$enable_quicktime" = x"yes"; then
+    CPPFLAGS="$CPPFLAGS -DWITH_QUICKTIME"
+  fi
 fi
 
 dnl ---------------------
@@ -408,6 +419,7 @@ AC_CONFIG_FILES([source/blender/decrypt/Makefile
 		source/blender/verify/Makefile
 		source/blender/writeblenfile/Makefile
 		source/blender/writestreamglue/Makefile
+		source/blender/quicktime/Makefile
 		source/blender/Makefile
 		source/creator/Makefile
 		source/kernel/Makefile

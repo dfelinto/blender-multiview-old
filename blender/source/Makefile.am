@@ -26,6 +26,13 @@ else
 blenpythonlib = blender/bpython/libblender_bpython.la
 endif
 
+
+if BlenderQUICKTIME
+blenquicktimelib = blender/quicktime/libblender_quicktime.la
+else
+blenquicktimelib = 
+endif
+
 LIBS =
 
 SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
@@ -52,6 +59,7 @@ libblender_source_la_LIBADD = \
 	blender/readblenfile/libblender_readblenfile.la \
 	blender/avi/libblender_avi.la \
 	blender/img/libblender_img.la \
+	$(blenquicktimelib) \
 	blender/render/libblender_render.la \
 	blender/radiosity/libblender_radiosity.la \
 	blender/blenkernel/libblender_blenkernel.la \
