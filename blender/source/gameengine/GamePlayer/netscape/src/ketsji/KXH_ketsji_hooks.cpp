@@ -36,7 +36,6 @@
  * Application handle refers to ketsji_engine_data!!!
  */
 
-#include <iostream.h>
 #include <stdio.h>
 
 /* Moz infra: */
@@ -75,10 +74,6 @@
 #include "KX_PyConstraintBinding.h"
 
 #include "KXH_engine_data_wraps.h"
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 
 #if defined(_WIN32)
 
