@@ -1176,8 +1176,8 @@ static int tree_element_active_ebone(TreeElement *te, TreeStoreElem *tselem, int
 			deselectall_armature();
 		}
 		ebone->flag |= BONE_SELECTED|BONE_ROOTSEL|BONE_TIPSEL;
-		if(ebone->parent && ebone->parent==ebone->prev) ebone->parent->flag |= BONE_TIPSEL;
-		if(ebone->next && ebone->next->parent==ebone) ebone->next->flag |= BONE_ROOTSEL;
+		if(ebone->parent==NULL && ebone->prev) ebone->prev->flag |= BONE_TIPSEL;
+		if(ebone->next && ebone->next->parent==NULL) ebone->next->flag |= BONE_ROOTSEL;
 		
 		allqueue(REDRAWVIEW3D, 0);
 		allqueue(REDRAWOOPS, 0);
