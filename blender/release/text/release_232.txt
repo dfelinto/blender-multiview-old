@@ -1,0 +1,278 @@
+Release notes Blender 2.32
+
+---- Known issues ----------------
+
+Important to read first:
+
+- Files saved with 2.32, and having a Theme in it, will most likely give grey UI text in 2.31 and 2.30 Blender versions. This was caused by a bug in the Blender file system... which is fixed now, but cannot be backwards fixed for Blender binaries in the past. :-)
+
+- Windows users: with 2.32, the default .B.blend file will be either read from (and saved to) the installation directory, or to the directory the "HOME" environment variable points to.
+When "HOME" exists, this has preference.
+
+
+---- Rendering  ------------------
+
+With this release Blender has not only been extended with a lot of new options, such as ray tracing and displacement mapping, but also offers the beta-test of an integrated support for the famous Yafray renderer.
+On the www.blender.org and www.blender3d.org site you will find more (html) documentation and sample files, below you can find a summary of features.
+
+--> General ray trace remarks
+
+- Set the F10 (Render buttons) option "Ray" to enable ray tracing for rendering. In Blender this is an integrated method, still using zbuffer and scanline rendering for 'first hit' rendering.
+
+- Blender uses an Octree to optimize ray intersections. The way it works now, it gives best speed when you keep the total environment as compact as possible. For example, exclude exterior objects, walls or floors from being added in the Octree by disabling their Material "Traceable" value.
+
+- Environment maps are rendered before raytracing is initialized and enabled. This to make sure environment maps remain fast to use.
+
+- known issue: the raytracing code doesn't calculate for each ray bounced/refracted the new correct filtering and oversampling values. This will make reflected/refracted image textures somewhat more blurry than expected.
+
+-->  Raytrace shadows
+
+- All lamp types in Blender can have a ray traced shadow. 
+- For Sun and Hemi the actual position of the lamp doesn't matter then, in this case it traces a ray in the constant Sun/Hemi direction.
+- Set (F10) OSA on for correct over sampling. 
+
+--> Soft shadows
+
+- Since there are a lot of variables associated with soft shadow, for this release they only are available for Area lights. Allowing spot & normal lamp to have soft shadow is possible, but will require a reorganization of the Lamp buttons, and will need review of 3D drawing methods.
+
+- Apart from 'area' size, you can individually set amount of samples in X and Y direction (for area lamp type 'Rect'). 
+
+- Soft shadows have four options:
+    "Clip circle" : only uses a circular shape of samples, gives smoother results
+    "Dither" : use a 2x2 dither mask
+    "Jitter" : applys a pseudo-random offset to samples
+    "Umbra" : extra emphasis on area that's fully in shadow.
+
+
+--> New: Area Lights
+
+- New lamp type added "Area". This uses the radiosity formula (Stoke) to calculate the amount of energy which is received from a plane. Result is very nice local light, which nicely spreads out.
+
+- Since area lights realistically are sensitive for distance (quadratic), the effect it has is quickly too much, or too less. For this the "Dist" value in Lamp has to be used. Set it at Dist=10 to have reasonable light on distance 10 Blender units (assumed you didnt scale lamp object). The default "Dist" value for lamps in Blender (20) will most typically give an overflow in standard Blender scenes!
+
+- Area lamps have a 'gamma' option to control the light spread
+
+- Area lamp builtin sizes: square, rect, cube & box. Only first 2 are   implemented. Set a type, and define area size.
+
+- Button area size won't affect the amount of energy. But scaling the lamp in 3d window will do. This is to cover the case when you scale an entire scene, the light then will remain identical If you just want to change area lamp size, use buttons when you dont want to make the scene too bright or too dark
+
+- Plan is to extend area light with 3d dimensions, boxes and cubes.
+
+- Note that area light is one-sided, towards negative Z. 
+
+
+--> Ray Transparency
+
+- Enable it with setting "RayTransp" in the new "Transp and Mirror" Panel. Please note that alpha is default at 1.0 in Blender, giving fully opaque. Typically a quick nice result can be achieved with setting a Fresnel value, and leave the Alpha slider at 1.0.
+
+- Set IOR for 'index of refraction'. Realistic values range from 1.1 (water) to 1.5 (glass).
+
+- For correct refraction calculus, 3D models MUST have normals pointing in the right direction (consistently pointing outside). That way, refraction can 'detect' the thickness of a transparent material, whether it enters or leaves it. So, model for realistic glass always both sides of a surface.
+
+- When not rendering with ray tracing enabled, 'RayTransp' materials will render solid. This gives better previews, but also makes envmaps look better, since environment maps are rendered without ray tracing.
+
+- 'Ray transp' rendering doesn't end with alpha information (alpha is 1.0).
+
+- New Material option "ShadowTra" will invoke a ray to all "ray shadow" lamps, evaluating the alpha of all faces it encounters. The result will look like a transparent shadow.
+Note: This is a true shading option, and not an option for Lamps, nor for a transparent Object giving transparent shadows. Main reason is to be able to control rendering speed.
+
+--> Ray Mirror
+
+- You need to set both the option "Ray Mirror" as give the slider "RayMirr" a value larger than zero.
+- Textures work on this value as well, with a new MapTo channel
+- the RGB colors for "Mir" define the mirror-reflection color.
+
+
+--> Fresnel effect
+
+Both transparency as mirror reflection can be controlled with a Fresnel effect in Blender, meaning it is depending on the angle between the surface normal and the viewing direction. Typically, the larger the angle (on the outer side, the outline) the more reflection or the more opaque a Material becomes.
+
+It took several testing releases before the optimal Fresnel code was found. What is released now is a hybrid version, allowing 'real' Fresnel, but also giving artistic freedom and control. This is provided with two settings:
+"Fresnel": the 'power' of the function, the higher the more strong the falloff is.
+"Fac": a controlling 'factor' to adjust how the blending happens
+
+Set the first value at 5.0, and the second at 1.25 for something that matches 'real' Fresnel.
+
+
+--> Displacement mapping
+
+- Added new channel in Material buttons "Map to" Panel, to control displacement mapping
+- The basic amount of scaling for displacement is controlled with new "Disp" slider. This amount is in local coordinate space for a Mesh.
+- Textures can return both a value and a normal. How this works on displacement can be controlled with the "Nor" and "Var" sliders in "Map To" Panel.
+- The preview render shows a fake preview now, by just displacing the normals.
+
+To further assist displacement mapping render, the 'Subsurf' buttons have a new option too, which allows 'simple' subdivision (without smoothing out). This also helps for improving quality of "Radio" rendering.
+
+--> Better bump textures
+
+Improved method to calculate normals for procedural textures such as Marble, wood, clouds. Instead of the old method it now derives the normal based sampling the texture additionally with three little offsets in x, y and z. This gives nice and correct results, superior to the old method (which just rotated a normal a bit). 
+
+--> Exposure and brightness
+
+Previously Blender clipped color straight with '1.0' (or 255) when it exceeds the possible RGB space. This causes ugly banding when light overflows.
+Using an exponential correction formula, this now can be nicely corrected. The World buttons (F6) have two new options for it:
+- "Exp" the exponentional curvature, with 0.0 being linear, and 1.0 being curved
+- "Range" sets the range of input colors to mapped to visible colors (0.0-1.0).
+
+--> Gaussian sampling
+Normally, while rendering OSA, each sub-pixel sample in Blender counts equally, and together make up the pixel color.
+With 'Gauss' option set (F10 menu) each sub-pixel sample creates a small weighted mask with variable size, which (can) affect neighbouring pixels as well. The result is smoother edges, less sensitive for gamma, and well suited to reduce motion-aliasing (when things move extreme slow).
+This is result of *long* period of research in NeoGeo days, and based on every scientific sampling/reconstructing theory we could find. Plus a little bit of our selves.
+
+Currently the Gauss option only works for edges of normal faces. It does not work for transparent rendering, not to solve high frequencies (aliasing) from ray trace render, nor for the Unified render. All topics to work on another time.
+
+---> Various
+
+- Adjusted specular max to 511, The Blinn shader has again this incredible small spec size.
+
+- New option "Translucency" (Shading panel) will enable shading when light shines on the backside as well. It only includes diffuse shading, not specular (of course!).
+Translucency is a "Map to" texture channel as well. 
+Translucency works nice to give half-transparent Materials a light emitting effect.
+
+---- Yafray ------------------
+
+In the main Render buttons of Blender (F10), you now can choose for the Yafray renderer as well, using a dropdown menu in the "Render" Panel.
+
+Yafray rendering currently works by exporting an intermediate xml file to a temporary directory. Yafray should be installed properly first. Windows users should be able to export immediately, other platforms first need to set the export directory in the Blender user-default section, Windows user can set this export directory too, but is not needed.
+
+After rendering, the resulting image is loaded back into Blender. This means that for the user it is just press F12 and wait for the result as if it were made by blender, this also works for animations.
+Materials are exported using a new Blender shader which emulates most of Blender's material functionality, including texture mapping, some procedurals and raytracing settings. Some things need a bit of additional tweaking from the user, like bump mapping levels and raytracing settings.
+
+See this link for the current supported Blender features in yafray:
+http://www.blender.org/modules.php?op=modload&name=phpBB2&file=viewtopic&t=2669
+
+Light is yet another thing that needs tweaking. Light power levels work quite different in Yafray, so the user has to adjust it to get the desired lighting level in Yafray, Blender's 'sphere' mode probably needs the least amount of tweaking.
+Spots and arealights (quad) are also used as emmiters for photons. But these are global photons, not old photonlight, so no (direct) caustics from point lights supported yet.
+
+The pathlight ('Full' option in GI menu) does support caustics from GI (indirect illumination, lights reflecting of other objects), sky and arealights.
+
+For global illumination there is a new panel where you can setup the usual skydome method (hemilight), full GI (pathlight) and also cache mode and photons (globalphotonlight).
+
+While developing this there were a lot of path problems. Most of them are solved now, but some could possibly still experience some problems on win32 or OS X.
+
+Please bear in mind this is still for beta test mostly, awaiting feedback for further improvements. Yafray now is offered as download from www.blender3d.org as well.
+
+---- New in Blender ------------------
+
+- Particle duplicators: when an Object has an Ipo, the timing for each duplicated Object is corrected for the lifetime of particle. 
+Remark: this won't work  for object location (is at particle) or for particle type 'Vect' which gives a rotation already. But now you can (for example) scale an Object small, and let it grow over time.
+
+- Blender Meshes now have a limit of 2 Billion faces (instead of 64k). This doesn't break backward or upward compatibility, but will cause .blend files to grow about 30% in size.
+
+- UI: all Blender versions (OS's) now have identical cursors.
+
+- 3D Window: new preferences for display of grid and floor. You can find it in the 3D View Properties panel (access with pulldown menu).
+
+- Mesh editmode: new tool "Bevel" (WKEY) will give all faces (non selected too) a beveling effect. Move mouse to control the amount, which is drawn as a preview. After confirm, a requestor allows to indicate a subdivision level.
+Remark: this is a first implementation, which is still slow for larger Meshes, or for higher subdivision levels.
+
+- Mesh editmode; "Select non-manifold" option in "Select" pulldown menu, which select vertices to indicate which edges don't have exactly 2 faces.
+
+- Mesh editmode: "Select more" and "Select less, in pulldown menus and accessible with hotkeys CTRL+PadPlus/Minus. It selects vertices having an edge with other vertex selected.
+
+- Mesh editmode: new Loop Cut functionality:
+  - after choosing a loop to cut you go into a second mode that lets you choose where exactly on the edge you want to cut. The placement is in percentages, so 0% is one side of the edge, and 100% is the other side.
+  - holding CTRL snaps the placement to whole percentages. 1.00 instead of the standard 0.01 of a percentage.
+  - Pressing S while you place the cut turns on Smooth-subdivide for the cut (or as I like to call it: Loopcutsubdividesmooth :)
+  - the percentages and the ON/OFF for smooth cut can be seen in the view3D header.
+
+- Mesh editmode: press numpad-dotkey to center view around selection
+
+- FaceSelect mode (UV textures):
+Two new options to uv auto calculation added. "From window to sphere" and "From window to cylinder".
+The differences to other sphere/cylinder mapping option is:
+ 1. the "around" settings of the 3D view sets the projection center
+ 2. the origin of the polar/spherical coordinate system always points out of the screen.
+    so the rotation of the view affects mapping.
+ 3. in the cylinder case the radius of the projection cylinder is read by a popup button.
+
+Basically what you need to do is rotate the viewport until the cylinder/sphere is aligned with the depth (Z axis) of the view, as if you where looking through the mesh from one end to another (makes more sense in the case of a cylinder), and choose the new mapping option.
+
+- Armature editmode: support for hide and unhide of Bones added. Accessible via menus and hotkeys HKEY, shift-HKEY, alt-HKEY.
+
+- Armatures: "Delay Deform" option added.
+The button is under the X-ray bones button in the edit buttons. With this armature option selected, manipulations in pose mode will only deform children after the transformation is finished. While hardly an optimal solution, this gives about 4 times speed up.
+
+- The main window header now displays the current file name.
+
+- Delete key can be correctly used for text input in Blender now
+
+- Blender now reads/writes BMP images.
+
+---- Python ------------------
+
+We began to ship some scripts with Blender itself, starting with a few import/export ones;
+these scripts can be accessed from Blender menus: File->Import, File->Export.
+The new Scripts Window also has a menu where these plus 'Misc' can be accessed.  More categories will be added later.
+
+To be registered in Blender menus, scripts must have a special header and be either at the <user home or Blender installation dir>/.blender/scripts or the user defined Scripts dir (Info Window -> File Paths -> Scripts).
+For more info, please check the top Announcement at the Python & Plugins forum at www.elysiun.com
+
+Further new features:
+- functions basename and splitext to Blender.sys;
+- Blender.Registry module, for persistent data;
+- Scripts Window, to substitute the Text Editor as the window to display
+script guis: now more than one running script can be accessed from the
+same window;
+
+Known issue:
+Blender still uses Python 2.2, and it doesn't include a Python library with all modules compiled in. This can cause some errors when people want to use external modules, but have Python 2.3 installed on their system. This will be addressed in the next release.
+
+- Python 'make' system: Scons
+Work has been done for a very promising new cross platform code building system for Blender. Especially to replace 'autoconf', which has maintenance and compatibility problems here. Scons supports all platforms and OS's, an even nicely generates MSVC project files.
+The Scons files are in cvs now, but not approved yet to officially replace autoconf.
+
+---- Bug fixes ------------------
+
+- Weight Painting now works for all painting modes. It used not to with option "Area" set in Paint Panel.
+
+- Pressing F12 (or other keys) during render caused crashes, this because the event queue was evaluated without keeping track of a rendering already being in progress.
+
+- Texture Paint mode didn't work in 2.31a, restored.
+
+- MacOSX: calling up Quicktime dialog doesn't freeze anymore when you choose "options".
+
+- MacOSX: texture plugins and sequence plugins now work (check directory plugins in distribution directory)
+
+- Armatures: constraint targets inside other Armatures weren't transforming correctly (grab, rotate, scale).
+- Armatures: update issues solved with Armatures being parent of Lattice.
+- Armatures: general overhaul of Armature constraint/parenting code which resulted in faster drawing and less lag.
+
+- Mesh editmode: Loop Cut tool now doesn't affect hidden vertices and faces.
+
+- Add a new Scene, with option "Full Copy" now also create new Ipos.
+
+- 3D Window: 'draw extra' axis for Lamp was on wrong location.
+
+- 3D Window: in EditMode CTRL+RightMouse allows for selection of other Objects again. This is useful for assigning vertex parent.
+
+- 3D Window: FaceSelect mode, the 'unwrap UV' pulldown menu option doesn't crash anymore
+
+- Code that limited zooming in and zooming out for spaces like sequencer, audiotimeline, etc. was accidentally removed in 2.30, causing crashes in extreme zooms. This has been put back.
+
+- Numerical input while 'transform': using it for scaling works correctly now. In previous release it reset other values to zero.
+
+- Fixed B&W images saving (R G and B were not correctly converted, causing wrong brightness of colors).
+
+(During the past month a lot more bugs were fixed as reported using the tracker on projects.blender.org. It's just too much to mention all, thanks & keep reporting!)
+
+---- Various fixes ------------------
+
+- Pulldown menus added for Image, Sound, Action, Oops, NLA windows. This as part of ongoing UI project. In current version most buttons from headers have been moved to pulldowns now. For a next release we'll look at methods how to bring back pulldown options (user-defined) as icon buttons in headers again.
+
+- 3D Window: Nkey menu now displays the 'w' value for Nurbs curves again
+
+- translations: added simple first Chinese translation for UI, Czech translation file fixed, added Brazilian Portuguese
+
+- laptop users: option 'no numpad' now accepts minuskey for numerical input while in transform mode.
+
+- Decimator tool for Meshes: display-list is correctly updated now, and it frees deform weights (vertex groups) correctly
+
+- All 'number' buttons in UI: pressing Enter key with mouse pointer over the button increases/decreases value again.
+
+- Freetype fonts: when using it for 3D font object, it now corrects the character size for the linedist as set in Blender. This only shows for non-standard fonts.
+
+- Context switching for 'Shading buttons' now happens when these buttons are invisible as well, causing the F5 hotkey to always show the correct buttons.
+
+- TextWindow: HOME and END keys work here now.
+
