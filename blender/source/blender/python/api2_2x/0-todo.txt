@@ -7,10 +7,8 @@ Requests and TODO list:
 - access to game engine properties (see logic.[ch]):
 		It seems trivial to add the game engine modules to bpython, investigate
 after 2.34;
-- add Blender.Window.Themes subsubmodule, to get/set ui theme attributes;
 - Blender.EMesh module: direct access to editmesh objects;
-- Blender.Mesh: add access to new edge structures with seams and crease values;
-- update Material, Texture, Lamp, etc with recent Blender additions;
+- update Material, Texture, Lamp, etc with recent Blender additions (done?);
 - support 3d texts;
 - support dupliverts.
 
