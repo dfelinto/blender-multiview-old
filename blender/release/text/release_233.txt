@@ -1,0 +1,23 @@
+Release notes Blender 2.33
+
+This is a reduced release log, since not only the text files became too long and hard to read, but we also now have a great working CMS on blender3d.org, which has been used extensively over the past months by developers and users to update documentation.
+
+For a full release log, please check: 
+http://www.blender3d.org/cms/Releaselogs.34.0.html
+
+
+---- Known issues ----------------
+
+Important to read first:
+
+- Files saved with 2.32 or 2.33, and having a Theme in it, will most likely give grey UI text in 2.31 and 2.30 Blender versions. This was caused by a bug in the Blender file system... which is fixed now, but cannot be backwards fixed for Blender binaries in the past. :-)
+
+---- Highlights of 2.33 ------------------
+
+- The game engine is back! It took some time, but now we can present something that's very close to 100% compatible to the last closed-source release of Blender.
+
+- Next stage of ray tracing in Blender has resulted in many fixes, speedups and inclusion  of Ambient Occlusion rendering
+
+- The procedural texture system became much more powerful, for example by the addition of Musgrave and Voronoi.
+
+- And a lot lot lot more... 
