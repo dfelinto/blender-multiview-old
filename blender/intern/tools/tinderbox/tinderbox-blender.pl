@@ -136,8 +136,7 @@ sub InitVars {
     $BuildObjDir = '';
     $BuildObjName = '';
     $ConfigGuess = './blender/source/tools/guess/guessconfig';
-    $GuessConfig = `cat /tmp/.nanguess`; #'NotSetYet';
-    chomp($GuessConfig);
+    $GuessConfig = "nanguess"; # actually the hint and cache filename for now
 	$SaveDate = `date +%Y%m%d`;
 	chomp($SaveDate);
 } #EndSub-InitVars
@@ -182,6 +181,23 @@ sub SetupPath {
 
 sub GetSystemInfo {
 
+	# test for GuessConfig hint
+	if ( ! -f $GuessConfig ) {
+		print "Manually create the '$GuessConfig' hint and cache by running\n";
+		print "'blender/source/tools/guess/guessconfig > $GuessConfig' once\n";
+		exit 1;
+	}
+
+	# read GuessConfig hint
+	open (FH, "< $GuessConfig") || die "$GuessConfig: $!\n";
+	$GuessConfig = <FH>;
+	close(FH);
+	chomp($GuessConfig);
+
+    $BuildName = $GuessConfig; #"HansBuildName";
+    $DirName   = $GuessConfig; #"HansDirName";;
+
+	# then we let tinderbox do it all over in their style
     $OS = `uname -s`;
     $OSVer = `uname -r`;
     
@@ -190,9 +206,6 @@ sub GetSystemInfo {
     if ( $OS eq 'IRIX64' ) {
 		$OS = 'IRIX';
     }
-    
-    $BuildName = $GuessConfig; #"HansBuildName";
-    $DirName   = $GuessConfig; #"HansDirName";;
 
     $RealOSVer = $OSVer;
     
@@ -306,18 +319,23 @@ sub BuildIt {
 	if ($BuildAutotools) {
 		$BuildObjDir = "$ENV{'HOME'}/develop/";
 	} else {
-	$BuildObjDir = "$ENV{'HOME'}/develop/blender/obj/";
+		$BuildObjDir = "$ENV{'HOME'}/develop/blender/obj/";
 	}
 	open (GETOBJ, "$ConfigGuess 2>&1 |") || die "$ConfigGuess: $!\n";
 	while (<GETOBJ>) {
-	    $GuessConfig = $_;
-	    chomp($GuessConfig);
-	    print "ConfigGuess = [$GuessConfig]\n";
-	    print LOG "ConfigGuess = [$GuessConfig]\n";
-	    chomp($BuildObjName = $BuildObjDir . $GuessConfig); 
+		$GuessConfig = $_;
+		chomp($GuessConfig);
+		print "ConfigGuess = [$GuessConfig]\n";
+		print LOG "ConfigGuess = [$GuessConfig]\n";
+		chomp($BuildObjName = $BuildObjDir . $GuessConfig); 
 	}
 	close (GETOBJ); 
-	
+
+	# overwrite nanguess hint and cache
+	open (PUTOBJ, ">nanguess") || die "Cannot write nanguess: $!\n";
+	print PUTOBJ $GuessConfig;
+	close(PUTOBJ);
+
 	# HANS: fix ranlib muck on osx
 	if ($UNAME eq 'Darwin') {
 		print "HANS: fix ranlib muck lib/$GuessConfig\n";
