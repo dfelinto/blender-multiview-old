@@ -16,4 +16,5 @@ INCLUDES = \
 	-I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/blenkernel \
-	-I$(top_srcdir)/source/blender/makesdna
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/include/
