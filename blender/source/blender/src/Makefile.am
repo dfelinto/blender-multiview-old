@@ -3,7 +3,7 @@ noinst_LTLIBRARIES = libblender_blendersrc.la
 libblender_blendersrc_la_SOURCES = \
 	editconstraint.c \
 	isect.c \
-	B.blend.c \
+	B.blend.c \
 	editcurve.c \
 	keyval.c \
 	Bfont.c \
@@ -67,7 +67,7 @@ libblender_blendersrc_la_SOURCES = \
 	drawsound.c \
 	filesel.c \
 	vpaint.c \
-	drawtext.c \
+	drawtext.c \
 	ghostwinlay.c \
 	windows_creator_splash.jpg.c \
 	drawview.c \
@@ -81,9 +81,14 @@ libblender_blendersrc_la_SOURCES = \
 	writeimage.c \
 	editarmature.c \
 	interface.c \
-	writemovie.c
+	writemovie.c \
+	cre/license.jpeg.c \
+	cre/license_key.c
 
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
+	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
+	-I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/intern/keymaker \
 	-I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/makesdna \
 	-I$(top_srcdir)/source/blender/blenkernel \
@@ -102,4 +107,5 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/gameengine/SoundSystem \
 	-I$(top_srcdir)/source/blender/verify \
 	-I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/source/blender/img \
 	-I$(top_srcdir)/intern/ghost

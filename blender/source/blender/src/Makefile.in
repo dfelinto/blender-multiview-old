@@ -159,7 +159,7 @@ noinst_LTLIBRARIES = libblender_blendersrc.la
 libblender_blendersrc_la_SOURCES = \
 	editconstraint.c \
 	isect.c \
-	B.blend.c \
+	B.blend.c \
 	editcurve.c \
 	keyval.c \
 	Bfont.c \
@@ -223,7 +223,7 @@ libblender_blendersrc_la_SOURCES = \
 	drawsound.c \
 	filesel.c \
 	vpaint.c \
-	drawtext.c \
+	drawtext.c \
 	ghostwinlay.c \
 	windows_creator_splash.jpg.c \
 	drawview.c \
@@ -237,10 +237,15 @@ libblender_blendersrc_la_SOURCES = \
 	writeimage.c \
 	editarmature.c \
 	interface.c \
-	writemovie.c
+	writemovie.c \
+	cre/license.jpeg.c \
+	cre/license_key.c
 
 
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
+	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
+	-I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/intern/keymaker \
 	-I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/makesdna \
 	-I$(top_srcdir)/source/blender/blenkernel \
@@ -259,6 +264,7 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/gameengine/SoundSystem \
 	-I$(top_srcdir)/source/blender/verify \
 	-I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/source/blender/img \
 	-I$(top_srcdir)/intern/ghost
 
 subdir = source/blender/src
@@ -270,12 +276,12 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libblender_blendersrc_la_LDFLAGS =
 libblender_blendersrc_la_LIBADD =
 am_libblender_blendersrc_la_OBJECTS = editconstraint.lo isect.lo \
-	editcurve.lo keyval.lo Bfont.lo editdeform.lo mainqueue.lo \
-	editface.lo mywindow.lo editfont.lo oops.lo editgroup.lo \
-	osx_creator_splash.jpg.lo blenderbuttons.lo editika.lo \
-	playanim.lo booleanops.lo editimasel.lo poseobject.lo \
-	booleanops_mesh.lo editipo.lo previewrender.lo buttons.lo \
-	editkey.lo cmap.tga.lo editlattice.lo renderwin.lo \
+	B.blend.lo editcurve.lo keyval.lo Bfont.lo editdeform.lo \
+	mainqueue.lo editface.lo mywindow.lo editfont.lo oops.lo \
+	editgroup.lo osx_creator_splash.jpg.lo blenderbuttons.lo \
+	editika.lo playanim.lo booleanops.lo editimasel.lo \
+	poseobject.lo booleanops_mesh.lo editipo.lo previewrender.lo \
+	buttons.lo editkey.lo cmap.tga.lo editlattice.lo renderwin.lo \
 	cmovie.tga.lo editmball.lo resources.lo editmesh.lo scrarea.lo \
 	drawaction.lo editnla.lo screendump.lo drawimage.lo \
 	editobject.lo sequence.lo drawimasel.lo editoops.lo space.lo \
@@ -284,17 +290,18 @@ am_libblender_blendersrc_la_OBJECTS = editconstraint.lo isect.lo \
 	editsima.lo toolbox.lo drawoops.lo editsound.lo \
 	unix_creator_splash.jpg.lo drawscene.lo editview.lo \
 	usiblender.lo drawseq.lo eventdebug.lo view.lo drawsound.lo \
-	filesel.lo vpaint.lo ghostwinlay.lo \
+	filesel.lo vpaint.lo drawtext.lo ghostwinlay.lo \
 	windows_creator_splash.jpg.lo drawview.lo glutil.lo edit.lo \
 	headerbuttons.lo writeavicodec.lo editaction.lo imasel.lo \
-	writeimage.lo editarmature.lo interface.lo writemovie.lo
+	writeimage.lo editarmature.lo interface.lo writemovie.lo \
+	license.jpeg.lo license_key.lo
 libblender_blendersrc_la_OBJECTS = \
 	$(am_libblender_blendersrc_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Bfont.Plo \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/B.blend.Plo ./$(DEPDIR)/Bfont.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/blenderbuttons.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/booleanops.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/booleanops_mesh.Plo \
@@ -306,8 +313,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/drawmesh.Plo ./$(DEPDIR)/drawnla.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/drawobject.Plo ./$(DEPDIR)/drawoops.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/drawscene.Plo ./$(DEPDIR)/drawseq.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/drawsound.Plo ./$(DEPDIR)/drawview.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/edit.Plo ./$(DEPDIR)/editaction.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/drawsound.Plo ./$(DEPDIR)/drawtext.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/drawview.Plo ./$(DEPDIR)/edit.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editaction.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/editarmature.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/editconstraint.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/editcurve.Plo \
@@ -327,6 +335,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/headerbuttons.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/imasel.Plo ./$(DEPDIR)/interface.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/isect.Plo ./$(DEPDIR)/keyval.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/license.jpeg.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/license_key.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/mainqueue.Plo ./$(DEPDIR)/mywindow.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/oops.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/osx_creator_splash.jpg.Plo \
@@ -374,6 +384,8 @@ clean-noinstLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
+license.jpeg.lo: cre/license.jpeg.c
+license_key.lo: cre/license_key.c
 libblender_blendersrc.la: $(libblender_blendersrc_la_OBJECTS) $(libblender_blendersrc_la_DEPENDENCIES) 
 	$(LINK)  $(libblender_blendersrc_la_LDFLAGS) $(libblender_blendersrc_la_OBJECTS) $(libblender_blendersrc_la_LIBADD) $(LIBS)
 
@@ -383,6 +395,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/B.blend.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Bfont.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blenderbuttons.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/booleanops.Plo@am__quote@
@@ -401,6 +414,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawscene.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawseq.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawsound.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawtext.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawview.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edit.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editaction.Plo@am__quote@
@@ -436,6 +450,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/interface.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isect.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keyval.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/license.jpeg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/license_key.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mainqueue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mywindow.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oops.Plo@am__quote@
@@ -497,6 +513,72 @@ distclean-depend:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+license.jpeg.o: cre/license.jpeg.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT license.jpeg.o -MD -MP -MF "$(DEPDIR)/license.jpeg.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o license.jpeg.o `test -f 'cre/license.jpeg.c' || echo '$(srcdir)/'`cre/license.jpeg.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/license.jpeg.Tpo" "$(DEPDIR)/license.jpeg.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/license.jpeg.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cre/license.jpeg.c' object='license.jpeg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/license.jpeg.Po' tmpdepfile='$(DEPDIR)/license.jpeg.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o license.jpeg.o `test -f 'cre/license.jpeg.c' || echo '$(srcdir)/'`cre/license.jpeg.c
+
+license.jpeg.obj: cre/license.jpeg.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT license.jpeg.obj -MD -MP -MF "$(DEPDIR)/license.jpeg.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o license.jpeg.obj `if test -f 'cre/license.jpeg.c'; then $(CYGPATH_W) 'cre/license.jpeg.c'; else $(CYGPATH_W) '$(srcdir)/cre/license.jpeg.c'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/license.jpeg.Tpo" "$(DEPDIR)/license.jpeg.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/license.jpeg.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cre/license.jpeg.c' object='license.jpeg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/license.jpeg.Po' tmpdepfile='$(DEPDIR)/license.jpeg.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o license.jpeg.obj `if test -f 'cre/license.jpeg.c'; then $(CYGPATH_W) 'cre/license.jpeg.c'; else $(CYGPATH_W) '$(srcdir)/cre/license.jpeg.c'`
+
+license.jpeg.lo: cre/license.jpeg.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT license.jpeg.lo -MD -MP -MF "$(DEPDIR)/license.jpeg.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o license.jpeg.lo `test -f 'cre/license.jpeg.c' || echo '$(srcdir)/'`cre/license.jpeg.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/license.jpeg.Tpo" "$(DEPDIR)/license.jpeg.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/license.jpeg.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cre/license.jpeg.c' object='license.jpeg.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/license.jpeg.Plo' tmpdepfile='$(DEPDIR)/license.jpeg.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o license.jpeg.lo `test -f 'cre/license.jpeg.c' || echo '$(srcdir)/'`cre/license.jpeg.c
+
+license_key.o: cre/license_key.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT license_key.o -MD -MP -MF "$(DEPDIR)/license_key.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o license_key.o `test -f 'cre/license_key.c' || echo '$(srcdir)/'`cre/license_key.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/license_key.Tpo" "$(DEPDIR)/license_key.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/license_key.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cre/license_key.c' object='license_key.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/license_key.Po' tmpdepfile='$(DEPDIR)/license_key.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o license_key.o `test -f 'cre/license_key.c' || echo '$(srcdir)/'`cre/license_key.c
+
+license_key.obj: cre/license_key.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT license_key.obj -MD -MP -MF "$(DEPDIR)/license_key.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o license_key.obj `if test -f 'cre/license_key.c'; then $(CYGPATH_W) 'cre/license_key.c'; else $(CYGPATH_W) '$(srcdir)/cre/license_key.c'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/license_key.Tpo" "$(DEPDIR)/license_key.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/license_key.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cre/license_key.c' object='license_key.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/license_key.Po' tmpdepfile='$(DEPDIR)/license_key.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o license_key.obj `if test -f 'cre/license_key.c'; then $(CYGPATH_W) 'cre/license_key.c'; else $(CYGPATH_W) '$(srcdir)/cre/license_key.c'`
+
+license_key.lo: cre/license_key.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT license_key.lo -MD -MP -MF "$(DEPDIR)/license_key.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o license_key.lo `test -f 'cre/license_key.c' || echo '$(srcdir)/'`cre/license_key.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/license_key.Tpo" "$(DEPDIR)/license_key.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/license_key.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cre/license_key.c' object='license_key.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/license_key.Plo' tmpdepfile='$(DEPDIR)/license_key.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o license_key.lo `test -f 'cre/license_key.c' || echo '$(srcdir)/'`cre/license_key.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -157,6 +157,10 @@ target_vendor = @target_vendor@
 noinst_LTLIBRARIES = libblender_blenlib.la
 
 libblender_blenlib_la_SOURCES = \
+	intern/BLI_dynstr.c \
+	intern/BLI_ghash.c \
+	intern/BLI_linklist.c \
+	intern/BLI_memarena.c \
 	intern/arithb.c \
 	intern/dynlib.c \
 	intern/fileops.c \
@@ -185,7 +189,8 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 
 libblender_blenlib_la_LDFLAGS =
 libblender_blenlib_la_LIBADD =
-am_libblender_blenlib_la_OBJECTS = arithb.lo dynlib.lo fileops.lo \
+am_libblender_blenlib_la_OBJECTS = BLI_dynstr.lo BLI_ghash.lo \
+	BLI_linklist.lo BLI_memarena.lo arithb.lo dynlib.lo fileops.lo \
 	gsqueue.lo matrixops.lo noise.lo psfont.lo rand.lo rct.lo \
 	scanfill.lo storage.lo time.lo util.lo vectorops.lo winstuff.lo
 libblender_blenlib_la_OBJECTS = $(am_libblender_blenlib_la_OBJECTS)
@@ -193,14 +198,17 @@ libblender_blenlib_la_OBJECTS = $(am_libblender_blenlib_la_OBJECTS)
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/arithb.Plo ./$(DEPDIR)/dynlib.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/fileops.Plo ./$(DEPDIR)/gsqueue.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/matrixops.Plo ./$(DEPDIR)/noise.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/psfont.Plo ./$(DEPDIR)/rand.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/rct.Plo ./$(DEPDIR)/scanfill.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/storage.Plo ./$(DEPDIR)/time.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/util.Plo ./$(DEPDIR)/vectorops.Plo \
-@AMDEP_TRUE@	./$(DEPDIR)/winstuff.Plo
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLI_dynstr.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLI_ghash.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLI_linklist.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLI_memarena.Plo ./$(DEPDIR)/arithb.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/dynlib.Plo ./$(DEPDIR)/fileops.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/gsqueue.Plo ./$(DEPDIR)/matrixops.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/noise.Plo ./$(DEPDIR)/psfont.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/rand.Plo ./$(DEPDIR)/rct.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/scanfill.Plo ./$(DEPDIR)/storage.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/time.Plo ./$(DEPDIR)/util.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/vectorops.Plo ./$(DEPDIR)/winstuff.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -230,6 +238,10 @@ clean-noinstLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
+BLI_dynstr.lo: intern/BLI_dynstr.c
+BLI_ghash.lo: intern/BLI_ghash.c
+BLI_linklist.lo: intern/BLI_linklist.c
+BLI_memarena.lo: intern/BLI_memarena.c
 arithb.lo: intern/arithb.c
 dynlib.lo: intern/dynlib.c
 fileops.lo: intern/fileops.c
@@ -254,6 +266,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLI_dynstr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLI_ghash.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLI_linklist.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLI_memarena.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arithb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dynlib.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fileops.Plo@am__quote@
@@ -305,6 +321,138 @@ distclean-depend:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+BLI_dynstr.o: intern/BLI_dynstr.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_dynstr.o -MD -MP -MF "$(DEPDIR)/BLI_dynstr.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_dynstr.o `test -f 'intern/BLI_dynstr.c' || echo '$(srcdir)/'`intern/BLI_dynstr.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_dynstr.Tpo" "$(DEPDIR)/BLI_dynstr.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_dynstr.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_dynstr.c' object='BLI_dynstr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_dynstr.Po' tmpdepfile='$(DEPDIR)/BLI_dynstr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_dynstr.o `test -f 'intern/BLI_dynstr.c' || echo '$(srcdir)/'`intern/BLI_dynstr.c
+
+BLI_dynstr.obj: intern/BLI_dynstr.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_dynstr.obj -MD -MP -MF "$(DEPDIR)/BLI_dynstr.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_dynstr.obj `if test -f 'intern/BLI_dynstr.c'; then $(CYGPATH_W) 'intern/BLI_dynstr.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLI_dynstr.c'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_dynstr.Tpo" "$(DEPDIR)/BLI_dynstr.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_dynstr.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_dynstr.c' object='BLI_dynstr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_dynstr.Po' tmpdepfile='$(DEPDIR)/BLI_dynstr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_dynstr.obj `if test -f 'intern/BLI_dynstr.c'; then $(CYGPATH_W) 'intern/BLI_dynstr.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLI_dynstr.c'`
+
+BLI_dynstr.lo: intern/BLI_dynstr.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_dynstr.lo -MD -MP -MF "$(DEPDIR)/BLI_dynstr.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_dynstr.lo `test -f 'intern/BLI_dynstr.c' || echo '$(srcdir)/'`intern/BLI_dynstr.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_dynstr.Tpo" "$(DEPDIR)/BLI_dynstr.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_dynstr.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_dynstr.c' object='BLI_dynstr.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_dynstr.Plo' tmpdepfile='$(DEPDIR)/BLI_dynstr.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_dynstr.lo `test -f 'intern/BLI_dynstr.c' || echo '$(srcdir)/'`intern/BLI_dynstr.c
+
+BLI_ghash.o: intern/BLI_ghash.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_ghash.o -MD -MP -MF "$(DEPDIR)/BLI_ghash.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_ghash.o `test -f 'intern/BLI_ghash.c' || echo '$(srcdir)/'`intern/BLI_ghash.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_ghash.Tpo" "$(DEPDIR)/BLI_ghash.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_ghash.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_ghash.c' object='BLI_ghash.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_ghash.Po' tmpdepfile='$(DEPDIR)/BLI_ghash.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_ghash.o `test -f 'intern/BLI_ghash.c' || echo '$(srcdir)/'`intern/BLI_ghash.c
+
+BLI_ghash.obj: intern/BLI_ghash.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_ghash.obj -MD -MP -MF "$(DEPDIR)/BLI_ghash.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_ghash.obj `if test -f 'intern/BLI_ghash.c'; then $(CYGPATH_W) 'intern/BLI_ghash.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLI_ghash.c'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_ghash.Tpo" "$(DEPDIR)/BLI_ghash.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_ghash.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_ghash.c' object='BLI_ghash.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_ghash.Po' tmpdepfile='$(DEPDIR)/BLI_ghash.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_ghash.obj `if test -f 'intern/BLI_ghash.c'; then $(CYGPATH_W) 'intern/BLI_ghash.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLI_ghash.c'`
+
+BLI_ghash.lo: intern/BLI_ghash.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_ghash.lo -MD -MP -MF "$(DEPDIR)/BLI_ghash.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_ghash.lo `test -f 'intern/BLI_ghash.c' || echo '$(srcdir)/'`intern/BLI_ghash.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_ghash.Tpo" "$(DEPDIR)/BLI_ghash.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_ghash.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_ghash.c' object='BLI_ghash.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_ghash.Plo' tmpdepfile='$(DEPDIR)/BLI_ghash.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_ghash.lo `test -f 'intern/BLI_ghash.c' || echo '$(srcdir)/'`intern/BLI_ghash.c
+
+BLI_linklist.o: intern/BLI_linklist.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_linklist.o -MD -MP -MF "$(DEPDIR)/BLI_linklist.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_linklist.o `test -f 'intern/BLI_linklist.c' || echo '$(srcdir)/'`intern/BLI_linklist.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_linklist.Tpo" "$(DEPDIR)/BLI_linklist.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_linklist.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_linklist.c' object='BLI_linklist.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_linklist.Po' tmpdepfile='$(DEPDIR)/BLI_linklist.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_linklist.o `test -f 'intern/BLI_linklist.c' || echo '$(srcdir)/'`intern/BLI_linklist.c
+
+BLI_linklist.obj: intern/BLI_linklist.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_linklist.obj -MD -MP -MF "$(DEPDIR)/BLI_linklist.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_linklist.obj `if test -f 'intern/BLI_linklist.c'; then $(CYGPATH_W) 'intern/BLI_linklist.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLI_linklist.c'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_linklist.Tpo" "$(DEPDIR)/BLI_linklist.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_linklist.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_linklist.c' object='BLI_linklist.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_linklist.Po' tmpdepfile='$(DEPDIR)/BLI_linklist.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_linklist.obj `if test -f 'intern/BLI_linklist.c'; then $(CYGPATH_W) 'intern/BLI_linklist.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLI_linklist.c'`
+
+BLI_linklist.lo: intern/BLI_linklist.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_linklist.lo -MD -MP -MF "$(DEPDIR)/BLI_linklist.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_linklist.lo `test -f 'intern/BLI_linklist.c' || echo '$(srcdir)/'`intern/BLI_linklist.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_linklist.Tpo" "$(DEPDIR)/BLI_linklist.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_linklist.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_linklist.c' object='BLI_linklist.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_linklist.Plo' tmpdepfile='$(DEPDIR)/BLI_linklist.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_linklist.lo `test -f 'intern/BLI_linklist.c' || echo '$(srcdir)/'`intern/BLI_linklist.c
+
+BLI_memarena.o: intern/BLI_memarena.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_memarena.o -MD -MP -MF "$(DEPDIR)/BLI_memarena.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_memarena.o `test -f 'intern/BLI_memarena.c' || echo '$(srcdir)/'`intern/BLI_memarena.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_memarena.Tpo" "$(DEPDIR)/BLI_memarena.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_memarena.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_memarena.c' object='BLI_memarena.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_memarena.Po' tmpdepfile='$(DEPDIR)/BLI_memarena.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_memarena.o `test -f 'intern/BLI_memarena.c' || echo '$(srcdir)/'`intern/BLI_memarena.c
+
+BLI_memarena.obj: intern/BLI_memarena.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_memarena.obj -MD -MP -MF "$(DEPDIR)/BLI_memarena.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_memarena.obj `if test -f 'intern/BLI_memarena.c'; then $(CYGPATH_W) 'intern/BLI_memarena.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLI_memarena.c'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_memarena.Tpo" "$(DEPDIR)/BLI_memarena.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_memarena.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_memarena.c' object='BLI_memarena.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_memarena.Po' tmpdepfile='$(DEPDIR)/BLI_memarena.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_memarena.obj `if test -f 'intern/BLI_memarena.c'; then $(CYGPATH_W) 'intern/BLI_memarena.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLI_memarena.c'`
+
+BLI_memarena.lo: intern/BLI_memarena.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLI_memarena.lo -MD -MP -MF "$(DEPDIR)/BLI_memarena.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLI_memarena.lo `test -f 'intern/BLI_memarena.c' || echo '$(srcdir)/'`intern/BLI_memarena.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLI_memarena.Tpo" "$(DEPDIR)/BLI_memarena.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLI_memarena.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLI_memarena.c' object='BLI_memarena.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLI_memarena.Plo' tmpdepfile='$(DEPDIR)/BLI_memarena.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLI_memarena.lo `test -f 'intern/BLI_memarena.c' || echo '$(srcdir)/'`intern/BLI_memarena.c
 
 arithb.o: intern/arithb.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT arithb.o -MD -MP -MF "$(DEPDIR)/arithb.Tpo" \

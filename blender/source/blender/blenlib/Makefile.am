@@ -1,6 +1,10 @@
 noinst_LTLIBRARIES = libblender_blenlib.la
 
 libblender_blenlib_la_SOURCES = \
+	intern/BLI_dynstr.c \
+	intern/BLI_ghash.c \
+	intern/BLI_linklist.c \
+	intern/BLI_memarena.c \
 	intern/arithb.c \
 	intern/dynlib.c \
 	intern/fileops.c \

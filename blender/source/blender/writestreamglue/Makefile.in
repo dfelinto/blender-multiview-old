@@ -160,9 +160,9 @@ libblender_writestreamglue_la_SOURCES = \
 	intern/BLO_dumpFromMemory.c \
 	intern/BLO_getPubKey.c \
 	intern/BLO_streamGlueControl.c \
-	intern/BLO_writeStreamGlue.c \
+	intern/BLO_writeStreamGlue.c \
 	stub/BLO_getPubKeySTUB.c \
-	stub/BLO_keyStoreSTUB.c \
+	stub/BLO_keyStoreSTUB.c \
 	stub/BLO_streamGlueControlSTUB.c \
 	stub/BLO_writeStreamGlueSTUB.c
 
@@ -170,6 +170,10 @@ libblender_writestreamglue_la_SOURCES = \
 
 #note note sure if the stub directory should be included... better safe than sorry
 INCLUDES = -I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/source/blender/deflate \
+	-I$(top_srcdir)/source/blender/encrypt \
+	-I$(top_srcdir)/source/blender/sign \
+	-I$(top_srcdir)/source/blender/writeblenfile \
 	-I$(top_srcdir)/source/kernel/gen_messaging \
 	-I$(top_srcdir)/intern/keymaker
 
@@ -182,7 +186,8 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libblender_writestreamglue_la_LDFLAGS =
 libblender_writestreamglue_la_LIBADD =
 am_libblender_writestreamglue_la_OBJECTS = BLO_dumpFromMemory.lo \
-	BLO_getPubKey.lo BLO_streamGlueControl.lo BLO_getPubKeySTUB.lo \
+	BLO_getPubKey.lo BLO_streamGlueControl.lo \
+	BLO_writeStreamGlue.lo BLO_getPubKeySTUB.lo BLO_keyStoreSTUB.lo \
 	BLO_streamGlueControlSTUB.lo BLO_writeStreamGlueSTUB.lo
 libblender_writestreamglue_la_OBJECTS = \
 	$(am_libblender_writestreamglue_la_OBJECTS)
@@ -193,8 +198,10 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_dumpFromMemory.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/BLO_getPubKey.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/BLO_getPubKeySTUB.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_keyStoreSTUB.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/BLO_streamGlueControl.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/BLO_streamGlueControlSTUB.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_writeStreamGlue.Plo \
 @AMDEP_TRUE@	./$(DEPDIR)/BLO_writeStreamGlueSTUB.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -228,7 +235,9 @@ clean-noinstLTLIBRARIES:
 BLO_dumpFromMemory.lo: intern/BLO_dumpFromMemory.c
 BLO_getPubKey.lo: intern/BLO_getPubKey.c
 BLO_streamGlueControl.lo: intern/BLO_streamGlueControl.c
+BLO_writeStreamGlue.lo: intern/BLO_writeStreamGlue.c
 BLO_getPubKeySTUB.lo: stub/BLO_getPubKeySTUB.c
+BLO_keyStoreSTUB.lo: stub/BLO_keyStoreSTUB.c
 BLO_streamGlueControlSTUB.lo: stub/BLO_streamGlueControlSTUB.c
 BLO_writeStreamGlueSTUB.lo: stub/BLO_writeStreamGlueSTUB.c
 libblender_writestreamglue.la: $(libblender_writestreamglue_la_OBJECTS) $(libblender_writestreamglue_la_DEPENDENCIES) 
@@ -243,8 +252,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_dumpFromMemory.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_getPubKey.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_getPubKeySTUB.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_keyStoreSTUB.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_streamGlueControl.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_streamGlueControlSTUB.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_writeStreamGlue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_writeStreamGlueSTUB.Plo@am__quote@
 
 distclean-depend:
@@ -382,6 +393,39 @@ BLO_streamGlueControl.lo: intern/BLO_streamGlueControl.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLO_streamGlueControl.lo `test -f 'intern/BLO_streamGlueControl.c' || echo '$(srcdir)/'`intern/BLO_streamGlueControl.c
 
+BLO_writeStreamGlue.o: intern/BLO_writeStreamGlue.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLO_writeStreamGlue.o -MD -MP -MF "$(DEPDIR)/BLO_writeStreamGlue.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLO_writeStreamGlue.o `test -f 'intern/BLO_writeStreamGlue.c' || echo '$(srcdir)/'`intern/BLO_writeStreamGlue.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLO_writeStreamGlue.Tpo" "$(DEPDIR)/BLO_writeStreamGlue.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLO_writeStreamGlue.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLO_writeStreamGlue.c' object='BLO_writeStreamGlue.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLO_writeStreamGlue.Po' tmpdepfile='$(DEPDIR)/BLO_writeStreamGlue.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLO_writeStreamGlue.o `test -f 'intern/BLO_writeStreamGlue.c' || echo '$(srcdir)/'`intern/BLO_writeStreamGlue.c
+
+BLO_writeStreamGlue.obj: intern/BLO_writeStreamGlue.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLO_writeStreamGlue.obj -MD -MP -MF "$(DEPDIR)/BLO_writeStreamGlue.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLO_writeStreamGlue.obj `if test -f 'intern/BLO_writeStreamGlue.c'; then $(CYGPATH_W) 'intern/BLO_writeStreamGlue.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLO_writeStreamGlue.c'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLO_writeStreamGlue.Tpo" "$(DEPDIR)/BLO_writeStreamGlue.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLO_writeStreamGlue.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLO_writeStreamGlue.c' object='BLO_writeStreamGlue.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLO_writeStreamGlue.Po' tmpdepfile='$(DEPDIR)/BLO_writeStreamGlue.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLO_writeStreamGlue.obj `if test -f 'intern/BLO_writeStreamGlue.c'; then $(CYGPATH_W) 'intern/BLO_writeStreamGlue.c'; else $(CYGPATH_W) '$(srcdir)/intern/BLO_writeStreamGlue.c'`
+
+BLO_writeStreamGlue.lo: intern/BLO_writeStreamGlue.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLO_writeStreamGlue.lo -MD -MP -MF "$(DEPDIR)/BLO_writeStreamGlue.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLO_writeStreamGlue.lo `test -f 'intern/BLO_writeStreamGlue.c' || echo '$(srcdir)/'`intern/BLO_writeStreamGlue.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLO_writeStreamGlue.Tpo" "$(DEPDIR)/BLO_writeStreamGlue.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLO_writeStreamGlue.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intern/BLO_writeStreamGlue.c' object='BLO_writeStreamGlue.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLO_writeStreamGlue.Plo' tmpdepfile='$(DEPDIR)/BLO_writeStreamGlue.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLO_writeStreamGlue.lo `test -f 'intern/BLO_writeStreamGlue.c' || echo '$(srcdir)/'`intern/BLO_writeStreamGlue.c
+
 BLO_getPubKeySTUB.o: stub/BLO_getPubKeySTUB.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLO_getPubKeySTUB.o -MD -MP -MF "$(DEPDIR)/BLO_getPubKeySTUB.Tpo" \
 @am__fastdepCC_TRUE@	  -c -o BLO_getPubKeySTUB.o `test -f 'stub/BLO_getPubKeySTUB.c' || echo '$(srcdir)/'`stub/BLO_getPubKeySTUB.c; \
@@ -414,6 +458,39 @@ BLO_getPubKeySTUB.lo: stub/BLO_getPubKeySTUB.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLO_getPubKeySTUB.Plo' tmpdepfile='$(DEPDIR)/BLO_getPubKeySTUB.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLO_getPubKeySTUB.lo `test -f 'stub/BLO_getPubKeySTUB.c' || echo '$(srcdir)/'`stub/BLO_getPubKeySTUB.c
+
+BLO_keyStoreSTUB.o: stub/BLO_keyStoreSTUB.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLO_keyStoreSTUB.o -MD -MP -MF "$(DEPDIR)/BLO_keyStoreSTUB.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLO_keyStoreSTUB.o `test -f 'stub/BLO_keyStoreSTUB.c' || echo '$(srcdir)/'`stub/BLO_keyStoreSTUB.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLO_keyStoreSTUB.Tpo" "$(DEPDIR)/BLO_keyStoreSTUB.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLO_keyStoreSTUB.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='stub/BLO_keyStoreSTUB.c' object='BLO_keyStoreSTUB.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLO_keyStoreSTUB.Po' tmpdepfile='$(DEPDIR)/BLO_keyStoreSTUB.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLO_keyStoreSTUB.o `test -f 'stub/BLO_keyStoreSTUB.c' || echo '$(srcdir)/'`stub/BLO_keyStoreSTUB.c
+
+BLO_keyStoreSTUB.obj: stub/BLO_keyStoreSTUB.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLO_keyStoreSTUB.obj -MD -MP -MF "$(DEPDIR)/BLO_keyStoreSTUB.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLO_keyStoreSTUB.obj `if test -f 'stub/BLO_keyStoreSTUB.c'; then $(CYGPATH_W) 'stub/BLO_keyStoreSTUB.c'; else $(CYGPATH_W) '$(srcdir)/stub/BLO_keyStoreSTUB.c'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLO_keyStoreSTUB.Tpo" "$(DEPDIR)/BLO_keyStoreSTUB.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLO_keyStoreSTUB.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='stub/BLO_keyStoreSTUB.c' object='BLO_keyStoreSTUB.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLO_keyStoreSTUB.Po' tmpdepfile='$(DEPDIR)/BLO_keyStoreSTUB.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLO_keyStoreSTUB.obj `if test -f 'stub/BLO_keyStoreSTUB.c'; then $(CYGPATH_W) 'stub/BLO_keyStoreSTUB.c'; else $(CYGPATH_W) '$(srcdir)/stub/BLO_keyStoreSTUB.c'`
+
+BLO_keyStoreSTUB.lo: stub/BLO_keyStoreSTUB.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLO_keyStoreSTUB.lo -MD -MP -MF "$(DEPDIR)/BLO_keyStoreSTUB.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o BLO_keyStoreSTUB.lo `test -f 'stub/BLO_keyStoreSTUB.c' || echo '$(srcdir)/'`stub/BLO_keyStoreSTUB.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/BLO_keyStoreSTUB.Tpo" "$(DEPDIR)/BLO_keyStoreSTUB.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/BLO_keyStoreSTUB.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='stub/BLO_keyStoreSTUB.c' object='BLO_keyStoreSTUB.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/BLO_keyStoreSTUB.Plo' tmpdepfile='$(DEPDIR)/BLO_keyStoreSTUB.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o BLO_keyStoreSTUB.lo `test -f 'stub/BLO_keyStoreSTUB.c' || echo '$(srcdir)/'`stub/BLO_keyStoreSTUB.c
 
 BLO_streamGlueControlSTUB.o: stub/BLO_streamGlueControlSTUB.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT BLO_streamGlueControlSTUB.o -MD -MP -MF "$(DEPDIR)/BLO_streamGlueControlSTUB.Tpo" \

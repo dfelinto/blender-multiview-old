@@ -15,6 +15,7 @@ libblender_blender_la_LIBADD = \
 	sign/libblender_sign.la \
 	verify/libblender_verify.la \
 	writestreamglue/libblender_writestreamglue.la \
+	readstreamglue/libblender_readstreamglue.la \
 	writeblenfile/libblender_writeblenfile.la \
 	readblenfile/libblender_readblenfile.la \
 	avi/libblender_avi.la \

@@ -445,9 +445,9 @@ uninstall-am: uninstall-info-am
 libfrozen.a: $(PYFILES)
 	@PYTHON@@PYTHON_VERSION@ -S -O \
 		$(top_srcdir)/intern/python/freeze/freeze.py -d -x os -x \
-		pprint -I $(SRCDIR) $(SRCDIR)/VRMLmain.py
+		pprint -I $(SRCDIR) -o ../frozen $(SRCDIR)/VRMLmain.py
 #Or leave out @PYTHON@@PYTHON_VERSION@?
-	cd ../frozen && make -f Makefile.freeze && cd ../freeze
+	cd ../frozen && make && cd ../freeze
 
 clean:;
 	rm -f *.pyo
