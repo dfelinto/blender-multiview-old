@@ -59,3 +59,7 @@ CPPFLAGS += -I../../makesdna
 # external interface of this module
 CPPFLAGS += -I..
 
+ifeq ($(WITH_QUICKTIME), true)
+	CPPFLAGS += -DWITH_QUICKTIME
+endif
+

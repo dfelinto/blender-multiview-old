@@ -61,7 +61,7 @@ case "$target" in
 dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
 dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h])
 	 SYSTEM_LIBS="$SYSTEM_LIBS -framework OpenGL -framework AGL"
-     CPPFLAGS="$CPPFLAGS -D_THREAD_SAFE -I/System/Library/Frameworks/Quicktime.framework/Headers"
+     CPPFLAGS="$CPPFLAGS -D_THREAD_SAFE"
   ;;
   *-*-openbsd* )
      CPPFLAGS="$CPPFLAGS -DFreeBSD"
