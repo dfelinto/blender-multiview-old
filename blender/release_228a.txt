@@ -1,0 +1,74 @@
+
+Changelog Blender 2.28a release
+
+KNOWN PROBLEMS:
+* the shadowbuffer size (LampButtons) has to be a value that can be divided by 64, especially for cases when you render 75% or 25% of the size.
+* the Hemi lamp still doesn't support the new shaders
+
+GENERAL FIXES:
+
+* Windows versions now use the user 'home' directory for saving settings. This includes the Blender .B.blend file (for startup), which for backwards compatibility still is being read from the old location, if there's none available in the new location.
+* Edge select now only works with CTRL-ALT-RightMouse. (ALT-RightMouse causes several window managers to act).
+* Toon shading: now works with Sun lights as well
+* Toon shading options in MaterialButtons have a proper range now
+* Bug fix: the menu option 'reopen last' caused a crash (all systems)
+* Bug fix: volume envelopes for audio strips now work in all spaces.
+
+PYTHON:
+
+Most work has been done on python for this update; also check the new documentation here: http://www.blender.org/modules/documentation/
+
+* Many debug messages have been removed.
+* Added argv to the builtin sys Python module. Currently only argv[0]
+  is there. This fixes the weird error that can make correct scritps
+  fail.
+* Fix scriptlinking.
+  Only when a script was linked to an Object, this functionality
+  worked. Now scriptlinking works on other types of Objects and
+  global scriptlinking works now too. This was an incompatibility
+  problem.
+* Changes in the Object module:
+  - Added buildParts() method.
+    This method forces computation of the particle system
+  - Fix argument parsing in the getLocation() and similar methods.
+    These functions were not compatible with the old implementation.
+    Now they need to have a list of values.
+  - Fix crash in the getTracked() method.
+  - Fix crash in the getParent() method.
+    Problem occurred when getParent was called the second time on the
+    same Object.
+  - Linking a Mesh datablock to an Object was not possible. Fixed
+* Changes in the Ipo module:
+  - Removed the pop up dialog "relative / absolute" when an ipo is
+    changed.
+  - Added EvaluateCurveOn(position, time) method.
+    This methos returns the value of the ipo curve number position at
+    the given time.
+* Changes in the NMesh module:
+  - Added the addMaterial (mat) method.
+  - Added an optional argument to the update() method. If the value
+    in the argument is 1, the mesh normals are recalculated.
+    Otherwise, no recalculation is done.
+  - Fix crash in the getVertexInfluences.
+    This crash occurred when no bone was linked to the vertex.
+  - Fix bug #399 - crash in the Face(vertexlist) method.
+  - Fix crash when trying to rename newly created meshes.
+* Changes in the Material module:
+  - missing specR, specG and specB variables. These variables where
+    available in the previous Python API.
+* Changes in the Image module:
+  - added variables to expose the image width, height and depth
+    parameters.
+* Changes in the Text module:
+  - The filename attribute didn't check for NULL - causing incorrect
+    behaviour.
+* Changes in the Armature module:
+  - Fix bug #433 - Bone.setQuat does not work
+    The method changed the head instead of the quat.
+* Changes in the Scene module:
+  - Added an optional argument to the method update(). When the value
+    is 1, a full update is done to all objects. Otherwise, only the
+    base list of objects is updated.
+* Some cleanup to make modules more consistent internally.
+* A lot of documentation updates to many modules.
+
