@@ -7,6 +7,8 @@ libblender_api2_2x_la_SOURCES = \
   Blender.h \
   Sys.c \
   Sys.h \
+  Registry.c \
+  Registry.h \
   Scene.c \
   Scene.h \
   Types.c \
