@@ -46,7 +46,8 @@ libblender_blenlib_la_SOURCES = \
 	intern/winstuff.c
 
 INCLUDES = -I$(top_srcdir)/source/blender/makesdna \
-	-I$(top_srcdir)/intern/guardedalloc
+	-I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/include
 
 EXTRA_DIST = \
 	Makefile \
