@@ -4,7 +4,10 @@ LIBS =
 
 libblender_yafrayexport_la_CFLAGS = -Wall
 
-libblender_yafrayexport_la_SOURCES = intern/yafray_Render.cpp intern/yafray_Render.h
+libblender_yafrayexport_la_SOURCES = intern/yafray_Render.cpp \
+intern/yafray_Render.h \
+intern/export_File.cpp intern/export_File.h \
+intern/api.cpp
 
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
