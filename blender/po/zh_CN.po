@@ -1,0 +1,2029 @@
+# Simplified Chinese Blender i18n file
+# It's easy to translate this file to Tranditional Chinese by Word or something else
+# I'll do the translation when more msgid have been added, or you can do it by yourself
+# Li Jun <bl8nder@yahoo.com>, 2003
+
+###########################################################
+###
+###  Render Window
+###
+###########################################################
+msgid "Pics"
+msgstr "图像"
+msgid "Directory/name to save rendered Pics to"
+msgstr "保存渲染的图像的路径及文件名"
+msgid "Image to use as background for rendering"
+msgstr "渲染时作为背景使用的图片"
+msgid "Backbuf"
+msgstr "背景"
+msgid "Enable/Disable use of Backbuf image"
+msgstr "使用背景图片"
+msgid "Image to use with FTYPE Image type"
+msgstr ""
+msgid "Ftype"
+msgstr ""
+msgid "Scene to link as a Set"
+msgstr ""
+msgid "Remove Set link"
+msgstr ""
+msgid "Set"
+msgstr ""
+
+msgid "Edge Settings |>> "
+msgstr "边的设置"
+msgid "Display edge settings"
+msgstr "显示边的设置"
+msgid "Edge"
+msgstr "边"
+msgid "Enable Toon shading"
+msgstr "使用卡通风格渲染"
+
+msgid "Render window placement on screen"
+msgstr "渲染窗口在屏幕上的位置"
+msgid "DispView"
+msgstr "到视图"
+msgid "DispWin"
+msgstr "到窗口"
+msgid "Extensions"
+msgstr "扩展名"
+msgid "Adds extensions to the output when rendering animations"
+msgstr "逐帧输出渲染动画时，给输出的文件加上扩展名"
+
+
+msgid "Start the rendering"
+msgstr "开始渲染"
+
+msgid "OSA"
+msgstr ""
+msgid "Sets oversample level to 5"
+msgstr "过采样率＝5"
+msgid "Sets oversample level to 8"
+msgstr "过采样率＝8"
+msgid "Sets oversample level to 11"
+msgstr "过采样率＝11"
+msgid "Sets oversample level to 16"
+msgstr "过采样率＝16"
+
+msgid "MBLUR"
+msgstr "运动模糊"
+msgid "Enables Motion Blur calculation"
+msgstr "允许计算运动模糊"
+msgid "Sets motion blur factor"
+msgstr "设置运动模糊因子大小"
+
+msgid "Xparts:"
+msgstr ""
+
+msgid ""
+"Sets the number of horizontal parts to render image in (For panorama sets "
+"number of camera slices)"
+msgstr ""
+
+msgid "Yparts:"
+msgstr ""
+
+msgid "Sets the number of vertical parts to render image in"
+msgstr ""
+
+msgid "Sky"
+msgstr "天空"
+msgid "Fill background with sky"
+msgstr "以“天空”做背景"
+
+msgid "Premul"
+msgstr "预乘"
+msgid "Multiply alpha in advance"
+msgstr "先乘alpha因子"
+
+msgid "Key"
+msgstr ""
+msgid "Alpha and colour values remain unchanged"
+msgstr "Alpha和颜色值保持不变"
+
+
+msgid "Shadows"
+msgstr "影子"
+msgid "Enable shadow calculation"
+msgstr "允许计算影子"
+msgid "Panorama"
+msgstr "全景图"
+msgid "Set render size to defined size"
+msgstr "使用设定尺寸渲染图像"
+msgid "Enable panorama rendering (output width is multiplied by Xparts)"
+msgstr "允许渲染成全景图（输出图象的宽度放大Xparts倍）"
+
+msgid "Set render size to 3/4 of defined size"
+msgstr "使用设定尺寸的3/4渲染图像"
+
+msgid "Set render size to 1/2 of defined size"
+msgstr "使用设定尺寸的1/2渲染图像"
+
+msgid "Set render size to 1/4 of defined size"
+msgstr "使用设定尺寸的1/4渲染图像"
+
+msgid "Enables field rendering"
+msgstr ""
+
+msgid "Odd"
+msgstr "奇数"
+
+msgid "Enables Odd field first rendering (Default: Even field)"
+msgstr "先渲染奇数场（field）（默认：偶数场）"
+
+msgid "x"
+msgstr "why x"
+msgid "Disables time difference in field calculations"
+msgstr ""
+
+msgid "Border"
+msgstr "边框"
+
+msgid "Render a small cut-out of the image"
+msgstr ""
+
+msgid "Gamma"
+msgstr ""
+
+msgid "Enable gamma correction"
+msgstr "允许Gamma校正"
+
+msgid "ANIM"
+msgstr "动画"
+msgid "Start rendering a sequence"
+msgstr "开始渲染动画序列"
+
+msgid "Do Sequence"
+msgstr "序列渲染输出"
+msgid "Enables sequence output rendering (Default: 3D rendering)"
+msgstr "只渲染到文件（默认：渲染到窗口和文件)"
+
+msgid "Render Daemon"
+msgstr ""
+msgid "Let external network render current scene"
+msgstr "使用外部网络渲染当前场景"
+
+msgid "PLAY"
+msgstr "播放"
+
+msgid "Play animation of rendered images/avi (searches Pics: field)"
+msgstr "播放渲染的图像/avi(searches Pics: field)"
+
+msgid "rt:"
+msgstr ""
+
+msgid "General testing/debug button"
+msgstr ""
+
+msgid "Sta:"
+msgstr "首："
+msgid "The start frame of the animation"
+msgstr "动画的开始帧"
+
+msgid "End:"
+msgstr "尾："
+msgid "The end  frame of the animation"
+msgstr "动画的结束帧"
+
+msgid "Game framing settings >>"
+msgstr ""
+
+msgid "Display game framing settings"
+msgstr ""
+
+msgid "SizeX:"
+msgstr "宽"
+msgid "The image width in pixels"
+msgstr "图像宽（以“象素”为单位）"
+msgid "AspX:"
+msgstr ""
+msgid "The horizontal aspect ratio"
+msgstr "图像的水平比率"
+
+
+msgid "SizeY:"
+msgstr "高"
+msgid "The image height in scanlines"
+msgstr "图像高（以“扫描线”为单位）"
+msgid "AspY:"
+msgstr ""
+msgid "The vertical aspect ratio"
+msgstr "图像的垂直比率"
+
+msgid "Images are saved in this file format"
+msgstr "用这种格式保存渲染的图像"
+
+msgid "Codec settings"
+msgstr "压缩编码设定"
+
+msgid "Set codec settings for Quicktime Codec"
+msgstr "Quicktime格式压缩编码设定"
+
+msgid "Codec"
+msgstr "编码"
+
+msgid "Codec Settings |>> "
+msgstr "编码设定§"
+
+msgid "Edit Codec settings for QuickTime"
+msgstr "编辑Quicktime编码设定"
+
+msgid "Set codec settings for AVI Codec"
+msgstr "AVI格式压缩编码设定"
+
+msgid "Quality: "
+msgstr "质量："
+
+msgid "Quality setting for JPEG images, AVI Jpeg and SGI movies"
+msgstr "JPEG图像、Jpeg压缩的AVI以及SGI的电影的质量"
+
+msgid "Frs/sec: "
+msgstr "帧率："
+
+msgid "Frames per second, for AVI and Sequence window grid"
+msgstr "每秒钟多少帧，AVI和序列文件"
+
+msgid "Crop"
+msgstr ""
+msgid "Exclude border rendering from total image"
+msgstr ""
+
+msgid "BW"
+msgstr ""
+msgid "Images are saved with BW (grayscale) data"
+msgstr "保存灰度图像"
+
+msgid "Images are saved with RGB (color) data"
+msgstr "保存RGB彩色图像"
+
+msgid "Images are saved with RGB and Alpha data (if supported)"
+msgstr "保存带Alpha信息的RGB彩色图像"
+
+msgid "PAL"
+msgstr ""
+msgid "Size preset: Image size - 720x576, Aspect ratio - 54x51, 25 fps"
+msgstr "图像尺寸-720x576，高宽比-54x51，25帧/秒"
+
+msgid "NTSC"
+msgstr ""
+msgid "Size preset: Image size - 720x480, Aspect ratio - 10x11, 30 fps"
+msgstr "图像尺寸-720x480，高宽比-10x11，30帧/秒"
+
+msgid "Default"
+msgstr ""
+msgid "Same as PAL, with render settings (OSA, Shadows, Fields)"
+msgstr "与PAL相同，但是打开了OSA、影子、Fields"
+
+msgid "Preview"
+msgstr ""
+msgid "Size preset: Image size - 640x512, Render size 50%"
+msgstr "图像尺寸-640x512，缩小50%渲染"
+
+msgid "PC"
+msgstr ""
+msgid "Size preset: Image size - 640x480, Aspect ratio - 100x100"
+msgstr "图像尺寸-640x480，高宽比-100x100"
+
+msgid "PAL 16:9"
+msgstr ""
+msgid "Size preset: Image size - 720x576, Aspect ratio - 64x45"
+msgstr "图像尺寸-720x576，高宽比-64x45"
+
+msgid "PANO"
+msgstr ""
+msgid "Standard panorama settings"
+msgstr "标准全景图的设置"
+
+msgid "FULL"
+msgstr ""
+msgid "Size preset: Image size - 1280x1024, Aspect ratio - 1x1"
+msgstr "图像尺寸-1280x1024，高宽比-1x1"
+
+msgid "Unified Renderer"
+msgstr ""
+msgid "Use the unified renderer."
+msgstr ""
+
+###########################################################
+###
+###  ToolBox (Popup Menu)
+###
+###########################################################
+msgid "ADD"
+msgstr "添加"
+msgid "FILE"
+msgstr "文件"
+msgid "EDIT"
+msgstr "编辑"
+msgid "OBJECT"
+msgstr "对象"
+msgid "MESH"
+msgstr "MESH对象"
+msgid "CURVE"
+msgstr "曲线（CURVE）"
+msgid "KEY"
+msgstr "关键帧（KEY）"
+#因为View下面有 放大、缩小、显示所有，所以翻译成“显示”，而不是“视图”
+msgid "VIEW"
+msgstr "显示"
+msgid "RENDER"
+msgstr "渲染"
+msgid "SEQUENCE"
+msgstr "序列"
+
+###########################################################
+###
+###  General Messages
+###
+###########################################################
+msgid "QUIT BLENDER"
+msgstr "退出BLENDER"
+msgid "Not allowed"
+msgstr "不允许"
+msgid "ERASE ALL"
+msgstr "删除所有"
+msgid "ERROR: %s"
+msgstr "错误"
+###########################################################
+###
+###  General Terms
+###
+###########################################################
+msgid "OK?"
+msgstr "请确定"
+
+###########################################################
+###
+###  FileSelect Commands
+###
+###########################################################
+msgid "LOAD FILE"
+msgstr "打开文件"
+msgid "SAVE FILE"
+msgstr "保存文件"
+msgid "Cancel"
+msgstr "取消"
+
+###########################################################
+###
+###  ToolBox >> ADD
+###
+###########################################################
+msgid "Mesh"
+msgstr "MESH对象"
+msgid "Opens the Add Mesh menu"
+msgstr "显示添加Mesh对象菜单"
+
+msgid "Curve"
+msgstr "曲线"
+msgid "Opens the Add Curve menu"
+msgstr "显示添加曲线菜单"
+
+msgid "Surface"
+msgstr "表面"
+msgid "Opens the Add Surface menu"
+msgstr "显示添加表面菜单"
+
+msgid "Text"
+msgstr "文字"
+msgid "Adds a Text object"
+msgstr "添加文字"
+
+msgid "MetaBall"
+msgstr "变形球"
+msgid "Metaball"
+msgstr "变形球"
+msgid "Adds a Metaball"
+msgstr "添加变形球"
+
+msgid "Empty"
+msgstr "辅助对象"
+msgid "Adds an Empty object"
+msgstr "添加辅助对象"
+
+msgid "Camera"
+msgstr "照相机"
+msgid "Adds a Camera"
+msgstr "添加相机"
+
+msgid "Lamp"
+msgstr "灯"
+msgid "Adds a Lamp"
+msgstr "添加灯"
+
+msgid "Armature"
+msgstr "骨架"
+msgid "Adds an Armature"
+msgstr "添加骨骼"
+
+msgid "Lattice"
+msgstr "辅助网格"
+msgid "Adds a Lattice"
+msgstr "添加辅助网格"
+
+
+###########################################################
+###
+###  ToolBox >> ADD >> Mesh
+###
+###########################################################
+msgid ">Plane"
+msgstr ">平面"
+msgid ">Cube"
+msgstr ">立方体"
+msgid ">UVsphere"
+msgstr ">UV球"
+msgid ">Icosphere"
+msgstr ">Ico球"
+msgid ">Cylinder"
+msgstr ">圆柱体"
+msgid ">Tube"
+msgstr ">管子"
+msgid ">Cone"
+msgstr ">圆锥"
+msgid ">Grid"
+msgstr ">网格对象"
+
+msgid ">Monkey"
+msgstr ">齐天大圣"
+msgid "Oooh Oooh Oooh"
+msgstr "老孙来也"
+
+###########################################################
+###
+###  ToolBox >> ADD >> Curve
+###
+###########################################################
+msgid ">Bezier Curve"
+msgstr ">Bezier曲线"
+msgid ">Bezier Circle"
+msgstr ">Bezier圆"
+msgid ">Nurbs Curve"
+msgstr ">Nurbs曲线"
+msgid ">Nurbs Circle"
+msgstr ">Nurbs圆"
+msgid ">Path"
+msgstr ">路径"
+
+
+###########################################################
+###
+###  ToolBox >> ADD >> Surface
+###
+###########################################################
+msgid ">Curve"
+msgstr ">曲线"
+msgid ">Circle"
+msgstr ">圆"
+msgid ">Surface"
+msgstr ">表面"
+msgid ">Tube"
+msgstr ">管子"
+msgid ">Sphere"
+msgstr ">球"
+msgid ">Donut"
+msgstr ">面包圈"
+
+###########################################################
+###
+###  Menubar >> ADD >> Mesh
+###
+###########################################################
+msgid "Adds a Mesh Plane"
+msgstr "添加一个平面"
+msgid "Adds a Mesh Cube"
+msgstr "添加一个立方体"
+msgid "Adds a Mesh Circle"
+msgstr "添加一个圆"
+msgid "Adds a Mesh Sphere"
+msgstr "添加一个平面Mesh网格"
+msgid "Adds a Mesh Isocohedron Sphere"
+msgstr "添加一个平面Mesh网格"
+msgid "Adds a Mesh Cylinder with closed ends"
+msgstr "添加一个圆柱体（封口）"
+msgid "Adds a Mesh Tube with open ends"
+msgstr "添加一个管子（封口）"
+msgid "Adds a Mesh Cone"
+msgstr "添加一个锥体"
+msgid "Adds a Mesh Grid"
+msgstr "添加一个网格（Grid）"
+
+###########################################################
+###
+###  Menubar >> ADD >> Curve
+###
+###########################################################
+msgid "Adds a Bezier Curve"
+msgstr "添加一个Bezier曲线"
+msgid "Adds a Bezier Circle"
+msgstr "添加一个Bezier圆"
+msgid "Adds a NURBS Curve"
+msgstr "添加一个NURBS曲线"
+msgid "Adds a NURBS Circle"
+msgstr "添加一个NURBS圆"
+msgid "Adds a Path"
+msgstr "添加一个路径"
+
+###########################################################
+###
+###  Menubar >> ADD >> Surface
+###
+###########################################################
+msgid "Adds a NURBS Curve"
+msgstr "添加一个NURBS曲线"
+msgid "Adds a NURBS Circle"
+msgstr "添加一个NURBS圆"
+msgid "Adds a NURBS Surface"
+msgstr "添加一个NURBS表面"
+msgid "Adds a NURBS Tube"
+msgstr "添加一个NURBS管子"
+msgid "Adds a NURBS Sphere"
+msgstr "添加一个NURBS球"
+msgid "Adds a NURBS Donut (Torus)"
+msgstr "添加一个NURBS面包圈"
+
+###########################################################
+###
+###  ToolBox >> FILE
+###
+###########################################################
+msgid "Hides pulldown menus"
+msgstr "隐藏下拉菜单"
+msgid "Enables display of pulldown menus"
+msgstr "显示下拉菜单"
+
+msgid "New"
+msgstr "新建"
+msgid "Starts a new project (WARNING! Closes current project!)"
+msgstr "开始一个新项目。注意：这会关闭当前的项目"
+
+msgid "Open"
+msgstr "打开"
+msgid "Opens a new file"
+msgstr "打开一个新文件"
+
+msgid "Reopen Last"
+msgstr "打开上次使用的文件"
+msgid "Reverts to the last version saved to file"
+msgstr "打开上次使用的文件"
+
+msgid "Append"
+msgstr "添加"
+msgid "Appends contents of a file to the current project"
+msgstr "添加其他文件的内容到当前项目"
+
+msgid "Import Settings"
+msgstr "设置导入选项"
+
+msgid "Save As"
+msgstr "另存为"
+msgid "Saves to a new file"
+msgstr "另存为一个新文件"
+
+msgid "Save"
+msgstr "保存"
+msgid "Saves to the current file"
+msgstr "保存当前文件"
+
+msgid "File options"
+msgstr "文件选项"
+msgid "Opens the File Options menu"
+msgstr "打开“文件选项”菜单"
+
+msgid "Save Runtime"
+msgstr "保存为可执行文件（无需动态连接库）"
+msgid "Creates a runtime executable with the current project"
+msgstr "从当前项目创建可执行文件（无需动态连接库）"
+msgid "Save dynamic Runtime"
+msgstr "保存为可执行文件（需要动态连接库）"
+msgid "Creates a dynamic runtime executable with the current project (requieres extenal python20.dll)"
+msgstr "从当前项目创建可执行文件（需要python20.dll）"
+msgid "Runtime options"
+msgstr "可执行文件的属性"
+msgid "Opens the Runtime Options menu"
+msgstr "打开“文件选项”菜单"
+
+msgid "Save Image"
+msgstr "保存图象"
+msgid "Saves the rendered image to a file"
+msgstr "把渲染图像保存到文件"
+
+msgid "Save VRML"
+msgstr "保存为VRML1.0格式"
+msgid "Save VRML 1.0"
+msgstr "保存为VRML1.0格式"
+msgid "Saves the current scene to a file in VRML 1.0 format"
+msgstr "把当前场景保存到 VRML  1.0文件"
+
+msgid "Save DXF"
+msgstr "保存为DXF格式"
+msgid "Saves the current scene to a file in DXF format"
+msgstr "把当前场景保存到DXF文件"
+
+msgid "Save VideoScape"
+msgstr "保存为VideoScape格式"
+msgid "Saves the current scene to a file in VideoScape format"
+msgstr "把当前场景保存到VideoScape文件"
+
+msgid "Save UserPrefs"
+msgstr "保存用户设置"
+
+msgid "Quit"
+msgstr "退出"
+msgid "Quits Blender immediately (WARNING! Save your project first!)"
+msgstr "立即退出Blender（注意：先保存你的心血）"
+
+msgid "Move to the parent directory (PKEY)"
+msgstr "到上级目录（P键）"
+
+msgid "Toggles Blender to fullscreen mode"
+msgstr "切换是否全屏显示Blender"
+
+msgid "Displays Toolbox menu (SPACE)"
+msgstr "显示工具箱菜单（空格键）"
+
+
+###########################################################
+###
+###  ToolBox >> FILE >> Open
+###
+###########################################################
+msgid "Sorts files alphabetically"
+msgstr "按字母顺序排序"
+msgid "Sorts files by time"
+msgstr "按时间顺序排序"
+msgid "Sorts files by size"
+msgstr "按文件大小排序"
+
+msgid "Toggles long info"
+msgstr "显示更多文件信息"
+
+msgid "Hides dot files"
+msgstr "隐藏只有扩展名的文件/目录"
+
+###########################################################
+###
+###  ToolBox >> FILE >> Reopen Last
+###
+###########################################################
+msgid "Open file: %s"
+msgstr "打开文件： %s"
+
+###########################################################
+###
+###  ToolBox >> FILE >> Append
+###
+###########################################################
+msgid "LOAD LIBRARY"
+msgstr "打开素材库"
+
+msgid "Copies selected data into current project"
+msgstr "把选择的数据添加到当前的项目里面"
+
+msgid "Link"
+msgstr "连接"
+msgid "Creates a link to selected data from current project"
+msgstr "只在当前项目里面添加指向所选择数据的连接（可以减小项目文件大小）"
+
+###########################################################
+###
+###  ToolBox >> FILE >> Importing Settings
+###
+###########################################################
+msgid "VRML 2.0 options"
+msgstr "VRML2.0选项"
+
+msgid "SepLayers"
+msgstr "分层"
+msgid "Separates Empties, Lamps, etc. into Layers"
+msgstr "按对象属性（Empty、灯……）分层放置导入的对象"
+
+msgid "Scale 1/100"
+msgstr "缩小1/100"
+msgid "Scales scene by 1/100 (3DS VRML)"
+msgstr "把场景缩小到1/100（用于导入3DS的VRML文件）"
+
+msgid "Two Sided"
+msgstr "两面的表面"
+msgid "Enables import of two sided faces"
+msgstr "允许导入有两个面的表面"
+
+###########################################################
+###
+###  ToolBox >> FILE >> File Options
+###
+###########################################################
+msgid "Compress File"
+msgstr "压缩文件"
+msgid "Enables file compression"
+msgstr "允许压缩文件"
+
+###########################################################
+###
+###  ToolBox >> FILE >> Save (dynamic) Runtime
+###
+###########################################################
+msgid "WRITE RUNTIME"
+msgstr "生成可执行文件"
+
+msgid "WRITE DYNAMIC RUNTIME"
+msgstr "生成需要要动态连接库的可执行文件"
+
+###########################################################
+###
+###  ToolBox >> FILE >> Importing Settings
+###
+###########################################################
+msgid "Size options:"
+msgstr "画面尺寸选项"
+
+msgid "X:"
+msgstr ""
+msgid "Displays current X screen/window resolution. Click to change."
+msgstr "当前X方向的分辨率，点击可以修改"
+
+msgid "Y:"
+msgstr ""
+msgid "Displays current Y screen/window resolution. Click to change."
+msgstr "当前Y方向的分辨率，点击可以修改"
+
+
+msgid "Fullscreen options:"
+msgstr "全屏显示选项"
+
+msgid "Fullscreen"
+msgstr "全屏"
+msgid "Starts player in a new fullscreen display"
+msgstr "以全屏方式打开新的播放器"
+
+msgid "Freq:"
+msgstr "刷新频率："
+msgid "Displays clock frequency of fullscreen display. Click to change."
+msgstr "全屏显示时的显示器刷新频率，点击可以修改"
+
+msgid "Bits: "
+msgstr "色深"
+msgid "Displays bit depth of full screen display. Click to change."
+msgstr "全屏显示时的色深，点击可以修改"
+
+msgid "Stereo options"
+msgstr "立体声选项"
+
+msgid "no stereo"
+msgstr "无立体声"
+msgid "Disables stereo"
+msgstr "禁用立体声"
+
+msgid "h/w pageflip"
+msgstr "硬件pageflip"
+msgid "Enables hardware pageflip stereo method"
+msgstr "使用硬件的pageflip立体声模式"
+
+msgid "syncdoubling"
+msgstr "syncdoubling模式"
+msgid "使用syncdoubling立体声模式"
+msgstr ""
+
+msgid "interlaced"
+msgstr "interlaced模式"
+msgid "Enables interlaced stereo method"
+msgstr "使用interlaced立体声模式"
+
+###########################################################
+###
+###  ToolBox >> FILE >> Save Image
+###
+###########################################################
+msgid "SAVE PNG"
+msgstr ""
+
+msgid "SAVE TARGA"
+msgstr ""
+
+msgid "SAVE RAW TARGA"
+msgstr ""
+
+msgid "SAVE IRIS"
+msgstr ""
+
+msgid "SAVE HAMX"
+msgstr ""
+
+msgid "SAVE FTYPE"
+msgstr ""
+
+msgid "SAVE JPEG"
+msgstr ""
+
+msgid "SAVE IMAGE"
+msgstr ""
+
+msgid "No image rendered"
+msgstr "你还没有渲染"
+
+msgid "Select an image type in DisplayButtons(F10)"
+msgstr "在渲染按键（F10）中选择一种图像类型"
+
+
+###########################################################
+###
+###  ToolBox >> FILE >> VRML 1.0/DXF/VideoScape
+###
+###########################################################
+msgid "SAVE VRML1"
+msgstr "存为VRML.0"
+msgid "Can't save VRML. Press TAB to leave EditMode"
+msgstr "不能保存成VRML，请先按TAB键离开编辑模式"
+
+msgid "SAVE DXF"
+msgstr "存为DXF"
+msgid "Can't save DXF. Press TAB to leave EditMode"
+msgstr "不能保存成DXF，请先按TAB键离开编辑模式"
+
+msgid "SAVE VIDEOSCAPE"
+msgstr "存为Videoscape"
+msgid "Can't save Videoscape. Press TAB to leave EditMode"
+msgstr "不能保存成Videoscape，请先按TAB键离开编辑模式"
+
+
+###########################################################
+###
+###  ToolBox >> Edit
+###
+###########################################################
+msgid "(De)Select All"
+msgstr "选/不选所有"
+msgid "Toggles between selecting all objects in the scene and selecting no objects"
+msgstr "在选择场景中所有对象和一个对象都不选择之间切换"
+
+msgid "Hide Selected"
+msgstr "隐藏已选择的对象"
+
+msgid "Border Select"
+msgstr "框选"
+msgid "Selects objects in a rectangular area (press B again to activate circle select in edit mode)"
+msgstr "选择穿过矩形区域的对象（在编辑模式下，选择包含在矩形区域里面的对象；且再按一次B键，选择圆形区域里面的对象）"
+msgid "Select objects in a circular area"
+msgstr "选择圆形区域里面的对象"
+
+
+msgid "Duplicate"
+msgstr "复制"
+msgid "Creates a copy of the selected object(s)"
+msgstr "拷贝一份选择的对象"
+
+msgid "Delete"
+msgstr "删除"
+msgid "Deletes the selected object(s)"
+msgstr "删除选择的对象"
+
+msgid "Edit Mode"
+msgstr "编辑模式"
+msgid "Toggles the current object between object mode and edit mode"
+msgstr "在对象模式和编辑模式之间切换"
+
+msgid "Grabber"
+msgstr "抓取"
+msgid "Moves the selected object(s)"
+msgstr "移动选择的对象"
+
+msgid "Rotate"
+msgstr "旋转"
+msgid "Rotates the selected object(s)"
+msgstr "旋转选择的对象"
+
+msgid "Scale"
+msgstr "缩放"
+msgid "Scales the selected object(s)"
+msgstr "缩放选择的对象"
+
+msgid "Shrink/Fatten"
+msgstr "Shrink/Fatten"
+
+msgid "Shear"
+msgstr "斜错"
+msgid "Shears the selected object(s)"
+msgstr "斜错（shear）选择的对象"
+
+msgid "Warp/Bend"
+msgstr "Warp/Bend"
+msgid "Warps or bends the selected objects"
+msgstr "弯折选择的对象"
+
+msgid "Snap Menu"
+msgstr "捕捉菜单"
+msgid "Activates the snap menu"
+msgstr "激活捕捉菜单"
+
+###########################################################
+###
+###  ToolBox >> OBJECT (1)
+###
+###########################################################
+msgid "Clear Size"
+msgstr "取消缩放"
+msgid "Clear Rotation"
+msgstr "取消旋转"
+msgid "Clear Location"
+msgstr "取消定位"
+msgid "Clear Origin"
+msgstr "取消设定原点"
+msgid "Make Parent"
+msgstr ""
+msgid "Clear Parent"
+msgstr ""
+msgid "Make Track"
+msgstr ""
+msgid "Clear Track"
+msgstr ""
+msgid "Image Displist"
+msgstr "Image Displist"
+msgid "Image Aspect"
+msgstr "Image Aspect"
+msgid "Vect Paint"
+msgstr ""
+
+
+###########################################################
+###
+###  ToolBox >> OBJECT (2)
+###
+###########################################################
+msgid "Edit Mode"
+msgstr "编辑模式"
+msgid "Move To Layer"
+msgstr "移到层："
+msgid "Delete"
+msgstr "删除"
+msgid "Delete All"
+msgstr "删除所有"
+msgid "Apply Size/Rot"
+msgstr "应用缩放/旋转"
+msgid "Apply Deform"
+msgstr "应用变形"
+msgid "Join"
+msgstr "結合"
+msgid "Make Local"
+msgstr ""
+msgid "Select Linked"
+msgstr "选择连接的"
+msgid "Make Links"
+msgstr ""
+msgid "Copy Menu"
+msgstr "拷贝操作菜单"
+msgid "Convert Menu"
+msgstr "转换操作菜单"
+msgid "Boolean Op"
+msgstr "布尔运算"
+
+
+###########################################################
+###
+###  ToolBox >> Mesh
+###
+###########################################################
+msgid "Deselect Linked"
+msgstr "不选择连接的"
+msgid "Extrude"
+msgstr "挤压"
+msgid "Delete Menu"
+msgstr "删除菜单"
+msgid "Make edge/face"
+msgstr "创建边/面"
+msgid "Fill"
+msgstr "填充"
+msgid "Split"
+msgstr "Split"
+msgid "Undo/reload"
+msgstr "重新载入"
+msgid "Calc Normals"
+msgstr "计算法向量"
+msgid "Separete"
+msgstr "Separete"
+msgid "Write Videosc"
+msgstr "Write Videosc"
+
+
+###########################################################
+###
+###  ToolBox >> Curve
+###
+###########################################################
+msgid "Deselect Linked"
+msgstr "不选择连接的"
+msgid "Extrude"
+msgstr "挤压"
+msgid "Delete Menu"
+msgstr "删除菜单"
+msgid "Make Segment"
+msgstr ""
+msgid "Cyclic"
+msgstr "Cyclic"
+msgid "Select Row"
+msgstr "Select Row"
+msgid "Calc Handle"
+msgstr ""
+msgid "Auto Handle"
+msgstr "Auto Handle"
+msgid "Vect Handle"
+msgstr "Vect Handle"
+msgid "Specials"
+msgstr "Specials"
+
+
+###########################################################
+###
+###  ToolBox >> Key
+###
+###########################################################
+msgid "Insert"
+msgstr "插入"
+msgid "Show"
+msgstr "显示"
+msgid "Next"
+msgstr "下一个"
+msgid "Prev"
+msgstr "上一个"
+msgid "Show+Sel"
+msgstr "显示并且选择"
+
+
+###########################################################
+###
+###  ToolBox >> RENDER
+###
+###########################################################
+msgid "Render Window"
+msgstr "渲染窗口"
+msgid "Render"
+msgstr "渲染"
+msgid "Set Border"
+msgstr "设置边界"
+msgid "Image Zoom"
+msgstr "图象缩放"
+
+
+###########################################################
+###
+###  ToolBox >> VIEW
+###
+###########################################################
+msgid "Centre"
+msgstr "所选对象居中"
+msgid "Home"
+msgstr "显示全部"
+msgid "Z-Buffer"
+msgstr "Z-Buffer"
+
+
+###########################################################
+###
+###  ToolBox >> SEQUENCE
+###
+###########################################################
+msgid "Add Strip"
+msgstr "Add Strip"
+msgid "Change Str"
+msgstr "Change Str"
+msgid "Delete Str"
+msgstr "Delete Str"
+msgid "Make Meta"
+msgstr "Make Meta"
+msgid "Str Params"
+msgstr "Str 参数"
+
+
+###########################################################
+###
+###  Menu bar
+###
+###########################################################
+msgid "File"
+msgstr "文件"
+msgid "Edit"
+msgstr "编辑"
+msgid "Add"
+msgstr "添加"
+msgid "View"
+msgstr "视图"
+msgid "Game"
+msgstr "游戏"
+msgid "Tools"
+msgstr "工具"
+
+
+###########################################################
+###
+###  Menu bar >> Add
+###
+###########################################################
+msgid "MetaBall"
+msgstr "变形球"
+msgid "Empty"
+msgstr "辅助对象"
+msgid "Lattice"
+msgstr "辅助网格"
+
+
+###########################################################
+###
+###  Menu bar >> Add >> Mesh
+###
+###########################################################
+msgid "Plane"
+msgstr "平面"
+msgid "Cube"
+msgstr "立方体"
+msgid "Circle"
+msgstr "圆"
+msgid "UVsphere"
+msgstr "UV球"
+msgid "IcoSphere"
+msgstr "Ico球"
+msgid "Cylinder"
+msgstr "圆柱体"
+msgid "Tube"
+msgstr "管子"
+msgid "Cone"
+msgstr "圆锥"
+msgid "Grid"
+msgstr "网格对象"
+
+
+###########################################################
+###
+###  Menu bar >> Add >> Curve
+###
+###########################################################
+msgid "Bezier Curve"
+msgstr "Bezier曲线"
+msgid "Bezier Circle"
+msgstr "Bezier圆"
+msgid "NURBS Curve"
+msgstr "NURBS曲线"
+msgid "NURBS Circle"
+msgstr "NURBS圆"
+msgid "Path"
+msgstr "路径"
+
+
+###########################################################
+###
+###  Menu bar >> Add >> Surface
+###
+###########################################################
+msgid "NURBS Suface"
+msgstr "NURBS表面"
+msgid "NURBS Tube"
+msgstr "NURBS管子"
+msgid "NURBS Sphere"
+msgstr "NURBS球"
+msgid "NURBS Donut"
+msgstr "NURBS面包圈"
+
+
+###########################################################
+###
+###  Menu bar >> View
+###
+###########################################################
+msgid "Front"
+msgstr "前视图"
+msgid "Sets current viewport to Front view"
+msgstr "切换到前视图"
+
+msgid "Right"
+msgstr "右视图"
+msgid "Sets current viewport to Right view"
+msgstr "切换到右视图"
+
+msgid "Top"
+msgstr "顶视图"
+msgid "Sets current viewport to Top view"
+msgstr "切换到顶视图"
+
+msgid "Sets current viewport to Camera view"
+msgstr "切换到相机视图"
+
+msgid "Zoom In"
+msgstr "放大"
+msgid "Zooms In current viewport"
+msgstr "放大视图"
+msgid "Zoom Out"
+msgstr "缩小"
+msgid "Zooms out current viewport"
+msgstr "缩小视图"
+msgid "Center"
+msgstr "原点居中显示"
+msgid "Centers selected item in current viewport"
+msgstr "原点居中显示"
+msgid "View All"
+msgstr "显示全部"
+msgid "Zooms In or Out to fit all objects in current viewport"
+msgstr "显示所有的对象"
+
+###########################################################
+###
+###  Menu bar >> Game
+###
+###########################################################
+msgid "Start Game"
+msgstr "开始游戏"
+msgid "Enable All Frames"
+msgstr "显示所有的帧"
+msgid "Toggles between draw all frames on (no frames dropped) and off (full speed)"
+msgstr "在显示所有的帧（精确）和丢弃一些帧（高速）之间切换"
+
+msgid "Show framerate and profile"
+msgstr "显示帧屏数和性能参数"
+msgid "Toggles between showing and not showing the framerate and profile"
+msgstr "显示帧屏数和性能参数"
+
+msgid "Show debug properties"
+msgstr "显示debug属性"
+msgid "Toggles between showing and not showing debug properties"
+msgstr "显示debug属性"
+
+msgid "Autostart"
+msgstr "自动开始"
+msgid "Toggles between automatic game start on and off"
+msgstr "游戏自动开始"
+
+###########################################################
+###
+###  Menu bar >> Tools
+###
+###########################################################
+msgid "Pack Data"
+msgstr "打包数据"
+msgid "Saves a copy of all packed external files inside the project file"
+msgstr "将所有外部数据打包压缩后保存在当前的项目中"
+
+msgid "Unpack Data to current dir"
+msgstr "把数据解压到当前目录"
+msgid "Removes all packed files from the project and saves them to the current directory"
+msgstr "把当前项目包含的所有文件解压到当前目录、并从项目中删除"
+
+msgid "Advanced Unpack"
+msgstr "更多的解压选项"
+msgid "No packed files. Autopack disabled"
+msgstr "没有打包的文件。“自动打包”被禁止"
+
+###########################################################
+###
+###  Image Browser
+###
+###########################################################
+msgid "Toggles display of directory information"
+msgstr "切换是否显示目录信息"
+msgid "Toggles display of selected image information"
+msgstr "切换是否显示选择图像的信息"
+msgid "Toggles magnified view of thumbnail of images under mouse pointer"
+msgstr "切换是否放大显示鼠标下面的缩略图"
+
+###########################################################
+###
+###  Buttons Window
+###
+###########################################################
+
+msgid "Displays Current Window Type. Click for menu of available types."
+msgstr "显示/切换当前视窗的类型"
+msgid "Zooms window to home view showing all items (HOMEKEY)"
+msgstr "显示全部（Home键）"
+msgid "Makes current window full screen (CTRL+Down arrow)"
+msgstr "全屏显示当前窗口（CTRL＋下箭头）"
+msgid "Returns to multiple views window (CTRL+Up arrow)"
+msgstr "返回多视图显示方式（CTRL＋上箭头）"
+
+msgid "View buttons"
+msgstr "显示"
+
+msgid "Lamp buttons (F4)"
+msgstr "灯（F4）"
+
+msgid "Material buttons (F5)"
+msgstr "材质（F5）"
+
+msgid "Texture buttons (F6)"
+msgstr "纹理（F6）"
+
+msgid "Animation buttons (F7)"
+msgstr "动画（F7）"
+
+msgid "Realtime buttons (F8)"
+msgstr ""
+
+msgid "Edit buttons (F9)"
+msgstr "编辑（F9）"
+
+msgid "Constraint buttons"
+msgstr "约束"
+
+msgid "Sound buttons"
+msgstr "声音"
+
+msgid "World buttons"
+msgstr "环境"
+
+msgid "Paint buttons"
+msgstr ""
+
+msgid "Radiosity buttons"
+msgstr "光能传递"
+
+msgid "Script buttons"
+msgstr "脚本"
+
+msgid "Display buttons (F10)"
+msgstr "渲染"
+
+msgid "Browses existing choices or adds NEW"
+msgstr "显示当前选择或者添加新的选择"
+
+msgid "SCE:"
+msgstr ""
+
+msgid "Displays current Datablock name. Click to change."
+msgstr "显示当前数据块的名字，点击可以修改。"
+
+msgid "Deletes link to this Datablock"
+msgstr "删除与当前数据块的连接"
+
+msgid "Saves this datablock even if it has no users"
+msgstr "即使没有使用，也保存这个数据块"
+
+msgid "Displays Current Frame of animation. Click to change."
+msgstr "显示当前的动画帧，点击可以修改。"
+
+###########################################################
+###
+###  OOPS Schematic
+###
+###########################################################
+msgid "Zooms view (CTRL+MiddleMouse)"
+msgstr "缩放视图（CTRL＋鼠标中键）"
+msgid "Zooms view to area"
+msgstr "缩放框选的区域"
+msgid "Displays Objects based on layer"
+msgstr "只显示当前层上的对象"
+msgid "Displays Scene data"
+msgstr "显示场景的数据"
+msgid "Displays Object data"
+msgstr "显示对象的数据"
+msgid "Displays Mesh data"
+msgstr "显示Mesh对象的数据"
+msgid "Displays Curve/Surface/Font data"
+msgstr "显示曲线/曲面字体的数据"
+msgid "Displays Metaball data"
+msgstr "显示变形球的数据"
+msgid "Displays Lattice data"
+msgstr "显示辅助网格的数据"
+msgid "Displays Lamp data"
+msgstr "显示灯的数据"
+msgid "Displays Material data"
+msgstr "显示材质的数据"
+msgid "Displays Texture data"
+msgstr "显示纹理的数据"
+msgid "Displays Ipo data"
+msgstr "显示IPO的数据"
+msgid "Displays Image data"
+msgstr "显示图像的数据"
+msgid "Displays Library data"
+msgstr "显示库的数据"
+
+###########################################################
+###
+###  User Preferences
+###
+###########################################################
+#"View & Controls"
+msgid "View & Controls"
+msgstr "显示和控制"
+
+msgid "Display:"
+msgstr "显示"
+
+msgid "ToolTips"
+msgstr "工具提示"
+msgid "Displays tooltips (help tags) over buttons"
+msgstr "在按钮上显示提示"
+
+msgid "Object Info"
+msgstr "对象信息"
+msgid "Displays current object name and frame number in the 3D viewport"
+msgstr "在3D视图中显示当前对象的名字和帧数"
+
+msgid "Global Scene"
+msgstr "全局场景"
+msgid "Forces the current Scene to be displayed in all Screens"
+msgstr "在所有的场景中显示当前的场景"
+
+msgid "Snap to grid:"
+msgstr "捕捉到网格"
+
+msgid "Grab"
+msgstr "移动"
+msgid "Move objects to grid units"
+msgstr "按网格大小移动对象"
+
+msgid "Rotate"
+msgstr "旋转"
+msgid "Rotate objects to grid units"
+msgstr "按网格大小旋转对象"
+msgid "Size"
+msgstr "缩放"
+msgid "Scale objects to grid units"
+msgstr "按网格大小缩放对象"
+
+
+msgid "View rotation method:"
+msgstr "旋转视图的方法"
+
+msgid "Trackball"
+msgstr "轨迹球"
+msgid "Use trackball style rotation with middle mouse button"
+msgstr "用鼠标中键进行轨迹球风格的旋转"
+msgid "Turntable"
+msgstr "转盘"
+msgid "Use turntable style rotation with middle mouse button"
+msgstr "用鼠标中键进行转盘风格的旋转"
+
+
+msgid "Middle mouse button:"
+msgstr "鼠标中键"
+
+msgid "Rotate View"
+msgstr "旋转视图"
+msgid "Default action for the middle mouse button"
+msgstr "鼠标中键的默认动作"
+msgid "Pan View"
+msgstr "平移视图"
+
+msgid "Emulate 3 Buttons"
+msgstr "模拟三键鼠标"
+msgid "Emulates a middle mouse button with ALT+LeftMouse"
+msgstr "用ALT＋鼠标左键模拟鼠标中键"
+
+
+msgid "Mousewheel:"
+msgstr "滚轮："
+
+msgid "Invert Wheel Zoom"
+msgstr "反转滚轮缩放"
+msgid "Swaps mouse wheel zoom direction"
+msgstr "交换滚轮缩放的方向"
+
+msgid "Scroll Lines:"
+msgstr "滚动行数："
+msgid "The number of lines scrolled at a time with the mouse wheel"
+msgstr "鼠标滚轮滚动一次移动的行数"
+
+#Edit Methods	
+msgid "Edit Methods"
+msgstr "编辑方式"
+
+
+msgid "Material linked to:"
+msgstr "材质连接到："
+
+msgid "ObData"
+msgstr ""
+msgid "Link new objects' material to the obData block"
+msgstr "把新对象的材质连接到对象数据（obData）块"
+msgid "Object"
+msgstr ""
+msgid "Link new objects' material to the object block"
+msgstr "把新对象的材质连接到对象（object）块"
+
+
+msgid "Auto keyframe on:"
+msgstr "自动关键帧设置在："
+
+msgid "Action"
+msgstr ""
+msgid "Automatic keyframe insertion in action ipo curve"
+msgstr "在动作ipo曲线上插入自动关键帧"
+msgid "Object"
+msgstr ""
+msgid "Automatic keyframe insertion in object ipo curve"
+msgstr "在对象ipo曲线上插入自动关键帧"
+
+
+msgid "Duplicate with object:"
+msgstr "随对象一起复制："
+
+msgid "Mesh"
+msgstr "Mesh网格"
+msgid "Causes mesh data to be duplicated with Shift+D"
+msgstr "Shift+D复制Mesh网格的数据"
+
+msgid "Armature"
+msgstr "骨骼"
+msgid "Causes armature data to be duplicated with Shift+D"
+msgstr "Shift+D复制骨骼地数据"
+
+msgid "Surface"
+msgstr "表面"
+msgid "Causes surface data to be duplicated with Shift+D"
+msgstr "Shift+D复制表面的数据"
+
+msgid "Lamp"
+msgstr "灯"
+msgid "Causes lamp data to be duplicated with Shift+D"
+msgstr "Shift+D复制灯的数据"
+
+msgid "Curve"
+msgstr "曲线"
+msgid "Causes curve data to be duplicated with Shift+D"
+msgstr "Shift+D复制曲线的数据"
+
+msgid "Material"
+msgstr "材质"
+msgid "Causes material data to be duplicated with Shift+D"
+msgstr "Shift+D复制材质的数据"
+
+msgid "Text"
+msgstr "文字"
+msgid "Causes text data to be duplicated with Shift+D"
+msgstr "Shift+D复制文字的数据"
+
+msgid "Texture"
+msgstr "纹理"
+msgid "Causes texture data to be duplicated with Shift+D"
+msgstr "Shift+D复制纹理的数据"
+
+msgid "Metaball"
+msgstr "变形球"
+msgid "Causes metaball data to be duplicated with Shift+D"
+msgstr "Shift+D复制变形球的数据"
+
+msgid "Ipo"
+msgstr ""
+msgid "Causes ipo data to be duplicated with Shift+D"
+msgstr "Shift+D复制ipo的数据"
+
+
+#Language & Font
+msgid "Language & Font"
+msgstr "语言和字体"
+
+msgid "Interface Font: "
+msgstr "界面字体"
+
+msgid "International Fonts"
+msgstr "国际化"
+msgid "Activate international interface"
+msgstr "使用国际化的界面"
+
+msgid "Select Font"
+msgstr "选择字体"
+msgid "Select a new font for the interface"
+msgstr "为界面选择一个新字体"
+
+msgid "Font Size:"
+msgstr "字体大小"
+msgid "Current interface font size (points)"
+msgstr "当前界面的字体大小（单位：点阵）"
+
+msgid "Select interface language"
+msgstr "选择界面语言"
+
+msgid "Tooltips"
+msgstr "工具提示"
+msgid "Translate tooltips"
+msgstr "翻译工具提示"
+
+msgid "Buttons"
+msgstr "按钮"
+msgid "Translate button labels"
+msgstr "翻译按钮标签"
+
+msgid "Toolbox"
+msgstr "工具箱"
+msgid "Translate toolbox menu"
+msgstr "翻译工具箱菜单"
+
+#Auto Save
+msgid "Auto Save"
+msgstr "自动保存"
+
+msgid "Auto Save Temp Files"
+msgstr "自动保存"
+msgid "Enables automatic saving of temporary files"
+msgstr "允许自动保存到临时文件爱你"
+
+msgid "Open Recent"
+msgstr "打开最近的文件"
+msgid "Opens the most recently saved temporary file"
+msgstr "打开最近保留的临时文件"
+
+
+msgid "Minutes:"
+msgstr "时间间隔："
+msgid "The time (in minutes) to wait between automatic temporary saves"
+msgstr "没多少分钟保存一个临时文件"
+msgid "Versions:"
+msgstr "数目"
+msgid "The number of old versions to maintain when saving"
+msgstr "指定临时文件的数目"
+
+#File Paths
+msgid "File Paths"
+msgstr "文件路径"
+
+msgid "Fonts: "
+msgstr "字体："
+msgid "The default directory to search for loading fonts"
+msgstr "搜索字体的缺省路径"
+msgid "Select the default font directory"
+msgstr "请选择字体的缺省路径"
+
+msgid "Textures: "
+msgstr "纹理："
+msgid "The default directory to search for textures"
+msgstr "搜索纹理的缺省路径"
+msgid "Select the default texture location"
+msgstr "请选择纹理的缺省路径"
+
+msgid "Tex Plugins: "
+msgstr "纹理插件："
+msgid "The default directory to search for texture plugins"
+msgstr "搜索纹理插件的缺省路径"
+msgid "Select the default texture plugin location"
+msgstr "请选择纹理插件的缺省路径"
+
+msgid "Seq Plugins: "
+msgstr "序列插件"
+msgid "The default directory to search for sequence plugins"
+msgstr "搜索序列插件的缺省路径"
+msgid "Select the default sequence plugin location"
+msgstr "请选择选择序列插件的缺省路径"
+
+msgid "Render: "
+msgstr "渲染："
+msgid "The default directory for rendering output"
+msgstr "渲染输出的缺省路径"
+msgid "Select the default render output location"
+msgstr "请选择渲染输出的缺省路径"
+
+msgid "Python: "
+msgstr ""
+msgid "The default directory to search for Python scripts"
+msgstr "搜索Python脚本的缺省路径"
+msgid "Select the default Python script location"
+msgstr "请选择Python脚本的缺省路径"
+
+msgid "Sounds: "
+msgstr "声音："
+msgid "The default directory to search for sounds"
+msgstr "搜索声音文件的缺省路径"
+msgid "Select the default sound location"
+msgstr "请选择声音文件的缺省路径"
+
+msgid "Temp: "
+msgstr ""
+msgid "The directory for storing temporary save files"
+msgstr "保存自动保存文件的缺省路径"
+msgid "Select the default temporary save file location"
+msgstr "请选择保存自动保存文件的缺省路径"
+
+#System & OpenGL
+msgid "System & OpenGL"
+msgstr "系统和OpenGL"
+
+msgid "Win Codecs:"
+msgstr "Windows的视频编码："
+
+msgid "Enable all codecs"
+msgstr "允许使用所有编码"
+msgid "Allows all codecs for rendering (not guaranteed)"
+msgstr "渲染时可以选择所有的编码（不保证可用）"
+
+
+msgid "Audio:"
+msgstr "音频："
+msgid "Mixing buffer 256"
+msgstr ""
+msgid "Set audio buffer size to 256 samples"
+msgstr "音频缓冲的大小设置为256次采样"
+msgid "Set audio buffer size to 512 samples"
+msgstr "音频缓冲的大小设置为512次采样"
+msgid "Set audio buffer size to 1024 samples"
+msgstr "音频缓冲的大小设置为1024次采样"
+msgid "Set audio buffer size to 2048 samples"
+msgstr "音频缓冲的大小设置为2048次采样"
+
+
+msgid "Keyboard:"
+msgstr "键盘："
+
+msgid "Emulate Numpad"
+msgstr "模拟小键盘"
+msgid "Causes the 1 to 0 keys to act as the numpad (useful for laptops)"
+msgstr "让数字键1～0起小键盘对应键的作用（对本本有用）"
+msgid "Disable Caps Lock"
+msgstr "关闭大写"
+msgid "Disables the Caps Lock key when entering text"
+msgstr "输入文字时关闭大写"
+
+
+msgid "System:"
+msgstr "系统："
+
+msgid "Disable Sound"
+msgstr "禁声"
+msgid "Disables sounds from being played"
+msgstr "不允许播放声音"
+
+msgid "Filter File Extensions"
+msgstr "过滤文件"
+msgid "Display only files with extensions in the image select window"
+msgstr "在图像选择窗口里面只显示有扩展名的文件"
+
+msgid "OpenGL:"
+msgstr ""
+
+msgid "Mipmaps"
+msgstr ""
+msgid "Toggles between mipmap textures on (beautiful) and off (fast)"
+msgstr "在打开mipmap纹理（画面靓）和关闭mipmap纹理（速度快）之间切换"
+
+msgid "Vertex Arrays"
+msgstr "顶点数组"
+msgid "Toggles between vertex arrays on (less reliable) and off (more reliable)"
+msgstr "在开启顶点数组（不大可靠）和关闭顶点数组（教可靠）之间切换"
+
+
+#????
+msgid "Log Events to Console"
+msgstr ""
+msgid "Display a list of input events in the console"
+msgstr ""
+msgid "Select console output method"
+msgstr ""
+
+msgid "Lines:"
+msgstr ""
+msgid "Maximum number of internal console lines"
+msgstr ""
+
+###########################################################
+###
+###  Text Editor
+###
+###########################################################
+msgid "Hides line numbers"
+msgstr "不显示程序行数"
+msgid "Displays line numbers"
+msgstr "显示程序行数"
+
+msgid "Browses Datablock"
+msgstr "浏览数据块"
+
+msgid "Displays available fonts"
+msgstr "可供选择的字体大小"
+
+msgid "File %t|New %x0|Open... %x1|Save %x2|Save As...%x3"
+msgstr "文件 %t|新建 %x0|打开... %x1|保存 %x2|另存为...%x3"
+msgid "LOAD TEXT FILE"
+msgstr "打开文本文件 "
+msgid "SAVE TEXT FILE"
+msgstr "保存文本文件"
+msgid "Save over?"
+msgstr "是否覆盖？"
+msgid "Create new file?"
+msgstr "是否创建新文件？"
+msgid "Unable to save file"
+msgstr "无法保存文件"
+msgid "Jump to line:"
+msgstr "跳到行："
+msgid "Really delete text?"
+msgstr "真的删除？"
+
+###########################################################
+###
+###  Audio Timeline
+###
+###########################################################
+msgid "SELECT WAV FILE"
+msgstr "选择WAVE文件"
+msgid "OPEN NEW"
+msgstr "打开新的"
+
+###########################################################
+###
+###  Video Sequence Editor
+###
+###########################################################
+
+msgid "Toggles image display"
+msgstr "切换显示图像"
+msgid "Zooms view in and out (CTRL+MiddleMouse)"
+msgstr "缩放视图（CTRL＋鼠标中键）"
+msgid "Zooms view to fit area"
+msgstr "缩放框选的区域"
+msgid "Clear"
+msgstr ""
+msgid "Forces a clear of all buffered images in memory"
+msgstr "清楚内存中保留的图像缓冲数据"
+
+###########################################################
+###
+###  UV/Image Editor
+###
+###########################################################
+msgid "Toggles constraining UV polygons to squares while editing"
+msgstr "编辑时保证UV多边形是正方形的"
+msgid "Toggles clipping UV with image size"
+msgstr "根据图像大小裁减UV"
+msgid "Toggles packed status of this Image"
+msgstr "把图像打包近当前项目"
+msgid "Load"
+msgstr "调入"
+msgid "Loads image - thumbnail view"
+msgstr "调入图像——用缩略图方式"
+msgid "Loads image - file select view"
+msgstr "调入图像——用文件选择方式"
+msgid "Replace"
+msgstr "替换"
+msgid "Replaces current image - thumbnail view"
+msgstr "替换当前图像——用缩略图方式"
+msgid "Replaces current image - file select view"
+msgstr "替换当前图像——用文件选择方式"
+msgid "Uses this image as a reflection map (Ignores UV Coordinates)"
+msgstr "把这幅图用作反射贴图（忽略UV坐标）"
+msgid "Sets the degree of repetition in the X direction"
+msgstr "X方向重复的频度"
+msgid "Sets the degree of repetition in the Y direction"
+msgstr "Y方向重复的频度"
+msgid "Anim"
+msgstr "动画"
+msgid "Toggles use of animated texture"
+msgstr "是否使用动画纹理"
+msgid "Displays the start frame of an animated texture. Click to change."
+msgstr "动画纹理的起始帧，点击可以修改"
+msgid "Displays the end frame of an animated texture. Click to change."
+msgstr "动画纹理的结束帧，点击可以修改"
+
+
+msgid "Speed"
+msgstr "速度"
+msgid "Displays Speed of the animation in frames per second. Click to change."
+msgstr "动画的速度（帧/秒），点击可以修改"
+
+msgid "SELECT IMAGE"
+msgstr "选择图像"
+###########################################################
+###
+###  NLA Editor
+###
+###########################################################
+
+msgid "Cycle"
+msgstr ""
+
+msgid "Enables TexturePaint Mode"
+msgstr ""
+msgid "Save"
+msgstr ""
+msgid "Saves image"
+msgstr ""
+msgid "Toggles forced redraw of other windows to reflect changes in real time"
+msgstr "允许重画其他的窗口，以便实时反映变化"
+
+###########################################################
+###
+###  Action Editor
+###
+###########################################################
+msgid "Sliders"
+msgstr ""
+msgid "Show action wiindow sliders"
+msgstr "显示动作窗口的滑杆"
+msgid "Hide action wiindow sliders"
+msgstr "隐藏动作窗口的滑杆"
+
+msgid "Bake"
+msgstr ""
+msgid "Generate an action with the constraint effects converted into ipo keys"
+msgstr ""
+
+msgid "Keeps this view displaying the current data regardless of what object is selected"
+msgstr "无论选择什么对象，都显示当前的数据"
+
+msgid "Displays number of users of this data. Click to make a single-user copy."
+msgstr "使用这个数据的用户数目。单击可以使它只有一个用户"
+
+###########################################################
+###
+###  IPO Curve Editor
+###
+###########################################################
+msgid "Toggles between Curve and Key display (KKEY)"
+msgstr "在显示曲线和关键帧之间切换（K键）"
+
+msgid "Can't change because of pinned data"
+msgstr "数据锁定，无法修改"
+msgid "Displays Object Ipos"
+msgstr "显示对象的Ipos"
+msgid "Displays Material Ipos"
+msgstr "显示材质的Ipos"
+msgid "Displays Channel Number of the active Material texture. Click to change."
+msgstr ""
+msgid "Display World Ipos"
+msgstr "显示是世界的Ipos"
+
+msgid "Displays Channel Number of the active World texture. Click to change."
+msgstr ""
+msgid "Display Curve Ipos"
+msgstr "显示曲线的Ipos"
+
+msgid "Display Camera Ipos"
+msgstr "显示相机的Ipos"
+msgid "Display Lamp Ipos"
+msgstr "显示灯的Ipos"
+msgid "Displays Channel Number of the active Lamp texture. Click to change."
+msgstr ""
+msgid "Displays VertexKeys Ipos"
+msgstr ""
+msgid "Displays Action Ipos"
+msgstr ""
+msgid "Displays Constraint Ipos"
+msgstr ""
+msgid "Displays Sequence Ipos"
+msgstr "显示序列的Ipos"
+
+msgid "Displays Sound Ipos"
+msgstr "显示声音的Ipos"
+msgid "Can't edit library data"
+msgstr "无法编辑库的数据"
+msgid "Copies the selected curves to the buffer"
+msgstr "拷贝选择的曲线到缓存里"
+msgid "Pastes the curves from the buffer"
+msgstr "复制缓存里面的曲线"
+msgid "Setsthe extend mode to constant"
+msgstr ""
+msgid "Setsthe extend mode to extrapolation"
+msgstr ""
+msgid "Sets the extend mode to cyclic"
+msgstr ""
+msgid "Sets the extend mode to cyclic extrapolation"
+msgstr ""
+
+###########################################################
+###
+###  3D ViewPort
+###
+###########################################################
+msgid "Toggles Layer visibility"
+msgstr "显示/关闭层"
+msgid "Locks layers and used Camera to Scene"
+msgstr "锁定场景之间的层和使用的相机"
+msgid "Toggles Local View (NumPad /)"
+msgstr "LocalView（小键盘的/）"
+msgid "Toggles Perspective mode (NumPad 5, Numpad 0)"
+msgstr "切换透视图方式（小键盘的5和0）"
+msgid "Selects Top, Front or Side views (Numpad 7, 1, 3)"
+msgstr "切换顶视图、前视图和左视图（小键盘的7、1、3）"
+msgid "Sets view draw mode to Boundbox, Wire, Solid, or Shaded (ZKEY, SHIFT+Z)"
+msgstr "显示模式Boundbox、Wire、Solid或者Shaded (ZKEY, SHIFT+Z)"
+msgid "Translates view (SHIFT+MiddleMouse)"
+msgstr "平移视图（SHIFT＋鼠标中键）"
+msgid "Enables Rotation or Scaling around boundbox center (COMMAKEY)"
+msgstr "绕boundbox的中心旋转或者缩放（“,”——逗号）"
+msgid "Enables Rotation or Scaling around median point"
+msgstr "绕中点旋转或者缩放"
+msgid "Enables Rotation or Scaling around cursor (DOTKEY)"
+msgstr "绕鼠标旋转或者缩放（“.”——句号"
+msgid "Enables Rotation or Scaling around individual object centers"
+msgstr "分别绕自己的中心旋转或者缩放"
+msgid "Toggles PoseMode (CTRL+TAB)"
+msgstr ""
+msgid "Toggles EditMode (TAB)"
+msgstr "编辑模式（TAB键）"
+msgid "Toggles VertexPaint Mode (VKEY)"
+msgstr "VertexPaint（V键）"
+msgid "Toggles WeightPaint Mode"
+msgstr ""
+msgid "Toggles TexturePaint Mode"
+msgstr ""
+msgid "Toggles FaceSelect Mode (FKEY)"
+msgstr "面选择模式（F键）"
+msgid "Copies the current pose to the buffer"
+msgstr "把当前的pose拷贝到缓存"
+msgid "Pastes the pose from the buffer"
+msgstr "粘贴缓存里的pose"
+msgid "Pastes the mirrored pose from the buffer"
+msgstr "粘贴缓存里pose的镜像"
+msgid "Displays a Background picture"
+msgstr "显示背景图像"
+msgid "Toggles Proportional Vertex Editing (OKEY)"
+msgstr "对称的顶点编辑模式（O键）"
+msgid "Enables Sharp falloff (SHIFT+OKEY)"
+msgstr ""
+msgid "Enables Smooth falloff (SHIFT+OKEY)"
+msgstr ""
+msgid "Renders this view (Hold SHIFT for Anim render)"
+msgstr "渲染当前视窗（同时按下SHIFT可以渲染动画）"
+msgid "Starts game (PKEY)"
+msgstr "开始游戏（P键）"
