@@ -38,10 +38,14 @@
 
 require 5.000;
 
-# globals
-use vars qw( $Home @Pwd $Mymtime $SaveDate $Hostname $Mailer);
-
-use Cwd;
+# globals. most of 'em are evil ugly globals
+use vars qw( $VERSION $UNAME $Home @Pwd $Mymtime $SaveDate
+			 $Hostname $Mailer $Tinderbox_server $BuildAdministrator
+			 $BuildDepend $ReportStatus $BuildOnce $BuildAutotools
+			 $BuildType %BinaryName $Make $CVS $CVSCO $BuildSleep
+			 $BuildTree $BuildTag $BuildName $Topsrcdir $BuildObjDir
+			 $BuildObjName $ConfigGuess $GuessConfig $FE $BuildModule
+			 $OS $OSVer $logfile $StartTime $StartDir);
 
 # check which mail system we're going to use
 eval "use Mail::Send";
@@ -56,29 +60,15 @@ if ($@) {
 	$Mailer = 'Mail::Send';
 }
 
+use Cwd;
 use Sys::Hostname;
 use File::Compare;
 use File::Copy;
-#use strict;
-
-# config section variables
-use vars qw( $SEMA $VERSION $UNAME );
-
-&gethome;
-
-$Hostname = hostname();
-$Hostname =~ s/\..*$//;
-
-$SEMA = "$Home/.tinderpid";
-$VERSION = '$Revision$';
-$UNAME = `uname`;
-chomp($UNAME);
-
-$Mymtime = 0;
-my $StartDir = "";
+use strict;
 
 sub SendMail{
 	my ($subject, $body) = @_;
+	my $msg;
 
 	if ($Mailer eq 'Net::SMTP')
 	{
@@ -107,27 +97,29 @@ sub SendMail{
 			die "Set the environment variable SMTP_SERVER to your outgoing mail server\n";
 		}
 	} else {
-        	$msg = new Mail::Send;
+		$msg = new Mail::Send;
+		$msg->subject($subject); 
+		$msg->to($Tinderbox_server);
 
-        	$msg->subject($subject); 
-        	$msg->to($Tinderbox_server);
-		# use the command below if you want Mail::Send to use Net::SMTP instead
-		# of talking to mail or sendmail directly
-        	# $fh = $msg->open('smtp', Server => $ENV{"SMTP_SERVER"}, Hello => 'localhost');
-        	$fh = $msg->open;
+		# use the command below if you want Mail::Send to use Net::SMTP
+		# instead of talking to mail or sendmail directly
+		# $fh = $msg->open('smtp', Server => $ENV{"SMTP_SERVER"},
+		#				    Hello => 'localhost');
+		my $fh = $msg->open;
 
 		print $fh "$body\n";
 		$fh->close;
 	}
 } #EndSub-SendMail
 
-sub gethome {
+sub GetHome {
 	@Pwd = getpwuid($<);
 	$Home = $ENV{HOME} || $ENV{LOGDIR} || $Pwd[7] or
 		die "no home directory for user $<";
 } #EndSub-gethome
 
-sub justme {
+sub JustMe {
+	my $SEMA = "$Home/.tinderpid";
 	if (open SEMA) {
 		my $pid;
 		chop($pid = <SEMA>);
@@ -140,9 +132,22 @@ sub justme {
 		}
 		close SEMA;
 	}
-} #EndSub-justme
+	# If we're still here, write our PID
+	open (SEMA, "> $SEMA") or die "can't write $SEMA: $!";
+	print SEMA "$$\n";
+	close (SEMA) or die "can't close $SEMA: $!";
+} #EndSub-JustMe
 
 sub InitVars {
+	$Hostname = hostname();
+	$Hostname =~ s/\..*$//;
+
+	$UNAME = `uname`;
+	chomp($UNAME);
+
+	$Mymtime = 0;
+	$StartDir = "";
+
     $BuildAdministrator = "$ENV{'USER'}\@$ENV{'HOST'}";
 
     $BuildDepend = 1;	# depend or clobber
@@ -170,6 +175,7 @@ sub InitVars {
 		$BinaryName{'blenderdynamic'} = 'blender';
 		$BuildType = 'auto';
 	}
+	$VERSION = '$Revision$';
 	# append version to BuildType
 	my $BTVersion = $VERSION;
 	$BTVersion =~ s/^.*\d+\.(\d+).*$/$1/;
@@ -208,8 +214,6 @@ sub ConditionalArgs {
 	$BuildTree = 'source';
 	if ($UNAME eq 'Darwin') {
 		$FE = 'blenderplayer,blenderdynamic'; 
-#	} elsif ($UNAME eq 'Linux') {
-#		$FE = 'blenderdynamic,Dblenderdynamic,blenderplugin,blenderpluginXPCOM'; 
 	} else {
 		$FE = 'blenderdynamic'; 
 	}
@@ -235,7 +239,7 @@ sub GetSystemInfo {
 	print "GuessConfig set to $GuessConfig\n";
 
     $BuildName = $GuessConfig; #"HansBuildName";
-    $DirName   = $GuessConfig; #"HansDirName";;
+    my $DirName   = $GuessConfig; #"HansDirName";;
 
 	# then we let tinderbox do it all over in their style
     $OS = `uname -s`;
@@ -245,12 +249,6 @@ sub GetSystemInfo {
 
     if ( $OS eq 'IRIX64' ) {
 		$OS = 'IRIX';
-    }
-
-    $RealOSVer = $OSVer;
-    
-    if ( $OS eq 'Linux' ) {
-		$RealOSVer = substr($OSVer,0,3);
     }
 
     $logfile = "${DirName}.log";
@@ -334,7 +332,7 @@ sub BuildIt {
 	}
 
 	if ( time - $LastTime < (60 * $BuildSleep) ) {
-	    $SleepTime = (60 * $BuildSleep) - (time - $LastTime);
+	    my $SleepTime = (60 * $BuildSleep) - (time - $LastTime);
 	    print "\n\nSleeping $SleepTime seconds ...\n";
 	    sleep($SleepTime);
 	}
@@ -345,7 +343,7 @@ sub BuildIt {
 	$StartTimeStr = &CVSTime($StartTime);
 	
 	&StartBuild if ($ReportStatus);
- 	$CurrentDir = getcwd();
+ 	my $CurrentDir = getcwd();
 	if ( $CurrentDir ne $StartDir ) {
 	    print "startdir: $StartDir, curdir $CurrentDir\n";
 	    die "curdir != startdir";
@@ -355,7 +353,7 @@ sub BuildIt {
 	print LOG "Build Administrator is $BuildAdministrator\n";
 	&PrintEnv;
 	
-	$BuildStatus = 0;
+	my $BuildStatus = 0;
 
     mkdir("develop", 0777);
     chdir("develop") || die "Couldn't enter develop";
@@ -476,7 +474,7 @@ sub BuildIt {
 	}
 	close(BUILD);
 
-	$AllBuildStatusStr = 'success';
+	my $AllBuildStatusStr = 'success';
 	foreach $fe (@felist) {
 		if (&BinaryExists($fe)) {
 			print LOG "Yes, this build step is SUCCESSFUL\n";
@@ -489,7 +487,7 @@ sub BuildIt {
 
 		print LOG "Build Status = $BuildStatus\n";
 
-	    $BuildStatusStr = ( $BuildStatus ? 'busted' : 'success' );
+	    my $BuildStatusStr = ( $BuildStatus ? 'busted' : 'success' );
 
 #	    # Hans: scp action added
 #	    if ( $BuildStatusStr eq 'success' ) {
@@ -577,9 +575,9 @@ sub BuildIt {
 
 	$Message = '';
 	while (<LOG>) {
-		for ($q=0;;$q++) {
-			$val = $q * 1000;
-			$Output = substr($_, $val, 1000);
+		for (my $q=0;;$q++) {
+			my $val = $q * 1000;
+			my $Output = substr($_, $val, 1000);
 
 			last if $Output eq undef;
 
@@ -636,7 +634,7 @@ sub BinaryExists {
 	my($fe) = @_;
 	my($Binname);
 	$fe = 'x' if (!defined($fe)); 
-	$BinName = $BuildObjName . '/' . $BinaryName{"$fe"};
+	my $BinName = $BuildObjName . '/' . $BinaryName{"$fe"};
 	print LOG "Testing existence of " . $BinName . "\n"; 
 	if ((-e $BinName) && (-x $BinName) && (-s $BinName)) {
 		1;
@@ -647,10 +645,9 @@ sub BinaryExists {
 
 sub DeleteBinary {
     my($fe) = @_;
-    my($BinName);
     $fe = 'x' if (!defined($fe)); 
 
-    $BinName = $BuildObjName . '/' . $BinaryName{"$fe"};
+    my $BinName = $BuildObjName . '/' . $BinaryName{"$fe"};
     print LOG "Deleting             $BinName\n";
     unlink ($BinName) || print LOG "Unlinking             $BinName FAILED\n";
 
@@ -702,11 +699,10 @@ sub PrintEnv {
 } #EndSub-PrintEnv
 
 # 'Main' function
+print     "------------------- GetHome\n";
+&GetHome;
 print     "------------------- JustMe\n";
-justme();
-open (SEMA, "> $SEMA") or die "can't write $SEMA: $!";
-print SEMA "$$\n";
-close (SEMA) or die "can't close $SEMA: $!";
+&JustMe();
 print     "------------------- InitVars\n";
 &InitVars;
 print     "------------------- ConditionalArgs\n";
