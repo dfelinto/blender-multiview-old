@@ -32,13 +32,18 @@
 # install from ports: python, openal, jpeg, png, sdl, nspr
 
 rm -f /tmp/.nanguess
-export MAKE=gmake
-export NANBLENDERHOME=`pwd`
-export MAKEFLAGS="-w -I $NANBLENDERHOME/source --no-print-directory"
-export HMAKE="$NANBLENDERHOME/source/tools/hmake/hmake"
+MAKE=gmake
+NANBLENDERHOME=`pwd`
+MAKEFLAGS="-w -I $NANBLENDERHOME/source --no-print-directory"
+HMAKE="$NANBLENDERHOME/source/tools/hmake/hmake"
 
-$HMAKE -C intern/
+export MAKE NANBLENDERHOME MAKEFLAGS HMAKE
+
+$HMAKE -C extern/
 if [ $? -eq 0 ]; then
-	$HMAKE -C source/
+	$HMAKE -C intern/
+	if [ $? -eq 0 ]; then
+		$HMAKE -C source/
+	fi
 fi
 
