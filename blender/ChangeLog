@@ -1,11 +1,11 @@
-Initall ChangeLog for Blender 2.26 Sun Feb  9 10:53:10 UTC 2003
+Initial Change Log for Blender 2.26 Sun Feb  9 10:53:10 UTC 2003
 
 New features of Blender 2.26:
 -----------------------------
 
-- Mousewheel support for all windows.
+- Mouse wheel support for all windows.
 
-- A "fake user" button next to the material popup.
+- A "fake user" button next to the material pop-up.
    (basically a shortcut for pressing Shift+F4 and F)
 
 - Added support for manipulating Ipo bezier handles through
@@ -26,14 +26,14 @@ New features of Blender 2.26:
        causes blender to select all keys for the channel or
        constraint channels that are to the left of the selection.
 
-- Simple shaded+wire and solid+wire drawmodes. It basically draws
-   the wireframe after drawing the model in solid/shaded/textured mode.
+- Simple shaded+wire and solid+wire draw modes. It basically draws
+   the wire frame after drawing the model in solid/shaded/textured mode.
    The user can set this per object using the "Wire" button in the
    edit buttons window.
 
-- A headerbutton for drawing linenumbers in the texteditor.
+- A header button for drawing line numbers in the text editor.
 
-- Ctrl keystrokes for cut/copy/paste/undo/redo in the texteditor.
+- Ctrl keystrokes for cut/copy/paste/undo/redo in the text editor.
 
 - Support for BMP images.
 
@@ -52,10 +52,10 @@ New features of Blender 2.26:
 - Moved to ode for python physics...
 - WM_Hints were also added for window managers that look for that sort of thing,
 
-- a few extra shortcuts added to the spacebar menu.
+- a few extra shortcuts added to the space bar menu.
 - Plugins work again on most platforms (MacOSX still not working).  
 
-Bugfixes:
+Bug fixes:
 ---------
 
 - Make switching to bottom, back, and left view (shift+pad7, shift+pad1
@@ -65,7 +65,7 @@ Bugfixes:
 
 - Ignore WM_DELETE_WINDOW on IRIX.
 
-- Icons in the imageselect window get drawn properly.
+- Icons in the image select window get drawn properly.
 
 
 Still Not working:
@@ -74,3 +74,7 @@ Still Not working:
 Plugins in MacOSX
 
 Older Python API
+
+New build system using configure (this is partially working but
+        needs some work)
+
