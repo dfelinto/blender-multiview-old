@@ -41,6 +41,7 @@ libblender_blenkernel_la_SOURCES = \
 	BKE_sca.h \
 	BKE_scene.h \
 	BKE_screen.h \
+	BKE_script.h \
 	BKE_sound.h \
 	BKE_subsurf.h \
 	BKE_text.h \
@@ -78,6 +79,7 @@ libblender_blenkernel_la_SOURCES = \
 	intern/lattice.c \
 	intern/packedFile.c \
 	intern/text.c \
+	intern/script.c \
 	intern/bmfont.c \
 	intern/font.c \
 	intern/library.c \

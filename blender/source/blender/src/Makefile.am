@@ -28,6 +28,7 @@ libblender_blendersrc_la_SOURCES = \
 	drawobject.c \
 	drawoops.c \
 	drawscene.c \
+	drawscript.c \
 	drawseq.c \
 	drawsound.c \
 	drawtext.c \
@@ -70,6 +71,7 @@ libblender_blendersrc_la_SOURCES = \
 	header_ipo.c \
 	header_nla.c \
 	header_oops.c \
+	header_script.c \
 	header_seq.c \
 	header_sound.c \
 	header_text.c \

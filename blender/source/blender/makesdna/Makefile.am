@@ -34,6 +34,7 @@ libblender_makesdna_la_SOURCES = \
 	DNA_radio_types.h \
 	DNA_scene_types.h \
 	DNA_screen_types.h \
+	DNA_script_types.h \
 	DNA_scriptlink_types.h \
 	DNA_sdna_types.h \
 	DNA_sensor_types.h \
