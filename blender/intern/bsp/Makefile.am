@@ -1,4 +1,7 @@
 noinst_LTLIBRARIES = libblender_BSP.la
+INCLUDES = -I$(top_srcdir)/intern/container \
+	-I$(top_srcdir)/intern/moto/include \
+	-I$(top_srcdir)/intern/memutil
 
 libblender_BSP_la_SOURCES = \
 	extern/CSG_BooleanOps.h \
