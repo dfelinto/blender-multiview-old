@@ -1,0 +1,67 @@
+New features of Blender 2.26:
+-----------------------------
+
+- Mousewheel support for all windows. Two user settings are added in the
+   top window for mousewheel usage. The zoom direction [WZoom] and the
+   number of lines that get scrolled [WLines] can be set here.
+   The mousewheel also works to increase/decrease the size of the circle
+   while selecting or doing proportional scaling. 
+
+- A "fake user" button next to the material popup has been added, to keep
+   the data when it has been unlinked from an object. (Basically a shortcut
+   for pressing Shift+F4 and F)
+
+- Added support for manipulating Ipo bezier handles through the action
+   window. Selecting action keys and pressing VKEY, HKEY, or shift-HKEY
+   modifies the handles of the keys in the same way it does in the IPO
+   window.
+
+- CKEY in the action window scrolls the window so that the current frame
+   is in the center.
+
+- Extra selection support for the action window, including:
+     - border select initiated in the channel names border selects the
+       channels and constraint channels.
+     - right click or border select initiated in the horizontal scroll
+       causes blender to select all keys for the selected frames.
+     - right click or border select in the vertical scroll causes blender
+       to select all keys for the channel or constraint channels that are
+       to the left of the selection.
+
+- X-ray bones support for showing armature bones in shaded mode (disabled
+   depth test). The new x-ray button is added in the edit buttons when the
+   armature is selected.
+
+- TKEY in the action window changes the Ipo type (constant/linear/bezier)
+   for the Ipo curves owned by the selected channels
+
+- Simple shaded+wire and solid+wire drawmodes. It basically draws the
+   wireframe after drawing the model in solid/shaded/textured mode.
+   The user can set this per object using the "Wire" button in the edit
+   buttons window.
+
+- A headerbutton for drawing linenumbers in the texteditor.
+
+- Ctrl keystrokes for cut/copy/paste/undo/redo in the texteditor.
+
+- NTSC render preset (Image size - 720x480, Aspect ratio - 10x11, 30 fps)
+
+
+Bugfixes:
+---------
+
+- Make switching to bottom, back, and left view (shift+pad7, shift+pad1
+   and shift+pad1) work when in camera view.
+
+- Full screen by default under Unix.
+
+- Ignore WM_DELETE_WINDOW on IRIX.
+
+- Icons in the imageselect window get drawn properly.
+
+
+Workarounds:
+------------
+
+- A small modification is made that prevents closing the renderwindow on
+   Mac OSX, so the GUI won't becoming irresponsive.
