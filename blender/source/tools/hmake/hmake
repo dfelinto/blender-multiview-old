@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/env perl
 # HMAKE, a filter and ANSI color wrapper for make and compiler output.
 # Copyright 2001 by Hans Lambermont <hans@lambermont.dyndns.org>
 #
