@@ -10,7 +10,8 @@ internlibs = \
 	intern/container/libblender_CTR.la \
 	intern/memutil/libblender_MEM.la \
 	intern/iksolver/libblender_IK.la \
-	intern/moto/libblender_MT.la
+	intern/moto/libblender_MT.la \
+	intern/SoundSystem/libsoundsystem.la
 
 if BlenderGAME
 PLAYER=blenderplayer

@@ -103,7 +103,7 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/blenloader \
 	-I$(top_srcdir)/source/blender/python \
 	-I$(top_srcdir)/source/kernel/gen_system \
-	-I$(top_srcdir)/source/gameengine/SoundSystem \
+	-I$(top_srcdir)/intern/SoundSystem \
 	-I$(top_srcdir)/source/blender/readstreamglue \
 	-I$(top_srcdir)/source/blender/img \
 	-I$(top_srcdir)/source/blender/quicktime \

@@ -1,4 +1,4 @@
-noinst_LTLIBRARIES = libgameblender_soundsystem.la
+noinst_LTLIBRARIES = libsoundsystem.la
 
 if BlenderFMOD
 FMOD_DEVICE = \
@@ -12,25 +12,11 @@ FMOD_DIST = \
 	fmod/SND_FmodDevice.h
 endif
 
-if BlenderOPENAL
-OPENAL_DEVICE = \
-	openal/SND_OpenALDevice.cpp \
-	openal/SND_OpenALDevice.h \
-	openal/pthread_cancel.cpp
-OPENAL_DIST =
-else
-OPENAL_DEVICE =
-OPENAL_DIST = \
-	openal/SND_OpenALDevice.cpp \
-	openal/SND_OpenALDevice.h \
-	openal/pthread_cancel.cpp
-endif
-
 #there is a test file for those who want to build it... as long as you edit this file
 
 #note fmod might be a windows only file as it includes from the windows library
 
-libgameblender_soundsystem_la_SOURCES = \
+libsoundsystem_la_SOURCES = \
 	SND_C-api.h \
 	SND_CDObject.h \
 	SND_DependKludge.h \
@@ -60,15 +46,16 @@ libgameblender_soundsystem_la_SOURCES = \
 	intern/SND_Utils.cpp \
 	intern/SND_WaveCache.cpp \
 	intern/SND_WaveSlot.cpp \
-	$(OPENAL_DEVICE)
+	openal/SND_OpenALDevice.cpp \
+	openal/SND_OpenALDevice.h \
+	openal/pthread_cancel.cpp
 
 INCLUDES = -I$(top_srcdir)/lib/windows/fmod/include \
-	-I$(top_srcdir)/source/gameengine/SoundSystem/intern \
+	-I$(top_srcdir)/intern/SoundSystem/intern \
 	-I$(top_srcdir)/intern/moto/include \
 	-I$(top_srcdir)/intern/string \
-	-I$(top_srcdir)/source/kernel/gen_system \
-	-I$(top_srcdir)/source/gameengine/SoundSystem/dummy \
-	-I$(top_srcdir)/source/gameengine/SoundSystem/openal
+	-I$(top_srcdir)/intern/SoundSystem/dummy \
+	-I$(top_srcdir)/intern/SoundSystem/openal
 
 EXTRA_DIST = \
 	Makefile \
@@ -76,5 +63,4 @@ EXTRA_DIST = \
 	fmod/Makefile \
 	intern/Makefile \
 	openal/Makefile \
-	$(FMOD_DIST) \
-	$(OPENAL_DIST)
+	$(FMOD_DIST)

@@ -7,7 +7,7 @@ gameplayerlib =
 endif
 
 SUBDIRS = BlenderRoutines Converter Expressions GameLogic Ketsji \
-	Rasterizer SceneGraph SoundSystem Network Physics $(gameplayerdir)
+	Rasterizer SceneGraph Network Physics $(gameplayerdir)
 
 noinst_LTLIBRARIES = libblender_gameengine.la $(gameplayerlib)
 
@@ -20,7 +20,6 @@ libblender_gameengine_la_LIBADD = \
 	Ketsji/libgameblender_ketsji.la \
 	Rasterizer/libgameblender_rasterizer.la \
 	SceneGraph/libgameblender_scenegraph.la \
-	SoundSystem/libgameblender_soundsystem.la \
 	Network/libgameblender_network.la \
 	Physics/libgameblender_physics.la
 

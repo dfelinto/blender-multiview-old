@@ -1,4 +1,4 @@
 LIBS =
 
-SUBDIRS = string ghost guardedalloc bmfont moto container memutil \
-	decimation bsp iksolver
+SUBDIRS = SoundSystem string ghost guardedalloc bmfont moto container \
+	memutil decimation bsp iksolver
