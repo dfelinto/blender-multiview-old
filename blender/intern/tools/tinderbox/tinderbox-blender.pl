@@ -88,7 +88,9 @@ sub InitVars {
 
     #relative path to binary
 	if ($UNAME eq 'Darwin') {
+		$BinaryName{'blendercreator'} = 'blendercreator';
 		$BinaryName{'blenderplayer'} = 'blenderplayer';
+		$BinaryName{'blenderpublisher'} = 'blenderpublisher';
 #		$BinaryName{'Dblenderplayer'} = 'debug/blenderplayer';
 	} elsif ($UNAME eq 'CYGWIN_NT-5.0') {
 		$BinaryName{'blendercreator'} = 'blendercreator.exe';
@@ -138,13 +140,13 @@ sub ConditionalArgs {
     if ( $BuildClassic ) {
     } else {
 		$BuildTree = 'source';
-#		if ($UNAME eq 'Darwin') {
-#			$FE = 'blenderplayer,Dblenderplayer'; 
+		if ($UNAME eq 'Darwin') {
+			$FE = 'blenderplayer,blendercreator,blenderpublisher'; 
 #		} elsif ($UNAME eq 'Linux') {
 #			$FE = 'blendercreator,Dblendercreator,blenderpublisher,Dblenderpublisher,blenderplugin,blenderpluginXPCOM'; 
-#		} else {
+		} else {
 			$FE = 'blendercreator'; 
-#		}
+		}
 		$BuildModule = 'blender';
     }
     $CVSCO .= " -r $BuildTag" if ( $BuildTag ne '');
