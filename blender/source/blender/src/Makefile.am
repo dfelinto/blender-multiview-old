@@ -77,6 +77,7 @@ libblender_blendersrc_la_SOURCES = \
 	imasel.c \
 	interface.c \
 	interface_panel.c \
+	interface_draw.c \
 	keyval.c \
 	mainqueue.c \
 	mywindow.c \
