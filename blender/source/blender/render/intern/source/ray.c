@@ -731,9 +731,10 @@ static short intersection(Isect *is)
 
 		divdet= t20*x0+t21*x1+t22*x2;
 		if(divdet!=0.0) {
+			float u;
 			divdet= 1.0/divdet;
-			float u= det1*divdet;
-		
+			u = det1*divdet;
+			
 			if(u<0.0 && u>-1.0) {
 				float v, cros0, cros1, cros2;
 				cros0= m1*t22-m2*t21;
