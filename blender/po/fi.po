@@ -1,6 +1,6 @@
-msgid ""
+﻿msgid ""
 msgstr ""
-"Last-Translator: bastian salmela <bastiansalmela@users.sourceforge.net>\n"
+"Last-Translator: Nathan Letwory<jesterking@letwory.net>\n"
 "PO-Revision-Date: 2003-04-18 18:30+0300\n"
 "Language-Team: Finnish\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -16,16 +16,16 @@ msgstr ""
 ###
 ###########################################################
 msgid "Start the rendering"
-msgstr "Aloita renderÃ¶inti"
+msgstr "Aloita renderöinti"
 
 msgid "Display edge settings"
-msgstr "NÃ¤ytÃ¤ reunan asetukset"
+msgstr "Näytä reunan asetukset"
 
 msgid "Enable shadow calculation"
 msgstr "Laske varjot"
 
 msgid "Start rendering a sequence"
-msgstr "Aloita renderÃ¶inti"
+msgstr "Aloita renderöinti"
 
 ###########################################################
 ###
@@ -33,7 +33,7 @@ msgstr "Aloita renderÃ¶inti"
 ###
 ###########################################################
 msgid "ADD"
-msgstr "LISÃÃ"
+msgstr "LISÄÄ"
 
 msgid "FILE"
 msgstr "TIEDOSTO"
@@ -48,19 +48,19 @@ msgid "MESH"
 msgstr ""
 
 msgid "CURVE"
-msgstr "KÃYRÃ"
+msgstr "KÄYRÄ"
 
 msgid "KEY"
 msgstr ""
 
 msgid "VIEW"
-msgstr "NÃKYMÃ"
+msgstr "NÄKYMÄ"
 
 msgid "RENDER"
-msgstr "RENDERÃI"
+msgstr "RENDERÖI"
 
 msgid "SEQUENCE"
-msgstr ""
+msgstr "SEKVENSSI"
 
 ###########################################################
 ###
@@ -107,7 +107,7 @@ msgid "Mesh"
 msgstr ""
 
 msgid "Curve"
-msgstr "KÃ¤yrÃ¤"
+msgstr "Käyrä"
 
 msgid "Surface"
 msgstr "Pinta"
@@ -119,7 +119,7 @@ msgid "MetaBall"
 msgstr "Metapallo"
 
 msgid "Empty"
-msgstr "TyhjÃ¤"
+msgstr "Tyhjä"
 
 msgid "Camera"
 msgstr "Kamera"
@@ -171,16 +171,16 @@ msgstr "&gt;Apina"
 ###
 ###########################################################
 msgid "&gt;Bezier Curve"
-msgstr "&gt;Bezier kÃ¤yrÃ¤"
+msgstr "&gt;Bezier käyrä"
 
 msgid "&gt;Bezier Circle"
-msgstr "&gt;Bezier ympyrÃ¤"
+msgstr "&gt;Bezier ympyrä"
 
 msgid "&gt;Nurbs Curve"
-msgstr "&gt;Nurbs kÃ¤yrÃ¤"
+msgstr "&gt;Nurbs käyrä"
 
 msgid "&gt;Nurbs Circle"
-msgstr "&gt;Nurbs ympyrÃ¤"
+msgstr "&gt;Nurbs ympyrä"
 
 msgid "&gt;Path"
 msgstr "&gt;Polku"
@@ -191,10 +191,10 @@ msgstr "&gt;Polku"
 ###
 ###########################################################
 msgid "&gt;Curve"
-msgstr "&gt;KÃ¤yrÃ¤"
+msgstr "&gt;käyrä"
 
 msgid "&gt;Circle"
-msgstr "&gt;YmpyrÃ¤"
+msgstr "&gt;ympyrä"
 
 msgid "&gt;Suface"
 msgstr "&gt;Pinta"
@@ -223,10 +223,10 @@ msgid "Reopen Last"
 msgstr "Avaa uudelleen"
 
 msgid "Append"
-msgstr "LisÃ¤Ã¤"
+msgstr "Lisää"
 
 msgid "Save As"
-msgstr "Tallenna nimellÃ¤"
+msgstr "Tallenna nimellä"
 
 msgid "Save"
 msgstr "Tallenna"
@@ -256,7 +256,7 @@ msgstr "Lopeta"
 ###########################################################
 #, fuzzy
 msgid "(De)Select All"
-msgstr "(Ã¤lÃ¤)Valitse kaikki"
+msgstr "(Älä )Valitse kaikki"
 
 msgid "Select Linked"
 msgstr "Valitse linkattu"
@@ -280,13 +280,13 @@ msgid "Grabber"
 msgstr "Tartunta-elin :)"
 
 msgid "Rotate"
-msgstr "KierrÃ¤"
+msgstr "Kierrä"
 
 msgid "Scale"
 msgstr "Skaalaa"
 
 msgid "Shrink/Fatten"
-msgstr "PienennÃ¤/Suurenna"
+msgstr "Pienennä/Suurenna"
 
 msgid "Shear"
 msgstr ""
@@ -304,29 +304,29 @@ msgstr "Napsahdus valikko"
 ###
 ###########################################################
 msgid "Clear Size"
-msgstr "TyhjennÃ¤ koko"
+msgstr "Tyhjennä koko"
 
 msgid "Clear Rotation"
-msgstr "TyhjennÃ¤ kierto"
+msgstr "Tyhjennä kierto"
 
 msgid "Clear Location"
-msgstr "TyhjennÃ¤ sijainti"
+msgstr "Tyhjennä sijainti"
 
 #, fuzzy
 msgid "Clear Origin"
-msgstr "TyhjennÃ¤ keskusta"
+msgstr "Tyhjennä keskusta"
 
 msgid "Make Parent"
-msgstr "Aseta isÃ¤nnÃ¤ksi"
+msgstr "Aseta isännäksi"
 
 msgid "Clear Parent"
-msgstr "TyhjennÃ¤ isÃ¤ntÃ¤"
+msgstr "Tyhjennä isännäksi"
 
 msgid "Make Track"
 msgstr "Aseta seuranta"
 
 msgid "Clear Track"
-msgstr ""
+msgstr "Poista seuranta"
 
 msgid "Image Displist"
 msgstr ""
@@ -343,30 +343,30 @@ msgstr ""
 ###
 ###########################################################
 msgid "Move To Layer"
-msgstr "SiirrÃ¤ tasolle"
+msgstr "Siirrä tasolle"
 
 msgid "Delete All"
 msgstr "Poista kaikki"
 
 msgid "Apply Size/Rot"
-msgstr ""
+msgstr "Suorita koko/rotaatio"
 
 msgid "Apply Deform"
-msgstr ""
+msgstr "Suorita muodonmuutos"
 
 msgid "Join"
-msgstr "YhdistÃ¤"
+msgstr "Yhdistä"
 
 #msgid "Make Local"
-#msgstr "Mache Lokal"
+#msgstr "Muuta paikalliseksi"
 #msgid "Select Linked"
-#msgstr "Selektiere verknÃÂ¼pfte"
+#msgstr "Valitse linkityt"
 #msgid "Make Links"
-#msgstr "Erstelle Links"
+#msgstr "Muodosta linkit"
 #msgid "Copy Menu"
-#msgstr "MenÃÂ¼ Kopieren"
+#msgstr "Kopiointivalikko"
 #msgid "Convert Menu"
-#msgstr "MenÃÂ¼ Konvertieren"
+#msgstr "Konvertointivalikko"
 msgid "Boolean Op"
 msgstr ""
 
@@ -388,7 +388,7 @@ msgid "Make edge/face"
 msgstr "Tee reuna/pinta"
 
 msgid "Fill"
-msgstr "TÃ¤ytÃ¤"
+msgstr "Täytä"
 
 msgid "Split"
 msgstr "Halkaise"
@@ -426,7 +426,7 @@ msgid "Auto Handle"
 msgstr "Automaattinen kahva"
 
 msgid "Vect Handle"
-msgstr "Vektori kahva"
+msgstr "Vektorikahva"
 
 msgid "Specials"
 msgstr "Erikoisuudet"
@@ -437,10 +437,10 @@ msgstr "Erikoisuudet"
 ###
 ###########################################################
 msgid "Insert"
-msgstr "LisÃ¤Ã¤"
+msgstr "Lisää"
 
 msgid "Show"
-msgstr "NÃ¤ytÃ¤"
+msgstr "Näytä"
 
 msgid "Next"
 msgstr "Seuraava"
@@ -449,7 +449,7 @@ msgid "Prev"
 msgstr "Edellinen"
 
 msgid "Show+Sel"
-msgstr "NÃ¤ytÃ¤+Valitse"
+msgstr "Näytä+Valitse"
 
 ###########################################################
 ###
@@ -457,10 +457,10 @@ msgstr "NÃ¤ytÃ¤+Valitse"
 ###
 ###########################################################
 msgid "Render Window"
-msgstr "RenderÃ¶inti ikkuna"
+msgstr "Renderöinti-ikkuna"
 
 msgid "Render"
-msgstr "RenderÃ¶i"
+msgstr "Renderöi"
 
 msgid "Set Border"
 msgstr "Aseta reunus"
@@ -474,7 +474,7 @@ msgstr "Kuvan zoomaus"
 ###
 ###########################################################
 msgid "Centre"
-msgstr "KeskitÃ¤"
+msgstr "Keskitä"
 
 msgid "Home"
 msgstr "Koti"
@@ -488,13 +488,13 @@ msgstr "Z-puskuri"
 ###
 ###########################################################
 msgid "Add Strip"
-msgstr "LisÃ¤Ã¤ strippi"
+msgstr "Lisää strippi"
 
 msgid "Change Str"
-msgstr ""
+msgstr "Muuta strippi"
 
 msgid "Delete Str"
-msgstr ""
+msgstr "Poista strippi"
 
 msgid "Make Meta"
 msgstr "Luo meta"
@@ -511,13 +511,13 @@ msgid "Add"
 msgstr "Uusi"
 
 msgid "View"
-msgstr "NÃ¤kymÃ¤"
+msgstr "Näkymä"
 
 msgid "Game"
 msgstr "Peli"
 
 msgid "Tools"
-msgstr "TyÃ¶kalut"
+msgstr "Työkalut"
 
 ###########################################################
 ###
@@ -536,7 +536,7 @@ msgid "Cube"
 msgstr "Kuutio"
 
 msgid "Circle"
-msgstr "YmpyrÃ¤"
+msgstr "Ympyrä"
 
 msgid "UVsphere"
 msgstr "UVpallo"
@@ -562,16 +562,16 @@ msgstr "Ruudukko"
 ###
 ###########################################################
 msgid "Bezier Curve"
-msgstr "Bezier kÃ¤yrÃ¤"
+msgstr "Bezier-käyrä"
 
 msgid "Bezier Circle"
-msgstr "Bezier ympyrÃ¤"
+msgstr "Bezier-ympyrä"
 
 msgid "NURBS Curve"
-msgstr "NURBS kÃ¤yrÃ¤"
+msgstr "NURBS käyrä"
 
 msgid "NURBS Circle"
-msgstr "NURBS ympyrÃ¤"
+msgstr "NURBS ympyrä"
 
 msgid "Path"
 msgstr "Polku"
@@ -599,25 +599,25 @@ msgstr "NURBS donitsi"
 ###
 ###########################################################
 msgid "Front"
-msgstr "EdestÃ¤"
+msgstr "Edestä"
 
 msgid "Right"
 msgstr "Sivusta"
 
 msgid "Top"
-msgstr "YlhÃ¤Ã¤ltÃ¤"
+msgstr "Ylhäältä"
 
 msgid "Zoom In"
-msgstr "Zoomaa sisÃ¤Ã¤n"
+msgstr "Zoomaa sisään"
 
 msgid "Zoom Out"
 msgstr "Zoomaa ulos"
 
 msgid "Center"
-msgstr "KeskitÃ¤"
+msgstr "Keskitä"
 
 msgid "View All"
-msgstr "NÃ¤ytÃ¤ kaikki"
+msgstr "Näytä kaikki"
 
 ###########################################################
 ###
@@ -631,10 +631,10 @@ msgid "Enable All Frame"
 msgstr ""
 
 msgid "Show framerate and profile"
-msgstr "NÃ¤ytÃ¤ kuvanopeus ja profiili "
+msgstr "Näytä kuvanopeus ja profiili "
 
 msgid "Autostart"
-msgstr "KÃ¤ynnistÃ¤ automaattisesti"
+msgstr "Käynnistä automaattisesti"
 
 ###########################################################
 ###
