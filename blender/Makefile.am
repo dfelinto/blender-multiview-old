@@ -34,11 +34,13 @@ libbrowserplugin_la_SOURCES =
 
 libbrowserplugin_la_LDFLAGS =  \
 	$(blenpythonlib) \
-	-lpython@PYTHON_VERSION@
+	-lpython@PYTHON_VERSION@ \
+	@LIBM@
 
 libbrowserplugin_la_LIBADD = \
 	source/libblender_plugin.la \
-	$(internlibs)
+	$(internlibs) \
+	@LIBM@
 
 endif
 
@@ -62,13 +64,15 @@ blender_LDADD = \
 	source/libblender_source.la \
 	$(internlibs) \
 	$(blenpythonlib) \
-	@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config/libpython@PYTHON_VERSION@.a
+	@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config/libpython@PYTHON_VERSION@.a \
+	@LIBM@
 
 blenderplayer_LDADD = \
 	source/libblender_player.la \
 	$(internlibs) \
 	$(blenpythonlib) \
-	@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config/libpython@PYTHON_VERSION@.a
+	@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config/libpython@PYTHON_VERSION@.a \
+	@LIBM@
 
 all-local: 
 	@for bundle in $(bin_PROGRAMS); do APPLICATION=$$bundle $(MAKE) bundle; done
@@ -101,14 +105,16 @@ blender_LDADD = \
         source/libblender_source.la \
 		$(internlibs) \
 		$(blenpythonlib) \
-		-lpython@PYTHON_VERSION@
+		-lpython@PYTHON_VERSION@ \
+		@LIBM@
  
 
 blenderplayer_LDADD = \
 	source/libblender_player.la \
 	$(internlibs) \
 	$(blenpythonlib) \
-	-lpython@PYTHON_VERSION@
+	-lpython@PYTHON_VERSION@ \
+		@LIBM@
 	
 
 
