@@ -22,6 +22,7 @@ dnl Checks for programs
 dnl -------------------
 
   AC_PROG_CXX
+  AC_PATH_XTRA
   AC_PROG_CC
   AC_PROG_LN_S
   AC_PROG_LIBTOOL
@@ -243,12 +244,6 @@ dnl ----------------
   AM_CONDITIONAL([BlenderFMOD],[test x$enable_fmod = x"yes"])
 
 
-dnl -----------------------------------
-dnl The library list for global linking
-dnl -----------------------------------
-
-  dnl LIBS="$LIBS $MYLIBS"
-
 dnl --------------------------
 dnl Checks for POSIX functions
 dnl --------------------------
@@ -306,6 +301,8 @@ fi
   AC_CHECK_LIB([GL], [glIsTexture],,,$X_LIBS)
   AC_CHECK_LIB([GLU], [gluGetString],,,$X_LIBS)
   AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes],,,$X_LIBS)
+
+LIBS="$X_LIBS $LIBS"
 
 dnl ---------------------
 dnl Checks for data types
