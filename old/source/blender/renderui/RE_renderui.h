@@ -49,10 +49,6 @@
 #ifndef RE_RENDERUI_H
 #define RE_RENDERUI_H
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

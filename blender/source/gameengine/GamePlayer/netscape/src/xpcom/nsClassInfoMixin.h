@@ -36,11 +36,6 @@
 
 #include "nsIClassInfo.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
-
 // helper class to implement all necessary nsIClassInfo method stubs
 // and to set flags used by the security system
 class nsClassInfoMixin : public nsIClassInfo

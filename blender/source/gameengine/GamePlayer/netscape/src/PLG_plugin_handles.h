@@ -34,10 +34,6 @@
 #ifndef PLG_PLUGIN_HANDLES_H
 #define PLG_PLUGIN_HANDLES_H
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -34,10 +34,6 @@
 #ifndef XPH_XCOM_HOOKS_H
 #define XPH_XCOM_HOOKS_H
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

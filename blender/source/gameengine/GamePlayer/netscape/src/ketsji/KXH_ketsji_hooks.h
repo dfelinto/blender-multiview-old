@@ -34,10 +34,6 @@
 #ifndef KXH_KETSJI_HOOKS_H
 #define KXH_KETSJI_HOOKS_H 
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #define KXH_DECLARE_HANDLE(name) typedef struct name##__ { int unused; } *name
 
 #ifndef __KXH_PLUGIN_HANDLE

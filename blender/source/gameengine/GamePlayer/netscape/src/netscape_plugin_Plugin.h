@@ -6,10 +6,6 @@
 #ifndef _netscape_plugin_Plugin_H_
 #define _netscape_plugin_Plugin_H_
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

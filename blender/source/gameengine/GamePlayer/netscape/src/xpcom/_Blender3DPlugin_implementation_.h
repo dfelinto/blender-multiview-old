@@ -33,10 +33,6 @@
 
 #include "nsClassInfoMixin.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 class _Blender3DPlugin_Implementation_ : public Blender3DPlugin,
 					 public nsClassInfoMixin
 {

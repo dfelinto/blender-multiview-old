@@ -1,15 +1,11 @@
- 
 /* ************************************************************************ */
-/* 
    grouped and transformed geometry functions 
    author: Tim Schmidt tisch@uni-paderborn.de
 */
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 extern int dGeomTransformGroupClass;
 

@@ -37,10 +37,6 @@
 
 #include "blender_plugin_types.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #define MSWINDOWS_LEFT_MOUSE_BUTTON 1
 #define MSWINDOWS_MIDDLE_MOUSE_BUTTON 2
 #define MSWINDOWS_RIGHT_MOUSE_BUTTON 3

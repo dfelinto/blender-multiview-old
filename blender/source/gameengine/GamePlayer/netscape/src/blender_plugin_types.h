@@ -36,10 +36,6 @@
 
 #include <stdio.h>
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef _WIN32
 /* Windows stuff goes here: */
 #include <windows.h>
