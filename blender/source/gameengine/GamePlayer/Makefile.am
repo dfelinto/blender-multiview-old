@@ -74,6 +74,7 @@ INCLUDES = -I$(top_srcdir)/source/gameengine/Rasterizer \
 	-I$(top_srcdir)/source/gameengine/GamePlayer/common \
 	-I$(top_srcdir)/source/gameengine/GamePlayer/netscape/src/ketsji \
 	-I$(top_srcdir)/source/gameengine/Rasterizer/RAS_OpenGLRasterizer \
+	-I$(top_srcdir)/source/gameengine/Physics/Sumo/Fuzzics/include \
 	-I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/imbuf \
 	-I$(top_srcdir)/intern/ghost \

@@ -9,9 +9,7 @@ libgameblender_network_la_SOURCES = \
 	NG_NetworkScene.cpp \
 	NG_NetworkScene.h \
 	LoopBackNetwork/NG_LoopBackNetworkDeviceInterface.cpp \
-	LoopBackNetwork/NG_LoopBackNetworkDeviceInterface.h \
-	TerraplayNetwork/NG_TerraplayNetworkDeviceInterface.cpp \
-	TerraplayNetwork/NG_TerraplayNetworkDeviceInterface.h
+	LoopBackNetwork/NG_LoopBackNetworkDeviceInterface.h
 
 INCLUDES = -I$(top_srcdir)/intern/string \
 	-I$(top_srcdir)/intern/moto/include
@@ -19,4 +17,6 @@ INCLUDES = -I$(top_srcdir)/intern/string \
 EXTRA_DIST = \
 	Makefile \
 	LoopBackNetwork/Makefile \
-	TerraplayNetwork/Makefile
+	TerraplayNetwork/Makefile \
+	TerraplayNetwork/NG_TerraplayNetworkDeviceInterface.cpp \
+	TerraplayNetwork/NG_TerraplayNetworkDeviceInterface.h
