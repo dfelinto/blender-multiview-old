@@ -16,7 +16,7 @@ libblender_intern_la_LIBADD = \
 	memutil/libblender_MEM.la \
 	decimation/libblender_LOD.la \
 	iksolver/libblender_IK.la \
-	keymaker/libblender_belgium.la
+	keymaker/libblender_belgium.la \
 	bsp/libblender_BSP.la \
 	python/frozen/libfrozen.a
 
