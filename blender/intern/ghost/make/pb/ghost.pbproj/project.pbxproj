@@ -1,0 +1,757 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 34;
+	objects = {
+		0249877500B94031C0A80491 = {
+			buildStyles = (
+				024987B000B9411DC0A80491,
+				F552FE990189B97301A803A0,
+			);
+			isa = PBXProject;
+			mainGroup = 0249877600B94031C0A80491;
+			productRefGroup = 0249877700B9408DC0A80491;
+			projectDirPath = "";
+			targets = (
+				0249878300B9408DC0A80491,
+			);
+		};
+		0249877600B94031C0A80491 = {
+			children = (
+				0249877700B9408DC0A80491,
+				03CBFF1A012D5FCC7F000001,
+				03CBFF1B012D5FCC7F000001,
+				03CBFF1C012D5FCC7F000001,
+				03CBFF1D012D5FCC7F000001,
+				03CBFF1E012D5FCC7F000001,
+				03CBFF1F012D5FCC7F000001,
+				03CBFF26012D604B7F000001,
+				03CBFF27012D604B7F000001,
+				03CBFF28012D604B7F000001,
+				03CBFF29012D604B7F000001,
+				03CBFF2A012D604B7F000001,
+				03CBFF2B012D604B7F000001,
+				03CBFF2C012D604B7F000001,
+				03CBFF2D012D604B7F000001,
+				03CBFF2E012D604B7F000001,
+				03CBFF2F012D604B7F000001,
+				03CBFF30012D604B7F000001,
+				03CBFF32012D604B7F000001,
+				03CBFF33012D604B7F000001,
+				03CBFF34012D604B7F000001,
+				03CBFF35012D604B7F000001,
+				03CBFF36012D604B7F000001,
+				03CBFF37012D604B7F000001,
+				03CBFF38012D604B7F000001,
+				03CBFF39012D604B7F000001,
+				03CBFF3A012D604B7F000001,
+				03CBFF3B012D604B7F000001,
+				03CBFF3C012D604B7F000001,
+				03CBFF3D012D604B7F000001,
+				03CBFF3E012D604B7F000001,
+				03CBFF3F012D604B7F000001,
+				03CBFF40012D604B7F000001,
+				03CBFF41012D604B7F000001,
+				03CBFF42012D604B7F000001,
+				0ED8B26A014F6BEE7F000001,
+				FA085BF101FDBB1603FE4482,
+				FA085BF201FDBB1603FE4482,
+				FA085BF301FDBB1603FE4482,
+				FA085BF401FDBB1603FE4482,
+				FA085BF501FDBB1603FE4482,
+				FA085BF601FDBB1603FE4482,
+				FA085C0301FDDAC603FE4482,
+				FA085C0401FDDAC603FE4482,
+				F52017D701FECEBE01A803A0,
+				F52017D801FECEBE01A803A0,
+				F52017D901FECEBE01A803A0,
+				F52017DA01FECEBE01A803A0,
+			);
+			isa = PBXGroup;
+			refType = 4;
+		};
+		0249877700B9408DC0A80491 = {
+			children = (
+				0249877800B9408DC0A80491,
+			);
+			isa = PBXGroup;
+			name = Products;
+			refType = 4;
+		};
+		0249877800B9408DC0A80491 = {
+			isa = PBXLibraryReference;
+			path = libghost.a;
+			refType = 3;
+		};
+		0249878300B9408DC0A80491 = {
+			buildPhases = (
+				0249878400B9408DC0A80491,
+				0249878700B9408DC0A80491,
+				0249879000B9408DC0A80491,
+				0249879100B9408DC0A80491,
+			);
+			buildSettings = {
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "-I \"../../../generic/extern\" -I \"../../extern\"";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOL_FLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = libghost.a;
+				REZ_EXECUTABLE = YES;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+			};
+			dependencies = (
+			);
+			isa = PBXLibraryTarget;
+			name = ghost;
+			productInstallPath = /usr/local/lib;
+			productName = ghost;
+			productReference = 0249877800B9408DC0A80491;
+			shouldUseHeadermap = 0;
+		};
+		0249878400B9408DC0A80491 = {
+			buildActionMask = 2147483647;
+			files = (
+				03CBFF20012D5FCC7F000001,
+				03CBFF21012D5FCC7F000001,
+				03CBFF22012D5FCC7F000001,
+				03CBFF23012D5FCC7F000001,
+				03CBFF24012D5FCC7F000001,
+				03CBFF25012D5FCC7F000001,
+				03CBFF43012D604B7F000001,
+				03CBFF44012D604B7F000001,
+				03CBFF45012D604B7F000001,
+				03CBFF46012D604B7F000001,
+				03CBFF47012D604B7F000001,
+				03CBFF48012D604B7F000001,
+				03CBFF49012D604B7F000001,
+				03CBFF4A012D604B7F000001,
+				03CBFF4C012D604B7F000001,
+				03CBFF4D012D604B7F000001,
+				03CBFF4E012D604B7F000001,
+				03CBFF4F012D604B7F000001,
+				03CBFF50012D604B7F000001,
+				03CBFF51012D604B7F000001,
+				FA085BF701FDBB1603FE4482,
+				FA085BF801FDBB1603FE4482,
+				F52017DF01FED81D01A803A0,
+				F52017E001FED81D01A803A0,
+			);
+			isa = PBXHeadersBuildPhase;
+			name = Headers;
+		};
+		0249878700B9408DC0A80491 = {
+			buildActionMask = 2147483647;
+			files = (
+				03CBFF52012D604B7F000001,
+				03CBFF53012D604B7F000001,
+				03CBFF54012D604B7F000001,
+				03CBFF55012D604B7F000001,
+				FA085BFA01FDBB1603FE4482,
+				FA085BFB01FDBB1603FE4482,
+				F52017E101FED81D01A803A0,
+				F52017E201FED81D01A803A0,
+				F52017E301FED81D01A803A0,
+				F52017E401FED81D01A803A0,
+				F52017E501FED81D01A803A0,
+				F52017E601FED81D01A803A0,
+				F52017E701FED81D01A803A0,
+			);
+			isa = PBXSourcesBuildPhase;
+			name = Sources;
+		};
+		0249879000B9408DC0A80491 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXFrameworksBuildPhase;
+			name = "Frameworks & Libraries";
+		};
+		0249879100B9408DC0A80491 = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			name = "ResourceManager Resources";
+		};
+		024987B000B9411DC0A80491 = {
+			buildRules = (
+			);
+			buildSettings = {
+			};
+			isa = PBXBuildStyle;
+			name = BuildStyle;
+		};
+//020
+//021
+//022
+//023
+//024
+//030
+//031
+//032
+//033
+//034
+		03CBFF1A012D5FCC7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_IEvent.h;
+			path = ../../GHOST_IEvent.h;
+			refType = 2;
+		};
+		03CBFF1B012D5FCC7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_IEventConsumer.h;
+			path = ../../GHOST_IEventConsumer.h;
+			refType = 2;
+		};
+		03CBFF1C012D5FCC7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_ISystem.h;
+			path = ../../GHOST_ISystem.h;
+			refType = 2;
+		};
+		03CBFF1D012D5FCC7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_ITimerTask.h;
+			path = ../../GHOST_ITimerTask.h;
+			refType = 2;
+		};
+		03CBFF1E012D5FCC7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_IWindow.h;
+			path = ../../GHOST_IWindow.h;
+			refType = 2;
+		};
+		03CBFF1F012D5FCC7F000001 = {
+			indentWidth = 4;
+			isa = PBXFileReference;
+			name = GHOST_Types.h;
+			path = ../../GHOST_Types.h;
+			refType = 2;
+			tabWidth = 4;
+			usesTabs = 0;
+		};
+		03CBFF20012D5FCC7F000001 = {
+			fileRef = 03CBFF1A012D5FCC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF21012D5FCC7F000001 = {
+			fileRef = 03CBFF1B012D5FCC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF22012D5FCC7F000001 = {
+			fileRef = 03CBFF1C012D5FCC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF23012D5FCC7F000001 = {
+			fileRef = 03CBFF1D012D5FCC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF24012D5FCC7F000001 = {
+			fileRef = 03CBFF1E012D5FCC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF25012D5FCC7F000001 = {
+			fileRef = 03CBFF1F012D5FCC7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF26012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_Buttons.cpp;
+			path = ../../intern/GHOST_Buttons.cpp;
+			refType = 2;
+		};
+		03CBFF27012D604B7F000001 = {
+			indentWidth = 4;
+			isa = PBXFileReference;
+			name = GHOST_Buttons.h;
+			path = ../../intern/GHOST_Buttons.h;
+			refType = 2;
+			tabWidth = 4;
+			usesTabs = 1;
+		};
+		03CBFF28012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_Debug.h;
+			path = ../../intern/GHOST_Debug.h;
+			refType = 2;
+		};
+		03CBFF29012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_Event.h;
+			path = ../../intern/GHOST_Event.h;
+			refType = 2;
+		};
+		03CBFF2A012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_EventButton.h;
+			path = ../../intern/GHOST_EventButton.h;
+			refType = 2;
+		};
+		03CBFF2B012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_EventCursor.h;
+			path = ../../intern/GHOST_EventCursor.h;
+			refType = 2;
+		};
+		03CBFF2C012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_EventKey.h;
+			path = ../../intern/GHOST_EventKey.h;
+			refType = 2;
+		};
+		03CBFF2D012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_EventManager.cpp;
+			path = ../../intern/GHOST_EventManager.cpp;
+			refType = 2;
+		};
+		03CBFF2E012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_EventManager.h;
+			path = ../../intern/GHOST_EventManager.h;
+			refType = 2;
+		};
+		03CBFF2F012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_EventPrinter.cpp;
+			path = ../../intern/GHOST_EventPrinter.cpp;
+			refType = 2;
+		};
+		03CBFF30012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_EventPrinter.h;
+			path = ../../intern/GHOST_EventPrinter.h;
+			refType = 2;
+		};
+		03CBFF32012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_ISystem.cpp;
+			path = ../../intern/GHOST_ISystem.cpp;
+			refType = 2;
+		};
+		03CBFF33012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_ModifierKeys.cpp;
+			path = ../../intern/GHOST_ModifierKeys.cpp;
+			refType = 2;
+		};
+		03CBFF34012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_ModifierKeys.h;
+			path = ../../intern/GHOST_ModifierKeys.h;
+			refType = 2;
+		};
+		03CBFF35012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_System.cpp;
+			path = ../../intern/GHOST_System.cpp;
+			refType = 2;
+		};
+		03CBFF36012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_System.h;
+			path = ../../intern/GHOST_System.h;
+			refType = 2;
+		};
+		03CBFF37012D604B7F000001 = {
+			indentWidth = 4;
+			isa = PBXFileReference;
+			name = GHOST_SystemCarbon.cpp;
+			path = ../../intern/GHOST_SystemCarbon.cpp;
+			refType = 2;
+			tabWidth = 4;
+			usesTabs = 1;
+		};
+		03CBFF38012D604B7F000001 = {
+			indentWidth = 4;
+			isa = PBXFileReference;
+			name = GHOST_SystemCarbon.h;
+			path = ../../intern/GHOST_SystemCarbon.h;
+			refType = 2;
+			tabWidth = 4;
+			usesTabs = 0;
+		};
+		03CBFF39012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_TimerManager.cpp;
+			path = ../../intern/GHOST_TimerManager.cpp;
+			refType = 2;
+		};
+		03CBFF3A012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_TimerManager.h;
+			path = ../../intern/GHOST_TimerManager.h;
+			refType = 2;
+		};
+		03CBFF3B012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_TimerTask.h;
+			path = ../../intern/GHOST_TimerTask.h;
+			refType = 2;
+		};
+		03CBFF3C012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_Window.cpp;
+			path = ../../intern/GHOST_Window.cpp;
+			refType = 2;
+		};
+		03CBFF3D012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_Window.h;
+			path = ../../intern/GHOST_Window.h;
+			refType = 2;
+		};
+		03CBFF3E012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_WindowCarbon.cpp;
+			path = ../../intern/GHOST_WindowCarbon.cpp;
+			refType = 2;
+		};
+		03CBFF3F012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_WindowCarbon.h;
+			path = ../../intern/GHOST_WindowCarbon.h;
+			refType = 2;
+		};
+		03CBFF40012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_WindowManager.cpp;
+			path = ../../intern/GHOST_WindowManager.cpp;
+			refType = 2;
+		};
+		03CBFF41012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = GHOST_WindowManager.h;
+			path = ../../intern/GHOST_WindowManager.h;
+			refType = 2;
+		};
+		03CBFF42012D604B7F000001 = {
+			isa = PBXFileReference;
+			name = Makefile;
+			path = ../../intern/Makefile;
+			refType = 2;
+		};
+		03CBFF43012D604B7F000001 = {
+			fileRef = 03CBFF27012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF44012D604B7F000001 = {
+			fileRef = 03CBFF28012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF45012D604B7F000001 = {
+			fileRef = 03CBFF29012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF46012D604B7F000001 = {
+			fileRef = 03CBFF2A012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF47012D604B7F000001 = {
+			fileRef = 03CBFF2B012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF48012D604B7F000001 = {
+			fileRef = 03CBFF2C012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF49012D604B7F000001 = {
+			fileRef = 03CBFF2E012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF4A012D604B7F000001 = {
+			fileRef = 03CBFF30012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF4C012D604B7F000001 = {
+			fileRef = 03CBFF34012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF4D012D604B7F000001 = {
+			fileRef = 03CBFF36012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF4E012D604B7F000001 = {
+			fileRef = 03CBFF3A012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF4F012D604B7F000001 = {
+			fileRef = 03CBFF3B012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF50012D604B7F000001 = {
+			fileRef = 03CBFF3D012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF51012D604B7F000001 = {
+			fileRef = 03CBFF41012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF52012D604B7F000001 = {
+			fileRef = 03CBFF26012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF53012D604B7F000001 = {
+			fileRef = 03CBFF32012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF54012D604B7F000001 = {
+			fileRef = 03CBFF33012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		03CBFF55012D604B7F000001 = {
+			fileRef = 03CBFF39012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+//030
+//031
+//032
+//033
+//034
+//0E0
+//0E1
+//0E2
+//0E3
+//0E4
+		0ED8B26A014F6BEE7F000001 = {
+			isa = PBXFileReference;
+			name = Makefile;
+			path = ../../Makefile;
+			refType = 2;
+		};
+//0E0
+//0E1
+//0E2
+//0E3
+//0E4
+//F50
+//F51
+//F52
+//F53
+//F54
+		F52017D701FECEBE01A803A0 = {
+			isa = PBXFileReference;
+			name = GHOST_WindowWin32.cpp;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_WindowWin32.cpp;
+			refType = 0;
+		};
+		F52017D801FECEBE01A803A0 = {
+			isa = PBXFileReference;
+			name = GHOST_WindowWin32.h;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_WindowWin32.h;
+			refType = 0;
+		};
+		F52017D901FECEBE01A803A0 = {
+			isa = PBXFileReference;
+			name = GHOST_WindowX11.cpp;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_WindowX11.cpp;
+			refType = 0;
+		};
+		F52017DA01FECEBE01A803A0 = {
+			isa = PBXFileReference;
+			name = GHOST_WindowX11.h;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_WindowX11.h;
+			refType = 0;
+		};
+		F52017DF01FED81D01A803A0 = {
+			fileRef = 03CBFF38012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F52017E001FED81D01A803A0 = {
+			fileRef = 03CBFF3F012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F52017E101FED81D01A803A0 = {
+			fileRef = 03CBFF3E012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F52017E201FED81D01A803A0 = {
+			fileRef = 03CBFF40012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F52017E301FED81D01A803A0 = {
+			fileRef = 03CBFF2F012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F52017E401FED81D01A803A0 = {
+			fileRef = 03CBFF2D012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F52017E501FED81D01A803A0 = {
+			fileRef = 03CBFF35012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F52017E601FED81D01A803A0 = {
+			fileRef = 03CBFF37012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F52017E701FED81D01A803A0 = {
+			fileRef = 03CBFF3C012D604B7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		F552FE990189B97301A803A0 = {
+			buildRules = (
+			);
+			buildSettings = {
+				OPTIMIZATION_CFLAGS = "-O0";
+			};
+			isa = PBXBuildStyle;
+			name = Development;
+		};
+//F50
+//F51
+//F52
+//F53
+//F54
+//FA0
+//FA1
+//FA2
+//FA3
+//FA4
+		FA085BF101FDBB1603FE4482 = {
+			isa = PBXFileReference;
+			name = GHOST_DisplayManager.cpp;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_DisplayManager.cpp;
+			refType = 0;
+		};
+		FA085BF201FDBB1603FE4482 = {
+			isa = PBXFileReference;
+			name = GHOST_DisplayManager.h;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_DisplayManager.h;
+			refType = 0;
+		};
+		FA085BF301FDBB1603FE4482 = {
+			isa = PBXFileReference;
+			name = GHOST_DisplayManagerCarbon.cpp;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_DisplayManagerCarbon.cpp;
+			refType = 0;
+		};
+		FA085BF401FDBB1603FE4482 = {
+			isa = PBXFileReference;
+			name = GHOST_DisplayManagerCarbon.h;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_DisplayManagerCarbon.h;
+			refType = 0;
+		};
+		FA085BF501FDBB1603FE4482 = {
+			isa = PBXFileReference;
+			name = GHOST_DisplayManagerX11.cpp;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_DisplayManagerX11.cpp;
+			refType = 0;
+		};
+		FA085BF601FDBB1603FE4482 = {
+			isa = PBXFileReference;
+			name = GHOST_DisplayManagerX11.h;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_DisplayManagerX11.h;
+			refType = 0;
+		};
+		FA085BF701FDBB1603FE4482 = {
+			fileRef = FA085BF201FDBB1603FE4482;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA085BF801FDBB1603FE4482 = {
+			fileRef = FA085BF401FDBB1603FE4482;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA085BFA01FDBB1603FE4482 = {
+			fileRef = FA085BF101FDBB1603FE4482;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA085BFB01FDBB1603FE4482 = {
+			fileRef = FA085BF301FDBB1603FE4482;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA085C0301FDDAC603FE4482 = {
+			isa = PBXFileReference;
+			name = GHOST_DisplayManagerWin32.cpp;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_DisplayManagerWin32.cpp;
+			refType = 0;
+		};
+		FA085C0401FDDAC603FE4482 = {
+			isa = PBXFileReference;
+			name = GHOST_DisplayManagerWin32.h;
+			path = /Users/maarten/develop/intern/ghost/intern/GHOST_DisplayManagerWin32.h;
+			refType = 0;
+		};
+	};
+	rootObject = 0249877500B94031C0A80491;
+}

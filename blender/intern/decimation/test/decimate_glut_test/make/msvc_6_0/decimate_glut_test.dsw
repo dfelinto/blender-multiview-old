@@ -1,0 +1,92 @@
+Microsoft Developer Studio Workspace File, Format Version 6.00
+# WARNING: DO NOT EDIT OR DELETE THIS WORKSPACE FILE!
+
+###############################################################################
+
+Project: "MoTo"=..\..\..\..\..\moto\make\msvc_6_0\MoTo.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "decimate_glut_test"=.\decimate_glut_test.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name decimation
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name MoTo
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name memutil
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "decimation"=..\..\..\..\make\msvc_6_0\decimation.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+    Begin Project Dependency
+    Project_Dep_Name MoTo
+    End Project Dependency
+    Begin Project Dependency
+    Project_Dep_Name memutil
+    End Project Dependency
+}}}
+
+###############################################################################
+
+Project: "ghost"=..\..\..\..\..\ghost\make\msvc\ghost.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Project: "memutil"=..\..\..\..\..\memutil\make\msvc_60\memutil.dsp - Package Owner=<4>
+
+Package=<5>
+{{{
+}}}
+
+Package=<4>
+{{{
+}}}
+
+###############################################################################
+
+Global:
+
+Package=<5>
+{{{
+}}}
+
+Package=<3>
+{{{
+}}}
+
+###############################################################################
+

@@ -1,0 +1,108 @@
+<HTML><HEAD><TITLE>Mesh Class</TITLE></HEAD>
+<BODY bgcolor="#ffffff">
+
+<H1>Mesh Class Reference</H1>
+<p>
+[<A HREF="index.html">Blender Index</A>] [<A HREF="heir.html">Blender Hierarchy</A>]
+</p>
+<HR>
+<P>Blender meshes can be seen in the OOPS window as brown rectangles   <a href="#short">More...</a></P>
+<P>
+<code>
+	#include &lt;<a href="mesh-h.html">mesh.h</a>&gt;
+</code>
+
+</P>
+
+<P>
+Inherits: <a href="Blender.html">Blender</a>
+<P>
+<H2>Public Members</H2>
+<UL>
+<LI><b><a name="ref0">Mesh</a></b> () 
+</LI>
+<LI><b><a name="ref1">~Mesh</a></b> () 
+</LI>
+<LI><b><a href="#ref2">Mesh</a></b> (const char* name) 
+</LI>
+<LI>PyObject* <b><a href="#ref3">addFace</a></b> (int i1, int i2, int i3, int i4, int isSmooth, int matIndex) 
+</LI>
+<LI>PyObject* <b><a href="#ref4">addTexCoords</a></b> (float u1, float v1, float u2, float v2, float u3, float v3, float u4, float v4) 
+</LI>
+<LI>PyObject* <b><a href="#ref5">addTexture</a></b> (char* filename) 
+</LI>
+<LI>PyObject* <b><a href="#ref6">addVertex</a></b> (float vx, float vy, float vz, float nx, float ny, float nz, float r = -1.0, float g = 0.0, float b = 0.0) 
+</LI>
+<LI>PyObject* <b><a href="#ref7">createTrianglesFromEdges</a></b> () 
+</LI>
+<LI>PyObject* <b><a href="#ref8">enterEditMode</a></b> () 
+</LI>
+<LI>PyObject* <b><a href="#ref9">leaveEditMode</a></b> () 
+</LI>
+<LI>PyObject* <b><a href="#ref10">removeDoubles</a></b> () 
+</LI>
+<LI>  char* <b><a href="#ref11">name</a></b>
+</LI>
+<LI>  PyObject* <b><a href="#ref12">vertices</a></b>
+</LI>
+<LI>  PyObject* <b><a href="#ref13">normals</a></b>
+</LI>
+<LI>  PyObject* <b><a href="#ref14">colors</a></b>
+</LI>
+<LI>  PyObject* <b><a href="#ref15">faces</a></b>
+</LI>
+<LI>  PyObject* <b><a href="#ref16">texcoords</a></b>
+</LI>
+<LI>  PyObject* <b><a href="#ref17">texture</a></b>
+</LI>
+</UL>
+<HR>
+<H2><a name="short">Detailed Description</a></H2>
+<P>
+Blender meshes can be seen in the OOPS window as brown rectangles. They are constructed without a connection to an object but should be connected to one. This gives users the chance to "share" a mesh by connecting one mesh to different objects.
+
+</P>
+<HR>
+<H2><a name="ref2"></a><a name="Mesh">Mesh</a>(const char* name)  </H2>
+<p>A Blender mesh has always a unique name. The name you give as an argument is only a proposal for the real name. Blender will check if this name is already used and rename the mesh if necessary.  </p>
+<H2>PyObject* <a name="ref3"></a><a name="addFace">addFace</a>(int i1, int i2, int i3, int i4, int isSmooth, int matIndex)  </H2>
+<p>Adds a list with 6 entries to the faces list. This might change in the future. The first 4 entries are indices to describe the vertices for a triangle or a quad. The decision if a quad is used or not is made by the 4th entry. If this is 0 then only the first 3 entries are used for an triangle. The 5th entry tells if the triangle (or quad) should be rendered as "smooth" (using vertex normals) or not. The last entry is the index of the material used for this face. </p>
+<H2>PyObject* <a name="ref4"></a><a name="addTexCoords">addTexCoords</a>(float u1, float v1, float u2, float v2, float u3, float v3, float u4, float v4)  </H2>
+<p>Adds the texture coordinates for one face to texcoords. The texture coordinates are stored for each face as a list of 4 sublists (for triangles just ignore the 4th sublist). Each of this sublists has 2 entries (u- and v- direction). </p>
+<H2>PyObject* <a name="ref5"></a><a name="addTexture">addTexture</a>(char* filename)  </H2>
+<p>Replaces the filename (including path) for the texture. In the future more than only one texture might be used. </p>
+<H2>PyObject* <a name="ref6"></a><a name="addVertex">addVertex</a>(float vx, float vy, float vz, float nx, float ny, float nz, float r = -1.0, float g = 0.0, float b = 0.0)  </H2>
+<p>Adds values for the list vertices, normals, and colors. The first 3 values are used for the vertex coordinates, the next 3 values for the vertex normal, and the last 3 (if used) for the vertex color. The color information has not to be specified. The default value for r (-1.0) means: Don't store any color information. </p>
+<H2>PyObject* <a name="ref7"></a><a name="createTrianglesFromEdges">createTrianglesFromEdges</a>()  </H2>
+<p>Instead of creating triangles and quads you can also create edges with addFace(...) now. This edges can be used by calling createTrianglesFromEdges() to triangulate a general polygon (even with holes). </p>
+<H2>PyObject* <a name="ref8"></a><a name="enterEditMode">enterEditMode</a>()  </H2>
+<p>This is like pressing the TAB key in Blender. You enter edit mode and you can add vertices and faces within Python. Then you leave edit mode again and the data is transfered from Python to Blender. </p>
+<H2>PyObject* <a name="ref9"></a><a name="leaveEditMode">leaveEditMode</a>()  </H2>
+<p>When you leave edit mode all collected data (vertices, faces) are transfered from Python to Blender. </p>
+<H2>PyObject* <a name="ref10"></a><a name="removeDoubles">removeDoubles</a>()  </H2>
+<p>After importing data (e.g. a DXF file) you might have doubled vertices because the file format does not allow to reuse the same vertices by using indices. This function removes doubled vertices within a precision value (at the moment you can't use the precision value from the interface; a value of 0.0003 is used) and is also called internally by createTrianglesFromEdges(). </p>
+<H2>  char* <a name="ref11"></a><a name="name">name</a></H2>
+<p>All rectangles you can see in the OOPS window are instances of classes with an unique name for all instances of this class. Nevertheless the name of two instances of different classes can be the same. </p>
+<H2>  PyObject* <a name="ref12"></a><a name="vertices">vertices</a></H2>
+<p>This holds a list of vertices for usage within Python. A face uses the indices of this vertices. This allows to store the vertices efficient and to share the same vertex between different triangles or quads. </p>
+<H2>  PyObject* <a name="ref13"></a><a name="normals">normals</a></H2>
+<p>This holds a list of vertex normals which can be used for "smooth" rendering. The number of elements in this list should be exactly the same as in the list for the vertices. </p>
+<H2>  PyObject* <a name="ref14"></a><a name="colors">colors</a></H2>
+<p>This holds a list of vertex colors. The list might be empty if no colors are used. But if they are used the list should be exactly of the same size as the list of vertices. </p>
+<H2>  PyObject* <a name="ref15"></a><a name="faces">faces</a></H2>
+<p>This holds a list of faces. At the moment a face is a list with 6 entries (integers). This might change in the future. The first 4 entries are indices to describe the vertices for a triangle or a quad. The decision if a quad is used or not is made by the 4th entry. If this is 0 then only the first 3 entries are used for an triangle. The 5th entry tells if the triangle (or quad) should be rendered as "smooth" (using vertex normals) or not. The last entry is the index of the material used for this face. </p>
+<H2>  PyObject* <a name="ref16"></a><a name="texcoords">texcoords</a></H2>
+<p>This holds a list of texture coordinates. The list might be empty but if used the list should have exactly the same size as the list of faces. The texture coordinates are stored for each face as a list of 4 sublists (for triangles just ignore the 4th sublist). Each of this sublists has 2 entries (u- and v- direction). </p>
+<H2>  PyObject* <a name="ref17"></a><a name="texture">texture</a></H2>
+<p>This holds the name (with path) of the used texture (if any). </p>
+<HR>
+<TABLE WIDTH="100%"><TR><TD ALIGN="left" VALIGN="top">
+
+<UL><LI><I>Author</I>: Jan Walter </LI>
+<LI>Documentation generated by jan@nvidea on Mon Mar  5 16:57:27 CET 2001
+</LI>
+</UL></TD><TD ALIGN="RIGHT" VALIGN="TOP">
+<b>K</b><i>doc</i>
+</TD>
+</TR></TABLE></BODY></HTML>
+

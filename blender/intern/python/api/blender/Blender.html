@@ -1,0 +1,105 @@
+<HTML><HEAD><TITLE>Blender Class</TITLE></HEAD>
+<BODY bgcolor="#ffffff">
+
+<H1>Blender Class Reference</H1>
+<p>
+[<A HREF="index.html">Blender Index</A>] [<A HREF="heir.html">Blender Hierarchy</A>]
+</p>
+<HR>
+<P>This is in fact no class it is a module in Python   <a href="#short">More...</a></P>
+<P>
+<code>
+	#include &lt;<a href="blender-h.html">blender.h</a>&gt;
+</code>
+
+</P>
+
+<H2>Public Members</H2>
+<UL>
+<LI><b><a name="ref0">Blender</a></b> () 
+</LI>
+<LI><b><a name="ref1">~Blender</a></b> () 
+</LI>
+<LI>PyObject* <b><a href="#ref2">addMesh</a></b> (const char* type) 
+</LI>
+<LI>PyObject* <b><a href="#ref3">connect</a></b> (PyObject* obj1, PyObject* obj2) 
+</LI>
+<LI>PyObject* <b><a href="#ref4">getCamera</a></b> (const char* name) 
+</LI>
+<LI>PyObject* <b><a href="#ref5">getCurrentScene</a></b> () 
+</LI>
+<LI>PyObject* <b><a href="#ref6">getDisplaySettings</a></b> () 
+</LI>
+<LI>PyObject* <b><a href="#ref7">getFilename</a></b> () 
+</LI>
+<LI>PyObject* <b><a href="#ref8">getLamp</a></b> (const char* name) 
+</LI>
+<LI>PyObject* <b><a href="#ref9">getLinkedData</a></b> () 
+</LI>
+<LI>PyObject* <b><a href="#ref10">getMaterial</a></b> (const char* name) 
+</LI>
+<LI>PyObject* <b><a href="#ref11">getMesh</a></b> (const char* name) 
+</LI>
+<LI>PyObject* <b><a href="#ref12">getObject</a></b> (const char* name) 
+</LI>
+<LI>PyObject* <b><a href="#ref13">isCamera</a></b> (const char* name) 
+</LI>
+<LI>PyObject* <b><a href="#ref14">isLamp</a></b> (const char* name) 
+</LI>
+<LI>PyObject* <b><a href="#ref15">isMesh</a></b> (const char* name) 
+</LI>
+<LI>PyObject* <b><a href="#ref16">loadFile</a></b> (const char* filename) 
+</LI>
+<LI>PyObject* <b><a href="#ref17">setCurrentFrame</a></b> (int frame) 
+</LI>
+</UL>
+<HR>
+<H2><a name="short">Detailed Description</a></H2>
+<P>
+This is in fact no class it is a module in Python. But I use it here as a class to document the global functions availabe in the Blender module.
+
+</P>
+<HR>
+<H2>PyObject* <a name="ref2"></a><a name="addMesh">addMesh</a>(const char* type)  </H2>
+<p>This reflects what happens if you press SPACE in Blender and select ADD->Mesh. The type string is one of the strings shown in Blender's submenu ("Plane", "Cube", etc.). </p>
+<H2>PyObject* <a name="ref3"></a><a name="connect">connect</a>(PyObject* obj1, PyObject* obj2)  </H2>
+<p>This should connect things like it is shown in the OOPS window. At the moment you can only connect objects with meshes and scenes with objects. This is likely to change in the future. </p>
+<H2>PyObject* <a name="ref4"></a><a name="getCamera">getCamera</a>(const char* name)  </H2>
+<p>Even if you can't see the connected data to an camera object in the OOPS window yet you can get access to the camera settings by calling this function with the name of the camera data. </p>
+<H2>PyObject* <a name="ref5"></a><a name="getCurrentScene">getCurrentScene</a>()  </H2>
+<p>Gives access to the current scene. For export scripts this should be one of the first things you should do. The names of the objects in the scene are stored and you can step through this names and get access to the associated data by calling getObject(name). </p>
+<H2>PyObject* <a name="ref6"></a><a name="getDisplaySettings">getDisplaySettings</a>()  </H2>
+<p>Because you can't create instances of the class DisplaySettings you have to call this function to create one for you. Then you can retrieve the data from the returned instance. </p>
+<H2>PyObject* <a name="ref7"></a><a name="getFilename">getFilename</a>()  </H2>
+<p>Gets the filename (including the path) of the current file. </p>
+<H2>PyObject* <a name="ref8"></a><a name="getLamp">getLamp</a>(const char* name)  </H2>
+<p>Gives access to the lamp data by using the unique name. </p>
+<H2>PyObject* <a name="ref9"></a><a name="getLinkedData">getLinkedData</a>()  </H2>
+<p>Get access to data linked to a script in the script buttons. This can be: Object, Camera, Lamp, Material, and World. </p>
+<H2>PyObject* <a name="ref10"></a><a name="getMaterial">getMaterial</a>(const char* name)  </H2>
+<p>Gives access to the material data by using the unique name. </p>
+<H2>PyObject* <a name="ref11"></a><a name="getMesh">getMesh</a>(const char* name)  </H2>
+<p>Gives access to the mesh data by using the unique name. </p>
+<H2>PyObject* <a name="ref12"></a><a name="getObject">getObject</a>(const char* name)  </H2>
+<p>Gives access to the object data by using the unique name. </p>
+<H2>PyObject* <a name="ref13"></a><a name="isCamera">isCamera</a>(const char* name)  </H2>
+<p>If you want to check if the connected data to this object (with this name) is really a camera use this function. </p>
+<H2>PyObject* <a name="ref14"></a><a name="isLamp">isLamp</a>(const char* name)  </H2>
+<p>If you want to check if the connected data to this object (with this name) is really a lamp use this function. </p>
+<H2>PyObject* <a name="ref15"></a><a name="isMesh">isMesh</a>(const char* name)  </H2>
+<p>If you want to check if the connected data to this object (with this name) is really a mesh use this function. </p>
+<H2>PyObject* <a name="ref16"></a><a name="loadFile">loadFile</a>(const char* filename)  </H2>
+<p>This functions loads a BLEND file. The string should contain the filename and the path. </p>
+<H2>PyObject* <a name="ref17"></a><a name="setCurrentFrame">setCurrentFrame</a>(int frame)  </H2>
+<p>If you want to export an animation you have to step through all the frames. This function allows you to do so and updates all objects which have some IPOs (InterPOlation curves) connected. </p>
+<HR>
+<TABLE WIDTH="100%"><TR><TD ALIGN="left" VALIGN="top">
+
+<UL><LI><I>Author</I>: Jan Walter </LI>
+<LI>Documentation generated by jan@nvidea on Mon Mar  5 16:57:27 CET 2001
+</LI>
+</UL></TD><TD ALIGN="RIGHT" VALIGN="TOP">
+<b>K</b><i>doc</i>
+</TD>
+</TR></TABLE></BODY></HTML>
+
