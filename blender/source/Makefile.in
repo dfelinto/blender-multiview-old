@@ -51,6 +51,8 @@ BlenderGAME_FALSE = @BlenderGAME_FALSE@
 BlenderGAME_TRUE = @BlenderGAME_TRUE@
 BlenderOPENAL_FALSE = @BlenderOPENAL_FALSE@
 BlenderOPENAL_TRUE = @BlenderOPENAL_TRUE@
+BlenderPLUGIN_FALSE = @BlenderPLUGIN_FALSE@
+BlenderPLUGIN_TRUE = @BlenderPLUGIN_TRUE@
 BlenderSTATIC_FALSE = @BlenderSTATIC_FALSE@
 BlenderSTATIC_TRUE = @BlenderSTATIC_TRUE@
 CARBON_FALSE = @CARBON_FALSE@
@@ -168,18 +170,32 @@ SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
 
 @CARBON_TRUE@bin_PROGRAMS = blenderpublisher.app blenderplayer.app 
 
-blender_bin_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
+@CARBON_TRUE@blenderpublisher_app_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
 
-blender_bin_SOURCES = 
+@CARBON_TRUE@blenderpublisher_app_SOURCES = 
 
-blender_bin_LDADD = \
-	-lpython@PYTHON_VERSION@ \
-	$(gamelib) \
-	creator/libblender_creator.la \
-	blender/libblender_blender.la \
-	kernel/libblender_kernel.la \
-	../intern/libblender_intern.la \
-	../intern/python/frozen/libfrozen.a
+@CARBON_TRUE@blenderpublisher_app_LDADD = \
+@CARBON_TRUE@	-lpython@PYTHON_VERSION@ \
+@CARBON_TRUE@	$(gamelib) \
+@CARBON_TRUE@	creator/libblender_creator.la \
+@CARBON_TRUE@	blender/libblender_blender.la \
+@CARBON_TRUE@	kernel/libblender_kernel.la \
+@CARBON_TRUE@	../intern/libblender_intern.la \
+@CARBON_TRUE@	../intern/python/frozen/libfrozen.a
+
+
+@CARBON_FALSE@blender_bin_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
+
+@CARBON_FALSE@blender_bin_SOURCES = 
+
+@CARBON_FALSE@blender_bin_LDADD = \
+@CARBON_FALSE@	-lpython@PYTHON_VERSION@ \
+@CARBON_FALSE@	$(gamelib) \
+@CARBON_FALSE@	creator/libblender_creator.la \
+@CARBON_FALSE@	blender/libblender_blender.la \
+@CARBON_FALSE@	kernel/libblender_kernel.la \
+@CARBON_FALSE@	../intern/libblender_intern.la \
+@CARBON_FALSE@	../intern/python/frozen/libfrozen.a
 
 subdir = source
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -190,37 +206,50 @@ CONFIG_CLEAN_FILES =
 @CARBON_FALSE@bin_PROGRAMS = blender.bin$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS)
 
-am_blender_bin_OBJECTS =
+@CARBON_FALSE@am_blender_bin_OBJECTS =
 blender_bin_OBJECTS = $(am_blender_bin_OBJECTS)
-@BlenderGAME_TRUE@blender_bin_DEPENDENCIES = \
-@BlenderGAME_TRUE@	gameengine/libblender_gameengine.la \
-@BlenderGAME_TRUE@	creator/libblender_creator.la \
-@BlenderGAME_TRUE@	blender/libblender_blender.la \
-@BlenderGAME_TRUE@	kernel/libblender_kernel.la \
-@BlenderGAME_TRUE@	../intern/libblender_intern.la \
-@BlenderGAME_TRUE@	../intern/python/frozen/libfrozen.a
-@BlenderGAME_FALSE@blender_bin_DEPENDENCIES = \
-@BlenderGAME_FALSE@	creator/libblender_creator.la \
-@BlenderGAME_FALSE@	blender/libblender_blender.la \
-@BlenderGAME_FALSE@	kernel/libblender_kernel.la \
-@BlenderGAME_FALSE@	../intern/libblender_intern.la \
-@BlenderGAME_FALSE@	../intern/python/frozen/libfrozen.a
+@BlenderGAME_FALSE@@CARBON_TRUE@blender_bin_DEPENDENCIES =
+@BlenderGAME_FALSE@@CARBON_FALSE@blender_bin_DEPENDENCIES = \
+@BlenderGAME_FALSE@@CARBON_FALSE@	creator/libblender_creator.la \
+@BlenderGAME_FALSE@@CARBON_FALSE@	blender/libblender_blender.la \
+@BlenderGAME_FALSE@@CARBON_FALSE@	kernel/libblender_kernel.la \
+@BlenderGAME_FALSE@@CARBON_FALSE@	../intern/libblender_intern.la \
+@BlenderGAME_FALSE@@CARBON_FALSE@	../intern/python/frozen/libfrozen.a
+@BlenderGAME_TRUE@@CARBON_TRUE@blender_bin_DEPENDENCIES =
+@BlenderGAME_TRUE@@CARBON_FALSE@blender_bin_DEPENDENCIES = \
+@BlenderGAME_TRUE@@CARBON_FALSE@	gameengine/libblender_gameengine.la \
+@BlenderGAME_TRUE@@CARBON_FALSE@	creator/libblender_creator.la \
+@BlenderGAME_TRUE@@CARBON_FALSE@	blender/libblender_blender.la \
+@BlenderGAME_TRUE@@CARBON_FALSE@	kernel/libblender_kernel.la \
+@BlenderGAME_TRUE@@CARBON_FALSE@	../intern/libblender_intern.la \
+@BlenderGAME_TRUE@@CARBON_FALSE@	../intern/python/frozen/libfrozen.a
 blenderplayer_app_SOURCES = blenderplayer.app.c
 blenderplayer_app_OBJECTS = blenderplayer.app.$(OBJEXT)
 blenderplayer_app_LDADD = $(LDADD)
 blenderplayer_app_DEPENDENCIES =
 blenderplayer_app_LDFLAGS =
-blenderpublisher_app_SOURCES = blenderpublisher.app.c
-blenderpublisher_app_OBJECTS = blenderpublisher.app.$(OBJEXT)
-blenderpublisher_app_LDADD = $(LDADD)
-blenderpublisher_app_DEPENDENCIES =
-blenderpublisher_app_LDFLAGS =
+@CARBON_TRUE@am_blenderpublisher_app_OBJECTS =
+blenderpublisher_app_OBJECTS = $(am_blenderpublisher_app_OBJECTS)
+@BlenderGAME_FALSE@@CARBON_TRUE@blenderpublisher_app_DEPENDENCIES = \
+@BlenderGAME_FALSE@@CARBON_TRUE@	creator/libblender_creator.la \
+@BlenderGAME_FALSE@@CARBON_TRUE@	blender/libblender_blender.la \
+@BlenderGAME_FALSE@@CARBON_TRUE@	kernel/libblender_kernel.la \
+@BlenderGAME_FALSE@@CARBON_TRUE@	../intern/libblender_intern.la \
+@BlenderGAME_FALSE@@CARBON_TRUE@	../intern/python/frozen/libfrozen.a
+@BlenderGAME_FALSE@@CARBON_FALSE@blenderpublisher_app_DEPENDENCIES =
+@BlenderGAME_TRUE@@CARBON_TRUE@blenderpublisher_app_DEPENDENCIES = \
+@BlenderGAME_TRUE@@CARBON_TRUE@	gameengine/libblender_gameengine.la \
+@BlenderGAME_TRUE@@CARBON_TRUE@	creator/libblender_creator.la \
+@BlenderGAME_TRUE@@CARBON_TRUE@	blender/libblender_blender.la \
+@BlenderGAME_TRUE@@CARBON_TRUE@	kernel/libblender_kernel.la \
+@BlenderGAME_TRUE@@CARBON_TRUE@	../intern/libblender_intern.la \
+@BlenderGAME_TRUE@@CARBON_TRUE@	../intern/python/frozen/libfrozen.a
+@BlenderGAME_TRUE@@CARBON_FALSE@blenderpublisher_app_DEPENDENCIES =
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/blenderplayer.app.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/blenderpublisher.app.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/blenderplayer.app.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -229,7 +258,7 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(blender_bin_SOURCES) blenderplayer.app.c \
-	blenderpublisher.app.c
+	$(blenderpublisher_app_SOURCES)
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	ps-recursive install-info-recursive uninstall-info-recursive \
@@ -238,7 +267,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = blender kernel creator gameengine icons
-SOURCES = $(blender_bin_SOURCES) blenderplayer.app.c blenderpublisher.app.c
+SOURCES = $(blender_bin_SOURCES) blenderplayer.app.c $(blenderpublisher_app_SOURCES)
 
 all: all-recursive
 
@@ -295,7 +324,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blenderplayer.app.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blenderpublisher.app.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

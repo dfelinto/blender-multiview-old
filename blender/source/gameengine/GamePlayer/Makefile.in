@@ -51,6 +51,8 @@ BlenderGAME_FALSE = @BlenderGAME_FALSE@
 BlenderGAME_TRUE = @BlenderGAME_TRUE@
 BlenderOPENAL_FALSE = @BlenderOPENAL_FALSE@
 BlenderOPENAL_TRUE = @BlenderOPENAL_TRUE@
+BlenderPLUGIN_FALSE = @BlenderPLUGIN_FALSE@
+BlenderPLUGIN_TRUE = @BlenderPLUGIN_TRUE@
 BlenderSTATIC_FALSE = @BlenderSTATIC_FALSE@
 BlenderSTATIC_TRUE = @BlenderSTATIC_TRUE@
 CARBON_FALSE = @CARBON_FALSE@
@@ -211,6 +213,10 @@ INCLUDES = -I$(top_srcdir)/source/gameengine/Rasterizer \
 	-I$(top_srcdir)/source/gameengine/Ketsji \
 	-I$(top_srcdir)/source/gameengine/SceneGraph \
 	-I$(top_srcdir)/source/gameengine/Network \
+	-I$(top_srcdir)/source/gameengine/GamePlayer/common \
+	-I$(top_srcdir)/source/gameengine/GamePlayer/netscape/src/ketsji \
+	-I$(top_srcdir)/source/gameengine/Physics/Sumo/include \
+	-I$(top_srcdir)/source/gameengine/Physics/Sumo/Fuzzics/include \
 	-I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/imbuf \
 	-I$(top_srcdir)/intern/bmfont

@@ -464,7 +464,7 @@ ac_includes_default="\
 #endif"
 
 ac_unique_file="source/creator/creator.c"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE LN_S ECHO RANLIB ac_ct_RANLIB CPP EGREP LIBTOOL PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS WIN32_TRUE WIN32_FALSE CARBON_TRUE CARBON_FALSE X11_TRUE X11_FALSE PYTHONSYSPREFIX BlenderSTATIC_TRUE BlenderSTATIC_FALSE BlenderGAME_TRUE BlenderGAME_FALSE BlenderOPENAL_TRUE BlenderOPENAL_FALSE LIBOBJS ALLOCA LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE LN_S ECHO RANLIB ac_ct_RANLIB CPP EGREP LIBTOOL PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS WIN32_TRUE WIN32_FALSE CARBON_TRUE CARBON_FALSE X11_TRUE X11_FALSE PYTHONSYSPREFIX BlenderSTATIC_TRUE BlenderSTATIC_FALSE BlenderGAME_TRUE BlenderGAME_FALSE BlenderOPENAL_TRUE BlenderOPENAL_FALSE BlenderPLUGIN_TRUE BlenderPLUGIN_FALSE LIBOBJS ALLOCA LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1026,6 +1026,7 @@ Optional Features:
   --enable-fast-install=PKGS  optimize for fast installation default=yes
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-blenderstatic  Build static binary (default=disable)
+  --enable-gameplayer     Build web plugin (default=disable)
   --enable-openal         Enable OpenAL in game engine (default=disable)
 
 Optional Packages:
@@ -4732,7 +4733,7 @@ test "x$enable_libtool_lock" != xno && enable_libtool_lock=yes
 case $host in
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4735 "configure"' > conftest.$ac_ext
+  echo '#line 4736 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5250,7 +5251,7 @@ chmod -w .
 save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -o out/conftest2.$ac_objext"
 compiler_c_o=no
-if { (eval echo configure:5253: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
+if { (eval echo configure:5254: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
   # The compiler can only warn and ignore the option if not recognized
   # So say no if there are warnings
   if test -s out/conftest.err; then
@@ -6995,7 +6996,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 6998 "configure"
+#line 6999 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -7093,7 +7094,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 7096 "configure"
+#line 7097 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8054,6 +8055,14 @@ if test "${with_gameblender+set}" = set; then
 
 else
       with_gameblender=no
+fi;
+
+  # Check whether --enable-gameplayer or --disable-gameplayer was given.
+if test "${enable_gameplayer+set}" = set; then
+  enableval="$enable_gameplayer"
+
+else
+      enable_gameplayer=no
 fi;
 
 
@@ -11597,6 +11606,16 @@ fi
 
 
 
+if test x$enable_gameplayer = x"yes"; then
+  BlenderPLUGIN_TRUE=
+  BlenderPLUGIN_FALSE='#'
+else
+  BlenderPLUGIN_TRUE='#'
+  BlenderPLUGIN_FALSE=
+fi
+
+
+
 
 
 
@@ -13714,10 +13733,77 @@ done
 
 
 
-if test ! x"$x_libraries" = x""; then
-  old_ldflags="${LDFLAGS}"
-  export LDFLAGS="-L$x_libraries"
+  ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+
+echo "$as_me:$LINENO: checking for printf in -lstdc++" >&5
+echo $ECHO_N "checking for printf in -lstdc++... $ECHO_C" >&6
+if test "${ac_cv_lib_stdcpp_printf+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lstdc++  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char printf ();
+int
+main ()
+{
+printf ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_stdcpp_printf=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_stdcpp_printf=no
 fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_stdcpp_printf" >&5
+echo "${ECHO_T}$ac_cv_lib_stdcpp_printf" >&6
+if test $ac_cv_lib_stdcpp_printf = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSTDC__ 1
+_ACEOF
+
+  LIBS="-lstdc++ $LIBS"
+
+fi
+   ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 echo "$as_me:$LINENO: checking for dlopen in -ldl" >&5
 echo $ECHO_N "checking for dlopen in -ldl... $ECHO_C" >&6
@@ -14668,65 +14754,6 @@ else
 fi
   fi
 
-echo "$as_me:$LINENO: checking for XDGAQueryModes in -lXxf86dga" >&5
-echo $ECHO_N "checking for XDGAQueryModes in -lXxf86dga... $ECHO_C" >&6
-if test "${ac_cv_lib_Xxf86dga_XDGAQueryModes+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lXxf86dga  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-#line $LINENO "configure"
-#include "confdefs.h"
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char XDGAQueryModes ();
-int
-main ()
-{
-XDGAQueryModes ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-         { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_lib_Xxf86dga_XDGAQueryModes=yes
-else
-  echo "$as_me: failed program was:" >&5
-cat conftest.$ac_ext >&5
-ac_cv_lib_Xxf86dga_XDGAQueryModes=no
-fi
-rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_Xxf86dga_XDGAQueryModes" >&5
-echo "${ECHO_T}$ac_cv_lib_Xxf86dga_XDGAQueryModes" >&6
-if test $ac_cv_lib_Xxf86dga_XDGAQueryModes = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBXXF86DGA 1
-_ACEOF
-
-  LIBS="-lXxf86dga $LIBS"
-
-fi
-
-
 echo "$as_me:$LINENO: checking for glIsTexture in -lGL" >&5
 echo $ECHO_N "checking for glIsTexture in -lGL... $ECHO_C" >&6
 if test "${ac_cv_lib_GL_glIsTexture+set}" = set; then
@@ -14792,7 +14819,7 @@ if test "${ac_cv_lib_GLU_gluErrorString+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lGLU -lGL $LIBS"
+LIBS="-lGLU  $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
@@ -14844,21 +14871,14 @@ _ACEOF
 
 fi
 
-  ac_ext=cc
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-
-
-echo "$as_me:$LINENO: checking for printf in -lstdc++" >&5
-echo $ECHO_N "checking for printf in -lstdc++... $ECHO_C" >&6
-if test "${ac_cv_lib_stdcpp_printf+set}" = set; then
+echo "$as_me:$LINENO: checking for XDGAQueryModes in -lXxf86dga" >&5
+echo $ECHO_N "checking for XDGAQueryModes in -lXxf86dga... $ECHO_C" >&6
+if test "${ac_cv_lib_Xxf86dga_XDGAQueryModes+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-lstdc++  $LIBS"
+LIBS="-lXxf86dga $X_LIBS $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
@@ -14869,11 +14889,11 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char printf ();
+char XDGAQueryModes ();
 int
 main ()
 {
-printf ();
+XDGAQueryModes ();
   ;
   return 0;
 }
@@ -14890,35 +14910,27 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_lib_stdcpp_printf=yes
+  ac_cv_lib_Xxf86dga_XDGAQueryModes=yes
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-ac_cv_lib_stdcpp_printf=no
+ac_cv_lib_Xxf86dga_XDGAQueryModes=no
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_stdcpp_printf" >&5
-echo "${ECHO_T}$ac_cv_lib_stdcpp_printf" >&6
-if test $ac_cv_lib_stdcpp_printf = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_lib_Xxf86dga_XDGAQueryModes" >&5
+echo "${ECHO_T}$ac_cv_lib_Xxf86dga_XDGAQueryModes" >&6
+if test $ac_cv_lib_Xxf86dga_XDGAQueryModes = yes; then
   cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBSTDC__ 1
+#define HAVE_LIBXXF86DGA 1
 _ACEOF
 
-  LIBS="-lstdc++ $LIBS"
+  LIBS="-lXxf86dga $LIBS"
 
 fi
-   ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-if test ! x"$x_libraries" = x""; then
-  unset LDFLAGS
-  export LDFLAGS=$old_ldflags
-fi
+
 
 
 
@@ -15450,6 +15462,13 @@ if test -z "${BlenderOPENAL_TRUE}" && test -z "${BlenderOPENAL_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BlenderOPENAL\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BlenderOPENAL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BlenderPLUGIN_TRUE}" && test -z "${BlenderPLUGIN_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BlenderPLUGIN\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BlenderPLUGIN\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -16102,6 +16121,8 @@ s,@BlenderGAME_TRUE@,$BlenderGAME_TRUE,;t t
 s,@BlenderGAME_FALSE@,$BlenderGAME_FALSE,;t t
 s,@BlenderOPENAL_TRUE@,$BlenderOPENAL_TRUE,;t t
 s,@BlenderOPENAL_FALSE@,$BlenderOPENAL_FALSE,;t t
+s,@BlenderPLUGIN_TRUE@,$BlenderPLUGIN_TRUE,;t t
+s,@BlenderPLUGIN_FALSE@,$BlenderPLUGIN_FALSE,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@ALLOCA@,$ALLOCA,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
