@@ -22,7 +22,10 @@ libfrozen_a_SOURCES =
 #EXTRA_DIST = $(top_srcdir)/intern/python/frozen/*.c README.NaN $(PYFILES)
 EXTRA_DIST = README.NaN $(PYFILES)
 
-libfrozen.a: $(PYFILES)
+#libfrozen.a: $(PYFILES)
+libfrozen.a: ../frozen/src.list $(PYFILES)
+
+../frozen/src.list:	$(PYFILES)
 	@PYTHON@ -S -O \
 		$(top_srcdir)/intern/python/freeze/freeze_ac.py -d -x os -x \
 		pprint -I $(SRCDIR) -o ../frozen $(SRCDIR)/VRMLmain.py
@@ -30,7 +33,7 @@ libfrozen.a: $(PYFILES)
 
 clean:;
 	rm -f *.pyo
-	cd ../frozen && rm -f *.o && cd ../freeze
+	cd ../frozen && rm -f *.o *.list && cd ../freeze
 
 distclean:;
 	rm -f *.pyc
