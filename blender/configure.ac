@@ -45,8 +45,15 @@ dnl     [ CXXFLAGS="-g -O3 -Wall -funsigned-char" ]
 case "$target" in
   *sparc* )
         AC_DEFINE(SUN_OGL_NO_VERTEX_MACROS,1,[Fix for Sun's GL])
+	AC_DEFINE(BIG_ENDIAN,1,)
   ;;  
-  *darwin*)
+  *-*-powerpc )
+	AC_DEFINE(BIG_ENDIAN,1,)
+  ;;
+  *-*-irix* )
+	AC_DEFINE(BIG_ENDIAN,1,)
+  ;;
+  *-*-darwin* )
   	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
   	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
   ;;
