@@ -9,7 +9,7 @@ dnl --------------------
 dnl AC/AM Initialization
 dnl --------------------
 
-  AC_INIT(blender-creator, 2.27, )
+  AC_INIT(blender-creator, 2.28, )
   AC_CANONICAL_SYSTEM
   AM_INIT_AUTOMAKE([$PACKAGE_NAME], [$PACKAGE_VERSION])
 
@@ -188,6 +188,12 @@ fi
 ])
 
 #Refactor sound lib options.
+  AC_ARG_ENABLE(openal,
+   AC_HELP_STRING([--enable-openal],[Enable OpenAL in game engine (default=disable)]),
+   ,dnl default assign.
+   [ enable_openal=no ]  dnl default setting.
+  )
+
   AC_ARG_ENABLE(fmod,
    AC_HELP_STRING([--enable-fmod],[Enable FMOD audio in game engine (default=disable)]),
    ,dnl default assign.
@@ -205,8 +211,12 @@ fi
 #Find out what path to use for python.
 python_sysprefix=`echo "import sys; print sys.prefix" | $PYTHON -`
 
-XIPH_PATH_OGG
-XIPH_PATH_VORBIS
+if test x"$enable_openal" = x"yes"; then
+  XIPH_PATH_OGG
+  XIPH_PATH_VORBIS
+#  AM_PATH_SDL(1.0)
+#  AM_PATH_SMPEG
+fi
 
 #SDL library functionality
 AM_PATH_SDL (1.0)
@@ -253,6 +263,7 @@ dnl ----------------
 #  AC_SUBST([BlenderSTATIC],[$enable_blenderstatic])
   AM_CONDITIONAL([BlenderSTATIC],[test x$enable_blenderstatic = x"yes"])
   AM_CONDITIONAL([BlenderGAME],[test x$enable_gameblender = x"yes"])
+  AM_CONDITIONAL([BlenderOPENAL],[test x$enable_openal = x"yes"])
   AM_CONDITIONAL([BlenderPLUGIN],[test x$enable_blenderplugin = x"yes"])
   AM_CONDITIONAL([BlenderFMOD],[test x$enable_fmod = x"yes"])
   AM_CONDITIONAL([BlenderQUICKTIME],[test x$enable_quicktime = x"yes"])
@@ -301,12 +312,16 @@ if test x"$enable_gameblender" = x"yes"; then
   AC_CHECK_LIB([ode], [dJointGetAMotorAngle],,
     AC_MSG_ERROR(First build ode or do not use --enable-gameblender))
 fi
+if test x"$enable_openal" = x"yes"; then
   AC_CHECK_LIB([smpeg], [SMPEG_getinfo])
   AC_CHECK_LIB([esd], [esd_close])
   AC_CHECK_LIB([ogg], [ogg_stream_destroy])
   AC_CHECK_LIB([vorbis], [vorbis_info_init])
   AC_CHECK_LIB([vorbisfile], [ov_open])
-  AC_CHECK_LIB([openal], [alutInit])
+  AC_CHECK_LIB([openal], [alutInit] ,
+   , dnl found -- nop
+   [enable_openal=no] )  dnl not found -- disable openal
+fi
 
 if test x$ac_cv_header_Carbon_Carbon_h != xyes; then
   AC_CHECK_LIB([Xext], [XextFindDisplay],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
@@ -342,6 +357,12 @@ else
   use_gameblender=0
 fi
   AC_DEFINE_UNQUOTED([USE_GAMEBLENDER],[$use_gameblender],[Compile in GameBlender support])
+
+dnl if test x$enable_openal = x"yes"; then
+dnl   AC_DEFINE_UNQUOTED([USE_OPENAL],[$use_openal],[Use OpenAL sound API in GameBlender])
+dnl fi
+
+AM_CONDITIONAL([USE_OPENAL],[test x$use_openal = x"yes"])
 
 dnl -----------------------------------------
 dnl Parse Makefile.in's and other input files

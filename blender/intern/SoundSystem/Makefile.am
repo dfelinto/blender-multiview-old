@@ -12,6 +12,20 @@ FMOD_DIST = \
 	fmod/SND_FmodDevice.h
 endif
 
+if BlenderOPENAL
+OPENAL_DEVICE = \
+	openal/SND_OpenALDevice.cpp \
+	openal/SND_OpenALDevice.h \
+	openal/pthread_cancel.cpp
+OPENAL_DIST =
+else
+OPENAL_DEVICE =
+OPENAL_DIST = \
+	openal/SND_OpenALDevice.cpp \
+	openal/SND_OpenALDevice.h \
+	openal/pthread_cancel.cpp
+endif
+
 #there is a test file for those who want to build it... as long as you edit this file
 
 #note fmod might be a windows only file as it includes from the windows library
@@ -46,9 +60,7 @@ libsoundsystem_la_SOURCES = \
 	intern/SND_Utils.cpp \
 	intern/SND_WaveCache.cpp \
 	intern/SND_WaveSlot.cpp \
-	openal/SND_OpenALDevice.cpp \
-	openal/SND_OpenALDevice.h \
-	openal/pthread_cancel.cpp
+    $(OPENAL_DEVICE)
 
 INCLUDES = -I$(top_srcdir)/lib/windows/fmod/include \
 	-I$(top_srcdir)/intern/SoundSystem/intern \
@@ -63,4 +75,5 @@ EXTRA_DIST = \
 	fmod/Makefile \
 	intern/Makefile \
 	openal/Makefile \
-	$(FMOD_DIST)
+	$(FMOD_DIST) \
+    $(OPENAL_DIST)
