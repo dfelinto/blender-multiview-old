@@ -123,6 +123,22 @@ Rethink, discuss ways to automate test writing and work on a good set of tests.
 == End of tests project ==
 
 ===============================
+= Project: Odds N' Ends =
+===============================
+>Coordinator(s): Joseph Gilbert
+>Start: after release 2.34
+>Priority: MEDIUM
+
+- add a Render.getImageType()
+- clean up Mathutils module (the code is pretty aweful)
+- figure out what's going on with mesh deformations
+- coerce Mathutils.Matrix() to take vector objects
+- add some volumetric functions to mathutils
+- bug fixes
+
+== End of Odds N' Ends project ==
+
+===============================
 = Project: Python GUI =
 ===============================
 >Coordinator(s): Joseph Gilbert
