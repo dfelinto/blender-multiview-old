@@ -706,8 +706,8 @@ static void draw_manipulator_rotate(float mat[][4], int moving, int drawflags)
 		}
 	}
 	
-	/* Trackball center, not in combo mode */
-	if((drawflags & MAN_ROT_T) && (drawflags & ~MAN_ROT_C)==0) {
+	/* Trackball center */
+	if(drawflags & MAN_ROT_T) {
 		float smat[3][3], imat[3][3];
 		float offset[3];
 		
@@ -957,7 +957,7 @@ static void draw_manipulator_scale(float mat[][4], int moving, int drawflags)
 	}
 	
 	/* not in combo mode */
-	if((drawflags & ~MAN_SCALE_C)==0) {
+	if((drawflags & (~MAN_SCALE_C))==0) {
 		/* center cube, do not add to selection when shift is pressed (planar constraint)  */
 		if( (G.f & G_PICKSEL) && (G.qual & LR_SHIFTKEY)==0) glLoadName(MAN_SCALE_C);
 		
@@ -1443,13 +1443,23 @@ void BIF_draw_manipulator(ScrArea *sa)
 	if(v3d->twflag & V3D_DRAW_MANIPULATOR) {
 		
 		if(v3d->twtype & V3D_MANIPULATOR_ROTATE) {
+			int flags = drawflags;
+			// prevent combo to draw too many centers
+			if(v3d->twtype & (V3D_MANIPULATOR_TRANSLATE|V3D_MANIPULATOR_SCALE)) 
+				flags &= ~MAN_ROT_T;
+			
 			if(G.moving) draw_manipulator_rotate_ghost(v3d->twmat, drawflags);
-			if(G.rt==4) draw_manipulator_rotate_cyl(v3d->twmat, G.moving, drawflags);
-			else draw_manipulator_rotate(v3d->twmat, G.moving, drawflags);
+			if(G.rt==4) draw_manipulator_rotate_cyl(v3d->twmat, G.moving, flags);
+			else draw_manipulator_rotate(v3d->twmat, G.moving, flags);
 		}
 		if(v3d->twtype & V3D_MANIPULATOR_SCALE) {
+			int flags= drawflags;
+			
+			if(v3d->twtype & (V3D_MANIPULATOR_ROTATE|V3D_MANIPULATOR_TRANSLATE));
+			else flags &= MAN_SCALE_C;
+			
 			if(G.moving) draw_manipulator_scale_ghost(v3d->twmat, drawflags);
-			draw_manipulator_scale(v3d->twmat, G.moving, drawflags);
+			draw_manipulator_scale(v3d->twmat, G.moving, flags);
 		}
 		if(v3d->twtype & V3D_MANIPULATOR_TRANSLATE) {
 			if(G.moving) draw_manipulator_translate_ghost(v3d->twmat, drawflags);
@@ -1486,13 +1496,13 @@ static int manipulator_selectbuf(ScrArea *sa, float hotspot)
 	
 	/* do the drawing */
 	if(v3d->twtype & V3D_MANIPULATOR_ROTATE) {
-		if(G.rt==4) draw_manipulator_rotate_cyl(v3d->twmat, 0, 0xFFFF);
-		else draw_manipulator_rotate(v3d->twmat, 0, 0xFFFF);
+		if(G.rt==4) draw_manipulator_rotate_cyl(v3d->twmat, 0, MAN_ROT_C);
+		else draw_manipulator_rotate(v3d->twmat, 0, MAN_ROT_C);
 	}
 	if(v3d->twtype & V3D_MANIPULATOR_SCALE)
-		draw_manipulator_scale(v3d->twmat, 0, 0xFFFF);
+		draw_manipulator_scale(v3d->twmat, 0, MAN_SCALE_C);
 	if(v3d->twtype & V3D_MANIPULATOR_TRANSLATE)
-		draw_manipulator_translate(v3d->twmat, 0, 0xFFFF);
+		draw_manipulator_translate(v3d->twmat, 0, MAN_TRANS_C);
 	
 	glPopName();
 	hits= glRenderMode(GL_RENDER);
