@@ -49,11 +49,12 @@ case "$target" in
   *-*-powerpc )
   ;;
   *-*-irix* )
-     AC_CHECK_LIB([cl],[audioAlgorithms])
+     AC_CHECK_LIB([cl],[clSetParams])
      AC_CHECK_LIB([dmedia],[dmACCreate])
-     AC_CHECK_LIB([c],[savestr])
      AC_CHECK_LIB([C],[free])
-     AC_CHECK_LIB([movieGL], [thisRoutineDoesNothing])
+     AC_CHECK_LIB([movieGL], [mvOpenFile])
+     IRIX_SSL="/usr/freeware"
+     LDFLAGS="$LDFLAGS -L/usr/freeware/lib32"
   ;;
   *-*-darwin* )
 dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
@@ -95,6 +96,15 @@ dnl ----------------------
            		CPPFLAGS="$CPPFLAGS -I$withval/include"
 		fi
 	fi
+],
+[
+	if test "x$IRIX_SSL" != "x"; then
+		if test -f $IRIX_SSL/include/openssl/ssl.h; then
+			LDFLAGS="$LDFLAGS -L$IRIX_SSL/lib"
+			CPPFLAGS="$CPPFLAGS -I$IRIX_SSL/include"
+		fi
+	fi
+	
 ])
 
   AC_ARG_WITH(ode,
