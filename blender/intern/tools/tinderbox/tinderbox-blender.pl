@@ -115,10 +115,10 @@ sub InitVars {
     $CVSCO = 'co -P';
 
     # Set these proper values for your tinderbox server
-    $Tinderbox_server = 'tinderbox@xserve.blender.org hans';
+    $Tinderbox_server = 'tinderbox@xserve.blender.org';
 
     # These shouldn't really need to be changed
-    $BuildSleep = 10; # Minimum wait period from start of build to start
+    $BuildSleep = 60; # Minimum wait period from start of build to start
                       # of next build in minutes (default 10)
     $BuildTree = '';
     $BuildTag = '';
