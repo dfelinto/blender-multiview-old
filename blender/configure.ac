@@ -21,6 +21,7 @@ dnl -------------------
   AC_PROG_CC
   AC_PROG_LN_S
   AC_PROG_LIBTOOL
+  AC_PROG_RANLIB
   AC_CHECK_TOOL([STRIP],[strip])
   AC_PROG_AWK
 
@@ -82,8 +83,9 @@ dnl -----------------------
   AC_PATH_XTRA
   AC_HEADER_DIRENT
   AC_HEADER_STDC
+  AC_HEADER_STAT
   AC_HEADER_SYS_WAIT
-  AC_CHECK_HEADERS([fcntl.h float.h inttypes.h limits.h malloc.h memory.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/file.h sys/ioctl.h sys/mount.h sys/param.h sys/statfs.h sys/time.h sys/vfs.h unistd.h])
+  AC_CHECK_HEADERS([fcntl.h float.h inttypes.h limits.h malloc.h memory.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/file.h sys/ioctl.h sys/mount.h sys/param.h sys/statfs.h sys/time.h sys/vfs.h unistd.h termios.h wchar.h wctype.h sys/socket.h])
   AC_CHECK_HEADER([openssl/crypto.h])
   AC_CHECK_HEADER([jpeglib.h])
   AC_CHECK_HEADER([png.h])
@@ -123,6 +125,9 @@ dnl Checks for POSIX functions
 dnl --------------------------
 
   AC_FUNC_ERROR_AT_LINE
+  AC_FUNC_LSTAT
+  AC_FUNC_OBSTACK
+  AC_FUNC_REALLOC
   AC_FUNC_FNMATCH
   AC_FUNC_FORK
   AC_FUNC_MALLOC
@@ -133,7 +138,7 @@ dnl --------------------------
   AC_FUNC_STAT
   AC_FUNC_STRFTIME
   AC_FUNC_VPRINTF
-  AC_CHECK_FUNCS([endpwent floor getcwd gettimeofday memmove memset mkdir munmap pow select sqrt strcasecmp strchr strdup strncasecmp strpbrk strrchr strstr strtoul])
+  AC_CHECK_FUNCS([endpwent floor getcwd gettimeofday memmove memset mkdir munmap pow select sqrt strcasecmp strchr strdup strncasecmp strpbrk strrchr strstr strtoul atexit fdatasync gethostname])
 
 dnl --------------------------
 dnl Checks for extra libraries
