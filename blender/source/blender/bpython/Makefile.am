@@ -2,7 +2,7 @@ noinst_LTLIBRARIES = libblender_bpython.la
 
 libblender_bpython_la_LDFLAGS = -static \
 	-L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
-	-lpython@PYTHON_VERSION@ @X_EXTRA_LIBS@ -ldl -lm -lpthread
+	-lpython@PYTHON_VERSION@ @X_EXTRA_LIBS@ -lm
 
 libblender_bpython_la_SOURCES = \
 	intern/BPY_constobject.c \
