@@ -40,12 +40,13 @@ if [ $numargs -lt 2 ]; then
 	exit 1
 fi
 
-cpargs=$(($numargs - 1));
+cpargs=$(($numargs - 1))
 eval dst=\${$#}
 
 #echo "[$@] has $# arguments $dst"
 
-for i in `jot $cpargs`; do
+i=1
+while [ $i -le $cpargs ]; do
 	eval src=\${$i};
 	#echo "$src to $dst"
 	if [ ! -f $src ]; then
@@ -78,5 +79,6 @@ for i in `jot $cpargs`; do
 		echo "ERROR $dst is not a directory or a file"
 		exit 1
 	fi
+	i=$(($i + 1))
 done
 
