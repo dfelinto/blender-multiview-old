@@ -3273,7 +3273,6 @@ static int ui_do_block(uiBlock *block, uiEvent *uevent)
 					but->flag |= UI_MOUSE_OVER;
 					UIbuttip= but;
 				}
-printf("mouse %d %d\n", uevent->mval[0], uevent->mval[1]);				
 				/* hilite case 1 */
 				if(but->flag & UI_MOUSE_OVER) {
 					if( (but->flag & UI_ACTIVE)==0) {
