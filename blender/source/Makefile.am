@@ -17,13 +17,13 @@ SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
 
 ## Assuming no reason to build creator anymore lets just call publisher blender
 if CARBON
-bin_PROGRAMS = blenderpublisher.app blenderplayer.app 
+bin_PROGRAMS = blender.app blenderplayer.app
 
-blenderpublisher_app_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
+blender_app_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
 
-blenderpublisher_app_SOURCES = 
+blender_app_SOURCES = 
 
-blenderpublisher_app_LDADD = \
+blender_app_LDADD = \
 	-lpython@PYTHON_VERSION@ \
 	$(gamelib) \
 	creator/libblender_creator.la \
