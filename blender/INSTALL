@@ -17,7 +17,7 @@ openal:      http://www.openal.org/home/		(for linux/windows)
 fmod: http://www.fmod.org/
 
 mozilla: http://www.mozilla.org/
-nspr:  ftp://ftp.mozilla.org/pub/nspr/releases
+nspr:  ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases
 	(side note: on debian linux you will need mozilla-dev and libnspr-dev)
 
 glut:    http://www.opengl.org/developers/documentation/glut.html
