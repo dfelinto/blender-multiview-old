@@ -491,8 +491,8 @@ else
   AM_CONDITIONAL(b_png, false)
   AM_CONDITIONAL(b_jpeg, false)
   AM_CONDITIONAL(b_sdl, false)
-  AC_CHECK_LIB([png], [png_get_header_version])
   AC_CHECK_LIB([jpeg], [jpeg_destroy])
+  AC_CHECK_LIB([png], [png_get_header_version],,,-lm)
   AM_PATH_SDL(1.0.0)
   AC_CHECK_LIB([SDL], [SDL_Init])
   LIBS="$LIBS $SDL_LIBS"
