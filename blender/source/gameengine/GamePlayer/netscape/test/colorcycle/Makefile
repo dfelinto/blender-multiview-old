@@ -44,4 +44,5 @@ CPPFLAGS += -I../../netscape_api
 CPPFLAGS += -I$(OPENGL_HEADERS)
 CPPFLAGS += -I$(NAN_NSPR)/include
 CPPFLAGS += -I$(NAN_NSPR)/include/nspr
+CPPFLAGS += -I$(NAN_MOZILLA_INC)/include/nspr
 

@@ -45,8 +45,11 @@ CPPFLAGS += -I..
 CPPFLAGS += -I../../netscape_api
 
 # Mozilla headers:
-CPPFLAGS += -I$(NAN_MOZILLA)/include
-CPPFLAGS += -I$(NAN_MOZILLA)/include/nspr
+CPPFLAGS += -I$(NAN_NSPR)/include
+CPPFLAGS += -I$(NAN_NSPR)/include/nspr
+CPPFLAGS += -I$(NAN_MOZILLA_INC)
+CPPFLAGS += -I$(NAN_MOZILLA_INC)/nspr
+CPPFLAGS += -I$(NAN_MOZILLA_INC)/xpcom
 
 # quick hack for using some intermediates:
 # :OBJPATH = /home/nzc/obj/linux-glibc2.1.2-i386/gameengine/GamePlayer/netscape/src

@@ -51,6 +51,7 @@ CPPFLAGS += -I../../netscape_api
 CPPFLAGS += -I../../common
 CPPFLAGS += -I$(NAN_NSPR)/include
 CPPFLAGS += -I$(NAN_NSPR)/include/nspr
+CPPFLAGS += -I$(NAN_MOZILLA_INC)/nspr
 
 # game engine: main chunks:
 CPPFLAGS += -I../../../../Expressions
