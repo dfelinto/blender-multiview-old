@@ -1,0 +1,408 @@
+------------------------- Blender 2.36 release log ----------------
+
+December 21, 2004
+
+For html versions of release logs, with images and examples, please check:
+http://www.blender3d.org/cms/Releaselogs.34.0.html
+
+The 2.36 version has been targeted to cleanup and stabilize Blender, a lot of 
+long pending bugs and annoyances were fixed.
+
+Have fun!
+
+The blender.org team.
+
+--------------------------------------------------------------------
+
+
+NEW!
+
+- Using CTRL+C or CTRL+V copy/paste on buttons now also works for the "color swatches" in Blender, copying and pasting the RGB values.
+(Note; on OSX you can use Apple Command key too)
+
+- In RenderWindow, press AKEY to toggle 'alpha view'.
+
+- Fixed selection of Objects in Solid draw mode. Selection was just always not what you wanted, the rules for wireframe (cycling) can't be used then.
+New rule is;
+ - it always selects the frontmost visible item (wires too), unless:
+ - frontmost is active/selected already, then it picks the 2nd
+ - mouse didnt move 2 pixels while selecting, then it starts cycling
+
+- Mesh EditMode: Removed co-planar restriction for creating FGons. These now can span an entire tube.
+
+- AO render; "Use sky"  or "Use tex" now also take option "Use distances" into account, so you can control shades of AO better.
+
+- Render: static animated particle systems now allow to be animated with Material and Texture ipos. Only shows in render.
+
+- Render: Material option "Ztransp" now can be reflected in raytraced mirror.
+
+- Global undo: using number buttons gives better Undo push names (check ALT+U menu)
+
+- Game engine: Objects without texture faces now render in their assigned Material colors, and with lighted faces. This shows with ALT+Z textured view mode too.
+
+- Added more cases to update "Shaded View" on changes with buttons or tools.
+
+- Lasso Select now works in UV FaceSelect and Edit Mode Curve, Surface, Lattice. Missing still: MBall and Armature Edit Mode.
+
+
+NEW: Textures
+
+- All textures (Material, Lamp, World) now have 10 channels. Exports to Yafray too.
+
+- Added; support for normal maps.
+
+- Textures now have a "nabla" slider to control sharpness (resulution) of calculated normals
+
+- All procedural textures now accept "ColorBand", which gives much better control over how normals are being calculated.
+
+- Stucci texture now accepts "ColorBand" too, to control the texture normal being calculated.
+- Magic texture also accepts "ColorBand"
+
+- New channel for "Map to" added: "Warp"
+Use the slider next to the option to set amount of influence the texture will have on the coordinates of the next texture channel.
+Warp uses for this the same values as for Normal or Displacement mapping and remains active for all channels, until replaced (or zeroed).
+Note; this is not "parallax mapping", that's for another release.
+
+- Lamp texture mapping "View" now works on all Lamp types (not only Spot). Nice for projected textures.
+
+(read more about this on http://www.blender3d.org/cms/Releaselogs.34.0.html)
+
+Game engine
+
+- Objects without image textures now use Material color and get lit by the available lights by default. Also works in Textured 3D View.
+
+- OpenAL was generating a signal that killed Blender when audio stopped. This caused issues with starting Blender from desktop icons in Linux systems.
+
+- Update in the physics engine: interpolate between frames so track to/camera actuators work properly
+
+- Support added for Windows screen saver in Blender player;
+Any blenderplayer.exe (with the patch applied) can be renamed into something.scr, and it will behave as a Windows screen saver.
+(Right-click the .scr file, and select "Install". Then, it will appear in the screen saver properties dialog part of the display settings, including small preview et al).
+The screen saver functionality does not affect the executable when it is NOT named .scr
+The screen saver automatically exits when the mouse/keyboard is moved/pressed. There is no more need to wrap blenderplayer.exe into a bat file and use python quit controllers, or whatever else is suggested at http://download.blender.org/documentation/oldsite/oldsite.blender3d.org/181_Blender%20news%20haloParty.html
+
+- World option "Physics engine" now is set to Sumo by default on reading older files.
+
+- fix for stereo window creation in Unix X11
+
+- fix for forces with new timing system
+
+- fix for using Python delattr() or 'del Obj.Attr'
+
+- Alpha sort now works for linked (ALT+D) objects
+
+- Uses Polytope collision now for faster mesh intersection tests
+
+- Mouse over sensor does work now for ortho cameras.
+
+
+Python
+
+- World.setIpo() method now checks for OK Ipo type
+
+- Ipo_woIcuName() used CAM instead of WO constants
+
+- removed obsolete getCurveBP() method (Bspline Ipo is not supported in Blender)
+
+- BOOL properties were returning True always, small mistake in logic.c's getData 
+
+- Crash solved in Window.ViewLayer when no 3d window was visible or initialized.
+
+- Mathutils.Euler constructor failed to initialize class variables
+
+- Removed Object.get and .getSelected (deprecated long ago, we use .Get and .GetSelected) 
+
+- Fix for wrong initialization with newQuaternionObject;
+
+- Crash fixed with Meshes having edge data
+
+- Crash fixed with unlinking Text block being in use by ScriptLink
+
+Windows
+
+- When starting an animation render, and the output directory doesn't exist, Blender now correctly creates the full directory path.
+
+- Fixed crashes caused by trying to pop up Blender error menus while the render window is still active. It now prints errors in the DOS command window.
+
+- When saving to a Quicktime movie, and a drive letter is missing, Blender will assume it's on the drive where the Blender.exe resides.
+
+- Curve Deform, in Windows only, deformation was flat (2D) with default settings
+
+
+Linux:
+
+- F11 to switch between render window / main window didn't work anymore in some window managers (e.g. fluxbox), after fixing it to work in kde.
+
+- Curve deform (after using CTRL+P) crashed in Linux
+
+OSX
+
+- DANGEROUS BUG! Errors in saving "runtime" game; the runtime.app was copied or deleted without keeping track of spaces in names, causing in potential loss of data when runtime.app name starts with a space (rare occasion, but still!).
+
+- Hiding the Blender window (using Apple-H) caused this modifier key to hang in Blender.
+
+- Fixes for potential crashes in audio (OpenAL).
+
+Solaris
+
+- Added support for audio (openAL)
+
+- Error in refreshing buttons in frontbuffer (on highlight) has been defined to be a bug in Sun OpenGL. Is reported, Sun engineers work on it.
+
+
+FileWindow
+
+- DANGEROUS BUG! When copying/deleting/renaming files (C, R, N hot keys), files or directories with spaces in it didn't always get handled OK.
+
+- On some systems (like with ATI 9600), using "1000s of colors", the backbuffer selection method didn't work because of a different rounding of drawn color codes. This caused vertex-paint, face select mode or zbuffer-hidden selection in Mesh edit mode not to work.
+
+Static Particles
+
+- Particles added to a Mesh, which was being deformed by Armature, crashed or caused extreme CPU time. Bug introduced in 2.33 with collision code.
+Note: dynamic particles added while deforming a Mesh with Armatures will only shoot particles from original locations. What does work correctly are static particles though.
+
+- Static particles that are being deformed (curve/lattice/armature) now display correct in 3d window. It only updates animation when the particle system updates normally though.
+
+- On exit edit mode, static particles on SubSurf now display OK
+
+- Static particles without "animate" set didn't deform even
+
+- static particles used as duplicators had errors with extreme low "life" value for particles. Also, still cases could happen with unrotated duplicates at the end of a static particle line (with Vect option).
+
+- Static particles now are selectable in a 3d Window
+
+- after render particle system with Material Ipo, values for material were not restored correctly
+
+- Meshes with particles didn't draw axis (draw extra) on correct location or color
+
+Tools, 3D Window
+
+- Options "Home" and "View selected" (numpad dot) now show identical
+
+- Using Border Select had a limit of maximum 500 objects. Now goes to 2500.
+
+- Playback and display of Mesh objects with "Wave" effect, and with other objects vertex-parented to this Mesh, now shows animation correctly.
+
+- Objects being vertex-parented to a mesh, which in turn was being deformed by a curve or lattice, now update correctly.
+
+- Option "Align active camera to view" in pulldown messed up modifier key state.
+
+- In PoseMode, selecting multiple bones and using transform (Grab, rotate, scale) crashed.
+
+- Join Meshes (CTRL+J) now accepts Vertex Groups to be joined properly
+
+- Lasso select on objects didnt work with multiple views, due to lack of calculation of screen coordinates.
+
+- 3D Window: using SHIFT + hotkeys to set layers in Layer menu (MKEY) only accepted last hotkey with using "OK" button.
+
+- 3D Window: the "Render this view" option (OpenGL preview render) sometimes crashed in shaded mode and/or with Armatures.
+
+- MetaBalls: using particles to duplicate Metas caused crash on adding new Meta Object
+
+
+
+
+Tools, other window types:
+
+- IpoWindow (animation curves); NKEY panel "XMin" and "Xmax" buttons didn't work proper on large changes (>100 frames).
+
+- Outliner: AKey toggles open/close all items.
+
+- Outliner crash fixed on Alt+D (linked duplicate) of Armature
+
+- Outliner: crash on selecting Script icon (Windows/Linux)
+
+- Oops Schematic Window: switching from Outliner gave wrong transformed view
+
+- Oops Schematic Window (not Outliner) didn't show Lamp textures nor Material Ipos - correctly
+
+Tools, general:
+
+- Vertex Keys on 3D Bezier curves now support animating the "twist" value. This already worked for Nurbs curves.
+
+- Unpacking a file with sounds now saves sample files correctly. This didn't work when the samples were not used yet (shown in UI or played in game).
+
+- Appending Objects with Constraints from another Blender file, now correctly loads other Objects too, when used by the Constraints.
+
+- Appending data from other files accidentally cleared current Scene ScriptLinks
+
+- Appending data in PoseMode crashed Blender
+
+- When a font for 3d Text Object doesnt exist anymore, Blender could crash.
+
+- Global undo; buttons sending redraw events gave extra undo push called "Make single user or local". 
+
+- Global undo: crash solved in large changes of Lattice resolution button. 
+
+Mesh Edit Mode
+
+- Expand/shrink selection (CTRL + numpad-plus/minus) did not work with edge/face selection modes correctly yet.
+
+- CTRL+H hook menu, the "select" option now works with all selection modes
+
+- Separate command (P) in new select mode 'face' still used selection as based on vertices, causing errors or a crash.
+
+- "Add UV Sphere" now aligns with view, as for all other primitives
+
+- Face "dots" (in face select mode) didn't update on a "snap to" command.
+
+- Entering Mesh edit mode, skipped adding the Original situation to the undo stack, when editing multiple vertex keys.
+
+- The "Rotate Edge" option on quads didn't give correct flag in edge for drawing it in Object Mode.
+
+- NKey (Transform properties) Panel: entering values for "Crease" now goes OK when multiple edges are selected with different crease values. Was also missing an undo push.
+
+- Bevel tool sometimes failed to create new faces.
+
+- After "Extrude" pressing MiddleMouse will move to axis constraint as usual.
+
+- Edge select mode, now allows to (alternate) select edges that are overlapping or extremely close.
+
+- SHIFT+F "Fill" didnt set default vertex color (as in Paint Panel).
+
+- selection buffer (zbuffered selection clip) now supports full 24 bits range (was 18 bits).
+
+- Edge Rotate didn't copy smooth or material flags
+
+- Loop Cut (Alt+T) now works with partially invisible (clipped outside window) vertices
+
+- "Separate loose parts", crash on empty mesh (with no verts)
+
+- ALT+B loop select could go haywire on certain cases
+
+- Hide/Reveil damaged FGon flags
+
+- EditMode undo: converting Curve to Mesh, entering editmode, and invoke an "undo" crashed.
+
+
+Mesh
+
+- Calculation of vertex normals now gives correct draw and render results when mixing smooth and solid faces. For example on a cylinder with the caps set to solid. Please note that vertex normals are only recalculated all over after leaving Edit Mode. Using the button "Set Smooth" in Object Mode might require to do TAB-TAB in some occasions. This is an issue for 2.37.
+
+- Objects with negative scale were drawing texture faces front/back inverted in UV Face Select mode. 
+
+Interface
+
+- Added several Undo "pushes" where it still missed.
+
+- With mouse cursor over a screen-edge (between windows) none of the hotkeys worked. Now it checks for the global list of keys, including screen-switch,
+quit, frame change, Fkeys, load/save, undo/redo, etc.
+
+- Opening submenu levels in Blender now uses different heuristics, keeping the sub-level open for as long you move into the submenu direction.
+
+- Frame-sliding (using LMB) in Ipo, Action, Sound, NLA, Sequence windows now nicely idles CPU. It could cause a very tight loop using 100% CPU time.
+
+- Button used for Constraint names could cause crashes due to wrong string size assumption.
+
+- Using CTRL+Up/Down in Buttons Window now correctly re-scales and restores view.
+
+- Option "Erase all" (CTRL+X) didn't load UI when that option was used for loading files before.
+
+- User Settings menu (behind top "Info" header) now draws correctly on window sizes larger than 1280 pixels.
+
+- Translation error: text buttons or buttons showing names were accidentally translated too.
+
+- Texture buttons: image blocks now can be unlinked with "X" button.
+
+- When new panels get created (like choosing "Yafray" in Render panel) the new panels align and restore location as good as possible.
+
+- Option to switch left/right mouse didn't work for floating panels. It then still selected stuff behind the button.
+
+- Added code to disable "Emulate 3 button mouse" when "Left mouse select" option is chosen. This can't work together unfortunately... because of 1 button mouse owners.
+
+
+Render
+
+- <b>Critical bug!</b> Deformed mesh didnt give correct 'orco' (original texture coordinates) anymore on render, 
+
+- "Unified" render uses different sampling method for OSA render now, going much faster when many faces cover each other (unified render stores full list of all faces/halos that cover a pixel).
+
+- Saving BMP images now adds correct extension on file save.
+
+- Using Quicktime movies as textures, now loads it in highest quality. Also added support for interlaced fields for DV movies.
+
+- Saving Quicktime movies without indicating output path, will now save it in the directory where Blender itself resides. When a movie cannot be created, it will stop rendering and print an error in the DOS window.
+
+- Static particles, rendered with lighting, now checks for "Layer" Lamp option.
+
+- Halos (particles) with a texture map, but only mapping it to "Alpha" were rendered black, instead of Material color.
+
+- Rendering a Movie file, using a "Border" and set "Crop" (for output in smaller picture size as indicated) crashed Blender.
+
+- Using "Dupli Frames" objects now render correctly with Motion Blur.
+
+- Rendering ray traced transparency ("glass") now sets face normals correctly on the fly, removing the need to manually edit normals in the correct directions. Allows a camera to fly inside for example.
+
+- Nurbs surfaces now give correct normals for ray tracing too.
+
+- When rendering the inside part of "glass", specularity is being calculated now. Reflected rays inside of transparent models will keep bouncing inside now.
+
+- Stencil in World textures didn't work on RGB channel yet.
+
+- "Unified" render now supports "Edge" render on wire frames too. Also solved crash in "Edge" render.
+
+- "Unified" render now fills in zero alpha for sky.
+
+- Issue solved with using background images for render with Alpha, and adding over halos or lens flares.
+
+- With material slider "Ray Mir" set not zero, but with option "Ray Mirror" off, Blender accidentally entered a part of ray tracing code, screwing up the alpha value of the result.
+
+- "Unified" render: halos with Flare option didn't render correct, they were added twice. Also corrected errors in applying alpha for 'Premul' alpha.
+
+- "Unified" render now doesn't render Halos that are behind the 'far' clipping range correctly.
+
+- "Unified" render AO with option "Sky" could give black dots, caused by an overflow due to division by zero.
+
+- Render option "Gauss" now works for "Parts" rendering too.
+
+- solved several cases of unitialized variables, causing black scanlines or other render errors. Windows only.
+
+- with multipe 3D windows in a Screen, with one having its own layers "unlocked" and set different, caused wrong render results. Now it only renders Local View or local layer settings with F12 hotkey and mouse in the specific window.
+
+- Invoking render in Mesh EditMode gave wrong texture coordinates on Subdivision Surface
+
+- Transparent raytracing didn't make specular transparent
+
+- Crash fix on render cyclic Nurbs Surface with Cube mapping
+
+
+Sequence Editor
+
+- The image output window didn't update always correct on clicks in Sequencer.
+
+- Crash solved when using Scene strips in the sequencer, and deleting the scenes itself.
+
+- Combining "panorama" Scene strip and Sequencer effect on Scene (like glow) crashed.
+
+
+Import / Export
+
+- Import: DXF Polyline import fix, for Cinema4D files (among others).
+
+- Multiple errors fixed in .obj importer
+
+- Vertex normals now export in .obj format
+
+- Vrml 1.0 and Inventor import now supports up to 750k faces or 1 M vertices per "node".
+
+- Fixes in .ai and .svg exporting
+
+- Updates in blender2cal3d.py;
+
+- Update to off_import: support for uv data
+
+Yafray
+
+- Rendering using plugin returns zbuffer info for post processing
+
+- Support added for Material UV TexFace option
+
+- Normal map support added
+
+- Crash fix caused by improper check if plugin was loaded
+
+- Closed Nurbs surface crashed on render
+
+- Added nearly full support for Blender's procedural textures, with the exception of 'envmap', 'magic', and 'plugin' modes. The stucci texture also is not exact match, since it cannot be fully emulated in yafray because of implementation issues. It will work best for low turbulence values
+
+
