@@ -37,7 +37,7 @@ DIR = $(OCGDIR)/gameengine/GamePlayer/netscape/test
 include nan_compile.mk
 
 CPPFLAGS += -DXP_UNIX
-CPPFLAGS += $(LEVEL_1_CPP_WARNINGS) $(LEVEL_2_CPP_WARNINGS)
+CFLAGS += $(LEVEL_1_C_WARNINGS) $(LEVEL_2_C_WARNINGS)
 
 CPPFLAGS += -I../../src
 CPPFLAGS += -I../../netscape_api
