@@ -5223,7 +5223,6 @@ void BLO_library_append(SpaceFile *sfile, char *dir, int idcode)
 	Object *ob;
 	
 	INIT_MINMAX(min, max);
-	centroid[0]= centroid[1]= centroid[2]= 0.0;
 
 	/* are there files selected? */
 	for(a=0; a<sfile->totfile; a++) {
