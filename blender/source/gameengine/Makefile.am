@@ -1,4 +1,4 @@
-if BlenderPLUGIN
+if BlenderGAME
 gameplayerdir = GamePlayer
 gameplayerlib = libgameblender_player.la
 else

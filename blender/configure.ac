@@ -72,16 +72,16 @@ dnl -----------------------
      [ enable_blenderstatic=no ]  dnl default setting.
   )
 
-  AC_ARG_WITH(gameblender,
-   AC_HELP_STRING([--with-gameblender],[Build game engine (default=without)]),
+  AC_ARG_ENABLE(gameblender,
+   AC_HELP_STRING([--enable-gameblender],[Build game engine (default=disable)]),
    ,dnl default assign.
-   [ with_gameblender=no ]  dnl default setting.
+   [ enable_gameblender=no ]  dnl default setting.
   )
 
-  AC_ARG_ENABLE(gameplayer,
-   AC_HELP_STRING([--enable-gameplayer],[Build web plugin (default=disable)]),
+  AC_ARG_ENABLE(blenderplugin,
+   AC_HELP_STRING([--enable-blenderplugin],[Build browser plugin(default=disable)]),
    ,dnl default assign.
-   [ enable_gameplayer=no ]  dnl default setting.
+   [ enable_blenderplugin=no ]  dnl default setting.
   )
 
 dnl ----------------------
@@ -214,10 +214,10 @@ dnl ----------------
   AC_SUBST([PYTHONSYSPREFIX],[$python_sysprefix])
 #  AC_SUBST([BlenderSTATIC],[$enable_blenderstatic])
   AM_CONDITIONAL([BlenderSTATIC],[test x$enable_blenderstatic = x"yes"])
-  AM_CONDITIONAL([BlenderGAME],[test x$with_gameblender = x"yes"])
+  AM_CONDITIONAL([BlenderGAME],[test x$enable_gameblender = x"yes"])
+  AM_CONDITIONAL([BlenderPLUGIN],[test x$enable_blenderplugin = x"yes"])
   AM_CONDITIONAL([BlenderOPENAL],[test x$enable_openal = x"yes"])
   AM_CONDITIONAL([BlenderFMOD],[test x$enable_fmod = x"yes"])
-  AM_CONDITIONAL([BlenderPLUGIN],[test x$enable_gameplayer = x"yes"])
 
 
 dnl -----------------------------------

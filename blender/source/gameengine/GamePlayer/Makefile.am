@@ -1,10 +1,18 @@
 if WIN32
 BUILDTYPE=libgameblender_player_win.la
+PLUGBUILDTYPE=libgameblender_plugin_win.la
 else
 BUILDTYPE=libgameblender_player_Ghost.la
+PLUGBUILDTYPE=libgameblender_plugin_netscape.la
 endif
 
-lib_LTLIBRARIES = $(BUILDTYPE) libgameblender_player.la
+if BlenderPLUGIN
+PLUGINLIB = libgameblender_plugin.la $(PLUGBUILDTYPE)
+else
+PLUGINLIB =
+endif
+
+lib_LTLIBRARIES = $(BUILDTYPE) $(PLUGINLIB) libgameblender_player.la
 
 libgameblender_player_la_SOURCES = \
 	common/GPC_Canvas.cpp \
@@ -39,6 +47,12 @@ libgameblender_player_win_la_SOURCES = \
 	common/windows/GPW_KeyboardDevice.cpp \
 	common/windows/GPW_System.cpp
 
+libgameblender_plugin_la_SOURCES =
+
+libgameblender_plugin_win_la_SOURCES =
+
+libgameblender_plugin_netscape_la_SOURCES =
+
 INCLUDES = -I$(top_srcdir)/source/gameengine/Rasterizer \
 	-I$(top_srcdir)/intern/string \
 	-I$(top_srcdir)/intern/moto/include \
@@ -59,8 +73,6 @@ INCLUDES = -I$(top_srcdir)/source/gameengine/Rasterizer \
 	-I$(top_srcdir)/source/gameengine/Network \
 	-I$(top_srcdir)/source/gameengine/GamePlayer/common \
 	-I$(top_srcdir)/source/gameengine/GamePlayer/netscape/src/ketsji \
-	-I$(top_srcdir)/source/gameengine/Physics/Sumo/include \
-	-I$(top_srcdir)/source/gameengine/Physics/Sumo/Fuzzics/include \
 	-I$(top_srcdir)/source/gameengine/Rasterizer/RAS_OpenGLRasterizer \
 	-I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/imbuf \

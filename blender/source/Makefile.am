@@ -3,9 +3,15 @@ gameblenderdir = gameengine
 gamelib =  gameengine/libblender_gameengine.la
 playerlib = libblender_player.la
 else
-playerlib =
 gameblenderdir =
 gamelib =
+playerlib =
+endif
+
+if BlenderPLUGIN
+pluginlib= libblender_plugin.la
+else
+pluginlib=
 endif
 
 if WIN32
@@ -16,7 +22,7 @@ endif
 
 SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
 
-lib_LTLIBRARIES = libblender_source.la $(playerlib)
+lib_LTLIBRARIES = libblender_source.la $(playerlib) $(pluginlib)
 
 libblender_source_la_LDFLAGS = \
 	-L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
@@ -39,3 +45,8 @@ libblender_player_la_SOURCES =
 
 libblender_player_la_LIBADD = \
 	gameengine/libgameblender_player.la
+
+libblender_plugin_la_SOURCES =
+
+libblender_plugin_la_LIBADD = \
+	gameengine/libgameblender_plugin.la
