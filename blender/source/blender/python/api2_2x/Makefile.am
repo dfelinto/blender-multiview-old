@@ -4,6 +4,13 @@ libblender_api2_2x_la_SOURCES = \
 	Blender.c \
 	Object.c \
 	Camera.c \
+	Camera.h \
+	Lamp.c \
+	Lamp.h \
+	Image.c \
+	Image.h \
+	constant.c \
+	constant.h \
 	gen_utils.c \
 	gen_utils.h \
 	interface.c \
