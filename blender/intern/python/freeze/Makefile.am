@@ -28,7 +28,7 @@ libfrozen.a: $(PYFILES)
 
 clean:;
 	rm -f *.pyo
-	cd ../frozen && rm *.o && cd ../freeze
+	cd ../frozen && rm -f *.o && cd ../freeze
 
 distclean:;
 	rm -f *.pyc
