@@ -59,6 +59,9 @@ Bugfixes:
 
 - Icons in the imageselect window get drawn properly.
 
+- Alleviation of the symptoms of the "slow render bug" by polling
+   less often for the escape key in the inner loops of the render
+   code (makes the escape key less responsive though).
 
 Workarounds:
 ------------
