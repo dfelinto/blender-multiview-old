@@ -1,0 +1,109 @@
+
+Changelog Blender 2.28c release
+
+NEW:
+
+* "Seperate loose parts" in the PKEY popup (in Mesh editmode), it seperates a mesh based on the parts in it that are not connected.
+
+* "Select same UV" in the WKEY popup (in FaceSelect mode), selects all faces in the mesh that have the same UV texture assigned as the current active face.
+
+**** METABALL
+
+- improved polygonization (linear interpolation) 
+- added new MetaElem types (plane, elipsoid and cube) 
+- old TubeX, TubeY and TubeZ will not be supported
+- new buttons in Edit button window (dx, dy, dz)
+- added new items into the headers menu and toolbox menu
+
+
+**** RECURSIVE ENVIRONMENT MAPS
+
+Multiple environments now can be rendered in one pass. Previously the other objects with environment maps didn't show up in a reflection. Like this:
+http://www.blender.org/bf/dep.jpg
+
+By default, Blender renders now this result:
+http://www.blender.org/bf/dep0.jpg
+
+For a further 'recursive ray-tracing effect' you can give each EnvMap texture a higher "Depth" value. Here is a result with depth set at '2':
+http://www.blender.org/bf/dep2.jpg
+
+Related new options:
+- in (F10) DisplayButtons, environment map rendering can be turned on and off.
+- in EnvMap texture buttons you can free all environment maps
+- Environment map sizes are also reduced with the (F10) 'percentage' option.
+
+
+**** RADIO RENDER
+
+Without preprocessing needed, while rendering each renderface with 'emit material' and each renderface with 'radio material flag' set will be used to iterate to a global illumination solution. Per face with high energy (emit) little images are rendered (hemicubes) which makes up lookup tables to 'shoot' its energy to other faces. 
+In the end this energy - color - then is directly added to the pixel colors while rendering, Gouraud shaded. 
+Since it's done with renderfaces, it works for all primitives in Blender. 
+  
+What it doesn't do yet: 
+ - take into account textured color of faces. Currently it uses the material RGB color for filtering distributed energy. 
+ - do some smart pre-subdividing. Right now it means that you'll have to balance the models yourself, to deliver small faces where you want a high accuracy for shadowing. 
+ - unified render (is at todo list) 
+  
+Rendering without lamps: 
+http://www.blender.org/bf/raptor.jpg 
+  
+This is obviously the advantage; animated radiosity: 
+http://www.blender.org/bf/0001_0031.avi 
+http://www.blender.org/bf/0001_0040.avi 
+The specular is done by adding Lamps with "no diffuse" option set. 
+  
+http://www.blender.org/bf/monkey.jpg 
+Note the subtle color bleeding in the head. Its a nice toy! 
+  
+http://www.blender.org/bf/0001_0100.avi 
+Check the chin. This is a clear problem with a model moving close through the hemicubes. 
+  
+Testfiles: 
+http://www.blender.org/bf/room.blend 
+http://www.blender.org/bf/Raptor_radio1.blend 
+  
+Notes: 
+- per Material you want to have included in radiosity render: set the 'radio' flag. For newly added Materials it is ON by default now. 
+- the Ambient slider in Material controls the amount of radiosity color. 
+- for enabling radiosity rendering, set the F10 "Radio" button. 
+- the Radiosity buttons now only show the relevant radiosity rendering options. Pressing "collect meshes" will show all buttons again. 
+- for meshes, the faces who use Radio material always call the 'autosmooth' routine, this to make sure sharp angles (like corners in a room) do not have shared vertices. For some smooth models (like the raptor example) you might increase the standard smoothing angle from 30 to 45 degree. 
+- When the 'hemisize' (radiosity buttons) is too low, you'll see aliasing artifacts, especially in smaller faces.
+- While itterating the steps are printed in the console. 
+- At the end, the amount of 'unshot energy' is printed in the console, this can be used to set a minimum for the Convergence button. 
+  
+**** PYTHON:
+
+* bug fixes:
+ - Object: obj.get/setEuler() methods
+ - Curve: curve.getControlPoint()
+ - Lamp: lamp.setDist() was missing
+ - Scene: scene.frameSettings()
+ - vectors representation: write the right number of components
+* internal improvements: Object, NMesh, Curve, Text
+* Additions:
+ - Added the 'site' directory to the default path, so that external Python packages (like wxPython, etc) can be found;
+ - Object: object.getBoundBox(), object.makeDisplayList() methods;
+ - Window: Get/SetCursorPos(), GetViewMatrix(), GetViewVector();
+ - Lamp: added modes NoDifuse and NoSpecular;
+ - Registry: new module to handle persistent data (in the future);
+ - Draw: PupMenu() function.
+
+
+**** GENERAL FIXES:
+
+* 2.28 bug: Shadow buffer crashed with odd sizes (Not multiples of 16)
+* fixed stringlength for texture plugin path button, max 160 chars now.
+* BUG #500: extreme wide spotbundles (>170 degr) didn't render correctly.
+* BUG #492: while rotating with middlemouse, the X11 system was flooded, causing a hickup
+* Dashed line displays again (OSX, Nvidia systems) while rotating around cursor
+* On popular request, the "Sync" button (correct realtime synchronization (framedrop) in ALT-A and) off by default.
+* The "extrude" operation now automatically sets newly created faces "smooth", when any of the faces attached to any of the edges that have been extruded were "smooth"
+* Many tooltips in Blender were rewritten
+* BUG #448: 'only shadow' lamps won't give light anymore when rendering without shadows.
+
+**** KNOWN PROBLEMS:
+
+* the Hemi lamp still doesn't support the new shaders
+
+
