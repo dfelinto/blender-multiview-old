@@ -3434,6 +3434,7 @@ int uiDoBlocks(ListBase *lb, int event)
 				if( block->flag & UI_BLOCK_LOOP) {
 					block->overdraw= ui_begin_overdraw((int)block->minx-1, (int)block->miny-6, (int)block->maxx+6, (int)block->maxy+1);
 				}
+				block->in_use= 1;	// is always a menu
 				uiDrawBlock(block);
 				block->flag &= ~UI_BLOCK_REDRAW;
 			}
