@@ -3,6 +3,8 @@ include nan_definitions.mk
 all: ${NAN_GETTEXT}/lib/freegettext.a  ${NAN_ICONV}/lib/freeiconv.a \
 		${NAN_PYTHON}/lib/freepy.a
 
+debug: all
+
 ${NAN_GETTEXT}/lib/freegettext.a: gettext.def \
 			${NAN_GETTEXT}/lib/gnu_gettext.dll
 	cp ${NAN_GETTEXT}/lib/gnu_gettext.dll .
