@@ -1,12 +1,12 @@
-# Translation Russian. Version 0.1
+# Translation Russian. Version 0.2
 # Yurec yureckey@mail.ru 2004
-# Blender version: 2.32 
+# Blender version: 2.33 
 
 msgid ""
 msgstr ""
-"Project-Id-Version: blender 2.32\n"
+"Project-Id-Version: blender 2.33\n"
 "POT-Creation-Date: 2004-02-05 20:50+0900\n"
-"PO-Revision-Date: 2004-02-10 08:38+0200\n"
+"PO-Revision-Date: 2004-04-28 08:38+0200\n"
 "Last-Translator: <yureckey@mail.ru>\n"
 "Language-Team:  <>\n"
 "MIME-Version: 1.0\n"
@@ -14,216 +14,6 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 
-msgid ""
-"\n"
-"\t# Hidden Objects, in invisible layers\n"
-"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"\n"
-"%s: Aborting antialias !\n"
-msgstr ""
-
-msgid ""
-"\n"
-"\n"
-"*** All detected structs:\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" Unshot energy:%f\n"
-msgstr ""
-
-msgid ""
-"\n"
-" sn1 exceeds line"
-msgstr ""
-
-msgid ""
-"\n"
-"# Visible Objects\n"
-"\n"
-msgstr ""
-
-
-#, c-format
-msgid ""
-"\n"
-"*** Activated full error trace on edge rendering  using:\n"
-"\t%s\n"
-"\t%s\n"
-"*** Rendering edges at %d intensity"
-msgstr ""
-
-msgid ""
-"\n"
-"*** Deflate test with stubs\n"
-"|\n"
-msgstr ""
-
-msgid ""
-"\n"
-"*** Streamglue read/write test\n"
-msgstr ""
-
-msgid ""
-"\n"
-"Blender quit\n"
-msgstr ""
-
-msgid ""
-"\n"
-"YUCK no sub addr\n"
-msgstr ""
-
-msgid ""
-"\n"
-"YUCK: WHAT0\n"
-msgstr ""
-
-msgid ""
-"\n"
-"YUCK: pc stack under flow\n"
-msgstr ""
-
-msgid ""
-"\n"
-"YUCK: ret stack under flow\n"
-msgstr ""
-
-msgid ""
-"\n"
-"YUCK: stack under flow\n"
-msgstr ""
-
-
-#, c-format
-msgid "\r Radiosity step %d"
-msgstr "\r Шаг Радиозити %d"
-
-
-msgid "  CURVE"
-msgstr ""
-
-msgid "  MESH"
-msgstr ""
-
-msgid "  META"
-msgstr ""
-
-msgid "  SURF"
-msgstr ""
-
-#, c-format
-msgid " (length %d) <"
-msgstr ""
-
-#, c-format
-msgid " - Char is %c"
-msgstr ""
-
-#, c-format
-msgid " Copy from '%s' to '%s' failed\n"
-msgstr ""
-
-#, c-format
-msgid " Move from '%s' to '%s' failed\n"
-msgstr ""
-
-#, c-format
-msgid " Name: %s | Speed: %.2f frames/s\n"
-msgstr ""
-
-msgid " Nothing indicated "
-msgstr "Ничего не выделено"
-
-#, c-format
-msgid " Rad elems: %d emittors %d\n"
-msgstr ""
-
-msgid " Split "
-msgstr " Расщепить "
-
-#, c-format
-msgid " Time: %s\n"
-msgstr " Время: %s\n"
-
-#, c-format
-msgid " advan: %3d reser: %3d\n"
-msgstr ""
-
-#, c-format
-msgid " locx: %4d locy: %4d\n"
-msgstr ""
-
-#, c-format
-msgid " ofsx:  %3d ofsy:  %3d\n"
-msgstr ""
-
-#, c-format
-msgid " sizex: %3d sizey: %3d\n"
-msgstr ""
-
-#, c-format
-msgid " struct %s elems: %d size: %d\n"
-msgstr ""
-
-#, c-format
-msgid " tried quality: %d, size %d\n"
-msgstr ""
-
-#, c-format
-msgid " var1: %d, var2: %d, var3: %d \n"
-msgstr ""
-
-#, c-format
-msgid "%s : %d"
-msgstr ""
-
-#, c-format
-msgid "%s TotPatch: %d TotElem: %d Emit: %d Faces %d Mem: %d k "
-msgstr "%s ВсехПатч: %d ВсехЭлем: %d Излуч: %d Граней %d Пам: %d k "
-
-#, c-format
-msgid "%s empty directory\n"
-msgstr ""
-
-#, c-format
-msgid "%s error: %d\n"
-msgstr ""
-
-#, c-format
-msgid "%s image with no imbuf ???\n"
-msgstr ""
-
-#, c-format
-msgid "%s is buggy, please cosider removing it.\n"
-msgstr ""
-
-#, c-format
-msgid "%s non-existant directory\n"
-msgstr ""
-
-#, c-format
-msgid "%s.BAKED"
-msgstr ""
-
-#, c-format
-msgid "%s: File not found!\n"
-msgstr ""
-
-#, c-format
-msgid "%s: returned error\n"
-msgstr ""
-
-#, c-format
-msgid "(3DF) Error parsing dxf, not enough vertices near line %d"
-msgstr ""
 
 msgid "(De)Select All"
 msgstr "(Де)Выделить Всё"
@@ -238,39 +28,6 @@ msgstr ""
 msgid "(press ESC to stop)"
 msgstr "(нажмите ESC для остановки)"
 
-#, c-format
-msgid ""
-"*** \tError in makesdna: the specified filenames is too long for parsing.\n"
-"\tFile: %s%s\n"
-msgstr ""
-
-msgid "*** End of list\n"
-msgstr ""
-
-msgid "*** Known structs : \n"
-msgstr ""
-
-msgid ""
-"*** Type define size test\n"
-"|\n"
-msgstr ""
-
-msgid "*** Unknown structs : \n"
-msgstr ""
-
-
-msgid "---< Undo Buffer >---\n"
-msgstr "---< Буфер Отмены >---\n"
-
-msgid "1: recalculated depth falls outside original range"
-msgstr ""
-
-msgid "2: invalid face/halo type"
-msgstr ""
-
-msgid "3: invalid face index"
-msgstr ""
-
 msgid "3D Grid:"
 msgstr "3D Сетка"
 
@@ -284,81 +41,6 @@ msgid "44.1 kHz"
 msgstr ""
 
 msgid "48.0 kHz"
-msgstr ""
-
-msgid "4: invalid data pointer"
-msgstr ""
-
-msgid "5: generic trace counter"
-msgstr ""
-
-msgid "6: overflow on z buffer depth"
-msgstr ""
-
-msgid "7: write outside edgerender buffer"
-msgstr ""
-
-msgid "8: cannot allocate memory"
-msgstr ""
-
-msgid "9: write outside colour target buffer"
-msgstr ""
-
-msgid ">Bezier Circle"
-msgstr ""
-
-msgid ">Bezier Curve"
-msgstr ""
-
-msgid ">Circle"
-msgstr ""
-
-msgid ">Cone"
-msgstr ""
-
-msgid ">Cube"
-msgstr ""
-
-msgid ">Curve"
-msgstr ""
-
-msgid ">Cylinder"
-msgstr ""
-
-msgid ">Donut"
-msgstr ""
-
-msgid ">Grid"
-msgstr ""
-
-msgid ">Icosphere"
-msgstr ""
-
-msgid ">Monkey"
-msgstr ""
-
-msgid ">Nurbs Circle"
-msgstr ""
-
-msgid ">Nurbs Curve"
-msgstr ""
-
-msgid ">Path"
-msgstr ""
-
-msgid ">Plane"
-msgstr ""
-
-msgid ">Sphere"
-msgstr ""
-
-msgid ">Surface"
-msgstr ""
-
-msgid ">Tube"
-msgstr ""
-
-msgid ">UVsphere"
 msgstr ""
 
 msgid "A normal distribution. Mean of the distribution."
@@ -380,9 +62,6 @@ msgstr "Добавить Новое %x32767"
 
 msgid "ADD property"
 msgstr "Добавить Свойство"
-
-msgid "ALERT users-pubKey != datastream-pubKey, stop reading\n"
-msgstr ""
 
 msgid "ALPHAOVER"
 msgstr "АльфаНад"
@@ -407,45 +86,6 @@ msgstr ""
 
 msgid "AUDIO"
 msgstr "Аудио"
-
-msgid "AVI "
-msgstr ""
-
-msgid "AVI Codec"
-msgstr ""
-
-msgid "AVI DEBUG: "
-msgstr ""
-
-msgid "AVI ERROR: compressed in an unsupported format\n"
-msgstr ""
-
-msgid "AVI ERROR: could not open file\n"
-msgstr ""
-
-msgid "AVI ERROR: could not read from file\n"
-msgstr ""
-
-msgid "AVI ERROR: could not write to file\n"
-msgstr ""
-
-msgid "AVI ERROR: error encountered while allocating memory\n"
-msgstr ""
-
-msgid "AVI ERROR: file is in an illegal or unrecognized format\n"
-msgstr ""
-
-msgid "AVI ERROR: movie did not contain expected item\n"
-msgstr ""
-
-msgid "AVI ERROR: program made illegal request\n"
-msgstr ""
-
-msgid "AVI Jpeg"
-msgstr ""
-
-msgid "AVI Raw"
-msgstr ""
 
 msgid "About Blender..."
 msgstr "Информация о Blender..."
@@ -476,7 +116,7 @@ msgid "Action End:"
 msgstr "Действия Кнц:"
 
 msgid "Action Range:"
-msgstr "Действи Диап:"
+msgstr "Действия Диапазон:"
 
 msgid "Action Start:"
 msgstr "Действия Нач:"
@@ -706,14 +346,6 @@ msgstr "Регулировать параметры для опций динам
 msgid "Adjusts sharpness or blurriness of the reflection"
 msgstr "Регулировать остроту или размытость отражений"
 
-#, c-format
-msgid "Align 2 error in struct: %s %s\n"
-msgstr ""
-
-#, c-format
-msgid "Align 4 error in struct: %s %s\n"
-msgstr ""
-
 msgid "Align Active Camera to View|Shift NumPad 0"
 msgstr "Располож активн камер к Виду|Shift NumPad 0"
 
@@ -758,24 +390,8 @@ msgstr "Все рёбра"
 msgid "All keys"
 msgstr "Все ключи"
 
-#, c-format
-msgid "Allocating %i more face groups.  %i total.\n"
-msgstr ""
-
-#, c-format
-msgid "Allocating %i more halo groups.  %i total.\n"
-msgstr ""
-
-#, c-format
-msgid "Allocating %i more vert groups.  %i total.\n"
-msgstr ""
-
 msgid "Allows all codecs for rendering (not guaranteed)"
 msgstr "Допустить для ренедера все кодеки (но их работа не гарантирована)"
-
-#, c-format
-msgid "Alocating %i more lamp groups, %i total.\n"
-msgstr ""
 
 msgid "Alpha"
 msgstr "Альфа"
@@ -844,7 +460,7 @@ msgid "Ang"
 msgstr "Угл"
 
 msgid "Ang:"
-msgstr ""
+msgstr "Угл:"
 
 msgid "Anim"
 msgstr "Анимация"
@@ -1158,14 +774,6 @@ msgstr "Установки Скоса|Ctrl C, 13"
 msgid "Bevel Settings|Ctrl C, 14"
 msgstr "Установки Скоса|Ctrl C, 14"
 
-#, c-format
-msgid ""
-"Bevel Size: %.4f        LMB to confirm, RMB to cancel, SPACE to input "
-"directly."
-msgstr ""
-"Размер Скоса: %.4f        LMB to confirm, RMB to cancel, SPACE to input "
-"directly."
-
 msgid "Bevel object must be a Curve."
 msgstr "Обьектом Скоса должна быть Кривая"
 
@@ -1271,11 +879,7 @@ msgid "Body: "
 msgstr ""
 
 msgid "Bone"
-msgstr "Кость"
-
-#, c-format
-msgid "Bone %s\n"
-msgstr "Кость %s\n"
+msgstr ""
 
 msgid "Bone deformation distance"
 msgstr "дистанция деформации Кости"
@@ -1389,27 +993,6 @@ msgstr ""
 
 msgid "Buttons"
 msgstr "Кнопки"
-
-msgid "C"
-msgstr ""
-
-msgid "CD"
-msgstr ""
-
-msgid "CDepth:"
-msgstr ""
-
-msgid "CLASSES"
-msgstr ""
-
-msgid "CROSS"
-msgstr ""
-
-msgid "CURVE"
-msgstr ""
-
-msgid "CaIpo"
-msgstr ""
 
 msgid "Cache"
 msgstr "Кэшировать"
@@ -2422,18 +2005,6 @@ msgstr "Создать Действие с эффектом ограничени
 msgid "Create new file?"
 msgstr "Создать новый файл?"
 
-#, c-format
-msgid "Created avi: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Created movie: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Created win avi: %s\n"
-msgstr ""
-
 msgid "Creates Dimples"
 msgstr "Создать Впадины"
 
@@ -3125,7 +2696,7 @@ msgid "Displays the active object's texture space"
 msgstr "Показывать текстурное пространство активного обьекта"
 
 msgid "Displays the active object's wireframe in shaded drawing modes"
-msgstr "Показывать активный обьект проволкой в затенённых режимах прорисовки"
+msgstr "Показывать Каркас активного обьекта  в затенённых режимах прорисовки"
 
 msgid "Displays the textures of the active material"
 msgstr "Показывать текстуры активного материала"
@@ -3158,7 +2729,7 @@ msgid ""
 "Distance covered by one complete cycle of the action specified in the Action "
 "Range"
 msgstr ""
-"Дистанция покрываемая одним полным циклом действия указанным в Диапазоне"
+"Дистанция покрываемая одним полным циклом действия указанным в Диапазоне "
 "Действия"
 
 msgid ""
@@ -3193,12 +2764,6 @@ msgid "Don't render layer:"
 msgstr "Не рендерить слой:"
 
 msgid "Doppler: "
-msgstr ""
-
-msgid "Double <<|Alt <"
-msgstr ""
-
-msgid "Double >>|Alt >"
 msgstr ""
 
 msgid "Double Sided"
@@ -3250,7 +2815,7 @@ msgid ""
 "Draw mode%t|BoundBox %x1|Wire %x2|OpenGL Solid %x3|Shaded Solid %x4|Textured "
 "Solid %x5"
 msgstr ""
-"Режим Прорисовки%t|Габариты %x1|проволка %x2|OpenGL Ровно %x3|Плавно %x4|Текстур "
+"Режим Прорисовки%t|Габариты %x1|Каркас %x2|OpenGL Ровно %x3|Плавно %x4|Текстур "
 "Ровно %x5"
 
 msgid "Draw object as key position"
@@ -3279,7 +2844,7 @@ msgid "Drawtype %%x%d|"
 msgstr ""
 
 msgid "Drawtype%t|Bounds %x1|Wire %x2|Solid %x3|Shaded %x4"
-msgstr "ТипПрорисовки%t|Габариты %x1|Проволка %x2|Ровно %x3|Затенённо %x4"
+msgstr "ТипПрорисовки%t|Габариты %x1|Каркас %x2|Ровно %x3|Затенённо %x4"
 
 msgid "Drawtype|Ctrl C, 4"
 msgstr "ТипПрорисовки|Ctrl C, 4"
@@ -3341,24 +2906,6 @@ msgstr ""
 msgid "Dynamic"
 msgstr "Динамич"
 
-msgid "EDIT"
-msgstr ""
-
-msgid "EFFECT"
-msgstr ""
-
-msgid "ENDBLK"
-msgstr ""
-
-msgid "ENDSEC"
-msgstr ""
-
-msgid "ENTITIES"
-msgstr ""
-
-msgid "EOF"
-msgstr ""
-
 msgid "ERASE %t|Selected%x0|All%x2"
 msgstr "Удалить %t|Выделенное%x0|Всё%x2"
 
@@ -3402,7 +2949,7 @@ msgid "Edit %t|Cut %x0|Copy %x1|Paste %x2|Print Cut Buffer %x3"
 msgstr "Редакт %t|Вырезать %x0|Копировать %x1|Вставка %x2|Печать ВырезБуф %x3"
 
 msgid "Edit Codec settings for QuickTime"
-msgstr ""
+msgstr "Редактировать установки кодека для QuickTime"
 
 msgid "Edit Methods"
 msgstr "Редакт Методы"
@@ -3578,7 +3125,7 @@ msgid "Enables painting textures on the image with left mouse button"
 msgstr "Включить рисование текстуры на изображении левой кнопкой мыши"
 
 msgid "Enables raytracing for mirror reflection rendering"
-msgstr "Включить трассировку лучами для рендеринга зекального отражения"
+msgstr "Включить трассировку лучами для рендеринга зеркального отражения"
 
 msgid "Enables raytracing for transparency rendering"
 msgstr "Включить трассировку лучами для рендеринга прозрачности"
@@ -3590,7 +3137,7 @@ msgid "Enables solid drawmode"
 msgstr "Включить режим прорисовки Ровный"
 
 msgid "Enables syncdoubling stereo method"
-msgstr ""
+msgstr "Включить syncdoubling стерео метод"
 
 msgid "Enables the active object's faces for UV coordinate mapping"
 msgstr "Включить грани активного обьекта для UV мэппинга координат"
@@ -3599,7 +3146,7 @@ msgid "Enables vertex colour painting on active object"
 msgstr "Включить для активного обьекта прорисовку цвета вершин"
 
 msgid "Enables wireframe drawmode"
-msgstr "Включить режим прорисовки Проволка"
+msgstr "Включить режим прорисовки Каркас"
 
 msgid "End"
 msgstr "Конец"
@@ -3679,118 +3226,6 @@ msgstr "Удалить выделенные ключи"
 msgid "Erases link to texture"
 msgstr "Удалить связь с текстурой"
 
-#, c-format
-msgid "Error Totblock: %d\n"
-msgstr ""
-
-#, c-format
-msgid "Error creating file: %s"
-msgstr ""
-
-#, c-format
-msgid "Error deleting '%s' (ignored)"
-msgstr ""
-
-msgid "Error during tokening function pointer argument list\n"
-msgstr ""
-
-msgid "Error in Bpib file\n"
-msgstr ""
-
-msgid "Error in RSA_new\n"
-msgstr ""
-
-msgid "Error in RSA_private_encrypt\n"
-msgstr ""
-
-#, c-format
-msgid "Error in RSA_public_decrypt %s\n"
-msgstr ""
-
-msgid "Error in ibImageFromMemory: NULL pointer\n"
-msgstr ""
-
-msgid "Error in other (possibly external) file, check console"
-msgstr ""
-
-#, c-format
-msgid "Error in search edge: %x\n"
-msgstr ""
-
-#, c-format
-msgid "Error inputting dxf, near line %d"
-msgstr ""
-
-#, c-format
-msgid "Error loading avi: %s\n"
-msgstr ""
-
-msgid "Error loading text, line lengths differ\n"
-msgstr ""
-
-#, c-format
-msgid "Error parsing dxf, near line %d"
-msgstr ""
-
-#, c-format
-msgid "Error parsing dxf, no mesh name near %d"
-msgstr ""
-
-#, c-format
-msgid "Error parsing dxf, no object name near %d"
-msgstr ""
-
-#, c-format
-msgid "Error parsing dxf, unknown polyline information near %d"
-msgstr ""
-
-#, c-format
-msgid "Error reading dxf, near line %d"
-msgstr ""
-
-msgid "Error reading frame from AVI"
-msgstr ""
-
-#, c-format
-msgid "Error restoring tempfile. Check files: '%s' '%s'"
-msgstr ""
-
-msgid "Error streamGlueControlAppendAction is a stub\n"
-msgstr ""
-
-msgid "Error streamGlueControlConstructor is a stub\n"
-msgstr ""
-
-msgid "Error streamGlueControlDestructor is a stub\n"
-msgstr ""
-
-msgid "Error streamGlueControlGetNextAction is a stub\n"
-msgstr ""
-
-#, c-format
-msgid "Error while reading %s\n"
-msgstr ""
-
-msgid "Error writeStreamGlue is a stub\n"
-msgstr ""
-
-#, c-format
-msgid "Error writing file: %s"
-msgstr ""
-
-#, c-format
-msgid "Error: No backbuf %s\n"
-msgstr ""
-
-msgid "Error: Unknown constraint type\n"
-msgstr ""
-
-#, c-format
-msgid "Error: inflate should return Z_OK, not %d\n"
-msgstr ""
-
-msgid "Error: inflate wanted more output buffer space\n"
-msgstr ""
 
 msgid "Esc"
 msgstr "Вых"
@@ -3871,7 +3306,6 @@ msgstr ""
 
 msgid "Extrude|E"
 msgstr "Выдавить|E"
-
 
 msgid "FILE"
 msgstr "ФАЙЛ"
@@ -4139,33 +3573,6 @@ msgstr "Шрифт"
 
 msgid "Font Settings|Ctrl C, 13"
 msgstr "Установки Шрифта|Ctrl C, 13"
-
-msgid "Font Size:   8"
-msgstr "Размер Шрифта:   8"
-
-msgid "Font Size:   9"
-msgstr ""
-
-msgid "Font Size:  10"
-msgstr ""
-
-msgid "Font Size:  11"
-msgstr ""
-
-msgid "Font Size:  12"
-msgstr ""
-
-msgid "Font Size:  13"
-msgstr ""
-
-msgid "Font Size:  14"
-msgstr ""
-
-msgid "Font Size:  15"
-msgstr ""
-
-msgid "Font Size:  16"
-msgstr ""
 
 msgid "Fontname not available"
 msgstr "Шрифт не доступен"
@@ -4658,9 +4065,6 @@ msgstr ""
 msgid "Heigth:"
 msgstr ""
 
-msgid "Hello world"
-msgstr ""
-
 msgid "Help"
 msgstr "Помощь"
 
@@ -4786,7 +4190,7 @@ msgid "IOR "
 msgstr ""
 
 msgid "IcoSphere|"
-msgstr "ИкоСфера|"
+msgstr ""
 
 msgid "Icosphere"
 msgstr "ИкоСфера"
@@ -4834,7 +4238,7 @@ msgid "Image too small"
 msgstr "Изображение слишком малО"
 
 msgid "Image:"
-msgstr ""
+msgstr "Изображение:"
 
 msgid "Images"
 msgstr "Изображения"
@@ -7067,7 +6471,7 @@ msgid "Only Curve Objects"
 msgstr "Только обьекты Кривые"
 
 msgid "Only draws optimal wireframe"
-msgstr "Рисовать только оптимальные проволочные рёбра"
+msgstr "Рисовать только оптимальные каркасные рёбра"
 
 msgid "Only editable 3D objects can be sheared"
 msgstr "Только редактируемые 3D обьекты могут быть общими"
@@ -7549,9 +6953,6 @@ msgstr "Фотоны"
 msgid "Physics %t|None %x1|Sumo %x2|ODE %x3 |Dynamo %x4|"
 msgstr ""
 
-msgid "Physics Engine"
-msgstr ""
-
 msgid "Pick a number between 0 and 1. Success if you stay below this value"
 msgstr "Взять число между 0 и 1. Успех если оставаться ниже этой величины"
 
@@ -7577,7 +6978,7 @@ msgid "Plane"
 msgstr "Плоскость"
 
 msgid "Plane|"
-msgstr "Плоскость|"
+msgstr ""
 
 msgid "Plastic"
 msgstr "Пластик"
@@ -7885,9 +7286,6 @@ msgid "RGBtoInt"
 msgstr "RGBкИнт"
 
 msgid "RIFF"
-msgstr ""
-
-msgid "RIFFlengWAVEfmt fmln01ccRATEbsecBP16dataDLEN"
 msgstr ""
 
 msgid "RIGHT"
@@ -8285,7 +7683,7 @@ msgid "Renders material's faces with inverted Z Buffer"
 msgstr "Рендерить грань материала с инвертированным Z-буфером"
 
 msgid "Renders only the edges of faces as a wireframe"
-msgstr "Рендерить только рёбра граней как проволку"
+msgstr "Рендерить только рёбра граней как каркас"
 
 msgid "Renders rings over halo"
 msgstr "Рендерить кольца поверх halo"
@@ -8713,30 +8111,6 @@ msgstr "Выбор WAV Файл"
 msgid "SELECT YFEXPORT PATH"
 msgstr "Выбор Путь экспорт YAFRAY"
 
-msgid "SEPR"
-msgstr ""
-
-msgid "SEQEND"
-msgstr ""
-
-msgid "SEQUENCE"
-msgstr ""
-
-msgid "SET"
-msgstr ""
-
-msgid "SO:"
-msgstr ""
-
-msgid "SR:"
-msgstr ""
-
-msgid "STRC"
-msgstr ""
-
-msgid "STRC error in SDNA file\n"
-msgstr ""
-
 msgid "SUB"
 msgstr "Вычсть"
 
@@ -8957,7 +8331,7 @@ msgid "Scrub"
 msgstr ""
 
 msgid "Scrub when changing frames"
-msgstr "Scrub при смене кадров"
+msgstr "Проигрывать звук при смене кадров"
 
 msgid "SeaGreen"
 msgstr ""
@@ -9579,9 +8953,6 @@ msgstr "Установить чтобы текстура перемножала 
 msgid "Sets texture to subtract the values or colour"
 msgstr "Установить чтобы текстура вычитала значения цвета"
 
-msgid "Sets the Gauss filter size)"
-msgstr "Размер фильтра Гаусса"
-
 msgid "Sets the alpha value for this position"
 msgstr "Установить величину Альфа для этой позиции"
 
@@ -10176,24 +9547,6 @@ msgstr "Перемешать блоки"
 msgid "Side|NumPad 3"
 msgstr "Сбоку "
 
-msgid "Signature INCORRECT\n"
-msgstr ""
-
-msgid "Signature verified\n"
-msgstr ""
-
-msgid "Signed data CRC is NOT correct\n"
-msgstr ""
-
-msgid "Signed data CRC is correct\n"
-msgstr ""
-
-msgid "Signed data length is NOT correct\n"
-msgstr ""
-
-msgid "Signed data length is correct\n"
-msgstr ""
-
 msgid "Single user"
 msgstr "одноПользовательский"
 
@@ -10457,45 +9810,6 @@ msgstr "Звуки: "
 
 msgid "SpTra"
 msgstr "ОтржПрз"
-
-msgid "Space"
-msgstr ""
-
-msgid "SpaceAction"
-msgstr ""
-
-msgid "SpaceButs"
-msgstr ""
-
-msgid "SpaceFile"
-msgstr ""
-
-msgid "SpaceImaSel"
-msgstr ""
-
-msgid "SpaceImage"
-msgstr ""
-
-msgid "SpaceIpo"
-msgstr ""
-
-msgid "SpaceNla"
-msgstr ""
-
-msgid "SpaceOops"
-msgstr ""
-
-msgid "SpaceScript"
-msgstr ""
-
-msgid "SpaceSeq"
-msgstr ""
-
-msgid "SpaceSound"
-msgstr ""
-
-msgid "SpaceText"
-msgstr ""
 
 msgid "Spacing of individual characters"
 msgstr "Расстояние между отдельными символами"
@@ -11065,7 +10379,7 @@ msgid "SurfTube"
 msgstr ""
 
 msgid "Surface"
-msgstr "Поверхн"
+msgstr "Поверхность"
 
 msgid "Surface Data|Ctrl L, 3"
 msgstr "Поверхности Данные|Ctrl L, 3"
@@ -11096,45 +10410,6 @@ msgstr "Система и OpenGL"
 
 msgid "System:"
 msgstr "Система:"
-
-msgid "T"
-msgstr ""
-
-msgid "T/P"
-msgstr ""
-
-msgid "TABLES"
-msgstr ""
-
-msgid "TE:"
-msgstr ""
-
-msgid "TEMP"
-msgstr ""
-
-msgid "TFace"
-msgstr ""
-
-msgid "TLEN"
-msgstr ""
-
-msgid "TLEN error in SDNA file\n"
-msgstr ""
-
-msgid "TYPE"
-msgstr ""
-
-msgid "TYPE error in SDNA file\n"
-msgstr ""
-
-msgid "Tab"
-msgstr ""
-
-msgid "Targa"
-msgstr ""
-
-msgid "Targa Raw"
-msgstr ""
 
 msgid "Target Object"
 msgstr "Обьект-цель"
@@ -11280,20 +10555,11 @@ msgstr "Директория по умолчанию для поиска Пла�
 msgid "The default directory to search for textures"
 msgstr "Директория по умолчанию для поиска Текстур"
 
-msgid "The deflation"
-msgstr ""
-
 msgid "The directory for storing temporary save files"
 msgstr "Директория для сохранения временных файлов"
 
-msgid "The encryption"
-msgstr ""
-
 msgid "The end  frame of the animation"
 msgstr "Конечный кадр анимации"
-
-msgid "The file reading"
-msgstr ""
 
 msgid "The gamma value for blending oversampled images (1.0 = no correction)."
 msgstr "Значение Гамма для смешения oversampled изображений (1.0 = нет коррекции)"
@@ -11328,17 +10594,8 @@ msgstr "Число оставляемых старых версий при со�
 msgid "The number of users"
 msgstr "Число пользователей"
 
-msgid "The read stream"
-msgstr ""
-
-msgid "The read stream loopback"
-msgstr ""
-
 msgid "The sample file used by this Sound"
 msgstr "Файл-сэмпл используемый этим Звуком"
-
-msgid "The signing"
-msgstr ""
 
 msgid "The size of the brush"
 msgstr "Размер Кисти"
@@ -11351,9 +10608,6 @@ msgstr "промежуток (в минутах) между временными
 
 msgid "The vertical aspect ratio"
 msgstr "Вертикальный aspect ratio"
-
-msgid "The write stream"
-msgstr ""
 
 msgid "Themes"
 msgstr "Темы"
@@ -12029,13 +11283,13 @@ msgid "Usage: %s outfile.c\n"
 msgstr ""
 
 msgid "Use 2x2 dithering for sampling"
-msgstr "Использовать 2x2 dithering для сэмплов"
+msgstr "Использовать 2x2 сглаживание для сэмплов"
 
 msgid "Use B spline formula for particle interpolation"
 msgstr "Использовать формулу БиСплайна для интерполяции частиц"
 
 msgid "Use Background Image"
-msgstr "Использовать Фоновое Изображение"
+msgstr "Использ Изображение-Фон"
 
 msgid "Use Fh settings in Materials"
 msgstr "Использовать Fh установки (из материалов)"
@@ -12372,7 +11626,7 @@ msgid "View All|Home"
 msgstr "Видеть всё|Home"
 
 msgid "View Camera:"
-msgstr ""
+msgstr "Вида Камера:"
 
 msgid "View Navigation"
 msgstr "Вида Навигация"
@@ -12527,17 +11781,17 @@ msgid "Window type:%t"
 msgstr "тип Окна:%t"
 
 msgid "Wire"
-msgstr "Проволка"
+msgstr "Каркас"
 
 #, c-format
 msgid "Wire %%x%d|"
 msgstr ""
 
 msgid "Wireframe"
-msgstr "Проволка"
+msgstr "Каркас"
 
 msgid "Wiresize:"
-msgstr "Проволкиразмер:"
+msgstr "Каркразмер:"
 
 msgid "WoIpo"
 msgstr ""
@@ -12834,23 +12088,8 @@ msgstr "Увеличение Вида к области"
 msgid "Zooms view to fit area"
 msgstr "Увеличение Вида до совпадения с областью"
 
-msgid "a"
-msgstr ""
-
-msgid "ab"
-msgstr ""
-
-msgid "abufsetrow: osa too large\n"
-msgstr ""
-
-msgid "act"
-msgstr ""
-
 msgid "action"
 msgstr "действ"
-
-msgid "actkey->data"
-msgstr ""
 
 msgid "add"
 msgstr "добав"
@@ -12861,12 +12100,6 @@ msgstr ""
 
 #, c-format
 msgid "added frame %3d (frame %3d in movie): length %6d: "
-msgstr ""
-
-msgid "addencodedbufferImBuf"
-msgstr ""
-
-msgid "alphalens"
 msgstr ""
 
 msgid "already exists\n"
@@ -12880,30 +12113,6 @@ msgstr ""
 
 msgid "angV"
 msgstr "углСк"
-
-msgid "anim struct"
-msgstr ""
-
-msgid "anim_absolute 0 failed\n"
-msgstr ""
-
-msgid "anim_panel"
-msgstr ""
-
-msgid "animavi"
-msgstr ""
-
-msgid "app_nam_part"
-msgstr ""
-
-msgid "append: already linked\n"
-msgstr ""
-
-msgid "append_avi buf"
-msgstr ""
-
-msgid "append_win_avi"
-msgstr ""
 
 msgid "armature"
 msgstr "арматура"
@@ -12939,177 +12148,6 @@ msgstr ""
 msgid "avimovie"
 msgstr ""
 
-
-msgid "bAction"
-msgstr ""
-
-msgid "bActionActuator"
-msgstr ""
-
-msgid "bActionChannel"
-msgstr ""
-
-msgid "bActionConstraint"
-msgstr ""
-
-msgid "bActionStrip"
-msgstr ""
-
-msgid "bActuator"
-msgstr ""
-
-msgid "bArmature"
-msgstr ""
-
-msgid "bCDActuator"
-msgstr ""
-
-msgid "bCameraActuator"
-msgstr ""
-
-msgid "bCollisionSensor"
-msgstr ""
-
-msgid "bConstraint"
-msgstr ""
-
-msgid "bConstraintActuator"
-msgstr ""
-
-msgid "bConstraintChannel"
-msgstr ""
-
-msgid "bController"
-msgstr ""
-
-msgid "bDeformGroup"
-msgstr ""
-
-msgid "bEditObjectActuator"
-msgstr ""
-
-msgid "bExpressionCont"
-msgstr ""
-
-msgid "bFollowPathConstraint"
-msgstr ""
-
-msgid "bGameActuator"
-msgstr ""
-
-msgid "bGroupActuator"
-msgstr ""
-
-msgid "bIpoActuator"
-msgstr ""
-
-msgid "bKeyboardSensor"
-msgstr ""
-
-msgid "bKinematicConstraint"
-msgstr ""
-
-msgid "bLocateLikeConstraint"
-msgstr ""
-
-msgid "bLockTrackConstraint"
-msgstr ""
-
-msgid "bMessageActuator"
-msgstr ""
-
-msgid "bMessageSensor"
-msgstr ""
-
-msgid "bMouseSensor"
-msgstr ""
-
-msgid "bNearSensor"
-msgstr ""
-
-msgid "bObjectActuator"
-msgstr ""
-
-msgid "bPose"
-msgstr ""
-
-msgid "bPoseChannel"
-msgstr ""
-
-msgid "bProperty"
-msgstr ""
-
-msgid "bPropertyActuator"
-msgstr ""
-
-msgid "bPropertySensor"
-msgstr ""
-
-msgid "bPythonCont"
-msgstr ""
-
-msgid "bRadarSensor"
-msgstr ""
-
-msgid "bRandomActuator"
-msgstr ""
-
-msgid "bRandomSensor"
-msgstr ""
-
-msgid "bRaySensor"
-msgstr ""
-
-msgid "bRotateLikeConstraint"
-msgstr ""
-
-msgid "bSceneActuator"
-msgstr ""
-
-msgid "bScreen"
-msgstr ""
-
-msgid "bSensor"
-msgstr ""
-
-msgid "bSound"
-msgstr ""
-
-msgid "bSoundActuator"
-msgstr ""
-
-msgid "bTheme"
-msgstr ""
-
-msgid "bTouchSensor"
-msgstr ""
-
-msgid "bTrackToConstraint"
-msgstr ""
-
-msgid "bVisibilityActuator"
-msgstr ""
-
-#, c-format
-msgid "bad Subr index %d\n"
-msgstr ""
-
-#, c-format
-msgid "bad call to addqueue: %d (%d, %d)\n"
-msgstr ""
-
-msgid "bad index informatio\n"
-msgstr ""
-
-msgid "bad initial header info\n"
-msgstr ""
-
-msgid "bad stream header information\n"
-msgstr ""
-
-msgid "bb"
-msgstr ""
-
 msgid "beautyfill"
 msgstr "Заполнкрасив"
 
@@ -13125,124 +12163,11 @@ msgstr ""
 msgid "beztriple"
 msgstr "Безьетройка"
 
-msgid "bgpic"
-msgstr ""
-
-msgid "bindat"
-msgstr ""
-
-msgid "blenderdynplayer.exe"
-msgstr ""
-
-msgid "blenderplayer"
-msgstr ""
-
-msgid "blendfile"
-msgstr ""
-
-msgid "blendfile\\DefaultIcon"
-msgstr ""
-
-msgid "blendfile\\shell\\open\\command"
-msgstr ""
-
-msgid "blendfiledata"
-msgstr ""
-
-msgid "block null while panel drag, should not happen\n"
-msgstr ""
-
-msgid "blocktype"
-msgstr ""
-
-msgid "bmp "
-msgstr ""
-
-msgid "bone"
-msgstr "кость"
-
-msgid "bonelist"
-msgstr ""
-
-msgid "bonemenu"
-msgstr ""
-
-msgid "bonetransmain"
-msgstr ""
-
 msgid "boundbox"
 msgstr "габаритбокс"
 
-msgid "bp from exotic"
-msgstr ""
-
-msgid "break true\n"
-msgstr ""
-
-msgid "buildtext"
-msgstr ""
-
-msgid "buildtext2"
-msgstr ""
-
-msgid "bumped on a compress error"
-msgstr ""
-
-msgid "bumped on a decompress error"
-msgstr ""
-
-msgid "bumped on a decrypt error"
-msgstr ""
-
-msgid "bumped on an encrypt error"
-msgstr ""
-
-msgid "bumped on an internal programming error"
-msgstr ""
-
-msgid "bumped on corrupted data"
-msgstr ""
-
-msgid "buts_viewmenu"
-msgstr ""
-
-msgid "butsetup"
-msgstr ""
-
-msgid "butsrect"
-msgstr ""
-
 msgid "button"
 msgstr "кнопка"
-
-#, c-format
-msgid "buttonswin %d"
-msgstr ""
-
-#, c-format
-msgid "bwin_from_winid: Internal error, bad winid: %d\n"
-msgstr ""
-
-#, c-format
-msgid "bwin_getsize: Internal error, bad winid: %d\n"
-msgstr ""
-
-#, c-format
-msgid "bytes = %d\n"
-msgstr ""
-
-msgid "c"
-msgstr ""
-
-msgid "calcpathdist"
-msgstr ""
-
-#, c-format
-msgid "called with %d bytes in buffer [%s]\n"
-msgstr ""
-
-msgid "camact"
-msgstr ""
 
 msgid "camera"
 msgstr "камера"
@@ -13274,25 +12199,6 @@ msgstr ""
 msgid "clOpenCompressor"
 msgstr ""
 
-#, c-format
-msgid "clip overflow: clve clvl %d %d\n"
-msgstr ""
-
-msgid "col1"
-msgstr ""
-
-msgid "col2"
-msgstr ""
-
-msgid "colBuffer"
-msgstr ""
-
-msgid "coldata"
-msgstr ""
-
-msgid "colmain"
-msgstr ""
-
 msgid "colorband"
 msgstr "цветныеполосы"
 
@@ -13314,99 +12220,11 @@ msgstr "ограничение"
 msgid "constraintChannel"
 msgstr "ограниченияКанал"
 
-msgid "cont"
-msgstr ""
-
-msgid "context_options"
-msgstr ""
-
-msgid "coordIndex"
-msgstr ""
-
-msgid "copyPoseChannel"
-msgstr ""
-
-msgid "copy_deformWeight"
-msgstr ""
-
-msgid "copylamptex"
-msgstr ""
-
 msgid "copymaterial"
 msgstr "копирМатериал"
 
-msgid "copymenu prop"
-msgstr ""
-
-msgid "copyposePoseChannel"
-msgstr ""
-
-msgid "corrupt Bpib file removed\n"
-msgstr ""
-
-msgid "cosmo_buffer"
-msgstr ""
-
-msgid "could not make a new key"
-msgstr ""
-
-msgid "could not write the key"
-msgstr ""
-
-msgid "couldn't find pictures\n"
-msgstr ""
-
-#, c-format
-msgid "couldn't open %s\n"
-msgstr ""
-
-#, c-format
-msgid "couldn't open anim %s\n"
-msgstr "не получается открыть анимацию %s\n"
-
-msgid "couldnt start avi\n"
-msgstr "не получается запустить avi\n"
-
-msgid "cpmain"
-msgstr ""
-
-msgid "cu orco"
-msgstr ""
-
-msgid "cu->orco"
-msgstr ""
-
-msgid "cumesh1"
-msgstr ""
-
-msgid "cumesh2"
-msgstr ""
-
-#, c-format
-msgid "cur: %s"
-msgstr ""
-
-msgid "currentfile eexe"
-msgstr ""
-
-msgid "currkey->data"
-msgstr ""
-
 msgid "curve"
 msgstr "кривая"
-
-msgid "cut buffer"
-msgstr ""
-
-msgid "cut buffera"
-msgstr ""
-
-msgid "cut bufferb"
-msgstr ""
-
-msgid "cvtbuf"
-msgstr ""
-
 
 msgid "dLoc"
 msgstr "dНхжд"
@@ -13450,100 +12268,6 @@ msgstr ""
 msgid "dZ"
 msgstr ""
 
-msgid "data"
-msgstr ""
-
-msgid "data1"
-msgstr ""
-
-msgid "data2"
-msgstr ""
-
-msgid "data_a"
-msgstr ""
-
-msgid "dblock buffer"
-msgstr ""
-
-#, c-format
-msgid "decodetarga: count would overwrite %d pixels\n"
-msgstr ""
-
-#, c-format
-msgid "def_icon: Internal error, bad icon ID: %d\n"
-msgstr ""
-
-msgid "defaultipo"
-msgstr ""
-
-msgid "deflate should report Z_STREAM_END\n"
-msgstr ""
-
-msgid "deflateEnd"
-msgstr ""
-
-msgid "deflateInit"
-msgstr ""
-
-msgid "deflateSetDictionary"
-msgstr ""
-
-msgid "deform"
-msgstr ""
-
-msgid "deform1"
-msgstr ""
-
-msgid "deformGroup"
-msgstr ""
-
-msgid "deformVert"
-msgstr ""
-
-msgid "deformWeight"
-msgstr ""
-
-msgid "delNurb"
-msgstr ""
-
-msgid "delNurb1"
-msgstr ""
-
-msgid "delNurb2"
-msgstr ""
-
-msgid "delNurb3"
-msgstr ""
-
-msgid "delNurb4"
-msgstr ""
-
-msgid "delNurb5"
-msgstr ""
-
-msgid "delNurb6"
-msgstr ""
-
-msgid "delNurb7"
-msgstr ""
-
-msgid "delNurb8"
-msgstr ""
-
-msgid "deleteNurb"
-msgstr ""
-
-#, c-format
-msgid "deltaX: %.3f"
-msgstr ""
-
-#, c-format
-msgid "detectBitmapFont :Unsupported version %d\n"
-msgstr ""
-
-msgid "dgrouplist"
-msgstr ""
-
 msgid "did not recognize this as a blend file"
 msgstr "не распознаётся как blend файл"
 
@@ -13553,188 +12277,8 @@ msgstr ""
 msgid "diffuseColor"
 msgstr "рассеянЦвет"
 
-msgid "difmat"
-msgstr ""
-
-msgid "dir Sorteer temp"
-msgstr ""
-
-msgid "directlink"
-msgstr ""
-
-msgid "disp"
-msgstr ""
-
-#, c-format
-msgid "displist %%t|%d ms"
-msgstr ""
-
-msgid "displistshade"
-msgstr ""
-
-msgid "dispmesh"
-msgstr ""
-
 msgid "distance"
 msgstr "дистанция"
-
-msgid "dl"
-msgstr ""
-
-msgid "dl index"
-msgstr ""
-
-msgid "dl verts"
-msgstr ""
-
-msgid "dlindex"
-msgstr ""
-
-msgid "dlm"
-msgstr ""
-
-msgid "dlm->mcol"
-msgstr ""
-
-msgid "dlm->mface"
-msgstr ""
-
-msgid "dlm->mvert"
-msgstr ""
-
-msgid "dlm->tface"
-msgstr ""
-
-msgid "dlmesh"
-msgstr ""
-
-msgid "dlnors"
-msgstr ""
-
-msgid "dlsimple: "
-msgstr ""
-
-msgid "dlverts"
-msgstr ""
-
-msgid "dmParamsCreate"
-msgstr ""
-
-msgid "dmSetImageDefaults"
-msgstr ""
-
-#, c-format
-msgid "do_soundbuts: unhandled event %d\n"
-msgstr ""
-
-msgid "does not know how to proceed"
-msgstr ""
-
-msgid "doesn't do anything yet\n"
-msgstr ""
-
-msgid "done.\n"
-msgstr ""
-
-msgid "double"
-msgstr ""
-
-#, c-format
-msgid "draw %%t|%d ms"
-msgstr ""
-
-msgid "dumprect"
-msgstr ""
-
-msgid "dup"
-msgstr ""
-
-#, c-format
-msgid "dup for subr %d not found in range\n"
-msgstr ""
-
-msgid "duplibase"
-msgstr ""
-
-msgid "duplicateNurb"
-msgstr ""
-
-msgid "duplicateNurb2"
-msgstr ""
-
-msgid "duplicateNurb3"
-msgstr ""
-
-msgid "duplicateNurb4"
-msgstr ""
-
-msgid "duplicateNurb5"
-msgstr ""
-
-msgid "duplichar_bezt2"
-msgstr ""
-
-msgid "duplichar_nurb"
-msgstr ""
-
-msgid "dx:"
-msgstr ""
-
-msgid "dy:"
-msgstr ""
-
-#, c-format
-msgid "dyld: %s\n"
-msgstr ""
-
-msgid "dynstr_cstring"
-msgstr ""
-
-msgid "dz:"
-msgstr ""
-
-msgid "e"
-msgstr ""
-
-msgid "eBone"
-msgstr ""
-
-msgid "edge render"
-msgstr ""
-
-msgid "edgeBuffer"
-msgstr ""
-
-msgid "edgefill"
-msgstr ""
-
-msgid "edgeflip"
-msgstr ""
-
-#, c-format
-msgid "edges selected: %d\n"
-msgstr ""
-
-msgid "edit ob act"
-msgstr ""
-
-msgid "editipo"
-msgstr ""
-
-msgid "editobact"
-msgstr ""
-
-msgid "en_US"
-msgstr ""
-
-msgid "encountered problems writing one (or more) parameters"
-msgstr ""
-
-msgid "encountered problems writing the blendfile"
-msgstr ""
-
-msgid "encountered problems writing the filedescription"
-msgstr ""
 
 msgid "end"
 msgstr "конец"
@@ -13742,1290 +12286,44 @@ msgstr "конец"
 msgid "endpoints"
 msgstr "конечнточки"
 
-msgid "enlargeencodedbufferImBuf"
-msgstr ""
-
 msgid "envmap"
 msgstr "картОкруж"
-
-#, c-format
-msgid "error block no font %s\n"
-msgstr ""
-
-#, c-format
-msgid "error in addface: %d\n"
-msgstr ""
-
-#, c-format
-msgid "error in areawinar %d ,areawinset\n"
-msgstr ""
-
-msgid "error in browse ipo \n"
-msgstr ""
-
-#, c-format
-msgid "error in findOrAddHalo: %d\n"
-msgstr ""
-
-#, c-format
-msgid "error in findOrAddVert: %d\n"
-msgstr ""
-
-#, c-format
-msgid "error in findOrAddVlak: %d\n"
-msgstr ""
-
-msgid "error in popfirst\n"
-msgstr ""
-
-msgid "error in poplast\n"
-msgstr ""
-
-#, c-format
-msgid "error in shadetrapixel nr: %d\n"
-msgstr ""
-
-msgid "error reading screen... file corrupt\n"
-msgstr ""
-
-msgid "error split_libdata\n"
-msgstr ""
-
-#, c-format
-msgid "error: area %d edge 1 bestaat niet\n"
-msgstr ""
-
-#, c-format
-msgid "error: area %d edge 2 bestaat niet\n"
-msgstr ""
-
-#, c-format
-msgid "error: area %d edge 3 bestaat niet\n"
-msgstr ""
-
-#, c-format
-msgid "error: area %d edge 4 bestaat niet\n"
-msgstr ""
-
-#, c-format
-msgid "error: can't find SDNA code %s\n"
-msgstr ""
-
-msgid "error: can't play this image type\n"
-msgstr ""
-
-msgid "error: file without SDNA\n"
-msgstr ""
-
-msgid "error: negative users in strip\n"
-msgstr ""
-
-msgid "error: sample didn't load properly\n"
-msgstr ""
-
-msgid "error; max (4) blockhandlers reached!\n"
-msgstr ""
-
-msgid "error; octree branches full\n"
-msgstr ""
-
-msgid "error; octree nodes full\n"
-msgstr ""
-
-msgid "errpr: illegal pointersize! \n"
-msgstr ""
-
-msgid "evlist"
-msgstr ""
-
-#, c-format
-msgid "expand: already linked: %s lib: %s\n"
-msgstr ""
-
-#, c-format
-msgid "expand: other lib %s\n"
-msgstr ""
-
-msgid "expcont"
-msgstr ""
-
-msgid "exportmenu"
-msgstr ""
 
 msgid "ext"
 msgstr "расшир"
 
-msgid "extend_spline"
-msgstr ""
-
-#, c-format
-msgid "extra offset %d\n"
-msgstr ""
-
-#, c-format
-msgid "extrabytes = %d\n"
-msgstr ""
-
-msgid "extrude IKA"
-msgstr ""
-
-msgid "extrudeNurb1"
-msgstr ""
-
-msgid "extrudebone"
-msgstr ""
-
-msgid "f"
-msgstr ""
-
-msgid "f:"
-msgstr ""
-
-msgid "failed"
-msgstr "не получилось"
-
-msgid "failed a blend file check"
-msgstr ""
-
-msgid "failed to allocate memory in get_mouse_trail()\n"
-msgstr ""
-
-msgid "failed to re-allocate memory in get_mouse_trail()\n"
-msgstr ""
-
-#, c-format
-msgid "faking space %d\n"
-msgstr ""
-
 msgid "false"
 msgstr "ложь"
-
-#, c-format
-msgid "fast free: pointer not in memlist %p size %d\n"
-msgstr ""
-
-msgid "fastmalloc: shouldnt be here\n"
-msgstr ""
-
-msgid "fdopen"
-msgstr ""
-
-msgid "figurin' nocalc is talking too long\n"
-msgstr ""
-
-msgid "filemenu"
-msgstr ""
-
-msgid "filldisp"
-msgstr ""
-
-msgid "filldisp1"
-msgstr ""
-
-msgid "filldisplist"
-msgstr ""
-
-msgid "filterNodes"
-msgstr ""
-
-msgid "findOrAdHalo"
-msgstr ""
-
-msgid "findOrAddVert"
-msgstr ""
-
-msgid "findOrAddVlak"
-msgstr ""
-
-msgid "find_disp"
-msgstr ""
-
-msgid "find_main"
-msgstr ""
-
-#, c-format
-msgid "first brace after offset %d\n"
-msgstr ""
-
-msgid "fixedtime"
-msgstr ""
-
-msgid "float"
-msgstr ""
-
-msgid "followpathConstraint"
-msgstr ""
-
-msgid "formfactors"
-msgstr ""
-
-msgid "framing_options"
-msgstr ""
-
-msgid "free anim, anim == NULL\n"
-msgstr ""
-
-msgid "freePackedFile: Trying to free a NULL pointer\n"
-msgstr ""
-
-msgid "freeimage "
-msgstr ""
-
-#, c-format
-msgid "from <%d, %d>"
-msgstr ""
-
-msgid "fromavirgbbuf"
-msgstr ""
-
-msgid "fromrgb32buf"
-msgstr ""
-
-msgid "fromtype1: bad FontMatrix line\n"
-msgstr ""
-
-msgid "fromtype1: no /Subrs found\n"
-msgstr ""
-
-msgid "fromtype1: no FontMatrix found\n"
-msgstr ""
-
-msgid "fromtype1: no currentfile eexec found\n"
-msgstr ""
-
-msgid "fromtype1: unexpected eof\n"
-msgstr ""
-
-msgid "fsme"
-msgstr ""
-
-msgid "g"
-msgstr ""
-
-msgid "game act"
-msgstr ""
-
-msgid "gamemenu"
-msgstr ""
-
-msgid "generated an out of memory error"
-msgstr ""
-
-msgid "get first"
-msgstr ""
-
-msgid "get nextdir"
-msgstr ""
-
-#, c-format
-msgid "get_obdata_defname: Internal error, bad type: %d\n"
-msgstr ""
-
-msgid "gla2DDrawInfo"
-msgstr ""
-
-#, c-format
-msgid "glyphcount = %d\n"
-msgstr ""
-
-msgid "gpfa_poseChannel"
-msgstr ""
-
-msgid "gqueue_new"
-msgstr ""
-
-msgid "gqueue_push"
-msgstr ""
-
-msgid "group act"
-msgstr ""
-
-msgid "groupkey"
-msgstr ""
-
-msgid "groupmenu"
-msgstr "меню_групп"
-
-msgid "groupobject"
-msgstr ""
-
-#, c-format
-msgid "guessing '%s' == '%s'\n"
-msgstr ""
-
-msgid "h"
-msgstr ""
-
-msgid "h/w pageflip"
-msgstr ""
-
-#, c-format
-msgid "hSoundObject: %p\n"
-msgstr ""
-
-msgid "hablock"
-msgstr ""
-
-msgid "hamx "
-msgstr ""
-
-msgid "has problems with your key"
-msgstr ""
-
-msgid "hashedgetab"
-msgstr ""
-
-msgid "hdrl"
-msgstr ""
-
-#, c-format
-msgid "header %d"
-msgstr ""
-
-msgid "header info"
-msgstr ""
-
-msgid "header view3d"
-msgstr ""
-
-msgid "hexdat"
-msgstr ""
-
-msgid "hme"
-msgstr ""
-
-msgid "i"
-msgstr ""
-
-msgid "iblock buffer"
-msgstr ""
-
-msgid "icon->data"
-msgstr ""
-
-msgid "idar"
-msgstr ""
-
-msgid "idx1"
-msgstr ""
-
-msgid "iff "
-msgstr ""
-
-msgid "ika"
-msgstr ""
-
-msgid "iksegments"
-msgstr ""
 
 msgid "image"
 msgstr "изображение"
 
-msgid "image_image_rtmappingmenu"
-msgstr ""
-
-msgid "image_imagemenu"
-msgstr ""
-
-msgid "image_selectmenu"
-msgstr ""
-
-msgid "image_uvsmenu"
-msgstr ""
-
-msgid "image_viewmenu"
-msgstr ""
-
-msgid "imagewraposa: null pointer to image\n"
-msgstr ""
-
-msgid "imagewraposa: null pointer to texture\n"
-msgstr ""
-
-msgid "imb_addcmapImBuf"
-msgstr ""
-
-msgid "imb_addplanesImBuf"
-msgstr ""
-
-msgid "imb_addrectImBuf"
-msgstr ""
-
-msgid "imb_enlargeencodedbufferImBuf: error in parameters\n"
-msgstr ""
-
-#, c-format
-msgid "imb_savepng: unsupported bytes per pixel: %d\n"
-msgstr ""
-
-msgid "importmenu"
-msgstr ""
-
-msgid "in console"
-msgstr ""
-
-#, c-format
-msgid "in getanimtype: %s\n"
-msgstr ""
-
-#, c-format
-msgid "in plugin: %s"
-msgstr ""
-
-msgid "incorrect size in header or error in AVI\n"
-msgstr ""
-
-msgid "incorrect use of new_mem_element\n"
-msgstr ""
-
-msgid "incorrect use of new_pgn_element\n"
-msgstr ""
-
-#, c-format
-msgid "inflate should report Z_STREAM_END, not %d\n"
-msgstr ""
-
-msgid "inflateEnd"
-msgstr ""
-
-msgid "inflateInit"
-msgstr ""
-
-msgid "inflateSetDictionary"
-msgstr ""
-
-#, c-format
-msgid "inflated %u to %u (flushes) err=%d\n"
-msgstr ""
-
-msgid "info_filemenu"
-msgstr ""
-
-msgid "info_help_websitesmenu"
-msgstr ""
-
-msgid "info_helpmenu"
-msgstr ""
-
-#, c-format
-msgid "infowin %d"
-msgstr ""
-
-msgid "initEdgeRenderBuffer"
-msgstr ""
-
-msgid "initGaus2"
-msgstr ""
-
-msgid "init_face_tab"
-msgstr ""
-
-msgid "init_render_curve3"
-msgstr ""
-
-msgid "initactionspace"
-msgstr ""
-
-msgid "initbuts"
-msgstr ""
-
-msgid "initfastshade2"
-msgstr ""
-
-msgid "initfilespace"
-msgstr ""
-
-msgid "initfilt"
-msgstr ""
-
-msgid "initgauss4"
-msgstr ""
-
-msgid "initglobals"
-msgstr ""
-
-msgid "initimaselspace"
-msgstr ""
-
-msgid "initimaspace"
-msgstr ""
-
-msgid "initinfo"
-msgstr ""
-
-msgid "initipo"
-msgstr ""
-
-msgid "initjit"
-msgstr ""
-
-msgid "initnlaspace"
-msgstr ""
-
-msgid "initoopsspace"
-msgstr ""
-
-msgid "initradiosity"
-msgstr ""
-
-msgid "initradiosity1"
-msgstr ""
-
-msgid "initradiosity3"
-msgstr ""
-
-msgid "initrendermaterial"
-msgstr ""
-
-msgid "initscriptspace"
-msgstr ""
-
-msgid "initseqspace"
-msgstr ""
-
-msgid "initshadbuf"
-msgstr ""
-
-msgid "initshadbuf2"
-msgstr ""
-
-msgid "initshadbuf3"
-msgstr ""
-
-msgid "initsoundspace"
-msgstr ""
-
-msgid "inittextspace"
-msgstr ""
-
-msgid "initview3d"
-msgstr ""
-
-msgid "initwindows"
-msgstr ""
-
-msgid "insertInEdgeBuffer"
-msgstr ""
-
-msgid "insertkey_editipo"
-msgstr ""
-
-msgid "int"
-msgstr ""
-
-msgid "int DNAlen= sizeof(DNAstr);\n"
-msgstr ""
-
-msgid "internicon"
-msgstr ""
-
-msgid "ipo"
-msgstr "ипо"
-
-msgid "ipoact"
-msgstr ""
-
-msgid "ipocopybuf"
-msgstr ""
-
-msgid "ipocurve"
-msgstr ""
-
-msgid "ipowin"
-msgstr ""
-
-#, c-format
-msgid "ipowin %d"
-msgstr ""
-
-msgid "is not allowed in this version"
-msgstr ""
-
-msgid "iv_finddata"
-msgstr ""
-
-msgid "ivstack"
-msgstr ""
-
-msgid "jit"
-msgstr ""
-
-msgid "join obmatar"
-msgstr ""
-
-msgid "join_mesh"
-msgstr ""
-
-msgid "joinmesh1"
-msgstr ""
-
-msgid "joinmesh2"
-msgstr ""
-
-msgid "joinmesh3"
-msgstr ""
-
-msgid "joinmesh4"
-msgstr ""
-
-msgid "joinmesh5"
-msgstr ""
-
-msgid "jointris"
-msgstr ""
-
-msgid "jpeg "
-msgstr ""
-
-msgid "k"
-msgstr ""
-
-msgid "kb->data"
-msgstr ""
-
-msgid "key"
-msgstr "ключ"
-
-msgid "keysens"
-msgstr ""
-
-msgid "kinematicConstraint"
-msgstr ""
-
-msgid "knots"
-msgstr "узлы"
-
-#, c-format
-msgid "knotu %d: %f\n"
-msgstr ""
-
-#, c-format
-msgid "knotv %d: %f\n"
-msgstr ""
-
-msgid "l"
-msgstr ""
-
 msgid "lamp"
 msgstr "лампа"
-
-msgid "lamp jitter tab"
-msgstr ""
-
-msgid "lamp_panel_lamp"
-msgstr ""
-
-msgid "lamp_panel_mapto"
-msgstr ""
-
-msgid "lamp_panel_preview"
-msgstr ""
-
-msgid "lamp_panel_spot"
-msgstr ""
-
-msgid "lamp_panel_texture"
-msgstr ""
-
-msgid "lampren"
-msgstr ""
-
-msgid "latt"
-msgstr ""
-
-msgid "lattice bp"
-msgstr ""
-
-msgid "latticedata"
-msgstr ""
-
-msgid "lattvert"
-msgstr ""
-
-msgid "leesInventor"
-msgstr ""
-
-msgid "leesInventor1"
-msgstr ""
-
-msgid "leesInventor3"
-msgstr ""
-
-msgid "leesInventor4"
-msgstr ""
-
-msgid "leesInventor5"
-msgstr ""
-
-msgid "leesInventor6"
-msgstr ""
-
-msgid "leesInventor8"
-msgstr ""
-
-msgid "left"
-msgstr ""
-
-#, c-format
-msgid "len: %d   From %d - %d"
-msgstr ""
-
-#, c-format
-msgid "len: %d (%d)"
-msgstr ""
-
-msgid "lib"
-msgstr ""
-
-msgid "libmain"
-msgstr ""
-
-msgid "library"
-msgstr ""
-
-msgid "limb"
-msgstr ""
-
-msgid "linV"
-msgstr "ЛинСк"
-
-msgid "linkline"
-msgstr ""
-
-msgid "listarray"
-msgstr ""
-
-msgid "lme"
-msgstr ""
-
-msgid "loadeditMesh1"
-msgstr ""
-
-msgid "loadeditMesh2"
-msgstr ""
-
-msgid "loadeditMesh3"
-msgstr ""
-
-msgid "locZ:"
-msgstr ""
 
 msgid "localview"
 msgstr "локальнВид"
 
-msgid "locktrackConstraint"
-msgstr ""
-
-msgid "loclikeConstraint"
-msgstr ""
-
-msgid "long"
-msgstr ""
-
-msgid "longimagedata: bad magic number in image file\n"
-msgstr ""
-
-msgid "longimagedata: image must have 1 byte per pix chan\n"
-msgstr ""
-
-msgid "m"
-msgstr ""
-
-msgid "ma"
-msgstr ""
-
-msgid "ma->curbuf"
-msgstr ""
-
-msgid "main"
-msgstr ""
-
-msgid "main(){\n"
-msgstr ""
-
-msgid "mainb"
-msgstr ""
-
-msgid "make first base"
-msgstr ""
-
-msgid "makeBevelList"
-msgstr ""
-
-msgid "makeBevelList2"
-msgstr ""
-
-msgid "makeBevelList3"
-msgstr ""
-
-msgid "makeBevelList4"
-msgstr ""
-
-msgid "makeBevelList5"
-msgstr ""
-
-msgid "makeDispList01"
-msgstr ""
-
-msgid "makeDispList1"
-msgstr ""
-
-msgid "makeDispListbev"
-msgstr ""
-
-msgid "makeDispListbev1"
-msgstr ""
-
-msgid "makeDispListbez"
-msgstr ""
-
-msgid "makeDispListimage"
-msgstr ""
-
-msgid "makeDispListpoly"
-msgstr ""
-
-msgid "makeDispListsurf"
-msgstr ""
-
-msgid "makeGlobalElemArray"
-msgstr ""
-
-msgid "makeNurbcurve1"
-msgstr ""
-
-msgid "makeNurbcurve3"
-msgstr ""
-
-msgid "makeNurbfaces1"
-msgstr ""
-
-msgid "makeNurbfaces3"
-msgstr ""
-
-msgid "makeNurbfaces4"
-msgstr ""
-
-msgid "makeNurbfaces5"
-msgstr ""
-
-msgid "make_editbone"
-msgstr ""
-
-msgid "make_orco"
-msgstr ""
-
-msgid "makebevelcurve1"
-msgstr ""
-
-msgid "makebevelcurve2"
-msgstr ""
-
-msgid "makebevelcurve3"
-msgstr ""
-
-msgid "makecyclicN"
-msgstr ""
-
-msgid "makeknots"
-msgstr ""
-
-msgid "makeoctree"
-msgstr ""
-
-msgid "makeshadbuf"
-msgstr ""
-
-msgid "makeshadbuf2"
-msgstr ""
-
-msgid "maketransverts"
-msgstr ""
-
-msgid "mallocgroup"
-msgstr ""
-
-msgid "mallocgroupdata"
-msgstr ""
-
-msgid "mat"
-msgstr ""
-
-msgid "matBuffer"
-msgstr ""
-
-msgid "matarray1"
-msgstr ""
-
-msgid "matarray2"
-msgstr ""
-
-msgid "max "
-msgstr ""
-
-msgid "maxh"
-msgstr ""
-
-msgid "maxw"
-msgstr ""
-
-msgid "mb boundbox"
-msgstr ""
-
-msgid "mbaldisp"
-msgstr ""
-
-msgid "mball"
-msgstr ""
-
-msgid "mball_intlist"
-msgstr ""
-
-msgid "mballnors"
-msgstr ""
-
-msgid "mballverts"
-msgstr ""
-
-msgid "mbproc->centers"
-msgstr ""
-
-msgid "mbproc->corners"
-msgstr ""
-
-msgid "mbproc->edges"
-msgstr ""
-
-msgid "mcol"
-msgstr ""
-
-msgid "mcoln"
-msgstr ""
-
-msgid "md->items"
-msgstr ""
-
-msgid "me->mat"
-msgstr ""
-
-msgid "me->mface"
-msgstr ""
-
-msgid "memarena"
-msgstr ""
-
 msgid "menu"
 msgstr "меню"
-
-msgid "menustr"
-msgstr ""
-
-msgid "mergeBP"
-msgstr ""
 
 msgid "mesh"
 msgstr "меш"
 
-msgid "mesh displist orco"
-msgstr ""
-
-msgid "meshdisp"
-msgstr ""
-
-msgid "meshnormals"
-msgstr ""
-
-msgid "message act"
-msgstr ""
-
-msgid "messagesens"
-msgstr ""
-
-msgid "metaelem"
-msgstr ""
-
-msgid "metastack"
-msgstr ""
-
-msgid "metastrip"
-msgstr ""
-
-msgid "metastripdata"
-msgstr ""
-
-msgid "mface"
-msgstr ""
-
-msgid "mfaces"
-msgstr ""
-
-msgid "mjpg"
-msgstr ""
-
-msgid "mmap"
-msgstr ""
-
-msgid "mousesens"
-msgstr ""
-
-msgid "movi"
-msgstr ""
-
-#, c-format
-msgid "movi_offset is %d\n"
-msgstr ""
-
 msgid "movie"
 msgstr "фильм"
-
-msgid "movie succesfully opened\n"
-msgstr ""
-
-msgid "movieentries"
-msgstr ""
-
-msgid "movieheader"
-msgstr ""
-
-msgid "moviestreamformatL"
-msgstr ""
-
-msgid "moviestreamformatS"
-msgstr ""
-
-msgid "moviestreams"
-msgstr ""
-
-msgid "msticky"
-msgstr ""
-
-msgid "mtex"
-msgstr ""
-
-msgid "mvAddTrack"
-msgstr ""
-
-msgid "mvClose"
-msgstr ""
-
-msgid "mvCreateFile"
-msgstr ""
-
-msgid "mvDeleteFrames"
-msgstr ""
-
-msgid "mvFindTrackByMedium"
-msgstr ""
-
-msgid "mvInsertCompressedImage"
-msgstr ""
-
-msgid "mvOpenFD"
-msgstr ""
-
-msgid "mvReadFrames"
-msgstr ""
-
-msgid "mvSetMovieDefaults"
-msgstr ""
-
-msgid "mvWrite"
-msgstr ""
-
-msgid "mvert"
-msgstr ""
-
-msgid "mverts"
-msgstr ""
-
-#, c-format
-msgid "mwinclose: Internal error, bad winid: %d\n"
-msgstr ""
-
-msgid "my_charname"
-msgstr ""
-
-#, c-format
-msgid "mywinset %d: doesn't exist\n"
-msgstr ""
-
-msgid "n"
-msgstr ""
-
-#, c-format
-msgid ""
-"name %s\n"
-"email %s\n"
-"homeUrl %s\n"
-"text %s\n"
-msgstr ""
-
-msgid "namedata"
-msgstr ""
-
-msgid "names"
-msgstr ""
-
-msgid "nearsens"
-msgstr ""
-
-msgid "needed the rest of the blend file"
-msgstr ""
-
-msgid "nepmcol"
-msgstr ""
-
-msgid "new character doesn't start with PO_BGNLOOP ?\n"
-msgstr ""
-
-msgid "new link"
-msgstr ""
-
-msgid "new panel"
-msgstr ""
-
-msgid "new uilink"
-msgstr ""
-
-msgid "new_bhead"
-msgstr ""
-
-msgid "newbase"
-msgstr ""
-
-msgid "newbezt"
-msgstr ""
-
-msgid "neweff"
-msgstr ""
-
-msgid "newidxentry"
-msgstr ""
-
-msgid "newmatar"
-msgstr ""
-
-msgid "newmem"
-msgstr ""
-
-msgid "newobj dupli"
-msgstr ""
-
-msgid "newobjfnt"
-msgstr ""
-
-msgid "newobjfnt2"
-msgstr ""
-
-msgid "newobobj dupli"
-msgstr ""
-
-msgid "newpgn"
-msgstr ""
-
-msgid "nla_selectmenu"
-msgstr ""
-
-msgid "nla_stripmenu"
-msgstr ""
-
-msgid "nla_viewmenu"
-msgstr ""
-
-msgid "nlink"
-msgstr ""
 
 msgid "no (correct) camera"
 msgstr "нет (правильной) камеры"
 
-msgid "no font found for international support\n"
-msgstr ""
-
-msgid "no ibuf !\n"
-msgstr ""
-
-msgid "no index entries\n"
-msgstr ""
-
-msgid "no name"
-msgstr "без имени"
-
-#, c-format
-msgid "no plugin: %s"
-msgstr ""
-
-msgid "no stereo"
-msgstr ""
-
-msgid "no stream format information\n"
-msgstr ""
-
 msgid "no suitable codec found!"
 msgstr "не найден подходящий кодек"
-
-msgid "no zbuf\n"
-msgstr ""
-
-msgid "noaudio"
-msgstr ""
-
-msgid "nomipmap"
-msgstr ""
-
-msgid "normalen1"
-msgstr ""
 
 msgid "normals"
 msgstr "нормали"
 
-#, c-format
-msgid "nr_names %d nr_types %d nr_structs %d\n"
-msgstr ""
-
-msgid "nu from exotic"
-msgstr ""
-
-msgid "numUControlPoints"
-msgstr ""
-
-msgid "numVControlPoints"
-msgstr ""
-
-msgid "numVertices"
-msgstr ""
-
-msgid "numbuts"
-msgstr ""
-
-msgid "ob"
-msgstr "об"
-
-msgid "ob->mat"
-msgstr ""
-
 msgid "object"
 msgstr "обьект"
-
-msgid "objectact"
-msgstr ""
-
-msgid "objectkey"
-msgstr ""
-
-msgid "objfnt_bezt"
-msgstr ""
-
-msgid "objfnt_nurb"
-msgstr ""
-
-msgid "offsettable"
-msgstr ""
-
-msgid "offsetting for brace\n"
-msgstr ""
-
-msgid "offsetting for space\n"
-msgstr ""
 
 msgid "ofsX"
 msgstr "офстX"
@@ -15035,15 +12333,6 @@ msgstr "офстY"
 
 msgid "ofsZ"
 msgstr "офстZ"
-
-msgid "okee_reload"
-msgstr ""
-
-msgid "onpoints"
-msgstr ""
-
-msgid "oops"
-msgstr ""
 
 msgid "open movie"
 msgstr "открыть фильм"
@@ -15057,30 +12346,6 @@ msgstr "открытие фильма\n"
 msgid "orco mesh"
 msgstr "оригкоорд меш"
 
-msgid "output_iris: can't open output file\n"
-msgstr ""
-
-msgid "output_iris: not enough space for image!!\n"
-msgstr ""
-
-msgid "output_iris: rlebuf is too small - bad poop\n"
-msgstr ""
-
-msgid "p"
-msgstr ""
-
-msgid "packFile"
-msgstr ""
-
-msgid "padding.c"
-msgstr ""
-
-msgid "panel untab: shouldnt happen\n"
-msgstr ""
-
-msgid "panelsort"
-msgstr ""
-
 msgid "parent"
 msgstr "родитель"
 
@@ -15093,379 +12358,32 @@ msgstr "частицыКлючи"
 msgid "path"
 msgstr "путь"
 
-msgid "pathdata"
-msgstr ""
-
-#, c-format
-msgid "pause:%d\n"
-msgstr ""
-
-msgid "pixels"
-msgstr ""
-
-msgid "pixstr"
-msgstr ""
-
-msgid "pixstrMain"
-msgstr ""
-
-msgid "pixstrext"
-msgstr ""
-
-msgid "png "
-msgstr ""
-
-msgid "point"
-msgstr ""
-
-msgid "polycache"
-msgstr ""
-
-msgid "pose"
-msgstr ""
-
-msgid "posechain"
-msgstr ""
-
-msgid "post render"
-msgstr ""
-
-msgid "postmat"
-msgstr ""
-
-msgid "premat"
-msgstr ""
-
-msgid "preprocess_include"
-msgstr ""
-
-msgid "prop"
-msgstr ""
-
-msgid "propact"
-msgstr ""
-
 msgid "property"
 msgstr "Свойство"
 
 msgid "property string"
 msgstr "Свойства строка"
 
-msgid "propsens"
-msgstr ""
-
-#, c-format
-msgid ""
-"pubKeyUrl1 %s\n"
-"pubKeyUrl2 %s\n"
-msgstr ""
-
-msgid "pushpop"
-msgstr ""
-
-msgid "pushpop not empty\n"
-msgstr ""
-
-msgid "pycont"
-msgstr ""
-
-msgid "q"
-msgstr ""
-
-msgid "quicktime "
-msgstr ""
-
-msgid "quit.blend"
-msgstr ""
-
-msgid "r"
-msgstr ""
-
-msgid "r--"
-msgstr ""
-
-msgid "r-x"
-msgstr ""
-
-msgid "radarsens"
-msgstr ""
-
-msgid "radfaces"
-msgstr ""
-
 msgid "radio"
 msgstr "радио"
-
-msgid "radio_panel_calculation"
-msgstr ""
-
-msgid "radio_panel_render"
-msgstr ""
-
-msgid "radio_panel_tool"
-msgstr ""
-
-msgid "radius"
-msgstr ""
-
-msgid "random act"
-msgstr ""
-
-msgid "randomsens"
-msgstr ""
-
-msgid "raysens"
-msgstr ""
-
-msgid "rb"
-msgstr ""
-
-#, c-format
-msgid "read action %d will get %u raw bytes\n"
-msgstr ""
-
-#, c-format
-msgid "read lib %s\n"
-msgstr ""
-
-msgid "readBitmapFontVersion0: corrupted bitmapfont\n"
-msgstr ""
-
-msgid "readBitmapFontVersion0:bmfont"
-msgstr ""
-
-msgid "readBitmapFontVersion0:buffer"
-msgstr ""
-
-msgid "read_file_data"
-msgstr ""
-
-msgid "read_struct"
-msgstr ""
-
-msgid "readbuffer"
-msgstr ""
-
-msgid "readstreamfile newbuffer"
-msgstr ""
-
-msgid "readvideoscape1"
-msgstr ""
-
-msgid "readwritetestdump"
-msgstr ""
-
-msgid "rec "
-msgstr ""
-
-msgid "reconstruct"
-msgstr ""
-
-msgid "rect"
-msgstr ""
-
-msgid "rectblur"
-msgstr ""
-
-msgid "rectot"
-msgstr ""
-
-msgid "rectz"
-msgstr ""
-
-msgid "rendermenu"
-msgstr ""
-
-msgid "repbind"
-msgstr ""
 
 msgid "resolution doesn't match"
 msgstr "разрешение не совпадает"
 
-#, c-format
-msgid "retrying at quality %d\n"
-msgstr ""
-
-msgid "rgb"
-msgstr ""
-
-msgid "rgb "
-msgstr ""
-
-msgid "rgba"
-msgstr ""
-
-msgid "right"
-msgstr "право"
-
-msgid "rotlikeConstraint"
-msgstr ""
-
-msgid "row_pointers"
-msgstr ""
-
-msgid "rt:"
-msgstr ""
-
-msgid "runtime_options"
-msgstr ""
-
-msgid "runtimepath"
-msgstr ""
-
-msgid "rw-"
-msgstr ""
-
-msgid "rwx"
-msgstr ""
-
-msgid "s"
-msgstr ""
-
-msgid "sB "
-msgstr ""
-
-msgid "sG "
-msgstr ""
-
-msgid "sR "
-msgstr ""
-
-msgid "samenvoeg iv"
-msgstr ""
-
-msgid "sample data"
-msgstr ""
-
-#, c-format
-msgid "sample: %p\n"
-msgstr ""
-
-msgid "samplebezt"
-msgstr ""
-
-msgid "save under"
-msgstr ""
-
-#, c-format
-msgid "sbw: side: %d %d\n"
-msgstr ""
-
-#, c-format
-msgid "sbw: width: %d %d\n"
-msgstr ""
-
-msgid "scalerect"
-msgstr ""
-
 msgid "scene"
 msgstr "сцена"
-
-msgid "scene act"
-msgstr ""
-
-msgid "scene_add_base"
-msgstr ""
 
 msgid "screen"
 msgstr "экран"
 
-#, c-format
-msgid "screen size %d %d\n"
-msgstr ""
-
 msgid "script"
 msgstr "скрипт"
-
-msgid "script_panel_scriptlink"
-msgstr ""
-
-msgid "script_scriptsmenu"
-msgstr ""
-
-msgid "scriptlistF"
-msgstr ""
-
-msgid "scriptlistL"
-msgstr ""
-
-msgid "sdna"
-msgstr ""
-
-msgid "sdna_data"
-msgstr ""
-
-msgid "sdnanames"
-msgstr ""
-
-msgid "sdnastrcs"
-msgstr ""
-
-msgid "sdnatypes"
-msgstr ""
-
-#, c-format
-msgid "seac: %3d %3d %3d %3d %3d\n"
-msgstr ""
-
-#, c-format
-msgid "seen %c ( %d) \n"
-msgstr ""
-
-msgid "sel buffer"
-msgstr ""
-
-msgid "selar"
-msgstr ""
 
 msgid "select 1 or 3 vertices"
 msgstr "выделите 1 или 3 вершины"
 
-msgid "selrect"
-msgstr ""
-
-msgid "sensor"
-msgstr ""
-
-#, c-format
-msgid "seq->type: %i\n"
-msgstr ""
-
-msgid "seq_addmenu"
-msgstr ""
-
-msgid "seq_addmenu_effectmenu"
-msgstr ""
-
-msgid "seq_editmenu"
-msgstr ""
-
-msgid "seq_selectmenu"
-msgstr ""
-
-msgid "seq_viewmenu"
-msgstr ""
-
-msgid "seqar"
-msgstr ""
-
-msgid "seqname"
-msgstr ""
-
 msgid "set"
 msgstr "установить"
-
-msgid "setedgepointers"
-msgstr ""
-
-msgid "setscreen error\n"
-msgstr ""
-
-msgid "setsplinetype"
-msgstr ""
-
-msgid "setsplinetype2"
-msgstr ""
 
 msgid "setting big cursor\n"
 msgstr "установить большой курсор\n"
@@ -15473,29 +12391,8 @@ msgstr "установить большой курсор\n"
 msgid "setting small cursor\n"
 msgstr "установить маленький курсор\n"
 
-msgid "sgi "
-msgstr ""
-
-msgid "shift+F1"
-msgstr ""
-
-msgid "shift+F2"
-msgstr ""
-
-msgid "short"
-msgstr ""
-
 msgid "show and select all keys"
 msgstr "показать и выделить все ключи"
-
-msgid "show_framerate"
-msgstr ""
-
-msgid "show_profile"
-msgstr ""
-
-msgid "show_properties"
-msgstr ""
 
 msgid "sizeX"
 msgstr "размрX"
@@ -15518,46 +12415,8 @@ msgstr "размрZ"
 msgid "skip: %d, x: %d y: %d, depth: %d (%x)\n"
 msgstr ""
 
-msgid "something wrong in areafullscreen"
-msgstr ""
-
-msgid "sort"
-msgstr ""
-
-msgid "sortremovedoub"
-msgstr ""
-
 msgid "sound"
 msgstr "звук"
-
-msgid "sound == NULL\n"
-msgstr ""
-
-#, c-format
-msgid "sound: %p\n"
-msgstr ""
-
-msgid "sound_panel_listener"
-msgstr ""
-
-msgid "sound_panel_sequencer"
-msgstr ""
-
-msgid "sound_panel_sound"
-msgstr ""
-
-msgid "sound_viewmenu"
-msgstr ""
-
-msgid "soundact"
-msgstr ""
-
-msgid "soundlistener"
-msgstr ""
-
-#, c-format
-msgid "special after offset %d\n"
-msgstr ""
 
 msgid "speed"
 msgstr "скорость"
@@ -15571,141 +12430,8 @@ msgstr "крнь(0.5)"
 msgid "sqrt(2)/4"
 msgstr "крнь(2)/4"
 
-msgid "stackoverflow in IV read\n"
-msgstr ""
-
-msgid "std "
-msgstr ""
-
 msgid "sticky"
 msgstr "липучка"
-
-msgid "still primitive code... fix!\n"
-msgstr ""
-
-msgid "str"
-msgstr ""
-
-msgid "strdup"
-msgstr ""
-
-msgid "stream"
-msgstr ""
-
-msgid "streamGlue header CRC correct\n"
-msgstr ""
-
-msgid "streamGlue header read. Magic confirmed\n"
-msgstr ""
-
-#, c-format
-msgid "streamGlue: write %d gets %u data + %u streamGlueHeader = %u\n"
-msgstr ""
-
-msgid "streamformat"
-msgstr ""
-
-msgid "streams less than 1\n"
-msgstr ""
-
-msgid "strf"
-msgstr ""
-
-msgid "strh"
-msgstr ""
-
-msgid "strip"
-msgstr ""
-
-msgid "stripelem"
-msgstr ""
-
-msgid "stripelems"
-msgstr ""
-
-msgid "strl"
-msgstr ""
-
-msgid "struct"
-msgstr ""
-
-#, c-format
-msgid "struct %s\n"
-msgstr ""
-
-msgid "structdata"
-msgstr ""
-
-msgid "structs"
-msgstr ""
-
-msgid "subdivNurb"
-msgstr ""
-
-msgid "subdivNurb2"
-msgstr ""
-
-msgid "subdivideNurb4"
-msgstr ""
-
-msgid "subivideNurb3"
-msgstr ""
-
-msgid "subr0: bad poop\n"
-msgstr ""
-
-msgid "subr2: bad poop\n"
-msgstr ""
-
-msgid "subverts"
-msgstr ""
-
-msgid "sure this is not a number"
-msgstr ""
-
-msgid "switchdirect"
-msgstr ""
-
-#, c-format
-msgid "symname \"%s\" Not found"
-msgstr ""
-
-msgid "syncdoubling"
-msgstr ""
-
-msgid "targa "
-msgstr ""
-
-#, c-format
-msgid "tb %d\n"
-msgstr ""
-
-msgid "tbuf"
-msgstr ""
-
-msgid "tekstedit"
-msgstr ""
-
-msgid "temp"
-msgstr ""
-
-msgid "temp string"
-msgstr ""
-
-msgid "tempNorms"
-msgstr ""
-
-msgid "temp_char_accum"
-msgstr ""
-
-msgid "temp_char_buf"
-msgstr ""
-
-msgid "temp_frontbuffer_image"
-msgstr ""
-
-msgid "tempstr"
-msgstr ""
 
 msgid "test for max value"
 msgstr "тест на максимальное значение"
@@ -15728,275 +12454,20 @@ msgstr "ткстрR"
 msgid "text"
 msgstr "текст"
 
-msgid "text buffer"
-msgstr ""
-
-msgid "text_buffer"
-msgstr ""
-
-msgid "text_editmenu"
-msgstr ""
-
-msgid "text_editmenu_selectmenu"
-msgstr ""
-
-msgid "text_editmenu_viewmenu"
-msgstr ""
-
-msgid "text_filemenu"
-msgstr ""
-
-msgid "text_name"
-msgstr ""
-
-msgid "texteditbuf"
-msgstr ""
-
-msgid "textline"
-msgstr ""
-
-msgid "textline_string"
-msgstr ""
-
-msgid "textname"
-msgstr ""
-
-msgid "tface"
-msgstr ""
-
 msgid "theme"
 msgstr "тема"
-
-msgid "theme pup"
-msgstr ""
-
-msgid "this is not good\n"
-msgstr ""
 
 msgid "this operation center does not work here!"
 msgstr "эта операция центрирования здесь не работает"
 
-msgid "tile1"
-msgstr ""
-
-msgid "tilerect"
-msgstr ""
-
-msgid "timelinemenu"
-msgstr ""
-
-msgid "tnorms"
-msgstr ""
-
-#, c-format
-msgid "to <%d, %d> "
-msgstr ""
-
-msgid "toavirgbbuf"
-msgstr ""
-
-msgid "too few arguments for -p (need 2): skipping\n"
-msgstr ""
-
 msgid "too many faces"
 msgstr "слишком много граней"
-
-msgid "too many names\n"
-msgstr ""
-
-msgid "too many structs\n"
-msgstr ""
-
-msgid "too many types\n"
-msgstr ""
 
 msgid "too many vertices"
 msgstr "слишком много вершин"
 
-msgid "too many windows\n"
-msgstr ""
-
 msgid "toolbox"
 msgstr "инструментарий"
-
-msgid "torgb32buf"
-msgstr ""
-
-#, c-format
-msgid "tot %d \n"
-msgstr ""
-
-#, c-format
-msgid "totlen %x\n"
-msgstr ""
-
-msgid "touchsens"
-msgstr ""
-
-msgid "tracktoConstraint"
-msgstr ""
-
-msgid "transPoseChannel"
-msgstr ""
-
-msgid "transVert"
-msgstr ""
-
-msgid "transmain"
-msgstr ""
-
-msgid "transseq"
-msgstr ""
-
-msgid "trias"
-msgstr ""
-
-msgid "true"
-msgstr ""
-
-msgid "tv"
-msgstr ""
-
-msgid "typedata"
-msgstr ""
-
-msgid "typelens"
-msgstr ""
-
-msgid "types"
-msgstr ""
-
-msgid "u"
-msgstr ""
-
-msgid "uKnotVector"
-msgstr ""
-
-msgid "uchar"
-msgstr ""
-
-msgid "uiBlock"
-msgstr ""
-
-msgid "uiBut"
-msgstr ""
-
-msgid "uiDefBut"
-msgstr ""
-
-msgid "ulong"
-msgstr ""
-
-#, c-format
-msgid "unable to unlink module %s"
-msgstr ""
-
-msgid "undefined"
-msgstr ""
-
-msgid "undo buf"
-msgstr ""
-
-msgid "undo: ERROR: G.undo_edit_level negative\n"
-msgstr ""
-
-msgid "undo_mesh"
-msgstr ""
-
-#, c-format
-msgid "unicode: %d '%c'\n"
-msgstr ""
-
-msgid "uninitialized sound !\n"
-msgstr ""
-
-msgid "unixnewline"
-msgstr ""
-
-msgid "unknown"
-msgstr ""
-
-#, c-format
-msgid "unknown dataProcessorType %d\n"
-msgstr ""
-
-#, c-format
-msgid "unknown option '%c': skipping\n"
-msgstr ""
-
-#, c-format
-msgid "unpackFile: unknown return_value %d\n"
-msgstr ""
-
-msgid "unpack_file newname"
-msgstr ""
-
-msgid "unsigned"
-msgstr ""
-
-msgid "unsigned char"
-msgstr ""
-
-msgid "unsigned char DNAstr[]= {\n"
-msgstr ""
-
-msgid "unsigned long"
-msgstr ""
-
-msgid "unsigned short"
-msgstr ""
-
-msgid "untitled.blend"
-msgstr ""
-
-msgid "update_iff: couldn't find chunk\n"
-msgstr ""
-
-#, c-format
-msgid "used quality: %d\n"
-msgstr ""
-
-msgid "user"
-msgstr ""
-
-msgid "ushort"
-msgstr ""
-
-msgid "v"
-msgstr ""
-
-msgid "vKnotVector"
-msgstr ""
-
-#, c-format
-msgid "var1 %d \n"
-msgstr ""
-
-#, c-format
-msgid "var1 %f \n"
-msgstr ""
-
-#, c-format
-msgid "var1: %d, var2: %d\n"
-msgstr ""
-
-#, c-format
-msgid "var1: %f, var2: %f, var3: %f\n"
-msgstr ""
-
-#, c-format
-msgid "var1: %s\n"
-msgstr ""
-
-#, c-format
-msgid "var1: %s, var2: %s, var3: %s\n"
-msgstr ""
-
-msgid "verifyPoseChannel"
-msgstr ""
-
-msgid "vert_tbl"
-msgstr ""
 
 msgid "vertex"
 msgstr "вершина"
@@ -16010,392 +12481,14 @@ msgstr "цвет_вершин"
 msgid "vertices"
 msgstr "вершины"
 
-msgid "verticesPerColumn"
-msgstr ""
-
-msgid "verticesPerRow"
-msgstr ""
-
-msgid "vertindex"
-msgstr ""
-
-msgid "vertsmooth"
-msgstr ""
-
-msgid "vfd_builtin"
-msgstr ""
-
-msgid "vfont"
-msgstr ""
-
-msgid "vfontbutstr"
-msgstr ""
-
-msgid "video "
-msgstr ""
-
-msgid "videoscapelezer"
-msgstr ""
-
-msgid "vids"
-msgstr ""
-
-msgid "visibility act"
-msgstr ""
-
-msgid "vnors disp"
-msgstr ""
-
-msgid "void"
-msgstr ""
-
-msgid "vpaintundobuf"
-msgstr ""
-
-msgid "w"
-msgstr ""
-
 msgid "warning: cannot assign more than 16 materials to 1 mesh"
 msgstr "внимание: невозможно присвоить более 16 материалов одному мешу"
-
-msgid "warning: using software compression"
-msgstr ""
-
-msgid "was busted on a read error"
-msgstr ""
-
-msgid "was not allowed. This blend file is not made by you."
-msgstr ""
 
 msgid "wave"
 msgstr "волна"
 
-msgid "wb"
-msgstr ""
-
-msgid "wd->buf"
-msgstr ""
-
-msgid "weightmap"
-msgstr ""
-
-#, c-format
-msgid "win %d"
-msgstr ""
-
-#, c-format
-msgid "win start %d %d size %d %d\n"
-msgstr ""
-
-#, c-format
-msgid "win: %d - (%d, %d, %d, %d) %d\n"
-msgstr ""
-
-msgid "winnewline"
-msgstr ""
-
-msgid "winopen"
-msgstr ""
-
-msgid "wire_samples"
-msgstr ""
-
 msgid "world"
 msgstr "мир"
-
-msgid "world_panel_mapto"
-msgstr ""
-
-msgid "world_panel_mistaph"
-msgstr ""
-
-msgid "world_panel_preview"
-msgstr ""
-
-msgid "world_panel_texture"
-msgstr ""
-
-msgid "world_panel_world"
-msgstr ""
-
-msgid "wpaintundo"
-msgstr ""
-
-msgid "write_runtime_check"
-msgstr ""
-
-msgid "writedata"
-msgstr ""
-
-msgid "writefaces"
-msgstr ""
-
-msgid "writefaces1"
-msgstr ""
-
-msgid "wrong window"
-msgstr ""
-
-msgid "wure_segment"
-msgstr ""
-
-#, c-format
-msgid "www.blender.org %d"
-msgstr ""
-
-msgid "x"
-msgstr ""
-
-#, c-format
-msgid "x = %d y = %d\n"
-msgstr ""
-
-msgid "x friction:"
-msgstr ""
-
-msgid "y"
-msgstr ""
-
-msgid "y friction:"
-msgstr ""
-
-msgid "z"
-msgstr ""
-
-msgid "z friction:"
-msgstr ""
-
-msgid "zBufShadeAdvanced> osa too large (internal error)\n"
-msgstr ""
-
-msgid "zbufDArectd"
-msgstr ""
-
-msgid "zbufshadeDA"
-msgstr ""
-
-msgid ""
-"|\n"
-"*** End of type define size test\n"
-msgstr ""
-
-msgid ""
-"|\n"
-"*** Finished test\n"
-"\n"
-msgstr ""
-
-msgid ""
-"|\n"
-"|-- Calling streamGlueWrite\n"
-msgstr ""
-
-msgid ""
-"|\n"
-"|-- Created and initialized streamGlueControl thingy \n"
-msgstr ""
-
-#, c-format
-msgid ""
-"|\n"
-"|-- Opened file for testing: %d with \n"
-"|\n"
-msgstr ""
-
-msgid ""
-"|\n"
-"|-- file close failed.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"|\n"
-"|-- streamGlueWrite returned with %d\n"
-msgstr ""
-
-#, c-format
-msgid "|      |- crc:               %x hex, (%d dec)\n"
-msgstr ""
-
-#, c-format
-msgid "|      |- dataProcessorType: %d (%d reversed)\n"
-msgstr ""
-
-#, c-format
-msgid "|      |- magic:             %c\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"|      |- totalStreamLength: %x hex (%x reversed), %d dec (%d reversed)\n"
-msgstr ""
-
-#, c-format
-msgid "|   |- datachunk pointing to %p\n"
-msgstr ""
-
-#, c-format
-msgid "|   |- datachunksize: %d\n"
-msgstr ""
-
-#, c-format
-msgid "|   |- streamGlueHeader: %p\n"
-msgstr ""
-
-#, c-format
-msgid "| %x6|Curve%x7"
-msgstr ""
-
-#, c-format
-msgid "| %x6|Effector%x8"
-msgstr ""
-
-#, c-format
-msgid "| %x6|Entire Group%x10"
-msgstr ""
-
-#, c-format
-msgid "| %x6|Lattice%x7"
-msgstr ""
-
-#, c-format
-msgid "| %x6|Mesh%x7"
-msgstr ""
-
-#, c-format
-msgid "| %x6|Surface%x7"
-msgstr ""
-
-#, c-format
-msgid "|%%l|Disable AutoPack, keep all packed files %%x%d"
-msgstr ""
-
-#, c-format
-msgid "|%%l|Use files in original location (create when necessary)%%x%d"
-msgstr ""
-
-#, c-format
-msgid "|-- Allocating %d bytes for the header.\n"
-msgstr ""
-
-msgid "|-- Arguments are now:\n"
-msgstr ""
-
-#, c-format
-msgid "|-- BLO_deflate returned %d \n"
-msgstr ""
-
-#, c-format
-msgid "|-- Memory dump (starting at %p):"
-msgstr ""
-
-msgid ""
-"|-- Size mismatch detected !!!\n"
-"|\n"
-msgstr ""
-
-msgid "|-- Sizes are correct.\n"
-msgstr ""
-
-msgid "|-- Will call BLO_deflate with args:\n"
-msgstr ""
-
-msgid "|--> BLO_readstreamfile_begin: local loopback\n"
-msgstr ""
-
-msgid "|--> BLO_readstreamfile_end: local loopback\n"
-msgstr ""
-
-msgid "|--> BLO_readstreamfile_process: local loopback\n"
-msgstr ""
-
-#, c-format
-msgid "|3D Cursor %x1"
-msgstr ""
-
-#, c-format
-msgid "|3D View %x1"
-msgstr ""
-
-#, c-format
-msgid "|Action Editor %x12"
-msgstr ""
-
-#, c-format
-msgid "|All changes%x1|%l"
-msgstr ""
-
-#, c-format
-msgid "|Armature Data%x2"
-msgstr ""
-
-#, c-format
-msgid "|Ask for each file %%x%d"
-msgstr ""
-
-#, c-format
-msgid "|Audio Timeline %x11"
-msgstr ""
-
-#, c-format
-msgid "|Bevel Settings%x19"
-msgstr ""
-
-#, c-format
-msgid "|Bounding Box %x1"
-msgstr ""
-
-#, c-format
-msgid "|Bounding Box Center %x0"
-msgstr ""
-
-#, c-format
-msgid "|Buttons Window %x4"
-msgstr ""
-
-#, c-format
-msgid "|Camera Data%x2"
-msgstr ""
-
-#, c-format
-msgid "|Create %s%%x%d"
-msgstr ""
-
-#, c-format
-msgid "|Curve Data%x2|Materials%x3"
-msgstr ""
-
-#, c-format
-msgid "|File Browser %x5"
-msgstr ""
-
-#, c-format
-msgid "|Font Settings%x18|Bevel Settings%x19"
-msgstr ""
-
-#, c-format
-msgid "|Image Browser %x10"
-msgstr ""
-
-#, c-format
-msgid "|Individual Object Centers %x2"
-msgstr ""
-
-#, c-format
-msgid "|Ipo Curve Editor %x2"
-msgstr ""
-
-#, c-format
-msgid "|Lamp Data%x2"
-msgstr ""
-
-#, c-format
-msgid "|Language:  %s %%x%d"
-msgstr ""
-
-#, c-format
-msgid "|Lattice Data%x2"
-msgstr ""
 
 #, c-format
 msgid "|Materials%x3"
@@ -16499,7 +12592,7 @@ msgstr "|Видео Секвенсер %x8"
 
 #, c-format
 msgid "|Wireframe %x2"
-msgstr "|Проволка %x2"
+msgstr "|Каркас %x2"
 
 #, c-format
 msgid "|Write files to current directory (overwrite existing files)%%x%d"
@@ -16508,3 +12601,364 @@ msgstr ""
 #, c-format
 msgid "|Write files to original location (overwrite existing files)%%x%d"
 msgstr ""
+
+
+############################################################
+#
+#	New strings since 2.32 (then i first upload russian translation) preparing for 2.33
+#	probably we need better scheme of updating translation 
+#
+############################################################
+
+###################################
+# 		fixing tooltips typos  (not mine)
+###################################
+
+msgid "Enable Gaussian sampling filter for antialiasing"
+msgstr "Включить гауссовский фильтр  для антиалиасинга"
+
+msgid "Sets the Gaussian filter size"
+msgstr "Размер гауссовского фильтра"
+
+msgid "Enable environment map rendering"
+msgstr "Включить рендеринг карт окружения"
+
+msgid "Viewport Shading (Hotkeys: Z, Shift Z, Ctrl Z, Alt Z"
+msgstr "Затенение в окне Вида (Вызов: Z, Shift Z, Ctrl Z, Alt Z)"
+
+msgid "Viewport Shading (Hotkeys: Z, Shift Z, Ctrl Z, Alt Z)"
+msgstr "Затенение в окне Вида (Вызов: Z, Shift Z, Ctrl Z, Alt Z)"
+
+msgid "Splits selected verts to separate sub-mesh."
+msgstr "Отделить выделенные вершины, разделяя под-меши"
+
+msgid "Sets the amount of red colour at the horizon"
+msgstr "Установить величину Красного цвета для Горизонта"
+
+msgid "Sets the amount of green colour at the horizon"
+msgstr "Установить величину Зелёного цвета для Горизонта"
+
+msgid "Sets the amount of blue colour at the horizon"
+msgstr "Установить величину Синего цвета для Горизонта"
+
+msgid "Area light size X, doesn't affect energy amount"
+msgstr "Размер X Пространственного света, не влияет на количество энергии"
+
+msgid "Use noise for sampling"
+msgstr "Использовать зашумление сэмплов"
+
+msgid "Mist / Stars / Physics"
+msgstr "Туман/Звёзды/Физика"
+
+msgid ""
+"Optional send message to objects with this name only"
+", or empty to broadcast"
+msgstr ""
+"Необязательное послание для сообщения обьекту только с этим именем, или "
+"Пусто для вещания всем"
+
+msgid "Plays action based on path position & stride. Only armatures parented to a path"
+msgstr "Играть действие основанное на позиции и длине шага для пути. Только для Арматур с родителем - Путь"
+
+msgid "Toggles whether to continue displaying the last frame past the end of the strip"
+msgstr "Показывать ли продолжение последнего кадра после прохода конца strip"
+
+msgid ""
+"Distance covered by one complete cycle of the action specified in the Action "
+"Range"
+msgstr ""
+"Дистанция покрываемая одним полным циклом действия указанным в Диапазоне "
+"Действия"
+
+
+#############################
+# 			new features
+#############################
+
+
+msgid "Enable rolling physics"
+msgstr "Включить физику взаимодействия как с твёрдым телом"
+
+msgid "Specify a bounds object for physics"
+msgstr "Указать ограничивающий обьект для физики"
+
+msgid "Physics Engine"
+msgstr "Движок для Физики"
+
+
+msgid "Amb Occ"
+msgstr ""
+
+msgid "Ambient Occlusion"
+msgstr ""
+
+msgid "Toggles ambient occlusion"
+msgstr "Включить Ambient Occlusion (окружающее заграждение)"
+
+msgid "Sets the number of samples used for AO  (actual number: squared)"
+msgstr "Установить число сэмплов используемых для АО"
+
+msgid "Sets length of AO rays, defines how far away other faces give occlusion effect"
+msgstr "Установить длину лучей АО, определяя расстояние где грани дадут АО эффект"
+
+msgid "Use Distances"
+msgstr "Использ Дистанц"
+
+msgid "Distance factor, the higher, the 'shorter' the shadows"
+msgstr "Дистанции фактор, с его ростом тени 'короче'"
+
+msgid "When enabled, distances to objects will be used to attenuate shadows"
+msgstr "Если включено, расстояние до обьектов используется для ослабления теней"
+
+msgid "adds light/shadows"
+msgstr "добавлять свет/тени"
+
+msgid "subtracts light/shadows (needs at least one normal light to make anything visible)"
+msgstr "вычитать свет/тени (нужен хотя бы один обычный свет, чтобы видеть обьекты)"
+
+msgid "Both"
+msgstr "Оба"
+
+msgid "both lightens & darkens"
+msgstr "и осветлять и затемнять"
+
+msgid "Random Sampling"
+msgstr "Случайн Сэмпл"
+
+msgid "When enabled, total random sampling will be used for an even noisier effect"
+msgstr "Если включено, случайный сэмплинг будет использован для большего шума"
+
+msgid "Plain"
+msgstr "Чисто"
+
+msgid "Plain diffuse energy (white)"
+msgstr "Чистая рассеянная энергия (белым)"
+
+msgid "Sky Color"
+msgstr "Небо Цвет"
+
+msgid "Use horizon and zenith color for diffuse energy"
+msgstr "Использовать цвета горизонта и зенита для рассеянной энергии"
+
+msgid "Sky Texture"
+msgstr "Небо Текстура"
+
+msgid "Does full Sky texture render for diffuse energy"
+msgstr "Делать полный рендер текстуры неба для рассеянной энергии"
+
+msgid "Sets global energy scale for AO"
+msgstr "Установить масштаб энергии для AO"
+
+msgid "AngMap"
+msgstr "УглМэп"
+
+msgid "Uses angular coordinates for the texture coordinates"
+msgstr "Использовать угловые координаты для текстурных координат"
+
+
+msgid "Texture Type"
+msgstr "Тип Текстуры"
+
+msgid "Select texture type"
+msgstr "Выбрать тип текстуры"
+
+msgid "Musgrave"
+msgstr ""
+
+msgid "Noise Basis"
+msgstr "Базис Шума"
+
+msgid "Sets the noise basis used for turbulence"
+msgstr "Установить базис шума используемого для завихрений"
+
+msgid "Scales intensity output"
+msgstr "Масштаб выходной интенсивности"
+
+msgid "Sets scaling for noise input"
+msgstr "Масштаб входного шума"
+
+msgid "Sets the number of frequencies used"
+msgstr "Число использующихся частот (октав)"
+
+msgid "Sets the highest fractal dimension"
+msgstr "Установить наибольший размер фрактала"
+
+msgid "Sets the gap between succesive frequencies"
+msgstr "Интервал между последовательными частотами"
+
+msgid "Sets Musgrave type"
+msgstr "Установить тип Musgrave"
+
+msgid "Sets the fractal offset"
+msgstr "Установить оффсет фрактала"
+
+msgid "Sets the gain multiplier"
+msgstr "Установить множитель усиления"
+
+msgid "Voronoi"
+msgstr "Вороной"
+
+msgid "Only calculate intensity"
+msgstr "Считать только интенсивность"
+
+msgid "Col1"
+msgstr "Цвт1"
+
+msgid "Col2"
+msgstr "Цвт2"
+
+msgid "Col3"
+msgstr "Цвт3"
+
+msgid "Color cells by position"
+msgstr "Цвет ячеек по позициям"
+
+msgid "Same as Col1 + outline based on F2-F1"
+msgstr "Также как Цвт1 + контур на основе F2-F1"
+
+msgid "Same as Col2 * intensity"
+msgstr "Также как Цвт2 * интенсивность"
+
+msgid "Distance Metric"
+msgstr "Метрика Дистанции"
+
+msgid "Sets the distance metric to be used"
+msgstr "Установить использующуюся метрику дистанции"
+
+msgid "Sets feature weight 1"
+msgstr "Установить вес особенности 1"
+
+msgid "Sets feature weight 2"
+msgstr "Установить вес особенности 2"
+
+msgid "Sets feature weight 3"
+msgstr "Установить вес особенности 3"
+
+msgid "Sets feature weight 4"
+msgstr "Установить вес особенности 4"
+
+msgid "Sets minkovsky exponent"
+msgstr "Установить экспоненту минковского"
+
+msgid "Distorted Noise"
+msgstr "Искажённый Шум"
+
+msgid "Sets amount of distortion"
+msgstr "Установить величину искажения"
+
+msgid "Distortion Noise"
+msgstr "Искажения Шум"
+
+msgid "Sets the noise basis which does the distortion"
+msgstr "Установить базис шума налагающего искажения"
+
+msgid "Sets the noise basis to distort"
+msgstr "Установить искажающийся базис шума"
+
+
+msgid "No Edges"
+msgstr "Нет рёбер"
+
+msgid "All Edges"
+msgstr "Все рёбра"
+
+msgid "Draw all edges of deselected faces in 3D view"
+msgstr "Прорисовывать все рёбра невыделенных граней в окне 3D вида"
+
+msgid "Draw edges of deselected faces z-buffered in 3D view"
+msgstr "Прорисовывать рёбра невыделенных граней через Z-буфер в окне 3D вида"
+
+msgid "Don't draw edges of deselected faces in 3D view"
+msgstr "Не прорисовывать рёбра  невыделенных граней в окне 3D вида"
+
+msgid "Bounds 1/1"
+msgstr "Границы 1/1"
+
+msgid "Applies planar UV mapping with bounds 1/1"
+msgstr "Применить плоский UV мэппинг с границами 1/1"
+
+msgid "Applies planar UV mapping with bounds 1/2"
+msgstr "Применить плоский UV мэппинг с границами 1/2"
+
+msgid "Applies planar UV mapping with bounds 1/4"
+msgstr "Применить плоский UV мэппинг с границами 1/4"
+
+msgid "Applies planar UV mapping with bounds 1/8"
+msgstr "Применить плоский UV мэппинг с границами 1/8"
+
+msgid "Applies standard UV mapping"
+msgstr "Применить стандартный UV мэппинг"
+
+msgid "Applies standard UV mapping 1/2"
+msgstr "Применить стандартный UV мэппинг 1/2"
+
+msgid "Applies standard UV mapping 1/4"
+msgstr "Применить стандартный UV мэппинг 1/4"
+
+msgid "Applies standard UV mapping 1/8"
+msgstr "Применить стандартный UV мэппинг 1/8"
+
+msgid "Applies planar UV mapping from window"
+msgstr "Применить плоский UV мэппинг из окна вида"
+
+msgid "Applies cube UV mapping"
+msgstr "Применить кубический UV мэппинг"
+
+msgid "Defines the cubemap size"
+msgstr "Определить размер кубической карты"
+
+msgid "Applies spherical UV mapping"
+msgstr "Применить сферический UV мэппинг"
+
+msgid "Applies cylindrical UV mapping"
+msgstr "Применить цилиндрический UV мэппинг"
+
+msgid "Defines the radius of the UV mapping cylinder"
+msgstr "Определить радиус цилиндра UV мэппинга"
+
+msgid "View Aligns Face"
+msgstr "Вид равнять Грани"
+
+msgid "View is on equator for cylindrical and spherical UV mapping"
+msgstr "3D Вид на экваторе для цилиндрического и сферического UV мэппинга"
+
+msgid "VA Top"
+msgstr "ВР сверху"
+
+msgid "View is on poles for cylindrical and spherical UV mapping"
+msgstr "3D Вид на полюса для цилиндрического и сферического UV мэппинга"
+
+msgid "Al Obj"
+msgstr "Равн Об"
+
+msgid "Align to object for cylindrical and spherical UV mapping"
+msgstr "Равнять к обьекту для цилиндрического и сферического UV мэппинга"
+
+msgid "Polar ZX"
+msgstr "Полюс ZX"
+
+msgid "Polar 0 is X for cylindrical and spherical UV mapping"
+msgstr "Полярный 0 это X для цилиндрического и сферического UV мэппинга"
+
+msgid "Polar ZY"
+msgstr "Полюс ZY"
+
+msgid "Polar 0 is Y for cylindrical and spherical UV mapping"
+msgstr "Полярный 0 это Y для цилиндрического и сферического UV мэппинга"
+
+
+msgid "Auto AA"
+msgstr "Авто АА"
+
+msgid "Set AA using OSA and GI quality, disable for manual control"
+msgstr "Установить AntiAliasing используя установки OSA и GI Качество, отключить для ручной настройки"
+
+msgid "AA Passes"
+msgstr "количество проходов для АА"
+
+msgid "AA Samples"
+msgstr "количество сэмплов для АА"
+
+msgid "Octree resolution for ray tracing"
+msgstr "Разрешение octree (восьмиричное дерево) для трассировки лучами"
+
