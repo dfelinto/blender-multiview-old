@@ -295,7 +295,7 @@ sub BuildIt {
 
 	# Set GuessConfig and ConfigGuess
 	print LOG "ConfigGuess = $ConfigGuess\n";
-	$BuildObjDir = "$ENV{'HOME'}/obj/";
+	$BuildObjDir = "$ENV{'HOME'}/develop/blender/obj/";
 	open (GETOBJ, "$ConfigGuess 2>&1 |") || die "$ConfigGuess: $!\n";
 	while (<GETOBJ>) {
 	    $GuessConfig = $_;
