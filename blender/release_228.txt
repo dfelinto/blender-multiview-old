@@ -1,0 +1,154 @@
+
+Change log Blender 2.28 release
+
+
+-------General:
+
+- Included new default .B.blend file in Blender, with Material, Texture, World and 'draw faces' and 'draw edges' options set.
+- When ButtonsWindow shows Material options (F5), selecting a Lamp automatically switches to Lamp shading settings (F4). And vice versa.
+- Tooltips for window headers have been upgraded
+- Typing a '\' in swedish keyboards works now.
+- Fixed slow file reading of files with vertex deform groups.
+- BUG FIX: When the preset directory menu in FileSelect was empty, it causing a nasty drawing error. (Typical when you fire up Blender and didn't save yet).
+- BUG FIX: saving VRML 1.0 files had incorrect UV coordinates.
+- Installation for MS Windows now works property for all versions.
+- Tooltips (buttons) now wait 0.3 seconds beforr popping up.
+- Added mouse wheel support in Text Editor.
+
+------Audio (new!)
+
+- Blender now allows playback of audio, in 3D window for syncing, as well in the Sequence editor. 
+- Editing with audio strips in the Sequence editor
+- Animation is synced to the audio (framedrop)
+- Audio is also played in all other windows (including 3D windows)
+- Check the full features of this system in this article:
+  http://intrr.org/blender/audiosequencer.html
+- Known problem: the Ipos for audio fading only playback in Sequencer
+- Output to movies with audio is not supported yet; a "Mixdown" feature for writing the mix into a file is provided instead
+
+------Python (new!)
+
+- The old code now has been replaced completely. This means it can be improved and maintained a lot better, new API calls have already been added like for Armatures.
+- What didn't make is was support for 'frozen modules' and the VRML2.0 importer. These two features were too complex to keep under support.
+- Expect in the period after 2.28 a lot of interesting import/export modules. - For 2.29 is scheduled to have pulldown menus to activate scripts.
+- full documentation: xxxxx
+
+------3DWindow editing
+
+- ALT+RIGHTMOUSE in Mesh edit mode selects both vertices of an edge (this is not real edge-selection, but it's close!).
+- Added 'draw edges' mode in F9 menu, it displays vertex selection in edges.
+- Changed ugly 'draw faces' option into a nice transparent.
+- Settings like 'draw faces' and 'draw edges' are now saved in a file.
+- "insert Mesh key" (IKEY) gives option to choose between Relative or Absolute (normal) keys.
+- Reversed change in SHIFT+O menu behavior. 
+  - in edit mode; press OKEY to toggle proportional editing
+  - in edit mode; press SHIFT+OKEY to toggle sharp/smooth proportional editing
+  - outside of edit mode; the SHIFT+O toggles subsurf on/off
+- BUG FIX: SHIFT+O caused crash when no Object was active
+- New "Group selection" menu (SHIFT-G), which offers the following options:
+  1- Children
+     Selects all direct children of the active object
+  2- Immediate Children
+     Select all children, children's children etc. of the active object
+  3- Activate Parent
+     Makes the parent of the current object active
+  4- Objects on shared layers
+     Selects all objects that share at least one layer with the active object
+- Added 'Textured Solid' to the Draw mode popup (DKEY).
+- "Turn table" view rotation now allows (with vertical movement) a twisted rotation as well. This to fix bug #364, causing a deviation error. Feedback on this feature might result in making this another user option though.
+- Selecting objects has a different frontbuffer drawing handling now. Instead of drawing everything again, in all windows, it restricts to the active and previous active object. When there are more objects to be redrawn, it does a normal swapbuffers. Result is it all redraws & selects a lot faster in complex scenes
+- BUG FIX: Typing special characters in 3d Text Object didn't work.
+- BUG FIX #149. Rendering the current view (view3d header, render) didn't render solid drawmode.
+- Spherical mapping in FaceSelect mode works again (UKEY).
+
+------Action Window
+
+- Fixed 'HOME' button, it didn't work at all
+- You now can zoom out much further
+- BUG FIX: opening a new Action Window, or scaling it, displayed with wrong window matrix.
+- Relative Vertex Keys (RVKs) now show up here as well, with options:
+  - RVK sliders. Pressing the little triangle next to the word 'sliders' in 
+    the channel names opens them up.
+  - NKEY in the area where the key block names are allows the user to change
+    the name of the keyblock, and the max and min values of the RVK sliders.
+  - ability to visualize the keyframes for the IpoCurves when the object is selected.
+  - right mouse can be used to select the keys
+  - border select in the main area can be used to border select keys.
+  - AKEY selects/deselects all of the keys
+  - GKEY and SKEY can be used to grab or scale the key selections.
+  - XKEY deletes the selected keys.
+  - DKEY duplicated the selected keys.
+  - VKEY, HKEY and shift-HKEY change the bezier handles for the selected keys.
+
+
+------NLA Window:
+- BUG FIX, #178, deleting action strips caused memory to be garbled, which caused a non-readable .blend file.
+- BUG FIX, #152, data-browse didnt work for a SHIFT+A "add action"
+
+
+-----Rendering:
+- Lamps have options to not give 'Diffuse' or 'Specular' light (F4 menu)
+- New shaders (from Tuhopuu) integrated in Blender:
+  - MaterialButtons: layout changed a bit, the 'shader' options now are 
+    located together.
+  - Shader options are separated in 'diffuse' and 'specular'. You can combine 
+    them freely.
+  - Diffuse Lambert: is the old shader
+  - Diffuse Oren Nayar: new shader, gives sandy/silky/skinny material well
+  - Diffuse Toon: for cartoon render
+  - Specular Phong: new spec, traditional 70ies spec
+  - Specular CookTorr: a reduced version of cook torrance shading, does
+                       off specular peak well (is the old spec in Blender)
+  - Specular Blinn: new spec, same features as CookTorr, but with extra
+                    'refraction' setting
+  - Specular Toon: new spec for cartoon render
+  - Default Blender starts with settings that render compatible, also for
+    old files.
+  - Works correctly in shaded view and preview-render
+- BUG FIX: In render window, pressing ZKEY now allows zooming again.
+- BUG FIX: 2.27 didn't render in background mode (blender -b).
+- Blender in background render mode now reacts to CTRL+C again. You'll have to do it twice... first CTRL+C will send an internal break (exit render loops)
+- New feature: rendering large images now displays correctly zoomed down in a render window. Not zooming down caused unpredictable slowdowns at various systems.
+- F11 now nicely pops/pushes a render window again.
+- DispView mode (render in 3d window) now doesn't disappear anymore after rendering
+- While rendering, pressing a single ESC immediately halts rendering. It now works as in versions 2.23 and older, without causing slow rendering.
+- BUG FIX: Memory leak which caused Blender to hog up more and more memory when rendering long animations. (An oldie!).
+
+------Quicktime support
+
+- Updated Quicktime code so settings can be stored in the blendfile, works compatible for OSX and Windows. This enables Blender to;
+  - have scenes with different codec settings. (same as avicodec)
+  - render directly without dialog.
+  - batch/background render to Quicktime movies.
+
+
+-----Radiosity
+
+- BUG FIX #370; when over 16 materials are used for 'collect meshes', it used an illegal index number, causing errors in rendering. 
+
+-----OpenGL related: (mostly for OSX and Nvidia cards)
+
+- Material preview (F4, F5) now nicely shows scanline progress of rendering
+- Using the GUI in general is much faster now, by properly caching 'glFlush' and swapbuffer calls.
+- Geforce in 'full scene antialias' mode doesn't garble the Blender interface anymore (Windows).
+- Iconified windows do not get window focus anymore. (X11)
+
+
+------OSX related:
+- Vertex painting and Face selection modes now correctly work.
+- BUG FIX: Selecting vertices in ImageWindow (UV coords) didn't display.
+- A hand cursor now indicates you can move a window edge.
+- New shiny Blender icon.
+- Saving a screenshot for Blender works with ALT+CTRL+F3 key. (Normal key is CTRL+F3, but OSX uses it).
+- Cursor now moves with arrow keys again, while grabbing/rotating/scaling
+- BUG FIX: After rendering, and pressing ESC or F11, the main window was inactive for input.
+
+------Source code:
+- interface.c has an extensive API doc now, with full description of the GUI system in Blender. Can be found in bf-blender/blender/docs/
+- Soundsystem library moved to 'intern' (out of the game engine)
+- New dependency to SDL library for compiling. Both system SDL (with sdl-config) and an SDL library in /lib/ work. 
+- Compiling with gcc under Windows works now.
+- And heaps and heaps of Makefile/projectfile/automake improvements.
+
+
+
