@@ -8,16 +8,41 @@ New features of Blender 2.27:
 - 'rename file' (NKEY) option in FileSelect and ImageSelect windows
 - 'remove file' (XKEY) option in ImageSelect
 - rightmouse menu in Text window, for open/save file.
-- Windows: clipboard support for cut/paste in TextWindow
 - Alt-M in TextWindow: copies the text to the active (3d) Font Object in 3D window
 - support for Freetype fonts in 3D Font Object
 - redesigned user pref buttons
-- Windows & OSX: support for QuickTime image (gif, tiff, psd) and movie (.mov) in/out
 - autoskinning for Armatures, when parenting a Mesh to an Armature it gives a menu
 - new (larger) icons for Windows XP
 - new draw mode for Lamps in 3D window
 - new menu for window-type
 - shadowbuffers now can have any size (with number-button)
+- Windows & OSX: support for QuickTime image (gif, tiff, psd) and movie (.mov) in/out
+  --------------------------------------------------------------
+  Please note! The selected Quicktime codec does *not* get saved
+  in the blendfile. Each time you startup Blender you have to
+  reselect the codec from the codec dialog. Background rendering
+  displays a codec dialog first when you start a render process.
+  --------------------------------------------------------------
+- The rendermenu now shows which codec is set for rendering.
+- A small button has been added that toggles the visibility of the pulldown menu titles.
+
+
+Win32 only:
+-----------
+- Clipboard support to copy/paste text from and to the texteditor.
+  Try with alt-shift-c and alt-shift-v.
+
+- A button has been added to the top header which allows runtime
+  switching between windowed and fullscreen mode. Commandline
+  options -w/-W for these two screenmodes are also available.
+
+- During animation playback, the current framenumber gets displayed
+  in the animwindow header.
+
+- (Experimental) A button has been added which allows you to list
+  all available codecs in the avi codec dialog, instead of listing
+  only certified codecs.
+
 
 Bugfixes:
 ---------
@@ -47,4 +72,3 @@ Still Not working:
 - The Blender210 Python API. The only API which is available in 2.27 is the one that was used in 2.25
 - New build system using configure (this is partially working but needs more work)
 - Physics support in the game engine
-
