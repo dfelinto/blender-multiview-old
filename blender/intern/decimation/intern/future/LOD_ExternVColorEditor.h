@@ -30,13 +30,7 @@
  */
 
 #ifndef NAN_INCLUDED_ExternVColorEditor_h
-
 #define NAN_INCLUDED_ExternVColorEditor_h
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 
 #include "common/NonCopyable.h"
 #include "LOD_ManMesh2.h"

@@ -32,10 +32,6 @@
 #ifndef NAN_INCLUDED_GlutMeshDrawer_h
 #define NAN_INCLUDED_GlutMeshDrawer_h
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include "common/GlutDrawer.h"
 #include "LOD_decimation.h"
 #include "MyGlutMouseHandler.h"
