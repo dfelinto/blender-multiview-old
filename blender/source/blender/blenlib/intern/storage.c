@@ -41,9 +41,13 @@
 #include "BLI_winstuff.h"
 #include <sys/types.h>
 #include <io.h>
+#include <direct.h>
 #endif
 
+#ifndef WIN32
 #include <dirent.h>
+#endif
+
 #include <time.h>
 #include <sys/stat.h>
 
