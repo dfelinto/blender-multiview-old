@@ -1,0 +1,67 @@
+A little guide to autoconf/automake
+
+If you want to play with the new autoconf environment you need to do the
+following, inside this dir:
+./bootstrap
+mkdir ../newdir
+cd ../newdir
+../blender/configure
+
+Take a look at INSTALL for options you can give to configure.
+
+Ok the way things are setup for blender to make changes to the build system
+you want to edit Makefile.am's and configure.ac  (configure.ac is the
+new name for configure.in)  After that you need to run
+./bootstrap to generate configure and the Makefile.in's.
+(Makefile.am's are input to automake to generate Makefile.in's
+configure.ac and the Makefile.in's are input to autoconf to generate 
+a configure script useable by other people.)
+
+
+I've been using autoconf 2.56 and automake 1.7 so if your using and older
+version and are having problems you might try upgrading.
+
+Here is a neat little tree I dug up somewhere on how you would get
+started on a system:
+your source files --> [autoscan*] --> [configure.scan] --> configure.ac
+
+configure.ac --.
+               |   .------> autoconf* -----> configure
+[aclocal.m4] --+---+
+               |   `-----> [autoheader*] --> [config.h.in]
+[acsite.m4] ---'
+
+Makefile.in -------------------------------> Makefile.in
+
+
+Files used in configuring a software package:
+
+                       .-------------> [config.cache]
+configure* ------------+-------------> config.log
+                       |
+[config.h.in] -.       v            .-> [config.h] -.
+               +--> config.status* -+               +--> make*
+Makefile.in ---'                    `-> Makefile ---'
+
+Some links I've found handy:
+http://www.linuxselfhelp.com/gnu/autoconf/html_chapter/autoconf_12.html
+http://nis-www.lanl.gov/~rosalia/mydocs/autoconf_tutorial_3.html
+http://sources.redhat.com/autobook/autobook/autobook_toc.html
+http://www.gnu.org/manual/automake/html_mono/automake.html
+http://murrayc.com/learning/linux/building_libraries/building_libraries.shtml
+http://www.murrayc.com/learning/linux/automake/automake.shtml
+
+TODO:
+to finish up the intern dir,
+
+ Square away how ghost works.
+(i.e. would be nice if under windows you could choose X11 or normal windows
+libs, same with macos.. right now its a cludge and it doesn't do one explicitly
+probably involves changing the way configure.ac picks stuff)
+
+Get intern/python figured out.
+fix the following in configure.ac
+        --with-mozilla=dir      (get it so nspr is autodetected here)
+        --with-nspr=dir         (incase in different dir)
+
+Get source/Makefile.am finished.
