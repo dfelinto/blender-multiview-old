@@ -7,7 +7,6 @@ on irc.freenode.net
 Here are some links to external packages you may or may not need:
 
 python:      http://www.python.org
-mxtexttools: http://www.egenix.com/files/python/mxTextTools.html (python lib)
 libjpeg:     http://www.ijg.org/
 libpng:      http://www.libpng.org/pub/png/
 zlib:        http://www.gzip.org/zlib/
@@ -69,15 +68,6 @@ please help improve it.
 *********************************************************************
 *********************************************************************
 
-
-
-
---Notes on compiling mxTextTools----------------------------------------------
-To get the latest version to compile on my machine I had to
-edit mxSetup.py and remove /usr/include from INCLPATH for it to build
-properly.
-(after doing this you need to edit blender/source/Makefile and
-fix the pointer to it I'm still working on automating this)
 
 
 
@@ -209,10 +199,6 @@ of the external libraries:
 	it asks you.
 5. freetype (fink install freetype2)
 
-After you have done this you should install the mx lib from:
-http://www.egenix.com/files/python/mxTextTools.html
-
-(we are currently in the process removing mxTextTools from Blender)
 
 Step 3:
 The rest of the external libraries are present in CVS in binary format so you
