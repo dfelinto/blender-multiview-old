@@ -1,0 +1,5 @@
+LIBRARY ICONV.DLL
+EXPORTS
+libiconv_close
+libiconv_open
+libiconv

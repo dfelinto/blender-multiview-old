@@ -1,0 +1,6 @@
+LIBRARY GNU_GETTEXT.DLL
+EXPORTS
+gettext
+textdomain
+bindtextdomain
+gettext_putenv
