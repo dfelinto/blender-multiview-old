@@ -66,6 +66,7 @@ dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/He
   ;;
   *-*-openbsd* )
      CPPFLAGS="$CPPFLAGS -DFreeBSD"
+     LDFLAGS="$LDFLAGS -pthread"
   ;;
   *-*-freebsd* )
      CPPFLAGS="$CPPFLAGS -DFreeBSD -D_THREAD_SAFE"
