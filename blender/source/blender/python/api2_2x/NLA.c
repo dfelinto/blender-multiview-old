@@ -36,38 +36,30 @@
 #include <BKE_main.h>
 #include "Types.h"
 
-/*****************************************************************************/
-/* Python API function prototypes for the NLA module.			 */
-/*****************************************************************************/
+//----------------------------------------------NLA prototypes---------------------------------------------------------------
 static PyObject *M_NLA_NewAction (PyObject * self, PyObject * args);
 static PyObject *M_NLA_CopyAction (PyObject * self, PyObject * args);
 static PyObject *M_NLA_GetActions(PyObject* self);
-
-/*****************************************************************************/
-/* The following string definitions are used for documentation strings.	  	 */
-/* In Python these will be written to the console when doing a		 */
-/* Blender.Armature.NLA.__doc__					 */
-/*****************************************************************************/
+static PyObject *M_NLA_NewActionStrip (PyObject * self, PyObject * args);
+//----------------------------------------------NLA doc strings--------------------------------------------------------------
 char M_NLA_doc[] = "The Blender NLA module -This module provides control over  Armature keyframing in Blender.";
 char M_NLA_NewAction_doc[] = "(name) - Create new action for linking to an object.";
+char M_NLA_NewActionStrip_doc[] = "(name) - Create a new NLA Action strip";
 char M_NLA_CopyAction_doc[] = "(name) - Copy action and return copy.";
-char M_NLA_GetActions_doc[] = "(name) - Returns a dictionary of actions.";
-
-/*****************************************************************************/
-/* Python method structure definition for Blender.Armature.NLA module:			 */
-/*****************************************************************************/
+char M_NLA_GetActions_doc[] = "Returns a dictionary of actions.";
+//----------------------------------------------NLA method def--------------------------------------------------------------
 struct PyMethodDef M_NLA_methods[] = {
   {"NewAction", (PyCFunction) M_NLA_NewAction, METH_VARARGS,
 	  M_NLA_NewAction_doc},
+  {"NewActionStrip", (PyCFunction) M_NLA_NewActionStrip, METH_VARARGS,
+	  M_NLA_NewActionStrip_doc},
   {"CopyAction", (PyCFunction) M_NLA_CopyAction, METH_VARARGS,
 	  M_NLA_CopyAction_doc},
   {"GetActions", (PyCFunction) M_NLA_GetActions, METH_NOARGS,
 	  M_NLA_GetActions_doc},
   {NULL, NULL, 0, NULL}
 };
-/*****************************************************************************/
-/* Python BPy_Action methods declarations:																		 */
-/*****************************************************************************/
+//------------------------------------BPy_Action methods/callbacks--------------------------------------------------
 static PyObject *Action_getName (BPy_Action * self);
 static PyObject *Action_setName (BPy_Action * self, PyObject * args);
 static PyObject *Action_setActive (BPy_Action * self, PyObject * args);
@@ -75,9 +67,11 @@ static PyObject *Action_getChannelIpo(BPy_Action * self, PyObject * args);
 static PyObject *Action_removeChannel(BPy_Action * self, PyObject * args);
 static PyObject *Action_getAllChannelIpos(BPy_Action*self);
 
-/*****************************************************************************/
-/* Python BPy_Action methods table:					 */
-/*****************************************************************************/
+static void Action_dealloc (BPy_Action * self);
+static PyObject *Action_getAttr (BPy_Action * self, char *name);
+static int Action_setAttr (BPy_Action * self, char *name, PyObject * v);
+static PyObject *Action_repr (BPy_Action * self);
+//------------------------------------BPy_Action  method def-----------------------------------------------------------
 static PyMethodDef BPy_Action_methods[] = {
   /* name, method, flags, doc */
   {"getName", (PyCFunction) Action_getName, METH_NOARGS,
@@ -94,18 +88,7 @@ static PyMethodDef BPy_Action_methods[] = {
 	"() - Return a dict of (name:ipo)-keys containing each channel in the object's action"},
   {NULL, NULL, 0, NULL}
 };
-
-/*****************************************************************************/
-/* Python TypeAction callback function prototypes:				 */
-/*****************************************************************************/
-static void Action_dealloc (BPy_Action * bone);
-static PyObject *Action_getAttr (BPy_Action * bone, char *name);
-static int Action_setAttr (BPy_Action * bone, char *name, PyObject * v);
-static PyObject *Action_repr (BPy_Action * bone);
-
-/*****************************************************************************/
-/* Python TypeAction structure definition:				 */
-/*****************************************************************************/
+//------------------------------------BPy_Action Type defintion--------------------------------------------------------
 PyTypeObject Action_Type = {
   PyObject_HEAD_INIT (NULL) 0,	  /* ob_size */
   "Blender Action",		                          /* tp_name */
@@ -128,8 +111,298 @@ PyTypeObject Action_Type = {
   BPy_Action_methods,		             /* tp_methods */
   0,				                                         /* tp_members */
 };
+//------------------------------------BPy_ActionStrip methods/callbacks--------------------------------------------
+PyObject *ActionStrip_setAction(BPy_ActionStrip *self, PyObject * args);
+PyObject *ActionStrip_addToObject(BPy_ActionStrip *self, PyObject * args);
 
-//-------------------------------------------------------------------------------------------------------------------------------
+static void ActionStrip_dealloc (BPy_ActionStrip * self);
+static PyObject *ActionStrip_getAttr (BPy_ActionStrip * self, char *name);
+static int ActionStrip_setAttr (BPy_ActionStrip * self, char *name, PyObject * v);
+static PyObject *ActionStrip_repr (BPy_ActionStrip * self);
+//------------------------------------BPy_ActionStrip  method def-----------------------------------------------------
+static PyMethodDef BPy_ActionStrip_methods[] = {
+  /* name, method, flags, doc */
+  {"setAction", (PyCFunction) ActionStrip_setAction, METH_NOARGS,
+   "() - set an ActionStrip's action"},
+  {NULL, NULL, 0, NULL}
+};
+//------------------------------------BPy_ActionStrip Type defintion--------------------------------------------------
+PyTypeObject ActionStrip_Type = {
+  PyObject_HEAD_INIT (NULL) 0,	  /* ob_size */
+  "Blender ActionStrip",		                          /* tp_name */
+  sizeof (BPy_ActionStrip),		                  /* tp_basicsize */
+  0,				                                          /* tp_itemsize */
+  /* methods */
+  (destructor) ActionStrip_dealloc,	          /* tp_dealloc */
+  0,				                                         /* tp_print */
+  (getattrfunc) ActionStrip_getAttr,	         /* tp_getattr */
+  (setattrfunc) ActionStrip_setAttr,	         /* tp_setattr */
+  0,	                                                     /* tp_compare */
+  (reprfunc) ActionStrip_repr,		             /* tp_repr */
+  0,				                                         /* tp_as_number */
+  0,				                                         /* tp_as_sequence */
+  0,				                                         /* tp_as_mapping */
+  0,				                                         /* tp_as_hash */
+  0, 0, 0, 0, 0, 0,
+  0,				                                         /* tp_doc */
+  0, 0, 0, 0, 0, 0,
+  BPy_ActionStrip_methods,		             /* tp_methods */
+  0,				                                         /* tp_members */
+};
+//---------------------------------------------------NLA Module Init--------------------------------------------------
+PyObject *
+NLA_Init (void)
+{
+  PyObject *submodule;
+
+  Action_Type.ob_type = &PyType_Type;
+
+  submodule = Py_InitModule3 ("Blender.Armature.NLA",
+			      M_NLA_methods, M_NLA_doc);
+
+  return (submodule);
+}
+//-----------------------------------BPy_Action Internal Protocols---------------------------------------------------
+//-------------------------------------------------dealloc-----------------------------------------------------------------
+static void
+Action_dealloc (BPy_Action * self)
+{
+    PyObject_DEL (self);
+}
+//-------------------------------------------------getAttr-------------------------------------------------------------------
+static PyObject *
+Action_getAttr (BPy_Action * self, char *name)
+{
+  PyObject *attr = Py_None;
+
+  if (strcmp (name, "name") == 0)
+    attr = Action_getName (self);
+  else if (strcmp (name, "__members__") == 0)  {
+      attr = Py_BuildValue ("[s]",
+			    "name");
+    }
+
+  if (!attr)
+    return (EXPP_ReturnPyObjError (PyExc_MemoryError,
+				   "couldn't create PyObject"));
+
+  if (attr != Py_None)
+    return attr;		/* member attribute found, return it */
+
+  /* not an attribute, search the methods table */
+  return Py_FindMethod (BPy_Action_methods, (PyObject *) self, name);
+}
+//-------------------------------------------------setAttr-------------------------------------------------------------------
+static int
+Action_setAttr (BPy_Action * self, char *name, PyObject * value)
+{
+  PyObject *valtuple;
+  PyObject *error = NULL;
+
+  valtuple = Py_BuildValue ("(O)", value);	/* the set* functions expect a tuple */
+
+  if (!valtuple)
+    return EXPP_ReturnIntError (PyExc_MemoryError,
+				"ActionSetAttr: couldn't create tuple");
+
+  if (strcmp (name, "name") == 0)
+    error = Action_setName (self, valtuple);
+  else
+    {				/* Error */
+      Py_DECREF (valtuple);
+
+      /* ... member with the given name was found */
+      return (EXPP_ReturnIntError (PyExc_KeyError, "attribute not found"));
+    }
+
+  Py_DECREF (valtuple);
+
+  if (error != Py_None)
+    return -1;
+
+  Py_DECREF (Py_None);		/* was incref'ed by the called Action_set* function */
+  return 0;			/* normal exit */
+}
+//-------------------------------------------------repr---------------------------------------------------------------------
+static PyObject *
+Action_repr (BPy_Action * self)
+{
+  if (self->action)
+    return PyString_FromFormat ("[Action \"%s\"]", self->action->id.name + 2);
+  else
+    return PyString_FromString ("NULL");
+}
+//------------------------------BPy_Action Callbacks--------------------------------------------------------------
+//--------------------------------------CreatePyObject---------------------------------------------------------------
+PyObject *
+Action_CreatePyObject (struct bAction * act)
+{
+  BPy_Action *blen_action;
+
+  blen_action = (BPy_Action *) PyObject_NEW (BPy_Action, &Action_Type);
+
+  if (blen_action == NULL)
+    {
+      return (NULL);
+    }
+  blen_action->action	= act;
+  return ((PyObject *) blen_action);
+}
+//------------------------------CheckPyObject---------------------------------------------------------------------
+int
+Action_CheckPyObject (PyObject * py_obj)
+{
+  return (py_obj->ob_type == &Action_Type);
+}
+//--------------------------------FromPyObject----------------------------------------------------------------------
+struct bAction *
+Action_FromPyObject (PyObject * py_obj)
+{
+  BPy_Action *blen_obj;
+
+  blen_obj = (BPy_Action *) py_obj;
+  return (blen_obj->action);
+}
+//-----------------------------------BPy_ActionStrip Internal Protocols--------------------------------------------
+//-------------------------------------------------dealloc-----------------------------------------------------------------
+static void
+ActionStrip_dealloc (BPy_ActionStrip * self)
+{
+	MEM_freeN(self->actionstrip);
+	PyObject_DEL (self);
+}
+//-------------------------------------------------getAttr-------------------------------------------------------------------
+static PyObject *
+ActionStrip_getAttr (BPy_ActionStrip * self, char *name)
+{
+  PyObject *attr = Py_None;
+
+  if (strcmp (name, "name") == 0){
+    //attr = ActionStrip_getName (self);
+  }else if (strcmp (name, "__members__") == 0)  {
+      attr = Py_BuildValue ("[s]",
+			    "name");
+  }
+
+  if (!attr)
+    return (EXPP_ReturnPyObjError (PyExc_MemoryError,
+				   "couldn't create PyObject"));
+
+  if (attr != Py_None)
+    return attr;		/* member attribute found, return it */
+
+  /* not an attribute, search the methods table */
+  return Py_FindMethod (BPy_ActionStrip_methods, (PyObject *) self, name);
+}
+//------------------------------------------------setAttr-----------------------------------------------------------------
+static int
+ActionStrip_setAttr (BPy_ActionStrip * self, char *name, PyObject * value)
+{
+  PyObject *valtuple;
+  PyObject *error = NULL;
+
+  valtuple = Py_BuildValue ("(O)", value);	/* the set* functions expect a tuple */
+
+  if (!valtuple)
+    return EXPP_ReturnIntError (PyExc_MemoryError,
+				"ActionStripSetAttr: couldn't create tuple");
+
+  if (strcmp (name, "name") == 0){
+    //error = ActionStrip_setName (self, valtuple);
+  }else {				
+      Py_DECREF (valtuple);
+
+	  return (EXPP_ReturnIntError (PyExc_KeyError, "attribute not found"));
+	}
+
+  Py_DECREF (valtuple);
+
+  if (error != Py_None)
+    return -1;
+
+  Py_DECREF (Py_None);		/* was incref'ed by the called ActionStrip_set* function */
+  return 0;			/* normal exit */
+}
+//-------------------------------------------------------repr----------------------------------------------------------------
+static PyObject *
+ActionStrip_repr (BPy_ActionStrip * self)
+{
+  if (self->actionstrip)
+    return PyString_FromFormat ("[ActionStrip \"%s\"]", self->actionstrip->act->id.name + 2);
+  else
+    return PyString_FromString ("NULL");
+}
+//------------------------------BPy_ActionStrip  Callbacks---------------------------------------------------------
+//--------------------------------------CreatePyObject---------------------------------------------------------------
+PyObject *
+ActionStrip_CreatePyObject (struct bActionStrip * actstrip)
+{
+  BPy_ActionStrip *blen_action;
+
+  blen_action = (BPy_ActionStrip *) PyObject_NEW (BPy_ActionStrip, &ActionStrip_Type);
+
+  if (blen_action == NULL)
+    {
+      return (NULL);
+    }
+  blen_action->actionstrip	= actstrip;
+  return ((PyObject *) blen_action);
+}
+//----------------------------------------------CheckPyObject-------------------------------------------------------------
+int
+ActionStrip_CheckPyObject (PyObject * py_obj)
+{
+  return (py_obj->ob_type == &ActionStrip_Type);
+}
+//--------------------------------------------FromPyObject-----------------------------------------------------------------
+struct bActionStrip *
+ActionStrip_FromPyObject (PyObject * py_obj)
+{
+  BPy_ActionStrip *blen_obj;
+
+  blen_obj = (BPy_ActionStrip *) py_obj;
+  return (blen_obj->actionstrip);
+}
+//------------------------------------NLA Module Function Definitions-----------------------------------------------
+//------------------------------------NLA.NewActionStrip()-------------------------------------------------------------
+static PyObject *
+M_NLA_NewActionStrip (PyObject * self, PyObject * args)
+{
+  char *name_str = "DefaultActionStrip";
+  BPy_ActionStrip *py_actionstrip = NULL;	
+  bActionStrip *bl_actionstrip = NULL;		
+
+  if (!PyArg_ParseTuple (args, "|s", &name_str)){
+    EXPP_ReturnPyObjError (PyExc_AttributeError,
+				   "expected string or nothing");
+	return NULL;
+  }
+
+  bl_actionstrip  = (bActionStrip*)MEM_callocN(sizeof(bActionStrip), name_str);
+
+  bl_actionstrip->act = NULL;
+  bl_actionstrip->actstart = 1.0;
+  bl_actionstrip->actend = 1.0;
+  bl_actionstrip->start = G.scene->r.cfra;
+  bl_actionstrip->end = bl_actionstrip->start + (bl_actionstrip->actend - bl_actionstrip->actstart);
+  bl_actionstrip->flag = ACTSTRIP_SELECT;
+  bl_actionstrip->repeat = 1.0;
+
+  // now create the wrapper obj in Python
+  if (bl_actionstrip)		
+    py_actionstrip = (BPy_ActionStrip *) PyObject_NEW (BPy_ActionStrip, &ActionStrip_Type);
+  else
+    return EXPP_ReturnPyObjError (PyExc_RuntimeError, "couldn't create ActionStrip Data in Blender");
+
+  if (py_actionstrip == NULL)
+    return EXPP_ReturnPyObjError (PyExc_MemoryError, "couldn't create ActionStrip Data object");
+
+  py_actionstrip->actionstrip = bl_actionstrip;	// link Python action wrapper with Blender ActionStrip
+
+  Py_INCREF(py_actionstrip);
+  return (PyObject *) py_actionstrip;
+}
+//------------------------------------NLA.NewAction()----------------------------------------------------------------------
 static PyObject *
 M_NLA_NewAction (PyObject * self, PyObject * args)
 {
@@ -168,7 +441,7 @@ M_NLA_NewAction (PyObject * self, PyObject * args)
   Py_INCREF(py_action);
   return (PyObject *) py_action;
 }
-
+//------------------------------------NLA.CopyAction()------------------------------------------------------------------
 static PyObject *
 M_NLA_CopyAction(PyObject* self, PyObject * args)
 {
@@ -183,7 +456,7 @@ M_NLA_CopyAction(PyObject* self, PyObject * args)
 	copyAction =  copy_action(py_action->action);
 	return Action_CreatePyObject (copyAction);
 }
-
+//------------------------------------NLA.GetActions()---------------------------------------------------------------------
 static PyObject *
 M_NLA_GetActions(PyObject* self)
 {
@@ -210,24 +483,8 @@ M_NLA_GetActions(PyObject* self)
 	}	
 	return dict;
 }
-
-/*****************************************************************************/
-/* Function:	NLA_Init						 */
-/*****************************************************************************/
-PyObject *
-NLA_Init (void)
-{
-  PyObject *submodule;
-
-  Action_Type.ob_type = &PyType_Type;
-
-  submodule = Py_InitModule3 ("Blender.Armature.NLA",
-			      M_NLA_methods, M_NLA_doc);
-
-  return (submodule);
-}
-
-//-------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------BPy_Action Function Definitions-----------------------------------------------
+//------------------------------------Action.getName()------------------------------------------------------------------
 static PyObject *
 Action_getName (BPy_Action * self)
 {
@@ -245,7 +502,7 @@ Action_getName (BPy_Action * self)
   return (EXPP_ReturnPyObjError (PyExc_RuntimeError,
 				 "couldn't get Action.name attribute"));
 }
-//-------------------------------------------------------------------------------------------------------------------------------
+//------------------------------------Action.setName()------------------------------------------------------------------
 static PyObject *
 Action_setName (BPy_Action * self, PyObject * args)
 {
@@ -265,7 +522,7 @@ Action_setName (BPy_Action * self, PyObject * args)
   Py_INCREF (Py_None);
   return Py_None;
 }
-
+//------------------------------------Action.setActive()------------------------------------------------------------------
 static PyObject *
 Action_setActive(BPy_Action * self, PyObject * args)
 {
@@ -290,7 +547,7 @@ Action_setActive(BPy_Action * self, PyObject * args)
   Py_INCREF (Py_None);
   return Py_None;
 }
-
+//------------------------------------Action.getChannelIpo()--------------------------------------------------------------
 static PyObject *
 Action_getChannelIpo(BPy_Action * self, PyObject * args)
 {
@@ -311,7 +568,7 @@ Action_getChannelIpo(BPy_Action * self, PyObject * args)
 	//return IPO
     return Ipo_CreatePyObject (chan->ipo);
 }
-
+//------------------------------------Action.removeChannel()------------------------------------------------------------
 static PyObject *
 Action_removeChannel(BPy_Action * self, PyObject * args)
 {
@@ -336,10 +593,9 @@ Action_removeChannel(BPy_Action * self, PyObject * args)
 	//remove channel
 	BLI_freelinkN (&self->action->chanbase, chan);
 
-	Py_INCREF (Py_None);
-	return (Py_None);
+	return EXPP_incr_ret (Py_None);
 }
-
+//------------------------------------Action.getAllChannelIpos()-----------------------------------------------------
 static PyObject *Action_getAllChannelIpos (BPy_Action *self)
 {
 	PyObject *dict=PyDict_New ();
@@ -365,104 +621,49 @@ static PyObject *Action_getAllChannelIpos (BPy_Action *self)
 	}	
 	return dict;
 }
-
-//-------------------------------------------------------------------------------------------------------------------------------
-static void
-Action_dealloc (BPy_Action * self)
+//------------------------------------BPy_ActionStrip Function Definitions----------------------------------------
+//------------------------------------ActionStrip.setAction()-------------------------------------------------------------
+static PyObject *ActionStrip_setAction(BPy_ActionStrip *self, PyObject * args)
 {
-    PyObject_DEL (self);
+	BPy_Action *py_action = NULL;
+	int frame = 1;
+
+	if(!PyArg_ParseTuple(args, "O!i", &Action_Type, &py_action, &frame)){
+		EXPP_ReturnPyObjError(PyExc_AttributeError, "Action object type and int");
+		return NULL;
+	}
+
+	if(py_action->action == NULL)
+		return EXPP_ReturnPyObjError(PyExc_AttributeError, "Action type is not valid");
+
+	self->actionstrip->act = py_action->action; //set action
+	self->actionstrip->actstart = 1.0;
+	self->actionstrip->actend = calc_action_end(py_action->action);
+	self->actionstrip->start = frame;
+	self->actionstrip->end = frame + (self->actionstrip->actend - self->actionstrip->actstart);
+
+	py_action->action->id.us++;
+
+	return EXPP_incr_ret (Py_None);
 }
-//-------------------------------------------------------------------------------------------------------------------------------
-static PyObject *
-Action_getAttr (BPy_Action * self, char *name)
+//------------------------------------ActionStrip.addToObject()----------------------------------------------------------
+static PyObject *ActionStrip_addToObject(BPy_ActionStrip *self, PyObject * args)
 {
-  PyObject *attr = Py_None;
+	BPy_Object *object;
 
-  if (strcmp (name, "name") == 0)
-    attr = Action_getName (self);
-  else if (strcmp (name, "__members__") == 0)  {
-      attr = Py_BuildValue ("[s]",
-			    "name");
-    }
+	if (!self->actionstrip)
+		return EXPP_ReturnPyObjError (PyExc_RuntimeError,   "actionstrip not valid");
 
-  if (!attr)
-    return (EXPP_ReturnPyObjError (PyExc_MemoryError,
-				   "couldn't create PyObject"));
+	if (!PyArg_ParseTuple (args, "O!", &Object_Type, &object))
+		return EXPP_ReturnPyObjError (PyExc_AttributeError,  "expected python object argument");
 
-  if (attr != Py_None)
-    return attr;		/* member attribute found, return it */
+	if(object->object->type != OB_ARMATURE) 
+		return EXPP_ReturnPyObjError (PyExc_AttributeError,  "object not of type armature");
 
-  /* not an attribute, search the methods table */
-  return Py_FindMethod (BPy_Action_methods, (PyObject *) self, name);
-}
+	if(self->actionstrip->act == NULL)
+		return EXPP_ReturnPyObjError (PyExc_RuntimeError,   "actionstrip not linked to an action");
 
-//-------------------------------------------------------------------------------------------------------------------------------
-static int
-Action_setAttr (BPy_Action * self, char *name, PyObject * value)
-{
-  PyObject *valtuple;
-  PyObject *error = NULL;
+	BLI_addtail(&object->object->nlastrips, self->actionstrip);
 
-  valtuple = Py_BuildValue ("(O)", value);	/* the set* functions expect a tuple */
-
-  if (!valtuple)
-    return EXPP_ReturnIntError (PyExc_MemoryError,
-				"ActionSetAttr: couldn't create tuple");
-
-  if (strcmp (name, "name") == 0)
-    error = Action_setName (self, valtuple);
-  else
-    {				/* Error */
-      Py_DECREF (valtuple);
-
-      /* ... member with the given name was found */
-      return (EXPP_ReturnIntError (PyExc_KeyError, "attribute not found"));
-    }
-
-  Py_DECREF (valtuple);
-
-  if (error != Py_None)
-    return -1;
-
-  Py_DECREF (Py_None);		/* was incref'ed by the called Action_set* function */
-  return 0;			/* normal exit */
-}
-//-------------------------------------------------------------------------------------------------------------------------------
-static PyObject *
-Action_repr (BPy_Action * self)
-{
-  if (self->action)
-    return PyString_FromFormat ("[Action \"%s\"]", self->action->id.name + 2);
-  else
-    return PyString_FromString ("NULL");
-}
-//-------------------------------------------------------------------------------------------------------------------------------
-PyObject *
-Action_CreatePyObject (struct bAction * act)
-{
-  BPy_Action *blen_action;
-
-  blen_action = (BPy_Action *) PyObject_NEW (BPy_Action, &Action_Type);
-
-  if (blen_action == NULL)
-    {
-      return (NULL);
-    }
-  blen_action->action	= act;
-  return ((PyObject *) blen_action);
-}
-//-------------------------------------------------------------------------------------------------------------------------------
-int
-Action_CheckPyObject (PyObject * py_obj)
-{
-  return (py_obj->ob_type == &Action_Type);
-}
-//-------------------------------------------------------------------------------------------------------------------------------
-struct bAction *
-Action_FromPyObject (PyObject * py_obj)
-{
-  BPy_Action *blen_obj;
-
-  blen_obj = (BPy_Action *) py_obj;
-  return (blen_obj->action);
-}
+	return EXPP_incr_ret (Py_None);
+	}
