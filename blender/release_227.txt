@@ -21,7 +21,7 @@ All platforms:
 
 - Freetype2 support added for importing almost every font format for a 3D text object.
 
-- Pressing alt-m in the texteditor window generates a 3D text from the current textfile.
+- Pressing Alt-MKEY in the texteditor window generates a 3D text from the current textfile.
   (up to 1000 characters)
 
 - The texteditor window is enhanced with a rightmouse menu for opening and saving files.
@@ -31,7 +31,7 @@ All platforms:
 
 - A small button has been added that toggles the visibility of the pulldown menu titles.
 
-- rename/delete menu's are added to the file and image browsers. Try NKEY and RKEY/XKEY.
+- Rename/delete menu's are added to the file and image browsers. Try NKEY and RKEY/XKEY.
 
 
 Win32 and OSX:
@@ -73,7 +73,7 @@ Win32 only:
 Sourcecode:
 -----------
 
-- all Dutch comments have been translated to English.
+- All Dutch comments have been translated to English.
 
 
 Bugfixes:
@@ -84,7 +84,6 @@ http://projects.blender.org/tracker/index.php?group_id=9&atid=125
 
 A shortlist:
 - Lattices deform correctly again
-- Plugins (textures, sequence effects) in MacOSX now work
 - Plugins for Windows work again
 
 Work Arounds:
@@ -95,8 +94,9 @@ Work Arounds:
 
 Didn't make it:
 ------------
-- advanced shading support (Blinn, cartoon rendering)
-- new draw mode for Lamps in 3D window
+- Advanced shading support (Blinn, cartoon rendering)
+- New draw mode for Lamps in 3D window
+- Plugins (textures, sequence effects) in MacOSX don't work yet.
 
 Still Not working:
 -----------------
