@@ -4,8 +4,6 @@ BUILDPS = \
 	intern/GHOST_DisplayManagerX11.h \
 	intern/GHOST_SystemX11.cpp \
 	intern/GHOST_SystemX11.h \
-	intern/GHOST_WindowManager.cpp \
-	intern/GHOST_WindowManager.h \
 	intern/GHOST_WindowX11.cpp \
 	intern/GHOST_WindowX11.h
 
@@ -38,8 +36,6 @@ DISTPS = \
 	intern/GHOST_DisplayManagerX11.h \
 	intern/GHOST_SystemX11.cpp \
 	intern/GHOST_SystemX11.h \
-	intern/GHOST_WindowManager.cpp \
-	intern/GHOST_WindowManager.h \
 	intern/GHOST_WindowX11.cpp \
 	intern/GHOST_WindowX11.h \
 	intern/GHOST_DisplayManagerCarbon.cpp \
@@ -64,8 +60,6 @@ DISTPS = \
 	intern/GHOST_DisplayManagerX11.h \
 	intern/GHOST_SystemX11.cpp \
 	intern/GHOST_SystemX11.h \
-	intern/GHOST_WindowManager.cpp \
-	intern/GHOST_WindowManager.h \
 	intern/GHOST_WindowX11.cpp \
 	intern/GHOST_WindowX11.h \
 	intern/GHOST_DisplayManagerWin32.cpp \
@@ -116,6 +110,8 @@ libblender_GHOST_la_SOURCES = \
 	intern/GHOST_TimerTask.h \
 	intern/GHOST_Window.cpp \
 	intern/GHOST_Window.h \
+	intern/GHOST_WindowManager.cpp \
+	intern/GHOST_WindowManager.h \
 	$(BUILDPS)
 
 EXTRA_DIST = \
