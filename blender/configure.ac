@@ -275,6 +275,8 @@ if test x"$enable_openal" = x"yes"; then
    , dnl found -- nop
    [enable_openal=no] )  dnl not found -- disable openal
 fi
+  AC_CHECK_LIB([Xext], [XextFindDisplay],,,$X_LIBS)
+  AC_CHECK_LIB([X11], [XOpenDisplay],,,$X_LIBS)
   AC_CHECK_LIB([GL], [glIsTexture],,,$X_LIBS)
   AC_CHECK_LIB([GLU], [gluGetString],,,$X_LIBS)
   AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes],,,$X_LIBS)
