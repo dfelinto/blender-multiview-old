@@ -40,6 +40,10 @@ case "$target" in
   *sparc* )
         AC_DEFINE(SUN_OGL_NO_VERTEX_MACROS,1,[Fix for Sun's GL])
   ;;  
+  *-apple-darwin*)
+  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
+  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
+  ;;
 esac
 
 dnl -----------------------
@@ -173,8 +177,6 @@ dnl -----------------------
   AC_CHECK_HEADER([png.h])
   AC_CHECK_HEADER([GL/gl.h])
   AC_CHECK_HEADER([GL/glu.h])
-  AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
-  AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
   AC_CHECK_HEADERS([alloca.h]) 
   AC_CHECK_HEADERS([arpa/inet.h]) 
   AC_CHECK_HEADERS([errno.h]) 
