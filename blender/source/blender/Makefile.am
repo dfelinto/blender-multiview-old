@@ -9,7 +9,7 @@ LIBS =
 SUBDIRS = blenloader deflate inflate \
 	writestreamglue readstreamglue writeblenfile readblenfile \
 	avi imbuf img render radiosity blenlib blenkernel blenpluginapi \
-	python makesdna src renderconverter $(quicktimedir)
+	python makesdna src renderconverter $(quicktimedir) yafray
 
 EXTRA_DIST = \
 	include/BDR_drawaction.h \

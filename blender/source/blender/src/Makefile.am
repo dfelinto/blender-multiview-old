@@ -108,7 +108,6 @@ libblender_blendersrc_la_SOURCES = \
 	writeimage.c \
 	writemovie.c \
 	language.c \
-	yafray_Render.cpp \
 	cre/license.jpeg.c \
 	cre/license_key.c
 
