@@ -1,0 +1,50 @@
+New features of Blender 2.27:
+-----------------------------
+
+- source code: all Dutch comments have been translated to English
+- new & antialised fonts in interface (Freetype)
+- translation system for tooltips, buttons and menus, with support for non-latin character sets. 
+  Instructions for how to work with this will be at the www.blender.org frontpage.
+- 'rename file' (NKEY) option in FileSelect and ImageSelect windows
+- 'remove file' (XKEY) option in ImageSelect
+- rightmouse menu in Text window, for open/save file.
+- Windows: clipboard support for cut/paste in TextWindow
+- Alt-M in TextWindow: copies the text to the active (3d) Font Object in 3D window
+- support for Freetype fonts in 3D Font Object
+- redesigned user pref buttons
+- Windows & OSX: support for QuickTime image (gif, tiff, psd) and movie (.mov) in/out
+- autoskinning for Armatures, when parenting a Mesh to an Armature it gives a menu
+- new (larger) icons for Windows XP
+- new draw mode for Lamps in 3D window
+- new menu for window-type
+- shadowbuffers now can have any size (with number-button)
+
+Bugfixes:
+---------
+
+Check the bug tracker for a complete listing:
+http://projects.blender.org/tracker/index.php?group_id=9&atid=125
+
+A shortlist:
+- Lattices deform correctly again
+- Plugins (textures, sequence effects) in MacOSX now work
+- Plugins for Windows work again
+
+Work Arounds:
+------------
+
+- OpenGL support for several Linux systems can cause problems when rendering with a 2nd Window.
+  Use option F10->DispView instead. This is still being investigated...
+
+Didn't make it:
+------------
+- advanced shading support (Blinn, cartoon rendering)
+
+Still Not working:
+-----------------
+
+- FaceSelect mode in OSX causes bad redrawing of the backbuffer (it flashes)
+- The Blender210 Python API. The only API which is available in 2.27 is the one that was used in 2.25
+- New build system using configure (this is partially working but needs more work)
+- Physics support in the game engine
+
