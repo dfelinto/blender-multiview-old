@@ -41,8 +41,7 @@ libblender_imbuf_la_SOURCES = \
 	intern/iris.c \
 	intern/jpeg.c \
 	intern/matrix.h \
-	intern/png_decode.c \
-	intern/png_encode.c \
+	intern/png.c \
 	intern/readimage.c \
 	intern/rectop.c \
 	intern/rotate.c \
