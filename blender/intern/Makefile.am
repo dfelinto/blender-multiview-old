@@ -5,6 +5,8 @@ lib_LTLIBRARIES = libblender_intern.la
 
 libblender_intern_la_SOURCES =
 
+libblender_intern_la_LDFLAGS = $(X_LIBS)
+
 libblender_intern_la_LIBADD = \
 	string/libblender_STR.la \
 	ghost/libblender_GHOST.la \
