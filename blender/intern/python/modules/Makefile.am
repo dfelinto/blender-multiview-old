@@ -1,7 +1,24 @@
 EXTRA_DIST = \
 	VRMLmain.py \
 	blenderos.py \
-	Blender/*.py \
+	Blender/BGL.py \
+   Blender/Camera.py \
+   Blender/Draw.py \
+   Blender/Image.py \
+   Blender/Ipo.py \
+   Blender/Lamp.py \
+   Blender/Material.py \
+   Blender/Mesh.py \
+   Blender/NMesh.py \
+   Blender/Object.py \
+   Blender/Scene.py \
+   Blender/Text.py \
+   Blender/Types.py \
+   Blender/Window.py \
+   Blender/World.py \
+   Blender/__init__.py \
+   Blender/shadow.py \
+   Blender/sys.py \
 	Converter/__init__.py \
 	Converter/bimporter.py \
 	Converter/importloader.py \

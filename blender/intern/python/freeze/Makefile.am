@@ -17,7 +17,10 @@ PYFILES = \
 	parsesetup.py \
 	winmakemakefile.py
 
-EXTRA_DIST = $(top_srcdir)/intern/python/frozen/*.c README.NaN $(PYFILES)
+libfrozen_a_SOURCES =
+
+#EXTRA_DIST = $(top_srcdir)/intern/python/frozen/*.c README.NaN $(PYFILES)
+EXTRA_DIST = README.NaN $(PYFILES)
 
 libfrozen.a: $(PYFILES)
 	@PYTHON@ -S -O \

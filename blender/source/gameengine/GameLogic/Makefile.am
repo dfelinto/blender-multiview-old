@@ -8,7 +8,7 @@ libgameblender_logic_la_SOURCES = \
 	SCA_ExpressionController.cpp \
 	SCA_IActuator.cpp \
 	SCA_IController.cpp \
-	SCA_IInputDevice.cpp \
+	SCA_IInputDevice.cpp \
 	SCA_ILogicBrick.cpp \
 	SCA_IObject.cpp \
 	SCA_IScene.cpp \

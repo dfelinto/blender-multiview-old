@@ -7,7 +7,7 @@ libgameblender_ketsji_la_SOURCES = \
 	KX_CameraIpoSGController.cpp \
 	KX_ConstraintActuator.cpp \
 	KX_ConstraintWrapper.cpp \
-	KX_ConvertPhysicsObjects.cpp \
+	KX_ConvertPhysicsObjects.cpp \
 	KX_EmptyObject.cpp \
 	KX_GameActuator.cpp \
 	KX_GameObject.cpp \

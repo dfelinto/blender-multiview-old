@@ -18,7 +18,7 @@ endif
 #note fmod might be a windows only file as it includes from the windows library
 
 libgameblender_soundsystem_la_SOURCES = \
-	dummy/SND_DummyDevice.cpp \
+	dummy/SND_DummyDevice.cpp \
 	$(FMOD_DEVICE) \
 	intern/SND_AudioDevice.cpp \
 	intern/SND_C-api.cpp \
