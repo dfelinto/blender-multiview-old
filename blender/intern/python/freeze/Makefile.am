@@ -19,7 +19,7 @@ EXTRA_DIST = $(top_srcdir)/intern/python/frozen/*.c README.NaN $(PYFILES)
 
 libfrozen.a: $(PYFILES)
 	@PYTHON@@PYTHON_VERSION@ -S -O \
-		$(top_srcdir)/intern/python/frozen/freeze.py -d -x os -x \
+		$(top_srcdir)/intern/python/freeze/freeze.py -d -x os -x \
 		pprint -I $(SRCDIR) $(SRCDIR)/VRMLmain.py
 #Or leave out @PYTHON@@PYTHON_VERSION@?
 	cd ../frozen && make -f Makefile.freeze && cd ../freeze
