@@ -227,7 +227,7 @@ dnl ----------------------
  AC_SUBST(PYTHON_LDFLAGS, [$am_cv_python_ldflags])
 
 #Find out what path to use for python.
-python_sysprefix=`echo "import sys; print sys.prefix" | python -`
+python_sysprefix=`echo "import sys; print sys.prefix" | $PYTHON -`
 
 if test x"$enable_openal" = x"yes"; then
   XIPH_PATH_OGG
