@@ -45,17 +45,20 @@ dnl     [ CXXFLAGS="-g -O3 -Wall -funsigned-char" ]
 case "$target" in
   *sparc* )
         AC_DEFINE(SUN_OGL_NO_VERTEX_MACROS,1,[Fix for Sun's GL])
-	AC_DEFINE(BIG_ENDIAN,1,)
   ;;  
   *-*-powerpc )
-	AC_DEFINE(BIG_ENDIAN,1,)
   ;;
   *-*-irix* )
-	AC_DEFINE(BIG_ENDIAN,1,)
+     AC_CHECK_LIB([cl],[audioAlgorithms])
+     AC_CHECK_LIB([dmedia],[dmACCreate])
+     AC_CHECK_LIB([c],[savestr])
+     AC_CHECK_LIB([C],[free])
+     AC_CHECK_LIB([movieGL], [thisRoutineDoesNothing])
   ;;
   *-*-darwin* )
-  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
-  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
+dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
+dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
+     SYSTEM_LIBS="$SYSTEM_LIBS -framework OpenGL -framework AGL"
   ;;
 esac
 
