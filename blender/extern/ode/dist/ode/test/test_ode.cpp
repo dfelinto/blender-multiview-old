@@ -37,7 +37,7 @@
 #endif				// andy's fix for cygwin
 #endif
 
-#if defined (__sparc) || defined (__sparc__)
+#if !defined(linux) && (defined (__sparc) || defined (__sparc__))
 #include <ieeefp.h>
 #endif
 
