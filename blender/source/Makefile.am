@@ -8,7 +8,7 @@ blender_SOURCES = \
 
 #I've assumed that everything under blender directory should be statically linked into the main file... while the gameengine and ode are separate dynamically linked to the binary
 
-blender_LIBADD = \
+blender_LDADD = \
 	blender/avi/libblender_avi.a \
 	blender/blenkernel/libblender_kernel.a \
 	blender/blenlib/libblender_blenlib.a \

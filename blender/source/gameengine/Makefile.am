@@ -3,6 +3,6 @@ SUBDIRS = BlenderRoutines Expressions Ketsji Physics SoundSystem GameLogic Raste
 
 lib_LTLIBRARIES = libgameengine.la
 
-libgameengine_la_LIBADD = \
+libgameengine_la_LIBADD = 
 
 libgameengine_la_SOURCES =

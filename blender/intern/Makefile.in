@@ -170,7 +170,9 @@ libblender_intern_la_LIBADD = \
 	memutil/libblender_MEM.la \
 	decimation/libblender_LOD.la \
 	iksolver/libblender_IK.la \
-	keymaker/libblender_belgium.la
+	keymaker/libblender_belgium.la \
+	bsp/libblender_BSP.la \
+	python/frozen/libfrozen.a
 
 
 LIBOBJS = \
@@ -201,7 +203,8 @@ libblender_intern_la_DEPENDENCIES = string/libblender_STR.la \
 	bmfont/libblender_BMF.la moto/libblender_MT.la \
 	container/libblender_CTR.la memutil/libblender_MEM.la \
 	decimation/libblender_LOD.la iksolver/libblender_IK.la \
-	keymaker/libblender_belgium.la
+	keymaker/libblender_belgium.la bsp/libblender_BSP.la \
+	python/frozen/libfrozen.a
 libblender_intern_la_SOURCES = libblender_intern.la.c
 libblender_intern_la_OBJECTS = libblender_intern.la.lo
 
@@ -580,8 +583,6 @@ uninstall-info: uninstall-info-recursive
 	uninstall-info-am uninstall-info-recursive \
 	uninstall-libLTLIBRARIES uninstall-recursive
 
-	bsp/libblender_BSP.la \
-	python/frozen/libfrozen.a
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
