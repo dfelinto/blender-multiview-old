@@ -183,10 +183,8 @@ dnl ----------------
   AC_CHECK_HEADER(Carbon/Carbon.h)
   AM_CONDITIONAL(CARBON,[test "x$ac_cv_header_Carbon_Carbon_h" = "xyes"])
 
-  AM_CONDITIONAL(X11,[test "x$no_x" = "xyes"])
-    
-
-
+  AC_CHECK_HEADER(X11/Xlib.h)
+  AM_CONDITIONAL(X11,[test "x$ac_cv_header_X11_Xlib_h" = "xyes"])
 
   dnl AC_SUBST(blabla_libs)
   AC_SUBST([PYTHONSYSPREFIX],[$python_sysprefix])
