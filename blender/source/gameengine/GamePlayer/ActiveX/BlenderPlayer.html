@@ -1,11 +1,9 @@
 <html>
-
 <head>
 <title>Blender 3D Plug-in Active X Control</title>
 
 <script language="JavaScript">
 <!-- hide me
-
 function setURL()
 {
 	var the_url = window.document.the_form1.the_url.value;
@@ -20,24 +18,23 @@ function fixURL(the_url)
     the_first_seven = the_first_seven.toLowerCase();
     if (the_first_seven != 'http://') 
     {
-            the_url = "http://" + the_url;
+        the_url = "http://" + the_url;
     }
     return the_url;
 }
-
 // show me -->
 </script>
 
-</HEAD>
+</head>
 
 <body bgcolor="#3F3FFF">
 <center>
 
 <font face="Verdana, Arial, Helvetica">
-
 <font size=6><B>Blender Player Active X Control</b></font><br>
 <font size=3>NaN Technologies BV</font><br>
 <font size=3>Maarten Gribnau</font>
+
 <p>
 <!--	codebase="http://www.blender.nl/plugin/test/Blender3DPlugin.cab#Version=2,22,1,0" -->
 <!--    <param name="loadingURL" value="file://c:\blend\webclown.blend"> -->
@@ -46,7 +43,7 @@ function fixURL(the_url)
     id=Blender3DPlugin
     width = "640"
     height = "400">
-    <param name="blenderURL" value="c:\blend\face_dloc.blend">
+    <param name="blenderURL" value="c:\blend\haloparty.blend">
     <param name="ForeColor" value=65280>
     <param name="BackColor" value=255>
     <param name="frameRate" value=59>
@@ -55,6 +52,7 @@ function fixURL(the_url)
 </object>
 </p>
 
+<p>
 <form>
 <input type="button" value="frame count" onClick="Blender3DPlugin.showFrameCount=!Blender3DPlugin.showFrameCount;">
 <input type="button" value="profile info" onClick="Blender3DPlugin.showProfileInfo=!Blender3DPlugin.showProfileInfo;">
@@ -101,9 +99,10 @@ function fixURL(the_url)
 </form>
 </p>
 
-
 </center>
 </font>
-</BODY>
-</HTML>
+</body>
+</html>
+
+
 

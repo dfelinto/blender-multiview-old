@@ -51,7 +51,6 @@
 #include "SYS_System.h"
 #include "NG_NetworkScene.h"
 #include "NG_LoopBackNetworkDeviceInterface.h"
-#include "SM_Scene.h"
 #include "KX_KetsjiEngine.h"
 #include "KX_BlenderSceneConverter.h"
 #include "RAS_OpenGLRasterizer.h"
