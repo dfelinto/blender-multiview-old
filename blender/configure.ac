@@ -300,11 +300,13 @@ if test x"$enable_openal" = x"yes"; then
    , dnl found -- nop
    [enable_openal=no] )  dnl not found -- disable openal
 fi
+if test x$ac_cv_header_Carbon_Carbon_h != xyes; then
   AC_CHECK_LIB([Xext], [XextFindDisplay],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
   AC_CHECK_LIB([X11], [XOpenDisplay],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
   AC_CHECK_LIB([GL], [glIsTexture],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
   AC_CHECK_LIB([GLU], [gluGetString],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
   AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
+fi
 
 dnl ---------------------
 dnl Checks for data types
