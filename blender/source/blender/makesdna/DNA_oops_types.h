@@ -41,6 +41,16 @@
 
 struct ID;
 
+typedef struct TreeStoreElem {
+	short type, nr, flag, used;
+	ID *id;
+} TreeStoreElem;
+
+typedef struct TreeStore {
+	int totelem, usedelem;
+	TreeStoreElem *data;
+} TreeStore;
+
 typedef struct Oops {
 	struct Oops *next, *prev;
 	short type, flag, dt, hide;
@@ -64,6 +74,11 @@ typedef struct OopsLink {
 /* oops->flag  (1==SELECT) */
 #define OOPS_DOSELECT	2
 #define OOPS_REFER		4
+
+/* TreeStoreElem->flag */
+#define TSE_CLOSED		1
+#define TSE_LASTCLICKED	2
+
 
 #endif
 
