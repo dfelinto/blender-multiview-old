@@ -1,10 +1,10 @@
 New features of Blender 2.26:
 -----------------------------
 
-- Mousewheel support for all windows. Two user settings are added in the
-   top window for mousewheel usage. The zoom direction [WZoom] and the
+- Mouse wheel support for all windows. Two user settings are added in the
+   top window for mouse wheel usage. The zoom direction [WZoom] and the
    number of lines that get scrolled [WLines] can be set here.
-   The mousewheel also works to increase/decrease the size of the circle
+   The mouse wheel also works to increase/decrease the size of the circle
    while selecting or doing proportional scaling. 
 
 - A "fake user" button next to the databrowse buttons has been added, to keep
@@ -35,12 +35,12 @@ New features of Blender 2.26:
 - TKEY in the action window changes the Ipo type (constant/linear/bezier)
    for the Ipo curves owned by the selected channels
 
-- Simple shaded+wire and solid+wire drawmodes. It basically draws the
+- Simple shaded+wire and solid+wire draw modes. It basically draws the
    wireframe after drawing the model in solid/shaded/textured mode.
    The user can set this per object using the "Wire" button in the edit
    buttons window.
 
-- A headerbutton for drawing linenumbers in the texteditor.
+- A header button for drawing line numbers in the texteditor.
 
 - Ctrl keystrokes for cut/copy/paste/undo/redo in the texteditor.
 
@@ -69,4 +69,18 @@ Workarounds:
 ------------
 
 - A small modification is made that prevents closing the renderwindow on
-   Mac OSX, so the GUI won't becoming irresponsive.
+    Mac OSX, so the GUI won't become unresponsive.
+
+
+Still Not working:
+-----------------
+
+- Plugins in MacOSX
+
+- The Blender210 Python API. The only API which is available in 2.26 is the one
+    that was used in 2.25
+
+- New build system using configure (this is partially working but
+    needs some work)
+
+- Physics support in the game engine
