@@ -42,10 +42,79 @@ all debug::
     endif
   endif
 
-  # First generic defaults for all, some of which should be overruled
-  # by platform dependent settings in the next section of this file.
+  # Platform specific overrides for various values...
   # Note: ?= lets these defaults be overruled by environment variables,
   # except those which are overruled in the platform section below.
+  # There are more generic ones defined all in a clump after the platform
+  # specific stuff
+
+  ifeq ($(OS),beos)
+    export ID = $(USER)
+    export HOST = $(HOSTNAME)
+  endif
+
+  ifeq ($(OS),darwin)
+    export ID = $(shell whoami)
+    export HOST = $(shell hostname -s)
+    # Override libraries locations to use fink installed libraries
+    export NAN_OPENSSL ?= /sw
+    export NAN_JPEG ?= /sw
+    export NAN_PNG ?= /sw
+    # Override common python settings so that the python that comes with
+    # OSX 10.2 in /usr/local/ is used.
+    export NAN_PYTHON ?= /usr/local
+    export NAN_PYTHON_VERSION ?= 2.2
+  endif
+
+  ifeq ($(OS),freebsd)
+    export ID = $(shell whoami)
+    export HOST = $(shell hostname -s)
+    export NAN_PYTHON ?= /usr/local/include/python
+    export NAN_PYTHON_VERSION ?= 2.2
+    export NAN_PYTHON_BINARY ?=
+    export NAN_MXTEXTTOOLS ?=
+    export NAN_OPENAL ?= /usr/local
+    export NAN_JPEG ?= /usr/local
+    export NAN_PNG ?= /usr/local
+    export NAN_SDL ?= /usr/local
+    export NAN_OPENSSL ?= /usr
+    export NAN_ZLIB ?= /usr
+    export NAN_NSPR ?= /usr/local
+  endif
+
+  ifeq ($(OS),irix)
+    export ID = $(shell whoami)
+    export HOST = $(shell /usr/bsd/hostname -s)
+    export NAN_PYTHON_VERSION ?= 2.1
+    export NAN_PYTHON_BINARY ?=
+    export NAN_MXTEXTTOOLS ?=
+    export NAN_ZLIB ?= /usr/freeware
+    export NAN_NSPR ?= /usr/local/apps/openblender/nspr/target/dist
+  endif
+
+  ifeq ($(OS),linux)
+    export ID = $(shell whoami)
+    export HOST = $(shell hostname -s)
+  endif
+
+  ifeq ($(OS),openbsd)
+    export ID = $(shell whoami)
+    export HOST = $(shell hostname -s)
+  endif
+
+  ifeq ($(OS),solaris)
+    export ID ?= $(shell /usr/ucb/whoami)
+    export HOST ?= $(shell hostname)
+  endif
+
+  ifeq ($(OS),windows)
+    export ID = $(LOGNAME)
+  endif
+
+
+  # generic defaults for all, some of which should be overruled
+  # by platform dependent settings in the above section of this file.
+  # Note: ?= lets these defaults be overruled by environment variables.
 
     export SRCHOME ?= $(NANBLENDERHOME)/source
     export CONFIG_GUESS := $(shell ${SRCHOME}/tools/guess/guessconfig)
@@ -68,7 +137,7 @@ all debug::
     export NAN_JPEG ?= $(LCGDIR)/jpeg
     export NAN_PNG ?= $(LCGDIR)/png
     export NAN_SDL ?= $(LCGDIR)/sdl
-    export NAN_ODE ?= $(SRCHOME)/ode
+    export NAN_ODE ?= $(LCGDIR)/ode
     export NAN_OPENSSL ?= $(LCGDIR)/openssl
     export NAN_TERRAPLAY ?= $(LCGDIR)/terraplay
     export NAN_MESA ?= /usr/src/Mesa-3.1
@@ -101,79 +170,4 @@ all debug::
     export NAN_BUILDINFO = true
     # Be paranoid regarding library creation (do not update archives)
     export NAN_PARANOID = true
-
-  # Platform Dependent settings go below. Defaults form the previous
-  # section can be overruled here. Note: don't use ?= here ;-)
-  # Also note that these cannot be overruled by environment variables
-  # anymore. (or we must put all global defaults in platform sections)
-
-  ifeq ($(OS),beos)
-    export ID = $(USER)
-    export HOST = $(HOSTNAME)
-  endif
-
-  ifeq ($(OS),darwin)
-    export ID = $(shell whoami)
-    export HOST = $(shell hostname -s)
-    # Override libraries locations to use fink installed libraries
-    export NAN_OPENSSL = /sw
-    export NAN_JPEG = /sw
-    export NAN_PNG = /sw
-    export NAN_ODE = $(LCGDIR)/ode
-    # Override common python settings so that the python that comes with 
-    # OSX 10.2 in /usr/local/ is used.
-    export NAN_PYTHON = /usr/local
-    export NAN_PYTHON_VERSION = 2.2
-    export NAN_PYTHON_BINARY = $(NAN_PYTHON)/bin/python$(NAN_PYTHON_VERSION)
-    export NAN_MXTEXTTOOLS = $(shell $(NAN_PYTHON_BINARY) -c 'import mx; print mx.__path__[0]')/TextTools/mxTextTools/mxTextTools.so 
-  endif
-
-  ifeq ($(OS),freebsd)
-    export ID = $(shell whoami)
-    export HOST = $(shell hostname -s)
-    export NAN_PYTHON = /usr/local/include/python
-    export NAN_PYTHON_VERSION = 2.2
-    export NAN_PYTHON_BINARY = 
-    export NAN_MXTEXTTOOLS = 
-    export NAN_OPENAL = /usr/local
-    export NAN_JPEG = /usr/local
-    export NAN_PNG = /usr/local
-    export NAN_SDL = /usr/local
-    export NAN_ODE = $(LCGDIR)/ode
-    export NAN_OPENSSL = /usr
-    export NAN_ZLIB = /usr
-    export NAN_NSPR = /usr/local
-  endif
-
-  ifeq ($(OS),irix)
-    export ID = $(shell whoami)
-    export HOST = $(shell /usr/bsd/hostname -s)
-    export NAN_PYTHON_VERSION = 2.1
-    export NAN_PYTHON_BINARY = 
-    export NAN_MXTEXTTOOLS = 
-    export NAN_ZLIB = /usr/freeware
-    export NAN_NSPR = /usr/local/apps/openblender/nspr/target/dist
-  endif
-
-  ifeq ($(OS),linux)
-    export ID = $(shell whoami)
-    export HOST = $(shell hostname -s)
-    export NAN_ODE = $(LCGDIR)/ode
-  endif
-
-  ifeq ($(OS),openbsd)
-    export ID = $(shell whoami)
-    export HOST = $(shell hostname -s)
-  endif
-
-  ifeq ($(OS),solaris)
-    export ID = $(shell /usr/ucb/whoami)
-    export HOST = $(shell hostname)
-  endif
-
-  ifeq ($(OS),windows)
-    export ID = $(LOGNAME)
-  endif
-
 endif
-
