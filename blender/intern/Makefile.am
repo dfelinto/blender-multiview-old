@@ -1,6 +1,5 @@
 SUBDIRS = string ghost guardedalloc bmfont moto container memutil \
-	decimation iksolver keymaker bsp 
-
+	decimation keymaker bsp  iksolver
 ## python/freeze
 
 lib_LTLIBRARIES = libblender_intern.la
@@ -15,9 +14,9 @@ libblender_intern_la_LIBADD = \
 	container/libblender_CTR.la \
 	memutil/libblender_MEM.la \
 	decimation/libblender_LOD.la \
-	iksolver/libblender_IK.la \
 	keymaker/libblender_belgium.la \
 	bsp/libblender_BSP.la \
+	iksolver/libblender_IK.la \
 	python/frozen/libfrozen.a
 
 LIBOBJS = \
@@ -30,7 +29,7 @@ LIBOBJS = \
 	container/libblender_CTR.a \
 	memutil/libblender_MEM.a \
 	decimation/libblender_LOD.a \
-	iksolver/libblender_IK.a \
-	keymaker/libblender_belgium.a \
 	bsp/libblender_BSP.a \
+	keymaker/libblender_belgium.a \
+	iksolver/libblender_IK.a \
 	python/frozen/libfrozen.a

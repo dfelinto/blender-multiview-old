@@ -1,6 +1,6 @@
 noinst_LTLIBRARIES = libblender_belgium.la
 
-INCLUDES = -I./include -I./python
+INCLUDES = -I. -I$(top_srcdir)/intern/keymaker/python
 
 libblender_belgium_la_SOURCES = \
 	blenkey.h \

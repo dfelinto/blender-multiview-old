@@ -158,15 +158,7 @@ subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES = source/gameengine/Expressions/Makefile \
-	source/gameengine/GameLogic/Makefile \
-	source/gameengine/GamePlayer/Makefile \
-	source/gameengine/Ketsji/Makefile \
-	source/gameengine/Network/Makefile \
-	source/gameengine/Physics/Makefile \
-	source/gameengine/Rasterizer/Makefile \
-	source/gameengine/SceneGraph/Makefile \
-	source/gameengine/SoundSystem/Makefile
+CONFIG_CLEAN_FILES =
 DIST_SOURCES =
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
@@ -216,24 +208,6 @@ $(srcdir)/config.h.in:  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
-source/gameengine/Expressions/Makefile: $(top_builddir)/config.status $(top_srcdir)/source/gameengine/Expressions/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-source/gameengine/GameLogic/Makefile: $(top_builddir)/config.status $(top_srcdir)/source/gameengine/GameLogic/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-source/gameengine/GamePlayer/Makefile: $(top_builddir)/config.status $(top_srcdir)/source/gameengine/GamePlayer/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-source/gameengine/Ketsji/Makefile: $(top_builddir)/config.status $(top_srcdir)/source/gameengine/Ketsji/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-source/gameengine/Network/Makefile: $(top_builddir)/config.status $(top_srcdir)/source/gameengine/Network/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-source/gameengine/Physics/Makefile: $(top_builddir)/config.status $(top_srcdir)/source/gameengine/Physics/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-source/gameengine/Rasterizer/Makefile: $(top_builddir)/config.status $(top_srcdir)/source/gameengine/Rasterizer/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-source/gameengine/SceneGraph/Makefile: $(top_builddir)/config.status $(top_srcdir)/source/gameengine/SceneGraph/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-source/gameengine/SoundSystem/Makefile: $(top_builddir)/config.status $(top_srcdir)/source/gameengine/SoundSystem/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -379,7 +353,6 @@ distcleancheck_listfiles = find . -type f -print
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkinstalldirs) $(distdir)/source/gameengine/Expressions $(distdir)/source/gameengine/GameLogic $(distdir)/source/gameengine/GamePlayer $(distdir)/source/gameengine/Ketsji $(distdir)/source/gameengine/Network $(distdir)/source/gameengine/Physics $(distdir)/source/gameengine/Rasterizer $(distdir)/source/gameengine/SceneGraph $(distdir)/source/gameengine/SoundSystem
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
 	  case $$file in \
