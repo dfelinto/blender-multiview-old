@@ -5,6 +5,8 @@ LIBS =
 libblender_api2_2x_la_SOURCES = \
   Blender.c \
   Blender.h \
+  Scene.c \
+  Scene.h \
   Types.c \
   Types.h \
   Object.c \
