@@ -1,0 +1,20 @@
+Release notes Blender 2.35a
+
+For a full release log, please check: 
+http://www.blender3d.org/cms/Releaselogs.34.0.html
+
+
+---- Updates for 2.35a ------------------
+
+- Linux; recompiled using different gcc
+- Outliner: crash on selecting Script icon (Windows/Linux)
+- Curve deform (CTRL+P) crashed in Linux
+- Oops Schematic Window: switching from Outliner gave wrong transformed view
+- 3D View: options "Home" and "View selected" (numpad dot) now show identical
+- Mesh EditMode: selection buffer (zbuffered selection clip) now supports full 24 bits range (was 18 bits).
+- Mesh Editmode: Edge Rotate didn't copy smooth or material flags
+- Mesh Editmode: Loop Cut (Alt+T) now works with partially invisible (clipped outside window) vertices
+- Rendering: Ray-trace transparant for Nurbs surfaces didn't work
+- Game engine; World option "Physics engine" now is set to Sumo by default on reading older files.
+- Yafray: rendering using plugin returns zbuffer info for post processing
+- Yafray: support added for Material UV TexFace option
