@@ -124,3 +124,32 @@ Rethink, discuss ways to automate test writing and work on a good set of tests.
 
 == End of tests project ==
 
+===============================
+= Project: Python GUI =
+===============================
+>Coordinator(s): Joseph Gilbert
+>Start: after release 2.34
+>Priority: LOW
+
+This project has been taking some thinking time. Idea is the following:
+- Each script is run in a Panel() object inside the Panels window.
+- Each script has it's own namespace for variables/globals
+- Each script has access to blender's internal UI functionality
+- Multiple scripts are run by the interpreter simultaneously
+- Multiple copies of the same script can be run at the same time
+- A new Console window that would show the output of scripts instead of 
+  output going to console/terminal window
+
+== End of Python GUI project ==
+
+===============================
+= Project: Boost C++ = (Test Project)
+===============================
+>Coordinator(s): Joseph Gilbert
+>Start: after release 2.34
+>Priority: VERY LOW :)
+
+Looking at integration of Boost.Python as a replacement for the 
+Python/C API. 
+
+== End of Boost C++ project ==
