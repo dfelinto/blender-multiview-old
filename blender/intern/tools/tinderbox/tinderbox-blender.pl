@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 # $Id$
 #
 # ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
@@ -84,29 +84,33 @@ sub InitVars {
     #relative path to binary
 	if ($UNAME eq 'Darwin') {
 		$BinaryName{'blenderplayer'} = 'blenderplayer';
-		$BinaryName{'Dblenderplayer'} = 'debug/blenderplayer';
+#		$BinaryName{'Dblenderplayer'} = 'debug/blenderplayer';
 	} elsif ($UNAME eq 'CYGWIN_NT-5.0') {
 		$BinaryName{'blendercreator'} = 'blendercreator.exe';
-		$BinaryName{'Dblendercreator'} = 'debug/blendercreator.exe';
-		$BinaryName{'blenderpublisher'} = 'blenderpublisher.exe';
-		$BinaryName{'Dblenderpublisher'} = 'debug/blenderpublisher.exe';
-		$BinaryName{'blenderplugin'} = 'npB3DPlg.dll';
+#		$BinaryName{'Dblendercreator'} = 'debug/blendercreator.exe';
+#		$BinaryName{'blenderpublisher'} = 'blenderpublisher.exe';
+#		$BinaryName{'Dblenderpublisher'} = 'debug/blenderpublisher.exe';
+#		$BinaryName{'blenderplugin'} = 'npB3DPlg.dll';
 	} else {
 		$BinaryName{'blendercreator'} = 'blendercreator';
-		$BinaryName{'Dblendercreator'} = 'debug/blendercreator';
-		$BinaryName{'blenderpublisher'} = 'blenderpublisher';
-		$BinaryName{'Dblenderpublisher'} = 'debug/blenderpublisher';
-		$BinaryName{'blenderplugin'} = 'npBlender3DPlugin.so';
-		$BinaryName{'blenderpluginXPCOM'} = 'Blender3DPlugin.so';
+#		$BinaryName{'Dblendercreator'} = 'debug/blendercreator';
+#		$BinaryName{'blenderpublisher'} = 'blenderpublisher';
+#		$BinaryName{'Dblenderpublisher'} = 'debug/blenderpublisher';
+#		$BinaryName{'blenderplugin'} = 'npBlender3DPlugin.so';
+#		$BinaryName{'blenderpluginXPCOM'} = 'Blender3DPlugin.so';
 	}
 
     # Set these to what makes sense for your system
-    $Make = 'make'; # Must be gnu make
+	if ($UNAME eq 'FreeBSD') {
+		$Make = 'gmake'; # Must be gnu make
+	} else {
+		$Make = 'make'; # Must be gnu make
+	}
     $CVS = 'cvs -Q';
     $CVSCO = 'co -P';
 
     # Set these proper values for your tinderbox server
-    $Tinderbox_server = 'tinderbox\@cvs.intra.blender.nl';
+    $Tinderbox_server = 'tinderbox\@xserve.blender.org';
 
     # These shouldn't really need to be changed
     $BuildSleep = 300; # Minimum wait period from start of build to start
@@ -114,10 +118,11 @@ sub InitVars {
     $BuildTree = '';
     $BuildTag = '';
     $BuildName = '';
-    $Topsrcdir = 'source';
+    $Topsrcdir = 'blender/source';
+    $Topinterndir = 'blender/intern';
     $BuildObjDir = '';
     $BuildObjName = '';
-    $ConfigGuess = './source/tools/guess/guessconfig';
+    $ConfigGuess = './blender/source/tools/guess/guessconfig';
     $GuessConfig = `cat /tmp/.nanguess`; #'NotSetYet';
     chomp($GuessConfig);
 	$SaveDate = `date +%Y%m%d`;
@@ -133,17 +138,18 @@ sub ConditionalArgs {
 		} elsif ($UNAME eq 'Linux') {
 			$FE = 'blendercreator,Dblendercreator,blenderpublisher,Dblenderpublisher,blenderplugin,blenderpluginXPCOM'; 
 		} else {
-			$FE = 'blendercreator,Dblendercreator,blenderpublisher,Dblenderpublisher,blenderplugin'; 
+			$FE = 'blendercreator'; 
 		}
-		$BuildModule = 'source release';
+		$BuildModule = 'blender';
     }
     $CVSCO .= " -r $BuildTag" if ( $BuildTag ne '');
 } #EndSub-ConditionalArgs
 
 sub SetupEnv {
     umask(0);
-    $ENV{"CVSROOT"} = ':pserver:tinderbox@cvs.intra.blender.nl:/home/cvs';
-    $ENV{"SRCHOME"} = "$ENV{'HOME'}/blender";
+    $ENV{"CVSROOT"} = ':pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender';
+    $ENV{"NANBLENDERHOME"} = "$ENV{'HOME'}/develop/blender";
+    $ENV{"SRCHOME"} = "$ENV{'HOME'}/develop/blender/source";
     $ENV{"MAKEFLAGS"} = "-w -I $ENV{'SRCHOME'} --no-print-directory";
 } #EndSub-SetupEnv
 
@@ -295,15 +301,6 @@ sub BuildIt {
 	}
 	close (GETOBJ); 
 	
-	print "$CVS $CVSCO lib/$GuessConfig lib/java\n";
-	print LOG "$CVS $CVSCO lib/$GuessConfig lib/java\n";
-	open (PULL, "$CVS $CVSCO lib/$GuessConfig lib/java 2>&1 |\n") || die"open: $!\n";
-	while (<PULL>) {
-	    print $_;
-	    print LOG $_;
-	}
-	close(PULL);
-
 	# HANS: fix ranlib muck on osx
 	if ($UNAME eq 'Darwin') {
 		print "HANS: fix ranlib muck lib/$GuessConfig\n";
@@ -316,7 +313,24 @@ sub BuildIt {
 		close(PULL);
 	}
 
+	chdir($Topinterndir) || die "chdir($Topinterndir): $!\n";
+	print `pwd` . " -> chdir($Topinterndir)\n";
+
+	my $MakeCmd = "$Make MAKE='$Make' all 2>&1";
+	print "$MakeCmd\n";
+	print LOG "$MakeCmd |\n";
+	open(BUILD, "$MakeCmd |\n");
+	while (<BUILD>) {
+	    print $_;
+	    print LOG $_;
+	}
+	close(BUILD);
+
+	chdir("$StartDir") || die "Couldn't enter $StartDir";
+    	chdir("develop") || die "Couldn't enter develop";
+
 	chdir($Topsrcdir) || die "chdir($Topsrcdir): $!\n";
+	print `pwd` . " -> chdir($Topsrcdir)\n";
 
 	@felist = split(/,/, $FE);
 
@@ -329,7 +343,9 @@ sub BuildIt {
 
 	if ($BuildClassic) {
 	} else {
-		my $MakeCmd = "$Make MAKE='$Make' all 2>&1 && $Make MAKE='$Make' debug 2>&1 && $Make MAKE='$Make' release 2>&1";
+		#my $MakeCmd = "$Make MAKE='$Make' all 2>&1 && $Make MAKE='$Make' debug 2>&1 && $Make MAKE='$Make' release 2>&1";
+		my $MakeCmd = "$Make MAKE='$Make' all 2>&1";
+		print "$MakeCmd\n";
 		print LOG "$MakeCmd |\n";
 		open(BUILD, "$MakeCmd |\n");
 		while (<BUILD>) {
