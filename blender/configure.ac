@@ -13,6 +13,10 @@ dnl --------------------
   AC_CANONICAL_SYSTEM
   AM_INIT_AUTOMAKE([blender-creator], [2.26])
 
+dnl check for the platform make
+AC_PATH_PROGS(U_MAKE, gmake gnumake, make)
+AC_SUBST(U_MAKE)
+
 dnl -------------------
 dnl Checks for programs
 dnl -------------------
