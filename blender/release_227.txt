@@ -12,9 +12,12 @@ All platforms:
 
 - A restyled userpreferences menu, which adds more space for all the new buttons.
 
-- autoskinning for Armatures, when parenting a Mesh to an Armature it gives a menu.
+- Autoskinning for Armatures, when parenting a Mesh to an Armature it gives a menu.
 
-- shadowbuffers now can have any size (with number-button)
+- Shadowbuffers now can have any size (with number-button)
+
+- Hotkeys are added for subsurfing objects. Shift-OKEY toggles subsurf mode for an object
+  and Ctrl-ONEKEY to Ctrl-FOURKEY will set the subsurf division with the keyboard.
 
 - Freetype2 support added for importing almost every font format for a 3D text object.
 
@@ -53,12 +56,13 @@ Win32 only:
 
 - New application and installer icons.
 
-- Clipboard support to copy/paste text from and to the texteditor. Try with alt-shift-c
-  and alt-shift-v.
+- Clipboard support to copy/paste text from and to the texteditor.
+  Try with Alt-Shift-CKEY and Alt-Shift-VKEY.
 
 - A button has been added to the top header which allows runtime switching between
-  windowed and fullscreen mode. Commandline options -w/-W for these two screenmodes are
-  also available.
+  windowed and fullscreen mode. Hotkeys for switching are Alt-DOWNARROWKEY for windowed
+  and Alt-UPARROWKEY for fullscreen mode. Commandline options -w/-W for the two modes
+  are also available.
 
 - During animation playback, the framenumber gets displayed in the animwindow header.
 
