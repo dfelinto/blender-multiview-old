@@ -46,7 +46,25 @@
 
 /*
  * $Log$
+ * Revision 1.4  2004/03/22 22:01:49  jesterking
+ * [GameEngine] Commit all Kester's changes made to the gameengine to restore 2.25 like physics.
+ * [SCons] Build with Solid as default when enabling the gameengine in the build process
+ * [SCons] Build solid and qhull from the extern directory and link statically against them
+ *
+ * That was about it.
+ *
+ * There are a few things that needs double checking:
+ *
+ * * Makefiles
+ * * Projectfiles
+ * * All the other systems than Linux and Windows on which the build (with scons) has been successfully tested.
+ *
+ * Revision 1.1.1.1  2003/08/10 20:22:32  desaster
+ * Import of Blender/cvs 2003/08/10
+ *
  * Revision 1.3  2002/11/25 12:02:14  mein
+ *
+ *
  * updated .c files to include:
  * #ifdef HAVE_CONFIG_H
  * #include <config.h>
