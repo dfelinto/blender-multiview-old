@@ -34,8 +34,24 @@
 
 require 5.000;
 
+# globals
+use vars qw( $Home @Pwd $Mymtime $SaveDate $Hostname $Mailer);
+
 use Cwd;
-use Mail::Send;
+
+# check which mail system we're going to use
+eval "use Mail::Send";
+if ($@) {
+	eval "use Net::SMTP";
+	if ($@) {
+		die "install Mail::Send or Net::SMTP\n";
+	} else {
+		$Mailer = 'Net::SMTP';
+	}
+} else {
+	$Mailer = 'Mail::Send';
+}
+
 use Sys::Hostname;
 use File::Compare;
 use File::Copy;
@@ -43,9 +59,6 @@ use File::Copy;
 
 # config section variables
 use vars qw( $SEMA $VERSION $UNAME );
-
-# globals
-use vars qw( $Home @Pwd $Mymtime $SaveDate $Hostname );
 
 &gethome;
 
@@ -74,6 +87,49 @@ sub justme {
 		close SEMA;
 	}
 } #EndSub-justme
+
+
+sub SendMail{
+	my ($subject, $body) = @_;
+
+	if ($Mailer eq 'Net::SMTP')
+	{
+		if (defined $ENV{"SMTP_SERVER"})
+		{
+			$msg = Net::SMTP->new($ENV{'SMTP_SERVER'}, Hello => 'localhost');
+		} else {
+			$msg = Net::SMTP->new('localhost', Hello => 'localhost');
+		}
+
+		if (defined $msg) {
+			$msg->mail($ENV{USER});
+			$msg->to($Tinderbox_server);
+
+			$msg->data();
+			$msg->datasend("Subject: $subject\n");
+			$msg->datasend("From: $ENV{USER}\n");
+			$msg->datasend("To: $Tinderbox_server\n");
+			$msg->datasend("\n");
+
+			$msg->datasend("$body\n");
+			$msg->quit;
+		} else {
+			die "Set the environment variable SMTP_SERVER to your outgoing mail server\n";
+		}
+	} else {
+        	$msg = new Mail::Send;
+
+        	$msg->subject($subject); 
+        	$msg->to($Tinderbox_server);
+		# use the command below if you want Mail::Send to use Net::SMTP instead
+		# of talking to mail or sendmail directly
+        	# $fh = $msg->open('smtp', Server => $ENV{"SMTP_SERVER"}, Hello => 'localhost');
+        	$fh = $msg->open;
+
+		print $fh "$body\n";
+		$fh->close;
+	}
+} #EndSub-SendMail
 
 sub gethome {
 	@Pwd = getpwuid($<);
@@ -225,7 +281,7 @@ sub test_thesame {
 }  #EndSub-test_thesame
 
 sub BuildIt {
-    my ($fe, @felist, $EarlyExit, $LastTime, $StartTimeStr);
+    my ($fe, @felist, $EarlyExit, $LastTime, $StartTimeStr, $Message);
 	my ($DateNow, $hourmin);
 
     $StartDir = getcwd();
@@ -499,36 +555,27 @@ sub BuildIt {
 # This was replaced by a perl 'port' of the above, writen by 
 # preed@netscape.com; good things: no need for system() call, and now it's
 # all in perl, so we don't have to do OS checking like before.
-        $msg = new Mail::Send;
-
-        $msg->subject("Tinderbox Report"); 
-        $msg->to($Tinderbox_server);
-        $fh = $msg->open;
 
 	open(LOG, "$logfile") || die "Couldn't open logfile: $!\n";
-	    
-	while (<LOG>) {
-	    $q = 0;
-	    
-	    for (;;) {
-		$val = $q * 1000;
-		$Output = substr($_, $val, 1000);
-		
-		last if $Output eq undef;
-		
-		$Output =~ s/^\.$//g;
-		$Output =~ s/\n//g;
-		print $fh "$Output\n";
-		$q++;
-	    } #EndFor
-		
-	} #EndWhile
-	    
-	close(LOG);
-        $fh->close;
 
+	while (<LOG>) {
+		for ($q=0;;$q++) {
+			$val = $q * 1000;
+			$Output = substr($_, $val, 1000);
+
+			last if $Output eq undef;
+
+			$Output =~ s/^\.$//g;
+			$Output =~ s/\n//g;
+			$Message .= "$Output\n";
+		} #EndFor
+	} #EndWhile
+
+	close(LOG);
 	unlink("$logfile");
-	
+
+	&SendMail("Tinderbox Report", $Message);
+
 	# if this is a test run, set early_exit to 0. 
 	#This mean one loop of execution
 	$EarlyExit++ if ($BuildOnce);
@@ -547,26 +594,23 @@ sub CVSTime {
 } #EndSub-CVSTime
 
 sub StartBuild {
-    my($fe, @felist);
+    my($fe, @felist, $message);
 
     @felist = split(/,/, $FE);
 
-    $msg = new Mail::Send;
-    $msg->subject("Tinderbox Report: Startbuildlog");
-    $msg->to($Tinderbox_server);
-    $fh = $msg->open;
     foreach $fe ( @felist ) {
-		print $fh "\n";
-		print $fh "tinderbox: tree: $BuildTree\n";
-		print $fh "tinderbox: builddate: $StartTime\n";
-		print $fh "tinderbox: status: building\n";
-		print $fh "tinderbox: build: $BuildName ($Hostname) $BuildType $fe\n";
-		print $fh "tinderbox: errorparser: unix\n";
-		print $fh "tinderbox: buildfamily: unix\n";
-		print $fh "tinderbox: END\n";
-		print $fh "\n";
+		$message .= "\n";
+		$message .= "tinderbox: tree: $BuildTree\n";
+		$message .= "tinderbox: builddate: $StartTime\n";
+		$message .= "tinderbox: status: building\n";
+		$message .= "tinderbox: build: $BuildName ($Hostname) $BuildType $fe\n";
+		$message .= "tinderbox: errorparser: unix\n";
+		$message .= "tinderbox: buildfamily: unix\n";
+		$message .= "tinderbox: END\n";
+		$message .= "\n";
     }
-    $fh->close;
+
+    &SendMail("Tinderbox Report: Startbuildlog", $message);
 	print LOG "StartBuildLog mailed to $Tinderbox_server\n";
 } #EndSub-StartBuild
 
