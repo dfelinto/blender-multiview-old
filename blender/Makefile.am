@@ -20,12 +20,12 @@ else
 endif
 
 if BlenderGAME
-MACPLAYER=blenderplayer.app
 PLAYER=blenderplayer
 else
-MACPLAYER=
 PLAYER=
 endif
+
+bin_PROGRAMS = blender $(PLAYER)
 
 if BlenderPLUGIN
 
@@ -46,29 +46,44 @@ endif
 ## Assuming no reason to build creator anymore lets just call publisher blender
 if CARBON
 
-bin_PROGRAMS = blender.app $(MACPLAYER)
+blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config -framework OpenGL -framework AGL -framework Carbon
 
-blender_app_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config -framework OpenGL -framework AGL -framework Carbon
+blender_SOURCES =
 
-blender_app_SOURCES =
+blenderplayer_SOURCES =
 
-blenderplayer_app_SOURCES =
-
-blender_app_LDADD = \
+blender_LDADD = \
 	source/libblender_source.la \
 	$(internlibs) \
 	$(blenpythonlib) \
 	-lpython@PYTHON_VERSION@
 
-blenderplayer_app_LDADD = \
+blenderplayer_LDADD = \
 	source/libblender_player.la \
 	$(internlibs) \
 	$(blenpythonlib) \
 	-lpython@PYTHON_VERSION@
 
-else
+all-local: 
+	@for bundle in $(bin_PROGRAMS); do APPLICATION=$$bundle $(MAKE) bundle; done
 
-bin_PROGRAMS = blender $(PLAYER)
+bundle:
+	@# set up directory structure for the OSX aplication bundle
+	@echo "---> creating directory structure for $(APPLICATION)"
+	@rm -rf $(APPLICATION).app
+	@cp -R $(top_srcdir)/source/darwin/$(APPLICATION).app .
+	@cat $(top_srcdir)/source/darwin/$(APPLICATION).app/Contents/Info.plist | \
+		sed s/VERSION/`cat $(top_srcdir)/release/VERSION`/ | \
+		sed s/DATE/`date +'%Y-%b-%d'`/ > $(APPLICATION).app/Contents/Info.plist
+	@echo "---> copying binary"
+	@cp $(APPLICATION) $(APPLICATION).app/Contents/MacOS/
+	@echo "---> adding excutable attributes"
+	@chmod +x $(APPLICATION).app/Contents/MacOS/$(APPLICATION)
+	@echo "---> removing CVS directories and Mac hidden files from distribution"
+	@find $(APPLICATION).app -name CVS -prune -exec rm -rf {} \;
+	@find $(APPLICATION).app -name .DS_Store -exec rm -f {} \;
+
+else
 
 blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
          $(X_LIBS)
@@ -88,5 +103,6 @@ blenderplayer_LDADD = \
 	$(internlibs) \
 	$(blenpythonlib) \
 	-lpython@PYTHON_VERSION@
+
 
 endif
