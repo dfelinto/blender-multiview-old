@@ -19,6 +19,10 @@ libblender_api2_2x_la_SOURCES = \
   Lamp.h \
   Curve.c \
   Curve.h \
+  Armature.c \
+  Armature.h \
+  Bone.c \
+  Bone.h \
   Image.c \
   Image.h \
   Window.c \
