@@ -341,6 +341,7 @@ AC_CONFIG_FILES([Makefile
 		source/blender/img/Makefile
 		source/blender/inflate/Makefile
 		source/blender/makesdna/Makefile
+		source/blender/makesdna/intern/Makefile
 		source/blender/misc/Makefile
 		source/blender/radiosity/Makefile
 		source/blender/readblenfile/Makefile
