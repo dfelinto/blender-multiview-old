@@ -153,53 +153,58 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libphysics.a
+noinst_LIBRARIES = libgameblender_physics.la
 
 
 #there are some test prgrams under sumo/fuzzics/sample directory... if anyome wants to build them they should modify this file
-libphysics_a_SOURCES = \
-		Sumo/SumoPhysicsController.cpp \
-		Sumo/SumoPhysicsEnvironment.cpp \
-		Sumo/Fuzzics/src/SM_FhObject.cpp \
-		Sumo/Fuzzics/src/SM_Scene.cpp \
-		Sumo/Fuzzics/src/SM_Object.cpp \
-		common/PHY_IMotionState.cpp \
-		common/PHY_IPhysicsController.cpp \
-		common/PHY_IPhysicsEnvironment.cpp \
-		BlOde/OdePhysicsController.cpp \
-		BlOde/OdePhysicsEnvironment.cpp \
-		Dummy/DummyPhysicsEnvironment.cpp
+libgameblender_physics_la_SOURCES = \
+	Sumo/SumoPhysicsController.cpp \
+	Sumo/SumoPhysicsEnvironment.cpp \
+	Sumo/Fuzzics/src/SM_FhObject.cpp \
+	Sumo/Fuzzics/src/SM_Scene.cpp \
+	Sumo/Fuzzics/src/SM_Object.cpp \
+	common/PHY_IMotionState.cpp \
+	common/PHY_IPhysicsController.cpp \
+	common/PHY_IPhysicsEnvironment.cpp \
+	BlOde/OdePhysicsController.cpp \
+	BlOde/OdePhysicsEnvironment.cpp \
+	Dummy/DummyPhysicsEnvironment.cpp
 
 
-INCLUDES = -I$(top_srcdir)/source/gameengine/Physics/Sumo/Fuzzics/include -I$(top_srcdir)/source/gameengine/Physics/common -I$(top_srcdir)/source/gameengine/Physics/Sumo/include -I$(top_srcdir)/intern/moto/include -I$(top_srcdir)/source/ode/include
+INCLUDES = -I$(top_srcdir)/source/gameengine/Physics/Sumo/Fuzzics/include \
+	-I$(top_srcdir)/source/gameengine/Physics/common \
+	-I$(top_srcdir)/source/gameengine/Physics/Sumo/include \
+	-I$(top_srcdir)/intern/moto/include \
+	-I$(top_srcdir)/source/ode/include
+
 subdir = source/gameengine/Physics
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libphysics_a_AR = $(AR) cru
-libphysics_a_LIBADD =
-am_libphysics_a_OBJECTS = SumoPhysicsController.$(OBJEXT) \
-	SM_FhObject.$(OBJEXT) SM_Scene.$(OBJEXT) SM_Object.$(OBJEXT) \
-	PHY_IMotionState.$(OBJEXT) PHY_IPhysicsController.$(OBJEXT) \
-	PHY_IPhysicsEnvironment.$(OBJEXT) \
-	OdePhysicsController.$(OBJEXT) OdePhysicsEnvironment.$(OBJEXT) \
-	DummyPhysicsEnvironment.$(OBJEXT)
-libphysics_a_OBJECTS = $(am_libphysics_a_OBJECTS)
+libgameblender_physics_la_AR = $(AR) cru
+libgameblender_physics_la_LIBADD =
+am_libgameblender_physics_la_OBJECTS = SumoPhysicsController.lo \
+	SM_FhObject.lo SM_Scene.lo SM_Object.lo PHY_IMotionState.lo \
+	PHY_IPhysicsController.lo PHY_IPhysicsEnvironment.lo \
+	OdePhysicsController.lo OdePhysicsEnvironment.lo \
+	DummyPhysicsEnvironment.lo
+libgameblender_physics_la_OBJECTS = \
+	$(am_libgameblender_physics_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/DummyPhysicsEnvironment.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/OdePhysicsController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/OdePhysicsEnvironment.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/PHY_IMotionState.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/PHY_IPhysicsController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/PHY_IPhysicsEnvironment.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SM_FhObject.Po ./$(DEPDIR)/SM_Object.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SM_Scene.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SumoPhysicsController.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/DummyPhysicsEnvironment.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/OdePhysicsController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/OdePhysicsEnvironment.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/PHY_IMotionState.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/PHY_IPhysicsController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/PHY_IPhysicsEnvironment.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SM_FhObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SM_Object.Plo ./$(DEPDIR)/SM_Scene.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SumoPhysicsController.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -208,9 +213,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libphysics_a_SOURCES)
+DIST_SOURCES = $(libgameblender_physics_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libphysics_a_SOURCES)
+SOURCES = $(libgameblender_physics_la_SOURCES)
 
 all: all-am
 
@@ -226,20 +231,20 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-SumoPhysicsController.$(OBJEXT): Sumo/SumoPhysicsController.cpp
-SM_FhObject.$(OBJEXT): Sumo/Fuzzics/src/SM_FhObject.cpp
-SM_Scene.$(OBJEXT): Sumo/Fuzzics/src/SM_Scene.cpp
-SM_Object.$(OBJEXT): Sumo/Fuzzics/src/SM_Object.cpp
-PHY_IMotionState.$(OBJEXT): common/PHY_IMotionState.cpp
-PHY_IPhysicsController.$(OBJEXT): common/PHY_IPhysicsController.cpp
-PHY_IPhysicsEnvironment.$(OBJEXT): common/PHY_IPhysicsEnvironment.cpp
-OdePhysicsController.$(OBJEXT): BlOde/OdePhysicsController.cpp
-OdePhysicsEnvironment.$(OBJEXT): BlOde/OdePhysicsEnvironment.cpp
-DummyPhysicsEnvironment.$(OBJEXT): Dummy/DummyPhysicsEnvironment.cpp
-libphysics.a: $(libphysics_a_OBJECTS) $(libphysics_a_DEPENDENCIES) 
-	-rm -f libphysics.a
-	$(libphysics_a_AR) libphysics.a $(libphysics_a_OBJECTS) $(libphysics_a_LIBADD)
-	$(RANLIB) libphysics.a
+SumoPhysicsController.lo: Sumo/SumoPhysicsController.cpp
+SM_FhObject.lo: Sumo/Fuzzics/src/SM_FhObject.cpp
+SM_Scene.lo: Sumo/Fuzzics/src/SM_Scene.cpp
+SM_Object.lo: Sumo/Fuzzics/src/SM_Object.cpp
+PHY_IMotionState.lo: common/PHY_IMotionState.cpp
+PHY_IPhysicsController.lo: common/PHY_IPhysicsController.cpp
+PHY_IPhysicsEnvironment.lo: common/PHY_IPhysicsEnvironment.cpp
+OdePhysicsController.lo: BlOde/OdePhysicsController.cpp
+OdePhysicsEnvironment.lo: BlOde/OdePhysicsEnvironment.cpp
+DummyPhysicsEnvironment.lo: Dummy/DummyPhysicsEnvironment.cpp
+libgameblender_physics.la: $(libgameblender_physics_la_OBJECTS) $(libgameblender_physics_la_DEPENDENCIES) 
+	-rm -f libgameblender_physics.la
+	$(libgameblender_physics_la_AR) libgameblender_physics.la $(libgameblender_physics_la_OBJECTS) $(libgameblender_physics_la_LIBADD)
+	$(RANLIB) libgameblender_physics.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -247,16 +252,16 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DummyPhysicsEnvironment.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OdePhysicsController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OdePhysicsEnvironment.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PHY_IMotionState.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PHY_IPhysicsController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PHY_IPhysicsEnvironment.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SM_FhObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SM_Object.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SM_Scene.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SumoPhysicsController.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DummyPhysicsEnvironment.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OdePhysicsController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OdePhysicsEnvironment.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PHY_IMotionState.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PHY_IPhysicsController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PHY_IPhysicsEnvironment.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SM_FhObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SM_Object.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SM_Scene.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SumoPhysicsController.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

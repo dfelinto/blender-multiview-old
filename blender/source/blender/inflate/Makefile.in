@@ -153,28 +153,30 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_inflate.a
+noinst_LIBRARIES = libblender_inflate.la
 
-libblender_inflate_a_SOURCES = \
-		intern/BLO_inflate.c
+libblender_inflate_la_SOURCES = \
+	intern/BLO_inflate.c
 
 
-INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging -I$(top_srcdir)/source/blender/readstreamglue
+INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging \
+	-I$(top_srcdir)/source/blender/readstreamglue
+
 subdir = source/blender/inflate
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_inflate_a_AR = $(AR) cru
-libblender_inflate_a_LIBADD =
-am_libblender_inflate_a_OBJECTS = BLO_inflate.$(OBJEXT)
-libblender_inflate_a_OBJECTS = $(am_libblender_inflate_a_OBJECTS)
+libblender_inflate_la_AR = $(AR) cru
+libblender_inflate_la_LIBADD =
+am_libblender_inflate_la_OBJECTS = BLO_inflate.lo
+libblender_inflate_la_OBJECTS = $(am_libblender_inflate_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_inflate.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_inflate.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -182,9 +184,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_inflate_a_SOURCES)
+DIST_SOURCES = $(libblender_inflate_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_inflate_a_SOURCES)
+SOURCES = $(libblender_inflate_la_SOURCES)
 
 all: all-am
 
@@ -200,11 +202,11 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-BLO_inflate.$(OBJEXT): intern/BLO_inflate.c
-libblender_inflate.a: $(libblender_inflate_a_OBJECTS) $(libblender_inflate_a_DEPENDENCIES) 
-	-rm -f libblender_inflate.a
-	$(libblender_inflate_a_AR) libblender_inflate.a $(libblender_inflate_a_OBJECTS) $(libblender_inflate_a_LIBADD)
-	$(RANLIB) libblender_inflate.a
+BLO_inflate.lo: intern/BLO_inflate.c
+libblender_inflate.la: $(libblender_inflate_la_OBJECTS) $(libblender_inflate_la_DEPENDENCIES) 
+	-rm -f libblender_inflate.la
+	$(libblender_inflate_la_AR) libblender_inflate.la $(libblender_inflate_la_OBJECTS) $(libblender_inflate_la_LIBADD)
+	$(RANLIB) libblender_inflate.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -212,7 +214,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_inflate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_inflate.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

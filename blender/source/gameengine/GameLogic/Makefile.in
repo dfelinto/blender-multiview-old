@@ -153,93 +153,95 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libgamelogic.a
+noinst_LIBRARIES = libgameblender_gamelogic.la
 
-libgamelogic_a_SOURCES = \
-		SCA_ANDController.cpp \
-		SCA_AlwaysEventManager.cpp \
-		SCA_AlwaysSensor.cpp \
-		SCA_EventManager.cpp \
-		SCA_ExpressionController.cpp \
-		SCA_IActuator.cpp \
-		SCA_IController.cpp \
-		SCA_IInputDevice.cpp \
-		SCA_ILogicBrick.cpp \
-		SCA_IObject.cpp \
-		SCA_IScene.cpp \
-		SCA_ISensor.cpp \
-		SCA_KeyboardManager.cpp \
-		SCA_KeyboardSensor.cpp \
-		SCA_LogicManager.cpp \
-		SCA_MouseManager.cpp \
-		SCA_MouseSensor.cpp \
-		SCA_ORController.cpp \
-		SCA_PropertyActuator.cpp \
-		SCA_PropertyEventManager.cpp \
-		SCA_PropertySensor.cpp \
-		SCA_PythonController.cpp \
-		SCA_RandomActuator.cpp \
-		SCA_RandomEventManager.cpp \
-		SCA_RandomNumberGenerator.cpp \
-		SCA_RandomSensor.cpp \
-		SCA_TimeEventManager.cpp
+libgameblender_gamelogic_la_SOURCES = \
+	SCA_ANDController.cpp \
+	SCA_AlwaysEventManager.cpp \
+	SCA_AlwaysSensor.cpp \
+	SCA_EventManager.cpp \
+	SCA_ExpressionController.cpp \
+	SCA_IActuator.cpp \
+	SCA_IController.cpp \
+	SCA_IInputDevice.cpp \
+	SCA_ILogicBrick.cpp \
+	SCA_IObject.cpp \
+	SCA_IScene.cpp \
+	SCA_ISensor.cpp \
+	SCA_KeyboardManager.cpp \
+	SCA_KeyboardSensor.cpp \
+	SCA_LogicManager.cpp \
+	SCA_MouseManager.cpp \
+	SCA_MouseSensor.cpp \
+	SCA_ORController.cpp \
+	SCA_PropertyActuator.cpp \
+	SCA_PropertyEventManager.cpp \
+	SCA_PropertySensor.cpp \
+	SCA_PythonController.cpp \
+	SCA_RandomActuator.cpp \
+	SCA_RandomEventManager.cpp \
+	SCA_RandomNumberGenerator.cpp \
+	SCA_RandomSensor.cpp \
+	SCA_TimeEventManager.cpp
 
 
-INCLUDES = -I$(top_srcdir)/source/gameengine/Expressions -I$(top_srcdir)/intern/string -I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ -I$(top_srcdir)/intern/moto/include
+INCLUDES = -I$(top_srcdir)/source/gameengine/Expressions \
+	-I$(top_srcdir)/intern/string \
+	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
+	-I$(top_srcdir)/intern/moto/include
+
 subdir = source/gameengine/GameLogic
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libgamelogic_a_AR = $(AR) cru
-libgamelogic_a_LIBADD =
-am_libgamelogic_a_OBJECTS = SCA_ANDController.$(OBJEXT) \
-	SCA_AlwaysEventManager.$(OBJEXT) SCA_AlwaysSensor.$(OBJEXT) \
-	SCA_EventManager.$(OBJEXT) SCA_ExpressionController.$(OBJEXT) \
-	SCA_IActuator.$(OBJEXT) SCA_IController.$(OBJEXT) \
-	SCA_ILogicBrick.$(OBJEXT) SCA_IObject.$(OBJEXT) \
-	SCA_IScene.$(OBJEXT) SCA_ISensor.$(OBJEXT) \
-	SCA_KeyboardManager.$(OBJEXT) SCA_KeyboardSensor.$(OBJEXT) \
-	SCA_LogicManager.$(OBJEXT) SCA_MouseManager.$(OBJEXT) \
-	SCA_MouseSensor.$(OBJEXT) SCA_ORController.$(OBJEXT) \
-	SCA_PropertyActuator.$(OBJEXT) \
-	SCA_PropertyEventManager.$(OBJEXT) SCA_PropertySensor.$(OBJEXT) \
-	SCA_PythonController.$(OBJEXT) SCA_RandomActuator.$(OBJEXT) \
-	SCA_RandomEventManager.$(OBJEXT) \
-	SCA_RandomNumberGenerator.$(OBJEXT) SCA_RandomSensor.$(OBJEXT) \
-	SCA_TimeEventManager.$(OBJEXT)
-libgamelogic_a_OBJECTS = $(am_libgamelogic_a_OBJECTS)
+libgameblender_gamelogic_la_AR = $(AR) cru
+libgameblender_gamelogic_la_LIBADD =
+am_libgameblender_gamelogic_la_OBJECTS = SCA_ANDController.lo \
+	SCA_AlwaysEventManager.lo SCA_AlwaysSensor.lo \
+	SCA_EventManager.lo SCA_ExpressionController.lo \
+	SCA_IActuator.lo SCA_IController.lo SCA_ILogicBrick.lo \
+	SCA_IObject.lo SCA_IScene.lo SCA_ISensor.lo \
+	SCA_KeyboardManager.lo SCA_KeyboardSensor.lo \
+	SCA_LogicManager.lo SCA_MouseManager.lo SCA_MouseSensor.lo \
+	SCA_ORController.lo SCA_PropertyActuator.lo \
+	SCA_PropertyEventManager.lo SCA_PropertySensor.lo \
+	SCA_PythonController.lo SCA_RandomActuator.lo \
+	SCA_RandomEventManager.lo SCA_RandomNumberGenerator.lo \
+	SCA_RandomSensor.lo SCA_TimeEventManager.lo
+libgameblender_gamelogic_la_OBJECTS = \
+	$(am_libgameblender_gamelogic_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/SCA_ANDController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_AlwaysEventManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_AlwaysSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_EventManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_ExpressionController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_IActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_IController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_ILogicBrick.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_IObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_IScene.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_ISensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_KeyboardManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_KeyboardSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_LogicManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_MouseManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_MouseSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_ORController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_PropertyActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_PropertyEventManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_PropertySensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_PythonController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_RandomActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_RandomEventManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_RandomNumberGenerator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_RandomSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SCA_TimeEventManager.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/SCA_ANDController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_AlwaysEventManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_AlwaysSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_EventManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_ExpressionController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_IActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_IController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_ILogicBrick.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_IObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_IScene.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_ISensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_KeyboardManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_KeyboardSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_LogicManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_MouseManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_MouseSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_ORController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_PropertyActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_PropertyEventManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_PropertySensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_PythonController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_RandomActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_RandomEventManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_RandomNumberGenerator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_RandomSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SCA_TimeEventManager.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -248,9 +250,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libgamelogic_a_SOURCES)
+DIST_SOURCES = $(libgameblender_gamelogic_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libgamelogic_a_SOURCES)
+SOURCES = $(libgameblender_gamelogic_la_SOURCES)
 
 all: all-am
 
@@ -266,10 +268,10 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libgamelogic.a: $(libgamelogic_a_OBJECTS) $(libgamelogic_a_DEPENDENCIES) 
-	-rm -f libgamelogic.a
-	$(libgamelogic_a_AR) libgamelogic.a $(libgamelogic_a_OBJECTS) $(libgamelogic_a_LIBADD)
-	$(RANLIB) libgamelogic.a
+libgameblender_gamelogic.la: $(libgameblender_gamelogic_la_OBJECTS) $(libgameblender_gamelogic_la_DEPENDENCIES) 
+	-rm -f libgameblender_gamelogic.la
+	$(libgameblender_gamelogic_la_AR) libgameblender_gamelogic.la $(libgameblender_gamelogic_la_OBJECTS) $(libgameblender_gamelogic_la_LIBADD)
+	$(RANLIB) libgameblender_gamelogic.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -277,32 +279,32 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ANDController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_AlwaysEventManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_AlwaysSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_EventManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ExpressionController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_IActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_IController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ILogicBrick.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_IObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_IScene.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ISensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_KeyboardManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_KeyboardSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_LogicManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_MouseManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_MouseSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ORController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_PropertyActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_PropertyEventManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_PropertySensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_PythonController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_RandomActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_RandomEventManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_RandomNumberGenerator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_RandomSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_TimeEventManager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ANDController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_AlwaysEventManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_AlwaysSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_EventManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ExpressionController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_IActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_IController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ILogicBrick.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_IObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_IScene.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ISensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_KeyboardManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_KeyboardSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_LogicManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_MouseManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_MouseSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_ORController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_PropertyActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_PropertyEventManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_PropertySensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_PythonController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_RandomActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_RandomEventManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_RandomNumberGenerator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_RandomSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCA_TimeEventManager.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

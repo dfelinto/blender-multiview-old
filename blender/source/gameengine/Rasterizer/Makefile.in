@@ -153,56 +153,59 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = librasterizer.a
+noinst_LIBRARIES = libgameblender_rasterizer.la
 
-librasterizer_a_SOURCES = \
-		RAS_BucketManager.cpp \
-		RAS_FramingManager.cpp \
-		RAS_IPolygonMaterial.cpp \
-		RAS_IRenderTools.cpp \
-		RAS_MaterialBucket.cpp \
-		RAS_MeshObject.cpp \
-		RAS_Polygon.cpp \
-		RAS_TexVert.cpp \
-		RAS_texmatrix.cpp \
-		RAS_OpenGLRasterizer/RAS_CheckVertexArrays.cpp \
-		RAS_OpenGLRasterizer/RAS_OpenGLRasterizer.cpp \
-		RAS_OpenGLRasterizer/RAS_VAOpenGLRasterizer.cpp
+libgameblender_rasterizer_la_SOURCES = \
+	RAS_BucketManager.cpp \
+	RAS_FramingManager.cpp \
+	RAS_IPolygonMaterial.cpp \
+	RAS_IRenderTools.cpp \
+	RAS_MaterialBucket.cpp \
+	RAS_MeshObject.cpp \
+	RAS_Polygon.cpp \
+	RAS_TexVert.cpp \
+	RAS_texmatrix.cpp \
+	RAS_OpenGLRasterizer/RAS_CheckVertexArrays.cpp \
+	RAS_OpenGLRasterizer/RAS_OpenGLRasterizer.cpp \
+	RAS_OpenGLRasterizer/RAS_VAOpenGLRasterizer.cpp
 
 
-INCLUDES = -I$(top_srcdir)/intern/moto/include -I$(top_srcdir)/intern/string -I$(top_srcdir)/source/kernel/gen_system
+INCLUDES = -I$(top_srcdir)/intern/moto/include \
+	-I$(top_srcdir)/intern/string \
+	-I$(top_srcdir)/source/kernel/gen_system
+
 subdir = source/gameengine/Rasterizer
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-librasterizer_a_AR = $(AR) cru
-librasterizer_a_LIBADD =
-am_librasterizer_a_OBJECTS = RAS_BucketManager.$(OBJEXT) \
-	RAS_FramingManager.$(OBJEXT) RAS_IPolygonMaterial.$(OBJEXT) \
-	RAS_IRenderTools.$(OBJEXT) RAS_MaterialBucket.$(OBJEXT) \
-	RAS_MeshObject.$(OBJEXT) RAS_Polygon.$(OBJEXT) \
-	RAS_TexVert.$(OBJEXT) RAS_texmatrix.$(OBJEXT) \
-	RAS_CheckVertexArrays.$(OBJEXT) RAS_OpenGLRasterizer.$(OBJEXT) \
-	RAS_VAOpenGLRasterizer.$(OBJEXT)
-librasterizer_a_OBJECTS = $(am_librasterizer_a_OBJECTS)
+libgameblender_rasterizer_la_AR = $(AR) cru
+libgameblender_rasterizer_la_LIBADD =
+am_libgameblender_rasterizer_la_OBJECTS = RAS_BucketManager.lo \
+	RAS_FramingManager.lo RAS_IPolygonMaterial.lo \
+	RAS_IRenderTools.lo RAS_MaterialBucket.lo RAS_MeshObject.lo \
+	RAS_Polygon.lo RAS_TexVert.lo RAS_texmatrix.lo \
+	RAS_CheckVertexArrays.lo RAS_OpenGLRasterizer.lo \
+	RAS_VAOpenGLRasterizer.lo
+libgameblender_rasterizer_la_OBJECTS = \
+	$(am_libgameblender_rasterizer_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/RAS_BucketManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_CheckVertexArrays.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_FramingManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_IPolygonMaterial.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_IRenderTools.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_MaterialBucket.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_MeshObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_OpenGLRasterizer.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_Polygon.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_TexVert.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_VAOpenGLRasterizer.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RAS_texmatrix.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/RAS_BucketManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_CheckVertexArrays.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_FramingManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_IPolygonMaterial.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_IRenderTools.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_MaterialBucket.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_MeshObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_OpenGLRasterizer.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_Polygon.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_TexVert.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_VAOpenGLRasterizer.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RAS_texmatrix.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -211,9 +214,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(librasterizer_a_SOURCES)
+DIST_SOURCES = $(libgameblender_rasterizer_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(librasterizer_a_SOURCES)
+SOURCES = $(libgameblender_rasterizer_la_SOURCES)
 
 all: all-am
 
@@ -229,16 +232,14 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-RAS_CheckVertexArrays.$(OBJEXT): \
-	RAS_OpenGLRasterizer/RAS_CheckVertexArrays.cpp
-RAS_OpenGLRasterizer.$(OBJEXT): \
-	RAS_OpenGLRasterizer/RAS_OpenGLRasterizer.cpp
-RAS_VAOpenGLRasterizer.$(OBJEXT): \
+RAS_CheckVertexArrays.lo: RAS_OpenGLRasterizer/RAS_CheckVertexArrays.cpp
+RAS_OpenGLRasterizer.lo: RAS_OpenGLRasterizer/RAS_OpenGLRasterizer.cpp
+RAS_VAOpenGLRasterizer.lo: \
 	RAS_OpenGLRasterizer/RAS_VAOpenGLRasterizer.cpp
-librasterizer.a: $(librasterizer_a_OBJECTS) $(librasterizer_a_DEPENDENCIES) 
-	-rm -f librasterizer.a
-	$(librasterizer_a_AR) librasterizer.a $(librasterizer_a_OBJECTS) $(librasterizer_a_LIBADD)
-	$(RANLIB) librasterizer.a
+libgameblender_rasterizer.la: $(libgameblender_rasterizer_la_OBJECTS) $(libgameblender_rasterizer_la_DEPENDENCIES) 
+	-rm -f libgameblender_rasterizer.la
+	$(libgameblender_rasterizer_la_AR) libgameblender_rasterizer.la $(libgameblender_rasterizer_la_OBJECTS) $(libgameblender_rasterizer_la_LIBADD)
+	$(RANLIB) libgameblender_rasterizer.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -246,18 +247,18 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_BucketManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_CheckVertexArrays.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_FramingManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_IPolygonMaterial.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_IRenderTools.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_MaterialBucket.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_MeshObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_OpenGLRasterizer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_Polygon.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_TexVert.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_VAOpenGLRasterizer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_texmatrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_BucketManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_CheckVertexArrays.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_FramingManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_IPolygonMaterial.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_IRenderTools.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_MaterialBucket.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_MeshObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_OpenGLRasterizer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_Polygon.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_TexVert.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_VAOpenGLRasterizer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RAS_texmatrix.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

@@ -153,35 +153,40 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_readstreamglue.a
+noinst_LIBRARIES = libblender_readstreamglue.la
 
-libblender_readstreamglue_a_SOURCES = \
-		intern/BLO_keyStore.c \
-		intern/BLO_readStreamGlue.c \
-		intern/BLO_readStreamGlueLoopBack.c
+libblender_readstreamglue_la_SOURCES = \
+	intern/BLO_keyStore.c \
+	intern/BLO_readStreamGlue.c \
+	intern/BLO_readStreamGlueLoopBack.c
 
 
-INCLUDES = -I$(top_srcdir)/intern/keymaker -I$(top_srcdir)/source/kernel/gen_messaging -I$(top_srcdir)/source/blender/blenloader -I$(top_srcdir)/source/blender/inflate -I$(top_srcdir)/source/blender/decrypt -I$(top_srcdir)/source/blender/verify
+INCLUDES = -I$(top_srcdir)/intern/keymaker \
+	-I$(top_srcdir)/source/kernel/gen_messaging \
+	-I$(top_srcdir)/source/blender/blenloader \
+	-I$(top_srcdir)/source/blender/inflate \
+	-I$(top_srcdir)/source/blender/decrypt \
+	-I$(top_srcdir)/source/blender/verify
+
 subdir = source/blender/readstreamglue
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_readstreamglue_a_AR = $(AR) cru
-libblender_readstreamglue_a_LIBADD =
-am_libblender_readstreamglue_a_OBJECTS = BLO_keyStore.$(OBJEXT) \
-	BLO_readStreamGlue.$(OBJEXT) \
-	BLO_readStreamGlueLoopBack.$(OBJEXT)
-libblender_readstreamglue_a_OBJECTS = \
-	$(am_libblender_readstreamglue_a_OBJECTS)
+libblender_readstreamglue_la_AR = $(AR) cru
+libblender_readstreamglue_la_LIBADD =
+am_libblender_readstreamglue_la_OBJECTS = BLO_keyStore.lo \
+	BLO_readStreamGlue.lo BLO_readStreamGlueLoopBack.lo
+libblender_readstreamglue_la_OBJECTS = \
+	$(am_libblender_readstreamglue_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_keyStore.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BLO_readStreamGlue.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BLO_readStreamGlueLoopBack.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_keyStore.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_readStreamGlue.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_readStreamGlueLoopBack.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -189,9 +194,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_readstreamglue_a_SOURCES)
+DIST_SOURCES = $(libblender_readstreamglue_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_readstreamglue_a_SOURCES)
+SOURCES = $(libblender_readstreamglue_la_SOURCES)
 
 all: all-am
 
@@ -207,14 +212,13 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-BLO_keyStore.$(OBJEXT): intern/BLO_keyStore.c
-BLO_readStreamGlue.$(OBJEXT): intern/BLO_readStreamGlue.c
-BLO_readStreamGlueLoopBack.$(OBJEXT): \
-	intern/BLO_readStreamGlueLoopBack.c
-libblender_readstreamglue.a: $(libblender_readstreamglue_a_OBJECTS) $(libblender_readstreamglue_a_DEPENDENCIES) 
-	-rm -f libblender_readstreamglue.a
-	$(libblender_readstreamglue_a_AR) libblender_readstreamglue.a $(libblender_readstreamglue_a_OBJECTS) $(libblender_readstreamglue_a_LIBADD)
-	$(RANLIB) libblender_readstreamglue.a
+BLO_keyStore.lo: intern/BLO_keyStore.c
+BLO_readStreamGlue.lo: intern/BLO_readStreamGlue.c
+BLO_readStreamGlueLoopBack.lo: intern/BLO_readStreamGlueLoopBack.c
+libblender_readstreamglue.la: $(libblender_readstreamglue_la_OBJECTS) $(libblender_readstreamglue_la_DEPENDENCIES) 
+	-rm -f libblender_readstreamglue.la
+	$(libblender_readstreamglue_la_AR) libblender_readstreamglue.la $(libblender_readstreamglue_la_OBJECTS) $(libblender_readstreamglue_la_LIBADD)
+	$(RANLIB) libblender_readstreamglue.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -222,9 +226,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_keyStore.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_readStreamGlue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_readStreamGlueLoopBack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_keyStore.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_readStreamGlue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_readStreamGlueLoopBack.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

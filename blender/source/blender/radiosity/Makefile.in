@@ -153,39 +153,46 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_radiosity.a
+noinst_LIBRARIES = libblender_radiosity.la
 
-libblender_radiosity_a_SOURCES = \
-		intern/source/raddisplay.c \
-		intern/source/radfactors.c \
-		intern/source/radio.c \
-		intern/source/radnode.c \
-		intern/source/radpostprocess.c \
-		intern/source/radpreprocess.c
+libblender_radiosity_la_SOURCES = \
+	intern/source/raddisplay.c \
+	intern/source/radfactors.c \
+	intern/source/radio.c \
+	intern/source/radnode.c \
+	intern/source/radpostprocess.c \
+	intern/source/radpreprocess.c
 
 
-INCLUDES = -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/blender/radiosity/extern/include -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/render/extern/include -I$(top_srcdir)/source/blender/misc
+INCLUDES = -I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/blender/radiosity/extern/include \
+	-I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/render/extern/include \
+	-I$(top_srcdir)/source/blender/misc
+
 subdir = source/blender/radiosity
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_radiosity_a_AR = $(AR) cru
-libblender_radiosity_a_LIBADD =
-am_libblender_radiosity_a_OBJECTS = raddisplay.$(OBJEXT) \
-	radfactors.$(OBJEXT) radio.$(OBJEXT) radnode.$(OBJEXT) \
-	radpostprocess.$(OBJEXT) radpreprocess.$(OBJEXT)
-libblender_radiosity_a_OBJECTS = $(am_libblender_radiosity_a_OBJECTS)
+libblender_radiosity_la_AR = $(AR) cru
+libblender_radiosity_la_LIBADD =
+am_libblender_radiosity_la_OBJECTS = raddisplay.lo radfactors.lo \
+	radio.lo radnode.lo radpostprocess.lo radpreprocess.lo
+libblender_radiosity_la_OBJECTS = $(am_libblender_radiosity_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/raddisplay.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/radfactors.Po ./$(DEPDIR)/radio.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/radnode.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/radpostprocess.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/radpreprocess.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/raddisplay.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/radfactors.Plo ./$(DEPDIR)/radio.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/radnode.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/radpostprocess.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/radpreprocess.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -193,9 +200,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_radiosity_a_SOURCES)
+DIST_SOURCES = $(libblender_radiosity_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_radiosity_a_SOURCES)
+SOURCES = $(libblender_radiosity_la_SOURCES)
 
 all: all-am
 
@@ -211,16 +218,16 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-raddisplay.$(OBJEXT): intern/source/raddisplay.c
-radfactors.$(OBJEXT): intern/source/radfactors.c
-radio.$(OBJEXT): intern/source/radio.c
-radnode.$(OBJEXT): intern/source/radnode.c
-radpostprocess.$(OBJEXT): intern/source/radpostprocess.c
-radpreprocess.$(OBJEXT): intern/source/radpreprocess.c
-libblender_radiosity.a: $(libblender_radiosity_a_OBJECTS) $(libblender_radiosity_a_DEPENDENCIES) 
-	-rm -f libblender_radiosity.a
-	$(libblender_radiosity_a_AR) libblender_radiosity.a $(libblender_radiosity_a_OBJECTS) $(libblender_radiosity_a_LIBADD)
-	$(RANLIB) libblender_radiosity.a
+raddisplay.lo: intern/source/raddisplay.c
+radfactors.lo: intern/source/radfactors.c
+radio.lo: intern/source/radio.c
+radnode.lo: intern/source/radnode.c
+radpostprocess.lo: intern/source/radpostprocess.c
+radpreprocess.lo: intern/source/radpreprocess.c
+libblender_radiosity.la: $(libblender_radiosity_la_OBJECTS) $(libblender_radiosity_la_DEPENDENCIES) 
+	-rm -f libblender_radiosity.la
+	$(libblender_radiosity_la_AR) libblender_radiosity.la $(libblender_radiosity_la_OBJECTS) $(libblender_radiosity_la_LIBADD)
+	$(RANLIB) libblender_radiosity.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -228,12 +235,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/raddisplay.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radfactors.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radio.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radnode.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radpostprocess.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radpreprocess.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/raddisplay.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radfactors.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radio.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radnode.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radpostprocess.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radpreprocess.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

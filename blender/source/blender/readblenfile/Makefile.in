@@ -153,34 +153,38 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_readblenfile.a
+noinst_LIBRARIES = libblender_readblenfile.la
 
-libblender_readblenfile_a_SOURCES = \
-		intern/BLO_readblenfile.c \
-		stub/BLO_readblenfileSTUB.c
+libblender_readblenfile_la_SOURCES = \
+	intern/BLO_readblenfile.c \
+	stub/BLO_readblenfileSTUB.c
 
 
 
 #note I'm unsure if the stub file should be included... better safe than sorry
-INCLUDES = -I$(top_srcdir)/source/blender/readstreamglue -I$(top_srcdir)/source/blender/blenloader -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/kernel/gen_messaging
+INCLUDES = -I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/source/blender/blenloader \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/source/kernel/gen_messaging
+
 subdir = source/blender/readblenfile
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_readblenfile_a_AR = $(AR) cru
-libblender_readblenfile_a_LIBADD =
-am_libblender_readblenfile_a_OBJECTS = BLO_readblenfile.$(OBJEXT) \
-	BLO_readblenfileSTUB.$(OBJEXT)
-libblender_readblenfile_a_OBJECTS = \
-	$(am_libblender_readblenfile_a_OBJECTS)
+libblender_readblenfile_la_AR = $(AR) cru
+libblender_readblenfile_la_LIBADD =
+am_libblender_readblenfile_la_OBJECTS = BLO_readblenfile.lo \
+	BLO_readblenfileSTUB.lo
+libblender_readblenfile_la_OBJECTS = \
+	$(am_libblender_readblenfile_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_readblenfile.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BLO_readblenfileSTUB.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_readblenfile.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_readblenfileSTUB.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -188,9 +192,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_readblenfile_a_SOURCES)
+DIST_SOURCES = $(libblender_readblenfile_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_readblenfile_a_SOURCES)
+SOURCES = $(libblender_readblenfile_la_SOURCES)
 
 all: all-am
 
@@ -206,12 +210,12 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-BLO_readblenfile.$(OBJEXT): intern/BLO_readblenfile.c
-BLO_readblenfileSTUB.$(OBJEXT): stub/BLO_readblenfileSTUB.c
-libblender_readblenfile.a: $(libblender_readblenfile_a_OBJECTS) $(libblender_readblenfile_a_DEPENDENCIES) 
-	-rm -f libblender_readblenfile.a
-	$(libblender_readblenfile_a_AR) libblender_readblenfile.a $(libblender_readblenfile_a_OBJECTS) $(libblender_readblenfile_a_LIBADD)
-	$(RANLIB) libblender_readblenfile.a
+BLO_readblenfile.lo: intern/BLO_readblenfile.c
+BLO_readblenfileSTUB.lo: stub/BLO_readblenfileSTUB.c
+libblender_readblenfile.la: $(libblender_readblenfile_la_OBJECTS) $(libblender_readblenfile_la_DEPENDENCIES) 
+	-rm -f libblender_readblenfile.la
+	$(libblender_readblenfile_la_AR) libblender_readblenfile.la $(libblender_readblenfile_la_OBJECTS) $(libblender_readblenfile_la_LIBADD)
+	$(RANLIB) libblender_readblenfile.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -219,8 +223,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_readblenfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_readblenfileSTUB.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_readblenfile.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_readblenfileSTUB.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

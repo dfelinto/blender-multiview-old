@@ -153,65 +153,70 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libexpressions.a
+noinst_LIBRARIES = libgameblender_expressions.la
 
-libexpressions_a_SOURCES = \
-		BoolValue.cpp \
-		ConstExpr.cpp \
-		EXP_C-Api.cpp \
-		EmptyValue.cpp \
-		ErrorValue.cpp \
-		Expression.cpp \
-		FloatValue.cpp \
-		IdentifierExpr.cpp \
-		IfExpr.cpp \
-		InputParser.cpp \
-		IntValue.cpp \
-		KX_HashedPtr.cpp \
-		ListValue.cpp \
-		Operator1Expr.cpp \
-		Operator2Expr.cpp \
-		PyObjectPlus.cpp \
-		StringValue.cpp \
-		Value.cpp \
-		VectorValue.cpp
+libgameblender_expressions_la_SOURCES = \
+	BoolValue.cpp \
+	ConstExpr.cpp \
+	EXP_C-Api.cpp \
+	EmptyValue.cpp \
+	ErrorValue.cpp \
+	Expression.cpp \
+	FloatValue.cpp \
+	IdentifierExpr.cpp \
+	IfExpr.cpp \
+	InputParser.cpp \
+	IntValue.cpp \
+	KX_HashedPtr.cpp \
+	ListValue.cpp \
+	Operator1Expr.cpp \
+	Operator2Expr.cpp \
+	PyObjectPlus.cpp \
+	StringValue.cpp \
+	Value.cpp \
+	VectorValue.cpp
 
 
-INCLUDES = -I$(top_srcdir)/source/gameengine/Expressions -I$(top_srcdir)/intern/string -I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@
+INCLUDES = -I$(top_srcdir)/source/gameengine/Expressions \
+	-I$(top_srcdir)/intern/string \
+	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@
+
 subdir = source/gameengine/Expressions
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libexpressions_a_AR = $(AR) cru
-libexpressions_a_LIBADD =
-am_libexpressions_a_OBJECTS = BoolValue.$(OBJEXT) ConstExpr.$(OBJEXT) \
-	EXP_C-Api.$(OBJEXT) EmptyValue.$(OBJEXT) ErrorValue.$(OBJEXT) \
-	Expression.$(OBJEXT) FloatValue.$(OBJEXT) \
-	IdentifierExpr.$(OBJEXT) IfExpr.$(OBJEXT) InputParser.$(OBJEXT) \
-	IntValue.$(OBJEXT) KX_HashedPtr.$(OBJEXT) ListValue.$(OBJEXT) \
-	Operator1Expr.$(OBJEXT) Operator2Expr.$(OBJEXT) \
-	PyObjectPlus.$(OBJEXT) StringValue.$(OBJEXT) Value.$(OBJEXT) \
-	VectorValue.$(OBJEXT)
-libexpressions_a_OBJECTS = $(am_libexpressions_a_OBJECTS)
+libgameblender_expressions_la_AR = $(AR) cru
+libgameblender_expressions_la_LIBADD =
+am_libgameblender_expressions_la_OBJECTS = BoolValue.lo ConstExpr.lo \
+	EXP_C-Api.lo EmptyValue.lo ErrorValue.lo Expression.lo \
+	FloatValue.lo IdentifierExpr.lo IfExpr.lo InputParser.lo \
+	IntValue.lo KX_HashedPtr.lo ListValue.lo Operator1Expr.lo \
+	Operator2Expr.lo PyObjectPlus.lo StringValue.lo Value.lo \
+	VectorValue.lo
+libgameblender_expressions_la_OBJECTS = \
+	$(am_libgameblender_expressions_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BoolValue.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ConstExpr.Po ./$(DEPDIR)/EXP_C-Api.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/EmptyValue.Po ./$(DEPDIR)/ErrorValue.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Expression.Po ./$(DEPDIR)/FloatValue.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/IdentifierExpr.Po ./$(DEPDIR)/IfExpr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/InputParser.Po ./$(DEPDIR)/IntValue.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_HashedPtr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ListValue.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Operator1Expr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Operator2Expr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/PyObjectPlus.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/StringValue.Po ./$(DEPDIR)/Value.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/VectorValue.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BoolValue.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/ConstExpr.Plo ./$(DEPDIR)/EXP_C-Api.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/EmptyValue.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/ErrorValue.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/Expression.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/FloatValue.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/IdentifierExpr.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/IfExpr.Plo ./$(DEPDIR)/InputParser.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/IntValue.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_HashedPtr.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/ListValue.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/Operator1Expr.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/Operator2Expr.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/PyObjectPlus.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/StringValue.Plo ./$(DEPDIR)/Value.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/VectorValue.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -220,9 +225,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libexpressions_a_SOURCES)
+DIST_SOURCES = $(libgameblender_expressions_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libexpressions_a_SOURCES)
+SOURCES = $(libgameblender_expressions_la_SOURCES)
 
 all: all-am
 
@@ -238,10 +243,10 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libexpressions.a: $(libexpressions_a_OBJECTS) $(libexpressions_a_DEPENDENCIES) 
-	-rm -f libexpressions.a
-	$(libexpressions_a_AR) libexpressions.a $(libexpressions_a_OBJECTS) $(libexpressions_a_LIBADD)
-	$(RANLIB) libexpressions.a
+libgameblender_expressions.la: $(libgameblender_expressions_la_OBJECTS) $(libgameblender_expressions_la_DEPENDENCIES) 
+	-rm -f libgameblender_expressions.la
+	$(libgameblender_expressions_la_AR) libgameblender_expressions.la $(libgameblender_expressions_la_OBJECTS) $(libgameblender_expressions_la_LIBADD)
+	$(RANLIB) libgameblender_expressions.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -249,25 +254,25 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoolValue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ConstExpr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EXP_C-Api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EmptyValue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ErrorValue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Expression.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FloatValue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IdentifierExpr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IfExpr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/InputParser.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IntValue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_HashedPtr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ListValue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Operator1Expr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Operator2Expr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PyObjectPlus.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StringValue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Value.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VectorValue.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BoolValue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ConstExpr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EXP_C-Api.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EmptyValue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ErrorValue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Expression.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FloatValue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IdentifierExpr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IfExpr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/InputParser.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IntValue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_HashedPtr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ListValue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Operator1Expr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Operator2Expr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PyObjectPlus.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/StringValue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Value.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VectorValue.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

@@ -153,13 +153,13 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libscenegraph.a
+noinst_LIBRARIES = libgameblender_scenegraph.la
 
-libscenegraph_a_SOURCES = \
-		SG_Controller.cpp \
-		SG_IObject.cpp \
-		SG_Node.cpp \
-		SG_Spatial.cpp
+libgameblender_scenegraph_la_SOURCES = \
+	SG_Controller.cpp \
+	SG_IObject.cpp \
+	SG_Node.cpp \
+	SG_Spatial.cpp
 
 
 INCLUDES = -I$(top_srcdir)/intern/moto/include
@@ -169,18 +169,19 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libscenegraph_a_AR = $(AR) cru
-libscenegraph_a_LIBADD =
-am_libscenegraph_a_OBJECTS = SG_Controller.$(OBJEXT) \
-	SG_IObject.$(OBJEXT) SG_Node.$(OBJEXT) SG_Spatial.$(OBJEXT)
-libscenegraph_a_OBJECTS = $(am_libscenegraph_a_OBJECTS)
+libgameblender_scenegraph_la_AR = $(AR) cru
+libgameblender_scenegraph_la_LIBADD =
+am_libgameblender_scenegraph_la_OBJECTS = SG_Controller.lo SG_IObject.lo \
+	SG_Node.lo SG_Spatial.lo
+libgameblender_scenegraph_la_OBJECTS = \
+	$(am_libgameblender_scenegraph_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/SG_Controller.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SG_IObject.Po ./$(DEPDIR)/SG_Node.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SG_Spatial.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/SG_Controller.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SG_IObject.Plo ./$(DEPDIR)/SG_Node.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SG_Spatial.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -189,9 +190,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libscenegraph_a_SOURCES)
+DIST_SOURCES = $(libgameblender_scenegraph_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libscenegraph_a_SOURCES)
+SOURCES = $(libgameblender_scenegraph_la_SOURCES)
 
 all: all-am
 
@@ -207,10 +208,10 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libscenegraph.a: $(libscenegraph_a_OBJECTS) $(libscenegraph_a_DEPENDENCIES) 
-	-rm -f libscenegraph.a
-	$(libscenegraph_a_AR) libscenegraph.a $(libscenegraph_a_OBJECTS) $(libscenegraph_a_LIBADD)
-	$(RANLIB) libscenegraph.a
+libgameblender_scenegraph.la: $(libgameblender_scenegraph_la_OBJECTS) $(libgameblender_scenegraph_la_DEPENDENCIES) 
+	-rm -f libgameblender_scenegraph.la
+	$(libgameblender_scenegraph_la_AR) libgameblender_scenegraph.la $(libgameblender_scenegraph_la_OBJECTS) $(libgameblender_scenegraph_la_LIBADD)
+	$(RANLIB) libgameblender_scenegraph.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -218,10 +219,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SG_Controller.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SG_IObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SG_Node.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SG_Spatial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SG_Controller.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SG_IObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SG_Node.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SG_Spatial.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

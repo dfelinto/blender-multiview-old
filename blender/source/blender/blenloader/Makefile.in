@@ -153,34 +153,48 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_blenloader.a
+noinst_LIBRARIES = libblender_blenloader.la
 
-libblender_blenloader_a_SOURCES = \
-		intern/genfile.c \
-		intern/readblenentry.c \
-		intern/readfile.c \
-		intern/writefile.c
+libblender_blenloader_la_SOURCES = \
+	intern/genfile.c \
+	intern/readblenentry.c \
+	intern/readfile.c \
+	intern/writefile.c
 
 
-INCLUDES = -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/readblenfile -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/blender/bpython/include -I$(top_srcdir)/source/kernel/gen_messaging -I$(top_srcdir)/source/blender/bpython/include -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/blender/render/extern/include -I$(top_srcdir)/source/blender/writestreamglue -I$(top_srcdir)/source/blender/readstreamglue
+INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/readblenfile \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/blender/bpython/include \
+	-I$(top_srcdir)/source/kernel/gen_messaging \
+	-I$(top_srcdir)/source/blender/bpython/include \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/source/blender/render/extern/include \
+	-I$(top_srcdir)/source/blender/writestreamglue \
+	-I$(top_srcdir)/source/blender/readstreamglue
+
 subdir = source/blender/blenloader
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_blenloader_a_AR = $(AR) cru
-libblender_blenloader_a_LIBADD =
-am_libblender_blenloader_a_OBJECTS = genfile.$(OBJEXT) \
-	readblenentry.$(OBJEXT) readfile.$(OBJEXT) writefile.$(OBJEXT)
-libblender_blenloader_a_OBJECTS = $(am_libblender_blenloader_a_OBJECTS)
+libblender_blenloader_la_AR = $(AR) cru
+libblender_blenloader_la_LIBADD =
+am_libblender_blenloader_la_OBJECTS = genfile.lo readblenentry.lo \
+	readfile.lo writefile.lo
+libblender_blenloader_la_OBJECTS = \
+	$(am_libblender_blenloader_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/genfile.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/readblenentry.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/readfile.Po ./$(DEPDIR)/writefile.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/genfile.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/readblenentry.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/readfile.Plo ./$(DEPDIR)/writefile.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -188,9 +202,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_blenloader_a_SOURCES)
+DIST_SOURCES = $(libblender_blenloader_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_blenloader_a_SOURCES)
+SOURCES = $(libblender_blenloader_la_SOURCES)
 
 all: all-am
 
@@ -206,14 +220,14 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-genfile.$(OBJEXT): intern/genfile.c
-readblenentry.$(OBJEXT): intern/readblenentry.c
-readfile.$(OBJEXT): intern/readfile.c
-writefile.$(OBJEXT): intern/writefile.c
-libblender_blenloader.a: $(libblender_blenloader_a_OBJECTS) $(libblender_blenloader_a_DEPENDENCIES) 
-	-rm -f libblender_blenloader.a
-	$(libblender_blenloader_a_AR) libblender_blenloader.a $(libblender_blenloader_a_OBJECTS) $(libblender_blenloader_a_LIBADD)
-	$(RANLIB) libblender_blenloader.a
+genfile.lo: intern/genfile.c
+readblenentry.lo: intern/readblenentry.c
+readfile.lo: intern/readfile.c
+writefile.lo: intern/writefile.c
+libblender_blenloader.la: $(libblender_blenloader_la_OBJECTS) $(libblender_blenloader_la_DEPENDENCIES) 
+	-rm -f libblender_blenloader.la
+	$(libblender_blenloader_la_AR) libblender_blenloader.la $(libblender_blenloader_la_OBJECTS) $(libblender_blenloader_la_LIBADD)
+	$(RANLIB) libblender_blenloader.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -221,10 +235,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/genfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readblenentry.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writefile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/genfile.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readblenentry.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readfile.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writefile.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

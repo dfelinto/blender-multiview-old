@@ -153,16 +153,16 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_img.a
+noinst_LIBRARIES = libblender_img.la
 
-libblender_img_a_SOURCES = \
-		intern/IMG_Api.cpp \
-		intern/IMG_BrushRGBA32.cpp \
-		intern/IMG_CanvasRGBA32.cpp \
-		intern/IMG_Line.cpp \
-		intern/IMG_Pixmap.cpp \
-		intern/IMG_PixmapRGBA32.cpp \
-		intern/IMG_Rect.cpp
+libblender_img_la_SOURCES = \
+	intern/IMG_Api.cpp \
+	intern/IMG_BrushRGBA32.cpp \
+	intern/IMG_CanvasRGBA32.cpp \
+	intern/IMG_Line.cpp \
+	intern/IMG_Pixmap.cpp \
+	intern/IMG_PixmapRGBA32.cpp \
+	intern/IMG_Rect.cpp
 
 subdir = source/blender/img
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -170,23 +170,22 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_img_a_AR = $(AR) cru
-libblender_img_a_LIBADD =
-am_libblender_img_a_OBJECTS = IMG_Api.$(OBJEXT) \
-	IMG_BrushRGBA32.$(OBJEXT) IMG_CanvasRGBA32.$(OBJEXT) \
-	IMG_Line.$(OBJEXT) IMG_Pixmap.$(OBJEXT) \
-	IMG_PixmapRGBA32.$(OBJEXT) IMG_Rect.$(OBJEXT)
-libblender_img_a_OBJECTS = $(am_libblender_img_a_OBJECTS)
+libblender_img_la_AR = $(AR) cru
+libblender_img_la_LIBADD =
+am_libblender_img_la_OBJECTS = IMG_Api.lo IMG_BrushRGBA32.lo \
+	IMG_CanvasRGBA32.lo IMG_Line.lo IMG_Pixmap.lo \
+	IMG_PixmapRGBA32.lo IMG_Rect.lo
+libblender_img_la_OBJECTS = $(am_libblender_img_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/IMG_Api.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/IMG_BrushRGBA32.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/IMG_CanvasRGBA32.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/IMG_Line.Po ./$(DEPDIR)/IMG_Pixmap.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/IMG_PixmapRGBA32.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/IMG_Rect.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/IMG_Api.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/IMG_BrushRGBA32.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/IMG_CanvasRGBA32.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/IMG_Line.Plo ./$(DEPDIR)/IMG_Pixmap.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/IMG_PixmapRGBA32.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/IMG_Rect.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -195,9 +194,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_img_a_SOURCES)
+DIST_SOURCES = $(libblender_img_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_img_a_SOURCES)
+SOURCES = $(libblender_img_la_SOURCES)
 
 all: all-am
 
@@ -213,17 +212,17 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-IMG_Api.$(OBJEXT): intern/IMG_Api.cpp
-IMG_BrushRGBA32.$(OBJEXT): intern/IMG_BrushRGBA32.cpp
-IMG_CanvasRGBA32.$(OBJEXT): intern/IMG_CanvasRGBA32.cpp
-IMG_Line.$(OBJEXT): intern/IMG_Line.cpp
-IMG_Pixmap.$(OBJEXT): intern/IMG_Pixmap.cpp
-IMG_PixmapRGBA32.$(OBJEXT): intern/IMG_PixmapRGBA32.cpp
-IMG_Rect.$(OBJEXT): intern/IMG_Rect.cpp
-libblender_img.a: $(libblender_img_a_OBJECTS) $(libblender_img_a_DEPENDENCIES) 
-	-rm -f libblender_img.a
-	$(libblender_img_a_AR) libblender_img.a $(libblender_img_a_OBJECTS) $(libblender_img_a_LIBADD)
-	$(RANLIB) libblender_img.a
+IMG_Api.lo: intern/IMG_Api.cpp
+IMG_BrushRGBA32.lo: intern/IMG_BrushRGBA32.cpp
+IMG_CanvasRGBA32.lo: intern/IMG_CanvasRGBA32.cpp
+IMG_Line.lo: intern/IMG_Line.cpp
+IMG_Pixmap.lo: intern/IMG_Pixmap.cpp
+IMG_PixmapRGBA32.lo: intern/IMG_PixmapRGBA32.cpp
+IMG_Rect.lo: intern/IMG_Rect.cpp
+libblender_img.la: $(libblender_img_la_OBJECTS) $(libblender_img_la_DEPENDENCIES) 
+	-rm -f libblender_img.la
+	$(libblender_img_la_AR) libblender_img.la $(libblender_img_la_OBJECTS) $(libblender_img_la_LIBADD)
+	$(RANLIB) libblender_img.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -231,13 +230,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_Api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_BrushRGBA32.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_CanvasRGBA32.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_Line.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_Pixmap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_PixmapRGBA32.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_Rect.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_Api.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_BrushRGBA32.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_CanvasRGBA32.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_Line.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_Pixmap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_PixmapRGBA32.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/IMG_Rect.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

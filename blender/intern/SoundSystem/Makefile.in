@@ -153,66 +153,72 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libsoundsystem.a
+noinst_LIBRARIES = libgameblender_soundsystem.la
 
 
 #there is a test file for those who want to build it... as long as you edit this file
 
 #note fmod might be a windows only file as it includes from the windows library
-libsoundsystem_a_SOURCES = \
-		dummy/SND_DummyDevice.cpp \
-		fmod/SND_FmodDevice.cpp \
-		intern/SND_AudioDevice.cpp \
-		intern/SND_C-api.cpp \
-		intern/SND_CDObject.cpp \
-		intern/SND_DeviceManager.cpp \
-		intern/SND_IdObject.cpp \
-		intern/SND_Scene.cpp \
-		intern/SND_SoundListener.cpp \
-		intern/SND_SoundObject.cpp \
-		intern/SND_Utils.cpp \
-		intern/SND_WaveCache.cpp \
-		intern/SND_WaveSlot.cpp \
-		openal/SND_OpenALDevice.cpp \
-		openal/pthread_cancel.cpp
+libgameblender_soundsystem_la_SOURCES = \
+	dummy/SND_DummyDevice.cpp \
+	fmod/SND_FmodDevice.cpp \
+	intern/SND_AudioDevice.cpp \
+	intern/SND_C-api.cpp \
+	intern/SND_CDObject.cpp \
+	intern/SND_DeviceManager.cpp \
+	intern/SND_IdObject.cpp \
+	intern/SND_Scene.cpp \
+	intern/SND_SoundListener.cpp \
+	intern/SND_SoundObject.cpp \
+	intern/SND_Utils.cpp \
+	intern/SND_WaveCache.cpp \
+	intern/SND_WaveSlot.cpp \
+	openal/SND_OpenALDevice.cpp \
+	openal/pthread_cancel.cpp
 
 
-INCLUDES = -I$(top_srcdir)/lib/windows/fmod/include -I$(top_srcdir)/source/gameengine/SoundSystem/intern -I$(top_srcdir)/intern/moto/include -I$(top_srcdir)/intern/string -I$(top_srcdir)/source/kernel/gen_system -I$(top_srcdir)/source/gameengine/SoundSystem/dummy -I$(top_srcdir)/source/gameengine/SoundSystem/openal
+INCLUDES = -I$(top_srcdir)/lib/windows/fmod/include \
+	-I$(top_srcdir)/source/gameengine/SoundSystem/intern \
+	-I$(top_srcdir)/intern/moto/include \
+	-I$(top_srcdir)/intern/string \
+	-I$(top_srcdir)/source/kernel/gen_system \
+	-I$(top_srcdir)/source/gameengine/SoundSystem/dummy \
+	-I$(top_srcdir)/source/gameengine/SoundSystem/openal
+
 subdir = source/gameengine/SoundSystem
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libsoundsystem_a_AR = $(AR) cru
-libsoundsystem_a_LIBADD =
-am_libsoundsystem_a_OBJECTS = SND_FmodDevice.$(OBJEXT) \
-	SND_AudioDevice.$(OBJEXT) SND_C-api.$(OBJEXT) \
-	SND_CDObject.$(OBJEXT) SND_DeviceManager.$(OBJEXT) \
-	SND_IdObject.$(OBJEXT) SND_Scene.$(OBJEXT) \
-	SND_SoundListener.$(OBJEXT) SND_SoundObject.$(OBJEXT) \
-	SND_Utils.$(OBJEXT) SND_WaveCache.$(OBJEXT) \
-	SND_WaveSlot.$(OBJEXT) SND_OpenALDevice.$(OBJEXT) \
-	pthread_cancel.$(OBJEXT)
-libsoundsystem_a_OBJECTS = $(am_libsoundsystem_a_OBJECTS)
+libgameblender_soundsystem_la_AR = $(AR) cru
+libgameblender_soundsystem_la_LIBADD =
+am_libgameblender_soundsystem_la_OBJECTS = SND_FmodDevice.lo \
+	SND_AudioDevice.lo SND_C-api.lo SND_CDObject.lo \
+	SND_DeviceManager.lo SND_IdObject.lo SND_Scene.lo \
+	SND_SoundListener.lo SND_SoundObject.lo SND_Utils.lo \
+	SND_WaveCache.lo SND_WaveSlot.lo SND_OpenALDevice.lo \
+	pthread_cancel.lo
+libgameblender_soundsystem_la_OBJECTS = \
+	$(am_libgameblender_soundsystem_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/SND_AudioDevice.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_C-api.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_CDObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_DeviceManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_FmodDevice.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_IdObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_OpenALDevice.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_Scene.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_SoundListener.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_SoundObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_Utils.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_WaveCache.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SND_WaveSlot.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pthread_cancel.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/SND_AudioDevice.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_C-api.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_CDObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_DeviceManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_FmodDevice.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_IdObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_OpenALDevice.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_Scene.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_SoundListener.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_SoundObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_Utils.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_WaveCache.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SND_WaveSlot.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/pthread_cancel.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -221,9 +227,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libsoundsystem_a_SOURCES)
+DIST_SOURCES = $(libgameblender_soundsystem_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libsoundsystem_a_SOURCES)
+SOURCES = $(libgameblender_soundsystem_la_SOURCES)
 
 all: all-am
 
@@ -239,24 +245,24 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-SND_FmodDevice.$(OBJEXT): fmod/SND_FmodDevice.cpp
-SND_AudioDevice.$(OBJEXT): intern/SND_AudioDevice.cpp
-SND_C-api.$(OBJEXT): intern/SND_C-api.cpp
-SND_CDObject.$(OBJEXT): intern/SND_CDObject.cpp
-SND_DeviceManager.$(OBJEXT): intern/SND_DeviceManager.cpp
-SND_IdObject.$(OBJEXT): intern/SND_IdObject.cpp
-SND_Scene.$(OBJEXT): intern/SND_Scene.cpp
-SND_SoundListener.$(OBJEXT): intern/SND_SoundListener.cpp
-SND_SoundObject.$(OBJEXT): intern/SND_SoundObject.cpp
-SND_Utils.$(OBJEXT): intern/SND_Utils.cpp
-SND_WaveCache.$(OBJEXT): intern/SND_WaveCache.cpp
-SND_WaveSlot.$(OBJEXT): intern/SND_WaveSlot.cpp
-SND_OpenALDevice.$(OBJEXT): openal/SND_OpenALDevice.cpp
-pthread_cancel.$(OBJEXT): openal/pthread_cancel.cpp
-libsoundsystem.a: $(libsoundsystem_a_OBJECTS) $(libsoundsystem_a_DEPENDENCIES) 
-	-rm -f libsoundsystem.a
-	$(libsoundsystem_a_AR) libsoundsystem.a $(libsoundsystem_a_OBJECTS) $(libsoundsystem_a_LIBADD)
-	$(RANLIB) libsoundsystem.a
+SND_FmodDevice.lo: fmod/SND_FmodDevice.cpp
+SND_AudioDevice.lo: intern/SND_AudioDevice.cpp
+SND_C-api.lo: intern/SND_C-api.cpp
+SND_CDObject.lo: intern/SND_CDObject.cpp
+SND_DeviceManager.lo: intern/SND_DeviceManager.cpp
+SND_IdObject.lo: intern/SND_IdObject.cpp
+SND_Scene.lo: intern/SND_Scene.cpp
+SND_SoundListener.lo: intern/SND_SoundListener.cpp
+SND_SoundObject.lo: intern/SND_SoundObject.cpp
+SND_Utils.lo: intern/SND_Utils.cpp
+SND_WaveCache.lo: intern/SND_WaveCache.cpp
+SND_WaveSlot.lo: intern/SND_WaveSlot.cpp
+SND_OpenALDevice.lo: openal/SND_OpenALDevice.cpp
+pthread_cancel.lo: openal/pthread_cancel.cpp
+libgameblender_soundsystem.la: $(libgameblender_soundsystem_la_OBJECTS) $(libgameblender_soundsystem_la_DEPENDENCIES) 
+	-rm -f libgameblender_soundsystem.la
+	$(libgameblender_soundsystem_la_AR) libgameblender_soundsystem.la $(libgameblender_soundsystem_la_OBJECTS) $(libgameblender_soundsystem_la_LIBADD)
+	$(RANLIB) libgameblender_soundsystem.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -264,20 +270,20 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_AudioDevice.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_C-api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_CDObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_DeviceManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_FmodDevice.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_IdObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_OpenALDevice.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_Scene.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_SoundListener.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_SoundObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_Utils.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_WaveCache.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_WaveSlot.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pthread_cancel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_AudioDevice.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_C-api.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_CDObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_DeviceManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_FmodDevice.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_IdObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_OpenALDevice.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_Scene.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_SoundListener.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_SoundObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_Utils.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_WaveCache.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SND_WaveSlot.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pthread_cancel.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

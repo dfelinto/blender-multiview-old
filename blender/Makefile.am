@@ -1,1 +1,1 @@
-SUBDIRS = intern
+SUBDIRS = intern source

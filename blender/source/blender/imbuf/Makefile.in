@@ -153,75 +153,77 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_imbuf.a
+noinst_LIBRARIES = libblender_imbuf.la
 
-libblender_imbuf_a_SOURCES = \
-		intern/allocimbuf.c \
-		intern/amiga.c \
-		intern/anim.c \
-		intern/antialias.c \
-		intern/bitplanes.c \
-		intern/bmp_decode.c \
-		intern/cmap.c \
-		intern/cspace.c \
-		intern/data.c \
-		intern/dither.c \
-		intern/divers.c \
-		intern/filter.c \
-		intern/ham.c \
-		intern/hamx.c \
-		intern/iff.c \
-		intern/imageprocess.c \
-		intern/iris.c \
-		intern/jpeg.c \
-		intern/png_decode.c \
-		intern/png_encode.c \
-		intern/readimage.c \
-		intern/rectop.c \
-		intern/rotate.c \
-		intern/scaling.c \
-		intern/targa.c \
-		intern/util.c \
-		intern/writeimage.c
+libblender_imbuf_la_SOURCES = \
+	intern/allocimbuf.c \
+	intern/amiga.c \
+	intern/anim.c \
+	intern/antialias.c \
+	intern/bitplanes.c \
+	intern/bmp_decode.c \
+	intern/cmap.c \
+	intern/cspace.c \
+	intern/data.c \
+	intern/dither.c \
+	intern/divers.c \
+	intern/filter.c \
+	intern/ham.c \
+	intern/hamx.c \
+	intern/iff.c \
+	intern/imageprocess.c \
+	intern/iris.c \
+	intern/jpeg.c \
+	intern/png_decode.c \
+	intern/png_encode.c \
+	intern/readimage.c \
+	intern/rectop.c \
+	intern/rotate.c \
+	intern/scaling.c \
+	intern/targa.c \
+	intern/util.c \
+	intern/writeimage.c
 
 
-INCLUDES = -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/avi
+INCLUDES = -I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/blender/avi
+
 subdir = source/blender/imbuf
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_imbuf_a_AR = $(AR) cru
-libblender_imbuf_a_LIBADD =
-am_libblender_imbuf_a_OBJECTS = allocimbuf.$(OBJEXT) amiga.$(OBJEXT) \
-	anim.$(OBJEXT) antialias.$(OBJEXT) bitplanes.$(OBJEXT) \
-	bmp_decode.$(OBJEXT) cmap.$(OBJEXT) cspace.$(OBJEXT) \
-	data.$(OBJEXT) dither.$(OBJEXT) divers.$(OBJEXT) \
-	filter.$(OBJEXT) ham.$(OBJEXT) hamx.$(OBJEXT) iff.$(OBJEXT) \
-	imageprocess.$(OBJEXT) iris.$(OBJEXT) jpeg.$(OBJEXT) \
-	png_decode.$(OBJEXT) png_encode.$(OBJEXT) readimage.$(OBJEXT) \
-	rectop.$(OBJEXT) rotate.$(OBJEXT) scaling.$(OBJEXT) \
-	targa.$(OBJEXT) util.$(OBJEXT) writeimage.$(OBJEXT)
-libblender_imbuf_a_OBJECTS = $(am_libblender_imbuf_a_OBJECTS)
+libblender_imbuf_la_AR = $(AR) cru
+libblender_imbuf_la_LIBADD =
+am_libblender_imbuf_la_OBJECTS = allocimbuf.lo amiga.lo anim.lo \
+	antialias.lo bitplanes.lo bmp_decode.lo cmap.lo cspace.lo \
+	data.lo dither.lo divers.lo filter.lo ham.lo hamx.lo iff.lo \
+	imageprocess.lo iris.lo jpeg.lo png_decode.lo png_encode.lo \
+	readimage.lo rectop.lo rotate.lo scaling.lo targa.lo util.lo \
+	writeimage.lo
+libblender_imbuf_la_OBJECTS = $(am_libblender_imbuf_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/allocimbuf.Po ./$(DEPDIR)/amiga.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/anim.Po ./$(DEPDIR)/antialias.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bitplanes.Po ./$(DEPDIR)/bmp_decode.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/cmap.Po ./$(DEPDIR)/cspace.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/data.Po ./$(DEPDIR)/dither.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/divers.Po ./$(DEPDIR)/filter.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ham.Po ./$(DEPDIR)/hamx.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/iff.Po ./$(DEPDIR)/imageprocess.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/iris.Po ./$(DEPDIR)/jpeg.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/png_decode.Po ./$(DEPDIR)/png_encode.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/readimage.Po ./$(DEPDIR)/rectop.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rotate.Po ./$(DEPDIR)/scaling.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/targa.Po ./$(DEPDIR)/util.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/writeimage.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/allocimbuf.Plo ./$(DEPDIR)/amiga.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/anim.Plo ./$(DEPDIR)/antialias.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/bitplanes.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/bmp_decode.Plo ./$(DEPDIR)/cmap.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/cspace.Plo ./$(DEPDIR)/data.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/dither.Plo ./$(DEPDIR)/divers.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/filter.Plo ./$(DEPDIR)/ham.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/hamx.Plo ./$(DEPDIR)/iff.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/imageprocess.Plo ./$(DEPDIR)/iris.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/jpeg.Plo ./$(DEPDIR)/png_decode.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/png_encode.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/readimage.Plo ./$(DEPDIR)/rectop.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/rotate.Plo ./$(DEPDIR)/scaling.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/targa.Plo ./$(DEPDIR)/util.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/writeimage.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -229,9 +231,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_imbuf_a_SOURCES)
+DIST_SOURCES = $(libblender_imbuf_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_imbuf_a_SOURCES)
+SOURCES = $(libblender_imbuf_la_SOURCES)
 
 all: all-am
 
@@ -247,37 +249,37 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-allocimbuf.$(OBJEXT): intern/allocimbuf.c
-amiga.$(OBJEXT): intern/amiga.c
-anim.$(OBJEXT): intern/anim.c
-antialias.$(OBJEXT): intern/antialias.c
-bitplanes.$(OBJEXT): intern/bitplanes.c
-bmp_decode.$(OBJEXT): intern/bmp_decode.c
-cmap.$(OBJEXT): intern/cmap.c
-cspace.$(OBJEXT): intern/cspace.c
-data.$(OBJEXT): intern/data.c
-dither.$(OBJEXT): intern/dither.c
-divers.$(OBJEXT): intern/divers.c
-filter.$(OBJEXT): intern/filter.c
-ham.$(OBJEXT): intern/ham.c
-hamx.$(OBJEXT): intern/hamx.c
-iff.$(OBJEXT): intern/iff.c
-imageprocess.$(OBJEXT): intern/imageprocess.c
-iris.$(OBJEXT): intern/iris.c
-jpeg.$(OBJEXT): intern/jpeg.c
-png_decode.$(OBJEXT): intern/png_decode.c
-png_encode.$(OBJEXT): intern/png_encode.c
-readimage.$(OBJEXT): intern/readimage.c
-rectop.$(OBJEXT): intern/rectop.c
-rotate.$(OBJEXT): intern/rotate.c
-scaling.$(OBJEXT): intern/scaling.c
-targa.$(OBJEXT): intern/targa.c
-util.$(OBJEXT): intern/util.c
-writeimage.$(OBJEXT): intern/writeimage.c
-libblender_imbuf.a: $(libblender_imbuf_a_OBJECTS) $(libblender_imbuf_a_DEPENDENCIES) 
-	-rm -f libblender_imbuf.a
-	$(libblender_imbuf_a_AR) libblender_imbuf.a $(libblender_imbuf_a_OBJECTS) $(libblender_imbuf_a_LIBADD)
-	$(RANLIB) libblender_imbuf.a
+allocimbuf.lo: intern/allocimbuf.c
+amiga.lo: intern/amiga.c
+anim.lo: intern/anim.c
+antialias.lo: intern/antialias.c
+bitplanes.lo: intern/bitplanes.c
+bmp_decode.lo: intern/bmp_decode.c
+cmap.lo: intern/cmap.c
+cspace.lo: intern/cspace.c
+data.lo: intern/data.c
+dither.lo: intern/dither.c
+divers.lo: intern/divers.c
+filter.lo: intern/filter.c
+ham.lo: intern/ham.c
+hamx.lo: intern/hamx.c
+iff.lo: intern/iff.c
+imageprocess.lo: intern/imageprocess.c
+iris.lo: intern/iris.c
+jpeg.lo: intern/jpeg.c
+png_decode.lo: intern/png_decode.c
+png_encode.lo: intern/png_encode.c
+readimage.lo: intern/readimage.c
+rectop.lo: intern/rectop.c
+rotate.lo: intern/rotate.c
+scaling.lo: intern/scaling.c
+targa.lo: intern/targa.c
+util.lo: intern/util.c
+writeimage.lo: intern/writeimage.c
+libblender_imbuf.la: $(libblender_imbuf_la_OBJECTS) $(libblender_imbuf_la_DEPENDENCIES) 
+	-rm -f libblender_imbuf.la
+	$(libblender_imbuf_la_AR) libblender_imbuf.la $(libblender_imbuf_la_OBJECTS) $(libblender_imbuf_la_LIBADD)
+	$(RANLIB) libblender_imbuf.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -285,33 +287,33 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allocimbuf.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amiga.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/anim.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/antialias.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bitplanes.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmp_decode.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cspace.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dither.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/divers.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ham.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hamx.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iff.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imageprocess.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iris.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jpeg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/png_decode.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/png_encode.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readimage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rectop.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotate.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scaling.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/targa.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeimage.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allocimbuf.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amiga.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/anim.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/antialias.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bitplanes.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmp_decode.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cspace.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dither.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/divers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filter.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ham.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hamx.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iff.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imageprocess.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/iris.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jpeg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/png_decode.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/png_encode.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/readimage.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rectop.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rotate.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scaling.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/targa.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeimage.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

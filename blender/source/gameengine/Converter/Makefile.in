@@ -153,65 +153,86 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libconverter.a
+noinst_LIBRARIES = libgameblender_converter.la
 
-libconverter_a_SOURCES = \
-		BL_ActionActuator.cpp \
-		BL_ArmatureObject.cpp \
-		BL_BlenderDataConversion.cpp \
-		BL_DeformableGameObject.cpp \
-		BL_MeshDeformer.cpp \
-		BL_SkinDeformer.cpp \
-		BL_SkinMeshObject.cpp \
-		BlenderWorldInfo.cpp \
-		KX_BlenderScalarInterpolator.cpp \
-		KX_BlenderSceneConverter.cpp \
-		KX_ConvertActuators.cpp \
-		KX_ConvertControllers.cpp \
-		KX_ConvertProperties.cpp \
-		KX_ConvertSensors.cpp \
-		KX_IpoConvert.cpp
+libgameblender_converter_la_SOURCES = \
+	BL_ActionActuator.cpp \
+	BL_ArmatureObject.cpp \
+	BL_BlenderDataConversion.cpp \
+	BL_DeformableGameObject.cpp \
+	BL_MeshDeformer.cpp \
+	BL_SkinDeformer.cpp \
+	BL_SkinMeshObject.cpp \
+	BlenderWorldInfo.cpp \
+	KX_BlenderScalarInterpolator.cpp \
+	KX_BlenderSceneConverter.cpp \
+	KX_ConvertActuators.cpp \
+	KX_ConvertControllers.cpp \
+	KX_ConvertProperties.cpp \
+	KX_ConvertSensors.cpp \
+	KX_IpoConvert.cpp
 
 
-INCLUDES = -I$(top_srcdir)/source/gameengine/GameLogic -I$(top_srcdir)/intern/moto/include -I$(top_srcdir)/intern/string -I$(top_srcdir)/source/gameengine/Expressions -I$(top_srcdir)/source/gameengine/GameLogic -I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ -I$(top_srcdir)/source/gameengine/Ketsji -I$(top_srcdir)/source/gameengine/SceneGraph -I$(top_srcdir)/source/kernel/gen_system -I$(top_srcdir)/source/gameengine/Rasterizer -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/gameengine/BlenderRoutines -I$(top_srcdir)/source/gameengine/Physics/common -I$(top_srcdir)/source/gameengine/SoundSystem -I$(top_srcdir)/source/gameengine/BlenderRoutines -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/gameengine/Physics/Dummy -I$(top_srcdir)/source/gameengine/Physics/BlOde -I$(top_srcdir)/source/gameengine/Ketsji/KXNetwork -I$(top_srcdir)/source/gameengine/Network
+INCLUDES = -I$(top_srcdir)/source/gameengine/GameLogic \
+	-I$(top_srcdir)/intern/moto/include \
+	-I$(top_srcdir)/intern/string \
+	-I$(top_srcdir)/source/gameengine/Expressions \
+	-I$(top_srcdir)/source/gameengine/GameLogic \
+	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
+	-I$(top_srcdir)/source/gameengine/Ketsji \
+	-I$(top_srcdir)/source/gameengine/SceneGraph \
+	-I$(top_srcdir)/source/kernel/gen_system \
+	-I$(top_srcdir)/source/gameengine/Rasterizer \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/gameengine/BlenderRoutines \
+	-I$(top_srcdir)/source/gameengine/Physics/common \
+	-I$(top_srcdir)/source/gameengine/SoundSystem \
+	-I$(top_srcdir)/source/gameengine/BlenderRoutines \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/gameengine/Physics/Dummy \
+	-I$(top_srcdir)/source/gameengine/Physics/BlOde \
+	-I$(top_srcdir)/source/gameengine/Ketsji/KXNetwork \
+	-I$(top_srcdir)/source/gameengine/Network
+
 subdir = source/gameengine/Converter
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libconverter_a_AR = $(AR) cru
-libconverter_a_LIBADD =
-am_libconverter_a_OBJECTS = BL_ActionActuator.$(OBJEXT) \
-	BL_ArmatureObject.$(OBJEXT) BL_BlenderDataConversion.$(OBJEXT) \
-	BL_DeformableGameObject.$(OBJEXT) BL_MeshDeformer.$(OBJEXT) \
-	BL_SkinDeformer.$(OBJEXT) BL_SkinMeshObject.$(OBJEXT) \
-	BlenderWorldInfo.$(OBJEXT) \
-	KX_BlenderScalarInterpolator.$(OBJEXT) \
-	KX_BlenderSceneConverter.$(OBJEXT) \
-	KX_ConvertActuators.$(OBJEXT) KX_ConvertControllers.$(OBJEXT) \
-	KX_ConvertProperties.$(OBJEXT) KX_ConvertSensors.$(OBJEXT) \
-	KX_IpoConvert.$(OBJEXT)
-libconverter_a_OBJECTS = $(am_libconverter_a_OBJECTS)
+libgameblender_converter_la_AR = $(AR) cru
+libgameblender_converter_la_LIBADD =
+am_libgameblender_converter_la_OBJECTS = BL_ActionActuator.lo \
+	BL_ArmatureObject.lo BL_BlenderDataConversion.lo \
+	BL_DeformableGameObject.lo BL_MeshDeformer.lo \
+	BL_SkinDeformer.lo BL_SkinMeshObject.lo BlenderWorldInfo.lo \
+	KX_BlenderScalarInterpolator.lo KX_BlenderSceneConverter.lo \
+	KX_ConvertActuators.lo KX_ConvertControllers.lo \
+	KX_ConvertProperties.lo KX_ConvertSensors.lo KX_IpoConvert.lo
+libgameblender_converter_la_OBJECTS = \
+	$(am_libgameblender_converter_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BL_ActionActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BL_ArmatureObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BL_BlenderDataConversion.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BL_DeformableGameObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BL_MeshDeformer.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BL_SkinDeformer.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BL_SkinMeshObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BlenderWorldInfo.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderScalarInterpolator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderSceneConverter.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ConvertActuators.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ConvertControllers.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ConvertProperties.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ConvertSensors.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_IpoConvert.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BL_ActionActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BL_ArmatureObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BL_BlenderDataConversion.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BL_DeformableGameObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BL_MeshDeformer.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BL_SkinDeformer.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BL_SkinMeshObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BlenderWorldInfo.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderScalarInterpolator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderSceneConverter.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ConvertActuators.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ConvertControllers.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ConvertProperties.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ConvertSensors.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_IpoConvert.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -220,9 +241,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libconverter_a_SOURCES)
+DIST_SOURCES = $(libgameblender_converter_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libconverter_a_SOURCES)
+SOURCES = $(libgameblender_converter_la_SOURCES)
 
 all: all-am
 
@@ -238,10 +259,10 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libconverter.a: $(libconverter_a_OBJECTS) $(libconverter_a_DEPENDENCIES) 
-	-rm -f libconverter.a
-	$(libconverter_a_AR) libconverter.a $(libconverter_a_OBJECTS) $(libconverter_a_LIBADD)
-	$(RANLIB) libconverter.a
+libgameblender_converter.la: $(libgameblender_converter_la_OBJECTS) $(libgameblender_converter_la_DEPENDENCIES) 
+	-rm -f libgameblender_converter.la
+	$(libgameblender_converter_la_AR) libgameblender_converter.la $(libgameblender_converter_la_OBJECTS) $(libgameblender_converter_la_LIBADD)
+	$(RANLIB) libgameblender_converter.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -249,21 +270,21 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_ActionActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_ArmatureObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_BlenderDataConversion.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_DeformableGameObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_MeshDeformer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_SkinDeformer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_SkinMeshObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlenderWorldInfo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderScalarInterpolator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderSceneConverter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConvertActuators.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConvertControllers.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConvertProperties.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConvertSensors.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_IpoConvert.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_ActionActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_ArmatureObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_BlenderDataConversion.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_DeformableGameObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_MeshDeformer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_SkinDeformer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BL_SkinMeshObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlenderWorldInfo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderScalarInterpolator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderSceneConverter.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConvertActuators.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConvertControllers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConvertProperties.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConvertSensors.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_IpoConvert.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

@@ -153,53 +153,53 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_blenlib.a
+noinst_LIBRARIES = libblender_blenlib.la
 
-libblender_blenlib_a_SOURCES = \
-		intern/arithb.c \
-		intern/dynlib.c \
-		intern/fileops.c \
-		intern/gsqueue.c \
-		intern/matrixops.c \
-		intern/noise.c \
-		intern/psfont.c \
-		intern/rand.c \
-		intern/rct.c \
-		intern/scanfill.c \
-		intern/storage.c \
-		intern/time.c \
-		intern/util.c \
-		intern/vectorops.c \
-		intern/winstuff.c
+libblender_blenlib_la_SOURCES = \
+	intern/arithb.c \
+	intern/dynlib.c \
+	intern/fileops.c \
+	intern/gsqueue.c \
+	intern/matrixops.c \
+	intern/noise.c \
+	intern/psfont.c \
+	intern/rand.c \
+	intern/rct.c \
+	intern/scanfill.c \
+	intern/storage.c \
+	intern/time.c \
+	intern/util.c \
+	intern/vectorops.c \
+	intern/winstuff.c
 
 
-INCLUDES = -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/intern/guardedalloc
+INCLUDES = -I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/intern/guardedalloc
+
 subdir = source/blender/blenlib
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_blenlib_a_AR = $(AR) cru
-libblender_blenlib_a_LIBADD =
-am_libblender_blenlib_a_OBJECTS = arithb.$(OBJEXT) dynlib.$(OBJEXT) \
-	fileops.$(OBJEXT) gsqueue.$(OBJEXT) matrixops.$(OBJEXT) \
-	noise.$(OBJEXT) psfont.$(OBJEXT) rand.$(OBJEXT) rct.$(OBJEXT) \
-	scanfill.$(OBJEXT) storage.$(OBJEXT) time.$(OBJEXT) \
-	util.$(OBJEXT) vectorops.$(OBJEXT) winstuff.$(OBJEXT)
-libblender_blenlib_a_OBJECTS = $(am_libblender_blenlib_a_OBJECTS)
+libblender_blenlib_la_AR = $(AR) cru
+libblender_blenlib_la_LIBADD =
+am_libblender_blenlib_la_OBJECTS = arithb.lo dynlib.lo fileops.lo \
+	gsqueue.lo matrixops.lo noise.lo psfont.lo rand.lo rct.lo \
+	scanfill.lo storage.lo time.lo util.lo vectorops.lo winstuff.lo
+libblender_blenlib_la_OBJECTS = $(am_libblender_blenlib_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/arithb.Po ./$(DEPDIR)/dynlib.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/fileops.Po ./$(DEPDIR)/gsqueue.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/matrixops.Po ./$(DEPDIR)/noise.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/psfont.Po ./$(DEPDIR)/rand.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rct.Po ./$(DEPDIR)/scanfill.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/storage.Po ./$(DEPDIR)/time.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/util.Po ./$(DEPDIR)/vectorops.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/winstuff.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/arithb.Plo ./$(DEPDIR)/dynlib.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/fileops.Plo ./$(DEPDIR)/gsqueue.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/matrixops.Plo ./$(DEPDIR)/noise.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/psfont.Plo ./$(DEPDIR)/rand.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/rct.Plo ./$(DEPDIR)/scanfill.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/storage.Plo ./$(DEPDIR)/time.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/util.Plo ./$(DEPDIR)/vectorops.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/winstuff.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -207,9 +207,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_blenlib_a_SOURCES)
+DIST_SOURCES = $(libblender_blenlib_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_blenlib_a_SOURCES)
+SOURCES = $(libblender_blenlib_la_SOURCES)
 
 all: all-am
 
@@ -225,25 +225,25 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-arithb.$(OBJEXT): intern/arithb.c
-dynlib.$(OBJEXT): intern/dynlib.c
-fileops.$(OBJEXT): intern/fileops.c
-gsqueue.$(OBJEXT): intern/gsqueue.c
-matrixops.$(OBJEXT): intern/matrixops.c
-noise.$(OBJEXT): intern/noise.c
-psfont.$(OBJEXT): intern/psfont.c
-rand.$(OBJEXT): intern/rand.c
-rct.$(OBJEXT): intern/rct.c
-scanfill.$(OBJEXT): intern/scanfill.c
-storage.$(OBJEXT): intern/storage.c
-time.$(OBJEXT): intern/time.c
-util.$(OBJEXT): intern/util.c
-vectorops.$(OBJEXT): intern/vectorops.c
-winstuff.$(OBJEXT): intern/winstuff.c
-libblender_blenlib.a: $(libblender_blenlib_a_OBJECTS) $(libblender_blenlib_a_DEPENDENCIES) 
-	-rm -f libblender_blenlib.a
-	$(libblender_blenlib_a_AR) libblender_blenlib.a $(libblender_blenlib_a_OBJECTS) $(libblender_blenlib_a_LIBADD)
-	$(RANLIB) libblender_blenlib.a
+arithb.lo: intern/arithb.c
+dynlib.lo: intern/dynlib.c
+fileops.lo: intern/fileops.c
+gsqueue.lo: intern/gsqueue.c
+matrixops.lo: intern/matrixops.c
+noise.lo: intern/noise.c
+psfont.lo: intern/psfont.c
+rand.lo: intern/rand.c
+rct.lo: intern/rct.c
+scanfill.lo: intern/scanfill.c
+storage.lo: intern/storage.c
+time.lo: intern/time.c
+util.lo: intern/util.c
+vectorops.lo: intern/vectorops.c
+winstuff.lo: intern/winstuff.c
+libblender_blenlib.la: $(libblender_blenlib_la_OBJECTS) $(libblender_blenlib_la_DEPENDENCIES) 
+	-rm -f libblender_blenlib.la
+	$(libblender_blenlib_la_AR) libblender_blenlib.la $(libblender_blenlib_la_OBJECTS) $(libblender_blenlib_la_LIBADD)
+	$(RANLIB) libblender_blenlib.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -251,21 +251,21 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arithb.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dynlib.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fileops.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsqueue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/matrixops.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/noise.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/psfont.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rand.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rct.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanfill.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/storage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/time.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vectorops.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winstuff.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arithb.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dynlib.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fileops.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gsqueue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/matrixops.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/noise.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/psfont.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rand.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rct.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanfill.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/storage.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/time.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/util.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vectorops.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winstuff.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

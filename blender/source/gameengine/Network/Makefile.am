@@ -1,10 +1,11 @@
-noinst_LIBRARIES = libnetwork.a
+noinst_LIBRARIES = libgameblender_network.la
 
-libnetwork_a_SOURCES = \
-		NG_NetworkMessage.cpp \
-		NG_NetworkObject.cpp \
-		NG_NetworkScene.cpp
-		LoopBackNetwork/NG_LoopBackNetworkDeviceInterface.cpp \
-		TerraplayNetwork/NG_TerraplayNetworkDeviceInterface.cpp
+libgameblender_network_la_SOURCES = \
+	NG_NetworkMessage.cpp \
+	NG_NetworkObject.cpp \
+	NG_NetworkScene.cpp
+	LoopBackNetwork/NG_LoopBackNetworkDeviceInterface.cpp \
+	TerraplayNetwork/NG_TerraplayNetworkDeviceInterface.cpp
 
-INCLUDES = -I$(top_srcdir)/intern/string -I$(top_srcdir)/intern/moto/include
+INCLUDES = -I$(top_srcdir)/intern/string \
+	-I$(top_srcdir)/intern/moto/include

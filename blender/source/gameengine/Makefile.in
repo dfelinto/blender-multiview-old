@@ -153,23 +153,24 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = BlenderRoutines Expressions Ketsji Physics SoundSystem GameLogic Rasterizer Converter GamePlayer Network SceneGraph
+SUBDIRS = BlenderRoutines Converter Expressions GameLogic Ketsji \
+	Rasterizer SceneGraph SoundSystem Network GamePlayer Physics
 
-lib_LTLIBRARIES = libgameengine.la
 
-libgameengine_la_LIBADD = 
+noinst_LTLIBRARIES = libblender_gameengine.la
 
-libgameengine_la_SOURCES = 
+libblender_gameengine_la_SOURCES = 
 subdir = source/gameengine
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-LTLIBRARIES = $(lib_LTLIBRARIES)
+LTLIBRARIES = $(noinst_LTLIBRARIES)
 
-libgameengine_la_LDFLAGS =
-libgameengine_la_DEPENDENCIES =
-am_libgameengine_la_OBJECTS =
-libgameengine_la_OBJECTS = $(am_libgameengine_la_OBJECTS)
+libblender_gameengine_la_LDFLAGS =
+libblender_gameengine_la_LIBADD =
+am_libblender_gameengine_la_OBJECTS =
+libblender_gameengine_la_OBJECTS = \
+	$(am_libblender_gameengine_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -179,7 +180,7 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libgameengine_la_SOURCES)
+DIST_SOURCES = $(libblender_gameengine_la_SOURCES)
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	ps-recursive install-info-recursive uninstall-info-recursive \
@@ -188,7 +189,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(libgameengine_la_SOURCES)
+SOURCES = $(libblender_gameengine_la_SOURCES)
 
 all: all-recursive
 
@@ -198,36 +199,17 @@ $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	  $(AUTOMAKE) --gnu  source/gameengine/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
-libLTLIBRARIES_INSTALL = $(INSTALL)
-install-libLTLIBRARIES: $(lib_LTLIBRARIES)
-	@$(NORMAL_INSTALL)
-	$(mkinstalldirs) $(DESTDIR)$(libdir)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    f="`echo $$p | sed -e 's|^.*/||'`"; \
-	    echo " $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$f"; \
-	    $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) $$p $(DESTDIR)$(libdir)/$$f; \
-	  else :; fi; \
-	done
 
-uninstall-libLTLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	    p="`echo $$p | sed -e 's|^.*/||'`"; \
-	  echo " $(LIBTOOL) --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p"; \
-	  $(LIBTOOL) --mode=uninstall rm -f $(DESTDIR)$(libdir)/$$p; \
-	done
-
-clean-libLTLIBRARIES:
-	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
 	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
 	  test "$$dir" = "$$p" && dir=.; \
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libgameengine.la: $(libgameengine_la_OBJECTS) $(libgameengine_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libdir) $(libgameengine_la_LDFLAGS) $(libgameengine_la_OBJECTS) $(libgameengine_la_LIBADD) $(LIBS)
+libblender_gameengine.la: $(libblender_gameengine_la_OBJECTS) $(libblender_gameengine_la_DEPENDENCIES) 
+	$(LINK)  $(libblender_gameengine_la_LDFLAGS) $(libblender_gameengine_la_OBJECTS) $(libblender_gameengine_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -410,7 +392,6 @@ check: check-recursive
 all-am: Makefile $(LTLIBRARIES)
 installdirs: installdirs-recursive
 installdirs-am:
-	$(mkinstalldirs) $(DESTDIR)$(libdir)
 
 install: install-recursive
 install-exec: install-exec-recursive
@@ -438,7 +419,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-recursive
@@ -456,7 +437,7 @@ info-am:
 
 install-data-am:
 
-install-exec-am: install-libLTLIBRARIES
+install-exec-am:
 
 install-info: install-info-recursive
 
@@ -481,29 +462,31 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-libLTLIBRARIES
+uninstall-am: uninstall-info-am
 
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am clean \
-	clean-generic clean-libLTLIBRARIES clean-libtool \
+	clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	clean-recursive ctags ctags-recursive distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-recursive distclean-tags distdir dvi dvi-am \
 	dvi-recursive info info-am info-recursive install install-am \
 	install-data install-data-am install-data-recursive \
 	install-exec install-exec-am install-exec-recursive \
-	install-info install-info-am install-info-recursive \
-	install-libLTLIBRARIES install-man install-recursive \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am installdirs-recursive maintainer-clean \
-	maintainer-clean-generic maintainer-clean-recursive mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	mostlyclean-recursive pdf pdf-am pdf-recursive ps ps-am \
-	ps-recursive tags tags-recursive uninstall uninstall-am \
-	uninstall-info-am uninstall-info-recursive \
-	uninstall-libLTLIBRARIES uninstall-recursive
+	install-info install-info-am install-info-recursive install-man \
+	install-recursive install-strip installcheck installcheck-am \
+	installdirs installdirs-am installdirs-recursive \
+	maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool mostlyclean-recursive \
+	pdf pdf-am pdf-recursive ps ps-am ps-recursive tags \
+	tags-recursive uninstall uninstall-am uninstall-info-am \
+	uninstall-info-recursive uninstall-recursive
 
+	Physics/Sumo/Fuzzics/libfuzzics.la \
+	Physics/Sumo/libgameblender_physics_sumo.la \
+	Physics/libgameblender_physics.la
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

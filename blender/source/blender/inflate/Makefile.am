@@ -1,6 +1,7 @@
-noinst_LIBRARIES = libblender_inflate.a
+noinst_LIBRARIES = libblender_inflate.la
 
-libblender_inflate_a_SOURCES = \
-		intern/BLO_inflate.c
+libblender_inflate_la_SOURCES = \
+	intern/BLO_inflate.c
 
-INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging -I$(top_srcdir)/source/blender/readstreamglue
+INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging \
+	-I$(top_srcdir)/source/blender/readstreamglue

@@ -153,81 +153,77 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = blender gameengine
+@BlenderGAME_FALSE@gameblenderdir = 
+@BlenderGAME_TRUE@gameblenderdir = gameengine
+@BlenderGAME_FALSE@gamelib = 
+@BlenderGAME_TRUE@gamelib = gameengine/libblender_gameengine.la
+@WIN_FALSE@icondir = 
 
-bin_PROGRAMS = blender
+@WIN_TRUE@icondir = icons
 
-blender_SOURCES = \
-	creator/buildinfo.c \
-	creator/creator.c
+SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
+@CARBON_FALSE@bin_PROGRAMS = blender blenderplayer plugin
 
+@CARBON_TRUE@bin_PROGRAMS = blenderpublisher.app blenderplayer.app 
 
-
-#I've assumed that everything under blender directory should be statically linked into the main file... while the gameengine and ode are separate dynamically linked to the binary
 blender_LDADD = \
-	blender/avi/libblender_avi.a \
-	blender/blenkernel/libblender_kernel.a \
-	blender/blenlib/libblender_blenlib.a \
-	blender/blenloader/libblender_blenloader.a \
-	blender/blenpluginapi/libblender_blenpluginapi.a \
-	blender/bpython/libblender_bpython.a \
-	blender/decrypt/libblender_decrypt.a \
-	blender/deflate/libblender_deflate.a \
-	blender/encrypt/libblender_encrypt.a \
-	blender/imbuf/libblender_imbuf.a \
-	blender/img/libblender_img.a \
-	blender/inflate/libblender_inflate.a \
-	blender/makesdna/libblender_makesdna.a \
-	blender/misc/libblender_misc.a \
-	blender/radiosity/libblender_radiosity.a \
-	blender/readblenfile/libblender_readblenfile.a \
-	blender/readstreamglue/libblender_readsreamglue.a \
-	blender/render/libblender_render.a \
-	blender/renderconverter/libblender_renderconverter.a \
-	blender/sign/libblender_sign.a \
-	blender/src/libblender_blendersrc.a \
-	blender/verify/libblender_verify.a \
-	blender/writeblenfile/libblender_writeblenfile.a \
-	blender/writestreamglue/libblender_writestreamglue.a
+	creator/libblender_creator.la \
+	$(gamelib) \
+	blender/libblender_blender.la \
+	kernel/libblender_kernel.a \
+	../intern/libblender_intern.la
 
 subdir = source
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-bin_PROGRAMS = blender$(EXEEXT)
+@CARBON_TRUE@bin_PROGRAMS = blenderpublisher.app$(EXEEXT) \
+@CARBON_TRUE@	blenderplayer.app$(EXEEXT)
+@CARBON_FALSE@bin_PROGRAMS = blender$(EXEEXT) blenderplayer$(EXEEXT) \
+@CARBON_FALSE@	plugin$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS)
 
-am_blender_OBJECTS = buildinfo.$(OBJEXT) creator.$(OBJEXT)
-blender_OBJECTS = $(am_blender_OBJECTS)
-blender_DEPENDENCIES = blender/avi/libblender_avi.a \
-	blender/blenkernel/libblender_kernel.a \
-	blender/blenlib/libblender_blenlib.a \
-	blender/blenloader/libblender_blenloader.a  \
-	blender/blenpluginapi/libblender_blenpluginapi.a \
-	blender/bpython/libblender_bpython.a \
-	blender/decrypt/libblender_decrypt.a  \
-	blender/deflate/libblender_deflate.a \
-	blender/encrypt/libblender_encrypt.a \
-	blender/imbuf/libblender_imbuf.a blender/img/libblender_img.a  \
-	blender/inflate/libblender_inflate.a \
-	blender/makesdna/libblender_makesdna.a \
-	blender/misc/libblender_misc.a  \
-	blender/radiosity/libblender_radiosity.a  \
-	blender/readblenfile/libblender_readblenfile.a \
-	blender/readstreamglue/libblender_readsreamglue.a \
-	blender/render/libblender_render.a \
-	blender/renderconverter/libblender_renderconverter.a  \
-	blender/sign/libblender_sign.a  \
-	blender/src/libblender_blendersrc.a  \
-	blender/verify/libblender_verify.a \
-	blender/writeblenfile/libblender_writeblenfile.a \
-	blender/writestreamglue/libblender_writestreamglue.a
+blender_SOURCES = blender.c
+blender_OBJECTS = blender.$(OBJEXT)
+@BlenderGAME_TRUE@blender_DEPENDENCIES = creator/libblender_creator.la \
+@BlenderGAME_TRUE@	gameengine/libblender_gameengine.la \
+@BlenderGAME_TRUE@	blender/libblender_blender.la \
+@BlenderGAME_TRUE@	kernel/libblender_kernel.a \
+@BlenderGAME_TRUE@	../intern/libblender_intern.la
+@BlenderGAME_FALSE@blender_DEPENDENCIES = creator/libblender_creator.la \
+@BlenderGAME_FALSE@	blender/libblender_blender.la \
+@BlenderGAME_FALSE@	kernel/libblender_kernel.a \
+@BlenderGAME_FALSE@	../intern/libblender_intern.la
 blender_LDFLAGS =
+blenderplayer_SOURCES = blenderplayer.c
+blenderplayer_OBJECTS = blenderplayer.$(OBJEXT)
+blenderplayer_LDADD = $(LDADD)
+blenderplayer_DEPENDENCIES =
+blenderplayer_LDFLAGS =
+blenderplayer_app_SOURCES = blenderplayer.app.c
+blenderplayer_app_OBJECTS = blenderplayer.app.$(OBJEXT)
+blenderplayer_app_LDADD = $(LDADD)
+blenderplayer_app_DEPENDENCIES =
+blenderplayer_app_LDFLAGS =
+blenderpublisher_app_SOURCES = blenderpublisher.app.c
+blenderpublisher_app_OBJECTS = blenderpublisher.app.$(OBJEXT)
+blenderpublisher_app_LDADD = $(LDADD)
+blenderpublisher_app_DEPENDENCIES =
+blenderpublisher_app_LDFLAGS =
+plugin_SOURCES = plugin.c
+plugin_OBJECTS = plugin.$(OBJEXT)
+plugin_LDADD = $(LDADD)
+plugin_DEPENDENCIES =
+plugin_LDFLAGS =
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/buildinfo.Po ./$(DEPDIR)/creator.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/blender.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/blenderplayer.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/blenderplayer.app.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/blenderpublisher.app.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/plugin.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -235,7 +231,8 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(blender_SOURCES)
+DIST_SOURCES = blender.c blenderplayer.c blenderplayer.app.c \
+	blenderpublisher.app.c plugin.c
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	ps-recursive install-info-recursive uninstall-info-recursive \
@@ -243,8 +240,8 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	installdirs-recursive install-recursive uninstall-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = $(blender_SOURCES)
+DIST_SUBDIRS = blender kernel creator gameengine icons
+SOURCES = blender.c blenderplayer.c blenderplayer.app.c blenderpublisher.app.c plugin.c
 
 all: all-recursive
 
@@ -284,11 +281,21 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-buildinfo.$(OBJEXT): creator/buildinfo.c
-creator.$(OBJEXT): creator/creator.c
 blender$(EXEEXT): $(blender_OBJECTS) $(blender_DEPENDENCIES) 
 	@rm -f blender$(EXEEXT)
 	$(LINK) $(blender_LDFLAGS) $(blender_OBJECTS) $(blender_LDADD) $(LIBS)
+blenderplayer$(EXEEXT): $(blenderplayer_OBJECTS) $(blenderplayer_DEPENDENCIES) 
+	@rm -f blenderplayer$(EXEEXT)
+	$(LINK) $(blenderplayer_LDFLAGS) $(blenderplayer_OBJECTS) $(blenderplayer_LDADD) $(LIBS)
+blenderplayer.app$(EXEEXT): $(blenderplayer_app_OBJECTS) $(blenderplayer_app_DEPENDENCIES) 
+	@rm -f blenderplayer.app$(EXEEXT)
+	$(LINK) $(blenderplayer_app_LDFLAGS) $(blenderplayer_app_OBJECTS) $(blenderplayer_app_LDADD) $(LIBS)
+blenderpublisher.app$(EXEEXT): $(blenderpublisher_app_OBJECTS) $(blenderpublisher_app_DEPENDENCIES) 
+	@rm -f blenderpublisher.app$(EXEEXT)
+	$(LINK) $(blenderpublisher_app_LDFLAGS) $(blenderpublisher_app_OBJECTS) $(blenderpublisher_app_LDADD) $(LIBS)
+plugin$(EXEEXT): $(plugin_OBJECTS) $(plugin_DEPENDENCIES) 
+	@rm -f plugin$(EXEEXT)
+	$(LINK) $(plugin_LDFLAGS) $(plugin_OBJECTS) $(plugin_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -296,8 +303,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buildinfo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/creator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blender.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blenderplayer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blenderplayer.app.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blenderpublisher.app.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/plugin.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -334,72 +344,6 @@ distclean-depend:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
-
-buildinfo.o: creator/buildinfo.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT buildinfo.o -MD -MP -MF "$(DEPDIR)/buildinfo.Tpo" \
-@am__fastdepCC_TRUE@	  -c -o buildinfo.o `test -f 'creator/buildinfo.c' || echo '$(srcdir)/'`creator/buildinfo.c; \
-@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/buildinfo.Tpo" "$(DEPDIR)/buildinfo.Po"; \
-@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/buildinfo.Tpo"; exit 1; \
-@am__fastdepCC_TRUE@	fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='creator/buildinfo.c' object='buildinfo.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/buildinfo.Po' tmpdepfile='$(DEPDIR)/buildinfo.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o buildinfo.o `test -f 'creator/buildinfo.c' || echo '$(srcdir)/'`creator/buildinfo.c
-
-buildinfo.obj: creator/buildinfo.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT buildinfo.obj -MD -MP -MF "$(DEPDIR)/buildinfo.Tpo" \
-@am__fastdepCC_TRUE@	  -c -o buildinfo.obj `if test -f 'creator/buildinfo.c'; then $(CYGPATH_W) 'creator/buildinfo.c'; else $(CYGPATH_W) '$(srcdir)/creator/buildinfo.c'`; \
-@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/buildinfo.Tpo" "$(DEPDIR)/buildinfo.Po"; \
-@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/buildinfo.Tpo"; exit 1; \
-@am__fastdepCC_TRUE@	fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='creator/buildinfo.c' object='buildinfo.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/buildinfo.Po' tmpdepfile='$(DEPDIR)/buildinfo.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o buildinfo.obj `if test -f 'creator/buildinfo.c'; then $(CYGPATH_W) 'creator/buildinfo.c'; else $(CYGPATH_W) '$(srcdir)/creator/buildinfo.c'`
-
-buildinfo.lo: creator/buildinfo.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT buildinfo.lo -MD -MP -MF "$(DEPDIR)/buildinfo.Tpo" \
-@am__fastdepCC_TRUE@	  -c -o buildinfo.lo `test -f 'creator/buildinfo.c' || echo '$(srcdir)/'`creator/buildinfo.c; \
-@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/buildinfo.Tpo" "$(DEPDIR)/buildinfo.Plo"; \
-@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/buildinfo.Tpo"; exit 1; \
-@am__fastdepCC_TRUE@	fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='creator/buildinfo.c' object='buildinfo.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/buildinfo.Plo' tmpdepfile='$(DEPDIR)/buildinfo.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o buildinfo.lo `test -f 'creator/buildinfo.c' || echo '$(srcdir)/'`creator/buildinfo.c
-
-creator.o: creator/creator.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT creator.o -MD -MP -MF "$(DEPDIR)/creator.Tpo" \
-@am__fastdepCC_TRUE@	  -c -o creator.o `test -f 'creator/creator.c' || echo '$(srcdir)/'`creator/creator.c; \
-@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/creator.Tpo" "$(DEPDIR)/creator.Po"; \
-@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/creator.Tpo"; exit 1; \
-@am__fastdepCC_TRUE@	fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='creator/creator.c' object='creator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/creator.Po' tmpdepfile='$(DEPDIR)/creator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o creator.o `test -f 'creator/creator.c' || echo '$(srcdir)/'`creator/creator.c
-
-creator.obj: creator/creator.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT creator.obj -MD -MP -MF "$(DEPDIR)/creator.Tpo" \
-@am__fastdepCC_TRUE@	  -c -o creator.obj `if test -f 'creator/creator.c'; then $(CYGPATH_W) 'creator/creator.c'; else $(CYGPATH_W) '$(srcdir)/creator/creator.c'`; \
-@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/creator.Tpo" "$(DEPDIR)/creator.Po"; \
-@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/creator.Tpo"; exit 1; \
-@am__fastdepCC_TRUE@	fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='creator/creator.c' object='creator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/creator.Po' tmpdepfile='$(DEPDIR)/creator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o creator.obj `if test -f 'creator/creator.c'; then $(CYGPATH_W) 'creator/creator.c'; else $(CYGPATH_W) '$(srcdir)/creator/creator.c'`
-
-creator.lo: creator/creator.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT creator.lo -MD -MP -MF "$(DEPDIR)/creator.Tpo" \
-@am__fastdepCC_TRUE@	  -c -o creator.lo `test -f 'creator/creator.c' || echo '$(srcdir)/'`creator/creator.c; \
-@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/creator.Tpo" "$(DEPDIR)/creator.Plo"; \
-@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/creator.Tpo"; exit 1; \
-@am__fastdepCC_TRUE@	fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='creator/creator.c' object='creator.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/creator.Plo' tmpdepfile='$(DEPDIR)/creator.TPlo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o creator.lo `test -f 'creator/creator.c' || echo '$(srcdir)/'`creator/creator.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -558,7 +502,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \

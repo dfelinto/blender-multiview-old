@@ -153,47 +153,62 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblenderroutines.a
+noinst_LIBRARIES = libgameblender_routines.la
 
-libblenderroutines_a_SOURCES = \
-		KX_BlenderCanvas.cpp \
-		KX_BlenderGL.cpp \
-		KX_BlenderInputDevice.cpp \
-		KX_BlenderKeyboardDevice.cpp \
-		KX_BlenderMouseDevice.cpp \
-		KX_BlenderPolyMaterial.cpp \
-		KX_BlenderRenderTools.cpp \
-		KX_BlenderSystem.cpp
+libgameblender_routines_la_SOURCES = \
+	KX_BlenderCanvas.cpp \
+	KX_BlenderGL.cpp \
+	KX_BlenderInputDevice.cpp \
+	KX_BlenderKeyboardDevice.cpp \
+	KX_BlenderMouseDevice.cpp \
+	KX_BlenderPolyMaterial.cpp \
+	KX_BlenderRenderTools.cpp \
+	KX_BlenderSystem.cpp
 
 
-INCLUDES = -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/gameengine/Rasterizer -I$(top_srcdir)/intern/bmfont -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/gameengine/GameLogic -I$(top_srcdir)/intern/moto/include -I$(top_srcdir)/intern/string -I$(top_srcdir)/source/gameengine/Ketsji -I$(top_srcdir)/source/gameengine/Expressions -I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ -I$(top_srcdir)/source/gameengine/SceneGraph -I$(top_srcdir)/source/kernel/gen_system -I$(top_srcdir)/source/blender/misc -I$(top_srcdir)/source/blender/blenlib
+INCLUDES = -I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/gameengine/Rasterizer \
+	-I$(top_srcdir)/intern/bmfont \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/source/gameengine/GameLogic \
+	-I$(top_srcdir)/intern/moto/include \
+	-I$(top_srcdir)/intern/string \
+	-I$(top_srcdir)/source/gameengine/Ketsji \
+	-I$(top_srcdir)/source/gameengine/Expressions \
+	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
+	-I$(top_srcdir)/source/gameengine/SceneGraph \
+	-I$(top_srcdir)/source/kernel/gen_system \
+	-I$(top_srcdir)/source/blender/misc \
+	-I$(top_srcdir)/source/blender/blenlib
+
 subdir = source/gameengine/BlenderRoutines
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblenderroutines_a_AR = $(AR) cru
-libblenderroutines_a_LIBADD =
-am_libblenderroutines_a_OBJECTS = KX_BlenderCanvas.$(OBJEXT) \
-	KX_BlenderGL.$(OBJEXT) KX_BlenderInputDevice.$(OBJEXT) \
-	KX_BlenderKeyboardDevice.$(OBJEXT) \
-	KX_BlenderMouseDevice.$(OBJEXT) \
-	KX_BlenderPolyMaterial.$(OBJEXT) \
-	KX_BlenderRenderTools.$(OBJEXT) KX_BlenderSystem.$(OBJEXT)
-libblenderroutines_a_OBJECTS = $(am_libblenderroutines_a_OBJECTS)
+libgameblender_routines_la_AR = $(AR) cru
+libgameblender_routines_la_LIBADD =
+am_libgameblender_routines_la_OBJECTS = KX_BlenderCanvas.lo \
+	KX_BlenderGL.lo KX_BlenderInputDevice.lo \
+	KX_BlenderKeyboardDevice.lo KX_BlenderMouseDevice.lo \
+	KX_BlenderPolyMaterial.lo KX_BlenderRenderTools.lo \
+	KX_BlenderSystem.lo
+libgameblender_routines_la_OBJECTS = \
+	$(am_libgameblender_routines_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/KX_BlenderCanvas.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderGL.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderInputDevice.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderKeyboardDevice.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderMouseDevice.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderPolyMaterial.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderRenderTools.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderSystem.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/KX_BlenderCanvas.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderGL.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderInputDevice.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderKeyboardDevice.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderMouseDevice.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderPolyMaterial.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderRenderTools.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_BlenderSystem.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -202,9 +217,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblenderroutines_a_SOURCES)
+DIST_SOURCES = $(libgameblender_routines_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblenderroutines_a_SOURCES)
+SOURCES = $(libgameblender_routines_la_SOURCES)
 
 all: all-am
 
@@ -220,10 +235,10 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libblenderroutines.a: $(libblenderroutines_a_OBJECTS) $(libblenderroutines_a_DEPENDENCIES) 
-	-rm -f libblenderroutines.a
-	$(libblenderroutines_a_AR) libblenderroutines.a $(libblenderroutines_a_OBJECTS) $(libblenderroutines_a_LIBADD)
-	$(RANLIB) libblenderroutines.a
+libgameblender_routines.la: $(libgameblender_routines_la_OBJECTS) $(libgameblender_routines_la_DEPENDENCIES) 
+	-rm -f libgameblender_routines.la
+	$(libgameblender_routines_la_AR) libgameblender_routines.la $(libgameblender_routines_la_OBJECTS) $(libgameblender_routines_la_LIBADD)
+	$(RANLIB) libgameblender_routines.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -231,14 +246,14 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderCanvas.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderGL.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderInputDevice.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderKeyboardDevice.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderMouseDevice.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderPolyMaterial.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderRenderTools.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderSystem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderCanvas.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderGL.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderInputDevice.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderKeyboardDevice.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderMouseDevice.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderPolyMaterial.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderRenderTools.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_BlenderSystem.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

@@ -1,6 +1,10 @@
-noinst_LIBRARIES = libblender_deflate.a
+noinst_LIBRARIES = libblender_deflate.la
 
-libblender_deflate_a_SOURCES = \
-		intern/BLO_deflate.c
+libblender_deflate_la_SOURCES = \
+	intern/BLO_deflate.c
 #note: a blatant copy from decrypt
-INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging -I$(top_srcdir)/intern/keymaker -I$(top_srcdir)/source/blender/writestreamglue -I$(top_srcdir)/source/blender/readstreamglue -I$(top_srcdir)/source/blender/inflate
+INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging \
+	-I$(top_srcdir)/intern/keymaker \
+	-I$(top_srcdir)/source/blender/writestreamglue \
+	-I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/source/blender/inflate

@@ -153,9 +153,9 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_blendersrc.a
+noinst_LIBRARIES = libblender_blendersrc.la
 
-libblender_blendersrc_a_SOURCES = \
+libblender_blendersrc_la_SOURCES = \
 	editconstraint.c \
 	isect.c \
 	B.blend.c \
@@ -239,96 +239,111 @@ libblender_blendersrc_a_SOURCES = \
 	writemovie.c
 
 
-INCLUDES = -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/intern/bmfont -I$(top_srcdir)/source/blender/imbuf -I$(top_srcdir)/source/blender/render/extern/include -I$(top_srcdir)/intern/bsp/extern -I$(top_srcdir)/source/blender/renderconverter -I$(top_srcdir)/source/blender/radiosity/extern/include -I$(top_srcdir)/intern/decimation/extern -I$(top_srcdir)/source/blender/misc -I$(top_srcdir)/source/blender/blenloader -I$(top_srcdir)/source/blender/bpython/include -I$(top_srcdir)/source/kernel/gen_system -I$(top_srcdir)/source/gameengine/SoundSystem -I$(top_srcdir)/source/blender/verify -I$(top_srcdir)/source/blender/readstreamglue -I$(top_srcdir)/intern/ghost
+INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/intern/bmfont \
+	-I$(top_srcdir)/source/blender/imbuf \
+	-I$(top_srcdir)/source/blender/render/extern/include \
+	-I$(top_srcdir)/intern/bsp/extern \
+	-I$(top_srcdir)/source/blender/renderconverter \
+	-I$(top_srcdir)/source/blender/radiosity/extern/include \
+	-I$(top_srcdir)/intern/decimation/extern \
+	-I$(top_srcdir)/source/blender/misc \
+	-I$(top_srcdir)/source/blender/blenloader \
+	-I$(top_srcdir)/source/blender/bpython/include \
+	-I$(top_srcdir)/source/kernel/gen_system \
+	-I$(top_srcdir)/source/gameengine/SoundSystem \
+	-I$(top_srcdir)/source/blender/verify \
+	-I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/intern/ghost
+
 subdir = source/blender/src
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_blendersrc_a_AR = $(AR) cru
-libblender_blendersrc_a_LIBADD =
-am_libblender_blendersrc_a_OBJECTS = editconstraint.$(OBJEXT) \
-	isect.$(OBJEXT) editcurve.$(OBJEXT) keyval.$(OBJEXT) \
-	Bfont.$(OBJEXT) editdeform.$(OBJEXT) mainqueue.$(OBJEXT) \
-	editface.$(OBJEXT) mywindow.$(OBJEXT) editfont.$(OBJEXT) \
-	oops.$(OBJEXT) editgroup.$(OBJEXT) \
-	osx_creator_splash.jpg.$(OBJEXT) blenderbuttons.$(OBJEXT) \
-	editika.$(OBJEXT) playanim.$(OBJEXT) booleanops.$(OBJEXT) \
-	editimasel.$(OBJEXT) poseobject.$(OBJEXT) \
-	booleanops_mesh.$(OBJEXT) editipo.$(OBJEXT) \
-	previewrender.$(OBJEXT) buttons.$(OBJEXT) editkey.$(OBJEXT) \
-	cmap.tga.$(OBJEXT) editlattice.$(OBJEXT) renderwin.$(OBJEXT) \
-	cmovie.tga.$(OBJEXT) editmball.$(OBJEXT) resources.$(OBJEXT) \
-	editmesh.$(OBJEXT) scrarea.$(OBJEXT) drawaction.$(OBJEXT) \
-	editnla.$(OBJEXT) screendump.$(OBJEXT) drawimage.$(OBJEXT) \
-	editobject.$(OBJEXT) sequence.$(OBJEXT) drawimasel.$(OBJEXT) \
-	editoops.$(OBJEXT) space.$(OBJEXT) drawipo.$(OBJEXT) \
-	editsca.$(OBJEXT) spacetypes.$(OBJEXT) drawmesh.$(OBJEXT) \
-	editscreen.$(OBJEXT) swapbuffers.$(OBJEXT) drawnla.$(OBJEXT) \
-	editseq.$(OBJEXT) toets.$(OBJEXT) drawobject.$(OBJEXT) \
-	editsima.$(OBJEXT) toolbox.$(OBJEXT) drawoops.$(OBJEXT) \
-	editsound.$(OBJEXT) unix_creator_splash.jpg.$(OBJEXT) \
-	drawscene.$(OBJEXT) editview.$(OBJEXT) usiblender.$(OBJEXT) \
-	drawseq.$(OBJEXT) eventdebug.$(OBJEXT) view.$(OBJEXT) \
-	drawsound.$(OBJEXT) filesel.$(OBJEXT) vpaint.$(OBJEXT) \
-	ghostwinlay.$(OBJEXT) windows_creator_splash.jpg.$(OBJEXT) \
-	drawview.$(OBJEXT) glutil.$(OBJEXT) edit.$(OBJEXT) \
-	headerbuttons.$(OBJEXT) writeavicodec.$(OBJEXT) \
-	editaction.$(OBJEXT) imasel.$(OBJEXT) writeimage.$(OBJEXT) \
-	editarmature.$(OBJEXT) interface.$(OBJEXT) writemovie.$(OBJEXT)
-libblender_blendersrc_a_OBJECTS = $(am_libblender_blendersrc_a_OBJECTS)
+libblender_blendersrc_la_AR = $(AR) cru
+libblender_blendersrc_la_LIBADD =
+am_libblender_blendersrc_la_OBJECTS = editconstraint.lo isect.lo \
+	editcurve.lo keyval.lo Bfont.lo editdeform.lo mainqueue.lo \
+	editface.lo mywindow.lo editfont.lo oops.lo editgroup.lo \
+	osx_creator_splash.jpg.lo blenderbuttons.lo editika.lo \
+	playanim.lo booleanops.lo editimasel.lo poseobject.lo \
+	booleanops_mesh.lo editipo.lo previewrender.lo buttons.lo \
+	editkey.lo cmap.tga.lo editlattice.lo renderwin.lo \
+	cmovie.tga.lo editmball.lo resources.lo editmesh.lo scrarea.lo \
+	drawaction.lo editnla.lo screendump.lo drawimage.lo \
+	editobject.lo sequence.lo drawimasel.lo editoops.lo space.lo \
+	drawipo.lo editsca.lo spacetypes.lo drawmesh.lo editscreen.lo \
+	swapbuffers.lo drawnla.lo editseq.lo toets.lo drawobject.lo \
+	editsima.lo toolbox.lo drawoops.lo editsound.lo \
+	unix_creator_splash.jpg.lo drawscene.lo editview.lo \
+	usiblender.lo drawseq.lo eventdebug.lo view.lo drawsound.lo \
+	filesel.lo vpaint.lo ghostwinlay.lo \
+	windows_creator_splash.jpg.lo drawview.lo glutil.lo edit.lo \
+	headerbuttons.lo writeavicodec.lo editaction.lo imasel.lo \
+	writeimage.lo editarmature.lo interface.lo writemovie.lo
+libblender_blendersrc_la_OBJECTS = \
+	$(am_libblender_blendersrc_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Bfont.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/blenderbuttons.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/booleanops.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/booleanops_mesh.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/buttons.Po ./$(DEPDIR)/cmap.tga.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/cmovie.tga.Po ./$(DEPDIR)/drawaction.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/drawimage.Po ./$(DEPDIR)/drawimasel.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/drawipo.Po ./$(DEPDIR)/drawmesh.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/drawnla.Po ./$(DEPDIR)/drawobject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/drawoops.Po ./$(DEPDIR)/drawscene.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/drawseq.Po ./$(DEPDIR)/drawsound.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/drawview.Po ./$(DEPDIR)/edit.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editaction.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editarmature.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editconstraint.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editcurve.Po ./$(DEPDIR)/editdeform.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editface.Po ./$(DEPDIR)/editfont.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editgroup.Po ./$(DEPDIR)/editika.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editimasel.Po ./$(DEPDIR)/editipo.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editkey.Po ./$(DEPDIR)/editlattice.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editmball.Po ./$(DEPDIR)/editmesh.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editnla.Po ./$(DEPDIR)/editobject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editoops.Po ./$(DEPDIR)/editsca.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editscreen.Po ./$(DEPDIR)/editseq.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editsima.Po ./$(DEPDIR)/editsound.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/editview.Po ./$(DEPDIR)/eventdebug.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/filesel.Po ./$(DEPDIR)/ghostwinlay.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/glutil.Po ./$(DEPDIR)/headerbuttons.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/imasel.Po ./$(DEPDIR)/interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/isect.Po ./$(DEPDIR)/keyval.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mainqueue.Po ./$(DEPDIR)/mywindow.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/oops.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/osx_creator_splash.jpg.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/playanim.Po ./$(DEPDIR)/poseobject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/previewrender.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/renderwin.Po ./$(DEPDIR)/resources.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/scrarea.Po ./$(DEPDIR)/screendump.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/sequence.Po ./$(DEPDIR)/space.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spacetypes.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/swapbuffers.Po ./$(DEPDIR)/toets.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/toolbox.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/unix_creator_splash.jpg.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/usiblender.Po ./$(DEPDIR)/view.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/vpaint.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/windows_creator_splash.jpg.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/writeavicodec.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/writeimage.Po ./$(DEPDIR)/writemovie.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Bfont.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/blenderbuttons.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/booleanops.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/booleanops_mesh.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/buttons.Plo ./$(DEPDIR)/cmap.tga.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/cmovie.tga.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/drawaction.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/drawimage.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/drawimasel.Plo ./$(DEPDIR)/drawipo.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/drawmesh.Plo ./$(DEPDIR)/drawnla.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/drawobject.Plo ./$(DEPDIR)/drawoops.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/drawscene.Plo ./$(DEPDIR)/drawseq.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/drawsound.Plo ./$(DEPDIR)/drawview.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/edit.Plo ./$(DEPDIR)/editaction.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editarmature.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editconstraint.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editcurve.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editdeform.Plo ./$(DEPDIR)/editface.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editfont.Plo ./$(DEPDIR)/editgroup.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editika.Plo ./$(DEPDIR)/editimasel.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editipo.Plo ./$(DEPDIR)/editkey.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editlattice.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editmball.Plo ./$(DEPDIR)/editmesh.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editnla.Plo ./$(DEPDIR)/editobject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editoops.Plo ./$(DEPDIR)/editsca.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editscreen.Plo ./$(DEPDIR)/editseq.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editsima.Plo ./$(DEPDIR)/editsound.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/editview.Plo ./$(DEPDIR)/eventdebug.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/filesel.Plo ./$(DEPDIR)/ghostwinlay.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/glutil.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/headerbuttons.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/imasel.Plo ./$(DEPDIR)/interface.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/isect.Plo ./$(DEPDIR)/keyval.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/mainqueue.Plo ./$(DEPDIR)/mywindow.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/oops.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/osx_creator_splash.jpg.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/playanim.Plo ./$(DEPDIR)/poseobject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/previewrender.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/renderwin.Plo ./$(DEPDIR)/resources.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/scrarea.Plo ./$(DEPDIR)/screendump.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/sequence.Plo ./$(DEPDIR)/space.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/spacetypes.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/swapbuffers.Plo ./$(DEPDIR)/toets.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/toolbox.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/unix_creator_splash.jpg.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/usiblender.Plo ./$(DEPDIR)/view.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/vpaint.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/windows_creator_splash.jpg.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/writeavicodec.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/writeimage.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/writemovie.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -336,9 +351,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_blendersrc_a_SOURCES)
+DIST_SOURCES = $(libblender_blendersrc_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_blendersrc_a_SOURCES)
+SOURCES = $(libblender_blendersrc_la_SOURCES)
 
 all: all-am
 
@@ -354,10 +369,10 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libblender_blendersrc.a: $(libblender_blendersrc_a_OBJECTS) $(libblender_blendersrc_a_DEPENDENCIES) 
-	-rm -f libblender_blendersrc.a
-	$(libblender_blendersrc_a_AR) libblender_blendersrc.a $(libblender_blendersrc_a_OBJECTS) $(libblender_blendersrc_a_LIBADD)
-	$(RANLIB) libblender_blendersrc.a
+libblender_blendersrc.la: $(libblender_blendersrc_la_OBJECTS) $(libblender_blendersrc_la_DEPENDENCIES) 
+	-rm -f libblender_blendersrc.la
+	$(libblender_blendersrc_la_AR) libblender_blendersrc.la $(libblender_blendersrc_la_OBJECTS) $(libblender_blendersrc_la_LIBADD)
+	$(RANLIB) libblender_blendersrc.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -365,84 +380,84 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Bfont.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blenderbuttons.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/booleanops.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/booleanops_mesh.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buttons.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmap.tga.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmovie.tga.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawaction.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawimage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawimasel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawipo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawmesh.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawnla.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawobject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawoops.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawscene.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawseq.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawsound.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawview.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editaction.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editarmature.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editconstraint.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editcurve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editdeform.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editfont.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editgroup.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editika.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editimasel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editipo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editkey.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editlattice.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editmball.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editmesh.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editnla.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editobject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editoops.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editsca.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editscreen.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editseq.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editsima.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editsound.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editview.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eventdebug.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filesel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ghostwinlay.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glutil.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/headerbuttons.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imasel.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isect.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keyval.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mainqueue.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mywindow.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oops.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/osx_creator_splash.jpg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/playanim.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/poseobject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/previewrender.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/renderwin.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resources.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scrarea.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/screendump.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/space.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spacetypes.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swapbuffers.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toets.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toolbox.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unix_creator_splash.jpg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usiblender.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/view.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpaint.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/windows_creator_splash.jpg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeavicodec.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeimage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writemovie.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Bfont.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blenderbuttons.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/booleanops.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/booleanops_mesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buttons.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmap.tga.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cmovie.tga.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawaction.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawimage.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawimasel.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawipo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawmesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawnla.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawobject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawoops.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawscene.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawseq.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawsound.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/drawview.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edit.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editaction.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editarmature.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editconstraint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editcurve.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editdeform.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editfont.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editgroup.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editika.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editimasel.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editipo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editkey.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editlattice.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editmball.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editmesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editnla.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editobject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editoops.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editsca.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editscreen.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editseq.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editsima.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editsound.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/editview.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eventdebug.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/filesel.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ghostwinlay.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glutil.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/headerbuttons.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/imasel.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/interface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isect.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keyval.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mainqueue.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mywindow.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/oops.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/osx_creator_splash.jpg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/playanim.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/poseobject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/previewrender.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/renderwin.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resources.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scrarea.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/screendump.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sequence.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/space.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spacetypes.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swapbuffers.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toets.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toolbox.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unix_creator_splash.jpg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/usiblender.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/view.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpaint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/windows_creator_splash.jpg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeavicodec.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeimage.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writemovie.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

@@ -153,16 +153,16 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_avi.a
+noinst_LIBRARIES = libblender_avi.la
 
-libblender_avi_a_SOURCES = \
-		intern/avi.c \
-		intern/avirgb.c \
-		intern/codecs.c \
-		intern/rgb32.c \
-		intern/endian.c \
-		intern/mjpeg.c \
-		intern/options.c
+libblender_avi_la_SOURCES = \
+	intern/avi.c \
+	intern/avirgb.c \
+	intern/codecs.c \
+	intern/rgb32.c \
+	intern/endian.c \
+	intern/mjpeg.c \
+	intern/options.c
 
 
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc
@@ -172,20 +172,19 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_avi_a_AR = $(AR) cru
-libblender_avi_a_LIBADD =
-am_libblender_avi_a_OBJECTS = avi.$(OBJEXT) avirgb.$(OBJEXT) \
-	codecs.$(OBJEXT) rgb32.$(OBJEXT) endian.$(OBJEXT) \
-	mjpeg.$(OBJEXT) options.$(OBJEXT)
-libblender_avi_a_OBJECTS = $(am_libblender_avi_a_OBJECTS)
+libblender_avi_la_AR = $(AR) cru
+libblender_avi_la_LIBADD =
+am_libblender_avi_la_OBJECTS = avi.lo avirgb.lo codecs.lo rgb32.lo \
+	endian.lo mjpeg.lo options.lo
+libblender_avi_la_OBJECTS = $(am_libblender_avi_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/avi.Po ./$(DEPDIR)/avirgb.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/codecs.Po ./$(DEPDIR)/endian.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mjpeg.Po ./$(DEPDIR)/options.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rgb32.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/avi.Plo ./$(DEPDIR)/avirgb.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/codecs.Plo ./$(DEPDIR)/endian.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/mjpeg.Plo ./$(DEPDIR)/options.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/rgb32.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -193,9 +192,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_avi_a_SOURCES)
+DIST_SOURCES = $(libblender_avi_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_avi_a_SOURCES)
+SOURCES = $(libblender_avi_la_SOURCES)
 
 all: all-am
 
@@ -211,17 +210,17 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-avi.$(OBJEXT): intern/avi.c
-avirgb.$(OBJEXT): intern/avirgb.c
-codecs.$(OBJEXT): intern/codecs.c
-rgb32.$(OBJEXT): intern/rgb32.c
-endian.$(OBJEXT): intern/endian.c
-mjpeg.$(OBJEXT): intern/mjpeg.c
-options.$(OBJEXT): intern/options.c
-libblender_avi.a: $(libblender_avi_a_OBJECTS) $(libblender_avi_a_DEPENDENCIES) 
-	-rm -f libblender_avi.a
-	$(libblender_avi_a_AR) libblender_avi.a $(libblender_avi_a_OBJECTS) $(libblender_avi_a_LIBADD)
-	$(RANLIB) libblender_avi.a
+avi.lo: intern/avi.c
+avirgb.lo: intern/avirgb.c
+codecs.lo: intern/codecs.c
+rgb32.lo: intern/rgb32.c
+endian.lo: intern/endian.c
+mjpeg.lo: intern/mjpeg.c
+options.lo: intern/options.c
+libblender_avi.la: $(libblender_avi_la_OBJECTS) $(libblender_avi_la_DEPENDENCIES) 
+	-rm -f libblender_avi.la
+	$(libblender_avi_la_AR) libblender_avi.la $(libblender_avi_la_OBJECTS) $(libblender_avi_la_LIBADD)
+	$(RANLIB) libblender_avi.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -229,13 +228,13 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avirgb.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/codecs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/endian.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mjpeg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/options.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rgb32.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avi.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/avirgb.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/codecs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/endian.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mjpeg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/options.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rgb32.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

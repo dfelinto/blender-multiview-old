@@ -1,42 +1,31 @@
-SUBDIRS = blender gameengine
+if BlenderGAME
+gameblenderdir = gameengine
+gamelib =  gameengine/libblender_gameengine.la
+else
+gameblenderdir =
+gamelib =
+endif
 
-bin_PROGRAMS = blender
+if WIN
+icondir = icons
+else 
+icondir =
+endif
 
-blender_SOURCES = \
-	creator/buildinfo.c \
-	creator/creator.c
+SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
+## Took out ode since not sure what to do with it yet.
 
-#I've assumed that everything under blender directory should be statically linked into the main file... while the gameengine and ode are separate dynamically linked to the binary
+## Assuming no reason to build creator anymore lets just call publisher blender
+if CARBON
+bin_PROGRAMS = blenderpublisher.app blenderplayer.app 
+else
+bin_PROGRAMS = blender blenderplayer plugin
+endif
 
 blender_LDADD = \
-	blender/avi/libblender_avi.a \
-	blender/blenkernel/libblender_kernel.a \
-	blender/blenlib/libblender_blenlib.a \
-	blender/blenloader/libblender_blenloader.a \
-	blender/blenpluginapi/libblender_blenpluginapi.a \
-	blender/bpython/libblender_bpython.a \
-	blender/decrypt/libblender_decrypt.a \
-	blender/deflate/libblender_deflate.a \
-	blender/encrypt/libblender_encrypt.a \
-	blender/imbuf/libblender_imbuf.a \
-	blender/img/libblender_img.a \
-	blender/inflate/libblender_inflate.a \
-	blender/makesdna/libblender_makesdna.a \
-	blender/misc/libblender_misc.a \
-	blender/radiosity/libblender_radiosity.a \
-	blender/readblenfile/libblender_readblenfile.a \
-	blender/readstreamglue/libblender_readsreamglue.a \
-	blender/render/libblender_render.a \
-	blender/renderconverter/libblender_renderconverter.a \
-	blender/sign/libblender_sign.a \
-	blender/src/libblender_blendersrc.a \
-	blender/verify/libblender_verify.a \
-	blender/writeblenfile/libblender_writeblenfile.a \
-	blender/writestreamglue/libblender_writestreamglue.a
-
-
-
-
-
-
-
+	creator/libblender_creator.la \
+	$(gamelib) \
+	blender/libblender_blender.la \
+	kernel/libblender_kernel.a \
+	../intern/libblender_intern.la
+## Need to add python stuff here

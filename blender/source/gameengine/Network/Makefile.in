@@ -153,33 +153,36 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libnetwork.a
+noinst_LIBRARIES = libgameblender_network.la
 
-libnetwork_a_SOURCES = \
-		NG_NetworkMessage.cpp \
-		NG_NetworkObject.cpp \
-		NG_NetworkScene.cpp
+libgameblender_network_la_SOURCES = \
+	NG_NetworkMessage.cpp \
+	NG_NetworkObject.cpp \
+	NG_NetworkScene.cpp
 
 
-INCLUDES = -I$(top_srcdir)/intern/string -I$(top_srcdir)/intern/moto/include
+INCLUDES = -I$(top_srcdir)/intern/string \
+	-I$(top_srcdir)/intern/moto/include
+
 subdir = source/gameengine/Network
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libnetwork_a_AR = $(AR) cru
-libnetwork_a_LIBADD =
-am_libnetwork_a_OBJECTS = NG_NetworkMessage.$(OBJEXT) \
-	NG_NetworkObject.$(OBJEXT) NG_NetworkScene.$(OBJEXT)
-libnetwork_a_OBJECTS = $(am_libnetwork_a_OBJECTS)
+libgameblender_network_la_AR = $(AR) cru
+libgameblender_network_la_LIBADD =
+am_libgameblender_network_la_OBJECTS = NG_NetworkMessage.lo \
+	NG_NetworkObject.lo NG_NetworkScene.lo
+libgameblender_network_la_OBJECTS = \
+	$(am_libgameblender_network_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/NG_NetworkMessage.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/NG_NetworkObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/NG_NetworkScene.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/NG_NetworkMessage.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/NG_NetworkObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/NG_NetworkScene.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -188,9 +191,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libnetwork_a_SOURCES)
+DIST_SOURCES = $(libgameblender_network_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libnetwork_a_SOURCES)
+SOURCES = $(libgameblender_network_la_SOURCES)
 
 all: all-am
 
@@ -206,10 +209,10 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libnetwork.a: $(libnetwork_a_OBJECTS) $(libnetwork_a_DEPENDENCIES) 
-	-rm -f libnetwork.a
-	$(libnetwork_a_AR) libnetwork.a $(libnetwork_a_OBJECTS) $(libnetwork_a_LIBADD)
-	$(RANLIB) libnetwork.a
+libgameblender_network.la: $(libgameblender_network_la_OBJECTS) $(libgameblender_network_la_DEPENDENCIES) 
+	-rm -f libgameblender_network.la
+	$(libgameblender_network_la_AR) libgameblender_network.la $(libgameblender_network_la_OBJECTS) $(libgameblender_network_la_LIBADD)
+	$(RANLIB) libgameblender_network.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -217,9 +220,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NG_NetworkMessage.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NG_NetworkObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NG_NetworkScene.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NG_NetworkMessage.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NG_NetworkObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NG_NetworkScene.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -439,8 +442,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
-		LoopBackNetwork/NG_LoopBackNetworkDeviceInterface.cpp \
-		TerraplayNetwork/NG_TerraplayNetworkDeviceInterface.cpp
+	LoopBackNetwork/NG_LoopBackNetworkDeviceInterface.cpp \
+	TerraplayNetwork/NG_TerraplayNetworkDeviceInterface.cpp
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

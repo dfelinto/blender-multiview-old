@@ -153,29 +153,37 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_renderconverter.a
+noinst_LIBRARIES = libblender_renderconverter.la
 
-libblender_renderconverter_a_SOURCES = \
-		intern/convertBlenderScene.c
+libblender_renderconverter_la_SOURCES = \
+	intern/convertBlenderScene.c
 
 
-INCLUDES = -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/blender/render/extern/include -I$(top_srcdir)/source/blender/misc -I$(top_srcdir)/source/blender/bpython/include
+INCLUDES = -I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/blender/render/extern/include \
+	-I$(top_srcdir)/source/blender/misc \
+	-I$(top_srcdir)/source/blender/bpython/include
+
 subdir = source/blender/renderconverter
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_renderconverter_a_AR = $(AR) cru
-libblender_renderconverter_a_LIBADD =
-am_libblender_renderconverter_a_OBJECTS = convertBlenderScene.$(OBJEXT)
-libblender_renderconverter_a_OBJECTS = \
-	$(am_libblender_renderconverter_a_OBJECTS)
+libblender_renderconverter_la_AR = $(AR) cru
+libblender_renderconverter_la_LIBADD =
+am_libblender_renderconverter_la_OBJECTS = convertBlenderScene.lo
+libblender_renderconverter_la_OBJECTS = \
+	$(am_libblender_renderconverter_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/convertBlenderScene.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/convertBlenderScene.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -183,9 +191,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_renderconverter_a_SOURCES)
+DIST_SOURCES = $(libblender_renderconverter_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_renderconverter_a_SOURCES)
+SOURCES = $(libblender_renderconverter_la_SOURCES)
 
 all: all-am
 
@@ -201,11 +209,11 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-convertBlenderScene.$(OBJEXT): intern/convertBlenderScene.c
-libblender_renderconverter.a: $(libblender_renderconverter_a_OBJECTS) $(libblender_renderconverter_a_DEPENDENCIES) 
-	-rm -f libblender_renderconverter.a
-	$(libblender_renderconverter_a_AR) libblender_renderconverter.a $(libblender_renderconverter_a_OBJECTS) $(libblender_renderconverter_a_LIBADD)
-	$(RANLIB) libblender_renderconverter.a
+convertBlenderScene.lo: intern/convertBlenderScene.c
+libblender_renderconverter.la: $(libblender_renderconverter_la_OBJECTS) $(libblender_renderconverter_la_DEPENDENCIES) 
+	-rm -f libblender_renderconverter.la
+	$(libblender_renderconverter_la_AR) libblender_renderconverter.la $(libblender_renderconverter_la_OBJECTS) $(libblender_renderconverter_la_LIBADD)
+	$(RANLIB) libblender_renderconverter.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -213,7 +221,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/convertBlenderScene.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/convertBlenderScene.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

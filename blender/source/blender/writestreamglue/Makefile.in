@@ -153,46 +153,48 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_writestreamglue.a
+noinst_LIBRARIES = libblender_writestreamglue.la
 
-libblender_writestreamglue_a_SOURCES = \
-		intern/BLO_dumpFromMemory.c \
-		intern/BLO_getPubKey.c \
-		intern/BLO_streamGlueControl.c \
-		intern/BLO_writeStreamGlue.c \
-		stub/BLO_getPubKeySTUB.c \
-		stub/BLO_keyStoreSTUB.c \
-		stub/BLO_streamGlueControlSTUB.c \
-		stub/BLO_writeStreamGlueSTUB.c
+libblender_writestreamglue_la_SOURCES = \
+	intern/BLO_dumpFromMemory.c \
+	intern/BLO_getPubKey.c \
+	intern/BLO_streamGlueControl.c \
+	intern/BLO_writeStreamGlue.c \
+	stub/BLO_getPubKeySTUB.c \
+	stub/BLO_keyStoreSTUB.c \
+	stub/BLO_streamGlueControlSTUB.c \
+	stub/BLO_writeStreamGlueSTUB.c
 
 
 
 #note note sure if the stub directory should be included... better safe than sorry
-INCLUDES = -I$(top_srcdir)/source/blender/readstreamglue -I$(top_srcdir)/source/kernel/gen_messaging -I$(top_srcdir)/intern/keymaker
+INCLUDES = -I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/source/kernel/gen_messaging \
+	-I$(top_srcdir)/intern/keymaker
+
 subdir = source/blender/writestreamglue
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_writestreamglue_a_AR = $(AR) cru
-libblender_writestreamglue_a_LIBADD =
-am_libblender_writestreamglue_a_OBJECTS = BLO_dumpFromMemory.$(OBJEXT) \
-	BLO_getPubKey.$(OBJEXT) BLO_streamGlueControl.$(OBJEXT) \
-	BLO_getPubKeySTUB.$(OBJEXT) BLO_streamGlueControlSTUB.$(OBJEXT) \
-	BLO_writeStreamGlueSTUB.$(OBJEXT)
-libblender_writestreamglue_a_OBJECTS = \
-	$(am_libblender_writestreamglue_a_OBJECTS)
+libblender_writestreamglue_la_AR = $(AR) cru
+libblender_writestreamglue_la_LIBADD =
+am_libblender_writestreamglue_la_OBJECTS = BLO_dumpFromMemory.lo \
+	BLO_getPubKey.lo BLO_streamGlueControl.lo BLO_getPubKeySTUB.lo \
+	BLO_streamGlueControlSTUB.lo BLO_writeStreamGlueSTUB.lo
+libblender_writestreamglue_la_OBJECTS = \
+	$(am_libblender_writestreamglue_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_dumpFromMemory.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BLO_getPubKey.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BLO_getPubKeySTUB.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BLO_streamGlueControl.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BLO_streamGlueControlSTUB.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BLO_writeStreamGlueSTUB.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_dumpFromMemory.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_getPubKey.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_getPubKeySTUB.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_streamGlueControl.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_streamGlueControlSTUB.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BLO_writeStreamGlueSTUB.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -200,9 +202,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_writestreamglue_a_SOURCES)
+DIST_SOURCES = $(libblender_writestreamglue_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_writestreamglue_a_SOURCES)
+SOURCES = $(libblender_writestreamglue_la_SOURCES)
 
 all: all-am
 
@@ -218,16 +220,16 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-BLO_dumpFromMemory.$(OBJEXT): intern/BLO_dumpFromMemory.c
-BLO_getPubKey.$(OBJEXT): intern/BLO_getPubKey.c
-BLO_streamGlueControl.$(OBJEXT): intern/BLO_streamGlueControl.c
-BLO_getPubKeySTUB.$(OBJEXT): stub/BLO_getPubKeySTUB.c
-BLO_streamGlueControlSTUB.$(OBJEXT): stub/BLO_streamGlueControlSTUB.c
-BLO_writeStreamGlueSTUB.$(OBJEXT): stub/BLO_writeStreamGlueSTUB.c
-libblender_writestreamglue.a: $(libblender_writestreamglue_a_OBJECTS) $(libblender_writestreamglue_a_DEPENDENCIES) 
-	-rm -f libblender_writestreamglue.a
-	$(libblender_writestreamglue_a_AR) libblender_writestreamglue.a $(libblender_writestreamglue_a_OBJECTS) $(libblender_writestreamglue_a_LIBADD)
-	$(RANLIB) libblender_writestreamglue.a
+BLO_dumpFromMemory.lo: intern/BLO_dumpFromMemory.c
+BLO_getPubKey.lo: intern/BLO_getPubKey.c
+BLO_streamGlueControl.lo: intern/BLO_streamGlueControl.c
+BLO_getPubKeySTUB.lo: stub/BLO_getPubKeySTUB.c
+BLO_streamGlueControlSTUB.lo: stub/BLO_streamGlueControlSTUB.c
+BLO_writeStreamGlueSTUB.lo: stub/BLO_writeStreamGlueSTUB.c
+libblender_writestreamglue.la: $(libblender_writestreamglue_la_OBJECTS) $(libblender_writestreamglue_la_DEPENDENCIES) 
+	-rm -f libblender_writestreamglue.la
+	$(libblender_writestreamglue_la_AR) libblender_writestreamglue.la $(libblender_writestreamglue_la_OBJECTS) $(libblender_writestreamglue_la_LIBADD)
+	$(RANLIB) libblender_writestreamglue.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -235,12 +237,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_dumpFromMemory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_getPubKey.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_getPubKeySTUB.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_streamGlueControl.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_streamGlueControlSTUB.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_writeStreamGlueSTUB.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_dumpFromMemory.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_getPubKey.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_getPubKeySTUB.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_streamGlueControl.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_streamGlueControlSTUB.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_writeStreamGlueSTUB.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

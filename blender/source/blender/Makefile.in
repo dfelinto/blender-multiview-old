@@ -153,12 +153,76 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = src avi blenkernel blenlib blenloader blenpluginapi bpython decrypt deflate encrypt imbuf img inflate makesdna misc radiosity readblenfile readstreamglue render renderconverter sign verify writeblenfile writestreamglue
+SUBDIRS = blenloader deflate inflate encrypt decrypt sign verify \
+	writestreamglue readstreamglue writeblenfile readblenfile \
+	avi imbuf img misc render radiosity blenlib blenkernel blenpluginapi \
+	bpython makesdna src renderconverter
+
+
+noinst_LTLIBRARIES = libblenderlib.la
+
+libblenderlib_la_LIBADD = \
+	blenloader/libblender_blenloader.la \
+	deflate/libblender_deflate.la \
+	inflate/libblender_inflate.la \
+	encrypt/libblender_encrypt.la \
+	decrypt/libblender_decrypt.la \
+	sign/libblender_sign.la \
+	verify/libblender_verify.la \
+	writestreamglue/libblender_writestreamglue.la \
+	writeblenfile/libblender_writeblenfile.la \
+	readblenfile/libblender_readblenfile.la \
+	avi/libblender_avi.la \
+	imbuf/libblender_imbuf.la \
+	img/libblender_img.la \
+	misc/libblender_misc.la \
+	render/libblender_render.la \
+	radiosity/libblender_radiosity.la \
+	blenlib/libblender_lib.la \
+	blenkernel/libblender_blenkernel.la \
+	blenpluginapi/libblender_blenpluginapi.la \
+	bpython/libblender_bpython.la \
+	makesdna/libblender_dna.la \
+	src/libblender_main.la \
+	renderconverter/libblender_renderconverter.la
+
 subdir = source/blender
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-DIST_SOURCES =
+LTLIBRARIES = $(noinst_LTLIBRARIES)
+
+libblenderlib_la_LDFLAGS =
+libblenderlib_la_DEPENDENCIES = blenloader/libblender_blenloader.la \
+	deflate/libblender_deflate.la inflate/libblender_inflate.la \
+	encrypt/libblender_encrypt.la decrypt/libblender_decrypt.la \
+	sign/libblender_sign.la verify/libblender_verify.la \
+	writestreamglue/libblender_writestreamglue.la \
+	writeblenfile/libblender_writeblenfile.la \
+	readblenfile/libblender_readblenfile.la avi/libblender_avi.la \
+	imbuf/libblender_imbuf.la img/libblender_img.la \
+	misc/libblender_misc.la render/libblender_render.la \
+	radiosity/libblender_radiosity.la blenlib/libblender_lib.la \
+	blenkernel/libblender_blenkernel.la \
+	blenpluginapi/libblender_blenpluginapi.la \
+	bpython/libblender_bpython.la makesdna/libblender_dna.la \
+	src/libblender_main.la \
+	renderconverter/libblender_renderconverter.la
+libblenderlib_la_SOURCES = libblenderlib.la.c
+libblenderlib_la_OBJECTS = libblenderlib.la.lo
+
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
+depcomp = $(SHELL) $(top_srcdir)/depcomp
+am__depfiles_maybe = depfiles
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libblenderlib.la.Plo
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
+	$(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+DIST_SOURCES = libblenderlib.la.c
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	ps-recursive install-info-recursive uninstall-info-recursive \
@@ -167,14 +231,72 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
+SOURCES = libblenderlib.la.c
+
 all: all-recursive
 
 .SUFFIXES:
+.SUFFIXES: .c .lo .o .obj
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  source/blender/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
+
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" = "$$p" && dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
+libblenderlib.la: $(libblenderlib_la_OBJECTS) $(libblenderlib_la_DEPENDENCIES) 
+	$(LINK)  $(libblenderlib_la_LDFLAGS) $(libblenderlib_la_OBJECTS) $(libblenderlib_la_LIBADD) $(LIBS)
+
+mostlyclean-compile:
+	-rm -f *.$(OBJEXT) core *.core
+
+distclean-compile:
+	-rm -f *.tab.c
+
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libblenderlib.la.Plo@am__quote@
+
+distclean-depend:
+	-rm -rf ./$(DEPDIR)
+
+.c.o:
+@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c `test -f '$<' || echo '$(srcdir)/'`$<
+
+.c.obj:
+@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o $@ `if test -f '$<'; then $(CYGPATH_W) '$<'; else $(CYGPATH_W) '$(srcdir)/$<'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c `if test -f '$<'; then $(CYGPATH_W) '$<'; else $(CYGPATH_W) '$(srcdir)/$<'`
+
+.c.lo:
+@am__fastdepCC_TRUE@	if $(LTCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -348,7 +470,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile
+all-am: Makefile $(LTLIBRARIES)
 installdirs: installdirs-recursive
 installdirs-am:
 
@@ -378,12 +500,13 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-libtool mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
+	mostlyclean-am
 
 distclean: distclean-recursive
 
-distclean-am: clean-am distclean-generic distclean-libtool \
-	distclean-tags
+distclean-am: clean-am distclean-compile distclean-depend \
+	distclean-generic distclean-libtool distclean-tags
 
 dvi: dvi-recursive
 
@@ -409,7 +532,8 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-generic mostlyclean-libtool
+mostlyclean-am: mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool
 
 pdf: pdf-recursive
 
@@ -424,20 +548,21 @@ uninstall-am: uninstall-info-am
 uninstall-info: uninstall-info-recursive
 
 .PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am clean \
-	clean-generic clean-libtool clean-recursive ctags \
-	ctags-recursive distclean distclean-generic distclean-libtool \
-	distclean-recursive distclean-tags distdir dvi dvi-am \
-	dvi-recursive info info-am info-recursive install install-am \
-	install-data install-data-am install-data-recursive \
+	clean-generic clean-libtool clean-noinstLTLIBRARIES \
+	clean-recursive ctags ctags-recursive distclean \
+	distclean-compile distclean-depend distclean-generic \
+	distclean-libtool distclean-recursive distclean-tags distdir \
+	dvi dvi-am dvi-recursive info info-am info-recursive install \
+	install-am install-data install-data-am install-data-recursive \
 	install-exec install-exec-am install-exec-recursive \
 	install-info install-info-am install-info-recursive install-man \
 	install-recursive install-strip installcheck installcheck-am \
 	installdirs installdirs-am installdirs-recursive \
 	maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-libtool mostlyclean-recursive pdf pdf-am \
-	pdf-recursive ps ps-am ps-recursive tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am \
+	maintainer-clean-recursive mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool mostlyclean-recursive \
+	pdf pdf-am pdf-recursive ps ps-am ps-recursive tags \
+	tags-recursive uninstall uninstall-am uninstall-info-am \
 	uninstall-info-recursive uninstall-recursive
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

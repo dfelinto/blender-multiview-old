@@ -153,11 +153,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_makesdna.a
+noinst_LIBRARIES = libblender_makesdna.la
 
-libblender_makesdna_a_SOURCES = \
-		intern/dna.c \
-		intern/makesdna.c
+libblender_makesdna_la_SOURCES = \
+	intern/dna.c \
+	intern/makesdna.c
 
 
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc
@@ -167,15 +167,15 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_makesdna_a_AR = $(AR) cru
-libblender_makesdna_a_LIBADD =
-am_libblender_makesdna_a_OBJECTS = dna.$(OBJEXT) makesdna.$(OBJEXT)
-libblender_makesdna_a_OBJECTS = $(am_libblender_makesdna_a_OBJECTS)
+libblender_makesdna_la_AR = $(AR) cru
+libblender_makesdna_la_LIBADD =
+am_libblender_makesdna_la_OBJECTS = dna.lo makesdna.lo
+libblender_makesdna_la_OBJECTS = $(am_libblender_makesdna_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/dna.Po ./$(DEPDIR)/makesdna.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/dna.Plo ./$(DEPDIR)/makesdna.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -183,9 +183,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_makesdna_a_SOURCES)
+DIST_SOURCES = $(libblender_makesdna_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_makesdna_a_SOURCES)
+SOURCES = $(libblender_makesdna_la_SOURCES)
 
 all: all-am
 
@@ -201,12 +201,12 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-dna.$(OBJEXT): intern/dna.c
-makesdna.$(OBJEXT): intern/makesdna.c
-libblender_makesdna.a: $(libblender_makesdna_a_OBJECTS) $(libblender_makesdna_a_DEPENDENCIES) 
-	-rm -f libblender_makesdna.a
-	$(libblender_makesdna_a_AR) libblender_makesdna.a $(libblender_makesdna_a_OBJECTS) $(libblender_makesdna_a_LIBADD)
-	$(RANLIB) libblender_makesdna.a
+dna.lo: intern/dna.c
+makesdna.lo: intern/makesdna.c
+libblender_makesdna.la: $(libblender_makesdna_la_OBJECTS) $(libblender_makesdna_la_DEPENDENCIES) 
+	-rm -f libblender_makesdna.la
+	$(libblender_makesdna_la_AR) libblender_makesdna.la $(libblender_makesdna_la_OBJECTS) $(libblender_makesdna_la_LIBADD)
+	$(RANLIB) libblender_makesdna.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -214,8 +214,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dna.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/makesdna.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dna.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/makesdna.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

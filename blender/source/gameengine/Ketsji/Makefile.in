@@ -153,168 +153,175 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libketsji.a
+noinst_LIBRARIES = libgameblender_ketsji.la
 
-libketsji_a_SOURCES = \
-		KX_CDActuator.cpp \
-		KX_Camera.cpp \
-		KX_CameraActuator.cpp \
-		KX_CameraIpoSGController.cpp \
-		KX_ConstraintActuator.cpp \
-		KX_ConstraintWrapper.cpp \
-		KX_ConvertPhysicsObjects.cpp \
-		KX_EmptyObject.cpp \
-		KX_GameActuator.cpp \
-		KX_GameObject.cpp \
-		KX_IPO_SGController.cpp \
-		KX_IPhysicsController.cpp \
-		KX_IpoActuator.cpp \
-		KX_KetsjiEngine.cpp \
-		KX_Light.cpp \
-		KX_LightIpoSGController.cpp \
-		KX_MeshProxy.cpp \
-		KX_MotionState.cpp \
-		KX_MouseFocusSensor.cpp \
-		KX_NearSensor.cpp \
-		KX_ObColorIpoSGController.cpp \
-		KX_ObjectActuator.cpp \
-		KX_OdePhysicsController.cpp \
-		KX_OrientationInterpolator.cpp \
-		KX_PhysicsObjectWrapper.cpp \
-		KX_PositionInterpolator.cpp \
-		KX_PyConstraintBinding.cpp \
-		KX_PythonInit.cpp \
-		KX_RadarSensor.cpp \
-		KX_RayEventManager.cpp \
-		KX_RaySensor.cpp \
-		KX_SCA_AddObjectActuator.cpp \
-		KX_SCA_EndObjectActuator.cpp \
-		KX_SCA_ReplaceMeshActuator.cpp \
-		KX_SG_NodeRelationships.cpp \
-		KX_ScalarInterpolator.cpp \
-		KX_ScalingInterpolator.cpp \
-		KX_Scene.cpp \
-		KX_SceneActuator.cpp \
-		KX_SoundActuator.cpp \
-		KX_SumoPhysicsController.cpp \
-		KX_TimeCategoryLogger.cpp \
-		KX_TimeLogger.cpp \
-		KX_TouchEventManager.cpp \
-		KX_TouchSensor.cpp \
-		KX_TrackToActuator.cpp \
-		KX_VertexProxy.cpp \
-		KX_VisibilityActuator.cpp \
-		KX_WorldInfo.cpp \
-		KX_WorldIpoController.cpp \
-		KXNetwork/KX_NetworkEventManager.cpp \
-		KXNetwork/KX_NetworkMessageActuator.cpp \
-		KXNetwork/KX_NetworkMessageSensor.cpp \
-		KXNetwork/KX_NetworkObjectActuator.cpp \
-		KXNetwork/KX_NetworkObjectSensor.cpp
+libgameblender_ketsji_la_SOURCES = \
+	KX_CDActuator.cpp \
+	KX_Camera.cpp \
+	KX_CameraActuator.cpp \
+	KX_CameraIpoSGController.cpp \
+	KX_ConstraintActuator.cpp \
+	KX_ConstraintWrapper.cpp \
+	KX_ConvertPhysicsObjects.cpp \
+	KX_EmptyObject.cpp \
+	KX_GameActuator.cpp \
+	KX_GameObject.cpp \
+	KX_IPO_SGController.cpp \
+	KX_IPhysicsController.cpp \
+	KX_IpoActuator.cpp \
+	KX_KetsjiEngine.cpp \
+	KX_Light.cpp \
+	KX_LightIpoSGController.cpp \
+	KX_MeshProxy.cpp \
+	KX_MotionState.cpp \
+	KX_MouseFocusSensor.cpp \
+	KX_NearSensor.cpp \
+	KX_ObColorIpoSGController.cpp \
+	KX_ObjectActuator.cpp \
+	KX_OdePhysicsController.cpp \
+	KX_OrientationInterpolator.cpp \
+	KX_PhysicsObjectWrapper.cpp \
+	KX_PositionInterpolator.cpp \
+	KX_PyConstraintBinding.cpp \
+	KX_PythonInit.cpp \
+	KX_RadarSensor.cpp \
+	KX_RayEventManager.cpp \
+	KX_RaySensor.cpp \
+	KX_SCA_AddObjectActuator.cpp \
+	KX_SCA_EndObjectActuator.cpp \
+	KX_SCA_ReplaceMeshActuator.cpp \
+	KX_SG_NodeRelationships.cpp \
+	KX_ScalarInterpolator.cpp \
+	KX_ScalingInterpolator.cpp \
+	KX_Scene.cpp \
+	KX_SceneActuator.cpp \
+	KX_SoundActuator.cpp \
+	KX_SumoPhysicsController.cpp \
+	KX_TimeCategoryLogger.cpp \
+	KX_TimeLogger.cpp \
+	KX_TouchEventManager.cpp \
+	KX_TouchSensor.cpp \
+	KX_TrackToActuator.cpp \
+	KX_VertexProxy.cpp \
+	KX_VisibilityActuator.cpp \
+	KX_WorldInfo.cpp \
+	KX_WorldIpoController.cpp \
+	KXNetwork/KX_NetworkEventManager.cpp \
+	KXNetwork/KX_NetworkMessageActuator.cpp \
+	KXNetwork/KX_NetworkMessageSensor.cpp \
+	KXNetwork/KX_NetworkObjectActuator.cpp \
+	KXNetwork/KX_NetworkObjectSensor.cpp
 
 
-INCLUDES = -I$(top_srcdir)/source/gameengine/GameLogic -I$(top_srcdir)/source/gameengine/SoundSystem -I$(top_srcdir)/source/gameengine/Expressions -I$(top_srcdir)/source/gameengine/SceneGraph -I$(top_srcdir)/intern/moto/include -I$(top_srcdir)/intern/string -I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ -I$(top_srcdir)/source/kernel/gen_system -I$(top_srcdir)/source/gameengine/Rasterizer -I$(top_srcdir)/source/gameengine/Physics/common -I$(top_srcdir)/source/gameengine/Network -I$(top_srcdir)/source/gameengine/Physics/BlOde -I$(top_srcdir)/source/gameengine/Ketsji/KXNetwork -I$(top_srcdir)/source/gameengine/Physics/Sumo/Fuzzics/include -I$(top_srcdir)/source/gameengine/Physics/Sumo/include -I$(top_srcdir)/source/gameengine/Physics/Sumo/
+INCLUDES = -I$(top_srcdir)/source/gameengine/GameLogic \
+	-I$(top_srcdir)/source/gameengine/SoundSystem \
+	-I$(top_srcdir)/source/gameengine/Expressions \
+	-I$(top_srcdir)/source/gameengine/SceneGraph \
+	-I$(top_srcdir)/intern/moto/include \
+	-I$(top_srcdir)/intern/string \
+	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
+	-I$(top_srcdir)/source/kernel/gen_system \
+	-I$(top_srcdir)/source/gameengine/Rasterizer \
+	-I$(top_srcdir)/source/gameengine/Physics/common \
+	-I$(top_srcdir)/source/gameengine/Network \
+	-I$(top_srcdir)/source/gameengine/Physics/BlOde \
+	-I$(top_srcdir)/source/gameengine/Ketsji/KXNetwork \
+	-I$(top_srcdir)/source/gameengine/Physics/Sumo/Fuzzics/include \
+	-I$(top_srcdir)/source/gameengine/Physics/Sumo/include \
+	-I$(top_srcdir)/source/gameengine/Physics/Sumo
+
 subdir = source/gameengine/Ketsji
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libketsji_a_AR = $(AR) cru
-libketsji_a_LIBADD =
-am_libketsji_a_OBJECTS = KX_CDActuator.$(OBJEXT) KX_Camera.$(OBJEXT) \
-	KX_CameraActuator.$(OBJEXT) KX_CameraIpoSGController.$(OBJEXT) \
-	KX_ConstraintActuator.$(OBJEXT) KX_ConstraintWrapper.$(OBJEXT) \
-	KX_EmptyObject.$(OBJEXT) KX_GameActuator.$(OBJEXT) \
-	KX_GameObject.$(OBJEXT) KX_IPO_SGController.$(OBJEXT) \
-	KX_IPhysicsController.$(OBJEXT) KX_IpoActuator.$(OBJEXT) \
-	KX_KetsjiEngine.$(OBJEXT) KX_Light.$(OBJEXT) \
-	KX_LightIpoSGController.$(OBJEXT) KX_MeshProxy.$(OBJEXT) \
-	KX_MotionState.$(OBJEXT) KX_MouseFocusSensor.$(OBJEXT) \
-	KX_NearSensor.$(OBJEXT) KX_ObColorIpoSGController.$(OBJEXT) \
-	KX_ObjectActuator.$(OBJEXT) KX_OdePhysicsController.$(OBJEXT) \
-	KX_OrientationInterpolator.$(OBJEXT) \
-	KX_PhysicsObjectWrapper.$(OBJEXT) \
-	KX_PositionInterpolator.$(OBJEXT) \
-	KX_PyConstraintBinding.$(OBJEXT) KX_PythonInit.$(OBJEXT) \
-	KX_RadarSensor.$(OBJEXT) KX_RayEventManager.$(OBJEXT) \
-	KX_RaySensor.$(OBJEXT) KX_SCA_AddObjectActuator.$(OBJEXT) \
-	KX_SCA_EndObjectActuator.$(OBJEXT) \
-	KX_SCA_ReplaceMeshActuator.$(OBJEXT) \
-	KX_SG_NodeRelationships.$(OBJEXT) \
-	KX_ScalarInterpolator.$(OBJEXT) \
-	KX_ScalingInterpolator.$(OBJEXT) KX_Scene.$(OBJEXT) \
-	KX_SceneActuator.$(OBJEXT) KX_SoundActuator.$(OBJEXT) \
-	KX_SumoPhysicsController.$(OBJEXT) \
-	KX_TimeCategoryLogger.$(OBJEXT) KX_TimeLogger.$(OBJEXT) \
-	KX_TouchEventManager.$(OBJEXT) KX_TouchSensor.$(OBJEXT) \
-	KX_TrackToActuator.$(OBJEXT) KX_VertexProxy.$(OBJEXT) \
-	KX_VisibilityActuator.$(OBJEXT) KX_WorldInfo.$(OBJEXT) \
-	KX_WorldIpoController.$(OBJEXT) \
-	KX_NetworkEventManager.$(OBJEXT) \
-	KX_NetworkMessageActuator.$(OBJEXT) \
-	KX_NetworkMessageSensor.$(OBJEXT) \
-	KX_NetworkObjectActuator.$(OBJEXT) \
-	KX_NetworkObjectSensor.$(OBJEXT)
-libketsji_a_OBJECTS = $(am_libketsji_a_OBJECTS)
+libgameblender_ketsji_la_AR = $(AR) cru
+libgameblender_ketsji_la_LIBADD =
+am_libgameblender_ketsji_la_OBJECTS = KX_CDActuator.lo KX_Camera.lo \
+	KX_CameraActuator.lo KX_CameraIpoSGController.lo \
+	KX_ConstraintActuator.lo KX_ConstraintWrapper.lo \
+	KX_EmptyObject.lo KX_GameActuator.lo KX_GameObject.lo \
+	KX_IPO_SGController.lo KX_IPhysicsController.lo \
+	KX_IpoActuator.lo KX_KetsjiEngine.lo KX_Light.lo \
+	KX_LightIpoSGController.lo KX_MeshProxy.lo KX_MotionState.lo \
+	KX_MouseFocusSensor.lo KX_NearSensor.lo \
+	KX_ObColorIpoSGController.lo KX_ObjectActuator.lo \
+	KX_OdePhysicsController.lo KX_OrientationInterpolator.lo \
+	KX_PhysicsObjectWrapper.lo KX_PositionInterpolator.lo \
+	KX_PyConstraintBinding.lo KX_PythonInit.lo KX_RadarSensor.lo \
+	KX_RayEventManager.lo KX_RaySensor.lo \
+	KX_SCA_AddObjectActuator.lo KX_SCA_EndObjectActuator.lo \
+	KX_SCA_ReplaceMeshActuator.lo KX_SG_NodeRelationships.lo \
+	KX_ScalarInterpolator.lo KX_ScalingInterpolator.lo KX_Scene.lo \
+	KX_SceneActuator.lo KX_SoundActuator.lo \
+	KX_SumoPhysicsController.lo KX_TimeCategoryLogger.lo \
+	KX_TimeLogger.lo KX_TouchEventManager.lo KX_TouchSensor.lo \
+	KX_TrackToActuator.lo KX_VertexProxy.lo \
+	KX_VisibilityActuator.lo KX_WorldInfo.lo \
+	KX_WorldIpoController.lo KX_NetworkEventManager.lo \
+	KX_NetworkMessageActuator.lo KX_NetworkMessageSensor.lo \
+	KX_NetworkObjectActuator.lo KX_NetworkObjectSensor.lo
+libgameblender_ketsji_la_OBJECTS = \
+	$(am_libgameblender_ketsji_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/KX_CDActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_Camera.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_CameraActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_CameraIpoSGController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ConstraintActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ConstraintWrapper.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_EmptyObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_GameActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_GameObject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_IPO_SGController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_IPhysicsController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_IpoActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_KetsjiEngine.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_Light.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_LightIpoSGController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_MeshProxy.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_MotionState.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_MouseFocusSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_NearSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkEventManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkMessageActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkMessageSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkObjectActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkObjectSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ObColorIpoSGController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ObjectActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_OdePhysicsController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_OrientationInterpolator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_PhysicsObjectWrapper.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_PositionInterpolator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_PyConstraintBinding.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_PythonInit.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_RadarSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_RayEventManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_RaySensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_SCA_AddObjectActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_SCA_EndObjectActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_SCA_ReplaceMeshActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_SG_NodeRelationships.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ScalarInterpolator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_ScalingInterpolator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_Scene.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_SceneActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_SoundActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_SumoPhysicsController.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_TimeCategoryLogger.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_TimeLogger.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_TouchEventManager.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_TouchSensor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_TrackToActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_VertexProxy.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_VisibilityActuator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_WorldInfo.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/KX_WorldIpoController.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/KX_CDActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_Camera.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_CameraActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_CameraIpoSGController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ConstraintActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ConstraintWrapper.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_EmptyObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_GameActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_GameObject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_IPO_SGController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_IPhysicsController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_IpoActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_KetsjiEngine.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_Light.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_LightIpoSGController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_MeshProxy.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_MotionState.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_MouseFocusSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_NearSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkEventManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkMessageActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkMessageSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkObjectActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_NetworkObjectSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ObColorIpoSGController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ObjectActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_OdePhysicsController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_OrientationInterpolator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_PhysicsObjectWrapper.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_PositionInterpolator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_PyConstraintBinding.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_PythonInit.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_RadarSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_RayEventManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_RaySensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_SCA_AddObjectActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_SCA_EndObjectActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_SCA_ReplaceMeshActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_SG_NodeRelationships.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ScalarInterpolator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_ScalingInterpolator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_Scene.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_SceneActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_SoundActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_SumoPhysicsController.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_TimeCategoryLogger.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_TimeLogger.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_TouchEventManager.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_TouchSensor.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_TrackToActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_VertexProxy.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_VisibilityActuator.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_WorldInfo.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/KX_WorldIpoController.Plo
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
@@ -323,9 +330,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libketsji_a_SOURCES)
+DIST_SOURCES = $(libgameblender_ketsji_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libketsji_a_SOURCES)
+SOURCES = $(libgameblender_ketsji_la_SOURCES)
 
 all: all-am
 
@@ -341,17 +348,15 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-KX_NetworkEventManager.$(OBJEXT): KXNetwork/KX_NetworkEventManager.cpp
-KX_NetworkMessageActuator.$(OBJEXT): \
-	KXNetwork/KX_NetworkMessageActuator.cpp
-KX_NetworkMessageSensor.$(OBJEXT): KXNetwork/KX_NetworkMessageSensor.cpp
-KX_NetworkObjectActuator.$(OBJEXT): \
-	KXNetwork/KX_NetworkObjectActuator.cpp
-KX_NetworkObjectSensor.$(OBJEXT): KXNetwork/KX_NetworkObjectSensor.cpp
-libketsji.a: $(libketsji_a_OBJECTS) $(libketsji_a_DEPENDENCIES) 
-	-rm -f libketsji.a
-	$(libketsji_a_AR) libketsji.a $(libketsji_a_OBJECTS) $(libketsji_a_LIBADD)
-	$(RANLIB) libketsji.a
+KX_NetworkEventManager.lo: KXNetwork/KX_NetworkEventManager.cpp
+KX_NetworkMessageActuator.lo: KXNetwork/KX_NetworkMessageActuator.cpp
+KX_NetworkMessageSensor.lo: KXNetwork/KX_NetworkMessageSensor.cpp
+KX_NetworkObjectActuator.lo: KXNetwork/KX_NetworkObjectActuator.cpp
+KX_NetworkObjectSensor.lo: KXNetwork/KX_NetworkObjectSensor.cpp
+libgameblender_ketsji.la: $(libgameblender_ketsji_la_OBJECTS) $(libgameblender_ketsji_la_DEPENDENCIES) 
+	-rm -f libgameblender_ketsji.la
+	$(libgameblender_ketsji_la_AR) libgameblender_ketsji.la $(libgameblender_ketsji_la_OBJECTS) $(libgameblender_ketsji_la_LIBADD)
+	$(RANLIB) libgameblender_ketsji.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -359,60 +364,60 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_CDActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_Camera.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_CameraActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_CameraIpoSGController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConstraintActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConstraintWrapper.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_EmptyObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_GameActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_GameObject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_IPO_SGController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_IPhysicsController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_IpoActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_KetsjiEngine.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_Light.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_LightIpoSGController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_MeshProxy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_MotionState.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_MouseFocusSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NearSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkEventManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkMessageActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkMessageSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkObjectActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkObjectSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ObColorIpoSGController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ObjectActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_OdePhysicsController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_OrientationInterpolator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_PhysicsObjectWrapper.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_PositionInterpolator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_PyConstraintBinding.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_PythonInit.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_RadarSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_RayEventManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_RaySensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SCA_AddObjectActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SCA_EndObjectActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SCA_ReplaceMeshActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SG_NodeRelationships.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ScalarInterpolator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ScalingInterpolator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_Scene.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SceneActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SoundActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SumoPhysicsController.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TimeCategoryLogger.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TimeLogger.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TouchEventManager.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TouchSensor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TrackToActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_VertexProxy.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_VisibilityActuator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_WorldInfo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_WorldIpoController.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_CDActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_Camera.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_CameraActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_CameraIpoSGController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConstraintActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ConstraintWrapper.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_EmptyObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_GameActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_GameObject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_IPO_SGController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_IPhysicsController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_IpoActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_KetsjiEngine.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_Light.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_LightIpoSGController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_MeshProxy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_MotionState.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_MouseFocusSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NearSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkEventManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkMessageActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkMessageSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkObjectActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_NetworkObjectSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ObColorIpoSGController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ObjectActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_OdePhysicsController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_OrientationInterpolator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_PhysicsObjectWrapper.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_PositionInterpolator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_PyConstraintBinding.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_PythonInit.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_RadarSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_RayEventManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_RaySensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SCA_AddObjectActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SCA_EndObjectActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SCA_ReplaceMeshActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SG_NodeRelationships.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ScalarInterpolator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_ScalingInterpolator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_Scene.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SceneActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SoundActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_SumoPhysicsController.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TimeCategoryLogger.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TimeLogger.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TouchEventManager.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TouchSensor.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_TrackToActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_VertexProxy.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_VisibilityActuator.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_WorldInfo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/KX_WorldIpoController.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

@@ -153,65 +153,76 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_bpython.a
+noinst_LIBRARIES = libblender_bpython.la
 
-libblender_bpython_a_SOURCES = \
-		intern/BPY_constobject.c \
-		intern/opy_draw.c \
-		intern/opy_matrix.c \
-		intern/BPY_csg.c \
-		intern/BPY_object.c \
-		intern/opy_nmesh.c \
-		intern/BPY_scene.c \
-		intern/b_import.c \
-		intern/BPY_image.c \
-		intern/BPY_text.c \
-		intern/opy_vector.c \
-		intern/BPY_ipo.c \
-		intern/BPY_tools.c \
-		intern/b_interface.c \
-		intern/BPY_links.c \
-		intern/opy_window.c \
-		intern/opy_blender.c \
-		intern/opy_datablock.c \
-		intern/BPY_main.c
+libblender_bpython_la_SOURCES = \
+	intern/BPY_constobject.c \
+	intern/opy_draw.c \
+	intern/opy_matrix.c \
+	intern/BPY_csg.c \
+	intern/BPY_object.c \
+	intern/opy_nmesh.c \
+	intern/BPY_scene.c \
+	intern/b_import.c \
+	intern/BPY_image.c \
+	intern/BPY_text.c \
+	intern/opy_vector.c \
+	intern/BPY_ipo.c \
+	intern/BPY_tools.c \
+	intern/b_interface.c \
+	intern/BPY_links.c \
+	intern/opy_window.c \
+	intern/opy_blender.c \
+	intern/opy_datablock.c \
+	intern/BPY_main.c
 
 
 #the python include is a hack... well atleast it works for me (don't understand why it doesn't have a direct link to their include files... or then it is my system that sucks)
-INCLUDES = -I$(top_srcdir)/source/blender/blenkernel -I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/intern/bmfont -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/blenlib/intern -I$(top_srcdir)/source/blender/blenloader -I$(top_srcdir)/source/blender/bpython/include -I$(top_srcdir)/source/blender/render/extern/include -I$(top_srcdir)/intern/bsp/extern
+INCLUDES = -I$(top_srcdir)/source/blender/blenkernel \
+	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
+	-I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/intern/bmfont \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/blender/blenlib/intern \
+	-I$(top_srcdir)/source/blender/blenloader \
+	-I$(top_srcdir)/source/blender/bpython/include \
+	-I$(top_srcdir)/source/blender/render/extern/include \
+	-I$(top_srcdir)/intern/bsp/extern
+
 subdir = source/blender/bpython
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_bpython_a_AR = $(AR) cru
-libblender_bpython_a_LIBADD =
-am_libblender_bpython_a_OBJECTS = BPY_constobject.$(OBJEXT) \
-	opy_draw.$(OBJEXT) opy_matrix.$(OBJEXT) BPY_csg.$(OBJEXT) \
-	BPY_object.$(OBJEXT) opy_nmesh.$(OBJEXT) BPY_scene.$(OBJEXT) \
-	b_import.$(OBJEXT) BPY_image.$(OBJEXT) BPY_text.$(OBJEXT) \
-	opy_vector.$(OBJEXT) BPY_ipo.$(OBJEXT) BPY_tools.$(OBJEXT) \
-	b_interface.$(OBJEXT) BPY_links.$(OBJEXT) opy_window.$(OBJEXT) \
-	opy_blender.$(OBJEXT) opy_datablock.$(OBJEXT) \
-	BPY_main.$(OBJEXT)
-libblender_bpython_a_OBJECTS = $(am_libblender_bpython_a_OBJECTS)
+libblender_bpython_la_AR = $(AR) cru
+libblender_bpython_la_LIBADD =
+am_libblender_bpython_la_OBJECTS = BPY_constobject.lo opy_draw.lo \
+	opy_matrix.lo BPY_csg.lo BPY_object.lo opy_nmesh.lo \
+	BPY_scene.lo b_import.lo BPY_image.lo BPY_text.lo opy_vector.lo \
+	BPY_ipo.lo BPY_tools.lo b_interface.lo BPY_links.lo \
+	opy_window.lo opy_blender.lo opy_datablock.lo BPY_main.lo
+libblender_bpython_la_OBJECTS = $(am_libblender_bpython_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BPY_constobject.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BPY_csg.Po ./$(DEPDIR)/BPY_image.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BPY_ipo.Po ./$(DEPDIR)/BPY_links.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BPY_main.Po ./$(DEPDIR)/BPY_object.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BPY_scene.Po ./$(DEPDIR)/BPY_text.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BPY_tools.Po ./$(DEPDIR)/b_import.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/b_interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/opy_blender.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/opy_datablock.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/opy_draw.Po ./$(DEPDIR)/opy_matrix.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/opy_nmesh.Po ./$(DEPDIR)/opy_vector.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/opy_window.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BPY_constobject.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BPY_csg.Plo ./$(DEPDIR)/BPY_image.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BPY_ipo.Plo ./$(DEPDIR)/BPY_links.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BPY_main.Plo ./$(DEPDIR)/BPY_object.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BPY_scene.Plo ./$(DEPDIR)/BPY_text.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/BPY_tools.Plo ./$(DEPDIR)/b_import.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/b_interface.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/opy_blender.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/opy_datablock.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/opy_draw.Plo ./$(DEPDIR)/opy_matrix.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/opy_nmesh.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/opy_vector.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/opy_window.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -219,9 +230,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_bpython_a_SOURCES)
+DIST_SOURCES = $(libblender_bpython_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_bpython_a_SOURCES)
+SOURCES = $(libblender_bpython_la_SOURCES)
 
 all: all-am
 
@@ -237,29 +248,29 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-BPY_constobject.$(OBJEXT): intern/BPY_constobject.c
-opy_draw.$(OBJEXT): intern/opy_draw.c
-opy_matrix.$(OBJEXT): intern/opy_matrix.c
-BPY_csg.$(OBJEXT): intern/BPY_csg.c
-BPY_object.$(OBJEXT): intern/BPY_object.c
-opy_nmesh.$(OBJEXT): intern/opy_nmesh.c
-BPY_scene.$(OBJEXT): intern/BPY_scene.c
-b_import.$(OBJEXT): intern/b_import.c
-BPY_image.$(OBJEXT): intern/BPY_image.c
-BPY_text.$(OBJEXT): intern/BPY_text.c
-opy_vector.$(OBJEXT): intern/opy_vector.c
-BPY_ipo.$(OBJEXT): intern/BPY_ipo.c
-BPY_tools.$(OBJEXT): intern/BPY_tools.c
-b_interface.$(OBJEXT): intern/b_interface.c
-BPY_links.$(OBJEXT): intern/BPY_links.c
-opy_window.$(OBJEXT): intern/opy_window.c
-opy_blender.$(OBJEXT): intern/opy_blender.c
-opy_datablock.$(OBJEXT): intern/opy_datablock.c
-BPY_main.$(OBJEXT): intern/BPY_main.c
-libblender_bpython.a: $(libblender_bpython_a_OBJECTS) $(libblender_bpython_a_DEPENDENCIES) 
-	-rm -f libblender_bpython.a
-	$(libblender_bpython_a_AR) libblender_bpython.a $(libblender_bpython_a_OBJECTS) $(libblender_bpython_a_LIBADD)
-	$(RANLIB) libblender_bpython.a
+BPY_constobject.lo: intern/BPY_constobject.c
+opy_draw.lo: intern/opy_draw.c
+opy_matrix.lo: intern/opy_matrix.c
+BPY_csg.lo: intern/BPY_csg.c
+BPY_object.lo: intern/BPY_object.c
+opy_nmesh.lo: intern/opy_nmesh.c
+BPY_scene.lo: intern/BPY_scene.c
+b_import.lo: intern/b_import.c
+BPY_image.lo: intern/BPY_image.c
+BPY_text.lo: intern/BPY_text.c
+opy_vector.lo: intern/opy_vector.c
+BPY_ipo.lo: intern/BPY_ipo.c
+BPY_tools.lo: intern/BPY_tools.c
+b_interface.lo: intern/b_interface.c
+BPY_links.lo: intern/BPY_links.c
+opy_window.lo: intern/opy_window.c
+opy_blender.lo: intern/opy_blender.c
+opy_datablock.lo: intern/opy_datablock.c
+BPY_main.lo: intern/BPY_main.c
+libblender_bpython.la: $(libblender_bpython_la_OBJECTS) $(libblender_bpython_la_DEPENDENCIES) 
+	-rm -f libblender_bpython.la
+	$(libblender_bpython_la_AR) libblender_bpython.la $(libblender_bpython_la_OBJECTS) $(libblender_bpython_la_LIBADD)
+	$(RANLIB) libblender_bpython.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -267,25 +278,25 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_constobject.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_csg.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_image.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_ipo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_links.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_object.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_scene.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_text.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_tools.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/b_import.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/b_interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_blender.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_datablock.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_draw.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_matrix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_nmesh.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_vector.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_window.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_constobject.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_csg.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_image.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_ipo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_links.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_main.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_object.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_scene.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_text.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BPY_tools.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/b_import.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/b_interface.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_blender.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_datablock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_draw.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_matrix.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_nmesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_vector.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opy_window.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

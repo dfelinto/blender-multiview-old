@@ -1,6 +1,6 @@
-noinst_LIBRARIES = libblender_blendersrc.a
+noinst_LIBRARIES = libblender_blendersrc.la
 
-libblender_blendersrc_a_SOURCES = \
+libblender_blendersrc_la_SOURCES = \
 	editconstraint.c \
 	isect.c \
 	B.blend.c \
@@ -83,5 +83,23 @@ libblender_blendersrc_a_SOURCES = \
 	interface.c \
 	writemovie.c
 
-## Yes I know this looks horible... maybe later somebody cleans this crap up
-INCLUDES = -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/intern/bmfont -I$(top_srcdir)/source/blender/imbuf -I$(top_srcdir)/source/blender/render/extern/include -I$(top_srcdir)/intern/bsp/extern -I$(top_srcdir)/source/blender/renderconverter -I$(top_srcdir)/source/blender/radiosity/extern/include -I$(top_srcdir)/intern/decimation/extern -I$(top_srcdir)/source/blender/misc -I$(top_srcdir)/source/blender/blenloader -I$(top_srcdir)/source/blender/bpython/include -I$(top_srcdir)/source/kernel/gen_system -I$(top_srcdir)/source/gameengine/SoundSystem -I$(top_srcdir)/source/blender/verify -I$(top_srcdir)/source/blender/readstreamglue -I$(top_srcdir)/intern/ghost
+INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/intern/bmfont \
+	-I$(top_srcdir)/source/blender/imbuf \
+	-I$(top_srcdir)/source/blender/render/extern/include \
+	-I$(top_srcdir)/intern/bsp/extern \
+	-I$(top_srcdir)/source/blender/renderconverter \
+	-I$(top_srcdir)/source/blender/radiosity/extern/include \
+	-I$(top_srcdir)/intern/decimation/extern \
+	-I$(top_srcdir)/source/blender/misc \
+	-I$(top_srcdir)/source/blender/blenloader \
+	-I$(top_srcdir)/source/blender/bpython/include \
+	-I$(top_srcdir)/source/kernel/gen_system \
+	-I$(top_srcdir)/source/gameengine/SoundSystem \
+	-I$(top_srcdir)/source/blender/verify \
+	-I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/intern/ghost

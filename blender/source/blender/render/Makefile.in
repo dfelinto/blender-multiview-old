@@ -153,74 +153,82 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_render.a
+noinst_LIBRARIES = libblender_render.la
 
-libblender_render_a_SOURCES = \
-		intern/source/RE_DummyShadowBuffer.cpp \
-		intern/source/RE_basicShadowBuffer.cpp \
-		intern/source/RE_callbacks.c \
-		intern/source/edgeRender.c \
-		intern/source/envmap.c \
-		intern/source/errorHandler.c \
-		intern/source/gammaCorrectionTables.c \
-		intern/source/initrender.c \
-		intern/source/jitter.c \
-		intern/source/outerRenderLoop.c \
-		intern/source/pixelblending.c \
-		intern/source/pixelshading.c \
-		intern/source/renderHelp.c \
-		intern/source/renderPreAndPost.c \
-		intern/source/rendercore.c \
-		intern/source/renderdatabase.c \
-		intern/source/shadbuf.c \
-		intern/source/shadowBuffer.cpp \
-		intern/source/vanillaRenderPipe.c \
-		intern/source/zbuf.c \
-		intern/source/zbufferdatastruct.c
+libblender_render_la_SOURCES = \
+	intern/source/RE_DummyShadowBuffer.cpp \
+	intern/source/RE_basicShadowBuffer.cpp \
+	intern/source/RE_callbacks.c \
+	intern/source/edgeRender.c \
+	intern/source/envmap.c \
+	intern/source/errorHandler.c \
+	intern/source/gammaCorrectionTables.c \
+	intern/source/initrender.c \
+	intern/source/jitter.c \
+	intern/source/outerRenderLoop.c \
+	intern/source/pixelblending.c \
+	intern/source/pixelshading.c \
+	intern/source/renderHelp.c \
+	intern/source/renderPreAndPost.c \
+	intern/source/rendercore.c \
+	intern/source/renderdatabase.c \
+	intern/source/shadbuf.c \
+	intern/source/shadowBuffer.cpp \
+	intern/source/vanillaRenderPipe.c \
+	intern/source/zbuf.c \
+	intern/source/zbufferdatastruct.c
 
 
-INCLUDES = -I$(top_srcdir)/source/blender/render/intern/include -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/render/extern/include -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/blender/radiosity/extern/include -I$(top_srcdir)/source/blender/imbuf -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/kernel/gen_messaging
+INCLUDES = -I$(top_srcdir)/source/blender/render/intern/include \
+	-I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/render/extern/include \
+	-I$(top_srcdir)/source/blender/blenkernel \
+	-I$(top_srcdir)/source/blender/radiosity/extern/include \
+	-I$(top_srcdir)/source/blender/imbuf \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/kernel/gen_messaging
+
 subdir = source/blender/render
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_render_a_AR = $(AR) cru
-libblender_render_a_LIBADD =
-am_libblender_render_a_OBJECTS = RE_DummyShadowBuffer.$(OBJEXT) \
-	RE_basicShadowBuffer.$(OBJEXT) RE_callbacks.$(OBJEXT) \
-	edgeRender.$(OBJEXT) envmap.$(OBJEXT) errorHandler.$(OBJEXT) \
-	gammaCorrectionTables.$(OBJEXT) initrender.$(OBJEXT) \
-	jitter.$(OBJEXT) outerRenderLoop.$(OBJEXT) \
-	pixelblending.$(OBJEXT) pixelshading.$(OBJEXT) \
-	renderHelp.$(OBJEXT) renderPreAndPost.$(OBJEXT) \
-	rendercore.$(OBJEXT) renderdatabase.$(OBJEXT) shadbuf.$(OBJEXT) \
-	shadowBuffer.$(OBJEXT) vanillaRenderPipe.$(OBJEXT) \
-	zbuf.$(OBJEXT) zbufferdatastruct.$(OBJEXT)
-libblender_render_a_OBJECTS = $(am_libblender_render_a_OBJECTS)
+libblender_render_la_AR = $(AR) cru
+libblender_render_la_LIBADD =
+am_libblender_render_la_OBJECTS = RE_DummyShadowBuffer.lo \
+	RE_basicShadowBuffer.lo RE_callbacks.lo edgeRender.lo envmap.lo \
+	errorHandler.lo gammaCorrectionTables.lo initrender.lo \
+	jitter.lo outerRenderLoop.lo pixelblending.lo pixelshading.lo \
+	renderHelp.lo renderPreAndPost.lo rendercore.lo \
+	renderdatabase.lo shadbuf.lo shadowBuffer.lo \
+	vanillaRenderPipe.lo zbuf.lo zbufferdatastruct.lo
+libblender_render_la_OBJECTS = $(am_libblender_render_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/RE_DummyShadowBuffer.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RE_basicShadowBuffer.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/RE_callbacks.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/edgeRender.Po ./$(DEPDIR)/envmap.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/errorHandler.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/gammaCorrectionTables.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/initrender.Po ./$(DEPDIR)/jitter.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/outerRenderLoop.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pixelblending.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pixelshading.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/renderHelp.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/renderPreAndPost.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rendercore.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/renderdatabase.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/shadbuf.Po ./$(DEPDIR)/shadowBuffer.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/vanillaRenderPipe.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/zbuf.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/zbufferdatastruct.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/RE_DummyShadowBuffer.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RE_basicShadowBuffer.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/RE_callbacks.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/edgeRender.Plo ./$(DEPDIR)/envmap.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/errorHandler.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/gammaCorrectionTables.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/initrender.Plo ./$(DEPDIR)/jitter.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/outerRenderLoop.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/pixelblending.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/pixelshading.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/renderHelp.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/renderPreAndPost.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/rendercore.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/renderdatabase.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/shadbuf.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/shadowBuffer.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/vanillaRenderPipe.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/zbuf.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/zbufferdatastruct.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -236,9 +244,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_render_a_SOURCES)
+DIST_SOURCES = $(libblender_render_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_render_a_SOURCES)
+SOURCES = $(libblender_render_la_SOURCES)
 
 all: all-am
 
@@ -254,31 +262,31 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-RE_DummyShadowBuffer.$(OBJEXT): intern/source/RE_DummyShadowBuffer.cpp
-RE_basicShadowBuffer.$(OBJEXT): intern/source/RE_basicShadowBuffer.cpp
-RE_callbacks.$(OBJEXT): intern/source/RE_callbacks.c
-edgeRender.$(OBJEXT): intern/source/edgeRender.c
-envmap.$(OBJEXT): intern/source/envmap.c
-errorHandler.$(OBJEXT): intern/source/errorHandler.c
-gammaCorrectionTables.$(OBJEXT): intern/source/gammaCorrectionTables.c
-initrender.$(OBJEXT): intern/source/initrender.c
-jitter.$(OBJEXT): intern/source/jitter.c
-outerRenderLoop.$(OBJEXT): intern/source/outerRenderLoop.c
-pixelblending.$(OBJEXT): intern/source/pixelblending.c
-pixelshading.$(OBJEXT): intern/source/pixelshading.c
-renderHelp.$(OBJEXT): intern/source/renderHelp.c
-renderPreAndPost.$(OBJEXT): intern/source/renderPreAndPost.c
-rendercore.$(OBJEXT): intern/source/rendercore.c
-renderdatabase.$(OBJEXT): intern/source/renderdatabase.c
-shadbuf.$(OBJEXT): intern/source/shadbuf.c
-shadowBuffer.$(OBJEXT): intern/source/shadowBuffer.cpp
-vanillaRenderPipe.$(OBJEXT): intern/source/vanillaRenderPipe.c
-zbuf.$(OBJEXT): intern/source/zbuf.c
-zbufferdatastruct.$(OBJEXT): intern/source/zbufferdatastruct.c
-libblender_render.a: $(libblender_render_a_OBJECTS) $(libblender_render_a_DEPENDENCIES) 
-	-rm -f libblender_render.a
-	$(libblender_render_a_AR) libblender_render.a $(libblender_render_a_OBJECTS) $(libblender_render_a_LIBADD)
-	$(RANLIB) libblender_render.a
+RE_DummyShadowBuffer.lo: intern/source/RE_DummyShadowBuffer.cpp
+RE_basicShadowBuffer.lo: intern/source/RE_basicShadowBuffer.cpp
+RE_callbacks.lo: intern/source/RE_callbacks.c
+edgeRender.lo: intern/source/edgeRender.c
+envmap.lo: intern/source/envmap.c
+errorHandler.lo: intern/source/errorHandler.c
+gammaCorrectionTables.lo: intern/source/gammaCorrectionTables.c
+initrender.lo: intern/source/initrender.c
+jitter.lo: intern/source/jitter.c
+outerRenderLoop.lo: intern/source/outerRenderLoop.c
+pixelblending.lo: intern/source/pixelblending.c
+pixelshading.lo: intern/source/pixelshading.c
+renderHelp.lo: intern/source/renderHelp.c
+renderPreAndPost.lo: intern/source/renderPreAndPost.c
+rendercore.lo: intern/source/rendercore.c
+renderdatabase.lo: intern/source/renderdatabase.c
+shadbuf.lo: intern/source/shadbuf.c
+shadowBuffer.lo: intern/source/shadowBuffer.cpp
+vanillaRenderPipe.lo: intern/source/vanillaRenderPipe.c
+zbuf.lo: intern/source/zbuf.c
+zbufferdatastruct.lo: intern/source/zbufferdatastruct.c
+libblender_render.la: $(libblender_render_la_OBJECTS) $(libblender_render_la_DEPENDENCIES) 
+	-rm -f libblender_render.la
+	$(libblender_render_la_AR) libblender_render.la $(libblender_render_la_OBJECTS) $(libblender_render_la_LIBADD)
+	$(RANLIB) libblender_render.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -286,27 +294,27 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RE_DummyShadowBuffer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RE_basicShadowBuffer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RE_callbacks.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edgeRender.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/envmap.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errorHandler.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gammaCorrectionTables.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/initrender.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jitter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/outerRenderLoop.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pixelblending.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pixelshading.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/renderHelp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/renderPreAndPost.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rendercore.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/renderdatabase.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shadbuf.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shadowBuffer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vanillaRenderPipe.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zbuf.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zbufferdatastruct.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RE_DummyShadowBuffer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RE_basicShadowBuffer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RE_callbacks.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/edgeRender.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/envmap.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errorHandler.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gammaCorrectionTables.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/initrender.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/jitter.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/outerRenderLoop.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pixelblending.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pixelshading.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/renderHelp.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/renderPreAndPost.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rendercore.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/renderdatabase.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shadbuf.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shadowBuffer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vanillaRenderPipe.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zbuf.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zbufferdatastruct.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

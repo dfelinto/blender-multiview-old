@@ -153,28 +153,33 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_deflate.a
+noinst_LIBRARIES = libblender_deflate.la
 
-libblender_deflate_a_SOURCES = \
-		intern/BLO_deflate.c
+libblender_deflate_la_SOURCES = \
+	intern/BLO_deflate.c
 
 #note: a blatant copy from decrypt
-INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging -I$(top_srcdir)/intern/keymaker -I$(top_srcdir)/source/blender/writestreamglue -I$(top_srcdir)/source/blender/readstreamglue -I$(top_srcdir)/source/blender/inflate
+INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging \
+	-I$(top_srcdir)/intern/keymaker \
+	-I$(top_srcdir)/source/blender/writestreamglue \
+	-I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/source/blender/inflate
+
 subdir = source/blender/deflate
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_deflate_a_AR = $(AR) cru
-libblender_deflate_a_LIBADD =
-am_libblender_deflate_a_OBJECTS = BLO_deflate.$(OBJEXT)
-libblender_deflate_a_OBJECTS = $(am_libblender_deflate_a_OBJECTS)
+libblender_deflate_la_AR = $(AR) cru
+libblender_deflate_la_LIBADD =
+am_libblender_deflate_la_OBJECTS = BLO_deflate.lo
+libblender_deflate_la_OBJECTS = $(am_libblender_deflate_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_deflate.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_deflate.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -182,9 +187,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_deflate_a_SOURCES)
+DIST_SOURCES = $(libblender_deflate_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_deflate_a_SOURCES)
+SOURCES = $(libblender_deflate_la_SOURCES)
 
 all: all-am
 
@@ -200,11 +205,11 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-BLO_deflate.$(OBJEXT): intern/BLO_deflate.c
-libblender_deflate.a: $(libblender_deflate_a_OBJECTS) $(libblender_deflate_a_DEPENDENCIES) 
-	-rm -f libblender_deflate.a
-	$(libblender_deflate_a_AR) libblender_deflate.a $(libblender_deflate_a_OBJECTS) $(libblender_deflate_a_LIBADD)
-	$(RANLIB) libblender_deflate.a
+BLO_deflate.lo: intern/BLO_deflate.c
+libblender_deflate.la: $(libblender_deflate_la_OBJECTS) $(libblender_deflate_la_DEPENDENCIES) 
+	-rm -f libblender_deflate.la
+	$(libblender_deflate_la_AR) libblender_deflate.la $(libblender_deflate_la_OBJECTS) $(libblender_deflate_la_LIBADD)
+	$(RANLIB) libblender_deflate.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -212,7 +217,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_deflate.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_deflate.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

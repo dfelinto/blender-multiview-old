@@ -153,29 +153,34 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_writeblenfile.a
+noinst_LIBRARIES = libblender_writeblenfile.la
 
-libblender_writeblenfile_a_SOURCES = \
-		intern/BLO_writeblenfile.c
+libblender_writeblenfile_la_SOURCES = \
+	intern/BLO_writeblenfile.c
 
 
-INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging -I$(top_srcdir)/source/blender/blenloader -I$(top_srcdir)/source/blender/writestreamglue -I$(top_srcdir)/source/blender/readstreamglue -I$(top_srcdir)/source/blender/readblenfile
+INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging \
+	-I$(top_srcdir)/source/blender/blenloader \
+	-I$(top_srcdir)/source/blender/writestreamglue \
+	-I$(top_srcdir)/source/blender/readstreamglue \
+	-I$(top_srcdir)/source/blender/readblenfile
+
 subdir = source/blender/writeblenfile
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_writeblenfile_a_AR = $(AR) cru
-libblender_writeblenfile_a_LIBADD =
-am_libblender_writeblenfile_a_OBJECTS = BLO_writeblenfile.$(OBJEXT)
-libblender_writeblenfile_a_OBJECTS = \
-	$(am_libblender_writeblenfile_a_OBJECTS)
+libblender_writeblenfile_la_AR = $(AR) cru
+libblender_writeblenfile_la_LIBADD =
+am_libblender_writeblenfile_la_OBJECTS = BLO_writeblenfile.lo
+libblender_writeblenfile_la_OBJECTS = \
+	$(am_libblender_writeblenfile_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_writeblenfile.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BLO_writeblenfile.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -183,9 +188,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_writeblenfile_a_SOURCES)
+DIST_SOURCES = $(libblender_writeblenfile_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_writeblenfile_a_SOURCES)
+SOURCES = $(libblender_writeblenfile_la_SOURCES)
 
 all: all-am
 
@@ -201,11 +206,11 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-BLO_writeblenfile.$(OBJEXT): intern/BLO_writeblenfile.c
-libblender_writeblenfile.a: $(libblender_writeblenfile_a_OBJECTS) $(libblender_writeblenfile_a_DEPENDENCIES) 
-	-rm -f libblender_writeblenfile.a
-	$(libblender_writeblenfile_a_AR) libblender_writeblenfile.a $(libblender_writeblenfile_a_OBJECTS) $(libblender_writeblenfile_a_LIBADD)
-	$(RANLIB) libblender_writeblenfile.a
+BLO_writeblenfile.lo: intern/BLO_writeblenfile.c
+libblender_writeblenfile.la: $(libblender_writeblenfile_la_OBJECTS) $(libblender_writeblenfile_la_DEPENDENCIES) 
+	-rm -f libblender_writeblenfile.la
+	$(libblender_writeblenfile_la_AR) libblender_writeblenfile.la $(libblender_writeblenfile_la_OBJECTS) $(libblender_writeblenfile_la_LIBADD)
+	$(RANLIB) libblender_writeblenfile.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -213,7 +218,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_writeblenfile.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLO_writeblenfile.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

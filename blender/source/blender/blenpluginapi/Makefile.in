@@ -153,29 +153,33 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_blenpluginapi.a
+noinst_LIBRARIES = libblender_blenpluginapi.la
 
-libblender_blenpluginapi_a_SOURCES = \
+libblender_blenpluginapi_la_SOURCES = \
 		intern/pluginapi.c
 
 
-INCLUDES = -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/imbuf -I$(top_srcdir)/source/blender/makesdna
+INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/blender/imbuf \
+	-I$(top_srcdir)/source/blender/makesdna
+
 subdir = source/blender/blenpluginapi
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_blenpluginapi_a_AR = $(AR) cru
-libblender_blenpluginapi_a_LIBADD =
-am_libblender_blenpluginapi_a_OBJECTS = pluginapi.$(OBJEXT)
-libblender_blenpluginapi_a_OBJECTS = \
-	$(am_libblender_blenpluginapi_a_OBJECTS)
+libblender_blenpluginapi_la_AR = $(AR) cru
+libblender_blenpluginapi_la_LIBADD =
+am_libblender_blenpluginapi_la_OBJECTS = pluginapi.lo
+libblender_blenpluginapi_la_OBJECTS = \
+	$(am_libblender_blenpluginapi_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/pluginapi.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/pluginapi.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -183,9 +187,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_blenpluginapi_a_SOURCES)
+DIST_SOURCES = $(libblender_blenpluginapi_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_blenpluginapi_a_SOURCES)
+SOURCES = $(libblender_blenpluginapi_la_SOURCES)
 
 all: all-am
 
@@ -201,11 +205,11 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-pluginapi.$(OBJEXT): intern/pluginapi.c
-libblender_blenpluginapi.a: $(libblender_blenpluginapi_a_OBJECTS) $(libblender_blenpluginapi_a_DEPENDENCIES) 
-	-rm -f libblender_blenpluginapi.a
-	$(libblender_blenpluginapi_a_AR) libblender_blenpluginapi.a $(libblender_blenpluginapi_a_OBJECTS) $(libblender_blenpluginapi_a_LIBADD)
-	$(RANLIB) libblender_blenpluginapi.a
+pluginapi.lo: intern/pluginapi.c
+libblender_blenpluginapi.la: $(libblender_blenpluginapi_la_OBJECTS) $(libblender_blenpluginapi_la_DEPENDENCIES) 
+	-rm -f libblender_blenpluginapi.la
+	$(libblender_blenpluginapi_la_AR) libblender_blenpluginapi.la $(libblender_blenpluginapi_la_OBJECTS) $(libblender_blenpluginapi_la_LIBADD)
+	$(RANLIB) libblender_blenpluginapi.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -213,7 +217,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pluginapi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pluginapi.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)

@@ -153,90 +153,96 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_blenkernel.a
+noinst_LIBRARIES = libblender_blenkernel.la
 
-libblender_blenkernel_a_SOURCES = \
-		intern/constraint.c \
-		intern/group.c \
-		intern/material.c \
-		intern/sca.c \
-		intern/world.c \
-		intern/curve.c \
-		intern/ika.c \
-		intern/mball.c \
-		intern/scene.c \
-		intern/writeavi.c \
-		intern/action.c \
-		intern/deform.c \
-		intern/image.c \
-		intern/mesh.c \
-		intern/screen.c \
-		intern/anim.c \
-		intern/displist.c \
-		intern/ipo.c \
-		intern/nla.c \
-		intern/sound.c \
-		intern/armature.c \
-		intern/effect.c \
-		intern/key.c \
-		intern/object.c \
-		intern/subsurf.c \
-		intern/blender.c \
-		intern/exotic.c \
-		intern/lattice.c \
-		intern/packedFile.c \
-		intern/text.c \
-		intern/bmfont.c \
-		intern/font.c \
-		intern/library.c \
-		intern/property.c \
-		intern/texture.c
+libblender_blenkernel_la_SOURCES = \
+	intern/constraint.c \
+	intern/group.c \
+	intern/material.c \
+	intern/sca.c \
+	intern/world.c \
+	intern/curve.c \
+	intern/ika.c \
+	intern/mball.c \
+	intern/scene.c \
+	intern/writeavi.c \
+	intern/action.c \
+	intern/deform.c \
+	intern/image.c \
+	intern/mesh.c \
+	intern/screen.c \
+	intern/anim.c \
+	intern/displist.c \
+	intern/ipo.c \
+	intern/nla.c \
+	intern/sound.c \
+	intern/armature.c \
+	intern/effect.c \
+	intern/key.c \
+	intern/object.c \
+	intern/subsurf.c \
+	intern/blender.c \
+	intern/exotic.c \
+	intern/lattice.c \
+	intern/packedFile.c \
+	intern/text.c \
+	intern/bmfont.c \
+	intern/font.c \
+	intern/library.c \
+	intern/property.c \
+	intern/texture.c
 
 
-INCLUDES = -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/bpython/include -I$(top_srcdir)/source/blender/render/extern/include -I$(top_srcdir)/source/blender/imbuf -I$(top_srcdir)/source/blender/avi -I$(top_srcdir)/intern/iksolver/extern -I$(top_srcdir)/source/blender/blenloader
+INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/blender/blenlib \
+	-I$(top_srcdir)/source/blender/makesdna \
+	-I$(top_srcdir)/source/blender/bpython/include \
+	-I$(top_srcdir)/source/blender/render/extern/include \
+	-I$(top_srcdir)/source/blender/imbuf \
+	-I$(top_srcdir)/source/blender/avi \
+	-I$(top_srcdir)/intern/iksolver/extern \
+	-I$(top_srcdir)/source/blender/blenloader
+
 subdir = source/blender/blenkernel
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
-libblender_blenkernel_a_AR = $(AR) cru
-libblender_blenkernel_a_LIBADD =
-am_libblender_blenkernel_a_OBJECTS = constraint.$(OBJEXT) \
-	group.$(OBJEXT) material.$(OBJEXT) sca.$(OBJEXT) \
-	world.$(OBJEXT) curve.$(OBJEXT) ika.$(OBJEXT) mball.$(OBJEXT) \
-	scene.$(OBJEXT) writeavi.$(OBJEXT) action.$(OBJEXT) \
-	deform.$(OBJEXT) image.$(OBJEXT) mesh.$(OBJEXT) \
-	screen.$(OBJEXT) anim.$(OBJEXT) displist.$(OBJEXT) \
-	ipo.$(OBJEXT) nla.$(OBJEXT) sound.$(OBJEXT) armature.$(OBJEXT) \
-	effect.$(OBJEXT) key.$(OBJEXT) object.$(OBJEXT) \
-	subsurf.$(OBJEXT) blender.$(OBJEXT) exotic.$(OBJEXT) \
-	lattice.$(OBJEXT) packedFile.$(OBJEXT) text.$(OBJEXT) \
-	bmfont.$(OBJEXT) font.$(OBJEXT) library.$(OBJEXT) \
-	property.$(OBJEXT) texture.$(OBJEXT)
-libblender_blenkernel_a_OBJECTS = $(am_libblender_blenkernel_a_OBJECTS)
+libblender_blenkernel_la_AR = $(AR) cru
+libblender_blenkernel_la_LIBADD =
+am_libblender_blenkernel_la_OBJECTS = constraint.lo group.lo material.lo \
+	sca.lo world.lo curve.lo ika.lo mball.lo scene.lo writeavi.lo \
+	action.lo deform.lo image.lo mesh.lo screen.lo anim.lo \
+	displist.lo ipo.lo nla.lo sound.lo armature.lo effect.lo key.lo \
+	object.lo subsurf.lo blender.lo exotic.lo lattice.lo \
+	packedFile.lo text.lo bmfont.lo font.lo library.lo property.lo \
+	texture.lo
+libblender_blenkernel_la_OBJECTS = \
+	$(am_libblender_blenkernel_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/action.Po ./$(DEPDIR)/anim.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/armature.Po ./$(DEPDIR)/blender.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/bmfont.Po ./$(DEPDIR)/constraint.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/curve.Po ./$(DEPDIR)/deform.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/displist.Po ./$(DEPDIR)/effect.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/exotic.Po ./$(DEPDIR)/font.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/group.Po ./$(DEPDIR)/ika.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/image.Po ./$(DEPDIR)/ipo.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/key.Po ./$(DEPDIR)/lattice.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/library.Po ./$(DEPDIR)/material.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mball.Po ./$(DEPDIR)/mesh.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/nla.Po ./$(DEPDIR)/object.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/packedFile.Po ./$(DEPDIR)/property.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/sca.Po ./$(DEPDIR)/scene.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/screen.Po ./$(DEPDIR)/sound.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/subsurf.Po ./$(DEPDIR)/text.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/texture.Po ./$(DEPDIR)/world.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/writeavi.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/action.Plo ./$(DEPDIR)/anim.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/armature.Plo ./$(DEPDIR)/blender.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/bmfont.Plo ./$(DEPDIR)/constraint.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/curve.Plo ./$(DEPDIR)/deform.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/displist.Plo ./$(DEPDIR)/effect.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/exotic.Plo ./$(DEPDIR)/font.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/group.Plo ./$(DEPDIR)/ika.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/image.Plo ./$(DEPDIR)/ipo.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/key.Plo ./$(DEPDIR)/lattice.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/library.Plo ./$(DEPDIR)/material.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/mball.Plo ./$(DEPDIR)/mesh.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/nla.Plo ./$(DEPDIR)/object.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/packedFile.Plo ./$(DEPDIR)/property.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/sca.Plo ./$(DEPDIR)/scene.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/screen.Plo ./$(DEPDIR)/sound.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/subsurf.Plo ./$(DEPDIR)/text.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/texture.Plo ./$(DEPDIR)/world.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/writeavi.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -244,9 +250,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_blenkernel_a_SOURCES)
+DIST_SOURCES = $(libblender_blenkernel_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_blenkernel_a_SOURCES)
+SOURCES = $(libblender_blenkernel_la_SOURCES)
 
 all: all-am
 
@@ -262,45 +268,45 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-constraint.$(OBJEXT): intern/constraint.c
-group.$(OBJEXT): intern/group.c
-material.$(OBJEXT): intern/material.c
-sca.$(OBJEXT): intern/sca.c
-world.$(OBJEXT): intern/world.c
-curve.$(OBJEXT): intern/curve.c
-ika.$(OBJEXT): intern/ika.c
-mball.$(OBJEXT): intern/mball.c
-scene.$(OBJEXT): intern/scene.c
-writeavi.$(OBJEXT): intern/writeavi.c
-action.$(OBJEXT): intern/action.c
-deform.$(OBJEXT): intern/deform.c
-image.$(OBJEXT): intern/image.c
-mesh.$(OBJEXT): intern/mesh.c
-screen.$(OBJEXT): intern/screen.c
-anim.$(OBJEXT): intern/anim.c
-displist.$(OBJEXT): intern/displist.c
-ipo.$(OBJEXT): intern/ipo.c
-nla.$(OBJEXT): intern/nla.c
-sound.$(OBJEXT): intern/sound.c
-armature.$(OBJEXT): intern/armature.c
-effect.$(OBJEXT): intern/effect.c
-key.$(OBJEXT): intern/key.c
-object.$(OBJEXT): intern/object.c
-subsurf.$(OBJEXT): intern/subsurf.c
-blender.$(OBJEXT): intern/blender.c
-exotic.$(OBJEXT): intern/exotic.c
-lattice.$(OBJEXT): intern/lattice.c
-packedFile.$(OBJEXT): intern/packedFile.c
-text.$(OBJEXT): intern/text.c
-bmfont.$(OBJEXT): intern/bmfont.c
-font.$(OBJEXT): intern/font.c
-library.$(OBJEXT): intern/library.c
-property.$(OBJEXT): intern/property.c
-texture.$(OBJEXT): intern/texture.c
-libblender_blenkernel.a: $(libblender_blenkernel_a_OBJECTS) $(libblender_blenkernel_a_DEPENDENCIES) 
-	-rm -f libblender_blenkernel.a
-	$(libblender_blenkernel_a_AR) libblender_blenkernel.a $(libblender_blenkernel_a_OBJECTS) $(libblender_blenkernel_a_LIBADD)
-	$(RANLIB) libblender_blenkernel.a
+constraint.lo: intern/constraint.c
+group.lo: intern/group.c
+material.lo: intern/material.c
+sca.lo: intern/sca.c
+world.lo: intern/world.c
+curve.lo: intern/curve.c
+ika.lo: intern/ika.c
+mball.lo: intern/mball.c
+scene.lo: intern/scene.c
+writeavi.lo: intern/writeavi.c
+action.lo: intern/action.c
+deform.lo: intern/deform.c
+image.lo: intern/image.c
+mesh.lo: intern/mesh.c
+screen.lo: intern/screen.c
+anim.lo: intern/anim.c
+displist.lo: intern/displist.c
+ipo.lo: intern/ipo.c
+nla.lo: intern/nla.c
+sound.lo: intern/sound.c
+armature.lo: intern/armature.c
+effect.lo: intern/effect.c
+key.lo: intern/key.c
+object.lo: intern/object.c
+subsurf.lo: intern/subsurf.c
+blender.lo: intern/blender.c
+exotic.lo: intern/exotic.c
+lattice.lo: intern/lattice.c
+packedFile.lo: intern/packedFile.c
+text.lo: intern/text.c
+bmfont.lo: intern/bmfont.c
+font.lo: intern/font.c
+library.lo: intern/library.c
+property.lo: intern/property.c
+texture.lo: intern/texture.c
+libblender_blenkernel.la: $(libblender_blenkernel_la_OBJECTS) $(libblender_blenkernel_la_DEPENDENCIES) 
+	-rm -f libblender_blenkernel.la
+	$(libblender_blenkernel_la_AR) libblender_blenkernel.la $(libblender_blenkernel_la_OBJECTS) $(libblender_blenkernel_la_LIBADD)
+	$(RANLIB) libblender_blenkernel.la
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -308,41 +314,41 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/action.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/anim.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/armature.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blender.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmfont.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/constraint.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/curve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/deform.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/displist.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/effect.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exotic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/font.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ika.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/image.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipo.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/key.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lattice.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/library.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/material.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mball.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mesh.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nla.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/object.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packedFile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/property.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sca.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scene.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/screen.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sound.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subsurf.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/text.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/texture.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/world.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeavi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/action.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/anim.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/armature.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blender.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bmfont.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/constraint.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/curve.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/deform.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/displist.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/effect.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exotic.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/font.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ika.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/image.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipo.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/key.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lattice.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/library.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/material.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mball.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mesh.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nla.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/object.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packedFile.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/property.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sca.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scene.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/screen.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sound.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subsurf.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/text.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/texture.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/world.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/writeavi.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
