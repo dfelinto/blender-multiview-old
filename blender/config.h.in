@@ -70,11 +70,20 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `C' library (-lC). */
+#undef HAVE_LIBC
+
+/* Define to 1 if you have the `cl' library (-lcl). */
+#undef HAVE_LIBCL
+
 /* Define to 1 if you have the `crypto' library (-lcrypto). */
 #undef HAVE_LIBCRYPTO
 
 /* Define to 1 if you have the `dl' library (-ldl). */
 #undef HAVE_LIBDL
+
+/* Define to 1 if you have the `dmedia' library (-ldmedia). */
+#undef HAVE_LIBDMEDIA
 
 /* Define to 1 if you have the `esd' library (-lesd). */
 #undef HAVE_LIBESD
@@ -90,6 +99,9 @@
 
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
+
+/* Define to 1 if you have the `movieGL' library (-lmovieGL). */
+#undef HAVE_LIBMOVIEGL
 
 /* Define to 1 if you have the `ode' library (-lode). */
 #undef HAVE_LIBODE
