@@ -85,12 +85,8 @@ http://projects.blender.org/tracker/index.php?group_id=9&atid=125
 A shortlist:
 - Lattices deform correctly again
 - Plugins for Windows work again
-
-Work Arounds:
-------------
-
-- OpenGL support for several Linux systems can cause problems when rendering with a 2nd Window.
-  Use option F10->DispView instead. This is still being investigated...
+- OpenGL context bug in GHOST were the X window was closed before the context resolved
+  Fixes crashes in combination with certain drivers, the r200 DRI most notably.
 
 Didn't make it:
 ------------
