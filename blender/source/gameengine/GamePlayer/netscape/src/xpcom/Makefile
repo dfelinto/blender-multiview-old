@@ -37,7 +37,7 @@ DIR = $(OCGDIR)/gameengine/GamePlayer/netscape/src
 include nan_compile.mk
 
 CPPFLAGS += -c -DXP_UNIX
-CPPFLAGS += $(LEVEL_1_C_WARNINGS) 
+CPPFLAGS += $(LEVEL_1_CPP_WARNINGS) 
 
 # only plugin related:
 CPPFLAGS += -I.

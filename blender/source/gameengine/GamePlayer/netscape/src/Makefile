@@ -41,7 +41,7 @@ ifeq ($(OS),$(findstring $(OS), "solaris linux freebsd irix"))
 CPPFLAGS += -c -DXP_UNIX 
 endif
 
-CPPFLAGS += $(LEVEL_2_C_WARNINGS) 
+CPPFLAGS += $(LEVEL_2_CPP_WARNINGS) 
 
 # string library
 CPPFLAGS += -I$(NAN_STRING)/include    

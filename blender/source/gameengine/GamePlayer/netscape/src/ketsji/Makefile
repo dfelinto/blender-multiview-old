@@ -42,7 +42,7 @@ ifeq ($(OS),$(findstring $(OS), "freebsd irix solaris linux"))
 CPPFLAGS +=-DXP_UNIX
 endif
 
-CPPFLAGS += $(LEVEL_1_C_WARNINGS) 
+CPPFLAGS += $(LEVEL_1_CPP_WARNINGS) 
 
 # only plugin related:
 CPPFLAGS += -I.
