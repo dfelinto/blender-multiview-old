@@ -112,3 +112,5 @@ PyObject_CallFunction
 PyObject_CallObject
 PyTuple_GetItem
 PyTuple_Type
+PyErr_Warn
+PyExc_DeprecationWarning
