@@ -54,7 +54,6 @@ libblender_blendersrc_la_SOURCES = \
 	headerbuttons.c \
 	imasel.c \
 	interface.c \
-	isect.c \
 	keyval.c \
 	mainqueue.c \
 	mywindow.c \
