@@ -11,5 +11,6 @@ libblender_python_la_LIBADD = \
 
 INCLUDES = \
 	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
+	-I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/blenkernel \
 	-I$(top_srcdir)/source/blender/makesdna
