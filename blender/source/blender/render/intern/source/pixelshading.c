@@ -447,8 +447,8 @@ void shadeHaloFloat(HaloRen *har,  float *col, int zz,
 	
 	/* halo being intersected? */
 	if(har->zs> zz-har->zd) {
-		t= ((float)(zz-har->zs))/(float)har->zd;
-		alpha*= sqrt(sqrt(t));
+	//	t= ((float)(zz-har->zs))/(float)har->zd;
+	//	alpha*= sqrt(sqrt(t));
 	}
 
 	dist*= alpha;
