@@ -35,12 +35,10 @@ dnl -----------------------------
 dnl Debug builds & compiler flags
 dnl -----------------------------
 
-  AC_ARG_WITH(cxxflags,
-     [  --with-cxxflags         Override default compiler flags],
-     [ CXXFLAGS="$withval" ],
-dnl     [ CXXFLAGS="-g -O3 -Wall -funsigned-char" ]
-     [ CXXFLAGS="-g -funsigned-char" ]
-  )
+if test "x$GCC" = xyes; then
+  CFLAGS="$CFLAGS -funsigned-char"
+  CXXFLAGS="$CXXFLAGS -funsigned-char"
+fi
 
 case "$target" in
   *sparc* )
@@ -60,6 +58,16 @@ case "$target" in
 dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
 dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
      SYSTEM_LIBS="$SYSTEM_LIBS -framework OpenGL -framework AGL"
+     CPPFLAGS="$CPPFLAGS -D_THREAD_SAFE"
+  ;;
+  *-*-openbsd* )
+     CPPFLAGS="$CPPFLAGS -DFreeBSD"
+  ;;
+  *-*-freebsd* )
+     CPPFLAGS="$CPPFLAGS -DFreeBSD -D_THREAD_SAFE"
+  ;;
+  *-*-beos* )
+     CPPFLAGS="$CPPFLAGS -D__BeOS"
   ;;
 esac
 
