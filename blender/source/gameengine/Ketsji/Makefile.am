@@ -117,7 +117,7 @@ libgameblender_ketsji_la_SOURCES = \
 	KXNetwork/KX_NetworkObjectSensor.h
 
 INCLUDES = -I$(top_srcdir)/source/gameengine/GameLogic \
-	-I$(top_srcdir)/source/gameengine/SoundSystem \
+	-I$(top_srcdir)/intern/SoundSystem \
 	-I$(top_srcdir)/source/gameengine/Expressions \
 	-I$(top_srcdir)/source/gameengine/SceneGraph \
 	-I$(top_srcdir)/intern/moto/include \

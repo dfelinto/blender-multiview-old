@@ -48,7 +48,7 @@ INCLUDES = -I$(top_srcdir)/source/gameengine/GameLogic \
 	-I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/gameengine/BlenderRoutines \
 	-I$(top_srcdir)/source/gameengine/Physics/common \
-	-I$(top_srcdir)/source/gameengine/SoundSystem \
+	-I$(top_srcdir)/intern/SoundSystem \
 	-I$(top_srcdir)/source/gameengine/BlenderRoutines \
 	-I$(top_srcdir)/source/blender/include \
 	-I$(top_srcdir)/source/gameengine/Physics/Dummy \

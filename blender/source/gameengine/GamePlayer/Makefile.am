@@ -63,7 +63,7 @@ INCLUDES = -I$(top_srcdir)/source/gameengine/Rasterizer \
 	-I$(top_srcdir)/source/gameengine/GameLogic \
 	-I$(top_srcdir)/source/gameengine/Converter \
 	-I$(top_srcdir)/source/gameengine/Network/LoopBackNetwork \
-	-I$(top_srcdir)/source/gameengine/SoundSystem \
+	-I$(top_srcdir)/intern/SoundSystem \
 	-I$(top_srcdir)/source/gameengine/Expressions \
 	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
 	-I$(top_srcdir)/source/kernel/gen_system \
