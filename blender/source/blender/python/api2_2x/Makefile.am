@@ -3,12 +3,16 @@ noinst_LTLIBRARIES = libblender_api2_2x.la
 LIBS =
 
 libblender_api2_2x_la_SOURCES = \
-  Blender.h \
   Blender.c \
+  Blender.h \
+  Types.c \
+  Types.h \
   Object.c \
   Object.h \
   NMesh.c \
   NMesh.h \
+  Material.c \
+  Material.h \
   Camera.c \
   Camera.h \
   Lamp.c \
