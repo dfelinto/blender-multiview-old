@@ -19,6 +19,7 @@ libblender_blendersrc_la_SOURCES = \
 	butspace.c \
 	cmap.tga.c \
 	cmovie.tga.c \
+	cursors.c \
 	drawaction.c \
 	drawimage.c \
 	drawimasel.c \
