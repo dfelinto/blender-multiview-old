@@ -8,7 +8,12 @@ libblender_blendersrc_la_SOURCES = \
 	blenderbuttons.c \
 	booleanops.c \
 	booleanops_mesh.c \
+	buttons_editing.c \
+	buttons_logic.c \
+	buttons_object.c \
 	buttons_scene.c \
+	buttons_script.c \
+	buttons_shading.c \
 	butspace.c \
 	cmap.tga.c \
 	cmovie.tga.c \
@@ -44,7 +49,6 @@ libblender_blendersrc_la_SOURCES = \
 	editnla.c \
 	editobject.c \
 	editoops.c \
-	editsca.c \
 	editscreen.c \
 	editseq.c \
 	editsima.c \

@@ -89,6 +89,7 @@ EXTRA_DIST = \
 	include/LOD_DependKludge.h \
 	include/TPT_DependKludge.h \
 	include/blendef.h \
+	include/butspace.h \
 	include/datatoc.h \
 	include/editlattice_ext.h \
 	include/interface.h \
