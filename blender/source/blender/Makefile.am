@@ -21,7 +21,6 @@ EXTRA_DIST = \
 	include/BDR_editobject.h \
 	include/BDR_isect.h \
 	include/BDR_vpaint.h \
-	include/BIF_buttons.h \
 	include/BIF_butspace.h \
 	include/BIF_drawimage.h \
 	include/BIF_drawoops.h \

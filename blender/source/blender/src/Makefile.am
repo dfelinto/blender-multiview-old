@@ -8,7 +8,6 @@ libblender_blendersrc_la_SOURCES = \
 	blenderbuttons.c \
 	booleanops.c \
 	booleanops_mesh.c \
-	buttons.c \
 	buttons_scene.c \
 	butspace.c \
 	cmap.tga.c \
