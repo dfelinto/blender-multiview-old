@@ -98,3 +98,15 @@ PyDict_Clear
 PyEval_EvalCode
 PyInt_Type
 PyString_Concat
+PyExc_MemoryError
+PyExc_ValueError
+PyOS_snprintf
+PyObject_Size
+PyExc_KeyError
+PyExc_NameError
+PyArg_ParseTupleAndKeywords
+PyModule_AddObject
+PyExc_NotImplementedError
+PyFunction_Type
+PyObject_CallFunction
+PyObject_CallObject
