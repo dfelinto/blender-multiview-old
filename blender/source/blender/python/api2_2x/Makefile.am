@@ -17,6 +17,8 @@ libblender_api2_2x_la_SOURCES = \
   Material.h \
   Camera.c \
   Camera.h \
+  World.c \
+  Worldy.h \
   Lamp.c \
   Lamp.h \
   Curve.c \
@@ -29,6 +31,14 @@ libblender_api2_2x_la_SOURCES = \
   Ipo.h \
   Metaball.c \
   Metaball.h \
+  Effect.c \
+  Effect.h \
+  Particle.c \
+  Particle.h \
+  Wave.c \
+  Wave.h \
+  Build.c \
+  Build.h \
   Image.c \
   Image.h \
   Window.c \
@@ -51,7 +61,7 @@ libblender_api2_2x_la_SOURCES = \
   EXPP_interface.h \
   modules.h
 
-libblender_api2_2x_la_CFLAGS = -Wall
+libblender_api2_2x_la_CFLAGS = -Wall 
 
 INCLUDES = \
   -I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
