@@ -19,6 +19,8 @@ libblender_api2_2x_la_SOURCES = \
   Draw.h \
   BGL.c \
   BGL.h \
+  Text.c \
+  Text.h \
   constant.c \
   constant.h \
   gen_utils.c \
