@@ -220,7 +220,6 @@ dnl  AC_FUNC_REALLOC
   AC_FUNC_MALLOC
   AC_FUNC_MEMCMP
   AC_FUNC_MMAP
-  dnl AC_FUNC_REALLOC
   AC_TYPE_SIGNAL
   AC_FUNC_STAT
   AC_FUNC_STRFTIME
@@ -235,7 +234,6 @@ dnl --------------------------
   AC_CHECK_LIB([stdc++], [printf]) dnl  Zarquon's knees, this is an evil hack.
   AC_LANG_POP([C++])
   AC_CHECK_LIB([dl], [dlopen])
-  AC_CHECK_LIB([util], [openpty])
   AC_CHECK_LIB([pthread], [pthread_exit])
   AC_CHECK_LIB([ssl], [SSL_new])
   AC_CHECK_LIB([crypto], [CRYPTO_lock])
