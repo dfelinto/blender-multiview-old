@@ -99,6 +99,12 @@ dnl -----------------------
    [ enable_blenderplugin=no ]  dnl default setting.
   )
 
+  AC_ARG_ENABLE(exppython,
+   AC_HELP_STRING([--enable-exppython],[Build experimental Python(default=disable)]),
+   ,dnl default assign.
+   [ enable_exppython=no ]  dnl default setting.
+  )
+
 dnl ----------------------
 dnl ssl
 dnl ----------------------
@@ -329,7 +335,7 @@ if test x$enable_openal = x"yes"; then
   AC_DEFINE_UNQUOTED([USE_OPENAL],[$use_openal],[Use OpenAL sound API in GameBlender])
 fi
 
-
+AM_CONDITIONAL([EXPPYTHON],[test x$enable_exppython = x"yes"])
 
 dnl -----------------------------------------
 dnl Parse Makefile.in's and other input files
@@ -348,19 +354,35 @@ AC_CONFIG_FILES([Makefile
 		intern/iksolver/Makefile
 		intern/keymaker/Makefile
 		intern/bsp/Makefile
-		intern/python/Makefile
+])
+
+if test x$enable_exppython = x"no"; then
+  AC_CONFIG_FILES([intern/python/Makefile
 		intern/python/blendermodule/Makefile
 		intern/python/freeze/Makefile
 		intern/python/modules/Makefile
-		intern/Makefile
+  ])
+fi
+
+AC_CONFIG_FILES([intern/Makefile
 		source/blender/src/Makefile
 		source/blender/avi/Makefile
 		source/blender/blenkernel/Makefile
 		source/blender/blenlib/Makefile
 		source/blender/blenloader/Makefile
 		source/blender/blenpluginapi/Makefile
-		source/blender/bpython/Makefile
-		source/blender/decrypt/Makefile
+])
+
+if test x$enable_exppython = x"yes"; then
+  AC_CONFIG_FILES([source/blender/python/Makefile
+		source/blender/python/api2_2x/Makefile
+  ])
+else
+  AC_CONFIG_FILES([source/blender/bpython/Makefile
+  ])
+fi
+
+AC_CONFIG_FILES([source/blender/decrypt/Makefile
 		source/blender/deflate/Makefile
 		source/blender/encrypt/Makefile
 		source/blender/imbuf/Makefile

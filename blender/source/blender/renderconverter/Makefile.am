@@ -1,3 +1,9 @@
+if EXPPYTHON
+  blenpythoninclude = -I$(top_srcdir)/source/blender/python
+else
+  blenpythoninclude = -I$(top_srcdir)/source/blender/bpython/include
+endif
+
 noinst_LTLIBRARIES = libblender_renderconverter.la
 
 libblender_renderconverter_la_SOURCES = \
@@ -11,7 +17,7 @@ INCLUDES = -I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/include \
 	-I$(top_srcdir)/source/blender/render/extern/include \
 	-I$(top_srcdir)/source/blender/misc \
-	-I$(top_srcdir)/source/blender/bpython/include
+	$(blenpythoninclude)
 
 EXTRA_DIST = \
 	Makefile \

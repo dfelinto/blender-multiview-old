@@ -1,3 +1,9 @@
+if EXPPYTHON
+  blenpythoninclude = -I$(top_srcdir)/source/blender/python
+else
+  blenpythoninclude = -I$(top_srcdir)/source/blender/bpython/include
+endif
+
 noinst_LTLIBRARIES = libblender_blenkernel.la
 
 libblender_blenkernel_la_SOURCES = \
@@ -86,7 +92,7 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/include \
 	-I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/makesdna \
-	-I$(top_srcdir)/source/blender/bpython/include \
+	$(blenpythoninclude) \
 	-I$(top_srcdir)/source/blender/render/extern/include \
 	-I$(top_srcdir)/source/blender/imbuf \
 	-I$(top_srcdir)/source/blender/avi \

@@ -1,7 +1,15 @@
+if EXPPYTHON
+  blenpythondir = python
+  blenpythonlib = python/libblender_python.la
+else
+  blenpythondir = bpython
+  blenpythonlib = bpython/libblender_bpython.la
+endif
+
 SUBDIRS = blenloader deflate inflate encrypt decrypt sign verify \
 	writestreamglue readstreamglue writeblenfile readblenfile \
 	avi imbuf img misc render radiosity blenlib blenkernel blenpluginapi \
-	bpython makesdna src renderconverter
+	$(blenpythondir) makesdna src renderconverter
 
 noinst_LTLIBRARIES = libblender_blender.la
 libblender_blender_la_SOURCES = \
@@ -115,7 +123,7 @@ libblender_blender_la_LIBADD = \
 	blenlib/libblender_blenlib.la \
 	blenkernel/libblender_blenkernel.la \
 	blenpluginapi/libblender_blenpluginapi.la \
-	bpython/libblender_bpython.la \
+	$(blenpythonlib) \
 	makesdna/libblender_makesdna.la \
 	src/libblender_blendersrc.la \
 	renderconverter/libblender_renderconverter.la

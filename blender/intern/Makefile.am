@@ -1,5 +1,11 @@
+if EXPPYTHON
+  blenpythondir =
+else
+  blenpythondir = python
+endif
+
 SUBDIRS = string ghost guardedalloc bmfont moto container memutil \
-	decimation keymaker bsp iksolver python
+	decimation keymaker bsp iksolver $(blenpythondir)
 
 lib_LTLIBRARIES = libblender_intern.la
 

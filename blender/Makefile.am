@@ -1,5 +1,11 @@
 SUBDIRS = intern source
 
+if EXPPYTHON
+  blenpythonlib =
+else
+  blenpythonlib = intern/python/frozen/libfrozen.a
+endif
+
 if BlenderGAME
 MACPLAYER=blenderplayer.app
 PLAYER=blenderplayer
@@ -15,7 +21,7 @@ lib_LTLIBRARIES = libbrowserplugin.la
 libbrowserplugin_la_SOURCES =
 
 libbrowserplugin_la_LDFLAGS =  \
-	intern/python/frozen/libfrozen.a \
+	$(blenpythonlib) \
 	-lpython@PYTHON_VERSION@
 
 libbrowserplugin_la_LIBADD = \
@@ -38,13 +44,13 @@ blenderplayer_app_SOURCES =
 blender_app_LDADD = \
         source/libblender_source.la \
         intern/libblender_intern.la \
-        intern/python/frozen/libfrozen.a \
+        $(blenpythonlib) \
         -lpython@PYTHON_VERSION@
 
 blenderplayer_app_LDADD = \
 	source/libblender_player.la \
         intern/libblender_intern.la \
-        intern/python/frozen/libfrozen.a \
+        $(blenpythonlib) \
         -lpython@PYTHON_VERSION@
 
 else
@@ -61,12 +67,12 @@ blenderplayer_SOURCES =
 blender_LDADD = \
         source/libblender_source.la \
         intern/libblender_intern.la \
-        intern/python/frozen/libfrozen.a \
+        $(blenpythonlib) \
         -lpython@PYTHON_VERSION@
 
 blenderplayer_LDADD = \
 	source/libblender_player.la \
         intern/libblender_intern.la \
-        intern/python/frozen/libfrozen.a \
+        $(blenpythonlib) \
         -lpython@PYTHON_VERSION@
 endif
