@@ -69,6 +69,7 @@ libblender_blendersrc_la_SOURCES = \
 	scrarea.c \
 	screendump.c \
 	sequence.c \
+	seqaudio.c \
 	space.c \
 	spacetypes.c \
 	swapbuffers.c \
@@ -81,6 +82,7 @@ libblender_blendersrc_la_SOURCES = \
 	writeavicodec.c \
 	writeimage.c \
 	writemovie.c \
+	language.c \
 	cre/license.jpeg.c \
 	cre/license_key.c
 
