@@ -629,6 +629,7 @@ static void draw_manipulator_rotate(float mat[][4], int moving, int drawflags)
 	/* prepare for screen aligned draw */
 	VECCOPY(vec, mat[0]);
 	size= Normalise(vec);
+	size*= 1.0 - cywid;		// fits in between translate, scale handles
 	glPushMatrix();
 	glTranslatef(mat[3][0], mat[3][1], mat[3][2]);
 	
@@ -678,6 +679,9 @@ static void draw_manipulator_rotate(float mat[][4], int moving, int drawflags)
 	}
 	else mymultmatrix(mat);
 	
+	/* small tweak to scale handles between translate and scale handles */
+	glScalef(1.0 - cywid, 1.0 - cywid, 1.0 - cywid);
+	
 	/* axes */
 	if(arcs==0) {
 		if(!(G.f & G_PICKSEL)) {
@@ -702,8 +706,8 @@ static void draw_manipulator_rotate(float mat[][4], int moving, int drawflags)
 		}
 	}
 	
-	/* Trackball center */
-	if(drawflags & MAN_ROT_T) {
+	/* Trackball center, not in combo mode */
+	if((drawflags & MAN_ROT_T) && (drawflags & ~MAN_ROT_C)==0) {
 		float smat[3][3], imat[3][3];
 		float offset[3];
 		
@@ -952,15 +956,18 @@ static void draw_manipulator_scale(float mat[][4], int moving, int drawflags)
 		glShadeModel(GL_SMOOTH);
 	}
 	
-	/* center cube, do not add to selection when shift is pressed (planar constraint)  */
-	if( (G.f & G_PICKSEL) && (G.qual & LR_SHIFTKEY)==0) glLoadName(MAN_SCALE_C);
-	
-	BIF_GetThemeColor3fv(TH_TRANSFORM, vec);
-	if(G.vd->twmode == V3D_MANIPULATOR_LOCAL) {vec[0]+= 0.25; vec[1]+=0.25; vec[2]+=0.25;}
-	else if(G.vd->twmode == V3D_MANIPULATOR_NORMAL) {vec[0]-= 0.2; vec[1]-=0.2; vec[2]-=0.2;}
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, vec);
-	
-	drawsolidcube(cusize);
+	/* not in combo mode */
+	if((drawflags & ~MAN_SCALE_C)==0) {
+		/* center cube, do not add to selection when shift is pressed (planar constraint)  */
+		if( (G.f & G_PICKSEL) && (G.qual & LR_SHIFTKEY)==0) glLoadName(MAN_SCALE_C);
+		
+		BIF_GetThemeColor3fv(TH_TRANSFORM, vec);
+		if(G.vd->twmode == V3D_MANIPULATOR_LOCAL) {vec[0]+= 0.25; vec[1]+=0.25; vec[2]+=0.25;}
+		else if(G.vd->twmode == V3D_MANIPULATOR_NORMAL) {vec[0]-= 0.2; vec[1]-=0.2; vec[2]-=0.2;}
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, vec);
+		
+		drawsolidcube(cusize);
+	}
 	
 	/* Z cube */
 	glTranslatef(0.0, 0.0, 1.0+cusize/2);
@@ -1498,14 +1505,22 @@ static int manipulator_selectbuf(ScrArea *sa, float hotspot)
 	
 	if(hits==1) return buffer[3];
 	else if(hits>1) {
-		/* we compare the two first in buffer, but exclude centers */
+		GLuint mindep, minval;
+		int a;
 		
-		if(buffer[3]==MAN_TRANS_C || buffer[3]==MAN_SCALE_C);
-		else if(buffer[4+3]==MAN_TRANS_C || buffer[4+3]==MAN_SCALE_C);
-		else {
-			if(buffer[4+1] < buffer[1]) return buffer[4+3];
+		/* we compare the hits in buffer, but value centers highest */
+		mindep= buffer[1];
+		minval= buffer[3];
+
+		for(a=1; a<hits; a++) {
+			if(minval==MAN_TRANS_C || minval==MAN_SCALE_C) break;
+			
+			if(buffer[4*a + 3]==MAN_TRANS_C || buffer[4*a + 3]==MAN_SCALE_C || buffer[4*a + 1] < mindep) {
+				mindep= buffer[4*a + 1];
+				minval= buffer[4*a + 3];
+			}
 		}
-		return buffer[3];
+		return minval;
 	}
 	return 0;
 }
