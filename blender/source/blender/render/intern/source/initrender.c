@@ -669,7 +669,7 @@ void initparts()
 			if(allparts[nr][3]-allparts[nr][1]<=0) allparts[nr][0]= PART_EMPTY;
 			
 			/* gauss needs 1 pixel extra to work */
-			if(R.r.mode & R_GAUSS) {
+			if(xparts*yparts>1 && (R.r.mode & R_GAUSS)) {
 				allparts[nr][0]-= 1;
 				allparts[nr][1]-= 1;
 				allparts[nr][2]+= 1;
