@@ -60,10 +60,6 @@ msgstr "BORRAR TODO"
 ###  General Terms
 ###
 ###########################################################
-msgid "File"
-msgstr "Archivo"
-msgid "Edit"
-msgstr "Editar"
 
 ###########################################################
 ###
@@ -89,18 +85,12 @@ msgid "Surface"
 msgstr "Superficie"
 msgid "Text"
 msgstr "Texto"
-msgid "MetaBall"
-msgstr "MetaBall"
-msgid "Empty"
-msgstr "Vacio"
 msgid "Camera"
 msgstr "Camara"
 msgid "Lamp"
 msgstr "Luz"
 msgid "Armature"
 msgstr "Armadura"
-msgid "Lattice"
-msgstr "Lattice"
 
 
 ###########################################################
@@ -158,8 +148,6 @@ msgid "&gt;Suface"
 msgstr "&gt;Superficie"
 msgid "&gt;Surface"
 msgstr "&gt;Superficie"
-msgid "&gt;Tube"
-msgstr "&gt;Tubo"
 msgid "&gt;Sphere"
 msgstr "&gt;Esfera"
 msgid "&gt;Donut"
@@ -266,12 +254,8 @@ msgstr "Pintura Vectorial"
 ###  ToolBox &gt;&gt; OBJECT (2)
 ###
 ###########################################################
-msgid "Edit Mode"
-msgstr "Modo de Edición"
 msgid "Move To Layer"
 msgstr "Mover a Capa"
-msgid "Delete"
-msgstr "Borrar"
 msgid "Delete All"
 msgstr "Borrar todo"
 msgid "Apply Size/Rot"
@@ -299,12 +283,6 @@ msgstr "Operación booleana"
 ###  ToolBox &gt;&gt; Mesh
 ###
 ###########################################################
-msgid "Deselect Linked"
-msgstr "Deseleccionar Links"
-msgid "Extrude"
-msgstr "Extrusión"
-msgid "Delete Menu"
-msgstr "Menu Borrar"
 msgid "Make edge/face"
 msgstr "Crear lado/cara"
 msgid "Fill"

@@ -1,4 +1,4 @@
-# blender ja.po
+# blender nl.po
 # Copyright (C) 2003 Free Software Foundation, Inc.
 # phase, 2003.
 
@@ -60,10 +60,6 @@ msgstr "ALLES WISSEN ???"
 ###  General Terms
 ###
 ###########################################################
-msgid "File"
-msgstr "Bestand"
-msgid "Edit"
-msgstr "Bewerk"
 
 ###########################################################
 ###
@@ -89,19 +85,12 @@ msgid "Surface"
 msgstr "Oppervlak"
 msgid "Text"
 msgstr "Tekst"
-msgid "MetaBall"
-msgstr "MetaBall"
-msgid "Empty"
-msgstr "Empty"
 msgid "Camera"
 msgstr "Camera"
 msgid "Lamp"
 msgstr "Lamp"
 msgid "Armature"
 msgstr "Armature"
-msgid "Lattice"
-msgstr "Lattice"
-
 
 ###########################################################
 ###
@@ -156,8 +145,6 @@ msgid ">Circle"
 msgstr ">Cirkel"
 msgid ">Suface"
 msgstr ">Oppervlak"
-msgid ">Tube"
-msgstr ">Tube"
 msgid ">Sphere"
 msgstr ">Sphere"
 msgid ">Donut"
@@ -264,12 +251,8 @@ msgstr "Vector Paint"
 ###  ToolBox >> OBJECT (2)
 ###
 ###########################################################
-msgid "Edit Mode"
-msgstr "Edit Modus"
 msgid "Move To Layer"
 msgstr "Verplaats naar Layer"
-msgid "Delete"
-msgstr "Wis"
 msgid "Delete All"
 msgstr "Wis Alles"
 #msgid "Apply Size/Rot"
@@ -297,12 +280,6 @@ msgstr "Boolean Operation"
 ###  ToolBox >> Mesh
 ###
 ###########################################################
-msgid "Deselect Linked"
-msgstr "Deselecteer Linked"
-msgid "Extrude"
-msgstr "Extrude"
-msgid "Delete Menu"
-msgstr "Delete Menu"
 msgid "Make edge/face"
 msgstr "Maak edge/face"
 msgid "Fill"

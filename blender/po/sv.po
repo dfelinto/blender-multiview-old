@@ -85,11 +85,6 @@ msgstr "RADERA ALLT"
 ###  General Terms
 ###
 ###########################################################
-msgid "File"
-msgstr "Arkiv"
-
-msgid "Edit"
-msgstr "Redigera"
 
 ###########################################################
 ###
@@ -119,12 +114,6 @@ msgstr "Yta"
 msgid "Text"
 msgstr "Text"
 
-msgid "MetaBall"
-msgstr "MetaBall"
-
-msgid "Empty"
-msgstr "Tom"
-
 msgid "Camera"
 msgstr "Kamera"
 
@@ -133,9 +122,6 @@ msgstr "Lampa"
 
 msgid "Armature"
 msgstr "Armatur"
-
-msgid "Lattice"
-msgstr "Lattice"
 
 ###########################################################
 ###
@@ -202,9 +188,6 @@ msgstr "&gt;Cirkel"
 
 msgid "&gt;Surface"
 msgstr "&gt;Yta"
-
-msgid "&gt;Tube"
-msgstr "&gt;Tub"
 
 msgid "&gt;Sphere"
 msgstr "&gt;Sfär"
@@ -343,14 +326,8 @@ msgstr "Vektor Måla"
 ###  ToolBox &gt;&gt; OBJECT (2)
 ###
 ###########################################################
-msgid "Edit Mode"
-msgstr "Redigerings Läge"
-
 msgid "Move To Layer"
 msgstr "Flytta Till Lager"
-
-msgid "Delete"
-msgstr "Radera"
 
 msgid "Delete All"
 msgstr "Radera Allt"
@@ -382,15 +359,6 @@ msgstr "Boolean Operation"
 ###  ToolBox &gt;&gt; Mesh
 ###
 ###########################################################
-msgid "Deselect Linked"
-msgstr "Avmarkera Länkad"
-
-msgid "Extrude"
-msgstr "Extrudera"
-
-msgid "Delete Menu"
-msgstr "Raderings Meny"
-
 msgid "Make edge/face"
 msgstr "Skapa kant/yta"
 
