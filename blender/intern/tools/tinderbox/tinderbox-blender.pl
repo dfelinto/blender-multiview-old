@@ -25,25 +25,30 @@
 #
 # The Original Code is: all of this file.
 #
-# Contributor(s): none yet.
+# Contributor(s): Hans Lambermont
 #
 # ***** END GPL/BL DUAL LICENSE BLOCK *****
 #
 # based on cvs:mozilla/webtools/tinderbox/examples/mozilla-unix.pl
-# Note: install this script from intern/tools/tinderbox on server
+# Note: install this script from intern/tools/tinderbox
 
 require 5.000;
 
 use Cwd;
 use Mail::Send;
+use Sys::Hostname;
+#use strict;
 
 # config section variables
 use vars qw( $SEMA $VERSION $UNAME );
 
 # globals
-use vars qw( $Home @Pwd $Mymtime $SaveDate );
+use vars qw( $Home @Pwd $Mymtime $SaveDate $Hostname );
 
 &gethome;
+
+$Hostname = hostname();
+$Hostname =~ s/\..*$//;
 
 $SEMA = "$Home/.tinderpid";
 $VERSION = "2.000";
@@ -110,10 +115,10 @@ sub InitVars {
     $CVSCO = 'co -P';
 
     # Set these proper values for your tinderbox server
-    $Tinderbox_server = 'tinderbox\@xserve.blender.org';
+    $Tinderbox_server = 'tinderbox@xserve.blender.org hans';
 
     # These shouldn't really need to be changed
-    $BuildSleep = 300; # Minimum wait period from start of build to start
+    $BuildSleep = 10; # Minimum wait period from start of build to start
                       # of next build in minutes (default 10)
     $BuildTree = '';
     $BuildTag = '';
@@ -133,13 +138,13 @@ sub ConditionalArgs {
     if ( $BuildClassic ) {
     } else {
 		$BuildTree = 'source';
-		if ($UNAME eq 'Darwin') {
-			$FE = 'blenderplayer,Dblenderplayer'; 
-		} elsif ($UNAME eq 'Linux') {
-			$FE = 'blendercreator,Dblendercreator,blenderpublisher,Dblenderpublisher,blenderplugin,blenderpluginXPCOM'; 
-		} else {
+#		if ($UNAME eq 'Darwin') {
+#			$FE = 'blenderplayer,Dblenderplayer'; 
+#		} elsif ($UNAME eq 'Linux') {
+#			$FE = 'blendercreator,Dblendercreator,blenderpublisher,Dblenderpublisher,blenderplugin,blenderpluginXPCOM'; 
+#		} else {
 			$FE = 'blendercreator'; 
-		}
+#		}
 		$BuildModule = 'blender';
     }
     $CVSCO .= " -r $BuildTag" if ( $BuildTag ne '');
@@ -370,70 +375,70 @@ sub BuildIt {
 
 	    $BuildStatusStr = ( $BuildStatus ? 'busted' : 'success' );
 
-	    # Hans: scp action added
-	    if ( $BuildStatusStr eq 'success' ) {
-			#	print "fe=$fe\n";
-		my ($pexe, $exe, $dates, $scpstr, $dy, $dm, $dd, $alldates);
-		$pexe = $BuildObjName . '/' . $BinaryName{"$fe"};
-			#	print "pexe=$pexe\n";
-		if ($UNAME eq 'CYGWIN_NT-5.0') {
-			$alldates = `date +%Y%m%d%H%M%S`;
-			chomp($alldates);
-			$myfe = $BinaryName{"$fe"};
-			$myfe =~ s/\.exe//;
-			$exe = $myfe . '-' . $alldates . '.exe';
-		} else {
-			$exe = $BinaryName{"$fe"} . '-' . `date +%Y%m%d%H%M%S`;
-			chomp($exe);
-		}
-			#	print "exe=$exe\n";
-		$dy = `date +%Y`; chomp($dy);
-		$dm = `date +%m`; chomp($dm);
-		$dd = `date +%d`; chomp($dd);
-		$dates = $dy . '/' . $dm . '/' . $dd . '/' . $GuessConfig;
-			#	print "dates=$dates\n";
-		$scpstr = "scp $pexe tinderbox\@server:allbuilds/$dates/$exe";
-		print "$scpstr\n";
-		print LOG "$scpstr\n";
-		open (SCP, "$scpstr 2>&1 |") || die "$scpstr: $!\n";
-		while (<SCP>) {
-	    		$scpresult = $_;
-	    		chomp($scpresult);
-	    		print "scp = [$scpresult]\n";
-	    		print LOG "SCP = [$scpresult]\n";
-		}
-		close (SCP);
-	    }
+#	    # Hans: scp action added
+#	    if ( $BuildStatusStr eq 'success' ) {
+#			#	print "fe=$fe\n";
+#		my ($pexe, $exe, $dates, $scpstr, $dy, $dm, $dd, $alldates);
+#		$pexe = $BuildObjName . '/' . $BinaryName{"$fe"};
+#			#	print "pexe=$pexe\n";
+#		if ($UNAME eq 'CYGWIN_NT-5.0') {
+#			$alldates = `date +%Y%m%d%H%M%S`;
+#			chomp($alldates);
+#			$myfe = $BinaryName{"$fe"};
+#			$myfe =~ s/\.exe//;
+#			$exe = $myfe . '-' . $alldates . '.exe';
+#		} else {
+#			$exe = $BinaryName{"$fe"} . '-' . `date +%Y%m%d%H%M%S`;
+#			chomp($exe);
+#		}
+#			#	print "exe=$exe\n";
+#		$dy = `date +%Y`; chomp($dy);
+#		$dm = `date +%m`; chomp($dm);
+#		$dd = `date +%d`; chomp($dd);
+#		$dates = $dy . '/' . $dm . '/' . $dd . '/' . $GuessConfig;
+#			#	print "dates=$dates\n";
+#		$scpstr = "scp $pexe tinderbox\@server:allbuilds/$dates/$exe";
+#		print "$scpstr\n";
+#		print LOG "$scpstr\n";
+#		open (SCP, "$scpstr 2>&1 |") || die "$scpstr: $!\n";
+#		while (<SCP>) {
+#	    		$scpresult = $_;
+#	    		chomp($scpresult);
+#	    		print "scp = [$scpresult]\n";
+#	    		print LOG "SCP = [$scpresult]\n";
+#		}
+#		close (SCP);
+#	    }
 
 	    print LOG "tinderbox: tree: $BuildTree\n";
 	    print LOG "tinderbox: builddate: $StartTime\n";
 	    print LOG "tinderbox: status: $BuildStatusStr\n";
-	    print LOG "tinderbox: build: $BuildName $fe\n";
+	    print LOG "tinderbox: build: $BuildName ($Hostname) $fe\n";
 	    print LOG "tinderbox: errorparser: unix\n";
 	    print LOG "tinderbox: buildfamily: unix\n";
 	    print LOG "tinderbox: END\n\n";	    
 	}
 
-	# only if all targets were successful will we scp the release
-	if ( $AllBuildStatusStr eq 'success' ) {
-		my ($dy, $dm, $dd, $alldates, $dates, $scpstr);
-		$dy = `date +%Y`; chomp($dy);
-		$dm = `date +%m`; chomp($dm);
-		$dd = `date +%d`; chomp($dd);
-		$dates = $dy . '/' . $dm . '/' . $dd;
-		$scpstr = "scp ${BuildObjDir}2.*/*.tar.gz ${BuildObjDir}2.*/*.zip tinderbox\@server:allbuilds/$dates/";
-		print "$scpstr\n";
-		print LOG "$scpstr\n";
-		open (SCP, "$scpstr 2>&1 |") || die "$scpstr: $!\n";
-		while (<SCP>) {
-	    		$scpresult = $_;
-	    		chomp($scpresult);
-	    		print "scp = [$scpresult]\n";
-				# this will only confuse ppl as always one of gz or zip fails
-				#print LOG "SCP = [$scpresult]\n";
-		}
-		close (SCP);
-	}
+#	# only if all targets were successful will we scp the release
+#	if ( $AllBuildStatusStr eq 'success' ) {
+#		my ($dy, $dm, $dd, $alldates, $dates, $scpstr);
+#		$dy = `date +%Y`; chomp($dy);
+#		$dm = `date +%m`; chomp($dm);
+#		$dd = `date +%d`; chomp($dd);
+#		$dates = $dy . '/' . $dm . '/' . $dd;
+#		$scpstr = "scp ${BuildObjDir}2.*/*.tar.gz ${BuildObjDir}2.*/*.zip tinderbox\@server:allbuilds/$dates/";
+#		print "$scpstr\n";
+#		print LOG "$scpstr\n";
+#		open (SCP, "$scpstr 2>&1 |") || die "$scpstr: $!\n";
+#		while (<SCP>) {
+#	    		$scpresult = $_;
+#	    		chomp($scpresult);
+#	    		print "scp = [$scpresult]\n";
+#				# this will only confuse ppl as always one of gz or zip fails
+#				#print LOG "SCP = [$scpresult]\n";
+#		}
+#		close (SCP);
+#	}
 
 	close(LOG);
 
@@ -512,7 +517,7 @@ sub StartBuild {
 		print $fh "tinderbox: tree: $BuildTree\n";
 		print $fh "tinderbox: builddate: $StartTime\n";
 		print $fh "tinderbox: status: building\n";
-		print $fh "tinderbox: build: $BuildName $fe\n";
+		print $fh "tinderbox: build: $BuildName ($Hostname) $fe\n";
 		print $fh "tinderbox: errorparser: unix\n";
 		print $fh "tinderbox: buildfamily: unix\n";
 		print $fh "tinderbox: END\n";
