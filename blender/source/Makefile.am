@@ -20,6 +20,12 @@ else
 icondir =
 endif
 
+if EXPPYTHON
+blenpythonlib = blender/python/libblender_python.la
+else
+blenpythonlib = blender/bpython/libblender_bpython.la
+endif
+
 SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
 
 noinst_LTLIBRARIES = libblender_source.la $(playerlib) $(pluginlib)
@@ -55,7 +61,7 @@ libblender_source_la_LIBADD = \
 	blender/blenpluginapi/libblender_blenpluginapi.la \
 	blender/imbuf/libblender_imbuf.la \
 	blender/blenlib/libblender_blenlib.la \
-	blender/bpython/libblender_bpython.la \
+	$(blenpythonlib) \
 	blender/makesdna/libblender_makesdna.la \
 	kernel/libblender_kernel.la
 
