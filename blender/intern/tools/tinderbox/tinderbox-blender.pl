@@ -73,22 +73,6 @@ chomp($UNAME);
 $Mymtime = 0;
 my $StartDir = "";
 
-sub justme {
-	if (open SEMA) {
-		my $pid;
-		chop($pid = <SEMA>);
-		if ( $$ != $pid ) {
-			print "PID $pid claims to be running and it is not us : $$\n";
-			kill(0, $pid) and die "$0 already running (pid $pid)\n";
-			print "PID $pid does not really exist\n";
-		} else {
-			print "PID $pid is us : $$\n";
-		}
-		close SEMA;
-	}
-} #EndSub-justme
-
-
 sub SendMail{
 	my ($subject, $body) = @_;
 
@@ -136,6 +120,21 @@ sub gethome {
 	$Home = $ENV{HOME} || $ENV{LOGDIR} || $Pwd[7] or
 		die "no home directory for user $<";
 } #EndSub-gethome
+
+sub justme {
+	if (open SEMA) {
+		my $pid;
+		chop($pid = <SEMA>);
+		if ( $$ != $pid ) {
+			print "PID $pid claims to be running and it is not us : $$\n";
+			kill(0, $pid) and die "$0 already running (pid $pid)\n";
+			print "PID $pid does not really exist\n";
+		} else {
+			print "PID $pid is us : $$\n";
+		}
+		close SEMA;
+	}
+} #EndSub-justme
 
 sub InitVars {
     $BuildAdministrator = "$ENV{'USER'}\@$ENV{'HOST'}";
@@ -188,7 +187,9 @@ sub InitVars {
     $BuildObjDir = '';
     $BuildObjName = '';
     $ConfigGuess = './blender/source/tools/guess/guessconfig';
+	print "ConfigGuess set to $ConfigGuess\n";
     $GuessConfig = "nanguess"; # actually the hint and cache filename for now
+	print "GuessConfig set to $GuessConfig\n";
 	$SaveDate = `date +%Y%m%d`;
 	chomp($SaveDate);
 } #EndSub-InitVars
@@ -207,27 +208,6 @@ sub ConditionalArgs {
     $CVSCO .= " -r $BuildTag" if ( $BuildTag ne '');
 } #EndSub-ConditionalArgs
 
-sub SetupEnv {
-    umask(0);
-    $ENV{"CVSROOT"} = ':pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender';
-    $ENV{"NANBLENDERHOME"} = "$ENV{'HOME'}/develop/blender";
-    $ENV{"SRCHOME"} = "$ENV{'HOME'}/develop/blender/source";
-} #EndSub-SetupEnv
-
-sub SetupPath {
-    my($Path);
-    $Path = $ENV{PATH};
-    print "Path before: $Path\n";
-
-    $ENV{'PATH'} = '/usr/local/bin:' . $ENV{'PATH'};
-    if ( $OS eq 'SunOS' ) {
-		$ENV{'PATH'} = $ENV{'PATH'} . ':/usr/ccs/bin';
-    }
-
-    $Path = $ENV{PATH};
-    print "Path After:  $Path\n";
-} #EndSub-SetupPath
-
 sub GetSystemInfo {
 
 	# test for GuessConfig hint
@@ -242,6 +222,7 @@ sub GetSystemInfo {
 	$GuessConfig = <FH>;
 	close(FH);
 	chomp($GuessConfig);
+	print "GuessConfig set to $GuessConfig\n";
 
     $BuildName = $GuessConfig; #"HansBuildName";
     $DirName   = $GuessConfig; #"HansDirName";;
@@ -264,6 +245,27 @@ sub GetSystemInfo {
 
     $logfile = "${DirName}.log";
 } #EndSub-GetSystemInfo
+
+sub SetupEnv {
+    umask(0);
+    $ENV{"CVSROOT"} = ':pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender';
+    $ENV{"NANBLENDERHOME"} = "$ENV{'HOME'}/develop/blender";
+    $ENV{"SRCHOME"} = "$ENV{'HOME'}/develop/blender/source";
+} #EndSub-SetupEnv
+
+sub SetupPath {
+    my($Path);
+    $Path = $ENV{PATH};
+    print "Path before: $Path\n";
+
+    $ENV{'PATH'} = '/usr/local/bin:' . $ENV{'PATH'};
+    if ( $OS eq 'SunOS' ) {
+		$ENV{'PATH'} = $ENV{'PATH'} . ':/usr/ccs/bin';
+    }
+
+    $Path = $ENV{PATH};
+    print "Path After:  $Path\n";
+} #EndSub-SetupPath
 
 sub test_thesame {
 	my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime,
@@ -291,8 +293,8 @@ sub BuildIt {
 	# Hans: start the logfile immediately
 	chdir("$StartDir");
 	unlink( "$logfile" );
-	print "New BuildIt loop opening $logfile\n";
-	open( LOG, ">$logfile" ) || print "can't open $?\n";
+	print "New BuildIt loop. Opening [$logfile]\n";
+	open( LOG, ">$logfile" ) || die "Can't open [$logfile]: $?\n";
 
     print "Using tinderbox-blender version : $VERSION\n";
     print LOG "Using tinderbox-blender version : $VERSION\n";
@@ -682,16 +684,14 @@ sub PrintEnv {
 	print LOG "------------------- PrintEnv end\n";
 } #EndSub-PrintEnv
 
-# Main function
-
+# 'Main' function
+print     "------------------- JustMe\n";
 justme();
 open (SEMA, "> $SEMA") or die "can't write $SEMA: $!";
 print SEMA "$$\n";
 close (SEMA) or die "can't close $SEMA: $!";
-
 print     "------------------- InitVars\n";
 &InitVars;
-$BuildDepend = 1;
 print     "------------------- ConditionalArgs\n";
 &ConditionalArgs;
 print     "------------------- GetSystemInfo\n";
