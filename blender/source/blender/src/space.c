@@ -1131,6 +1131,7 @@ void winqreadview3dspace(ScrArea *sa, void *spacedata, BWinEvent *evt)
 						if (G.obedit->type==OB_MESH)
 							loop('c');
 					}
+					else transform('r');
 				}
 				else transform('r');
 				break;
