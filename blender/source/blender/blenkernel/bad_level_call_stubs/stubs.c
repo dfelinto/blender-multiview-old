@@ -102,7 +102,7 @@ void load_editMesh(void){}
 void make_editMesh(void){}
 void free_editMesh(void){}
 void docentre_new(void){}
-int saveover(char *str){ return 0}
+int saveover(char *str){ return 0;}
 
 /* image.c */
 #include "DNA_image_types.h"
