@@ -11,8 +11,7 @@ SUBDIRS = blenloader deflate inflate encrypt decrypt sign verify \
 	avi imbuf img render radiosity blenlib blenkernel blenpluginapi \
 	$(blenpythondir) makesdna src renderconverter
 
-noinst_LTLIBRARIES = libblender_blender.la
-libblender_blender_la_SOURCES = \
+EXTRA_DIST = \
 	include/BDR_drawaction.h \
 	include/BDR_drawmesh.h \
 	include/BDR_drawobject.h \
@@ -101,28 +100,3 @@ libblender_blender_la_SOURCES = \
 	include/objfnt.h \
 	include/particle_effect.h \
 	include/playanim_ext.h
-
-libblender_blender_la_LIBADD = \
-	blenloader/libblender_blenloader.la \
-	deflate/libblender_deflate.la \
-	inflate/libblender_inflate.la \
-	encrypt/libblender_encrypt.la \
-	decrypt/libblender_decrypt.la \
-	sign/libblender_sign.la \
-	verify/libblender_verify.la \
-	writestreamglue/libblender_writestreamglue.la \
-	readstreamglue/libblender_readstreamglue.la \
-	writeblenfile/libblender_writeblenfile.la \
-	readblenfile/libblender_readblenfile.la \
-	avi/libblender_avi.la \
-	imbuf/libblender_imbuf.la \
-	img/libblender_img.la \
-	render/libblender_render.la \
-	radiosity/libblender_radiosity.la \
-	blenlib/libblender_blenlib.la \
-	blenkernel/libblender_blenkernel.la \
-	blenpluginapi/libblender_blenpluginapi.la \
-	$(blenpythonlib) \
-	makesdna/libblender_makesdna.la \
-	src/libblender_blendersrc.la \
-	renderconverter/libblender_renderconverter.la

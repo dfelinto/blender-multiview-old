@@ -12,7 +12,7 @@ else
 PLUGINLIB =
 endif
 
-lib_LTLIBRARIES = $(BUILDTYPE) $(PLUGINLIB) libgameblender_player.la
+noinst_LTLIBRARIES = $(BUILDTYPE) $(PLUGINLIB) libgameblender_player.la
 
 libgameblender_player_la_SOURCES = \
 	common/GPC_Canvas.cpp \

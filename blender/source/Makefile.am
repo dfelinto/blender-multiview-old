@@ -22,7 +22,7 @@ endif
 
 SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
 
-lib_LTLIBRARIES = libblender_source.la $(playerlib) $(pluginlib)
+noinst_LTLIBRARIES = libblender_source.la $(playerlib) $(pluginlib)
 
 libblender_source_la_LDFLAGS = \
 	-L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
@@ -34,7 +34,29 @@ libblender_source_la_LIBADD = \
 	-lpython@PYTHON_VERSION@ \
 	$(gamelib) \
 	creator/libblender_creator.la \
-	blender/libblender_blender.la \
+	blender/src/libblender_blendersrc.la \
+	blender/renderconverter/libblender_renderconverter.la \
+	blender/blenloader/libblender_blenloader.la \
+	blender/deflate/libblender_deflate.la \
+	blender/inflate/libblender_inflate.la \
+	blender/encrypt/libblender_encrypt.la \
+	blender/decrypt/libblender_decrypt.la \
+	blender/sign/libblender_sign.la \
+	blender/verify/libblender_verify.la \
+	blender/writestreamglue/libblender_writestreamglue.la \
+	blender/readstreamglue/libblender_readstreamglue.la \
+	blender/writeblenfile/libblender_writeblenfile.la \
+	blender/readblenfile/libblender_readblenfile.la \
+	blender/avi/libblender_avi.la \
+	blender/img/libblender_img.la \
+	blender/render/libblender_render.la \
+	blender/radiosity/libblender_radiosity.la \
+	blender/blenkernel/libblender_blenkernel.la \
+	blender/blenpluginapi/libblender_blenpluginapi.la \
+	blender/imbuf/libblender_imbuf.la \
+	blender/blenlib/libblender_blenlib.la \
+	blender/bpython/libblender_bpython.la \
+	blender/makesdna/libblender_makesdna.la \
 	kernel/libblender_kernel.la
 
 libblender_player_la_LDFLAGS = \
