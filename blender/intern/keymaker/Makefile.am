@@ -15,4 +15,4 @@ libblender_belgium_la_SOURCES = \
 ## Keyloader is a seperate test program
 bin_PROGRAMS = keyloader
 keyloader_SOURCES = keyloader.c
-keyloader_LDADD = -lcrypto libblender_belgium.la
+keyloader_LDADD = libblender_belgium.la -lcrypto
