@@ -11121,6 +11121,8 @@
 		};
 		A34CCC0C07E3889800AD7C17 = {
 			children = (
+				A397F55807F5B14100AFAB73,
+				A397F55907F5B14100AFAB73,
 				A34CCC0D07E3889800AD7C17,
 				A34CCC0E07E3889800AD7C17,
 				A34CCC0F07E3889800AD7C17,
@@ -12680,6 +12682,8 @@
 		};
 		A34CCCBA07E3889800AD7C17 = {
 			children = (
+				A397F56407F5B1CE00AFAB73,
+				A397F56507F5B1CE00AFAB73,
 				A34CCCBB07E3889800AD7C17,
 				A34CCCBC07E3889800AD7C17,
 				A34CCCD107E3889800AD7C17,
@@ -18002,6 +18006,53 @@
 			settings = {
 			};
 		};
+		A397F55807F5B14100AFAB73 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			name = KX_RayCast.cpp;
+			path = ../../source/gameengine/Ketsji/KX_RayCast.cpp;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A397F55907F5B14100AFAB73 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = KX_RayCast.h;
+			path = ../../source/gameengine/Ketsji/KX_RayCast.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A397F55A07F5B14100AFAB73 = {
+			fileRef = A397F55807F5B14100AFAB73;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A397F56407F5B1CE00AFAB73 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = SumoPHYCallbackBridge.cpp;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		A397F56507F5B1CE00AFAB73 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = SumoPHYCallbackBridge.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		A397F56607F5B1CE00AFAB73 = {
+			fileRef = A397F56407F5B1CE00AFAB73;
+			isa = PBXBuildFile;
+			settings = {
+				COMPILER_FLAGS = "-I../../extern/solid";
+			};
+		};
 		A3B35CCC07E4ED5D00AE0C8B = {
 			fileEncoding = 5;
 			isa = PBXFileReference;
@@ -18757,6 +18808,8 @@
 				A3D66D4C07EA40B1005185E6,
 				A397AC9F07EEA36500D1D9FB,
 				A397ACA107EEA36500D1D9FB,
+				A397F55A07F5B14100AFAB73,
+				A397F56607F5B1CE00AFAB73,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -18803,7 +18856,7 @@
 			buildRules = (
 			);
 			buildSettings = {
-				GCC_PREPROCESSOR_DEFINITIONS = "FTGL_STATIC_LIBRARY GAMEBLENDER=1 INTERNATIONAL NDEBUG USE_SUMO_SOLID WITH_QUICKTIME NEWTRANSFORM _THREAD_SAFE";
+				GCC_PREPROCESSOR_DEFINITIONS = "FTGL_STATIC_LIBRARY GAMEBLENDER=1 INTERNATIONAL NDEBUG USE_SUMO_SOLID WITH_QUICKTIME NEWTRANSFORM _THREAD_SAFE \"USE_CCGSUBSURFLIB \"";
 				INSTALL_PATH = /usr/local/bin;
 				LIBRARY_SEARCH_PATHS = "../../../lib/darwin-6.1-powerpc/solid/lib ../../../lib/darwin-6.1-powerpc/qhull/lib ../../../lib/darwin-6.1-powerpc/sdl/lib ../../../lib/darwin-6.1-powerpc/png/lib ../../../lib/darwin-6.1-powerpc/jpeg/lib ../../../lib/darwin-6.1-powerpc/freetype/lib ../../../lib/darwin-6.1-powerpc/ftgl/lib ../../../lib/darwin-6.1-powerpc/gettext/lib ../../../lib/darwin-6.1-powerpc/openal/lib";
 				OTHER_CFLAGS = "";
