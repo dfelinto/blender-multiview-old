@@ -157,6 +157,8 @@ sub ConditionalArgs {
 sub SetupEnv {
     umask(0);
     $ENV{"CVSROOT"} = ':pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender';
+    $ENV{"NANBLENDERHOME"} = "$ENV{'HOME'}/develop/blender";
+    $ENV{"SRCHOME"} = "$ENV{'HOME'}/develop/blender/source";
 } #EndSub-SetupEnv
 
 sub SetupPath {
