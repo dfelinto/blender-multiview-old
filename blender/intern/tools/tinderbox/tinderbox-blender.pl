@@ -364,8 +364,12 @@ sub BuildIt {
 	while (<PULL>) {
 	    print $_;
 	    print LOG $_;
+		# TODO actually check for updates/patches before we rebuild
 	}
 	close(PULL);
+	# TODO cvs error code checking, or check for things like :
+	#  fork failed
+	#  Resource temporarily unavailable
 
     # Update ourselves from CVS for the next run, if we changed that is.
 	if ( -f "$StartDir/enableTinderboxAutoUpdate") {
@@ -405,6 +409,9 @@ sub BuildIt {
 		$BuildObjDir = "$ENV{'HOME'}/develop/";
 	} else {
 		$BuildObjDir = "$ENV{'HOME'}/develop/blender/obj/";
+	}
+	if (! -f $ConfigGuess) {
+		die "$ConfigGuess not found, aborting\n";
 	}
 	open (GETOBJ, "$ConfigGuess 2>&1 |") || die "$ConfigGuess: $!\n";
 	while (<GETOBJ>) {
