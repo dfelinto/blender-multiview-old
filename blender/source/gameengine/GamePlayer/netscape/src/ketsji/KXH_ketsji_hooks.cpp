@@ -533,7 +533,7 @@ initialize_gameengine(ketsji_engine_data* k, struct BlendFileData * active_file)
 						 k->kx_engine);
 		
 		PyObject* dictionaryobject 
-			= initGamePythonScripting("Ketsji", 
+			= initGamePlayerPythonScripting("Ketsji", 
 						  psl_Highest);
 		if (k->keyboarddevice 
 		    && k->mousedevice 

@@ -664,7 +664,7 @@ bool CBlenderPlayerCtrl::startEngine(void)
 				m_audiodevice,
 				startscenename);
 			
-			PyObject* m_dictionaryobject = initGamePythonScripting("Ketsji", psl_Highest);
+			PyObject* m_dictionaryobject = initGamePlayerPythonScripting("Ketsji", psl_Highest);
 			m_ketsjiengine->SetPythonDictionary(m_dictionaryobject);
 
 			initRasterizer(m_rasterizer, m_canvas);			
