@@ -2,6 +2,7 @@
 # Run this to generate all the initial makefiles, etc.
 
 aclocal_flags=
+autoheader_flags=
 automake_flags="--gnu --add-missing"
 autoconf_flags=
 DIE=0
@@ -40,6 +41,8 @@ fi
 
 echo "Running aclocal $aclocal_flags..."
 aclocal $aclocal_flags
+echo "Running autoheader $autoheader_flags..."
+autoheader $autoheader_flags
 echo "Running automake $automake_flags..."
 automake $automake_flags
 echo "Running autoconf $autoconf_flags..."
