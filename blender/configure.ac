@@ -103,6 +103,19 @@ dnl -----------------------
    [ enable_exppython=no ]  dnl default setting.
   )
 
+AC_ARG_ENABLE(debug,
+[  --enable-debug          enable GHOST debugging [default=no]],
+  enable_debug=$enableval, enable_debug=no)
+if test "x$enable_debug" = xyes; then
+  if test "x$GCC" = xyes; then
+    CFLAGS="$CFLAGS -O0 -DGHOST_DEBUG"
+    CXXFLAGS="$CXXFLAGS -O0 -DGHOST_DEBUG"
+  else
+    AC_MSG_WARN([compiler unknown, please disable optimizations manually in \
+your CFLAGS])
+  fi
+fi
+
 dnl ----------------------
 dnl ssl
 dnl ----------------------
