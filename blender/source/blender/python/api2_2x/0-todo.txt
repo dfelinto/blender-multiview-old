@@ -50,12 +50,12 @@ is a desirable goal.
 Changes in files:
 - DON'T BREAK BPYTHON API;
 + move things that should not be in header files to .c files;
-++      Moved static declarations and data definitions out of headers.
-++	Mostly done.  BGL.[ch] still needs some work.
+++   Moved static declarations and data definitions out of headers.
+
 
 + consider moving declarations from bpy_types.h and modules.h to the module
     headers;
-++	BGL module is untouched.  Some modules lack a .h file.  Otherwise, done.
+++	Some modules lack a .h file.  Otherwise, done.
 
 + add Id cvs tags to all files; DONE
 - define a comments format (doxygen-friendly);
