@@ -1,3 +1,19 @@
+Release notes Blender 2.31a
+
+Quick update for 2.31, with the following fixes:
+
+- 3D Window: while moving Camera Object in camera view, the constraint line was drawn incorrect.
+- 3D Window: the Transform Panel displayed wrong when in FaceSelect or VertexPaint mode.
+- 3D Window: in the MKEY "move to layer" menu, the numeric hotkeys were mixed up
+- Ipo Window: in newly created Ipo Windows the Transform Panel was drawn with zero size
+- Rendering: autosmooth was always on when Material option "Radio" was set... should only be done when render option "Radio" was set too.
+
+- OSX: restored CTRL+F12 or ALT+F12 for rendering when your system ejects CDROM with F12 (ahem!).
+- MS Windows: the File Browse window displayed wrong path/filename on attempt to read a non-existing directory.
+
+- Added for the manual designers: when you want to make screenshot with a pulldown or popup menu in it, press (alt+)ctrl+f3 while the menu is visible, then ESC, and press (alt+)ctrl+f3 again. Note the (alt+) is for OSX users only.
+
+
 Release notes Blender 2.31
 
 ---- New: ------------------
@@ -23,46 +39,65 @@ The functionality is still accessible though by holding CTRL while pressing a "L
 
 - Interface: removing a window edge (Join Areas) sometimes removed the wrong edge. Was a very old bug... but showed up in new standard default file.
 
-- 2.30 error: clicking to select Objects at same location now correctly cycles through the available Objects again.
+- AntiAlias fonts: file paths longer than 64 characters caused crash. Is 256 now.
 
-- Rendering specular highlights for Sun light works correctly again.
-
-- 2.30 error: CTRL+SHIFT+F3 allows screen capture of entire Blender window again.
-
-- 2.30 error: the "Emulate 2 button mouse" option, allowing ALT+LeftMouse for MiddleMouse now works again.
-
-- Pressing ESC during rendering now reacts immediately again. This was reported fixed before, but accidentally un-committed from the code.
-
-- Rendering shadeless Material with UV "TexFace" option had a wrong gamma.
-
-- F6 TextureButtons: the "Default Vars" now resets the environment mapping settings as well.
+- Themes: switching main Theme didn't update button draw type for Theme buttons themselves.
 
 - IpoWindow: using the new Transform Properties Panel, some buttons caused the event being handled double, giving weird results.
 
+- IpoWindow: Sometimes the Transform Properties Panel was drawn with zero size. Added a more strict version check for this to prevent it.
+
 - F6 Texture Buttons: browsing a new texture for a Lamp only gave the "Add New" option.
+
+- F6 Texture Buttons: the "Default Vars" now resets the environment mapping settings as well.
 
 - UV Image Editor: saving an image (after using Texture Paint) now is in same type as original image (was Targa only).
 
-- Rendering started with mouse cursor in a 3D window now renders "Local View" or unlocked layer settings again.
+- 3D Window: when using a SpotLight in 'Textured Draw mode' (aka Potato mode) the 'Solid Draw mode' turned out black. (Bug since 2.0!)
 
-- Removed old hack from rendering, which enabled a "Border" render in a previously rendered image. It was badly implemented and crashed too often. Related to this, code was cleaned up which prevents errors as reported in rendering with "Border" and "Fields".
+- 3D Window: the MKEY 'movetolayer' option doesn't close anymore on numeric input. Somewhere before 2.25 this was changed... weird. Now you can set layers with numeric buttons, including using ALT for numbers larger than 10, and using SHIFT for extend-select buttons. Press OK or Enter to close the menu.
 
-- Converting a 3D closed curve (Bezier or NURBS) to a Mesh (ALT+C) the result was a bunch of unconnected vertices.
+- 3D Window: CTRL+1 (or 2,3,4) crashed when no Object as active. This hotkey is for setting subdivision level for Meshes.
 
-- When rendering a 'square spot' it displayed rotated wrong in an Environment Map.
+- 2.30 error: clicking to select Objects at same location now correctly cycles through the available Objects again.
 
-- When rendering Material with option "Wire", rendering in parts gave errors.
+- 2.30 error: CTRL+SHIFT+F3 allows screen capture of entire Blender window again. (For OSX: also press ALT for screen capture).
 
-- Fixed in unified render (now is actually usable!):
+- 2.30 error: the "Emulate 2 button mouse" option, allowing ALT+LeftMouse for MiddleMouse now works again.
+
+- Fixed in Unified render (now is actually usable!):
  - alpha was wrong for halos with lines or rings
  - halo rendering wrong combined with spothalo
  - no antialiasing with sky when rendering spothalo
  - cleaned some weird usage of gamma for spothalo and sky
    (when rendering sky + spothalo, sky got gamma corrected 
+(Note: "Unified render" renders all in a single pass, whilst normally Blender renders in separate layers for opaque faces, transparent faces, halos and sky. The layers then are merged using alpha, which can cause several (depth) errors.)
+
+- When rendering a 'square spot' it displayed rotated wrong in an Environment Map.
+
+- When rendering Material with option "Wire", rendering in parts gave errors.
 
 - When rendering a Mesh with multiple users (linked-duplicates) it caused a crash when it used UV faces. 
 
+- Rendering specular highlights for Sun light works correctly again.
+
+- Pressing ESC during rendering now reacts immediately again. This was reported fixed before, but accidentally un-committed from the code.
+
+- Rendering shadeless Material with UV "TexFace" option had a wrong gamma.
+
+- Rendering started with mouse cursor in a 3D window now renders "Local View" or unlocked layer settings again.
+
+- Rendering with Meshes using "Smooth" appearance always had "Auto smooth" set on. Was introduced for Radiosity render in 2.28c. Now it only uses "Auto smooth" when the radiosity render is actually used.
+
+- Removed old hack from rendering, which enabled a "Border" render in a previously rendered image. It was badly implemented and crashed too often. Related to this, code was cleaned up which prevents errors as reported in rendering with "Border" and "Fields".
+
+- The default built-in font was not rendered when using background rendering (blender -b on commandline).
+
+- Converting a 3D closed curve (Bezier or NURBS) to a Mesh (ALT+C) the result was a bunch of unconnected vertices.
+
 - Constraints: Fixed the lag with Follow Path.
+
+- Constraints: prevented creating endless loops.
 
 - Mesh Vertex Keys: now can have up to 64k vertices, was 32k.
 
@@ -72,99 +107,83 @@ The functionality is still accessible though by holding CTRL while pressing a "L
 
 - Mesh EditMode: the Knife Tool sometimes cut unselected edges as well
 
+- Mesh Editmode: Fixed crash when try to faceloop-cut (SHIFT+R, CTRL+R) with a Mesh having an edge that didn't belong to any face. These tools now also update the vertex counter as displayed in 'Info header'.
+
 - Mesh object: "Subdiv" level 0 and draw type "Optimal" caused Mesh not drawing in EditMode.
-
-- MS Windows, Blender text editor: Using clipboard to copy/paste text (CTRL+C and CTRL+V) works with correct line endings.
-
-- 3D Window: when using a SpotLight in 'Textured Draw mode' (aka Potato mode) the 'Solid Draw mode' turned out black. (Bug since 2.0!)
 
 - Armatures/Meshes: using "Parent Armature->Name Groups" puts the Mesh in a state that is ready for weight paint.
 
 - MetaBalls: the displaylists were re-created for each redraw of 3d window, causing an enormous slowdown. Now it runs smooth again. (Old bug!)
-
-- 3D Window: the MKEY 'movetolayer' option doesn't close anymore on numeric input. Somewhere before 2.25 this was changed... weird. Now you can set layers with numeric buttons, including using ALT for numbers larger than 10, and using SHIFT for extend-select buttons. Press OK or Enter to close the menu.
-
 - Blender didn't rename 'temp save' file to quit.blend at quit. Was reported on OSX and Linux. 
 
 - Materials: The stencil option only worked for one channel with normal-mapping. Now it works for all as it's supposed to be. 
-
-- The default built-in font was not rendered when using background rendering (blender -b on commandline).
-
-- IpoWindow: Sometimes the Transform Properties Panel was drawn with zero size. Added a more strict version check for this to prevent it.
 
 - OSX: using the F10 RenderButtons "Play" option now pops the window to the front. This also for starting blender from command line.
 
 - OSX: the preferred AntiAlias font couldnt be written in .b.blend (unless you manually install the font in ~/.blender/)
 
-- AntiAlias fonts: file paths longer than 64 characters caused crash. Is 256 now.
-
-- Mesh Editmode: Fixed crash when try to faceloop-cut (SHIFT+R, CTRL+R) with a Mesh having an edge that didn't belong to any face. These tools now also update the vertex counter as displayed in 'Info header'.
-
-- Themes: switching main Theme didn't update button draw type for Theme buttons themselves.
-
-- Constraints: prevented creating endless loops.
+- MS Windows, Blender Text editor: Using clipboard to copy/paste text (CTRL+C and CTRL+V) works with correct line endings.
 
 ---- Various fixes:
 
-- In render output window; using Pad-plus and minus zoom now always includes a zoom level 1.0 now.
+- Interface: cleaned up aligning and positioning of buttons in most Panels (for manual)
 
-- 3D window, when setting a render border in camera view (SHIFT+B) the associated render option is set as well.
+- Added decorations to 'Minimal' buttons Theme to make it usable, also restored the 2.2x drawing style for buttons as 'OldSkool' Theme.
 
 - 2.30 error: in 3D window selecting Objects wasn't updated correctly in all situations.
 
 - 2.30 error: CTRL+LeftMouse click allows selecting Objects in EditMode again.
 
+- 2.30 error, the new toolbox and floating menus were closed when mouse left the menu immediately. Is now a safety of 40 pixels again.
+
 - Action Window: zooming in increased with factor 5.
 
 - Buttons Window: the Panel background color+alpha is part of Theme settings now.
 
-- 3D Window: OpenGL render option is icon in window header again, and now uses Theme Color for background as well.
+- 3D window, when setting a render border in camera view (SHIFT+B) the associated render option is set as well.
 
-- Image Window: the buttons in header were messed up in 2.30
+- 3D Window: OpenGL render option is icon in window header again, and now uses Theme Color for background as well.
 
 - 3D Window: a Constraint now draws a blue dashed line to its parent.
 
-- Knife tool now has correct cursor, for all platforms.
+- 3D Window: Enter EditMode from FaceSelect mode correctly selects vertices again
 
-- cleaned up aligning and positioning of buttons in most Panels
+- 3D Window: transform option (SKEY) allows typing in zero scaling value.
 
-- Added decorations to 'Minimal' buttons Theme to make it usable, also restored the 2.2x drawing style for buttons as 'OldSkool' Theme.
-
-- fixed error in 2.30, the new toolbox and floating menus were closed when mouse left the menu immediately. Is now a safety of 40 pixels again.
-
-- Theme for TextWindow now allows color for text as well.
-
-- Mesh EditMode, Knife Tool: ESC for pop-up menu was not handled, and pressing ENTER at pop-up menu caused 'mouse trail' call to exit.
-
-- F6 TextureButtons: "Crop and Anim" Panel had wrong name... now "Anim and Movie". This Panel now draws buttons always, because it is for the 'anim option' (sequence of files) which is different from 'movie' option (single file).
-
-- F9 EditButtons: moved vertex group buttons to first Panel. These buttons should be available outside editmode as well.
-
-- F6 ObjectButtons: added to the Constraint Panel buttons indicating the 'Active Bone' or 'Active Object', like previously (2.2x) was drawn in constraint buttons header.
-
-- F6 TextureButtons: Colorband color sliders didnt update the colorband
-
-- 3d Window: Enter EditMode from FaceSelect mode correctly selects vertices again
-
-- 3d Window: transform option (SKEY) allows typing in zero scaling value.
-
-- 3d Window: Warp transform option (SHIFT+WKEY) allows typing in values.
+- 3D Window: Warp transform option (SHIFT+WKEY) allows typing in values.
 
 - 3D Window: the header didn't display 'Mesh' pulldown menu when VertexPaint mode and EditMode were both active.
 
-- 3d Window: modes 'VertexPaint' and 'Weightpaint' and 'Texturepaint' allow drawmode wire-extra again.
+- 3D Window: modes 'VertexPaint' and 'Weightpaint' and 'Texturepaint' allow drawmode wire-extra again.
+
+- Image Window: the buttons in header were messed up in 2.30
 
 - TextEditor window: the hotkeys ALT+N (new) and ALT+O (open) now also work when no 'text block' is active or available in Blender.
+
+- File Browse window: text sometimes was drawn over outer border.
+
+- Theme for TextWindow now allows color for text as well.
 
 - F5 MaterialButtons: when you set "Halo", and "Star", then disable "Halo", the "TexFace" button was set. The fix also prevents RGB from being reaset to 1.0.
 
 - F5 MaterialButtons: "OB" and "ME" buttons in 2nd Panel didnt work properly. Also the "1 Mat 1" buttons didnt display in all situations.
 
-- F9 EditButtons: changed decimator slider into number-button, with only 1 vertex in Mesh the slider didn't display OK. The slider also provided insufficient space for the full text.
+- F6 TextureButtons: "Crop and Anim" Panel had wrong name... now "Anim and Movie". This Panel now draws buttons always, because it is for the 'anim option' (sequence of files) which is different from 'movie' option (single file).
 
+- F6 ObjectButtons: added to the Constraint Panel buttons indicating the 'Active Bone' or 'Active Object', like previously (2.2x) was drawn in constraint buttons header.
+
+- F6 TextureButtons: Colorband color sliders didnt update the colorband
+
+- F9 EditButtons: moved vertex group buttons to first Panel. These buttons should be available outside editmode as well.
+
+- F9 EditButtons: changed decimator slider into number-button, with only 1 vertex in Mesh the slider didn't display OK. The slider also provided insufficient space for the full text.
 - Constraints: sometimes its data was not available (null) after reading file, causing a crash. Code has been secured.
 
-- File Browse window: text sometimes was drawn over outer border.
+- In render output window; using Pad-plus and minus zoom now always includes a zoom level 1.0 now.
+
+- Mesh EditMode: Knife tool now has correct cursor, for all platforms.
+
+- Mesh EditMode, Knife Tool: ESC for pop-up menu was not handled, and pressing ENTER at pop-up menu caused 'mouse trail' call to exit.
 
 - OSX: is now compiled with optimizing, giving a speed gain of 10-20%.
 
