@@ -58,7 +58,7 @@ libblender_blendersrc_la_SOURCES = \
 	mainqueue.c \
 	mywindow.c \
 	oops.c \
-	osx_creator_splash.jpg.c \
+	splash.jpg.c \
 	playanim.c \
 	poseobject.c \
 	previewrender.c \
@@ -72,11 +72,9 @@ libblender_blendersrc_la_SOURCES = \
 	swapbuffers.c \
 	toets.c \
 	toolbox.c \
-	unix_creator_splash.jpg.c \
 	usiblender.c \
 	view.c \
 	vpaint.c \
-	windows_creator_splash.jpg.c \
 	winlay.h \
 	writeavicodec.c \
 	writeimage.c \
