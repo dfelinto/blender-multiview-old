@@ -93,7 +93,6 @@ libblender_blendersrc_la_SOURCES = \
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
 	-I$(top_srcdir)/intern/guardedalloc \
-	-I$(top_srcdir)/intern/keymaker \
 	-I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/makesdna \
 	-I$(top_srcdir)/source/blender/blenkernel \

@@ -49,8 +49,6 @@ libblender_source_la_LIBADD = \
 	blender/blenloader/libblender_blenloader.la \
 	blender/deflate/libblender_deflate.la \
 	blender/inflate/libblender_inflate.la \
-	blender/encrypt/libblender_encrypt.la \
-	blender/decrypt/libblender_decrypt.la \
 	blender/writestreamglue/libblender_writestreamglue.la \
 	blender/readstreamglue/libblender_readstreamglue.la \
 	blender/writeblenfile/libblender_writeblenfile.la \

@@ -50,7 +50,6 @@ case "$target" in
      AC_CHECK_LIB([dmedia],[dmACCreate])
      AC_CHECK_LIB([C],[free])
      AC_CHECK_LIB([movieGL], [mvOpenFile])
-     IRIX_SSL="/usr/freeware"
      LDFLAGS="$LDFLAGS -L/usr/freeware/lib32"
      if test "x$GCC" = xyes; then
         CXXFLAGS="$CXXFLAGS -DNO_FAST_ATOMS"
@@ -120,28 +119,6 @@ if test "x$enable_debug" = xyes; then
 your CFLAGS])
   fi
 fi
-
-dnl ----------------------
-dnl ssl
-dnl ----------------------
-  AC_ARG_WITH(ssl, 
-    AC_HELP_STRING([--with-ssl[=PFX]],[Path to ssl files]),
-[       if test $withval != "yes"; then
-		if test -f $withval/include/openssl/ssl.h; then
-           		LDFLAGS="$LDFLAGS -L$withval/lib"
-           		CPPFLAGS="$CPPFLAGS -I$withval/include"
-		fi
-	fi
-],
-[
-	if test "x$IRIX_SSL" != "x"; then
-		if test -f $IRIX_SSL/include/openssl/ssl.h; then
-			LDFLAGS="$LDFLAGS -L$IRIX_SSL/lib"
-			CPPFLAGS="$CPPFLAGS -I$IRIX_SSL/include"
-		fi
-	fi
-	
-])
 
   AC_ARG_WITH(ode,
     AC_HELP_STRING([--with-ode[=PFX]],[Path to ode files]),
@@ -250,7 +227,6 @@ dnl -----------------------
   AC_HEADER_STAT
   AC_HEADER_SYS_WAIT
   AC_CHECK_HEADERS([fcntl.h float.h inttypes.h limits.h malloc.h memory.h netinet/in.h stddef.h stdint.h stdlib.h string.h strings.h sys/file.h sys/ioctl.h sys/mount.h sys/param.h sys/statfs.h sys/time.h sys/vfs.h unistd.h termios.h wchar.h wctype.h sys/socket.h])
-  AC_CHECK_HEADER([openssl/crypto.h])
   AC_CHECK_HEADER([jpeglib.h])
   AC_CHECK_HEADER([png.h])
   AC_CHECK_HEADER([GL/gl.h])
@@ -317,8 +293,6 @@ dnl --------------------------
   AC_LANG_POP([C++])
   AC_CHECK_LIB([dl], [dlopen])
   AC_CHECK_LIB([pthread], [pthread_exit])
-  AC_CHECK_LIB([ssl], [SSL_new])
-  AC_CHECK_LIB([crypto], [CRYPTO_lock])
   AC_CHECK_LIB([png], [png_get_header_version])
   AC_CHECK_LIB([jpeg], [jpeg_destroy])
   AC_CHECK_LIB([util], [openpty])
@@ -389,7 +363,6 @@ AC_CONFIG_FILES([Makefile
 		intern/memutil/Makefile
 		intern/decimation/Makefile
 		intern/iksolver/Makefile
-		intern/keymaker/Makefile
 		intern/bsp/Makefile
 ])
 
@@ -419,9 +392,8 @@ else
   ])
 fi
 
-AC_CONFIG_FILES([source/blender/decrypt/Makefile
+AC_CONFIG_FILES([
 		source/blender/deflate/Makefile
-		source/blender/encrypt/Makefile
 		source/blender/imbuf/Makefile
 		source/blender/img/Makefile
 		source/blender/inflate/Makefile

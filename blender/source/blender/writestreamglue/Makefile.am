@@ -14,10 +14,8 @@ libblender_writestreamglue_la_SOURCES = \
 
 INCLUDES = -I$(top_srcdir)/source/blender/readstreamglue \
 	-I$(top_srcdir)/source/blender/deflate \
-	-I$(top_srcdir)/source/blender/encrypt \
 	-I$(top_srcdir)/source/blender/writeblenfile \
-	-I$(top_srcdir)/source/kernel/gen_messaging \
-	-I$(top_srcdir)/intern/keymaker
+	-I$(top_srcdir)/source/kernel/gen_messaging
 
 EXTRA_DIST = \
 	Makefile \

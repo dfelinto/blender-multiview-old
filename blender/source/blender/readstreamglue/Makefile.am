@@ -13,11 +13,10 @@ libblender_readstreamglue_la_SOURCES = \
 	intern/BLO_readStreamGlueLoopBack.c \
 	intern/BLO_readStreamGlueLoopBack.h
 
-INCLUDES = -I$(top_srcdir)/intern/keymaker \
+INCLUDES = \
 	-I$(top_srcdir)/source/kernel/gen_messaging \
 	-I$(top_srcdir)/source/blender/blenloader \
-	-I$(top_srcdir)/source/blender/inflate \
-	-I$(top_srcdir)/source/blender/decrypt
+	-I$(top_srcdir)/source/blender/inflate
 
 EXTRA_DIST = \
 	Makefile \

@@ -9,7 +9,6 @@ internlibs = \
 	intern/bmfont/libblender_BMF.la \
 	intern/container/libblender_CTR.la \
 	intern/memutil/libblender_MEM.la \
-	intern/keymaker/libblender_belgium.la \
 	intern/iksolver/libblender_IK.la \
 	intern/moto/libblender_MT.la
 
