@@ -224,7 +224,7 @@ dnl ----------------------
     [am_cv_python_ldflags],
     [am_cv_python_ldflags=`$PYTHON -c "import distutils.sysconfig; print distutils.sysconfig.get_config_var('LINKFORSHARED')"`])
 
-  LDFLAGS="$LDFLAGS $am_cv_python_ldflags"
+ AC_SUBST(PYTHON_LDFLAGS, [$am_cv_python_ldflags])
 
 #Find out what path to use for python.
 python_sysprefix=`echo "import sys; print sys.prefix" | python -`

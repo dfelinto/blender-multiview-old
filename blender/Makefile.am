@@ -52,8 +52,7 @@ else
 quicktimeldflags = 
 endif
 
-blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
-				  -framework OpenGL -framework AGL -framework Carbon \
+blender_LDFLAGS = -framework OpenGL -framework AGL -framework Carbon \
 				  $(quicktimeldflags)
 
 blender_SOURCES =
@@ -64,13 +63,13 @@ blender_LDADD = \
 	source/libblender_source.la \
 	$(internlibs) \
 	$(blenpythonlib) \
-	-lpython@PYTHON_VERSION@
+	@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config/libpython@PYTHON_VERSION@.a
 
 blenderplayer_LDADD = \
 	source/libblender_player.la \
 	$(internlibs) \
 	$(blenpythonlib) \
-	-lpython@PYTHON_VERSION@
+	@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config/libpython@PYTHON_VERSION@.a
 
 all-local: 
 	@for bundle in $(bin_PROGRAMS); do APPLICATION=$$bundle $(MAKE) bundle; done
@@ -93,7 +92,7 @@ bundle:
 
 else
 
-blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
+blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config @PYTHON_LDFLAGS@ 
 
 blender_SOURCES =
 
@@ -101,15 +100,17 @@ blenderplayer_SOURCES =
 
 blender_LDADD = \
         source/libblender_source.la \
-        $(internlibs) \
-        $(blenpythonlib) \
-        -lpython@PYTHON_VERSION@
+		$(internlibs) \
+		$(blenpythonlib) \
+		-lpython@PYTHON_VERSION@
+ 
 
 blenderplayer_LDADD = \
 	source/libblender_player.la \
 	$(internlibs) \
 	$(blenpythonlib) \
 	-lpython@PYTHON_VERSION@
+	
 
 
 endif
