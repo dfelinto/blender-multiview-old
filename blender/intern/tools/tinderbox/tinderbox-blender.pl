@@ -35,6 +35,7 @@
 require 5.000;
 
 use Cwd;
+use Mail::Send;
 
 # config section variables
 use vars qw( $SEMA $VERSION $UNAME );
@@ -84,14 +85,12 @@ sub InitVars {
 	if ($UNAME eq 'Darwin') {
 		$BinaryName{'blenderplayer'} = 'blenderplayer';
 		$BinaryName{'Dblenderplayer'} = 'debug/blenderplayer';
-		$mail = '/usr/bin/mail';
 	} elsif ($UNAME eq 'CYGWIN_NT-5.0') {
 		$BinaryName{'blendercreator'} = 'blendercreator.exe';
 		$BinaryName{'Dblendercreator'} = 'debug/blendercreator.exe';
 		$BinaryName{'blenderpublisher'} = 'blenderpublisher.exe';
 		$BinaryName{'Dblenderpublisher'} = 'debug/blenderpublisher.exe';
 		$BinaryName{'blenderplugin'} = 'npB3DPlg.dll';
-		$mail = '/usr/local/bin/blat.exe';
 	} else {
 		$BinaryName{'blendercreator'} = 'blendercreator';
 		$BinaryName{'Dblendercreator'} = 'debug/blendercreator';
@@ -99,7 +98,6 @@ sub InitVars {
 		$BinaryName{'Dblenderpublisher'} = 'debug/blenderpublisher';
 		$BinaryName{'blenderplugin'} = 'npBlender3DPlugin.so';
 		$BinaryName{'blenderpluginXPCOM'} = 'Blender3DPlugin.so';
-		$mail = '/usr/bin/mail';
 	}
 
     # Set these to what makes sense for your system
@@ -111,7 +109,7 @@ sub InitVars {
     $Tinderbox_server = 'tinderbox\@cvs.intra.blender.nl';
 
     # These shouldn't really need to be changed
-    $BuildSleep = 15; # Minimum wait period from start of build to start
+    $BuildSleep = 300; # Minimum wait period from start of build to start
                       # of next build in minutes (default 10)
     $BuildTree = '';
     $BuildTag = '';
@@ -145,7 +143,7 @@ sub ConditionalArgs {
 sub SetupEnv {
     umask(0);
     $ENV{"CVSROOT"} = ':pserver:tinderbox@cvs.intra.blender.nl:/home/cvs';
-    $ENV{"SRCHOME"} = "$ENV{'HOME'}/develop/source";
+    $ENV{"SRCHOME"} = "$ENV{'HOME'}/blender";
     $ENV{"MAKEFLAGS"} = "-w -I $ENV{'SRCHOME'} --no-print-directory";
 } #EndSub-SetupEnv
 
@@ -437,9 +435,13 @@ sub BuildIt {
 # This was replaced by a perl 'port' of the above, writen by 
 # preed@netscape.com; good things: no need for system() call, and now it's
 # all in perl, so we don't have to do OS checking like before.
+        $msg = new Mail::Send;
+
+        $msg->subject("Tinderbox Report"); 
+        $msg->to($Tinderbox_server);
+        $fh = $msg->open;
 
 	open(LOG, "$logfile") || die "Couldn't open logfile: $!\n";
-	open(OUTLOG, ">${logfile}.last") || die "Couldn't open logfile: $!\n";
 	    
 	while (<LOG>) {
 	    $q = 0;
@@ -452,22 +454,15 @@ sub BuildIt {
 		
 		$Output =~ s/^\.$//g;
 		$Output =~ s/\n//g;
-		print OUTLOG "$Output\n";
+		print $fh "$Output\n";
 		$q++;
 	    } #EndFor
 		
 	} #EndWhile
 	    
 	close(LOG);
-	close(OUTLOG);
+        $fh->close;
 
-	if ($UNAME eq 'CYGWIN_NT-5.0') {
-		system( "$mail ${logfile}.last -server cvs -f tinderbox\@win2k -t $Tinderbox_server" )
-			if ($ReportStatus );
-	} else {
-		system( "$mail $Tinderbox_server < ${logfile}.last" )
-			if ($ReportStatus );
-	}
 	unlink("$logfile");
 	
 	# if this is a test run, set early_exit to 0. 
@@ -492,26 +487,22 @@ sub StartBuild {
 
     @felist = split(/,/, $FE);
 
-	if ($UNAME eq 'CYGWIN_NT-5.0') {
-		open( STARTBUILDLOG, ">startbuildlog" ) || print "can't open $?\n";
-	} else {
-		open( STARTBUILDLOG, "|$mail $Tinderbox_server" );
-	}
+    $msg = new Mail::Send;
+    $msg->subject("Tinderbox Report: Startbuildlog");
+    $msg->to($Tinderbox_server);
+    $fh = $msg->open;
     foreach $fe ( @felist ) {
-		print STARTBUILDLOG "\n";
-		print STARTBUILDLOG "tinderbox: tree: $BuildTree\n";
-		print STARTBUILDLOG "tinderbox: builddate: $StartTime\n";
-		print STARTBUILDLOG "tinderbox: status: building\n";
-		print STARTBUILDLOG "tinderbox: build: $BuildName $fe\n";
-		print STARTBUILDLOG "tinderbox: errorparser: unix\n";
-		print STARTBUILDLOG "tinderbox: buildfamily: unix\n";
-		print STARTBUILDLOG "tinderbox: END\n";
-		print STARTBUILDLOG "\n";
+		print $fh "\n";
+		print $fh "tinderbox: tree: $BuildTree\n";
+		print $fh "tinderbox: builddate: $StartTime\n";
+		print $fh "tinderbox: status: building\n";
+		print $fh "tinderbox: build: $BuildName $fe\n";
+		print $fh "tinderbox: errorparser: unix\n";
+		print $fh "tinderbox: buildfamily: unix\n";
+		print $fh "tinderbox: END\n";
+		print $fh "\n";
     }
-    close( STARTBUILDLOG );
-	if ($UNAME eq 'CYGWIN_NT-5.0') {
-		system ( "$mail startbuildlog -server cvs -f tinderbox\@win2k -t $Tinderbox_server" );
-	}
+    $fh->close;
 	print LOG "StartBuildLog mailed to $Tinderbox_server\n";
 } #EndSub-StartBuild
 
