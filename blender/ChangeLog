@@ -1,0 +1,76 @@
+Initall ChangeLog for Blender 2.26 Sun Feb  9 10:53:10 UTC 2003
+
+New features of Blender 2.26:
+-----------------------------
+
+- Mousewheel support for all windows.
+
+- A "fake user" button next to the material popup.
+   (basically a shortcut for pressing Shift+F4 and F)
+
+- Added support for manipulating Ipo bezier handles through
+   the action window. Selecting action keys and pressing VKEY,
+   HKEY, or shift-HKEY modifies the handles of the keys in
+   the same way it does in the IPO window.
+
+- CKEY in the action window scrolls the window so that the current frame
+   is in the center.
+
+- Extra selection support for the action window, including:
+     - border select initiated in the channel names border
+       selects the channels and constraint channels.
+     - right click or border select initiated in the horizontal
+       scroll causes blender to select all keys for the selected
+       frames.
+     - right click or border select in the vertical scroll
+       causes blender to select all keys for the channel or
+       constraint channels that are to the left of the selection.
+
+- Simple shaded+wire and solid+wire drawmodes. It basically draws
+   the wireframe after drawing the model in solid/shaded/textured mode.
+   The user can set this per object using the "Wire" button in the
+   edit buttons window.
+
+- A headerbutton for drawing linenumbers in the texteditor.
+
+- Ctrl keystrokes for cut/copy/paste/undo/redo in the texteditor.
+
+- Support for BMP images.
+
+- NTSC render preset (Image size - 720x480, Aspect ratio - 10x11, 30 fps)
+
+- x-ray bones support for showing armature bones in shaded
+   mode (disabled depth test). The new x-ray button is added
+   in the edit buttons when the armature is selected.
+
+- TKEY in the action window changes the Ipo type
+  (constant/linear/bezier) for the Ipo curves owned by the
+   selected channels
+
+- Disabling need for a "Key" to use all the features
+
+- Moved to ode for python physics...
+- WM_Hints were also added for window managers that look for that sort of thing,
+
+- a few extra shortcuts added to the spacebar menu.
+- Plugins work again on most platforms (MacOSX still not working).  
+
+Bugfixes:
+---------
+
+- Make switching to bottom, back, and left view (shift+pad7, shift+pad1
+   and shift+pad1) work when in camera view.
+
+- Full screen by default under Unix.
+
+- Ignore WM_DELETE_WINDOW on IRIX.
+
+- Icons in the imageselect window get drawn properly.
+
+
+Still Not working:
+-----------------
+
+Plugins in MacOSX
+
+Older Python API
