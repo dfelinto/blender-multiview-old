@@ -81,6 +81,13 @@ if [ "$OS" = "cygwin" ]; then
     CPU=""
 fi
 
+# Patch Windows
+if [ "$OS" = "mingw" ]; then
+    OS="windows"
+    OS_VERSION=""
+    CPU=""
+fi
+
 # Create NANGUESS string
 if [ -z "$OS_VERSION" ]; then
     if [ -z "$CPU" ]; then
