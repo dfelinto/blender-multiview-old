@@ -1,0 +1,496 @@
+<?xml version='1.0'?>
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V3.1//EN"
+"/usr/share/xml/docbook/xml-dtd-4.1.2-9/docbookx.dtd" >
+<article>
+   <artheader>
+      <title>Building Blender from source</title>
+   </artheader>
+   <para>
+      This document describes the tools necessary to build Blender from
+      source, either from cvs or from a source package. Building from cvs
+      requires the use of more tools. While this may be a bit more
+      troublesome than building from a source package, this may be necessary
+      for some people. For example, when you want to build Blender for an
+      unsupported platform or when you want to implement some new features to
+      this exiting program.
+   </para>
+
+   <note>
+      This is a very early version of this document. This means that it is
+      incomplete and that some procedures or concepts are not correct. Please
+      keep this in mind when reading this.
+   </note>
+   
+   <sect1>
+      <title>Getting the sources</title>
+      <para>
+         The following paragraphs will describe how and where to get the
+         sources needed for building Blender.
+      </para>
+      <sect2>
+         <title>Get the latest stable source package</title>
+         <para>
+            <emphasis>
+               This procedure has not been written yet since there is
+               currently no stable source package available.
+            </emphasis>
+         </para>
+      </sect2>
+      
+      <sect2>
+         <title>Get the latest sources from CVS</title>
+         <para>
+            CVS stands for Concurrent Versioning System. It is a software
+            configuration tool that keeps the various source files in a
+            central repository. CVS enables developers to quickly update to
+            the latest state of the repository and commit changes. The tool
+            keeps track of the changes between each version of a file. To get
+            the current state of the repository, you don't need to have a
+            username for accessing the sources. This feature is optional,
+            but in an opensource development, it's almost a requirement.
+            To commit changes to the repository, however, you need to have
+            developer access. Since this document only describes how to get
+            the latest state of the sources, the commit procedures are not
+            described here.
+            <emphasis>
+               Should the CVS commit procedures and how to get developer
+               access also be described here?
+            </emphasis>
+         </para>
+         <para>
+            To get the latest state of the sources use:
+         </para>
+         <para>
+            <command>
+               export CVSROOT=:pserver:anonymous@cvs.blender.org:/cvs01
+            </command>
+         </para>
+         <para>
+            <command>
+               cvs login
+            </command>
+         </para>
+         <para>
+            <prompt>password:</prompt>
+            <keycap>Enter</keycap>
+         </para>
+         <para>
+            <command>
+               cvs -z3 co blender
+            </command>
+         </para>
+         <para>
+            <emphasis>
+               Please do not use a higher level of compression for accessing
+               the Blender server.
+            </emphasis>
+         </para>
+         <para>
+            If you already have a working set of files obtained from the
+            server, you can use the <command>update</command> command to
+            update the sources to the current state of the repository.
+            <command>cd</command> to the blender source tree on your
+            system and type in the following command:
+         </para>
+         <para>
+            <command>
+               cvs -z3 update .
+            </command>
+         </para>
+      </sect2>
+   </sect1>
+
+   <sect1>
+      <title>External libraries needed</title>
+      <para>
+         Blender is a package that uses a lot of external packages for
+         expanding its functionality. Each of these packages have, just as
+         Blender, a history of changes. Newer versions of such a package will
+         probably have more features and less known problems. As a developer
+         it is exiting to work with the latest features available to get the
+         most out of the tool. However, the number of developers out there is
+         much lower than the number of end-users who are not interested in the
+         latest feature, these users want an application that works. Since
+         Blender has to run on multiple platforms, all those platforms have to
+         have the same minimum functionality available in the external
+         packages.
+      </para>
+      <para>
+         The table below displays the packages needed and the minimum version
+         of those packages. Over time it is possible that those minimum
+         versions are increased as the demand for the newer features is high.
+         <emphasis>
+            Are the versions listed below truly the minimum or can some
+            versions even be lower? Also, is the list complete?
+         </emphasis>
+      </para>
+      <table frame='all'>
+         <title>Minimum version external libraries</title>
+         <tgroup cols='2' align='left' colsep='1' rowsep='1'>
+            <colspec colname='library'></colspec>
+            <colspec colname='version'></colspec>
+            <thead>
+               <row>
+                  <entry>Library</entry>
+                  <entry>Version</entry>
+               </row>
+            </thead>
+            <tbody>
+               <row>
+                  <entry>glibc</entry>
+                  <entry>2.2.4</entry>
+               </row>
+               <row>
+                  <entry>libjpeg</entry>
+                  <entry>6b</entry>
+               </row>
+               <row>
+                  <entry>libpng</entry>
+                  <entry>1.0.14</entry>
+               </row>
+               <row>
+                  <entry>libsdl</entry>
+                  <entry>1.0</entry>
+               </row>
+               <row>
+                  <entry>libz</entry>
+                  <entry>1.1.4</entry>
+               </row>
+               <row>
+                  <entry>mesa</entry>
+                  <entry>3.4.2</entry>
+               </row>
+               <row>
+                  <entry>openAL</entry>
+                  <entry>??</entry>
+               </row>
+               <row>
+                  <entry>openGL</entry>
+                  <entry>1.2</entry>
+               </row>
+               <row>
+                  <entry>python</entry>
+                  <entry>2.0</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+      <para>
+         Not all libraries apply to all platforms. The following table gives
+         an overview of the currently supported platforms and the required
+         libraries. An 'X' means that it is needed, a '-' means that it is not
+         needed and an 'O' means that it is optional.
+         <emphasis>
+            Please check the table below.
+         </emphasis>
+      </para>
+      <table frame='all'>
+         <title>Platform dependent library requirements</title>
+         <tgroup cols='6' align='left' colsep='1' rowsep='1'>
+            <colspec colname='library'></colspec>
+            <colspec colname='Linux'></colspec>
+            <colspec colname='Windows'></colspec>
+            <colspec colname='FreeBSD'></colspec>
+            <colspec colname='IRIX'></colspec>
+            <colspec colname='MacOS X'></colspec>
+            <thead>
+               <row>
+                  <entry>Library</entry>
+                  <entry>Linux</entry>
+                  <entry>Windows</entry>
+                  <entry>FreeBSD</entry>
+                  <entry>IRIX</entry>
+                  <entry>MacOS X</entry>
+               </row>
+            </thead>
+            <tbody>
+               <row>
+                  <entry>glibc</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>-</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>libjpeg</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>libpng</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>libsdl</entry>
+                  <entry align='center'>O</entry>
+                  <entry align='center'>O</entry>
+                  <entry align='center'>O</entry>
+                  <entry align='center'>O</entry>
+                  <entry align='center'>O</entry>
+               </row>
+               <row>
+                  <entry>libz</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>mesa</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>-</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>openAL</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>openGL</entry>
+                  <entry align='center'>-</entry>
+                  <entry align='center'>-</entry>
+                  <entry align='center'>-</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>-</entry>
+               </row>
+               <row>
+                  <entry>python</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+                  <entry align='center'>X</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+   </sect1>
+
+   <sect1>
+      <title>Tools needed</title>
+      <para>
+         Having the necessary libraries installed and the Blender sources
+         downloaded to your system means that you're now able to build
+         Blender. The entire build process requires some tools to be
+         available on your system. In the table below, the list of tools
+         along with the minimum version is shown. The third column shows if
+         the tool is required for CVS only ('X'). If the tool is not required
+         for a source package build, a '-' is shown.
+         <emphasis>
+            Is the table below complete and are the versions listed truly the
+            minimum versions needed to build Blender?
+         </emphasis>
+      </para>
+      <table frame='all'>
+         <title>Minimum version tools</title>
+         <tgroup cols='4' align='left' colsep='1' rowsep='1'>
+            <colspec colname='library'></colspec>
+            <colspec colname='version'></colspec>
+            <colspec colname='note'></colspec>
+            <thead>
+               <row>
+                  <entry>Tool</entry>
+                  <entry>Version</entry>
+                  <entry>CVS</entry>
+                  <entry>Note</entry>
+               </row>
+            </thead>
+            <tbody>
+               <row>
+                  <entry>autoconf</entry>
+                  <entry>2.53</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>automake</entry>
+                  <entry>1.6.2</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>cvs</entry>
+                  <entry>1.11.1p1</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>docbook</entry>
+                  <entry>3.1</entry>
+                  <entry align='center'>O</entry>
+               </row>
+               <row>
+                  <entry>doxygen</entry>
+                  <entry>??</entry>
+                  <entry align='center'>O</entry>
+               </row>
+               <row>
+                  <entry>gawk</entry>
+                  <entry>3.1.0</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>gcc</entry>
+                  <entry>2.96</entry>
+                  <entry align='center'>-</entry>
+               </row>
+               <row>
+                  <entry>gettext</entry>
+                  <entry>0.11</entry>
+                  <entry align='center'>-</entry>
+               </row>
+               <row>
+                  <entry>gmake</entry>
+                  <entry>3.79.1</entry>
+                  <entry align='center'>-</entry>
+               </row>
+               <row>
+                  <entry>m4</entry>
+                  <entry>1.4</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>sed</entry>
+                  <entry>3.02</entry>
+                  <entry align='center'>X</entry>
+               </row>
+               <row>
+                  <entry>sh</entry>
+                  <entry>2.05.1</entry>
+                  <entry align='center'>-</entry>
+               </row>
+               <row>
+                  <entry>Visual C++</entry>
+                  <entry>6.0 SP5</entry>
+                  <entry align='center'>-</entry>
+                  <entry>Windows only</entry>
+               </row>
+            </tbody>
+         </tgroup>
+      </table>
+      <note>
+         Python is not included in this table although it is used to build
+         Blender. The reason that it is not included is because Python is also
+         needed as an external library and thus has to be installed already as
+         has been written in the previous section.
+      </note>
+   </sect1>
+
+   <sect1>
+      <title>Building Blender</title>
+      <para>
+         The paragraphs that follow will describe a generic build process
+         that applies to most platforms. If a step is not applicable for a
+         platform or the procedure is different, it is noted. For the Windows
+         build, refer to the Windows specific section.
+      </para>
+      <note>
+         The Windows specific parts have not been written yet...
+      </note>
+
+      <sect2>
+         <title>Bootstrapping</title>
+         <para>
+            Bootstrapping the Blender sources is needed to create an overall
+            <command>configure</command> script. In a source package the
+            <command>configure</command> script is included and therefore the
+            bootstrapping step can be skipped.
+            In the root of the Blender source tree, a
+            <command>bootstrap</command> script is located. This script calls
+            the <command>aclocal</command>, <command>automake</command> and
+            <command>autoconf</command> tools to create from the various input
+            files the necessary Makefile.in files and the
+            <command>configure</command> script. To generate the
+            <command>configure</command> script, execute the following
+            command:
+         </para>
+         <para>
+            <command>./bootstrap</command>
+         </para>
+         <qandaset defaultlabel='qanda'>
+            <question>
+               <para>
+                  I get an undefined AC_PROG_LIBTOOL message. What do I need
+                  to do to fix this?
+               </para>
+            </question>
+            <answer>
+               <para>
+                  Copy the <filename>acinclude.m4</filename> from
+                  <filename>/usr/local/share/libtool/libltdl/</filename> into
+                  the root of your blender source directory.
+               </para>
+            </answer>
+         </qandaset>
+      </sect2>
+
+      <sect2>
+         <title>Running configure</title>
+         <para>
+            Running the <command>configrue</command> script, will generate the
+            Makefiles needed to build Blender. To keep the blender source tree
+            as clean as possible, it is recommended to run configure from
+            another directory. From the root of your Blender source tree do:
+         </para>
+         <para>
+            <command>mkdir ../build_blender</command>
+         </para>
+         <para>
+            <command>cd ../build_blender</command>
+         </para>
+         <para>
+            <command>../blender/configure</command>
+         </para>
+         <para>
+            It is possible to pass some flags to the configure script to
+            customize your Blender build.
+         </para>
+         <para>
+            <emphasis>
+               TODO: add the description of all possible flags to this
+               section.
+            </emphasis>
+         </para>
+      </sect2>
+
+      <sect2>
+         <title>Compile the sources</title>
+         <para>
+            <emphasis>
+               TODO: Write something useful here...
+            </emphasis>
+         </para>
+      </sect2>
+
+      <sect2>
+         <title>Installing Blender</title>
+         <para>
+            <emphasis>
+               TODO: Write something useful here...
+            </emphasis>
+         </para>
+      </sect2>
+
+      <sect2>
+         <title>Building Blender on Windows</title>
+         <para>
+            <emphasis>
+               TODO: Write something useful here...
+            </emphasis>
+         </para>
+      </sect2>
+   </sect1>
+</article>
+

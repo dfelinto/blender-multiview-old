@@ -1,0 +1,175 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1"><title>Building Blender from source</title><meta name="generator" content="DocBook XSL Stylesheets V1.48"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="article"><div class="titlepage"><div><h1 class="title"><a name="id2743767"></a>Building Blender from source</h1></div><hr></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><a href="#id2797417">Getting the sources</a></dt><dd><dl><dt><a href="#id2797431">Get the latest stable source package</a></dt><dt><a href="#id2810476">Get the latest sources from CVS</a></dt></dl></dd><dt><a href="#id2750624">External libraries needed</a></dt><dt><a href="#id2751442">Tools needed</a></dt><dt><a href="#id2747413">Building Blender</a></dt><dd><dl><dt><a href="#id2747435">Bootstrapping</a></dt><dt><a href="#id2747562">Running configure</a></dt><dt><a href="#id2747635">Compile the sources</a></dt><dt><a href="#id2747653">Installing Blender</a></dt><dt><a href="#id2747671">Building Blender on Windows</a></dt></dl></dd></dl></div><p>
+      This document describes the tools necessary to build Blender from
+      source, either from cvs or from a source package. Building from cvs
+      requires the use of more tools. While this may be a bit more
+      troublesome than building from a source package, this may be necessary
+      for some people. For example, when you want to build Blender for an
+      unsupported platform or when you want to implement some new features to
+      this exiting program.
+   </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3>
+      This is a very early version of this document. This means that it is
+      incomplete and that some procedures or concepts are not correct. Please
+      keep this in mind when reading this.
+   </div><div class="sect1"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="id2797417"></a>Getting the sources</h2></div></div><p>
+         The following paragraphs will describe how and where to get the
+         sources needed for building Blender.
+      </p><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="id2797431"></a>Get the latest stable source package</h3></div></div><p>
+            <span class="emphasis"><i>
+               This procedure has not been written yet since there is
+               currently no stable source package available.
+            </i></span>
+         </p></div><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="id2810476"></a>Get the latest sources from CVS</h3></div></div><p>
+            CVS stands for Concurrent Versioning System. It is a software
+            configuration tool that keeps the various source files in a
+            central repository. CVS enables developers to quickly update to
+            the latest state of the repository and commit changes. The tool
+            keeps track of the changes between each version of a file. To get
+            the current state of the repository, you don't need to have a
+            username for accessing the sources. This feature is optional,
+            but in an opensource development, it's almost a requirement.
+            To commit changes to the repository, however, you need to have
+            developer access. Since this document only describes how to get
+            the latest state of the sources, the commit procedures are not
+            described here.
+            <span class="emphasis"><i>
+               Should the CVS commit procedures and how to get developer
+               access also be described here?
+            </i></span>
+         </p><p>
+            To get the latest state of the sources use:
+         </p><p>
+            <b>
+               export CVSROOT=:pserver:anonymous@cvs.blender.org:/cvs01
+            </b>
+         </p><p>
+            <b>
+               cvs login
+            </b>
+         </p><p>
+            <tt>password:</tt>
+            <b>Enter</b>
+         </p><p>
+            <b>
+               cvs -z3 co blender
+            </b>
+         </p><p>
+            <span class="emphasis"><i>
+               Please do not use a higher level of compression for accessing
+               the Blender server.
+            </i></span>
+         </p><p>
+            If you already have a working set of files obtained from the
+            server, you can use the <b>update</b> command to
+            update the sources to the current state of the repository.
+            <b>cd</b> to the blender source tree on your
+            system and type in the following command:
+         </p><p>
+            <b>
+               cvs -z3 update .
+            </b>
+         </p></div></div><div class="sect1"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="id2750624"></a>External libraries needed</h2></div></div><p>
+         Blender is a package that uses a lot of external packages for
+         expanding its functionality. Each of these packages have, just as
+         Blender, a history of changes. Newer versions of such a package will
+         probably have more features and less known problems. As a developer
+         it is exiting to work with the latest features available to get the
+         most out of the tool. However, the number of developers out there is
+         much lower than the number of end-users who are not interested in the
+         latest feature, these users want an application that works. Since
+         Blender has to run on multiple platforms, all those platforms have to
+         have the same minimum functionality available in the external
+         packages.
+      </p><p>
+         The table below displays the packages needed and the minimum version
+         of those packages. Over time it is possible that those minimum
+         versions are increased as the demand for the newer features is high.
+         <span class="emphasis"><i>
+            Are the versions listed below truly the minimum or can some
+            versions even be lower? Also, is the list complete?
+         </i></span>
+      </p><div class="table"><p><b>Table 1. Minimum version external libraries</b></p><table summary="Minimum version external libraries" border="1"><colgroup><col align="left"><col align="left"></colgroup><thead><tr><th>Library</th><th>Version</th></tr></thead><tbody><tr><td>glibc</td><td>2.2.4</td></tr><tr><td>libjpeg</td><td>6b</td></tr><tr><td>libpng</td><td>1.0.14</td></tr><tr><td>libsdl</td><td>1.0</td></tr><tr><td>libz</td><td>1.1.4</td></tr><tr><td>mesa</td><td>3.4.2</td></tr><tr><td>openAL</td><td>??</td></tr><tr><td>openGL</td><td>1.2</td></tr><tr><td>python</td><td>2.0</td></tr></tbody></table></div><p>
+         Not all libraries apply to all platforms. The following table gives
+         an overview of the currently supported platforms and the required
+         libraries. An 'X' means that it is needed, a '-' means that it is not
+         needed and an 'O' means that it is optional.
+         <span class="emphasis"><i>
+            Please check the table below.
+         </i></span>
+      </p><div class="table"><p><b>Table 2. Platform dependent library requirements</b></p><table summary="Platform dependent library requirements" border="1"><colgroup><col align="left"><col align="left"><col align="left"><col align="left"><col align="left"><col align="left"></colgroup><thead><tr><th>Library</th><th>Linux</th><th>Windows</th><th>FreeBSD</th><th>IRIX</th><th>MacOS X</th></tr></thead><tbody><tr><td>glibc</td><td align="center">X</td><td align="center">-</td><td align="center">X</td><td align="center">X</td><td align="center">X</td></tr><tr><td>libjpeg</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td></tr><tr><td>libpng</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td></tr><tr><td>libsdl</td><td align="center">O</td><td align="center">O</td><td align="center">O</td><td align="center">O</td><td align="center">O</td></tr><tr><td>libz</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td></tr><tr><td>mesa</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">-</td><td align="center">X</td></tr><tr><td>openAL</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td></tr><tr><td>openGL</td><td align="center">-</td><td align="center">-</td><td align="center">-</td><td align="center">X</td><td align="center">-</td></tr><tr><td>python</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td><td align="center">X</td></tr></tbody></table></div></div><div class="sect1"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="id2751442"></a>Tools needed</h2></div></div><p>
+         Having the necessary libraries installed and the Blender sources
+         downloaded to your system means that you're now able to build
+         Blender. The entire build process requires some tools to be
+         available on your system. In the table below, the list of tools
+         along with the minimum version is shown. The third column shows if
+         the tool is required for CVS only ('X'). If the tool is not required
+         for a source package build, a '-' is shown.
+         <span class="emphasis"><i>
+            Is the table below complete and are the versions listed truly the
+            minimum versions needed to build Blender?
+         </i></span>
+      </p><div class="table"><p><b>Table 3. Minimum version tools</b></p><table summary="Minimum version tools" border="1"><colgroup><col align="left"><col align="left"><col align="left"><col></colgroup><thead><tr><th>Tool</th><th>Version</th><th>CVS</th><th>Note</th></tr></thead><tbody><tr><td>autoconf</td><td>2.53</td><td align="center">X</td><td class="auto-generated"> </td></tr><tr><td>automake</td><td>1.6.2</td><td align="center">X</td><td class="auto-generated"> </td></tr><tr><td>cvs</td><td>1.11.1p1</td><td align="center">X</td><td class="auto-generated"> </td></tr><tr><td>docbook</td><td>3.1</td><td align="center">O</td><td class="auto-generated"> </td></tr><tr><td>doxygen</td><td>??</td><td align="center">O</td><td class="auto-generated"> </td></tr><tr><td>gawk</td><td>3.1.0</td><td align="center">X</td><td class="auto-generated"> </td></tr><tr><td>gcc</td><td>2.96</td><td align="center">-</td><td class="auto-generated"> </td></tr><tr><td>gettext</td><td>0.11</td><td align="center">-</td><td class="auto-generated"> </td></tr><tr><td>gmake</td><td>3.79.1</td><td align="center">-</td><td class="auto-generated"> </td></tr><tr><td>m4</td><td>1.4</td><td align="center">X</td><td class="auto-generated"> </td></tr><tr><td>sed</td><td>3.02</td><td align="center">X</td><td class="auto-generated"> </td></tr><tr><td>sh</td><td>2.05.1</td><td align="center">-</td><td class="auto-generated"> </td></tr><tr><td>Visual C++</td><td>6.0 SP5</td><td align="center">-</td><td>Windows only</td></tr></tbody></table></div><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3>
+         Python is not included in this table although it is used to build
+         Blender. The reason that it is not included is because Python is also
+         needed as an external library and thus has to be installed already as
+         has been written in the previous section.
+      </div></div><div class="sect1"><div class="titlepage"><div><h2 class="title" style="clear: both"><a name="id2747413"></a>Building Blender</h2></div></div><p>
+         The paragraphs that follow will describe a generic build process
+         that applies to most platforms. If a step is not applicable for a
+         platform or the procedure is different, it is noted. For the Windows
+         build, refer to the Windows specific section.
+      </p><div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><h3 class="title">Note</h3>
+         The Windows specific parts have not been written yet...
+      </div><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="id2747435"></a>Bootstrapping</h3></div></div><p>
+            Bootstrapping the Blender sources is needed to create an overall
+            <b>configure</b> script. In a source package the
+            <b>configure</b> script is included and therefore the
+            bootstrapping step can be skipped.
+            In the root of the Blender source tree, a
+            <b>bootstrap</b> script is located. This script calls
+            the <b>aclocal</b>, <b>automake</b> and
+            <b>autoconf</b> tools to create from the various input
+            files the necessary Makefile.in files and the
+            <b>configure</b> script. To generate the
+            <b>configure</b> script, execute the following
+            command:
+         </p><p>
+            <b>./bootstrap</b>
+         </p><div class="qandaset"><dl></dl><tr class="question"><td align="left" valign="top"><a name="id2747521"></a><a name="id2747527"></a><b>Q:</b></td><td align="left" valign="top"><p>
+                  I get an undefined AC_PROG_LIBTOOL message. What do I need
+                  to do to fix this?
+               </p></td></tr><tr class="answer"><td align="left" valign="top"><b>A:</b></td><td align="left" valign="top"><p>
+                  Copy the <tt>acinclude.m4</tt> from
+                  <tt>/usr/local/share/libtool/libltdl/</tt> into
+                  the root of your blender source directory.
+               </p></td></tr><table border="0"><col align="left" width="1%"><tbody></tbody></table></div></div><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="id2747562"></a>Running configure</h3></div></div><p>
+            Running the <b>configrue</b> script, will generate the
+            Makefiles needed to build Blender. To keep the blender source tree
+            as clean as possible, it is recommended to run configure from
+            another directory. From the root of your Blender source tree do:
+         </p><p>
+            <b>mkdir ../build_blender</b>
+         </p><p>
+            <b>cd ../build_blender</b>
+         </p><p>
+            <b>../blender/configure</b>
+         </p><p>
+            It is possible to pass some flags to the configure script to
+            customize your Blender build.
+         </p><p>
+            <span class="emphasis"><i>
+               TODO: add the description of all possible flags to this
+               section.
+            </i></span>
+         </p></div><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="id2747635"></a>Compile the sources</h3></div></div><p>
+            <span class="emphasis"><i>
+               TODO: Write something useful here...
+            </i></span>
+         </p></div><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="id2747653"></a>Installing Blender</h3></div></div><p>
+            <span class="emphasis"><i>
+               TODO: Write something useful here...
+            </i></span>
+         </p></div><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="id2747671"></a>Building Blender on Windows</h3></div></div><p>
+            <span class="emphasis"><i>
+               TODO: Write something useful here...
+            </i></span>
+         </p></div></div></div></body></html>
