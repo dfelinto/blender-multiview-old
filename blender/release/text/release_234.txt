@@ -1,0 +1,19 @@
+Release notes Blender 2.34
+
+This is a reduced release log, since not only the text files became too long and hard to read, but we also now have a great working CMS on blender3d.org, which has been used extensively over the past months by developers and users to update documentation.
+
+For a full release log, please check: 
+http://www.blender3d.org/cms/Releaselogs.34.0.html
+
+
+---- Highlights of 2.34 ------------------
+
+- Particle forces and deflection allowing particles to interact with objects
+
+- UV unwrapping with LSCM
+
+- YafRay integration as a plugin, with new features like the Photon Light for caustics rendering
+
+- Weighted creases for subdivision surfaces for fine detail without the need for adding more control points
+
+- And a many more goodies...
