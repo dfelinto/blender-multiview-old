@@ -29,6 +29,8 @@ libblender_api2_2x_la_SOURCES = \
   vector.h \
   constant.c \
   constant.h \
+  rgbTuple.c \
+  rgbTuple.h \
   gen_utils.c \
   gen_utils.h \
   EXPP_interface.c \
