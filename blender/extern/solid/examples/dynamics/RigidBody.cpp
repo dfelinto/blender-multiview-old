@@ -48,8 +48,13 @@ void RigidBody::reset(const MT_Transform& xform)
 void RigidBody::applyForces(MT_Scalar step)
 {
 	applyCentralForce(m_gravity);	
+#if defined (__sun) || defined(__sun__) || defined(__sparc) || defined(__sparc__) || defined (__APPLE)
+	m_lin_vel *= pow(m_lin_damping, step);
+	m_ang_vel *= pow(m_ang_damping, step);
+#else
 	m_lin_vel *= powf(m_lin_damping, step);
 	m_ang_vel *= powf(m_ang_damping, step);
+#endif
 }
 
 
