@@ -1,0 +1,513 @@
+# blender ja.po
+# Copyright (C) 2003 Free Software Foundation, Inc.
+# snts <snutlix@hotmail.com>, 2003.
+#
+
+###########################################################
+###
+###  Render Window
+###
+###########################################################
+msgid "Start the rendering"
+msgstr "レンダリング開始"
+msgid "Display edge settings"
+msgstr "エッジの設定"
+msgid "Enable shadow calculation"
+msgstr "影を有効にする"
+
+
+###########################################################
+###
+###  ToolBox (Popup Menu)
+###
+###########################################################
+msgid "ADD"
+msgstr "オブジェ追加"
+msgid "FILE"
+msgstr "ファイル"
+msgid "EDIT"
+msgstr "オブジェ編集"
+msgid "OBJECT"
+msgstr "オブジェクト"
+msgid "MESH"
+msgstr "メッシュ"
+msgid "CURVE"
+msgstr "曲線"
+msgid "KEY"
+msgstr "キー"
+msgid "VIEW"
+msgstr "表示"
+msgid "RENDER"
+msgstr "レンダー"
+msgid "SEQUENCE"
+msgstr "シーケンス"
+
+
+###########################################################
+###
+###  ToolBox >> ADD
+###
+###########################################################
+msgid "Mesh"
+msgstr "メッシュ"
+msgid "Curve"
+msgstr "曲線"
+msgid "Surface"
+msgstr "サーフェス"
+msgid "Text"
+msgstr "テキスト"
+msgid "MetaBall"
+msgstr "メタボール"
+msgid "Empty"
+msgstr "Empty"
+msgid "Camera"
+msgstr "カメラ"
+msgid "Lamp"
+msgstr "ランプ"
+msgid "Armature"
+msgstr "Armature"
+msgid "Lattice"
+msgstr "Lattice"
+
+
+###########################################################
+###
+###  ToolBox >> ADD >> Mesh
+###
+###########################################################
+msgid ">Plane"
+msgstr ">平面"
+msgid ">Cube"
+msgstr ">四角"
+msgid ">UVsphere"
+msgstr ">UVsphere"
+msgid ">Icosphere"
+msgstr ">Icosphere"
+msgid ">Cylinder"
+msgstr ">シリンダー"
+msgid ">Tube"
+msgstr ">チューブ"
+msgid ">Cone"
+msgstr ">円錐"
+msgid ">Grid"
+msgstr ">グリッド"
+msgid ">Monkey"
+msgstr ">モンキー"
+
+
+###########################################################
+###
+###  ToolBox >> ADD >> Curve
+###
+###########################################################
+msgid ">Bezier Curve"
+msgstr ">ベジェ 曲線"
+msgid ">Bezier Circle"
+msgstr ">ベジェ Circle"
+msgid ">Nurbs Curve"
+msgstr ">Nurbs Curve"
+msgid ">Nurbs Circle"
+msgstr ">Nurbs Circle"
+msgid ">Path"
+msgstr ">パス"
+
+
+###########################################################
+###
+###  ToolBox >> ADD >> Surface
+###
+###########################################################
+msgid ">Curve"
+msgstr ">曲線"
+msgid ">Circle"
+msgstr ">Circle"
+msgid ">Suface"
+msgstr ">サーフェス"
+msgid ">Tube"
+msgstr ">チューブ"
+msgid ">Sphere"
+msgstr ">Sphere"
+msgid ">Donut"
+msgstr ">ドーナッツ"
+
+
+###########################################################
+###
+###  ToolBox >> FILE
+###
+###########################################################
+msgid "New"
+msgstr "新規作成"
+msgid "Open"
+msgstr "ファイルを開く"
+msgid "Reopen Last"
+msgstr "最後に開いたファイル"
+msgid "Append"
+msgstr "現在のファイルに追加"
+msgid "Save As"
+msgstr "名前を付けて保存"
+msgid "Save"
+msgstr "上書き保存"
+msgid "Save Image"
+msgstr "レンダ画像を保存"
+msgid "Save VRML"
+msgstr "VRML形式で保存"
+msgid "Save DXF"
+msgstr "DXF形式で保存"
+msgid "Save VideoScape"
+msgstr "VideoScape形式で保存"
+msgid "Save UserPrefs"
+msgstr "ユーザ設定保存"
+msgid "Quit"
+msgstr "終了"
+
+
+###########################################################
+###
+###  ToolBox >> Edit
+###
+###########################################################
+msgid "(De)Select All"
+msgstr "全てを選択/解除"
+msgid "Select Linked"
+msgstr "リンクだけ選択/解除"
+msgid "Hide Selected"
+msgstr "選択オブジェを隠す"
+msgid "Border Select"
+msgstr "BorderSelect"
+msgid "Duplicate"
+msgstr "複製"
+msgid "Delete"
+msgstr "削除"
+msgid "Edit Mode"
+msgstr "編集モード"
+msgid "Grabber"
+msgstr "移動"
+msgid "Rotate"
+msgstr "回転"
+msgid "Scale"
+msgstr "拡大縮小"
+msgid "Shrink/Fatten"
+msgstr "Shrink/Fatten"
+msgid "Shear"
+msgstr "Shear"
+msgid "Warp/Bend"
+msgstr "ワープ/折り曲げ"
+msgid "Snap Menu"
+msgstr "スナップ"
+
+
+###########################################################
+###
+###  ToolBox >> OBJECT (1)
+###
+###########################################################
+msgid "Clear Size"
+msgstr "サイズをクリア"
+msgid "Clear Rotation"
+msgstr "回転をクリア"
+msgid "Clear Location"
+msgstr "位置をクリア"
+msgid "Clear Origin"
+msgstr "原点をクリア"
+msgid "Make Parent"
+msgstr "親子づける"
+msgid "Clear Parent"
+msgstr "親子関係を解除"
+msgid "Make Track"
+msgstr "追跡する"
+msgid "Clear Track"
+msgstr "追跡をクリア"
+msgid "Image Displist"
+msgstr "Image Displist"
+msgid "Image Aspect"
+msgstr "Image Aspect"
+msgid "Vect Paint"
+msgstr "頂点ペイント"
+
+
+###########################################################
+###
+###  ToolBox >> OBJECT (2)
+###
+###########################################################
+msgid "Edit Mode"
+msgstr "編集モード"
+msgid "Move To Layer"
+msgstr "レイヤを移動"
+msgid "Delete"
+msgstr "削除"
+msgid "Delete All"
+msgstr "全て削除"
+msgid "Apply Size/Rot"
+msgstr "サイズや回転を設定"
+msgid "Apply Deform"
+msgstr "変形を適用"
+msgid "Join"
+msgstr "結合"
+msgid "Make Local"
+msgstr "ローカル化"
+msgid "Select Linked"
+msgstr "リンクだけ選択"
+msgid "Make Links"
+msgstr "リンクする"
+msgid "Copy Menu"
+msgstr "メニューをコピー"
+msgid "Convert Menu"
+msgstr "メニューを変換"
+msgid "Boolean Op"
+msgstr "ブール演算"
+
+
+###########################################################
+###
+###  ToolBox >> Mesh
+###
+###########################################################
+msgid "Deselect Linked"
+msgstr "リンクだけ選択/解除"
+msgid "Extrude"
+msgstr "Extrude"
+msgid "Delete Menu"
+msgstr "メニュー削除"
+msgid "Make edge/face"
+msgstr "辺や面を作成"
+msgid "Fill"
+msgstr "Fill"
+msgid "Split"
+msgstr "Split"
+msgid "Undo/reload"
+msgstr "やり直し"
+msgid "Calc Normals"
+msgstr "法線を計算"
+msgid "Separete"
+msgstr "Separete"
+msgid "Write Videosc"
+msgstr "WriteVideosc"
+
+
+###########################################################
+###
+###  ToolBox >> Curve
+###
+###########################################################
+msgid "Deselect Linked"
+msgstr "リンクだけ選択/解除"
+msgid "Extrude"
+msgstr "Extrude"
+msgid "Delete Menu"
+msgstr "メニュー削除"
+msgid "Make Segment"
+msgstr "セグメントを作成"
+msgid "Cyclic"
+msgstr "Cyclic"
+msgid "Select Row"
+msgstr "Select Row"
+msgid "Calc Handle"
+msgstr "ハンドルを計算"
+msgid "Auto Handle"
+msgstr "Auto Handle"
+msgid "Vect Handle"
+msgstr "Vect Handle"
+msgid "Specials"
+msgstr "Specials"
+
+
+###########################################################
+###
+###  ToolBox >> Key
+###
+###########################################################
+msgid "Insert"
+msgstr "キー挿入"
+msgid "Show"
+msgstr "キー表示"
+msgid "Next"
+msgstr "次キー"
+msgid "Prev"
+msgstr "前キー"
+msgid "Show+Sel"
+msgstr "表示して選択"
+
+
+###########################################################
+###
+###  ToolBox >> RENDER
+###
+###########################################################
+msgid "Render Window"
+msgstr "レンダウィンドウの表示"
+msgid "Render"
+msgstr "レンダリング開始"
+msgid "Set Border"
+msgstr "Set Border"
+msgid "Image Zoom"
+msgstr "画像拡大"
+
+
+###########################################################
+###
+###  ToolBox >> VIEW
+###
+###########################################################
+msgid "Centre"
+msgstr "Centre"
+msgid "Home"
+msgstr "HOME"
+msgid "Z-Buffer"
+msgstr "Z-Buffer"
+
+
+###########################################################
+###
+###  ToolBox >> SEQUENCE
+###
+###########################################################
+msgid "Add Strip"
+msgstr "Add Strip"
+msgid "Change Str"
+msgstr "Change Str"
+msgid "Delete Str"
+msgstr "Delete Str"
+msgid "Make Meta"
+msgstr "Make Meta"
+msgid "Str Params"
+msgstr "Str Params"
+
+
+###########################################################
+###
+###  Menu bar
+###
+###########################################################
+msgid "File"
+msgstr "ファイル"
+msgid "Edit"
+msgstr "　編集"
+msgid "Add"
+msgstr "追加"
+msgid "View"
+msgstr "表示"
+msgid "Game"
+msgstr "ゲーム"
+msgid "Tools"
+msgstr "ツール"
+
+
+###########################################################
+###
+###  Menu bar >> Add
+###
+###########################################################
+msgid "MetaBall"
+msgstr "メタボール"
+msgid "Empty"
+msgstr "Empty"
+msgid "Lattice"
+msgstr "Lattice"
+
+
+###########################################################
+###
+###  Menu bar >> Add >> Mesh
+###
+###########################################################
+msgid "Plane"
+msgstr "平面"
+msgid "Cube"
+msgstr "四角"
+msgid "Circle"
+msgstr "Circle"
+msgid "UVsphere"
+msgstr "UVsphere"
+msgid "IcoSphere"
+msgstr "IcoSphere"
+msgid "Cylinder"
+msgstr "Cylinder"
+msgid "Tube"
+msgstr "チューブ"
+msgid "Cone"
+msgstr "円錐"
+msgid "Grid"
+msgstr "グリッド"
+
+
+###########################################################
+###
+###  Menu bar >> Add >> Curve
+###
+###########################################################
+msgid "Bezier Curve"
+msgstr "ベジェ曲線"
+msgid "Bezier Circle"
+msgstr "Bezier Circle"
+msgid "NURBS Curve"
+msgstr "NURBS Curve"
+msgid "NURBS Circle"
+msgstr "NURBS Circle"
+msgid "Path"
+msgstr "パス"
+
+
+###########################################################
+###
+###  Menu bar >> Add >> Surface
+###
+###########################################################
+msgid "NURBS Suface"
+msgstr "NURBS Surface"
+msgid "NURBS Tube"
+msgstr "NURBS チューブ"
+msgid "NURBS Sphere"
+msgstr "NURBS Sphere"
+msgid "NURBS Donut"
+msgstr "NURBS Donut"
+
+
+###########################################################
+###
+###  Menu bar >> View
+###
+###########################################################
+msgid "Front"
+msgstr "Front"
+msgid "Right"
+msgstr "Right"
+msgid "Top"\
+msgstr "Top"
+msgid "Zoom In"
+msgstr "拡大"
+msgid "Zoom Out"
+msgstr "縮小"
+msgid "Center"
+msgstr "Center"
+msgid "View All"
+msgstr "全て表示"
+
+
+###########################################################
+###
+###  Menu bar >> Game
+###
+###########################################################
+msgid "Start Game"
+msgstr "ゲーム開始"
+msgid "Enable All Frame"
+msgstr "Enable All Frame"
+msgid "Show framerate and profile"
+msgstr "Show debug properties"
+msgid "Autostart"
+msgstr "Autostart"
+
+
+###########################################################
+###
+###  Menu bar >> Tools
+###
+###########################################################
+msgid "Pack Data"
+msgstr "Pack Data"
+msgid "Unpack Data to current dir"
+msgstr "Unpack Data to current dir"
+msgid "Advanced Unpack"
+msgstr "Advanced Unpack"
