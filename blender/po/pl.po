@@ -1,0 +1,649 @@
+msgid ""
+msgstr ""
+"Last-Translator: Piotr Kieć <ccpiotr@o2.pl>\n"
+"PO-Revision-Date: 2004-05-08 18:23+0200\n"
+"Language-Team: Polski <pl@li.org>\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 0.9.6\n"
+
+# Copyright (C) 2003 Free Software Foundation, Inc.
+# snts &lt;snutlix@hotmail.com&gt;, 2003.
+#
+###########################################################
+###
+###  Render Window
+###
+###########################################################
+msgid "Start the rendering"
+msgstr "Renderowanie"
+
+msgid "Display edge settings"
+msgstr "Pokaż ustawienia krawędzi"
+
+msgid "Enable shadow calculation"
+msgstr "Rendering z cieniem"
+
+msgid "Start rendering a sequence"
+msgstr "Renderowanie klatek"
+
+###########################################################
+###
+###  ToolBox (Popup Menu)
+###
+###########################################################
+msgid "ADD"
+msgstr "DODAJ"
+
+msgid "FILE"
+msgstr "PLIK"
+
+msgid "EDIT"
+msgstr "EDYCJA"
+
+msgid "OBJECT"
+msgstr "OBIEKT"
+
+msgid "MESH"
+msgstr "SIATKA"
+
+msgid "CURVE"
+msgstr "KRZYWA"
+
+msgid "KEY"
+msgstr "KLUCZ"
+
+msgid "VIEW"
+msgstr "WIDOK"
+
+msgid "RENDER"
+msgstr "RENDERUJ"
+
+msgid "SEQUENCE"
+msgstr "KLATKI"
+
+###########################################################
+###
+###  General Messages
+###
+###########################################################
+msgid "QUIT BLENDER"
+msgstr "ZAKOŃCZ"
+
+msgid "Not allowed"
+msgstr "Nie zezwolono"
+
+msgid "ERASE ALL"
+msgstr "USUŃ WSZYSTKO"
+
+###########################################################
+###
+###  General Terms
+###
+###########################################################
+###########################################################
+###
+###  FileSelect Commands
+###
+###########################################################
+msgid "LOAD FILE"
+msgstr "WCZYTAJ"
+
+msgid "SAVE FILE"
+msgstr "ZAPISZ"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD
+###
+###########################################################
+msgid "Mesh"
+msgstr "Siatka"
+
+msgid "Curve"
+msgstr "Krzywa"
+
+msgid "Surface"
+msgstr "Powierzchnia"
+
+msgid "Text"
+msgstr "Tekst"
+
+msgid "Camera"
+msgstr "Kamera"
+
+msgid "Lamp"
+msgstr "Lampa"
+
+msgid "Armature"
+msgstr "Kości"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Mesh
+###
+###########################################################
+msgid "&gt;Plane"
+msgstr "&gt;Kwadrat"
+
+msgid "&gt;Cube"
+msgstr "&gt;Sześcian"
+
+msgid "&gt;UVsphere"
+msgstr "&gt;UV-kula"
+
+msgid "&gt;Icosphere"
+msgstr "&gt;Ico-kula"
+
+msgid "&gt;Cylinder"
+msgstr "&gt;Cylinder"
+
+msgid "&gt;Tube"
+msgstr "&gt;Tuba"
+
+msgid "&gt;Cone"
+msgstr "&gt;Stożek"
+
+msgid "&gt;Grid"
+msgstr "&gt;Siatka"
+
+msgid "&gt;Monkey"
+msgstr "&gt;Małpa"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Curve
+###
+###########################################################
+msgid "&gt;Bezier Curve"
+msgstr "&gt;Krzywa Beziera"
+
+msgid "&gt;Bezier Circle"
+msgstr "&gt;Okrąg Baziera"
+
+msgid "&gt;Nurbs Curve"
+msgstr "&gt;Krzywa Nurbs"
+
+msgid "&gt;Nurbs Circle"
+msgstr "&gt;Okrąg Nurbs"
+
+msgid "&gt;Path"
+msgstr "&gt;Ścieżka"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Surface
+###
+###########################################################
+msgid "&gt;Curve"
+msgstr "&gt;Krzywa"
+
+msgid "&gt;Circle"
+msgstr "&gt;Okrąg"
+
+msgid "&gt;Suface"
+msgstr "&gt;Powierzchnia"
+
+msgid "&gt;Surface"
+msgstr "&gt;Powierzchnia"
+
+msgid "&gt;Sphere"
+msgstr "&gt;Kula"
+
+msgid "&gt;Donut"
+msgstr "&gt;Torus"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; FILE
+###
+###########################################################
+msgid "New"
+msgstr "Nowy"
+
+msgid "Open"
+msgstr "Otwórz"
+
+msgid "Reopen Last"
+msgstr "Otwórz ostatni"
+
+msgid "Append"
+msgstr "Dołącz"
+
+msgid "Save As"
+msgstr "Zapisz jako"
+
+msgid "Save"
+msgstr "Zapisz"
+
+msgid "Save Image"
+msgstr "Zapisz obrazek"
+
+msgid "Save VRML"
+msgstr "Zapisz jako VRML"
+
+msgid "Save DXF"
+msgstr "Zapisz jako DXF"
+
+msgid "Save VideoScape"
+msgstr "Zapisz jako VideoScape"
+
+msgid "Save UserPrefs"
+msgstr "Zapisz ustawienia użytkownika"
+
+msgid "Quit"
+msgstr "Zakończ"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Edit
+###
+###########################################################
+msgid "(De)Select All"
+msgstr "Zaznacz/Odznacz wszystko"
+
+msgid "Select Linked"
+msgstr "Zaznacz złączenia"
+
+msgid "Hide Selected"
+msgstr "Ukryj zaznaczenie"
+
+msgid "Border Select"
+msgstr "Ramkowe zaznaczanie"
+
+msgid "Duplicate"
+msgstr "Dublikuj"
+
+msgid "Delete"
+msgstr "Usuń"
+
+msgid "Edit Mode"
+msgstr "Tryb edycji"
+
+msgid "Grabber"
+msgstr "Przenieś"
+
+msgid "Rotate"
+msgstr "Obróć"
+
+msgid "Scale"
+msgstr "Skaluj"
+
+msgid "Shrink/Fatten"
+msgstr "Powiększ/Pomiejsz"
+
+msgid "Shear"
+msgstr "Obcinanie"
+
+msgid "Warp/Bend"
+msgstr "Odginanie/Załamywanie"
+
+msgid "Snap Menu"
+msgstr "Snap Menu"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (1)
+###
+###########################################################
+msgid "Clear Size"
+msgstr "Resetuj wielkość"
+
+msgid "Clear Rotation"
+msgstr "Resetuj obrót"
+
+msgid "Clear Location"
+msgstr "Resetuj pozycje"
+
+msgid "Clear Origin"
+msgstr "Resetuj do oryginału"
+
+msgid "Make Parent"
+msgstr "Ustaw jako matkę"
+
+msgid "Clear Parent"
+msgstr "Wyczyść informacje o matce"
+
+msgid "Make Track"
+msgstr "Patrz na"
+
+msgid "Clear Track"
+msgstr "Wyłącz patrzenie"
+
+msgid "Image Displist"
+msgstr "Lista obrazów"
+
+msgid "Image Aspect"
+msgstr "Wygląd obrazu"
+
+msgid "Vect Paint"
+msgstr "Wektorowe malowanie"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (2)
+###
+###########################################################
+msgid "Move To Layer"
+msgstr "Przenieś do warstwy"
+
+msgid "Delete All"
+msgstr "Usuń wszystko"
+
+msgid "Apply Size/Rot"
+msgstr "Zastosuj Wielkość/Obrót"
+
+msgid "Apply Deform"
+msgstr "Zastosuj zniekształcenie"
+
+msgid "Join"
+msgstr "Połącz"
+
+#msgid "Make Local"
+#msgstr "Mache Lokal"
+#msgid "Select Linked"
+#msgstr "Selektiere verknÃ¼pfte"
+#msgid "Make Links"
+#msgstr "Erstelle Links"
+#msgid "Copy Menu"
+#msgstr "MenÃ¼ Kopieren"
+#msgid "Convert Menu"
+#msgstr "MenÃ¼ Konvertieren"
+msgid "Boolean Op"
+msgstr "Operacje logiczne"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Mesh
+###
+###########################################################
+msgid "Make edge/face"
+msgstr "Utwórz odcinek/powierzchnie"
+
+msgid "Fill"
+msgstr "Zapełń"
+
+msgid "Split"
+msgstr "Rozdziel"
+
+msgid "Undo/reload"
+msgstr "Cofnij/wczytaj ponownie"
+
+msgid "Calc Normals"
+msgstr "Przeliczanie normali"
+
+msgid "Separete"
+msgstr "Rozdziel"
+
+msgid "Write Videosc"
+msgstr "Zapisz Videosc"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Curve
+###
+###########################################################
+msgid "Deselect Linked"
+msgstr "Odznacz złączenia"
+
+msgid "Extrude"
+msgstr "Wytłocz"
+
+msgid "Delete Menu"
+msgstr "Usuń menu"
+
+msgid "Make Segment"
+msgstr "Utwórz segment"
+
+msgid "Cyclic"
+msgstr "Cykliczne"
+
+msgid "Select Row"
+msgstr "Zaznacz rząd"
+
+msgid "Calc Handle"
+msgstr "Przeliczanie manipulacji"
+
+msgid "Auto Handle"
+msgstr "Auto manipulacja"
+
+msgid "Vect Handle"
+msgstr "Wektorowa manipulacja"
+
+msgid "Specials"
+msgstr "Specjalne"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Key
+###
+###########################################################
+msgid "Insert"
+msgstr "Wstaw"
+
+msgid "Show"
+msgstr "Pokaż"
+
+msgid "Next"
+msgstr "Następny"
+
+msgid "Prev"
+msgstr "Poprzedni"
+
+msgid "Show+Sel"
+msgstr "Pokaż+Sel"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; RENDER
+###
+###########################################################
+msgid "Render Window"
+msgstr "Okno renderingu"
+
+msgid "Render"
+msgstr "Rendering"
+
+msgid "Set Border"
+msgstr "Ustaw ramkę"
+
+msgid "Image Zoom"
+msgstr "Powiększenie obrazu"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; VIEW
+###
+###########################################################
+msgid "Centre"
+msgstr "Środek"
+
+msgid "Home"
+msgstr "Dom"
+
+msgid "Z-Buffer"
+msgstr "Bufor Z"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; SEQUENCE
+###
+###########################################################
+msgid "Add Strip"
+msgstr "Dodaj pasek"
+
+msgid "Change Str"
+msgstr "Zmień Str"
+
+msgid "Delete Str"
+msgstr "Usuń Str"
+
+msgid "Make Meta"
+msgstr "Utwórz meta"
+
+msgid "Str Params"
+msgstr "Parametry Str"
+
+###########################################################
+###
+###  Menu bar
+###
+###########################################################
+msgid "File"
+msgstr "Plik"
+
+msgid "Edit"
+msgstr "Edycja"
+
+msgid "Add"
+msgstr "Dodaj"
+
+msgid "View"
+msgstr "Widok"
+
+msgid "Game"
+msgstr "Gra"
+
+msgid "Tools"
+msgstr "Narzędzia"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add
+###
+###########################################################
+msgid "MetaBall"
+msgstr "Metakula"
+
+msgid "Empty"
+msgstr "Pusty"
+
+msgid "Lattice"
+msgstr "Deformator"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Mesh
+###
+###########################################################
+msgid "Plane"
+msgstr "Kwadrat"
+
+msgid "Cube"
+msgstr "Sześcian"
+
+msgid "Circle"
+msgstr "Okrąg"
+
+msgid "UVsphere"
+msgstr "UV Kula"
+
+msgid "IcoSphere"
+msgstr "Ico Kula"
+
+msgid "Cylinder"
+msgstr "Cylinder"
+
+msgid "Tube"
+msgstr "Tuba"
+
+msgid "Cone"
+msgstr "Stożek"
+
+msgid "Grid"
+msgstr "Siatka"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Curve
+###
+###########################################################
+msgid "Bezier Curve"
+msgstr "Krzywa Beziera"
+
+msgid "Bezier Circle"
+msgstr "Okrąg Beziera"
+
+msgid "NURBS Curve"
+msgstr "Krzywa NURBS"
+
+msgid "NURBS Circle"
+msgstr "Okrąg NURBS"
+
+msgid "Path"
+msgstr "Ścieżka"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Surface
+###
+###########################################################
+msgid "NURBS Suface"
+msgstr "Powierzchnia NURBS"
+
+msgid "NURBS Tube"
+msgstr "Tuba NURBS"
+
+msgid "NURBS Sphere"
+msgstr "Kula NURBS"
+
+msgid "NURBS Donut"
+msgstr "Torus NURBS"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; View
+###
+###########################################################
+msgid "Front"
+msgstr "Przód"
+
+msgid "Right"
+msgstr "Prawo"
+
+msgid "Top"
+msgstr "Góra"
+
+msgid "Zoom In"
+msgstr "Powiększ"
+
+msgid "Zoom Out"
+msgstr "Pomniejsz"
+
+msgid "Center"
+msgstr "Środek"
+
+msgid "View All"
+msgstr "Pokaż wszystko"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Game
+###
+###########################################################
+msgid "Start Game"
+msgstr "Rozpocznij grę"
+
+msgid "Enable All Frame"
+msgstr "Pokazuj wszystkie klatki"
+
+msgid "Show framerate and profile"
+msgstr "Pokaż szybkość klatek i profile"
+
+msgid "Autostart"
+msgstr "Autostart"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Tools
+###
+###########################################################
+msgid "Pack Data"
+msgstr "Pakuj dane"
+
+msgid "Unpack Data to current dir"
+msgstr "Rozpakuj dane do aktualnego katalogu"
+
+msgid "Advanced Unpack"
+msgstr "Zaawansowane odpakowywanie"
+
