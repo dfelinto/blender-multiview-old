@@ -24,7 +24,7 @@
  *
  * This is a new part of Blender.
  *
- * Contributor(s): Willian P. Germano
+ * Contributor(s): Willian P. Germano, Alex Mole
  *
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
 */
@@ -35,6 +35,8 @@
 #include "Python.h"
 
 extern PyTypeObject Button_Type, Material_Type;
+
+extern PyTypeObject Texture_Type;
 
 extern PyTypeObject Object_Type;
 extern PyTypeObject Scene_Type;

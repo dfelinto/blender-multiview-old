@@ -59,6 +59,10 @@ libblender_api2_2x_la_SOURCES = \
   BGL.h \
   Text.c \
   Text.h \
+  Texture.c \
+  Texture.h \
+  MTex.c \
+  MTex.h \
   vector.c \
   vector.h \
   constant.c \
