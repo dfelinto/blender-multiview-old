@@ -379,7 +379,7 @@ AC_CONFIG_FILES([Makefile
 		source/gameengine/SceneGraph/Makefile
 		source/gameengine/SoundSystem/Makefile
 		source/gameengine/Makefile
-      source/icons/Makefile
+		source/icons/Makefile
 		source/Makefile
 ])
 AC_OUTPUT
