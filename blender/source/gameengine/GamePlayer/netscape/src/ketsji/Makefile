@@ -50,6 +50,7 @@ CPPFLAGS += -I..
 CPPFLAGS += -I../../netscape_api
 CPPFLAGS += -I../../common
 CPPFLAGS += -I$(NAN_NSPR)/include
+CPPFLAGS += -I$(NAN_SOUNDSYSTEM)/include
 CPPFLAGS += -I$(NAN_NSPR)/include/nspr
 CPPFLAGS += -I$(NAN_MOZILLA_INC)/nspr
 
@@ -62,7 +63,6 @@ CPPFLAGS += -I../../../../GameLogic
 CPPFLAGS += -I../../../../Rasterizer
 CPPFLAGS += -I../../../../Rasterizer/RAS_OpenGLRasterizer
 CPPFLAGS += -I../../../../SceneGraph
-CPPFLAGS += -I../../../../SoundSystem
 CPPFLAGS += -I../../../../Network
 CPPFLAGS += -I../../../../Network/LoopBackNetwork
 
