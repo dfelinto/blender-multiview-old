@@ -52,6 +52,65 @@ dnl -----------------------
    [ with_gameblender=no ]  dnl default setting.
   )
 
+dnl ----------------------
+dnl ssl
+dnl ----------------------
+  AC_ARG_WITH(ssl, 
+    AC_HELP_STRING([--with-ssl[=PFX]],[Path to ssl files]),
+[       if test $withval != "yes"; then
+		with_ssl =$withval
+	fi
+	if test x$with_ssl != "yes"; then
+           LDFLAGS="$LDFLAGS -L$withval/lib -lssl"
+           CPPFLAGS="$CPPFLAGS -I$withval/include"
+	fi
+])
+
+  AC_ARG_WITH(libjpeg,
+    AC_HELP_STRING([--with-libjpeg[=PFX]],[Path to libjpeg files]),
+[       if test $withval != "yes"; then
+                with_libjpeg =$withval
+        fi
+        if test x$with_libjpeg != "yes"; then
+           LDFLAGS="$LDFLAGS -L$withval/lib -ljpeg"
+           CPPFLAGS="$CPPFLAGS -I$withval/include"
+        fi
+])
+
+  AC_ARG_WITH(libpng,
+    AC_HELP_STRING([--with-libpng[=PFX]],[Path to libpng files]),
+[       if test $withval != "yes"; then
+                with_libpng =$withval
+        fi
+        if test x$with_libpng != "yes"; then
+           LDFLAGS="$LDFLAGS -L$withval/lib -lpng"
+           CPPFLAGS="$CPPFLAGS -I$withval/include"
+        fi
+])
+
+  AC_ARG_WITH(libz,
+    AC_HELP_STRING([--with-libz[=PFX]],[Path to libz files]),
+[       if test $withval != "yes"; then
+                with_libz =$withval
+        fi
+        if test x$with_libz != "yes"; then
+           LDFLAGS="$LDFLAGS -L$withval/lib -lz"
+           CPPFLAGS="$CPPFLAGS -I$withval/include"
+        fi
+])
+
+  AC_ARG_WITH(mozilla,
+    AC_HELP_STRING([--with-mozilla[=PFX]],[Path to mozilla files]),
+[       if test $withval != "yes"; then
+                with_mozilla =$withval
+        fi
+        if test x$with_mozilla != "yes"; then
+           LDFLAGS="$LDFLAGS -L$withval/lib/mozilla-$MOZVER -lnspr"
+           CPPFLAGS="$CPPFLAGS -I$withval/include/mozilla-$MOZVER/nspr",
+        fi
+])
+
+
 #Refactor sound lib options.
   AC_ARG_ENABLE(openal,
    AC_HELP_STRING([--enable-openal],[Enable OpenAL in game engine (default=disable)]),
@@ -91,6 +150,8 @@ dnl -----------------------
   AC_CHECK_HEADER([png.h])
   AC_CHECK_HEADER([GL/gl.h])
   AC_CHECK_HEADER([GL/glu.h])
+  AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
+  AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
 
 dnl ----------------
 dnl determine what type of windowing we are using

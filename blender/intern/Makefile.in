@@ -154,7 +154,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 SUBDIRS = string ghost guardedalloc bmfont moto container memutil \
-	decimation keymaker bsp  iksolver
+	decimation keymaker bsp iksolver python
 
 
 lib_LTLIBRARIES = libblender_intern.la
@@ -171,8 +171,7 @@ libblender_intern_la_LIBADD = \
 	decimation/libblender_LOD.la \
 	keymaker/libblender_belgium.la \
 	bsp/libblender_BSP.la \
-	iksolver/libblender_IK.la \
-	python/frozen/libfrozen.a
+	iksolver/libblender_IK.la
 
 
 LIBOBJS = \
@@ -187,8 +186,7 @@ LIBOBJS = \
 	decimation/libblender_LOD.a \
 	bsp/libblender_BSP.a \
 	keymaker/libblender_belgium.a \
-	iksolver/libblender_IK.a \
-	python/frozen/libfrozen.a
+	iksolver/libblender_IK.a
 
 subdir = intern
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -203,8 +201,7 @@ libblender_intern_la_DEPENDENCIES = string/libblender_STR.la \
 	bmfont/libblender_BMF.la moto/libblender_MT.la \
 	container/libblender_CTR.la memutil/libblender_MEM.la \
 	decimation/libblender_LOD.la keymaker/libblender_belgium.la \
-	bsp/libblender_BSP.la iksolver/libblender_IK.la \
-	python/frozen/libfrozen.a
+	bsp/libblender_BSP.la iksolver/libblender_IK.la
 libblender_intern_la_SOURCES = libblender_intern.la.c
 libblender_intern_la_OBJECTS = libblender_intern.la.lo
 
