@@ -71,12 +71,17 @@ Changes in files:
 	gen_utils.[ch] for some modules to use;
 - remove unecessary redraws;
 - check for refcount bugs, like PyList_Append, etc.
+- Use new Boolean return values for True and False instead of integers.
 
 Dir structure:
 - move internal bpytypes (bone, euler, vector, etc) to a separate subdir:
 	internal/ or something;
 - rename EXPP_interface.[ch] to bpy_interface.[ch] and move internal stuff
 	from python/BPY_interface.c to it;
+
+Interoperability:
+- Modules and methods should play nicely together.  The return value from a getSomething() method should work as the input argument to a setSomething() method.  In otherwords,  ob.setSomething( ob.setSomething() )  should work.
+- Methods taking or returning coordinate arguments should work with the bpy math types.  Using the tuple and list constructors can help us cheat here as opposed to making everything accept and return Vectors.
 
 == End of structural changes project ==
 
