@@ -5,9 +5,6 @@ LIBS =
 libblender_render_la_SOURCES = \
 	extern/include/render.h \
 	extern/include/render_types.h \
-	intern/include/RE_DummyShadowBuffer.h \
-	intern/include/RE_ShadowBuffer.h \
-	intern/include/RE_basicShadowBuffer.h \
 	intern/include/RE_callbacks.h \
 	intern/include/edgeRender.h \
 	intern/include/envmap.h \
@@ -26,7 +23,6 @@ libblender_render_la_SOURCES = \
 	intern/include/rendercore.h \
 	intern/include/rendercore_int.h \
 	intern/include/shadbuf.h \
-	intern/include/shadowBuffer.h \
 	intern/include/texture.h \
 	intern/include/vanillaRenderPipe.h \
 	intern/include/vanillaRenderPipe_int.h \
@@ -36,8 +32,6 @@ libblender_render_la_SOURCES = \
 	intern/include/zbuf_types.h \
 	intern/include/zbufferdatastruct.h \
 	intern/include/zbufferdatastruct_types.h \
-	intern/source/RE_DummyShadowBuffer.cpp \
-	intern/source/RE_basicShadowBuffer.cpp \
 	intern/source/RE_callbacks.c \
 	intern/source/edgeRender.c \
 	intern/source/envmap.c \
@@ -53,10 +47,10 @@ libblender_render_la_SOURCES = \
 	intern/source/rendercore.c \
 	intern/source/renderdatabase.c \
 	intern/source/shadbuf.c \
-	intern/source/shadowBuffer.cpp \
 	intern/source/vanillaRenderPipe.c \
 	intern/source/zbuf.c \
 	intern/source/ray.c \
+	intern/source/texture.c \
 	intern/source/zbufferdatastruct.c
 
 INCLUDES = -I$(top_srcdir)/source/blender/render/intern/include \
