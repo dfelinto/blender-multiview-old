@@ -25,6 +25,8 @@ libblender_api2_2x_la_SOURCES = \
   Worldy.h \
   Lamp.c \
   Lamp.h \
+  Lattice.c \
+  Lattice.h \
   Curve.c \
   Curve.h \
   Armature.c \
