@@ -628,7 +628,7 @@ static char *sensor_name(int type)
 static char *sensor_pup(void)
 {
 	/* the number needs to match defines in game.h */
-	return "Sensors %t|Always %x0|Keyboard %x3|Mouse %x5|"
+	return "Sensors %t|Always %x0|x %x3|Mouse %x5|"
 		"Touch %x1|Collision %x6|Near %x2|Radar %x7|"
 		"Property %x4|Random %x8|Ray %x9|Message %x10";
 }
@@ -1189,7 +1189,7 @@ static short draw_sensorbuttons(bSensor *sens, uiBlock *block, short xco, short 
 			/* Line 2: type selection. The number are a bit mangled to get
 			* proper compatibility with older .blend files. */
 			str= "Type %t|Left button %x1|Middle button %x2|"
-				"Right button %x4|Movement %x8|Mouse over %x16"; 
+				"Right button %x4|Wheel Up %x5|Wheel Down %x6|Movement %x8|Mouse over %x16"; 
 			uiDefButS(block, MENU, B_REDR, str, xco+10, yco-44, width-20, 19,
 				&ms->type, 0, 31, 0, 0,
 				"Specify the type of event this mouse sensor should trigger on.");
