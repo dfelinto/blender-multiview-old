@@ -36,6 +36,12 @@ dnl     [ CXXFLAGS="-g -O3 -Wall -funsigned-char" ]
      [ CXXFLAGS="-funsigned-char" ]
   )
 
+case "$target" in
+  *sparc* )
+        AC_DEFINE(SUN_OGL_NO_VERTEX_MACROS,1,[Fix for Sun's GL])
+  ;;  
+esac
+
 dnl -----------------------
 dnl User definable features
 dnl -----------------------

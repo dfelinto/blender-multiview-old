@@ -3,9 +3,9 @@ SUBDIRS = blenloader deflate inflate encrypt decrypt sign verify \
 	avi imbuf img misc render radiosity blenlib blenkernel blenpluginapi \
 	bpython makesdna src renderconverter
 
-noinst_LTLIBRARIES = libblenderlib.la
+noinst_LTLIBRARIES = libblender_lib.la
 
-libblenderlib_la_LIBADD = \
+libblender_lib_la_LIBADD = \
 	blenloader/libblender_blenloader.la \
 	deflate/libblender_deflate.la \
 	inflate/libblender_inflate.la \

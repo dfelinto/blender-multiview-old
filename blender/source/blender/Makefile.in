@@ -160,9 +160,9 @@ SUBDIRS = blenloader deflate inflate encrypt decrypt sign verify \
 	bpython makesdna src renderconverter
 
 
-noinst_LTLIBRARIES = libblenderlib.la
+noinst_LTLIBRARIES = libblender_lib.la
 
-libblenderlib_la_LIBADD = \
+libblender_lib_la_LIBADD = \
 	blenloader/libblender_blenloader.la \
 	deflate/libblender_deflate.la \
 	inflate/libblender_inflate.la \
@@ -193,8 +193,8 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 
-libblenderlib_la_LDFLAGS =
-libblenderlib_la_DEPENDENCIES = blenloader/libblender_blenloader.la \
+libblender_lib_la_LDFLAGS =
+libblender_lib_la_DEPENDENCIES = blenloader/libblender_blenloader.la \
 	deflate/libblender_deflate.la inflate/libblender_inflate.la \
 	encrypt/libblender_encrypt.la decrypt/libblender_decrypt.la \
 	sign/libblender_sign.la verify/libblender_verify.la \
@@ -209,13 +209,13 @@ libblenderlib_la_DEPENDENCIES = blenloader/libblender_blenloader.la \
 	bpython/libblender_bpython.la makesdna/libblender_dna.la \
 	src/libblender_main.la \
 	renderconverter/libblender_renderconverter.la
-libblenderlib_la_SOURCES = libblenderlib.la.c
-libblenderlib_la_OBJECTS = libblenderlib.la.lo
+libblender_lib_la_SOURCES = libblender_lib.la.c
+libblender_lib_la_OBJECTS = libblender_lib.la.lo
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libblenderlib.la.Plo
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libblender_lib.la.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -223,7 +223,7 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = libblenderlib.la.c
+DIST_SOURCES = libblender_lib.la.c
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	ps-recursive install-info-recursive uninstall-info-recursive \
@@ -232,7 +232,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
 DIST_SUBDIRS = $(SUBDIRS)
-SOURCES = libblenderlib.la.c
+SOURCES = libblender_lib.la.c
 
 all: all-recursive
 
@@ -252,8 +252,8 @@ clean-noinstLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
-libblenderlib.la: $(libblenderlib_la_OBJECTS) $(libblenderlib_la_DEPENDENCIES) 
-	$(LINK)  $(libblenderlib_la_LDFLAGS) $(libblenderlib_la_OBJECTS) $(libblenderlib_la_LIBADD) $(LIBS)
+libblender_lib.la: $(libblender_lib_la_OBJECTS) $(libblender_lib_la_DEPENDENCIES) 
+	$(LINK)  $(libblender_lib_la_LDFLAGS) $(libblender_lib_la_OBJECTS) $(libblender_lib_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -261,7 +261,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libblenderlib.la.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libblender_lib.la.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
