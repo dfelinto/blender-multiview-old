@@ -1,0 +1,19 @@
+Release notes Blender 2.35
+
+This is a reduced release log, since not only the text files became too long and hard to read, but we also now have a great working CMS on blender3d.org, which has been used extensively over the past months by developers and users to update documentation.
+
+For a full release log, please check: 
+http://www.blender3d.org/cms/Releaselogs.34.0.html
+
+
+---- Highlights of 2.35 ------------------
+
+- Full UNDO all over Blender
+
+- Mesh editing now with edge/face selection support
+
+- Outliner data view
+
+- Curve and Hook deformers
+
+- etc etc etc :)
