@@ -10651,10 +10651,6 @@ msgstr "Passed adler checksum\n"
 msgid "DeCompressed %ld bytes to %ld (%.0f%%)\n"
 msgstr "DeCompressed %ld bytes to %ld (%.0f%%)\n"
 
-#: blender/makesdna/intern/makesdna.c:52
-msgid "$Id$"
-msgstr "$Id$"
-
 #: blender/makesdna/intern/makesdna.c:72
 msgid "DNA_listBase.h"
 msgstr "DNA_listBase.h"
@@ -11620,10 +11616,6 @@ msgstr "read action %d will get %u raw bytes\n"
 msgid "unknown dataProcessorType %d\n"
 msgstr "unknown dataProcessorType %d\n"
 
-#: blender/render/intern/source/edgeRender.c:72
-msgid "$Id$"
-msgstr "$Id$"
-
 #: blender/render/intern/source/edgeRender.c:220
 msgid "matBuffer"
 msgstr "matBuffer"
@@ -11941,10 +11933,6 @@ msgstr "Tile2"
 #: blender/render/intern/source/shadbuf.c:330
 msgid "Tile3"
 msgstr "Tile3"
-
-#: blender/render/intern/source/vanillaRenderPipe.c:107
-msgid "$Id$"
-msgstr "$Id$"
 
 #: blender/render/intern/source/vanillaRenderPipe.c:197
 #, c-format
@@ -28468,10 +28456,6 @@ msgstr ""
 #: gameengine/GamePlayer/netscape/src/PLG_X11_windowing.c:855
 #, c-format
 msgid "--> PLG_implementation::(%p) %s\n"
-msgstr ""
-
-#: gameengine/GamePlayer/netscape/src/UnixShell.c:34
-msgid "$Id$"
 msgstr ""
 
 #: gameengine/GamePlayer/netscape/src/UnixShell.c:129
