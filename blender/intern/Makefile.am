@@ -7,7 +7,6 @@ lib_LTLIBRARIES = libblender_intern.la
 libblender_intern_la_LIBADD = \
 	string/libblender_STR.la \
 	ghost/libblender_GHOST.la \
-	ghost/libblender_GHOST_X11.la \
 	guardedalloc/libblender_guardedalloc.la \
 	bmfont/libblender_BMF.la \
 	moto/libblender_MT.la \

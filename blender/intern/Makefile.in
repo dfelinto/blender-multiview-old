@@ -39,6 +39,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 ACLOCAL = @ACLOCAL@
+ALLOCA = @ALLOCA@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -76,7 +77,6 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
-LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
@@ -101,8 +101,8 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
-WIN_FALSE = @WIN_FALSE@
-WIN_TRUE = @WIN_TRUE@
+WIN32_FALSE = @WIN32_FALSE@
+WIN32_TRUE = @WIN32_TRUE@
 X11_FALSE = @X11_FALSE@
 X11_TRUE = @X11_TRUE@
 X_CFLAGS = @X_CFLAGS@
@@ -163,7 +163,6 @@ lib_LTLIBRARIES = libblender_intern.la
 libblender_intern_la_LIBADD = \
 	string/libblender_STR.la \
 	ghost/libblender_GHOST.la \
-	ghost/libblender_GHOST_X11.la \
 	guardedalloc/libblender_guardedalloc.la \
 	bmfont/libblender_BMF.la \
 	moto/libblender_MT.la \
@@ -182,7 +181,7 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 
 libblender_intern_la_LDFLAGS =
 libblender_intern_la_DEPENDENCIES = string/libblender_STR.la \
-	ghost/libblender_GHOST.la ghost/libblender_GHOST_X11.la \
+	ghost/libblender_GHOST.la \
 	guardedalloc/libblender_guardedalloc.la \
 	bmfont/libblender_BMF.la moto/libblender_MT.la \
 	container/libblender_CTR.la memutil/libblender_MEM.la \

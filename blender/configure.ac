@@ -158,17 +158,21 @@ dnl -----------------------
   AC_CHECK_HEADER([GL/glu.h])
   AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
   AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/glu.h]) 
+  AC_CHECK_HEADERS([alloca.h]) 
+  AC_CHECK_HEADERS([arpa/inet.h]) 
+  AC_CHECK_HEADERS([errno.h]) 
+  AC_CHECK_HEADERS([netdb.h]) 
 
 dnl ----------------
 dnl determine what type of windowing we are using
 dnl ----------------
   AC_CHECK_HEADER(windows.h)
-  AM_CONDITIONAL(WIN,[test "x$ac_cv_header_windows_h" = "xyes"])
+  AM_CONDITIONAL(WIN32,[test "x$ac_cv_header_windows_h" = "xyes"])
 
   AC_CHECK_HEADER(Carbon/Carbon.h)
   AM_CONDITIONAL(CARBON,[test "x$ac_cv_header_Carbon_Carbon_h" = "xyes"])
 
-  AM_CONDITIONAL(X11,[test "x$no_x" = "xno"])
+  AM_CONDITIONAL(X11,[test "x$no_x" = "xyes"])
     
 
 
@@ -195,6 +199,7 @@ dnl --------------------------
   AC_FUNC_LSTAT
   AC_FUNC_OBSTACK
   AC_FUNC_REALLOC
+  AC_FUNC_ALLOCA
   AC_FUNC_FNMATCH
   AC_FUNC_FORK
   AC_FUNC_MALLOC
@@ -294,6 +299,10 @@ AC_CONFIG_FILES([Makefile
 		intern/iksolver/Makefile
 		intern/keymaker/Makefile
 		intern/bsp/Makefile
+		intern/python/Makefile
+		intern/python/blendermodule/Makefile
+		intern/python/freeze/Makefile
+		intern/python/modules/Makefile
 		intern/Makefile
 		source/blender/src/Makefile
 		source/blender/avi/Makefile
@@ -320,6 +329,8 @@ AC_CONFIG_FILES([Makefile
 		source/blender/writeblenfile/Makefile
 		source/blender/writestreamglue/Makefile
 		source/blender/Makefile
+		source/creator/Makefile
+		source/kernel/Makefile
 		source/gameengine/BlenderRoutines/Makefile
 		source/gameengine/Converter/Makefile
 		source/gameengine/Expressions/Makefile

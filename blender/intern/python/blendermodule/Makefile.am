@@ -1,6 +1,9 @@
-bin_PROGRAMS = blendermodule
-blendermodule_SOURCES = main.c 
-blendermodule_LDADD   = -lpython1.6 -ldl -lm
-SUBDIRS = 
-EXTRA_DIST = main.c 
-bin_PROGRAMS = blendermodule
+noinst_LTLIBRARIES = libblender_module.la
+
+libblender_module_la_LDFLAGS = -static \
+	-L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
+	-lpython@PYTHON_VERSION@ @X_EXTRA_LIBS@ -ldl -lm -lpthread
+
+INCLUDES = -I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@
+
+libblender_module_la_SOURCES = main.c

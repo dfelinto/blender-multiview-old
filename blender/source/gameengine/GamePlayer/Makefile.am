@@ -5,7 +5,7 @@ else
 BUILDX11=
 endif
 
-if WIN
+if WIN32
 BUILDWIN=libgameplayer_win.a
 else
 BUILDWIN=

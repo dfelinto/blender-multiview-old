@@ -39,6 +39,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 ACLOCAL = @ACLOCAL@
+ALLOCA = @ALLOCA@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -100,8 +101,8 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
-WIN_FALSE = @WIN_FALSE@
-WIN_TRUE = @WIN_TRUE@
+WIN32_FALSE = @WIN32_FALSE@
+WIN32_TRUE = @WIN32_TRUE@
 X11_FALSE = @X11_FALSE@
 X11_TRUE = @X11_TRUE@
 X_CFLAGS = @X_CFLAGS@
@@ -157,9 +158,9 @@ target_vendor = @target_vendor@
 
 #assumption X11 flag means that it is a unix system... maybe it should be chaned later
 @X11_TRUE@BUILDX11 = libgameplayer_unix.a
-@WIN_FALSE@BUILDWIN = 
 
-@WIN_TRUE@BUILDWIN = libgameplayer_win.a
+@WIN32_TRUE@BUILDWIN = libgameplayer_win.a
+@WIN32_FALSE@BUILDWIN = 
 
 noinst_LIBRARIES = libgameplayer.a $(BUILDX11) $(BUILDWIN)
 

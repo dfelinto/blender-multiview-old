@@ -39,6 +39,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 ACLOCAL = @ACLOCAL@
+ALLOCA = @ALLOCA@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -76,7 +77,6 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
-LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
@@ -101,8 +101,8 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
-WIN_FALSE = @WIN_FALSE@
-WIN_TRUE = @WIN_TRUE@
+WIN32_FALSE = @WIN32_FALSE@
+WIN32_TRUE = @WIN32_TRUE@
 X11_FALSE = @X11_FALSE@
 X11_TRUE = @X11_TRUE@
 X_CFLAGS = @X_CFLAGS@
@@ -154,16 +154,26 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@X11_FALSE@BUILDX11 = 
-@X11_TRUE@BUILDX11 = libblender_GHOST_X11.la
-@WIN_FALSE@BUILDWIN = 
+@X11_TRUE@BUILDPS = \
+@X11_TRUE@	intern/GHOST_DisplayManagerX11.cpp \
+@X11_TRUE@	intern/GHOST_SystemX11.cpp \
+@X11_TRUE@	intern/GHOST_WindowManager.cpp \
+@X11_TRUE@	intern/GHOST_WindowX11.cpp
 
-@WIN_TRUE@BUILDWIN = libblender_GHOST_WIN.la
-@CARBON_FALSE@BUILDCARBON = 
 
-@CARBON_TRUE@BUILDCARBON = libblender_GHOST_CARBON.la
+@WIN32_TRUE@BUILDPS = \
+@WIN32_TRUE@	intern/GHOST_DisplayManagerWin32.cpp \
+@WIN32_TRUE@	intern/GHOST_SystemWin32.cpp \
+@WIN32_TRUE@	intern/GHOST_WindowWin32.cpp
 
-noinst_LTLIBRARIES = libblender_GHOST.la  $(BUILDX11) $(BUILDWIN) $(BUILDCARBON)
+
+@CARBON_TRUE@BUILDPS = \
+@CARBON_TRUE@	intern/GHOST_DisplayManagerCarbon.cpp \
+@CARBON_TRUE@	intern/GHOST_SystemCarbon.cpp \
+@CARBON_TRUE@	intern/GHOST_WindowCarbon.cpp
+
+
+noinst_LTLIBRARIES = libblender_GHOST.la  
 
 INCLUDES = -I$(top_srcdir)/intern/string
 
@@ -187,27 +197,8 @@ libblender_GHOST_la_SOURCES = \
 	intern/GHOST_Rect.cpp \
 	intern/GHOST_System.cpp \
 	intern/GHOST_TimerManager.cpp \
-	intern/GHOST_Window.cpp
-
-
-libblender_GHOST_X11_la_SOURCES = \
-	intern/GHOST_DisplayManagerX11.cpp \
-	intern/GHOST_SystemX11.cpp \
-	intern/GHOST_WindowManager.cpp \
-	intern/GHOST_WindowX11.cpp
-
-
-#Figure these out later.
-libblender_GHOST_CARBON_la_SOURCES = \
-	intern/GHOST_DisplayManagerCarbon.cpp \
-	intern/GHOST_SystemCarbon.cpp \
-	intern/GHOST_WindowCarbon.cpp
-
-
-libblender_GHOST_WIN_la_SOURCES = \
-	intern/GHOST_DisplayManagerWin32.cpp \
-	intern/GHOST_SystemWin32.cpp \
-	intern/GHOST_WindowWin32.cpp
+	intern/GHOST_Window.cpp \
+	$(BUILDPS)
 
 subdir = intern/ghost
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -217,28 +208,18 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 
 libblender_GHOST_la_LDFLAGS =
 libblender_GHOST_la_LIBADD =
+@CARBON_TRUE@am__objects_1 = GHOST_DisplayManagerCarbon.lo \
+@CARBON_TRUE@	GHOST_SystemCarbon.lo GHOST_WindowCarbon.lo
+@WIN32_TRUE@am__objects_1 = GHOST_DisplayManagerWin32.lo \
+@WIN32_TRUE@	GHOST_SystemWin32.lo GHOST_WindowWin32.lo
+@X11_TRUE@am__objects_1 = GHOST_DisplayManagerX11.lo GHOST_SystemX11.lo \
+@X11_TRUE@	GHOST_WindowManager.lo GHOST_WindowX11.lo
 am_libblender_GHOST_la_OBJECTS = GHOST_Buttons.lo GHOST_C-api.lo \
 	GHOST_CallbackEventConsumer.lo GHOST_DisplayManager.lo \
 	GHOST_EventManager.lo GHOST_EventPrinter.lo GHOST_ISystem.lo \
 	GHOST_ModifierKeys.lo GHOST_Rect.lo GHOST_System.lo \
-	GHOST_TimerManager.lo GHOST_Window.lo
+	GHOST_TimerManager.lo GHOST_Window.lo $(am__objects_1)
 libblender_GHOST_la_OBJECTS = $(am_libblender_GHOST_la_OBJECTS)
-libblender_GHOST_CARBON_la_LDFLAGS =
-libblender_GHOST_CARBON_la_LIBADD =
-am_libblender_GHOST_CARBON_la_OBJECTS = GHOST_DisplayManagerCarbon.lo \
-	GHOST_SystemCarbon.lo GHOST_WindowCarbon.lo
-libblender_GHOST_CARBON_la_OBJECTS = \
-	$(am_libblender_GHOST_CARBON_la_OBJECTS)
-libblender_GHOST_WIN_la_LDFLAGS =
-libblender_GHOST_WIN_la_LIBADD =
-am_libblender_GHOST_WIN_la_OBJECTS = GHOST_DisplayManagerWin32.lo \
-	GHOST_SystemWin32.lo GHOST_WindowWin32.lo
-libblender_GHOST_WIN_la_OBJECTS = $(am_libblender_GHOST_WIN_la_OBJECTS)
-libblender_GHOST_X11_la_LDFLAGS =
-libblender_GHOST_X11_la_LIBADD =
-am_libblender_GHOST_X11_la_OBJECTS = GHOST_DisplayManagerX11.lo \
-	GHOST_SystemX11.lo GHOST_WindowManager.lo GHOST_WindowX11.lo
-libblender_GHOST_X11_la_OBJECTS = $(am_libblender_GHOST_X11_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -280,12 +261,9 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(libblender_GHOST_la_SOURCES) \
-	$(libblender_GHOST_CARBON_la_SOURCES) \
-	$(libblender_GHOST_WIN_la_SOURCES) \
-	$(libblender_GHOST_X11_la_SOURCES)
+DIST_SOURCES = $(libblender_GHOST_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(libblender_GHOST_la_SOURCES) $(libblender_GHOST_CARBON_la_SOURCES) $(libblender_GHOST_WIN_la_SOURCES) $(libblender_GHOST_X11_la_SOURCES)
+SOURCES = $(libblender_GHOST_la_SOURCES)
 
 all: all-am
 
@@ -317,24 +295,18 @@ GHOST_Rect.lo: intern/GHOST_Rect.cpp
 GHOST_System.lo: intern/GHOST_System.cpp
 GHOST_TimerManager.lo: intern/GHOST_TimerManager.cpp
 GHOST_Window.lo: intern/GHOST_Window.cpp
-libblender_GHOST.la: $(libblender_GHOST_la_OBJECTS) $(libblender_GHOST_la_DEPENDENCIES) 
-	$(CXXLINK)  $(libblender_GHOST_la_LDFLAGS) $(libblender_GHOST_la_OBJECTS) $(libblender_GHOST_la_LIBADD) $(LIBS)
 GHOST_DisplayManagerCarbon.lo: intern/GHOST_DisplayManagerCarbon.cpp
 GHOST_SystemCarbon.lo: intern/GHOST_SystemCarbon.cpp
 GHOST_WindowCarbon.lo: intern/GHOST_WindowCarbon.cpp
-libblender_GHOST_CARBON.la: $(libblender_GHOST_CARBON_la_OBJECTS) $(libblender_GHOST_CARBON_la_DEPENDENCIES) 
-	$(CXXLINK)  $(libblender_GHOST_CARBON_la_LDFLAGS) $(libblender_GHOST_CARBON_la_OBJECTS) $(libblender_GHOST_CARBON_la_LIBADD) $(LIBS)
 GHOST_DisplayManagerWin32.lo: intern/GHOST_DisplayManagerWin32.cpp
 GHOST_SystemWin32.lo: intern/GHOST_SystemWin32.cpp
 GHOST_WindowWin32.lo: intern/GHOST_WindowWin32.cpp
-libblender_GHOST_WIN.la: $(libblender_GHOST_WIN_la_OBJECTS) $(libblender_GHOST_WIN_la_DEPENDENCIES) 
-	$(CXXLINK)  $(libblender_GHOST_WIN_la_LDFLAGS) $(libblender_GHOST_WIN_la_OBJECTS) $(libblender_GHOST_WIN_la_LIBADD) $(LIBS)
 GHOST_DisplayManagerX11.lo: intern/GHOST_DisplayManagerX11.cpp
 GHOST_SystemX11.lo: intern/GHOST_SystemX11.cpp
 GHOST_WindowManager.lo: intern/GHOST_WindowManager.cpp
 GHOST_WindowX11.lo: intern/GHOST_WindowX11.cpp
-libblender_GHOST_X11.la: $(libblender_GHOST_X11_la_OBJECTS) $(libblender_GHOST_X11_la_DEPENDENCIES) 
-	$(CXXLINK)  $(libblender_GHOST_X11_la_LDFLAGS) $(libblender_GHOST_X11_la_OBJECTS) $(libblender_GHOST_X11_la_LIBADD) $(LIBS)
+libblender_GHOST.la: $(libblender_GHOST_la_OBJECTS) $(libblender_GHOST_la_DEPENDENCIES) 
+	$(CXXLINK)  $(libblender_GHOST_la_LDFLAGS) $(libblender_GHOST_la_OBJECTS) $(libblender_GHOST_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core

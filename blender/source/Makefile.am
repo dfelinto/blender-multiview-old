@@ -6,7 +6,7 @@ gameblenderdir =
 gamelib =
 endif
 
-if WIN
+if WIN32
 icondir = icons
 else 
 icondir =
@@ -19,13 +19,17 @@ SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
 if CARBON
 bin_PROGRAMS = blenderpublisher.app blenderplayer.app 
 else
-bin_PROGRAMS = blender blenderplayer plugin
+#bin_PROGRAMS = blender blenderplayer plugin
+bin_PROGRAMS = blender.bin
 endif
 
-blender_LDADD = \
-	creator/libblender_creator.la \
+blender_bin_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
+
+blender_bin_LDADD = \
+	-lpython@PYTHON_VERSION@ \
 	$(gamelib) \
+	creator/libblender_creator.la \
 	blender/libblender_blender.la \
 	kernel/libblender_kernel.a \
-	../intern/libblender_intern.la
-## Need to add python stuff here
+	../intern/libblender_intern.la \
+	../intern/python/frozen/libfrozen.a
