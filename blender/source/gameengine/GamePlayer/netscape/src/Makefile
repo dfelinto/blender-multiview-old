@@ -48,6 +48,7 @@ CPPFLAGS += -I$(NAN_STRING)/include
 
 # only plugin related:
 CPPFLAGS += -I$(NAN_NSPR)/include
+CPPFLAGS += -I$(NAN_NSPR)/include/nspr
 CPPFLAGS += -I../netscape_api
 CPPFLAGS += -I../common
 CPPFLAGS += -I../test
