@@ -859,6 +859,9 @@
 		};
 		A34CC7A007E3889600AD7C17 = {
 			children = (
+				A397AC9C07EEA36500D1D9FB,
+				A397AC9D07EEA36500D1D9FB,
+				A397AC9E07EEA36500D1D9FB,
 				A34CC7A107E3889600AD7C17,
 				A34CC7A207E3889600AD7C17,
 				A34CC7A307E3889600AD7C17,
@@ -17954,6 +17957,51 @@
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
+		A397AC9C07EEA36500D1D9FB = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = CCGSubSurf.c;
+			path = ../../source/blender/blenkernel/intern/CCGSubSurf.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A397AC9D07EEA36500D1D9FB = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = CCGSubSurf.h;
+			path = ../../source/blender/blenkernel/intern/CCGSubSurf.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A397AC9E07EEA36500D1D9FB = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = subsurf_ccg.c;
+			path = ../../source/blender/blenkernel/intern/subsurf_ccg.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A397AC9F07EEA36500D1D9FB = {
+			fileRef = A397AC9C07EEA36500D1D9FB;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A397ACA007EEA36500D1D9FB = {
+			fileRef = A397AC9D07EEA36500D1D9FB;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A397ACA107EEA36500D1D9FB = {
+			fileRef = A397AC9E07EEA36500D1D9FB;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		A3B35CCC07E4ED5D00AE0C8B = {
 			fileEncoding = 5;
 			isa = PBXFileReference;
@@ -18707,6 +18755,8 @@
 				A3CFAB5607E4846500501F05,
 				A3B35CCD07E4ED5D00AE0C8B,
 				A3D66D4C07EA40B1005185E6,
+				A397AC9F07EEA36500D1D9FB,
+				A397ACA107EEA36500D1D9FB,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -19744,6 +19794,7 @@
 				A3CFAB4A07E4840200501F05,
 				A3CFAB5A07E4854D00501F05,
 				A3CFAB5B07E4855100501F05,
+				A397ACA007EEA36500D1D9FB,
 			);
 			isa = PBXHeadersBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
