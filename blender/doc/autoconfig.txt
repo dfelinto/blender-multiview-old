@@ -1,11 +1,14 @@
 A little guide to autoconf/automake
 
 If you want to play with the new autoconf environment you need to do the
-following, inside this dir:
+following, inside your root blender dir:
 ./bootstrap
 mkdir ../newdir
 cd ../newdir
 ../blender/configure
+
+(If you get errors on bootstrap about undefined AC_PROG_LIBTOOL
+copy acinclude.m4 from /usr/local/share/libtool/libltdl/  into your blender dir)
 
 Take a look at INSTALL for options you can give to configure.
 
@@ -52,7 +55,6 @@ http://murrayc.com/learning/linux/building_libraries/building_libraries.shtml
 http://www.murrayc.com/learning/linux/automake/automake.shtml
 
 TODO:
-to finish up the intern dir,
 
  Square away how ghost works.
 (i.e. would be nice if under windows you could choose X11 or normal windows
@@ -63,5 +65,3 @@ Get intern/python figured out.
 fix the following in configure.ac
         --with-mozilla=dir      (get it so nspr is autodetected here)
         --with-nspr=dir         (incase in different dir)
-
-Get source/Makefile.am finished.
