@@ -68,6 +68,7 @@ EXTRA_DIST = \
 	include/BIF_writeavicodec.h \
 	include/BIF_writeimage.h \
 	include/BIF_writemovie.h \
+	include/BPI_script.h \
 	include/BSE_buttons.h \
 	include/BSE_drawimasel.h \
 	include/BSE_drawipo.h \

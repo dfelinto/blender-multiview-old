@@ -1,9 +1,10 @@
-/* blenkernel/script.c
- *
- *
+/**
+ * include/BPI_script.h (jan-2004 ianwill)
+ *	
  * $Id$
  *
- * Function(s) related to struct script management.
+ * Header for BPython's script structure. BPI: Blender Python external include
+ * file.
  *
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
@@ -34,35 +35,36 @@
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
  */
 
-#include "BKE_script.h"
-#include "BPI_script.h"
+#ifndef BPI_SCRIPT_H
+#define BPI_SCRIPT_H
 
-#include "MEM_guardedalloc.h"
+//#include "DNA_listBase.h"
+#include "DNA_ID.h"
 
-/*
-#include "BLI_blenlib.h"
-#include "BKE_bad_level_calls.h"
-#include "BKE_utildefines.h"
-#include "BKE_library.h"
-#include "BKE_global.h"
-#include "BKE_main.h"
+typedef struct Script {
+	ID id;
 
-#include "BPY_extern.h" // Blender Python library
+	void *py_draw;
+	void *py_event;
+	void *py_button;
+	void *py_globaldict;
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-*/
+	int flags, lastspace;
 
-void free_script (Script *script)
-{
-	if (!script) return;
+} Script;
 
-	if (script->py_globaldict || script->py_button ||
-			script->py_event || script->py_draw)
-	{
-		BPY_clear_script(script);
-	}
+/* Note: a script that registers callbacks in the script->py_* pointers
+ * above (or calls the file or image selectors) needs to keep its global
+ * dictionary until Draw.Exit() is called and the callbacks removed.
+ * Unsetting SCRIPT_RUNNING means the interpreter reached the end of the
+ * script and returned control to Blender, but we can't get rid of its
+ * namespace (global dictionary) while SCRIPT_GUI or SCRIPT_FILESEL is set,
+ * because of the callbacks.  The flags and the script name are saved in
+ * each running script's global dictionary, under '__script__'. */
 
-	return;
-}
+/* Flags */
+#define SCRIPT_RUNNING	0x01
+#define SCRIPT_GUI			0x02
+#define SCRIPT_FILESEL	0x04
+
+#endif /* BPI_SCRIPT_H */
