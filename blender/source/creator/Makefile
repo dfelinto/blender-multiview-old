@@ -19,8 +19,6 @@
 #
 # ***** END GPL/BL DUAL LICENSE BLOCK *****
 #
-#
-#
 
 LIBNAME = creator
 DIR = $(OCGDIR)/creator
@@ -30,8 +28,7 @@ CSRCS = creator.c
 
 include nan_compile.mk
 
-ifeq ($(OS),$(findstring $(OS), "beos darwin freebsd linux openbsd
-solaris windows"))
+ifeq ($(OS),$(findstring $(OS), "beos darwin freebsd linux openbsd solaris windows"))
     CFLAGS += -funsigned-char
 endif
 

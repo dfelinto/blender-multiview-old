@@ -19,15 +19,19 @@
 #
 # ***** END GPL/BL DUAL LICENSE BLOCK *****
 #
-# Bounces make to subdirectories.
+#
 
-include nan_definitions.mk
+LIBNAME = sumo
+DIR = $(OCGDIR)/gameengine/blphys/$(LIBNAME)
 
-SOURCEDIR = source/gameengine
-DIR = $(OCGDIR)/gameengine
-DIRS = BlenderRoutines
-DIRS += Converter
-DIRS += Expressions GameLogic Ketsji Rasterizer SceneGraph
-DIRS += SoundSystem Network GamePlayer Physics
+include nan_compile.mk
 
-include nan_subdirs.mk
+CCFLAGS += $(LEVEL_1_CPP_WARNINGS)
+
+CPPFLAGS += -I$(OPENGL_HEADERS)
+CPPFLAGS += -I$(NAN_STRING)/include    
+CPPFLAGS += -I$(NAN_PYTHON)/include/python$(NAN_PYTHON_VERSION)
+CPPFLAGS += -I$(NAN_FUZZICS)/include -I$(NAN_SUMO)/include -I$(NAN_MOTO)/include
+CPPFLAGS += -I$(NAN_GUARDEDALLOC)/include
+CPPFLAGS += -I../../Physics/common
+CPPFLAGS += -I../../Physics/Dummy

@@ -20,7 +20,7 @@
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
  */
 #include "SumoPhysicsEnvironment.h"
-#include "PHY_imotionstate.h"
+#include "PHY_IMotionState.h"
 #include "SumoPhysicsController.h"
 #include "SM_Scene.h"
 

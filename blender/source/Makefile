@@ -46,7 +46,8 @@ ifeq ($(OS),freebsd)
 endif
 
 ########## buildinfo kludge ###################
-
+CPPFLAGS += -I../Physics/common
+CPPFLAGS += -I../Physics/Dummy
 ifdef NAN_BUILDINFO
     BUILDINFO_O = $(DIR)/$(DEBUG_DIR)buildinfo.o
     BUILDINFO_C = $(SRCHOME)/creator/buildinfo.c
@@ -111,6 +112,12 @@ PYPLAYERLIB ?= $(PYLIB)
     COMLIB += $(NAN_JPEG)/lib/libjpeg.a
     COMLIB += $(OCGDIR)/gameengine/bloutines/$(DEBUG_DIR)libbloutines.a
     COMLIB += $(OCGDIR)/gameengine/blconverter/$(DEBUG_DIR)libblconverter.a
+    COMLIB += $(OCGDIR)/gameengine/blphys/common/$(DEBUG_DIR)libcommon.a
+    COMLIB += $(OCGDIR)/gameengine/blphys/sumo/$(DEBUG_DIR)libsumo.a
+    COMLIB += $(OCGDIR)/gameengine/blphys/dummy/$(DEBUG_DIR)libdummy.a
+    COMLIB += $(OCGDIR)/gameengine/blphys/common/$(DEBUG_DIR)libcommon.a
+    COMLIB += $(OCGDIR)/gameengine/blphys/sumo/$(DEBUG_DIR)libsumo.a
+    COMLIB += $(OCGDIR)/gameengine/blphys/dummy/$(DEBUG_DIR)libdummy.a
     COMLIB += $(OCGDIR)/gameengine/ketsji/$(DEBUG_DIR)libketsji.a
     COMLIB += $(OCGDIR)/gameengine/logic/$(DEBUG_DIR)liblogic.a
     COMLIB += $(OCGDIR)/gameengine/rasterizer/$(DEBUG_DIR)librasterizer.a
@@ -118,7 +125,7 @@ PYPLAYERLIB ?= $(PYLIB)
     COMLIB += $(OCGDIR)/gameengine/expression/$(DEBUG_DIR)libexpression.a
     COMLIB += $(OCGDIR)/gameengine/scenegraph/$(DEBUG_DIR)libscenegraph.a
     COMLIB += $(OCGDIR)/sumo/$(DEBUG_DIR)libfuzzics.a
-    COMLIB += $(OCGDIR)/sumo/$(DEBUG_DIR)libsolid.a
+#    COMLIB += $(OCGDIR)/sumo/$(DEBUG_DIR)libsolid.a
     COMLIB += $(NAN_MOTO)/lib/libmoto.a
     COMLIB += $(NAN_SND_LIBS)
     COMLIB += $(OCGDIR)/kernel/gen_system/$(DEBUG_DIR)libgen_system.a

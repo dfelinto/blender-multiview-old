@@ -20,7 +20,7 @@
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
  */
 #include "DummyPhysicsEnvironment.h"
-#include "PHY_imotionstate.h"
+#include "PHY_IMotionState.h"
 
 
 

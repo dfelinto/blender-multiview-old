@@ -2918,3 +2918,4 @@ void set_timecursor(int nr)
 	window_set_custom_cursor(mainwin, mask, bitmap);
 	BIF_renderwin_set_custom_cursor(mask, bitmap);
 }
+

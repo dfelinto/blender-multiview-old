@@ -21,30 +21,29 @@
 #
 #
 
-LIBNAME = ketsji
-DIR = $(OCGDIR)/gameengine/$(LIBNAME)
+LIBNAME = common
+DIR = $(OCGDIR)/gameengine/blphys/$(LIBNAME)
 
 include nan_compile.mk
 
 CCFLAGS += $(LEVEL_1_CPP_WARNINGS)
 
-CPPFLAGS += $(OGL_CPPFLAGS)
-CPPFLAGS += -I$(NAN_PYTHON)/include/python$(NAN_PYTHON_VERSION)
+CPPFLAGS += -I$(OPENGL_HEADERS)
 CPPFLAGS += -I$(NAN_STRING)/include    
+CPPFLAGS += -I$(NAN_PYTHON)/include/python$(NAN_PYTHON_VERSION)
 CPPFLAGS += -I$(NAN_FUZZICS)/include -I$(NAN_SUMO)/include -I$(NAN_MOTO)/include
-CPPFLAGS += -I../Rasterizer -I../GameLogic -I../SceneGraph
-CPPFLAGS += -I../BlenderRoutines -I../SoundSystem -I../Expressions
+CPPFLAGS += -I../../blender
+# these two needed because of blenkernel
+CPPFLAGS += -I../../blender/makesdna
+CPPFLAGS += -I../../blender/include
+CPPFLAGS += -I../../blender/blenlib
+CPPFLAGS += -I../../blender/blenkernel
+CPPFLAGS += -I../../blender/render/extern/include
+CPPFLAGS += -I$(NAN_GUARDEDALLOC)/include
+CPPFLAGS += -I../Expressions -I../Rasterizer -I../GameLogic -I../SoundSystem
+CPPFLAGS += -I../Ketsji -I../BlenderRoutines -I../SceneGraph
 CPPFLAGS += -I../../kernel/gen_system
-CPPFLAGS += -I../Network -IKXNetwork
-CPPFLAGS += -I../Physics/common
+CPPFLAGS += -I../Rasterizer/RAS_OpenGLRasterizer
+CPPFLAGS += -I../Network -I../Ketsji/KXNetwork
+CPPFLAGS += -I../Physics
 CPPFLAGS += -I../Physics/Dummy
-CPPFLAGS += -I../Physics/Sumo
-CPPFLAGS += -I.
-
-###########################
-
-SOURCEDIR = source/gameengine/Ketsji
-DIRS = KXNetwork
-
-include nan_subdirs.mk
-

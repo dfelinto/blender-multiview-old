@@ -23,11 +23,8 @@
 
 include nan_definitions.mk
 
-SOURCEDIR = source/gameengine
-DIR = $(OCGDIR)/gameengine
-DIRS = BlenderRoutines
-DIRS += Converter
-DIRS += Expressions GameLogic Ketsji Rasterizer SceneGraph
-DIRS += SoundSystem Network GamePlayer Physics
+SOURCEDIR = source/gameengine/Physics
+DIR = $(OCGDIR)/gameengine/blphys
+DIRS = common Sumo Dummy
 
 include nan_subdirs.mk
