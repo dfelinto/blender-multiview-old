@@ -6494,6 +6494,7 @@
 		};
 		A34CCA0E07E3889700AD7C17 = {
 			children = (
+				A3D66D4B07EA40B1005185E6,
 				A34CCA1107E3889700AD7C17,
 				A34CCA1207E3889700AD7C17,
 				A34CCA1307E3889700AD7C17,
@@ -18705,6 +18706,7 @@
 				A3CFAB1607E4763E00501F05,
 				A3CFAB5607E4846500501F05,
 				A3B35CCD07E4ED5D00AE0C8B,
+				A3D66D4C07EA40B1005185E6,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -23254,6 +23256,21 @@
 		};
 		A3CFAB5B07E4855100501F05 = {
 			fileRef = A34CC8E707E3889600AD7C17;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A3D66D4B07EA40B1005185E6 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = transform_manipulator.c;
+			path = ../../source/blender/src/transform_manipulator.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3D66D4C07EA40B1005185E6 = {
+			fileRef = A3D66D4B07EA40B1005185E6;
 			isa = PBXBuildFile;
 			settings = {
 			};
