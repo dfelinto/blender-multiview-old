@@ -1,86 +1,86 @@
 noinst_LTLIBRARIES = libblender_blendersrc.la
 
 libblender_blendersrc_la_SOURCES = \
-	editconstraint.c \
-	isect.c \
 	B.blend.c \
-	editcurve.c \
-	keyval.c \
 	Bfont.c \
-	editdeform.c \
-	mainqueue.c \
-	editface.c \
-	mywindow.c \
-	editfont.c \
-	oops.c \
-	editgroup.c \
-	osx_creator_splash.jpg.c \
 	blenderbuttons.c \
-	editika.c \
-	playanim.c \
 	booleanops.c \
-	editimasel.c \
-	poseobject.c \
 	booleanops_mesh.c \
-	editipo.c \
-	previewrender.c \
 	buttons.c \
-	editkey.c \
 	cmap.tga.c \
-	editlattice.c \
-	renderwin.c \
 	cmovie.tga.c \
-	editmball.c \
-	resources.c \
-	editmesh.c \
-	scrarea.c \
 	drawaction.c \
-	editnla.c \
-	screendump.c \
 	drawimage.c \
-	editobject.c \
-	sequence.c \
 	drawimasel.c \
-	editoops.c \
-	space.c \
 	drawipo.c \
-	editsca.c \
-	spacetypes.c \
 	drawmesh.c \
-	editscreen.c \
-	swapbuffers.c \
 	drawnla.c \
-	editseq.c \
-	toets.c \
 	drawobject.c \
-	editsima.c \
-	toolbox.c \
 	drawoops.c \
-	editsound.c \
-	unix_creator_splash.jpg.c \
 	drawscene.c \
-	editview.c \
-	usiblender.c \
 	drawseq.c \
-	eventdebug.c \
-	view.c \
 	drawsound.c \
-	filesel.c \
-	vpaint.c \
 	drawtext.c \
-	ghostwinlay.c \
-	windows_creator_splash.jpg.c \
 	drawview.c \
-	glutil.c \
-	winlay.h \
 	edit.c \
-	headerbuttons.c \
-	writeavicodec.c \
 	editaction.c \
-	imasel.c \
-	writeimage.c \
 	editarmature.c \
+	editconstraint.c \
+	editcurve.c \
+	editdeform.c \
+	editface.c \
+	editfont.c \
+	editgroup.c \
+	editika.c \
+	editimasel.c \
+	editipo.c \
+	editkey.c \
+	editlattice.c \
+	editmball.c \
+	editmesh.c \
+	editnla.c \
+	editobject.c \
+	editoops.c \
+	editsca.c \
+	editscreen.c \
+	editseq.c \
+	editsima.c \
+	editsound.c \
+	editview.c \
+	eventdebug.c \
+	filesel.c \
+	ghostwinlay.c \
+	glutil.c \
+	headerbuttons.c \
+	imasel.c \
 	interface.c \
+	isect.c \
+	keyval.c \
+	mainqueue.c \
+	mywindow.c \
+	oops.c \
+	osx_creator_splash.jpg.c \
+	playanim.c \
+	poseobject.c \
+	previewrender.c \
+	renderwin.c \
+	resources.c \
+	scrarea.c \
+	screendump.c \
+	sequence.c \
+	space.c \
+	spacetypes.c \
+	swapbuffers.c \
+	toets.c \
+	toolbox.c \
+	unix_creator_splash.jpg.c \
+	usiblender.c \
+	view.c \
+	vpaint.c \
+	windows_creator_splash.jpg.c \
+	winlay.h \
+	writeavicodec.c \
+	writeimage.c \
 	writemovie.c \
 	cre/license.jpeg.c \
 	cre/license_key.c
@@ -109,3 +109,6 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/readstreamglue \
 	-I$(top_srcdir)/source/blender/img \
 	-I$(top_srcdir)/intern/ghost
+
+EXTRA_DIST = \
+	Makefile

@@ -1,9 +1,15 @@
 noinst_LTLIBRARIES = libblender_blenloader.la
 
 libblender_blenloader_la_SOURCES = \
+	BLO_genfile.h \
+	BLO_readfile.h \
+	BLO_soundfile.h \
+	BLO_writefile.h \
 	intern/genfile.c \
+	intern/genfile.h \
 	intern/readblenentry.c \
 	intern/readfile.c \
+	intern/readfile.h \
 	intern/writefile.c
 
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
@@ -19,3 +25,7 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/render/extern/include \
 	-I$(top_srcdir)/source/blender/writestreamglue \
 	-I$(top_srcdir)/source/blender/readstreamglue
+
+EXTRA_DIST = \
+	Makefile \
+	intern/Makefile

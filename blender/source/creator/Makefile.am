@@ -1,4 +1,5 @@
 noinst_LTLIBRARIES = libblender_creator.la
+
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/makesdna \
 	-I$(top_srcdir)/source/blender/blenkernel \
@@ -15,3 +16,6 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 libblender_creator_la_SOURCES= \
 	buildinfo.c \
 	creator.c
+
+EXTRA_DIST = \
+	Makefile

@@ -17,3 +17,5 @@ dna.c: makesdna
 BUILT_SOURCES = dna.c
 CLEANFILES = dna.c
 
+EXTRA_DIST = \
+	Makefile

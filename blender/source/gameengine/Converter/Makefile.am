@@ -2,20 +2,35 @@ noinst_LTLIBRARIES = libgameblender_converter.la
 
 libgameblender_converter_la_SOURCES = \
 	BL_ActionActuator.cpp \
+	BL_ActionActuator.h \
 	BL_ArmatureObject.cpp \
+	BL_ArmatureObject.h \
 	BL_BlenderDataConversion.cpp \
+	BL_BlenderDataConversion.h \
 	BL_DeformableGameObject.cpp \
+	BL_DeformableGameObject.h \
 	BL_MeshDeformer.cpp \
+	BL_MeshDeformer.h \
 	BL_SkinDeformer.cpp \
+	BL_SkinDeformer.h \
 	BL_SkinMeshObject.cpp \
+	BL_SkinMeshObject.h \
 	BlenderWorldInfo.cpp \
+	BlenderWorldInfo.h \
 	KX_BlenderScalarInterpolator.cpp \
+	KX_BlenderScalarInterpolator.h \
 	KX_BlenderSceneConverter.cpp \
+	KX_BlenderSceneConverter.h \
 	KX_ConvertActuators.cpp \
+	KX_ConvertActuators.h \
 	KX_ConvertControllers.cpp \
+	KX_ConvertControllers.h \
 	KX_ConvertProperties.cpp \
+	KX_ConvertProperties.h \
 	KX_ConvertSensors.cpp \
-	KX_IpoConvert.cpp
+	KX_ConvertSensors.h \
+	KX_IpoConvert.cpp \
+	KX_IpoConvert.h
 
 INCLUDES = -I$(top_srcdir)/source/gameengine/GameLogic \
 	-I$(top_srcdir)/intern/moto/include \
@@ -40,3 +55,6 @@ INCLUDES = -I$(top_srcdir)/source/gameengine/GameLogic \
 	-I$(top_srcdir)/source/gameengine/Physics/BlOde \
 	-I$(top_srcdir)/source/gameengine/Ketsji/KXNetwork \
 	-I$(top_srcdir)/source/gameengine/Network
+
+EXTRA_DIST = \
+	Makefile

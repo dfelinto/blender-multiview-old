@@ -1,6 +1,8 @@
 noinst_LTLIBRARIES = libblender_radiosity.la
 
 libblender_radiosity_la_SOURCES = \
+	extern/include/radio.h \
+	extern/include/radio_types.h \
 	intern/source/raddisplay.c \
 	intern/source/radfactors.c \
 	intern/source/radio.c \
@@ -16,3 +18,8 @@ INCLUDES = -I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/render/extern/include \
 	-I$(top_srcdir)/source/blender/misc
+
+EXTRA_DIST = \
+	Makefile \
+	intern/Makefile \
+	intern/source/Makefile

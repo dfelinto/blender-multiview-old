@@ -1,15 +1,23 @@
 noinst_LTLIBRARIES = libgameblender_routines.la
 
-
 libgameblender_routines_la_SOURCES = \
+	BL_KetsjiEmbedStart.cpp \
 	KX_BlenderCanvas.cpp \
+	KX_BlenderCanvas.h \
 	KX_BlenderGL.cpp \
+	KX_BlenderGL.h \
 	KX_BlenderInputDevice.cpp \
+	KX_BlenderInputDevice.h \
 	KX_BlenderKeyboardDevice.cpp \
+	KX_BlenderKeyboardDevice.h \
 	KX_BlenderMouseDevice.cpp \
+	KX_BlenderMouseDevice.h \
 	KX_BlenderPolyMaterial.cpp \
+	KX_BlenderPolyMaterial.h \
 	KX_BlenderRenderTools.cpp \
-	KX_BlenderSystem.cpp
+	KX_BlenderRenderTools.h \
+	KX_BlenderSystem.cpp \
+	KX_BlenderSystem.h
 
 INCLUDES = -I$(top_srcdir)/source/blender/include \
 	-I$(top_srcdir)/source/gameengine/Rasterizer \
@@ -26,3 +34,6 @@ INCLUDES = -I$(top_srcdir)/source/blender/include \
 	-I$(top_srcdir)/source/kernel/gen_system \
 	-I$(top_srcdir)/source/blender/misc \
 	-I$(top_srcdir)/source/blender/blenlib
+
+EXTRA_DIST = \
+	Makefile

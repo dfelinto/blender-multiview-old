@@ -1,6 +1,7 @@
 noinst_LTLIBRARIES = libblender_renderconverter.la
 
 libblender_renderconverter_la_SOURCES = \
+	RE_renderconverter.h \
 	intern/convertBlenderScene.c
 
 INCLUDES = -I$(top_srcdir)/source/blender/blenlib \
@@ -11,3 +12,7 @@ INCLUDES = -I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/render/extern/include \
 	-I$(top_srcdir)/source/blender/misc \
 	-I$(top_srcdir)/source/blender/bpython/include
+
+EXTRA_DIST = \
+	Makefile \
+	intern/Makefile

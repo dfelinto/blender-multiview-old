@@ -1,6 +1,51 @@
 noinst_LTLIBRARIES = libblender_blenkernel.la
 
 libblender_blenkernel_la_SOURCES = \
+	BKE_action.h \
+	BKE_anim.h \
+	BKE_armature.h \
+	BKE_bad_level_calls.h \
+	BKE_blender.h \
+	BKE_bmfont.h \
+	BKE_bmfont_types.h \
+	BKE_booleanops.h \
+	BKE_booleanops_mesh.h \
+	BKE_constraint.h \
+	BKE_curve.h \
+	BKE_deform.h \
+	BKE_displist.h \
+	BKE_effect.h \
+	BKE_endian.h \
+	BKE_exotic.h \
+	BKE_font.h \
+	BKE_global.h \
+	BKE_group.h \
+	BKE_ika.h \
+	BKE_image.h \
+	BKE_ipo.h \
+	BKE_key.h \
+	BKE_lattice.h \
+	BKE_library.h \
+	BKE_main.h \
+	BKE_material.h \
+	BKE_mball.h \
+	BKE_mesh.h \
+	BKE_nla.h \
+	BKE_object.h \
+	BKE_osa_types.h \
+	BKE_packedFile.h \
+	BKE_plugin_types.h \
+	BKE_property.h \
+	BKE_sca.h \
+	BKE_scene.h \
+	BKE_screen.h \
+	BKE_sound.h \
+	BKE_subsurf.h \
+	BKE_text.h \
+	BKE_texture.h \
+	BKE_utildefines.h \
+	BKE_world.h \
+	BKE_writeavi.h \
 	intern/constraint.c \
 	intern/group.c \
 	intern/material.c \
@@ -47,3 +92,7 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/avi \
 	-I$(top_srcdir)/intern/iksolver/extern \
 	-I$(top_srcdir)/source/blender/blenloader
+
+EXTRA_DIST = \
+	Makefile \
+	intern/Makefile
