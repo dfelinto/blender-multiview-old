@@ -1,0 +1,110 @@
+TODO list for Blender Python
+============================
+
+
+Requests and TODO list:
+- read / write access to image buffers (can use / follow BGL's buffers);
+- access to game engine properties (see logic.[ch]):
+		It seems trivial to add the game engine modules to bpython, investigate
+after 2.34;
+- add Blender.Window.Themes subsubmodule, to get/set ui theme attributes;
+- Blender.EMesh module: direct access to editmesh objects.
+
+
+The next section describes bpython projects.  Here's a suggested format:
+============================
+= Project: name of project =
+============================
+>Coordinator(s): DEVELOPER(S)
+>Started on: DATE
+>Priority: LOW/MEDIUM/HIGH/FIX IT!
+
+>Current state: ...
+
+>Description: ...
+
+== End of name of project project ==
+
+
+
+===============================
+= Project: structural changes =
+===============================
+>Coordinator(s): Stephen, Willian
+>Start: after release 2.34
+>Priority: MEDIUM
+
+>Description:
+
+It's about time for some cleaning-up, we plan to do this since before 2.28.
+First of all we should discuss what we'll do via mailing list, then divide the
+task in small steps, some of which need to be finished fast once they've been
+started, so our "men at work" signs don't bother other developers too much.
+
+BPython is a perfect project to showcase Python embedding, besides being a
+gentle host to new Blender developers, so keeping it readable and instructional
+is a desirable goal.
+
+Changes in files:
+- DON'T BREAK BPYTHON API;
+- move things that should not be in header files to .c files;
+- consider moving declarations from bpy_types.h and modules.h to the module
+  headers;
+- add Id cvs tags to all files;
+- define a comments format (doxygen-friendly);
+- define order: start with module declarations, then table and so on;
+- respect 80-column limit for readability and use tabs, not spaces;
+- use EXPP_incr_ret where applicable;
+- consider Yann's suggestion for get/setAttr tables;
+- consider macros and/or Joe's get/setVarType functions, maybe put in
+	gen_utils.[ch] for some modules to use;
+- remove unecessary redraws;
+- check for refcount bugs, like PyList_Append, etc.
+
+Dir structure:
+- move internal bpytypes (bone, euler, vector, etc) to a separate subdir:
+	internal/ or something;
+- rename EXPP_interface.[ch] to bpy_interface.[ch] and move internal stuff
+	from python/BPY_interface.c to it;
+
+== End of structural changes project ==
+
+
+
+==========================
+= Project: documentation =
+==========================
+>Coordinator(s):
+>Started on:
+>Priority:
+
+>Current state:
+
+>Description:
+
+Epydoc, under python/api2_2x/doc:
+- review text and make small updates to make it more uniform.
+
+Docstrings in .c files:
+- define a clear and economic format and update all strings accordingly.
+
+Tutorial:
+- write a tutorial in chapters (each developer can then add new chapters to
+it).  Willian will convert the one he's writing to use docbook
+xml like the Blender docboard uses for the manual.
+
+== End of doc project ==
+
+
+
+==================
+= Project: tests =
+==================
+Coordinator(s):
+Started on:
+Priority:
+
+Rethink, discuss ways to automate test writing and work on a good set of tests.
+
+== End of tests project ==
+
