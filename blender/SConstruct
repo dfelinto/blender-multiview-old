@@ -4,6 +4,14 @@ import time
 import sys
 from distutils import sysconfig
 
+if sys.hexversion < 0x2040000:
+	print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+	print
+	print "You need at least Python 2.3 to build Blender with SCons"
+	print
+	print ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+	exit()
+
 if sys.platform != 'win32':
 	sys.stdout = os.popen("tee build.log", "w")
 	sys.stderr = sys.stdout
