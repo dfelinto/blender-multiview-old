@@ -41,13 +41,16 @@ if [ $numargs -lt 2 ]; then
 fi
 
 cpargs=`expr $numargs - 1`
-eval dst=\${$#}
-
-#echo "[$@] has $# arguments $dst"
-
 i=1
 while [ $i -le $cpargs ]; do
-	eval src=\${$i};
+    args="$args $1"
+	#echo "arg $i = $args"
+    i=`expr $i + 1`
+    shift
+done
+dst=$1
+
+for src in $args; do
 	#echo "$src to $dst"
 	if [ ! -f $src ]; then
 		echo "ERROR $src is not a file"
@@ -56,7 +59,7 @@ while [ $i -le $cpargs ]; do
 	if [ -d $dst ]; then
 		src2=`echo $src | sed 's/.*\///'`
 		if [ -f "$dst/$src2" ]; then
-			diff -q $src $dst 2>&1 >/dev/null
+			diff $src $dst 2>&1 >/dev/null
 			if [ $? -eq 0 ]; then
 				echo "    $src2 already installed"
 			else
@@ -68,7 +71,7 @@ while [ $i -le $cpargs ]; do
 			cp $src $dst
 		fi
 	elif [ -f $dst ]; then
-		diff -q $src $dst 2>&1 >/dev/null
+		diff $src $dst 2>&1 >/dev/null
 		if [ $? -eq 0 ]; then
 			echo "    $src already installed"
 		else
@@ -79,6 +82,5 @@ while [ $i -le $cpargs ]; do
 		echo "ERROR $dst is not a directory or a file"
 		exit 1
 	fi
-	i=`expr $i + 1`
 done
 
