@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_soundsystem.la
+noinst_LTLIBRARIES = libgameblender_soundsystem.la
 
 #there is a test file for those who want to build it... as long as you edit this file
 

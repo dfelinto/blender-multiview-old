@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_bpython.la
+noinst_LTLIBRARIES = libblender_bpython.la
 
 libblender_bpython_la_SOURCES = \
 	intern/BPY_constobject.c \

@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_radiosity.la
+noinst_LTLIBRARIES = libblender_radiosity.la
 
 libblender_radiosity_la_SOURCES = \
 	intern/source/raddisplay.c \

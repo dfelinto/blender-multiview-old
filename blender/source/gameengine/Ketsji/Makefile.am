@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_ketsji.la
+noinst_LTLIBRARIES = libgameblender_ketsji.la
 
 libgameblender_ketsji_la_SOURCES = \
 	KX_CDActuator.cpp \

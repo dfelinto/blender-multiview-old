@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_readblenfile.la
+noinst_LTLIBRARIES = libblender_readblenfile.la
 
 libblender_readblenfile_la_SOURCES = \
 	intern/BLO_readblenfile.c \

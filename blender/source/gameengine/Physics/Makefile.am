@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_physics.la
+noinst_LTLIBRARIES = libgameblender_physics.la
 
 #there are some test prgrams under sumo/fuzzics/sample directory... if anyome wants to build them they should modify this file
 

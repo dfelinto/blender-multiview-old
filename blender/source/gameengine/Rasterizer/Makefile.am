@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_rasterizer.la
+noinst_LTLIBRARIES = libgameblender_rasterizer.la
 
 libgameblender_rasterizer_la_SOURCES = \
 	RAS_BucketManager.cpp \

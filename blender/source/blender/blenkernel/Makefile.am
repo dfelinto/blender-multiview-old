@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_blenkernel.la
+noinst_LTLIBRARIES = libblender_blenkernel.la
 
 libblender_blenkernel_la_SOURCES = \
 	intern/constraint.c \

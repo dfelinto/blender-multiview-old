@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_blenpluginapi.la
+noinst_LTLIBRARIES = libblender_blenpluginapi.la
 
 libblender_blenpluginapi_la_SOURCES = \
 		intern/pluginapi.c

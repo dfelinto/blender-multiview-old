@@ -76,6 +76,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
+LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
@@ -153,7 +154,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-noinst_LIBRARIES = libblender_bpython.la
+noinst_LTLIBRARIES = libblender_bpython.la
 
 libblender_bpython_la_SOURCES = \
 	intern/BPY_constobject.c \
@@ -196,9 +197,9 @@ subdir = source/blender/bpython
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
-LIBRARIES = $(noinst_LIBRARIES)
+LTLIBRARIES = $(noinst_LTLIBRARIES)
 
-libblender_bpython_la_AR = $(AR) cru
+libblender_bpython_la_LDFLAGS =
 libblender_bpython_la_LIBADD =
 am_libblender_bpython_la_OBJECTS = BPY_constobject.lo opy_draw.lo \
 	opy_matrix.lo BPY_csg.lo BPY_object.lo opy_nmesh.lo \
@@ -244,10 +245,14 @@ $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
-AR = ar
-
-clean-noinstLIBRARIES:
-	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" = "$$p" && dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
 BPY_constobject.lo: intern/BPY_constobject.c
 opy_draw.lo: intern/opy_draw.c
 opy_matrix.lo: intern/opy_matrix.c
@@ -268,9 +273,7 @@ opy_blender.lo: intern/opy_blender.c
 opy_datablock.lo: intern/opy_datablock.c
 BPY_main.lo: intern/BPY_main.c
 libblender_bpython.la: $(libblender_bpython_la_OBJECTS) $(libblender_bpython_la_DEPENDENCIES) 
-	-rm -f libblender_bpython.la
-	$(libblender_bpython_la_AR) libblender_bpython.la $(libblender_bpython_la_OBJECTS) $(libblender_bpython_la_LIBADD)
-	$(RANLIB) libblender_bpython.la
+	$(LINK)  $(libblender_bpython_la_LDFLAGS) $(libblender_bpython_la_OBJECTS) $(libblender_bpython_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -1056,7 +1059,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES)
+all-am: Makefile $(LTLIBRARIES)
 
 installdirs:
 
@@ -1086,7 +1089,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstLIBRARIES \
+clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -1132,7 +1135,7 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstLIBRARIES ctags distclean \
+	clean-libtool clean-noinstLTLIBRARIES ctags distclean \
 	distclean-compile distclean-depend distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am info \
 	info-am install install-am install-data install-data-am \

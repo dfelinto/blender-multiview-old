@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_readstreamglue.la
+noinst_LTLIBRARIES = libblender_readstreamglue.la
 
 libblender_readstreamglue_la_SOURCES = \
 	intern/BLO_keyStore.c \

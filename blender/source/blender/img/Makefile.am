@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_img.la
+noinst_LTLIBRARIES = libblender_img.la
 
 libblender_img_la_SOURCES = \
 	intern/IMG_Api.cpp \

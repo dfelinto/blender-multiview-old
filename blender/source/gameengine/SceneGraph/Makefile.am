@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_scenegraph.la
+noinst_LTLIBRARIES = libgameblender_scenegraph.la
 
 libgameblender_scenegraph_la_SOURCES = \
 	SG_Controller.cpp \

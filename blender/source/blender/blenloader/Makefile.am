@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_blenloader.la
+noinst_LTLIBRARIES = libblender_blenloader.la
 
 libblender_blenloader_la_SOURCES = \
 	intern/genfile.c \

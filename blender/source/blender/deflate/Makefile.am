@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_deflate.la
+noinst_LTLIBRARIES = libblender_deflate.la
 
 libblender_deflate_la_SOURCES = \
 	intern/BLO_deflate.c

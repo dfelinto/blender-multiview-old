@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_blendersrc.la
+noinst_LTLIBRARIES = libblender_blendersrc.la
 
 libblender_blendersrc_la_SOURCES = \
 	editconstraint.c \

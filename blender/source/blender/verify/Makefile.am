@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_verify.la
+noinst_LTLIBRARIES = libblender_verify.la
 
 libblender_verify_la_SOURCES = \
 	intern/BLO_verify.c

@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_writestreamglue.la
+noinst_LTLIBRARIES = libblender_writestreamglue.la
 
 libblender_writestreamglue_la_SOURCES = \
 	intern/BLO_dumpFromMemory.c \

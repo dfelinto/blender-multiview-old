@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_imbuf.la
+noinst_LTLIBRARIES = libblender_imbuf.la
 
 libblender_imbuf_la_SOURCES = \
 	intern/allocimbuf.c \

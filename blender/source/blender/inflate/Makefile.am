@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_inflate.la
+noinst_LTLIBRARIES = libblender_inflate.la
 
 libblender_inflate_la_SOURCES = \
 	intern/BLO_inflate.c

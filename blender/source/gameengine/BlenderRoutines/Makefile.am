@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_routines.la
+noinst_LTLIBRARIES = libgameblender_routines.la
 
 
 libgameblender_routines_la_SOURCES = \

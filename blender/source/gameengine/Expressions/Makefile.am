@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_expressions.la
+noinst_LTLIBRARIES = libgameblender_expressions.la
 
 libgameblender_expressions_la_SOURCES = \
 	BoolValue.cpp \

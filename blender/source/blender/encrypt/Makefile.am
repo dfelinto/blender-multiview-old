@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_encrypt.la
+noinst_LTLIBRARIES = libblender_encrypt.la
 
 libblender_encrypt_la_SOURCES = \
 	intern/BLO_encrypt.c

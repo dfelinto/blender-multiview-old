@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_gamelogic.la
+noinst_LTLIBRARIES = libgameblender_gamelogic.la
 
 libgameblender_gamelogic_la_SOURCES = \
 	SCA_ANDController.cpp \

@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_blenlib.la
+noinst_LTLIBRARIES = libblender_blenlib.la
 
 libblender_blenlib_la_SOURCES = \
 	intern/arithb.c \

@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_converter.la
+noinst_LTLIBRARIES = libgameblender_converter.la
 
 libgameblender_converter_la_SOURCES = \
 	BL_ActionActuator.cpp \

@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libgameblender_network.la
+noinst_LTLIBRARIES = libgameblender_network.la
 
 libgameblender_network_la_SOURCES = \
 	NG_NetworkMessage.cpp \

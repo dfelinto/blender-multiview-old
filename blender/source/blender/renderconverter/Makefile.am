@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_renderconverter.la
+noinst_LTLIBRARIES = libblender_renderconverter.la
 
 libblender_renderconverter_la_SOURCES = \
 	intern/convertBlenderScene.c

@@ -1,4 +1,4 @@
-noinst_LTLIBRARIES = libblendercreator.la
+noinst_LTLTLIBRARIES = libblendercreator.la
 
 libblendercreator_la_SOURCES = \
 	buildinfo.c \

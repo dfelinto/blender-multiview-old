@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_avi.la
+noinst_LTLIBRARIES = libblender_avi.la
 
 libblender_avi_la_SOURCES= \
 	intern/avi.c \

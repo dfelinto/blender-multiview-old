@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_render.la
+noinst_LTLIBRARIES = libblender_render.la
 
 libblender_render_la_SOURCES = \
 	intern/source/RE_DummyShadowBuffer.cpp \

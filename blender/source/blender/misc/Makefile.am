@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_misc.la
+noinst_LTLIBRARIES = libblender_misc.la
 
 libblender_misc_la_SOURCES = \
 	blendertimer.c

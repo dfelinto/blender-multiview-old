@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_sign.la
+noinst_LTLIBRARIES = libblender_sign.la
 
 libblender_sign_la_SOURCES = \
 	intern/BLO_sign.c

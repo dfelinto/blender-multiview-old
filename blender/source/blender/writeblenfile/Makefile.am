@@ -1,4 +1,4 @@
-noinst_LIBRARIES = libblender_writeblenfile.la
+noinst_LTLIBRARIES = libblender_writeblenfile.la
 
 libblender_writeblenfile_la_SOURCES = \
 	intern/BLO_writeblenfile.c
