@@ -2,7 +2,7 @@ noinst_LTLIBRARIES = libblender_yafrayexport.la
 
 LIBS =
 
-libblender_yafrayexport_la_CFLAGS = -Wall
+libblender_yafrayexport_la_CXXFLAGS = -Wall
 
 libblender_yafrayexport_la_SOURCES = intern/yafray_Render.cpp \
 intern/yafray_Render.h \
