@@ -162,7 +162,7 @@ dnl ----------------------
   )
 
 #Python!
-  AM_PATH_PYTHON(1.5)
+  AM_PATH_PYTHON(2.0)
 #Find out what path to use for python.
 python_sysprefix=`echo "import sys; print sys.prefix" | python -`
 
