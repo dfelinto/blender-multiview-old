@@ -1261,7 +1261,7 @@ void makebevelcurve(Object *ob, ListBase *disp)
 		BLI_addtail(disp, dl);
 		dl->type= DL_SEGM;
 		dl->parts= 1;
-		dl->flag= DL_FRONT_CURVE;
+		dl->flag= DL_BACK_CURVE;
 		dl->nr= nr;
 
 		/* half a circle */
@@ -1302,7 +1302,7 @@ void makebevelcurve(Object *ob, ListBase *disp)
 		dl->verts= MEM_mallocN(nr*3*sizeof(float), "makebevelcurve p3");
 		BLI_addtail(disp, dl);
 		dl->type= DL_SEGM;
-		dl->flag= DL_BACK_CURVE;
+		dl->flag= DL_FRONT_CURVE;
 		dl->parts= 1;
 		dl->nr= nr;
 		
