@@ -4027,7 +4027,6 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "THREAD_SAFE USE_DOUBLES QHULL _LIB NDEBUG USE_SUMO_SOLID";
 				INSTALL_PATH = /usr/local/lib;
 				LIBRARY_STYLE = STATIC;
-				OPTIMIZATION_CFLAGS = "";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -4290,7 +4289,6 @@
 				GCC_PREPROCESSOR_DEFINITIONS = "NDEBUG USE_SUMO_SOLID _THREAD_SAFE";
 				INSTALL_PATH = /usr/local/lib;
 				LIBRARY_STYLE = STATIC;
-				OPTIMIZATION_CFLAGS = "";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -4798,6 +4796,7 @@
 				A34CC77B07E3889600AD7C17,
 				A34CC77C07E3889600AD7C17,
 				A34CC77D07E3889600AD7C17,
+				A39CCA9007F7787F004B987A,
 				A34CC77E07E3889600AD7C17,
 				A34CC77F07E3889600AD7C17,
 				A34CC78007E3889600AD7C17,
@@ -5273,6 +5272,7 @@
 		};
 		A34CC7A007E3889600AD7C17 = {
 			children = (
+				A39CCA8C07F77854004B987A,
 				A397AC9C07EEA36500D1D9FB,
 				A397AC9D07EEA36500D1D9FB,
 				A397AC9E07EEA36500D1D9FB,
@@ -22467,6 +22467,30 @@
 				COMPILER_FLAGS = "-I../../extern/solid";
 			};
 		};
+		A39CCA8C07F77854004B987A = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = DerivedMesh.c;
+			path = ../../source/blender/blenkernel/intern/DerivedMesh.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A39CCA8D07F77855004B987A = {
+			fileRef = A39CCA8C07F77854004B987A;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A39CCA9007F7787F004B987A = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = BKE_DerivedMesh.h;
+			path = ../../source/blender/blenkernel/BKE_DerivedMesh.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
 		A3B35CCC07E4ED5D00AE0C8B = {
 			fileEncoding = 5;
 			isa = PBXFileReference;
@@ -23229,6 +23253,7 @@
 				A397ACA107EEA36500D1D9FB,
 				A397F55A07F5B14100AFAB73,
 				A397F56607F5B1CE00AFAB73,
+				A39CCA8D07F77855004B987A,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
