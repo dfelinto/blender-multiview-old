@@ -507,10 +507,6 @@ SOURCE=..\..\..\source\blender\src\toolbox.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\..\source\blender\src\transform.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\..\..\source\blender\src\unwrapper.c
 # End Source File
 # Begin Source File
