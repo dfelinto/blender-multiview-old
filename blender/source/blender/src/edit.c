@@ -1185,11 +1185,13 @@ void mergemenu(void)
 		    snap_to_center();
 		    notice("Removed: %d", removedoublesflag(1, doublimit));
 		    allqueue(REDRAWVIEW3D, 0);
+		    countall();
 		    break;
 	    case 2: /*Merge at Cursor*/
 		    snap_sel_to_curs();
 		    notice("Removed: %d", removedoublesflag(1, doublimit));
 		    allqueue(REDRAWVIEW3D, 0);
+		    countall();
 		    break;
 	}
 
