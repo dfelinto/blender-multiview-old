@@ -84,7 +84,6 @@ sub InitVars {
     $BuildDepend = 1;	# depend or clobber
     $ReportStatus = 1;  # Send results to server or not
     $BuildOnce = 0;     # Build once, don't send results to server
-    $BuildClassic = 0;  # Build classic source
     $BuildAutotools = 0;# Build with the autotools
     $BuildType = 'traditional'; # Description for the traditional build
 
@@ -123,7 +122,7 @@ sub InitVars {
     $CVSCO = 'co -P';
 
     # Set these proper values for your tinderbox server
-    $Tinderbox_server = 'tinderbox@xserve.blender.org';
+	$Tinderbox_server = 'tinderbox@xserve.blender.org';
 
     # These shouldn't really need to be changed
     $BuildSleep = 60; # Minimum wait period from start of build to start
@@ -131,7 +130,7 @@ sub InitVars {
     $BuildTree = '';
     $BuildTag = '';
     $BuildName = '';
-    $Topsrcdir = 'blender/source';
+    $Topsrcdir = 'blender';
     $Topinterndir = 'blender/intern';
     $BuildObjDir = '';
     $BuildObjName = '';
@@ -142,27 +141,22 @@ sub InitVars {
 } #EndSub-InitVars
 
 sub ConditionalArgs {
-    if ( $BuildClassic ) {
-    } else {
-		$BuildTree = 'source';
-		if ($UNAME eq 'Darwin') {
-			$FE = 'blenderplayer,blendercreator,blenderpublisher'; 
-#		} elsif ($UNAME eq 'Linux') {
-#			$FE = 'blendercreator,Dblendercreator,blenderpublisher,Dblenderpublisher,blenderplugin,blenderpluginXPCOM'; 
-		} else {
-			$FE = 'blendercreator'; 
-		}
-		$BuildModule = 'blender';
-    }
+	$BuildTree = 'source';
+	if ($UNAME eq 'Darwin') {
+		$FE = 'blenderplayer,blendercreator,blenderpublisher'; 
+#	} elsif ($UNAME eq 'Linux') {
+#		$FE = 'blendercreator,Dblendercreator,blenderpublisher,Dblenderpublisher,blenderplugin,blenderpluginXPCOM'; 
+	} else {
+		$FE = 'blendercreator'; 
+	}
+	$BuildModule = 'blender';
+
     $CVSCO .= " -r $BuildTag" if ( $BuildTag ne '');
 } #EndSub-ConditionalArgs
 
 sub SetupEnv {
     umask(0);
     $ENV{"CVSROOT"} = ':pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender';
-    $ENV{"NANBLENDERHOME"} = "$ENV{'HOME'}/develop/blender";
-    $ENV{"SRCHOME"} = "$ENV{'HOME'}/develop/blender/source";
-    $ENV{"MAKEFLAGS"} = "-w -I $ENV{'SRCHOME'} --no-print-directory";
 } #EndSub-SetupEnv
 
 sub SetupPath {
@@ -299,15 +293,11 @@ sub BuildIt {
 	$BuildStatus = 0;
 
     mkdir("develop", 0777);
-    mkdir("obj", 0777);
     chdir("develop") || die "Couldn't enter develop";
 
-	if ( $BuildClassic ) {
-	} else {
-	    print"$CVS $CVSCO $BuildModule\n";
-	    print LOG "$CVS $CVSCO $BuildModule\n";
-	    open (PULL, "$CVS $CVSCO $BuildModule 2>&1 |") || die "open: $!\n";
-	}
+	print"$CVS $CVSCO $BuildModule\n";
+	print LOG "$CVS $CVSCO $BuildModule\n";
+	open (PULL, "$CVS $CVSCO $BuildModule 2>&1 |") || die "open: $!\n";
 	while (<PULL>) {
 	    print $_;
 	    print LOG $_;
@@ -354,30 +344,14 @@ sub BuildIt {
 		system("./bootstrap");
 		$Topsrcdir = $BuildObjName;
 		mkdir($Topsrcdir, 0777);
-		chdir($Topsrcdir) || die "chdir($Topsrcdir): $1\n";
+		chdir($Topsrcdir) || die "chdir($Topsrcdir): $!\n";
 		print `pwd` . " -> chdir($Topsrcdir)\n";
 		system("../blender/configure");
-	} else {
-	chdir($Topinterndir) || die "chdir($Topinterndir): $!\n";
-	print `pwd` . " -> chdir($Topinterndir)\n";
-
-	my $MakeCmd = "$Make MAKE='$Make' all 2>&1";
-	print "$MakeCmd\n";
-	print LOG "$MakeCmd |\n";
-	open(BUILD, "$MakeCmd |\n");
-	while (<BUILD>) {
-	    print $_;
-	    print LOG $_;
 	}
-	close(BUILD);
-
-	chdir("$StartDir") || die "Couldn't enter $StartDir";
-    	chdir("develop") || die "Couldn't enter develop";
-
+	
 	chdir($Topsrcdir) || die "chdir($Topsrcdir): $!\n";
 	print `pwd` . " -> chdir($Topsrcdir)\n";
-	}
-
+	
 	@felist = split(/,/, $FE);
 
 	foreach $fe ( @felist ) {	    
@@ -387,19 +361,16 @@ sub BuildIt {
 		}
 	}
 
-	if ($BuildClassic) {
-	} else {
-		#my $MakeCmd = "$Make MAKE='$Make' all 2>&1 && $Make MAKE='$Make' debug 2>&1 && $Make MAKE='$Make' release 2>&1";
-		my $MakeCmd = "$Make MAKE='$Make' all 2>&1";
-		print "$MakeCmd\n";
-		print LOG "$MakeCmd |\n";
-		open(BUILD, "$MakeCmd |\n");
-		while (<BUILD>) {
-		    print $_;
-		    print LOG $_;
-		}
-		close(BUILD);
+	#my $MakeCmd = "$Make MAKE='$Make' all 2>&1 && $Make MAKE='$Make' debug 2>&1 && $Make MAKE='$Make' release 2>&1";
+	my $MakeCmd = "$Make MAKE='$Make' all 2>&1";
+	print "$MakeCmd\n";
+	print LOG "$MakeCmd |\n";
+	open(BUILD, "$MakeCmd |\n");
+	while (<BUILD>) {
+		print $_;
+		print LOG $_;
 	}
+	close(BUILD);
 
 	$AllBuildStatusStr = 'success';
 	foreach $fe (@felist) {
