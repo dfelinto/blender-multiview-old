@@ -66,7 +66,7 @@ $Hostname = hostname();
 $Hostname =~ s/\..*$//;
 
 $SEMA = "$Home/.tinderpid";
-$VERSION = "2.000";
+$VERSION = '$Revision$';
 $UNAME = `uname`;
 chomp($UNAME);
 
@@ -294,6 +294,9 @@ sub BuildIt {
 	print "New BuildIt loop opening $logfile\n";
 	open( LOG, ">$logfile" ) || print "can't open $?\n";
 
+    print "Using tinderbox-blender version : $VERSION\n";
+    print LOG "Using tinderbox-blender version : $VERSION\n";
+	
     print "Starting dir is : $StartDir\n";
     print LOG "Starting dir is : $StartDir\n";
 
@@ -553,6 +556,7 @@ sub BuildIt {
 
 	open(LOG, "$logfile") || die "Couldn't open logfile: $!\n";
 
+	$Message = '';
 	while (<LOG>) {
 		for ($q=0;;$q++) {
 			$val = $q * 1000;
