@@ -4,8 +4,8 @@
 AC_PREREQ(2.57)
 AC_INIT(SOLID, 3.5)
 AC_CONFIG_SRCDIR([include/SOLID.h])
-AC_CONFIG_HEADER([include/config.h])
 AM_INIT_AUTOMAKE
+AM_CONFIG_HEADER([include/config.h])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -56,8 +56,18 @@ fi
 AC_CHECK_LIB([glut], [glutInit])
 
 # Checks for libraries.
+AC_ARG_WITH(qhull,
+    AC_HELP_STRING([--with-qhull[=PFX]],[Path to QHull library]),
+[       if test $withval != "yes"; then
+          if test -f $withval/include/qhull/qhull_a.h; then
+              LDFLAGS="$LDFLAGS -L$withval/lib"
+              CPPFLAGS="$CPPFLAGS -I$withval/include"
+          fi
+        fi
+])
+
 AC_CHECK_HEADERS(qhull/qhull_a.h)
-AC_CHECK_LIB(qhull, qh_qhull, s_have_qhull=yes)
+AC_CHECK_LIB(qhull, qh_qhull, s_have_qhull=yes,, "-lm")
 if test "X${s_have_qhull}" = Xyes; then
   QHULL_LIBS="-lqhull"
 else

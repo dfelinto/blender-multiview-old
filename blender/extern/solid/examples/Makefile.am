@@ -9,10 +9,10 @@ mnm_SOURCES = mnm.cpp
 
 GLLIBS = -lglut -lGLU -lGL -L/usr/X11R6/lib -lXmu -lXi -lX11
 
-sample_LDADD = ../src/libsolid.la  
-gldemo_LDADD = ../src/libsolid.la $(GLLIBS)
-physics_LDADD = dynamics/libdynamics.la ../src/libsolid.la $(GLLIBS)
-mnm_LDADD = dynamics/libdynamics.la ../src/libsolid.la $(GLLIBS)
+sample_LDADD = ../src/libsolid.la $(QHULL_LIBS)
+gldemo_LDADD = ../src/libsolid.la $(QHULL_LIBS) $(GLLIBS)
+physics_LDADD = dynamics/libdynamics.la ../src/libsolid.la $(QHULL_LIBS) $(GLLIBS)
+mnm_LDADD = dynamics/libdynamics.la ../src/libsolid.la $(QHULL_LIBS) $(GLLIBS)
 
 AM_CPPFLAGS = -Idynamics
 
