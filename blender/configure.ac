@@ -9,9 +9,9 @@ dnl --------------------
 dnl AC/AM Initialization
 dnl --------------------
 
-  AC_INIT(blender-creator, 2.26, )
+  AC_INIT(blender-creator, 2.27, )
   AC_CANONICAL_SYSTEM
-  AM_INIT_AUTOMAKE([blender-creator], [2.26])
+  AM_INIT_AUTOMAKE([$PACKAGE_NAME], [$PACKAGE_VERSION])
 
 dnl check for the platform make
 AC_PATH_PROGS(U_MAKE, gmake gnumake, make)
@@ -432,7 +432,6 @@ AC_CONFIG_FILES([source/blender/decrypt/Makefile
 		source/blender/readstreamglue/Makefile
 		source/blender/render/Makefile
 		source/blender/renderconverter/Makefile
-		source/blender/verify/Makefile
 		source/blender/writeblenfile/Makefile
 		source/blender/writestreamglue/Makefile
 		source/blender/quicktime/Makefile

@@ -14,7 +14,7 @@ endif
 
 LIBS =
 
-SUBDIRS = blenloader deflate inflate encrypt decrypt verify \
+SUBDIRS = blenloader deflate inflate encrypt decrypt \
 	writestreamglue readstreamglue writeblenfile readblenfile \
 	avi imbuf img render radiosity blenlib blenkernel blenpluginapi \
 	$(blenpythondir) makesdna src renderconverter $(quicktimedir)
