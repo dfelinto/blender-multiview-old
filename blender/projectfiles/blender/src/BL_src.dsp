@@ -291,6 +291,10 @@ SOURCE=..\..\..\source\blender\src\editmesh_tools.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\source\blender\src\editmode_undo.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\source\blender\src\editnla.c
 # End Source File
 # Begin Source File
@@ -503,6 +507,10 @@ SOURCE=..\..\..\source\blender\src\toolbox.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\..\source\blender\src\transform.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\..\source\blender\src\unwrapper.c
 # End Source File
 # Begin Source File
@@ -552,6 +560,10 @@ SOURCE=..\..\..\source\blender\include\BIF_editfont.h
 # Begin Source File
 
 SOURCE=..\..\..\source\blender\include\BIF_editmesh.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\..\source\blender\include\BIF_editmode_undo.h
 # End Source File
 # Begin Source File
 
