@@ -20,17 +20,21 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-# The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
-# All rights reserved.
-#
-# The Original Code is: all of this file.
+# The Original Code is http://lxr.mozilla.org/mozilla/source/webtools/tinderbox/examples/mozilla-unix.pl
 #
 # Contributor(s): Hans Lambermont
 #
 # ***** END GPL/BL DUAL LICENSE BLOCK *****
 #
-# based on cvs:mozilla/webtools/tinderbox/examples/mozilla-unix.pl
-# Note: install this script from intern/tools/tinderbox
+# Initial Installation Instructions :
+# 1) make a useraccount named 'tinderbox'
+# 2) copy this script to ~tinderbox/
+# 3) su - tinderbox
+# 4) touch .cvspass
+# 5) setenv CVSROOT :pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender
+# 6) cvs login (password is anonymous)
+# And from then on just :
+# 7) ./tinderbox-blender.pl
 
 require 5.000;
 
@@ -143,7 +147,7 @@ sub InitVars {
     $ReportStatus = 1;  # Send results to server or not
     $BuildOnce = 0;     # Build once, don't send results to server
     $BuildAutotools = 0;# Build with the autotools
-    $BuildType = 'traditional'; # Description for the traditional build
+    $BuildType = 'trad'; # Description for the traditional build
 
     #relative path to binary
 	if ($UNAME eq 'Darwin') {
@@ -162,8 +166,12 @@ sub InitVars {
 	}
 	if ($BuildAutotools) {
 		$BinaryName{'blenderdynamic'} = 'blender';
-		$BuildType = 'autotoolized';
+		$BuildType = 'auto';
 	}
+	# append version to BuildType
+	my $BTVersion = $VERSION;
+	$BTVersion =~ s/^.*\d+\.(\d+).*$/$1/;
+	$BuildType .= ".$BTVersion";
 
     # Set these to what makes sense for your system
 	if ($UNAME eq 'FreeBSD') {
