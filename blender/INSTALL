@@ -1,7 +1,13 @@
 This file is to help you get started using the source and will hopefully
 answer most questions.  If you do have any problems with these instructions,
-post a message to the Forums on www.blender.org, or visit us at #blendersauce
+post a message to the Forums on www.blender.org, or visit us at #blendercoders
 on irc.freenode.net
+
+The build documentation is also available through the website:
+
+http://www.blender3d.org/cms/Building_Blender.117.0.html
+
+This should have the most up-to-date build documentation at all times.
 
 
 Here are some links to external packages you may or may not need:
@@ -50,21 +56,16 @@ FTGL needs a small patch to get glyphs with the right colour in the cache
 
 You may also need to modify the typedef for GLUTesselatorFunction in 
 src/FTVectoriser.cpp if you are on an undefined system.  To do that
-check the following link to find out various platform identifiers.
-http://www.blender.org/modules/documentation/intranet/conventions/codingstyleguide.html#3_2
+check the following link to find out various platform identifiers:
+http://www.blender3d.org/cms/Names.146.0.html#299
 
 
 
 *********************************************************************
 *********************************************************************
 
-There are three build systems for unixy platforms, the old NaN Makefiles,
-and the automake/autoconf configure style one, and the brand new SCons
-based system.
-
-configure will scribble over the NaN Makefiles if you run it directly
-from the blender top dir, so don't do that. Follow the instructions in
-doc/autoconfig.txt instead, and invoke it from it's own object-directory.
+There are two build systems for unixy platforms, the old NaN Makefiles 
+and the brand new SCons-based system.
 
 The NaN system is best understood, if you want to use the configure system,
 please help improve it. SCons has been added as a new build system for
@@ -78,6 +79,7 @@ build system.
 
 
 --------------Basic Makefile TIPS---------------------------------------
+
 Edit source/nan_definitions.mk to fit your environment, be sure to edit the
 block matching your OS. You will want to change variables like 
 NAN_JPEG, NAN_PNG etc. to point to where you have those installed.
@@ -195,12 +197,9 @@ BUILDING BLENDER
 Open the workspace $NANBLENDERHOME/projectfiles/blender/blender.dsw or the
 solution $NANBLENDERHOME/projectfiles_vc7/blender/blender.sln
 
-This contains the following three main projects:
 blender           Builds the main executable
-GP_ghost          Builds the stand-alone game player
-GP_axctl          Builds the ActiveX control
 
-Choose the project you want to build and hit F7. If all is well it should build
+Choose the project blender and hit F7. If all is well it should build
 with a lot of warnings but no errors.
 
 BUILDING/DOWNLOADING EXTERNAL LIBRARIES
