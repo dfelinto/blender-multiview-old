@@ -18,6 +18,7 @@ PyCFunction_GetFlags
 PyCFunction_GetFunction
 PyCFunction_GetSelf
 PyCFunction_New
+PyCFunction_NewEx
 PyCFunction_Type
 PyCObject_AsVoidPtr
 PyCObject_FromVoidPtr
