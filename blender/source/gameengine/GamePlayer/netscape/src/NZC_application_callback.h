@@ -34,6 +34,10 @@
 #ifndef PLA_APPLICATION_CALLBACK_H
 #define PLA_APPLICATION_CALLBACK_H
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "PLG_plugin_handles.h"
 
 #ifdef __cplusplus

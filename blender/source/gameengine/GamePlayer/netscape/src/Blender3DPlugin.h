@@ -6,6 +6,10 @@
 #ifndef _Blender3DPlugin_H_
 #define _Blender3DPlugin_H_
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */

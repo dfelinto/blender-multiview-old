@@ -45,6 +45,10 @@
 #ifndef _NPAPI_H_
 #define _NPAPI_H_
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __OS2__
 #pragma pack(1)
 #endif

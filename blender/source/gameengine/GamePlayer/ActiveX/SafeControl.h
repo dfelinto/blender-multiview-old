@@ -10,6 +10,10 @@
 #include "comcat.h"
 #include "objsafe.h"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 HRESULT CreateComponentCategory(CATID catid, WCHAR* catDescription);
 HRESULT RegisterCLSIDInCategory(REFCLSID clsid, CATID catid);
 HRESULT UnRegisterCLSIDInCategory(REFCLSID clsid, CATID catid);

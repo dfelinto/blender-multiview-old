@@ -37,6 +37,10 @@
 #include "PLG_plugin_handles.h"
 #include <X11/Xlib.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -46,6 +46,10 @@
 #ifndef _NPUPP_H_
 #define _NPUPP_H_
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #if defined(__OS2__)
 #pragma pack(1)
 #endif

@@ -34,6 +34,10 @@
 
 #include "MemoryResource.h"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 /**
  * This memory resource reads images from the application resources.
  * Images are expected to be stored as raw RGBA bytes.

@@ -38,6 +38,10 @@
 #include "PLG_plugin_handles.h"
 #include "prthread.h"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 /**********************************
  * Begin Blender include block
  **********************************/

@@ -35,6 +35,10 @@
 #ifndef PLB_SCRIPT_BINDINGS_H
 #define PLB_SCRIPT_BINDINGS_H
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
