@@ -46,7 +46,8 @@ endif
 ## Assuming no reason to build creator anymore lets just call publisher blender
 if CARBON
 
-blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config -framework OpenGL -framework AGL -framework Carbon
+blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config @LIBM@ \
+				  -framework OpenGL -framework AGL -framework Carbon
 
 blender_SOURCES =
 
@@ -86,7 +87,7 @@ bundle:
 else
 
 blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
-         $(X_LIBS)
+         @LIBM@ $(X_LIBS)
 
 blender_SOURCES =
 

@@ -275,6 +275,8 @@ dnl  AC_FUNC_REALLOC
 dnl --------------------------
 dnl Checks for extra libraries
 dnl --------------------------
+  AC_CHECK_LIBM  dnl Use libtool.m4's provided macro to get the math library 
+  AC_SUBST(LIBM)
   AC_CHECK_LIB([z], [gzopen])
   AC_LANG_PUSH([C++])
   AC_CHECK_LIB([stdc++], [printf]) dnl  Zarquon's knees, this is an evil hack.
@@ -285,7 +287,6 @@ dnl --------------------------
   AC_CHECK_LIB([crypto], [CRYPTO_lock])
   AC_CHECK_LIB([png], [png_get_header_version])
   AC_CHECK_LIB([jpeg], [jpeg_destroy])
-  AC_CHECK_LIB([m], [acos])
   AC_CHECK_LIB([util], [openpty])
   AC_CHECK_LIB([SDL], [SDL_Init])
 if test x"$enable_gameblender" = x"yes"; then
