@@ -100,7 +100,12 @@ all debug::
     export NAN_ZLIB ?= $(LCGDIR)/zlib
     export NAN_NSPR ?= $(LCGDIR)/nspr
     export NAN_FREETYPE ?= $(LCGDIR)/freetype
-    export NAN_GETTEXT ?= $(LCGDIR)/gettext	
+    export NAN_GETTEXT ?= $(LCGDIR)/gettext
+	ifeq ($(FREE_WINDOWS), true)
+      export NAN_FTGL ?= $(LCGDIR)/gcc/ftgl
+    else
+      export NAN_FTGL ?= $(LCGDIR)/ftgl
+    endif
 	export NAN_SDLLIBS ?= $(shell sdl-config --libs)
 	export NAN_SDLCFLAGS ?= $(shell sdl-config --cflags)
 
@@ -398,7 +403,6 @@ all debug::
       export NAN_PYTHON_BINARY ?= $(NAN_PYTHON)/bin/python$(NAN_PYTHON_VERSION)
       export NAN_FREETYPE ?= $(LCGDIR)/gcc/freetype
       export NAN_ODE ?= $(LCGDIR)/gcc/ode
-      export NAN_FTGL ?= $(LCGDIR)/gcc/ftgl
       ifeq ($(NAN_SDL),)
 	      export NAN_SDL = $(LCGDIR)/gcc/sdl
 		  export NAN_SDLCFLAGS = -I$(NAN_SDL)/include
@@ -407,7 +411,6 @@ all debug::
       export NAN_PYTHON_BINARY ?= python
       export NAN_FREETYPE ?= $(LCGDIR)/freetype
       export NAN_ODE ?= $(LCGDIR)/ode
-	  export NAN_FTGL ?= $(LCGDIR)/ftgl
       ifeq ($(NAN_SDL),)
 	      export NAN_SDL = $(LCGDIR)/sdl
 		  export NAN_SDLCFLAGS = -I$(NAN_SDL)/include
