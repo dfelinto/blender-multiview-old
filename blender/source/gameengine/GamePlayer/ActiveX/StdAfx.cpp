@@ -35,3 +35,8 @@
 //  stdafx.obj will contain the pre-compiled type information
 
 #include "stdafx.h"
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+

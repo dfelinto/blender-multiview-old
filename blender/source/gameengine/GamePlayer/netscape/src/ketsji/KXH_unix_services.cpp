@@ -32,6 +32,10 @@
  * where app = Ketjsi.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #if !defined(_WIN32) && !defined(__APPLE__)
 
 #include "SCA_IInputDevice.h"

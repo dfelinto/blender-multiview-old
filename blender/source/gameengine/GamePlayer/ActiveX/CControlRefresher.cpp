@@ -31,7 +31,9 @@
 
 #include "CControlRefresher.h"
 
-
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 CControlRefresher::CControlRefresher(COleControl* control, DWORD interval)
 {

@@ -34,6 +34,10 @@
 #include "stdafx.h"
 #include <mshtml.h> 
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 //#define AX_NO_SOUND
 
 #include "BlenderPlayer.h"

@@ -30,10 +30,11 @@
  */
 
 #include "stdafx.h"
-
-
 #include "SafeControl.h"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 ////////////////////////////////////////////////////////////////
 // Copied from the ActiveX SDK

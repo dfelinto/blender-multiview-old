@@ -31,6 +31,10 @@
  * Wrapper to communicate with a threaded application from the plugin.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #ifdef _WIN32
 
 #include "npwin.cpp"

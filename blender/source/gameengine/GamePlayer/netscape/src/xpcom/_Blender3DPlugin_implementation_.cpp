@@ -45,7 +45,9 @@
 #include "_Blender3DPlugin_implementation_.h"
 #include "PLB_script_bindings.h"
 
-//
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 static void _BI_log(const char* msg);
 

@@ -43,6 +43,10 @@
 #include <Resources.h>
 #include <ToolUtils.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #define XP_MAC 1
 
 //
