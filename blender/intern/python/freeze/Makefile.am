@@ -10,7 +10,9 @@ PYFILES = \
 	hello.py \
 	makeconfig.py \
 	makefreeze.py \
+	makefreeze_ac.py \
 	makemakefile.py \
+	makemakefile_ac.py \
 	modulefinder.py \
 	parsesetup.py \
 	winmakemakefile.py
@@ -19,7 +21,7 @@ EXTRA_DIST = $(top_srcdir)/intern/python/frozen/*.c README.NaN $(PYFILES)
 
 libfrozen.a: $(PYFILES)
 	@PYTHON@@PYTHON_VERSION@ -S -O \
-		$(top_srcdir)/intern/python/freeze/freeze.py -d -x os -x \
+		$(top_srcdir)/intern/python/freeze/freeze_ac.py -d -x os -x \
 		pprint -I $(SRCDIR) -o ../frozen $(SRCDIR)/VRMLmain.py
 #Or leave out @PYTHON@@PYTHON_VERSION@?
 	cd ../frozen && make && cd ../freeze
