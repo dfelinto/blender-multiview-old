@@ -37,6 +37,8 @@ require 5.000;
 use Cwd;
 use Mail::Send;
 use Sys::Hostname;
+use File::Compare;
+use File::Copy;
 #use strict;
 
 # config section variables
@@ -56,6 +58,7 @@ $UNAME = `uname`;
 chomp($UNAME);
 
 $Mymtime = 0;
+my $StartDir = "";
 
 sub justme {
 	if (open SEMA) {
@@ -131,7 +134,6 @@ sub InitVars {
     $BuildTag = '';
     $BuildName = '';
     $Topsrcdir = 'blender';
-    $Topinterndir = 'blender/intern';
     $BuildObjDir = '';
     $BuildObjName = '';
     $ConfigGuess = './blender/source/tools/guess/guessconfig';
@@ -214,8 +216,8 @@ sub GetSystemInfo {
 
 sub test_thesame {
 	my ($dev, $ino, $mode, $nlink, $uid, $gid, $rdev, $size, $atime,
-		$mtime, $ctime, $blksize, $blocks)
-		= stat($0) or die "cannot open $0: $!\n";
+		$mtime, $ctime, $blksize, $blocks) = stat("$StartDir/$0") or
+		die "test_thesame cannot open $StartDir/$0: $!\n";
 	if ( $Mymtime == 0 ) { $Mymtime = $mtime; }
 	#print "$Mymtime $mtime\n";
 	return 0 if ($Mymtime != $mtime);
@@ -224,12 +226,14 @@ sub test_thesame {
 
 sub BuildIt {
     my ($fe, @felist, $EarlyExit, $LastTime, $StartTimeStr);
-	my ($StartDir);
 	my ($DateNow, $hourmin);
 
     $StartDir = getcwd();
     $LastTime = 0;
     $EarlyExit = 0;
+
+	# Set Mymtime
+	test_thesame();
 
     while ( ! $EarlyExit ) {
 
@@ -269,14 +273,7 @@ sub BuildIt {
 	    sleep($SleepTime);
 	}
 
-	# done sleeping. check for script changes and if so restart script
-	if ( test_thesame() == 0 ) {
-		print "\n$0 changed, restart ourself. old pid = $$\n";
-		exec ($0, "") or die "Couldn't replace myself: $!\n";
-	} else {
-		print LOG "No $0 changes, mtime is $Mymtime\n";
-	}
-
+	# done sleeping.
 	$LastTime = time;
 	$StartTime = time - 60 * 10;
 	$StartTimeStr = &CVSTime($StartTime);
@@ -306,6 +303,38 @@ sub BuildIt {
 	}
 	close(PULL);
 
+    # Update ourselves from CVS for the next run, if we changed that is.
+	if ( -f "$StartDir/enableTinderboxAutoUpdate") {
+		my $CVS_Script = "blender/intern/tools/tinderbox/tinderbox-blender.pl";
+		my $diff = compare($CVS_Script, "$StartDir/$0");
+		if ($diff == 1) {
+			print "\n$CVS_Script changed in CVS, copy it over $StartDir/$0\n";
+			copy($CVS_Script, "$StartDir/$0");
+			# Let test_thesame act on this action lateron
+		} elsif ($diff == 0) {
+			my $line = "\n$0 did not change in CVS\n";
+			print $line;
+			print LOG $line;
+		} else {
+			my $line = "\n$0 compare error :-( auto-update offline\n";
+			print $line;
+			print LOG $line;
+		}
+    	# check for script changes and if so restart script
+        # This still works for multi-OS NFS mounted builds.
+    	if (test_thesame() == 0) {
+			chdir("$StartDir");
+    		print "\n$0 changed, restart ourself. old pid = $$\n";
+    		exec ("$0", "") or die "Couldn't replace myself: $!\n";
+    	} else {
+    		print LOG "No $StartDir/$0 changes, mtime is $Mymtime\n";
+    	}
+	} else {
+		my $line = "No $StartDir/enableTinderboxAutoUpdate found\n";
+		print $line;
+		print LOG $line;
+	}
+
 	# Set GuessConfig and ConfigGuess
 	print LOG "ConfigGuess = $ConfigGuess\n";
 	if ($BuildAutotools) {
@@ -324,7 +353,7 @@ sub BuildIt {
 	close (GETOBJ); 
 
 	# overwrite nanguess hint and cache
-	open (PUTOBJ, ">nanguess") || die "Cannot write nanguess: $!\n";
+	open (PUTOBJ, "> $StartDir/nanguess") || die "Cannot write nanguess: $!\n";
 	print PUTOBJ $GuessConfig;
 	close(PUTOBJ);
 
