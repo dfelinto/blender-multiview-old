@@ -3,32 +3,29 @@
 msgid ""
 msgstr ""
 ""
-"Last-Translator: Karlos <jiri.hnidek@vslib.cz>\n"
+"Last-Translator: jiri <jiri.hnidek@vslib.cz>\n"
 "PO-Revision-Date: 2003-05-16 20:22+0200\n"
 "Project-Id-Version: cz\n"
-"Language-Team: Český <cs@li.org>\n"
+"Language-Team: Czech <cs@li.org>\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-# Copyright (C) 2003 Free Software Foundation, Inc.
-# snts &lt;snutlix@hotmail.com&gt;, 2003.
-#
 ###########################################################
 ###
 ###  Render Window
 ###
 ###########################################################
 msgid "Start the rendering"
-msgstr "Spustit renderování"
+msgstr "Spustit renderovani"
 
 msgid "Display edge settings"
-msgstr "Zobrazit nastavení hran"
+msgstr "Zobrazit nastaveni hran"
 
 msgid "Enable shadow calculation"
-msgstr "Povolit výpočet stínů"
+msgstr "Povolit vypocet stinu"
 
 msgid "Start rendering a sequence"
-msgstr "Spustit renderování animace"
+msgstr "Spustit renderovani animace"
 
 ###########################################################
 ###
@@ -36,31 +33,31 @@ msgstr "Spustit renderování animace"
 ###
 ###########################################################
 msgid "ADD"
-msgstr "PŘIDAT"
+msgstr "PRIDAT"
 
 msgid "FILE"
 msgstr "SOUBOR"
 
 msgid "EDIT"
-msgstr "UPRAVIT"
+msgstr "UPRAVY"
 
 msgid "OBJECT"
 msgstr "OBJEKT"
 
 msgid "MESH"
-msgstr "PLÁŠŤ"
+msgstr "MESH"
 
 msgid "CURVE"
-msgstr "KŘIVKY"
+msgstr "KRIVKA"
 
 msgid "KEY"
-msgstr "KLÍČ"
+msgstr "KLIC"
 
 msgid "VIEW"
 msgstr "POHLED"
 
 msgid "RENDER"
-msgstr "RENDEROVÁNÍ"
+msgstr "RENDER"
 
 msgid "SEQUENCE"
 msgstr "ANIMACE"
@@ -71,13 +68,13 @@ msgstr "ANIMACE"
 ###
 ###########################################################
 msgid "QUIT BLENDER"
-msgstr "UKONČIT BLENDER"
+msgstr "UKONCIT BLENDER"
 
 msgid "Not allowed"
-msgstr "Není povoleno"
+msgstr "Neni povoleno"
 
 msgid "ERASE ALL"
-msgstr "SMAZAT VŠE"
+msgstr "SMAZAT VSE"
 
 ###########################################################
 ###
@@ -91,10 +88,10 @@ msgstr "SMAZAT VŠE"
 ###
 ###########################################################
 msgid "LOAD FILE"
-msgstr "NAČÍST SOUBOR"
+msgstr "NACIST SOUBOR"
 
 msgid "SAVE FILE"
-msgstr "ULOŽIT SOUBOR"
+msgstr "ULOZIT SOUBOR"
 
 ###########################################################
 ###
@@ -102,10 +99,10 @@ msgstr "ULOŽIT SOUBOR"
 ###
 ###########################################################
 msgid "Mesh"
-msgstr "Plášť"
+msgstr "Mesh"
 
 msgid "Curve"
-msgstr "Křivka"
+msgstr "Krivka"
 
 msgid "Surface"
 msgstr "Povrch"
@@ -128,7 +125,7 @@ msgstr "Armatura"
 ###
 ###########################################################
 msgid "&gt;Plane"
-msgstr "&gt;Čtverec"
+msgstr "&gt;Ctverec"
 
 msgid "&gt;Cube"
 msgstr "&gt;Krychle"
@@ -140,19 +137,19 @@ msgid "&gt;Icosphere"
 msgstr "&gt;IcoKoule"
 
 msgid "&gt;Cylinder"
-msgstr "&gt;Válec"
+msgstr "&gt;Valec"
 
 msgid "&gt;Tube"
 msgstr "&gt;Trubka"
 
 msgid "&gt;Cone"
-msgstr "&gt;Kužel"
+msgstr "&gt;Kuzel"
 
 msgid "&gt;Grid"
-msgstr "&gt;Mřížka"
+msgstr "&gt;Mrizka"
 
 msgid "&gt;Monkey"
-msgstr "&gt;Opička"
+msgstr "&gt;Opicka"
 
 ###########################################################
 ###
@@ -160,13 +157,13 @@ msgstr "&gt;Opička"
 ###
 ###########################################################
 msgid "&gt;Bezier Curve"
-msgstr "&gt;Bezierova Křivka"
+msgstr "&gt;Bezierova Krivka"
 
 msgid "&gt;Bezier Circle"
-msgstr "&gt;Bezierův Kruh"
+msgstr "&gt;Bezieruv Kruh"
 
 msgid "&gt;Nurbs Curve"
-msgstr "&gt;Nurbs Křivka"
+msgstr "&gt;Nurbs Krivka"
 
 msgid "&gt;Nurbs Circle"
 msgstr "&gt;Nurbs Kruh"
@@ -180,7 +177,7 @@ msgstr "&gt;Cesta"
 ###
 ###########################################################
 msgid "&gt;Curve"
-msgstr "&gt;Křivka"
+msgstr "&gt;Krivka"
 
 msgid "&gt;Circle"
 msgstr "&gt;Kruh"
@@ -200,37 +197,37 @@ msgstr "&gt;Prstenec"
 ###
 ###########################################################
 msgid "New"
-msgstr "Nový"
+msgstr "Novy"
 
 msgid "Open"
-msgstr "Otevřít"
+msgstr "Otevrit"
 
 msgid "Reopen Last"
-msgstr "Otevřít poslední"
+msgstr "Otevrit posledni"
 
 msgid "Append"
-msgstr "Přidat"
+msgstr "Pridat"
 
 msgid "Save As"
-msgstr "Uložit jako"
+msgstr "Ulozit jako"
 
 msgid "Save"
-msgstr "Uložit"
+msgstr "Ulozit"
 
 msgid "Save Image"
-msgstr "Uložit obrázek"
+msgstr "Ulozit obrazek"
 
 msgid "Save VRML"
-msgstr "Uložit jako VRML"
+msgstr "Ulozit jako VRML"
 
 msgid "Save DXF"
-msgstr "Uložit jako DXF"
+msgstr "Ulozit jako DXF"
 
 msgid "Save VideoScape"
-msgstr "Uložit Animaci"
+msgstr "Ulozit Animaci"
 
 msgid "Save UserPrefs"
-msgstr "Uložit nastavení"
+msgstr "Ulozit nastaveni"
 
 msgid "Quit"
 msgstr "Konec"
@@ -241,16 +238,16 @@ msgstr "Konec"
 ###
 ###########################################################
 msgid "(De)Select All"
-msgstr "O(d)značit vše"
+msgstr "O(d)znacit vse"
 
 msgid "Select Linked"
-msgstr "Označit spojené"
+msgstr ""
 
 msgid "Hide Selected"
-msgstr "Skrýt vše"
+msgstr "Skryt oznacene"
 
 msgid "Border Select"
-msgstr "Hraniční označení"
+msgstr "Obdelnikove oznaceni"
 
 msgid "Duplicate"
 msgstr "Duplikovat"
@@ -259,7 +256,7 @@ msgid "Delete"
 msgstr "Smazat"
 
 msgid "Edit Mode"
-msgstr "Editační mód"
+msgstr "Editacni mod"
 
 msgid "Grabber"
 msgstr "Posun"
@@ -268,19 +265,19 @@ msgid "Rotate"
 msgstr "Rotace"
 
 msgid "Scale"
-msgstr "Změna velikosti"
+msgstr "Zmena velikosti"
 
 msgid "Shrink/Fatten"
-msgstr "Smršit/roztáhnout"
+msgstr "Smrsit/roztahnout"
 
 msgid "Shear"
 msgstr "Zkosit"
 
 msgid "Warp/Bend"
-msgstr "Zbortit/pokřivit"
+msgstr "Zbortit/pokrivit"
 
 msgid "Snap Menu"
-msgstr "Zarovnávací menu"
+msgstr "Zarovnavaci menu"
 
 ###########################################################
 ###
@@ -288,37 +285,37 @@ msgstr "Zarovnávací menu"
 ###
 ###########################################################
 msgid "Clear Size"
-msgstr "Původní velikost"
+msgstr "Puvodni velikost"
 
 msgid "Clear Rotation"
-msgstr "Původní rotace"
+msgstr "Puvodni rotace"
 
 msgid "Clear Location"
-msgstr "Původní pozice"
+msgstr "Puvodni pozice"
 
 msgid "Clear Origin"
-msgstr "Původní Origin"
+msgstr ""
 
 msgid "Make Parent"
-msgstr "Vytvořit rodiče"
+msgstr ""
 
 msgid "Clear Parent"
-msgstr "Smazat rodiče"
+msgstr ""
 
 msgid "Make Track"
-msgstr "Přidat dráhu"
+msgstr ""
 
 msgid "Clear Track"
-msgstr "Odstranit dráhu"
+msgstr ""
 
 msgid "Image Displist"
-msgstr "Image Displist"
+msgstr ""
 
 msgid "Image Aspect"
-msgstr "Image Aspekt"
+msgstr ""
 
 msgid "Vect Paint"
-msgstr "Vect Paint"
+msgstr ""
 
 ###########################################################
 ###
@@ -326,33 +323,34 @@ msgstr "Vect Paint"
 ###
 ###########################################################
 msgid "Move To Layer"
-msgstr "Přesunout do vrstvy"
+msgstr "Presunout do vrstvy"
 
 msgid "Delete All"
-msgstr "Smazat vše"
+msgstr "Smazat vse"
 
 msgid "Apply Size/Rot"
-msgstr "Aplikace Zvětšení/Rot"
+msgstr "Aplikobat Zvetseni/Rot"
 
 msgid "Apply Deform"
-msgstr "Aplikace deformace"
+msgstr "Aplikovat deformaci"
 
 msgid "Join"
 msgstr "Spojit"
 
-#msgid "Make Local"
-#msgstr "Mache Lokal"
-#msgid "Select Linked"
-#msgstr "Selektiere verknĂÂźpfte"
-#msgid "Make Links"
-#msgstr "Erstelle Links"
-#msgid "Copy Menu"
-#msgstr "MenĂÂź Kopieren"
-#msgid "Convert Menu"
-#msgstr "MenĂÂź Konvertieren"
+msgid "Make Local"
+msgstr ""
+
+msgid "Make Links"
+msgstr ""
+
+msgid "Copy Menu"
+msgstr "Kopirovat menu"
+
+msgid "Convert Menu"
+msgstr "Zmenit menu"
 
 msgid "Boolean Op"
-msgstr "Boolean Operace"
+msgstr "Boolean operace"
 
 ###########################################################
 ###
@@ -360,22 +358,22 @@ msgstr "Boolean Operace"
 ###
 ###########################################################
 msgid "Make edge/face"
-msgstr "Vytvořit hranu/plošku"
+msgstr "Vytvorit hranu/plosku"
 
 msgid "Fill"
 msgstr "Vyplnit"
 
 msgid "Split"
-msgstr "Rozdělit"
+msgstr "Rozdelit"
 
 msgid "Undo/reload"
-msgstr "Zpět/původní"
+msgstr "Zpet/puvodni"
 
 msgid "Calc Normals"
-msgstr "Vypočítat normály"
+msgstr "Vypocitat normaly"
 
 msgid "Separete"
-msgstr "Rozdělit"
+msgstr "Rozdelit"
 
 msgid "Write Videosc"
 msgstr "Zapsat animaci"
@@ -386,34 +384,34 @@ msgstr "Zapsat animaci"
 ###
 ###########################################################
 msgid "Deselect Linked"
-msgstr "Odznačit Spojené"
+msgstr "Odznacit Spojene"
 
 msgid "Extrude"
-msgstr "Tažení"
+msgstr "Tazeni"
 
 msgid "Delete Menu"
 msgstr "Smazat menu"
 
 msgid "Make Segment"
-msgstr "Vytvořit Segment"
+msgstr "Vytvorit segment"
 
 msgid "Cyclic"
-msgstr "Uzavřít"
+msgstr "Uzavrit"
 
 msgid "Select Row"
-msgstr "Vybrat Řadu"
+msgstr "Vybrat radek"
 
 msgid "Calc Handle"
-msgstr "Spočítat Handle"
+msgstr ""
 
 msgid "Auto Handle"
-msgstr "Auto Handle"
+msgstr ""
 
 msgid "Vect Handle"
-msgstr "Vektor Handle"
+msgstr ""
 
 msgid "Specials"
-msgstr "Specialitky"
+msgstr ""
 
 ###########################################################
 ###
@@ -421,19 +419,19 @@ msgstr "Specialitky"
 ###
 ###########################################################
 msgid "Insert"
-msgstr "Vložit"
+msgstr "Vlozit"
 
 msgid "Show"
-msgstr "Ukázat"
+msgstr "Ukazat"
 
 msgid "Next"
-msgstr "Další"
+msgstr "Dalsi"
 
 msgid "Prev"
-msgstr "Předchozí"
+msgstr "Predchozi"
 
 msgid "Show+Sel"
-msgstr "Ukáz+Ozn"
+msgstr "Ukaz+Ozn"
 
 ###########################################################
 ###
@@ -441,16 +439,16 @@ msgstr "Ukáz+Ozn"
 ###
 ###########################################################
 msgid "Render Window"
-msgstr "Renderovací okno"
+msgstr "Renderovaci okno"
 
 msgid "Render"
 msgstr "Renderovat"
 
 msgid "Set Border"
-msgstr "Označit okraje"
+msgstr "Oznacit okraje"
 
 msgid "Image Zoom"
-msgstr "Image Zoom"
+msgstr ""
 
 ###########################################################
 ###
@@ -461,7 +459,7 @@ msgid "Centre"
 msgstr "Vycentrovat"
 
 msgid "Home"
-msgstr "Home"
+msgstr ""
 
 msgid "Z-Buffer"
 msgstr "Z-Buffer"
@@ -472,19 +470,19 @@ msgstr "Z-Buffer"
 ###
 ###########################################################
 msgid "Add Strip"
-msgstr "Přidat Strip"
+msgstr "Pridat pruh"
 
 msgid "Change Str"
-msgstr "Změnit Strip"
+msgstr "Zmenit pruh"
 
 msgid "Delete Str"
-msgstr "Smazat Strip"
+msgstr "Smazat pruh"
 
 msgid "Make Meta"
-msgstr "Vytvořit Meta"
+msgstr "Vytvorit skupinu"
 
 msgid "Str Params"
-msgstr "Strip Parametry"
+msgstr ""
 
 ###########################################################
 ###
@@ -498,7 +496,7 @@ msgid "Edit"
 msgstr "Upravit"
 
 msgid "Add"
-msgstr "Přidat"
+msgstr "Pridat"
 
 msgid "View"
 msgstr "Pohled"
@@ -507,7 +505,7 @@ msgid "Game"
 msgstr "Hra"
 
 msgid "Tools"
-msgstr "Nástroje"
+msgstr "Nastroje"
 
 ###########################################################
 ###
@@ -518,10 +516,10 @@ msgid "MetaBall"
 msgstr "Metaball"
 
 msgid "Empty"
-msgstr "Prázdný"
+msgstr "Prazdny"
 
 msgid "Lattice"
-msgstr "Lattice"
+msgstr "Mrizka"
 
 ###########################################################
 ###
@@ -529,7 +527,7 @@ msgstr "Lattice"
 ###
 ###########################################################
 msgid "Plane"
-msgstr "Čtverec"
+msgstr "Plocha"
 
 msgid "Cube"
 msgstr "Krychle"
@@ -544,16 +542,16 @@ msgid "IcoSphere"
 msgstr "IcoKoule"
 
 msgid "Cylinder"
-msgstr "Válec"
+msgstr "Valec"
 
 msgid "Tube"
 msgstr "Trubka"
 
 msgid "Cone"
-msgstr "Kužel"
+msgstr "Kuzel"
 
 msgid "Grid"
-msgstr "Mřížka"
+msgstr "Mrizka"
 
 ###########################################################
 ###
@@ -561,16 +559,16 @@ msgstr "Mřížka"
 ###
 ###########################################################
 msgid "Bezier Curve"
-msgstr "Bezierova Křivka"
+msgstr "Bezierova krivka"
 
 msgid "Bezier Circle"
-msgstr "Bezierův Kruh"
+msgstr "Bezieruv kruh"
 
 msgid "NURBS Curve"
-msgstr "NURBS Křivka"
+msgstr "NURBS krivka"
 
 msgid "NURBS Circle"
-msgstr "NURBS Kruh"
+msgstr "NURBS kruh"
 
 msgid "Path"
 msgstr "Cesta"
@@ -581,16 +579,16 @@ msgstr "Cesta"
 ###
 ###########################################################
 msgid "NURBS Suface"
-msgstr "NURBS Povrch"
+msgstr "NURBS povrch"
 
 msgid "NURBS Tube"
-msgstr "NURBS Trubka"
+msgstr "NURBS trubka"
 
 msgid "NURBS Sphere"
-msgstr "NURBS Koule"
+msgstr "NURBS koule"
 
 msgid "NURBS Donut"
-msgstr "NURBS Prstenec"
+msgstr "NURBS prstenec"
 
 ###########################################################
 ###
@@ -598,25 +596,25 @@ msgstr "NURBS Prstenec"
 ###
 ###########################################################
 msgid "Front"
-msgstr "Čelní"
+msgstr ""
 
 msgid "Right"
-msgstr "Boční"
+msgstr ""
 
 msgid "Top"
-msgstr "Ze zhora"
+msgstr ""
 
 msgid "Zoom In"
-msgstr "Zoom In"
+msgstr "Priblizit"
 
 msgid "Zoom Out"
-msgstr "Zoom Out"
+msgstr "Oddalit"
 
 msgid "Center"
 msgstr "Vycentrovat"
 
 msgid "View All"
-msgstr "Zobrazit vše"
+msgstr "Zobrazit vse"
 
 ###########################################################
 ###
@@ -627,7 +625,7 @@ msgid "Start Game"
 msgstr "Spustit hru"
 
 msgid "Enable All Frame"
-msgstr "Povolit všechny framy"
+msgstr "Povolit vsechny framy"
 
 msgid "Show framerate and profile"
 msgstr "Zobrazit fps a profil"
@@ -644,8 +642,8 @@ msgid "Pack Data"
 msgstr "Zabalit Data"
 
 msgid "Unpack Data to current dir"
-msgstr "Rozbalit data do aktuálního adresáře"
+msgstr "Rozbalit data do aktualniho adresare"
 
 msgid "Advanced Unpack"
-msgstr "Pokročilé rozbalení"
+msgstr ""
 
