@@ -46,6 +46,18 @@
 
 /*
  * $Log$
+ * Revision 1.3  2002/11/25 12:02:14  mein
+ * updated .c files to include:
+ * #ifdef HAVE_CONFIG_H
+ * #include <config.h>
+ * #endif
+ *
+ * Just need to finish cpp files now :)
+ *
+ * Kent
+ * --
+ * mein@cs.umn.edu
+ *
  * Revision 1.2  2002/10/13 15:57:16  hans
  * - mention the GPL the right way
  * - extend NaN Holding copyright to its proper startup
@@ -149,6 +161,10 @@
 #include "NZC_application_callback.h"
 #include "prthread.h"
 #include "prlock.h"
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #ifndef M_PI
 #define M_PI 3.14159265

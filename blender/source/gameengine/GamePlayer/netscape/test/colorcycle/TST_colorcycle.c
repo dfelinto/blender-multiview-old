@@ -41,6 +41,10 @@
 #include "NZC_application_hooks.h"
 #include "NZC_application_callback.h"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 /* If defined: report to the logfile if a function is called */
 /*  #define TST_GENERATE_LOG */
 

@@ -37,6 +37,11 @@
  * Copyright (c) 1996 Netscape Communications. All rights reserved.
  ******************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+
 /*
 ** Ok, so we don't usually include .c files (only .h files) but we're
 ** doing it here to avoid some fancy make rules. First pull in the common

@@ -52,6 +52,9 @@
 #include "BDR_isect.h"
 #include "mydevice.h"
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 extern short cox, coy;	/* scanfill.c */
 
