@@ -432,7 +432,6 @@ AC_CONFIG_FILES([source/blender/decrypt/Makefile
 		source/blender/readstreamglue/Makefile
 		source/blender/render/Makefile
 		source/blender/renderconverter/Makefile
-		source/blender/sign/Makefile
 		source/blender/verify/Makefile
 		source/blender/writeblenfile/Makefile
 		source/blender/writestreamglue/Makefile
