@@ -103,7 +103,6 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/renderconverter \
 	-I$(top_srcdir)/source/blender/radiosity/extern/include \
 	-I$(top_srcdir)/intern/decimation/extern \
-	-I$(top_srcdir)/source/blender/misc \
 	-I$(top_srcdir)/source/blender/blenloader \
 	$(blenpythoninclude) \
 	-I$(top_srcdir)/source/kernel/gen_system \

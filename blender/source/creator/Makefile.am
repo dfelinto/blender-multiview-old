@@ -10,7 +10,6 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/makesdna \
 	-I$(top_srcdir)/source/blender/blenkernel \
 	-I$(top_srcdir)/source/blender/blenloader \
-	-I$(top_srcdir)/source/blender/misc \
 	$(blenpythoninclude) \
 	-I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/renderconverter \

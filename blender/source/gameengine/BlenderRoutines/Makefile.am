@@ -37,7 +37,6 @@ INCLUDES = -I$(top_srcdir)/source/blender/include \
 	-I$(top_srcdir)/source/gameengine/SceneGraph \
 	-I$(top_srcdir)/source/gameengine/SoundSystem \
 	-I$(top_srcdir)/source/kernel/gen_system \
-	-I$(top_srcdir)/source/blender/misc \
 	-I$(top_srcdir)/source/blender/blenloader \
 	-I$(top_srcdir)/source/blender/blenlib
 

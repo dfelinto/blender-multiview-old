@@ -16,8 +16,7 @@ INCLUDES = -I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/include \
 	-I$(top_srcdir)/source/blender/radiosity/extern/include \
 	-I$(top_srcdir)/intern/guardedalloc \
-	-I$(top_srcdir)/source/blender/render/extern/include \
-	-I$(top_srcdir)/source/blender/misc
+	-I$(top_srcdir)/source/blender/render/extern/include
 
 EXTRA_DIST = \
 	Makefile \

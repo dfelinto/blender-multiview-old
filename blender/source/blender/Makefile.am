@@ -8,7 +8,7 @@ endif
 
 SUBDIRS = blenloader deflate inflate encrypt decrypt sign verify \
 	writestreamglue readstreamglue writeblenfile readblenfile \
-	avi imbuf img misc render radiosity blenlib blenkernel blenpluginapi \
+	avi imbuf img render radiosity blenlib blenkernel blenpluginapi \
 	$(blenpythondir) makesdna src renderconverter
 
 noinst_LTLIBRARIES = libblender_blender.la
@@ -117,7 +117,6 @@ libblender_blender_la_LIBADD = \
 	avi/libblender_avi.la \
 	imbuf/libblender_imbuf.la \
 	img/libblender_img.la \
-	misc/libblender_misc.la \
 	render/libblender_render.la \
 	radiosity/libblender_radiosity.la \
 	blenlib/libblender_blenlib.la \

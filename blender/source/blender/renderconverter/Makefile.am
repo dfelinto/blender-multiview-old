@@ -16,7 +16,6 @@ INCLUDES = -I$(top_srcdir)/source/blender/blenlib \
 	-I$(top_srcdir)/source/blender/blenkernel \
 	-I$(top_srcdir)/source/blender/include \
 	-I$(top_srcdir)/source/blender/render/extern/include \
-	-I$(top_srcdir)/source/blender/misc \
 	$(blenpythoninclude)
 
 EXTRA_DIST = \
