@@ -632,7 +632,7 @@ short get_constraint_target (bConstraint *con, short ownertype, void* ownerdata,
 
 				if(cu->path==0 || cu->path->data==0) calc_curvepath(data->tar);
 
-				curvetime= bsystem_time(data->tar, data->tar->parent, (float)ctime, 0.0);
+				curvetime= bsystem_time(data->tar, data->tar->parent, (float)ctime, 0.0) - data->offset;
 
 				if(calc_ipo_spec(cu->ipo, CU_SPEED, &curvetime)==0) {
 					curvetime /= cu->pathlen;
