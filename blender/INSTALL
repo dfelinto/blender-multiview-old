@@ -144,15 +144,13 @@ QuickTime SDK installed.
 
 When building Blender on Windows you have three choices:
 METHOD 1. Build using the old NaN Makefiles.
-METHOD 2. Build using the new automake/autoconf files
-METHOD 3. Use Microsoft Visual Studio project files
-METHOD 4. Use SCons (see above)
+METHOD 2. Use Microsoft Visual Studio project files (msvc6 and msvc7)
+METHOD 3. Use SCons (see above)
 
-These directions are for method 3. Method 1 was used in Nan in combination 
-with Cygwin. I don't know if somebody ever tried method 2. Note: better
-instruction for MSVC7 coming soonish.
+These directions are for method 2. Method 1 was used in Nan in combination 
+with Cygwin.
 
-If you are using Method 1 and or 2 with cygwin you need to set FREE_WINDOWS 
+If you are using Method 1 with cygwin you need to set FREE_WINDOWS 
 to true you can do this with: export FREE_WINDOWS=true
 
 EXTERNAL LIBARIES
@@ -171,7 +169,8 @@ INTERN LIBRARIES:
 The first thing you need to do is to build the Blender "intern" libraries.
 You need to have Python installed on your machine.
 
-Open the workspace in the $NANBLENDERHOME/intern/make/msvc_6_0 directory.
+Open the workspace in the $NANBLENDERHOME/intern/make/msvc_6_0 (msvc_7_0 if you
+want to build with .NET) directory.
 Build the "build_install_all" project. This will build all the intern libraries
 and installs them in the $NANBLENDERHOME/../lib/windows directory.
 
@@ -193,7 +192,8 @@ to add Python to your path.
 
 BUILDING BLENDER
 
-Open the workspace $NANBLENDERHOME/projectfiles/blender/blender.dsw
+Open the workspace $NANBLENDERHOME/projectfiles/blender/blender.dsw or the
+solution $NANBLENDERHOME/projectfiles_vc7/blender/blender.sln
 
 This contains the following three main projects:
 blender           Builds the main executable
@@ -233,6 +233,10 @@ ZLIB:
 Go to sourceforge.net, navigate to the GnuWin32 project and download 
 zlib-1.1.4-lib.zip. Rename the unzipped directory "zlib" and copy it to the 
 $NANBLENDERHOME/../lib/windows directory.
+
+QUICKTIME:
+The blender.sln expects the Quicktime SDK to be in lib/windows/QTDevWin, which
+should contain the directories CIncludes and Libraries.
 
 
 
