@@ -125,6 +125,16 @@ fi
         fi
 ])
 
+  AC_ARG_WITH(sdl,
+    AC_HELP_STRING([--with-sdl[=PFX]],[Path to SDL library]),
+[       if test $withval != "yes"; then
+        	if test -f $withval/include/SDL/SDL.h; then
+           		LDFLAGS="$LDFLAGS -L$withval/lib"
+           		CPPFLAGS="$CPPFLAGS -I$withval/include/SDL"
+		fi
+        fi
+])
+
   AC_ARG_WITH(freetype2,
     AC_HELP_STRING([--with-freetype2[=PFX]],[Path to freetype2 library]),
 [       if test $withval != "yes"; then
