@@ -4,7 +4,10 @@ noinst_LTLIBRARIES = libblender_python.la
 
 LIBS =
 
-libblender_python_la_SOURCES = BPY_interface.c
+libblender_python_la_SOURCES = \
+  BPY_interface.c \
+  BPY_menus.c \
+  BPY_menus.h
 
 libblender_python_la_CFLAGS = -Wall
 
