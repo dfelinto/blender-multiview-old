@@ -10,15 +10,15 @@ endif
 
 if BlenderPLUGIN
 
-lib_LTLIBRARIES = browserplugin.la
+lib_LTLIBRARIES = libbrowserplugin.la
 
-browserplugin_la_SOURCES =
+libbrowserplugin_la_SOURCES =
 
-browserplugin_la_LDFLAGS =  \
+libbrowserplugin_la_LDFLAGS =  \
 	intern/python/frozen/libfrozen.a \
 	-lpython@PYTHON_VERSION@
 
-browserplugin_la_LIBADD = \
+libbrowserplugin_la_LIBADD = \
 	source/libblender_plugin.la \
 	intern/libblender_intern.la
 
