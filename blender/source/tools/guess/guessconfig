@@ -39,7 +39,7 @@ fi
 
 # Be kind, temporarily ...
 if [ -z "$SRCHOME" ]; then
-    SRCHOME="$HOME/develop/source"
+    SRCHOME="$NANBLENDERHOME/source"
     export SRCHOME
 fi
 
