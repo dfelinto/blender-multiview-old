@@ -1,0 +1,90 @@
+Release notes Blender 2.33a
+
+This is the update of 2.33 release, with essential bug fixes.
+
+For the full 2.33 release log, please check: 
+http://www.blender3d.org/cms/Releaselogs.34.0.html
+
+---- Bug fixes -------------
+
+- Audio strips in sequencer crashed.
+
+- Speedup in ALT+A animation playback. Result of better code for armature
+  display lists and Python script-links
+
+- Windows installer: better checks for where files are written, which 
+  caused some startup files not to be found correctly in 2.33
+
+- Bug fix for AO and Soft shadow:
+  When Traceable was off, and the rendered pixel was outside Octree, the
+  intersection was going wrong. Due to the many samples taken not easy
+  to see, but certainly causing extra noise.
+
+- Fix in ray tracing in general: improved check for extreme small values
+  in central Octree traverse. This solves occasional hang (Windows) and
+  reports substantial speedups at OSX (no FPE exceptions)
+
+- UV editing in FaceSelect mode: bug caused wrong mapping for the 
+  option "From Window"
+
+- Game engine: fix for (material) drawing sharing vertices
+
+- Game engine: Use external velocity (velocity set by the game engine - not
+  the physics engine) for Motion Actuators
+
+- Material preview showed bump mapping inverse
+
+- Windows: file select window crashed with files having dates outside of  
+  range (1970-2034 or so)
+
+- ALT+A playback did a redraw of other windows with wrong frame, potentially
+  causing a flicker in display
+
+- Fixed little annoyance that caused previewrender not to clear sometimes.
+  For example when no Texture exists, and you switch from material to
+  texture buttons.
+
+- Python: memory leak fixed in NMesh_getVertsFromGroup
+
+- Python: Object.setEuler() was not accepting old style args of 3 floats.
+
+- Python: bugfix #1197 (New Bone.parent/child Access Destructive)
+
+- IBM graphics cards: they crashed on selecting Empty object, or on objects
+  with drawtype 'name'. Coded a bypass that doesnt draw this while selecting.
+
+
+---- NEW! ---------
+
+- Mouse Wheel Support for the Game Engine.
+ This adds "Wheel Up" and "Wheel Down" as choices to the Mouse sensor brick.
+
+- Added two more mapping types to World buttons for sky render.
+
+  "Sphere": spherical mapping for a 360 degree panorama
+  "Tube": cylindrical mapping for a 360 degree panorama
+
+  Both mappings by default do only the sky (upper) hemisphere. The color
+  below is same as regular Horiz and Zenith colors, useful for setting
+  an AO effect.
+
+  Sample pics:
+  http://www.1000skies.com/fullpanos/index.htm (commercial)
+
+- Polish translation added
+
+- FreeBSD: sound (SDL) support added
+
+- Added tooltips, some extra pulldown menus, toolbox functions.
+
+------ for Developers ----------
+
+- Scons support improved for OSX.
+- All needed libs for OSX 10.3 are in cvs, Scons builds without additional
+  install
+- Solid/Qhull compiles with makefiles
+
+---- Known issues ----------------
+
+- Files saved with 2.32 or 2.33, and having a Theme in it, will most likely give grey UI text in 2.31 and 2.30 Blender versions. This was caused by a bug in the Blender file system... which is fixed now, but cannot be backwards fixed for Blender binaries in the past. :-)
+
