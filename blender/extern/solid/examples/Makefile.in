@@ -169,7 +169,7 @@ sample_OBJECTS = $(am_sample_OBJECTS)
 sample_DEPENDENCIES = ../src/libsolid.la
 sample_LDFLAGS =
 
-DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/include
+DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/include -I/usr/X11R6/include
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/gldemo.Po ./$(DEPDIR)/mnm.Po \

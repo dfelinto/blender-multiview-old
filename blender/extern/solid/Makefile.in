@@ -125,7 +125,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = src include examples doc
+SUBDIRS = src include examples
 
 EXTRA_DIST = \
 	README.txt \
