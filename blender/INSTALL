@@ -117,7 +117,8 @@ Be sure to do this at the same level your blender directory is at
 Not all are entirely complete yet, but the system itself is very usable.
 
 Quick tip 1: type 'scons' to build it.
-Quick tip 2: type 'scons --clean' to clean your build tree.
+Quick tip 2: type 'scons clean' to clean your build tree.
+(You should also remove/rename config.opts)
 
 The main file of interest is the SConstruct file in the blender 
 directory. Open this file and browse to the section that concerns your
