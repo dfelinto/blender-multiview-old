@@ -8,8 +8,8 @@ The instructions are:
 
 1. Download cygwin (www.cygwin.com) and use the setup program
    to install packages for gcc, gcc-mingw, w32api, make, cvs,
-   python, perl, and gettext (and maybe others... the dependency
-   list is bound to change over time and hopefully these 
+   python, perl, gettext, and gettext-devel (and maybe others... the 
+   dependency list is bound to change over time and hopefully these 
    instructions will keep up with the changes). All of the following
    commands will be entered at the cygwin prompt so launch
    cygwin now.
