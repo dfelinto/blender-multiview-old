@@ -75,13 +75,6 @@ all debug::
     export NAN_GHOST ?= $(LCGDIR)/ghost
     export NAN_TEST_VERBOSITY ?= 1
     export NAN_BMFONT ?= $(LCGDIR)/bmfont
-    ifeq ($(FREE_WINDOWS), true)
-      export NAN_FTGL ?= $(LCGDIR)/gcc/ftgl
-	  export NAN_SDL ?= $(LCGDIR)/gcc/sdl
-    else
-      export NAN_FTGL ?= $(LCGDIR)/ftgl
-	  export NAN_SDL ?= $(LCGDIR)/sdl
-    endif
 	export NAN_SDL ?= $(shell sdl-config --prefix)
 	export NAN_SDLLIBS ?= $(shell sdl-config --libs)
 	export NAN_SDLCFLAGS ?= $(shell sdl-config --cflags)
@@ -150,11 +143,11 @@ all debug::
     export NAN_NSPR ?= $(LCGDIR)/nspr
     export NAN_FREETYPE ?= /sw
     export NAN_GETTEXT ?= $(LCGDIR)/gettext
-	ifndef NAN_SDL
+    ifeq ($(NAN_SDL),)
 		export NAN_SDL = $(LCGDIR)/sdl
 		export NAN_SDLCFLAGS = -I$(NAN_SDL)/include
 		export NAN_SDLLIBS = $(NAN_SDL)/lib/libSDL.a -framework Cocoa
-	endif
+    endif
 
     # Uncomment the following line to use Mozilla inplace of netscape
     # CPPFLAGS +=-DMOZ_NOT_NET
@@ -279,7 +272,7 @@ all debug::
     export NAN_NSPR ?= $(LCGDIR)/nspr
     export NAN_FREETYPE ?= /usr
     export NAN_GETTEXT ?= /usr
-	ifndef NAN_SDL
+	ifeq ($(NAN_SDL),)
 		export NAN_SDL = $(LCGDIR)/sdl
 		export NAN_SDLCFLAGS = -I$(NAN_SDL)/include/SDL
 		export NAN_SDLLIBS = -L$(NAN_SDL)/lib -lSDL
@@ -326,7 +319,7 @@ all debug::
     export NAN_GETTEXT ?= $(LCGDIR)/gettext
 	export NAN_SDLLIBS ?= $(shell sdl-config --libs)
 	export NAN_SDLCFLAGS ?= $(shell sdl-config --cflags)
-	ifndef NAN_SDL
+	ifeq ($(NAN_SDL),)
 		export NAN_SDL = $(LCGDIR)/sdl
 		export NAN_SDLCFLAGS = -I$(NAN_SDL)/include/SDL
 		export NAN_SDLLIBS = -L$(NAN_SDL)/lib -lSDL
@@ -370,7 +363,7 @@ all debug::
     export NAN_NSPR ?= $(LCGDIR)/nspr
     export NAN_FREETYPE ?= $(LCGDIR)/freetype
     export NAN_GETTEXT ?= $(LCGDIR)/gettext
-	ifndef NAN_SDL
+	ifeq ($(NAN_SDL),)
 		export NAN_SDL = $(LCGDIR)/sdl
 		export NAN_SDLCFLAGS = -I$(NAN_SDL)/include/SDL
 		export NAN_SDLLIBS = -L$(NAN_SDL)/lib -lSDL
@@ -405,15 +398,22 @@ all debug::
       export NAN_PYTHON_BINARY ?= $(NAN_PYTHON)/bin/python$(NAN_PYTHON_VERSION)
       export NAN_FREETYPE ?= $(LCGDIR)/gcc/freetype
       export NAN_ODE ?= $(LCGDIR)/gcc/ode
-	export NAN_SDLLIBS ?= $(shell sdl-config --libs)
-	export NAN_SDLCFLAGS ?= $(shell sdl-config --cflags)
+      export NAN_FTGL ?= $(LCGDIR)/gcc/ftgl
+      ifeq ($(NAN_SDL),)
+	      export NAN_SDL = $(LCGDIR)/gcc/sdl
+		  export NAN_SDLCFLAGS = -I$(NAN_SDL)/include
+	  endif
     else
       export NAN_PYTHON_BINARY ?= python
       export NAN_FREETYPE ?= $(LCGDIR)/freetype
       export NAN_ODE ?= $(LCGDIR)/ode
-	  export NAN_SDLCFLAGS ?= -I$(NAN_SDL)/include
-    endif
-    export NAN_OPENAL ?= $(LCGDIR)/openal
+	  export NAN_FTGL ?= $(LCGDIR)/ftgl
+      ifeq ($(NAN_SDL),)
+	      export NAN_SDL = $(LCGDIR)/sdl
+		  export NAN_SDLCFLAGS = -I$(NAN_SDL)/include
+      endif
+	endif
+	export NAN_OPENAL ?= $(LCGDIR)/openal
     export NAN_FMOD ?= $(LCGDIR)/fmod
     export NAN_JPEG ?= $(LCGDIR)/jpeg
     export NAN_PNG ?= $(LCGDIR)/png
@@ -462,7 +462,7 @@ all debug::
     export NAN_NSPR ?= $(LCGDIR)/nspr
     export NAN_FREETYPE ?= $(LCGDIR)/freetype
     export NAN_GETTEXT ?= $(LCGDIR)/gettext
-	ifndef NAN_SDL
+	ifeq ($(NAN_SDL),)
 		export NAN_SDL = $(LCGDIR)/sdl
 		export NAN_SDLCFLAGS = -I$(NAN_SDL)/include/SDL
 		export NAN_SDLLIBS = -L$(NAN_SDL)/lib -lSDL
