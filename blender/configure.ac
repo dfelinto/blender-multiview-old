@@ -153,6 +153,17 @@ dnl ----------------------
         fi
 ])
 
+  AC_ARG_WITH(freetype2,
+    AC_HELP_STRING([--with-freetype2[=PFX]],[Path to freetype2 library]),
+[       if test $withval != "yes"; then
+                if test -f $withval/include/freetype2/freetype/freetype.h; then
+                        LDFLAGS="$LDFLAGS -L$withval/lib -lfreetype"
+                        CPPFLAGS="$CPPFLAGS -I$withval/include/freetype2 -DWITH_FREETYPE2"
+                        CFLAGS="$CFLAGS -I$withval/include/freetype2 -DWITH_FREETYPE2"
+                fi
+        fi
+])
+
   AC_ARG_WITH(libjpeg,
     AC_HELP_STRING([--with-libjpeg[=PFX]],[Path to libjpeg files]),
 [       if test $withval != "yes"; then

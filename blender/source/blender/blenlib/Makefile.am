@@ -42,6 +42,7 @@ libblender_blenlib_la_SOURCES = \
 	intern/time.c \
 	intern/util.c \
 	intern/vectorops.c \
+	intern/freetypefont.c \
 	intern/winstuff.c
 
 INCLUDES = -I$(top_srcdir)/source/blender/makesdna \
