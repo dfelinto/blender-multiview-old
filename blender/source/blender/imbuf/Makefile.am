@@ -53,7 +53,9 @@ libblender_imbuf_la_SOURCES = \
 INCLUDES = -I$(top_srcdir)/source/blender/makesdna \
 	-I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/blenlib \
-	-I$(top_srcdir)/source/blender/avi
+	-I$(top_srcdir)/source/blender/avi \
+	-I$(top_srcdir)/source/blender/quicktime \
+	-I$(top_srcdir)/source/blender/blenkernel
 
 EXTRA_DIST = \
 	Makefile \

@@ -66,6 +66,7 @@ INCLUDES = -I$(top_srcdir)/source/blender/render/intern/include \
 	-I$(top_srcdir)/source/blender/blenkernel \
 	-I$(top_srcdir)/source/blender/radiosity/extern/include \
 	-I$(top_srcdir)/source/blender/imbuf \
+	-I$(top_srcdir)/source/blender/quicktime \
 	-I$(top_srcdir)/source/blender/include \
 	-I$(top_srcdir)/source/kernel/gen_messaging
 
