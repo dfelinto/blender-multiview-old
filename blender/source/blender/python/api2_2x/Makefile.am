@@ -31,6 +31,10 @@ libblender_api2_2x_la_SOURCES = \
   Bone.h \
   Ipo.c \
   Ipo.h \
+  Ipocurve.c \
+  Ipocurve.h \
+  BezTriple.c \
+  BezTriple.h \
   Metaball.c \
   Metaball.h \
   Effect.c \
