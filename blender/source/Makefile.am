@@ -25,11 +25,13 @@ endif
 
 blender_bin_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
 
+blender_bin_SOURCES = 
+
 blender_bin_LDADD = \
 	-lpython@PYTHON_VERSION@ \
 	$(gamelib) \
 	creator/libblender_creator.la \
 	blender/libblender_blender.la \
-	kernel/libblender_kernel.a \
+	kernel/libblender_kernel.la \
 	../intern/libblender_intern.la \
 	../intern/python/frozen/libfrozen.a

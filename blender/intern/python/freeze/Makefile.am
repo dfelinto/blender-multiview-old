@@ -2,7 +2,6 @@ noinst_LIBRARIES = libfrozen.a
 
 SRCDIR = $(top_srcdir)/intern/python/modules
 
-
 PYFILES = \
 	bkfile.py \
 	checkextensions.py \

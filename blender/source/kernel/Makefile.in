@@ -157,10 +157,12 @@ target_vendor = @target_vendor@
 noinst_LTLIBRARIES = libblender_kernel.la
 
 INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging \
-	-I$(top_srcdir)/source/kernel/gen_system
+	-I$(top_srcdir)/source/kernel/gen_system \
+	-I$(top_srcdir)/intern/string \
+	-I$(top_srcdir)/intern/moto/include
 
 
-libblender_kernel_la_SOURCE = gen_system/SYS_SingletonSystem.cpp \
+libblender_kernel_la_SOURCES = gen_system/SYS_SingletonSystem.cpp \
 	gen_system/GEN_HashedPtr.cpp \
 	gen_system/GEN_Matrix4x4.cpp \
 	gen_system/SYS_System.cpp \
@@ -174,13 +176,18 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 
 libblender_kernel_la_LDFLAGS =
 libblender_kernel_la_LIBADD =
-libblender_kernel_la_SOURCES = libblender_kernel.la.c
-libblender_kernel_la_OBJECTS = libblender_kernel.la.lo
+am_libblender_kernel_la_OBJECTS = SYS_SingletonSystem.lo \
+	GEN_HashedPtr.lo GEN_Matrix4x4.lo SYS_System.lo messaging.lo
+libblender_kernel_la_OBJECTS = $(am_libblender_kernel_la_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libblender_kernel.la.Plo
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/GEN_HashedPtr.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/GEN_Matrix4x4.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SYS_SingletonSystem.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/SYS_System.Plo \
+@AMDEP_TRUE@	./$(DEPDIR)/messaging.Plo
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -188,14 +195,22 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = libblender_kernel.la.c
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+DIST_SOURCES = $(libblender_kernel_la_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = libblender_kernel.la.c
+SOURCES = $(libblender_kernel_la_SOURCES)
 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj
+.SUFFIXES: .c .cpp .lo .o .obj
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --gnu  source/kernel/Makefile
@@ -210,8 +225,13 @@ clean-noinstLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
+SYS_SingletonSystem.lo: gen_system/SYS_SingletonSystem.cpp
+GEN_HashedPtr.lo: gen_system/GEN_HashedPtr.cpp
+GEN_Matrix4x4.lo: gen_system/GEN_Matrix4x4.cpp
+SYS_System.lo: gen_system/SYS_System.cpp
+messaging.lo: gen_messaging/intern/messaging.c
 libblender_kernel.la: $(libblender_kernel_la_OBJECTS) $(libblender_kernel_la_DEPENDENCIES) 
-	$(LINK)  $(libblender_kernel_la_LDFLAGS) $(libblender_kernel_la_OBJECTS) $(libblender_kernel_la_LIBADD) $(LIBS)
+	$(CXXLINK)  $(libblender_kernel_la_LDFLAGS) $(libblender_kernel_la_OBJECTS) $(libblender_kernel_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -219,7 +239,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libblender_kernel.la.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GEN_HashedPtr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GEN_Matrix4x4.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SYS_SingletonSystem.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SYS_System.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/messaging.Plo@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -256,6 +280,204 @@ distclean-depend:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+messaging.o: gen_messaging/intern/messaging.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT messaging.o -MD -MP -MF "$(DEPDIR)/messaging.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o messaging.o `test -f 'gen_messaging/intern/messaging.c' || echo '$(srcdir)/'`gen_messaging/intern/messaging.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/messaging.Tpo" "$(DEPDIR)/messaging.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/messaging.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gen_messaging/intern/messaging.c' object='messaging.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/messaging.Po' tmpdepfile='$(DEPDIR)/messaging.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o messaging.o `test -f 'gen_messaging/intern/messaging.c' || echo '$(srcdir)/'`gen_messaging/intern/messaging.c
+
+messaging.obj: gen_messaging/intern/messaging.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT messaging.obj -MD -MP -MF "$(DEPDIR)/messaging.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o messaging.obj `if test -f 'gen_messaging/intern/messaging.c'; then $(CYGPATH_W) 'gen_messaging/intern/messaging.c'; else $(CYGPATH_W) '$(srcdir)/gen_messaging/intern/messaging.c'`; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/messaging.Tpo" "$(DEPDIR)/messaging.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/messaging.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gen_messaging/intern/messaging.c' object='messaging.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/messaging.Po' tmpdepfile='$(DEPDIR)/messaging.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o messaging.obj `if test -f 'gen_messaging/intern/messaging.c'; then $(CYGPATH_W) 'gen_messaging/intern/messaging.c'; else $(CYGPATH_W) '$(srcdir)/gen_messaging/intern/messaging.c'`
+
+messaging.lo: gen_messaging/intern/messaging.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT messaging.lo -MD -MP -MF "$(DEPDIR)/messaging.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o messaging.lo `test -f 'gen_messaging/intern/messaging.c' || echo '$(srcdir)/'`gen_messaging/intern/messaging.c; \
+@am__fastdepCC_TRUE@	then mv "$(DEPDIR)/messaging.Tpo" "$(DEPDIR)/messaging.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/messaging.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='gen_messaging/intern/messaging.c' object='messaging.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/messaging.Plo' tmpdepfile='$(DEPDIR)/messaging.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o messaging.lo `test -f 'gen_messaging/intern/messaging.c' || echo '$(srcdir)/'`gen_messaging/intern/messaging.c
+
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o $@ `if test -f '$<'; then $(CYGPATH_W) '$<'; else $(CYGPATH_W) '$(srcdir)/$<'`; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `if test -f '$<'; then $(CYGPATH_W) '$<'; else $(CYGPATH_W) '$(srcdir)/$<'`
+
+.cpp.lo:
+@am__fastdepCXX_TRUE@	if $(LTCXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Plo"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+SYS_SingletonSystem.o: gen_system/SYS_SingletonSystem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SYS_SingletonSystem.o -MD -MP -MF "$(DEPDIR)/SYS_SingletonSystem.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o SYS_SingletonSystem.o `test -f 'gen_system/SYS_SingletonSystem.cpp' || echo '$(srcdir)/'`gen_system/SYS_SingletonSystem.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/SYS_SingletonSystem.Tpo" "$(DEPDIR)/SYS_SingletonSystem.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/SYS_SingletonSystem.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/SYS_SingletonSystem.cpp' object='SYS_SingletonSystem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SYS_SingletonSystem.Po' tmpdepfile='$(DEPDIR)/SYS_SingletonSystem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SYS_SingletonSystem.o `test -f 'gen_system/SYS_SingletonSystem.cpp' || echo '$(srcdir)/'`gen_system/SYS_SingletonSystem.cpp
+
+SYS_SingletonSystem.obj: gen_system/SYS_SingletonSystem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SYS_SingletonSystem.obj -MD -MP -MF "$(DEPDIR)/SYS_SingletonSystem.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o SYS_SingletonSystem.obj `if test -f 'gen_system/SYS_SingletonSystem.cpp'; then $(CYGPATH_W) 'gen_system/SYS_SingletonSystem.cpp'; else $(CYGPATH_W) '$(srcdir)/gen_system/SYS_SingletonSystem.cpp'`; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/SYS_SingletonSystem.Tpo" "$(DEPDIR)/SYS_SingletonSystem.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/SYS_SingletonSystem.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/SYS_SingletonSystem.cpp' object='SYS_SingletonSystem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SYS_SingletonSystem.Po' tmpdepfile='$(DEPDIR)/SYS_SingletonSystem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SYS_SingletonSystem.obj `if test -f 'gen_system/SYS_SingletonSystem.cpp'; then $(CYGPATH_W) 'gen_system/SYS_SingletonSystem.cpp'; else $(CYGPATH_W) '$(srcdir)/gen_system/SYS_SingletonSystem.cpp'`
+
+SYS_SingletonSystem.lo: gen_system/SYS_SingletonSystem.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SYS_SingletonSystem.lo -MD -MP -MF "$(DEPDIR)/SYS_SingletonSystem.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o SYS_SingletonSystem.lo `test -f 'gen_system/SYS_SingletonSystem.cpp' || echo '$(srcdir)/'`gen_system/SYS_SingletonSystem.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/SYS_SingletonSystem.Tpo" "$(DEPDIR)/SYS_SingletonSystem.Plo"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/SYS_SingletonSystem.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/SYS_SingletonSystem.cpp' object='SYS_SingletonSystem.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SYS_SingletonSystem.Plo' tmpdepfile='$(DEPDIR)/SYS_SingletonSystem.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SYS_SingletonSystem.lo `test -f 'gen_system/SYS_SingletonSystem.cpp' || echo '$(srcdir)/'`gen_system/SYS_SingletonSystem.cpp
+
+GEN_HashedPtr.o: gen_system/GEN_HashedPtr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GEN_HashedPtr.o -MD -MP -MF "$(DEPDIR)/GEN_HashedPtr.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o GEN_HashedPtr.o `test -f 'gen_system/GEN_HashedPtr.cpp' || echo '$(srcdir)/'`gen_system/GEN_HashedPtr.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/GEN_HashedPtr.Tpo" "$(DEPDIR)/GEN_HashedPtr.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/GEN_HashedPtr.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/GEN_HashedPtr.cpp' object='GEN_HashedPtr.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/GEN_HashedPtr.Po' tmpdepfile='$(DEPDIR)/GEN_HashedPtr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GEN_HashedPtr.o `test -f 'gen_system/GEN_HashedPtr.cpp' || echo '$(srcdir)/'`gen_system/GEN_HashedPtr.cpp
+
+GEN_HashedPtr.obj: gen_system/GEN_HashedPtr.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GEN_HashedPtr.obj -MD -MP -MF "$(DEPDIR)/GEN_HashedPtr.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o GEN_HashedPtr.obj `if test -f 'gen_system/GEN_HashedPtr.cpp'; then $(CYGPATH_W) 'gen_system/GEN_HashedPtr.cpp'; else $(CYGPATH_W) '$(srcdir)/gen_system/GEN_HashedPtr.cpp'`; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/GEN_HashedPtr.Tpo" "$(DEPDIR)/GEN_HashedPtr.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/GEN_HashedPtr.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/GEN_HashedPtr.cpp' object='GEN_HashedPtr.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/GEN_HashedPtr.Po' tmpdepfile='$(DEPDIR)/GEN_HashedPtr.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GEN_HashedPtr.obj `if test -f 'gen_system/GEN_HashedPtr.cpp'; then $(CYGPATH_W) 'gen_system/GEN_HashedPtr.cpp'; else $(CYGPATH_W) '$(srcdir)/gen_system/GEN_HashedPtr.cpp'`
+
+GEN_HashedPtr.lo: gen_system/GEN_HashedPtr.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GEN_HashedPtr.lo -MD -MP -MF "$(DEPDIR)/GEN_HashedPtr.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o GEN_HashedPtr.lo `test -f 'gen_system/GEN_HashedPtr.cpp' || echo '$(srcdir)/'`gen_system/GEN_HashedPtr.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/GEN_HashedPtr.Tpo" "$(DEPDIR)/GEN_HashedPtr.Plo"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/GEN_HashedPtr.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/GEN_HashedPtr.cpp' object='GEN_HashedPtr.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/GEN_HashedPtr.Plo' tmpdepfile='$(DEPDIR)/GEN_HashedPtr.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GEN_HashedPtr.lo `test -f 'gen_system/GEN_HashedPtr.cpp' || echo '$(srcdir)/'`gen_system/GEN_HashedPtr.cpp
+
+GEN_Matrix4x4.o: gen_system/GEN_Matrix4x4.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GEN_Matrix4x4.o -MD -MP -MF "$(DEPDIR)/GEN_Matrix4x4.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o GEN_Matrix4x4.o `test -f 'gen_system/GEN_Matrix4x4.cpp' || echo '$(srcdir)/'`gen_system/GEN_Matrix4x4.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/GEN_Matrix4x4.Tpo" "$(DEPDIR)/GEN_Matrix4x4.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/GEN_Matrix4x4.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/GEN_Matrix4x4.cpp' object='GEN_Matrix4x4.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/GEN_Matrix4x4.Po' tmpdepfile='$(DEPDIR)/GEN_Matrix4x4.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GEN_Matrix4x4.o `test -f 'gen_system/GEN_Matrix4x4.cpp' || echo '$(srcdir)/'`gen_system/GEN_Matrix4x4.cpp
+
+GEN_Matrix4x4.obj: gen_system/GEN_Matrix4x4.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GEN_Matrix4x4.obj -MD -MP -MF "$(DEPDIR)/GEN_Matrix4x4.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o GEN_Matrix4x4.obj `if test -f 'gen_system/GEN_Matrix4x4.cpp'; then $(CYGPATH_W) 'gen_system/GEN_Matrix4x4.cpp'; else $(CYGPATH_W) '$(srcdir)/gen_system/GEN_Matrix4x4.cpp'`; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/GEN_Matrix4x4.Tpo" "$(DEPDIR)/GEN_Matrix4x4.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/GEN_Matrix4x4.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/GEN_Matrix4x4.cpp' object='GEN_Matrix4x4.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/GEN_Matrix4x4.Po' tmpdepfile='$(DEPDIR)/GEN_Matrix4x4.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GEN_Matrix4x4.obj `if test -f 'gen_system/GEN_Matrix4x4.cpp'; then $(CYGPATH_W) 'gen_system/GEN_Matrix4x4.cpp'; else $(CYGPATH_W) '$(srcdir)/gen_system/GEN_Matrix4x4.cpp'`
+
+GEN_Matrix4x4.lo: gen_system/GEN_Matrix4x4.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT GEN_Matrix4x4.lo -MD -MP -MF "$(DEPDIR)/GEN_Matrix4x4.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o GEN_Matrix4x4.lo `test -f 'gen_system/GEN_Matrix4x4.cpp' || echo '$(srcdir)/'`gen_system/GEN_Matrix4x4.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/GEN_Matrix4x4.Tpo" "$(DEPDIR)/GEN_Matrix4x4.Plo"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/GEN_Matrix4x4.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/GEN_Matrix4x4.cpp' object='GEN_Matrix4x4.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/GEN_Matrix4x4.Plo' tmpdepfile='$(DEPDIR)/GEN_Matrix4x4.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o GEN_Matrix4x4.lo `test -f 'gen_system/GEN_Matrix4x4.cpp' || echo '$(srcdir)/'`gen_system/GEN_Matrix4x4.cpp
+
+SYS_System.o: gen_system/SYS_System.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SYS_System.o -MD -MP -MF "$(DEPDIR)/SYS_System.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o SYS_System.o `test -f 'gen_system/SYS_System.cpp' || echo '$(srcdir)/'`gen_system/SYS_System.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/SYS_System.Tpo" "$(DEPDIR)/SYS_System.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/SYS_System.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/SYS_System.cpp' object='SYS_System.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SYS_System.Po' tmpdepfile='$(DEPDIR)/SYS_System.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SYS_System.o `test -f 'gen_system/SYS_System.cpp' || echo '$(srcdir)/'`gen_system/SYS_System.cpp
+
+SYS_System.obj: gen_system/SYS_System.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SYS_System.obj -MD -MP -MF "$(DEPDIR)/SYS_System.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o SYS_System.obj `if test -f 'gen_system/SYS_System.cpp'; then $(CYGPATH_W) 'gen_system/SYS_System.cpp'; else $(CYGPATH_W) '$(srcdir)/gen_system/SYS_System.cpp'`; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/SYS_System.Tpo" "$(DEPDIR)/SYS_System.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/SYS_System.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/SYS_System.cpp' object='SYS_System.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SYS_System.Po' tmpdepfile='$(DEPDIR)/SYS_System.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SYS_System.obj `if test -f 'gen_system/SYS_System.cpp'; then $(CYGPATH_W) 'gen_system/SYS_System.cpp'; else $(CYGPATH_W) '$(srcdir)/gen_system/SYS_System.cpp'`
+
+SYS_System.lo: gen_system/SYS_System.cpp
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SYS_System.lo -MD -MP -MF "$(DEPDIR)/SYS_System.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o SYS_System.lo `test -f 'gen_system/SYS_System.cpp' || echo '$(srcdir)/'`gen_system/SYS_System.cpp; \
+@am__fastdepCXX_TRUE@	then mv "$(DEPDIR)/SYS_System.Tpo" "$(DEPDIR)/SYS_System.Plo"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/SYS_System.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='gen_system/SYS_System.cpp' object='SYS_System.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SYS_System.Plo' tmpdepfile='$(DEPDIR)/SYS_System.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SYS_System.lo `test -f 'gen_system/SYS_System.cpp' || echo '$(srcdir)/'`gen_system/SYS_System.cpp
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -72,6 +72,17 @@ dnl ----------------------
 	fi
 ])
 
+  AC_ARG_WITH(ode,
+    AC_HELP_STRING([--with-ode[=PFX]],[Path to ode files]),
+[       if test $withval != "yes"; then
+                with_ode =$withval
+        fi
+        if test x$with_ode != "yes"; then
+           LDFLAGS="$LDFLAGS -L$withval/lib -lode"
+           CPPFLAGS="$CPPFLAGS -I$withval/include"
+        fi
+])
+
   AC_ARG_WITH(libjpeg,
     AC_HELP_STRING([--with-libjpeg[=PFX]],[Path to libjpeg files]),
 [       if test $withval != "yes"; then
@@ -198,7 +209,9 @@ dnl --------------------------
   AC_FUNC_ERROR_AT_LINE
   AC_FUNC_LSTAT
   AC_FUNC_OBSTACK
-  AC_FUNC_REALLOC
+dnl  complaints about not on some systems.  Not sure if its needed or not
+dnl  mein@cs.umn.edu
+dnl  AC_FUNC_REALLOC
   AC_FUNC_ALLOCA
   AC_FUNC_FNMATCH
   AC_FUNC_FORK
