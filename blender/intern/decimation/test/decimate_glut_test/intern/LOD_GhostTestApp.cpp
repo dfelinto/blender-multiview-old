@@ -33,6 +33,9 @@
 #include <config.h>
 #endif
 
+#define TRUE 1
+#define FALSE 0
+
 #include "LOD_GhostTestApp.h"
 
 #include "GHOST_ISystem.h"
@@ -73,7 +76,8 @@ InitApp(
 	m_window = m_system->createWindow(
 		"GHOST crud!",
 		100,100,640,480,GHOST_kWindowStateNormal,
-		GHOST_kDrawingContextTypeOpenGL
+		GHOST_kDrawingContextTypeOpenGL,
+		FALSE
 	);
 
 	if (
@@ -97,7 +101,7 @@ Run(
 	}
 
 	while (!m_finish_me_off) {
-		m_system->processEvents();
+		m_system->processEvents(TRUE);
 		m_system->dispatchEvents();
 	};
 }
@@ -198,11 +202,3 @@ processEvent(
 
 	return handled;
 }
-
-
-
-
-
-
-
-	
