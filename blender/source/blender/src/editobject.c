@@ -5543,7 +5543,7 @@ void transform(int mode)
 						ee = ee->next;
 					}
 					
-					if(maxcr==10.0) wrong= 1;
+					if(mincr==10.0) wrong= 1;
 					else {
 						sprintf(str, "Edge sharpness range: %.3f - %.3f", mincr, maxcr); 
 						headerprint(str);
