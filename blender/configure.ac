@@ -29,8 +29,6 @@ dnl -------------------
   AC_PROG_RANLIB
   AC_CHECK_TOOL([STRIP],[strip])
   AC_PROG_AWK
-  AC_FIND_X
-  AC_FIND_XTRA
 
 dnl -----------------------------
 dnl Debug builds & compiler flags
@@ -211,7 +209,6 @@ dnl -----------------------
   AC_CONFIG_SRCDIR([source/creator/creator.c])
   AM_CONFIG_HEADER([config.h])
 
-  AC_PATH_X
   AC_PATH_XTRA
   AC_HEADER_DIRENT
   AC_HEADER_STDC
@@ -303,11 +300,11 @@ if test x"$enable_openal" = x"yes"; then
    , dnl found -- nop
    [enable_openal=no] )  dnl not found -- disable openal
 fi
-  AC_CHECK_LIB([Xext], [XextFindDisplay])
-  AC_CHECK_LIB([X11], [XOpenDisplay])
-  AC_CHECK_LIB([GL], [glIsTexture])
-  AC_CHECK_LIB([GLU], [gluGetString])
-  AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes])
+  AC_CHECK_LIB([Xext], [XextFindDisplay],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
+  AC_CHECK_LIB([X11], [XOpenDisplay],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
+  AC_CHECK_LIB([GL], [glIsTexture],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
+  AC_CHECK_LIB([GLU], [gluGetString],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
+  AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes],,,$X_LIBS -lXext -lX11 -lm $X_EXTRA_LIBS)
 
 dnl ---------------------
 dnl Checks for data types
