@@ -35,6 +35,9 @@
 # 6) cvs login (password is anonymous)
 # And from then on just :
 # 7) ./tinderbox-blender.pl
+#
+# Optionally use a .tinderboxrc configuration file, located in the directory
+# you start tinderbox from (usually the homedir :)
 
 require 5.000;
 
@@ -42,10 +45,10 @@ require 5.000;
 use vars qw( $VERSION $UNAME $Home @Pwd $Mymtime $SaveDate
 			 $Hostname $Mailer $Tinderbox_server $BuildAdministrator
 			 $BuildDepend $ReportStatus $BuildOnce $BuildAutotools
-			 $BuildType %BinaryName $Make $CVS $CVSCO $BuildSleep
+			 $BuildType @BuildType %BinaryName $Make $CVS $CVSCO $BuildSleep
 			 $BuildTree $BuildTag $BuildName $Topsrcdir $BuildObjDir
 			 $BuildObjName $ConfigGuess $GuessConfig $FE $BuildModule
-			 $OS $OSVer $logfile $StartTime $StartDir);
+			 $OS $OSVer $logfile $StartTime $StartDir $rcfile);
 
 # check which mail system we're going to use
 eval "use Mail::Send";
@@ -154,10 +157,12 @@ sub InitVars {
     $ReportStatus = 1;  # Send results to server or not
     $BuildOnce = 0;     # Build once, don't send results to server
     $BuildAutotools = 0;# Build with the autotools
-    $BuildType = 'trad'; # Description for the traditional build
+    @BuildType = ('trad', 'auto'); # BuildType descriptions
 
+	$FE = 'blenderdynamic'; 
     #relative path to binary
 	if ($UNAME eq 'Darwin') {
+		$FE = 'blenderplayer,blenderdynamic'; 
 		$BinaryName{'blenderplayer'} = 'bin/blenderplayer';
 		$BinaryName{'blenderdynamic'} = 'bin/blender';
 #		$BinaryName{'Dblenderplayer'} = 'debug/bin/blenderplayer';
@@ -171,15 +176,7 @@ sub InitVars {
 #		$BinaryName{'blenderplugin'} = 'npBlender3DPlugin.so';
 #		$BinaryName{'blenderpluginXPCOM'} = 'Blender3DPlugin.so';
 	}
-	if ($BuildAutotools) {
-		$BinaryName{'blenderdynamic'} = 'blender';
-		$BuildType = 'auto';
-	}
 	$VERSION = '$Revision$';
-	# append version to BuildType
-	my $BTVersion = $VERSION;
-	$BTVersion =~ s/^.*\d+\.(\d+).*$/$1/;
-	$BuildType .= ".$BTVersion";
 
     # Set these to what makes sense for your system
 	if ($UNAME eq 'FreeBSD') {
@@ -188,20 +185,21 @@ sub InitVars {
 		$Make = 'make'; # Must be gnu make
 	}
     $CVS = 'cvs -Q';
-    $CVSCO = 'co -P';
 
-    # Set these proper values for your tinderbox server
+	$rcfile = '.tinderboxrc'; # Optional configuration file
+
+	# Defaults in case there is no configuration file supplied, these
+	# shouldn't really need to be changed
+
 	$Tinderbox_server = 'tinderbox@xserve.blender.org';
-
-    # These shouldn't really need to be changed
-    $BuildSleep = 60; # Minimum wait period from start of build to start
+	$BuildSleep = 60; # Minimum wait period from start of build to start
                       # of next build in minutes (default 10)
-    $BuildTree = '';
+    $BuildTree = 'source';
     $BuildTag = '';
     $BuildName = '';
-    $Topsrcdir = 'blender';
     $BuildObjDir = '';
     $BuildObjName = '';
+	$BuildModule = 'blender lib';
     $ConfigGuess = './blender/source/tools/guess/guessconfig';
 	print "ConfigGuess set to $ConfigGuess\n";
     $GuessConfig = "nanguess"; # actually the hint and cache filename for now
@@ -211,15 +209,22 @@ sub InitVars {
 } #EndSub-InitVars
 
 sub ConditionalArgs {
-	$BuildTree = 'source';
-	if ($UNAME eq 'Darwin') {
-		$FE = 'blenderplayer,blenderdynamic'; 
+	if ($BuildAutotools) {
+		$BinaryName{'blenderdynamic'} = 'blender';
+		$BuildObjDir = "$ENV{'HOME'}/develop/";
 	} else {
-		$FE = 'blenderdynamic'; 
+		$BinaryName{'blenderdynamic'} = 'bin/blender';
+		$Topsrcdir = 'blender';
+		$BuildObjDir = "$ENV{'HOME'}/develop/blender/obj/";
 	}
-	$BuildModule = 'blender lib';
+	# append version to BuildType
+	my $BTVersion = $VERSION;
+	$BTVersion =~ s/^.*\d+\.(\d+).*$/$1/;
+	$BuildType = $BuildType[$BuildAutotools] . ".$BTVersion";
 
-    $CVSCO .= " -r $BuildTag" if ( $BuildTag ne '');
+	# Checkout the specified revision if there is one, the trunk if not
+	$CVSCO = 'co -P';
+	$CVSCO .= " -r $BuildTag" if ( $BuildTag ne '');
 } #EndSub-ConditionalArgs
 
 sub GetSystemInfo {
@@ -296,7 +301,16 @@ sub BuildIt {
 	# Set Mymtime
 	test_thesame();
 
-    while ( ! $EarlyExit ) {
+	while ( ! $EarlyExit ) {
+	
+	# Reload the configuration file each run, if it exists
+	if (-f $rcfile) {
+		print "Including config file $rcfile\n";
+		do $rcfile;
+		&ConditionalArgs;
+	} else {
+		print "Config file $rcfile not found\n";
+	}
 
 	# Hans: start the logfile immediately
 	chdir("$StartDir");
@@ -405,11 +419,6 @@ sub BuildIt {
 
 	# Set GuessConfig and ConfigGuess
 	print LOG "ConfigGuess = $ConfigGuess\n";
-	if ($BuildAutotools) {
-		$BuildObjDir = "$ENV{'HOME'}/develop/";
-	} else {
-		$BuildObjDir = "$ENV{'HOME'}/develop/blender/obj/";
-	}
 	if (! -f $ConfigGuess) {
 		die "$ConfigGuess not found, aborting\n";
 	}
