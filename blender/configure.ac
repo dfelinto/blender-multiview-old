@@ -53,6 +53,10 @@ case "$target" in
      AC_CHECK_LIB([movieGL], [mvOpenFile])
      IRIX_SSL="/usr/freeware"
      LDFLAGS="$LDFLAGS -L/usr/freeware/lib32"
+     if test "x$GCC" = xyes; then
+        CXXFLAGS="$CXXFLAGS -DNO_FAST_ATOMS"
+     fi
+
   ;;
   *-*-darwin* )
 dnl  	AC_CHECK_HEADER([/System/Library/Frameworks/OpenGL.framework/Versions/A/Headers/gl.h]) 
