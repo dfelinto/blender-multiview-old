@@ -58,3 +58,4 @@
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
 #endif // !defined(AFX_STDAFX_H__3821D263_E6F2_43B9_A1A8_EB96F30D281E__INCLUDED_)
+

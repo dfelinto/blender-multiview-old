@@ -55,3 +55,4 @@ private:
 };
 	
 #endif // __DCCOBBCOLLIDER_INCLUDED__
+

@@ -193,3 +193,4 @@ struct Blender3DPlugin : public netscape_plugin_Plugin {
 #endif /* __cplusplus */
 
 #endif /* Class Blender3DPlugin */
+

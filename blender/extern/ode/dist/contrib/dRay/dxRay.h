@@ -30,3 +30,4 @@ int dCollidePR(dxGeom* RayGeom, dxGeom* PlaneGeom, int Flags, dContactGeom* Cont
 int dCollideSR(dxGeom* RayGeom, dxGeom* SphereGeom, int Flags, dContactGeom* Contacts, int Stride);
 int dCollideBR(dxGeom* RayGeom, dxGeom* BoxGeom, int Flags, dContactGeom* Contacts, int Stride);
 int dCollideCCR(dxGeom* RayGeom, dxGeom* CCylinderGeom, int Flags, dContactGeom* Contacts, int Stride);
+

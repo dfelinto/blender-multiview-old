@@ -604,3 +604,4 @@ void    NP_LOADDS NPN_ForceRedraw(NPP instance);
 #endif
 
 #endif /* _NPAPI_H_ */
+

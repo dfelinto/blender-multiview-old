@@ -26,3 +26,4 @@ void dGeomTriListBuild(dGeomID g, const dcVector3* Vertices, int VertexCount, co
 
 /* Getting data */
 void dGeomTriListGetTriangle(dGeomID g, int Index, dVector3* v0, dVector3* v1, dVector3* v2);
+

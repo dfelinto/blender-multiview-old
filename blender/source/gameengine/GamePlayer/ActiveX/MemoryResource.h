@@ -91,3 +91,4 @@ protected:
 };
 
 #endif // __MEMORY_RESOURCE_H__
+

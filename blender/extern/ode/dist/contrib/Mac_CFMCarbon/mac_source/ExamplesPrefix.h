@@ -11,3 +11,4 @@ int main (int argc, char **argv) { argc = ccommand(&argv); return fmain(argc, ar
 #define main(argc, argv) fmain(argc, argv)
 
 #endif // prefix_h
+

@@ -88,5 +88,6 @@ private :
 
 	LOD_Decimation_InfoPtr m_info;
 };
+
 #endif
 

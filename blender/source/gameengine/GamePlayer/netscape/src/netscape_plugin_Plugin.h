@@ -306,3 +306,4 @@ struct netscape_plugin_Plugin : public java_lang_Object {
 #endif /* __cplusplus */
 
 #endif /* Class netscape/plugin/Plugin */
+

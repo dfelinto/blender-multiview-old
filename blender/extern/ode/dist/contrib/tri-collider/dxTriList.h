@@ -233,3 +233,4 @@ template<class T> const T& dcMIN(const T& x, const T& y){
 }
 
 #endif	//__DXTRILIST_INCLUDED__
+

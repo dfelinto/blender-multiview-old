@@ -108,5 +108,5 @@ NS_IMETHODIMP _MYCLASS_::SendMessage(const char *to, const char *from, const cha
 /* End of implementation class template. */
 #endif
 
-
 #endif /* __gen_Blender3DPlugin_h__ */
+

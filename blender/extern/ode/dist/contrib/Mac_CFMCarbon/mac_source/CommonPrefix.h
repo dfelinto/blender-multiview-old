@@ -4,3 +4,4 @@
 
 // Comment out for single precision
 #define PRECISION_DOUBLE 1
+

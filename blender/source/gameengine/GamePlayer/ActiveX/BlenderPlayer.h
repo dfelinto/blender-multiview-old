@@ -62,3 +62,4 @@ extern const WORD _wVerMinor;
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
 #endif // !defined(AFX_BLENDERPLAYER_H__10709E01_D774_4395_BCA9_9D206BE544DA__INCLUDED)
+

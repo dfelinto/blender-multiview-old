@@ -399,3 +399,4 @@ protected:
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
 #endif // !defined(AFX_BLENDERPLAYERCTL_H__9DA6C3C3_CF65_4267_AB50_DCCDE8341EBF__INCLUDED)
+

@@ -635,4 +635,3 @@ typedef enum JRIEnvOperations {
 #endif /* __cplusplus */
 
 #endif /* JRI_H */
-/******************************************************************************/

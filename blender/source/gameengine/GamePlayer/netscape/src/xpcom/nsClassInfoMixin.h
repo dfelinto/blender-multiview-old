@@ -72,3 +72,4 @@ class nsClassInfoMixin : public nsIClassInfo
 };
 
 #endif
+

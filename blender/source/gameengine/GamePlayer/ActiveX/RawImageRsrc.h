@@ -96,3 +96,4 @@ protected:
 };
 
 #endif // __RAW_IMAGE_RSRC_H__
+

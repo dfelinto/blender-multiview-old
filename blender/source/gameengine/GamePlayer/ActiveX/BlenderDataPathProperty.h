@@ -85,3 +85,4 @@ public:
 // Microsoft Visual C++ will insert additional declarations immediately before the previous line.
 
 #endif // !defined(AFX_BLENDERDATAPATHPROPERTY_H__C3C26CAC_072A_431C_B985_20836EE58F76__INCLUDED_)
+

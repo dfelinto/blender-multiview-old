@@ -1233,3 +1233,4 @@ NPError	NP_Shutdown(void);
 #endif /* XP_UNIX */
 
 #endif /* _NPUPP_H_ */
+
