@@ -217,7 +217,7 @@ sub ConditionalArgs {
 	} else {
 		$FE = 'blenderdynamic'; 
 	}
-	$BuildModule = 'blender';
+	$BuildModule = 'blender lib';
 
     $CVSCO .= " -r $BuildTag" if ( $BuildTag ne '');
 } #EndSub-ConditionalArgs
