@@ -6,6 +6,8 @@ else
   blenpythonlib = bpython/libblender_bpython.la
 endif
 
+LIBS =
+
 SUBDIRS = blenloader deflate inflate encrypt decrypt sign verify \
 	writestreamglue readstreamglue writeblenfile readblenfile \
 	avi imbuf img render radiosity blenlib blenkernel blenpluginapi \

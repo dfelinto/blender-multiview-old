@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_encrypt.la
 
+LIBS =
+
 libblender_encrypt_la_SOURCES = \
 	BLO_encrypt.h \
 	intern/BLO_encrypt.c

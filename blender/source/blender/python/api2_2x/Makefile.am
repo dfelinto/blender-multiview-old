@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_api2_2x.la
 
+LIBS =
+
 libblender_api2_2x_la_SOURCES = \
 	Blender.c \
 	Object.c \

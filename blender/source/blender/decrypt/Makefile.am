@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_decrypt.la
 
+LIBS =
+
 libblender_decrypt_la_SOURCES = \
 	BLO_decrypt.h \
 	BLO_en_de_cryptHeader.h \

@@ -3,6 +3,8 @@ INCLUDES = -I$(top_srcdir)/intern/container \
 	-I$(top_srcdir)/intern/moto/include \
 	-I$(top_srcdir)/intern/memutil
 
+LIBS =
+
 libblender_BSP_la_SOURCES = \
 	extern/CSG_BooleanOps.h \
 	intern/BSP_CSGException.h \

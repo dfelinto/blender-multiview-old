@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_BMF.la
 
+LIBS =
+
 libblender_BMF_la_SOURCES = \
 	BMF_Api.h \
 	BMF_Fonts.h \

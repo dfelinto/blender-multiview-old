@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_img.la
 
+LIBS =
+
 libblender_img_la_SOURCES = \
 	IMG_Api.h \
 	intern/IMG_Api.cpp \

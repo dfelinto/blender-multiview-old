@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_kernel.la
 
+LIBS =
+
 INCLUDES = -I$(top_srcdir)/source/kernel/gen_messaging \
 	-I$(top_srcdir)/source/kernel/gen_system \
 	-I$(top_srcdir)/intern/string \

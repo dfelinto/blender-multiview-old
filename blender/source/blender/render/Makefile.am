@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_render.la
 
+LIBS =
+
 libblender_render_la_SOURCES = \
 	extern/include/render.h \
 	extern/include/render_types.h \

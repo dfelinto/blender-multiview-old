@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_sign.la
 
+LIBS =
+
 libblender_sign_la_SOURCES = \
 	BLO_sign.h \
 	intern/BLO_sign.c

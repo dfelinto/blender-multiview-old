@@ -303,13 +303,11 @@ if test x"$enable_openal" = x"yes"; then
    , dnl found -- nop
    [enable_openal=no] )  dnl not found -- disable openal
 fi
-  AC_CHECK_LIB([Xext], [XextFindDisplay],,,$X_LIBS)
-  AC_CHECK_LIB([X11], [XOpenDisplay],,,$X_LIBS)
-  AC_CHECK_LIB([GL], [glIsTexture],,,$X_LIBS)
-  AC_CHECK_LIB([GLU], [gluGetString],,,$X_LIBS)
-  AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes],,,$X_LIBS)
-
-LIBS="$X_LIBS $LIBS"
+  AC_CHECK_LIB([Xext], [XextFindDisplay])
+  AC_CHECK_LIB([X11], [XOpenDisplay])
+  AC_CHECK_LIB([GL], [glIsTexture])
+  AC_CHECK_LIB([GLU], [gluGetString])
+  AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes])
 
 dnl ---------------------
 dnl Checks for data types
@@ -321,7 +319,6 @@ dnl ---------------------
   AC_TYPE_SIZE_T
   AC_HEADER_TIME
   AC_STRUCT_TM
-
 
 dnl ---  eh... i dunno... -PH  ----
 if test x$with_gameblender = x"yes"; then

@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_belgium.la
 
+LIBS =
+
 INCLUDES = -I. -I$(top_srcdir)/intern/keymaker/python
 
 libblender_belgium_la_SOURCES = \

@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_readblenfile.la
 
+LIBS =
+
 libblender_readblenfile_la_SOURCES = \
 	BLO_readblenfile.h \
 	intern/BLO_readblenfile.c 

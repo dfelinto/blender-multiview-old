@@ -4,6 +4,8 @@ else
   blenpythoninclude = -I$(top_srcdir)/source/blender/bpython/include
 endif
 
+LIBS =
+
 noinst_LTLIBRARIES = libblender_creator.la
 
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc \

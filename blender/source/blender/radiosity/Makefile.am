@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_radiosity.la
 
+LIBS =
+
 libblender_radiosity_la_SOURCES = \
 	extern/include/radio.h \
 	extern/include/radio_types.h \

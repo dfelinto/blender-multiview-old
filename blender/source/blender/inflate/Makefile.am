@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_inflate.la
 
+LIBS =
+
 libblender_inflate_la_SOURCES = \
 	BLO_in_de_flateHeader.h \
 	BLO_inflate.h \

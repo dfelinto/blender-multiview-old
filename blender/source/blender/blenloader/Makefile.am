@@ -6,6 +6,8 @@ endif
 
 noinst_LTLIBRARIES = libblender_blenloader.la
 
+LIBS =
+
 libblender_blenloader_la_SOURCES = \
 	BLO_genfile.h \
 	BLO_readfile.h \

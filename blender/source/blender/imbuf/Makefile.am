@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_imbuf.la
 
+LIBS =
+
 libblender_imbuf_la_SOURCES = \
 	IMB_imbuf.h \
 	IMB_imbuf_types.h \

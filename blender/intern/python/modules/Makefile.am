@@ -1,3 +1,5 @@
+LIBS =
+
 EXTRA_DIST = \
 	VRMLmain.py \
 	blenderos.py \

@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_readstreamglue.la
 
+LIBS =
+
 libblender_readstreamglue_la_SOURCES = \
 	BLO_keyStore.h \
 	BLO_readStreamErrors.h \

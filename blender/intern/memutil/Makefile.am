@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_MEM.la
 
+LIBS =
+
 libblender_MEM_la_SOURCES = \
 	MEM_NonCopyable.h \
 	MEM_RefCountPtr.h \

@@ -72,6 +72,8 @@ endif
 
 noinst_LTLIBRARIES = libblender_GHOST.la  
 
+LIBS =
+
 INCLUDES = -I$(top_srcdir)/intern/string
 
 libblender_GHOST_la_SOURCES = \

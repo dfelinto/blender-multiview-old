@@ -2,6 +2,8 @@ SUBDIRS = api2_2x
 
 noinst_LTLIBRARIES = libblender_python.la
 
+LIBS =
+
 libblender_python_la_SOURCES = BPY_interface.c
 
 libblender_python_la_CFLAGS = -Wall

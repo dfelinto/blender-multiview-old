@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_writestreamglue.la
 
+LIBS =
+
 libblender_writestreamglue_la_SOURCES = \
 	BLO_getPubKey.h \
 	BLO_writeStreamErrors.h \

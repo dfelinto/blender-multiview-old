@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_CTR.la
 
+LIBS =
+
 libblender_CTR_la_SOURCES = \
 	CTR_List.h \
 	CTR_Map.h \

@@ -1,5 +1,7 @@
 noinst_LIBRARIES = libfrozen.a
 
+LIBS =
+
 SRCDIR = $(top_srcdir)/intern/python/modules
 
 PYFILES = \

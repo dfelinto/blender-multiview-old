@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_MT.la
 
+LIBS =
+
 INCLUDES= -I$(top_srcdir)/intern/moto/include
 
 libblender_MT_la_SOURCES = \

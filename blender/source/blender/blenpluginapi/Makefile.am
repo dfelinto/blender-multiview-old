@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_blenpluginapi.la
 
+LIBS =
+
 libblender_blenpluginapi_la_SOURCES = \
 	documentation.h \
 	floatpatch.h \

@@ -6,6 +6,8 @@ endif
 
 noinst_LTLIBRARIES = libblender_renderconverter.la
 
+LIBS =
+
 libblender_renderconverter_la_SOURCES = \
 	RE_renderconverter.h \
 	intern/convertBlenderScene.c

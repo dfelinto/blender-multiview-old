@@ -6,6 +6,8 @@ endif
 
 noinst_LTLIBRARIES = libblender_blenkernel.la
 
+LIBS =
+
 libblender_blenkernel_la_SOURCES = \
 	BKE_action.h \
 	BKE_anim.h \

@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_avi.la
 
+LIBS =
+
 libblender_avi_la_SOURCES= \
 	AVI_avi.h \
 	intern/avi.c \

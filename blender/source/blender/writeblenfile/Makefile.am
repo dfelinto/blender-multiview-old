@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_writeblenfile.la
 
+LIBS =
+
 libblender_writeblenfile_la_SOURCES = \
 	BLO_writeblenfile.h \
 	intern/BLO_writeblenfile.c

@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_blenlib.la
 
+LIBS =
+
 libblender_blenlib_la_SOURCES = \
 	BLI_arithb.h \
 	BLI_blenlib.h \

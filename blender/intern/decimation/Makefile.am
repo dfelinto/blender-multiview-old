@@ -1,4 +1,7 @@
 noinst_LTLIBRARIES = libblender_LOD.la
+
+LIBS =
+
 INCLUDES = -I$(top_srcdir)/intern/decimation/intern \
 	-I$(top_srcdir)/intern/decimation/extern \
 	-I$(top_srcdir)/intern/moto/include \

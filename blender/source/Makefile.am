@@ -26,18 +26,15 @@ else
 blenpythonlib = blender/bpython/libblender_bpython.la
 endif
 
+LIBS =
+
 SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
 
 noinst_LTLIBRARIES = libblender_source.la $(playerlib) $(pluginlib)
 
-libblender_source_la_LDFLAGS = \
-	-L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
-	 $(X_LIBS)
-
 libblender_source_la_SOURCES = 
 
 libblender_source_la_LIBADD = \
-	-lpython@PYTHON_VERSION@ \
 	$(gamelib) \
 	creator/libblender_creator.la \
 	blender/src/libblender_blendersrc.la \
@@ -64,10 +61,6 @@ libblender_source_la_LIBADD = \
 	$(blenpythonlib) \
 	blender/makesdna/libblender_makesdna.la \
 	kernel/libblender_kernel.la
-
-libblender_player_la_LDFLAGS = \
-	-L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
-	 $(X_LIBS)
 
 libblender_player_la_SOURCES =
 

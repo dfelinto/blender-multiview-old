@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_verify.la
 
+LIBS =
+
 libblender_verify_la_SOURCES = \
 	BLO_sign_verify_Header.h \
 	BLO_signer_info.h \

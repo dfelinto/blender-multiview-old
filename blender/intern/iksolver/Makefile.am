@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_IK.la
 
+LIBS =
+
 INCLUDES = -I$(top_srcdir)/intern/iksolver/intern/TNT \
 	-I$(top_srcdir)/intern/iksolver/intern \
 	-I$(top_srcdir)/intern/iksolver/extern \

@@ -1,5 +1,7 @@
 noinst_LTLIBRARIES = libblender_deflate.la
 
+LIBS =
+
 libblender_deflate_la_SOURCES = \
 	BLO_deflate.h \
 	intern/BLO_deflate.c

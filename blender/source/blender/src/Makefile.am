@@ -6,6 +6,8 @@ endif
 
 noinst_LTLIBRARIES = libblender_blendersrc.la
 
+LIBS =
+
 libblender_blendersrc_la_SOURCES = \
 	B.blend.c \
 	Bfont.c \

@@ -1,10 +1,8 @@
 noinst_LTLIBRARIES = libblender_bpython.la
 
-libblender_bpython_la_CFLAGS = -DFUTURE_PYTHON_API
+LIBS =
 
-libblender_bpython_la_LDFLAGS = -static \
-	-L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config \
-	-lpython@PYTHON_VERSION@ @X_EXTRA_LIBS@ -lm
+libblender_bpython_la_CFLAGS = -DFUTURE_PYTHON_API
 
 libblender_bpython_la_SOURCES = \
 	include/BPY_extern.h \

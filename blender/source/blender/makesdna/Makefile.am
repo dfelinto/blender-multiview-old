@@ -1,6 +1,8 @@
 SUBDIRS = intern 
 noinst_LTLIBRARIES = libblender_makesdna.la
 
+LIBS =
+
 libblender_makesdna_la_SOURCES = \
 	DNA_ID.h \
 	DNA_action_types.h \
