@@ -72,8 +72,25 @@ Notes:
 - While itterating the steps are printed in the console. 
 - At the end, the amount of 'unshot energy' is printed in the console, this can be used to set a minimum for the Convergence button. 
   
+**** PYTHON:
 
-**** FIXES:
+* bug fixes:
+ - Object: obj.get/setEuler() methods
+ - Curve: curve.getControlPoint()
+ - Lamp: lamp.setDist() was missing
+ - Scene: scene.frameSettings()
+ - vectors representation: write the right number of components
+* internal improvements: Object, NMesh, Curve, Text
+* Additions:
+ - Added the 'site' directory to the default path, so that external Python packages (like wxPython, etc) can be found;
+ - Object: object.getBoundBox(), object.makeDisplayList() methods;
+ - Window: Get/SetCursorPos(), GetViewMatrix(), GetViewVector();
+ - Lamp: added modes NoDifuse and NoSpecular;
+ - Registry: new module to handle persistent data (in the future);
+ - Draw: PupMenu() function.
+
+
+**** GENERAL FIXES:
 
 * 2.28 bug: Shadow buffer crashed with odd sizes (Not multiples of 16)
 * fixed stringlength for texture plugin path button, max 160 chars now.
