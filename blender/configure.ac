@@ -227,11 +227,9 @@ dnl --------------------------
 dnl Checks for extra libraries
 dnl --------------------------
 
-dnl ugly hack.  -PH
-if test ! x"$x_libraries" = x""; then
-  old_ldflags="${LDFLAGS}"
-  export LDFLAGS="-L$x_libraries"
-fi
+  AC_LANG_PUSH([C++])
+  AC_CHECK_LIB([stdc++], [printf]) dnl  Zarquon's knees, this is an evil hack.
+  AC_LANG_POP([C++])
   AC_CHECK_LIB([dl], [dlopen])
   AC_CHECK_LIB([util], [openpty])
   AC_CHECK_LIB([pthread], [pthread_exit])
@@ -254,17 +252,10 @@ if test x"$enable_openal" = x"yes"; then
    , dnl found -- nop
    [enable_openal=no] )  dnl not found -- disable openal
 fi
-  AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes])
   AC_CHECK_LIB([GL], [glIsTexture])
-  AC_CHECK_LIB([GLU], [gluErrorString],,,[-lGL])
-  AC_LANG_PUSH([C++])
-  AC_CHECK_LIB([stdc++], [printf]) dnl  Zarquon's knees, this is an evil hack.
-  AC_LANG_POP([C++])  dnl  Should've had C++ last.
+  AC_CHECK_LIB([GLU], [gluErrorString])
+  AC_CHECK_LIB([Xxf86dga], [XDGAQueryModes],,,$X_LIBS)
 
-if test ! x"$x_libraries" = x""; then
-  unset LDFLAGS
-  export LDFLAGS=$old_ldflags
-fi
 
 
 dnl ---------------------
