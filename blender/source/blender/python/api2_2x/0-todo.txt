@@ -9,8 +9,6 @@ Requests and TODO list:
 after 2.34;
 - Blender.EMesh module: direct access to editmesh objects;
 - update Material, Texture, Lamp, etc with recent Blender additions (done?);
-- support 3d texts;
-- support dupliverts.
 
 
 The next section describes bpython projects.  Here's a suggested format:
@@ -64,7 +62,6 @@ Changes in files:
 ++     all source files have gone thru the indent formatter 
 
 - use EXPP_incr_ret where applicable;
-- consider Yann's suggestion for get/setAttr tables;
 - consider macros and/or Joe's get/setVarType functions, maybe put in
 	gen_utils.[ch] for some modules to use;
 - remove unecessary redraws;
@@ -76,6 +73,12 @@ Dir structure:
 	internal/ or something;
 - rename EXPP_interface.[ch] to bpy_interface.[ch] and move internal stuff
 	from python/BPY_interface.c to it;
+
+- consider splitting BPY_interface.c, it's too big and should really only have
+  what its name implies (BPY_ functions seen outside python/ dir);
+- keep only the few "public" declarations (needed also outside python/) in
+  BPY_extern.h, to avoid unnecessary recompilation every time it is changed.
+  These should (and are) called BPY_***().
 
 Interoperability:
 - Modules and methods should play nicely together.  The return value from a getSomething() method should work as the input argument to a setSomething() method.  In otherwords,  ob.setSomething( ob.setSomething() )  should work.
