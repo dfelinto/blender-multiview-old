@@ -25,6 +25,9 @@ glut:    http://www.opengl.org/developers/documentation/glut.html
 If you do not have OpenGL you will also need mesa:
 mesa:    http://www.mesa3d.org
 
+If you want to compile with QuickTime enabled, download the SDK for your OS:
+quicktime:   http://developer.apple.com/quicktime/
+
 For the translations to other languages than English you will need gettext,
 freetype2 and FTGL. Note that these translations are not complete yet, some
 time after the release of 2.27 they will be made available for download also.
@@ -55,15 +58,18 @@ http://www.blender.org/modules/documentation/intranet/conventions/codingstylegui
 *********************************************************************
 *********************************************************************
 
-There are two build systems for unixy platforms, the old NaN Makefiles,
-and the automake/autoconf configure style one.
+There are three build systems for unixy platforms, the old NaN Makefiles,
+and the automake/autoconf configure style one, and the brand new SCons
+based system.
 
 configure will scribble over the NaN Makefiles if you run it directly
 from the blender top dir, so don't do that. Follow the instructions in
 doc/autoconfig.txt instead, and invoke it from it's own object-directory.
 
 The NaN system is best understood, if you want to use the configure system,
-please help improve it.
+please help improve it. SCons has been added as a new build system for
+Blender and it has expanded in a short time, proving to be a quite handy
+build system.
 
 *********************************************************************
 *********************************************************************
@@ -85,6 +91,53 @@ problems with this at the moment.
 After adjusting things for your environment run 'make' (or use the nice hmake
 script at blender/source/tools/hmake/hmake)
 
+----------------------Basic SCon TIPS-----------------------------------
+
+To be able to build with the SCons build system you'll need Python (preferably
+version 2.2.x) and SCons (http://www.scons.org) installed. After you're
+sure these work properly you are ready to build with SCons.
+
+Systems supported at the moment are:
+* Linux (Michel_)
+* Windows (jesterKing)
+* Irix (Hos)
+* Cygwin (Michel_)
+* MacOS (sgefant)
+
+All except Linux build with this system against the precompiled libraries,
+so be sure to get them from CVS, ie. for Windows:
+
+cvs -z3 -d:pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender co lib/windows
+
+Be sure to do this at the same level your blender directory is at
+(ie. /home/username/build/blender and /home/username/build/lib/OS).
+
+Not all are entirely complete yet, but the system itself is very usable.
+
+Quick tip 1: type 'scons' to build it.
+Quick tip 2: type 'scons --clean' to clean your build tree.
+
+The main file of interest is the SConstruct file in the blender 
+directory. Open this file and browse to the section that concerns your
+system. Set any options as necessary (the true/false switches, the
+rest should work out-of-the-box).
+
+When you're satisfied with the settings you should run scons. For most systems
+that is just in the command-line in the directory containing the SConstruct
+file. If you want to, you can use the switch -j N for benefiting more processors,
+and --debug=time for timing the entire build process.
+
+If you are on Windows and you want to compile with MSVC (6 and 7) you'll need
+to run vcvars32.bat in your command-line (DOS-box) to set the necessary
+environment variables. Be sure to browse to the blender top-directory. Type
+'scons' and watch the build fly by.
+
+For the Windows build the QuickTime SDK is expected to be at
+lib\windows\QTDevWin\CIncludes
+and
+lib\windows\QTDevWin\Libraries,
+but you can alter the SConstruct file to point it to the path you have your
+QuickTime SDK installed.
 
 
 ----------------------WINDOWS TIPS--------------------------------------
@@ -93,18 +146,26 @@ When building Blender on Windows you have three choices:
 METHOD 1. Build using the old NaN Makefiles.
 METHOD 2. Build using the new automake/autoconf files
 METHOD 3. Use Microsoft Visual Studio project files
+METHOD 4. Use SCons (see above)
 
 These directions are for method 3. Method 1 was used in Nan in combination 
-with Cygwin. I don't know if somebody ever tried method 2.
+with Cygwin. I don't know if somebody ever tried method 2. Note: better
+instruction for MSVC7 coming soonish.
 
 If you are using Method 1 and or 2 with cygwin you need to set FREE_WINDOWS 
 to true you can do this with: export FREE_WINDOWS=true
 
 EXTERNAL LIBARIES
 All external libraries that Blender depends on are found in CVS in 
-precompiled form. If you did not already do so, check out 
-blender/lib/windows from CVS. If you prefer to build or download those 
-libraries yourself, there are some directions below.
+precompiled form. If you did not already do so, check out lib/windows from CVS using
+ 
+cvs -z3 -d:pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender co lib/windows
+
+[NOTE: Make sure you are in the directory where the blender directory resides,
+NOT in the blender directory itself! lib/windows must be in the same dir as
+blender to make the VC project files work correctly.]
+If you prefer to build or download those libraries yourself, there are some
+directions below.
 
 INTERN LIBRARIES:
 The first thing you need to do is to build the Blender "intern" libraries.
@@ -112,7 +173,10 @@ You need to have Python installed on your machine.
 
 Open the workspace in the $NANBLENDERHOME/intern/make/msvc_6_0 directory.
 Build the "build_install_all" project. This will build all the intern libraries
-and installs them in the $NANBLENDERHOME/lib/windows directory.
+and installs them in the $NANBLENDERHOME/../lib/windows directory.
+
+If you get weird compiler errors, make sure you have the latest Visual Studio
+Service Pack installed. SP5 worked for me.
 
 If the post build step (copying the libraries to their destinations) fails,
 this is probably due to the fact that MSVC can't find the XCOPY command as 
@@ -147,7 +211,7 @@ JPEG:
 BINARY LIBRARY:
 Go to sourceforge.net, navigate to the GnuWin32 project and download 
 libjpeg-6b-lib.zip. Rename the unzipped directory "jpeg" and copy it to the 
-$NANBLENDERHOME/lib/windows directory.
+$NANBLENDERHOME/../lib/windows directory.
 FROM SOURCES:
 Download the jpeg sources from http://www.ijg.org/. Go into the source 
 directory and copy the file jconfig.vc to jconfig.h. Now start a command box
@@ -156,19 +220,19 @@ vcvars32.bat batch file located in the VC98/Bin directory of the MSVC
 installation directory first).
 Copy these include files: jconfig.h, jerror.h, jmorecfg.h, jpeglib.h
 from the build directory to the lib tree in this directory:
-$NANBLENDERHOME/lib/windows/jpeg/include
+$NANBLENDERHOME/../lib/windows/jpeg/include
 The file libjpeg.lib should be copied to:
-$NANBLENDERHOME/lib/windows/jpeg/lib
+$NANBLENDERHOME/../lib/windows/jpeg/lib
 
 PNG:
 Go to sourceforge.net, navigate to the GnuWin32 project and download 
 libpng-1.2.4-1-lib.zip. Rename the unzipped directory "png" and copy it to the 
-$NANBLENDERHOME/lib/windows directory.
+$NANBLENDERHOME/../lib/windows directory.
 
 ZLIB:
 Go to sourceforge.net, navigate to the GnuWin32 project and download 
 zlib-1.1.4-lib.zip. Rename the unzipped directory "zlib" and copy it to the 
-$NANBLENDERHOME/lib/windows directory.
+$NANBLENDERHOME/../lib/windows directory.
 
 
 
@@ -177,6 +241,7 @@ When building Blender on OSX you have three choices:
 METHOD 1. Build using the old NaN Makefiles.
 METHOD 2. Build using the new automake/autoconf files
 METHOD 3. Use the Project Builder project
+METHOD 4. Use the SCons build system (see above)
 
 METHOD 1 and 3
 The first 4 steps are th same for methods 1 and 3. Only the actual Blender 
