@@ -452,7 +452,7 @@ msgid "Front"
 msgstr "Front"
 msgid "Right"
 msgstr "Right"
-msgid "Top"\
+msgid "Top"
 msgstr "Top"
 msgid "Zoom In"
 msgstr "拡大"
