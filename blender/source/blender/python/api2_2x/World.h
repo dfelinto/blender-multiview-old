@@ -109,7 +109,7 @@ static PyMethodDef BPy_World_methods[] = {
   {"getRange", (PyCFunction)World_getRange, METH_NOARGS,
       "() - Return World Range"},
   {"setRange", (PyCFunction)World_setRange, METH_VARARGS,
-      "() - Change this World's range"}, {
+      "() - Change this World's range"}, 
   {"getIpo", (PyCFunction)World_getIpo, METH_NOARGS,
       "() - Return World Ipo"},
   {"setIpo", (PyCFunction)World_setIpo, METH_VARARGS,
