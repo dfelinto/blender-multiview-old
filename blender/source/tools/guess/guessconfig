@@ -30,13 +30,6 @@
 #
 # ***** END GPL/BL DUAL LICENSE BLOCK *****
 
-# If we were here before, then there is no need to run config.guess again
-TMP=/tmp
-if [ -f $TMP/.nanguess ]; then
-    cat $TMP/.nanguess
-    exit 0;
-fi
-
 # Be kind, temporarily ...
 if [ -z "$SRCHOME" ]; then
     SRCHOME="$NANBLENDERHOME/source"
@@ -102,9 +95,6 @@ fi
 # Parse arguments
 if [ -z "$1" ]; then
     # No arguments, just echo OS-VERSION-CPU
-    echo $NANGUESS > $TMP/.nanguess
-    chmod 666 $TMP/.nanguess
-#    chgrp cvs $TMP/.nanguess
     echo $NANGUESS
 elif [ "$1" = "-s" ]; then
     # bourne shell output style
