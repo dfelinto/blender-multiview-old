@@ -110,3 +110,5 @@ PyExc_NotImplementedError
 PyFunction_Type
 PyObject_CallFunction
 PyObject_CallObject
+PyTuple_GetItem
+PyTuple_Type
