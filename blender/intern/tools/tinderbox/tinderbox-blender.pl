@@ -148,26 +148,21 @@ sub InitVars {
 
     #relative path to binary
 	if ($UNAME eq 'Darwin') {
-		$BinaryName{'blendercreator'} = 'blendercreator';
-		$BinaryName{'blenderplayer'} = 'blenderplayer';
-		$BinaryName{'blenderpublisher'} = 'blenderpublisher';
-#		$BinaryName{'Dblenderplayer'} = 'debug/blenderplayer';
+		$BinaryName{'blenderplayer'} = 'bin/blenderplayer';
+		$BinaryName{'blenderdynamic'} = 'bin/blender';
+#		$BinaryName{'Dblenderplayer'} = 'debug/bin/blenderplayer';
 	} elsif ($UNAME eq 'CYGWIN_NT-5.0') {
-		$BinaryName{'blendercreator'} = 'blendercreator.exe';
-#		$BinaryName{'Dblendercreator'} = 'debug/blendercreator.exe';
-#		$BinaryName{'blenderpublisher'} = 'blenderpublisher.exe';
-#		$BinaryName{'Dblenderpublisher'} = 'debug/blenderpublisher.exe';
+#		$BinaryName{'blenderdynamic'} = 'blender.exe';
+#		$BinaryName{'Dblenderdynamic'} = 'debug/blender.exe';
 #		$BinaryName{'blenderplugin'} = 'npB3DPlg.dll';
 	} else {
-		$BinaryName{'blendercreator'} = 'blendercreator';
-#		$BinaryName{'Dblendercreator'} = 'debug/blendercreator';
-#		$BinaryName{'blenderpublisher'} = 'blenderpublisher';
-#		$BinaryName{'Dblenderpublisher'} = 'debug/blenderpublisher';
+#		$BinaryName{'blenderdynamic'} = 'blender';
+#		$BinaryName{'Dblenderdynamic'} = 'debug/blender';
 #		$BinaryName{'blenderplugin'} = 'npBlender3DPlugin.so';
 #		$BinaryName{'blenderpluginXPCOM'} = 'Blender3DPlugin.so';
 	}
 	if ($BuildAutotools) {
-		$BinaryName{'blendercreator'} = 'blender';
+		$BinaryName{'blenderdynamic'} = 'blender';
 		$BuildType = 'autotoolized';
 	}
 
@@ -201,11 +196,11 @@ sub InitVars {
 sub ConditionalArgs {
 	$BuildTree = 'source';
 	if ($UNAME eq 'Darwin') {
-		$FE = 'blenderplayer,blendercreator,blenderpublisher'; 
+		$FE = 'blenderplayer,blenderdynamic'; 
 #	} elsif ($UNAME eq 'Linux') {
-#		$FE = 'blendercreator,Dblendercreator,blenderpublisher,Dblenderpublisher,blenderplugin,blenderpluginXPCOM'; 
+#		$FE = 'blenderdynamic,Dblenderdynamic,blenderplugin,blenderpluginXPCOM'; 
 	} else {
-		$FE = 'blendercreator'; 
+		$FE = 'blenderdynamic'; 
 	}
 	$BuildModule = 'blender';
 
