@@ -18,10 +18,22 @@ SUBDIRS = blender kernel creator $(gameblenderdir) $(icondir)
 ## Assuming no reason to build creator anymore lets just call publisher blender
 if CARBON
 bin_PROGRAMS = blenderpublisher.app blenderplayer.app 
+
+blenderpublisher_app_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
+
+blenderpublisher_app_SOURCES = 
+
+blenderpublisher_app_LDADD = \
+	-lpython@PYTHON_VERSION@ \
+	$(gamelib) \
+	creator/libblender_creator.la \
+	blender/libblender_blender.la \
+	kernel/libblender_kernel.la \
+	../intern/libblender_intern.la \
+	../intern/python/frozen/libfrozen.a
 else
 #bin_PROGRAMS = blender blenderplayer plugin
 bin_PROGRAMS = blender.bin
-endif
 
 blender_bin_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config
 
@@ -35,3 +47,4 @@ blender_bin_LDADD = \
 	kernel/libblender_kernel.la \
 	../intern/libblender_intern.la \
 	../intern/python/frozen/libfrozen.a
+endif
