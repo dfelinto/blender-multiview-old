@@ -14,7 +14,10 @@ All platforms:
 
 - Autoskinning for Armatures, when parenting a Mesh to an Armature it gives a menu.
 
-- Shadowbuffers now can have any size (with number-button)
+- In editmode, selected vertices can be merged with Alt-MKEY. The merge option is also
+  added to the WKEY menu. 
+
+- Shadowbuffers now can have any size. (with number-button)
 
 - Hotkeys are added for subsurfing objects. Shift-OKEY toggles subsurf mode for an object
   and Ctrl-ONEKEY to Ctrl-FOURKEY will set the subsurf division with the keyboard.
