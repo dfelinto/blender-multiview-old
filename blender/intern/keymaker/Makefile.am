@@ -8,5 +8,9 @@ libblender_belgium_la_SOURCES = \
 	mt19937int.h \
 	python/key_pyc.h \
 	key.c \
-	keyloader.c \
 	mt19937int.c
+
+## Keyloader is a seperate test program
+bin_PROGRAMS = keyloader
+keyloader_SOURCES = keyloader.c
+keyloader_LDADD = -lcrypto libblender_belgium.la
