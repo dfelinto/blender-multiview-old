@@ -1167,7 +1167,7 @@ static uiBlock *view3d_edit_object_makelinksmenu(void *arg_unused)
 	
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, "Object Ipo|Ctrl L, 2",		0, yco-=20, menuwidth, 19, NULL, 0.0, 0.0, 1, 4, "");
 	
-	if (ob=OBACT) {
+	if ((ob=OBACT)) {
 	
 		if(ob->type==OB_MESH) {
 			uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, "Mesh Data|Ctrl L, 3",			0, yco-=20, menuwidth, 19, NULL, 0.0, 0.0, 1, 2, "");
@@ -1298,7 +1298,7 @@ static uiBlock *view3d_edit_object_copyattrmenu(void *arg_unused)
 	
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, "Object Constraints|Ctrl C, 11",			0, yco-=20, menuwidth, 19, NULL, 0.0, 0.0, 1, 22, "");
 	
-	if (ob= OBACT) {
+	if ((ob= OBACT)) {
 	
 		if ((ob->type == OB_MESH) || (ob->type == OB_CURVE) || (ob->type == OB_SURF) ||
 				(ob->type == OB_FONT) || (ob->type == OB_MBALL)) {
