@@ -56,6 +56,7 @@ libblender_render_la_SOURCES = \
 	intern/source/shadowBuffer.cpp \
 	intern/source/vanillaRenderPipe.c \
 	intern/source/zbuf.c \
+	intern/source/ray.c \
 	intern/source/zbufferdatastruct.c
 
 INCLUDES = -I$(top_srcdir)/source/blender/render/intern/include \
