@@ -7971,63 +7971,61 @@ void bevel_shrink_draw(float d, int flag)
 	/* move edges of all faces with evl->f1 & flag closer towards their centres */
 	evl= G.edvl.first;
 	while (evl) {
-		if (evl->f1 & flag) {
-			VECCOPY(v1, evl->v1->co);
-			VECCOPY(v2, evl->v2->co);			
-			VECCOPY(v3, evl->v3->co);	
-			VECCOPY(no, evl->n);
-			if (evl->v4 == NULL) {
-				bevel_displace_vec(vec, v1, v2, v3, d, no);
-				VECCOPY(fv2, vec);
-				bevel_displace_vec(vec, v2, v3, v1, d, no);
-				VECCOPY(fv3, vec);		
-				bevel_displace_vec(vec, v3, v1, v2, d, no);
-				VECCOPY(fv1, vec);
+		VECCOPY(v1, evl->v1->co);
+		VECCOPY(v2, evl->v2->co);			
+		VECCOPY(v3, evl->v3->co);	
+		VECCOPY(no, evl->n);
+		if (evl->v4 == NULL) {
+			bevel_displace_vec(vec, v1, v2, v3, d, no);
+			VECCOPY(fv2, vec);
+			bevel_displace_vec(vec, v2, v3, v1, d, no);
+			VECCOPY(fv3, vec);		
+			bevel_displace_vec(vec, v3, v1, v2, d, no);
+			VECCOPY(fv1, vec);
 
-				fix_bevel_tri_wrap(v1, v2, v3, fv1, fv2, fv3, no);
+			fix_bevel_tri_wrap(v1, v2, v3, fv1, fv2, fv3, no);
 
-				glBegin(GL_LINES);
-				glVertex3fv(fv1);
-				glVertex3fv(fv2);
-				glEnd();						
-				glBegin(GL_LINES);
-				glVertex3fv(fv2);
-				glVertex3fv(fv3);
-				glEnd();						
-				glBegin(GL_LINES);
-				glVertex3fv(fv1);
-				glVertex3fv(fv3);
-				glEnd();						
-			} else {
-				VECCOPY(v4, evl->v4->co);
-				bevel_displace_vec(vec, v4, v1, v2, d, no);
-				VECCOPY(fv1, vec);
-				bevel_displace_vec(vec, v1, v2, v3, d, no);
-				VECCOPY(fv2, vec);
-				bevel_displace_vec(vec, v2, v3, v4, d, no);
-				VECCOPY(fv3, vec);		
-				bevel_displace_vec(vec, v3, v4, v1, d, no);
-				VECCOPY(fv4, vec);		
+			glBegin(GL_LINES);
+			glVertex3fv(fv1);
+			glVertex3fv(fv2);
+			glEnd();						
+			glBegin(GL_LINES);
+			glVertex3fv(fv2);
+			glVertex3fv(fv3);
+			glEnd();						
+			glBegin(GL_LINES);
+			glVertex3fv(fv1);
+			glVertex3fv(fv3);
+			glEnd();						
+		} else {
+			VECCOPY(v4, evl->v4->co);
+			bevel_displace_vec(vec, v4, v1, v2, d, no);
+			VECCOPY(fv1, vec);
+			bevel_displace_vec(vec, v1, v2, v3, d, no);
+			VECCOPY(fv2, vec);
+			bevel_displace_vec(vec, v2, v3, v4, d, no);
+			VECCOPY(fv3, vec);		
+			bevel_displace_vec(vec, v3, v4, v1, d, no);
+			VECCOPY(fv4, vec);		
 
-				fix_bevel_quad_wrap(v1, v2, v3, v4, fv1, fv2, fv3, fv4, d, no);
+			fix_bevel_quad_wrap(v1, v2, v3, v4, fv1, fv2, fv3, fv4, d, no);
 
-				glBegin(GL_LINES);
-				glVertex3fv(fv1);
-				glVertex3fv(fv2);
-				glEnd();						
-				glBegin(GL_LINES);
-				glVertex3fv(fv2);
-				glVertex3fv(fv3);
-				glEnd();						
-				glBegin(GL_LINES);
-				glVertex3fv(fv3);
-				glVertex3fv(fv4);
-				glEnd();						
-				glBegin(GL_LINES);
-				glVertex3fv(fv1);
-				glVertex3fv(fv4);
-				glEnd();						
-			}
+			glBegin(GL_LINES);
+			glVertex3fv(fv1);
+			glVertex3fv(fv2);
+			glEnd();						
+			glBegin(GL_LINES);
+			glVertex3fv(fv2);
+			glVertex3fv(fv3);
+			glEnd();						
+			glBegin(GL_LINES);
+			glVertex3fv(fv3);
+			glVertex3fv(fv4);
+			glEnd();						
+			glBegin(GL_LINES);
+			glVertex3fv(fv1);
+			glVertex3fv(fv4);
+			glEnd();						
 		}
 		evl= evl->next;
 	}	
