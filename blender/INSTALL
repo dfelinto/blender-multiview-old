@@ -114,7 +114,7 @@ MAKEFLAGS: "-w -I$NANBLENDERHOME/source"
 After adjusting things for your environment you can run 'make' (or use the nice hmake
 script at blender/source/tools/hmake/hmake).
 
-1) run 'make' in bf-blender/extern/
+1) run 'make' in bf-blender/intern/
 2) run 'make' in bf-blender/extern/
 3) run 'make' in bf-blender/source/
 
@@ -286,7 +286,7 @@ should contain the directories CIncludes and Libraries.
 
 ----------------------Mac OSX TIPS--------------------------------------
 
-When building Blender on OSX you have three choices:
+When building Blender on OSX you have two choices:
 METHOD 1. Build using the old NaN Makefiles.
 METHOD 2. Use the SCons build system (see above)
 
