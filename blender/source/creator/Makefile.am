@@ -12,7 +12,8 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/render/extern/include \
 	-I$(top_srcdir)/source/kernel/gen_messaging \
 	-I$(top_srcdir)/source/kernel/gen_system \
-	-I$(top_srcdir)/source/blender/include
+	-I$(top_srcdir)/source/blender/include \
+	-I$(top_srcdir)/source/blender/imbuf
 
 libblender_creator_la_SOURCES= \
 	buildinfo.c \
