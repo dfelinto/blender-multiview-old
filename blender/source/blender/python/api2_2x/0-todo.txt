@@ -51,13 +51,20 @@ is a desirable goal.
 
 Changes in files:
 - DON'T BREAK BPYTHON API;
-- move things that should not be in header files to .c files;
-- consider moving declarations from bpy_types.h and modules.h to the module
-  headers;
-- add Id cvs tags to all files;
++ move things that should not be in header files to .c files;
+++      Moved static declarations and data definitions out of headers.
+++	Mostly done.  BGL.[ch] still needs some work.
+
++ consider moving declarations from bpy_types.h and modules.h to the module
+    headers;
+++	BGL module is untouched.  Some modules lack a .h file.  Otherwise, done.
+
++ add Id cvs tags to all files; DONE
 - define a comments format (doxygen-friendly);
 - define order: start with module declarations, then table and so on;
-- respect 80-column limit for readability and use tabs, not spaces;
++ respect 80-column limit for readability and use tabs, not spaces; DONE
+++     all source files have gone thru the indent formatter 
+
 - use EXPP_incr_ret where applicable;
 - consider Yann's suggestion for get/setAttr tables;
 - consider macros and/or Joe's get/setVarType functions, maybe put in
