@@ -1,21 +1,12 @@
-#assumption X11 flag means that it is a unix system... maybe it should be chaned later
-if X11
-BUILDX11=libgameplayer_unix.a
-else
-BUILDX11=
-endif
-
 if WIN32
-BUILDWIN=libgameplayer_win.a
+BUILDTYPE=libgameblender_player_win.la
 else
-BUILDWIN=
+BUILDTYPE=libgameblender_player_Ghost.la
 endif
 
-noinst_LIBRARIES = libgameplayer.a $(BUILDX11) $(BUILDWIN)
+lib_LTLIBRARIES = $(BUILDTYPE) libgameblender_player.la
 
-#I'm unsure if I should build the ghost/nestcape or activeX sources... 
-#so essentially this file is not complete by any means
-libgameplayer_a_SOURCES = \
+libgameblender_player_la_SOURCES = \
 	common/GPC_Canvas.cpp \
 	common/GPC_Engine.cpp \
 	common/GPC_KeyboardDevice.cpp \
@@ -26,15 +17,23 @@ libgameplayer_a_SOURCES = \
 	common/GPC_RawLogoArrays.cpp \
 	common/GPC_RenderTools.cpp \
 	common/GPC_System.cpp \
-	common/bmfont.cpp
+	common/bmfont.cpp \
+	ghost/GPG_Application.cpp \
+	ghost/GPG_Canvas.cpp \
+	ghost/GPG_KeyboardDevice.cpp \
+	ghost/GPG_System.cpp \
+	ghost/GPG_ghost.cpp
 
-libgameplayer_unix_a_SOURCES = \
+libgameblender_player_la_LIBADD = \
+	$(BUILDTYPE)
+
+libgameblender_player_Ghost_la_SOURCES = \
 	common/unix/GPU_Canvas.cpp \
 	common/unix/GPU_Engine.cpp \
 	common/unix/GPU_KeyboardDevice.cpp \
 	common/unix/GPU_System.cpp
 
-libgameplayer_win_a_SOURCES = \
+libgameblender_player_win_la_SOURCES = \
 	common/windows/GPW_Canvas.cpp \
 	common/windows/GPW_Engine.cpp \
 	common/windows/GPW_KeyboardDevice.cpp \
@@ -54,6 +53,7 @@ INCLUDES = -I$(top_srcdir)/source/gameengine/Rasterizer \
 	-I$(top_srcdir)/source/gameengine/Expressions \
 	-I@PYTHONSYSPREFIX@/include/python@PYTHON_VERSION@ \
 	-I$(top_srcdir)/source/kernel/gen_system \
+	-I$(top_srcdir)/source/kernel/gen_messaging \
 	-I$(top_srcdir)/source/gameengine/Ketsji \
 	-I$(top_srcdir)/source/gameengine/SceneGraph \
 	-I$(top_srcdir)/source/gameengine/Network \
@@ -61,6 +61,8 @@ INCLUDES = -I$(top_srcdir)/source/gameengine/Rasterizer \
 	-I$(top_srcdir)/source/gameengine/GamePlayer/netscape/src/ketsji \
 	-I$(top_srcdir)/source/gameengine/Physics/Sumo/include \
 	-I$(top_srcdir)/source/gameengine/Physics/Sumo/Fuzzics/include \
+	-I$(top_srcdir)/source/gameengine/Rasterizer/RAS_OpenGLRasterizer \
 	-I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/imbuf \
+	-I$(top_srcdir)/intern/ghost \
 	-I$(top_srcdir)/intern/bmfont

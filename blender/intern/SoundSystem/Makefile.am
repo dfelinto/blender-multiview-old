@@ -1,12 +1,25 @@
 noinst_LTLIBRARIES = libgameblender_soundsystem.la
 
+if BlenderFMOD
+FMOD_DEVICE = fmod/SND_FmodDevice.cpp
+else
+FMOD_DEVICE =
+endif
+
+if BlenderOPENAL
+OPENAL_DEVICE = openal/SND_OpenALDevice.cpp \
+	openal/pthread_cancel.cpp
+else
+OPENAL_DEVICE =
+endif
+
 #there is a test file for those who want to build it... as long as you edit this file
 
 #note fmod might be a windows only file as it includes from the windows library
 
 libgameblender_soundsystem_la_SOURCES = \
 	dummy/SND_DummyDevice.cpp \
-	fmod/SND_FmodDevice.cpp \
+	$(FMOD_DEVICE) \
 	intern/SND_AudioDevice.cpp \
 	intern/SND_C-api.cpp \
 	intern/SND_CDObject.cpp \
@@ -18,8 +31,7 @@ libgameblender_soundsystem_la_SOURCES = \
 	intern/SND_Utils.cpp \
 	intern/SND_WaveCache.cpp \
 	intern/SND_WaveSlot.cpp \
-	openal/SND_OpenALDevice.cpp \
-	openal/pthread_cancel.cpp
+	$(OPENAL_DEVICE)
 
 INCLUDES = -I$(top_srcdir)/lib/windows/fmod/include \
 	-I$(top_srcdir)/source/gameengine/SoundSystem/intern \

@@ -1,6 +1,6 @@
-noinst_LTLIBRARIES = libgameblender_gamelogic.la
+noinst_LTLIBRARIES = libgameblender_logic.la
 
-libgameblender_gamelogic_la_SOURCES = \
+libgameblender_logic_la_SOURCES = \
 	SCA_ANDController.cpp \
 	SCA_AlwaysEventManager.cpp \
 	SCA_AlwaysSensor.cpp \

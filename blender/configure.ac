@@ -148,12 +148,17 @@ dnl ----------------------
         fi
 ])
 
-
 #Refactor sound lib options.
   AC_ARG_ENABLE(openal,
    AC_HELP_STRING([--enable-openal],[Enable OpenAL in game engine (default=disable)]),
    ,dnl default assign.
    [ enable_openal=no ]  dnl default setting.
+  )
+
+  AC_ARG_ENABLE(fmod,
+   AC_HELP_STRING([--enable-fmod],[Enable FMOD audio in game engine (default=disable)]),
+   ,dnl default assign.
+   [ enable_fmod=no ]  dnl default setting.
   )
 
 #Python!
@@ -211,6 +216,7 @@ dnl ----------------
   AM_CONDITIONAL([BlenderSTATIC],[test x$enable_blenderstatic = x"yes"])
   AM_CONDITIONAL([BlenderGAME],[test x$with_gameblender = x"yes"])
   AM_CONDITIONAL([BlenderOPENAL],[test x$enable_openal = x"yes"])
+  AM_CONDITIONAL([BlenderFMOD],[test x$enable_fmod = x"yes"])
   AM_CONDITIONAL([BlenderPLUGIN],[test x$enable_gameplayer = x"yes"])
 
 

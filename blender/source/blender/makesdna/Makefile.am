@@ -1,7 +1,7 @@
 noinst_LTLIBRARIES = libblender_makesdna.la
+## Need to build and run intern/makesdna.c
 
 libblender_makesdna_la_SOURCES = \
-	intern/dna.c \
-	intern/makesdna.c
+	intern/dna.c 
 
 INCLUDES = -I$(top_srcdir)/intern/guardedalloc
