@@ -25,7 +25,7 @@ libblender_imbuf_la_SOURCES = \
 	intern/anim5.c \
 	intern/antialias.c \
 	intern/bitplanes.c \
-	intern/bmp_decode.c \
+	intern/bmp.c \
 	intern/cmap.c \
 	intern/cspace.c \
 	intern/data.c \
