@@ -9,6 +9,8 @@ libblender_blendersrc_la_SOURCES = \
 	booleanops.c \
 	booleanops_mesh.c \
 	buttons.c \
+	buttons_scene.c \
+	butspace.c \
 	cmap.tga.c \
 	cmovie.tga.c \
 	drawaction.c \
