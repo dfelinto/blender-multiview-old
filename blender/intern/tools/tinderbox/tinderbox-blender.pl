@@ -100,6 +100,8 @@ sub SendMail{
 			$msg->datasend("\n");
 
 			$msg->datasend("$body\n");
+			$msg->dataend();
+
 			$msg->quit;
 		} else {
 			die "Set the environment variable SMTP_SERVER to your outgoing mail server\n";
