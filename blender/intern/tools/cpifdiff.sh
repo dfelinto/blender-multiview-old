@@ -40,7 +40,7 @@ if [ $numargs -lt 2 ]; then
 	exit 1
 fi
 
-cpargs=$(($numargs - 1))
+cpargs=`expr $numargs - 1`
 eval dst=\${$#}
 
 #echo "[$@] has $# arguments $dst"
@@ -79,6 +79,6 @@ while [ $i -le $cpargs ]; do
 		echo "ERROR $dst is not a directory or a file"
 		exit 1
 	fi
-	i=$(($i + 1))
+	i=`expr $i + 1`
 done
 
