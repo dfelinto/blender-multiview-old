@@ -170,6 +170,8 @@ Remark: this is a first implementation, which is still slow for larger Meshes, o
 
 - Mesh editmode: "Select more" and "Select less, in pulldown menus and accessible with hotkeys CTRL+PadPlus/Minus. It selects vertices having an edge with other vertex selected.
 
+- Mesh editmode: "Select Random", in pulldown menu. It selects a random percentage of vertices, the percentage can be set with a requester that pops up.
+
 - Mesh editmode: new Loop Cut functionality:
   - after choosing a loop to cut you go into a second mode that lets you choose where exactly on the edge you want to cut. The placement is in percentages, so 0% is one side of the edge, and 100% is the other side.
   - holding CTRL snaps the placement to whole percentages. 1.00 instead of the standard 0.01 of a percentage.
