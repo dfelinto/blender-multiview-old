@@ -7,10 +7,10 @@ PYFILES = \
 	checkextensions.py \
 	checkextensions_win32.py \
 	freeze.py \
+	freeze_ac.py \
 	hello.py \
 	makeconfig.py \
 	makefreeze.py \
-	makefreeze_ac.py \
 	makemakefile.py \
 	makemakefile_ac.py \
 	modulefinder.py \
