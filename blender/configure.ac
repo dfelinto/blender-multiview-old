@@ -209,6 +209,12 @@ dnl ----------------------
 
 #Python!
   AM_PATH_PYTHON(2.0)
+  AC_CACHE_CHECK([Python link args...],
+    [am_cv_python_ldflags],
+    [am_cv_python_ldflags=`$PYTHON -c "import distutils.sysconfig; print distutils.sysconfig.get_config_var('LINKFORSHARED')"`])
+
+  LDFLAGS="$LDFLAGS $am_cv_python_ldflags"
+
 #Find out what path to use for python.
 python_sysprefix=`echo "import sys; print sys.prefix" | python -`
 
