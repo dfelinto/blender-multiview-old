@@ -13,6 +13,26 @@ internlibs = \
 	intern/moto/libblender_MT.la \
 	intern/SoundSystem/libsoundsystem.la
 
+### This hack is needed to get the path to the pre-build libraries correct.
+### I hope there's a better way to solve this. (Michel)
+if b_png
+blib_png=$(top_srcdir)/../$(BLIB_PNG)
+else
+blib_png=
+endif
+
+if b_jpeg
+blib_jpeg=$(top_srcdir)/../$(BLIB_JPEG)
+else
+blib_jpeg=
+endif
+
+if b_sdl
+blib_sdl=$(top_srcdir)/../$(BLIB_SDL)
+else
+blib_sdl=
+endif
+
 if BlenderGAME
 PLAYER=blenderplayer
 else
@@ -87,7 +107,7 @@ bundle:
 
 else
 
-blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config @PYTHON_LDFLAGS@ 
+blender_LDFLAGS = -L@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config @PYTHON_LDFLAGS@ $(BFLAGS)
 
 blender_SOURCES =
 
@@ -97,7 +117,8 @@ blender_LDADD = \
         source/libblender_source.la \
 		$(internlibs) \
 		-lpython@PYTHON_VERSION@ \
-		@LIBM@
+		@LIBM@ \
+        $(blib_png) $(blib_jpeg) $(blib_sdl)
  
 blenderplayer_LDADD = \
 	source/libblender_player.la \
