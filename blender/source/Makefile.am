@@ -20,13 +20,6 @@ else
 icondir =
 endif
 
-if EXPPYTHON
-blenpythonlib = blender/python/libblender_python.la
-else
-blenpythonlib = blender/bpython/libblender_bpython.la
-endif
-
-
 if BlenderQUICKTIME
 blenquicktimelib = blender/quicktime/libblender_quicktime.la
 else
@@ -62,7 +55,7 @@ libblender_source_la_LIBADD = \
 	blender/blenpluginapi/libblender_blenpluginapi.la \
 	blender/imbuf/libblender_imbuf.la \
 	blender/blenlib/libblender_blenlib.la \
-	$(blenpythonlib) \
+	blender/python/libblender_python.la \
 	blender/makesdna/libblender_makesdna.la \
 	kernel/libblender_kernel.la
 

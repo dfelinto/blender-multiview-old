@@ -1,11 +1,3 @@
-if EXPPYTHON
-  blenpythondir = python
-  blenpythonlib = python/libblender_python.la
-else
-  blenpythondir = bpython
-  blenpythonlib = bpython/libblender_bpython.la
-endif
-
 if BlenderQUICKTIME
   quicktimedir = quicktime
 else
@@ -17,7 +9,7 @@ LIBS =
 SUBDIRS = blenloader deflate inflate \
 	writestreamglue readstreamglue writeblenfile readblenfile \
 	avi imbuf img render radiosity blenlib blenkernel blenpluginapi \
-	$(blenpythondir) makesdna src renderconverter $(quicktimedir)
+	python makesdna src renderconverter $(quicktimedir)
 
 EXTRA_DIST = \
 	include/BDR_drawaction.h \

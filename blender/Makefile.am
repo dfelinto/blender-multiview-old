@@ -12,12 +12,6 @@ internlibs = \
 	intern/iksolver/libblender_IK.la \
 	intern/moto/libblender_MT.la
 
-if EXPPYTHON
-  blenpythonlib =
-else
-  blenpythonlib = intern/python/frozen/libfrozen.a
-endif
-
 if BlenderGAME
 PLAYER=blenderplayer
 else
@@ -33,7 +27,6 @@ lib_LTLIBRARIES = libbrowserplugin.la
 libbrowserplugin_la_SOURCES =
 
 libbrowserplugin_la_LDFLAGS =  \
-	$(blenpythonlib) \
 	-lpython@PYTHON_VERSION@ \
 	@LIBM@
 
@@ -63,14 +56,12 @@ blenderplayer_SOURCES =
 blender_LDADD = \
 	source/libblender_source.la \
 	$(internlibs) \
-	$(blenpythonlib) \
 	@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config/libpython@PYTHON_VERSION@.a \
 	@LIBM@
 
 blenderplayer_LDADD = \
 	source/libblender_player.la \
 	$(internlibs) \
-	$(blenpythonlib) \
 	@PYTHONSYSPREFIX@/lib/python@PYTHON_VERSION@/config/libpython@PYTHON_VERSION@.a \
 	@LIBM@
 
@@ -104,18 +95,13 @@ blenderplayer_SOURCES =
 blender_LDADD = \
         source/libblender_source.la \
 		$(internlibs) \
-		$(blenpythonlib) \
 		-lpython@PYTHON_VERSION@ \
 		@LIBM@
  
-
 blenderplayer_LDADD = \
 	source/libblender_player.la \
 	$(internlibs) \
-	$(blenpythonlib) \
 	-lpython@PYTHON_VERSION@ \
 		@LIBM@
-	
-
 
 endif

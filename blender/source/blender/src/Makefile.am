@@ -1,9 +1,3 @@
-if EXPPYTHON
-  blenpythoninclude = -I$(top_srcdir)/source/blender/python
-else
-  blenpythoninclude = -I$(top_srcdir)/source/blender/bpython/include
-endif
-
 noinst_LTLIBRARIES = libblender_blendersrc.la
 
 LIBS =
@@ -105,7 +99,7 @@ INCLUDES = -I$(top_srcdir)/intern/guardedalloc \
 	-I$(top_srcdir)/source/blender/radiosity/extern/include \
 	-I$(top_srcdir)/intern/decimation/extern \
 	-I$(top_srcdir)/source/blender/blenloader \
-	$(blenpythoninclude) \
+	-I$(top_srcdir)/source/blender/python \
 	-I$(top_srcdir)/source/kernel/gen_system \
 	-I$(top_srcdir)/source/gameengine/SoundSystem \
 	-I$(top_srcdir)/source/blender/readstreamglue \
