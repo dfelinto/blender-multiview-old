@@ -2044,11 +2044,10 @@ static EditEdge *findnearestedge()
 	if(G.eded.first==0) return NULL;
 	else eed=G.eded.first;	
 	
-	/* reset test flags */
-	while(eed){	
-		eed->f &= ~2;
-		eed=eed->next;
-	}
+	/* reset flags */	
+	for(eve=G.edve.first; eve; eve=eve->next){
+		eve->f &= ~2;
+	}	
 		
 	calc_meshverts_ext_f2();     	/*sets (eve->f & 2) for vertices that aren't visible*/
 	getmouseco_areawin(mval);
