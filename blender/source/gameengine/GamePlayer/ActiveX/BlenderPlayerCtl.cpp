@@ -94,7 +94,6 @@ extern "C"
 static char THIS_FILE[] = __FILE__;
 #endif
 
-
 IMPLEMENT_DYNCREATE(CBlenderPlayerCtrl, COleControl)
 
 CRITICAL_SECTION CBlenderPlayerCtrl::s_cs;
@@ -869,7 +868,7 @@ bool CBlenderPlayerCtrl::activateBlenderData(CBlenderDataPathProperty& blenderDa
 		CWaitCursor waitCursor;
 		blenderData.SeekToBegin();
 		unsigned char* buf = (unsigned char*)::malloc(filelen);
-		blenderData.ReadHuge(buf, filelen);
+		blenderData.Read(buf, filelen);
 
 		// Load the Blender file from memory
 		success = LoadGameData(buf, filelen);
