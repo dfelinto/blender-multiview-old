@@ -7,6 +7,8 @@ libblender_api2_2x_la_SOURCES = \
   Blender.c \
   Object.c \
   Object.h \
+  NMesh.c \
+  NMesh.h \
   Camera.c \
   Camera.h \
   Lamp.c \
@@ -21,6 +23,8 @@ libblender_api2_2x_la_SOURCES = \
   BGL.h \
   Text.c \
   Text.h \
+  vector.c \
+  vector.h \
   constant.c \
   constant.h \
   gen_utils.c \
