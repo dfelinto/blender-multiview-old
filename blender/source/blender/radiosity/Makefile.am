@@ -1,0 +1,11 @@
+noinst_LIBRARIES = libblender_radiosity.a
+
+libblender_radiosity_a_SOURCES = \
+		intern/source/raddisplay.c \
+		intern/source/radfactors.c \
+		intern/source/radio.c \
+		intern/source/radnode.c \
+		intern/source/radpostprocess.c \
+		intern/source/radpreprocess.c
+
+INCLUDES = -I$(top_srcdir)/source/blender/blenlib -I$(top_srcdir)/source/blender/blenkernel -I$(top_srcdir)/source/blender/makesdna -I$(top_srcdir)/source/blender/include -I$(top_srcdir)/source/blender/radiosity/extern/include -I$(top_srcdir)/intern/guardedalloc -I$(top_srcdir)/source/blender/render/extern/include -I$(top_srcdir)/source/blender/misc

@@ -1,0 +1,1 @@
+SUBDIRS = src avi blenkernel blenlib blenloader blenpluginapi bpython decrypt deflate encrypt imbuf img inflate makesdna misc radiosity readblenfile readstreamglue render renderconverter sign verify writeblenfile writestreamglue
