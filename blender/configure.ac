@@ -74,56 +74,51 @@ dnl ----------------------
   AC_ARG_WITH(ssl, 
     AC_HELP_STRING([--with-ssl[=PFX]],[Path to ssl files]),
 [       if test $withval != "yes"; then
-		with_ssl =$withval
-	fi
-	if test x$with_ssl != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -lssl"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
+		if test -f $withval/include/openssl/ssl.h; then
+           		LDFLAGS="$LDFLAGS -L$withval/lib"
+           		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		fi
 	fi
 ])
 
   AC_ARG_WITH(ode,
     AC_HELP_STRING([--with-ode[=PFX]],[Path to ode files]),
 [       if test $withval != "yes"; then
-                with_ode =$withval
-        fi
-        if test x$with_ode != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -lode"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
+        	if test -f $withval/include/ode/ode.h; then
+           		LDFLAGS="$LDFLAGS -L$withval/lib"
+           		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		fi
         fi
 ])
 
   AC_ARG_WITH(libjpeg,
     AC_HELP_STRING([--with-libjpeg[=PFX]],[Path to libjpeg files]),
 [       if test $withval != "yes"; then
-                with_libjpeg =$withval
-        fi
-        if test x$with_libjpeg != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -ljpeg"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
+		if test -f  $withval/include/jpeglib.h; then
+           		LDFLAGS="$LDFLAGS -L$withval/lib"
+           		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		fi
         fi
 ])
 
   AC_ARG_WITH(libpng,
     AC_HELP_STRING([--with-libpng[=PFX]],[Path to libpng files]),
 [       if test $withval != "yes"; then
-                with_libpng =$withval
-        fi
-        if test x$with_libpng != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -lpng"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
+        	if test -f  $withval/include/png.h; then
+           		LDFLAGS="$LDFLAGS -L$withval/lib"
+           		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		fi
         fi
 ])
 
   AC_ARG_WITH(libz,
     AC_HELP_STRING([--with-libz[=PFX]],[Path to libz files]),
 [       if test $withval != "yes"; then
-                with_libz =$withval
-        fi
-        if test x$with_libz != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -lz"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
-        fi
+                if test -f  $withval/include/zlib.h; then
+                        LDFLAGS="$LDFLAGS -L$withval/lib"
+                        CPPFLAGS="$CPPFLAGS -I$withval/include"
+                fi
+	fi
 ])
 
   AC_ARG_WITH(mozilla,
@@ -242,18 +237,20 @@ dnl --------------------------
   AC_CHECK_LIB([dl], [dlopen])
   AC_CHECK_LIB([util], [openpty])
   AC_CHECK_LIB([pthread], [pthread_exit])
+  AC_CHECK_LIB([ssl], [SSL_new])
   AC_CHECK_LIB([crypto], [CRYPTO_lock])
   #AC_CHECK_LIB([e], [main])
   #AC_CHECK_LIB([inks], [main])
   AC_CHECK_LIB([jpeg], [jpeg_destroy])
   AC_CHECK_LIB([m], [acos])
-  AC_CHECK_LIB([png], [png_access_version_number])
+  AC_CHECK_LIB([png], [png_uint_32])
   AC_CHECK_LIB([util], [openpty])
   AC_CHECK_LIB([z], [gzopen])
   AC_CHECK_LIB([SDL], [SDL_Init])
 if test x"$enable_openal" = x"yes"; then
   AC_CHECK_LIB([smpeg], [SMPEG_getinfo])
   AC_CHECK_LIB([esd], [esd_close])
+  AC_CHECK_LIB([ode], [dJointGetAMotorAngle])
   AC_CHECK_LIB([ogg], [ogg_stream_destroy])
   AC_CHECK_LIB([vorbis], [vorbis_info_init])
   AC_CHECK_LIB([vorbisfile], [ov_open])

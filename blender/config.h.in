@@ -91,6 +91,9 @@
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
+/* Define to 1 if you have the `ode' library (-lode). */
+#undef HAVE_LIBODE
+
 /* Define to 1 if you have the `ogg' library (-logg). */
 #undef HAVE_LIBOGG
 
@@ -108,6 +111,9 @@
 
 /* Define to 1 if you have the `smpeg' library (-lsmpeg). */
 #undef HAVE_LIBSMPEG
+
+/* Define to 1 if you have the `ssl' library (-lssl). */
+#undef HAVE_LIBSSL
 
 /* Define to 1 if you have the `stdc++' library (-lstdc++). */
 #undef HAVE_LIBSTDC__

@@ -8278,11 +8278,10 @@ fi;
 if test "${with_ssl+set}" = set; then
   withval="$with_ssl"
          if test $withval != "yes"; then
-		with_ssl =$withval
-	fi
-	if test x$with_ssl != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -lssl"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
+		if test -f $withval/include/openssl/ssl.h; then
+           		LDFLAGS="$LDFLAGS -L$withval/lib"
+           		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		fi
 	fi
 
 fi;
@@ -8292,11 +8291,10 @@ fi;
 if test "${with_ode+set}" = set; then
   withval="$with_ode"
          if test $withval != "yes"; then
-                with_ode =$withval
-        fi
-        if test x$with_ode != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -lode"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
+        	if test -f $withval/include/ode/ode.h; then
+           		LDFLAGS="$LDFLAGS -L$withval/lib"
+           		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		fi
         fi
 
 fi;
@@ -8306,11 +8304,10 @@ fi;
 if test "${with_libjpeg+set}" = set; then
   withval="$with_libjpeg"
          if test $withval != "yes"; then
-                with_libjpeg =$withval
-        fi
-        if test x$with_libjpeg != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -ljpeg"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
+		if test -f  $withval/include/jpeglib.h; then
+           		LDFLAGS="$LDFLAGS -L$withval/lib"
+           		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		fi
         fi
 
 fi;
@@ -8320,11 +8317,10 @@ fi;
 if test "${with_libpng+set}" = set; then
   withval="$with_libpng"
          if test $withval != "yes"; then
-                with_libpng =$withval
-        fi
-        if test x$with_libpng != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -lpng"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
+        	if test -f  $withval/include/png.h; then
+           		LDFLAGS="$LDFLAGS -L$withval/lib"
+           		CPPFLAGS="$CPPFLAGS -I$withval/include"
+		fi
         fi
 
 fi;
@@ -8334,12 +8330,11 @@ fi;
 if test "${with_libz+set}" = set; then
   withval="$with_libz"
          if test $withval != "yes"; then
-                with_libz =$withval
-        fi
-        if test x$with_libz != "yes"; then
-           LDFLAGS="$LDFLAGS -L$withval/lib -lz"
-           CPPFLAGS="$CPPFLAGS -I$withval/include"
-        fi
+                if test -f  $withval/include/zlib.h; then
+                        LDFLAGS="$LDFLAGS -L$withval/lib"
+                        CPPFLAGS="$CPPFLAGS -I$withval/include"
+                fi
+	fi
 
 fi;
 
@@ -13984,6 +13979,65 @@ _ACEOF
 fi
 
 
+echo "$as_me:$LINENO: checking for SSL_new in -lssl" >&5
+echo $ECHO_N "checking for SSL_new in -lssl... $ECHO_C" >&6
+if test "${ac_cv_lib_ssl_SSL_new+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lssl  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char SSL_new ();
+int
+main ()
+{
+SSL_new ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_ssl_SSL_new=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_ssl_SSL_new=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_ssl_SSL_new" >&5
+echo "${ECHO_T}$ac_cv_lib_ssl_SSL_new" >&6
+if test $ac_cv_lib_ssl_SSL_new = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSSL 1
+_ACEOF
+
+  LIBS="-lssl $LIBS"
+
+fi
+
+
 echo "$as_me:$LINENO: checking for CRYPTO_lock in -lcrypto" >&5
 echo $ECHO_N "checking for CRYPTO_lock in -lcrypto... $ECHO_C" >&6
 if test "${ac_cv_lib_crypto_CRYPTO_lock+set}" = set; then
@@ -14163,9 +14217,9 @@ _ACEOF
 fi
 
 
-echo "$as_me:$LINENO: checking for png_access_version_number in -lpng" >&5
-echo $ECHO_N "checking for png_access_version_number in -lpng... $ECHO_C" >&6
-if test "${ac_cv_lib_png_png_access_version_number+set}" = set; then
+echo "$as_me:$LINENO: checking for png_uint_32 in -lpng" >&5
+echo $ECHO_N "checking for png_uint_32 in -lpng... $ECHO_C" >&6
+if test "${ac_cv_lib_png_png_uint_32+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -14180,11 +14234,11 @@ extern "C"
 #endif
 /* We use char because int might match the return type of a gcc2
    builtin and then its argument prototype would still apply.  */
-char png_access_version_number ();
+char png_uint_32 ();
 int
 main ()
 {
-png_access_version_number ();
+png_uint_32 ();
   ;
   return 0;
 }
@@ -14201,18 +14255,18 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_lib_png_png_access_version_number=yes
+  ac_cv_lib_png_png_uint_32=yes
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-ac_cv_lib_png_png_access_version_number=no
+ac_cv_lib_png_png_uint_32=no
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_png_png_access_version_number" >&5
-echo "${ECHO_T}$ac_cv_lib_png_png_access_version_number" >&6
-if test $ac_cv_lib_png_png_access_version_number = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_lib_png_png_uint_32" >&5
+echo "${ECHO_T}$ac_cv_lib_png_png_uint_32" >&6
+if test $ac_cv_lib_png_png_uint_32 = yes; then
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBPNG 1
 _ACEOF
@@ -14514,6 +14568,65 @@ if test $ac_cv_lib_esd_esd_close = yes; then
 _ACEOF
 
   LIBS="-lesd $LIBS"
+
+fi
+
+
+echo "$as_me:$LINENO: checking for dJointGetAMotorAngle in -lode" >&5
+echo $ECHO_N "checking for dJointGetAMotorAngle in -lode... $ECHO_C" >&6
+if test "${ac_cv_lib_ode_dJointGetAMotorAngle+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lode  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+#include "confdefs.h"
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char dJointGetAMotorAngle ();
+int
+main ()
+{
+dJointGetAMotorAngle ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_ode_dJointGetAMotorAngle=yes
+else
+  echo "$as_me: failed program was:" >&5
+cat conftest.$ac_ext >&5
+ac_cv_lib_ode_dJointGetAMotorAngle=no
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_ode_dJointGetAMotorAngle" >&5
+echo "${ECHO_T}$ac_cv_lib_ode_dJointGetAMotorAngle" >&6
+if test $ac_cv_lib_ode_dJointGetAMotorAngle = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBODE 1
+_ACEOF
+
+  LIBS="-lode $LIBS"
 
 fi
 
