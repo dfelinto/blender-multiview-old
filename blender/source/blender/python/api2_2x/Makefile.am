@@ -60,7 +60,8 @@ libblender_api2_2x_la_SOURCES = \
   gen_utils.h \
   EXPP_interface.c \
   EXPP_interface.h \
-  modules.h
+  modules.h \
+  bpy_types.h
 
 libblender_api2_2x_la_CFLAGS = -Wall 
 
