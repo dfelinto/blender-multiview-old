@@ -274,7 +274,10 @@ dnl --------------------------
   AC_CHECK_LIB([m], [acos])
   AC_CHECK_LIB([util], [openpty])
   AC_CHECK_LIB([SDL], [SDL_Init])
-  AC_CHECK_LIB([ode], [dJointGetAMotorAngle])
+if test x"$enable_gameblender" = x"yes"; then
+  AC_CHECK_LIB([ode], [dJointGetAMotorAngle],,
+    AC_MSG_ERROR(First build ode or do not use --enable-gameblender))
+fi
 if test x"$enable_openal" = x"yes"; then
   AC_CHECK_LIB([smpeg], [SMPEG_getinfo])
   AC_CHECK_LIB([esd], [esd_close])
