@@ -7,7 +7,7 @@ New features of Blender 2.26:
    The mousewheel also works to increase/decrease the size of the circle
    while selecting or doing proportional scaling. 
 
-- A "fake user" button next to the material popup has been added, to keep
+- A "fake user" button next to the databrowse buttons has been added, to keep
    the data when it has been unlinked from an object. (Basically a shortcut
    for pressing Shift+F4 and F)
 
@@ -62,6 +62,8 @@ Bugfixes:
 - Alleviation of the symptoms of the "slow render bug" by polling
    less often for the escape key in the inner loops of the render
    code (makes the escape key less responsive though).
+
+- RGBA Targa files get displayed correctly in The GIMP
 
 Workarounds:
 ------------
