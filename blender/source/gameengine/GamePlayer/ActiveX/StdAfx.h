@@ -32,6 +32,10 @@
 #if !defined(AFX_STDAFX_H__3821D263_E6F2_43B9_A1A8_EB96F30D281E__INCLUDED_)
 #define AFX_STDAFX_H__3821D263_E6F2_43B9_A1A8_EB96F30D281E__INCLUDED_
 
+#if defined(__WIN32__) || defined(WIN32) || defined(_WIN32)
+	#define WINVER 0x0400
+#endif
+
 #if _MSC_VER > 1000
 #pragma once
 #endif // _MSC_VER > 1000
