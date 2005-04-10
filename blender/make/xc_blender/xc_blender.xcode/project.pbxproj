@@ -4414,6 +4414,36 @@
 			target = A3048CC407F6E4B50013C604;
 			targetProxy = A3048CE507F6EBAE0013C604;
 		};
+		A30C085C0809B36D0047DDB4 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = transform_conversions.c;
+			path = ../../source/blender/src/transform_conversions.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30C085D0809B36D0047DDB4 = {
+			fileRef = A30C085C0809B36D0047DDB4;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A30C08640809B39F0047DDB4 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = transform.h;
+			path = ../../source/blender/include/transform.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30C08650809B39F0047DDB4 = {
+			fileRef = A30C08640809B39F0047DDB4;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		A34C070A07E4E57B0026C252 = {
 			buildActionMask = 2147483647;
 			files = (
@@ -5308,7 +5338,6 @@
 				A34CC7BF07E3889600AD7C17,
 				A34CC7C007E3889600AD7C17,
 				A34CC7C107E3889600AD7C17,
-				A34CC7C207E3889600AD7C17,
 				A34CC7C307E3889600AD7C17,
 				A34CC7C407E3889600AD7C17,
 				A34CC7C507E3889600AD7C17,
@@ -5604,15 +5633,6 @@
 			lastKnownFileType = sourcecode.c.c;
 			name = sound.c;
 			path = ../../source/blender/blenkernel/intern/sound.c;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CC7C207E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.c;
-			name = subsurf.c;
-			path = ../../source/blender/blenkernel/intern/subsurf.c;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -7056,6 +7076,7 @@
 		};
 		A34CC86A07E3889600AD7C17 = {
 			children = (
+				A30C08640809B39F0047DDB4,
 				A34CC86B07E3889600AD7C17,
 				A34CC86C07E3889600AD7C17,
 				A34CC86D07E3889600AD7C17,
@@ -10911,6 +10932,7 @@
 		};
 		A34CCA0E07E3889700AD7C17 = {
 			children = (
+				A30C085C0809B36D0047DDB4,
 				A3D66D4B07EA40B1005185E6,
 				A34CCA1107E3889700AD7C17,
 				A34CCA1207E3889700AD7C17,
@@ -11018,13 +11040,9 @@
 				A34CCA7F07E3889700AD7C17,
 				A34CCA8007E3889700AD7C17,
 				A34CCA8107E3889700AD7C17,
-				A34CCA8207E3889700AD7C17,
 				A34CCA8307E3889700AD7C17,
-				A34CCA8407E3889700AD7C17,
 				A34CCA8507E3889700AD7C17,
-				A34CCA8607E3889700AD7C17,
 				A34CCA8707E3889700AD7C17,
-				A34CCA8807E3889700AD7C17,
 				A34CCA8907E3889700AD7C17,
 				A34CCA8A07E3889700AD7C17,
 				A34CCA8B07E3889700AD7C17,
@@ -11993,30 +12011,12 @@
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
-		A34CCA8207E3889700AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = transform.h;
-			path = ../../source/blender/src/transform.h;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
 		A34CCA8307E3889700AD7C17 = {
 			fileEncoding = 5;
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.c;
 			name = transform_constraints.c;
 			path = ../../source/blender/src/transform_constraints.c;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CCA8407E3889700AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = transform_constraints.h;
-			path = ../../source/blender/src/transform_constraints.h;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -12029,30 +12029,12 @@
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
-		A34CCA8607E3889700AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = transform_generics.h;
-			path = ../../source/blender/src/transform_generics.h;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
 		A34CCA8707E3889700AD7C17 = {
 			fileEncoding = 5;
 			isa = PBXFileReference;
 			lastKnownFileType = sourcecode.c.c;
 			name = transform_numinput.c;
 			path = ../../source/blender/src/transform_numinput.c;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CCA8807E3889700AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = transform_numinput.h;
-			path = ../../source/blender/src/transform_numinput.h;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -22857,7 +22839,6 @@
 				A3CFA7CC07E43E6B00501F05,
 				A3CFA7CD07E43E6B00501F05,
 				A3CFA7CE07E43E6E00501F05,
-				A3CFA7CF07E43E6F00501F05,
 				A3CFA7D007E43E7100501F05,
 				A3CFA7D107E43E7200501F05,
 				A3CFA7D207E43E7300501F05,
@@ -23254,6 +23235,7 @@
 				A397F55A07F5B14100AFAB73,
 				A397F56607F5B1CE00AFAB73,
 				A39CCA8D07F77855004B987A,
+				A30C085D0809B36D0047DDB4,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -24299,6 +24281,7 @@
 				A3048BC707F6B99C0013C604,
 				A3048BD007F6BBC80013C604,
 				A3048BD107F6BBED0013C604,
+				A30C08650809B39F0047DDB4,
 			);
 			isa = PBXHeadersBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -24739,13 +24722,6 @@
 		};
 		A3CFA7CE07E43E6E00501F05 = {
 			fileRef = A34CC7C107E3889600AD7C17;
-			isa = PBXBuildFile;
-			settings = {
-				COMPILER_FLAGS = "-DWITH_FREETYPE2 -I../../source/blender/blenkernel -I../../intern/guardedalloc";
-			};
-		};
-		A3CFA7CF07E43E6F00501F05 = {
-			fileRef = A34CC7C207E3889600AD7C17;
 			isa = PBXBuildFile;
 			settings = {
 				COMPILER_FLAGS = "-DWITH_FREETYPE2 -I../../source/blender/blenkernel -I../../intern/guardedalloc";
