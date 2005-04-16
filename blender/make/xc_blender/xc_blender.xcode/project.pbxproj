@@ -22620,7 +22620,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"preparing bundle\"\ncat build/blender.app/Contents/Info.plist | sed s/VERSION/`cat ../../release/VERSION`/ | sed s/DATE/`date +'%Y-%b-%d'`/ > build/blender.app/Contents/Info.plist\nmkdir build/blender.app/Contents/MacOS/\ncp build/blender build/blender.app/Contents/MacOS/blender\necho \"copying distribution files\"\ncp ../../bin/.blender/.Blanguages build/blender.app/Contents/Resources/\ncp -R ../../bin/.blender/locale   build/blender.app/Contents/Resources/\nmkdir build/blender.app/Contents/MacOS/.blender\ncp -R ../../release/bpydata build/blender.app/Contents/MacOS/.blender\ncp -R ../../release/scripts build/blender.app/Contents/MacOS/.blender\nfind build/blender.app -name CVS -prune -exec rm -rf {} \\;\nfind build/blender.app -name .DS_Store -prune -exec rm -rf {} \\;";
+			shellScript = "echo \"preparing bundle\"\ncat build/blender.app/Contents/Info.plist | sed s/VERSION/`cat ../../release/VERSION`/ | sed s/DATE/`date +'%Y-%b-%d'`/ > build/blender.app/Contents/Info.plist\nmkdir build/blender.app/Contents/MacOS/\ncp build/blender build/blender.app/Contents/MacOS/blender\necho \"copying distribution files\"\ncp ../../bin/.blender/.Blanguages build/blender.app/Contents/Resources/\ncp -R ../../bin/.blender/locale   build/blender.app/Contents/Resources/\nmkdir build/blender.app/Contents/MacOS/.blender\ncp -R ../../release/scripts build/blender.app/Contents/MacOS/.blender\nfind build/blender.app -name CVS -prune -exec rm -rf {} \\;\nfind build/blender.app -name .DS_Store -prune -exec rm -rf {} \\;";
 		};
 		A3CFA69F07E3A71900501F05 = {
 			children = (
