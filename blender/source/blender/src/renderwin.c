@@ -51,9 +51,9 @@
 #include <sys/time.h>
 #include <signal.h>
 
-#include <limits.h>
-
 #endif
+
+#include <limits.h>
 
 #include "BLI_blenlib.h"
 
