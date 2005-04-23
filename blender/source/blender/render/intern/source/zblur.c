@@ -48,7 +48,7 @@
 
 #include "blendef.h"
 
-#include "BIF_gl.h"
+//#include "BIF_gl.h"
 
 /* -------------------------------------------------
  * defines, protos */
@@ -784,11 +784,11 @@ void add_zblur(void)
 	/* split up z buffer into 2 gray images	*/
 	zsplit(R.rectz, zfront, zback, zfocus, INT_MAX, zmin, x, y);
 	
-	glDrawBuffer(GL_FRONT);
-	glRasterPos2i(0, 0);
-	glDrawPixels(x, y, GL_RED, GL_UNSIGNED_BYTE, zback->data);
-	glFlush();
-	glDrawBuffer(GL_BACK);
+//	glDrawBuffer(GL_FRONT);
+//	glRasterPos2i(0, 0);
+//	glDrawPixels(x, y, GL_RED, GL_UNSIGNED_BYTE, zback->data);
+//	glFlush();
+//	glDrawBuffer(GL_BACK);
 	
 	gauss_blur(zback, 1.0);
 	gauss_blur(zfront, zblurr);
