@@ -4444,6 +4444,54 @@
 			settings = {
 			};
 		};
+		A314C90C081B0C2100CDA716 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			name = KX_SG_BoneParentNodeRelationship.cpp;
+			path = ../../source/gameengine/Ketsji/KX_SG_BoneParentNodeRelationship.cpp;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A314C90D081B0C2100CDA716 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = KX_SG_BoneParentNodeRelationship.h;
+			path = ../../source/gameengine/Ketsji/KX_SG_BoneParentNodeRelationship.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A314C90E081B0C2100CDA716 = {
+			fileRef = A314C90C081B0C2100CDA716;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A314C916081B0C6000CDA716 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = zblur.h;
+			path = ../../source/blender/render/intern/include/zblur.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A314C919081B0C7300CDA716 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = zblur.c;
+			path = ../../source/blender/render/intern/source/zblur.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A314C91A081B0C7300CDA716 = {
+			fileRef = A314C919081B0C7300CDA716;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		A34C070A07E4E57B0026C252 = {
 			buildActionMask = 2147483647;
 			files = (
@@ -10470,6 +10518,7 @@
 		A34CC9D707E3889700AD7C17 = {
 			children = (
 				A34CC9D807E3889700AD7C17,
+				A314C916081B0C6000CDA716,
 				A34CC9D907E3889700AD7C17,
 				A34CC9DA07E3889700AD7C17,
 				A34CC9DB07E3889700AD7C17,
@@ -10688,6 +10737,7 @@
 		A34CC9EE07E3889700AD7C17 = {
 			children = (
 				A34CC9EF07E3889700AD7C17,
+				A314C919081B0C7300CDA716,
 				A34CC9F007E3889700AD7C17,
 				A34CC9F107E3889700AD7C17,
 				A34CC9F207E3889700AD7C17,
@@ -15517,6 +15567,8 @@
 		};
 		A34CCC0C07E3889800AD7C17 = {
 			children = (
+				A314C90C081B0C2100CDA716,
+				A314C90D081B0C2100CDA716,
 				A397F55807F5B14100AFAB73,
 				A397F55907F5B14100AFAB73,
 				A34CCC0D07E3889800AD7C17,
@@ -23236,6 +23288,8 @@
 				A397F56607F5B1CE00AFAB73,
 				A39CCA8D07F77855004B987A,
 				A30C085D0809B36D0047DDB4,
+				A314C90E081B0C2100CDA716,
+				A314C91A081B0C7300CDA716,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
