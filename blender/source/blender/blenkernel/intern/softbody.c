@@ -1097,7 +1097,7 @@ static void softbody_baked_add(Object *ob, float framenr)
 		if(sb->sfra >= sb->efra) return;		// safety, UI or py setting allows
 		if(sb->interval<1) sb->interval= 1;		// just be sure
 		
-		sb->totkey= 1 + (int)(ceilf( (efra-sfra)/dfra ) );
+		sb->totkey= 1 + (int)(ceil( (efra-sfra)/dfra ) );
 		sb->keys= MEM_callocN( sizeof(void *)*sb->totkey, "sb keys");
 	}
 	
