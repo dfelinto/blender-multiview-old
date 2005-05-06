@@ -4492,6 +4492,54 @@
 			settings = {
 			};
 		};
+		A3237E57082647E60003A764 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = BKE_depsgraph.h;
+			path = ../../source/blender/blenkernel/BKE_depsgraph.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3237E58082647E60003A764 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = depsgraph_private.h;
+			path = ../../source/blender/blenkernel/depsgraph_private.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3237E5B082648040003A764 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = depsgraph.c;
+			path = ../../source/blender/blenkernel/intern/depsgraph.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3237E5C082648040003A764 = {
+			fileRef = A3237E5B082648040003A764;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A3237E5F082648230003A764 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = drawdeps.c;
+			path = ../../source/blender/src/drawdeps.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3237E60082648230003A764 = {
+			fileRef = A3237E5F082648230003A764;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		A34C070A07E4E57B0026C252 = {
 			buildActionMask = 2147483647;
 			files = (
@@ -4861,6 +4909,8 @@
 		};
 		A34CC76D07E3889600AD7C17 = {
 			children = (
+				A3237E57082647E60003A764,
+				A3237E58082647E60003A764,
 				A34CC76E07E3889600AD7C17,
 				A34CC77207E3889600AD7C17,
 				A34CC77307E3889600AD7C17,
@@ -5350,6 +5400,7 @@
 		};
 		A34CC7A007E3889600AD7C17 = {
 			children = (
+				A3237E5B082648040003A764,
 				A39CCA8C07F77854004B987A,
 				A397AC9C07EEA36500D1D9FB,
 				A397AC9D07EEA36500D1D9FB,
@@ -7124,6 +7175,7 @@
 		};
 		A34CC86A07E3889600AD7C17 = {
 			children = (
+				A3FBBA1B082C2DBA001C5E36,
 				A30C08640809B39F0047DDB4,
 				A34CC86B07E3889600AD7C17,
 				A34CC86C07E3889600AD7C17,
@@ -8123,6 +8175,7 @@
 		};
 		A34CC8CF07E3889600AD7C17 = {
 			children = (
+				A3FBBA2E082C2EB5001C5E36,
 				A34CC8D007E3889600AD7C17,
 				A34CC8D107E3889600AD7C17,
 				A34CC8D207E3889600AD7C17,
@@ -8624,6 +8677,8 @@
 		};
 		A34CC90607E3889600AD7C17 = {
 			children = (
+				A3FBBA26082C2E46001C5E36,
+				A3FBBA27082C2E46001C5E36,
 				A34CC90807E3889600AD7C17,
 				A34CC90907E3889600AD7C17,
 				A34CC90A07E3889600AD7C17,
@@ -10982,6 +11037,10 @@
 		};
 		A34CCA0E07E3889700AD7C17 = {
 			children = (
+				A3FBBA1E082C2DE0001C5E36,
+				A3FBBA1F082C2DE0001C5E36,
+				A3FBBA20082C2DE0001C5E36,
+				A3237E5F082648230003A764,
 				A30C085C0809B36D0047DDB4,
 				A3D66D4B07EA40B1005185E6,
 				A34CCA1107E3889700AD7C17,
@@ -23290,6 +23349,12 @@
 				A30C085D0809B36D0047DDB4,
 				A314C90E081B0C2100CDA716,
 				A314C91A081B0C7300CDA716,
+				A3237E5C082648040003A764,
+				A3237E60082648230003A764,
+				A3FBBA21082C2DE0001C5E36,
+				A3FBBA22082C2DE0001C5E36,
+				A3FBBA23082C2DE0001C5E36,
+				A3FBBA28082C2E46001C5E36,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -27784,6 +27849,93 @@
 			isa = PBXBuildFile;
 			settings = {
 			};
+		};
+		A3FBBA1B082C2DBA001C5E36 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = BSE_time.h;
+			path = ../../source/blender/include/BSE_time.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3FBBA1E082C2DE0001C5E36 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = drawtime.c;
+			path = ../../source/blender/src/drawtime.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3FBBA1F082C2DE0001C5E36 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = edittime.c;
+			path = ../../source/blender/src/edittime.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3FBBA20082C2DE0001C5E36 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = header_time.c;
+			path = ../../source/blender/src/header_time.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3FBBA21082C2DE0001C5E36 = {
+			fileRef = A3FBBA1E082C2DE0001C5E36;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A3FBBA22082C2DE0001C5E36 = {
+			fileRef = A3FBBA1F082C2DE0001C5E36;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A3FBBA23082C2DE0001C5E36 = {
+			fileRef = A3FBBA20082C2DE0001C5E36;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A3FBBA26082C2E46001C5E36 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = Font.c;
+			path = ../../source/blender/python/api2_2x/Font.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3FBBA27082C2E46001C5E36 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = Font.h;
+			path = ../../source/blender/python/api2_2x/Font.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3FBBA28082C2E46001C5E36 = {
+			fileRef = A3FBBA26082C2E46001C5E36;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A3FBBA2E082C2EB5001C5E36 = {
+			fileEncoding = 5;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = DNA_object_force.h;
+			path = ../../source/blender/makesdna/DNA_object_force.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
 		};
 	};
 	rootObject = A34CC75107E3883900AD7C17;
