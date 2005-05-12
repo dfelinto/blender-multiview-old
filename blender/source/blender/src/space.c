@@ -3428,11 +3428,6 @@ static void winqreadseqspace(ScrArea *sa, void *spacedata, BWinEvent *evt)
 			if((G.qual==0))
 				transform_seq('g', 0);
 			break;
-		case KKEY:
-			if((G.qual==0)) { /* Cut at current frame */
-				seq_cut(CFRA);
-			}
-			break;
 		case MKEY:
 			if(G.qual==LR_ALTKEY)
 				un_meta();
