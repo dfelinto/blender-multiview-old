@@ -1983,9 +1983,11 @@ static int check_builtinfuncs(char *string)
 {
 	int number = 22, a = 0;
 	
-	char builtinfuncs[][11] = {"continue", "del", "elif", "else", "except", "exec",
-				"for", "global", "if", "in", "is", "lambda", "not", "or", "pass",
-				"print", "raise", "return", "while", "yield", "from", "import"};
+	char builtinfuncs[][11] = {"and", "as", "assert", "break", "class", "continue", "def",
+								"del", "elif", "else", "except", "exec", "finally",
+								"for", "from", "global", "if", "import", "in",
+								"is", "lambda", "or", "pass", "print",
+								"raise", "return", "try", "while", "yield"};
 
 	for( a = 0; a < number; a++) {
 		if(!strcmp(builtinfuncs[a], string))
