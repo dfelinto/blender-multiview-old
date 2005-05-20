@@ -598,6 +598,7 @@ void BLI_clean(char *path)
 
 void BLI_char_switch(char *string, char from, char to) 
 {
+	if(string==0) return;
 	while (*string != 0) {
 		if (*string == from) *string = to;
 		string++;
