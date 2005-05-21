@@ -23816,7 +23816,7 @@
 			fileRef = A34CCA4B07E3889700AD7C17;
 			isa = PBXBuildFile;
 			settings = {
-				COMPILER_FLAGS = "-I../../source/blender/src";
+				COMPILER_FLAGS = "-I../../../lib/darwin-6.1-powerpc/sdl/include          ";
 			};
 		};
 		A3CFA6E207E3A9D100501F05 = {
@@ -24152,7 +24152,7 @@
 			fileRef = A34CCA7F07E3889700AD7C17;
 			isa = PBXBuildFile;
 			settings = {
-				COMPILER_FLAGS = "-I../../source/blender/src";
+				COMPILER_FLAGS = "-I../../source/blender/src  -I../../../lib/darwin-6.1-powerpc/sdl/include          ";
 			};
 		};
 		A3CFA71307E3AA9200501F05 = {
@@ -27902,6 +27902,7 @@
 			fileRef = A3FBBA20082C2DE0001C5E36;
 			isa = PBXBuildFile;
 			settings = {
+				COMPILER_FLAGS = "-I../../../lib/darwin-6.1-powerpc/sdl/include";
 			};
 		};
 		A3FBBA26082C2E46001C5E36 = {
