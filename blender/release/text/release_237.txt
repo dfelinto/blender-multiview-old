@@ -1,0 +1,11 @@
+------------------------- Blender 2.37 release log ----------------
+
+May 29, 2005
+
+For html versions of release logs, with images and examples, please check:
+http://www.blender3d.org/cms/Releaselogs.34.0.html
+
+Have fun!
+
+The blender.org team.
+
