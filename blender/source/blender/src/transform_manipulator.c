@@ -383,7 +383,6 @@ int calc_manipulator_stats(ScrArea *sa)
 				calc_tw_center(base->object->obmat[3]);
 				totsel++;
 			}
-			else ENDBASELOOP(base)
 			base= base->next;
 		}
 		
