@@ -1532,7 +1532,6 @@ static void createTransObject(TransInfo *t)
 				tx++;
 			}
 		}
-		else ENDBASELOOP(base)
 	}
 }
 
