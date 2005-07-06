@@ -1362,7 +1362,7 @@ void special_aftertrans_update(char mode, int flip, short canceled)
 			/* do not call this always, we dont want actions to update, for inserting keys */
 			DAG_object_flush_update(G.scene, G.obpose, OB_RECALC_DATA);
 		}
-		else if(cancelled)	/* but if cancelled we do the update */
+		else if(canceled)	/* but if cancelled we do the update */
 			DAG_object_flush_update(G.scene, G.obpose, OB_RECALC_DATA);
 
 	}
