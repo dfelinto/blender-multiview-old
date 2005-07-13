@@ -338,7 +338,7 @@ struct DagForest *build_dag(struct Scene *sce, short mask)
 								// fprintf(stderr,"armature %s target :%s \n", ob->id.name, target->id.name);
 								node3 = dag_get_node(dag, target);
 								
-								if(subtarget[0])
+								if(subtarget && subtarget[0])
 									dag_add_relation(dag,node3,node, DAG_RL_OB_DATA|DAG_RL_DATA_DATA);
 								else
 									dag_add_relation(dag,node3,node, DAG_RL_OB_DATA);
