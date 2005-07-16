@@ -418,7 +418,7 @@ static void draw_b_bone(int dt, int armflag, int boneflag, int constflag, unsign
 	
 	/* draw points only if... */
 	if(armflag & ARM_EDITMODE) {
-		draw_bone_points(dt, armflag, boneflag, id, 1.0);
+		draw_bone_points(dt, armflag, boneflag, id, length);
 	}
 
 	/* colors for modes */
