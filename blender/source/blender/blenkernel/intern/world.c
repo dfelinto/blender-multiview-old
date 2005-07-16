@@ -98,7 +98,7 @@ World *add_world(char *name)
 	wrld->aoenergy= 1.0;
 	wrld->aobias= 0.05;
 	
-	wrld->physicsEngine= WOPHY_BULLET;
+	wrld->physicsEngine= WOPHY_SUMO;
 	
 	return wrld;
 }
