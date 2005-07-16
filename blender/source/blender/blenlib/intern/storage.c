@@ -393,7 +393,8 @@ void BLI_adddirstrings()
 		else if(num1) sprintf(files[num].size, "%15d", num1);
 		else sprintf(files[num].size, "0");
 
-		strftime(datum, 32, "%d-%b-%y %R", tm);
+//		strftime(datum, 32, "%d-%b-%y %R", tm);
+		strftime(datum, 32, "%d-%b-%y ", tm);
 
 		if (st_size < 1000) {
 			sprintf(size, "%10d", (int) st_size);
