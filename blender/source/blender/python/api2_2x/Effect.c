@@ -34,7 +34,6 @@
 #include "DNA_object_types.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
-#include "Build.h"
 #include "Particle.h"
 #include "Wave.h"
 #include "gen_utils.h"
