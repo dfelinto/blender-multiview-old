@@ -1011,7 +1011,7 @@ DerivedMesh *subsurf_make_derived_from_mesh(Mesh *me, DispListMesh *dlm, Subsurf
 
 		/* Do not use cache in render mode. */
 	if (useRenderParams) {
-		CCGSubSurf *ss = _getSubSurf(NULL, levels, 0, 1, 1, useSimple);
+		CCGSubSurf *ss = _getSubSurf(NULL, smd->renderLevels, 0, 1, 1, useSimple);
 
 		ss_sync_from_mesh(ss, me, dlm, vertCos, useSimple);
 
