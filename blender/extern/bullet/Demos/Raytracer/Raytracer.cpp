@@ -37,6 +37,7 @@ Very basic raytracer, rendering into a texture.
 #include "CollisionShapes/BoxShape.h"
 #include "CollisionShapes/Simplex1to4Shape.h"
 #include "CollisionShapes/ConeShape.h"
+#include "CollisionShapes/CylinderShape.h"
 #include "CollisionShapes/MinkowskiSumShape.h"
 
 
@@ -62,8 +63,12 @@ int screenHeight = 128;
 GLuint glTextureId;
 
 SphereShape	mySphere(1);
-BoxShape myBox(SimdVector3(1,1,1));
+BoxShape myBox(SimdVector3(0.4f,0.4f,0.4f));
+CylinderShape myCylinder(SimdVector3(0.3f,0.3f,0.3f));
 ConeShape myCone(1,1);
+
+MinkowskiSumShape myMink(&myCylinder,&myBox);
+
 
 ///
 ///
@@ -72,7 +77,7 @@ int main(int argc,char** argv)
 {
 	raytracePicture = new RenderTexture(screenWidth,screenHeight);
 
-	myBox.SetMargin(0.3f);
+	myBox.SetMargin(0.02f);
 	myCone.SetMargin(0.2f);
 
 	simplex.SetSimplexSolver(&simplexSolver);
@@ -103,11 +108,11 @@ int main(int argc,char** argv)
 	shapePtr[0] = &myCone;
 	shapePtr[1] =&simplex;
 	shapePtr[2] =&convexHullShape;
-	shapePtr[3] =&myBox;
+	shapePtr[3] =&myMink;//myBox;
 
 	simplex.SetMargin(0.3f);
 
-	setCameraDistance(5.f);
+	setCameraDistance(6.f);
 
 	return glutmain(argc, argv,screenWidth,screenHeight,"Minkowski-Sum Raytracer Demo");
 }
@@ -132,9 +137,14 @@ void clientDisplay(void)
 		SimdVector3	pos(-3.5f+i*2.5f,0.f,0.f);
 		transforms[i].setOrigin( pos );
 		SimdQuaternion orn;
-		orn.setEuler(yaw,pitch,roll);
-		transforms[i].setRotation(orn);
+		if (i < 2)
+		{
+			orn.setEuler(yaw,pitch,roll);
+			transforms[i].setRotation(orn);
+		}
 	}
+	myMink.SetTransformA(SimdTransform(transforms[0].getRotation()));
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 	glDisable(GL_LIGHTING);
 	if (once)
@@ -257,7 +267,7 @@ void clientDisplay(void)
 					SimdVector3 worldNormal;
 					worldNormal = transforms[s].getBasis() *rayResult.m_normal;
 
-					float light = worldNormal.dot(SimdVector3(0.2f,1.f,0.2f));
+					float light = worldNormal.dot(SimdVector3(0.4f,-1.f,-0.4f));
 					if (light < 0.2)
 						light = 0.2f;
 					if (light > 1.f)
