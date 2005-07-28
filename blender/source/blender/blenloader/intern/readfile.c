@@ -2824,7 +2824,7 @@ static void *restore_pointer_by_name(Main *mainp, ID *id, int user)
 
 /* called from kernel/blender.c */
 /* used to link a file (without UI) to the current UI */
-void lib_link_screen_restore(Main *newmain, char mode, Scene *curscene)
+void lib_link_screen_restore(Main *newmain, Scene *curscene)
 {
 	bScreen *sc;
 	ScrArea *sa;
