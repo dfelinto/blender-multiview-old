@@ -20,6 +20,7 @@
 #include "ConstraintSolver/OdeConstraintSolver.h"
 #include "CollisionDispatch/ToiContactDispatcher.h"
 #include "BroadphaseCollision/SimpleBroadphase.h"
+#include "IDebugDraw.h"
 
 #include "PHY_Pro.h"
 
@@ -51,7 +52,7 @@ PolyhedralConvexShape* shapePtr[4] =
 
 };
 
-struct GLDebugDrawer : PHY_IPhysicsDebugDraw
+struct GLDebugDrawer : IDebugDraw
 {
 	virtual void	DrawLine(const SimdVector3& from,const SimdVector3& to,const SimdVector3& color)
 	{
@@ -160,7 +161,7 @@ int main(int argc,char** argv)
 			//physObjects[i]->SetAngularVelocity(0,0,-2,true);
 		}
 
-		//physicsEnvironmentPtr->setDebugDrawer(&debugDrawer);
+		physicsEnvironmentPtr->setDebugDrawer(&debugDrawer);
 
 		
 	}
@@ -168,9 +169,6 @@ int main(int argc,char** argv)
 }
 
 //to be implemented by the demo
-//#define ACTIVE_TAG 1
-//#define ISLAND_SLEEPING 2
-//#define WANTS_DEACTIVATION 3
 
 void renderme()
 {

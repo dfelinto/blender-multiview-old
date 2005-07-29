@@ -24,6 +24,7 @@
 
 #include "CollisionShapes/TriangleMesh.h"
 
+#include "IDebugDraw.h"
 
 #include "PHY_Pro.h"
 
@@ -63,7 +64,7 @@ CollisionShape* shapePtr[5] =
 
 };
 
-struct GLDebugDrawer : PHY_IPhysicsDebugDraw
+struct GLDebugDrawer : IDebugDraw
 {
 	virtual void	DrawLine(const SimdVector3& from,const SimdVector3& to,const SimdVector3& color)
 	{
