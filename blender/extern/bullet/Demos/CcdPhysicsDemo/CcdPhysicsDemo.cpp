@@ -84,11 +84,11 @@ int main(int argc,char** argv)
 	shapeProps.m_mass = 1.0f;
 	
 	PHY_MaterialProps materialProps;
-	materialProps.m_friction = 0.5f;
-	materialProps.m_restitution = 0.1f;
+	materialProps.m_friction = 10.5f;
+	materialProps.m_restitution = 0.0f;
 
 	CcdConstructionInfo ccdObjectCi;
-	ccdObjectCi.m_friction = 0.5f;
+	ccdObjectCi.m_friction = 10.5f;
 
 	ccdObjectCi.m_linearDamping = shapeProps.m_lin_drag;
 	ccdObjectCi.m_angularDamping = shapeProps.m_ang_drag;
