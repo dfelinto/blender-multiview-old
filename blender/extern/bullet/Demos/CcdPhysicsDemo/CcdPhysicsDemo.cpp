@@ -21,6 +21,7 @@
 #include "CollisionDispatch/ToiContactDispatcher.h"
 #include "BroadphaseCollision/SimpleBroadphase.h"
 #include "IDebugDraw.h"
+#include "GLDebugDrawer.h"
 
 #include "PHY_Pro.h"
 
@@ -52,19 +53,6 @@ PolyhedralConvexShape* shapePtr[4] =
 
 };
 
-struct GLDebugDrawer : IDebugDraw
-{
-	virtual void	DrawLine(const SimdVector3& from,const SimdVector3& to,const SimdVector3& color)
-	{
-		glBegin(GL_LINES);
-		glColor3f(color.x(),color.y(),color.z());
-		glVertex3f(from.x(),from.y(),from.z());
-		glVertex3f(to.x(),to.y(),to.z());
-		glEnd();
-	}
-
-
-};
 int main(int argc,char** argv)
 {
 	GLDebugDrawer	debugDrawer;
@@ -96,11 +84,11 @@ int main(int argc,char** argv)
 	shapeProps.m_mass = 1.0f;
 	
 	PHY_MaterialProps materialProps;
-	materialProps.m_friction = 50.5f;
+	materialProps.m_friction = 0.5f;
 	materialProps.m_restitution = 0.1f;
 
 	CcdConstructionInfo ccdObjectCi;
-	ccdObjectCi.m_friction = 50.5f;
+	ccdObjectCi.m_friction = 0.5f;
 
 	ccdObjectCi.m_linearDamping = shapeProps.m_lin_drag;
 	ccdObjectCi.m_angularDamping = shapeProps.m_ang_drag;
@@ -162,6 +150,7 @@ int main(int argc,char** argv)
 		}
 
 		physicsEnvironmentPtr->setDebugDrawer(&debugDrawer);
+		debugDrawer.SetDebugMode(1);
 
 		
 	}

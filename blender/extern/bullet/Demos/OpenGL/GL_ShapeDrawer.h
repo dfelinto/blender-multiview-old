@@ -17,9 +17,11 @@ class CollisionShape;
 /// OpenGL shape drawing
 class GL_ShapeDrawer
 {
+
 	public:
 		static 	void	DrawOpenGL(float* m, const CollisionShape* shape, const SimdVector3& color);
 		static void		DrawCoordSystem();
+		
 };
 
 #endif //GL_SHAPE_DRAWER_H

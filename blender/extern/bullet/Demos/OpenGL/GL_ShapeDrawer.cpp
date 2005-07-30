@@ -8,6 +8,7 @@
  * of this software for any purpose.  
  * It is provided "as is" without express or implied warranty.
  */
+
 #ifdef WIN32 //needed for glut.h
 #include <windows.h>
 #endif
@@ -33,6 +34,9 @@ void GL_ShapeDrawer::DrawCoordSystem()  {
     glEnd();
 	
 }
+
+
+
 
 class GlDrawcallback : public TriangleCallback
 {

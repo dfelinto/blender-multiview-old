@@ -150,6 +150,9 @@
 				RelativePath=".\GL_Simplex1to4.h">
 			</File>
 			<File
+				RelativePath=".\GLDebugDrawer.h">
+			</File>
+			<File
 				RelativePath=".\GlutStuff.h">
 			</File>
 			<File
