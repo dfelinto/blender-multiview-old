@@ -25,7 +25,7 @@
 #include "CollisionShapes/TriangleMesh.h"
 
 #include "IDebugDraw.h"
-#include "GLDebugDrawer.h"
+//#include "GLDebugDrawer.h"
 
 #include "PHY_Pro.h"
 
@@ -84,7 +84,7 @@ int main(int argc,char** argv)
 
 
 
-	GLDebugDrawer	debugDrawer;
+//	GLDebugDrawer	debugDrawer;
 
 	ConstraintSolver* solver = new SimpleConstraintSolver;
 	//ConstraintSolver* solver = new OdeConstraintSolver;

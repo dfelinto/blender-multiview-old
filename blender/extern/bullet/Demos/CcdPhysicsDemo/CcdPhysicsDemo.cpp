@@ -21,7 +21,7 @@
 #include "CollisionDispatch/ToiContactDispatcher.h"
 #include "BroadphaseCollision/SimpleBroadphase.h"
 #include "IDebugDraw.h"
-////#include "GLDebugDrawer.h"
+#include "GLDebugDrawer.h"
 
 #include "PHY_Pro.h"
 
@@ -55,7 +55,7 @@ PolyhedralConvexShape* shapePtr[4] =
 
 int main(int argc,char** argv)
 {
-//	GLDebugDrawer	debugDrawer;
+	GLDebugDrawer	debugDrawer;
 
 	//ConstraintSolver* solver = new SimpleConstraintSolver;
 	ConstraintSolver* solver = new OdeConstraintSolver;
@@ -84,11 +84,11 @@ int main(int argc,char** argv)
 	shapeProps.m_mass = 1.0f;
 	
 	PHY_MaterialProps materialProps;
-	materialProps.m_friction = 10.5f;
+	materialProps.m_friction = 0.5f;
 	materialProps.m_restitution = 0.0f;
 
 	CcdConstructionInfo ccdObjectCi;
-	ccdObjectCi.m_friction = 10.5f;
+	ccdObjectCi.m_friction = 0.5f;
 
 	ccdObjectCi.m_linearDamping = shapeProps.m_lin_drag;
 	ccdObjectCi.m_angularDamping = shapeProps.m_ang_drag;
@@ -149,8 +149,8 @@ int main(int argc,char** argv)
 			//physObjects[i]->SetAngularVelocity(0,0,-2,true);
 		}
 
-	//	physicsEnvironmentPtr->setDebugDrawer(&debugDrawer);
-	//	debugDrawer.SetDebugMode(1);
+		physicsEnvironmentPtr->setDebugDrawer(&debugDrawer);
+		debugDrawer.SetDebugMode(1);
 
 		
 	}
