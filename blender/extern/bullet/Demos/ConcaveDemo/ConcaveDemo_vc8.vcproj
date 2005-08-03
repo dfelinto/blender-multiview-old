@@ -6,7 +6,6 @@
 	ProjectGUID="{F20F38CC-CFA7-40C7-81AE-945C8C09E473}"
 	RootNamespace="ConcaveDemo"
 	Keyword="Win32Proj"
-	SignManifests="true"
 	>
 	<Platforms>
 		<Platform
@@ -188,6 +187,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\MyMesh.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\MyMotionState.cpp"
 				>
 			</File>
@@ -197,6 +200,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\MyMesh.h"
+				>
+			</File>
 			<File
 				RelativePath=".\MyMotionState.h"
 				>
