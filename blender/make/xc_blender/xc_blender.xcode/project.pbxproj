@@ -4444,6 +4444,144 @@
 			settings = {
 			};
 		};
+		A30ED2E808918738005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = DNA_modifier_types.h;
+			path = ../../source/blender/makesdna/DNA_modifier_types.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30ED2EB0891879E005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = BKE_modifier.h;
+			path = ../../source/blender/blenkernel/BKE_modifier.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30ED2EC089187D0005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = modifier.c;
+			path = ../../source/blender/blenkernel/intern/modifier.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30ED2ED089187D0005D2A63 = {
+			fileRef = A30ED2EC089187D0005D2A63;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A30ED2F70891898C005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = drawarmature.c;
+			path = ../../source/blender/src/drawarmature.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30ED2F80891898C005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = lorem.c;
+			path = ../../source/blender/src/lorem.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30ED2F90891898C005D2A63 = {
+			fileRef = A30ED2F70891898C005D2A63;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A30ED2FA0891898C005D2A63 = {
+			fileRef = A30ED2F80891898C005D2A63;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A30ED2FD08918B35005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			name = KX_BulletPhysicsController.cpp;
+			path = ../../source/gameengine/Ketsji/KX_BulletPhysicsController.cpp;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30ED2FE08918B35005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = KX_BulletPhysicsController.h;
+			path = ../../source/gameengine/Ketsji/KX_BulletPhysicsController.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30ED2FF08918B35005D2A63 = {
+			fileRef = A30ED2FD08918B35005D2A63;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A30ED30008918B35005D2A63 = {
+			fileRef = A30ED2FE08918B35005D2A63;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A30ED30308918C0C005D2A63 = {
+			children = (
+				A30ED30408918C0D005D2A63,
+				A30ED30508918C0D005D2A63,
+				A30ED30608918C0D005D2A63,
+				A30ED30708918C0D005D2A63,
+			);
+			isa = PBXGroup;
+			name = Bullet;
+			path = ../../source/gameengine/Physics/Bullet;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A30ED30408918C0D005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = CcdPhysicsController.cpp;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		A30ED30508918C0D005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = CcdPhysicsController.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		A30ED30608918C0D005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = CcdPhysicsEnvironment.cpp;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		A30ED30708918C0D005D2A63 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = CcdPhysicsEnvironment.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
 		A314C90C081B0C2100CDA716 = {
 			fileEncoding = 5;
 			isa = PBXFileReference;
@@ -4488,6 +4626,28 @@
 		};
 		A314C91A081B0C7300CDA716 = {
 			fileRef = A314C919081B0C7300CDA716;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		A31EC81608A1751300515640 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			path = point.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		A31EC81708A1751300515640 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			path = point.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		A31EC81A08A1753400515640 = {
+			fileRef = A31EC81608A1751300515640;
 			isa = PBXBuildFile;
 			settings = {
 			};
@@ -4909,6 +5069,7 @@
 		};
 		A34CC76D07E3889600AD7C17 = {
 			children = (
+				A30ED2EB0891879E005D2A63,
 				A3237E57082647E60003A764,
 				A3237E58082647E60003A764,
 				A34CC76E07E3889600AD7C17,
@@ -4932,7 +5093,6 @@
 				A34CC78207E3889600AD7C17,
 				A34CC78307E3889600AD7C17,
 				A34CC78407E3889600AD7C17,
-				A34CC78507E3889600AD7C17,
 				A34CC78607E3889600AD7C17,
 				A34CC78707E3889600AD7C17,
 				A34CC78807E3889600AD7C17,
@@ -5152,15 +5312,6 @@
 			lastKnownFileType = sourcecode.c.h;
 			name = BKE_group.h;
 			path = ../../source/blender/blenkernel/BKE_group.h;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CC78507E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = BKE_ika.h;
-			path = ../../source/blender/blenkernel/BKE_ika.h;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -5400,6 +5551,7 @@
 		};
 		A34CC7A007E3889600AD7C17 = {
 			children = (
+				A30ED2EC089187D0005D2A63,
 				A3237E5B082648040003A764,
 				A39CCA8C07F77854004B987A,
 				A397AC9C07EEA36500D1D9FB,
@@ -5418,7 +5570,6 @@
 				A34CC7AB07E3889600AD7C17,
 				A34CC7AC07E3889600AD7C17,
 				A34CC7AD07E3889600AD7C17,
-				A34CC7AE07E3889600AD7C17,
 				A34CC7AF07E3889600AD7C17,
 				A34CC7B007E3889600AD7C17,
 				A34CC7B107E3889600AD7C17,
@@ -5561,15 +5712,6 @@
 			lastKnownFileType = sourcecode.c.c;
 			name = group.c;
 			path = ../../source/blender/blenkernel/intern/group.c;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CC7AE07E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.c;
-			name = ika.c;
-			path = ../../source/blender/blenkernel/intern/ika.c;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -7200,7 +7342,6 @@
 				A34CC87F07E3889600AD7C17,
 				A34CC88007E3889600AD7C17,
 				A34CC88107E3889600AD7C17,
-				A34CC88207E3889600AD7C17,
 				A34CC88307E3889600AD7C17,
 				A34CC88407E3889600AD7C17,
 				A34CC88507E3889600AD7C17,
@@ -7250,8 +7391,6 @@
 				A34CC8B107E3889600AD7C17,
 				A34CC8B207E3889600AD7C17,
 				A34CC8B307E3889600AD7C17,
-				A34CC8B407E3889600AD7C17,
-				A34CC8B507E3889600AD7C17,
 				A34CC8B607E3889600AD7C17,
 				A34CC8B707E3889600AD7C17,
 				A34CC8B807E3889600AD7C17,
@@ -7486,15 +7625,6 @@
 			lastKnownFileType = sourcecode.c.h;
 			name = BIF_editgroup.h;
 			path = ../../source/blender/include/BIF_editgroup.h;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CC88207E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = BIF_editika.h;
-			path = ../../source/blender/include/BIF_editika.h;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -7939,24 +8069,6 @@
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
-		A34CC8B407E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = BSE_editaction.h;
-			path = ../../source/blender/include/BSE_editaction.h;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CC8B507E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = BSE_editaction_types.h;
-			path = ../../source/blender/include/BSE_editaction_types.h;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
 		A34CC8B607E3889600AD7C17 = {
 			fileEncoding = 5;
 			isa = PBXFileReference;
@@ -8175,6 +8287,7 @@
 		};
 		A34CC8CF07E3889600AD7C17 = {
 			children = (
+				A30ED2E808918738005D2A63,
 				A3FBBA2E082C2EB5001C5E36,
 				A34CC8D007E3889600AD7C17,
 				A34CC8D107E3889600AD7C17,
@@ -8188,7 +8301,6 @@
 				A34CC8D907E3889600AD7C17,
 				A34CC8DA07E3889600AD7C17,
 				A34CC8DB07E3889600AD7C17,
-				A34CC8DC07E3889600AD7C17,
 				A34CC8DD07E3889600AD7C17,
 				A34CC8DE07E3889600AD7C17,
 				A34CC8DF07E3889600AD7C17,
@@ -8334,15 +8446,6 @@
 			lastKnownFileType = sourcecode.c.h;
 			name = DNA_ID.h;
 			path = ../../source/blender/makesdna/DNA_ID.h;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CC8DC07E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = DNA_ika_types.h;
-			path = ../../source/blender/makesdna/DNA_ika_types.h;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -8677,6 +8780,8 @@
 		};
 		A34CC90607E3889600AD7C17 = {
 			children = (
+				A31EC81608A1751300515640,
+				A31EC81708A1751300515640,
 				A3FBBA26082C2E46001C5E36,
 				A3FBBA27082C2E46001C5E36,
 				A34CC90807E3889600AD7C17,
@@ -8690,8 +8795,6 @@
 				A34CC91007E3889600AD7C17,
 				A34CC91107E3889600AD7C17,
 				A34CC91207E3889600AD7C17,
-				A34CC91307E3889600AD7C17,
-				A34CC91407E3889600AD7C17,
 				A34CC91507E3889600AD7C17,
 				A34CC91607E3889600AD7C17,
 				A34CC91707E3889600AD7C17,
@@ -8772,8 +8875,6 @@
 				A34CC99807E3889600AD7C17,
 				A34CC99907E3889600AD7C17,
 				A34CC99A07E3889600AD7C17,
-				A34CC99B07E3889600AD7C17,
-				A34CC99C07E3889600AD7C17,
 				A34CC99D07E3889600AD7C17,
 				A34CC99E07E3889600AD7C17,
 				A34CC99F07E3889600AD7C17,
@@ -8882,24 +8983,6 @@
 			lastKnownFileType = sourcecode.c.h;
 			name = bpy_types.h;
 			path = ../../source/blender/python/api2_2x/bpy_types.h;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CC91307E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.c;
-			name = Build.c;
-			path = ../../source/blender/python/api2_2x/Build.c;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CC91407E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = Build.h;
-			path = ../../source/blender/python/api2_2x/Build.h;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -10139,24 +10222,6 @@
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
-		A34CC99B07E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.c;
-			name = Wave.c;
-			path = ../../source/blender/python/api2_2x/Wave.c;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CC99C07E3889600AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.h;
-			name = Wave.h;
-			path = ../../source/blender/python/api2_2x/Wave.h;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
 		A34CC99D07E3889600AD7C17 = {
 			fileEncoding = 5;
 			isa = PBXFileReference;
@@ -11037,6 +11102,8 @@
 		};
 		A34CCA0E07E3889700AD7C17 = {
 			children = (
+				A30ED2F70891898C005D2A63,
+				A30ED2F80891898C005D2A63,
 				A3FBBA1E082C2DE0001C5E36,
 				A3FBBA1F082C2DE0001C5E36,
 				A3FBBA20082C2DE0001C5E36,
@@ -11082,7 +11149,6 @@
 				A34CCA3807E3889700AD7C17,
 				A34CCA3907E3889700AD7C17,
 				A34CCA3A07E3889700AD7C17,
-				A34CCA3B07E3889700AD7C17,
 				A34CCA3C07E3889700AD7C17,
 				A34CCA3D07E3889700AD7C17,
 				A34CCA3E07E3889700AD7C17,
@@ -11514,15 +11580,6 @@
 			lastKnownFileType = sourcecode.c.c;
 			name = editgroup.c;
 			path = ../../source/blender/src/editgroup.c;
-			refType = 2;
-			sourceTree = SOURCE_ROOT;
-		};
-		A34CCA3B07E3889700AD7C17 = {
-			fileEncoding = 5;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.c.c;
-			name = editika.c;
-			path = ../../source/blender/src/editika.c;
 			refType = 2;
 			sourceTree = SOURCE_ROOT;
 		};
@@ -15626,6 +15683,8 @@
 		};
 		A34CCC0C07E3889800AD7C17 = {
 			children = (
+				A30ED2FD08918B35005D2A63,
+				A30ED2FE08918B35005D2A63,
 				A314C90C081B0C2100CDA716,
 				A314C90D081B0C2100CDA716,
 				A397F55807F5B14100AFAB73,
@@ -17013,6 +17072,7 @@
 		};
 		A34CCCA107E3889800AD7C17 = {
 			children = (
+				A30ED30308918C0C005D2A63,
 				A34CCCA207E3889800AD7C17,
 				A34CCCA907E3889800AD7C17,
 				A34CCCB407E3889800AD7C17,
@@ -22788,7 +22848,6 @@
 				A3CFA6CE07E3A99300501F05,
 				A3CFA6CF07E3A99800501F05,
 				A3CFA6D007E3A99A00501F05,
-				A3CFA6D107E3A99B00501F05,
 				A3CFA6D207E3A99E00501F05,
 				A3CFA6D307E3A9A000501F05,
 				A3CFA6D407E3A9A300501F05,
@@ -22932,7 +22991,6 @@
 				A3CFA7BA07E43E4900501F05,
 				A3CFA7BB07E43E4A00501F05,
 				A3CFA7BC07E43E4B00501F05,
-				A3CFA7BD07E43E4C00501F05,
 				A3CFA7BE07E43E5000501F05,
 				A3CFA7BF07E43E5100501F05,
 				A3CFA7C007E43E5400501F05,
@@ -23324,13 +23382,11 @@
 				A3CFAA0907E464E800501F05,
 				A3CFAA0A07E464E900501F05,
 				A3CFAA0B07E464EB00501F05,
-				A3CFAA0C07E464EC00501F05,
 				A3CFAA0D07E464EE00501F05,
 				A3CFAA0E07E464F000501F05,
 				A3CFAA0F07E464F300501F05,
 				A3CFAA1007E464F500501F05,
 				A3CFAA1107E464F700501F05,
-				A3CFAA1207E464F800501F05,
 				A3CFAA1307E464FA00501F05,
 				A3CFAA1407E464FC00501F05,
 				A3CFAB1007E4752000501F05,
@@ -23355,6 +23411,11 @@
 				A3FBBA22082C2DE0001C5E36,
 				A3FBBA23082C2DE0001C5E36,
 				A3FBBA28082C2E46001C5E36,
+				A30ED2ED089187D0005D2A63,
+				A30ED2F90891898C005D2A63,
+				A30ED2FA0891898C005D2A63,
+				A30ED2FF08918B35005D2A63,
+				A31EC81A08A1753400515640,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -23695,13 +23756,6 @@
 		};
 		A3CFA6D007E3A99A00501F05 = {
 			fileRef = A34CCA3A07E3889700AD7C17;
-			isa = PBXBuildFile;
-			settings = {
-				COMPILER_FLAGS = "-I../../source/blender/src";
-			};
-		};
-		A3CFA6D107E3A99B00501F05 = {
-			fileRef = A34CCA3B07E3889700AD7C17;
 			isa = PBXBuildFile;
 			settings = {
 				COMPILER_FLAGS = "-I../../source/blender/src";
@@ -24391,7 +24445,6 @@
 				A3CFA76107E3BB3A00501F05,
 				A3CFAB4A07E4840200501F05,
 				A3CFAB5A07E4854D00501F05,
-				A3CFAB5B07E4855100501F05,
 				A397ACA007EEA36500D1D9FB,
 				A3048BA607F6B58C0013C604,
 				A3048BA807F6B5CD0013C604,
@@ -24401,6 +24454,7 @@
 				A3048BD007F6BBC80013C604,
 				A3048BD107F6BBED0013C604,
 				A30C08650809B39F0047DDB4,
+				A30ED30008918B35005D2A63,
 			);
 			isa = PBXHeadersBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -24715,13 +24769,6 @@
 		};
 		A3CFA7BC07E43E4B00501F05 = {
 			fileRef = A34CC7AF07E3889600AD7C17;
-			isa = PBXBuildFile;
-			settings = {
-				COMPILER_FLAGS = "-DWITH_FREETYPE2 -I../../source/blender/blenkernel -I../../intern/guardedalloc";
-			};
-		};
-		A3CFA7BD07E43E4C00501F05 = {
-			fileRef = A34CC7AE07E3889600AD7C17;
 			isa = PBXBuildFile;
 			settings = {
 				COMPILER_FLAGS = "-DWITH_FREETYPE2 -I../../source/blender/blenkernel -I../../intern/guardedalloc";
@@ -27396,12 +27443,6 @@
 			settings = {
 			};
 		};
-		A3CFAA0C07E464EC00501F05 = {
-			fileRef = A34CC91307E3889600AD7C17;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
 		A3CFAA0D07E464EE00501F05 = {
 			fileRef = A34CC91B07E3889600AD7C17;
 			isa = PBXBuildFile;
@@ -27428,12 +27469,6 @@
 		};
 		A3CFAA1107E464F700501F05 = {
 			fileRef = A34CC90A07E3889600AD7C17;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		A3CFAA1207E464F800501F05 = {
-			fileRef = A34CC99B07E3889600AD7C17;
 			isa = PBXBuildFile;
 			settings = {
 			};
@@ -27825,12 +27860,6 @@
 		};
 		A3CFAB5A07E4854D00501F05 = {
 			fileRef = A34CC78F07E3889600AD7C17;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		A3CFAB5B07E4855100501F05 = {
-			fileRef = A34CC8E707E3889600AD7C17;
 			isa = PBXBuildFile;
 			settings = {
 			};
