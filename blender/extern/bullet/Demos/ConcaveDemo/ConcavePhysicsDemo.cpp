@@ -236,7 +236,7 @@ void renderme()
 		}
 
 		char	extraDebug[128];
-		sprintf(extraDebug,"islId, Body=%i , %i",physObjects[i]->GetRigidBody()->m_islandTag1,physObjects[i]->GetRigidBody()->m_debugBodyId);
+		//sprintf(extraDebug,"islId, Body=%i , %i",physObjects[i]->GetRigidBody()->m_islandTag1,physObjects[i]->GetRigidBody()->m_debugBodyId);
 		shapePtr[shapeIndex[i]]->SetExtraDebugInfo(extraDebug);
 		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[shapeIndex[i]],wireColor);
 	}

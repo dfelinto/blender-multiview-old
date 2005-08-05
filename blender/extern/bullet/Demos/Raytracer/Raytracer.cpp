@@ -243,8 +243,8 @@ void clientDisplay(void)
 			rayToTrans.setOrigin(rayTo);
 			for (int s=0;s<numObjects;s++)
 			{
-				rayFromLocal = transforms[s].inverse()* rayFromTrans;
-				rayToLocal = transforms[s].inverse()* rayToTrans;
+			//	rayFromLocal = transforms[s].inverse()* rayFromTrans;
+			//	rayToLocal = transforms[s].inverse()* rayToTrans;
 
 				//choose the continuous collision detection method
 				SubsimplexConvexCast convexCaster(&pointShape,shapePtr[s],&simplexSolver);
