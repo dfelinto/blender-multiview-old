@@ -115,6 +115,9 @@
 				RelativePath=".\GL_Simplex1to4.cpp">
 			</File>
 			<File
+				RelativePath=".\GLDebugDrawer.cpp">
+			</File>
+			<File
 				RelativePath=".\GlutStuff.cpp">
 			</File>
 			<File
