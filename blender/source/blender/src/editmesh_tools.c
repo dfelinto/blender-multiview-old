@@ -4653,38 +4653,38 @@ int EdgeSlide(short immediate, float imperc)
 
 			 if(tempsv->up->v1 == tempsv->down->v1){
                  short t[2];   
-				 project_short(tempsv->up->v2->co,&t);
+				 project_short(tempsv->up->v2->co,t);
                  v2[0] = (float)t[0];
                  v2[1] = (float)t[1];
                  
-				 project_short(tempsv->down->v2->co,&t);	
+				 project_short(tempsv->down->v2->co,t);	
                  v3[0] = (float)t[0];
                  v3[1] = (float)t[1];               			 
 			 } else if (tempsv->up->v2 == tempsv->down->v2){
                  short t[2];    
-				 project_short(tempsv->up->v1->co,&t);
+				 project_short(tempsv->up->v1->co,t);
                  v2[0] = (float)t[0];
                  v2[1] = (float)t[1];
                  
-				 project_short(tempsv->down->v1->co,&t);	
+				 project_short(tempsv->down->v1->co,t);	
                  v3[0] = (float)t[0];
                  v3[1] = (float)t[1];
 			 } else if (tempsv->up->v1 == tempsv->down->v2){
                  short t[2];    
-				 project_short(tempsv->up->v2->co,&t);
+				 project_short(tempsv->up->v2->co,t);
                  v2[0] = (float)t[0];
                  v2[1] = (float)t[1];
                  
-				 project_short(tempsv->down->v1->co,&t);	
+				 project_short(tempsv->down->v1->co,t);	
                  v3[0] = (float)t[0];
                  v3[1] = (float)t[1]; 
 			 } else if (tempsv->up->v2 == tempsv->down->v1){
                  short t[2];   
-				 project_short(tempsv->up->v1->co,&t);
+				 project_short(tempsv->up->v1->co,t);
                  v2[0] = (float)t[0];
                  v2[1] = (float)t[1];
                  
-				 project_short(tempsv->down->v2->co,&t);	
+				 project_short(tempsv->down->v2->co,t);	
                  v3[0] = (float)t[0];
                  v3[1] = (float)t[1];
 			 }
