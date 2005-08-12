@@ -136,7 +136,7 @@ void clientDisplay(void) {
 	for (i=0;i<numObjects;i++)
 	{
 		tr[i].getOpenGLMatrix( m );
-		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,1,1));
+		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,1,1),getDebugMode());
 	}
 
 	
@@ -217,7 +217,7 @@ void clientDisplay(void) {
 			toTransWorld.setOrigin(hitPoint);
 
 			toTransWorld.getOpenGLMatrix( m );
-			GL_ShapeDrawer::DrawOpenGL(m,shapePtr[0],SimdVector3(0,1,1));
+			GL_ShapeDrawer::DrawOpenGL(m,shapePtr[0],SimdVector3(0,1,1),getDebugMode());
 
 
 		}
@@ -225,4 +225,7 @@ void clientDisplay(void) {
 
 	glFlush();
     glutSwapBuffers();
+}
+void clientResetScene()
+{
 }

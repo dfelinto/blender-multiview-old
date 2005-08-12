@@ -63,7 +63,7 @@ struct DebugCastResult : public ConvexCast::CastResult
 		SimdTransform hitTrans;
 		SimdTransformUtil::IntegrateTransform(m_fromTrans,m_linVel,m_angVel,fraction,hitTrans);
 		hitTrans.getOpenGLMatrix(m);
-		GL_ShapeDrawer::DrawOpenGL(m,m_shape,SimdVector3(1,0,0));
+		GL_ShapeDrawer::DrawOpenGL(m,m_shape,SimdVector3(1,0,0),IDebugDraw::DBG_NoDebug);
 	
 	}
 };

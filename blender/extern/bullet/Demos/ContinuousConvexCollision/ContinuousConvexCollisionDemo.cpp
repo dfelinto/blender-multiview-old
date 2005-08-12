@@ -40,7 +40,6 @@
 #include <GL/glut.h>
 #include "GlutStuff.h"
 
-extern bool showDebug;
 
 float yaw=0.f,pitch=0.f,roll=0.f;
 const int maxNumObjects = 4;
@@ -152,7 +151,7 @@ void clientDisplay(void) {
 	}
 */
 
-	if (0)//showDebug)
+	if (getDebugMode()==IDebugDraw::DBG_DrawAabb)
 	{
 		i=0;//for (i=1;i<numObjects;i++)
 		{
@@ -180,7 +179,7 @@ void clientDisplay(void) {
 				//GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i]);
 
 				interpolatedTrans.getOpenGLMatrix( m );
-				GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,0,1));
+				GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,0,1),getDebugMode());
 			}
 		}
 	}
@@ -236,7 +235,7 @@ void clientDisplay(void) {
 	for (i=0;i<numObjects;i++)
 	{	
 		fromTrans[i].getOpenGLMatrix(m);
-		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,1,1));
+		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,1,1),getDebugMode());
 	}
 
 	DebugCastResult	rayResult1(fromTrans[0],shapePtr[0],linVels[0],angVels[0]);
@@ -246,7 +245,7 @@ void clientDisplay(void) {
 	{
 		ConvexCast::CastResult	rayResult2;
 		ConvexCast::CastResult*	rayResultPtr;
-		if (showDebug)
+		if (IDebugDraw::DBG_DrawAabb)
 		{
 			rayResultPtr = &rayResult1;
 		} else
@@ -274,12 +273,12 @@ void clientDisplay(void) {
 			SimdTransformUtil::IntegrateTransform(fromTrans[0],linVels[0],angVels[0],rayResultPtr->m_fraction,hitTrans);
 
 			hitTrans.getOpenGLMatrix(m);
-			GL_ShapeDrawer::DrawOpenGL(m,shapePtr[0],SimdVector3(0,1,0));
+			GL_ShapeDrawer::DrawOpenGL(m,shapePtr[0],SimdVector3(0,1,0),getDebugMode());
 
 			SimdTransformUtil::IntegrateTransform(fromTrans[i],linVels[i],angVels[i],rayResultPtr->m_fraction,hitTrans);
 
 			hitTrans.getOpenGLMatrix(m);
-			GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(0,1,1));
+			GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(0,1,1),getDebugMode());
 	
 
 		}
@@ -287,4 +286,8 @@ void clientDisplay(void) {
 
 	glFlush();
     glutSwapBuffers();
+}
+
+void clientResetScene()
+{
 }

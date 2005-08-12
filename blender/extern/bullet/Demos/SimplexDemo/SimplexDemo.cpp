@@ -94,7 +94,7 @@ void clientDisplay(void) {
 		transA.getOpenGLMatrix( m );
 
 		/// draw the simplex
-		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,1,1));
+		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,1,1),getDebugMode());
 
 		/// calculate closest point from simplex to the origin, and draw this vector
 		simplex.CalcClosest(m);
@@ -105,4 +105,9 @@ void clientDisplay(void) {
 
 	glFlush();
     glutSwapBuffers();
+}
+
+void clientResetScene()
+{
+
 }

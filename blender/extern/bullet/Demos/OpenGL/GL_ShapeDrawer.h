@@ -19,7 +19,7 @@ class GL_ShapeDrawer
 {
 	public:
 
-		static 	void	DrawOpenGL(float* m, const CollisionShape* shape, const SimdVector3& color);
+		static 	void	DrawOpenGL(float* m, const CollisionShape* shape, const SimdVector3& color,int	debugMode);
 		static void		DrawCoordSystem();
 		
 };

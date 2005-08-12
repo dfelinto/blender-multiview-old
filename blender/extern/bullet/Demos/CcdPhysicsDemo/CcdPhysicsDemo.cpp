@@ -21,10 +21,12 @@
 #include "CollisionDispatch/ToiContactDispatcher.h"
 #include "BroadphaseCollision/SimpleBroadphase.h"
 #include "IDebugDraw.h"
+
 #include "GLDebugDrawer.h"
 
 #include "PHY_Pro.h"
-
+#include "BMF_Api.h"
+#include <stdio.h> //printf debugging
 
 #include <GL/glut.h>
 #include "GL_ShapeDrawer.h"
@@ -32,33 +34,38 @@
 #include "GlutStuff.h"
 	
 
-const int numObjects = 22;
+const int numObjects = 200;
 
-const int maxNumObjects = 100;
+const int maxNumObjects = 400;
 MyMotionState ms[maxNumObjects];
 CcdPhysicsController* physObjects[maxNumObjects] = {0,0,0,0};
 int	shapeIndex[maxNumObjects];
 CcdPhysicsEnvironment* physicsEnvironmentPtr = 0;
 
 
+#define CUBE_HALF_EXTENTS 1
+
 //GL_LineSegmentShape shapeE(SimdPoint3(-50,0,0),
 //						   SimdPoint3(50,0,0));
 PolyhedralConvexShape* shapePtr[4] = 
 {
-	new BoxShape (SimdVector3(100,10,100)),
-	new BoxShape (SimdVector3(2,2,2)),
+	new BoxShape (SimdVector3(10,10,10)),
+	new BoxShape (SimdVector3(CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS)),
 	new BU_Simplex1to4(SimdPoint3(-2,-2,-2),SimdPoint3(2,-2,-2),SimdPoint3(-2,2,-2),SimdPoint3(0,0,2)),
 
 	new BoxShape (SimdVector3(1,3,1))
 
 };
 
+
+	GLDebugDrawer debugDrawer;
+
 int main(int argc,char** argv)
 {
-	GLDebugDrawer	debugDrawer;
 
-	//ConstraintSolver* solver = new SimpleConstraintSolver;
-	ConstraintSolver* solver = new OdeConstraintSolver;
+
+	ConstraintSolver* solver = new SimpleConstraintSolver;
+	//ConstraintSolver* solver = new OdeConstraintSolver;
 
 	ToiContactDispatcher* dispatcher = new	ToiContactDispatcher(solver);
 		
@@ -66,7 +73,8 @@ int main(int argc,char** argv)
 
 
 	physicsEnvironmentPtr = new CcdPhysicsEnvironment(dispatcher,broadphase);
-	
+	physicsEnvironmentPtr->setDeactivationTime(2.f);
+
 
 	physicsEnvironmentPtr->setGravity(0,-10,0);
 	PHY_ShapeProps shapeProps;
@@ -79,12 +87,12 @@ int main(int argc,char** argv)
 	shapeProps.m_friction_scaling[2] = 1.;
 
 	shapeProps.m_inertia = 1.f;
-	shapeProps.m_lin_drag = 0.95999998f;
-	shapeProps.m_ang_drag = 0.89999998f;
-	shapeProps.m_mass = 1.0f;
+	shapeProps.m_lin_drag = 0.2f;
+	shapeProps.m_ang_drag = 0.1f;
+	shapeProps.m_mass = 10.0f;
 	
 	PHY_MaterialProps materialProps;
-	materialProps.m_friction = 0.5f;
+	materialProps.m_friction = 10.5f;
 	materialProps.m_restitution = 0.0f;
 
 	CcdConstructionInfo ccdObjectCi;
@@ -107,6 +115,8 @@ int main(int argc,char** argv)
 	for (i=0;i<numObjects;i++)
 	{
 		shapeProps.m_shape = shapePtr[shapeIndex[i]];
+		shapeProps.m_shape->SetMargin(0.05f);
+
 
 		bool isDyna = i>0;
 		
@@ -116,8 +126,16 @@ int main(int argc,char** argv)
 			ms[i].setWorldOrientation(orn.x(),orn.y(),orn.z(),orn[3]);
 		}
 		
-		ms[i].setWorldPosition(-15+(5) % 30,i*15-10,0);
 
+		if (i>0)
+		{
+			ms[i].setWorldPosition(0,i*CUBE_HALF_EXTENTS*2 - CUBE_HALF_EXTENTS,0);
+		} else
+		{
+			ms[i].setWorldPosition(0,-10,0);
+
+		}
+		
 		ccdObjectCi.m_MotionState = &ms[i];
 		ccdObjectCi.m_gravity = SimdVector3(0,0,0);
 		ccdObjectCi.m_localInertiaTensor =SimdVector3(0,0,0);
@@ -128,7 +146,7 @@ int main(int argc,char** argv)
 		}
 		else
 		{
-			shapeProps.m_mass = 1.f;
+			shapeProps.m_mass = 100.f;
 			ccdObjectCi.m_mass = shapeProps.m_mass;
 		}
 
@@ -150,17 +168,24 @@ int main(int argc,char** argv)
 		}
 
 		physicsEnvironmentPtr->setDebugDrawer(&debugDrawer);
-		debugDrawer.SetDebugMode(1);
-
 		
 	}
-	return glutmain(argc, argv,640,480,"GJK Demo");
+	
+	clientResetScene();
+
+	setCameraDistance(46.f);
+
+	return glutmain(argc, argv,640,480,"Bullet GJK Demo. http://www.continuousphysics.com/Bullet/phpBB2/");
 }
 
 //to be implemented by the demo
 
+
 void renderme()
 {
+	debugDrawer.SetDebugMode(getDebugMode());
+
+
 	float m[16];
 	int i;
 
@@ -196,11 +221,38 @@ void renderme()
 			wireColor = SimdVector3 (0.f,1.f,0.f);
 		}
 
-		char	extraDebug[128];
+		char	extraDebug[125];
 		sprintf(extraDebug,"islId, Body=%i , %i",physObjects[i]->GetRigidBody()->m_islandTag1,physObjects[i]->GetRigidBody()->m_debugBodyId);
 		shapePtr[shapeIndex[i]]->SetExtraDebugInfo(extraDebug);
-		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[shapeIndex[i]],wireColor);
+		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[shapeIndex[i]],wireColor,getDebugMode());
+
+
 	}
+
+	glRasterPos3f(20,20,0);
+	char buf[124];
+	sprintf(buf,"space to reset");
+	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+	glRasterPos3f(20,15,0);
+	sprintf(buf,"c to show contact points");
+	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+
+	glRasterPos3f(20,10,0);
+	sprintf(buf,"cursor keys and z,x to navigate");
+	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+
+	glRasterPos3f(20,5,0);
+	sprintf(buf,"i to toggle simulation, s single step");
+	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+
+
+	glRasterPos3f(20,0,0);
+	sprintf(buf,"q to quit");
+	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+
+	glRasterPos3f(20,-5,0);
+	sprintf(buf,"d to toggle deactivation");
+	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 
 }
 void clientMoveAndDisplay()
@@ -227,8 +279,39 @@ void clientDisplay(void) {
 
 	renderme();
 
+	
+
     glFlush();
     glutSwapBuffers();
 }
 
 
+
+///make this positive to show stack falling from a distance
+///this shows the penalty tresholds in action, springy/spungy look
+#define EXTRA_HEIGHT 0.f
+
+
+void clientResetScene()
+{
+	int i;
+	for (i=0;i<numObjects;i++)
+	{
+		if (i>0)
+		{
+			//stack them
+			int colsize = 10;
+			int row = (i*CUBE_HALF_EXTENTS*2)/(colsize*2*CUBE_HALF_EXTENTS);
+			int col = (i)%(colsize)-colsize/2;
+
+			physObjects[i]->setPosition(col*2*CUBE_HALF_EXTENTS + (row%2)*CUBE_HALF_EXTENTS,row*2*CUBE_HALF_EXTENTS+CUBE_HALF_EXTENTS+EXTRA_HEIGHT,0);
+			physObjects[i]->setOrientation(0,0,0,1);
+			physObjects[i]->SetLinearVelocity(0,0,0,false);
+			physObjects[i]->SetAngularVelocity(0,0,0,false);
+		} else
+		{
+			ms[i].setWorldPosition(0,-10,0);
+
+		}
+	}
+}

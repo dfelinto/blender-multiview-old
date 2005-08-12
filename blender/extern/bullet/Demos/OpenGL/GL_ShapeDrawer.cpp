@@ -16,7 +16,8 @@
 #include "GL_ShapeDrawer.h"
 #include "CollisionShapes/PolyhedralConvexShape.h"
 #include "CollisionShapes/TriangleMeshShape.h"
-
+#include "IDebugDraw.h"
+//for debugmodes
 #include "BMF_Api.h"
 #include <stdio.h> //printf debugging
 
@@ -60,7 +61,7 @@ public:
 
 };
 
-void GL_ShapeDrawer::DrawOpenGL(float* m, const CollisionShape* shape, const SimdVector3& color)
+void GL_ShapeDrawer::DrawOpenGL(float* m, const CollisionShape* shape, const SimdVector3& color,int	debugMode)
 {
 	glPushMatrix(); 
     glLoadMatrixf(m);
@@ -76,16 +77,10 @@ void GL_ShapeDrawer::DrawOpenGL(float* m, const CollisionShape* shape, const Sim
 	/// for polyhedral shapes
 	if (shape->IsPolyhedral())
 	{
+
 		PolyhedralConvexShape* polyshape = (PolyhedralConvexShape*) shape;
 		
-		if (polyshape->GetExtraDebugInfo())
-		{
-			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetExtraDebugInfo());
-		} else
-		{
-			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetName());
-		}
-
+		
 		glBegin(GL_LINES);
 
 
@@ -102,29 +97,41 @@ void GL_ShapeDrawer::DrawOpenGL(float* m, const CollisionShape* shape, const Sim
 		}
 		glEnd();
 
-		glColor3f(1.f, 1.f, 1.f);
-		for (i=0;i<polyshape->GetNumVertices();i++)
+		
+
+		if (debugMode==IDebugDraw::DBG_DrawText)
 		{
-			SimdPoint3 vtx;
-			polyshape->GetVertex(i,vtx);
-			glRasterPos3f(vtx.x(),  vtx.y(),  vtx.z());
-			char buf[12];
-			sprintf(buf," %d",i);
-			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetName());
 		}
 
-		for (i=0;i<polyshape->GetNumPlanes();i++)
+		if (debugMode==IDebugDraw::DBG_DrawFeaturesText)
 		{
-			SimdVector3 normal;
-			SimdPoint3 vtx;
-			polyshape->GetPlane(normal,vtx,i);
-			SimdScalar d = vtx.dot(normal);
+			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetExtraDebugInfo());
+		
+			glColor3f(1.f, 1.f, 1.f);
+			for (i=0;i<polyshape->GetNumVertices();i++)
+			{
+				SimdPoint3 vtx;
+				polyshape->GetVertex(i,vtx);
+				glRasterPos3f(vtx.x(),  vtx.y(),  vtx.z());
+				char buf[12];
+				sprintf(buf," %d",i);
+				BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+			}
 
-			glRasterPos3f(normal.x()*d,  normal.y()*d, normal.z()*d);
-			char buf[12];
-			sprintf(buf," plane %d",i);
-			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
-			
+			for (i=0;i<polyshape->GetNumPlanes();i++)
+			{
+				SimdVector3 normal;
+				SimdPoint3 vtx;
+				polyshape->GetPlane(normal,vtx,i);
+				SimdScalar d = vtx.dot(normal);
+
+				glRasterPos3f(normal.x()*d,  normal.y()*d, normal.z()*d);
+				char buf[12];
+				sprintf(buf," plane %d",i);
+				BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+				
+			}
 		}
 	}
 	if (shape->IsConcave())

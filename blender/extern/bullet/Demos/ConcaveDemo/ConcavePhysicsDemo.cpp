@@ -86,8 +86,8 @@ int main(int argc,char** argv)
 
 //	GLDebugDrawer	debugDrawer;
 
-	ConstraintSolver* solver = new SimpleConstraintSolver;
-	//ConstraintSolver* solver = new OdeConstraintSolver;
+	//ConstraintSolver* solver = new SimpleConstraintSolver;
+	ConstraintSolver* solver = new OdeConstraintSolver;
 
 	ToiContactDispatcher* dispatcher = new	ToiContactDispatcher(solver);
 		
@@ -235,10 +235,10 @@ void renderme()
 			wireColor = SimdVector3 (0.f,1.f,0.f);
 		}
 
-		char	extraDebug[128];
+		char	extraDebug[125];
 		//sprintf(extraDebug,"islId, Body=%i , %i",physObjects[i]->GetRigidBody()->m_islandTag1,physObjects[i]->GetRigidBody()->m_debugBodyId);
 		shapePtr[shapeIndex[i]]->SetExtraDebugInfo(extraDebug);
-		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[shapeIndex[i]],wireColor);
+		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[shapeIndex[i]],wireColor,getDebugMode());
 	}
 
 }
@@ -271,3 +271,7 @@ void clientDisplay(void) {
 }
 
 
+void clientResetScene()
+{
+
+}

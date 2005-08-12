@@ -389,3 +389,7 @@ void clientDisplay(void)
 	glFlush();
 	glutSwapBuffers();
 }
+
+void clientResetScene()
+{
+}

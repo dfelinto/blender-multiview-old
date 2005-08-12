@@ -5,6 +5,7 @@
 	Name="OpenGLSupport"
 	ProjectGUID="{47328C1E-54A4-4065-B3DA-F88EE281D1E5}"
 	Keyword="Win32Proj"
+	SignManifests="true"
 	>
 	<Platforms>
 		<Platform
@@ -41,12 +42,12 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="..\..\Glut;..\..\LinearMath;..\..\Bullet"
 				PreprocessorDefinitions="WIN32;_DEBUG;_LIB"
-				MinimalRebuild="TRUE"
+				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -72,7 +73,7 @@
 				Name="VCBscMakeTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
+				Name="VCFxCopTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -107,7 +108,7 @@
 				RuntimeLibrary="0"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="TRUE"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -133,7 +134,7 @@
 				Name="VCBscMakeTool"
 			/>
 			<Tool
-				Name="VCAppVerifierTool"
+				Name="VCFxCopTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -166,6 +167,10 @@
 			</File>
 			<File
 				RelativePath=".\GL_Simplex1to4.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GLDebugDrawer.cpp"
 				>
 			</File>
 			<File
@@ -215,6 +220,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLDebugDrawer.h"
+				>
+			</File>
+			<File
 				RelativePath=".\GlutStuff.h"
 				>
 			</File>
@@ -234,4 +243,6 @@
 			>
 		</File>
 	</Files>
+	<Globals>
+	</Globals>
 </VisualStudioProject>

@@ -46,8 +46,7 @@ int screenHeight = 480.f;
 
 int main(int argc,char** argv)
 {
-	tr[0].setOrigin(SimdVector3(0.0f,3.f,7.f));
-	tr[1].setOrigin(SimdVector3(0.0f,9.f,2.f));
+	clientResetScene();
 
 	SimdMatrix3x3 basisA;
 	basisA.setIdentity();
@@ -129,7 +128,7 @@ void clientDisplay(void) {
 		
 		tr[i].getOpenGLMatrix( m );
 
-		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,1,1));
+		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[i],SimdVector3(1,1,1),getDebugMode());
 
 
 	}
@@ -145,7 +144,7 @@ void clientDisplay(void) {
 	SimdTransform ident;
 	ident.setIdentity();
 	ident.getOpenGLMatrix(m);
-	GL_ShapeDrawer::DrawOpenGL(m,&simplex,SimdVector3(1,1,1));
+	GL_ShapeDrawer::DrawOpenGL(m,&simplex,SimdVector3(1,1,1),getDebugMode());
 
 
 	SimdQuaternion orn;
@@ -158,4 +157,10 @@ void clientDisplay(void) {
 
 	glFlush();
     glutSwapBuffers();
+}
+
+void clientResetScene()
+{
+	tr[0].setOrigin(SimdVector3(0.0f,3.f,7.f));
+	tr[1].setOrigin(SimdVector3(0.0f,9.f,2.f));
 }

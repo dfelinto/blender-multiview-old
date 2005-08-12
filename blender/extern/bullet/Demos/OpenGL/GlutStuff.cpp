@@ -16,6 +16,22 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "IDebugDraw.h"
+//see IDebugDraw.h for modes
+static int	sDebugMode = 0;
+
+int		getDebugMode()
+{
+	return sDebugMode ;
+}
+
+void	setDebugMode(int mode)
+{
+	sDebugMode = mode;
+}
+
+
+
 
 #include "GlutStuff.h"
 
@@ -66,7 +82,7 @@ static const double SCALE_FACTOR = 2;
 
 bool stepping= true;
 bool singleStep = false;
-bool showDebug = false;
+
 
 static bool idle = false;
   
@@ -95,7 +111,7 @@ void setCamera() {
 	eye[2] = DISTANCE * cos(razi) * cos(rele);
  
 
-    glFrustum(-1.0, 1.0, -1.0, 1.0, 1.0, 600.0);
+    glFrustum(-1.0, 1.0, -1.0, 1.0, 1.0, 100.0);
     gluLookAt(eye[0], eye[1], eye[2], 
               center[0], center[1], center[2], 
               0, 1, 0);
@@ -118,9 +134,12 @@ void myReshape(int w, int h) {
     setCamera();
 }
 
+int lastKey  = 0;
 
 void myKeyboard(unsigned char key, int x, int y)
 {
+	lastKey = 0;
+
     switch (key) 
     {
     case 'q' : exit(0); break;
@@ -132,7 +151,32 @@ void myKeyboard(unsigned char key, int x, int y)
     case 'z' : zoomIn(); break;
     case 'x' : zoomOut(); break;
     case 'i' : toggleIdle(); break;
-	case 'd' : showDebug = !showDebug; break;
+	case 't' : 
+			if (sDebugMode & IDebugDraw::DBG_DrawText)
+				sDebugMode = sDebugMode & (~IDebugDraw::DBG_DrawText);
+			else
+				sDebugMode |= IDebugDraw::DBG_DrawText;
+		   break;
+	case 'y':		
+			if (sDebugMode & IDebugDraw::DBG_DrawFeaturesText)
+				sDebugMode = sDebugMode & (~IDebugDraw::DBG_DrawFeaturesText);
+			else
+				sDebugMode |= IDebugDraw::DBG_DrawFeaturesText;
+		break;
+	case 'a':	
+		if (sDebugMode & IDebugDraw::DBG_DrawAabb)
+				sDebugMode = sDebugMode & (~IDebugDraw::DBG_DrawAabb);
+			else
+				sDebugMode |= IDebugDraw::DBG_DrawAabb;
+			break;
+		case 'c' : 
+			if (sDebugMode & IDebugDraw::DBG_DrawContactPoints)
+				sDebugMode = sDebugMode & (~IDebugDraw::DBG_DrawContactPoints);
+			else
+				sDebugMode |= IDebugDraw::DBG_DrawContactPoints;
+			break;
+		break;
+
 	case 'o' :
 		{
 			stepping = !stepping;
@@ -141,8 +185,16 @@ void myKeyboard(unsigned char key, int x, int y)
 	case 's' : clientMoveAndDisplay(); break;
 //    case ' ' : newRandom(); break;
 	case ' ':
-		singleStep = true;
+		clientResetScene();
 			break;
+	case 'd':
+		{
+			if (sDebugMode & IDebugDraw::DBG_NoDeactivation)
+				sDebugMode = sDebugMode & (~IDebugDraw::DBG_NoDeactivation);
+			else
+				sDebugMode |= IDebugDraw::DBG_NoDeactivation;
+			break;
+		}
     default:
 //        std::cout << "unused key : " << key << std::endl;
         break;

@@ -12,11 +12,16 @@
 #define GLUT_STUFF_H
 
 //to be implemented by the demo
-void clientDisplay(void);
+void clientDisplay();
 void clientMoveAndDisplay();
+void clientResetScene();
+
 
 int glutmain(int argc, char **argv,int width,int height,const char* title);
 
 void	setCameraDistance(float dist);
+int		getDebugMode();
+void	setDebugMode(int mode);
+
 
 #endif //GLUT_STUFF_H
