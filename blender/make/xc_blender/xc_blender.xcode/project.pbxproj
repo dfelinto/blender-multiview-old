@@ -8780,6 +8780,8 @@
 		};
 		A34CC90607E3889600AD7C17 = {
 			children = (
+				A3B479F808AD52FB00E04135,
+				A3B479F908AD52FB00E04135,
 				A31EC81608A1751300515640,
 				A31EC81708A1751300515640,
 				A3FBBA26082C2E46001C5E36,
@@ -22793,6 +22795,30 @@
 			shellPath = /bin/sh;
 			shellScript = "echo \"preparing bundle\"\ncat build/blender.app/Contents/Info.plist | sed s/VERSION/`cat ../../release/VERSION`/ | sed s/DATE/`date +'%Y-%b-%d'`/ > build/blender.app/Contents/Info.plist\nmkdir build/blender.app/Contents/MacOS/\ncp build/blender build/blender.app/Contents/MacOS/blender\necho \"copying distribution files\"\ncp ../../bin/.blender/.Blanguages build/blender.app/Contents/Resources/\ncp -R ../../bin/.blender/locale   build/blender.app/Contents/Resources/\nmkdir build/blender.app/Contents/MacOS/.blender\ncp -R ../../release/scripts build/blender.app/Contents/MacOS/.blender\nfind build/blender.app -name CVS -prune -exec rm -rf {} \\;\nfind build/blender.app -name .DS_Store -prune -exec rm -rf {} \\;";
 		};
+		A3B479F808AD52FB00E04135 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = sceneTimeLine.c;
+			path = ../../source/blender/python/api2_2x/sceneTimeLine.c;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3B479F908AD52FB00E04135 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = sceneTimeLine.h;
+			path = ../../source/blender/python/api2_2x/sceneTimeLine.h;
+			refType = 2;
+			sourceTree = SOURCE_ROOT;
+		};
+		A3B479FA08AD52FB00E04135 = {
+			fileRef = A3B479F808AD52FB00E04135;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		A3CFA69F07E3A71900501F05 = {
 			children = (
 				A3CFA6A607E3A7FC00501F05,
@@ -23416,6 +23442,7 @@
 				A30ED2FA0891898C005D2A63,
 				A30ED2FF08918B35005D2A63,
 				A31EC81A08A1753400515640,
+				A3B479FA08AD52FB00E04135,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
