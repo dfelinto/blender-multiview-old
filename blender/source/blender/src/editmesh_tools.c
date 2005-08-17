@@ -136,8 +136,6 @@ static int vergface(const void *v1, const void *v2)
 
 /* *********************************** */
 
-#define FLT_EPSILON 1.19209290e-07F
-
 void convert_to_triface(int direction)
 {
 	EditMesh *em = G.editMesh;
