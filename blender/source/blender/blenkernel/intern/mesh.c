@@ -633,12 +633,13 @@ void make_edges(Mesh *me)
 	
 	for(a= me->totface, mface= me->mface; a>0; a--, mface++) {
 		to_edgesort(ed++, mface->v1, mface->v2, !mface->v3, mface->edcode & ME_V1V2);
-		to_edgesort(ed++, mface->v2, mface->v3, 0, mface->edcode & ME_V2V3);
 		if(mface->v4) {
+			to_edgesort(ed++, mface->v2, mface->v3, 0, mface->edcode & ME_V2V3);
 			to_edgesort(ed++, mface->v3, mface->v4, 0, mface->edcode & ME_V3V4);
 			to_edgesort(ed++, mface->v4, mface->v1, 0, mface->edcode & ME_V4V1);
 		}
 		else if(mface->v3) {
+			to_edgesort(ed++, mface->v2, mface->v3, 0, mface->edcode & ME_V2V3);
 			to_edgesort(ed++, mface->v3, mface->v1, 0, mface->edcode & ME_V3V1);
 		}
 	}
