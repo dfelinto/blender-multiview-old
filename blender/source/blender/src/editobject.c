@@ -2781,6 +2781,24 @@ void copy_attr(short event)
 						base->object->recalc |= OB_RECALC_DATA;
 					}
 				}
+				else if(event==25) {	/* curve resolution */
+
+					if ELEM(base->object->type, OB_CURVE, OB_FONT) {
+						cu= ob->data;
+						cu1= base->object->data;
+						
+						cu1->resolu= cu->resolu;
+						
+						nu= cu1->nurb.first;
+						
+						while(nu) {
+							nu->resolu= cu1->resolu;
+							nu= nu->next;
+						}
+						
+						base->object->recalc |= OB_RECALC_DATA;
+					}
+				}
 				else if(event==20) {	/* particle settings */
 					PartEff *pa1, *pa2;
 					char *p1, *p2;
