@@ -2618,6 +2618,10 @@ void copy_attr_menu()
 	
 	if(ob->type == OB_FONT) strcat(str, "|Font Settings%x18|Bevel Settings%x19");
 	if(ob->type == OB_CURVE) strcat(str, "|Bevel Settings%x19");
+	
+	if((ob->type == OB_FONT) || (ob->type == OB_CURVE)) {
+			strcat(str, "|Curve Resolution%x25");
+	}
 
 	if(ob->type==OB_MESH){
 		strcat(str, "|Subdiv%x21");
@@ -2642,6 +2646,7 @@ void copy_attr(short event)
 	Object *ob, *obt;
 	Base *base;
 	Curve *cu, *cu1;
+	Nurb *nu;
 	void *poin1, *poin2=0;
 	
 	if(G.scene->id.lib) return;
