@@ -1671,9 +1671,11 @@ static TBitem tb_curve_select[]= {
 {  -1, "", 				0, do_view3d_select_curvemenu}};
 
 static TBitem tb__select[]= {
-{	0, "Border Select|B", 	'b', NULL},
-{	0, "(De)select All|A", 	'a', NULL},
-{  -1, "", 			0, tb_do_hotkey}};
+{	0, "Border Select|B", 	0, NULL},
+{	0, "SEPR", 				0, NULL},
+{	0, "(De)select All|A", 	1, NULL},
+{	0, "Inverse",			2, NULL},
+{  -1, "", 			0, do_view3d_select_objectmenu}};
 
 
 /* *************Edit ********** */
