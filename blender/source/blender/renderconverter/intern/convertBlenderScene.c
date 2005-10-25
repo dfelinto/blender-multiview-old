@@ -932,15 +932,6 @@ static void static_particle_strand(Object *ob, Material *ma, float *orco, float 
 	Normalise(nor);		// nor needed as tangent 
 	Crossf(cross, vec, nor);
 	
-	/*
-	{
-		int i;
-		printf("winmat test\n");
-		for (i=0;i<4;i++)
-			printf("%f %f %f %f\n", R.winmat[i][0], R.winmat[i][1], R.winmat[i][2], R.winmat[i][3]);
-		printf("Done\n");
-	}*/
-	
 	/* turn cross in pixelsize */
 	w= vec[2]*R.winmat[2][3] + R.winmat[3][3];
 	
