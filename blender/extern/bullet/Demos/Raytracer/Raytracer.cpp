@@ -180,7 +180,7 @@ void clientDisplay(void)
 
 	float tanFov = (top-bottom)*0.5f / nearPlane;
 
-	float fov = 2.0 * atanf (tanFov);
+	float fov = 2.0 * SimdAtan (tanFov);
 
 
 	SimdVector3	rayFrom(eye[0],eye[1],eye[2]);
@@ -197,7 +197,7 @@ void clientDisplay(void)
 	vertical = hor.cross(rayForward);
 	vertical.normalize();
 
-	float tanfov = tanf(0.5f*fov);
+	float tanfov = SimdTan(0.5f*fov);
 
 	hor *= 2.f * farPlane * tanfov;
 	vertical *= 2.f * farPlane * tanfov;
