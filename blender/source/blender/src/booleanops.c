@@ -727,7 +727,6 @@ NewBooleanMesh(
 
 			if (dlm.nors) MEM_freeN(dlm.nors);
 
-#if 0
 			me_new->mvert = dlm.mvert;
 			me_new->medge = dlm.medge;
 			me_new->mface = dlm.mface;
@@ -736,16 +735,6 @@ NewBooleanMesh(
 			me_new->totvert = dlm.totvert;
 			me_new->totedge = dlm.totedge;
 			me_new->totface = dlm.totface;
-#else
-			me->mvert = dlm.mvert;
-			me->medge = dlm.medge;
-			me->mface = dlm.mface;
-			me->tface = dlm.tface;
-			me->mcol = dlm.mcol;
-			me->totvert = dlm.totvert;
-			me->totedge = dlm.totedge;
-			me->totface = dlm.totface;
-#endif
 
 			// free up the memory
 
