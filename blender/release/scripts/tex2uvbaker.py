@@ -1,7 +1,7 @@
 #!BPY
 
 """ Registration info for Blender menus:
-Name: 'aTexture Baker'
+Name: 'Texture Baker'
 Blender: 236
 Group: 'UV'
 Tooltip: 'Procedural to uvmapped texture baker'
