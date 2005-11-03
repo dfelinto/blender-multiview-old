@@ -2491,8 +2491,9 @@ static void draw_horizontal_join_shape(ScrArea *sa, char dir)
 		glVertex2f(points[i].x, points[i].y);
 	glEnd();
 	glBegin(GL_POLYGON);
-	for(i=5;i<8;i++)
+	for(i=4;i<8;i++)
 		glVertex2f(points[i].x, points[i].y);
+	glVertex2f(points[0].x, points[0].y);
 	glEnd();
 
 	glRectf(points[2].x, points[2].y, points[8].x, points[8].y);
@@ -2562,8 +2563,9 @@ static void draw_vertical_join_shape(ScrArea *sa, char dir)
 		glVertex2f(points[i].x, points[i].y);
 	glEnd();
 	glBegin(GL_POLYGON);
-	for(i=5;i<8;i++)
+	for(i=4;i<8;i++)
 		glVertex2f(points[i].x, points[i].y);
+	glVertex2f(points[0].x, points[0].y);
 	glEnd();
 
 	glRectf(points[2].x, points[2].y, points[8].x, points[8].y);
