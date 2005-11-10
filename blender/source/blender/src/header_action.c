@@ -561,6 +561,7 @@ static void do_action_keymenu_intpolmenu(void *arg, int event)
 			break;
 	}
 
+	scrarea_queue_winredraw(curarea);
 }
 
 static uiBlock *action_keymenu_intpolmenu(void *arg_unused)
