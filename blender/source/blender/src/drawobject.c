@@ -764,25 +764,6 @@ void drawcamera(Object *ob)
 		glEnd();
 	}
 
-
-	/* draw inactive cameras with outline arrow */
-	if (ob != G.vd->camera) glBegin(GL_LINE_LOOP);
-	else glBegin(GL_TRIANGLES);
-	
-		vec[0][0]= -0.7*cam->drawsize;
-		vec[0][1]= 1.1*cam->drawsize;
-		glVertex3fv(vec[0]);
-		
-		vec[0][0]= 0.0; 
-		vec[0][1]= 1.8*cam->drawsize;
-		glVertex3fv(vec[0]);
-		
-		vec[0][0]= 0.7*cam->drawsize; 
-		vec[0][1]= 1.1*cam->drawsize;
-		glVertex3fv(vec[0]);
-	
-	glEnd();
-	
 	if(cam->flag & (CAM_SHOWLIMITS+CAM_SHOWMIST)) {
 		myloadmatrix(G.vd->viewmat);
 		Mat4CpyMat4(vec, ob->obmat);
