@@ -375,6 +375,8 @@ static void precalc_effectors(Object *ob, PartEff *paf, Particle *pa, ListBase *
 		if(ec->ob->type==OB_CURVE) {
 			float vec[4], dir[3];
 				
+			ec->oldspeed[0]= ec->oldspeed[1]= ec->oldspeed[2];
+			
 			/* scale corrects speed vector to curve size */
 			if(paf->totkey>1) ec->scale= (paf->totkey-1)/pa->lifetime;
 			else ec->scale= 1.0f;
