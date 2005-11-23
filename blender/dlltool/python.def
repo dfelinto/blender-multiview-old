@@ -6,6 +6,7 @@ PyArg_ParseTupleAndKeywords
 PyArg_UnpackTuple
 PyArg_VaParse
 PyBaseObject_Type
+PyBool_Type
 PyBuffer_FromMemory
 PyBuffer_FromObject
 PyBuffer_FromReadWriteMemory
