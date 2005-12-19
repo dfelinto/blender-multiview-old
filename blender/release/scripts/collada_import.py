@@ -8,14 +8,16 @@ Tooltip: 'Import scene from COLLADA format (.dae)'
 """
 
 __author__ = "Mikael Lagre"
-__url__ = ("blender", "elysiun", "Project homepage, http://colladablender.sourceforge.net","Official Collada site, http://www.collada.org")
-__version__ = "0.2"
+__url__ = ("blender", "elysiun", "Project homepage, http://colladablender.sourceforge.net", "Official Collada site, http://www.collada.org")
+__version__ = "0.3"
 __bpydoc__ = """
-Description: Imports a COLLADA 1.3.1 file into a Blender scene.
+Description:
 
-Usage: Run the script from the menu or inside Blender.  
+Imports a COLLADA 1.3.1 file into a Blender scene.
 
-Notes: Does not import animation.
+Usage: run the script from the menu or inside Blender.  
+
+Notes: the script does not import animations yet.
 """
 
 # --------------------------------------------------------------------------
@@ -64,12 +66,38 @@ except:
 try:
     from xml.dom.minidom import *
 except:
-    print 'Error! Could not find reader.Sax2 module'
+    print '\nError! Could not find reader.Sax2 module'
     _ERROR = True
 
-import re
+try:
+    import re
+except:
+    print '\Error! Could not find the "re" module'
+    _ERROR = True
 
-#filename = 'C:\\ColladaBlender\\test.xml'
+if _ERROR:
+    from sys import version_info
+    version = '%s.%s' % version_info[0:2]
+    print """
+This script requires the xml and re modules that are part of a
+default standalone Python install.
+
+To run the collada importer and exporter you need to have
+Python version %s installed in your system. It can be downloaded from:
+
+http://www.python.org
+
+Notes:
+- The minor (third) version number doesn't matter, you can have either
+Python %s.1 or %s.2 or higher.
+- If you do have Python %s installed and still can't run the scripts, then
+make sure Blender's Python interpreter is finding the standalone modules
+(run 'System Information' from Blender's Help -> System menu).
+""" % (version, version, version, version)
+    Draw.PupMenu("Error: missing module(s), please check console")
+
+
+#filename = 'C:\\test.xml'
 whitespace = re.compile( '\s+' )
 angleToRadian = 3.1415926 / 180.0
 radianToAngle = 180.0 / 3.1415926
@@ -237,9 +265,19 @@ def getVector3( element ):
     value = [ float( data[ 0 ] ), float( data[ 1 ] ), float( data[ 2 ] ) ]
     return Mathutils.Vector( value )
 
-def getImageSourcePath( source ):
+def getImageSourcePath( source, filePath ):
     
-    # Remove characters from string and see if file exists
+    # Try and load our texture from 'filePath' (local .dae import path)
+    texturesDir = filePath + '/'
+    texturesDir = texturesDir.replace( '\\', '/' )  # Bill Gates!!!
+    splitPath = source.split( '/' )
+    if ( len( splitPath ) > 0 ):
+        fileName = splitPath[ len( splitPath ) - 1 ]
+        mupp = texturesDir + fileName
+        if ( Blender.sys.exists( mupp ) == 1 ):
+            return mupp
+    
+    # File does not exist to try and remove characters from string and see if file exists
     source = source.replace( 'file://', '' )
     if ( Blender.sys.exists( source ) == 1 ):
         return source
@@ -248,12 +286,12 @@ def getImageSourcePath( source ):
     if ( Blender.sys.exists( source ) == 1 ):
         return source
     
-    
+        
     # File did not exists so try and load our texture from 'texturesdir'
     texturesDir = Blender.Get( 'texturesdir' )
-    texturesDir = texturesDir.replace( '\\', '/' )
+    texturesDir = texturesDir.replace( '\\', '/' ) # Bill Gates!!!
     splitPath = source.split( '/' )
-    if ( len( splitPath) > 0 ):
+    if ( len( splitPath ) > 0 ):
         fileName = splitPath[ len( splitPath ) - 1 ]
         source = texturesDir + fileName
 
@@ -516,7 +554,7 @@ class CP( _CommonProfile ):
     pass
 
 
-def importImage( imageElement ):
+def importImage( imageElement, filePath ):
     
     global library
     
@@ -529,7 +567,7 @@ def importImage( imageElement ):
     # Get a correct source
     if ( source != None ):
         source = source.value
-        source = getImageSourcePath( source )
+        source = getImageSourcePath( source, filePath )
     
     if not ( source == None ): 
         blenderImage = Image.Load( source )
@@ -984,7 +1022,7 @@ def importCamera( cameraElement ):
                         param = getParamData( paramElement )
                         if ( param.name == CP.PN.YFOV ):
                             yfov = float( param.data )
-                            lens = 16.0 / math.tan( yfov * ( 3.1415926 / 90.0 ) )
+                            lens = 16.0 / math.tan( yfov * 0.5 * ( 3.1415926 / 180.0 ) )
                             newCamera.setLens( lens )
                         if ( param.name == CP.PN.XFOV ):    # TODO: XFOV is not the same...
                             xfov = float( param.data )
@@ -1001,7 +1039,7 @@ def importCamera( cameraElement ):
     
     return id, newCamera
 
-def importLibrary( libNode ):
+def importLibrary( libNode, filePath ):
     
     global filename
     global library
@@ -1035,7 +1073,7 @@ def importLibrary( libNode ):
     # Import library data and put into library dictionary
     if imageElements != None:
         for image in imageElements:
-            imageData = importImage( image )
+            imageData = importImage( image, filePath )
             library[ imageData[ 0 ] ] = imageData[ 1 ]
     if textureElements != None:
         for texture in textureElements:
@@ -1218,8 +1256,12 @@ def main( filename ):
     # Get COLLADA element
     collada = doc.firstChild
     
+    # Extract filePath from filename
+    filePath = Blender.sys.dirname( filename )
+    
+    
     # Import library
-    importLibrary( collada )
+    importLibrary( collada, filePath )
     
     # Import scene hiearchy
     importScene( collada )
@@ -1245,4 +1287,4 @@ def ImportGUI( ):
 if not ( _ERROR == True ):
     ImportGUI()
 
-#main()
+#main( filename )

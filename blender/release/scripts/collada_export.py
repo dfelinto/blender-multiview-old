@@ -9,13 +9,15 @@ Tooltip: 'Export scene to COLLADA format (.dae)'
 
 __author__ = "Mikael Lagre"
 __url__ = ("blender", "elysiun", "Project homepage, http://colladablender.sourceforge.net", "Official Collada site, http://www.collada.org")
-__version__ = "0.2"
+__version__ = "0.3"
 __bpydoc__ = """
-Description: Exports Blender scene to the COLLADA 1.3.1 format.
+Description:
 
-Usage: Run the script from the menu or inside Blender.  
+Exports Blender scene to the COLLADA 1.3.1 format.
 
-Notes: Does not export animation.
+Usage: run the script from the menu or inside Blender.  
+
+Notes: the script does not export animations yet.
 """
 
 # --------------------------------------------------------------------------
@@ -63,21 +65,39 @@ except:
 try:
     from xml.dom.minidom import Document, Element, Childless, Text, _write_data
 except:
-    print "Error! Could not find XML modules!"
+    print "\nError! Could not find XML modules!"
     _ERROR = True
+
+if _ERROR:
+    from sys import version_info
+    version = '%s.%s' % version_info[0:2]
+    print """
+This script requires the xml module that is part of a
+default standalone Python install.
+
+To run the collada importer and exporter you need to have
+Python version %s installed in your system. It can be downloaded from:
+
+http://www.python.org
+
+Notes:
+- The minor (third) version number doesn't matter, you can have either
+Python %s.1 or %s.2 or higher.
+- If you do have Python %s installed and still can't run the scripts, then
+make sure Blender's Python interpreter is finding the standalone modules
+(run 'System Information' from Blender's Help -> System menu).
+""" % (version, version, version, version)
+    Draw.PupMenu("Error: missing module(s), please check console")
 
 
 # === GLOBAL EXPORT SETTINGS ===
-# (features below are coming in v0.04)
-# exportSelectedOnly = False
-# bakeTransforms = False
+exportBakedTransform = False         # Export <matrix> element transform
+exportSelected = False              # Export selected objects only
+niceFormat = False                  # Creates a more readable document
 # ==============================
-# Export options
 
-exportBakedTransform = False
-exportSelected = False
-exportCameraAsLookAt = False
-niceFormat = False
+
+
 
 # ----------------------------------------------
 # Class structures
@@ -999,16 +1019,50 @@ class _FloatArrayElement( Element ):
             writer.write( ">" )
             dataString = ''
             if ( self._dataType == 'POSITION' ):
-                for v in self._data:
-                    dataString = "\n%.6f %.6f %.6f" % ( v.co[0], v.co[1], v.co[2] )
+                if ( niceFormat ):
+                    for v in self._data:
+                        dataString = "\n%.6f %.6f %.6f" % ( v.co[0], v.co[1], v.co[2]  )
+                        writer.write( dataString )
+                else:
+                    v = self._data
+                    dataString = "%.6f %.6f %.6f " % ( v[0].co[0], v[0].co[1], v[0].co[2] )
                     writer.write( dataString )
+                    size = len( self._data )
+                    for i in range( 1, size - 1 ):
+                        dataString = "%.6f %.6f %.6f " % ( v[i].co[0], v[i].co[1], v[i].co[2] )
+                        writer.write( dataString )
+                    dataString = "%.6f %.6f %.6f" % ( v[size-1].co[0], v[size-1].co[1], v[size-1].co[2] )
+                    writer.write( dataString )
+                    
             elif ( self._dataType == 'NORMAL' ):
-                for n in self._data:
-                    dataString = "\n%.6f %.6f %.6f" % ( n[0], n[1], n[2] )
+                if ( niceFormat ):
+                    for n in self._data:
+                        dataString = "\n%.6f %.6f %.6f" % ( n[0], n[1], n[2] )
+                        writer.write( dataString )
+                else:
+                    n = self._data
+                    dataString = "%.6f %.6f %.6f " % ( n[0][0], n[0][1], n[0][2] )
+                    writer.write( dataString )
+                    size = len( self._data )
+                    for i in range( 1, size - 1 ):
+                        dataString = "%.6f %.6f %.6f " % ( n[i][0], n[i][1], n[i][2] )
+                        writer.write( dataString )
+                    dataString = "%.6f %.6f %.6f" % ( n[size-1][0], n[size-1][1], n[size-1][2] )
                     writer.write( dataString )
             elif ( self._dataType == 'UV' ):
-                for uv in self._data:
-                    dataString = "\n%.6f %.6f" % ( uv[0], uv[1] )
+                if ( niceFormat ):
+                    for uv in self._data:
+                        dataString = "\n%.6f %.6f" % ( uv[0], uv[1] )
+                        writer.write( dataString )
+                else:
+                    uv = self._data
+                    dataString = "%.6f %.6f " % ( uv[0][0], uv[0][1] )
+                    writer.write( dataString )
+                    size = len( self._data )
+                    for i in range( 1, size - 1 ):
+                        dataString = "%.6f %.6f " % ( uv[i][0], uv[i][1] )
+                        writer.write( dataString )
+                    dataString = "%.6f %.6f" % ( uv[size-1][0], uv[size-1][1] )
                     writer.write( dataString )
             else:
                 # Replace '\n' with '\n + indent + addindent'
@@ -1016,7 +1070,11 @@ class _FloatArrayElement( Element ):
                     replaceString = '\n' + indent + addindent
                     self._data = self._data.replace( '\n', replaceString )
                 _write_data( writer, self._data )
-            writer.write("%s</%s>%s" % ( newl + indent, self.tagName, newl ) )
+            
+            if ( niceFormat ):
+                writer.write("%s</%s>%s" % ( newl + indent, self.tagName, newl ) )
+            else:
+                writer.write("</%s>%s" % ( self.tagName, newl ) )
 
 
 class _IntArrayElement( Element ):
@@ -1273,6 +1331,9 @@ class _MatrixElement( Element, Childless ):
     # This implementation was taken from the Python 2.3 minidom impl.
     # of class Element
     def writexml( self, writer, indent="", addindent="", newl="" ):
+        
+        global niceFormat
+        
         writer.write(indent+"<" + self.tagName)
 
         attrs = self._get_attributes()
@@ -1287,9 +1348,13 @@ class _MatrixElement( Element, Childless ):
             writer.write( "/>%s" % newl )
         else:
             # Replace '\n' with '\n + indent + addindent'
-            replaceString = '\n' + indent + addindent
-            self._data = self._data.replace( '\n', replaceString )
-            writer.write(">%s%s</%s>%s" % ( self._data, newl + indent, self.tagName, newl ) )
+            if ( niceFormat ):
+                replaceString = '\n' + indent + addindent
+                self._data = self._data.replace( '\n', replaceString )
+                writer.write(">%s%s</%s>%s" % ( self._data, newl + indent, self.tagName, newl ) )
+            else:
+                writer.write(">%s</%s>%s" % ( self._data, self.tagName, newl ) )
+                
 
 class _LookAtElement( Element ):
     pass
@@ -2040,7 +2105,7 @@ def writeMesh( libraryElement, mesh ):
                         #no += "\n%.6f %.6f %.6f" % ( f.no[0], f.no[1], f.no[2] )
                         no.append( f.no )
                     else:
-                        print "Warning! Face has nao normal. Outputing (0,0,0) as normal instead!"
+                        print "Warning! Face has no normal. Outputing (0,0,0) as normal instead!"
                         # TODO: Calculate normal instead!
                         #no += "\n%.6f %.6f %.6f" % ( 0.0, 0.0, 0.0 )
                         no.append( [ 0.0, 0.0, 0.0 ] )
@@ -2346,9 +2411,8 @@ def writeCamera( libraryElement, camera ):
         #paramXFOV = dae.createParamElement( None, CP.PN.XFOV, "float", CP.FT.IN, None, None )
         
         # Calculate Y-FOV based on LENS value
-        factor = 1.0
         lens = camera.getLens( )
-        yfov = 90.0 * 3.1415926 * ( math.atan( (16.0 * factor) / lens ) )
+        yfov = 2 * ( math.atan( 16.0 / lens ) ) * ( 180.0 / 3.1415926 )
         
         paramYFOV.setData( "%.6f" % yfov )
         program.appendChild( paramYFOV )
@@ -2557,9 +2621,21 @@ def writeNode( object, parentNode ):
         matrix = object.getMatrix( 'localspace' )
         data = ""
         matrix.transpose()
-        for i in range( 4 ):
-            data += "\n%.6f %.6f %.6f %.6f" % ( matrix[ i ].x, matrix[ i ].y,
-                                                matrix[ i ].z, matrix[ i ].w )
+        if ( niceFormat ):
+            for i in range( 4 ):
+                data += "\n%.6f %.6f %.6f %.6f" % ( matrix[ i ].x, matrix[ i ].y,
+                                                    matrix[ i ].z, matrix[ i ].w )
+        else:
+            data += "%.6f %.6f %.6f %.6f " % ( matrix[ 0 ].x, matrix[ 0 ].y,
+                                               matrix[ 0 ].z, matrix[ 0 ].w )
+            data += "%.6f %.6f %.6f %.6f " % ( matrix[ 1 ].x, matrix[ 1 ].y,
+                                               matrix[ 1 ].z, matrix[ 1 ].w )
+            data += "%.6f %.6f %.6f %.6f " % ( matrix[ 2 ].x, matrix[ 2 ].y,
+                                               matrix[ 2 ].z, matrix[ 2 ].w )                
+            data += "%.6f %.6f %.6f %.6f" % ( matrix[ 3 ].x, matrix[ 3 ].y,
+                                              matrix[ 3 ].z, matrix[ 3 ].w )                
+
+
         matrixElement.setData( data )
         newNode.appendChild( matrixElement )
     else:
@@ -2774,3 +2850,4 @@ def ExportGUI( ):
 if not ( _ERROR == True ):
     ExportGUI()
     
+#main( 'C:\\test.xml' )
