@@ -1,8 +1,6 @@
-------------------------- Blender 2.37a release log ----------------
+------------------------- Blender 2.40 release ----------------
 
-June 14, 2005
-
-This is the bugfix upgrade release for 2.37.
+Dec 20, 2005
 
 For html versions of release logs, with images and examples, please check:
 http://www.blender3d.org/cms/Releaselogs.34.0.html
