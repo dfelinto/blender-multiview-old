@@ -15,6 +15,8 @@
 //#include "GL_LineSegmentShape.h"
 #include "CollisionShapes/BoxShape.h"
 #include "CollisionShapes/Simplex1to4Shape.h"
+#include "CollisionShapes/EmptyShape.h"
+
 #include "Dynamics/RigidBody.h"
 #include "ConstraintSolver/SimpleConstraintSolver.h"
 #include "ConstraintSolver/OdeConstraintSolver.h"
@@ -34,7 +36,7 @@
 #include "GlutStuff.h"
 	
 
-const int numObjects = 200;
+const int numObjects = 40;
 
 const int maxNumObjects = 400;
 MyMotionState ms[maxNumObjects];
@@ -47,13 +49,13 @@ CcdPhysicsEnvironment* physicsEnvironmentPtr = 0;
 
 //GL_LineSegmentShape shapeE(SimdPoint3(-50,0,0),
 //						   SimdPoint3(50,0,0));
-PolyhedralConvexShape* shapePtr[4] = 
+CollisionShape* shapePtr[4] = 
 {
 	new BoxShape (SimdVector3(10,10,10)),
 	new BoxShape (SimdVector3(CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS)),
-	new BU_Simplex1to4(SimdPoint3(-2,-2,-2),SimdPoint3(2,-2,-2),SimdPoint3(-2,2,-2),SimdPoint3(0,0,2)),
-
-	new BoxShape (SimdVector3(1,3,1))
+	//new EmptyShape(),
+	new BU_Simplex1to4(SimdPoint3(-1,-1,-1),SimdPoint3(1,-1,-1),SimdPoint3(-1,1,-1),SimdPoint3(0,0,1)),
+	//new BoxShape (SimdVector3(0.4,1,0.8))
 
 };
 
@@ -108,7 +110,7 @@ int main(int argc,char** argv)
 	for (i=0;i<numObjects;i++)
 	{
 		if (i>0)
-			shapeIndex[i] = 1;
+			shapeIndex[i] = 1;//2 to test start with EmptyShape
 		else
 			shapeIndex[i] = 0;
 	}
@@ -146,13 +148,20 @@ int main(int argc,char** argv)
 		}
 		else
 		{
-			shapeProps.m_mass = 100.f;
+			shapeProps.m_mass = 1.f;
 			ccdObjectCi.m_mass = shapeProps.m_mass;
 		}
 
 		
 		SimdVector3 localInertia;
-		shapePtr[shapeIndex[i]]->CalculateLocalInertia(shapeProps.m_mass,localInertia);
+		if (shapePtr[shapeIndex[i]]->GetShapeType() == EMPTY_SHAPE_PROXYTYPE)
+		{
+			//take inertia from first shape
+			shapePtr[1]->CalculateLocalInertia(shapeProps.m_mass,localInertia);
+		} else
+		{
+			shapePtr[shapeIndex[i]]->CalculateLocalInertia(shapeProps.m_mass,localInertia);
+		}
 		ccdObjectCi.m_localInertiaTensor = localInertia;
 
 		ccdObjectCi.m_collisionShape = shapePtr[shapeIndex[i]];
@@ -223,8 +232,32 @@ void renderme()
 
 		char	extraDebug[125];
 		sprintf(extraDebug,"islId, Body=%i , %i",physObjects[i]->GetRigidBody()->m_islandTag1,physObjects[i]->GetRigidBody()->m_debugBodyId);
-		shapePtr[shapeIndex[i]]->SetExtraDebugInfo(extraDebug);
-		GL_ShapeDrawer::DrawOpenGL(m,shapePtr[shapeIndex[i]],wireColor,getDebugMode());
+		physObjects[i]->GetRigidBody()->GetCollisionShape()->SetExtraDebugInfo(extraDebug);
+		GL_ShapeDrawer::DrawOpenGL(m,physObjects[i]->GetRigidBody()->GetCollisionShape(),wireColor,getDebugMode());
+
+		if (getDebugMode()!=0 && (i>0))
+		{
+			if (physObjects[i]->GetRigidBody()->GetCollisionShape()->GetShapeType() == EMPTY_SHAPE_PROXYTYPE)
+			{
+				physObjects[i]->GetRigidBody()->SetCollisionShape(shapePtr[1]);
+			
+				//remove the persistent collision pairs that were created based on the previous shape
+
+				BroadphaseProxy* bpproxy = (BroadphaseProxy*)physObjects[i]->m_broadphaseHandle;
+
+				bpproxy->SetClientObjectType(physObjects[i]->GetRigidBody()->GetCollisionShape()->GetShapeType());
+
+				physicsEnvironmentPtr->GetBroadphase()->CleanProxyFromPairs(bpproxy);
+
+				SimdVector3 newinertia;
+				SimdScalar newmass = 10.f;
+				physObjects[i]->GetRigidBody()->GetCollisionShape()->CalculateLocalInertia(newmass,newinertia);
+				physObjects[i]->GetRigidBody()->setMassProps(newmass,newinertia);
+				physObjects[i]->GetRigidBody()->updateInertiaTensor();
+
+			}
+
+		}
 
 
 	}
@@ -304,7 +337,8 @@ void clientResetScene()
 			int row = (i*CUBE_HALF_EXTENTS*2)/(colsize*2*CUBE_HALF_EXTENTS);
 			int col = (i)%(colsize)-colsize/2;
 
-			physObjects[i]->setPosition(col*2*CUBE_HALF_EXTENTS + (row%2)*CUBE_HALF_EXTENTS,row*2*CUBE_HALF_EXTENTS+CUBE_HALF_EXTENTS+EXTRA_HEIGHT,0);
+			physObjects[i]->setPosition(col*2*CUBE_HALF_EXTENTS + (row%2)*CUBE_HALF_EXTENTS,
+				row*2*CUBE_HALF_EXTENTS+CUBE_HALF_EXTENTS+EXTRA_HEIGHT,0);
 			physObjects[i]->setOrientation(0,0,0,1);
 			physObjects[i]->SetLinearVelocity(0,0,0,false);
 			physObjects[i]->SetAngularVelocity(0,0,0,false);

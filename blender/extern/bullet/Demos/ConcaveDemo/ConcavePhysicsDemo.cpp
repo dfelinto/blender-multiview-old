@@ -21,7 +21,8 @@
 #include "CollisionDispatch/ToiContactDispatcher.h"
 #include "BroadphaseCollision/SimpleBroadphase.h"
 #include "CollisionShapes/TriangleMeshShape.h"
-
+#include "CollisionShapes/TriangleIndexVertexArray.h"
+#include "CollisionShapes/BvhTriangleMeshShape.h"
 #include "CollisionShapes/TriangleMesh.h"
 
 #include "IDebugDraw.h"
@@ -36,7 +37,7 @@
 #include "GlutStuff.h"
 	
 
-const int numObjects = 20;
+const int numObjects = 80;
 
 const int maxNumObjects = 100;
 MyMotionState ms[maxNumObjects];
@@ -58,13 +59,20 @@ CollisionShape* shapePtr[5] =
 
 
 	new BoxShape (SimdVector3(1,3,1)),
-
+#ifdef DEBUG_MESH
 	new TriangleMeshShape(&meshData),
-
+#else
+	NULL,
+#endif
 	//(&meshData)
 
 };
 
+static const int NUM_VERTICES = 5;
+static const int NUM_TRIANGLES=4;
+
+SimdVector3	gVertices[NUM_VERTICES];
+int	gIndices[NUM_TRIANGLES*3];
 
 int main(int argc,char** argv)
 {
@@ -72,7 +80,7 @@ int main(int argc,char** argv)
 	setCameraDistance(30.f);
 
 #define TRISIZE 10.f
-
+#ifdef DEBUG_MESH
 	SimdVector3 vert0(-TRISIZE ,0,TRISIZE );
 	SimdVector3 vert1(TRISIZE ,10,TRISIZE );
 	SimdVector3 vert2(TRISIZE ,0,-TRISIZE );
@@ -81,7 +89,105 @@ int main(int argc,char** argv)
 	SimdVector3 vert4(TRISIZE ,0,-TRISIZE );
 	SimdVector3 vert5(-TRISIZE ,0,-TRISIZE );
 	meshData.AddTriangle(vert3,vert4,vert5);
+#else
+#ifdef ODE_MESH
+	SimdVector3 Size = SimdVector3(15.f,15.f,12.5f);
+	
+  gVertices[0][0] = -Size[0];
+  gVertices[0][1] = Size[2];
+  gVertices[0][2] = -Size[1];
+  
+  gVertices[1][0] = Size[0];
+  gVertices[1][1] = Size[2];
+  gVertices[1][2] = -Size[1];
+  
+  gVertices[2][0] = Size[0];
+  gVertices[2][1] = Size[2];
+  gVertices[2][2] = Size[1];  
 
+  gVertices[3][0] = -Size[0];
+  gVertices[3][1] = Size[2];
+  gVertices[3][2] = Size[1];
+  
+  gVertices[4][0] = 0;
+  gVertices[4][1] = 0;
+  gVertices[4][2] = 0;
+  
+  gIndices[0] = 0;
+  gIndices[1] = 1;
+  gIndices[2] = 4;
+  
+  gIndices[3] = 1;
+  gIndices[4] = 2;
+  gIndices[5] = 4;
+  
+  gIndices[6] = 2;
+  gIndices[7] = 3;
+  gIndices[8] = 4;
+  
+  gIndices[9] = 3;
+  gIndices[10] = 0;
+  gIndices[11] = 4;
+
+  int vertStride = sizeof(SimdVector3);
+  int indexStride = 3*sizeof(int);
+
+	TriangleIndexVertexArray* indexVertexArrays = new TriangleIndexVertexArray(NUM_TRIANGLES,
+		gIndices,
+		indexStride,
+		NUM_VERTICES,(float*) &gVertices[0].x(),vertStride);
+
+	//shapePtr[4] = new TriangleMeshShape(indexVertexArrays);
+	shapePtr[4] = new BvhTriangleMeshShape(indexVertexArrays);
+#else
+
+	int vertStride = sizeof(SimdVector3);
+	int indexStride = 3*sizeof(int);
+
+	const int NUM_VERTS_X = 50;
+	const int NUM_VERTS_Y = 50;
+	const int totalVerts = NUM_VERTS_X*NUM_VERTS_Y;
+	
+	const int totalTriangles = 2*(NUM_VERTS_X-1)*(NUM_VERTS_Y-1);
+
+	SimdVector3*	gVertices = new SimdVector3[totalVerts];
+	int*	gIndices = new int[totalTriangles*3];
+
+	for (int i=0;i<NUM_VERTS_X;i++)
+	{
+		for (int j=0;j<NUM_VERTS_Y;j++)
+		{
+			gVertices[i+j*NUM_VERTS_X].setValue((i-NUM_VERTS_X*0.5f)*10.f,2.f*sinf((float)i)*cosf((float)j),(j-NUM_VERTS_Y*0.5f)*10.f);
+		}
+	}
+
+	int index=0;
+	for (int i=0;i<NUM_VERTS_X-1;i++)
+	{
+		for (int j=0;j<NUM_VERTS_Y-1;j++)
+		{
+			gIndices[index++] = j*NUM_VERTS_X+i;
+			gIndices[index++] = j*NUM_VERTS_X+i+1;
+			gIndices[index++] = (j+1)*NUM_VERTS_X+i+1;
+
+			gIndices[index++] = j*NUM_VERTS_X+i;
+			gIndices[index++] = (j+1)*NUM_VERTS_X+i+1;
+			gIndices[index++] = (j+1)*NUM_VERTS_X+i;
+		}
+	}
+	
+	TriangleIndexVertexArray* indexVertexArrays = new TriangleIndexVertexArray(totalTriangles,
+		gIndices,
+		indexStride,
+		totalVerts,(float*) &gVertices[0].x(),vertStride);
+
+	//shapePtr[4] = new TriangleMeshShape(indexVertexArrays);
+	shapePtr[4] = new BvhTriangleMeshShape(indexVertexArrays);
+#endif
+
+	
+
+#endif//DEBUG_MESH
 
 
 //	GLDebugDrawer	debugDrawer;
@@ -97,7 +203,7 @@ int main(int argc,char** argv)
 	physicsEnvironmentPtr = new CcdPhysicsEnvironment(dispatcher,broadphase);
 	
 
-	physicsEnvironmentPtr->setGravity(0,-10,0);
+	physicsEnvironmentPtr->setGravity(0,-10,3);
 	PHY_ShapeProps shapeProps;
 	
 	shapeProps.m_do_anisotropic = false;
@@ -113,11 +219,11 @@ int main(int argc,char** argv)
 	shapeProps.m_mass = 1.0f;
 	
 	PHY_MaterialProps materialProps;
-	materialProps.m_friction = 50.5f;
+	materialProps.m_friction = 0.f;// 50.5f;
 	materialProps.m_restitution = 0.1f;
 
 	CcdConstructionInfo ccdObjectCi;
-	ccdObjectCi.m_friction = 50.5f;
+	ccdObjectCi.m_friction = 0.f;//50.5f;
 
 	ccdObjectCi.m_linearDamping = shapeProps.m_lin_drag;
 	ccdObjectCi.m_angularDamping = shapeProps.m_ang_drag;
@@ -129,7 +235,7 @@ int main(int argc,char** argv)
 	for (i=0;i<numObjects;i++)
 	{
 		if (i>0)
-			shapeIndex[i] = 2;
+			shapeIndex[i] = 1;//2 = tetrahedron
 		else
 			shapeIndex[i] = 4;
 	}
@@ -139,15 +245,19 @@ int main(int argc,char** argv)
 
 		bool isDyna = i>0;
 		
-		if (0)//i==1)
+		if (!i)
 		{
-			SimdQuaternion orn(0,0,0.1*SIMD_HALF_PI);
-			ms[i].setWorldOrientation(orn.x(),orn.y(),orn.z(),orn[3]);
+			//SimdQuaternion orn(0,0,0.1*SIMD_HALF_PI);
+			//ms[i].setWorldOrientation(orn.x(),orn.y(),orn.z(),orn[3]);
+			//ms[i].setWorldPosition(0,-10,0);
+		} else
+		{
+				ms[i].setWorldPosition(10,i*15-10,0);
 		}
 		
 //either create a few stacks, to show several islands, or create 1 large stack, showing stability
 		//ms[i].setWorldPosition((i*5) % 30,i*15-10,0);
-		ms[i].setWorldPosition(0,i*15-10,0);
+		
 
 		ccdObjectCi.m_MotionState = &ms[i];
 		ccdObjectCi.m_gravity = SimdVector3(0,0,0);

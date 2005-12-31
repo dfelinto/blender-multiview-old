@@ -134,13 +134,19 @@ void GL_ShapeDrawer::DrawOpenGL(float* m, const CollisionShape* shape, const Sim
 			}
 		}
 	}
-	if (shape->IsConcave())
+	if (shape->GetShapeType() == TRIANGLE_MESH_SHAPE_PROXYTYPE)
 	{
 		TriangleMeshShape* concaveMesh = (TriangleMeshShape*) shape;
-		SimdVector3 aabbMax(1e30f,1e30f,1e30f);
+		//SimdVector3 aabbMax(1e30f,1e30f,1e30f);
+		//SimdVector3 aabbMax(100,100,100);//1e30f,1e30f,1e30f);
+		
+		extern float eye[3];
+		SimdVector3 aabbMax(eye[0]+100,eye[1]+100,eye[2]+100);//1e30f,1e30f,1e30f);
+		SimdVector3 aabbMin(eye[0]-100,eye[1]-100,eye[2]-100);//1e30f,1e30f,1e30f);
+
 		GlDrawcallback drawCallback;
 
-		concaveMesh->ProcessAllTriangles(&drawCallback,-aabbMax,aabbMax);
+		concaveMesh->ProcessAllTriangles(&drawCallback,aabbMin,aabbMax);
 
 
 	}
