@@ -830,7 +830,7 @@ static PyObject *M_Object_Duplicate( PyObject * self, PyObject * args, PyObject 
 	
 	static char *kwlist[] = {"mesh", "surface", "curve",
 			"text", "metaball", "armature", "lamp", "material", "texture", "ipo", NULL};
-	printf("B\n");
+	
 	if (!PyArg_ParseTupleAndKeywords(args, kwd, "|iiiiiiiiii", kwlist,
 		&mesh_dupe, &surface_dupe, &curve_dupe, &text_dupe, &metaball_dupe,
 		&armature_dupe, &lamp_dupe, &material_dupe, &texture_dupe, &ipo_dupe))
