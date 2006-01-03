@@ -1856,6 +1856,7 @@ static PyObject *Object_join( BPy_Object * self, PyObject * args )
 		py_child = PySequence_GetItem( list, i );
 		if( !Object_CheckPyObject( py_child ) ) {
 			/* Cleanup */
+			free_libblock( &G.main->scene, temp_scene );
 			return ( EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a list of objects, one or more of the list items is not a Blender Object." ) );
 		} else {
