@@ -37,10 +37,6 @@
 
 #include <string.h>
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #if defined(WIN32) || defined(__APPLE__)
 	#ifdef WIN32
         #if !defined(__CYGWIN32__)
