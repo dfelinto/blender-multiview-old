@@ -157,7 +157,7 @@ NPP_GetValue(
 	case NPPVpluginDescriptionString:
 		log_entry("NPP_GetValue::NPPVpluginDescriptionString");
 		*((char **)value) =
-		  "Player for interactive 3D content.\n";
+			"Player for interactive 3D content";
 		break;
 	case NPPVpluginScriptableInstance:
 		/* This cast must succeed... otherwise we'll get nasty
