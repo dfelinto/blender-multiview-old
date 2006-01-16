@@ -269,27 +269,9 @@ def comprehansiveImageLoad(imagePath, filePath):
 					break
 			return img
 	
-	
-	
 	# No go.
 	print '\t\tImage Not Found "%s"' % imagePath
 	return None
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -894,47 +876,6 @@ def load_obj(file, IMPORT_MTL=1, IMPORT_EDGES=1, IMPORT_SMOOTH_ALL=0):
 	
 	print "obj import time: ", sys.time() - time1
 
-"""
-# Batch directory loading.
-def load_obj_dir(obj_dir):
-	
-	# Strip file
-	obj_dir = stripFile(obj_dir)	
-	time = sys.time()
-	
-	objFiles = [f for f in os.listdir(obj_dir) if f.lower().endswith('obj')]
-	
-	Window.DrawProgressBar(0, '')
-	count = 0
-	obj_len = len(objFiles)
-	for obj in objFiles:
-		count+=1
-		
-		newScn = Scene.New(obj)
-		newScn.makeCurrent()
-		
-		Window.DrawProgressBar((float(count)/obj_len) - 0.01, '%s: %i of %i' % (obj, count, obj_len))
-		
-		load_obj(obj_dir  + obj)
-		
-	Window.DrawProgressBar(1, '')
-	print 'Total obj import "%s" dir: %.2f' % (obj_dir, sys.time() - time)
-
-
-def main():
-	TEXT_IMPORT = 'Import a Wavefront OBJ'
-	TEXT_BATCH_IMPORT = 'Import *.obj to Scenes'
-	# load_obj("/metavr/file_examples/obj/zombie.obj")
-	if Window.GetKeyQualifiers() & Window.Qual.SHIFT:
-		if not os:
-			Draw.PupMenu('Module "os" not found, needed for batch load, using normal selector.')
-			Window.FileSelector(load_obj, TEXT_IMPORT)
-		else:
-			Window.FileSelector(load_obj_dir, TEXT_BATCH_IMPORT)
-	else:
-		Window.FileSelector(load_obj, TEXT_IMPORT)
-"""
-
 def load_obj_ui(file):
 	
 	IMPORT_MTL = Draw.Create(1)
@@ -1000,7 +941,6 @@ def load_obj_ui(file):
 	
 	if count > 1:
 		print 'Total obj import "%s" dir: %.2f' % (obj_dir, sys.time() - time)
-	
 	
 
 def main():
