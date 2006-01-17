@@ -8,16 +8,11 @@ Tooltip: 'Import scene from COLLADA format (.dae)'
 """
 
 __author__ = "Mikael Lagre"
-__url__ = ("blender", "elysiun", "Project homepage, http://colladablender.sourceforge.net", "Official Collada site, http://www.collada.org")
-__version__ = "0.3"
-__bpydoc__ = """
-Description:
-
-Imports a COLLADA 1.3.1 file into a Blender scene.
-
-Usage: run the script from the menu or inside Blender.  
-
-Notes: the script does not import animations yet.
+__url__ = ("blender", "elysiun", "Project homepage, http://colladablender.sourceforge.net",)
+__version__ = "0.4"
+__bpydoc__ = """\Description: Imports a COLLADA 1.3.1 file into a Blender scene.
+Usage: Run the script from the menu or inside Blender.  
+Notes: Does not import animation.
 """
 
 # --------------------------------------------------------------------------
@@ -66,41 +61,16 @@ except:
 try:
     from xml.dom.minidom import *
 except:
-    print '\nError! Could not find reader.Sax2 module'
+    print 'Error! Could not find reader.Sax2 module'
     _ERROR = True
 
-try:
-    import re
-except:
-    print '\Error! Could not find the "re" module'
-    _ERROR = True
-
-if _ERROR:
-    from sys import version_info
-    version = '%s.%s' % version_info[0:2]
-    print """
-This script requires the xml and re modules that are part of a
-default standalone Python install.
-
-To run the collada importer and exporter you need to have
-Python version %s installed in your system. It can be downloaded from:
-
-http://www.python.org
-
-Notes:
-- The minor (third) version number doesn't matter, you can have either
-Python %s.1 or %s.2 or higher.
-- If you do have Python %s installed and still can't run the scripts, then
-make sure Blender's Python interpreter is finding the standalone modules
-(run 'System Information' from Blender's Help -> System menu).
-""" % (version, version, version, version)
-    Draw.PupMenu("Error: missing module(s), please check console")
-
+import re
 
 #filename = 'C:\\test.xml'
 whitespace = re.compile( '\s+' )
 angleToRadian = 3.1415926 / 180.0
 radianToAngle = 180.0 / 3.1415926
+warnings = False
 
 class Param:
     name = None
@@ -294,8 +264,10 @@ def getImageSourcePath( source, filePath ):
     if ( len( splitPath ) > 0 ):
         fileName = splitPath[ len( splitPath ) - 1 ]
         source = texturesDir + fileName
-
-    return source
+        if ( Blender.sys.exists( source ) == 1 ):
+            return source
+    
+    return None
 
 # COLLADA Common Profile constants strings
 # ( for COLLADA specification 1.3.1 )
@@ -557,6 +529,7 @@ class CP( _CommonProfile ):
 def importImage( imageElement, filePath ):
     
     global library
+    global warnings
     
     # Get attributes
     source = imageElement.attributes.getNamedItem( 'source' )
@@ -565,16 +538,21 @@ def importImage( imageElement, filePath ):
 
     
     # Get a correct source
+    imageSource = None
     if ( source != None ):
         source = source.value
-        source = getImageSourcePath( source, filePath )
+        imageSource = getImageSourcePath( source, filePath )
     
-    if not ( source == None ): 
-        blenderImage = Image.Load( source )
+    blenderImage = None
+    if not ( imageSource == None ): 
+        blenderImage = Image.Load( imageSource )
         if ( name != None ):
             blenderImage.setName( name.value )
         elif ( id != None ):
             blenderImage.setName( id )
+    else:
+        print 'Warning: Texture %s could not be loaded. Check if texture exist or modify texture path in .dae file' % ( source )
+        warnings = True
     
     return id, blenderImage
     
@@ -617,10 +595,10 @@ def importTexture( textureElement ):
             if ( inputData.semantic == CP.IS.IMAGE ):
                 source = inputData.source
                 source = source.replace( '#', '' )
-                # imageSource = Image.Get( source )
-                imageSource = library[ source ]
-                if ( imageSource != None ):
-                    blenderTexture.setImage( imageSource )
+                if ( library.has_key( source ) ):
+                    imageSource = library[ source ]
+                    if ( imageSource != None ):
+                        blenderTexture.setImage( imageSource )
     
     return id, blenderTexture
     
@@ -1074,7 +1052,8 @@ def importLibrary( libNode, filePath ):
     if imageElements != None:
         for image in imageElements:
             imageData = importImage( image, filePath )
-            library[ imageData[ 0 ] ] = imageData[ 1 ]
+            if ( imageData[ 1 ] != None ):
+                library[ imageData[ 0 ] ] = imageData[ 1 ]
     if textureElements != None:
         for texture in textureElements:
             textureData = importTexture( texture )
@@ -1180,6 +1159,8 @@ def importNode( myParent, thisNode ):
     
         # Euler angles now has to be in radians ...
         newObject.setEuler( toEulerAngleInRadians( relativeMatrix.rotationPart().toEuler( ) ) )
+        
+        
     else:
         
         # Look for unbaked transform
@@ -1239,6 +1220,7 @@ def main( filename ):
     
     global library
     global currentScene
+    global warnings
     
     currentScene = Scene.GetCurrent( )
     library = dict()
@@ -1271,6 +1253,10 @@ def main( filename ):
     
     importTime = endTime - startTime
     print "Import time: %.6f" % ( importTime )
+    
+    # Handle warnings
+    if ( warnings ):
+        Draw.PupMenu( 'Warning%t|Some information could not be imported. Check console for details' )
 
 def callback_fileselector( filename ):
     if ( Blender.sys.exists( filename ) == 1 ):

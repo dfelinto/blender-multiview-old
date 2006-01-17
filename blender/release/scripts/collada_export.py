@@ -2,14 +2,14 @@
 
 """
 Name: 'COLLADA (.dae) ...'
-Blender: 237
+Blender: 240
 Group: 'Export'
 Tooltip: 'Export scene to COLLADA format (.dae)'
 """
 
 __author__ = "Mikael Lagre"
 __url__ = ("blender", "elysiun", "Project homepage, http://colladablender.sourceforge.net", "Official Collada site, http://www.collada.org")
-__version__ = "0.3"
+__version__ = "0.4"
 __bpydoc__ = """
 Description:
 
@@ -21,7 +21,7 @@ Notes: the script does not export animations yet.
 """
 
 # --------------------------------------------------------------------------
-# Collada exporter version 0.2
+# Collada exporter version 0.4
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -91,13 +91,13 @@ make sure Blender's Python interpreter is finding the standalone modules
 
 
 # === GLOBAL EXPORT SETTINGS ===
-exportBakedTransform = False         # Export <matrix> element transform
+exportBakedTransform = True        # Export <matrix> element transform
 exportSelected = False              # Export selected objects only
 niceFormat = False                  # Creates a more readable document
 # ==============================
 
-
-
+# Global FPS for animation export (exporter uses render->anim settings)
+fps = 25
 
 # ----------------------------------------------
 # Class structures
@@ -165,14 +165,19 @@ class COLLADADocument( Document ):
         e = _LibraryElement( type )
         e.ownerDocument = self
         return e
-
-    def createChannelElement( self ):
-        e = _ChannelElement( )
+    
+    def createAnimationElement( self, id=None, name=None ):
+        e = _AnimationElement( id, name )
+        e.ownerDocument = self
+        return e
+    
+    def createChannelElement( self, id=None, name=None, source=None, target=None ):
+        e = _ChannelElement( id, name, source, target )
         e.ownerDocument = self
         return e
 
-    def createSamplerElement( self ):
-        e = _SamplerElement( )
+    def createSamplerElement( self, id=None, name=None  ):
+        e = _SamplerElement( id, name )
         e.ownerDocument = self
         return e
 
@@ -445,7 +450,7 @@ class COLLADADocument( Document ):
         return e
 
     def createUnitElement( self, name=None, meter=None ):
-        e = _UnitElement( data )
+        e = _UnitElement( name, meter )
         e.ownerDocument = self
         return e
 
@@ -514,6 +519,7 @@ class _CommonProfile:
         Z = 39
         ZFAR = 40
         ZNEAR = 41
+        MATRIX4X4 = 42  # Not in Common Profile really but here for baked animation param name
         
         str = [ "", "A", "AMBIENT", "ANGLE", "ATTENUATION", 
                 "ATTENUATION_SCALE", "B", "BOTTOM", "COLOR", "DIFFUSE",
@@ -521,7 +527,7 @@ class _CommonProfile:
                 "P", "Q", "R", "REFLECTIVE", "REFLECTIVITY", "RIGHT", "S", 
                 "SHININESS", "SPECULAR", "T", "TANGENT.X", "TANGENT.Y", 
                 "TANGENT.Z", "TIME", "TOP", "TRANSPARENCY", "TRANSPARENT",
-                "U", "V", "W", "X", "XFOV", "Y", "YFOV", "Z", "ZFAR", "ZNEAR" ]
+                "U", "V", "W", "X", "XFOV", "Y", "YFOV", "Z", "ZFAR", "ZNEAR", "matrix" ]
     
     class _ProgramIDAndURL:
         ANGLE_MAP = 1
@@ -775,13 +781,55 @@ class _LibraryElement( Element ):
     
 
 class _AnimationElement( Element ):
-    pass
+    
+    _name = None
+    _id = None
+
+    def __init__( self, id, name ):
+        Element.__init__( self, "animation" )
+        self._id = id
+        self._name = name
+        if not ( self._id == None ):
+            self.setAttribute( "id", id )
+        if not ( self._name == None ):
+            self.setAttribute( "name", name )
 
 class _ChannelElement( Element ):
-    pass
+    
+    _name = None
+    _id = None
+    _source = None
+    _target = None
+    
+    def __init__( self, id, name, source, target ):
+        Element.__init__( self, "channel" )
+        self._id = id
+        self._name = name
+        self._source = source
+        self._target = target
+        if not ( self._id == None ):
+            self.setAttribute( "id", self._id )
+        if not ( self._name == None ):
+            self.setAttribute( "name", self._name )
+        if not ( self._source == None ):
+            self.setAttribute( "source", '#' + self._source )
+        if not ( self._target == None ):
+            self.setAttribute( "target", self._target )
+            
 
 class _SamplerElement( Element ):
-    pass
+    
+    _name = None
+    _id = None
+    
+    def __init__( self, id, name ):
+        Element.__init__( self, "sampler" )
+        self._id = id
+        self._name = name
+        if not ( self._id == None ):
+            self.setAttribute( "id", self._id )
+        if not ( self._name == None ):
+            self.setAttribute( "name", self._name )
 
 class _ControllerElement( Element ):
     pass
@@ -961,7 +1009,8 @@ class _FloatArrayElement( Element ):
     _magnitude = None
     _data = None
     _dataType = 'STRING'
-    
+    #_fps = 25   
+
     def setData( self, data ):
         self._data = data
     
@@ -975,6 +1024,9 @@ class _FloatArrayElement( Element ):
         self._count = count
         self.setAttribute( "count", "%i" % self._count )
     
+    # def setFPS( self, fps ):
+    #    self._fps = fps
+
     def __init__( self, count, id, name, digits, magnitude ):
         Element.__init__( self, "float_array" )
         self._count = count        
@@ -999,7 +1051,8 @@ class _FloatArrayElement( Element ):
     def writexml( self, writer, indent="", addindent="", newl="" ):
         
         global niceFormat        
-        
+        global fps
+
         writer.write(indent+"<" + self.tagName)
 
         attrs = self._get_attributes()
@@ -1063,6 +1116,116 @@ class _FloatArrayElement( Element ):
                         dataString = "%.6f %.6f " % ( uv[i][0], uv[i][1] )
                         writer.write( dataString )
                     dataString = "%.6f %.6f" % ( uv[size-1][0], uv[size-1][1] )
+                    writer.write( dataString )
+            elif ( self._dataType == 'ANIMATIONINPUT-MATRIX' ):
+                if ( niceFormat ):
+                    for tValue in self._data:
+                        dataString = "\n%.6f" % ( tValue / fps )
+                        writer.write( dataString )
+                else:
+                    tValue = self._data
+                    size = len( self._data )
+                    if ( size > 1 ):
+                        dataString = '%.6f ' % ( tValue[0] / fps )
+                        writer.write( dataString )
+                        for i in range( 1, size - 1 ):
+                            dataString = '%.6f ' % ( tValue[i] / fps )
+                            writer.write( dataString )
+                    dataString = "%.6f" % ( tValue[size-1] / fps )
+                    writer.write( dataString )                       
+            elif ( self._dataType == 'ANIMATIONINPUT' ):
+                if ( niceFormat ):
+                    for tValue in self._data:
+                        dataString = "\n%.6f" % ( tValue.pt[0] / fps )
+                        writer.write( dataString )
+                else:
+                    tValue = self._data
+                    size = len( self._data )
+                    if ( size > 1 ):
+                        dataString = '%.6f ' % ( tValue[0].pt[0] / fps )
+                        writer.write( dataString )
+                        for i in range( 1, size - 1 ):
+                            dataString = '%.6f ' % ( tValue[i].pt[0] / fps )
+                            writer.write( dataString )
+                    dataString = "%.6f" % ( tValue[size-1].pt[0] / fps )
+                    writer.write( dataString )
+            elif ( self._dataType == 'ANIMATIONOUTPUT-MATRIX' ):
+                if ( niceFormat ):
+                    dataString = ''
+                    for m in self._data:
+                        dataString = '\n%.6f %.6f %.6f %.6f\n%.6f %.6f %.6f %.6f\n%.6f %.6f %.6f %.6f\n%.6f %.6f %.6f %.6f' %  ( m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2], m[0][3], m[1][3], m[2][3], m[3][3] )
+                        writer.write( dataString )
+                else:
+                    m = self._data[ 0 ]
+                    dataString = '%.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f ' %  ( m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2], m[0][3], m[1][3], m[2][3], m[3][3] )
+                    writer.write( dataString )
+                    size = len( self._data )
+                    for i in range( 1, size - 1 ):
+                        m = self._data[ i ]
+                        dataString = '%.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f ' %  ( m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2], m[0][3], m[1][3], m[2][3], m[3][3] )                            
+                        writer.write( dataString )
+                    m = self._data[ size - 1 ]
+                    dataString = '%.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f %.6f' %  ( m[0][0], m[1][0], m[2][0], m[3][0], m[0][1], m[1][1], m[2][1], m[3][1], m[0][2], m[1][2], m[2][2], m[3][2], m[0][3], m[1][3], m[2][3], m[3][3] )
+                    writer.write( dataString )            
+            elif ( self._dataType == 'ANIMATIONOUTPUT-SHININESS' ):
+                if ( niceFormat ):
+                    for tValue in self._data:
+                        dataString = "\n%.6f" % ( tValue.pt[1] / 4.0 )
+                        writer.write( dataString )
+                else:
+                    tValue = self._data
+                    dataString = "%.6f " % ( tValue[0].pt[1]  / 4.0 )
+                    writer.write( dataString )
+                    size = len( self._data )
+                    for i in range( 1, size - 1 ):
+                        dataString = '%.6f ' % ( tValue[i].pt[1] / 4.0 )
+                        writer.write( dataString )
+                    dataString = "%.6f" % ( tValue[size-1].pt[1] / 4.0 )
+                    writer.write( dataString )                
+            elif ( self._dataType == 'ANIMATIONOUTPUT-ALPHA' ):
+                if ( niceFormat ):
+                    for tValue in self._data:
+                        dataString = "\n%.6f" % ( 1.0 - tValue.pt[1] )
+                        writer.write( dataString )
+                else:
+                    tValue = self._data
+                    dataString = "%.6f " % ( 1.0 - tValue[0].pt[1] )
+                    writer.write( dataString )
+                    size = len( self._data )
+                    for i in range( 1, size - 1 ):
+                        dataString = '%.6f ' % ( 1.0 - tValue[i].pt[1] )
+                        writer.write( dataString )
+                    dataString = "%.6f" % ( 1.0 - tValue[size-1].pt[1] )
+                    writer.write( dataString ) 
+            elif ( self._dataType == 'ANIMATIONOUTPUT-ROTATION' ):
+                if ( niceFormat ):
+                    for tValue in self._data:
+                        dataString = "\n%.6f" % ( tValue.pt[1] * 10.0 )
+                        writer.write( dataString )
+                else:
+                    tValue = self._data
+                    dataString = "%.6f " % ( tValue[0].pt[1] * 10.0 )
+                    writer.write( dataString )
+                    size = len( self._data )
+                    for i in range( 1, size - 1 ):
+                        dataString = '%.6f ' % ( tValue[i].pt[1] * 10.0 )
+                        writer.write( dataString )
+                    dataString = "%.6f" % ( tValue[size-1].pt[1] * 10.0 )
+                    writer.write( dataString ) 
+            elif ( self._dataType == 'ANIMATIONOUTPUT' ):
+                if ( niceFormat ):
+                    for tValue in self._data:
+                        dataString = "\n%.6f" % ( tValue.pt[1] )
+                        writer.write( dataString )
+                else:
+                    tValue = self._data
+                    dataString = "%.6f " % ( tValue[0].pt[1] )
+                    writer.write( dataString )
+                    size = len( self._data )
+                    for i in range( 1, size - 1 ):
+                        dataString = '%.6f ' % ( tValue[i].pt[1] )
+                        writer.write( dataString )
+                    dataString = "%.6f" % ( tValue[size-1].pt[1] )
                     writer.write( dataString )
             else:
                 # Replace '\n' with '\n + indent + addindent'
@@ -1290,6 +1453,11 @@ class _ParamElement( Element, Childless ):
             self.setAttribute( "type", self._type )
         if not ( self._flow == None ):
             self.setAttribute( "flow", CP.FT.str[ self._flow ] )
+        if not ( self._semantic == None ):
+            self.setAttribute( "semantic", self._semantic )
+        if not ( self._sid == None ):
+            self.setAttribute( "sid", self._sid )
+            
 
     # Overloaded writexml function so we can keep data within one line
     # This implementation was taken from the Python 2.3 minidom impl.
@@ -1865,9 +2033,9 @@ class _UnitElement( Element, Childless ):
         self._name = name
         self._meter = meter
         
-        if not ( self._id == None ):
-            self.setAttribute( "name", self._name )
         if not ( self._name == None ):
+            self.setAttribute( "name", self._name )
+        if not ( self._meter == None ):
             self.setAttribute( "meter", self._meter )
 
     # Overloaded writexml function so we can keep data within one line
@@ -1884,10 +2052,8 @@ class _UnitElement( Element, Childless ):
             writer.write(" %s=\"" % a_name)
             _write_data( writer, attrs[a_name].value)
             writer.write("\"")
-        if ( self._data == None ):
-            writer.write( "/>%s" % newl )
-        else:
-            writer.write(">%s</%s>%s" % (self._data, self.tagName, newl ) ) 
+
+        writer.write( "/>%s" % newl )
 
 class _UpAxisElement( Element, Childless ):
     
@@ -1939,6 +2105,100 @@ class _ExtraElement( Element ):
 # ----------------------------------------------
 def toAngle( radians ):
     return ( radians * 180 ) / 3.14159265
+
+
+""" Return True if IPO curveName applies to a transform """
+def isTransformCurve( curveName ):
+    if ( curveName == 'LocX' or
+         curveName == 'LocY' or
+         curveName == 'LocZ' or
+         curveName == 'RotX' or
+         curveName == 'RotY' or
+         curveName == 'RotZ' or
+         curveName == 'SizeX' or
+         curveName == 'SizeY' or
+         curveName == 'SizeZ' ):
+        return True
+    return False
+
+""" Return True if IPO curveName applies to a translate """
+def isTranslateCurve( curveName ):
+    if ( curveName == 'LocX' or
+         curveName == 'LocY' or
+         curveName == 'LocZ' ):
+        return True
+    return False
+
+""" Return True if IPO curveName applies to a rotation """
+def isRotationCurve( curveName ):
+    if ( curveName == 'RotX' or
+         curveName == 'RotY' or
+         curveName == 'RotZ' ):
+        return True
+    return False
+
+""" Return a COLLADA param element from IPO curve name """
+def getParamElementFromCurveName( curveName ):
+    
+    # Output TIME if no correct output could be found... (yes kind of stupid
+    # I know)
+    paramOutput = dae.createParamElement( None, CP.PN.TIME, "float", CP.FT.OUT )
+    if ( curveName == 'LocX' or curveName == 'SizeX'):
+        paramOutput = dae.createParamElement( None, CP.PN.X, "float", CP.FT.OUT )
+    elif ( curveName == 'LocY' or curveName == 'SizeY' ):
+        paramOutput = dae.createParamElement( None, CP.PN.Y, "float", CP.FT.OUT )
+    elif ( curveName == 'LocZ' or curveName == 'SizeZ' ):
+        paramOutput = dae.createParamElement( None, CP.PN.Z, "float", CP.FT.OUT )
+    elif ( curveName == 'RotX' or curveName == 'RotY' or curveName == 'RotZ' ):
+        paramOutput = dae.createParamElement( None, CP.PN.ANGLE, "float", CP.FT.OUT )
+    elif ( curveName == 'R' or curveName == 'ColR' or curveName == 'SpecR' or curveName == 'MirR' ):
+        paramOutput = dae.createParamElement( None, CP.PN.R, "float", CP.FT.OUT )
+    elif ( curveName == 'G' or curveName == 'ColG' or curveName == 'SpecG' or curveName == 'MirG' ):
+        paramOutput = dae.createParamElement( None, CP.PN.G, "float", CP.FT.OUT )
+    elif ( curveName == 'B' or curveName == 'ColB' or curveName == 'SpecB' or curveName == 'MirB' ):
+        paramOutput = dae.createParamElement( None, CP.PN.B, "float", CP.FT.OUT )
+    elif ( curveName == 'Alpha' ):
+        paramOutput = dae.createParamElement( None, CP.PN.A, "float", CP.FT.OUT ) 
+    elif ( curveName == 'Ref' ):
+        paramOutput = dae.createParamElement( None, CP.PN.REFLECTIVITY, "float", CP.FT.OUT ) 
+    elif ( curveName == 'Hard' ):
+        paramOutput = dae.createParamElement( None, CP.PN.SHININESS, "float", CP.FT.OUT ) 
+    
+    return paramOutput
+
+""" 
+    Return a COLLADA Target written 
+    according to the Address Syntax specification.
+    The sid values (except the Common Profile constants)
+    are my own Blender specific values. However they follow
+    the Maya plug-in sid transform syntax.
+"""
+def getTargetNameFromCurveName( curveName ):
+    if ( curveName == 'LocX' ):     return 'translate.X'
+    elif ( curveName == 'LocY' ):   return 'translate.Y'
+    elif ( curveName == 'LocZ' ):   return 'translate.Z'
+    elif ( curveName == 'RotX' ):   return 'rotateX.ANGLE'
+    elif ( curveName == 'RotY' ):   return 'rotateY.ANGLE'
+    elif ( curveName == 'RotZ' ):   return 'rotateZ.ANGLE'
+    elif ( curveName == 'SizeX' ):  return 'scale.X'
+    elif ( curveName == 'SizeY' ):  return 'scale.Y'
+    elif ( curveName == 'SizeZ' ):  return 'scale.Z'
+    elif ( curveName == 'R' ):      return 'diffuse.R'
+    elif ( curveName == 'G' ):      return 'diffuse.G'
+    elif ( curveName == 'B' ):      return 'diffuse.B'
+    elif ( curveName == 'Alpha' ):  return 'transparency'
+    elif ( curveName == 'SpecR' ):  return 'specular.R'
+    elif ( curveName == 'SpecG' ):  return 'specular.G'
+    elif ( curveName == 'SpecB' ):  return 'specular.B'
+    elif ( curveName == 'MirR' ):   return 'reflective.R'
+    elif ( curveName == 'MirR' ):   return 'reflective.G'
+    elif ( curveName == 'MirR' ):   return 'reflective.B'
+    elif ( curveName == 'Ref' ):    return 'reflectivity'
+    elif ( curveName == 'Hard' ):   return 'shininess'
+    else:
+        return ''
+        
+
 
 # ----------------------------------------------
 #    BLENDER to COLLADA helper functions
@@ -2291,32 +2551,32 @@ def writeMaterial( libraryElement, material ):
                         CP.PIAU.str[ CP.PIAU.PHONG ] )
     
     # PHONG PARAMS
-    colorParam = dae.createParamElement( None, CP.PN.COLOR, "float3", CP.FT.IN )
+    colorParam = dae.createParamElement( None, CP.PN.COLOR, "float3", CP.FT.IN, None, 'color' )
     colorParam.setData( "%.6f %.6f %.6f" % ( col[0], col[1], col[2] ) )
-    ambientParam = dae.createParamElement( None, CP.PN.AMBIENT, "float3", CP.FT.IN )
+    ambientParam = dae.createParamElement( None, CP.PN.AMBIENT, "float3", CP.FT.IN, None, 'ambient' )
     ambientParam.setData( "%.6f %.6f %.6f" % ( ambient * col[0], ambient * col[1], ambient * col[2] ) )                        
-    diffuseParam = dae.createParamElement( None, CP.PN.DIFFUSE, "float3", CP.FT.IN )
+    diffuseParam = dae.createParamElement( None, CP.PN.DIFFUSE, "float3", CP.FT.IN, None, 'diffuse' )
     diffuseParam.setData( "%.6f %.6f %.6f" % ( col[0], col[1], col[2] ) )
     #transparencyParam = dae.createParamElement( None, CP.PN.TRANSPARENCY, "float", CP.FT.IN )
     #transparencyParam.setData( "%.6f" % transparency )                        
-    specularParam = dae.createParamElement( None, CP.PN.SPECULAR, "float3", CP.FT.IN )
+    specularParam = dae.createParamElement( None, CP.PN.SPECULAR, "float3", CP.FT.IN, None, 'specular' )
     specularParam.setData( "%.6f %.6f %.6f" % ( speccol[0] * spec, speccol[1]  * spec, speccol[2]  * spec ) )
-    emissionParam = dae.createParamElement( None, CP.PN.EMISSION, "float3", CP.FT.IN )
+    emissionParam = dae.createParamElement( None, CP.PN.EMISSION, "float3", CP.FT.IN, None, 'emission' )
     emissionParam.setData( "%.6f %.6f %.6f" % ( emit * col[0], emit * col[1], emit * col[2] ) )
 
-    shininessParam = dae.createParamElement( None, CP.PN.SHININESS, "float", CP.FT.IN )
+    shininessParam = dae.createParamElement( None, CP.PN.SHININESS, "float", CP.FT.IN, None, 'shininess' )
     shininessParam.setData( "%.6f" % ( shininess ) )
 
     # Output color as transparent color for now
-    transparentParam = dae.createParamElement( None, CP.PN.TRANSPARENT, "float", CP.FT.IN )
+    transparentParam = dae.createParamElement( None, CP.PN.TRANSPARENT, "float", CP.FT.IN, None, 'transparent' )
     transparentParam.setData( "%.6f %.6f %.6f" % ( col[0], col[1], col[2]  ) )                
-    transparencyParam = dae.createParamElement( None, CP.PN.TRANSPARENCY, "float", CP.FT.IN )
+    transparencyParam = dae.createParamElement( None, CP.PN.TRANSPARENCY, "float", CP.FT.IN, None, 'transparency' )
     transparencyParam.setData( "%.6f" % ( transparency ) )
 
     
-    reflectParam = dae.createParamElement( None, CP.PN.REFLECTIVE, "float3", CP.FT.IN )
+    reflectParam = dae.createParamElement( None, CP.PN.REFLECTIVE, "float3", CP.FT.IN, None, 'reflective' )
     reflectParam.setData( "%.6f %.6f %.6f" % ( refcol[0], refcol[1], refcol[2]  ) )                
-    reflectivityParam = dae.createParamElement( None, CP.PN.REFLECTIVITY, "float", CP.FT.IN )
+    reflectivityParam = dae.createParamElement( None, CP.PN.REFLECTIVITY, "float", CP.FT.IN, None,'reflectivity' )
     reflectivityParam.setData( "%.6f" % ( ref  ) )
     
     # refractiveParam = dae.createParamElement( None, CP.PN.REFRACTIVEINDEX, "float3", CP.FT.IN )
@@ -2390,6 +2650,478 @@ def writeTexture( libraryElement, texture ):
     else:
         print "Warning! Texture is not of Image type. Texture not exported!"
 
+
+""" Write animation information to dae file """
+def writeAnimation( libraryElement, ipo, ipoOwner ):
+
+    global fps
+    global exportBakedTransform
+
+    ipoName = ipo.getName()
+    ipoID = ipoName + "-Lib" 
+    curves = ipo.getCurves( )
+    animationElement = dae.createAnimationElement( ipoID, ipoName )
+    transformInputElement = None
+    transformOutputElement = None
+    transformSamplerElement = None
+    transformChannelElement = None
+
+
+    # Store information about curves before creating sources
+    transformCurves = []
+    otherCurves = []
+
+    transformXMin = 10000
+    transformXMax = -10000
+
+    # Get curve types
+    for curve in curves:
+        curveName = curve.getName( )
+        if ( exportBakedTransform and isTransformCurve( curveName ) ):
+            transformCurves.append( curve )
+
+            # Get control points (keyframes)
+            keyFrames = curve.getPoints( )
+            nrKeyFrames = len( keyFrames )
+    
+            # Get the min and max values from this curve
+
+            for keyFrame in keyFrames:
+                points = keyFrame.getPoints( )            
+                if ( points[ 0 ] < transformXMin ):
+                    transformXMin = int( points[ 0 ] )
+                if ( points[ 0 ] > transformXMax ):
+                    transformXMax = int( points[ 0 ] )
+        else:
+            otherCurves.append( curve )
+        
+
+    # Check for curves...
+    nrTransformCurves = len( transformCurves )
+    nrOtherCurves = len( otherCurves )
+    nrCurves = nrTransformCurves + nrOtherCurves
+    if ( nrCurves == 0 ):
+        return
+    
+    # Calculate and Write baked transform sources
+    if ( exportBakedTransform and ( nrTransformCurves >  0 ) ):
+        
+        animationInput = []
+        animationOutput = []        
+        
+        sourceID = ipoName + '-Transform-Input'
+        transformInputElement = dae.createSourceElement( sourceID, sourceID )
+        floatArrayName = sourceID + "-Array"
+        nrKeyFrames = ( transformXMax + 1 ) - transformXMin
+        floatArrayTime = dae.createFloatArrayElement( nrKeyFrames, floatArrayName, floatArrayName )
+        floatArrayTime.setData( animationInput )
+        floatArrayTime.setDataType( 'ANIMATIONINPUT-MATRIX' )
+        transformInputElement.appendChild( floatArrayTime )
+
+        # Create common profile technique
+        technique = dae.createTechniqueElement( CP.COMMON )
+        
+        # Create accessor element with TIME param
+        accessorTime = dae.createAccessorElement( nrKeyFrames, floatArrayName, floatArrayName + "-Accessor", 0 , 1 )
+        paramTime = dae.createParamElement( None, CP.PN.TIME, "float", CP.FT.OUT )
+        
+        accessorTime.appendChild( paramTime )
+        technique.appendChild( accessorTime )
+        transformInputElement.appendChild( technique )
+        # animationElement.appendChild( sourceElement )
+
+
+        
+        # Loop through Xmin to XMax
+        for frame in range( transformXMin, transformXMax + 1 ):
+            time = float( frame )
+            animationInput.append( time )
+            
+            translateXYZ = Blender.Mathutils.Vector( )
+            rotateXYZ = Blender.Mathutils.Vector( )
+            sizeXYZ = Blender.Mathutils.Vector( )
+            
+            # Gather data
+            for curve in transformCurves:
+                curveName = curve.getName( )
+                value = curve.evaluate( time )
+                # print '%s: Time: %i Value: %f' % ( curveName, time, value )
+                if ( curveName == 'LocX' ): translateXYZ.x = value
+                elif ( curveName == 'LocY' ): translateXYZ.y = value
+                elif ( curveName == 'LocZ' ): translateXYZ.z = value
+                elif ( curveName == 'RotX' ): rotateXYZ.x = value * 10.0
+                elif ( curveName == 'RotY' ): rotateXYZ.y = value * 10.0
+                elif ( curveName == 'RotZ' ): rotateXYZ.z = value * 10.0
+                elif ( curveName == 'SizeX' ): sizeXYZ.x = value
+                elif ( curveName == 'SizeY' ): sizeXYZ.y = value
+                elif ( curveName == 'SizeZ' ): sizeXYZ.z = value
+            
+            # Now add these values to our transformMatrix
+            transformMatrix = Blender.Mathutils.ScaleMatrix( sizeXYZ.x, 4, Mathutils.Vector( 1.0, 0.0, 0.0  ) )
+            transformMatrix *= Blender.Mathutils.ScaleMatrix( sizeXYZ.y, 4, Mathutils.Vector( 0.0, 1.0, 0.0  ) ) 
+            transformMatrix *= Blender.Mathutils.ScaleMatrix( sizeXYZ.z, 4, Mathutils.Vector( 0.0, 0.0, 1.0  ) ) 
+            transformMatrix *= Blender.Mathutils.RotationMatrix( rotateXYZ.x, 4, 'x' )
+            transformMatrix *= Blender.Mathutils.RotationMatrix( rotateXYZ.y, 4, 'y' )
+            transformMatrix *= Blender.Mathutils.RotationMatrix( rotateXYZ.z, 4, 'z' )
+            transformMatrix *= Blender.Mathutils.TranslationMatrix( translateXYZ )
+            
+            # print transformMatrix
+            animationOutput.append( transformMatrix )
+        
+        # Write animation output source...
+        sourceID2 = ipoName + '-Transform-Output'
+        transformOutputElement = dae.createSourceElement( sourceID2, sourceID2 )
+        floatArrayName = sourceID2 + "-Array"
+        floatArrayOutput = dae.createFloatArrayElement( nrKeyFrames * 16, floatArrayName, floatArrayName )
+        floatArrayOutput.setData( animationOutput )
+        floatArrayOutput.setDataType( 'ANIMATIONOUTPUT-MATRIX' )
+
+        transformOutputElement.appendChild( floatArrayOutput )
+
+        # Create common profile technique
+        techniqueOutput = dae.createTechniqueElement( CP.COMMON )
+        
+        # Create accessor element with output param
+        accessorOutput = dae.createAccessorElement( nrKeyFrames, floatArrayName, floatArrayName + "-Accessor", 0 , 16 )
+        
+        # Create float4x4 param element
+        paramOutput = dae.createParamElement( None, CP.PN.MATRIX4X4, "float4x4", CP.FT.OUT )
+
+
+        accessorOutput.appendChild( paramOutput )
+        techniqueOutput.appendChild( accessorOutput )
+        transformOutputElement.appendChild( techniqueOutput )
+        # animationElement.appendChild( sourceElement )
+
+        # Create sampler and channel elements for this baked transform
+
+        
+        sourceID = ipoName + '-Transform'
+        samplerID = ipoName + '-Transform-Sampler'
+        
+        transformSamplerElement = dae.createSamplerElement( samplerID, samplerID )
+        inputInput = dae.createInputElement( None, CP.IS.INPUT, sourceID + '-Input' )
+        inputOutput = dae.createInputElement( None, CP.IS.OUTPUT, sourceID + '-Output' )
+        transformSamplerElement.appendChild( inputInput )
+        transformSamplerElement.appendChild( inputOutput )
+        #animationElement.appendChild( samplerElement )
+        
+        
+        # Create channel element
+        channelID = ipoName + '-Transform-Channel'
+
+
+        target = ipoOwner + '/transform'
+        transformChannelElement = dae.createChannelElement( channelID, channelID, samplerID, target )
+
+        # Add transform sources first
+        animationElement.appendChild( transformInputElement )
+        animationElement.appendChild( transformOutputElement )
+        
+    
+##    # Else if transform is not baked:
+##    else:
+##        for curve in transformCurves:
+##        
+##            curveName = curve.getName( )
+##            keyFrames = curve.getPoints( )
+##            nrKeyFrames = len( keyFrames )
+##            
+##            # Create input source element
+##            # TODO: If keyframe-input are same (same position-points) then perhaps create one input source?
+##            sourceID = ipoName + "-" + curveName + "-Input"
+##            sourceElement = dae.createSourceElement( sourceID, sourceID )
+##            floatArrayName = sourceID + "-Array"
+##            floatArrayTime = dae.createFloatArrayElement( nrKeyFrames, floatArrayName, floatArrayName )
+##            floatArrayTime.setData( keyFrames )
+##            floatArrayTime.setDataType( 'ANIMATIONINPUT' )
+##            sourceElement.appendChild( floatArrayTime )
+##    
+##            # Create common profile technique
+##            technique = dae.createTechniqueElement( CP.COMMON )
+##            
+##            # Create accessor element with TIME param
+##            accessorTime = dae.createAccessorElement( nrKeyFrames, floatArrayName, floatArrayName + "-Accessor", 0 , 1 )
+##            paramTime = dae.createParamElement( None, CP.PN.TIME, "float", CP.FT.OUT )
+##            
+##            accessorTime.appendChild( paramTime )
+##            technique.appendChild( accessorTime )
+##            sourceElement.appendChild( technique )
+##            animationElement.appendChild( sourceElement )
+##
+##
+##            # Create output source element
+##            sourceID2 = ipoName + "-" + curveName + "-Output"
+##            sourceElement = dae.createSourceElement( sourceID2, sourceID2 )
+##            floatArrayName = sourceID2 + "-Array"
+##            floatArrayOutput = dae.createFloatArrayElement( nrKeyFrames, floatArrayName, floatArrayName )
+##            floatArrayOutput.setData( keyFrames )
+##            if ( curveName == 'Hard' ):
+##                floatArrayOutput.setDataType( 'ANIMATIONOUTPUT-SHININESS' )
+##            else:
+##                floatArrayOutput.setDataType( 'ANIMATIONOUTPUT' )
+##    
+##            sourceElement.appendChild( floatArrayOutput )
+##    
+##            # Create common profile technique
+##            techniqueOutput = dae.createTechniqueElement( CP.COMMON )
+##            
+##            # Create accessor element with output param
+##            accessorOutput = dae.createAccessorElement( nrKeyFrames, floatArrayName, floatArrayName + "-Accessor", 0 , 1 )
+##            
+##            # Create different params depending on curve name (this should be driven channel for objects but
+##            # for now let's use the curve name because that seems to work)
+##            paramOutput = getParamElementFromCurveName( curveName )
+##    
+##    
+##            accessorOutput.appendChild( paramOutput )
+##            techniqueOutput.appendChild( accessorOutput )
+##            sourceElement.appendChild( techniqueOutput )
+##            animationElement.appendChild( sourceElement )    
+    
+    
+  
+    # Now that we have written transform channels write every other channel
+    # TODO: Combine channels if possible (for example RGB sources -> material diffuse channel)
+    for curve in otherCurves:
+        curveName = curve.getName( )
+        keyFrames = curve.getPoints( )
+        nrKeyFrames = len( keyFrames )
+        
+        # Create input source element
+        # TODO: If keyframe-input are same (same position-points) then perhaps create one input source?
+        sourceID = ipoName + "-" + curveName + "-Input"
+        sourceElement = dae.createSourceElement( sourceID, sourceID )
+        floatArrayName = sourceID + "-Array"
+        floatArrayTime = dae.createFloatArrayElement( nrKeyFrames, floatArrayName, floatArrayName )
+        floatArrayTime.setData( keyFrames )
+        floatArrayTime.setDataType( 'ANIMATIONINPUT' )
+        sourceElement.appendChild( floatArrayTime )
+
+        # Create common profile technique
+        technique = dae.createTechniqueElement( CP.COMMON )
+        
+        # Create accessor element with TIME param
+        accessorTime = dae.createAccessorElement( nrKeyFrames, floatArrayName, floatArrayName + "-Accessor", 0 , 1 )
+        paramTime = dae.createParamElement( None, CP.PN.TIME, "float", CP.FT.OUT )
+        
+        accessorTime.appendChild( paramTime )
+        technique.appendChild( accessorTime )
+        sourceElement.appendChild( technique )
+        animationElement.appendChild( sourceElement )
+
+
+        # Create output source element
+        sourceID2 = ipoName + "-" + curveName + "-Output"
+        sourceElement = dae.createSourceElement( sourceID2, sourceID2 )
+        floatArrayName = sourceID2 + "-Array"
+        floatArrayOutput = dae.createFloatArrayElement( nrKeyFrames, floatArrayName, floatArrayName )
+        floatArrayOutput.setData( keyFrames )
+        if ( curveName == 'Hard' ):
+            floatArrayOutput.setDataType( 'ANIMATIONOUTPUT-SHININESS' )
+        elif ( curveName == 'Alpha' ):
+            floatArrayOutput.setDataType( 'ANIMATIONOUTPUT-ALPHA' )
+        elif ( isRotationCurve( curveName ) ):
+            floatArrayOutput.setDataType( 'ANIMATIONOUTPUT-ROTATION' )
+        else:
+            floatArrayOutput.setDataType( 'ANIMATIONOUTPUT' )
+        sourceElement.appendChild( floatArrayOutput )
+
+        # Create common profile technique
+        techniqueOutput = dae.createTechniqueElement( CP.COMMON )
+        
+        # Create accessor element with output param
+        accessorOutput = dae.createAccessorElement( nrKeyFrames, floatArrayName, floatArrayName + "-Accessor", 0 , 1 )
+        
+        # Create different params depending on curve name (this should be driven channel for objects but
+        # for now let's use the curve name because that seems to work)
+        paramOutput = getParamElementFromCurveName( curveName )
+
+
+        accessorOutput.appendChild( paramOutput )
+        techniqueOutput.appendChild( accessorOutput )
+        sourceElement.appendChild( techniqueOutput )
+        animationElement.appendChild( sourceElement ) 
+    
+    
+    
+    # Add transform sampler element first
+    if ( transformSamplerElement != None ):
+        animationElement.appendChild( transformSamplerElement )
+
+    # Add other samples
+    for curve in otherCurves:
+        
+        curveName = curve.getName( )        
+        sourceID = ipoName + "-" + curveName
+        
+        # Create sampler element
+        samplerID = ipoName + "-" + curveName + '-Sampler'
+        samplerElement = dae.createSamplerElement( samplerID, samplerID )
+        
+        # Create input semantics
+        inputInput = dae.createInputElement( None, CP.IS.INPUT, sourceID + '-Input' )
+        inputOutput = dae.createInputElement( None, CP.IS.OUTPUT, sourceID + '-Output' )        
+
+        samplerElement.appendChild( inputInput )
+        samplerElement.appendChild( inputOutput )
+        animationElement.appendChild( samplerElement )
+    
+    
+    # Add transform channel element first
+    if ( transformChannelElement != None ):    
+        animationElement.appendChild( transformChannelElement )
+    
+    # TODO: Write other channels here
+    for curve in otherCurves:
+        
+        curveName = curve.getName( )
+        sourceID = ipoName + "-" + curveName + '-Sampler'
+        
+        # Create channel element
+        channelID = ipoName + "-" + curveName + '-Channel'
+        
+        # Get IPO Curve driver object
+        # Important! If this is a animation channel that is not targetet against
+        # a transform then target lib instead (add '-Lib' to target id)
+        if ( not isTransformCurve( curveName ) ):
+            target = ipoOwner + '-Lib/' + getTargetNameFromCurveName( curveName )
+        else:
+            target = ipoOwner + '/' + getTargetNameFromCurveName( curveName )
+        
+        
+        channelElement = dae.createChannelElement( channelID, channelID, sourceID, target )
+        animationElement.appendChild( channelElement )
+    
+    libraryElement.appendChild( animationElement )
+
+# Write transform animation first
+##    if ( exportBakedTransform ):
+##        
+##        transformXMin = 1000.0
+##        transformXMax = -1000.0
+##
+##        # Store which IPO curves that are transform based
+##        transformCurves = []
+##
+##        # Create sources for each curve
+##        for curve in curves:
+##
+##        # Get information about our Ipo curve
+##        curveName = curve.getName( ) 
+##        
+##        # Get control points (keyframes)
+##        keyFrames = curve.getPoints( )
+##        nrKeyFrames = len( keyFrames )
+##
+##        # Get the min and max values from this curve
+##        if ( exportBakedTransform ):
+##            if ( isTransformCurve( curveName ) ):
+##                for keyFrame in keyFrames:
+##                    points = keyFrame.getPoints( )            
+##                    if ( points[ 0 ] < transformXMin ):
+##                        transformXMin = points[ 0 ]
+##                    if ( points[ 0 ] > transformXMax ):
+##                        transformXMax = points[ 0 ]
+##            print curveName + ' has Xmin[%f] and Xmax[%f]' % ( transformXMin, transformXMax )
+##        else:
+##            # Create input source element
+##            # TODO: If keyframe-input are same (same position-points) then perhaps create one input source?
+##            sourceID = ipoName + "-" + curveName + "-Input"
+##            sourceElement = dae.createSourceElement( sourceID, sourceID )
+##            floatArrayName = sourceID + "-Array"
+##            floatArrayTime = dae.createFloatArrayElement( nrKeyFrames, floatArrayName, floatArrayName )
+##            floatArrayTime.setData( keyFrames )
+##            floatArrayTime.setDataType( 'ANIMATIONINPUT' )
+##            sourceElement.appendChild( floatArrayTime )
+##    
+##            # Create common profile technique
+##            technique = dae.createTechniqueElement( CP.COMMON )
+##            
+##            # Create accessor element with TIME param
+##            accessorTime = dae.createAccessorElement( nrKeyFrames, floatArrayName, floatArrayName + "-Accessor", 0 , 1 )
+##            paramTime = dae.createParamElement( None, CP.PN.TIME, "float", CP.FT.OUT )
+##            
+##            accessorTime.appendChild( paramTime )
+##            technique.appendChild( accessorTime )
+##            sourceElement.appendChild( technique )
+##            animationElement.appendChild( sourceElement )
+##
+##
+##            # Create output source element
+##            sourceID2 = ipoName + "-" + curveName + "-Output"
+##            sourceElement = dae.createSourceElement( sourceID2, sourceID2 )
+##            floatArrayName = sourceID2 + "-Array"
+##            floatArrayOutput = dae.createFloatArrayElement( nrKeyFrames, floatArrayName, floatArrayName )
+##            floatArrayOutput.setData( keyFrames )
+##            floatArrayOutput.setDataType( 'ANIMATIONOUTPUT' )
+##    
+##            sourceElement.appendChild( floatArrayOutput )
+##    
+##            # Create common profile technique
+##            techniqueOutput = dae.createTechniqueElement( CP.COMMON )
+##            
+##            # Create accessor element with output param
+##            accessorOutput = dae.createAccessorElement( nrKeyFrames, floatArrayName, floatArrayName + "-Accessor", 0 , 1 )
+##            
+##            # Create different params depending on curve name (this should be driven channel for objects but
+##            # for now let's use the curve name because that seems to work)
+##            paramOutput = getParamElementFromCurveName( curveName )
+##    
+##    
+##            accessorOutput.appendChild( paramOutput )
+##            techniqueOutput.appendChild( accessorOutput )
+##            sourceElement.appendChild( techniqueOutput )
+##            animationElement.appendChild( sourceElement )
+##
+##    
+##    # If baking animation:
+##    # Loop through 
+##    # if ( exportBakedTransform ):    
+##    
+##    
+##    
+##    
+##    # Create sampler element
+##    for curve in curves:    
+##        
+##        curveName = curve.getName( )        
+##        
+##        sourceID = ipoName + "-" + curveName
+##        
+##        # Create sampler element
+##        samplerID = ipoName + "-" + curveName + '-Sampler'
+##        samplerElement = dae.createSamplerElement( samplerID, samplerID )
+##        
+##        # Create input semantics
+##        inputInput = dae.createInputElement( None, CP.IS.INPUT, sourceID + '-Input' )
+##        inputOutput = dae.createInputElement( None, CP.IS.OUTPUT, sourceID + '-Output' )
+##        
+##        samplerElement.appendChild( inputInput )
+##        samplerElement.appendChild( inputOutput )
+##        animationElement.appendChild( samplerElement )
+##    
+##    
+##    # Create channel element
+##    for curve in curves:    
+##        
+##        curveName = curve.getName( )        
+##        
+##        sourceID = ipoName + "-" + curveName + '-Sampler'
+##        
+##        # Create channel element
+##        channelID = ipoName + "-" + curveName + '-Channel'
+##        
+##        # Get IPO Curve driver object
+##        target = ipoOwner + '/' + getTargetNameFromCurveName( curveName )
+##        channelElement = dae.createChannelElement( channelID, channelID, sourceID, target )
+##        
+##        animationElement.appendChild( channelElement )
+##        
+##    
+##    libraryElement.appendChild( animationElement )
+
+
 # Write camera information to dae file
 def writeCamera( libraryElement, camera ):
     
@@ -2454,12 +3186,18 @@ def writeHeader( colladaElement ):
     # Can I change this in Blender?
     upaxisdata = "Z_UP"
     upaxis = dae.createUpAxisElement( upaxisdata )
+    
     # createddata = date( 2005, 12, 21)
     # created = dae.createCreatedElement( createddata )
 
+    # Create a unit element (mostly for Maya import to work better )
+    unit = dae.createUnitElement( 'centimeter', '%s' % 0.01 )
+    
+    
     asset.appendChild( author )
     asset.appendChild( authoringtool )
     asset.appendChild( upaxis )
+    asset.appendChild( unit )
     colladaElement.appendChild( asset )
 
 # --- Write libraries to dae file ---
@@ -2470,17 +3208,23 @@ def writeLibrary( colladaElement ):
     textureLibraryElement = dae.createLibraryElement( CP.LT.TEXTURE )
     materialLibraryElement = dae.createLibraryElement( CP.LT.MATERIAL )
     geometryLibraryElement = dae.createLibraryElement( CP.LT.GEOMETRY )
+    animationLibraryElement = dae.createLibraryElement( CP.LT.ANIMATION )   
     lightLibraryElement = dae.createLibraryElement( CP.LT.LIGHT )
     cameraLibraryElement = dae.createLibraryElement( CP.LT.CAMERA )
     
     meshes = dict()
     lights = dict()
     cameras = dict()
-    
+    ipos = dict()
+
     for obj in objects:
         objType = obj.getType( )
         dataName = obj.getData( True )
         data = obj.getData( False )
+        ipo = obj.getIpo( )
+        objName = obj.name
+        if ( ipo != None ):
+            ipos[ objName ] = ipo
         if ( objType == 'Mesh' ):
             meshes[ dataName ] = NMesh.GetRaw( dataName )
         elif ( objType == 'Lamp' ):
@@ -2488,15 +3232,8 @@ def writeLibrary( colladaElement ):
         elif ( objType == 'Camera' ):
             cameras[ dataName ] = data
     
-    #meshes = NMesh.GetNames()
-    #lights = Lamp.Get()
-    #cameras = Camera.Get( )
 
-    #print meshes
-    #print lights
-    #print cameras
-    
-    
+
     # Get raw meshes
     materials = dict()
     nrMeshes = len( meshes )
@@ -2514,8 +3251,12 @@ def writeLibrary( colladaElement ):
                 for material in meshMaterials:
                     key = material.getName( )
                     materials[ key ] = material
+                    
+                    # Ipo on material?
+                    ipo = material.getIpo( )
+                    if ( ipo != None ):
+                        ipos[ key ] = ipo
     
-    #print materials
     
     # Get materials
     textures = dict()
@@ -2534,8 +3275,12 @@ def writeLibrary( colladaElement ):
                     if ( texture.tex.type == Texture.Types.IMAGE ):
                         key = texture.tex.getName( )
                         textures[ key ] = texture.tex
-    
-    #print textures
+        
+                        # Ipo on texture?
+                        ipo = texture.tex.getIpo( )
+                        if ( ipo != None ):
+                            ipos[ key ] = ipo    
+
     
     # Write textures
     images = dict()
@@ -2552,8 +3297,8 @@ def writeLibrary( colladaElement ):
             if ( image != None ):
                 imageName = image.getName( )
                 images[ imageName ] = image
+
    
-    #print images
  
     # Write images
     nrImages = len( images )
@@ -2589,12 +3334,28 @@ def writeLibrary( colladaElement ):
             progress += addProgress
             Window.DrawProgressBar( progress, "Exporting cameras %.0f %%..." % ( progress * 100.0 ) )
     
+    
+    # Write animations
+    nrAnimations = len( ipos )
+    if ( nrAnimations > 0 ):
+        progress = 0.0
+        addProgress = 1.0 / nrAnimations
+        for key in ipos:
+            ipo = ipos[ key ]
+            writeAnimation( animationLibraryElement, ipo, key )
+            progress += addProgress
+            Window.DrawProgressBar( progress, "Exporting animation %.0f %%..." % ( progress * 100.0 ) )
+
+    # Write library element. Put animation first...
+
+
     colladaElement.appendChild( imageLibraryElement )
     colladaElement.appendChild( textureLibraryElement )
     colladaElement.appendChild( materialLibraryElement )
     colladaElement.appendChild( geometryLibraryElement )
     colladaElement.appendChild( lightLibraryElement )
     colladaElement.appendChild( cameraLibraryElement )
+    colladaElement.appendChild( animationLibraryElement )
 
 # --- Write node to dae ---
 def writeNode( object, parentNode ):
@@ -2613,11 +3374,16 @@ def writeNode( object, parentNode ):
         url += "-Lib"
         instance = dae.createInstanceElement( url )
         newNode.appendChild( instance )
-        
+    
+    
+    # No need to check for IPO connection here simply output sid values anyway. 
+    # sid values are according to target values in library and these
+    # names follows the naming convention that the Maya exporter use
+    
     #sidTranslate = newNodeName + "-Translate"
     #sidRotateX = newNodeName + "-Rotate-X" 
     if ( exportBakedTransform ):
-        matrixElement = dae.createMatrixElement( )
+        matrixElement = dae.createMatrixElement( 'transform' )
         matrix = object.getMatrix( 'localspace' )
         data = ""
         matrix.transpose()
@@ -2639,11 +3405,11 @@ def writeNode( object, parentNode ):
         matrixElement.setData( data )
         newNode.appendChild( matrixElement )
     else:
-        translate = dae.createTranslateElement( )
-        rotateX = dae.createRotateElement( )
-        rotateY = dae.createRotateElement( )
-        rotateZ = dae.createRotateElement( )
-        scale = dae.createScaleElement( )
+        translate = dae.createTranslateElement( 'translate' )
+        rotateX = dae.createRotateElement( 'rotateX' )
+        rotateY = dae.createRotateElement( 'rotateY' )
+        rotateZ = dae.createRotateElement( 'rotateZ' )
+        scale = dae.createScaleElement( 'scale' )
         location = object.getLocation()
         rotation = object.getEuler()
         size = object.getSize()
@@ -2678,7 +3444,7 @@ def writeNode( object, parentNode ):
 
 # --- Write scene to dae file ---
 def writeScene( colladaElement ):
-    
+
     # Write <scene> element
     currentScene = Scene.GetCurrent( )
     sceneName = currentScene.getName( )
@@ -2747,7 +3513,8 @@ def main( filePath ):
     global dae
     global objects
     global exportSelected
-    
+    global fps
+
     if not ( filePath == None ):
         
         print "Exporting: " + filePath + "..."
@@ -2770,6 +3537,11 @@ def main( filePath ):
         # Write header information
         writeHeader( collada )
         
+        # Set fps
+        scn = Scene.GetCurrent( )
+        context = scn.getRenderingContext( )
+        fps = context.framesPerSec( )
+
         #Write library information
         writeLibrary( collada )
         
@@ -2850,4 +3622,4 @@ def ExportGUI( ):
 if not ( _ERROR == True ):
     ExportGUI()
     
-#main( 'C:\\test.xml' )
+#main( 'C:\\ColladaBlender\\test.xml' )
