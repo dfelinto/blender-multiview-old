@@ -1,0 +1,14 @@
+------------------------- Blender 2.41 release ----------------
+
+Jan 23, 2006
+
+This is the update of 2.40, with especially additions and fixes in the
+game engine.
+
+For html versions of release logs, with images and examples, please check:
+http://www.blender3d.org/cms/Releaselogs.34.0.html
+
+Have fun!
+
+The blender.org team.
+
