@@ -190,6 +190,7 @@ static void load_node_image(char *str)	/* called from fileselect */
 		ima->ok= 1;
 		
 		NodeTagChanged(snode->edittree, node);
+		snode_handle_recalc(snode);
 		allqueue(REDRAWNODE, 0); 
 	}
 }
@@ -223,6 +224,7 @@ static void composit_node_event(SpaceNode *snode, short event)
 			else strcpy(name, U.textudir);
 			
 			activate_fileselect(FILE_SPECIAL, "SELECT IMAGE", name, load_node_image);
+			break;
 		}
 		case B_NODE_TREE_EXEC:
 			snode_handle_recalc(snode);
