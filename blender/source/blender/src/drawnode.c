@@ -571,7 +571,7 @@ static void node_browse_image_cb(void *ntree_v, void *node_v)
 
 		BLI_strncpy(node->name, node->id->name+2, 21);
 
-		NodeTagChanged(ntree, node);
+		NodeTagChanged(ntree, node); 
 	}
 	node->menunr= 0;
 }

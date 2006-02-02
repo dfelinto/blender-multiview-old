@@ -190,7 +190,7 @@ static void load_node_image(char *str)	/* called from fileselect */
 		ima->ok= 1;
 		
 		NodeTagChanged(snode->edittree, node);
-		allqueue(REDRAWNODE, 0);
+		allqueue(REDRAWNODE, 0); 
 	}
 }
 
