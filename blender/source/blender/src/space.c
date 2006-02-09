@@ -648,7 +648,8 @@ static void select_grouped_menu(void)
 	str= MEM_mallocN(160, "groupmenu");
 	strcpy(str, "Select Grouped%t|Children%x1|"
 	            "Immediate Children%x2|Parent%x3|"
-	            "Objects on Shared Layers%x4");
+	            "Objects on Shared Layers%x4|"
+                "Objects in Same Group%x5|");
 
 	/* here we go */
 	
