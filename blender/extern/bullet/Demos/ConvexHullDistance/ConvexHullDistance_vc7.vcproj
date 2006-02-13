@@ -23,7 +23,7 @@
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="5"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="TRUE"
@@ -136,6 +136,18 @@
 			</File>
 			<File
 				RelativePath="..\..\Bullet\CollisionShapes\Simplex1to4Shape.cpp">
+			</File>
+			<File
+				RelativePath="..\..\Bullet\CollisionShapes\StridingMeshInterface.cpp">
+			</File>
+			<File
+				RelativePath="..\..\Bullet\CollisionShapes\StridingMeshInterface.h">
+			</File>
+			<File
+				RelativePath="..\..\Bullet\CollisionShapes\TriangleCallback.cpp">
+			</File>
+			<File
+				RelativePath="..\..\Bullet\CollisionShapes\TriangleCallback.h">
 			</File>
 			<File
 				RelativePath="..\..\Bullet\CollisionShapes\TriangleMeshShape.cpp">

@@ -153,7 +153,9 @@ int main(int argc,char** argv)
 	SimdVector3*	gVertices = new SimdVector3[totalVerts];
 	int*	gIndices = new int[totalTriangles*3];
 
-	for (int i=0;i<NUM_VERTS_X;i++)
+	int i;
+
+	for ( i=0;i<NUM_VERTS_X;i++)
 	{
 		for (int j=0;j<NUM_VERTS_Y;j++)
 		{
@@ -162,7 +164,7 @@ int main(int argc,char** argv)
 	}
 
 	int index=0;
-	for (int i=0;i<NUM_VERTS_X-1;i++)
+	for ( i=0;i<NUM_VERTS_X-1;i++)
 	{
 		for (int j=0;j<NUM_VERTS_Y-1;j++)
 		{
@@ -231,7 +233,7 @@ int main(int argc,char** argv)
 	SimdTransform tr;
 	tr.setIdentity();
 
-	int i;
+	
 	for (i=0;i<numObjects;i++)
 	{
 		if (i>0)
@@ -292,12 +294,12 @@ int main(int argc,char** argv)
 		physObjects[i]= new CcdPhysicsController( ccdObjectCi);
 		physicsEnvironmentPtr->addCcdPhysicsController( physObjects[i]);
 
-		if (i==0)
+/*		if (i==0)
 		{
-		//	physObjects[i]->SetAngularVelocity(0,0,-2,true);
-		//	physObjects[i]->GetRigidBody()->setDamping(0,0);
+			physObjects[i]->SetAngularVelocity(0,0,-2,true);
+			physObjects[i]->GetRigidBody()->setDamping(0,0);
 		}
-
+*/
 		//for the line that represents the AABB extents
 //	physicsEnvironmentPtr->setDebugDrawer(&debugDrawer);
 
