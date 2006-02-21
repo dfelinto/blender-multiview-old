@@ -20,7 +20,7 @@
 #include "Dynamics/RigidBody.h"
 #include "ConstraintSolver/SimpleConstraintSolver.h"
 #include "ConstraintSolver/OdeConstraintSolver.h"
-#include "CollisionDispatch/ToiContactDispatcher.h"
+#include "CollisionDispatch/CollisionDispatcher.h"
 #include "BroadphaseCollision/SimpleBroadphase.h"
 #include "IDebugDraw.h"
 
@@ -69,7 +69,7 @@ int main(int argc,char** argv)
 	ConstraintSolver* solver = new SimpleConstraintSolver;
 	//ConstraintSolver* solver = new OdeConstraintSolver;
 
-	ToiContactDispatcher* dispatcher = new	ToiContactDispatcher(solver);
+	CollisionDispatcher* dispatcher = new	CollisionDispatcher();
 		
 	BroadphaseInterface* broadphase = new SimpleBroadphase();
 
@@ -166,7 +166,6 @@ int main(int argc,char** argv)
 
 		ccdObjectCi.m_collisionShape = shapePtr[shapeIndex[i]];
 
-		ccdObjectCi.m_broadphaseHandle = 0;
 
 		physObjects[i]= new CcdPhysicsController( ccdObjectCi);
 		physicsEnvironmentPtr->addCcdPhysicsController( physObjects[i]);
@@ -243,7 +242,7 @@ void renderme()
 			
 				//remove the persistent collision pairs that were created based on the previous shape
 
-				BroadphaseProxy* bpproxy = (BroadphaseProxy*)physObjects[i]->m_broadphaseHandle;
+				BroadphaseProxy* bpproxy = physObjects[i]->GetRigidBody()->m_broadphaseHandle;
 
 				bpproxy->SetClientObjectType(physObjects[i]->GetRigidBody()->GetCollisionShape()->GetShapeType());
 

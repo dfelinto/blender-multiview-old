@@ -18,7 +18,7 @@
 #include "Dynamics/RigidBody.h"
 #include "ConstraintSolver/SimpleConstraintSolver.h"
 #include "ConstraintSolver/OdeConstraintSolver.h"
-#include "CollisionDispatch/ToiContactDispatcher.h"
+#include "CollisionDispatch/CollisionDispatcher.h"
 #include "BroadphaseCollision/SimpleBroadphase.h"
 #include "CollisionShapes/TriangleMeshShape.h"
 #include "CollisionShapes/TriangleIndexVertexArray.h"
@@ -197,7 +197,7 @@ int main(int argc,char** argv)
 	//ConstraintSolver* solver = new SimpleConstraintSolver;
 	ConstraintSolver* solver = new OdeConstraintSolver;
 
-	ToiContactDispatcher* dispatcher = new	ToiContactDispatcher(solver);
+	CollisionDispatcher* dispatcher = new	CollisionDispatcher();
 		
 	BroadphaseInterface* broadphase = new SimpleBroadphase();
 
@@ -289,7 +289,6 @@ int main(int argc,char** argv)
 
 		ccdObjectCi.m_collisionShape = shapePtr[shapeIndex[i]];
 
-		ccdObjectCi.m_broadphaseHandle = 0;
 
 		physObjects[i]= new CcdPhysicsController( ccdObjectCi);
 		physicsEnvironmentPtr->addCcdPhysicsController( physObjects[i]);
