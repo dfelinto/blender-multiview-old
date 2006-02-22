@@ -3719,23 +3719,25 @@ static void editing_panel_mesh_paint(void)
 		uiDefButF(block, NUMSLI, B_NOP, "Size ",		10,80,225,19, &Gwp.size, 2.0, 64.0, 0, 0, "The size of the brush");
 
 		uiBlockBeginAlign(block);
-		uiDefButS(block, ROW, B_DIFF, "Mix",		250,160,60,19, &Gwp.mode, 1.0, 0.0, 0, 0, "Mix the vertex colours");
-		uiDefButS(block, ROW, B_DIFF, "Add",		250,140,60,19, &Gwp.mode, 1.0, 1.0, 0, 0, "Add the vertex colour");
-		uiDefButS(block, ROW, B_DIFF, "Sub",		250,120,60,19, &Gwp.mode, 1.0, 2.0, 0, 0, "Subtract from the vertex colour");
-		uiDefButS(block, ROW, B_DIFF, "Mul",		250,100,60,19, &Gwp.mode, 1.0, 3.0, 0, 0, "Multiply the vertex colour");
-		uiDefButS(block, ROW, B_DIFF, "Filter",		250, 80,60,19, &Gwp.mode, 1.0, 4.0, 0, 0, "Mix the colours with an alpha factor");
+		uiDefButS(block, ROW, B_DIFF, "Mix",		250,160,60,17, &Gwp.mode, 1.0, 0.0, 0, 0, "Mix the vertex colours");
+		uiDefButS(block, ROW, B_DIFF, "Add",		250,142,60,17, &Gwp.mode, 1.0, 1.0, 0, 0, "Add the vertex colour");
+		uiDefButS(block, ROW, B_DIFF, "Sub",		250,124,60,17, &Gwp.mode, 1.0, 2.0, 0, 0, "Subtract from the vertex colour");
+		uiDefButS(block, ROW, B_DIFF, "Mul",		250,106,60,17, &Gwp.mode, 1.0, 3.0, 0, 0, "Multiply the vertex colour");
+		uiDefButS(block, ROW, B_DIFF, "Filter",		250, 88,60,17, &Gwp.mode, 1.0, 4.0, 0, 0, "Mix the colours with an alpha factor");
+		uiDefButS(block, ROW, B_DIFF, "Lighter",	250, 70,60,17, &Gwp.mode, 1.0, 5.0, 0, 0, "Pain over darker areas only");
+		uiDefButS(block, ROW, B_DIFF, "Darker",		250, 52,60,17, &Gwp.mode, 1.0, 6.0, 0, 0, "Pain over lighter areas only");
 		
 		uiBlockBeginAlign(block);
-		uiDefButBitS(block, TOG, VP_AREA, 0, "All Faces", 	10,50,75,19, &Gwp.flag, 0, 0, 0, 0, "Paint on all faces inside brush");
-		uiDefButBitS(block, TOG, VP_SOFT, 0, "Vertex Dist", 85,50,75,19, &Gwp.flag, 0, 0, 0, 0, "Use distances to vertices (instead of paint entire faces)");
-		uiDefButBitS(block, TOG, VP_NORMALS, 0, "Normals", 	160,50,75,19, &Gwp.flag, 0, 0, 0, 0, "Applies the vertex normal before painting");
-		uiDefButBitS(block, TOG, VP_SPRAY, 0, "Spray",		235,50,75,19, &Gwp.flag, 0, 0, 0, 0, "Keep applying paint effect while holding mouse");
+		uiDefButBitS(block, TOG, VP_AREA, 0, "All Faces", 	10,30,75,19, &Gwp.flag, 0, 0, 0, 0, "Paint on all faces inside brush");
+		uiDefButBitS(block, TOG, VP_SOFT, 0, "Vertex Dist", 85,30,75,19, &Gwp.flag, 0, 0, 0, 0, "Use distances to vertices (instead of paint entire faces)");
+		uiDefButBitS(block, TOG, VP_NORMALS, 0, "Normals", 	160,30,75,19, &Gwp.flag, 0, 0, 0, 0, "Applies the vertex normal before painting");
+		uiDefButBitS(block, TOG, VP_SPRAY, 0, "Spray",		235,30,75,19, &Gwp.flag, 0, 0, 0, 0, "Keep applying paint effect while holding mouse");
 		
 		if(ob){
 			uiBlockBeginAlign(block);
-			uiDefButBitS(block, TOG, VP_MIRROR_X, REDRAWVIEW3D, "X-Mirror",	10,10,100,19, &Gwp.flag, 0, 0, 0, 0, "Mirrored Paint, applying on mirrored Weight Group name");
-			uiDefButBitC(block, TOG, OB_DRAWWIRE, REDRAWVIEW3D, "Wire",	110,10,100,19, &ob->dtx, 0, 0, 0, 0, "Displays the active object's wireframe in shaded drawing modes");
-			uiDefBut(block, BUT, B_CLR_WPAINT, "Clear",					210,10,100,19, NULL, 0, 0, 0, 0, "Removes reference to this deform group from all vertices");
+			uiDefButBitS(block, TOG, VP_MIRROR_X, REDRAWVIEW3D, "X-Mirror",	10,0,100,19, &Gwp.flag, 0, 0, 0, 0, "Mirrored Paint, applying on mirrored Weight Group name");
+			uiDefButBitC(block, TOG, OB_DRAWWIRE, REDRAWVIEW3D, "Wire",	110,0,100,19, &ob->dtx, 0, 0, 0, 0, "Displays the active object's wireframe in shaded drawing modes");
+			uiDefBut(block, BUT, B_CLR_WPAINT, "Clear",					210,0,100,19, NULL, 0, 0, 0, 0, "Removes reference to this deform group from all vertices");
 			uiBlockEndAlign(block);
 		}
 	}
@@ -3755,25 +3757,30 @@ static void editing_panel_mesh_paint(void)
 		uiDefButF(block, COL, B_REDR, "",			1176,120,28,60, &(Gvp.r), 0, 0, 0, B_VPCOLSLI, "");
 		
 		uiBlockBeginAlign(block);
-		uiDefButS(block, ROW, B_DIFF, "Mix",			1212,160,63,19, &Gvp.mode, 1.0, 0.0, 0, 0, "Mix the vertex colours");
-		uiDefButS(block, ROW, B_DIFF, "Add",			1212,140,63,19, &Gvp.mode, 1.0, 1.0, 0, 0, "Add the vertex colour");
-		uiDefButS(block, ROW, B_DIFF, "Sub",			1212, 120,63,19, &Gvp.mode, 1.0, 2.0, 0, 0, "Subtract from the vertex colour");
-		uiDefButS(block, ROW, B_DIFF, "Mul",			1212, 100,63,19, &Gvp.mode, 1.0, 3.0, 0, 0, "Multiply the vertex colour");
-		uiDefButS(block, ROW, B_DIFF, "Filter",		1212, 80,63,19, &Gvp.mode, 1.0, 4.0, 0, 0, "Mix the colours with an alpha factor");
-		
-		uiBlockBeginAlign(block);
-		uiDefButBitS(block, TOG, VP_AREA, 0, "All Faces", 		979,50,75,19, &Gvp.flag, 0, 0, 0, 0, "Paint on all faces inside brush");
-		uiDefButBitS(block, TOG, VP_SOFT, 0, "Vertex Dist", 	1054,50,75,19, &Gvp.flag, 0, 0, 0, 0, "Use distances to vertices (instead of paint entire faces)");
-		uiDefButBitS(block, TOG, VP_NORMALS, 0, "Normals", 	1129,50,75,19, &Gvp.flag, 0, 0, 0, 0, "Applies the vertex normal before painting");
-		uiDefButBitS(block, TOG, VP_SPRAY, 0, "Spray",		1204,50,75,19, &Gvp.flag, 0, 0, 0, 0, "Keep applying paint effect while holding mouse");
-
-		uiBlockBeginAlign(block);
-		uiDefBut(block, BUT, B_VPGAMMA, "Set",		979,25,81,19, 0, 0, 0, 0, 0, "Apply Mul and Gamma to vertex colours");
-		uiDefButF(block, NUM, B_DIFF, "Mul:", 		1061,25,112,19, &Gvp.mul, 0.1, 50.0, 10, 0, "Set the number to multiply vertex colours with");
-		uiDefButF(block, NUM, B_DIFF, "Gamma:", 	1174,25,102,19, &Gvp.gamma, 0.1, 5.0, 10, 0, "Change the clarity of the vertex colours");
+		uiDefButS(block, ROW, B_DIFF, "Mix",			1212,160,63,17, &Gvp.mode, 1.0, 0.0, 0, 0, "Mix the vertex colours");
+		uiDefButS(block, ROW, B_DIFF, "Add",			1212,142,63,17, &Gvp.mode, 1.0, 1.0, 0, 0, "Add the vertex colour");
+		uiDefButS(block, ROW, B_DIFF, "Sub",			1212, 124,63,17, &Gvp.mode, 1.0, 2.0, 0, 0, "Subtract from the vertex colour");
+		uiDefButS(block, ROW, B_DIFF, "Mul",			1212, 106,63,17, &Gvp.mode, 1.0, 3.0, 0, 0, "Multiply the vertex colour");
+		uiDefButS(block, ROW, B_DIFF, "Filter",			1212, 88,63,17, &Gvp.mode, 1.0, 4.0, 0, 0, "Mix the colours with an alpha factor");
+		uiDefButS(block, ROW, B_DIFF, "Lighter",		1212, 70,63,17, &Gvp.mode, 1.0, 5.0, 0, 0, "Pain over darker areas only");
+		uiDefButS(block, ROW, B_DIFF, "Darker",			1212, 52,63,17, &Gvp.mode, 1.0, 6.0, 0, 0, "Pain over lighter areas only");
 		uiBlockEndAlign(block);
 		
-		uiDefBut(block, BUT, B_SET_VCOL, "Set VertCol",	979,0,81,20, 0, 0, 0, 0, 0, "Set Vertex colour of selection to current (Shift+K)");
+		uiDefBut(block, BUT, B_SET_VCOL, "Set VertCol",	979,50,81,20, 0, 0, 0, 0, 0, "Set Vertex colour of selection to current (Shift+K)");
+		
+		uiBlockBeginAlign(block);
+		uiDefButBitS(block, TOG, VP_AREA, 0, "All Faces", 		979,25,75,19, &Gvp.flag, 0, 0, 0, 0, "Paint on all faces inside brush");
+		uiDefButBitS(block, TOG, VP_SOFT, 0, "Vertex Dist", 	1054,25,75,19, &Gvp.flag, 0, 0, 0, 0, "Use distances to vertices (instead of paint entire faces)");
+		uiDefButBitS(block, TOG, VP_NORMALS, 0, "Normals", 	1129,25,75,19, &Gvp.flag, 0, 0, 0, 0, "Applies the vertex normal before painting");
+		uiDefButBitS(block, TOG, VP_SPRAY, 0, "Spray",		1204,25,75,19, &Gvp.flag, 0, 0, 0, 0, "Keep applying paint effect while holding mouse");
+
+		uiBlockBeginAlign(block);
+		uiDefBut(block, BUT, B_VPGAMMA, "Set",		979,0,81,19, 0, 0, 0, 0, 0, "Apply Mul and Gamma to vertex colours");
+		uiDefButF(block, NUM, B_DIFF, "Mul:", 		1061,0,112,19, &Gvp.mul, 0.1, 50.0, 10, 0, "Set the number to multiply vertex colours with");
+		uiDefButF(block, NUM, B_DIFF, "Gamma:", 	1174,0,102,19, &Gvp.gamma, 0.1, 5.0, 10, 0, "Change the clarity of the vertex colours");
+		uiBlockEndAlign(block);
+		
+		
 	}
 	
 }
