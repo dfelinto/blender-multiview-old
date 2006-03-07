@@ -1109,7 +1109,7 @@ void makebevelcurve(Object *ob, ListBase *disp)
 		fp[3]= fp[4]= 0.0;
 		fp[5]= cu->ext1;
 	}
-	if( (cu->flag & (CU_FRONT|CU_BACK))==0 && cu->ext1==0.0f)	{ // we make a full round bevel in that case
+	else if( (cu->flag & (CU_FRONT|CU_BACK))==0 && cu->ext1==0.0f)	{ // we make a full round bevel in that case
 		
 		nr= 4+ 2*cu->bevresol;
 		   
