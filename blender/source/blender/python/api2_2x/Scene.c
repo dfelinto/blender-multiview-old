@@ -282,7 +282,7 @@ static PyObject *Scene_getAttr( BPy_Scene * self, char *name )
 static int Scene_setAttr( BPy_Scene * self, char *name, PyObject * value )
 {
 	if( !(self->scene) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return EXPP_ReturnIntError( PyExc_RuntimeError,
 					      "Blender Scene was deleted!" );
 	
 	PyObject *valtuple;
@@ -511,8 +511,7 @@ static PyObject *M_Scene_Unlink( PyObject * self, PyObject * args )
 		return EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected Scene PyType object" );
 	
-	pyscn = pyobj;
-	//scene = ( ( BPy_Scene * ) pyobj )->scene;
+	pyscn = (BPy_Scene *)pyobj;
 	scene = pyscn->scene;
 	
 	if (!(scene))
@@ -1084,6 +1083,8 @@ static PyObject *Scene_getTimeLine( BPy_Scene *self )
 	if( !(self->scene) )
 		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "Blender scene was deleted!" );
+	
+	BPy_TimeLine *tm; 
 	
 	tm= (BPy_TimeLine *) PyObject_NEW (BPy_TimeLine, &TimeLine_Type);
 	if (!tm)
