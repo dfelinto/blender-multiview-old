@@ -28,7 +28,7 @@
 #include "NarrowPhaseCollision/GjkPairDetector.h"
 #include "NarrowPhaseCollision/GjkConvexCast.h"
 #include "NarrowPhaseCollision/ContinuousConvexCollision.h"
-#include "NarrowPhaseCollision/SubsimplexConvexCast.h"
+#include "NarrowPhaseCollision/SubSimplexConvexCast.h"
 #include "NarrowPhaseCollision/BU_CollisionPair.h"
 
 #include "CollisionShapes/SphereShape.h"
@@ -36,6 +36,9 @@
 #include "CollisionShapes/Simplex1to4Shape.h"
 
 #include "GL_ShapeDrawer.h"
+#ifdef WIN32 //needed for glut.h
+#include <windows.h>
+#endif
 #include <GL/glut.h>
 #include "GlutStuff.h"
 
@@ -228,4 +231,15 @@ void clientDisplay(void) {
 }
 void clientResetScene()
 {
+}
+
+void clientKeyboard(unsigned char key, int x, int y)
+{
+	defaultKeyboard(key, x, y);
+}
+
+
+void clientMouseFunc(int button, int state, int x, int y)
+{
+
 }

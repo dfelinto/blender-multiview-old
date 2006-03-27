@@ -1,13 +1,17 @@
 /*
- * Copyright (c) 2005 Erwin Coumans <www.erwincoumans.com>
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies.
- * Erwin Coumans makes no representations about the suitability 
- * of this software for any purpose.  
- * It is provided "as is" without express or implied warranty.
- */
+Bullet Continuous Collision Detection and Physics Library
+Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
+
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose, 
+including commercial applications, and to alter it and redistribute it freely, 
+subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+*/
 
 #ifdef WIN32 //needed for glut.h
 #include <windows.h>
@@ -16,6 +20,15 @@
 #include "GL_ShapeDrawer.h"
 #include "CollisionShapes/PolyhedralConvexShape.h"
 #include "CollisionShapes/TriangleMeshShape.h"
+#include "CollisionShapes/BoxShape.h"
+#include "CollisionShapes/SphereShape.h"
+#include "CollisionShapes/ConeShape.h"
+#include "CollisionShapes/CylinderShape.h"
+#include "CollisionShapes/Simplex1to4Shape.h"
+
+
+
+
 #include "IDebugDraw.h"
 //for debugmodes
 #include "BMF_Api.h"
@@ -74,66 +87,126 @@ void GL_ShapeDrawer::DrawOpenGL(float* m, const CollisionShape* shape, const Sim
 
 	glRasterPos3f(0.0,  0.0,  0.0);
 
-	/// for polyhedral shapes
-	if (shape->IsPolyhedral())
+	bool useWireframeFallback = true;
+
+	if (!(debugMode & IDebugDraw::DBG_DrawWireframe))
 	{
-
-		PolyhedralConvexShape* polyshape = (PolyhedralConvexShape*) shape;
-		
-		
-		glBegin(GL_LINES);
-
-
-		int i;
-		for (i=0;i<polyshape->GetNumEdges();i++)
+		switch (shape->GetShapeType())
 		{
-			SimdPoint3 a,b;
-			polyshape->GetEdge(i,a,b);
-
-			glVertex3f(a.getX(),a.getY(),a.getZ());
-			glVertex3f(b.getX(),b.getY(),b.getZ());
-
-
-		}
-		glEnd();
-
-		
-
-		if (debugMode==IDebugDraw::DBG_DrawText)
-		{
-			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetName());
-		}
-
-		if (debugMode==IDebugDraw::DBG_DrawFeaturesText)
-		{
-			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetExtraDebugInfo());
-		
-			glColor3f(1.f, 1.f, 1.f);
-			for (i=0;i<polyshape->GetNumVertices();i++)
+		case BOX_SHAPE_PROXYTYPE:
 			{
-				SimdPoint3 vtx;
-				polyshape->GetVertex(i,vtx);
-				glRasterPos3f(vtx.x(),  vtx.y(),  vtx.z());
-				char buf[12];
-				sprintf(buf," %d",i);
-				BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+				const BoxShape* boxShape = static_cast<const BoxShape*>(shape);
+				SimdVector3 halfExtent = boxShape->GetHalfExtents();
+				glScaled(2*halfExtent[0], 2*halfExtent[1], 2*halfExtent[2]);
+				glutSolidCube(1.0);
+				useWireframeFallback = false;
+				break;
+			}
+		case TRIANGLE_SHAPE_PROXYTYPE:
+		case TETRAHEDRAL_SHAPE_PROXYTYPE:
+			{
+				const BU_Simplex1to4* tetra = static_cast<const BU_Simplex1to4*>(shape);
+				//todo:	
+				useWireframeFallback = false;
+				break;
+			}
+		case CONVEX_HULL_SHAPE_PROXYTYPE:
+		case SPHERE_SHAPE_PROXYTYPE:
+			{
+				const SphereShape* sphereShape = static_cast<const SphereShape*>(shape);
+				float radius = sphereShape->GetMargin();//radius doesn't include the margin, so draw with margin
+				glutSolidSphere(radius,10,10);
+				useWireframeFallback = false;
+				break;
+			}
+		case MULTI_SPHERE_SHAPE_PROXYTYPE:
+		case CONE_SHAPE_PROXYTYPE:
+			{
+				const ConeShape* coneShape = static_cast<const ConeShape*>(shape);
+				float radius = coneShape->GetRadius();//+coneShape->GetMargin();
+				float height = coneShape->GetHeight();//+coneShape->GetMargin();
+				glutSolidCone(radius,height,10,10);
+				useWireframeFallback = false;
+				break;
+
+			}
+		case CONVEX_SHAPE_PROXYTYPE:
+		case CYLINDER_SHAPE_PROXYTYPE:
+			{
+				break;
+			}
+		default:
+			{
 			}
 
-			for (i=0;i<polyshape->GetNumPlanes();i++)
-			{
-				SimdVector3 normal;
-				SimdPoint3 vtx;
-				polyshape->GetPlane(normal,vtx,i);
-				SimdScalar d = vtx.dot(normal);
+		};
 
-				glRasterPos3f(normal.x()*d,  normal.y()*d, normal.z()*d);
-				char buf[12];
-				sprintf(buf," plane %d",i);
-				BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
-				
+	}
+	
+
+	if (useWireframeFallback)
+	{
+		/// for polyhedral shapes
+		if (shape->IsPolyhedral())
+		{
+			PolyhedralConvexShape* polyshape = (PolyhedralConvexShape*) shape;
+			
+			
+			glBegin(GL_LINES);
+
+
+			int i;
+			for (i=0;i<polyshape->GetNumEdges();i++)
+			{
+				SimdPoint3 a,b;
+				polyshape->GetEdge(i,a,b);
+
+				glVertex3f(a.getX(),a.getY(),a.getZ());
+				glVertex3f(b.getX(),b.getY(),b.getZ());
+
+
+			}
+			glEnd();
+
+			
+
+			if (debugMode==IDebugDraw::DBG_DrawText)
+			{
+				BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetName());
+			}
+
+			if (debugMode==IDebugDraw::DBG_DrawFeaturesText)
+			{
+				BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetExtraDebugInfo());
+			
+				glColor3f(1.f, 1.f, 1.f);
+				for (i=0;i<polyshape->GetNumVertices();i++)
+				{
+					SimdPoint3 vtx;
+					polyshape->GetVertex(i,vtx);
+					glRasterPos3f(vtx.x(),  vtx.y(),  vtx.z());
+					char buf[12];
+					sprintf(buf," %d",i);
+					BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+				}
+
+				for (i=0;i<polyshape->GetNumPlanes();i++)
+				{
+					SimdVector3 normal;
+					SimdPoint3 vtx;
+					polyshape->GetPlane(normal,vtx,i);
+					SimdScalar d = vtx.dot(normal);
+
+					glRasterPos3f(normal.x()*d,  normal.y()*d, normal.z()*d);
+					char buf[12];
+					sprintf(buf," plane %d",i);
+					BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+					
+				}
 			}
 		}
 	}
+
 	if (shape->GetShapeType() == TRIANGLE_MESH_SHAPE_PROXYTYPE)
 	{
 		TriangleMeshShape* concaveMesh = (TriangleMeshShape*) shape;
@@ -151,8 +224,7 @@ void GL_ShapeDrawer::DrawOpenGL(float* m, const CollisionShape* shape, const Sim
 
 	}
 
-	//glScaled(2*m_halfExtent[0], 2*m_halfExtent[1], 2*m_halfExtent[2]);
-    //glutSolidCube(1.0);
+	
     
 	glPopMatrix();
     glPopMatrix();

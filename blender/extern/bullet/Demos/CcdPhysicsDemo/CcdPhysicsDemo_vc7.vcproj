@@ -39,6 +39,8 @@
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/CcdPhysicsDemo.pdb"
 				SubSystem="1"
+				StackReserveSize="8192000"
+				StackCommitSize="8192000"
 				TargetMachine="1"/>
 			<Tool
 				Name="VCMIDLTool"/>
@@ -86,6 +88,8 @@
 				AdditionalLibraryDirectories="..\..\Glut"
 				GenerateDebugInformation="TRUE"
 				SubSystem="1"
+				StackReserveSize="8192000"
+				StackCommitSize="8192000"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"/>

@@ -1,40 +1,40 @@
 /*
- * Copyright (c) 2005 Erwin Coumans http://continuousphysics.com/Bullet/
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies.
- * Erwin Coumans makes no representations about the suitability 
- * of this software for any purpose.  
- * It is provided "as is" without express or implied warranty.
+Bullet Continuous Collision Detection and Physics Library
+Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
+
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose, 
+including commercial applications, and to alter it and redistribute it freely, 
+subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
 */
+
+
 #include "Point2PointConstraint.h"
 #include "Dynamics/RigidBody.h"
 #include "Dynamics/MassProps.h"
 
 
-static RigidBody s_fixed(MassProps(0,SimdVector3(0.f,0.f,0.f)),0.f,0.f,1.f,1.f);
 
 
-Point2PointConstraint::Point2PointConstraint():
-m_rbA(s_fixed),m_rbB(s_fixed)
+Point2PointConstraint::Point2PointConstraint()
 {
-
-
-	s_fixed.setMassProps(0.f,SimdVector3(0.f,0.f,0.f));
 }
 
 Point2PointConstraint::Point2PointConstraint(RigidBody& rbA,RigidBody& rbB, const SimdVector3& pivotInA,const SimdVector3& pivotInB)
-:m_rbA(rbA),m_rbB(rbB),m_pivotInA(pivotInA),m_pivotInB(pivotInB)
+:TypedConstraint(rbA,rbB),m_pivotInA(pivotInA),m_pivotInB(pivotInB)
 {
 
 }
 
 
 Point2PointConstraint::Point2PointConstraint(RigidBody& rbA,const SimdVector3& pivotInA)
-:m_rbA(rbA),m_rbB(s_fixed),m_pivotInA(pivotInA),m_pivotInB(rbA.getCenterOfMassTransform()(pivotInA))
+:TypedConstraint(rbA),m_pivotInA(pivotInA),m_pivotInB(rbA.getCenterOfMassTransform()(pivotInA))
 {
-	s_fixed.setMassProps(0.f,SimdVector3(1e10f,1e10f,1e10f));
 	
 }
 

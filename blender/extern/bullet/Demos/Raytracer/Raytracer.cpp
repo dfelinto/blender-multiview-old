@@ -20,11 +20,14 @@ Very basic raytracer, rendering into a texture.
 #include "SimdQuaternion.h"
 #include "SimdTransform.h"
 #include "GL_ShapeDrawer.h"
+#ifdef WIN32 //needed for glut.h
+#include <windows.h>
+#endif
 #include <GL/glut.h>
 #include "GlutStuff.h"
 
 #include "NarrowPhaseCollision/VoronoiSimplexSolver.h"
-#include "NarrowPhaseCollision/SubsimplexConvexCast.h"
+#include "NarrowPhaseCollision/SubSimplexConvexCast.h"
 #include "NarrowPhaseCollision/GjkConvexCast.h"
 #include "NarrowPhaseCollision/ContinuousConvexCollision.h"
 #include "NarrowPhaseCollision/BU_CollisionPair.h"
@@ -392,4 +395,15 @@ void clientDisplay(void)
 
 void clientResetScene()
 {
+}
+
+void clientKeyboard(unsigned char key, int x, int y)
+{
+	defaultKeyboard(key, x, y);
+}
+
+
+void clientMouseFunc(int button, int state, int x, int y)
+{
+
 }

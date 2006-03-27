@@ -1,13 +1,17 @@
 /*
- * Copyright (c) 2005 Erwin Coumans <www.erwincoumans.com>
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies.
- * Erwin Coumans makes no representations about the suitability 
- * of this software for any purpose.  
- * It is provided "as is" without express or implied warranty.
- */
+Bullet Continuous Collision Detection and Physics Library
+Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
+
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose, 
+including commercial applications, and to alter it and redistribute it freely, 
+subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+*/
 
 #ifdef WIN32//for glut.h
 #include <windows.h>
@@ -136,7 +140,7 @@ void myReshape(int w, int h) {
 
 int lastKey  = 0;
 
-void myKeyboard(unsigned char key, int x, int y)
+void defaultKeyboard(unsigned char key, int x, int y)
 {
 	lastKey = 0;
 
@@ -151,6 +155,20 @@ void myKeyboard(unsigned char key, int x, int y)
     case 'z' : zoomIn(); break;
     case 'x' : zoomOut(); break;
     case 'i' : toggleIdle(); break;
+	case 'h':
+			if (sDebugMode & IDebugDraw::DBG_NoHelpText)
+				sDebugMode = sDebugMode & (~IDebugDraw::DBG_NoHelpText);
+			else
+				sDebugMode |= IDebugDraw::DBG_NoHelpText;
+			break;
+
+	case 'w':
+			if (sDebugMode & IDebugDraw::DBG_DrawWireframe)
+				sDebugMode = sDebugMode & (~IDebugDraw::DBG_DrawWireframe);
+			else
+				sDebugMode |= IDebugDraw::DBG_DrawWireframe;
+		   break;
+
 	case 't' : 
 			if (sDebugMode & IDebugDraw::DBG_DrawText)
 				sDebugMode = sDebugMode & (~IDebugDraw::DBG_DrawText);
@@ -200,8 +218,7 @@ void myKeyboard(unsigned char key, int x, int y)
         break;
     }
 
-	clientDisplay();
-
+	glutPostRedisplay();
 
 }
 
@@ -221,7 +238,9 @@ void mySpecial(int key, int x, int y)
 //        std::cout << "unused (special) key : " << key << std::endl;
         break;
     }
-	clientDisplay();
+
+	glutPostRedisplay();
+
 }
 
 
@@ -286,12 +305,13 @@ int glutmain(int argc, char **argv,int width,int height,const char* title) {
     glutCreateWindow(title);
 	
     myinit();
-    glutKeyboardFunc(myKeyboard);
+    glutKeyboardFunc(clientKeyboard);
     glutSpecialFunc(mySpecial);
     glutReshapeFunc(myReshape);
     createMenu();
 	glutIdleFunc(clientMoveAndDisplay);
-
+	glutMouseFunc(clientMouseFunc);
+	
 	glutDisplayFunc( clientDisplay );
 
     glutMainLoop();

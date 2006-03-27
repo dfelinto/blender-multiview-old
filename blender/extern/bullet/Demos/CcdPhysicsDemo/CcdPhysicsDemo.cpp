@@ -1,27 +1,36 @@
 /*
- * Copyright (c) 2005 Erwin Coumans <www.erwincoumans.com>
- *
- * Permission to use, copy, modify, distribute and sell this software
- * and its documentation for any purpose is hereby granted without fee,
- * provided that the above copyright notice appear in all copies.
- * Erwin Coumans makes no representations about the suitability 
- * of this software for any purpose.  
- * It is provided "as is" without express or implied warranty.
- */
+Bullet Continuous Collision Detection and Physics Library
+Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
+
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose, 
+including commercial applications, and to alter it and redistribute it freely, 
+subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+*/
 
 #include "CcdPhysicsEnvironment.h"
 #include "CcdPhysicsController.h"
 #include "MyMotionState.h"
 //#include "GL_LineSegmentShape.h"
 #include "CollisionShapes/BoxShape.h"
+#include "CollisionShapes/SphereShape.h"
+#include "CollisionShapes/ConeShape.h"
+
+
 #include "CollisionShapes/Simplex1to4Shape.h"
 #include "CollisionShapes/EmptyShape.h"
 
 #include "Dynamics/RigidBody.h"
-#include "ConstraintSolver/SimpleConstraintSolver.h"
-#include "ConstraintSolver/OdeConstraintSolver.h"
 #include "CollisionDispatch/CollisionDispatcher.h"
 #include "BroadphaseCollision/SimpleBroadphase.h"
+#include "BroadphaseCollision/AxisSweep3.h"
+
+
 #include "IDebugDraw.h"
 
 #include "GLDebugDrawer.h"
@@ -30,15 +39,18 @@
 #include "BMF_Api.h"
 #include <stdio.h> //printf debugging
 
+#ifdef WIN32 //needed for glut.h
+#include <windows.h>
+#endif
 #include <GL/glut.h>
 #include "GL_ShapeDrawer.h"
 
 #include "GlutStuff.h"
-	
 
-const int numObjects = 40;
 
-const int maxNumObjects = 400;
+const int numObjects = 200;
+const int maxNumObjects = 450;
+
 MyMotionState ms[maxNumObjects];
 CcdPhysicsController* physObjects[maxNumObjects] = {0,0,0,0};
 int	shapeIndex[maxNumObjects];
@@ -47,14 +59,20 @@ CcdPhysicsEnvironment* physicsEnvironmentPtr = 0;
 
 #define CUBE_HALF_EXTENTS 1
 
+#define EXTRA_HEIGHT -20.f
 //GL_LineSegmentShape shapeE(SimdPoint3(-50,0,0),
 //						   SimdPoint3(50,0,0));
 CollisionShape* shapePtr[4] = 
 {
-	new BoxShape (SimdVector3(10,10,10)),
+	new BoxShape (SimdVector3(50,10,50)),
 	new BoxShape (SimdVector3(CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS)),
+	new SphereShape (CUBE_HALF_EXTENTS- 0.05f),
+	
+	//new ConeShape(CUBE_HALF_EXTENTS,2.f*CUBE_HALF_EXTENTS),
+	//new BU_Simplex1to4(SimdPoint3(-1,-1,-1),SimdPoint3(1,-1,-1),SimdPoint3(-1,1,-1),SimdPoint3(0,0,1)),
+
 	//new EmptyShape(),
-	new BU_Simplex1to4(SimdPoint3(-1,-1,-1),SimdPoint3(1,-1,-1),SimdPoint3(-1,1,-1),SimdPoint3(0,0,1)),
+	
 	//new BoxShape (SimdVector3(0.4,1,0.8))
 
 };
@@ -66,13 +84,15 @@ int main(int argc,char** argv)
 {
 
 
-	ConstraintSolver* solver = new SimpleConstraintSolver;
-	//ConstraintSolver* solver = new OdeConstraintSolver;
 
 	CollisionDispatcher* dispatcher = new	CollisionDispatcher();
 		
-	BroadphaseInterface* broadphase = new SimpleBroadphase();
+	
+	SimdVector3 worldAabbMin(-10000,-10000,-10000);
+	SimdVector3 worldAabbMax(10000,10000,10000);
 
+	BroadphaseInterface* broadphase = new AxisSweep3(worldAabbMin,worldAabbMax);
+	//BroadphaseInterface* broadphase = new SimpleBroadphase();
 
 	physicsEnvironmentPtr = new CcdPhysicsEnvironment(dispatcher,broadphase);
 	physicsEnvironmentPtr->setDeactivationTime(2.f);
@@ -110,10 +130,13 @@ int main(int argc,char** argv)
 	for (i=0;i<numObjects;i++)
 	{
 		if (i>0)
-			shapeIndex[i] = 1;//2 to test start with EmptyShape
+		{
+			shapeIndex[i] = 1;//sphere
+		}
 		else
 			shapeIndex[i] = 0;
 	}
+
 	for (i=0;i<numObjects;i++)
 	{
 		shapeProps.m_shape = shapePtr[shapeIndex[i]];
@@ -134,8 +157,20 @@ int main(int argc,char** argv)
 			ms[i].setWorldPosition(0,i*CUBE_HALF_EXTENTS*2 - CUBE_HALF_EXTENTS,0);
 		} else
 		{
-			ms[i].setWorldPosition(0,-10,0);
+			ms[i].setWorldPosition(0,-10+EXTRA_HEIGHT,0);
+			/*
+			//for testing, rotate the ground cube so the stack has to recover a bit
+			float quatIma0,quatIma1,quatIma2,quatReal;
+			SimdQuaternion quat;
+			SimdVector3 axis(0,0,1);
+			SimdScalar angle=0.03f;
 
+			quat.setRotation(axis,angle);
+
+			ms[i].setWorldOrientation(quat.getX(),quat.getY(),quat.getZ(),quat[3]);
+			*/
+
+			
 		}
 		
 		ccdObjectCi.m_MotionState = &ms[i];
@@ -181,9 +216,9 @@ int main(int argc,char** argv)
 	
 	clientResetScene();
 
-	setCameraDistance(46.f);
+	setCameraDistance(86.f);
 
-	return glutmain(argc, argv,640,480,"Bullet GJK Demo. http://www.continuousphysics.com/Bullet/phpBB2/");
+	return glutmain(argc, argv,640,480,"Bullet Physics Demo. http://www.continuousphysics.com/Bullet/phpBB2/");
 }
 
 //to be implemented by the demo
@@ -217,16 +252,32 @@ void renderme()
 		transA.setOrigin( dpos );
 		transA.getOpenGLMatrix( m );
 		
-		SimdVector3 wireColor(0.f,0.f,1.f); //wants deactivation
-
+		
+		SimdVector3 wireColor(0.f,0.0f,0.5f); //wants deactivation
+		if (i & 1)
+		{
+			wireColor = SimdVector3(0.f,0.0f,1.f);
+		}
 		///color differently for active, sleeping, wantsdeactivation states
 		if (physObjects[i]->GetRigidBody()->GetActivationState() == 1) //active
 		{
-			wireColor = SimdVector3 (1.f,0.f,0.f);
+			if (i & 1)
+			{
+				wireColor += SimdVector3 (1.f,0.f,0.f);
+			} else
+			{			
+				wireColor += SimdVector3 (.5f,0.f,0.f);
+			}
 		}
 		if (physObjects[i]->GetRigidBody()->GetActivationState() == 2) //ISLAND_SLEEPING
 		{
-			wireColor = SimdVector3 (0.f,1.f,0.f);
+			if (i & 1)
+			{
+				wireColor += SimdVector3 (0.f,1.f, 0.f);
+			} else
+			{
+				wireColor += SimdVector3 (0.f,0.5f,0.f);
+			}
 		}
 
 		char	extraDebug[125];
@@ -244,8 +295,6 @@ void renderme()
 
 				BroadphaseProxy* bpproxy = physObjects[i]->GetRigidBody()->m_broadphaseHandle;
 
-				bpproxy->SetClientObjectType(physObjects[i]->GetRigidBody()->GetCollisionShape()->GetShapeType());
-
 				physicsEnvironmentPtr->GetBroadphase()->CleanProxyFromPairs(bpproxy);
 
 				SimdVector3 newinertia;
@@ -261,30 +310,44 @@ void renderme()
 
 	}
 
-	glRasterPos3f(20,20,0);
-	char buf[124];
-	sprintf(buf,"space to reset");
-	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
-	glRasterPos3f(20,15,0);
-	sprintf(buf,"c to show contact points");
-	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+	if (!(getDebugMode() & IDebugDraw::DBG_NoHelpText))
+	{
+		float yOffset = 40.f;
 
-	glRasterPos3f(20,10,0);
-	sprintf(buf,"cursor keys and z,x to navigate");
-	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		glRasterPos3f(20,20+yOffset,0);
+		char buf[124];
+		sprintf(buf,"space to reset");
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		glRasterPos3f(20,15+yOffset,0);
+		sprintf(buf,"c to show contact points");
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 
-	glRasterPos3f(20,5,0);
-	sprintf(buf,"i to toggle simulation, s single step");
-	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		glRasterPos3f(20,10+yOffset,0);
+		sprintf(buf,"cursor keys and z,x to navigate");
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+
+		glRasterPos3f(20,5+yOffset,0);
+		sprintf(buf,"i to toggle simulation, s single step");
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 
 
-	glRasterPos3f(20,0,0);
-	sprintf(buf,"q to quit");
-	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		glRasterPos3f(20,0+yOffset,0);
+		sprintf(buf,"q to quit");
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 
-	glRasterPos3f(20,-5,0);
-	sprintf(buf,"d to toggle deactivation");
-	BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		glRasterPos3f(20,-5+yOffset,0);
+		sprintf(buf,"d to toggle deactivation");
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+
+		glRasterPos3f(20,-10+yOffset,0);
+		sprintf(buf,". to shoot primitive");
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+
+		glRasterPos3f(20,-15+yOffset,0);
+		sprintf(buf,"h to toggle help text");
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+
+	}
 
 }
 void clientMoveAndDisplay()
@@ -321,7 +384,7 @@ void clientDisplay(void) {
 
 ///make this positive to show stack falling from a distance
 ///this shows the penalty tresholds in action, springy/spungy look
-#define EXTRA_HEIGHT 0.f
+
 
 
 void clientResetScene()
@@ -331,6 +394,21 @@ void clientResetScene()
 	{
 		if (i>0)
 		{
+
+			if ((getDebugMode() & IDebugDraw::DBG_NoHelpText))
+			{
+				if (physObjects[i]->GetRigidBody()->GetCollisionShape()->GetShapeType() == BOX_SHAPE_PROXYTYPE)
+				{
+					physObjects[i]->GetRigidBody()->SetCollisionShape(shapePtr[2]);
+				} else
+				{
+					physObjects[i]->GetRigidBody()->SetCollisionShape(shapePtr[1]);
+				}
+
+				BroadphaseProxy* bpproxy = physObjects[i]->GetRigidBody()->m_broadphaseHandle;
+				physicsEnvironmentPtr->GetBroadphase()->CleanProxyFromPairs(bpproxy);
+			}
+
 			//stack them
 			int colsize = 10;
 			int row = (i*CUBE_HALF_EXTENTS*2)/(colsize*2*CUBE_HALF_EXTENTS);
@@ -343,8 +421,39 @@ void clientResetScene()
 			physObjects[i]->SetAngularVelocity(0,0,0,false);
 		} else
 		{
-			ms[i].setWorldPosition(0,-10,0);
-
+			ms[i].setWorldPosition(0,-10-EXTRA_HEIGHT,0);
 		}
 	}
+}
+
+void	shootBox(const SimdVector3& destination)
+{
+	int i  = numObjects-1;
+
+	extern float eye[3];
+
+	float speed = 100.f;
+	SimdVector3 linVel(destination[0]-eye[0],destination[1]-eye[1],destination[2]-eye[2]);
+	linVel.normalize();
+	linVel*=speed;
+	
+	physObjects[i]->setPosition(eye[0],eye[1],eye[2]);
+	physObjects[i]->setOrientation(0,0,0,1);
+	physObjects[i]->SetLinearVelocity(linVel[0],linVel[1],linVel[2],false);
+	physObjects[i]->SetAngularVelocity(0,0,0,false);
+}
+
+void clientKeyboard(unsigned char key, int x, int y)
+{
+
+	if (key == '.')
+	{
+		shootBox(SimdVector3(0,0,0));
+	}
+	defaultKeyboard(key, x, y);
+}
+
+
+void clientMouseFunc(int button, int state, int x, int y)
+{
 }
