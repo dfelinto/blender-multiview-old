@@ -212,7 +212,7 @@ int main(int argc,char** argv)
 	physicsEnvironmentPtr = new CcdPhysicsEnvironment(dispatcher,broadphase);
 	
 
-	physicsEnvironmentPtr->setGravity(0,-10,3);
+	physicsEnvironmentPtr->setGravity(-1,-10,1);
 	PHY_ShapeProps shapeProps;
 	
 	shapeProps.m_do_anisotropic = false;

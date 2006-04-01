@@ -115,7 +115,7 @@ void clientDisplay(void) {
 	input.m_transformA = tr[0];
 	input.m_transformB = tr[1];
 
-	convexConvex.GetClosestPoints(input ,gjkOutput);
+	convexConvex.GetClosestPoints(input ,gjkOutput,0);
 
 	if (gjkOutput.m_hasResult)
 	{
