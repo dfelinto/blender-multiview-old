@@ -36,7 +36,6 @@ def copy_bone_influences(_from, _to):
 		_range=upidx-loidx 
 		# Guess the right index, keep re-adjusting the high and the low.
 		while _range > 3:
-			print upidx, loidx
 			half= _range/2
 			z= vecs[upidx-half][1].z
 			if z >= seek_vec_z:
@@ -108,7 +107,6 @@ def copy_bone_influences(_from, _to):
 	add_ = Mesh.AssignModes.ADD
 	
 	for i, co in enumerate(world_verts_to):
-		print i
 		from_idx= getSnapIdx(co, world_verts_from)
 		from_infs= me_from.getVertexInfluences(from_idx)
 		
