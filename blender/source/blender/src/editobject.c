@@ -2366,7 +2366,10 @@ void convertmenu(void)
 				if(cu->id.us>1) {
 					ob1= G.main->object.first;
 					while(ob1) {
-						if(ob1->data==cu) ob1->type= OB_CURVE;
+						if(ob1->data==cu) {
+							ob1->type= OB_CURVE;
+							ob1->recalc |= OB_RECALC;
+						}
 						ob1= ob1->id.next;
 					}
 				}
