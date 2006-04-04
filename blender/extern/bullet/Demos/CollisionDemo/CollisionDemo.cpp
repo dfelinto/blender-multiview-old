@@ -200,3 +200,6 @@ void clientMouseFunc(int button, int state, int x, int y)
 {
 
 }
+void	clientMotionFunc(int x,int y)
+{
+}

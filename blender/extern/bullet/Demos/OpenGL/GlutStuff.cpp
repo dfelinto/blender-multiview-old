@@ -133,7 +133,14 @@ void stepBack() { ele -= STEPSIZE; if (azi < 0) azi += 360; setCamera(); }
 void zoomIn() { DISTANCE -= 1; setCamera(); }
 void zoomOut() { DISTANCE += 1; setCamera(); }
 
+
+int glutScreenWidth = 0;
+int glutScreenHeight = 0;
+
 void myReshape(int w, int h) {
+	glutScreenWidth = w;
+	glutScreenHeight = h;
+
     glViewport(0, 0, w, h);
     setCamera();
 }
@@ -308,10 +315,10 @@ int glutmain(int argc, char **argv,int width,int height,const char* title) {
     glutKeyboardFunc(clientKeyboard);
     glutSpecialFunc(mySpecial);
     glutReshapeFunc(myReshape);
-    createMenu();
+    //createMenu();
 	glutIdleFunc(clientMoveAndDisplay);
 	glutMouseFunc(clientMouseFunc);
-	
+	glutMotionFunc(clientMotionFunc);
 	glutDisplayFunc( clientDisplay );
 
     glutMainLoop();

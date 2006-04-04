@@ -5,7 +5,6 @@
 	Name="Raytracer"
 	ProjectGUID="{F8B0A298-14C9-4006-8D53-51032892BEDD}"
 	Keyword="Win32Proj"
-	SignManifests="true"
 	>
 	<Platforms>
 		<Platform
@@ -199,6 +198,10 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
+		<File
+			RelativePath=".\VTune\Raytracer.vpj"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>

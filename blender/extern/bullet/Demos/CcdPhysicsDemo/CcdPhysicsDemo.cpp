@@ -29,6 +29,7 @@ subject to the following restrictions:
 #include "CollisionDispatch/CollisionDispatcher.h"
 #include "BroadphaseCollision/SimpleBroadphase.h"
 #include "BroadphaseCollision/AxisSweep3.h"
+#include "ConstraintSolver/Point2PointConstraint.h"
 
 
 #include "IDebugDraw.h"
@@ -47,8 +48,17 @@ subject to the following restrictions:
 
 #include "GlutStuff.h"
 
+extern float eye[3];
+extern int glutScreenWidth;
+extern int glutScreenHeight;
 
-const int numObjects = 200;
+
+#ifdef _DEBUG
+const int numObjects = 20;
+#else
+const int numObjects = 120;
+#endif
+
 const int maxNumObjects = 450;
 
 MyMotionState ms[maxNumObjects];
@@ -313,9 +323,15 @@ void renderme()
 	if (!(getDebugMode() & IDebugDraw::DBG_NoHelpText))
 	{
 		float yOffset = 40.f;
-
-		glRasterPos3f(20,20+yOffset,0);
 		char buf[124];
+
+		glColor3f(1, 1, 1);
+
+		glRasterPos3f(20,25+yOffset,0);
+		sprintf(buf,"mouse + buttons to interact");
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		
+		glRasterPos3f(20,20+yOffset,0);
 		sprintf(buf,"space to reset");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 		glRasterPos3f(20,15+yOffset,0);
@@ -412,9 +428,16 @@ void clientResetScene()
 			//stack them
 			int colsize = 10;
 			int row = (i*CUBE_HALF_EXTENTS*2)/(colsize*2*CUBE_HALF_EXTENTS);
+			int row2 = row;
 			int col = (i)%(colsize)-colsize/2;
 
-			physObjects[i]->setPosition(col*2*CUBE_HALF_EXTENTS + (row%2)*CUBE_HALF_EXTENTS,
+			
+			if (col>3)
+			{
+				col=11;
+				row2 |=1;
+			}
+			physObjects[i]->setPosition(col*2*CUBE_HALF_EXTENTS + (row2%2)*CUBE_HALF_EXTENTS,
 				row*2*CUBE_HALF_EXTENTS+CUBE_HALF_EXTENTS+EXTRA_HEIGHT,0);
 			physObjects[i]->setOrientation(0,0,0,1);
 			physObjects[i]->SetLinearVelocity(0,0,0,false);
@@ -430,9 +453,9 @@ void	shootBox(const SimdVector3& destination)
 {
 	int i  = numObjects-1;
 
-	extern float eye[3];
+	
 
-	float speed = 100.f;
+	float speed = 40.f;
 	SimdVector3 linVel(destination[0]-eye[0],destination[1]-eye[1],destination[2]-eye[2]);
 	linVel.normalize();
 	linVel*=speed;
@@ -453,7 +476,197 @@ void clientKeyboard(unsigned char key, int x, int y)
 	defaultKeyboard(key, x, y);
 }
 
+int gPickingConstraintId = 0;
+SimdVector3 gOldPickingPos;
+float gOldPickingDist  = 0.f;
+RigidBody* pickedBody = 0;//for deactivation state
 
+
+SimdVector3	GetRayTo(int x,int y)
+{
+	float top = 1.f;
+	float bottom = -1.f;
+	float nearPlane = 1.f;
+	float tanFov = (top-bottom)*0.5f / nearPlane;
+	float fov = 2.0 * atanf (tanFov);
+
+	SimdVector3	rayFrom(eye[0],eye[1],eye[2]);
+	SimdVector3 rayForward = -rayFrom;
+	rayForward.normalize();
+	float farPlane = 600.f;
+	rayForward*= farPlane;
+
+	SimdVector3 rightOffset;
+	SimdVector3 vertical(0.f,1.f,0.f);
+	SimdVector3 hor;
+	hor = rayForward.cross(vertical);
+	hor.normalize();
+	vertical = hor.cross(rayForward);
+	vertical.normalize();
+
+	float tanfov = tanf(0.5f*fov);
+	hor *= 2.f * farPlane * tanfov;
+	vertical *= 2.f * farPlane * tanfov;
+	SimdVector3 rayToCenter = rayFrom + rayForward;
+	SimdVector3 dHor = hor * 1.f/float(glutScreenWidth);
+	SimdVector3 dVert = vertical * 1.f/float(glutScreenHeight);
+	SimdVector3 rayTo = rayToCenter - 0.5f * hor + 0.5f * vertical;
+	rayTo += x * dHor;
+	rayTo -= y * dVert;
+	return rayTo;
+}
 void clientMouseFunc(int button, int state, int x, int y)
 {
+	//printf("button %i, state %i, x=%i,y=%i\n",button,state,x,y);
+	//button 0, state 0 means left mouse down
+
+	SimdVector3 rayTo = GetRayTo(x,y);
+
+	switch (button)
+	{
+	case 2:
+		{
+			if (state==0)
+			{
+				shootBox(rayTo);
+			}
+			break;
+		};
+	case 1:
+		{
+			if (state==0)
+			{
+				//apply an impulse
+				if (physicsEnvironmentPtr)
+				{
+					float hit[3];
+					float normal[3];
+					PHY_IPhysicsController* hitObj = physicsEnvironmentPtr->rayTest(0,eye[0],eye[1],eye[2],rayTo.getX(),rayTo.getY(),rayTo.getZ(),hit[0],hit[1],hit[2],normal[0],normal[1],normal[2]);
+					if (hitObj)
+					{
+						CcdPhysicsController* physCtrl = static_cast<CcdPhysicsController*>(hitObj);
+						RigidBody* body = physCtrl->GetRigidBody();
+						if (body)
+						{
+							body->SetActivationState(ACTIVE_TAG);
+							SimdVector3 impulse = rayTo;
+							impulse.normalize();
+							float impulseStrength = 10.f;
+							impulse *= impulseStrength;
+							SimdVector3 relPos(
+								hit[0] - body->getCenterOfMassPosition().getX(),						
+								hit[1] - body->getCenterOfMassPosition().getY(),
+								hit[2] - body->getCenterOfMassPosition().getZ());
+
+							body->applyImpulse(impulse,relPos);
+						}
+						
+					}
+
+				}
+
+			} else
+			{
+				
+			}
+			break;	
+		}
+	case 0:
+		{
+			if (state==0)
+			{
+				//add a point to point constraint for picking
+				if (physicsEnvironmentPtr)
+				{
+					float hit[3];
+					float normal[3];
+					PHY_IPhysicsController* hitObj = physicsEnvironmentPtr->rayTest(0,eye[0],eye[1],eye[2],rayTo.getX(),rayTo.getY(),rayTo.getZ(),hit[0],hit[1],hit[2],normal[0],normal[1],normal[2]);
+					if (hitObj)
+					{
+						
+						CcdPhysicsController* physCtrl = static_cast<CcdPhysicsController*>(hitObj);
+						RigidBody* body = physCtrl->GetRigidBody();
+						
+						if (body)
+						{
+							pickedBody = body;
+							pickedBody->SetActivationState(DISABLE_DEACTIVATION);
+														
+							SimdVector3 pickPos(hit[0],hit[1],hit[2]);
+							
+							SimdVector3 localPivot = body->getCenterOfMassTransform().inverse() * pickPos;
+							
+							gPickingConstraintId = physicsEnvironmentPtr->createConstraint(physCtrl,0,PHY_POINT2POINT_CONSTRAINT,
+							localPivot.getX(),
+							localPivot.getY(),
+							localPivot.getZ(),
+							0,0,0);
+							//printf("created constraint %i",gPickingConstraintId);
+
+							//save mouse position for dragging
+							gOldPickingPos = rayTo;
+
+							
+							SimdVector3 eyePos(eye[0],eye[1],eye[2]);
+
+							gOldPickingDist  = (pickPos-eyePos).length();
+
+							Point2PointConstraint* p2p = physicsEnvironmentPtr->getPoint2PointConstraint(gPickingConstraintId);
+							if (p2p)
+							{
+								//very weak constraint for picking
+								p2p->m_setting.m_tau = 0.1f;
+							}
+						}
+					}
+				}
+			} else
+			{
+				if (gPickingConstraintId && physicsEnvironmentPtr)
+				{
+					physicsEnvironmentPtr->removeConstraint(gPickingConstraintId);
+					//printf("removed constraint %i",gPickingConstraintId);
+					gPickingConstraintId = 0;
+					pickedBody->ForceActivationState(ACTIVE_TAG);
+					pickedBody->m_deactivationTime = 0.f;
+					pickedBody = 0;
+							
+					
+				}
+			}
+
+			break;
+
+		}
+	default:
+		{
+		}
+	}
+
+}
+
+void	clientMotionFunc(int x,int y)
+{
+	
+	if (gPickingConstraintId && physicsEnvironmentPtr)
+	{
+		
+		//move the constraint pivot
+
+		Point2PointConstraint* p2p = physicsEnvironmentPtr->getPoint2PointConstraint(gPickingConstraintId);
+		if (p2p)
+		{
+			//keep it at the same picking distance
+			
+			SimdVector3 newRayTo = GetRayTo(x,y);
+			SimdVector3 eyePos(eye[0],eye[1],eye[2]);
+			SimdVector3 dir = newRayTo-eyePos;
+			dir.normalize();
+			dir *= gOldPickingDist;
+			
+			SimdVector3 newPos = eyePos + dir;
+			p2p->SetPivotB(newPos);
+		}
+
+	}
 }
