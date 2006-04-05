@@ -13684,7 +13684,7 @@ msgid "SubSh P:"
 msgstr "SubSh P:"
 
 #: blender/src/buttons.c:2601
-msgid "Set the number of times the environment is tested to detect pathes"
+msgid "Set the number of times the environment is tested to detect patches"
 msgstr "Imposta il numero di volte che l'ambiente è testato per scoprire le patch"
 
 #: blender/src/buttons.c:2602

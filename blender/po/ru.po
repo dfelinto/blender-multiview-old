@@ -7347,7 +7347,7 @@ msgstr "Случайно.."
 msgid "Randomizes ring dimension and line location"
 msgstr "Случайные размеры колец и положения линий"
 
-msgid "Randomizes selected vertice sequence data"
+msgid "Randomizes selected vertex sequence data"
 msgstr "Случайные последовательности выделенных вершин"
 
 msgid "Randomizes starcolour"
@@ -9198,7 +9198,7 @@ msgstr ""
 msgid "Sets the number of times the environment is tested to detect elements"
 msgstr "Установить сколько раз окружение тестируется для детекта элементов"
 
-msgid "Sets the number of times the environment is tested to detect pathes"
+msgid "Sets the number of times the environment is tested to detect patches"
 msgstr "Установить сколько раз окружение тестируется для детекта Патчей"
 
 msgid "Sets the number of vertical parts to render image in"
@@ -9780,7 +9780,7 @@ msgstr "Сортировать файлы по размеру"
 msgid "Sorts files by time"
 msgstr "Сортировать файлы по времени"
 
-msgid "Sorts selected vertice data in the X direction"
+msgid "Sorts selected vertex data in the X direction"
 msgstr "Сортировать выделенные вершины в направлении X"
 
 msgid "Sound"
@@ -12629,7 +12629,7 @@ msgstr "Затенение в окне Вида (Вызов: Z, Shift Z, Ctrl Z,
 msgid "Viewport Shading (Hotkeys: Z, Shift Z, Ctrl Z, Alt Z)"
 msgstr "Затенение в окне Вида (Вызов: Z, Shift Z, Ctrl Z, Alt Z)"
 
-msgid "Splits selected verts to separate sub-mesh."
+msgid "Splits selected vertices to separate sub-mesh"
 msgstr "Отделить выделенные вершины, разделяя под-меши"
 
 msgid "Sets the amount of red colour at the horizon"
