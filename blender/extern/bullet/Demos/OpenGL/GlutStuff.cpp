@@ -67,6 +67,8 @@ void myinit(void) {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);
 
+	glClearColor(0.8,0.8,0.8,0);
+
     //  glEnable(GL_CULL_FACE);
     //  glCullFace(GL_BACK);
 }
@@ -321,6 +323,7 @@ int glutmain(int argc, char **argv,int width,int height,const char* title) {
 	glutMotionFunc(clientMotionFunc);
 	glutDisplayFunc( clientDisplay );
 
+	
     glutMainLoop();
     return 0;
 }

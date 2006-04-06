@@ -30,6 +30,7 @@ subject to the following restrictions:
 #include "BroadphaseCollision/SimpleBroadphase.h"
 #include "BroadphaseCollision/AxisSweep3.h"
 #include "ConstraintSolver/Point2PointConstraint.h"
+#include "ConstraintSolver/HingeConstraint.h"
 
 
 #include "IDebugDraw.h"
@@ -54,7 +55,7 @@ extern int glutScreenHeight;
 
 
 #ifdef _DEBUG
-const int numObjects = 20;
+const int numObjects = 22;
 #else
 const int numObjects = 120;
 #endif
@@ -88,7 +89,7 @@ CollisionShape* shapePtr[4] =
 };
 
 
-	GLDebugDrawer debugDrawer;
+GLDebugDrawer debugDrawer;
 
 int main(int argc,char** argv)
 {
@@ -154,6 +155,8 @@ int main(int argc,char** argv)
 
 
 		bool isDyna = i>0;
+		//if (i==1)
+		//	isDyna=false;
 		
 		if (0)//i==1)
 		{
@@ -164,22 +167,39 @@ int main(int argc,char** argv)
 
 		if (i>0)
 		{
-			ms[i].setWorldPosition(0,i*CUBE_HALF_EXTENTS*2 - CUBE_HALF_EXTENTS,0);
-		} else
-		{
-			ms[i].setWorldPosition(0,-10+EXTRA_HEIGHT,0);
-			/*
-			//for testing, rotate the ground cube so the stack has to recover a bit
+			
+			switch (i)
+			{
+			case 1:
+				{
+					ms[i].setWorldPosition(0,10,0);
+					//for testing, rotate the ground cube so the stack has to recover a bit
+			
+					break;
+				}
+			case 2:
+				{
+					ms[i].setWorldPosition(0,8,2);
+					break;
+				}
+			default:
+					ms[i].setWorldPosition(0,i*CUBE_HALF_EXTENTS*2 - CUBE_HALF_EXTENTS,0);
+			}
+
 			float quatIma0,quatIma1,quatIma2,quatReal;
 			SimdQuaternion quat;
 			SimdVector3 axis(0,0,1);
-			SimdScalar angle=0.03f;
+			SimdScalar angle=0.5f;
 
 			quat.setRotation(axis,angle);
 
 			ms[i].setWorldOrientation(quat.getX(),quat.getY(),quat.getZ(),quat[3]);
-			*/
+			
 
+
+		} else
+		{
+			ms[i].setWorldPosition(0,-10+EXTRA_HEIGHT,0);
 			
 		}
 		
@@ -223,10 +243,60 @@ int main(int argc,char** argv)
 		physicsEnvironmentPtr->setDebugDrawer(&debugDrawer);
 		
 	}
+
+
+	//create a constraint
+	{
+		//physObjects[i]->SetAngularVelocity(0,0,-2,true);
+		int constraintId;
+
+		//0.0f, -1.0f, 1.0f
+
+			float pivotX=CUBE_HALF_EXTENTS,
+				pivotY=-CUBE_HALF_EXTENTS,
+				pivotZ=CUBE_HALF_EXTENTS;
+
+			float axisX=1,axisY=0,axisZ=0;
+
+		/*constraintId =physicsEnvironmentPtr->createConstraint(
+		physObjects[1],
+		//0,
+		physObjects[2],
+			//PHY_POINT2POINT_CONSTRAINT,
+			PHY_LINEHINGE_CONSTRAINT,
+			pivotX,pivotY,pivotZ,
+			axisX,axisY,axisZ
+			);
+
+			*/
+
+			HingeConstraint* hinge = 0;
+			
+			SimdVector3 pivotInA(CUBE_HALF_EXTENTS,-CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS);
+			SimdVector3 pivotInB(-CUBE_HALF_EXTENTS,-CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS);
+			SimdVector3 axisInA(0,1,0);
+			SimdVector3 axisInB(0,-1,0);
+
+			RigidBody* rb0 = physObjects[1]->GetRigidBody();
+			RigidBody* rb1 = physObjects[2]->GetRigidBody();
+			
+			hinge = new HingeConstraint(
+				*rb0,
+				*rb1,pivotInA,pivotInB,axisInA,axisInB);
+			
+			physicsEnvironmentPtr->m_constraints.push_back(hinge);
+			
+			hinge->SetUserConstraintId(100);
+			hinge->SetUserConstraintType(PHY_LINEHINGE_CONSTRAINT);
+			
+	}
+
+
+
 	
 	clientResetScene();
 
-	setCameraDistance(86.f);
+	setCameraDistance(26.f);
 
 	return glutmain(argc, argv,640,480,"Bullet Physics Demo. http://www.continuousphysics.com/Bullet/phpBB2/");
 }
@@ -238,6 +308,19 @@ void renderme()
 {
 	debugDrawer.SetDebugMode(getDebugMode());
 
+	//render the hinge axis
+	{
+		SimdVector3 color(1,0,0);
+		SimdVector3 dirLocal(0,1,0);
+		SimdVector3 pivotInA(CUBE_HALF_EXTENTS,-CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS);
+		SimdVector3 pivotInB(-CUBE_HALF_EXTENTS,-CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS);
+		SimdVector3 from = physObjects[1]->GetRigidBody()->getCenterOfMassTransform()(pivotInA);
+		SimdVector3 fromB = physObjects[2]->GetRigidBody()->getCenterOfMassTransform()(pivotInB);
+		SimdVector3 dirWorldA = physObjects[1]->GetRigidBody()->getCenterOfMassTransform().getBasis() * dirLocal ;
+		SimdVector3 dirWorldB = physObjects[2]->GetRigidBody()->getCenterOfMassTransform().getBasis() * dirLocal ;
+		debugDrawer.DrawLine(from,from+dirWorldA,color);
+		debugDrawer.DrawLine(fromB,fromB+dirWorldB,color);
+	}
 
 	float m[16];
 	int i;
@@ -263,7 +346,7 @@ void renderme()
 		transA.getOpenGLMatrix( m );
 		
 		
-		SimdVector3 wireColor(0.f,0.0f,0.5f); //wants deactivation
+		SimdVector3 wireColor(1.f,1.0f,0.5f); //wants deactivation
 		if (i & 1)
 		{
 			wireColor = SimdVector3(0.f,0.0f,1.f);
@@ -322,46 +405,59 @@ void renderme()
 
 	if (!(getDebugMode() & IDebugDraw::DBG_NoHelpText))
 	{
-		float yOffset = 40.f;
+		float yOffset = 10.f;
+		float xOffset = 0.f;
+		float yStart = 10.f;
+
+		float yIncr = -2.f;
+	
 		char buf[124];
 
-		glColor3f(1, 1, 1);
+		glColor3f(0, 0, 0);
 
-		glRasterPos3f(20,25+yOffset,0);
+		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"mouse + buttons to interact");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
-		
-		glRasterPos3f(20,20+yOffset,0);
+		yStart += yIncr;
+		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"space to reset");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
-		glRasterPos3f(20,15+yOffset,0);
+		yStart += yIncr;
+
+		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"c to show contact points");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
 
-		glRasterPos3f(20,10+yOffset,0);
+		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"cursor keys and z,x to navigate");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
 
-		glRasterPos3f(20,5+yOffset,0);
+		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"i to toggle simulation, s single step");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
 
-
-		glRasterPos3f(20,0+yOffset,0);
+		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"q to quit");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
 
-		glRasterPos3f(20,-5+yOffset,0);
+		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"d to toggle deactivation");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
 
-		glRasterPos3f(20,-10+yOffset,0);
+		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,". to shoot primitive");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
 
-		glRasterPos3f(20,-15+yOffset,0);
+		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"h to toggle help text");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
 
 	}
 
@@ -381,6 +477,30 @@ void clientMoveAndDisplay()
 
 }
 
+
+/*
+{
+		//physObjects[i]->SetAngularVelocity(0,0,-2,true);
+		int constraintId;
+
+			float pivotX=CUBE_HALF_EXTENTS,
+				pivotY=CUBE_HALF_EXTENTS,
+				pivotZ=CUBE_HALF_EXTENTS;
+			float axisX=0,axisY=1,axisZ=0;
+
+
+		constraintId =physicsEnvironmentPtr->createConstraint(
+		physObjects[1],
+		//0,
+		physObjects[2],
+			PHY_POINT2POINT_CONSTRAINT,
+			//PHY_LINEHINGE_CONSTRAINT,
+			pivotX,pivotY,pivotZ,
+			axisX,axisY,axisZ
+			);
+
+	}
+*/
 
 
 
@@ -405,6 +525,7 @@ void clientDisplay(void) {
 
 void clientResetScene()
 {
+
 	int i;
 	for (i=0;i<numObjects;i++)
 	{
@@ -611,7 +732,7 @@ void clientMouseFunc(int button, int state, int x, int y)
 
 							gOldPickingDist  = (pickPos-eyePos).length();
 
-							Point2PointConstraint* p2p = physicsEnvironmentPtr->getPoint2PointConstraint(gPickingConstraintId);
+							Point2PointConstraint* p2p = static_cast<Point2PointConstraint*>(physicsEnvironmentPtr->getConstraintById(gPickingConstraintId));
 							if (p2p)
 							{
 								//very weak constraint for picking
@@ -653,7 +774,7 @@ void	clientMotionFunc(int x,int y)
 		
 		//move the constraint pivot
 
-		Point2PointConstraint* p2p = physicsEnvironmentPtr->getPoint2PointConstraint(gPickingConstraintId);
+		Point2PointConstraint* p2p = static_cast<Point2PointConstraint*>(physicsEnvironmentPtr->getConstraintById(gPickingConstraintId));
 		if (p2p)
 		{
 			//keep it at the same picking distance
