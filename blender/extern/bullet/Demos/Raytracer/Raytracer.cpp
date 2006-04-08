@@ -264,14 +264,14 @@ void clientDisplay(void)
 
 				if (convexCaster.calcTimeOfImpact(rayFromTrans,rayToTrans,transforms[s],transforms[s],rayResult))
 				{
-					float fog = 1.f - 0.1f * rayResult.m_fraction;
+					//float fog = 1.f - 0.1f * rayResult.m_fraction;
 					rayResult.m_normal.normalize();
 
 					SimdVector3 worldNormal;
 					worldNormal = transforms[s].getBasis() *rayResult.m_normal;
 
 					float light = worldNormal.dot(SimdVector3(0.4f,-1.f,-0.4f));
-					if (light < 0.2)
+					if (light < 0.2f)
 						light = 0.2f;
 					if (light > 1.f)
 						light = 1.f;
