@@ -23,6 +23,10 @@ subject to the following restrictions:
 #include "SimdTransform.h"
 #include "CollisionShapes/ConvexHullShape.h"
 
+#include "CollisionShapes/BoxShape.h"
+
+
+
 #include "CollisionDispatch/CollisionWorld.h"
 #include "CollisionDispatch/CollisionObject.h"
 #include "CollisionDispatch/CollisionDispatcher.h"
@@ -69,13 +73,16 @@ int main(int argc,char** argv)
 	SimdPoint3	points0[3]={SimdPoint3(1,0,0),SimdPoint3(0,1,0),SimdPoint3(0,0,1)};
 	SimdPoint3	points1[5]={SimdPoint3(1,0,0),SimdPoint3(0,1,0),SimdPoint3(0,0,1),SimdPoint3(0,0,-1),SimdPoint3(-1,-1,0)};
 	
-	ConvexHullShape	hullA(points0,3);
-	hullA.setLocalScaling(SimdVector3(3,3,3));
-	ConvexHullShape	hullB(points1,4);
-	hullB.setLocalScaling(SimdVector3(4,4,4));
+	BoxShape boxA(SimdVector3(1,1,1));
+	BoxShape boxB(SimdVector3(0.5,0.5,0.5));
+	//ConvexHullShape	hullA(points0,3);
+	//hullA.setLocalScaling(SimdVector3(3,3,3));
+	//ConvexHullShape	hullB(points1,4);
+	//hullB.setLocalScaling(SimdVector3(4,4,4));
 
-	objects[0].m_collisionShape = &hullA;
-	objects[1].m_collisionShape = &hullB;
+
+	objects[0].m_collisionShape = &boxA;//&hullA;
+	objects[1].m_collisionShape = &boxB;//&hullB;
 
 	CollisionDispatcher dispatcher;
 	//SimpleBroadphase	broadphase;

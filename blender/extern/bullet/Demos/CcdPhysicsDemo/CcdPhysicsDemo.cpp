@@ -32,7 +32,7 @@ subject to the following restrictions:
 #include "ConstraintSolver/Point2PointConstraint.h"
 #include "ConstraintSolver/HingeConstraint.h"
 
-
+#include "quickprof.h"
 #include "IDebugDraw.h"
 
 #include "GLDebugDrawer.h"
@@ -41,6 +41,20 @@ subject to the following restrictions:
 #include "BMF_Api.h"
 #include <stdio.h> //printf debugging
 
+
+#ifdef WIN32
+#if _MSC_VER >= 1310
+//only use SIMD Hull code under Win32
+#define USE_HULL 1
+
+#include "NarrowPhaseCollision/Hull.h"
+
+#endif //_MSC_VER 
+#endif //WIN32
+
+
+
+
 #ifdef WIN32 //needed for glut.h
 #include <windows.h>
 #endif
@@ -48,6 +62,7 @@ subject to the following restrictions:
 #include "GL_ShapeDrawer.h"
 
 #include "GlutStuff.h"
+
 
 extern float eye[3];
 extern int glutScreenWidth;
@@ -73,7 +88,9 @@ CcdPhysicsEnvironment* physicsEnvironmentPtr = 0;
 #define EXTRA_HEIGHT -20.f
 //GL_LineSegmentShape shapeE(SimdPoint3(-50,0,0),
 //						   SimdPoint3(50,0,0));
-CollisionShape* shapePtr[4] = 
+static const int numShapes = 4;
+
+CollisionShape* shapePtr[numShapes] = 
 {
 	new BoxShape (SimdVector3(50,10,50)),
 	new BoxShape (SimdVector3(CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS)),
@@ -84,7 +101,7 @@ CollisionShape* shapePtr[4] =
 
 	//new EmptyShape(),
 	
-	//new BoxShape (SimdVector3(0.4,1,0.8))
+	new BoxShape (SimdVector3(0.4,1,0.8))
 
 };
 
@@ -148,10 +165,14 @@ int main(int argc,char** argv)
 			shapeIndex[i] = 0;
 	}
 
+
+
+
 	for (i=0;i<numObjects;i++)
 	{
 		shapeProps.m_shape = shapePtr[shapeIndex[i]];
 		shapeProps.m_shape->SetMargin(0.05f);
+		
 
 
 		bool isDyna = i>0;
@@ -325,6 +346,60 @@ void renderme()
 	float m[16];
 	int i;
 
+
+   if (getDebugMode() & IDebugDraw::DBG_DisableBulletLCP)
+   {
+	   //don't use Bullet, use quickstep
+	   physicsEnvironmentPtr->setSolverType(0);
+   } else
+   {
+	   //Bullet LCP solver
+	   physicsEnvironmentPtr->setSolverType(1);
+   }
+
+	   
+	bool isSatEnabled = (getDebugMode() & IDebugDraw::DBG_EnableSatComparison);
+
+	physicsEnvironmentPtr->EnableSatCollisionDetection(isSatEnabled);
+
+
+#ifdef USE_HULL
+	//some testing code for SAT
+	if (isSatEnabled)
+	{
+		for (int s=0;s<numShapes;s++)
+		{
+			CollisionShape* shape = shapePtr[s];
+
+			if (shape->IsPolyhedral())
+			{
+				PolyhedralConvexShape* polyhedron = static_cast<PolyhedralConvexShape*>(shape);
+				if (!polyhedron->m_optionalHull)
+				{
+					//first convert vertices in 'Point3' format
+					int numPoints = polyhedron->GetNumVertices();
+					Point3* points = new Point3[numPoints+1];
+					//first 4 points should not be co-planar, so add central point to satisfy MakeHull
+					points[0] = Point3(0.f,0.f,0.f);
+					
+					SimdVector3 vertex;
+					for (int p=0;p<numPoints;p++)
+					{
+						polyhedron->GetVertex(p,vertex);
+						points[p+1] = Point3(vertex.getX(),vertex.getY(),vertex.getZ());
+					}
+
+					Hull* hull = Hull::MakeHull(numPoints+1,points);
+					polyhedron->m_optionalHull = hull;
+				}
+
+			}
+		}
+
+	}
+#endif //USE_HULL
+
+
 	for (i=0;i<numObjects;i++)
 	{
 		SimdTransform transA;
@@ -405,9 +480,12 @@ void renderme()
 
 	if (!(getDebugMode() & IDebugDraw::DBG_NoHelpText))
 	{
-		float yOffset = 10.f;
-		float xOffset = 0.f;
-		float yStart = 10.f;
+
+	
+
+		
+		float xOffset = 10.f;
+		float yStart = 20.f;
 
 		float yIncr = -2.f;
 	
@@ -415,10 +493,33 @@ void renderme()
 
 		glColor3f(0, 0, 0);
 
+
+		if ( getDebugMode() & IDebugDraw::DBG_ProfileTimings)
+		{
+			static int counter = 0;
+			counter++;
+			std::map<std::string, hidden::ProfileBlock*>::iterator iter;
+			for (iter = Profiler::mProfileBlocks.begin(); iter != Profiler::mProfileBlocks.end(); ++iter)
+			{
+				char blockTime[128];
+				sprintf(blockTime, "%s: %lf",&((*iter).first[0]),Profiler::getBlockTime((*iter).first, Profiler::BLOCK_CYCLE_SECONDS));//BLOCK_TOTAL_PERCENT));
+				glRasterPos3f(xOffset,yStart,0);
+				BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),blockTime);
+				yStart += yIncr;
+
+			}
+		}
+
+		//profiling << Profiler::createStatsString(Profiler::BLOCK_TOTAL_PERCENT); 
+		//<< std::endl;
+
+		
+
 		glRasterPos3f(xOffset,yStart,0);
-		sprintf(buf,"mouse + buttons to interact");
+		sprintf(buf,"mouse to interact");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 		yStart += yIncr;
+
 		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"space to reset");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
@@ -458,6 +559,21 @@ void renderme()
 		sprintf(buf,"h to toggle help text");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 		yStart += yIncr;
+
+		bool useBulletLCP = !(getDebugMode() & IDebugDraw::DBG_DisableBulletLCP);
+
+		glRasterPos3f(xOffset,yStart,0);
+		sprintf(buf,"m Bullet GJK = %i",!isSatEnabled);
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
+
+		glRasterPos3f(xOffset,yStart,0);
+		sprintf(buf,"n Bullet LCP = %i",useBulletLCP);
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
+
+		
+
 
 	}
 

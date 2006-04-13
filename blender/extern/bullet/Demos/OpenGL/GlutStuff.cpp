@@ -178,6 +178,27 @@ void defaultKeyboard(unsigned char key, int x, int y)
 				sDebugMode |= IDebugDraw::DBG_DrawWireframe;
 		   break;
 
+   case 'p':
+	   if (sDebugMode & IDebugDraw::DBG_ProfileTimings)
+		sDebugMode = sDebugMode & (~IDebugDraw::DBG_ProfileTimings);
+	else
+		sDebugMode |= IDebugDraw::DBG_ProfileTimings;
+   break;
+
+   case 'm':
+	   if (sDebugMode & IDebugDraw::DBG_EnableSatComparison)
+		sDebugMode = sDebugMode & (~IDebugDraw::DBG_EnableSatComparison);
+	else
+		sDebugMode |= IDebugDraw::DBG_EnableSatComparison;
+   break;
+
+   case 'n':
+	   if (sDebugMode & IDebugDraw::DBG_DisableBulletLCP)
+		sDebugMode = sDebugMode & (~IDebugDraw::DBG_DisableBulletLCP);
+	else
+		sDebugMode |= IDebugDraw::DBG_DisableBulletLCP;
+   break;
+
 	case 't' : 
 			if (sDebugMode & IDebugDraw::DBG_DrawText)
 				sDebugMode = sDebugMode & (~IDebugDraw::DBG_DrawText);
