@@ -93,6 +93,7 @@ enum mod_constants {
 	EXPP_MOD_WAVE_LIFETIME,
 	EXPP_MOD_WAVE_TIMEOFFS,
 	EXPP_MOD_WAVE_FLAG,
+
 	EXPP_MOD_BOOLEAN_OPERATION,
 	EXPP_MOD_BOOLEAN_OBJECT,
 
@@ -106,6 +107,7 @@ enum mod_constants {
 /*****************************************************************************/
 static PyObject *Modifier_getName( BPy_Modifier * self );
 static int Modifier_setName( BPy_Modifier * self, PyObject *arg );
+
 static PyObject *Modifier_getKeys( BPy_Modifier * self );
 static PyObject *Modifier_moveUp( BPy_Modifier * self );
 static PyObject *Modifier_moveDown( BPy_Modifier * self );
@@ -134,8 +136,7 @@ static PyMethodDef BPy_Modifier_methods[] = {
 static PyGetSetDef BPy_Modifier_getseters[] = {
 	{"name",
 	(getter)Modifier_getName, (setter)Modifier_setName,
-	 "Modifier name",
-	 NULL},
+	 "Modifier name", NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
@@ -1015,6 +1016,49 @@ static PyObject *ModSeq_append( BPy_ModSeq *self, PyObject *args )
 	return Modifier_CreatePyObject( self->obj, self->obj->modifiers.last );
 }
 
+/*
+ * simple method to implement pseudo module constants
+ */
+
+static PyObject *ModSeq_typeConst( BPy_Modifier *self_unused, void *type )
+{
+	return PyInt_FromLong( (long)type );
+}
+
+/*****************************************************************************/
+/* Python BPy_ModSeq attributes get/set structure:                           */
+/*****************************************************************************/
+static PyGetSetDef BPy_ModSeq_getseters[] = {
+	{"SUBSURF",
+	 (getter)ModSeq_typeConst, (setter)NULL,
+	 NULL, (void *)eModifierType_Subsurf},
+	{"ARMATURE",
+	 (getter)ModSeq_typeConst, (setter)NULL,
+	 NULL, (void *)eModifierType_Armature},
+	{"LATTICE",
+	 (getter)ModSeq_typeConst, (setter)NULL,
+	 NULL, (void *)eModifierType_Lattice},
+	{"CURVE",
+	 (getter)ModSeq_typeConst, (setter)NULL,
+	 NULL, (void *)eModifierType_Curve},
+	{"BUILD",
+	 (getter)ModSeq_typeConst, (setter)NULL,
+	 NULL, (void *)eModifierType_Build},
+	{"MIRROR",
+	 (getter)ModSeq_typeConst, (setter)NULL,
+	 NULL, (void *)eModifierType_Mirror},
+	{"DECIMATE",
+	 (getter)ModSeq_typeConst, (setter)NULL,
+	 NULL, (void *)eModifierType_Decimate},
+	{"WAVE",
+	 (getter)ModSeq_typeConst, (setter)NULL,
+	 NULL, (void *)eModifierType_Wave},
+	{"BOOLEAN",
+	 (getter)ModSeq_typeConst, (setter)NULL,
+	 NULL, (void *)eModifierType_Boolean},
+	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
+};
+
 /*****************************************************************************/
 /* Python BPy_ModSeq methods table:                                          */
 /*****************************************************************************/
@@ -1088,7 +1132,7 @@ PyTypeObject ModSeq_Type = {
   /*** Attribute descriptor and subclassing stuff ***/
 	BPy_ModSeq_methods,         /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	NULL,                       /* struct PyGetSetDef *tp_getset; */
+	BPy_ModSeq_getseters,       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
