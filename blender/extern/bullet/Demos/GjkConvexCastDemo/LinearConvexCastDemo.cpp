@@ -27,6 +27,7 @@
 
 #include "NarrowPhaseCollision/GjkPairDetector.h"
 #include "NarrowPhaseCollision/GjkConvexCast.h"
+
 #include "NarrowPhaseCollision/ContinuousConvexCollision.h"
 #include "NarrowPhaseCollision/SubSimplexConvexCast.h"
 #include "NarrowPhaseCollision/BU_CollisionPair.h"

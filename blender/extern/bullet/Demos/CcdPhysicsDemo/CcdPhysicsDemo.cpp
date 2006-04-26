@@ -493,6 +493,7 @@ void renderme()
 
 		glColor3f(0, 0, 0);
 
+#ifdef USE_QUICKPROF
 
 		if ( getDebugMode() & IDebugDraw::DBG_ProfileTimings)
 		{
@@ -509,7 +510,7 @@ void renderme()
 
 			}
 		}
-
+#endif //USE_QUICKPROF
 		//profiling << Profiler::createStatsString(Profiler::BLOCK_TOTAL_PERCENT); 
 		//<< std::endl;
 
