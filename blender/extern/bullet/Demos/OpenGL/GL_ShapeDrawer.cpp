@@ -56,7 +56,7 @@ class GlDrawcallback : public TriangleCallback
 {
 public:
 
-	virtual void ProcessTriangle(SimdVector3* triangle)
+	virtual void ProcessTriangle(SimdVector3* triangle,int partId, int triangleIndex)
 	{
 		glBegin(GL_LINES);
 		glColor3f(1, 0, 0);

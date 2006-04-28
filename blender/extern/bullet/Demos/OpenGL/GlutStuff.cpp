@@ -223,6 +223,7 @@ void defaultKeyboard(unsigned char key, int x, int y)
 			else
 				sDebugMode |= IDebugDraw::DBG_DrawContactPoints;
 			break;
+
 		break;
 
 	case 'o' :
@@ -235,12 +236,12 @@ void defaultKeyboard(unsigned char key, int x, int y)
 	case ' ':
 		clientResetScene();
 			break;
-	case 'd':
+	case '1':
 		{
-			if (sDebugMode & IDebugDraw::DBG_NoDeactivation)
-				sDebugMode = sDebugMode & (~IDebugDraw::DBG_NoDeactivation);
+			if (sDebugMode & IDebugDraw::DBG_EnableCCD)
+				sDebugMode = sDebugMode & (~IDebugDraw::DBG_EnableCCD);
 			else
-				sDebugMode |= IDebugDraw::DBG_NoDeactivation;
+				sDebugMode |= IDebugDraw::DBG_EnableCCD;
 			break;
 		}
     default:

@@ -41,18 +41,16 @@ subject to the following restrictions:
 #include "BMF_Api.h"
 #include <stdio.h> //printf debugging
 
+float deltaTime = 1.f/60.f;
+float bulletSpeed = 40.f;
 
 #ifdef WIN32
 #if _MSC_VER >= 1310
 //only use SIMD Hull code under Win32
 #define USE_HULL 1
-
 #include "NarrowPhaseCollision/Hull.h"
-
 #endif //_MSC_VER 
 #endif //WIN32
-
-
 
 
 #ifdef WIN32 //needed for glut.h
@@ -124,8 +122,7 @@ int main(int argc,char** argv)
 
 	physicsEnvironmentPtr = new CcdPhysicsEnvironment(dispatcher,broadphase);
 	physicsEnvironmentPtr->setDeactivationTime(2.f);
-
-
+	
 	physicsEnvironmentPtr->setGravity(0,-10,0);
 	PHY_ShapeProps shapeProps;
 	
@@ -271,25 +268,13 @@ int main(int argc,char** argv)
 		//physObjects[i]->SetAngularVelocity(0,0,-2,true);
 		int constraintId;
 
-		//0.0f, -1.0f, 1.0f
-
 			float pivotX=CUBE_HALF_EXTENTS,
 				pivotY=-CUBE_HALF_EXTENTS,
 				pivotZ=CUBE_HALF_EXTENTS;
 
 			float axisX=1,axisY=0,axisZ=0;
 
-		/*constraintId =physicsEnvironmentPtr->createConstraint(
-		physObjects[1],
-		//0,
-		physObjects[2],
-			//PHY_POINT2POINT_CONSTRAINT,
-			PHY_LINEHINGE_CONSTRAINT,
-			pivotX,pivotY,pivotZ,
-			axisX,axisY,axisZ
-			);
-
-			*/
+		
 
 			HingeConstraint* hinge = 0;
 			
@@ -323,8 +308,6 @@ int main(int argc,char** argv)
 }
 
 //to be implemented by the demo
-
-
 void renderme()
 {
 	debugDrawer.SetDebugMode(getDebugMode());
@@ -355,6 +338,14 @@ void renderme()
    {
 	   //Bullet LCP solver
 	   physicsEnvironmentPtr->setSolverType(1);
+   }
+	
+   if (getDebugMode() & IDebugDraw::DBG_EnableCCD)
+   {
+	   physicsEnvironmentPtr->setCcdMode(3);
+   } else
+   {
+	   physicsEnvironmentPtr->setCcdMode(0);
    }
 
 	   
@@ -453,6 +444,7 @@ void renderme()
 		physObjects[i]->GetRigidBody()->GetCollisionShape()->SetExtraDebugInfo(extraDebug);
 		GL_ShapeDrawer::DrawOpenGL(m,physObjects[i]->GetRigidBody()->GetCollisionShape(),wireColor,getDebugMode());
 
+		///this block is just experimental code to show some internal issues with replacing shapes on the fly.
 		if (getDebugMode()!=0 && (i>0))
 		{
 			if (physObjects[i]->GetRigidBody()->GetCollisionShape()->GetShapeType() == EMPTY_SHAPE_PROXYTYPE)
@@ -480,9 +472,6 @@ void renderme()
 
 	if (!(getDebugMode() & IDebugDraw::DBG_NoHelpText))
 	{
-
-	
-
 		
 		float xOffset = 10.f;
 		float yStart = 20.f;
@@ -495,6 +484,7 @@ void renderme()
 
 #ifdef USE_QUICKPROF
 
+		
 		if ( getDebugMode() & IDebugDraw::DBG_ProfileTimings)
 		{
 			static int counter = 0;
@@ -527,11 +517,6 @@ void renderme()
 		yStart += yIncr;
 
 		glRasterPos3f(xOffset,yStart,0);
-		sprintf(buf,"c to show contact points");
-		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
-		yStart += yIncr;
-
-		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"cursor keys and z,x to navigate");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 		yStart += yIncr;
@@ -552,9 +537,10 @@ void renderme()
 		yStart += yIncr;
 
 		glRasterPos3f(xOffset,yStart,0);
-		sprintf(buf,". to shoot primitive");
+		sprintf(buf,"a to draw temporal AABBs");
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 		yStart += yIncr;
+
 
 		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"h to toggle help text");
@@ -562,6 +548,8 @@ void renderme()
 		yStart += yIncr;
 
 		bool useBulletLCP = !(getDebugMode() & IDebugDraw::DBG_DisableBulletLCP);
+
+		bool useCCD = (getDebugMode() & IDebugDraw::DBG_EnableCCD);
 
 		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"m Bullet GJK = %i",!isSatEnabled);
@@ -573,17 +561,25 @@ void renderme()
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 		yStart += yIncr;
 
-		
+		glRasterPos3f(xOffset,yStart,0);
+		sprintf(buf,"c CCD mode (adhoc) = %i",useCCD);
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
 
+		glRasterPos3f(xOffset,yStart,0);
+		sprintf(buf,"+- shooting speed = %10.2f",bulletSpeed);
+		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+		yStart += yIncr;
 
 	}
 
 }
+
 void clientMoveAndDisplay()
 {
 	 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-	float deltaTime = 1.f/60.f;
+	
 
 	physicsEnvironmentPtr->proceedDeltaTime(0.f,deltaTime);
 	
@@ -595,38 +591,15 @@ void clientMoveAndDisplay()
 }
 
 
-/*
-{
-		//physObjects[i]->SetAngularVelocity(0,0,-2,true);
-		int constraintId;
-
-			float pivotX=CUBE_HALF_EXTENTS,
-				pivotY=CUBE_HALF_EXTENTS,
-				pivotZ=CUBE_HALF_EXTENTS;
-			float axisX=0,axisY=1,axisZ=0;
-
-
-		constraintId =physicsEnvironmentPtr->createConstraint(
-		physObjects[1],
-		//0,
-		physObjects[2],
-			PHY_POINT2POINT_CONSTRAINT,
-			//PHY_LINEHINGE_CONSTRAINT,
-			pivotX,pivotY,pivotZ,
-			axisX,axisY,axisZ
-			);
-
-	}
-*/
-
-
 
 void clientDisplay(void) {
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-	renderme();
+	
+	physicsEnvironmentPtr->UpdateAabbs(deltaTime);
 
+	renderme();
 	
 
     glFlush();
@@ -637,8 +610,6 @@ void clientDisplay(void) {
 
 ///make this positive to show stack falling from a distance
 ///this shows the penalty tresholds in action, springy/spungy look
-
-
 
 void clientResetScene()
 {
@@ -680,23 +651,21 @@ void clientResetScene()
 			physObjects[i]->setOrientation(0,0,0,1);
 			physObjects[i]->SetLinearVelocity(0,0,0,false);
 			physObjects[i]->SetAngularVelocity(0,0,0,false);
-		} else
-		{
-			ms[i].setWorldPosition(0,-10-EXTRA_HEIGHT,0);
-		}
+		} 
 	}
 }
+
+
 
 void	shootBox(const SimdVector3& destination)
 {
 	int i  = numObjects-1;
 
 	
-
-	float speed = 40.f;
+	
 	SimdVector3 linVel(destination[0]-eye[0],destination[1]-eye[1],destination[2]-eye[2]);
 	linVel.normalize();
-	linVel*=speed;
+	linVel*=bulletSpeed;
 	
 	physObjects[i]->setPosition(eye[0],eye[1],eye[2]);
 	physObjects[i]->setOrientation(0,0,0,1);
@@ -711,6 +680,16 @@ void clientKeyboard(unsigned char key, int x, int y)
 	{
 		shootBox(SimdVector3(0,0,0));
 	}
+
+	if (key == '+')
+	{
+		bulletSpeed += 10.f;
+	}
+	if (key == '-')
+	{
+		bulletSpeed -= 10.f;
+	}
+
 	defaultKeyboard(key, x, y);
 }
 
