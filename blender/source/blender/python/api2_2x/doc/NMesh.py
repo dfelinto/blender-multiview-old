@@ -49,8 +49,6 @@ Example::
     - NOVNORMALSFLIP - no flipping of vertex normals during render.
     - TWOSIDED - double sided mesh.
     - AUTOSMOOTH - turn auto smoothing of faces "on".
-    - SUBSURF - turn Catmull-Clark subdivision of surfaces "on".
-    - OPTIMAL - optimal drawing of edges when "SubSurf" is "on".
 @var FaceFlags: The available *texture face* (uv face select mode) selection
   flags.  Note: these refer to TexFace faces, available if nmesh.hasFaceUV()
   returns true.
