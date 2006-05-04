@@ -147,10 +147,10 @@ static struct ImBuf *make_waveform_view_from_ibuf_float(struct ImBuf * ibuf)
 						 waveform_gamma)*255);
 	}
 
-	for (y = 0; y < h; y++) {
+	for (y = 0; y < ibuf->y; y++) {
 		unsigned char * last_p = 0;
 
-		for (x = 0; x < w; x++) {
+		for (x = 0; x < ibuf->x; x++) {
 			float * rgb = src + 4 * (ibuf->x * y + x);
 			float v = 1.0 * 
 				(  0.299*rgb[0] 
@@ -306,8 +306,8 @@ static struct ImBuf *make_vectorscope_view_from_ibuf_float(struct ImBuf * ibuf)
 		vectorscope_put_cross(x,          0,    255, tgt, w, h, 1);
 	}
 
-	for (y = 0; y < h; y++) {
-		for (x = 0; x < w; x++) {
+	for (y = 0; y < ibuf->y; y++) {
+		for (x = 0; x < ibuf->x; x++) {
 			float * src1 = src + 4 * (ibuf->x * y + x);
 			char * p;
 			
