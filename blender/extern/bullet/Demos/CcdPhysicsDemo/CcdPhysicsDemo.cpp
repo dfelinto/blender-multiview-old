@@ -228,11 +228,13 @@ int main(int argc,char** argv)
 		{
 			shapeProps.m_mass = 0.f;
 			ccdObjectCi.m_mass = shapeProps.m_mass;
+			ccdObjectCi.m_collisionFlags = CollisionObject::CollisionFlags::isStatic;
 		}
 		else
 		{
 			shapeProps.m_mass = 1.f;
 			ccdObjectCi.m_mass = shapeProps.m_mass;
+			ccdObjectCi.m_collisionFlags = 0;
 		}
 
 		
@@ -562,7 +564,7 @@ void renderme()
 		yStart += yIncr;
 
 		glRasterPos3f(xOffset,yStart,0);
-		sprintf(buf,"c CCD mode (adhoc) = %i",useCCD);
+		sprintf(buf,"1 CCD mode (adhoc) = %i",useCCD);
 		BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
 		yStart += yIncr;
 

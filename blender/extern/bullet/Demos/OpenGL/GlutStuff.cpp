@@ -224,7 +224,14 @@ void defaultKeyboard(unsigned char key, int x, int y)
 				sDebugMode |= IDebugDraw::DBG_DrawContactPoints;
 			break;
 
-		break;
+		case 'd' : 
+			if (sDebugMode & IDebugDraw::DBG_NoDeactivation)
+				sDebugMode = sDebugMode & (~IDebugDraw::DBG_NoDeactivation);
+			else
+				sDebugMode |= IDebugDraw::DBG_NoDeactivation;
+			break;
+
+		
 
 	case 'o' :
 		{
