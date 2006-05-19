@@ -67,7 +67,7 @@ class DocumentTranslator(object):
 ##    controllerLibrary = None
 ##    animationLibrary = None
 ##    materialLibrary = None
-##    textureLibrary = None
+    texturesLibrary = None
     lampsLibrary = None
     colladaDocument = None
     scenesLibrary = None
@@ -82,9 +82,13 @@ class DocumentTranslator(object):
         self.sceneGraph = SceneGraph(self)       
         self.lampsLibrary = LampsLibrary(self)
         self.colladaDocument = None
+        self.texturesLibrary = TexturesLibrary(self)
         self.camerasLibrary = CamerasLibrary(self)
         self.materialsLibrary = MaterialsLibrary(self)
         self.meshLibrary = MeshLibrary(self)
+        
+        
+        
         
         self.currentBScene = Blender.Scene.getCurrent()
         
@@ -109,6 +113,7 @@ class DocumentTranslator(object):
         # Setup the libraries
         self.camerasLibrary.SetDaeLibrary(self.colladaDocument.camerasLibrary)
         self.lampsLibrary.SetDaeLibrary(self.colladaDocument.lightsLibrary)
+        self.texturesLibrary.SetDaeLibrary(self.colladaDocument.imagesLibrary)
         self.materialsLibrary.SetDaeLibrary(self.colladaDocument.materialsLibrary)
         self.meshLibrary.SetDaeLibrary(self.colladaDocument.geometriesLibrary)
         
@@ -204,10 +209,14 @@ class SceneGraph(object):
         if debugMode:
             print "Delete everything from the scene.."
             bNodes = Blender.Object.Get()
-        
-            for bNode in bNodes:
-                self.document.currentBScene.unlink(bNode)   
-        
+            
+            newScene = Blender.Scene.New("new Scene")
+            newScene.makeCurrent()
+            Blender.Scene.Unlink(self.document.currentBScene)
+            self.document.currentBScene = newScene
+            ##self.document.currentBScene.unlink()
+##            for bNode in bNodes:
+##                pass#self.document.currentBScene.unlink(bNode)   
             
         if colladaScene == None:
             return False
@@ -379,7 +388,7 @@ class SceneNode(object):
         
     def SaveToDae(self,bNode,childNodes):
         daeNode = collada.DaeNode()
-        daeNode.id = daeNode.name = bNode.name +'-node'
+        daeNode.id = daeNode.name = bNode.name# +'-node'
         
         # Get the transformations
         if self.document.bakedTransform :
@@ -784,7 +793,23 @@ class MeshNode(object):
             # now we have to add this bindmaterial to the intance of this geometry
             bindMaterials.append(daeBindMaterial)
         return bindMaterials
+    
+class TextureNode(object):
+    def __init__(self, document):
+        self.document = document
         
+    def LoadFromDae(self, daeImage):
+        imageID = daeImage.id
+        imageName = daeImage.name
+        
+        bTexture = Blender.Texture.New(imageID)
+        bTexture.setType('Image')
+        img = Blender.Image.Load(daeImage.init_from)
+        
+        bTexture.setImage(img)
+        
+        return bTexture
+    
 class MaterialNode(object):
     def __init__(self, document):
         self.document = document
@@ -818,6 +843,11 @@ class MaterialNode(object):
                     if not (shader.diffuse.color is None):
                         color = shader.diffuse.color.rgba
                         bMat.setRGBCol(color[0],color[1], color[2])
+                    else: # Texture
+                        texture = shader.diffuse.texture.texture
+                        if not (texture is None):
+                            pass##bMat.setTexture(0,self.document.texturesLibrary.FindObject(texture, True))
+                        
                 bMat.setSpec(0)           
             
             if isinstance(shader, collada.DaeFxShadeBlinn) or isinstance(shader, collada.DaeFxShadePhong):
@@ -934,6 +964,8 @@ class LampNode(object):
         
         if daeLight.techniqueCommon.GetType() == collada.DaeSyntax.DIRECTIONAL:
             lamp.type = Blender.Lamp.Types.Sun
+        elif daeLight.techniqueCommon.GetType() == collada.DaeSyntax.POINT:
+            lamp.type = Blender.Lamp.Types.Lamp 
             # Get the attenuation
             constAtt = daeLight.techniqueCommon.constantAttenuation
             linAtt = daeLight.techniqueCommon.linearAttenuation
@@ -943,8 +975,6 @@ class LampNode(object):
                 lamp.dist = (lamp.energy/2)/ linAtt
             else:
                 lamp.dist = 5000.0
-        elif daeLight.techniqueCommon.GetType() == collada.DaeSyntax.POINT:
-            lamp.type = Blender.Lamp.Types.Lamp 
         elif daeLight.techniqueCommon.GetType() == collada.DaeSyntax.SPOT:
             lamp.type = Blender.Lamp.Types.Spot
             # Get the attenuation
@@ -1137,3 +1167,21 @@ class MaterialsLibrary(Library):
     def SaveToDae(self, id):
         pass
 
+class TexturesLibrary(Library):
+    
+    def LoadFromDae(self, daeImage):        
+        if daeImage is None:
+            Debug.Debug('TexturesLibrary: Object with this TARGET:%s does not exist'%(daeImage),'ERROR')
+            return
+        imageID = daeImage.id
+        imageName = daeImage.name
+        
+        textureNode = TextureNode(self.document)
+        bTexture = textureNode.LoadFromDae(daeImage)
+ 
+        # Add this texture in this library, under it's real name
+        self.objects[imageID] = [bTexture,bTexture.name]
+        return bTexture
+    
+    def SaveToDae(self, id):
+        pass

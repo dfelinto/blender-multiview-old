@@ -42,23 +42,26 @@ Blender.Window.WaitCursor(1)
 # indicates if the user can choose a file to import
 useDefaultFile = True
 
-# the location of the test file
-##defaultFileUrl = '\\examples\\test.xml'
-##defaultFileUrl = '\\examples\\mushroom140.dae'
-defaultFileUrl = '\\examples\\msphere.dae'
-defaultFileUrl = '\\examples\\test_out.xml'
-##defaultFileUrl = '\\examples\\mcube.dae'
-##defaultFileUrl = '\\examples\\mcube_simple.dae'
-##defaultFileUrl = '\\examples\\mcube_meter.dae'
-##defaultFileUrl = '\\examples\\seymour140.dae'
-
-# the location of the export test file
-defaultExportUrl = '\\examples\\test_out.xml'
-
 # the name of the dir which contains the subclasses 
 subClassesDir = 'colladaImEx'
 # the location of the scripts directory for Blender
 scriptsDir = os.path.join(Blender.Get('scriptsdir'), subClassesDir)
+
+# the location of the test file
+##defaultFileUrl = '\\examples\\test.xml'
+##defaultFileUrl = '\\examples\\mushroom140.dae'
+defaultFileUrl = scriptsDir + '\\examples\\msphere.dae'
+defaultFileUrl = scriptsDir + '\\examples\\test_out.xml'
+##defaultFileUrl = '\\examples\\mcube.dae'
+##defaultFileUrl = '\\examples\\mcube_simple.dae'
+##defaultFileUrl = '\\examples\\mcube_meter.dae'
+##defaultFileUrl = '\\examples\\seymour140.dae'
+defaultFileUrl = scriptsDir + '\\examples\\physics\\friction.dae'
+defaultFileUrl = scriptsDir + '\\examples\\mushroom140.dae'
+
+# the location of the export test file
+defaultExportUrl = scriptsDir + '\\examples\\test_out.xml'
+
 
 # append the path for the collada utils
 if scriptsDir not in sys.path:
@@ -140,7 +143,8 @@ def Main(doImp):
         #keep track of the time to execute this script
         startTime = Blender.sys.time()
         
-        fileurl = scriptsDir
+        ##fileurl = scriptsDir
+        fileurl = ''
         if doImport:
             fileurl+= defaultFileUrl
         else :
@@ -165,9 +169,15 @@ def Main(doImp):
             msg = 'Import .dae'
         else:
             msg = 'Export .dae'
-        defFilename = ''
+        defFilename = Blender.sys.dirname(Blender.sys.progname)+"\\"
+        colladaReg = Blender.Registry.GetKey('collada',True)
+            
+        if not (colladaReg is None) and 'path' in colladaReg and Blender.sys.exists(colladaReg['path']):
+            defFilename = colladaReg['path']
         if not doImport:
-            defFilename = Blender.Get('filename').rsplit('.',1)[0]+'.dae'
+            defFilename = colladaReg['path']
+            ##defFilename = Blender.Get('filename').rsplit('.',1)[0]+'.dae'
+        ##print Blender.Get('filename')
         Blender.Window.FileSelector(FileSelected,msg,defFilename)
     
 def ReloadModules():    
@@ -199,6 +209,9 @@ def FileSelected(fileName):
             extension = fileName.rsplit('.',1)[1].lower()
             if extension != 'xml' and extension != 'dae':
                 cutils.Debug.Debug('File(%s) is not a .dae or .xml file' % (fileName),'ERROR')
+        d = {}
+        d['path'] = fileName
+        Blender.Registry.SetKey('collada',d, True)
         transl = translator.Translator(doImport,__version__,debug,fileName)           
     else:
         cutils.Debug.Debug('ERROR: filename is empty','ERROR')

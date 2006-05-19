@@ -48,8 +48,24 @@ import Blender
 
 # the name of the dir which contains the subclasses 
 subClassesDir = 'colladaImEx'
+
 # the location of the scripts directory for Blender
-scriptsDir = os.path.join(Blender.Get('scriptsdir'), subClassesDir)
+if Blender.Get('scriptsdir'):
+    scriptsDir = os.path.join(Blender.Get('scriptsdir'), subClassesDir)
+else:
+    ######################## SET PATH TO FOLDER 'colladaImEx' here (if necessary)
+    
+    # Example:
+    
+    # scriptsDir = "C:/Blender/.blender/scripts/colladaImEx/
+    
+    scriptsDir = ""
+    
+    #############################################################################
+    
+    if scriptsDir == "":
+        Blender.Draw.PupMenu("Cannot find folder %t | Please set path in file 'colladaImEx\cstartup.py'")
+
 
 # append the path for the collada utils
 if scriptsDir not in sys.path:

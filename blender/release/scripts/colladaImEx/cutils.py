@@ -87,6 +87,8 @@ def ToInt(val):
     
 # Convert a string to a list of 3 floats e.g '1.0 2.0 3.0' -> [1.0, 2.0, 3.0]
 def ToFloat3(stringValue):
+    if stringValue is None:
+        return None
     split = stringValue.split( )
     return [ float( split[ 0 ] ), float( split[ 1 ] ), float( split[ 2 ] ) ]
 

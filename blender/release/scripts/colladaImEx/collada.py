@@ -1,4 +1,4 @@
-# --------------------------------------------------------------------------
+# -------------------------------------------------------------------------
 # Illusoft Collada 1.4 plugin for Blender version 0.2
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
@@ -50,13 +50,21 @@ class DaeDocument(object):
         self.controllersLibrary = DaeLibrary(DaeSyntax.LIBRARY_CONTROLLERS,DaeController,DaeSyntax.CONTROLLER)
         self.effectsLibrary = DaeLibrary(DaeSyntax.LIBRARY_EFFECTS,DaeFxEffect,DaeFxSyntax.EFFECT)
         self.geometriesLibrary = DaeLibrary(DaeSyntax.LIBRARY_GEOMETRIES,DaeGeometry,DaeSyntax.GEOMETRY)
+        self.imagesLibrary = DaeLibrary(DaeSyntax.LIBRARY_IMAGES, DaeImage, DaeSyntax.IMAGE)
         self.lightsLibrary = DaeLibrary(DaeSyntax.LIBRARY_LIGHTS,DaeLight,DaeSyntax.LIGHT)
         self.materialsLibrary = DaeLibrary(DaeSyntax.LIBRARY_MATERIALS,DaeFxMaterial,DaeFxSyntax.MATERIAL)
         self.nodesLibrary = DaeLibrary(DaeSyntax.LIBRARY_NODES, DaeNode, DaeSyntax.NODE)
         self.visualScenesLibrary = DaeLibrary(DaeSyntax.LIBRARY_VISUAL_SCENES,DaeVisualScene,DaeSyntax.VISUAL_SCENE)
         
+        # Physics Support
+        self.physicsMaterialsLibrary = DaeLibrary(DaeSyntax.LIBRARY_PHYSICS_MATERIALS, DaePhysicsMaterial, DaePhysicsSyntax.PHYSICS_MATERIAL)        
+        ##self.rigidBodiesLibrary = DaeLibrary(DaeSyntax.LIBRARY_RIGID_BODIES, DaeRigidBody, DaePhysicsSyntax.RIGID_BODY)        
+        self.physicsScenesLibrary = DaeLibrary(DaeSyntax.LIBRARY_PHYSICS_SCENES, DaePhysicsScene, DaePhysicsSyntax.PHYSICS_SCENE)        
         
+        self.physicsModelsLibrary = DaeLibrary(DaeSyntax.LIBRARY_PHYSICS_MODELS, DaePhysicsModel, DaePhysicsSyntax.PHYSICS_MODEL)
+                
         self.scene = None
+        self.physicsScene = None
         
     def LoadDocumentFromFile(self, filename):
         global debugMode
@@ -83,7 +91,8 @@ class DaeDocument(object):
         # get the extra elements
         self.extras = CreateObjectsFromXml(self,colladaNode,DaeSyntax.EXTRA,DaeExtra)
                 
-        # parse all the libraries        
+        # parse all the libraries
+        self.imagesLibrary.LoadFromXml(self,xmlUtils.FindElementByTagName(colladaNode,DaeSyntax.LIBRARY_IMAGES))
         self.animationsLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode,DaeSyntax.LIBRARY_IMAGES))
         self.animationClipsLibrary.LoadFromXml(self,xmlUtils.FindElementByTagName(colladaNode,DaeSyntax.LIBRARY_ANIMATION_CLIPS))
         self.camerasLibrary.LoadFromXml(self,xmlUtils.FindElementByTagName(colladaNode,DaeSyntax.LIBRARY_CAMERAS))
@@ -94,6 +103,11 @@ class DaeDocument(object):
         self.materialsLibrary.LoadFromXml(self,xmlUtils.FindElementByTagName(colladaNode,DaeSyntax.LIBRARY_MATERIALS))
         self.nodesLibrary.LoadFromXml(self,xmlUtils.FindElementByTagName(colladaNode,DaeSyntax.LIBRARY_NODES))
         self.visualScenesLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_VISUAL_SCENES))
+        
+        self.physicsMaterialsLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_PHYSICS_MATERIALS))
+        ##self.rigidBodiesLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_RIGID_BODIES))        
+        self.physicsModelsLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_PHYSICS_MODELS))
+        self.physicsScenesLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_PHYSICS_SCENES))
         
         # Get the sceneNodes
         sceneNodes = colladaNode.getElementsByTagName(DaeSyntax.SCENE)
@@ -127,10 +141,14 @@ class DaeDocument(object):
         AppendChild(self,colladaNode,self.controllersLibrary)
         AppendChild(self,colladaNode,self.effectsLibrary)
         AppendChild(self,colladaNode,self.geometriesLibrary)
+        AppendChild(self,colladaNode,self.imagesLibrary)
         AppendChild(self,colladaNode,self.lightsLibrary)
         AppendChild(self,colladaNode,self.materialsLibrary)
         AppendChild(self,colladaNode,self.nodesLibrary)
         AppendChild(self,colladaNode,self.visualScenesLibrary)
+        AppendChild(self,colladaNode,self.physicsMaterialsLibrary)
+        AppendChild(self,colladaNode,self.physicsModelsLibrary)
+        AppendChild(self,colladaNode,self.physicsScenesLibrary)        
         
         AppendChild(self,colladaNode,self.scene)
         
@@ -189,8 +207,8 @@ class DaeElement(DaeEntity):
     
     def SaveToXml(self, daeDocument):
         node = super(DaeElement,self).SaveToXml(daeDocument)
-        SetAttribute(node,DaeSyntax.ID,self.id.replace(" ","_").replace(".","_"))
-        SetAttribute(node,DaeSyntax.NAME, self.name.replace(" ","_").replace(".","_"))
+        SetAttribute(node,DaeSyntax.ID,StripString(self.id))
+        SetAttribute(node,DaeSyntax.NAME, StripString(self.name))
         return node
     
     def __str__(self):
@@ -316,16 +334,23 @@ class DaeScene(DaeEntity):
         if xmlNode is None:
             return
         self.iVisualScenes = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_VISUAL_SCENE, DaeVisualSceneInstance)
-        ##self.iPhysicsScenes = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_PHYSICS_SCENE, DaeInstancePhysicsScene)
+        self.iPhysicsScenes = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_PHYSICS_SCENE, DaePhysicsSceneInstance)
     
     def SaveToXml(self, daeDocument):
         node = super(DaeScene,self).SaveToXml(daeDocument)
         AppendChilds(daeDocument, node, self.iVisualScenes)
+        AppendChilds(daeDocument, node, self.iPhysicsScenes)
         return node
     
     def GetVisualScenes(self):
         result = []
         for i in self.iVisualScenes:
+            result.append(i.object)
+        return result
+    
+    def GetPhysicsScenes(self):
+        result = []
+        for i in self.iPhysicsScenes:
             result.append(i.object)
         return result
     
@@ -431,7 +456,32 @@ class DaeCamera(DaeElement):
 class DaeController(DaeElement):
     pass
 class DaeImage(DaeElement):
-    pass
+    def __init__(self):
+        super(DaeImage,self).__init__()
+        self.format = None
+        self.height = None
+        self.width = None
+        self.depth = None
+        self.init_from = None
+        self.syntax = DaeSyntax.IMAGE
+        
+    def LoadFromXml(self, daeDocument, xmlNode):
+        super(DaeImage, self).LoadFromXml(daeDocument, xmlNode)
+        self.format = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.FORMAT)
+        self.height = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.HEIGHT)
+        self.width = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.WIDTH)
+        self.depth = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.DEPTH)
+        self.init_from = xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.INIT_FROM))  
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaeImage, self).SaveToXml(daeDocument)
+        SetAttribute(node, DaeSyntax.FORMAT, self.format)
+        SetAttribute(node, DaeSyntax.HEIGHT, self.height)
+        SetAttribute(node, DaeSyntax.WIDTH, self.width)
+        SetAttribute(node, DaeSyntax.DEPTH, self.depth)
+        AppendTextChild(node, DaeSyntax.INIT_FROM,self.init_from, None)
+        return node
+    
 ##class DaeMaterial(DaeElement):
 ##    def __init__(self):
 ##        super(DaeMaterial,self).__init__()
@@ -583,7 +633,7 @@ class DaeInput(DaeEntity):
         node = super(DaeInput, self).SaveToXml(daeDocument)
         SetAttribute(node,DaeSyntax.OFFSET, self.offset)
         SetAttribute(node,DaeSyntax.SEMANTIC, self.semantic)
-        SetAttribute(node,DaeSyntax.SOURCE, '#'+self.source.replace(" ","_").replace(".","_"))
+        SetAttribute(node,DaeSyntax.SOURCE, StripString('#'+self.source))
         SetAttribute(node,DaeSyntax.SET, self.set)
         return node
 
@@ -1148,7 +1198,7 @@ class DaeAccessor(DaeEntity):
         node = super(DaeAccessor,self).SaveToXml(daeDocument)
         node.setAttribute(DaeSyntax.COUNT, str(self.count))
         SetAttribute(node,DaeSyntax.OFFSET, self.offset)
-        node.setAttribute(DaeSyntax.SOURCE, '#'+self.source)
+        node.setAttribute(DaeSyntax.SOURCE, StripString('#'+self.source))
         SetAttribute(node, DaeSyntax.STRIDE, len(self.params))
         AppendChilds(daeDocument, node, self.params)
         return node
@@ -1248,6 +1298,7 @@ class DaeIDREFArray(DaeArray):
     def LoadFromXml(self, daeDocument, xmlNode):
         super(DaeIDREFArray, self).LoadFromXml(daeDocument, xmlNode)
         ##self.data = ToFloatList(self.data)
+
 
 #---Primitive Classes---
 class DaePrimitive(DaeEntity):
@@ -1679,7 +1730,14 @@ class DaeSyntax(object):
     INSTANCE_LIGHT = 'instance_light'
     INSTANCE_NODE = 'instance_node'
     INSTANCE_VISUAL_SCENE = 'instance_visual_scene'
-
+    INSTANCE_PHYSICS_SCENE = 'instance_physics_scene'
+    
+    #---image---
+    FORMAT = 'format'
+    DEPTH = 'depth'
+    HEIGHT = 'height'
+    WIDTH = 'width'
+    INIT_FROM = 'init_from'
 
 class DaeFxBindMaterial(DaeEntity):
     def __init__(self):
@@ -1727,7 +1785,7 @@ class DaeFxMaterialInstance(DaeEntity):
         
     def SaveToXml(self, daeDocument):
         node = super(DaeFxMaterialInstance,self).SaveToXml(daeDocument)
-        SetAttribute(node, DaeFxSyntax.TARGET, '#'+self.object.id)
+        SetAttribute(node, DaeFxSyntax.TARGET, StripString('#'+self.object.id))
         SetAttribute(node, DaeFxSyntax.SYMBOL, self.object.id)
         return node
         
@@ -2063,13 +2121,18 @@ class DaeFxColor(DaeEntity):
 class DaeFxTexture(DaeEntity):
     def __init__(self):
         super(DaeFxTexture, self).__init__()
+        self.texture = ''
+        self.textCoord = ''
         self.syntax = DaeFxSyntax.TEXTURE
         
     def LoadFromXml(self, daeDocument, xmlNode):
-        super(DaeFxTexture, self).LoadFromXml(daeDocument, xmlNode)
+        self.texture = daeDocument.imagesLibrary.FindObject(xmlUtils.ReadAttribute(xmlNode, DaeFxSyntax.TEXTURE))
+        self.textCoord = xmlUtils.ReadAttribute(xmlNode, DaeFxSyntax.TEXCOORD)
         
     def SaveToXml(self, daeDocument):
         node = super(DaeFxTexture,self).SaveToXml(daeDocument)
+        SetAttribute(node, DaeFxSyntax.TEXTURE, self.texture)
+        SetAttribute(node, DaeFxSyntax.TEXCOORD, self.textCoord)
         return node
     
 class DaeFxSyntax(object):
@@ -2085,6 +2148,7 @@ class DaeFxSyntax(object):
     TRANSPARENCY = 'transparency'
     INDEXOFREFRACTION = 'index_of_refraction'
     TEXTURE = 'texture'
+    TEXCOORD = 'texcoord'
     AMBIENT = 'ambient'
     DIFFUSE = 'diffuse'    
     
@@ -2111,7 +2175,251 @@ class DaeFxSyntax(object):
     LAMBERT = 'lambert'
     
     FLOAT ='float'
+#---COLLADA PHYSICS---
+class DaePhysicsScene(DaeElement):
+    def __init__(self):
+        super(DaePhysicsScene,self).__init__()
+        self.asset = None
+        self.extras = None
+        self.iPhysicsModels = []
+        self.syntax = DaePhysicsSyntax.PHYSICS_SCENE       
+        
+    def LoadFromXml(self, daeDocument, xmlNode):
+        super(DaePhysicsScene, self).LoadFromXml(daeDocument, xmlNode)
+        self.extras = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.EXTRA, DaeExtra)
+        self.asset = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.ASSET, DaeAsset)
+        self.iPhysicsModels = CreateObjectsFromXml(daeDocument, xmlNode, DaePhysicsSyntax.INSTANCE_PHYSICS_MODEL, DaePhysicsModelInstance)
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaePhysicsScene, self).SaveToXml(daeDocument)
+        # Add the assets
+        AppendChild(daeDocument,node,self.asset)
+        # Add the phyics models
+        AppendChilds(daeDocument, node, self.iPhysicsModels)
+        # Add the extra's
+        AppendChilds(self,node,self.extras)
+        return node
+        
+    def __str__(self):
+        return super(DaePhysicsScene,self).__str__()+' asset: %s, iPhysicsModels: %s, extras: %s'%(self.asset, self.iPhysicsModels, self.extras)
+ 
+class DaePhysicsModelInstance(DaeInstance):
+    def __init__(self):
+        super(DaePhysicsModelInstance, self).__init__()        
+        self.syntax = DaePhysicsSyntax.INSTANCE_PHYSICS_MODEL
+        self.iRidigBodies = []
+        
+    def LoadFromXml(self, daeDocument, xmlNode):
+        super(DaePhysicsModelInstance,self).LoadFromXml(daeDocument, xmlNode)
+        self.object = daeDocument.physicsModelsLibrary.FindObject(self.url)
+        self.iRigidBodies = self.CreateInstanceRigidBodies(daeDocument, xmlNode, self.object)
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaePhysicsModelInstance,self).SaveToXml(daeDocument)
+        AppendChilds(daeDocument, node, self.iRidigBodies)
+        return node
     
+    def CreateInstanceRigidBodies(self, daeDocument, xmlNode, physicsModel):
+        objects = []
+        CreateObjectsFromXml(daeDocument, xmlNode, DaePhysicsSyntax.INSTANCE_RIGID_BODY, DaeRigidBodyInstance)
+        nodes = xmlUtils.FindElementsByTagName(xmlNode,DaePhysicsSyntax.INSTANCE_RIGID_BODY)
+        for node in nodes:
+            object = DaeRigidBodyInstance()
+            object.LoadFromXml(daeDocument, node)
+            print object
+            object.object = physicsModel.FindRigidBody(object.url)
+            objects.append(object)
+        return objects
+        
+    
+class DaePhysicsSceneInstance(DaeInstance):
+    def __init__(self):
+        super(DaePhysicsSceneInstance, self).__init__()
+        self.syntax = DaeSyntax.INSTANCE_PHYSICS_SCENE
+        
+    def LoadFromXml(self, daeDocument, xmlNode):
+        super(DaePhysicsSceneInstance,self).LoadFromXml(daeDocument, xmlNode)
+        self.object = daeDocument.physicsScenesLibrary.FindObject(self.url)
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaePhysicsSceneInstance,self).SaveToXml(daeDocument)
+        return node
+    
+class DaePhysicsMaterialInstance(DaeInstance):
+    def __init__(self):
+        super(DaePhysicsMaterialInstance, self).__init__()        
+        self.syntax = DaePhysicsSyntax.INSTANCE_PHYSICS_MATERIAL
+        
+    def LoadFromXml(self, daeDocument, xmlNode):        
+        super(DaePhysicsMaterialInstance,self).LoadFromXml(daeDocument, xmlNode)
+        self.object = daeDocument.physicsMaterialsLibrary.FindObject(self.url)
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaePhysicsMaterialInstance,self).SaveToXml(daeDocument)
+        return node
+    
+class DaeRigidBodyInstance(DaeInstance):
+    def __init__(self):
+        super(DaeRigidBodyInstance, self).__init__()        
+        self.syntax = DaePhysicsSyntax.INSTANCE_RIGID_BODY
+        self.object = None
+        
+    def LoadFromXml(self, daeDocument, xmlNode):        
+        super(DaeRigidBodyInstance,self).LoadFromXml(daeDocument, xmlNode)
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaeRigidBodyInstance,self).SaveToXml(daeDocument)
+        return node
+    
+class DaePhysicsModel(DaeElement):
+    def __init__(self):
+        super(DaePhysicsModel,self).__init__()
+        self.syntax = DaePhysicsSyntax.PHYSICS_MODEL
+        self.rigidBodies = []
+    
+    def LoadFromXml(self, daeDocument, xmlNode):
+        super(DaePhysicsModel, self).LoadFromXml(daeDocument, xmlNode)
+        self.rigidBodies = CreateObjectsFromXml(daeDocument, xmlNode, DaePhysicsSyntax.RIGID_BODY, DaeRigidBody)        
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaePhysicsModel, self).SaveToXml(daeDocument)
+        # Add the rigid bodies
+        AppendChilds(daeDocument, node, self.rigidBodies)
+        return node
+    
+    def FindRigidBody(self, url):
+        print url
+        return None
+
+class DaePhysicsMaterial(DaeElement):
+    def __init__(self):
+        super(DaePhysicsMaterial,self).__init__()
+        self.syntax = DaePhysicsSyntax.PHYSICS_MATERIAL
+        self.techniqueCommon = DaePhysicsMaterial.DaeTechniqueCommon()
+    
+    def LoadFromXml(self, daeDocument, xmlNode):
+        super(DaePhysicsMaterial, self).LoadFromXml(daeDocument, xmlNode)
+        self.techniqueCommon = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.TECHNIQUE_COMMON, DaePhysicsMaterial.DaeTechniqueCommon)        
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaePhysicsMaterial, self).SaveToXml(daeDocument)
+        AppendChild(daeDocument,node,self.techniqueCommon)
+        return node
+    
+    class DaeTechniqueCommon(DaeEntity):
+        def __init__(self):
+            super(DaePhysicsMaterial.DaeTechniqueCommon,self).__init__()
+            self.syntax = DaeSyntax.TECHNIQUE_COMMON
+            self.dynamicFriction = 0
+            self.restitution = 0
+            self.staticFriction = 0
+            
+        def LoadFromXml(self, daeDocument, xmlNode):
+            self.dynamicFriction = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.DYNAMIC_FRICTION, float, 0)
+            #print self.dynamicFriction
+            self.restitution = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.RESTITUTION,  float, 0)
+            self.staticFriction = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.STATIC_FRICTION, float, 0)
+        
+        def SaveToXml(self, daeDocument):
+            node = super(DaePhysicsMaterial.DaeTechniqueCommon,self).SaveToXml(daeDocument)
+            AppendTextChild(node, DaePhysicsSyntax.DYNAMIC_FRICTION, self.dynamicFriction, None)
+            AppendTextChild(node, DaePhysicsSyntax.RESTITUTION, self.restitution, None)
+            AppendTextChild(node, DaePhysicsSyntax.STATIC_FRICTION, self.staticFriction, None)
+            return node
+        
+        def __str__(self):
+            return super(DaePhysicsMaterial.DaeTechniqueCommon,self).__str__()
+    
+class DaeRigidBody(DaeEntity):
+    def __init__(self):
+        super(DaeRigidBody, self).__init__()
+        self.syntax = DaePhysicsSyntax.RIGID_BODY
+        self.name = ''
+        self.techniqueCommon = DaeRigidBody.DaeTechniqueCommon()
+    
+    def LoadFromXml(self, daeDocument, xmlNode):
+        self.name = xmlNode.getAttribute(DaeSyntax.NAME)
+        self.techniqueCommon = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.TECHNIQUE_COMMON, DaeRigidBody.DaeTechniqueCommon)        
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaeRigidBody, self).SaveToXml(daeDocument)
+        SetAttribute(node,DaeSyntax.NAME, StripString(self.name))
+        AppendChild(daeDocument,node,self.techniqueCommon)
+        return node
+    
+    class DaeTechniqueCommon(DaeEntity):
+        def __init__(self):
+            super(DaeRigidBody.DaeTechniqueCommon, self).__init__()
+            self.syntax = DaeSyntax.TECHNIQUE_COMMON
+            self.iPhysicsMaterial = None
+            self.physicsMaterial = None
+            self.dynamic = True 
+            self.mass = None
+            self.inertia = None
+            self.shapes = []
+            
+        def LoadFromXml(self, daeDocument, xmlNode):
+            self.iPhysicsMaterial = CreateObjectFromXml(daeDocument, xmlNode, DaePhysicsSyntax.INSTANCE_PHYSICS_MATERIAL, DaePhysicsMaterialInstance)        
+            self.physicsMaterial = CreateObjectFromXml(daeDocument, xmlNode, DaePhysicsSyntax.PHYSICS_MATERIAL, DaePhysicsMaterial)        
+            self.dynamic = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.DYNAMIC,bool,True)
+            self.mass = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.MASS, float, None)
+            self.inertia = ToFloat3(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode,DaePhysicsSyntax.INERTIA)))
+            self.shapes = CreateObjectsFromXml(daeDocument, xmlNode, DaePhysicsSyntax.SHAPE, DaeShape)
+        
+        def SaveToXml(self, daeDocument):
+            node = super(DaeRigidBody.DaeTechniqueCommon,self).SaveToXml(daeDocument)
+            AppendChild(daeDocument,node,self.iPhysicsMaterial)
+            AppendChild(daeDocument,node,self.physicsMaterial)
+            AppendChilds(daeDocument, node, self.shapes)
+            AppendTextChild(node, DaePhysicsSyntax.DYNAMIC, self.dynamic, None)
+            AppendTextChild(node, DaePhysicsSyntax.MASS, self.mass, None)
+            AppendTextChild(node, DaePhysicsSyntax.INERTIA, self.inertia, None)
+            return node
+        
+        def __str__(self):
+            return super(DaeRigidBody.DaeTechniqueCommon,self).__str__()
+        
+class DaeShape(DaeEntity):
+    def __init__(self):
+        super(DaeShape, self).__init__()
+        self.iGeomety = None
+        self.mass = None
+        self.density = None
+        self.syntax = DaePhysicsSyntax.SHAPE
+        
+    def LoadFromXml(self, daeDocument, xmlNode):
+        self.iGeometry = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_GEOMETRY,DaeGeometryInstance)
+        self.mass = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.MASS, float, None)
+        self.density = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.DENSITY, float, None)
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaeShape, self).SaveToXml(daeDocument)
+        AppendChild(daeDocument, node, self.iGeometry)
+        AppendTextChild(node, DaePhysicsSyntax.MASS, self.mass, None)
+        AppendTextChild(node, DaePhysicsSyntax.DENSITY, self.density, None)
+        return node
+    
+class DaePhysicsSyntax(object):
+    PHYSICS_SCENE = 'physics_scene'
+    PHYSICS_MODEL = 'physics_model'
+    PHYSICS_MATERIAL = 'physics_material'
+    
+    RIGID_BODY = 'rigid_body'
+    
+    INSTANCE_PHYSICS_MODEL = 'instance_physics_model'
+    INSTANCE_PHYSICS_MATERIAL = 'instance_physics_material'
+    INSTANCE_RIGID_BODY = 'instance_rigid_body'
+    
+    RESTITUTION = 'restitution'
+    STATIC_FRICTION = 'static_friction'
+    DYNAMIC_FRICTION = 'dynamic_friction'
+    
+    DYNAMIC = 'dynamic'
+    MASS = 'mass'
+    INERTIA = 'inertia'
+    SHAPE = 'shape'
+    DENSITY = 'density'    
+
 #---Functions---
 def CreateObjectsFromXml(colladaDocument, xmlNode, nodeType, objectType):
     if xmlNode is None:
@@ -2143,7 +2451,13 @@ def CastFromXml(colladaDocument, xmlNode, nodeType, cast, default=None):
         return default
     node = xmlUtils.FindElementByTagName(xmlNode, nodeType)
     if node != None:
-        return cast(xmlUtils.ReadContents(node))
+        textValue = xmlUtils.ReadContents(node)
+        if cast == bool:
+            if textValue.lower() == 'false':
+                return False
+            else:
+                return True
+        return cast(textValue)
     return default
         
 def CastAttributeFromXml(xmlNode, nodeType, cast, default=None):
@@ -2194,6 +2508,8 @@ def AppendTextInChild(xmlNode, object):
         text.data = ListToString(object)
     elif type(object) == float:
         text.data = round(object, ROUND)
+    elif type(object) == bool:
+        text.data = str(object).lower()
     else:
         text.data = str(object)
     xmlNode.appendChild(text)
@@ -2214,7 +2530,7 @@ def ReadNodeUrl(node):
     return None
 
 def WriteNodeUrl(node, url):
-    node.setAttribute(DaeSyntax.URL, '#'+url.replace(" ","_").replace(".","_"))
+    node.setAttribute(DaeSyntax.URL, StripString('#'+url))
     
 def IsVersionOk(version, curVersion):
     versionAr = version.split('.')
@@ -2223,3 +2539,6 @@ def IsVersionOk(version, curVersion):
         if versionAr[i] != curVersionAr[i]:
             return False
     return True
+
+def StripString(text):
+    return text.replace(' ','_').replace('.','_')
