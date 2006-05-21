@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2
+# Illusoft Collada 1.4 plugin for Blender version 0.2.16
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -27,6 +27,7 @@ import xmlUtils
 from cutils import *
 from datetime import *
 
+# The number of decimals to export floats to
 ROUND = 5
 
 # TODO: finish DaeDocument
@@ -539,7 +540,7 @@ class DaeGeometry(DaeElement):
         return node
         
     def __str__(self):
-        return super(DaeLight,self).__str__()+' assets: %s, data: %s, extras: %s'%(self.asset, self.data, self.extras)
+        return super(DaeGeometry,self).__str__()+' assets: %s, data: %s, extras: %s'%(self.asset, self.data, self.extras)
 
 class DaeMesh(DaeEntity):
     def __init__(self):
@@ -885,6 +886,13 @@ class DaeVisualScene(DaeElement):
         # Add the extra's
         AppendChilds(self,node,self.extras)
         return node
+    
+    def FindNode(self, nodeUrl):
+        for n in self.nodes:
+            if n.id == nodeUrl:
+                return n
+        return None
+        
         
     def __str__(self):
         return super(DaeVisualScene,self).__str__()+' asset: %s, nodes: %s, extras: %s'%(self.asset, self.nodes, self.extras)
@@ -1473,7 +1481,7 @@ class DaeControllerInstance(DaeInstance):
     def LoadFromXml(self, daeDocument, xmlNode):
         super(DaeControllerInstance,self).LoadFromXml(daeDocument, xmlNode)
         self.skeletons = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.SKELETON, DaeSkeleton)
-        self.bindMaterials = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.BIND_MATERIAL, DaeBindMaterial)
+        self.bindMaterials = CreateObjectsFromXml(daeDocument, xmlNode, DaeFxSyntax.BIND_MATERIAL, DaeFxBindMaterial)
         self.object = daeDocument.controllersLibrary.FindObject(self.url)
         
     def SaveToXml(self, daeDocument):
@@ -1573,6 +1581,9 @@ class DaeSyntax(object):
     COLLADA = 'COLLADA'
     VERSION = 'version'
     XMLNS = 'xmlns'
+    
+    BODY = 'body'
+    TARGET = 'target'
     
     ASSET = 'asset'
     
@@ -2216,7 +2227,7 @@ class DaePhysicsModelInstance(DaeInstance):
         
     def SaveToXml(self, daeDocument):
         node = super(DaePhysicsModelInstance,self).SaveToXml(daeDocument)
-        AppendChilds(daeDocument, node, self.iRidigBodies)
+        AppendChilds(daeDocument, node, self.iRigidBodies)
         return node
     
     def CreateInstanceRigidBodies(self, daeDocument, xmlNode, physicsModel):
@@ -2226,8 +2237,13 @@ class DaePhysicsModelInstance(DaeInstance):
         for node in nodes:
             object = DaeRigidBodyInstance()
             object.LoadFromXml(daeDocument, node)
-            print object
-            object.object = physicsModel.FindRigidBody(object.url)
+            object.body = physicsModel.FindRigidBody(object.bodyString)
+            n = None
+            for visualScene in daeDocument.visualScenesLibrary.items:
+                n = visualScene.FindNode(object.targetString)
+                if not (n is None):
+                    break
+            object.target = n
             objects.append(object)
         return objects
         
@@ -2258,17 +2274,23 @@ class DaePhysicsMaterialInstance(DaeInstance):
         node = super(DaePhysicsMaterialInstance,self).SaveToXml(daeDocument)
         return node
     
-class DaeRigidBodyInstance(DaeInstance):
+class DaeRigidBodyInstance(DaeEntity):
     def __init__(self):
         super(DaeRigidBodyInstance, self).__init__()        
         self.syntax = DaePhysicsSyntax.INSTANCE_RIGID_BODY
-        self.object = None
+        self.body = None
+        self.target = None
+        self.bodyString = ''
+        self.targetString = ''
         
     def LoadFromXml(self, daeDocument, xmlNode):        
-        super(DaeRigidBodyInstance,self).LoadFromXml(daeDocument, xmlNode)
+        self.bodyString = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.BODY)
+        self.targetString = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.TARGET)[1:]
         
     def SaveToXml(self, daeDocument):
         node = super(DaeRigidBodyInstance,self).SaveToXml(daeDocument)
+        SetAttribute(node, DaeSyntax.BODY, self.body.sid)
+        SetAttribute(node, DaeSyntax.TARGET, StripString('#'+self.target.id))        
         return node
     
 class DaePhysicsModel(DaeElement):
@@ -2288,7 +2310,9 @@ class DaePhysicsModel(DaeElement):
         return node
     
     def FindRigidBody(self, url):
-        print url
+        for rigidBody in self.rigidBodies:
+            if rigidBody.sid == url:
+                return rigidBody
         return None
 
 class DaePhysicsMaterial(DaeElement):
@@ -2335,15 +2359,18 @@ class DaeRigidBody(DaeEntity):
         super(DaeRigidBody, self).__init__()
         self.syntax = DaePhysicsSyntax.RIGID_BODY
         self.name = ''
+        self.sid = ''
         self.techniqueCommon = DaeRigidBody.DaeTechniqueCommon()
     
     def LoadFromXml(self, daeDocument, xmlNode):
         self.name = xmlNode.getAttribute(DaeSyntax.NAME)
+        self.sid = xmlNode.getAttribute(DaeSyntax.SID)
         self.techniqueCommon = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.TECHNIQUE_COMMON, DaeRigidBody.DaeTechniqueCommon)        
         
     def SaveToXml(self, daeDocument):
         node = super(DaeRigidBody, self).SaveToXml(daeDocument)
         SetAttribute(node,DaeSyntax.NAME, StripString(self.name))
+        SetAttribute(node,DaeSyntax.SID, StripString(self.sid))
         AppendChild(daeDocument,node,self.techniqueCommon)
         return node
     
@@ -2364,7 +2391,45 @@ class DaeRigidBody(DaeEntity):
             self.dynamic = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.DYNAMIC,bool,True)
             self.mass = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.MASS, float, None)
             self.inertia = ToFloat3(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode,DaePhysicsSyntax.INERTIA)))
-            self.shapes = CreateObjectsFromXml(daeDocument, xmlNode, DaePhysicsSyntax.SHAPE, DaeShape)
+            
+            shapeNodes = xmlUtils.FindElementsByTagName(xmlNode, DaePhysicsSyntax.SHAPE)
+            for shapeNode in shapeNodes:
+                s = xmlUtils.FindElementByTagName(shapeNode, DaePhysicsSyntax.BOX)
+                b = None
+                if not (s is None):
+                    b = DaeBox()
+                else:
+                    s = xmlUtils.FindElementByTagName(shapeNode, DaePhysicsSyntax.SPHERE)
+                    if not (s is None):
+                        b = DaeSphere()
+                    else:
+                        s = xmlUtils.FindElementByTagName(shapeNode, DaePhysicsSyntax.PLANE)
+                        if not (s is None):
+                            b = DaePlane()
+                        else:
+                            s = xmlUtils.FindElementByTagName(shapeNode, DaeSyntax.INSTANCE_GEOMETRY)
+                            if not (s is None):
+                                b = DaeGeometryShape()
+                            else:
+                                s = xmlUtils.FindElementByTagName(shapeNode, DaePhysicsSyntax.CYLINDER)
+                                if not (s is None):
+                                    b = DaeCylinder()
+                                else:
+                                    s = xmlUtils.FindElementByTagName(shapeNode, DaePhysicsSyntax.TAPERED_CYLINDER)
+                                    if not (s is None):
+                                        b = DaeTaperedCylinder()
+                                    else:
+                                        s = xmlUtils.FindElementByTagName(shapeNode, DaePhysicsSyntax.CAPSULE)
+                                        if not (s is None):
+                                            b = DaeCapsule()
+                                        else: # TAPERED_CAPSULE
+                                            b = DaeTaperedCapsule()
+                b.LoadFromXml(daeDocument, s)
+                self.shapes.append(b)
+                
+            ##print self.shapes
+            ##boxes = CreateObjectsFromXml(daeDocument, xmlUtils
+            ##self.shapes = CreateObjectsFromXml(daeDocument, xmlNode, DaePhysicsSyntax.SHAPE, DaeShape)
         
         def SaveToXml(self, daeDocument):
             node = super(DaeRigidBody.DaeTechniqueCommon,self).SaveToXml(daeDocument)
@@ -2374,7 +2439,12 @@ class DaeRigidBody(DaeEntity):
             AppendTextChild(node, DaePhysicsSyntax.DYNAMIC, self.dynamic, None)
             AppendTextChild(node, DaePhysicsSyntax.MASS, self.mass, None)
             AppendTextChild(node, DaePhysicsSyntax.INERTIA, self.inertia, None)
-            return node
+        
+        def GetPhysicsMaterial(self):
+            if not (self.physicsMaterial is None):
+                return self.physicsMaterial
+            else:
+                return self.iPhysicsMaterial.object
         
         def __str__(self):
             return super(DaeRigidBody.DaeTechniqueCommon,self).__str__()
@@ -2382,7 +2452,7 @@ class DaeRigidBody(DaeEntity):
 class DaeShape(DaeEntity):
     def __init__(self):
         super(DaeShape, self).__init__()
-        self.iGeomety = None
+        ##self.iGeomety = None
         self.mass = None
         self.density = None
         self.syntax = DaePhysicsSyntax.SHAPE
@@ -2397,6 +2467,34 @@ class DaeShape(DaeEntity):
         AppendChild(daeDocument, node, self.iGeometry)
         AppendTextChild(node, DaePhysicsSyntax.MASS, self.mass, None)
         AppendTextChild(node, DaePhysicsSyntax.DENSITY, self.density, None)
+        return node
+
+class DaeBoxShape(DaeShape):
+    def __init__(self):
+        super(DaeBoxShape, self).__init__()
+        self.halfExtents = []
+        
+    def LoadFromXml(self, daeDocument, xmlNode):
+        super(DaeBoxShape, self).LoadFromXml(daeDocument, xmlNode)
+        self.halfExtents = ToFloat3(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode,DaePhysicsSyntax.HALF_EXTENTS)))
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaeBoxShape, self).SaveToXml(daeDocument)
+        AppendTextChild(node, DaePhysicsSyntax.HALF_EXTENTS, self.halfExtents)
+        return node
+    
+class DaeGeometryShape(DaeShape):
+    def __init__(self):
+        super(DaeGeometryShape, self).__init__()
+        self.iGeometry = None
+        
+    def LoadFromXml(self, daeDocument, xmlNode):
+        super(DaeGeometryShape, self).LoadFromXml(daeDocument, xmlNode)
+        self.iGeometry = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_GEOMETRY, DaeGeometryInstance)
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaeGeometryShape, self).SaveToXml(daeDocument)
+        AppendChild(daeDocument, node, self.iGeometry)
         return node
     
 class DaePhysicsSyntax(object):
@@ -2418,7 +2516,15 @@ class DaePhysicsSyntax(object):
     MASS = 'mass'
     INERTIA = 'inertia'
     SHAPE = 'shape'
-    DENSITY = 'density'    
+    DENSITY = 'density'
+    
+    BOX = 'box'
+    PLANE = 'plane'
+    CYLINDER = 'cylinder'
+    SPHERE = 'sphere'
+    CAPSULE = 'capsule'
+    TAPERED_CAPSULE ='tapered_capsule'
+    TAPERED_CYLINDER = 'tapered_cylinder'
 
 #---Functions---
 def CreateObjectsFromXml(colladaDocument, xmlNode, nodeType, objectType):

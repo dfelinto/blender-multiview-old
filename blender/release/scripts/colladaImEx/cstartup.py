@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2
+# Illusoft Collada 1.4 plugin for Blender version 0.2.16
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -34,7 +34,7 @@ except NameError:
     _ERROR = True
 
 
-__version__ = '0.2'
+__version__ = '0.2.16'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)
@@ -57,7 +57,7 @@ defaultFileUrl = scriptsDir + '\\examples\\test_out.xml'
 ##defaultFileUrl = '\\examples\\mcube_meter.dae'
 ##defaultFileUrl = '\\examples\\seymour140.dae'
 defaultFileUrl = scriptsDir + '\\examples\\physics\\friction.dae'
-defaultFileUrl = scriptsDir + '\\examples\\mushroom140.dae'
+##defaultFileUrl = scriptsDir + '\\examples\\mushroom140.dae'
 
 # the location of the export test file
 defaultExportUrl = scriptsDir + '\\examples\\test_out.xml'
@@ -174,8 +174,10 @@ def Main(doImp):
             
         if not (colladaReg is None) and 'path' in colladaReg and Blender.sys.exists(colladaReg['path']):
             defFilename = colladaReg['path']
-        if not doImport:
-            defFilename = colladaReg['path']
+        elif not (doImport):
+            defFilename += 'untitled.dae'
+        ##if not doImport:
+        ##    defFilename = colladaReg['path']
             ##defFilename = Blender.Get('filename').rsplit('.',1)[0]+'.dae'
         ##print Blender.Get('filename')
         Blender.Window.FileSelector(FileSelected,msg,defFilename)

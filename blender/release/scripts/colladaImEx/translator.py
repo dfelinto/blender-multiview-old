@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2
+# Illusoft Collada 1.4 plugin for Blender version 0.2.16
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -87,6 +87,9 @@ class DocumentTranslator(object):
         self.materialsLibrary = MaterialsLibrary(self)
         self.meshLibrary = MeshLibrary(self)
         
+        self.filename = None
+        self.filePath = ''
+        
         
         
         
@@ -101,6 +104,8 @@ class DocumentTranslator(object):
         
     def Import(self, fileName):
         global debugMode
+        self.filename = fileName
+        self.filePath = Blender.sys.dirname(self.filename) + Blender.sys.sep
         self.isImport = True
         Blender.Window.EditMode(0)
         Blender.Window.DrawProgressBar(0.0, 'Starting Import')
@@ -177,6 +182,7 @@ class DocumentTranslator(object):
             #daeScene = collada.DaeScene()
             #daeScene.AddInstance()
         
+        
         self.colladaDocument.scene = daeScene
         
         self.colladaDocument.SaveDocumentToFile(fileName)
@@ -199,6 +205,7 @@ class SceneGraph(object):
         self.childNodes = dict()
         self.rootNodes = []
         
+        self.objectNames = dict()
         # Get the current blender scene
         #self.currentBScene = Blender.Scene.getCurrent()
     
@@ -233,10 +240,21 @@ class SceneGraph(object):
         # loop trough all nodes        
         for daeNode in visualScene.nodes:
             sceneNode = SceneNode(self.document, self)
-            sceneNode.ObjectFromDae(daeNode)
+            ob = sceneNode.ObjectFromDae(daeNode)
+            self.objectNames[daeNode.id] = ob.name
         
+        # Now get the physics Scene
+        physicsScenes = colladaScene.GetPhysicsScenes()
+        if not (physicsScenes is None) and len(physicsScenes) > 0:            
+            # For now, only pick the fist available physics Scene
+            physicsScene = physicsScenes[0]
+            for iPhysicsModel in physicsScene.iPhysicsModels:
+                physicsNode = PhysicsNode(self.document)
+                physicsNode.LoadFromDae(iPhysicsModel, self.objectNames)
+            
+        # Update the current Scene.
         self.document.currentBScene.update(1)
-        
+    
     def SaveToDae(self, bScene):
         daeVisualScene = collada.DaeVisualScene()
         daeVisualScene.id = daeVisualScene.name = bScene.name
@@ -259,7 +277,62 @@ class SceneGraph(object):
             daeVisualScene.nodes.append(daeNode)
             
         self.document.colladaDocument.visualScenesLibrary.AddItem(daeVisualScene)
-        return daeVisualScene   
+        return daeVisualScene
+    
+class PhysicsNode(object):
+    dynamic = 0
+    child = 1
+    actor = 2
+    inertiaLockX = 3
+    inertiaLockY = 4
+    inertiaLockZ = 5
+    doFH = 6
+    rotFH = 7
+    anisotropicFriction = 8
+    ghost = 9
+    rigidBody = 10
+    bounds = 11
+    collisionResponse = 12
+    
+    
+    def __init__(self, document):
+        self.document = document
+        
+    def LoadFromDae(self, daeInstancePhysicsModel, objectNames):
+        for iRigidBody in daeInstancePhysicsModel.iRigidBodies:
+            # Get the real blender name instead of the collada name.
+            realObjectName = objectNames[iRigidBody.targetString]
+            # Get the Blender object with the specified name.
+            bObject = Blender.Object.Get(realObjectName)
+            # Get the rigid body.
+            rigidBody = iRigidBody.body
+            # Get the common technique of the rigid body.
+            rigidBodyT = rigidBody.techniqueCommon
+            # Get the physics material.
+            physicsMaterial = rigidBodyT.GetPhysicsMaterial()
+            # Get the shapes of the bounding volumes in this rigid body.
+            shapes = rigidBodyT.shapes
+            
+            # The Rigid Body Flags
+            rbFlags = 0 + rigidBodyT.dynamic + (1 << self.actor) + (1 << self.rigidBody) + (1 << self.bounds)
+            rbShapeBoundType = 0
+            # For now only get the first shape
+            shape = shapes[0]
+            # Check the type of the shape
+            if isinstance(shape, collada.DaeGeometryShape):                
+                rbShapeBoundType = 5
+            elif isinstance(shape, collada.DaeBox):
+                rbShapeBoundType = 0
+            elif isinstance(shape, collada.DaeSphere):
+                rbShapeBoundType = 1
+            elif isinstance(shape, collada.DaeCylinder):
+                rbShapeBoundType = 2
+            elif isinstance(shape, collada.DaeTaperedCylinder):
+                rbShapeBoundType = 3           
+                
+            bObject.rbFlags = rbFlags
+            print rbFlags
+            bObject.rbShapeBoundType = rbShapeBoundType
             
 
 class SceneNode(object):
@@ -380,8 +453,8 @@ class SceneNode(object):
             for daeChild in daeNode.nodes:
                 childSceneNode = SceneNode(self.document,self)
                 object = childSceneNode.ObjectFromDae(daeChild)
-                childlist.append(object)
-            
+                if not(object is None):
+                    childlist.append(object)
             newObject.makeParent(childlist,0,1)
             
             return newObject
@@ -445,7 +518,22 @@ class SceneNode(object):
         for bNode in myChildNodes:
             sceneNode = SceneNode(self.document, self)
             daeNode.nodes.append(sceneNode.SaveToDae(bNode,childNodes))
-            
+        
+        rbFlags = []
+        rbF = bNode.rbFlags
+        # Get the bit flags
+        while rbF > 0:
+            val = rbF >> 1
+            if val << 1 == rbF:
+                rbFlags.append(0)
+            else:
+                rbFlags.append(1)
+            rbF = val
+        
+        ##print bNode, bNode.rbFlags, rbFlags
+        if len(rbFlags) > 0:
+            # TODO: Add physics Data
+            pass
         return daeNode
     
 class MeshNode(object):
@@ -803,11 +891,11 @@ class TextureNode(object):
         imageName = daeImage.name
         
         bTexture = Blender.Texture.New(imageID)
-        bTexture.setType('Image')
-        img = Blender.Image.Load(daeImage.init_from)
         
-        bTexture.setImage(img)
-        
+        if Blender.sys.exists(self.document.filePath + daeImage.init_from):
+            bTexture.setType('Image')            
+            img = Blender.Image.Load(self.document.filePath + daeImage.init_from)        
+            bTexture.setImage(img)        
         return bTexture
     
 class MaterialNode(object):
@@ -846,7 +934,9 @@ class MaterialNode(object):
                     else: # Texture
                         texture = shader.diffuse.texture.texture
                         if not (texture is None):
-                            pass##bMat.setTexture(0,self.document.texturesLibrary.FindObject(texture, True))
+                            bImage = self.document.texturesLibrary.FindObject(texture, True)
+                            if not bImage is None:
+                                bMat.setTexture(0, bImage, Blender.Texture.TexCo.UV)
                         
                 bMat.setSpec(0)           
             
