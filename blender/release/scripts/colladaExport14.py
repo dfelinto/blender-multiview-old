@@ -9,7 +9,7 @@ Tooltip: 'Export scene from Blender to COLLADA 1.4 format (.dae)'
 
 __author__ = "Illusoft - Pieter Visser"
 __url__ = ("Project homepage, http://colladablender.illusoft.com")
-__version__ = "0.2.32"
+__version__ = "0.2.45"
 __email__ = "colladablender@illusoft.com"
 __bpydoc__ = """\
 
@@ -19,7 +19,7 @@ Usage: Run the script from the menu or inside Blender.
 """
 
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.32
+# Illusoft Collada 1.4 plugin for Blender version 0.2.45
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -48,32 +48,42 @@ import Blender
 
 error = False
 
+######################## SET PATH TO FOLDER consisting 'colladaImEx' here (if necessary)
+    
+# Example:
+   
+# scriptsDir = "C:/Temp/"
+   
+scriptsDir = ""
+    
+#############################################################################
+
 try:
     import colladaImEx.cstartup
+    if Blender.Get('scriptsdir') is None:
+        if loc == '' or loc is None:
+            Blender.Draw.PupMenu("Cannot find folder %t | Please set path in file 'colladaImport14.py'")
+            error = True
+        else:
+            loc = scriptsDir
+    else:
+        loc = ""
 except ImportError:
-    ######################## SET PATH TO FOLDER consisting 'colladaImEx' here (if necessary)
-    
-    # Example:
-    
-    # scriptsDir = "C:/Temp/"
-    
-    scriptsDir = ""
-    
-    #############################################################################
     if scriptsDir == "":
-        Blender.Draw.PupMenu("Cannot find folder %t | Please set path in file 'colladaExport14.py'")
+        Blender.Draw.PupMenu("Cannot find folder %t | Please set path in file 'colladaImport14.py'")
         error = True
     else:
         if scriptsDir not in sys.path:
             sys.path.append(scriptsDir)
         try:
             import colladaImEx.cstartup
+            loc = scriptsDir
         except:
-            Blender.Draw.PupMenu("Cannot find colladaImEx files %t | Please make sure the path is correct in file 'colladaExport14.py'")
+            Blender.Draw.PupMenu("Cannot find colladaImEx files %t | Please make sure the path is correct in file 'colladaImport14.py'")
             error = True
             
 if not error:        
     reload(colladaImEx.cstartup)
-    colladaImEx.cstartup.Main(False)
+    colladaImEx.cstartup.Main(False, loc)
 
 

@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.32
+# Illusoft Collada 1.4 plugin for Blender version 0.2.45
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -34,7 +34,7 @@ except NameError:
     _ERROR = True
 
 
-__version__ = '0.2.32'
+__version__ = '0.2.45'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)
@@ -43,6 +43,7 @@ Blender.Window.WaitCursor(1)
 useDefaultFile = True
 
 # the name of the dir which contains the subclasses 
+##subClassesDir = 'colladaImEx'
 # the location of the scripts directory for Blender
 ##scriptsDir = os.path.join(Blender.Get('scriptsdir'), subClassesDir)
 
@@ -121,10 +122,15 @@ except NameError:
 # A List with al the modules (in the scriptsdir) to be reloaded
 modules = [cutils, xmlUtils, collada, translator]
 
-def Main(doImp):
-    global debug, __version__, doImport
+def Main(doImp, scriptsLoc):
+    global debug, __version__, doImport, scriptsLocation, defaultFilename
 
     doImport = doImp
+    if scriptsLoc == "":
+        scriptsLocation = Blender.Get('scriptsdir')+Blender.sys.sep+'bpymodules'+Blender.sys.sep+'colladaImEx'+Blender.sys.sep
+    else:
+        scriptsLocation = scriptsLoc
+    
     
     if not ReloadModules():
         print 'cannot reload all modules'
@@ -165,11 +171,6 @@ def Main(doImp):
         # Hide the wait cursor in blender
         Blender.Window.WaitCursor(0)
     else:
-        msg = ''
-        if doImport:
-            msg = 'Import .dae'
-        else:
-            msg = 'Export .dae'
         defFilename = Blender.sys.dirname(Blender.sys.progname)+"\\"
         colladaReg = Blender.Registry.GetKey('collada',True)
             
@@ -177,11 +178,15 @@ def Main(doImp):
             defFilename = colladaReg['path']
         elif not (doImport):
             defFilename += 'untitled.dae'
+        
+        defaultFilename = defFilename
+        
+        Blender.Draw.Register(Gui, Event, ButtonEvent)  # registering the 3 callbacks
         ##if not doImport:
         ##    defFilename = colladaReg['path']
             ##defFilename = Blender.Get('filename').rsplit('.',1)[0]+'.dae'
         ##print Blender.Get('filename')
-        Blender.Window.FileSelector(FileSelected,msg,defFilename)
+        ##Blender.Window.FileSelector(FileSelected,msg,defFilename)
     
 def ReloadModules():    
     # Loop through all the modules and try to reload them
@@ -194,38 +199,272 @@ def ReloadModules():
     return True
 
 def FileSelected(fileName):
-    global doImport
-    #keep track of the time to execute this script
-    startTime = Blender.sys.time()
+    global doImport, fileButton
+    
     if fileName != '':
         # check if file exists
-        if Blender.sys.exists(fileName) == 1 and not doImport:
-            overwrite = Blender.Draw.PupMenu( "File Already Exists, Overwrite?%t|Yes%x1|No%x0" )
-            if overwrite == 0:
-                return False
-        elif Blender.sys.exists(fileName) != 1 and doImport:
+##        if Blender.sys.exists(fileName) == 1 and not doImport:
+##            overwrite = Blender.Draw.PupMenu( "File Already Exists, Overwrite?%t|Yes%x1|No%x0" )
+##            if overwrite == 0:
+##                return False
+        if Blender.sys.exists(fileName) != 1 and doImport:
             cutils.Debug.Debug('File(%s) does not exist' % (fileName),'ERROR')
             return False
         
+##        if doImport:
+##            # Check if the file has a valid extension .DAE or .XML
+##            extension = fileName.rsplit('.',1)[1].lower()
+##            if extension != 'xml' and extension != 'dae':
+##                cutils.Debug.Debug('File(%s) is not a .dae or .xml file' % (fileName),'ERROR')
+        fileButton.val = fileName
+        ##transl = translator.Translator(doImport,__version__,debug,fileName)           
+    else:
+        cutils.Debug.Debug('ERROR: filename is empty','ERROR')
+
+toggle = 0
+fileButton = None
+toggleTriangles = None
+togglePolygons = None
+toggleExportSelection = None
+toggleClearScene = None
+toggleNewScene = None
+toggleBakeMatrix = None
+toggleLookAt = None
+
+
+def Gui():
+    global toggleLookAt, toggleBakeMatrix, toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, toggleExportSelection, scriptsLocation, doImport, defaultFilename, fileButton    
+        
+    Blender.BGL.glClearColor(0.898,0.910,0.808,1) # Set BG Color1
+    Blender.BGL.glClear(Blender.BGL.GL_COLOR_BUFFER_BIT)
+    Blender.BGL.glColor3f(0.835,0.848,0.745) # BG Color 2
+    size = Blender.Window.GetAreaSize()
+    Blender.BGL.glRectd(40,0,200,size[1])
+    try:
+        logoImage = Blender.Image.Load(scriptsLocation + 'logo.png')
+        Blender.BGL.glEnable(Blender.BGL.GL_BLEND ) # Only needed for alpha blending images with background.
+        Blender.BGL.glBlendFunc(Blender.BGL.GL_SRC_ALPHA, Blender.BGL.GL_ONE_MINUS_SRC_ALPHA)     
+        Blender.Draw.Image(logoImage, 45, size[1]-30)     
+        Blender.BGL.glDisable(Blender.BGL.GL_BLEND)        
+    except IOError: # image not found
+        Blender.BGL.glColor3i(0.255,0.255,0.2)
+        Blender.BGL.glRasterPos2i(45, size[1]-30)
+        Blender.Draw.Text("Collada 1.4.0 Plugin for Blender", "large") 
+        
+    Blender.BGL.glColor3f(0.255,0.255,0.2)
+    Blender.BGL.glRasterPos2i(45, size[1]-40)
+    Blender.Draw.Text("Version: %s"%(__version__),"small")
+    
+    # Write donation text
+    donateText1 = "If this plugin is valuable to you or your company, please consider a donation at"
+    donateText2 = "http://colladablender.illusoft.com to support this plugin. Thanks a lot!"
+    Blender.BGL.glRasterPos2i(45, size[1]-60)
+    Blender.Draw.Text(donateText1, "small")    
+    Blender.BGL.glRasterPos2i(45, size[1]-70)
+    Blender.Draw.Text(donateText2, "small") 
+    
+    # Write import / export text
+    Blender.BGL.glColor3f(0.9,0.08,0.08)
+    Blender.BGL.glRasterPos2i(45, size[1]-95)
+    if doImport:
+        importExportText = "Import"
+    else:
+        importExportText = "Export"        
+    Blender.Draw.Text(importExportText, "normal")
+    
+    Blender.BGL.glColor3f(0.255,0.255,0.2)
+    
+    # Create File path input    
+    yval = size[1]-130
+    Blender.BGL.glRasterPos2i(45, yval)
+    if fileButton is None or fileButton.val == '':
+        fileName = defaultFilename
+    else:
+        fileName = fileButton.val
+    Blender.Draw.Text('%s file:'%(importExportText),"normal")
+    fileButton = Blender.Draw.String('', 5, 105, yval-5, 400, 20, fileName, 255) 
+    Blender.Draw.PushButton('...', 2, 105 + 400, yval-5, 30, 20, 'browse file')
+    
+    Blender.Draw.PushButton("Cancel", 3, 45, 10, 55, 20, "Cancel")
+    Blender.Draw.PushButton(importExportText + ' and Close', 4, 45+55+35, 10, 100, 20, importExportText + ' and close this screen')
+    
+    # Create Export Options:    
+    if not doImport:
+        yval = yval - 50
+        # Create Triangle / Polygons Options    
+        if not (toggleTriangles is None):
+            toggleTrianglesVal = toggleTriangles.val
+        else:
+            toggleTrianglesVal = 0
+        
+        if not (togglePolygons is None):
+            togglePolygonsVal = togglePolygons.val
+        else:
+            togglePolygonsVal = 0
+            
+        ##toggleTriangles = Blender.Draw.Toggle('Triangles',6,45, yval, 60, 20, toggleTrianglesVal, 'Export all geometry as triangles')
+        ##togglePolygons = Blender.Draw.Toggle('Polygons',7,45+60 + 30, yval, 60, 20, togglePolygonsVal, 'Export all geometry as polygons')
+        
+        yval = yval - 40
+        # Create Export Selection Option
+        if not (toggleExportSelection is None):
+            toggleExportSelectionVal = toggleExportSelection.val
+        else:
+            toggleExportSelectionVal = 0
+            
+        toggleExportSelection = Blender.Draw.Toggle('Only Export Selection',8,45, yval, 150, 20, toggleExportSelectionVal, 'Only export selected objects')
+        
+        yval = yval - 40
+        # Create Export Selection Option
+        if not (toggleBakeMatrix is None):
+            toggleBakeMatrixVal = toggleBakeMatrix.val
+        else:
+            toggleBakeMatrixVal = 0
+            
+        toggleBakeMatrix = Blender.Draw.Toggle('Bake Matrices',11,45, yval, 150, 20, toggleBakeMatrixVal, 'Put all transformations in a single matrix')
+        
+        yval = yval - 40
+        # Create Export Selection Option
+        if not (toggleLookAt is None):
+            toggleLookAtVal = toggleLookAt.val
+        else:
+            toggleLookAtVal = 0
+            
+        ##toggleLookAt = Blender.Draw.Toggle('Camera as Lookat',12,45, yval, 150, 20, toggleLookAtVal, 'Export the transformation of camera\'s as lookat')
+        
+        Blender.Draw.PushButton(importExportText, 12, 45+55+35+100+35, 10, 55, 20, importExportText)
+    else:
+        yval = yval - 50
+        # Create Import To new Scene Options
+        if not (toggleNewScene is None):
+            toggleNewSceneVal = toggleNewScene.val
+        else:
+            toggleNewSceneVal = 0
+        
+        if not (toggleClearScene is None):
+            toggleClearSceneVal = toggleClearScene.val
+        else:
+            toggleClearSceneVal = 0
+            
+        ##toggleNewScene = Blender.Draw.Toggle('New Scene',9,40, yval, 75, 20, toggleNewSceneVal, 'Import file into a new Scene')
+        ##toggleClearScene = Blender.Draw.Toggle('Clear Scene',10,40+75 + 10, yval, 75, 20, toggleClearSceneVal, 'Clear everything on the current scene')
+        
+        
+       
+def Event(evt, val):
+    pass
+        
+def ButtonEvent(evt):
+    global toggleLookAt, toggleBakeMatrix, toggleExportSelection,toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, doImport, defaultFilename, fileSelectorShown, fileButton
+        
+    if evt == 1:
+        toggle = 1 - toggle
+        Blender.Draw.Redraw(1)
+    elif evt == 2: # browse file
+        browseText = ''
         if doImport:
-            # Check if the file has a valid extension .DAE or .XML
-            extension = fileName.rsplit('.',1)[1].lower()
-            if extension != 'xml' and extension != 'dae':
-                cutils.Debug.Debug('File(%s) is not a .dae or .xml file' % (fileName),'ERROR')
+            browseText = 'Import .dae'
+        else:
+            browseText = 'Export .dae'
+        Blender.Window.FileSelector(FileSelected,browseText,defaultFilename)
+        Blender.Draw.Redraw(1)
+    elif evt == 3:
+        Blender.Draw.Exit()
+    elif evt == 4 or evt == 12: # Ok, time to export/import
+        #keep track of the time to execute this script
+        startTime = Blender.sys.time()
+        fileName = fileButton.val
+        exists = Blender.sys.exists(fileName)
+        if exists == 1 and not doImport:
+            overwrite = Blender.Draw.PupMenu( "File Already Exists, Overwrite?%t|Yes%x1|No%x0" )
+            if overwrite == 0:
+                return False
+        elif exists != 1 and doImport:
+            Blender.Draw.PupMenu("File does not exist: %t|"+fileName)
+            cutils.Debug.Debug('File(%s) does not exist' % (fileName),'ERROR')
+            return False
+        elif not Blender.sys.exists(Blender.sys.dirname(fileName)):
+            Blender.Draw.PupMenu("Path is not valid: %t|"+Blender.sys.dirname(fileName))
+            cutils.Debug.Debug('Path is not valid: %s' % (Blender.sys.dirname(fileName)),'ERROR')
+            return False
+        
+        if toggleTriangles is None:
+            useTriangles = False
+        else:
+            useTriangles = bool(toggleTriangles.val)
+            
+        if togglePolygons is None:
+            usePolygons = False
+        else:
+            usePolygons = bool(togglePolygons.val)
+            
+        if toggleBakeMatrix is None:
+            bakeMatrices = False
+        else:
+            bakeMatrices = bool(toggleBakeMatrix.val)
+            
+        if toggleExportSelection is None:
+            exportSelection = False
+        else:
+            exportSelection = bool(toggleExportSelection.val)
+            
+        if toggleNewScene is None:
+            newScene = False
+        else:
+            newScene = bool(toggleNewScene.val)
+        
+        if toggleClearScene is None:
+            clearScene = False
+        else:
+            clearScene = bool(toggleClearScene.val)
+            
+        if toggleLookAt is None:
+            lookAt = False
+        else:
+            lookAt = bool(toggleLookAt.val)
         d = {}
         d['path'] = fileName
         Blender.Registry.SetKey('collada',d, True)
-        transl = translator.Translator(doImport,__version__,debug,fileName)           
-    else:
-        cutils.Debug.Debug('ERROR: filename is empty','ERROR')
-    
-    # Redraw al 3D windows.
-    Blender.Window.RedrawAll()    
-    
-    # calculate the elapsed time
-    endTime = Blender.sys.time()
-    elapsedTime = endTime - startTime
-    cutils.Debug.Debug('FINISHED - time elapsed: %.1f'%(elapsedTime),'FEEDBACK')
-    
-    # Hide the wait cursor in blender
-    Blender.Window.WaitCursor(0)
+        
+        if doImport:
+            importExportText = "Import"
+        else:
+            importExportText = "Export"        
+        
+        try:
+            transl = translator.Translator(doImport,__version__,debug,fileName, useTriangles, usePolygons, bakeMatrices, exportSelection, newScene, clearScene, lookAt)
+            # Redraw al 3D windows.
+            Blender.Window.RedrawAll()    
+            
+            # calculate the elapsed time
+            endTime = Blender.sys.time()
+            elapsedTime = endTime - startTime
+            Blender.Draw.PupMenu(importExportText + " Successfull %t")
+        except:
+            endTime = Blender.sys.time()
+            elapsedTime = endTime - startTime
+            Blender.Draw.PupMenu(importExportText + "ing failed%t | Check the console for more info")
+            raise # throw the exception
+        
+        cutils.Debug.Debug('FINISHED - time elapsed: %.1f'%(elapsedTime),'FEEDBACK')
+        
+        # Hide the wait cursor in blender
+        Blender.Window.WaitCursor(0)
+        if evt == 4:
+            Blender.Draw.Exit()
+    elif evt == 6: # Toggle Triangles
+        if toggleTriangles.val:
+            togglePolygons.val = 0
+        Blender.Draw.Redraw(1)
+    elif evt == 7: # Toggle Polygons
+        if togglePolygons.val:
+            toggleTriangles.val = 0
+        Blender.Draw.Redraw(1)
+    elif evt == 9: # Toggle Create new Scene
+        if toggleNewScene.val:
+            toggleClearScene.val = 0
+        Blender.Draw.Redraw(1)
+    elif evt == 10: # Toggle Clear current Scene
+        if toggleClearScene.val:
+            toggleNewScene.val = 0
+        Blender.Draw.Redraw(1)

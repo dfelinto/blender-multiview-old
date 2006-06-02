@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.32
+# Illusoft Collada 1.4 plugin for Blender version 0.2.45
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -533,7 +533,6 @@ class DaeGeometry(DaeElement):
         # Add the assets
         AppendChild(daeDocument,node,self.asset)
         # Add the data
-        ##print self.data, type(self.data)
         AppendChild(daeDocument, node, self.data)
         # Add the extra's
         AppendChilds(self,node,self.extras)
@@ -987,7 +986,7 @@ class DaeNode(DaeElement):
             el = Element(i[0])
             val = i[1]
             if i[0] == DaeSyntax.MATRIX:
-                val = MatrixToString(val)
+                val = MatrixToString(val,ROUND)
                 AppendTextChild(node,i[0],val)
             else:
                 val = ListToString(RoundList(val, 5))
@@ -2362,7 +2361,6 @@ class DaePhysicsMaterial(DaeElement):
             
         def LoadFromXml(self, daeDocument, xmlNode):
             self.dynamicFriction = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.DYNAMIC_FRICTION, float, 0)
-            #print self.dynamicFriction
             self.restitution = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.RESTITUTION,  float, 0)
             self.staticFriction = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.STATIC_FRICTION, float, 0)
         
@@ -2416,7 +2414,6 @@ class DaeRigidBody(DaeEntity):
             
             shapeNodes = xmlUtils.FindElementsByTagName(xmlNode, DaePhysicsSyntax.SHAPE)
             for shapeNode in shapeNodes:
-                print shapeNode.toxml()
                 s = xmlUtils.FindElementByTagName(shapeNode, DaePhysicsSyntax.BOX)
                 b = None
                 if not (s is None):
@@ -2449,10 +2446,6 @@ class DaeRigidBody(DaeEntity):
                                             b = DaeTaperedCapsuleShape()
                 b.LoadFromXml(daeDocument, s)
                 self.shapes.append(b)
-                
-            ##print self.shapes
-            ##boxes = CreateObjectsFromXml(daeDocument, xmlUtils
-            ##self.shapes = CreateObjectsFromXml(daeDocument, xmlNode, DaePhysicsSyntax.SHAPE, DaeShape)
         
         def SaveToXml(self, daeDocument):
             node = super(DaeRigidBody.DaeTechniqueCommon,self).SaveToXml(daeDocument)
@@ -2478,7 +2471,6 @@ class DaeRigidBody(DaeEntity):
 class DaeShape(DaeEntity):
     def __init__(self):
         super(DaeShape, self).__init__()
-        ##self.iGeomety = None
         self.mass = None
         self.density = None
         self.syntax = DaePhysicsSyntax.SHAPE
@@ -2490,7 +2482,6 @@ class DaeShape(DaeEntity):
         
     def SaveToXml(self, daeDocument):
         node = super(DaeShape, self).SaveToXml(daeDocument)
-        ##AppendChild(daeDocument, node, self.iGeometry)
         AppendTextChild(node, DaePhysicsSyntax.MASS, self.mass, None)
         AppendTextChild(node, DaePhysicsSyntax.DENSITY, self.density, None)
         return node
@@ -2583,7 +2574,11 @@ class DaeGeometryShape(DaeShape):
         
     def LoadFromXml(self, daeDocument, xmlNode):
         super(DaeGeometryShape, self).LoadFromXml(daeDocument, xmlNode)
-        self.iGeometry = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_GEOMETRY, DaeGeometryInstance)
+        self.iGeometry = DaeGeometryInstance()
+        self.iGeometry.LoadFromXml(daeDocument, xmlNode)
+        #self.iGeometry = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_GEOMETRY, DaeGeometryInstance)
+        #print self.iGeometry
+        #print xmlNode.toxml()
         
     def SaveToXml(self, daeDocument):
         #node = super(DaeGeometryShape, self).SaveToXml(daeDocument)
@@ -2620,7 +2615,7 @@ class DaePhysicsSyntax(object):
     TAPERED_CAPSULE ='tapered_capsule'
     TAPERED_CYLINDER = 'tapered_cylinder'
     
-    HALF_EXTENTS = 'half_extends'
+    HALF_EXTENTS = 'half_extents'
 
 #---Functions---
 def CreateObjectsFromXml(colladaDocument, xmlNode, nodeType, objectType):

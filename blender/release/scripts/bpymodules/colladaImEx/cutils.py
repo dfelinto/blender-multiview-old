@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.32
+# Illusoft Collada 1.4 plugin for Blender version 0.2.45
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -197,7 +197,7 @@ def ClearConsole():
     if sysCommand != 'unknown':
         os.system(sysCommand)
         
-def MatrixToString(mat):
+def MatrixToString(mat, nDigits):
     result = ''
     if mat is None:
         return result
@@ -205,7 +205,7 @@ def MatrixToString(mat):
     for vec in mat:
         result += '\n\t'
         for i in vec:
-            result += str(i)+' '
+            result += str(round(i, nDigits))+' '
         
     return result+'\n'
             

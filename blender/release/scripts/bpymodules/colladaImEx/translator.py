@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.32
+# Illusoft Collada 1.4 plugin for Blender version 0.2.45
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -33,10 +33,18 @@ import datetime
 class Translator(object):
     isImporter = False
     
-    def __init__(self, isImporter, version, debugM = False, fileName=''):
-        global __version__, debugMode
+    def __init__(self, isImporter, version, debugM, fileName,_useTriangles, _usePolygons, _bakeMatrices, _exportSelection, _createNewScene, _clearScene, _lookAt):
+        global __version__, debugMode, usePhysics, useTriangles, usePolygons, bakeMatrices, exportSelection, createNewScene, clearScene, lookAt
         __version__ = version
         debugMode = debugM
+        usePhysics = None
+        useTriangles = _useTriangles
+        usePolygons = _usePolygons
+        bakeMatrices = _bakeMatrices
+        exportSelection = _exportSelection
+        createNewScene = _createNewScene
+        clearScene = _clearScene
+        lookAt = _lookAt
         
         self.isImporter = isImporter
         self.fileName = ''
@@ -44,9 +52,6 @@ class Translator(object):
             self.__Import(fileName)
         else:
             self.__Export(fileName)
-##            if debugM:
-##                print "export"                
-##                self.__Import(fileName)
     
     def __Import(self,fileName=''):
         documentTranslator = DocumentTranslator(fileName)            
@@ -59,7 +64,7 @@ class Translator(object):
         
 class DocumentTranslator(object):
     isImport = None
-    
+    ids = []
     sceneGraph = None
     
     cameraLibrary = None
@@ -72,23 +77,23 @@ class DocumentTranslator(object):
     colladaDocument = None
     scenesLibrary = None
     
-    # exporter options:
-    bakedTransform = False
-    
-    def CreateID(self, name):
+    def CreateID(self, name, typeName=None):
         if not (name in self.ids):
             self.ids.append(name)
             return name
         else:
             tempName = name;
-            # Check for existing number at the end?
-            while tempName[-1:].isdigit():
-                tempName =  tempName[:-1]
-            digitStr = name[-(len(name)-len(tempName)):]
-            digit = 1;
-            if len(digitStr) > 0 and len(digitStr) != len(name):
-                digit = int(digitStr)+1 
-            return self.CreateID(tempName+str(digit))
+            if not(typeName is None) and name.rfind(typeName) >= 0:
+                # Check for existing number at the end?
+                while tempName[-1:].isdigit():
+                    tempName =  tempName[:-1]
+                digitStr = name[-(len(name)-len(tempName)):]
+                digit = 1;
+                if len(digitStr) > 0 and len(digitStr) != len(name):
+                    digit = int(digitStr)+1 
+                return self.CreateID(tempName+str(digit))
+            else:
+                return self.CreateID(tempName+typeName)
         
     def __init__(self, fileName):
         self.isImport = False 
@@ -118,6 +123,7 @@ class DocumentTranslator(object):
         
     def Import(self, fileName):
         global debugMode
+        
         self.filename = fileName
         self.filePath = Blender.sys.dirname(self.filename) + Blender.sys.sep
         self.isImport = True
@@ -262,6 +268,7 @@ class SceneGraph(object):
             sceneNode = SceneNode(self.document, self)
             ob = sceneNode.ObjectFromDae(daeNode)
             self.objectNames[daeNode.id] = ob.name
+            ##sceneNode.ObjectFromDae(daeNode)
         
         # Now get the physics Scene
         physicsScenes = colladaScene.GetPhysicsScenes()
@@ -272,27 +279,32 @@ class SceneGraph(object):
                 physicsNode = PhysicsNode(self.document)
                 physicsNode.LoadFromDae(iPhysicsModel, self.objectNames)
             
+            
         # Update the current Scene.
         self.document.currentBScene.update(1)
     
     def SaveToDae(self, bScene):
+        global exportSelection
         daeVisualScene = collada.DaeVisualScene()
-        daeVisualScene.id = daeVisualScene.name = self.document.CreateID(bScene.name)
+        daeVisualScene.id = daeVisualScene.name = self.document.CreateID(bScene.name,'-Scene')
         
         daePhysicsScene = collada.DaePhysicsScene()
-        daePhysicsScene.id = daePhysicsScene.name = self.document.CreateID(bScene.name+'-Physics')
+        daePhysicsScene.id = daePhysicsScene.name = self.document.CreateID(bScene.name+'-Physics', '-Scene')
         
-        # now loop trough all nodes in this scene and create a list with root nodes and children
-        for node in bScene.getChildren():
-            pNode = node.parent
-            if pNode is None:
-                self.rootNodes.append(node)
-            else:
-                if self.childNodes.has_key(pNode.name):
-                    self.childNodes[pNode.name].append(node)
+        if exportSelection:
+            self.rootNodes = Blender.Object.GetSelected()
+            self.childNodes = []
+        else: # now loop trough all nodes in this scene and create a list with root nodes and children
+            for node in bScene.getChildren():
+                pNode = node.parent
+                if pNode is None:
+                    self.rootNodes.append(node)
                 else:
-                    self.childNodes[pNode.name] = [node]
-        
+                    try:
+                        self.childNodes[pNode.name].append(node)
+                    except:
+                        self.childNodes[pNode.name] = [node]
+                    
         # Begin with the rootnodes
         for rootNode in self.rootNodes:
             sceneNode = SceneNode(self.document,self)
@@ -321,16 +333,25 @@ class PhysicsNode(object):
     bounds = 11
     collisionResponse = 12
     
-    
     def __init__(self, document):
         self.document = document
         
     def LoadFromDae(self, daeInstancePhysicsModel, objectNames):
+        global usePhysics
+        if not(usePhysics is None) and not usePhysics:
+            return
+        
         for iRigidBody in daeInstancePhysicsModel.iRigidBodies:
             # Get the real blender name instead of the collada name.
             realObjectName = objectNames[iRigidBody.targetString]
             # Get the Blender object with the specified name.
             bObject = Blender.Object.Get(realObjectName)
+            # Check if physics is supported.
+            if usePhysics is None:
+                usePhysics = hasattr(bObject, "rbShapeBoundType")
+                if not usePhysics:
+                    return
+
             # Get the rigid body.
             rigidBody = iRigidBody.body
             # Get the common technique of the rigid body.
@@ -346,8 +367,12 @@ class PhysicsNode(object):
             # For now only get the first shape
             shape = shapes[0]
             # Check the type of the shape
-            if isinstance(shape, collada.DaeGeometryShape):                
-                rbShapeBoundType = 5
+            if isinstance(shape, collada.DaeGeometryShape):
+                ##print shape, shape.iGeometry.object.data
+                if isinstance(shape.iGeometry.object.data, collada.DaeMesh):
+                    rbShapeBoundType = 4
+                else:
+                    rbShapeBoundType = 5
             elif isinstance(shape, collada.DaeBoxShape):
                 rbShapeBoundType = 0
             elif isinstance(shape, collada.DaeSphereShape):
@@ -358,6 +383,9 @@ class PhysicsNode(object):
                 rbShapeBoundType = 3           
                 
             bObject.rbFlags = rbFlags
+            if not (rigidBodyT.mass is None):
+                bObject.rbMass = rigidBodyT.mass
+            
             bObject.rbShapeBoundType = rbShapeBoundType
             
 
@@ -422,10 +450,18 @@ class SceneNode(object):
             # TODO: MAYBE CHANGE THIS LATER update the mesh..
             if newObject.getType() == 'Mesh':
                 newObject.getData().update(1,1,1)
+                # Set the vertex colors.
+                for f in newObject.getData(mesh=1).faces:
+                    for c in f.col:
+                        c.r = 255
+                        c.g = 255
+                        c.b = 255
+                        c.a = 255                    
             
             # Do the transformation
             mat = Matrix().resize4x4()
-            for transform in daeNode.transforms:
+            for i in range(len(daeNode.transforms)):
+                transform = daeNode.transforms[len(daeNode.transforms)-(i+1)]
                 type = transform[0]
                 data = transform[1]
                 if type == collada.DaeSyntax.TRANSLATE:
@@ -486,25 +522,28 @@ class SceneNode(object):
             return newObject
         
     def SaveToDae(self,bNode,childNodes):
+        global bakeMatrices, exportSelection
         daeNode = collada.DaeNode()
-        daeNode.id = daeNode.name = self.document.CreateID(bNode.name)# +'-node'
+        daeNode.id = daeNode.name = self.document.CreateID(bNode.name,'-Node')# +'-node'
         
         # Get the transformations
-        if self.document.bakedTransform :
-            daeNode.transforms.append([collada.DaeSyntax.MATRIX, bNode.matrix])
+        if bakeMatrices :
+            mat = Blender.Mathutils.CopyMat(bNode.matrix).transpose()
+            daeNode.transforms.append([collada.DaeSyntax.MATRIX, mat])
         else:
-            daeNode.transforms.append([collada.DaeSyntax.SCALE, bNode.getSize()])
+            daeNode.transforms.append([collada.DaeSyntax.TRANSLATE, bNode.getLocation()])
+            
             euler = bNode.getEuler()
             rotxVec = [1,0,0,euler.x*radianToAngle]
             rotyVec = [0,1,0,euler.y*radianToAngle]
             rotzVec = [0,0,1,euler.z*radianToAngle]
             
             ##rotVec = [round(euler.x*radianToAngle,3), round(euler.y*radianToAngle,3), round(euler.z*radianToAngle,3)]
-            if euler.x != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
-            if euler.y != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
             if euler.z != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotzVec])
+            if euler.y != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
+            if euler.x != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
             
-            daeNode.transforms.append([collada.DaeSyntax.TRANSLATE, bNode.getLocation()])
+            daeNode.transforms.append([collada.DaeSyntax.SCALE, bNode.getSize()])
             
         # Get the instance
         type = bNode.getType()
@@ -541,18 +580,26 @@ class SceneNode(object):
         myChildNodes = []
         if childNodes.has_key(bNode.name):
             myChildNodes = childNodes[bNode.name]
-            
-        for bNode in myChildNodes:
-            sceneNode = SceneNode(self.document, self)
-            daeNode.nodes.append(sceneNode.SaveToDae(bNode,childNodes))
+        
+        if not exportSelection:
+            for bNode in myChildNodes:
+                sceneNode = SceneNode(self.document, self)
+                daeNode.nodes.append(sceneNode.SaveToDae(bNode,childNodes)[0])
         
         daePhysicsInstance = self.SavePhysicsToDae(bNode, meshID, daeNode)
             
         return (daeNode, daePhysicsInstance)
     
     def SavePhysicsToDae(self, bNode, meshID, daeNode):
-        if meshID is None:
+        global usePhysics
+        if meshID is None or (not(usePhysics is None) and not usePhysics):
             return None
+        
+        # Check if physics is supported.
+        if usePhysics is None:
+            usePhysics = hasattr(bNode, "rbShapeBoundType")
+            if not usePhysics:
+                return None
         
         rbFlags = [0 for a in range(16)]
         rbF = bNode.rbFlags
@@ -572,35 +619,36 @@ class SceneNode(object):
         if len(rbFlags) > 0:
             if rbFlags[10] and rbFlags[2]: # Check if this node is: actor + rigid body + dynamic                
                 daePhysicsModel = collada.DaePhysicsModel();
-                daePhysicsModel.id = daePhysicsModel.name = self.document.CreateID(daeNode.id+'-PX')
+                daePhysicsModel.id = daePhysicsModel.name = self.document.CreateID(daeNode.id,'-PhysicsModel')
                 daeRigidBody = collada.DaeRigidBody();
-                daeRigidBody.id = daeRigidBody.name = self.document.CreateID(daeNode.id+'-RB')
+                daeRigidBody.id = daeRigidBody.name = self.document.CreateID(daeNode.id,'-RigidBody')
                 daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
                 daeRigidBodyTechniqueCommon.dynamic = bool(rbFlags[0])
                 daeRigidBodyTechniqueCommon.mass = bNode.rbMass
                 # check the shape of the rigid body.
                 if bNode.rbShapeBoundType == 0: # Box
                     shape = collada.DaeBoxShape()
-                    shape.halfExtents = [1,1,1]
+                    shape.halfExtents = list(bNode.rbHalfExtents)
                 elif bNode.rbShapeBoundType == 1: # Sphere
                     shape = collada.DaeSphereShape()
-                    shape.radius = 1
+                    shape.radius = bNode.rbRadius
                 elif bNode.rbShapeBoundType == 2: # Cylinder
                     return None
                 elif bNode.rbShapeBoundType == 3: # Cone
                     return None
-                elif bNode.rbShapeBoundType == 4: # Tri mesh
-                    return None
-                else: # Convex hull
+                else: # Convex hull or # Static Triangle Mesh
                     shape = collada.DaeGeometryShape()
                     iGeometry = collada.DaeGeometryInstance()
-                    object = self.document.colladaDocument.geometriesLibrary.FindObject(daeNode.id+'-Convex')
+                    if bNode.rbShapeBoundType == 5:
+                        object = self.document.colladaDocument.geometriesLibrary.FindObject(daeNode.id+'-Convex')
+                    else:
+                        object = self.document.colladaDocument.geometriesLibrary.FindObject(meshID)
                     if object is None:
                         object = collada.DaeGeometry()
-                        object.id = object.name = self.document.CreateID(daeNode.id+'-Convex')
+                        object.id = object.name = self.document.CreateID(daeNode.id,'-ConvexGeom')
                         convexMesh = collada.DaeConvexMesh()
                         convexMesh.convexHullOf = meshID
-                        object.data = convexMesh
+                        object.data = convexMesh                                                    
                         self.document.colladaDocument.geometriesLibrary.AddItem(object)
                     iGeometry.object = object    
                     shape.iGeometry = iGeometry
@@ -609,7 +657,7 @@ class SceneNode(object):
                 daePhysicsMaterial = self.document.colladaDocument.physicsMaterialsLibrary.FindObject(daeNode.id+'-PxMaterial')
                 if daePhysicsMaterial is None:
                     daePhysicsMaterial = collada.DaePhysicsMaterial()
-                    daePhysicsMaterial.id = daePhysicsMaterial.name = self.document.CreateID(daeNode.id+'PxMaterial')
+                    daePhysicsMaterial.id = daePhysicsMaterial.name = self.document.CreateID(daeNode.id, '-PhysicsMaterial')
                     self.document.colladaDocument.physicsMaterialsLibrary.AddItem(daePhysicsMaterial)
                                 
                 # Create a physics material instance.
@@ -663,7 +711,7 @@ class MeshNode(object):
         
         # Create a new meshObject
         bMesh2 = Blender.NMesh.New(meshID)
-        
+
         if isinstance(daeGeometry.data,collada.DaeMesh): # check if it's a mesh
             materials = []
             for matName, material in self.materials.iteritems():
@@ -763,6 +811,9 @@ class MeshNode(object):
                             ##curFaceVerts2.reverse()          
                             # Create a new Face.
                             newFace = Blender.NMesh.Face(curFaceVerts2)
+                            
+                            ##print newFace.col
+                            ##newFace.
 ##                            print ""
 ##                            for b in newFace.v:
 ##                                print b.co
@@ -776,16 +827,20 @@ class MeshNode(object):
                                 matIndex = self.FindMaterial(bMesh2.materials, self.materials[primitive.material].name)
                                 # Set the material index for the new face.
                                 newFace.materialIndex = matIndex
+                                textures = self.materials[primitive.material].getTextures()
+                                if len(textures) > 0 and not (textures[0] is None):
+                                    texture = textures[0]
+                                    newFace.image = texture.tex.getImage()
                         else:
                             bMesh2.addEdge(curFaceVerts2[0], curFaceVerts2[1])
                         # update the index
                         pIndex += realVertCount * maxOffset
-                    bMesh2.faces = faces           
+                    bMesh2.faces = faces
         return bMesh2
     
     def SaveToDae(self, bMesh):
         daeGeometry = collada.DaeGeometry()
-        daeGeometry.id = daeGeometry.name = self.document.CreateID(bMesh.name)
+        daeGeometry.id = daeGeometry.name = self.document.CreateID(bMesh.name,'-Geometry')
         
         daeMesh = collada.DaeMesh()                
         
@@ -793,9 +848,9 @@ class MeshNode(object):
         faceEdges = []
         
         daeSource = collada.DaeSource()
-        daeSource.id = self.document.CreateID(daeGeometry.id+'-Position')
+        daeSource.id = self.document.CreateID(daeGeometry.id,'-Position')
         daeFloatArray = collada.DaeFloatArray()
-        daeFloatArray.id = self.document.CreateID(daeSource.id+'-array')
+        daeFloatArray.id = self.document.CreateID(daeSource.id,'-array')
         daeSource.source = daeFloatArray
         daeSource.techniqueCommon = collada.DaeSource.DaeTechniqueCommon()
         accessor = collada.DaeAccessor()
@@ -807,9 +862,9 @@ class MeshNode(object):
         accessor.AddParam('Z','float')        
         
         daeSourceNormals = collada.DaeSource()
-        daeSourceNormals.id = self.document.CreateID(daeGeometry.id+'-Normals')
+        daeSourceNormals.id = self.document.CreateID(daeGeometry.id,'-Normals')
         daeFloatArrayNormals = collada.DaeFloatArray()
-        daeFloatArrayNormals.id = self.document.CreateID(daeSourceNormals.id+'-array')
+        daeFloatArrayNormals.id = self.document.CreateID(daeSourceNormals.id,'-array')
         daeSourceNormals.source = daeFloatArrayNormals
         daeSourceNormals.techniqueCommon = collada.DaeSource.DaeTechniqueCommon()
         accessorNormals = collada.DaeAccessor()
@@ -821,9 +876,9 @@ class MeshNode(object):
         accessorNormals.AddParam('Z','float') 
         
         daeSourceTextures = collada.DaeSource()
-        daeSourceTextures.id = self.document.CreateID(daeGeometry.id + '-UV')
+        daeSourceTextures.id = self.document.CreateID(daeGeometry.id , '-UV')
         daeFloatArrayTextures = collada.DaeFloatArray()
-        daeFloatArrayTextures.id = self.document.CreateID(daeSourceTextures.id+'-array')
+        daeFloatArrayTextures.id = self.document.CreateID(daeSourceTextures.id,'-array')
         daeSourceTextures.source = daeFloatArrayTextures
         daeSourceTextures.techniqueCommon = collada.DaeSource.DaeTechniqueCommon()
         accessorTextures = collada.DaeAccessor()
@@ -834,7 +889,7 @@ class MeshNode(object):
         
         
         daeVertices = collada.DaeVertices()
-        daeVertices.id = self.document.CreateID(daeGeometry.id+'-Vertex')
+        daeVertices.id = self.document.CreateID(daeGeometry.id,'-Vertex')
         daeInput = collada.DaeInput()
         daeInput.semantic = 'POSITION'
         daeInput.source = daeSource.id
@@ -1038,6 +1093,7 @@ class MaterialNode(object):
             if isinstance(shader,collada.DaeFxShadeLambert) or isinstance(shader, collada.DaeFxShadeBlinn) or isinstance(shader, collada.DaeFxShadePhong):
                 bMat.setDiffuseShader(Blender.Material.Shaders.DIFFUSE_LAMBERT)
                 if shader.diffuse:
+                    ##print shader.diffuse.color.rgba, shader.diffuse.color
                     if not (shader.diffuse.color is None):
                         color = shader.diffuse.color.rgba
                         bMat.setRGBCol(color[0],color[1], color[2])
@@ -1069,14 +1125,14 @@ class MaterialNode(object):
         
     def SaveToDae(self, bMaterial):
         daeMaterial = collada.DaeFxMaterial()
-        daeMaterial.id = daeMaterial.name = self.document.CreateID(bMaterial.name)
+        daeMaterial.id = daeMaterial.name = self.document.CreateID(bMaterial.name, '-Material')
         
         instance = collada.DaeFxEffectInstance()
         daeEffect = self.document.colladaDocument.effectsLibrary.FindObject(bMaterial.name+'-fx')
         meshNode = MeshNode(self.document)
         if daeEffect is None:
             daeEffect = collada.DaeFxEffect()
-            daeEffect.id = daeEffect.name = self.document.CreateID(bMaterial.name + '-fx')
+            daeEffect.id = daeEffect.name = self.document.CreateID(bMaterial.name , '-fx')
             shader = None
             if bMaterial.getSpec() > 0.0:
                 if bMaterial.getSpecShader() == Blender.Material.Shaders.SPEC_BLINN:
@@ -1128,7 +1184,7 @@ class CameraNode(object):
     
     def SaveToDae(self, bCamera):
         daeCamera = collada.DaeCamera()
-        daeCamera.id = daeCamera.name = self.document.CreateID(bCamera.name)
+        daeCamera.id = daeCamera.name = self.document.CreateID(bCamera.name,'-Camera')
         daeOptics = collada.DaeOptics()
         daeTechniqueCommon = None
         if bCamera.type == 1: # orthographic
@@ -1196,7 +1252,7 @@ class LampNode(object):
     
     def SaveToDae(self, bLamp):
         daeLight = collada.DaeLight()
-        daeLight.id = daeLight.name = bLamp.name
+        daeLight.id = daeLight.name = self.document.CreateID(bLamp.name,'-Light')
         
         daeTechniqueCommon = None
         if bLamp.type == Blender.Lamp.Types.Hemi: # Ambient
