@@ -282,8 +282,13 @@ def Gui():
     else:
         fileName = fileButton.val
     Blender.Draw.Text('%s file:'%(importExportText),"normal")
-    fileButton = Blender.Draw.String('', 5, 105, yval-5, 400, 20, fileName, 255) 
-    Blender.Draw.PushButton('...', 2, 105 + 400, yval-5, 30, 20, 'browse file')
+    maxWidth = 400
+    if size[0] - (105 + 35) > maxWidth:
+        fileWidth = maxWidth
+    else:
+        fileWidth = size[0] - (105 + 35)
+    fileButton = Blender.Draw.String('', 5, 105, yval-5, fileWidth, 20, fileName, 255) 
+    Blender.Draw.PushButton('...', 2, 105 + fileWidth, yval-5, 30, 20, 'browse file')
     
     Blender.Draw.PushButton("Cancel", 3, 45, 10, 55, 20, "Cancel")
     Blender.Draw.PushButton(importExportText + ' and Close', 4, 45+55+35, 10, 100, 20, importExportText + ' and close this screen')
@@ -302,8 +307,8 @@ def Gui():
         else:
             togglePolygonsVal = 0
             
-        ##toggleTriangles = Blender.Draw.Toggle('Triangles',6,45, yval, 60, 20, toggleTrianglesVal, 'Export all geometry as triangles')
-        ##togglePolygons = Blender.Draw.Toggle('Polygons',7,45+60 + 30, yval, 60, 20, togglePolygonsVal, 'Export all geometry as polygons')
+        toggleTriangles = Blender.Draw.Toggle('Triangles',6,45, yval, 60, 20, toggleTrianglesVal, 'Export all geometry as triangles')
+        togglePolygons = Blender.Draw.Toggle('Polygons',7,45+60 + 30, yval, 60, 20, togglePolygonsVal, 'Export all geometry as polygons')
         
         yval = yval - 40
         # Create Export Selection Option
@@ -346,8 +351,8 @@ def Gui():
         else:
             toggleClearSceneVal = 0
             
-        ##toggleNewScene = Blender.Draw.Toggle('New Scene',9,40, yval, 75, 20, toggleNewSceneVal, 'Import file into a new Scene')
-        ##toggleClearScene = Blender.Draw.Toggle('Clear Scene',10,40+75 + 10, yval, 75, 20, toggleClearSceneVal, 'Clear everything on the current scene')
+        toggleNewScene = Blender.Draw.Toggle('New Scene',9,40, yval, 75, 20, toggleNewSceneVal, 'Import file into a new Scene')
+        toggleClearScene = Blender.Draw.Toggle('Clear Scene',10,40+75 + 10, yval, 75, 20, toggleClearSceneVal, 'Clear everything on the current scene')
         
         
        

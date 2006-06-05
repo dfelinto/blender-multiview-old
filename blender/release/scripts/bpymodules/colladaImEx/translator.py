@@ -85,16 +85,23 @@ class DocumentTranslator(object):
             tempName = name;
             if not(typeName is None) and name.rfind(typeName) >= 0:
                 # Check for existing number at the end?
-                while tempName[-1:].isdigit():
-                    tempName =  tempName[:-1]
-                digitStr = name[-(len(name)-len(tempName)):]
-                digit = 1;
-                if len(digitStr) > 0 and len(digitStr) != len(name):
-                    digit = int(digitStr)+1 
-                return self.CreateID(tempName+str(digit))
+                return self.IncrementString(tempName)
             else:
                 return self.CreateID(tempName+typeName)
-        
+    
+    def IncrementString(self, name):
+        tempName = name;
+        if name.rfind('.') >= 0:
+            while tempName[-1:].isdigit():
+                tempName =  tempName[:-1]
+            digitStr = name[-(len(name)-len(tempName)):]
+            digit = 1
+            if len(digitStr) > 0 and len(digitStr) != len(name):
+                digit = int(digitStr)+1
+            return tempName+str(digit).zfill(3)
+        else:
+            return name+'.001'
+                    
     def __init__(self, fileName):
         self.isImport = False 
         self.scenesLibrary = ScenesLibrary(self)
@@ -113,16 +120,36 @@ class DocumentTranslator(object):
         
         
         self.currentBScene = Blender.Scene.getCurrent()
-        
+                
         self.progressCount = 0.4
         self.progressField = (1.0 - self.progressCount)
         self.progressStep = 0.0
         self.progressPartCount = 0.0
         
         self.tMat = Matrix()
+    
+    def CreateNameForObject(self, name, replace, myType):
+        if not replace:
+            return name
+        
+        if myType == 'object':
+            try:
+                ob = Blender.Object.Get(name)
+                ob.name = self.CreateNameForObject(self.IncrementString(ob.name), True, 'object')
+            except ValueError:
+                pass
+        elif myType == 'mesh':                   
+            try:
+                mesh = Blender.Mesh.Get(name)
+                if not mesh is None:
+                    mesh.name = self.CreateNameForObject(self.IncrementString(mesh.name), True, 'mesh')
+            except ValueError:
+                pass
+            
+        return name
         
     def Import(self, fileName):
-        global debugMode
+        global debugMode, createNewScene
         
         self.filename = fileName
         self.filePath = Blender.sys.dirname(self.filename) + Blender.sys.sep
@@ -130,6 +157,11 @@ class DocumentTranslator(object):
         Blender.Window.EditMode(0)
         Blender.Window.DrawProgressBar(0.0, 'Starting Import')
         
+        if createNewScene:
+            self.currentBScene = Blender.Scene.New('Scene')
+            self.currentBScene.makeCurrent()
+        else:
+            self.currentBScene = Blender.Scene.getCurrent()
         
         # Create a new Collada document
         Blender.Window.DrawProgressBar(0.1, 'Get Collada Document')
@@ -236,10 +268,10 @@ class SceneGraph(object):
         #self.currentBScene = Blender.Scene.getCurrent()
     
     def LoadFromCollada(self, colladaScene):
-        global debugMode
+        global debugMode, newScene, clearScene
         
         # When in debugMode, delete everything from the scene before proceding
-        if debugMode:
+        if debugMode or clearScene:
             print "Delete everything from the scene.."
             bNodes = Blender.Object.Get()
             
@@ -247,9 +279,6 @@ class SceneGraph(object):
             newScene.makeCurrent()
             Blender.Scene.Unlink(self.document.currentBScene)
             self.document.currentBScene = newScene
-            ##self.document.currentBScene.unlink()
-##            for bNode in bNodes:
-##                pass#self.document.currentBScene.unlink(bNode)   
             
         if colladaScene == None:
             return False
@@ -293,6 +322,8 @@ class SceneGraph(object):
         
         if exportSelection:
             self.rootNodes = Blender.Object.GetSelected()
+            if len(self.rootNodes) == 0:
+                print self.document.currentBScene.getActiveObject()
             self.childNodes = []
         else: # now loop trough all nodes in this scene and create a list with root nodes and children
             for node in bScene.getChildren():
@@ -426,7 +457,7 @@ class SceneNode(object):
                     elif isinstance(daeInstance,collada.DaeControllerInstance):
                         newObject = Blender.Object.New('Empty',self.id)
                     elif isinstance(daeInstance,collada.DaeGeometryInstance):
-                        newObject = Blender.Object.New('Mesh',self.id)
+                        newObject = Blender.Object.New('Mesh',self.document.CreateNameForObject(self.id,True, 'object'))
                         dataObject = self.document.meshLibrary.FindObject(daeInstance,True)
                     elif isinstance(daeInstance,collada.DaeLightInstance):
                         newObject = Blender.Object.New('Lamp',self.id)
@@ -576,12 +607,12 @@ class SceneNode(object):
                 daeLight = lampNode.SaveToDae(bNode.getData())
             instance.object = daeLight
             daeNode.iLights.append(instance)
-            
-        myChildNodes = []
-        if childNodes.has_key(bNode.name):
-            myChildNodes = childNodes[bNode.name]
         
-        if not exportSelection:
+        if not exportSelection:    
+            myChildNodes = []
+            if childNodes.has_key(bNode.name):
+                myChildNodes = childNodes[bNode.name]        
+        
             for bNode in myChildNodes:
                 sceneNode = SceneNode(self.document, self)
                 daeNode.nodes.append(sceneNode.SaveToDae(bNode,childNodes)[0])
@@ -710,7 +741,7 @@ class MeshNode(object):
         meshName = daeGeometry.name
         
         # Create a new meshObject
-        bMesh2 = Blender.NMesh.New(meshID)
+        bMesh2 = Blender.NMesh.New(self.document.CreateNameForObject(meshID,True,'mesh'))
 
         if isinstance(daeGeometry.data,collada.DaeMesh): # check if it's a mesh
             materials = []
@@ -839,6 +870,7 @@ class MeshNode(object):
         return bMesh2
     
     def SaveToDae(self, bMesh):
+        global useTriangles, usePolygons
         daeGeometry = collada.DaeGeometry()
         daeGeometry.id = daeGeometry.name = self.document.CreateID(bMesh.name,'-Geometry')
         
@@ -945,14 +977,22 @@ class MeshNode(object):
                     # Update the prevVert vertice.
                     prevVert = vert
                     
-            if vertCount == 3: # triangle                
+            if (vertCount == 3 and not usePolygons) or (useTriangles and vertCount == 4): # triangle                
                 # Iff a Triangle Item for the current material not exists, create one.
                 daeTrianglesDict.setdefault(matIndex, collada.DaeTriangles())
-                # Add al the vertices to the triangle list.
-                AddVerts(face.verts,daeTrianglesDict[matIndex].triangles)
-                # Update the vertice count for the trianglelist.
-                daeTrianglesDict[matIndex].count += 1
-                
+                if vertCount == 3:
+                    # Add al the vertices to the triangle list.
+                    AddVerts(face.verts,daeTrianglesDict[matIndex].triangles)
+                    # Update the vertice count for the trianglelist.
+                    daeTrianglesDict[matIndex].count += 1
+                else: # Convert polygon to triangles                    
+                    verts1 = face.verts[:3]
+                    verts2 = face.verts[2:] + tuple([face.verts[0]])
+                    # Add al the vertices to the triangle list.
+                    AddVerts(verts1,daeTrianglesDict[matIndex].triangles)
+                    AddVerts(verts2, daeTrianglesDict[matIndex].triangles)
+                    # Update the vertice count for the trianglelist.
+                    daeTrianglesDict[matIndex].count += 2              
             else: # polygon
                 # Iff a Polygon Item for the current material not exists, create one.
                 daePolygonsDict.setdefault(matIndex, collada.DaePolygons())

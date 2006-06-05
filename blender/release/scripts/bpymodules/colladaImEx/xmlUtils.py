@@ -67,6 +67,13 @@ def ReadDateTime(node):
         return None
     return GetDateTime(ReadContents(node))
 
+##def RemoveWhiteSpace(parent):    
+##    for child in list(parent.childNodes):
+##        if child.nodeType==node.TEXT_NODE and node.data.strip()=='':
+##            parent.removeChild(child)
+##        else:
+##            removeWhitespaceNodes(child)
+
 def RemoveWhiteSpace(node):
     removeList = []
     for child in node.childNodes:
