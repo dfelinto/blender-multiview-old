@@ -676,7 +676,7 @@ class SceneNode(object):
                     object = collada.DaeGeometry()
                     object.id = object.name = self.document.CreateID(daeNode.id,'-ConvexGeom')
                     convexMesh = collada.DaeConvexMesh()
-                    convexMesh.convexHullOf = meshID1.replace('.','_')
+                    convexMesh.convexHullOf = meshID.replace('.','_')
                     object.data = convexMesh                                                    
                     self.document.colladaDocument.geometriesLibrary.AddItem(object)
                 iGeometry.object = object    
