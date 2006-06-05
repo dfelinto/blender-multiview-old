@@ -647,81 +647,79 @@ class SceneNode(object):
             lastIndex += 1
             rbF = val
         
-        if len(rbFlags) > 0:
-            if rbFlags[10] and rbFlags[2]: # Check if this node is: actor + rigid body + dynamic                
-                daePhysicsModel = collada.DaePhysicsModel();
-                daePhysicsModel.id = daePhysicsModel.name = self.document.CreateID(daeNode.id,'-PhysicsModel')
-                daeRigidBody = collada.DaeRigidBody();
-                daeRigidBody.id = daeRigidBody.name = self.document.CreateID(daeNode.id,'-RigidBody')
-                daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
-                daeRigidBodyTechniqueCommon.dynamic = bool(rbFlags[0])
-                daeRigidBodyTechniqueCommon.mass = bNode.rbMass
-                # check the shape of the rigid body.
-                if bNode.rbShapeBoundType == 0: # Box
-                    shape = collada.DaeBoxShape()
-                    shape.halfExtents = list(bNode.rbHalfExtents)
-                elif bNode.rbShapeBoundType == 1: # Sphere
-                    shape = collada.DaeSphereShape()
-                    shape.radius = bNode.rbRadius
-                elif bNode.rbShapeBoundType == 2: # Cylinder
-                    return None
-                elif bNode.rbShapeBoundType == 3: # Cone
-                    return None
-                else: # Convex hull or # Static Triangle Mesh
-                    shape = collada.DaeGeometryShape()
-                    iGeometry = collada.DaeGeometryInstance()
-                    if bNode.rbShapeBoundType == 5:
-                        object = self.document.colladaDocument.geometriesLibrary.FindObject(daeNode.id+'-Convex')
-                    else:
-                        object = self.document.colladaDocument.geometriesLibrary.FindObject(meshID)
-                    if object is None:
-                        object = collada.DaeGeometry()
-                        object.id = object.name = self.document.CreateID(daeNode.id,'-ConvexGeom')
-                        convexMesh = collada.DaeConvexMesh()
-                        convexMesh.convexHullOf = meshID
-                        object.data = convexMesh                                                    
-                        self.document.colladaDocument.geometriesLibrary.AddItem(object)
-                    iGeometry.object = object    
-                    shape.iGeometry = iGeometry
-                
-                # Create a physics material.
-                daePhysicsMaterial = self.document.colladaDocument.physicsMaterialsLibrary.FindObject(daeNode.id+'-PxMaterial')
-                if daePhysicsMaterial is None:
-                    daePhysicsMaterial = collada.DaePhysicsMaterial()
-                    daePhysicsMaterial.id = daePhysicsMaterial.name = self.document.CreateID(daeNode.id, '-PhysicsMaterial')
-                    self.document.colladaDocument.physicsMaterialsLibrary.AddItem(daePhysicsMaterial)
-                                
-                # Create a physics material instance.
-                daePhysicsMaterialInstance = collada.DaePhysicsMaterialInstance()
-                # Set the physics material of this instance
-                daePhysicsMaterialInstance.object = daePhysicsMaterial
-                
-                
-                # add the shape to the commom technique.
-                daeRigidBodyTechniqueCommon.shapes.append(shape)                
-                # Set the material of the common technique.
-                daeRigidBodyTechniqueCommon.iPhysicsMaterial = daePhysicsMaterialInstance
-                # Set the common technique of this rigid body.
-                daeRigidBody.techniqueCommon = daeRigidBodyTechniqueCommon
-                
-                # Add the rigid body to the physics model.
-                daePhysicsModel.rigidBodies.append(daeRigidBody)
-                # Create a new RigidBody instance
-                daeRigidBodyInstance = collada.DaeRigidBodyInstance()
-                # Set the rigid body of this instance
-                daeRigidBodyInstance.body = daeRigidBody
-                # Set the node of this instance
-                daeRigidBodyInstance.target = daeNode
-                
-                # Create a new Physics Model Instance.
-                daePhysicsModelInstance = collada.DaePhysicsModelInstance()
-                # Set the Physics Model of this instance.
-                daePhysicsModelInstance.object = daePhysicsModel
-                # add the rigidbody instance to this physics model instance.
-                daePhysicsModelInstance.iRigidBodies.append(daeRigidBodyInstance)
-                # add the physics model to the library.
-                self.document.colladaDocument.physicsModelsLibrary.items.append(daePhysicsModel)
-                return daePhysicsModelInstance
+            daePhysicsModel = collada.DaePhysicsModel();
+            daePhysicsModel.id = daePhysicsModel.name = self.document.CreateID(daeNode.id,'-PhysicsModel')
+            daeRigidBody = collada.DaeRigidBody();
+            daeRigidBody.id = daeRigidBody.name = self.document.CreateID(daeNode.id,'-RigidBody')
+            daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
+            daeRigidBodyTechniqueCommon.dynamic = bool(rbFlags[0])
+            daeRigidBodyTechniqueCommon.mass = bNode.rbMass
+            # check the shape of the rigid body.
+            if bNode.rbShapeBoundType == 0: # Box
+                shape = collada.DaeBoxShape()
+                shape.halfExtents = list(bNode.rbHalfExtents)
+            elif bNode.rbShapeBoundType == 1: # Sphere
+                shape = collada.DaeSphereShape()
+                shape.radius = bNode.rbRadius
+            elif bNode.rbShapeBoundType == 2: # Cylinder
+                return None
+            elif bNode.rbShapeBoundType == 3: # Cone
+                return None
+            else: # Convex hull or # Static Triangle Mesh
+                shape = collada.DaeGeometryShape()
+                iGeometry = collada.DaeGeometryInstance()
+                if bNode.rbShapeBoundType == 5:
+                    object = self.document.colladaDocument.geometriesLibrary.FindObject(daeNode.id+'-Convex')
+                else:
+                    object = self.document.colladaDocument.geometriesLibrary.FindObject(meshID)
+                if object is None:
+                    object = collada.DaeGeometry()
+                    object.id = object.name = self.document.CreateID(daeNode.id,'-ConvexGeom')
+                    convexMesh = collada.DaeConvexMesh()
+                    convexMesh.convexHullOf = meshID1.replace('.','_')
+                    object.data = convexMesh                                                    
+                    self.document.colladaDocument.geometriesLibrary.AddItem(object)
+                iGeometry.object = object    
+                shape.iGeometry = iGeometry
+            
+            # Create a physics material.
+            daePhysicsMaterial = self.document.colladaDocument.physicsMaterialsLibrary.FindObject(daeNode.id+'-PxMaterial')
+            if daePhysicsMaterial is None:
+                daePhysicsMaterial = collada.DaePhysicsMaterial()
+                daePhysicsMaterial.id = daePhysicsMaterial.name = self.document.CreateID(daeNode.id, '-PhysicsMaterial')
+                self.document.colladaDocument.physicsMaterialsLibrary.AddItem(daePhysicsMaterial)
+                            
+            # Create a physics material instance.
+            daePhysicsMaterialInstance = collada.DaePhysicsMaterialInstance()
+            # Set the physics material of this instance
+            daePhysicsMaterialInstance.object = daePhysicsMaterial
+            
+            
+            # add the shape to the commom technique.
+            daeRigidBodyTechniqueCommon.shapes.append(shape)                
+            # Set the material of the common technique.
+            daeRigidBodyTechniqueCommon.iPhysicsMaterial = daePhysicsMaterialInstance
+            # Set the common technique of this rigid body.
+            daeRigidBody.techniqueCommon = daeRigidBodyTechniqueCommon
+            
+            # Add the rigid body to the physics model.
+            daePhysicsModel.rigidBodies.append(daeRigidBody)
+            # Create a new RigidBody instance
+            daeRigidBodyInstance = collada.DaeRigidBodyInstance()
+            # Set the rigid body of this instance
+            daeRigidBodyInstance.body = daeRigidBody
+            # Set the node of this instance
+            daeRigidBodyInstance.target = daeNode
+            
+            # Create a new Physics Model Instance.
+            daePhysicsModelInstance = collada.DaePhysicsModelInstance()
+            # Set the Physics Model of this instance.
+            daePhysicsModelInstance.object = daePhysicsModel
+            # add the rigidbody instance to this physics model instance.
+            daePhysicsModelInstance.iRigidBodies.append(daeRigidBodyInstance)
+            # add the physics model to the library.
+            self.document.colladaDocument.physicsModelsLibrary.items.append(daePhysicsModel)
+            return daePhysicsModelInstance
                 
         return None
     
