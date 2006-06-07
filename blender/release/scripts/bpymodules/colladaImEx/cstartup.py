@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.45
+# Illusoft Collada 1.4 plugin for Blender version 0.2.56
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -27,6 +27,7 @@ _ERROR = False
 
 import sys
 import os
+
 try:
     import Blender
 except NameError:
@@ -34,7 +35,7 @@ except NameError:
     _ERROR = True
 
 
-__version__ = '0.2.45'
+__version__ = '0.2.56'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)
@@ -123,7 +124,9 @@ except NameError:
 modules = [cutils, xmlUtils, collada, translator]
 
 def Main(doImp, scriptsLoc):
-    global debug, __version__, doImport, scriptsLocation, defaultFilename
+    global debug, __version__, doImport, scriptsLocation, defaultFilename, valsLoaded
+    
+    valsLoaded = False
 
     doImport = doImp
     if scriptsLoc == "":
@@ -230,11 +233,35 @@ toggleClearScene = None
 toggleNewScene = None
 toggleBakeMatrix = None
 toggleLookAt = None
+togglePhysics = None
+toggleExportCurrentScene = None
+toggleExportRelativePaths = None
 
+def LoadDefaultVals():
+    global toggleLookAt, toggleBakeMatrix, toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, toggleExportSelection, scriptsLocation, doImport, defaultFilename, fileButton, valsLoaded, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths
+    
+    if valsLoaded:
+        return None
+    
+    colladaReg = Blender.Registry.GetKey('collada',True)
+    if not (colladaReg is None):
+        fileButton.val = colladaReg.get('path', '')
+        if doImport:
+            toggleNewScene.val = colladaReg.get('newScene', False)
+            toggleClearScene.val = colladaReg.get('clearScene', False)
+        else:
+            ##toggleLookAt.val = colladaReg.get('lookAt', False)
+            toggleBakeMatrix.val = colladaReg.get('bakeMatrices', False)
+            toggleTriangles.val = colladaReg.get('useTriangles', False)
+            togglePolygons.val = colladaReg.get('usePolygons', False)
+            toggleExportSelection.val = colladaReg.get('exportSelection', False)            
+            togglePhysics.val = not colladaReg.get('usePhysics', True)
+            toggleExportCurrentScene.val = colladaReg.get('exportCurrentScene', False)
+            toggleExportRelativePaths.val = colladaReg.get('exportRelativePaths', True)
+    valsLoaded = True
 
 def Gui():
-    global toggleLookAt, toggleBakeMatrix, toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, toggleExportSelection, scriptsLocation, doImport, defaultFilename, fileButton    
-        
+    global toggleLookAt, toggleBakeMatrix, toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, toggleExportSelection, scriptsLocation, doImport, defaultFilename, fileButton, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths
     Blender.BGL.glClearColor(0.898,0.910,0.808,1) # Set BG Color1
     Blender.BGL.glClear(Blender.BGL.GL_COLOR_BUFFER_BIT)
     Blender.BGL.glColor3f(0.835,0.848,0.745) # BG Color 2
@@ -320,7 +347,7 @@ def Gui():
         toggleExportSelection = Blender.Draw.Toggle('Only Export Selection',8,45, yval, 150, 20, toggleExportSelectionVal, 'Only export selected objects')
         
         yval = yval - 40
-        # Create Export Selection Option
+        # Create Bake Matrix Option
         if not (toggleBakeMatrix is None):
             toggleBakeMatrixVal = toggleBakeMatrix.val
         else:
@@ -329,13 +356,41 @@ def Gui():
         toggleBakeMatrix = Blender.Draw.Toggle('Bake Matrices',11,45, yval, 150, 20, toggleBakeMatrixVal, 'Put all transformations in a single matrix')
         
         yval = yval - 40
-        # Create Export Selection Option
+        #Create Physics Option
+        if not (togglePhysics is None):
+            togglePhysicsVal = togglePhysics.val
+        else:
+            togglePhysicsVal = 0
+            
+        togglePhysics = Blender.Draw.Toggle('Disable Physics',13,45, yval, 150, 20, togglePhysicsVal, 'Disable Export physics information')
+        
+        
+        yval = yval - 40
+        #Create Physics Option
+        if not (toggleExportCurrentScene is None):
+            toggleExportCurrentSceneVal = toggleExportCurrentScene.val
+        else:
+            toggleExportCurrentSceneVal = 0
+            
+        toggleExportCurrentScene = Blender.Draw.Toggle('Only Current Scene',14,45, yval, 150, 20, toggleExportCurrentSceneVal, 'Only Export the current scene')
+        
+        yval = yval - 40
+        #Create Relative Path's Option
+        if not (toggleExportRelativePaths is None):
+            toggleExportRelativePathsVal = toggleExportRelativePaths.val
+        else:
+            toggleExportRelativePathsVal = 0
+            
+        toggleExportRelativePaths = Blender.Draw.Toggle('Use Relative Paths',15,45, yval, 150, 20, toggleExportRelativePathsVal, 'Export paths relative to the collada file')
+        
+        
+        # Create Lookat  Option
         if not (toggleLookAt is None):
             toggleLookAtVal = toggleLookAt.val
         else:
             toggleLookAtVal = 0
             
-        ##toggleLookAt = Blender.Draw.Toggle('Camera as Lookat',12,45, yval, 150, 20, toggleLookAtVal, 'Export the transformation of camera\'s as lookat')
+        ##toggleLookAt = Blender.Draw.Toggle('Camera as Lookat',14,45, yval, 150, 20, toggleLookAtVal, 'Export the transformation of camera\'s as lookat')
         
         Blender.Draw.PushButton(importExportText, 12, 45+55+35+100+35, 10, 55, 20, importExportText)
     else:
@@ -353,14 +408,15 @@ def Gui():
             
         toggleNewScene = Blender.Draw.Toggle('New Scene',9,40, yval, 75, 20, toggleNewSceneVal, 'Import file into a new Scene')
         toggleClearScene = Blender.Draw.Toggle('Clear Scene',10,40+75 + 10, yval, 75, 20, toggleClearSceneVal, 'Clear everything on the current scene')
-        
+    
+    LoadDefaultVals()
         
        
 def Event(evt, val):
     pass
         
 def ButtonEvent(evt):
-    global toggleLookAt, toggleBakeMatrix, toggleExportSelection,toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, doImport, defaultFilename, fileSelectorShown, fileButton
+    global toggleLookAt, toggleBakeMatrix, toggleExportSelection,toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, doImport, defaultFilename, fileSelectorShown, fileButton, valsLoaded, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths
         
     if evt == 1:
         toggle = 1 - toggle
@@ -427,8 +483,41 @@ def ButtonEvent(evt):
             lookAt = False
         else:
             lookAt = bool(toggleLookAt.val)
-        d = {}
+            
+        if togglePhysics is None:
+            usePhysics = True
+        else:
+            usePhysics = not bool(togglePhysics.val)
+            
+        if toggleExportCurrentScene is None:
+            exportCurrentScene = False
+        else:
+            exportCurrentScene = bool(toggleExportCurrentScene.val)
+            
+        if toggleExportRelativePaths is None:
+            exportRelativePaths = False
+        else:
+            exportRelativePaths = bool(toggleExportRelativePaths.val)
+        
+        
+        d = Blender.Registry.GetKey('collada',True)
+        if d is None:
+            d = dict()
         d['path'] = fileName
+        
+        if doImport:
+            d['newScene'] = newScene
+            d['clearScene'] = clearScene
+        else:
+            d['useTriangles'] = useTriangles
+            d['usePolygons'] = usePolygons
+            d['bakeMatrices'] = bakeMatrices
+            d['exportSelection'] = exportSelection
+            d['lookAt'] = lookAt
+            d['usePhysics'] = usePhysics
+            d['exportCurrentScene'] = exportCurrentScene
+            d['exportRelativePaths'] = exportRelativePaths
+            
         Blender.Registry.SetKey('collada',d, True)
         
         if doImport:
@@ -437,14 +526,14 @@ def ButtonEvent(evt):
             importExportText = "Export"        
         
         try:
-            transl = translator.Translator(doImport,__version__,debug,fileName, useTriangles, usePolygons, bakeMatrices, exportSelection, newScene, clearScene, lookAt)
+            transl = translator.Translator(doImport,__version__,debug,fileName, useTriangles, usePolygons, bakeMatrices, exportSelection, newScene, clearScene, lookAt, usePhysics, exportCurrentScene, exportRelativePaths)
             # Redraw al 3D windows.
             Blender.Window.RedrawAll()    
             
             # calculate the elapsed time
             endTime = Blender.sys.time()
             elapsedTime = endTime - startTime
-            Blender.Draw.PupMenu(importExportText + " Successfull %t")
+            Blender.Draw.PupMenu(importExportText + " Successful %t")
         except:
             endTime = Blender.sys.time()
             elapsedTime = endTime - startTime
@@ -454,9 +543,10 @@ def ButtonEvent(evt):
         cutils.Debug.Debug('FINISHED - time elapsed: %.1f'%(elapsedTime),'FEEDBACK')
         
         # Hide the wait cursor in blender
-        Blender.Window.WaitCursor(0)
+        Blender.Window.WaitCursor(0)        
         if evt == 4:
             Blender.Draw.Exit()
+        valsLoaded = False
     elif evt == 6: # Toggle Triangles
         if toggleTriangles.val:
             togglePolygons.val = 0

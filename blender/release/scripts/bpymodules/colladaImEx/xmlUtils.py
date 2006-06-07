@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.45
+# Illusoft Collada 1.4 plugin for Blender version 0.2.56
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -67,23 +67,29 @@ def ReadDateTime(node):
         return None
     return GetDateTime(ReadContents(node))
 
-##def RemoveWhiteSpace(parent):    
-##    for child in list(parent.childNodes):
-##        if child.nodeType==node.TEXT_NODE and node.data.strip()=='':
-##            parent.removeChild(child)
-##        else:
-##            removeWhitespaceNodes(child)
-
-def RemoveWhiteSpace(node):
-    removeList = []
-    for child in node.childNodes:
-        if child.nodeType == child.TEXT_NODE and not child.data.strip():
-            removeList.append(child)
-        elif child.hasChildNodes():
+def RemoveWhiteSpace(parent):    
+    for child in list(parent.childNodes):
+        if child.nodeType==child.TEXT_NODE and child.data.strip()=='':
+            parent.removeChild(child)
+        else:
             RemoveWhiteSpace(child)
-    
-    for node in removeList:
-        node.parentNode.removeChild(node)
+
+def RemoveWhiteSpaceNode(parent):
+    for child in list(parent.childNodes):
+        if child.nodeType == child.TEXT_NODE and child.data.strip()=='':
+            parent.removeChild(child)
+    return parent
+            
+##def RemoveWhiteSpace(node):
+##    removeList = []
+##    for child in node.childNodes:
+##        if child.nodeType == child.TEXT_NODE and not child.data.strip():
+##            removeList.append(child)
+##        elif child.hasChildNodes():
+##            RemoveWhiteSpace(child)
+##    
+##    for node in removeList:
+##        node.parentNode.removeChild(node)
 
 def GetDateTime(xmlvalue):
     vals = xmlvalue.split('T')

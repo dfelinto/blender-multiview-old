@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.45
+# Illusoft Collada 1.4 plugin for Blender version 0.2.56
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -30,11 +30,13 @@ from Blender.Mathutils import *
 import math
 import datetime
 
+import profile
+
 class Translator(object):
     isImporter = False
     
-    def __init__(self, isImporter, version, debugM, fileName,_useTriangles, _usePolygons, _bakeMatrices, _exportSelection, _createNewScene, _clearScene, _lookAt):
-        global __version__, debugMode, usePhysics, useTriangles, usePolygons, bakeMatrices, exportSelection, createNewScene, clearScene, lookAt
+    def __init__(self, isImporter, version, debugM, fileName,_useTriangles, _usePolygons, _bakeMatrices, _exportSelection, _createNewScene, _clearScene, _lookAt, _exportPhysics, _exportCurrentScene, _exportRelativePaths):
+        global __version__, debugMode, usePhysics, useTriangles, usePolygons, bakeMatrices, exportSelection, createNewScene, clearScene, lookAt, replaceNames, exportPhysics, exportCurrentScene, useRelativePaths
         __version__ = version
         debugMode = debugM
         usePhysics = None
@@ -45,6 +47,11 @@ class Translator(object):
         createNewScene = _createNewScene
         clearScene = _clearScene
         lookAt = _lookAt
+        exportPhysics = _exportPhysics
+        exportCurrentScene = _exportCurrentScene
+        useRelativePaths = _exportRelativePaths
+        
+        replaceNames = clearScene
         
         self.isImporter = isImporter
         self.fileName = ''
@@ -87,7 +94,7 @@ class DocumentTranslator(object):
                 # Check for existing number at the end?
                 return self.IncrementString(tempName)
             else:
-                return self.CreateID(tempName+typeName)
+                return self.CreateID(tempName+typeName, typeName)
     
     def IncrementString(self, name):
         tempName = name;
@@ -194,7 +201,8 @@ class DocumentTranslator(object):
         self.Progress()
     
     def Export(self, fileName):
-        global __version__
+        global __version__, filename
+        filename = fileName
         self.ids = []
         self.isImport = False
         Blender.Window.EditMode(0)
@@ -221,24 +229,28 @@ class DocumentTranslator(object):
         
         # Loop throug all scenes
         for bScene in Blender.Scene.Get():
-            daeInstanceVisualScene = collada.DaeVisualSceneInstance()
-            daeInstancePhysicsScene = collada.DaePhysicsSceneInstance()
-            daeVisualScene = self.colladaDocument.visualScenesLibrary.FindObject(bScene.name)
-            if daeVisualScene is None:
-                sceneGraph = SceneGraph(self)
-                scenesList = sceneGraph.SaveToDae(bScene)
-                daeVisualScene = scenesList[0]
-                daePhysicsScene = scenesList[1]
-               
-            daeInstanceVisualScene.object = daeVisualScene
-            daeInstancePhysicsScene.object = daePhysicsScene
-            #self.colladaDocument.visualScenesLibrary.AddItem(daeIntanceVisualScene)
-            daeScene.iVisualScenes.append(daeInstanceVisualScene)
-            daeScene.iPhysicsScenes.append(daeInstancePhysicsScene)
-            
-            #self.colladaDocument.visualScenesLibrary.AddItem(sceneGraph.ObjectToDae(bScene))
-            #daeScene = collada.DaeScene()
-            #daeScene.AddInstance()
+            if not exportCurrentScene or self.currentBScene == bScene:
+                daeInstanceVisualScene = collada.DaeVisualSceneInstance()
+                daeInstancePhysicsScene = collada.DaePhysicsSceneInstance()
+                daeVisualScene = self.colladaDocument.visualScenesLibrary.FindObject(bScene.name)
+                if daeVisualScene is None:
+                    sceneGraph = SceneGraph(self)
+                    scenesList = sceneGraph.SaveToDae(bScene)
+                    daeVisualScene = scenesList[0]
+                    if exportPhysics:
+                        daePhysicsScene = scenesList[1]
+                   
+                daeInstanceVisualScene.object = daeVisualScene
+                
+                #self.colladaDocument.visualScenesLibrary.AddItem(daeIntanceVisualScene)
+                daeScene.iVisualScenes.append(daeInstanceVisualScene)
+                if exportPhysics:
+                    daeInstancePhysicsScene.object = daePhysicsScene
+                    daeScene.iPhysicsScenes.append(daeInstancePhysicsScene)
+                
+                #self.colladaDocument.visualScenesLibrary.AddItem(sceneGraph.ObjectToDae(bScene))
+                #daeScene = collada.DaeScene()
+                #daeScene.AddInstance()
         
         
         self.colladaDocument.scene = daeScene
@@ -313,7 +325,7 @@ class SceneGraph(object):
         self.document.currentBScene.update(1)
     
     def SaveToDae(self, bScene):
-        global exportSelection
+        global exportSelection, exportPhysics
         daeVisualScene = collada.DaeVisualScene()
         daeVisualScene.id = daeVisualScene.name = self.document.CreateID(bScene.name,'-Scene')
         
@@ -322,8 +334,6 @@ class SceneGraph(object):
         
         if exportSelection:
             self.rootNodes = Blender.Object.GetSelected()
-            if len(self.rootNodes) == 0:
-                print self.document.currentBScene.getActiveObject()
             self.childNodes = []
         else: # now loop trough all nodes in this scene and create a list with root nodes and children
             for node in bScene.getChildren():
@@ -341,12 +351,14 @@ class SceneGraph(object):
             sceneNode = SceneNode(self.document,self)
             nodeResult = sceneNode.SaveToDae(rootNode,self.childNodes)
             daeNode = nodeResult[0]
-            daeInstancePhysicsModel = nodeResult[1]
             daeVisualScene.nodes.append(daeNode)
-            daePhysicsScene.iPhysicsModels.append(daeInstancePhysicsModel)
+            if exportPhysics:
+                daeInstancePhysicsModel = nodeResult[1]                
+                daePhysicsScene.iPhysicsModels.append(daeInstancePhysicsModel)
             
         self.document.colladaDocument.visualScenesLibrary.AddItem(daeVisualScene)
-        self.document.colladaDocument.physicsScenesLibrary.AddItem(daePhysicsScene)
+        if exportPhysics:
+            self.document.colladaDocument.physicsScenesLibrary.AddItem(daePhysicsScene)
         return (daeVisualScene, daePhysicsScene)
     
 class PhysicsNode(object):
@@ -428,6 +440,7 @@ class SceneNode(object):
         self.document = document
         
     def ObjectFromDae(self,daeNode):
+        global replaceNames
         self.document.Progress()
         self.id = daeNode.id
         self.type = daeNode.type
@@ -457,7 +470,7 @@ class SceneNode(object):
                     elif isinstance(daeInstance,collada.DaeControllerInstance):
                         newObject = Blender.Object.New('Empty',self.id)
                     elif isinstance(daeInstance,collada.DaeGeometryInstance):
-                        newObject = Blender.Object.New('Mesh',self.document.CreateNameForObject(self.id,True, 'object'))
+                        newObject = Blender.Object.New('Mesh',self.document.CreateNameForObject(self.id,replaceNames, 'object'))
                         dataObject = self.document.meshLibrary.FindObject(daeInstance,True)
                     elif isinstance(daeInstance,collada.DaeLightInstance):
                         newObject = Blender.Object.New('Lamp',self.id)
@@ -622,8 +635,8 @@ class SceneNode(object):
         return (daeNode, daePhysicsInstance)
     
     def SavePhysicsToDae(self, bNode, meshID, daeNode):
-        global usePhysics
-        if meshID is None or (not(usePhysics is None) and not usePhysics):
+        global usePhysics, exportPhysics
+        if meshID is None or (not(usePhysics is None) and not usePhysics or not exportPhysics):
             return None
         
         # Check if physics is supported.
@@ -647,81 +660,86 @@ class SceneNode(object):
             lastIndex += 1
             rbF = val
         
-            daePhysicsModel = collada.DaePhysicsModel();
-            daePhysicsModel.id = daePhysicsModel.name = self.document.CreateID(daeNode.id,'-PhysicsModel')
-            daeRigidBody = collada.DaeRigidBody();
-            daeRigidBody.id = daeRigidBody.name = self.document.CreateID(daeNode.id,'-RigidBody')
-            daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
-            daeRigidBodyTechniqueCommon.dynamic = bool(rbFlags[0])
-            daeRigidBodyTechniqueCommon.mass = bNode.rbMass
-            # check the shape of the rigid body.
-            if bNode.rbShapeBoundType == 0: # Box
-                shape = collada.DaeBoxShape()
-                shape.halfExtents = list(bNode.rbHalfExtents)
-            elif bNode.rbShapeBoundType == 1: # Sphere
-                shape = collada.DaeSphereShape()
-                shape.radius = bNode.rbRadius
-            elif bNode.rbShapeBoundType == 2: # Cylinder
-                return None
-            elif bNode.rbShapeBoundType == 3: # Cone
-                return None
-            else: # Convex hull or # Static Triangle Mesh
-                shape = collada.DaeGeometryShape()
-                iGeometry = collada.DaeGeometryInstance()
-                if bNode.rbShapeBoundType == 5:
-                    object = self.document.colladaDocument.geometriesLibrary.FindObject(daeNode.id+'-Convex')
-                else:
-                    object = self.document.colladaDocument.geometriesLibrary.FindObject(meshID)
-                if object is None:
-                    object = collada.DaeGeometry()
-                    object.id = object.name = self.document.CreateID(daeNode.id,'-ConvexGeom')
-                    convexMesh = collada.DaeConvexMesh()
-                    convexMesh.convexHullOf = meshID.replace('.','_')
-                    object.data = convexMesh                                                    
-                    self.document.colladaDocument.geometriesLibrary.AddItem(object)
-                iGeometry.object = object    
-                shape.iGeometry = iGeometry
-            
-            # Create a physics material.
-            daePhysicsMaterial = self.document.colladaDocument.physicsMaterialsLibrary.FindObject(daeNode.id+'-PxMaterial')
-            if daePhysicsMaterial is None:
-                daePhysicsMaterial = collada.DaePhysicsMaterial()
-                daePhysicsMaterial.id = daePhysicsMaterial.name = self.document.CreateID(daeNode.id, '-PhysicsMaterial')
-                self.document.colladaDocument.physicsMaterialsLibrary.AddItem(daePhysicsMaterial)
-                            
-            # Create a physics material instance.
-            daePhysicsMaterialInstance = collada.DaePhysicsMaterialInstance()
-            # Set the physics material of this instance
-            daePhysicsMaterialInstance.object = daePhysicsMaterial
-            
-            
-            # add the shape to the commom technique.
-            daeRigidBodyTechniqueCommon.shapes.append(shape)                
-            # Set the material of the common technique.
-            daeRigidBodyTechniqueCommon.iPhysicsMaterial = daePhysicsMaterialInstance
-            # Set the common technique of this rigid body.
-            daeRigidBody.techniqueCommon = daeRigidBodyTechniqueCommon
-            
-            # Add the rigid body to the physics model.
-            daePhysicsModel.rigidBodies.append(daeRigidBody)
-            # Create a new RigidBody instance
-            daeRigidBodyInstance = collada.DaeRigidBodyInstance()
-            # Set the rigid body of this instance
-            daeRigidBodyInstance.body = daeRigidBody
-            # Set the node of this instance
-            daeRigidBodyInstance.target = daeNode
-            
-            # Create a new Physics Model Instance.
-            daePhysicsModelInstance = collada.DaePhysicsModelInstance()
-            # Set the Physics Model of this instance.
-            daePhysicsModelInstance.object = daePhysicsModel
-            # add the rigidbody instance to this physics model instance.
-            daePhysicsModelInstance.iRigidBodies.append(daeRigidBodyInstance)
-            # add the physics model to the library.
-            self.document.colladaDocument.physicsModelsLibrary.items.append(daePhysicsModel)
-            return daePhysicsModelInstance
-                
-        return None
+        daePhysicsModel = collada.DaePhysicsModel();
+        daePhysicsModel.id = daePhysicsModel.name = self.document.CreateID(daeNode.id,'-PhysicsModel')
+        daeRigidBody = collada.DaeRigidBody();
+        daeRigidBody.id = daeRigidBody.name = self.document.CreateID(daeNode.id,'-RigidBody')
+        daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
+        daeRigidBodyTechniqueCommon.dynamic = bool(rbFlags[0])
+        daeRigidBodyTechniqueCommon.mass = bNode.rbMass
+        # check the shape of the rigid body.
+        if bNode.rbShapeBoundType == 0: # Box
+            shape = collada.DaeBoxShape()
+            shape.halfExtents = list(bNode.rbHalfExtents)
+        elif bNode.rbShapeBoundType == 1: # Sphere
+            shape = collada.DaeSphereShape()
+            shape.radius = bNode.rbRadius
+        elif bNode.rbShapeBoundType == 2: # Cylinder
+            shape = collada.DaeCylinderShape()
+            shape.radius = [[bNode.rbRadius],[bNode.rbRadius]]
+            shape.height = bNode.rbHalfExtents[2]
+        elif bNode.rbShapeBoundType == 3: # Cone
+            shape = collada.DaeTaperedCylinderShape()
+            shape.radius1 = [[bNode.rbRadius],[bNode.rbRadius]]
+            shape.radius2 = [0 , 0]
+            shape.height = bNode.rbHalfExtents[2]
+        else: # Convex hull or # Static Triangle Mesh
+            shape = collada.DaeGeometryShape()
+            iGeometry = collada.DaeGeometryInstance()
+            if bNode.rbShapeBoundType == 5:
+                object = self.document.colladaDocument.geometriesLibrary.FindObject(daeNode.id+'-Convex')
+            else:
+                object = self.document.colladaDocument.geometriesLibrary.FindObject(meshID)
+            if object is None:
+                object = collada.DaeGeometry()
+                object.id = object.name = self.document.CreateID(daeNode.id,'-ConvexGeom')
+                convexMesh = collada.DaeConvexMesh()
+                convexMesh.convexHullOf = meshID
+                object.data = convexMesh                                                    
+                self.document.colladaDocument.geometriesLibrary.AddItem(object)
+            iGeometry.object = object    
+            shape.iGeometry = iGeometry
+        
+        # Create a physics material.
+        daePhysicsMaterial = self.document.colladaDocument.physicsMaterialsLibrary.FindObject(daeNode.id+'-PxMaterial')
+        if daePhysicsMaterial is None:
+            daePhysicsMaterial = collada.DaePhysicsMaterial()
+            ##daePhysicsMaterial.restitution = bNode.rbRestitution
+            ##daePhysicsMaterial.staticFriction = bNode.rbFriction
+            daePhysicsMaterial.id = daePhysicsMaterial.name = self.document.CreateID(daeNode.id, '-PhysicsMaterial')
+            self.document.colladaDocument.physicsMaterialsLibrary.AddItem(daePhysicsMaterial)
+                        
+        # Create a physics material instance.
+        daePhysicsMaterialInstance = collada.DaePhysicsMaterialInstance()
+        # Set the physics material of this instance
+        daePhysicsMaterialInstance.object = daePhysicsMaterial
+        
+        
+        # add the shape to the commom technique.
+        daeRigidBodyTechniqueCommon.shapes.append(shape)                
+        # Set the material of the common technique.
+        daeRigidBodyTechniqueCommon.iPhysicsMaterial = daePhysicsMaterialInstance
+        # Set the common technique of this rigid body.
+        daeRigidBody.techniqueCommon = daeRigidBodyTechniqueCommon
+        
+        # Add the rigid body to the physics model.
+        daePhysicsModel.rigidBodies.append(daeRigidBody)
+        # Create a new RigidBody instance
+        daeRigidBodyInstance = collada.DaeRigidBodyInstance()
+        # Set the rigid body of this instance
+        daeRigidBodyInstance.body = daeRigidBody
+        # Set the node of this instance
+        daeRigidBodyInstance.target = daeNode
+        
+        # Create a new Physics Model Instance.
+        daePhysicsModelInstance = collada.DaePhysicsModelInstance()
+        # Set the Physics Model of this instance.
+        daePhysicsModelInstance.object = daePhysicsModel
+        # add the rigidbody instance to this physics model instance.
+        daePhysicsModelInstance.iRigidBodies.append(daeRigidBodyInstance)
+        # add the physics model to the library.
+        self.document.colladaDocument.physicsModelsLibrary.items.append(daePhysicsModel)
+        return daePhysicsModelInstance                
     
 class MeshNode(object):
     def __init__(self,document):
@@ -734,12 +752,13 @@ class MeshNode(object):
                 return i
         return -1
     
-    def LoadFromDae(self, daeGeometry):        
+    def LoadFromDae(self, daeGeometry):
+        global replaceNames      
         meshID = daeGeometry.id
         meshName = daeGeometry.name
         
         # Create a new meshObject
-        bMesh2 = Blender.NMesh.New(self.document.CreateNameForObject(meshID,True,'mesh'))
+        bMesh2 = Blender.NMesh.New(self.document.CreateNameForObject(meshID,replaceNames,'mesh'))
 
         if isinstance(daeGeometry.data,collada.DaeMesh): # check if it's a mesh
             materials = []
@@ -825,41 +844,49 @@ class MeshNode(object):
                             # Check all the inputs and do the right thing
                             for input in inputs:                                
                                 inputVal = p[pIndex+(i*maxOffset)+input.offset]                                
-                                ##print p, pIndex, i, maxOffset, input.offset, pIndex+(i*maxOffset)+input.offset, inputVal
                                 if input.semantic == "VERTEX":
                                     vert2 = pVertices[inputVal]
-##                                    print vert2.co
                                     curFaceVerts2.append(vert2)
                                 elif input.semantic == "TEXCOORD":
                                     uvList.append((uvs[inputVal][0],uvs[inputVal][1]))
                                 elif input.semantic == "NORMAL":
                                     pass                           
                         if vertCount > 2:
-##                            for a in curFaceVerts2:
-##                                print a.co   
-                            ##curFaceVerts2.reverse()          
-                            # Create a new Face.
-                            newFace = Blender.NMesh.Face(curFaceVerts2)
-                            
-                            ##print newFace.col
-                            ##newFace.
-##                            print ""
-##                            for b in newFace.v:
-##                                print b.co
-                            # Set the UV Coordinates
-                            newFace.uv = uvList
-                            # Add the new face to the list
-                            faces.append(newFace)                         
-                            # Add the material to this face
-                            if primitive.material != '':
-                                # Find the material index.
-                                matIndex = self.FindMaterial(bMesh2.materials, self.materials[primitive.material].name)
-                                # Set the material index for the new face.
-                                newFace.materialIndex = matIndex
-                                textures = self.materials[primitive.material].getTextures()
-                                if len(textures) > 0 and not (textures[0] is None):
-                                    texture = textures[0]
-                                    newFace.image = texture.tex.getImage()
+                            faceCount = 1 + (realVertCount-4) / 2 + (realVertCount-4) % 2                            
+                            firstIndex = 2
+                            lastIndex = 1                           
+                            for a in range(faceCount):
+                                newFirstIndex = (firstIndex + 1) % realVertCount
+                                newLastIndex = (lastIndex -1) % realVertCount
+                                fuv = []
+                                if newFirstIndex != newLastIndex:
+                                    fv = [curFaceVerts2[firstIndex]] + [curFaceVerts2[newFirstIndex]] + [curFaceVerts2[newLastIndex]] +  [curFaceVerts2[lastIndex]]
+                                    if len(uvList) == realVertCount:
+                                        fuv = [uvList[firstIndex]] + [uvList[newFirstIndex]] + [uvList[newLastIndex]] + [uvList[lastIndex]]
+                                else:
+                                    fv = [curFaceVerts2[firstIndex]] + [curFaceVerts2[newFirstIndex]] + [curFaceVerts2[lastIndex]]
+                                    if len(uvList) == realVertCount:
+                                        fuv = [uvList[firstIndex]] + [uvList[newFirstIndex]] + [uvList[lastIndex]]
+                                firstIndex = newFirstIndex
+                                lastIndex = newLastIndex
+                                # Create a new Face.
+                                newFace = Blender.NMesh.Face(fv)
+                                # Set the UV Coordinates
+                                newFace.uv = fuv
+                                # Add the new face to the list
+                                faces.append(newFace)
+                                # Add the material to this face
+                                if primitive.material != '':
+                                    # Find the material index.
+                                    matIndex = self.FindMaterial(bMesh2.materials, self.materials[primitive.material].name)
+                                    # Set the material index for the new face.
+                                    newFace.materialIndex = matIndex
+                                    textures = self.materials[primitive.material].getTextures()
+                                    if len(textures) > 0 and not (textures[0] is None):
+                                        texture = textures[0]
+                                        image = texture.tex.getImage()
+                                        if not image is None:
+                                            newFace.image = image
                         else:
                             bMesh2.addEdge(curFaceVerts2[0], curFaceVerts2[1])
                         # update the index
@@ -1002,6 +1029,9 @@ class MeshNode(object):
                 daePolygonsDict[matIndex].polygons.append(pverts)
                 # Update the vertice count for the polygonlist.
                 daePolygonsDict[matIndex].count += 1
+            if mesh.faceUV:
+                if not face.image is None:
+                    pass
         # Loop through all the edges
         for edge in mesh.edges:
             if not edge.index in faceEdges:
@@ -1041,20 +1071,6 @@ class MeshNode(object):
         if daeLines != None:
             daeLines.inputs.append(daeInput)
             daeMesh.primitives.append(daeLines)
-##        if len(bMesh.materials) > 0:
-##            materialName = bMesh.materials[0].name
-##        if daeTriangles != None:
-##            daeTriangles.material = materialName
-##            daeTriangles.inputs.append(daeInput)
-##            daeMesh.primitives.append(daeTriangles)
-##        if daePolygons != None:
-##            daePolygons.inputs.append(daeInput)
-##            daePolygons.material = materialName
-##            daeMesh.primitives.append(daePolygons)
-##        if daeLines != None:
-##            daeLines.material = materialName
-##            daeLines.inputs.append(daeInput)
-##            daeMesh.primitives.append(daeLines)
         
         daeMesh.sources.append(daeSource)
         daeMesh.sources.append(daeSourceNormals)
@@ -1095,10 +1111,20 @@ class TextureNode(object):
         
         bTexture = Blender.Texture.New(imageID)
         
-        if Blender.sys.exists(self.document.filePath + daeImage.init_from):
+        filename = ''
+        if Blender.sys.exists(daeImage.initFrom):
+            filename = daeImage.initFrom
+        elif Blender.sys.exists(self.document.filePath + daeImage.initFrom):
+            filename = self.document.filePath + daeImage.initFrom
+        
+        
+        if filename <> '':
             bTexture.setType('Image')            
-            img = Blender.Image.Load(self.document.filePath + daeImage.init_from)        
-            bTexture.setImage(img)        
+            img = Blender.Image.Load(filename)        
+            bTexture.setImage(img)
+        else:
+            print 'image not found: %s'%(daeImage.initFrom)
+            
         return bTexture
     
 class MaterialNode(object):
@@ -1135,12 +1161,12 @@ class MaterialNode(object):
                     if not (shader.diffuse.color is None):
                         color = shader.diffuse.color.rgba
                         bMat.setRGBCol(color[0],color[1], color[2])
-                    else: # Texture
+                    if not (shader.diffuse.texture is None): # Texture
                         texture = shader.diffuse.texture.texture
                         if not (texture is None):
-                            bImage = self.document.texturesLibrary.FindObject(texture, True)
-                            if not bImage is None:
-                                bMat.setTexture(0, bImage, Blender.Texture.TexCo.UV)
+                            bTexture = self.document.texturesLibrary.FindObject(texture, True)
+                            if not bTexture is None:
+                                bMat.setTexture(0, bTexture, Blender.Texture.TexCo.UV)
                         
                 bMat.setSpec(0)           
             
@@ -1162,6 +1188,7 @@ class MaterialNode(object):
         return bMat        
         
     def SaveToDae(self, bMaterial):
+        global useRelativePaths, filename
         daeMaterial = collada.DaeFxMaterial()
         daeMaterial.id = daeMaterial.name = self.document.CreateID(bMaterial.name, '-Material')
         
@@ -1183,6 +1210,27 @@ class MaterialNode(object):
                 
             else :
                 shader = collada.DaeFxShadeLambert()
+            
+            # Check if a texture is used for color
+            textures = bMaterial.getTextures()
+            for mTex in textures:                
+                # Check if this texture is mapped to Color
+                if not mTex is None and mTex.mapto == Blender.Texture.MapTo.COL:
+                    texture = mTex.tex
+                    if not texture.image is None and Blender.sys.exists(texture.image.filename):
+                        daeImage = self.document.colladaDocument.imagesLibrary.FindObject(texture.name)                    
+                        if daeImage is None: # Create the image
+                            daeImage = collada.DaeImage()
+                            daeImage.id = daeImage.name = self.document.CreateID(texture.name,'-image')
+                            daeImage.initFrom = texture.image.filename
+                            if useRelativePaths:
+                                daeImage.initFrom = CreateRelativePath(filename, daeImage.initFrom)                                                                  
+                            self.document.colladaDocument.imagesLibrary.AddItem(daeImage)
+                            daeTexture = collada.DaeFxTexture()
+                            daeTexture.texture = daeImage.id
+                            shader.AddValue(collada.DaeFxSyntax.DIFFUSE, daeTexture)
+                            break
+            
             shader.AddValue(collada.DaeFxSyntax.DIFFUSE,bMaterial.getRGBCol()+[1])
             shader.AddValue(collada.DaeFxSyntax.TRANSPARENCY, 1 - bMaterial.alpha)
             shader.AddValue(collada.DaeFxSyntax.TRANSPARENT, [1,1,1,1])
@@ -1469,7 +1517,8 @@ class TexturesLibrary(Library):
         
         textureNode = TextureNode(self.document)
         bTexture = textureNode.LoadFromDae(daeImage)
- 
+        bTexture.setType('Image')
+        
         # Add this texture in this library, under it's real name
         self.objects[imageID] = [bTexture,bTexture.name]
         return bTexture

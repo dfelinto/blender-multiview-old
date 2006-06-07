@@ -9,7 +9,7 @@ Tooltip: 'Export scene from Blender to COLLADA 1.4 format (.dae)'
 
 __author__ = "Illusoft - Pieter Visser"
 __url__ = ("Project homepage, http://colladablender.illusoft.com")
-__version__ = "0.2.45"
+__version__ = "0.2.56"
 __email__ = "colladablender@illusoft.com"
 __bpydoc__ = """\
 
@@ -19,7 +19,7 @@ Usage: Run the script from the menu or inside Blender.
 """
 
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.45
+# Illusoft Collada 1.4 plugin for Blender version 0.2.56
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #

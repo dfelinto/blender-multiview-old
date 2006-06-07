@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.45
+# Illusoft Collada 1.4 plugin for Blender version 0.2.56
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -73,10 +73,7 @@ class DaeDocument(object):
        
         # Get COLLADA element
         colladaNode = doc.documentElement    
-        
-        # Remove the white space
-        xmlUtils.RemoveWhiteSpace(colladaNode)
-        
+                
         # Get Attributes        
         self.version = colladaNode.getAttribute(DaeSyntax.VERSION)
         if not IsVersionOk(self.version, self.colladaVersion):
@@ -105,7 +102,6 @@ class DaeDocument(object):
         self.visualScenesLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_VISUAL_SCENES))
         
         self.physicsMaterialsLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_PHYSICS_MATERIALS))
-        ##self.rigidBodiesLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_RIGID_BODIES))        
         self.physicsModelsLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_PHYSICS_MODELS))
         self.physicsScenesLibrary.LoadFromXml(self, xmlUtils.FindElementByTagName(colladaNode, DaeSyntax.LIBRARY_PHYSICS_SCENES))
         
@@ -462,7 +458,7 @@ class DaeImage(DaeElement):
         self.height = None
         self.width = None
         self.depth = None
-        self.init_from = None
+        self.initFrom = None
         self.syntax = DaeSyntax.IMAGE
         
     def LoadFromXml(self, daeDocument, xmlNode):
@@ -471,7 +467,7 @@ class DaeImage(DaeElement):
         self.height = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.HEIGHT)
         self.width = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.WIDTH)
         self.depth = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.DEPTH)
-        self.init_from = xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.INIT_FROM))  
+        self.initFrom = xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.INIT_FROM))  
         
     def SaveToXml(self, daeDocument):
         node = super(DaeImage, self).SaveToXml(daeDocument)
@@ -479,7 +475,7 @@ class DaeImage(DaeElement):
         SetAttribute(node, DaeSyntax.HEIGHT, self.height)
         SetAttribute(node, DaeSyntax.WIDTH, self.width)
         SetAttribute(node, DaeSyntax.DEPTH, self.depth)
-        AppendTextChild(node, DaeSyntax.INIT_FROM,self.init_from, None)
+        AppendTextChild(node, DaeSyntax.INIT_FROM,self.initFrom, None)
         return node
     
 ##class DaeMaterial(DaeElement):
@@ -552,7 +548,7 @@ class DaeConvexMesh(DaeEntity):
         
     def SaveToXml(self, daeDocument):
         node = super(DaeConvexMesh, self).SaveToXml(daeDocument)
-        SetAttribute(node, DaeSyntax.CONVEX_HULL_OF, self.convexHullOf)
+        SetAttribute(node, DaeSyntax.CONVEX_HULL_OF, StripString(self.convexHullOf))
         return node
     
 class DaeMesh(DaeEntity):
@@ -738,7 +734,7 @@ class DaeLight(DaeElement):
         ##self.techniqueCommon.LoadFromXml(daeDocument, xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.TECHNIQUE_COMMON))
         self.techniques = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.TECHNIQUE,DaeTechnique)
         
-        lightSourceNode = xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.TECHNIQUE_COMMON).firstChild
+        lightSourceNode = xmlUtils.RemoveWhiteSpaceNode(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.TECHNIQUE_COMMON)).firstChild
         lightSourceName = lightSourceNode.localName
         if lightSourceName == DaeSyntax.DIRECTIONAL:
             self.techniqueCommon = DaeLight.DaeDirectional()            
@@ -944,6 +940,7 @@ class DaeNode(DaeElement):
         self.layer = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.LAYER)
         
         # Get transforms
+        xmlUtils.RemoveWhiteSpaceNode(xmlNode)
         child = xmlNode.firstChild
         while child != None:
             name = child.localName
@@ -1059,7 +1056,7 @@ class DaeOptics(DaeEntity):
         #self.techniqueCommon.LoadFromXml(daeDocument, xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.TECHNIQUE_COMMON))
         self.techniques = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.TECHNIQUE,DaeTechnique)
         
-        opticsSourceNode = xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.TECHNIQUE_COMMON).firstChild
+        opticsSourceNode = xmlUtils.RemoveWhiteSpaceNode(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.TECHNIQUE_COMMON)).firstChild
         opticsSourceName = opticsSourceNode.localName
         if opticsSourceName == DaeSyntax.PERSPECTIVE:
             self.techniqueCommon = DaeOptics.DaePerspective()
@@ -1932,9 +1929,11 @@ class DaeFxTechnique(DaeEntity):
         super(DaeFxTechnique, self).__init__()
         self.syntax = DaeFxSyntax.TECHNIQUE
         self.shader = DaeFxShadeConstant()
+        self.sid = ''
         
     def LoadFromXml(self, daeDocument, xmlNode):
         # TODO: add asset and extra?
+        self.sid = xmlUtils.ReadAttribute(xmlNode, DaeFxSyntax.SID)
         lightSourceNode = xmlUtils.FindElementByTagName(xmlNode, DaeFxSyntax.CONSTANT)
         if lightSourceNode:
             self.shader = CreateObjectFromXml(daeDocument, xmlNode, DaeFxSyntax.CONSTANT, DaeFxShadeConstant)            
@@ -1953,6 +1952,7 @@ class DaeFxTechnique(DaeEntity):
         
     def SaveToXml(self, daeDocument):
         node = super(DaeFxTechnique,self).SaveToXml(daeDocument)
+        node.setAttribute(DaeFxSyntax.SID, self.sid)
         AppendChild(daeDocument, node, self.shader)
         return node
     
@@ -2053,7 +2053,10 @@ class DaeFxShadeLambert(DaeFxShadeConstant):
         if type == DaeFxSyntax.DIFFUSE:
             if not self.diffuse:
                 self.diffuse = DaeFxCommonColorAndTextureContainer(type)
-            self.diffuse.color = col
+            if isinstance(val, DaeFxTexture): # its a texture
+                self.diffuse.texture = val
+            else: # it's a color
+                self.diffuse.color = col
         elif type == DaeFxSyntax.AMBIENT:
             if not self.ambient:
                 self.ambient = DaeFxCommonColorAndTextureContainer(type)
@@ -2163,7 +2166,7 @@ class DaeFxTexture(DaeEntity):
         
     def SaveToXml(self, daeDocument):
         node = super(DaeFxTexture,self).SaveToXml(daeDocument)
-        SetAttribute(node, DaeFxSyntax.TEXTURE, self.texture)
+        SetAttribute(node, DaeFxSyntax.TEXTURE, StripString(self.texture))
         SetAttribute(node, DaeFxSyntax.TEXCOORD, self.textCoord)
         return node
     
@@ -2409,7 +2412,7 @@ class DaeRigidBody(DaeEntity):
             self.iPhysicsMaterial = CreateObjectFromXml(daeDocument, xmlNode, DaePhysicsSyntax.INSTANCE_PHYSICS_MATERIAL, DaePhysicsMaterialInstance)        
             self.physicsMaterial = CreateObjectFromXml(daeDocument, xmlNode, DaePhysicsSyntax.PHYSICS_MATERIAL, DaePhysicsMaterial)        
             self.dynamic = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.DYNAMIC,bool,True)
-            self.mass = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.MASS, float, None)
+            self.mass = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.MASS, float, 1)
             self.inertia = ToFloat3(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode,DaePhysicsSyntax.INERTIA)))
             
             shapeNodes = xmlUtils.FindElementsByTagName(xmlNode, DaePhysicsSyntax.SHAPE)
@@ -2519,18 +2522,39 @@ class DaeSphereShape(DaeShape):
 class DaeCylinderShape(DaeShape):
     def __init__(self):
         super(DaeCylinderShape, self).__init__()
-        self.radius = None
+        self.radius = [1 , 1]
         self.height = None
         self.syntax = DaePhysicsSyntax.CYLINDER
         
     def LoadFromXml(self, daeDocument, xmlNode):
         super(DaeCylinderShape, self).LoadFromXml(daeDocument, xmlNode)
-        self.radius = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.RADIUS, float)
+        self.radius = ToFloat2(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaePhysicsSyntax.RADIUS)),'Not a valid radius found. Must consist of 2 floats')
         self.height = CastFromXml(daeDocument, xmlNode, DaeSyntax.HEIGHT, float)
         
     def SaveToXml(self, daeDocument):
         node = super(DaeCylinderShape, self).SaveToXml(daeDocument)
         AppendTextChild(node, DaePhysicsSyntax.RADIUS, self.radius)
+        AppendTextChild(node, DaeSyntax.HEIGHT, self.height)
+        return node
+    
+class DaeTaperedCylinderShape(DaeShape):
+    def __init__(self):
+        super(DaeTaperedCylinderShape, self).__init__()
+        self.radius1 = [1 , 1]
+        self.radius2 = [1 , 1]
+        self.height = None
+        self.syntax = DaePhysicsSyntax.TAPERED_CYLINDER
+        
+    def LoadFromXml(self, daeDocument, xmlNode):
+        super(DaeTaperedCylinderShape, self).LoadFromXml(daeDocument, xmlNode)
+        self.radius1 = ToFloat2(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaePhysicsSyntax.RADIUS1)),'Not a valid radius found. Must consist of 2 floats')
+        self.radius2 = ToFloat2(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaePhysicsSyntax.RADIUS2)), 'Not a valid radius found. Must consist of 2 floats')
+        self.height = CastFromXml(daeDocument, xmlNode, DaeSyntax.HEIGHT, float)
+        
+    def SaveToXml(self, daeDocument):
+        node = super(DaeTaperedCylinderShape, self).SaveToXml(daeDocument)
+        AppendTextChild(node, DaePhysicsSyntax.RADIUS1, self.radius1)
+        AppendTextChild(node, DaePhysicsSyntax.RADIUS2, self.radius2)
         AppendTextChild(node, DaeSyntax.HEIGHT, self.height)
         return node
     
@@ -2606,6 +2630,9 @@ class DaePhysicsSyntax(object):
     SHAPE = 'shape'
     DENSITY = 'density'
     RADIUS = 'radius'
+    RADIUS1 = 'radius1'
+    RADIUS2 = 'radius2'
+    
     
     BOX = 'box'
     PLANE = 'plane'

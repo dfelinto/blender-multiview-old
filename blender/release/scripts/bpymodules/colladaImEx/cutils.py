@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.45
+# Illusoft Collada 1.4 plugin for Blender version 0.2.56
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -91,6 +91,52 @@ def ToFloat3(stringValue):
         return None
     split = stringValue.split( )
     return [ float( split[ 0 ] ), float( split[ 1 ] ), float( split[ 2 ] ) ]
+
+# Convert a string to a list of 2 floats e.g '1.0 2.0' -> [1.0, 2.0]
+def ToFloat2(stringValue, errorText=''):
+    if stringValue is None:
+        return None
+    split = stringValue.split( )
+    try:
+        return [ float( split[ 0 ] ), float( split[ 1 ] )]
+    except IndexError:
+        print 'Error: ' + errorText
+        raise
+
+
+def CreateRelativePath(basePath, filePath):
+    if basePath is None or basePath is '' or filePath is None or filePath is '':
+        return ''
+    try:
+        if not Blender.sys.exists(filePath):
+            return ''
+    except TypeError:
+        return ''
+    
+    basePathAr = basePath.lower().split(Blender.sys.sep)
+    filePathAr = filePath.lower().split(Blender.sys.sep)
+    filePathLength = len(filePathAr)
+    
+    if not basePathAr[0] == filePathAr[0]: # Files must have the same root.
+        return filePath
+    
+    result =  ''
+    equalIndex = -1
+    for i in range(len(basePathAr)-1):
+        if basePathAr[i] == filePathAr[i]:
+            pass
+        else:
+            if equalIndex == -1:
+                equalIndex = i
+            result += '..'+ Blender.sys.sep
+    if equalIndex == -1:
+        equalIndex = len(basePathAr)-1
+    for i in range(equalIndex, filePathLength):
+        result += filePathAr[i]
+        if not i == filePathLength-1:
+            result += Blender.sys.sep
+        
+    return result
 
 def ToList(var):
     result = []
