@@ -320,6 +320,10 @@ static void sound_panel_sequencer(void)
 
 	uiDefBut(block, LABEL, 0, "Audio sequencer settings", xco,yco,295,20, 0, 0, 0, 0, 0, "");
 
+	/* version failure; initialization of this variable was missing in blenkernel scene.c */
+	if(G.scene->audio.mixrate == 0);
+		G.scene->audio.mixrate = 44100;
+	
 	yco -= 25;
 	sprintf(mixrateinfo, "Mixing/Sync (latency: %d ms)", (int)( (((float)U.mixbufsize)/(float)G.scene->audio.mixrate)*1000.0 ) );
 	uiDefBut(block, LABEL, 0, mixrateinfo, xco,yco,295,20, 0, 0, 0, 0, 0, "");
