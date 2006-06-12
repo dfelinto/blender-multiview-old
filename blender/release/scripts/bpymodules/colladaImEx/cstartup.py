@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.56
+# Illusoft Collada 1.4 plugin for Blender version 0.2.65
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -35,7 +35,7 @@ except NameError:
     _ERROR = True
 
 
-__version__ = '0.2.56'
+__version__ = '0.2.65'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)

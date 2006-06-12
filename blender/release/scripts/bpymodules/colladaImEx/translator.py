@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.56
+# Illusoft Collada 1.4 plugin for Blender version 0.2.65
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -1274,7 +1274,7 @@ class CameraNode(object):
         daeOptics = collada.DaeOptics()
         daeTechniqueCommon = None
         if bCamera.type == 1: # orthographic
-            daeTechniqueCommon = collada.DaeOptics.DaeOrthographic()
+            daeTechniqueCommon = collada.DaeOptics.DaeOrthoGraphic()
         else: # perspective
             daeTechniqueCommon = collada.DaeOptics.DaePerspective()
             lens = bCamera.getLens( )
