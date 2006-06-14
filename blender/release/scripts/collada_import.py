@@ -1,7 +1,7 @@
 #!BPY
 
 """
-Name: 'COLLADA (.dae) ...'
+Name: 'COLLADA 1.3.1 (.dae) ...'
 Blender: 237
 Group: 'Import'
 Tooltip: 'Import scene from COLLADA format (.dae)'

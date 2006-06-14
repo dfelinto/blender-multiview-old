@@ -1,7 +1,7 @@
 #!BPY
 
 """
-Name: 'COLLADA (.dae) ...'
+Name: 'COLLADA 1.3.1 (.dae) ...'
 Blender: 240
 Group: 'Export'
 Tooltip: 'Export scene to COLLADA format (.dae)'
