@@ -435,6 +435,7 @@ def ButtonEvent(evt):
         #keep track of the time to execute this script
         startTime = Blender.sys.time()
         fileName = fileButton.val
+        dirName = Blender.sys.dirname(fileName) + Blender.sys.sep
         exists = Blender.sys.exists(fileName)
         if exists == 1 and not doImport:
             overwrite = Blender.Draw.PupMenu( "File Already Exists, Overwrite?%t|Yes%x1|No%x0" )
@@ -444,9 +445,9 @@ def ButtonEvent(evt):
             Blender.Draw.PupMenu("File does not exist: %t|"+fileName)
             cutils.Debug.Debug('File(%s) does not exist' % (fileName),'ERROR')
             return False
-        elif not Blender.sys.exists(Blender.sys.dirname(fileName)):
-            Blender.Draw.PupMenu("Path is not valid: %t|"+Blender.sys.dirname(fileName))
-            cutils.Debug.Debug('Path is not valid: %s' % (Blender.sys.dirname(fileName)),'ERROR')
+        elif not Blender.sys.exists(dirName):
+            Blender.Draw.PupMenu("Path is not valid: %t|"+dirName)
+            cutils.Debug.Debug('Path is not valid: %s' % (dirName),'ERROR')
             return False
         
         if toggleTriangles is None:

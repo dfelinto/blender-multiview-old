@@ -30,8 +30,6 @@ from Blender.Mathutils import *
 import math
 import datetime
 
-import profile
-
 class Translator(object):
     isImporter = False
     
