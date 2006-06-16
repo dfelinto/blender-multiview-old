@@ -799,12 +799,12 @@ def load_3ds(filename, PREF_UI= True):
 	# Select all new objects.
 	print 'finished importing: "%s" in %.4f sec.' % (filename, (Blender.sys.time()-time1))
 	file.close()
-'''
+
 if __name__=='__main__':
 	Blender.Window.FileSelector(load_3ds, 'Import 3DS', '*.3ds')
-'''
-# For testing compatibility
 
+# For testing compatibility
+'''
 TIME= Blender.sys.time()
 import os
 print 'Searching for files'
@@ -830,4 +830,4 @@ for i, _3ds in enumerate(lines):
 		load_3ds(_3ds, False)
 
 print 'TOTAL TIME: %.6f' % (Blender.sys.time() - TIME)
-
+'''
