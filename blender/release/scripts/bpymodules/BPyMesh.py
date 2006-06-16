@@ -212,12 +212,12 @@ def faceRayIntersect(f, orig, dir):
 
 
 def pickMeshRayFace(me, orig, dir):
-	best_dist= 1000000
+	best_dist= 1<<30
 	best_isect= best_side= best_face= None
 	for f in me.faces:
 		isect, side= faceRayIntersect(f, orig, dir)
 		if isect:
-			dist= len(isect-orig)
+			dist= (isect-orig).length
 			if dist<best_dist:
 				best_dist= dist
 				best_face= f
@@ -280,7 +280,7 @@ def pickMeshGroupVCol(me, orig, dir):
 		idxs= 0,2,3
 	f_c= f.col
 	f_colvecs= [col2vec(f_c[i]) for i in idxs]
-	return c
+	return f_colvecs[0]*w0 + f_colvecs[1]*w1 + f_colvecs[2]*w2
 
 # reuse me more.
 def sorted_edge_indicies(ed):
