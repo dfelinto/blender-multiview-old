@@ -34,7 +34,7 @@ include nan_definitions.mk
 
 SOURCEDIR = extern
 DIR = $(OCGDIR)/extern
-DIRS = qhull/src solid 
+DIRS = 
 
 ifeq ($(WITH_FREETYPE2), true)
     DIRS += bFTGL/src
@@ -47,13 +47,10 @@ endif
 endif
 
 ifneq ($(NAN_NO_KETSJI), true)
-    DIRS += bullet
+    DIRS += qhull/src solid bullet
 endif
 
 TARGET =
-ifneq ($(OS),irix)
-  TARGET=solid
-endif
 
 all::
 	@[ -d $(OCGDIR)/extern ] || mkdir -p $(OCGDIR)/extern
