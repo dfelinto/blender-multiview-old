@@ -31,8 +31,9 @@
 # Bounces make to subdirectories. Also installs after succesful all target.
 
 SOURCEDIR = extern/ffmpeg
+DIR = $(OCGDIR)/extern/ffmpeg
 
-# include nan_subdirs.mk
+include nan_subdirs.mk
 
 ALLDIRS = libavcodec libavformat libavutil
 
