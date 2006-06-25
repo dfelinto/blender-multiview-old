@@ -36,7 +36,7 @@
 SRC_DIR = $(SRC_PATH)/lib$(NAME)
 DIR = $(OCGDIR)/extern/ffmpeg/lib$(NAME)
 VPATH = $(SRC_DIR)
-EXTRADIRS = liba52 i386
+EXTRADIRS = alpha armv4l i386 liba52 mlib ppc ps2 sh4 sparc
 
 #FIXME: This should be in configure/config.mak
 ifeq ($(TARGET_ARCH_SPARC64),yes)

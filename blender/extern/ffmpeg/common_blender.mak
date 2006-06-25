@@ -25,7 +25,7 @@
 #
 # The Original Code is: all of this file.
 #
-# Contributor(s): none yet.
+# Contributor(s): Peter Schlaile
 #
 # ***** END GPL/BL DUAL LICENSE BLOCK *****
 #
@@ -34,7 +34,9 @@
 #
 
 SRC_DIR = $(SRC_PATH)/lib$(NAME)
+DIR = $(OCGDIR)/extern/ffmpeg/lib$(NAME)
 VPATH = $(SRC_DIR)
+EXTRADIRS = alpha armv4l i386 liba52 mlib ppc ps2 sh4 sparc
 
 #FIXME: This should be in configure/config.mak
 ifeq ($(TARGET_ARCH_SPARC64),yes)
@@ -42,10 +44,49 @@ CFLAGS+= -mcpu=ultrasparc -mtune=ultrasparc
 endif
 
 SRCS := $(OBJS:.o=.c) $(ASM_OBJS:.o=.S) $(CPPOBJS:.o=.cpp)
-OBJS := $(OBJS) $(ASM_OBJS) $(CPPOBJS)
+OBJS := 
+# $(OBJS) $(ASM_OBJS) $(CPPOBJS)
 STATIC_OBJS := $(OBJS) $(STATIC_OBJS)
+CSRCS := $(SRCS)
+CCSRCS :=
 
 LIBNAME = $(NAME)
 
+CFLAGS_BACKUP := $(CFLAGS)
+
 include nan_compile.mk
 
+# FIXME: hack!
+CFLAGS := $(CFLAGS_BACKUP)
+CFLAGS += -DHAVE_AV_CONFIG_H
+
+ifdef TARGET_BUILTIN_VECTOR
+$(DIR)/i386/fft_sse.o: CFLAGS+= -msse
+depend: CFLAGS+= -msse
+endif
+ifdef TARGET_BUILTIN_3DNOW
+$(DIR)/i386/fft_3dn.o: CFLAGS+= -m3dnow
+ifeq ($(TARGET_ARCH_X86),yes)
+$(DIR)/i386/fft_3dn2.o: CFLAGS+= -march=athlon
+endif
+ifeq ($(TARGET_ARCH_X86_64),yes)
+$(DIR)/i386/fft_3dn2.o: CFLAGS+= -march=k8
+endif
+endif
+
+makedirffmpeg::
+	@for i in $(EXTRADIRS); do \
+	    [ -d $(DIR)/$$i ] || mkdir $(DIR)/$$i ; \
+	    [ -d $(DIR)/$$i/debug ] || mkdir $(DIR)/$$i/debug ; \
+	done
+
+install: makedir makedirffmpeg all debug
+	@[ -d $(NAN_FFMPEG) ] || mkdir $(NAN_FFMPEG)
+	@[ -d $(NAN_FFMPEG)/include ] || mkdir $(NAN_FFMPEG)/include
+	@[ -d $(NAN_FFMPEG)/include/ffmpeg ] || mkdir $(NAN_FFMPEG)/include/ffmpeg
+	@[ -d $(NAN_FFMPEG)/lib ] || mkdir $(NAN_FFMPEG)/lib
+	@$(NANBLENDERHOME)/intern/tools/cpifdiff.sh $(DIR)/lib$(NAME).a $(NAN_FFMPEG)/lib/
+ifeq ($(OS),darwin)
+	ranlib $(NAN_FFMPEG)/lib/lib$(NAME).a
+endif
+	@$(NANBLENDERHOME)/intern/tools/cpifdiff.sh $(HEADERS) $(NAN_FFMPEG)/include/ffmpeg/
