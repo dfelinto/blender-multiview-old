@@ -20,7 +20,7 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-# The Original Code is Copyright (C) 2002 by Hans Lambermont
+# The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
 # All rights reserved.
 #
 # The Original Code is: all of this file.
@@ -28,44 +28,24 @@
 # Contributor(s): none yet.
 #
 # ***** END GPL/BL DUAL LICENSE BLOCK *****
-# Bounces make to subdirectories. Also installs after succesful all target.
+#
+#
+# common bits used by all libraries
+#
 
-include nan_definitions.mk
+SRC_DIR = $(SRC_PATH)/lib$(NAME)
+VPATH = $(SRC_DIR)
 
-SOURCEDIR = extern
-DIR = $(OCGDIR)/extern
-DIRS = qhull/src solid 
-
-ifeq ($(WITH_FREETYPE2), true)
-    DIRS += bFTGL/src
+#FIXME: This should be in configure/config.mak
+ifeq ($(TARGET_ARCH_SPARC64),yes)
+CFLAGS+= -mcpu=ultrasparc -mtune=ultrasparc
 endif
 
-ifeq ($(WITH_FFMPEG), true)
-ifeq ($(NAN_FFMPEG), $(LCGDIR)/ffmpeg)
-    DIRS += ffmpeg
-endif
-endif
+SRCS := $(OBJS:.o=.c) $(ASM_OBJS:.o=.S) $(CPPOBJS:.o=.cpp)
+OBJS := $(OBJS) $(ASM_OBJS) $(CPPOBJS)
+STATIC_OBJS := $(OBJS) $(STATIC_OBJS)
 
-ifneq ($(NAN_NO_KETSJI), true)
-    DIRS += bullet
-endif
+LIBNAME = $(NAME)
 
-TARGET =
-ifneq ($(OS),irix)
-  TARGET=solid
-endif
-
-all::
-	@[ -d $(OCGDIR)/extern ] || mkdir -p $(OCGDIR)/extern
-	@for i in $(DIRS); do \
-	    echo "====> $(MAKE) $@ in $(SOURCEDIR)/$$i" ;\
-	    $(MAKE) -C $$i install || exit 1; \
-	done
-
-clean test debug::
-	@[ -d $(OCGDIR)/extern ] || mkdir -p $(OCGDIR)/extern
-	@for i in $(DIRS); do \
-	    echo "====> $(MAKE) $@ in $(SOURCEDIR)/$$i" ;\
-	    $(MAKE) -C $$i $@ || exit 1; \
-	done
+include nan_compile.mk
 
