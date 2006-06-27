@@ -138,7 +138,7 @@ void add_primitiveMball(int dummy_argument)
 	check_editmode(OB_MBALL);
 
 	/* if no obedit: new object and enter editmode */
-	if(G.obedit==0) {
+	if(G.obedit==NULL) {
 		add_object_draw(OB_MBALL);
 		base_init_from_view3d(BASACT, G.vd);
 		G.obedit= BASACT->object;
@@ -265,7 +265,7 @@ void mouse_mball()
 		if(ml==startelem) break;
 		ml= ml->next;
 	}
-	if(ml==0) startelem= editelems.first;
+	if(ml==NULL) startelem= editelems.first;
 	
 	if(hits>0) {
 		ml= startelem;
@@ -287,7 +287,7 @@ void mouse_mball()
 			if(act) break;
 			
 			ml= ml->next;
-			if(ml==0) ml= editelems.first;
+			if(ml==NULL) ml= editelems.first;
 			if(ml==startelem) break;
 		}
 		if(act) {
