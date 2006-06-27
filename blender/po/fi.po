@@ -1,11 +1,9 @@
-﻿msgid ""
-msgstr ""
-"Last-Translator: Nathan Letwory<jesterking@letwory.net>\n"
-"PO-Revision-Date: 2003-04-18 18:30+0300\n"
-"Language-Team: Finnish\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 0.9.6\n"
+﻿#"Last-Translator: Nathan Letwory<jesterking@letwory.net>\n"
+#"PO-Revision-Date: 2003-04-18 18:30+0300\n"
+#"Language-Team: Finnish\n"
+#"Content-Type: text/plain; charset=UTF-8\n"
+#"Content-Transfer-Encoding: 8bit\n"
+#"X-Generator: KBabel 0.9.6\n"
 
 # Copyright (C) 2003 Free Software Foundation, Inc.
 # snts &lt;snutlix@hotmail.com&gt;, 2003.

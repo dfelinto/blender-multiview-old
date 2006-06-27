@@ -1,14 +1,11 @@
 # translation of cz.po to Czech
 # Jiri Hnidek <jiri.hnidek@vslib.cz>, 2003
-msgid ""
-msgstr ""
-""
-"Last-Translator: jiri <jiri.hnidek@vslib.cz>\n"
-"PO-Revision-Date: 2003-05-16 20:22+0200\n"
-"Project-Id-Version: cz\n"
-"Language-Team: Czech <cs@li.org>\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+#"Last-Translator: jiri <jiri.hnidek@vslib.cz>\n"
+#"PO-Revision-Date: 2003-05-16 20:22+0200\n"
+#"Project-Id-Version: cz\n"
+#"Language-Team: Czech <cs@li.org>\n"
+#"Content-Type: text/plain; charset=UTF-8\n"
+#"Content-Transfer-Encoding: 8bit\n"
 
 ###########################################################
 ###

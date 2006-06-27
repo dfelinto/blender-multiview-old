@@ -1,12 +1,10 @@
 # translation of pl.po to 
 # Piotr Kieć <pk_piotr@o2.pl>, 2004.
-msgid ""
-msgstr ""
-"Last-Translator: Piotr Kieć <pk_piotr@o2.pl>\n"
-"PO-Revision-Date: 2004-07-20 18:39+0200\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Project-Id-Version: pl\n"
+#"Last-Translator: Piotr Kieć <pk_piotr@o2.pl>\n"
+#"PO-Revision-Date: 2004-07-20 18:39+0200\n"
+#"Content-Type: text/plain; charset=UTF-8\n"
+#"Content-Transfer-Encoding: 8bit\n"
+#"Project-Id-Version: pl\n"
 
 
 msgid "Sets the number of samples used for AO (actual number: squared)"

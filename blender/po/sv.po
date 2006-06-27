@@ -1,15 +1,12 @@
 # translation of sv.po to Svenska
 # sten <ztonzy@yahoo.se>, 2003
-msgid ""
-msgstr ""
-""
-"Last-Translator: sten <ztonzy@yahoo.se>\n"
-"PO-Revision-Date: 2003-04-19 21:47+0200\n"
-"Project-Id-Version: sv\n"
-"Language-Team: Svenska <sv@li.org>\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.0\n"
+#"Last-Translator: sten <ztonzy@yahoo.se>\n"
+#"PO-Revision-Date: 2003-04-19 21:47+0200\n"
+#"Project-Id-Version: sv\n"
+#"Language-Team: Svenska <sv@li.org>\n"
+#"Content-Type: text/plain; charset=UTF-8\n"
+#"Content-Transfer-Encoding: 8bit\n"
+#"X-Generator: KBabel 1.0\n"
 
 # Copyright (C) 2003 Free Software Foundation, Inc.
 # snts &lt;snutlix@hotmail.com&gt;, 2003.

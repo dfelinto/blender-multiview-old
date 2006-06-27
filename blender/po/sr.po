@@ -1,16 +1,14 @@
 # Translation Serbian. Version 0.2
 # Nikola Radovanovic nrad@eunet.yu 2004
 # Blender version: 2.33 
-msgid ""
-msgstr ""
-"Project-Id-Version: Blender 2.33\n"
-"POT-Creation-Date: 2004-05-16 19:49+ZONE\n"
-"PO-Revision-Date: 2004-08-20 23:29+0100\n"
-"Last-Translator: Nikola Radovanovic <nrad@eunet.yu>\n"
-"Language-Team: Blender Serbia <office@blender.co.yu>\n"
-"MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit\n"
+#"Project-Id-Version: Blender 2.33\n"
+#"POT-Creation-Date: 2004-05-16 19:49+ZONE\n"
+#"PO-Revision-Date: 2004-08-20 23:29+0100\n"
+#"Last-Translator: Nikola Radovanovic <nrad@eunet.yu>\n"
+#"Language-Team: Blender Serbia <office@blender.co.yu>\n"
+#"MIME-Version: 1.0\n"
+#"Content-Type: text/plain; charset=UTF-8\n"
+#"Content-Transfer-Encoding: 8bit\n"
 
 msgid "\r Radiosity step %d"
 msgstr "\r Радиозити корак %d"
