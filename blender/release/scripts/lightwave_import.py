@@ -1,10 +1,10 @@
 #!BPY
-'''
-Name: 'LightWave + Materials (.lwo)...'
-Blender: 239
+"""
+Name: 'LightWave (.lwo)...'
+Blender: 241
 Group: 'Import'
-Tooltip: 'Import LightWave Object File Format (.lwo)'
-'''
+Tooltip: 'Import LightWave Object File Format'
+"""
 
 __author__ = "Alessandro Pirovano, Anthony D'Agostino (Scorpius)"
 __url__ = ("blender", "elysiun",
@@ -1238,22 +1238,29 @@ def my_create_mesh(clip_list, surf, objspec_list, current_facelist, objname, not
 	msh = obj.getData()
 	mat_index = len(msh.getMaterials(1))
 	mat = None
-	if surf.has_key('g_MAT'):
+	try: # g_MAT
 		mat = surf['g_MAT']
 		msh.addMaterial(mat)
+	except:
+		pass
+	
 	msh.mode |= Blender.NMesh.Modes.AUTOSMOOTH #smooth it anyway
-	if surf.has_key('SMAN'):
+	try: # SMAN
 		#not allowed mixed mode mesh (all the mesh is smoothed and all with the same angle)
 		#only one smoothing angle will be active! => take the max one
 		s = int(surf['SMAN']/3.1415926535897932384626433832795*180.0)     #lwo in radians - blender in degrees
 		if msh.getMaxSmoothAngle() < s: msh.setMaxSmoothAngle(s)
+	except:
+		pass
 
 	img = None
-	if surf.has_key('g_IMAG'):
+	try: # g_IMAG
 		ima = lookup_imag(clip_list, surf['g_IMAG'])
 		if ima != None:
 			img = ima['g_IMG']
-
+	except:
+		pass
+	
 	#uv_flag = ((surf.has_key('UVNAME')) and (uvcoords_dict.has_key(surf['UVNAME'])) and (img != None))
 	uv_flag = ((surf.has_key('UVNAME')) and (uvcoords_dict.has_key(surf['UVNAME'])))
 
@@ -1596,16 +1603,17 @@ def create_blok(surf, mat, clip_list, obj_size, obj_pos):
 						 'Texture Displacement',
 						 'Additive']
 		set_blendmode = 7 #default additive
-		if blok.has_key('OPAC'):
-			set_blendmode = blok['OPAC']
+		try:	set_blendmode = blok['OPAC']
+		except:	pass
+		
 		if set_blendmode == 5: #transparency
 			newtex.imageFlags |= Blender.Texture.ImageFlags.CALCALPHA
 		tobj.pprint ("!!!Set Texture -> MapTo -> Blending Mode = %s" % blendmode_list[set_blendmode])
 
 		set_dvar = 1.0
-		if blok.has_key('OPACVAL'):
-			set_dvar = blok['OPACVAL']
-
+		try:	set_dvar = blok['OPACVAL']
+		except:	pass
+		
 		#MapTo is determined by CHAN parameter
 		mapflag = Blender.Texture.MapTo.COL  #default to color
 		if blok.has_key('CHAN'):
