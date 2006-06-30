@@ -137,8 +137,12 @@ correct name.
 
 ----------------------Basic SCon TIPS-----------------------------------
 
+More documentation on the scons system is available at
+blender/doc/blender-scons.txt and blender/doc/blender-scons-dev.txt.  Where
+this document and those conflict, those are much more likely to be right.
+
 To be able to build with the SCons build system you'll need Python (preferably
-version 2.2.x) and SCons (http://www.scons.org) installed. After you're
+version 2.4.x) and SCons (http://www.scons.org) installed. After you're
 sure these work properly you are ready to build with SCons.
 
 Systems supported at the moment are:
@@ -161,8 +165,8 @@ Not all are entirely complete yet, but the system itself is very usable.
 Quick tip 1: type 'scons' to build it.   (If you get errors edit config.opts
 	so that it matches your system)
 Quick tip 2: type 'scons clean' to clean your build tree.
-Quick tip 3: You should also remove/rename config.opts any time SConstruct has
-	changed.
+Quick tip 3: You should also remove/rename user_config.py any time SConstruct
+	has changed.
 
 The main file of interest is the SConstruct file in the blender 
 directory. Open this file and browse to the section that concerns your
