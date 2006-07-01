@@ -1545,11 +1545,11 @@ PyObject *M_Mathutils_PolyFill( PyObject * self, PyObject * args )
 	PyObject *polyLineList, *polyLine, *polyVec;
 	int i, len_polylines, len_polypoints;
 	
-	/* display list listbase */
+	/* display listbase */
 	ListBase dispbase={NULL, NULL};
 	DispList *dl;
 	float *fp; /*pointer to the array of malloced dl->verts to set the points from the vectors */
-	int index, *dl_face;
+	int index, *dl_face, totpoints=0;
 	
 	
 	dispbase.first= dispbase.last= NULL;
@@ -1595,24 +1595,36 @@ PyObject *M_Mathutils_PolyFill( PyObject * self, PyObject * args )
 			if( ((VectorObject *)polyVec)->size > 2 )
 				fp[2] = ((VectorObject *)polyVec)->vec[2];
 			else
-				fp[2]= 0.0f; /* if its a 3d vector then set the z to be zero */
+				fp[2]= 0.0f; /* if its a 2d vector then set the z to be zero */
+			
+			totpoints++;
 		}
 	}
 	
-	/* now make the list to return */
-	filldisplist(&dispbase, &dispbase);
-	dl= dispbase.first; /*filled faces only in 1 dl ??? */
-	
-	tri_list= PyList_New(dl->parts);
-	index= 0;
-	
-	dl_face= dl->index;
-	while(index < dl->parts) {
-		PyList_SetItem(tri_list, index, Py_BuildValue("iii", dl_face[0], dl_face[1], dl_face[2]) );
-		dl_face+= 3;
-		index++;
+	if (totpoints) {
+		/* now make the list to return */
+		filldisplist(&dispbase, &dispbase);
+		
+		
+		/* The faces are stored in a new DisplayList
+		thats added to the head of the listbase */
+		dl= dispbase.first; 
+		
+		tri_list= PyList_New(dl->parts);
+		index= 0;
+		
+		dl_face= dl->index;
+		while(index < dl->parts) {
+			PyList_SetItem(tri_list, index, Py_BuildValue("iii", dl_face[0], dl_face[1], dl_face[2]) );
+			dl_face+= 3;
+			index++;
+		}
+		freedisplist(&dispbase);
+	} else {
+		/* no points, do this so scripts dont barf */
+		tri_list= PyList_New(0);
 	}
-	freedisplist(&dispbase);
+	
 	return tri_list;
 }
 
