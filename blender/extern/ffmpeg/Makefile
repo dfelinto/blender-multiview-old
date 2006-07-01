@@ -44,7 +44,7 @@ all::
 	    echo "====> $(MAKE) $@ in $(SOURCEDIR)/$$i" ;\
 	    $(MAKE) -C $$i install || exit 1; \
 	done
-clean test debug::
+clean test debug:: config
 	@for i in $(ALLDIRS); do \
 	    echo "====> $(MAKE) $@ in $(SOURCEDIR)/$$i" ;\
 	    $(MAKE) -C $$i $@ || exit 1; \
