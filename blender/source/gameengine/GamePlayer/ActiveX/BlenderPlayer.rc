@@ -1,4 +1,4 @@
-//Microsoft Developer Studio generated resource script.
+// Microsoft Visual C++ generated resource script.
 //
 #include "resource.h"
 
@@ -27,18 +27,18 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE 
 BEGIN
     "#include ""afxres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE 
 BEGIN
     "1 TYPELIB ""BlenderPlayer.tlb""\r\n"
     "\0"
@@ -47,15 +47,14 @@ END
 #endif    // APSTUDIO_INVOKED
 
 
-#ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
 // Version
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 2,25,4,0
- PRODUCTVERSION 2,25,4,0
+ FILEVERSION 2,42,4,0
+ PRODUCTVERSION 2,42,4,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -70,19 +69,14 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "Comments", "\0"
-            VALUE "CompanyName", "NaN Technologies BV\0"
-            VALUE "FileDescription", "Blender 3D Plug-in ActiveX Control\0"
-            VALUE "FileVersion", "2, 25, 4, 0\0"
-            VALUE "InternalName", "Blender3DPlugin\0"
-            VALUE "LegalCopyright", "Copyright (C) 2001\0"
-            VALUE "LegalTrademarks", "\0"
-            VALUE "OLESelfRegister", "\0"
-            VALUE "OriginalFilename", "Blender3DPlugin.OCX\0"
-            VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "Blender 3D Plug-in ActiveX Control\0"
-            VALUE "ProductVersion", "2, 25, 4, 0\0"
-            VALUE "SpecialBuild", "\0"
+            VALUE "CompanyName", "NaN Technologies BV"
+            VALUE "FileDescription", "Blender 3D Plug-in ActiveX Control"
+            VALUE "FileVersion", "2, 42, 4, 0"
+            VALUE "InternalName", "Blender3DPlugin"
+            VALUE "LegalCopyright", "Copyright (C) 2001"
+            VALUE "OriginalFilename", "Blender3DPlugin.OCX"
+            VALUE "ProductName", "Blender 3D Plug-in ActiveX Control"
+            VALUE "ProductVersion", "2, 42, 4, 0"
         END
     END
     BLOCK "VarFileInfo"
@@ -90,8 +84,6 @@ BEGIN
         VALUE "Translation", 0x409, 1200
     END
 END
-
-#endif    // !_MAC
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -101,37 +93,34 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-IDI_ABOUTDLL            ICON    DISCARDABLE     "BlenderPlayer.ico"
+IDI_ABOUTDLL            ICON                    "BlenderPlayer.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Bitmap
 //
 
-IDB_BLENDERPLAYER       BITMAP  DISCARDABLE     "BlenderPlayerCtl.bmp"
+IDB_BLENDERPLAYER       BITMAP                  "BlenderPlayerCtl.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
 //
 
-IDD_ABOUTBOX_BLENDERPLAYER DIALOG DISCARDABLE  34, 22, 260, 55
-STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+IDD_ABOUTBOX_BLENDERPLAYER DIALOGEX 34, 22, 260, 55
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "About Blender 3D Plugin Active X Control"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
-    LTEXT           "Blender 3D Plug-in Active X Control",IDC_STATIC,40,10,
-                    170,8
-    LTEXT           "Copyright (C) 2001, NaN Technologies BV",IDC_STATIC,40,
-                    20,170,8
+    LTEXT           "Blender 3D Plug-in Active X Control",IDC_STATIC,40,10,170,8
+    LTEXT           "Copyright (C) 2001-2006, NaN Technologies BV",IDC_STATIC,40,20,170,8
     DEFPUSHBUTTON   "OK",IDOK,221,7,32,14,WS_GROUP
     ICON            IDI_ABOUTDLL,IDC_STATIC,7,7,20,20
-    CONTROL         "http://www.blender.nl",IDC_STATIC,"Static",
-                    SS_LEFTNOWORDWRAP | WS_GROUP,39,33,170,8
+    CONTROL         "http://www.blender.nl",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,39,33,170,8
 END
 
-IDD_PROPPAGE_BLENDERPLAYER DIALOG DISCARDABLE  0, 0, 250, 110
-STYLE WS_CHILD
+IDD_PROPPAGE_BLENDERPLAYER DIALOG  0, 0, 250, 110
+STYLE DS_SETFONT | WS_CHILD
 FONT 8, "MS Sans Serif"
 BEGIN
     EDITTEXT        IDC_EDIT_BLENDER_URL,5,15,225,12,ES_AUTOHSCROLL
@@ -149,7 +138,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO 
 BEGIN
     IDD_ABOUTBOX_BLENDERPLAYER, DIALOG
     BEGIN
@@ -174,28 +163,28 @@ END
 // BLEND
 //
 
-IDR_LOAD                BLEND   DISCARDABLE     "..\\common\\load.blend"
+IDR_LOAD                BLEND                   "..\\common\\load.blend"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // RAW
 //
 
-IDR_LOGO_BLENDER        RAW     DISCARDABLE     "..\\common\\logo_blender.raw"
-IDR_LOGO_BLENDER3D      RAW     DISCARDABLE     "..\\common\\logo_blender3d.raw"
+IDR_LOGO_BLENDER        RAW                     "..\\common\\logo_blender.raw"
+IDR_LOGO_BLENDER3D      RAW                     "..\\common\\logo_blender3d.raw"
 
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table
 //
 
-STRINGTABLE DISCARDABLE 
+STRINGTABLE 
 BEGIN
     IDS_BLENDERPLAYER       "Blender 3D Plug-in Active X Control"
     IDS_BLENDERPLAYER_PPG   "Blender 3D Plug-in Property Page"
 END
 
-STRINGTABLE DISCARDABLE 
+STRINGTABLE 
 BEGIN
     IDS_BLENDERPLAYER_PPG_CAPTION "General"
 END

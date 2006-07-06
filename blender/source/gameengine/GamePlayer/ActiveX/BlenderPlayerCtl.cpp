@@ -665,11 +665,15 @@ bool CBlenderPlayerCtrl::startEngine(void)
 				startscenename);
 			
 			PyObject* m_dictionaryobject = initGamePlayerPythonScripting("Ketsji", psl_Highest);
+			//PyObject* m_dictionaryobject = initGamePlayerPythonScripting("Ketsji", psl_Lowest);
+
+			///python scripting doesn't work
 			m_ketsjiengine->SetPythonDictionary(m_dictionaryobject);
 
 			initRasterizer(m_rasterizer, m_canvas);			
 			initGameLogic(startscene);
 			initGameKeys();
+			
 			initPythonConstraintBinding();
 			
 			m_sceneconverter->ConvertScene(
