@@ -11,6 +11,8 @@ else
    exit -1
 fi
 
+cp common.mak common_blender.mak
+cp Makefile Makefile_blender
 rm -rf libavcodec libavformat libavutil libpostproc
 
 cd ..

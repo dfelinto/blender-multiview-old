@@ -62,22 +62,26 @@ CFLAGS += -DHAVE_AV_CONFIG_H
 
 ifdef TARGET_BUILTIN_VECTOR
 $(DIR)/i386/fft_sse.o: CFLAGS+= -msse
+$(DIR)/debug/i386/fft_sse.o: CFLAGS+= -msse
 depend: CFLAGS+= -msse
 endif
 ifdef TARGET_BUILTIN_3DNOW
 $(DIR)/i386/fft_3dn.o: CFLAGS+= -m3dnow
+$(DIR)/debug/i386/fft_3dn.o: CFLAGS+= -m3dnow
 ifeq ($(TARGET_ARCH_X86),yes)
 $(DIR)/i386/fft_3dn2.o: CFLAGS+= -march=athlon
+$(DIR)/debug/i386/fft_3dn2.o: CFLAGS+= -march=athlon
 endif
 ifeq ($(TARGET_ARCH_X86_64),yes)
 $(DIR)/i386/fft_3dn2.o: CFLAGS+= -march=k8
+$(DIR)/debug/i386/fft_3dn2.o: CFLAGS+= -march=k8
 endif
 endif
 
 makedirffmpeg::
 	@for i in $(EXTRADIRS); do \
 	    [ -d $(DIR)/$$i ] || mkdir $(DIR)/$$i ; \
-	    [ -d $(DIR)/$$i/debug ] || mkdir $(DIR)/$$i/debug ; \
+	    [ -d $(DIR)/debug/$$i ] || mkdir $(DIR)/debug/$$i ; \
 	done
 
 install: makedir makedirffmpeg all debug
