@@ -2313,7 +2313,7 @@ class DaeRigidBodyInstance(DaeEntity):
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeRigidBodyInstance,self).SaveToXml(daeDocument)
-		SetAttribute(node, DaeSyntax.BODY, self.body.sid)
+		SetAttribute(node, DaeSyntax.BODY, StripString(self.body.name))
 		SetAttribute(node, DaeSyntax.TARGET, StripString('#'+self.target.id))		 
 		return node
 	
@@ -2393,7 +2393,7 @@ class DaeRigidBody(DaeEntity):
 	def SaveToXml(self, daeDocument):
 		node = super(DaeRigidBody, self).SaveToXml(daeDocument)
 		SetAttribute(node,DaeSyntax.NAME, StripString(self.name))
-		SetAttribute(node,DaeSyntax.SID, StripString(self.sid))
+		SetAttribute(node,DaeSyntax.SID, StripString(self.name))
 		AppendChild(daeDocument,node,self.techniqueCommon)
 		return node
 	
