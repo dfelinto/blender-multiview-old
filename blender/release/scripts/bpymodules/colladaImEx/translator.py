@@ -527,9 +527,9 @@ class SceneNode(object):
 					# TODO: use the correct up-axis
 					position = Vector([data[0],data[1], data[2]])
 					target = Vector([data[3],data[4], data[5]])
-					up = Vector([data[6],data[7], data[8]]).normalize()
-					front = (position-target).normalize()
-					side = -1*CrossVecs(front, up).normalize()
+					up = Vector([data[6],data[7], data[8]]).normalized()
+					front = (position-target).normalized()
+					side = -1*CrossVecs(front, up).normalized()
 					m = Matrix().resize4x4()
 
 					m[0][0] = side.x
