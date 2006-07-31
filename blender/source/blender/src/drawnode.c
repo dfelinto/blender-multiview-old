@@ -1127,7 +1127,7 @@ static void draw_nodespace_back(ScrArea *sa, SpaceNode *snode)
 	
 	if(snode->flag & SNODE_BACKDRAW) {
 		ima= (Image *)find_id("IM", "Viewer Node");
-		if(ima->ibuf) {
+		if(ima && ima->ibuf) {
 			/* somehow the offset has to be calculated inverse */
 			
 			glaDefine2DArea(&sa->winrct);
