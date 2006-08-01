@@ -1299,7 +1299,7 @@ static void winqreadview3dspace(ScrArea *sa, void *spacedata, BWinEvent *evt)
 						G.vd->ofs[2]= -curs[2];
 					}
 					scrarea_queue_winredraw(curarea);
-			
+				}
 				break;
 			case DKEY:
 				if((G.qual==LR_SHIFTKEY)) {
