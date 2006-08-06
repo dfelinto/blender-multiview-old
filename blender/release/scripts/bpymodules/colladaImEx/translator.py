@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.2.65
+# Illusoft Collada 1.4 plugin for Blender version 0.3.89
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -73,15 +73,19 @@ class DocumentTranslator(object):
 	ids = []
 	sceneGraph = None
 	
+	# Keep track of the layers on import
+	layers = None
+	
 	cameraLibrary = None
 ##	  geometryLibrary = None
 ##	  controllerLibrary = None
-##	  animationLibrary = None
+	animationsLibrary = None
 ##	  materialLibrary = None
 	texturesLibrary = None
 	lampsLibrary = None
 	colladaDocument = None
 	scenesLibrary = None
+	fps = 25
 	
 	def CreateID(self, name, typeName=None):
 		if not (name in self.ids):
@@ -118,6 +122,7 @@ class DocumentTranslator(object):
 		self.camerasLibrary = CamerasLibrary(self)
 		self.materialsLibrary = MaterialsLibrary(self)
 		self.meshLibrary = MeshLibrary(self)
+		self.animationsLibrary = AnimationsLibrary(self)
 		
 		self.filename = None
 		self.filePath = ''
@@ -163,6 +168,9 @@ class DocumentTranslator(object):
 		Blender.Window.EditMode(0)
 		Blender.Window.DrawProgressBar(0.0, 'Starting Import')
 		
+		# Keep track of the 20 layers
+		self.layers = [None for x in range(20)]
+		
 		if createNewScene:
 			self.currentBScene = Blender.Scene.New('Scene')
 			self.currentBScene.makeCurrent()
@@ -179,6 +187,7 @@ class DocumentTranslator(object):
 		self.texturesLibrary.SetDaeLibrary(self.colladaDocument.imagesLibrary)
 		self.materialsLibrary.SetDaeLibrary(self.colladaDocument.materialsLibrary)
 		self.meshLibrary.SetDaeLibrary(self.colladaDocument.geometriesLibrary)
+		self.animationsLibrary.SetDaeLibrary(self.colladaDocument.animationsLibrary)
 		
 		# Parse the COLLADA file
 		self.colladaDocument.LoadDocumentFromFile(fileName)
@@ -190,6 +199,9 @@ class DocumentTranslator(object):
 			self.tMat[0][1] = 1
 			self.tMat[1][2] = 1
 			self.tMat[2][0] = 1
+			self.axiss = ["Y", "Z", "X"]
+			
+		self.axiss = ["X", "Y", "Z"]
 			
 		self.progressStep = self.progressField/(self.colladaDocument.GetItemCount()+1)
 		
@@ -223,12 +235,12 @@ class DocumentTranslator(object):
 		
 		self.colladaDocument.asset = daeAsset
 		
-		
 		daeScene = collada.DaeScene()
 		
 		# Loop throug all scenes
 		for bScene in Blender.Scene.Get():
 			if not exportCurrentScene or self.currentBScene == bScene:
+				self.fps = bScene.getRenderingContext( ).framesPerSec()
 				daeInstanceVisualScene = collada.DaeVisualSceneInstance()
 				daeInstancePhysicsScene = collada.DaePhysicsSceneInstance()
 				daeVisualScene = self.colladaDocument.visualScenesLibrary.FindObject(bScene.name)
@@ -238,14 +250,15 @@ class DocumentTranslator(object):
 					daeVisualScene = scenesList[0]
 					if exportPhysics:
 						daePhysicsScene = scenesList[1]
-				   
+
 				daeInstanceVisualScene.object = daeVisualScene
 				
 				#self.colladaDocument.visualScenesLibrary.AddItem(daeIntanceVisualScene)
 				daeScene.iVisualScenes.append(daeInstanceVisualScene)
 				if exportPhysics:
-					daeInstancePhysicsScene.object = daePhysicsScene
-					daeScene.iPhysicsScenes.append(daeInstancePhysicsScene)
+					if not (daePhysicsScene is None):
+						daeInstancePhysicsScene.object = daePhysicsScene
+						daeScene.iPhysicsScenes.append(daeInstancePhysicsScene)
 				
 				#self.colladaDocument.visualScenesLibrary.AddItem(sceneGraph.ObjectToDae(bScene))
 				#daeScene = collada.DaeScene()
@@ -319,6 +332,7 @@ class SceneGraph(object):
 				physicsNode = PhysicsNode(self.document)
 				physicsNode.LoadFromDae(iPhysicsModel, self.objectNames)
 			
+		# Create all the animations
 			
 		# Update the current Scene.
 		self.document.currentBScene.update(1)
@@ -356,8 +370,11 @@ class SceneGraph(object):
 				daePhysicsScene.iPhysicsModels.append(daeInstancePhysicsModel)
 			
 		self.document.colladaDocument.visualScenesLibrary.AddItem(daeVisualScene)
-		if exportPhysics:
+		if exportPhysics and len(daePhysicsScene.iPhysicsModels) > 0:			
 			self.document.colladaDocument.physicsScenesLibrary.AddItem(daePhysicsScene)
+		else:
+			daePhysicsScene = None
+
 		return (daeVisualScene, daePhysicsScene)
 	
 class PhysicsNode(object):
@@ -430,7 +447,219 @@ class PhysicsNode(object):
 			
 			bObject.rbShapeBoundType = rbShapeBoundType
 			
+class Animation(object):
+	def __init__(self, document):
+		self.document = document
+	
+	def LoadFromDae(self, daeAnimation, daeNode, bObject):
+		# Loop trough all channels
+		for channel in daeAnimation.channels:
+			ca = channel.target.split("/",1)
+			if ca[0] == daeNode.id:				
+				for s in daeAnimation.samplers:
+					if s.id == channel.source[1:]:
+						sampler = s
+				if not (s is None):
+					if bObject.ipo is None:
+						ipo = Blender.Ipo.New("Object",daeAnimation.id)					
+						bObject.setIpo(ipo)
+					else:
+						ipo = bObject.ipo
+					type = self.FindType(ca[1], daeNode)
+					input = sampler.GetInput("INPUT")
+					inputSource = daeAnimation.GetSource(input.source)
+					# Check if the input has a TIME parameter and is the only one.
+					if not (type is None) and inputSource.techniqueCommon.accessor.HasParam("TIME") and len(inputSource.techniqueCommon.accessor.params) == 1:
+						output = sampler.GetInput("OUTPUT")
+						outputSource = daeAnimation.GetSource(output.source)
+						accessorCount = outputSource.techniqueCommon.accessor.count
+						accessorStride = outputSource.techniqueCommon.accessor.stride
+						times = [x*self.document.fps for x in inputSource.source.data]
+						if type[0] == "translate" or type[0] == "scale" or (type[0] == "rotate" and type[1][1] == "ANGLE"):
+							axiss = []
+							if len(type[1]) == 1:
+								axiss = ["X", "Y", "Z"]
+							elif type[0] == "rotate":
+								axiss = [type[1][0][-1]]
+							elif len(type[1]) == 2:
+								if type[1][1] in ["X", "Y", "Z"]:
+									axiss = [type[1][1]]
+							for axis in axiss:
+								if type[0] == "translate":
+									cname = "Loc"
+								elif type[0] == "scale":
+									cname = "Scale"
+								else:
+									cname = "Rot"
+								cname += self.document.axiss[axiss.index(axis)]
+								curve = ipo.addCurve(cname)
+								for time in times:
+									val = outputSource.source.data[times.index(time)*accessorStride+axiss.index(axis)]
+									if type[0] == "rotate":
+										val /= 10
+									curve.addBezier((time,val))						
+						
+	
+	def FindType(self, target, daeNode):
+		ta = target.split(".",1)
+		for t in daeNode.transforms:
+			if t[2] == ta[0]:
+				return [t[0],ta]
+		return None
 
+	def SaveToDae(self, ipo, targetDaeNode):
+		animations = None
+		curves = ipo.getCurves()
+		if not curves is None:
+			animations = dict()
+			for curve in curves:
+				cName = curve.getName()
+				interpolation = curve.getInterpolation()
+				if cName.startswith("Loc") or cName.startswith("Rot") or cName.startswith("Scale"):
+					if cName.startswith("Loc"):
+						n = collada.DaeSyntax.TRANSLATE
+					elif cName.startswith("Scale"):
+						n = collada.DaeSyntax.SCALE						
+					else:
+						n = collada.DaeSyntax.ROTATE+cName[-1]
+					ani = animations.setdefault(n,{})
+					for bp in curve.bezierPoints:
+						anit = ani.setdefault(bp.pt[0],{'X':0, 'Y':0, 'Z':0, 'interpolation':interpolation})
+						anit[cName[-1]] = bp.pt[1]
+						if cName.startswith("Rot"):
+							anit[cName[-1]] = anit[cName[-1]]*10 # Multiply the angle times 10 (Blender uses angle/10)					
+				else:
+					pass
+		
+		
+		# add animations to collada
+		for name, animation in animations.iteritems():
+			daeAnimation = collada.DaeAnimation()
+			daeAnimation.id = daeAnimation.name = self.document.CreateID(targetDaeNode.id+'-'+name,'-Animation')
+
+			daeSourceInput = collada.DaeSource()
+			daeSourceInput.id = self.document.CreateID(daeAnimation.id,'-input')
+			daeFloatArrayInput = collada.DaeFloatArray()
+			daeFloatArrayInput.id = self.document.CreateID(daeSourceInput.id,'-array')
+			daeSourceInput.source = daeFloatArrayInput
+			daeSourceInput.techniqueCommon = collada.DaeSource.DaeTechniqueCommon()
+			accessorInput = collada.DaeAccessor()
+			daeSourceInput.techniqueCommon.accessor = accessorInput
+			accessorInput.source = daeFloatArrayInput.id
+			accessorInput.count = len(animation)
+			accessorInput.AddParam('TIME','float')
+			
+			if name == collada.DaeSyntax.TRANSLATE or name == collada.DaeSyntax.SCALE:
+				vals = self.CreateSourceOutput(daeAnimation, len(animation),  "xyz")				
+			elif name.startswith(collada.DaeSyntax.ROTATE):
+				vals = self.CreateSourceOutput(daeAnimation, len(animation),  "angle")
+				
+			daeSourceOutput = vals[0]
+			outputArray = vals[1]
+			daeSourceInterpolation = vals[2]
+			interpolationArray = vals[3]
+			
+			daeAnimation.sources.append(daeSourceInput)
+			daeAnimation.sources.append(daeSourceOutput)
+			daeAnimation.sources.append(daeSourceInterpolation)
+			
+			
+			for key, value in animation.iteritems():
+				daeFloatArrayInput.data.append(key/self.document.fps)
+				interpolation = value['interpolation']
+				if interpolation == 'Constant':
+					cInterpolation = 'STEP'
+				elif interpolation == 'Linear':
+					cInterpolation = 'LINEAR'
+				else:
+					cInterpolation = 'BEZIER'
+					
+				if name == collada.DaeSyntax.TRANSLATE or name == collada.DaeSyntax.SCALE:						
+					outputArray.data.append(value['X'])
+					outputArray.data.append(value['Y'])
+					outputArray.data.append(value['Z'])
+					
+					interpolationArray.data.append(cInterpolation)		
+					interpolationArray.data.append(cInterpolation)
+					interpolationArray.data.append(cInterpolation)
+				elif name.startswith(collada.DaeSyntax.ROTATE):
+					outputArray.data.append(value[name[-1]])
+					interpolationArray.data.append(cInterpolation)
+					
+			if not name.startswith(collada.DaeSyntax.ROTATE) or sum(outputArray.data) != 0:				
+				daeSampler = collada.DaeSampler()
+				daeSampler.id = self.document.CreateID(daeAnimation.id,"-sampler")
+				daeAnimation.samplers.append(daeSampler)
+				
+				daeInputInput = collada.DaeInput()
+				daeInputInput.semantic = 'INPUT'
+				daeInputInput.source = daeSourceInput.id
+				daeSampler.inputs.append(daeInputInput)
+				
+				daeInputOutput = collada.DaeInput()
+				daeInputOutput.semantic = 'OUTPUT'
+				daeInputOutput.source = daeSourceOutput.id
+				daeSampler.inputs.append(daeInputOutput)
+				
+				daeInputInterpolation = collada.DaeInput()
+				daeInputInterpolation.semantic = 'INTERPOLATION'
+				daeInputInterpolation.source = daeSourceInterpolation.id
+				daeSampler.inputs.append(daeInputInterpolation)
+				
+				daeChannel = collada.DaeChannel()
+				daeChannel.source = daeSampler
+				
+				daeChannel.target = targetDaeNode.id+'/'+name
+				if name.startswith(collada.DaeSyntax.ROTATE):
+					daeChannel.target += ".ANGLE"
+				daeAnimation.channels.append(daeChannel)
+				
+				self.document.colladaDocument.animationsLibrary.AddItem(daeAnimation)
+		
+	def CreateSourceOutput(self, daeAnimation, count, type):
+		daeSourceOutput = collada.DaeSource()
+		daeSourceOutput.id = self.document.CreateID(daeAnimation.id,'-output')
+		if type == "xyz" or "angle":
+			outputArray = collada.DaeFloatArray()
+		else:
+			pass
+			
+		##daeFloatArrayOutput = collada.DaeFloatArray()
+		outputArray.id = self.document.CreateID(daeSourceOutput.id,'-array')
+		daeSourceOutput.source = outputArray
+		daeSourceOutput.techniqueCommon = collada.DaeSource.DaeTechniqueCommon()
+		accessorOutput = collada.DaeAccessor()
+		daeSourceOutput.techniqueCommon.accessor = accessorOutput
+		accessorOutput.source = outputArray.id
+		accessorOutput.count = count
+		
+		
+		daeSourceInterpolation = collada.DaeSource()
+		daeSourceInterpolation.id = self.document.CreateID(daeAnimation.id,'-interpolation')
+		interpolationArray = collada.DaeNameArray()
+		interpolationArray.id = self.document.CreateID(daeSourceInterpolation.id,'-array')
+		daeSourceInterpolation.source = interpolationArray
+		daeSourceInterpolation.techniqueCommon = collada.DaeSource.DaeTechniqueCommon()
+		accessorInterpolation = collada.DaeAccessor()
+		daeSourceInterpolation.techniqueCommon.accessor = accessorInterpolation
+		accessorInterpolation.source = interpolationArray.id
+		accessorInterpolation.count = count
+		
+		if type == "xyz":			
+			accessorOutput.AddParam('X','float')
+			accessorOutput.AddParam('Y','float')
+			accessorOutput.AddParam('Z','float')
+			accessorInterpolation.AddParam('X','Name')
+			accessorInterpolation.AddParam('Y','Name')
+			accessorInterpolation.AddParam('Z','Name')
+			
+		elif type == "angle":
+			accessorOutput.AddParam('ANGLE','float')
+			accessorInterpolation.AddParam('ANGLE','Name')
+			
+		return [daeSourceOutput, outputArray, daeSourceInterpolation, interpolationArray]
+		
+	
 class SceneNode(object):
 	
 	def __init__(self, document, sceneNode):
@@ -490,7 +719,7 @@ class SceneNode(object):
 					
 			self.document.currentBScene.link(newObject)
 			
-			# TODO: MAYBE CHANGE THIS LATER update the mesh..
+			# TODO: Vertex Colors: MAYBE CHANGE THIS LATER update the mesh..
 			if newObject.getType() == 'Mesh':
 				newObject.getData().update(1,1,1)
 				# Set the vertex colors.
@@ -510,7 +739,7 @@ class SceneNode(object):
 				if type == collada.DaeSyntax.TRANSLATE:
 					mat = mat*TranslationMatrix(Vector(data)* self.document.tMat)
 				elif type == collada.DaeSyntax.ROTATE:
-					mat = mat*RotationMatrix(data[3],4,'r',Vector([data[0],data[1],data[2]])* self.document.tMat)
+					mat = mat*RotationMatrix(data[3] % 360,4,'r',Vector([data[0],data[1],data[2]])* self.document.tMat)
 				elif type == collada.DaeSyntax.SCALE:
 					skewVec = Vector(data[0],data[1], data[2])*self.document.tMat
 					mat = mat * Matrix([skewVec.x,0,0,0],[0,skewVec.y,0,0],[0,0,skewVec.z,0],[0,0,0,1])
@@ -524,12 +753,12 @@ class SceneNode(object):
 					
 					mat = mat * Matrix([1+fac1*rotVec.x,fac1*rotVec.y,fac1*rotVec.z,0],[fac2*rotVec.x,1+fac2*rotVec.y,fac2*rotVec.z,0],[fac3*rotVec.x,fac3*rotVec.y,1+fac3*rotVec.z,0],[0,0,0,1])
 				elif type == collada.DaeSyntax.LOOKAT:
-					# TODO: use the correct up-axis
+					# TODO: LOOKAT Transform: use the correct up-axis
 					position = Vector([data[0],data[1], data[2]])
 					target = Vector([data[3],data[4], data[5]])
-					up = Vector([data[6],data[7], data[8]]).normalized()
-					front = (position-target).normalized()
-					side = -1*CrossVecs(front, up).normalized()
+					up = Vector([data[6],data[7], data[8]]).normalize()
+					front = (position-target).normalize()
+					side = -1*CrossVecs(front, up).normalize()
 					m = Matrix().resize4x4()
 
 					m[0][0] = side.x
@@ -555,6 +784,9 @@ class SceneNode(object):
 					
 			newObject.setMatrix(mat)
 			childlist = []
+			
+			
+			
 			for daeChild in daeNode.nodes:
 				childSceneNode = SceneNode(self.document,self)
 				object = childSceneNode.ObjectFromDae(daeChild)
@@ -562,6 +794,54 @@ class SceneNode(object):
 					childlist.append(object)
 			newObject.makeParent(childlist,0,1)
 			
+			# Check if this node has an animation.
+			daeAnimations = self.document.animationsLibrary.GetDaeAnimations(self.id)
+			for daeAnimation in daeAnimations:
+				a = Animation(self.document)
+				a.LoadFromDae(daeAnimation, daeNode, newObject)
+				
+			# Check if the daeNode has some Layer information.
+			if not len(daeNode.layer) == 0:
+				layers = self.document.layers
+				# Keep track of the blender layers to which this Node belongs.
+				myLayers = []
+				# Loop through all layers of this node.
+				for layer in daeNode.layer:
+					# Check if this layer is used before.
+					if layer in layers:
+						# If so, the layer to add is the index of that layer + 1.
+						layerNo = layers.index(layer)+1
+					else:
+						# else, create a new layer.
+						addLayer = True
+						# When the layer is a digit, try to use the same digit in Blender.
+						if layer.isdigit():
+							# If So, check if this digit is between 1 and 20 AND if this layer is not used before
+							digit = int(layer)
+							if digit >= 1 and digit <= len(layers) and layers[digit-1] is None:
+								# Add the new layer to the list.
+								layers[digit-1] = layer
+								layerNo = digit
+								# Set this flag to false, so further checking is skipped.
+								addLayer = False
+						# If the layer was not a digit, Create a new one.
+						if addLayer:
+							layerNo = 1
+							# Get the first free spot.
+							if None in layers:
+								index = layers.index(None)							
+								layers[index] = layer
+								layerNo = index+1
+					# When this layerNo is not in myLayers yet, add it to the list.
+					if not (layerNo in myLayers):
+						myLayers.append(layerNo)
+			else:
+				# Use the current selected layers.
+				myLayers = self.document.currentBScene.layers
+			# Set the layers of the new Object.
+			newObject.layers = myLayers
+			
+			# Return the new Object
 			return newObject
 		
 	def SaveToDae(self,bNode,childNodes):
@@ -582,9 +862,12 @@ class SceneNode(object):
 			rotzVec = [0,0,1,euler.z*radianToAngle]
 			
 			##rotVec = [round(euler.x*radianToAngle,3), round(euler.y*radianToAngle,3), round(euler.z*radianToAngle,3)]
-			if euler.z != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotzVec])
-			if euler.y != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
-			if euler.x != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
+##			if euler.z != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotzVec])
+##			if euler.y != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
+##			if euler.x != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
+			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotzVec])
+			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
+			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
 			
 			daeNode.transforms.append([collada.DaeSyntax.SCALE, bNode.getSize()])
 			
@@ -620,6 +903,15 @@ class SceneNode(object):
 			instance.object = daeLight
 			daeNode.iLights.append(instance)
 		
+		# Check if the object has an IPO curve. if so, export animation.
+		if not (bNode.ipo is None):
+			ipo = bNode.ipo
+			animation = Animation(self.document)
+			animation.SaveToDae(ipo, daeNode)
+		
+		# Export layer information.
+		daeNode.layer = bNode.layers
+		
 		if not exportSelection:    
 			myChildNodes = []
 			if childNodes.has_key(bNode.name):
@@ -647,14 +939,14 @@ class SceneNode(object):
 		rbFlags = [0 for a in range(16)]
 		rbF = bNode.rbFlags
 		lastIndex = 0;
-		# Get the bit flags
+		# Get the bit flags.
 		while rbF > 0:
 			val = rbF >> 1
 			if val << 1 == rbF:
-				#rbFlags.append(0)
+				##rbFlags.append(0)
 				rbFlags[lastIndex] = 0
 			else:
-				#rbFlags.append(1)
+				##rbFlags.append(1)
 				rbFlags[lastIndex] = 1
 			lastIndex += 1
 			rbF = val
@@ -666,18 +958,18 @@ class SceneNode(object):
 		daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
 		daeRigidBodyTechniqueCommon.dynamic = bool(rbFlags[0])
 		daeRigidBodyTechniqueCommon.mass = bNode.rbMass
-		# check the shape of the rigid body.
-		if bNode.rbShapeBoundType == 0: # Box
+		# Check the shape of the rigid body.
+		if bNode.rbShapeBoundType == 0 and rbFlags[PhysicsNode.actor] and rbFlags[PhysicsNode.bounds]: # Box
 			shape = collada.DaeBoxShape()
 			shape.halfExtents = list(bNode.rbHalfExtents)
-		elif bNode.rbShapeBoundType == 1: # Sphere
+		elif bNode.rbShapeBoundType == 1 and rbFlags[PhysicsNode.actor] and rbFlags[PhysicsNode.bounds]: # Sphere
 			shape = collada.DaeSphereShape()
 			shape.radius = bNode.rbRadius
-		elif bNode.rbShapeBoundType == 2: # Cylinder
+		elif bNode.rbShapeBoundType == 2 and rbFlags[PhysicsNode.actor] and rbFlags[PhysicsNode.bounds]: # Cylinder
 			shape = collada.DaeCylinderShape()
 			shape.radius = [[bNode.rbRadius],[bNode.rbRadius]]
 			shape.height = bNode.rbHalfExtents[2]
-		elif bNode.rbShapeBoundType == 3: # Cone
+		elif bNode.rbShapeBoundType == 3 and rbFlags[PhysicsNode.actor] and rbFlags[PhysicsNode.bounds]: # Cone
 			shape = collada.DaeTaperedCylinderShape()
 			shape.radius1 = [[bNode.rbRadius],[bNode.rbRadius]]
 			shape.radius2 = [0 , 0]
@@ -703,8 +995,12 @@ class SceneNode(object):
 		daePhysicsMaterial = self.document.colladaDocument.physicsMaterialsLibrary.FindObject(daeNode.id+'-PxMaterial')
 		if daePhysicsMaterial is None:
 			daePhysicsMaterial = collada.DaePhysicsMaterial()
-			##daePhysicsMaterial.restitution = bNode.rbRestitution
-			##daePhysicsMaterial.staticFriction = bNode.rbFriction
+			# Set Restitution.
+			daePhysicsMaterial.restitution = 0 # TODO: Physics: when this object is a mesh, use the restitution and friction from its material.
+			# Set Friction.
+			daePhysicsMaterial.staticFriction = 0.5
+			daePhysicsMaterial.dynamicFriction = 0.5
+			
 			daePhysicsMaterial.id = daePhysicsMaterial.name = self.document.CreateID(daeNode.id, '-PhysicsMaterial')
 			self.document.colladaDocument.physicsMaterialsLibrary.AddItem(daePhysicsMaterial)
 						
@@ -772,125 +1068,127 @@ class MeshNode(object):
 			
 			# Get all the sources
 			sources = dict()
+			
 			for source in daeMesh.sources:
 				sources[source.id] = source.vectors
 
 			# Get the Position Input
 			vPosInput = daeVertices.FindInput('POSITION')
+			if not (daeMesh.FindSource(vPosInput).techniqueCommon is None):
 
-			# Get the Normal Input
-			vNorInput = daeVertices.FindInput('NORMAL')
-						
-			
-			# Keep track of the Blender Vertices
-			pVertices = []
-			
-			self.document.ProgressPart(0.0,'Create Vertices')
-			
-			
-			
-			# Create all the vertices.
-			for i in sources[vPosInput.source]:
-				vPosVector = Vector(i[0], i[1], i[2]) * self.document.tMat
-				pVertices.append(Blender.NMesh.Vert(vPosVector.x, vPosVector.y, vPosVector.z))
-			bMesh2.verts = pVertices				
+				# Get the Normal Input
+				vNorInput = daeVertices.FindInput('NORMAL')
+							
 				
-			faceVerts = [] # The list of vertices for each face to add
-			edgeVerts = [] # The list of vertices for each edge to add
-			
-			# Now create the primitives
-			self.document.ProgressPart(0.5,'Create Primitives')
-			daePrimitives = daeMesh.primitives
-			for primitive in daePrimitives:
-				# Get the UV Input
-				vUvInput = primitive.FindInput('TEXCOORD')
-				uvs = []
-				if not (vUvInput is None):
-					for i in sources[vUvInput.source]:
-						vUvVector = Vector(i[0],i[1])
-						uvs.append(vUvVector)
-				inputs = primitive.inputs
-				maxOffset = primitive.GetMaxOffset()+1 # The number of values for one vertice
-				vertCount = 0 # The number of vertices for one primitive
-				realVertCount = 0 # The number of vertices for one primitive
-				plist = [] # The list with all primitives
-				if isinstance(primitive, collada.DaePolygons): # Polygons
-					plist = primitive.polygons
-					vertCount = 4
-				elif isinstance(primitive, collada.DaeTriangles): # Triangles
-					plist.append(primitive.triangles)
-					vertCount = 3
-				elif isinstance(primitive, collada.DaeLines): # Lines
-					plist.append(primitive.lines)
-					vertCount = 2
-				realVertCount = vertCount
-				# Loop through each P (primitive)	 
-				for p in plist:
-					if vertCount == 4:
-						realVertCount = len(p)/maxOffset
-					pIndex = 0
-					# A list with edges in this face
-					faceEdges = []
-					# a list to store all the created faces in to add them to the mesh afterwards.
-					allFaceVerts = [] 
-					# loop through all the values in this 'p'
-					while pIndex < len(p):
-						# Keep track of the verts in this face
-						curFaceVerts2 = []
-						uvList	= []
-						# for every vertice for this primitive
-						for i in range(realVertCount):
-							# Check all the inputs and do the right thing
-							for input in inputs:								
-								inputVal = p[pIndex+(i*maxOffset)+input.offset] 							   
-								if input.semantic == "VERTEX":
-									vert2 = pVertices[inputVal]
-									curFaceVerts2.append(vert2)
-								elif input.semantic == "TEXCOORD":
-									uvList.append((uvs[inputVal][0],uvs[inputVal][1]))
-								elif input.semantic == "NORMAL":
-									pass						   
-						if vertCount > 2:
-							faceCount = 1 + (realVertCount-4) / 2 + (realVertCount-4) % 2							 
-							firstIndex = 2
-							lastIndex = 1							
-							for a in range(faceCount):
-								newFirstIndex = (firstIndex + 1) % realVertCount
-								newLastIndex = (lastIndex -1) % realVertCount
-								fuv = []
-								if newFirstIndex != newLastIndex:
-									fv = [curFaceVerts2[firstIndex]] + [curFaceVerts2[newFirstIndex]] + [curFaceVerts2[newLastIndex]] +  [curFaceVerts2[lastIndex]]
-									if len(uvList) == realVertCount:
-										fuv = [uvList[firstIndex]] + [uvList[newFirstIndex]] + [uvList[newLastIndex]] + [uvList[lastIndex]]
-								else:
-									fv = [curFaceVerts2[firstIndex]] + [curFaceVerts2[newFirstIndex]] + [curFaceVerts2[lastIndex]]
-									if len(uvList) == realVertCount:
-										fuv = [uvList[firstIndex]] + [uvList[newFirstIndex]] + [uvList[lastIndex]]
-								firstIndex = newFirstIndex
-								lastIndex = newLastIndex
-								# Create a new Face.
-								newFace = Blender.NMesh.Face(fv)
-								# Set the UV Coordinates
-								newFace.uv = fuv
-								# Add the new face to the list
-								faces.append(newFace)
-								# Add the material to this face
-								if primitive.material != '':
-									# Find the material index.
-									matIndex = self.FindMaterial(bMesh2.materials, self.materials[primitive.material].name)
-									# Set the material index for the new face.
-									newFace.materialIndex = matIndex
-									textures = self.materials[primitive.material].getTextures()
-									if len(textures) > 0 and not (textures[0] is None):
-										texture = textures[0]
-										image = texture.tex.getImage()
-										if not image is None:
-											newFace.image = image
-						else:
-							bMesh2.addEdge(curFaceVerts2[0], curFaceVerts2[1])
-						# update the index
-						pIndex += realVertCount * maxOffset
-					bMesh2.faces = faces
+				# Keep track of the Blender Vertices
+				pVertices = []
+				
+				self.document.ProgressPart(0.0,'Create Vertices')
+				
+				# Create all the vertices.
+				for i in sources[vPosInput.source]:
+					vPosVector = Vector(i[0], i[1], i[2]) * self.document.tMat
+					pVertices.append(Blender.NMesh.Vert(vPosVector.x, vPosVector.y, vPosVector.z))
+				bMesh2.verts = pVertices				
+					
+				faceVerts = [] # The list of vertices for each face to add
+				edgeVerts = [] # The list of vertices for each edge to add
+				
+				# Now create the primitives
+				self.document.ProgressPart(0.5,'Create Primitives')
+				daePrimitives = daeMesh.primitives
+				for primitive in daePrimitives:
+					# Get the UV Input
+					vUvInput = primitive.FindInput('TEXCOORD')
+					uvs = []
+					if not (vUvInput is None):
+						for i in sources[vUvInput.source]:
+							vUvVector = Vector(i[0],i[1])
+							uvs.append(vUvVector)
+					inputs = primitive.inputs
+					maxOffset = primitive.GetMaxOffset()+1 # The number of values for one vertice
+					vertCount = 0 # The number of vertices for one primitive
+					realVertCount = 0 # The number of vertices for one primitive
+					plist = [] # The list with all primitives
+					if isinstance(primitive, collada.DaePolygons): # Polygons
+						plist = primitive.polygons
+						vertCount = 4
+					elif isinstance(primitive, collada.DaeTriangles): # Triangles
+						plist.append(primitive.triangles)
+						vertCount = 3
+					elif isinstance(primitive, collada.DaeLines): # Lines
+						plist.append(primitive.lines)
+						vertCount = 2
+					realVertCount = vertCount
+					# Loop through each P (primitive)	 
+					for p in plist:
+						if vertCount == 4:
+							realVertCount = len(p)/maxOffset
+						pIndex = 0
+						# A list with edges in this face
+						faceEdges = []
+						# a list to store all the created faces in to add them to the mesh afterwards.
+						allFaceVerts = [] 
+						# loop through all the values in this 'p'
+						while pIndex < len(p):
+							# Keep track of the verts in this face
+							curFaceVerts2 = []
+							uvList	= []
+							# for every vertice for this primitive
+							for i in range(realVertCount):
+								# Check all the inputs and do the right thing
+								for input in inputs:								
+									inputVal = p[pIndex+(i*maxOffset)+input.offset] 							   
+									if input.semantic == "VERTEX":
+										print len(pVertices), inputVal
+										vert2 = pVertices[inputVal]
+										curFaceVerts2.append(vert2)
+									elif input.semantic == "TEXCOORD":
+										uvList.append((uvs[inputVal][0],uvs[inputVal][1]))
+									elif input.semantic == "NORMAL":
+										pass						   
+							if vertCount > 2:
+								faceCount = 1 + (realVertCount-4) / 2 + (realVertCount-4) % 2							 
+								firstIndex = 2
+								lastIndex = 1							
+								for a in range(faceCount):
+									newFirstIndex = (firstIndex + 1) % realVertCount
+									newLastIndex = (lastIndex -1) % realVertCount
+									fuv = []
+									if newFirstIndex != newLastIndex:
+										fv = [curFaceVerts2[firstIndex]] + [curFaceVerts2[newFirstIndex]] + [curFaceVerts2[newLastIndex]] +  [curFaceVerts2[lastIndex]]
+										if len(uvList) == realVertCount:
+											fuv = [uvList[firstIndex]] + [uvList[newFirstIndex]] + [uvList[newLastIndex]] + [uvList[lastIndex]]
+									else:
+										fv = [curFaceVerts2[firstIndex]] + [curFaceVerts2[newFirstIndex]] + [curFaceVerts2[lastIndex]]
+										if len(uvList) == realVertCount:
+											fuv = [uvList[firstIndex]] + [uvList[newFirstIndex]] + [uvList[lastIndex]]
+									firstIndex = newFirstIndex
+									lastIndex = newLastIndex
+									# Create a new Face.
+									newFace = Blender.NMesh.Face(fv)
+									# Set the UV Coordinates
+									newFace.uv = fuv
+									# Add the new face to the list
+									faces.append(newFace)
+									# Add the material to this face
+									if primitive.material != '':
+										# Find the material index.
+										print primitive.material, self.materials[primitive.material]
+										matIndex = self.FindMaterial(bMesh2.materials, self.materials[primitive.material].name)
+										# Set the material index for the new face.
+										newFace.materialIndex = matIndex
+										textures = self.materials[primitive.material].getTextures()
+										if len(textures) > 0 and not (textures[0] is None):
+											texture = textures[0]
+											image = texture.tex.getImage()
+											if not image is None:
+												newFace.image = image
+							else:
+								bMesh2.addEdge(curFaceVerts2[0], curFaceVerts2[1])
+							# update the index
+							pIndex += realVertCount * maxOffset
+						bMesh2.faces = faces
 		return bMesh2
 	
 	def SaveToDae(self, bMesh):
@@ -1199,52 +1497,53 @@ class MaterialNode(object):
 		bMat = Blender.Material.New(materialID)
 		for i in daeMaterial.iEffects:
 			daeEffect = self.document.colladaDocument.effectsLibrary.FindObject(i.url)		  
-			shader = daeEffect.profileCommon.technique.shader
-			if shader.transparent:
-				tcol = shader.transparent.color.rgba		
-				tkey = 1
-				if shader.transparency:
-					tkey = shader.transparency.float
-				alpha = 1 - tkey * (tcol[0]*0.21 + tcol[1]*0.71 + tcol[2]*0.08)
-				bMat.setAlpha(alpha)
-			elif shader.transparency:
-				alpha = 1 - shader.transparency.float
-			if shader.reflective:
-				color = shader.reflective.color.rgba
-				bMat.setMirCol(color[0], color[1], color[2])
-			if shader.reflectivity:
-				bMat.setRef(shader.reflectivity.float)
- 
-			if isinstance(shader,collada.DaeFxShadeLambert) or isinstance(shader, collada.DaeFxShadeBlinn) or isinstance(shader, collada.DaeFxShadePhong):
-				bMat.setDiffuseShader(Blender.Material.Shaders.DIFFUSE_LAMBERT)
-				if shader.diffuse:
-					##print shader.diffuse.color.rgba, shader.diffuse.color
-					if not (shader.diffuse.color is None):
-						color = shader.diffuse.color.rgba
-						bMat.setRGBCol(color[0],color[1], color[2])
-					if not (shader.diffuse.texture is None): # Texture
-						texture = shader.diffuse.texture.texture
-						if not (texture is None):
-							bTexture = self.document.texturesLibrary.FindObject(texture, True)
-							if not bTexture is None:
-								bMat.setTexture(0, bTexture, Blender.Texture.TexCo.UV)
-						
-				bMat.setSpec(0) 		  
-			
-			if isinstance(shader, collada.DaeFxShadeBlinn) or isinstance(shader, collada.DaeFxShadePhong):
-				if not isinstance(shader, collada.DaeFxShadePhong):
-					bMat.setSpecShader(Blender.Material.Shaders.SPEC_BLINN)
-					if shader.indexOfRefraction:
-						shader.indexOfRefraction.float
-						bMat.setRefracIndex(shader.indexOfRefraction.float)
-				else:
-					bMat.setSpecShader(Blender.Material.Shaders.SPEC_PHONG)
-				if shader.specular:
-					specColor = shader.specular.color.rgba
-					bMat.setSpecCol(specColor[0], specColor[1], specColor[2])
-				bMat.setSpec(1)
-				if shader.shininess:
-					bMat.setHardness(int(shader.shininess.float) * 4)
+			if not (daeEffect.profileCommon is None):
+				shader = daeEffect.profileCommon.technique.shader
+				if shader.transparent:
+					tcol = shader.transparent.color.rgba		
+					tkey = 1
+					if shader.transparency:
+						tkey = shader.transparency.float
+					alpha = 1 - tkey * (tcol[0]*0.21 + tcol[1]*0.71 + tcol[2]*0.08)
+					bMat.setAlpha(alpha)
+				elif shader.transparency:
+					alpha = 1 - shader.transparency.float
+				if shader.reflective:
+					color = shader.reflective.color.rgba
+					bMat.setMirCol(color[0], color[1], color[2])
+				if shader.reflectivity:
+					bMat.setRef(shader.reflectivity.float)
+
+				if isinstance(shader,collada.DaeFxShadeLambert) or isinstance(shader, collada.DaeFxShadeBlinn) or isinstance(shader, collada.DaeFxShadePhong):
+					bMat.setDiffuseShader(Blender.Material.Shaders.DIFFUSE_LAMBERT)
+					if shader.diffuse:
+						##print shader.diffuse.color.rgba, shader.diffuse.color
+						if not (shader.diffuse.color is None):
+							color = shader.diffuse.color.rgba
+							bMat.setRGBCol(color[0],color[1], color[2])
+						if not (shader.diffuse.texture is None): # Texture
+							texture = shader.diffuse.texture.texture
+							if not (texture is None):
+								bTexture = self.document.texturesLibrary.FindObject(texture, True)
+								if not bTexture is None:
+									bMat.setTexture(0, bTexture, Blender.Texture.TexCo.UV)
+							
+					bMat.setSpec(0) 		  
+				
+				if isinstance(shader, collada.DaeFxShadeBlinn) or isinstance(shader, collada.DaeFxShadePhong):
+					if not isinstance(shader, collada.DaeFxShadePhong):
+						bMat.setSpecShader(Blender.Material.Shaders.SPEC_BLINN)
+						if shader.indexOfRefraction:
+							shader.indexOfRefraction.float
+							bMat.setRefracIndex(shader.indexOfRefraction.float)
+					else:
+						bMat.setSpecShader(Blender.Material.Shaders.SPEC_PHONG)
+					if shader.specular:
+						specColor = shader.specular.color.rgba
+						bMat.setSpecCol(specColor[0], specColor[1], specColor[2])
+					bMat.setSpec(1)
+					if shader.shininess:
+						bMat.setHardness(int(shader.shininess.float) * 4)
 			
 		return bMat 	   
 		
@@ -1410,6 +1709,8 @@ class LampNode(object):
 			daeTechniqueCommon = collada.DaeLight.DaeSpot()
 			daeTechniqueCommon.constantAttenuation = 1-bLamp.energy
 			daeTechniqueCommon.linearAttenuation = (0.5 - daeTechniqueCommon.constantAttenuation)/bLamp.dist
+			# Export the falloff Angle.
+			daeTechniqueCommon.falloffAngle = bLamp.getSpotSize()
 		elif bLamp.type == Blender.Lamp.Types.Sun: # Directional
 			daeTechniqueCommon = collada.DaeLight.DaeDirectional()
 		else: # area
@@ -1436,7 +1737,10 @@ class Library(object):
 			if 'url' in dir(daeInstance) and k == daeInstance.url:
 				return self.objects[k][0]
 			elif 'target' in dir(daeInstance) and k == daeInstance.target:
-				return self.objects[k][0]		 
+				return self.objects[k][0]
+			elif isinstance(daeInstance, str):
+				return self.objects[k][0]
+				
 		if fromDae:
 			# dataObject not in library, so add it
 			return self.LoadFromDae(daeInstance)
@@ -1461,7 +1765,7 @@ class ScenesLibrary(Library):
 	
 	def LoadFromDae(self, daeInstance): 	   
 		daeVisualScene = self.daeLibrary.FindObject(daeInstance.url)
-		# TODO: implement multiple scenes
+		# TODO: Scene: implement multiple scenes
 		return None
 	
 	def SaveToDae(self, id):
@@ -1487,7 +1791,7 @@ class CamerasLibrary(Library):
 	
 	def SaveToDae(self, id):
 		pass
-		
+				
 class LampsLibrary(Library):
 	
 	def LoadFromDae(self, daeInstance): 	   
@@ -1526,19 +1830,10 @@ class MeshLibrary(Library):
 			for bMaterial in bMaterials:
 				for iMaterial in bMaterial.techniqueCommon.iMaterials:
 					Material = self.document.materialsLibrary.FindObject(iMaterial,True)
-					meshNode.materials[iMaterial.target] = Material
-					##print 'Mat:',Material
-		##print meshNode.materials
-##			  bMaterial = bMaterials[0]
-##			  if bMaterial:
-##				  iMaterials = bMaterial.techniqueCommon.iMaterials
-##				  if iMaterials:
-##					  if iMaterials[0]:
-##						  meshNode.materials = [self.document.materialsLibrary.FindObject(iMaterials[0],True)]
-##			  
+					meshNode.materials[iMaterial.symbol] = Material
 		
 		bMesh = meshNode.LoadFromDae(daeGeometry)
- 
+
 		# Add this mesh in this library, under it's real name
 		self.objects[meshID] = [bMesh,bMesh.name]
 		return bMesh
@@ -1559,7 +1854,7 @@ class MaterialsLibrary(Library):
 		materialNode = MaterialNode(self.document)
 		
 		bMaterial = materialNode.LoadFromDae(daeMaterial)
- 
+		
 		# Add this mesh in this library, under it's real name
 		self.objects[materialID] = [bMaterial,bMaterial.name]
 		return bMaterial
@@ -1586,3 +1881,26 @@ class TexturesLibrary(Library):
 	
 	def SaveToDae(self, id):
 		pass
+		
+class AnimationsLibrary(Library):
+	
+	def LoadFromDae(self, animationName):
+		daeAnimation = self.daeLibrary.FindObject(animationName)
+		if animation is None:
+			return;
+		animationID = animation.id
+		animationName = animation.name
+		
+		animation = Animation(self.document)
+		animation.LoadFromDae(daeAnimation)
+		##self.objects[animationID] = [animation, animation.name]
+		return animation
+
+	def GetDaeAnimations(self, daeNodeId):
+		daeAnimations = []
+		for daeAnimation in self.daeLibrary.items:
+			for channel in daeAnimation.channels:
+				ta = channel.target.split("/", 1)
+				if ta[0] == daeNodeId:
+					daeAnimations.append(daeAnimation)
+		return daeAnimations
