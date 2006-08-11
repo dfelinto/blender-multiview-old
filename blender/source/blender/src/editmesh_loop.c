@@ -498,7 +498,7 @@ static CutCurve *get_mouse_trail(int *len, char mode, char cutmode, struct GHash
 					"cut line selected), ESC to abort, ALT key for vertex snap.");
 		
 		/*redraw backbuffer if in zbuffered selection mode but not vertex selection*/
-		if(G.vd->drawtype>OB_WIRE && (G.vd->flag & V3D_ZBUF_SELECT) && !(G.scene->selectmode & SCE_SELECT_VERTEX)) {
+		if(G.vd->drawtype>OB_WIRE && (G.vd->flag & V3D_ZBUF_SELECT)) {
 			oldmode = G.scene->selectmode;
 			G.scene->selectmode = SCE_SELECT_VERTEX;
 			backdrawview3d(0);
@@ -677,6 +677,7 @@ void KnifeSubdivide(char mode)
 {
 	EditMesh *em = G.editMesh;
 	EditEdge *eed;
+	EditVert *eve;
 	CutCurve *curve;		
 	Window *win;
 	
@@ -714,26 +715,15 @@ void KnifeSubdivide(char mode)
 	
 	/*the floating point coordinates of verts in screen space will be stored in a hash table according to the vertices pointer*/
 	gh = BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp);
-	for(eed=em->edges.first; eed; eed=eed->next){
-		if(eed->f & SELECT){
-			/*do eed->v1*/
-			scr = MEM_mallocN(sizeof(float)*2, "Vertex Screen Coordinates");
-			VECCOPY(co, eed->v1->co);
-			co[3]= 1.0;
-			Mat4MulVec4fl(G.obedit->obmat, co);
-			project_float(co, scr);
-			BLI_ghash_insert(gh, eed->v1, scr);
-			eed->v1->f1 = 0; /*store vertex intersection flag here*/
-			
-			/*do eed->v2*/
-			scr = MEM_mallocN(sizeof(float)*2, "Vertex Screen Coordinates");
-			VECCOPY(co, eed->v2->co);
-			co[3]= 1.0;
-			Mat4MulVec4fl(G.obedit->obmat, co);
-			project_float(co, scr);
-			BLI_ghash_insert(gh, eed->v2, scr);
-			eed->v2->f1 = 0; /*store vertex intersection flag here*/
-		}
+	for(eve=em->verts.first; eve; eve=eve->next){
+		scr = MEM_mallocN(sizeof(float)*2, "Vertex Screen Coordinates");
+		VECCOPY(co, eve->co);
+		co[3]= 1.0;
+		Mat4MulVec4fl(G.obedit->obmat, co);
+		project_float(co,scr);
+		BLI_ghash_insert(gh, eve, scr);
+		eve->f1 = 0; /*store vertex intersection flag here*/
+	
 	}
 	
 	curve=get_mouse_trail(&len, TRAIL_MIXED, mode, gh);
