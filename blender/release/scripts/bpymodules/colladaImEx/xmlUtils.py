@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.89
+# Illusoft Collada 1.4 plugin for Blender version 0.3.90
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #

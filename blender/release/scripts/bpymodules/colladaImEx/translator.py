@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.89
+# Illusoft Collada 1.4 plugin for Blender version 0.3.90
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -78,7 +78,7 @@ class DocumentTranslator(object):
 	
 	cameraLibrary = None
 ##	  geometryLibrary = None
-##	  controllerLibrary = None
+	controllersLibrary = None
 	animationsLibrary = None
 ##	  materialLibrary = None
 	texturesLibrary = None
@@ -123,6 +123,7 @@ class DocumentTranslator(object):
 		self.materialsLibrary = MaterialsLibrary(self)
 		self.meshLibrary = MeshLibrary(self)
 		self.animationsLibrary = AnimationsLibrary(self)
+		self.controllersLibrary = ControllersLibrary(self)
 		
 		self.filename = None
 		self.filePath = ''
@@ -188,6 +189,7 @@ class DocumentTranslator(object):
 		self.materialsLibrary.SetDaeLibrary(self.colladaDocument.materialsLibrary)
 		self.meshLibrary.SetDaeLibrary(self.colladaDocument.geometriesLibrary)
 		self.animationsLibrary.SetDaeLibrary(self.colladaDocument.animationsLibrary)
+		self.controllersLibrary.SetDaeLibrary(self.colladaDocument.controllersLibrary)
 		
 		# Parse the COLLADA file
 		self.colladaDocument.LoadDocumentFromFile(fileName)
@@ -210,6 +212,12 @@ class DocumentTranslator(object):
 		self.sceneGraph.LoadFromCollada(self.colladaDocument.scene)
 		
 		self.Progress()
+	
+	def CalcVector(self, vector):
+		if self.colladaDocument.asset.upAxis == collada.DaeSyntax.Y_UP:
+			return Vector(vector[2], vector[0], vector[1])
+		else:
+			return vector
 	
 	def Export(self, fileName):
 		global __version__, filename
@@ -320,7 +328,8 @@ class SceneGraph(object):
 		for daeNode in visualScene.nodes:
 			sceneNode = SceneNode(self.document, self)
 			ob = sceneNode.ObjectFromDae(daeNode)
-			self.objectNames[daeNode.id] = ob.name
+			if ob != None:
+				self.objectNames[daeNode.id] = ob.name
 			##sceneNode.ObjectFromDae(daeNode)
 		
 		# Now get the physics Scene
@@ -447,6 +456,29 @@ class PhysicsNode(object):
 			
 			bObject.rbShapeBoundType = rbShapeBoundType
 			
+class Controller(object):
+	def __init__(self, document):
+		self.document = document
+		
+	def LoadFromDae(self, daeController, daeControllerInstance):
+		# Check if this controller is a SKIN controller
+		if not (daeController.skin is None):
+			# Create a new GeometryInstance for getting the mesh for this controller.
+			daeGeoInstance = collada.DaeGeometryInstance()
+			daeGeoInstance.url = daeController.skin.source
+			daeGeoInstance.bindMaterials = daeControllerInstance.bindMaterials
+			# Get the Blender Mesh
+			bMesh = self.document.meshLibrary.FindObject(daeGeoInstance, True)
+			
+			# todo: create vert groups
+			
+			
+			#return the mesh.
+			return bMesh
+		else: # It's a morph controller. do nothing.
+			return None
+		
+
 class Animation(object):
 	def __init__(self, document):
 		self.document = document
@@ -666,6 +698,12 @@ class SceneNode(object):
 		self.id = ''
 		self.type = ''
 		self.document = document
+		self.transformMatrix = None
+		self.parentNode = sceneNode
+		self.bObject = None
+		self.bEditBone = None
+		
+		self.aap = None
 		
 	def ObjectFromDae(self,daeNode):
 		global replaceNames
@@ -673,13 +711,29 @@ class SceneNode(object):
 		self.id = daeNode.id
 		self.type = daeNode.type
 		
+		editBone = None
+		newObject = None
+		dataObject = None
+		armature = None
+		parentBone = None
+		
 		if daeNode.IsJoint():
 			# it's a Joint, not implemented yet
-			return
-			pass
+			if daeNode.parentNode == None or not daeNode.parentNode.IsJoint():				
+				newObject = Blender.Object.New('Armature',self.id)
+				self.document.currentBScene.link(newObject)
+			else:
+				armature = self.parentNode.bObject.data
+				armature.makeEditable()
+				editBone = Blender.Armature.Editbone()
+				armature.bones[str(self.id)] = editBone				
+				if self.parentNode.id in armature.bones.keys():
+					parentBone = armature.bones[str(self.parentNode.id)]
+					editBone.parent = parentBone
+					editBone.options = Blender.Armature.CONNECTED	
+			
+				self.bObject = self.parentNode.bObject
 		else : #its a Node			  
-			newObject = None
-			dataObject = None
 			daeInstances = daeNode.GetInstances()
 			
 			if len(daeInstances) == 0:
@@ -696,7 +750,8 @@ class SceneNode(object):
 						newObject = Blender.Object.New('Camera',self.id)
 						dataObject = self.document.camerasLibrary.FindObject(daeInstance,True)
 					elif isinstance(daeInstance,collada.DaeControllerInstance):
-						newObject = Blender.Object.New('Empty',self.id)
+						newObject = Blender.Object.New('Mesh',self.id)
+						dataObject = self.document.controllersLibrary.FindObject(daeInstance, True)
 					elif isinstance(daeInstance,collada.DaeGeometryInstance):
 						newObject = Blender.Object.New('Mesh',self.document.CreateNameForObject(self.id,replaceNames, 'object'))
 						dataObject = self.document.meshLibrary.FindObject(daeInstance,True)
@@ -730,68 +785,110 @@ class SceneNode(object):
 						c.b = 255
 						c.a = 255					 
 			
-			# Do the transformation
-			mat = Matrix().resize4x4()
-			for i in range(len(daeNode.transforms)):
-				transform = daeNode.transforms[len(daeNode.transforms)-(i+1)]
-				type = transform[0]
-				data = transform[1]
-				if type == collada.DaeSyntax.TRANSLATE:
-					mat = mat*TranslationMatrix(Vector(data)* self.document.tMat)
-				elif type == collada.DaeSyntax.ROTATE:
-					mat = mat*RotationMatrix(data[3] % 360,4,'r',Vector([data[0],data[1],data[2]])* self.document.tMat)
-				elif type == collada.DaeSyntax.SCALE:
-					skewVec = Vector(data[0],data[1], data[2])*self.document.tMat
-					mat = mat * Matrix([skewVec.x,0,0,0],[0,skewVec.y,0,0],[0,0,skewVec.z,0],[0,0,0,1])
-				elif type == collada.DaeSyntax.SKEW:
-					s = math.tan(data[0]*angleToRadian)
-					rotVec = Vector(data[1],data[2],data[3])*self.document.tMat
-					transVec = Vector(data[4],data[5],data[6])*self.document.tMat
-					fac1 = s*transVec.x
-					fac2 = s*transVec.y
-					fac3 = s*transVec.z 				   
-					
-					mat = mat * Matrix([1+fac1*rotVec.x,fac1*rotVec.y,fac1*rotVec.z,0],[fac2*rotVec.x,1+fac2*rotVec.y,fac2*rotVec.z,0],[fac3*rotVec.x,fac3*rotVec.y,1+fac3*rotVec.z,0],[0,0,0,1])
-				elif type == collada.DaeSyntax.LOOKAT:
-					# TODO: LOOKAT Transform: use the correct up-axis
-					position = Vector([data[0],data[1], data[2]])
-					target = Vector([data[3],data[4], data[5]])
-					up = Vector([data[6],data[7], data[8]]).normalize()
-					front = (position-target).normalize()
-					side = -1*CrossVecs(front, up).normalize()
-					m = Matrix().resize4x4()
+		
+		
+		
+		# Do the transformation
+		mat = Matrix().resize4x4()
+		for i in range(len(daeNode.transforms)):
+			transform = daeNode.transforms[len(daeNode.transforms)-(i+1)]
+			type = transform[0]
+			data = transform[1]
+			if type == collada.DaeSyntax.TRANSLATE:
+				mat = mat*TranslationMatrix(Vector(data)* self.document.tMat)
+			elif type == collada.DaeSyntax.ROTATE:
+				mat = mat*RotationMatrix(data[3] % 360,4,'r',Vector([data[0],data[1],data[2]])* self.document.tMat)
+			elif type == collada.DaeSyntax.SCALE:
+				skewVec = Vector(data[0],data[1], data[2])*self.document.tMat
+				mat = mat * Matrix([skewVec.x,0,0,0],[0,skewVec.y,0,0],[0,0,skewVec.z,0],[0,0,0,1])
+			elif type == collada.DaeSyntax.SKEW:
+				s = math.tan(data[0]*angleToRadian)
+				rotVec = Vector(data[1],data[2],data[3])*self.document.tMat
+				transVec = Vector(data[4],data[5],data[6])*self.document.tMat
+				fac1 = s*transVec.x
+				fac2 = s*transVec.y
+				fac3 = s*transVec.z 				   
+				
+				mat = mat * Matrix([1+fac1*rotVec.x,fac1*rotVec.y,fac1*rotVec.z,0],[fac2*rotVec.x,1+fac2*rotVec.y,fac2*rotVec.z,0],[fac3*rotVec.x,fac3*rotVec.y,1+fac3*rotVec.z,0],[0,0,0,1])
+			elif type == collada.DaeSyntax.LOOKAT:
+				# TODO: LOOKAT Transform: use the correct up-axis
+				position = Vector([data[0],data[1], data[2]])
+				target = Vector([data[3],data[4], data[5]])
+				up = Vector([data[6],data[7], data[8]]).normalize()
+				front = (position-target).normalize()
+				side = -1*CrossVecs(front, up).normalize()
+				m = Matrix().resize4x4()
 
-					m[0][0] = side.x
-					m[0][1] = side.y
-					m[0][2] = side.z
-					
-					m[1][0] = up.x
-					m[1][1] = up.y
-					m[1][2] = up.z
-					
-					m[2][0] = front.x
-					m[2][1] = front.y
-					m[2][2] = front.z
-					
-					m[3][0] = position.x
-					m[3][1] = position.y
-					m[3][2] = position.z
-					
-					mat = mat*m
-					
-				elif type == collada.DaeSyntax.MATRIX:
-					mat = mat * data
-					
-			newObject.setMatrix(mat)
-			childlist = []
+				m[0][0] = side.x
+				m[0][1] = side.y
+				m[0][2] = side.z
+				
+				m[1][0] = up.x
+				m[1][1] = up.y
+				m[1][2] = up.z
+				
+				m[2][0] = front.x
+				m[2][1] = front.y
+				m[2][2] = front.z
+				
+				m[3][0] = position.x
+				m[3][1] = position.y
+				m[3][2] = position.z
+				
+				mat = mat*m
+				
+			elif type == collada.DaeSyntax.MATRIX:
+				mat = mat * data
+				
+		self.transformMatrix = mat
+		if isinstance(self.parentNode, SceneNode):
+				self.transformMatrix *= self.parentNode.transformMatrix
+		
+##		print ""
+##		print self.id
+##		print self.transformMatrix
 			
+		if newObject is None: # We have a bone.
+			vecTail = Vector(0,0,0)
+			vecHead = Vector(0,0,0)
+			if not (parentBone is None):
+				vecTail = parentBone.tail
+				vecHead = parentBone.tail
 			
+			vecParentPos = Vector(self.parentNode.transformMatrix[3][0], self.parentNode.transformMatrix[3][1], self.parentNode.transformMatrix[3][2])
+			vecChildPos = Vector(self.transformMatrix[3][0], self.transformMatrix[3][1], self.transformMatrix[3][2])
+			vecArmaturePos = Vector(self.bObject.loc[0], self.bObject.loc[1], self.bObject.loc[2])
+			##vecTail = vecChildPos - vecParentPos
+			vecTail = vecChildPos - vecArmaturePos
+##			print "child", vecChildPos
+##			print "parent", vecParentPos
+##			print "armature", vecArmaturePos
+##			for i in range(len(daeNode.transforms)):
+##				transform = daeNode.transforms[len(daeNode.transforms)-(i+1)]
+##				type = transform[0]
+##				data = transform[1]
+##				if type == collada.DaeSyntax.TRANSLATE:
+##					##vecTail = vecTail + self.document.CalcVector(Vector(data))
+##					vecTail = vecHead - Vector(self.transformMatrix[3][0], self.transformMatrix[3][1], self.transformMatrix[3][2])
+##					print vecTail
+##					##print Vector(data), self.document.CalcVector(Vector(data))
 			
-			for daeChild in daeNode.nodes:
-				childSceneNode = SceneNode(self.document,self)
-				object = childSceneNode.ObjectFromDae(daeChild)
-				if not(object is None):
-					childlist.append(object)
+			editBone.tail = vecTail
+			editBone.head = vecHead
+			armature.update()
+		else: # Just a Blender Object		
+			newObject.setMatrix(self.transformMatrix)
+			self.bObject = newObject
+		childlist = []
+		
+		
+		
+		for daeChild in daeNode.nodes:
+			childSceneNode = SceneNode(self.document,self)
+			object = childSceneNode.ObjectFromDae(daeChild)
+			if not(object is None):
+				childlist.append(object)
+		if not (newObject is None):
 			newObject.makeParent(childlist,0,1)
 			
 			# Check if this node has an animation.
@@ -840,9 +937,9 @@ class SceneNode(object):
 				myLayers = self.document.currentBScene.layers
 			# Set the layers of the new Object.
 			newObject.layers = myLayers
-			
-			# Return the new Object
-			return newObject
+		
+		# Return the new Object
+		return newObject
 		
 	def SaveToDae(self,bNode,childNodes):
 		global bakeMatrices, exportSelection
@@ -902,6 +999,8 @@ class SceneNode(object):
 				daeLight = lampNode.SaveToDae(bNode.getData())
 			instance.object = daeLight
 			daeNode.iLights.append(instance)
+		elif type == 'Armature':
+			pass
 		
 		# Check if the object has an IPO curve. if so, export animation.
 		if not (bNode.ipo is None):
@@ -954,7 +1053,7 @@ class SceneNode(object):
 		daePhysicsModel = collada.DaePhysicsModel();
 		daePhysicsModel.id = daePhysicsModel.name = self.document.CreateID(daeNode.id,'-PhysicsModel')
 		daeRigidBody = collada.DaeRigidBody();
-		daeRigidBody.id = daeRigidBody.name = self.document.CreateID(daeNode.id,'-RigidBody')
+		daeRigidBody.id = daeRigidBody.name = daeRigidBody.sid = self.document.CreateID(daeNode.id,'-RigidBody')
 		daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
 		daeRigidBodyTechniqueCommon.dynamic = bool(rbFlags[0])
 		daeRigidBodyTechniqueCommon.mass = bNode.rbMass
@@ -1119,11 +1218,16 @@ class MeshNode(object):
 					elif isinstance(primitive, collada.DaeLines): # Lines
 						plist.append(primitive.lines)
 						vertCount = 2
+					elif isinstance(primitive, collada.DaePolylist): # Polylist
+						plist.append(primitive.polygons)
+						vertCount = 5
 					realVertCount = vertCount
 					# Loop through each P (primitive)	 
 					for p in plist:
 						if vertCount == 4:
 							realVertCount = len(p)/maxOffset
+						elif vertCount == 5:
+							realVertCount = primitive.vcount[0]
 						pIndex = 0
 						# A list with edges in this face
 						faceEdges = []
@@ -1140,7 +1244,6 @@ class MeshNode(object):
 								for input in inputs:								
 									inputVal = p[pIndex+(i*maxOffset)+input.offset] 							   
 									if input.semantic == "VERTEX":
-										print len(pVertices), inputVal
 										vert2 = pVertices[inputVal]
 										curFaceVerts2.append(vert2)
 									elif input.semantic == "TEXCOORD":
@@ -1173,17 +1276,19 @@ class MeshNode(object):
 									faces.append(newFace)
 									# Add the material to this face
 									if primitive.material != '':
-										# Find the material index.
-										print primitive.material, self.materials[primitive.material]
-										matIndex = self.FindMaterial(bMesh2.materials, self.materials[primitive.material].name)
-										# Set the material index for the new face.
-										newFace.materialIndex = matIndex
-										textures = self.materials[primitive.material].getTextures()
-										if len(textures) > 0 and not (textures[0] is None):
-											texture = textures[0]
-											image = texture.tex.getImage()
-											if not image is None:
-												newFace.image = image
+										if self.materials.has_key(primitive.material):
+											# Find the material index.
+											matIndex = self.FindMaterial(bMesh2.materials, self.materials[primitive.material].name)
+											# Set the material index for the new face.
+											newFace.materialIndex = matIndex
+											textures = self.materials[primitive.material].getTextures()
+											if len(textures) > 0 and not (textures[0] is None):
+												texture = textures[0]
+												image = texture.tex.getImage()
+												if not image is None:
+													newFace.image = image
+										else:
+											print "Warning: Cannot find material:", primitive.material
 							else:
 								bMesh2.addEdge(curFaceVerts2[0], curFaceVerts2[1])
 							# update the index
@@ -1571,6 +1676,9 @@ class MaterialNode(object):
 			else :
 				shader = collada.DaeFxShadeLambert()
 			
+			# hasDiffuse indicates if the material already has a diffuse texture
+			hasDiffuse = False
+			
 			# Check if a texture is used for color
 			textures = bMaterial.getTextures()
 			for mTex in textures:				 
@@ -1588,10 +1696,12 @@ class MaterialNode(object):
 							self.document.colladaDocument.imagesLibrary.AddItem(daeImage)
 							daeTexture = collada.DaeFxTexture()
 							daeTexture.texture = daeImage.id
+							hasDiffuse = True
 							shader.AddValue(collada.DaeFxSyntax.DIFFUSE, daeTexture)
 							break
 			
-			shader.AddValue(collada.DaeFxSyntax.DIFFUSE,bMaterial.getRGBCol()+[1])
+			if not hasDiffuse:
+				shader.AddValue(collada.DaeFxSyntax.DIFFUSE,bMaterial.getRGBCol()+[1])
 			shader.AddValue(collada.DaeFxSyntax.TRANSPARENCY, 1 - bMaterial.alpha)
 			shader.AddValue(collada.DaeFxSyntax.TRANSPARENT, [1,1,1,1])
 			shader.AddValue(collada.DaeFxSyntax.EMISSION, [col * bMaterial.getEmit() for col in bMaterial.getRGBCol()] + [1])
@@ -1813,8 +1923,13 @@ class LampsLibrary(Library):
 		
 class MeshLibrary(Library):
 	
-	def LoadFromDae(self, daeInstance): 	   
-		daeGeometry = self.daeLibrary.FindObject(daeInstance.url)
+	def LoadFromDae(self, daeInstance):	   
+		daeGeometry = None
+		if isinstance(daeInstance, collada.DaeInstance):
+			daeGeometry = self.daeLibrary.FindObject(daeInstance.url)
+		else:
+			print daeInstance
+			daeGeometry = self.daeLibrary.FindObject(daeInstance)
 		if daeGeometry is None:
 			Debug.Debug('MeshLibrary: Object with this ID does not exist','ERROR')
 			return
@@ -1904,3 +2019,21 @@ class AnimationsLibrary(Library):
 				if ta[0] == daeNodeId:
 					daeAnimations.append(daeAnimation)
 		return daeAnimations
+
+class ControllersLibrary(Library):
+	
+	def LoadFromDae(self, daeInstance):
+		daeController = self.daeLibrary.FindObject(daeInstance.url)
+		if daeController is None:
+			Debug.Debug('ControllersLibrary: Object with this TARGET:%s does not exist'%(daeInstance.target),'ERROR')
+			return
+		controllerID = daeController.id
+		controllerName = daeController.name
+		
+		controller = Controller(self.document)
+		bMesh = controller.LoadFromDae(daeController, daeInstance)
+		
+		# Add this mesh in this library, under it's real name
+		self.objects[controllerID] = [bMesh, bMesh.name]
+		
+		return bMesh
