@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.90
+# Illusoft Collada 1.4 plugin for Blender version 0.3.91
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -893,6 +893,7 @@ class SceneNode(object):
 			
 			# Check if this node has an animation.
 			daeAnimations = self.document.animationsLibrary.GetDaeAnimations(self.id)
+			##print daeAnimations
 			for daeAnimation in daeAnimations:
 				a = Animation(self.document)
 				a.LoadFromDae(daeAnimation, daeNode, newObject)
@@ -1224,24 +1225,28 @@ class MeshNode(object):
 					realVertCount = vertCount
 					# Loop through each P (primitive)	 
 					for p in plist:
+						# for PolyList: Keep track of the index of the polygon
+						polyListIndex = -1
 						if vertCount == 4:
 							realVertCount = len(p)/maxOffset
-						elif vertCount == 5:
-							realVertCount = primitive.vcount[0]
 						pIndex = 0
 						# A list with edges in this face
 						faceEdges = []
 						# a list to store all the created faces in to add them to the mesh afterwards.
-						allFaceVerts = [] 
+						allFaceVerts = []
 						# loop through all the values in this 'p'
 						while pIndex < len(p):
+							# update the realVertCount
+							if vertCount == 5:
+								polyListIndex += 1
+								realVertCount = primitive.vcount[polyListIndex]
 							# Keep track of the verts in this face
 							curFaceVerts2 = []
 							uvList	= []
 							# for every vertice for this primitive
 							for i in range(realVertCount):
 								# Check all the inputs and do the right thing
-								for input in inputs:								
+								for input in inputs:
 									inputVal = p[pIndex+(i*maxOffset)+input.offset] 							   
 									if input.semantic == "VERTEX":
 										vert2 = pVertices[inputVal]
@@ -1291,8 +1296,11 @@ class MeshNode(object):
 											print "Warning: Cannot find material:", primitive.material
 							else:
 								bMesh2.addEdge(curFaceVerts2[0], curFaceVerts2[1])
+							
 							# update the index
 							pIndex += realVertCount * maxOffset
+							
+							
 						bMesh2.faces = faces
 		return bMesh2
 	
@@ -1605,12 +1613,19 @@ class MaterialNode(object):
 			if not (daeEffect.profileCommon is None):
 				shader = daeEffect.profileCommon.technique.shader
 				if shader.transparent:
-					tcol = shader.transparent.color.rgba		
-					tkey = 1
-					if shader.transparency:
-						tkey = shader.transparency.float
-					alpha = 1 - tkey * (tcol[0]*0.21 + tcol[1]*0.71 + tcol[2]*0.08)
-					bMat.setAlpha(alpha)
+					if not (shader.transparent.color is None):						
+						tcol = shader.transparent.color.rgba		
+						tkey = 1
+						if shader.transparency:
+							tkey = shader.transparency.float
+						alpha = 1 - tkey * (tcol[0]*0.21 + tcol[1]*0.71 + tcol[2]*0.08)
+						bMat.setAlpha(alpha)
+					if not (shader.transparent.texture is None): # Texture
+						texture = shader.transparent.texture.texture
+						if not(texture is None):
+							bTexture = self.document.texturesLibrary.FindObject(texture, True)
+							if not bTexture is None:
+								bMat.setTexture(0, bTexture, Blender.Texture.TexCo.UV, Blender.Texture.MapTo.ALPHA)	
 				elif shader.transparency:
 					alpha = 1 - shader.transparency.float
 				if shader.reflective:
@@ -1928,7 +1943,7 @@ class MeshLibrary(Library):
 		if isinstance(daeInstance, collada.DaeInstance):
 			daeGeometry = self.daeLibrary.FindObject(daeInstance.url)
 		else:
-			print daeInstance
+			##print daeInstance
 			daeGeometry = self.daeLibrary.FindObject(daeInstance)
 		if daeGeometry is None:
 			Debug.Debug('MeshLibrary: Object with this ID does not exist','ERROR')
@@ -2016,6 +2031,7 @@ class AnimationsLibrary(Library):
 		for daeAnimation in self.daeLibrary.items:
 			for channel in daeAnimation.channels:
 				ta = channel.target.split("/", 1)
+				##print daeNodeId, ta
 				if ta[0] == daeNodeId:
 					daeAnimations.append(daeAnimation)
 		return daeAnimations

@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.90
+# Illusoft Collada 1.4 plugin for Blender version 0.3.91
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -198,6 +198,8 @@ def AddVec3( vector1, vector2 ):
 	vector1.z += vector2.z
 
 def ToMatrix4( matrixElement ):
+	if matrixElement is None:
+		return None
 	data = matrixElement.split( )
 	
 	vec1 = [ float(data[0]), float(data[4]), float(data[8]), float(data[12]) ]
