@@ -13,20 +13,32 @@ subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
+//#define USE_PARALLEL_DISPATCHER 1
+
+
 #include "CcdPhysicsEnvironment.h"
+#include "ParallelPhysicsEnvironment.h"
+
 #include "CcdPhysicsController.h"
 #include "MyMotionState.h"
 //#include "GL_LineSegmentShape.h"
 #include "CollisionShapes/BoxShape.h"
 #include "CollisionShapes/SphereShape.h"
 #include "CollisionShapes/ConeShape.h"
-
-
+#include "CollisionShapes/StaticPlaneShape.h"
+#include "CollisionShapes/CompoundShape.h"
 #include "CollisionShapes/Simplex1to4Shape.h"
 #include "CollisionShapes/EmptyShape.h"
+#include "CollisionShapes/TriangleMeshShape.h"
+#include "CollisionShapes/TriangleIndexVertexArray.h"
+#include "CollisionShapes/BvhTriangleMeshShape.h"
+#include "CollisionShapes/TriangleMesh.h"
 
 #include "Dynamics/RigidBody.h"
 #include "CollisionDispatch/CollisionDispatcher.h"
+
+#include "ParallelIslandDispatcher.h"
+
 #include "BroadphaseCollision/SimpleBroadphase.h"
 #include "BroadphaseCollision/AxisSweep3.h"
 #include "ConstraintSolver/Point2PointConstraint.h"
@@ -36,6 +48,9 @@ subject to the following restrictions:
 #include "IDebugDraw.h"
 
 #include "GLDebugDrawer.h"
+
+
+
 
 #include "PHY_Pro.h"
 #include "BMF_Api.h"
@@ -56,7 +71,16 @@ float bulletSpeed = 40.f;
 #ifdef WIN32 //needed for glut.h
 #include <windows.h>
 #endif
+
+//think different
+#if defined(__APPLE__) && !defined (VMDMESA)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
+#endif
+
 #include "GL_ShapeDrawer.h"
 
 #include "GlutStuff.h"
@@ -66,20 +90,30 @@ extern float eye[3];
 extern int glutScreenWidth;
 extern int glutScreenHeight;
 
+const int maxProxies = 32766;
+const int maxOverlap = 65535;
+
+bool createConstraint = true;//false;
+bool useCompound = true;//false;
+
 
 #ifdef _DEBUG
-const int numObjects = 22;
+const int numObjects = 50;
 #else
 const int numObjects = 120;
 #endif
 
-const int maxNumObjects = 450;
+const int maxNumObjects = 32760;
 
 MyMotionState ms[maxNumObjects];
 CcdPhysicsController* physObjects[maxNumObjects] = {0,0,0,0};
 int	shapeIndex[maxNumObjects];
-CcdPhysicsEnvironment* physicsEnvironmentPtr = 0;
 
+#ifdef USE_PARALLEL_DISPATCHER
+ParallelPhysicsEnvironment* physicsEnvironmentPtr = 0;
+#else
+CcdPhysicsEnvironment* physicsEnvironmentPtr = 0;
+#endif
 
 #define CUBE_HALF_EXTENTS 1
 
@@ -90,18 +124,35 @@ static const int numShapes = 4;
 
 CollisionShape* shapePtr[numShapes] = 
 {
-	new BoxShape (SimdVector3(50,10,50)),
-	new BoxShape (SimdVector3(CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS)),
-	new SphereShape (CUBE_HALF_EXTENTS- 0.05f),
-	
-	//new ConeShape(CUBE_HALF_EXTENTS,2.f*CUBE_HALF_EXTENTS),
-	//new BU_Simplex1to4(SimdPoint3(-1,-1,-1),SimdPoint3(1,-1,-1),SimdPoint3(-1,1,-1),SimdPoint3(0,0,1)),
+	///Please don't make the box sizes larger then 1000: the collision detection will be inaccurate.
+	///See http://www.continuousphysics.com/Bullet/phpBB2/viewtopic.php?t=346
 
-	//new EmptyShape(),
-	
-	new BoxShape (SimdVector3(0.4,1,0.8))
+//#define USE_GROUND_PLANE 1
+#ifdef USE_GROUND_PLANE
+	new StaticPlaneShape(SimdVector3(0,1,0),10),
+#else
+	new BoxShape (SimdVector3(50,10,50)),
+#endif
+		
+		new BoxShape (SimdVector3(CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS)),
+		new SphereShape (CUBE_HALF_EXTENTS- 0.05f),
+
+		//new ConeShape(CUBE_HALF_EXTENTS,2.f*CUBE_HALF_EXTENTS),
+		//new BU_Simplex1to4(SimdPoint3(-1,-1,-1),SimdPoint3(1,-1,-1),SimdPoint3(-1,1,-1),SimdPoint3(0,0,1)),
+
+		//new EmptyShape(),
+
+		new BoxShape (SimdVector3(0.4,1,0.8))
 
 };
+
+
+
+////////////////////////////////////
+
+
+
+
 
 
 GLDebugDrawer debugDrawer;
@@ -110,22 +161,84 @@ int main(int argc,char** argv)
 {
 
 
-
 	CollisionDispatcher* dispatcher = new	CollisionDispatcher();
-		
+	ParallelIslandDispatcher* dispatcher2 = new	ParallelIslandDispatcher();
 	
-	SimdVector3 worldAabbMin(-10000,-10000,-10000);
-	SimdVector3 worldAabbMax(10000,10000,10000);
+	SimdVector3 worldAabbMin(-30000,-30000,-30000);
+	SimdVector3 worldAabbMax(30000,30000,30000);
 
-	BroadphaseInterface* broadphase = new AxisSweep3(worldAabbMin,worldAabbMax);
-	//BroadphaseInterface* broadphase = new SimpleBroadphase();
+	OverlappingPairCache* broadphase = new AxisSweep3(worldAabbMin,worldAabbMax,maxProxies,maxOverlap);
+	//OverlappingPairCache* broadphase = new SimpleBroadphase(maxProxies,maxOverlap);
 
+#ifdef USE_PARALLEL_DISPATCHER
+	physicsEnvironmentPtr = new ParallelPhysicsEnvironment(dispatcher2,broadphase);
+#else
 	physicsEnvironmentPtr = new CcdPhysicsEnvironment(dispatcher,broadphase);
+#endif
 	physicsEnvironmentPtr->setDeactivationTime(2.f);
+
+	physicsEnvironmentPtr->setGravity(0,-10,0);//0,0);//-10,0);
+	int i;
+
+//#define  USE_TRIMESH_GROUND 1
+#ifdef USE_TRIMESH_GROUND
+
+
+const float TRIANGLE_SIZE=20.f;
+
+	//create a triangle-mesh ground
+	int vertStride = sizeof(SimdVector3);
+	int indexStride = 3*sizeof(int);
+
+	const int NUM_VERTS_X = 50;
+	const int NUM_VERTS_Y = 50;
+	const int totalVerts = NUM_VERTS_X*NUM_VERTS_Y;
 	
-	physicsEnvironmentPtr->setGravity(0,-10,0);
+	const int totalTriangles = 2*(NUM_VERTS_X-1)*(NUM_VERTS_Y-1);
+
+	SimdVector3*	gVertices = new SimdVector3[totalVerts];
+	int*	gIndices = new int[totalTriangles*3];
+
+	
+
+	for ( i=0;i<NUM_VERTS_X;i++)
+	{
+		for (int j=0;j<NUM_VERTS_Y;j++)
+		{
+			gVertices[i+j*NUM_VERTS_X].setValue((i-NUM_VERTS_X*0.5f)*TRIANGLE_SIZE,2.f*sinf((float)i)*cosf((float)j),(j-NUM_VERTS_Y*0.5f)*TRIANGLE_SIZE);
+		}
+	}
+
+	int index=0;
+	for ( i=0;i<NUM_VERTS_X-1;i++)
+	{
+		for (int j=0;j<NUM_VERTS_Y-1;j++)
+		{
+			gIndices[index++] = j*NUM_VERTS_X+i;
+			gIndices[index++] = j*NUM_VERTS_X+i+1;
+			gIndices[index++] = (j+1)*NUM_VERTS_X+i+1;
+
+			gIndices[index++] = j*NUM_VERTS_X+i;
+			gIndices[index++] = (j+1)*NUM_VERTS_X+i+1;
+			gIndices[index++] = (j+1)*NUM_VERTS_X+i;
+		}
+	}
+	
+	TriangleIndexVertexArray* indexVertexArrays = new TriangleIndexVertexArray(totalTriangles,
+		gIndices,
+		indexStride,
+		totalVerts,(float*) &gVertices[0].x(),vertStride);
+
+	//shapePtr[4] = new TriangleMeshShape(indexVertexArrays);
+	shapePtr[0] = new BvhTriangleMeshShape(indexVertexArrays);
+
+	
+#endif //
+	
+	
+	
 	PHY_ShapeProps shapeProps;
-	
+
 	shapeProps.m_do_anisotropic = false;
 	shapeProps.m_do_fh = false;
 	shapeProps.m_do_rot_fh = false;
@@ -137,21 +250,17 @@ int main(int argc,char** argv)
 	shapeProps.m_lin_drag = 0.2f;
 	shapeProps.m_ang_drag = 0.1f;
 	shapeProps.m_mass = 10.0f;
-	
+
 	PHY_MaterialProps materialProps;
 	materialProps.m_friction = 10.5f;
 	materialProps.m_restitution = 0.0f;
 
-	CcdConstructionInfo ccdObjectCi;
-	ccdObjectCi.m_friction = 0.5f;
-
-	ccdObjectCi.m_linearDamping = shapeProps.m_lin_drag;
-	ccdObjectCi.m_angularDamping = shapeProps.m_ang_drag;
+	
 
 	SimdTransform tr;
 	tr.setIdentity();
 
-	int i;
+	
 	for (i=0;i<numObjects;i++)
 	{
 		if (i>0)
@@ -162,37 +271,55 @@ int main(int argc,char** argv)
 			shapeIndex[i] = 0;
 	}
 
+	if (useCompound)
+	{
+		CompoundShape* compoundShape = new CompoundShape();
+		CollisionShape* oldShape = shapePtr[1];
+		shapePtr[1] = compoundShape;
 
-
+		SimdTransform ident;
+		ident.setIdentity();
+		ident.setOrigin(SimdVector3(0,0,0));	
+		compoundShape->AddChildShape(ident,oldShape);//
+		ident.setOrigin(SimdVector3(0,0,2));	
+		compoundShape->AddChildShape(ident,new SphereShape(0.9));//
+	}
 
 	for (i=0;i<numObjects;i++)
 	{
+
+		CcdConstructionInfo ccdObjectCi;
+		ccdObjectCi.m_friction = 0.5f;
+
+		ccdObjectCi.m_linearDamping = shapeProps.m_lin_drag;
+		ccdObjectCi.m_angularDamping = shapeProps.m_ang_drag;
+
 		shapeProps.m_shape = shapePtr[shapeIndex[i]];
 		shapeProps.m_shape->SetMargin(0.05f);
-		
+
 
 
 		bool isDyna = i>0;
 		//if (i==1)
 		//	isDyna=false;
-		
+
 		if (0)//i==1)
 		{
 			SimdQuaternion orn(0,0,0.1*SIMD_HALF_PI);
 			ms[i].setWorldOrientation(orn.x(),orn.y(),orn.z(),orn[3]);
 		}
-		
+
 
 		if (i>0)
 		{
-			
+
 			switch (i)
 			{
 			case 1:
 				{
 					ms[i].setWorldPosition(0,10,0);
 					//for testing, rotate the ground cube so the stack has to recover a bit
-			
+
 					break;
 				}
 			case 2:
@@ -201,7 +328,7 @@ int main(int argc,char** argv)
 					break;
 				}
 			default:
-					ms[i].setWorldPosition(0,i*CUBE_HALF_EXTENTS*2 - CUBE_HALF_EXTENTS,0);
+				ms[i].setWorldPosition(0,i*CUBE_HALF_EXTENTS*2 - CUBE_HALF_EXTENTS,0);
 			}
 
 			float quatIma0,quatIma1,quatIma2,quatReal;
@@ -212,15 +339,15 @@ int main(int argc,char** argv)
 			quat.setRotation(axis,angle);
 
 			ms[i].setWorldOrientation(quat.getX(),quat.getY(),quat.getZ(),quat[3]);
-			
+
 
 
 		} else
 		{
 			ms[i].setWorldPosition(0,-10+EXTRA_HEIGHT,0);
-			
+
 		}
-		
+
 		ccdObjectCi.m_MotionState = &ms[i];
 		ccdObjectCi.m_gravity = SimdVector3(0,0,0);
 		ccdObjectCi.m_localInertiaTensor =SimdVector3(0,0,0);
@@ -228,31 +355,46 @@ int main(int argc,char** argv)
 		{
 			shapeProps.m_mass = 0.f;
 			ccdObjectCi.m_mass = shapeProps.m_mass;
-			ccdObjectCi.m_collisionFlags = CollisionObject::CollisionFlags::isStatic;
+			ccdObjectCi.m_collisionFlags = CollisionObject::isStatic;
+			
+			ccdObjectCi.m_collisionFilterGroup = CcdConstructionInfo::StaticFilter;
+			ccdObjectCi.m_collisionFilterMask = CcdConstructionInfo::AllFilter ^ CcdConstructionInfo::StaticFilter;
 		}
 		else
 		{
 			shapeProps.m_mass = 1.f;
 			ccdObjectCi.m_mass = shapeProps.m_mass;
 			ccdObjectCi.m_collisionFlags = 0;
+
 		}
 
-		
-		SimdVector3 localInertia;
-		if (shapePtr[shapeIndex[i]]->GetShapeType() == EMPTY_SHAPE_PROXYTYPE)
+
+		SimdVector3 localInertia(0.f,0.f,0.f);
+		if (shapeIndex[i])
 		{
-			//take inertia from first shape
-			shapePtr[1]->CalculateLocalInertia(shapeProps.m_mass,localInertia);
-		} else
-		{
-			shapePtr[shapeIndex[i]]->CalculateLocalInertia(shapeProps.m_mass,localInertia);
+			if (shapePtr[shapeIndex[i]]->GetShapeType() == EMPTY_SHAPE_PROXYTYPE)
+			{
+				//take inertia from first shape
+				shapePtr[1]->CalculateLocalInertia(shapeProps.m_mass,localInertia);
+			} else
+			{
+				shapePtr[shapeIndex[i]]->CalculateLocalInertia(shapeProps.m_mass,localInertia);
+			}
+
 		}
 		ccdObjectCi.m_localInertiaTensor = localInertia;
-
+		
 		ccdObjectCi.m_collisionShape = shapePtr[shapeIndex[i]];
 
 
 		physObjects[i]= new CcdPhysicsController( ccdObjectCi);
+
+		// Only do CCD if  motion in one timestep (1.f/60.f) exceeds CUBE_HALF_EXTENTS
+		physObjects[i]->GetRigidBody()->m_ccdSquareMotionTreshold = CUBE_HALF_EXTENTS;
+		
+		//Experimental: better estimation of CCD Time of Impact:
+		physObjects[i]->GetRigidBody()->m_ccdSweptShereRadius = 0.2*CUBE_HALF_EXTENTS;
+
 		physicsEnvironmentPtr->addCcdPhysicsController( physObjects[i]);
 
 		if (i==1)
@@ -261,48 +403,40 @@ int main(int argc,char** argv)
 		}
 
 		physicsEnvironmentPtr->setDebugDrawer(&debugDrawer);
-		
+
 	}
 
 
-	//create a constraint
+	clientResetScene();
+	physicsEnvironmentPtr->SyncMotionStates(0.f);
+
+	if (createConstraint)
 	{
 		//physObjects[i]->SetAngularVelocity(0,0,-2,true);
 		int constraintId;
 
 			float pivotX=CUBE_HALF_EXTENTS,
-				pivotY=-CUBE_HALF_EXTENTS,
+				pivotY=CUBE_HALF_EXTENTS,
 				pivotZ=CUBE_HALF_EXTENTS;
+			float axisX=0,axisY=1,axisZ=0;
 
-			float axisX=1,axisY=0,axisZ=0;
 
-		
+		constraintId =physicsEnvironmentPtr->createConstraint(
+		physObjects[1],
+		//0,
+		physObjects[2],
+			////PHY_POINT2POINT_CONSTRAINT,
+			PHY_GENERIC_6DOF_CONSTRAINT,//can leave any of the 6 degree of freedom 'free' or 'locked'
+			//PHY_LINEHINGE_CONSTRAINT,
+			pivotX,pivotY,pivotZ,
+			axisX,axisY,axisZ
+			);
 
-			HingeConstraint* hinge = 0;
-			
-			SimdVector3 pivotInA(CUBE_HALF_EXTENTS,-CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS);
-			SimdVector3 pivotInB(-CUBE_HALF_EXTENTS,-CUBE_HALF_EXTENTS,CUBE_HALF_EXTENTS);
-			SimdVector3 axisInA(0,1,0);
-			SimdVector3 axisInB(0,-1,0);
-
-			RigidBody* rb0 = physObjects[1]->GetRigidBody();
-			RigidBody* rb1 = physObjects[2]->GetRigidBody();
-			
-			hinge = new HingeConstraint(
-				*rb0,
-				*rb1,pivotInA,pivotInB,axisInA,axisInB);
-			
-			physicsEnvironmentPtr->m_constraints.push_back(hinge);
-			
-			hinge->SetUserConstraintId(100);
-			hinge->SetUserConstraintType(PHY_LINEHINGE_CONSTRAINT);
-			
 	}
 
-
-
 	
-	clientResetScene();
+
+
 
 	setCameraDistance(26.f);
 
@@ -315,6 +449,7 @@ void renderme()
 	debugDrawer.SetDebugMode(getDebugMode());
 
 	//render the hinge axis
+	if (createConstraint)
 	{
 		SimdVector3 color(1,0,0);
 		SimdVector3 dirLocal(0,1,0);
@@ -332,25 +467,25 @@ void renderme()
 	int i;
 
 
-   if (getDebugMode() & IDebugDraw::DBG_DisableBulletLCP)
-   {
-	   //don't use Bullet, use quickstep
-	   physicsEnvironmentPtr->setSolverType(0);
-   } else
-   {
-	   //Bullet LCP solver
-	   physicsEnvironmentPtr->setSolverType(1);
-   }
-	
-   if (getDebugMode() & IDebugDraw::DBG_EnableCCD)
-   {
-	   physicsEnvironmentPtr->setCcdMode(3);
-   } else
-   {
-	   physicsEnvironmentPtr->setCcdMode(0);
-   }
+	if (getDebugMode() & IDebugDraw::DBG_DisableBulletLCP)
+	{
+		//don't use Bullet, use quickstep
+		physicsEnvironmentPtr->setSolverType(0);
+	} else
+	{
+		//Bullet LCP solver
+		physicsEnvironmentPtr->setSolverType(1);
+	}
 
-	   
+	if (getDebugMode() & IDebugDraw::DBG_EnableCCD)
+	{
+		physicsEnvironmentPtr->setCcdMode(3);
+	} else
+	{
+		physicsEnvironmentPtr->setCcdMode(0);
+	}
+
+
 	bool isSatEnabled = (getDebugMode() & IDebugDraw::DBG_EnableSatComparison);
 
 	physicsEnvironmentPtr->EnableSatCollisionDetection(isSatEnabled);
@@ -374,7 +509,7 @@ void renderme()
 					Point3* points = new Point3[numPoints+1];
 					//first 4 points should not be co-planar, so add central point to satisfy MakeHull
 					points[0] = Point3(0.f,0.f,0.f);
-					
+
 					SimdVector3 vertex;
 					for (int p=0;p<numPoints;p++)
 					{
@@ -397,7 +532,7 @@ void renderme()
 	{
 		SimdTransform transA;
 		transA.setIdentity();
-		
+
 		float pos[3];
 		float rot[4];
 
@@ -412,8 +547,8 @@ void renderme()
 
 		transA.setOrigin( dpos );
 		transA.getOpenGLMatrix( m );
-		
-		
+
+
 		SimdVector3 wireColor(1.f,1.0f,0.5f); //wants deactivation
 		if (i & 1)
 		{
@@ -444,7 +579,18 @@ void renderme()
 		char	extraDebug[125];
 		sprintf(extraDebug,"islId, Body=%i , %i",physObjects[i]->GetRigidBody()->m_islandTag1,physObjects[i]->GetRigidBody()->m_debugBodyId);
 		physObjects[i]->GetRigidBody()->GetCollisionShape()->SetExtraDebugInfo(extraDebug);
+
+		float vec[16];
+		SimdTransform ident;
+		ident.setIdentity();
+		ident.getOpenGLMatrix(vec);
+		glPushMatrix(); 
+	  
+		glLoadMatrixf(vec);
+
 		GL_ShapeDrawer::DrawOpenGL(m,physObjects[i]->GetRigidBody()->GetCollisionShape(),wireColor,getDebugMode());
+
+		glPopMatrix(); 
 
 		///this block is just experimental code to show some internal issues with replacing shapes on the fly.
 		if (getDebugMode()!=0 && (i>0))
@@ -452,7 +598,7 @@ void renderme()
 			if (physObjects[i]->GetRigidBody()->GetCollisionShape()->GetShapeType() == EMPTY_SHAPE_PROXYTYPE)
 			{
 				physObjects[i]->GetRigidBody()->SetCollisionShape(shapePtr[1]);
-			
+
 				//remove the persistent collision pairs that were created based on the previous shape
 
 				BroadphaseProxy* bpproxy = physObjects[i]->GetRigidBody()->m_broadphaseHandle;
@@ -474,19 +620,19 @@ void renderme()
 
 	if (!(getDebugMode() & IDebugDraw::DBG_NoHelpText))
 	{
-		
+
 		float xOffset = 10.f;
 		float yStart = 20.f;
 
 		float yIncr = -2.f;
-	
+
 		char buf[124];
 
 		glColor3f(0, 0, 0);
 
 #ifdef USE_QUICKPROF
 
-		
+
 		if ( getDebugMode() & IDebugDraw::DBG_ProfileTimings)
 		{
 			static int counter = 0;
@@ -506,7 +652,7 @@ void renderme()
 		//profiling << Profiler::createStatsString(Profiler::BLOCK_TOTAL_PERCENT); 
 		//<< std::endl;
 
-		
+
 
 		glRasterPos3f(xOffset,yStart,0);
 		sprintf(buf,"mouse to interact");
@@ -579,16 +725,23 @@ void renderme()
 
 void clientMoveAndDisplay()
 {
-	 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-	
+
 
 	physicsEnvironmentPtr->proceedDeltaTime(0.f,deltaTime);
-	
-	renderme();
 
-    glFlush();
-    glutSwapBuffers();
+#ifdef USE_QUICKPROF 
+        Profiler::beginBlock("render"); 
+#endif //USE_QUICKPROF 
+	
+	renderme(); 
+
+#ifdef USE_QUICKPROF 
+        Profiler::endBlock("render"); 
+#endif 
+	glFlush();
+	glutSwapBuffers();
 
 }
 
@@ -596,16 +749,19 @@ void clientMoveAndDisplay()
 
 void clientDisplay(void) {
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-	
+
 	physicsEnvironmentPtr->UpdateAabbs(deltaTime);
+	//draw contactpoints
+	physicsEnvironmentPtr->CallbackTriggers();
+
 
 	renderme();
-	
 
-    glFlush();
-    glutSwapBuffers();
+
+	glFlush();
+	glutSwapBuffers();
 }
 
 
@@ -642,7 +798,7 @@ void clientResetScene()
 			int row2 = row;
 			int col = (i)%(colsize)-colsize/2;
 
-			
+
 			if (col>3)
 			{
 				col=11;
@@ -663,12 +819,12 @@ void	shootBox(const SimdVector3& destination)
 {
 	int i  = numObjects-1;
 
-	
-	
+
+
 	SimdVector3 linVel(destination[0]-eye[0],destination[1]-eye[1],destination[2]-eye[2]);
 	linVel.normalize();
 	linVel*=bulletSpeed;
-	
+
 	physObjects[i]->setPosition(eye[0],eye[1],eye[2]);
 	physObjects[i]->setOrientation(0,0,0,1);
 	physObjects[i]->SetLinearVelocity(linVel[0],linVel[1],linVel[2],false);
@@ -779,14 +935,14 @@ void clientMouseFunc(int button, int state, int x, int y)
 
 							body->applyImpulse(impulse,relPos);
 						}
-						
+
 					}
 
 				}
 
 			} else
 			{
-				
+
 			}
 			break;	
 		}
@@ -802,30 +958,30 @@ void clientMouseFunc(int button, int state, int x, int y)
 					PHY_IPhysicsController* hitObj = physicsEnvironmentPtr->rayTest(0,eye[0],eye[1],eye[2],rayTo.getX(),rayTo.getY(),rayTo.getZ(),hit[0],hit[1],hit[2],normal[0],normal[1],normal[2]);
 					if (hitObj)
 					{
-						
+
 						CcdPhysicsController* physCtrl = static_cast<CcdPhysicsController*>(hitObj);
 						RigidBody* body = physCtrl->GetRigidBody();
-						
-						if (body)
+
+						if (body && !body->IsStatic())
 						{
 							pickedBody = body;
 							pickedBody->SetActivationState(DISABLE_DEACTIVATION);
-														
+
 							SimdVector3 pickPos(hit[0],hit[1],hit[2]);
-							
+
 							SimdVector3 localPivot = body->getCenterOfMassTransform().inverse() * pickPos;
-							
+
 							gPickingConstraintId = physicsEnvironmentPtr->createConstraint(physCtrl,0,PHY_POINT2POINT_CONSTRAINT,
-							localPivot.getX(),
-							localPivot.getY(),
-							localPivot.getZ(),
-							0,0,0);
+								localPivot.getX(),
+								localPivot.getY(),
+								localPivot.getZ(),
+								0,0,0);
 							//printf("created constraint %i",gPickingConstraintId);
 
 							//save mouse position for dragging
 							gOldPickingPos = rayTo;
 
-							
+
 							SimdVector3 eyePos(eye[0],eye[1],eye[2]);
 
 							gOldPickingDist  = (pickPos-eyePos).length();
@@ -849,8 +1005,8 @@ void clientMouseFunc(int button, int state, int x, int y)
 					pickedBody->ForceActivationState(ACTIVE_TAG);
 					pickedBody->m_deactivationTime = 0.f;
 					pickedBody = 0;
-							
-					
+
+
 				}
 			}
 
@@ -866,23 +1022,23 @@ void clientMouseFunc(int button, int state, int x, int y)
 
 void	clientMotionFunc(int x,int y)
 {
-	
+
 	if (gPickingConstraintId && physicsEnvironmentPtr)
 	{
-		
+
 		//move the constraint pivot
 
 		Point2PointConstraint* p2p = static_cast<Point2PointConstraint*>(physicsEnvironmentPtr->getConstraintById(gPickingConstraintId));
 		if (p2p)
 		{
 			//keep it at the same picking distance
-			
+
 			SimdVector3 newRayTo = GetRayTo(x,y);
 			SimdVector3 eyePos(eye[0],eye[1],eye[2]);
 			SimdVector3 dir = newRayTo-eyePos;
 			dir.normalize();
 			dir *= gOldPickingDist;
-			
+
 			SimdVector3 newPos = eyePos + dir;
 			p2p->SetPivotB(newPos);
 		}

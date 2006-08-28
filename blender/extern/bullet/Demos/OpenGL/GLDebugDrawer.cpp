@@ -5,7 +5,16 @@
 #ifdef WIN32 //needed for glut.h
 #include <windows.h>
 #endif
+
+//think different
+#if defined(__APPLE__) && !defined (VMDMESA)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
+#endif
+
 #include "BMF_Api.h"
 #include <stdio.h> //printf debugging
 GLDebugDrawer::GLDebugDrawer()
@@ -42,7 +51,8 @@ void	GLDebugDrawer::DrawContactPoint(const SimdVector3& pointOnB,const SimdVecto
 		glVertex3d(from.getX(), from.getY(), from.getZ());
 		glVertex3d(to.getX(), to.getY(), to.getZ());
 		glEnd();
-	
+
+
 		glRasterPos3f(from.x(),  from.y(),  from.z());
 		char buf[12];
 		sprintf(buf," %d",lifeTime);

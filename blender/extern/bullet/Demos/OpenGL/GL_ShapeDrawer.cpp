@@ -16,7 +16,16 @@ subject to the following restrictions:
 #ifdef WIN32 //needed for glut.h
 #include <windows.h>
 #endif
+
+//think different
+#if defined(__APPLE__) && !defined (VMDMESA)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
+#endif
+
 #include "GL_ShapeDrawer.h"
 #include "CollisionShapes/PolyhedralConvexShape.h"
 #include "CollisionShapes/TriangleMeshShape.h"
@@ -25,8 +34,9 @@ subject to the following restrictions:
 #include "CollisionShapes/ConeShape.h"
 #include "CollisionShapes/CylinderShape.h"
 #include "CollisionShapes/Simplex1to4Shape.h"
+#include "CollisionShapes/CompoundShape.h"
 
-
+#include "CollisionShapes/ConvexTriangleMeshShape.h"
 
 
 #include "IDebugDraw.h"
@@ -52,6 +62,7 @@ void GL_ShapeDrawer::DrawCoordSystem()  {
 
 
 
+
 class GlDrawcallback : public TriangleCallback
 {
 public:
@@ -71,162 +82,268 @@ public:
 		glEnd();
 
 	}
-
 };
+
+class TriangleGlDrawcallback : public InternalTriangleIndexCallback
+{
+public:
+	virtual void InternalProcessTriangleIndex(SimdVector3* triangle,int partId,int  triangleIndex)
+	{
+		glBegin(GL_TRIANGLES);//LINES);
+		glColor3f(1, 0, 0);
+		glVertex3d(triangle[0].getX(), triangle[0].getY(), triangle[0].getZ());
+		glVertex3d(triangle[1].getX(), triangle[1].getY(), triangle[1].getZ());
+		glColor3f(0, 1, 0);
+		glVertex3d(triangle[2].getX(), triangle[2].getY(), triangle[2].getZ());
+		glVertex3d(triangle[1].getX(), triangle[1].getY(), triangle[1].getZ());
+		glColor3f(0, 0, 1);
+		glVertex3d(triangle[2].getX(), triangle[2].getY(), triangle[2].getZ());
+		glVertex3d(triangle[0].getX(), triangle[0].getY(), triangle[0].getZ());
+		glEnd();
+	}
+};
+
 
 void GL_ShapeDrawer::DrawOpenGL(float* m, const CollisionShape* shape, const SimdVector3& color,int	debugMode)
 {
-	glPushMatrix(); 
-    glLoadMatrixf(m);
 
-    //DrawCoordSystem();
-    
-	glPushMatrix();
-	glEnable(GL_COLOR_MATERIAL);
-	glColor3f(color.x(),color.y(), color.z());
-
-	glRasterPos3f(0.0,  0.0,  0.0);
-
-	bool useWireframeFallback = true;
-
-	if (!(debugMode & IDebugDraw::DBG_DrawWireframe))
-	{
-		switch (shape->GetShapeType())
-		{
-		case BOX_SHAPE_PROXYTYPE:
-			{
-				const BoxShape* boxShape = static_cast<const BoxShape*>(shape);
-				SimdVector3 halfExtent = boxShape->GetHalfExtents();
-				glScaled(2*halfExtent[0], 2*halfExtent[1], 2*halfExtent[2]);
-				glutSolidCube(1.0);
-				useWireframeFallback = false;
-				break;
-			}
-		case TRIANGLE_SHAPE_PROXYTYPE:
-		case TETRAHEDRAL_SHAPE_PROXYTYPE:
-			{
-				const BU_Simplex1to4* tetra = static_cast<const BU_Simplex1to4*>(shape);
-				//todo:	
-				useWireframeFallback = false;
-				break;
-			}
-		case CONVEX_HULL_SHAPE_PROXYTYPE:
-		case SPHERE_SHAPE_PROXYTYPE:
-			{
-				const SphereShape* sphereShape = static_cast<const SphereShape*>(shape);
-				float radius = sphereShape->GetMargin();//radius doesn't include the margin, so draw with margin
-				glutSolidSphere(radius,10,10);
-				useWireframeFallback = false;
-				break;
-			}
-		case MULTI_SPHERE_SHAPE_PROXYTYPE:
-		case CONE_SHAPE_PROXYTYPE:
-			{
-				const ConeShape* coneShape = static_cast<const ConeShape*>(shape);
-				float radius = coneShape->GetRadius();//+coneShape->GetMargin();
-				float height = coneShape->GetHeight();//+coneShape->GetMargin();
-				glutSolidCone(radius,height,10,10);
-				useWireframeFallback = false;
-				break;
-
-			}
-		case CONVEX_SHAPE_PROXYTYPE:
-		case CYLINDER_SHAPE_PROXYTYPE:
-			{
-				break;
-			}
-		default:
-			{
-			}
-
-		};
-
-	}
 	
+	glPushMatrix(); 
+    glMultMatrixf(m);
 
-	if (useWireframeFallback)
+	if (shape->GetShapeType() == COMPOUND_SHAPE_PROXYTYPE)
 	{
-		/// for polyhedral shapes
-		if (shape->IsPolyhedral())
+		const CompoundShape* compoundShape = static_cast<const CompoundShape*>(shape);
+		for (int i=compoundShape->GetNumChildShapes()-1;i>=0;i--)
 		{
-			PolyhedralConvexShape* polyshape = (PolyhedralConvexShape*) shape;
-			
-			
-			glBegin(GL_LINES);
+			SimdTransform childTrans = compoundShape->GetChildTransform(i);
+			const CollisionShape* colShape = compoundShape->GetChildShape(i);
+			float childMat[16];
+			childTrans.getOpenGLMatrix(childMat);
+			DrawOpenGL(childMat,colShape,color,debugMode);
+		}
 
+	} else
+	{
+		//DrawCoordSystem();
+	    
+		//glPushMatrix();
+		glEnable(GL_COLOR_MATERIAL);
+		glColor3f(color.x(),color.y(), color.z());
 
-			int i;
-			for (i=0;i<polyshape->GetNumEdges();i++)
+		
+
+		bool useWireframeFallback = true;
+
+		if (!(debugMode & IDebugDraw::DBG_DrawWireframe))
+		{
+			switch (shape->GetShapeType())
 			{
-				SimdPoint3 a,b;
-				polyshape->GetEdge(i,a,b);
-
-				glVertex3f(a.getX(),a.getY(),a.getZ());
-				glVertex3f(b.getX(),b.getY(),b.getZ());
-
-
-			}
-			glEnd();
-
-			
-
-			if (debugMode==IDebugDraw::DBG_DrawText)
-			{
-				BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetName());
-			}
-
-			if (debugMode==IDebugDraw::DBG_DrawFeaturesText)
-			{
-				BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetExtraDebugInfo());
-			
-				glColor3f(1.f, 1.f, 1.f);
-				for (i=0;i<polyshape->GetNumVertices();i++)
+			case BOX_SHAPE_PROXYTYPE:
 				{
-					SimdPoint3 vtx;
-					polyshape->GetVertex(i,vtx);
-					glRasterPos3f(vtx.x(),  vtx.y(),  vtx.z());
-					char buf[12];
-					sprintf(buf," %d",i);
-					BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+					const BoxShape* boxShape = static_cast<const BoxShape*>(shape);
+					SimdVector3 halfExtent = boxShape->GetHalfExtents();
+					glScaled(2*halfExtent[0], 2*halfExtent[1], 2*halfExtent[2]);
+					glutSolidCube(1.0);
+					useWireframeFallback = false;
+					break;
+				}
+			case TRIANGLE_SHAPE_PROXYTYPE:
+			case TETRAHEDRAL_SHAPE_PROXYTYPE:
+				{
+					const BU_Simplex1to4* tetra = static_cast<const BU_Simplex1to4*>(shape);
+					//todo:	
+					useWireframeFallback = false;
+					break;
+				}
+			case CONVEX_HULL_SHAPE_PROXYTYPE:
+				break;
+			case SPHERE_SHAPE_PROXYTYPE:
+				{
+					const SphereShape* sphereShape = static_cast<const SphereShape*>(shape);
+					float radius = sphereShape->GetMargin();//radius doesn't include the margin, so draw with margin
+					glutSolidSphere(radius,10,10);
+					useWireframeFallback = false;
+					break;
+				}
+			case MULTI_SPHERE_SHAPE_PROXYTYPE:
+			case CONE_SHAPE_PROXYTYPE:
+				{
+					const ConeShape* coneShape = static_cast<const ConeShape*>(shape);
+					float radius = coneShape->GetRadius();//+coneShape->GetMargin();
+					float height = coneShape->GetHeight();//+coneShape->GetMargin();
+					//glRotatef(-90.0, 1.0, 0.0, 0.0);
+					glTranslatef(0.0, 0.0, -0.5*height);
+					glutSolidCone(radius,height,10,10);
+					useWireframeFallback = false;
+					break;
+
+				}
+			case CONVEX_TRIANGLEMESH_SHAPE_PROXYTYPE:
+				{
+					useWireframeFallback = false;
+					break;
 				}
 
-				for (i=0;i<polyshape->GetNumPlanes();i++)
+			case CONVEX_SHAPE_PROXYTYPE:
+			case CYLINDER_SHAPE_PROXYTYPE:
 				{
-					SimdVector3 normal;
-					SimdPoint3 vtx;
-					polyshape->GetPlane(normal,vtx,i);
-					SimdScalar d = vtx.dot(normal);
-
-					glRasterPos3f(normal.x()*d,  normal.y()*d, normal.z()*d);
-					char buf[12];
-					sprintf(buf," plane %d",i);
-					BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+					const CylinderShape* cylinder = static_cast<const CylinderShape*>(shape);
+					int upAxis = cylinder->GetUpAxis();
 					
+					GLUquadricObj *quadObj = gluNewQuadric();
+					
+					glPushMatrix();
+					switch (upAxis)
+					{
+					case 0:
+						glRotatef(-90.0, 0.0, 1.0, 0.0);
+						glTranslatef(0.0, 0.0, -1.0);
+						break;
+					case 1:
+						glRotatef(-90.0, 1.0, 0.0, 0.0);
+						glTranslatef(0.0, 0.0, -1.0);
+						break;
+					case 2:
+						
+						glTranslatef(0.0, 0.0, -1.0);
+						break;
+					default:
+						{
+							assert(0);
+						}
+
+					}
+					
+					//The gluCylinder subroutine draws a cylinder that is oriented along the z axis. 
+					//The base of the cylinder is placed at z = 0; the top of the cylinder is placed at z=height. 
+					//Like a sphere, the cylinder is subdivided around the z axis into slices and along the z axis into stacks.
+					
+					gluQuadricDrawStyle(quadObj, (GLenum)GLU_FILL);
+					gluQuadricNormals(quadObj, (GLenum)GLU_SMOOTH);
+					float radius = cylinder->GetHalfExtents().getX();
+					float height = 2.f*cylinder->GetHalfExtents().getY();
+					gluCylinder(quadObj, radius, radius, height, 15, 10);
+					glPopMatrix();
+					glEndList();
+
+					break;
 				}
+			default:
+				{
+				}
+
+			};
+
+		}
+		
+
+		
+
+		if (useWireframeFallback)
+		{
+			/// for polyhedral shapes
+			if (shape->IsPolyhedral())
+			{
+				PolyhedralConvexShape* polyshape = (PolyhedralConvexShape*) shape;
+				
+				
+				glBegin(GL_LINES);
+
+
+				int i;
+				for (i=0;i<polyshape->GetNumEdges();i++)
+				{
+					SimdPoint3 a,b;
+					polyshape->GetEdge(i,a,b);
+
+					glVertex3f(a.getX(),a.getY(),a.getZ());
+					glVertex3f(b.getX(),b.getY(),b.getZ());
+
+
+				}
+				glEnd();
+
+				
+				if (debugMode==IDebugDraw::DBG_DrawFeaturesText)
+				{
+					glRasterPos3f(0.0,  0.0,  0.0);
+					BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),polyshape->GetExtraDebugInfo());
+
+					glColor3f(1.f, 1.f, 1.f);
+					for (i=0;i<polyshape->GetNumVertices();i++)
+					{
+						SimdPoint3 vtx;
+						polyshape->GetVertex(i,vtx);
+						glRasterPos3f(vtx.x(),  vtx.y(),  vtx.z());
+						char buf[12];
+						sprintf(buf," %d",i);
+						BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+					}
+
+					for (i=0;i<polyshape->GetNumPlanes();i++)
+					{
+						SimdVector3 normal;
+						SimdPoint3 vtx;
+						polyshape->GetPlane(normal,vtx,i);
+						SimdScalar d = vtx.dot(normal);
+
+						glRasterPos3f(normal.x()*d,  normal.y()*d, normal.z()*d);
+						char buf[12];
+						sprintf(buf," plane %d",i);
+						BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),buf);
+						
+					}
+				}
+
+				
 			}
 		}
-	}
 
-	if (shape->GetShapeType() == TRIANGLE_MESH_SHAPE_PROXYTYPE)
-	{
-		TriangleMeshShape* concaveMesh = (TriangleMeshShape*) shape;
-		//SimdVector3 aabbMax(1e30f,1e30f,1e30f);
-		//SimdVector3 aabbMax(100,100,100);//1e30f,1e30f,1e30f);
+		if (shape->GetShapeType() == TRIANGLE_MESH_SHAPE_PROXYTYPE)
+		{
+			TriangleMeshShape* concaveMesh = (TriangleMeshShape*) shape;
+			//SimdVector3 aabbMax(1e30f,1e30f,1e30f);
+			//SimdVector3 aabbMax(100,100,100);//1e30f,1e30f,1e30f);
+			
+			extern float eye[3];
+			SimdVector3 aabbMax(eye[0]+100,eye[1]+100,eye[2]+100);//1e30f,1e30f,1e30f);
+			SimdVector3 aabbMin(eye[0]-100,eye[1]-100,eye[2]-100);//1e30f,1e30f,1e30f);
+
+			GlDrawcallback drawCallback;
+
+			concaveMesh->ProcessAllTriangles(&drawCallback,aabbMin,aabbMax);
+
+
+		}
+
+		if (shape->GetShapeType() == CONVEX_TRIANGLEMESH_SHAPE_PROXYTYPE)
+		{
+			ConvexTriangleMeshShape* convexMesh = (ConvexTriangleMeshShape*) shape;
+			
+			extern float eye[3];
+			SimdVector3 aabbMax(eye[0]+100,eye[1]+100,eye[2]+100);
+			SimdVector3 aabbMin(eye[0]-100,eye[1]-100,eye[2]-100);
+			TriangleGlDrawcallback drawCallback;
+			convexMesh->GetStridingMesh()->InternalProcessAllTriangles(&drawCallback,aabbMin,aabbMax);
+
+		}
 		
-		extern float eye[3];
-		SimdVector3 aabbMax(eye[0]+100,eye[1]+100,eye[2]+100);//1e30f,1e30f,1e30f);
-		SimdVector3 aabbMin(eye[0]-100,eye[1]-100,eye[2]-100);//1e30f,1e30f,1e30f);
+		/*glDisable(GL_DEPTH_BUFFER_BIT);
+		if (debugMode==IDebugDraw::DBG_DrawText)
+		{
+			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),shape->GetName());
+		}
 
-		GlDrawcallback drawCallback;
+		if (debugMode==IDebugDraw::DBG_DrawFeaturesText)
+		{
+			BMF_DrawString(BMF_GetFont(BMF_kHelvetica10),shape->GetExtraDebugInfo());
+		}
+		glEnable(GL_DEPTH_BUFFER_BIT);
+		*/
 
-		concaveMesh->ProcessAllTriangles(&drawCallback,aabbMin,aabbMax);
-
-
+	//	glPopMatrix();
 	}
-
-	
-    
-	glPopMatrix();
     glPopMatrix();
 	
 }

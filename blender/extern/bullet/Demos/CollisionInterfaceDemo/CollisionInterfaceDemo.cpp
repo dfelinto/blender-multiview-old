@@ -39,7 +39,14 @@ subject to the following restrictions:
 #ifdef WIN32 //needed for glut.h
 #include <windows.h>
 #endif
+//think different
+#if defined(__APPLE__) && !defined (VMDMESA)
+#include <OpenGL/gl.h>
+#include <OpenGL/glu.h>
+#include <GLUT/glut.h>
+#else
 #include <GL/glut.h>
+#endif
 #include "GlutStuff.h"
 
 
@@ -120,9 +127,11 @@ void clientDisplay(void) {
 
 	if (collisionWorld)
 		collisionWorld->PerformDiscreteCollisionDetection();
-
-	///one way to draw all the contact points is iterating over contact manifolds / points:
+	
 	int i;
+/*
+	///one way to draw all the contact points is iterating over contact manifolds / points:
+
 	int numManifolds = collisionWorld->GetDispatcher()->GetNumManifolds();
 	for (i=0;i<numManifolds;i++)
 	{
@@ -147,6 +156,7 @@ void clientDisplay(void) {
 			glEnd();
 		}
 	}
+*/
 
 
 	//GL_ShapeDrawer::DrawCoordSystem();
