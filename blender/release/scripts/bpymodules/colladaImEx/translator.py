@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.91
+# Illusoft Collada 1.4 plugin for Blender version 0.3.94
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -24,11 +24,11 @@
 
 from cutils import *
 import collada
-import sys
 import Blender
 from Blender.Mathutils import *
 import math
 import datetime
+from helperObjects import *
 
 class Translator(object):
 	isImporter = False
@@ -113,6 +113,12 @@ class DocumentTranslator(object):
 			return name+'.001'
 					
 	def __init__(self, fileName):
+		global waitingControllers, armatures
+		# Keep track of the controller that are waiting to be applied
+		waitingControllers = dict()
+		# Keep track of the armatures created
+		armatures = dict()
+		
 		self.isImport = False 
 		self.scenesLibrary = ScenesLibrary(self)
 		self.sceneGraph = SceneGraph(self)		 
@@ -138,7 +144,18 @@ class DocumentTranslator(object):
 		self.progressStep = 0.0
 		self.progressPartCount = 0.0
 		
-		self.tMat = Matrix()
+		self.tMatOLD = Matrix()
+		self._zUpMatrix = Matrix()
+		self._yUpMatrix = Matrix(
+		[0,0,1,0],
+		[1,0,0,0],
+		[0,1,0,0],
+		[0,0,0,1])
+		
+		self.axisTransformMatrix = Matrix()
+		self.inverseAxisTransformMatrix  = Matrix()
+		self.orgAxiss = ["X","Y","Z"]
+		
 	
 	def CreateNameForObject(self, name, replace, myType):
 		if not replace:
@@ -156,6 +173,27 @@ class DocumentTranslator(object):
 				if not mesh is None:
 					mesh.name = self.CreateNameForObject(self.IncrementString(mesh.name), True, 'mesh')
 			except ValueError:
+				pass
+		elif myType == 'armature':
+			try:
+				armature = Blender.Armature.Get(str(name))
+				if not armature is None:
+					armature.name = self.CreateNameForObject(self.IncrementString(armature.name), True, 'armature')
+			except ValueError:
+				pass
+		elif myType == 'camera':
+			try:
+				camera = Blender.Camera.Get(str(name))
+				if not camera is None:
+					camera.name = self.CreateNameForObject(self.IncrementString(camera.name), True, 'camera')
+			except NameError:
+				pass
+		elif myType == 'lamp':
+			try:
+				lamp = Blender.Lamp.Get(str(name))
+				if not lamp is None:
+					lamp.name = self.CreateNameForObject(self.IncrementString(lamp.name), True, 'lamp')
+			except NameError:
 				pass
 			
 		return name
@@ -194,18 +232,28 @@ class DocumentTranslator(object):
 		# Parse the COLLADA file
 		self.colladaDocument.LoadDocumentFromFile(fileName)
 		
+		self.axiss = ["X", "Y", "Z"]
 		if self.colladaDocument.asset.upAxis == collada.DaeSyntax.Y_UP:
-			self.tMat[0][0] = 0
-			self.tMat[1][1] = 0
-			self.tMat[2][2] = 0
-			self.tMat[0][1] = 1
-			self.tMat[1][2] = 1
-			self.tMat[2][0] = 1
+			self.tMatOLD[0][0] = 0
+			self.tMatOLD[1][1] = 0
+			self.tMatOLD[2][2] = 0
+			self.tMatOLD[0][1] = 1
+			self.tMatOLD[1][2] = 1
+			self.tMatOLD[2][0] = 1
 			self.axiss = ["Y", "Z", "X"]
 			
-		self.axiss = ["X", "Y", "Z"]
+		if self.colladaDocument.asset.upAxis == collada.DaeSyntax.Y_UP:
+			self.axisTransformMatrix = Matrix(self._yUpMatrix)
+			self.axiss = ["Y", "Z", "X"]
+		
+		self.inverseAxisTransformMatrix = Matrix(self.axisTransformMatrix).invert()
+		
+		
 			
 		self.progressStep = self.progressField/(self.colladaDocument.GetItemCount()+1)
+		
+		# Get the animation info
+		animations = AnimationInfo.CreateAnimations(self.animationsLibrary, self.fps, self.axiss)
 		
 		# Read the COLLADA stucture and build the scene in Blender.
 		Blender.Window.DrawProgressBar(0.4, 'Translate Collada 2 Blender')
@@ -218,6 +266,28 @@ class DocumentTranslator(object):
 			return Vector(vector[2], vector[0], vector[1])
 		else:
 			return vector
+
+	
+	# Calculate the correct transform matrix dependent of the current UP axis.
+	# When Up axis is Yup:
+	# orgTrans * vecYup = newVecYup
+	# newTrans * vecZup = newVecZup
+	# vecZup = tMat * vecYUp
+	# vecYup = invtMat * vecZup
+	# newVecYup = orgTrans * vecYup = orgTrans * (invtMat * vecZup)
+	# newVecZup = tMat * newVecYup = tMat * (orgTrans * (invtMat * vecZup))
+	# newTrans = tMat * orgTrans * invtMat
+	def CalcMatrix(self, matrix):
+		if self.colladaDocument.asset.upAxis == collada.DaeSyntax.Y_UP:
+			return self.axisTransformMatrix * matrix * self.inverseAxisTransformMatrix 
+		else:
+			return matrix
+
+	def CalcMatrixReverse(self, matrix):
+		if self.colladaDocument.asset.upAxis == collada.DaeSyntax.Y_UP:
+			return self.inverseAxisTransformMatrix * matrix * self.axisTransformMatrix
+		else:
+			return matrix
 	
 	def Export(self, fileName):
 		global __version__, filename
@@ -326,7 +396,7 @@ class SceneGraph(object):
 		Blender.Window.DrawProgressBar(0.5,'Build the items on the scene')
 		# loop trough all nodes 	   
 		for daeNode in visualScene.nodes:
-			sceneNode = SceneNode(self.document, self)
+			sceneNode = SceneNode(self.document, None)
 			ob = sceneNode.ObjectFromDae(daeNode)
 			if ob != None:
 				self.objectNames[daeNode.id] = ob.name
@@ -459,8 +529,216 @@ class PhysicsNode(object):
 class Controller(object):
 	def __init__(self, document):
 		self.document = document
+		self.bMesh = None
+		self.daeController = None
+		self.armatureName = None
+		self.modifier = None
+	
+	# Recursive method for setting the locations of the bones from their Bind matrices.
+	def PositionBone(self, boneName, armature, bindMatrices):
+		# Get the boneInfo for this bone.
+		boneInfo = armature.boneInfos[boneName]
+		# Get the jointName for this bone.
+		jointName = boneInfo.GetJointName()
+		# Get the BindMatrix for the head of this bone.
+		headMatrix = bindMatrices[jointName]
+		# Get the name of the tail joint.
+		tailJointName = boneInfo.name##armature.boneInfos[boneName].tailJointName		
+		# If there is a tail joint, get the BindMatrix for that joint.
+		if not boneInfo.IsEnd():
+			tailMatrix = bindMatrices[tailJointName]			
+		# Get the location of the armature Object.
+		armatureLocation = armature.GetLocation()
+		# Create a vector at [0,0,0,1]
+		nullVec = Vector().resize4D()
 		
-	def LoadFromDae(self, daeController, daeControllerInstance):
+		# Calculate the position of the head
+		headVec = self.document.CalcVector(headMatrix * nullVec).resize4D() - armatureLocation
+		# Set the default value for the tail.
+		tailVec = headVec + Vector(0,0,1,1)
+		# If this bone has a Tail joint, calculate the position of the tail.
+		if not boneInfo.IsEnd():
+			tailVec = self.document.CalcVector(tailMatrix * nullVec).resize4D() - armatureLocation	
+		else:
+			parentBoneInfo = boneInfo.parent
+			if not parentBoneInfo is None:
+				parentBone = parentBoneInfo.GetBone()
+				tailVec = 2 * parentBone.tail - parentBone.head
+			else:
+				tailVec = Vector(0,0,1,1)
+		
+		if boneInfo.IsRoot():
+			headVec -= Vector(0,0,-0.1,1)
+		
+		# Set the head and tail location.
+		boneInfo.SetHead(headVec)
+		boneInfo.SetTail(tailVec)
+		
+		# Do the same for each child.
+		for childBoneName in boneInfo.childs:
+			self.PositionBone(childBoneName, armature, bindMatrices)
+		
+	def PoseBone(self, boneName, armature, bindMatrices, bPose, parentBindI = Matrix()):
+		boneInfo = armature.boneInfos[boneName]
+		bBone = boneInfo.GetBone()
+		jointName = boneInfo.GetJointName()
+		bindMatrixCollada = bindMatrices[jointName]
+		bindMatrixBlender = self.document.CalcMatrix(bindMatrixCollada)
+		bindMatrixBlenderI = Matrix(bindMatrixBlender).invert()
+		
+		# calculate the local transform for the current position
+		F = boneInfo.localTransformMatrix
+		
+		# calculate the transform in bindmode relative to its parent bind pose.
+		E = parentBindI * bindMatrixBlender
+
+		deltaBlender = Matrix()
+		if jointName != boneName:
+			# calculate the difference between the two transforms
+			deltaBlender = Matrix(E).invert() * F
+		deltaBlenderT = Matrix(deltaBlender).transpose()
+		
+		# Set the transform
+		bPose.bones[boneName].localMatrix = deltaBlenderT
+
+		# Do the same for each child.
+		for childBoneName in boneInfo.childs:
+			self.PoseBone(childBoneName, armature, bindMatrices, bPose, bindMatrixBlenderI)
+	
+	def AnimateBone(self, boneName, armature, bPose, action):
+		boneInfo = armature.boneInfos[boneName]
+		animationInfo = AnimationInfo.GetAnimationInfo(boneName)
+		if not animationInfo is None:
+			def pose_rot(anim_data):
+				bone_rotation_matrix= Euler(anim_data[0], anim_data[1], anim_data[2]).toMatrix()
+				bone_rotation_matrix.resize4x4()
+				return tuple(bone_rotation_matrix.toQuat()) # qw,qx,qy,qz
+
+			poseBone = bPose.bones[boneName]
+			types = animationInfo.GetTypes(boneInfo.daeNode)
+			for time in animationInfo.times.keys():
+				poseBone.insertKey(armature.GetBlenderObject(), int(round(time)), types)		
+				target = animationInfo.times[time]
+				
+			actionIpos = action.getAllChannelIpos()
+			ipo = actionIpos[boneName]
+			for time in animationInfo.times:
+				target = animationInfo.times[time]
+				for value in target:
+					type = animationInfo.GetType(boneInfo.daeNode, value)
+					if type[0] == collada.DaeSyntax.TRANSLATE:
+						pass
+					elif type[0] == collada.DaeSyntax.ROTATE:
+						if type[1][1] == "ANGLE":
+							pass
+##							axis = self.document.axiss[self.document.orgAxiss.index(type[1][0][-1])]
+##							curve_wquat = ipo[Blender.Ipo.PO_QUATW]
+##							curve_xquat = ipo[Blender.Ipo.PO_QUATX]
+##							curve_yquat = ipo[Blender.Ipo.PO_QUATY]
+##							pose_rotations = pose_rot([50+time,0,0])
+##							print pose_rotations
+##							curve_wquat.append((time, pose_rotations[0]))
+##							curve_xquat.append((time, pose_rotations[1]))
+##							curve_yquat.append((time, pose_rotations[2]))
+							
+					
+			##for time in animationinfo.times.keys():
+				
+				
+		for childBoneName in boneInfo.childs:
+			self.AnimateBone(childBoneName,armature, bPose, action)
+				
+		
+	def BindMesh(self):
+		global waitingControllers, armatures
+		armature = Armature.GetArmature(self.armatureName)
+		realArmatureName = armature.realName
+
+		armatureObject = armature.GetBlenderObject()
+
+		self.modifier[Blender.Modifier.Settings.OBJECT] = armatureObject
+
+		bArmature = armature.GetBlenderArmature()
+		daeSkin = self.daeController.skin
+		
+		# For each bone create a vertex group.
+		for boneName in armatureObject.data.bones.keys():
+			self.bMesh.addVertGroup(boneName)
+
+		vertexWeights = daeSkin.vertexWeights
+		daeJoints = daeSkin.joints
+		if not vertexWeights.vcount is None and not vertexWeights.v is None:			
+			# Get the Joint Source
+			jointList = daeSkin.FindSource(vertexWeights.FindInput('JOINT')).source.data
+			# Get the weights
+			weightList = daeSkin.FindSource(vertexWeights.FindInput('WEIGHT')).source.data
+			# Get the BindMatrix values
+			bindFloats = daeSkin.FindSource(daeJoints.FindInput("INV_BIND_MATRIX")).source.data
+			# Create the BindMatrices
+			bindMatrices = dict()
+			for jointNameIndex in range(len(jointList)):
+				jointName = jointList[jointNameIndex]
+				bindMatrix = ToMatrix4(bindFloats[jointNameIndex*16:(jointNameIndex+1)*16]).invert()
+				bindMatrices[jointName] = bindMatrix			
+			
+			bPose = armatureObject.getPose()
+			# Loop trough each Root bone. Those bones will position their childs.
+			for rootBoneName in armature.rootBoneInfos:
+				self.PoseBone(rootBoneName, armature, bindMatrices, bPose)
+			
+			# Set the bind positions of the bones (in Edit mode)
+			armature.MakeEditable(True)
+			# Loop trough each Root bone. Those bones will position their childs.
+			for rootBoneName in armature.rootBoneInfos:
+				self.PositionBone(rootBoneName, armature, bindMatrices)
+			
+			armature.MakeEditable(False)
+
+
+			vIndex = 0
+			vertInfos = []
+			maxInputOffset = vertexWeights.GetMaxOffset()+1
+			for vCountIndex in range(len(vertexWeights.vcount)): # loop trough each element in vcount.
+				vcount = vertexWeights.vcount[vCountIndex]
+				vertInfo = [vCountIndex,[]]
+				for jointIndex in range(vcount): # Get all the info for this vertice.							
+					vertInfo[1].append([0,0])
+					vertJointInfo = vertInfo[1][jointIndex]
+					for input in vertexWeights.inputs:
+						inputVal = vertexWeights.v[vIndex+input.offset]
+						if input.semantic == "JOINT":
+							vertJointInfo[0] = jointList[inputVal]
+						elif input.semantic == "WEIGHT":
+							vertJointInfo[1] = weightList[inputVal]
+					vIndex += maxInputOffset
+				vertInfos.append(vertInfo)
+			
+			
+			bonesList = bArmature.bones.keys()
+
+			
+			jointBoneInfoList = armature.GetJointList()
+				
+			for vertInfo in vertInfos:
+				for vertJointInfo in vertInfo[1]:
+					groupName = vertJointInfo[0]
+					if  groupName in jointBoneInfoList:
+						boneName = jointBoneInfoList[groupName].name
+						vertIndex = vertInfo[0]
+						vertWeight = vertJointInfo[1]						
+						self.bMesh.assignVertsToGroup(boneName,[vertIndex],vertWeight,'add')		
+			
+			action = Blender.Armature.NLA.NewAction("Action") 
+			action.setActive(armature.GetBlenderObject())
+			
+			
+						
+			# Apply the animations for the bones (if available)
+			for rootBoneName in armature.rootBoneInfos:
+				pass#self.AnimateBone(rootBoneName, armature, bPose, action)
+			
+	def LoadFromDae(self, daeController, daeControllerInstance, bObject):
+		global waitingControllers
 		# Check if this controller is a SKIN controller
 		if not (daeController.skin is None):
 			# Create a new GeometryInstance for getting the mesh for this controller.
@@ -468,14 +746,41 @@ class Controller(object):
 			daeGeoInstance.url = daeController.skin.source
 			daeGeoInstance.bindMaterials = daeControllerInstance.bindMaterials
 			# Get the Blender Mesh
-			bMesh = self.document.meshLibrary.FindObject(daeGeoInstance, True)
+			self.bMesh = self.document.meshLibrary.FindObject(daeGeoInstance, True)
+			self.daeController = daeController
+			# Link the mesh to the blenderObject.
+			bObject.link(self.bMesh)
 			
-			# todo: create vert groups
+			# Set the bObject to the right place.
+			bindShapeMatrix =  daeController.skin.bindShapeMatrix
+			bindShapeMatrix = self.document.CalcMatrix(bindShapeMatrix)
+			bObject.setMatrix(bindShapeMatrix)
+			
+			# Create an armature modifier for the Blender Object.
+			self.modifier = bObject.modifiers.append(Blender.Modifier.Type.ARMATURE)
+			
+			# Find the armature for this controller
+			armature = None
+			for jointName in daeControllerInstance.skeletons:
+				armature = Armature.FindArmatureWithJoint(jointName[1:])				
+				if not armature is None:
+					break			
+			self.armatureName = armature.name
+			# Check if the armature is already parsed. If not, wait until then.
+			if not armature is None:
+				# make the armature the parent of the blender object
+				armature.GetBlenderObject().makeParent([bObject], 0, 1)
+				self.BindMesh()				
+			else:
+				# Add this controller to a to-do list ;) and wait until the armature is parsed.
+				waitingControllers[self.armatureName] = self
+				
 			
 			
 			#return the mesh.
-			return bMesh
+			return self.bMesh
 		else: # It's a morph controller. do nothing.
+			print "WARNING: Morph is not supported"
 			return None
 		
 
@@ -523,7 +828,7 @@ class Animation(object):
 									cname = "Scale"
 								else:
 									cname = "Rot"
-								cname += self.document.axiss[axiss.index(axis)]
+								cname += self.document.axiss[self.document.orgAxiss.index(axis)]
 								curve = ipo.addCurve(cname)
 								for time in times:
 									val = outputSource.source.data[times.index(time)*accessorStride+axiss.index(axis)]
@@ -699,14 +1004,14 @@ class SceneNode(object):
 		self.type = ''
 		self.document = document
 		self.transformMatrix = None
+		self.localTransformMatrix = None
 		self.parentNode = sceneNode
-		self.bObject = None
-		self.bEditBone = None
 		
-		self.aap = None
+		self.armature = None
+		self.isJoint = False
 		
 	def ObjectFromDae(self,daeNode):
-		global replaceNames
+		global replaceNames, objectList, waitingControllers, armatures
 		self.document.Progress()
 		self.id = daeNode.id
 		self.type = daeNode.type
@@ -716,95 +1021,27 @@ class SceneNode(object):
 		dataObject = None
 		armature = None
 		parentBone = None
+		daeInstance = None
+		boneName = None
 		
-		if daeNode.IsJoint():
-			# it's a Joint, not implemented yet
-			if daeNode.parentNode == None or not daeNode.parentNode.IsJoint():				
-				newObject = Blender.Object.New('Armature',self.id)
-				self.document.currentBScene.link(newObject)
-			else:
-				armature = self.parentNode.bObject.data
-				armature.makeEditable()
-				editBone = Blender.Armature.Editbone()
-				armature.bones[str(self.id)] = editBone				
-				if self.parentNode.id in armature.bones.keys():
-					parentBone = armature.bones[str(self.parentNode.id)]
-					editBone.parent = parentBone
-					editBone.options = Blender.Armature.CONNECTED	
-			
-				self.bObject = self.parentNode.bObject
-		else : #its a Node			  
-			daeInstances = daeNode.GetInstances()
-			
-			if len(daeInstances) == 0:
-				newObject = Blender.Object.New('Empty',self.id) 
-			else:
-				# if only one instance is in this node, add it.
-				if len (daeInstances)== 1:
-					# Get the instance
-					daeInstance = daeInstances[0]
-					# Check which type the instance is
-					if isinstance(daeInstance,collada.DaeAnimationInstance):
-						newObject = Blender.Object.New('Empty',self.id)
-					elif isinstance(daeInstance,collada.DaeCameraInstance):
-						newObject = Blender.Object.New('Camera',self.id)
-						dataObject = self.document.camerasLibrary.FindObject(daeInstance,True)
-					elif isinstance(daeInstance,collada.DaeControllerInstance):
-						newObject = Blender.Object.New('Mesh',self.id)
-						dataObject = self.document.controllersLibrary.FindObject(daeInstance, True)
-					elif isinstance(daeInstance,collada.DaeGeometryInstance):
-						newObject = Blender.Object.New('Mesh',self.document.CreateNameForObject(self.id,replaceNames, 'object'))
-						dataObject = self.document.meshLibrary.FindObject(daeInstance,True)
-					elif isinstance(daeInstance,collada.DaeLightInstance):
-						newObject = Blender.Object.New('Lamp',self.id)
-						dataObject = self.document.lampsLibrary.FindObject(daeInstance,True)
-					elif isinstance(daeInstance,collada.DaeNodeInstance):
-						newObject = Blender.Object.New('Empty',self.id)
-					elif isinstance(daeInstance,collada.DaeVisualSceneInstance):
-						newObject = Blender.Object.New('Empty',self.id)
-					else:
-						print daeInstance
-						return
-					# Link the new Object to the dataObject
-					if dataObject != None:
-						newObject.link(dataObject)
-				else:  # otherwise, create an empty node and attach the different instances to it
-					newObject = Blender.Object.New('Empty',self.id)
-					# finish this
-					
-			self.document.currentBScene.link(newObject)
-			
-			# TODO: Vertex Colors: MAYBE CHANGE THIS LATER update the mesh..
-			if newObject.getType() == 'Mesh':
-				newObject.getData().update(1,1,1)
-				# Set the vertex colors.
-				for f in newObject.getData(mesh=1).faces:
-					for c in f.col:
-						c.r = 255
-						c.g = 255
-						c.b = 255
-						c.a = 255					 
-			
-		
-		
-		
-		# Do the transformation
+		#Get the transformation
+		# TODO, replace all the self.document.tMatOLD and calculate the transformmatrices the correct way using CalcMatrix()
 		mat = Matrix().resize4x4()
 		for i in range(len(daeNode.transforms)):
 			transform = daeNode.transforms[len(daeNode.transforms)-(i+1)]
 			type = transform[0]
 			data = transform[1]
 			if type == collada.DaeSyntax.TRANSLATE:
-				mat = mat*TranslationMatrix(Vector(data)* self.document.tMat)
+				mat = mat*TranslationMatrix(Vector(data)* self.document.tMatOLD)
 			elif type == collada.DaeSyntax.ROTATE:
-				mat = mat*RotationMatrix(data[3] % 360,4,'r',Vector([data[0],data[1],data[2]])* self.document.tMat)
+				mat = mat*RotationMatrix(data[3] % 360,4,'r',Vector([data[0],data[1],data[2]])* self.document.tMatOLD)
 			elif type == collada.DaeSyntax.SCALE:
-				skewVec = Vector(data[0],data[1], data[2])*self.document.tMat
+				skewVec = Vector(data[0],data[1], data[2])*self.document.tMatOLD
 				mat = mat * Matrix([skewVec.x,0,0,0],[0,skewVec.y,0,0],[0,0,skewVec.z,0],[0,0,0,1])
 			elif type == collada.DaeSyntax.SKEW:
 				s = math.tan(data[0]*angleToRadian)
-				rotVec = Vector(data[1],data[2],data[3])*self.document.tMat
-				transVec = Vector(data[4],data[5],data[6])*self.document.tMat
+				rotVec = Vector(data[1],data[2],data[3])*self.document.tMatOLD
+				transVec = Vector(data[4],data[5],data[6])*self.document.tMatOLD
 				fac1 = s*transVec.x
 				fac2 = s*transVec.y
 				fac3 = s*transVec.z 				   
@@ -839,61 +1076,176 @@ class SceneNode(object):
 				
 			elif type == collada.DaeSyntax.MATRIX:
 				mat = mat * data
-				
+		self.localTransformMatrix = Matrix(mat)
 		self.transformMatrix = mat
 		if isinstance(self.parentNode, SceneNode):
 				self.transformMatrix *= self.parentNode.transformMatrix
-		
-##		print ""
-##		print self.id
-##		print self.transformMatrix
+				
+		if daeNode.IsJoint():
+			self.isJoint = True
+			# it's a Joint, so check if we have to create a new armature or a bone inside an existing armature.
+			if daeNode.parentNode == None or not daeNode.parentNode.IsJoint():
+				# Create a unique name for the armature object
+				objectName = self.document.CreateNameForObject(self.id,replaceNames, 'object')
+				# Create a unique name for the armature data
+				armatureName = self.document.CreateNameForObject(objectName,replaceNames, 'armature')
+				# Create a new armature
+				self.armature = Armature.CreateArmature(objectName, self.id, armatureName, daeNode)				
+				# Get the new created Blender Object
+				newObject = self.armature.GetBlenderObject()
+				# Link the new object to the current scene.
+				self.document.currentBScene.link(newObject)
+				
+				# Create a root bone
+				self.armature.MakeEditable(True)
+				boneName = str(self.id)
+				boneInfo = self.armature.AddNewBone(boneName, None, daeNode)
+				headLoc = Vector(0,0,0)
+				tailLoc = Vector(0,0,-0.3)
+				boneInfo.SetHead(headLoc)
+				boneInfo.SetTail(tailLoc)
+				locTrans = Matrix()
+				locTrans[2][3] = -0.3
+				boneInfo.localTransformMatrix = locTrans
+				self.armature.MakeEditable(False)				
+
+			else:
+				self.armature = self.parentNode.armature
+				# Make the armature editable, so we can create a new bone.
+				self.armature.MakeEditable(True)
+				# Get the name of the parent bone of this bone.
+				parentBoneName = self.parentNode.id						
+				# Create the name for the new bone
+				boneName = str(self.id)
+				# Add a new bone to the armature.
+				boneInfo = self.armature.AddNewBone(boneName, parentBoneName, daeNode)
+				# Set the correct head and tail positions of this bone.
+				headLoc = Vector(0,0,0)
+				if not boneInfo.parent is None: # The head of this bone starts at the end of it's parent.
+					headLoc = boneInfo.parent.GetBone().tail
+				
+				# Get the location of this node.
+				nodeLoc = Matrix(self.transformMatrix).transpose() * Vector(0,0,0,1)
+				# Get the location of the armature.
+				armatureLoc = self.armature.GetLocation()
+				# Set the location of the tail to the difference between the NodeLoc and armatureLoc
+				boneInfo.SetHead(headLoc)
+				boneInfo.SetTail(nodeLoc - armatureLoc)
+				# Store the localTransformMatrix of this joint
+				boneInfo.localTransformMatrix = Matrix(self.parentNode.localTransformMatrix).transpose()
+				boneInfo.worldTransformMatrix = Matrix(self.parentNode.transformMatrix).transpose()
+				
+				self.armature.MakeEditable(False)
 			
-		if newObject is None: # We have a bone.
-			vecTail = Vector(0,0,0)
-			vecHead = Vector(0,0,0)
-			if not (parentBone is None):
-				vecTail = parentBone.tail
-				vecHead = parentBone.tail
+			# Check if this is the last Joint
+			hasJointChilds = False
+			for daeChild in daeNode.nodes:
+				if daeChild.IsJoint():
+					hasJointChilds = True
+					break
 			
-			vecParentPos = Vector(self.parentNode.transformMatrix[3][0], self.parentNode.transformMatrix[3][1], self.parentNode.transformMatrix[3][2])
-			vecChildPos = Vector(self.transformMatrix[3][0], self.transformMatrix[3][1], self.transformMatrix[3][2])
-			vecArmaturePos = Vector(self.bObject.loc[0], self.bObject.loc[1], self.bObject.loc[2])
-			##vecTail = vecChildPos - vecParentPos
-			vecTail = vecChildPos - vecArmaturePos
-##			print "child", vecChildPos
-##			print "parent", vecParentPos
-##			print "armature", vecArmaturePos
-##			for i in range(len(daeNode.transforms)):
-##				transform = daeNode.transforms[len(daeNode.transforms)-(i+1)]
-##				type = transform[0]
-##				data = transform[1]
-##				if type == collada.DaeSyntax.TRANSLATE:
-##					##vecTail = vecTail + self.document.CalcVector(Vector(data))
-##					vecTail = vecHead - Vector(self.transformMatrix[3][0], self.transformMatrix[3][1], self.transformMatrix[3][2])
-##					print vecTail
-##					##print Vector(data), self.document.CalcVector(Vector(data))
+			if not hasJointChilds: 
+				# This is the last joint of the armature.
+				# Create one last bone for the last joint.
+				# (otherwise pivoting the end point of the last created bone is not possible)
+				self.armature.MakeEditable(True)
+				
+				# Get the name of the parent bone of this bone.
+				parentBoneName = self.id
+				# Create the name for the new bone
+				boneName = str(self.id + "_end")
+				
+				# Add a new bone to the armature.
+				boneInfo = self.armature.AddNewBone(boneName, parentBoneName, daeNode)
+				
+				# Set the correct head and tail positons of this bone.
+				headLoc = Vector(0,0,0)
+				tailLoc = Vector(0,0,1)
+				if not parentBoneName is None: # The head of this bone starts at the end of it's parent.
+					parentBone = boneInfo.parent.GetBone()
+					headLoc = parentBone.tail
+					tailLoc = 2 * parentBone.tail - parentBone.head
+					boneInfo.SetConnected()
+					boneInfo.localTransformMatrix = Matrix(self.localTransformMatrix).transpose()
+
+				boneInfo.SetHead(headLoc)
+				boneInfo.SetTail(tailLoc)	
+				
+				self.armature.MakeEditable(False)
+				if  self.armature.name in waitingControllers:
+					# make the armature the parent of the blender object
+					controller = waitingControllers[self.armature.name]
+					Armature.GetArmature(controller.armatureName).GetBlenderObject().makeParent([newObject], 0, 1)
+					controller.BindMesh()
+
+		else : #its a Node			  
+			daeInstances = daeNode.GetInstances()
 			
-			editBone.tail = vecTail
-			editBone.head = vecHead
-			armature.update()
-		else: # Just a Blender Object		
-			newObject.setMatrix(self.transformMatrix)
+			if len(daeInstances) == 0:
+				newObject = Blender.Object.New('Empty',self.id) 
+			else:
+				# if only one instance is in this node, add it.
+				if len (daeInstances)== 1:
+					# Get the instance
+					daeInstance = daeInstances[0]
+					# Check which type the instance is
+					if isinstance(daeInstance,collada.DaeAnimationInstance): # Animation
+						newObject = Blender.Object.New('Empty',self.document.CreateNameForObject(self.id,replaceNames, 'empty'))
+					elif isinstance(daeInstance,collada.DaeCameraInstance): # Camera
+						newObject = Blender.Object.New('Camera',self.document.CreateNameForObject(self.id,replaceNames, 'camera'))
+						dataObject = self.document.camerasLibrary.FindObject(daeInstance,True)
+					elif isinstance(daeInstance,collada.DaeControllerInstance): # Controller
+						newObject = Blender.Object.New('Mesh',self.document.CreateNameForObject(self.id,replaceNames, 'object'))
+						dataObject = self.document.controllersLibrary.FindObject(daeInstance, True, newObject)
+					elif isinstance(daeInstance,collada.DaeGeometryInstance): # Geometry
+						newObject = Blender.Object.New('Mesh',self.document.CreateNameForObject(self.id,replaceNames, 'object'))
+						dataObject = self.document.meshLibrary.FindObject(daeInstance,True)
+					elif isinstance(daeInstance,collada.DaeLightInstance): # Light
+						newObject = Blender.Object.New('Lamp',self.document.CreateNameForObject(self.id,replaceNames, 'lamp'))
+						dataObject = self.document.lampsLibrary.FindObject(daeInstance,True)
+					elif isinstance(daeInstance,collada.DaeNodeInstance): # Node
+						newObject = Blender.Object.New('Empty',self.document.CreateNameForObject(self.id,replaceNames, 'empty'))
+					elif isinstance(daeInstance,collada.DaeVisualSceneInstance): # Visual Scene
+						newObject = Blender.Object.New('Empty',self.document.CreateNameForObject(self.id,replaceNames, 'empty'))
+					else:
+						print daeInstance
+						return
+					# Link the new Object to the dataObject
+					if dataObject != None:
+						newObject.link(dataObject)
+				else:  # otherwise, create an empty node and attach the different instances to it
+					newObject = Blender.Object.New('Empty',self.id)
+					# finish this
+						
+			if not isinstance(daeInstance, collada.DaeControllerInstance):
+				newObject.setMatrix(self.transformMatrix)
 			self.bObject = newObject
+			
+			self.document.currentBScene.link(newObject)
+			
+			# TODO: Vertex Colors: MAYBE CHANGE THIS LATER update the mesh..
+			if newObject.getType() == 'Mesh':
+				newObject.getData().update(1,1,1)
+				# Set the vertex colors.
+				for f in newObject.getData(mesh=1).faces:
+					for c in f.col:
+						c.r = 255
+						c.g = 255
+						c.b = 255
+						c.a = 255
+
 		childlist = []
-		
-		
-		
 		for daeChild in daeNode.nodes:
 			childSceneNode = SceneNode(self.document,self)
 			object = childSceneNode.ObjectFromDae(daeChild)
 			if not(object is None):
 				childlist.append(object)
-		if not (newObject is None):
+		
+		if not self.isJoint and self.armature is None:
 			newObject.makeParent(childlist,0,1)
 			
 			# Check if this node has an animation.
 			daeAnimations = self.document.animationsLibrary.GetDaeAnimations(self.id)
-			##print daeAnimations
 			for daeAnimation in daeAnimations:
 				a = Animation(self.document)
 				a.LoadFromDae(daeAnimation, daeNode, newObject)
@@ -938,7 +1290,7 @@ class SceneNode(object):
 				myLayers = self.document.currentBScene.layers
 			# Set the layers of the new Object.
 			newObject.layers = myLayers
-		
+
 		# Return the new Object
 		return newObject
 		
@@ -959,10 +1311,6 @@ class SceneNode(object):
 			rotyVec = [0,1,0,euler.y*radianToAngle]
 			rotzVec = [0,0,1,euler.z*radianToAngle]
 			
-			##rotVec = [round(euler.x*radianToAngle,3), round(euler.y*radianToAngle,3), round(euler.z*radianToAngle,3)]
-##			if euler.z != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotzVec])
-##			if euler.y != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
-##			if euler.x != 0: daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
 			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotzVec])
 			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
 			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
@@ -1140,6 +1488,7 @@ class MeshNode(object):
 	def __init__(self,document):
 		self.document = document
 		self.materials = []
+		self.verts = []
 	
 	def FindMaterial(self, bMaterials,name):
 		for i in range(len(bMaterials)):
@@ -1185,11 +1534,17 @@ class MeshNode(object):
 				
 				self.document.ProgressPart(0.0,'Create Vertices')
 				
+				vertIndex = 0
+				self.verts = range(len(sources[vPosInput.source]))
 				# Create all the vertices.
-				for i in sources[vPosInput.source]:
-					vPosVector = Vector(i[0], i[1], i[2]) * self.document.tMat
-					pVertices.append(Blender.NMesh.Vert(vPosVector.x, vPosVector.y, vPosVector.z))
-				bMesh2.verts = pVertices				
+				for i in sources[vPosInput.source]:					
+					vPosVector = Vector(i[0], i[1], i[2]) * self.document.tMatOLD
+					bVert = Blender.NMesh.Vert(vPosVector.x, vPosVector.y, vPosVector.z)
+					self.verts[vertIndex] = bVert
+					pVertices.append(bVert)
+					vertIndex += 1
+					
+				bMesh2.verts = pVertices
 					
 				faceVerts = [] # The list of vertices for each face to add
 				edgeVerts = [] # The list of vertices for each edge to add
@@ -1856,7 +2211,7 @@ class Library(object):
 	def SetDaeLibrary(self, daeLibrary):
 		self.daeLibrary = daeLibrary
 	
-	def FindObject(self, daeInstance, fromDae):
+	def FindObject(self, daeInstance, fromDae, bObject = None):
 		for k in self.objects:
 			
 			if 'url' in dir(daeInstance) and k == daeInstance.url:
@@ -1868,9 +2223,19 @@ class Library(object):
 				
 		if fromDae:
 			# dataObject not in library, so add it
-			return self.LoadFromDae(daeInstance)
+			return self.LoadFromDae(daeInstance, bObject)
 		else:
 			return self.SaveToDae(daeIntance)
+	
+	def FindObjectTotal(self, daeInstance):
+		for k in self.objects:
+			if 'url' in dir(daeInstance) and k == daeInstance.url:
+				return self.objects[k]
+			elif 'target' in dir(daeInstance) and k == daeInstance.target:
+				return self.objects[k]
+			elif isinstance(daeInstance, str):
+				return self.objects[k]
+		return None
 	
 	def FindObjectEx(self, bObject):
 		for k in self.objects:
@@ -1888,7 +2253,7 @@ class Library(object):
 			
 class ScenesLibrary(Library):
 	
-	def LoadFromDae(self, daeInstance): 	   
+	def LoadFromDae(self, daeInstance, bObject): 	   
 		daeVisualScene = self.daeLibrary.FindObject(daeInstance.url)
 		# TODO: Scene: implement multiple scenes
 		return None
@@ -1899,7 +2264,7 @@ class ScenesLibrary(Library):
 				
 class CamerasLibrary(Library):
 	
-	def LoadFromDae(self, daeInstance):
+	def LoadFromDae(self, daeInstance, bObject):
 		daeCamera = self.daeLibrary.FindObject(daeInstance.url)
 		if daeCamera is None:
 			Debug.Debug('CamerasLibrary: Object with this ID does not exist','ERROR')
@@ -1919,7 +2284,7 @@ class CamerasLibrary(Library):
 				
 class LampsLibrary(Library):
 	
-	def LoadFromDae(self, daeInstance): 	   
+	def LoadFromDae(self, daeInstance, bObject): 	   
 		daeLight = self.daeLibrary.FindObject(daeInstance.url)
 		if daeLight is None:
 			Debug.Debug('LightsLibrary: Object with this ID does not exist','ERROR')
@@ -1938,7 +2303,7 @@ class LampsLibrary(Library):
 		
 class MeshLibrary(Library):
 	
-	def LoadFromDae(self, daeInstance):	   
+	def LoadFromDae(self, daeInstance, bObject):	   
 		daeGeometry = None
 		if isinstance(daeInstance, collada.DaeInstance):
 			daeGeometry = self.daeLibrary.FindObject(daeInstance.url)
@@ -1965,7 +2330,7 @@ class MeshLibrary(Library):
 		bMesh = meshNode.LoadFromDae(daeGeometry)
 
 		# Add this mesh in this library, under it's real name
-		self.objects[meshID] = [bMesh,bMesh.name]
+		self.objects[meshID] = [bMesh,bMesh.name, meshNode]
 		return bMesh
 	
 	def SaveToDae(self, id):
@@ -1973,7 +2338,7 @@ class MeshLibrary(Library):
 		
 class MaterialsLibrary(Library):
 	
-	def LoadFromDae(self, daeInstance): 	   
+	def LoadFromDae(self, daeInstance, bObject): 	   
 		daeMaterial = self.daeLibrary.FindObject(daeInstance.target)
 		if daeMaterial is None:
 			Debug.Debug('MaterialLibrary: Object with this TARGET:%s does not exist'%(daeInstance.target),'ERROR')
@@ -1994,7 +2359,7 @@ class MaterialsLibrary(Library):
 
 class TexturesLibrary(Library):
 	
-	def LoadFromDae(self, daeImage):		
+	def LoadFromDae(self, daeImage, bObject):		
 		if daeImage is None:
 			Debug.Debug('TexturesLibrary: Object with this TARGET:%s does not exist'%(daeImage),'ERROR')
 			return
@@ -2014,7 +2379,7 @@ class TexturesLibrary(Library):
 		
 class AnimationsLibrary(Library):
 	
-	def LoadFromDae(self, animationName):
+	def LoadFromDae(self, animationName, bObject):
 		daeAnimation = self.daeLibrary.FindObject(animationName)
 		if animation is None:
 			return;
@@ -2038,7 +2403,7 @@ class AnimationsLibrary(Library):
 
 class ControllersLibrary(Library):
 	
-	def LoadFromDae(self, daeInstance):
+	def LoadFromDae(self, daeInstance, bObject):
 		daeController = self.daeLibrary.FindObject(daeInstance.url)
 		if daeController is None:
 			Debug.Debug('ControllersLibrary: Object with this TARGET:%s does not exist'%(daeInstance.target),'ERROR')
@@ -2047,7 +2412,7 @@ class ControllersLibrary(Library):
 		controllerName = daeController.name
 		
 		controller = Controller(self.document)
-		bMesh = controller.LoadFromDae(daeController, daeInstance)
+		bMesh = controller.LoadFromDae(daeController, daeInstance, bObject)
 		
 		# Add this mesh in this library, under it's real name
 		self.objects[controllerID] = [bMesh, bMesh.name]

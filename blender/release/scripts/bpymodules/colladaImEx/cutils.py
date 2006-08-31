@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.91
+# Illusoft Collada 1.4 plugin for Blender version 0.3.94
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -200,13 +200,19 @@ def AddVec3( vector1, vector2 ):
 def ToMatrix4( matrixElement ):
 	if matrixElement is None:
 		return None
-	data = matrixElement.split( )
-	
-	vec1 = [ float(data[0]), float(data[4]), float(data[8]), float(data[12]) ]
-	vec2 = [ float(data[1]), float(data[5]), float(data[9]), float(data[13]) ]
-	vec3 = [ float(data[2]), float(data[6]), float(data[10]), float(data[14]) ]
-	vec4 = [ float(data[3]), float(data[7]), float(data[11]), float(data[15]) ]
-	
+	if not isinstance(matrixElement,list):
+		data = matrixElement.split( )
+		
+		vec1 = [ float(data[0]), float(data[4]), float(data[8]), float(data[12]) ]
+		vec2 = [ float(data[1]), float(data[5]), float(data[9]), float(data[13]) ]
+		vec3 = [ float(data[2]), float(data[6]), float(data[10]), float(data[14]) ]
+		vec4 = [ float(data[3]), float(data[7]), float(data[11]), float(data[15]) ]
+	else:
+		vec1 = matrixElement[0:4]
+		vec2 = matrixElement[4:8]
+		vec3 = matrixElement[8:12]
+		vec4 =  matrixElement[12:16]
+			
 	return Blender.Mathutils.Matrix( vec1, vec2, vec3, vec4 )
 
 def ToMatrix3(matrixElement):
@@ -281,3 +287,16 @@ def GetValidFilename(filename):
 	filename = filename.replace( "//", "/" )	
 	filename = filename.replace( Blender.sys.sep, "/" )
 	return "file://" + filename
+
+def GetColumnVector(matrix, colNumber, rowCount):
+	if rowCount == 4:
+		return Vector(matrix[0][colNumber], matrix[1][colNumber], matrix[2][colNumber], matrix[3][colNumber])
+	else:
+		return Vector(matrix[0][colNumber], matrix[1][colNumber], matrix[2][colNumber])
+
+def PrintTransforms(matrix, name):
+	print "\n",name, "matrix\n", matrix
+	newMat = Matrix(matrix).transpose()
+	print name,"loc:   ", newMat.translationPart()
+	print name,"euler: ", newMat.toEuler()
+	print name,"scale: ", newMat.scalePart()

@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.91
+# Illusoft Collada 1.4 plugin for Blender version 0.3.94
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -566,6 +566,13 @@ class DaeSkin(DaeEntity):
 		AppendChilds(self,node,self.extras)
 		return node
 
+	def FindSource(self,input):
+		for s in self.sources:
+			if s.id == input.source:
+				return s
+		return None
+
+
 class DaeJoints(DaeEntity):
 	def __init__(self):
 		self.extras = []
@@ -582,6 +589,18 @@ class DaeJoints(DaeEntity):
 		# Add the extras
 		AppendChilds(self,node,self.extras)
 		return node
+	
+	def GetMaxOffset(self):
+		if self.inputs != []:
+			return max([i.offset for i in self.inputs])
+		else:
+			return None
+
+	def FindInput(self, semantic):
+		for i in self.inputs:
+			if i.semantic == semantic:
+				return i
+		return None
 
 class DaeVertexWeights(DaeEntity):
 	def __init__(self):
@@ -595,8 +614,8 @@ class DaeVertexWeights(DaeEntity):
 		self.extras = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.EXTRA, DaeExtra)
 		self.inputs = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INPUT, DaeInput)
 		self.count = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.COUNT)
-		self.vcount = ToFloatList(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.VCOUNT)))
-		self.v = ToFloatList(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.V)))		
+		self.vcount = ToIntList(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.VCOUNT)))
+		self.v = ToIntList(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.V)))		
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeSkin, self).SaveToXml(daeDocument)		
@@ -607,7 +626,19 @@ class DaeVertexWeights(DaeEntity):
 		AppendChilds(self,node,self.inputs)
 		# Add the extras
 		AppendChilds(self,node,self.extras)
-		return node
+		return node	
+
+	def GetMaxOffset(self):
+		if self.inputs != []:
+			return max([i.offset for i in self.inputs])
+		else:
+			return None
+
+	def FindInput(self, semantic):
+		for i in self.inputs:
+			if i.semantic == semantic:
+				return i
+		return None
 
 class DaeMorph(DaeEntity):
 	def __init__(self):
@@ -1703,7 +1734,7 @@ class DaeControllerInstance(DaeInstance):
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
 		super(DaeControllerInstance,self).LoadFromXml(daeDocument, xmlNode)
-		self.skeletons = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.SKELETON, DaeSkeleton)
+		self.skeletons = xmlUtils.GetStringArrayFromNodes(xmlNode.getElementsByTagName(DaeSyntax.SKELETON))
 		self.bindMaterials = CreateObjectsFromXml(daeDocument, xmlNode, DaeFxSyntax.BIND_MATERIAL, DaeFxBindMaterial)
 		self.object = daeDocument.controllersLibrary.FindObject(self.url)
 		
@@ -1782,21 +1813,6 @@ class DaeVisualSceneInstance(DaeInstance):
 	def SaveToXml(self, daeDocument):
 		node = super(DaeVisualSceneInstance,self).SaveToXml(daeDocument)
 		return node
-		
-	
-class DaeSkeleton(DaeEntity):
-	def __init__(self):
-		super(DaeSkeleton,self).__init__()
-		self.iControllers = []
-	
-	def LoadFromXml(self, daeDocument, xmlNode):
-		self.iControllers = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_CONTROLLER, DaeControllerInstance)
-		
-	def SaveToXml(self, daeDocument):
-		node = super(DaeSkeleton, self).SaveToXml(daeDocument)
-		AppendChilds(daeDocument, node, self.iControllers)
-		return node
-
 
 class DaeSyntax(object):
 	

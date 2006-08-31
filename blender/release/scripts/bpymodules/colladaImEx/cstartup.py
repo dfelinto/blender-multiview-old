@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.91
+# Illusoft Collada 1.4 plugin for Blender version 0.3.94
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -34,7 +34,7 @@ except NameError:
 	print "Error! Could not find Blender modules!"
 	_ERROR = True
 
-__version__ = '0.3.91'
+__version__ = '0.3.94'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)
@@ -88,13 +88,19 @@ else:
 	try:
 		import collada
 	except NameError:
-		print "Error! Could not find Collada(collada) module"
+		print "Error! Could not find Collada(collada.py) module"
 		_PERROR = True
 		
 	try:
 		import translator
 	except NameError:
-		print "Error! Could not find Collada Translator (translator) module"
+		print "Error! Could not find Collada Translator (translator.py) module"
+		_PERROR = True
+		
+	try:
+		import helperObjects
+	except NameError:
+		print "Error! Could not find Collada helperObjects (helperObjects.py) module"
 		_PERROR = True
 	
 	# Try to load extra python modules
@@ -108,7 +114,7 @@ else:
 		Blender.Draw.PupMenu("Cannot load plugin modules.")
 	else:
 		# A List with al the modules (in the scriptsdir) to be reloaded
-		modules = [cutils, xmlUtils, collada, translator]
+		modules = [cutils, xmlUtils, collada, helperObjects, translator]
 		
 
 def Main(doImp, scriptsLoc):
@@ -163,7 +169,7 @@ def Main(doImp, scriptsLoc):
 		# Hide the wait cursor in blender
 		Blender.Window.WaitCursor(0)
 	else:
-		defFilename = Blender.sys.dirname(Blender.sys.progname)+"\\"
+		defFilename = Blender.sys.dirname(Blender.sys.progname)+Blender.sys.sep
 		colladaReg = Blender.Registry.GetKey('collada',True)
 			
 		if not (colladaReg is None) and 'path' in colladaReg and Blender.sys.exists(colladaReg['path']):
