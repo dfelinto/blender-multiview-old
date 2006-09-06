@@ -84,6 +84,16 @@ makedirffmpeg::
 	    [ -d $(DIR)/debug/$$i ] || mkdir $(DIR)/debug/$$i ; \
 	done
 
+clean::
+	@[ ! -d $(DIR) ] || ( cd $(DIR) && $(RM) *.o )
+	@[ ! -d $(DIR)/debug ] || ( cd $(DIR)/debug && $(RM) *.o )
+	@for i in $(EXTRADIRS); do \
+	    [ ! -d $(DIR)/$$i/*.o ] || \
+	          ( cd $(DIR)/$$i && $(RM) *.o ) ; \
+	    [ ! -d $(DIR)/debug/$$i/*.o ] || \
+	          ( cd $(DIR)/debug/$$i && $(RM) *.o ) ; \
+	done
+
 install: makedir makedirffmpeg all debug
 	@[ -d $(NAN_FFMPEG) ] || mkdir $(NAN_FFMPEG)
 	@[ -d $(NAN_FFMPEG)/include ] || mkdir $(NAN_FFMPEG)/include
