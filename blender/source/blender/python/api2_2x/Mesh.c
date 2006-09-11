@@ -5668,13 +5668,44 @@ static PyObject *Mesh_getFromObject( BPy_Mesh * self, PyObject * args )
 		tmpmesh = tmpobj->data;
 		tmpmesh->id.us--;
 		
-		/* copies the data */
-		tmpobj->data = copy_mesh( tmpmesh );
-		G.totmesh++;
-		tmpmesh = tmpobj->data;
-
+		if (cage) {
+			/* copies the data */
+			tmpobj->data = copy_mesh( tmpmesh );
+			G.totmesh++;
+			tmpmesh = tmpobj->data;
+		
 		/* if not getting the original caged mesh, get final derived mesh */
-		if( !cage ) {
+		} else {
+			
+			/* Make a dummy mesh, saves copying */
+			tmpobj->data = copy_libblock( tmpmesh );
+			G.totmesh++;
+			tmpmesh = tmpobj->data;
+			
+			tmpmesh->totcol=
+			tmpmesh->totvert=
+			tmpmesh->totedge=
+			tmpmesh->totface=
+			tmpmesh->totselect=
+			tmpmesh->mvert=
+			tmpmesh->medge= 
+			tmpmesh->mface=
+			tmpmesh->tface=
+			tmpmesh->dface=
+			tmpmesh->dvert=
+			tmpmesh->mcol=
+			tmpmesh->msticky=
+			tmpmesh->bb=
+			tmpmesh->key=
+			tmpmesh->mat= NULL;
+			
+#ifdef WITH_VERSE
+			newmesh->vnode = NULL;
+#endif	
+			/* Finish with the dummy Mesh */
+			
+			
+			/* Write the display mesh into the dummy mesh */
 			dm = mesh_create_derived_render( tmpobj );
 			dlm = dm->convertToDispListMesh( dm, 0 );
 			displistmesh_to_mesh( dlm, tmpmesh );
