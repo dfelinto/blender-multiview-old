@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.94
+# Illusoft Collada 1.4 plugin for Blender version 0.3.102
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -514,10 +514,12 @@ class DaeCamera(DaeElement):
   
 class DaeController(DaeElement):
 	def __init__(self):
+		super(DaeController, self).__init__();
 		self.skin = None
 		self.morph = None
 		self.extras = []
 		self.asset = None
+		self.syntax = DaeSyntax.CONTROLLER
 	
 	def LoadFromXml(self, daeDocument, xmlNode):
 		super(DaeController, self).LoadFromXml(daeDocument, xmlNode)
@@ -544,6 +546,7 @@ class DaeSkin(DaeEntity):
 		self.joints = None
 		self.vertexWeights = None
 		self.extras = []
+		self.syntax = DaeSyntax.SKIN
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
 		self.source = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.SOURCE)[1:]
@@ -556,8 +559,8 @@ class DaeSkin(DaeEntity):
 	
 	def SaveToXml(self, daeDocument):
 		node = super(DaeSkin, self).SaveToXml(daeDocument)
-		SetAttribute(node, DaeSyntax.SOURCE, self.source)
-		AppendTextChild(node, DaeSyntax.BIND_SHAPE_MATRIX, ListToString(RoundList(self.bindShapeMatrix, 5)))
+		SetAttribute(node, DaeSyntax.SOURCE, "#" + self.source)
+		AppendTextChild(node, DaeSyntax.BIND_SHAPE_MATRIX, MatrixToString(self.bindShapeMatrix,ROUND))
 		AppendChilds(daeDocument, node, self.sources)
 		AppendChild(daeDocument,node,self.joints)
 		AppendChild(daeDocument,node,self.vertexWeights)
@@ -1740,7 +1743,8 @@ class DaeControllerInstance(DaeInstance):
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeControllerInstance,self).SaveToXml(daeDocument)
-		AppendChilds(daeDocument, node, self.skeletons)
+		for skeleton in self.skeletons:
+			AppendTextChild(node, DaeSyntax.SKELETON, "#"+skeleton)
 		AppendChilds(daeDocument, node, self.bindMaterials)
 		return node
 	
@@ -2563,7 +2567,7 @@ class DaeRigidBodyInstance(DaeEntity):
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeRigidBodyInstance,self).SaveToXml(daeDocument)
-		SetAttribute(node, DaeSyntax.BODY, self.body.sid)
+		SetAttribute(node, DaeSyntax.BODY, StripString(self.body.sid))
 		SetAttribute(node, DaeSyntax.TARGET, StripString('#'+self.target.id))		 
 		return node
 	
@@ -2586,6 +2590,7 @@ class DaePhysicsModel(DaeElement):
 	def FindRigidBody(self, url):
 		for rigidBody in self.rigidBodies:
 			if rigidBody.sid == url:
+				
 				return rigidBody
 		return None
 

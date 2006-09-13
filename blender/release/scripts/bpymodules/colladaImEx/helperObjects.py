@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.94
+# Illusoft Collada 1.4 plugin for Blender version 0.3.102
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -45,7 +45,10 @@ class Armature(object):
 
 	def GetBlenderArmature(self):
 		return self.blenderArmature
-
+	
+	def HasBone(self, boneName):
+		return boneName in self.boneInfos
+	
 	def AddNewBone(self, boneName, parentBoneName, daeNode):
 		# Create a new Editbone.
 		editBone = Blender.Armature.Editbone()
@@ -65,7 +68,7 @@ class Armature(object):
 			parentBoneInfo = self.boneInfos[parentBoneName]
 			parentBoneInfo.childs[boneName] = boneInfo
 			editBone.parent = self.GetBone(parentBoneName)
-			boneInfo.SetConnected()
+			##boneInfo.SetConnected()
 		else:
 			self.rootBoneInfos[boneName] = boneInfo
 		
@@ -78,7 +81,7 @@ class Armature(object):
 			self.GetBlenderArmature().update()
 	
 	def GetBone(self, boneName):
-		if boneName is None:
+		if boneName is None or not (boneName in self.blenderArmature.bones.keys()):
 			return None
 		else:
 			return self.blenderArmature.bones[boneName]
@@ -86,6 +89,9 @@ class Armature(object):
 	# Get the location of the armature (VECTOR)
 	def GetLocation(self):
 		return Vector(self.armatureBObject.loc).resize4D()
+	
+	def GetTransformation(self):
+		return self.armatureBObject.matrix
 
 	def GetBoneInfo(self, boneName):
 		if boneName is None:
@@ -153,12 +159,18 @@ class BoneInfo(object):
 		if len(tailLocVector) == 4:
 			tailLocVector.resize3D()
 		self.GetBone().tail = tailLocVector
-		
+	
+	def GetTail(self):
+		return self.GetBone().tail
+
 	def SetHead(self, headLocVector):
 		if len(headLocVector) == 4:
 			headLocVector.resize3D()
 		self.GetBone().head = headLocVector
 	
+	def GetHead(self):
+		return self.GetBone().head
+
 	def SetConnected(self):		
 		self.GetBone().options = Blender.Armature.CONNECTED
 		
@@ -168,11 +180,15 @@ class BoneInfo(object):
 	def IsRoot(self):
 		return self.parent is None
 
+	def GetTailName(self):
+		return self.daeNode.name
+
 	def GetJointName(self):
-		if not self.parent is None:
-			return self.parent.name
-		else:
-			return self.armature.name
+		return self.name
+##		if not self.parent is None:
+##			return self.parent.name
+##		else:
+##			return self.armature.name
 
 class AnimationInfo(object):
 	_animations = dict()
