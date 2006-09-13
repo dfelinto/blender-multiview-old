@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.102
+# Illusoft Collada 1.4 plugin for Blender version 0.3.104
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -664,7 +664,7 @@ class DaeImage(DaeElement):
 		self.height = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.HEIGHT)
 		self.width = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.WIDTH)
 		self.depth = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.DEPTH)
-		self.initFrom = xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.INIT_FROM))	
+		self.initFrom = str(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.INIT_FROM)))
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeImage, self).SaveToXml(daeDocument)

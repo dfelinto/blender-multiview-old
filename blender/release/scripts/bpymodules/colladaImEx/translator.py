@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.102
+# Illusoft Collada 1.4 plugin for Blender version 0.3.104
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -542,7 +542,7 @@ class Controller(object):
 		# Get the jointName for this bone.
 		jointName = boneInfo.GetJointName()
 
-##		headJointName = boneInfo.name
+		##		headJointName = boneInfo.name
 ##		tailJointName = 
 		
 ##		print "bone:" , boneName, "- headJoint:", jointName, "- tailJoint:", boneInfo.GetTailName(), "- isEnd:", boneInfo.IsEnd()
@@ -563,14 +563,18 @@ class Controller(object):
 		nullVec = Vector().resize4D()
 		
 		# Calculate the position of the head
-		headVec = self.document.CalcVector(headMatrix * nullVec).resize4D() - armatureLocation
+		headVec = self.document.CalcVector(headMatrix * nullVec).resize4D() ##- armatureLocation
+		headVec = Matrix(armature.GetTransformation()).transpose().invert() * headVec
 		# Set the default value for the tail.
 		tailVec = headVec + Vector(0,0,1,1)
 		# If this bone has a Tail joint, calculate the position of the tail.
 		if not boneInfo.IsEnd():
-			tailVec = self.document.CalcVector(tailMatrix * nullVec).resize4D() - armatureLocation	
+			tailVec = self.document.CalcVector(tailMatrix * nullVec).resize4D() ##- armatureLocation	
+			tailVec = Matrix(armature.GetTransformation()).transpose().invert() * tailVec
 		else:
-			pass#PrintTransforms(headMatrix, jointName)
+			parentBone = boneInfo.parent.GetBone()
+			tailVec =  2 * headVec - Vector(parentBone.head).resize4D()
+##			pass#PrintTransforms(headMatrix, jointName)
 			##tailVec = (headMatrix * headVec)-armatureLocation
 			##print jointName, headVec, headMatrix
 			##print headVec, boneInfo.GetBone().tail - boneInfo.GetBone().head
@@ -587,7 +591,7 @@ class Controller(object):
 ##			headVec -= Vector(0,0,-0.1,1)
 		
 		# Set the head and tail location.
-		if not boneInfo.IsEnd():
+##		if not boneInfo.IsEnd():
 			##PrintTransforms(self.document.CalcMatrix(tailMatrix) * Matrix(armature.GetTransformation()).invert(), tailJointName)
 ##			PrintTransforms(self.document.CalcMatrix(tailMatrix), tailJointName)
 			##boneInfo.GetBone().matrix = self.document.CalcMatrix(tailMatrix).transpose() * Matrix(armature.GetTransformation()).invert()
@@ -598,8 +602,8 @@ class Controller(object):
 ##			print headVec
 ##			print tailVec
 ##			print
-			boneInfo.SetHead(headVec)
-			boneInfo.SetTail(tailVec)
+		boneInfo.SetHead(headVec)
+		boneInfo.SetTail(tailVec)
 				
 			
 		
@@ -626,9 +630,9 @@ class Controller(object):
 		E = parentBindI * bindMatrixBlender
 
 		deltaBlender = Matrix()
-		if jointName != boneName:
+##		if jointName != boneName:
 			# calculate the difference between the two transforms
-			deltaBlender = Matrix(E).invert() * F
+		deltaBlender = Matrix(E).invert() * F
 		deltaBlenderT = Matrix(deltaBlender).transpose()
 		
 		# Set the transform
@@ -717,7 +721,7 @@ class Controller(object):
 			bPose = armatureObject.getPose()
 			# Loop trough each Root bone. Those bones will position their childs.
 			for rootBoneName in armature.rootBoneInfos:
-				pass#self.PoseBone(rootBoneName, armature, bindMatrices, bPose)
+				self.PoseBone(rootBoneName, armature, bindMatrices, bPose)
 			
 			# Set the bind positions of the bones (in Edit mode)
 			armature.MakeEditable(True)
@@ -1237,17 +1241,33 @@ class SceneNode(object):
 					# Set the correct head and tail positions of this bone.
 					headLoc = Vector(0,0,0)
 					if not boneInfo.parent is None: # The head of this bone starts at the end of it's parent.
-						headLoc = Matrix(self.parentNode.transformMatrix).transpose() * Vector(0,0,0,1) - armatureLoc
+##						headLoc = Matrix(self.parentNode.transformMatrix).transpose() * Vector(0,0,0,1) - armatureLoc
+						headLoc = Matrix(self.parentNode.transformMatrix).transpose() * Vector(0,0,0,1)
 						# Check if the head of this bone is at the same position as the tail of it's parent.
 						if (headLoc.resize3D() - boneInfo.parent.GetTail()).length < 0.001:
 							boneInfo.SetConnected()
 					
 					# Get the location of this node.
 					nodeLoc = Matrix(self.transformMatrix).transpose() * Vector(0,0,0,1)
-					tailLoc = (nodeLoc - armatureLoc).resize3D()
-					if headLoc == tailLoc:
-						tailLoc += Vector(0,0,0.001)
+##					tailLoc = (nodeLoc - armatureLoc).resize3D()
+					if headLoc == nodeLoc:
+						nodeLoc += Vector(0,0,0.001)
+					tailLoc = Matrix(self.armature.GetTransformation()).transpose().invert() * nodeLoc.resize4D()
 					
+					
+##					print boneName
+##					print "headLoc PRE" ,headLoc
+					# Undo the armature transformation
+					if not boneInfo.parent is None:
+						headLoc = Matrix(self.armature.GetTransformation()).transpose().invert() * headLoc.resize4D()
+					
+##					print "headLoc POST", headLoc
+##					PrintTransforms(Matrix(self.armature.GetTransformation()).transpose().invert(),"armature")
+##					print "invert origin", Matrix(self.armature.GetTransformation()).transpose().invert() * Vector(0,0,0,1)
+##					print "nodeLoc PRE:",nodeLoc
+##					print "tailLoc POST:", tailLoc
+					
+##					print
 					# Set the location of the tail to the difference between the NodeLoc and armatureLoc
 					boneInfo.SetHead(headLoc)
 					boneInfo.SetTail(tailLoc)
@@ -2082,7 +2102,6 @@ class TextureNode(object):
 				filename = daeImage.initFrom
 			elif Blender.sys.exists(self.document.filePath + daeImage.initFrom):
 				filename = self.document.filePath + daeImage.initFrom
-		
 		
 		if filename <> '':
 			bTexture.setType('Image')			 
