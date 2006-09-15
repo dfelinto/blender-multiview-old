@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.104
+# Illusoft Collada 1.4 plugin for Blender version 0.3.108
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -406,7 +406,8 @@ class DaeContributor(DaeEntity):
 		AppendTextChild(node, DaeSyntax.AUTHORING_TOOL, self.authoringTool)
 		AppendTextChild(node, DaeSyntax.COMMENTS, self.comments)
 		AppendTextChild(node, DaeSyntax.COPYRIGHT, self.copyright)
-		AppendTextChild(node, DaeSyntax.SOURCE_DATA, self.sourceData)
+		sourceDataEncoded = self.sourceData.replace(" ","%20")
+		AppendTextChild(node, DaeSyntax.SOURCE_DATA, sourceDataEncoded)
 		return node
 		
 		
@@ -580,13 +581,14 @@ class DaeJoints(DaeEntity):
 	def __init__(self):
 		self.extras = []
 		self.inputs = []
+		self.syntax = DaeSyntax.JOINTS
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
 		self.extras = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.EXTRA, DaeExtra)
 		self.inputs = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INPUT, DaeInput)
 		
 	def SaveToXml(self, daeDocument):
-		node = super(DaeSkin, self).SaveToXml(daeDocument)		
+		node = super(DaeJoints, self).SaveToXml(daeDocument)		
 		# Add the inputs
 		AppendChilds(self,node,self.inputs)
 		# Add the extras
@@ -610,8 +612,9 @@ class DaeVertexWeights(DaeEntity):
 		self.extras = []
 		self.inputs = []
 		self.count = 0
-		self.v = None
-		self.vcount = None
+		self.v = []
+		self.vcount = []
+		self.syntax = DaeSyntax.VERTEX_WEIGHTS
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
 		self.extras = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.EXTRA, DaeExtra)
@@ -621,12 +624,13 @@ class DaeVertexWeights(DaeEntity):
 		self.v = ToIntList(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.V)))		
 		
 	def SaveToXml(self, daeDocument):
-		node = super(DaeSkin, self).SaveToXml(daeDocument)		
+		node = super(DaeVertexWeights, self).SaveToXml(daeDocument)		
 		SetAttribute(node, DaeSyntax.COUNT, self.count)
-		AppendTextChild(node, DaeSyntax.VCOUNT, ListToString(self.vcount))
-		AppendTextChild(node, DaeSyntax.V, ListToString(self.v))
 		# Add the inputs
 		AppendChilds(self,node,self.inputs)
+		AppendTextChild(node, DaeSyntax.VCOUNT, ListToString(self.vcount))
+		AppendTextChild(node, DaeSyntax.V, ListToString(self.v))
+		
 		# Add the extras
 		AppendChilds(self,node,self.extras)
 		return node	
@@ -1182,9 +1186,12 @@ class DaeNode(DaeElement):
 
 	def SaveToXml(self, daeDocument):
 		node = super(DaeNode, self).SaveToXml(daeDocument)
-		SetAttribute(node, DaeSyntax.SID, self.sid)
 		if self.type == DaeSyntax.TYPE_JOINT:
-			SetAttribute(node, DaeSyntax.TYPE, DaeNode.GetType(self.type))
+			SetAttribute(node, DaeSyntax.TYPE, self.type)##DaeNode.GetType(self.type))
+		SetAttribute(node, DaeSyntax.SID, self.sid)
+		
+		
+		
 		
 		# Add the layers
 		SetAttribute(node, DaeSyntax.LAYER, ListToString(self.layer))
@@ -1197,7 +1204,8 @@ class DaeNode(DaeElement):
 				AppendTextChild(node,i[0],val)
 			else:
 				orgval = val
-				val = ListToString(RoundList(val, 5))
+##				val = ListToString(RoundList(val, 5))
+				val = ListToString(val, ROUND)
 				if i[0] == DaeSyntax.SCALE:
 					##AppendTextChild(node,i[0],val,"1.0 1.0 1.0")
 					SetAttribute(AppendTextChild(node,i[0],val,None), DaeSyntax.SID, DaeSyntax.SCALE)
@@ -2013,6 +2021,9 @@ class DaeSyntax(object):
 	VCOUNT = 'vcount'
 	V = 'v'
 	
+	IDREF = 'IDREF'
+	FLOAT = 'float'
+	
 class DaeFxBindMaterial(DaeEntity):
 	def __init__(self):
 		super(DaeFxBindMaterial, self).__init__()
@@ -2183,7 +2194,7 @@ class DaeFxTechnique(DaeEntity):
 		super(DaeFxTechnique, self).__init__()
 		self.syntax = DaeFxSyntax.TECHNIQUE
 		self.shader = DaeFxShadeConstant()
-		self.sid = ''
+		self.sid = 'blender'
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
 		# TODO:  Collada API: add asset and extra?
@@ -2707,14 +2718,19 @@ class DaeRigidBody(DaeEntity):
 		
 		def SaveToXml(self, daeDocument):
 			node = super(DaeRigidBody.DaeTechniqueCommon,self).SaveToXml(daeDocument)
-			AppendChild(daeDocument,node,self.iPhysicsMaterial)
-			AppendChild(daeDocument,node,self.physicsMaterial)
-			shapes = Element(DaePhysicsSyntax.SHAPE)
-			AppendChilds(daeDocument, shapes, self.shapes)
-			node.appendChild(shapes)
 			AppendTextChild(node, DaePhysicsSyntax.DYNAMIC, self.dynamic, None)
 			AppendTextChild(node, DaePhysicsSyntax.MASS, self.mass, None)
 			AppendTextChild(node, DaePhysicsSyntax.INERTIA, self.inertia, None)
+			AppendChild(daeDocument,node,self.iPhysicsMaterial)
+			AppendChild(daeDocument,node,self.physicsMaterial)			
+			shapes = Element(DaePhysicsSyntax.SHAPE)
+			AppendChilds(daeDocument, shapes, self.shapes)
+			node.appendChild(shapes)
+
+			
+			
+			
+			
 			return node
 		
 		def GetPhysicsMaterial(self):
@@ -2983,9 +2999,9 @@ def AppendTextInChild(xmlNode, object):
 		text.data = object.isoformat()##xmlUtils.ToDateTime(object)
 	elif type(object) == list:
 		if len(object) == 0: return
-		if object[0] is not None and type(object[0]) == float:
-			object = RoundList(object, ROUND)
-		text.data = ListToString(object)
+##		if object[0] is not None and type(object[0]) == float:
+##			object = RoundList(object, ROUND)
+		text.data = ListToString(object,ROUND)
 	elif type(object) == float:
 		text.data = round(object, ROUND)
 	elif type(object) == bool:

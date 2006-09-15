@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.104
+# Illusoft Collada 1.4 plugin for Blender version 0.3.108
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -262,15 +262,24 @@ def MatrixToString(mat, nDigits):
 			result += str(round(i, nDigits))+' '
 		
 	return result+'\n'
+
+def MatrixToList(mat):
+	result = []
+	for vec in mat:
+		result.extend(list(vec))
+	return result
 			
 def RoundList(lst, nDigits):
 	result = []
 	for i in lst:
+		val = round(i, nDigits)
+		if val < (1.0 / 10**nDigits):
+			val = 0
 		result.append(round(i, nDigits))
 	return result
 		
 
-def ListToString(lst):
+def ListToString(lst, nDigits = 5):
 	val  = ''
 	if lst is None:
 		return val
@@ -278,10 +287,13 @@ def ListToString(lst):
 		for i in lst:
 			if type(i) == list:
 				val += ListToString(i)+'\n'
+			elif isinstance(i, float):
+				f = '%.'+str(nDigits)+'f '
+				val += f % i
 			else:
 				val += str(i)+' '
 		return val[:-1]
-	
+
 def GetValidFilename(filename):
 	filename = Blender.sys.expandpath( filename )
 	filename = filename.replace( "//", "/" )	

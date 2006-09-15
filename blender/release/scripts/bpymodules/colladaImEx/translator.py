@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.104
+# Illusoft Collada 1.4 plugin for Blender version 0.3.108
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -445,11 +445,12 @@ class SceneGraph(object):
 			daeNode = nodeResult[0]
 			daeVisualScene.nodes.append(daeNode)
 			if exportPhysics:
-				daeInstancePhysicsModel = nodeResult[1] 			   
-				daePhysicsScene.iPhysicsModels.append(daeInstancePhysicsModel)
+				daeInstancePhysicsModel = nodeResult[1]
+				if not daeInstancePhysicsModel is None:
+					daePhysicsScene.iPhysicsModels.append(daeInstancePhysicsModel)
 			
 		self.document.colladaDocument.visualScenesLibrary.AddItem(daeVisualScene)
-		if exportPhysics and len(daePhysicsScene.iPhysicsModels) > 0:			
+		if exportPhysics and len(daePhysicsScene.iPhysicsModels) > 0:
 			self.document.colladaDocument.physicsScenesLibrary.AddItem(daePhysicsScene)
 		else:
 			daePhysicsScene = None
@@ -554,7 +555,7 @@ class Controller(object):
 		# If there is a tail joint, get the BindMatrix for that joint.
 		
 		tailMatrix = bindMatrices[tailJointName]
-		
+##		PrintTransforms(headMatrix, boneName)
 ##		if not boneInfo.IsEnd():
 ##			tailMatrix = bindMatrices[tailJointName]
 		# Get the location of the armature Object.
@@ -621,11 +622,12 @@ class Controller(object):
 		jointName = boneInfo.GetJointName()
 		bindMatrixCollada = bindMatrices[jointName]
 		bindMatrixBlender = self.document.CalcMatrix(bindMatrixCollada)
+##		PrintTransforms(bindMatrixBlender, "bind "+boneName)
 		bindMatrixBlenderI = Matrix(bindMatrixBlender).invert()
 		
 		# calculate the local transform for the current position
 		F = boneInfo.localTransformMatrix
-		
+##		PrintTransforms(F, "local transform");
 		# calculate the transform in bindmode relative to its parent bind pose.
 		E = parentBindI * bindMatrixBlender
 
@@ -633,6 +635,7 @@ class Controller(object):
 ##		if jointName != boneName:
 			# calculate the difference between the two transforms
 		deltaBlender = Matrix(E).invert() * F
+##		PrintTransforms(deltaBlender, "delta")
 		deltaBlenderT = Matrix(deltaBlender).transpose()
 		
 		# Set the transform
@@ -835,7 +838,7 @@ class Controller(object):
 		daeSkin.source = bMesh.name
 		
 		# Set the bindshapematrix
-		daeSkin.bindShapeMatrix = bMeshObject.getMatrix('localspace').transpose()
+		daeSkin.bindShapeMatrix = bMeshObject.matrix##bMeshObject.getMatrix('localspace').transpose()
 		
 		bArmatureObject = bModifier[Blender.Modifier.Settings.OBJECT]
 		bArmature = bArmatureObject.data
@@ -853,11 +856,17 @@ class Controller(object):
 		jointSourceArray.id = self.document.CreateID(jointSource.id, "-array")
 		jointSource.techniqueCommon.accessor = jointAccessor = collada.DaeAccessor()		
 		jointAccessor.AddParam("JOINT",collada.DaeSyntax.IDREF)
+		jointAccessor.source = jointSource.id
 		daeSkin.sources.append(jointSource)
 		# And the input for the joints
 		jointInput = collada.DaeInput()
 		jointInput.semantic = "JOINT"
 		jointInput.source = jointSource.id
+		jointInput.offset = 0
+		
+		jointInput2 = collada.DaeInput()
+		jointInput2.semantic = "JOINT"
+		jointInput2.source = jointSource.id
 		
 		
 		# Create the source for the weights
@@ -868,31 +877,78 @@ class Controller(object):
 		weightSourceArray.id = self.document.CreateID(weightSource.id, "-array")
 		weightSource.techniqueCommon.accessor = weightAccessor = collada.DaeAccessor()		
 		weightAccessor.AddParam("WEIGHT","float")
+		weightAccessor.source = weightSource.id
 		daeSkin.sources.append(weightSource)
 		# And the input for the weights
 		weightInput = collada.DaeInput()
 		weightInput.semantic = "WEIGHT"
 		weightInput.source = weightSource.id
+		weightInput.offset = 1
 		
-		daeSkin.joints.inputs.append(jointInput)
+		daeSkin.joints.inputs.append(jointInput2)
 		daeSkin.vertexWeights.inputs.append(jointInput)
 		daeSkin.vertexWeights.inputs.append(weightInput)
+		
+		poseSource = collada.DaeSource()
+		poseSource.id = self.document.CreateID(daeController.id,"-poses")
+		poseSource.techniqueCommon = collada.DaeSource.DaeTechniqueCommon()
+		poseSource.source = poseSourceArray = collada.DaeFloatArray()
+		poseSourceArray.id = self.document.CreateID(poseSource.id,"-array")
+		poseSource.techniqueCommon.accessor = poseAccessor = collada.DaeAccessor()
+		poseAccessor.AddParam("","float4x4")
+		poseAccessor.source = poseSource.id
+		daeSkin.sources.append(poseSource)
+		# Add the input for the poses
+		poseInput = collada.DaeInput()
+		poseInput.semantic = "INV_BIND_MATRIX"
+		poseInput.source = poseSource.id
+		
+		# Add this input to the joints
+		daeSkin.joints.inputs.append(poseInput)
+		
+		
+		# Get all vertextGroups
+		vGroups = dict()
+		for vertexGroupName in bMesh.getVertGroupNames():
+			vwsdict = vGroups[vertexGroupName] = dict()
+			vws = bMesh.getVertsFromGroup(vertexGroupName,True)
+			for vw in vws:
+				vwsdict[vw[0]] = vw[1]
 		
 		# Loop through each vertex group.
 		for vertexGroupName in bMesh.getVertGroupNames():
 			# Check if this vertexgroup has the same name as a bone in the armature.
 			if vertexGroupName in bArmature.bones.keys():
-				# Check if this bone is the last one
-				##if bArmature.bones[vertexGroupName].hasChildren():
 				jointAccessor.count += 1
 				jointSourceArray.data.append(vertexGroupName)
 				# Get the vertices in this vertexGroup
 				verts = bMesh.getVertsFromGroup(vertexGroupName)
+				
+				# for now just add the Identiy matrix for each joint
+##				print
+##				PrintTransforms(Matrix(bArmature.bones[vertexGroupName].matrix['ARMATURESPACE']).transpose().invert(), vertexGroupName)
+				bindMatrix = Matrix(bArmature.bones[vertexGroupName].matrix['ARMATURESPACE']).transpose()
+				bindMatrix =Matrix(bArmatureObject.getMatrix('localspace')).transpose() * bindMatrix
+				invBindMatrix = Matrix(bindMatrix).invert()
+				poseSourceArray.data.extend(MatrixToList(invBindMatrix))
 				for vert in verts:
 					weightAccessor.count += 1
-##				print vertexGroupName, verts
-		
-		
+
+		weightIndex = 0;
+		for vert in bMesh.verts:
+			jointCount = 0
+			for vGroup in vGroups:
+				if vert.index in vGroups[vGroup]:
+					jointCount += 1
+					daeSkin.vertexWeights.v.append(jointSourceArray.data.index(vGroup))
+					daeSkin.vertexWeights.v.append(weightIndex)
+					weightSourceArray.data.append(vGroups[vGroup][vert.index])
+					weightIndex += 1
+			if jointCount > 0:
+				daeSkin.vertexWeights.count += 1
+				daeSkin.vertexWeights.vcount.append(jointCount)
+				
+				
 		self.document.colladaDocument.controllersLibrary.AddItem(daeController)
 		return daeController
 
@@ -1190,8 +1246,8 @@ class SceneNode(object):
 				mat = mat*m
 				
 			elif type == collada.DaeSyntax.MATRIX:
-				mat = mat * data * self.document.tMatOLD
-
+				mat = mat * self.document.CalcMatrix(data)## * self.document.tMatOLD
+			
 		self.localTransformMatrix = Matrix(mat)
 		self.transformMatrix = mat
 		if isinstance(self.parentNode, SceneNode):
@@ -1239,18 +1295,20 @@ class SceneNode(object):
 					armatureLoc = self.armature.GetLocation()
 					
 					# Set the correct head and tail positions of this bone.
-					headLoc = Vector(0,0,0)
+					headLoc = Vector(0,0,0,1)
 					if not boneInfo.parent is None: # The head of this bone starts at the end of it's parent.
 ##						headLoc = Matrix(self.parentNode.transformMatrix).transpose() * Vector(0,0,0,1) - armatureLoc
 						headLoc = Matrix(self.parentNode.transformMatrix).transpose() * Vector(0,0,0,1)
 						# Check if the head of this bone is at the same position as the tail of it's parent.
-						if (headLoc.resize3D() - boneInfo.parent.GetTail()).length < 0.001:
-							boneInfo.SetConnected()
+						
 					
 					# Get the location of this node.
 					nodeLoc = Matrix(self.transformMatrix).transpose() * Vector(0,0,0,1)
 ##					tailLoc = (nodeLoc - armatureLoc).resize3D()
 					if headLoc == nodeLoc:
+						print "zero bone:", boneName
+					##print headLoc, nodeLoc
+##					if (headLoc - nodeLoc).length < 0.001:
 						nodeLoc += Vector(0,0,0.001)
 					tailLoc = Matrix(self.armature.GetTransformation()).transpose().invert() * nodeLoc.resize4D()
 					
@@ -1260,6 +1318,8 @@ class SceneNode(object):
 					# Undo the armature transformation
 					if not boneInfo.parent is None:
 						headLoc = Matrix(self.armature.GetTransformation()).transpose().invert() * headLoc.resize4D()
+						if (Vector(headLoc).resize3D() - boneInfo.parent.GetTail()).length < 0.001:
+							boneInfo.SetConnected()
 					
 ##					print "headLoc POST", headLoc
 ##					PrintTransforms(Matrix(self.armature.GetTransformation()).transpose().invert(),"armature")
@@ -1467,22 +1527,24 @@ class SceneNode(object):
 		daeNode.id = daeNode.name = self.document.CreateID(bNode.name,'-Node')# +'-node'
 		
 		# Get the transformations
+		mat = bNode.getMatrix('localspace')
 		if bakeMatrices :
-			mat = Blender.Mathutils.CopyMat(bNode.matrix).transpose()
+			mat = Matrix(mat).transpose()
 			daeNode.transforms.append([collada.DaeSyntax.MATRIX, mat])
-		else:
-			daeNode.transforms.append([collada.DaeSyntax.TRANSLATE, bNode.getLocation()])
+		else:			
+			loc = mat.translationPart()
+			daeNode.transforms.append([collada.DaeSyntax.TRANSLATE, loc])
 			
-			euler = bNode.getEuler()
-			rotxVec = [1,0,0,euler.x*radianToAngle]
-			rotyVec = [0,1,0,euler.y*radianToAngle]
-			rotzVec = [0,0,1,euler.z*radianToAngle]
-			
+			euler = mat.toEuler()
+			rotxVec = [1,0,0,euler.x]
+			rotyVec = [0,1,0,euler.y]
+			rotzVec = [0,0,1,euler.z]
 			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotzVec])
 			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
 			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
 			
-			daeNode.transforms.append([collada.DaeSyntax.SCALE, bNode.getSize()])
+			scale = mat.scalePart()
+			daeNode.transforms.append([collada.DaeSyntax.SCALE, scale])
 			
 		# Get the instance
 		type = bNode.getType()
@@ -1536,7 +1598,10 @@ class SceneNode(object):
 			instance.object = daeLight
 			daeNode.iLights.append(instance)
 		elif type == 'Armature':
-			pass
+			daeNode.type = collada.DaeSyntax.TYPE_JOINT
+			armatureNode = ArmatureNode(self.document)
+			daeArmature = armatureNode.SaveToDae(bNode.getData(),bNode.getPose())
+			daeNode.nodes.extend(daeArmature)
 		
 		# Check if the object has an IPO curve. if so, export animation.
 		if not (bNode.ipo is None):
@@ -1545,7 +1610,7 @@ class SceneNode(object):
 			animation.SaveToDae(ipo, daeNode)
 		
 		# Export layer information.
-		daeNode.layer = bNode.layers
+		daeNode.layer = ['L'+str(layer) for layer in bNode.layers]
 		
 		if not exportSelection:    
 			myChildNodes = []
@@ -1557,7 +1622,6 @@ class SceneNode(object):
 				daeNode.nodes.append(sceneNode.SaveToDae(bNode,childNodes)[0])
 		
 		daePhysicsInstance = self.SavePhysicsToDae(bNode, meshID, daeNode)
-			
 		return (daeNode, daePhysicsInstance)
 	
 	def SavePhysicsToDae(self, bNode, meshID, daeNode):
@@ -1670,7 +1734,88 @@ class SceneNode(object):
 		# add the physics model to the library.
 		self.document.colladaDocument.physicsModelsLibrary.items.append(daePhysicsModel)
 		return daePhysicsModelInstance				  
+
+class ArmatureNode(object):
+	def __init__(self, document):
+		self.document = document
+		
+	def SaveToDae(self, bArmature, bPose):
+		daeNodes = []
+		# Get the root bones
+		rootBones = []
+		for boneName in bArmature.bones.keys():
+			bone = bArmature.bones[boneName]
+			if not bone.hasParent():
+				rootBones.append(bone)
+		
+##		for rootBoneName in rootBones:
+##			bone = rootBones[rootBoneName]
+##			daeNode = self.BoneToDae(bone)
+##			daeNodes.append(daeNode)
+		# Only take the first root and ignore it.
+		if len(rootBones) > 0 and not rootBones[0].children is None:
+			for childBone in rootBones[0].children:
+##				print PrintTransforms(Matrix(bPose.bones[rootBones[0].name].poseMatrix).transpose(),rootBones[0].name)
+				poseMatrix = Matrix(bPose.bones[rootBones[0].name].poseMatrix).transpose()
+				poseMatrixRotInv = poseMatrix.rotationPart().invert().resize4x4()
+##				poseMatrixNoRot = poseMatrix * poseMatrixRotInv
+				daeNodes.append(self.BoneToDae(childBone, bPose, Matrix().resize4x4(),poseMatrixRotInv))
+		
+		return daeNodes
+
+	def BoneToDae(self, bBone, bPose, parentMatrix, rootRotationInv):
+		daeNode = collada.DaeNode()
+		daeNode.id = daeNode.name = daeNode.sid = self.document.CreateID(bBone.name, '-Joint')
+		daeNode.type = collada.DaeSyntax.TYPE_JOINT
+		
+		# Get the transformations
+		##armatureMat = Matrix(bBone.matrix['ARMATURESPACE']).transpose()#.resize4x4()
+		armatureMat = Matrix(bPose.bones[bBone.name].poseMatrix).transpose()
+		
+##		PrintTransforms(armatureMat, bBone.name)
+##		print
+##		print bBone.name
+##		print armatureMat
+##		print bBone.name
+##		PrintTransforms(rootRotationInv,"rootRotInv")
+##		PrintTransforms(parentMatrix,"parentPose")
+		mat = Matrix(parentMatrix).invert() * armatureMat
+##		PrintTransforms(mat, bBone.name + " POST BEFORE ROOTTRANSFORM")
+##		mat = rootRotationInv * mat
+		
+##		PrintTransforms(mat, bBone.name + " POST")
+		mat.transpose()
+		
+		if bakeMatrices :
+			daeNode.transforms.append([collada.DaeSyntax.MATRIX, mat])
+		else:
+			translation = mat.translationPart()
+			
+			daeNode.transforms.append([collada.DaeSyntax.TRANSLATE, translation])
+			
+			euler = mat.toEuler()
+##			print euler
+			rotxVec = [1,0,0,euler.x]
+			rotyVec = [0,1,0,euler.y]
+			rotzVec = [0,0,1,euler.z]
+			
+##			print rotxVec[3], rotyVec[3], rotzVec[3]
+			
+			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotzVec])
+			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
+			daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
+			
+			scale = mat.scalePart()
+			daeNode.transforms.append([collada.DaeSyntax.SCALE, scale])
+			
+			
+		if not bBone.children is None:
+			for childBone in bBone.children:
+				daeNode.nodes.append(self.BoneToDae(childBone, bPose, armatureMat, rootRotationInv))
+		return daeNode
+		
 	
+		
 class MeshNode(object):
 	def __init__(self,document):
 		self.document = document
