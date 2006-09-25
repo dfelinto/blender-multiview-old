@@ -3783,23 +3783,6 @@ static void ntree_version_241(bNodeTree *ntree)
 					node->storage= nbd;
 				}
 			}
-			else if (node->type==CMP_NODE_QD_DOF) {
-				/* qdn: QD_DoF, might be useless here (not sure though) since version >= 242 */
-				if (node->storage==NULL) {
-					NodeQD_DoF *nqd = MEM_callocN(sizeof(NodeQD_DoF), "node QD_Dof patch");
-					nqd->algo = 2;
-					nqd->bktype = 0;
-					nqd->rotation = 0.f;
-					nqd->do_sample = 1;
-					nqd->do_aa = 0;
-					nqd->do_gamco = 0;
-					nqd->samples = 16;
-					nqd->aperture = 0.f;
-					nqd->maxblur = 0;
-					nqd->bthresh = 1.f;
-					node->storage = nqd;
-				}
-			}
 		}
 	}
 }
