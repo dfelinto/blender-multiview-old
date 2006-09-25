@@ -3783,6 +3783,23 @@ static void ntree_version_241(bNodeTree *ntree)
 					node->storage= nbd;
 				}
 			}
+			else if (node->type==CMP_NODE_QD_DOF) {
+				/* qdn: QD_DoF, might be useless here (not sure though) since version >= 242 */
+				if (node->storage==NULL) {
+					NodeQD_DoF *nqd = MEM_callocN(sizeof(NodeQD_DoF), "node QD_Dof patch");
+					nqd->algo = 2;
+					nqd->bktype = 0;
+					nqd->rotation = 0.f;
+					nqd->do_sample = 1;
+					nqd->do_aa = 0;
+					nqd->do_gamco = 0;
+					nqd->samples = 16;
+					nqd->aperture = 0.f;
+					nqd->maxblur = 0;
+					nqd->bthresh = 1.f;
+					node->storage = nqd;
+				}
+			}
 		}
 	}
 }
@@ -5588,10 +5605,33 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 	if(main->versionfile <= 242) {
 		Scene *sce;
 		Object *ob;
+		Curve *cu;
+		Nurb *nu;
+		BezTriple *bezt;
+		BPoint *bp;
+		int a;
 		
 		for(sce= main->scene.first; sce; sce= sce->id.next) {
 			if (sce->toolsettings->select_thresh == 0.0f)
 				sce->toolsettings->select_thresh= 0.01f;
+		}
+		
+		/* add default radius values to old curve points */
+		for(cu= main->curve.first; cu; cu= cu->id.next) {
+			for(nu= cu->nurb.first; nu; nu= nu->next) {
+				if (nu) {
+					if(nu->bezt) {
+						for(bezt=nu->bezt, a=0; a<nu->pntsu; a++, bezt++) {
+							bezt->radius= 1.0;
+						}
+					}
+					else if(nu->bp) {
+						for(bp=nu->bp, a=0; a<nu->pntsu*nu->pntsv; a++, bp++) {
+							bp->radius= 1.0;
+						}
+					}
+				}
+			}
 		}
 		
 		ob = main->object.first;
@@ -5635,7 +5675,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 							}
 						}
 					}
-                }
+				}
 			}
 
 			ob = ob->id.next;
