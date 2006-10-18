@@ -3413,7 +3413,7 @@ static float isfaceNoDiff(float fake[4][3])
 	if(noA1[0] == noA2[0] && noA1[1] == noA2[1] && noA1[2] == noA2[2]) normalADiff = 0.0;
 	else{
 		normalADiff = VecAngle2(noA1, noA2);
-		if(!normalADiff) normalADiff = 179;
+		//if(!normalADiff) normalADiff = 179;
 	}
 	
 	CalcNormFloat(fake[1], fake[2], fake[3], noB1);
@@ -3422,7 +3422,7 @@ static float isfaceNoDiff(float fake[4][3])
 	if(noB1[0] == noB2[0] && noB1[1] == noB2[1] && noB1[2] == noB2[2]) normalBDiff = 0.0;
 	else{
 		normalBDiff = VecAngle2(noB1, noB2);
-		if(!normalBDiff) normalBDiff = 179;
+		//if(!normalBDiff) normalBDiff = 179;
 	}
 	return (normalADiff/360) + (normalBDiff/360);
 }
