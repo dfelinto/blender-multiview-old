@@ -1239,7 +1239,7 @@ void do_global_buttons(unsigned short event)
 
 	case B_IMAGEDELETE:
 		
-		if(G.sima->image && BLI_streq(G.sima->image->id.name+2, "Render Result")==0) {r
+		if(G.sima->image && BLI_streq(G.sima->image->id.name+2, "Render Result")==0) {
 			/* Run on non render images, unlink normally */
 			G.sima->image= NULL;
 			image_changed(G.sima, 0);
