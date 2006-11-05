@@ -17,7 +17,7 @@
 
 #include <zlib.h>
 #ifndef sqrtf
-#define sqrt sqrtf
+#define sqrtf sqrt
 #endif
 
 /******************************************************************************
