@@ -1114,8 +1114,10 @@ void multires_update_levels(Mesh *me)
 	if(cr_lvl==me->mr->levels.first) {
 		/* Update deformverts */
 		free_dverts(me->mr->dverts, cr_lvl->totvert);
-		me->mr->dverts= MEM_mallocN(sizeof(MDeformVert)*me->totvert, "MDeformVert");
-		copy_dverts(me->mr->dverts, me->dvert, me->totvert);
+		if(me->dvert) {
+			me->mr->dverts= MEM_mallocN(sizeof(MDeformVert)*me->totvert, "MDeformVert");
+			copy_dverts(me->mr->dverts, me->dvert, me->totvert);
+		}
 	}
 
 	/* Prepare deltas */
