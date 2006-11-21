@@ -1101,8 +1101,13 @@ static void write_oldstyle_tface_242(WriteData *wd, Mesh *me)
 	mcol= me->mcol;
 	tf= me->tface;
 
-	for (a=0; a < me->totface; a++, mtf++, tf++, mcol+=4) {
-		memcpy(tf->col, mcol, sizeof(tf->col));
+	for (a=0; a < me->totface; a++, mtf++, tf++) {
+		if (me->mcol) {
+			memcpy(tf->col, mcol, sizeof(tf->col));
+			mcol+=4;
+		}
+		else
+			memset(tf->col, 255, sizeof(tf->col));
 		memcpy(tf->uv, mtf->uv, sizeof(tf->uv));
 
 		tf->flag= mtf->flag;
