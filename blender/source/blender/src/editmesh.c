@@ -1136,7 +1136,7 @@ void load_editMesh(void)
 		CustomData_from_em_block(&em->fdata, &me->fdata, efa->data, i);
 
 		/* no index '0' at location 3 or 4 */
-		test_index_face(mface, &me->fdata, i, efa->v4?4:3);
+		test_index_face(mface, NULL, i, efa->v4?4:3);
 
 #ifdef WITH_VERSE
 		if(efa->vface) {
