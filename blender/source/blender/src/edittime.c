@@ -429,8 +429,15 @@ void get_minmax_markers(short sel, float *first, float *last)
 		selcount= BLI_countlist(markers);
 	}
 	
-	min= ((TimeMarker *)markers->first)->frame;
-	max= ((TimeMarker *)markers->last)->frame;
+	if (markers->first && markers->last) {
+		min= ((TimeMarker *)markers->first)->frame;
+		max= ((TimeMarker *)markers->last)->frame;
+	}
+	else {
+		*first = 0.0f;
+		*last = 0.0f;
+		return;
+	}
 	
 	if (selcount > 1) {
 		for (marker= markers->first; marker; marker= marker->next) {
