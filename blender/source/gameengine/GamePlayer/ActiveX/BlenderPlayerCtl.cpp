@@ -692,7 +692,7 @@ bool CBlenderPlayerCtrl::startEngine(void)
 			
 			m_audiodevice->StopAllObjects();
 			m_rasterizer->Init();
-			m_ketsjiengine->StartEngine();
+			m_ketsjiengine->StartEngine(true);
 			
 			m_engineRunning = true;
 			updateFrameColor();

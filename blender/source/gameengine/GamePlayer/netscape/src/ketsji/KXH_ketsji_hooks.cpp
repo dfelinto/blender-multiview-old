@@ -589,7 +589,7 @@ initialize_gameengine(ketsji_engine_data* k, struct BlendFileData * active_file)
 		// Inside, the rasterizer is initialised! This
 		// requires gl calls...
 		k->rasterizer->Init();
-		k->kx_engine->StartEngine();
+		k->kx_engine->StartEngine( true );
 
 		// that's it:
 		k->kx_initialized = true;
