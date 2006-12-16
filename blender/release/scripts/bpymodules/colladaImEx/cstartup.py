@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.108
+# Illusoft Collada 1.4 plugin for Blender version 0.3.137
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -34,7 +34,7 @@ except NameError:
 	print "Error! Could not find Blender modules!"
 	_ERROR = True
 
-__version__ = '0.3.108'
+__version__ = '0.3.137'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)
@@ -219,14 +219,17 @@ toggleExportSelection = None
 toggleClearScene = None
 toggleNewScene = None
 toggleBakeMatrix = None
+toggleSampleAnimation = None
 toggleLookAt = None
 togglePhysics = None
 toggleExportCurrentScene = None
 toggleExportRelativePaths = None
 toggleUseUV = None
+toggleSampleAnimation = None
+toggleOnlyMainScene = None
 
 def LoadDefaultVals():
-	global toggleLookAt, toggleBakeMatrix, toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, toggleExportSelection, scriptsLocation, doImport, defaultFilename, fileButton, valsLoaded, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths, toggleUseUV
+	global toggleLookAt, toggleBakeMatrix, toggleSampleAnimation, toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, toggleExportSelection, scriptsLocation, doImport, defaultFilename, fileButton, valsLoaded, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths, toggleUseUV, toggleOnlyMainScene
 	
 	if valsLoaded:
 		return None
@@ -235,6 +238,7 @@ def LoadDefaultVals():
 	if not (colladaReg is None):
 		fileButton.val = colladaReg.get('path', '')
 		if doImport:
+			toggleOnlyMainScene.val = colladaReg.get('onlyMainScene', False)
 			toggleNewScene.val = colladaReg.get('newScene', False)
 			toggleClearScene.val = colladaReg.get('clearScene', False)
 		else:
@@ -246,11 +250,12 @@ def LoadDefaultVals():
 			togglePhysics.val = not colladaReg.get('usePhysics', True)
 			toggleExportCurrentScene.val = colladaReg.get('exportCurrentScene', False)
 			toggleExportRelativePaths.val = colladaReg.get('exportRelativePaths', True)
+			toggleSampleAnimation.val = colladaReg.get('sampleAnimation', False)
 			toggleUseUV.val = colladaReg.get('useUV', False)
 	valsLoaded = True
 
 def Gui():
-	global toggleLookAt, toggleBakeMatrix, toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, toggleExportSelection, scriptsLocation, doImport, defaultFilename, fileButton, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths, toggleUseUV
+	global toggleLookAt, toggleBakeMatrix, toggleSampleAnimation, toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, toggleExportSelection, scriptsLocation, doImport, defaultFilename, fileButton, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths, toggleUseUV, toggleOnlyMainScene
 	Blender.BGL.glClearColor(0.898,0.910,0.808,1) # Set BG Color1
 	Blender.BGL.glClear(Blender.BGL.GL_COLOR_BUFFER_BIT)
 	Blender.BGL.glColor3f(0.835,0.848,0.745) # BG Color 2
@@ -343,6 +348,16 @@ def Gui():
 			toggleBakeMatrixVal = 0
 			
 		toggleBakeMatrix = Blender.Draw.Toggle('Bake Matrices',11,45, yval, 150, 20, toggleBakeMatrixVal, 'Put all transformations in a single matrix')
+
+		yval = yval - 40
+		# Create Sample Anim
+		if not (toggleSampleAnimation is None):
+			toggleSampleAnimationVal = toggleSampleAnimation.val
+		else:
+			toggleSampleAnimationVal = 0
+			
+		toggleSampleAnimation = Blender.Draw.Toggle('Sample Animation',11,45, yval, 150, 20, toggleSampleAnimationVal, 'Export information for every frame of animation.')
+		
 		
 		yval = yval - 40
 		#Create Physics Option
@@ -390,7 +405,7 @@ def Gui():
 		##toggleLookAt = Blender.Draw.Toggle('Camera as Lookat',14,45, yval, 150, 20, toggleLookAtVal, 'Export the transformation of camera\'s as lookat')
 		
 		Blender.Draw.PushButton(importExportText, 12, 45+55+35+100+35, 10, 55, 20, importExportText)
-	else:
+	else: # IMPORT GUI
 		yval = yval - 50
 		# Create Import To new Scene Options
 		if not (toggleNewScene is None):
@@ -403,8 +418,28 @@ def Gui():
 		else:
 			toggleClearSceneVal = 0
 			
-		toggleNewScene = Blender.Draw.Toggle('New Scene',9,40, yval, 75, 20, toggleNewSceneVal, 'Import file into a new Scene')
-		toggleClearScene = Blender.Draw.Toggle('Clear Scene',10,40+75 + 10, yval, 75, 20, toggleClearSceneVal, 'Clear everything on the current scene')
+		if not (toggleOnlyMainScene is None):
+			toggleOnlyMainSceneVal = toggleOnlyMainScene.val
+		else:
+			toggleOnlyMainSceneVal = 0
+			
+		if toggleOnlyMainSceneVal == 0:
+			if toggleClearSceneVal == 0 and toggleNewSceneVal == 0:
+				toggleNewSceneVal = 1
+			
+		newSceneText = 'Import file into a new Scene';
+		newSceneTitle = 'New Scene'
+		clearSceneText = 'Clear everything on the current scene'
+		clearSceneTitle = 'Clear Scene'		
+		if toggleOnlyMainSceneVal == 0:
+			newSceneText = 'Import file into a new Scenes'
+			newSceneTitle = 'New Scenes'
+			clearSceneText = 'Delete all the Blender Scenes'
+			clearSceneTitle = 'Delete Scenes'
+		toggleOnlyMainScene = Blender.Draw.Toggle('Only Import Main Scene',11,40, yval, 190, 20, toggleOnlyMainSceneVal, 'Only import the main scene from Collada')
+		yval = yval - 40	
+		toggleNewScene = Blender.Draw.Toggle(newSceneTitle,9,40, yval, 90, 20, toggleNewSceneVal, newSceneText)
+		toggleClearScene = Blender.Draw.Toggle(clearSceneTitle,10,40+90 + 10, yval, 90, 20, toggleClearSceneVal, clearSceneText)
 	
 	LoadDefaultVals()
 		
@@ -413,8 +448,8 @@ def Event(evt, val):
 	pass
 		
 def ButtonEvent(evt):
-	global toggleLookAt, toggleBakeMatrix, toggleExportSelection,toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, doImport, defaultFilename, fileSelectorShown, fileButton, valsLoaded, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths, toggleUseUV
-		
+	global toggleLookAt, toggleBakeMatrix, toggleExportSelection,toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, doImport, defaultFilename, fileSelectorShown, fileButton, valsLoaded, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths, toggleUseUV, toggleSampleAnimation, toggleOnlyMainScene
+	checkImportButtons = False	
 	if evt == 1:
 		toggle = 1 - toggle
 		Blender.Draw.Redraw(1)
@@ -436,7 +471,7 @@ def ButtonEvent(evt):
 		exists = Blender.sys.exists(fileName)
 		if exists == 1 and not doImport:
 			overwrite = Blender.Draw.PupMenu( "File Already Exists, Overwrite?%t|Yes%x1|No%x0" )
-			if overwrite == 0:
+			if not overwrite == 1:
 				return False
 		elif exists != 1 and doImport:
 			Blender.Draw.PupMenu("File does not exist: %t|"+fileName)
@@ -476,6 +511,11 @@ def ButtonEvent(evt):
 			clearScene = False
 		else:
 			clearScene = bool(toggleClearScene.val)
+		
+		if toggleOnlyMainScene is None:
+			onlyMainScene = False
+		else:
+			onlyMainScene = bool(toggleOnlyMainScene.val)
 			
 		if toggleLookAt is None:
 			lookAt = False
@@ -501,6 +541,11 @@ def ButtonEvent(evt):
 			useUV = False
 		else:
 			useUV = bool(toggleUseUV.val)
+			
+		if toggleSampleAnimation is None:
+			sampleAnimation = False
+		else:
+			sampleAnimation = bool(toggleSampleAnimation.val)
 		
 		
 		d = Blender.Registry.GetKey('collada',True)
@@ -511,6 +556,7 @@ def ButtonEvent(evt):
 		if doImport:
 			d['newScene'] = newScene
 			d['clearScene'] = clearScene
+			d['onlyMainScene'] = onlyMainScene
 		else:
 			d['useTriangles'] = useTriangles
 			d['usePolygons'] = usePolygons
@@ -521,6 +567,7 @@ def ButtonEvent(evt):
 			d['exportCurrentScene'] = exportCurrentScene
 			d['exportRelativePaths'] = exportRelativePaths
 			d['useUV'] = useUV
+			d['sampleAnimation'] = sampleAnimation
 			
 		Blender.Registry.SetKey('collada',d, True)
 		
@@ -530,7 +577,7 @@ def ButtonEvent(evt):
 			importExportText = "Export" 	   
 		
 		try:
-			transl = translator.Translator(doImport,__version__,debug,fileName, useTriangles, usePolygons, bakeMatrices, exportSelection, newScene, clearScene, lookAt, usePhysics, exportCurrentScene, exportRelativePaths, useUV)
+			transl = translator.Translator(doImport,__version__,debug,fileName, useTriangles, usePolygons, bakeMatrices, exportSelection, newScene, clearScene, lookAt, usePhysics, exportCurrentScene, exportRelativePaths, useUV, sampleAnimation, onlyMainScene)
 			# Redraw al 3D windows.
 			Blender.Window.RedrawAll()	  
 			
@@ -562,8 +609,17 @@ def ButtonEvent(evt):
 	elif evt == 9: # Toggle Create new Scene
 		if toggleNewScene.val:
 			toggleClearScene.val = 0
-		Blender.Draw.Redraw(1)
+		checkImportButtons = True
 	elif evt == 10: # Toggle Clear current Scene
 		if toggleClearScene.val:
 			toggleNewScene.val = 0
+		checkImportButtons = True	
+	elif evt == 11: # Toggle Only Main Scene
+		checkImportButtons = True
+	
+	
+	if checkImportButtons:
+		if not toggleOnlyMainScene.val:
+			if not toggleClearScene.val and not toggleNewScene.val:
+				toggleNewScene.val = True
 		Blender.Draw.Redraw(1)

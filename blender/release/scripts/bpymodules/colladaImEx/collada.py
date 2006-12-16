@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.108
+# Illusoft Collada 1.4 plugin for Blender version 0.3.137
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -329,7 +329,7 @@ class DaeScene(DaeEntity):
 	def LoadFromXml(self, daeDocument, xmlNode):
 		if xmlNode is None:
 			return
-		self.iVisualScenes = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_VISUAL_SCENE, DaeVisualSceneInstance)
+		self.iVisualScene = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_VISUAL_SCENE, DaeVisualSceneInstance)
 		self.iPhysicsScenes = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_PHYSICS_SCENE, DaePhysicsSceneInstance)
 	
 	def SaveToXml(self, daeDocument):
@@ -338,11 +338,10 @@ class DaeScene(DaeEntity):
 		AppendChilds(daeDocument, node, self.iPhysicsScenes)
 		return node
 	
-	def GetVisualScenes(self):
-		result = []
-		for i in self.iVisualScenes:
-			result.append(i.object)
-		return result
+	def GetVisualScene(self):
+		if not self.iVisualScene is None:
+			return self.iVisualScene.object
+		return None
 	
 	def GetPhysicsScenes(self):
 		result = []
@@ -595,11 +594,11 @@ class DaeJoints(DaeEntity):
 		AppendChilds(self,node,self.extras)
 		return node
 	
-	def GetMaxOffset(self):
+	def GetStride(self):
 		if self.inputs != []:
-			return max([i.offset for i in self.inputs])
+			return max([i.offset for i in self.inputs])+1
 		else:
-			return None
+			return 0
 
 	def FindInput(self, semantic):
 		for i in self.inputs:
@@ -635,11 +634,11 @@ class DaeVertexWeights(DaeEntity):
 		AppendChilds(self,node,self.extras)
 		return node	
 
-	def GetMaxOffset(self):
+	def GetStride(self):
 		if self.inputs != []:
-			return max([i.offset for i in self.inputs])
+			return max([i.offset for i in self.inputs])+1
 		else:
-			return None
+			return 0
 
 	def FindInput(self, semantic):
 		for i in self.inputs:
@@ -738,6 +737,11 @@ class DaeGeometry(DaeElement):
 	def __str__(self):
 		return super(DaeGeometry,self).__str__()+' assets: %s, data: %s, extras: %s'%(self.asset, self.data, self.extras)
 	
+	def HasOnlyTriangles(self):
+		if isinstance(self.data, DaeMesh):
+			return self.data.HasOnlyTriangles()
+		return False
+	
 class DaeConvexMesh(DaeEntity):
 	def __init__(self):
 		super(DaeConvexMesh, self).__init__()
@@ -797,6 +801,13 @@ class DaeMesh(DaeEntity):
 		AppendChilds(daeDocument, node, self.primitives)
 		AppendChilds(daeDocument, node, self.extras)
 		return node
+	
+	def HasOnlyTriangles(self):
+		for primitive in self.primitives:
+			if not(isinstance(primitive, DaeTriangles)):
+				return False
+		return True
+						  
 class DaeVertices(DaeElement):
 	def __init__(self):
 		super(DaeVertices,self).__init__()
@@ -1136,7 +1147,7 @@ class DaeNode(DaeElement):
 		self.parentNode = None
 		
 		self.iVisualScenes = []
-		
+		self.extras = []
 		self.syntax = DaeSyntax.NODE
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
@@ -1178,6 +1189,8 @@ class DaeNode(DaeElement):
 		self.iLights = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_LIGHT, DaeLightInstance)
 		self.iNodes = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_NODE, DaeNodeInstance)
 		self.iVisualScenes = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_VISUAL_SCENE, DaeVisualSceneInstance)
+
+		self.extras = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.EXTRA, DaeExtra)
 
 		# Get childs nodes
 		self.nodes = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.NODE, DaeNode)
@@ -1240,6 +1253,8 @@ class DaeNode(DaeElement):
 		AppendChilds(daeDocument, node, self.iNodes)
 		AppendChilds(daeDocument, node, self.iVisualScenes)
 		
+		AppendChilds(daeDocument, node, self.extras)
+		
 		return node
 	
 	def IsJoint(self):
@@ -1261,18 +1276,28 @@ class DaeNode(DaeElement):
 class DaeTechnique(DaeEntity):
 	def __init__(self):
 		super(DaeTechnique,self).__init__()
-		self.profile = ''
+		self.profile = 'Blender'
 		self.xmlns = ''
+		self.params = [];
 		self.syntax = DaeSyntax.TECHNIQUE
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
 		self.profile = xmlNode.getAttribute(DaeSyntax.PROFILE)
 		self.xmlns = xmlNode.getAttribute(DaeSyntax.XMLNS)
+		self.params = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.PARAM, DaeParam)
+
+	def AddParam(self, name, type, value):
+		param = DaeParam()
+		param.name = name
+		param.type = type
+		param.value = value
+		self.params.append( param )
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeTechnique,self).SaveToXml(daeDocument)
 		node.setAttribute(DaeSyntax.PROFILE, self.profile)
 		SetAttribute(node, DaeSyntax.XMLNS, self.xmlns)
+		AppendChilds(daeDocument, node, self.params)				
 		return node
 	
 class DaeOptics(DaeEntity):
@@ -1482,6 +1507,7 @@ class DaeParam(DaeEntity):
 		self.semantic = None
 		self.sid = None 
 		self.type = ''	 
+		self.value = ''
 		self.syntax = DaeSyntax.PARAM
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
@@ -1489,6 +1515,7 @@ class DaeParam(DaeEntity):
 		self.sid = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.SID)
 		self.name = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.NAME)
 		self.type = xmlNode.getAttribute(DaeSyntax.TYPE)
+		self.value = xmlUtils.ReadContents(xmlNode)
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeParam,self).SaveToXml(daeDocument)
@@ -1496,6 +1523,7 @@ class DaeParam(DaeEntity):
 		SetAttribute(node, DaeSyntax.SID, self.sid)
 		SetAttribute(node, DaeSyntax.NAME, self.name)
 		node.setAttribute(DaeSyntax.TYPE, self.type)
+		AppendTextInChild(node, self.value)
 		return node
 	
 class DaeArray(DaeElement):
@@ -1586,12 +1614,12 @@ class DaePrimitive(DaeEntity):
 		SetAttribute(node, DaeSyntax.MATERIAL, StripString(self.material))
 		node.setAttribute(DaeSyntax.COUNT, str(self.count))
 		return node
-	
-	def GetMaxOffset(self):
+		
+	def GetStride(self):
 		if self.inputs != []:
-			return max([i.offset for i in self.inputs])
+			return max([i.offset for i in self.inputs])+1
 		else:
-			return None
+			return 0
 		
 	def FindInput(self, semantic):
 		for i in self.inputs:
@@ -1681,17 +1709,36 @@ class DaeTriFans(DaePrimitive):
 	def __init__(self):
 		super(DaeTriFans, self).__init__()
 		self.syntax = DaeSyntax.TRIFANS
+		self.trifans = []
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
 		super(DaeTriFans,self).LoadFromXml(daeDocument, xmlNode)
+		self.inputs = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INPUT, DaeInput)
+		self.trifans = xmlUtils.GetListFromNodes(xmlNode.getElementsByTagName(DaeSyntax.P), int)
+	
+	def SaveToXml(self, daeDocument):
+		node = super(DaeTriFans,self).SaveToXml(daeDocument)
+		AppendChilds(daeDocument, node, self.inputs)
+		xmlUtils.AppendChilds(node, DaeSyntax.P, self.trifans)
+		return node 	
 	
 class DaeTriStrips(DaePrimitive):
 	def __init__(self):
 		super(DaeTriStrips, self).__init__()
 		self.syntax = DaeSyntax.TRISTRIPS
+		self.tristrips = []
 	
 	def LoadFromXml(self, daeDocument, xmlNode):
 		super(DaeTriStrips,self).LoadFromXml(daeDocument, xmlNode)
+		self.inputs = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INPUT, DaeInput)
+		self.tristrips = xmlUtils.GetListFromNodes(xmlNode.getElementsByTagName(DaeSyntax.P), int)
+	
+	def SaveToXml(self, daeDocument):
+		node = super(DaeTriStrips,self).SaveToXml(daeDocument)
+		AppendChilds(daeDocument, node, self.inputs)
+		xmlUtils.AppendChilds(node, DaeSyntax.P, self.tristrips)
+		return node
+		
 #---instance Classes---
 class DaeInstance(DaeEntity):
 	def __init__(self):
