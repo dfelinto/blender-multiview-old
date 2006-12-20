@@ -1945,42 +1945,50 @@ class SceneNode(object):
 		daeRigidBody.id = daeRigidBody.name = daeRigidBody.sid = self.document.CreateID(daeNode.id,'-RigidBody')
 		daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
 		daeRigidBodyTechniqueCommon.dynamic = bool(rbFlags[0])
-		daeRigidBodyTechniqueCommon.mass = bNode.rbMass
+		if daeRigidBodyTechniqueCommon.dynamic:
+				daeRigidBodyTechniqueCommon.mass = bNode.rbMass
+		else:
+				daeRigidBodyTechniqueCommon.mass = 0 #not dynamic means mass == 0!
+		
 		# Check the shape of the rigid body.
-		if bNode.rbShapeBoundType == 0 and rbFlags[PhysicsNode.actor] and rbFlags[PhysicsNode.bounds]: # Box
+		if bNode.rbShapeBoundType == 0 and rbFlags[PhysicsNode.bounds]: # Box
 			shape = collada.DaeBoxShape()
 			shape.halfExtents = list(bNode.rbHalfExtents)
-		elif bNode.rbShapeBoundType == 1 and rbFlags[PhysicsNode.actor] and rbFlags[PhysicsNode.bounds]: # Sphere
+		elif bNode.rbShapeBoundType == 1  and rbFlags[PhysicsNode.bounds]: # Sphere
 			shape = collada.DaeSphereShape()
 			shape.radius = bNode.rbRadius
-		elif bNode.rbShapeBoundType == 2 and rbFlags[PhysicsNode.actor] and rbFlags[PhysicsNode.bounds]: # Cylinder
+		elif bNode.rbShapeBoundType == 2  and rbFlags[PhysicsNode.bounds]: # Cylinder
 			shape = collada.DaeCylinderShape()
 			shape.radius = [[bNode.rbRadius],[bNode.rbRadius]]
 			shape.height = bNode.rbHalfExtents[2]
-		elif bNode.rbShapeBoundType == 3 and rbFlags[PhysicsNode.actor] and rbFlags[PhysicsNode.bounds]: # Cone
+		elif bNode.rbShapeBoundType == 3  and rbFlags[PhysicsNode.bounds]: # Cone
 			shape = collada.DaeTaperedCylinderShape()
 			shape.radius1 = [[bNode.rbRadius],[bNode.rbRadius]]
 			shape.radius2 = [0 , 0]
 			shape.height = bNode.rbHalfExtents[2]
-		else: # Convex hull or # Static Triangle Mesh
-			shape = collada.DaeGeometryShape()
-			iGeometry = collada.DaeGeometryInstance()
-			if bNode.rbShapeBoundType == 5:
-				object = self.document.colladaDocument.geometriesLibrary.FindObject(daeNode.id+'-Convex')
+		else: # Convex hull or # Static Triangle Mesh for static, and # Sphere if dynamic
+			if daeRigidBodyTechniqueCommon.dynamic and not rbFlags[PhysicsNode.bounds]:
+				shape = collada.DaeSphereShape()
+				shape.radius = bNode.rbRadius
 			else:
-				object = self.document.colladaDocument.geometriesLibrary.FindObject(meshID)
-				if not object.HasOnlyTriangles(): # The geometry contains no triangles
-					pass
+				shape = collada.DaeGeometryShape()
+				iGeometry = collada.DaeGeometryInstance()
+				if bNode.rbShapeBoundType == 5:
+					object = self.document.colladaDocument.geometriesLibrary.FindObject(daeNode.id+'-Convex')
+				else:
+					object = self.document.colladaDocument.geometriesLibrary.FindObject(meshID)
+					if not object.HasOnlyTriangles(): # The geometry contains no triangles
+						pass
 					
-			if object is None:
-				object = collada.DaeGeometry()
-				object.id = object.name = self.document.CreateID(daeNode.id,'-ConvexGeom')
-				convexMesh = collada.DaeConvexMesh()
-				convexMesh.convexHullOf = meshID
-				object.data = convexMesh													
-				self.document.colladaDocument.geometriesLibrary.AddItem(object)
-			iGeometry.object = object	 
-			shape.iGeometry = iGeometry
+				if object is None:
+					object = collada.DaeGeometry()
+					object.id = object.name = self.document.CreateID(daeNode.id,'-ConvexGeom')
+					convexMesh = collada.DaeConvexMesh()
+					convexMesh.convexHullOf = meshID
+					object.data = convexMesh													
+					self.document.colladaDocument.geometriesLibrary.AddItem(object)
+				iGeometry.object = object	 
+				shape.iGeometry = iGeometry
 		
 		# Create a physics material.
 		daePhysicsMaterial = self.document.colladaDocument.physicsMaterialsLibrary.FindObject(daeNode.id+'-PxMaterial')
