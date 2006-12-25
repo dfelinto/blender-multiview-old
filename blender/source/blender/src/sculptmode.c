@@ -599,27 +599,29 @@ void set_sculpt_object(Object *ob)
 {
 	SculptSession *ss= sculpt_session();
 
-	if(ss->keyblock) {
-		Mesh *me= get_mesh(ss->active_ob);
-		if(me) {
-			mesh_to_key(me, ss->keyblock);
-			DAG_object_flush_update(G.scene, ss->active_ob, OB_RECALC_DATA);
+	if(ss) {
+		if(ss->keyblock) {
+			Mesh *me= get_mesh(ss->active_ob);
+			if(me) {
+				mesh_to_key(me, ss->keyblock);
+				DAG_object_flush_update(G.scene, ss->active_ob, OB_RECALC_DATA);
+			}
 		}
-	}
 
-	if(ob) {
-		Mesh *me= get_mesh(ob);
-		calc_vertex_users();
+		if(ob) {
+			Mesh *me= get_mesh(ob);
+			calc_vertex_users();
+			
+			/* Load in key */
+			ss->keyblock= ob_get_keyblock(ob);
+			if(ss->keyblock)
+				key_to_mesh(ss->keyblock, me);
+			
+			DAG_object_flush_update(G.scene, ob, OB_RECALC_DATA);
+		}	
 		
-		/* Load in key */
-		ss->keyblock= ob_get_keyblock(ob);
-		if(ss->keyblock)
-			key_to_mesh(ss->keyblock, me);
-		
-		DAG_object_flush_update(G.scene, ob, OB_RECALC_DATA);
-	}	
-	
-	ss->active_ob= ob;
+		ss->active_ob= ob;
+	}
 }
 
 /* ===== INTERFACE =====
