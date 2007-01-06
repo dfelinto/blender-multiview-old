@@ -1,4 +1,3 @@
-﻿# Simplified Chinese Blender i18n file
 # It's easy to translate this file to Tranditional Chinese by Word or something else
 # I'll do the translation when more msgid have been added, or you can do it by yourself
 # Copyright (C) 2003-2004 Li Jun
@@ -45,9 +44,6 @@ msgstr ""
 ###
 ###########################################################
 
-#~ msgid "Pics"
-#~ msgstr "图像"
-
 msgid "Directory/name to save rendered Pics to"
 msgstr "保存渲染的图像的路径及文件名"
 
@@ -78,9 +74,6 @@ msgstr "布景"
 #**********************************************************
 ###########################################################
 
-##~ msgid "Edge Settings |>> "
-##~ msgstr "边的设置"
-
 msgid "Edge Settings"
 msgstr "边的设置"
 
@@ -89,9 +82,6 @@ msgstr "显示边的设置"
 
 msgid "Edge"
 msgstr "边"
-
-#~ msgid "Enable Toon shading"
-#~ msgstr "使用卡通风格渲染"
 
 #**********************************************************
 
@@ -122,9 +112,6 @@ msgstr "抗锯齿"
 
 msgid "Sets oversample level to 5"
 msgstr "设置采样级别为5"
-
-#~ msgid "Sets oversample level to 8"
-#~ msgstr "设置采样级别为8"
 
 msgid "Sets oversample level to 11"
 msgstr "设置采样级别为11"
@@ -200,9 +187,6 @@ msgstr "影子"
 msgid "Enable shadow calculation"
 msgstr "允许计算影子"
 
-#~ msgid "Panorama"
-#~ msgstr "全景图"
-
 msgid "Set render size to defined size"
 msgstr "使用定义的尺寸渲染图像"
 
@@ -240,9 +224,6 @@ msgid "Enables Odd field first rendering (Default: Even field)"
 msgstr "先渲染奇数场（默认：偶数场）"
 
 #**********************************************************
-
-#~ msgid "x"
-#~ msgstr "why x"
 
 msgid "Disables time difference in field calculations"
 msgstr "在场计算中忽略时间差异"
@@ -378,41 +359,8 @@ msgstr "用此格式保存渲染的图像"
 
 #**********************************************************
 
-#~ msgid "Codec settings"
-#~ msgstr "压缩编码设置"
-
-#**********************************************************
-
-#~ msgid "Set codec settings for Quicktime Codec"
-#~ msgstr "Quicktime格式压缩编码设定"
-
-#**********************************************************
-
-#~ msgid "Codec"
-#~ msgstr "编码"
-
-#**********************************************************
-
-#~ msgid "Codec Settings |>> "
-#~ msgstr "编码设定|>>"
-
-#**********************************************************
-
-#~ msgid "Edit Codec settings for QuickTime"
-#~ msgstr "编辑Quicktime编码设定"
-
-#**********************************************************
-
-#~ msgid "Set codec settings for AVI Codec"
-#~ msgstr "AVI格式压缩编码设定"
-
-#**********************************************************
-
 msgid "Quality"
 msgstr "质量"
-
-msgid "Quality:"
-msgstr "质量:"
 
 #**********************************************************
 
@@ -2167,17 +2115,6 @@ msgid "Snap to grid:"
 msgstr "捕捉到网格"
 
 #**********************************************************
-
-#~ msgid "Grab"
-#~ msgstr "移动"
-
-#~ msgid "Move objects to grid units"
-#~ msgstr "按网格大小移动物体"
-
-#**********************************************************
-
-#~ msgid "Rotate objects to grid units"
-#~ msgstr "按网格大小旋转物体"
 
 ###########################################################
 ###  must break down the following line
@@ -9209,9 +9146,6 @@ msgstr "指定帧里的老贴图值"
 msgid "Map New:"
 msgstr "新贴图:"
 
-msgid "Specify old mapping value in frames"
-msgstr "指定帧里的老贴图值"
-
 msgid "Specify the start frame of the animation"
 msgstr "指定动画的起始帧"
 
@@ -13554,13 +13488,13 @@ msgid "Add to existing Group"
 msgstr "添加到现有的组"
 
 msgid "Add to New Group "
-msgstr "添加到新的组"
+msgstr "添加到新的组 "
 
 msgid "Add to New Group"
 msgstr "添加到新的组"
 
 msgid "Remove from all Groups "
-msgstr "从所有组内移除"
+msgstr "从所有组内移除 "
 
 msgid "Remove from all Groups"
 msgstr "从所有组内移除"
@@ -20779,9 +20713,6 @@ msgstr "变化器"
 msgid "Generators"
 msgstr "产生器"
 
-msgid "Groups"
-msgstr "组"
-
 msgid "Filters"
 msgstr "过滤器"
 
@@ -23229,9 +23160,6 @@ msgstr "播放所有轨"
 msgid "Play one track "
 msgstr "播放单轨"
 
-msgid "Volume "
-msgstr "音量"
-
 msgid "Stop "
 msgstr "停止"
 
@@ -24652,9 +24580,6 @@ msgstr "抓取"
 msgid "Airbrush"
 msgstr "喷枪"
 
-msgid "Brush"
-msgstr "笔刷"
-
 msgid "Symmetry"
 msgstr "对称"
 
@@ -24727,9 +24652,6 @@ msgstr "引导曲线"
 
 msgid "Choose Font Size:"
 msgstr "选择字体大小:"
-
-msgid "View Selected"
-msgstr "显示选择的"
 
 msgid "Collapse"
 msgstr "塌陷"
@@ -24888,9 +24810,6 @@ msgstr "标记锐角"
 msgid "Clear Sharp"
 msgstr "清除锐角"
 
-msgid "Add Multires"
-msgstr "添加多精度"
-
 msgid "Delete Multires"
 msgstr "删除多精度"
 
@@ -24931,18 +24850,6 @@ msgstr "Keyed"
 msgid "Effector"
 msgstr "受动器"
 
-msgid "Verts"
-msgstr "顶点"
-
-msgid "Edges"
-msgstr "边"
-
-msgid "Faces"
-msgstr "面"
-
-msgid "Volume "
-msgstr "容积"
-
 msgid " Verts"
 msgstr " 顶点"
 
@@ -24961,23 +24868,11 @@ msgstr "作用"
 msgid "Death"
 msgstr "死亡"
 
-msgid "Collision"
-msgstr "碰撞"
-
 msgid "First"
 msgstr "第一"
 
-msgid "Spherical"
-msgstr "球形"
-
-msgid "Vortex"
-msgstr "漩涡"
-
 msgid "Magnet"
 msgstr "磁铁"
-
-msgid "Wind"
-msgstr "风"
 
 msgid "Rotator"
 msgstr "旋转机"
@@ -25015,26 +24910,8 @@ msgstr "呈现:"
 msgid "Nothing"
 msgstr "无"
 
-msgid "Point"
-msgstr "点"
-
 msgid "Cicle"
 msgstr "圈"
-
-msgid "Cross"
-msgstr "十字"
-
-msgid "Axis"
-msgstr "轴"
-
-msgid "Object"
-msgstr "物体"
-
-msgid "Group"
-msgstr "组"
-
-msgid "Path"
-msgstr "路径"
 
 msgid " Nothing"
 msgstr " 无"
@@ -25090,26 +24967,17 @@ msgstr "结"
 msgid "Const"
 msgstr "恒量"
 
-msgid "Const"
-msgstr "恒量"
-
 msgid "Abs Length"
 msgstr "绝对长度"
 
 msgid "Absolute Time"
 msgstr "绝对时间"
 
-msgid "Physics"
-msgstr "物理"
-
 msgid "Newtonian"
 msgstr "牛顿"
 
 msgid "Global effects"
 msgstr "全局影响"
-
-msgid "Rotation"
-msgstr "旋转"
 
 msgid "Soft Body II"
 msgstr "软体II"
@@ -25164,9 +25032,6 @@ msgstr "亮度扣像"
 
 msgid "SplitViewer"
 msgstr "分离查看器"
-
-msgid "Free Unused"
-msgstr "释放未用的"
 
 msgid "Backdrop"
 msgstr "背景"
