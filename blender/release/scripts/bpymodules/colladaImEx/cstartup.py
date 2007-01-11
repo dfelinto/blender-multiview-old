@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.137
+# Illusoft Collada 1.4 plugin for Blender version 0.3.143
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -34,7 +34,7 @@ except NameError:
 	print "Error! Could not find Blender modules!"
 	_ERROR = True
 
-__version__ = '0.3.137'
+__version__ = '0.3.143'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)
@@ -356,7 +356,7 @@ def Gui():
 		else:
 			toggleSampleAnimationVal = 0
 			
-		toggleSampleAnimation = Blender.Draw.Toggle('Sample Animation',11,45, yval, 150, 20, toggleSampleAnimationVal, 'Export information for every frame of animation.')
+		toggleSampleAnimation = Blender.Draw.Toggle('Sample Animation',16,45, yval, 150, 20, toggleSampleAnimationVal, 'Export information for every frame of animation.')
 		
 		
 		yval = yval - 40
@@ -436,7 +436,7 @@ def Gui():
 			newSceneTitle = 'New Scenes'
 			clearSceneText = 'Delete all the Blender Scenes'
 			clearSceneTitle = 'Delete Scenes'
-		toggleOnlyMainScene = Blender.Draw.Toggle('Only Import Main Scene',11,40, yval, 190, 20, toggleOnlyMainSceneVal, 'Only import the main scene from Collada')
+		toggleOnlyMainScene = Blender.Draw.Toggle('Only Import Main Scene',17,40, yval, 190, 20, toggleOnlyMainSceneVal, 'Only import the main scene from Collada')
 		yval = yval - 40	
 		toggleNewScene = Blender.Draw.Toggle(newSceneTitle,9,40, yval, 90, 20, toggleNewSceneVal, newSceneText)
 		toggleClearScene = Blender.Draw.Toggle(clearSceneTitle,10,40+90 + 10, yval, 90, 20, toggleClearSceneVal, clearSceneText)
@@ -614,7 +614,7 @@ def ButtonEvent(evt):
 		if toggleClearScene.val:
 			toggleNewScene.val = 0
 		checkImportButtons = True	
-	elif evt == 11: # Toggle Only Main Scene
+	elif evt == 17: # Toggle Only Main Scene
 		checkImportButtons = True
 	
 	

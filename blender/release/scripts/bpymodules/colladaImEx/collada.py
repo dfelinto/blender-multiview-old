@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.137
+# Illusoft Collada 1.4 plugin for Blender version 0.3.143
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -1094,7 +1094,7 @@ class DaeVisualScene(DaeElement):
 	def __init__(self):
 		super(DaeVisualScene,self).__init__()
 		self.asset = None
-		self.extras = None
+		self.extras = []
 		self.nodes = []
 		self.syntax = DaeSyntax.VISUAL_SCENE		
 		
@@ -1292,6 +1292,12 @@ class DaeTechnique(DaeEntity):
 		param.type = type
 		param.value = value
 		self.params.append( param )
+		
+	def FindParam(self, name):
+		for param in self.params:
+			if param.name == name:
+				return param
+		return None
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeTechnique,self).SaveToXml(daeDocument)
@@ -2070,6 +2076,12 @@ class DaeSyntax(object):
 	
 	IDREF = 'IDREF'
 	FLOAT = 'float'
+	
+	#-- types---
+	LISTOFNAMES = 'ListOfNames'
+	LISTOFINTS = 'ListOfInts'
+	INT = 'int'
+	STRING = 'string'
 	
 class DaeFxBindMaterial(DaeEntity):
 	def __init__(self):
@@ -3093,3 +3105,25 @@ def IsVersionOk(version, curVersion):
 
 def StripString(text):
 	return text.replace(' ','_').replace('.','_')
+
+def CreateExtra(colladaInstance):
+	if isinstance(colladaInstance, DaeEntity):
+		extra = DaeExtra()
+		technique = DaeTechnique()
+		extra.techniques.append(technique)
+		technique.profile = "Blender"	
+		colladaInstance.extras.append(extra)
+		return technique
+	else:
+		print "ERROR: Cannot Add Extra Tag"
+		return DaeTechnique()
+	
+def GetExtra(colladaInstance):
+	if isinstance(colladaInstance, DaeEntity):
+		if not colladaInstance.extras is None:
+			for daeExtra in colladaInstance.extras:
+				for daeTechnique in daeExtra.techniques:
+					if daeTechnique.profile == 'Blender':
+						return daeTechnique					
+	return None
+	

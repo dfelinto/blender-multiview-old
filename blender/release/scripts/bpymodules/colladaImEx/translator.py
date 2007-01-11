@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.137
+# Illusoft Collada 1.4 plugin for Blender version 0.3.143
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -894,7 +894,7 @@ class Controller(object):
 		daeSkin.source = meshName
 		
 		# Set the bindshapematrix
-		daeSkin.bindShapeMatrix = Matrix(bMeshObject.matrix).transpose()##bMeshObject.getMatrix('localspace').transpose()
+		daeSkin.bindShapeMatrix = Matrix(bMeshObject.matrix).transpose()##bMeshObject.getMatrix('localspace').transpose()		
 		
 		bArmatureObject = bModifier[Blender.Modifier.Settings.OBJECT]
 		bArmature = bArmatureObject.data
@@ -980,19 +980,26 @@ class Controller(object):
 				# Get the vertices in this vertexGroup
 				verts = bMesh.getVertsFromGroup(vertexGroupName)
 				
-				# for now just add the Identiy matrix for each joint
 ##				print
 ##				PrintTransforms(Matrix(bArmature.bones[vertexGroupName].matrix['ARMATURESPACE']).transpose().invert(), vertexGroupName)
-				bindMatrix = Matrix(bArmature.bones[vertexGroupName].matrix['ARMATURESPACE']).transpose()
-				bindMatrix =Matrix(bArmatureObject.getMatrix('localspace')).transpose() * bindMatrix
+				#bindMatrix = Matrix(bArmature.bones[vertexGroupName].matrix['ARMATURESPACE']).transpose()
+				headPos = bArmature.bones[vertexGroupName].head["ARMATURESPACE"]
+				bindMatrix = Matrix([1,0,0,headPos.x], [0,1,0,headPos.y], [0,0,1,headPos.z],[0,0,0,1])	
+				##bindMatrix = Matrix(bMeshObject.matrix).transpose() * bindMatrix								
+				bindMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose() * bindMatrix;
+				
 				invBindMatrix = Matrix(bindMatrix).invert()
 				poseSourceArray.data.extend(MatrixToList(invBindMatrix))
 				for vert in verts:
 					weightAccessor.count += 1
 
+
+		vertJointCount = dict();
 		weightIndex = 0;
 		for vert in bMesh.verts:
 			jointCount = 0
+
+			#count up the number of joints to get an equal weight
 			for vGroup in vGroups:
 				if vert.index in vGroups[vGroup]:
 					found = False
@@ -1001,15 +1008,29 @@ class Controller(object):
 						found = True
 					except:
 						found = False
-					if found :
-						jointCount += 1					
+					if found :						
+						jointCount += 1
+						vertJointCount[vert.index] = jointCount
+						
+			#now we know how many, so make an even weight:			
+			for vGroup in vGroups:
+				if vert.index in vGroups[vGroup]:
+					found = False
+					try :
+						jointSourceArray.data.index(vGroup)
+						found = True
+					except:
+						found = False
+					if found :												
 						daeSkin.vertexWeights.v.append(jointSourceArray.data.index(vGroup))
-						daeSkin.vertexWeights.v.append(weightIndex)
-						weightSourceArray.data.append(vGroups[vGroup][vert.index])
+						daeSkin.vertexWeights.v.append(weightIndex)						
+						weightSourceArray.data.append( 1.0 / vertJointCount[vert.index])
 						weightIndex += 1
+			
+			#update the counts for this vertex
 			if jointCount > 0:
 				daeSkin.vertexWeights.count += 1
-				daeSkin.vertexWeights.vcount.append(jointCount)
+				daeSkin.vertexWeights.vcount.append(jointCount)				
 				
 				
 		self.document.colladaDocument.controllersLibrary.AddItem(daeController)
@@ -1126,10 +1147,15 @@ class Animation(object):
 			for key in quats:
 				euler = quats[key].toEuler();
 				
-				if not joint is None:		
-					bindMatrix = Matrix(joint.matrix['ARMATURESPACE']).transpose()
-					bindMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose() * bindMatrix					
-					poseMatrix = Matrix(bParentMatrix).invert() * bindMatrix
+				if not joint is None:							
+					headPos = joint.head["ARMATURESPACE"]
+					bindMatrix = Matrix([1,0,0,headPos.x], [0,1,0,headPos.y], [0,0,1,headPos.z],[0,0,0,1])
+					armMatrix = Matrix(bindMatrix);
+					if ( not joint.hasParent() ):
+						armMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose().invert();
+						armMatrix *= bindMatrix													
+
+					poseMatrix = Matrix(bParentMatrix).invert() * armMatrix	
 					
 					poseEuler = poseMatrix.toEuler()					
 					euler.x += poseEuler.x
@@ -1177,9 +1203,14 @@ class Animation(object):
 						anit[cName[-1]] = timeVal
 						
 						if not joint is None:							
-							bindMatrix = Matrix(joint.matrix['ARMATURESPACE']).transpose()
-							bindMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose() * bindMatrix							
-							poseMatrix = Matrix(bParentMatrix).invert() * bindMatrix							
+							headPos = joint.head["ARMATURESPACE"]
+							bindMatrix = Matrix([1,0,0,headPos.x], [0,1,0,headPos.y], [0,0,1,headPos.z],[0,0,0,1])
+							armMatrix = bindMatrix;
+							if ( not joint.hasParent() ):
+								armMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose();
+								armMatrix *= bindMatrix													
+
+							poseMatrix = Matrix(bParentMatrix).invert() * armMatrix							
 							
 							if cName.startswith("Loc"):				
 								poseMatrix.transpose()
@@ -2043,34 +2074,45 @@ class ArmatureNode(object):
 		daeNodes = []
 		# Get the root bones
 		rootBones = []
+		
 		for boneName in bArmature.bones.keys():
 			bone = bArmature.bones[boneName]
 			if not bone.hasParent():
 				rootBones.append(bone)
-	
+				
 		# Only take the first root and ignore it.
-		if len(rootBones) > 0 and not rootBones[0].children is None:
-			for childBone in rootBones[0].children:
+		if len(rootBones) > 0 and not rootBones[0].children is None:			
+			daeNodes.append(self.BoneToDae(rootBones[0], bPose,Matrix(), bArmatureObject))		
+			
+			##for childBone in rootBones[0].children:
 ##				print PrintTransforms(Matrix(bPose.bones[rootBones[0].name].poseMatrix).transpose(),rootBones[0].name)
-				poseMatrix = Matrix(bPose.bones[rootBones[0].name].poseMatrix).transpose()
-				poseMatrixRotInv = poseMatrix.rotationPart().invert().resize4x4()
-##				poseMatrixNoRot = poseMatrix * poseMatrixRotInv
+			##	poseMatrix = Matrix(bPose.bones[rootBones[0].name].poseMatrix).transpose()
+			##	poseMatrixRotInv = poseMatrix.rotationPart().invert().resize4x4()
+				##poseMatrixNoRot = poseMatrix * poseMatrixRotInv
 
-				daeNodes.append(self.BoneToDae(rootBones[0], bPose, Matrix(bArmatureObject.matrix).transpose().invert(),poseMatrixRotInv, bArmatureObject))
+			##	print rootBones[0]
+			##	print Matrix(bArmatureObject.matrix).transpose().invert()
+				##daeNodes.append(self.BoneToDae(rootBones[0], bPose, Matrix(bArmatureObject.matrix).transpose().invert(),poseMatrixRotInv, bArmatureObject))
+
+		if len(rootBones) > 1:
+			print "Please use only a single root for proper export"
+			
 		return daeNodes
 
-	def BoneToDae(self, bBone, bPose, parentMatrix, rootRotationInv, bArmatureObject, bParentBind=None):
+	def BoneToDae(self, bBone, bPose, parentMatrix, bArmatureObject, bParentBind=None):
 		daeNode = collada.DaeNode()
 		daeNode.id = daeNode.name = daeNode.sid = self.document.CreateID(bBone.name, '-Joint')
 		daeNode.type = collada.DaeSyntax.TYPE_JOINT
 		
 		# Get the transformations
-		bindMatrix = Matrix(bBone.matrix['ARMATURESPACE']).transpose()
-		bindMatrix =Matrix(bArmatureObject.getMatrix('localspace')).transpose() * bindMatrix
+		headPos = bBone.head["ARMATURESPACE"]
+		bindMatrix = Matrix([1,0,0,headPos.x], [0,1,0,headPos.y], [0,0,1,headPos.z],[0,0,0,1])
+		armMatrix = bindMatrix;
 		
+		if ( not bBone.hasParent() ):
+			armMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose();
+			armMatrix *= bindMatrix
 		
-		armatureMat = Matrix(bPose.bones[bBone.name].poseMatrix).transpose()
-
 		try :
 			armAction = bArmatureObject.getAction()
 			ipList = armAction.getAllChannelIpos()
@@ -2087,9 +2129,9 @@ class ArmatureNode(object):
 					animation.SaveToDae(ipo, daeNode, bBone, bPose, bParentBind, bArmatureObject)
 		except:
 			pass
-		
-
-		mat = Matrix(parentMatrix).invert() * armatureMat
+				
+		mat = Matrix(parentMatrix).invert() * armMatrix
+		boneMatrix = Matrix(bindMatrix)
 		mat.transpose()
 		
 		if bakeMatrices :
@@ -2117,7 +2159,7 @@ class ArmatureNode(object):
 			
 		if not bBone.children is None:
 			for childBone in bBone.children:
-				daeNode.nodes.append(self.BoneToDae(childBone, bPose, armatureMat, rootRotationInv, bArmatureObject, bindMatrix))
+				daeNode.nodes.append(self.BoneToDae(childBone, bPose, boneMatrix, bArmatureObject, boneMatrix))
 		return daeNode
 		
 	
@@ -2413,8 +2455,8 @@ class MeshNode(object):
 		accessorTextures.source = daeFloatArrayTextures.id
 		accessorTextures.AddParam('S','float')
 		accessorTextures.AddParam('T','float');
-		
-		
+
+				
 		daeVertices = collada.DaeVertices()
 		daeVertices.id = self.document.CreateID(daeGeometry.id,'-Vertex')
 		daeInput = collada.DaeInput()
@@ -2427,8 +2469,27 @@ class MeshNode(object):
 		daeInputNormals.offset = 1
 		## daeVertices.inputs.append(daeInputNormals)
 		daeMesh.vertices = daeVertices
+
+		hasColor = False
+		#Vertex colors:
+		if ( bMesh.hasVertexColours() ) :
+			hasColor = True
+			daeSourceColors = collada.DaeSource()
+			daeSourceColors.id = self.document.CreateID(daeGeometry.id , '-color')
+			daeFloatArrayColors = collada.DaeFloatArray()
+			daeFloatArrayColors.id = self.document.CreateID(daeSourceColors.id,'-array')
+			daeSourceColors.source = daeFloatArrayColors
+			daeSourceColors.techniqueCommon = collada.DaeSource.DaeTechniqueCommon()
+			accessorColors = collada.DaeAccessor()
+			daeSourceColors.techniqueCommon.accessor = accessorColors
+			accessorColors.source = daeFloatArrayColors.id
+			accessorColors.AddParam('R','float')
+			accessorColors.AddParam('G','float');
+			accessorColors.AddParam('B','float');
+			accessorColors.AddParam('A','float');
 		
 		for vert in bMesh.verts:
+			#print vert
 			for co in vert.co:				  
 				daeFloatArray.data.append(co)
 			## for no in vert.no:
@@ -2451,7 +2512,7 @@ class MeshNode(object):
 					matIndex = face.image.name
 			
 			vertCount = len(face.verts)
-									
+			
 			# Create a new function which adds vertices to a list.
 			def AddVerts(verts,prlist,smooth,secondTriangle=False):
 				secondTriangleIndex = [2,3,0]
@@ -2469,10 +2530,22 @@ class MeshNode(object):
 					if smooth:
 						for no in vert.no:
 							daeFloatArrayNormals.data.append(no);
-						accessorNormals.count = accessorNormals.count + 1	
+						accessorNormals.count = accessorNormals.count + 1
 
 					#prlist.append(len(daeFloatArrayNormals.data)/3-1)
 					prlist.append(accessorNormals.count - 1)
+					
+					
+					if hasColor:
+						if secondTriangle:
+							vert_index = secondTriangleIndex[vert_index]							
+						daeFloatArrayColors.data.append(face.col[vert_index].r / 255.0)
+						daeFloatArrayColors.data.append(face.col[vert_index].g / 255.0)
+						daeFloatArrayColors.data.append(face.col[vert_index].b / 255.0)
+						daeFloatArrayColors.data.append(face.col[vert_index].a / 255.0)
+						prlist.append(len(daeFloatArrayColors.data)/4-1)						
+						accessorColors.count = accessorColors.count + 1
+						vert_index = v_index
 					
 					# If the mesh has UV-coords, add these to the textures array.
 					if mesh.faceUV:
@@ -2549,7 +2622,13 @@ class MeshNode(object):
 		daeInputUV.semantic = 'TEXCOORD'
 		daeInputUV.offset = 2
 		daeInputUV.source = daeSourceTextures.id
-		
+
+		if hasColor:
+			daeInputColor = collada.DaeInput()
+			daeInputColor.semantic = 'COLOR'
+			daeInputColor.offset = 3
+			daeInputColor.source = daeSourceColors.id
+			
 		materialName = ''
 			
 		for k, daeTriangles in daeTrianglesDict.iteritems():
@@ -2559,22 +2638,47 @@ class MeshNode(object):
 					daeTriangles.material = bMesh.materials[k].name
 				elif mesh.faceUV and (useUV or bMesh.materials is None or len(bMesh.materials) == 0):
 					daeTriangles.material = uvTextures[k]
-			daeTriangles.inputs.append(daeInput)
+			offsetCount = 0;
+			daeInput.offset = offsetCount			
+			daeTriangles.inputs.append(daeInput)			
+			offsetCount += 1;
+			
+			daeInputNormals.offset = offsetCount;
 			daeTriangles.inputs.append(daeInputNormals);
+			offsetCount += 1;
+			
 			if mesh.faceUV:
-				daeTriangles.inputs.append(daeInputUV)			
+				daeInputUV.offset = offsetCount;				
+				daeTriangles.inputs.append(daeInputUV)
+				offsetCount += 1;
+			if hasColor:
+				daeInputColor.offset = offsetCount;				
+				daeTriangles.inputs.append(daeInputColor)
+				offsetCount += 1;
 			daeMesh.primitives.append(daeTriangles)
-		
 		for k, daePolygons in daePolygonsDict.iteritems():
 			if k != -1:
 				if not useUV and not bMesh.materials is None and len(bMesh.materials) > 0 and k >= 0:
 					daePolygons.material = bMesh.materials[k].name
 				elif mesh.faceUV and (useUV or bMesh.materials is None or len(bMesh.materials) == 0):
 					daePolygons.material = uvTextures[k]
-			daePolygons.inputs.append(daeInput)
+			offsetCount = 0;
+			daeInput.offset = offsetCount			
+			daePolygons.inputs.append(daeInput)			
+			offsetCount += 1;
+			
+			daeInputNormals.offset = offsetCount;
 			daePolygons.inputs.append(daeInputNormals);
+			offsetCount += 1;
+			
 			if mesh.faceUV:
+				daeInputUV.offset = offsetCount;				
 				daePolygons.inputs.append(daeInputUV)
+				offsetCount += 1;
+			if hasColor:
+				daeInputColor.offset = offsetCount;				
+				daePolygons.inputs.append(daeInputColor)
+				offsetCount += 1;
 			daeMesh.primitives.append(daePolygons)
 		
 		if daeLines != None:
@@ -2582,9 +2686,11 @@ class MeshNode(object):
 			daeMesh.primitives.append(daeLines)
 		
 		daeMesh.sources.append(daeSource)
-		daeMesh.sources.append(daeSourceNormals)
+		daeMesh.sources.append(daeSourceNormals)		
 		if mesh.faceUV:
 			daeMesh.sources.append(daeSourceTextures)
+		if hasColor:
+			daeMesh.sources.append(daeSourceColors)
 		
 		daeGeometry.data = daeMesh
 		

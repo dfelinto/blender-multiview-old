@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.137
+# Illusoft Collada 1.4 plugin for Blender version 0.3.143
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -26,7 +26,7 @@ import Blender
 import collada
 from Blender.Mathutils import *
 
-class Armature(object):
+class Armature(object):	
 	# static vars
 	# A list of all created armatures
 	_armatures = dict()
