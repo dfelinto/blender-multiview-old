@@ -988,7 +988,7 @@ def main():
 			projectVecs = []
 		
 		newProjectVec = meshFaces[0].no
-		newProjectMeshFaces = [meshFaces.pop(0)]	# Popping stuffs it up.
+		newProjectMeshFaces = [meshFaces[0]]	# Popping stuffs it up.
 		
 		
 		# Predent that the most unique angke is ages away to start the loop off
