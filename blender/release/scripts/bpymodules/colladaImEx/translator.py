@@ -494,16 +494,29 @@ class SceneGraph(object):
 					except:
 						self.childNodes[pNode.name] = [node]
 					
+		
+		#if exportPhysics:
+		# Create a new Physics Model.
+		daePhysicsModel = collada.DaePhysicsModel();
+		daePhysicsModel.id = daePhysicsModel.name = self.document.CreateID(bScene.name,'-PhysicsModel')
+		
+		# Create a new Physics Model Instance.
+		daePhysicsModelInstance = collada.DaePhysicsModelInstance()
+
+		# Set the Physics Model of this instance.
+		daePhysicsModelInstance.object = daePhysicsModel
+		# add the physics model to the library.
+		self.document.colladaDocument.physicsModelsLibrary.items.append(daePhysicsModel)
+		if not daePhysicsModelInstance is None:
+			daePhysicsScene.iPhysicsModels.append(daePhysicsModelInstance)			
+		
 		# Begin with the rootnodes
 		for rootNode in self.rootNodes:
 			sceneNode = SceneNode(self.document,self)
-			nodeResult = sceneNode.SaveToDae(rootNode,self.childNodes)
+			nodeResult = sceneNode.SaveSceneToDae(rootNode,self.childNodes,daePhysicsModel,daePhysicsModelInstance)
 			daeNode = nodeResult[0]
 			daeVisualScene.nodes.append(daeNode)
-			if exportPhysics:
-				daeInstancePhysicsModel = nodeResult[1]
-				if not daeInstancePhysicsModel is None:
-					daePhysicsScene.iPhysicsModels.append(daeInstancePhysicsModel)
+		
 			
 		self.document.colladaDocument.visualScenesLibrary.AddItem(daeVisualScene)
 		if exportPhysics and len(daePhysicsScene.iPhysicsModels) > 0:
@@ -1808,7 +1821,7 @@ class SceneNode(object):
 		# Return the new Object
 		return newObject
 		
-	def SaveToDae(self,bNode,childNodes):
+	def SaveSceneToDae(self,bNode,childNodes,daeGlobalPhysicsModel,daeGlobalPhysicsModelInstance):
 		global bakeMatrices, exportSelection
 		daeNode = collada.DaeNode()
 		daeNode.id = daeNode.name = self.document.CreateID(bNode.name,'-Node')# +'-node'
@@ -1941,10 +1954,10 @@ class SceneNode(object):
 				sceneNode = SceneNode(self.document, self)
 				daeNode.nodes.append(sceneNode.SaveToDae(bNode,childNodes)[0])
 		
-		daePhysicsInstance = self.SavePhysicsToDae(bNode, meshID, daeNode)
+		daePhysicsInstance = self.SavePhysicsToDae(bNode, meshID, daeNode,daeGlobalPhysicsModel,daeGlobalPhysicsModelInstance)
 		return (daeNode, daePhysicsInstance)
 	
-	def SavePhysicsToDae(self, bNode, meshID, daeNode):
+	def SavePhysicsToDae(self, bNode, meshID, daeNode,daeGlobalPhysicsModel,daeGlobalPhysicsModelInstance):
 		global usePhysics, exportPhysics
 		if meshID is None or (not(usePhysics is None) and not usePhysics or not exportPhysics):
 			return None
@@ -1970,8 +1983,7 @@ class SceneNode(object):
 			lastIndex += 1
 			rbF = val
 		
-		daePhysicsModel = collada.DaePhysicsModel();
-		daePhysicsModel.id = daePhysicsModel.name = self.document.CreateID(daeNode.id,'-PhysicsModel')
+		
 		daeRigidBody = collada.DaeRigidBody();
 		daeRigidBody.id = daeRigidBody.name = daeRigidBody.sid = self.document.CreateID(daeNode.id,'-RigidBody')
 		daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
@@ -2048,7 +2060,7 @@ class SceneNode(object):
 		daeRigidBody.techniqueCommon = daeRigidBodyTechniqueCommon
 		
 		# Add the rigid body to the physics model.
-		daePhysicsModel.rigidBodies.append(daeRigidBody)
+		daeGlobalPhysicsModel.rigidBodies.append(daeRigidBody)
 		# Create a new RigidBody instance
 		daeRigidBodyInstance = collada.DaeRigidBodyInstance()
 		# Set the rigid body of this instance
@@ -2056,15 +2068,9 @@ class SceneNode(object):
 		# Set the node of this instance
 		daeRigidBodyInstance.target = daeNode
 		
-		# Create a new Physics Model Instance.
-		daePhysicsModelInstance = collada.DaePhysicsModelInstance()
-		# Set the Physics Model of this instance.
-		daePhysicsModelInstance.object = daePhysicsModel
 		# add the rigidbody instance to this physics model instance.
-		daePhysicsModelInstance.iRigidBodies.append(daeRigidBodyInstance)
-		# add the physics model to the library.
-		self.document.colladaDocument.physicsModelsLibrary.items.append(daePhysicsModel)
-		return daePhysicsModelInstance				  
+		daeGlobalPhysicsModelInstance.iRigidBodies.append(daeRigidBodyInstance)
+		return daeRigidBodyInstance				  
 
 class ArmatureNode(object):
 	def __init__(self, document):
