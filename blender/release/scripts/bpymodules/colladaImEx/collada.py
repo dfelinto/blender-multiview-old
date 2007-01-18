@@ -2566,7 +2566,8 @@ class DaePhysicsModelInstance(DaeInstance):
 	def __init__(self):
 		super(DaePhysicsModelInstance, self).__init__() 	   
 		self.syntax = DaePhysicsSyntax.INSTANCE_PHYSICS_MODEL
-		self.iRigidBodies = []
+		self.iRigidBodies = []	
+		self.iConstraints = []
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
 		super(DaePhysicsModelInstance,self).LoadFromXml(daeDocument, xmlNode)
@@ -2576,6 +2577,7 @@ class DaePhysicsModelInstance(DaeInstance):
 	def SaveToXml(self, daeDocument):
 		node = super(DaePhysicsModelInstance,self).SaveToXml(daeDocument)
 		AppendChilds(daeDocument, node, self.iRigidBodies)
+		AppendChilds(daeDocument, node, self.iConstraints)
 		return node
 	
 	def CreateInstanceRigidBodies(self, daeDocument, xmlNode, physicsModel):
@@ -2641,20 +2643,25 @@ class DaeRigidBodyInstance(DaeEntity):
 		SetAttribute(node, DaeSyntax.TARGET, StripString('#'+self.target.id))		 
 		return node
 	
+
+
 class DaePhysicsModel(DaeElement):
 	def __init__(self):
 		super(DaePhysicsModel,self).__init__()
 		self.syntax = DaePhysicsSyntax.PHYSICS_MODEL
 		self.rigidBodies = []
+		self.constraints = []
 	
 	def LoadFromXml(self, daeDocument, xmlNode):
 		super(DaePhysicsModel, self).LoadFromXml(daeDocument, xmlNode)
-		self.rigidBodies = CreateObjectsFromXml(daeDocument, xmlNode, DaePhysicsSyntax.RIGID_BODY, DaeRigidBody)		
+		self.rigidBodies = CreateObjectsFromXml(daeDocument, xmlNode, DaePhysicsSyntax.RIGID_BODY, DaeRigidBody)
+		#constraints not yet
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaePhysicsModel, self).SaveToXml(daeDocument)
 		# Add the rigid bodies
 		AppendChilds(daeDocument, node, self.rigidBodies)
+		AppendChilds(daeDocument, node, self.constraints)
 		return node
 	
 	def FindRigidBody(self, url):
@@ -2801,6 +2808,190 @@ class DaeRigidBody(DaeEntity):
 		def __str__(self):
 			return super(DaeRigidBody.DaeTechniqueCommon,self).__str__()
 		
+
+
+class DaeRigidConstraintInstance(DaeEntity):
+	def __init__(self):
+		super(DaeRigidConstraintInstance, self).__init__()		
+		self.syntax = DaePhysicsSyntax.INSTANCE_RIGID_CONSTRAINT
+		self.constraint = None
+		self.target = None
+		self.bodyString = ''
+		self.targetString = ''
+		
+	def LoadFromXml(self, daeDocument, xmlNode):		
+		self.bodyString = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.BODY)
+		self.targetString = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.TARGET)[1:]
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeRigidConstraintInstance,self).SaveToXml(daeDocument)
+		SetAttribute(node, DaePhysicsSyntax.CONSTRAINT, StripString(self.constraint.sid))
+		return node
+		
+		
+class DaeLinearLimit(DaeEntity):
+	def __init__(self):
+		super(DaeLinearLimit, self).__init__()
+		self.syntax = DaePhysicsSyntax.LINEAR_LIMITS
+		self.min = [0,0,0]
+		self.max = [0,0,0]
+		
+	def LoadFromXml(self, daeDocument, xmlNode):
+		#super(DaeBoxShape, self).LoadFromXml(daeDocument, xmlNode)
+		self.halfExtents = []
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeLinearLimit, self).SaveToXml(daeDocument)
+		AppendTextChild(node, 'min', [self.min[0],self.min[1],self.min[2]], None)	
+		AppendTextChild(node, 'max', [self.max[0],self.max[1],self.max[2]], None)	
+		return node
+	def __str__(self):
+		return super(DaeLinearLimit,self).__str__()
+
+class DaeAngularLimit(DaeEntity):
+	def __init__(self):
+		super(DaeAngularLimit, self).__init__()
+		self.syntax = DaePhysicsSyntax.ANGULAR_LIMITS
+		self.min = [0,0,0]
+		self.max = [0,0,0]
+		
+	def LoadFromXml(self, daeDocument, xmlNode):
+		#super(DaeBoxShape, self).LoadFromXml(daeDocument, xmlNode)
+		self.halfExtents = []
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeAngularLimit, self).SaveToXml(daeDocument)
+		AppendTextChild(node, 'min', [self.min[0],self.min[1],self.min[2]], None)	
+		AppendTextChild(node, 'max', [self.max[0],self.max[1],self.max[2]], None)	
+		return node
+	def __str__(self):
+		return super(DaeAngularLimit,self).__str__()
+		
+class DaeLimit(DaeEntity):
+	def __init__(self):
+		super(DaeLimit, self).__init__()
+		self.syntax = DaePhysicsSyntax.LIMITS
+		self.linearLimits = DaeLinearLimit()
+		self.angularLimits = DaeAngularLimit()
+		
+	def LoadFromXml(self, daeDocument, xmlNode):
+		#super(DaeBoxShape, self).LoadFromXml(daeDocument, xmlNode)
+		self.halfExtents = []
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeLimit, self).SaveToXml(daeDocument)
+		AppendChild(daeDocument,node,  self.linearLimits)
+		AppendChild(daeDocument,node,  self.angularLimits)
+		
+		return node
+	
+	def __str__(self):
+		return super(DaeLimit,self).__str__()
+		
+		
+class DaeRigidConstraint(DaeEntity):
+	def __init__(self):
+		super(DaeRigidConstraint, self).__init__()
+		self.syntax = DaePhysicsSyntax.RIGID_CONSTRAINT
+		self.name = ''
+		self.sid = ''
+		self.ref_attachment = None
+		self.attachment = None
+		
+		self.techniqueCommon = DaeRigidConstraint.DaeTechniqueCommon()
+	
+	def LoadFromXml(self, daeDocument, xmlNode):
+		self.name = xmlNode.getAttribute(DaeSyntax.NAME)
+		self.sid = xmlNode.getAttribute(DaeSyntax.SID)
+		self.ref_attachment = xmlNode.getAttribute(DaePhysicsSyntax.REF_ATTACHMENT)
+		self.attachment = xmlNode.getAttribute(DaePhysicsSyntax.ATTACHMENT)
+		
+		self.techniqueCommon = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.TECHNIQUE_COMMON, DaeRigidConstraint.DaeTechniqueCommon)		 
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeRigidConstraint, self).SaveToXml(daeDocument)
+		SetAttribute(node,DaeSyntax.NAME, StripString(self.name))
+		SetAttribute(node,DaeSyntax.SID, StripString(self.sid))
+		if not (self.ref_attachment is None):
+			#SetAttribute(node,DaePhysicsSyntax.REF_ATTACHMENT,StripString(self.ref_attachment.sid))
+			AppendChild(daeDocument,node,self.ref_attachment)
+		if not (self.attachment is None):
+			AppendChild(daeDocument,node,self.attachment)
+
+		AppendChild(daeDocument,node,self.techniqueCommon)
+		return node
+	
+	class DaeRefAttachment(DaeEntity):
+		def __init__(self):
+			super(DaeRigidConstraint.DaeRefAttachment, self).__init__()
+			self.syntax = DaePhysicsSyntax.REF_ATTACHMENT
+			self.rigid_body = None
+			self.enabled = True 
+			self.extras = []
+			self.pivX = 0.0
+			self.pivY = 0.0
+			self.pivZ = 0.0
+			self.axX = 0.0
+			self.axY = 0.0
+			self.axZ = 0.0
+			
+		def LoadFromXml(self, daeDocument, xmlNode):
+			self.enabled = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.CONSTRAINT_ENABLED,bool,True)
+		def SaveToXml(self, daeDocument):
+			node = super(DaeRigidConstraint.DaeRefAttachment,self).SaveToXml(daeDocument)
+			SetAttribute(node,DaePhysicsSyntax.RIGID_BODY, StripString(self.rigid_body.sid))
+			AppendTextChild(node, DaeSyntax.TRANSLATE, [self.pivX,self.pivY,self.pivZ], None)	
+
+			AppendTextChild(node, DaeSyntax.ROTATE, [1,0,0,self.axX], None)	
+			AppendTextChild(node, DaeSyntax.ROTATE, [0,1,0,self.axY], None)	
+			AppendTextChild(node, DaeSyntax.ROTATE, [0,0,1,self.axZ], None)	
+
+			return node
+			
+		def __str__(self):
+			return super(DaeRigidConstraint.DaeRefAttachment,self).__str__()
+	
+	class DaeAttachment(DaeEntity):
+		def __init__(self):
+			super(DaeRigidConstraint.DaeAttachment, self).__init__()
+			self.syntax = DaePhysicsSyntax.ATTACHMENT
+			self.rigid_body = None
+			self.enabled = True 
+			self.extras = []
+		def LoadFromXml(self, daeDocument, xmlNode):
+			self.enabled = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.CONSTRAINT_ENABLED,bool,True)
+		def SaveToXml(self, daeDocument):
+			node = super(DaeRigidConstraint.DaeAttachment,self).SaveToXml(daeDocument)
+			SetAttribute(node,DaePhysicsSyntax.RIGID_BODY, StripString(self.rigid_body.sid))
+			#AppendTextChild(node, DaePhysicsSyntax.CONSTRAINT_ENABLED, self.enabled, None)	
+			return node
+			
+		def __str__(self):
+			return super(DaeRigidConstraint.DaeRefAttachment,self).__str__()
+	
+	
+	class DaeTechniqueCommon(DaeEntity):
+		def __init__(self):
+			super(DaeRigidConstraint.DaeTechniqueCommon, self).__init__()
+			self.syntax = DaeSyntax.TECHNIQUE_COMMON
+			self.enabled = True
+			self.limits = DaeLimit()
+			
+		def LoadFromXml(self, daeDocument, xmlNode):
+			self.enabled = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.CONSTRAINT_ENABLED,bool,True)
+			
+		def SaveToXml(self, daeDocument):
+			node = super(DaeRigidConstraint.DaeTechniqueCommon,self).SaveToXml(daeDocument)
+			AppendTextChild(node, DaePhysicsSyntax.CONSTRAINT_ENABLED, self.enabled, None)
+			AppendChild(daeDocument, node, self.limits)
+			
+
+			return node
+		def __str__(self):
+			return super(DaeRigidConstraint.DaeTechniqueCommon,self).__str__()
+	
+	
+		
 class DaeShape(DaeEntity):
 	def __init__(self):
 		super(DaeShape, self).__init__()
@@ -2834,6 +3025,8 @@ class DaeBoxShape(DaeShape):
 		AppendTextChild(node, DaePhysicsSyntax.HALF_EXTENTS, self.halfExtents)
 		return node
 
+
+		
 class DaeSphereShape(DaeShape):
 	def __init__(self):
 		super(DaeSphereShape, self).__init__()
@@ -2946,9 +3139,22 @@ class DaePhysicsSyntax(object):
 	
 	RIGID_BODY = 'rigid_body'
 	
+	RIGID_CONSTRAINT = 'rigid_constraint'
+	REF_ATTACHMENT = 'ref_attachment'
+	ATTACHMENT = 'attachment'
+	INTERPENETRATE = 'interpenetrate'
+	CONSTRAINT_ENABLED = 'enabled'
+	LIMITS = 'limits'
+	LINEAR_LIMITS = 'linear'
+	ANGULAR_LIMITS = 'swing_cone_and_twist'	
+	LIMITS_MIN = 'min'
+	LIMITS_MAX = 'max'
+	
 	INSTANCE_PHYSICS_MODEL = 'instance_physics_model'
 	INSTANCE_PHYSICS_MATERIAL = 'instance_physics_material'
 	INSTANCE_RIGID_BODY = 'instance_rigid_body'
+	INSTANCE_RIGID_CONSTRAINT = 'instance_rigid_constraint'
+	CONSTRAINT = 'constraint'
 	
 	RESTITUTION = 'restitution'
 	STATIC_FRICTION = 'static_friction'

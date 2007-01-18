@@ -1952,7 +1952,7 @@ class SceneNode(object):
 		
 			for bNode in myChildNodes:
 				sceneNode = SceneNode(self.document, self)
-				daeNode.nodes.append(sceneNode.SaveToDae(bNode,childNodes)[0])
+				daeNode.nodes.append(sceneNode.SaveSceneToDae(bNode,childNodes,daeGlobalPhysicsModel,daeGlobalPhysicsModelInstance)[0])
 		
 		daePhysicsInstance = self.SavePhysicsToDae(bNode, meshID, daeNode,daeGlobalPhysicsModel,daeGlobalPhysicsModelInstance)
 		return (daeNode, daePhysicsInstance)
@@ -1985,7 +1985,9 @@ class SceneNode(object):
 		
 		
 		daeRigidBody = collada.DaeRigidBody();
+		#print "daeNode.id",daeNode.id
 		daeRigidBody.id = daeRigidBody.name = daeRigidBody.sid = self.document.CreateID(daeNode.id,'-RigidBody')
+		#print "daeRigidBody.sid",daeRigidBody.sid
 		daeRigidBodyTechniqueCommon = collada.DaeRigidBody.DaeTechniqueCommon()
 		daeRigidBodyTechniqueCommon.dynamic = bool(rbFlags[0])
 		if daeRigidBodyTechniqueCommon.dynamic:
@@ -2070,6 +2072,75 @@ class SceneNode(object):
 		
 		# add the rigidbody instance to this physics model instance.
 		daeGlobalPhysicsModelInstance.iRigidBodies.append(daeRigidBodyInstance)
+		
+		#handle constraints
+		for rbconstraint in bNode.constraints:
+			if rbconstraint.type == Blender.Constraint.Type.RIGIDBODYJOINT:
+				daeRigidConstraint = collada.DaeRigidConstraint();
+				daeRigidConstraint.id = daeRigidConstraint.name = daeRigidConstraint.sid = rbconstraint.name 
+				daeRigidConstraint.ref_attachment = collada.DaeRigidConstraint.DaeRefAttachment()
+				daeRigidConstraint.ref_attachment.rigid_body = daeRigidBody
+				daeRigidConstraint.ref_attachment.pivX = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_PIVX]
+				daeRigidConstraint.ref_attachment.pivY = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_PIVY]
+				daeRigidConstraint.ref_attachment.pivZ = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_PIVZ]
+				daeRigidConstraint.ref_attachment.axX = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_AXX]
+				daeRigidConstraint.ref_attachment.axY = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_AXY]
+				daeRigidConstraint.ref_attachment.axZ = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_AXZ]
+				
+				if not (rbconstraint[Blender.Constraint.Settings.TARGET] is None):
+					#find rigidbody that goes with TARGET...
+					blendertargetob = rbconstraint[Blender.Constraint.Settings.TARGET]
+					targetRbId = blendertargetob.name+'-RigidBody'
+					targetrigidbody = daeGlobalPhysicsModel.FindRigidBody(targetRbId)
+					if not (targetrigidbody is None):
+						daeRigidConstraint.attachment = collada.DaeRigidConstraint.DaeAttachment()
+						daeRigidConstraint.attachment.rigid_body = targetrigidbody
+		
+				#print "constraint type = ",rbconstraint[Blender.Constraint.Settings.CONSTR_RB_TYPE]
+				
+				daeRigidConstraintTechniqueCommon = collada.DaeRigidConstraint.DaeTechniqueCommon()
+				
+				daeRigidConstraintTechniqueCommon.limits.linearLimits.min = [0,0,0]
+				daeRigidConstraintTechniqueCommon.limits.linearLimits.max = [0,0,0]
+				daeRigidConstraintTechniqueCommon.limits.angularLimits.min = [0,0,0]
+				daeRigidConstraintTechniqueCommon.limits.angularLimits.max = [0,0,0]
+
+				#generic 6 degree-of-freedom joint				
+				if rbconstraint[Blender.Constraint.Settings.CONSTR_RB_TYPE] == 12:
+					daeRigidConstraintTechniqueCommon.limits.linearLimits.min = [rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MINLIMIT0],rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MINLIMIT1],rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MINLIMIT2]]
+					daeRigidConstraintTechniqueCommon.limits.linearLimits.max = [rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MAXLIMIT0],rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MAXLIMIT1],rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MAXLIMIT2]]
+					daeRigidConstraintTechniqueCommon.limits.angularLimits.min = [rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MINLIMIT3],rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MINLIMIT4],rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MINLIMIT5]]
+					daeRigidConstraintTechniqueCommon.limits.angularLimits.max = [rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MAXLIMIT3],rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MAXLIMIT4],rbconstraint[Blender.Constraint.Settings.CONSTR_RB_MAXLIMIT5]]
+				#ball-socket joint
+				if rbconstraint[Blender.Constraint.Settings.CONSTR_RB_TYPE] == 1:
+					daeRigidConstraintTechniqueCommon.limits.linearLimits.min = [0,0,0]
+					daeRigidConstraintTechniqueCommon.limits.linearLimits.max = [0,0,0]
+					daeRigidConstraintTechniqueCommon.limits.angularLimits.min = ['-INF','-INF','-INF']
+					daeRigidConstraintTechniqueCommon.limits.angularLimits.max = ['INF','INF','INF']
+				#hinge
+				if rbconstraint[Blender.Constraint.Settings.CONSTR_RB_TYPE] == 2:
+					daeRigidConstraintTechniqueCommon.limits.linearLimits.min = [0,0,0]
+					daeRigidConstraintTechniqueCommon.limits.linearLimits.max = [0,0,0]
+					daeRigidConstraintTechniqueCommon.limits.angularLimits.min = ['-INF',0,0]
+					daeRigidConstraintTechniqueCommon.limits.angularLimits.max = ['INF',0,0]
+				
+				
+				#daeRigidConstraintTechniqueCommon.enabled = True
+				daeRigidConstraint.techniqueCommon = daeRigidConstraintTechniqueCommon
+				daeGlobalPhysicsModel.constraints.append(daeRigidConstraint)
+				
+				# Create a new RigidConstraint instance
+				daeRigidConstraintInstance = collada.DaeRigidConstraintInstance()
+				# Set the rigid body of this instance
+				daeRigidConstraintInstance.constraint = daeRigidConstraint
+				
+				#add constraint instance
+				daeGlobalPhysicsModelInstance.iConstraints.append(daeRigidConstraintInstance)
+				
+				
+				
+				
+				
 		return daeRigidBodyInstance				  
 
 class ArmatureNode(object):
