@@ -329,13 +329,13 @@ class DaeScene(DaeEntity):
 	def LoadFromXml(self, daeDocument, xmlNode):
 		if xmlNode is None:
 			return
-		self.iVisualScene = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_VISUAL_SCENE, DaeVisualSceneInstance)
 		self.iPhysicsScenes = CreateObjectsFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_PHYSICS_SCENE, DaePhysicsSceneInstance)
+		self.iVisualScene = CreateObjectFromXml(daeDocument, xmlNode, DaeSyntax.INSTANCE_VISUAL_SCENE, DaeVisualSceneInstance)
 	
 	def SaveToXml(self, daeDocument):
 		node = super(DaeScene,self).SaveToXml(daeDocument)
-		AppendChilds(daeDocument, node, self.iVisualScenes)
 		AppendChilds(daeDocument, node, self.iPhysicsScenes)
+		AppendChilds(daeDocument, node, self.iVisualScenes)
 		return node
 	
 	def GetVisualScene(self):
@@ -2926,6 +2926,7 @@ class DaeRigidConstraint(DaeEntity):
 			super(DaeRigidConstraint.DaeRefAttachment, self).__init__()
 			self.syntax = DaePhysicsSyntax.REF_ATTACHMENT
 			self.rigid_body = None
+			self.blenderobject = None
 			self.enabled = True 
 			self.extras = []
 			self.pivX = 0.0
@@ -2941,7 +2942,6 @@ class DaeRigidConstraint(DaeEntity):
 			node = super(DaeRigidConstraint.DaeRefAttachment,self).SaveToXml(daeDocument)
 			SetAttribute(node,DaePhysicsSyntax.RIGID_BODY, StripString(self.rigid_body.sid))
 			AppendTextChild(node, DaeSyntax.TRANSLATE, [self.pivX,self.pivY,self.pivZ], None)	
-
 			AppendTextChild(node, DaeSyntax.ROTATE, [1,0,0,self.axX], None)	
 			AppendTextChild(node, DaeSyntax.ROTATE, [0,1,0,self.axY], None)	
 			AppendTextChild(node, DaeSyntax.ROTATE, [0,0,1,self.axZ], None)	
@@ -2956,18 +2956,31 @@ class DaeRigidConstraint(DaeEntity):
 			super(DaeRigidConstraint.DaeAttachment, self).__init__()
 			self.syntax = DaePhysicsSyntax.ATTACHMENT
 			self.rigid_body = None
+			self.blenderobject = None
 			self.enabled = True 
 			self.extras = []
+			self.pivX = 0.0
+			self.pivY = 0.0
+			self.pivZ = 0.0
+			self.axX = 0.0
+			self.axY = 0.0
+			self.axZ = 0.0
+
 		def LoadFromXml(self, daeDocument, xmlNode):
 			self.enabled = CastFromXml(daeDocument, xmlNode, DaePhysicsSyntax.CONSTRAINT_ENABLED,bool,True)
 		def SaveToXml(self, daeDocument):
 			node = super(DaeRigidConstraint.DaeAttachment,self).SaveToXml(daeDocument)
 			SetAttribute(node,DaePhysicsSyntax.RIGID_BODY, StripString(self.rigid_body.sid))
+			AppendTextChild(node, DaeSyntax.TRANSLATE, [self.pivX,self.pivY,self.pivZ], None)
+			AppendTextChild(node, DaeSyntax.ROTATE, [1,0,0,self.axX], None)	
+			AppendTextChild(node, DaeSyntax.ROTATE, [0,1,0,self.axY], None)	
+			AppendTextChild(node, DaeSyntax.ROTATE, [0,0,1,self.axZ], None)	
+
 			#AppendTextChild(node, DaePhysicsSyntax.CONSTRAINT_ENABLED, self.enabled, None)	
 			return node
 			
 		def __str__(self):
-			return super(DaeRigidConstraint.DaeRefAttachment,self).__str__()
+			return super(DaeRigidConstraint.DaeAttachment,self).__str__()
 	
 	
 	class DaeTechniqueCommon(DaeEntity):
@@ -2984,7 +2997,6 @@ class DaeRigidConstraint(DaeEntity):
 			node = super(DaeRigidConstraint.DaeTechniqueCommon,self).SaveToXml(daeDocument)
 			AppendTextChild(node, DaePhysicsSyntax.CONSTRAINT_ENABLED, self.enabled, None)
 			AppendChild(daeDocument, node, self.limits)
-			
 
 			return node
 		def __str__(self):

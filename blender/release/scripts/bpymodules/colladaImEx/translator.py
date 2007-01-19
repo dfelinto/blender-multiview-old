@@ -2078,14 +2078,16 @@ class SceneNode(object):
 			if rbconstraint.type == Blender.Constraint.Type.RIGIDBODYJOINT:
 				daeRigidConstraint = collada.DaeRigidConstraint();
 				daeRigidConstraint.id = daeRigidConstraint.name = daeRigidConstraint.sid = rbconstraint.name 
-				daeRigidConstraint.ref_attachment = collada.DaeRigidConstraint.DaeRefAttachment()
-				daeRigidConstraint.ref_attachment.rigid_body = daeRigidBody
-				daeRigidConstraint.ref_attachment.pivX = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_PIVX]
-				daeRigidConstraint.ref_attachment.pivY = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_PIVY]
-				daeRigidConstraint.ref_attachment.pivZ = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_PIVZ]
-				daeRigidConstraint.ref_attachment.axX = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_AXX]
-				daeRigidConstraint.ref_attachment.axY = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_AXY]
-				daeRigidConstraint.ref_attachment.axZ = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_AXZ]
+				
+				daeRigidConstraint.attachment = collada.DaeRigidConstraint.DaeAttachment()
+				daeRigidConstraint.attachment.rigid_body = daeRigidBody
+				daeRigidConstraint.attachment.blenderobject = bNode
+				daeRigidConstraint.attachment.pivX = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_PIVX]
+				daeRigidConstraint.attachment.pivY = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_PIVY]
+				daeRigidConstraint.attachment.pivZ = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_PIVZ]
+				daeRigidConstraint.attachment.axX = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_AXX]
+				daeRigidConstraint.attachment.axY = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_AXY]
+				daeRigidConstraint.attachment.axZ = rbconstraint[Blender.Constraint.Settings.CONSTR_RB_AXZ]
 				
 				if not (rbconstraint[Blender.Constraint.Settings.TARGET] is None):
 					#find rigidbody that goes with TARGET...
@@ -2093,9 +2095,41 @@ class SceneNode(object):
 					targetRbId = blendertargetob.name+'-RigidBody'
 					targetrigidbody = daeGlobalPhysicsModel.FindRigidBody(targetRbId)
 					if not (targetrigidbody is None):
-						daeRigidConstraint.attachment = collada.DaeRigidConstraint.DaeAttachment()
-						daeRigidConstraint.attachment.rigid_body = targetrigidbody
-		
+						daeRigidConstraint.ref_attachment = collada.DaeRigidConstraint.DaeRefAttachment()
+						daeRigidConstraint.ref_attachment.rigid_body = targetrigidbody
+						daeRigidConstraint.ref_attachment.blenderobject = blendertargetob
+						
+						#calculate pivX/pivY/pivZ and axX,axY,axZ for this reference frame
+						refObjectWorldMatrix = blendertargetob.matrix
+						attachObjectWorldMatrix = bNode.matrix
+						euler = Euler(daeRigidConstraint.attachment.axX,daeRigidConstraint.attachment.axY,daeRigidConstraint.attachment.axZ);
+						matRot= euler.toMatrix()
+						matT1 = TranslationMatrix(Vector(daeRigidConstraint.attachment.pivX,daeRigidConstraint.attachment.pivY,daeRigidConstraint.attachment.pivZ))
+						matT = TranslationMatrix(Vector(0,0,0))
+						matT[0][0]=matRot[0][0]
+						matT[0][1]=matRot[0][1]
+						matT[0][2]=matRot[0][2]
+						matT[1][0]=matRot[1][0]
+						matT[1][1]=matRot[1][1]
+						matT[1][2]=matRot[1][2]
+						matT[2][0]=matRot[2][0]
+						matT[2][1]=matRot[2][1]
+						matT[2][2]=matRot[2][2]
+						copyMat = Matrix(refObjectWorldMatrix);
+						attachLocalMatrix = matT * matT1
+						invertedMat = copyMat.invert()
+						globalFrameA = attachLocalMatrix * attachObjectWorldMatrix
+						refAttachLocalMatrix = globalFrameA * invertedMat
+						refPivot = refAttachLocalMatrix.translationPart() 
+						eulerAngles = refAttachLocalMatrix.toEuler()
+						daeRigidConstraint.ref_attachment.pivX = refPivot[0]
+						daeRigidConstraint.ref_attachment.pivY = refPivot[1]
+						daeRigidConstraint.ref_attachment.pivZ = refPivot[2]
+						daeRigidConstraint.ref_attachment.axX = eulerAngles[0]
+						daeRigidConstraint.ref_attachment.axY = eulerAngles[1]
+						daeRigidConstraint.ref_attachment.axZ = eulerAngles[2]
+						
+						
 				#print "constraint type = ",rbconstraint[Blender.Constraint.Settings.CONSTR_RB_TYPE]
 				
 				daeRigidConstraintTechniqueCommon = collada.DaeRigidConstraint.DaeTechniqueCommon()
