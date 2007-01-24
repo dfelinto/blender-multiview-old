@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.143
+# Illusoft Collada 1.4 plugin for Blender version 0.3.146
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -135,11 +135,11 @@ class DaeDocument(object):
 		AppendChild(self,colladaNode,self.animationClipsLibrary)
 		AppendChild(self,colladaNode,self.camerasLibrary)
 		AppendChild(self,colladaNode,self.controllersLibrary)
-		AppendChild(self,colladaNode,self.effectsLibrary)
-		AppendChild(self,colladaNode,self.geometriesLibrary)
+		AppendChild(self,colladaNode,self.effectsLibrary)		
 		AppendChild(self,colladaNode,self.imagesLibrary)
 		AppendChild(self,colladaNode,self.lightsLibrary)
 		AppendChild(self,colladaNode,self.materialsLibrary)
+		AppendChild(self,colladaNode,self.geometriesLibrary)
 		AppendChild(self,colladaNode,self.nodesLibrary)
 		AppendChild(self,colladaNode,self.visualScenesLibrary)
 		AppendChild(self,colladaNode,self.physicsMaterialsLibrary)
@@ -2113,24 +2113,48 @@ class DaeFxBindMaterial(DaeEntity):
 		def __str__(self):
 			return super(DaeFxBindMaterial.DaeFxTechniqueCommon,self).__str__()
 
+class DaeFxBindVertexInput(DaeEntity):		
+	def __init__(self):
+		super(DaeFxBindVertexInput, self).__init__()
+		self.semantic = "CHANNEL1"
+		self.input_semantic = "TEXCOORD";
+		self.input_set = "1";
+		self.syntax = "bind_vertex_input";
 		
+	def LoadFromXml(self, daeDocument, xmlNode):
+		self.semantic = xmlUtils.ReadAttribute(xmlNode, "semantic");
+		self.input_set = xmlUtils.ReadAttribute(xmlNode, "input_semantic");
+		self.input_semantic = xmlUtils.ReadAttribute(xmlNode, "input_set");		
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeFxBindVertexInput,self).SaveToXml(daeDocument)
+		SetAttribute(node, "semantic", self.semantic);
+		SetAttribute(node, "input_semantic", self.input_semantic);
+		SetAttribute(node, "input_set", self.input_set);
+		return node
+	
+	
 class DaeFxMaterialInstance(DaeEntity):
 	def __init__(self):
 		super(DaeFxMaterialInstance, self).__init__()
 		self.target = ''
 		self.symbol = ''
+		self.bind = DaeFxBindVertexInput();
 		self.object = None
 		self.syntax = DaeFxSyntax.INSTANCE_MATERIAL
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
 		self.target = xmlUtils.ReadAttribute(xmlNode, DaeFxSyntax.TARGET)[1:]
 		self.symbol = xmlUtils.ReadAttribute(xmlNode, DaeFxSyntax.SYMBOL)
+		self.bind = CreateObjectFromXml(daeDocument, xmlNode, "bind_vetex_input", DaeFxBindVertexInput);
 		self.object = daeDocument.materialsLibrary.FindObject(self.target)
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeFxMaterialInstance,self).SaveToXml(daeDocument)
+		print "x"
 		SetAttribute(node, DaeFxSyntax.TARGET, StripString('#'+self.object.id))
 		SetAttribute(node, DaeFxSyntax.SYMBOL, StripString(self.object.id))
+		AppendChild(daeDocument,node,self.bind);
 		return node
 
 	def __str__(self):
@@ -2182,15 +2206,18 @@ class DaeFxEffect(DaeElement):
 	def __init__(self):
 		super(DaeFxEffect, self).__init__()
 		self.profileCommon = DaeFxProfileCommon()
+		self.newParams = [];
 		self.syntax = DaeFxSyntax.EFFECT
 		
 	
 	def LoadFromXml(self, daeDocument, xmlNode):
 		super(DaeFxEffect, self).LoadFromXml(daeDocument, xmlNode)
+		self.newParams = CreateObjectsFromXml(daeDocument, xmlNode, DaeFxSyntax.NEWPARAM, DaeFxNewParam)		
 		self.profileCommon = CreateObjectFromXml(daeDocument, xmlNode, DaeFxSyntax.PROFILE_COMMON, DaeFxProfileCommon)
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeFxEffect,self).SaveToXml(daeDocument)
+		AppendChilds(daeDocument, node, self.newParams)		
 		AppendChild(daeDocument, node, self.profileCommon)
 		return node
 	
@@ -2199,7 +2226,103 @@ class DaeFxEffect(DaeElement):
 	
 	def AddShader(self, daeShader):
 		self.profileCommon.technique.shader = daeShader
+
+class DaeFxSampler2D(DaeElement):
+	def __init__(self):
+		super(DaeFxSampler2D, self).__init__()
+		self.syntax = DaeFxSyntax.SAMPLER2D
+		self.source = DaeSamplerSource();
+		self.minfilter = DaeMinFilter();
+		self.maxfilter = DaeMaxFilter();
 	
+	def LoadFromXml(self, daeDocument, xmlNode):
+		super(DaeFxSampler2D, self).LoadFromXml(daeDocument, xmlNode)		
+		self.source = xmlUtils.ReadContents(xmlNode);
+		self.minfilter = CreateObjectFromXml(daeDocument, xmlNode, "minfilter", DaeMinFilter);
+		self.maxfilter = CreateObjectFromXml(daeDocument, xmlNode, "maxfilter", DaeMaxFilter);
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeFxSampler2D,self).SaveToXml(daeDocument)
+		AppendChild(daeDocument, node, self.source)
+		AppendChild(daeDocument, node, self.minfilter);
+		AppendChild(daeDocument, node, self.maxfilter);
+		
+		return node
+	
+	def __str__(self):
+		return super(DaeFxEffect, self).__str__() + ', profileCommon: %s' % (self.profileCommon)
+	
+	def AddShader(self, daeShader):
+		self.profileCommon.technique.shader = daeShader
+
+class DaeFxSurface(DaeElement):
+	def __init__(self):
+		super(DaeFxSurface, self).__init__()
+		self.syntax = DaeFxSyntax.SURFACE
+		self.initfrom = ""
+		self.format = "A8R8G8B8"
+		self.type = "2D"
+	
+	def LoadFromXml(self, daeDocument, xmlNode):
+		super(DaeFxSurface, self).LoadFromXml(daeDocument, xmlNode)		
+		self.type = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.TYPE);		
+		self.initfrom = str(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.INIT_FROM)))
+		if (xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.FORMAT)):
+			self.format = str(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.FORMAT)))
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeFxSurface,self).SaveToXml(daeDocument)
+		SetAttribute(node, DaeSyntax.TYPE, self.type)
+		AppendTextChild(node, DaeSyntax.INIT_FROM, StripString(self.initfrom), None)
+		AppendTextChild(node, DaeSyntax.FORMAT, self.format, None)
+		return node;	
+
+class DaeSamplerSource(DaeElement):
+	def __init__(self):
+		self.syntax = DaeSyntax.SOURCE
+		self.id = ""
+		self.name = ""
+		self.value = "";
+	
+	def LoadFromXml(self, daeDocument, xmlNode):
+		self.value = xmlUtils.ReadContents(xmlNode)
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeSamplerSource,self).SaveToXml(daeDocument)
+		AppendTextInChild(node, StripString(self.value))
+		return node
+
+class DaeMinFilter(DaeElement):
+	def __init__(self):
+		self.syntax = "minfilter"
+		self.id = ""
+		self.name = ""
+		self.value = "LINEAR_MIPMAP_LINEAR";
+	
+	def LoadFromXml(self, daeDocument, xmlNode):
+		self.value = xmlUtils.ReadContents(xmlNode)
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeMinFilter,self).SaveToXml(daeDocument)
+		AppendTextInChild(node, self.value)
+		return node
+
+class DaeMaxFilter(DaeElement):
+	def __init__(self):
+		self.syntax = "maxfilter"
+		self.id = ""
+		self.name = ""
+		self.value = "LINEAR";
+	
+	def LoadFromXml(self, daeDocument, xmlNode):
+		self.value = xmlUtils.ReadContents(xmlNode)
+		
+	def SaveToXml(self, daeDocument):
+		node = super(DaeMaxFilter,self).SaveToXml(daeDocument)
+		AppendTextInChild(node, self.value)
+		return node
+
+		
 class DaeFxProfileCommon(DaeEntity):
 	def __init__(self):
 		super(DaeFxProfileCommon, self).__init__()
@@ -2239,13 +2362,29 @@ class DaeFxImage(DaeEntity):
 class DaeFxNewParam(DaeEntity):
 	def __init__(self):
 		super(DaeFxNewParam, self).__init__()
+		self.sid = "";
+		self.sampler = None;
+		self.surface = None;
 		self.syntax = DaeFxSyntax.NEWPARAM
 		
 	def LoadFromXml(self, daeDocument, xmlNode):
-		super(DaeFxNewParam, self).LoadFromXml(daeDocument, xmlNode)
+		self.sid = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.SID);
+		samplerNode = xmlUtils.FindElementByTagName(xmlNode, DaeFxSyntax.SAMPLER2D);		
+		if samplerNode:
+			self.sampler = CreateObjectFromXml(daeDocument, xmlNode, DaeFxSyntax.SAMPLER2D, DaeFxSampler2D)
+			
+		surfaceNode = xmlUtils.FindElementByTagName(xmlNode, DaeFxSyntax.SURFACE);
+		if surfaceNode:
+			self.surface = CreateObjectFromXml(daeDocument, xmlNode, DaeFxSyntax.SURFACE, DaeFxSurface)		
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeFxNewParam,self).SaveToXml(daeDocument)
+		SetAttribute(node, DaeSyntax.SID, StripString(self.sid))
+		if ( not self.sampler is None ):
+			AppendChild(daeDocument, node, self.sampler)
+		if ( not self.surface is None ):
+			AppendChild(daeDocument, node, self.surface)
+				
 		return node
 	
 class DaeFxTechnique(DaeEntity):
@@ -2481,11 +2620,11 @@ class DaeFxTexture(DaeEntity):
 	def __init__(self):
 		super(DaeFxTexture, self).__init__()
 		self.texture = ''
-		self.textCoord = ''
+		self.textCoord = 'CHANNEL1';
 		self.syntax = DaeFxSyntax.TEXTURE
 		
-	def LoadFromXml(self, daeDocument, xmlNode):
-		self.texture = daeDocument.imagesLibrary.FindObject(xmlUtils.ReadAttribute(xmlNode, DaeFxSyntax.TEXTURE))
+	def LoadFromXml(self, daeDocument, xmlNode):		
+		self.texture = xmlUtils.ReadAttribute(xmlNode, DaeFxSyntax.TEXTURE)
 		self.textCoord = xmlUtils.ReadAttribute(xmlNode, DaeFxSyntax.TEXCOORD)
 		
 	def SaveToXml(self, daeDocument):
@@ -2528,6 +2667,8 @@ class DaeFxSyntax(object):
 	
 	IMAGE = 'image'
 	NEWPARAM = 'newparam'
+	SAMPLER2D = 'sampler2D'
+	SURFACE = 'surface'
 	TECHNIQUE = 'technique'
 	
 	CONSTANT = 'constant'

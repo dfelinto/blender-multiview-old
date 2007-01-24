@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.143
+# Illusoft Collada 1.4 plugin for Blender version 0.3.146
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -391,6 +391,7 @@ class SceneGraph(object):
 	def LoadFromCollada(self, visualScenes, colladaScene):
 		global debugMode, newScene, clearScene, onlyMainScene
 		currentBlenderSceneNames = [x.name for x in Blender.Scene.Get()]
+
 		
 		if visualScenes is None or len(visualScenes) == 0:
 			return False
@@ -1456,7 +1457,7 @@ class SceneNode(object):
 		boneName = None
 		#Get the transformation
 		# TODO, replace all the self.document.tMatOLD and calculate the transformmatrices the correct way using CalcMatrix()
-		mat = Matrix().resize4x4()
+		mat = Matrix().resize4x4()		
 		for i in range(len(daeNode.transforms)):
 			transform = daeNode.transforms[len(daeNode.transforms)-(i+1)]
 			type = transform[0]
@@ -1513,20 +1514,18 @@ class SceneNode(object):
 		if isinstance(self.parentNode, SceneNode):
 				self.transformMatrix *= self.parentNode.transformMatrix
 		
-		
 		if daeNode.IsJoint():
-			
 			currentBoneExists = False
 			self.isJoint = True
 			# it's a Joint, so check if we have to create a new armature or a bone inside an existing armature.
 			if daeNode.parentNode == None or not daeNode.parentNode.IsJoint():
-				# Create a unique name for the armature object
+				# Create a unique name for the armature object				
 				objectName = self.document.CreateNameForObject(self.id,replaceNames, 'object')
-				# Create a unique name for the armature data
+				# Create a unique name for the armature data				
 				armatureName = self.document.CreateNameForObject(objectName,replaceNames, 'armature')
-				# Create a new armature
+				# Create a new armature				
 				self.armature = Armature.CreateArmature(objectName, self.id, armatureName, daeNode)
-				
+								
 				##print "create armature", armatureName
 				# Get the new created Blender Object
 				newObject = self.armature.GetBlenderObject()
@@ -1645,10 +1644,9 @@ class SceneNode(object):
 				
 				self.armature.MakeEditable(False)
 
-		else : #its a Node			  
+		else : #its a Node			  			
 			daeInstances = daeNode.GetInstances()
 			isController = False
-			
 			if len(daeInstances) == 0:
 				newObject = Blender.Object.New('Empty',self.id) 
 			else:
@@ -1666,7 +1664,7 @@ class SceneNode(object):
 						newObject = Blender.Object.New('Mesh',self.document.CreateNameForObject(self.id,replaceNames, 'object'))
 						dataObject = self.document.controllersLibrary.FindObject(daeInstance, True, newObject)
 						isController = True
-					elif isinstance(daeInstance,collada.DaeGeometryInstance): # Geometry
+					elif isinstance(daeInstance,collada.DaeGeometryInstance): # Geometry						
 						newObject = Blender.Object.New('Mesh',self.document.CreateNameForObject(self.id,replaceNames, 'object'))
 						dataObject = self.document.meshLibrary.FindObject(daeInstance,True)
 					elif isinstance(daeInstance,collada.DaeLightInstance): # Light
@@ -2880,18 +2878,39 @@ class TextureNode(object):
 		if daeEffect is None:
 			daeEffect = collada.DaeFxEffect()
 			daeEffect.id = daeEffect.name = self.document.CreateID(bImage.name , '-fx')
+
+			#creating surface
+			daeSurfaceParam = collada.DaeFxNewParam();
+			surfaceId = self.document.CreateID(bImage.name,'-surface');			
+			daeSurfaceParam.sid = surfaceId;
+
+			daeSurface = collada.DaeFxSurface();
+			daeSurfaceParam.surface = daeSurface;
+			daeSurface.initfrom = bImage.name + "-img";
+			daeEffect.profileCommon.newParams.append( daeSurfaceParam )
+
+			#creating Sampler
+			daeSamplerParam = collada.DaeFxNewParam();
+			samplerId = self.document.CreateID(bImage.name,'-sampler');
+			daeSamplerParam.sid = samplerId;			
+			
+			daeSampler = collada.DaeFxSampler2D();	
+
+			daeSamplerParam.sampler = daeSampler;
+			daeSampler.source.value = surfaceId;
+			daeEffect.profileCommon.newParams.append( daeSamplerParam )
 			
 			shader = collada.DaeFxShadeLambert()
 			daeImage = self.document.colladaDocument.imagesLibrary.FindObject(bImage.name) 				   
 			if daeImage is None: # Create the image
 				daeImage = collada.DaeImage()
-				daeImage.id = daeImage.name = self.document.CreateID(bImage.name,'-image')
+				daeImage.id = daeImage.name = bImage.name + "-img";
 				daeImage.initFrom = Blender.sys.expandpath(bImage.filename)
 				if useRelativePaths:
 					daeImage.initFrom = CreateRelativePath(filename, daeImage.initFrom) 																 
 				self.document.colladaDocument.imagesLibrary.AddItem(daeImage)
 				daeTexture = collada.DaeFxTexture()
-				daeTexture.texture = daeImage.id
+				daeTexture.texture = samplerId;	
 				shader.AddValue(collada.DaeFxSyntax.DIFFUSE, daeTexture)
 				
 			daeEffect.AddShader(shader)
@@ -2945,8 +2964,10 @@ class MaterialNode(object):
 							color = shader.diffuse.color.rgba
 							bMat.setRGBCol(color[0],color[1], color[2])
 						if not (shader.diffuse.texture is None): # Texture
-							texture = shader.diffuse.texture.texture
-							if not (texture is None):
+							textureSampler = shader.diffuse.texture.texture;							
+							if not (textureSampler is None):
+								texture = daeEffect.profileCommon.newParams[0].surface.initfrom;
+								texture = self.document.colladaDocument.imagesLibrary.FindObject(texture)
 								bTexture = self.document.texturesLibrary.FindObject(texture, True)
 								if not bTexture is None:
 									bMat.setTexture(0, bTexture, Blender.Texture.TexCo.UV)
@@ -2974,15 +2995,16 @@ class MaterialNode(object):
 	def SaveToDae(self, bMaterial):
 		global useRelativePaths, filename
 		daeMaterial = collada.DaeFxMaterial()
-		daeMaterial.id = daeMaterial.name = self.document.CreateID(bMaterial.name, '-Material')
+		daeMaterial.id = daeMaterial.name = self.document.CreateID(bMaterial.name, '-Material3')
 		
 		instance = collada.DaeFxEffectInstance()
 		daeEffect = self.document.colladaDocument.effectsLibrary.FindObject(bMaterial.name+'-fx')
 		meshNode = MeshNode(self.document)
 		if daeEffect is None:
 			daeEffect = collada.DaeFxEffect()
-			daeEffect.id = daeEffect.name = self.document.CreateID(bMaterial.name , '-fx')
-			shader = None
+
+
+
 			if bMaterial.getSpec() > 0.0:
 				if bMaterial.getSpecShader() == Blender.Material.Shaders.SPEC_BLINN:
 					shader = collada.DaeFxShadeBlinn()

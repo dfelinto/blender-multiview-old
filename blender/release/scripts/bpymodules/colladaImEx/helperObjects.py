@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.143
+# Illusoft Collada 1.4 plugin for Blender version 0.3.146
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -114,11 +114,10 @@ class Armature(object):
 	#---CLASSMETHODS
 	
 	# Factory method
-	def CreateArmature(cls,objectName,armatureName, realArmatureName, daeNode):
+	def CreateArmature(cls,objectName,armatureName, realArmatureName, daeNode):		
 		armatureBObject = Blender.Object.New('Armature',objectName)
 		armatureBObject.data.name = str(realArmatureName)
-		
-		armature = Armature(armatureBObject, daeNode)
+		armature = Armature(armatureBObject, daeNode)		
 		armature.name = armatureName
 		cls._armatures[armatureName] = armature
 		
