@@ -1468,7 +1468,11 @@ static int get_ipo_cfra_from_cfra(SpaceIpo * sipo, int cfra)
 	if (sipo->blocktype==ID_SEQ) {
 		Sequence * seq = (Sequence*) sipo->from;
 
-		if (seq && ((seq->flag & SEQ_IPO_FRAME_LOCKED) != 0)) {
+		if (!seq) {
+			return cfra;
+		}
+
+		if ((seq->flag & SEQ_IPO_FRAME_LOCKED) != 0) {
 			return cfra;
 		} else {
 			float ctime= frame_to_float(cfra - seq->startdisp);

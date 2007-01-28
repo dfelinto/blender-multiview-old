@@ -2437,7 +2437,10 @@ static int get_cfra_from_dx(SpaceIpo * sipo, int dx)
 {
 	if (sipo->blocktype == ID_SEQ) {
 		Sequence * seq = (Sequence*) sipo->from;
-		if (seq && ((seq->flag & SEQ_IPO_FRAME_LOCKED) != 0)) {
+		if (!seq) {
+			return dx;
+		}
+		if ((seq->flag & SEQ_IPO_FRAME_LOCKED) != 0) {
 			return dx;
 		} else {
 			float m= (seq->enddisp - seq->startdisp)/100.0f;
