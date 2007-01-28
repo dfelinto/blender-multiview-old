@@ -1446,6 +1446,7 @@ static void threaded_tile_processor(Render *re)
 		/* on break, wait for all slots to get freed */
 		if( (g_break=re->test_break()) && BLI_available_threads(&threads)==re->r.threads)
 			rendering= 0;
+		
 	}
 	
 	if(rr->exrhandle) {
