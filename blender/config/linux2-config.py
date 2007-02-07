@@ -11,7 +11,7 @@ BF_PYTHON_BINARY = '${BF_PYTHON}/bin/python${BF_PYTHON_VERSION}'
 BF_PYTHON_LIB = 'python${BF_PYTHON_VERSION}' #BF_PYTHON+'/lib/python'+BF_PYTHON_VERSION+'/config/libpython'+BF_PYTHON_VERSION+'.a'
 BF_PYTHON_LINKFLAGS = ['-Xlinker', '-export-dynamic']
 
-WITH_BF_OPENAL = 'true'
+WITH_BF_OPENAL = 'false'
 BF_OPENAL = '/usr'
 BF_OPENAL_INC = '${BF_OPENAL}/include'
 BF_OPENAL_LIB = 'openal'
