@@ -48,6 +48,9 @@ __bpydoc__ = """\
 # along with this program; if not, write to the Free Software Foundation,
 # --------------------------------------------------------------------------
 
+# This script has been modified on Feb 15, 2007 by the Blender Foundation
+# changes include text in the user interface and text output.
+
 import Blender
 from Blender  import Window
 import sys
