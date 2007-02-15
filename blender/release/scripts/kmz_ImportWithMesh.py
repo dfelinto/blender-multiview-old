@@ -13,9 +13,9 @@ __bpydoc__ = """\
        To read 3d geometry .kmz and .kml file 
 
        Caution  : the geometry data of the Google Earth's files on the web 
-       are licended  and you can not load or use it in a personnal work .
-       Be aware that the containt of the file you try to read must be free 
-       or legaly your's .
+       are licensed  and you can not load or use it in a personnal work .
+       Be aware that the content of the file you try to read must be free 
+       or legaly yours .
 
 		Attention, this script uses the Blender's intern fill() function to create 
 		certain complex faces but to work correctly this function  needs a few 
