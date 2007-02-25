@@ -265,10 +265,9 @@ static PyObject *M_Material_Get( PyObject * self, PyObject * args )
 
 	if( name ) {		/* (name) - Search material by name */
 
-		BPy_Material *wanted_mat = NULL;
-		wanted_mat = ( Material * ) GetIdFromList( &( G.main->mat ), name );
+		mat_iter = ( Material * ) GetIdFromList( &( G.main->mat ), name );
 
-		if( wanted_mat == NULL ) { /* Requested material doesn't exist */
+		if( mat_iter == NULL ) { /* Requested material doesn't exist */
 			char error_msg[64];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Material \"%s\" not found", name );
@@ -276,7 +275,7 @@ static PyObject *M_Material_Get( PyObject * self, PyObject * args )
 						      error_msg );
 		}
 
-		return ( PyObject * ) wanted_mat;
+		return Material_CreatePyObject( mat_iter );
 	}
 
 	else {			/* () - return a list with all materials in the scene */
