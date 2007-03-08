@@ -7509,26 +7509,12 @@ static PyObject *Mesh_getTexMesh( BPy_Mesh * self )
 }
 
 static int Mesh_setTexMesh( BPy_Mesh * self, PyObject * arg )
-{
+{	
+	int ret = GenericLib_assignData(value, (void **) &self->mesh->texcomesh, 0, 1, ID_ME, 0);
 	
-	/*None or Mesh*/
-	if ( arg != Py_None && !Mesh_CheckPyObject(arg) )
-		return EXPP_ReturnIntError( PyExc_ValueError,
-			"texmesh must be a Mesh or None type" );
+	if (ret==0 && value!=Py_None) /*This must be a mesh type*/
+		(( BPy_Mesh * ) value)->new= 0;
 	
-	/*remove existing texmesh*/
-	if (self->mesh->texcomesh) {
-		self->mesh->texcomesh->id.us--;
-		self->mesh->texcomesh= NULL;
-	}
-	
-	if (arg != Py_None) { /* its a mesh */
-		BPy_Mesh *blen_obj = ( BPy_Mesh * ) arg;
-		/*This is a mesh so it needs to be added */
-		self->mesh->texcomesh= blen_obj->mesh;
-		self->mesh->texcomesh->id.us++;
-		blen_obj->new= 0;
-	}
 	return 0;
 }
 
