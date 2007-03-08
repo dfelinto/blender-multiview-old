@@ -7508,7 +7508,7 @@ static PyObject *Mesh_getTexMesh( BPy_Mesh * self )
 		Py_RETURN_NONE;
 }
 
-static int Mesh_setTexMesh( BPy_Mesh * self, PyObject * arg )
+static int Mesh_setTexMesh( BPy_Mesh * self, PyObject * value )
 {	
 	int ret = GenericLib_assignData(value, (void **) &self->mesh->texcomesh, 0, 1, ID_ME, 0);
 	
