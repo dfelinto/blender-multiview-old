@@ -100,7 +100,7 @@ extern "C" {
 		PLA_plugin_handle i
 		);
 
-	/** Retrieve a ref to the foreground colour vector. */
+	/** Retrieve a ref to the foreground color vector. */
 	float*
 	PLA_get_foreground_colour(
 		PLA_plugin_handle i

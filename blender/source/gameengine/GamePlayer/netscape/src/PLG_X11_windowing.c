@@ -131,7 +131,7 @@ PLB_keyboard_key_callback(
 	);
 
 
-/** Double buffered, with alpha and 16-bit colour, please. */
+/** Double buffered, with alpha and 16-bit color, please. */
 int GL_capabilities[] =
 {
 	GLX_DOUBLEBUFFER,   // front and back buffers

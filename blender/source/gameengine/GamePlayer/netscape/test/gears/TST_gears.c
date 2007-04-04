@@ -46,6 +46,13 @@
 
 /*
  * $Log$
+ * Revision 1.5  2007/04/04 13:18:38  campbellbarton
+ * moved source and text to american spelling
+ * * colour -> color
+ * * centre -> center
+ * * normalise -> normalize
+ * * modelling -> modeling
+ *
  * Revision 1.4  2004/03/22 22:01:49  jesterking
  * [GameEngine] Commit all Kester's changes made to the gameengine to restore 2.25 like physics.
  * [SCons] Build with Solid as default when enabling the gameengine in the build process
@@ -86,7 +93,7 @@
  * from parts that could not be open sourced. Enjoy!
  *
  * Revision 1.4  2002/01/04 17:02:55  nzc
- * - Removed double mutex unlock from plain colour drawing func.
+ * - Removed double mutex unlock from plain color drawing func.
  * - Renamed functions to better reflect the grouping. See comments in
  *   UnixShell.c for details.
  *

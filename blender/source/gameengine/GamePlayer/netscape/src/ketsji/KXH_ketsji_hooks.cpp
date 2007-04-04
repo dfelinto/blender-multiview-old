@@ -152,9 +152,9 @@ release_resources(
 	ketsji_engine_data* k
 	);
 
-/** Set the canvas to a plain fore and background colour. */
+/** Set the canvas to a plain fore and background color. */
 void
-set_plain_colour(
+set_plain_color(
 	ketsji_engine_data* k
 	);
 
@@ -177,9 +177,9 @@ to_state(
 	KXH_STATE i
 	);
 
-/** Redraw the canvas with a plain foreground colour. */
+/** Redraw the canvas with a plain foreground color. */
 void 
-set_plain_colour_redraw_func(
+set_plain_color_redraw_func(
 	ketsji_engine_data* k
 	);
 
@@ -612,14 +612,14 @@ tick(ketsji_engine_data* k)
 	switch (k->state) {
 	case KXH_INIT:
 		KXH_log_entry("tick: init");
-		set_plain_colour(k);
+		set_plain_color(k);
 			
 		if (PLA_get_loading_animation_url(k->plugin)) {
 			// A loading animation url was given:
 			// use it. Loading was already
 			// initiated elsewhere.
 			KXH_log_entry("tick: show fg");
-			to_state(k, KXH_SHOW_FG_COLOUR);
+			to_state(k, KXH_SHOW_FG_COLOR);
 		} else {
 			KXH_log_entry("tick: default loader ");
 			open_default_loader(k);
@@ -627,9 +627,9 @@ tick(ketsji_engine_data* k)
 			to_state(k, KXH_PLAY_LOADING_ANIM);
 		}
 		break;
-	case KXH_SHOW_FG_COLOUR:
+	case KXH_SHOW_FG_COLOR:
 		/* load the animation. */
-		set_plain_colour(k);			
+		set_plain_color(k);			
 
 		// next state: 
 		if (k->loading_anim) {
@@ -710,8 +710,8 @@ tick(ketsji_engine_data* k)
 		// outside, and caught by the general
 		// termination criterium
 			
-		// for now, just colour cycle a bit
-		set_plain_colour(k);
+		// for now, just color cycle a bit
+		set_plain_color(k);
 		break;
 	case KXH_CLEAN_UP:
 		// this is the actual TERM signal:
@@ -870,20 +870,20 @@ request_replacing_url(ketsji_engine_data* k,
 }
 
 void
-set_plain_colour(ketsji_engine_data* k) 
+set_plain_color(ketsji_engine_data* k) 
 {
-//	KXH_log_entry("set_plain_colour");
-	set_plain_colour_redraw_func(k);
+//	KXH_log_entry("set_plain_color");
+	set_plain_color_redraw_func(k);
 }
 
 void 
-set_plain_colour_redraw_func(ketsji_engine_data* k)
+set_plain_color_redraw_func(ketsji_engine_data* k)
 {
 	
-  //	KXH_log_entry("set_plain_colour_redraw_func");
+  //	KXH_log_entry("set_plain_color_redraw_func");
 	PLA_acquire_gl_context(k->plugin);
 
-	float* c = PLA_get_foreground_colour(k->plugin);
+	float* c = PLA_get_foreground_color(k->plugin);
 
 #ifndef _WIN32
  	glClearColor(c[0], c[1], c[2], 1.0);
