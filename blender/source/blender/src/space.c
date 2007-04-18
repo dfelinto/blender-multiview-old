@@ -1338,7 +1338,7 @@ static void winqreadview3dspace(ScrArea *sa, void *spacedata, BWinEvent *evt)
 						new_ofs[0]= -curs[0];
 						new_ofs[1]= -curs[1];
 						new_ofs[2]= -curs[2];
-						smooth_view(G.vd, new_ofs, NULL, NULL);
+						smooth_view(G.vd, new_ofs, NULL, NULL, NULL);
 					}
 				}
 				doredraw= 1;
@@ -1743,7 +1743,7 @@ static void winqreadview3dspace(ScrArea *sa, void *spacedata, BWinEvent *evt)
 						new_ofs[0]= -curs[0];
 						new_ofs[1]= -curs[1];
 						new_ofs[2]= -curs[2];
-						smooth_view(G.vd, new_ofs, NULL, NULL);
+						smooth_view(G.vd, new_ofs, NULL, NULL, NULL);
 					}
 					scrarea_queue_winredraw(curarea);
 				}
@@ -3339,7 +3339,7 @@ void drawinfospace(ScrArea *sa, void *spacedata)
 		
         uiDefButS(block, NUM, B_DRAWINFO, "Smooth View:",
 			(xpos+edgsp+(4*mpref)+(5*midsp)),y1,(mpref),buth,
-			&U.smooth_viewtx, 0, 1000, 0, 0,
+			&U.smooth_viewtx, 0, 10000, 0, 0,
 			"The time to animate the view in miliseconds, zero to disable");
 		
 		uiDefBut(block, LABEL,0,"Select with:",

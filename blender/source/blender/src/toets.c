@@ -120,6 +120,32 @@ static int is_an_active_object(void *ob) {
 	return 0;
 }
 
+/* run when pressing 1,3 or 7 */
+static void axis_set_view(float *new_quat, short view, int perspo)
+{
+	G.vd->view=0;
+	
+	if (G.vd->persp==2 && G.vd->camera) {
+		/* Is this switching from a camera view ? */
+		float orig_ofs[3];
+		float orig_lens= G.vd->lens;
+		VECCOPY(orig_ofs, G.vd->ofs);
+		view_settings_from_ob(G.vd->camera, G.vd->ofs, G.vd->viewquat, &G.vd->dist, &G.vd->lens);
+		
+		if (U.uiflag & USER_AUTOPERSP) G.vd->persp= 0;
+		else if(G.vd->persp>=2) G.vd->persp= perspo;
+		
+		smooth_view(G.vd, orig_ofs, new_quat, NULL, &orig_lens);
+	} else {
+		
+		if (U.uiflag & USER_AUTOPERSP) G.vd->persp= 0;
+		else if(G.vd->persp>=2) G.vd->persp= perspo;
+		
+		smooth_view(G.vd, NULL, new_quat, NULL, NULL);
+	}
+	G.vd->view= view;
+}
+
 void persptoetsen(unsigned short event)
 {
 	static Object *oldcamera=0;
@@ -127,7 +153,12 @@ void persptoetsen(unsigned short event)
 	static int perspo=1;
 	int preview3d_event= 1;
 	
-	float new_quat[4], new_dist;
+	float new_quat[4], new_dist, orig_ofs[3];
+	
+	/* Use this to test if we started out with a camera */
+	Object *act_cam_orig=NULL;
+	if (G.vd->persp == 2)
+		act_cam_orig = G.vd->camera;
 	
 	if(event==PADENTER) {
 		if (G.qual == LR_SHIFTKEY) {
@@ -137,7 +168,7 @@ void persptoetsen(unsigned short event)
 				G.vd->camzoom= 0;
 			} else {
 				new_dist = 10.0;
-				smooth_view(G.vd, NULL, NULL, &new_dist);
+				smooth_view(G.vd, NULL, NULL, &new_dist, NULL);
 			}
 		}
 	}
@@ -156,34 +187,21 @@ void persptoetsen(unsigned short event)
 			new_quat[1]=-1.0;
 			new_quat[2]=0.0;
 			new_quat[3]=0.0;
-			G.vd->view= 0;
-			smooth_view(G.vd, NULL, new_quat, NULL);
-			G.vd->view= 7;
-			
-			if (U.uiflag & USER_AUTOPERSP) G.vd->persp= 0; 
-			else if(G.vd->persp>=2) G.vd->persp= perspo;
+			axis_set_view(new_quat, 7, perspo);
 		}
 		else if(event==PAD1) {
 			new_quat[0]=0.0;
 			new_quat[1]=0.0;
 			new_quat[2]=(float)-cos(M_PI/4.0);
 			new_quat[3]=(float)-cos(M_PI/4.0);
-			G.vd->view=0;
-			smooth_view(G.vd, NULL, new_quat, NULL);
-			G.vd->view=1;
-			if (U.uiflag & USER_AUTOPERSP) G.vd->persp= 0;
-			else if(G.vd->persp>=2) G.vd->persp= perspo;
+			axis_set_view(new_quat, 1, perspo);
 		}
 		else if(event==PAD3) {
 			new_quat[0]= 0.5;
 			new_quat[1]=-0.5;
 			new_quat[2]= 0.5;
 			new_quat[3]= 0.5;
-			G.vd->view=0;
-			smooth_view(G.vd, NULL, new_quat, NULL);
-			G.vd->view=3;
-			if (U.uiflag & USER_AUTOPERSP) G.vd->persp= 0;
-			else if(G.vd->persp>=2) G.vd->persp= perspo;
+			axis_set_view(new_quat, 3, perspo);
 		}
 		else if(event==PADMINUS) {
 			/* this min and max is also in viewmove() */
@@ -225,33 +243,21 @@ void persptoetsen(unsigned short event)
 			new_quat[1]=0.0;
 			new_quat[2]=0.0;
 			new_quat[3]=0.0;
-			G.vd->view=0;
-			smooth_view(G.vd, NULL, new_quat, NULL);
-			G.vd->view=7;
-			if (U.uiflag & USER_AUTOPERSP) G.vd->persp= 0;
-			else if(G.vd->persp>=2) G.vd->persp= perspo;
+			axis_set_view(new_quat, 7, perspo);
 		}
 		else if(event==PAD1) {
 			new_quat[0]= (float)cos(M_PI/4.0);
 			new_quat[1]= (float)-sin(M_PI/4.0);
 			new_quat[2]= 0.0;
 			new_quat[3]= 0.0;
-			G.vd->view=0;
-			smooth_view(G.vd, NULL, new_quat, NULL);
-			G.vd->view=1;
-			if (U.uiflag & USER_AUTOPERSP) G.vd->persp= 0;
-			else if(G.vd->persp>=2) G.vd->persp= perspo;
+			axis_set_view(new_quat, 1, perspo);
 		}
 		else if(event==PAD3) {
 			new_quat[0]= 0.5;
 			new_quat[1]= -0.5;
 			new_quat[2]= -0.5;
 			new_quat[3]= -0.5;
-			G.vd->view=0;
-			smooth_view(G.vd, NULL, new_quat, NULL);
-			G.vd->view=3;
-			if (U.uiflag & USER_AUTOPERSP) G.vd->persp= 0;
-			else if(G.vd->persp>=2) G.vd->persp= perspo;
+			axis_set_view(new_quat, 3, perspo);
 		}
 		else if(event==PADMINUS) {
 			/* this min and max is also in viewmove() */
@@ -269,15 +275,34 @@ void persptoetsen(unsigned short event)
 			if(G.vd->persp!=1) preview3d_event= 0;
 		}
 		else if(event==PAD5) {
-			if(G.vd->persp==1) G.vd->persp=0;
-			else G.vd->persp=1;
+			if (U.smooth_viewtx) {
+				if(G.vd->persp==1) { G.vd->persp=0;
+				} else if (act_cam_orig) {
+					/* were from a camera view */
+					float orig_dist= G.vd->dist;
+					float orig_lens= G.vd->lens;
+					VECCOPY(orig_ofs, G.vd->ofs);
+
+					G.vd->persp=1;
+					G.vd->dist= 0.0;
+					
+					view_settings_from_ob(act_cam_orig, G.vd->ofs, NULL, NULL, &G.vd->lens);
+					
+					smooth_view(G.vd, orig_ofs, NULL, &orig_dist, &orig_lens);
+					
+				} else {
+					G.vd->persp=1;
+				}
+			} else {
+				if(G.vd->persp==1) G.vd->persp=0;
+				else G.vd->persp=1;
+			}
 		}
 		else if(event==PAD0) {
 			if(G.qual==LR_ALTKEY) {
 				if(oldcamera && is_an_active_object(oldcamera)) {
 					G.vd->camera= oldcamera;
 				}
-				
 				handle_view3d_lock();
 			}
 			else if(BASACT) {
@@ -301,9 +326,23 @@ void persptoetsen(unsigned short event)
 				handle_view3d_lock();
 			}
 			
-			if(G.vd->camera) {
+			if(G.vd->camera && (G.vd->camera != act_cam_orig)) {
 				G.vd->persp= 2;
 				G.vd->view= 0;
+				
+				if (U.smooth_viewtx) {
+					/* move 3d view to camera view */
+					float orig_lens = G.vd->lens;
+					VECCOPY(orig_ofs, G.vd->ofs);
+					
+					if (act_cam_orig)
+						view_settings_from_ob(act_cam_orig, G.vd->ofs, G.vd->viewquat, &G.vd->dist, &G.vd->lens);
+					
+					smooth_view_to_camera(G.vd);
+					VECCOPY(G.vd->ofs, orig_ofs);
+					G.vd->lens = orig_lens;
+				}
+				
 				if(((G.qual & LR_CTRLKEY) && (G.qual & LR_ALTKEY)) || (G.qual & LR_SHIFTKEY)) {
 					void setcameratoview3d(void);	// view.c
 					setcameratoview3d();
