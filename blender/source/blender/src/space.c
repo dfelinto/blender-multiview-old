@@ -3339,7 +3339,7 @@ void drawinfospace(ScrArea *sa, void *spacedata)
 		
         uiDefButS(block, NUM, B_DRAWINFO, "Smooth View:",
 			(xpos+edgsp+(4*mpref)+(5*midsp)),y1,(mpref),buth,
-			&U.smooth_viewtx, 0, 10000, 0, 0,
+			&U.smooth_viewtx, 0, 1000, 0, 0,
 			"The time to animate the view in miliseconds, zero to disable");
 		
 		uiDefBut(block, LABEL,0,"Select with:",

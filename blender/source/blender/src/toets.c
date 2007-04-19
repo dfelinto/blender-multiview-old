@@ -121,8 +121,11 @@ static int is_an_active_object(void *ob) {
 }
 
 /* run when pressing 1,3 or 7 */
-static void axis_set_view(float *new_quat, short view, int perspo)
+static void axis_set_view(float q1, float q2, float q3, float q4, short view, int perspo)
 {
+	float new_quat[4];
+	new_quat[0]= q1; new_quat[1]= q2;
+	new_quat[2]= q3; new_quat[3]= q4;
 	G.vd->view=0;
 	
 	if (G.vd->persp==2 && G.vd->camera) {
@@ -153,7 +156,7 @@ void persptoetsen(unsigned short event)
 	static int perspo=1;
 	int preview3d_event= 1;
 	
-	float new_quat[4], new_dist, orig_ofs[3];
+	float new_dist, orig_ofs[3];
 	
 	/* Use this to test if we started out with a camera */
 	Object *act_cam_orig=NULL;
@@ -183,25 +186,13 @@ void persptoetsen(unsigned short event)
 			/* G.vd->persp= 3; */
 		}
 		else if(event==PAD7) {
-			new_quat[0]=0.0;
-			new_quat[1]=-1.0;
-			new_quat[2]=0.0;
-			new_quat[3]=0.0;
-			axis_set_view(new_quat, 7, perspo);
+			axis_set_view(0.0, -1.0, 0.0, 0.0, 7, perspo);
 		}
 		else if(event==PAD1) {
-			new_quat[0]=0.0;
-			new_quat[1]=0.0;
-			new_quat[2]=(float)-cos(M_PI/4.0);
-			new_quat[3]=(float)-cos(M_PI/4.0);
-			axis_set_view(new_quat, 1, perspo);
+			axis_set_view(0.0, 0.0, (float)-cos(M_PI/4.0), (float)-cos(M_PI/4.0), 1, perspo);
 		}
 		else if(event==PAD3) {
-			new_quat[0]= 0.5;
-			new_quat[1]=-0.5;
-			new_quat[2]= 0.5;
-			new_quat[3]= 0.5;
-			axis_set_view(new_quat, 3, perspo);
+			axis_set_view(0.5, -0.5, 0.5, 0.5, 3, perspo);
 		}
 		else if(event==PADMINUS) {
 			/* this min and max is also in viewmove() */
@@ -239,25 +230,13 @@ void persptoetsen(unsigned short event)
 		
 
 		if(event==PAD7) {
-			new_quat[0]=1.0;
-			new_quat[1]=0.0;
-			new_quat[2]=0.0;
-			new_quat[3]=0.0;
-			axis_set_view(new_quat, 7, perspo);
+			axis_set_view(1.0, 0.0, 0.0, 0.0, 7, perspo);
 		}
 		else if(event==PAD1) {
-			new_quat[0]= (float)cos(M_PI/4.0);
-			new_quat[1]= (float)-sin(M_PI/4.0);
-			new_quat[2]= 0.0;
-			new_quat[3]= 0.0;
-			axis_set_view(new_quat, 1, perspo);
+			axis_set_view((float)cos(M_PI/4.0), (float)-sin(M_PI/4.0), 0.0, 0.0, 1, perspo);
 		}
 		else if(event==PAD3) {
-			new_quat[0]= 0.5;
-			new_quat[1]= -0.5;
-			new_quat[2]= -0.5;
-			new_quat[3]= -0.5;
-			axis_set_view(new_quat, 3, perspo);
+			axis_set_view(0.5, -0.5, -0.5, -0.5, 3, perspo);
 		}
 		else if(event==PADMINUS) {
 			/* this min and max is also in viewmove() */
@@ -330,7 +309,14 @@ void persptoetsen(unsigned short event)
 				G.vd->persp= 2;
 				G.vd->view= 0;
 				
-				if (U.smooth_viewtx) {
+				if(((G.qual & LR_CTRLKEY) && (G.qual & LR_ALTKEY)) || (G.qual & LR_SHIFTKEY)) {
+					void setcameratoview3d(void);	// view.c
+					setcameratoview3d();
+					DAG_object_flush_update(G.scene, G.scene->camera, OB_RECALC_OB);
+					BIF_undo_push("View to Camera position");
+					allqueue(REDRAWVIEW3D, 0);
+				
+				} else if (U.smooth_viewtx) {
 					/* move 3d view to camera view */
 					float orig_lens = G.vd->lens;
 					VECCOPY(orig_ofs, G.vd->ofs);
@@ -343,13 +329,7 @@ void persptoetsen(unsigned short event)
 					G.vd->lens = orig_lens;
 				}
 				
-				if(((G.qual & LR_CTRLKEY) && (G.qual & LR_ALTKEY)) || (G.qual & LR_SHIFTKEY)) {
-					void setcameratoview3d(void);	// view.c
-					setcameratoview3d();
-					DAG_object_flush_update(G.scene, G.scene->camera, OB_RECALC_OB);
-					BIF_undo_push("View to Camera position");
-					allqueue(REDRAWVIEW3D, 0);
-				}				
+			
 			}
 		}
 		else if(event==PAD9) {
@@ -371,7 +351,6 @@ void persptoetsen(unsigned short event)
 				G.vd->view= 0;
 			}
 			if(event==PAD2 || event==PAD8) {
-				
 				/* horizontal axis */
 				VECCOPY(q1+1, G.vd->viewinv[0]);
 				
