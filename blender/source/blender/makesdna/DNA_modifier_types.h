@@ -278,6 +278,17 @@ enum {
 	MOD_WAV_MAP_UV,
 };
 
+/* WaveModifierData.flag */
+#define MOD_WAVE_X      1<<1
+#define MOD_WAVE_Y      1<<2
+#define MOD_WAVE_CYCL   1<<3
+#define MOD_WAVE_VCOL   1<<4
+#define MOD_WAVE_TURB   1<<5
+#define MOD_WAVE_NORM   1<<6
+#define MOD_WAVE_NORM_X 1<<7
+#define MOD_WAVE_NORM_Y 1<<8
+#define MOD_WAVE_NORM_Z 1<<9
+
 typedef struct WaveModifierData {
 	ModifierData modifier;
 
