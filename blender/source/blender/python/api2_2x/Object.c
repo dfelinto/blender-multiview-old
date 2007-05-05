@@ -5254,7 +5254,7 @@ PyObject *Object_Init( void )
 	PyObject *PITypesDict = M_Object_PITypesDict( );
 	PyObject *RBFlagsDict = M_Object_RBFlagsDict( );
 	PyObject *RBShapesDict = M_Object_RBShapeBoundDict( );
-	PyObject *IpoKeyTypes = M_Object_IpoKeyTypesDict( );
+	PyObject *IpoKeyTypesDict = M_Object_IpoKeyTypesDict( );
 
 	PyType_Ready( &Object_Type ) ;
 
@@ -5297,8 +5297,8 @@ PyObject *Object_Init( void )
 		PyModule_AddObject( module, "RBFlags", RBFlagsDict );
 	if( RBShapesDict )
 		PyModule_AddObject( module, "RBShapes", RBShapesDict );
-	if( IpoKeysDict )
-		PyModule_AddObject( module, "IpoKeyTypes", IpoKeyTypes );	
+	if( IpoKeyTypesDict )
+		PyModule_AddObject( module, "IpoKeyTypes", IpoKeyTypesDict );	
 
 		/*Add SUBMODULES to the module*/
 	dict = PyModule_GetDict( module ); /*borrowed*/
