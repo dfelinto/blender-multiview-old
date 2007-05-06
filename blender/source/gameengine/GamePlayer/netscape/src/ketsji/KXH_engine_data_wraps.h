@@ -80,7 +80,7 @@ extern "C" {
 	enum KXH_STATE {
 		KXH_NO_STATE = 0,
 		KXH_INIT,                     // 1
-		KXH_SHOW_FG_COLOUR,           // 2
+		KXH_SHOW_FG_COLOR,            // 2
 		KXH_TEST_LOADING_FILE_TYPE,   // 3
 		KXH_PLAY_LOADING_ANIM,        // 4
 		KXH_TEST_MAIN_FILE,           // 5
