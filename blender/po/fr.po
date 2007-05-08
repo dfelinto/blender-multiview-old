@@ -1,7 +1,7 @@
 # French UI Translation
-# eon <eon.2006@free.fr>, 2006
-#"Last-Translator: eon <eon.2006@free.fr>\n"
-#"PO-Revision-Date: 2006-12-20 18:00+0100\n"
+# eon <eon.2006@free.fr>, 2007
+#"Last-Translator: eon <eon.2007@free.fr>\n"
+#"PO-Revision-Date: 2007-02-08 18:00+0100\n"
 #"Content-Type: text/plain; charset=UTF-8\n"
 #"Content-Transfer-Encoding: 8bit\n"
 #"Language-Team: eon (eon@jabber.fr) , serialsiner , kaal / main thread on http://www.zoo-logique.org/3D.Blender/newsportal/thread.php?group=3D.Blender"
@@ -13,9 +13,10 @@
 ###########################################################
 ###
 ###  Summary of this file by section (WIP)
+###  All sections have a special code, just start a search in the text file to go to the section you look for
 ###
-###   General Messages
-###   Window Type
+###   General Messages (code32)
+###   Window Type (code109)
 ###   FileSelect Commands
 ###   Menu bar
 ###   Menu bar  FILE
@@ -23,12 +24,19 @@
 ###   Menu bar  GAME
 ###   Menu bar  RENDER
 ###   Menu bar  HELP
+###   Menu bar  Select (code1245)
+###   Menubar  Mode (code145)
+###   Menubar Spécial Draw Mode (D) (code134)
+###   SECTION  NODE EDITOR (code254)
+###   SECTION  OUTLINER (code158)
+###   Editing Armature (F9) (code154)
+###   ToolBox  RENDER (F10) (code155)
 ###
 ###########################################################
 
 ###########################################################
 ###
-###  General Messages
+###  General Messages (code32)
 ###
 ###########################################################
 
@@ -103,9 +111,16 @@ msgstr "Effacer l'Origine"
 msgid "Convert Curve to"
 msgstr "Convertir la Courbe en"
 
+#CTRL-Y
+msgid "No redo available"
+msgstr "Pas d'action à refaire"
+
+msgid "No more steps to do"
+msgstr "Plus d'action à refaire"
+
 ###########################################################
 ###
-###  Window Type
+###  Window Type (code109)
 ###
 ###########################################################
 
@@ -188,9 +203,6 @@ msgstr "Chemin Relatif"
 msgid "Save over"
 msgstr "Ecraser?"
 
-msgid "Append"
-msgstr "Importer"
-
 msgid "Load Library"
 msgstr "Importer"
 
@@ -268,10 +280,7 @@ msgid "Recover Last Session"
 msgstr "Ouvrir Sauvegarde de Secours"
 
 msgid "Compress File"
-msgstr "Compresser le projet"
-
-msgid "Append/Link"
-msgstr "Importer/Lier .blend"
+msgstr "Compresser le .blend"
 
 msgid "Save As..."
 msgstr "Enregistrer Sous"
@@ -290,6 +299,9 @@ msgstr "Enregistrer l'Interface"
 
 msgid "Save Runtime..."
 msgstr "Enregister le Jeu en exécutable"
+
+msgid "Append or Link"
+msgstr "Importer/Lier depuis un .blend"
 
 msgid "Import"
 msgstr "Importer"
@@ -409,20 +421,23 @@ msgstr "Rendu Partiel"
 msgid "Render Settings"
 msgstr "Paramètres du Rendu"
 
-msgid "Bake-Render Meshes"
+msgid "Bake Render Meshes"
 msgstr "Rendu vers Textures UV"
 
 msgid "Bake Selected Meshes "
 msgstr "Type de Rendu"
 
-msgid "Full Render "
+msgid "Full Render"
 msgstr "Rendu final"
+
+msgid "Ambient Occlusion"
+msgstr "Occlusion Ambiante"
 
 msgid "Normals "
 msgstr "Normales"
 
-msgid "Texture Only "
-msgstr "Textures brutes"
+msgid "Texture Only"
+msgstr "Textures seulement"
 
 msgid "No Images found to bake to"
 msgstr "Aucune Image UV trouvée"
@@ -602,14 +617,17 @@ msgid "Outline Selected Objects"
 msgstr "Surligner les Objets Sélectionnés"
 
 msgid "Set Clipping Border"
-msgstr "Coupe 3D"
+msgstr "Activer Coupe 3D"
+
+msgid "Clear Clipping Border"
+msgstr "Désactiver Coupe 3D"
 
 msgid "Render Preview..."
 msgstr "Rendu Interactif"
 
 ###########################################################
 ###
-###  Menu bar  Select
+###  Menu bar  Select (code1245)
 ###
 ###########################################################
 
@@ -645,6 +663,13 @@ msgstr "Enfants"
 
 msgid "Immediate Children"
 msgstr "1er Enfant"
+
+msgid "Linked Faces"
+msgstr "Faces liées"
+
+# messagebox
+msgid "No active face, or active face has no UV texture"
+msgstr "Pas de face active, ou la face active n'a pas de coordonnées de texture UV"
 
 ###########################################################
 ###
@@ -729,6 +754,9 @@ msgstr "Echelle"
 
 msgid "Make Single User"
 msgstr "Dé-Lier"
+
+msgid "Selected Objects"
+msgstr "Objets Sélectionnés"
 
 msgid "Make Links"
 msgstr "Lier"
@@ -843,7 +871,7 @@ msgstr "Créer Parenté"
 
 ###########################################################
 ###
-###  Menubar  Mode
+###  Menubar  Mode (code145)
 ###
 ###########################################################
 
@@ -857,7 +885,7 @@ msgid "Object Mode "
 msgstr "Mode Objet"
 
 msgid "UV Face Select "
-msgstr "Mode UV Mapping"
+msgstr "Mode Faces UV"
 
 ###########################################################
 ###
@@ -1220,6 +1248,15 @@ msgstr "Fusionner"
 msgid "Bevel"
 msgstr "Chanfrain"
 
+msgid "Loop Subdivide"
+msgstr "Coupe Circulaire"
+
+msgid "Loop Subdivide..."
+msgstr "Coupe Circulaire..."
+
+msgid "Knife Subdivide..."
+msgstr "Coupe au Couteau..."
+
 msgid "Mark Seam"
 msgstr "Marquer Couture"
 
@@ -1577,11 +1614,29 @@ msgstr "Moteur Physique"
 msgid "Physics Engine"
 msgstr "Moteur Physique"
 
+msgid "Amb Occ"
+msgstr "Occlusion"
+
 msgid "Mist"
 msgstr "Brouillard"
 
 msgid "Stars"
 msgstr "Etoiles"
+
+msgid "Sub"
+msgstr "Soustraire"
+
+msgid "Both"
+msgstr "Les deux"
+
+msgid "Plain"
+msgstr "Blanc"
+
+msgid "Sky Color"
+msgstr "Couleur du Ciel"
+
+msgid "Sky Texture"
+msgstr "Texture du Ciel"
 
 msgid "Ramps"
 msgstr "Dégradés"
@@ -1613,11 +1668,11 @@ msgstr "Neutre"
 msgid "Traceable"
 msgstr "Rayons"
 
-msgid "TraShadow"
-msgstr "Ombre Transp"
+msgid "TraShado"
+msgstr "Ombres α"
 
 msgid "OnlyShad"
-msgstr "Ombre α"
+msgstr "Omb.Seul."
 
 msgid "Layer"
 msgstr "Calque"
@@ -1935,8 +1990,29 @@ msgstr "Vent"
 msgid "NEW"
 msgstr "Nouveau"
 
-msgid "Particles"
+msgid "Particles " 
 msgstr "Particules"
+
+msgid "Particle Motion" 
+msgstr "Mouvement Particules"
+
+msgid "Only Mesh Objects can generate particles"
+msgstr "Seuls les Objets à maillage peuvent générer des particules"
+
+msgid "Static"
+msgstr "Statique"
+
+msgid "Animated"
+msgstr "Animées"
+
+msgid "Emit:"
+msgstr "Emission:"
+
+msgid "Children:"
+msgstr "Enfants:"
+
+msgid "Velocity:"
+msgstr "Vitesse:"
 
 #tip
 msgid "Create a new Particle effect"
@@ -1959,6 +2035,12 @@ msgstr "Activer"
 
 msgid "Object not enabled for fluid simulation..."
 msgstr "Simulation des fluides non activée pour cet objet"
+
+msgid "Soft Body II"
+msgstr "Corps Mou II"
+
+msgid "Object is not a softbody"
+msgstr "L'Objet n'est pas un corps mou"
 
 ###########################################################
 ###
@@ -2153,6 +2235,9 @@ msgstr "Afficher:"
 msgid "Limits"
 msgstr "Limites"
 
+msgid "Lens:"
+msgstr "Lentille:"
+
 msgid "Clipping:"
 msgstr "Champ de vision:"
 
@@ -2274,9 +2359,40 @@ msgstr "Spécifie la valeur de fin du champ de vision"
 msgid "Render orthogonally"
 msgstr "Projection orthogonale"
 
+msgid "Draw the field of view"
+msgstr "Dessine le champ de vision"
+
+msgid "Draw the active camera's name in camera view"
+msgstr "Affiche le nom de la caméra utilisée dans la vue caméra"
+
 ###########################################################
 ###
-###  ToolBox  RENDER (F10)
+###  Editing Armature (F9) (code154)
+###
+###########################################################
+
+msgid "Armature Bones"
+msgstr "Os"
+
+msgid "Selected Bones"
+msgstr "Os sélectionnés"
+
+msgid "Display Options"
+msgstr "Options d'Affichage"
+
+msgid "child of"
+msgstr "enfant de"
+
+#tips
+msgid "Draw bone names"
+msgstr "Affiche le nom des Os"
+
+msgid "Draw bone axis"
+msgstr "Affiche l'axe des Os"
+
+###########################################################
+###
+###  ToolBox  RENDER (F10) (code155)
 ###
 ###########################################################
 
@@ -2304,7 +2420,7 @@ msgstr "Plein écran"
 
 # Panneau Render Layers
 msgid "Render Layers"
-msgstr "Rendu par Couches"
+msgstr "Couches"
 
 msgid "Scene:"
 msgstr "Scène:"
@@ -2335,7 +2451,7 @@ msgid "Fill background with sky"
 msgstr "Affiche le ciel en tant que fond de rendu"
 
 msgid "Border"
-msgstr "Partiel"
+msgstr "Rendu Partiel"
 
 msgid "Rendering Engine "
 msgstr "Moteur de Rendu"
@@ -2364,6 +2480,13 @@ msgstr "Activer Rendu Composite"
 
 msgid "PLAY"
 msgstr "Lire"
+
+# Panneau Bake
+msgid "Bake"
+msgstr "Rendu vers Texture"
+
+msgid "BAKE"
+msgstr "Rendu vers Textures UV"
 
 # Panneau Format
 msgid "Size preset: Image size - 720x576, Aspect ratio - 54x51, 25 fps"
@@ -2632,7 +2755,58 @@ msgstr "Séquence"
 
 ###########################################################
 ###
-###  SECTION  NODE EDITOR
+###  SECTION  OUTLINER (code158)
+###
+###########################################################
+
+msgid "Show Outliner"
+msgstr "Afficher Liste"
+
+msgid "Show Oops Schematic"
+msgstr "Afficher Organigramme"
+
+msgid "Linked to Selected"
+msgstr "Liés à la Sélection"
+
+msgid "Search"
+msgstr "Chercher"
+
+msgid "Find"
+msgstr "Chercher..."
+
+msgid "Find (Case Sensitive)"
+msgstr "Chercher... (Casse respectée)"
+
+msgid "Find Complete"
+msgstr "Chercher un mot entier..."
+
+msgid "Find Complete (Case Sensitive)"
+msgstr "Chercher un mot entier... (Casse respectée)"
+
+msgid "Outliner Display"
+msgstr "Eléments affichés"
+
+msgid "Selected "
+msgstr "Sélection"
+
+msgid "Same Types "
+msgstr "Même Type"
+
+msgid "All Scenes "
+msgstr "Toutes Scènes"
+
+msgid "Visible Layers "
+msgstr "Calques Visibles"
+
+msgid "Current Scene "
+msgstr "Scène Active"
+
+msgid "Active "
+msgstr "Actif"
+
+###########################################################
+###
+###  SECTION  NODE EDITOR (code254)
 ###
 ###########################################################
 
@@ -2641,6 +2815,9 @@ msgstr "Entrée"
 
 msgid "Color"
 msgstr "Couleur"
+
+msgid "Camera Data"
+msgstr "Données Camera"
 
 msgid "Mix"
 msgstr "Mélanger"
@@ -2692,6 +2869,22 @@ msgstr "Ouvrir"
 
 msgid "Use Nodes"
 msgstr "Act. Noeuds"
+
+msgid "Make Group"
+msgstr "Grouper"
+
+msgid "Ungroup"
+msgstr "Dégrouper"
+
+msgid "Edit Group"
+msgstr "Editer le Groupe"
+
+msgid "Select Linked To"
+msgstr "Lien suivant"
+
+msgid "Select Linked From"
+msgstr "Lien précédent"
+
 
 ###########################################################
 ###
@@ -3027,7 +3220,7 @@ msgid "Loop/Cut Menu "
 msgstr "Menu Couper"
 
 msgid "Loop Cut (CTRL-R)"
-msgstr "Trancher (CTRL-R)"
+msgstr "Coupe Circulaire (CTRL-R)"
 
 msgid "Knife (Exact) "
 msgstr "Couteau (Ligne Exacte)"
@@ -3140,7 +3333,7 @@ msgid "Rotate Edge CCW"
 msgstr "Tourner l'arête à gauche"
 
 msgid "Loopcut"
-msgstr "Scier par boucle"
+msgstr "Coupe Circulaire"
 
 msgid "Edge Slide"
 msgstr "Déplacer l'arête"
@@ -3150,7 +3343,7 @@ msgstr "Select. d'arêtes par Boucle"
 
 ###########################################################
 ###
-###  Menubar Spécial Draw Mode (D)
+###  Menubar Spécial Draw Mode (D) (code134)
 ###
 ###########################################################
 
@@ -3432,8 +3625,7 @@ msgstr "Définir la résolution par interpolation"
 msgid "Allow Curve Object to be 3d, it doesn't fill then"
 msgstr "Pemettre à l'objet courbe d'être 3d, il ne se remplit pas jusqu'a"
 
-msgid "Draw the field of view"
-msgstr "Dessiner le champ de vision"
+
 
 msgid "Only draw, and take into account, the outer vertices"
 msgstr "Dessiner seulement, et prendre en compte, les sommets extérieurs"
@@ -3441,53 +3633,11 @@ msgstr "Dessiner seulement, et prendre en compte, les sommets extérieurs"
 msgid "Use relative keys (instead of absolute)"
 msgstr "Utiliser des clefs relatives (au lieu d'absolues)"
 
-msgid "child of"
-msgstr "fils de"
-
 msgid "Skinnable "
 msgstr "Habillable "
 
 msgid "Unskinnable "
 msgstr "Non habillable "
-
-msgid "Head "
-msgstr "Tête "
-
-msgid "Neck "
-msgstr "Cou "
-
-msgid "Back "
-msgstr "Dos "
-
-msgid "Shoulder "
-msgstr "Épaule "
-
-msgid "Arm "
-msgstr "Bras "
-
-msgid "Hand "
-msgstr "Main "
-
-msgid "Finger "
-msgstr "Doigt "
-
-msgid "Thumb "
-msgstr "Pouce "
-
-msgid "Pelvis "
-msgstr "Bassin "
-
-msgid "Leg "
-msgstr "Jambe "
-
-msgid "Foot "
-msgstr "Pied "
-
-msgid "Toe "
-msgstr "Orteil "
-
-msgid "Tentacle "
-msgstr "Tentacule "
 
 msgid "Classification of armature element"
 msgstr "Classification de l'élément de l'armature"
@@ -3650,23 +3800,11 @@ msgstr "Temps automatique"
 msgid "Toolbox"
 msgstr "Boîte à outils"
 
-msgid "Win Codecs:"
-msgstr "Codecs win :"
-
-msgid "Enable all codecs"
-msgstr "Activer tous les codecs"
-
 msgid "Display only files with extensions in the image select window"
 msgstr "Afficher seulement les fichiers avec extensions dans la fenêtre de sélection d'images"
 
 msgid "Insert gaps Sequencer"
 msgstr "Insérer le séquenceur d'espaces"
-
-msgid "Shrink blocks"
-msgstr "Rétrécir les blocs"
-
-msgid "Shuffle blocks"
-msgstr "Mélanger les blocs"
 
 msgid "Open File"
 msgstr "Ouvrir un fichier"
@@ -3683,9 +3821,6 @@ msgstr "dessiner"
 msgid "draw+swap"
 msgstr "dessiner + échanger"
 
-msgid "OK?"
-msgstr "D'accord ?"
-
 msgid "Rotations in degrees!"
 msgstr "Rotations en degrés !"
 
@@ -3700,9 +3835,6 @@ msgstr "Transformation non possible tant que la Position de Repos est activée"
 
 msgid "Clear vertex colors"
 msgstr "Nettoyer les couleurs des sommets"
-
-msgid "undefined"
-msgstr "indéfini"
 
 msgid "Full Frames (Uncompressed)"
 msgstr "Images complètes (non compressées)"
