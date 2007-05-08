@@ -1,11 +1,11 @@
 # French UI Translation
-# eon <eon.2006@free.fr>, 2007
+# eon <eon.2007@free.fr>, 2007
 #"Last-Translator: eon <eon.2007@free.fr>\n"
-#"PO-Revision-Date: 2007-02-08 18:00+0100\n"
+#"PO-Revision-Date: 2007-05-07 01:00+0100\n"
 #"Content-Type: text/plain; charset=UTF-8\n"
 #"Content-Transfer-Encoding: 8bit\n"
-#"Language-Team: eon (eon@jabber.fr) , serialsiner , kaal / main thread on http://www.zoo-logique.org/3D.Blender/newsportal/thread.php?group=3D.Blender"
-#"X-Generator: Gedit 2.16.0\n"
+#"Language-Team: eon (eon@jabber.fr) , serialsiner , kaal / project page : http://wiki.blender.org/index.php/Interface/fr"
+#"X-Generator: Gedit 2.18.0\n"
 
 # Copyright (C) 2005 Free Software Foundation, Inc.
 #
@@ -13,30 +13,40 @@
 ###########################################################
 ###
 ###  Summary of this file by section (WIP)
-###  All sections have a special code, just start a search in the text file to go to the section you look for
 ###
-###   General Messages (code32)
-###   Window Type (code109)
-###   FileSelect Commands
-###   Menu bar
-###   Menu bar  FILE
-###   Menu bar  ANIM
-###   Menu bar  GAME
-###   Menu bar  RENDER
-###   Menu bar  HELP
-###   Menu bar  Select (code1245)
-###   Menubar  Mode (code145)
-###   Menubar Spécial Draw Mode (D) (code134)
-###   SECTION  NODE EDITOR (code254)
-###   SECTION  OUTLINER (code158)
-###   Editing Armature (F9) (code154)
-###   ToolBox  RENDER (F10) (code155)
+###########################################################
+###
+###  General Messages  
+###  Window Type  
+###  FileSelect Commands
+###  Menu bar
+###  Menu bar  FILE
+###  Menu bar  ANIM
+###  Menu bar  GAME
+###  Menu bar  RENDERs
+###  Menu bar  HELP
+###  Menu bar  Select  
+###  Menubar  Mode  
+###  Menubar MESH
+###  Menubar Face (mode UV face select)
+###  Menubar Spécial Draw Mode (D)  
+###  WINDOW  PREFERENCE  
+###  SECTION  NODE EDITOR  
+###  SECTION  OUTLINER  
+###  Editing Armature (F9)  
+###  ToolBox  ACTOR  
+###  ToolBox  SHADING (F5)  
+###  ToolBox  RENDER (F10)  
+###  Menu Make Parent (CTRL-P en mode edition)  
+###  Menu Clear Parent (ALT-P en mode edition)  
+###  Menu Make Links (CTRL-L)  
+###  Menu Make Faces (F)  
 ###
 ###########################################################
 
 ###########################################################
 ###
-###  General Messages (code32)
+###  General Messages 
 ###
 ###########################################################
 
@@ -118,9 +128,12 @@ msgstr "Pas d'action à refaire"
 msgid "No more steps to do"
 msgstr "Plus d'action à refaire"
 
+msgid "No faces or vertex selected."
+msgstr "Aucune face ou sommets sélectionnés"
+
 ###########################################################
 ###
-###  Window Type (code109)
+###  Window Type  
 ###
 ###########################################################
 
@@ -206,6 +219,10 @@ msgstr "Ecraser?"
 msgid "Load Library"
 msgstr "Importer"
 
+msgid "SELECT DATABLOCK"
+msgstr "Sélectionner"
+
+
 #Tooltips
 msgid "Sorts files alphabetically"
 msgstr "Trie les fichiers par ordre alphabétique"
@@ -289,16 +306,16 @@ msgid "Save"
 msgstr "Enregistrer"
 
 msgid "Save Image..."
-msgstr "Enregistrer le Rendu"
+msgstr "Sauver Rendu -> Image"
 
 msgid "Dump Subwindow"
-msgstr "Enregistrer la Fenêtre"
+msgstr "Sauver Fenêtre -> Image"
 
 msgid "Dump Screen"
-msgstr "Enregistrer l'Interface"
+msgstr "Sauver Interface -> Image"
 
 msgid "Save Runtime..."
-msgstr "Enregister le Jeu en exécutable"
+msgstr "Sauver le Jeu en exécutable"
 
 msgid "Append or Link"
 msgstr "Importer/Lier depuis un .blend"
@@ -310,7 +327,10 @@ msgid "Export"
 msgstr "Exporter"
 
 msgid "Save Default Settings"
-msgstr "Enregistrer > Scène par défaut"
+msgstr "Enregistrer -> Scène de Démarrage"
+
+msgid "Load Factory Settings"
+msgstr "Charger la Scène de Démarrage par Défaut"
 
 msgid "Pack Data"
 msgstr "Empaqueter le projet"
@@ -384,6 +404,9 @@ msgstr "Afficher Toutes les Images"
 
 msgid "Show Framerate and Profile"
 msgstr "Afficher les Statistiques"
+
+msgid "Show Physics Visualization"
+msgstr "Afficher la Physique des Objets"
 
 msgid "Use Blender Materials"
 msgstr "Utiliser les Matériaux de Blender"
@@ -462,6 +485,9 @@ msgstr "Documentation sur le Script Python (Eng)"
 
 msgid "Release Notes"
 msgstr "Notes de Version (Eng)"
+
+msgid "ID Property Browser"
+msgstr "Edition des Propriétés ID (Eng)"
 
 msgid "Scripts Help Browser"
 msgstr "Aides des Scripts Python (Eng)"
@@ -580,9 +606,6 @@ msgstr "Vue Sélection Isolée"
 msgid "Orthographic"
 msgstr "Orthogonale"
 
-msgid "Center"
-msgstr "Centrer"
-
 msgid "Background Image..."
 msgstr "Image d'Arrière Plan"
 
@@ -591,6 +614,9 @@ msgstr "Paramètres de la Vue"
 
 msgid "Use Background Image"
 msgstr "Afficher Image"
+
+msgid "View Properties"
+msgstr "Paramètres de la Vue"
 
 msgid "Grid:"
 msgstr "Grille:"
@@ -604,6 +630,9 @@ msgstr "Curseur 3D:"
 msgid "View Camera:"
 msgstr "Vue Caméra:"
 
+msgid "Grid Floor"
+msgstr "Grille"
+
 msgid "X Axis"
 msgstr "Axe X"
 
@@ -613,8 +642,14 @@ msgstr "Axe Y"
 msgid "Z Axis"
 msgstr "Axe Z"
 
-msgid "Outline Selected Objects"
-msgstr "Surligner les Objets Sélectionnés"
+msgid "Outline Selected"
+msgstr "Surligner Sélection"
+
+msgid "Relationship Lines"
+msgstr "Liens de Parenté"
+
+msgid "All Object Centers"
+msgstr "Tous les Centres"
 
 msgid "Set Clipping Border"
 msgstr "Activer Coupe 3D"
@@ -627,7 +662,7 @@ msgstr "Rendu Interactif"
 
 ###########################################################
 ###
-###  Menu bar  Select (code1245)
+###  Menu bar  Select  
 ###
 ###########################################################
 
@@ -664,8 +699,8 @@ msgstr "Enfants"
 msgid "Immediate Children"
 msgstr "1er Enfant"
 
-msgid "Linked Faces"
-msgstr "Faces liées"
+msgid "Linked Vertices"
+msgstr "Sommets liés"
 
 # messagebox
 msgid "No active face, or active face has no UV texture"
@@ -723,7 +758,7 @@ msgid "Make Parent..."
 msgstr "Créer Parenté"
 
 msgid "Clear Parent..."
-msgstr "Enlever Parenté"
+msgstr "Supprimer Parenté"
 
 msgid "Boolean Operation..."
 msgstr "Opération Booléenne"
@@ -807,13 +842,16 @@ msgid "Selection-> Center"
 msgstr "Sélection -> Centre"
 
 msgid "Mirror"
-msgstr "Symétrie"
+msgstr "Miroir"
 
 msgid "Transform"
-msgstr "Transform"
+msgstr "Transformer"
 
 msgid "Transform Properties"
 msgstr "Coordonnées"
+
+msgid "Link Scale"
+msgstr "Proportionnel"
 
 # Tooltip
 msgid "Parent Object"
@@ -865,13 +903,9 @@ msgstr "Ajouter Contrainte"
 msgid "Clear Constraints"
 msgstr "Enlever Contraintes"
 
-# Dialog box
-msgid "Make parent"
-msgstr "Créer Parenté"
-
 ###########################################################
 ###
-###  Menubar  Mode (code145)
+###  Menubar  Mode  
 ###
 ###########################################################
 
@@ -910,7 +944,7 @@ msgid "Solid "
 msgstr "Solide"
 
 msgid "Shaded "
-msgstr "Ombré"
+msgstr "Ombrée"
 
 msgid "Textured "
 msgstr "Texturé"
@@ -939,6 +973,15 @@ msgstr "Baricentre"
 
 msgid "Bounding Box Center "
 msgstr "Centre de la Boite Englobante"
+
+###########################################################
+###
+###  Menubar  Snap
+###
+###########################################################
+
+msgid "Closest"
+msgstr "Distance"
 
 ###########################################################
 ###
@@ -1010,6 +1053,45 @@ msgstr "Linéaire"
 
 msgid "Constant"
 msgstr "Constante"
+
+
+###########################################################
+###
+###  Menubar Face (mode UV face select)
+###
+###########################################################
+
+msgid "Show/Hide Faces"
+msgstr "Afficher/Cacher Faces"
+
+msgid "Hide Selected Faces"
+msgstr "Cacher les Faces Sélectionnées"
+
+msgid "Hide Deselected Faces"
+msgstr "Cacher les Faces Non-sélectionnées"
+
+msgid "Show Hidden Faces"
+msgstr "Afficher les Faces Cachées"
+
+msgid "Mirror UVs"
+msgstr "Miroir UVs"
+
+msgid "Rotate UVs"
+msgstr "Rotation UVs"
+
+msgid "Unwrap UVs"
+msgstr "Déplier UVs"
+
+#Rotates UVs message box
+msgid "Rotate "
+msgstr "Rotation"
+
+msgid "UV Co-ordinates "
+msgstr "Coordonnées UVs"
+
+msgid "UV Calculation "
+msgstr "Méthode de calcul UV"
+
 
 ###########################################################
 ###
@@ -1227,6 +1309,13 @@ msgstr "Convertir en Triangles"
 msgid "Convert to Quads"
 msgstr "Convertir en Quads"
 
+#menu Mesh
+msgid "Convert Quads to Triangles"
+msgstr "Convertir les Quads en Triangles"
+
+msgid "Convert Triangles to Quads"
+msgstr "Convertir les Triangles en Quads"
+
 msgid "Extrude"
 msgstr "Extruder"
 
@@ -1326,12 +1415,6 @@ msgstr "Solidifier l'Animation"
 msgid "ObData to Center"
 msgstr "Maillage au Centre"
 
-msgid "Center New"
-msgstr "Nouveau Centre"
-
-msgid "Center Cursor"
-msgstr "Centre au Curseur"
-
 ###########################################################
 ###
 ###  SPACE MENU:  VIEW
@@ -1357,7 +1440,7 @@ msgid "Solid"
 msgstr "Solide"
 
 msgid "Shaded"
-msgstr "Ombré"
+msgstr "Ombrée"
 
 msgid "Textured"
 msgstr "Texturé"
@@ -1576,7 +1659,7 @@ msgstr "Redémarrer"
 
 ###########################################################
 ###
-###  ToolBox  SHADING (F5)
+###  ToolBox  SHADING (F5)  
 ###
 ###########################################################
 
@@ -1610,6 +1693,9 @@ msgstr "Papier"
 msgid "Physics "
 msgstr "Moteur Physique"
 
+msgid "DataBrowse "
+msgstr "Parcourir"
+
 #Tip
 msgid "Physics Engine"
 msgstr "Moteur Physique"
@@ -1640,6 +1726,51 @@ msgstr "Texture du Ciel"
 
 msgid "Ramps"
 msgstr "Dégradés"
+
+msgid "Show Col Ramp"
+msgstr "Aff. Dégradé Couleur"
+
+msgid "Show Spec Ramp"
+msgstr "Aff. Dégradé Spéculaire"
+
+msgid "Colorband"
+msgstr "Dégradé"
+
+msgid "SSS"
+msgstr "Translucidité"
+
+msgid "Subsurface Scattering"
+msgstr "Translucidité SSS"
+
+msgid "Enables diffuse subsurface scattering"
+msgstr "Active la translucidité du matériau en utilisant la méthode 'SSS' (SubSurface Scattering)."
+
+msgid "Custom "
+msgstr "Personnalisé"
+
+msgid "Apple "
+msgstr "Pomme"
+
+msgid "Cream "
+msgstr "Crême"
+
+msgid "Whole Milk "
+msgstr "Lait Entier"
+
+msgid "Skim Milk "
+msgstr "Lait écrémé"
+
+msgid "Skin 1 "
+msgstr "Peau 1"
+
+msgid "Skin 2 "
+msgstr "Peau 2"
+
+msgid "Chicken "
+msgstr "Poulet"
+
+msgid "Potato "
+msgstr "Pomme de Terre"
 
 msgid "Ray Shadow"
 msgstr "Ombres Ray"
@@ -2034,10 +2165,10 @@ msgid "Enable"
 msgstr "Activer"
 
 msgid "Object not enabled for fluid simulation..."
-msgstr "Simulation des fluides non activée pour cet objet"
+msgstr "Simulation des fluides désactivée pour cet objet"
 
-msgid "Soft Body II"
-msgstr "Corps Mou II"
+msgid "Soft Body Collision"
+msgstr "Collision Corps Mou"
 
 msgid "Object is not a softbody"
 msgstr "L'Objet n'est pas un corps mou"
@@ -2061,7 +2192,13 @@ msgid "Decimate"
 msgstr "Reduction Poly"
 
 msgid "UVProject"
-msgstr "Projection UV"
+msgstr "Projeter UV"
+
+msgid "Mirror U"
+msgstr "Miroir U"
+
+msgid "Mirror V"
+msgstr "Miroir V"
 
 msgid "Assign"
 msgstr "Assigner Matériau"
@@ -2084,25 +2221,28 @@ msgstr "Lissage Auto"
 msgid "Make"
 msgstr "Créer"
 
-msgid "Centre"
-msgstr "Maillage > Centre"
+msgid "Center"
+msgstr "Centrer"
 
-msgid "Centre New"
-msgstr "Centre > Maillage"
+msgid "Center New"
+msgstr "Reset Centre"
 
-msgid "Centre Cursor"
-msgstr "Centre > Curseur"
+msgid "Center Cursor"
+msgstr "Centre au Curseur"
 
 #tip
 msgid "Shifts object data to be centered about object's origin"
 msgstr "Décale les données de l'objet pour qu'elles soient centrées sur l'origine de l'objet"
 
 msgid "Double Sided"
-msgstr "Double Faces"
+msgstr "Doubles Faces"
 
 #tip
 msgid "Render/display the mesh as double or single sided"
 msgstr "Bascule les faces de l'objet en mode simple ou double-face"
+
+msgid "Vertex Color"
+msgstr "Couleurs Sommets"
 
 msgid "SlowerDraw"
 msgstr "Affich Lent"
@@ -2151,6 +2291,17 @@ msgstr "Afficher Normales"
 msgid "Draw Edges"
 msgstr "Afficher Arêtes"
 
+#tooltip
+msgid "Displays edges of visible faces"
+msgstr "Affiche les arêtes des faces visibles"
+
+msgid "Draw Hidden Edges"
+msgstr "Afficher Arêtes Cachées"
+
+#tooltip
+msgid "Displays edges of hidden faces"
+msgstr "Affiche les arêtes des faces cachées"
+
 msgid "Draw Seams"
 msgstr "Afficher Coutures"
 
@@ -2191,7 +2342,10 @@ msgid "Spin"
 msgstr "Cercle"
 
 msgid "Vertex Groups"
-msgstr "Sommets (grp)"
+msgstr "Groupes de Sommets"
+
+msgid "Copy Group"
+msgstr "Dupliquer Groupe"
 
 msgid "Selec"
 msgstr "Sélec."
@@ -2367,7 +2521,7 @@ msgstr "Affiche le nom de la caméra utilisée dans la vue caméra"
 
 ###########################################################
 ###
-###  Editing Armature (F9) (code154)
+###  Editing Armature (F9)  
 ###
 ###########################################################
 
@@ -2392,7 +2546,7 @@ msgstr "Affiche l'axe des Os"
 
 ###########################################################
 ###
-###  ToolBox  RENDER (F10) (code155)
+###  ToolBox  RENDER (F10)  
 ###
 ###########################################################
 
@@ -2424,6 +2578,13 @@ msgstr "Couches"
 
 msgid "Scene:"
 msgstr "Scène:"
+
+msgid "Single"
+msgstr "Solo"
+
+#tip
+msgid "Only render this layer"
+msgstr "Active uniquement cette couche pour le rendu."
 
 msgid "Layer:"
 msgstr "Calques:"
@@ -2483,7 +2644,7 @@ msgstr "Lire"
 
 # Panneau Bake
 msgid "Bake"
-msgstr "Rendu vers Texture"
+msgstr "Rendu vers Textures"
 
 msgid "BAKE"
 msgstr "Rendu vers Textures UV"
@@ -2521,14 +2682,6 @@ msgstr "GRAND"
 
 msgid "Save image as: "
 msgstr "Format du rendu:"
-
-# je me suis permis cette traduction car même en anglais ça ne veut rien dire...
-# Mais le tooltip reprend le terme rendu unifié.
-msgid "Unified Renderer"
-msgstr "Spécial"
-
-msgid "Use the unified renderer."
-msgstr "Utilise le rendu unifié (pour les particules)."
 
 msgid "Crop"
 msgstr "Coupe"
@@ -2587,6 +2740,14 @@ msgstr "Désactive le son stéréo"
 
 msgid "Enables hardware pageflip stereo method"
 msgstr "Active la méthode 'pageflip' pour synchroniser les canaux audios avec des tampons OpenGL."
+
+# Panneau Animation
+msgid "Sync"
+msgstr "Synchronisation"
+
+#tooltip
+msgid "Use sample clock for syncing animation to audio"
+msgstr "Utilise une horloge pour respecter la vitesse d'animation"
 
 ###########################################################
 ###
@@ -2755,7 +2916,7 @@ msgstr "Séquence"
 
 ###########################################################
 ###
-###  SECTION  OUTLINER (code158)
+###  SECTION  OUTLINER  
 ###
 ###########################################################
 
@@ -2806,7 +2967,7 @@ msgstr "Actif"
 
 ###########################################################
 ###
-###  SECTION  NODE EDITOR (code254)
+###  SECTION  NODE EDITOR  
 ###
 ###########################################################
 
@@ -2840,8 +3001,41 @@ msgstr "Courbes RVB"
 msgid "RGB to BW"
 msgstr "RVB -> N&B"
 
+msgid "Set Alpha"
+msgstr "Régler l'Alpha"
+
+msgid "ID Mask"
+msgstr "Masque par ID"
+
+msgid "ColorRamp"
+msgstr "Dégradé Couleur"
+
 msgid "Separate RGBA"
 msgstr "Séparer RVBA"
+
+msgid "Combine RGBA"
+msgstr "Combiner RVBA"
+
+msgid "Separate HSVA"
+msgstr "Séparer TSLA"
+
+msgid "Combine HSVA"
+msgstr "Combiner TSLA"
+
+msgid "Vector Blur"
+msgstr "Flou de Mouvement"
+
+msgid "Defocus"
+msgstr "Flou de Distance"
+
+msgid "Hue Saturation Value"
+msgstr "Teinte Saturation Luminance"
+
+msgid "Bright/Contrast"
+msgstr "Luminosité/Contraste"
+
+msgid "Distort"
+msgstr "Distortion"
 
 msgid "Translate"
 msgstr "Déplacer"
@@ -2854,6 +3048,9 @@ msgstr "Valeur"
 
 msgid "Viewer"
 msgstr "Aperçu"
+
+msgid "SplitViewer"
+msgstr "Aperçus Comparés"
 
 msgid "Hide/Unhide"
 msgstr "Cacher/Montrer"
@@ -2888,7 +3085,7 @@ msgstr "Lien précédent"
 
 ###########################################################
 ###
-###  WINDOW  PREFERENCE
+###  WINDOW  PREFERENCE  
 ###
 ###########################################################
 
@@ -3073,6 +3270,9 @@ msgstr "Copier Couleur"
 
 msgid "Paste Color"
 msgstr "Coller Couleur"
+
+msgid "Solid OpenGL lights:"
+msgstr "Lumières en vue Ombrée"
 
 msgid "Audio mixing buffer:"
 msgstr "Mémoire de mixage audio"
@@ -3343,7 +3543,7 @@ msgstr "Select. d'arêtes par Boucle"
 
 ###########################################################
 ###
-###  Menubar Spécial Draw Mode (D) (code134)
+###  Menubar Spécial Draw Mode (D)  
 ###
 ###########################################################
 
@@ -3360,7 +3560,7 @@ msgid "OpenGL Solid "
 msgstr "Solide"
 
 msgid "Shaded Solid "
-msgstr "Ombré"
+msgstr "Ombrée"
 
 msgid "Textured Solid "
 msgstr "Texturé"
@@ -3550,6 +3750,110 @@ msgstr "Bas"
 msgid "No Header "
 msgstr "Sans Barre d'outils"
 
+
+###########################################################
+###
+###  Menu Make Parent (CTRL-P en mode edition)  
+###
+###########################################################
+
+msgid "Make Parent "
+msgstr "Créer Parenté"
+
+msgid "Make parent"
+msgstr "Créer Parenté"
+
+msgid "Normal Parent "
+msgstr "Parenté Classique"
+
+msgid "Follow Path "
+msgstr "Suivre le Chemin"
+
+
+###########################################################
+###
+###  Menu Clear Parent (ALT-P en mode edition)  
+###
+###########################################################
+
+msgid "Clear Parent"
+msgstr "Supprimer Parenté"
+
+###########################################################
+###
+###  Menu Make Links (CTRL-L)  
+###
+###########################################################
+
+msgid "Make Links "
+msgstr "Lier"
+
+
+###########################################################
+###
+###  Menu Make Faces (F)  
+###
+###########################################################
+
+msgid "Make Faces"
+msgstr "Assembler les Faces"
+
+msgid "Make FGon"
+msgstr "Assembler en FGon"
+
+msgid "Clear FGon"
+msgstr "Casser le FGon"
+
+msgid "No faces selected to make FGon"
+msgstr "Aucune sélection de faces à assembler en FGon"
+
+msgid "The selected vertices already form a face"
+msgstr "Les sommets sélectionnés forment déja une face"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ###########################################################
 ###
 ###Rosetta contribution (not verified)
@@ -3676,14 +3980,6 @@ msgstr "Doux"
 msgid "Use a soft brush"
 msgstr "Utiliser une brosse douce"
 
-msgid "Displays edges of visible faces"
-msgstr "Affiche les arêtes des faces visibles"
-
-msgid "Draw Hidden Edges"
-msgstr "Dessine les arêtes cachées"
-
-msgid "Displays edges of hidden faces"
-msgstr "Affiche les arêtes des faces cachées"
 
 msgid "Move up"
 msgstr "Déplacement vers le haut"
