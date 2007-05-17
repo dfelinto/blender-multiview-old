@@ -218,6 +218,7 @@ PyImport_Import
 PyImport_ImportFrozenModule
 PyImport_ImportModule
 PyImport_ImportModuleEx
+PyImport_ImportModuleLevel
 PyImport_Inittab
 PyImport_ReloadModule
 PyInstance_New
