@@ -2710,18 +2710,22 @@ void insertkey_action(void)
 		if (mode == 0) return;
 		
 		for (achan= act->chanbase.first; achan; achan=achan->next) {
-			if (EDITABLE_ACHAN(achan) && (SEL_ACHAN(achan) || (mode == 1))) {
-				for (icu= achan->ipo->curve.first; icu; icu=icu->next) {
-					val = icu->curval;
-					insert_vert_ipo(icu, cfra, val);
-				}
+			if (EDITABLE_ACHAN(achan)) {
+				if (achan->ipo && (SEL_ACHAN(achan) || (mode == 1))) {
+					for (icu= achan->ipo->curve.first; icu; icu=icu->next) {
+						val = icu->curval;
+						insert_vert_ipo(icu, cfra, val);
+					}
+				}	
 				
 				if (EXPANDED_ACHAN(achan) && FILTER_CON_ACHAN(achan)) {
 					for (conchan=achan->constraintChannels.first; conchan; conchan=conchan->next) {
-						if (EDITABLE_CONCHAN(conchan) && (SEL_ACHAN(conchan) || (mode == 1))) {
-							for (icu= conchan->ipo->curve.first; icu; icu=icu->next) {
-								val = icu->curval;
-								insert_vert_ipo(icu, cfra, val);
+						if (EDITABLE_CONCHAN(conchan)) {
+							if (conchan->ipo && (SEL_ACHAN(conchan) || (mode == 1))) {
+								for (icu= conchan->ipo->curve.first; icu; icu=icu->next) {
+									val = icu->curval;
+									insert_vert_ipo(icu, cfra, val);
+								}
 							}
 						}
 					}
