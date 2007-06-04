@@ -1305,12 +1305,14 @@ static PyObject *Mesh_renamePropLayer_internal(Mesh *mesh, CustomData *data, PyO
 static PyObject *Mesh_propList_internal(CustomData *data)
 {
 	CustomDataLayer *layer;
-	PyObject *list = PyList_New( 0 );
+	PyObject *list = PyList_New( 0 ), *item;
 	int i;
 	for(i=0; i<data->totlayer; i++) {
 		layer = &data->layers[i];
 		if( (layer->type == CD_PROP_FLT) || (layer->type == CD_PROP_INT) || (layer->type == CD_PROP_STR)) {
-			PyList_Append( list, PyString_FromString(layer->name) );
+			item = PyString_FromString(layer->name);
+			PyList_Append( list, item );
+			Py_DECREF(item);
 		}
 	}
 	return list;
