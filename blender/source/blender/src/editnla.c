@@ -422,6 +422,11 @@ void snap_action_strips(int snap_mode)
 			}
 		}
 		
+		/* object has ipo */
+		if (base->object->ipo) {
+			snap_ipo_keys(base->object->ipo, snap_mode);
+		}
+		
 		/* object has action */
 		if (base->object->action) {
 			ListBase act_data = {NULL, NULL};
@@ -440,20 +445,13 @@ void snap_action_strips(int snap_mode)
 			}
 			BLI_freelistN(&act_data);
 			
-			// err
 			remake_action_ipos(base->object->action);
-		}
-		
-		/* object has ipo */
-		/* for now, this is done regardless of whether there is an action. However, 
-		 * there may be errors later on... this needs further testing. Until then, this code stays.
-		 */
-		if (base->object->ipo) {
-			snap_ipo_keys(base->object->ipo, snap_mode);
 		}
 	}
 	BIF_undo_push("Snap NLA strips");
 	allqueue (REDRAWVIEW3D, 0);
+	allqueue (REMAKEIPO, 0);
+	allqueue (REDRAWIPO, 0);
 	allqueue (REDRAWACTION, 0);
 	allqueue (REDRAWNLA, 0);
 }
