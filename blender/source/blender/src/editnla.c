@@ -78,6 +78,7 @@
 #include "BSE_editnla_types.h"
 #include "BSE_headerbuttons.h"
 #include "BSE_drawipo.h"
+#include "BSE_editaction_types.h"
 #include "BSE_trans_types.h"
 #include "BSE_edit.h"
 #include "BSE_filesel.h"
@@ -419,6 +420,36 @@ void snap_action_strips(int snap_mode)
 					}
 				}
 			}
+		}
+		
+		/* object has action */
+		if (base->object->action) {
+			ListBase act_data = {NULL, NULL};
+			bActListElem *ale;
+			int filter;
+			
+			/* filter action data */
+			filter= (ACTFILTER_VISIBLE | ACTFILTER_FOREDIT | ACTFILTER_IPOKEYS);
+			actdata_filter(&act_data, filter, base->object->action, ACTCONT_ACTION);
+			
+			/* snap to frame */
+			for (ale= act_data.first; ale; ale= ale->next) {
+				actstrip_map_ipo_keys(base->object, ale->key_data, 0, 1); 
+				snap_ipo_keys(ale->key_data, snap_mode);
+				actstrip_map_ipo_keys(base->object, ale->key_data, 1, 1);
+			}
+			BLI_freelistN(&act_data);
+			
+			// err
+			remake_action_ipos(base->object->action);
+		}
+		
+		/* object has ipo */
+		/* for now, this is done regardless of whether there is an action. However, 
+		 * there may be errors later on... this needs further testing. Until then, this code stays.
+		 */
+		if (base->object->ipo) {
+			snap_ipo_keys(base->object->ipo, snap_mode);
 		}
 	}
 	BIF_undo_push("Snap NLA strips");
