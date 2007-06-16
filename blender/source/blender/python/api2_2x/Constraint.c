@@ -1617,7 +1617,7 @@ static bConstraint *locate_constr( BPy_ConstraintSeq *self, BPy_Constraint * val
 	bConstraint *con;
 
 	/* check that argument is a modifier */
-	if (!BPy_Constant_Check(value))
+	if (!BPy_Constraint_Check(value))
 		return (bConstraint *)EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a constraint as an argument" );
 
