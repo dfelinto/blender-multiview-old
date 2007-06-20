@@ -256,7 +256,7 @@ char *get_con_subtarget_name(bConstraint *con, Object *target)
 		char *subtarget;
 		
 		tar = get_constraint_target(con, &subtarget);
-		return subtarget;
+		if (tar==target) return subtarget;
 	}
 	
 	return NULL;  
