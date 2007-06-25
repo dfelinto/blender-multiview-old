@@ -14,6 +14,6 @@ incs = ['.',
 	'#/intern/guardedalloc']
 
 
-defs = ['-DWITH_DDS']
+defs = ['WITH_DDS']
 
 env.BlenderLib ('bf_dds', source_files, incs, defs, libtype=['core','player'], priority = [90, 200])
