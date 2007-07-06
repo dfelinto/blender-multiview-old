@@ -100,7 +100,7 @@ static void meshactionbuts(SpaceAction *saction, Object *ob, Key *key)
 {
 	int           i;
 	char          str[64];
-	float	        x, y;
+	float	      x, y;
 	uiBlock       *block;
 	uiBut 		  *but;
 
@@ -119,7 +119,7 @@ static void meshactionbuts(SpaceAction *saction, Object *ob, Key *key)
     block= uiNewBlock (&curarea->uiblocks, str, UI_EMBOSS, UI_HELV, curarea->win);
 
 	x = NAMEWIDTH + 1;
-    y = CHANNELHEIGHT/2;
+    y = 0.0f;
 
 	/* make the little 'open the sliders' widget */
 	// should eventually be removed
@@ -282,7 +282,7 @@ static void action_icu_buts(SpaceAction *saction)
                        UI_EMBOSS, UI_HELV, curarea->win);
 
 	x = NAMEWIDTH + 1;
-    y = 0.0;
+    y = 0.0f;
 	
 	uiBlockSetEmboss(block, UI_EMBOSSN);
 
