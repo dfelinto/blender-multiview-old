@@ -637,7 +637,7 @@ static void *get_nearest_action_key (float *selx, short *sel, short *ret_type, b
 	}
 		
 	/* filter data */
-	filter= (ACTFILTER_VISIBLE | ACTFILTER_CHANNELS);
+	filter= (ACTFILTER_FORDRAWING | ACTFILTER_VISIBLE | ACTFILTER_CHANNELS);
 	actdata_filter(&act_data, filter, data, datatype);
 	
 	for (ale= act_data.first; ale; ale= ale->next) {
