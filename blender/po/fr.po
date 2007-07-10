@@ -108,15 +108,19 @@ msgstr "Appliquer échelle et rotation"
 
 #ALT-R
 msgid "Clear rotation"
-msgstr "Effacer les Rotations"
+msgstr "Réinitialiser la Rotation"
 
 #ALT-G
 msgid "Clear location"
-msgstr "Effacer l'Echelle"
+msgstr "Réinitialiser la Position"
+
+#ALT-G
+msgid "Clear scale"
+msgstr "Réinitialiser l'Echelle"
 
 #ALT-O
 msgid "Clear origin"
-msgstr "Effacer l'Origine"
+msgstr "Réinitialiser le Centre"
 
 msgid "Convert Curve to"
 msgstr "Convertir la Courbe en"
@@ -580,7 +584,7 @@ msgid "Right"
 msgstr "Vue de Droite"
 
 msgid "Top"
-msgstr "Vue d'en Haut"
+msgstr "Vue de Dessus"
 
 msgid "Cameras"
 msgstr "Caméras"
@@ -877,22 +881,19 @@ msgid "Rotate"
 msgstr "Pivoter"
 
 msgid "Scale"
-msgstr "Mettre à l'échelle"
-
-msgid "Clear Size"
-msgstr "Effacer la Mise à l'Echelle"
+msgstr "Changer l'Echelle"
 
 msgid "Clear Rotation"
-msgstr "Effacer les Rotations"
+msgstr "Réinitialiser la Rotation"
 
 msgid "Clear Location"
-msgstr "Effacer la Localisation"
+msgstr "Réinitialiser la Position"
 
 msgid "Clear Scale"
-msgstr "Effacer l'Echelle"
+msgstr "Réinitialiser l'Echelle"
 
 msgid "Clear Origin"
-msgstr "Effacer l'Origine"
+msgstr "Réinitialiser le Centre"
 
 msgid "Clear/Apply"
 msgstr "Effacer/Appliquer..."
@@ -1172,7 +1173,7 @@ msgid "MetaBall"
 msgstr "Metaball"
 
 msgid "Empty"
-msgstr "Objet Factice"
+msgstr "Objet Vide"
 
 msgid "Bezier Curve"
 msgstr "Courbe BEZIER"
@@ -1328,8 +1329,23 @@ msgstr "Retourner"
 msgid "Control Points"
 msgstr "Points de Contrôle"
 
+msgid "Automatic"
+msgstr "Automatique"
+
+msgid "Make Segment"
+msgstr "Créer Segment"
+
 msgid "Toggle Cyclic"
 msgstr "Cyclique O/N"
+
+msgid "Toggle Free/Aligned"
+msgstr "Poignées Libres/Alignées"
+
+msgid "Reload Original"
+msgstr "Annuler Tout"
+
+msgid "Reload original data"
+msgstr "Revenir au tracé initial?"
 
 msgid "Collapse"
 msgstr "Fusionner"
@@ -1410,7 +1426,10 @@ msgid "Properties"
 msgstr "Transformations (Paramètres)"
 
 msgid "Make Duplicates Real"
-msgstr "Solidifier l'Animation"
+msgstr "Solidifier les objets dupliqués"
+
+msgid "Make dupli objects real"
+msgstr "Solidifier les objets dupliqués"
 
 msgid "ObData to Center"
 msgstr "Maillage au Centre"
@@ -1529,7 +1548,7 @@ msgid "Editing (F9) "
 msgstr "Edition (F9)"
 
 msgid "Scene (F10) "
-msgstr "Rendu (F10)"
+msgstr "Scène (F10)"
 
 msgid "Lamp buttons"
 msgstr "Lampes"
@@ -2378,10 +2397,22 @@ msgid "Shapes"
 msgstr "Mémoire de Formes"
 
 msgid "Add Shape Key"
-msgstr "Ajouter une Forme Clé"
+msgstr "Ajouter une Clé de Forme"
 
 msgid "Add new Shape Key"
-msgstr "Ajouter une nouvelle Forme Clé"
+msgstr "Ajouter une nouvelle Clé de Forme"
+
+msgid "Previous Shape Key"
+msgstr "Clé de Forme précédente"
+	 
+msgid "Next Shape Key"
+msgstr "Clé de Forme suivante"
+
+msgid "Makes Shape Keys relative"
+msgstr "Rend relatives les Clés de Forme"
+
+msgid "Deletes current Shape Key"
+msgstr "Supprime la Clé de Forme courante"
 
 msgid "Show:"
 msgstr "Afficher:"
@@ -2518,6 +2549,9 @@ msgstr "Dessine le champ de vision"
 
 msgid "Draw the active camera's name in camera view"
 msgstr "Affiche le nom de la caméra utilisée dans la vue caméra"
+
+msgid "Add Multires"
+msgstr "Ajouter Multires"
 
 ###########################################################
 ###
