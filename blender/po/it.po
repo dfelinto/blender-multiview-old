@@ -1,8 +1,12 @@
+# translation of it-244.po to Italian
+# translation of it.po to Italian
+# Italian translation for blender
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: it-244\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2007-06-21 23:21+0100\n"
+"PO-Revision-Date: 2007-07-07 01:40+0100\n"
 "Last-Translator: Skynet_italy <fiott@tin.it>\n"
 "Language-Team:  <it@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -2691,7 +2695,7 @@ msgid "Optional send message to objects with this name onlyNIL_NULL, or empty to
 msgstr "Messaggio opzionale da inviare all'oggetto con questo nome onlyNIL_NULL, o vuoto per trasmettere"
 
 msgid "Optional message subject. This is what can be filtered on."
-msgstr "Soggetto messaggio Opzionale. Questo è quello che pu essere filtrato"
+msgstr "Soggetto messaggio Opzionale. Questo é quello che pu essere filtrato"
 
 msgid "T/P"
 msgstr "T/P"
@@ -3555,7 +3559,7 @@ msgid "To convert simulation into baked (cached) result"
 msgstr "Converte la simulazione in risultato (cached)"
 
 msgid "Soft Body is baked, free it first"
-msgstr "Corpo Morbido è cotto(baked), rimuovi bake prima"
+msgstr "Corpo Morbido é cotto(baked), rimuovi bake prima"
 
 msgid "Start frame for baking"
 msgstr "Fotogramma iniziale per la cottura(baking)"
@@ -3993,7 +3997,7 @@ msgid "Obstacle"
 msgstr "Ostacoli"
 
 msgid "Object is a fixed obstacle."
-msgstr "L'oggetto è un ostacolo fisso"
+msgstr "L'oggetto é un ostacolo fisso"
 
 msgid "Inflow"
 msgstr "Affluenza"
@@ -4107,7 +4111,7 @@ msgid "Value:"
 msgstr "Valore:"
 
 msgid "Viscosity setting, value that is multiplied by 10 to the power of (exponent*-1)."
-msgstr "Impostazioni viscosità, valore che è moltiplicato per 10 alla potenza di (esponente*-1)"
+msgstr "Impostazioni viscosità, valore che é moltiplicato per 10 alla potenza di (esponente*-1)"
 
 msgid "Neg-Exp.:"
 msgstr "Esp.-Neg:"
@@ -4704,7 +4708,7 @@ msgid "Pano"
 msgstr "Pano"
 
 msgid "Enable panorama rendering (output width is multiplied by Xparts)"
-msgstr "Abilita il rendering panoramico (la larghezza in uscita è moltiplicata da PartX)"
+msgstr "Abilita il rendering panoramico (la larghezza in uscita é moltiplicata da PartX)"
 
 msgid "Ray"
 msgstr "Ray"
@@ -4998,13 +5002,13 @@ msgid "EmitPwr:"
 msgstr "EmisInt:"
 
 msgid "arealight, material emit and background intensity scaling, 1 is normal"
-msgstr "scala intensità arealight, emissione materiali e sfondo, 1 è normale"
+msgstr "scala intensità arealight, emissione materiali e sfondo, 1 é normale"
 
 msgid "GI Pwr:"
 msgstr "Int GI:"
 
 msgid "GI indirect lighting intensity scaling, 1 is normal"
-msgstr "scala intensità illuminazione indiretta GI, 1 è normale"
+msgstr "scala intensità illuminazione indiretta GI, 1 é normale"
 
 msgid "Depth:"
 msgstr "Profondità:"
@@ -5106,13 +5110,13 @@ msgid "Gam "
 msgstr "Gam "
 
 msgid "Gamma correction, 1 is off"
-msgstr "Correzione Gamma, 1 è spento"
+msgstr "Correzione Gamma, 1 é spento"
 
 msgid "Exp "
 msgstr "Exp "
 
 msgid "Exposure adjustment, 0 is off"
-msgstr "Impostazione esposizione, 0 è spento"
+msgstr "Impostazione esposizione, 0 é spento"
 
 msgid "Processors:"
 msgstr "Processori:"
@@ -5136,7 +5140,7 @@ msgid "AA Passes "
 msgstr "Passi AA "
 
 msgid "Number of AA passes (0 is no AA)"
-msgstr "Numero di passi AA (0 è nessun AA)"
+msgstr "Numero di passi AA (0 é nessun AA)"
 
 msgid "AA Samples "
 msgstr "Campionamenti AA"
@@ -5190,7 +5194,7 @@ msgid "Sigma:"
 msgstr "Sigma:"
 
 msgid "Filter type control, higher value is stronger gaussian"
-msgstr "Controllo del tipo di filtro, valore alto è forte gaussiano"
+msgstr "Controllo del tipo di filtro, valore alto é forte gaussiano"
 
 msgid "Map Old:"
 msgstr "Mappa Vecchio:"
@@ -6075,13 +6079,13 @@ msgid "SubSh Patch:"
 msgstr "Corr. Subsh:"
 
 msgid "Sets the number of times the environment is tested to detect pathes"
-msgstr "Imposta il numero di volte che l'ambiente è testato per rilevare zone"
+msgstr "Imposta il numero di volte che l'ambiente é testato per rilevare zone"
 
 msgid "SubSh Element:"
 msgstr "Elementi Subsh:"
 
 msgid "Sets the number of times the environment is tested to detect elements"
-msgstr "Imposta il numero di volte che l'ambiente è testato per rilevare elementi"
+msgstr "Imposta il numero di volte che l'ambiente é testato per rilevare elementi"
 
 msgid "Subdiv Shoot Element"
 msgstr "Sudd. Elementi colpiti"
@@ -6807,7 +6811,7 @@ msgid "GloInt:"
 msgstr "GloInt:"
 
 msgid "Sets light glow intensity, 0 is off"
-msgstr "Imposta l'intensità della incandescenza della luce, 0 è spenta"
+msgstr "Imposta l'intensità della incandescenza della luce, 0 é spenta"
 
 msgid "GloOfs:"
 msgstr "GloOfs:"
@@ -6825,10 +6829,10 @@ msgid "Sets the size of the shadow buffer"
 msgstr "Imposta la dimensione del buffer delle ombre"
 
 msgid "Sets the radius of the lightsource, 0 is same as pointlight"
-msgstr "Imposta il raggio della sorgente di luce, 0 è uguale al punto luce"
+msgstr "Imposta il raggio della sorgente di luce, 0 é uguale al punto luce"
 
 msgid "Sets the distance value at which light intensity is half"
-msgstr "Imposta la distanza alla quale l'intensità della luce è dimezzata"
+msgstr "Imposta la distanza alla quale l'intensità della luce é dimezzata"
 
 msgid "Shape "
 msgstr "Forma "
@@ -7257,13 +7261,13 @@ msgid "frsOfs "
 msgstr "Scostfrs "
 
 msgid "Fresnel offset, 1 is uniform mirror, 5 is fresnel mirror (IOR>1)"
-msgstr "Offset fresnel, 1 è specchio uniforme, 5 specchio fresnel (IOR >1)"
+msgstr "Offset fresnel, 1 é specchio uniforme, 5 specchio fresnel (IOR >1)"
 
 msgid "Absorption Color"
 msgstr "Colore assorbimento"
 
 msgid "transmit absorption color, white is no absorption"
-msgstr "Colore trasmissione assorbimento, bianco è nessun assorbimento"
+msgstr "Colore trasmissione assorbimento, bianco é nessun assorbimento"
 
 msgid "aR "
 msgstr "aR "
@@ -7278,7 +7282,7 @@ msgid "Ds"
 msgstr "Ds"
 
 msgid "absorption distance scale, 1 is one blender (world) unit of distance"
-msgstr "scala distanza assorbimento, 1 è una unità di distanza blender (mondo)"
+msgstr "scala distanza assorbimento, 1 é una unità di distanza blender (mondo)"
 
 msgid "Dispersion"
 msgstr "Dispersione"
@@ -7287,7 +7291,7 @@ msgid "Pwr "
 msgstr "Quan "
 
 msgid "Dispersion power, the higher, the more dispersion, 0 is no dispersion"
-msgstr "Quantità dispersione, più alta, maggiore la dispersione, 0 è nessuna dispersione"
+msgstr "Quantità dispersione, più alta, maggiore la dispersione, 0 é nessuna dispersione"
 
 msgid "Samples "
 msgstr "Campioni "
@@ -7347,7 +7351,7 @@ msgid "FlareSize: "
 msgstr "DimBagliore: "
 
 msgid "Sets the factor by which the flare is larger than the halo"
-msgstr "Imposta il fattore per il quale il bagliore è più largo dell'alone"
+msgstr "Imposta il fattore per il quale il bagliore é più largo dell'alone"
 
 msgid "Sub Size: "
 msgstr "Dim Sub: "
@@ -7620,7 +7624,7 @@ msgid "Pastes Material from the buffer"
 msgstr "Incolla i materiali dal buffer"
 
 msgid "Shows the block the material is linked to"
-msgstr "Visualizza il blocco a cui il materiale è collegato a"
+msgstr "Visualizza il blocco a cui il materiale é collegato a"
 
 msgid "OB"
 msgstr "OG"
@@ -8301,7 +8305,7 @@ msgid "Median W:"
 msgstr "Medio W:"
 
 msgid "Weight is used for SoftBody Goal"
-msgstr "Il peso è usato per l'obbiettivo Corpi morbidi"
+msgstr "Il peso é usato per l'obbiettivo Corpi morbidi"
 
 msgid "Crease W:"
 msgstr "Piega W:"
@@ -10422,7 +10426,7 @@ msgid "Append object(s) in active layer"
 msgstr "Collega oggetto(i) nel livello attivo"
 
 msgid "Append object(s) at cursor, use centroid if more than one object is selected"
-msgstr "Collega oggetto(i) al cursore, usa il centroide se più di un oggetto è selezionato"
+msgstr "Collega oggetto(i) al cursore, usa il centroide se più di un oggetto é selezionato"
 
 msgid "Sync Pose"
 msgstr "Sinc Posa"
@@ -10959,7 +10963,7 @@ msgid "Help"
 msgstr "Aiuto"
 
 msgid "Indicates this is a Packed file. See File menu."
-msgstr "Indica che questo è un file packed, Guarda il menu File"
+msgstr "Indica che questo é un file packed, Guarda il menu File"
 
 msgid "Click to display Splash Screen"
 msgstr "Click per visualizzare lo Splash Screen"
@@ -11064,7 +11068,7 @@ msgid "Pose Constraint Ipo cannot be switched"
 msgstr "L'Ipo Vincolo Posa non puo' essere cambiata"
 
 msgid "Ipo is connected to Pose Action"
-msgstr "L'Ipo è connessa a una Posa Azione "
+msgstr "L'Ipo é connessa a una Posa Azione "
 
 msgid "Pose Action Ipo cannot be switched"
 msgstr "L'Ipo Posa Azione non puo' essere cambiata"
@@ -11553,7 +11557,7 @@ msgid "None Available"
 msgstr "Nessuno Disponibile"
 
 msgid "None of the texts in the Text Editor is a 3D View space handler"
-msgstr "Nessuno dei testi nell'editor di testo è un manipolatore dello spazio della vista 3D"
+msgstr "Nessuno dei testi nell'editor di testo é un manipolatore dello spazio della vista 3D"
 
 msgid "Background Image..."
 msgstr "Immagine di Sfondo..."
@@ -12333,7 +12337,7 @@ msgid "Pastes the mirrored pose from the buffer"
 msgstr "Incolla la posa specchiata dal buffer"
 
 msgid "Keeps this view displaying the current data regardless of what object is selected"
-msgstr "Mantiene la visualizzazione dei dati correnti di questa vista rispetto a quale oggetto è selezionato"
+msgstr "Mantiene la visualizzazione dei dati correnti di questa vista rispetto a quale oggetto é selezionato"
 
 msgid "ADD NEW "
 msgstr "AGGIUNGI NUOVO "
@@ -12567,7 +12571,7 @@ msgid "Paste Action Pose"
 msgstr "Incolla Azione Posa"
 
 msgid "Game engine is disabled in this release!"
-msgstr "Il motore di Gioco è disabilitato in questa versione!"
+msgstr "Il motore di Gioco é disabilitato in questa versione!"
 
 msgid "To Selected (top)"
 msgstr "Al Selezionato (alto)"
@@ -12795,7 +12799,7 @@ msgid "Open on Mouse Over"
 msgstr "Apri al passaggio del Mouse"
 
 msgid "Open menu buttons and pulldowns automatically when the mouse is hovering"
-msgstr "Apre i menu bottoni a discesa automaticamente quando il mouse è passato"
+msgstr "Apre i menu bottoni a discesa automaticamente quando il mouse é passato"
 
 msgid "Top Level:"
 msgstr "Primo Livello:"
@@ -13428,7 +13432,7 @@ msgid "view"
 msgstr "vista"
 
 msgid "Pose edit not possible while Rest Position is enabled"
-msgstr "Modifica della Posa impossibile quando Blocca Posizione è abilitato"
+msgstr "Modifica della Posa impossibile quando Blocca Posizione é abilitato"
 
 msgid "UV lscm unwrap"
 msgstr "Scartoccia UV con lscm"
@@ -13656,7 +13660,7 @@ msgid "(De)Select All"
 msgstr "(De)Sel. Tutto"
 
 msgid "Edit Mode "
-msgstr "Edit Mode "
+msgstr "Modo Edit "
 
 msgid "Grabber"
 msgstr "Prendere"
@@ -14298,7 +14302,7 @@ msgid "Disable"
 msgstr "Disabilita"
 
 msgid "Default is to generate and use fluidsim vertex speed vectors, this option switches calculation off during bake, and disables loading."
-msgstr "La generazione e velocità vertici usata in fluidsim è predefinita,questa opzione commuta il calcolo su off durante cottura(bake), ed disabilita caricamento."
+msgstr "La generazione e velocità vertici usata in fluidsim é predefinita,questa opzione commuta il calcolo su off durante cottura(bake), ed disabilita caricamento."
 
 msgid "Local Inflow Coords"
 msgstr "Coordinate locali afflusso:"
@@ -14760,7 +14764,7 @@ msgid "Set sampling filter for blur"
 msgstr "Imposta filtro di campionamento per sfoca"
 
 msgid "Uses circular filter, warning it's slow!"
-msgstr "Usa filtro circolare, attenzione è lento!"
+msgstr "Usa filtro circolare, attenzione é lento!"
 
 msgid "Applies filter on gamma corrected values"
 msgstr "Su gamma applica filtro con valori corretti"
@@ -15009,7 +15013,7 @@ msgid "Convert whitespace"
 msgstr "Converti Spazio Bianco"
 
 msgid "Objects in Same Group"
-msgstr "oggetti stesso gruppo"
+msgstr "Oggetti stesso gruppo"
 
 msgid "Shift G, 5"
 msgstr "Shift G, 5"
@@ -15024,7 +15028,7 @@ msgid "W, Alt 1"
 msgstr "W, Alt 1"
 
 msgid "Object Mode "
-msgstr "Object Mode"
+msgstr "Modo Oggetto"
 
 msgid "UV Face Select "
 msgstr "UV Face Select"
@@ -15192,7 +15196,7 @@ msgid "Image too small"
 msgstr "Immagine troppo piccola"
 
 msgid "No border supported for Panorama"
-msgstr "Nessun bordo è supportato per Panorama"
+msgstr "Nessun bordo é supportato per Panorama"
 
 msgid "No border area selected."
 msgstr "Nessuna area sel. delimitata"
@@ -15210,10 +15214,10 @@ msgid "Modifiers cannot be applied to multi-user data"
 msgstr "I modificatori non possono essere applicati a dati multi-user"
 
 msgid "Modifier is disabled or returned error, skipping apply"
-msgstr "Il modificatore è disabilitato o restituisce un errore, salta applica"
+msgstr "Il modificatore é disabilitato o restituisce un errore, salta applica"
 
 msgid "Modifier is disabled, skipping apply"
-msgstr "Il modificatore è disabilitato, salta applica"
+msgstr "Il modificatore é disabilitato, salta applica"
 
 msgid "Cannot apply modifier for this object type"
 msgstr "Non puoi applicare il modificatore per questo tipo di oggetto"
@@ -15234,7 +15238,7 @@ msgid "no conversion possible"
 msgstr "conversione impossibile"
 
 msgid "The active object is not in this layer"
-msgstr "L'oggetto attivo non è in questo livello"
+msgstr "L'oggetto attivo non é in questo livello"
 
 msgid "The active object does not have a mesh obData"
 msgstr "L'oggetto attivo non ha una mesh odData"
@@ -15276,7 +15280,7 @@ msgid "No valid selection"
 msgstr "Selezione non valida"
 
 msgid "No valid vertices are selected"
-msgstr "Nessun vertice selezionato è valido"
+msgstr "Nessun vertice selezionato é valido"
 
 msgid "No curve is selected"
 msgstr "Nessuna curva selezionata"
@@ -15324,7 +15328,7 @@ msgid "Unable to center cursor in Edit Mode"
 msgstr "Inabile a centrare cursore in Edit Mode"
 
 msgid "This is the current scene"
-msgstr "Questa è la scena corrente"
+msgstr "Questa é la scena corrente"
 
 msgid "Read console"
 msgstr "Leggi Console"
@@ -15333,7 +15337,7 @@ msgid "Wrong window"
 msgstr "finestra sbagliata"
 
 msgid "The selected file is not a movie"
-msgstr "Il file sel. non è un filmato"
+msgstr "Il file sel. non é un filmato"
 
 msgid "Unsupported audio format"
 msgstr "Formato audio non supportato"
@@ -15342,7 +15346,7 @@ msgid "Only 16 bit audio is supported"
 msgstr "Supportato solo audio a 16bit"
 
 msgid "The selected file is not a sound file"
-msgstr "Il file selezionato non è un file audio"
+msgstr "Il file selezionato non é un file audio"
 
 msgid "Can't apply effects to audio sequence strips"
 msgstr "Non puoi applicare effetti su strisce di sequenze audio"
@@ -16956,10 +16960,10 @@ msgid "Add Multires"
 msgstr "Agg. Multires"
 
 msgid "Sculpt Mode"
-msgstr "Sculpire Mode"
+msgstr "Modo Scolpire"
 
 msgid "Sculpt Mode "
-msgstr "Sculpire Mode"
+msgstr "Modo Scolpire"
 
 msgid "Sculpt"
 msgstr "Scolpire"
@@ -17403,10 +17407,10 @@ msgid "Shadow casting alpha, only in use for Irregular Shadowbuffer"
 msgstr "Getta ombre trasparenti, solo in uso inregolare buffer ombre"
 
 msgid "Falloff power for transmissivity (1.0 is linear)"
-msgstr "Potenza decadimento per trasmissività (1.0 è lineare)"
+msgstr "Potenza decadimento per trasmissività (1.0 é lineare)"
 
 msgid "Depth limit for transmissivity (0.0 is disabled)"
-msgstr "Limite profondità trasmissività (0.0 è disabilitata)"
+msgstr "Limite profondità trasmissività (0.0 é disabilitata)"
 
 msgid "Vertex select mode (Ctrl Tab 1)"
 msgstr "Modo seleziona vertici (Ctrl Tab 1)"
@@ -17514,7 +17518,7 @@ msgid "Vertically shifts the camera view, without changing the perspective"
 msgstr "Slittamento verticale visuale camera,senza cambiare la prospettiva"
 
 msgid "The size that the camera is displayed in the 3D View (different from the object's scale)"
-msgstr "La dimensione della camera è visualizzata in vista 3D (diverso dalla scala degli oggetti)"
+msgstr "La dimensione della camera é visualizzata in vista 3D (diverso dalla scala degli oggetti)"
 
 msgid "Full Render"
 msgstr "Render Completo"
@@ -17550,7 +17554,7 @@ msgid "Add Children"
 msgstr "Agg. figlio"
 
 msgid "The direction that the OpenGL light is shining"
-msgstr "La direzione della luce openGL è brillante"
+msgstr "La direzione della luce openGL é brillante"
 
 msgid "Diameter in Pixels for Object/Lamp center display"
 msgstr "Diametro in pixel del indicatore centro per Oggetti e Lampade"
@@ -17640,7 +17644,7 @@ msgid "Map Image"
 msgstr "Mappa Immagine"
 
 msgid "When Border render, the resulting image gets cropped"
-msgstr "Quando il bordo del render, l'immagine risultante è tagliata"
+msgstr "Quando il bordo del render, l'immagine risultante é tagliata"
 
 msgid "Distort"
 msgstr "Distorcere"
@@ -18183,7 +18187,7 @@ msgid "Emiss:"
 msgstr "Emissione:"
 
 msgid "The maximum length of particle strand (zero is no limit)"
-msgstr "La massima durata della riva particella ( zero è nessun limite)"
+msgstr "La massima durata della riva particella ( zero é nessun limite)"
 
 msgid "Animated Mesh:"
 msgstr "Mesh animata:"
@@ -18192,7 +18196,7 @@ msgid "Number of tracer particles to generate."
 msgstr "Numero di particelle traccianti generate"
 
 msgid "Number of isosurface subdivisions. This is necessary for the inclusion of particles into the surface generation. Warning - can lead to longer computation times!"
-msgstr "Numero di suddivisioni di isosurface.Questo è necessario per l'inclusione di particelle nella generazione di superficie. Attenzione - può portare a tempi più lunghi di calcolo!"
+msgstr "Numero di suddivisioni di isosurface.Questo é necessario per l'inclusione di particelle nella generazione di superficie. Attenzione - può portare a tempi più lunghi di calcolo!"
 
 msgid "Amount of surface smoothing (0=off, 1=normal, >1=stronger smoothing)."
 msgstr "Quantità di levigatura superficie (0=off, 1=normale, >1=forte livellamento)."
@@ -18231,7 +18235,7 @@ msgid "Impact Factor:"
 msgstr "Fattore impatto:"
 
 msgid "This is an unphsyical value for moving objects - it control the impact an obstacle has on the fluid, =0 behaves a bit like outflow (deleting fluid), =1 is default, while >1 results in high forces. Can be used to tweak total mass."
-msgstr "Questo è un valore ... per oggetti in movimento - esso controlla l'impatto che ha l'ostacolo sul fluido, =0 si comporta un pò come deflusso (rimuove fluido), =1 è predefinito, mentre >1 risulta molto efficace.Può essere usato per perfezzionare la massa totale"
+msgstr "Questo é un valore non fisico per oggetti in movimento - esso controlla l'impatto che ha l'ostacolo sul fluido, =0 si comporta un pò come deflusso (rimuove fluido), =1 é predefinito, mentre >1 risulta molto efficace.Può essere usato per perfezzionare la massa totale"
 
 msgid "Amount of mixing between no- and free-slip, 0=stickier, 1=same as free slip."
 msgstr "Quantità di miscela tra non e scivolamento libero, 0= ancorato, 1= identico a scivolamento libero."
@@ -18261,7 +18265,7 @@ msgid "Select fluid simulation bake directory/prefix to load particles from, sam
 msgstr "Sel. simulazione fluidi cotta(bake) in cartella/prefissata e carica particelle, lo stesso come per oggetto dominio."
 
 msgid "Object is not a softbody"
-msgstr "L'oggetto non è un softbody"
+msgstr "L'oggetto non é un softbody"
 
 msgid "However it can deflect a softbody"
 msgstr "Nondimeno esso può deviare un softbody"
@@ -18321,7 +18325,7 @@ msgid "Channel 3"
 msgstr "Canale 3"
 
 msgid "Values lower than this setting are 100% keyed"
-msgstr "Il valore più basso di questa regolazione è 100% tonalità"
+msgstr "Il valore più basso di questa regolazione é 100% tonalità"
 
 msgid "Channel Key"
 msgstr "Adatta Canale"
@@ -18339,7 +18343,7 @@ msgid "Locks layers and used Camera to Scene (Ctrl `)"
 msgstr "Blocca i livelli e la camera usati nella scena (Ctrl ò)"
 
 msgid "The channel number shown in the image preview. 0 is the result of all strips combined."
-msgstr "Il numero del canale mostrato nell'anteprima. 0 è il risultato di tutte le strisce combinate."
+msgstr "Il numero del canale mostrato nell'anteprima. 0 é il risultato di tutte le strisce combinate."
 
 msgid "Snap To Frame"
 msgstr "Allinea a fotogramma"
@@ -18375,7 +18379,7 @@ msgid "From Marked As Sharp"
 msgstr "Da marcati come acuti"
 
 msgid "Modifier is disabled or return error, skipping apply"
-msgstr "Il modificatore è disabilitato o restituisce un errore, saltando applica"
+msgstr "Il modificatore é disabilitato o restituisce un errore, saltando applica"
 
 msgid "Vertical Aspect Ratio"
 msgstr "Rapporto di aspetto verticale"
@@ -18510,7 +18514,7 @@ msgid "Load new Image of Movie"
 msgstr "Carica nuova immagine del filmato"
 
 msgid "If view locked to Object, use this Bone to lock to view to"
-msgstr "Se vista è bloccata su oggetto, usa questo osso in blocca vista"
+msgstr "Se vista é bloccata su oggetto, usa questo osso in blocca vista"
 
 msgid "Lock view to center always on this Object"
 msgstr "Blocca vista sempre al centro di questo oggetto"
@@ -18552,10 +18556,10 @@ msgid "Mean blue scattering path length"
 msgstr "Lunghezza media del percorso di dispersione del blu"
 
 msgid "Index of refraction (higher values are denser)"
-msgstr "Indice di rifrazione (con valori più alti è più denso)"
+msgstr "Indice di rifrazione (con valori più alti é più denso)"
 
 msgid "Error tolerance (low values are slower and higher quality)"
-msgstr "Tolleranza errore (con valori bassi è più lento e la qualità è più alta)"
+msgstr "Tolleranza errore (con valori bassi é più lento e la qualità é più alta)"
 
 msgid "Scattering color"
 msgstr "Colore dispersione"
@@ -18693,13 +18697,13 @@ msgid "Vertex Group name to control overall armature influence"
 msgstr "Nome gruppo vertici controlla influenza complessiva armatura"
 
 msgid "Main axis of movement is x-axis"
-msgstr "L'asse principale di movimento è asse X"
+msgstr "L'asse principale di movimento é asse X"
 
 msgid "Main axis of movement is y-axis"
-msgstr "L'asse principale di movimento è asse Y"
+msgstr "L'asse principale di movimento é asse Y"
 
 msgid "Main axis of movement is z-axis"
-msgstr "L'asse principale di movimento è asse Z"
+msgstr "L'asse principale di movimento é asse Z"
 
 msgid "Automatically determine main-axis of movement"
 msgstr "Determina automaticamente l'asse principale di movimento"
@@ -18720,10 +18724,10 @@ msgid "Don't join pairs where Vcols don't match"
 msgstr "Non unisce coppie dove Vcol non sono appaiati"
 
 msgid "Don't join pairs where edge is sharp"
-msgstr "Non unisce coppie dove lato è acuto"
+msgstr "Non unisce coppie dove lato é acuto"
 
 msgid "Don't join pairs where material dosnt match"
-msgstr "Non unisce coppie dove materiale non è appaiato"
+msgstr "Non unisce coppie dove materiale non é appaiato"
 
 msgid "Displays sharp edges, used whith the EdgeSplit modifier"
 msgstr "Mostra lati acuti, usati con il modificatore Div.Lati (EdgeSplit)"
@@ -18738,10 +18742,10 @@ msgid "Subsurf Settings"
 msgstr "Impostazioni Subsurf"
 
 msgid "Set name of UV layer to use, default is active UV layer"
-msgstr "Imposta nome del livello UV usato, il livello UV attivo è il predefinito"
+msgstr "Imposta nome del livello UV usato, il livello UV attivo é il predefinito"
 
 msgid "Set name of vertex color layer to use, default is active vertex color layer"
-msgstr "Imposta il nome del livello di colorazione a vertici usato, il livello di colorazione a vertici attivo è il predefinito"
+msgstr "Imposta il nome del livello di colorazione a vertici usato, il livello di colorazione a vertici attivo é il predefinito"
 
 msgid "Flip X"
 msgstr "Inverti X"
@@ -18765,7 +18769,7 @@ msgid "Channel 3 Tolorance"
 msgstr "Tolleranza Canale 3"
 
 msgid "Tolerance for color to be considered a keying color"
-msgstr "Tolleranza per il colore che è considerato colore chiave"
+msgstr "Tolleranza per il colore che é considerato colore chiave"
 
 msgid "Alpha Lift"
 msgstr "Passaggio a Trasparenza"
@@ -18780,10 +18784,10 @@ msgid "Adjusts the brightness of any shadows captured"
 msgstr "Aggiusta la luminosita di alcune ombre catturate"
 
 msgid "Values higher than this setting are 100% opaque"
-msgstr "Il valore più alto di questa impostazione è 100% opaco"
+msgstr "Il valore più alto di questa impostazione é 100% opaco"
 
 msgid "Adjusts how much selected channel is affected by color spill algorithm"
-msgstr "Regola quanto il canale selezionato è colpito dal'algoritmo di soppressione colore"
+msgstr "Regola quanto il canale selezionato é colpito dal'algoritmo di soppressione colore"
 
 msgid "Red Spill Suppression"
 msgstr "Soppressione canle di uscita rosso"
@@ -18825,7 +18829,7 @@ msgid "Number of samples (16=grainy, higher=less noise)"
 msgstr "Numero di campionamenti (16=granuloso, più alto=meno rumore)"
 
 msgid "Enable when using an image as input instead of actual zbuffer (auto enabled if node not image based, eg. time node)"
-msgstr "Quando abilitato usa immagine come input invece del attuale Zbuffer (auto abilitato se il nodo non è basato su immagine, esempio calcola nodo)"
+msgstr "Quando abilitato usa immagine come input invece del attuale Zbuffer (auto abilitato se il nodo non é basato su immagine, esempio calcola nodo)"
 
 msgid "Gamma Correct"
 msgstr "Correzione Gamma"
@@ -18931,4 +18935,61 @@ msgstr "Imposta UV texture attiva"
 
 msgid "Removes the current UV texture layer"
 msgstr "Rimuove la corrente UV texture"
+
+msgid "filename too long!"
+msgstr "nome file troppo lungo!"
+
+msgid "requested file doesn't exist!"
+msgstr "Il file richiesto non esiste!"
+
+msgid "cannot open file!"
+msgstr "non può aprire file!"
+
+msgid "unknown file extension."
+msgstr "estensione file sconosciuta."
+
+msgid "Draw lines on the model"
+msgstr "Linee tracciato sul modello"
+
+msgid "Interactively smooth areas of the model"
+msgstr "Interagisce smooth aree del modello"
+
+msgid "Interactively pinch areas of the model"
+msgstr "Interagisce pizzicando aree del modello"
+
+msgid "Push vertices along the direction of their normals"
+msgstr "Tira i vertici lungo la direzione della loro normale"
+
+msgid "Grabs a group of vertices and moves them with the mouse"
+msgstr "Prende un gruppo di vertici e li muove con il mouse"
+
+msgid "Adds a layer of depth"
+msgstr "Agg. un livello di profondità"
+
+msgid "Flatten"
+msgstr "Spiana"
+
+msgid "Interactively flatten areas of the model"
+msgstr "Interagisce spianando aree del modello"
+
+msgid "Add depth to model [Shift]"
+msgstr "Agg. profondità al modello [Shift]"
+
+msgid "Subtract depth from model [Shift]"
+msgstr "Sottrae profandità dal modello [Shift]"
+
+msgid "Brush makes changes without waiting for the mouse to move"
+msgstr "Il pennello fa cambiamenti senza aspettare il movimento del mouse"
+
+msgid "Set brush strength"
+msgstr "Imposta forza pennello"
+
+msgid "Please select 2 meshes"
+msgstr "Seleziona 2 mesh"
+
+msgid "Parent|Shift G, 3"
+msgstr "Genitore|Shift G, 3"
+
+msgid "Siblings (Shared Parent)|Shift G, 4"
+msgstr "Fratelli (genitore condiviso)|Shift G, 4"
 
