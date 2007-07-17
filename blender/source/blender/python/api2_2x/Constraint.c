@@ -562,11 +562,11 @@ static int action_setter( BPy_Constraint *self, int type, PyObject *value )
 			return EXPP_setFloatClamped( value, &con->min, -1000.0, 1000.0 );
 	case EXPP_CONSTR_MAX:
 		if (con->type < 10)
-			return EXPP_setFloatClamped( value, &con->min, -180.0, 180.0 );
+			return EXPP_setFloatClamped( value, &con->max, -180.0, 180.0 );
 		else if (con->type < 20)
-			return EXPP_setFloatClamped( value, &con->min, 0.0001, 1000.0 );
+			return EXPP_setFloatClamped( value, &con->max, 0.0001, 1000.0 );
 		else 
-			return EXPP_setFloatClamped( value, &con->min, -1000.0, 1000.0 );
+			return EXPP_setFloatClamped( value, &con->max, -1000.0, 1000.0 );
 	case EXPP_CONSTR_KEYON:
 		return EXPP_setIValueRange( value, &con->type,
 				EXPP_CONSTR_XROT, EXPP_CONSTR_ZLOC, 'h' );
