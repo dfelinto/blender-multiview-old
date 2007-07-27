@@ -2106,7 +2106,7 @@ static void ObjectToTransData(TransData *td, Object *ob)
 	 * 		inverse correction to stop it from screwing up space conversion
 	 *		matrix later
 	 */
-	constinv= constraints_list_needinv(&ob->constraints)
+	constinv= constraints_list_needinv(&ob->constraints);
 	if (ob->track || constinv==0) {
 		track= ob->track;
 		ob->track= NULL;
