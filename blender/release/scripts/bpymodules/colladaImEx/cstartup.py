@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.146
+# Illusoft Collada 1.4 plugin for Blender
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -34,7 +34,7 @@ except NameError:
 	print "Error! Could not find Blender modules!"
 	_ERROR = True
 
-__version__ = '0.3.146'
+__version__ = '0.3.159'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)
@@ -237,6 +237,35 @@ def LoadDefaultVals():
 	colladaReg = Blender.Registry.GetKey('collada',True)
 	if not (colladaReg is None):
 		fileButton.val = colladaReg.get('path', '')
+		fileParts = []
+		filePath = "";
+		fileParts = fileButton.val.split("\\");
+		partCount = len(fileParts);
+		if partCount > 0 :
+			for i in range(partCount):
+				if i == 0:
+					filePath = fileParts[i];
+				else :
+					if i != partCount - 1:
+						filePath = filePath + "\\" + fileParts[i];
+					else:
+						filePath = filePath + "\\";	
+
+		blenderFilename = Blender.Get('filename');
+		fileParts = []
+		fileParts = blenderFilename.split("\\");
+		partCount = len(fileParts);		
+		if partCount > 0 :
+			blenderFileOnlyName = fileParts[partCount -1];
+			blenderFileOnlyName = blenderFileOnlyName.replace(".blend", ".dae");
+			filePath = filePath + blenderFileOnlyName;
+		else :
+			filePath = filePath + "untitled.dae";
+
+
+		if len(filePath) > 0 :
+			fileButton.val = filePath;
+				
 		if doImport:
 			toggleOnlyMainScene.val = colladaReg.get('onlyMainScene', False)
 			toggleNewScene.val = colladaReg.get('newScene', False)
@@ -394,7 +423,7 @@ def Gui():
 		else:
 			toggleUseUVVal = 0
 			
-		toggleUseUV = Blender.Draw.Toggle('Use UV Image',15,45, yval, 150, 20, toggleUseUVVal, 'Use UV Image instead of materials.')
+		toggleUseUV = Blender.Draw.Toggle('Use UV Image Mats',15,45, yval, 150, 20, toggleUseUVVal, 'Use UV Image instead of the material textures. Use this if you did not use the Material Textures window. Note: If you reimport this file, they will have moved to the materials section!!')
 		
 		# Create Lookat  Option
 		if not (toggleLookAt is None):

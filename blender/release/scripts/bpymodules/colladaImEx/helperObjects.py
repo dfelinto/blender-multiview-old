@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.146
+# Illusoft Collada 1.4 plugin for Blender
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -33,7 +33,9 @@ class Armature(object):
 	
 	def __init__(self, armatureBObject, daeNode):
 		self.armatureBObject = armatureBObject
-		self.blenderArmature = armatureBObject.data
+		self.blenderArmature = Blender.Armature.New ();
+		self.armatureBObject.link(self.blenderArmature);
+		print self.armatureBObject;
 		self.boneInfos = dict()
 		self.rootBoneInfos = dict()
 		# The real blender name of this armature
@@ -115,8 +117,8 @@ class Armature(object):
 	
 	# Factory method
 	def CreateArmature(cls,objectName,armatureName, realArmatureName, daeNode):		
-		armatureBObject = Blender.Object.New('Armature',objectName)
-		armatureBObject.data.name = str(realArmatureName)
+		armatureBObject = armature_obj = Blender.Object.New ('Armature', objectName)
+		armatureBObject.name = str(realArmatureName)
 		armature = Armature(armatureBObject, daeNode)		
 		armature.name = armatureName
 		cls._armatures[armatureName] = armature
@@ -259,4 +261,3 @@ class AnimationInfo(object):
 		return None
 	GetAnimationInfo = classmethod(GetAnimationInfo)
 
-	

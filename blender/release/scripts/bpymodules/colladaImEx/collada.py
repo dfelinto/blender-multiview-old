@@ -1,5 +1,5 @@
 # -------------------------------------------------------------------------
-# Illusoft Collada 1.4 plugin for Blender version 0.3.146
+# Illusoft Collada 1.4 plugin for Blender
 # --------------------------------------------------------------------------
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -559,7 +559,7 @@ class DaeSkin(DaeEntity):
 	
 	def SaveToXml(self, daeDocument):
 		node = super(DaeSkin, self).SaveToXml(daeDocument)
-		SetAttribute(node, DaeSyntax.SOURCE, "#" + self.source)
+		SetAttribute(node, DaeSyntax.SOURCE, "#" + StripString(self.source));
 		AppendTextChild(node, DaeSyntax.BIND_SHAPE_MATRIX, MatrixToString(self.bindShapeMatrix,ROUND))
 		AppendChilds(daeDocument, node, self.sources)
 		AppendChild(daeDocument,node,self.joints)
@@ -1016,13 +1016,13 @@ class DaeLight(DaeElement):
 	class DaeSpot(DaeTechniqueCommon):
 		def __init__(self):
 			super(DaeLight.DaeSpot,self).__init__()
-			self.defConstantAttenuation = 0.0
+			self.defConstantAttenuation = 1.0
 			self.defLinearAttenuation = 0.0
 			self.defQuadraticAttenuation = 0.0
 			self.defFalloffAngle = 180.0
 			self.defFalloffExponent = 0.0
 			
-			self.constantAttenuation = 0.0
+			self.constantAttenuation = 1.0
 			self.linearAttenuation = 0.0
 			self.quadraticAttenuation = 0.0
 			self.falloffAngle = 180.0
@@ -1069,7 +1069,7 @@ class DaeLight(DaeElement):
 	class DaePoint(DaeTechniqueCommon):
 		def __init__(self):
 			super(DaeLight.DaePoint,self).__init__()
-			self.constantAttenuation = 0.0
+			self.constantAttenuation = 1.0
 			self.linearAttenuation = 0.0
 			self.quadraticAttenuation = 0.0
 			self.syntax = DaeSyntax.POINT
@@ -1201,7 +1201,7 @@ class DaeNode(DaeElement):
 		node = super(DaeNode, self).SaveToXml(daeDocument)
 		if self.type == DaeSyntax.TYPE_JOINT:
 			SetAttribute(node, DaeSyntax.TYPE, self.type)##DaeNode.GetType(self.type))
-		SetAttribute(node, DaeSyntax.SID, self.sid)
+		SetAttribute(node, DaeSyntax.SID, StripString(self.sid))
 		
 		
 		
@@ -2151,7 +2151,6 @@ class DaeFxMaterialInstance(DaeEntity):
 		
 	def SaveToXml(self, daeDocument):
 		node = super(DaeFxMaterialInstance,self).SaveToXml(daeDocument)
-		print "x"
 		SetAttribute(node, DaeFxSyntax.TARGET, StripString('#'+self.object.id))
 		SetAttribute(node, DaeFxSyntax.SYMBOL, StripString(self.object.id))
 		AppendChild(daeDocument,node,self.bind);
@@ -2236,8 +2235,8 @@ class DaeFxSampler2D(DaeElement):
 		self.maxfilter = DaeMaxFilter();
 	
 	def LoadFromXml(self, daeDocument, xmlNode):
-		super(DaeFxSampler2D, self).LoadFromXml(daeDocument, xmlNode)		
-		self.source = xmlUtils.ReadContents(xmlNode);
+		super(DaeFxSampler2D, self).LoadFromXml(daeDocument, xmlNode)
+		self.source = str(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.SOURCE)))
 		self.minfilter = CreateObjectFromXml(daeDocument, xmlNode, "minfilter", DaeMinFilter);
 		self.maxfilter = CreateObjectFromXml(daeDocument, xmlNode, "maxfilter", DaeMaxFilter);
 		
@@ -3463,7 +3462,10 @@ def IsVersionOk(version, curVersion):
 	return True
 
 def StripString(text):
-	return text.replace(' ','_').replace('.','_')
+    if text != None:
+	   return text.replace(' ','_').replace('.','_')
+    else:
+        return text;
 
 def CreateExtra(colladaInstance):
 	if isinstance(colladaInstance, DaeEntity):
