@@ -266,7 +266,7 @@ def write_scene(file, sce, world):
 			Property: "TranslationMaxX", "bool", "",0
 			Property: "TranslationMaxY", "bool", "",0
 			Property: "TranslationMaxZ", "bool", "",0
-			Property: "RotationOrder", "enum", "",0
+			Property: "RotationOrder", "enum", "",1
 			Property: "RotationSpaceForLimitOnly", "bool", "",0
 			Property: "AxisLen", "double", "",10
 			Property: "PreRotation", "Vector3D", "",0,0,0
