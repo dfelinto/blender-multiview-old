@@ -347,7 +347,7 @@ def write_scene(file, sce, world):
 		
 		write_object_props(bone, None, None, matrix_mod)
 		
-		file.write('\n\t\t\tProperty: "Size", "double", "",%.6f' % (bone.head['ARMATURESPACE']-bone.tail['ARMATURESPACE']).length)
+		file.write('\n\t\t\tProperty: "Size", "double", "",%.6f' % ((bone.head['ARMATURESPACE']-bone.tail['ARMATURESPACE']) * matrix_mod).length)
 		#file.write('\n\t\t\tProperty: "Size", "double", "",1')
 		#file.write('\n\t\t\tProperty: "LimbLength", "double", "",%.6f' % (bone.head['ARMATURESPACE']-bone.tail['ARMATURESPACE']).length)
 		file.write('\n\t\t\tProperty: "LimbLength", "double", "",1')
@@ -842,7 +842,7 @@ def write_scene(file, sce, world):
 	}''')
 	
 	# in the example was 'Bip01 L Thigh_2'
-	def write_sub_deformer_skin(obname, group_name, bone, me):
+	def write_sub_deformer_skin(obname, group_name, bone, me, matrix_mod):
 		file.write('\n\tDeformer: "SubDeformer::Cluster %s", "Cluster" {' % group_name)
 		file.write('''
 		Version: 100
@@ -886,7 +886,7 @@ def write_scene(file, sce, world):
 				file.write(',%.8f' % vg[1])
 			i+=1
 		
-		m = mtx4_z90 * bone.matrix['ARMATURESPACE']
+		m = mtx4_z90 * (matrix_mod * bone.matrix['ARMATURESPACE'])
 		matstr = mat4x4str(m)
 		matstr_i = mat4x4str(m.invert())
 		#matstr = mat4x4str(Matrix())
@@ -1480,7 +1480,7 @@ Objects:  {''')
 		
 		for bonename, bone, obname, bone_mesh, armob in ob_bones:
 			if bone_mesh == me:
-				write_sub_deformer_skin(obname, bonename, bone, me)
+				write_sub_deformer_skin(obname, bonename, bone, me, armob.matrixWorld)
 	
 	# Write pose's really weired, only needed when an armature and mesh are used together
 	# each by themselves dont need pose data. for now only pose meshes and bones
@@ -1594,7 +1594,7 @@ Relations:  {''')
 	
 	
 	# This should be at the end
-	file.write('\n\tPose: "Pose::BIND_POSES", "BindPose" {\n\t}')
+	# file.write('\n\tPose: "Pose::BIND_POSES", "BindPose" {\n\t}')
 	
 	file.write('\n}')
 	file.write('''
@@ -1646,8 +1646,6 @@ Connections:  {''')
 		if arm:
 			file.write('\n\tConnect: "OO", "Deformer::Skin %s", "Model::%s"' % (obname, obname))
 	
-	#ob_bones.sort( key = lambda ob: ob[1].parent != None)
-	ob_bones.sort( key = lambda ob: ob[1].parent != None)
 	for bonename, bone, obname, me, armob in ob_bones:
 		if me:
 			file.write('\n\tConnect: "OO", "SubDeformer::Cluster %s", "Deformer::Skin %s"' % (bonename, obname))
@@ -1659,8 +1657,8 @@ Connections:  {''')
 			file.write('\n\tConnect: "OO", "Model::%s", "SubDeformer::Cluster %s"' % (bonename, bonename))
 	
 	
-	# 
-
+	
+	
 	for bonename, bone, obname, me, armob in ob_bones:
 		blend_parent = bone.parent
 		if blend_parent:
