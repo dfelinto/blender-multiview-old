@@ -226,7 +226,7 @@ void transform_markers(int mode, int smode)	// mode and smode unused here, for c
 						sprintf(str, "Marker %.2f offset %.2f", (selmarker->frame/(float)G.scene->r.frs_sec), (offs/(float)G.scene->r.frs_sec));
 				}
 				else if (slink->spacetype == SPACE_ACTION) {
-					if (saction->flag & TIME_DRAWTIME)
+					if (saction->flag & SACTION_DRAWTIME)
 						sprintf(str, "Marker %.2f offset %.2f", (selmarker->frame/(float)G.scene->r.frs_sec), (offs/(float)G.scene->r.frs_sec));
 					else
 						sprintf(str, "Marker %.2f offset %.2f", (double)(selmarker->frame), (double)(offs));
