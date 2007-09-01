@@ -2662,7 +2662,7 @@ void add_verts_to_dgroups(Object *ob, Object *par, int heat, int mirror)
 		float mat[3][3];
 		
 		/* scale value from matrix, wont account for non uniform scale but ok */
-		Mat3CpyMat4(mat, ob->obmat);
+		Mat3CpyMat4(mat, par->obmat);
 		Mat3MulVecfl(mat, tmp);
 		scale = (fabs(tmp[0]) + fabs(tmp[1]) + fabs(tmp[2])) / 3.0f;
 		
