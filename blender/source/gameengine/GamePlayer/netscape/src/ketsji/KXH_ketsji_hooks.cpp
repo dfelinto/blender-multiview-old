@@ -883,9 +883,8 @@ set_plain_color_redraw_func(ketsji_engine_data* k)
   //	KXH_log_entry("set_plain_color_redraw_func");
 	PLA_acquire_gl_context(k->plugin);
 
-	float* c = PLA_get_foreground_color(k->plugin);
-
 #ifndef _WIN32
+	float *c = PLA_get_foreground_colour(k->plugin);
  	glClearColor(c[0], c[1], c[2], 1.0);
  	glClear(GL_COLOR_BUFFER_BIT);
 #endif
