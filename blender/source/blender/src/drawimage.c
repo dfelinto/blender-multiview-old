@@ -620,11 +620,7 @@ void draw_tfaces(void)
 
 	
 	/* Draw the cursor here, this should be in its own function really but it relys on the previous calls to set the view matrix */
-	{
-		
-
-		
-	}
+	drawcursor_sima();
 	
 	glPointSize(1.0);
 }
@@ -1592,10 +1588,8 @@ void drawimagespace(ScrArea *sa, void *spacedata)
 	
 	if(ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL)) {
 		imagespace_grid(sima);
-		if(show_viewer==0) {
+		if(show_viewer==0)
 			draw_tfaces();
-			drawcursor_sima(); /* warning, mist be called after draw_tfaces */
-		}
 	}
 	else {
 		float xim, yim, xoffs=0.0f, yoffs= 0.0f;
@@ -1769,7 +1763,6 @@ void drawimagespace(ScrArea *sa, void *spacedata)
 			
 			if(show_viewer==0) { 
 				draw_tfaces();
-				drawcursor_sima(); /* make sure this is after draw_tfaces() */
 			}
 		}
 
