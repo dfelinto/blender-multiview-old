@@ -796,7 +796,7 @@ void	KX_BlenderSceneConverter::WritePhysicsObjectToAnimationIpo(int frameNumber)
 						if (icu1)
 						{
 							float curVal = position.x();
-							insert_vert_icu(icu1, frameNumber, curVal);
+							insert_vert_icu(icu1, frameNumber, curVal, 0);
 #ifdef TEST_HANDLES_GAME2IPO
 							testhandles_ipocurve(icu1);
 #endif
