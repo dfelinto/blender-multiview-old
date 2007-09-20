@@ -6514,7 +6514,6 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 	
 	if(main->versionfile <= 244) {
 		Scene *sce;
-		Material *ma;
 		bScreen *sc;
 		Object *ob;
 		Lamp *la;
