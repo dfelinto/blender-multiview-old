@@ -80,6 +80,7 @@ void borderselect_sima(short whichuvs);
 void mouseco_to_curtile(void);
 void mouse_select_sima(void);
 void snap_menu_sima(void);
+void aspect_sima(struct SpaceImage *sima, float *x, float *y);
 
 void select_invert_tface_uv(void);
 void select_swap_tface_uv(void);

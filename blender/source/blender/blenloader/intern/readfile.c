@@ -6751,6 +6751,14 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		
 	}
 
+	if ((main->versionfile < 245) || (main->versionfile == 245 && main->subversionfile < 2)) {
+		Image *ima;	
+		/* initialize 1:1 Aspect */
+		for(ima= main->image.first; ima; ima= ima->id.next) {
+			ima->aspx = ima->aspy = 1.0f;				
+		}
+	}
+
 	/* WATCH IT!!!: pointers from libdata have not been converted yet here! */
 	/* WATCH IT 2!: Userdef struct init has to be in src/usiblender.c! */
 
