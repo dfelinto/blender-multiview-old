@@ -453,57 +453,48 @@ void draw_uvs_sima(void)
 	EditMesh *em = G.editMesh;
 	EditFace *efa;
 	
-	char col1[4], col2[4];
+	char col1[4], col2[4], efaset = 0;
 	float pointsize= BIF_GetThemeValuef(TH_VERTEX_SIZE);
  	
 	if (!G.obedit || !CustomData_has_layer(&em->fdata, CD_MTFACE))
 		return;
 	
-	
 	calc_image_view(G.sima, 'f');	/* float */
 	myortho2(G.v2d->cur.xmin, G.v2d->cur.xmax, G.v2d->cur.ymin, G.v2d->cur.ymax);
 	glLoadIdentity();
 	
-	/* draw shadow mesh */
-	if ((G.sima->flag & SI_DRAWSHADOW) && (G.obedit==OBACT)) { /* TODO - editmesh */
-		DerivedMesh *dm;
-
-		/* draw final mesh with modifiers applied */
-		/* should test - editmesh_get_derived_cage_and_final */
-		dm = editmesh_get_derived_base();
-
+	
+	if(G.sima->flag & SI_DRAWTOOL || G.sima->flag & SI_DRAWSHADOW) {
 		glColor3ub(112, 112, 112);
-		if (dm->drawUVEdges) dm->drawUVEdges(dm);
-
-		dm->release(dm);
-	}
-	else if((G.sima->flag & SI_DRAWTOOL) || (G.obedit==OBACT)) {
-		/* draw mesh without modifiers applied */
-
-		if (G.obedit) {		
-			glColor3ub(112, 112, 112);
-			for (efa= em->faces.first; efa; efa= efa->next) {
-				tface= CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
-				if (SIMA_FACEDRAW_CHECK(efa, tface)) {
-					glBegin(GL_LINE_LOOP);
-					glVertex2fv(tface->uv[0]);
-					glVertex2fv(tface->uv[1]);
-					glVertex2fv(tface->uv[2]);
-					if(efa->v4) glVertex2fv(tface->uv[3]);
-					glEnd();
-					
-					
-					efa->tmp.p = tface;
-				} else {
-					efa->tmp.p = NULL;
-				}
-					
+		for (efa= em->faces.first; efa; efa= efa->next) {
+			tface= CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
+			if (SIMA_FACEDRAW_CHECK(efa, tface)) {
+				efa->tmp.p = tface;
+			} else {
+				glBegin(GL_LINE_LOOP);
+				glVertex2fv(tface->uv[0]);
+				glVertex2fv(tface->uv[1]);
+				glVertex2fv(tface->uv[2]);
+				if(efa->v4) glVertex2fv(tface->uv[3]);
+				glEnd();
+				
+				efa->tmp.p = NULL;
+			}
+		}
+		if(G.sima->flag & SI_DRAWTOOL)
+			return; /* only draw shadow mesh */
+		
+	} else {
+		/* would be nice to do this within a draw loop but most below are optional, so it would involve too many checks */
+		for (efa= em->faces.first; efa; efa= efa->next) {
+			tface= CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
+			if (SIMA_FACEDRAW_CHECK(efa, tface)) {		
+				efa->tmp.p = tface;
+			} else {
+				efa->tmp.p = NULL;
 			}
 		}
 	}
-
-	if((G.sima->flag & SI_DRAWTOOL) || !(G.obedit==OBACT))
-		return; /* only draw shadow mesh */
 	
 	/* draw transparent faces */
 	if(G.f & G_DRAWFACES) {
@@ -620,10 +611,8 @@ void draw_uvs_sima(void)
 			}
 		}
 		
-		
 		glLineWidth(1);
 		cpack(0xFFFFFF);
-		
 		for (efa= em->faces.first; efa; efa= efa->next) {
 //			tface= CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
 //			if (SIMA_FACEDRAW_CHECK(efa, tface)) {
@@ -1168,14 +1157,16 @@ static void image_panel_view_properties(short cntrl)	// IMAGE_HANDLER_VIEW_PROPE
 	
 	
 	if (G.sima->image) {
-		uiDefBut(block, LABEL, B_NOP, "Image Display...",		10,140,140,19, 0, 0, 0, 0, 0, "");
+		uiDefBut(block, LABEL, B_NOP, "Image Display:",		10,140,140,19, 0, 0, 0, 0, 0, "");
 		uiBlockBeginAlign(block);
 		uiDefButF(block, NUM, B_REDR, "AspX:", 10,120,140,19, &G.sima->image->aspx, 0.1, 5000.0, 100, 0, "X Display Aspect for this image, does not affect renderingm 0 disables.");
 		uiDefButF(block, NUM, B_REDR, "AspY:", 10,100,140,19, &G.sima->image->aspy, 0.1, 5000.0, 100, 0, "X Display Aspect for this image, does not affect rendering 0 disables.");
 		uiBlockEndAlign(block);
 	}
 	
+	
 	if (EM_texFaceCheck()) {
+		uiDefBut(block, LABEL, B_NOP, "Draw Type:",		10, 20,120,19, 0, 0, 0, 0, 0, "");
 		uiBlockBeginAlign(block);
 		uiDefButC(block,  ROW, B_REDR, "Dash",			10, 0,58,19, &G.sima->dt_uv, 0.0, 0.0, 0, 0, "Dashed Wire UV drawtype");
 		uiDefButC(block,  ROW, B_REDR, "Black",			68, 0,58,19, &G.sima->dt_uv, 0.0, 1.0, 0, 0, "Black Wire UV drawtype");
