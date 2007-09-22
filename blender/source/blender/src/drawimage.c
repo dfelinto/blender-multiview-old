@@ -485,9 +485,6 @@ void draw_uvs_sima(void)
 		if (G.editMesh->derivedFinal && G.editMesh->derivedFinal->drawUVEdges) {
 			G.editMesh->derivedFinal->drawUVEdges(G.editMesh->derivedFinal);
 		}
-			
-#if 0
-		DerivedMesh *finalDM, *cageDM;
 
 		/* draw final mesh with modifiers applied */
 		cageDM = editmesh_get_derived_cage_and_final(&finalDM, CD_MASK_BAREMESH | CD_MASK_MTFACE);
@@ -497,14 +494,13 @@ void draw_uvs_sima(void)
 				 * so if cage is the same as the final, theres no point in drawing the shadowmesh. */
 				!((G.sima->flag & SI_SYNC_UVSEL && cageDM==finalDM))
 		) {
-			//glColor3ub(112, 112, 112);
-			//finalDM->drawUVEdges(finalDM);
+			glColor3ub(112, 112, 112);
+			finalDM->drawUVEdges(finalDM);
 		}
 		
 		if (cageDM != finalDM)
 			cageDM->release(cageDM);
 		finalDM->release(finalDM);
-#endif
 	}
 	
 	/* draw transparent faces */
