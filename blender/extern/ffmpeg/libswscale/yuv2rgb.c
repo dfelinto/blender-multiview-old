@@ -619,6 +619,7 @@ SwsFunc yuv2rgb_get_func_ptr (SwsContext *c)
 #if defined(HAVE_MMX2) || defined(HAVE_MMX)
     if (c->flags & SWS_CPU_CAPS_MMX2){
         switch(c->dstFormat){
+	case PIX_FMT_BGR32:  return yuv420_bgr32_MMX2;
         case PIX_FMT_RGB32:  return yuv420_rgb32_MMX2;
         case PIX_FMT_BGR24:  return yuv420_rgb24_MMX2;
         case PIX_FMT_BGR565: return yuv420_rgb16_MMX2;
@@ -627,6 +628,7 @@ SwsFunc yuv2rgb_get_func_ptr (SwsContext *c)
     }
     if (c->flags & SWS_CPU_CAPS_MMX){
         switch(c->dstFormat){
+	case PIX_FMT_BGR32:  return yuv420_bgr32_MMX;
         case PIX_FMT_RGB32:  return yuv420_rgb32_MMX;
         case PIX_FMT_BGR24:  return yuv420_rgb24_MMX;
         case PIX_FMT_BGR565: return yuv420_rgb16_MMX;
