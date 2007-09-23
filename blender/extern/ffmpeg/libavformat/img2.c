@@ -3,24 +3,24 @@
  * Copyright (c) 2000, 2001, 2002 Fabrice Bellard.
  * Copyright (c) 2004 Michael Niedermayer
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
-
-/* XXX: this is a hack */
-extern int loop_input;
+#include "avstring.h"
 
 typedef struct {
     int img_first;
@@ -52,6 +52,11 @@ static const IdStrMap img_tags[] = {
     { CODEC_ID_FFV1      , "ffv1-img"},
     { CODEC_ID_RAWVIDEO  , "y"},
     { CODEC_ID_BMP       , "bmp"},
+    { CODEC_ID_GIF       , "gif"},
+    { CODEC_ID_TARGA     , "tga"},
+    { CODEC_ID_TIFF      , "tiff"},
+    { CODEC_ID_SGI       , "sgi"},
+    { CODEC_ID_PTX       , "ptx"},
     {0, NULL}
 };
 
@@ -107,7 +112,7 @@ static int find_image_range(int *pfirst_index, int *plast_index,
 
     /* find the first image */
     for(first_index = 0; first_index < 5; first_index++) {
-        if (get_frame_filename(buf, sizeof(buf), path, first_index) < 0){
+        if (av_get_frame_filename(buf, sizeof(buf), path, first_index) < 0){
             *pfirst_index =
             *plast_index = 1;
             return 0;
@@ -127,8 +132,8 @@ static int find_image_range(int *pfirst_index, int *plast_index,
                 range1 = 1;
             else
                 range1 = 2 * range;
-            if (get_frame_filename(buf, sizeof(buf), path,
-                                   last_index + range1) < 0)
+            if (av_get_frame_filename(buf, sizeof(buf), path,
+                                      last_index + range1) < 0)
                 goto fail;
             if (!url_exist(buf))
                 break;
@@ -152,10 +157,13 @@ static int find_image_range(int *pfirst_index, int *plast_index,
 
 static int image_probe(AVProbeData *p)
 {
-    if (filename_number_test(p->filename) >= 0 && av_str2id(img_tags, p->filename))
-        return AVPROBE_SCORE_MAX;
-    else
-        return 0;
+    if (p->filename && av_str2id(img_tags, p->filename)) {
+        if (av_filename_number_test(p->filename))
+            return AVPROBE_SCORE_MAX;
+        else
+            return AVPROBE_SCORE_MAX/2;
+    }
+    return 0;
 }
 
 enum CodecID av_guess_image2_codec(const char *filename){
@@ -172,10 +180,10 @@ static int img_read_header(AVFormatContext *s1, AVFormatParameters *ap)
 
     st = av_new_stream(s1, 0);
     if (!st) {
-        return -ENOMEM;
+        return AVERROR(ENOMEM);
     }
 
-    pstrcpy(s->path, sizeof(s->path), s1->filename);
+    av_strlcpy(s->path, s1->filename, sizeof(s->path));
     s->img_number = 0;
     s->img_count = 0;
 
@@ -184,7 +192,7 @@ static int img_read_header(AVFormatContext *s1, AVFormatParameters *ap)
         s->is_pipe = 0;
     else{
         s->is_pipe = 1;
-        st->need_parsing= 1;
+        st->need_parsing = AVSTREAM_PARSE_FULL;
     }
 
     if (!ap->time_base.num) {
@@ -200,7 +208,7 @@ static int img_read_header(AVFormatContext *s1, AVFormatParameters *ap)
 
     if (!s->is_pipe) {
         if (find_image_range(&first_index, &last_index, s->path) < 0)
-            return AVERROR_IO;
+            return AVERROR(EIO);
         s->img_first = first_index;
         s->img_last = last_index;
         s->img_number = first_index;
@@ -236,15 +244,15 @@ static int img_read_packet(AVFormatContext *s1, AVPacket *pkt)
 
     if (!s->is_pipe) {
         /* loop over input */
-        if (loop_input && s->img_number > s->img_last) {
+        if (s1->loop_input && s->img_number > s->img_last) {
             s->img_number = s->img_first;
         }
-        if (get_frame_filename(filename, sizeof(filename),
-                               s->path, s->img_number)<0 && s->img_number > 1)
-            return AVERROR_IO;
+        if (av_get_frame_filename(filename, sizeof(filename),
+                                  s->path, s->img_number)<0 && s->img_number > 1)
+            return AVERROR(EIO);
         for(i=0; i<3; i++){
             if (url_fopen(f[i], filename, URL_RDONLY) < 0)
-                return AVERROR_IO;
+                return AVERROR(EIO);
             size[i]= url_fsize(f[i]);
 
             if(codec->codec_id != CODEC_ID_RAWVIDEO)
@@ -257,7 +265,7 @@ static int img_read_packet(AVFormatContext *s1, AVPacket *pkt)
     } else {
         f[0] = &s1->pb;
         if (url_feof(f[0]))
-            return AVERROR_IO;
+            return AVERROR(EIO);
         size[0]= 4096;
     }
 
@@ -278,7 +286,7 @@ static int img_read_packet(AVFormatContext *s1, AVPacket *pkt)
 
     if (ret[0] <= 0 || ret[1]<0 || ret[2]<0) {
         av_free_packet(pkt);
-        return AVERROR_IO; /* signal EOF */
+        return AVERROR(EIO); /* signal EOF */
     } else {
         s->img_count++;
         s->img_number++;
@@ -300,7 +308,7 @@ static int img_write_header(AVFormatContext *s)
     VideoData *img = s->priv_data;
 
     img->img_number = 1;
-    pstrcpy(img->path, sizeof(img->path), s->filename);
+    av_strlcpy(img->path, s->filename, sizeof(img->path));
 
     /* find format */
     if (s->oformat->flags & AVFMT_NOFILE)
@@ -320,12 +328,12 @@ static int img_write_packet(AVFormatContext *s, AVPacket *pkt)
     int i;
 
     if (!img->is_pipe) {
-        if (get_frame_filename(filename, sizeof(filename),
-                               img->path, img->img_number) < 0 && img->img_number>1)
-            return AVERROR_IO;
+        if (av_get_frame_filename(filename, sizeof(filename),
+                                  img->path, img->img_number) < 0 && img->img_number>1)
+            return AVERROR(EIO);
         for(i=0; i<3; i++){
             if (url_fopen(pb[i], filename, URL_WRONLY) < 0)
-                return AVERROR_IO;
+                return AVERROR(EIO);
 
             if(codec->codec_id != CODEC_ID_RAWVIDEO)
                 break;
@@ -364,8 +372,8 @@ static int img_write_trailer(AVFormatContext *s)
 #endif /* CONFIG_MUXERS */
 
 /* input */
-
-static AVInputFormat image2_iformat = {
+#ifdef CONFIG_IMAGE2_DEMUXER
+AVInputFormat image2_demuxer = {
     "image2",
     "image2 sequence",
     sizeof(VideoData),
@@ -377,8 +385,9 @@ static AVInputFormat image2_iformat = {
     NULL,
     AVFMT_NOFILE,
 };
-
-static AVInputFormat image2pipe_iformat = {
+#endif
+#ifdef CONFIG_IMAGE2PIPE_DEMUXER
+AVInputFormat image2pipe_demuxer = {
     "image2pipe",
     "piped image2 sequence",
     sizeof(VideoData),
@@ -388,12 +397,11 @@ static AVInputFormat image2pipe_iformat = {
     img_read_close,
     NULL,
 };
+#endif
 
-
-#ifdef CONFIG_MUXERS
 /* output */
-
-static AVOutputFormat image2_oformat = {
+#ifdef CONFIG_IMAGE2_MUXER
+AVOutputFormat image2_muxer = {
     "image2",
     "image2 sequence",
     "",
@@ -406,8 +414,9 @@ static AVOutputFormat image2_oformat = {
     img_write_trailer,
     AVFMT_NOFILE,
 };
-
-static AVOutputFormat image2pipe_oformat = {
+#endif
+#ifdef CONFIG_IMAGE2PIPE_MUXER
+AVOutputFormat image2pipe_muxer = {
     "image2pipe",
     "piped image2 sequence",
     "",
@@ -419,17 +428,4 @@ static AVOutputFormat image2pipe_oformat = {
     img_write_packet,
     img_write_trailer,
 };
-#endif /* CONFIG_MUXERS */
-
-int img2_init(void)
-{
-    av_register_input_format(&image2_iformat);
-    av_register_input_format(&image2pipe_iformat);
-
-#ifdef CONFIG_MUXERS
-    av_register_output_format(&image2_oformat);
-    av_register_output_format(&image2pipe_oformat);
 #endif
-
-    return 0;
-}

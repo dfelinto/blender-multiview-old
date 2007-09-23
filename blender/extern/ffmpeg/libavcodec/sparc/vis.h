@@ -2,21 +2,20 @@
  * vis.h
  * Copyright (C) 2003 David S. Miller <davem@redhat.com>
  *
- * This file is part of mpeg2dec, a free MPEG-2 video stream decoder.
- * See http://libmpeg2.sourceforge.net/ for updates.
+ * This file is part of FFmpeg.
  *
- * mpeg2dec is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * FFmpeg is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * mpeg2dec is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -40,6 +39,9 @@
  * Thus, we do the opcode encoding by hand and output 32-bit words in
  * the assembler to keep the binary from becoming tainted.
  */
+
+#ifndef AVCODEC_VIS_H
+#define AVCODEC_VIS_H
 
 #define vis_opc_base    ((0x1 << 31) | (0x36 << 19))
 #define vis_opf(X)      ((X) << 5)
@@ -326,3 +328,5 @@ static inline void vis_alignaddrl_g0(void *_ptr)
 /* Pixel component distance.  */
 
 #define vis_pdist(rs1,rs2,rd)           vis_dd2d(0x3e, rs1, rs2, rd)
+
+#endif // AVCODEC_VIS_H

@@ -2,18 +2,20 @@
  * Sony Playstation (PSX) STR File Demuxer
  * Copyright (c) 2003 The ffmpeg Project
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -80,7 +82,7 @@ typedef struct StrDemuxContext {
     AVPacket tmp_pkt;
 } StrDemuxContext;
 
-const static char sync_header[12] = {0x00,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x00};
+static const char sync_header[12] = {0x00,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0x00};
 
 static int str_probe(AVProbeData *p)
 {
@@ -90,8 +92,8 @@ static int str_probe(AVProbeData *p)
     if (p->buf_size < 0x38)
         return 0;
 
-    if ((LE_32(&p->buf[0]) == RIFF_TAG) &&
-        (LE_32(&p->buf[8]) == CDXA_TAG)) {
+    if ((AV_RL32(&p->buf[0]) == RIFF_TAG) &&
+        (AV_RL32(&p->buf[8]) == CDXA_TAG)) {
 
         /* RIFF header seen; skip 0x2C bytes */
         start = RIFF_HEADER_SIZE;
@@ -124,7 +126,7 @@ static int str_read_header(AVFormatContext *s,
                            AVFormatParameters *ap)
 {
     ByteIOContext *pb = &s->pb;
-    StrDemuxContext *str = (StrDemuxContext *)s->priv_data;
+    StrDemuxContext *str = s->priv_data;
     AVStream *st;
     unsigned char sector[RAW_CD_SECTOR_SIZE];
     int start;
@@ -140,8 +142,8 @@ static int str_read_header(AVFormatContext *s,
 
     /* skip over any RIFF header */
     if (get_buffer(pb, sector, RIFF_HEADER_SIZE) != RIFF_HEADER_SIZE)
-        return AVERROR_IO;
-    if (LE_32(&sector[0]) == RIFF_TAG)
+        return AVERROR(EIO);
+    if (AV_RL32(&sector[0]) == RIFF_TAG)
         start = RIFF_HEADER_SIZE;
     else
         start = 0;
@@ -151,7 +153,7 @@ static int str_read_header(AVFormatContext *s,
     /* check through the first 32 sectors for individual channels */
     for (i = 0; i < 32; i++) {
         if (get_buffer(pb, sector, RAW_CD_SECTOR_SIZE) != RAW_CD_SECTOR_SIZE)
-            return AVERROR_IO;
+            return AVERROR(EIO);
 
 //printf("%02x %02x %02x %02x\n",sector[0x10],sector[0x11],sector[0x12],sector[0x13]);
 
@@ -166,17 +168,17 @@ static int str_read_header(AVFormatContext *s,
             /* check if this channel gets to be the dominant video channel */
             if (str->video_channel == -1) {
                 /* qualify the magic number */
-                if (LE_32(&sector[0x18]) != STR_MAGIC)
+                if (AV_RL32(&sector[0x18]) != STR_MAGIC)
                     break;
                 str->video_channel = channel;
                 str->channels[channel].type = STR_VIDEO;
-                str->channels[channel].width = LE_16(&sector[0x28]);
-                str->channels[channel].height = LE_16(&sector[0x2A]);
+                str->channels[channel].width = AV_RL16(&sector[0x28]);
+                str->channels[channel].height = AV_RL16(&sector[0x2A]);
 
                 /* allocate a new AVStream */
                 st = av_new_stream(s, 0);
                 if (!st)
-                    return AVERROR_NOMEM;
+                    return AVERROR(ENOMEM);
                 av_set_pts_info(st, 64, 1, 15);
 
                 str->channels[channel].video_stream_index = st->index;
@@ -205,7 +207,7 @@ static int str_read_header(AVFormatContext *s,
                 /* allocate a new AVStream */
                 st = av_new_stream(s, 0);
                 if (!st)
-                    return AVERROR_NOMEM;
+                    return AVERROR(ENOMEM);
                 av_set_pts_info(st, 64, 128, str->channels[channel].sample_rate);
 
                 str->channels[channel].audio_stream_index = st->index;
@@ -248,7 +250,7 @@ static int str_read_packet(AVFormatContext *s,
                            AVPacket *ret_pkt)
 {
     ByteIOContext *pb = &s->pb;
-    StrDemuxContext *str = (StrDemuxContext *)s->priv_data;
+    StrDemuxContext *str = s->priv_data;
     unsigned char sector[RAW_CD_SECTOR_SIZE];
     int channel;
     int packet_read = 0;
@@ -258,7 +260,7 @@ static int str_read_packet(AVFormatContext *s,
     while (!packet_read) {
 
         if (get_buffer(pb, sector, RAW_CD_SECTOR_SIZE) != RAW_CD_SECTOR_SIZE)
-            return AVERROR_IO;
+            return AVERROR(EIO);
 
         channel = sector[0x11];
         if (channel >= 32)
@@ -271,16 +273,16 @@ static int str_read_packet(AVFormatContext *s,
             /* check if this the video channel we care about */
             if (channel == str->video_channel) {
 
-                int current_sector = LE_16(&sector[0x1C]);
-                int sector_count   = LE_16(&sector[0x1E]);
-                int frame_size = LE_32(&sector[0x24]);
+                int current_sector = AV_RL16(&sector[0x1C]);
+                int sector_count   = AV_RL16(&sector[0x1E]);
+                int frame_size = AV_RL32(&sector[0x24]);
                 int bytes_to_copy;
 //        printf("%d %d %d\n",current_sector,sector_count,frame_size);
                 /* if this is the first sector of the frame, allocate a pkt */
                 pkt = &str->tmp_pkt;
                 if (current_sector == 0) {
                     if (av_new_packet(pkt, frame_size))
-                        return AVERROR_IO;
+                        return AVERROR(EIO);
 
                     pkt->pos= url_ftell(pb) - RAW_CD_SECTOR_SIZE;
                     pkt->stream_index =
@@ -317,7 +319,7 @@ printf (" dropping audio sector\n");
             if (channel == str->audio_channel) {
                 pkt = ret_pkt;
                 if (av_new_packet(pkt, 2304))
-                    return AVERROR_IO;
+                    return AVERROR(EIO);
                 memcpy(pkt->data,sector+24,2304);
 
                 pkt->stream_index =
@@ -336,7 +338,7 @@ printf (" dropping other sector\n");
         }
 
         if (url_feof(pb))
-            return AVERROR_IO;
+            return AVERROR(EIO);
     }
 
     return ret;
@@ -344,14 +346,14 @@ printf (" dropping other sector\n");
 
 static int str_read_close(AVFormatContext *s)
 {
-    StrDemuxContext *str = (StrDemuxContext *)s->priv_data;
+    StrDemuxContext *str = s->priv_data;
 
     av_free(str->video_chunk);
 
     return 0;
 }
 
-static AVInputFormat str_iformat = {
+AVInputFormat str_demuxer = {
     "psxstr",
     "Sony Playstation STR format",
     sizeof(StrDemuxContext),
@@ -360,9 +362,3 @@ static AVInputFormat str_iformat = {
     str_read_packet,
     str_read_close,
 };
-
-int str_init(void)
-{
-    av_register_input_format(&str_iformat);
-    return 0;
-}

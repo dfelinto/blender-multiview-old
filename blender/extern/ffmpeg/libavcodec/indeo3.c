@@ -2,18 +2,20 @@
  * Intel Indeo 3 (IV31, IV32, etc.) video decoder for ffmpeg
  * written, produced, and directed by Alan Smithee
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -22,7 +24,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "common.h"
 #include "avcodec.h"
 #include "dsputil.h"
 #include "mpegvideo.h"
@@ -94,10 +95,6 @@ static void iv_Decode_Chunk(Indeo3DecodeContext *s, unsigned char *cur,
   unsigned char *ref, int width, int height, unsigned char *buf1,
   long fflags2, unsigned char *hdr,
   unsigned char *buf2, int min_width_160);
-
-#ifndef min
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#endif
 
 /* ---------------------------------------------------------------------- */
 static void iv_alloc_frames(Indeo3DecodeContext *s)
@@ -228,7 +225,7 @@ static unsigned long iv_decode_frame(Indeo3DecodeContext *s,
 
   iv_Decode_Chunk(s, s->cur_frame->Ybuf, s->ref_frame->Ybuf, hdr_width,
     hdr_height, buf_pos + offs * 2, fflags2, hdr_pos, buf_pos,
-    min(hdr_width, 160));
+    FFMIN(hdr_width, 160));
 
   if (!(s->avctx->flags & CODEC_FLAG_GRAY))
   {
@@ -239,7 +236,7 @@ static unsigned long iv_decode_frame(Indeo3DecodeContext *s,
 
   iv_Decode_Chunk(s, s->cur_frame->Vbuf, s->ref_frame->Vbuf, chroma_width,
     chroma_height, buf_pos + offs * 2, fflags2, hdr_pos, buf_pos,
-    min(chroma_width, 40));
+    FFMIN(chroma_width, 40));
 
   buf_pos = buf + 16 + offs3;
   offs = le2me_32(*(uint32_t *)buf_pos);
@@ -247,7 +244,7 @@ static unsigned long iv_decode_frame(Indeo3DecodeContext *s,
 
   iv_Decode_Chunk(s, s->cur_frame->Ubuf, s->ref_frame->Ubuf, chroma_width,
     chroma_height, buf_pos + offs * 2, fflags2, hdr_pos, buf_pos,
-    min(chroma_width, 40));
+    FFMIN(chroma_width, 40));
 
   }
 
@@ -381,7 +378,7 @@ static void iv_Decode_Chunk(Indeo3DecodeContext *s,
     } else if(cmd == 3) {
       if(strip->usl7 == 0) {
         strip->usl7 = 1;
-        ref_vectors = buf2 + (*buf1 * 2);
+        ref_vectors = (signed char*)buf2 + (*buf1 * 2);
         buf1++;
         continue;
       }
@@ -1068,7 +1065,6 @@ static int indeo3_decode_init(AVCodecContext *avctx)
     s->width = avctx->width;
     s->height = avctx->height;
     avctx->pix_fmt = PIX_FMT_YUV410P;
-    avctx->has_b_frames = 0;
 
     build_modpred(s);
     iv_alloc_frames(s);

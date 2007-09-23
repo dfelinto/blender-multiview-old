@@ -3,21 +3,23 @@
  * Copyright (c) 2000, 2001 Fabrice Bellard.
  * Copyright (c) 2002-2004 Michael Niedermayer <michaelni@gmx.at>
  *
- * This library is free software; you can redistribute it and/or
+ * gmc & q-pel & 32/64 bit based MC by Michael Niedermayer <michaelni@gmx.at>
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
- * gmc & q-pel & 32/64 bit based MC by Michael Niedermayer <michaelni@gmx.at>
  */
 
 /**
@@ -30,13 +32,17 @@
 #include "mpegvideo.h"
 #include "simple_idct.h"
 #include "faandct.h"
+#include "h263.h"
 #include "snow.h"
 
 /* snow.c */
 void ff_spatial_dwt(int *buffer, int width, int height, int stride, int type, int decomposition_count);
 
-uint8_t cropTbl[256 + 2 * MAX_NEG_CROP] = {0, };
-uint32_t squareTbl[512] = {0, };
+/* vorbis.c */
+void vorbis_inverse_coupling(float *mag, float *ang, int blocksize);
+
+uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP] = {0, };
+uint32_t ff_squareTbl[512] = {0, };
 
 const uint8_t ff_zigzag_direct[64] = {
     0,   1,  8, 16,  9,  2,  3, 10,
@@ -88,7 +94,7 @@ const uint8_t ff_alternate_vertical_scan[64] = {
 };
 
 /* a*inverse[b]>>32 == a/b for all 0<=a<=65536 && 2<=b<=255 */
-const uint32_t inverse[256]={
+const uint32_t ff_inverse[256]={
          0, 4294967295U,2147483648U,1431655766, 1073741824,  858993460,  715827883,  613566757,
  536870912,  477218589,  429496730,  390451573,  357913942,  330382100,  306783379,  286331154,
  268435456,  252645136,  238609295,  226050911,  214748365,  204522253,  195225787,  186737709,
@@ -160,7 +166,7 @@ static int pix_sum_c(uint8_t * pix, int line_size)
 static int pix_norm1_c(uint8_t * pix, int line_size)
 {
     int s, i, j;
-    uint32_t *sq = squareTbl + 256;
+    uint32_t *sq = ff_squareTbl + 256;
 
     s = 0;
     for (i = 0; i < 16; i++) {
@@ -226,7 +232,7 @@ static void bswap_buf(uint32_t *dst, uint32_t *src, int w){
 static int sse4_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int h)
 {
     int s, i;
-    uint32_t *sq = squareTbl + 256;
+    uint32_t *sq = ff_squareTbl + 256;
 
     s = 0;
     for (i = 0; i < h; i++) {
@@ -243,7 +249,7 @@ static int sse4_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int h)
 static int sse8_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int h)
 {
     int s, i;
-    uint32_t *sq = squareTbl + 256;
+    uint32_t *sq = ff_squareTbl + 256;
 
     s = 0;
     for (i = 0; i < h; i++) {
@@ -264,7 +270,7 @@ static int sse8_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int h)
 static int sse16_c(void *v, uint8_t *pix1, uint8_t *pix2, int line_size, int h)
 {
     int s, i;
-    uint32_t *sq = squareTbl + 256;
+    uint32_t *sq = ff_squareTbl + 256;
 
     s = 0;
     for (i = 0; i < h; i++) {
@@ -292,8 +298,8 @@ static int sse16_c(void *v, uint8_t *pix1, uint8_t *pix2, int line_size, int h)
 }
 
 
-static inline int w_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int w, int h, int type){
 #ifdef CONFIG_SNOW_ENCODER //dwt is in snow.c
+static inline int w_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int w, int h, int type){
     int s, i, j;
     const int dec_count= w==8 ? 3 : 4;
     int tmp[32*32];
@@ -353,14 +359,13 @@ static inline int w_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, in
             for(i=0; i<size; i++){
                 for(j=0; j<size; j++){
                     int v= tmp[sx + sy + i*stride + j] * scale[type][dec_count-3][level][ori];
-                    s += ABS(v);
+                    s += FFABS(v);
                 }
             }
         }
     }
     assert(s>=0);
     return s>>9;
-#endif
 }
 
 static int w53_8_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int h){
@@ -386,6 +391,7 @@ int w53_32_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int h){
 int w97_32_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int h){
     return w_c(v, pix1, pix2, line_size, 32, h, 0);
 }
+#endif
 
 static void get_pixels_c(DCTELEM *restrict block, const uint8_t *pixels, int line_size)
 {
@@ -431,7 +437,7 @@ static void put_pixels_clamped_c(const DCTELEM *block, uint8_t *restrict pixels,
                                  int line_size)
 {
     int i;
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     /* read the pixels */
     for(i=0;i<8;i++) {
@@ -453,7 +459,7 @@ static void put_pixels_clamped4_c(const DCTELEM *block, uint8_t *restrict pixels
                                  int line_size)
 {
     int i;
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     /* read the pixels */
     for(i=0;i<4;i++) {
@@ -471,7 +477,7 @@ static void put_pixels_clamped2_c(const DCTELEM *block, uint8_t *restrict pixels
                                  int line_size)
 {
     int i;
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     /* read the pixels */
     for(i=0;i<2;i++) {
@@ -508,7 +514,7 @@ static void add_pixels_clamped_c(const DCTELEM *block, uint8_t *restrict pixels,
                           int line_size)
 {
     int i;
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     /* read the pixels */
     for(i=0;i<8;i++) {
@@ -529,7 +535,7 @@ static void add_pixels_clamped4_c(const DCTELEM *block, uint8_t *restrict pixels
                           int line_size)
 {
     int i;
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     /* read the pixels */
     for(i=0;i<4;i++) {
@@ -546,7 +552,7 @@ static void add_pixels_clamped2_c(const DCTELEM *block, uint8_t *restrict pixels
                           int line_size)
 {
     int i;
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     /* read the pixels */
     for(i=0;i<2;i++) {
@@ -587,6 +593,14 @@ static void add_pixels4_c(uint8_t *restrict pixels, DCTELEM *block, int line_siz
     }
 }
 
+static int sum_abs_dctelem_c(DCTELEM *block)
+{
+    int sum=0, i;
+    for(i=0; i<64; i++)
+        sum+= FFABS(block[i]);
+    return sum;
+}
+
 #if 0
 
 #define PIXOP2(OPNAME, OP) \
@@ -594,7 +608,7 @@ static void OPNAME ## _pixels(uint8_t *block, const uint8_t *pixels, int line_si
 {\
     int i;\
     for(i=0; i<h; i++){\
-        OP(*((uint64_t*)block), LD64(pixels));\
+        OP(*((uint64_t*)block), AV_RN64(pixels));\
         pixels+=line_size;\
         block +=line_size;\
     }\
@@ -604,8 +618,8 @@ static void OPNAME ## _no_rnd_pixels_x2_c(uint8_t *block, const uint8_t *pixels,
 {\
     int i;\
     for(i=0; i<h; i++){\
-        const uint64_t a= LD64(pixels  );\
-        const uint64_t b= LD64(pixels+1);\
+        const uint64_t a= AV_RN64(pixels  );\
+        const uint64_t b= AV_RN64(pixels+1);\
         OP(*((uint64_t*)block), (a&b) + (((a^b)&0xFEFEFEFEFEFEFEFEULL)>>1));\
         pixels+=line_size;\
         block +=line_size;\
@@ -616,8 +630,8 @@ static void OPNAME ## _pixels_x2_c(uint8_t *block, const uint8_t *pixels, int li
 {\
     int i;\
     for(i=0; i<h; i++){\
-        const uint64_t a= LD64(pixels  );\
-        const uint64_t b= LD64(pixels+1);\
+        const uint64_t a= AV_RN64(pixels  );\
+        const uint64_t b= AV_RN64(pixels+1);\
         OP(*((uint64_t*)block), (a|b) - (((a^b)&0xFEFEFEFEFEFEFEFEULL)>>1));\
         pixels+=line_size;\
         block +=line_size;\
@@ -628,8 +642,8 @@ static void OPNAME ## _no_rnd_pixels_y2_c(uint8_t *block, const uint8_t *pixels,
 {\
     int i;\
     for(i=0; i<h; i++){\
-        const uint64_t a= LD64(pixels          );\
-        const uint64_t b= LD64(pixels+line_size);\
+        const uint64_t a= AV_RN64(pixels          );\
+        const uint64_t b= AV_RN64(pixels+line_size);\
         OP(*((uint64_t*)block), (a&b) + (((a^b)&0xFEFEFEFEFEFEFEFEULL)>>1));\
         pixels+=line_size;\
         block +=line_size;\
@@ -640,8 +654,8 @@ static void OPNAME ## _pixels_y2_c(uint8_t *block, const uint8_t *pixels, int li
 {\
     int i;\
     for(i=0; i<h; i++){\
-        const uint64_t a= LD64(pixels          );\
-        const uint64_t b= LD64(pixels+line_size);\
+        const uint64_t a= AV_RN64(pixels          );\
+        const uint64_t b= AV_RN64(pixels+line_size);\
         OP(*((uint64_t*)block), (a|b) - (((a^b)&0xFEFEFEFEFEFEFEFEULL)>>1));\
         pixels+=line_size;\
         block +=line_size;\
@@ -651,8 +665,8 @@ static void OPNAME ## _pixels_y2_c(uint8_t *block, const uint8_t *pixels, int li
 static void OPNAME ## _pixels_xy2_c(uint8_t *block, const uint8_t *pixels, int line_size, int h)\
 {\
         int i;\
-        const uint64_t a= LD64(pixels  );\
-        const uint64_t b= LD64(pixels+1);\
+        const uint64_t a= AV_RN64(pixels  );\
+        const uint64_t b= AV_RN64(pixels+1);\
         uint64_t l0=  (a&0x0303030303030303ULL)\
                     + (b&0x0303030303030303ULL)\
                     + 0x0202020202020202ULL;\
@@ -662,8 +676,8 @@ static void OPNAME ## _pixels_xy2_c(uint8_t *block, const uint8_t *pixels, int l
 \
         pixels+=line_size;\
         for(i=0; i<h; i+=2){\
-            uint64_t a= LD64(pixels  );\
-            uint64_t b= LD64(pixels+1);\
+            uint64_t a= AV_RN64(pixels  );\
+            uint64_t b= AV_RN64(pixels+1);\
             l1=  (a&0x0303030303030303ULL)\
                + (b&0x0303030303030303ULL);\
             h1= ((a&0xFCFCFCFCFCFCFCFCULL)>>2)\
@@ -671,8 +685,8 @@ static void OPNAME ## _pixels_xy2_c(uint8_t *block, const uint8_t *pixels, int l
             OP(*((uint64_t*)block), h0+h1+(((l0+l1)>>2)&0x0F0F0F0F0F0F0F0FULL));\
             pixels+=line_size;\
             block +=line_size;\
-            a= LD64(pixels  );\
-            b= LD64(pixels+1);\
+            a= AV_RN64(pixels  );\
+            b= AV_RN64(pixels+1);\
             l0=  (a&0x0303030303030303ULL)\
                + (b&0x0303030303030303ULL)\
                + 0x0202020202020202ULL;\
@@ -687,8 +701,8 @@ static void OPNAME ## _pixels_xy2_c(uint8_t *block, const uint8_t *pixels, int l
 static void OPNAME ## _no_rnd_pixels_xy2_c(uint8_t *block, const uint8_t *pixels, int line_size, int h)\
 {\
         int i;\
-        const uint64_t a= LD64(pixels  );\
-        const uint64_t b= LD64(pixels+1);\
+        const uint64_t a= AV_RN64(pixels  );\
+        const uint64_t b= AV_RN64(pixels+1);\
         uint64_t l0=  (a&0x0303030303030303ULL)\
                     + (b&0x0303030303030303ULL)\
                     + 0x0101010101010101ULL;\
@@ -698,8 +712,8 @@ static void OPNAME ## _no_rnd_pixels_xy2_c(uint8_t *block, const uint8_t *pixels
 \
         pixels+=line_size;\
         for(i=0; i<h; i+=2){\
-            uint64_t a= LD64(pixels  );\
-            uint64_t b= LD64(pixels+1);\
+            uint64_t a= AV_RN64(pixels  );\
+            uint64_t b= AV_RN64(pixels+1);\
             l1=  (a&0x0303030303030303ULL)\
                + (b&0x0303030303030303ULL);\
             h1= ((a&0xFCFCFCFCFCFCFCFCULL)>>2)\
@@ -707,8 +721,8 @@ static void OPNAME ## _no_rnd_pixels_xy2_c(uint8_t *block, const uint8_t *pixels
             OP(*((uint64_t*)block), h0+h1+(((l0+l1)>>2)&0x0F0F0F0F0F0F0F0FULL));\
             pixels+=line_size;\
             block +=line_size;\
-            a= LD64(pixels  );\
-            b= LD64(pixels+1);\
+            a= AV_RN64(pixels  );\
+            b= AV_RN64(pixels+1);\
             l0=  (a&0x0303030303030303ULL)\
                + (b&0x0303030303030303ULL)\
                + 0x0101010101010101ULL;\
@@ -735,7 +749,7 @@ CALL_2X_PIXELS(OPNAME ## _no_rnd_pixels16_xy2_c, OPNAME ## _no_rnd_pixels_xy2_c,
 static void OPNAME ## _pixels2_c(uint8_t *block, const uint8_t *pixels, int line_size, int h){\
     int i;\
     for(i=0; i<h; i++){\
-        OP(*((uint16_t*)(block  )), LD16(pixels  ));\
+        OP(*((uint16_t*)(block  )), AV_RN16(pixels  ));\
         pixels+=line_size;\
         block +=line_size;\
     }\
@@ -743,7 +757,7 @@ static void OPNAME ## _pixels2_c(uint8_t *block, const uint8_t *pixels, int line
 static void OPNAME ## _pixels4_c(uint8_t *block, const uint8_t *pixels, int line_size, int h){\
     int i;\
     for(i=0; i<h; i++){\
-        OP(*((uint32_t*)(block  )), LD32(pixels  ));\
+        OP(*((uint32_t*)(block  )), AV_RN32(pixels  ));\
         pixels+=line_size;\
         block +=line_size;\
     }\
@@ -751,8 +765,8 @@ static void OPNAME ## _pixels4_c(uint8_t *block, const uint8_t *pixels, int line
 static void OPNAME ## _pixels8_c(uint8_t *block, const uint8_t *pixels, int line_size, int h){\
     int i;\
     for(i=0; i<h; i++){\
-        OP(*((uint32_t*)(block  )), LD32(pixels  ));\
-        OP(*((uint32_t*)(block+4)), LD32(pixels+4));\
+        OP(*((uint32_t*)(block  )), AV_RN32(pixels  ));\
+        OP(*((uint32_t*)(block+4)), AV_RN32(pixels+4));\
         pixels+=line_size;\
         block +=line_size;\
     }\
@@ -766,11 +780,11 @@ static inline void OPNAME ## _no_rnd_pixels8_l2(uint8_t *dst, const uint8_t *src
     int i;\
     for(i=0; i<h; i++){\
         uint32_t a,b;\
-        a= LD32(&src1[i*src_stride1  ]);\
-        b= LD32(&src2[i*src_stride2  ]);\
+        a= AV_RN32(&src1[i*src_stride1  ]);\
+        b= AV_RN32(&src2[i*src_stride2  ]);\
         OP(*((uint32_t*)&dst[i*dst_stride  ]), no_rnd_avg32(a, b));\
-        a= LD32(&src1[i*src_stride1+4]);\
-        b= LD32(&src2[i*src_stride2+4]);\
+        a= AV_RN32(&src1[i*src_stride1+4]);\
+        b= AV_RN32(&src2[i*src_stride2+4]);\
         OP(*((uint32_t*)&dst[i*dst_stride+4]), no_rnd_avg32(a, b));\
     }\
 }\
@@ -780,11 +794,11 @@ static inline void OPNAME ## _pixels8_l2(uint8_t *dst, const uint8_t *src1, cons
     int i;\
     for(i=0; i<h; i++){\
         uint32_t a,b;\
-        a= LD32(&src1[i*src_stride1  ]);\
-        b= LD32(&src2[i*src_stride2  ]);\
+        a= AV_RN32(&src1[i*src_stride1  ]);\
+        b= AV_RN32(&src2[i*src_stride2  ]);\
         OP(*((uint32_t*)&dst[i*dst_stride  ]), rnd_avg32(a, b));\
-        a= LD32(&src1[i*src_stride1+4]);\
-        b= LD32(&src2[i*src_stride2+4]);\
+        a= AV_RN32(&src1[i*src_stride1+4]);\
+        b= AV_RN32(&src2[i*src_stride2+4]);\
         OP(*((uint32_t*)&dst[i*dst_stride+4]), rnd_avg32(a, b));\
     }\
 }\
@@ -794,8 +808,8 @@ static inline void OPNAME ## _pixels4_l2(uint8_t *dst, const uint8_t *src1, cons
     int i;\
     for(i=0; i<h; i++){\
         uint32_t a,b;\
-        a= LD32(&src1[i*src_stride1  ]);\
-        b= LD32(&src2[i*src_stride2  ]);\
+        a= AV_RN32(&src1[i*src_stride1  ]);\
+        b= AV_RN32(&src2[i*src_stride2  ]);\
         OP(*((uint32_t*)&dst[i*dst_stride  ]), rnd_avg32(a, b));\
     }\
 }\
@@ -805,8 +819,8 @@ static inline void OPNAME ## _pixels2_l2(uint8_t *dst, const uint8_t *src1, cons
     int i;\
     for(i=0; i<h; i++){\
         uint32_t a,b;\
-        a= LD16(&src1[i*src_stride1  ]);\
-        b= LD16(&src2[i*src_stride2  ]);\
+        a= AV_RN16(&src1[i*src_stride1  ]);\
+        b= AV_RN16(&src2[i*src_stride2  ]);\
         OP(*((uint16_t*)&dst[i*dst_stride  ]), rnd_avg32(a, b));\
     }\
 }\
@@ -844,10 +858,10 @@ static inline void OPNAME ## _pixels8_l4(uint8_t *dst, const uint8_t *src1, uint
     int i;\
     for(i=0; i<h; i++){\
         uint32_t a, b, c, d, l0, l1, h0, h1;\
-        a= LD32(&src1[i*src_stride1]);\
-        b= LD32(&src2[i*src_stride2]);\
-        c= LD32(&src3[i*src_stride3]);\
-        d= LD32(&src4[i*src_stride4]);\
+        a= AV_RN32(&src1[i*src_stride1]);\
+        b= AV_RN32(&src2[i*src_stride2]);\
+        c= AV_RN32(&src3[i*src_stride3]);\
+        d= AV_RN32(&src4[i*src_stride4]);\
         l0=  (a&0x03030303UL)\
            + (b&0x03030303UL)\
            + 0x02020202UL;\
@@ -858,10 +872,10 @@ static inline void OPNAME ## _pixels8_l4(uint8_t *dst, const uint8_t *src1, uint
         h1= ((c&0xFCFCFCFCUL)>>2)\
           + ((d&0xFCFCFCFCUL)>>2);\
         OP(*((uint32_t*)&dst[i*dst_stride]), h0+h1+(((l0+l1)>>2)&0x0F0F0F0FUL));\
-        a= LD32(&src1[i*src_stride1+4]);\
-        b= LD32(&src2[i*src_stride2+4]);\
-        c= LD32(&src3[i*src_stride3+4]);\
-        d= LD32(&src4[i*src_stride4+4]);\
+        a= AV_RN32(&src1[i*src_stride1+4]);\
+        b= AV_RN32(&src2[i*src_stride2+4]);\
+        c= AV_RN32(&src3[i*src_stride3+4]);\
+        d= AV_RN32(&src4[i*src_stride4+4]);\
         l0=  (a&0x03030303UL)\
            + (b&0x03030303UL)\
            + 0x02020202UL;\
@@ -896,10 +910,10 @@ static inline void OPNAME ## _no_rnd_pixels8_l4(uint8_t *dst, const uint8_t *src
     int i;\
     for(i=0; i<h; i++){\
         uint32_t a, b, c, d, l0, l1, h0, h1;\
-        a= LD32(&src1[i*src_stride1]);\
-        b= LD32(&src2[i*src_stride2]);\
-        c= LD32(&src3[i*src_stride3]);\
-        d= LD32(&src4[i*src_stride4]);\
+        a= AV_RN32(&src1[i*src_stride1]);\
+        b= AV_RN32(&src2[i*src_stride2]);\
+        c= AV_RN32(&src3[i*src_stride3]);\
+        d= AV_RN32(&src4[i*src_stride4]);\
         l0=  (a&0x03030303UL)\
            + (b&0x03030303UL)\
            + 0x01010101UL;\
@@ -910,10 +924,10 @@ static inline void OPNAME ## _no_rnd_pixels8_l4(uint8_t *dst, const uint8_t *src
         h1= ((c&0xFCFCFCFCUL)>>2)\
           + ((d&0xFCFCFCFCUL)>>2);\
         OP(*((uint32_t*)&dst[i*dst_stride]), h0+h1+(((l0+l1)>>2)&0x0F0F0F0FUL));\
-        a= LD32(&src1[i*src_stride1+4]);\
-        b= LD32(&src2[i*src_stride2+4]);\
-        c= LD32(&src3[i*src_stride3+4]);\
-        d= LD32(&src4[i*src_stride4+4]);\
+        a= AV_RN32(&src1[i*src_stride1+4]);\
+        b= AV_RN32(&src2[i*src_stride2+4]);\
+        c= AV_RN32(&src3[i*src_stride3+4]);\
+        d= AV_RN32(&src4[i*src_stride4+4]);\
         l0=  (a&0x03030303UL)\
            + (b&0x03030303UL)\
            + 0x01010101UL;\
@@ -973,8 +987,8 @@ static inline void OPNAME ## _pixels2_xy2_c(uint8_t *block, const uint8_t *pixel
 static inline void OPNAME ## _pixels4_xy2_c(uint8_t *block, const uint8_t *pixels, int line_size, int h)\
 {\
         int i;\
-        const uint32_t a= LD32(pixels  );\
-        const uint32_t b= LD32(pixels+1);\
+        const uint32_t a= AV_RN32(pixels  );\
+        const uint32_t b= AV_RN32(pixels+1);\
         uint32_t l0=  (a&0x03030303UL)\
                     + (b&0x03030303UL)\
                     + 0x02020202UL;\
@@ -984,8 +998,8 @@ static inline void OPNAME ## _pixels4_xy2_c(uint8_t *block, const uint8_t *pixel
 \
         pixels+=line_size;\
         for(i=0; i<h; i+=2){\
-            uint32_t a= LD32(pixels  );\
-            uint32_t b= LD32(pixels+1);\
+            uint32_t a= AV_RN32(pixels  );\
+            uint32_t b= AV_RN32(pixels+1);\
             l1=  (a&0x03030303UL)\
                + (b&0x03030303UL);\
             h1= ((a&0xFCFCFCFCUL)>>2)\
@@ -993,8 +1007,8 @@ static inline void OPNAME ## _pixels4_xy2_c(uint8_t *block, const uint8_t *pixel
             OP(*((uint32_t*)block), h0+h1+(((l0+l1)>>2)&0x0F0F0F0FUL));\
             pixels+=line_size;\
             block +=line_size;\
-            a= LD32(pixels  );\
-            b= LD32(pixels+1);\
+            a= AV_RN32(pixels  );\
+            b= AV_RN32(pixels+1);\
             l0=  (a&0x03030303UL)\
                + (b&0x03030303UL)\
                + 0x02020202UL;\
@@ -1011,8 +1025,8 @@ static inline void OPNAME ## _pixels8_xy2_c(uint8_t *block, const uint8_t *pixel
     int j;\
     for(j=0; j<2; j++){\
         int i;\
-        const uint32_t a= LD32(pixels  );\
-        const uint32_t b= LD32(pixels+1);\
+        const uint32_t a= AV_RN32(pixels  );\
+        const uint32_t b= AV_RN32(pixels+1);\
         uint32_t l0=  (a&0x03030303UL)\
                     + (b&0x03030303UL)\
                     + 0x02020202UL;\
@@ -1022,8 +1036,8 @@ static inline void OPNAME ## _pixels8_xy2_c(uint8_t *block, const uint8_t *pixel
 \
         pixels+=line_size;\
         for(i=0; i<h; i+=2){\
-            uint32_t a= LD32(pixels  );\
-            uint32_t b= LD32(pixels+1);\
+            uint32_t a= AV_RN32(pixels  );\
+            uint32_t b= AV_RN32(pixels+1);\
             l1=  (a&0x03030303UL)\
                + (b&0x03030303UL);\
             h1= ((a&0xFCFCFCFCUL)>>2)\
@@ -1031,8 +1045,8 @@ static inline void OPNAME ## _pixels8_xy2_c(uint8_t *block, const uint8_t *pixel
             OP(*((uint32_t*)block), h0+h1+(((l0+l1)>>2)&0x0F0F0F0FUL));\
             pixels+=line_size;\
             block +=line_size;\
-            a= LD32(pixels  );\
-            b= LD32(pixels+1);\
+            a= AV_RN32(pixels  );\
+            b= AV_RN32(pixels+1);\
             l0=  (a&0x03030303UL)\
                + (b&0x03030303UL)\
                + 0x02020202UL;\
@@ -1052,8 +1066,8 @@ static inline void OPNAME ## _no_rnd_pixels8_xy2_c(uint8_t *block, const uint8_t
     int j;\
     for(j=0; j<2; j++){\
         int i;\
-        const uint32_t a= LD32(pixels  );\
-        const uint32_t b= LD32(pixels+1);\
+        const uint32_t a= AV_RN32(pixels  );\
+        const uint32_t b= AV_RN32(pixels+1);\
         uint32_t l0=  (a&0x03030303UL)\
                     + (b&0x03030303UL)\
                     + 0x01010101UL;\
@@ -1063,8 +1077,8 @@ static inline void OPNAME ## _no_rnd_pixels8_xy2_c(uint8_t *block, const uint8_t
 \
         pixels+=line_size;\
         for(i=0; i<h; i+=2){\
-            uint32_t a= LD32(pixels  );\
-            uint32_t b= LD32(pixels+1);\
+            uint32_t a= AV_RN32(pixels  );\
+            uint32_t b= AV_RN32(pixels+1);\
             l1=  (a&0x03030303UL)\
                + (b&0x03030303UL);\
             h1= ((a&0xFCFCFCFCUL)>>2)\
@@ -1072,8 +1086,8 @@ static inline void OPNAME ## _no_rnd_pixels8_xy2_c(uint8_t *block, const uint8_t
             OP(*((uint32_t*)block), h0+h1+(((l0+l1)>>2)&0x0F0F0F0FUL));\
             pixels+=line_size;\
             block +=line_size;\
-            a= LD32(pixels  );\
-            b= LD32(pixels+1);\
+            a= AV_RN32(pixels  );\
+            b= AV_RN32(pixels+1);\
             l0=  (a&0x03030303UL)\
                + (b&0x03030303UL)\
                + 0x01010101UL;\
@@ -1173,19 +1187,19 @@ void ff_gmc_c(uint8_t *dst, uint8_t *src, int stride, int h, int ox, int oy,
                                            + src[index+stride+1]*   frac_x )*   frac_y
                                         + r)>>(shift*2);
                 }else{
-                    index= src_x + clip(src_y, 0, height)*stride;
+                    index= src_x + av_clip(src_y, 0, height)*stride;
                     dst[y*stride + x]= ( (  src[index         ]*(s-frac_x)
                                           + src[index       +1]*   frac_x )*s
                                         + r)>>(shift*2);
                 }
             }else{
                 if((unsigned)src_y < height){
-                    index= clip(src_x, 0, width) + src_y*stride;
+                    index= av_clip(src_x, 0, width) + src_y*stride;
                     dst[y*stride + x]= (  (  src[index         ]*(s-frac_y)
                                            + src[index+stride  ]*   frac_y )*s
                                         + r)>>(shift*2);
                 }else{
-                    index= clip(src_x, 0, width) + clip(src_y, 0, height)*stride;
+                    index= av_clip(src_x, 0, width) + av_clip(src_y, 0, height)*stride;
                     dst[y*stride + x]=    src[index         ];
                 }
             }
@@ -1484,86 +1498,33 @@ H264_CHROMA_MC(avg_       , op_avg)
 #undef op_avg
 #undef op_put
 
-static inline void copy_block2(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
-{
+static void put_no_rnd_h264_chroma_mc8_c(uint8_t *dst/*align 8*/, uint8_t *src/*align 1*/, int stride, int h, int x, int y){
+    const int A=(8-x)*(8-y);
+    const int B=(  x)*(8-y);
+    const int C=(8-x)*(  y);
+    const int D=(  x)*(  y);
     int i;
+
+    assert(x<8 && y<8 && x>=0 && y>=0);
+
     for(i=0; i<h; i++)
     {
-        ST16(dst   , LD16(src   ));
-        dst+=dstStride;
-        src+=srcStride;
+        dst[0] = (A*src[0] + B*src[1] + C*src[stride+0] + D*src[stride+1] + 32 - 4) >> 6;
+        dst[1] = (A*src[1] + B*src[2] + C*src[stride+1] + D*src[stride+2] + 32 - 4) >> 6;
+        dst[2] = (A*src[2] + B*src[3] + C*src[stride+2] + D*src[stride+3] + 32 - 4) >> 6;
+        dst[3] = (A*src[3] + B*src[4] + C*src[stride+3] + D*src[stride+4] + 32 - 4) >> 6;
+        dst[4] = (A*src[4] + B*src[5] + C*src[stride+4] + D*src[stride+5] + 32 - 4) >> 6;
+        dst[5] = (A*src[5] + B*src[6] + C*src[stride+5] + D*src[stride+6] + 32 - 4) >> 6;
+        dst[6] = (A*src[6] + B*src[7] + C*src[stride+6] + D*src[stride+7] + 32 - 4) >> 6;
+        dst[7] = (A*src[7] + B*src[8] + C*src[stride+7] + D*src[stride+8] + 32 - 4) >> 6;
+        dst+= stride;
+        src+= stride;
     }
 }
-
-static inline void copy_block4(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
-{
-    int i;
-    for(i=0; i<h; i++)
-    {
-        ST32(dst   , LD32(src   ));
-        dst+=dstStride;
-        src+=srcStride;
-    }
-}
-
-static inline void copy_block8(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
-{
-    int i;
-    for(i=0; i<h; i++)
-    {
-        ST32(dst   , LD32(src   ));
-        ST32(dst+4 , LD32(src+4 ));
-        dst+=dstStride;
-        src+=srcStride;
-    }
-}
-
-static inline void copy_block16(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
-{
-    int i;
-    for(i=0; i<h; i++)
-    {
-        ST32(dst   , LD32(src   ));
-        ST32(dst+4 , LD32(src+4 ));
-        ST32(dst+8 , LD32(src+8 ));
-        ST32(dst+12, LD32(src+12));
-        dst+=dstStride;
-        src+=srcStride;
-    }
-}
-
-static inline void copy_block17(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
-{
-    int i;
-    for(i=0; i<h; i++)
-    {
-        ST32(dst   , LD32(src   ));
-        ST32(dst+4 , LD32(src+4 ));
-        ST32(dst+8 , LD32(src+8 ));
-        ST32(dst+12, LD32(src+12));
-        dst[16]= src[16];
-        dst+=dstStride;
-        src+=srcStride;
-    }
-}
-
-static inline void copy_block9(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
-{
-    int i;
-    for(i=0; i<h; i++)
-    {
-        ST32(dst   , LD32(src   ));
-        ST32(dst+4 , LD32(src+4 ));
-        dst[8]= src[8];
-        dst+=dstStride;
-        src+=srcStride;
-    }
-}
-
 
 #define QPEL_MC(r, OPNAME, RND, OP) \
 static void OPNAME ## mpeg4_qpel8_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h){\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     for(i=0; i<h; i++)\
     {\
@@ -1582,7 +1543,7 @@ static void OPNAME ## mpeg4_qpel8_h_lowpass(uint8_t *dst, uint8_t *src, int dstS
 \
 static void OPNAME ## mpeg4_qpel8_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
     const int w=8;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     for(i=0; i<w; i++)\
     {\
@@ -1609,7 +1570,7 @@ static void OPNAME ## mpeg4_qpel8_v_lowpass(uint8_t *dst, uint8_t *src, int dstS
 }\
 \
 static void OPNAME ## mpeg4_qpel16_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h){\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     \
     for(i=0; i<h; i++)\
@@ -1636,7 +1597,7 @@ static void OPNAME ## mpeg4_qpel16_h_lowpass(uint8_t *dst, uint8_t *src, int dst
 }\
 \
 static void OPNAME ## mpeg4_qpel16_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     const int w=16;\
     for(i=0; i<w; i++)\
@@ -2060,9 +2021,9 @@ QPEL_MC(0, avg_       , _       , op_avg)
 
 #if 1
 #define H264_LOWPASS(OPNAME, OP, OP2) \
-static void OPNAME ## h264_qpel2_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
+static av_unused void OPNAME ## h264_qpel2_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
     const int h=2;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     for(i=0; i<h; i++)\
     {\
@@ -2073,9 +2034,9 @@ static void OPNAME ## h264_qpel2_h_lowpass(uint8_t *dst, uint8_t *src, int dstSt
     }\
 }\
 \
-static void OPNAME ## h264_qpel2_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
+static av_unused void OPNAME ## h264_qpel2_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
     const int w=2;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     for(i=0; i<w; i++)\
     {\
@@ -2093,10 +2054,10 @@ static void OPNAME ## h264_qpel2_v_lowpass(uint8_t *dst, uint8_t *src, int dstSt
     }\
 }\
 \
-static void OPNAME ## h264_qpel2_hv_lowpass(uint8_t *dst, int16_t *tmp, uint8_t *src, int dstStride, int tmpStride, int srcStride){\
+static av_unused void OPNAME ## h264_qpel2_hv_lowpass(uint8_t *dst, int16_t *tmp, uint8_t *src, int dstStride, int tmpStride, int srcStride){\
     const int h=2;\
     const int w=2;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     src -= 2*srcStride;\
     for(i=0; i<h+5; i++)\
@@ -2124,7 +2085,7 @@ static void OPNAME ## h264_qpel2_hv_lowpass(uint8_t *dst, int16_t *tmp, uint8_t 
 }\
 static void OPNAME ## h264_qpel4_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
     const int h=4;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     for(i=0; i<h; i++)\
     {\
@@ -2139,7 +2100,7 @@ static void OPNAME ## h264_qpel4_h_lowpass(uint8_t *dst, uint8_t *src, int dstSt
 \
 static void OPNAME ## h264_qpel4_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
     const int w=4;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     for(i=0; i<w; i++)\
     {\
@@ -2164,7 +2125,7 @@ static void OPNAME ## h264_qpel4_v_lowpass(uint8_t *dst, uint8_t *src, int dstSt
 static void OPNAME ## h264_qpel4_hv_lowpass(uint8_t *dst, int16_t *tmp, uint8_t *src, int dstStride, int tmpStride, int srcStride){\
     const int h=4;\
     const int w=4;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     src -= 2*srcStride;\
     for(i=0; i<h+5; i++)\
@@ -2199,7 +2160,7 @@ static void OPNAME ## h264_qpel4_hv_lowpass(uint8_t *dst, int16_t *tmp, uint8_t 
 \
 static void OPNAME ## h264_qpel8_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
     const int h=8;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     for(i=0; i<h; i++)\
     {\
@@ -2218,7 +2179,7 @@ static void OPNAME ## h264_qpel8_h_lowpass(uint8_t *dst, uint8_t *src, int dstSt
 \
 static void OPNAME ## h264_qpel8_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride){\
     const int w=8;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     for(i=0; i<w; i++)\
     {\
@@ -2251,7 +2212,7 @@ static void OPNAME ## h264_qpel8_v_lowpass(uint8_t *dst, uint8_t *src, int dstSt
 static void OPNAME ## h264_qpel8_hv_lowpass(uint8_t *dst, int16_t *tmp, uint8_t *src, int dstStride, int tmpStride, int srcStride){\
     const int h=8;\
     const int w=8;\
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;\
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;\
     int i;\
     src -= 2*srcStride;\
     for(i=0; i<h+5; i++)\
@@ -2482,8 +2443,8 @@ H264_MC(avg_, 16)
 #undef op2_put
 #endif
 
-#define op_scale1(x)  block[x] = clip_uint8( (block[x]*weight + offset) >> log2_denom )
-#define op_scale2(x)  dst[x] = clip_uint8( (src[x]*weights + dst[x]*weightd + offset) >> (log2_denom+1))
+#define op_scale1(x)  block[x] = av_clip_uint8( (block[x]*weight + offset) >> log2_denom )
+#define op_scale2(x)  dst[x] = av_clip_uint8( (src[x]*weights + dst[x]*weightd + offset) >> (log2_denom+1))
 #define H264_WEIGHT(W,H) \
 static void weight_h264_pixels ## W ## x ## H ## _c(uint8_t *block, int stride, int log2_denom, int weight, int offset){ \
     int y; \
@@ -2553,7 +2514,7 @@ H264_WEIGHT(2,2)
 #undef H264_WEIGHT
 
 static void wmv2_mspel8_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h){
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
     int i;
 
     for(i=0; i<h; i++){
@@ -2570,8 +2531,40 @@ static void wmv2_mspel8_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int
     }
 }
 
+#ifdef CONFIG_CAVS_DECODER
+/* AVS specific */
+void ff_cavsdsp_init(DSPContext* c, AVCodecContext *avctx);
+
+void ff_put_cavs_qpel8_mc00_c(uint8_t *dst, uint8_t *src, int stride) {
+    put_pixels8_c(dst, src, stride, 8);
+}
+void ff_avg_cavs_qpel8_mc00_c(uint8_t *dst, uint8_t *src, int stride) {
+    avg_pixels8_c(dst, src, stride, 8);
+}
+void ff_put_cavs_qpel16_mc00_c(uint8_t *dst, uint8_t *src, int stride) {
+    put_pixels16_c(dst, src, stride, 16);
+}
+void ff_avg_cavs_qpel16_mc00_c(uint8_t *dst, uint8_t *src, int stride) {
+    avg_pixels16_c(dst, src, stride, 16);
+}
+#endif /* CONFIG_CAVS_DECODER */
+
+#if defined(CONFIG_VC1_DECODER) || defined(CONFIG_WMV3_DECODER)
+/* VC-1 specific */
+void ff_vc1dsp_init(DSPContext* c, AVCodecContext *avctx);
+
+void ff_put_vc1_mspel_mc00_c(uint8_t *dst, uint8_t *src, int stride, int rnd) {
+    put_pixels8_c(dst, src, stride, 8);
+}
+#endif /* CONFIG_VC1_DECODER||CONFIG_WMV3_DECODER */
+
+#if defined(CONFIG_H264_ENCODER)
+/* H264 specific */
+void ff_h264dspenc_init(DSPContext* c, AVCodecContext *avctx);
+#endif /* CONFIG_H264_ENCODER */
+
 static void wmv2_mspel8_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int w){
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
     int i;
 
     for(i=0; i<w; i++){
@@ -2648,6 +2641,7 @@ static void put_mspel8_mc22_c(uint8_t *dst, uint8_t *src, int stride){
 }
 
 static void h263_v_loop_filter_c(uint8_t *src, int stride, int qscale){
+    if(ENABLE_ANY_H263) {
     int x;
     const int strength= ff_h263_loop_filter_strength[qscale];
 
@@ -2673,16 +2667,18 @@ static void h263_v_loop_filter_c(uint8_t *src, int stride, int qscale){
         src[x-1*stride] = p1;
         src[x+0*stride] = p2;
 
-        ad1= ABS(d1)>>1;
+        ad1= FFABS(d1)>>1;
 
-        d2= clip((p0-p3)/4, -ad1, ad1);
+        d2= av_clip((p0-p3)/4, -ad1, ad1);
 
         src[x-2*stride] = p0 - d2;
         src[x+  stride] = p3 + d2;
     }
+    }
 }
 
 static void h263_h_loop_filter_c(uint8_t *src, int stride, int qscale){
+    if(ENABLE_ANY_H263) {
     int y;
     const int strength= ff_h263_loop_filter_strength[qscale];
 
@@ -2708,12 +2704,13 @@ static void h263_h_loop_filter_c(uint8_t *src, int stride, int qscale){
         src[y*stride-1] = p1;
         src[y*stride+0] = p2;
 
-        ad1= ABS(d1)>>1;
+        ad1= FFABS(d1)>>1;
 
-        d2= clip((p0-p3)/4, -ad1, ad1);
+        d2= av_clip((p0-p3)/4, -ad1, ad1);
 
         src[y*stride-2] = p0 - d2;
         src[y*stride+1] = p3 + d2;
+    }
     }
 }
 
@@ -2760,25 +2757,25 @@ static inline void h264_loop_filter_luma_c(uint8_t *pix, int xstride, int ystrid
             const int q1 = pix[1*xstride];
             const int q2 = pix[2*xstride];
 
-            if( ABS( p0 - q0 ) < alpha &&
-                ABS( p1 - p0 ) < beta &&
-                ABS( q1 - q0 ) < beta ) {
+            if( FFABS( p0 - q0 ) < alpha &&
+                FFABS( p1 - p0 ) < beta &&
+                FFABS( q1 - q0 ) < beta ) {
 
                 int tc = tc0[i];
                 int i_delta;
 
-                if( ABS( p2 - p0 ) < beta ) {
-                    pix[-2*xstride] = p1 + clip( (( p2 + ( ( p0 + q0 + 1 ) >> 1 ) ) >> 1) - p1, -tc0[i], tc0[i] );
+                if( FFABS( p2 - p0 ) < beta ) {
+                    pix[-2*xstride] = p1 + av_clip( (( p2 + ( ( p0 + q0 + 1 ) >> 1 ) ) >> 1) - p1, -tc0[i], tc0[i] );
                     tc++;
                 }
-                if( ABS( q2 - q0 ) < beta ) {
-                    pix[   xstride] = q1 + clip( (( q2 + ( ( p0 + q0 + 1 ) >> 1 ) ) >> 1) - q1, -tc0[i], tc0[i] );
+                if( FFABS( q2 - q0 ) < beta ) {
+                    pix[   xstride] = q1 + av_clip( (( q2 + ( ( p0 + q0 + 1 ) >> 1 ) ) >> 1) - q1, -tc0[i], tc0[i] );
                     tc++;
                 }
 
-                i_delta = clip( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
-                pix[-xstride] = clip_uint8( p0 + i_delta );    /* p0' */
-                pix[0]        = clip_uint8( q0 - i_delta );    /* q0' */
+                i_delta = av_clip( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
+                pix[-xstride] = av_clip_uint8( p0 + i_delta );    /* p0' */
+                pix[0]        = av_clip_uint8( q0 - i_delta );    /* q0' */
             }
             pix += ystride;
         }
@@ -2808,14 +2805,14 @@ static inline void h264_loop_filter_chroma_c(uint8_t *pix, int xstride, int ystr
             const int q0 = pix[0];
             const int q1 = pix[1*xstride];
 
-            if( ABS( p0 - q0 ) < alpha &&
-                ABS( p1 - p0 ) < beta &&
-                ABS( q1 - q0 ) < beta ) {
+            if( FFABS( p0 - q0 ) < alpha &&
+                FFABS( p1 - p0 ) < beta &&
+                FFABS( q1 - q0 ) < beta ) {
 
-                int delta = clip( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
+                int delta = av_clip( (((q0 - p0 ) << 2) + (p1 - q1) + 4) >> 3, -tc, tc );
 
-                pix[-xstride] = clip_uint8( p0 + delta );    /* p0' */
-                pix[0]        = clip_uint8( q0 - delta );    /* q0' */
+                pix[-xstride] = av_clip_uint8( p0 + delta );    /* p0' */
+                pix[0]        = av_clip_uint8( q0 - delta );    /* q0' */
             }
             pix += ystride;
         }
@@ -2839,9 +2836,9 @@ static inline void h264_loop_filter_chroma_intra_c(uint8_t *pix, int xstride, in
         const int q0 = pix[0];
         const int q1 = pix[1*xstride];
 
-        if( ABS( p0 - q0 ) < alpha &&
-            ABS( p1 - p0 ) < beta &&
-            ABS( q1 - q0 ) < beta ) {
+        if( FFABS( p0 - q0 ) < alpha &&
+            FFABS( p1 - p0 ) < beta &&
+            FFABS( q1 - q0 ) < beta ) {
 
             pix[-xstride] = ( 2*p1 + p0 + q1 + 2 ) >> 2;   /* p0' */
             pix[0]        = ( 2*q1 + q0 + p1 + 2 ) >> 2;   /* q0' */
@@ -3070,9 +3067,9 @@ static int nsse16_c(void *v, uint8_t *s1, uint8_t *s2, int stride, int h){
         }
         if(y+1<h){
             for(x=0; x<15; x++){
-                score2+= ABS(  s1[x  ] - s1[x  +stride]
+                score2+= FFABS(  s1[x  ] - s1[x  +stride]
                              - s1[x+1] + s1[x+1+stride])
-                        -ABS(  s2[x  ] - s2[x  +stride]
+                        -FFABS(  s2[x  ] - s2[x  +stride]
                              - s2[x+1] + s2[x+1+stride]);
             }
         }
@@ -3080,8 +3077,8 @@ static int nsse16_c(void *v, uint8_t *s1, uint8_t *s2, int stride, int h){
         s2+= stride;
     }
 
-    if(c) return score1 + ABS(score2)*c->avctx->nsse_weight;
-    else  return score1 + ABS(score2)*8;
+    if(c) return score1 + FFABS(score2)*c->avctx->nsse_weight;
+    else  return score1 + FFABS(score2)*8;
 }
 
 static int nsse8_c(void *v, uint8_t *s1, uint8_t *s2, int stride, int h){
@@ -3096,9 +3093,9 @@ static int nsse8_c(void *v, uint8_t *s1, uint8_t *s2, int stride, int h){
         }
         if(y+1<h){
             for(x=0; x<7; x++){
-                score2+= ABS(  s1[x  ] - s1[x  +stride]
+                score2+= FFABS(  s1[x  ] - s1[x  +stride]
                              - s1[x+1] + s1[x+1+stride])
-                        -ABS(  s2[x  ] - s2[x  +stride]
+                        -FFABS(  s2[x  ] - s2[x  +stride]
                              - s2[x+1] + s2[x+1+stride]);
             }
         }
@@ -3106,8 +3103,8 @@ static int nsse8_c(void *v, uint8_t *s1, uint8_t *s2, int stride, int h){
         s2+= stride;
     }
 
-    if(c) return score1 + ABS(score2)*c->avctx->nsse_weight;
-    else  return score1 + ABS(score2)*8;
+    if(c) return score1 + FFABS(score2)*c->avctx->nsse_weight;
+    else  return score1 + FFABS(score2)*8;
 }
 
 static int try_8x8basis_c(int16_t rem[64], int16_t weight[64], int16_t basis[64], int scale){
@@ -3147,7 +3144,7 @@ void ff_block_permute(DCTELEM *block, uint8_t *permutation, const uint8_t *scant
     DCTELEM temp[64];
 
     if(last<=0) return;
-    //if(permutation[1]==1) return; //FIXME its ok but not clean and might fail for some perms
+    //if(permutation[1]==1) return; //FIXME it is ok but not clean and might fail for some permutations
 
     for(i=0; i<=last; i++){
         const int j= scantable[i];
@@ -3212,12 +3209,14 @@ void ff_set_cmp(DSPContext* c, me_cmp_func *cmp, int type){
         case FF_CMP_NSSE:
             cmp[i]= c->nsse[i];
             break;
+#ifdef CONFIG_SNOW_ENCODER
         case FF_CMP_W53:
             cmp[i]= c->w53[i];
             break;
         case FF_CMP_W97:
             cmp[i]= c->w97[i];
             break;
+#endif
         default:
             av_log(NULL, AV_LOG_ERROR,"internal error in cmp function selection\n");
         }
@@ -3295,7 +3294,7 @@ o2= (i1)-(i2);
     y= a-b;\
 }
 
-#define BUTTERFLYA(x,y) (ABS((x)+(y)) + ABS((x)-(y)))
+#define BUTTERFLYA(x,y) (FFABS((x)+(y)) + FFABS((x)-(y)))
 
 static int hadamard8_diff8x8_c(/*MpegEncContext*/ void *s, uint8_t *dst, uint8_t *src, int stride, int h){
     int i;
@@ -3392,26 +3391,21 @@ static int hadamard8_intra8x8_c(/*MpegEncContext*/ void *s, uint8_t *src, uint8_
             +BUTTERFLYA(temp[8*3+i], temp[8*7+i]);
     }
 
-    sum -= ABS(temp[8*0] + temp[8*4]); // -mean
+    sum -= FFABS(temp[8*0] + temp[8*4]); // -mean
 
     return sum;
 }
 
 static int dct_sad8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2, int stride, int h){
     MpegEncContext * const s= (MpegEncContext *)c;
-    DECLARE_ALIGNED_8(uint64_t, aligned_temp[sizeof(DCTELEM)*64/8]);
+    DECLARE_ALIGNED_16(uint64_t, aligned_temp[sizeof(DCTELEM)*64/8]);
     DCTELEM * const temp= (DCTELEM*)aligned_temp;
-    int sum=0, i;
 
     assert(h==8);
 
     s->dsp.diff_pixels(temp, src1, src2, stride);
     s->dsp.fdct(temp);
-
-    for(i=0; i<64; i++)
-        sum+= ABS(temp[i]);
-
-    return sum;
+    return s->dsp.sum_abs_dctelem(temp);
 }
 
 #ifdef CONFIG_GPL
@@ -3444,11 +3438,11 @@ static int dct_sad8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2
 
 static int dct264_sad8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2, int stride, int h){
     MpegEncContext * const s= (MpegEncContext *)c;
-    int16_t dct[8][8];
+    DCTELEM dct[8][8];
     int i;
     int sum=0;
 
-    s->dsp.diff_pixels(dct, src1, src2, stride);
+    s->dsp.diff_pixels(dct[0], src1, src2, stride);
 
 #define SRC(x) dct[i][x]
 #define DST(x,v) dct[i][x]= v
@@ -3458,7 +3452,7 @@ static int dct264_sad8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *s
 #undef DST
 
 #define SRC(x) dct[x][i]
-#define DST(x,v) sum += ABS(v)
+#define DST(x,v) sum += FFABS(v)
     for( i = 0; i < 8; i++ )
         DCT8_1D
 #undef SRC
@@ -3479,12 +3473,10 @@ static int dct_max8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2
     s->dsp.fdct(temp);
 
     for(i=0; i<64; i++)
-        sum= FFMAX(sum, ABS(temp[i]));
+        sum= FFMAX(sum, FFABS(temp[i]));
 
     return sum;
 }
-
-void simple_idct(DCTELEM *block); //FIXME
 
 static int quant_psnr8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2, int stride, int h){
     MpegEncContext * const s= (MpegEncContext *)c;
@@ -3655,8 +3647,8 @@ static int vsad_intra16_c(/*MpegEncContext*/ void *c, uint8_t *s, uint8_t *dummy
 
     for(y=1; y<h; y++){
         for(x=0; x<16; x+=4){
-            score+= ABS(s[x  ] - s[x  +stride]) + ABS(s[x+1] - s[x+1+stride])
-                   +ABS(s[x+2] - s[x+2+stride]) + ABS(s[x+3] - s[x+3+stride]);
+            score+= FFABS(s[x  ] - s[x  +stride]) + FFABS(s[x+1] - s[x+1+stride])
+                   +FFABS(s[x+2] - s[x+2+stride]) + FFABS(s[x+3] - s[x+3+stride]);
         }
         s+= stride;
     }
@@ -3670,7 +3662,7 @@ static int vsad16_c(/*MpegEncContext*/ void *c, uint8_t *s1, uint8_t *s2, int st
 
     for(y=1; y<h; y++){
         for(x=0; x<16; x++){
-            score+= ABS(s1[x  ] - s2[x ] - s1[x  +stride] + s2[x +stride]);
+            score+= FFABS(s1[x  ] - s2[x ] - s1[x  +stride] + s2[x +stride]);
         }
         s1+= stride;
         s2+= stride;
@@ -3710,6 +3702,15 @@ static int vsse16_c(/*MpegEncContext*/ void *c, uint8_t *s1, uint8_t *s2, int st
     return score;
 }
 
+static int ssd_int8_vs_int16_c(const int8_t *pix1, const int16_t *pix2,
+                               int size){
+    int score=0;
+    int i;
+    for(i=0; i<size; i++)
+        score += (pix1[i]-pix2[i])*(pix1[i]-pix2[i]);
+    return score;
+}
+
 WARPER8_16_SQ(hadamard8_diff8x8_c, hadamard8_diff16_c)
 WARPER8_16_SQ(hadamard8_intra8x8_c, hadamard8_intra16_c)
 WARPER8_16_SQ(dct_sad8x8_c, dct_sad16_c)
@@ -3720,6 +3721,39 @@ WARPER8_16_SQ(dct_max8x8_c, dct_max16_c)
 WARPER8_16_SQ(quant_psnr8x8_c, quant_psnr16_c)
 WARPER8_16_SQ(rd8x8_c, rd16_c)
 WARPER8_16_SQ(bit8x8_c, bit16_c)
+
+static void vector_fmul_c(float *dst, const float *src, int len){
+    int i;
+    for(i=0; i<len; i++)
+        dst[i] *= src[i];
+}
+
+static void vector_fmul_reverse_c(float *dst, const float *src0, const float *src1, int len){
+    int i;
+    src1 += len-1;
+    for(i=0; i<len; i++)
+        dst[i] = src0[i] * src1[-i];
+}
+
+void ff_vector_fmul_add_add_c(float *dst, const float *src0, const float *src1, const float *src2, int src3, int len, int step){
+    int i;
+    for(i=0; i<len; i++)
+        dst[i*step] = src0[i] * src1[i] + src2[i] + src3;
+}
+
+void ff_float_to_int16_c(int16_t *dst, const float *src, int len){
+    int i;
+    for(i=0; i<len; i++) {
+        int_fast32_t tmp = ((int32_t*)src)[i];
+        if(tmp & 0xf0000){
+            tmp = (0x43c0ffff - tmp)>>31;
+            // is this faster on some gcc/cpu combinations?
+//          if(tmp > 0x43c0ffff) tmp = 0xFFFF;
+//          else                 tmp = 0;
+        }
+        dst[i] = tmp - 0x8000;
+    }
+}
 
 /* XXX: those functions should be suppressed ASAP when all IDCTs are
  converted */
@@ -3758,41 +3792,62 @@ static void ff_jref_idct2_add(uint8_t *dest, int line_size, DCTELEM *block)
 
 static void ff_jref_idct1_put(uint8_t *dest, int line_size, DCTELEM *block)
 {
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     dest[0] = cm[(block[0] + 4)>>3];
 }
 static void ff_jref_idct1_add(uint8_t *dest, int line_size, DCTELEM *block)
 {
-    uint8_t *cm = cropTbl + MAX_NEG_CROP;
+    uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
 
     dest[0] = cm[dest[0] + ((block[0] + 4)>>3)];
 }
 
-static void just_return() { return; }
+static void just_return(void *mem av_unused, int stride av_unused, int h av_unused) { return; }
 
 /* init static data */
 void dsputil_static_init(void)
 {
     int i;
 
-    for(i=0;i<256;i++) cropTbl[i + MAX_NEG_CROP] = i;
+    for(i=0;i<256;i++) ff_cropTbl[i + MAX_NEG_CROP] = i;
     for(i=0;i<MAX_NEG_CROP;i++) {
-        cropTbl[i] = 0;
-        cropTbl[i + MAX_NEG_CROP + 256] = 255;
+        ff_cropTbl[i] = 0;
+        ff_cropTbl[i + MAX_NEG_CROP + 256] = 255;
     }
 
     for(i=0;i<512;i++) {
-        squareTbl[i] = (i - 256) * (i - 256);
+        ff_squareTbl[i] = (i - 256) * (i - 256);
     }
 
     for(i=0; i<64; i++) inv_zigzag_direct16[ff_zigzag_direct[i]]= i+1;
 }
 
+int ff_check_alignment(void){
+    static int did_fail=0;
+    DECLARE_ALIGNED_16(int, aligned);
+
+    if((long)&aligned & 15){
+        if(!did_fail){
+#if defined(HAVE_MMX) || defined(HAVE_ALTIVEC)
+            av_log(NULL, AV_LOG_ERROR,
+                "Compiler did not align stack variables. Libavcodec has been miscompiled\n"
+                "and may be very slow or crash. This is not a bug in libavcodec,\n"
+                "but in the compiler. You may try recompiling using gcc >= 4.2.\n"
+                "Do not report crashes to FFmpeg developers.\n");
+#endif
+            did_fail=1;
+        }
+        return -1;
+    }
+    return 0;
+}
 
 void dsputil_init(DSPContext* c, AVCodecContext *avctx)
 {
     int i;
+
+    ff_check_alignment();
 
 #ifdef CONFIG_ENCODERS
     if(avctx->dct_algo==FF_DCT_FASTINT) {
@@ -3810,7 +3865,7 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
 #endif //CONFIG_ENCODERS
 
     if(avctx->lowres==1){
-        if(avctx->idct_algo==FF_IDCT_INT || avctx->idct_algo==FF_IDCT_AUTO){
+        if(avctx->idct_algo==FF_IDCT_INT || avctx->idct_algo==FF_IDCT_AUTO || !ENABLE_H264_DECODER){
             c->idct_put= ff_jref_idct4_put;
             c->idct_add= ff_jref_idct4_add;
         }else{
@@ -3835,7 +3890,8 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
             c->idct_add= ff_jref_idct_add;
             c->idct    = j_rev_dct;
             c->idct_permutation_type= FF_LIBMPEG2_IDCT_PERM;
-        }else if(avctx->idct_algo==FF_IDCT_VP3){
+        }else if((ENABLE_VP3_DECODER || ENABLE_VP5_DECODER || ENABLE_VP6_DECODER || ENABLE_THEORA_DECODER ) &&
+                avctx->idct_algo==FF_IDCT_VP3){
             c->idct_put= ff_vp3_idct_put_c;
             c->idct_add= ff_vp3_idct_add_c;
             c->idct    = ff_vp3_idct_c;
@@ -3848,10 +3904,12 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
         }
     }
 
-    c->h264_idct_add= ff_h264_idct_add_c;
-    c->h264_idct8_add= ff_h264_idct8_add_c;
-    c->h264_idct_dc_add= ff_h264_idct_dc_add_c;
-    c->h264_idct8_dc_add= ff_h264_idct8_dc_add_c;
+    if (ENABLE_H264_DECODER) {
+        c->h264_idct_add= ff_h264_idct_add_c;
+        c->h264_idct8_add= ff_h264_idct8_add_c;
+        c->h264_idct_dc_add= ff_h264_idct_dc_add_c;
+        c->h264_idct8_dc_add= ff_h264_idct8_dc_add_c;
+    }
 
     c->get_pixels = get_pixels_c;
     c->diff_pixels = diff_pixels_c;
@@ -3860,6 +3918,7 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->add_pixels_clamped = add_pixels_clamped_c;
     c->add_pixels8 = add_pixels8_c;
     c->add_pixels4 = add_pixels4_c;
+    c->sum_abs_dctelem = sum_abs_dctelem_c;
     c->gmc1 = gmc1_c;
     c->gmc = ff_gmc_c;
     c->clear_blocks = clear_blocks_c;
@@ -3965,6 +4024,7 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->avg_h264_chroma_pixels_tab[0]= avg_h264_chroma_mc8_c;
     c->avg_h264_chroma_pixels_tab[1]= avg_h264_chroma_mc4_c;
     c->avg_h264_chroma_pixels_tab[2]= avg_h264_chroma_mc2_c;
+    c->put_no_rnd_h264_chroma_pixels_tab[0]= put_no_rnd_h264_chroma_mc8_c;
 
     c->weight_h264_pixels_tab[0]= weight_h264_pixels16x16_c;
     c->weight_h264_pixels_tab[1]= weight_h264_pixels16x8_c;
@@ -3986,6 +4046,16 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->biweight_h264_pixels_tab[7]= biweight_h264_pixels4x2_c;
     c->biweight_h264_pixels_tab[8]= biweight_h264_pixels2x4_c;
     c->biweight_h264_pixels_tab[9]= biweight_h264_pixels2x2_c;
+
+#ifdef CONFIG_CAVS_DECODER
+    ff_cavsdsp_init(c,avctx);
+#endif
+#if defined(CONFIG_VC1_DECODER) || defined(CONFIG_WMV3_DECODER)
+    ff_vc1dsp_init(c,avctx);
+#endif
+#if defined(CONFIG_H264_ENCODER)
+    ff_h264dspenc_init(c,avctx);
+#endif
 
     c->put_mspel_pixels_tab[0]= put_mspel8_mc00_c;
     c->put_mspel_pixels_tab[1]= put_mspel8_mc10_c;
@@ -4021,10 +4091,14 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->vsse[4]= vsse_intra16_c;
     c->nsse[0]= nsse16_c;
     c->nsse[1]= nsse8_c;
+#ifdef CONFIG_SNOW_ENCODER
     c->w53[0]= w53_16_c;
     c->w53[1]= w53_8_c;
     c->w97[0]= w97_16_c;
     c->w97[1]= w97_8_c;
+#endif
+
+    c->ssd_int8_vs_int16 = ssd_int8_vs_int16_c;
 
     c->add_bytes= add_bytes_c;
     c->diff_bytes= diff_bytes_c;
@@ -4037,20 +4111,31 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->h264_h_loop_filter_chroma= h264_h_loop_filter_chroma_c;
     c->h264_v_loop_filter_chroma_intra= h264_v_loop_filter_chroma_intra_c;
     c->h264_h_loop_filter_chroma_intra= h264_h_loop_filter_chroma_intra_c;
+    c->h264_loop_filter_strength= NULL;
 
-    c->h263_h_loop_filter= h263_h_loop_filter_c;
-    c->h263_v_loop_filter= h263_v_loop_filter_c;
+    if (ENABLE_ANY_H263) {
+        c->h263_h_loop_filter= h263_h_loop_filter_c;
+        c->h263_v_loop_filter= h263_v_loop_filter_c;
+    }
 
     c->h261_loop_filter= h261_loop_filter_c;
 
     c->try_8x8basis= try_8x8basis_c;
     c->add_8x8basis= add_8x8basis_c;
 
-#ifdef CONFIG_SNOW_ENCODER
+#ifdef CONFIG_SNOW_DECODER
     c->vertical_compose97i = ff_snow_vertical_compose97i;
     c->horizontal_compose97i = ff_snow_horizontal_compose97i;
     c->inner_add_yblock = ff_snow_inner_add_yblock;
 #endif
+
+#ifdef CONFIG_VORBIS_DECODER
+    c->vorbis_inverse_coupling = vorbis_inverse_coupling;
+#endif
+    c->vector_fmul = vector_fmul_c;
+    c->vector_fmul_reverse = vector_fmul_reverse_c;
+    c->vector_fmul_add_add = ff_vector_fmul_add_add_c;
+    c->float_to_int16 = ff_float_to_int16_c;
 
     c->shrink[0]= ff_img_copy_plane;
     c->shrink[1]= ff_shrink22;
@@ -4059,30 +4144,25 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
 
     c->prefetch= just_return;
 
-#ifdef HAVE_MMX
-    dsputil_init_mmx(c, avctx);
-#endif
-#ifdef ARCH_ARMV4L
-    dsputil_init_armv4l(c, avctx);
-#endif
-#ifdef HAVE_MLIB
-    dsputil_init_mlib(c, avctx);
-#endif
-#ifdef ARCH_SPARC
-   dsputil_init_vis(c,avctx);
-#endif
-#ifdef ARCH_ALPHA
-    dsputil_init_alpha(c, avctx);
-#endif
-#ifdef ARCH_POWERPC
-    dsputil_init_ppc(c, avctx);
-#endif
-#ifdef HAVE_MMI
-    dsputil_init_mmi(c, avctx);
-#endif
-#ifdef ARCH_SH4
-    dsputil_init_sh4(c,avctx);
-#endif
+    memset(c->put_2tap_qpel_pixels_tab, 0, sizeof(c->put_2tap_qpel_pixels_tab));
+    memset(c->avg_2tap_qpel_pixels_tab, 0, sizeof(c->avg_2tap_qpel_pixels_tab));
+
+    if (ENABLE_MMX)      dsputil_init_mmx   (c, avctx);
+    if (ENABLE_ARMV4L)   dsputil_init_armv4l(c, avctx);
+    if (ENABLE_MLIB)     dsputil_init_mlib  (c, avctx);
+    if (ENABLE_SPARC)    dsputil_init_vis   (c, avctx);
+    if (ENABLE_ALPHA)    dsputil_init_alpha (c, avctx);
+    if (ENABLE_POWERPC)  dsputil_init_ppc   (c, avctx);
+    if (ENABLE_MMI)      dsputil_init_mmi   (c, avctx);
+    if (ENABLE_SH4)      dsputil_init_sh4   (c, avctx);
+    if (ENABLE_BFIN)     dsputil_init_bfin  (c, avctx);
+
+    for(i=0; i<64; i++){
+        if(!c->put_2tap_qpel_pixels_tab[0][i])
+            c->put_2tap_qpel_pixels_tab[0][i]= c->put_h264_qpel_pixels_tab[0][i];
+        if(!c->avg_2tap_qpel_pixels_tab[0][i])
+            c->avg_2tap_qpel_pixels_tab[0][i]= c->avg_h264_qpel_pixels_tab[0][i];
+    }
 
     switch(c->idct_permutation_type){
     case FF_NO_IDCT_PERM:

@@ -1,31 +1,38 @@
 /*
+ * SVQ1 decoder
+ * ported to MPlayer by Arpi <arpi@thot.banki.hu>
+ * ported to libavcodec by Nick Kurshev <nickols_k@mail.ru>
  *
  * Copyright (C) 2002 the xine project
  * Copyright (C) 2002 the ffmpeg project
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
- * Ported to mplayer by Arpi <arpi@thot.banki.hu>
- * Ported to libavcodec by Nick Kurshev <nickols_k@mail.ru>
- *
  */
 
 /**
  * @file svq1_cb.h
  * svq1 code books.
  */
+
+#ifndef AVCODEC_SVQ1_CB_H
+#define AVCODEC_SVQ1_CB_H
+
+#include <stdint.h>
+#include <stdlib.h>
 
 /* 6x16-entry codebook for inter-coded 4x2 vectors */
 static const int8_t svq1_inter_codebook_4x2[768] = {
@@ -764,42 +771,10 @@ static const int8_t svq1_inter_codebook_8x8[6144] = {
 };
 
 /* list of codebooks for inter-coded vectors */
-static const int8_t* const svq1_inter_codebooks[6] = {
+const int8_t* const ff_svq1_inter_codebooks[6] = {
     svq1_inter_codebook_4x2, svq1_inter_codebook_4x4,
     svq1_inter_codebook_8x4, svq1_inter_codebook_8x8,
     NULL, NULL,
-};
-
-static const int8_t svq1_inter_codebook_sum[4][16*6] = {
- {
- -1,  1, -2,  0,  1, -1, -1, -1, -2, -1,  1, -1, -1,  0, -1, -1,
-  0, -1, -1, -1, -1,  0, -1,  0,  0,  0, -3,  1, -1,  0,  1, -1,
-  1, -1,  2,  2,  1,  1,  2,  0,  0,  0, -1,  1,  1,  0,  0,  0,
-  1, -1,  0,  1, -1,  1,  1,  0,  1,  0, -1,  1,  1,  0,  0,  0,
- -2,  0,  0, -2,  0,  0, -2,  0, -2, -1, -2, -1,  0,  0, -1,  0,
-  1,  0,  1, -1,  2,  2,  1,  2,  2,  1,  0,  1,  1,  0,  1,  1,
- },{
- -2,  1, -1, -1,  1,  0,  1, -1, -1, -1,  1, -1,  0, -1,  0, -1,
-  0,  0,  0, -2,  0,  1,  0, -1, -1,  0,  2, -3,  1, -2,  3, -1,
-  2,  0,  2,  1,  1, -1,  1,  1,  0,  0,  1,  1,  2, -2,  1,  0,
- -2, -1,  2, -2, -2,  0, -3,  0, -1,  0, -1,  0, -1,  0, -2, -3,
-  1, -2, -2, -1,  1, -1, -1,  1, -1,  1,  1,  0, -2,  0,  1,  1,
-  1,  1,  2,  1,  0,  0, -1,  0,  0,  1,  0,  1, -1,  1,  0,  2,
- },{
-  0,  0,  0, -3,  1,  1,  1, -3,  0, -1,  0, -3,  1, -3,  0, -2,
-  1,  2, -1, -3,  0, -3,  1, -1,  0, -1,  0,  0,  1,  2,  1,  1,
- -1,  2, -3,  3,  1,  0, -5,  1,  0, -1, -3,  1,  0,  2,  0, -3,
-  4,  2,  0, -2,  1, -2,  3, -2,  1,  1,  0, -1,  2,  5,  3,  1,
- -1,  0,  2, -3, -2,  0,  0, -2,  2, -3, -1, -1,  2,  1,  0, -2,
-  3, -1,  1, -1,  2,  4,  0,  1,  0,  1,  0, -1, -3, -2, -1,  0,
- },{
-  0,  2, -1, -1,  2, -4, -2,  3,  0, -1, -5,  1,  0,  1,  0,  6,
- -2,  2,  0,  1,  1, -1, -1, -2,  1, -2, -1,  0,  2, -2, -2, -1,
- -4,  2, -1, -3, -1, -2,  2, -1,  2, -1,  2,  0,  3, -3, -3,  0,
- -3,  0,  0, -2,  4, -4,  0, -1,  4,  0, -2, -2,  3, -2,  0,  4,
-  5,  0,  1,  0, -3,  3,  3,  2,  0,  0,  1,  2, -5, -2, -3,  0,
- -3,  2, -2,  2, -2,  4,  7, -3,  4,  2,  3,  2, -1,  0, -3,  1,
- }
 };
 
 /* 6x16-entry codebook for intra-coded 4x2 vectors */
@@ -1539,40 +1514,10 @@ static const int8_t svq1_intra_codebook_8x8[6144] = {
 };
 
 /* list of codebooks for intra-coded vectors */
-static const int8_t* const svq1_intra_codebooks[6] = {
+const int8_t* const ff_svq1_intra_codebooks[6] = {
     svq1_intra_codebook_4x2, svq1_intra_codebook_4x4,
     svq1_intra_codebook_8x4, svq1_intra_codebook_8x8,
     NULL, NULL,
 };
 
-static const int8_t svq1_intra_codebook_sum[4][16*6] = {
- {
-  0,  0,  0, -1, -1, -1, -1, -2,  0, -1, -1,  0, -1,  0,  1,  0,
-  1,  0, -1,  1,  0,  0, -1,  1, -1,  0,  0,  0, -1,  1,  0,  0,
- -1,  0,  0,  1, -1,  1,  0, -1, -1,  0,  1,  1,  0,  0, -1,  1,
-  0,  1,  0,  0,  1, -1,  0,  0,  0, -1,  1,  0,  1,  0, -2,  1,
-  0, -1,  1,  0,  0,  0,  1,  0, -1,  0,  0,  0, -1,  0,  0,  0,
-  0,  1,  1,  0,  0, -1,  0,  1,  0,  0,  0,  0, -1,  1,  1, -1,
- },{
- -1, -2,  0, -1,  1,  0, -1,  0, -1, -4, -1, -2, -1, -2,  1, -2,
-  0,  0,  4, -2, -1,  1,  1,  0,  2,  1,  1,  0,  2,  0,  0,  0,
-  1,  1,  0, -1, -1, -1,  1,  0, -1, -3, -3,  1, -1,  1, -2, -1,
-  1, -1,  0,  1,  2,  1, -1, -1,  1,  1,  1,  2,  1,  0,  1, -2,
- -2,  0, -1, -2, -2,  0, -1, -1, -1,  0,  1,  0, -1, -1,  0, -1,
-  0,  2,  1,  2,  2,  1, -1,  1,  0,  2,  0, -1,  1,  0,  0,  0,
- },{
- -2,  0, -1, -1,  1,  1, -2,  0, -2,  0,  1, -2, -2,  1, -1, -1,
-  3, -2,  0, -3, -4, -3,  2,  1,  0,  3, -2,  2,  3,  2,  2, -1,
- -3,  1,  0,  1,  0,  0,  0,  1, -2,  1, -2, -2, -1, -2, -2,  2,
-  0, -4,  0,  2, -1,  0,  2,  2,  2,  1,  0, -1, -1,  1, -3,  2,
-  2,  1,  0,  3,  1, -1,  1,  3,  1,  0,  1,  1,  2, -1,  1, -1,
- -2, -1,  0, -1,  1, -1,  1, -2, -2, -1, -1, -3,  1, -4, -3,  1,
- },{
- -2,  0, -2,  3, -1, -1,  0,  2,  2, -1, -3,  2,  1,  0, -2, -1,
- -3, -2, -2,  1,  2, -3,  0,  1, -5, -2, -3,  0, -2, -1,  2,  0,
- -1, -1,  0, -2,  1,  3, -7, -2, -2, -1,  2, -1,  0,  3,  1,  3,
-  1,  0,  0,  1,  2,  3,  1,  2,  0, -2, -2,  1,  1,  2,  2,  3,
-  4,  1, -1,  2, -2,  4,  0,  0,  0,  4,  2,  0, -2, -2,  2, -4,
- -1,  5, -2, -2, -3,  2, -3, -1,  3, -3,  0,  4,  3,  0,  1, -2,
- }
-};
+#endif // AVCODEC_SVQ1_CB_H

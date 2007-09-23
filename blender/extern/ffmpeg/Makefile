@@ -35,10 +35,10 @@ DIR = $(OCGDIR)/extern/ffmpeg
 
 include nan_subdirs.mk
 
-ALLDIRS = libavcodec libavformat libavutil
+ALLDIRS = libavcodec libavformat libavutil libswscale
 
 config::
-	./configure --disable-shared --enable-a52 --enable-gpl --disable-audio-oss --disable-audio-beos --disable-v4l --disable-v4l2 --disable-bktr --disable-dv1394 --disable-network --disable-zlib --disable-lzo --disable-vhook --disable-ffserver --disable-ffplay
+	./configure --disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-pthreads 
 all::
 	@for i in $(ALLDIRS); do \
 	    echo "====> $(MAKE) $@ in $(SOURCEDIR)/$$i" ;\

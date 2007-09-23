@@ -5,20 +5,21 @@
  * Copyright (c) 2005 Alex Beregszaszi
  * Copyright (c) 2005 Roberto Togni
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
  */
 
 /**
@@ -127,7 +128,7 @@ typedef struct {
 } QDM2Complex;
 
 typedef struct {
-    QDM2Complex complex[256 + 1] __attribute__((aligned(16)));
+    DECLARE_ALIGNED_16(QDM2Complex, complex[256 + 1]);
     float       samples_im[MPA_MAX_CHANNELS][256];
     float       samples_re[MPA_MAX_CHANNELS][256];
 } QDM2FFT;
@@ -180,9 +181,9 @@ typedef struct {
     float output_buffer[1024];
 
     /// Synthesis filter
-    MPA_INT synth_buf[MPA_MAX_CHANNELS][512*2] __attribute__((aligned(16)));
+    DECLARE_ALIGNED_16(MPA_INT, synth_buf[MPA_MAX_CHANNELS][512*2]);
     int synth_buf_offset[MPA_MAX_CHANNELS];
-    int32_t sb_samples[MPA_MAX_CHANNELS][128][SBLIMIT] __attribute__((aligned(16)));
+    DECLARE_ALIGNED_16(int32_t, sb_samples[MPA_MAX_CHANNELS][128][SBLIMIT]);
 
     /// Mixed temporary data used in decoding
     float tone_level[MPA_MAX_CHANNELS][30][64];
@@ -227,7 +228,7 @@ static uint8_t random_dequant_index[256][5];
 static uint8_t random_dequant_type24[128][3];
 static float noise_samples[128];
 
-static MPA_INT mpa_window[512] __attribute__((aligned(16)));
+static DECLARE_ALIGNED_16(MPA_INT, mpa_window[512]);
 
 
 static void softclip_table_init(void) {
@@ -1834,7 +1835,7 @@ static int qdm2_decode_init(AVCodecContext *avctx)
     extradata += 8;
     extradata_size -= 8;
 
-    size = BE_32(extradata);
+    size = AV_RB32(extradata);
 
     if(size > extradata_size){
         av_log(avctx, AV_LOG_ERROR, "extradata size too small, %i < %i\n",
@@ -1844,29 +1845,29 @@ static int qdm2_decode_init(AVCodecContext *avctx)
 
     extradata += 4;
     av_log(avctx, AV_LOG_DEBUG, "size: %d\n", size);
-    if (BE_32(extradata) != MKBETAG('Q','D','C','A')) {
+    if (AV_RB32(extradata) != MKBETAG('Q','D','C','A')) {
         av_log(avctx, AV_LOG_ERROR, "invalid extradata, expecting QDCA\n");
         return -1;
     }
 
     extradata += 8;
 
-    avctx->channels = s->nb_channels = s->channels = BE_32(extradata);
+    avctx->channels = s->nb_channels = s->channels = AV_RB32(extradata);
     extradata += 4;
 
-    avctx->sample_rate = BE_32(extradata);
+    avctx->sample_rate = AV_RB32(extradata);
     extradata += 4;
 
-    avctx->bit_rate = BE_32(extradata);
+    avctx->bit_rate = AV_RB32(extradata);
     extradata += 4;
 
-    s->group_size = BE_32(extradata);
+    s->group_size = AV_RB32(extradata);
     extradata += 4;
 
-    s->fft_size = BE_32(extradata);
+    s->fft_size = AV_RB32(extradata);
     extradata += 4;
 
-    s->checksum_size = BE_32(extradata);
+    s->checksum_size = AV_RB32(extradata);
     extradata += 4;
 
     s->fft_order = av_log2(s->fft_size) + 1;

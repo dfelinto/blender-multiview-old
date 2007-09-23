@@ -1,20 +1,22 @@
 /*
-    Copyright (C) 2001-2003 Michael Niedermayer (michaelni@gmx.at)
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-*/
+ * Copyright (C) 2001-2003 Michael Niedermayer (michaelni@gmx.at)
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
 
 #ifndef NEWPOSTPROCESS_H
 #define NEWPOSTPROCESS_H
@@ -25,10 +27,6 @@
  *     external api for the pp stuff
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define LIBPOSTPROC_VERSION_INT ((51<<16)+(1<<8)+0)
 #define LIBPOSTPROC_VERSION     51.1.0
 #define LIBPOSTPROC_BUILD       LIBPOSTPROC_VERSION_INT
@@ -38,6 +36,8 @@ extern "C" {
 #define PP_QUALITY_MAX 6
 
 #define QP_STORE_T int8_t
+
+#include <inttypes.h>
 
 typedef void pp_context_t;
 typedef void pp_mode_t;
@@ -74,9 +74,5 @@ void pp_free_context(pp_context_t *ppContext);
 #define PP_FORMAT_444    (0x00000000|PP_FORMAT)
 
 #define PP_PICT_TYPE_QP2  0x00000010 ///< MPEG2 style QScale
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

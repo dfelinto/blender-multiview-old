@@ -1,3 +1,23 @@
+/*
+ * copyright (c) 2001 Fabrice Bellard
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 /**
  * @file apiexample.c
  * avcodec API use example.
@@ -11,6 +31,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+
+#define PI 3.14159265358979323846
 
 #ifdef HAVE_AV_CONFIG_H
 #undef HAVE_AV_CONFIG_H
@@ -69,7 +91,7 @@ void audio_encode_example(const char *filename)
 
     /* encode a single tone sound */
     t = 0;
-    tincr = 2 * M_PI * 440.0 / c->sample_rate;
+    tincr = 2 * PI * 440.0 / c->sample_rate;
     for(i=0;i<200;i++) {
         for(j=0;j<frame_size;j++) {
             samples[2*j] = (int)(sin(t) * 10000);
@@ -101,9 +123,6 @@ void audio_decode_example(const char *outfilename, const char *filename)
     uint8_t inbuf[INBUF_SIZE + FF_INPUT_BUFFER_PADDING_SIZE], *inbuf_ptr;
 
     printf("Audio decoding\n");
-
-    /* set end of buffer to 0 (this ensures that no overreading happens for damaged mpeg streams) */
-    memset(inbuf + INBUF_SIZE, 0, FF_INPUT_BUFFER_PADDING_SIZE);
 
     /* find the mpeg audio decoder */
     codec = avcodec_find_decoder(CODEC_ID_MP2);
@@ -205,8 +224,6 @@ void video_encode_example(const char *filename)
         fprintf(stderr, "could not open codec\n");
         exit(1);
     }
-
-    /* the codec gives us the frame size, in samples */
 
     f = fopen(filename, "wb");
     if (!f) {
@@ -319,11 +336,11 @@ void video_decode_example(const char *outfilename, const char *filename)
     picture= avcodec_alloc_frame();
 
     if(codec->capabilities&CODEC_CAP_TRUNCATED)
-        c->flags|= CODEC_FLAG_TRUNCATED; /* we dont send complete frames */
+        c->flags|= CODEC_FLAG_TRUNCATED; /* we do not send complete frames */
 
-    /* for some codecs, such as msmpeg4 and mpeg4, width and height
-       MUST be initialized there because these info are not available
-       in the bitstream */
+    /* For some codecs, such as msmpeg4 and mpeg4, width and height
+       MUST be initialized there because this information is not
+       available in the bitstream. */
 
     /* open it */
     if (avcodec_open(c, codec) < 0) {
@@ -416,8 +433,7 @@ int main(int argc, char **argv)
     /* must be called before using avcodec lib */
     avcodec_init();
 
-    /* register all the codecs (you can also register only the codec
-       you wish to have smaller code */
+    /* register all the codecs */
     avcodec_register_all();
 
     if (argc <= 1) {

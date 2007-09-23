@@ -2,18 +2,20 @@
  * BeOS audio play interface
  * Copyright (c) 2000, 2001 Fabrice Bellard.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -192,15 +194,15 @@ static int audio_open(AudioData *s, int is_output, const char *audio_device)
 
 #ifndef HAVE_BSOUNDRECORDER
     if (!is_output)
-        return -EIO; /* not for now */
+        return AVERROR(EIO); /* not for now */
 #endif
     s->input_sem = create_sem(AUDIO_BUFFER_SIZE, "ffmpeg_ringbuffer_input");
     if (s->input_sem < B_OK)
-        return -EIO;
+        return AVERROR(EIO);
     s->output_sem = create_sem(0, "ffmpeg_ringbuffer_output");
     if (s->output_sem < B_OK) {
         delete_sem(s->input_sem);
-        return -EIO;
+        return AVERROR(EIO);
     }
     s->input_index = 0;
     s->output_index = 0;
@@ -224,7 +226,7 @@ static int audio_open(AudioData *s, int is_output, const char *audio_device)
                 delete_sem(s->input_sem);
             if (s->output_sem)
                 delete_sem(s->output_sem);
-            return -EIO;
+            return AVERROR(EIO);
         }
         s->codec_id = (iformat.byte_order == B_MEDIA_LITTLE_ENDIAN)?CODEC_ID_PCM_S16LE:CODEC_ID_PCM_S16BE;
         s->channels = iformat.channel_count;
@@ -250,7 +252,7 @@ static int audio_open(AudioData *s, int is_output, const char *audio_device)
             delete_sem(s->input_sem);
         if (s->output_sem)
             delete_sem(s->output_sem);
-        return -EIO;
+        return AVERROR(EIO);
     }
     s->player->SetCookie(s);
     s->player->SetVolume(1.0);
@@ -291,7 +293,7 @@ static int audio_write_header(AVFormatContext *s1)
     s->channels = st->codec->channels;
     ret = audio_open(s, 1, NULL);
     if (ret < 0)
-        return -EIO;
+        return AVERROR(EIO);
     return 0;
 }
 
@@ -313,7 +315,7 @@ lat1 = s->player->Latency();
         int amount;
         len = MIN(size, AUDIO_BLOCK_SIZE);
         if (acquire_sem_etc(s->input_sem, len, B_CAN_INTERRUPT, 0LL) < B_OK)
-            return -EIO;
+            return AVERROR(EIO);
         amount = MIN(len, (AUDIO_BUFFER_SIZE - s->input_index));
         memcpy(&s->buffer[s->input_index], buf, amount);
         s->input_index += amount;
@@ -354,15 +356,15 @@ static int audio_read_header(AVFormatContext *s1, AVFormatParameters *ap)
 
     st = av_new_stream(s1, 0);
     if (!st) {
-        return -ENOMEM;
+        return AVERROR(ENOMEM);
     }
     s->sample_rate = ap->sample_rate;
     s->channels = ap->channels;
 
-    ret = audio_open(s, 0, ap->device);
+    ret = audio_open(s, 0, s1->filename);
     if (ret < 0) {
         av_free(st);
-        return -EIO;
+        return AVERROR(EIO);
     }
     /* take real parameters */
     st->codec->codec_type = CODEC_TYPE_AUDIO;
@@ -382,7 +384,7 @@ static int audio_read_packet(AVFormatContext *s1, AVPacket *pkt)
     status_t err;
 
     if (av_new_packet(pkt, s->frame_size) < 0)
-        return -EIO;
+        return AVERROR(EIO);
     buf = (unsigned char *)pkt->data;
     size = pkt->size;
     while (size > 0) {
@@ -391,7 +393,7 @@ static int audio_read_packet(AVFormatContext *s1, AVPacket *pkt)
         while ((err=acquire_sem_etc(s->output_sem, len, B_CAN_INTERRUPT, 0LL)) == B_INTERRUPTED);
         if (err < B_OK) {
             av_free_packet(pkt);
-            return -EIO;
+            return AVERROR(EIO);
         }
         amount = MIN(len, (AUDIO_BUFFER_SIZE - s->output_index));
         memcpy(buf, &s->buffer[s->output_index], amount);
@@ -419,8 +421,8 @@ static int audio_read_close(AVFormatContext *s1)
     return 0;
 }
 
-static AVInputFormat audio_in_format = {
-    "audio_device",
+static AVInputFormat audio_beos_demuxer = {
+    "audio_beos",
     "audio grab and output",
     sizeof(AudioData),
     NULL,
@@ -431,8 +433,8 @@ static AVInputFormat audio_in_format = {
     AVFMT_NOFILE,
 };
 
-AVOutputFormat audio_out_format = {
-    "audio_device",
+AVOutputFormat audio_beos_muxer = {
+    "audio_beos",
     "audio grab and output",
     "",
     "",
@@ -454,8 +456,8 @@ extern "C" {
 int audio_init(void)
 {
     main_thid = find_thread(NULL);
-    av_register_input_format(&audio_in_format);
-    av_register_output_format(&audio_out_format);
+    av_register_input_format(&audio_beos_demuxer);
+    av_register_output_format(&audio_beos_muxer);
     return 0;
 }
 

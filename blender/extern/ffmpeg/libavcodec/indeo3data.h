@@ -1,3 +1,28 @@
+/*
+ * Intel Indeo 3 (IV31, IV32, etc.) video decoder for ffmpeg
+ * written, produced, and directed by Alan Smithee
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
+#ifndef AVCODEC_INDEO3DATA_H
+#define AVCODEC_INDEO3DATA_H
+
+#include <stdint.h>
 
 static const uint32_t correction[] = {
         0x00000000, 0x00000202, 0xfffffdfe, 0x000002ff, 0xfffffd01, 0xffffff03, 0x000000fd, 0x00000404,
@@ -2313,3 +2338,5 @@ static const uint32_t correctionhighorder[] = {
         0xd1d1d1d2, 0xd1d1d1d2, 0xd1d1d1d2, 0xd1d1d1d2, 0xd1d1d1d2, 0xd1d1d1d2, 0xd1d1d1d2, 0xd1d1d1d2,
         0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000
 };
+
+#endif // AVCODEC_INDEO3DATA_H

@@ -2,18 +2,20 @@
  * Real Audio 1.0 (14.4K)
  * Copyright (c) 2003 the ffmpeg project
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -428,7 +430,6 @@ static int ra144_decode_frame(AVCodecContext * avctx,
             uint8_t * buf, int buf_size)
 {
   unsigned int a,b,c;
-  long s;
   signed short *shptr;
   unsigned int *lptr,*temp;
   const short **dptr;
@@ -482,13 +483,8 @@ static int ra144_decode_frame(AVCodecContext * avctx,
     glob->resetflag=0;
 
     shptr=glob->output_buffer;
-    while (shptr<glob->output_buffer+BLOCKSIZE) {
-      s=*(shptr++)<<2;
-      *data=s;
-      if (s>32767) *data=32767;
-      if (s<-32767) *data=-32768;
-      data++;
-    }
+    while (shptr<glob->output_buffer+BLOCKSIZE)
+      *data++=av_clip_int16(*(shptr++)<<2);
     b+=30;
   }
 

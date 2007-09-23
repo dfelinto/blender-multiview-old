@@ -1,7 +1,35 @@
+/*
+ * copyright (c) 2000,2001 Fabrice Bellard
+ * H263+ support
+ * copyright (c) 2002-2004 Michael Niedermayer <michaelni@gmx.at>
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
+
 /**
  * @file mpeg4data.h
  * mpeg4 tables.
  */
+
+#ifndef AVCODEC_MPEG4DATA_H
+#define AVCODEC_MPEG4DATA_H
+
+#include <stdint.h>
+#include "mpegvideo.h"
 
 // shapes
 #define RECT_SHAPE       0
@@ -123,7 +151,8 @@ static RLTable rl_intra = {
     intra_level,
 };
 
-static const uint16_t inter_rvlc[170][2]={ //note this is identical to the intra rvlc except that its reordered
+/* Note this is identical to the intra rvlc except that it is reordered. */
+static const uint16_t inter_rvlc[170][2]={
 {0x0006,  3},{0x0001,  4},{0x0004,  5},{0x001C,  7},
 {0x003C,  8},{0x003D,  8},{0x007C,  9},{0x00FC, 10},
 {0x00FD, 10},{0x01FC, 11},{0x01FD, 11},{0x03FC, 12},
@@ -399,3 +428,5 @@ const uint16_t ff_mpeg4_resync_prefix[8]={
 static const uint8_t mpeg4_dc_threshold[8]={
     99, 13, 15, 17, 19, 21, 23, 0
 };
+
+#endif // AVCODEC_MPEG4DATA_H

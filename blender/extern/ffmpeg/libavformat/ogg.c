@@ -4,6 +4,22 @@
  *
  * Uses libogg, but requires libvorbisenc to construct correct headers
  * when containing Vorbis stream -- currently the only format supported
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include <stdio.h>
@@ -12,8 +28,6 @@
 
 #include "avformat.h"
 
-#undef NDEBUG
-#include <assert.h>
 
 #define DECODER_BUFFER_SIZE 4096
 
@@ -137,10 +151,10 @@ static int ogg_write_trailer(AVFormatContext *avfcontext) {
 }
 
 
-static AVOutputFormat ogg_oformat = {
+AVOutputFormat ogg_muxer = {
     "ogg",
-    "Ogg Vorbis",
-    "audio/x-vorbis",
+    "Ogg format",
+    "application/ogg",
     "ogg",
     sizeof(OggContext),
     CODEC_ID_VORBIS,
@@ -191,7 +205,7 @@ static int ogg_read_header(AVFormatContext *avfcontext, AVFormatParameters *ap)
     buf = ogg_sync_buffer(&context->oy, DECODER_BUFFER_SIZE) ;
 
     if(get_buffer(&avfcontext->pb, buf, DECODER_BUFFER_SIZE) <= 0)
-        return AVERROR_IO ;
+        return AVERROR(EIO) ;
 
     ogg_sync_wrote(&context->oy, DECODER_BUFFER_SIZE) ;
     ogg_sync_pageout(&context->oy, &og) ;
@@ -202,7 +216,7 @@ static int ogg_read_header(AVFormatContext *avfcontext, AVFormatParameters *ap)
 
     ast = av_new_stream(avfcontext, 0) ;
     if(!ast)
-        return AVERROR_NOMEM ;
+        return AVERROR(ENOMEM) ;
     av_set_pts_info(ast, 60, 1, AV_TIME_BASE);
 
     codec= &ast->codec;
@@ -231,14 +245,14 @@ static int ogg_read_packet(AVFormatContext *avfcontext, AVPacket *pkt) {
     ogg_packet op ;
 
     if(next_packet(avfcontext, &op))
-        return AVERROR_IO ;
+        return AVERROR(EIO) ;
     if(av_new_packet(pkt, op.bytes) < 0)
-        return AVERROR_IO ;
+        return AVERROR(EIO) ;
     pkt->stream_index = 0 ;
     memcpy(pkt->data, op.packet, op.bytes);
     if(avfcontext->streams[0]->codec.sample_rate && op.granulepos!=-1)
         pkt->pts= av_rescale(op.granulepos, AV_TIME_BASE, avfcontext->streams[0]->codec.sample_rate);
-//    printf("%lld %d %d\n", pkt->pts, (int)op.granulepos, avfcontext->streams[0]->codec.sample_rate);
+//    printf("%"PRId64" %d %d\n", pkt->pts, (int)op.granulepos, avfcontext->streams[0]->codec.sample_rate);
 
     return op.bytes;
 }
@@ -249,7 +263,6 @@ static int ogg_read_close(AVFormatContext *avfcontext) {
 
     ogg_stream_clear(&context->os) ;
     ogg_sync_clear(&context->oy) ;
-    av_freep(&avfcontext->streams[0]->codec.extradata);
 
     return 0 ;
 }
@@ -266,11 +279,3 @@ static AVInputFormat ogg_iformat = {
     .extensions = "ogg",
 } ;
 #endif
-
-int libogg_init(void) {
-#ifdef CONFIG_MUXERS
-    av_register_output_format(&ogg_oformat) ;
-#endif
-/*     av_register_input_format(&ogg_iformat); */
-    return 0 ;
-}

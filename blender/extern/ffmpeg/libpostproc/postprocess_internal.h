@@ -1,25 +1,33 @@
 /*
-    Copyright (C) 2001-2002 Michael Niedermayer (michaelni@gmx.at)
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-*/
+ * Copyright (C) 2001-2002 Michael Niedermayer (michaelni@gmx.at)
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
 
 /**
  * @file postprocess_internal.h
  * internal api header.
  */
+
+#ifndef POSTPROCESS_INTERNAL_H
+#define POSTPROCESS_INTERNAL_H
+
+#include "avutil.h"
+#include "postprocess.h"
 
 #define V_DEBLOCK       0x01
 #define H_DEBLOCK       0x02
@@ -58,9 +66,13 @@
 #define TEMP_NOISE_FILTER               0x100000
 #define FORCE_QUANT                     0x200000
 
-//use if u want a faster postprocessing code
-//cant differentiate between chroma & luma filters (both on or both off)
-//obviosly the -pp option at the commandline has no effect except turning the here selected
+#if ( defined(__PIC__) || defined(__pic__) ) && ! defined(PIC)
+#    define PIC
+#endif
+
+//use if you want a faster postprocessing code
+//cannot differentiate between chroma & luma filters (both on or both off)
+//obviously the -pp option on the command line has no effect except turning the here selected
 //filters on
 //#define COMPILE_TIME_MODE 0x77
 
@@ -79,8 +91,8 @@ static inline int CLIP(int a){
  * Postprocessng filter.
  */
 struct PPFilter{
-        char *shortName;
-        char *longName;
+        const char *shortName;
+        const char *longName;
         int chromDefault;       ///< is chrominance filtering on by default if this filter is manually activated
         int minLumQuality;      ///< minimum quality to turn luminance filtering on
         int minChromQuality;    ///< minimum quality to turn chrominance filtering on
@@ -111,6 +123,11 @@ typedef struct PPMode{
  * postprocess context.
  */
 typedef struct PPContext{
+        /**
+         * info on struct for av_log
+         */
+        AVClass *av_class;
+
         uint8_t *tempBlocks; ///<used for the horizontal code
 
         /**
@@ -120,8 +137,8 @@ typedef struct PPContext{
          */
         uint64_t *yHistogram;
 
-        uint64_t __attribute__((aligned(8))) packedYOffset;
-        uint64_t __attribute__((aligned(8))) packedYScale;
+        DECLARE_ALIGNED(8, uint64_t, packedYOffset);
+        DECLARE_ALIGNED(8, uint64_t, packedYScale);
 
         /** Temporal noise reducing buffers */
         uint8_t *tempBlured[3];
@@ -133,11 +150,11 @@ typedef struct PPContext{
 
         uint8_t *deintTemp;
 
-        uint64_t __attribute__((aligned(8))) pQPb;
-        uint64_t __attribute__((aligned(8))) pQPb2;
+        DECLARE_ALIGNED(8, uint64_t, pQPb);
+        DECLARE_ALIGNED(8, uint64_t, pQPb2);
 
-        uint64_t __attribute__((aligned(8))) mmxDcOffset[64];
-        uint64_t __attribute__((aligned(8))) mmxDcThreshold[64];
+        DECLARE_ALIGNED(8, uint64_t, mmxDcOffset[64]);
+        DECLARE_ALIGNED(8, uint64_t, mmxDcThreshold[64]);
 
         QP_STORE_T *stdQPTable;       ///< used to fix MPEG2 style qscale
         QP_STORE_T *nonBQPTable;
@@ -168,3 +185,5 @@ static inline void linecpy(void *dest, void *src, int lines, int stride)
                 memcpy(dest+(lines-1)*stride, src+(lines-1)*stride, -lines*stride);
         }
 }
+
+#endif // POSTPROCESS_INTERNAL_H

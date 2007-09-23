@@ -12,18 +12,20 @@
  * Many thanks to Dan Dennedy <dan@dennedy.org> for providing wealth
  * of DV technical info.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -31,6 +33,7 @@
  * @file dv.c
  * DV codec.
  */
+#define ALT_BITSTREAM_READER
 #include "avcodec.h"
 #include "dsputil.h"
 #include "mpegvideo.h"
@@ -72,12 +75,12 @@ static void* dv_anchor[DV_ANCHOR_SIZE];
 #endif
 
 /* XXX: also include quantization */
-static RL_VLC_ELEM *dv_rl_vlc;
+static RL_VLC_ELEM dv_rl_vlc[1184];
 /* VLC encoding lookup table */
 static struct dv_vlc_pair {
    uint32_t vlc;
    uint8_t  size;
-} (*dv_vlc_map)[DV_VLC_MAP_LEV_SIZE] = NULL;
+} dv_vlc_map[DV_VLC_MAP_RUN_SIZE][DV_VLC_MAP_LEV_SIZE];
 
 static void dv_build_unquantize_tables(DVVideoContext *s, uint8_t* perm)
 {
@@ -120,10 +123,6 @@ static int dvvideo_init(AVCodecContext *avctx)
 
         done = 1;
 
-        dv_vlc_map = av_mallocz_static(DV_VLC_MAP_LEV_SIZE*DV_VLC_MAP_RUN_SIZE*sizeof(struct dv_vlc_pair));
-        if (!dv_vlc_map)
-            return -ENOMEM;
-
         /* dv_anchor lets each thread know its Id */
         for (i=0; i<DV_ANCHOR_SIZE; i++)
             dv_anchor[i] = (void*)(size_t)i;
@@ -151,10 +150,7 @@ static int dvvideo_init(AVCodecContext *avctx)
            to accelerate the parsing of partial codes */
         init_vlc(&dv_vlc, TEX_VLC_BITS, j,
                  new_dv_vlc_len, 1, 1, new_dv_vlc_bits, 2, 2, 0);
-
-        dv_rl_vlc = av_mallocz_static(dv_vlc.table_size * sizeof(RL_VLC_ELEM));
-        if (!dv_rl_vlc)
-            return -ENOMEM;
+        assert(dv_vlc.table_size == 1184);
 
         for(i = 0; i < dv_vlc.table_size; i++){
             int code= dv_vlc.table[i][0];
@@ -269,11 +265,6 @@ static const uint16_t block_sizes[6] = {
 static const int vs_total_ac_bits = (100 * 4 + 68*2) * 5;
 /* see dv_88_areas and dv_248_areas for details */
 static const int mb_area_start[5] = { 1, 6, 21, 43, 64 };
-
-#ifndef ALT_BITSTREAM_READER
-#warning only works with ALT_BITSTREAM_READER
-static int re_index; //Hack to make it compile
-#endif
 
 static inline int get_bits_left(GetBitContext *s)
 {
@@ -562,7 +553,7 @@ static inline void dv_decode_video_segment(DVVideoContext *s,
 
 #ifdef DV_CODEC_TINY_TARGET
 /* Converts run and level (where level != 0) pair into vlc, returning bit size */
-static always_inline int dv_rl2vlc(int run, int level, int sign, uint32_t* vlc)
+static av_always_inline int dv_rl2vlc(int run, int level, int sign, uint32_t* vlc)
 {
     int size;
     if (run < DV_VLC_MAP_RUN_SIZE && level < DV_VLC_MAP_LEV_SIZE) {
@@ -587,7 +578,7 @@ static always_inline int dv_rl2vlc(int run, int level, int sign, uint32_t* vlc)
     return size;
 }
 
-static always_inline int dv_rl2vlc_size(int run, int level)
+static av_always_inline int dv_rl2vlc_size(int run, int level)
 {
     int size;
 
@@ -603,13 +594,13 @@ static always_inline int dv_rl2vlc_size(int run, int level)
     return size;
 }
 #else
-static always_inline int dv_rl2vlc(int run, int l, int sign, uint32_t* vlc)
+static av_always_inline int dv_rl2vlc(int run, int l, int sign, uint32_t* vlc)
 {
     *vlc = dv_vlc_map[run][l].vlc | sign;
     return dv_vlc_map[run][l].size;
 }
 
-static always_inline int dv_rl2vlc_size(int run, int l)
+static av_always_inline int dv_rl2vlc_size(int run, int l)
 {
     return dv_vlc_map[run][l].size;
 }
@@ -629,7 +620,7 @@ typedef struct EncBlockInfo {
     uint32_t partial_bit_buffer; /* we can't use uint16_t here */
 } EncBlockInfo;
 
-static always_inline PutBitContext* dv_encode_ac(EncBlockInfo* bi, PutBitContext* pb_pool,
+static av_always_inline PutBitContext* dv_encode_ac(EncBlockInfo* bi, PutBitContext* pb_pool,
                                        PutBitContext* pb_end)
 {
     int prev;
@@ -672,7 +663,7 @@ static always_inline PutBitContext* dv_encode_ac(EncBlockInfo* bi, PutBitContext
     return pb;
 }
 
-static always_inline void dv_set_class_number(DCTELEM* blk, EncBlockInfo* bi,
+static av_always_inline void dv_set_class_number(DCTELEM* blk, EncBlockInfo* bi,
                                               const uint8_t* zigzag_scan, const int *weight, int bias)
 {
     int i, area;
@@ -707,7 +698,7 @@ static always_inline void dv_set_class_number(DCTELEM* blk, EncBlockInfo* bi,
               /* weigh it and and shift down into range, adding for rounding */
               /* the extra division by a factor of 2^4 reverses the 8x expansion of the DCT
                  AND the 2x doubling of the weights */
-              level = (ABS(level) * weight[i] + (1<<(dv_weight_bits+3))) >> (dv_weight_bits+4);
+              level = (FFABS(level) * weight[i] + (1<<(dv_weight_bits+3))) >> (dv_weight_bits+4);
               bi->mb[i] = level;
               if(level>max) max= level;
               bi->bit_size[area] += dv_rl2vlc_size(i - prev  - 1, level);
@@ -744,7 +735,7 @@ static always_inline void dv_set_class_number(DCTELEM* blk, EncBlockInfo* bi,
 
 //FIXME replace this by dsputil
 #define SC(x, y) ((s[x] - s[y]) ^ ((s[x] - s[y]) >> 7))
-static always_inline int dv_guess_dct_mode(DCTELEM *blk) {
+static av_always_inline int dv_guess_dct_mode(DCTELEM *blk) {
     DCTELEM *s;
     int score88 = 0;
     int score248 = 0;
@@ -847,7 +838,7 @@ static inline void dv_encode_video_segment(DVVideoContext *s,
     uint8_t*  data;
     uint8_t*  ptr;
     int       do_edge_wrap;
-    DECLARE_ALIGNED_8(DCTELEM, block[64]);
+    DECLARE_ALIGNED_16(DCTELEM, block[64]);
     EncBlockInfo  enc_blks[5*6];
     PutBitContext pbs[5*6];
     PutBitContext* pb;
@@ -855,7 +846,7 @@ static inline void dv_encode_video_segment(DVVideoContext *s,
     int       vs_bit_size = 0;
     int       qnos[5];
 
-    assert((((int)block) & 7) == 0);
+    assert((((int)block) & 15) == 0);
 
     enc_blk = &enc_blks[0];
     pb = &pbs[0];
@@ -1014,6 +1005,7 @@ static int dv_decode_mt(AVCodecContext *avctx, void* sl)
     return 0;
 }
 
+#ifdef CONFIG_ENCODERS
 static int dv_encode_mt(AVCodecContext *avctx, void* sl)
 {
     DVVideoContext *s = avctx->priv_data;
@@ -1032,7 +1024,9 @@ static int dv_encode_mt(AVCodecContext *avctx, void* sl)
                             &s->sys->video_place[slice*5]);
     return 0;
 }
+#endif
 
+#ifdef CONFIG_DECODERS
 /* NOTE: exactly one frame must be given (120000 bytes for NTSC,
    144000 bytes for PAL - or twice those for 50Mbps) */
 static int dvvideo_decode_frame(AVCodecContext *avctx,
@@ -1072,7 +1066,132 @@ static int dvvideo_decode_frame(AVCodecContext *avctx,
 
     return s->sys->frame_size;
 }
+#endif
 
+
+static inline int dv_write_pack(enum dv_pack_type pack_id, DVVideoContext *c, uint8_t* buf)
+{
+    /*
+     * Here's what SMPTE314M says about these two:
+     *    (page 6) APTn, AP1n, AP2n, AP3n: These data shall be identical
+     *             as track application IDs (APTn = 001, AP1n =
+     *             001, AP2n = 001, AP3n = 001), if the source signal
+     *             comes from a digital VCR. If the signal source is
+     *             unknown, all bits for these data shall be set to 1.
+     *    (page 12) STYPE: STYPE defines a signal type of video signal
+     *                     00000b = 4:1:1 compression
+     *                     00100b = 4:2:2 compression
+     *                     XXXXXX = Reserved
+     * Now, I've got two problems with these statements:
+     *   1. it looks like APT == 111b should be a safe bet, but it isn't.
+     *      It seems that for PAL as defined in IEC 61834 we have to set
+     *      APT to 000 and for SMPTE314M to 001.
+     *   2. It is not at all clear what STYPE is used for 4:2:0 PAL
+     *      compression scheme (if any).
+     */
+    int apt = (c->sys->pix_fmt == PIX_FMT_YUV420P ? 0 : 1);
+    int stype = (c->sys->pix_fmt == PIX_FMT_YUV422P ? 4 : 0);
+
+    uint8_t aspect = 0;
+    if((int)(av_q2d(c->avctx->sample_aspect_ratio) * c->avctx->width / c->avctx->height * 10) == 17) /* 16:9 */
+        aspect = 0x02;
+
+    buf[0] = (uint8_t)pack_id;
+    switch (pack_id) {
+    case dv_header525: /* I can't imagine why these two weren't defined as real */
+    case dv_header625: /* packs in SMPTE314M -- they definitely look like ones */
+          buf[1] = 0xf8 |               /* reserved -- always 1 */
+                   (apt & 0x07);        /* APT: Track application ID */
+          buf[2] = (0 << 7)    | /* TF1: audio data is 0 - valid; 1 - invalid */
+                   (0x0f << 3) | /* reserved -- always 1 */
+                   (apt & 0x07); /* AP1: Audio application ID */
+          buf[3] = (0 << 7)    | /* TF2: video data is 0 - valid; 1 - invalid */
+                   (0x0f << 3) | /* reserved -- always 1 */
+                   (apt & 0x07); /* AP2: Video application ID */
+          buf[4] = (0 << 7)    | /* TF3: subcode(SSYB) is 0 - valid; 1 - invalid */
+                   (0x0f << 3) | /* reserved -- always 1 */
+                   (apt & 0x07); /* AP3: Subcode application ID */
+          break;
+    case dv_video_source:
+          buf[1] = 0xff; /* reserved -- always 1 */
+          buf[2] = (1 << 7) | /* B/W: 0 - b/w, 1 - color */
+                   (1 << 6) | /* following CLF is valid - 0, invalid - 1 */
+                   (3 << 4) | /* CLF: color frames id (see ITU-R BT.470-4) */
+                   0xf; /* reserved -- always 1 */
+          buf[3] = (3 << 6) | /* reserved -- always 1 */
+                   (c->sys->dsf << 5) | /*  system: 60fields/50fields */
+                   stype; /* signal type video compression */
+          buf[4] = 0xff; /* VISC: 0xff -- no information */
+          break;
+    case dv_video_control:
+          buf[1] = (0 << 6) | /* Copy generation management (CGMS) 0 -- free */
+                   0x3f; /* reserved -- always 1 */
+          buf[2] = 0xc8 | /* reserved -- always b11001xxx */
+                   aspect;
+          buf[3] = (1 << 7) | /* Frame/field flag 1 -- frame, 0 -- field */
+                   (1 << 6) | /* First/second field flag 0 -- field 2, 1 -- field 1 */
+                   (1 << 5) | /* Frame change flag 0 -- same picture as before, 1 -- different */
+                   (1 << 4) | /* 1 - interlaced, 0 - noninterlaced */
+                   0xc; /* reserved -- always b1100 */
+          buf[4] = 0xff; /* reserved -- always 1 */
+          break;
+    default:
+          buf[1] = buf[2] = buf[3] = buf[4] = 0xff;
+    }
+    return 5;
+}
+
+static void dv_format_frame(DVVideoContext* c, uint8_t* buf)
+{
+    int chan, i, j, k;
+
+    for (chan = 0; chan < c->sys->n_difchan; chan++) {
+        for (i = 0; i < c->sys->difseg_size; i++) {
+            memset(buf, 0xff, 80 * 6); /* First 6 DIF blocks are for control data */
+
+            /* DV header: 1DIF */
+            buf += dv_write_dif_id(dv_sect_header, chan, i, 0, buf);
+            buf += dv_write_pack((c->sys->dsf ? dv_header625 : dv_header525), c, buf);
+            buf += 72; /* unused bytes */
+
+            /* DV subcode: 2DIFs */
+            for (j = 0; j < 2; j++) {
+                buf += dv_write_dif_id(dv_sect_subcode, chan, i, j, buf);
+                for (k = 0; k < 6; k++)
+                     buf += dv_write_ssyb_id(k, (i < c->sys->difseg_size/2), buf) + 5;
+                buf += 29; /* unused bytes */
+            }
+
+            /* DV VAUX: 3DIFS */
+            for (j = 0; j < 3; j++) {
+                buf += dv_write_dif_id(dv_sect_vaux, chan, i, j, buf);
+                buf += dv_write_pack(dv_video_source,  c, buf);
+                buf += dv_write_pack(dv_video_control, c, buf);
+                buf += 7*5;
+                buf += dv_write_pack(dv_video_source,  c, buf);
+                buf += dv_write_pack(dv_video_control, c, buf);
+                buf += 4*5 + 2; /* unused bytes */
+            }
+
+            /* DV Audio/Video: 135 Video DIFs + 9 Audio DIFs */
+            for (j = 0; j < 135; j++) {
+                if (j%15 == 0) {
+                    memset(buf, 0xff, 80);
+                    buf += dv_write_dif_id(dv_sect_audio, chan, i, j/15, buf);
+                    buf += 77; /* audio control & shuffled PCM audio */
+                }
+                buf += dv_write_dif_id(dv_sect_video, chan, i, j, buf);
+                buf += 77; /* 1 video macro block: 1 bytes control
+                              4 * 14 bytes Y 8x8 data
+                              10 bytes Cr 8x8 data
+                              10 bytes Cb 8x8 data */
+            }
+        }
+    }
+}
+
+
+#ifdef CONFIG_ENCODERS
 static int dvvideo_encode_frame(AVCodecContext *c, uint8_t *buf, int buf_size,
                                 void *data)
 {
@@ -1095,24 +1214,18 @@ static int dvvideo_encode_frame(AVCodecContext *c, uint8_t *buf, int buf_size,
 
     emms_c();
 
-    /* Fill in just enough of the header for dv_frame_profile() to
-       return the correct result, so that the frame can be decoded
-       correctly. The rest of the metadata is filled in by the dvvideo
-       avformat. (this should probably change so that encode_frame()
-       fills in ALL of the metadata - e.g. for Quicktime-wrapped DV
-       streams) */
-
-    /* NTSC/PAL format */
-    buf[3] = s->sys->dsf ? 0x80 : 0x00;
-
-    /* 25Mbps or 50Mbps */
-    buf[80*5 + 48 + 3] = (s->sys->pix_fmt == PIX_FMT_YUV422P) ? 0x4 : 0x0;
+    dv_format_frame(s, buf);
 
     return s->sys->frame_size;
 }
+#endif
 
 static int dvvideo_close(AVCodecContext *c)
 {
+    DVVideoContext *s = c->priv_data;
+
+    if(s->picture.data[0])
+        c->release_buffer(c, &s->picture);
 
     return 0;
 }
@@ -1126,13 +1239,11 @@ AVCodec dvvideo_encoder = {
     sizeof(DVVideoContext),
     dvvideo_init,
     dvvideo_encode_frame,
-    dvvideo_close,
-    NULL,
-    CODEC_CAP_DR1,
-    NULL
+    .pix_fmts = (enum PixelFormat[]) {PIX_FMT_YUV411P, PIX_FMT_YUV422P, PIX_FMT_YUV420P, -1},
 };
 #endif // CONFIG_DVVIDEO_ENCODER
 
+#ifdef CONFIG_DVVIDEO_DECODER
 AVCodec dvvideo_decoder = {
     "dvvideo",
     CODEC_TYPE_VIDEO,
@@ -1145,3 +1256,4 @@ AVCodec dvvideo_decoder = {
     CODEC_CAP_DR1,
     NULL
 };
+#endif

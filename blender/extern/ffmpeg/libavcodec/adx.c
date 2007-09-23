@@ -2,18 +2,20 @@
  * ADX ADPCM codecs
  * Copyright (c) 2001,2003 BERO
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avcodec.h"
@@ -43,8 +45,6 @@ typedef struct {
 #define    BASEVOL   0x4000
 #define    SCALE1    0x7298
 #define    SCALE2    0x3350
-
-#define    CLIP(s)    if (s>32767) s=32767; else if (s<-32768) s=-32768
 
 /* 18 bytes <-> 32 samples */
 
@@ -84,8 +84,7 @@ static void adx_encode(unsigned char *adx,const short *wav,PREV *prev)
 
     if (scale==0) scale=1;
 
-    adx[0] = scale>>8;
-    adx[1] = scale;
+    AV_WB16(adx, scale);
 
     for(i=0;i<16;i++) {
         adx[i+2] = ((data[i*2]/scale)<<4) | ((data[i*2+1]/scale)&0xf);
@@ -95,7 +94,7 @@ static void adx_encode(unsigned char *adx,const short *wav,PREV *prev)
 
 static void adx_decode(short *out,const unsigned char *in,PREV *prev)
 {
-    int scale = ((in[0]<<8)|(in[1]));
+    int scale = AV_RB16(in);
     int i;
     int s0,s1,s2,d;
 
@@ -109,19 +108,17 @@ static void adx_decode(short *out,const unsigned char *in,PREV *prev)
         // d>>=4; if (d&8) d-=16;
         d = ((signed char)d >> 4);
         s0 = (BASEVOL*d*scale + SCALE1*s1 - SCALE2*s2)>>14;
-        CLIP(s0);
-        *out++=s0;
         s2 = s1;
-        s1 = s0;
+        s1 = av_clip_int16(s0);
+        *out++=s1;
 
         d = in[i];
         //d&=15; if (d&8) d-=16;
         d = ((signed char)(d<<4) >> 4);
         s0 = (BASEVOL*d*scale + SCALE1*s1 - SCALE2*s2)>>14;
-        CLIP(s0);
-        *out++=s0;
         s2 = s1;
-        s1 = s0;
+        s1 = av_clip_int16(s0);
+        *out++=s1;
     }
     prev->s1 = s1;
     prev->s2 = s2;
@@ -142,14 +139,6 @@ static void adx_decode_stereo(short *out,const unsigned char *in,PREV *prev)
 }
 
 #ifdef CONFIG_ENCODERS
-
-static void write_long(unsigned char *p,uint32_t v)
-{
-    p[0] = v>>24;
-    p[1] = v>>16;
-    p[2] = v>>8;
-    p[3] = v;
-}
 
 static int adx_encode_header(AVCodecContext *avctx,unsigned char *buf,size_t bufsize)
 {
@@ -176,13 +165,13 @@ static int adx_encode_header(AVCodecContext *avctx,unsigned char *buf,size_t buf
     } adxhdr; /* big endian */
     /* offset-6 "(c)CRI" */
 #endif
-    write_long(buf+0x00,0x80000000|0x20);
-    write_long(buf+0x04,0x03120400|avctx->channels);
-    write_long(buf+0x08,avctx->sample_rate);
-    write_long(buf+0x0c,0); /* FIXME: set after */
-    write_long(buf+0x10,0x01040300);
-    write_long(buf+0x14,0x00000000);
-    write_long(buf+0x18,0x00000000);
+    AV_WB32(buf+0x00,0x80000000|0x20);
+    AV_WB32(buf+0x04,0x03120400|avctx->channels);
+    AV_WB32(buf+0x08,avctx->sample_rate);
+    AV_WB32(buf+0x0c,0); /* FIXME: set after */
+    AV_WB32(buf+0x10,0x01040300);
+    AV_WB32(buf+0x14,0x00000000);
+    AV_WB32(buf+0x18,0x00000000);
     memcpy(buf+0x1c,"\0\0(c)CRI",8);
     return 0x20+4;
 }
@@ -262,17 +251,12 @@ static int adx_encode_frame(AVCodecContext *avctx,
 
 #endif //CONFIG_ENCODERS
 
-static uint32_t read_long(const unsigned char *p)
-{
-    return (p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3];
-}
-
-int is_adx(const unsigned char *buf,size_t bufsize)
+static int is_adx(const unsigned char *buf,size_t bufsize)
 {
     int    offset;
 
     if (buf[0]!=0x80) return 0;
-    offset = (read_long(buf)^0x80000000)+4;
+    offset = (AV_RB32(buf)^0x80000000)+4;
     if (bufsize<offset || memcmp(buf+offset-6,"(c)CRI",6)) return 0;
     return offset;
 }
@@ -287,8 +271,8 @@ static int adx_decode_header(AVCodecContext *avctx,const unsigned char *buf,size
     if (offset==0) return 0;
 
     channels = buf[7];
-    freq = read_long(buf+8);
-    size = read_long(buf+12);
+    freq = AV_RB32(buf+8);
+    size = AV_RB32(buf+12);
 
 //    printf("freq=%d ch=%d\n",freq,channels);
 
@@ -385,8 +369,8 @@ static int adx_decode_frame(AVCodecContext *avctx,
 }
 
 #ifdef CONFIG_ENCODERS
-AVCodec adx_adpcm_encoder = {
-    "adx_adpcm",
+AVCodec adpcm_adx_encoder = {
+    "adpcm_adx",
     CODEC_TYPE_AUDIO,
     CODEC_ID_ADPCM_ADX,
     sizeof(ADXContext),
@@ -397,8 +381,8 @@ AVCodec adx_adpcm_encoder = {
 };
 #endif //CONFIG_ENCODERS
 
-AVCodec adx_adpcm_decoder = {
-    "adx_adpcm",
+AVCodec adpcm_adx_decoder = {
+    "adpcm_adx",
     CODEC_TYPE_AUDIO,
     CODEC_ID_ADPCM_ADX,
     sizeof(ADXContext),

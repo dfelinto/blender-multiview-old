@@ -2,20 +2,21 @@
  * Microsoft Video-1 Decoder
  * Copyright (C) 2003 the ffmpeg project
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
  */
 
 /**
@@ -34,7 +35,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "common.h"
 #include "avcodec.h"
 #include "dsputil.h"
 
@@ -61,7 +61,7 @@ typedef struct Msvideo1Context {
 
 static int msvideo1_decode_init(AVCodecContext *avctx)
 {
-    Msvideo1Context *s = (Msvideo1Context *)avctx->priv_data;
+    Msvideo1Context *s = avctx->priv_data;
 
     s->avctx = avctx;
 
@@ -74,7 +74,6 @@ static int msvideo1_decode_init(AVCodecContext *avctx)
         avctx->pix_fmt = PIX_FMT_RGB555;
     }
 
-    avctx->has_b_frames = 0;
     dsputil_init(&s->dsp, avctx);
 
     s->frame.data[0] = NULL;
@@ -243,25 +242,25 @@ static void msvideo1_decode_16bit(Msvideo1Context *s)
                 flags = (byte_b << 8) | byte_a;
 
                 CHECK_STREAM_PTR(4);
-                colors[0] = LE_16(&s->buf[stream_ptr]);
+                colors[0] = AV_RL16(&s->buf[stream_ptr]);
                 stream_ptr += 2;
-                colors[1] = LE_16(&s->buf[stream_ptr]);
+                colors[1] = AV_RL16(&s->buf[stream_ptr]);
                 stream_ptr += 2;
 
                 if (colors[0] & 0x8000) {
                     /* 8-color encoding */
                     CHECK_STREAM_PTR(12);
-                    colors[2] = LE_16(&s->buf[stream_ptr]);
+                    colors[2] = AV_RL16(&s->buf[stream_ptr]);
                     stream_ptr += 2;
-                    colors[3] = LE_16(&s->buf[stream_ptr]);
+                    colors[3] = AV_RL16(&s->buf[stream_ptr]);
                     stream_ptr += 2;
-                    colors[4] = LE_16(&s->buf[stream_ptr]);
+                    colors[4] = AV_RL16(&s->buf[stream_ptr]);
                     stream_ptr += 2;
-                    colors[5] = LE_16(&s->buf[stream_ptr]);
+                    colors[5] = AV_RL16(&s->buf[stream_ptr]);
                     stream_ptr += 2;
-                    colors[6] = LE_16(&s->buf[stream_ptr]);
+                    colors[6] = AV_RL16(&s->buf[stream_ptr]);
                     stream_ptr += 2;
-                    colors[7] = LE_16(&s->buf[stream_ptr]);
+                    colors[7] = AV_RL16(&s->buf[stream_ptr]);
                     stream_ptr += 2;
 
                     for (pixel_y = 0; pixel_y < 4; pixel_y++) {
@@ -300,7 +299,7 @@ static int msvideo1_decode_frame(AVCodecContext *avctx,
                                 void *data, int *data_size,
                                 uint8_t *buf, int buf_size)
 {
-    Msvideo1Context *s = (Msvideo1Context *)avctx->priv_data;
+    Msvideo1Context *s = avctx->priv_data;
 
     s->buf = buf;
     s->size = buf_size;
@@ -326,7 +325,7 @@ static int msvideo1_decode_frame(AVCodecContext *avctx,
 
 static int msvideo1_decode_end(AVCodecContext *avctx)
 {
-    Msvideo1Context *s = (Msvideo1Context *)avctx->priv_data;
+    Msvideo1Context *s = avctx->priv_data;
 
     if (s->frame.data[0])
         avctx->release_buffer(avctx, &s->frame);

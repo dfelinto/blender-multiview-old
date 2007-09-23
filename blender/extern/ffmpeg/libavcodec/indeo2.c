@@ -1,21 +1,22 @@
 /*
- * Indel Indeo 2 codec
+ * Intel Indeo 2 codec
  * Copyright (c) 2005 Konstantin Shishkov
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
  */
 
 /**
@@ -85,11 +86,11 @@ static int ir2_decode_plane(Ir2Context *ctx, int width, int height, uint8_t *dst
                 }
             } else { /* add two deltas from table */
                 t = dst[out - stride] + (table[c * 2] - 128);
-                t= clip_uint8(t);
+                t= av_clip_uint8(t);
                 dst[out] = t;
                 out++;
                 t = dst[out - stride] + (table[(c * 2) + 1] - 128);
-                t= clip_uint8(t);
+                t= av_clip_uint8(t);
                 dst[out] = t;
                 out++;
             }
@@ -119,11 +120,11 @@ static int ir2_decode_plane_inter(Ir2Context *ctx, int width, int height, uint8_
                 out += c * 2;
             } else { /* add two deltas from table */
                 t = dst[out] + (((table[c * 2] - 128)*3) >> 2);
-                t= clip_uint8(t);
+                t= av_clip_uint8(t);
                 dst[out] = t;
                 out++;
                 t = dst[out] + (((table[(c * 2) + 1] - 128)*3) >> 2);
-                t= clip_uint8(t);
+                t= av_clip_uint8(t);
                 dst[out] = t;
                 out++;
             }
@@ -195,11 +196,13 @@ static int ir2_decode_init(AVCodecContext *avctx){
     avctx->pix_fmt= PIX_FMT_YUV410P;
 
     if (!ir2_vlc.table)
+#ifdef ALT_BITSTREAM_READER_LE
         init_vlc(&ir2_vlc, CODE_VLC_BITS, IR2_CODES,
                  &ir2_codes[0][1], 4, 2,
-#ifdef ALT_BITSTREAM_READER_LE
                  &ir2_codes[0][0], 4, 2, INIT_VLC_USE_STATIC | INIT_VLC_LE);
 #else
+        init_vlc(&ir2_vlc, CODE_VLC_BITS, IR2_CODES,
+                 &ir2_codes[0][1], 4, 2,
                  &ir2_codes[0][0], 4, 2, INIT_VLC_USE_STATIC);
 #endif
 

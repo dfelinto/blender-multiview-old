@@ -2,18 +2,20 @@
  * Westwood SNDx codecs
  * Copyright (c) 2005 Konstantin Shishkov
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avcodec.h"
@@ -26,9 +28,6 @@
  * can be found here:
  * http://www.multimedia.cx
  */
-
-typedef struct {
-} WSSNDContext;
 
 static const char ws_adpcm_2bit[] = { -2, -1, 0, 1};
 static const char ws_adpcm_4bit[] = {
@@ -58,11 +57,19 @@ static int ws_snd_decode_frame(AVCodecContext *avctx,
     if (!buf_size)
         return 0;
 
-    out_size = LE_16(&buf[0]);
+    out_size = AV_RL16(&buf[0]);
     *data_size = out_size * 2;
-    in_size = LE_16(&buf[2]);
+    in_size = AV_RL16(&buf[2]);
     buf += 4;
 
+    if (out_size > *data_size) {
+        av_log(avctx, AV_LOG_ERROR, "Frame is too large to fit in buffer\n");
+        return -1;
+    }
+    if (in_size > buf_size) {
+        av_log(avctx, AV_LOG_ERROR, "Frame data is larger than input buffer\n");
+        return -1;
+    }
     if (in_size == out_size) {
         for (i = 0; i < out_size; i++)
             *samples++ = (*buf++ - 0x80) << 8;
@@ -137,7 +144,7 @@ AVCodec ws_snd1_decoder = {
     "ws_snd1",
     CODEC_TYPE_AUDIO,
     CODEC_ID_WESTWOOD_SND1,
-    sizeof(WSSNDContext),
+    0,
     ws_snd_decode_init,
     NULL,
     NULL,

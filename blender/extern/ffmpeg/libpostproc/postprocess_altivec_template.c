@@ -1,29 +1,26 @@
 /*
-    AltiVec optimizations (C) 2004 Romain Dolbeau <romain@dolbeau.org>
+ * AltiVec optimizations (C) 2004 Romain Dolbeau <romain@dolbeau.org>
+ *
+ * based on code by Copyright (C) 2001-2003 Michael Niedermayer (michaelni@gmx.at)
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
 
-    based on code by Copyright (C) 2001-2003 Michael Niedermayer (michaelni@gmx.at)
-
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 2 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-*/
-
-
-#ifdef CONFIG_DARWIN
-#define AVV(x...) (x)
-#else
-#define AVV(x...) {x}
-#endif
+#include "avutil.h"
 
 #define ALTIVEC_TRANSPOSE_8x8_SHORT(src_a,src_b,src_c,src_d,src_e,src_f,src_g,src_h) \
   do {                                                                  \
@@ -65,8 +62,7 @@ static inline int vertClassify_altivec(uint8_t src[], int stride, PPContext *c) 
     vector by assuming (stride % 16) == 0, unfortunately
     this is not always true.
   */
-  register int y;
-  short __attribute__ ((aligned(16))) data[8];
+  DECLARE_ALIGNED(16, short, data[8]);
   int numEq;
   uint8_t *src2 = src;
   vector signed short v_dcOffset;
@@ -205,7 +201,7 @@ static inline void doVertLowPass_altivec(uint8_t *src, int stride, PPContext *c)
   const vector signed int zero = vec_splat_s32(0);
   const int properStride = (stride % 16);
   const int srcAlign = ((unsigned long)src2 % 16);
-  short __attribute__ ((aligned(16))) qp[8];
+  DECLARE_ALIGNED(16, short, qp[8]);
   qp[0] = c->QP;
   vector signed short vqp = vec_ld(0, qp);
   vqp = vec_splat(vqp, 0);
@@ -263,7 +259,6 @@ static inline void doVertLowPass_altivec(uint8_t *src, int stride, PPContext *c)
 #undef LOAD_LINE
 #undef LOAD_LINE_ALIGNED
 
-  const vector unsigned short v_1 = vec_splat_u16(1);
   const vector unsigned short v_2 = vec_splat_u16(2);
   const vector unsigned short v_4 = vec_splat_u16(4);
 
@@ -392,7 +387,7 @@ static inline void doVertDefFilter_altivec(uint8_t src[], int stride, PPContext 
   */
   uint8_t *src2 = src;
   const vector signed int zero = vec_splat_s32(0);
-  short __attribute__ ((aligned(16))) qp[8];
+  DECLARE_ALIGNED(16, short, qp[8]);
   qp[0] = 8*c->QP;
   vector signed short vqp = vec_ld(0, qp);
   vqp = vec_splat(vqp, 0);
@@ -515,8 +510,7 @@ static inline void dering_altivec(uint8_t src[], int stride, PPContext *c) {
     src & stride :-(
   */
   uint8_t *srcCopy = src;
-  uint8_t __attribute__((aligned(16))) dt[16];
-  const vector unsigned char vuint8_1 = vec_splat_u8(1);
+  DECLARE_ALIGNED(16, uint8_t, dt[16]);
   const vector signed int zero = vec_splat_s32(0);
   vector unsigned char v_dt;
   dt[0] = deringThreshold;
@@ -580,7 +574,7 @@ static inline void dering_altivec(uint8_t src[], int stride, PPContext *c) {
     v_avg = vec_avg(v_min, v_max);
   }
 
-  signed int __attribute__((aligned(16))) S[8];
+  DECLARE_ALIGNED(16, signed int, S[8]);
   {
     const vector unsigned short mask1 = (vector unsigned short)
       AVV(0x0001, 0x0002, 0x0004, 0x0008,
@@ -676,11 +670,10 @@ static inline void dering_altivec(uint8_t src[], int stride, PPContext *c) {
   /* I'm not sure the following is actually faster
      than straight, unvectorized C code :-( */
 
-  int __attribute__((aligned(16))) tQP2[4];
+  DECLARE_ALIGNED(16, int, tQP2[4]);
   tQP2[0]= c->QP/2 + 1;
   vector signed int vQP2 = vec_ld(0, tQP2);
   vQP2 = vec_splat(vQP2, 0);
-  const vector unsigned char vuint8_2 = vec_splat_u8(2);
   const vector signed int vsint32_8 = vec_splat_s32(8);
   const vector unsigned int vuint32_4 = vec_splat_u32(4);
 
@@ -1105,9 +1098,6 @@ static inline void transpose_16x8_char_toPackedAlign_altivec(unsigned char* dst,
 
 static inline void transpose_8x16_char_fromPackedAlign_altivec(unsigned char* dst, unsigned char* src, int stride) {
   const vector unsigned char zero = vec_splat_u8(0);
-  const vector unsigned char magic_perm = (const vector unsigned char)
-    AVV(0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-        0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F);
 
 #define LOAD_DOUBLE_LINE(i, j)                                  \
   vector unsigned char src##i = vec_ld(i * 16, src);            \

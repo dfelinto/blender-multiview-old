@@ -1,19 +1,21 @@
 /*
- * AU encoder and decoder
+ * AU muxer and demuxer
  * Copyright (c) 2001 Fabrice Bellard.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -26,13 +28,14 @@
  */
 
 #include "avformat.h"
-#include "avi.h"
+#include "raw.h"
+#include "riff.h"
 
 /* if we don't know the size in advance */
-#define AU_UNKOWN_SIZE ((uint32_t)(~0))
+#define AU_UNKNOWN_SIZE ((uint32_t)(~0))
 
 /* The ffmpeg codecs we support, and the IDs they have in the file */
-static const CodecTag codec_au_tags[] = {
+static const AVCodecTag codec_au_tags[] = {
     { CODEC_ID_PCM_MULAW, 1 },
     { CODEC_ID_PCM_S16BE, 3 },
     { CODEC_ID_PCM_ALAW, 27 },
@@ -44,12 +47,10 @@ static const CodecTag codec_au_tags[] = {
 static int put_au_header(ByteIOContext *pb, AVCodecContext *enc)
 {
     if(!enc->codec_tag)
-       enc->codec_tag = codec_get_tag(codec_au_tags, enc->codec_id);
-    if(!enc->codec_tag)
         return -1;
     put_tag(pb, ".snd");       /* magic number */
     put_be32(pb, 24);           /* header size */
-    put_be32(pb, AU_UNKOWN_SIZE); /* data size */
+    put_be32(pb, AU_UNKNOWN_SIZE); /* data size */
     put_be32(pb, (uint32_t)enc->codec_tag);     /* codec ID */
     put_be32(pb, enc->sample_rate);
     put_be32(pb, (uint32_t)enc->channels);
@@ -102,8 +103,6 @@ static int au_write_trailer(AVFormatContext *s)
 static int au_probe(AVProbeData *p)
 {
     /* check file header */
-    if (p->buf_size <= 24)
-        return 0;
     if (p->buf[0] == '.' && p->buf[1] == 's' &&
         p->buf[2] == 'n' && p->buf[3] == 'd')
         return AVPROBE_SCORE_MAX;
@@ -160,10 +159,10 @@ static int au_read_packet(AVFormatContext *s,
     int ret;
 
     if (url_feof(&s->pb))
-        return AVERROR_IO;
+        return AVERROR(EIO);
     ret= av_get_packet(&s->pb, pkt, MAX_SIZE);
     if (ret < 0)
-        return AVERROR_IO;
+        return AVERROR(EIO);
     pkt->stream_index = 0;
 
     /* note: we need to modify the packet size here to handle the last
@@ -177,7 +176,8 @@ static int au_read_close(AVFormatContext *s)
     return 0;
 }
 
-static AVInputFormat au_iformat = {
+#ifdef CONFIG_AU_DEMUXER
+AVInputFormat au_demuxer = {
     "au",
     "SUN AU Format",
     0,
@@ -186,10 +186,12 @@ static AVInputFormat au_iformat = {
     au_read_packet,
     au_read_close,
     pcm_read_seek,
+    .codec_tag= (const AVCodecTag*[]){codec_au_tags, 0},
 };
+#endif
 
-#ifdef CONFIG_MUXERS
-static AVOutputFormat au_oformat = {
+#ifdef CONFIG_AU_MUXER
+AVOutputFormat au_muxer = {
     "au",
     "SUN AU Format",
     "audio/basic",
@@ -200,14 +202,6 @@ static AVOutputFormat au_oformat = {
     au_write_header,
     au_write_packet,
     au_write_trailer,
+    .codec_tag= (const AVCodecTag*[]){codec_au_tags, 0},
 };
-#endif //CONFIG_MUXERS
-
-int au_init(void)
-{
-    av_register_input_format(&au_iformat);
-#ifdef CONFIG_MUXERS
-    av_register_output_format(&au_oformat);
-#endif //CONFIG_MUXERS
-    return 0;
-}
+#endif //CONFIG_AU_MUXER

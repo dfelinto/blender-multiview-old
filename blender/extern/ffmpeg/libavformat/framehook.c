@@ -2,18 +2,20 @@
  * Video processing hooks
  * Copyright (c) 2000, 2001 Fabrice Bellard.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <errno.h>
@@ -21,7 +23,7 @@
 #include "avformat.h"
 #include "framehook.h"
 
-#ifdef CONFIG_HAVE_DLFCN
+#ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
 
@@ -39,7 +41,7 @@ static FrameHookEntry *first_hook;
 /* Returns 0 on OK */
 int frame_hook_add(int argc, char *argv[])
 {
-#ifdef HAVE_VHOOK
+#ifdef CONFIG_VHOOK
     void *loaded;
     FrameHookEntry *fhe, **fhep;
 
@@ -55,7 +57,7 @@ int frame_hook_add(int argc, char *argv[])
 
     fhe = av_mallocz(sizeof(*fhe));
     if (!fhe) {
-        return errno;
+        return AVERROR(ENOMEM);
     }
 
     fhe->Configure = dlsym(loaded, "Configure");
@@ -64,18 +66,18 @@ int frame_hook_add(int argc, char *argv[])
 
     if (!fhe->Process) {
         av_log(NULL, AV_LOG_ERROR, "Failed to find Process entrypoint in %s\n", argv[0]);
-        return -1;
+        return AVERROR(ENOENT);
     }
 
     if (!fhe->Configure && argc > 1) {
         av_log(NULL, AV_LOG_ERROR, "Failed to find Configure entrypoint in %s\n", argv[0]);
-        return -1;
+        return AVERROR(ENOENT);
     }
 
     if (argc > 1 || fhe->Configure) {
         if (fhe->Configure(&fhe->ctx, argc, argv)) {
             av_log(NULL, AV_LOG_ERROR, "Failed to Configure %s\n", argv[0]);
-            return -1;
+            return AVERROR(EINVAL);
         }
     }
 
@@ -91,11 +93,10 @@ int frame_hook_add(int argc, char *argv[])
 #endif
 }
 
-void frame_hook_process(AVPicture *pict, enum PixelFormat pix_fmt, int width, int height)
+void frame_hook_process(AVPicture *pict, enum PixelFormat pix_fmt, int width, int height, int64_t pts)
 {
     if (first_hook) {
         FrameHookEntry *fhe;
-        int64_t pts = av_gettime();
 
         for (fhe = first_hook; fhe; fhe = fhe->next) {
             fhe->Process(fhe->ctx, pict, pix_fmt, width, height, pts);

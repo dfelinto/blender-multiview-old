@@ -1,19 +1,21 @@
 /*
- * Smacker decoder
+ * Smacker demuxer
  * Copyright (c) 2006 Konstantin Shishkov.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -22,10 +24,11 @@
  */
 
 #include "avformat.h"
-#include "avi.h"
+#include "riff.h"
 #include "bswap.h"
 
 #define SMACKER_PAL 0x01
+#define SMACKER_FLAG_RING_FRAME 0x01
 
 enum SAudFlags {
     SMK_AUD_PACKED  = 0x80000000,
@@ -86,8 +89,6 @@ static const uint8_t smk_pal[64] = {
 
 static int smacker_probe(AVProbeData *p)
 {
-    if (p->buf_size < 4)
-        return 0;
     if(p->buf[0] == 'S' && p->buf[1] == 'M' && p->buf[2] == 'K'
         && (p->buf[3] == '2' || p->buf[3] == '4'))
         return AVPROBE_SCORE_MAX;
@@ -98,7 +99,7 @@ static int smacker_probe(AVProbeData *p)
 static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
 {
     ByteIOContext *pb = &s->pb;
-    SmackerContext *smk = (SmackerContext *)s->priv_data;
+    SmackerContext *smk = s->priv_data;
     AVStream *st, *ast[7];
     int i, ret;
     int tbase;
@@ -112,6 +113,8 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
     smk->frames = get_le32(pb);
     smk->pts_inc = (int32_t)get_le32(pb);
     smk->flags = get_le32(pb);
+    if(smk->flags & SMACKER_FLAG_RING_FRAME)
+        smk->frames++;
     for(i = 0; i < 7; i++)
         smk->audio[i] = get_le32(pb);
     smk->treesize = get_le32(pb);
@@ -199,7 +202,7 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
     if(ret != st->codec->extradata_size - 16){
         av_free(smk->frm_size);
         av_free(smk->frm_flags);
-        return AVERROR_IO;
+        return AVERROR(EIO);
     }
     ((int32_t*)st->codec->extradata)[0] = le2me_32(smk->mmap_size);
     ((int32_t*)st->codec->extradata)[1] = le2me_32(smk->mclr_size);
@@ -215,7 +218,7 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
 static int smacker_read_packet(AVFormatContext *s, AVPacket *pkt)
 {
-    SmackerContext *smk = (SmackerContext *)s->priv_data;
+    SmackerContext *smk = s->priv_data;
     int flags;
     int ret;
     int i;
@@ -224,7 +227,7 @@ static int smacker_read_packet(AVFormatContext *s, AVPacket *pkt)
     int pos;
 
     if (url_feof(&s->pb) || smk->cur_frame >= smk->frames)
-        return -EIO;
+        return AVERROR(EIO);
 
     /* if we demuxed all streams, pass another frame */
     if(smk->curstream < 0) {
@@ -284,32 +287,32 @@ static int smacker_read_packet(AVFormatContext *s, AVPacket *pkt)
                 smk->buf_sizes[smk->curstream] = size;
                 ret = get_buffer(&s->pb, smk->bufs[smk->curstream], size);
                 if(ret != size)
-                    return AVERROR_IO;
+                    return AVERROR(EIO);
                 smk->stream_id[smk->curstream] = smk->indexes[i];
             }
             flags >>= 1;
         }
         if (av_new_packet(pkt, frame_size + 768))
-            return AVERROR_NOMEM;
+            return AVERROR(ENOMEM);
         if(smk->frm_size[smk->cur_frame] & 1)
             palchange |= 2;
         pkt->data[0] = palchange;
         memcpy(pkt->data + 1, smk->pal, 768);
         ret = get_buffer(&s->pb, pkt->data + 769, frame_size);
         if(ret != frame_size)
-            return AVERROR_IO;
+            return AVERROR(EIO);
         pkt->stream_index = smk->videoindex;
         pkt->size = ret + 769;
         smk->cur_frame++;
         smk->nextpos = url_ftell(&s->pb);
     } else {
         if (av_new_packet(pkt, smk->buf_sizes[smk->curstream]))
-            return AVERROR_NOMEM;
+            return AVERROR(ENOMEM);
         memcpy(pkt->data, smk->bufs[smk->curstream], smk->buf_sizes[smk->curstream]);
         pkt->size = smk->buf_sizes[smk->curstream];
         pkt->stream_index = smk->stream_id[smk->curstream];
         pkt->pts = smk->aud_pts[smk->curstream];
-        smk->aud_pts[smk->curstream] += LE_32(pkt->data);
+        smk->aud_pts[smk->curstream] += AV_RL32(pkt->data);
         smk->curstream--;
     }
 
@@ -318,7 +321,7 @@ static int smacker_read_packet(AVFormatContext *s, AVPacket *pkt)
 
 static int smacker_read_close(AVFormatContext *s)
 {
-    SmackerContext *smk = (SmackerContext *)s->priv_data;
+    SmackerContext *smk = s->priv_data;
     int i;
 
     for(i = 0; i < 7; i++)
@@ -329,15 +332,10 @@ static int smacker_read_close(AVFormatContext *s)
     if(smk->frm_flags)
         av_free(smk->frm_flags);
 
-    for(i=0;i<s->nb_streams;i++) {
-        AVStream *st = s->streams[i];
-        if(st->codec->extradata)
-            av_free(st->codec->extradata);
-    }
     return 0;
 }
 
-static AVInputFormat smacker_iformat = {
+AVInputFormat smacker_demuxer = {
     "smk",
     "Smacker Video",
     sizeof(SmackerContext),
@@ -346,9 +344,3 @@ static AVInputFormat smacker_iformat = {
     smacker_read_packet,
     smacker_read_close,
 };
-
-int smacker_init(void)
-{
-    av_register_input_format(&smacker_iformat);
-    return 0;
-}

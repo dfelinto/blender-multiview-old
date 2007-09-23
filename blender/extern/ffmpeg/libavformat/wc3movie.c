@@ -2,18 +2,20 @@
  * Wing Commander III Movie (.mve) File Demuxer
  * Copyright (c) 2003 The ffmpeg Project
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -113,8 +115,8 @@ static int wc3_probe(AVProbeData *p)
     if (p->buf_size < 12)
         return 0;
 
-    if ((LE_32(&p->buf[0]) != FORM_TAG) ||
-        (LE_32(&p->buf[8]) != MOVE_TAG))
+    if ((AV_RL32(&p->buf[0]) != FORM_TAG) ||
+        (AV_RL32(&p->buf[8]) != MOVE_TAG))
         return 0;
 
     return AVPROBE_SCORE_MAX;
@@ -123,7 +125,7 @@ static int wc3_probe(AVProbeData *p)
 static int wc3_read_header(AVFormatContext *s,
                            AVFormatParameters *ap)
 {
-    Wc3DemuxContext *wc3 = (Wc3DemuxContext *)s->priv_data;
+    Wc3DemuxContext *wc3 = s->priv_data;
     ByteIOContext *pb = &s->pb;
     unsigned int fourcc_tag;
     unsigned int size;
@@ -150,9 +152,9 @@ static int wc3_read_header(AVFormatContext *s,
      * the first BRCH tag */
     if ((ret = get_buffer(pb, preamble, WC3_PREAMBLE_SIZE)) !=
         WC3_PREAMBLE_SIZE)
-        return AVERROR_IO;
-    fourcc_tag = LE_32(&preamble[0]);
-    size = (BE_32(&preamble[4]) + 1) & (~1);
+        return AVERROR(EIO);
+    fourcc_tag = AV_RL32(&preamble[0]);
+    size = (AV_RB32(&preamble[4]) + 1) & (~1);
 
     do {
         switch (fourcc_tag) {
@@ -167,8 +169,8 @@ static int wc3_read_header(AVFormatContext *s,
             /* need the number of palettes */
             url_fseek(pb, 8, SEEK_CUR);
             if ((ret = get_buffer(pb, preamble, 4)) != 4)
-                return AVERROR_IO;
-            wc3->palette_count = LE_32(&preamble[0]);
+                return AVERROR(EIO);
+            wc3->palette_count = AV_RL32(&preamble[0]);
             if((unsigned)wc3->palette_count >= UINT_MAX / PALETTE_SIZE){
                 wc3->palette_count= 0;
                 return -1;
@@ -183,16 +185,16 @@ static int wc3_read_header(AVFormatContext *s,
             else
                 bytes_to_read = 512;
             if ((ret = get_buffer(pb, s->title, bytes_to_read)) != bytes_to_read)
-                return AVERROR_IO;
+                return AVERROR(EIO);
             break;
 
         case SIZE_TAG:
             /* video resolution override */
             if ((ret = get_buffer(pb, preamble, WC3_PREAMBLE_SIZE)) !=
                 WC3_PREAMBLE_SIZE)
-                return AVERROR_IO;
-            wc3->width = LE_32(&preamble[0]);
-            wc3->height = LE_32(&preamble[4]);
+                return AVERROR(EIO);
+            wc3->width = AV_RL32(&preamble[0]);
+            wc3->height = AV_RL32(&preamble[4]);
             break;
 
         case PALT_TAG:
@@ -202,7 +204,7 @@ static int wc3_read_header(AVFormatContext *s,
             if ((ret = get_buffer(pb,
                 &wc3->palettes[current_palette * PALETTE_SIZE],
                 PALETTE_SIZE)) != PALETTE_SIZE)
-                return AVERROR_IO;
+                return AVERROR(EIO);
 
             /* transform the current palette in place */
             for (i = current_palette * PALETTE_SIZE;
@@ -226,17 +228,17 @@ static int wc3_read_header(AVFormatContext *s,
 
         if ((ret = get_buffer(pb, preamble, WC3_PREAMBLE_SIZE)) !=
             WC3_PREAMBLE_SIZE)
-            return AVERROR_IO;
-        fourcc_tag = LE_32(&preamble[0]);
+            return AVERROR(EIO);
+        fourcc_tag = AV_RL32(&preamble[0]);
         /* chunk sizes are 16-bit aligned */
-        size = (BE_32(&preamble[4]) + 1) & (~1);
+        size = (AV_RB32(&preamble[4]) + 1) & (~1);
 
     } while (fourcc_tag != BRCH_TAG);
 
     /* initialize the decoder streams */
     st = av_new_stream(s, 0);
     if (!st)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
     av_set_pts_info(st, 33, 1, 90000);
     wc3->video_stream_index = st->index;
     st->codec->codec_type = CODEC_TYPE_VIDEO;
@@ -250,7 +252,7 @@ static int wc3_read_header(AVFormatContext *s,
 
     st = av_new_stream(s, 0);
     if (!st)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
     av_set_pts_info(st, 33, 1, 90000);
     wc3->audio_stream_index = st->index;
     st->codec->codec_type = CODEC_TYPE_AUDIO;
@@ -269,7 +271,7 @@ static int wc3_read_header(AVFormatContext *s,
 static int wc3_read_packet(AVFormatContext *s,
                            AVPacket *pkt)
 {
-    Wc3DemuxContext *wc3 = (Wc3DemuxContext *)s->priv_data;
+    Wc3DemuxContext *wc3 = s->priv_data;
     ByteIOContext *pb = &s->pb;
     unsigned int fourcc_tag;
     unsigned int size;
@@ -287,11 +289,11 @@ static int wc3_read_packet(AVFormatContext *s,
         /* get the next chunk preamble */
         if ((ret = get_buffer(pb, preamble, WC3_PREAMBLE_SIZE)) !=
             WC3_PREAMBLE_SIZE)
-            ret = AVERROR_IO;
+            ret = AVERROR(EIO);
 
-        fourcc_tag = LE_32(&preamble[0]);
+        fourcc_tag = AV_RL32(&preamble[0]);
         /* chunk sizes are 16-bit aligned */
-        size = (BE_32(&preamble[4]) + 1) & (~1);
+        size = (AV_RB32(&preamble[4]) + 1) & (~1);
 
         switch (fourcc_tag) {
 
@@ -302,8 +304,8 @@ static int wc3_read_packet(AVFormatContext *s,
         case SHOT_TAG:
             /* load up new palette */
             if ((ret = get_buffer(pb, preamble, 4)) != 4)
-                return AVERROR_IO;
-            palette_number = LE_32(&preamble[0]);
+                return AVERROR(EIO);
+            palette_number = AV_RL32(&preamble[0]);
             if (palette_number >= wc3->palette_count)
                 return AVERROR_INVALIDDATA;
             base_palette_index = palette_number * PALETTE_COUNT * 3;
@@ -322,7 +324,7 @@ static int wc3_read_packet(AVFormatContext *s,
             pkt->stream_index = wc3->video_stream_index;
             pkt->pts = wc3->pts;
             if (ret != size)
-                ret = AVERROR_IO;
+                ret = AVERROR(EIO);
             packet_read = 1;
             break;
 
@@ -332,7 +334,7 @@ static int wc3_read_packet(AVFormatContext *s,
             url_fseek(pb, size, SEEK_CUR);
 #else
             if ((unsigned)size > sizeof(text) || (ret = get_buffer(pb, text, size)) != size)
-                ret = AVERROR_IO;
+                ret = AVERROR(EIO);
             else {
                 int i = 0;
                 av_log (s, AV_LOG_DEBUG, "Subtitle time!\n");
@@ -351,7 +353,7 @@ static int wc3_read_packet(AVFormatContext *s,
             pkt->stream_index = wc3->audio_stream_index;
             pkt->pts = wc3->pts;
             if (ret != size)
-                ret = AVERROR_IO;
+                ret = AVERROR(EIO);
 
             /* time to advance pts */
             wc3->pts += WC3_FRAME_PTS_INC;
@@ -374,14 +376,14 @@ static int wc3_read_packet(AVFormatContext *s,
 
 static int wc3_read_close(AVFormatContext *s)
 {
-    Wc3DemuxContext *wc3 = (Wc3DemuxContext *)s->priv_data;
+    Wc3DemuxContext *wc3 = s->priv_data;
 
     av_free(wc3->palettes);
 
     return 0;
 }
 
-static AVInputFormat wc3_iformat = {
+AVInputFormat wc3_demuxer = {
     "wc3movie",
     "Wing Commander III movie format",
     sizeof(Wc3DemuxContext),
@@ -390,9 +392,3 @@ static AVInputFormat wc3_iformat = {
     wc3_read_packet,
     wc3_read_close,
 };
-
-int wc3_init(void)
-{
-    av_register_input_format(&wc3_iformat);
-    return 0;
-}

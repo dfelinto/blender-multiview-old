@@ -1,29 +1,27 @@
 /*
  * Copyright (c) 2004 Michael Niedermayer <michaelni@gmx.at>
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
+ * License along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 //#define DEBUG
 
 // Ported by Vlad Stelmahovsky
 
 #include "avcodec.h"
-#include "common.h"
-
-#ifdef HAVE_THREADS
 
 #define INCL_DOS
 #define INCL_DOSERRORS
@@ -63,7 +61,7 @@ void thread_func(void *v){
 
 /**
  * free what has been allocated by avcodec_thread_init().
- * must be called after decoding has finished, especially dont call while avcodec_thread_execute() is running
+ * must be called after decoding has finished, especially do not call while avcodec_thread_execute() is running
  */
 void avcodec_thread_free(AVCodecContext *s){
     ThreadContext *c= s->thread_opaque;
@@ -145,4 +143,3 @@ fail:
     avcodec_thread_free(s);
     return -1;
 }
-#endif

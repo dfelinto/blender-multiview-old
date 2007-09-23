@@ -2,18 +2,20 @@
  * ASUS V1/V2 codec
  * Copyright (c) 2003 Michael Niedermayer
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -23,6 +25,7 @@
  */
 
 #include "avcodec.h"
+#include "bitstream.h"
 #include "dsputil.h"
 #include "mpegvideo.h"
 
@@ -462,6 +465,7 @@ for(i=0; i<s->avctx->extradata_size; i++){
     return (get_bits_count(&a->gb)+31)/32*4;
 }
 
+#ifdef CONFIG_ENCODERS
 static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size, void *data){
     ASV1Context * const a = avctx->priv_data;
     AVFrame *pict = data;
@@ -515,6 +519,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
 
     return size*4;
 }
+#endif /* CONFIG_ENCODERS */
 
 static void common_init(AVCodecContext *avctx){
     ASV1Context * const a = avctx->priv_data;
@@ -564,6 +569,7 @@ static int decode_init(AVCodecContext *avctx){
     return 0;
 }
 
+#ifdef CONFIG_ENCODERS
 static int encode_init(AVCodecContext *avctx){
     ASV1Context * const a = avctx->priv_data;
     int i;
@@ -587,6 +593,7 @@ static int encode_init(AVCodecContext *avctx){
 
     return 0;
 }
+#endif
 
 static int decode_end(AVCodecContext *avctx){
     ASV1Context * const a = avctx->priv_data;
@@ -632,6 +639,7 @@ AVCodec asv1_encoder = {
     encode_init,
     encode_frame,
     //encode_end,
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, -1},
 };
 
 AVCodec asv2_encoder = {
@@ -642,6 +650,7 @@ AVCodec asv2_encoder = {
     encode_init,
     encode_frame,
     //encode_end,
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, -1},
 };
 
 #endif //CONFIG_ENCODERS

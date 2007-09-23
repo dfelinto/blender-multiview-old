@@ -1,20 +1,21 @@
 /*
  * Copyright (c) 2002 The FFmpeg Project.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
  */
 
 /**
@@ -34,8 +35,6 @@ typedef struct Wmv2Context{
     MpegEncContext s;
     int j_type_bit;
     int j_type;
-    int flag3;
-    int flag63;
     int abt_flag;
     int abt_type;
     int abt_type_table[6];
@@ -59,7 +58,7 @@ static void wmv2_common_init(Wmv2Context * w){
     ff_init_scantable(s->dsp.idct_permutation, &w->abt_scantable[1], wmv2_scantableB);
 }
 
-#ifdef CONFIG_ENCODERS
+#ifdef CONFIG_WMV2_ENCODER
 
 static int encode_ext_header(Wmv2Context *w){
     MpegEncContext * const s= &w->s;
@@ -72,7 +71,7 @@ static int encode_ext_header(Wmv2Context *w){
     put_bits(&pb, 11, FFMIN(s->bit_rate/1024, 2047));
 
     put_bits(&pb, 1, w->mspel_bit=1);
-    put_bits(&pb, 1, w->flag3=1);
+    put_bits(&pb, 1, s->loop_filter);
     put_bits(&pb, 1, w->abt_flag=1);
     put_bits(&pb, 1, w->j_type_bit=1);
     put_bits(&pb, 1, w->top_left_mv_flag=0);
@@ -142,8 +141,8 @@ int ff_wmv2_encode_picture_header(MpegEncContext * s, int picture_number)
         if(w->per_mb_rl_bit) put_bits(&s->pb, 1, s->per_mb_rl_table);
 
         if(!s->per_mb_rl_table){
-            code012(&s->pb, s->rl_chroma_table_index);
-            code012(&s->pb, s->rl_table_index);
+            ff_code012(&s->pb, s->rl_chroma_table_index);
+            ff_code012(&s->pb, s->rl_table_index);
         }
 
         put_bits(&s->pb, 1, s->dc_table_index);
@@ -154,7 +153,7 @@ int ff_wmv2_encode_picture_header(MpegEncContext * s, int picture_number)
 
         put_bits(&s->pb, 2, SKIP_TYPE_NONE);
 
-        code012(&s->pb, cbp_index=0);
+        ff_code012(&s->pb, cbp_index=0);
         if(s->qscale <= 10){
             int map[3]= {0,2,1};
             w->cbp_table_index= map[cbp_index];
@@ -171,14 +170,14 @@ int ff_wmv2_encode_picture_header(MpegEncContext * s, int picture_number)
         if(w->abt_flag){
             put_bits(&s->pb, 1, w->per_mb_abt^1);
             if(!w->per_mb_abt){
-                code012(&s->pb, w->abt_type);
+                ff_code012(&s->pb, w->abt_type);
             }
         }
 
         if(w->per_mb_rl_bit) put_bits(&s->pb, 1, s->per_mb_rl_table);
 
         if(!s->per_mb_rl_table){
-            code012(&s->pb, s->rl_table_index);
+            ff_code012(&s->pb, s->rl_table_index);
             s->rl_chroma_table_index = s->rl_table_index;
         }
         put_bits(&s->pb, 1, s->dc_table_index);
@@ -192,8 +191,9 @@ int ff_wmv2_encode_picture_header(MpegEncContext * s, int picture_number)
     return 0;
 }
 
-// nearly idential to wmv1 but thats just because we dont use the useless M$ crap features
-// its duplicated here in case someone wants to add support for these carp features
+/* Nearly identical to wmv1 but that is just because we do not use the
+ * useless M$ crap features. It is duplicated here in case someone wants
+ * to add support for these crap features. */
 void ff_wmv2_encode_mb(MpegEncContext * s,
                        DCTELEM block[6][64],
                        int motion_x, int motion_y)
@@ -207,7 +207,6 @@ void ff_wmv2_encode_mb(MpegEncContext * s,
 
     if (!s->mb_intra) {
         /* compute cbp */
-        set_stat(ST_INTER_MB);
         cbp = 0;
         for (i = 0; i < 6; i++) {
             if (s->block_last_index[i] >= 0)
@@ -244,7 +243,6 @@ void ff_wmv2_encode_mb(MpegEncContext * s,
 #endif
 
         if (s->pict_type == I_TYPE) {
-            set_stat(ST_INTRA_MB);
             put_bits(&s->pb,
                      ff_msmp4_mb_i_table[coded_cbp][1], ff_msmp4_mb_i_table[coded_cbp][0]);
         } else {
@@ -252,7 +250,6 @@ void ff_wmv2_encode_mb(MpegEncContext * s,
                      wmv2_inter_table[w->cbp_table_index][cbp][1],
                      wmv2_inter_table[w->cbp_table_index][cbp][0]);
         }
-        set_stat(ST_INTRA_MB);
         put_bits(&s->pb, 1, 0);         /* no AC prediction yet */
         if(s->inter_intra_pred){
             s->h263_aic_dir=0;
@@ -261,10 +258,10 @@ void ff_wmv2_encode_mb(MpegEncContext * s,
     }
 
     for (i = 0; i < 6; i++) {
-        msmpeg4_encode_block(s, block[i], i);
+        ff_msmpeg4_encode_block(s, block[i], i);
     }
 }
-#endif //CONFIG_ENCODERS
+#endif //CONFIG_WMV2_ENCODER
 
 static void parse_mb_skip(Wmv2Context * w){
     int mb_x, mb_y;
@@ -329,7 +326,7 @@ static int decode_ext_header(Wmv2Context *w){
     fps                = get_bits(&gb, 5);
     s->bit_rate        = get_bits(&gb, 11)*1024;
     w->mspel_bit       = get_bits1(&gb);
-    w->flag3           = get_bits1(&gb);
+    s->loop_filter     = get_bits1(&gb);
     w->abt_flag        = get_bits1(&gb);
     w->j_type_bit      = get_bits1(&gb);
     w->top_left_mv_flag= get_bits1(&gb);
@@ -341,8 +338,8 @@ static int decode_ext_header(Wmv2Context *w){
     s->slice_height = s->mb_height / code;
 
     if(s->avctx->debug&FF_DEBUG_PICT_INFO){
-        av_log(s->avctx, AV_LOG_DEBUG, "fps:%d, br:%d, qpbit:%d, abt_flag:%d, j_type_bit:%d, tl_mv_flag:%d, mbrl_bit:%d, code:%d, flag3:%d, slices:%d\n",
-        fps, s->bit_rate, w->mspel_bit, w->abt_flag, w->j_type_bit, w->top_left_mv_flag, w->per_mb_rl_bit, code, w->flag3,
+        av_log(s->avctx, AV_LOG_DEBUG, "fps:%d, br:%d, qpbit:%d, abt_flag:%d, j_type_bit:%d, tl_mv_flag:%d, mbrl_bit:%d, code:%d, loop_filter:%d, slices:%d\n",
+        fps, s->bit_rate, w->mspel_bit, w->abt_flag, w->j_type_bit, w->top_left_mv_flag, w->per_mb_rl_bit, code, s->loop_filter,
         code);
     }
     return 0;
@@ -366,7 +363,7 @@ return -1;
     if(s->picture_number==0)
         decode_ext_header(w);
 
-    s->pict_type = get_bits(&s->gb, 1) + 1;
+    s->pict_type = get_bits1(&s->gb) + 1;
     if(s->pict_type == I_TYPE){
         code = get_bits(&s->gb, 7);
         av_log(s->avctx, AV_LOG_DEBUG, "I7:%X/\n", code);
@@ -514,7 +511,7 @@ static int16_t *wmv2_pred_motion(Wmv2Context *w, int *px, int *py){
     C = s->current_picture.motion_val[0][xy + 2 - wrap];
 
     if(s->mb_x && !s->first_slice_line && !s->mspel && w->top_left_mv_flag)
-        diff= FFMAX(ABS(A[0] - B[0]), ABS(A[1] - B[1]));
+        diff= FFMAX(FFABS(A[0] - B[0]), FFABS(A[1] - B[1]));
     else
         diff=0;
 
@@ -642,8 +639,14 @@ void ff_mspel_motion(MpegEncContext *s,
 
     /* WARNING: do no forget half pels */
     v_edge_pos = s->v_edge_pos;
-    src_x = clip(src_x, -16, s->width);
-    src_y = clip(src_y, -16, s->height);
+    src_x = av_clip(src_x, -16, s->width);
+    src_y = av_clip(src_y, -16, s->height);
+
+    if(src_x<=-16 || src_x >= s->width)
+        dxy &= ~3;
+    if(src_y<=-16 || src_y >= s->height)
+        dxy &= ~4;
+
     linesize   = s->linesize;
     uvlinesize = s->uvlinesize;
     ptr = ref_picture[0] + (src_y * linesize) + src_x;
@@ -683,10 +686,10 @@ void ff_mspel_motion(MpegEncContext *s,
 
     src_x = s->mb_x * 8 + mx;
     src_y = s->mb_y * 8 + my;
-    src_x = clip(src_x, -8, s->width >> 1);
+    src_x = av_clip(src_x, -8, s->width >> 1);
     if (src_x == (s->width >> 1))
         dxy &= ~1;
-    src_y = clip(src_y, -8, s->height >> 1);
+    src_y = av_clip(src_y, -8, s->height >> 1);
     if (src_y == (s->height >> 1))
         dxy &= ~2;
     offset = (src_y * uvlinesize) + src_x;
@@ -830,6 +833,7 @@ static int wmv2_decode_init(AVCodecContext *avctx){
     return 0;
 }
 
+#ifdef CONFIG_WMV2_DECODER
 AVCodec wmv2_decoder = {
     "wmv2",
     CODEC_TYPE_VIDEO,
@@ -841,8 +845,9 @@ AVCodec wmv2_decoder = {
     ff_h263_decode_frame,
     CODEC_CAP_DRAW_HORIZ_BAND | CODEC_CAP_DR1,
 };
+#endif
 
-#ifdef CONFIG_ENCODERS
+#ifdef CONFIG_WMV2_ENCODER
 AVCodec wmv2_encoder = {
     "wmv2",
     CODEC_TYPE_VIDEO,
@@ -851,5 +856,6 @@ AVCodec wmv2_encoder = {
     wmv2_encode_init,
     MPV_encode_picture,
     MPV_encode_end,
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, -1},
 };
 #endif

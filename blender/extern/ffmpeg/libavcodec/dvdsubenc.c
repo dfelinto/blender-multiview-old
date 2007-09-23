@@ -2,27 +2,27 @@
  * DVD subtitle encoding for ffmpeg
  * Copyright (c) 2005 Wolfram Gloger.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avcodec.h"
+#include "bytestream.h"
 
 #undef NDEBUG
 #include <assert.h>
-
-typedef struct DVDSubtitleContext {
-} DVDSubtitleContext;
 
 // ncnt is the nibble counter
 #define PUTNIBBLE(val)\
@@ -83,14 +83,6 @@ static void dvd_encode_rle(uint8_t **pq,
         bitmap += linesize;
     }
 
-    *pq = q;
-}
-
-static inline void putbe16(uint8_t **pq, uint16_t v)
-{
-    uint8_t *q = *pq;
-    *q++ = v >> 8;
-    *q++ = v;
     *pq = q;
 }
 
@@ -164,11 +156,11 @@ static int encode_dvd_subtitles(uint8_t *outbuf, int outbuf_size,
 
     // set data packet size
     qq = outbuf + 2;
-    putbe16(&qq, q - outbuf);
+    bytestream_put_be16(&qq, q - outbuf);
 
     // send start display command
-    putbe16(&q, (h->start_display_time*90) >> 10);
-    putbe16(&q, (q - outbuf) /*- 2 */ + 8 + 12*rects + 2);
+    bytestream_put_be16(&q, (h->start_display_time*90) >> 10);
+    bytestream_put_be16(&q, (q - outbuf) /*- 2 */ + 8 + 12*rects + 2);
     *q++ = 0x03; // palette - 4 nibbles
     *q++ = 0x03; *q++ = 0x7f;
     *q++ = 0x04; // alpha - 4 nibbles
@@ -193,20 +185,20 @@ static int encode_dvd_subtitles(uint8_t *outbuf, int outbuf_size,
 
         *q++ = 0x06;
         // offset1, offset2
-        putbe16(&q, offset1[object_id]);
-        putbe16(&q, offset2[object_id]);
+        bytestream_put_be16(&q, offset1[object_id]);
+        bytestream_put_be16(&q, offset2[object_id]);
     }
     *q++ = 0x01; // start command
     *q++ = 0xff; // terminating command
 
     // send stop display command last
-    putbe16(&q, (h->end_display_time*90) >> 10);
-    putbe16(&q, (q - outbuf) - 2 /*+ 4*/);
+    bytestream_put_be16(&q, (h->end_display_time*90) >> 10);
+    bytestream_put_be16(&q, (q - outbuf) - 2 /*+ 4*/);
     *q++ = 0x02; // set end
     *q++ = 0xff; // terminating command
 
     qq = outbuf;
-    putbe16(&qq, q - outbuf);
+    bytestream_put_be16(&qq, q - outbuf);
 
     av_log(NULL, AV_LOG_DEBUG, "subtitle_packet size=%td\n", q - outbuf);
     return q - outbuf;
@@ -237,7 +229,7 @@ AVCodec dvdsub_encoder = {
     "dvdsub",
     CODEC_TYPE_SUBTITLE,
     CODEC_ID_DVD_SUBTITLE,
-    sizeof(DVDSubtitleContext),
+    0,
     dvdsub_init_encoder,
     dvdsub_encode,
     dvdsub_close_encoder,

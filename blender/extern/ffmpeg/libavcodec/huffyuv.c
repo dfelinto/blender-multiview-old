@@ -3,22 +3,24 @@
  *
  * Copyright (c) 2002-2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This library is free software; you can redistribute it and/or
+ * see http://www.pcisys.net/~melanson/codecs/huffyuv.txt for a description of
+ * the algorithm used
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
- * see http://www.pcisys.net/~melanson/codecs/huffyuv.txt for a description of
- * the algorithm used
  */
 
 /**
@@ -26,9 +28,8 @@
  * huffyuv codec for libavcodec.
  */
 
-#include "common.h"
-#include "bitstream.h"
 #include "avcodec.h"
+#include "bitstream.h"
 #include "dsputil.h"
 
 #define VLC_BITS 11
@@ -69,7 +70,8 @@ typedef struct HYuvContext{
     uint64_t stats[3][256];
     uint8_t len[3][256];
     uint32_t bits[3][256];
-    VLC vlc[3];
+    uint32_t pix_bgr_map[1<<VLC_BITS];
+    VLC vlc[6];                             //Y,U,V,YY,YU,YV
     AVFrame picture;
     uint8_t *bitstream_buffer;
     unsigned int bitstream_buffer_size;
@@ -204,6 +206,29 @@ static inline int sub_left_prediction(HYuvContext *s, uint8_t *dst, uint8_t *src
     }
 }
 
+static inline void sub_left_prediction_bgr32(HYuvContext *s, uint8_t *dst, uint8_t *src, int w, int *red, int *green, int *blue){
+    int i;
+    int r,g,b;
+    r= *red;
+    g= *green;
+    b= *blue;
+    for(i=0; i<FFMIN(w,4); i++){
+        const int rt= src[i*4+R];
+        const int gt= src[i*4+G];
+        const int bt= src[i*4+B];
+        dst[i*4+R]= rt - r;
+        dst[i*4+G]= gt - g;
+        dst[i*4+B]= bt - b;
+        r = rt;
+        g = gt;
+        b = bt;
+    }
+    s->dsp.diff_bytes(dst+16, src+16, src+12, w*4-16);
+    *red=   src[(w-1)*4+R];
+    *green= src[(w-1)*4+G];
+    *blue=  src[(w-1)*4+B];
+}
+
 static void read_len_table(uint8_t *dst, GetBitContext *gb){
     int i, val, repeat;
 
@@ -236,59 +261,130 @@ static int generate_bits_table(uint32_t *dst, uint8_t *len_table){
     return 0;
 }
 
+#ifdef CONFIG_ENCODERS
+typedef struct {
+    uint64_t val;
+    int name;
+} heap_elem_t;
+
+static void heap_sift(heap_elem_t *h, int root, int size)
+{
+    while(root*2+1 < size) {
+        int child = root*2+1;
+        if(child < size-1 && h[child].val > h[child+1].val)
+            child++;
+        if(h[root].val > h[child].val) {
+            FFSWAP(heap_elem_t, h[root], h[child]);
+            root = child;
+        } else
+            break;
+    }
+}
+
 static void generate_len_table(uint8_t *dst, uint64_t *stats, int size){
-    uint64_t counts[2*size];
+    heap_elem_t h[size];
     int up[2*size];
+    int len[2*size];
     int offset, i, next;
 
     for(offset=1; ; offset<<=1){
         for(i=0; i<size; i++){
-            counts[i]= stats[i] + offset - 1;
+            h[i].name = i;
+            h[i].val = (stats[i] << 8) + offset;
+        }
+        for(i=size/2-1; i>=0; i--)
+            heap_sift(h, i, size);
+
+        for(next=size; next<size*2-1; next++){
+            // merge the two smallest entries, and put it back in the heap
+            uint64_t min1v = h[0].val;
+            up[h[0].name] = next;
+            h[0].val = INT64_MAX;
+            heap_sift(h, 0, size);
+            up[h[0].name] = next;
+            h[0].name = next;
+            h[0].val += min1v;
+            heap_sift(h, 0, size);
         }
 
-        for(next=size; next<size*2; next++){
-            uint64_t min1, min2;
-            int min1_i, min2_i;
-
-            min1=min2= INT64_MAX;
-            min1_i= min2_i=-1;
-
-            for(i=0; i<next; i++){
-                if(min2 > counts[i]){
-                    if(min1 > counts[i]){
-                        min2= min1;
-                        min2_i= min1_i;
-                        min1= counts[i];
-                        min1_i= i;
-                    }else{
-                        min2= counts[i];
-                        min2_i= i;
-                    }
-                }
-            }
-
-            if(min2==INT64_MAX) break;
-
-            counts[next]= min1 + min2;
-            counts[min1_i]=
-            counts[min2_i]= INT64_MAX;
-            up[min1_i]=
-            up[min2_i]= next;
-            up[next]= -1;
-        }
-
-        for(i=0; i<size; i++){
-            int len;
-            int index=i;
-
-            for(len=0; up[index] != -1; len++)
-                index= up[index];
-
-            if(len >= 32) break;
-
-            dst[i]= len;
+        len[2*size-2] = 0;
+        for(i=2*size-3; i>=size; i--)
+            len[i] = len[up[i]] + 1;
+        for(i=0; i<size; i++) {
+            dst[i] = len[up[i]] + 1;
+            if(dst[i] >= 32) break;
         }
         if(i==size) break;
+    }
+}
+#endif /* CONFIG_ENCODERS */
+
+static void generate_joint_tables(HYuvContext *s){
+    uint16_t symbols[1<<VLC_BITS];
+    uint16_t bits[1<<VLC_BITS];
+    uint8_t len[1<<VLC_BITS];
+    if(s->bitstream_bpp < 24){
+        int p, i, y, u;
+        for(p=0; p<3; p++){
+            for(i=y=0; y<256; y++){
+                int len0 = s->len[0][y];
+                int limit = VLC_BITS - len0;
+                if(limit <= 0)
+                    continue;
+                for(u=0; u<256; u++){
+                    int len1 = s->len[p][u];
+                    if(len1 > limit)
+                        continue;
+                    len[i] = len0 + len1;
+                    bits[i] = (s->bits[0][y] << len1) + s->bits[p][u];
+                    symbols[i] = (y<<8) + u;
+                    if(symbols[i] != 0xffff) // reserved to mean "invalid"
+                        i++;
+                }
+            }
+            free_vlc(&s->vlc[3+p]);
+            init_vlc_sparse(&s->vlc[3+p], VLC_BITS, i, len, 1, 1, bits, 2, 2, symbols, 2, 2, 0);
+        }
+    }else{
+        uint8_t (*map)[4] = (uint8_t(*)[4])s->pix_bgr_map;
+        int i, b, g, r, code;
+        int p0 = s->decorrelate;
+        int p1 = !s->decorrelate;
+        // restrict the range to +/-16 becaues that's pretty much guaranteed to
+        // cover all the combinations that fit in 11 bits total, and it doesn't
+        // matter if we miss a few rare codes.
+        for(i=0, g=-16; g<16; g++){
+            int len0 = s->len[p0][g&255];
+            int limit0 = VLC_BITS - len0;
+            if(limit0 < 2)
+                continue;
+            for(b=-16; b<16; b++){
+                int len1 = s->len[p1][b&255];
+                int limit1 = limit0 - len1;
+                if(limit1 < 1)
+                    continue;
+                code = (s->bits[p0][g&255] << len1) + s->bits[p1][b&255];
+                for(r=-16; r<16; r++){
+                    int len2 = s->len[2][r&255];
+                    if(len2 > limit1)
+                        continue;
+                    len[i] = len0 + len1 + len2;
+                    bits[i] = (code << len2) + s->bits[2][r&255];
+                    if(s->decorrelate){
+                        map[i][G] = g;
+                        map[i][B] = g+b;
+                        map[i][R] = g+r;
+                    }else{
+                        map[i][B] = g;
+                        map[i][G] = b;
+                        map[i][R] = r;
+                    }
+                    i++;
+                }
+            }
+        }
+        free_vlc(&s->vlc[3]);
+        init_vlc(&s->vlc[3], VLC_BITS, i, len, 1, 1, bits, 2, 2, 0);
     }
 }
 
@@ -312,6 +408,8 @@ printf("%6X, %2d,  %3d\n", s->bits[i][j], s->len[i][j], j);
         free_vlc(&s->vlc[i]);
         init_vlc(&s->vlc[i], VLC_BITS, 256, s->len[i], 1, 1, s->bits[i], 4, 4, 0);
     }
+
+    generate_joint_tables(s);
 
     return (get_bits_count(&gb)+7)/8;
 }
@@ -341,6 +439,8 @@ static int read_old_huffman_tables(HYuvContext *s){
         init_vlc(&s->vlc[i], VLC_BITS, 256, s->len[i], 1, 1, s->bits[i], 4, 4, 0);
     }
 
+    generate_joint_tables(s);
+
     return 0;
 #else
     av_log(s->avctx, AV_LOG_DEBUG, "v1 huffyuv is not supported \n");
@@ -356,7 +456,9 @@ static void alloc_temp(HYuvContext *s){
             s->temp[i]= av_malloc(s->width + 16);
         }
     }else{
-        s->temp[0]= av_malloc(4*s->width + 16);
+        for(i=0; i<2; i++){
+            s->temp[i]= av_malloc(4*s->width + 16);
+        }
     }
 }
 
@@ -375,6 +477,7 @@ static int common_init(AVCodecContext *avctx){
     return 0;
 }
 
+#ifdef CONFIG_DECODERS
 static int decode_init(AVCodecContext *avctx)
 {
     HYuvContext *s = avctx->priv_data;
@@ -447,7 +550,7 @@ s->bgr32=1;
         break;
     case 16:
         if(s->yuy2){
-            avctx->pix_fmt = PIX_FMT_YUV422;
+            avctx->pix_fmt = PIX_FMT_YUYV422;
         }else{
             avctx->pix_fmt = PIX_FMT_YUV422P;
         }
@@ -455,7 +558,7 @@ s->bgr32=1;
     case 24:
     case 32:
         if(s->bgr32){
-            avctx->pix_fmt = PIX_FMT_RGBA32;
+            avctx->pix_fmt = PIX_FMT_RGB32;
         }else{
             avctx->pix_fmt = PIX_FMT_BGR24;
         }
@@ -470,7 +573,9 @@ s->bgr32=1;
 
     return 0;
 }
+#endif
 
+#ifdef CONFIG_ENCODERS
 static int store_table(HYuvContext *s, uint8_t *len, uint8_t *buf){
     int i;
     int index= 0;
@@ -514,6 +619,9 @@ static int encode_init(AVCodecContext *avctx)
     case PIX_FMT_YUV422P:
         s->bitstream_bpp= 16;
         break;
+    case PIX_FMT_RGB32:
+        s->bitstream_bpp= 24;
+        break;
     default:
         av_log(avctx, AV_LOG_ERROR, "format not supported\n");
         return -1;
@@ -543,7 +651,12 @@ static int encode_init(AVCodecContext *avctx)
             av_log(avctx, AV_LOG_INFO, "using huffyuv 2.2.0 or newer interlacing flag\n");
     }
 
-    ((uint8_t*)avctx->extradata)[0]= s->predictor;
+    if(s->bitstream_bpp>=24 && s->predictor==MEDIAN){
+        av_log(avctx, AV_LOG_ERROR, "Error: RGB is incompatible with median predictor\n");
+        return -1;
+    }
+
+    ((uint8_t*)avctx->extradata)[0]= s->predictor | (s->decorrelate << 6);
     ((uint8_t*)avctx->extradata)[1]= s->bitstream_bpp;
     ((uint8_t*)avctx->extradata)[2]= s->interlaced ? 0x10 : 0x20;
     if(s->context)
@@ -612,6 +725,20 @@ static int encode_init(AVCodecContext *avctx)
 
     return 0;
 }
+#endif /* CONFIG_ENCODERS */
+
+/* TODO instead of restarting the read when the code isn't in the first level
+ * of the joint table, jump into the 2nd level of the individual table. */
+#define READ_2PIX(dst0, dst1, plane1){\
+    uint16_t code = get_vlc2(&s->gb, s->vlc[3+plane1].table, VLC_BITS, 1);\
+    if(code != 0xffff){\
+        dst0 = code>>8;\
+        dst1 = code;\
+    }else{\
+        dst0 = get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3);\
+        dst1 = get_vlc2(&s->gb, s->vlc[plane1].table, VLC_BITS, 3);\
+    }\
+}
 
 static void decode_422_bitstream(HYuvContext *s, int count){
     int i;
@@ -619,10 +746,8 @@ static void decode_422_bitstream(HYuvContext *s, int count){
     count/=2;
 
     for(i=0; i<count; i++){
-        s->temp[0][2*i  ]= get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3);
-        s->temp[1][  i  ]= get_vlc2(&s->gb, s->vlc[1].table, VLC_BITS, 3);
-        s->temp[0][2*i+1]= get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3);
-        s->temp[2][  i  ]= get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3);
+        READ_2PIX(s->temp[0][2*i  ], s->temp[1][i], 1);
+        READ_2PIX(s->temp[0][2*i+1], s->temp[2][i], 2);
     }
 }
 
@@ -632,11 +757,11 @@ static void decode_gray_bitstream(HYuvContext *s, int count){
     count/=2;
 
     for(i=0; i<count; i++){
-        s->temp[0][2*i  ]= get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3);
-        s->temp[0][2*i+1]= get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3);
+        READ_2PIX(s->temp[0][2*i  ], s->temp[0][2*i+1], 0);
     }
 }
 
+#ifdef CONFIG_ENCODERS
 static int encode_422_bitstream(HYuvContext *s, int count){
     int i;
 
@@ -645,34 +770,43 @@ static int encode_422_bitstream(HYuvContext *s, int count){
         return -1;
     }
 
+#define LOAD4\
+            int y0 = s->temp[0][2*i];\
+            int y1 = s->temp[0][2*i+1];\
+            int u0 = s->temp[1][i];\
+            int v0 = s->temp[2][i];
+
     count/=2;
     if(s->flags&CODEC_FLAG_PASS1){
         for(i=0; i<count; i++){
-            s->stats[0][ s->temp[0][2*i  ] ]++;
-            s->stats[1][ s->temp[1][  i  ] ]++;
-            s->stats[0][ s->temp[0][2*i+1] ]++;
-            s->stats[2][ s->temp[2][  i  ] ]++;
+            LOAD4;
+            s->stats[0][y0]++;
+            s->stats[1][u0]++;
+            s->stats[0][y1]++;
+            s->stats[2][v0]++;
         }
     }
     if(s->avctx->flags2&CODEC_FLAG2_NO_OUTPUT)
         return 0;
     if(s->context){
         for(i=0; i<count; i++){
-            s->stats[0][ s->temp[0][2*i  ] ]++;
-            put_bits(&s->pb, s->len[0][ s->temp[0][2*i  ] ], s->bits[0][ s->temp[0][2*i  ] ]);
-            s->stats[1][ s->temp[1][  i  ] ]++;
-            put_bits(&s->pb, s->len[1][ s->temp[1][  i  ] ], s->bits[1][ s->temp[1][  i  ] ]);
-            s->stats[0][ s->temp[0][2*i+1] ]++;
-            put_bits(&s->pb, s->len[0][ s->temp[0][2*i+1] ], s->bits[0][ s->temp[0][2*i+1] ]);
-            s->stats[2][ s->temp[2][  i  ] ]++;
-            put_bits(&s->pb, s->len[2][ s->temp[2][  i  ] ], s->bits[2][ s->temp[2][  i  ] ]);
+            LOAD4;
+            s->stats[0][y0]++;
+            put_bits(&s->pb, s->len[0][y0], s->bits[0][y0]);
+            s->stats[1][u0]++;
+            put_bits(&s->pb, s->len[1][u0], s->bits[1][u0]);
+            s->stats[0][y1]++;
+            put_bits(&s->pb, s->len[0][y1], s->bits[0][y1]);
+            s->stats[2][v0]++;
+            put_bits(&s->pb, s->len[2][v0], s->bits[2][v0]);
         }
     }else{
         for(i=0; i<count; i++){
-            put_bits(&s->pb, s->len[0][ s->temp[0][2*i  ] ], s->bits[0][ s->temp[0][2*i  ] ]);
-            put_bits(&s->pb, s->len[1][ s->temp[1][  i  ] ], s->bits[1][ s->temp[1][  i  ] ]);
-            put_bits(&s->pb, s->len[0][ s->temp[0][2*i+1] ], s->bits[0][ s->temp[0][2*i+1] ]);
-            put_bits(&s->pb, s->len[2][ s->temp[2][  i  ] ], s->bits[2][ s->temp[2][  i  ] ]);
+            LOAD4;
+            put_bits(&s->pb, s->len[0][y0], s->bits[0][y0]);
+            put_bits(&s->pb, s->len[1][u0], s->bits[1][u0]);
+            put_bits(&s->pb, s->len[0][y1], s->bits[0][y1]);
+            put_bits(&s->pb, s->len[2][v0], s->bits[2][v0]);
         }
     }
     return 0;
@@ -686,11 +820,21 @@ static int encode_gray_bitstream(HYuvContext *s, int count){
         return -1;
     }
 
+#define LOAD2\
+            int y0 = s->temp[0][2*i];\
+            int y1 = s->temp[0][2*i+1];
+#define STAT2\
+            s->stats[0][y0]++;\
+            s->stats[0][y1]++;
+#define WRITE2\
+            put_bits(&s->pb, s->len[0][y0], s->bits[0][y0]);\
+            put_bits(&s->pb, s->len[0][y1], s->bits[0][y1]);
+
     count/=2;
     if(s->flags&CODEC_FLAG_PASS1){
         for(i=0; i<count; i++){
-            s->stats[0][ s->temp[0][2*i  ] ]++;
-            s->stats[0][ s->temp[0][2*i+1] ]++;
+            LOAD2;
+            STAT2;
         }
     }
     if(s->avctx->flags2&CODEC_FLAG2_NO_OUTPUT)
@@ -698,56 +842,96 @@ static int encode_gray_bitstream(HYuvContext *s, int count){
 
     if(s->context){
         for(i=0; i<count; i++){
-            s->stats[0][ s->temp[0][2*i  ] ]++;
-            put_bits(&s->pb, s->len[0][ s->temp[0][2*i  ] ], s->bits[0][ s->temp[0][2*i  ] ]);
-            s->stats[0][ s->temp[0][2*i+1] ]++;
-            put_bits(&s->pb, s->len[0][ s->temp[0][2*i+1] ], s->bits[0][ s->temp[0][2*i+1] ]);
+            LOAD2;
+            STAT2;
+            WRITE2;
         }
     }else{
         for(i=0; i<count; i++){
-            put_bits(&s->pb, s->len[0][ s->temp[0][2*i  ] ], s->bits[0][ s->temp[0][2*i  ] ]);
-            put_bits(&s->pb, s->len[0][ s->temp[0][2*i+1] ], s->bits[0][ s->temp[0][2*i+1] ]);
+            LOAD2;
+            WRITE2;
+        }
+    }
+    return 0;
+}
+#endif /* CONFIG_ENCODERS */
+
+static av_always_inline void decode_bgr_1(HYuvContext *s, int count, int decorrelate, int alpha){
+    int i;
+    for(i=0; i<count; i++){
+        int code = get_vlc2(&s->gb, s->vlc[3].table, VLC_BITS, 1);
+        if(code != -1){
+            *(uint32_t*)&s->temp[0][4*i] = s->pix_bgr_map[code];
+        }else if(decorrelate){
+            s->temp[0][4*i+G] = get_vlc2(&s->gb, s->vlc[1].table, VLC_BITS, 3);
+            s->temp[0][4*i+B] = get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3) + s->temp[0][4*i+G];
+            s->temp[0][4*i+R] = get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3) + s->temp[0][4*i+G];
+        }else{
+            s->temp[0][4*i+B] = get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3);
+            s->temp[0][4*i+G] = get_vlc2(&s->gb, s->vlc[1].table, VLC_BITS, 3);
+            s->temp[0][4*i+R] = get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3);
+        }
+        if(alpha)
+            get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3); //?!
+    }
+}
+
+static void decode_bgr_bitstream(HYuvContext *s, int count){
+    if(s->decorrelate){
+        if(s->bitstream_bpp==24)
+            decode_bgr_1(s, count, 1, 0);
+        else
+            decode_bgr_1(s, count, 1, 1);
+    }else{
+        if(s->bitstream_bpp==24)
+            decode_bgr_1(s, count, 0, 0);
+        else
+            decode_bgr_1(s, count, 0, 1);
+    }
+}
+
+static int encode_bgr_bitstream(HYuvContext *s, int count){
+    int i;
+
+    if(s->pb.buf_end - s->pb.buf - (put_bits_count(&s->pb)>>3) < 3*4*count){
+        av_log(s->avctx, AV_LOG_ERROR, "encoded frame too large\n");
+        return -1;
+    }
+
+#define LOAD3\
+            int g= s->temp[0][4*i+G];\
+            int b= (s->temp[0][4*i+B] - g) & 0xff;\
+            int r= (s->temp[0][4*i+R] - g) & 0xff;
+#define STAT3\
+            s->stats[0][b]++;\
+            s->stats[1][g]++;\
+            s->stats[2][r]++;
+#define WRITE3\
+            put_bits(&s->pb, s->len[1][g], s->bits[1][g]);\
+            put_bits(&s->pb, s->len[0][b], s->bits[0][b]);\
+            put_bits(&s->pb, s->len[2][r], s->bits[2][r]);
+
+    if((s->flags&CODEC_FLAG_PASS1) && (s->avctx->flags2&CODEC_FLAG2_NO_OUTPUT)){
+        for(i=0; i<count; i++){
+            LOAD3;
+            STAT3;
+        }
+    }else if(s->context || (s->flags&CODEC_FLAG_PASS1)){
+        for(i=0; i<count; i++){
+            LOAD3;
+            STAT3;
+            WRITE3;
+        }
+    }else{
+        for(i=0; i<count; i++){
+            LOAD3;
+            WRITE3;
         }
     }
     return 0;
 }
 
-static void decode_bgr_bitstream(HYuvContext *s, int count){
-    int i;
-
-    if(s->decorrelate){
-        if(s->bitstream_bpp==24){
-            for(i=0; i<count; i++){
-                s->temp[0][4*i+G]= get_vlc2(&s->gb, s->vlc[1].table, VLC_BITS, 3);
-                s->temp[0][4*i+B]= get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3) + s->temp[0][4*i+G];
-                s->temp[0][4*i+R]= get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3) + s->temp[0][4*i+G];
-            }
-        }else{
-            for(i=0; i<count; i++){
-                s->temp[0][4*i+G]= get_vlc2(&s->gb, s->vlc[1].table, VLC_BITS, 3);
-                s->temp[0][4*i+B]= get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3) + s->temp[0][4*i+G];
-                s->temp[0][4*i+R]= get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3) + s->temp[0][4*i+G];
-                                   get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3); //?!
-            }
-        }
-    }else{
-        if(s->bitstream_bpp==24){
-            for(i=0; i<count; i++){
-                s->temp[0][4*i+B]= get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3);
-                s->temp[0][4*i+G]= get_vlc2(&s->gb, s->vlc[1].table, VLC_BITS, 3);
-                s->temp[0][4*i+R]= get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3);
-            }
-        }else{
-            for(i=0; i<count; i++){
-                s->temp[0][4*i+B]= get_vlc2(&s->gb, s->vlc[0].table, VLC_BITS, 3);
-                s->temp[0][4*i+G]= get_vlc2(&s->gb, s->vlc[1].table, VLC_BITS, 3);
-                s->temp[0][4*i+R]= get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3);
-                                   get_vlc2(&s->gb, s->vlc[2].table, VLC_BITS, 3); //?!
-            }
-        }
-    }
-}
-
+#ifdef CONFIG_DECODERS
 static void draw_slice(HYuvContext *s, int y){
     int h, cy;
     int offset[4];
@@ -985,7 +1169,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, uint8
                 decode_bgr_bitstream(s, width-1);
                 add_left_prediction_bgr32(p->data[0] + last_line+4, s->temp[0], width-1, &leftr, &leftg, &leftb);
 
-                for(y=s->height-2; y>=0; y--){ //yes its stored upside down
+                for(y=s->height-2; y>=0; y--){ //Yes it is stored upside down.
                     decode_bgr_bitstream(s, width);
 
                     add_left_prediction_bgr32(p->data[0] + p->linesize[0]*y, s->temp[0], width, &leftr, &leftg, &leftb);
@@ -1014,6 +1198,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size, uint8
 
     return (get_bits_count(&s->gb)+31)/32*4 + table_size;
 }
+#endif
 
 static int common_end(HYuvContext *s){
     int i;
@@ -1024,6 +1209,7 @@ static int common_end(HYuvContext *s){
     return 0;
 }
 
+#ifdef CONFIG_DECODERS
 static int decode_end(AVCodecContext *avctx)
 {
     HYuvContext *s = avctx->priv_data;
@@ -1032,13 +1218,15 @@ static int decode_end(AVCodecContext *avctx)
     common_end(s);
     av_freep(&s->bitstream_buffer);
 
-    for(i=0; i<3; i++){
+    for(i=0; i<6; i++){
         free_vlc(&s->vlc[i]);
     }
 
     return 0;
 }
+#endif
 
+#ifdef CONFIG_ENCODERS
 static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size, void *data){
     HYuvContext *s = avctx->priv_data;
     AVFrame *pict = data;
@@ -1174,6 +1362,31 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
                 encode_422_bitstream(s, width);
             }
         }
+    }else if(avctx->pix_fmt == PIX_FMT_RGB32){
+        uint8_t *data = p->data[0] + (height-1)*p->linesize[0];
+        const int stride = -p->linesize[0];
+        const int fake_stride = -fake_ystride;
+        int y;
+        int leftr, leftg, leftb;
+
+        put_bits(&s->pb, 8, leftr= data[R]);
+        put_bits(&s->pb, 8, leftg= data[G]);
+        put_bits(&s->pb, 8, leftb= data[B]);
+        put_bits(&s->pb, 8, 0);
+
+        sub_left_prediction_bgr32(s, s->temp[0], data+4, width-1, &leftr, &leftg, &leftb);
+        encode_bgr_bitstream(s, width-1);
+
+        for(y=1; y<s->height; y++){
+            uint8_t *dst = data + y*stride;
+            if(s->predictor == PLANE && s->interlaced < y){
+                s->dsp.diff_bytes(s->temp[1], dst, dst - fake_stride, width*4);
+                sub_left_prediction_bgr32(s, s->temp[0], s->temp[1], width, &leftr, &leftg, &leftb);
+            }else{
+                sub_left_prediction_bgr32(s, s->temp[0], dst, width, &leftr, &leftg, &leftb);
+            }
+            encode_bgr_bitstream(s, width);
+        }
     }else{
         av_log(avctx, AV_LOG_ERROR, "Format not supported!\n");
     }
@@ -1195,11 +1408,11 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
             snprintf(p, end-p, "\n");
             p++;
         }
-    }
+    } else
+        avctx->stats_out[0] = '\0';
     if(!(s->avctx->flags2 & CODEC_FLAG2_NO_OUTPUT)){
         flush_put_bits(&s->pb);
         s->dsp.bswap_buf((uint32_t*)buf, (uint32_t*)buf, size);
-        avctx->stats_out[0] = '\0';
     }
 
     s->picture_number++;
@@ -1218,7 +1431,9 @@ static int encode_end(AVCodecContext *avctx)
 
     return 0;
 }
+#endif /* CONFIG_ENCODERS */
 
+#ifdef CONFIG_DECODERS
 AVCodec huffyuv_decoder = {
     "huffyuv",
     CODEC_TYPE_VIDEO,
@@ -1244,6 +1459,7 @@ AVCodec ffvhuff_decoder = {
     CODEC_CAP_DR1 | CODEC_CAP_DRAW_HORIZ_BAND,
     NULL
 };
+#endif
 
 #ifdef CONFIG_ENCODERS
 
@@ -1255,6 +1471,7 @@ AVCodec huffyuv_encoder = {
     encode_init,
     encode_frame,
     encode_end,
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV422P, PIX_FMT_RGB32, -1},
 };
 
 AVCodec ffvhuff_encoder = {
@@ -1265,6 +1482,7 @@ AVCodec ffvhuff_encoder = {
     encode_init,
     encode_frame,
     encode_end,
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_YUV422P, PIX_FMT_RGB32, -1},
 };
 
 #endif //CONFIG_ENCODERS

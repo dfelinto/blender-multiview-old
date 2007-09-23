@@ -36,16 +36,16 @@
 SRC_DIR = $(SRC_PATH)/lib$(NAME)
 DIR = $(OCGDIR)/extern/ffmpeg/lib$(NAME)
 VPATH = $(SRC_DIR)
-EXTRADIRS = alpha armv4l i386 liba52 mlib ppc ps2 sh4 sparc
+EXTRADIRS = alpha armv4l i386 liba52 mlib ppc ps2 sh4 sparc bfin
 
-#FIXME: This should be in configure/config.mak
-ifeq ($(TARGET_ARCH_SPARC64),yes)
-CFLAGS+= -mcpu=ultrasparc -mtune=ultrasparc
-endif
+CFLAGS   += $(CFLAGS-yes)
+OBJS     += $(OBJS-yes)
+ASM_OBJS += $(ASM_OBJS-yes)
+CPP_OBJS += $(CPP_OBJS-yes)
 
-SRCS := $(OBJS:.o=.c) $(ASM_OBJS:.o=.S) $(CPPOBJS:.o=.cpp)
+SRCS := $(OBJS:.o=.c) $(ASM_OBJS:.o=.S) $(CPP_OBJS:.o=.cpp)
 OBJS := 
-# $(OBJS) $(ASM_OBJS) $(CPPOBJS)
+# $(OBJS) $(ASM_OBJS) $(CPP_OBJS)
 STATIC_OBJS := $(OBJS) $(STATIC_OBJS)
 CSRCS := $(SRCS)
 CCSRCS :=
@@ -59,24 +59,10 @@ include nan_compile.mk
 # FIXME: hack!
 CFLAGS := $(CFLAGS_BACKUP)
 CFLAGS += -DHAVE_AV_CONFIG_H
-
-ifdef TARGET_BUILTIN_VECTOR
-$(DIR)/i386/fft_sse.o: CFLAGS+= -msse
-$(DIR)/debug/i386/fft_sse.o: CFLAGS+= -msse
-depend: CFLAGS+= -msse
-endif
-ifdef TARGET_BUILTIN_3DNOW
-$(DIR)/i386/fft_3dn.o: CFLAGS+= -m3dnow
-$(DIR)/debug/i386/fft_3dn.o: CFLAGS+= -m3dnow
-ifeq ($(TARGET_ARCH_X86),yes)
-$(DIR)/i386/fft_3dn2.o: CFLAGS+= -march=athlon
-$(DIR)/debug/i386/fft_3dn2.o: CFLAGS+= -march=athlon
-endif
-ifeq ($(TARGET_ARCH_X86_64),yes)
-$(DIR)/i386/fft_3dn2.o: CFLAGS+= -march=k8
-$(DIR)/debug/i386/fft_3dn2.o: CFLAGS+= -march=k8
-endif
-endif
+CFLAGS += -I.. -I../libavutil \
+	-I../libavcodec -I../libavformat -I../libswscale \
+	-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_ISOC9X_SOURCE \
+	$(OPTFLAGS)
 
 makedirffmpeg::
 	@for i in $(EXTRADIRS); do \

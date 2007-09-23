@@ -1,55 +1,46 @@
-///****************************************************************************
-// *
-// *  XVID MPEG-4 VIDEO CODEC
-// *  - MMX and XMM forward discrete cosine transform -
-// *
-// *  Copyright(C) 2001 Peter Ross <pross@xvid.org>
-// *
-// *  This program is free software; you can redistribute it and/or modify it
-// *  under the terms of the GNU General Public License as published by
-// *  the Free Software Foundation; either version 2 of the License, or
-// *  (at your option) any later version.
-// *
-// *  This program is distributed in the hope that it will be useful,
-// *  but WITHOUT ANY WARRANTY; without even the implied warranty of
-// *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// *  GNU General Public License for more details.
-// *
-// *  You should have received a copy of the GNU General Public License
-// *  along with this program; if not, write to the Free Software Foundation,
-// *  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
-//
-// *
-// * $Id$
-// *
-// ***************************************************************************/
-
-// ****************************************************************************
-//
-// Originally provided by Intel at AP-922
-// http://developer.intel.com/vtune/cbts/strmsimd/922down.htm
-// (See more app notes at http://developer.intel.com/vtune/cbts/strmsimd/appnotes.htm)
-// but in a limited edition.
-// New macro implements a column part for precise iDCT
-// The routine precision now satisfies IEEE standard 1180-1990.
-//
-// Copyright(C) 2000-2001 Peter Gubanov <peter@elecard.net.ru>
-// Rounding trick Copyright(C) 2000 Michel Lespinasse <walken@zoy.org>
-//
-// http://www.elecard.com/peter/idct.html
-// http://www.linuxvideo.org/mpeg2dec/
-//
-// ***************************************************************************/
-//
-// These examples contain code fragments for first stage iDCT 8x8
-// (for rows) and first stage DCT 8x8 (for columns)
-//
-
-// conversion to gcc syntax by michael niedermayer
-
+/*
+ * XVID MPEG-4 VIDEO CODEC
+ * - MMX and XMM forward discrete cosine transform -
+ *
+ * Copyright(C) 2001 Peter Ross <pross@xvid.org>
+ *
+ * Originally provided by Intel at AP-922
+ * http://developer.intel.com/vtune/cbts/strmsimd/922down.htm
+ * (See more app notes at http://developer.intel.com/vtune/cbts/strmsimd/appnotes.htm)
+ * but in a limited edition.
+ * New macro implements a column part for precise iDCT
+ * The routine precision now satisfies IEEE standard 1180-1990.
+ *
+ * Copyright(C) 2000-2001 Peter Gubanov <peter@elecard.net.ru>
+ * Rounding trick Copyright(C) 2000 Michel Lespinasse <walken@zoy.org>
+ *
+ * http://www.elecard.com/peter/idct.html
+ * http://www.linuxvideo.org/mpeg2dec/
+ *
+ * These examples contain code fragments for first stage iDCT 8x8
+ * (for rows) and first stage DCT 8x8 (for columns)
+ *
+ * conversion to gcc syntax by Michael Niedermayer
+ *
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * FFmpeg is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with FFmpeg; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ */
 
 #include <inttypes.h>
-#include "../avcodec.h"
+#include "avcodec.h"
 
 //=============================================================================
 // Macros and other preprocessor constants
@@ -295,17 +286,17 @@ static const int16_t tab_i_04_xmm[32*4] attribute_used __attribute__ ((aligned(8
   "movq 8+" #A1 ",%%mm1                \n\t"/* 1     ; x7 x6 x5 x4*/\
   "movq %%mm0,%%mm2                \n\t"/* 2     ; x3 x2 x1 x0*/\
   "movq " #A3 ",%%mm3                  \n\t"/* 3     ; w05 w04 w01 w00*/\
-  "pshufw $0b10001000,%%mm0,%%mm0  \n\t"/* x2 x0 x2 x0*/\
+  "pshufw $0x88,%%mm0,%%mm0        \n\t"/* x2 x0 x2 x0*/\
   "movq 8+" #A3 ",%%mm4                \n\t"/* 4     ; w07 w06 w03 w02*/\
   "movq %%mm1,%%mm5                \n\t"/* 5     ; x7 x6 x5 x4*/\
   "pmaddwd %%mm0,%%mm3             \n\t"/* x2*w05+x0*w04 x2*w01+x0*w00*/\
   "movq 32+" #A3 ",%%mm6               \n\t"/* 6     ; w21 w20 w17 w16*/\
-  "pshufw $0b10001000,%%mm1,%%mm1  \n\t"/* x6 x4 x6 x4*/\
+  "pshufw $0x88,%%mm1,%%mm1        \n\t"/* x6 x4 x6 x4*/\
   "pmaddwd %%mm1,%%mm4             \n\t"/* x6*w07+x4*w06 x6*w03+x4*w02*/\
   "movq 40+" #A3 ",%%mm7               \n\t"/* 7    ; w23 w22 w19 w18*/\
-  "pshufw $0b11011101,%%mm2,%%mm2  \n\t"/* x3 x1 x3 x1*/\
+  "pshufw $0xdd,%%mm2,%%mm2        \n\t"/* x3 x1 x3 x1*/\
   "pmaddwd %%mm2,%%mm6             \n\t"/* x3*w21+x1*w20 x3*w17+x1*w16*/\
-  "pshufw $0b11011101,%%mm5,%%mm5  \n\t"/* x7 x5 x7 x5*/\
+  "pshufw $0xdd,%%mm5,%%mm5        \n\t"/* x7 x5 x7 x5*/\
   "pmaddwd %%mm5,%%mm7             \n\t"/* x7*w23+x5*w22 x7*w19+x5*w18*/\
   "paddd " #A4 ",%%mm3                 \n\t"/* +%4*/\
   "pmaddwd 16+" #A3 ",%%mm0            \n\t"/* x2*w13+x0*w12 x2*w09+x0*w08*/\
@@ -330,7 +321,7 @@ static const int16_t tab_i_04_xmm[32*4] attribute_used __attribute__ ((aligned(8
   "packssdw %%mm0,%%mm3            \n\t"/* 0     ; y3 y2 y1 y0*/\
   "packssdw %%mm4,%%mm7            \n\t"/* 4     ; y6 y7 y4 y5*/\
   "movq %%mm3, " #A2 "                  \n\t"/* 3     ; save y3 y2 y1 y0*/\
-  "pshufw $0b10110001,%%mm7,%%mm7  \n\t"/* y7 y6 y5 y4*/\
+  "pshufw $0xb1,%%mm7,%%mm7        \n\t"/* y7 y6 y5 y4*/\
   "movq %%mm7,8                +" #A2 "\n\t"/* 7     ; save y7 y6 y5 y4*/\
 
 

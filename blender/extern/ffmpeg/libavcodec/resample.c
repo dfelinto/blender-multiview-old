@@ -1,25 +1,27 @@
 /*
- * Sample rate convertion for both audio and video
+ * samplerate conversion for both audio and video
  * Copyright (c) 2000 Fabrice Bellard.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /**
  * @file resample.c
- * Sample rate convertion for both audio and video.
+ * samplerate conversion for both audio and video
  */
 
 #include "avcodec.h"
@@ -159,7 +161,8 @@ ReSampleContext *audio_resample_init(int output_channels, int input_channels,
     if(s->filter_channels>2)
       s->filter_channels = 2;
 
-    s->resample_context= av_resample_init(output_rate, input_rate, 16, 10, 0, 1.0);
+#define TAPS 16
+    s->resample_context= av_resample_init(output_rate, input_rate, TAPS, 10, 0, 0.8);
 
     return s;
 }
@@ -188,7 +191,7 @@ int audio_resample(ReSampleContext *s, short *output, short *input, int nb_sampl
     }
 
     /* make some zoom to avoid round pb */
-    lenout= (int)(nb_samples * s->ratio) + 16;
+    lenout= (int)(4*nb_samples * s->ratio) + 16;
     bufout[0]= (short*) av_malloc( lenout * sizeof(short) );
     bufout[1]= (short*) av_malloc( lenout * sizeof(short) );
 

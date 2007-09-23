@@ -2,23 +2,26 @@
  * DVB subtitle decoding for ffmpeg
  * Copyright (c) 2005 Ian Caulfield.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avcodec.h"
 #include "dsputil.h"
 #include "bitstream.h"
+#include "colorspace.h"
 
 //#define DEBUG
 //#define DEBUG_PACKET_CONTENTS
@@ -30,7 +33,7 @@
 #define DVBSUB_OBJECT_SEGMENT   0x13
 #define DVBSUB_DISPLAY_SEGMENT  0x80
 
-static unsigned char *cm;
+#define cm (ff_cropTbl + MAX_NEG_CROP)
 
 #ifdef DEBUG_SAVE_IMAGES
 #undef fprintf
@@ -342,8 +345,6 @@ static int dvbsub_init_decoder(AVCodecContext *avctx)
     int i, r, g, b, a = 0;
     DVBSubContext *ctx = (DVBSubContext*) avctx->priv_data;
 
-    cm = cropTbl + MAX_NEG_CROP;
-
     memset(avctx->priv_data, 0, sizeof(DVBSubContext));
 
     ctx->composition_id = avctx->sub_id & 0xffff;
@@ -454,7 +455,7 @@ static int dvbsub_read_2bit_string(uint8_t *destbuf, int dbuf_len,
             }
             pixels_read++;
         } else {
-            bits = get_bits(&gb, 1);
+            bits = get_bits1(&gb);
             if (bits == 1) {
                 run_length = get_bits(&gb, 3) + 3;
                 bits = get_bits(&gb, 2);
@@ -470,7 +471,7 @@ static int dvbsub_read_2bit_string(uint8_t *destbuf, int dbuf_len,
                     }
                 }
             } else {
-                bits = get_bits(&gb, 1);
+                bits = get_bits1(&gb);
                 if (bits == 0) {
                     bits = get_bits(&gb, 2);
                     if (bits == 2) {
@@ -559,7 +560,7 @@ static int dvbsub_read_4bit_string(uint8_t *destbuf, int dbuf_len,
             }
             pixels_read++;
         } else {
-            bits = get_bits(&gb, 1);
+            bits = get_bits1(&gb);
             if (bits == 0) {
                 run_length = get_bits(&gb, 3);
 
@@ -580,7 +581,7 @@ static int dvbsub_read_4bit_string(uint8_t *destbuf, int dbuf_len,
                     pixels_read++;
                 }
             } else {
-                bits = get_bits(&gb, 1);
+                bits = get_bits1(&gb);
                 if (bits == 0) {
                     run_length = get_bits(&gb, 2) + 4;
                     bits = get_bits(&gb, 4);
@@ -849,7 +850,7 @@ static void dvbsub_parse_object_segment(AVCodecContext *avctx,
 
     int coding_method, non_modifying_colour;
 
-    object_id = BE_16(buf);
+    object_id = AV_RB16(buf);
     buf += 2;
 
     object = get_object(ctx, object_id);
@@ -861,9 +862,9 @@ static void dvbsub_parse_object_segment(AVCodecContext *avctx,
     non_modifying_colour = ((*buf++) >> 1) & 1;
 
     if (coding_method == 0) {
-        top_field_len = BE_16(buf);
+        top_field_len = AV_RB16(buf);
         buf += 2;
-        bottom_field_len = BE_16(buf);
+        bottom_field_len = AV_RB16(buf);
         buf += 2;
 
         if (buf + top_field_len + bottom_field_len > buf_end) {
@@ -893,29 +894,6 @@ static void dvbsub_parse_object_segment(AVCodecContext *avctx,
     }
 
 }
-
-#define SCALEBITS 10
-#define ONE_HALF  (1 << (SCALEBITS - 1))
-#define FIX(x)    ((int) ((x) * (1<<SCALEBITS) + 0.5))
-
-#define YUV_TO_RGB1_CCIR(cb1, cr1)\
-{\
-    cb = (cb1) - 128;\
-    cr = (cr1) - 128;\
-    r_add = FIX(1.40200*255.0/224.0) * cr + ONE_HALF;\
-    g_add = - FIX(0.34414*255.0/224.0) * cb - FIX(0.71414*255.0/224.0) * cr + \
-            ONE_HALF;\
-    b_add = FIX(1.77200*255.0/224.0) * cb + ONE_HALF;\
-}
-
-#define YUV_TO_RGB2_CCIR(r, g, b, y1)\
-{\
-    y = ((y1) - 16) * FIX(255.0/219.0);\
-    r = cm[(y + r_add) >> SCALEBITS];\
-    g = cm[(y + g_add) >> SCALEBITS];\
-    b = cm[(y + b_add) >> SCALEBITS];\
-}
-
 
 static void dvbsub_parse_clut_segment(AVCodecContext *avctx,
                                         uint8_t *buf, int buf_size)
@@ -1040,9 +1018,9 @@ static void dvbsub_parse_region_segment(AVCodecContext *avctx,
 
     fill = ((*buf++) >> 3) & 1;
 
-    region->width = BE_16(buf);
+    region->width = AV_RB16(buf);
     buf += 2;
-    region->height = BE_16(buf);
+    region->height = AV_RB16(buf);
     buf += 2;
 
     if (region->width * region->height != region->buf_size) {
@@ -1084,7 +1062,7 @@ static void dvbsub_parse_region_segment(AVCodecContext *avctx,
     delete_region_display_list(ctx, region);
 
     while (buf + 5 < buf_end) {
-        object_id = BE_16(buf);
+        object_id = AV_RB16(buf);
         buf += 2;
 
         object = get_object(ctx, object_id);
@@ -1104,9 +1082,9 @@ static void dvbsub_parse_region_segment(AVCodecContext *avctx,
         display->object_id = object_id;
         display->region_id = region_id;
 
-        display->x_pos = BE_16(buf) & 0xfff;
+        display->x_pos = AV_RB16(buf) & 0xfff;
         buf += 2;
-        display->y_pos = BE_16(buf) & 0xfff;
+        display->y_pos = AV_RB16(buf) & 0xfff;
         buf += 2;
 
         if ((object->type == 1 || object->type == 2) && buf+1 < buf_end) {
@@ -1169,9 +1147,9 @@ static void dvbsub_parse_page_segment(AVCodecContext *avctx,
 
         display->region_id = region_id;
 
-        display->x_pos = BE_16(buf);
+        display->x_pos = AV_RB16(buf);
         buf += 2;
-        display->y_pos = BE_16(buf);
+        display->y_pos = AV_RB16(buf);
         buf += 2;
 
         *tmp_ptr = display->next;
@@ -1403,9 +1381,9 @@ static int dvbsub_decode(AVCodecContext *avctx,
     {
         p += 1;
         segment_type = *p++;
-        page_id = BE_16(p);
+        page_id = AV_RB16(p);
         p += 2;
-        segment_length = BE_16(p);
+        segment_length = AV_RB16(p);
         p += 2;
 
         if (page_id == ctx->composition_id || page_id == ctx->ancillary_id) {
@@ -1458,174 +1436,4 @@ AVCodec dvbsub_decoder = {
     NULL,
     dvbsub_close_decoder,
     dvbsub_decode,
-};
-
-/* Parser (mostly) copied from dvdsub.c */
-
-#define PARSE_BUF_SIZE  (65536)
-
-
-/* parser definition */
-typedef struct DVBSubParseContext {
-    uint8_t *packet_buf;
-    int packet_start;
-    int packet_index;
-    int in_packet;
-} DVBSubParseContext;
-
-static int dvbsub_parse_init(AVCodecParserContext *s)
-{
-    DVBSubParseContext *pc = s->priv_data;
-    pc->packet_buf = av_malloc(PARSE_BUF_SIZE);
-
-    return 0;
-}
-
-static int dvbsub_parse(AVCodecParserContext *s,
-                        AVCodecContext *avctx,
-                        uint8_t **poutbuf, int *poutbuf_size,
-                        const uint8_t *buf, int buf_size)
-{
-    DVBSubParseContext *pc = s->priv_data;
-    uint8_t *p, *p_end;
-    int len, buf_pos = 0;
-
-#ifdef DEBUG
-    av_log(avctx, AV_LOG_INFO, "DVB parse packet pts=%Lx, lpts=%Lx, cpts=%Lx:\n",
-            s->pts, s->last_pts, s->cur_frame_pts[s->cur_frame_start_index]);
-#endif
-
-#ifdef DEBUG_PACKET_CONTENTS
-    int i;
-
-    for (i=0; i < buf_size; i++)
-    {
-        av_log(avctx, AV_LOG_INFO, "%02x ", buf[i]);
-        if (i % 16 == 15)
-            av_log(avctx, AV_LOG_INFO, "\n");
-    }
-
-    if (i % 16 != 0)
-        av_log(avctx, AV_LOG_INFO, "\n");
-
-#endif
-
-    *poutbuf = NULL;
-    *poutbuf_size = 0;
-
-    s->fetch_timestamp = 1;
-
-    if (s->last_pts != s->pts && s->last_pts != AV_NOPTS_VALUE) /* Start of a new packet */
-    {
-        if (pc->packet_index != pc->packet_start)
-        {
-#ifdef DEBUG
-            av_log(avctx, AV_LOG_INFO, "Discarding %d bytes\n",
-                pc->packet_index - pc->packet_start);
-#endif
-        }
-
-        pc->packet_start = 0;
-        pc->packet_index = 0;
-
-        if (buf_size < 2 || buf[0] != 0x20 || buf[1] != 0x00) {
-#ifdef DEBUG
-            av_log(avctx, AV_LOG_INFO, "Bad packet header\n");
-#endif
-            return -1;
-        }
-
-        buf_pos = 2;
-
-        pc->in_packet = 1;
-    } else {
-        if (pc->packet_start != 0)
-        {
-            if (pc->packet_index != pc->packet_start)
-            {
-                memmove(pc->packet_buf, pc->packet_buf + pc->packet_start,
-                            pc->packet_index - pc->packet_start);
-
-                pc->packet_index -= pc->packet_start;
-                pc->packet_start = 0;
-            } else {
-                pc->packet_start = 0;
-                pc->packet_index = 0;
-            }
-        }
-    }
-
-    if (buf_size - buf_pos + pc->packet_index > PARSE_BUF_SIZE)
-        return -1;
-
-/* if not currently in a packet, discard data */
-    if (pc->in_packet == 0)
-        return buf_size;
-
-    memcpy(pc->packet_buf + pc->packet_index, buf + buf_pos, buf_size - buf_pos);
-    pc->packet_index += buf_size - buf_pos;
-
-    p = pc->packet_buf;
-    p_end = pc->packet_buf + pc->packet_index;
-
-    while (p < p_end)
-    {
-        if (*p == 0x0f)
-        {
-            if (p + 6 <= p_end)
-            {
-                len = BE_16(p + 4);
-
-                if (p + len + 6 <= p_end)
-                {
-                    *poutbuf_size += len + 6;
-
-                    p += len + 6;
-                } else
-                    break;
-            } else
-                break;
-        } else if (*p == 0xff) {
-            if (p + 1 < p_end)
-            {
-#ifdef DEBUG
-                av_log(avctx, AV_LOG_INFO, "Junk at end of packet\n");
-#endif
-            }
-            pc->packet_index = p - pc->packet_buf;
-            pc->in_packet = 0;
-            break;
-        } else {
-            av_log(avctx, AV_LOG_ERROR, "Junk in packet\n");
-
-            pc->packet_index = p - pc->packet_buf;
-            pc->in_packet = 0;
-            break;
-        }
-    }
-
-    if (*poutbuf_size > 0)
-    {
-        *poutbuf = pc->packet_buf;
-        pc->packet_start = *poutbuf_size;
-    }
-
-    if (s->last_pts == AV_NOPTS_VALUE)
-        s->last_pts = s->pts;
-
-    return buf_size;
-}
-
-static void dvbsub_parse_close(AVCodecParserContext *s)
-{
-    DVBSubParseContext *pc = s->priv_data;
-    av_freep(&pc->packet_buf);
-}
-
-AVCodecParser dvbsub_parser = {
-    { CODEC_ID_DVB_SUBTITLE },
-    sizeof(DVBSubParseContext),
-    dvbsub_parse_init,
-    dvbsub_parse,
-    dvbsub_parse_close,
 };

@@ -2,26 +2,29 @@
  * NuppelVideo demuxer.
  * Copyright (c) 2006 Reimar Doeffinger.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
-#include "avi.h"
+#include "riff.h"
 
 typedef struct {
     int v_id;
     int a_id;
+    int rtjpg_video;
 } NUVContext;
 
 typedef enum {
@@ -33,8 +36,6 @@ typedef enum {
 } frametype_t;
 
 static int nuv_probe(AVProbeData *p) {
-    if (p->buf_size < 12)
-        return 0;
     if (!memcmp(p->buf, "NuppelVideo", 12))
         return AVPROBE_SCORE_MAX;
     if (!memcmp(p->buf, "MythTVVideo", 12))
@@ -84,6 +85,8 @@ static int get_codec_data(ByteIOContext *pb, AVStream *vst,
                     vst->codec->codec_tag = get_le32(pb);
                     vst->codec->codec_id =
                         codec_get_id(codec_bmp_tags, vst->codec->codec_tag);
+                    if (vst->codec->codec_tag == MKTAG('R', 'J', 'P', 'G'))
+                        vst->codec->codec_id = CODEC_ID_NUV;
                 } else
                     url_fskip(pb, 4);
 
@@ -95,6 +98,7 @@ static int get_codec_data(ByteIOContext *pb, AVStream *vst,
                     ast->codec->codec_id =
                         wav_codec_get_id(ast->codec->codec_tag,
                                          ast->codec->bits_per_sample);
+                    ast->need_parsing = AVSTREAM_PARSE_FULL;
                 } else
                     url_fskip(pb, 4 * 4);
 
@@ -115,7 +119,7 @@ static int get_codec_data(ByteIOContext *pb, AVStream *vst,
 }
 
 static int nuv_header(AVFormatContext *s, AVFormatParameters *ap) {
-    NUVContext *ctx = (NUVContext *)s->priv_data;
+    NUVContext *ctx = s->priv_data;
     ByteIOContext *pb = &s->pb;
     char id_string[12], version_string[5];
     double aspect, fps;
@@ -147,12 +151,11 @@ static int nuv_header(AVFormatContext *s, AVFormatParameters *ap) {
         vst = av_new_stream(s, ctx->v_id);
         vst->codec->codec_type = CODEC_TYPE_VIDEO;
         vst->codec->codec_id = CODEC_ID_NUV;
-        vst->codec->codec_tag = MKTAG('R', 'J', 'P', 'G');
         vst->codec->width = width;
         vst->codec->height = height;
         vst->codec->bits_per_sample = 10;
         vst->codec->sample_aspect_ratio = av_d2q(aspect, 10000);
-        vst->r_frame_rate = av_d2q(1.0 / fps, 10000);
+        vst->r_frame_rate = av_d2q(fps, 60000);
         av_set_pts_info(vst, 32, 1, 1000);
     } else
         ctx->v_id = -1;
@@ -172,39 +175,45 @@ static int nuv_header(AVFormatContext *s, AVFormatParameters *ap) {
         ctx->a_id = -1;
 
     get_codec_data(pb, vst, ast, is_mythtv);
+    ctx->rtjpg_video = vst->codec->codec_id == CODEC_ID_NUV;
     return 0;
 }
 
 #define HDRSIZE 12
 
 static int nuv_packet(AVFormatContext *s, AVPacket *pkt) {
-    NUVContext *ctx = (NUVContext *)s->priv_data;
+    NUVContext *ctx = s->priv_data;
     ByteIOContext *pb = &s->pb;
     uint8_t hdr[HDRSIZE];
     frametype_t frametype;
     int ret, size;
     while (!url_feof(pb)) {
+        int copyhdrsize = ctx->rtjpg_video ? HDRSIZE : 0;
         ret = get_buffer(pb, hdr, HDRSIZE);
         if (ret <= 0)
-            return ret;
+            return ret ? ret : -1;
         frametype = hdr[0];
-        size = PKTSIZE(LE_32(&hdr[8]));
+        size = PKTSIZE(AV_RL32(&hdr[8]));
         switch (frametype) {
-            case NUV_VIDEO:
             case NUV_EXTRADATA:
+                if (!ctx->rtjpg_video) {
+                    url_fskip(pb, size);
+                    break;
+                }
+            case NUV_VIDEO:
                 if (ctx->v_id < 0) {
                     av_log(s, AV_LOG_ERROR, "Video packet in file without video stream!\n");
                     url_fskip(pb, size);
                     break;
                 }
-                ret = av_new_packet(pkt, HDRSIZE + size);
+                ret = av_new_packet(pkt, copyhdrsize + size);
                 if (ret < 0)
                     return ret;
-                pkt->pos = url_ftell(pb);
-                pkt->pts = LE_32(&hdr[4]);
+                pkt->pos = url_ftell(pb) - copyhdrsize;
+                pkt->pts = AV_RL32(&hdr[4]);
                 pkt->stream_index = ctx->v_id;
-                memcpy(pkt->data, hdr, HDRSIZE);
-                ret = get_buffer(pb, pkt->data + HDRSIZE, size);
+                memcpy(pkt->data, hdr, copyhdrsize);
+                ret = get_buffer(pb, pkt->data + copyhdrsize, size);
                 return ret;
             case NUV_AUDIO:
                 if (ctx->a_id < 0) {
@@ -213,7 +222,7 @@ static int nuv_packet(AVFormatContext *s, AVPacket *pkt) {
                     break;
                 }
                 ret = av_get_packet(pb, pkt, size);
-                pkt->pts = LE_32(&hdr[4]);
+                pkt->pts = AV_RL32(&hdr[4]);
                 pkt->stream_index = ctx->a_id;
                 return ret;
             case NUV_SEEKP:
@@ -224,10 +233,10 @@ static int nuv_packet(AVFormatContext *s, AVPacket *pkt) {
                 break;
         }
     }
-    return AVERROR_IO;
+    return AVERROR(EIO);
 }
 
-static AVInputFormat nuv_iformat = {
+AVInputFormat nuv_demuxer = {
     "nuv",
     "NuppelVideo format",
     sizeof(NUVContext),
@@ -237,9 +246,3 @@ static AVInputFormat nuv_iformat = {
     NULL,
     NULL,
 };
-
-int nuv_init(void) {
-    av_register_input_format(&nuv_iformat);
-    return 0;
-}
-

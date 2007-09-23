@@ -2,18 +2,20 @@
  * FFT/IFFT transforms
  * Copyright (c) 2002 Fabrice Bellard.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -54,20 +56,35 @@ int ff_fft_init(FFTContext *s, int nbits, int inverse)
         s->exptab[i].im = s1;
     }
     s->fft_calc = ff_fft_calc_c;
+    s->imdct_calc = ff_imdct_calc;
     s->exptab1 = NULL;
 
     /* compute constant table for HAVE_SSE version */
-#if (defined(HAVE_MMX) && (defined(HAVE_BUILTIN_VECTOR) || defined(HAVE_MM3DNOW))) || defined(HAVE_ALTIVEC)
+#if defined(HAVE_MMX) \
+    || (defined(HAVE_ALTIVEC) && !defined(ALTIVEC_USE_REFERENCE_C_CODE))
     {
-        int has_vectors = 0;
+        int has_vectors = mm_support();
 
-#if defined(HAVE_MMX)
-        has_vectors = mm_support() & (MM_3DNOW | MM_3DNOWEXT | MM_SSE | MM_SSE2);
-#endif
-#if defined(HAVE_ALTIVEC) && !defined(ALTIVEC_USE_REFERENCE_C_CODE)
-        has_vectors = mm_support() & MM_ALTIVEC;
-#endif
         if (has_vectors) {
+#if defined(HAVE_MMX)
+            if (has_vectors & MM_3DNOWEXT) {
+                /* 3DNowEx for K7/K8 */
+                s->imdct_calc = ff_imdct_calc_3dn2;
+                s->fft_calc = ff_fft_calc_3dn2;
+            } else if (has_vectors & MM_3DNOW) {
+                /* 3DNow! for K6-2/3 */
+                s->fft_calc = ff_fft_calc_3dn;
+            } else if (has_vectors & MM_SSE) {
+                /* SSE for P3/P4 */
+                s->imdct_calc = ff_imdct_calc_sse;
+                s->fft_calc = ff_fft_calc_sse;
+            }
+#else /* HAVE_MMX */
+            if (has_vectors & MM_ALTIVEC)
+                s->fft_calc = ff_fft_calc_altivec;
+#endif
+        }
+        if (s->fft_calc != ff_fft_calc_c) {
             int np, nblocks, np2, l;
             FFTComplex *q;
 
@@ -93,27 +110,6 @@ int ff_fft_init(FFTContext *s, int nbits, int inverse)
                 nblocks = nblocks >> 1;
             } while (nblocks != 0);
             av_freep(&s->exptab);
-#if defined(HAVE_MMX)
-#ifdef HAVE_MM3DNOW
-            if (has_vectors & MM_3DNOWEXT)
-                /* 3DNowEx for Athlon(XP) */
-                s->fft_calc = ff_fft_calc_3dn2;
-            else if (has_vectors & MM_3DNOW)
-                /* 3DNow! for K6-2/3 */
-                s->fft_calc = ff_fft_calc_3dn;
-#endif
-#ifdef HAVE_BUILTIN_VECTOR
-            if (has_vectors & MM_SSE2)
-                /* SSE for P4/K8 */
-                s->fft_calc = ff_fft_calc_sse;
-            else if ((has_vectors & MM_SSE) &&
-                     s->fft_calc == ff_fft_calc_c)
-                /* SSE for P3 */
-                s->fft_calc = ff_fft_calc_sse;
-#endif
-#else /* HAVE_MMX */
-            s->fft_calc = ff_fft_calc_altivec;
-#endif
         }
     }
 #endif

@@ -2,26 +2,34 @@
  * Range coder
  * Copyright (c) 2004 Michael Niedermayer <michaelni@gmx.at>
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
  */
 
 /**
  * @file rangecoder.h
  * Range coder.
  */
+
+#ifndef AVCODEC_RANGECODER_H
+#define AVCODEC_RANGECODER_H
+
+#include <stdint.h>
+#include <assert.h>
+#include "common.h"
 
 typedef struct RangeCoder{
     int low;
@@ -64,6 +72,13 @@ static inline void renorm_encoder(RangeCoder *c){
     }
 }
 
+static inline int get_rac_count(RangeCoder *c){
+    int x= c->bytestream - c->bytestream_start + c->outstanding_count;
+    if(c->outstanding_byte >= 0)
+        x++;
+    return 8*x - av_log2(c->range);
+}
+
 static inline void put_rac(RangeCoder *c, uint8_t * const state, int bit){
     int range1= (c->range * (*state)) >> 8;
 
@@ -94,7 +109,7 @@ static inline void refill(RangeCoder *c){
 
 static inline int get_rac(RangeCoder *c, uint8_t * const state){
     int range1= (c->range * (*state)) >> 8;
-    int attribute_unused one_mask;
+    int av_unused one_mask;
 
     c->range -= range1;
 #if 1
@@ -123,3 +138,4 @@ static inline int get_rac(RangeCoder *c, uint8_t * const state){
 #endif
 }
 
+#endif // AVCODEC_RANGECODER_H

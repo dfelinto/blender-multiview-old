@@ -1,30 +1,33 @@
 /*
- * AVI encoder.
+ * AVI muxer
  * Copyright (c) 2000 Fabrice Bellard.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
 #include "avi.h"
+#include "riff.h"
 
 /*
  * TODO:
  *  - fill all fields if non streamed (nb_frames for example)
  */
 
-#ifdef CONFIG_MUXERS
+#ifdef CONFIG_AVI_MUXER
 typedef struct AVIIentry {
     unsigned int flags, pos, len;
 } AVIIentry;
@@ -55,255 +58,6 @@ static inline AVIIentry* avi_get_ientry(AVIIndex* idx, int ent_id)
     return &idx->cluster[cl][id];
 }
 
-offset_t start_tag(ByteIOContext *pb, const char *tag)
-{
-    put_tag(pb, tag);
-    put_le32(pb, 0);
-    return url_ftell(pb);
-}
-
-void end_tag(ByteIOContext *pb, offset_t start)
-{
-    offset_t pos;
-
-    pos = url_ftell(pb);
-    url_fseek(pb, start - 4, SEEK_SET);
-    put_le32(pb, (uint32_t)(pos - start));
-    url_fseek(pb, pos, SEEK_SET);
-}
-#endif //CONFIG_MUXERS
-
-/* Note: when encoding, the first matching tag is used, so order is
-   important if multiple tags possible for a given codec. */
-const CodecTag codec_bmp_tags[] = {
-    { CODEC_ID_H264, MKTAG('H', '2', '6', '4') },
-    { CODEC_ID_H264, MKTAG('h', '2', '6', '4') },
-    { CODEC_ID_H264, MKTAG('X', '2', '6', '4') },
-    { CODEC_ID_H264, MKTAG('x', '2', '6', '4') },
-    { CODEC_ID_H264, MKTAG('a', 'v', 'c', '1') },
-    { CODEC_ID_H264, MKTAG('V', 'S', 'S', 'H') },
-
-    { CODEC_ID_H263, MKTAG('H', '2', '6', '3') },
-    { CODEC_ID_H263P, MKTAG('H', '2', '6', '3') },
-    { CODEC_ID_H263I, MKTAG('I', '2', '6', '3') }, /* intel h263 */
-    { CODEC_ID_H261, MKTAG('H', '2', '6', '1') },
-
-    /* added based on MPlayer */
-    { CODEC_ID_H263P, MKTAG('U', '2', '6', '3') },
-    { CODEC_ID_H263P, MKTAG('v', 'i', 'v', '1') },
-
-    { CODEC_ID_MPEG4, MKTAG('F', 'M', 'P', '4')},
-    { CODEC_ID_MPEG4, MKTAG('D', 'I', 'V', 'X'), .invalid_asf = 1 },
-    { CODEC_ID_MPEG4, MKTAG('D', 'X', '5', '0'), .invalid_asf = 1 },
-    { CODEC_ID_MPEG4, MKTAG('X', 'V', 'I', 'D'), .invalid_asf = 1 },
-    { CODEC_ID_MPEG4, MKTAG('M', 'P', '4', 'S') },
-    { CODEC_ID_MPEG4, MKTAG('M', '4', 'S', '2') },
-    { CODEC_ID_MPEG4, MKTAG(0x04, 0, 0, 0) }, /* some broken avi use this */
-
-    /* added based on MPlayer */
-    { CODEC_ID_MPEG4, MKTAG('D', 'I', 'V', '1') },
-    { CODEC_ID_MPEG4, MKTAG('B', 'L', 'Z', '0') },
-    { CODEC_ID_MPEG4, MKTAG('m', 'p', '4', 'v') },
-    { CODEC_ID_MPEG4, MKTAG('U', 'M', 'P', '4') },
-    { CODEC_ID_MPEG4, MKTAG('W', 'V', '1', 'F') },
-    { CODEC_ID_MPEG4, MKTAG('S', 'E', 'D', 'G') },
-
-    { CODEC_ID_MPEG4, MKTAG('R', 'M', 'P', '4') },
-
-    { CODEC_ID_MSMPEG4V3, MKTAG('D', 'I', 'V', '3'), .invalid_asf = 1 }, /* default signature when using MSMPEG4 */
-    { CODEC_ID_MSMPEG4V3, MKTAG('M', 'P', '4', '3') },
-
-    /* added based on MPlayer */
-    { CODEC_ID_MSMPEG4V3, MKTAG('M', 'P', 'G', '3') },
-    { CODEC_ID_MSMPEG4V3, MKTAG('D', 'I', 'V', '5') },
-    { CODEC_ID_MSMPEG4V3, MKTAG('D', 'I', 'V', '6') },
-    { CODEC_ID_MSMPEG4V3, MKTAG('D', 'I', 'V', '4') },
-    { CODEC_ID_MSMPEG4V3, MKTAG('A', 'P', '4', '1') },
-    { CODEC_ID_MSMPEG4V3, MKTAG('C', 'O', 'L', '1') },
-    { CODEC_ID_MSMPEG4V3, MKTAG('C', 'O', 'L', '0') },
-
-    { CODEC_ID_MSMPEG4V2, MKTAG('M', 'P', '4', '2') },
-
-    /* added based on MPlayer */
-    { CODEC_ID_MSMPEG4V2, MKTAG('D', 'I', 'V', '2') },
-
-    { CODEC_ID_MSMPEG4V1, MKTAG('M', 'P', 'G', '4') },
-
-    { CODEC_ID_WMV1, MKTAG('W', 'M', 'V', '1') },
-
-    /* added based on MPlayer */
-    { CODEC_ID_WMV2, MKTAG('W', 'M', 'V', '2') },
-    { CODEC_ID_DVVIDEO, MKTAG('d', 'v', 's', 'd') },
-    { CODEC_ID_DVVIDEO, MKTAG('d', 'v', 'h', 'd') },
-    { CODEC_ID_DVVIDEO, MKTAG('d', 'v', 's', 'l') },
-    { CODEC_ID_DVVIDEO, MKTAG('d', 'v', '2', '5') },
-    { CODEC_ID_MPEG1VIDEO, MKTAG('m', 'p', 'g', '1') },
-    { CODEC_ID_MPEG1VIDEO, MKTAG('m', 'p', 'g', '2') },
-    { CODEC_ID_MPEG2VIDEO, MKTAG('m', 'p', 'g', '2') },
-    { CODEC_ID_MPEG2VIDEO, MKTAG('M', 'P', 'E', 'G') },
-    { CODEC_ID_MPEG1VIDEO, MKTAG('P', 'I', 'M', '1') },
-    { CODEC_ID_MPEG1VIDEO, MKTAG('V', 'C', 'R', '2') },
-    { CODEC_ID_MPEG1VIDEO, 0x10000001 },
-    { CODEC_ID_MPEG2VIDEO, 0x10000002 },
-    { CODEC_ID_MPEG2VIDEO, MKTAG('D', 'V', 'R', ' ') },
-    { CODEC_ID_MJPEG, MKTAG('M', 'J', 'P', 'G') },
-    { CODEC_ID_MJPEG, MKTAG('L', 'J', 'P', 'G') },
-    { CODEC_ID_LJPEG, MKTAG('L', 'J', 'P', 'G') },
-    { CODEC_ID_MJPEG, MKTAG('J', 'P', 'G', 'L') }, /* Pegasus lossless JPEG */
-    { CODEC_ID_MJPEG, MKTAG('M', 'J', 'L', 'S') }, /* JPEG-LS custom FOURCC for avi - decoder */
-    { CODEC_ID_JPEGLS, MKTAG('M', 'J', 'L', 'S') }, /* JPEG-LS custom FOURCC for avi - encoder */
-    { CODEC_ID_HUFFYUV, MKTAG('H', 'F', 'Y', 'U') },
-    { CODEC_ID_FFVHUFF, MKTAG('F', 'F', 'V', 'H') },
-    { CODEC_ID_CYUV, MKTAG('C', 'Y', 'U', 'V') },
-    { CODEC_ID_RAWVIDEO, MKTAG('I', '4', '2', '0') },
-    { CODEC_ID_RAWVIDEO, MKTAG('Y', 'U', 'Y', '2') },
-    { CODEC_ID_RAWVIDEO, MKTAG('Y', '4', '2', '2') },
-    { CODEC_ID_RAWVIDEO, MKTAG('U', 'Y', 'V', 'Y') },
-    { CODEC_ID_RAWVIDEO, MKTAG('I', 'Y', 'U', 'V') },
-    { CODEC_ID_INDEO3, MKTAG('I', 'V', '3', '1') },
-    { CODEC_ID_INDEO3, MKTAG('I', 'V', '3', '2') },
-    { CODEC_ID_VP3, MKTAG('V', 'P', '3', '1') },
-    { CODEC_ID_VP3, MKTAG('V', 'P', '3', '0') },
-    { CODEC_ID_ASV1, MKTAG('A', 'S', 'V', '1') },
-    { CODEC_ID_ASV2, MKTAG('A', 'S', 'V', '2') },
-    { CODEC_ID_VCR1, MKTAG('V', 'C', 'R', '1') },
-    { CODEC_ID_FFV1, MKTAG('F', 'F', 'V', '1') },
-    { CODEC_ID_XAN_WC4, MKTAG('X', 'x', 'a', 'n') },
-    { CODEC_ID_MSRLE, MKTAG('m', 'r', 'l', 'e') },
-    { CODEC_ID_MSRLE, MKTAG(0x1, 0x0, 0x0, 0x0) },
-    { CODEC_ID_MSVIDEO1, MKTAG('M', 'S', 'V', 'C') },
-    { CODEC_ID_MSVIDEO1, MKTAG('m', 's', 'v', 'c') },
-    { CODEC_ID_MSVIDEO1, MKTAG('C', 'R', 'A', 'M') },
-    { CODEC_ID_MSVIDEO1, MKTAG('c', 'r', 'a', 'm') },
-    { CODEC_ID_MSVIDEO1, MKTAG('W', 'H', 'A', 'M') },
-    { CODEC_ID_MSVIDEO1, MKTAG('w', 'h', 'a', 'm') },
-    { CODEC_ID_CINEPAK, MKTAG('c', 'v', 'i', 'd') },
-    { CODEC_ID_TRUEMOTION1, MKTAG('D', 'U', 'C', 'K') },
-    { CODEC_ID_MSZH, MKTAG('M', 'S', 'Z', 'H') },
-    { CODEC_ID_ZLIB, MKTAG('Z', 'L', 'I', 'B') },
-    { CODEC_ID_SNOW, MKTAG('S', 'N', 'O', 'W') },
-    { CODEC_ID_4XM, MKTAG('4', 'X', 'M', 'V') },
-    { CODEC_ID_FLV1, MKTAG('F', 'L', 'V', '1') },
-    { CODEC_ID_FLASHSV, MKTAG('F', 'S', 'V', '1') },
-    { CODEC_ID_SVQ1, MKTAG('s', 'v', 'q', '1') },
-    { CODEC_ID_TSCC, MKTAG('t', 's', 'c', 'c') },
-    { CODEC_ID_ULTI, MKTAG('U', 'L', 'T', 'I') },
-    { CODEC_ID_VIXL, MKTAG('V', 'I', 'X', 'L') },
-    { CODEC_ID_QPEG, MKTAG('Q', 'P', 'E', 'G') },
-    { CODEC_ID_QPEG, MKTAG('Q', '1', '.', '0') },
-    { CODEC_ID_QPEG, MKTAG('Q', '1', '.', '1') },
-    { CODEC_ID_WMV3, MKTAG('W', 'M', 'V', '3') },
-    { CODEC_ID_LOCO, MKTAG('L', 'O', 'C', 'O') },
-    { CODEC_ID_WNV1, MKTAG('W', 'N', 'V', '1') },
-    { CODEC_ID_AASC, MKTAG('A', 'A', 'S', 'C') },
-    { CODEC_ID_INDEO2, MKTAG('R', 'T', '2', '1') },
-    { CODEC_ID_FRAPS, MKTAG('F', 'P', 'S', '1') },
-    { CODEC_ID_THEORA, MKTAG('t', 'h', 'e', 'o') },
-    { CODEC_ID_TRUEMOTION2, MKTAG('T', 'M', '2', '0') },
-    { CODEC_ID_CSCD, MKTAG('C', 'S', 'C', 'D') },
-    { CODEC_ID_ZMBV, MKTAG('Z', 'M', 'B', 'V') },
-    { CODEC_ID_KMVC, MKTAG('K', 'M', 'V', 'C') },
-    { CODEC_ID_RAWVIDEO, 0 },
-    { CODEC_ID_NONE, 0 },
-};
-
-unsigned int codec_get_tag(const CodecTag *tags, int id)
-{
-    while (tags->id != CODEC_ID_NONE) {
-        if (tags->id == id)
-            return tags->tag;
-        tags++;
-    }
-    return 0;
-}
-
-static unsigned int codec_get_asf_tag(const CodecTag *tags, unsigned int id)
-{
-    while (tags->id != CODEC_ID_NONE) {
-        if (!tags->invalid_asf && tags->id == id)
-            return tags->tag;
-        tags++;
-    }
-    return 0;
-}
-
-enum CodecID codec_get_id(const CodecTag *tags, unsigned int tag)
-{
-    while (tags->id != CODEC_ID_NONE) {
-        if(   toupper((tag >> 0)&0xFF) == toupper((tags->tag >> 0)&0xFF)
-           && toupper((tag >> 8)&0xFF) == toupper((tags->tag >> 8)&0xFF)
-           && toupper((tag >>16)&0xFF) == toupper((tags->tag >>16)&0xFF)
-           && toupper((tag >>24)&0xFF) == toupper((tags->tag >>24)&0xFF))
-            return tags->id;
-        tags++;
-    }
-    return CODEC_ID_NONE;
-}
-
-unsigned int codec_get_bmp_tag(int id)
-{
-    return codec_get_tag(codec_bmp_tags, id);
-}
-
-unsigned int codec_get_wav_tag(int id)
-{
-    return codec_get_tag(codec_wav_tags, id);
-}
-
-enum CodecID codec_get_bmp_id(unsigned int tag)
-{
-    return codec_get_id(codec_bmp_tags, tag);
-}
-
-enum CodecID codec_get_wav_id(unsigned int tag)
-{
-    return codec_get_id(codec_wav_tags, tag);
-}
-
-#ifdef CONFIG_MUXERS
-/* BITMAPINFOHEADER header */
-void put_bmp_header(ByteIOContext *pb, AVCodecContext *enc, const CodecTag *tags, int for_asf)
-{
-    put_le32(pb, 40 + enc->extradata_size); /* size */
-    put_le32(pb, enc->width);
-    put_le32(pb, enc->height);
-    put_le16(pb, 1); /* planes */
-
-    put_le16(pb, enc->bits_per_sample ? enc->bits_per_sample : 24); /* depth */
-    /* compression type */
-    put_le32(pb, for_asf ? (enc->codec_tag ? enc->codec_tag : codec_get_asf_tag(tags, enc->codec_id)) : enc->codec_tag); //
-    put_le32(pb, enc->width * enc->height * 3);
-    put_le32(pb, 0);
-    put_le32(pb, 0);
-    put_le32(pb, 0);
-    put_le32(pb, 0);
-
-    put_buffer(pb, enc->extradata, enc->extradata_size);
-
-    if (enc->extradata_size & 1)
-        put_byte(pb, 0);
-}
-
-void ff_parse_specific_params(AVCodecContext *stream, int *au_rate, int *au_ssize, int *au_scale)
-{
-    int gcd;
-
-    *au_ssize= stream->block_align;
-    if(stream->frame_size && stream->sample_rate){
-        *au_scale=stream->frame_size;
-        *au_rate= stream->sample_rate;
-    }else if(stream->codec_type == CODEC_TYPE_VIDEO){
-        *au_scale= stream->time_base.num;
-        *au_rate = stream->time_base.den;
-    }else{
-        *au_scale= stream->block_align ? stream->block_align*8 : 8;
-        *au_rate = stream->bit_rate;
-    }
-    gcd= ff_gcd(*au_scale, *au_rate);
-    *au_scale /= gcd;
-    *au_rate /= gcd;
-}
-
 static offset_t avi_start_new_riff(AVIContext *avi, ByteIOContext *pb,
                                    const char* riff_tag, const char* list_tag)
 {
@@ -321,8 +75,7 @@ static offset_t avi_start_new_riff(AVIContext *avi, ByteIOContext *pb,
     return loff;
 }
 
-static unsigned char* avi_stream2fourcc(unsigned char* tag, int index,
-                                        enum CodecType type)
+static char* avi_stream2fourcc(char* tag, int index, enum CodecType type)
 {
     tag[0] = '0';
     tag[1] = '0' + index;
@@ -335,6 +88,51 @@ static unsigned char* avi_stream2fourcc(unsigned char* tag, int index,
     }
     tag[4] = '\0';
     return tag;
+}
+
+static void avi_write_info_tag(ByteIOContext *pb, const char *tag, const char *str)
+{
+    int len = strlen(str);
+    if (len > 0) {
+        len++;
+        put_tag(pb, tag);
+        put_le32(pb, len);
+        put_strz(pb, str);
+        if (len & 1)
+            put_byte(pb, 0);
+    }
+}
+
+static int avi_write_counters(AVFormatContext* s, int riff_id)
+{
+    ByteIOContext *pb = &s->pb;
+    AVIContext *avi = s->priv_data;
+    int n, au_byterate, au_ssize, au_scale, nb_frames = 0;
+    offset_t file_size;
+    AVCodecContext* stream;
+
+    file_size = url_ftell(pb);
+    for(n = 0; n < s->nb_streams; n++) {
+        assert(avi->frames_hdr_strm[n]);
+        stream = s->streams[n]->codec;
+        url_fseek(pb, avi->frames_hdr_strm[n], SEEK_SET);
+        ff_parse_specific_params(stream, &au_byterate, &au_ssize, &au_scale);
+        if(au_ssize == 0) {
+            put_le32(pb, avi->packet_count[n]);
+        } else {
+            put_le32(pb, avi->audio_strm_length[n] / au_ssize);
+        }
+        if(stream->codec_type == CODEC_TYPE_VIDEO)
+            nb_frames = FFMAX(nb_frames, avi->packet_count[n]);
+    }
+    if(riff_id == 1) {
+        assert(avi->frames_hdr_all);
+        url_fseek(pb, avi->frames_hdr_all, SEEK_SET);
+        put_le32(pb, nb_frames);
+    }
+    url_fseek(pb, file_size, SEEK_SET);
+
+    return 0;
 }
 
 static int avi_write_header(AVFormatContext *s)
@@ -365,7 +163,7 @@ static int avi_write_header(AVFormatContext *s)
     nb_frames = 0;
 
     if(video_enc){
-        put_le32(pb, (uint32_t)(int64_t_C(1000000) * video_enc->time_base.num / video_enc->time_base.den));
+        put_le32(pb, (uint32_t)(INT64_C(1000000) * video_enc->time_base.num / video_enc->time_base.den));
     } else {
         put_le32(pb, 0);
     }
@@ -398,11 +196,6 @@ static int avi_write_header(AVFormatContext *s)
         put_tag(pb, "strl");
 
         stream = s->streams[i]->codec;
-
-        /* FourCC should really be set by the codec itself */
-        if (! stream->codec_tag) {
-            stream->codec_tag = codec_get_bmp_tag(stream->codec_id);
-        }
 
         /* stream generic header */
         strh = start_tag(pb, "strh");
@@ -506,6 +299,29 @@ static int avi_write_header(AVFormatContext *s)
 
     end_tag(pb, list1);
 
+    list2 = start_tag(pb, "LIST");
+    put_tag(pb, "INFO");
+    avi_write_info_tag(pb, "INAM", s->title);
+    avi_write_info_tag(pb, "IART", s->author);
+    avi_write_info_tag(pb, "ICOP", s->copyright);
+    avi_write_info_tag(pb, "ICMT", s->comment);
+    avi_write_info_tag(pb, "IPRD", s->album);
+    avi_write_info_tag(pb, "IGNR", s->genre);
+    if (s->track) {
+        char str_track[4];
+        snprintf(str_track, 4, "%d", s->track);
+        avi_write_info_tag(pb, "IPRT", str_track);
+    }
+    if(!(s->streams[0]->codec->flags & CODEC_FLAG_BITEXACT))
+        avi_write_info_tag(pb, "ISFT", LIBAVFORMAT_IDENT);
+    end_tag(pb, list2);
+
+    /* some padding for easier tag editing */
+    list2 = start_tag(pb, "JUNK");
+    for (i = 0; i < 1016; i += 4)
+        put_le32(pb, 0);
+    end_tag(pb, list2);
+
     avi->movi_list = start_tag(pb, "LIST");
     put_tag(pb, "movi");
 
@@ -518,8 +334,8 @@ static int avi_write_ix(AVFormatContext *s)
 {
     ByteIOContext *pb = &s->pb;
     AVIContext *avi = s->priv_data;
-    unsigned char tag[5];
-    unsigned char ix_tag[] = "ix00";
+    char tag[5];
+    char ix_tag[] = "ix00";
     int i, j;
 
     assert(!url_is_streamed(pb));
@@ -575,10 +391,9 @@ static int avi_write_idx1(AVFormatContext *s)
 {
     ByteIOContext *pb = &s->pb;
     AVIContext *avi = s->priv_data;
-    offset_t file_size, idx_chunk;
-    int i, n, nb_frames, au_byterate, au_ssize, au_scale;
-    AVCodecContext *stream;
-    unsigned char tag[5];
+    offset_t idx_chunk;
+    int i;
+    char tag[5];
 
     if (!url_is_streamed(pb)) {
         AVIIentry* ie = 0, *tie;
@@ -612,26 +427,7 @@ static int avi_write_idx1(AVFormatContext *s)
         } while (!empty);
         end_tag(pb, idx_chunk);
 
-        /* Fill in frame/sample counters */
-        file_size = url_ftell(pb);
-        nb_frames = 0;
-        for(n=0;n<s->nb_streams;n++) {
-            assert(avi->frames_hdr_strm[n]);
-                stream = s->streams[n]->codec;
-                url_fseek(pb, avi->frames_hdr_strm[n], SEEK_SET);
-                ff_parse_specific_params(stream, &au_byterate, &au_ssize, &au_scale);
-                if (au_ssize == 0) {
-                    put_le32(pb, avi->packet_count[n]);
-                } else {
-                    put_le32(pb, avi->audio_strm_length[n] / au_ssize);
-                }
-            if(stream->codec_type == CODEC_TYPE_VIDEO)
-                nb_frames = FFMAX(nb_frames, avi->packet_count[n]);
-       }
-        assert(avi->frames_hdr_all);
-        url_fseek(pb, avi->frames_hdr_all, SEEK_SET);
-        put_le32(pb, nb_frames);
-       url_fseek(pb, file_size, SEEK_SET);
+        avi_write_counters(s, avi->riff_id);
     }
     return 0;
 }
@@ -646,7 +442,7 @@ static int avi_write_packet(AVFormatContext *s, AVPacket *pkt)
     AVCodecContext *enc= s->streams[stream_index]->codec;
     int size= pkt->size;
 
-//    av_log(s, AV_LOG_DEBUG, "%lld %d %d\n", pkt->dts, avi->packet_count[stream_index], stream_index);
+//    av_log(s, AV_LOG_DEBUG, "%"PRId64" %d %d\n", pkt->dts, avi->packet_count[stream_index], stream_index);
     while(enc->block_align==0 && pkt->dts != AV_NOPTS_VALUE && pkt->dts > avi->packet_count[stream_index]){
         AVPacket empty_packet;
 
@@ -655,7 +451,7 @@ static int avi_write_packet(AVFormatContext *s, AVPacket *pkt)
         empty_packet.data= NULL;
         empty_packet.stream_index= stream_index;
         avi_write_packet(s, &empty_packet);
-//        av_log(s, AV_LOG_DEBUG, "dup %lld %d\n", pkt->dts, avi->packet_count[stream_index]);
+//        av_log(s, AV_LOG_DEBUG, "dup %"PRId64" %d\n", pkt->dts, avi->packet_count[stream_index]);
     }
     avi->packet_count[stream_index]++;
 
@@ -718,36 +514,37 @@ static int avi_write_trailer(AVFormatContext *s)
     int i, j, n, nb_frames;
     offset_t file_size;
 
-    if (!url_is_streamed(pb))
-    {
-    if (avi->riff_id == 1) {
-        end_tag(pb, avi->movi_list);
-        res = avi_write_idx1(s);
-        end_tag(pb, avi->riff_start);
-    } else {
-        avi_write_ix(s);
-        end_tag(pb, avi->movi_list);
-        end_tag(pb, avi->riff_start);
+    if (!url_is_streamed(pb)){
+        if (avi->riff_id == 1) {
+            end_tag(pb, avi->movi_list);
+            res = avi_write_idx1(s);
+            end_tag(pb, avi->riff_start);
+        } else {
+            avi_write_ix(s);
+            end_tag(pb, avi->movi_list);
+            end_tag(pb, avi->riff_start);
 
-        file_size = url_ftell(pb);
-        url_fseek(pb, avi->odml_list - 8, SEEK_SET);
-        put_tag(pb, "LIST"); /* Making this AVI OpenDML one */
-        url_fskip(pb, 16);
+            file_size = url_ftell(pb);
+            url_fseek(pb, avi->odml_list - 8, SEEK_SET);
+            put_tag(pb, "LIST"); /* Making this AVI OpenDML one */
+            url_fskip(pb, 16);
 
-        for (n=nb_frames=0;n<s->nb_streams;n++) {
-             AVCodecContext *stream = s->streams[n]->codec;
-             if (stream->codec_type == CODEC_TYPE_VIDEO) {
-                 if (nb_frames < avi->packet_count[n])
-                     nb_frames = avi->packet_count[n];
-             } else {
-                 if (stream->codec_id == CODEC_ID_MP2 || stream->codec_id == CODEC_ID_MP3) {
-                     nb_frames += avi->packet_count[n];
+            for (n=nb_frames=0;n<s->nb_streams;n++) {
+                AVCodecContext *stream = s->streams[n]->codec;
+                if (stream->codec_type == CODEC_TYPE_VIDEO) {
+                    if (nb_frames < avi->packet_count[n])
+                        nb_frames = avi->packet_count[n];
+                } else {
+                    if (stream->codec_id == CODEC_ID_MP2 || stream->codec_id == CODEC_ID_MP3) {
+                        nb_frames += avi->packet_count[n];
+                    }
                 }
             }
+            put_le32(pb, nb_frames);
+            url_fseek(pb, file_size, SEEK_SET);
+
+            avi_write_counters(s, avi->riff_id);
         }
-        put_le32(pb, nb_frames);
-        url_fseek(pb, file_size, SEEK_SET);
-    }
     }
     put_flush_packet(pb);
 
@@ -762,7 +559,7 @@ static int avi_write_trailer(AVFormatContext *s)
     return res;
 }
 
-static AVOutputFormat avi_oformat = {
+AVOutputFormat avi_muxer = {
     "avi",
     "avi format",
     "video/x-msvideo",
@@ -773,11 +570,6 @@ static AVOutputFormat avi_oformat = {
     avi_write_header,
     avi_write_packet,
     avi_write_trailer,
+    .codec_tag= (const AVCodecTag*[]){codec_bmp_tags, codec_wav_tags, 0},
 };
-
-int avienc_init(void)
-{
-    av_register_output_format(&avi_oformat);
-    return 0;
-}
-#endif //CONFIG_MUXERS
+#endif //CONFIG_AVI_MUXER

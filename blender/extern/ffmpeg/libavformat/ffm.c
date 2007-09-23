@@ -1,19 +1,21 @@
 /*
- * FFM (ffserver live feed) encoder and decoder
+ * FFM (ffserver live feed) muxer and demuxer
  * Copyright (c) 2001 Fabrice Bellard.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -199,6 +201,7 @@ static int ffm_write_header(AVFormatContext *s)
             put_be32(pb, codec->nsse_weight);
             put_be32(pb, codec->frame_skip_cmp);
             put_be64(pb, av_dbl2int(codec->rc_buffer_aggressivity));
+            put_be32(pb, codec->codec_tag);
             break;
         case CODEC_TYPE_AUDIO:
             put_be32(pb, codec->sample_rate);
@@ -436,7 +439,7 @@ static void adjust_write_index(AVFormatContext *s)
         ffm->write_index += pos_max;
     }
 
-    //printf("Adjusted write index from %lld to %lld: pts=%0.6f\n", orig_write_index, ffm->write_index, pts / 1000000.);
+    //printf("Adjusted write index from %"PRId64" to %"PRId64": pts=%0.6f\n", orig_write_index, ffm->write_index, pts / 1000000.);
     //printf("pts range %0.6f - %0.6f\n", get_pts(s, 0) / 1000000. , get_pts(s, ffm->file_size - 2 * FFM_PACKET_SIZE) / 1000000. );
 
  end:
@@ -467,7 +470,7 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
         ffm->file_size = url_fsize(pb);
         adjust_write_index(s);
     } else {
-        ffm->file_size = (uint64_t_C(1) << 63) - 1;
+        ffm->file_size = (UINT64_C(1) << 63) - 1;
     }
 
     nb_streams = get_be32(pb);
@@ -532,6 +535,7 @@ static int ffm_read_header(AVFormatContext *s, AVFormatParameters *ap)
             codec->nsse_weight = get_be32(pb);
             codec->frame_skip_cmp = get_be32(pb);
             codec->rc_buffer_aggressivity = av_int2dbl(get_be64(pb));
+            codec->codec_tag = get_be32(pb);
             break;
         case CODEC_TYPE_AUDIO:
             codec->sample_rate = get_be32(pb);
@@ -577,15 +581,15 @@ static int ffm_read_packet(AVFormatContext *s, AVPacket *pkt)
     switch(ffm->read_state) {
     case READ_HEADER:
         if (!ffm_is_avail_data(s, FRAME_HEADER_SIZE)) {
-            return -EAGAIN;
+            return AVERROR(EAGAIN);
         }
 #if 0
-        printf("pos=%08Lx spos=%Lx, write_index=%Lx size=%Lx\n",
+        printf("pos=%08"PRIx64" spos=%"PRIx64", write_index=%"PRIx64" size=%"PRIx64"\n",
                url_ftell(&s->pb), s->pb.pos, ffm->write_index, ffm->file_size);
 #endif
         if (ffm_read_data(s, ffm->header, FRAME_HEADER_SIZE, 1) !=
             FRAME_HEADER_SIZE)
-            return -EAGAIN;
+            return AVERROR(EAGAIN);
 #if 0
         {
             int i;
@@ -597,12 +601,12 @@ static int ffm_read_packet(AVFormatContext *s, AVPacket *pkt)
         ffm->read_state = READ_DATA;
         /* fall thru */
     case READ_DATA:
-        size = (ffm->header[2] << 16) | (ffm->header[3] << 8) | ffm->header[4];
+        size = AV_RB24(ffm->header + 2);
         if (!ffm_is_avail_data(s, size)) {
-            return -EAGAIN;
+            return AVERROR(EAGAIN);
         }
 
-        duration = (ffm->header[5] << 16) | (ffm->header[6] << 8) | ffm->header[7];
+        duration = AV_RB24(ffm->header + 5);
 
         av_new_packet(pkt, size);
         pkt->stream_index = ffm->header[0];
@@ -614,7 +618,7 @@ static int ffm_read_packet(AVFormatContext *s, AVPacket *pkt)
         if (ffm_read_data(s, pkt->data, size, 0) != size) {
             /* bad case: desynchronized packet. we cancel all the packet loading */
             av_free_packet(pkt);
-            return -EAGAIN;
+            return AVERROR(EAGAIN);
         }
         if (ffm->first_frame_in_packet)
         {
@@ -641,7 +645,7 @@ static void ffm_seek1(AVFormatContext *s, offset_t pos1)
     if (pos >= ffm->file_size)
         pos -= (ffm->file_size - FFM_PACKET_SIZE);
 #ifdef DEBUG_SEEK
-    printf("seek to %Lx -> %Lx\n", pos1, pos);
+    printf("seek to %"PRIx64" -> %"PRIx64"\n", pos1, pos);
 #endif
     url_fseek(pb, pos, SEEK_SET);
 }
@@ -710,15 +714,10 @@ static int ffm_seek(AVFormatContext *s, int stream_index, int64_t wanted_pts, in
 offset_t ffm_read_write_index(int fd)
 {
     uint8_t buf[8];
-    offset_t pos;
-    int i;
 
     lseek(fd, 8, SEEK_SET);
     read(fd, buf, 8);
-    pos = 0;
-    for(i=0;i<8;i++)
-        pos |= (int64_t)buf[i] << (56 - i * 8);
-    return pos;
+    return AV_RB64(buf);
 }
 
 void ffm_write_write_index(int fd, offset_t pos)
@@ -754,14 +753,15 @@ static int ffm_read_close(AVFormatContext *s)
 
 static int ffm_probe(AVProbeData *p)
 {
-    if (p->buf_size >= 4 &&
+    if (
         p->buf[0] == 'F' && p->buf[1] == 'F' && p->buf[2] == 'M' &&
         p->buf[3] == '1')
         return AVPROBE_SCORE_MAX + 1;
     return 0;
 }
 
-static AVInputFormat ffm_iformat = {
+#ifdef CONFIG_FFM_DEMUXER
+AVInputFormat ffm_demuxer = {
     "ffm",
     "ffm format",
     sizeof(FFMContext),
@@ -771,9 +771,9 @@ static AVInputFormat ffm_iformat = {
     ffm_read_close,
     ffm_seek,
 };
-
-#ifdef CONFIG_MUXERS
-static AVOutputFormat ffm_oformat = {
+#endif
+#ifdef CONFIG_FFM_MUXER
+AVOutputFormat ffm_muxer = {
     "ffm",
     "ffm format",
     "",
@@ -786,13 +786,4 @@ static AVOutputFormat ffm_oformat = {
     ffm_write_packet,
     ffm_write_trailer,
 };
-#endif //CONFIG_MUXERS
-
-int ffm_init(void)
-{
-    av_register_input_format(&ffm_iformat);
-#ifdef CONFIG_MUXERS
-    av_register_output_format(&ffm_oformat);
-#endif //CONFIG_MUXERS
-    return 0;
-}
+#endif //CONFIG_FFM_MUXER

@@ -2,18 +2,20 @@
  * Buffered I/O for ffmpeg system
  * Copyright (c) 2000,2001 Fabrice Bellard
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -21,6 +23,8 @@
 #include <stdarg.h>
 
 #define IO_BUFFER_SIZE 32768
+
+static void fill_buffer(ByteIOContext *s);
 
 int init_put_byte(ByteIOContext *s,
                   unsigned char *buffer,
@@ -50,6 +54,10 @@ int init_put_byte(ByteIOContext *s,
     s->is_streamed = 0;
     s->max_packet_size = 0;
     s->update_checksum= NULL;
+    if(!read_packet && !write_flag){
+        s->pos = buffer_size;
+        s->buf_end = s->buffer + buffer_size;
+    }
     return 0;
 }
 
@@ -106,56 +114,45 @@ void put_flush_packet(ByteIOContext *s)
 offset_t url_fseek(ByteIOContext *s, offset_t offset, int whence)
 {
     offset_t offset1;
+    offset_t pos= s->pos - (s->write_flag ? 0 : (s->buf_end - s->buffer));
 
     if (whence != SEEK_CUR && whence != SEEK_SET)
-        return -EINVAL;
+        return AVERROR(EINVAL);
 
-#ifdef CONFIG_MUXERS
-    if (s->write_flag) {
-        if (whence == SEEK_CUR) {
-            offset1 = s->pos + (s->buf_ptr - s->buffer);
-            if (offset == 0)
-                return offset1;
-            offset += offset1;
-        }
-        offset1 = offset - s->pos;
-        if (!s->must_flush &&
-            offset1 >= 0 && offset1 < (s->buf_end - s->buffer)) {
-            /* can do the seek inside the buffer */
-            s->buf_ptr = s->buffer + offset1;
-        } else {
-            if (!s->seek)
-                return -EPIPE;
+    if (whence == SEEK_CUR) {
+        offset1 = pos + (s->buf_ptr - s->buffer);
+        if (offset == 0)
+            return offset1;
+        offset += offset1;
+    }
+    offset1 = offset - pos;
+    if (!s->must_flush &&
+        offset1 >= 0 && offset1 < (s->buf_end - s->buffer)) {
+        /* can do the seek inside the buffer */
+        s->buf_ptr = s->buffer + offset1;
+    } else if(s->is_streamed && !s->write_flag &&
+              offset1 >= 0 && offset1 < (s->buf_end - s->buffer) + (1<<16)){
+        while(s->pos < offset && !s->eof_reached)
+            fill_buffer(s);
+        s->buf_ptr = s->buf_end + offset - s->pos;
+    } else {
+        offset_t res = AVERROR(EPIPE);
+
+#if defined(CONFIG_MUXERS) || defined(CONFIG_NETWORK)
+        if (s->write_flag) {
             flush_buffer(s);
             s->must_flush = 1;
-            s->buf_ptr = s->buffer;
-            s->seek(s->opaque, offset, SEEK_SET);
-            s->pos = offset;
-        }
-    } else
-#endif //CONFIG_MUXERS
-    {
-        if (whence == SEEK_CUR) {
-            offset1 = s->pos - (s->buf_end - s->buffer) + (s->buf_ptr - s->buffer);
-            if (offset == 0)
-                return offset1;
-            offset += offset1;
-        }
-        offset1 = offset - (s->pos - (s->buf_end - s->buffer));
-        if (offset1 >= 0 && offset1 <= (s->buf_end - s->buffer)) {
-            /* can do the seek inside the buffer */
-            s->buf_ptr = s->buffer + offset1;
-        } else {
-            if (!s->seek)
-                return -EPIPE;
-            s->buf_ptr = s->buffer;
+        } else
+#endif /* defined(CONFIG_MUXERS) || defined(CONFIG_NETWORK) */
+        {
             s->buf_end = s->buffer;
-            if (s->seek(s->opaque, offset, SEEK_SET) == (offset_t)-EPIPE)
-                return -EPIPE;
-            s->pos = offset;
         }
-        s->eof_reached = 0;
+        s->buf_ptr = s->buffer;
+        if (!s->seek || (res = s->seek(s->opaque, offset, SEEK_SET)) < 0)
+            return res;
+        s->pos = offset;
     }
+    s->eof_reached = 0;
     return offset;
 }
 
@@ -174,9 +171,14 @@ offset_t url_fsize(ByteIOContext *s)
     offset_t size;
 
     if (!s->seek)
-        return -EPIPE;
-    size = s->seek(s->opaque, -1, SEEK_END) + 1;
-    s->seek(s->opaque, s->pos, SEEK_SET);
+        return AVERROR(EPIPE);
+    size = s->seek(s->opaque, 0, AVSEEK_SIZE);
+    if(size<0){
+        if ((size = s->seek(s->opaque, -1, SEEK_END)) < 0)
+            return size;
+        size++;
+        s->seek(s->opaque, s->pos, SEEK_SET);
+    }
     return size;
 }
 
@@ -190,7 +192,6 @@ int url_ferror(ByteIOContext *s)
     return s->error;
 }
 
-#if defined(CONFIG_MUXERS) || defined(CONFIG_PROTOCOLS)
 void put_le32(ByteIOContext *s, unsigned int val)
 {
     put_byte(s, val);
@@ -257,7 +258,6 @@ void put_tag(ByteIOContext *s, const char *tag)
         put_byte(s, *tag++);
     }
 }
-#endif //CONFIG_MUXERS || CONFIG_PROTOCOLS
 
 /* Input stream */
 
@@ -280,8 +280,8 @@ static void fill_buffer(ByteIOContext *s)
         /* do not modify buffer if EOF reached so that a seek back can
            be done without rereading data */
         s->eof_reached = 1;
-    if(len<0)
-        s->error= len;
+        if(len<0)
+            s->error= len;
     } else {
         s->pos += len;
         s->buf_ptr = s->buffer;
@@ -298,13 +298,11 @@ unsigned long get_checksum(ByteIOContext *s){
 void init_checksum(ByteIOContext *s, unsigned long (*update_checksum)(unsigned long c, const uint8_t *p, unsigned int len), unsigned long checksum){
     s->update_checksum= update_checksum;
     if(s->update_checksum){
-        s->checksum= s->update_checksum(checksum, NULL, 0);
+        s->checksum= checksum;
         s->checksum_ptr= s->buf_ptr;
     }
 }
 
-/* NOTE: return 0 if EOF, so you cannot use it if EOF handling is
-   necessary */
 /* XXX: put an inline version */
 int get_byte(ByteIOContext *s)
 {
@@ -319,7 +317,6 @@ int get_byte(ByteIOContext *s)
     }
 }
 
-/* NOTE: return URL_EOF (-1) if EOF */
 int url_fgetc(ByteIOContext *s)
 {
     if (s->buf_ptr < s->buf_end) {
@@ -511,26 +508,25 @@ int url_fdopen(ByteIOContext *s, URLContext *h)
     }
     buffer = av_malloc(buffer_size);
     if (!buffer)
-        return -ENOMEM;
+        return AVERROR(ENOMEM);
 
     if (init_put_byte(s, buffer, buffer_size,
                       (h->flags & URL_WRONLY || h->flags & URL_RDWR), h,
                       url_read_packet, url_write_packet, url_seek_packet) < 0) {
         av_free(buffer);
-        return AVERROR_IO;
+        return AVERROR(EIO);
     }
     s->is_streamed = h->is_streamed;
     s->max_packet_size = max_packet_size;
     return 0;
 }
 
-/* XXX: must be called before any I/O */
 int url_setbufsize(ByteIOContext *s, int buf_size)
 {
     uint8_t *buffer;
     buffer = av_malloc(buf_size);
     if (!buffer)
-        return -ENOMEM;
+        return AVERROR(ENOMEM);
 
     av_free(s->buffer);
     s->buffer = buffer;
@@ -543,8 +539,6 @@ int url_setbufsize(ByteIOContext *s, int buf_size)
     return 0;
 }
 
-/* NOTE: when opened as read/write, the buffers are only used for
-   reading */
 int url_fopen(ByteIOContext *s, const char *filename, int flags)
 {
     URLContext *h;
@@ -576,7 +570,6 @@ URLContext *url_fileno(ByteIOContext *s)
 }
 
 #ifdef CONFIG_MUXERS
-/* XXX: currently size is limited */
 int url_fprintf(ByteIOContext *s, const char *fmt, ...)
 {
     va_list ap;
@@ -591,8 +584,6 @@ int url_fprintf(ByteIOContext *s, const char *fmt, ...)
 }
 #endif //CONFIG_MUXERS
 
-/* note: unlike fgets, the EOL character is not returned and a whole
-   line is parsed. return NULL if first char read was EOF */
 char *url_fgets(ByteIOContext *s, char *buf, int buf_size)
 {
     int c;
@@ -614,20 +605,14 @@ char *url_fgets(ByteIOContext *s, char *buf, int buf_size)
     return buf;
 }
 
-/*
- * Return the maximum packet size associated to packetized buffered file
- * handle. If the file is not packetized (stream like http or file on
- * disk), then 0 is returned.
- *
- * @param h buffered file handle
- * @return maximum packet size in bytes
- */
 int url_fget_max_packet_size(ByteIOContext *s)
 {
     return s->max_packet_size;
 }
 
-#ifdef CONFIG_MUXERS
+/* url_open_dyn_buf and url_close_dyn_buf are used in rtp.c to send a response
+ * back to the server even if CONFIG_MUXERS is not set. */
+#if defined(CONFIG_MUXERS) || defined(CONFIG_NETWORK)
 /* buffer handling */
 int url_open_buf(ByteIOContext *s, uint8_t *buf, int buf_size, int flags)
 {
@@ -636,7 +621,6 @@ int url_open_buf(ByteIOContext *s, uint8_t *buf, int buf_size, int flags)
                          NULL, NULL, NULL, NULL);
 }
 
-/* return the written or read size */
 int url_close_buf(ByteIOContext *s)
 {
     put_flush_packet(s);
@@ -744,26 +728,11 @@ static int url_open_dyn_buf_internal(ByteIOContext *s, int max_packet_size)
     return ret;
 }
 
-/*
- * Open a write only memory stream.
- *
- * @param s new IO context
- * @return zero if no error.
- */
 int url_open_dyn_buf(ByteIOContext *s)
 {
     return url_open_dyn_buf_internal(s, 0);
 }
 
-/*
- * Open a write only packetized memory stream with a maximum packet
- * size of 'max_packet_size'.  The stream is stored in a memory buffer
- * with a big endian 4 byte header giving the packet size in bytes.
- *
- * @param s new IO context
- * @param max_packet_size maximum packet size (must be > 0)
- * @return zero if no error.
- */
 int url_open_dyn_packet_buf(ByteIOContext *s, int max_packet_size)
 {
     if (max_packet_size <= 0)
@@ -771,13 +740,6 @@ int url_open_dyn_packet_buf(ByteIOContext *s, int max_packet_size)
     return url_open_dyn_buf_internal(s, max_packet_size);
 }
 
-/*
- * Return the written size and a pointer to the buffer. The buffer
- *  must be freed with av_free().
- * @param s IO context
- * @param pointer to a byte buffer
- * @return the length of the byte buffer
- */
 int url_close_dyn_buf(ByteIOContext *s, uint8_t **pbuffer)
 {
     DynBuffer *d = s->opaque;
@@ -790,4 +752,4 @@ int url_close_dyn_buf(ByteIOContext *s, uint8_t **pbuffer)
     av_free(d);
     return size;
 }
-#endif //CONFIG_MUXERS
+#endif /* CONFIG_MUXERS || CONFIG_NETWORK */

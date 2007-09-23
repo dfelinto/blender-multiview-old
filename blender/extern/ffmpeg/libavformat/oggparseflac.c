@@ -1,18 +1,20 @@
 /*
  *    Copyright (C) 2005  Matthieu CASTET
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -47,7 +49,7 @@ flac_header (AVFormatContext * s, int idx)
         skip_bits(&gb, 4*8); /* "fLaC" */
 
         /* METADATA_BLOCK_HEADER */
-        if (get_bits(&gb, 32) != FLAC_STREAMINFO_SIZE)
+        if (get_bits_long(&gb, 32) != FLAC_STREAMINFO_SIZE)
             return -1;
 
         skip_bits(&gb, 16*2+24*2);
@@ -73,8 +75,24 @@ flac_header (AVFormatContext * s, int idx)
     return 1;
 }
 
+static int
+old_flac_header (AVFormatContext * s, int idx)
+{
+    AVStream *st = s->streams[idx];
+    st->codec->codec_type = CODEC_TYPE_AUDIO;
+    st->codec->codec_id = CODEC_ID_FLAC;
+
+    return 0;
+}
+
 ogg_codec_t flac_codec = {
     .magic = "\177FLAC",
     .magicsize = 5,
     .header = flac_header
+};
+
+ogg_codec_t old_flac_codec = {
+    .magic = "fLaC",
+    .magicsize = 4,
+    .header = old_flac_header
 };

@@ -2,18 +2,20 @@
  * XVideo Motion Compensation
  * Copyright (c) 2003 Ivan Kalvachev
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -27,10 +29,6 @@
 #undef NDEBUG
 #include <assert.h>
 
-#ifdef USE_FASTMEMCPY
-#include "fastmemcpy.h"
-#endif
-
 #ifdef HAVE_XVMC
 
 //X11 includes are in the xvmc_render.h
@@ -42,7 +40,7 @@
 //#include "xvmc_debug.h"
 
 //set s->block
-inline void XVMC_init_block(MpegEncContext *s){
+void XVMC_init_block(MpegEncContext *s){
 xvmc_render_state_t * render;
     render = (xvmc_render_state_t*)s->current_picture.data[2];
     assert(render != NULL);
@@ -136,7 +134,7 @@ const int mb_xy = s->mb_y * s->mb_stride + s->mb_x;
 
     if(s->encoding){
         av_log(s->avctx, AV_LOG_ERROR, "XVMC doesn't support encoding!!!\n");
-        return -1;
+        return;
     }
 
    //from MPV_decode_mb(),

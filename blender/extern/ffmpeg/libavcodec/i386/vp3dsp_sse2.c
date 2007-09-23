@@ -1,18 +1,20 @@
 /*
  * Copyright (C) 2004 the ffmpeg project
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -21,7 +23,7 @@
  * SSE2-optimized functions cribbed from the original VP3 source code.
  */
 
-#include "../dsputil.h"
+#include "dsputil.h"
 #include "mmx.h"
 
 static DECLARE_ALIGNED_16(const unsigned short, SSE2_dequant_const[]) =
@@ -822,4 +824,16 @@ void ff_vp3_idct_sse2(int16_t *input_data)
     SSE2_Transpose();
 
     SSE2_Column_IDCT();
+}
+
+void ff_vp3_idct_put_sse2(uint8_t *dest, int line_size, DCTELEM *block)
+{
+    ff_vp3_idct_sse2(block);
+    put_signed_pixels_clamped_mmx(block, dest, line_size);
+}
+
+void ff_vp3_idct_add_sse2(uint8_t *dest, int line_size, DCTELEM *block)
+{
+    ff_vp3_idct_sse2(block);
+    add_pixels_clamped_mmx(block, dest, line_size);
 }

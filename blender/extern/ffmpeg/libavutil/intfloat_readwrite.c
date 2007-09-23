@@ -3,18 +3,20 @@
  *
  * Copyright (c) 2005 Michael Niedermayer <michaelni@gmx.at>
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -27,7 +29,7 @@
 #include "intfloat_readwrite.h"
 
 double av_int2dbl(int64_t v){
-    if(v+v > 0xFFELLU<<52)
+    if(v+v > 0xFFEULL<<52)
         return 0.0/0.0;
     return ldexp(((v&((1LL<<52)-1)) + (1LL<<52)) * (v>>63|1), (v>>52&0x7FF)-1075);
 }
@@ -43,7 +45,7 @@ double av_ext2dbl(const AVExtFloat ext){
     int e, i;
 
     for (i = 0; i < 8; i++)
-        m |= (uint64_t)ext.mantissa[i]<<(56-(i<<3));
+        m = (m<<8) + ext.mantissa[i];
     e = (((int)ext.exponent[0]&0x7f)<<8) | ext.exponent[1];
     if (e == 0x7fff && m)
         return 0.0/0.0;
@@ -51,7 +53,7 @@ double av_ext2dbl(const AVExtFloat ext){
                              * mantissa bit is written as opposed to the
                              * single and double precision formats */
     if (ext.exponent[0]&0x80)
-        return ldexp(-m, e);
+        m= -m;
     return ldexp(m, e);
 }
 
@@ -72,7 +74,7 @@ int32_t av_flt2int(float d){
 }
 
 AVExtFloat av_dbl2ext(double d){
-    struct AVExtFloat ext;
+    struct AVExtFloat ext= {{0}};
     int e, i; double f; uint64_t m;
 
     f = fabs(frexp(d, &e));
@@ -83,11 +85,8 @@ AVExtFloat av_dbl2ext(double d){
         m = (uint64_t)ldexp(f, 64);
         for (i=0; i < 8; i++)
             ext.mantissa[i] = m>>(56-(i<<3));
-    } else if (f == 0.0) {
-        memset (&ext, 0, 10);
-    } else {
+    } else if (f != 0.0) {
         ext.exponent[0] = 0x7f; ext.exponent[1] = 0xff;
-        memset (&ext.mantissa, 0, 8);
         if (f != 1/0.0)
             ext.mantissa[0] = ~0;
     }

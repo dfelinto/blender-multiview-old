@@ -2,18 +2,20 @@
  * Shorten decoder
  * Copyright (c) 2005 Jeff Muizelaar
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -170,12 +172,12 @@ static void init_offset(ShortenContext *s)
             s->offset[chan][i] = mean;
 }
 
-static int inline get_le32(GetBitContext *gb)
+static inline int get_le32(GetBitContext *gb)
 {
     return bswap_32(get_bits_long(gb, 32));
 }
 
-static short inline get_le16(GetBitContext *gb)
+static inline short get_le16(GetBitContext *gb)
 {
     return bswap_16(get_bits_long(gb, 16));
 }
@@ -291,12 +293,13 @@ static int shorten_decode_frame(AVCodecContext *avctx,
         s->bitstream_size= buf_size;
 
         if(buf_size < s->max_framesize){
-            //dprintf("wanna more data ... %d\n", buf_size);
+            //dprintf(avctx, "wanna more data ... %d\n", buf_size);
+            *data_size = 0;
             return input_buf_size;
         }
     }
     init_get_bits(&s->gb, buf, buf_size*8);
-    get_bits(&s->gb, s->bitindex);
+    skip_bits(&s->gb, s->bitindex);
     if (!s->blocksize)
     {
         int maxnlpc = 0;
@@ -333,7 +336,8 @@ static int shorten_decode_frame(AVCodecContext *avctx,
         }
         s->nwrap = FFMAX(NWRAP, maxnlpc);
 
-        allocate_buffers(s);
+        if (allocate_buffers(s))
+            return -1;
 
         init_offset(s);
 
@@ -468,6 +472,7 @@ static int shorten_decode_frame(AVCodecContext *avctx,
                 s->blocksize = get_uint(s, av_log2(s->blocksize));
                 break;
             case FN_QUIT:
+                *data_size = 0;
                 return buf_size;
                 break;
             default:

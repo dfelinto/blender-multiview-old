@@ -3,20 +3,21 @@
  *
  * Copyright (c) 2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
  */
 
 /**
@@ -24,9 +25,8 @@
  * FF Video Codec 1 (an experimental lossless codec)
  */
 
-#include "common.h"
-#include "bitstream.h"
 #include "avcodec.h"
+#include "bitstream.h"
 #include "dsputil.h"
 #include "rangecoder.h"
 #include "golomb.h"
@@ -184,7 +184,7 @@ typedef struct FFV1Context{
     DSPContext dsp;
 }FFV1Context;
 
-static always_inline int fold(int diff, int bits){
+static av_always_inline int fold(int diff, int bits){
     if(bits==8)
         diff= (int8_t)diff;
     else{
@@ -223,7 +223,7 @@ static inline void put_symbol(RangeCoder *c, uint8_t *state, int v, int is_signe
     int i;
 
     if(v){
-        const int a= ABS(v);
+        const int a= FFABS(v);
         const int e= av_log2(a);
         put_rac(c, state+0, 0);
 
@@ -271,7 +271,7 @@ static inline int get_symbol(RangeCoder *c, uint8_t *state, int is_signed){
 static inline void update_vlc_state(VlcState * const state, const int v){
     int drift= state->drift;
     int count= state->count;
-    state->error_sum += ABS(v);
+    state->error_sum += FFABS(v);
     drift += v;
 
     if(count == 128){ //FIXME variable
@@ -354,6 +354,7 @@ static inline int get_vlc_symbol(GetBitContext *gb, VlcState * const state, int 
     return ret;
 }
 
+#ifdef CONFIG_ENCODERS
 static inline int encode_line(FFV1Context *s, int w, int_fast16_t *sample[2], int plane_index, int bits){
     PlaneContext * const p= &s->plane[plane_index];
     RangeCoder * const c= &s->c;
@@ -527,6 +528,7 @@ static void write_header(FFV1Context *f){
     for(i=0; i<5; i++)
         write_quant_table(c, f->quant_table[i]);
 }
+#endif /* CONFIG_ENCODERS */
 
 static int common_init(AVCodecContext *avctx){
     FFV1Context *s = avctx->priv_data;
@@ -545,6 +547,7 @@ static int common_init(AVCodecContext *avctx){
     return 0;
 }
 
+#ifdef CONFIG_ENCODERS
 static int encode_init(AVCodecContext *avctx)
 {
     FFV1Context *s = avctx->priv_data;
@@ -595,7 +598,7 @@ static int encode_init(AVCodecContext *avctx)
     case PIX_FMT_YUV410P:
         s->colorspace= 0;
         break;
-    case PIX_FMT_RGBA32:
+    case PIX_FMT_RGB32:
         s->colorspace= 1;
         break;
     default:
@@ -608,6 +611,7 @@ static int encode_init(AVCodecContext *avctx)
 
     return 0;
 }
+#endif /* CONFIG_ENCODERS */
 
 
 static void clear_state(FFV1Context *f){
@@ -632,6 +636,7 @@ static void clear_state(FFV1Context *f){
     }
 }
 
+#ifdef CONFIG_ENCODERS
 static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size, void *data){
     FFV1Context *f = avctx->priv_data;
     RangeCoder * const c= &f->c;
@@ -687,6 +692,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
         return used_count + (put_bits_count(&f->pb)+7)/8;
     }
 }
+#endif /* CONFIG_ENCODERS */
 
 static int common_end(AVCodecContext *avctx){
     FFV1Context *s = avctx->priv_data;
@@ -696,6 +702,7 @@ static int common_end(AVCodecContext *avctx){
         PlaneContext *p= &s->plane[i];
 
         av_freep(&p->state);
+        av_freep(&p->vlc_state);
     }
 
     return 0;
@@ -887,7 +894,7 @@ static int read_header(FFV1Context *f){
             av_log(f->avctx, AV_LOG_ERROR, "chroma subsampling not supported in this colorspace\n");
             return -1;
         }
-        f->avctx->pix_fmt= PIX_FMT_RGBA32;
+        f->avctx->pix_fmt= PIX_FMT_RGB32;
     }else{
         av_log(f->avctx, AV_LOG_ERROR, "colorspace not supported\n");
         return -1;
@@ -1027,5 +1034,6 @@ AVCodec ffv1_encoder = {
     encode_init,
     encode_frame,
     common_end,
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_YUV444P, PIX_FMT_YUV422P, PIX_FMT_YUV411P, PIX_FMT_YUV410P, PIX_FMT_RGB32, -1},
 };
 #endif

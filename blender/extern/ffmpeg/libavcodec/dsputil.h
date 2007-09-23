@@ -3,18 +3,20 @@
  * Copyright (c) 2000, 2001, 2002 Fabrice Bellard.
  * Copyright (c) 2002-2004 Michael Niedermayer <michaelni@gmx.at>
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -28,7 +30,6 @@
 #ifndef DSPUTIL_H
 #define DSPUTIL_H
 
-#include "common.h"
 #include "avcodec.h"
 
 
@@ -36,6 +37,7 @@
 /* dct code */
 typedef short DCTELEM;
 typedef int DWTELEM;
+typedef short IDWTELEM;
 
 void fdct_ifast (DCTELEM *data);
 void fdct_ifast248 (DCTELEM *data);
@@ -58,6 +60,10 @@ void ff_h264_idct_dc_add_c(uint8_t *dst, DCTELEM *block, int stride);
 void ff_h264_lowres_idct_add_c(uint8_t *dst, int stride, DCTELEM *block);
 void ff_h264_lowres_idct_put_c(uint8_t *dst, int stride, DCTELEM *block);
 
+void ff_vector_fmul_add_add_c(float *dst, const float *src0, const float *src1,
+                              const float *src2, int src3, int blocksize, int step);
+void ff_float_to_int16_c(int16_t *dst, const float *src, int len);
+
 /* encoding scans */
 extern const uint8_t ff_alternate_horizontal_scan[64];
 extern const uint8_t ff_alternate_vertical_scan[64];
@@ -68,8 +74,8 @@ extern const uint8_t ff_zigzag248_direct[64];
 #define MAX_NEG_CROP 1024
 
 /* temporary */
-extern uint32_t squareTbl[512];
-extern uint8_t cropTbl[256 + 2 * MAX_NEG_CROP];
+extern uint32_t ff_squareTbl[512];
+extern uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP];
 
 /* VP3 DSP functions */
 void ff_vp3_idct_c(DCTELEM *block/* align 16*/);
@@ -139,7 +145,7 @@ static void a(uint8_t *block, const uint8_t *pixels, int line_size, int h){\
 
 /* motion estimation */
 // h is limited to {width/2, width, 2*width} but never larger than 16 and never smaller then 2
-// allthough currently h<4 is not used as functions with width <8 are not used and neither implemented
+// although currently h<4 is not used as functions with width <8 are neither used nor implemented
 typedef int (*me_cmp_func)(void /*MpegEncContext*/ *s, uint8_t *blk1/*align width (8 or 16)*/, uint8_t *blk2/*align 1*/, int line_size, int h)/* __attribute__ ((const))*/;
 
 
@@ -158,6 +164,7 @@ typedef struct DSPContext {
     void (*add_pixels_clamped)(const DCTELEM *block/*align 16*/, uint8_t *pixels/*align 8*/, int line_size);
     void (*add_pixels8)(uint8_t *pixels, DCTELEM *block, int line_size);
     void (*add_pixels4)(uint8_t *pixels, DCTELEM *block, int line_size);
+    int (*sum_abs_dctelem)(DCTELEM *block/*align 16*/);
     /**
      * translational global motion compensation.
      */
@@ -194,9 +201,12 @@ typedef struct DSPContext {
     me_cmp_func ildct_cmp[5]; //only width 16 used
     me_cmp_func frame_skip_cmp[5]; //only width 8 used
 
+    int (*ssd_int8_vs_int16)(const int8_t *pix1, const int16_t *pix2,
+                             int size);
+
     /**
      * Halfpel motion compensation with rounding (a+b+1)>>1.
-     * this is an array[4][4] of motion compensation funcions for 4
+     * this is an array[4][4] of motion compensation functions for 4
      * horizontal blocksizes (8,16) and the 4 halfpel positions<br>
      * *pixels_tab[ 0->16xH 1->8xH ][ xhalfpel + 2*yhalfpel ]
      * @param block destination where the result is stored
@@ -220,7 +230,7 @@ typedef struct DSPContext {
 
     /**
      * Halfpel motion compensation with no rounding (a+b)>>1.
-     * this is an array[2][4] of motion compensation funcions for 2
+     * this is an array[2][4] of motion compensation functions for 2
      * horizontal blocksizes (8,16) and the 4 halfpel positions<br>
      * *pixels_tab[ 0->16xH 1->8xH ][ xhalfpel + 2*yhalfpel ]
      * @param block destination where the result is stored
@@ -232,7 +242,7 @@ typedef struct DSPContext {
 
     /**
      * Halfpel motion compensation with no rounding (a+b)>>1.
-     * this is an array[2][4] of motion compensation funcions for 2
+     * this is an array[2][4] of motion compensation functions for 2
      * horizontal blocksizes (8,16) and the 4 halfpel positions<br>
      * *pixels_tab[ 0->16xH 1->8xH ][ xhalfpel + 2*yhalfpel ]
      * @param block destination into which the result is averaged (a+b)>>1
@@ -246,7 +256,8 @@ typedef struct DSPContext {
 
     /**
      * Thirdpel motion compensation with rounding (a+b+1)>>1.
-     * this is an array[12] of motion compensation funcions for the 9 thirdpel positions<br>
+     * this is an array[12] of motion compensation functions for the 9 thirdpe
+     * positions<br>
      * *pixels_tab[ xthirdpel + 4*ythirdpel ]
      * @param block destination where the result is stored
      * @param pixels source
@@ -263,16 +274,30 @@ typedef struct DSPContext {
     qpel_mc_func put_mspel_pixels_tab[8];
 
     /**
-     * h264 Chram MC
+     * h264 Chroma MC
      */
     h264_chroma_mc_func put_h264_chroma_pixels_tab[3];
+    /* This is really one func used in VC-1 decoding */
+    h264_chroma_mc_func put_no_rnd_h264_chroma_pixels_tab[3];
     h264_chroma_mc_func avg_h264_chroma_pixels_tab[3];
 
     qpel_mc_func put_h264_qpel_pixels_tab[4][16];
     qpel_mc_func avg_h264_qpel_pixels_tab[4][16];
 
+    qpel_mc_func put_2tap_qpel_pixels_tab[4][16];
+    qpel_mc_func avg_2tap_qpel_pixels_tab[4][16];
+
     h264_weight_func weight_h264_pixels_tab[10];
     h264_biweight_func biweight_h264_pixels_tab[10];
+
+    /* AVS specific */
+    qpel_mc_func put_cavs_qpel_pixels_tab[2][16];
+    qpel_mc_func avg_cavs_qpel_pixels_tab[2][16];
+    void (*cavs_filter_lv)(uint8_t *pix, int stride, int alpha, int beta, int tc, int bs1, int bs2);
+    void (*cavs_filter_lh)(uint8_t *pix, int stride, int alpha, int beta, int tc, int bs1, int bs2);
+    void (*cavs_filter_cv)(uint8_t *pix, int stride, int alpha, int beta, int tc, int bs1, int bs2);
+    void (*cavs_filter_ch)(uint8_t *pix, int stride, int alpha, int beta, int tc, int bs1, int bs2);
+    void (*cavs_idct8_add)(uint8_t *dst, DCTELEM *block, int stride);
 
     me_cmp_func pix_abs[2][4];
 
@@ -292,11 +317,26 @@ typedef struct DSPContext {
     void (*h264_h_loop_filter_chroma)(uint8_t *pix, int stride, int alpha, int beta, int8_t *tc0);
     void (*h264_v_loop_filter_chroma_intra)(uint8_t *pix, int stride, int alpha, int beta);
     void (*h264_h_loop_filter_chroma_intra)(uint8_t *pix, int stride, int alpha, int beta);
+    // h264_loop_filter_strength: simd only. the C version is inlined in h264.c
+    void (*h264_loop_filter_strength)(int16_t bS[2][4][4], uint8_t nnz[40], int8_t ref[2][40], int16_t mv[2][40][2],
+                                      int bidir, int edges, int step, int mask_mv0, int mask_mv1);
 
     void (*h263_v_loop_filter)(uint8_t *src, int stride, int qscale);
     void (*h263_h_loop_filter)(uint8_t *src, int stride, int qscale);
 
     void (*h261_loop_filter)(uint8_t *src, int stride);
+
+    /* assume len is a multiple of 4, and arrays are 16-byte aligned */
+    void (*vorbis_inverse_coupling)(float *mag, float *ang, int blocksize);
+    /* assume len is a multiple of 8, and arrays are 16-byte aligned */
+    void (*vector_fmul)(float *dst, const float *src, int len);
+    void (*vector_fmul_reverse)(float *dst, const float *src0, const float *src1, int len);
+    /* assume len is a multiple of 8, and src arrays are 16-byte aligned */
+    void (*vector_fmul_add_add)(float *dst, const float *src0, const float *src1, const float *src2, int src3, int len, int step);
+
+    /* C version: convert floats from the range [384.0,386.0] to ints in [-32768,32767]
+     * simd versions: convert floats from [-32768.0,32767.0] without rescaling and arrays are 16byte aligned */
+    void (*float_to_int16)(int16_t *dst, const float *src, int len);
 
     /* (I)DCT */
     void (*fdct)(DCTELEM *block/* align 16*/);
@@ -343,23 +383,39 @@ typedef struct DSPContext {
 #define BASIS_SHIFT 16
 #define RECON_SHIFT 6
 
+    /* h264 functions */
     void (*h264_idct_add)(uint8_t *dst, DCTELEM *block, int stride);
     void (*h264_idct8_add)(uint8_t *dst, DCTELEM *block, int stride);
     void (*h264_idct_dc_add)(uint8_t *dst, DCTELEM *block, int stride);
     void (*h264_idct8_dc_add)(uint8_t *dst, DCTELEM *block, int stride);
+    void (*h264_dct)(DCTELEM block[4][4]);
 
     /* snow wavelet */
-    void (*vertical_compose97i)(DWTELEM *b0, DWTELEM *b1, DWTELEM *b2, DWTELEM *b3, DWTELEM *b4, DWTELEM *b5, int width);
-    void (*horizontal_compose97i)(DWTELEM *b, int width);
-    void (*inner_add_yblock)(uint8_t *obmc, const int obmc_stride, uint8_t * * block, int b_w, int b_h, int src_x, int src_y, int src_stride, slice_buffer * sb, int add, uint8_t * dst8);
+    void (*vertical_compose97i)(IDWTELEM *b0, IDWTELEM *b1, IDWTELEM *b2, IDWTELEM *b3, IDWTELEM *b4, IDWTELEM *b5, int width);
+    void (*horizontal_compose97i)(IDWTELEM *b, int width);
+    void (*inner_add_yblock)(const uint8_t *obmc, const int obmc_stride, uint8_t * * block, int b_w, int b_h, int src_x, int src_y, int src_stride, slice_buffer * sb, int add, uint8_t * dst8);
 
     void (*prefetch)(void *mem, int stride, int h);
 
     void (*shrink[4])(uint8_t *dst, int dst_wrap, const uint8_t *src, int src_wrap, int width, int height);
+
+    /* vc1 functions */
+    void (*vc1_inv_trans_8x8)(DCTELEM *b);
+    void (*vc1_inv_trans_8x4)(DCTELEM *b, int n);
+    void (*vc1_inv_trans_4x8)(DCTELEM *b, int n);
+    void (*vc1_inv_trans_4x4)(DCTELEM *b, int n);
+    void (*vc1_v_overlap)(uint8_t* src, int stride);
+    void (*vc1_h_overlap)(uint8_t* src, int stride);
+    /* put 8x8 block with bicubic interpolation and quarterpel precision
+     * last argument is actually round value instead of height
+     */
+    op_pixels_func put_vc1_mspel_pixels_tab[16];
 } DSPContext;
 
 void dsputil_static_init(void);
 void dsputil_init(DSPContext* p, AVCodecContext *avctx);
+
+int ff_check_alignment(void);
 
 /**
  * permute block according to permuatation.
@@ -416,11 +472,17 @@ static inline int get_penalty_factor(int lambda, int lambda2, int type){
    one or more MultiMedia extension */
 int mm_support(void);
 
-#ifdef __GNUC__
-  #define DECLARE_ALIGNED_16(t,v)       t v __attribute__ ((aligned (16)))
-#else
-  #define DECLARE_ALIGNED_16(t,v)      __declspec(align(16)) t v
-#endif
+void dsputil_init_alpha(DSPContext* c, AVCodecContext *avctx);
+void dsputil_init_armv4l(DSPContext* c, AVCodecContext *avctx);
+void dsputil_init_bfin(DSPContext* c, AVCodecContext *avctx);
+void dsputil_init_mlib(DSPContext* c, AVCodecContext *avctx);
+void dsputil_init_mmi(DSPContext* c, AVCodecContext *avctx);
+void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx);
+void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx);
+void dsputil_init_sh4(DSPContext* c, AVCodecContext *avctx);
+void dsputil_init_vis(DSPContext* c, AVCodecContext *avctx);
+
+#define DECLARE_ALIGNED_16(t, v) DECLARE_ALIGNED(16, t, v)
 
 #if defined(HAVE_MMX)
 
@@ -433,6 +495,7 @@ int mm_support(void);
 #define MM_SSE2   0x0010 /* PIV SSE2 functions */
 #define MM_3DNOWEXT  0x0020 /* AMD 3DNowExt */
 #define MM_SSE3   0x0040 /* Prescott SSE3 functions */
+#define MM_SSSE3  0x0080 /* Conroe SSSE3 functions */
 
 extern int mm_flags;
 
@@ -452,51 +515,39 @@ static inline void emms(void)
         emms();\
 }
 
-#ifdef __GNUC__
-  #define DECLARE_ALIGNED_8(t,v)       t v __attribute__ ((aligned (8)))
-#else
-  #define DECLARE_ALIGNED_8(t,v)      __declspec(align(8)) t v
-#endif
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
 
 #define STRIDE_ALIGN 8
 
-void dsputil_init_mmx(DSPContext* c, AVCodecContext *avctx);
 void dsputil_init_pix_mmx(DSPContext* c, AVCodecContext *avctx);
 
 #elif defined(ARCH_ARMV4L)
 
 /* This is to use 4 bytes read to the IDCT pointers for some 'zero'
    line optimizations */
-#define DECLARE_ALIGNED_8(t,v)    t v __attribute__ ((aligned (4)))
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(4, t, v)
 #define STRIDE_ALIGN 4
 
 #define MM_IWMMXT    0x0100 /* XScale IWMMXT */
 
 extern int mm_flags;
 
-void dsputil_init_armv4l(DSPContext* c, AVCodecContext *avctx);
-
 #elif defined(HAVE_MLIB)
 
 /* SPARC/VIS IDCT needs 8-byte aligned DCT blocks */
-#define DECLARE_ALIGNED_8(t,v)    t v __attribute__ ((aligned (8)))
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
 #define STRIDE_ALIGN 8
-
-void dsputil_init_mlib(DSPContext* c, AVCodecContext *avctx);
 
 #elif defined(ARCH_SPARC)
 
 /* SPARC/VIS IDCT needs 8-byte aligned DCT blocks */
-#define DECLARE_ALIGNED_8(t,v)    t v __attribute__ ((aligned (8)))
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
 #define STRIDE_ALIGN 8
-void dsputil_init_vis(DSPContext* c, AVCodecContext *avctx);
 
 #elif defined(ARCH_ALPHA)
 
-#define DECLARE_ALIGNED_8(t,v)    t v __attribute__ ((aligned (8)))
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
 #define STRIDE_ALIGN 8
-
-void dsputil_init_alpha(DSPContext* c, AVCodecContext *avctx);
 
 #elif defined(ARCH_POWERPC)
 
@@ -504,61 +555,36 @@ void dsputil_init_alpha(DSPContext* c, AVCodecContext *avctx);
 
 extern int mm_flags;
 
-#if defined(HAVE_ALTIVEC) && !defined(CONFIG_DARWIN)
+#if defined(HAVE_ALTIVEC) && !defined(__APPLE_CC__)
 #define pixel altivec_pixel
 #include <altivec.h>
 #undef pixel
 #endif
 
-#define DECLARE_ALIGNED_8(t,v)    t v __attribute__ ((aligned (16)))
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(16, t, v)
 #define STRIDE_ALIGN 16
-
-void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx);
 
 #elif defined(HAVE_MMI)
 
-#define DECLARE_ALIGNED_8(t,v)    t v __attribute__ ((aligned (16)))
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(16, t, v)
 #define STRIDE_ALIGN 16
-
-void dsputil_init_mmi(DSPContext* c, AVCodecContext *avctx);
 
 #elif defined(ARCH_SH4)
 
-#define DECLARE_ALIGNED_8(t,v)    t v __attribute__ ((aligned (8)))
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
 #define STRIDE_ALIGN 8
 
-void dsputil_init_sh4(DSPContext* c, AVCodecContext *avctx);
+#elif defined(ARCH_BFIN)
+
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
+#define STRIDE_ALIGN 8
 
 #else
 
-#define DECLARE_ALIGNED_8(t,v)    t v __attribute__ ((aligned (8)))
+#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
 #define STRIDE_ALIGN 8
 
 #endif
-
-#ifdef __GNUC__
-
-struct unaligned_64 { uint64_t l; } __attribute__((packed));
-struct unaligned_32 { uint32_t l; } __attribute__((packed));
-struct unaligned_16 { uint16_t l; } __attribute__((packed));
-
-#define LD16(a) (((const struct unaligned_16 *) (a))->l)
-#define LD32(a) (((const struct unaligned_32 *) (a))->l)
-#define LD64(a) (((const struct unaligned_64 *) (a))->l)
-
-#define ST16(a, b) (((struct unaligned_16 *) (a))->l) = (b)
-#define ST32(a, b) (((struct unaligned_32 *) (a))->l) = (b)
-
-#else /* __GNUC__ */
-
-#define LD16(a) (*((uint16_t*)(a)))
-#define LD32(a) (*((uint32_t*)(a)))
-#define LD64(a) (*((uint64_t*)(a)))
-
-#define ST16(a, b) *((uint16_t*)(a)) = (b)
-#define ST32(a, b) *((uint32_t*)(a)) = (b)
-
-#endif /* !__GNUC__ */
 
 /* PSNR */
 void get_psnr(uint8_t *orig_image[3], uint8_t *coded_image[3],
@@ -571,6 +597,8 @@ void get_psnr(uint8_t *orig_image[3], uint8_t *coded_image[3],
    FFTSample type */
 typedef float FFTSample;
 
+struct MDCTContext;
+
 typedef struct FFTComplex {
     FFTSample re, im;
 } FFTComplex;
@@ -582,6 +610,8 @@ typedef struct FFTContext {
     FFTComplex *exptab;
     FFTComplex *exptab1; /* only used by SSE code */
     void (*fft_calc)(struct FFTContext *s, FFTComplex *z);
+    void (*imdct_calc)(struct MDCTContext *s, FFTSample *output,
+                       const FFTSample *input, FFTSample *tmp);
 } FFTContext;
 
 int ff_fft_init(FFTContext *s, int nbits, int inverse);
@@ -612,6 +642,10 @@ typedef struct MDCTContext {
 int ff_mdct_init(MDCTContext *s, int nbits, int inverse);
 void ff_imdct_calc(MDCTContext *s, FFTSample *output,
                 const FFTSample *input, FFTSample *tmp);
+void ff_imdct_calc_3dn2(MDCTContext *s, FFTSample *output,
+                        const FFTSample *input, FFTSample *tmp);
+void ff_imdct_calc_sse(MDCTContext *s, FFTSample *output,
+                       const FFTSample *input, FFTSample *tmp);
 void ff_mdct_calc(MDCTContext *s, FFTSample *out,
                const FFTSample *input, FFTSample *tmp);
 void ff_mdct_end(MDCTContext *s);
@@ -634,6 +668,83 @@ static int name16(void /*MpegEncContext*/ *s, uint8_t *dst, uint8_t *src, int st
         score +=name8(s, dst+8         , src+8         , stride, 8);\
     }\
     return score;\
+}
+
+
+static inline void copy_block2(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
+{
+    int i;
+    for(i=0; i<h; i++)
+    {
+        AV_WN16(dst   , AV_RN16(src   ));
+        dst+=dstStride;
+        src+=srcStride;
+    }
+}
+
+static inline void copy_block4(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
+{
+    int i;
+    for(i=0; i<h; i++)
+    {
+        AV_WN32(dst   , AV_RN32(src   ));
+        dst+=dstStride;
+        src+=srcStride;
+    }
+}
+
+static inline void copy_block8(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
+{
+    int i;
+    for(i=0; i<h; i++)
+    {
+        AV_WN32(dst   , AV_RN32(src   ));
+        AV_WN32(dst+4 , AV_RN32(src+4 ));
+        dst+=dstStride;
+        src+=srcStride;
+    }
+}
+
+static inline void copy_block9(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
+{
+    int i;
+    for(i=0; i<h; i++)
+    {
+        AV_WN32(dst   , AV_RN32(src   ));
+        AV_WN32(dst+4 , AV_RN32(src+4 ));
+        dst[8]= src[8];
+        dst+=dstStride;
+        src+=srcStride;
+    }
+}
+
+static inline void copy_block16(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
+{
+    int i;
+    for(i=0; i<h; i++)
+    {
+        AV_WN32(dst   , AV_RN32(src   ));
+        AV_WN32(dst+4 , AV_RN32(src+4 ));
+        AV_WN32(dst+8 , AV_RN32(src+8 ));
+        AV_WN32(dst+12, AV_RN32(src+12));
+        dst+=dstStride;
+        src+=srcStride;
+    }
+}
+
+static inline void copy_block17(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int h)
+{
+    int i;
+    for(i=0; i<h; i++)
+    {
+        AV_WN32(dst   , AV_RN32(src   ));
+        AV_WN32(dst+4 , AV_RN32(src+4 ));
+        AV_WN32(dst+8 , AV_RN32(src+8 ));
+        AV_WN32(dst+12, AV_RN32(src+12));
+        dst[16]= src[16];
+        dst+=dstStride;
+        src+=srcStride;
+    }
 }
 
 #endif

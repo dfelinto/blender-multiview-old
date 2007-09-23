@@ -2,18 +2,20 @@
  * 4X Technologies .4xm File Demuxer (no muxer)
  * Copyright (c) 2003  The ffmpeg Project
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -42,6 +44,9 @@
 #define  ifrm_TAG MKTAG('i', 'f', 'r', 'm')
 #define  pfrm_TAG MKTAG('p', 'f', 'r', 'm')
 #define  cfrm_TAG MKTAG('c', 'f', 'r', 'm')
+#define  ifr2_TAG MKTAG('i', 'f', 'r', '2')
+#define  pfr2_TAG MKTAG('p', 'f', 'r', '2')
+#define  cfr2_TAG MKTAG('c', 'f', 'r', '2')
 #define  snd__TAG MKTAG('s', 'n', 'd', '_')
 
 #define vtrk_SIZE 0x44
@@ -77,11 +82,8 @@ typedef struct FourxmDemuxContext {
 
 static int fourxm_probe(AVProbeData *p)
 {
-    if (p->buf_size < 12)
-        return 0;
-
-    if ((LE_32(&p->buf[0]) != RIFF_TAG) ||
-        (LE_32(&p->buf[8]) != _4XMV_TAG))
+    if ((AV_RL32(&p->buf[0]) != RIFF_TAG) ||
+        (AV_RL32(&p->buf[8]) != _4XMV_TAG))
         return 0;
 
     return AVPROBE_SCORE_MAX;
@@ -94,7 +96,7 @@ static int fourxm_read_header(AVFormatContext *s,
     unsigned int fourcc_tag;
     unsigned int size;
     int header_size;
-    FourxmDemuxContext *fourxm = (FourxmDemuxContext *)s->priv_data;
+    FourxmDemuxContext *fourxm = s->priv_data;
     unsigned char *header;
     int i;
     int current_track = -1;
@@ -117,48 +119,50 @@ static int fourxm_read_header(AVFormatContext *s,
     /* allocate space for the header and load the whole thing */
     header = av_malloc(header_size);
     if (!header)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
     if (get_buffer(pb, header, header_size) != header_size)
-        return AVERROR_IO;
+        return AVERROR(EIO);
 
     /* take the lazy approach and search for any and all vtrk and strk chunks */
     for (i = 0; i < header_size - 8; i++) {
-        fourcc_tag = LE_32(&header[i]);
-        size = LE_32(&header[i + 4]);
+        fourcc_tag = AV_RL32(&header[i]);
+        size = AV_RL32(&header[i + 4]);
 
         if (fourcc_tag == std__TAG) {
-            fourxm->fps = av_int2flt(LE_32(&header[i + 12]));
+            fourxm->fps = av_int2flt(AV_RL32(&header[i + 12]));
         } else if (fourcc_tag == vtrk_TAG) {
             /* check that there is enough data */
             if (size != vtrk_SIZE) {
                 av_free(header);
                 return AVERROR_INVALIDDATA;
             }
-            fourxm->width = LE_32(&header[i + 36]);
-            fourxm->height = LE_32(&header[i + 40]);
-            i += 8 + size;
+            fourxm->width = AV_RL32(&header[i + 36]);
+            fourxm->height = AV_RL32(&header[i + 40]);
 
             /* allocate a new AVStream */
             st = av_new_stream(s, 0);
             if (!st)
-                return AVERROR_NOMEM;
+                return AVERROR(ENOMEM);
             av_set_pts_info(st, 60, 1, fourxm->fps);
 
             fourxm->video_stream_index = st->index;
 
             st->codec->codec_type = CODEC_TYPE_VIDEO;
             st->codec->codec_id = CODEC_ID_4XM;
-            st->codec->codec_tag = 0;  /* no fourcc */
+            st->codec->extradata_size = 4;
+            st->codec->extradata = av_malloc(4);
+            AV_WL32(st->codec->extradata, AV_RL32(&header[i + 16]));
             st->codec->width = fourxm->width;
             st->codec->height = fourxm->height;
 
+            i += 8 + size;
         } else if (fourcc_tag == strk_TAG) {
             /* check that there is enough data */
             if (size != strk_SIZE) {
                 av_free(header);
                 return AVERROR_INVALIDDATA;
             }
-            current_track = LE_32(&header[i + 8]);
+            current_track = AV_RL32(&header[i + 8]);
             if (current_track + 1 > fourxm->track_count) {
                 fourxm->track_count = current_track + 1;
                 if((unsigned)fourxm->track_count >= UINT_MAX / sizeof(AudioTrack))
@@ -167,26 +171,26 @@ static int fourxm_read_header(AVFormatContext *s,
                     fourxm->track_count * sizeof(AudioTrack));
                 if (!fourxm->tracks) {
                     av_free(header);
-                    return AVERROR_NOMEM;
+                    return AVERROR(ENOMEM);
                 }
             }
-            fourxm->tracks[current_track].adpcm = LE_32(&header[i + 12]);
-            fourxm->tracks[current_track].channels = LE_32(&header[i + 36]);
-            fourxm->tracks[current_track].sample_rate = LE_32(&header[i + 40]);
-            fourxm->tracks[current_track].bits = LE_32(&header[i + 44]);
+            fourxm->tracks[current_track].adpcm = AV_RL32(&header[i + 12]);
+            fourxm->tracks[current_track].channels = AV_RL32(&header[i + 36]);
+            fourxm->tracks[current_track].sample_rate = AV_RL32(&header[i + 40]);
+            fourxm->tracks[current_track].bits = AV_RL32(&header[i + 44]);
             i += 8 + size;
 
             /* allocate a new AVStream */
             st = av_new_stream(s, current_track);
             if (!st)
-                return AVERROR_NOMEM;
+                return AVERROR(ENOMEM);
 
             av_set_pts_info(st, 60, 1, fourxm->tracks[current_track].sample_rate);
 
             fourxm->tracks[current_track].stream_index = st->index;
 
             st->codec->codec_type = CODEC_TYPE_AUDIO;
-            st->codec->codec_tag = 1;
+            st->codec->codec_tag = 0;
             st->codec->channels = fourxm->tracks[current_track].channels;
             st->codec->sample_rate = fourxm->tracks[current_track].sample_rate;
             st->codec->bits_per_sample = fourxm->tracks[current_track].bits;
@@ -233,10 +237,10 @@ static int fourxm_read_packet(AVFormatContext *s,
 
         if ((ret = get_buffer(&s->pb, header, 8)) < 0)
             return ret;
-        fourcc_tag = LE_32(&header[0]);
-        size = LE_32(&header[4]);
+        fourcc_tag = AV_RL32(&header[0]);
+        size = AV_RL32(&header[4]);
         if (url_feof(pb))
-            return AVERROR_IO;
+            return AVERROR(EIO);
         switch (fourcc_tag) {
 
         case LIST_TAG:
@@ -249,12 +253,16 @@ static int fourxm_read_packet(AVFormatContext *s,
 
         case ifrm_TAG:
         case pfrm_TAG:
-        case cfrm_TAG:{
+        case cfrm_TAG:
+        case ifr2_TAG:
+        case pfr2_TAG:
+        case cfr2_TAG:
+        {
 
             /* allocate 8 more bytes than 'size' to account for fourcc
              * and size */
             if (size + 8 < size || av_new_packet(pkt, size + 8))
-                return AVERROR_IO;
+                return AVERROR(EIO);
             pkt->stream_index = fourxm->video_stream_index;
             pkt->pts = fourxm->video_pts;
             pkt->pos = url_ftell(&s->pb);
@@ -276,7 +284,7 @@ static int fourxm_read_packet(AVFormatContext *s,
             if (track_number == fourxm->selected_track) {
                 ret= av_get_packet(&s->pb, pkt, size);
                 if(ret<0)
-                    return AVERROR_IO;
+                    return AVERROR(EIO);
                 pkt->stream_index =
                     fourxm->tracks[fourxm->selected_track].stream_index;
                 pkt->pts = fourxm->audio_pts;
@@ -311,14 +319,14 @@ static int fourxm_read_packet(AVFormatContext *s,
 
 static int fourxm_read_close(AVFormatContext *s)
 {
-    FourxmDemuxContext *fourxm = (FourxmDemuxContext *)s->priv_data;
+    FourxmDemuxContext *fourxm = s->priv_data;
 
     av_free(fourxm->tracks);
 
     return 0;
 }
 
-static AVInputFormat fourxm_iformat = {
+AVInputFormat fourxm_demuxer = {
     "4xm",
     "4X Technologies format",
     sizeof(FourxmDemuxContext),
@@ -327,9 +335,3 @@ static AVInputFormat fourxm_iformat = {
     fourxm_read_packet,
     fourxm_read_close,
 };
-
-int fourxm_init(void)
-{
-    av_register_input_format(&fourxm_iformat);
-    return 0;
-}

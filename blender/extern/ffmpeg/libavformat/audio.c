@@ -2,18 +2,20 @@
  * Linux audio play and grab interface
  * Copyright (c) 2000, 2001 Fabrice Bellard.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
@@ -21,7 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#ifdef __OpenBSD__
+#ifdef HAVE_SOUNDCARD_H
 #include <soundcard.h>
 #else
 #include <sys/soundcard.h>
@@ -51,21 +53,13 @@ static int audio_open(AudioData *s, int is_output, const char *audio_device)
     int tmp, err;
     char *flip = getenv("AUDIO_FLIP_LEFT");
 
-    /* open linux audio device */
-    if (!audio_device)
-#ifdef __OpenBSD__
-        audio_device = "/dev/sound";
-#else
-        audio_device = "/dev/dsp";
-#endif
-
     if (is_output)
         audio_fd = open(audio_device, O_WRONLY);
     else
         audio_fd = open(audio_device, O_RDONLY);
     if (audio_fd < 0) {
         perror(audio_device);
-        return AVERROR_IO;
+        return AVERROR(EIO);
     }
 
     if (flip && *flip == '1') {
@@ -116,7 +110,7 @@ static int audio_open(AudioData *s, int is_output, const char *audio_device)
     default:
         av_log(NULL, AV_LOG_ERROR, "Soundcard does not support 16 bit sample format\n");
         close(audio_fd);
-        return AVERROR_IO;
+        return AVERROR(EIO);
     }
     err=ioctl(audio_fd, SNDCTL_DSP_SETFMT, &tmp);
     if (err < 0) {
@@ -145,7 +139,7 @@ static int audio_open(AudioData *s, int is_output, const char *audio_device)
     return 0;
  fail:
     close(audio_fd);
-    return AVERROR_IO;
+    return AVERROR(EIO);
 }
 
 static int audio_close(AudioData *s)
@@ -164,9 +158,9 @@ static int audio_write_header(AVFormatContext *s1)
     st = s1->streams[0];
     s->sample_rate = st->codec->sample_rate;
     s->channels = st->codec->channels;
-    ret = audio_open(s, 1, NULL);
+    ret = audio_open(s, 1, s1->filename);
     if (ret < 0) {
-        return AVERROR_IO;
+        return AVERROR(EIO);
     } else {
         return 0;
     }
@@ -191,7 +185,7 @@ static int audio_write_packet(AVFormatContext *s1, AVPacket *pkt)
                 if (ret > 0)
                     break;
                 if (ret < 0 && (errno != EAGAIN && errno != EINTR))
-                    return AVERROR_IO;
+                    return AVERROR(EIO);
             }
             s->buffer_ptr = 0;
         }
@@ -222,15 +216,15 @@ static int audio_read_header(AVFormatContext *s1, AVFormatParameters *ap)
 
     st = av_new_stream(s1, 0);
     if (!st) {
-        return -ENOMEM;
+        return AVERROR(ENOMEM);
     }
     s->sample_rate = ap->sample_rate;
     s->channels = ap->channels;
 
-    ret = audio_open(s, 0, ap->device);
+    ret = audio_open(s, 0, s1->filename);
     if (ret < 0) {
         av_free(st);
-        return AVERROR_IO;
+        return AVERROR(EIO);
     }
 
     /* take real parameters */
@@ -251,7 +245,7 @@ static int audio_read_packet(AVFormatContext *s1, AVPacket *pkt)
     struct audio_buf_info abufi;
 
     if (av_new_packet(pkt, s->frame_size) < 0)
-        return AVERROR_IO;
+        return AVERROR(EIO);
     for(;;) {
         struct timeval tv;
         fd_set fds;
@@ -276,7 +270,7 @@ static int audio_read_packet(AVFormatContext *s1, AVPacket *pkt)
         }
         if (!(ret == 0 || (ret == -1 && (errno == EAGAIN || errno == EINTR)))) {
             av_free_packet(pkt);
-            return AVERROR_IO;
+            return AVERROR(EIO);
         }
     }
     pkt->size = ret;
@@ -313,8 +307,9 @@ static int audio_read_close(AVFormatContext *s1)
     return 0;
 }
 
-static AVInputFormat audio_in_format = {
-    "audio_device",
+#ifdef CONFIG_OSS_DEMUXER
+AVInputFormat oss_demuxer = {
+    "oss",
     "audio grab and output",
     sizeof(AudioData),
     NULL,
@@ -323,9 +318,11 @@ static AVInputFormat audio_in_format = {
     audio_read_close,
     .flags = AVFMT_NOFILE,
 };
+#endif
 
-static AVOutputFormat audio_out_format = {
-    "audio_device",
+#ifdef CONFIG_OSS_MUXER
+AVOutputFormat oss_muxer = {
+    "oss",
     "audio grab and output",
     "",
     "",
@@ -344,10 +341,4 @@ static AVOutputFormat audio_out_format = {
     audio_write_trailer,
     .flags = AVFMT_NOFILE,
 };
-
-int audio_init(void)
-{
-    av_register_input_format(&audio_in_format);
-    av_register_output_format(&audio_out_format);
-    return 0;
-}
+#endif

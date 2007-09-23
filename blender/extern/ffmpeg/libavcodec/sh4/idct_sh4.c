@@ -3,22 +3,24 @@
  *
  * Copyright (c) 2001-2003 BERO <bero@geocities.co.jp>
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "../dsputil.h"
+#include "dsputil.h"
 #define c1      1.38703984532214752434  /* sqrt(2)*cos(1*pi/16) */
 #define c2      1.30656296487637657577  /* sqrt(2)*cos(2*pi/16) */
 #define c3      1.17587560241935884520  /* sqrt(2)*cos(3*pi/16) */
@@ -27,14 +29,14 @@
 #define c6      0.54119610014619712324  /* sqrt(2)*cos(6*pi/16) */
 #define c7      0.27589937928294311353  /* sqrt(2)*cos(7*pi/16) */
 
-const static float even_table[] __attribute__ ((aligned(8))) = {
+static const float even_table[] __attribute__ ((aligned(8))) = {
         c4, c4, c4, c4,
         c2, c6,-c6,-c2,
         c4,-c4,-c4, c4,
         c6,-c2, c2,-c6
 };
 
-const static float odd_table[] __attribute__ ((aligned(8))) = {
+static const float odd_table[] __attribute__ ((aligned(8))) = {
         c1, c3, c5, c7,
         c3,-c7,-c1,-c5,
         c5,-c1, c7, c3,

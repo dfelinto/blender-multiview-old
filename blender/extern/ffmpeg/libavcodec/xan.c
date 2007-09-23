@@ -2,20 +2,21 @@
  * Wing Commander/Xan Video Decoder
  * Copyright (C) 2003 the ffmpeg project
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
  */
 
 /**
@@ -32,7 +33,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "common.h"
 #include "avcodec.h"
 
 typedef struct XanContext {
@@ -68,7 +68,6 @@ static int xan_decode_init(AVCodecContext *avctx)
     }
 
     avctx->pix_fmt = PIX_FMT_PAL8;
-    avctx->has_b_frames = 0;
 
     if(avcodec_check_dimensions(avctx, avctx->width, avctx->height))
         return -1;
@@ -83,7 +82,7 @@ static int xan_decode_init(AVCodecContext *avctx)
     return 0;
 }
 
-/* This function is used in lieu of memcpy(). This decoder can not use
+/* This function is used in lieu of memcpy(). This decoder cannot use
  * memcpy because the memory locations often overlap and
  * memcpy doesn't like that; it's not uncommon, for example, for
  * dest = src+1, to turn byte A into  pattern AAAAAAAA.
@@ -206,7 +205,7 @@ static void xan_unpack(unsigned char *dest, unsigned char *src, int dest_len)
     bytecopy(dest, src, size);  dest += size;  src += size;
 }
 
-static void inline xan_wc3_output_pixel_run(XanContext *s,
+static inline void xan_wc3_output_pixel_run(XanContext *s,
     unsigned char *pixel_buffer, int x, int y, int pixel_count)
 {
     int stride;
@@ -235,7 +234,7 @@ static void inline xan_wc3_output_pixel_run(XanContext *s,
     }
 }
 
-static void inline xan_wc3_copy_pixel_run(XanContext *s,
+static inline void xan_wc3_copy_pixel_run(XanContext *s,
     int x, int y, int pixel_count, int motion_x, int motion_y)
 {
     int stride;
@@ -294,10 +293,10 @@ static void xan_wc3_decode_frame(XanContext *s) {
     unsigned char *vector_segment;
     unsigned char *imagedata_segment;
 
-    huffman_segment =   s->buf + LE_16(&s->buf[0]);
-    size_segment =      s->buf + LE_16(&s->buf[2]);
-    vector_segment =    s->buf + LE_16(&s->buf[4]);
-    imagedata_segment = s->buf + LE_16(&s->buf[6]);
+    huffman_segment =   s->buf + AV_RL16(&s->buf[0]);
+    size_segment =      s->buf + AV_RL16(&s->buf[2]);
+    vector_segment =    s->buf + AV_RL16(&s->buf[4]);
+    imagedata_segment = s->buf + AV_RL16(&s->buf[6]);
 
     xan_huffman_decode(opcode_buffer, huffman_segment, opcode_buffer_size);
 
@@ -348,14 +347,13 @@ static void xan_wc3_decode_frame(XanContext *s) {
 
         case 10:
         case 20:
-            size = BE_16(&size_segment[0]);
+            size = AV_RB16(&size_segment[0]);
             size_segment += 2;
             break;
 
         case 11:
         case 21:
-            size = (size_segment[0] << 16) | (size_segment[1] << 8) |
-                size_segment[2];
+            size = AV_RB24(size_segment);
             size_segment += 3;
             break;
         }

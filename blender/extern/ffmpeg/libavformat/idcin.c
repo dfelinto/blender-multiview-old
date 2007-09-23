@@ -2,18 +2,20 @@
  * Id Quake II CIN File Demuxer
  * Copyright (c) 2003 The ffmpeg Project
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -102,32 +104,28 @@ static int idcin_probe(AVProbeData *p)
      * audio channels: 0 for no audio, or 1 or 2
      */
 
-    /* cannot proceed without 20 bytes */
-    if (p->buf_size < 20)
-        return 0;
-
     /* check the video width */
-    number = LE_32(&p->buf[0]);
+    number = AV_RL32(&p->buf[0]);
     if ((number == 0) || (number > 1024))
        return 0;
 
     /* check the video height */
-    number = LE_32(&p->buf[4]);
+    number = AV_RL32(&p->buf[4]);
     if ((number == 0) || (number > 1024))
        return 0;
 
     /* check the audio sample rate */
-    number = LE_32(&p->buf[8]);
+    number = AV_RL32(&p->buf[8]);
     if ((number != 0) && ((number < 8000) | (number > 48000)))
         return 0;
 
     /* check the audio bytes/sample */
-    number = LE_32(&p->buf[12]);
+    number = AV_RL32(&p->buf[12]);
     if (number > 2)
         return 0;
 
     /* check the audio channels */
-    number = LE_32(&p->buf[16]);
+    number = AV_RL32(&p->buf[16]);
     if (number > 2)
         return 0;
 
@@ -139,7 +137,7 @@ static int idcin_read_header(AVFormatContext *s,
                              AVFormatParameters *ap)
 {
     ByteIOContext *pb = &s->pb;
-    IdcinDemuxContext *idcin = (IdcinDemuxContext *)s->priv_data;
+    IdcinDemuxContext *idcin = s->priv_data;
     AVStream *st;
     unsigned int width, height;
     unsigned int sample_rate, bytes_per_sample, channels;
@@ -153,7 +151,7 @@ static int idcin_read_header(AVFormatContext *s,
 
     st = av_new_stream(s, 0);
     if (!st)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
     av_set_pts_info(st, 33, 1, 90000);
     idcin->video_stream_index = st->index;
     st->codec->codec_type = CODEC_TYPE_VIDEO;
@@ -167,7 +165,7 @@ static int idcin_read_header(AVFormatContext *s,
     st->codec->extradata = av_malloc(HUFFMAN_TABLE_SIZE);
     if (get_buffer(pb, st->codec->extradata, HUFFMAN_TABLE_SIZE) !=
         HUFFMAN_TABLE_SIZE)
-        return AVERROR_IO;
+        return AVERROR(EIO);
     /* save a reference in order to transport the palette */
     st->codec->palctrl = &idcin->palctrl;
 
@@ -176,7 +174,7 @@ static int idcin_read_header(AVFormatContext *s,
         idcin->audio_present = 1;
         st = av_new_stream(s, 0);
         if (!st)
-            return AVERROR_NOMEM;
+            return AVERROR(ENOMEM);
         av_set_pts_info(st, 33, 1, 90000);
         idcin->audio_stream_index = st->index;
         st->codec->codec_type = CODEC_TYPE_AUDIO;
@@ -216,7 +214,7 @@ static int idcin_read_packet(AVFormatContext *s,
     int ret;
     unsigned int command;
     unsigned int chunk_size;
-    IdcinDemuxContext *idcin = (IdcinDemuxContext *)s->priv_data;
+    IdcinDemuxContext *idcin = s->priv_data;
     ByteIOContext *pb = &s->pb;
     int i;
     int palette_scale;
@@ -224,17 +222,17 @@ static int idcin_read_packet(AVFormatContext *s,
     unsigned char palette_buffer[768];
 
     if (url_feof(&s->pb))
-        return AVERROR_IO;
+        return AVERROR(EIO);
 
     if (idcin->next_chunk_is_video) {
         command = get_le32(pb);
         if (command == 2) {
-            return AVERROR_IO;
+            return AVERROR(EIO);
         } else if (command == 1) {
             /* trigger a palette change */
             idcin->palctrl.palette_changed = 1;
             if (get_buffer(pb, palette_buffer, 768) != 768)
-                return AVERROR_IO;
+                return AVERROR(EIO);
             /* scale the palette as necessary */
             palette_scale = 2;
             for (i = 0; i < 768; i++)
@@ -257,7 +255,7 @@ static int idcin_read_packet(AVFormatContext *s,
         chunk_size -= 4;
         ret= av_get_packet(pb, pkt, chunk_size);
         if (ret != chunk_size)
-            return AVERROR_IO;
+            return AVERROR(EIO);
         pkt->stream_index = idcin->video_stream_index;
         pkt->pts = idcin->pts;
     } else {
@@ -268,7 +266,7 @@ static int idcin_read_packet(AVFormatContext *s,
             chunk_size = idcin->audio_chunk_size1;
         ret= av_get_packet(pb, pkt, chunk_size);
         if (ret != chunk_size)
-            return AVERROR_IO;
+            return AVERROR(EIO);
         pkt->stream_index = idcin->audio_stream_index;
         pkt->pts = idcin->pts;
 
@@ -288,7 +286,7 @@ static int idcin_read_close(AVFormatContext *s)
     return 0;
 }
 
-static AVInputFormat idcin_iformat = {
+AVInputFormat idcin_demuxer = {
     "idcin",
     "Id CIN format",
     sizeof(IdcinDemuxContext),
@@ -297,9 +295,3 @@ static AVInputFormat idcin_iformat = {
     idcin_read_packet,
     idcin_read_close,
 };
-
-int idcin_init(void)
-{
-    av_register_input_format(&idcin_iformat);
-    return 0;
-}

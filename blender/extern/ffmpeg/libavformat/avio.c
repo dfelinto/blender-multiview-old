@@ -2,21 +2,24 @@
  * Unbuffered io for ffmpeg system
  * Copyright (c) 2001 Fabrice Bellard
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include "avformat.h"
+#include "avstring.h"
 
 static int default_interrupt_cb(void);
 
@@ -65,14 +68,17 @@ int url_open(URLContext **puc, const char *filename, int flags)
             goto found;
         up = up->next;
     }
-    err = -ENOENT;
+    err = AVERROR(ENOENT);
     goto fail;
  found:
-    uc = av_malloc(sizeof(URLContext) + strlen(filename));
+    uc = av_malloc(sizeof(URLContext) + strlen(filename) + 1);
     if (!uc) {
-        err = -ENOMEM;
+        err = AVERROR(ENOMEM);
         goto fail;
     }
+#if LIBAVFORMAT_VERSION_INT >= (52<<16)
+    uc->filename = (char *) &uc[1];
+#endif
     strcpy(uc->filename, filename);
     uc->prot = up;
     uc->flags = flags;
@@ -95,7 +101,7 @@ int url_read(URLContext *h, unsigned char *buf, int size)
 {
     int ret;
     if (h->flags & URL_WRONLY)
-        return AVERROR_IO;
+        return AVERROR(EIO);
     ret = h->prot->url_read(h, buf, size);
     return ret;
 }
@@ -105,10 +111,10 @@ int url_write(URLContext *h, unsigned char *buf, int size)
 {
     int ret;
     if (!(h->flags & (URL_WRONLY | URL_RDWR)))
-        return AVERROR_IO;
+        return AVERROR(EIO);
     /* avoid sending too big packets */
     if (h->max_packet_size && size > h->max_packet_size)
-        return AVERROR_IO;
+        return AVERROR(EIO);
     ret = h->prot->url_write(h, buf, size);
     return ret;
 }
@@ -119,7 +125,7 @@ offset_t url_seek(URLContext *h, offset_t pos, int whence)
     offset_t ret;
 
     if (!h->prot->url_seek)
-        return -EPIPE;
+        return AVERROR(EPIPE);
     ret = h->prot->url_seek(h, pos, whence);
     return ret;
 }
@@ -146,20 +152,17 @@ offset_t url_filesize(URLContext *h)
 {
     offset_t pos, size;
 
-    pos = url_seek(h, 0, SEEK_CUR);
-    size = url_seek(h, -1, SEEK_END)+1;
-    url_seek(h, pos, SEEK_SET);
+    size= url_seek(h, 0, AVSEEK_SIZE);
+    if(size<0){
+        pos = url_seek(h, 0, SEEK_CUR);
+        if ((size = url_seek(h, -1, SEEK_END)) < 0)
+            return size;
+        size++;
+        url_seek(h, pos, SEEK_SET);
+    }
     return size;
 }
 
-/*
- * Return the maximum packet size associated to packetized file
- * handle. If the file is not packetized (stream like http or file on
- * disk), then 0 is returned.
- *
- * @param h file handle
- * @return maximum packet size in bytes
- */
 int url_get_max_packet_size(URLContext *h)
 {
     return h->max_packet_size;
@@ -167,7 +170,7 @@ int url_get_max_packet_size(URLContext *h)
 
 void url_get_filename(URLContext *h, char *buf, int buf_size)
 {
-    pstrcpy(buf, buf_size, h->filename);
+    av_strlcpy(buf, h->filename, buf_size);
 }
 
 
@@ -176,12 +179,6 @@ static int default_interrupt_cb(void)
     return 0;
 }
 
-/**
- * The callback is called in blocking functions to test regulary if
- * asynchronous interruption is needed. -EINTR is returned in this
- * case by the interrupted function. 'NULL' means no interrupt
- * callback is given.
- */
 void url_set_interrupt_cb(URLInterruptCB *interrupt_cb)
 {
     if (!interrupt_cb)

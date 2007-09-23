@@ -2,20 +2,27 @@
  * MPEG2 transport stream defines
  * Copyright (c) 2003 Fabrice Bellard.
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#ifndef AVFORMAT_MPEGTS_H
+#define AVFORMAT_MPEGTS_H
+
+#include "avformat.h"
 
 #define TS_FEC_PACKET_SIZE 204
 #define TS_DVHS_PACKET_SIZE 192
@@ -44,14 +51,12 @@
 #define STREAM_TYPE_AUDIO_AAC       0x0f
 #define STREAM_TYPE_VIDEO_MPEG4     0x10
 #define STREAM_TYPE_VIDEO_H264      0x1b
+#define STREAM_TYPE_VIDEO_VC1       0xea
 
 #define STREAM_TYPE_AUDIO_AC3       0x81
 #define STREAM_TYPE_AUDIO_DTS       0x8a
 
 #define STREAM_TYPE_SUBTITLE_DVB    0x100
-
-unsigned int mpegts_crc32(const uint8_t *data, int len);
-extern AVOutputFormat mpegts_mux;
 
 typedef struct MpegTSContext MpegTSContext;
 
@@ -59,3 +64,5 @@ MpegTSContext *mpegts_parse_open(AVFormatContext *s);
 int mpegts_parse_packet(MpegTSContext *ts, AVPacket *pkt,
                         const uint8_t *buf, int len);
 void mpegts_parse_close(MpegTSContext *ts);
+
+#endif /* AVFORMAT_MPEGTS_H */

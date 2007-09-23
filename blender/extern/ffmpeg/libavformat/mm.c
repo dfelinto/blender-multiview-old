@@ -2,19 +2,21 @@
  * American Laser Games MM Format Demuxer
  * Copyright (c) 2006 Peter Ross
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * License along with FFmpeg; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 /**
@@ -57,11 +59,9 @@ typedef struct {
 static int mm_probe(AVProbeData *p)
 {
     /* the first chunk is always the header */
-    if (p->buf_size < MM_PREAMBLE_SIZE)
+    if (AV_RL16(&p->buf[0]) != MM_TYPE_HEADER)
         return 0;
-    if (LE_16(&p->buf[0]) != MM_TYPE_HEADER)
-        return 0;
-    if (LE_32(&p->buf[2]) != MM_HEADER_LEN_V && LE_32(&p->buf[2]) != MM_HEADER_LEN_AV)
+    if (AV_RL32(&p->buf[2]) != MM_HEADER_LEN_V && AV_RL32(&p->buf[2]) != MM_HEADER_LEN_AV)
         return 0;
 
     /* only return half certainty since this check is a bit sketchy */
@@ -71,7 +71,7 @@ static int mm_probe(AVProbeData *p)
 static int mm_read_header(AVFormatContext *s,
                            AVFormatParameters *ap)
 {
-    MmDemuxContext *mm = (MmDemuxContext *)s->priv_data;
+    MmDemuxContext *mm = s->priv_data;
     ByteIOContext *pb = &s->pb;
     AVStream *st;
 
@@ -95,7 +95,7 @@ static int mm_read_header(AVFormatContext *s,
     /* video stream */
     st = av_new_stream(s, 0);
     if (!st)
-        return AVERROR_NOMEM;
+        return AVERROR(ENOMEM);
     st->codec->codec_type = CODEC_TYPE_VIDEO;
     st->codec->codec_id = CODEC_ID_MMVIDEO;
     st->codec->codec_tag = 0;  /* no fourcc */
@@ -108,7 +108,7 @@ static int mm_read_header(AVFormatContext *s,
     if (length == MM_HEADER_LEN_AV) {
         st = av_new_stream(s, 0);
         if (!st)
-            return AVERROR_NOMEM;
+            return AVERROR(ENOMEM);
         st->codec->codec_type = CODEC_TYPE_AUDIO;
         st->codec->codec_tag = 0; /* no fourcc */
         st->codec->codec_id = CODEC_ID_PCM_U8;
@@ -126,7 +126,7 @@ static int mm_read_header(AVFormatContext *s,
 static int mm_read_packet(AVFormatContext *s,
                            AVPacket *pkt)
 {
-    MmDemuxContext *mm = (MmDemuxContext *)s->priv_data;
+    MmDemuxContext *mm = s->priv_data;
     ByteIOContext *pb = &s->pb;
     unsigned char preamble[MM_PREAMBLE_SIZE];
     unsigned char pal[MM_PALETTE_SIZE];
@@ -136,17 +136,17 @@ static int mm_read_packet(AVFormatContext *s,
     while(1) {
 
         if (get_buffer(pb, preamble, MM_PREAMBLE_SIZE) != MM_PREAMBLE_SIZE) {
-            return AVERROR_IO;
+            return AVERROR(EIO);
         }
 
-        type = LE_16(&preamble[0]);
-        length = LE_16(&preamble[2]);
+        type = AV_RL16(&preamble[0]);
+        length = AV_RL16(&preamble[2]);
 
         switch(type) {
         case MM_TYPE_PALETTE :
             url_fseek(pb, 4, SEEK_CUR);  /* unknown data */
             if (get_buffer(pb, pal, MM_PALETTE_SIZE) != MM_PALETTE_SIZE)
-                return AVERROR_IO;
+                return AVERROR(EIO);
             url_fseek(pb, length - (4 + MM_PALETTE_SIZE), SEEK_CUR);
 
             for (i=0; i<MM_PALETTE_COUNT; i++) {
@@ -168,10 +168,10 @@ static int mm_read_packet(AVFormatContext *s,
         case MM_TYPE_INTER_HHV :
             /* output preamble + data */
             if (av_new_packet(pkt, length + MM_PREAMBLE_SIZE))
-                return AVERROR_NOMEM;
+                return AVERROR(ENOMEM);
             memcpy(pkt->data, preamble, MM_PREAMBLE_SIZE);
             if (get_buffer(pb, pkt->data + MM_PREAMBLE_SIZE, length) != length)
-                return AVERROR_IO;
+                return AVERROR(EIO);
             pkt->size = length + MM_PREAMBLE_SIZE;
             pkt->stream_index = 0;
             pkt->pts = mm->video_pts++;
@@ -179,7 +179,7 @@ static int mm_read_packet(AVFormatContext *s,
 
         case MM_TYPE_AUDIO :
             if (av_get_packet(&s->pb, pkt, length)<0)
-                return AVERROR_NOMEM;
+                return AVERROR(ENOMEM);
             pkt->size = length;
             pkt->stream_index = 1;
             pkt->pts = mm->audio_pts++;
@@ -199,7 +199,7 @@ static int mm_read_close(AVFormatContext *s)
     return 0;
 }
 
-static AVInputFormat mm_iformat = {
+AVInputFormat mm_demuxer = {
     "mm",
     "American Laser Games MM format",
     sizeof(MmDemuxContext),
@@ -208,9 +208,3 @@ static AVInputFormat mm_iformat = {
     mm_read_packet,
     mm_read_close,
 };
-
-int mm_init(void)
-{
-    av_register_input_format(&mm_iformat);
-    return 0;
-}

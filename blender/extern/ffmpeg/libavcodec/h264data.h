@@ -2,20 +2,21 @@
  * H26L/H264/AVC/JVT/14496-10/... encoder/decoder
  * Copyright (c) 2003 Michael Niedermayer <michaelni@gmx.at>
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
  */
 
 /**
@@ -25,31 +26,33 @@
  * @author Michael Niedermayer <michaelni@gmx.at>
  */
 
-#define VERT_PRED             0
-#define HOR_PRED              1
-#define DC_PRED               2
-#define DIAG_DOWN_LEFT_PRED   3
-#define DIAG_DOWN_RIGHT_PRED  4
-#define VERT_RIGHT_PRED       5
-#define HOR_DOWN_PRED         6
-#define VERT_LEFT_PRED        7
-#define HOR_UP_PRED           8
+#ifndef AVCODEC_H264DATA_H
+#define AVCODEC_H264DATA_H
 
-#define LEFT_DC_PRED          9
-#define TOP_DC_PRED           10
-#define DC_128_PRED           11
+#include <stdint.h>
+#include "mpegvideo.h"
+#include "rational.h"
 
-
-#define DC_PRED8x8            0
-#define HOR_PRED8x8           1
-#define VERT_PRED8x8          2
-#define PLANE_PRED8x8         3
-
-#define LEFT_DC_PRED8x8       4
-#define TOP_DC_PRED8x8        5
-#define DC_128_PRED8x8        6
 
 #define EXTENDED_SAR          255
+
+/* NAL unit types */
+enum {
+NAL_SLICE=1,
+NAL_DPA,
+NAL_DPB,
+NAL_DPC,
+NAL_IDR_SLICE,
+NAL_SEI,
+NAL_SPS,
+NAL_PPS,
+NAL_AUD,
+NAL_END_SEQUENCE,
+NAL_END_STREAM,
+NAL_FILLER_DATA,
+NAL_SPS_EXT,
+NAL_AUXILIARY_SLICE=19
+};
 
 static const AVRational pixel_aspect[14]={
  {0, 1},
@@ -486,15 +489,6 @@ static const PMbInfo b_sub_mb_type_info[13]={
 {MB_TYPE_8x8  |MB_TYPE_P0L0|MB_TYPE_P0L1|MB_TYPE_P1L0|MB_TYPE_P1L1, 4, },
 };
 
-
-static const uint8_t rem6[52]={
-0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, 0, 1, 2, 3,
-};
-
-static const uint8_t div6[52]={
-0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8,
-};
-
 static const uint8_t default_scaling4[2][16]={
 {   6,13,20,28,
    13,20,28,32,
@@ -527,7 +521,7 @@ static const uint8_t default_scaling8[2][64]={
    24,25,27,28,30,32,33,35
 }};
 
-static const int dequant4_coeff_init[6][3]={
+static const uint8_t dequant4_coeff_init[6][3]={
   {10,13,16},
   {11,14,18},
   {13,16,20},
@@ -536,10 +530,10 @@ static const int dequant4_coeff_init[6][3]={
   {18,23,29},
 };
 
-static const int dequant8_coeff_init_scan[16] = {
+static const uint8_t dequant8_coeff_init_scan[16] = {
   0,3,4,3, 3,1,5,1, 4,5,2,5, 3,1,5,1
 };
-static const int dequant8_coeff_init[6][6]={
+static const uint8_t dequant8_coeff_init[6][6]={
   {20,18,32,19,25,24},
   {22,19,35,21,28,26},
   {26,23,42,24,33,31},
@@ -607,23 +601,48 @@ static const int quant_coeff[52][16]={
 
 
 /* Deblocking filter (p153) */
-static const int alpha_table[52] = {
+static const uint8_t alpha_table[52*3] = {
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
      0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
      0,  0,  0,  0,  0,  0,  4,  4,  5,  6,
      7,  8,  9, 10, 12, 13, 15, 17, 20, 22,
     25, 28, 32, 36, 40, 45, 50, 56, 63, 71,
     80, 90,101,113,127,144,162,182,203,226,
-    255, 255
+   255,255,
+   255,255,255,255,255,255,255,255,255,255,255,255,255,
+   255,255,255,255,255,255,255,255,255,255,255,255,255,
+   255,255,255,255,255,255,255,255,255,255,255,255,255,
+   255,255,255,255,255,255,255,255,255,255,255,255,255,
 };
-static const int beta_table[52] = {
+static const uint8_t beta_table[52*3] = {
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
      0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
      0,  0,  0,  0,  0,  0,  2,  2,  2,  3,
      3,  3,  3,  4,  4,  4,  6,  6,  7,  7,
      8,  8,  9,  9, 10, 10, 11, 11, 12, 12,
     13, 13, 14, 14, 15, 15, 16, 16, 17, 17,
-    18, 18
+    18, 18,
+    18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+    18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+    18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+    18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
 };
-static const int tc0_table[52][3] = {
+static const uint8_t tc0_table[52*3][3] = {
+    { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+    { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+    { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+    { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+    { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+    { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+    { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+    { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+    { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
     { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
     { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
     { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 1 },
@@ -632,12 +651,21 @@ static const int tc0_table[52][3] = {
     { 1, 1, 2 }, { 1, 2, 3 }, { 1, 2, 3 }, { 2, 2, 3 }, { 2, 2, 4 }, { 2, 3, 4 },
     { 2, 3, 4 }, { 3, 3, 5 }, { 3, 4, 6 }, { 3, 4, 6 }, { 4, 5, 7 }, { 4, 5, 8 },
     { 4, 6, 9 }, { 5, 7,10 }, { 6, 8,11 }, { 6, 8,13 }, { 7,10,14 }, { 8,11,16 },
-    { 9,12,18 }, {10,13,20 }, {11,15,23 }, {13,17,25 }
+    { 9,12,18 }, {10,13,20 }, {11,15,23 }, {13,17,25 },
+    {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 },
+    {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 },
+    {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 },
+    {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 },
+    {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 },
+    {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 },
+    {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 },
+    {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 },
+    {13,17,25 }, {13,17,25 }, {13,17,25 }, {13,17,25 },
 };
 
 /* Cabac pre state table */
 
-static const int cabac_context_init_I[460][2] =
+static const int8_t cabac_context_init_I[460][2] =
 {
     /* 0 - 10 */
     { 20, -15 }, {  2, 54 },  {  3,  74 }, { 20, -15 },
@@ -806,7 +834,7 @@ static const int cabac_context_init_I[460][2] =
     {  29,   9 }, {  35,  20 }, {  29,  36 }, {  14,  67 }
 };
 
-static const int cabac_context_init_PB[3][460][2] =
+static const int8_t cabac_context_init_PB[3][460][2] =
 {
     /* i_cabac_init_idc == 0 */
     {
@@ -1276,3 +1304,5 @@ static const int cabac_context_init_PB[3][460][2] =
         {  31,  12 }, {  37,  23 }, {  31,  38 }, {  20,  64 },
     }
 };
+
+#endif // AVCODEC_H264DATA_H

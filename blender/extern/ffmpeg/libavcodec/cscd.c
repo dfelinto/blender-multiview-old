@@ -2,24 +2,25 @@
  * CamStudio decoder
  * Copyright (c) 2006 Reimar Doeffinger
  *
- * This library is free software; you can redistribute it and/or
+ * This file is part of FFmpeg.
+ *
+ * FFmpeg is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
+ * version 2.1 of the License, or (at your option) any later version.
  *
- * This library is distributed in the hope that it will be useful,
+ * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
+ * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "common.h"
 #include "avcodec.h"
 
 #ifdef CONFIG_ZLIB
@@ -135,7 +136,7 @@ static void add_frame_32(AVFrame *f, uint8_t *src,
 
 static int decode_frame(AVCodecContext *avctx, void *data, int *data_size,
                         uint8_t *buf, int buf_size) {
-    CamStudioContext *c = (CamStudioContext *)avctx->priv_data;
+    CamStudioContext *c = avctx->priv_data;
     AVFrame *picture = data;
 
     if (buf_size < 2) {
@@ -212,18 +213,17 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size,
 }
 
 static int decode_init(AVCodecContext *avctx) {
-    CamStudioContext *c = (CamStudioContext *)avctx->priv_data;
+    CamStudioContext *c = avctx->priv_data;
     if (avcodec_check_dimensions(avctx, avctx->height, avctx->width) < 0) {
         return 1;
     }
-    avctx->has_b_frames = 0;
     switch (avctx->bits_per_sample) {
-        case 16: avctx->pix_fmt = PIX_FMT_RGB565; break;
+        case 16: avctx->pix_fmt = PIX_FMT_RGB555; break;
         case 24: avctx->pix_fmt = PIX_FMT_BGR24; break;
-        case 32: avctx->pix_fmt = PIX_FMT_RGBA32; break;
+        case 32: avctx->pix_fmt = PIX_FMT_RGB32; break;
         default:
             av_log(avctx, AV_LOG_ERROR,
-                   "CamStudio codec error: unvalid depth %i bpp\n",
+                   "CamStudio codec error: invalid depth %i bpp\n",
                    avctx->bits_per_sample);
              return 1;
     }
@@ -241,7 +241,7 @@ static int decode_init(AVCodecContext *avctx) {
 }
 
 static int decode_end(AVCodecContext *avctx) {
-    CamStudioContext *c = (CamStudioContext *)avctx->priv_data;
+    CamStudioContext *c = avctx->priv_data;
     av_freep(&c->decomp_buf);
     if (c->pic.data[0])
         avctx->release_buffer(avctx, &c->pic);
