@@ -12,6 +12,10 @@ from sets import Set
 
 Import('env')
 
+ff_env = env.Copy();
+ff_env.Replace(CCFLAGS = '')
+ff_env.Replace(BF_DEBUG_FLAGS = '')
+
 makevardef = re.compile('^([a-zA-Z0-9_-]+)[ \t]*(\+?)=(.*)')
 makevarsubst = re.compile('\$\(([^\)]+)\)')
 makeifeq = re.compile('if(n?)eq \(([^,]*),([^\)]*)\)')
@@ -90,7 +94,6 @@ if not os.path.isdir(root + "/include"):
     os.mkdir(root + "/include");
 if not os.path.isdir(root + "/include/ffmpeg"):
     os.mkdir(root + "/include/ffmpeg");
-        
 
 for lib in all_libs:
     vars = getmakevars([root + '/config.mak', root + "/" + lib + '/Makefile'])
@@ -134,11 +137,9 @@ for lib in all_libs:
             shutil.copyfile(root + "/" + lib + "/" + h,
                             root + "/include/ffmpeg/" + h)
 
-    env.BlenderLib (libname="extern_" + lib, sources=sources,
+    ff_env.BlenderLib (libname="extern_" + lib, sources=sources,
                     includes=["."] + all_libs,
                     defines=Split(defs),
                     libtype=['core', 'intern', 'player'],
                     priority = [5, 5, 10],
                     compileflags = Split(cflags))
-        
-    
