@@ -85,7 +85,7 @@ print "Configuring ffmpeg..."
 
 if not os.path.isfile(root + "/config.mak"):
     os.chdir(root);
-    os.system('.' + os.sep + 'configure --disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-pthreads')
+    os.system('sh configure --disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-pthreads')
     os.chdir("../..");
 else:
     print "(skipped, config.mak already exists)"
