@@ -4943,9 +4943,7 @@ void make_ipo_transdata (TransInfo *t)
 void remake_ipo_transdata (TransInfo *t)
 {
 	EditIpo *ei;
-	BezTriple *bezt;
-	
-	int a, b;
+	int a;
 	
 	/* bubble-sort the beztriples */
 	ei= G.sipo->editipo;
