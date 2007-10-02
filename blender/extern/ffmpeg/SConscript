@@ -141,5 +141,5 @@ for lib in all_libs:
                     includes=["."] + all_libs,
                     defines=Split(defs),
                     libtype=['core', 'intern', 'player'],
-                    priority = [5, 5, 10],
+                    priority = [5, 5, 200],
                     compileflags = Split(cflags))
