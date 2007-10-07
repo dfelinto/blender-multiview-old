@@ -21,7 +21,7 @@ The 'cpp' preprocessor is expected to be available on your system, but may work 
 The compiler uses fixed paths as well, if you are going to use it, it is best to just copy the entire 'slcompiler' directory into the ply-2.3/example directory and work from there.
 The main compiler is 'qdslc.py', simple usage: "python qdslc.py shadername.sl" (the -S and -O options can be used to optimize the code a bit and also make it a bit more 'readable').
 If succesful a 'shadername.sqd' file will be the result, copy it to the qdune/shaders directory.
-The compiler is a very extremely recent addition, so again, don't expect things to work well.
+The compiler is a very recent addition, so again, don't expect things to work well.
 
 There are several example ribfiles in the 'ribs' directory which might be useful for testing.
 The fig.12. ribfiles are example files from the 'Advanced Renderman' book, chapter 12, see http://www.renderman.org/RMR/Publications/index.html#Advanced for more info.
