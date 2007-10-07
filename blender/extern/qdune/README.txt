@@ -16,8 +16,10 @@ Thanks to Jos Stam and Alias|Wavefront for making them available.
 
 If you want to experiment with shaders, then you also need the ply parser available here:
 http://www.dabeaz.com/ply/
-The compiler expects the 'cpp' preprocessor to be available on your system.
-The compiler uses fixed paths as well, if you are going to use it, it is best to just copy the entire 'slcompiler' directory into the ply-2.3/example directory and work from there. The main compiler is 'qdslc.py', usage: "python qdslc.py shadername.sl", if succesful a shadername.sqd file will be the result, copy it to the qdune/shaders directory.
+The compiler is currently entirely python based, and needs at least python2.4 to work properly.
+The 'cpp' preprocessor is expected to be available on your system, but may work without it so long as you don't use include files or macros in your shaders.
+The compiler uses fixed paths as well, if you are going to use it, it is best to just copy the entire 'slcompiler' directory into the ply-2.3/example directory and work from there.
+The main compiler is 'qdslc.py', usage: "python qdslc.py shadername.sl", if succesful a shadername.sqd file will be the result, copy it to the qdune/shaders directory.
 The compiler is an extremely recent addition, so again, don't expect things to work well.
 
 There are several example ribfiles in the 'ribs' directory which might be useful for testing.
