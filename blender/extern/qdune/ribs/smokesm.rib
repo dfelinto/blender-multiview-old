@@ -1,0 +1,23 @@
+Hider "hidden" "jitter" [0]
+Display "smokeball.sm" "zfile" "z"
+Format 512 512 1
+PixelSamples 1 1
+PixelFilter "box" 1 1
+ShadingRate 4
+Projection "perspective" "fov" [25]
+ConcatTransform [-1 0 0 0 0 1 0 0 0 0 -1 0 0 0 0 1]
+Translate 0 0 -8 
+#Attribute "dice" "binary" [1]
+WorldBegin
+
+AttributeBegin
+Translate 0 0 2
+Rotate -10 1 1 1
+Sphere 1 -1 1 360
+AttributeEnd
+
+WorldEnd
+
+#MakeShadow "smokeball.z" "smokeball.sm"
+
+
