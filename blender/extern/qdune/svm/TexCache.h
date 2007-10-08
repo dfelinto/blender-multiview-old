@@ -42,7 +42,7 @@ protected:
 	textile_t* getTile(const tileID_t& tileID) const;
 	// data
 	// texture_db is the database of all texture Files in memory.
-	mutable StringHashMap<EXRbuf_t*> texture_db;
+	mutable hashmap_t<EXRbuf_t*> texture_db;
 	// textile_db is the database of all texture Tiles currently in memory.
 	// The amount of memory it occupies (based on size of all tile data)
 	// is the deciding factor for throwing out and loading tiles from disk when it fills up (maxmem variable).

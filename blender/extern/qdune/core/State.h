@@ -159,7 +159,7 @@ public:
 	Camera cam, projcam;	// projection camera init. by hider
 
 	// this only used by ribInterface, lookup of Rib callbacks
-	StringHashMap<RIBFUNC> _riblu;
+	hashmap_t<RIBFUNC> _riblu;
 
 	// current framebuffer, used by the hiders
 	FrameBuffer* framebuffer;
@@ -176,15 +176,15 @@ protected:
 
 	// reference to all cloned attributes
 	std::vector<Attributes*> ref_attr;
-	HashTable<unsigned int, Attributes*, 10> hash_attr;
+	hashtable_t<unsigned int, Attributes*, 10> hash_attr;
 
 	// reference to all cloned transforms
 	std::vector<Transform*> ref_xform;
-	HashTable<unsigned int, Transform*, 10> hash_xfrm;
+	hashtable_t<unsigned int, Transform*, 10> hash_xfrm;
 
 	// reference to all cloned lightsource arrays
 	std::vector<SlShaderInstance**> ref_lights;
-	HashTable<unsigned int, SlShaderInstance**, 10> hash_lights;
+	hashtable_t<unsigned int, SlShaderInstance**, 10> hash_lights;
 
 	// list of named coordinate systems
 	std::map<std::string, Transform> namedCoordSys;

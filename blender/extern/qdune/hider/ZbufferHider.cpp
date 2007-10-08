@@ -480,7 +480,7 @@ void ZbufferHider::bucketEnd()
 	// resample bucket and write to framebuffer
 	float coldat[5];
 	// z is maximum of samples in pixel
-	FixedArray<float> zmax(bucket_sizeY);
+	fsArray_t<float> zmax(bucket_sizeY);
 	if (only_z) {
 		// for depth renders, only need to apply z depth filter
 		coldat[0] = coldat[1] = coldat[2] = coldat[3] = 0.f;

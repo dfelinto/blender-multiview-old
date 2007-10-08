@@ -138,7 +138,7 @@ State::State()
 	// init the hashtable for the ribInterface
 	_ribFunc* ribf = ribFuncTable;
 	while (ribf->name) {
-		_riblu.addItem(ribf->name, ribf->func);
+		_riblu.insert(ribf->name, ribf->func);
 		ribf++;
 	}
 
@@ -681,7 +681,7 @@ Attributes* State::cloneAttributes()
 	// a durable copy is always made of the very first attribute
 	if (!ref_attr.empty()) {
 		// references not empty, re-use of already allocated ones possible?
-		Attributes** ru_attr = hash_attr.findItem(ha);
+		Attributes** ru_attr = hash_attr.find(ha);
 		if (ru_attr) {
 			// do a memcmp() to make sure
 			if (memcmp(*ru_attr, &cur_attr, sizeof(Attributes)) == 0) return *ru_attr;
@@ -690,7 +690,7 @@ Attributes* State::cloneAttributes()
 	// first attribute, nothing found, or miss, so make a new durable copy
 	Attributes* new_attr = new Attributes(cur_attr);
 	ref_attr.push_back(new_attr);
-	hash_attr.addItem(ha, new_attr);
+	hash_attr.insert(ha, new_attr);
 	return new_attr;
 }
 
@@ -700,14 +700,14 @@ Transform* State::cloneTransform()
 	Transform& cur_xform = topTransform();
 	const unsigned int hx = hashfunc(reinterpret_cast<const unsigned char*>(&cur_xform), sizeof(Transform));
 	if (!ref_xform.empty()) {
-		Transform** ru_xfrm = hash_xfrm.findItem(hx);
+		Transform** ru_xfrm = hash_xfrm.find(hx);
 		if (ru_xfrm) {
 			if (memcmp(*ru_xfrm, &cur_xform, sizeof(Transform)) == 0) return *ru_xfrm;
 		}
 	}
 	Transform* xf = new Transform(cur_xform);
 	ref_xform.push_back(xf);
-	hash_xfrm.addItem(hx, xf);
+	hash_xfrm.insert(hx, xf);
 	return xf;
 }
 
@@ -726,7 +726,7 @@ SlShaderInstance** State::cloneLightArray(unsigned int &numlights)
 	const size_t nla_bytes = sizeof(SlShaderInstance*)*numlights;
 	const unsigned int hl = hashfunc(reinterpret_cast<const unsigned char*>(nla), nla_bytes);
 	if (!ref_lights.empty()) {
-		SlShaderInstance*** ru_light = hash_lights.findItem(hl);	// !!!
+		SlShaderInstance*** ru_light = hash_lights.find(hl);	// !!!
 		if (ru_light) {
 			if (memcmp(*ru_light, nla, nla_bytes) == 0) {
 				delete[] nla;
@@ -735,7 +735,7 @@ SlShaderInstance** State::cloneLightArray(unsigned int &numlights)
 		}
 	}
 	ref_lights.push_back(nla);
-	hash_lights.addItem(hl, nla);
+	hash_lights.insert(hl, nla);
 	return nla;
 }
 

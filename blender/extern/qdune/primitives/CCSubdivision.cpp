@@ -85,12 +85,12 @@ typedef unsigned long uint64;
 
 static bool intpolBD = false;
 
-typedef FixedArray<ccVert>::iterator VertIter;
-typedef FixedArray<ccVert>::const_iterator VertConstIter;
-typedef FixedArray<ccFace>::iterator FaceIter;
-typedef FixedArray<ccFace>::const_iterator FaceConstIter;
-typedef FixedArray<ccEdge>::iterator EdgeIter;
-typedef FixedArray<ccEdge>::const_iterator EdgeConstIter;
+typedef fsArray_t<ccVert>::iterator VertIter;
+typedef fsArray_t<ccVert>::const_iterator VertConstIter;
+typedef fsArray_t<ccFace>::iterator FaceIter;
+typedef fsArray_t<ccFace>::const_iterator FaceConstIter;
+typedef fsArray_t<ccEdge>::iterator EdgeIter;
+typedef fsArray_t<ccEdge>::const_iterator EdgeConstIter;
 
 // ugly macros... needs better implementation TODO
 
@@ -103,19 +103,19 @@ typedef FixedArray<ccEdge>::const_iterator EdgeConstIter;
 {\
 	unsigned int _idx1=_i1, _idx2=_i2;\
 	if (_idx1 > _idx2) SWAP(_idx1, _idx2);\
-	int e_idx = *edge_id.findItem(_idx1 + (uint64)_num_verts*_idx2);\
+	int e_idx = *edge_id.find(_idx1 + (uint64)_num_verts*_idx2);\
 	ccFace* f = &_face_list[_fc_idx];\
 	f->edges.push_back(e_idx);\
 	E = &_edge_list[e_idx];\
 	E->v1 = &_vert_list[_i1], E->v2 = &_vert_list[_i2];\
 	if (E->v1->edges.size() == 0) {\
-		const Array<int>* eiv = *edge_verts.findItem(E->v1);\
-		for (Array<int>::const_iterator ei=eiv->begin(); ei!=eiv->end(); ++ei)\
+		const array_t<int>* eiv = *edge_verts.find(E->v1);\
+		for (array_t<int>::const_iterator ei=eiv->begin(); ei!=eiv->end(); ++ei)\
 			E->v1->edges.push_back(&_edge_list[*ei]);\
 	}\
 	if (E->v2->edges.size() == 0) {\
-		const Array<int>* eiv = *edge_verts.findItem(E->v2);\
-		for (Array<int>::const_iterator ei=eiv->begin(); ei!=eiv->end(); ++ei)\
+		const array_t<int>* eiv = *edge_verts.find(E->v2);\
+		for (array_t<int>::const_iterator ei=eiv->begin(); ei!=eiv->end(); ++ei)\
 			E->v2->edges.push_back(&_edge_list[*ei]);\
 	}\
 	E->faces.push_back(f);\
@@ -124,24 +124,24 @@ typedef FixedArray<ccEdge>::const_iterator EdgeConstIter;
 // macro to prepare for edge list initialization
 // determines new number of edges & initializes hashtables
 #define INIT_EDGES(_vert_list, _face_list, _num_verts, _num_faces, _num_edges)\
-	AATree_t<uint64, unsigned int> edge_id;\
-	HashTable<const ccVert*, Array<int>* > edge_verts;\
+	aatree_t<uint64, unsigned int> edge_id;\
+	hashtable_t<const ccVert*, array_t<int>* > edge_verts;\
 	_num_edges = 0;\
 	for (unsigned int fi=0; fi<_num_faces; ++fi) {\
 		ccFace* f = &_face_list[fi];\
-		const Array<int>& fcverts = f->verts;\
+		const array_t<int>& fcverts = f->verts;\
 		const unsigned int nv = fcverts.size();\
 		for (unsigned int vi=0; vi<nv; ++vi) {\
 			unsigned int ri1 = fcverts[vi], ri2 = fcverts[(vi+1) % nv];\
 			unsigned int idx1 = ri1, idx2 = ri2;\
 			if (idx1 > idx2) SWAP(idx1, idx2);\
 			uint64 ID = idx1 + (uint64)_num_verts*idx2;\
-			if (edge_id.findItem(ID) == NULL) {\
-				edge_id.addItem(ID, _num_edges);\
+			if (edge_id.find(ID) == NULL) {\
+				edge_id.insert(ID, _num_edges);\
 				const ccVert *v1 = &_vert_list[ri1], *v2 = &_vert_list[ri2];\
-				Array<int> **evi1 = edge_verts.findItem(v1), **evi2 = edge_verts.findItem(v2);\
-				if (evi1 == NULL) { edge_verts.addItem(v1, new Array<int>);  evi1 = edge_verts.findItem(v1); }\
-				if (evi2 == NULL) { edge_verts.addItem(v2, new Array<int>);  evi2 = edge_verts.findItem(v2); }\
+				array_t<int> **evi1 = edge_verts.find(v1), **evi2 = edge_verts.find(v2);\
+				if (evi1 == NULL) { edge_verts.insert(v1, new array_t<int>);  evi1 = edge_verts.find(v1); }\
+				if (evi2 == NULL) { edge_verts.insert(v2, new array_t<int>);  evi2 = edge_verts.find(v2); }\
 				(*evi1)->push_back(_num_edges);\
 				(*evi2)->push_back(_num_edges);\
 				_num_edges++;\
@@ -152,7 +152,7 @@ typedef FixedArray<ccEdge>::const_iterator EdgeConstIter;
 
 // helper function to set the boundary flag if edge has single face neighbour.
 // Also, if edge on boundary then so are its two vertices and adjacent face
-inline void setBoundaryFlags(FixedArray<ccEdge>& edge_list)
+inline void setBoundaryFlags(fsArray_t<ccEdge>& edge_list)
 {
 	for (EdgeIter e=edge_list.begin(); e!=edge_list.end(); ++e) {
 		if (e->faces.size() == 1) {
@@ -227,7 +227,7 @@ CCSubdivisionMesh::CCSubdivisionMesh(RtInt nf, RtInt nverts[], RtInt verts[], Rt
 	// different code to account for proper propagation of flags.
 	edge_list.resize(num_edges);
 	for (unsigned int fi=0; fi<num_faces; ++fi) {
-		const Array<int>& fcverts = face_list[fi].verts;
+		const array_t<int>& fcverts = face_list[fi].verts;
 		const unsigned int nv = fcverts.size();
 		ccEdge* E;
 		for (unsigned int vi=0; vi<nv; ++vi)
@@ -242,7 +242,7 @@ CCSubdivisionMesh::CCSubdivisionMesh(RtInt nf, RtInt nverts[], RtInt verts[], Rt
 	// if we have s/t coords, set for each face.
 	// for now, only facevarying type
 	if (primvars) {
-		vardata_t **svar = primvars->pvars.findItem("s"), **tvar = primvars->pvars.findItem("t");
+		vardata_t **svar = primvars->pvars.find("s"), **tvar = primvars->pvars.find("t");
 		if (svar && tvar) {
 			if (((*svar)->param.ct_flags & SC_FACEVARYING) && ((*tvar)->param.ct_flags & SC_FACEVARYING)) {
 				const float *sc = (*svar)->data, *tc = (*tvar)->data;
@@ -332,8 +332,8 @@ void CCSubdivisionMesh::dice(MicroPolygonGrid &g, bool Pclose)
 
 // do one iteration of catmull-clark subdivision.
 // returns array of repositioned original vertices and new face & edge verts
-void Subdivide(FixedArray<ccVert> &vert_list,
-               FixedArray<ccEdge> &edge_list, FixedArray<ccFace> &face_list,
+void Subdivide(fsArray_t<ccVert> &vert_list,
+               fsArray_t<ccEdge> &edge_list, fsArray_t<ccFace> &face_list,
                bool fromPatch, bool limitProjection)
 {
 	const unsigned int num_verts = vert_list.size();
@@ -341,13 +341,13 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 	const unsigned int num_faces = face_list.size();
 	const unsigned int new_num_verts = num_verts + num_edges + num_faces;
 
-	FixedArray<ccVert> new_verts(new_num_verts);
+	fsArray_t<ccVert> new_verts(new_num_verts);
 
 	// add new face vertices, average of all face verts
 	int nvi = num_verts; // start index of new face verts
 	for (FaceIter f=face_list.begin(); f!=face_list.end(); ++f) {
 		Point3 nv(0);
-		for (Array<int>::const_iterator vi=f->verts.begin(); vi!=f->verts.end(); ++vi)
+		for (array_t<int>::const_iterator vi=f->verts.begin(); vi!=f->verts.end(); ++vi)
 			nv += vert_list[*vi].co;
 		new_verts[nvi].co = nv / float(f->verts.size());
 		f->center = &new_verts[nvi++];
@@ -374,7 +374,7 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 		if (e->flags & (SD_BOUNDARY | SD_CREASE))
 			new_verts[nvi].co = ne * 0.5f;
 		else {
-			for (Array<ccFace*>::const_iterator f=e->faces.begin(); f!=e->faces.end(); ++f)
+			for (array_t<ccFace*>::const_iterator f=e->faces.begin(); f!=e->faces.end(); ++f)
 				ne += (*f)->center->co;
 			new_verts[nvi].co = ne / float(e->faces.size() + 2);
 		}
@@ -398,7 +398,7 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 
 		// determine number of creases and boundaries
 		int numcr = 0, numbd = 0;
-		for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e) {
+		for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e) {
 			if ((*e)->flags & SD_CREASE) numcr++;
 			if ((*e)->flags & SD_BOUNDARY) numbd++;
 		}
@@ -420,7 +420,7 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 					// since then it is actually an iterator object.
 					// When using the qdtl implementation, which implements 'iterators' directly as pointers, just 'v' would be ok
 					// (not true anymore if the block based implementation is used, has 'proper' iterators)
-					for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
+					for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
 						if ((*e)->flags & SD_CREASE) R += ((*e)->v1 != &(*v)) ? (*e)->v1->co : (*e)->v2->co;
 					new_verts[nvi++].co = R * 0.125f;
 				}
@@ -435,7 +435,7 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 			if (numbd & 1) {
 				// odd number of sharp edges, avg. of orig.vert and adjacent new edge vertices
 				Point3 R = v->co * numbd;
-				for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
+				for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
 					if ((*e)->flags & SD_BOUNDARY) R += (*e)->new_vert->co;
 				new_verts[nvi++].co = R * (0.5f / (float)numbd);
 			}
@@ -443,7 +443,7 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 				// even, standard vertex rule, use average of pairs
 				const float numpairs = float(numbd >> 1);
 				Point3 R = v->co * 6.f * numpairs;
-				for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e) {
+				for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e) {
 					if ((*e)->flags & SD_BOUNDARY) {
 						if ((*e)->v1 != &(*v)) R += (*e)->v1->co;
 						if ((*e)->v2 != &(*v)) R += (*e)->v2->co;
@@ -459,13 +459,13 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 
 		// Q -> average of all new face verts around this vertex
 		Point3 Q(0);
-		for (Array<ccFace*>::const_iterator f=v->faces.begin(); f!=v->faces.end(); ++f)
+		for (array_t<ccFace*>::const_iterator f=v->faces.begin(); f!=v->faces.end(); ++f)
 			Q += (*f)->center->co;
 		Q /= (float)v->faces.size();
 
 		// R -> average of all edge midpoints on this vertex (from CC paper, prbook info seems incorrect)
 		Point3 R(0);
-		for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
+		for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
 			R += ((*e)->v1 != &(*v)) ? (*e)->v1->co : (*e)->v2->co;
 
 		const float ni = 1.f / float(n);
@@ -493,7 +493,7 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 		const unsigned int n = v->edges.size(); // valence
 		// first test if vertex has any crease edges
 		int numcr = 0;
-		for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
+		for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
 			if ((*e)->flags & SD_CREASE) numcr++;
 		if (numcr > 1) {  // if dart, single sharp edge, can be skipped, smooth rule applies
 			if (numcr > 2) // corner, if >2 creases, no change in position
@@ -506,7 +506,7 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 					v->co = newv->co;
 				else {
 					Point3 co = newv->co * 4.f;
-					for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
+					for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
 						if ((*e)->flags & SD_CREASE) co += (*e)->new_vert->co;
 					v->co = co / 6.f;
 				}
@@ -520,21 +520,21 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 			// explicit subd.patches with the evaluated patches.
 			// What *really* to do for all other cases, I don't know...
 			int numbd = 0;
-			for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
+			for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
 				if ((*e)->flags & SD_BOUNDARY) numbd++;
 			// normaly an integer division by 2, but this makes it at least 'look'
 			// as if it works for odd number of boundaries too...
 			const float numpairs = numbd*0.5f;
 			Point3 co = (newv->co * 4.f * numpairs);
-			for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
+			for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
 				if ((*e)->flags & SD_BOUNDARY) co += (*e)->new_vert->co;
 			v->co = co / (6.f*numpairs);
 		}
 		else {
 			Point3 co = newv->co * (n*n);
-			for (Array<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
+			for (array_t<ccEdge*>::const_iterator e=v->edges.begin(); e!=v->edges.end(); ++e)
 				co += (4.f * (*e)->new_vert->co);
-			for (Array<ccFace*>::const_iterator f=v->faces.begin(); f!=v->faces.end(); ++f)
+			for (array_t<ccFace*>::const_iterator f=v->faces.begin(); f!=v->faces.end(); ++f)
 				co += (*f)->center->co;
 			if (v->faces.size() != n)
 				// hack, 'almost' works for non-manifold cases...
@@ -549,8 +549,8 @@ void Subdivide(FixedArray<ccVert> &vert_list,
 
 // rebuild all lists from *new* vert_list (contains repositioned orig. verts)
 // and previous face & edge lists which now contain new face & edge vertices
-void rebuildLists(FixedArray<ccVert> &vert_list,
-                  FixedArray<ccEdge> &edge_list, FixedArray<ccFace> &face_list,
+void rebuildLists(fsArray_t<ccVert> &vert_list,
+                  fsArray_t<ccEdge> &edge_list, fsArray_t<ccFace> &face_list,
                   bool fromPatch, bool st_rot)
 {
 	const unsigned int num_verts = vert_list.size();
@@ -570,19 +570,19 @@ void rebuildLists(FixedArray<ccVert> &vert_list,
 			vert_list[v_idx++].flags |= SD_CREASE;
 
 	// vertex index remap, only used if building from patch or 'interpolateboundary' tag not set
-	HashTable<int, int> vidx_rm;
+	hashtable_t<int, int> vidx_rm;
 	if (fromPatch) {
 		// for patches, the outermost ring of vertices can be discarded if not on border.
 		int cur_vidx = 0;
 		int new_numverts = 0;
 		for (VertIter v=vert_list.begin(); v!=vert_list.end(); ++v)
 			if ((v->flags & SD_SUPPORTVERTEX)==0) new_numverts++;
-		FixedArray<ccVert> nv(new_numverts);
+		fsArray_t<ccVert> nv(new_numverts);
 		int nvi = 0, vi = 0;
 		for (VertIter v=vert_list.begin(); v!=vert_list.end(); ++v, ++vi) {
 			if ((v->flags & SD_SUPPORTVERTEX)==0) {
 				nv[nvi++] = *v;
-				vidx_rm.addItem(vi, cur_vidx++);
+				vidx_rm.insert(vi, cur_vidx++);
 			}
 		}
 		vert_list = nv;
@@ -593,19 +593,19 @@ void rebuildLists(FixedArray<ccVert> &vert_list,
 		int new_numverts = 0;
 		for (VertIter v=vert_list.begin(); v!=vert_list.end(); ++v)
 			if ((v->flags & SD_BOUNDARY)==0) new_numverts++;
-		FixedArray<ccVert> nv(new_numverts);
+		fsArray_t<ccVert> nv(new_numverts);
 		int nvi = 0,  vi = 0;
 		for (VertIter v=vert_list.begin(); v!=vert_list.end(); ++v, ++vi) {
 			if ((v->flags & SD_BOUNDARY)==0) {
 				nv[nvi++] = *v;
-				vidx_rm.addItem(vi, cur_vidx++);
+				vidx_rm.insert(vi, cur_vidx++);
 			}
 		}
 		vert_list = nv;
 	}
 
 	// determine the required new number of faces
-	FixedArray<ccFace> old_face_list(face_list);
+	fsArray_t<ccFace> old_face_list(face_list);
 	int new_numfaces = 0;
 	for (unsigned int fi=0; fi<num_faces; ++fi) {
 		ccFace* f = &face_list[fi];
@@ -614,10 +614,10 @@ void rebuildLists(FixedArray<ccVert> &vert_list,
 		else {
 			const int mv = f->verts.size(), num_e = f->edges.size();
 			for (int ei=0; ei<num_e; ++ei) {
-				if (vidx_rm.findItem(face_st + fi) &&
-				    vidx_rm.findItem(edge_st + f->edges[ei]) &&
-				    vidx_rm.findItem(f->verts[(ei+1) % mv]) &&
-				    vidx_rm.findItem(edge_st + f->edges[(ei+1) % num_e]))
+				if (vidx_rm.find(face_st + fi) &&
+				    vidx_rm.find(edge_st + f->edges[ei]) &&
+				    vidx_rm.find(f->verts[(ei+1) % mv]) &&
+				    vidx_rm.find(edge_st + f->edges[(ei+1) % num_e]))
 					new_numfaces++;
 			}
 		}
@@ -627,21 +627,21 @@ void rebuildLists(FixedArray<ccVert> &vert_list,
 	face_list.resize(new_numfaces);
 	int nfi = 0; // new face index
 	// edge data for new edge_list
-	AATree_t<uint64, int> edge_id;
-	HashTable<const ccVert*, Array<int>* > edge_verts;
+	aatree_t<uint64, int> edge_id;
+	hashtable_t<const ccVert*, array_t<int>* > edge_verts;
 	unsigned new_num_edges = 0;
 	for (unsigned int fi=0; fi<num_faces; ++fi) {
 		// orig. face
 		const ccFace* OF = &old_face_list[fi];
 		// verts and edges of orig. face
-		const Array<int>& verts = OF->verts;
-		const Array<int>& edges = OF->edges;
+		const array_t<int>& verts = OF->verts;
+		const array_t<int>& edges = OF->edges;
 
 		// st test
-		const Array<Point2>& stco = OF->stco;
+		const array_t<Point2>& stco = OF->stco;
 		unsigned int numst = stco.size();
 		Point2 st_center(0, 0);
-		FixedArray<Point2> st_edges(numst);
+		fsArray_t<Point2> st_edges(numst);
 		if (numst) {
 			// st center & edge midpts
 			for (unsigned int sti=0; sti<numst; ++sti) {
@@ -655,15 +655,15 @@ void rebuildLists(FixedArray<ccVert> &vert_list,
 		// now build all new quads
 		const unsigned int fci = face_st + fi;  // new face center vertex index
 		const unsigned int num_e = edges.size();
-		Array<int> vidx(4);
+		array_t<int> vidx(4);
 		for (unsigned int ei=0; ei<num_e; ++ei) {
 			if (!vidx_rm.empty()) {
 				// for patches, if any vertex no longer in vert_list, skip face
 				vidx[0] = fci, vidx[1] = edge_st + edges[ei], vidx[2] = verts[(ei + 1) % mv], vidx[3] = edge_st + edges[(ei + 1) % num_e];
-				const int *i1 = vidx_rm.findItem(fci),
-				          *i2 = vidx_rm.findItem(edge_st + edges[ei]),
-				          *i3 = vidx_rm.findItem(verts[(ei+1) % mv]),
-				          *i4 = vidx_rm.findItem(edge_st + edges[(ei + 1) % num_e]);
+				const int *i1 = vidx_rm.find(fci),
+				          *i2 = vidx_rm.find(edge_st + edges[ei]),
+				          *i3 = vidx_rm.find(verts[(ei+1) % mv]),
+				          *i4 = vidx_rm.find(edge_st + edges[(ei + 1) % num_e]);
 				if ((i1 == NULL) || (i2 == NULL) || (i3 == NULL) || (i4 == NULL)) continue;
 				vidx[0] = *i1;
 				vidx[1] = *i2;
@@ -709,19 +709,19 @@ void rebuildLists(FixedArray<ccVert> &vert_list,
 				}
 			}
 			// new edge data update
-			const Array<int>& nverts = nf->verts;
+			const array_t<int>& nverts = nf->verts;
 			unsigned int nmv = nverts.size();
 			for (unsigned int vi=0; vi<nmv; ++vi) {
 				unsigned int ri1 = nverts[vi], ri2 = nverts[(vi+1) % nmv];
 				unsigned int idx1 = ri1, idx2 = ri2;
 				if (idx1 > idx2) SWAP(idx1, idx2);
 				uint64 ID = idx1 + (uint64)num_verts*idx2;
-				if (edge_id.findItem(ID) == NULL) {
-					edge_id.addItem(ID, new_num_edges);
+				if (edge_id.find(ID) == NULL) {
+					edge_id.insert(ID, new_num_edges);
 					const ccVert *v1 = &vert_list[ri1], *v2 = &vert_list[ri2];
-					Array<int> **evi1 = edge_verts.findItem(v1), **evi2 = edge_verts.findItem(v2);
-					if (evi1 == NULL) { edge_verts.addItem(v1, new Array<int>);  evi1 = edge_verts.findItem(v1); }
-					if (evi2 == NULL) { edge_verts.addItem(v2, new Array<int>);  evi2 = edge_verts.findItem(v2); }
+					array_t<int> **evi1 = edge_verts.find(v1), **evi2 = edge_verts.find(v2);
+					if (evi1 == NULL) { edge_verts.insert(v1, new array_t<int>);  evi1 = edge_verts.find(v1); }
+					if (evi2 == NULL) { edge_verts.insert(v2, new array_t<int>);  evi2 = edge_verts.find(v2); }
 					(*evi1)->push_back(new_num_edges);
 					(*evi2)->push_back(new_num_edges);
 					new_num_edges++;
@@ -736,8 +736,8 @@ void rebuildLists(FixedArray<ccVert> &vert_list,
 	nfi = 0;  // new face index
 	for (unsigned int fi=0; fi<num_faces; ++fi) {
 		const ccFace* OF = &old_face_list[fi];
-		const Array<int>& verts = OF->verts;
-		const Array<int>& edges = OF->edges;
+		const array_t<int>& verts = OF->verts;
+		const array_t<int>& edges = OF->edges;
 		const unsigned int mv = verts.size();
 		const unsigned int num_e = edges.size();
 		const unsigned int fc = face_st + fi;
@@ -746,10 +746,10 @@ void rebuildLists(FixedArray<ccVert> &vert_list,
 					idx3 = verts[(eidx + 1) % mv], idx4 = edge_st + edges[(eidx + 1) % num_e];
 			if (!vidx_rm.empty()) {
 				// for patches, if any vertex no longer in vert_list, skip face
-				const int *i1 = vidx_rm.findItem(idx1),
-				          *i2 = vidx_rm.findItem(idx2),
-				          *i3 = vidx_rm.findItem(idx3),
-				          *i4 = vidx_rm.findItem(idx4);
+				const int *i1 = vidx_rm.find(idx1),
+				          *i2 = vidx_rm.find(idx2),
+				          *i3 = vidx_rm.find(idx3),
+				          *i4 = vidx_rm.find(idx4);
 				if ((i1 == NULL) || (i2 == NULL) || (i3 == NULL) || (i4 == NULL)) continue;
 				idx1 = *i1;
 				idx2 = *i2;
@@ -779,8 +779,8 @@ void rebuildLists(FixedArray<ccVert> &vert_list,
 
 // For each face, make a subdivision patch.
 // The patch consists of the main face, with its one ring neighbourhood of faces.
-void makePatches(const FixedArray<ccVert> &vert_list,
-                 const FixedArray<ccEdge> &edge_list, const FixedArray<ccFace> &face_list,
+void makePatches(const fsArray_t<ccVert> &vert_list,
+                 const fsArray_t<ccEdge> &edge_list, const fsArray_t<ccFace> &face_list,
                  const Primitive* parentprim, const Framework* FW, splitbprims_t* spb, bool fromPatch)
 {
 	const unsigned int num_faces = face_list.size();
@@ -804,7 +804,7 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 		if (fromPatch && ((mf->flags & SD_MAINQUAD)==0)) continue;
 
 		// determine the extra-ordinary vertex
-		for (Array<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
+		for (array_t<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
 			const int val = vert_list[*vi].edges.size();
 			if ((val != 2) && (val != 4)) {	// ignore valence 2! see comment right below
 				patch->eovert = *vi;
@@ -822,7 +822,7 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 		// Another example of a valence 2 vertex is on upper part of nose on suzanne mesh, which Pixie will discard as invalid.
 		// But by accepting this as a regular vertex, the problem goes away, found no problems sofar anyway...
 		if (patch->eovert == -1) {
-			for (Array<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
+			for (array_t<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
 				if (vert_list[*vi].edges.size() == 4) {
 					patch->eovert = *vi;
 					break;
@@ -830,7 +830,7 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 			}
 			// if still not found, possibly single or border face, look for valence 2 on boundary
 			if (patch->eovert == -1) {
-				for (Array<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
+				for (array_t<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
 					const ccVert* v = &vert_list[*vi];
 					if ((v->edges.size() == 2) && (v->flags & SD_BOUNDARY)) {
 						patch->eovert = *vi;
@@ -844,7 +844,7 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 
 		// test for special flag, are all creases also boundaries?
 		bool cr_eq_bd = true;
-		for (Array<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
+		for (array_t<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
 			for (unsigned int ei=0; ei<vert_list[*vi].edges.size(); ++ei) {
 				const ccEdge* e = &edge_list[ei];
 				if (((e->flags & SD_BOUNDARY) && ((e->flags & SD_CREASE)==0)) ||
@@ -859,7 +859,7 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 		if (cr_eq_bd) patch->flags |= SD_CREASE_EQ_BOUND;
 		// test if face touches boundary
 		// (test verts, not edges, since only 1 edge vert might be on border)
-		for (Array<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
+		for (array_t<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
 			if (vert_list[*vi].flags & SD_BOUNDARY) {
 				patch->flags |= SD_BOUNDARY;
 				break;
@@ -868,9 +868,9 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 		// test if patch is non-manifold (more than 2 faces per edge)
 		// testing only edges of main face is not sufficient, have to
 		// test each edge around main quad vertices
-		for (Array<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
-			const Array<ccEdge*>& edl = vert_list[*vi].edges;
-			for (Array<ccEdge*>::const_iterator e=edl.begin(); e!=edl.end(); ++e) {
+		for (array_t<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
+			const array_t<ccEdge*>& edl = vert_list[*vi].edges;
+			for (array_t<ccEdge*>::const_iterator e=edl.begin(); e!=edl.end(); ++e) {
 				if ((*e)->faces.size() > 2) {
 					patch->flags |= SD_NONMANIFOLD;
 					break;
@@ -881,9 +881,9 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 		// test if patch contains crease edges
 		// (again test edges around verts as for non-manifold case, any vertex
 		//  on main quad which is part of 'external' crease edge must also be considered)
-		for (Array<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
-			const Array<ccEdge*>& edl = vert_list[*vi].edges;
-			for (Array<ccEdge*>::const_iterator e=edl.begin(); e!=edl.end(); ++e) {
+		for (array_t<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
+			const array_t<ccEdge*>& edl = vert_list[*vi].edges;
+			for (array_t<ccEdge*>::const_iterator e=edl.begin(); e!=edl.end(); ++e) {
 				if ((*e)->flags & SD_CREASE) {
 					patch->flags |= SD_CREASE;
 					break;
@@ -895,10 +895,10 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 		// Patch ring, all faces connected to the main face.
 		// as for the nonmanifold test, testing faces from edges is not sufficient,
 		// have to test all faces around each vertex.
-		Array<ccFace*>& pr = patch->ring;
-		for (Array<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
+		array_t<ccFace*>& pr = patch->ring;
+		for (array_t<int>::const_iterator vi=mf->verts.begin(); vi!=mf->verts.end(); ++vi) {
 			const ccVert* v = &vert_list[*vi];
-			for (Array<ccFace*>::const_iterator f2=v->faces.begin(); f2!=v->faces.end(); ++f2)
+			for (array_t<ccFace*>::const_iterator f2=v->faces.begin(); f2!=v->faces.end(); ++f2)
 				if ((mf != *f2) && (!pr.contains(*f2))) pr.push_back(*f2);
 		}
 
@@ -917,14 +917,14 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 #ifdef SKIP_GLOBAL_SUBDIVISION
 		// quad test
 		bool allquad = (mf->edges.size() == 4);
-		for (Array<ccFace*>::const_iterator pfi=pr.begin(); pfi!=pr.end(); ++pfi)
+		for (array_t<ccFace*>::const_iterator pfi=pr.begin(); pfi!=pr.end(); ++pfi)
 			if ((*pfi)->edges.size() != 4) {
 				allquad = false;
 				break;
 			}
 
 		int numeo = 0;
-		for (Array<int>::const_iterator vi=mf->verts.begin(); vi<mf->verts.end(); ++vi) {
+		for (array_t<int>::const_iterator vi=mf->verts.begin(); vi<mf->verts.end(); ++vi) {
 			const unsigned int val = vert_list[*vi].edges.size();
 			if (val != 2) {
 				if (val != ((vert_list[*vi].flags & SD_BOUNDARY) ? 3 : 4)) numeo++;
@@ -982,8 +982,8 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 			if ((numrf == 5) || (numrf == 3)) {
 				int num_bd = 0;
 				int bdix[2] = {0, 0};
-				const Array<int>& edges = face_list[patch->mainface].edges;
-				for (Array<int>::const_iterator ei=edges.begin(); ei!=edges.end(); ++ei) {
+				const array_t<int>& edges = face_list[patch->mainface].edges;
+				for (array_t<int>::const_iterator ei=edges.begin(); ei!=edges.end(); ++ei) {
 					if (edge_list[*ei].flags & SD_BOUNDARY) {
 						if (num_bd<2) bdix[num_bd] = *ei;
 						num_bd++;
@@ -1067,13 +1067,13 @@ void makePatches(const FixedArray<ccVert> &vert_list,
 // SDPatch
 
 // init static vars
-tLinkedList_t<int, int*>* SDPatch::gridx_cache = NULL;
+alist_t<int, int*>* SDPatch::gridx_cache = NULL;
 int SDPatch::gridx_refc = 0;
 
 SDPatch::SDPatch():flags(SD_UNDEFINED), mainface(-1), eovert(-1)
 {
 	if (gridx_cache == NULL)
-		gridx_cache = new tLinkedList_t<int, int*>(); // initial alloc
+		gridx_cache = new alist_t<int, int*>(); // initial alloc
 	gridx_refc++;
 }
 
@@ -1088,7 +1088,7 @@ SDPatch::~SDPatch()
 
 
 // helper function for control point extraction
-inline const ccFace* neighbourFace(const Array<ccFace*>& faces, const ccFace* from_face)
+inline const ccFace* neighbourFace(const array_t<ccFace*>& faces, const ccFace* from_face)
 {
 	if (faces[0] != from_face) return faces[0];
 	return faces[1];
@@ -1100,8 +1100,8 @@ inline void makeRtPoint(RtPoint dst, Point3 src)
 }
 
 // extract the 16 control points for a BSpline patch
-BicubicPatch* SDPatch::makeBSplinePatch(const FixedArray<ccVert>& vert_list,
-                                        const FixedArray<ccEdge>& edge_list, const FixedArray<ccFace>& face_list,
+BicubicPatch* SDPatch::makeBSplinePatch(const fsArray_t<ccVert>& vert_list,
+                                        const fsArray_t<ccEdge>& edge_list, const fsArray_t<ccFace>& face_list,
                                         int border[2], const Primitive* parentprim)
 {
 	// the center face
@@ -1174,7 +1174,7 @@ BicubicPatch* SDPatch::makeBSplinePatch(const FixedArray<ccVert>& vert_list,
 		// from center face edge 0 (verts 9-10), get its neighbour face
 		const int nb_edge = cf->edges[0];
 		const ccFace* nb_face = neighbourFace(edge_list[nb_edge].faces, cf);
-		const Array<int>* nfe = &nb_face->edges;
+		const array_t<int>* nfe = &nb_face->edges;
 		// index of vert 9 on neighbour face
 		int vidx = nb_face->verts.index(cf->verts[1]);
 		const bool CCW = (nb_face->verts[(vidx + 1) & 3] == cf->verts[0]);
@@ -1257,7 +1257,7 @@ BicubicPatch* SDPatch::makeBSplinePatch(const FixedArray<ccVert>& vert_list,
 		// from center face edge 2 (verts 5-6), get its neighbour face
 		const int nb_edge = cf->edges[2];
 		const ccFace* nb_face = neighbourFace(edge_list[nb_edge].faces, cf);
-		const Array<int>* nfe = &nb_face->edges;
+		const array_t<int>* nfe = &nb_face->edges;
 		// index of vert 6 on neighbour face
 		int vidx = nb_face->verts.index(cf->verts[3]);
 		const bool CCW = (nb_face->verts[(vidx+1) & 3] == cf->verts[2]);
@@ -1457,14 +1457,14 @@ BicubicPatch* SDPatch::makeBSplinePatch(const FixedArray<ccVert>& vert_list,
 		nvdt->data[2] = cf->stco[1].x;
 		nvdt->data[0] = cf->stco[2].x;
 		nvdt->data[1] = cf->stco[3].x;
-		npv->pvars.addItem("s", nvdt);
+		npv->pvars.insert("s", nvdt);
 		nvdt = new vardata_t(dp);
 		nvdt->data = new float[4];
 		nvdt->data[3] = cf->stco[0].y;
 		nvdt->data[2] = cf->stco[1].y;
 		nvdt->data[0] = cf->stco[2].y;
 		nvdt->data[1] = cf->stco[3].y;
-		npv->pvars.addItem("t", nvdt);
+		npv->pvars.insert("t", nvdt);
 	}
 
 	// if this patch is NOT split from explicit subd patch,
@@ -1477,8 +1477,8 @@ BicubicPatch* SDPatch::makeBSplinePatch(const FixedArray<ccVert>& vert_list,
 
 
 // extract control points for an irregular patch which can be evaluated directly
-JS_SDPatch* SDPatch::makeJSPatch(const FixedArray<ccVert>& vert_list,
-				const FixedArray<ccEdge>& edge_list, const FixedArray<ccFace>& face_list,
+JS_SDPatch* SDPatch::makeJSPatch(const fsArray_t<ccVert>& vert_list,
+				const fsArray_t<ccEdge>& edge_list, const fsArray_t<ccFace>& face_list,
 				const Primitive* parentprim)
 {
 	// the center face
@@ -1536,14 +1536,14 @@ JS_SDPatch* SDPatch::makeJSPatch(const FixedArray<ccVert>& vert_list,
 		nvdt->data[1] = cf->stco[fv1_idx].x;
 		nvdt->data[3] = cf->stco[fv2_idx].x;
 		nvdt->data[2] = cf->stco[fv3_idx].x;
-		npv->pvars.addItem("s", nvdt);
+		npv->pvars.insert("s", nvdt);
 		nvdt = new vardata_t(dp);
 		nvdt->data = new float[4];
 		nvdt->data[0] = cf->stco[fv0_idx].y;
 		nvdt->data[1] = cf->stco[fv1_idx].y;
 		nvdt->data[3] = cf->stco[fv2_idx].y;
 		nvdt->data[2] = cf->stco[fv3_idx].y;
-		npv->pvars.addItem("t", nvdt);
+		npv->pvars.insert("t", nvdt);
 	}
 
 	// starting at vert 0 on main face, get points 5/4/3
@@ -1556,7 +1556,7 @@ JS_SDPatch* SDPatch::makeJSPatch(const FixedArray<ccVert>& vert_list,
 	int nb_edge = cf->edges[(fv0_idx - 1) & 3];
 	const ccFace* nb_face = neighbourFace(edge_list[nb_edge].faces, cf);
 	// neighbour face edges
-	const Array<int>* nfe = &nb_face->edges;
+	const array_t<int>* nfe = &nb_face->edges;
 	// index of vert 0 on nb_face
 	int vidx = nb_face->verts.index(v0_idx);
 	// get verts 1 & 2 and next neighbour face across edge 2/3
@@ -1699,11 +1699,11 @@ JS_SDPatch* SDPatch::makeJSPatch(const FixedArray<ccVert>& vert_list,
 
 
 // create new vert, edge and face lists from this patch
-void SDPatch::makeExplicitSDPatch(const FixedArray<ccVert>& vert_list,
-				const FixedArray<ccEdge>& edge_list, const FixedArray<ccFace>& face_list,
+void SDPatch::makeExplicitSDPatch(const fsArray_t<ccVert>& vert_list,
+				const fsArray_t<ccEdge>& edge_list, const fsArray_t<ccFace>& face_list,
 				const Primitive* parentprim)
 {
-	HashTable<const ccVert*, int> new_idx;  // vert index remap
+	hashtable_t<const ccVert*, int> new_idx;  // vert index remap
 	int cur_idx = 0;
 	// determine new number of verts,
 	// number of patch faces is known beforehand,
@@ -1712,17 +1712,17 @@ void SDPatch::makeExplicitSDPatch(const FixedArray<ccVert>& vert_list,
 	// mainquad
 	int num_patch_verts = 0;
 	// main face
-	const Array<int>& fv = face_list[mainface].verts;
-	for (Array<int>::const_iterator vi=fv.begin(); vi!=fv.end(); ++vi) {
+	const array_t<int>& fv = face_list[mainface].verts;
+	for (array_t<int>::const_iterator vi=fv.begin(); vi!=fv.end(); ++vi) {
 		const ccVert* v = &vert_list[*vi];
-		const int* idxp = new_idx.findItem(v);
+		const int* idxp = new_idx.find(v);
 		int idx;
 		if (idxp)
 			idx = *idxp;
 		else {
 			num_patch_verts++;
 			idx = cur_idx;
-			new_idx.addItem(v, idx);
+			new_idx.insert(v, idx);
 			cur_idx++;
 		}
 		patch_faces[0].verts.push_back(idx);
@@ -1733,17 +1733,17 @@ void SDPatch::makeExplicitSDPatch(const FixedArray<ccVert>& vert_list,
 	patch_faces[0].flags |= SD_MAINQUAD;
 	// ring vertices
 	for (unsigned int fi=0; fi<ring.size(); ++fi) {
-		const Array<int>& prv = ring[fi]->verts;
-		for (Array<int>::const_iterator vi=prv.begin(); vi!=prv.end(); ++vi) {
+		const array_t<int>& prv = ring[fi]->verts;
+		for (array_t<int>::const_iterator vi=prv.begin(); vi!=prv.end(); ++vi) {
 			const ccVert* v = &vert_list[*vi];
-			const int* idxp = new_idx.findItem(v);
+			const int* idxp = new_idx.find(v);
 			int idx;
 			if (idxp)
 				idx = *idxp;
 			else {
 				num_patch_verts++;
 				idx = cur_idx;
-				new_idx.addItem(v, idx);
+				new_idx.insert(v, idx);
 				cur_idx++;
 			}
 			patch_faces[fi+1].verts.push_back(idx);
@@ -1756,19 +1756,19 @@ void SDPatch::makeExplicitSDPatch(const FixedArray<ccVert>& vert_list,
 	for (int i=0; i<num_patch_verts; ++i)
 		patch_verts[i].flags = SD_NOTSET;
 	// main face
-	for (Array<int>::const_iterator vi=fv.begin(); vi!=fv.end(); ++vi) {
+	for (array_t<int>::const_iterator vi=fv.begin(); vi!=fv.end(); ++vi) {
 		const ccVert* v = &vert_list[*vi];
-		ccVert* pv = &patch_verts[*new_idx.findItem(v)];
+		ccVert* pv = &patch_verts[*new_idx.find(v)];
 		// copy flags from previous vertex, add SD_MAINQUAD flag
 		pv->co = v->co;
 		pv->flags = v->flags | SD_MAINQUAD;
 	}
 	// ring vertices
 	for (unsigned int fi=0; fi<ring.size(); ++fi) {
-		const Array<int>& prv = ring[fi]->verts;
-		for (Array<int>::const_iterator vi=prv.begin(); vi!=prv.end(); ++vi) {
+		const array_t<int>& prv = ring[fi]->verts;
+		for (array_t<int>::const_iterator vi=prv.begin(); vi!=prv.end(); ++vi) {
 			const ccVert* v = &vert_list[*vi];
-			ccVert* pv = &patch_verts[*new_idx.findItem(v)];
+			ccVert* pv = &patch_verts[*new_idx.find(v)];
 			if (pv->flags == SD_NOTSET) { // only set once!
 				// new vertex, copy the flags from previous vertex
 				pv->co = v->co;
@@ -1782,7 +1782,7 @@ void SDPatch::makeExplicitSDPatch(const FixedArray<ccVert>& vert_list,
 	// set face ptrs in patch_verts list
 	for (unsigned int fi=0; fi<patch_faces.size(); ++fi) {
 		ccFace* f = &patch_faces[fi];
-		for (Array<int>::const_iterator vi=f->verts.begin(); vi!=f->verts.end(); ++vi)
+		for (array_t<int>::const_iterator vi=f->verts.begin(); vi!=f->verts.end(); ++vi)
 			patch_verts[*vi].faces.push_back(f);
 	}
 
@@ -1793,21 +1793,21 @@ void SDPatch::makeExplicitSDPatch(const FixedArray<ccVert>& vert_list,
 	// finalize edge list
 	patch_edges.resize(num_patch_edges);
 	// main quad edges
-	const Array<int>& fce = face_list[mainface].edges;
-	for (Array<int>::const_iterator eidx=fce.begin(); eidx!=fce.end(); ++eidx) {
+	const array_t<int>& fce = face_list[mainface].edges;
+	for (array_t<int>::const_iterator eidx=fce.begin(); eidx!=fce.end(); ++eidx) {
 		const ccEdge* e = &edge_list[*eidx];
 		ccEdge* E;
-		const unsigned int i1 = *new_idx.findItem(e->v1), i2 = *new_idx.findItem(e->v2);
+		const unsigned int i1 = *new_idx.find(e->v1), i2 = *new_idx.find(e->v2);
 		SET_EDGE(patch_edges, i1, i2, patch_verts, patch_faces, num_patch_verts, 0);
 		E->flags = e->flags;  // copy flags
 	}
 	// ring edges
 	for (unsigned int fi=0; fi<ring.size(); ++fi) {
-		const Array<int>& re = ring[fi]->edges;
-		for (Array<int>::const_iterator eidx=re.begin(); eidx!=re.end(); ++eidx) {
+		const array_t<int>& re = ring[fi]->edges;
+		for (array_t<int>::const_iterator eidx=re.begin(); eidx!=re.end(); ++eidx) {
 			const ccEdge* e = &edge_list[*eidx];
 			ccEdge* E;
-			const unsigned int i1 = *new_idx.findItem(e->v1), i2 = *new_idx.findItem(e->v2), fi1 = fi + 1;
+			const unsigned int i1 = *new_idx.find(e->v1), i2 = *new_idx.find(e->v2), fi1 = fi + 1;
 			SET_EDGE(patch_edges, i1, i2, patch_verts, patch_faces, num_patch_verts, fi1);
 			E->flags = e->flags;  // copy flags
 		}
@@ -1852,7 +1852,7 @@ void SDPatch::split(const Framework &f, bool usplit, bool vsplit, splitbprims_t*
 
 bool SDPatch::diceable(MicroPolygonGrid &g, Hider &h, bool &usplit, bool &vsplit)
 {
-	Array<int>& fv = patch_faces[mainface].verts;
+	array_t<int>& fv = patch_faces[mainface].verts;
 #ifdef SKIP_GLOBAL_SUBDIVISION
 		// if patch not all quad, or more than 1 eo.vert on main face, must split first
 		if ((flags & SD_ALLQUAD) == 0) {
@@ -1860,7 +1860,7 @@ bool SDPatch::diceable(MicroPolygonGrid &g, Hider &h, bool &usplit, bool &vsplit
 				usplit = vsplit = true;
 				return false;
 			}
-			for (Array<ccFace*>::const_iterator fi=ring.begin(); fi!=ring.end(); ++fi)
+			for (array_t<ccFace*>::const_iterator fi=ring.begin(); fi!=ring.end(); ++fi)
 				if ((*fi)->edges.size() != 4) {
 					usplit = vsplit = true;
 					return false;
@@ -1869,7 +1869,7 @@ bool SDPatch::diceable(MicroPolygonGrid &g, Hider &h, bool &usplit, bool &vsplit
 		}
 		if (((flags & SD_NONMANIFOLD) == 0) and ((flags & SD_ONE_EOV) == 0)) {
 			int numeo = 0;
-			for (Array<int>::const_iterator vi=fv.begin(); vi<fv.end(); ++vi) {
+			for (array_t<int>::const_iterator vi=fv.begin(); vi<fv.end(); ++vi) {
 				const unsigned int val = patch_verts[*vi].edges.size();
 				if ((val != 2) and (val != ((patch_verts[*vi].flags & SD_BOUNDARY) ? 3 : 4))) {
 					if (++numeo > 1) {
@@ -1905,12 +1905,12 @@ bool SDPatch::diceable(MicroPolygonGrid &g, Hider &h, bool &usplit, bool &vsplit
 void makeGridIndex(int* gridx, int numv)
 {
 	// base quad, with the x/y coords set to the max grid corners
-	FixedArray<ccVert> vert_list(4);
+	fsArray_t<ccVert> vert_list(4);
 	vert_list[3].co.set(0, 0, 0);
 	vert_list[2].co.set(0, numv-1, 0);
 	vert_list[1].co.set(numv-1, numv-1, 0);
 	vert_list[0].co.set(numv-1, 0, 0);
-	FixedArray<ccFace> face_list(1);
+	fsArray_t<ccFace> face_list(1);
 	face_list[0].verts.resize(4);
 	face_list[0].edges.resize(4);
 	for (int i=0; i<4; i++) {
@@ -1923,7 +1923,7 @@ void makeGridIndex(int* gridx, int numv)
 	face_list[0].stco[2].set(0.f, (float)numf);
 	face_list[0].stco[1].set((float)numf, (float)numf);
 	face_list[0].stco[0].set((float)numf, 0.f);
-	FixedArray<ccEdge> edge_list(4);
+	fsArray_t<ccEdge> edge_list(4);
 	edge_list[0].v1 = &vert_list[0], edge_list[0].v2 = &vert_list[1];
 	edge_list[1].v1 = &vert_list[1], edge_list[1].v2 = &vert_list[2];
 	edge_list[2].v1 = &vert_list[2], edge_list[2].v2 = &vert_list[3];
@@ -1935,7 +1935,7 @@ void makeGridIndex(int* gridx, int numv)
 	const int mL = ilog2(numf);
 	for (int L=0; L<mL; ++L) {
 		const int new_numverts = num_verts + num_faces + num_edges;
-		FixedArray<ccVert> new_verts(new_numverts);
+		fsArray_t<ccVert> new_verts(new_numverts);
 		int nvi = num_verts;
 		for (int fi=0; fi<num_faces; ++fi) {
 			ccFace* f = &face_list[fi];
@@ -1992,17 +1992,17 @@ void SDPatch::dice(MicroPolygonGrid &g, bool Pclose)
 
 	// only want mainquad data
 	// verts
-	Array<ccVert*> nv;
+	array_t<ccVert*> nv;
 	for (unsigned int i=0; i<patch_verts.size(); ++i)
 	for (VertIter vi=patch_verts.begin(); vi!=patch_verts.end(); ++vi)
 		if (vi->flags & SD_MAINQUAD) nv.push_back(&(*vi));
 	// st coords
-	Array<Point2> stco;
+	array_t<Point2> stco;
 	bool have_st = (!patch_faces[0].stco.empty());
 	if (have_st) {
 		for (FaceConstIter fci=patch_faces.begin(); fci!=patch_faces.end(); ++fci) {
 			if (fci->flags & SD_MAINQUAD) {
-				for (Array<Point2>::const_iterator sti=fci->stco.begin(); sti!=fci->stco.end(); ++sti)
+				for (array_t<Point2>::const_iterator sti=fci->stco.begin(); sti!=fci->stco.end(); ++sti)
 					stco.push_back(*sti);
 			}
 		}
@@ -2012,12 +2012,12 @@ void SDPatch::dice(MicroPolygonGrid &g, bool Pclose)
 	// this significantly reduces time otherwise spent constantly recalculating it again and again
 	// usually, only a small set of resolutions are needed (<=5),
 	// but depends on max microgrid size.
-	int** gridx = gridx_cache->findItem(gsz);
+	int** gridx = gridx_cache->find(gsz);
 	if (gridx==NULL) {
 		int* new_gridx = new int[gsz*gsz*2];
 		memset(new_gridx, 0, sizeof(int)*gsz*gsz*2);
 		makeGridIndex(new_gridx, gsz);
-		gridx_cache->addItem(gsz, new_gridx);
+		gridx_cache->insert(gsz, new_gridx);
 		gridx = &new_gridx;
 	}
 	RtPoint* P_grid = (RtPoint*)(Pclose ? g.addVariable("=Pclose") : g.addVariable("P"));
@@ -2262,7 +2262,7 @@ void JS_SDPatch::post_init()
 	const int K = 2*jsdata->N + 8;
 	// now do eigenspace projection
 	// stupid error was here!
-	// used FixedArray for Cp, but blocked array experiments caused days of headaches wondering why nothing seemed to work anymore...
+	// used fsArray_t for Cp, but blocked array experiments caused days of headaches wondering why nothing seemed to work anymore...
 	// of course, memcpy doesn't work in that case...
 	Point3* Cp = new Point3[K];
 	const double* vecI = eigen[jsdata->N - 3].iV;

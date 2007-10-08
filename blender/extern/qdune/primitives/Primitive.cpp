@@ -20,10 +20,10 @@ PrimVars::PrimVars() : refc(1)
 
 PrimVars::~PrimVars()
 {
-	vardata_t** vdt = pvars.firstItem();
+	vardata_t** vdt = pvars.first();
 	while (vdt) {
 		delete *vdt;
-		vdt = pvars.nextItem();
+		vdt = pvars.next();
 	}
 }
 
@@ -134,7 +134,7 @@ void Primitive::initPrimVars(RtInt n, RtToken tokens[], RtPointer parms[],
 		}
 		// 'primvars' only created once, duplicates get reference
 		if (primvars == NULL) primvars = new PrimVars();
-		primvars->pvars.addItem(varname, vdt);
+		primvars->pvars.insert(varname, vdt);
 	}
 }
 
@@ -150,7 +150,7 @@ void Primitive::removePrimVar(const char* name)
 {
 	if (primvars) {
 		vardata_t* vdt = NULL;
-		primvars->pvars.removeItem(name, vdt);
+		primvars->pvars.remove(name, vdt);
 		if (vdt) delete vdt;
 	}
 }
@@ -161,7 +161,7 @@ void Primitive::removePrimVar(const char* name)
 void Primitive::linear_dice(MicroPolygonGrid &g)
 {
 	if (primvars) {
-		vardata_t** vdt = primvars->pvars.firstItem();
+		vardata_t** vdt = primvars->pvars.first();
 		if (vdt == NULL) return; // nothing in list
 		float u, v;
 		unsigned int ug, vg, idx = 0;
@@ -208,7 +208,7 @@ void Primitive::linear_dice(MicroPolygonGrid &g)
 			}
 			// matrix/hpoint TODO
 			// next variable
-			vdt = primvars->pvars.nextItem();
+			vdt = primvars->pvars.next();
 		}
 	}
 }
@@ -306,7 +306,7 @@ void BlurredPrimitive::split(const Framework &f, bool usplit, bool vsplit, split
 		for (std::vector<Primitive*>::iterator pose=poses.begin(); pose!=poses.end(); ++pose)
 			(*pose)->split(f, usplit, vsplit, &splitbprims);
 		// if any created, bprim(s) can now be inserted into framework
-		for (Array<BlurredPrimitive*>::iterator bi=splitbprims.bprims.begin(); bi!=splitbprims.bprims.end(); ++bi)
+		for (array_t<BlurredPrimitive*>::iterator bi=splitbprims.bprims.begin(); bi!=splitbprims.bprims.end(); ++bi)
 			f.insert(*bi);
 	}
 }

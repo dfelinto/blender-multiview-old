@@ -1330,7 +1330,7 @@ string parameterList_t::process(int state_hint, const char* basepath)
 	// catch errors
 	try
 	{
-		RIBFUNC* ribfunc = state->_riblu.findItem(listname.c_str());
+		RIBFUNC* ribfunc = state->_riblu.find(listname.c_str());
 		if (ribfunc)
 			(*ribfunc)(numargs, *this);
 		else // for anything not handled yet

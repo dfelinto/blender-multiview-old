@@ -39,7 +39,7 @@ static void splitPolygon(const Primitive& p, const Framework &f, RtPoint* pts,
 
 	// end triangle when odd number of vertices, prbook seems to have some errors...
 	const PrimVars* pv = p.getPrimVars();
-	NamedLinkedList_t<vardata_t*>& varlist = const_cast<PrimVars*>(pv)->pvars;
+	sklist_t<vardata_t*>& varlist = const_cast<PrimVars*>(pv)->pvars;
 	if (sta != lastpoint) {
 		const int I0 = idx_ofs ? idx_ofs[0] : 0,
 		          I1 = idx_ofs ? idx_ofs[sta] : sta,
@@ -68,7 +68,7 @@ static void splitPolygon(const Primitive& p, const Framework &f, RtPoint* pts,
 		if (pv && (varlist.size() != 0)) {
 			PrimVars *npv1 = NULL, *npv2 = NULL, *npv3 = NULL;
 
-				vardata_t** vdt = varlist.firstItem();
+				vardata_t** vdt = varlist.first();
 				while (vdt) {
 					if (npv1 == NULL) npv1 = bp1->newPrimVars();
 					if (npv2 == NULL) npv2 = bp2->newPrimVars();
@@ -163,10 +163,10 @@ static void splitPolygon(const Primitive& p, const Framework &f, RtPoint* pts,
 						// don't know what to do with matrices yet...
 					}
 					char* vname = varlist.getName();
-					npv1->pvars.addItem(vname, nvdt1);
-					npv2->pvars.addItem(vname, nvdt2);
-					npv3->pvars.addItem(vname, nvdt3);
-					vdt = varlist.nextItem();
+					npv1->pvars.insert(vname, nvdt1);
+					npv2->pvars.insert(vname, nvdt2);
+					npv3->pvars.insert(vname, nvdt3);
+					vdt = varlist.next();
 				}
 
 		}

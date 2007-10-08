@@ -105,7 +105,7 @@ CurveSet::CurveSet(bool linear, int ncurves, int nvertices[], bool periodic,
 	// others
 	initPrimVars(n, tokens, parms, totcurves, totvary, totverts, totvary*2);
 	if (primvars) {
-		vardata_t** vdt = primvars->pvars.firstItem();
+		vardata_t** vdt = primvars->pvars.first();
 		while (vdt)  {
 			const char* name = primvars->pvars.getName();
 			if (!strcmp(name, RI_WIDTH)) {
@@ -123,7 +123,7 @@ CurveSet::CurveSet(bool linear, int ncurves, int nvertices[], bool periodic,
 			}
 			else if (!strcmp(name, RI_N))
 				vary_N = reinterpret_cast<RtNormal*>((*vdt)->data);
-			vdt = primvars->pvars.nextItem();
+			vdt = primvars->pvars.next();
 		}
 	}
 	if (!has_width) max_width = const_width = 1.f;

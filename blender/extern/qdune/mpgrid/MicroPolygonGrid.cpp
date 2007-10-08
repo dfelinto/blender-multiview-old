@@ -39,10 +39,10 @@ MicroPolygonGrid::MicroPolygonGrid(): gtype(G_NORMAL), Ng_updated(false), xdim(0
 
 MicroPolygonGrid::~MicroPolygonGrid()
 {
-	float** fg = vertexvars.firstItem();
+	float** fg = vertexvars.first();
 	while (fg) {
 		delete[] *fg;
-		fg = vertexvars.nextItem();
+		fg = vertexvars.next();
 	}
 	vertexvars.clear();
 }
@@ -68,26 +68,26 @@ void MicroPolygonGrid::setFrom(const MicroPolygonGrid& mg)
 
 float* MicroPolygonGrid::addVariable(RtToken name, int grid_element_size)
 {
-	float** fg = vertexvars.findItem(name);
+	float** fg = vertexvars.find(name);
 	if (fg) return *fg;	// already defined
 	// new grid
 	const unsigned int numfloats = nverts*grid_element_size;
 	float* nfg = new float[numfloats];
 	memset(nfg, 0, sizeof(float)*numfloats);
-	vertexvars.addItem(name, nfg);
+	vertexvars.insert(name, nfg);
 	return nfg;
 }
 
 void MicroPolygonGrid::deleteVariable(RtToken name)
 {
 	float* fg = NULL;
-	vertexvars.removeItem(name, fg);
+	vertexvars.remove(name, fg);
 	if (fg) delete[] fg;
 }
 
 float* MicroPolygonGrid::findVariable(RtToken name)
 {
-	float** fg = vertexvars.findItem(name);
+	float** fg = vertexvars.find(name);
 	if (fg) return *fg;
 	return NULL;
 }

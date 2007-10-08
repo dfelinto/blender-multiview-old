@@ -77,7 +77,7 @@ public:
 	void insert(const keytype& k, const datatype& d, datatype& dd)
 	{
 		if (lru && (num_items == max_items)) { // list full, throw out lru item
-			htab.removeItem(lru->key);
+			htab.remove(lru->key);
 			link_t* it = lru;
 			dd = it->data;
 			lru = lru->next;
@@ -92,7 +92,7 @@ public:
 			link_t* old_mru = mru;
 			mru = old_mru->next = new link_t(k, d, old_mru);
 		}
-		htab.addItem(k, mru);
+		htab.insert(k, mru);
 		num_items++;
 	}
 	datatype* find(const keytype& k)
@@ -100,7 +100,7 @@ public:
 		if (num_items == 0) return NULL;
 		if (mru->key != k) {
 			// not mru, lookup by hashtable
-			link_t** dt = htab.findItem(k);
+			link_t** dt = htab.find(k);
 			if (dt == NULL) return NULL;
 			link_t* it = *dt;	// found, promote to mru
 			if (it->prev) {
@@ -119,8 +119,8 @@ public:
 	}
 	size_t size() const { return num_items; }
 	// for traversal
-	inline datatype firstItem() { return ((curitem = lru)==NULL) ? NULL : curitem->data; }
-	inline datatype nextItem()
+	inline datatype first() { return ((curitem = lru)==NULL) ? NULL : curitem->data; }
+	inline datatype next()
 	{
 		return (curitem==NULL) ? NULL : (((curitem = curitem->next)==NULL) ? NULL : curitem->data);
 	}
@@ -134,7 +134,7 @@ protected:
 	};
 	link_t *lru, *mru, *curitem;
 	size_t max_items, num_items;
-	HashTable<keytype, link_t*> htab;
+	hashtable_t<keytype, link_t*> htab;
 };
 
 __END_QDRENDER

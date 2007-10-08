@@ -199,8 +199,8 @@ void splitPrimVars(const Primitive* parent, Primitive* newp,
 	const PrimVars* pv = parent->getPrimVars();
 	if (pv==NULL) return;
 	PrimVars* npv = NULL;
-	NamedLinkedList_t<vardata_t*>& varlist = const_cast<PrimVars*>(pv)->pvars;
-	vardata_t** vdt = varlist.firstItem();
+	sklist_t<vardata_t*>& varlist = const_cast<PrimVars*>(pv)->pvars;
+	vardata_t** vdt = varlist.first();
 	while (vdt) {
 		if (vdt) {
 			if (npv == NULL) npv = newp->newPrimVars();
@@ -242,8 +242,8 @@ void splitPrimVars(const Primitive* parent, Primitive* newp,
 				}
 				// don't know what to do with matrices yet...
 			}
-			npv->pvars.addItem(varlist.getName(), nvdt);
-			vdt = varlist.nextItem();
+			npv->pvars.insert(varlist.getName(), nvdt);
+			vdt = varlist.next();
 		}
 	}
 }

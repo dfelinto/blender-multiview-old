@@ -50,21 +50,21 @@ TextureCache::~TextureCache()
 	cout << "cache miss  : " << cache_miss << " ( " << cache_miss*cdv << "\% )\n";
 
 	//cout << "texture_db size = " << texture_db.size() << endl;
-	EXRbuf_t** ei = texture_db.firstItem();
+	EXRbuf_t** ei = texture_db.first();
 	int n = 0;
 	while (ei) {
 		delete *ei;
-		ei = texture_db.nextItem();
+		ei = texture_db.next();
 		n++;
 	}
 	//cout << "deleted " << n << " textures\n";
 
 	cout <<  "Total tiles in memory: " << textile_db->size() << endl;
-	textile_t* tt = textile_db->firstItem();
+	textile_t* tt = textile_db->first();
 	while (tt) {
 		delete[] tt->color_data;
 		delete tt;
-		tt = textile_db->nextItem();
+		tt = textile_db->next();
 	}
 	delete textile_db;
 }
@@ -73,18 +73,18 @@ TextureCache::~TextureCache()
 // if that failed or some other error occured, will store NULL ptr to prevent the file from trying to be opened continuously
 const EXRbuf_t* TextureCache::getTextureInfo(const char texname[]) const
 {
-	EXRbuf_t** ei = texture_db.findItem(texname);
+	EXRbuf_t** ei = texture_db.find(texname);
 	if (ei) return *ei;
 	// not found, open new .tqd file
 	//char fullpath[512] = {0};
 	//snprintf(fullpath, 512, "%s%s", State::Instance()->topOptions().basepath, texname);
 	EXRbuf_t* ebc = new EXRbuf_t(texname); //fullpath);
 	if (!ebc->valid()) {
-		texture_db.addItem(texname, NULL);
+		texture_db.insert(texname, NULL);
 		delete ebc;
 		return NULL;
 	}
-	texture_db.addItem(texname, ebc);
+	texture_db.insert(texname, ebc);
 	return ebc;
 }
 

@@ -75,7 +75,7 @@ protected:
 	const Primitive *parent;  // Primitive from which we came
 	// a linked list with string keys actually is slightly faster than a hashtable in this case,
 	// maybe because the list is usually short, not sure
-	NamedLinkedList_t<float*> vertexvars;
+	sklist_t<float*> vertexvars;
 };
 
 __END_QDRENDER

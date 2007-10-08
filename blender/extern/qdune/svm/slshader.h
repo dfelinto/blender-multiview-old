@@ -123,7 +123,7 @@ public:
 	// this used for displacement shaders which need to update Ng when P is modified
 	bool update_Ng;
 	// other user-defined *varying* variables that might need dicing (iff also specified as primitive variable)
-	NamedLinkedList_t<decParam_t> user_vars;
+	sklist_t<decParam_t> user_vars;
 };
 
 class MicroPolygonGrid;

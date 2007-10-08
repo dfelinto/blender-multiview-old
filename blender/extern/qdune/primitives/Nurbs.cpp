@@ -30,7 +30,7 @@ __BEGIN_QDRENDER
  *	k   is the order of the curve (or surface direction)
  *	kv  is the knot vector ([0..m+k-1]) to find the break point in.
  */
-inline int FindBreakPoint(float u, const FixedArray<float>& kv, int m, int k)
+inline int FindBreakPoint(float u, const fsArray_t<float>& kv, int m, int k)
 {
 	if (u == kv[m + 1]) return m;	// Special case for closed interval
 	/*
@@ -58,7 +58,7 @@ inline int FindBreakPoint(float u, const FixedArray<float>& kv, int m, int k)
  *
  * (From Bartels, Beatty & Barsky, p.387)
  */
-inline void BasisFunctions(float u, int brkPoint, const FixedArray<float>& kv, int k, FixedArray<float>& bvals)
+inline void BasisFunctions(float u, int brkPoint, const fsArray_t<float>& kv, int k, fsArray_t<float>& bvals)
 {
 	bvals[0] = 1.f;
 	for (int r=2; r<=k; ++r) {
@@ -73,7 +73,7 @@ inline void BasisFunctions(float u, int brkPoint, const FixedArray<float>& kv, i
 }
 
 // Compute derivatives of the basis functions Bi,k(u)'
-inline void BasisDerivatives(float u, int brkPoint, const FixedArray<float>& kv, int k, FixedArray<float>& dvals)
+inline void BasisDerivatives(float u, int brkPoint, const fsArray_t<float>& kv, int k, fsArray_t<float>& dvals)
 {
 	BasisFunctions(u, brkPoint, kv, k-1, dvals);
 	dvals[k-1] = 0.f;	    // BasisFunctions misses this

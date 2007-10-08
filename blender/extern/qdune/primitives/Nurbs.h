@@ -57,7 +57,7 @@ protected:
 			bvprime.resize(vorder);
 		}
 		~NuData() { if (Pw) delete[] Pw;  Pw = NULL; }
-		FixedArray<float> bu, bv, buprime, bvprime, uknot, vknot;
+		fsArray_t<float> bu, bv, buprime, bvprime, uknot, vknot;
 		RtHpoint* Pw;
 		int nu, nv, uorder, vorder;
 		int refc;

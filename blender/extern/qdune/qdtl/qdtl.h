@@ -22,14 +22,14 @@ __BEGIN_QDRENDER
 
 // fixed size array
 template<typename T>
-class FixedArray
+class fsArray_t
 {
 public:
-	FixedArray():array(NULL), _size(0) {}
-	FixedArray(unsigned int Size):array(NULL), _size(0) { resize(Size); }
-	FixedArray(const FixedArray &fa):array(NULL), _size(0) { copy(fa); }
-	~FixedArray() { _free(); }
-	FixedArray& operator=(const FixedArray& fa) { copy(fa);  return *this; }
+	fsArray_t():array(NULL), _size(0) {}
+	fsArray_t(unsigned int Size):array(NULL), _size(0) { resize(Size); }
+	fsArray_t(const fsArray_t &fa):array(NULL), _size(0) { copy(fa); }
+	~fsArray_t() { _free(); }
+	fsArray_t& operator=(const fsArray_t& fa) { copy(fa);  return *this; }
 	void resize(unsigned int Size) { _free();  _size = Size;   array = new T [_size]; }
 	T& operator[](unsigned int i) { return array[i]; }
 	T& operator[](unsigned int i) const { return array[i]; }
@@ -43,7 +43,7 @@ public:
 	const_iterator end() const { return array + _size; }
 protected:
 	void _free() { if (array) delete[] array;  array = NULL;  _size = _size = 0; }
-	void copy(const FixedArray& fa)
+	void copy(const fsArray_t& fa)
 	{
 		_free();  resize(fa._size);
 		for (unsigned int i=0; i<_size; ++i) array[i] = fa.array[i];
@@ -52,36 +52,36 @@ protected:
 	unsigned int _size;
 };
 
-// generic growable Array class, similar to STL vector, can be used as stack/list as well,
+// generic growable array class, similar to STL vector, can be used as stack/list as well,
 template <typename T>
-class Array
+class array_t
 {
 private:
-	//Array(const Array& a);
-	//Array& operator=(const Array& a);
+	//array_t(const array_t& a);
+	//array_t& operator=(const array_t& a);
 public:
-	Array():array(NULL), curidx(0), maxidx(0) {}
-	Array(const Array& a)
+	array_t():array(NULL), curidx(0), maxidx(0) {}
+	array_t(const array_t& a)
 	{
 		array = new T [a.maxidx];
 		for (unsigned int i=0; i<a.maxidx; ++i) array[i] = a.array[i];
 		curidx = a.curidx;
 		maxidx = a.maxidx;
 	}
-	Array(unsigned int initsize)
+	array_t(unsigned int initsize)
 	{
 		curidx = maxidx = initsize;
 		array = new T [maxidx];
 		memset(array, 0, maxidx*sizeof(T));
 	}
-	~Array()
+	~array_t()
 	{
 		if (array) {
 			delete[] array;
 			array = NULL;
 		}
 	}
-	Array& operator=(const Array& a)
+	array_t& operator=(const array_t& a)
 	{
 		// don't delete if enough space already
 		if (array && (a.maxidx <= maxidx)) {
@@ -183,24 +183,24 @@ protected:
 };
 //------------------------------------------------------------------------------
 
-// singly linked list, with key association
+// associative linked list
 template<typename keytype, typename datatype>
-class tLinkedList_t
+class alist_t
 {
 private:
-	tLinkedList_t(const tLinkedList_t& L);
-	tLinkedList_t& operator=(const tLinkedList_t& L);
+	alist_t(const alist_t& L);
+	alist_t& operator=(const alist_t& L);
 public:
-	tLinkedList_t():list(NULL), maxitems(0) {}
-	~tLinkedList_t() { clear(); }
-	void addItem(const keytype& k, const datatype& item)
+	alist_t():list(NULL), maxitems(0) {}
+	~alist_t() { clear(); }
+	void insert(const keytype& k, const datatype& item)
 	{
 		list = new link_t(k, item, list);
 		++maxitems;
 	}
 	// remove item, search by item key,
 	// returns false if item was not found, does not delete data!
-	bool removeItem(const keytype& k)
+	bool remove(const keytype& k)
 	{
 		for (link_t *L=list, *pL=NULL; L!=NULL; pL=L, L=L->next) {
 			if (L->k == k) {
@@ -215,7 +215,7 @@ public:
 		}
 		return false;
 	}
-	datatype* findItem(const keytype& k) const
+	datatype* find(const keytype& k) const
 	{
 		for (link_t* L=list; L!=NULL; L=L->next)
 			if (L->k == k) return &L->d;
@@ -274,14 +274,14 @@ protected:
 
 // as above, for string keys
 template<typename datatype>
-class NamedLinkedList_t
+class sklist_t
 {
 private:
-	NamedLinkedList_t(const NamedLinkedList_t& L);
-	NamedLinkedList_t& operator=(const NamedLinkedList_t& L);
+	sklist_t(const sklist_t& L);
+	sklist_t& operator=(const sklist_t& L);
 public:
-	NamedLinkedList_t():list(NULL), curitem(NULL), maxitems(0) {}
-	~NamedLinkedList_t() { clear(); }
+	sklist_t():list(NULL), curitem(NULL), maxitems(0) {}
+	~sklist_t() { clear(); }
 	void clear()
 	{
 		link_t* L = list;
@@ -294,7 +294,7 @@ public:
 		list = curitem = NULL;
 		maxitems = 0;
 	}
-	void addItem(const char* name, const datatype& item)
+	void insert(const char* name, const datatype& item)
 	{
 		link_t* L = new link_t;
 		L->name = new char[strlen(name) + 1];
@@ -304,13 +304,13 @@ public:
 		list = L;
 		maxitems++;
 	}
-	datatype* findItem(const char* name) const
+	datatype* find(const char* name) const
 	{
 		for (link_t* L=list; L!=NULL; L=L->next)
 			if (!strcmp(name, L->name)) return &L->data;
 		return NULL;
 	}
-	void removeItem(const char* name, datatype& dt)
+	void remove(const char* name, datatype& dt)
 	{
 		for (link_t *L=list, *pL=NULL; L!=NULL; pL=L, L=L->next)
 			if (!strcmp(name, L->name)) {
@@ -327,12 +327,12 @@ public:
 	}
 	inline bool empty() const { return (maxitems == 0); }
 	inline unsigned int size() const { return maxitems; }
-	inline datatype* firstItem() { return ((curitem = list)==NULL) ? NULL : &curitem->data; }
-	inline datatype* nextItem()
+	inline datatype* first() { return ((curitem = list)==NULL) ? NULL : &curitem->data; }
+	inline datatype* next()
 	{
 		return (curitem==NULL) ? NULL : (((curitem = curitem->next)==NULL) ? NULL : &curitem->data);
 	}
-	// returns key string, use with firstItem/nextItem
+	// returns key string, use with first/next
 	inline char* getName() { return (curitem==NULL) ? NULL : curitem->name; }
 protected:
 	struct link_t
@@ -351,11 +351,11 @@ protected:
 // see http://eternallyconfuzzled.com/jsw_home.aspx
 // Works quite well, could possibly be used as replacement for map<>
 template<typename keytype, typename datatype>
-class AATree_t
+class aatree_t
 {
 public:
-	AATree_t():numitems(0) { nil.link[0] = nil.link[1] = root = &nil; }
-	~AATree_t() { clear(); }
+	aatree_t():numitems(0) { nil.link[0] = nil.link[1] = root = &nil; }
+	~aatree_t() { clear(); }
 	// mtds
 	void clear()
 	{
@@ -394,7 +394,7 @@ public:
 		root = &nil;
 		numitems = 0;
 	}
-	datatype* findItem(const keytype& key) const
+	datatype* find(const keytype& key) const
 	{
 		node_t* it = root;
 		while (it != &nil) {
@@ -403,7 +403,7 @@ public:
 		}
 		return NULL;
 	}
-	void addItem(const keytype& key, const datatype& data)
+	void insert(const keytype& key, const datatype& data)
 	{
 		if (root == &nil) // Empty tree case
 			root = new node_t(1, key, data, &nil);
@@ -437,7 +437,7 @@ public:
 		++numitems;
 	}
 	// remove item, does not delete data!
-	bool removeItem(const keytype& key)
+	bool remove(const keytype& key)
 	{
 		if (root == &nil) return false;
 
@@ -558,29 +558,29 @@ protected:
 };
 
 //------------------------------------------------------------------------------
-// HashTable/Map
+// hashtable_t/Map
 
 unsigned int hashfunc(const unsigned char* data, unsigned int len);
 
 // simple generic hashtable
 template<typename hashtype, typename datatype, unsigned int log2_size=10>	// default of 1024 buckets
-class HashTable
+class hashtable_t
 {
 public:
-	HashTable():numitems(0) { }
-	~HashTable() {}
-	void addItem(const hashtype& key, const datatype& data)
+	hashtable_t():numitems(0) { }
+	~hashtable_t() {}
+	void insert(const hashtype& key, const datatype& data)
 	{
 		++numitems;
-		values[hashfunc(reinterpret_cast<const unsigned char*>(&key), sizeof(key)) & ((1 << log2_size)-1)].addItem(key, data);
+		values[hashfunc(reinterpret_cast<const unsigned char*>(&key), sizeof(key)) & ((1 << log2_size)-1)].insert(key, data);
 	}
-	datatype* findItem(const hashtype& key) const
+	datatype* find(const hashtype& key) const
 	{
-		return values[hashfunc(reinterpret_cast<const unsigned char*>(&key), sizeof(key)) & ((1 << log2_size)-1)].findItem(key);
+		return values[hashfunc(reinterpret_cast<const unsigned char*>(&key), sizeof(key)) & ((1 << log2_size)-1)].find(key);
 	}
-	bool removeItem(const hashtype& key)
+	bool remove(const hashtype& key)
 	{
-		if (values[hashfunc(reinterpret_cast<const unsigned char*>(&key), sizeof(key)) & ((1 << log2_size)-1)].removeItem(key)) {
+		if (values[hashfunc(reinterpret_cast<const unsigned char*>(&key), sizeof(key)) & ((1 << log2_size)-1)].remove(key)) {
 			--numitems;
 			return true;
 		}
@@ -612,38 +612,38 @@ public:
 			if (sz < minit) { minbk = n;  minit = sz; }
 			if (sz > maxit) { maxbk = n;  maxit = sz; }
 		}
-		printf("HashTable() bucket %d has least items %d\n", minbk, minit);
-		printf("HashTable() bucket %d has most items %d\n", maxbk, maxit);
+		printf("hashtable_t() bucket %d has least items %d\n", minbk, minit);
+		printf("hashtable_t() bucket %d has most items %d\n", maxbk, maxit);
 	}
 private:
 	size_t numitems;
-	tLinkedList_t<hashtype, datatype> values[1 << log2_size];
-	//AATree_t<hashtype, datatype> values[1 << log2_size];
+	alist_t<hashtype, datatype> values[1 << log2_size];
+	//aatree_t<hashtype, datatype> values[1 << log2_size];
 };
 
 
 // as above, strings as key
 template<typename datatype, unsigned int log2_size=10>	// default of 1024 buckets
-class StringHashMap
+class hashmap_t
 {
 public:
-	StringHashMap():maxitems(0), curbk(0) {}
-	~StringHashMap() {}
-	void addItem(const char* name, const datatype &data)
+	hashmap_t():maxitems(0), curbk(0) {}
+	~hashmap_t() {}
+	void insert(const char* name, const datatype &data)
 	{
 		values[hashfunc(reinterpret_cast<const unsigned char*>(name),
-		                (unsigned int)strlen(name)) & ((1 << log2_size)-1)].addItem(name, data);
+		                (unsigned int)strlen(name)) & ((1 << log2_size)-1)].insert(name, data);
 		maxitems++;
 	}
-	datatype* findItem(const char* name) const
+	datatype* find(const char* name) const
 	{
 		return values[hashfunc(reinterpret_cast<const unsigned char*>(name),
-		                       (unsigned int)strlen(name)) & ((1 << log2_size)-1)].findItem(name);
+		                       (unsigned int)strlen(name)) & ((1 << log2_size)-1)].find(name);
 	}
-	void removeItem(const char* name, datatype& dt)
+	void remove(const char* name, datatype& dt)
 	{
 		values[hashfunc(reinterpret_cast<const unsigned char*>(name),
-		                (unsigned int)strlen(name)) & ((1 << log2_size)-1)].removeItem(name, dt);
+		                (unsigned int)strlen(name)) & ((1 << log2_size)-1)].remove(name, dt);
 		if (dt) --maxitems;
 	}
 	size_t size() const { return maxitems; }
@@ -652,35 +652,35 @@ public:
 		for (unsigned int i=0; i<(1 << log2_size); ++i)
 			values[i].clear();
 	}
-	datatype* firstItem()
+	datatype* first()
 	{
 		// first non-empty bucket
 		curbk = 0;
 		if (maxitems == 0) return NULL;
 		while (values[curbk].empty())
 			if (++curbk == (1 << log2_size)) return NULL;
-		return values[curbk].firstItem();
+		return values[curbk].first();
 	}
-	datatype* nextItem()
+	datatype* next()
 	{
 		if (curbk == (1 << log2_size)) return NULL;
-		datatype* dt = values[curbk].nextItem();
+		datatype* dt = values[curbk].next();
 		if (dt == NULL) {	// next non-empty bucket
 			curbk++;
 			while (values[curbk].empty())
 				if (++curbk == (1 << log2_size)) return NULL;
-			dt = values[curbk].firstItem();
+			dt = values[curbk].first();
 		}
 		return dt;
 	}
-	// returns key name string, use with firstItem/nextItem
+	// returns key name string, use with first/next
 	inline char* getName()
 	{
 		if (curbk == (1 << log2_size)) return NULL;
 		return values[curbk].getName();
 	}
 private:
-	NamedLinkedList_t<datatype> values[1 << log2_size];
+	sklist_t<datatype> values[1 << log2_size];
 	size_t maxitems;
 	unsigned int curbk;
 };

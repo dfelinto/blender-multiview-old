@@ -42,7 +42,7 @@ PointSet::PointSet(RtInt nverts, RtInt n, RtToken tokens[], RtPointer parms[])
 	// others
 	Primitive::initPrimVars(n, tokens, parms, 1, totverts, totverts, totverts);
 	if (primvars) {
-		vardata_t** vdt = primvars->pvars.firstItem();
+		vardata_t** vdt = primvars->pvars.first();
 		while (vdt)  {
 			const char* name = primvars->pvars.getName();
 			if (!strcmp(name, RI_WIDTH)) {
@@ -53,7 +53,7 @@ PointSet::PointSet(RtInt nverts, RtInt n, RtToken tokens[], RtPointer parms[])
 				const_width = (*vdt)->data[0];
 				has_width = true;
 			}
-			vdt = primvars->pvars.nextItem();
+			vdt = primvars->pvars.next();
 		}
 	}
 	if (!has_width) const_width = 1.f;
@@ -105,13 +105,13 @@ void PointSet::splitPrimVars(Primitive* prim1, Primitive* prim2, int tv1, int tv
 	if (primvars == NULL) return;
 	Camera& cam = State::Instance()->projcam;
 	PrimVars *npv1 = NULL, *npv2 = NULL;
-	NamedLinkedList_t<vardata_t*>& varlist = primvars->pvars;
-	vardata_t** vdt = varlist.firstItem();
+	sklist_t<vardata_t*>& varlist = primvars->pvars;
+	vardata_t** vdt = varlist.first();
 	while (vdt) {
 		const char* name = varlist.getName();
 		if ((!strcmp(name, RI_WIDTH)) || (!strcmp(name, RI_CONSTANTWIDTH))) {
 			// width vars already handled in split()
-			vdt = varlist.nextItem();
+			vdt = varlist.next();
 			continue;
 		}
 		if (vdt) {
@@ -171,9 +171,9 @@ void PointSet::splitPrimVars(Primitive* prim1, Primitive* prim2, int tv1, int tv
 					nvdt2->data = reinterpret_cast<float*>(nma2);
 				}
 			}
-			npv1->pvars.addItem(name, nvdt1);
-			npv2->pvars.addItem(name, nvdt2);
-			vdt = varlist.nextItem();
+			npv1->pvars.insert(name, nvdt1);
+			npv2->pvars.insert(name, nvdt2);
+			vdt = varlist.next();
 		}
 	}
 }
@@ -364,7 +364,7 @@ void PointSet::dice(MicroPolygonGrid &g, bool Pclose)
 	g.initVars(std_dice);
 	// linear_dice() not called here, since no interpolation is necesary
 	if (primvars) {
-		vardata_t** vdt = primvars->pvars.firstItem();
+		vardata_t** vdt = primvars->pvars.first();
 		if (vdt == NULL) return; // nothing in list
 		bool varying = (((*vdt)->param.ct_flags & (SC_VARYING | SC_VERTEX)) != 0);
 		while (vdt) {
@@ -396,7 +396,7 @@ void PointSet::dice(MicroPolygonGrid &g, bool Pclose)
 			}
 			// matrix/hpoint todo
 			// next variable
-			vdt = primvars->pvars.nextItem();
+			vdt = primvars->pvars.next();
 		}
 	}
 }

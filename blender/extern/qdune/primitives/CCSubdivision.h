@@ -37,10 +37,10 @@ struct ccVert
 		return *this;
 	}
 	Point3 co;
-	Array<ccEdge*> edges; // edge references
+	array_t<ccEdge*> edges; // edge references
 	// face references
 	// (not strictly necessary, can get from edges, uses slightly less memory too, but makes things simpler)
-	Array<ccFace*> faces;
+	array_t<ccFace*> faces;
 	sdFlags flags;
 };
 
@@ -58,7 +58,7 @@ struct ccEdge
 		return *this;
 	}
 	ccVert *v1, *v2, *new_vert; // edge vertex references
-	Array<ccFace*> faces;
+	array_t<ccFace*> faces;
 	sdFlags flags;
 };
 
@@ -75,8 +75,8 @@ struct ccFace
 		flags = cf.flags;
 		return *this;
 	}
-	Array<int> verts, edges;	// here these are index arrays
-	Array<Point2> stco;	// s/t texcoords
+	array_t<int> verts, edges;	// here these are index arrays
+	array_t<Point2> stco;	// s/t texcoords
 	ccVert* center;	// new center vertex
 	sdFlags flags;
 };
@@ -88,8 +88,8 @@ class JS_SDPatch;
 class BicubicPatch;
 class SDPatch : public Primitive
 {
-	friend void makePatches(const FixedArray<ccVert>&,
-	                        const FixedArray<ccEdge>&, const FixedArray<ccFace>&,
+	friend void makePatches(const fsArray_t<ccVert>&,
+	                        const fsArray_t<ccEdge>&, const fsArray_t<ccFace>&,
 	                        const Primitive*, const Framework*, splitbprims_t*, bool);
 private:
 	SDPatch(const SDPatch &s);
@@ -108,26 +108,26 @@ public:
 	virtual bool in_camspace() const { return true; }
 protected:
 	// mtds
-	JS_SDPatch* makeJSPatch(const FixedArray<ccVert>& vert_list,
-	                        const FixedArray<ccEdge>& edge_list, const FixedArray<ccFace>& face_list,
+	JS_SDPatch* makeJSPatch(const fsArray_t<ccVert>& vert_list,
+	                        const fsArray_t<ccEdge>& edge_list, const fsArray_t<ccFace>& face_list,
 	                        const Primitive* parentprim);
-	BicubicPatch* makeBSplinePatch(const FixedArray<ccVert>& vert_list,
-	                               const FixedArray<ccEdge>& edge_list, const FixedArray<ccFace>& face_list,
+	BicubicPatch* makeBSplinePatch(const fsArray_t<ccVert>& vert_list,
+	                               const fsArray_t<ccEdge>& edge_list, const fsArray_t<ccFace>& face_list,
 	                               int border[2], const Primitive* parentprim);
-	void makeExplicitSDPatch(const FixedArray<ccVert>& vert_list,
-	                         const FixedArray<ccEdge>& edge_list, const FixedArray<ccFace>& face_list,
+	void makeExplicitSDPatch(const fsArray_t<ccVert>& vert_list,
+	                         const fsArray_t<ccEdge>& edge_list, const fsArray_t<ccFace>& face_list,
 	                         const Primitive* parentprim);
 	// data
 	sdFlags flags;
 	int mainface, eovert;
 	Bound bnd;
-	Array<ccFace*> ring;
-	FixedArray<ccVert> patch_verts;
-	FixedArray<ccEdge> patch_edges;
-	FixedArray<ccFace> patch_faces;
+	array_t<ccFace*> ring;
+	fsArray_t<ccVert> patch_verts;
+	fsArray_t<ccEdge> patch_edges;
+	fsArray_t<ccFace> patch_faces;
 
 	// gridindex cache, see split()
-	static tLinkedList_t<int, int*> *gridx_cache;
+	static alist_t<int, int*> *gridx_cache;
 	static int gridx_refc;
 };
 
@@ -207,20 +207,20 @@ public:
 	virtual void dice(MicroPolygonGrid &g, bool Pclose=false);
 	virtual bool in_camspace() const { return true; }
 protected:
-	FixedArray<ccVert> vert_list;
-	FixedArray<ccEdge> edge_list;
-	FixedArray<ccFace> face_list;
+	fsArray_t<ccVert> vert_list;
+	fsArray_t<ccEdge> edge_list;
+	fsArray_t<ccFace> face_list;
 	bool presubd;
 };
 
-void Subdivide(FixedArray<ccVert> &vert_list,
-               FixedArray<ccEdge> &edge_list, FixedArray<ccFace> &face_list,
+void Subdivide(fsArray_t<ccVert> &vert_list,
+               fsArray_t<ccEdge> &edge_list, fsArray_t<ccFace> &face_list,
                bool fromPatch = false, bool limitProjection = false);
-void rebuildLists(FixedArray<ccVert> &vert_list,
-                  FixedArray<ccEdge> &edge_list, FixedArray<ccFace> &face_list,
+void rebuildLists(fsArray_t<ccVert> &vert_list,
+                  fsArray_t<ccEdge> &edge_list, fsArray_t<ccFace> &face_list,
                   bool fromPatch = false, bool st_rot = false);
-void makePatches(const FixedArray<ccVert> &vert_list,
-                 const FixedArray<ccEdge> &edge_list, const FixedArray<ccFace> &face_list,
+void makePatches(const fsArray_t<ccVert> &vert_list,
+                 const fsArray_t<ccEdge> &edge_list, const fsArray_t<ccFace> &face_list,
                  const Primitive* parentprim, const Framework* FW = NULL, splitbprims_t* spb=NULL, bool fromPatch = false);
 
 __END_QDRENDER

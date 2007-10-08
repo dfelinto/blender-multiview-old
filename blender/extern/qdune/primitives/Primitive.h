@@ -37,12 +37,12 @@ public:
 	inline void incRefCount() { refc++; }
 	inline int decRefCount() { return --refc; }
 	// public data, accessed very frequently (split()/dice())
-	NamedLinkedList_t<vardata_t*> pvars;
+	sklist_t<vardata_t*> pvars;
 	// once again a simple list is faster than a hashmap,
 	// but besides that, there still seems to be a problem with it somewhere as well,
 	// in CCSubdivision.cpp, when texcoords are init. from s/t,
 	// memory usage suddenly explodes for some reason, no clue why yet...
-	//StringHashMap<vardata_t*> pvars;
+	//hashmap_t<vardata_t*> pvars;
 protected:
 	int refc; // reference count
 };
@@ -59,7 +59,7 @@ class BlurredPrimitive;
 struct splitbprims_t
 {
 	BlurredPrimitive* parent;
-	Array<BlurredPrimitive*> bprims;
+	array_t<BlurredPrimitive*> bprims;
 };
 
 // base primitive class
