@@ -4,10 +4,9 @@ The SConscript is extremely simplistic and needs to be adapted for other systems
 The renderer currently mostly uses fixed paths for shaders and the subdivision .dat files.
 For this to work properly, the renderer expects to be started from the main 'qdune' directory.
 
-There are several external files used here which are included:
-
-First is the CImg.h include file in the 'framebuffer' directory, see http://cimg.sourceforge.net/
-the CImg library by David Tschumperlé is a very nice general image processing library, but is only used as framebuffer here.
+For display output the CImg library is used. It is a very nice general image processing library by David Tschumperlé, but is only used as framebuffer here.
+The program can work without it, but then always saves result images as file.
+If anyone wants to recreate the full standalone program, get the CImg.h file here: http://cimg.sourceforge.net/ , and copy the file to the 'framebuffer' directory.
 
 The subdivision surface is partially evaluated directly using the method from the paper "Exact Evaluation of Catmull-Clark Subdivision Surfaces at Arbitrary Parameter Values"
 see http://www.dgp.toronto.edu/people/stam/reality/Research/SubdivEval/index.html
@@ -25,6 +24,7 @@ The compiler is a very recent addition, so again, don't expect things to work we
 
 There are several example ribfiles in the 'ribs' directory which might be useful for testing.
 The fig.12. ribfiles are example files from the 'Advanced Renderman' book, chapter 12, see http://www.renderman.org/RMR/Publications/index.html#Advanced for more info.
+'suzgallery.rib' is a modified version of an example file from the well-known BMRT renderer, 'vasegallery1.rib'.
 
 Anyone wishing to do work on the renderer will find the book 'Production Rendering' a very useful reference, since the entire design of qdune is based on it.
 see http://www.amazon.com/Production-Rendering-Ian-Stephenson/dp/1852338210
