@@ -1,0 +1,8 @@
+In this directory, I collect patches to FFMPEG, to make it
+work / faster with blender.
+
+Currently, there is only a small MMX acceleration for the
+YUV -> BGRA32 
+transformation.
+
+-- Peter 
