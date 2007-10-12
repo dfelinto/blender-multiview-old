@@ -9,13 +9,39 @@
 # by rendering smokesm before rendering this file.
 #########################################################################
 
+#----------------------------------------------
+# shadowmap
 Hider "hidden" "jitter" [0]
+FrameBegin 1
+Display "smokeball.sm" "zfile" "z"
+Format 512 512 1
+PixelSamples 1 1
+PixelFilter "box" 1 1
+ShadingRate 4
+Projection "perspective" "fov" [25]
+ConcatTransform [-1 0 0 0 0 1 0 0 0 0 -1 0 0 0 0 1]
+Translate 0 0 -8 
+Attribute "dice" "binary" [1]
+WorldBegin
+
+AttributeBegin
+Translate 0 0 2
+Rotate -10 1 1 1
+Sphere 1 -1 1 360
+AttributeEnd
+
+WorldEnd
+FrameEnd
+
+#----------------------------------------------
+# image
+
+Hider "hidden" "jitter" [1]
+FrameBegin 2
 #Option "searchpath" "shader" ["../shaders:&"]
 Display "fig12.12" "framebuffer" "rgb"
+#Display "fig12.12.tga" "file" "rgb"
 Format 512 512 1
-#Format 480 360 1
-#Format 1024 1024 1
-#PixelFilter "box" 1 1
 PixelSamples 4 4
 Exposure 1 1.8
 ShadingRate 1
@@ -41,7 +67,7 @@ Sides 1
 
 Declare "stepsize" "float" 
 Atmosphere "smoke" "stepsize" [.25]
-	"float smokeoctaves" [4] "float smokefreq" [1] "float opacdensity" [0.025] 
+	"float smokeoctaves" [8] "float smokefreq" [1] "float opacdensity" [0.025] 
 	"float lightdensity" [0.075]
 
 AttributeBegin
@@ -68,3 +94,4 @@ Sphere 1 -1 1 360
 AttributeEnd
 
 WorldEnd
+FrameEnd

@@ -140,6 +140,7 @@ RtToken RI_BUCKETSIZE           =       "bucketsize";
 RtToken RI_TEXTUREMEMORY        =       "texturememory";
 RtToken RI_GRIDSIZE             =       "gridsize";
 RtToken RI_BINARY               =       "binary";
+RtToken RI_EYESPLITS            =       "eyesplits";
 
 //------------------------------------------------------------------------------
 // Basis Matrices
@@ -746,6 +747,8 @@ RtVoid RiOptionV(RtToken name, RtInt n, RtToken tokens[], RtPointer parms[])
 				options.texturememory = ABS(*((RtInt*)parms[i]))*1024;
 			else if (!strcmp(tokens[i], RI_GRIDSIZE))
 				options.gridsize = ABS(*((RtInt*)parms[i]));
+			else if (!strcmp(tokens[i], RI_EYESPLITS))
+				options.eyesplits = ABS(*((RtInt*)parms[i]));
 			else
 				fprintf(ERROUT, "Unknown limits option '%s'\n", tokens[i]);
 		}
@@ -1282,7 +1285,7 @@ RtVoid RiAttributeV(RtToken name, RtInt n, RtToken tokens[], RtPointer parms[])
 	else if (!strcmp(name, "dice")) {
 		for (int i=0; i<n; ++i) {
 			if (!strcmp(tokens[i], RI_BINARY))
-				attr.dice_binary = ABS(*((RtBoolean*)parms[i]));
+				attr.flags |= (*((int*)parms[i]) != 0) ? AF_DICE_BINARY : 0;
 			else
 				fprintf(ERROUT, "Unknown dice attribute: '%s'\n", tokens[i]);
 		}

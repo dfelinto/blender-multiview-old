@@ -1,5 +1,6 @@
-Option "searchpath" "string shader" ".:%PIXIEHOME%/shaders:%SHADERS%"
-Display "curvehair" "framebuffer" "rgb"
+Hider "hidden" "jitter" [1]
+Display "curvehair2" "framebuffer" "rgb"
+#Display "curvehair2.tga" "file" "rgb"
 Projection "perspective" "fov" [55]
 Format 1000 1000 1
 PixelSamples 4 4

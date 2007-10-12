@@ -122,7 +122,8 @@ static struct // predeclared variable, token & declared param
 	{ RI_BUCKETSIZE, {SC_CONSTANT|DT_INT, 1, 1}},
 	{ RI_TEXTUREMEMORY, {SC_CONSTANT|DT_INT, 1, 1}},
 	{ RI_GRIDSIZE, {SC_CONSTANT|DT_INT, 1, 1}},
-	{ RI_BINARY, {SC_CONSTANT|DT_INT, 1, 1}}
+	{ RI_BINARY, {SC_CONSTANT|DT_INT, 1, 1}},
+	{ RI_EYESPLITS, {SC_CONSTANT|DT_INT, 1, 1}}
 };
 
 // state create
@@ -257,7 +258,7 @@ void State::insert(Primitive* prim, int motion_pos)
 	else if (openAreaLight)
 		TODO
 	else */
-	if (motion_pos >= 0) {
+	if (motion_pos >= 0) {	// motion blurred primitive
 		if (openBlurPrim == NULL) openBlurPrim = new BlurredPrimitive();
 		// set lightarray and std_dice flags first before calling cloneAttributes(),
 		Attributes& attr = topAttributes();

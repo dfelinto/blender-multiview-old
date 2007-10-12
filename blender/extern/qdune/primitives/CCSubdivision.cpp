@@ -2402,10 +2402,10 @@ bool JS_SDPatch::diceable(MicroPolygonGrid &g, Hider &h, bool &usplit, bool &vsp
 
 	const Attributes* attr = getAttributeReference();
 	// 2x2 mp minimum
-	unsigned int xdim = attr->dice_binary ? (1 << MAX2(1, int(0.5f + (float)log(MAX2(1e-7f, TESTSIZE*maxUDist) / attr->effectiveShadingRate)*(float)M_LOG2E)))
-	                                      : MAX2(2, int(0.5f + (TESTSIZE*maxUDist) / attr->effectiveShadingRate));
-	unsigned int ydim = attr->dice_binary ? (1 << MAX2(1, int(0.5f + (float)log(MAX2(1e-7f, TESTSIZE*maxVDist) / attr->effectiveShadingRate)*(float)M_LOG2E)))
-	                                      : MAX2(2, int(0.5f + (TESTSIZE*maxVDist) / attr->effectiveShadingRate));
+	unsigned int xdim = (attr->flags & AF_DICE_BINARY) ? (1 << MAX2(1, int(0.5f + (float)log(MAX2(1e-7f, TESTSIZE*maxUDist) / attr->effectiveShadingRate)*(float)M_LOG2E)))
+	                                                   : MAX2(2, int(0.5f + (TESTSIZE*maxUDist) / attr->effectiveShadingRate));
+	unsigned int ydim = (attr->flags & AF_DICE_BINARY) ? (1 << MAX2(1, int(0.5f + (float)log(MAX2(1e-7f, TESTSIZE*maxVDist) / attr->effectiveShadingRate)*(float)M_LOG2E)))
+	                                                   : MAX2(2, int(0.5f + (TESTSIZE*maxVDist) / attr->effectiveShadingRate));
 
 	g.setDim(xdim, ydim, this);
 	xdim++, ydim++;

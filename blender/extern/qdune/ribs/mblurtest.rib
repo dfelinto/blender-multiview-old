@@ -1,4 +1,3 @@
-#Option "searchpath" "string shader" ".:%PIXIEHOME%/shaders:%SHADERS%"
 Hider "hidden" "jitter" [1]
 Display "mblurtest" "framebuffer" "rgb"
 #Display "mblurtest.tga" "file" "rgb"

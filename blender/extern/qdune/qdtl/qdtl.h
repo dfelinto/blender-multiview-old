@@ -26,14 +26,14 @@ class fsArray_t
 {
 public:
 	fsArray_t():array(NULL), _size(0) {}
-	fsArray_t(unsigned int Size):array(NULL), _size(0) { resize(Size); }
+	fsArray_t(size_t Size):array(NULL), _size(0) { resize(Size); }
 	fsArray_t(const fsArray_t &fa):array(NULL), _size(0) { copy(fa); }
 	~fsArray_t() { _free(); }
 	fsArray_t& operator=(const fsArray_t& fa) { copy(fa);  return *this; }
-	void resize(unsigned int Size) { _free();  _size = Size;   array = new T [_size]; }
-	T& operator[](unsigned int i) { return array[i]; }
-	T& operator[](unsigned int i) const { return array[i]; }
-	unsigned int size() const { return _size; }
+	void resize(size_t Size) { _free();  _size = Size;   array = new T [_size]; }
+	T& operator[](size_t i) { return array[i]; }
+	T& operator[](size_t i) const { return array[i]; }
+	size_t size() const { return _size; }
 	bool empty() const { return (_size == 0); }
 	typedef T* iterator;
 	typedef const T* const_iterator;
@@ -46,10 +46,10 @@ protected:
 	void copy(const fsArray_t& fa)
 	{
 		_free();  resize(fa._size);
-		for (unsigned int i=0; i<_size; ++i) array[i] = fa.array[i];
+		for (size_t i=0; i<_size; ++i) array[i] = fa.array[i];
 	}
 	T* array;
-	unsigned int _size;
+	size_t _size;
 };
 
 // generic growable array class, similar to STL vector, can be used as stack/list as well,
@@ -64,11 +64,11 @@ public:
 	array_t(const array_t& a)
 	{
 		array = new T [a.maxidx];
-		for (unsigned int i=0; i<a.maxidx; ++i) array[i] = a.array[i];
+		for (size_t i=0; i<a.maxidx; ++i) array[i] = a.array[i];
 		curidx = a.curidx;
 		maxidx = a.maxidx;
 	}
-	array_t(unsigned int initsize)
+	array_t(size_t initsize)
 	{
 		curidx = maxidx = initsize;
 		array = new T [maxidx];
@@ -85,19 +85,19 @@ public:
 	{
 		// don't delete if enough space already
 		if (array && (a.maxidx <= maxidx)) {
-			for (unsigned int i=0; i<a.curidx; ++i) array[i] = a.array[i];
+			for (size_t i=0; i<a.curidx; ++i) array[i] = a.array[i];
 			curidx = a.curidx;
 			return *this;
 		}
 		if (array) delete[] array;
 		array = new T [a.maxidx];
-		for (unsigned int i=0; i<a.maxidx; ++i) array[i] = a.array[i];
+		for (size_t i=0; i<a.maxidx; ++i) array[i] = a.array[i];
 		curidx = a.curidx;
 		maxidx = a.maxidx;
 		return *this;
 	}
 	void clear() { curidx = 0; } // no delete, just set index back to 0
-	void resize(unsigned int newsize)
+	void resize(size_t newsize)
 	{
 		// do nothing if newsize less or equal to already allocated space
 		if (array && (newsize <= maxidx)) return;
@@ -105,14 +105,14 @@ public:
 		T* na = new T [maxidx];
 		memset(na, 0, maxidx*sizeof(T));
 		if (array) {
-			for (unsigned int i=0; i<curidx; ++i) na[i] = array[i];
+			for (size_t i=0; i<curidx; ++i) na[i] = array[i];
 			delete[] array;
 		}
 		curidx = newsize;
 		array = na;
 	}
 	// as above, but does not copy old contents
-	void resize_clear(unsigned int newsize)
+	void resize_clear(size_t newsize)
 	{
 		// only clear if newsize less or equal to already allocated space (if any)
 		if (array && (newsize <= maxidx)) { curidx = 0;  return; }
@@ -136,24 +136,24 @@ public:
 	T& pop() { assert(curidx!=0);  return array[--curidx]; }
 	*/
 	// array access, DOES NO BOUNDS CHECKING!!!!
-	T& operator[](unsigned int i) { return array[i]; }
-	T& operator[](unsigned int i) const { return array[i]; }
+	T& operator[](size_t i) { return array[i]; }
+	T& operator[](size_t i) const { return array[i]; }
 	// same, but does check bounds, aborts if trying to access array beyond bounds
-	T& at(unsigned int i) { assert(i<curidx);  return array[i]; }
+	T& at(size_t i) { assert(i<curidx);  return array[i]; }
 	bool empty() const { return (curidx==0); }
-	unsigned int size() const { return curidx; }
-	unsigned int capacity() const { return maxidx; }
+	size_t size() const { return curidx; }
+	size_t capacity() const { return maxidx; }
 	// returns true if item is contained in array
 	bool contains(const T& item) const
 	{
-		for (unsigned int i=0; i<curidx; ++i)
+		for (size_t i=0; i<curidx; ++i)
 			if (array[i] == item) return true;
 		return false;
 	}
 	// returns index number of item in array, if not found, returns -1
 	int index(const T& item) const
 	{
-		for (unsigned int i = 0; i<curidx; ++i)
+		for (size_t i = 0; i<curidx; ++i)
 			if (array[i] == item) return i;
 		return -1;
 	}
@@ -172,14 +172,14 @@ protected:
 			maxidx = (maxidx==0) ? 1 : (maxidx << 1);
 			T* na = new T [maxidx];
 			if (array) {
-				for (unsigned int i=0; i<curidx; ++i) na[i] = array[i];
+				for (size_t i=0; i<curidx; ++i) na[i] = array[i];
 				delete[] array;
 			}
 			array = na;
 		}
 	}
 	T* array;
-	unsigned int curidx, maxidx;
+	size_t curidx, maxidx;
 };
 //------------------------------------------------------------------------------
 
@@ -191,7 +191,7 @@ private:
 	alist_t(const alist_t& L);
 	alist_t& operator=(const alist_t& L);
 public:
-	alist_t():list(NULL), maxitems(0) {}
+	alist_t() : list(NULL), maxitems(0) {}
 	~alist_t() { clear(); }
 	void insert(const keytype& k, const datatype& item)
 	{
@@ -221,7 +221,7 @@ public:
 			if (L->k == k) return &L->d;
 		return NULL;
 	}
-	unsigned int size() const { return maxitems; }
+	size_t size() const { return maxitems; }
 	void clear()
 	{
 		link_t* L = list;
@@ -269,7 +269,7 @@ protected:
 		link_t* next;
 	};
 	link_t *list;
-	unsigned int maxitems;
+	size_t maxitems;
 };
 
 // as above, for string keys
@@ -326,7 +326,7 @@ public:
 			}
 	}
 	inline bool empty() const { return (maxitems == 0); }
-	inline unsigned int size() const { return maxitems; }
+	inline size_t size() const { return maxitems; }
 	inline datatype* first() { return ((curitem = list)==NULL) ? NULL : &curitem->data; }
 	inline datatype* next()
 	{
@@ -342,7 +342,7 @@ protected:
 		link_t* next;
 	};
 	link_t *list, *curitem;
-	unsigned int maxitems;
+	size_t maxitems;
 };
 
 //------------------------------------------------------------------------------
@@ -567,7 +567,7 @@ template<typename hashtype, typename datatype, unsigned int log2_size=10>	// def
 class hashtable_t
 {
 public:
-	hashtable_t():numitems(0) { }
+	hashtable_t():numitems(0) {}
 	~hashtable_t() {}
 	void insert(const hashtype& key, const datatype& data)
 	{
@@ -616,9 +616,8 @@ public:
 		printf("hashtable_t() bucket %d has most items %d\n", maxbk, maxit);
 	}
 private:
-	size_t numitems;
 	alist_t<hashtype, datatype> values[1 << log2_size];
-	//aatree_t<hashtype, datatype> values[1 << log2_size];
+	size_t numitems;
 };
 
 

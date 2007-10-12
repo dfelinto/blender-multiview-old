@@ -9,11 +9,8 @@
 # by rendering smokesm before rendering this file.
 #########################################################################
 
-#Option "searchpath" "shader" ["../shaders:&"]
 Display "fig12.14" "framebuffer" "rgb"
 #Display "fig12.14.tga" "file" "rgb"
-#Quantize "rgba" 65535 0 65535 0.5   # uncomment this line for 16 bit output
-#Option "searchpath" "shader" ["../shaders:/u0/lg/shaders/MusgraveShaders:&"]
 Format 640 480 1
 #Format 1024 768 1
 Exposure 1 2.0

@@ -75,9 +75,8 @@ void BilinearPatch::post_init()
 Bound BilinearPatch::bound()
 {
 	Bound b;
-	
 	const RtVector v1 = {hull[2][0] - hull[0][0], hull[2][1] - hull[0][1], hull[2][2] - hull[0][2]},
-								v2 = {hull[3][0] - hull[1][0], hull[3][1] - hull[1][1], hull[3][2] - hull[1][2]};
+	               v2 = {hull[3][0] - hull[1][0], hull[3][1] - hull[1][1], hull[3][2] - hull[1][2]};
 	RtPoint L = {hull[0][0] + vmin*v1[0], hull[0][1] + vmin*v1[1], hull[0][2] + vmin*v1[2]};
 	RtVector dRL = {(hull[1][0] + vmin*v2[0]) - L[0], (hull[1][1] + vmin*v2[1]) - L[1], (hull[1][2] + vmin*v2[2]) - L[2]};
 	b.include(Point3(L[0] + umin*dRL[0], L[1] + umin*dRL[1], L[2] + umin*dRL[2]));
@@ -86,20 +85,6 @@ Bound BilinearPatch::bound()
 	dRL[0] = (hull[1][0] + vmax*v2[0]) - L[0], dRL[1] = (hull[1][1] + vmax*v2[1]) - L[1], dRL[2] = (hull[1][2] + vmax*v2[2]) - L[2];
 	b.include(Point3(L[0] + umin*dRL[0], L[1] + umin*dRL[1], L[2] + umin*dRL[2]));
 	b.include(Point3(L[0] + umax*dRL[0], L[1] + umax*dRL[1], L[2] + umax*dRL[2]));
-
-	/*
-	const Point3 h0(hull[0][0], hull[0][1], hull[0][2]), h1(hull[1][0], hull[1][1], hull[1][2]);
-	const Vector v1(hull[2][0] - hull[0][0], hull[2][1] - hull[0][1], hull[2][2] - hull[0][2]),
-							v2(hull[3][0] - hull[1][0], hull[3][1] - hull[1][1], hull[3][2] - hull[1][2]);
-	Point3 L = h0 + vmin*v1;
-	Vector dRL = (h1 + vmin*v2) - L;
-	b.include(L + umin*dRL);
-	b.include(L + umax*dRL);
-	L = h0 + vmax*v1;
-	dRL = (h1 + vmax*v2) - L;
-	b.include(L + umin*dRL);
-	b.include(L + umax*dRL);
-	*/
 	b.addEpsilon();
 	// hull already in cameraspace, so no xform needed
 	return b;
@@ -335,7 +320,7 @@ void calcFD(const Point3 hull[16], float nu, float nv, Point3 fd[16])
 */
 
 // transform control mesh to equivalent bezier control mesh
-void convert2Bezier(RtPoint hull[16], const RtMatrix ubasis, const RtMatrix vbasis)
+static void convert2Bezier(RtPoint hull[16], const RtMatrix ubasis, const RtMatrix vbasis)
 {
 	const RtMatrix invBezier = {{0.f,     0.f,     0.f, 1.f},
 	                            {0.f,     0.f, 1.f/3.f, 1.f},
@@ -362,7 +347,7 @@ void convert2Bezier(RtPoint hull[16], const RtMatrix ubasis, const RtMatrix vbas
 }
 
 // as above, but for use with BSpline patches (used in subdiv)
-void bSpline2Bezier(RtPoint hull[16])
+static void bSpline2Bezier(RtPoint hull[16])
 {
 	const RtMatrix pre = {{1.f/6.f,     0.f,     0.f,     0.f},
 	                      {2.f/3.f, 2.f/3.f, 1.f/3.f, 1.f/6.f},
@@ -374,7 +359,7 @@ void bSpline2Bezier(RtPoint hull[16])
 	                      {     0.f, 1.f/6.f, 2.f/3.f, 1.f/6.f}};
 	// dimension here is num of point elements,
 	// can be hpoint too so then would be 4 (xyzw)
-	// TODO
+	// TODO (make hpoint by default and use w=1)
 	for (int dim=0; dim<3; ++dim) {
 		RtMatrix P;
 		for (int i=0; i<4; ++i)
@@ -612,10 +597,10 @@ bool BicubicPatch::diceable(MicroPolygonGrid &g, Hider &h, bool &usplit, bool &v
 
 	const Attributes* attr = getAttributeReference();
 	// 2x2 mp minimum
-	unsigned int xdim = attr->dice_binary ? (1 << MAX2(1, int(0.5f + (float)log(MAX2(1e-7f, TESTSIZE*maxUDist) / attr->effectiveShadingRate)*(float)M_LOG2E)))
-	                                      : MAX2(2, int(0.5f + (TESTSIZE*maxUDist) / attr->effectiveShadingRate));
-	unsigned int ydim = attr->dice_binary ? (1 << MAX2(1, int(0.5f + (float)log(MAX2(1e-7f, TESTSIZE*maxVDist) / attr->effectiveShadingRate)*(float)M_LOG2E)))
-	                                      : MAX2(2, int(0.5f + (TESTSIZE*maxVDist) / attr->effectiveShadingRate));
+	unsigned int xdim = (attr->flags & AF_DICE_BINARY) ? (1 << MAX2(1, int(0.5f + (float)log(MAX2(1e-7f, TESTSIZE*maxUDist) / attr->effectiveShadingRate)*(float)M_LOG2E)))
+	                                                   : MAX2(2, int(0.5f + (TESTSIZE*maxUDist) / attr->effectiveShadingRate));
+	unsigned int ydim = (attr->flags & AF_DICE_BINARY) ? (1 << MAX2(1, int(0.5f + (float)log(MAX2(1e-7f, TESTSIZE*maxVDist) / attr->effectiveShadingRate)*(float)M_LOG2E)))
+	                                                   : MAX2(2, int(0.5f + (TESTSIZE*maxVDist) / attr->effectiveShadingRate));
 
 	g.setDim(xdim, ydim, this);
 	xdim++, ydim++;
@@ -689,7 +674,7 @@ void BicubicPatch::dice(MicroPolygonGrid &g, bool Pclose)
 // only splits the patchmesh into its individual patches, dice() is never called
 
 BicubicPatchMesh::BicubicPatchMesh(RtInt nu, bool uperiodic, RtInt nv, bool vperiodic,
-				RtInt n, RtToken tokens[], RtPointer parms[])
+                                   RtInt n, RtToken tokens[], RtPointer parms[])
 {
 	const int numpts = nu*nv;
 	pts = NULL;

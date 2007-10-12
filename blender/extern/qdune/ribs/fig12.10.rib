@@ -12,20 +12,65 @@
 
 ##RenderMan RIB-Structure 1.0
 version 3.03
+
+#------------------------------------------------------------
+# shadowmap
+
+Hider "hidden" "jitter" [0]
+FrameBegin 1
+Display "fig12.10.sm" "zfile" "z"
+Format 512 512 1
+PixelFilter "box" 1 1
+PixelSamples 1 1
+#ScreenWindow -2.75 2.75 -2.75 2.75
+Projection "perspective" "fov" [1.15]
+
+Rotate -29.12 1.00 0.00 0.00
+Rotate 158.20 0.00 1.00 0.00
+Translate -80.00 -120.00 -200.00
+
+WorldBegin
+
+AttributeBegin
+Translate 1 1 0
+Scale .1 .1 .1
+Rotate -100 0 0 1
+ReadArchive "gumbo.rib"
+AttributeEnd
+
+AttributeBegin
+Translate -2.4 2 0
+Scale .1 .1 .1
+Rotate -50 0 0 1
+ReadArchive "gumbo.rib"
+AttributeEnd
+
+WorldEnd
+
+FrameEnd
+
+#------------------------------------------------------------
+# image
+
+Hider "hidden" "jitter" [1]
+FrameBegin 2
+
 Format 640 480 1
 #Format 1024 768 1
-PixelSamples 2 2
-Display "fig12.10.tif" "framebuffer" "rgb"
+PixelSamples 4 4
+Display "fig12.10" "framebuffer" "rgb"
+#Display "fig12.10.tga" "file" "rgb"
 
+Exposure 1 1.5
 
 Projection "perspective"  "fov" [11]
 ShadingRate 1
-Option "searchpath" "shader" [".:../shaders:&"]
+#Option "searchpath" "shader" [".:../shaders:&"]
 
 ##CameraOrientation 2 20 5 0 0 0 -0.0240204 -0.240204 0.970425
 ConcatTransform [0.995037 -0.0240204 -0.0965609 0 -0.0995037 -0.240204 -0.965609 0 3.56147e-10 0.970425 -0.241402 0 0 0 0 1]
 Translate -2 -20 -5
- 
+
 WorldBegin
 Translate 0 0 -0.5
 
@@ -37,18 +82,22 @@ Illuminate 1 1
 # Key light
 AttributeBegin
 Translate 80 120 200
-Declare "nsamples" "integer"
-Attribute "light" "nsamples" [16]
+# Declare "nsamples" "integer"
+# Attribute "light" "nsamples" [16]
 
 AreaLightSource "uberlight" 2 "string lighttype" ["omni"] 
             "intensity" [2] "lightcolor" [1 .95 .85]
             "float falloff" [0] 
-            "float raytraceshadow" [1] "color shadowcolor" [.1 .12 .17]
+            #"float raytraceshadow" [1]
+            "string shadowmap" ["fig12.10.sm"]
+            "color shadowcolor" [.1 .12 .17]
+            "float shadownsamps" [16] "float shadowbias" [0.7] "float shadowblur" [5]
 
-Surface "constant"
-Attribute "render" "casts_shadows" ["none"]
-Disk 0 30 -360
+# Surface "constant"
+# Attribute "render" "casts_shadows" ["none"]
+# Disk 0 30 -360
 AttributeEnd
+
 Illuminate 2 1
 
 # Fill light
@@ -94,16 +143,15 @@ ReadArchive "gumbo.rib"
 AttributeEnd
 
 AttributeBegin
-Attribute "render" "casts_shadows" ["none"]
+#Attribute "render" "casts_shadows" ["none"]
 Surface "constant"
 Color [.75 .75 .75 ]
 Sphere 1000 -1000 1000 -360
 AttributeEnd
 
-
 AttributeBegin
-Attribute "identifier" "name" ["box"]
-Attribute "render" "casts_shadows" ["none"]
+#Attribute "identifier" "name" ["box"]
+#Attribute "render" "casts_shadows" ["none"]
 Translate 0 0 -0.4
 Rotate 20 0 0 1
 TransformBegin
@@ -122,3 +170,5 @@ Patch "bilinear" "P" [ 1 -1 0  1 1 0  1 -1 2  1 1 2]
 AttributeEnd
 
 WorldEnd
+
+FrameEnd

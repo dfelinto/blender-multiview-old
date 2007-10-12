@@ -36,8 +36,8 @@ void Camera::init(const Options& opt)
 	aspect = opt.pixelAspectRatio;
 	float scr[4] = {opt.left, opt.right, opt.bottom, opt.top};
 	scr2ras = Scale((float)width, (float)height, 1.f) *
-						Scale(1.f/(scr[1] - scr[0]), 1.f/(scr[2] - scr[3]), 1.f) *
-						Translate(-scr[0], -scr[3], 0.f);
+	          Scale(1.f/(scr[1] - scr[0]), 1.f/(scr[2] - scr[3]), 1.f) *
+	          Translate(-scr[0], -scr[3], 0.f);
 	ras2scr = scr2ras;
 	ras2scr.invert();
 	ras2cam = cam2scr;

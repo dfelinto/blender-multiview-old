@@ -12,8 +12,8 @@ Rotate -120 0 0 1
 
 WorldBegin
 
-	LightSource "pointlight" 2 "intensity" [50] "from" [0 -6 6]
-	LightSource "distantlight" 3 "intensity" [0.2] "from" [0 6 6] "to" [0 0 0]
+	LightSource "pointlight" 2 "intensity" [40] "from" [0 -6 6]
+	LightSource "distantlight" 3 "intensity" [0.25] "from" [0 6 6] "to" [0 0 0]
 
 	Surface "glossy" "Kd" [1] "Ks" [1]
 

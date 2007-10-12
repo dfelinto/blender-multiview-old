@@ -185,12 +185,10 @@ float getShadowFactor(const char* texname, float st[8], const RtPoint& wldP, flo
 	//static unsigned int VDCC = 0, SBC = 0;
 	static Halton H2(2), H3(3);
 	for (int sm=0; sm<numsam; ++sm) {
-		/*
-		if (sm == 5) {
-			if (ts == 5) return 0.f;
+		/*if (sm == 16) {
+			if (ts == 16) return 0.f;
 			if (ts == 0) return 1.f;
-		}
-		*/
+		}*/
 		const float zval = texcache->getDepth(texinfo, int(xmin + H2.getNext()*dx), int(ymin + H3.getNext()*dy));
 		//const float zval = texcache->getDepth(texinfo, int(xmin + RI_vdC(++VDCC)*dx), int(ymin + RI_Sb(++SBC)*dy));
 		//const float zval = texcache->getDepth(texinfo, int(xmin + RI_vdC(++VDCC)*dx), int(ymin + (sm + 0.5f)*sdiv*dy));

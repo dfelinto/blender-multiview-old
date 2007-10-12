@@ -78,6 +78,7 @@ Options::Options()
 	bucketsize = 32;
 	texturememory = 10*1024*1024;	// 10Mb default should be enough
 	gridsize = 1024;
+	eyesplits = 5;
 
 	// basepath relative to current file for ReadArchive/etc
 	basepath[0] = 0;

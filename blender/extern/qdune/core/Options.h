@@ -66,6 +66,7 @@ public:
 	RtInt bucketsize;	// size of bucket in pixels
 	RtInt texturememory;	// texture cache size in kb
 	RtInt gridsize;	// maximum size of grid (num of verts)
+	RtInt eyesplits;
 
 	// basepath relative to current file for ReadArchive/etc
 	char basepath[256];

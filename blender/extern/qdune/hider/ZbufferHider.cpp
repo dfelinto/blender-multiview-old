@@ -587,7 +587,7 @@ int ZbufferHider::inFrustum(Primitive* p)
 	const float p_zmin = MIN2(b.minmax[0].z, b.minmax[1].z);
 	const float p_zmax = MAX2(b.minmax[0].z, b.minmax[1].z);
 	const Options& opts = State::Instance()->topOptions();
-	if ((p_zmax < opts.nearClip) || (p_zmin > opts.farClip)) // completely behind nearclip or farclip
+	if ((p_zmax < opts.nearClip) or (p_zmin > opts.farClip)) // completely behind nearclip or farclip
 	{
 		prim_culled++;
 		return NOT_VISIBLE;
@@ -630,7 +630,7 @@ int ZbufferHider::inFrustum(Primitive* p)
 		prim_culled++;
 		return NOT_VISIBLE;
 	}
-	else if ((p_zmin < (float)RI_EPSILON) && (p_zmax < opts.farClip))
+	if ((p_zmin < (float)RI_EPSILON) and (p_zmax > opts.nearClip))
 	{
 		// crossing eyeplane, the dreaded 'eyesplit'!
 		prim_culled++;

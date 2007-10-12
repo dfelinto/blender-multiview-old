@@ -3,6 +3,7 @@
 #include "Primitive.h"
 #include "Color.h"
 #include "MicroPolygonGrid.h"
+#include "Options.h"
 
 #include <iostream>
 
@@ -12,6 +13,8 @@ __BEGIN_QDRENDER
 ReyesFramework::ReyesFramework(const Attributes& attr, const Options& opt)
 {
 	hider = new ZbufferHider(attr, opt);
+	max_eyesplits = opt.eyesplits;
+	total_eyesplits = 0;
 }
 
 ReyesFramework::~ReyesFramework()
@@ -35,8 +38,6 @@ Color ReyesFramework::trace(const Point3 &p, const Vector &r) const
 	return Color(0);
 }
 
-// TODO: make user option
-#define MAX_EYE_SPLITS 5
 void ReyesFramework::insert(Primitive* prim) const
 {
 	int v = hider->inFrustum(prim);
@@ -44,12 +45,12 @@ void ReyesFramework::insert(Primitive* prim) const
 		hider->insert(prim);
 	else if (v == EYE_SPLIT) {
 		if (prim->splitable()) {
-			if (prim->getEyeSplits() < MAX_EYE_SPLITS) {
+			if (prim->getEyeSplits() < max_eyesplits) {
 				prim->incEyeSplits();
 				prim->split(*this, true, true);
 			}
 			else	// max split exceeded, discard...
-				std::cout << "Max eyesplits exceeded, discarding primitive\n";
+				++total_eyesplits;
 			delete prim;
 		}
 	}
@@ -60,6 +61,8 @@ void ReyesFramework::insert(Primitive* prim) const
 
 void ReyesFramework::worldEnd() const
 {
+	if (total_eyesplits)
+		std::cout << "\rExceeded maximum eyesplitcount " << total_eyesplits << " times" << std::endl;
 	while (hider->bucketBegin()) {
 		Primitive* p;
 		while ((p = hider->firstPrim()) != NULL) {

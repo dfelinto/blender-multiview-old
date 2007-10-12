@@ -85,7 +85,7 @@ extern RtToken RI_IDENTIFIER, RI_NAME, RI_SHADINGGROUP;
 extern RtToken RI_WIDTH, RI_CONSTANTWIDTH;
 // extra's
 extern RtToken RI_JITTER, RI_ZFILE, RI_SPHERE, RI_RAYTRACE, RI_HYBRID,
-               RI_BUCKETSIZE, RI_TEXTUREMEMORY, RI_GRIDSIZE, RI_BINARY;
+               RI_BUCKETSIZE, RI_TEXTUREMEMORY, RI_GRIDSIZE, RI_BINARY, RI_EYESPLITS;
 
 extern RtBasis RiBezierBasis, RiBSplineBasis, RiCatmullRomBasis,
                RiHermiteBasis, RiPowerBasis;

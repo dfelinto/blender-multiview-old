@@ -1,7 +1,6 @@
 #include "Attributes.h"
 
-#include "slshader.h"
-#include <iostream>
+#include <cstring>
 
 __BEGIN_QDRENDER
 
@@ -12,7 +11,7 @@ __BEGIN_QDRENDER
 Attributes::Attributes()
 {
 	// default flags:
-	// RiOrientation=OUTSIDE, RiSides=2, RiShadingInterpolation=CONSTANT, RiMatte=false
+	// RiOrientation=OUTSIDE, RiSides=2, RiShadingInterpolation=CONSTANT, RiMatte=false, dice_binary=false
 	flags = 0;
 
 	// Shading
@@ -29,14 +28,7 @@ Attributes::Attributes()
 	effectiveShadingRate = 1;
 
 	// array of all current active lightshaders
-	// NOTE: so, at some point I got an enormous amount of 'uninitialised value' error reports from valgrind, ordering me to 'fix my program!'...
-	// seemingly without any apparent reason whatsoever...
-	// After spending the whole day grasping at straws, it finally occured to me, padding!!!
-	// Valgrind was seeing some padding bytes as an uninitialized value or something. That was not quite the end of it though...
-	// In any case, this is why the padding variable itself also needs to be initialized as well... Something to remember...
-	numlights = pad0 = 0;
 	lightsources = NULL;
-
 	// shaders
 	surface_shader = NULL;
 	displacement_shader = NULL;
@@ -70,8 +62,14 @@ Attributes::Attributes()
 	//  since to make that work properly, opacity would have to be set to less than 0.98,
 	//  or this value itself must be reset)
 	opacity_threshold = 3.f;
-	// power of 2 grids
-	dice_binary = RI_FALSE;
+	// the number of lights in list
+	numlights = 0;
+	// NOTE: so, at some point I got an enormous amount of 'uninitialised value' error reports from valgrind, ordering me to 'fix my program!'...
+	// seemingly without any apparent reason whatsoever...
+	// After spending the whole day grasping at straws, it finally occured to me, padding!!!
+	// Valgrind was seeing some padding bytes as an uninitialized value or something. That was not quite the end of it though...
+	// In any case, this is why the padding variable itself also needs to be initialized as well... Something to remember...
+	pad0 = 0;
 }
 
 // copy constructor

@@ -19,6 +19,9 @@ public:
 	virtual void remove(const Primitive*) const;
 	virtual void worldEnd() const;
 	virtual Color trace(const Point3 &p, const Vector &r) const;
+protected:
+	int max_eyesplits;
+	mutable int total_eyesplits;
 };
 
 __END_QDRENDER

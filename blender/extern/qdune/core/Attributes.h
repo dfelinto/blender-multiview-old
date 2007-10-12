@@ -10,7 +10,7 @@ class SlShaderInstance;
 class Transform;
 
 // attribute flag bits
-enum atFlagBits {AF_SMOOTH=1, AF_MATTE=2, AF_SIDES1=4, AF_ORIENTATION=8};
+enum atFlagBits {AF_SMOOTH=1, AF_MATTE=2, AF_SIDES1=4, AF_ORIENTATION=8, AF_DICE_BINARY=16};
 typedef int atFlags;
 
 class Attributes
@@ -34,7 +34,6 @@ public:
 
 	// array of all current active lightsources, borrowed reference, do not delete!
 	SlShaderInstance** lightsources;
-	unsigned int numlights, pad0;
 
 	// Shaders, borrowed references, do not delete!
 	SlShaderInstance* surface_shader;
@@ -58,7 +57,7 @@ public:
 	// optional attributes
 	RtFloat displacementbound_sphere;
 	RtFloat opacity_threshold;
-	RtBoolean dice_binary;
+	unsigned int numlights, pad0;
 };
 
 __END_QDRENDER
