@@ -89,7 +89,7 @@ typedef struct PluginSeq {
 typedef struct Sequence {
 
 	struct Sequence *next, *prev;
-	struct Sequence *newseq; /* should not be saved in DNA - only used for recursive duplicate and recently select more/less */
+	void *tmp; /* tmp var for copying, and tagging for linked selection */
 	char name[24]; /* name, not set by default and dosnt need to be unique as with ID's */
 
 	short flag, type;	/*flags bitmap (see below) and the type of sequence*/

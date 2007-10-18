@@ -359,7 +359,7 @@ Sequence *find_next_prev_sequence(Sequence *test, int lr, int sel) {
 		if(		(seq!=test) &&
 				(test->machine==seq->machine) &&
 				(test->depth==seq->depth) &&
-				((sel == -1) || (sel==seq->flag & SELECT)))
+				((sel == -1) || (sel==(seq->flag & SELECT))))
 		{
 			dist = MAXFRAME*2;
 			
@@ -2127,12 +2127,12 @@ static void recurs_dupli_seq(ListBase *old, ListBase *new)
 	seq= old->first;
 
 	while(seq) {
-		seq->newseq= 0;
+		seq->tmp= NULL;
 		if(seq->flag & SELECT) {
 
 			if(seq->type==SEQ_META) {
 				seqn= MEM_dupallocN(seq);
-				seq->newseq= seqn;
+				seq->tmp= seqn;
 				BLI_addtail(new, seqn);
 
 				seqn->strip= MEM_dupallocN(seq->strip);
@@ -2148,7 +2148,7 @@ static void recurs_dupli_seq(ListBase *old, ListBase *new)
 			}
 			else if(seq->type == SEQ_SCENE) {
 				seqn= MEM_dupallocN(seq);
-				seq->newseq= seqn;
+				seq->tmp= seqn;
 				BLI_addtail(new, seqn);
 
 				seqn->strip= MEM_dupallocN(seq->strip);
@@ -2160,7 +2160,7 @@ static void recurs_dupli_seq(ListBase *old, ListBase *new)
 			}
 			else if(seq->type == SEQ_MOVIE) {
 				seqn= MEM_dupallocN(seq);
-				seq->newseq= seqn;
+				seq->tmp= seqn;
 				BLI_addtail(new, seqn);
 
 				seqn->strip= MEM_dupallocN(seq->strip);
@@ -2183,7 +2183,7 @@ static void recurs_dupli_seq(ListBase *old, ListBase *new)
 			}
 			else if(seq->type == SEQ_RAM_SOUND) {
 				seqn= MEM_dupallocN(seq);
-				seq->newseq= seqn;
+				seq->tmp= seqn;
 				BLI_addtail(new, seqn);
 
 				seqn->strip= MEM_dupallocN(seq->strip);
@@ -2208,7 +2208,7 @@ static void recurs_dupli_seq(ListBase *old, ListBase *new)
 			}
 			else if(seq->type == SEQ_HD_SOUND) {
 				seqn= MEM_dupallocN(seq);
-				seq->newseq= seqn;
+				seq->tmp= seqn;
 				BLI_addtail(new, seqn);
 
 				seqn->strip= MEM_dupallocN(seq->strip);
@@ -2233,7 +2233,7 @@ static void recurs_dupli_seq(ListBase *old, ListBase *new)
 			}
 			else if(seq->type < SEQ_EFFECT) {
 				seqn= MEM_dupallocN(seq);
-				seq->newseq= seqn;
+				seq->tmp= seqn;
 				BLI_addtail(new, seqn);
 
 				seqn->strip->us++;
@@ -2243,12 +2243,12 @@ static void recurs_dupli_seq(ListBase *old, ListBase *new)
 			}
 			else {
 				seqn= MEM_dupallocN(seq);
-				seq->newseq= seqn;
+				seq->tmp= seqn;
 				BLI_addtail(new, seqn);
 
-				if(seq->seq1 && seq->seq1->newseq) seqn->seq1= seq->seq1->newseq;
-				if(seq->seq2 && seq->seq2->newseq) seqn->seq2= seq->seq2->newseq;
-				if(seq->seq3 && seq->seq3->newseq) seqn->seq3= seq->seq3->newseq;
+				if(seq->seq1 && seq->seq1->tmp) seqn->seq1= seq->seq1->tmp;
+				if(seq->seq2 && seq->seq2->tmp) seqn->seq2= seq->seq2->tmp;
+				if(seq->seq3 && seq->seq3->tmp) seqn->seq3= seq->seq3->tmp;
 
 				if(seqn->ipo) seqn->ipo->id.us++;
 
@@ -3453,7 +3453,7 @@ static int select_more_less_seq__internal(int sel, int linked) {
 	int isel;
 	
 	ed= G.scene->ed;
-	if(ed==0) return;
+	if(ed==0) return 0;
 	
 	if (sel) {
 		sel = SELECT;
@@ -3466,27 +3466,26 @@ static int select_more_less_seq__internal(int sel, int linked) {
 	if (!linked) {
 		/* if not linked we only want to touch each seq once, newseq */
 		for(seq= ed->seqbasep->first; seq; seq= seq->next) {
-			seq->newseq = NULL;
+			seq->tmp = NULL;
 		}
 	}
 	
 	for(seq= ed->seqbasep->first; seq; seq= seq->next) {
-		if((seq->flag & SELECT) == sel) {
-			if ((linked==0 && seq->newseq)==0) {
+		if((int)(seq->flag & SELECT) == sel) {
+			if ((linked==0 && seq->tmp)==0) {
 				/* only get unselected nabours */
 				neighbor = find_neighboring_sequence(seq, 1, isel);
 				if (neighbor) {
 					if (sel) {neighbor->flag |= SELECT; recurs_sel_seq(neighbor);}
 					else		neighbor->flag &= ~SELECT;
-					if (linked==0) neighbor->newseq = 1;
+					if (linked==0) neighbor->tmp = (Sequence *)1;
 					change = 1;
 				}
-				
 				neighbor = find_neighboring_sequence(seq, 2, isel);
 				if (neighbor) {
 					if (sel) {neighbor->flag |= SELECT; recurs_sel_seq(neighbor);}
 					else		neighbor->flag &= ~SELECT;
-					if (linked==0) neighbor->newseq = 1;
+					if (linked==0) neighbor->tmp = (void *)1;
 					change = 1;
 				}
 			}
