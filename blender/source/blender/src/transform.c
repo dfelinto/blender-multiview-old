@@ -3450,7 +3450,7 @@ static short getAnimEdit_DrawTime(TransInfo *t)
 
 
 /* This function is used by Animation Editor specific transform functions to do 
- * the Snap Keyframe to Nearest Keyframe
+ * the Snap Keyframe to Nearest Frame/Marker
  */
 static void doAnimEdit_SnapFrame(TransInfo *t, TransData *td, Object *ob, short autosnap)
 {
@@ -3609,7 +3609,7 @@ static void applyTimeTranslate(TransInfo *t, float sval)
 			*(td->val) = td->ival + val;
 		}
 		
-		/* apply snap-to-nearest-frame? */
+		/* apply nearest snapping */
 		doAnimEdit_SnapFrame(t, td, ob, autosnap);
 	}
 }
@@ -3828,7 +3828,7 @@ static void applyTimeScale(TransInfo *t) {
 		*(td->val) *= fac;
 		*(td->val) += startx;
 		
-		/* apply snap-to-nearest-frame? */
+		/* apply nearest snapping */
 		doAnimEdit_SnapFrame(t, td, ob, autosnap);
 	}
 }
