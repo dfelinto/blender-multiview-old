@@ -1495,13 +1495,9 @@ void ray_ao_qmc(ShadeInput *shi, float *shadfac)
 	
 	while (samples < max_samples) {
 
-		if (G.rt==0) {
-			/* sampling, returns quasi-random vector in unit hemisphere */
-			QMC_sampleHemi(samp3d, qsa, shi->thread, samples);
-		} else {
-			/* sampling, returns quasi-random vector in unit hemisphere */
-			QMC_sampleHemiCosine(samp3d, qsa, shi->thread, samples);
-		}
+		/* sampling, returns quasi-random vector in unit hemisphere */
+		QMC_sampleHemi(samp3d, qsa, shi->thread, samples);
+
 		dir[0] = (samp3d[0]*up[0] + samp3d[1]*side[0] + samp3d[2]*nrm[0]);
 		dir[1] = (samp3d[0]*up[1] + samp3d[1]*side[1] + samp3d[2]*nrm[1]);
 		dir[2] = (samp3d[0]*up[2] + samp3d[1]*side[2] + samp3d[2]*nrm[2]);
