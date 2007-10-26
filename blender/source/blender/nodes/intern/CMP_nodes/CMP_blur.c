@@ -28,7 +28,6 @@
  */
 
 #include "../CMP_util.h"
-#include "qdutil.h" /* use for fast gauss only */
 
 /* **************** BLUR ******************** */
 static bNodeSocketType cmp_node_blur_in[]= {
