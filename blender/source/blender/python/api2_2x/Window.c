@@ -86,6 +86,7 @@ static PyObject *M_Window_GetPerspMatrix( PyObject * self );
 static PyObject *M_Window_FileSelector( PyObject * self, PyObject * args );
 static PyObject *M_Window_ImageSelector( PyObject * self, PyObject * args );
 static PyObject *M_Window_EditMode( PyObject * self, PyObject * args );
+static PyObject *M_Window_PoseMode( PyObject * self, PyObject * args );
 static PyObject *M_Window_ViewLayers( PyObject * self, PyObject * args );
 static PyObject *M_Window_CameraView( PyObject * self, PyObject * args );
 static PyObject *M_Window_QTest( PyObject * self );
@@ -179,6 +180,9 @@ static char M_Window_EditMode_doc[] =
 Returns the current status.  This function is mostly useful to leave\n\
 edit mode before applying changes to a mesh (otherwise the changes will\n\
 be lost) and then returning to it upon leaving.";
+
+static char M_Window_PoseMode_doc[] =
+		"() - Get the current status -- 0: not in pose mode; 1: in edit mode";
 
 static char M_Window_ViewLayers_doc[] =
 	"(layers = [], winid = None) - Get/set active layers in all 3d View windows.\n\
@@ -325,6 +329,8 @@ struct PyMethodDef M_Window_methods[] = {
 	 M_Window_GetPerspMatrix_doc},
 	{"EditMode", ( PyCFunction ) M_Window_EditMode, METH_VARARGS,
 	 M_Window_EditMode_doc},
+	{"PoseMode", ( PyCFunction ) M_Window_PoseMode, METH_VARARGS,
+	 M_Window_PoseMode_doc},
 	{"ViewLayers", ( PyCFunction ) M_Window_ViewLayers, METH_VARARGS,
 	 M_Window_ViewLayers_doc},
 	 /* typo, deprecate someday: */
@@ -947,6 +953,32 @@ static PyObject *M_Window_EditMode( PyObject * self, PyObject * args )
 	}
 
 	return Py_BuildValue( "h", G.obedit ? 1 : 0 );
+}
+
+static PyObject *M_Window_PoseMode( PyObject * self, PyObject * args )
+{
+	short status = -1;
+	short is_posemode = 0;
+	Base *base;
+	
+	if( !PyArg_ParseTuple( args, "|h", &status ) )
+		return EXPP_ReturnPyObjError( PyExc_TypeError,
+									  "expected optional int (bool) as argument" );
+
+	if( status >= 0 ) {
+		if( status ) {
+			enter_posemode();
+		} else if( G.obedit ) {
+			exit_posemode();
+		}
+	}
+
+	base= BASACT;
+	if (base && base->object->flag & OB_POSEMODE) {
+		is_posemode = 1;
+	}
+	
+	return Py_BuildValue( "h", is_posemode );
 }
 
 static PyObject *M_Window_ViewLayers( PyObject * self, PyObject * args )
