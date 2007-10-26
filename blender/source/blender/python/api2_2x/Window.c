@@ -47,6 +47,7 @@
 #include "BIF_screen.h"
 #include "BIF_space.h"
 #include "BIF_drawtext.h"
+#include "BIF_poseobject.h"
 #include "DNA_view3d_types.h"
 #include "DNA_space_types.h"
 #include "DNA_scene_types.h"
