@@ -2111,7 +2111,7 @@ static void ipo_panel_properties(short cntrl)	// IPO_HANDLER_PROPERTIES
 	/* note ranges for buttons below are idiot... we need 2 ranges, one for sliding scale, one for real clip */
 	if(G.sipo->ipo && G.sipo->ipo->curve.first && totipo_curve) {
 		extern int totipo_vertsel;	// editipo.c
-		uiDefBut(block, LABEL, 0, "Visible curves",		10, 200, 150, 19, NULL, 1.0, 0.0, 0, 0, "");
+		uiDefBut(block, LABEL, 0, "Visible curves",		160, 200, 150, 19, NULL, 1.0, 0.0, 0, 0, "");
 		
 		uiBlockBeginAlign(block);
 		uiDefButF(block, NUM, B_MUL_IPO, "Xmin:",		10, 180, 150, 19, &G.sipo->tot.xmin, G.sipo->tot.xmin-1000.0, MAXFRAMEF, 100, 0, "");
