@@ -40,7 +40,7 @@ proportion of the veighting is unchanged.
 # ***** END GPL LICENCE BLOCK *****
 # --------------------------------------------------------------------------
 
-from Blender import Scene, Draw, Object
+from Blender import Scene, Draw, Object, Modifier
 import BPyMesh
 SMALL_NUM= 0.000001
 
@@ -53,8 +53,8 @@ def getArmatureGroups(ob, me):
 		arm_obs.append(arm)
 	
 	for m in ob.modifiers:
-		if m.type== Blender.Modifier.Types.ARMATURE:
-			arm = m[Blender.Modifier.Settings.OBJECT]
+		if m.type== Modifier.Types.ARMATURE:
+			arm = m[Modifier.Settings.OBJECT]
 			if arm:
 				arm_obs.append(arm)
 	
