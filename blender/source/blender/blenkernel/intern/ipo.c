@@ -782,7 +782,8 @@ static void posechannel_get_local_transform(bPoseChannel *pchan, float *loc, flo
 	}
 	else {
 		Mat4CpyMat3(offs_bone, pchan->bone->bone_mat);
-		
+		VECCOPY(offs_bone[3], pchan->bone->head);
+
 		/* invert it */
 		Mat4Invert(imat, offs_bone);
 		
@@ -790,7 +791,7 @@ static void posechannel_get_local_transform(bPoseChannel *pchan, float *loc, flo
 	
 	/* difference: current transform - (parent transform + bone transform)  */
 	Mat4MulMat4(diff_mat, pchan->pose_mat, imat);
-	
+
 	if(loc)
 		VECCOPY(loc, diff_mat[3]);
 	if(eul)
