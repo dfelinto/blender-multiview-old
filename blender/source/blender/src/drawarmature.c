@@ -1786,9 +1786,6 @@ static void draw_pose_paths(Object *ob)
 					fp_start = pchan->path;
 				}
 				
-				/* get pointer to place in path-array to start from */
-				
-				
 				/* draw curve-line of path */
 				if ((CFRA > sfra) && (CFRA < efra)) {
 					/* Show before/after current frame with slight difference in colour intensity 
