@@ -285,7 +285,6 @@ void pose_calculate_path(Object *ob)
 				int temp= base->object->recalc;
 				object_handle_update(base->object);
 				base->object->recalc= temp;
-				printf("base->object->recalc = %d \n", base->object->recalc);
 			}
 		}
 		
