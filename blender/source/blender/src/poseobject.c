@@ -248,9 +248,21 @@ void pose_calculate_path(Object *ob)
 	cfra= CFRA;
 	sfra = arm->pathsf;
 	efra = arm->pathef;
-	if (efra<=sfra) return;
+	if (efra <= sfra) {
+		error("Can't calculate paths when pathlen <= 0");
+		return;
+	}
 	
-	DAG_object_update_flags(G.scene, ob, screen_view3d_layers());
+	waitcursor(1);
+	
+	/* hack: for unsaved files, set OB_RECALC so that paths can get calculated */
+	if ((ob->recalc & OB_RECALC)==0) {
+		ob->recalc |= OB_RECALC;
+		DAG_object_update_flags(G.scene, ob, screen_view3d_layers());
+	}
+	else
+		DAG_object_update_flags(G.scene, ob, screen_view3d_layers());
+	
 	
 	/* malloc the path blocks */
 	for (pchan= ob->pose->chanbase.first; pchan; pchan= pchan->next) {
@@ -273,6 +285,7 @@ void pose_calculate_path(Object *ob)
 				int temp= base->object->recalc;
 				object_handle_update(base->object);
 				base->object->recalc= temp;
+				printf("base->object->recalc = %d \n", base->object->recalc);
 			}
 		}
 		
@@ -295,6 +308,8 @@ void pose_calculate_path(Object *ob)
 			}
 		}
 	}
+	
+	waitcursor(0);
 	
 	CFRA= cfra;
 	allqueue(REDRAWVIEW3D, 0);	/* recalc tags are still there */
