@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # $Id$
 #
@@ -73,6 +73,12 @@ EOF
     gcc $dummy.c -o $dummy
     OS_VERSION=`$dummy | sed -e 's/^/glibc/'`
     rm -f $dummy.c $dummy
+fi
+
+# Patch Solaris
+if [ "$OS" = "solaris" ]; then
+    # will be 32 or 64, just adds the address space to the cpu
+    CPU=$CPU-`isainfo -b`
 fi
 
 # Patch Windows
