@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # $Id$
 #
@@ -77,8 +77,10 @@ fi
 
 # Patch Solaris
 if [ "$OS" = "solaris" ]; then
-    # will be 32 or 64, just adds the address space to the cpu
-    CPU=$CPU-`isainfo -b`
+    # Adds the address space to the cpu if its 64bit
+	if [ `isainfo -b` == "64" ]; then
+		CPU=$CPU_64
+	fi
 fi
 
 # Patch Windows
