@@ -79,7 +79,11 @@ fi
 if [ "$OS" = "solaris" ]; then
     # Adds the address space to the cpu if its 64bit
 	if [ `isainfo -b` = "64" ]; then
-		CPU="$CPU"_64
+		if [ "$CPU" = "i386" ]; then
+			CPU=x86_64
+		else	# will probably be sparc in this case
+			CPU="$CPU"_64
+		fi
 	fi
 fi
 
