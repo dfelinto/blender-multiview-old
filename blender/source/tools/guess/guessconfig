@@ -79,7 +79,7 @@ fi
 if [ "$OS" = "solaris" ]; then
     # Adds the address space to the cpu if its 64bit
 	if [ `isainfo -b` = "64" ]; then
-		CPU=$CPU_64
+		CPU="$CPU"_64
 	fi
 fi
 
