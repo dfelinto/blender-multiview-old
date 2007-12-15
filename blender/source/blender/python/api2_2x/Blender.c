@@ -930,7 +930,7 @@ void V24_M_Blender_Init(void)
 	module = Py_InitModule3("Blender", Blender_methods,
 		"The main Blender module");
 
-	types_InitAll();	/* set all our pytypes to &PyType_Type */
+	V24_types_InitAll();	/* set all our pytypes to &PyType_Type */
 
 	/* constants for packed files*/
 	UnpackModes = V24_Blender_UnpackModesDict(  );
@@ -985,7 +985,7 @@ void V24_M_Blender_Init(void)
 	PyDict_SetItemString(dict, "Mathutils", V24_Mathutils_Init());
 	PyDict_SetItemString(dict, "Geometry", V24_Geometry_Init());
 	PyDict_SetItemString(dict, "Modifier", V24_Modifier_Init());
-	PyDict_SetItemString(dict, "NMesh", NMesh_Init());
+	PyDict_SetItemString(dict, "NMesh", V24_NMesh_Init());
 	PyDict_SetItemString(dict, "Noise", V24_Noise_Init());
 	PyDict_SetItemString(dict, "Object", V24_Object_Init());
 	PyDict_SetItemString(dict, "Group", V24_Group_Init());
@@ -993,7 +993,7 @@ void V24_M_Blender_Init(void)
 	PyDict_SetItemString(dict, "Scene", V24_Scene_Init());
 	PyDict_SetItemString(dict, "Sound", V24_Sound_Init());
 	PyDict_SetItemString(dict, "SurfNurb", V24_SurfNurb_Init());
-	PyDict_SetItemString(dict, "sys", sys_Init());
+	PyDict_SetItemString(dict, "sys", V24_sys_Init());
 	PyDict_SetItemString(dict, "Types", V24_Types_Init());
 	PyDict_SetItemString(dict, "Text", V24_Text_Init());
 	PyDict_SetItemString(dict, "Text3d", V24_Text3d_Init());

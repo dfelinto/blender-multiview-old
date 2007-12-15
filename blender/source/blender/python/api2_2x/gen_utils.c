@@ -668,7 +668,7 @@ int V24_EXPP_setIValueClamped( PyObject *value, void *param,
 int V24_EXPP_setVec3Clamped( PyObject *value, float *param,
 								float min, float max )
 {	
-	if( VectorObject_Check( value ) ) {
+	if( V24_VectorObject_Check( value ) ) {
 		V24_VectorObject *vect = (V24_VectorObject *)value;
 		if( vect->size == 3 ) {
 			param[0] = V24_EXPP_ClampFloat( vect->vec[0], min, max );
@@ -761,7 +761,7 @@ int V24_EXPP_setIValueRange( PyObject *value, void *param,
  * to the appropriate type based on the "type" specifier.
  *
  * Inputs:
- *    constant: constant_Type value 
+ *    constant: V24_constant_Type value 
  *    param: pointer to destination variable
  *    type: kind of pointer and data
  *
@@ -772,7 +772,7 @@ int V24_EXPP_setModuleConstant ( V24_BPy_constant *constant, void *param, char t
 {
 	PyObject *item;
 
-	if( constant->ob_type != &constant_Type )
+	if( constant->ob_type != &V24_constant_Type )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			   "expected module constant" );
 

@@ -456,7 +456,7 @@ struct bAction *V24_Action_FromPyObject( PyObject * py_obj )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Action_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
@@ -951,7 +951,7 @@ static int V24_ActionStrip_setGroupTarget( V24_BPy_ActionStrip * self, PyObject 
 
 	if( (PyObject *)args == Py_None )
 		self->strip->object = NULL;
-	else if( BPy_Object_Check( args ) )
+	else if( V24_BPy_Object_Check( args ) )
 		self->strip->object = ((V24_BPy_Object *)args)->object;
 	else
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,

@@ -122,7 +122,7 @@ static PyObject *V24_M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSe
 		
 		len_polypoints= PySequence_Size( polyLine );
 		if (len_polypoints>0) { /* dont bother adding edges as polylines */
-			if (V24_EXPP_check_sequence_consistency( polyLine, &vector_Type ) != 1) {
+			if (V24_EXPP_check_sequence_consistency( polyLine, &V24_vector_Type ) != 1) {
 				freedisplist(&dispbase);
 				Py_DECREF(polyLine);
 				return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
@@ -193,10 +193,10 @@ static PyObject *V24_M_Geometry_LineIntersect2D( PyObject * self, PyObject * arg
 	V24_VectorObject *line_a1, *line_a2, *line_b1, *line_b2;
 	float a1x, a1y, a2x, a2y,  b1x, b1y, b2x, b2y, xi, yi, a1,a2,b1,b2, newvec[2];
 	if( !PyArg_ParseTuple ( args, "O!O!O!O!",
-	  &vector_Type, &line_a1,
-	  &vector_Type, &line_a2,
-	  &vector_Type, &line_b1,
-	  &vector_Type, &line_b2)
+	  &V24_vector_Type, &line_a1,
+	  &V24_vector_Type, &line_a2,
+	  &V24_vector_Type, &line_b1,
+	  &V24_vector_Type, &line_b2)
 	)
 		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_TypeError, "expected 4 vector types\n" ) );
@@ -233,7 +233,7 @@ static PyObject *V24_M_Geometry_LineIntersect2D( PyObject * self, PyObject * arg
 			/*X of vert, Y of hoz. no calculation needed */
 			newvec[0]= a1x;
 			newvec[1]= b1y;
-			return newVectorObject(newvec, 2, Py_NEW);
+			return V24_newVectorObject(newvec, 2, Py_NEW);
 		}
 		
 		yi = (float)(((b1y / fabs(b1x - b2x)) * fabs(b2x - a1x)) + ((b2y / fabs(b1x - b2x)) * fabs(b1x - a1x)));
@@ -245,7 +245,7 @@ static PyObject *V24_M_Geometry_LineIntersect2D( PyObject * self, PyObject * arg
 		}
 		newvec[0]= a1x;
 		newvec[1]= yi;
-		return newVectorObject(newvec, 2, Py_NEW);
+		return V24_newVectorObject(newvec, 2, Py_NEW);
 	} else if (fabs(a2y-a1y) < eul) {  /* hoz line1 */
 		if (fabs(b2y-b1y) < eul) { /*hoz line2*/
 			Py_RETURN_NONE; /*2 hoz lines dont intersect*/
@@ -260,7 +260,7 @@ static PyObject *V24_M_Geometry_LineIntersect2D( PyObject * self, PyObject * arg
 		}
 		newvec[0]= xi;
 		newvec[1]= a1y;
-		return newVectorObject(newvec, 2, Py_NEW);
+		return V24_newVectorObject(newvec, 2, Py_NEW);
 	}
 	
 	b1 = (a2y-a1y)/(a2x-a1x);
@@ -277,7 +277,7 @@ static PyObject *V24_M_Geometry_LineIntersect2D( PyObject * self, PyObject * arg
 	if ((a1x-xi)*(xi-a2x) >= 0 && (b1x-xi)*(xi-b2x) >= 0 && (a1y-yi)*(yi-a2y) >= 0 && (b1y-yi)*(yi-b2y)>=0) {
 		newvec[0]= xi;
 		newvec[1]= yi;
-		return newVectorObject(newvec, 2, Py_NEW);
+		return V24_newVectorObject(newvec, 2, Py_NEW);
 	}
 	Py_RETURN_NONE;
 }
@@ -290,9 +290,9 @@ static PyObject *V24_M_Geometry_ClosestPointOnLine( PyObject * self, PyObject * 
 	PyObject *ret;
 	
 	if( !PyArg_ParseTuple ( args, "O!O!O!",
-	&vector_Type, &pt,
-	&vector_Type, &line_1,
-	&vector_Type, &line_2)
+	&V24_vector_Type, &pt,
+	&V24_vector_Type, &line_1,
+	&V24_vector_Type, &line_2)
 	  )
 		return ( V24_EXPP_ReturnPyObjError
 				( PyExc_TypeError, "expected 3 vector types\n" ) );
@@ -311,7 +311,7 @@ static PyObject *V24_M_Geometry_ClosestPointOnLine( PyObject * self, PyObject * 
 	lambda = lambda_cp_line_ex(pt_in, l1, l2, pt_out);
 	
 	ret = PyTuple_New(2);
-	PyTuple_SET_ITEM( ret, 0, newVectorObject(pt_out, 3, Py_NEW) );
+	PyTuple_SET_ITEM( ret, 0, V24_newVectorObject(pt_out, 3, Py_NEW) );
 	PyTuple_SET_ITEM( ret, 1, PyFloat_FromDouble(lambda) );
 	return ret;
 }
@@ -324,10 +324,10 @@ static PyObject *V24_M_Geometry_PointInTriangle2D( PyObject * self, PyObject * a
 	V24_VectorObject *pt_vec, *tri_p1, *tri_p2, *tri_p3;
 	
 	if( !PyArg_ParseTuple ( args, "O!O!O!O!",
-	  &vector_Type, &pt_vec,
-	  &vector_Type, &tri_p1,
-	  &vector_Type, &tri_p2,
-	  &vector_Type, &tri_p3)
+	  &V24_vector_Type, &pt_vec,
+	  &V24_vector_Type, &tri_p1,
+	  &V24_vector_Type, &tri_p2,
+	  &V24_vector_Type, &tri_p3)
 	)
 		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_TypeError, "expected 4 vector types\n" ) );

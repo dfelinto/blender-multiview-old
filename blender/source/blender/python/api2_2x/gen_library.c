@@ -163,25 +163,25 @@ PyObject * V24_GenericLib_setName_with_method( void *self, PyObject *args )
  */
 short V24_GenericLib_getType(PyObject * pydata)
 {
-	//~ if (BPy_Scene_Check(pydata))	return ID_SCE;
-	if (BPy_Object_Check(pydata))	return ID_OB;
-	if (BPy_Mesh_Check(pydata))		return ID_ME;
-	//~ if (BPy_Curve_Check(pydata))	return ID_CU;
-	//~ if (BPy_Metaball_Check(pydata))	return ID_MB;
-	//~ if (BPy_Material_Check(pydata))	return ID_MA;
-	if (BPy_Texture_Check(pydata))	return ID_TE;
-	//~ if (BPy_Image_Check(pydata))	return ID_IM;
-		//~ //if (BPy_Lattice_Check(pydata))	return ID_LT;
-	//~ if (BPy_Lamp_Check(pydata))		return ID_LA;
-	//~ if (BPy_Camera_Check(pydata))	return ID_CA;
-	if (BPy_Ipo_Check(pydata))		return ID_IP;
-	if (BPy_World_Check(pydata))	return ID_WO;
+	//~ if (V24_BPy_Scene_Check(pydata))	return ID_SCE;
+	if (V24_BPy_Object_Check(pydata))	return ID_OB;
+	if (V24_BPy_Mesh_Check(pydata))		return ID_ME;
+	//~ if (V24_BPy_Curve_Check(pydata))	return ID_CU;
+	//~ if (V24_BPy_Metaball_Check(pydata))	return ID_MB;
+	//~ if (V24_BPy_Material_Check(pydata))	return ID_MA;
+	if (V24_BPy_Texture_Check(pydata))	return ID_TE;
+	//~ if (V24_BPy_Image_Check(pydata))	return ID_IM;
+		//~ //if (V24_BPy_Lattice_Check(pydata))	return ID_LT;
+	//~ if (V24_BPy_Lamp_Check(pydata))		return ID_LA;
+	//~ if (V24_BPy_Camera_Check(pydata))	return ID_CA;
+	if (V24_BPy_Ipo_Check(pydata))		return ID_IP;
+	if (V24_BPy_World_Check(pydata))	return ID_WO;
 		//~ //if (BPy_Font_Check(pydata))		return ID_VF;
-	//~ if (BPy_Text_Check(pydata))		return ID_TXT;
-	//~ if (BPy_Sound_Check(pydata))	return ID_SO;
-	if (BPy_Group_Check(pydata))	return ID_GR;
-	//~ if (BPy_Armature_Check(pydata))	return ID_AR;
-	if (BPy_Action_Check(pydata))	return ID_AC;
+	//~ if (V24_BPy_Text_Check(pydata))		return ID_TXT;
+	//~ if (V24_BPy_Sound_Check(pydata))	return ID_SO;
+	if (V24_BPy_Group_Check(pydata))	return ID_GR;
+	//~ if (V24_BPy_Armature_Check(pydata))	return ID_AR;
+	if (V24_BPy_Action_Check(pydata))	return ID_AC;
 	
 	return -1;
 }

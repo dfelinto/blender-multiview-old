@@ -36,9 +36,9 @@
 
 #include <Python.h>
 
-extern PyTypeObject quaternion_Type;
+extern PyTypeObject V24_quaternion_Type;
 
-#define QuaternionObject_Check(v) ((v)->ob_type == &quaternion_Type)
+#define V24_QuaternionObject_Check(v) ((v)->ob_type == &V24_quaternion_Type)
 
 typedef struct {
 	PyObject_VAR_HEAD 
@@ -68,6 +68,6 @@ PyObject *V24_Quaternion_Normalize( V24_QuaternionObject * self );
 PyObject *V24_Quaternion_ToEuler( V24_QuaternionObject * self );
 PyObject *V24_Quaternion_ToMatrix( V24_QuaternionObject * self );
 PyObject *V24_Quaternion_copy( V24_QuaternionObject * self );
-PyObject *newQuaternionObject( float *quat, int type );
+PyObject *V24_newQuaternionObject( float *quat, int type );
 
 #endif				/* EXPP_quat_h */

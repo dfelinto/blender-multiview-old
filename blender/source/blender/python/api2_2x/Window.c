@@ -897,7 +897,7 @@ static PyObject *V24_M_Window_GetViewMatrix( PyObject * self )
 	if( !G.vd )
 		Py_RETURN_NONE;
 
-	return newMatrixObject( ( float * ) G.vd->viewmat, 4, 4, Py_WRAP );
+	return V24_newMatrixObject( ( float * ) G.vd->viewmat, 4, 4, Py_WRAP );
 }
 
 /*****************************************************************************/
@@ -909,7 +909,7 @@ static PyObject *V24_M_Window_GetPerspMatrix( PyObject * self )
 	if( !G.vd )
 		Py_RETURN_NONE;
 
-	return newMatrixObject( ( float * ) G.vd->persmat, 4, 4, Py_WRAP );
+	return V24_newMatrixObject( ( float * ) G.vd->persmat, 4, 4, Py_WRAP );
 }
 
 

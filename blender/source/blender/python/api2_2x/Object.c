@@ -1265,13 +1265,13 @@ static PyObject *V24_Object_GetEuler( V24_BPy_Object * self, PyObject * args )
 				"expected either nothing, 'localspace' (default) or 'worldspace'" );
 	}
 
-	return ( PyObject * ) newEulerObject( eul, Py_NEW );
+	return ( PyObject * ) V24_newEulerObject( eul, Py_NEW );
 }
 
 static PyObject *V24_Object_getInverseMatrix( V24_BPy_Object * self )
 {
 	V24_MatrixObject *inverse =
-		( V24_MatrixObject * ) newMatrixObject( NULL, 4, 4, Py_NEW );
+		( V24_MatrixObject * ) V24_newMatrixObject( NULL, 4, 4, Py_NEW );
 	Mat4Invert( (float ( * )[4])*inverse->matrix, self->object->obmat );
 
 	return ( ( PyObject * ) inverse );
@@ -1540,7 +1540,7 @@ static PyObject *V24_Object_getBoundBox( V24_BPy_Object * self )
 				   does not have its own memory,
 				   we must create vectors that allocate space */
 
-				vector = newVectorObject( NULL, 3, Py_NEW);
+				vector = V24_newVectorObject( NULL, 3, Py_NEW);
 				memcpy( ( ( V24_VectorObject * ) vector )->vec,
 					tmpvec, 3 * sizeof( float ) );
 				PyList_SET_ITEM( bbox, i, vector );
@@ -1561,7 +1561,7 @@ static PyObject *V24_Object_getBoundBox( V24_BPy_Object * self )
 
 		/* create vectors referencing object bounding box coords */
 		for( i = 0; i < 8; i++ ) {
-			vector = newVectorObject( vec, 3, Py_WRAP );
+			vector = V24_newVectorObject( vec, 3, Py_WRAP );
 			PyList_SET_ITEM( bbox, i, vector );
 			vec += 3;
 		}
@@ -1598,23 +1598,23 @@ static PyObject *V24_Object_link( V24_BPy_Object * self, PyObject * args )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an object as argument" );
 
-	if( BPy_Armature_Check( py_data ) )
+	if( V24_BPy_Armature_Check( py_data ) )
 		data = ( void * ) PyArmature_AsArmature((V24_BPy_Armature*)py_data);
-	else if( BPy_Camera_Check( py_data ) )
+	else if( V24_BPy_Camera_Check( py_data ) )
 		data = ( void * ) V24_Camera_FromPyObject( py_data );
-	else if( BPy_Lamp_Check( py_data ) )
+	else if( V24_BPy_Lamp_Check( py_data ) )
 		data = ( void * ) V24_Lamp_FromPyObject( py_data );
-	else if( BPy_Curve_Check( py_data ) )
+	else if( V24_BPy_Curve_Check( py_data ) )
 		data = ( void * ) Curve_FromPyObject( py_data );
-	else if( BPy_NMesh_Check( py_data ) ) {
-		data = ( void * ) NMesh_FromPyObject( py_data, self->object );
+	else if( V24_BPy_NMesh_Check( py_data ) ) {
+		data = ( void * ) V24_NMesh_FromPyObject( py_data, self->object );
 		if( !data )		/* NULL means there is already an error */
 			return NULL;
-	} else if( BPy_Mesh_Check( py_data ) )
+	} else if( V24_BPy_Mesh_Check( py_data ) )
 		data = ( void * ) V24_Mesh_FromPyObject( py_data, self->object );
-	else if( BPy_Lattice_Check( py_data ) )
+	else if( V24_BPy_Lattice_Check( py_data ) )
 		data = ( void * ) V24_Lattice_FromPyObject( py_data );
-	else if( BPy_Metaball_Check( py_data ) )
+	else if( V24_BPy_Metaball_Check( py_data ) )
 		data = ( void * ) V24_Metaball_FromPyObject( py_data );
 	else if( V24_BPy_Text3d_Check( py_data ) )
 		data = ( void * ) Text3d_FromPyObject( py_data );
@@ -1999,7 +1999,7 @@ static PyObject *V24_Object_join( V24_BPy_Object * self, PyObject * args )
 	/* Check if the PyObject passed in list is a Blender object. */
 	for( i = 0; i < list_length; i++ ) {
 		py_child = PySequence_GetItem( list, i );
-		if( !BPy_Object_Check( py_child ) ) {
+		if( !V24_BPy_Object_Check( py_child ) ) {
 			/* Cleanup */
 			free_libblock( &G.main->scene, temp_scene );
 			Py_DECREF( py_child );
@@ -2095,7 +2095,7 @@ static PyObject *internal_makeParent(Object *parent, PyObject *py_child,
 {
 	Object *child = NULL;
 
-	if( BPy_Object_Check( py_child ) )
+	if( V24_BPy_Object_Check( py_child ) )
 		child = ( Object * ) V24_Object_FromPyObject( py_child );
 
 	if( child == NULL )
@@ -2229,7 +2229,7 @@ static int V24_Object_setEuler( V24_BPy_Object * self, PyObject * args )
 	if( PyTuple_Check( args ) && PyTuple_Size( args ) == 1 )
 		args = PyTuple_GET_ITEM( args, 0 );
 
-	if( EulerObject_Check( args ) ) {
+	if( V24_EulerObject_Check( args ) ) {
 		rot1 = ( ( V24_EulerObject * ) args )->eul[0];
 		rot2 = ( ( V24_EulerObject * ) args )->eul[1];
 		rot3 = ( ( V24_EulerObject * ) args )->eul[2];
@@ -2262,7 +2262,7 @@ static int V24_Object_setMatrix( V24_BPy_Object * self, V24_MatrixObject * mat )
 {
 	int x, y;
 
-	if( !MatrixObject_Check( mat ) )
+	if( !V24_MatrixObject_Check( mat ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected matrix object as argument" );
 
@@ -2299,7 +2299,7 @@ static int V24_Object_setMatrix( V24_BPy_Object * self, V24_MatrixObject * mat )
 	float matrix[4][4]; /* for the result */
 	float invmat[4][4]; /* for the result */
 
-	if( !MatrixObject_Check( mat ) )
+	if( !V24_MatrixObject_Check( mat ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected matrix object as argument" );
 
@@ -2792,7 +2792,7 @@ static PyObject *V24_Object_addProperty( V24_BPy_Object * self, PyObject * args 
 					"expecting string, data, and optional string" );
 		}
 	} else if( argslen == 1 ) {
-		if( !PyArg_ParseTuple( args, "O!", &property_Type, &py_prop ) )
+		if( !PyArg_ParseTuple( args, "O!", &V24_property_Type, &py_prop ) )
 			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expecting a Property" );
 
@@ -2856,7 +2856,7 @@ static PyObject *V24_Object_addProperty( V24_BPy_Object * self, PyObject * args 
 		/* this should never be able to happen is we just assigned a valid
 		 * proper to py_prop->property */
 
-		if( !updateProperyData( py_prop ) ) {
+		if( !V24_updateProperyData( py_prop ) ) {
 			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 							"Could not update property data" );
 		}
@@ -2877,7 +2877,7 @@ static PyObject *V24_Object_removeProperty( V24_BPy_Object * self, PyObject * ar
 	/* we accept either a property stringname or actual object */
 	if( PyTuple_Size( args ) == 1 ) {
 		PyObject *prop = PyTuple_GET_ITEM( args, 0 );
-		if( BPy_Property_Check( prop ) )
+		if( V24_BPy_Property_Check( prop ) )
 			py_prop = (V24_BPy_Property *)prop;
 		else
 			prop_name = PyString_AsString( prop );
@@ -2889,7 +2889,7 @@ static PyObject *V24_Object_removeProperty( V24_BPy_Object * self, PyObject * ar
 	/*remove the link, free the data, and update the py struct*/
 	if( py_prop ) {
 		BLI_remlink( &self->object->prop, py_prop->property );
-		if( updatePyProperty( py_prop ) ) {
+		if( V24_updatePyProperty( py_prop ) ) {
 			free_property( py_prop->property );
 			py_prop->property = NULL;
 		}
@@ -3007,7 +3007,7 @@ static PyObject *V24_Object_getDupliObjects( V24_BPy_Object * self )
 				pair = PyTuple_New( 2 );
 				
 				PyTuple_SET_ITEM( pair, 0, V24_Object_CreatePyObject(dupob->ob) );
-				PyTuple_SET_ITEM( pair, 1, newMatrixObject((float*)dupob->mat,4,4,Py_NEW) );
+				PyTuple_SET_ITEM( pair, 1, V24_newMatrixObject((float*)dupob->mat,4,4,Py_NEW) );
 				PyList_SET_ITEM( list, index, pair);
 			}
 			free_object_duplilist(duplilist);
@@ -3073,7 +3073,7 @@ static int V24_Object_setModifiers( V24_BPy_Object * self, PyObject * value )
 	V24_BPy_ModSeq *pymodseq;
 	ModifierData *md;
 	
-	if (!BPy_ModSeq_Check(value))
+	if (!V24_BPy_ModSeq_Check(value))
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"can only assign another objects modifiers" );
 	
@@ -4394,12 +4394,12 @@ static PyObject *V24_Object_getMatrixLocal( V24_BPy_Object * self )
   	 
 		Mat4Invert(invmat, self->object->parent->obmat );
 		Mat4MulMat4(matrix, self->object->obmat, invmat);
-		return newMatrixObject((float*)matrix,4,4,Py_NEW);
+		return V24_newMatrixObject((float*)matrix,4,4,Py_NEW);
 	} else { /* no parent, so return world space matrix */
 		disable_where_script( 1 );
 		where_is_object( self->object );
 		disable_where_script( 0 );
-		return newMatrixObject((float*)self->object->obmat,4,4,Py_WRAP);
+		return V24_newMatrixObject((float*)self->object->obmat,4,4,Py_WRAP);
 	}
 }
 
@@ -4410,14 +4410,14 @@ static PyObject *V24_Object_getMatrixWorld( V24_BPy_Object * self )
 	disable_where_script( 1 );
 	where_is_object( self->object );
 	disable_where_script( 0 );
-	return newMatrixObject((float*)self->object->obmat,4,4,Py_WRAP);
+	return V24_newMatrixObject((float*)self->object->obmat,4,4,Py_WRAP);
 }
 
 /* Parent Inverse matrix */
 
 static PyObject *V24_Object_getMatrixParentInverse( V24_BPy_Object * self )
 {
-	return newMatrixObject((float*)self->object->parentinv,4,4,Py_WRAP);
+	return V24_newMatrixObject((float*)self->object->parentinv,4,4,Py_WRAP);
 }
 
 /*
@@ -4428,7 +4428,7 @@ static PyObject *V24_Object_getMatrixParentInverse( V24_BPy_Object * self )
 
 static PyObject *V24_Object_getMatrixOldWorld( V24_BPy_Object * self )
 {
-	return newMatrixObject((float*)self->object->obmat,4,4,Py_WRAP);
+	return V24_newMatrixObject((float*)self->object->obmat,4,4,Py_WRAP);
 }
 
 /*
@@ -4485,7 +4485,7 @@ static PyObject *get_obj_data( V24_BPy_Object *self, int mesh )
 		break;
 	case OB_MESH:
 		if( !mesh ) /* get as NMesh (default) */
-			data_object = NMesh_CreatePyObject( object->data, object );
+			data_object = V24_NMesh_CreatePyObject( object->data, object );
 		else		/* else get as Mesh */
 			data_object = V24_Mesh_CreatePyObject( object->data, object );
 		break;
@@ -4553,7 +4553,7 @@ static PyObject *V24_Object_getData( V24_BPy_Object *self, PyObject *args,
 
 static PyObject *V24_Object_getEuler( V24_BPy_Object * self )
 {
-	return ( PyObject * ) newEulerObject( self->object->rot, Py_WRAP );
+	return ( PyObject * ) V24_newEulerObject( self->object->rot, Py_WRAP );
 }
 
 #define PROTFLAGS_MASK ( OB_LOCK_LOCX | OB_LOCK_LOCY | OB_LOCK_LOCZ | \
@@ -4620,7 +4620,7 @@ static PyObject *V24_Object_getRBHalfExtents( V24_BPy_Object * self )
 }
 
 static PyGetSetDef V24_BPy_Object_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"LocX",
 	 (getter)getFloatAttr, (setter)setFloatAttr,
 	 "The X location coordinate of the object",

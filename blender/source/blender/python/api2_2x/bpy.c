@@ -74,7 +74,7 @@ void m_bpy_init(void)
 	
 	module = Py_InitModule3("bpy", NULL, "The main bpy module");
 
-	types_InitAll();	/* set all our pytypes to &PyType_Type */
+	V24_types_InitAll();	/* set all our pytypes to &PyType_Type */
 
 	dict = PyModule_GetDict(module);
 	g_bpydict = dict;

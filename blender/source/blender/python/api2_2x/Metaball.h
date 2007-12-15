@@ -39,7 +39,7 @@
 
 extern PyTypeObject V24_Metaball_Type;
 
-#define BPy_Metaball_Check(v) ((v)->ob_type==&V24_Metaball_Type)
+#define V24_BPy_Metaball_Check(v) ((v)->ob_type==&V24_Metaball_Type)
 
 
 /* Python V24_BPy_Metaball structure definition */
@@ -51,7 +51,7 @@ typedef struct {
 
 extern PyTypeObject V24_Metaelem_Type;
 
-#define BPy_Metaelem_Check(v) ((v)->ob_type==&V24_Metaelem_Type)
+#define V24_BPy_Metaelem_Check(v) ((v)->ob_type==&V24_Metaelem_Type)
 
 /* Python V24_BPy_Metaelem structure definition */
 typedef struct {
@@ -61,7 +61,7 @@ typedef struct {
 
 extern PyTypeObject V24_MetaElemSeq_Type;
 
-#define BPy_MetaElemSeq_Check(v) ((v)->ob_type==&V24_MetaElemSeq_Type)
+#define V24_BPy_MetaElemSeq_Check(v) ((v)->ob_type==&V24_MetaElemSeq_Type)
 
 /* Python V24_BPy_MetaElemSeq structure definition */
 typedef struct {

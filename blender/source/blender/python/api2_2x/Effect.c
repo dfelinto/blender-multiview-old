@@ -1348,7 +1348,7 @@ static PyObject *V24_Effect_getParticlesLoc( V24_BPy_Effect * self )
 			for(c_time= pa->time; c_time<m_time; c_time+=paf->staticstep) {
 				where_is_particle(paf, pa, c_time, vec);
 				MTC_Mat4MulVecfl(ob->obmat, vec); /* make worldspace like the others */
-				pyvec = newVectorObject(vec, 3, Py_NEW);
+				pyvec = V24_newVectorObject(vec, 3, Py_NEW);
 				if( PyList_Append( strand_list, pyvec) < 0 ) {
 					Py_DECREF( list );
 					Py_DECREF( strand_list );
@@ -1388,8 +1388,8 @@ static PyObject *V24_Effect_getParticlesLoc( V24_BPy_Effect * self )
 					}
 					where_is_particle(paf, pa, s_time, vec);
 					where_is_particle(paf, pa, p_time, vec1);
-					pyvec  = newVectorObject(vec, 3, Py_NEW);
-					pyvec2 = newVectorObject(vec1, 3, Py_NEW);
+					pyvec  = V24_newVectorObject(vec, 3, Py_NEW);
+					pyvec2 = V24_newVectorObject(vec1, 3, Py_NEW);
 					if( PyList_Append( list, Py_BuildValue("[OO]", pyvec, pyvec2)) < 0 ) {
 						Py_DECREF( list );
 						Py_XDECREF( pyvec );
@@ -1401,7 +1401,7 @@ static PyObject *V24_Effect_getParticlesLoc( V24_BPy_Effect * self )
 					Py_DECREF( pyvec2 );
 				} else { /* not a vector */
 					where_is_particle(paf, pa, c_time, vec);
-					pyvec = newVectorObject(vec, 3, Py_NEW);
+					pyvec = V24_newVectorObject(vec, 3, Py_NEW);
 					if( PyList_Append( list, pyvec) < 0 ) {
 						Py_DECREF( list );
 						Py_XDECREF( pyvec );

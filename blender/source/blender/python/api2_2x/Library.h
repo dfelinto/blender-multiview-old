@@ -63,8 +63,8 @@ typedef struct {
 extern PyTypeObject V24_Library_Type;
 extern PyTypeObject V24_LibraryData_Type;
 
-#define BPy_LibraryData_Check(v)       ((v)->ob_type == &V24_LibraryData_Type)
-#define BPy_Library_Check(v)       ((v)->ob_type == &V24_Library_Type)
+#define V24_BPy_LibraryData_Check(v)       ((v)->ob_type == &V24_LibraryData_Type)
+#define V24_BPy_Library_Check(v)       ((v)->ob_type == &V24_Library_Type)
 
 /*****************************************************************************/
 /* Module Blender.Library - public functions	 */

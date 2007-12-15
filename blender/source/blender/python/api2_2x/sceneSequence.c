@@ -159,7 +159,7 @@ static PyObject *V24_NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *
 			se++;
 		}		
 		
-	} else if (BPy_Sound_Check(py_data)) {
+	} else if (V24_BPy_Sound_Check(py_data)) {
 		/* sound */
 		int totframe;
 		bSound *sound = (( V24_BPy_Sound * )py_data)->sound;
@@ -183,7 +183,7 @@ static PyObject *V24_NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *
 		/* name sound in first strip */
 		strncpy(se->name, sound->name, FILE_MAXFILE-1);
 		
-	} else if (BPy_Scene_Check(py_data)) {
+	} else if (V24_BPy_Scene_Check(py_data)) {
 		/* scene */
 		Scene *sce = ((V24_BPy_Scene *)py_data)->scene;
 		
@@ -456,7 +456,7 @@ static int V24_Sequence_setIpo( V24_BPy_Sequence * self, PyObject * value )
 	/* if parameter is not None, check for valid Ipo */
 
 	if ( value != Py_None ) {
-		if ( !BPy_Ipo_Check( value ) )
+		if ( !V24_BPy_Ipo_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected an Ipo object" );
 

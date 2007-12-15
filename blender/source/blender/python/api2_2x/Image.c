@@ -1212,7 +1212,7 @@ static int setIntAttrClamp( V24_BPy_Image *self, PyObject *value, void *type )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Image_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"filename", (getter)V24_Image_getFilename, (setter)V24_Image_setFilename,
 	 "image path", NULL},
 	/* readonly */

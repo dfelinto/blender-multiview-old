@@ -35,6 +35,6 @@
 
 #include <Python.h>
 
-PyObject *sys_Init( void );
+PyObject *V24_sys_Init( void );
 
 #endif				/* EXPP_sys_H */

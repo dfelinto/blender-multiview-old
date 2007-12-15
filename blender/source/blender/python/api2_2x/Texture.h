@@ -49,7 +49,7 @@ typedef struct {
 
 extern PyTypeObject V24_Texture_Type;
 
-#define BPy_Texture_Check(v)  ((v)->ob_type == &V24_Texture_Type)
+#define V24_BPy_Texture_Check(v)  ((v)->ob_type == &V24_Texture_Type)
 
 
 /*****************************************************************************/

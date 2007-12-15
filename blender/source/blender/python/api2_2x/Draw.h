@@ -41,10 +41,10 @@
 #include "DNA_space_types.h"
 #include "DNA_text_types.h"
 
-void initDraw( void );
+void V24_initDraw( void );
 
 /* 
- * V24V24__Button Object stuct 
+ * V24_Button Object stuct 
  */
 
 typedef struct V24__Button {
@@ -58,7 +58,7 @@ typedef struct V24__Button {
 		float asvec[3];
 	} val;
 	char tooltip[256];
-} V24V24__Button;
+} V24_Button;
 
 #define BPY_MAX_TOOLTIP	255
 

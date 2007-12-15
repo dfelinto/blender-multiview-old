@@ -69,7 +69,7 @@ current image frame, some images change frame if they are a sequence */
 #define EXPP_BUTTON_EVENTS_MIN 0
 #define EXPP_BUTTON_EVENTS_MAX 15382 /* 16384 - 1 - OFFSET */
 
-#define ButtonObject_Check(v) ((v)->ob_type == &V24_Button_Type)
+#define V24_ButtonObject_Check(v) ((v)->ob_type == &V24_Button_Type)
 
 #define UI_METHOD_ERRORCHECK \
 	if (check_button_event(&event) == -1)\
@@ -92,7 +92,7 @@ static PyObject *V24_Button_repr( PyObject * self );
 static PyObject *V24_Button_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type);
 static int V24_Button_setattr( PyObject * self, char *name, PyObject * v );
 
-static V24V24__Button *newbutton( void );
+static V24_Button *newbutton( void );
 
 /* GUI interface routines */
 
@@ -167,19 +167,19 @@ exactly once for everytime this function is called.";
 
 
 static char V24_Method_Create_doc[] =
-	"(value) - Create a default V24V24__Button object\n\n\
+	"(value) - Create a default V24_Button object\n\n\
  (value) - The value to store in the button\n\n\
  Valid values are ints, floats, and strings";
 
 static char V24_Method_Button_doc[] =
-	"(name, event, x, y, width, height, [tooltip]) - Create a new V24V24__Button \
+	"(name, event, x, y, width, height, [tooltip]) - Create a new V24_Button \
 (push) button\n\n\
 (name) A string to display on the button\n\
 (event) The event number to pass to the button event function when activated\n\
 (x, y) The lower left coordinate of the button\n\
 (width, height) The button width and height\n\
 [tooltip=] The button's tooltip\n\n\
-This function can be called as V24V24__Button() or PushButton().";
+This function can be called as V24_Button() or PushButton().";
 
 static char V24_Method_BeginAlign_doc[] =
 	"Buttons after this function will draw aligned (button layout only)";
@@ -241,7 +241,7 @@ new V24_Scrollbar\n\n\
 [tooltip=] The button's tooltip";
 
 static char V24_Method_ColorPicker_doc[] = 
-	"(event, x, y, width, height, initial, [tooltip]) - Create a new V24V24__Button \
+	"(event, x, y, width, height, initial, [tooltip]) - Create a new V24_Button \
 Color picker button\n\n\
 (event) The event number to pass to the button event function when the color changes\n\
 (x, y) The lower left coordinate of the button\n\
@@ -250,7 +250,7 @@ Color picker button\n\n\
 [tooltip=] The button's tooltip";
 
 static char V24_Method_Normal_doc[] = 
-	"(event, x, y, width, height, initial, [tooltip]) - Create a new V24V24__Button \
+	"(event, x, y, width, height, initial, [tooltip]) - Create a new V24_Button \
 Normal button (a sphere that you can roll to change the normal)\n\n\
 (event) The event number to pass to the button event function when the color changes\n\
 (x, y) The lower left coordinate of the button\n\
@@ -364,7 +364,7 @@ PyObject *V24_M_Button_List = NULL;
 static struct PyMethodDef Draw_methods[] = {
 	{"Create", (PyCFunction)V24_Method_Create, METH_VARARGS, V24_Method_Create_doc},
 	{"UIBlock", (PyCFunction)V24_Method_UIBlock, METH_VARARGS, V24_Method_UIBlock_doc},
-	{"V24V24__Button", (PyCFunction)V24_Method_Button, METH_VARARGS, V24_Method_Button_doc},
+	{"V24_Button", (PyCFunction)V24_Method_Button, METH_VARARGS, V24_Method_Button_doc},
 	{"Toggle", (PyCFunction)V24_Method_Toggle, METH_VARARGS, V24_Method_Toggle_doc},
 	{"Menu", (PyCFunction)V24_Method_Menu, METH_VARARGS, V24_Method_Menu_doc},
 	{"Slider", (PyCFunction)V24_Method_Slider, METH_VARARGS, V24_Method_Slider_doc},
@@ -394,8 +394,8 @@ static struct PyMethodDef Draw_methods[] = {
 
 PyTypeObject V24_Button_Type = {
 	PyObject_HEAD_INIT( NULL ) 0,	/*ob_size */
-	"V24V24__Button",		/*tp_name */
-	sizeof( V24V24__Button ),	/*tp_basicsize */
+	"V24_Button",		/*tp_name */
+	sizeof( V24_Button ),	/*tp_basicsize */
 	0,			/*tp_itemsize */
 	( destructor ) V24_Button_dealloc,	/*tp_dealloc */
 	( printfunc ) 0,	/*tp_print */
@@ -471,7 +471,7 @@ PyTypeObject V24_Button_Type = {
 
 static void V24_Button_dealloc( PyObject * self )
 {
-	V24V24__Button *but = ( V24V24__Button * ) self;
+	V24_Button *but = ( V24_Button * ) self;
 
 	if( but->type == BSTRING_TYPE ) {
 		if( but->val.asstr )
@@ -483,7 +483,7 @@ static void V24_Button_dealloc( PyObject * self )
 
 static PyObject *V24_Button_getattr( PyObject * self, char *name )
 {
-	V24V24__Button *but = ( V24V24__Button * ) self;
+	V24_Button *but = ( V24_Button * ) self;
 	
 	if( strcmp( name, "val" ) == 0 ) {
 		if( but->type == BINT_TYPE )
@@ -502,7 +502,7 @@ static PyObject *V24_Button_getattr( PyObject * self, char *name )
 
 static int V24_Button_setattr( PyObject * self, char *name, PyObject * v )
 {
-	V24V24__Button *but = ( V24V24__Button * ) self;
+	V24_Button *but = ( V24_Button * ) self;
 
 	if( strcmp( name, "val" ) == 0 ) {
 		if( but->type == BINT_TYPE && PyNumber_Check(v) ) {
@@ -575,9 +575,9 @@ static PyObject *V24_Button_repr( PyObject * self )
 static PyObject *V24_Button_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type)
 {
 	PyObject *ret, *valA=NULL, *valB=NULL;
-	if (ButtonObject_Check(objectA))
+	if (V24_ButtonObject_Check(objectA))
 		objectA = valA = V24_Button_getattr( objectA, "val" );
-	if (ButtonObject_Check(objectB))
+	if (V24_ButtonObject_Check(objectB))
 		objectB = valB = V24_Button_getattr( objectB, "val" );
 	ret = PyObject_RichCompare(objectA, objectB, comparison_type);
 	Py_XDECREF(valA); /* V24_Button_getattr created with 1 ref, we dont care about them now */
@@ -586,11 +586,11 @@ static PyObject *V24_Button_richcmpr(PyObject *objectA, PyObject *objectB, int c
 }
 
 
-static V24V24__Button *newbutton( void )
+static V24_Button *newbutton( void )
 {
-	V24V24__Button *but = NULL;
+	V24_Button *but = NULL;
 	
-	but = ( V24V24__Button * ) PyObject_NEW( V24V24__Button, &V24_Button_Type );
+	but = ( V24_Button * ) PyObject_NEW( V24_Button, &V24_Button_Type );
 	but->tooltip[0] = 0; /*NULL-terminate tooltip string*/
 	but->tooltip[255] = 0; /*necassary to insure we always have a NULL-terminated string, as
 	                         according to the docs strncpy doesn't do this for us.*/
@@ -758,7 +758,7 @@ static void exec_but_callback(void *pyobj, void *data)
 	if (callback==NULL || callback == Py_None)
 		return;
 	
-	/* V24V24__Button types support
+	/* V24_Button types support
 	case MENU:	
 	case TEX:
 	case TOG:
@@ -825,7 +825,7 @@ static void exec_but_callback(void *pyobj, void *data)
 }
 
 /*note that this function populates the drawbutton ref lists.*/
-static void set_pycallback(uiBut *ubut, PyObject *callback, V24V24__Button *but)
+static void set_pycallback(uiBut *ubut, PyObject *callback, V24_Button *but)
 {
 	PyObject *tuple;
 	if (!callback || !PyCallable_Check(callback)) {
@@ -1012,7 +1012,7 @@ static PyObject *V24_Method_Draw( PyObject * self )
 
 static PyObject *V24_Method_Create( PyObject * self, PyObject * args )
 {
-	V24V24__Button *but = NULL;
+	V24_Button *but = NULL;
 	PyObject *val;
 	char *newstr;
 
@@ -1197,7 +1197,7 @@ static PyObject *V24_Method_Menu( PyObject * self, PyObject * args )
 	char *name, *tip = NULL;
 	int event, def;
 	int x, y, w, h;
-	V24V24__Button *but;
+	V24_Button *but;
 	PyObject *callback=NULL;
 
 	if( !PyArg_ParseTuple( args, "siiiiii|sO", &name, &event,
@@ -1227,7 +1227,7 @@ static PyObject *V24_Method_Toggle( PyObject * self, PyObject * args )
 	char *name, *tip = NULL;
 	int event;
 	int x, y, w, h, def;
-	V24V24__Button *but;
+	V24_Button *but;
 	PyObject *callback=NULL;
 
 	if( !PyArg_ParseTuple( args, "siiiiii|sO", &name, &event,
@@ -1293,7 +1293,7 @@ static PyObject *V24_Method_Slider( PyObject * self, PyObject * args )
 	char *name, *tip = NULL;
 	int event;
 	int x, y, w, h, realtime = 1;
-	V24V24__Button *but;
+	V24_Button *but;
 	PyObject *mino, *maxo, *inio;
 	PyObject *callback=NULL;
 
@@ -1365,7 +1365,7 @@ static PyObject *V24_Method_Scrollbar( PyObject * self, PyObject * args )
 	uiBlock *block;
 	int event;
 	int x, y, w, h, realtime = 1;
-	V24V24__Button *but;
+	V24_Button *but;
 	PyObject *mino, *maxo, *inio;
 	float ini, min, max;
 	uiBut *ubut;
@@ -1420,7 +1420,7 @@ another int and string as arguments" );
 static PyObject *V24_Method_ColorPicker( PyObject * self, PyObject * args )
 {
 	char USAGE_ERROR[] = "expected a 3-float tuple of values between 0 and 1";
-	V24V24__Button *but;
+	V24_Button *but;
 	PyObject *inio;
 	uiBlock *block;
 	char *tip = NULL;
@@ -1470,7 +1470,7 @@ static PyObject *V24_Method_ColorPicker( PyObject * self, PyObject * args )
 static PyObject *V24_Method_Normal( PyObject * self, PyObject * args )
 {
 	char USAGE_ERROR[] = "expected a 3-float tuple of values between -1 and 1";
-	V24V24__Button *but;
+	V24_Button *but;
 	PyObject *inio;
 	uiBlock *block;
 	char *tip = NULL;
@@ -1516,7 +1516,7 @@ static PyObject *V24_Method_Number( PyObject * self, PyObject * args )
 	char *name, *tip = NULL;
 	int event;
 	int x, y, w, h;
-	V24V24__Button *but;
+	V24_Button *but;
 	PyObject *mino, *maxo, *inio;
 	PyObject *callback=NULL;
 	uiBut *ubut= NULL;
@@ -1583,7 +1583,7 @@ static PyObject *V24_Method_String( PyObject * self, PyObject * args )
 	char *info_str = NULL, *info_str0 = " ";
 	int event;
 	int x, y, w, h, len, real_len = 0;
-	V24V24__Button *but;
+	V24_Button *but;
 	PyObject *callback=NULL;
 
 	if( !PyArg_ParseTuple( args, "siiiiisi|sO", &info_arg, &event,
@@ -1824,7 +1824,7 @@ static PyObject *V24_Method_PupBlock( PyObject * self, PyObject * args )
 	for ( i=0 ; i<len ; i++ ) {
 		PyObject *pyMin = NULL, *pyMax = NULL;
 		PyObject *f1, *f2;
-		V24V24__Button *but = NULL;
+		V24_Button *but = NULL;
 		int tlen;
 		char *text, *tip = NULL;
 
@@ -1854,12 +1854,12 @@ static PyObject *V24_Method_PupBlock( PyObject * self, PyObject * args )
 		case 3:		/*	TOGGLE	*/
 			if (!PyArg_ParseTuple( pyItem, "sO!|s", &text, &V24_Button_Type, &but, &tip )) {
 				Py_DECREF( pyItem );
-				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a V24V24__Button object and optionally a string for toggles" );
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a V24_Button object and optionally a string for toggles" );
 			}
 
 			if (but->type != BINT_TYPE) {
 				Py_DECREF( pyItem );
-				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "V24V24__Button object for toggles should hold an integer" );
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "V24_Button object for toggles should hold an integer" );
 			}
 
 			add_numbut(i, TOG|INT, text, 0, 0, &but->val.asint, tip);
@@ -1868,7 +1868,7 @@ static PyObject *V24_Method_PupBlock( PyObject * self, PyObject * args )
 		case 5:		/*	TEX and NUM	*/
 			if (!PyArg_ParseTuple( pyItem, "sO!OO|s", &text, &V24_Button_Type, &but, &pyMin, &pyMax, &tip )) {
 				Py_DECREF( pyItem );
-				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a V24V24__Button object, two numerical values and optionally a string for Text and Num buttons" );
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a V24_Button object, two numerical values and optionally a string for Text and Num buttons" );
 			}
 
 			f1 = PyNumber_Float(pyMin);
@@ -1876,7 +1876,7 @@ static PyObject *V24_Method_PupBlock( PyObject * self, PyObject * args )
 
 			if (!f1 || !f2) {
 				Py_DECREF( pyItem );
-				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a V24V24__Button object, two numerical values and optionally a string for Text and Num buttons" );
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a V24_Button object, two numerical values and optionally a string for Text and Num buttons" );
 			}
 
 			min = (float)PyFloat_AS_DOUBLE(f1);
@@ -1950,7 +1950,7 @@ static PyObject *V24_Method_Image( PyObject * self, PyObject * args )
 			"expected a Blender.Image and 2 floats, and " \
 			"optionally 2 floats and 4 ints as arguments" );
 	/* check that the first PyObject is actually a Blender.Image */
-	if( !BPy_Image_Check( pyObjImage ) )
+	if( !V24_BPy_Image_Check( pyObjImage ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected a Blender.Image and 2 floats, and " \
 			"optionally 2 floats and 4 ints as arguments" );

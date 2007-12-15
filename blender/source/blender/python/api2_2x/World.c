@@ -238,7 +238,7 @@ static PyMethodDef V24_BPy_World_methods[] = {
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_World_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"skytype", (getter)V24_World_getSkytype, (setter)V24_World_setSkytype,
 	 "sky settings as a list", NULL},
 	{"mode", (getter)V24_World_getMode, (setter)V24_World_setMode,

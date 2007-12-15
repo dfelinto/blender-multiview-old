@@ -35,8 +35,8 @@
 #include "DNA_armature_types.h"
 
 /*-------------------TYPE CHECKS---------------------------------*/
-#define BoneObject_Check(v) ((v)->ob_type == &V24_Bone_Type)
-#define EditBoneObject_Check(v) ((v)->ob_type == &V24_EditBone_Type)
+#define V24_BoneObject_Check(v) ((v)->ob_type == &V24_Bone_Type)
+#define V24_EditBoneObject_Check(v) ((v)->ob_type == &V24_EditBone_Type)
 /*-------------------TYPEOBJECT----------------------------------*/
 extern PyTypeObject V24_EditBone_Type;
 extern PyTypeObject V24_Bone_Type;

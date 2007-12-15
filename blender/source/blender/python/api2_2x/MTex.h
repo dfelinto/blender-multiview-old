@@ -48,7 +48,7 @@ typedef struct {
 
 extern PyTypeObject V24_MTex_Type;
 
-#define BPy_MTex_Check(v)  ((v)->ob_type == &V24_MTex_Type)
+#define V24_BPy_MTex_Check(v)  ((v)->ob_type == &V24_MTex_Type)
 
 
 /*****************************************************************************/

@@ -245,7 +245,7 @@ static PyObject *V24_Group_getLayers( V24_BPy_Group * self )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Group_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"layers",
 	 (getter)V24_Group_getLayers, (setter)V24_Group_setLayers,
 	 "layer mask for this group",
@@ -450,7 +450,7 @@ PyObject *V24_M_Group_Get( PyObject * self, PyObject * args )
 PyObject *V24_M_Group_Unlink( PyObject * self, V24_BPy_Group * pygrp )
 {
 	Group *group;
-	if( !BPy_Group_Check(pygrp) )
+	if( !V24_BPy_Group_Check(pygrp) )
 		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected a group" ) );
 	
@@ -663,7 +663,7 @@ static PyObject *V24_GroupObSeq_link( V24_BPy_GroupObSeq * self, V24_BPy_Object 
 	
 	GROUP_DEL_CHECK_PY(self->bpygroup);
 	
-	if( !BPy_Object_Check(value) )
+	if( !V24_BPy_Object_Check(value) )
 		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a python object as an argument" ) );
 	
@@ -687,7 +687,7 @@ static PyObject *V24_GroupObSeq_unlink( V24_BPy_GroupObSeq * self, V24_BPy_Objec
 	
 	GROUP_DEL_CHECK_PY(self->bpygroup);
 	
-	if( !BPy_Object_Check(value) )
+	if( !V24_BPy_Object_Check(value) )
 		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a python object as an argument" ) );
 	

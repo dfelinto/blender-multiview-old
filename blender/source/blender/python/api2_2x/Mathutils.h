@@ -42,10 +42,10 @@
 #include "point.h"
 
 PyObject *V24_Mathutils_Init( void );
-PyObject *row_vector_multiplication(V24_VectorObject* vec, V24_MatrixObject * mat);
-PyObject *column_vector_multiplication(V24_MatrixObject * mat, V24_VectorObject* vec);
-PyObject *row_point_multiplication(V24_PointObject* pt, V24_MatrixObject * mat);
-PyObject *column_point_multiplication(V24_MatrixObject * mat, V24_PointObject* pt);
+PyObject *V24_row_vector_multiplication(V24_VectorObject* vec, V24_MatrixObject * mat);
+PyObject *V24_column_vector_multiplication(V24_MatrixObject * mat, V24_VectorObject* vec);
+PyObject *V24_row_point_multiplication(V24_PointObject* pt, V24_MatrixObject * mat);
+PyObject *V24_column_point_multiplication(V24_MatrixObject * mat, V24_PointObject* pt);
 PyObject *quat_rotation(PyObject *arg1, PyObject *arg2);
 
 PyObject *V24_M_Mathutils_Rand(PyObject * self, PyObject * args);

@@ -56,7 +56,7 @@ PyObject *V24_Point_toVector(V24_PointObject * self)
 		vec[x] = self->coord[x];
 	}
 	
-	return newVectorObject(vec, self->size, Py_NEW);
+	return V24_newVectorObject(vec, self->size, Py_NEW);
 }
 //----------------------------Point.zero() ----------------------
 //set the point data to 0,0,0
@@ -271,7 +271,7 @@ static PyObject *V24_Point_add(PyObject * v1, PyObject * v2)
 
 	if(!coord1->coerced_object){
 		if(coord2->coerced_object){
-			if(VectorObject_Check(coord2->coerced_object)){  //POINT + VECTOR
+			if(V24_VectorObject_Check(coord2->coerced_object)){  //POINT + VECTOR
 				//Point translation
 				vec = (V24_VectorObject*)coord2->coerced_object;
 				size = coord1->size;
@@ -283,7 +283,7 @@ static PyObject *V24_Point_add(PyObject * v1, PyObject * v2)
 					return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 						"Point addition: arguments are the wrong size....\n");
 				}
-				return newPointObject(coord, size, Py_NEW);
+				return V24_newPointObject(coord, size, Py_NEW);
 			}	
 		}else{  //POINT + POINT
 			size = coord1->size;
@@ -295,7 +295,7 @@ static PyObject *V24_Point_add(PyObject * v1, PyObject * v2)
 				return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 					"Point addition: arguments are the wrong size....\n");
 			}
-			return newPointObject(coord, size, Py_NEW);
+			return V24_newPointObject(coord, size, Py_NEW);
 		}
 	}
 
@@ -328,7 +328,7 @@ static PyObject *V24_Point_sub(PyObject * v1, PyObject * v2)
 	}
 
 	//Point - Point = Vector
-	return newVectorObject(coord, size, Py_NEW);
+	return V24_newVectorObject(coord, size, Py_NEW);
 }
 //------------------------obj * obj------------------------------
 //mulplication
@@ -359,7 +359,7 @@ static PyObject *V24_Point_mul(PyObject * p1, PyObject * p2)
 				coord[x] = coord2->coord[x] *	scalar;
 			}
 			Py_DECREF(f);
-			return newPointObject(coord, size, Py_NEW);
+			return V24_newPointObject(coord, size, Py_NEW);
 		}
 	}else{
 		if(coord2->coerced_object){
@@ -377,11 +377,11 @@ static PyObject *V24_Point_mul(PyObject * p1, PyObject * p2)
 					coord[x] = coord1->coord[x] *	scalar;
 				}
 				Py_DECREF(f);
-				return newPointObject(coord, size, Py_NEW);
-			}else if(MatrixObject_Check(coord2->coerced_object)){ //POINT * MATRIX
+				return V24_newPointObject(coord, size, Py_NEW);
+			}else if(V24_MatrixObject_Check(coord2->coerced_object)){ //POINT * MATRIX
 				mat = (V24_MatrixObject*)coord2->coerced_object;
-				return row_point_multiplication(coord1, mat);
-			}else if(QuaternionObject_Check(coord2->coerced_object)){  //POINT * QUATERNION
+				return V24_row_point_multiplication(coord1, mat);
+			}else if(V24_QuaternionObject_Check(coord2->coerced_object)){  //POINT * QUATERNION
 				quat = (V24_QuaternionObject*)coord2->coerced_object;
 				if(coord1->size != 3){
 					return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
@@ -405,7 +405,7 @@ static PyObject *V24_Point_neg(V24_PointObject *self)
 	for(x = 0; x < self->size; x++)
 		coord[x] = -self->coord[x];
 
-	return newPointObject(coord, self->size, Py_NEW);
+	return V24_newPointObject(coord, self->size, Py_NEW);
 }
 
 //------------------------coerce(obj, obj)-----------------------
@@ -418,10 +418,10 @@ static PyObject *V24_Point_neg(V24_PointObject *self)
  then call vector.multiply(vector, scalar_cast_as_vector)*/
 static int V24_Point_coerce(PyObject ** p1, PyObject ** p2)
 {
-	if(VectorObject_Check(*p2) || PyFloat_Check(*p2) || PyInt_Check(*p2) ||
-			MatrixObject_Check(*p2) || QuaternionObject_Check(*p2)) {
+	if(V24_VectorObject_Check(*p2) || PyFloat_Check(*p2) || PyInt_Check(*p2) ||
+			V24_MatrixObject_Check(*p2) || V24_QuaternionObject_Check(*p2)) {
 		PyObject *coerced = V24_EXPP_incr_ret(*p2);
-		*p2 = newPointObject(NULL,3,Py_NEW);
+		*p2 = V24_newPointObject(NULL,3,Py_NEW);
 		((V24_PointObject*)*p2)->coerced_object = coerced;
 		Py_INCREF (*p1);
 		return 0;
@@ -467,7 +467,7 @@ static PyNumberMethods V24_Point_NumMethods = {
 
 };
 //------------------PY_OBECT DEFINITION--------------------------
-PyTypeObject point_Type = {
+PyTypeObject V24_point_Type = {
 	PyObject_HEAD_INIT(NULL) 
 	0,											/*ob_size */
 	"point",									/*tp_name */
@@ -482,19 +482,19 @@ PyTypeObject point_Type = {
 	&V24_Point_NumMethods,							/*tp_as_number */
 	&V24_Point_SeqMethods,							/*tp_as_sequence */
 };
-//------------------------newPointObject (internal)-------------
+//------------------------V24_newPointObject (internal)-------------
 //creates a new point object
 /*pass Py_WRAP - if point is a WRAPPER for data allocated by BLENDER
  (i.e. it was allocated elsewhere by MEM_mallocN())
   pass Py_NEW - if point is not a WRAPPER and managed by PYTHON
  (i.e. it must be created here with PyMEM_malloc())*/
-PyObject *newPointObject(float *coord, int size, int type)
+PyObject *V24_newPointObject(float *coord, int size, int type)
 {
 	V24_PointObject *self;
 	int x;
 
-	point_Type.ob_type = &PyType_Type;
-	self = PyObject_NEW(V24_PointObject, &point_Type);
+	V24_point_Type.ob_type = &PyType_Type;
+	self = PyObject_NEW(V24_PointObject, &V24_point_Type);
 	self->data.blend_data = NULL;
 	self->data.py_data = NULL;
 	if(size > 3 || size < 2)

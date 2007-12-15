@@ -82,7 +82,7 @@ PyObject *V24_Matrix_toQuat(V24_MatrixObject * self)
 		Mat4ToQuat((float (*)[4])*self->matrix, quat);
 	}
 	
-	return newQuaternionObject(quat, Py_NEW);
+	return V24_newQuaternionObject(quat, Py_NEW);
 }
 /*---------------------------Matrix.toEuler() --------------------*/
 PyObject *V24_Matrix_toEuler(V24_MatrixObject * self)
@@ -106,7 +106,7 @@ PyObject *V24_Matrix_toEuler(V24_MatrixObject * self)
 	for(x = 0; x < 3; x++) {
 		eul[x] *= (float) (180 / Py_PI);
 	}
-	return newEulerObject(eul, Py_NEW);
+	return V24_newEulerObject(eul, Py_NEW);
 }
 /*---------------------------Matrix.resize4x4() ------------------*/
 PyObject *V24_Matrix_Resize4x4(V24_MatrixObject * self)
@@ -174,7 +174,7 @@ PyObject *V24_Matrix_TranslationPart(V24_MatrixObject * self)
 	vec[1] = self->matrix[3][1];
 	vec[2] = self->matrix[3][2];
 
-	return newVectorObject(vec, 3, Py_NEW);
+	return V24_newVectorObject(vec, 3, Py_NEW);
 }
 /*---------------------------Matrix.rotationPart() ---------------*/
 PyObject *V24_Matrix_RotationPart(V24_MatrixObject * self)
@@ -197,7 +197,7 @@ PyObject *V24_Matrix_RotationPart(V24_MatrixObject * self)
 	mat[7] = self->matrix[2][1];
 	mat[8] = self->matrix[2][2];
 
-	return newMatrixObject(mat, 3, 3, Py_NEW);
+	return V24_newMatrixObject(mat, 3, 3, Py_NEW);
 }
 /*---------------------------Matrix.scalePart() --------------------*/
 PyObject *V24_Matrix_scalePart(V24_MatrixObject * self)
@@ -223,7 +223,7 @@ PyObject *V24_Matrix_scalePart(V24_MatrixObject * self)
 	scale[0]= tmat[0][0];
 	scale[1]= tmat[1][1];
 	scale[2]= tmat[2][2];
-	return newVectorObject(scale, 3, Py_NEW);
+	return V24_newVectorObject(scale, 3, Py_NEW);
 }
 /*---------------------------Matrix.invert() ---------------------*/
 PyObject *V24_Matrix_Invert(V24_MatrixObject * self)
@@ -364,7 +364,7 @@ PyObject *V24_Matrix_Identity(V24_MatrixObject * self)
 /*---------------------------Matrix.inverted() ------------------*/
 PyObject *V24_Matrix_copy(V24_MatrixObject * self)
 {
-	return (PyObject*)(V24_MatrixObject*)newMatrixObject((float (*))*self->matrix, self->rowSize, self->colSize, Py_NEW);
+	return (PyObject*)(V24_MatrixObject*)V24_newMatrixObject((float (*))*self->matrix, self->rowSize, self->colSize, Py_NEW);
 }
 
 /*----------------------------dealloc()(internal) ----------------*/
@@ -436,7 +436,7 @@ static PyObject* V24_Matrix_richcmpr(PyObject *objectA, PyObject *objectB, int c
 	V24_MatrixObject *matA = NULL, *matB = NULL;
 	int result = 0;
 
-	if (!MatrixObject_Check(objectA) || !MatrixObject_Check(objectB)){
+	if (!V24_MatrixObject_Check(objectA) || !V24_MatrixObject_Check(objectB)){
 		if (comparison_type == Py_NE){
 			return V24_EXPP_incr_ret(Py_True); 
 		}else{
@@ -497,7 +497,7 @@ static PyObject *V24_Matrix_item(V24_MatrixObject * self, int i)
 		return V24_EXPP_ReturnPyObjError(PyExc_IndexError,
 		"matrix[attribute]: array index out of range\n");
 
-	return newVectorObject(self->matrix[i], self->colSize, Py_WRAP);
+	return V24_newVectorObject(self->matrix[i], self->colSize, Py_WRAP);
 }
 /*----------------------------object[]-------------------------
   sequence accessor (set)*/
@@ -560,7 +560,7 @@ static PyObject *V24_Matrix_slice(V24_MatrixObject * self, int begin, int end)
 	list = PyList_New(end - begin);
 	for(count = begin; count < end; count++) {
 		PyList_SetItem(list, count - begin,
-				newVectorObject(self->matrix[count], self->colSize, Py_WRAP));
+				V24_newVectorObject(self->matrix[count], self->colSize, Py_WRAP));
 	}
 
 	return list;
@@ -664,7 +664,7 @@ static PyObject *V24_Matrix_add(PyObject * m1, PyObject * m2)
 		}
 	}
 
-	return newMatrixObject(mat, mat1->rowSize, mat1->colSize, Py_NEW);
+	return V24_newMatrixObject(mat, mat1->rowSize, mat1->colSize, Py_NEW);
 }
 /*------------------------obj - obj------------------------------
   subtraction*/
@@ -693,7 +693,7 @@ static PyObject *V24_Matrix_sub(PyObject * m1, PyObject * m2)
 		}
 	}
 
-	return newMatrixObject(mat, mat1->rowSize, mat1->colSize, Py_NEW);
+	return V24_newMatrixObject(mat, mat1->rowSize, mat1->colSize, Py_NEW);
 }
 /*------------------------obj * obj------------------------------
   mulplication*/
@@ -727,18 +727,18 @@ static PyObject *V24_Matrix_mul(PyObject * m1, PyObject * m2)
 					mat[((x * mat2->colSize) + y)] = scalar * mat2->matrix[x][y];
 				}
 			}
-			return newMatrixObject(mat, mat2->rowSize, mat2->colSize, Py_NEW);
+			return V24_newMatrixObject(mat, mat2->rowSize, mat2->colSize, Py_NEW);
 		}
 	}else{
 		if(mat2->coerced_object){
 			/* MATRIX * VECTOR   operation is now being done by vector */
-			/*if(VectorObject_Check(mat2->coerced_object)){ 
+			/*if(V24_VectorObject_Check(mat2->coerced_object)){ 
 				vec = (V24_VectorObject*)mat2->coerced_object;
-				return column_vector_multiplication(mat1, vec);
+				return V24_column_vector_multiplication(mat1, vec);
 			}else */
-			if(PointObject_Check(mat2->coerced_object)){ /*MATRIX * POINT*/
+			if(V24_PointObject_Check(mat2->coerced_object)){ /*MATRIX * POINT*/
 				pt = (V24_PointObject*)mat2->coerced_object;
-				return column_point_multiplication(mat1, pt);
+				return V24_column_point_multiplication(mat1, pt);
 			}else if (PyFloat_Check(mat2->coerced_object) || 
 				PyInt_Check(mat2->coerced_object)){	/*MATRIX * FLOAT/INT*/
 				f = PyNumber_Float(mat2->coerced_object);
@@ -754,7 +754,7 @@ static PyObject *V24_Matrix_mul(PyObject * m1, PyObject * m2)
 						mat[((x * mat1->colSize) + y)] = scalar * mat1->matrix[x][y];
 					}
 				}
-				return newMatrixObject(mat, mat1->rowSize, mat1->colSize, Py_NEW);
+				return V24_newMatrixObject(mat, mat1->rowSize, mat1->colSize, Py_NEW);
 			}
 		}else{  /*MATRIX * MATRIX*/
 			if(mat1->colSize != mat2->rowSize){
@@ -770,7 +770,7 @@ static PyObject *V24_Matrix_mul(PyObject * m1, PyObject * m2)
 					dot = 0.0f;
 				}
 			}
-			return newMatrixObject(mat, mat1->rowSize, mat2->colSize, Py_NEW);
+			return V24_newMatrixObject(mat, mat1->rowSize, mat2->colSize, Py_NEW);
 		}
 	}
 
@@ -792,10 +792,10 @@ PyObject* V24_Matrix_inv(V24_MatrixObject *self)
  then call vector.multiply(vector, scalar_cast_as_vector)*/
 static int V24_Matrix_coerce(PyObject ** m1, PyObject ** m2)
 {
-	if(VectorObject_Check(*m2) || PyFloat_Check(*m2) || PyInt_Check(*m2) ||
-			PointObject_Check(*m2)) {
+	if(V24_VectorObject_Check(*m2) || PyFloat_Check(*m2) || PyInt_Check(*m2) ||
+			V24_PointObject_Check(*m2)) {
 		PyObject *coerced = V24_EXPP_incr_ret(*m2);
-		*m2 = newMatrixObject(NULL,3,3,Py_NEW);
+		*m2 = V24_newMatrixObject(NULL,3,3,Py_NEW);
 		((V24_MatrixObject*)*m2)->coerced_object = coerced;
 		Py_INCREF (*m1);
 		return 0;
@@ -840,7 +840,7 @@ static PyNumberMethods V24_Matrix_NumMethods = {
 	(unaryfunc) 0,							/* __hex__ */
 };
 /*------------------PY_OBECT DEFINITION--------------------------*/
-PyTypeObject matrix_Type = {
+PyTypeObject V24_matrix_Type = {
 	PyObject_HEAD_INIT(NULL)		/*tp_head*/
 	0,								/*tp_internal*/
 	"matrix",						/*tp_name*/
@@ -890,7 +890,7 @@ PyTypeObject matrix_Type = {
 	0								/*tp_del*/
 };
 
-/*------------------------newMatrixObject (internal)-------------
+/*------------------------V24_newMatrixObject (internal)-------------
 creates a new matrix object
 self->matrix     self->contiguous_ptr (reference to data.xxx)
        [0]------------->[0]
@@ -906,7 +906,7 @@ self->matrix[1][1] = self->contiguous_ptr[4] = self->data.xxx_data[4]*/
  (i.e. it was allocated elsewhere by MEM_mallocN())
   pass Py_NEW - if vector is not a WRAPPER and managed by PYTHON
  (i.e. it must be created here with PyMEM_malloc())*/
-PyObject *newMatrixObject(float *mat, int rowSize, int colSize, int type)
+PyObject *V24_newMatrixObject(float *mat, int rowSize, int colSize, int type)
 {
 	V24_MatrixObject *self;
 	int x, row, col;
@@ -917,7 +917,7 @@ PyObject *newMatrixObject(float *mat, int rowSize, int colSize, int type)
 			"matrix(): row and column sizes must be between 2 and 4\n");
 	}
 
-	self = PyObject_NEW(V24_MatrixObject, &matrix_Type);
+	self = PyObject_NEW(V24_MatrixObject, &V24_matrix_Type);
 	self->data.blend_data = NULL;
 	self->data.py_data = NULL;
 	self->rowSize = rowSize;

@@ -386,14 +386,14 @@ static PyObject *V24_Scene_getObjects( V24_BPy_Scene *self)
 static PyObject *V24_Scene_getCursor( V24_BPy_Scene * self )
 {
 	SCENE_DEL_CHECK_PY(self);
-	return newVectorObject( self->scene->cursor, 3, Py_WRAP );
+	return V24_newVectorObject( self->scene->cursor, 3, Py_WRAP );
 }
 
 static int V24_Scene_setCursor( V24_BPy_Scene * self, PyObject * value )
 {	
 	V24_VectorObject *bpy_vec;
 	SCENE_DEL_CHECK_INT(self);
-	if (!VectorObject_Check(value))
+	if (!V24_VectorObject_Check(value))
 		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected a vector" ) );
 	
@@ -411,7 +411,7 @@ static int V24_Scene_setCursor( V24_BPy_Scene * self, PyObject * value )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Scene_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"Layers",
 	 (getter)V24_Scene_getLayerMask, (setter)V24_Scene_setLayerMask,
 	 "Scene layer bitmask",
@@ -1226,7 +1226,7 @@ int V24_SceneObSeq_setObjects( V24_BPy_SceneObSeq *self, PyObject *value, void *
 	SCENE_DEL_CHECK_INT(self->bpyscene);
 	
 	/* scn.objects.selected = scn.objects  - shortcut to select all */
-	if (BPy_SceneObSeq_Check(value)) {
+	if (V24_BPy_SceneObSeq_Check(value)) {
 		V24_BPy_SceneObSeq *bpy_sceneseq = (V24_BPy_SceneObSeq *)value;
 		if (self->bpyscene->scene != bpy_sceneseq->bpyscene->scene)
 			return V24_EXPP_ReturnIntError( PyExc_ValueError,
@@ -1455,7 +1455,7 @@ static PyObject *V24_SceneObSeq_link( V24_BPy_SceneObSeq * self, PyObject *pyobj
 	
 	if( PyTuple_Size(pyobj) == 1 ) {
 		V24_BPy_LibraryData *seq = ( V24_BPy_LibraryData * )PyTuple_GET_ITEM( pyobj, 0 );
-		if( BPy_LibraryData_Check( seq ) )
+		if( V24_BPy_LibraryData_Check( seq ) )
 			return V24_LibraryData_importLibData( seq, seq->name,
 					( seq->kind == OBJECT_IS_LINK ? FILE_LINK : 0 ),
 					self->bpyscene->scene );
@@ -1486,30 +1486,30 @@ static PyObject *V24_SceneObSeq_new( V24_BPy_SceneObSeq * self, PyObject *args )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"scene.objects.new(obdata) - expected obdata to be\n\ta python obdata type or the string 'Empty'" );
 
-	if( BPy_Armature_Check( py_data ) ) {
+	if( V24_BPy_Armature_Check( py_data ) ) {
 		data = ( void * ) Armature_FromPyObject( py_data );
 		type = OB_ARMATURE;
-	} else if( BPy_Camera_Check( py_data ) ) {
+	} else if( V24_BPy_Camera_Check( py_data ) ) {
 		data = ( void * ) V24_Camera_FromPyObject( py_data );
 		type = OB_CAMERA;
-	} else if( BPy_Lamp_Check( py_data ) ) {
+	} else if( V24_BPy_Lamp_Check( py_data ) ) {
 		data = ( void * ) V24_Lamp_FromPyObject( py_data );
 		type = OB_LAMP;
-	} else if( BPy_Curve_Check( py_data ) ) {
+	} else if( V24_BPy_Curve_Check( py_data ) ) {
 		data = ( void * ) Curve_FromPyObject( py_data );
 		type = OB_CURVE;
-	} else if( BPy_NMesh_Check( py_data ) ) {
-		data = ( void * ) NMesh_FromPyObject( py_data, NULL );
+	} else if( V24_BPy_NMesh_Check( py_data ) ) {
+		data = ( void * ) V24_NMesh_FromPyObject( py_data, NULL );
 		type = OB_MESH;
 		if( !data )		/* NULL means there is already an error */
 			return NULL;
-	} else if( BPy_Mesh_Check( py_data ) ) {
+	} else if( V24_BPy_Mesh_Check( py_data ) ) {
 		data = ( void * ) V24_Mesh_FromPyObject( py_data, NULL );
 		type = OB_MESH;
-	} else if( BPy_Lattice_Check( py_data ) ) {
+	} else if( V24_BPy_Lattice_Check( py_data ) ) {
 		data = ( void * ) V24_Lattice_FromPyObject( py_data );
 		type = OB_LATTICE;
-	} else if( BPy_Metaball_Check( py_data ) ) {
+	} else if( V24_BPy_Metaball_Check( py_data ) ) {
 		data = ( void * ) V24_Metaball_FromPyObject( py_data );
 		type = OB_MBALL;
 	} else if( V24_BPy_Text3d_Check( py_data ) ) {
@@ -1647,7 +1647,7 @@ static int V24_SceneObSeq_setActive(V24_BPy_SceneObSeq *self, PyObject *value)
 		return 0;
 	}
 	
-	if (!BPy_Object_Check(value))
+	if (!V24_BPy_Object_Check(value))
 		return (V24_EXPP_ReturnIntError( PyExc_ValueError,
 					      "Object or None types can only be assigned to active!" ));
 	

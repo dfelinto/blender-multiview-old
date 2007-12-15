@@ -37,86 +37,86 @@
 	 Blender */
 
 /*****************************************************************************/
-/* Python charRGBA_Type callback function prototypes:			  */
+/* Python V24_charRGBA_Type callback function prototypes:			  */
 /*****************************************************************************/
-static PyObject *charRGBA_repr( V24_BPy_charRGBA * self );
+static PyObject *V24_charRGBA_repr( V24_BPy_charRGBA * self );
 
-static int charRGBALength( V24_BPy_charRGBA * self );
+static int V24_charRGBALength( V24_BPy_charRGBA * self );
 
-static PyObject *charRGBASubscript( V24_BPy_charRGBA * self, PyObject * key );
-static int charRGBAAssSubscript( V24_BPy_charRGBA * self, PyObject * who,
+static PyObject *V24_charRGBASubscript( V24_BPy_charRGBA * self, PyObject * key );
+static int V24_charRGBAAssSubscript( V24_BPy_charRGBA * self, PyObject * who,
 				 PyObject * cares );
 
-static PyObject *charRGBAItem( V24_BPy_charRGBA * self, int i );
-static int charRGBAAssItem( V24_BPy_charRGBA * self, int i, PyObject * ob );
-static PyObject *charRGBASlice( V24_BPy_charRGBA * self, int begin, int end );
-static int charRGBAAssSlice( V24_BPy_charRGBA * self, int begin, int end,
+static PyObject *V24_charRGBAItem( V24_BPy_charRGBA * self, int i );
+static int V24_charRGBAAssItem( V24_BPy_charRGBA * self, int i, PyObject * ob );
+static PyObject *V24_charRGBASlice( V24_BPy_charRGBA * self, int begin, int end );
+static int V24_charRGBAAssSlice( V24_BPy_charRGBA * self, int begin, int end,
 			     PyObject * seq );
-static PyObject *charRGBA_getColor( V24_BPy_charRGBA * self, void * type);
-static int charRGBA_setColor( V24_BPy_charRGBA * self, PyObject * value, void * type);
+static PyObject *V24_charRGBA_getColor( V24_BPy_charRGBA * self, void * type);
+static int V24_charRGBA_setColor( V24_BPy_charRGBA * self, PyObject * value, void * type);
 
 /*****************************************************************************/
-/* Python charRGBA_Type Mapping Methods table:			*/
+/* Python V24_charRGBA_Type Mapping Methods table:			*/
 /*****************************************************************************/
-static PyMappingMethods charRGBAAsMapping = {
-	( inquiry ) charRGBALength,	/* mp_length                            */
-	( binaryfunc ) charRGBASubscript,	/* mp_subscript                 */
-	( objobjargproc ) charRGBAAssSubscript,	/* mp_ass_subscript */
+static PyMappingMethods V24_charRGBAAsMapping = {
+	( inquiry ) V24_charRGBALength,	/* mp_length                            */
+	( binaryfunc ) V24_charRGBASubscript,	/* mp_subscript                 */
+	( objobjargproc ) V24_charRGBAAssSubscript,	/* mp_ass_subscript */
 };
 
 /*****************************************************************************/
-/* Python charRGBA_Type Sequence Methods table:			*/
+/* Python V24_charRGBA_Type Sequence Methods table:			*/
 /*****************************************************************************/
-static PySequenceMethods charRGBAAsSequence = {
-	( inquiry ) charRGBALength,	/* sq_length */
+static PySequenceMethods V24_charRGBAAsSequence = {
+	( inquiry ) V24_charRGBALength,	/* sq_length */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
-	( intargfunc ) charRGBAItem,	/* sq_item */
-	( intintargfunc ) charRGBASlice,	/* sq_slice */
-	( intobjargproc ) charRGBAAssItem,	/* sq_ass_item */
-	( intintobjargproc ) charRGBAAssSlice,	/* sq_ass_slice       */
+	( intargfunc ) V24_charRGBAItem,	/* sq_item */
+	( intintargfunc ) V24_charRGBASlice,	/* sq_slice */
+	( intobjargproc ) V24_charRGBAAssItem,	/* sq_ass_item */
+	( intintobjargproc ) V24_charRGBAAssSlice,	/* sq_ass_slice       */
 };
 
-static PyGetSetDef charRGBA_getseters[] = {
+static PyGetSetDef V24_charRGBA_getseters[] = {
 	{"R",
-	 (getter)charRGBA_getColor, (setter)charRGBA_setColor,
+	 (getter)V24_charRGBA_getColor, (setter)V24_charRGBA_setColor,
 	 "the red component",
 	 (void *) 0},
 	{"r",
-	 (getter)charRGBA_getColor, (setter)charRGBA_setColor,
+	 (getter)V24_charRGBA_getColor, (setter)V24_charRGBA_setColor,
 	 "the red component",
 	 (void *) 0},
 	{"G",
-	 (getter)charRGBA_getColor, (setter)charRGBA_setColor,
+	 (getter)V24_charRGBA_getColor, (setter)V24_charRGBA_setColor,
 	 "the green component",
 	 (void *) 1},
 	{"g",
-	 (getter)charRGBA_getColor, (setter)charRGBA_setColor,
+	 (getter)V24_charRGBA_getColor, (setter)V24_charRGBA_setColor,
 	 "the green component",
 	 (void *) 1},
 	{"B",
-	 (getter)charRGBA_getColor, (setter)charRGBA_setColor,
+	 (getter)V24_charRGBA_getColor, (setter)V24_charRGBA_setColor,
 	 "the blue component",
 	 (void *) 2},
 	{"b",
-	 (getter)charRGBA_getColor, (setter)charRGBA_setColor,
+	 (getter)V24_charRGBA_getColor, (setter)V24_charRGBA_setColor,
 	 "the blue component",
 	 (void *) 2},
 	{"A",
-	 (getter)charRGBA_getColor, (setter)charRGBA_setColor,
+	 (getter)V24_charRGBA_getColor, (setter)V24_charRGBA_setColor,
 	 "the alpha component",
 	 (void *) 3},
 	{"a",
-	 (getter)charRGBA_getColor, (setter)charRGBA_setColor,
+	 (getter)V24_charRGBA_getColor, (setter)V24_charRGBA_setColor,
 	 "the alpha component",
 	 (void *) 3},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
 /*****************************************************************************/
-/* Python charRGBA_Type structure definition:				*/
+/* Python V24_charRGBA_Type structure definition:				*/
 /*****************************************************************************/
-PyTypeObject charRGBA_Type = {
+PyTypeObject V24_charRGBA_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
@@ -131,13 +131,13 @@ PyTypeObject charRGBA_Type = {
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
 	NULL,                       /* cmpfunc tp_compare; */
-	( reprfunc ) charRGBA_repr,	/* reprfunc tp_repr; */
+	( reprfunc ) V24_charRGBA_repr,	/* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&charRGBAAsSequence,	    /* PySequenceMethods *tp_as_sequence; */
-	&charRGBAAsMapping,	        /* PyMappingMethods *tp_as_mapping; */
+	&V24_charRGBAAsSequence,	    /* PySequenceMethods *tp_as_sequence; */
+	&V24_charRGBAAsMapping,	        /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
 
@@ -176,7 +176,7 @@ PyTypeObject charRGBA_Type = {
   /*** Attribute descriptor and subclassing stuff ***/
 	NULL,                       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	charRGBA_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_charRGBA_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -199,21 +199,21 @@ PyTypeObject charRGBA_Type = {
 };
 
 /*****************************************************************************/
-/* Function:	charRGBA_New	                                        */
+/* Function:	V24_charRGBA_New	                                        */
 /*****************************************************************************/
-PyObject *charRGBA_New( char *rgba )
+PyObject *V24_charRGBA_New( char *rgba )
 {
 	V24_BPy_charRGBA *charRGBA = NULL;
 
 	/*
-	 * When called the first time, charRGBA_Type.tp_dealloc will be NULL.
+	 * When called the first time, V24_charRGBA_Type.tp_dealloc will be NULL.
 	 * If that's the case, initialize the PyTypeObject.  If the
 	 * initialization succeeds, then create a new object.
 	 */
 
-	if( charRGBA_Type.tp_dealloc || PyType_Ready( &charRGBA_Type ) >= 0 ) {
+	if( V24_charRGBA_Type.tp_dealloc || PyType_Ready( &V24_charRGBA_Type ) >= 0 ) {
 		charRGBA = ( V24_BPy_charRGBA * ) PyObject_NEW( V24_BPy_charRGBA,
-				&charRGBA_Type );
+				&V24_charRGBA_Type );
 	}
 
 	if( charRGBA == NULL )
@@ -230,12 +230,12 @@ PyObject *charRGBA_New( char *rgba )
 }
 
 /*****************************************************************************/
-/* Functions:	 charRGBA_getCol and charRGBA_setCol         	 */
+/* Functions:	 V24_charRGBA_getCol and V24_charRGBA_setCol         	 */
 /* Description:	 These functions get/set rgba color triplet values.	The  */
 /*		 get function returns a tuple, the set one accepts three     */
 /*		 chars (separated or in a tuple) as arguments.		    */
 /*****************************************************************************/
-PyObject *charRGBA_getCol( V24_BPy_charRGBA * self )
+PyObject *V24_charRGBA_getCol( V24_BPy_charRGBA * self )
 {
 	PyObject *list = PyList_New( 4 );
 
@@ -250,7 +250,7 @@ PyObject *charRGBA_getCol( V24_BPy_charRGBA * self )
 	return list;
 }
 
-PyObject *charRGBA_setCol( V24_BPy_charRGBA * self, PyObject * args )
+PyObject *V24_charRGBA_setCol( V24_BPy_charRGBA * self, PyObject * args )
 {
 	int ok;
 	char r = 0, g = 0, b = 0, a = 0;
@@ -275,7 +275,7 @@ PyObject *charRGBA_setCol( V24_BPy_charRGBA * self, PyObject * args )
 
 /* return color value for one of the components */
 
-static PyObject *charRGBA_getColor( V24_BPy_charRGBA * self, void * type)
+static PyObject *V24_charRGBA_getColor( V24_BPy_charRGBA * self, void * type)
 {
 	int index = ((long)type) & 3; 
 	return PyInt_FromLong ( *self->rgba[index] );
@@ -283,7 +283,7 @@ static PyObject *charRGBA_getColor( V24_BPy_charRGBA * self, void * type)
 
 /* sets the color value of one of the components */
 
-static int charRGBA_setColor( V24_BPy_charRGBA * self, PyObject * value,
+static int V24_charRGBA_setColor( V24_BPy_charRGBA * self, PyObject * value,
 		void * type)
 {
 	int index = ((long)type) & 3; 
@@ -306,18 +306,18 @@ static int charRGBA_setColor( V24_BPy_charRGBA * self, PyObject * value,
 /*		 These functions provide code to access charRGBA objects as  */
 /*		  mappings.						 */
 /*****************************************************************************/
-static int charRGBALength( V24_BPy_charRGBA * self )
+static int V24_charRGBALength( V24_BPy_charRGBA * self )
 {
 	return 4;
 }
 
-static PyObject *charRGBASubscript( V24_BPy_charRGBA * self, PyObject * key )
+static PyObject *V24_charRGBASubscript( V24_BPy_charRGBA * self, PyObject * key )
 {
 	char *name = NULL;
 	int i;
 
 	if( PyNumber_Check( key ) )
-		return charRGBAItem( self, ( int ) PyInt_AsLong( key ) );
+		return V24_charRGBAItem( self, ( int ) PyInt_AsLong( key ) );
 
 	if( !PyArg_ParseTuple( key, "s", &name ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
@@ -337,7 +337,7 @@ static PyObject *charRGBASubscript( V24_BPy_charRGBA * self, PyObject * key )
 	return PyInt_FromLong( (long)(*self->rgba[i]) );
 }
 
-static int charRGBAAssSubscript( V24_BPy_charRGBA * self, PyObject * key,
+static int V24_charRGBAAssSubscript( V24_BPy_charRGBA * self, PyObject * key,
 				 PyObject * v )
 {
 	char *name = NULL;
@@ -348,7 +348,7 @@ static int charRGBAAssSubscript( V24_BPy_charRGBA * self, PyObject * key,
 					    "value to assign must be a number" );
 
 	if( PyNumber_Check( key ) )
-		return charRGBAAssItem( self, ( int ) PyInt_AsLong( key ), v );
+		return V24_charRGBAAssItem( self, ( int ) PyInt_AsLong( key ), v );
 
 	if( !PyArg_Parse( key, "s", &name ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
@@ -375,7 +375,7 @@ static int charRGBAAssSubscript( V24_BPy_charRGBA * self, PyObject * key,
 /*	     These functions provide code to access charRGBA objects as	 */
 /*		 sequences.						*/
 /*****************************************************************************/
-static PyObject *charRGBAItem( V24_BPy_charRGBA * self, int i )
+static PyObject *V24_charRGBAItem( V24_BPy_charRGBA * self, int i )
 {
 	if( i < 0 || i >= 4 )
 		return V24_EXPP_ReturnPyObjError( PyExc_IndexError,
@@ -384,7 +384,7 @@ static PyObject *charRGBAItem( V24_BPy_charRGBA * self, int i )
 	return PyInt_FromLong( *(self->rgba[i]) );
 }
 
-static PyObject *charRGBASlice( V24_BPy_charRGBA * self, int begin, int end )
+static PyObject *V24_charRGBASlice( V24_BPy_charRGBA * self, int begin, int end )
 {
 	PyObject *list;
 	int count;
@@ -405,7 +405,7 @@ static PyObject *charRGBASlice( V24_BPy_charRGBA * self, int begin, int end )
 	return list;
 }
 
-static int charRGBAAssItem( V24_BPy_charRGBA * self, int i, PyObject * ob )
+static int V24_charRGBAAssItem( V24_BPy_charRGBA * self, int i, PyObject * ob )
 {
 	if( i < 0 || i >= 4 )
 		return V24_EXPP_ReturnIntError( PyExc_IndexError,
@@ -420,7 +420,7 @@ static int charRGBAAssItem( V24_BPy_charRGBA * self, int i, PyObject * ob )
 	return 0;
 }
 
-static int charRGBAAssSlice( V24_BPy_charRGBA * self, int begin, int end,
+static int V24_charRGBAAssSlice( V24_BPy_charRGBA * self, int begin, int end,
 			     PyObject * seq )
 {
 	int count;
@@ -458,11 +458,11 @@ static int charRGBAAssSlice( V24_BPy_charRGBA * self, int begin, int end,
 }
 
 /*****************************************************************************/
-/* Function:	charRGBA_repr						*/
+/* Function:	V24_charRGBA_repr						*/
 /* Description: This is a callback function for the V24_BPy_charRGBA type. It  */
 /*		builds a meaninful string to represent charRGBA objects.   */
 /*****************************************************************************/
-static PyObject *charRGBA_repr( V24_BPy_charRGBA * self )
+static PyObject *V24_charRGBA_repr( V24_BPy_charRGBA * self )
 {
 	char r, g, b, a;
 

@@ -502,7 +502,7 @@ static PyObject *V24_IpoCurve_append( V24_C_IpoCurve * self, PyObject * value )
 	IpoCurve *icu = self->ipocurve;
 
 	/* if args is a already a beztriple, tack onto end of list */
-	if( BPy_BezTriple_Check ( value ) ) {
+	if( V24_BPy_BezTriple_Check ( value ) ) {
 		V24_BPy_BezTriple *bobj = (V24_BPy_BezTriple *)value;
 
 		BezTriple *newb = MEM_callocN( (icu->totvert+1)*sizeof(BezTriple),
@@ -851,7 +851,7 @@ static int V24_IpoCurve_setDriverObject( V24_C_IpoCurve * self, PyObject * arg )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 					      "This IpoCurve does not have an active driver" );
 
-	if(!BPy_Object_Check(arg) )
+	if(!V24_BPy_Object_Check(arg) )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 					      "expected an object argument" );
 	ipo->driver->ob = ((V24_BPy_Object *)arg)->object;

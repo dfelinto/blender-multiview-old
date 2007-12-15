@@ -561,7 +561,7 @@ static PyMethodDef V24_BPy_Texture_methods[] = {
 /* Python V24_Texture_Type attributes get/set structure:                         */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Texture_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"animFrames",
 	 (getter)V24_Texture_getAnimFrames, (setter)V24_Texture_setAnimFrames,
 	 "Number of frames of a movie to use",
@@ -1562,7 +1562,7 @@ static int V24_Texture_setImage( V24_BPy_Texture * self, PyObject * value )
 {
 	Image *blimg = NULL;
 
-	if( !BPy_Image_Check (value) )
+	if( !V24_BPy_Image_Check (value) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					      "expected an Image" );
 	blimg = V24_Image_FromPyObject( value );
@@ -1955,7 +1955,7 @@ static int V24_Texture_setIpo( V24_BPy_Texture * self, PyObject * value )
 	/* if parameter is not None, check for valid Ipo */
 
 	if ( value != Py_None ) {
-		if ( !BPy_Ipo_Check( value ) )
+		if ( !V24_BPy_Ipo_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 					      	"expected an Ipo object" );
 
@@ -2478,7 +2478,7 @@ static PyObject *V24_Texture_evaluate( V24_BPy_Texture * self, PyObject * value 
 	float vec[4];
 	/* int rgbnor; dont use now */
 	
-	if (VectorObject_Check(value)) {
+	if (V24_VectorObject_Check(value)) {
 		if(((V24_VectorObject *)value)->size < 3)
 			return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 					"expects a 3D vector object or a tuple of 3 numbers");
@@ -2505,7 +2505,7 @@ static PyObject *V24_Texture_evaluate( V24_BPy_Texture * self, PyObject * value 
 	vec[2] = texres.tb;
 	vec[3] = texres.tin;
 	
-	return newVectorObject(vec, 4, Py_NEW);
+	return V24_newVectorObject(vec, 4, Py_NEW);
 }
 
 static PyObject *V24_Texture_copy( V24_BPy_Texture * self )

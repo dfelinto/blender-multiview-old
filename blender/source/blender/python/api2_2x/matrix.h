@@ -35,9 +35,9 @@
 
 #include <Python.h>
 
-extern PyTypeObject matrix_Type;
+extern PyTypeObject V24_matrix_Type;
 
-#define MatrixObject_Check(v) ((v)->ob_type == &matrix_Type)
+#define V24_MatrixObject_Check(v) ((v)->ob_type == &V24_matrix_Type)
 
 typedef float **ptRow;
 typedef struct V24__Matrix {
@@ -75,6 +75,6 @@ PyObject *V24_Matrix_Resize4x4( V24_MatrixObject * self );
 PyObject *V24_Matrix_toEuler( V24_MatrixObject * self );
 PyObject *V24_Matrix_toQuat( V24_MatrixObject * self );
 PyObject *V24_Matrix_copy( V24_MatrixObject * self );
-PyObject *newMatrixObject(float *mat, int rowSize, int colSize, int type);
+PyObject *V24_newMatrixObject(float *mat, int rowSize, int colSize, int type);
 
 #endif				/* EXPP_matrix_H */

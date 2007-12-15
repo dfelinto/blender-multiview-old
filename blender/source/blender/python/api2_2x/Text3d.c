@@ -319,7 +319,7 @@ static int setFloatAttrClamp( V24_BPy_Text3d *self, PyObject *value, void *type 
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Text3d_getseters[] = {
-	GENERIC_LIB_GETSETATTR, /* didnt have any attributes, at least lets have the standard ID attrs */
+	V24_GENERIC_LIB_GETSETATTR, /* didnt have any attributes, at least lets have the standard ID attrs */
 	{"activeFrame",
 	 (getter)V24_Text3d_getActiveFrame, (setter)V24_Text3d_setActiveFrame,
 	 "the index of the active text frame",
@@ -787,7 +787,7 @@ static PyObject* V24_Text3d_setDrawMode(V24_BPy_Text3d* self,PyObject* args)
 			return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"unable to parse list" ) );	
 		}
-		if( !BPy_Constant_Check(v)){
+		if( !V24_BPy_Constant_Check(v)){
 			Py_DECREF(listObject);
 			Py_DECREF(v);
 			self->curve->flag = temp;
@@ -1065,7 +1065,7 @@ static PyObject *V24_Text3d_setAlignment( V24_BPy_Text3d * self, PyObject * args
 	V24_BPy_constant *constant;
 	int value;
 
-	if( !PyArg_ParseTuple( args, "O!", &constant_Type, &constant ) )
+	if( !PyArg_ParseTuple( args, "O!", &V24_constant_Type, &constant ) )
 		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected module constant" ) );
 

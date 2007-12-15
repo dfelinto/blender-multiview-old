@@ -841,7 +841,7 @@ static int setFlagAttr( V24_BPy_Camera *self, PyObject *value, void *type )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Camera_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"type",
 	 (getter)V24_Camera_getType, (setter)V24_Camera_setType,
 	 "camera type \"persp\" or \"ortho\"",

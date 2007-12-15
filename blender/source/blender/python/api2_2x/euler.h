@@ -36,9 +36,9 @@
 
 #include <Python.h>
 
-extern PyTypeObject euler_Type;
+extern PyTypeObject V24_euler_Type;
 
-#define EulerObject_Check(v) ((v)->ob_type == &euler_Type)
+#define V24_EulerObject_Check(v) ((v)->ob_type == &V24_euler_Type)
 
 typedef struct {
 	PyObject_VAR_HEAD 
@@ -62,6 +62,6 @@ PyObject *V24_Euler_ToMatrix( V24_EulerObject * self );
 PyObject *V24_Euler_ToQuat( V24_EulerObject * self );
 PyObject *V24_Euler_Rotate( V24_EulerObject * self, PyObject *args );
 PyObject *V24_Euler_copy( V24_EulerObject * self, PyObject *args );
-PyObject *newEulerObject( float *eul, int type );
+PyObject *V24_newEulerObject( float *eul, int type );
 
 #endif				/* EXPP_euler_h */

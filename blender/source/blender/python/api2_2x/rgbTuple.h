@@ -49,8 +49,8 @@ typedef struct {
 /*****************************************************************************/
 /* Python API function prototypes for the rgbTuple helper module.            */
 /*****************************************************************************/
-PyObject *rgbTuple_New( float *rgb[3] );
-PyObject *rgbTuple_getCol( V24_BPy_rgbTuple * self );
-int rgbTuple_setCol( V24_BPy_rgbTuple * self, PyObject * args );
+PyObject *V24_rgbTuple_New( float *rgb[3] );
+PyObject *V24_rgbTuple_getCol( V24_BPy_rgbTuple * self );
+int V24_rgbTuple_setCol( V24_BPy_rgbTuple * self, PyObject * args );
 
 #endif				/* EXPP_rgbTuple_H */

@@ -38,51 +38,51 @@
    Blender */
 
 /*****************************************************************************/
-/* Python rgbTuple_Type callback function prototypes:                        */
+/* Python V24_rgbTuple_Type callback function prototypes:                        */
 /*****************************************************************************/
-static PyObject *rgbTuple_getAttr( V24_BPy_rgbTuple * self, char *name );
-static int rgbTuple_setAttr( V24_BPy_rgbTuple * self, char *name, PyObject * v );
-static PyObject *rgbTuple_repr( V24_BPy_rgbTuple * self );
+static PyObject *V24_rgbTuple_getAttr( V24_BPy_rgbTuple * self, char *name );
+static int V24_rgbTuple_setAttr( V24_BPy_rgbTuple * self, char *name, PyObject * v );
+static PyObject *V24_rgbTuple_repr( V24_BPy_rgbTuple * self );
 
-static int rgbTupleLength( void );
+static int V24_rgbTupleLength( void );
 
-static PyObject *rgbTupleSubscript( V24_BPy_rgbTuple * self, PyObject * key );
-static int rgbTupleAssSubscript( V24_BPy_rgbTuple * self, PyObject * who,
+static PyObject *V24_rgbTupleSubscript( V24_BPy_rgbTuple * self, PyObject * key );
+static int V24_rgbTupleAssSubscript( V24_BPy_rgbTuple * self, PyObject * who,
 				 PyObject * cares );
 
-static PyObject *rgbTupleItem( V24_BPy_rgbTuple * self, int i );
-static int rgbTupleAssItem( V24_BPy_rgbTuple * self, int i, PyObject * ob );
-static PyObject *rgbTupleSlice( V24_BPy_rgbTuple * self, int begin, int end );
-static int rgbTupleAssSlice( V24_BPy_rgbTuple * self, int begin, int end,
+static PyObject *V24_rgbTupleItem( V24_BPy_rgbTuple * self, int i );
+static int V24_rgbTupleAssItem( V24_BPy_rgbTuple * self, int i, PyObject * ob );
+static PyObject *V24_rgbTupleSlice( V24_BPy_rgbTuple * self, int begin, int end );
+static int V24_rgbTupleAssSlice( V24_BPy_rgbTuple * self, int begin, int end,
 			     PyObject * seq );
 
 /*****************************************************************************/
-/* Python rgbTuple_Type Mapping Methods table:                               */
+/* Python V24_rgbTuple_Type Mapping Methods table:                               */
 /*****************************************************************************/
-static PyMappingMethods rgbTupleAsMapping = {
-	( inquiry ) rgbTupleLength,	/* mp_length        */
-	( binaryfunc ) rgbTupleSubscript,	/* mp_subscript     */
-	( objobjargproc ) rgbTupleAssSubscript,	/* mp_ass_subscript */
+static PyMappingMethods V24_rgbTupleAsMapping = {
+	( inquiry ) V24_rgbTupleLength,	/* mp_length        */
+	( binaryfunc ) V24_rgbTupleSubscript,	/* mp_subscript     */
+	( objobjargproc ) V24_rgbTupleAssSubscript,	/* mp_ass_subscript */
 };
 
 /*****************************************************************************/
-/* Python rgbTuple_Type Sequence Methods table:                              */
+/* Python V24_rgbTuple_Type Sequence Methods table:                              */
 /*****************************************************************************/
-static PySequenceMethods rgbTupleAsSequence = {
-	( inquiry ) rgbTupleLength,	/* sq_length */
+static PySequenceMethods V24_rgbTupleAsSequence = {
+	( inquiry ) V24_rgbTupleLength,	/* sq_length */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
-	( intargfunc ) rgbTupleItem,	/* sq_item */
-	( intintargfunc ) rgbTupleSlice,	/* sq_slice */
-	( intobjargproc ) rgbTupleAssItem,	/* sq_ass_item */
-	( intintobjargproc ) rgbTupleAssSlice,	/* sq_ass_slice       */
+	( intargfunc ) V24_rgbTupleItem,	/* sq_item */
+	( intintargfunc ) V24_rgbTupleSlice,	/* sq_slice */
+	( intobjargproc ) V24_rgbTupleAssItem,	/* sq_ass_item */
+	( intintobjargproc ) V24_rgbTupleAssSlice,	/* sq_ass_slice       */
 	0,0,0
 };
 
 /*****************************************************************************/
-/* Python rgbTuple_Type structure definition:                                */
+/* Python V24_rgbTuple_Type structure definition:                                */
 /*****************************************************************************/
-PyTypeObject rgbTuple_Type = {
+PyTypeObject V24_rgbTuple_Type = {
 	PyObject_HEAD_INIT( NULL ) 
 	0,	/* ob_size */
 	"rgbTuple",		/* tp_name */
@@ -91,13 +91,13 @@ PyTypeObject rgbTuple_Type = {
 	/* methods */
 	0,			/* tp_dealloc */
 	0,			/* tp_print */
-	( getattrfunc ) rgbTuple_getAttr,	/* tp_getattr */
-	( setattrfunc ) rgbTuple_setAttr,	/* tp_setattr */
+	( getattrfunc ) V24_rgbTuple_getAttr,	/* tp_getattr */
+	( setattrfunc ) V24_rgbTuple_setAttr,	/* tp_setattr */
 	0,			/* tp_compare */
-	( reprfunc ) rgbTuple_repr,	/* tp_repr */
+	( reprfunc ) V24_rgbTuple_repr,	/* tp_repr */
 	0,			/* tp_as_number */
-	&rgbTupleAsSequence,	/* tp_as_sequence */
-	&rgbTupleAsMapping,	/* tp_as_mapping */
+	&V24_rgbTupleAsSequence,	/* tp_as_sequence */
+	&V24_rgbTupleAsMapping,	/* tp_as_mapping */
 	0,			/* tp_as_hash */
 	0, 0, 0, 0, 0, Py_TPFLAGS_DEFAULT,
 	0,			/* tp_doc */
@@ -127,11 +127,11 @@ PyTypeObject rgbTuple_Type = {
 };
 
 /*****************************************************************************/
-/* Function:              rgbTuple_New                                       */
+/* Function:              V24_rgbTuple_New                                       */
 /*****************************************************************************/
-PyObject *rgbTuple_New( float *rgb[3] )
+PyObject *V24_rgbTuple_New( float *rgb[3] )
 {
-	V24_BPy_rgbTuple *rgbTuple = PyObject_NEW( V24_BPy_rgbTuple, &rgbTuple_Type );
+	V24_BPy_rgbTuple *rgbTuple = PyObject_NEW( V24_BPy_rgbTuple, &V24_rgbTuple_Type );
 
 	if( rgbTuple == NULL )
 		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
@@ -145,25 +145,25 @@ PyObject *rgbTuple_New( float *rgb[3] )
 }
 
 /*****************************************************************************/
-/* Functions:      rgbTuple_getCol and rgbTuple_setCol                       */
+/* Functions:      V24_rgbTuple_getCol and V24_rgbTuple_setCol                       */
 /* Description:    These functions get/set rgb color triplet values.  The    */
 /*                 get function returns a tuple, the set one accepts three   */
 /*                 floats (separated or in a tuple) as arguments.            */
 /*****************************************************************************/
-PyObject *rgbTuple_getCol( V24_BPy_rgbTuple * self )
+PyObject *V24_rgbTuple_getCol( V24_BPy_rgbTuple * self )
 {
 	return Py_BuildValue( "[fff]", *(self->rgb[0]),
 			 			*(self->rgb[1]), *(self->rgb[2]));
 }
 
-int rgbTuple_setCol( V24_BPy_rgbTuple * self, PyObject * args )
+int V24_rgbTuple_setCol( V24_BPy_rgbTuple * self, PyObject * args )
 {
 	int ok = 0;
 	int i;
 	float num[3]={0,0,0};
 
 	/*
-	 * since rgbTuple_getCol() returns a list, be sure we accept a list
+	 * since V24_rgbTuple_getCol() returns a list, be sure we accept a list
 	 * as valid input
 	 */
 
@@ -194,12 +194,12 @@ int rgbTuple_setCol( V24_BPy_rgbTuple * self, PyObject * args )
 }
 
 /*****************************************************************************/
-/* Function:    rgbTuple_getAttr                                             */
+/* Function:    V24_rgbTuple_getAttr                                             */
 /* Description: This is a callback function for the V24_BPy_rgbTuple type. It is */
 /*              the function that accesses V24_BPy_rgbTuple member variables and */
 /*              methods.                                                     */
 /*****************************************************************************/
-static PyObject *rgbTuple_getAttr( V24_BPy_rgbTuple * self, char *name )
+static PyObject *V24_rgbTuple_getAttr( V24_BPy_rgbTuple * self, char *name )
 {
 	int i;
 
@@ -220,11 +220,11 @@ static PyObject *rgbTuple_getAttr( V24_BPy_rgbTuple * self, char *name )
 }
 
 /*****************************************************************************/
-/* Function:    rgbTuple_setAttr                                             */
+/* Function:    V24_rgbTuple_setAttr                                             */
 /* Description: This is a callback function for the V24_BPy_rgbTuple type. It is */
 /*              the function that changes V24_BPy_rgbTuple member variables.     */
 /*****************************************************************************/
-static int rgbTuple_setAttr( V24_BPy_rgbTuple * self, char *name, PyObject * v )
+static int V24_rgbTuple_setAttr( V24_BPy_rgbTuple * self, char *name, PyObject * v )
 {
 	float value;
 
@@ -255,18 +255,18 @@ static int rgbTuple_setAttr( V24_BPy_rgbTuple * self, char *name, PyObject * v )
 /*             These functions provide code to access rgbTuple objects as    */
 /*             mappings.                                                     */
 /*****************************************************************************/
-static int rgbTupleLength( void )
+static int V24_rgbTupleLength( void )
 {
 	return 3;
 }
 
-static PyObject *rgbTupleSubscript( V24_BPy_rgbTuple * self, PyObject * key )
+static PyObject *V24_rgbTupleSubscript( V24_BPy_rgbTuple * self, PyObject * key )
 {
 	char *name = NULL;
 	int i;
 
 	if( PyNumber_Check( key ) )
-		return rgbTupleItem( self, ( int ) PyInt_AsLong( key ) );
+		return V24_rgbTupleItem( self, ( int ) PyInt_AsLong( key ) );
 
 	if( !PyArg_ParseTuple( key, "s", &name ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
@@ -284,7 +284,7 @@ static PyObject *rgbTupleSubscript( V24_BPy_rgbTuple * self, PyObject * key )
 	return PyFloat_FromDouble( (double)(*( self->rgb[i] )) );
 }
 
-static int rgbTupleAssSubscript( V24_BPy_rgbTuple * self, PyObject * key,
+static int V24_rgbTupleAssSubscript( V24_BPy_rgbTuple * self, PyObject * key,
 				 PyObject * v )
 {
 	char *name = NULL;
@@ -295,7 +295,7 @@ static int rgbTupleAssSubscript( V24_BPy_rgbTuple * self, PyObject * key,
 					    "value to assign must be a number" );
 
 	if( PyNumber_Check( key ) )
-		return rgbTupleAssItem( self, ( int ) PyInt_AsLong( key ), v );
+		return V24_rgbTupleAssItem( self, ( int ) PyInt_AsLong( key ), v );
 
 	if( !PyArg_Parse( key, "s", &name ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
@@ -320,7 +320,7 @@ static int rgbTupleAssSubscript( V24_BPy_rgbTuple * self, PyObject * key,
 /*             These functions provide code to access rgbTuple objects as    */
 /*             sequences.                                                    */
 /*****************************************************************************/
-static PyObject *rgbTupleItem( V24_BPy_rgbTuple * self, int i )
+static PyObject *V24_rgbTupleItem( V24_BPy_rgbTuple * self, int i )
 {
 	if( i < 0 || i >= 3 )
 		return V24_EXPP_ReturnPyObjError( PyExc_IndexError,
@@ -329,7 +329,7 @@ static PyObject *rgbTupleItem( V24_BPy_rgbTuple * self, int i )
 	return PyFloat_FromDouble( (long)(*( self->rgb[i] )) );
 }
 
-static PyObject *rgbTupleSlice( V24_BPy_rgbTuple * self, int begin, int end )
+static PyObject *V24_rgbTupleSlice( V24_BPy_rgbTuple * self, int begin, int end )
 {
 	PyObject *list;
 	int count;
@@ -350,7 +350,7 @@ static PyObject *rgbTupleSlice( V24_BPy_rgbTuple * self, int begin, int end )
 	return list;
 }
 
-static int rgbTupleAssItem( V24_BPy_rgbTuple * self, int i, PyObject * ob )
+static int V24_rgbTupleAssItem( V24_BPy_rgbTuple * self, int i, PyObject * ob )
 {
 	if( i < 0 || i >= 3 )
 		return V24_EXPP_ReturnIntError( PyExc_IndexError,
@@ -366,7 +366,7 @@ static int rgbTupleAssItem( V24_BPy_rgbTuple * self, int i, PyObject * ob )
 	return 0;
 }
 
-static int rgbTupleAssSlice( V24_BPy_rgbTuple * self, int begin, int end,
+static int V24_rgbTupleAssSlice( V24_BPy_rgbTuple * self, int begin, int end,
 			     PyObject * seq )
 {
 	int count;
@@ -404,11 +404,11 @@ static int rgbTupleAssSlice( V24_BPy_rgbTuple * self, int begin, int end,
 }
 
 /*****************************************************************************/
-/* Function:    rgbTuple_repr                                                */
+/* Function:    V24_rgbTuple_repr                                                */
 /* Description: This is a callback function for the V24_BPy_rgbTuple type. It    */
 /*              builds a meaninful string to represent rgbTuple objects.     */
 /*****************************************************************************/
-static PyObject *rgbTuple_repr( V24_BPy_rgbTuple * self )
+static PyObject *V24_rgbTuple_repr( V24_BPy_rgbTuple * self )
 {
 	float r, g, b;
 

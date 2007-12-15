@@ -57,8 +57,8 @@ typedef struct {
 
 extern PyTypeObject V24_ModSeq_Type;
 extern PyTypeObject V24_Modifier_Type;
-#define BPy_ModSeq_Check(v)  ((v)->ob_type == &V24_ModSeq_Type)
-#define BPy_Modifier_Check(v)  ((v)->ob_type == &V24_Modifier_Type)
+#define V24_BPy_ModSeq_Check(v)  ((v)->ob_type == &V24_ModSeq_Type)
+#define V24_BPy_Modifier_Check(v)  ((v)->ob_type == &V24_Modifier_Type)
 
 /* 
  *   prototypes

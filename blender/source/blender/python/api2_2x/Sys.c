@@ -149,7 +149,7 @@ struct PyMethodDef M_sys_methods[] = {
 
 static PyObject *g_sysmodule = NULL;	/* pointer to Blender.sys module */
 
-PyObject *sys_Init( void )
+PyObject *V24_sys_Init( void )
 {
 	PyObject *submodule, *dict;
 

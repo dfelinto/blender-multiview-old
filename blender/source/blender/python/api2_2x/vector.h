@@ -35,9 +35,9 @@
 
 #include <Python.h>
 
-extern PyTypeObject vector_Type;
+extern PyTypeObject V24_vector_Type;
 
-#define VectorObject_Check(v) ((v)->ob_type == &vector_Type)
+#define V24_VectorObject_Check(v) ((v)->ob_type == &V24_vector_Type)
 
 typedef struct {
 	PyObject_VAR_HEAD 
@@ -56,6 +56,6 @@ PyObject *V24_Vector_Resize4D( V24_VectorObject * self );
 PyObject *V24_Vector_toPoint( V24_VectorObject * self );
 PyObject *V24_Vector_ToTrackQuat( V24_VectorObject * self, PyObject * args );
 PyObject *V24_Vector_copy( V24_VectorObject * self );
-PyObject *newVectorObject(float *vec, int size, int type);
+PyObject *V24_newVectorObject(float *vec, int size, int type);
 
 #endif				/* EXPP_vector_h */

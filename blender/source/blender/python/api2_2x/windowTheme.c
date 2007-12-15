@@ -136,11 +136,11 @@ static void V24_ThemeSpace_dealloc( V24_BPy_ThemeSpace * self )
 
 #define ELSEIF_TSP_RGBA(attr)\
 	else if (!strcmp(name, #attr))\
-		attrib = charRGBA_New(&tsp->attr[0]);
+		attrib = V24_charRGBA_New(&tsp->attr[0]);
 
 /* Example: ELSEIF_TSP_RGBA(back) becomes:
  * else if (!strcmp(name, "back")
- * 	attrib = charRGBA_New(&tsp->back[0])
+ * 	attrib = V24_charRGBA_New(&tsp->back[0])
  */
 
 static PyObject *V24_ThemeSpace_getAttr( V24_BPy_ThemeSpace * self, char *name )
@@ -230,7 +230,7 @@ static int V24_ThemeSpace_setAttr( V24_BPy_ThemeSpace * self, char *name,
 	int ret = -1;
 
 	if( !strcmp( name, "back" ) )
-		attrib = charRGBA_New( &tsp->back[0] );
+		attrib = V24_charRGBA_New( &tsp->back[0] );
 		ELSEIF_TSP_RGBA( text )
 		ELSEIF_TSP_RGBA( text_hi )
 		ELSEIF_TSP_RGBA( header )
@@ -311,11 +311,11 @@ static int V24_ThemeSpace_setAttr( V24_BPy_ThemeSpace * self, char *name,
 			return V24_EXPP_ReturnIntError( PyExc_MemoryError,
 						    "couldn't create tuple!" );
 
-		pyret = charRGBA_setCol( ( V24_BPy_charRGBA * ) attrib, valtuple );
+		pyret = V24_charRGBA_setCol( ( V24_BPy_charRGBA * ) attrib, valtuple );
 		Py_DECREF( valtuple );
 
 		if( pyret == Py_None ) {
-			Py_DECREF( Py_None );	/* was increfed by charRGBA_setCol */
+			Py_DECREF( Py_None );	/* was increfed by V24_charRGBA_setCol */
 			ret = 0;
 		}
 
@@ -378,11 +378,11 @@ static void V24_ThemeUI_dealloc( V24_BPy_ThemeUI * self )
 
 #define ELSEIF_TUI_RGBA(attr)\
 	else if (!strcmp(name, #attr))\
-		attrib = charRGBA_New(&tui->attr[0]);
+		attrib = V24_charRGBA_New(&tui->attr[0]);
 
 /* Example: ELSEIF_TUI_RGBA(outline) becomes:
  * else if (!strcmp(name, "outline")
- * 	attr = charRGBA_New(&tui->outline[0])
+ * 	attr = V24_charRGBA_New(&tui->outline[0])
  */
 
 static PyObject *V24_ThemeUI_getAttr( V24_BPy_ThemeUI * self, char *name )
@@ -435,7 +435,7 @@ static int V24_ThemeUI_setAttr( V24_BPy_ThemeUI * self, char *name, PyObject * v
 	int ret = -1;
 
 	if( !strcmp( name, "outline" ) )
-		attrib = charRGBA_New( &tui->outline[0] );
+		attrib = V24_charRGBA_New( &tui->outline[0] );
 	ELSEIF_TUI_RGBA( neutral )
 		ELSEIF_TUI_RGBA( action )
 		ELSEIF_TUI_RGBA( setting )
@@ -486,11 +486,11 @@ static int V24_ThemeUI_setAttr( V24_BPy_ThemeUI * self, char *name, PyObject * v
 			return V24_EXPP_ReturnIntError( PyExc_MemoryError,
 						    "couldn't create tuple!" );
 
-		pyret = charRGBA_setCol( ( V24_BPy_charRGBA * ) attrib, valtuple );
+		pyret = V24_charRGBA_setCol( ( V24_BPy_charRGBA * ) attrib, valtuple );
 		Py_DECREF( valtuple );
 
 		if( pyret == Py_None ) {
-			Py_DECREF( Py_None );	/* was increfed by charRGBA_setCol */
+			Py_DECREF( Py_None );	/* was increfed by V24_charRGBA_setCol */
 			ret = 0;
 		}
 

@@ -53,12 +53,12 @@ extern void editbones_to_armature (ListBase *list, Object *ob);
 
 //------------------------ERROR CODES---------------------------------
 //This is here just to make me happy and to have more consistant error strings :)
-static const char sBoneDictError[] = "ArmatureType.bones - Error: ";
-static const char sBoneDictBadArgs[] = "ArmatureType.bones - Bad Arguments: ";
-static const char sArmatureError[] = "ArmatureType - Error: ";
-static const char sArmatureBadArgs[] = "ArmatureType - Bad Arguments: ";
-static const char sModuleError[] = "Blender.Armature - Error: ";
-static const char sModuleBadArgs[] = "Blender.Armature - Bad Arguments: ";
+static const char V24_sBoneDictError[] = "ArmatureType.bones - Error: ";
+static const char V24_sBoneDictBadArgs[] = "ArmatureType.bones - Bad Arguments: ";
+static const char V24_sArmatureError[] = "ArmatureType - Error: ";
+static const char V24_sArmatureBadArgs[] = "ArmatureType - Bad Arguments: ";
+static const char V24_sModuleError[] = "Blender.Armature - Error: ";
+static const char V24_sModuleBadArgs[] = "Blender.Armature - Bad Arguments: ";
 
 PyObject * arm_weakref_callback_weakref_dealloc(PyObject *self, PyObject *weakref);
 /* python callable */
@@ -267,15 +267,15 @@ static int V24_BonesDict_SetItem(V24_BPy_BonesDict *self, PyObject *key, PyObjec
 
 	if (!self->editmode_flag)
 		return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-				sBoneDictBadArgs,  "You must call makeEditable() first");
+				V24_sBoneDictBadArgs,  "You must call makeEditable() first");
 	
 	if (!key_str)
 		return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-				sBoneDictBadArgs,  "The key must be the name of an editbone");
+				V24_sBoneDictBadArgs,  "The key must be the name of an editbone");
 	
-	if (value && !EditBoneObject_Check(value))
+	if (value && !V24_EditBoneObject_Check(value))
 		return V24_EXPP_intError(PyExc_AttributeError, "%s%s",
-				sBoneDictBadArgs,  "Can only assign editbones as values");
+				V24_sBoneDictBadArgs,  "Can only assign editbones as values");
 	
 	//parse value for assignment
 	if (value){ /* we know this must be an editbone from the above check */
@@ -308,7 +308,7 @@ static int V24_BonesDict_SetItem(V24_BPy_BonesDict *self, PyObject *key, PyObjec
 				((V24_BPy_EditBone*)value)->editbone = NULL;
 				MEM_freeN(editbone);
 					return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-							sBoneDictBadArgs,  "The 'connected' flag is set but the bone has no parent!");
+							V24_sBoneDictBadArgs,  "The 'connected' flag is set but the bone has no parent!");
 			}else{
 				VECCOPY(editbone->head, editbone->parent->tail);
 			}
@@ -322,7 +322,7 @@ static int V24_BonesDict_SetItem(V24_BPy_BonesDict *self, PyObject *key, PyObjec
 			((V24_BPy_EditBone*)value)->editbone = NULL;
 			BLI_freelinkN(&self->editbones, editbone);
 			return V24_EXPP_intError(PyExc_RuntimeError, "%s%s", 
-					sBoneDictError,  "Unable to access dictionary!");
+					V24_sBoneDictError,  "Unable to access dictionary!");
 		}
 	}else {
 		//they are trying to delete the bone using 'del'
@@ -330,7 +330,7 @@ static int V24_BonesDict_SetItem(V24_BPy_BonesDict *self, PyObject *key, PyObjec
 
 		if (!editbone_for_deletion)
 			return V24_EXPP_intError(PyExc_KeyError, "%s%s%s%s", 
-					sBoneDictError,  "The key: ", key_str, " is not present in this dictionary!");
+					V24_sBoneDictError,  "The key: ", key_str, " is not present in this dictionary!");
 
 		/*first kill the datastruct then remove the item from the dict
 		and wait for GC to pick it up.
@@ -350,7 +350,7 @@ static int V24_BonesDict_SetItem(V24_BPy_BonesDict *self, PyObject *key, PyObjec
 		BLI_freelinkN(&self->editbones, editbone_for_deletion->editbone);
 		if(PyDict_DelItem(self->editbonesMap, key) == -1)
 			return V24_EXPP_intError(PyExc_RuntimeError, "%s%s", 
-					sBoneDictError,  "Unable to access dictionary!");
+					V24_sBoneDictError,  "Unable to access dictionary!");
 	}
 	return 0;
 }
@@ -443,7 +443,7 @@ static PyObject *V24_PyBonesDict_FromPyArmature(V24_BPy_Armature *py_armature)
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s", 
-		sBoneDictError, "Failed to create class");
+		V24_sBoneDictError, "Failed to create class");
 }
 
 //######################### V24_Armature_Type #############################
@@ -467,7 +467,7 @@ static PyObject *V24_Armature_makeEditable(V24_BPy_Armature *self)
 
 AttributeError:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "The armature cannot be placed manually in editmode before you call makeEditable()!");
+		V24_sArmatureBadArgs, "The armature cannot be placed manually in editmode before you call makeEditable()!");
 }
 
 //------------------------Armature.update()
@@ -494,7 +494,7 @@ static PyObject *V24_Armature_update(V24_BPy_Armature *self)
 
 AttributeError:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "The armature must be linked to an object before you can save changes!");
+		V24_sArmatureBadArgs, "The armature must be linked to an object before you can save changes!");
 }
 
 //------------------------Armature.__copy__()
@@ -535,7 +535,7 @@ static int V24_Armature_setAutoIK(V24_BPy_Armature *self, PyObject *value, void 
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects True or False");
+		V24_sArmatureBadArgs, "Expects True or False");
 }
 //------------------------Armature.layers (getter)
 static PyObject *V24_Armature_getLayers(V24_BPy_Armature *self, void *closure)
@@ -629,7 +629,7 @@ static int V24_Armature_setMirrorEdit(V24_BPy_Armature *self, PyObject *value, v
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects True or False");
+		V24_sArmatureBadArgs, "Expects True or False");
 }
 //------------------------Armature.drawType (getter)
 static PyObject *V24_Armature_getDrawType(V24_BPy_Armature *self, void *closure)
@@ -648,7 +648,7 @@ static PyObject *V24_Armature_getDrawType(V24_BPy_Armature *self, void *closure)
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sArmatureError, "drawType: ", "Internal failure!");
+		V24_sArmatureError, "drawType: ", "Internal failure!");
 }
 //------------------------Armature.drawType (setter)
 static int V24_Armature_setDrawType(V24_BPy_Armature *self, PyObject *value, void *closure)
@@ -657,7 +657,7 @@ static int V24_Armature_setDrawType(V24_BPy_Armature *self, PyObject *value, voi
 	long numeric_value;
 
 	if(value){
-		if(BPy_Constant_Check(value)){
+		if(V24_BPy_Constant_Check(value)){
 			name = PyDict_GetItemString(((V24_BPy_constant*)value)->dict, "name");
 			if (!STREQ2(PyString_AsString(name), "OCTAHEDRON", "STICK") &&
 				!STREQ2(PyString_AsString(name), "BBONE", "ENVELOPE"))
@@ -674,11 +674,11 @@ static int V24_Armature_setDrawType(V24_BPy_Armature *self, PyObject *value, voi
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects module constant");
+		V24_sArmatureBadArgs, "Expects module constant");
 
 ValueError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Argument must be the constant OCTAHEDRON, STICK, BBONE, or ENVELOPE");
+		V24_sArmatureBadArgs, "Argument must be the constant OCTAHEDRON, STICK, BBONE, or ENVELOPE");
 }
 //------------------------Armature.ghostStep (getter)
 static PyObject *V24_Armature_getStep(V24_BPy_Armature *self, void *closure)
@@ -703,11 +703,11 @@ static int V24_Armature_setStep(V24_BPy_Armature *self, PyObject *value, void *c
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects Integer");
+		V24_sArmatureBadArgs, "Expects Integer");
 
 ValueError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Argument must fall within 1-20");
+		V24_sArmatureBadArgs, "Argument must fall within 1-20");
 }
 //------------------------Armature.ghost (getter)
 static PyObject *V24_Armature_getGhost(V24_BPy_Armature *self, void *closure)
@@ -732,11 +732,11 @@ static int V24_Armature_setGhost(V24_BPy_Armature *self, PyObject *value, void *
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects Integer");
+		V24_sArmatureBadArgs, "Expects Integer");
 
 ValueError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Argument must fall within 0-30");
+		V24_sArmatureBadArgs, "Argument must fall within 0-30");
 }
 //------------------------Armature.drawNames (getter)
 static PyObject *V24_Armature_getDrawNames(V24_BPy_Armature *self, void *closure)
@@ -764,7 +764,7 @@ static int V24_Armature_setDrawNames(V24_BPy_Armature *self, PyObject *value, vo
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects True or False");
+		V24_sArmatureBadArgs, "Expects True or False");
 }
 //------------------------Armature.drawAxes (getter)
 static PyObject *V24_Armature_getDrawAxes(V24_BPy_Armature *self, void *closure)
@@ -792,7 +792,7 @@ static int V24_Armature_setDrawAxes(V24_BPy_Armature *self, PyObject *value, voi
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects True or False");
+		V24_sArmatureBadArgs, "Expects True or False");
 }
 //------------------------Armature.delayDeform (getter)
 static PyObject *V24_Armature_getDelayDeform(V24_BPy_Armature *self, void *closure)
@@ -820,7 +820,7 @@ static int V24_Armature_setDelayDeform(V24_BPy_Armature *self, PyObject *value, 
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects True or False");
+		V24_sArmatureBadArgs, "Expects True or False");
 }
 //------------------------Armature.restPosition (getter)
 static PyObject *V24_Armature_getRestPosition(V24_BPy_Armature *self, void *closure)
@@ -848,7 +848,7 @@ static int V24_Armature_setRestPosition(V24_BPy_Armature *self, PyObject *value,
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects True or False");
+		V24_sArmatureBadArgs, "Expects True or False");
 }
 //------------------------Armature.envelopes (getter)
 static PyObject *V24_Armature_getEnvelopes(V24_BPy_Armature *self, void *closure)
@@ -876,7 +876,7 @@ static int V24_Armature_setEnvelopes(V24_BPy_Armature *self, PyObject *value, vo
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects True or False");
+		V24_sArmatureBadArgs, "Expects True or False");
 }
 //------------------------Armature.vertexGroups (getter)
 static PyObject *V24_Armature_getVertexGroups(V24_BPy_Armature *self, void *closure)
@@ -904,7 +904,7 @@ static int V24_Armature_setVertexGroups(V24_BPy_Armature *self, PyObject *value,
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureBadArgs, "Expects True or False");
+		V24_sArmatureBadArgs, "Expects True or False");
 }
 
 //------------------------Armature.bones (getter)
@@ -923,7 +923,7 @@ static int V24_Armature_setBoneDict(V24_BPy_Armature *self, PyObject *value, voi
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sArmatureError, "You are not allowed to change the .Bones attribute");
+		V24_sArmatureError, "You are not allowed to change the .Bones attribute");
 }
 
 //------------------------Bone.layerMask (get)
@@ -975,7 +975,7 @@ static PyMethodDef V24_BPy_Armature_methods[] = {
 //------------------------tp_getset
 //This contains methods for attributes that require checking
 static PyGetSetDef V24_BPy_Armature_getset[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"bones", (getter)V24_Armature_getBoneDict, (setter)V24_Armature_setBoneDict, 
 		"The armature's Bone dictionary", NULL},
 	{"vertexGroups", (getter)V24_Armature_getVertexGroups, (setter)V24_Armature_setVertexGroups, 
@@ -1036,7 +1036,7 @@ static PyObject *V24_Armature_new(PyTypeObject *type, PyObject *args, PyObject *
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sArmatureError, " __new__: ", "couldn't create Armature Data in Blender");
+		V24_sArmatureError, " __new__: ", "couldn't create Armature Data in Blender");
 }
 //------------------------tp_init
 //This methods does initialization of the new object
@@ -1061,7 +1061,7 @@ static int Armature_init(V24_BPy_Armature *self, PyObject *args, PyObject *kwds)
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s", 
-		sArmatureBadArgs, " __init__: ", "Expects string(name)");
+		V24_sArmatureBadArgs, " __init__: ", "Expects string(name)");
 }
 
 
@@ -1267,11 +1267,11 @@ static PyObject *V24_M_Armature_Get(PyObject * self, PyObject * args)
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sModuleError, "Get(): ", "Internal Error Ocurred");
+		V24_sModuleError, "Get(): ", "Internal Error Ocurred");
 
 AttributeError:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s%s", 
-		sModuleBadArgs, "Get(): ", "- Expects (optional) string sequence");
+		V24_sModuleBadArgs, "Get(): ", "- Expects (optional) string sequence");
 }
 
 
@@ -1371,7 +1371,7 @@ PyObject *V24_Armature_CreatePyObject(struct bArmature *armature)
 	/* see if we alredy have it */
 	for (i=0; i< PyList_Size(armlist); i++) { 
 		py_armature = (V24_BPy_Armature *)PyWeakref_GetObject(PyList_GET_ITEM(armlist, i));
-		if (BPy_Armature_Check(py_armature) && py_armature->armature == armature) {
+		if (V24_BPy_Armature_Check(py_armature) && py_armature->armature == armature) {
 			Py_INCREF(py_armature);
 			/*printf("reusing armature\n");*/
 			return (PyObject *)py_armature;
@@ -1408,7 +1408,7 @@ PyObject *V24_Armature_CreatePyObject(struct bArmature *armature)
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sModuleError, "V24_Armature_CreatePyObject: ", "Internal Error Ocurred");
+		V24_sModuleError, "V24_Armature_CreatePyObject: ", "Internal Error Ocurred");
 }
 //-----------------(internal)
 //Converts a PyArmature to a bArmature

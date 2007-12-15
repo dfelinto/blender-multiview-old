@@ -39,7 +39,7 @@
 extern PyTypeObject V24_BezTriple_Type;
 
 /* type check macro */
-#define BPy_BezTriple_Check(o) \
+#define V24_BPy_BezTriple_Check(o) \
  ( (o)->ob_type == &V24_BezTriple_Type)
 
 /****************************************************************************
@@ -58,7 +58,7 @@ typedef struct {
 
 PyObject *V24_BezTriple_CreatePyObject( BezTriple * bzt );
 BezTriple *V24_BezTriple_FromPyObject( PyObject * pyobj );
-PyObject *newBezTriple( float *args );
+PyObject *V24_newBezTriple( float *args );
 PyObject *V24_BezTriple_Init( void );
 
 #endif				/* EXPP_BEZTRIPLE_H */

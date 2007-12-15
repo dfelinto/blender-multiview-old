@@ -35,9 +35,9 @@
 
 #include <Python.h>
 
-extern PyTypeObject point_Type;
+extern PyTypeObject V24_point_Type;
 
-#define PointObject_Check(v) ((v)->ob_type == &point_Type)
+#define V24_PointObject_Check(v) ((v)->ob_type == &V24_point_Type)
 
 typedef struct {
 	PyObject_VAR_HEAD 
@@ -62,6 +62,6 @@ blender (stored in blend_data). This is an either/or struct not both*/
 //prototypes
 PyObject *V24_Point_Zero( V24_PointObject * self );
 PyObject *V24_Point_toVector(V24_PointObject * self);
-PyObject *newPointObject(float *coord, int size, int type);
+PyObject *V24_newPointObject(float *coord, int size, int type);
 
 #endif				/* EXPP_point_h */

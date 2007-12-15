@@ -39,7 +39,7 @@
 
 extern PyTypeObject V24_Effect_Type;
 
-#define BPy_Effect_Check(v) ((v)->ob_type==&V24_Effect_Type)
+#define V24_BPy_Effect_Check(v) ((v)->ob_type==&V24_Effect_Type)
 
 /* Python V24_BPy_Effect structure definition */
 typedef struct {

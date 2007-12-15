@@ -71,7 +71,7 @@ PyObject *V24_Quaternion_ToEuler(V24_QuaternionObject * self)
 	for(x = 0; x < 3; x++) {
 		eul[x] *= (180 / (float)Py_PI);
 	}
-	return newEulerObject(eul, Py_NEW);
+	return V24_newEulerObject(eul, Py_NEW);
 }
 //----------------------------Quaternion.toMatrix()------------------
 //return the quat as a matrix
@@ -80,7 +80,7 @@ PyObject *V24_Quaternion_ToMatrix(V24_QuaternionObject * self)
 	float mat[9] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
 	QuatToMat3(self->quat, (float (*)[3]) mat);
 
-	return newMatrixObject(mat, 3, 3, Py_NEW);
+	return V24_newMatrixObject(mat, 3, 3, Py_NEW);
 }
 //----------------------------Quaternion.normalize()----------------
 //normalize the axis of rotation of [theta,vector]
@@ -144,7 +144,7 @@ PyObject *V24_Quaternion_Conjugate(V24_QuaternionObject * self)
 //return a copy of the quat
 PyObject *V24_Quaternion_copy(V24_QuaternionObject * self)
 {
-	return newQuaternionObject(self->quat, Py_NEW);	
+	return V24_newQuaternionObject(self->quat, Py_NEW);	
 }
 
 //----------------------------dealloc()(internal) ------------------
@@ -202,7 +202,7 @@ static PyObject *V24_Quaternion_getattr(V24_QuaternionObject * self, char *name)
 			V24_EXPP_FloatsAreEqual(vec[2], 0.0f, 10) ){
 			vec[0] = 1.0f;
 		}
-		return (PyObject *) newVectorObject(vec, 3, Py_NEW);
+		return (PyObject *) V24_newVectorObject(vec, 3, Py_NEW);
 	}
 	if(STREQ(name, "wrapped")){
 		if(self->wrapped == Py_WRAP)
@@ -270,7 +270,7 @@ static PyObject* V24_Quaternion_richcmpr(PyObject *objectA, PyObject *objectB, i
 	V24_QuaternionObject *quatA = NULL, *quatB = NULL;
 	int result = 0;
 
-	if (!QuaternionObject_Check(objectA) || !QuaternionObject_Check(objectB)){
+	if (!V24_QuaternionObject_Check(objectA) || !V24_QuaternionObject_Check(objectB)){
 		if (comparison_type == Py_NE){
 			return V24_EXPP_incr_ret(Py_True); 
 		}else{
@@ -425,7 +425,7 @@ static PyObject *V24_Quaternion_add(PyObject * q1, PyObject * q2)
 		quat[x] = quat1->quat[x] + quat2->quat[x];
 	}
 
-	return newQuaternionObject(quat, Py_NEW);
+	return V24_newQuaternionObject(quat, Py_NEW);
 }
 //------------------------obj - obj------------------------------
 //subtraction
@@ -446,7 +446,7 @@ static PyObject *V24_Quaternion_sub(PyObject * q1, PyObject * q2)
 		quat[x] = quat1->quat[x] - quat2->quat[x];
 	}
 
-	return newQuaternionObject(quat, Py_NEW);
+	return V24_newQuaternionObject(quat, Py_NEW);
 }
 //------------------------obj * obj------------------------------
 //mulplication
@@ -477,7 +477,7 @@ static PyObject *V24_Quaternion_mul(PyObject * q1, PyObject * q2)
 			for(x = 0; x < 4; x++) {
 				quat[x] = quat2->quat[x] * scalar;
 			}
-			return newQuaternionObject(quat, Py_NEW);
+			return V24_newQuaternionObject(quat, Py_NEW);
 		}
 	}else{
 		if(quat2->coerced_object){
@@ -494,15 +494,15 @@ static PyObject *V24_Quaternion_mul(PyObject * q1, PyObject * q2)
 				for(x = 0; x < 4; x++) {
 					quat[x] = quat1->quat[x] * scalar;
 				}
-				return newQuaternionObject(quat, Py_NEW);
-			}else if(VectorObject_Check(quat2->coerced_object)){  //QUAT * VEC
+				return V24_newQuaternionObject(quat, Py_NEW);
+			}else if(V24_VectorObject_Check(quat2->coerced_object)){  //QUAT * VEC
 				vec = (V24_VectorObject*)quat2->coerced_object;
 				if(vec->size != 3){
 					return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 						"Quaternion multiplication: only 3D vector rotations currently supported\n");
 				}
 				return quat_rotation((PyObject*)quat1, (PyObject*)vec);
-			}else if(PointObject_Check(quat2->coerced_object)){  //QUAT * POINT
+			}else if(V24_PointObject_Check(quat2->coerced_object)){  //QUAT * POINT
 				pt = (V24_PointObject*)quat2->coerced_object;
 				if(pt->size != 3){
 					return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
@@ -531,10 +531,10 @@ static PyObject *V24_Quaternion_mul(PyObject * q1, PyObject * q2)
  then call vector.multiply(vector, scalar_cast_as_vector)*/
 static int V24_Quaternion_coerce(PyObject ** q1, PyObject ** q2)
 {
-	if(VectorObject_Check(*q2) || PyFloat_Check(*q2) || PyInt_Check(*q2) ||
-			PointObject_Check(*q2)) {
+	if(V24_VectorObject_Check(*q2) || PyFloat_Check(*q2) || PyInt_Check(*q2) ||
+			V24_PointObject_Check(*q2)) {
 		PyObject *coerced = V24_EXPP_incr_ret(*q2);
-		*q2 = newQuaternionObject(NULL,Py_NEW);
+		*q2 = V24_newQuaternionObject(NULL,Py_NEW);
 		((V24_QuaternionObject*)*q2)->coerced_object = coerced;
 		Py_INCREF (*q1);
 		return 0;
@@ -580,7 +580,7 @@ static PyNumberMethods V24_Quaternion_NumMethods = {
 
 };
 //------------------PY_OBECT DEFINITION--------------------------
-PyTypeObject quaternion_Type = {
+PyTypeObject V24_quaternion_Type = {
 PyObject_HEAD_INIT(NULL)		//tp_head
 	0,								//tp_internal
 	"quaternion",						//tp_name
@@ -629,18 +629,18 @@ PyObject_HEAD_INIT(NULL)		//tp_head
 	0,								//tp_weaklist
 	0								//tp_del
 };
-//------------------------newQuaternionObject (internal)-------------
+//------------------------V24_newQuaternionObject (internal)-------------
 //creates a new quaternion object
 /*pass Py_WRAP - if vector is a WRAPPER for data allocated by BLENDER
  (i.e. it was allocated elsewhere by MEM_mallocN())
   pass Py_NEW - if vector is not a WRAPPER and managed by PYTHON
  (i.e. it must be created here with PyMEM_malloc())*/
-PyObject *newQuaternionObject(float *quat, int type)
+PyObject *V24_newQuaternionObject(float *quat, int type)
 {
 	V24_QuaternionObject *self;
 	int x;
 	
-	self = PyObject_NEW(V24_QuaternionObject, &quaternion_Type);
+	self = PyObject_NEW(V24_QuaternionObject, &V24_quaternion_Type);
 	self->data.blend_data = NULL;
 	self->data.py_data = NULL;
 	self->coerced_object = NULL;

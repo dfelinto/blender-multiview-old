@@ -179,7 +179,7 @@ static PyMethodDef V24_BPy_Ipo_methods[] = {
 /* Python V24_BPy_Ipo attributes get/set structure:                              */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Ipo_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"curves",
 	 (getter)V24_Ipo_getCurves, (setter)NULL,
 	 "Ipo curves",
@@ -792,7 +792,7 @@ static PyObject *V24_M_Ipo_Get( PyObject * self_unused, PyObject * args )
 /*****************************************************************************/
 static PyObject *V24_M_Ipo_Recalc( PyObject * self_unused, PyObject * value )
 {
-	if( !BPy_IpoCurve_Check(value) )
+	if( !V24_BPy_IpoCurve_Check(value) )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected Ipo curve argument" );
 

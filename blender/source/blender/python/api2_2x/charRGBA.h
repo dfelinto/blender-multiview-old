@@ -47,13 +47,13 @@ typedef struct {
 
 } V24_BPy_charRGBA;
 
-extern PyTypeObject charRGBA_Type;
+extern PyTypeObject V24_charRGBA_Type;
 
 /*****************************************************************************/
 /* Python API function prototypes for the charRGBA helper module.            */
 /*****************************************************************************/
-PyObject *charRGBA_New( char *rgba );
-PyObject *charRGBA_getCol( V24_BPy_charRGBA * self );
-PyObject *charRGBA_setCol( V24_BPy_charRGBA * self, PyObject * args );
+PyObject *V24_charRGBA_New( char *rgba );
+PyObject *V24_charRGBA_getCol( V24_BPy_charRGBA * self );
+PyObject *V24_charRGBA_setCol( V24_BPy_charRGBA * self, PyObject * args );
 
 #endif				/* EXPP_charRGBA_H */

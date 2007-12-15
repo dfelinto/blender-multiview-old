@@ -77,7 +77,7 @@ PyObject *V24_Vector_toPoint(V24_VectorObject * self)
 		coord[i] = self->vec[i];
 	}
 	
-	return newPointObject(coord, self->size, Py_NEW);
+	return V24_newPointObject(coord, self->size, Py_NEW);
 }
 /*----------------------------Vector.zero() ----------------------
   set the vector data to 0,0,0 */
@@ -271,7 +271,7 @@ PyObject *V24_Vector_ToTrackQuat( V24_VectorObject * self, PyObject * args )
 	vec[1] = -self->vec[1];
 	vec[2] = -self->vec[2];
 
-	return newQuaternionObject(vectoquat(vec, track, up), Py_NEW);
+	return V24_newQuaternionObject(vectoquat(vec, track, up), Py_NEW);
 }
 
 
@@ -280,7 +280,7 @@ PyObject *V24_Vector_ToTrackQuat( V24_VectorObject * self, PyObject * args )
   return a copy of the vector */
 PyObject *V24_Vector_copy(V24_VectorObject * self)
 {
-	return newVectorObject(self->vec, self->size, Py_NEW);
+	return V24_newVectorObject(self->vec, self->size, Py_NEW);
 }
 
 /*----------------------------dealloc()(internal) ----------------
@@ -423,10 +423,10 @@ static PyObject *V24_Vector_add(PyObject * v1, PyObject * v2)
 
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 	
-	if VectorObject_Check(v1)
+	if V24_VectorObject_Check(v1)
 		vec1= (V24_VectorObject *)v1;
 	
-	if VectorObject_Check(v2)
+	if V24_VectorObject_Check(v2)
 		vec2= (V24_VectorObject *)v2;
 	
 	/* make sure v1 is always the vector */
@@ -439,10 +439,10 @@ static PyObject *V24_Vector_add(PyObject * v1, PyObject * v2)
 		for(i = 0; i < vec1->size; i++) {
 			vec[i] = vec1->vec[i] +	vec2->vec[i];
 		}
-		return newVectorObject(vec, vec1->size, Py_NEW);
+		return V24_newVectorObject(vec, vec1->size, Py_NEW);
 	}
 	
-	if(PointObject_Check(v2)){  /*VECTOR + POINT*/
+	if(V24_PointObject_Check(v2)){  /*VECTOR + POINT*/
 		/*Point translation*/
 		V24_PointObject *pt = (V24_PointObject*)v2;
 		
@@ -454,7 +454,7 @@ static PyObject *V24_Vector_add(PyObject * v1, PyObject * v2)
 			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 				"Vector addition: arguments are the wrong size....\n");
 		}
-		return newPointObject(vec, vec1->size, Py_NEW);
+		return V24_newPointObject(vec, vec1->size, Py_NEW);
 	}
 	
 	return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
@@ -469,10 +469,10 @@ static PyObject *V24_Vector_iadd(PyObject * v1, PyObject * v2)
 
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 	
-	if VectorObject_Check(v1)
+	if V24_VectorObject_Check(v1)
 		vec1= (V24_VectorObject *)v1;
 	
-	if VectorObject_Check(v2)
+	if V24_VectorObject_Check(v2)
 		vec2= (V24_VectorObject *)v2;
 	
 	/* make sure v1 is always the vector */
@@ -489,7 +489,7 @@ static PyObject *V24_Vector_iadd(PyObject * v1, PyObject * v2)
 		return v1;
 	}
 	
-	if(PointObject_Check(v2)){  /*VECTOR + POINT*/
+	if(V24_PointObject_Check(v2)){  /*VECTOR + POINT*/
 		/*Point translation*/
 		V24_PointObject *pt = (V24_PointObject*)v2;
 		
@@ -517,7 +517,7 @@ static PyObject *V24_Vector_sub(PyObject * v1, PyObject * v2)
 	float vec[4];
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 
-	if (!VectorObject_Check(v1) || !VectorObject_Check(v2))
+	if (!V24_VectorObject_Check(v1) || !V24_VectorObject_Check(v2))
 		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector subtraction: arguments not valid for this operation....\n");
 	
@@ -532,7 +532,7 @@ static PyObject *V24_Vector_sub(PyObject * v1, PyObject * v2)
 		vec[i] = vec1->vec[i] -	vec2->vec[i];
 	}
 
-	return newVectorObject(vec, vec1->size, Py_NEW);
+	return V24_newVectorObject(vec, vec1->size, Py_NEW);
 }
 
 /*------------------------obj -= obj------------------------------
@@ -542,7 +542,7 @@ static PyObject *V24_Vector_isub(PyObject * v1, PyObject * v2)
 	int i, size;
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 
-	if (!VectorObject_Check(v1) || !VectorObject_Check(v2))
+	if (!V24_VectorObject_Check(v1) || !V24_VectorObject_Check(v2))
 		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector subtraction: arguments not valid for this operation....\n");
 	
@@ -568,10 +568,10 @@ static PyObject *V24_Vector_mul(PyObject * v1, PyObject * v2)
 {
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 	
-	if VectorObject_Check(v1)
+	if V24_VectorObject_Check(v1)
 		vec1= (V24_VectorObject *)v1;
 	
-	if VectorObject_Check(v2)
+	if V24_VectorObject_Check(v2)
 		vec2= (V24_VectorObject *)v2;
 	
 	/* make sure v1 is always the vector */
@@ -605,15 +605,15 @@ static PyObject *V24_Vector_mul(PyObject * v1, PyObject * v2)
 		for(i = 0; i < vec1->size; i++) {
 			vec[i] = vec1->vec[i] *	scalar;
 		}
-		return newVectorObject(vec, vec1->size, Py_NEW);
+		return V24_newVectorObject(vec, vec1->size, Py_NEW);
 		
-	} else if (MatrixObject_Check(v2)) {
+	} else if (V24_MatrixObject_Check(v2)) {
 		/* VEC * MATRIX */
 		if (v1==v2) /* mat*vec, we have swapped the order */
-			return column_vector_multiplication((V24_MatrixObject*)v2, vec1);
+			return V24_column_vector_multiplication((V24_MatrixObject*)v2, vec1);
 		else /* vec*mat */
-			return row_vector_multiplication(vec1, (V24_MatrixObject*)v2);
-	} else if (QuaternionObject_Check(v2)) {
+			return V24_row_vector_multiplication(vec1, (V24_MatrixObject*)v2);
+	} else if (V24_QuaternionObject_Check(v2)) {
 		V24_QuaternionObject *quat = (V24_QuaternionObject*)v2;
 		if(vec1->size != 3)
 			return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
@@ -646,7 +646,7 @@ static PyObject *V24_Vector_imul(PyObject * v1, PyObject * v2)
 		Py_INCREF( v1 );
 		return v1;
 		
-	} else if (MatrixObject_Check(v2)) {
+	} else if (V24_MatrixObject_Check(v2)) {
 		float vecCopy[4];
 		int x,y, size = vec->size;
 		V24_MatrixObject *mat= (V24_MatrixObject*)v2;
@@ -689,7 +689,7 @@ static PyObject *V24_Vector_div(PyObject * v1, PyObject * v2)
 	float vec[4], scalar;
 	V24_VectorObject *vec1 = NULL;
 	
-	if(!VectorObject_Check(v1)) /* not a vector */
+	if(!V24_VectorObject_Check(v1)) /* not a vector */
 		return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 			"Vector division: Vector must be divided by a float\n");
 	
@@ -709,7 +709,7 @@ static PyObject *V24_Vector_div(PyObject * v1, PyObject * v2)
 	for(i = 0; i < size; i++) {
 		vec[i] = vec1->vec[i] /	scalar;
 	}
-	return newVectorObject(vec, size, Py_NEW);
+	return V24_newVectorObject(vec, size, Py_NEW);
 }
 
 /*------------------------obj / obj------------------------------
@@ -720,7 +720,7 @@ static PyObject *V24_Vector_idiv(PyObject * v1, PyObject * v2)
 	float scalar;
 	V24_VectorObject *vec1 = NULL;
 	
-	/*if(!VectorObject_Check(v1))
+	/*if(!V24_VectorObject_Check(v1))
 		return V24_EXPP_ReturnIntError(PyExc_TypeError, 
 			"Vector division: Vector must be divided by a float\n");*/
 	
@@ -754,7 +754,7 @@ static PyObject *V24_Vector_neg(V24_VectorObject *self)
 		vec[i] = -self->vec[i];
 	}
 
-	return newVectorObject(vec, self->size, Py_NEW);
+	return V24_newVectorObject(vec, self->size, Py_NEW);
 }
 /*------------------------coerce(obj, obj)-----------------------
   coercion of unknown types to type V24_VectorObject for numeric protocols
@@ -803,7 +803,7 @@ PyObject* V24_Vector_richcmpr(PyObject *objectA, PyObject *objectB, int comparis
 	float epsilon = .000001f;
 	double lenA,lenB;
 
-	if (!VectorObject_Check(objectA) || !VectorObject_Check(objectB)){
+	if (!V24_VectorObject_Check(objectA) || !V24_VectorObject_Check(objectB)){
 		if (comparison_type == Py_NE){
 			return V24_EXPP_incr_ret(Py_True); 
 		}else{
@@ -1124,7 +1124,7 @@ static PyGetSetDef V24_Vector_getseters[] = {
  vec*mat and mat*vec both get sent to V24_Vector_mul and it neesd to sort out the order
 */
 
-PyTypeObject vector_Type = {
+PyTypeObject V24_vector_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
@@ -1207,16 +1207,16 @@ PyTypeObject vector_Type = {
 };
 
 
-/*------------------------newVectorObject (internal)-------------
+/*------------------------V24_newVectorObject (internal)-------------
   creates a new vector object
   pass Py_WRAP - if vector is a WRAPPER for data allocated by BLENDER
  (i.e. it was allocated elsewhere by MEM_mallocN())
   pass Py_NEW - if vector is not a WRAPPER and managed by PYTHON
  (i.e. it must be created here with PyMEM_malloc())*/
-PyObject *newVectorObject(float *vec, int size, int type)
+PyObject *V24_newVectorObject(float *vec, int size, int type)
 {
 	int i;
-	V24_VectorObject *self = PyObject_NEW(V24_VectorObject, &vector_Type);
+	V24_VectorObject *self = PyObject_NEW(V24_VectorObject, &V24_vector_Type);
 	
 	if(size > 4 || size < 2)
 		return NULL;

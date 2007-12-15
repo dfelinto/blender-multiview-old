@@ -37,7 +37,7 @@
 #include <DNA_scene_types.h>
 
 extern PyTypeObject V24_TimeLine_Type;
-#define BPy_TimeLine_Check (v) \
+#define V24_BPy_TimeLine_Check (v) \
     ((v)->ob_type == &V24_TimeLine_Type)	
 
 typedef struct {

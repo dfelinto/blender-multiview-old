@@ -379,7 +379,7 @@ static PyMethodDef V24_BPy_Lamp_methods[] = {
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Lamp_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"bias",
 	 (getter)V24_Lamp_getBias, (setter)V24_Lamp_setBias,
 	 "Lamp shadow map sampling bias",
@@ -834,7 +834,7 @@ PyObject *V24_Lamp_CreatePyObject( Lamp * lamp )
 	rgb[1] = &lamp->g;
 	rgb[2] = &lamp->b;
 
-	pylamp->color = ( V24_BPy_rgbTuple * ) rgbTuple_New( rgb );
+	pylamp->color = ( V24_BPy_rgbTuple * ) V24_rgbTuple_New( rgb );
 	Py_INCREF(pylamp->color);
 	
 	return ( PyObject * ) pylamp;
@@ -964,7 +964,7 @@ static PyObject *V24_Lamp_getQuad2( V24_BPy_Lamp * self )
 
 static PyObject *V24_Lamp_getCol( V24_BPy_Lamp * self )
 {
-	return rgbTuple_getCol( self->color );
+	return V24_rgbTuple_getCol( self->color );
 }
 
 static int V24_Lamp_setType( V24_BPy_Lamp * self, PyObject * value )
@@ -1175,7 +1175,7 @@ static int V24_Lamp_setComponent( V24_BPy_Lamp * self, PyObject * value,
 
 static int V24_Lamp_setCol( V24_BPy_Lamp * self, PyObject * args )
 {
-	return rgbTuple_setCol( self->color, args );
+	return V24_rgbTuple_setCol( self->color, args );
 }
 
 /* lamp.addScriptLink */

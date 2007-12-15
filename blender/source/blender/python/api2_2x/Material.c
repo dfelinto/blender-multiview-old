@@ -865,7 +865,7 @@ static PyMethodDef V24_BPy_Material_methods[] = {
 /*****************************************************************************/
 
 static PyGetSetDef V24_BPy_Material_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"add",
 	 (getter)V24_Material_getAdd, (setter)V24_Material_setAdd,
 	 "Strength of the add effect",
@@ -1314,11 +1314,11 @@ PyObject *V24_Material_CreatePyObject( struct Material *mat )
 	sss[1] = &mat->sss_col[1];
 	sss[2] = &mat->sss_col[2];
 
-	pymat->col = ( V24_BPy_rgbTuple * ) rgbTuple_New( col );
-	pymat->amb = ( V24_BPy_rgbTuple * ) rgbTuple_New( amb );
-	pymat->spec = ( V24_BPy_rgbTuple * ) rgbTuple_New( spec );
-	pymat->mir = ( V24_BPy_rgbTuple * ) rgbTuple_New( mir );
-	pymat->sss = ( V24_BPy_rgbTuple * ) rgbTuple_New( sss );
+	pymat->col = ( V24_BPy_rgbTuple * ) V24_rgbTuple_New( col );
+	pymat->amb = ( V24_BPy_rgbTuple * ) V24_rgbTuple_New( amb );
+	pymat->spec = ( V24_BPy_rgbTuple * ) V24_rgbTuple_New( spec );
+	pymat->mir = ( V24_BPy_rgbTuple * ) V24_rgbTuple_New( mir );
+	pymat->sss = ( V24_BPy_rgbTuple * ) V24_rgbTuple_New( sss );
 
 	return ( PyObject * ) pymat;
 }
@@ -1350,28 +1350,28 @@ static PyObject *V24_Material_getMode( V24_BPy_Material * self )
 
 static PyObject *V24_Material_getRGBCol( V24_BPy_Material * self )
 {
-	return rgbTuple_getCol( self->col );
+	return V24_rgbTuple_getCol( self->col );
 }
 
 /*
 static PyObject *Material_getAmbCol(V24_BPy_Material *self)
 {
-	return rgbTuple_getCol(self->amb);
+	return V24_rgbTuple_getCol(self->amb);
 }
 */
 static PyObject *V24_Material_getSpecCol( V24_BPy_Material * self )
 {
-	return rgbTuple_getCol( self->spec );
+	return V24_rgbTuple_getCol( self->spec );
 }
 
 static PyObject *V24_Material_getMirCol( V24_BPy_Material * self )
 {
-	return rgbTuple_getCol( self->mir );
+	return V24_rgbTuple_getCol( self->mir );
 }
 
 static PyObject *V24_Material_getSssCol( V24_BPy_Material * self )
 {
-	return rgbTuple_getCol( self->sss );
+	return V24_rgbTuple_getCol( self->sss );
 }
 
 static PyObject *V24_Material_getSpecShader( V24_BPy_Material * self )
@@ -1777,29 +1777,29 @@ static int V24_Material_setMode( V24_BPy_Material * self, PyObject * value )
 
 static int V24_Material_setRGBCol( V24_BPy_Material * self, PyObject * value )
 {
-	return rgbTuple_setCol( self->col, value );
+	return V24_rgbTuple_setCol( self->col, value );
 }
 
 /*
 static PyObject *Material_setAmbCol (V24_BPy_Material *self, PyObject * value )
 {
-	return rgbTuple_setCol(self->amb, value);
+	return V24_rgbTuple_setCol(self->amb, value);
 }
 */
 
 static int V24_Material_setSpecCol( V24_BPy_Material * self, PyObject * value )
 {
-	return rgbTuple_setCol( self->spec, value );
+	return V24_rgbTuple_setCol( self->spec, value );
 }
 
 static int V24_Material_setMirCol( V24_BPy_Material * self, PyObject * value )
 {
-	return rgbTuple_setCol( self->mir, value );
+	return V24_rgbTuple_setCol( self->mir, value );
 }
 
 static int V24_Material_setSssCol( V24_BPy_Material * self, PyObject * value )
 {
-	return rgbTuple_setCol( self->sss, value );
+	return V24_rgbTuple_setCol( self->sss, value );
 }
 
 static int V24_Material_setColorComponent( V24_BPy_Material * self, PyObject * value,
@@ -2521,7 +2521,7 @@ Material **V24_EXPP_newMaterialList_fromPyList( PyObject * list )
 
 		pymat = ( V24_BPy_Material * ) PySequence_GetItem( list, i );
 
-		if( BPy_Material_Check( ( PyObject * ) pymat ) ) {
+		if( V24_BPy_Material_Check( ( PyObject * ) pymat ) ) {
 			mat = pymat->material;
 			matlist[i] = mat;
 		} else if( ( PyObject * ) pymat == Py_None ) {

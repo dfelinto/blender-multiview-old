@@ -38,7 +38,7 @@
 /* The Main PyType Object defined in Main.c */
 extern PyTypeObject V24_LibBlockSeq_Type;
 
-#define BPy_LibBlockSeq_Check(v) \
+#define V24_BPy_LibBlockSeq_Check(v) \
     ((v)->ob_type == &V24_LibBlockSeq_Type)
 
 /* Main sequence, iterate on the libdatas listbase*/

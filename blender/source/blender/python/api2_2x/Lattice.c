@@ -706,7 +706,7 @@ static PyObject *V24_Lattice_getAxisType(V24_BPy_Lattice * self, void * type)
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Lattice_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"width", (getter)V24_Lattice_getWidth, (setter)NULL,
 	 "lattice U subdivision ", NULL},
 	{"height", (getter)V24_Lattice_getHeight, (setter)NULL,

@@ -46,9 +46,9 @@
 
 //------------------------ERROR CODES---------------------------------
 //This is here just to make me happy and to have more consistant error strings :)
-static const char sEditBoneError[] = "EditBone - Error: ";
+static const char V24_sEditBoneError[] = "EditBone - Error: ";
 // static const char sEditBoneBadArgs[] = "EditBone - Bad Arguments: ";
-static const char sBoneError[] = "Bone - Error: ";
+static const char V24_sBoneError[] = "Bone - Error: ";
 // static const char sBoneBadArgs[] = "Bone - Bad Arguments: ";
 
 //----------------------(internal)
@@ -97,7 +97,7 @@ static PyObject *V24_EditBone_hasParent(V24_BPy_EditBone *self)
 
 AttributeError:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".hasParent: ", "EditBone must be added to the armature first");
+		V24_sEditBoneError, ".hasParent: ", "EditBone must be added to the armature first");
 }
 //-------------------------EditBone.clearParent()
 static PyObject *V24_EditBone_clearParent(V24_BPy_EditBone *self)
@@ -112,7 +112,7 @@ static PyObject *V24_EditBone_clearParent(V24_BPy_EditBone *self)
 
 AttributeError:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".clearParent: ", "EditBone must be added to the armature first");
+		V24_sEditBoneError, ".clearParent: ", "EditBone must be added to the armature first");
 }
 //------------------ATTRIBUTE IMPLEMENTATION---------------------------
 //------------------------EditBone.name (get)
@@ -140,7 +140,7 @@ static int V24_EditBone_setName(V24_BPy_EditBone *self, PyObject *value, void *c
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".name: ", "expects a string");
+		V24_sEditBoneError, ".name: ", "expects a string");
 }
 //------------------------EditBone.roll (get)
 static PyObject *V24_EditBone_getRoll(V24_BPy_EditBone *self, void *closure)
@@ -168,15 +168,15 @@ static int V24_EditBone_setRoll(V24_BPy_EditBone *self, PyObject *value, void *c
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".roll: ", "expects a float");
+		V24_sEditBoneError, ".roll: ", "expects a float");
 }
 //------------------------EditBone.head (get)
 static PyObject *V24_EditBone_getHead(V24_BPy_EditBone *self, void *closure)
 {
 	if (self->editbone){
-		return newVectorObject(self->editbone->head, 3, Py_WRAP);
+		return V24_newVectorObject(self->editbone->head, 3, Py_WRAP);
 	}else{
-		return newVectorObject(self->head, 3, Py_NEW);
+		return V24_newVectorObject(self->head, 3, Py_NEW);
 	}
 }
 //------------------------EditBone.head (set)
@@ -185,7 +185,7 @@ static int V24_EditBone_setHead(V24_BPy_EditBone *self, PyObject *value, void *c
 	V24_VectorObject *vec = NULL;
 	int x;
 
-	if (!PyArg_Parse(value, "O!", &vector_Type, &vec))
+	if (!PyArg_Parse(value, "O!", &V24_vector_Type, &vec))
 		goto AttributeError;
 	if (vec->size != 3)
 		goto AttributeError2;
@@ -203,19 +203,19 @@ static int V24_EditBone_setHead(V24_BPy_EditBone *self, PyObject *value, void *c
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".head: ", "expects a Vector Object");
+		V24_sEditBoneError, ".head: ", "expects a Vector Object");
 
 AttributeError2:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".head: ", "Vector Object needs to be (x,y,z)");
+		V24_sEditBoneError, ".head: ", "Vector Object needs to be (x,y,z)");
 }
 //------------------------EditBone.tail (get)
 static PyObject *V24_EditBone_getTail(V24_BPy_EditBone *self, void *closure)
 {
 	if (self->editbone){
-		return newVectorObject(self->editbone->tail, 3, Py_WRAP);
+		return V24_newVectorObject(self->editbone->tail, 3, Py_WRAP);
 	}else{
-		return newVectorObject(self->tail, 3, Py_NEW);
+		return V24_newVectorObject(self->tail, 3, Py_NEW);
 	}
 }
 //------------------------EditBone.tail (set)
@@ -224,7 +224,7 @@ static int V24_EditBone_setTail(V24_BPy_EditBone *self, PyObject *value, void *c
 	V24_VectorObject *vec = NULL;
 	int x;
 
-	if (!PyArg_Parse(value, "O!", &vector_Type, &vec))
+	if (!PyArg_Parse(value, "O!", &V24_vector_Type, &vec))
 		goto AttributeError;
 	if (vec->size != 3)
 		goto AttributeError2;
@@ -242,11 +242,11 @@ static int V24_EditBone_setTail(V24_BPy_EditBone *self, PyObject *value, void *c
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".tail: ", "expects a Vector Object");
+		V24_sEditBoneError, ".tail: ", "expects a Vector Object");
 
 AttributeError2:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".tail: ", "Vector Object needs to be (x,y,z)");
+		V24_sEditBoneError, ".tail: ", "Vector Object needs to be (x,y,z)");
 }
 //------------------------EditBone.weight (get)
 static PyObject *V24_EditBone_getWeight(V24_BPy_EditBone *self, void *closure)
@@ -273,7 +273,7 @@ static int V24_EditBone_setWeight(V24_BPy_EditBone *self, PyObject *value, void 
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".weight: ", "expects a float");
+		V24_sEditBoneError, ".weight: ", "expects a float");
 }
 //------------------------EditBone.deform_dist (get)
 static PyObject *V24_EditBone_getDeform_dist(V24_BPy_EditBone *self, void *closure)
@@ -300,7 +300,7 @@ static int V24_EditBone_setDeform_dist(V24_BPy_EditBone *self, PyObject *value, 
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".deform_dist: ", "expects a float");
+		V24_sEditBoneError, ".deform_dist: ", "expects a float");
 }
 //------------------------EditBone.subdivisions (get)
 static PyObject *V24_EditBone_getSubdivisions(V24_BPy_EditBone *self, void *closure)
@@ -327,7 +327,7 @@ static int V24_EditBone_setSubdivisions(V24_BPy_EditBone *self, PyObject *value,
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".subdivisions: ", "expects a integer");
+		V24_sEditBoneError, ".subdivisions: ", "expects a integer");
 }
 //------------------------EditBone.options (get)
 static PyObject *V24_EditBone_getOptions(V24_BPy_EditBone *self, void *closure)
@@ -411,7 +411,7 @@ static PyObject *V24_EditBone_getOptions(V24_BPy_EditBone *self, void *closure)
 RuntimeError:
 	Py_XDECREF( list );
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sEditBoneError, ".options: ", "Internal failure!");
+		V24_sEditBoneError, ".options: ", "Internal failure!");
 }
 //----------------------(internal) V24_EditBone_CheckValidConstant
 static int V24_EditBone_CheckValidConstant(PyObject *constant)
@@ -419,7 +419,7 @@ static int V24_EditBone_CheckValidConstant(PyObject *constant)
 	PyObject *name = NULL;
 
 	if (constant){
-		if (BPy_Constant_Check(constant)){
+		if (V24_BPy_Constant_Check(constant)){
 			name = PyDict_GetItemString(((V24_BPy_constant*)constant)->dict, "name");
 			if (!name) 
 				return 0;
@@ -472,7 +472,7 @@ static int V24_EditBone_setOptions(V24_BPy_EditBone *self, PyObject *value, void
 			self->flag = new_flag;
 		}
 		return 0;
-	}else if (BPy_Constant_Check(value)){
+	}else if (V24_BPy_Constant_Check(value)){
 		if (!V24_EditBone_CheckValidConstant(value))
 			goto AttributeError2;
 		val = PyDict_GetItemString(((V24_BPy_constant*)value)->dict, "value");
@@ -501,13 +501,13 @@ static int V24_EditBone_setOptions(V24_BPy_EditBone *self, PyObject *value, void
 
 AttributeError1:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".options: ", "Expects a constant or list of constants");
+		V24_sEditBoneError, ".options: ", "Expects a constant or list of constants");
 AttributeError2:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".options: ", "Please use a constant defined in the Armature module");
+		V24_sEditBoneError, ".options: ", "Please use a constant defined in the Armature module");
 AttributeError3:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".options: ", "You can't connect to parent because no parent is set");
+		V24_sEditBoneError, ".options: ", "You can't connect to parent because no parent is set");
 }
 //------------------------EditBone.parent (get)
 static PyObject *V24_EditBone_getParent(V24_BPy_EditBone *self, void *closure)
@@ -541,10 +541,10 @@ static int V24_EditBone_setParent(V24_BPy_EditBone *self, PyObject *value, void 
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".parent: ", "expects a EditBone Object");
+		V24_sEditBoneError, ".parent: ", "expects a EditBone Object");
 AttributeError2:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".parent: ", "This object is not in the armature's bone list!");
+		V24_sEditBoneError, ".parent: ", "This object is not in the armature's bone list!");
 }
 //------------------------EditBone.matrix (get)
 static PyObject *V24_EditBone_getMatrix(V24_BPy_EditBone *self, void *closure)
@@ -560,7 +560,7 @@ static PyObject *V24_EditBone_getMatrix(V24_BPy_EditBone *self, void *closure)
 		vec_roll_to_mat3(axis, self->roll, boneMatrix);
 	}
 
-    return newMatrixObject((float*)boneMatrix, 3, 3, Py_NEW);
+    return V24_newMatrixObject((float*)boneMatrix, 3, 3, Py_NEW);
 }
 //------------------------EditBone.matrix (set)
 static int V24_EditBone_setMatrix(V24_BPy_EditBone *self, PyObject *value, void *closure)
@@ -568,7 +568,7 @@ static int V24_EditBone_setMatrix(V24_BPy_EditBone *self, PyObject *value, void 
 	PyObject *matrix;
 	float roll, length, vec[3], axis[3], mat3[3][3];
 
-	if (!PyArg_Parse(value, "O!", &matrix_Type, &matrix))
+	if (!PyArg_Parse(value, "O!", &V24_matrix_Type, &matrix))
 		goto AttributeError;
 
 	//make sure we have the right sizes
@@ -611,7 +611,7 @@ static int V24_EditBone_setMatrix(V24_BPy_EditBone *self, PyObject *value, void 
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".matrix: ", "expects a 3x3 or 4x4 Matrix Object");
+		V24_sEditBoneError, ".matrix: ", "expects a 3x3 or 4x4 Matrix Object");
 }
 //------------------------Bone.length (get)
 static PyObject *V24_EditBone_getLength(V24_BPy_EditBone *self, void *closure)
@@ -678,7 +678,7 @@ static int V24_EditBone_setHeadRadius(V24_BPy_EditBone *self, PyObject *value, v
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".headRadius: ", "expects a float");
+		V24_sEditBoneError, ".headRadius: ", "expects a float");
 }
 
 
@@ -706,7 +706,7 @@ static int V24_EditBone_setTailRadius(V24_BPy_EditBone *self, PyObject *value, v
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".tailRadius: ", "expects a float");
+		V24_sEditBoneError, ".tailRadius: ", "expects a float");
 }
 
 //------------------------Bone.layerMask (get)
@@ -853,7 +853,7 @@ static PyObject *V24_EditBone_new(PyTypeObject *type, PyObject *args, PyObject *
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sEditBoneError, " __new__: ", "Internal Error");
+		V24_sEditBoneError, " __new__: ", "Internal Error");
 }
 //------------------------tp_dealloc
 //This tells how to 'tear-down' our object when ref count hits 0
@@ -960,7 +960,7 @@ static PyObject *V24_Bone_getAllChildren(V24_BPy_Bone *self)
 	} else if (!V24_PyBone_ChildrenAsList(list, &self->bone->childbase)) {
 		Py_XDECREF(list);
 		V24_EXPP_objError(PyExc_RuntimeError, "%s%s", 
-				sBoneError, "Internal error trying to wrap blender bones!");
+				V24_sBoneError, "Internal error trying to wrap blender bones!");
 	}
 	return list;
 }
@@ -976,7 +976,7 @@ static PyObject *V24_Bone_getName(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setName(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.roll (get)
 static PyObject *V24_Bone_getRoll(V24_BPy_Bone *self, void *closure)
@@ -989,13 +989,13 @@ static PyObject *V24_Bone_getRoll(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setRoll(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.head (get)
 static PyObject *V24_Bone_getHead(V24_BPy_Bone *self, void *closure)
 {
-	PyObject *val1 = newVectorObject(self->bone->head, 3, Py_WRAP);
-	PyObject *val2 = newVectorObject(self->bone->arm_head, 3, Py_WRAP);
+	PyObject *val1 = V24_newVectorObject(self->bone->head, 3, Py_WRAP);
+	PyObject *val2 = V24_newVectorObject(self->bone->arm_head, 3, Py_WRAP);
 	PyObject *ret =	Py_BuildValue(
 			"{s:O, s:O}", "BONESPACE", val1, "ARMATURESPACE", val2);
 	
@@ -1007,13 +1007,13 @@ static PyObject *V24_Bone_getHead(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setHead(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.tail (get)
 static PyObject *V24_Bone_getTail(V24_BPy_Bone *self, void *closure)
 {
-	PyObject *val1 = newVectorObject(self->bone->tail, 3, Py_WRAP);
-	PyObject *val2 = newVectorObject(self->bone->arm_tail, 3, Py_WRAP);
+	PyObject *val1 = V24_newVectorObject(self->bone->tail, 3, Py_WRAP);
+	PyObject *val2 = V24_newVectorObject(self->bone->arm_tail, 3, Py_WRAP);
 	PyObject *ret =	Py_BuildValue("{s:O, s:O}", 
 		"BONESPACE", val1, "ARMATURESPACE", val2);
 	
@@ -1025,7 +1025,7 @@ static PyObject *V24_Bone_getTail(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setTail(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.weight (get)
 static PyObject *V24_Bone_getWeight(V24_BPy_Bone *self, void *closure)
@@ -1036,7 +1036,7 @@ static PyObject *V24_Bone_getWeight(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setWeight(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.deform_dist (get)
 static PyObject *V24_Bone_getDeform_dist(V24_BPy_Bone *self, void *closure)
@@ -1047,7 +1047,7 @@ static PyObject *V24_Bone_getDeform_dist(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setDeform_dist(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.subdivisions (get)
 static PyObject *V24_Bone_getSubdivisions(V24_BPy_Bone *self, void *closure)
@@ -1058,7 +1058,7 @@ static PyObject *V24_Bone_getSubdivisions(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setSubdivisions(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.connected (get)
 static PyObject *V24_Bone_getOptions(V24_BPy_Bone *self, void *closure)
@@ -1107,13 +1107,13 @@ static PyObject *V24_Bone_getOptions(V24_BPy_Bone *self, void *closure)
 RuntimeError:
 	Py_XDECREF(list);
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sBoneError, "getOptions(): ", "Internal failure!");
+		V24_sBoneError, "getOptions(): ", "Internal failure!");
 }
 //------------------------Bone.connected (set)
 static int V24_Bone_setOptions(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.parent (get)
 static PyObject *V24_Bone_getParent(V24_BPy_Bone *self, void *closure)
@@ -1127,7 +1127,7 @@ static PyObject *V24_Bone_getParent(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setParent(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.children (get)
 static PyObject *V24_Bone_getChildren(V24_BPy_Bone *self, void *closure)
@@ -1152,19 +1152,19 @@ RuntimeError:
 	Py_XDECREF(list);
 	Py_XDECREF(py_bone);
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s", 
-		sBoneError, "Internal error trying to wrap blender bones!");
+		V24_sBoneError, "Internal error trying to wrap blender bones!");
 }
 //------------------------Bone.children (set)
 static int V24_Bone_setChildren(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.matrix (get)
 static PyObject *V24_Bone_getMatrix(V24_BPy_Bone *self, void *closure)
 {
-	PyObject *val1 = newMatrixObject((float*)self->bone->bone_mat, 3,3, Py_WRAP);
-	PyObject *val2 = newMatrixObject((float*)self->bone->arm_mat, 4,4, Py_WRAP);
+	PyObject *val1 = V24_newMatrixObject((float*)self->bone->bone_mat, 3,3, Py_WRAP);
+	PyObject *val2 = V24_newMatrixObject((float*)self->bone->arm_mat, 4,4, Py_WRAP);
 	PyObject *ret =	Py_BuildValue("{s:O, s:O}", 
 		"BONESPACE", val1, "ARMATURESPACE", val2);
 	Py_DECREF(val1);
@@ -1177,7 +1177,7 @@ static PyObject *V24_Bone_getMatrix(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setMatrix(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 //------------------------Bone.length (get)
 static PyObject *V24_Bone_getLength(V24_BPy_Bone *self, void *closure)
@@ -1188,7 +1188,7 @@ static PyObject *V24_Bone_getLength(V24_BPy_Bone *self, void *closure)
 static int V24_Bone_setLength(V24_BPy_Bone *self, PyObject *value, void *closure)
 {  
   return V24_EXPP_intError(PyExc_ValueError, "%s%s", 
-		sBoneError, "You must first call .makeEditable() to edit the armature");
+		V24_sBoneError, "You must first call .makeEditable() to edit the armature");
 }
 
 //------------------------Bone.headRadius (get)
@@ -1216,7 +1216,7 @@ static int V24_Bone_setHeadRadius(V24_BPy_Bone *self, PyObject *value, void *clo
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".headRadius: ", "expects a float");
+		V24_sEditBoneError, ".headRadius: ", "expects a float");
 }
 
 //------------------------Bone.tailRadius (get)
@@ -1237,7 +1237,7 @@ static int V24_Bone_setTailRadius(V24_BPy_Bone *self, PyObject *value, void *clo
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sEditBoneError, ".headRadius: ", "expects a float");
+		V24_sEditBoneError, ".headRadius: ", "expects a float");
 }
 
 //------------------------Bone.layerMask (get)
@@ -1405,7 +1405,7 @@ PyObject *V24_PyEditBone_FromEditBone(struct EditBone *editbone)
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sEditBoneError, "V24_PyEditBone_FromEditBone: ", "Internal Error Ocurred");
+		V24_sEditBoneError, "V24_PyEditBone_FromEditBone: ", "Internal Error Ocurred");
 }
 //-----------------(internal)
 //Converts a struct Bone to a V24_BPy_Bone

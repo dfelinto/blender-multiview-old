@@ -63,11 +63,11 @@ extern void chan_calc_mat(bPoseChannel *chan);
 
 //------------------------ERROR CODES---------------------------------
 //This is here just to make me happy and to have more consistant error strings :)
-static const char sPoseError[] = "Pose - Error: ";
+static const char V24_sPoseError[] = "Pose - Error: ";
 //static const char sPoseBadArgs[] = "Pose - Bad Arguments: ";
-static const char sPoseBoneError[] = "PoseBone - Error: ";
+static const char V24_sPoseBoneError[] = "PoseBone - Error: ";
 //static const char sPoseBoneBadArgs[] = "PoseBone - Bad Arguments: ";
-static const char sPoseBonesDictError[] = "PoseBone - Error: ";
+static const char V24_sPoseBonesDictError[] = "PoseBone - Error: ";
 //static const char sPoseBonesDictBadArgs[] = "PoseBone - Bad Arguments: ";
 
 //################## V24_PoseBonesDict_Type (internal) ########################
@@ -277,7 +277,7 @@ static PyObject *V24_PyPoseBonesDict_FromPyPose(V24_BPy_Pose *py_pose)
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s", 
-		sPoseBonesDictError, "Failed to create class");
+		V24_sPoseBonesDictError, "Failed to create class");
 }
 
 //################## V24_Pose_Type ##########################
@@ -323,7 +323,7 @@ static int V24_Pose_setBoneDict(V24_BPy_Pose *self, PyObject *value, void *closu
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
-		sPoseError, "You are not allowed to change the .bones attribute");
+		V24_sPoseError, "You are not allowed to change the .bones attribute");
 }
 //------------------TYPE_OBECT IMPLEMENTATION---------------------------
 //------------------------tp_getset
@@ -463,7 +463,7 @@ static PyObject *V24_PoseBone_insertKey(V24_BPy_PoseBone *self, PyObject *args)
 				Py_DECREF(item);
 			}
 			self->posechannel->flag = (short)numeric_value;
-		}else if (BPy_Constant_Check(constants)){
+		}else if (V24_BPy_Constant_Check(constants)){
 			if (constants == V24_EXPP_GetModuleConstant("Blender.Object.Pose", "ROT")){
 				numeric_value |= POSE_ROT;
 			}else if (constants == V24_EXPP_GetModuleConstant("Blender.Object.Pose", "LOC")){
@@ -531,20 +531,20 @@ static PyObject *V24_PoseBone_insertKey(V24_BPy_PoseBone *self, PyObject *args)
 
 AttributeError:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".insertKey: ", "expects an Object, int, (optional) constants");
+		V24_sPoseBoneError, ".insertKey: ", "expects an Object, int, (optional) constants");
 AttributeError2:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".insertKey: ", "wrong object detected. \
+		V24_sPoseBoneError, ".insertKey: ", "wrong object detected. \
 		Use the object this pose came from");
 AttributeError3:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".insertKey: ", "Expects a constant or list of constants");
+		V24_sPoseBoneError, ".insertKey: ", "Expects a constant or list of constants");
 AttributeError4:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".insertKey: ", "Please use a constant defined in the Pose module");
+		V24_sPoseBoneError, ".insertKey: ", "Please use a constant defined in the Pose module");
 AttributeError5:
 	return V24_EXPP_objError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".insertKey: ", "You must set up and link an Action to this object first");
+		V24_sPoseBoneError, ".insertKey: ", "You must set up and link an Action to this object first");
 }
 //------------------------tp_methods
 //This contains a list of all methods the object contains
@@ -574,13 +574,13 @@ static int V24_PoseBone_setName(V24_BPy_PoseBone *self, PyObject *value, void *c
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".name: ", "expects a string");
+		V24_sPoseBoneError, ".name: ", "expects a string");
 }
 //------------------------PoseBone.loc (getter)
 //Gets the loc attribute
 static PyObject *V24_PoseBone_getLoc(V24_BPy_PoseBone *self, void *closure)
 {
-    return newVectorObject(self->posechannel->loc, 3, Py_WRAP);
+    return V24_newVectorObject(self->posechannel->loc, 3, Py_WRAP);
 }
 //------------------------PoseBone.loc (setter)
 //Sets the loc attribute
@@ -589,7 +589,7 @@ static int V24_PoseBone_setLoc(V24_BPy_PoseBone *self, PyObject *value, void *cl
 	V24_VectorObject *vec = NULL;
 	int x;
 
-	if (!PyArg_Parse(value, "O!", &vector_Type, &vec))
+	if (!PyArg_Parse(value, "O!", &V24_vector_Type, &vec))
 		goto AttributeError;
 	if (vec->size != 3)
 		goto AttributeError;
@@ -601,13 +601,13 @@ static int V24_PoseBone_setLoc(V24_BPy_PoseBone *self, PyObject *value, void *cl
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".loc: ", "expects a 3d vector object");
+		V24_sPoseBoneError, ".loc: ", "expects a 3d vector object");
 }
 //------------------------PoseBone.size (getter)
 //Gets the size attribute
 static PyObject *V24_PoseBone_getSize(V24_BPy_PoseBone *self, void *closure)
 {
-    return newVectorObject(self->posechannel->size, 3, Py_WRAP);
+    return V24_newVectorObject(self->posechannel->size, 3, Py_WRAP);
 }
 //------------------------PoseBone.size (setter)
 //Sets the size attribute
@@ -616,7 +616,7 @@ static int V24_PoseBone_setSize(V24_BPy_PoseBone *self, PyObject *value, void *c
 	V24_VectorObject *vec = NULL;
 	int x;
 
-	if (!PyArg_Parse(value, "O!", &vector_Type, &vec))
+	if (!PyArg_Parse(value, "O!", &V24_vector_Type, &vec))
 		goto AttributeError;
 	if (vec->size != 3)
 		goto AttributeError;
@@ -628,13 +628,13 @@ static int V24_PoseBone_setSize(V24_BPy_PoseBone *self, PyObject *value, void *c
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".size: ", "expects a 3d vector object");
+		V24_sPoseBoneError, ".size: ", "expects a 3d vector object");
 }
 //------------------------PoseBone.quat (getter)
 //Gets the quat attribute
 static PyObject *V24_PoseBone_getQuat(V24_BPy_PoseBone *self, void *closure)
 {
-    return newQuaternionObject(self->posechannel->quat, Py_WRAP);
+    return V24_newQuaternionObject(self->posechannel->quat, Py_WRAP);
 }
 //------------------------PoseBone.quat (setter)
 //Sets the quat attribute
@@ -643,7 +643,7 @@ static int V24_PoseBone_setQuat(V24_BPy_PoseBone *self, PyObject *value, void *c
 	V24_QuaternionObject *quat = NULL;
 	int x;
 
-	if (!PyArg_Parse(value, "O!", &quaternion_Type, &quat))
+	if (!PyArg_Parse(value, "O!", &V24_quaternion_Type, &quat))
 		goto AttributeError;
 
 	for (x = 0; x < 4; x++){
@@ -653,13 +653,13 @@ static int V24_PoseBone_setQuat(V24_BPy_PoseBone *self, PyObject *value, void *c
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".quat: ", "expects a quaternion object");
+		V24_sPoseBoneError, ".quat: ", "expects a quaternion object");
 }
 //------------------------PoseBone.localMatrix (getter)
 //Gets the chan_mat
 static PyObject *V24_PoseBone_getLocalMatrix(V24_BPy_PoseBone *self, void *closure)
 {
-    return newMatrixObject((float*)self->posechannel->chan_mat, 4, 4, Py_WRAP);
+    return V24_newMatrixObject((float*)self->posechannel->chan_mat, 4, 4, Py_WRAP);
 }
 //------------------------PoseBone.localMatrix (setter)
 //Sets the chan_mat 
@@ -670,7 +670,7 @@ static int V24_PoseBone_setLocalMatrix(V24_BPy_PoseBone *self, PyObject *value, 
 	float mat3[3][3], mat4[4][4];
 	int matsize = 0;
 
-	if (!PyArg_Parse(value, "O!", &matrix_Type, &matrix))
+	if (!PyArg_Parse(value, "O!", &V24_matrix_Type, &matrix))
 		goto AttributeError;
 
 	if (matrix->rowSize == 3 && matrix->colSize == 3){
@@ -717,13 +717,13 @@ static int V24_PoseBone_setLocalMatrix(V24_BPy_PoseBone *self, PyObject *value, 
 
 AttributeError:
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".localMatrix: ", "expects a 3x3 or 4x4 matrix object");
+		V24_sPoseBoneError, ".localMatrix: ", "expects a 3x3 or 4x4 matrix object");
 }
 //------------------------PoseBone.poseMatrix (getter)
 //Gets the pose_mat
 static PyObject *V24_PoseBone_getPoseMatrix(V24_BPy_PoseBone *self, void *closure)
 {
-    return newMatrixObject((float*)self->posechannel->pose_mat, 4, 4, Py_WRAP);
+    return V24_newMatrixObject((float*)self->posechannel->pose_mat, 4, 4, Py_WRAP);
 }
 //------------------------PoseBone.poseMatrix (setter)
 //Sets the pose_mat
@@ -732,7 +732,7 @@ static int V24_PoseBone_setPoseMatrix(V24_BPy_PoseBone *self, V24_MatrixObject *
 	float delta_mat[4][4], quat[4]; /* rotation */
 	float size[4]; /* size only */
 	
-	if( !MatrixObject_Check( value ) )
+	if( !V24_MatrixObject_Check( value ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 									"expected matrix object as argument" );
 	
@@ -794,7 +794,7 @@ static PyObject *V24_PoseBone_getLimitMin(V24_BPy_PoseBone *self, void *closure)
 			}
 		}
 	}
-	return newVectorObject(mylimitmin, 3, Py_NEW);
+	return V24_newVectorObject(mylimitmin, 3, Py_NEW);
 }
 //------------------------PoseBone.limitmin (setter)
 //Sets the pose bone limitmin value
@@ -879,7 +879,7 @@ static PyObject *V24_PoseBone_getLimitMax(V24_BPy_PoseBone *self, void *closure)
 			}
 		}
 	}
-	return newVectorObject(mylimitmax, 3, Py_NEW);
+	return V24_newVectorObject(mylimitmax, 3, Py_NEW);
 }
 //------------------------PoseBone.limitmax (setter)
 //Sets the pose bone limitmax value
@@ -936,27 +936,27 @@ static int V24_PoseBone_setLimitMax(V24_BPy_PoseBone *self, PyObject *value, voi
 //Gets the pose head position
 static PyObject *V24_PoseBone_getHead(V24_BPy_PoseBone *self, void *closure)
 {
-    return newVectorObject(self->posechannel->pose_head, 3, Py_NEW);
+    return V24_newVectorObject(self->posechannel->pose_head, 3, Py_NEW);
 }
 //------------------------PoseBone.head (setter)
 //Sets the pose head position
 static int V24_PoseBone_setHead(V24_BPy_PoseBone *self, PyObject *value, void *closure)
 {
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".head: ", "not able to set this property");
+		V24_sPoseBoneError, ".head: ", "not able to set this property");
 }
 //------------------------PoseBone.tail (getter)
 //Gets the pose tail position
 static PyObject *V24_PoseBone_getTail(V24_BPy_PoseBone *self, void *closure)
 {
-    return newVectorObject(self->posechannel->pose_tail, 3, Py_NEW);
+    return V24_newVectorObject(self->posechannel->pose_tail, 3, Py_NEW);
 }
 //------------------------PoseBone.tail (setter)
 //Sets the pose tail position
 static int V24_PoseBone_setTail(V24_BPy_PoseBone *self, PyObject *value, void *closure)
 {
 	return V24_EXPP_intError(PyExc_AttributeError, "%s%s%s",
-		sPoseBoneError, ".tail: ", "not able to set this property");
+		V24_sPoseBoneError, ".tail: ", "not able to set this property");
 }
 //------------------------PoseBone.sel (getter)
 //Gets the pose bones selection
@@ -1350,7 +1350,7 @@ PyObject *V24_PyPose_FromPose(bPose *pose, char *name)
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sPoseError, "V24_PyPose_FromPose: ", "Internal Error Ocurred");
+		V24_sPoseError, "V24_PyPose_FromPose: ", "Internal Error Ocurred");
 }
 //------------------------------V24_PyPoseBone_FromPosechannel (internal)
 //Returns a PyPoseBone from a bPoseChannel - return PyNone if bPoseChannel is NULL
@@ -1370,7 +1370,7 @@ PyObject *V24_PyPoseBone_FromPosechannel(bPoseChannel *pchan)
 
 RuntimeError:
 	return V24_EXPP_objError(PyExc_RuntimeError, "%s%s%s", 
-		sPoseBoneError, "V24_PyPoseBone_FromPosechannel: ", "Internal Error Ocurred");
+		V24_sPoseBoneError, "V24_PyPoseBone_FromPosechannel: ", "Internal Error Ocurred");
 }
 //------------------------------V24_Object_FromPoseChannel (internal)
 //An ugly method for determining where the pchan chame from

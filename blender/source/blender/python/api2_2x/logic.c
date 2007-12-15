@@ -64,7 +64,7 @@ static int V24_Property_setAttr( V24_BPy_Property * Property, char *name,
 static PyObject *V24_Property_repr( V24_BPy_Property * Property );
 static int V24_Property_compare( V24_BPy_Property * a1, V24_BPy_Property * a2 );
 //--------------- Python TypeProperty structure definition----------------
-PyTypeObject property_Type = {
+PyTypeObject V24_property_Type = {
 	PyObject_HEAD_INIT( NULL ) 
 	0,	/* ob_size */
 	"Blender Property",	/* tp_name */
@@ -90,8 +90,8 @@ PyTypeObject property_Type = {
 };
 //--------------- Property module internal callbacks-------------------
 
-//--------------- updatePyProperty-------------------------------------
-int updatePyProperty( V24_BPy_Property * self )
+//--------------- V24_updatePyProperty-------------------------------------
+int V24_updatePyProperty( V24_BPy_Property * self )
 {
 	if( !self->property ) {
 		return 0;	//nothing to update - not linked
@@ -125,7 +125,7 @@ int updatePyProperty( V24_BPy_Property * self )
 }
 
 //--------------- updatePropertyData------------------------------------
-int updateProperyData( V24_BPy_Property * self )
+int V24_updateProperyData( V24_BPy_Property * self )
 {
 	if( !self->property ) {
 		//nothing to update - not linked
@@ -321,7 +321,7 @@ PyObject *V24_Property_CreatePyObject( struct bProperty * Property )
 
 	py_property =
 		( V24_BPy_Property * ) PyObject_NEW( V24_BPy_Property,
-						 &property_Type );
+						 &V24_property_Type );
 
 	//set the struct flag
 	py_property->property = Property;
@@ -329,7 +329,7 @@ PyObject *V24_Property_CreatePyObject( struct bProperty * Property )
 	//allocate space for python vars
 	py_property->name = PyMem_Malloc( 32 );
 
-	if( !updatePyProperty( py_property ) )
+	if( !V24_updatePyProperty( py_property ) )
 		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_AttributeError, "Property struct empty" ) );
 
@@ -348,14 +348,14 @@ struct bProperty *V24_Property_FromPyObject( PyObject * py_obj )
 		return ( py_property->property );
 }
 
-//--------------- newPropertyObject()-------------------------------
-PyObject *newPropertyObject( char *name, PyObject * data, int type )
+//--------------- V24_newPropertyObject()-------------------------------
+PyObject *V24_newPropertyObject( char *name, PyObject * data, int type )
 {
 	V24_BPy_Property *py_property;
 
 	py_property =
 		( V24_BPy_Property * ) PyObject_NEW( V24_BPy_Property,
-						 &property_Type );
+						 &V24_property_Type );
 	py_property->name = PyMem_Malloc( 32 );
 	py_property->property = NULL;
 
@@ -389,7 +389,7 @@ static PyObject *V24_Property_setName( V24_BPy_Property * self, PyObject * value
 		BLI_strncpy( self->name, name, 32 );
 	} else {
 		BLI_strncpy( self->property->name, name, 32 );
-		updatePyProperty( self );
+		V24_updatePyProperty( self );
 	}
 
 	Py_RETURN_NONE;
@@ -498,7 +498,7 @@ static PyObject *V24_Property_setData( V24_BPy_Property * self, PyObject * args 
 				     PyString_AsString( data ),
 				     MAX_PROPSTRING );
 		}
-		updatePyProperty( self );
+		V24_updatePyProperty( self );
 	} else {
 		self->data = data;
 	}

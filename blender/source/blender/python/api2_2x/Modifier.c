@@ -671,7 +671,7 @@ static int cast_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 		Object *ob_new=NULL;
 		if (value == Py_None) {
 			md->object = NULL;
-		} else if (BPy_Object_Check( value )) {
+		} else if (V24_BPy_Object_Check( value )) {
 			ob_new = ((( V24_BPy_Object * )value)->object);
 			md->object = ob_new;
 		} else {
@@ -777,9 +777,9 @@ static PyObject *array_getter( V24_BPy_Modifier * self, int type )
 	else if( type == EXPP_MOD_MERGE_DIST )
 		return PyFloat_FromDouble( md->merge_dist );
 	else if( type == EXPP_MOD_OFFSET_VEC)
-		return newVectorObject( md->offset, 3, Py_NEW );
+		return V24_newVectorObject( md->offset, 3, Py_NEW );
 	else if( type == EXPP_MOD_SCALE_VEC)
-		return newVectorObject( md->scale, 3, Py_NEW );
+		return V24_newVectorObject( md->scale, 3, Py_NEW );
 	
 	return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 }
@@ -930,7 +930,7 @@ static int displace_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 		Object *ob_new=NULL;
 		if (value == Py_None) {
 			md->map_object = NULL;
-		} else if (BPy_Object_Check( value )) {
+		} else if (V24_BPy_Object_Check( value )) {
 			ob_new = ((( V24_BPy_Object * )value)->object);
 			md->map_object = ob_new;
 		} else {
@@ -1264,7 +1264,7 @@ static ModifierData *locate_modifier( V24_BPy_ModSeq *self, V24_BPy_Modifier * v
 	ModifierData *md;
 
 	/* check that argument is a modifier */
-	if( !BPy_Modifier_Check(value) )
+	if( !V24_BPy_Modifier_Check(value) )
 		return (ModifierData *)V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an modifier as an argument" );
 

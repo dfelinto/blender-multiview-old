@@ -512,7 +512,7 @@ static PyObject *V24_Sound_repr( V24_BPy_Sound * self )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Sound_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"filename", (getter)V24_Sound_getFilename, (setter)V24_Sound_setFilename,
 	 "text filename", NULL},
 	{"packed", (getter)V24_Sound_getPacked, (setter)NULL,

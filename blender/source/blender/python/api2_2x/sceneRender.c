@@ -2312,7 +2312,7 @@ static int V24_RenderData_setSet( V24_BPy_RenderData *self, PyObject *value )
 	}
 
 	/* be sure argument is a Scene */
-	if( !BPy_Scene_Check( value ) )
+	if( !V24_BPy_Scene_Check( value ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected Scene as argument" );
 

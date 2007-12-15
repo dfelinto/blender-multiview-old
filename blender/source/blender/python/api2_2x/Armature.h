@@ -35,8 +35,8 @@
 #include "DNA_armature_types.h"
 
 //-------------------TYPE CHECKS---------------------------------
-#define BPy_Armature_Check(v) ((v)->ob_type == &V24_Armature_Type)
-#define BPy_BonesDict_Check(v) ((v)->ob_type == &V24_BonesDict_Type)
+#define V24_BPy_Armature_Check(v) ((v)->ob_type == &V24_Armature_Type)
+#define V24_BPy_BonesDict_Check(v) ((v)->ob_type == &V24_BonesDict_Type)
 //-------------------MODULE INIT---------------------------------
 PyObject *V24_Armature_Init( void );
 //-------------------TYPEOBJECT----------------------------------

@@ -137,7 +137,7 @@ static PyObject *V24_M_BezTriple_New( PyObject* self, PyObject * args )
 		}
 	}
 
-	return newBezTriple( numbuf );
+	return V24_newBezTriple( numbuf );
 
 TypeError:
 	return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
@@ -674,7 +674,7 @@ BezTriple *V24_BezTriple_FromPyObject( PyObject * pyobj )
   input args is a sequence - either 3 or 9 floats
 */
 
-PyObject *newBezTriple( float *numbuf )
+PyObject *V24_newBezTriple( float *numbuf )
 {
 	int i, j, num;
 	PyObject *pyobj = NULL;

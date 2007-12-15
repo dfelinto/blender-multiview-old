@@ -284,7 +284,7 @@ static int V24_LibBlockSeq_setActive(V24_BPy_LibBlockSeq *self, PyObject *value)
 {
 	switch (self->type) {
 	case ID_SCE:
-		if (!BPy_Scene_Check(value)) {
+		if (!V24_BPy_Scene_Check(value)) {
 			return V24_EXPP_ReturnIntError(PyExc_TypeError,
 					"Must be a scene" );
 		} else {
@@ -306,7 +306,7 @@ static int V24_LibBlockSeq_setActive(V24_BPy_LibBlockSeq *self, PyObject *value)
 		return 0;
 		
 	case ID_IM:
-		if (!BPy_Image_Check(value)) {
+		if (!V24_BPy_Image_Check(value)) {
 			return V24_EXPP_ReturnIntError(PyExc_TypeError,
 					"Must be a scene" );
 		} else {
@@ -329,7 +329,7 @@ static int V24_LibBlockSeq_setActive(V24_BPy_LibBlockSeq *self, PyObject *value)
 		return 0;
 	
 	case ID_TXT:
-		if (!BPy_Text_Check(value)) {
+		if (!V24_BPy_Text_Check(value)) {
 			return V24_EXPP_ReturnIntError(PyExc_TypeError,
 					"Must be a text" );
 		} else {
@@ -597,7 +597,7 @@ PyObject *V24_LibBlockSeq_unlink(V24_BPy_LibBlockSeq *self, PyObject * value)
 {
 	switch (self->type) {
 	case ID_SCE:
-		if( !BPy_Scene_Check(value) ) {
+		if( !V24_BPy_Scene_Check(value) ) {
 			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected Scene object" );
 		} else {
@@ -613,7 +613,7 @@ PyObject *V24_LibBlockSeq_unlink(V24_BPy_LibBlockSeq *self, PyObject * value)
 			Py_RETURN_NONE;
 		}
 	case ID_GR:
-		if( !BPy_Group_Check(value) ) {
+		if( !V24_BPy_Group_Check(value) ) {
 			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected Group object" );
 		} else {
@@ -634,7 +634,7 @@ PyObject *V24_LibBlockSeq_unlink(V24_BPy_LibBlockSeq *self, PyObject * value)
 		}
 
 	case ID_TXT:
-		if( !BPy_Text_Check(value) ) {
+		if( !V24_BPy_Text_Check(value) ) {
 			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected Text object" );
 		} else {

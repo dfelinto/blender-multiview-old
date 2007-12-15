@@ -38,7 +38,7 @@
 /* The Main PyType Object defined in Main.c */
 extern PyTypeObject V24_Config_Type;
 
-#define BPy_Config_Check(v) \
+#define V24_BPy_Config_Check(v) \
     ((v)->ob_type == &V24_Config_Type)
 
 /* Main sequence, iterate on the libdatas listbase*/

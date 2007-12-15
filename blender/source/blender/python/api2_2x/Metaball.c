@@ -186,7 +186,7 @@ static int V24_Metaelem_setMFlagBits( V24_BPy_Metaelem * self, PyObject * value,
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Metaball_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"materials",
 	 (getter)V24_Metaball_getMaterials, (setter)V24_Metaball_setMaterials,
 	 "Number of metaball users",
@@ -781,12 +781,12 @@ static PyObject *V24_Metaelem_getCoord( V24_BPy_Metaelem * self )
 	co[1]= self->metaelem->y;
 	co[2]= self->metaelem->z;
 	
-	return newVectorObject( co, 3, Py_NEW );
+	return V24_newVectorObject( co, 3, Py_NEW );
 }
 static int V24_Metaelem_setCoord( V24_BPy_Metaelem * self,  V24_VectorObject * value )
 {
 
-	if( !VectorObject_Check( value ) || value->size != 3 )
+	if( !V24_VectorObject_Check( value ) || value->size != 3 )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"metaelem.co - expected vector argument of size 3" );
 	
@@ -810,11 +810,11 @@ static PyObject *V24_Metaelem_getDims( V24_BPy_Metaelem * self )
 	co[0]= self->metaelem->expx;
 	co[1]= self->metaelem->expy;
 	co[2]= self->metaelem->expz;
-	return newVectorObject( co, 3, Py_NEW );
+	return V24_newVectorObject( co, 3, Py_NEW );
 }
 static int V24_Metaelem_setDims( V24_BPy_Metaelem * self,  V24_VectorObject * value )
 {
-	if( !VectorObject_Check( value ) || value->size != 3 )
+	if( !V24_VectorObject_Check( value ) || value->size != 3 )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"metaelem.dims - expected vector argument of size 3" );
 
@@ -833,12 +833,12 @@ static int V24_Metaelem_setDims( V24_BPy_Metaelem * self,  V24_VectorObject * va
 static PyObject *V24_Metaelem_getQuat( V24_BPy_Metaelem * self )
 {
 	METAELEM_DEL_CHECK_PY(self);
-	return newQuaternionObject(self->metaelem->quat, Py_NEW); 
+	return V24_newQuaternionObject(self->metaelem->quat, Py_NEW); 
 }
 static int V24_Metaelem_setQuat( V24_BPy_Metaelem * self,  V24_QuaternionObject * value )
 {
 	int i;
-	if( !QuaternionObject_Check( value ) )
+	if( !V24_QuaternionObject_Check( value ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"metaelem.quat - expected quat argument" );
 	
@@ -1061,7 +1061,7 @@ static PyObject *V24_MetaElemSeq_remove( V24_BPy_MetaElemSeq * self, V24_BPy_Met
 {
 	MetaElem *ml_iter, *ml_py;
 	
-	if( !BPy_Metaelem_Check(elem) )
+	if( !V24_BPy_Metaelem_Check(elem) )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"elements.remove(metaelem) - expected a Metaball element" );
 	

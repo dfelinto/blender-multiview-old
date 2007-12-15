@@ -37,7 +37,7 @@
 
 extern PyTypeObject V24_SurfNurb_Type;
 
-#define BPy_SurfNurb_Check(v)  ((v)->ob_type == &V24_SurfNurb_Type)	/* for type checking */
+#define V24_BPy_SurfNurb_Check(v)  ((v)->ob_type == &V24_SurfNurb_Type)	/* for type checking */
 
 /* Python V24_BPy_SurfNurb structure definition */
 typedef struct {

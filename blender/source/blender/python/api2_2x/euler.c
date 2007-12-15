@@ -67,7 +67,7 @@ PyObject *V24_Euler_ToQuat(V24_EulerObject * self)
 		eul[x] = self->eul[x] * ((float)Py_PI / 180);
 	}
 	EulToQuat(eul, quat);
-	return newQuaternionObject(quat, Py_NEW);
+	return V24_newQuaternionObject(quat, Py_NEW);
 }
 //----------------------------Euler.toMatrix()---------------------
 //return a matrix representation of the euler
@@ -81,7 +81,7 @@ PyObject *V24_Euler_ToMatrix(V24_EulerObject * self)
 		eul[x] = self->eul[x] * ((float)Py_PI / 180);
 	}
 	EulToMat3(eul, (float (*)[3]) mat);
-	return newMatrixObject(mat, 3, 3 , Py_NEW);
+	return V24_newMatrixObject(mat, 3, 3 , Py_NEW);
 }
 //----------------------------Euler.unique()-----------------------
 //sets the x,y,z values to a unique euler rotation
@@ -178,7 +178,7 @@ PyObject *V24_Euler_Rotate(V24_EulerObject * self, PyObject *args)
 // return a copy of the euler
 PyObject *V24_Euler_copy(V24_EulerObject * self, PyObject *args)
 {
-	return newEulerObject(self->eul, Py_NEW);
+	return V24_newEulerObject(self->eul, Py_NEW);
 }
 
 
@@ -266,7 +266,7 @@ static PyObject* V24_Euler_richcmpr(PyObject *objectA, PyObject *objectB, int co
 	V24_EulerObject *eulA = NULL, *eulB = NULL;
 	int result = 0;
 
-	if (!EulerObject_Check(objectA) || !EulerObject_Check(objectB)){
+	if (!V24_EulerObject_Check(objectA) || !V24_EulerObject_Check(objectB)){
 		if (comparison_type == Py_NE){
 			return V24_EXPP_incr_ret(Py_True); 
 		}else{
@@ -413,7 +413,7 @@ static PySequenceMethods V24_Euler_SeqMethods = {
 	(intintobjargproc) V24_Euler_ass_slice,			/* sq_ass_slice */
 };
 //------------------PY_OBECT DEFINITION--------------------------
-PyTypeObject euler_Type = {
+PyTypeObject V24_euler_Type = {
 	PyObject_HEAD_INIT(NULL)		//tp_head
 	0,								//tp_internal
 	"euler",						//tp_name
@@ -462,18 +462,18 @@ PyTypeObject euler_Type = {
 	0,								//tp_weaklist
 	0								//tp_del
 };
-//------------------------newEulerObject (internal)-------------
+//------------------------V24_newEulerObject (internal)-------------
 //creates a new euler object
 /*pass Py_WRAP - if vector is a WRAPPER for data allocated by BLENDER
  (i.e. it was allocated elsewhere by MEM_mallocN())
   pass Py_NEW - if vector is not a WRAPPER and managed by PYTHON
  (i.e. it must be created here with PyMEM_malloc())*/
-PyObject *newEulerObject(float *eul, int type)
+PyObject *V24_newEulerObject(float *eul, int type)
 {
 	V24_EulerObject *self;
 	int x;
 
-	self = PyObject_NEW(V24_EulerObject, &euler_Type);
+	self = PyObject_NEW(V24_EulerObject, &V24_euler_Type);
 	self->data.blend_data = NULL;
 	self->data.py_data = NULL;
 

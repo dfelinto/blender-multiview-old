@@ -36,9 +36,9 @@
 #include "DNA_object_types.h"
 
 //-------------------TYPE CHECKS---------------------------------
-#define BPy_Pose_Check(v) ((v)->ob_type == &V24_Pose_Type)
-#define BPy_PoseBone_Check(v) ((v)->ob_type == &V24_PoseBone_Type)
-#define BPy_PoseBonesDict_Check(v) ((v)->ob_type == &V24_PoseBonesDict_Type)
+#define V24_BPy_Pose_Check(v) ((v)->ob_type == &V24_Pose_Type)
+#define V24_BPy_PoseBone_Check(v) ((v)->ob_type == &V24_PoseBone_Type)
+#define V24_BPy_PoseBonesDict_Check(v) ((v)->ob_type == &V24_PoseBonesDict_Type)
 //-------------------TYPEOBJECT----------------------------------
 extern PyTypeObject V24_Pose_Type;
 extern PyTypeObject V24_PoseBone_Type;

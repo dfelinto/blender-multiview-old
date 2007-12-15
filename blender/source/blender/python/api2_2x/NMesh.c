@@ -305,7 +305,7 @@ if recalc_normals is True, vertex normals are transformed along with \n\
 vertex coordinatess.\n";
 
 
-void mesh_update( Mesh * mesh, Object * ob )
+void V24_mesh_update( Mesh * mesh, Object * ob )
 {
 	if (ob) {
 		DAG_object_flush_update(G.scene, ob, OB_RECALC_DATA);
@@ -344,13 +344,13 @@ static int check_NMeshLists( BPy_NMesh *nmesh )
 		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh materials are not a sequence" );
 
-	if( V24_EXPP_check_sequence_consistency( nmesh->verts, &NMVert_Type ) != 1 )
+	if( V24_EXPP_check_sequence_consistency( nmesh->verts, &V24_NMVert_Type ) != 1 )
 		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh vertices must be NMVerts" );
-	if( V24_EXPP_check_sequence_consistency( nmesh->edges, &NMEdge_Type ) != 1 )
+	if( V24_EXPP_check_sequence_consistency( nmesh->edges, &V24_NMEdge_Type ) != 1 )
 		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh edges must be NMEdges" );
-	if( V24_EXPP_check_sequence_consistency( nmesh->faces, &NMFace_Type ) != 1 )
+	if( V24_EXPP_check_sequence_consistency( nmesh->faces, &V24_NMFace_Type ) != 1 )
 		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh faces must be NMFaces" );
 	for( i = 0 ; i < PySequence_Length(nmesh->faces); ++i ) {
@@ -362,11 +362,11 @@ static int check_NMeshLists( BPy_NMesh *nmesh )
 		uv = face->uv;
 		v = face->v;
 		Py_DECREF( face );
-		if( V24_EXPP_check_sequence_consistency( face->col, &NMCol_Type ) != 1 ) {
+		if( V24_EXPP_check_sequence_consistency( face->col, &V24_NMCol_Type ) != 1 ) {
 			return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh face col must be NMCols" );
 		}
-		if( V24_EXPP_check_sequence_consistency( face->v, &NMVert_Type ) != 1 )
+		if( V24_EXPP_check_sequence_consistency( face->v, &V24_NMVert_Type ) != 1 )
 			return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh face v must be NMVerts" );
 
@@ -405,7 +405,7 @@ static void NMCol_dealloc( PyObject * self )
 
 static BPy_NMCol *newcol( char r, char g, char b, char a )
 {
-	BPy_NMCol *mc = ( BPy_NMCol * ) PyObject_NEW( BPy_NMCol, &NMCol_Type );
+	BPy_NMCol *mc = ( BPy_NMCol * ) PyObject_NEW( BPy_NMCol, &V24_NMCol_Type );
 
 	mc->r = r;
 	mc->g = g;
@@ -475,7 +475,7 @@ static PyObject *NMCol_repr( BPy_NMCol * self )
 	return Py_BuildValue( "s", s );
 }
 
-PyTypeObject NMCol_Type = {
+PyTypeObject V24_NMCol_Type = {
 	PyObject_HEAD_INIT( NULL ) 0,	/* ob_size */
 	"Blender NMCol",	/* tp_name */
 	sizeof( BPy_NMCol ),	/* tp_basicsize */
@@ -515,7 +515,7 @@ static void NMFace_dealloc( PyObject * self )
 
 static PyObject *new_NMFace( PyObject * vertexlist )
 {
-	BPy_NMFace *mf = PyObject_NEW( BPy_NMFace, &NMFace_Type );
+	BPy_NMFace *mf = PyObject_NEW( BPy_NMFace, &V24_NMFace_Type );
 	PyObject *vlcopy;
 
 	if( vertexlist ) {	/* create a copy of the given vertex list */
@@ -578,7 +578,7 @@ static PyObject *NMFace_append( PyObject * self, PyObject * args )
 	PyObject *vert;
 	BPy_NMFace *f = ( BPy_NMFace * ) self;
 
-	if( !PyArg_ParseTuple( args, "O!", &NMVert_Type, &vert ) )
+	if( !PyArg_ParseTuple( args, "O!", &V24_NMVert_Type, &vert ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected an NMVert object" );
 
@@ -633,7 +633,7 @@ static PyObject *NMFace_getattr( PyObject * self, char *name )
 	else if( ( strcmp( name, "normal" ) == 0 )
 		 || ( strcmp( name, "no" ) == 0 ) ) {
 
-		if( V24_EXPP_check_sequence_consistency( mf->v, &NMVert_Type ) ==
+		if( V24_EXPP_check_sequence_consistency( mf->v, &V24_NMVert_Type ) ==
 		    1 ) {
 
 			float fNormal[3] = { 0.0, 0.0, 0.0 };
@@ -795,7 +795,7 @@ static PySequenceMethods NMFace_SeqMethods = {
 	0,0,0,
 };
 
-PyTypeObject NMFace_Type = {
+PyTypeObject V24_NMFace_Type = {
 	PyObject_HEAD_INIT( NULL ) 0,	/*ob_size */
 	"Blender NMFace",	/*tp_name */
 	sizeof( BPy_NMFace ),	/*tp_basicsize */
@@ -817,7 +817,7 @@ PyTypeObject NMFace_Type = {
 
 static BPy_NMVert *newvert( float *co )
 {
-	BPy_NMVert *mv = PyObject_NEW( BPy_NMVert, &NMVert_Type );
+	BPy_NMVert *mv = PyObject_NEW( BPy_NMVert, &V24_NMVert_Type );
 
 	mv->co[0] = co[0];
 	mv->co[1] = co[1];
@@ -851,12 +851,12 @@ static PyObject *NMVert_getattr( PyObject * self, char *name )
 	BPy_NMVert *mv = ( BPy_NMVert * ) self;
 
 	if( !strcmp( name, "co" ) || !strcmp( name, "loc" ) )
-		return newVectorObject(mv->co,3,Py_WRAP);
+		return V24_newVectorObject(mv->co,3,Py_WRAP);
 
 	else if( strcmp( name, "no" ) == 0 )
-		return newVectorObject(mv->no,3,Py_WRAP);
+		return V24_newVectorObject(mv->no,3,Py_WRAP);
 	else if( strcmp( name, "uvco" ) == 0 )
-		return newVectorObject(mv->uvco,3,Py_WRAP);
+		return V24_newVectorObject(mv->uvco,3,Py_WRAP);
 	else if( strcmp( name, "index" ) == 0 )
 		return PyInt_FromLong( mv->index );
 	else if( strcmp( name, "sel" ) == 0 )
@@ -990,7 +990,7 @@ static PySequenceMethods NMVert_SeqMethods = {
 	0,0,0,
 };
 
-PyTypeObject NMVert_Type = {
+PyTypeObject V24_NMVert_Type = {
 	PyObject_HEAD_INIT( NULL ) 
 	0,	/*ob_size */
 	"Blender NMVert",	/*tp_name */
@@ -1019,9 +1019,9 @@ static BPy_NMEdge *new_NMEdge( BPy_NMVert * v1, BPy_NMVert * v2, char crease, sh
   BPy_NMEdge *edge=NULL;
 
   if (!v1 || !v2) return NULL;
-  if (!BPy_NMVert_Check(v1) || !BPy_NMVert_Check(v2)) return NULL;
+  if (!V24_BPy_NMVert_Check(v1) || !V24_BPy_NMVert_Check(v2)) return NULL;
 
-  edge = PyObject_NEW( BPy_NMEdge, &NMEdge_Type );
+  edge = PyObject_NEW( BPy_NMEdge, &V24_NMEdge_Type );
 
   edge->v1=V24_EXPP_incr_ret((PyObject*)v1);
   edge->v2=V24_EXPP_incr_ret((PyObject*)v2);
@@ -1094,7 +1094,7 @@ static int NMEdge_setattr( PyObject * self, char *name, PyObject * v )
   return V24_EXPP_ReturnIntError( PyExc_AttributeError, name );
 }
 
-PyTypeObject NMEdge_Type = {
+PyTypeObject V24_NMEdge_Type = {
 	PyObject_HEAD_INIT( NULL ) 
 	0,	/*ob_size */
 	"Blender NMEdge",	/*tp_name */
@@ -1430,9 +1430,9 @@ static PyObject *NMesh_update( PyObject *self, PyObject *a, PyObject *kwd )
 	if( recalc_normals )
 		mesh_calc_normals(mesh->mvert, mesh->totvert, mesh->mface, mesh->totface, NULL);
 
-	mesh_update( mesh, nmesh->object );
+	V24_mesh_update( mesh, nmesh->object );
 
-	nmesh_updateMaterials( nmesh );
+	V24_nmesh_updateMaterials( nmesh );
 
 	if( nmesh->name && nmesh->name != Py_None )
 		new_id( &( G.main->mesh ), &mesh->id,
@@ -1861,7 +1861,7 @@ static int NMesh_setattr( PyObject * self, char *name, PyObject * v )
 	return 0;
 }
 
-PyTypeObject NMesh_Type = {
+PyTypeObject V24_NMesh_Type = {
 	PyObject_HEAD_INIT( NULL ) 0,	/*ob_size */
 	"Blender NMesh",	/*tp_name */
 	sizeof( BPy_NMesh ),	/*tp_basicsize */
@@ -1878,7 +1878,7 @@ PyTypeObject NMesh_Type = {
 static BPy_NMFace *nmface_from_data( BPy_NMesh * mesh, int vidxs[4],
 	char mat_nr, char flag, MTFace * tface, MCol * col, int orig_index )
 {
-	BPy_NMFace *newf = PyObject_NEW( BPy_NMFace, &NMFace_Type );
+	BPy_NMFace *newf = PyObject_NEW( BPy_NMFace, &V24_NMFace_Type );
 	int i, len;
 
 	if( vidxs[3] )
@@ -1952,7 +1952,7 @@ static BPy_NMEdge *nmedge_from_data( BPy_NMesh * mesh, MEdge *edge )
 static BPy_NMVert *nmvert_from_data( MVert * vert, MSticky * st, float *co,
 	int idx, char flag )
 {
-	BPy_NMVert *mv = PyObject_NEW( BPy_NMVert, &NMVert_Type );
+	BPy_NMVert *mv = PyObject_NEW( BPy_NMVert, &V24_NMVert_Type );
 
 	mv->co[0] = co[0];
 	mv->co[1] = co[1];
@@ -1989,7 +1989,7 @@ static int get_active_faceindex( Mesh * me )
 static BPy_NMVert *nmvert_from_float(float *co, float *no, int idx) {
 	BPy_NMVert *mv;
 
-	mv = PyObject_NEW( BPy_NMVert, &NMVert_Type );
+	mv = PyObject_NEW( BPy_NMVert, &V24_NMVert_Type );
 
 	mv->index = idx;
 
@@ -2010,7 +2010,7 @@ static BPy_NMVert *nmvert_from_float(float *co, float *no, int idx) {
 
 static BPy_NMFace *nmface_from_index( BPy_NMesh * mesh, int vidxs[4], char mat_nr )
 {
-	BPy_NMFace *newf = PyObject_NEW( BPy_NMFace, &NMFace_Type );
+	BPy_NMFace *newf = PyObject_NEW( BPy_NMFace, &V24_NMFace_Type );
 	int i, len;
 
 	if( vidxs[3] )
@@ -2098,7 +2098,7 @@ static PyObject *new_NMesh_displist(ListBase *lb, Object *ob)
 	if (ob->type == OB_CURVE || ob->type == OB_FONT)
 		one_normal = 1;
 
-	me = PyObject_NEW( BPy_NMesh, &NMesh_Type );
+	me = PyObject_NEW( BPy_NMesh, &V24_NMesh_Type );
 	me->name = V24_EXPP_incr_ret( Py_None );
 	me->flags = 0;
 	me->mode = ME_TWOSIDED;	/* default for new meshes */
@@ -2234,7 +2234,7 @@ static PyObject *new_NMesh_displist(ListBase *lb, Object *ob)
 static PyObject *new_NMesh_internal( Mesh * oldmesh,
 				     DerivedMesh *dm )
 {
-	BPy_NMesh *me = PyObject_NEW( BPy_NMesh, &NMesh_Type );
+	BPy_NMesh *me = PyObject_NEW( BPy_NMesh, &V24_NMesh_Type );
 	me->flags = 0;
 	me->mode = ME_TWOSIDED;	/* default for new meshes */
 	me->subdiv[0] = NMESH_SUBDIV;
@@ -2360,7 +2360,7 @@ static PyObject *new_NMesh_internal( Mesh * oldmesh,
 	return ( PyObject * ) me;
 }
 
-PyObject *new_NMesh( Mesh * oldmesh )
+PyObject *V24_new_NMesh( Mesh * oldmesh )
 {
 	return new_NMesh_internal( oldmesh, NULL );
 }
@@ -2374,7 +2374,7 @@ static PyObject *M_NMesh_New( PyObject * self, PyObject * args )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected nothing or a string as argument" );
 
-	ret = new_NMesh( NULL );
+	ret = V24_new_NMesh( NULL );
 
 	if( ret && name ) {
 		BPy_NMesh *nmesh = ( BPy_NMesh * ) ret;
@@ -2401,7 +2401,7 @@ static PyObject *M_NMesh_GetRaw( PyObject * self, PyObject * args )
 			return V24_EXPP_incr_ret( Py_None );
 	}
 
-	return new_NMesh( oldmesh );
+	return V24_new_NMesh( oldmesh );
 }
 
 static PyObject *M_NMesh_GetNames(PyObject *self)
@@ -2578,26 +2578,26 @@ static int mface_from_data( MFace * mf, CustomData *fdata, int findex,
 	}
 
 	nmv = ( BPy_NMVert * ) PyList_GetItem( from->v, 0 );
-	if( BPy_NMVert_Check( nmv ) && nmv->index != -1 )
+	if( V24_BPy_NMVert_Check( nmv ) && nmv->index != -1 )
 		mf->v1 = nmv->index;
 	else
 		mf->v1 = 0;
 
 	nmv = ( BPy_NMVert * ) PyList_GetItem( from->v, 1 );
-	if( BPy_NMVert_Check( nmv ) && nmv->index != -1 )
+	if( V24_BPy_NMVert_Check( nmv ) && nmv->index != -1 )
 		mf->v2 = nmv->index;
 	else
 		mf->v2 = 0;
 
 	nmv = ( BPy_NMVert * ) PyList_GetItem( from->v, 2 );
-	if( BPy_NMVert_Check( nmv ) && nmv->index != -1 )
+	if( V24_BPy_NMVert_Check( nmv ) && nmv->index != -1 )
 		mf->v3 = nmv->index;
 	else
 		mf->v3 = 0;
 
 	if( numverts == 4 ) {
 		nmv = ( BPy_NMVert * ) PyList_GetItem( from->v, 3 );
-		if( BPy_NMVert_Check( nmv ) && nmv->index != -1 )
+		if( V24_BPy_NMVert_Check( nmv ) && nmv->index != -1 )
 			mf->v4 = nmv->index;
 		else
 			mf->v4 = 0;
@@ -2620,7 +2620,7 @@ static int mface_from_data( MFace * mf, CustomData *fdata, int findex,
 			BPy_NMCol *mc =
 				( BPy_NMCol * ) PySequence_GetItem( from->col,
 								    i );
-			if( !BPy_NMCol_Check( mc ) ) {
+			if( !V24_BPy_NMCol_Check( mc ) ) {
 				Py_DECREF( mc );
 				continue;
 			}
@@ -2716,7 +2716,7 @@ static int unlink_existingMeshData( Mesh * mesh )
 	return 1;
 }
 
-Material **nmesh_updateMaterials( BPy_NMesh * nmesh )
+Material **V24_nmesh_updateMaterials( BPy_NMesh * nmesh )
 {
 	Material **matlist;
 	Mesh *mesh = nmesh->mesh;
@@ -2751,7 +2751,7 @@ Material **nmesh_updateMaterials( BPy_NMesh * nmesh )
 	return matlist;
 }
 
-PyObject *NMesh_assignMaterials_toObject( BPy_NMesh * nmesh, Object * ob )
+PyObject *V24_NMesh_assignMaterials_toObject( BPy_NMesh * nmesh, Object * ob )
 {
 	V24_BPy_Material *pymat;
 	Material *ma;
@@ -2781,7 +2781,7 @@ PyObject *NMesh_assignMaterials_toObject( BPy_NMesh * nmesh, Object * ob )
 		pymat = ( V24_BPy_Material * ) PySequence_GetItem( nmesh->
 							       materials, i );
 
-		if( BPy_Material_Check( ( PyObject * ) pymat ) ) {
+		if( V24_BPy_Material_Check( ( PyObject * ) pymat ) ) {
 			ma = pymat->material;
 			assign_material( ob, ma, i + 1 );	/*@ XXX don't use this function anymore */
 		} else {
@@ -3014,7 +3014,7 @@ static int convert_NMeshToMesh( Mesh * mesh, BPy_NMesh * nmesh)
 			BPy_NMVert *mv =
 				( BPy_NMVert * ) PySequence_GetItem( mf->v,
 								     j );
-			if( BPy_NMVert_Check( mv ) )
+			if( V24_BPy_NMVert_Check( mv ) )
 				mv->index = -1;
 			Py_DECREF( mv );
 		}
@@ -3078,7 +3078,7 @@ static PyObject *M_NMesh_PutRaw( PyObject * self, PyObject * args )
 	int old_totvert = 0;
 
 	if( !PyArg_ParseTuple( args, "O!|sii",
-			       &NMesh_Type, &nmesh, &name, &recalc_normals, &store_edges ) )
+			       &V24_NMesh_Type, &nmesh, &name, &recalc_normals, &store_edges ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected an NMesh object and optionally also a string and two ints" );
 
@@ -3122,7 +3122,7 @@ static PyObject *M_NMesh_PutRaw( PyObject * self, PyObject * args )
 	if( recalc_normals )
 		mesh_calc_normals(mesh->mvert, mesh->totvert, mesh->mface, mesh->totface, NULL);
 
-	mesh_update( mesh, nmesh->object );
+	V24_mesh_update( mesh, nmesh->object );
 
 	if( !during_script(  ) )
 		V24_EXPP_allqueue( REDRAWVIEW3D, 0 );
@@ -3154,7 +3154,7 @@ static PyObject *M_NMesh_PutRaw( PyObject * self, PyObject * args )
 	// each bit indicates the binding PER MATERIAL 
 
 	if( ob ) {		// we created a new object
-		NMesh_assignMaterials_toObject( nmesh, ob );
+		V24_NMesh_assignMaterials_toObject( nmesh, ob );
 		V24_EXPP_synchronizeMaterialLists( ob );
 		return V24_Object_CreatePyObject( ob );
 	} else {
@@ -3284,7 +3284,7 @@ static PyObject *M_NMesh_EdgeFlagsDict( void )
 	return EF;
 }
 
-PyObject *NMesh_Init( void )
+PyObject *V24_NMesh_Init( void )
 {
 	PyObject *submodule;
 
@@ -3294,10 +3294,10 @@ PyObject *NMesh_Init( void )
 	PyObject *FaceTranspModes = M_NMesh_FaceTranspModesDict(  );
   PyObject *EdgeFlags = M_NMesh_EdgeFlagsDict(  );
 
-	NMCol_Type.ob_type = &PyType_Type;
-	NMFace_Type.ob_type = &PyType_Type;
-	NMVert_Type.ob_type = &PyType_Type;
-	NMesh_Type.ob_type = &PyType_Type;
+	V24_NMCol_Type.ob_type = &PyType_Type;
+	V24_NMFace_Type.ob_type = &PyType_Type;
+	V24_NMVert_Type.ob_type = &PyType_Type;
+	V24_NMesh_Type.ob_type = &PyType_Type;
 
 	submodule =
 		Py_InitModule3( "Blender.NMesh", M_NMesh_methods,
@@ -3321,9 +3321,9 @@ PyObject *NMesh_Init( void )
 
 /* These are needed by Object.c */
 
-PyObject *NMesh_CreatePyObject( Mesh * me, Object * ob )
+PyObject *V24_NMesh_CreatePyObject( Mesh * me, Object * ob )
 {
-	BPy_NMesh *nmesh = ( BPy_NMesh * ) new_NMesh( me );
+	BPy_NMesh *nmesh = ( BPy_NMesh * ) V24_new_NMesh( me );
 
 	if( nmesh )
 		nmesh->object = ob;	/* linking nmesh and object for vgrouping methods */
@@ -3333,12 +3333,12 @@ PyObject *NMesh_CreatePyObject( Mesh * me, Object * ob )
 
 int NMesh_CheckPyObject( PyObject * pyobj )
 {
-	return ( pyobj->ob_type == &NMesh_Type );
+	return ( pyobj->ob_type == &V24_NMesh_Type );
 }
 
-Mesh *NMesh_FromPyObject( PyObject * pyobj, Object * ob )
+Mesh *V24_NMesh_FromPyObject( PyObject * pyobj, Object * ob )
 {
-	if( pyobj->ob_type == &NMesh_Type ) {
+	if( pyobj->ob_type == &V24_NMesh_Type ) {
 		Mesh *mesh;
 		BPy_NMesh *nmesh = ( BPy_NMesh * ) pyobj;
 
@@ -3355,8 +3355,8 @@ Mesh *NMesh_FromPyObject( PyObject * pyobj, Object * ob )
 			if( nmesh->name && nmesh->name != Py_None )
 			    new_id( &( G.main->mesh ), &mesh->id,
 				    PyString_AsString( nmesh->name ) );
-			mesh_update( mesh, nmesh->object );
-			nmesh_updateMaterials( nmesh );
+			V24_mesh_update( mesh, nmesh->object );
+			V24_nmesh_updateMaterials( nmesh );
 		}
 		return mesh;
 	}
@@ -3375,7 +3375,7 @@ static PyObject *findEdge( BPy_NMesh *nmesh, BPy_NMVert *v1, BPy_NMVert *v2, int
   for ( i = 0; i < PyList_Size(nmesh->edges); ++i )
   {
     BPy_NMEdge *edge=(BPy_NMEdge*)PyList_GetItem( nmesh->edges, i );
-    if (!BPy_NMEdge_Check(edge)) continue;
+    if (!V24_BPy_NMEdge_Check(edge)) continue;
     if ( POINTER_CROSS_EQ((BPy_NMVert*)edge->v1, (BPy_NMVert*)edge->v2, v1, v2) )
     {
       return V24_EXPP_incr_ret((PyObject*)edge);
@@ -3404,7 +3404,7 @@ static void removeEdge( BPy_NMesh *nmesh, BPy_NMVert *v1, BPy_NMVert *v2, int un
   for ( i = 0; i < totedge; ++i )
   {
     edge=(BPy_NMEdge*)PyList_GetItem( nmesh->edges, i );
-    if (!BPy_NMEdge_Check(edge)) continue;
+    if (!V24_BPy_NMEdge_Check(edge)) continue;
     if ( POINTER_CROSS_EQ((BPy_NMVert*)edge->v1, (BPy_NMVert*)edge->v2, v1, v2) )
     {
       break;
@@ -3419,7 +3419,7 @@ static void removeEdge( BPy_NMesh *nmesh, BPy_NMVert *v1, BPy_NMVert *v2, int un
     BPy_NMFace *face=(BPy_NMFace *)PyList_GetItem(nmesh->faces, j);
     int k, del_face=0;
     int totv;
-    if (!BPy_NMFace_Check(face)) continue;
+    if (!V24_BPy_NMFace_Check(face)) continue;
     totv=PyList_Size(face->v);
     if (totv<2) continue;
     for ( k = 0; k < totv && !del_face; ++k )
@@ -3449,7 +3449,7 @@ static PyObject *NMesh_addEdge( PyObject * self, PyObject * args )
   BPy_NMVert *v1=NULL, *v2=NULL;
 
   if (!PyArg_ParseTuple
-	    ( args, "O!O!", &NMVert_Type, &v1, &NMVert_Type, &v2 ) ) {
+	    ( args, "O!O!", &V24_NMVert_Type, &v1, &V24_NMVert_Type, &v2 ) ) {
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMVert, NMVert" );
 	}
@@ -3467,7 +3467,7 @@ static PyObject *NMesh_findEdge( PyObject * self, PyObject * args )
   BPy_NMVert *v1=NULL, *v2=NULL;
 
   if (!PyArg_ParseTuple
-	    ( args, "O!O!", &NMVert_Type, &v1, &NMVert_Type, &v2 ) ) {
+	    ( args, "O!O!", &V24_NMVert_Type, &v1, &V24_NMVert_Type, &v2 ) ) {
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMVert, NMVert" );
 	}
@@ -3485,7 +3485,7 @@ static PyObject *NMesh_removeEdge( PyObject * self, PyObject * args )
   BPy_NMVert *v1=NULL, *v2=NULL;
 
   if (!PyArg_ParseTuple
-	    ( args, "O!O!", &NMVert_Type, &v1, &NMVert_Type, &v2 ) ) {
+	    ( args, "O!O!", &V24_NMVert_Type, &v1, &V24_NMVert_Type, &v2 ) ) {
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMVert, NMVert" );
 	}
@@ -3507,7 +3507,7 @@ static PyObject *NMesh_addFace( PyObject * self, PyObject * args )
   int totv=0;
   
   if (!PyArg_ParseTuple
-	    ( args, "O!", &NMFace_Type, &face ) ) {
+	    ( args, "O!", &V24_NMFace_Type, &face ) ) {
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMFace argument" );
 	}
@@ -3559,7 +3559,7 @@ static PyObject *NMesh_removeFace( PyObject * self, PyObject * args )
   int totv=0;
   
   if (!PyArg_ParseTuple
-	    ( args, "O!", &NMFace_Type, &face ) ) {
+	    ( args, "O!", &V24_NMFace_Type, &face ) ) {
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMFace argument" );
 	}
@@ -4104,7 +4104,7 @@ static PyObject *NMesh_transform (PyObject *self, PyObject *args)
 	float vx, vy, vz;
 	int i, recalc_normals = 0;
 
-	if( !PyArg_ParseTuple( args, "O!|i", &matrix_Type, &ob1, &recalc_normals ) )
+	if( !PyArg_ParseTuple( args, "O!|i", &V24_matrix_Type, &ob1, &recalc_normals ) )
 		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected matrix and optionally an int as arguments" ) );
 

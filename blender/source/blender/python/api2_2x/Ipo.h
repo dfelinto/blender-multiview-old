@@ -48,7 +48,7 @@ typedef struct {
 
 extern PyTypeObject V24_Ipo_Type;
 
-#define BPy_Ipo_Check(v)  ((v)->ob_type == &V24_Ipo_Type)	/* for type checking */
+#define V24_BPy_Ipo_Check(v)  ((v)->ob_type == &V24_Ipo_Type)	/* for type checking */
 
 
 /* 

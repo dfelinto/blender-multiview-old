@@ -40,8 +40,8 @@
 extern PyTypeObject V24_Sequence_Type;
 extern PyTypeObject V24_SceneSeq_Type;
 
-#define BPy_Sequence_Check(v)       ((v)->ob_type == &V24_Sequence_Type)
-#define BPy_SceneSeq_Check(v)       ((v)->ob_type == &V24_SceneSeq_Type)
+#define V24_BPy_Sequence_Check(v)       ((v)->ob_type == &V24_Sequence_Type)
+#define V24_BPy_SceneSeq_Check(v)       ((v)->ob_type == &V24_SceneSeq_Type)
 
 
 /*****************************************************************************/

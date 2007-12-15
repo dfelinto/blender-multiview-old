@@ -1309,12 +1309,12 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 	 *	- id-properties are wrapped using the id-properties pyapi
 	 *	- targets are presented as a list of matrices
 	 */
-	srcmat = newMatrixObject((float *)cob->matrix, 4, 4, Py_NEW);
+	srcmat = V24_newMatrixObject((float *)cob->matrix, 4, 4, Py_NEW);
 	idprop = V24_BPy_Wrap_IDProperty(NULL, con->prop, NULL);
 	
 	tarmats= PyList_New(con->tarnum); 
 	for (ct=targets->first, index=0; ct; ct=ct->next, index++) {
-		tarmat = newMatrixObject((float *)ct->matrix, 4, 4, Py_NEW);
+		tarmat = V24_newMatrixObject((float *)ct->matrix, 4, 4, Py_NEW);
 		PyList_SET_ITEM(tarmats, index, tarmat);
 	}
 	
@@ -1394,7 +1394,7 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 	}
 	
 	
-	if (!PyObject_TypeCheck(retval, &matrix_Type)) {
+	if (!PyObject_TypeCheck(retval, &V24_matrix_Type)) {
 		printf("Error in PyConstraint - doConstraint: Function not returning a matrix!\n");
 		con->flag |= PYCON_SCRIPTERROR;
 		
@@ -1468,7 +1468,7 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 	else
 		subtar = PyString_FromString(ct->subtarget);
 	
-	tarmat = newMatrixObject((float *)ct->matrix, 4, 4, Py_NEW);
+	tarmat = V24_newMatrixObject((float *)ct->matrix, 4, 4, Py_NEW);
 	idprop = V24_BPy_Wrap_IDProperty( NULL, con->prop, NULL);
 	
 /*  since I can't remember what the armature weakrefs do, I'll just leave this here
@@ -1546,7 +1546,7 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 		return;
 	}
 	
-	if (!PyObject_TypeCheck(retval, &matrix_Type)) {
+	if (!PyObject_TypeCheck(retval, &V24_matrix_Type)) {
 		con->flag |= PYCON_SCRIPTERROR;
 		
 		Py_XDECREF(tar);
@@ -1768,7 +1768,7 @@ float BPY_pydriver_eval(IpoDriver *driver)
 	return result;
 }
 
-/* V24V24__Button Python Evaluation */
+/* V24_Button Python Evaluation */
 
 /* Python evaluation for gui buttons:
  *	users can write any valid Python expression (that evals to an int or float)
@@ -1809,7 +1809,7 @@ int BPY_button_eval(char *expr, double *value)
 	if (!bpy_pydriver_Dict) {
 		if (bpy_pydriver_create_dict() != 0) {
 			fprintf(stderr,
-				"V24V24__Button Python Eval error: couldn't create Python dictionary");
+				"V24_Button Python Eval error: couldn't create Python dictionary");
 			return -1;
 		}
 	}

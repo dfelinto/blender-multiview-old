@@ -518,7 +518,7 @@ static PyObject *V24_KeyBlock_getData( PyObject * self )
 	case ID_ME:
 
 		for (i=0, datap = kb->keyblock->data; i<kb->keyblock->totelem; i++) {
-			PyObject *vec = newVectorObject((float*)datap, 3, Py_WRAP);
+			PyObject *vec = V24_newVectorObject((float*)datap, 3, Py_WRAP);
 			
 			if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "could not allocate memory for Blender.Mathutils.Vector wrapper!" );
@@ -547,21 +547,21 @@ static PyObject *V24_KeyBlock_getData( PyObject * self )
 				if (!tuple) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "PyTuple_New() failed!" );
 					  
-				vec = newVectorObject(vecs, 3, Py_WRAP);
+				vec = V24_newVectorObject(vecs, 3, Py_WRAP);
 				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 					  
 				PyTuple_SET_ITEM( tuple, 0, vec);
 				
 				vecs += 3;
-				vec = newVectorObject(vecs, 3, Py_WRAP);
+				vec = V24_newVectorObject(vecs, 3, Py_WRAP);
 				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 
 				PyTuple_SET_ITEM( tuple, 1, vec);
 				
 				vecs += 3;
-				vec = newVectorObject(vecs, 3, Py_WRAP);
+				vec = V24_newVectorObject(vecs, 3, Py_WRAP);
 				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 
@@ -569,7 +569,7 @@ static PyObject *V24_KeyBlock_getData( PyObject * self )
 				
 				/*tilts*/
 				vecs += 3;				
-				vec = newVectorObject(vecs, 3, Py_WRAP);
+				vec = V24_newVectorObject(vecs, 3, Py_WRAP);
 				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 
@@ -580,7 +580,7 @@ static PyObject *V24_KeyBlock_getData( PyObject * self )
 		} else {
 			for( i = 0, datap = kb->keyblock->data; i < datasize;
 					i++, datap += kb->key->elemsize ) {
-				PyObject *vec = newVectorObject((float*)datap, 4, Py_WRAP);
+				PyObject *vec = V24_newVectorObject((float*)datap, 4, Py_WRAP);
 				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 				
@@ -592,7 +592,7 @@ static PyObject *V24_KeyBlock_getData( PyObject * self )
 	case ID_LT:
 		for( i = 0, datap = kb->keyblock->data; i < kb->keyblock->totelem;
 				i++, datap += kb->key->elemsize ) {
-			PyObject *vec = newVectorObject((float*)datap, 3, Py_WRAP);
+			PyObject *vec = V24_newVectorObject((float*)datap, 3, Py_WRAP);
 			if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 			

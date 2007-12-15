@@ -238,7 +238,7 @@ static PyObject *V24_Font_getPacked( V24_BPy_Font * self )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Font_getseters[] = {
-	GENERIC_LIB_GETSETATTR,
+	V24_GENERIC_LIB_GETSETATTR,
 	{"filename",
 	 (getter)V24_Font_getFilename, (setter)V24_Font_setFilename,
 	 "Font filepath",

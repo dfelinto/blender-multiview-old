@@ -59,12 +59,12 @@ extern PyTypeObject V24_MCol_Type;
 struct V24_BPy_Object;
 
 /* Type checking for EXPP PyTypes */
-#define BPy_Mesh_Check(v)       ((v)->ob_type == &V24_Mesh_Type)
-#define BPy_MFace_Check(v)      ((v)->ob_type == &V24_MFace_Type)
-#define BPy_MEdge_Check(v)      ((v)->ob_type == &V24_MEdge_Type)
-#define BPy_MVert_Check(v)      ((v)->ob_type == &V24_MVert_Type)
-#define BPy_PVert_Check(v)      ((v)->ob_type == &V24_PVert_Type)
-#define BPy_MCol_Check(v)       ((v)->ob_type == &V24_MCol_Type)
+#define V24_BPy_Mesh_Check(v)       ((v)->ob_type == &V24_Mesh_Type)
+#define V24_BPy_MFace_Check(v)      ((v)->ob_type == &V24_MFace_Type)
+#define V24_BPy_MEdge_Check(v)      ((v)->ob_type == &V24_MEdge_Type)
+#define V24_BPy_MVert_Check(v)      ((v)->ob_type == &V24_MVert_Type)
+#define V24_BPy_PVert_Check(v)      ((v)->ob_type == &V24_PVert_Type)
+#define V24_BPy_MCol_Check(v)       ((v)->ob_type == &V24_MCol_Type)
 
 /* Typedefs for the new types */
 
