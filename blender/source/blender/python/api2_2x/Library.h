@@ -40,12 +40,12 @@
 #include "blendef.h"
 
 /*****************************************************************************/
-/* Python BPy_Library structure definition:        */
+/* Python V24_BPy_Library structure definition:        */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD 
 	char filename[FILE_MAXDIR + FILE_MAXFILE];
-} BPy_Library;
+} V24_BPy_Library;
 
 typedef struct {
 	PyObject_HEAD 
@@ -58,21 +58,21 @@ typedef struct {
 		OBJECT_IS_APPEND,
 		OTHER
 	} kind;
-} BPy_LibraryData;
+} V24_BPy_LibraryData;
 
-extern PyTypeObject Library_Type;
-extern PyTypeObject LibraryData_Type;
+extern PyTypeObject V24_Library_Type;
+extern PyTypeObject V24_LibraryData_Type;
 
-#define BPy_LibraryData_Check(v)       ((v)->ob_type == &LibraryData_Type)
-#define BPy_Library_Check(v)       ((v)->ob_type == &Library_Type)
+#define BPy_LibraryData_Check(v)       ((v)->ob_type == &V24_LibraryData_Type)
+#define BPy_Library_Check(v)       ((v)->ob_type == &V24_Library_Type)
 
 /*****************************************************************************/
 /* Module Blender.Library - public functions	 */
 /*****************************************************************************/
-PyObject *Library_Init( void );
+PyObject *V24_Library_Init( void );
 PyObject *oldLibrary_Init( void );
 
-PyObject *LibraryData_importLibData( BPy_LibraryData *self, char *name,
+PyObject *V24_LibraryData_importLibData( V24_BPy_LibraryData *self, char *name,
 		int mode, Scene *scene );
 
 #endif				/* EXPP_LIBRARY_H */

@@ -36,29 +36,29 @@
 #include <Python.h>
 #include "DNA_effect_types.h"
 
-extern PyTypeObject Particle_Type;
+extern PyTypeObject V24_Particle_Type;
 
-#define BPy_Particle_Check(v) ((v)->ob_type==&Particle_Type)
+#define BPy_Particle_Check(v) ((v)->ob_type==&V24_Particle_Type)
 
-/* Python BPy_Particle structure definition */
+/* Python V24_BPy_Particle structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	Effect * particle;
-} BPy_Particle;
+} V24_BPy_Particle;
 
 #include "Effect.h"
 
 /*****************************************************************************/
-/* Python Particle_Type callback function prototypes:                        */
+/* Python V24_Particle_Type callback function prototypes:                        */
 /*****************************************************************************/
 #if 0
-void ParticleDeAlloc( BPy_Particle * msh );
-//int ParticlePrint (BPy_Particle *msh, FILE *fp, int flags);
-int ParticleSetAttr( BPy_Particle * msh, char *name, PyObject * v );
-PyObject *ParticleGetAttr( BPy_Particle * msh, char *name );
-PyObject *ParticleRepr( void );
-PyObject *ParticleCreatePyObject( struct Effect *particle );
-int ParticleCheckPyObject( PyObject * py_obj );
+void V24_ParticleDeAlloc( V24_BPy_Particle * msh );
+//int ParticlePrint (V24_BPy_Particle *msh, FILE *fp, int flags);
+int V24_ParticleSetAttr( V24_BPy_Particle * msh, char *name, PyObject * v );
+PyObject *V24_ParticleGetAttr( V24_BPy_Particle * msh, char *name );
+PyObject *V24_ParticleRepr( void );
+PyObject *V24_ParticleCreatePyObject( struct Effect *particle );
+int V24_ParticleCheckPyObject( PyObject * py_obj );
 struct Particle *ParticleFromPyObject( PyObject * py_obj );
 #endif
 

@@ -43,11 +43,11 @@ extern PyTypeObject constant_Type;
 typedef struct {
 	PyObject_HEAD 
 	PyObject * dict;
-} BPy_constant;
+} V24_BPy_constant;
 /*-------------------VISIBLE PROTOTYPES-----------------------*/
-PyObject *PyConstant_New(void);
-int PyConstant_Insert(BPy_constant *self, char *name, PyObject *value);
-PyObject *PyConstant_NewInt(char *name, int value);
-PyObject *PyConstant_NewString(char *name, char *value);
+PyObject *V24_PyConstant_New(void);
+int V24_PyConstant_Insert(V24_BPy_constant *self, char *name, PyObject *value);
+PyObject *V24_PyConstant_NewInt(char *name, int value);
+PyObject *V24_PyConstant_NewString(char *name, char *value);
 
 #endif				/* EXPP_constant_H */

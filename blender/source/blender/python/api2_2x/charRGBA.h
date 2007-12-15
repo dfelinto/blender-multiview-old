@@ -39,13 +39,13 @@
  * objects, so this header file must contain only 'public' declarations */
 /* there's also rgbTuple, for rgb floats and a color obj in NMesh, messy! */
 
-/* Python BPy_charRGBA structure definition: */
+/* Python V24_BPy_charRGBA structure definition: */
 
 typedef struct {
 	PyObject_HEAD 
 	char *rgba[4];	/* array of four pointers to chars */
 
-} BPy_charRGBA;
+} V24_BPy_charRGBA;
 
 extern PyTypeObject charRGBA_Type;
 
@@ -53,7 +53,7 @@ extern PyTypeObject charRGBA_Type;
 /* Python API function prototypes for the charRGBA helper module.            */
 /*****************************************************************************/
 PyObject *charRGBA_New( char *rgba );
-PyObject *charRGBA_getCol( BPy_charRGBA * self );
-PyObject *charRGBA_setCol( BPy_charRGBA * self, PyObject * args );
+PyObject *charRGBA_getCol( V24_BPy_charRGBA * self );
+PyObject *charRGBA_setCol( V24_BPy_charRGBA * self, PyObject * args );
 
 #endif				/* EXPP_charRGBA_H */

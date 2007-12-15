@@ -38,23 +38,23 @@
 
 
 /*****************************************************************************/
-/* Python BPy_Image structure definition                                     */
+/* Python V24_BPy_Image structure definition                                     */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD 
 	Image * image; /* libdata must be second */
 
-} BPy_Image;
+} V24_BPy_Image;
 
-extern PyTypeObject Image_Type;	/* The Image PyType Object */
+extern PyTypeObject V24_Image_Type;	/* The Image PyType Object */
 
-#define BPy_Image_Check(v)  ((v)->ob_type == &Image_Type)	/*for type checking */
+#define BPy_Image_Check(v)  ((v)->ob_type == &V24_Image_Type)	/*for type checking */
 
 /*****************************************************************************/
 /* Module Blender.Image - public functions                                   */
 /*****************************************************************************/
-PyObject *Image_Init( void );
-PyObject *Image_CreatePyObject( Image * image );
-Image *Image_FromPyObject( PyObject * pyobj );
+PyObject *V24_Image_Init( void );
+PyObject *V24_Image_CreatePyObject( Image * image );
+Image *V24_Image_FromPyObject( PyObject * pyobj );
 
 #endif				/* EXPP_IMAGE_H */

@@ -65,61 +65,61 @@
 #define IPOKEY_OFFSET   4
 #define IPOKEY_SIZE     5
 /*****************************************************************************/
-/* Python BPy_World methods declarations:                                   */
+/* Python V24_BPy_World methods declarations:                                   */
 /*****************************************************************************/
-static PyObject *World_getRange( BPy_World * self );
-static PyObject *World_setRange( BPy_World * self, PyObject * args );
-static PyObject *World_getIpo( BPy_World * self );
-static PyObject *World_oldsetIpo( BPy_World * self, PyObject * args );
-static int       World_setIpo( BPy_World * self, PyObject * args );
-static PyObject *World_clearIpo( BPy_World * self );
-static PyObject *World_insertIpoKey( BPy_World * self, PyObject * args );
-static PyObject *World_getMode( BPy_World * self );
-static PyObject *World_oldsetMode( BPy_World * self, PyObject * args );
-static int       World_setMode( BPy_World * self, PyObject * args );
-static PyObject *World_getSkytype( BPy_World * self );
-static PyObject *World_oldsetSkytype( BPy_World * self, PyObject * args );
-static int       World_setSkytype( BPy_World * self, PyObject * args );
-static PyObject *World_getMistype( BPy_World * self );
-static PyObject *World_oldsetMistype( BPy_World * self, PyObject * args );
-static int       World_setMistype( BPy_World * self, PyObject * args );
-static PyObject *World_getHor( BPy_World * self );
-static PyObject *World_oldsetHor( BPy_World * self, PyObject * args );
-static int       World_setHor( BPy_World * self, PyObject * args );
-static PyObject *World_getZen( BPy_World * self );
-static PyObject *World_oldsetZen( BPy_World * self, PyObject * args );
-static int       World_setZen( BPy_World * self, PyObject * args );
-static PyObject *World_getAmb( BPy_World * self );
-static PyObject *World_oldsetAmb( BPy_World * self, PyObject * args );
-static int       World_setAmb( BPy_World * self, PyObject * args );
-static PyObject *World_getStar( BPy_World * self );
-static PyObject *World_oldsetStar( BPy_World * self, PyObject * args );
-static int       World_setStar( BPy_World * self, PyObject * args );
-static PyObject *World_getMist( BPy_World * self );
-static PyObject *World_oldsetMist( BPy_World * self, PyObject * args );
-static int       World_setMist( BPy_World * self, PyObject * args );
-static PyObject *World_getScriptLinks( BPy_World * self, PyObject * value );
-static PyObject *World_addScriptLink( BPy_World * self, PyObject * args );
-static PyObject *World_clearScriptLinks( BPy_World * self, PyObject * args );
-static PyObject *World_setCurrent( BPy_World * self );
-static PyObject *World_copy( BPy_World * self );
+static PyObject *V24_World_getRange( V24_BPy_World * self );
+static PyObject *V24_World_setRange( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getIpo( V24_BPy_World * self );
+static PyObject *V24_World_oldsetIpo( V24_BPy_World * self, PyObject * args );
+static int       V24_World_setIpo( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_clearIpo( V24_BPy_World * self );
+static PyObject *V24_World_insertIpoKey( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getMode( V24_BPy_World * self );
+static PyObject *V24_World_oldsetMode( V24_BPy_World * self, PyObject * args );
+static int       V24_World_setMode( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getSkytype( V24_BPy_World * self );
+static PyObject *V24_World_oldsetSkytype( V24_BPy_World * self, PyObject * args );
+static int       V24_World_setSkytype( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getMistype( V24_BPy_World * self );
+static PyObject *V24_World_oldsetMistype( V24_BPy_World * self, PyObject * args );
+static int       V24_World_setMistype( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getHor( V24_BPy_World * self );
+static PyObject *V24_World_oldsetHor( V24_BPy_World * self, PyObject * args );
+static int       V24_World_setHor( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getZen( V24_BPy_World * self );
+static PyObject *V24_World_oldsetZen( V24_BPy_World * self, PyObject * args );
+static int       V24_World_setZen( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getAmb( V24_BPy_World * self );
+static PyObject *V24_World_oldsetAmb( V24_BPy_World * self, PyObject * args );
+static int       V24_World_setAmb( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getStar( V24_BPy_World * self );
+static PyObject *V24_World_oldsetStar( V24_BPy_World * self, PyObject * args );
+static int       V24_World_setStar( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getMist( V24_BPy_World * self );
+static PyObject *V24_World_oldsetMist( V24_BPy_World * self, PyObject * args );
+static int       V24_World_setMist( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_getScriptLinks( V24_BPy_World * self, PyObject * value );
+static PyObject *V24_World_addScriptLink( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_clearScriptLinks( V24_BPy_World * self, PyObject * args );
+static PyObject *V24_World_setCurrent( V24_BPy_World * self );
+static PyObject *V24_World_copy( V24_BPy_World * self );
 
 
 /*****************************************************************************/
 /* Python API function prototypes for the World module.                     */
 /*****************************************************************************/
-static PyObject *M_World_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_World_New( PyObject * self, PyObject * args,
 			      PyObject * keywords );
-static PyObject *M_World_Get( PyObject * self, PyObject * args );
-static PyObject *M_World_GetCurrent( PyObject * self );
+static PyObject *V24_M_World_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_World_GetCurrent( PyObject * self );
 
 
 /*****************************************************************************/
-/* Python World_Type callback function prototypes:			*/
+/* Python V24_World_Type callback function prototypes:			*/
 /*****************************************************************************/
-//static int World_Print (BPy_World *self, FILE *fp, int flags);
-static int World_Compare( BPy_World * a, BPy_World * b );
-static PyObject *World_Repr( BPy_World * self );
+//static int World_Print (V24_BPy_World *self, FILE *fp, int flags);
+static int V24_World_Compare( V24_BPy_World * a, V24_BPy_World * b );
+static PyObject *V24_World_Repr( V24_BPy_World * self );
 
 
 
@@ -128,16 +128,16 @@ static PyObject *World_Repr( BPy_World * self );
 /* In Python these will be written to the console when doing a               */
 /* Blender.World.__doc__                                                     */
 /*****************************************************************************/
-static char M_World_doc[] = "The Blender World module\n\n\
+static char V24_M_World_doc[] = "The Blender World module\n\n\
 This module provides access to **World Data** objects in Blender\n\n";
 
-static char M_World_New_doc[] = "() - return a new World object";
+static char V24_M_World_New_doc[] = "() - return a new World object";
 
-static char M_World_Get_doc[] =
+static char V24_M_World_Get_doc[] =
 	"(name) - return the world with the name 'name', \
 returns None if not found.\n If 'name' is not specified, \
 it returns a list of all worlds in the\ncurrent scene.";
-static char M_World_GetCurrent_doc[] = "() - returns the current world, or \
+static char V24_M_World_GetCurrent_doc[] = "() - returns the current world, or \
 None if the Scene has no world";
 
 
@@ -146,90 +146,90 @@ None if the Scene has no world";
 /* Python method structure definition for Blender.World module:              */
 /*****************************************************************************/
 struct PyMethodDef M_World_methods[] = {
-	{"New", ( PyCFunction ) M_World_New, METH_VARARGS | METH_KEYWORDS,
-	 M_World_New_doc},
-	{"Get", M_World_Get, METH_VARARGS, M_World_Get_doc},
-	{"GetActive", ( PyCFunction ) M_World_GetCurrent, METH_NOARGS,
-	 M_World_GetCurrent_doc},
-	{"GetCurrent", ( PyCFunction ) M_World_GetCurrent, METH_NOARGS,
-	 M_World_GetCurrent_doc},
-	{"get", M_World_Get, METH_VARARGS, M_World_Get_doc},
+	{"New", ( PyCFunction ) V24_M_World_New, METH_VARARGS | METH_KEYWORDS,
+	 V24_M_World_New_doc},
+	{"Get", V24_M_World_Get, METH_VARARGS, V24_M_World_Get_doc},
+	{"GetActive", ( PyCFunction ) V24_M_World_GetCurrent, METH_NOARGS,
+	 V24_M_World_GetCurrent_doc},
+	{"GetCurrent", ( PyCFunction ) V24_M_World_GetCurrent, METH_NOARGS,
+	 V24_M_World_GetCurrent_doc},
+	{"get", V24_M_World_Get, METH_VARARGS, V24_M_World_Get_doc},
 	{NULL, NULL, 0, NULL}
 };
 
 
 
 /*****************************************************************************/
-/* Python BPy_World methods table:                                          */
+/* Python V24_BPy_World methods table:                                          */
 /*****************************************************************************/
-static PyMethodDef BPy_World_methods[] = {
-	{"getRange", ( PyCFunction ) World_getRange, METH_NOARGS,
+static PyMethodDef V24_BPy_World_methods[] = {
+	{"getRange", ( PyCFunction ) V24_World_getRange, METH_NOARGS,
 	 "() - Return World Range"},
-	{"setRange", ( PyCFunction ) World_setRange, METH_VARARGS,
+	{"setRange", ( PyCFunction ) V24_World_setRange, METH_VARARGS,
 	 "() - Change this World's range"},
-	{"getIpo", ( PyCFunction ) World_getIpo, METH_NOARGS,
+	{"getIpo", ( PyCFunction ) V24_World_getIpo, METH_NOARGS,
 	 "() - Return World Ipo"},
-	{"setIpo", ( PyCFunction ) World_oldsetIpo, METH_VARARGS,
+	{"setIpo", ( PyCFunction ) V24_World_oldsetIpo, METH_VARARGS,
 	 "() - Change this World's ipo"},
-	{"clearIpo", ( PyCFunction ) World_clearIpo, METH_VARARGS,
+	{"clearIpo", ( PyCFunction ) V24_World_clearIpo, METH_VARARGS,
 	 "() - Unlink Ipo from this World"},
-	{"getName", ( PyCFunction ) GenericLib_getName, METH_NOARGS,
+	{"getName", ( PyCFunction ) V24_GenericLib_getName, METH_NOARGS,
 	 "() - Return World Data name"},
-	{"setName", ( PyCFunction ) GenericLib_setName_with_method, METH_VARARGS,
+	{"setName", ( PyCFunction ) V24_GenericLib_setName_with_method, METH_VARARGS,
 	 "() - Set World Data name"},
-	{"getMode", ( PyCFunction ) World_getMode, METH_NOARGS,
+	{"getMode", ( PyCFunction ) V24_World_getMode, METH_NOARGS,
 	 "() - Return World Data mode"},
-	{"setMode", ( PyCFunction ) World_oldsetMode, METH_VARARGS,
+	{"setMode", ( PyCFunction ) V24_World_oldsetMode, METH_VARARGS,
 	 "(i) - Set World Data mode"},
-	{"getSkytype", ( PyCFunction ) World_getSkytype, METH_NOARGS,
+	{"getSkytype", ( PyCFunction ) V24_World_getSkytype, METH_NOARGS,
 	 "() - Return World Data skytype"},
-	{"setSkytype", ( PyCFunction ) World_oldsetSkytype, METH_VARARGS,
+	{"setSkytype", ( PyCFunction ) V24_World_oldsetSkytype, METH_VARARGS,
 	 "() - Return World Data skytype"},
-	{"getMistype", ( PyCFunction ) World_getMistype, METH_NOARGS,
+	{"getMistype", ( PyCFunction ) V24_World_getMistype, METH_NOARGS,
 	 "() - Return World Data mistype"},
-	{"setMistype", ( PyCFunction ) World_oldsetMistype, METH_VARARGS,
+	{"setMistype", ( PyCFunction ) V24_World_oldsetMistype, METH_VARARGS,
 	 "() - Return World Data mistype"},
-	{"getHor", ( PyCFunction ) World_getHor, METH_NOARGS,
+	{"getHor", ( PyCFunction ) V24_World_getHor, METH_NOARGS,
 	 "() - Return World Data hor"},
-	{"setHor", ( PyCFunction ) World_oldsetHor, METH_VARARGS,
+	{"setHor", ( PyCFunction ) V24_World_oldsetHor, METH_VARARGS,
 	 "() - Return World Data hor"},
-	{"getZen", ( PyCFunction ) World_getZen, METH_NOARGS,
+	{"getZen", ( PyCFunction ) V24_World_getZen, METH_NOARGS,
 	 "() - Return World Data zen"},
-	{"setZen", ( PyCFunction ) World_oldsetZen, METH_VARARGS,
+	{"setZen", ( PyCFunction ) V24_World_oldsetZen, METH_VARARGS,
 	 "() - Return World Data zen"},
-	{"getAmb", ( PyCFunction ) World_getAmb, METH_NOARGS,
+	{"getAmb", ( PyCFunction ) V24_World_getAmb, METH_NOARGS,
 	 "() - Return World Data amb"},
-	{"setAmb", ( PyCFunction ) World_oldsetAmb, METH_VARARGS,
+	{"setAmb", ( PyCFunction ) V24_World_oldsetAmb, METH_VARARGS,
 	 "() - Return World Data amb"},
-	{"getStar", ( PyCFunction ) World_getStar, METH_NOARGS,
+	{"getStar", ( PyCFunction ) V24_World_getStar, METH_NOARGS,
 	 "() - Return World Data star"},
-	{"setStar", ( PyCFunction ) World_oldsetStar, METH_VARARGS,
+	{"setStar", ( PyCFunction ) V24_World_oldsetStar, METH_VARARGS,
 	 "() - Return World Data star"},
-	{"getMist", ( PyCFunction ) World_getMist, METH_NOARGS,
+	{"getMist", ( PyCFunction ) V24_World_getMist, METH_NOARGS,
 	 "() - Return World Data mist"},
-	{"setMist", ( PyCFunction ) World_oldsetMist, METH_VARARGS,
+	{"setMist", ( PyCFunction ) V24_World_oldsetMist, METH_VARARGS,
 	 "() - Return World Data mist"},
-	{"getScriptLinks", ( PyCFunction ) World_getScriptLinks, METH_O,
+	{"getScriptLinks", ( PyCFunction ) V24_World_getScriptLinks, METH_O,
 	 "(eventname) - Get a list of this world's scriptlinks (Text names) "
 	 "of the given type\n"
 	 "(eventname) - string: FrameChanged, Redraw or Render."},
-	{"addScriptLink", ( PyCFunction ) World_addScriptLink, METH_VARARGS,
+	{"addScriptLink", ( PyCFunction ) V24_World_addScriptLink, METH_VARARGS,
 	 "(text, evt) - Add a new world scriptlink.\n"
 	 "(text) - string: an existing Blender Text name;\n"
 	 "(evt) string: FrameChanged, Redraw or Render."},
-	{"clearScriptLinks", ( PyCFunction ) World_clearScriptLinks,
+	{"clearScriptLinks", ( PyCFunction ) V24_World_clearScriptLinks,
 	 METH_VARARGS,
 	 "() - Delete all scriptlinks from this world.\n"
 	 "([s1<,s2,s3...>]) - Delete specified scriptlinks from this world."},
-	{"setCurrent", ( PyCFunction ) World_setCurrent, METH_NOARGS,
+	{"setCurrent", ( PyCFunction ) V24_World_setCurrent, METH_NOARGS,
 	 "() - Makes this world the active world for the current scene."},
-	{"makeActive", ( PyCFunction ) World_setCurrent, METH_NOARGS,
+	{"makeActive", ( PyCFunction ) V24_World_setCurrent, METH_NOARGS,
 	 "please use setCurrent instead, this alias will be removed."},
-	{"insertIpoKey", ( PyCFunction ) World_insertIpoKey, METH_VARARGS,
+	{"insertIpoKey", ( PyCFunction ) V24_World_insertIpoKey, METH_VARARGS,
 	 "( World IPO type ) - Inserts a key into the IPO"},
-	{"__copy__", ( PyCFunction ) World_copy, METH_NOARGS,
+	{"__copy__", ( PyCFunction ) V24_World_copy, METH_NOARGS,
 	 "() - Makes a copy of this world."},
-	{"copy", ( PyCFunction ) World_copy, METH_NOARGS,
+	{"copy", ( PyCFunction ) V24_World_copy, METH_NOARGS,
 	 "() - Makes a copy of this world."},
 	{NULL, NULL, 0, NULL}
 };
@@ -237,41 +237,41 @@ static PyMethodDef BPy_World_methods[] = {
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_World_getseters[] = {
+static PyGetSetDef V24_BPy_World_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
-	{"skytype", (getter)World_getSkytype, (setter)World_setSkytype,
+	{"skytype", (getter)V24_World_getSkytype, (setter)V24_World_setSkytype,
 	 "sky settings as a list", NULL},
-	{"mode", (getter)World_getMode, (setter)World_setMode,
+	{"mode", (getter)V24_World_getMode, (setter)V24_World_setMode,
 	 "world mode", NULL},
-	{"mistype", (getter)World_getMistype, (setter)World_setMistype,
+	{"mistype", (getter)V24_World_getMistype, (setter)V24_World_setMistype,
 	 "world mist type", NULL},
-	{"hor", (getter)World_getHor, (setter)World_setHor,
+	{"hor", (getter)V24_World_getHor, (setter)V24_World_setHor,
 	 "world horizon color", NULL},
-	{"amb", (getter)World_getAmb, (setter)World_setAmb,
+	{"amb", (getter)V24_World_getAmb, (setter)V24_World_setAmb,
 	 "world ambient color", NULL},
-	{"mist", (getter)World_getMist, (setter)World_setMist,
+	{"mist", (getter)V24_World_getMist, (setter)V24_World_setMist,
 	 "world mist settings", NULL},
-	{"ipo", (getter)World_getIpo, (setter)World_setIpo,
+	{"ipo", (getter)V24_World_getIpo, (setter)V24_World_setIpo,
 	 "world ipo", NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
 /*****************************************************************************/
-/* Python World_Type structure definition:			          */
+/* Python V24_World_Type structure definition:			          */
 /*****************************************************************************/
-PyTypeObject World_Type = {
+PyTypeObject V24_World_Type = {
 	PyObject_HEAD_INIT( NULL ) 
 	0,	/* ob_size */
 	"World",		/* tp_name */
-	sizeof( BPy_World ),	/* tp_basicsize */
+	sizeof( V24_BPy_World ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
 	NULL,	/* tp_dealloc */
 	0,		/* tp_print */
 	NULL,	/* tp_getattr */
 	NULL,	/* tp_setattr */
-	( cmpfunc ) World_Compare,	/* tp_compare */
-	( reprfunc ) World_Repr,	/* tp_repr */
+	( cmpfunc ) V24_World_Compare,	/* tp_compare */
+	( reprfunc ) V24_World_Repr,	/* tp_repr */
 
 	/* Method suites for standard classes */
 
@@ -281,7 +281,7 @@ PyTypeObject World_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -314,9 +314,9 @@ PyTypeObject World_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_World_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_World_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_World_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_World_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -355,15 +355,15 @@ PyTypeObject World_Type = {
  * \return A new World PyObject.
  */
 
-static PyObject *M_World_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_World_New( PyObject * self, PyObject * args,
 			      PyObject * kwords )
 {
 	char *name = NULL;
-	BPy_World *pyworld;
+	V24_BPy_World *pyworld;
 	World *blworld;
 
 	if( !PyArg_ParseTuple( args, "s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected	int argument" ) );
 
 
@@ -374,13 +374,13 @@ static PyObject *M_World_New( PyObject * self, PyObject * args,
 		blworld->id.us = 0;
 		/* create python wrapper obj */
 		pyworld =
-			( BPy_World * ) PyObject_NEW( BPy_World, &World_Type );
+			( V24_BPy_World * ) PyObject_NEW( V24_BPy_World, &V24_World_Type );
 	} else
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create World Data in Blender" ) );
 
 	if( pyworld == NULL )
-		return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						"couldn't create World Data object" ) );
 
 	pyworld->world = blworld;
@@ -401,7 +401,7 @@ static PyObject *M_World_New( PyObject * self, PyObject * args,
  * in Blender.
  */
 
-static PyObject *M_World_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_World_Get( PyObject * self, PyObject * args )
 {
 
 	char *name = NULL;
@@ -410,33 +410,33 @@ static PyObject *M_World_Get( PyObject * self, PyObject * args )
 	char error_msg[64];
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected string argument (or nothing)" ) );
 
 	if( name ) {		/* (name) - Search world by name */
-		world_iter = ( World * ) GetIdFromList( &( G.main->world ), name );
+		world_iter = ( World * ) V24_GetIdFromList( &( G.main->world ), name );
 		
 		if( world_iter == NULL ) {	/* Requested world doesn't exist */
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "World \"%s\" not found", name );
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_NameError, error_msg ) );
 		}
 
-		return ( PyObject * ) World_CreatePyObject(world_iter);
+		return ( PyObject * ) V24_World_CreatePyObject(world_iter);
 	}
 
 	else {			/* return a list of all worlds in the scene */
 		world_iter = G.main->world.first;
 		worldlist = PyList_New( 0 );
 		if( worldlist == NULL )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 							"couldn't create PyList" ) );
 
 		while( world_iter ) {
-			BPy_World *found_world =
-				( BPy_World * ) PyObject_NEW( BPy_World,
-							      &World_Type );
+			V24_BPy_World *found_world =
+				( V24_BPy_World * ) PyObject_NEW( V24_BPy_World,
+							      &V24_World_Type );
 			found_world->world = world_iter;
 			PyList_Append( worldlist, ( PyObject * ) found_world );
 			Py_DECREF(found_world);
@@ -448,9 +448,9 @@ static PyObject *M_World_Get( PyObject * self, PyObject * args )
 
 }
 
-static PyObject *M_World_GetCurrent( PyObject * self )
+static PyObject *V24_M_World_GetCurrent( PyObject * self )
 {
-	BPy_World *w = NULL;
+	V24_BPy_World *w = NULL;
 #if 0	/* add back in when bpy becomes "official" */
 	static char warning = 1;
 	if( warning ) {
@@ -462,7 +462,7 @@ static PyObject *M_World_GetCurrent( PyObject * self )
 	if( !G.scene->world )
 		Py_RETURN_NONE;
 	
-	w = ( BPy_World * ) PyObject_NEW( BPy_World, &World_Type );
+	w = ( V24_BPy_World * ) PyObject_NEW( V24_BPy_World, &V24_World_Type );
 	w->world = G.scene->world;
 	return ( PyObject * ) w;
 }
@@ -477,15 +477,15 @@ static PyObject *M_World_GetCurrent( PyObject * self )
  * \return PyObject*: The initialized submodule.
  */
 
-PyObject *World_Init( void )
+PyObject *V24_World_Init( void )
 {
 	PyObject *submodule;
 
-	if( PyType_Ready( &World_Type ) < 0 )
+	if( PyType_Ready( &V24_World_Type ) < 0 )
 		return NULL;
 
 	submodule = Py_InitModule3( "Blender.World",
-				    M_World_methods, M_World_doc );
+				    M_World_methods, V24_M_World_doc );
 
 	PyModule_AddIntConstant( submodule, "ZENITH",      IPOKEY_ZENITH );
 	PyModule_AddIntConstant( submodule, "HORIZON",     IPOKEY_HORIZON );
@@ -498,45 +498,45 @@ PyObject *World_Init( void )
 }
 
 /*****************************************************************************/
-/* Python BPy_World methods:						*/
+/* Python V24_BPy_World methods:						*/
 /*****************************************************************************/
-static PyObject *World_getRange( BPy_World * self )
+static PyObject *V24_World_getRange( V24_BPy_World * self )
 {
 	return PyFloat_FromDouble( self->world->range );
 }
 
-static PyObject *World_setRange( BPy_World * self, PyObject * args )
+static PyObject *V24_World_setRange( V24_BPy_World * self, PyObject * args )
 {
 	float range = 0.f;
 	if( !PyArg_ParseTuple( args, "f", &range ) )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_TypeError, "expected a float argument" ) );
 	self->world->range = range;
 	Py_RETURN_NONE;
 }
 
 
-static PyObject *World_getIpo( BPy_World * self )
+static PyObject *V24_World_getIpo( V24_BPy_World * self )
 {
 	struct Ipo *ipo = self->world->ipo;
 
 	if( !ipo )
 		Py_RETURN_NONE;
 
-	return Ipo_CreatePyObject( ipo );
+	return V24_Ipo_CreatePyObject( ipo );
 }
 
-static int World_setIpo( BPy_World * self, PyObject * value )
+static int V24_World_setIpo( V24_BPy_World * self, PyObject * value )
 {
-	return GenericLib_assignData(value, (void **) &self->world->ipo, 0, 1, ID_IP, ID_WO);
+	return V24_GenericLib_assignData(value, (void **) &self->world->ipo, 0, 1, ID_IP, ID_WO);
 }
 
-static PyObject *World_oldsetIpo( BPy_World * self, PyObject * args )
+static PyObject *V24_World_oldsetIpo( V24_BPy_World * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)World_setIpo );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_World_setIpo );
 }
 
-static PyObject *World_clearIpo( BPy_World * self )
+static PyObject *V24_World_clearIpo( V24_BPy_World * self )
 {
 	World *world = self->world;
 	Ipo *ipo = ( Ipo * ) world->ipo;
@@ -547,10 +547,10 @@ static PyObject *World_clearIpo( BPy_World * self )
 			id->us--;
 		world->ipo = NULL;
 
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	}
 
-	return EXPP_incr_ret_False(); /* no ipo found */
+	return V24_EXPP_incr_ret_False(); /* no ipo found */
 }
 
 /**
@@ -559,7 +559,7 @@ static PyObject *World_clearIpo( BPy_World * self )
  * \return int : The World Data skytype.
  */
 
-static PyObject *World_getSkytype( BPy_World * self )
+static PyObject *V24_World_getSkytype( V24_BPy_World * self )
 {
 	return PyInt_FromLong( ( long ) self->world->skytype );
 }
@@ -571,18 +571,18 @@ static PyObject *World_getSkytype( BPy_World * self )
  * \return int : The World Data skytype.
  */
 
-static int World_setSkytype( BPy_World * self, PyObject * value )
+static int V24_World_setSkytype( V24_BPy_World * self, PyObject * value )
 {
 	if( !PyInt_Check(value) )
-		return ( EXPP_ReturnIntError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"expected int argument" ) );
 	self->world->skytype = (short)PyInt_AsLong(value);
 	return 0;
 }
 
-static PyObject *World_oldsetSkytype( BPy_World * self, PyObject * args )
+static PyObject *V24_World_oldsetSkytype( V24_BPy_World * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)World_setSkytype );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_World_setSkytype );
 }
 
 
@@ -592,7 +592,7 @@ static PyObject *World_oldsetSkytype( BPy_World * self, PyObject * args )
  * \return int : The World Data mode.
  */
 
-static PyObject *World_getMode( BPy_World * self )
+static PyObject *V24_World_getMode( V24_BPy_World * self )
 {
 	return PyInt_FromLong( ( long ) self->world->mode );
 }
@@ -604,18 +604,18 @@ static PyObject *World_getMode( BPy_World * self )
  * \return int : The World Data mode.
  */
 
-static int World_setMode( BPy_World * self, PyObject * value )
+static int V24_World_setMode( V24_BPy_World * self, PyObject * value )
 {
 	if( !PyInt_Check(value) )
-		return ( EXPP_ReturnIntError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"expected int argument" ) );
 	self->world->mode = (short)PyInt_AsLong(value);
 	return 0;
 }
 
-static PyObject *World_oldsetMode( BPy_World * self, PyObject * args )
+static PyObject *V24_World_oldsetMode( V24_BPy_World * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)World_setMode );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_World_setMode );
 }
 
 
@@ -626,7 +626,7 @@ static PyObject *World_oldsetMode( BPy_World * self, PyObject * args )
  * \return int : The World Data mistype.
  */
 
-static PyObject *World_getMistype( BPy_World * self )
+static PyObject *V24_World_getMistype( V24_BPy_World * self )
 {
 	return PyInt_FromLong( ( long ) self->world->mistype );
 }
@@ -638,27 +638,27 @@ static PyObject *World_getMistype( BPy_World * self )
  * \return int : The World Data mistype.
  */
 
-static int World_setMistype( BPy_World * self, PyObject * value )
+static int V24_World_setMistype( V24_BPy_World * self, PyObject * value )
 {
 	if( !PyInt_Check(value) )
-		return ( EXPP_ReturnIntError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"expected int argument" ) );
 	self->world->mistype = (short)PyInt_AsLong(value);
 	return 0;
 }
 
-static PyObject *World_oldsetMistype( BPy_World * self, PyObject * args )
+static PyObject *V24_World_oldsetMistype( V24_BPy_World * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)World_setMistype );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_World_setMistype );
 }
 
 
 
-static PyObject *World_getHor( BPy_World * self )
+static PyObject *V24_World_getHor( V24_BPy_World * self )
 {
 	PyObject *attr = PyList_New( 3 );
 	if( !attr )
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create list" ) );
 	PyList_SET_ITEM( attr, 0, PyFloat_FromDouble( self->world->horr ) );
 	PyList_SET_ITEM( attr, 1, PyFloat_FromDouble( self->world->horg ) );
@@ -667,13 +667,13 @@ static PyObject *World_getHor( BPy_World * self )
 }
 
 
-static int World_setHor( BPy_World * self, PyObject * value )
+static int V24_World_setHor( V24_BPy_World * self, PyObject * value )
 {
 	if( !PyList_Check( value ) )
-		return ( EXPP_ReturnIntError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"expected list argument" ) );
 	if( PyList_Size( value ) != 3 )
-		return ( EXPP_ReturnIntError
+		return ( V24_EXPP_ReturnIntError
 			 ( PyExc_TypeError, "list size must be 3" ) );
 	self->world->horr = (float)PyFloat_AsDouble( PyList_GetItem( value, 0 ) );
 	self->world->horg = (float)PyFloat_AsDouble( PyList_GetItem( value, 1 ) );
@@ -681,16 +681,16 @@ static int World_setHor( BPy_World * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *World_oldsetHor( BPy_World * self, PyObject * args )
+static PyObject *V24_World_oldsetHor( V24_BPy_World * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)World_setHor );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_World_setHor );
 }
 
-static PyObject *World_getZen( BPy_World * self )
+static PyObject *V24_World_getZen( V24_BPy_World * self )
 {
 	PyObject *attr = PyList_New( 3 );
 	if( !attr )
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create list" ) );
 	PyList_SET_ITEM( attr, 0, PyFloat_FromDouble( self->world->zenr ) );
 	PyList_SET_ITEM( attr, 1, PyFloat_FromDouble( self->world->zeng ) );
@@ -699,13 +699,13 @@ static PyObject *World_getZen( BPy_World * self )
 }
 
 
-static int World_setZen( BPy_World * self, PyObject * value )
+static int V24_World_setZen( V24_BPy_World * self, PyObject * value )
 {
 	if( !PyList_Check( value ) )
-		return ( EXPP_ReturnIntError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"expected list argument" ) );
 	if( PyList_Size( value ) != 3 )
-		return ( EXPP_ReturnIntError
+		return ( V24_EXPP_ReturnIntError
 			 ( PyExc_TypeError, "list size must be 3" ) );
 	self->world->zenr = (float)PyFloat_AsDouble( PyList_GetItem( value, 0 ) );
 	self->world->zeng = (float)PyFloat_AsDouble( PyList_GetItem( value, 1 ) );
@@ -713,17 +713,17 @@ static int World_setZen( BPy_World * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *World_oldsetZen( BPy_World * self, PyObject * args )
+static PyObject *V24_World_oldsetZen( V24_BPy_World * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)World_setZen );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_World_setZen );
 }
 
 
-static PyObject *World_getAmb( BPy_World * self )
+static PyObject *V24_World_getAmb( V24_BPy_World * self )
 {
 	PyObject *attr = PyList_New( 3 );
 	if( !attr )
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create list" ) );
 	PyList_SET_ITEM( attr, 0, PyFloat_FromDouble( self->world->ambr ) );
 	PyList_SET_ITEM( attr, 1, PyFloat_FromDouble( self->world->ambg ) );
@@ -732,13 +732,13 @@ static PyObject *World_getAmb( BPy_World * self )
 }
 
 
-static int World_setAmb( BPy_World * self, PyObject * value )
+static int V24_World_setAmb( V24_BPy_World * self, PyObject * value )
 {
 	if( !PyList_Check( value ) )
-		return ( EXPP_ReturnIntError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"expected list argument" ) );
 	if( PyList_Size( value ) != 3 )
-		return ( EXPP_ReturnIntError
+		return ( V24_EXPP_ReturnIntError
 			 ( PyExc_TypeError, "wrong list size" ) );
 	self->world->ambr = (float)PyFloat_AsDouble( PyList_GetItem( value, 0 ) );
 	self->world->ambg = (float)PyFloat_AsDouble( PyList_GetItem( value, 1 ) );
@@ -746,16 +746,16 @@ static int World_setAmb( BPy_World * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *World_oldsetAmb( BPy_World * self, PyObject * args )
+static PyObject *V24_World_oldsetAmb( V24_BPy_World * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)World_setAmb );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_World_setAmb );
 }
 
-static PyObject *World_getStar( BPy_World * self )
+static PyObject *V24_World_getStar( V24_BPy_World * self )
 {
 	PyObject *attr = PyList_New( 7 );
 	if( !attr )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_RuntimeError, "couldn't create list" ) );
 	PyList_SET_ITEM( attr, 0, PyFloat_FromDouble( self->world->starr ) );
 	PyList_SET_ITEM( attr, 1, PyFloat_FromDouble( self->world->starg ) );
@@ -768,13 +768,13 @@ static PyObject *World_getStar( BPy_World * self )
 }
 
 
-static int World_setStar( BPy_World * self, PyObject * value )
+static int V24_World_setStar( V24_BPy_World * self, PyObject * value )
 {
 	if( !PyList_Check( value ) )
-		return ( EXPP_ReturnIntError
+		return ( V24_EXPP_ReturnIntError
 			 ( PyExc_TypeError, "expected list argument" ) );
 	if( PyList_Size( value ) != 7 )
-		return ( EXPP_ReturnIntError
+		return ( V24_EXPP_ReturnIntError
 			 ( PyExc_TypeError, "wrong list size" ) );
 	self->world->starr = (float)PyFloat_AsDouble( PyList_GetItem( value, 0 ) );
 	self->world->starg = (float)PyFloat_AsDouble( PyList_GetItem( value, 1 ) );
@@ -790,17 +790,17 @@ static int World_setStar( BPy_World * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *World_oldsetStar( BPy_World * self, PyObject * args )
+static PyObject *V24_World_oldsetStar( V24_BPy_World * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)World_setStar );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_World_setStar );
 }
 
 
-static PyObject *World_getMist( BPy_World * self )
+static PyObject *V24_World_getMist( V24_BPy_World * self )
 {
 	PyObject *attr = PyList_New( 4 );
 	if( !attr )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_RuntimeError, "couldn't create list" ) );
 	PyList_SET_ITEM( attr, 0, PyFloat_FromDouble( self->world->misi ) );
 	PyList_SET_ITEM( attr, 1, PyFloat_FromDouble( self->world->miststa ) );
@@ -809,13 +809,13 @@ static PyObject *World_getMist( BPy_World * self )
 	return attr;
 }
 
-static int World_setMist( BPy_World * self, PyObject * value )
+static int V24_World_setMist( V24_BPy_World * self, PyObject * value )
 {
 	if( !PyList_Check( value ) )
-		return ( EXPP_ReturnIntError
+		return ( V24_EXPP_ReturnIntError
 			 ( PyExc_TypeError, "expected list argument" ) );
 	if( PyList_Size( value ) != 4 )
-		return ( EXPP_ReturnIntError
+		return ( V24_EXPP_ReturnIntError
 			 ( PyExc_TypeError, "wrong list size" ) );
 	self->world->misi = (float)PyFloat_AsDouble( PyList_GetItem( value, 0 ) );
 	self->world->miststa =
@@ -827,36 +827,36 @@ static int World_setMist( BPy_World * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *World_oldsetMist( BPy_World * self, PyObject * args )
+static PyObject *V24_World_oldsetMist( V24_BPy_World * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)World_setMist );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_World_setMist );
 }
 
 
 /* world.addScriptLink */
-static PyObject *World_addScriptLink( BPy_World * self, PyObject * args )
+static PyObject *V24_World_addScriptLink( V24_BPy_World * self, PyObject * args )
 {
 	World *world = self->world;
 	ScriptLink *slink = NULL;
 
 	slink = &( world )->scriptlink;
 
-	return EXPP_addScriptLink( slink, args, 0 );
+	return V24_EXPP_addScriptLink( slink, args, 0 );
 }
 
 /* world.clearScriptLinks */
-static PyObject *World_clearScriptLinks( BPy_World * self, PyObject * args )
+static PyObject *V24_World_clearScriptLinks( V24_BPy_World * self, PyObject * args )
 {
 	World *world = self->world;
 	ScriptLink *slink = NULL;
 
 	slink = &( world )->scriptlink;
 
-	return EXPP_clearScriptLinks( slink, args );
+	return V24_EXPP_clearScriptLinks( slink, args );
 }
 
 /* world.getScriptLinks */
-static PyObject *World_getScriptLinks( BPy_World * self, PyObject * value )
+static PyObject *V24_World_getScriptLinks( V24_BPy_World * self, PyObject * value )
 {
 	World *world = self->world;
 	ScriptLink *slink = NULL;
@@ -864,7 +864,7 @@ static PyObject *World_getScriptLinks( BPy_World * self, PyObject * value )
 
 	slink = &( world )->scriptlink;
 
-	ret = EXPP_getScriptLinks( slink, value, 0 );
+	ret = V24_EXPP_getScriptLinks( slink, value, 0 );
 
 	if( ret )
 		return ret;
@@ -874,7 +874,7 @@ static PyObject *World_getScriptLinks( BPy_World * self, PyObject * value )
 
 
 /* world.setCurrent */
-static PyObject *World_setCurrent( BPy_World * self )
+static PyObject *V24_World_setCurrent( V24_BPy_World * self )
 {
 	World *world = self->world;
 #if 0	/* add back in when bpy becomes "official" */
@@ -894,11 +894,11 @@ static PyObject *World_setCurrent( BPy_World * self )
 }
 
 /* world.__copy__ */
-static PyObject *World_copy( BPy_World * self )
+static PyObject *V24_World_copy( V24_BPy_World * self )
 {
 	World *world = copy_world(self->world );
 	world->id.us = 0;
-	return World_CreatePyObject(world);
+	return V24_World_CreatePyObject(world);
 }
 
 /**
@@ -912,7 +912,7 @@ static PyObject *World_copy( BPy_World * self )
  * comparisons are meaninful -- the "<", "<=", ">" or ">=" are not.
  */
 
-static int World_Compare( BPy_World * a, BPy_World * b )
+static int V24_World_Compare( V24_BPy_World * a, V24_BPy_World * b )
 {
 	return ( a->world == b->world ) ? 0 : -1;
 }
@@ -925,7 +925,7 @@ static int World_Compare( BPy_World * a, BPy_World * b )
  */
 
 /*
-static int World_Print(BPy_World *self, FILE *fp, int flags)
+static int World_Print(V24_BPy_World *self, FILE *fp, int flags)
 { 
 	fprintf(fp, "[World \"%s\"]", self->world->id.name+2);
 	return 0;
@@ -939,7 +939,7 @@ static int World_Print(BPy_World *self, FILE *fp, int flags)
  * Python.	Repr gives a string representation of a PyObject.
  */
 
-static PyObject *World_Repr( BPy_World * self )
+static PyObject *V24_World_Repr( V24_BPy_World * self )
 {
 	return PyString_FromFormat( "[World \"%s\"]",
 				    self->world->id.name + 2 );
@@ -947,17 +947,17 @@ static PyObject *World_Repr( BPy_World * self )
 
 /*@}*/
 /*
-static int World_compare (BPy_World *a, BPy_World *b)
+static int World_compare (V24_BPy_World *a, V24_BPy_World *b)
 {
 	World *pa = a->world, *pb = b->world;
 	return (pa == pb) ? 0:-1;
 }
 */
-PyObject *World_CreatePyObject( struct World * world )
+PyObject *V24_World_CreatePyObject( struct World * world )
 {
-	BPy_World *blen_object;
+	V24_BPy_World *blen_object;
 
-	blen_object = ( BPy_World * ) PyObject_NEW( BPy_World, &World_Type );
+	blen_object = ( V24_BPy_World * ) PyObject_NEW( V24_BPy_World, &V24_World_Type );
 
 	if( blen_object == NULL ) {
 		return ( NULL );
@@ -966,26 +966,26 @@ PyObject *World_CreatePyObject( struct World * world )
 	return ( ( PyObject * ) blen_object );
 }
 
-World *World_FromPyObject( PyObject * py_obj )
+World *V24_World_FromPyObject( PyObject * py_obj )
 {
-	BPy_World *blen_obj;
+	V24_BPy_World *blen_obj;
 
-	blen_obj = ( BPy_World * ) py_obj;
+	blen_obj = ( V24_BPy_World * ) py_obj;
 	return ( blen_obj->world );
 
 }
 
 /*
- * World_insertIpoKey()
+ * V24_World_insertIpoKey()
  *  inserts World IPO key for ZENITH,HORIZON,MIST,STARS,OFFSET,SIZE
  */
 
-static PyObject *World_insertIpoKey( BPy_World * self, PyObject * args )
+static PyObject *V24_World_insertIpoKey( V24_BPy_World * self, PyObject * args )
 {
 	int key = 0, map;
 
 	if( !PyArg_ParseTuple( args, "i", &( key ) ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 										"expected int argument" ) );
 
 	map = texchannel_to_adrcode(self->world->texact);
@@ -1025,10 +1025,10 @@ static PyObject *World_insertIpoKey( BPy_World * self, PyObject * args )
 	}
 
 	allspace(REMAKEIPO, 0);
-	EXPP_allqueue(REDRAWIPO, 0);
-	EXPP_allqueue(REDRAWVIEW3D, 0);
-	EXPP_allqueue(REDRAWACTION, 0);
-	EXPP_allqueue(REDRAWNLA, 0);
+	V24_EXPP_allqueue(REDRAWIPO, 0);
+	V24_EXPP_allqueue(REDRAWVIEW3D, 0);
+	V24_EXPP_allqueue(REDRAWACTION, 0);
+	V24_EXPP_allqueue(REDRAWNLA, 0);
 
 	Py_RETURN_NONE;
 }

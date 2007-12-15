@@ -41,72 +41,72 @@
 #include "BKE_main.h" /* so we can access G.main->vfont.first */
 #include "DNA_space_types.h" /* for FILE_MAXDIR only */
 
-extern PyObject *M_Text3d_LoadFont( PyObject * self, PyObject * args );
+extern PyObject *V24_M_Text3d_LoadFont( PyObject * self, PyObject * args );
 
 /*--------------------Python API function prototypes for the Font module----*/
-static PyObject *M_Font_Load( PyObject * self, PyObject * value );
-static PyObject *M_Font_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_Font_Load( PyObject * self, PyObject * value );
+static PyObject *V24_M_Font_Get( PyObject * self, PyObject * args );
 
 /*------------------------Python API Doc strings for the Font module--------*/
-char M_Font_doc[] = "The Blender Font module\n\n\
+char V24_M_Font_doc[] = "The Blender Font module\n\n\
 This module provides control over **Font Data** objects in Blender.\n\n\
 Example::\n\n\
 	from Blender import Text3d.Font\n\
 	l = Text3d.Font.Load('/usr/share/fonts/verdata.ttf')\n";
-char M_Font_Get_doc[] = "(name) - return an existing font called 'name'\
+char V24_M_Font_Get_doc[] = "(name) - return an existing font called 'name'\
 when no argument is given it returns a list of blenders fonts.";
-char M_Font_Load_doc[] =
+char V24_M_Font_Load_doc[] =
 	"(filename) - return font from file filename as Font Object, \
 returns None if not found.\n";
 
 /*----- Python method structure definition for Blender.Text3d.Font module---*/
 struct PyMethodDef M_Font_methods[] = {
-	{"Get", ( PyCFunction ) M_Font_Get, METH_VARARGS, M_Font_Get_doc},
-	{"Load", ( PyCFunction ) M_Font_Load, METH_O, M_Font_Load_doc},
+	{"Get", ( PyCFunction ) V24_M_Font_Get, METH_VARARGS, V24_M_Font_Get_doc},
+	{"Load", ( PyCFunction ) V24_M_Font_Load, METH_O, V24_M_Font_Load_doc},
 	{NULL, NULL, 0, NULL}
 };
 
-/*--------------- Python BPy_Font methods declarations:-------------------*/
-static PyObject *Font_pack( BPy_Font * self );
-static PyObject *Font_unpack( BPy_Font * self, PyObject * args );
+/*--------------- Python V24_BPy_Font methods declarations:-------------------*/
+static PyObject *V24_Font_pack( V24_BPy_Font * self );
+static PyObject *V24_Font_unpack( V24_BPy_Font * self, PyObject * args );
 
-/*--------------- Python BPy_Font methods table:--------------------------*/
-static PyMethodDef BPy_Font_methods[] = {
-	{"pack", ( PyCFunction ) Font_pack, METH_NOARGS,
+/*--------------- Python V24_BPy_Font methods table:--------------------------*/
+static PyMethodDef V24_BPy_Font_methods[] = {
+	{"pack", ( PyCFunction ) V24_Font_pack, METH_NOARGS,
 	 "() - pack this Font"},
-	{"unpack", ( PyCFunction ) Font_unpack, METH_O,
+	{"unpack", ( PyCFunction ) V24_Font_unpack, METH_O,
 	 "(mode) - unpack this packed font"},
 	{NULL, NULL, 0, NULL}
 };
 
 /*--------------- Python TypeFont callback function prototypes----------*/
-static int Font_compare( BPy_Font * a1, BPy_Font * a2 );
-static PyObject *Font_repr( BPy_Font * font );
+static int V24_Font_compare( V24_BPy_Font * a1, V24_BPy_Font * a2 );
+static PyObject *V24_Font_repr( V24_BPy_Font * font );
 
 
 /*--------------- Python Font Module methods------------------------*/
 
 /*--------------- Blender.Text3d.Font.Get()-----------------------*/
-static PyObject *M_Font_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_Font_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	VFont *vfont_iter;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected string argument (or nothing)" ) );
 
 	vfont_iter = G.main->vfont.first;
 
 	if( name ) {		/* (name) - Search font by name */
 
-		BPy_Font *wanted_vfont = NULL;
+		V24_BPy_Font *wanted_vfont = NULL;
 
 		while(vfont_iter) {
 			if( strcmp( name, vfont_iter->id.name + 2 ) == 0 ) {
 				wanted_vfont =
-					( BPy_Font * )
-					Font_CreatePyObject( vfont_iter );
+					( V24_BPy_Font * )
+					V24_Font_CreatePyObject( vfont_iter );
 				break;
 			}
 			vfont_iter = vfont_iter->id.next;
@@ -116,7 +116,7 @@ static PyObject *M_Font_Get( PyObject * self, PyObject * args )
 			char error_msg[64];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Font \"%s\" not found", name );
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_NameError, error_msg ) );
 		}
 
@@ -130,15 +130,15 @@ static PyObject *M_Font_Get( PyObject * self, PyObject * args )
 		vfontlist = PyList_New( BLI_countlist( &( G.main->vfont ) ) );
 
 		if( vfontlist == NULL )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 							"couldn't create font list" ) );
 
 		while( vfont_iter ) {
-			pyobj = Font_CreatePyObject( vfont_iter );
+			pyobj = V24_Font_CreatePyObject( vfont_iter );
 
 			if( !pyobj ) {
 				Py_DECREF(vfontlist);
-				return ( EXPP_ReturnPyObjError
+				return ( V24_EXPP_ReturnPyObjError
 					 ( PyExc_MemoryError,
 					   "couldn't create Object" ) );
 			}
@@ -154,34 +154,34 @@ static PyObject *M_Font_Get( PyObject * self, PyObject * args )
 
 
 /*--------------- Blender.Text3d.Font.New()-----------------------*/
-PyObject *M_Font_Load( PyObject * self, PyObject * value )
+PyObject *V24_M_Font_Load( PyObject * self, PyObject * value )
 {
 	char *filename_str = PyString_AsString(value);
-	BPy_Font *py_font = NULL;	/* for Font Data object wrapper in Python */
+	V24_BPy_Font *py_font = NULL;	/* for Font Data object wrapper in Python */
 
 	if( !value )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected string or empty argument" ) );
 
 	/*create python font*/
 	if( !S_ISDIR(BLI_exist(filename_str)) )  {
-		py_font= (BPy_Font *) M_Text3d_LoadFont (self, value);
+		py_font= (V24_BPy_Font *) V24_M_Text3d_LoadFont (self, value);
 	}
 	else
 		Py_RETURN_NONE;
 	return ( PyObject * ) py_font;
 }
 
-/*--------------- Python BPy_Font getsetattr funcs ---------------------*/
+/*--------------- Python V24_BPy_Font getsetattr funcs ---------------------*/
 
 
-/*--------------- BPy_Font.filename-------------------------------------*/
-static PyObject *Font_getFilename( BPy_Font * self )
+/*--------------- V24_BPy_Font.filename-------------------------------------*/
+static PyObject *V24_Font_getFilename( V24_BPy_Font * self )
 {
 	return PyString_FromString( self->font->name );
 }
 
-static int Font_setFilename( BPy_Font * self, PyObject * value )
+static int V24_Font_setFilename( V24_BPy_Font * self, PyObject * value )
 {
 	char *name = NULL;
 
@@ -189,7 +189,7 @@ static int Font_setFilename( BPy_Font * self, PyObject * value )
 	
 	name = PyString_AsString ( value );
 	if( !name )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					      "expected string argument" );
 
 	PyOS_snprintf( self->font->name, FILE_MAXDIR * sizeof( char ), "%s",
@@ -198,53 +198,53 @@ static int Font_setFilename( BPy_Font * self, PyObject * value )
 	return 0;
 }
 
-/*--------------- BPy_Font.pack()---------------------------------*/
-static PyObject *Font_pack( BPy_Font * self ) 
+/*--------------- V24_BPy_Font.pack()---------------------------------*/
+static PyObject *V24_Font_pack( V24_BPy_Font * self ) 
 {
 	if( !self->font->packedfile ) 
 		self->font->packedfile = newPackedFile(self->font->name);
 	Py_RETURN_NONE;
 }
 
-/*--------------- BPy_Font.unpack()---------------------------------*/
-static PyObject *Font_unpack( BPy_Font * self, PyObject * value ) 
+/*--------------- V24_BPy_Font.unpack()---------------------------------*/
+static PyObject *V24_Font_unpack( V24_BPy_Font * self, PyObject * value ) 
 {
 	int mode= PyInt_AsLong(value);
 	VFont *font= self->font;
 	
 	if( mode==-1 )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_AttributeError,
 			   "expected int argument from Blender.UnpackModes" ) );
 	
 	if (font->packedfile)
 		if (unpackVFont(font, mode) == RET_ERROR)
-                return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+                return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
                                 "error unpacking font" );
 
 	Py_RETURN_NONE;
 }
 
-/*--------------- BPy_Font.packed---------------------------------*/
-static PyObject *Font_getPacked( BPy_Font * self ) 
+/*--------------- V24_BPy_Font.packed---------------------------------*/
+static PyObject *V24_Font_getPacked( V24_BPy_Font * self ) 
 {
 	if (G.fileflags & G_AUTOPACK)
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	else
-		return EXPP_incr_ret_False();
+		return V24_EXPP_incr_ret_False();
 }
 
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_Font_getseters[] = {
+static PyGetSetDef V24_BPy_Font_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
 	{"filename",
-	 (getter)Font_getFilename, (setter)Font_setFilename,
+	 (getter)V24_Font_getFilename, (setter)V24_Font_setFilename,
 	 "Font filepath",
 	 NULL},
 	{"packed",
-	 (getter)Font_getPacked, (setter)NULL,
+	 (getter)V24_Font_getPacked, (setter)NULL,
 	 "Packed status",
 	 NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
@@ -253,12 +253,12 @@ static PyGetSetDef BPy_Font_getseters[] = {
 /*****************************************************************************/
 /* Python TypeFont structure definition:                                     */
 /*****************************************************************************/
-PyTypeObject Font_Type = {
+PyTypeObject V24_Font_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Font",             /* char *tp_name; */
-	sizeof( BPy_Font ),         /* int tp_basicsize; */
+	sizeof( V24_BPy_Font ),         /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -267,8 +267,8 @@ PyTypeObject Font_Type = {
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Font_compare,   /* cmpfunc tp_compare; */
-	( reprfunc ) Font_repr,     /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Font_compare,   /* cmpfunc tp_compare; */
+	( reprfunc ) V24_Font_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -278,7 +278,7 @@ PyTypeObject Font_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -311,9 +311,9 @@ PyTypeObject Font_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Font_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Font_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Font_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Font_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -341,24 +341,24 @@ PyTypeObject Font_Type = {
 
 
 /*--------------- Font Module Init-----------------------------*/
-PyObject *Font_Init( void )
+PyObject *V24_Font_Init( void )
 {
 	PyObject *submodule;
 
-	if( PyType_Ready( &Font_Type ) < 0 )
+	if( PyType_Ready( &V24_Font_Type ) < 0 )
 		return NULL;
 
 	submodule = Py_InitModule3( "Blender.Text3d.Font",
-				    M_Font_methods, M_Font_doc );
+				    M_Font_methods, V24_M_Font_doc );
 
 	return ( submodule );
 }
 
 /*--------------- Font module internal callbacks-----------------*/
-/*---------------BPy_Font internal callbacks/methods-------------*/
+/*---------------V24_BPy_Font internal callbacks/methods-------------*/
 
 /*--------------- repr---------------------------------------------*/
-static PyObject *Font_repr( BPy_Font * self )
+static PyObject *V24_Font_repr( V24_BPy_Font * self )
 {
 	if( self->font )
 		return PyString_FromFormat( "[Font \"%s\"]",
@@ -368,17 +368,17 @@ static PyObject *Font_repr( BPy_Font * self )
 }
 
 /*--------------- compare------------------------------------------*/
-static int Font_compare( BPy_Font * a, BPy_Font * b )
+static int V24_Font_compare( V24_BPy_Font * a, V24_BPy_Font * b )
 {
 	return ( a->font == b->font ) ? 0 : -1;
 }
 
-/*--------------- Font_CreatePyObject---------------------------------*/
-PyObject *Font_CreatePyObject( struct VFont * font )
+/*--------------- V24_Font_CreatePyObject---------------------------------*/
+PyObject *V24_Font_CreatePyObject( struct VFont * font )
 {
-	BPy_Font *blen_font;
+	V24_BPy_Font *blen_font;
 
-	blen_font = ( BPy_Font * ) PyObject_NEW( BPy_Font, &Font_Type );
+	blen_font = ( V24_BPy_Font * ) PyObject_NEW( V24_BPy_Font, &V24_Font_Type );
 
 	blen_font->font = font;
 
@@ -388,10 +388,10 @@ PyObject *Font_CreatePyObject( struct VFont * font )
 /*--------------- Font_FromPyObject---------------------------------*/
 struct VFont *Font_FromPyObject( PyObject * py_obj )
 {
-	BPy_Font *blen_obj;
+	V24_BPy_Font *blen_obj;
 
-	blen_obj = ( BPy_Font * ) py_obj;
-	if( !( ( BPy_Font * ) py_obj )->font ) {	/*test to see if linked to text3d*/
+	blen_obj = ( V24_BPy_Font * ) py_obj;
+	if( !( ( V24_BPy_Font * ) py_obj )->font ) {	/*test to see if linked to text3d*/
 		//use python vars
 		return NULL;
 	} else {

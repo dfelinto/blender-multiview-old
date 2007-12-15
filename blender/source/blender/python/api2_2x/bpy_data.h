@@ -36,10 +36,10 @@
 #include "DNA_listBase.h"
 
 /* The Main PyType Object defined in Main.c */
-extern PyTypeObject LibBlockSeq_Type;
+extern PyTypeObject V24_LibBlockSeq_Type;
 
 #define BPy_LibBlockSeq_Check(v) \
-    ((v)->ob_type == &LibBlockSeq_Type)
+    ((v)->ob_type == &V24_LibBlockSeq_Type)
 
 /* Main sequence, iterate on the libdatas listbase*/
 typedef struct {
@@ -47,9 +47,9 @@ typedef struct {
 	Link *iter; /* so we can iterate over the listbase */
 	
 	short type; /* store the ID type such as ID_ME */
-} BPy_LibBlockSeq;
+} V24_BPy_LibBlockSeq;
 
 
-PyObject * Data_Init( void );
+PyObject * V24_Data_Init( void );
 
 #endif				/* EXPP_BPYDATA_H */

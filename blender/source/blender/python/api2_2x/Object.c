@@ -283,10 +283,10 @@ enum obj_consts {
 /*****************************************************************************/
 /* Python API function prototypes for the Blender module.		 */
 /*****************************************************************************/
-static PyObject *M_Object_New( PyObject * self, PyObject * args );
-PyObject *M_Object_Get( PyObject * self, PyObject * args );
-static PyObject *M_Object_GetSelected( PyObject * self );
-static PyObject *M_Object_Duplicate( PyObject * self, PyObject * args, PyObject *kwd);
+static PyObject *V24_M_Object_New( PyObject * self, PyObject * args );
+PyObject *V24_M_Object_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_Object_GetSelected( PyObject * self );
+static PyObject *V24_M_Object_Duplicate( PyObject * self, PyObject * args, PyObject *kwd);
 
 /* HELPER FUNCTION FOR PARENTING */
 static PyObject *internal_makeParent(Object *parent, PyObject *py_child, int partype, int noninverse, int fast, int v1, int v2, int v3, char *bonename);
@@ -296,23 +296,23 @@ static PyObject *internal_makeParent(Object *parent, PyObject *py_child, int par
 /* In Python these will be written to the console when doing a		 */
 /* Blender.Object.__doc__						 */
 /*****************************************************************************/
-char M_Object_doc[] = "The Blender Object module\n\n\
+char V24_M_Object_doc[] = "The Blender Object module\n\n\
 This module provides access to **Object Data** in Blender.\n";
 
-char M_Object_New_doc[] =
+char V24_M_Object_New_doc[] =
 	"(type) - Add a new object of type 'type' in the current scene";
 
-char M_Object_Get_doc[] =
+char V24_M_Object_Get_doc[] =
 	"(name) - return the object with the name 'name', returns None if not\
 	found.\n\
 	If 'name' is not specified, it returns a list of all objects in the\n\
 	current scene.";
 
-char M_Object_GetSelected_doc[] =
+char V24_M_Object_GetSelected_doc[] =
 	"() - Returns a list of selected Objects in the active layer(s)\n\
 The active object is the first in the list, if visible";
 
-char M_Object_Duplicate_doc[] =
+char V24_M_Object_Duplicate_doc[] =
 	"(linked) - Duplicate all selected, visible objects in the current scene";
 
 
@@ -320,195 +320,195 @@ char M_Object_Duplicate_doc[] =
 /* Python method structure definition for Blender.Object module:	 */
 /*****************************************************************************/
 struct PyMethodDef M_Object_methods[] = {
-	{"New", ( PyCFunction ) M_Object_New, METH_VARARGS,
-	 M_Object_New_doc},
-	{"Get", ( PyCFunction ) M_Object_Get, METH_VARARGS,
-	 M_Object_Get_doc},
-	{"GetSelected", ( PyCFunction ) M_Object_GetSelected, METH_NOARGS,
-	 M_Object_GetSelected_doc},
-	{"Duplicate", ( PyCFunction ) M_Object_Duplicate, METH_VARARGS | METH_KEYWORDS,
-	 M_Object_Duplicate_doc},
+	{"New", ( PyCFunction ) V24_M_Object_New, METH_VARARGS,
+	 V24_M_Object_New_doc},
+	{"Get", ( PyCFunction ) V24_M_Object_Get, METH_VARARGS,
+	 V24_M_Object_Get_doc},
+	{"GetSelected", ( PyCFunction ) V24_M_Object_GetSelected, METH_NOARGS,
+	 V24_M_Object_GetSelected_doc},
+	{"Duplicate", ( PyCFunction ) V24_M_Object_Duplicate, METH_VARARGS | METH_KEYWORDS,
+	 V24_M_Object_Duplicate_doc},
 	{NULL, NULL, 0, NULL}
 };
 
 
 /*****************************************************************************/
-/* Python BPy_Object methods declarations:				   */
+/* Python V24_BPy_Object methods declarations:				   */
 /*****************************************************************************/
 static int setupSB(Object* ob); /*Make sure Softbody Pointer is initialized */
 static int setupPI(Object* ob);
 
-static PyObject *Object_buildParts( BPy_Object * self );
-static PyObject *Object_clearIpo( BPy_Object * self );
-static PyObject *Object_clrParent( BPy_Object * self, PyObject * args );
-static PyObject *Object_clearTrack( BPy_Object * self, PyObject * args );
-static PyObject *Object_getData(BPy_Object *self, PyObject *args, PyObject *kwd);
-static PyObject *Object_getDeltaLocation( BPy_Object * self );
-static PyObject *Object_getDrawMode( BPy_Object * self );
-static PyObject *Object_getDrawType( BPy_Object * self );
-static PyObject *Object_GetEuler( BPy_Object * self, PyObject * args );
-static PyObject *Object_getInverseMatrix( BPy_Object * self );
-static PyObject *Object_getIpo( BPy_Object * self );
-static PyObject *Object_getLocation( BPy_Object * self, PyObject * args );
-static PyObject *Object_getMaterials( BPy_Object * self, PyObject * args );
-static PyObject *Object_getMatrix( BPy_Object * self, PyObject * args );
-static PyObject *Object_getParent( BPy_Object * self );
-static PyObject *Object_getParentBoneName( BPy_Object * self );
-static int Object_setParentBoneName( BPy_Object * self, PyObject * value );
-static PyObject *Object_getSize( BPy_Object * self, PyObject * args );
-static PyObject *Object_getTimeOffset( BPy_Object * self );
-static PyObject *Object_getTracked( BPy_Object * self );
-static PyObject *Object_getType( BPy_Object * self );
-static PyObject *Object_getBoundBox( BPy_Object * self );
-static PyObject *Object_getAction( BPy_Object * self );
-static PyObject *Object_getPose( BPy_Object * self );
-static PyObject *Object_evaluatePose( BPy_Object * self, PyObject *args );
-static PyObject *Object_getSelected( BPy_Object * self );
-static PyObject *Object_makeDisplayList( BPy_Object * self );
-static PyObject *Object_link( BPy_Object * self, PyObject * args );
-static PyObject *Object_makeParent( BPy_Object * self, PyObject * args );
-static PyObject *Object_join( BPy_Object * self, PyObject * args );
-static PyObject *Object_makeParentDeform( BPy_Object * self, PyObject * args );
-static PyObject *Object_makeParentVertex( BPy_Object * self, PyObject * args );
-static PyObject *Object_makeParentBone( BPy_Object * self, PyObject * args );
-static PyObject *Object_materialUsage( void );
-static PyObject *Object_getDupliObjects ( BPy_Object * self);
-static PyObject *Object_getEffects( BPy_Object * self );
-static PyObject *Object_setDeltaLocation( BPy_Object * self, PyObject * args );
-static PyObject *Object_SetDrawMode( BPy_Object * self, PyObject * args );
-static PyObject *Object_SetDrawType( BPy_Object * self, PyObject * args );
-static PyObject *Object_SetEuler( BPy_Object * self, PyObject * args );
-static PyObject *Object_SetMatrix( BPy_Object * self, PyObject * args );
-static PyObject *Object_SetIpo( BPy_Object * self, PyObject * args );
-static PyObject *Object_insertIpoKey( BPy_Object * self, PyObject * args );
-static PyObject *Object_insertPoseKey( BPy_Object * self, PyObject * args );
-static PyObject *Object_insertCurrentPoseKey( BPy_Object * self, PyObject * args );
-static PyObject *Object_setConstraintInfluenceForBone( BPy_Object * self, PyObject * args );
-static PyObject *Object_setLocation( BPy_Object * self, PyObject * args );
-static PyObject *Object_setMaterials( BPy_Object * self, PyObject * args );
-static PyObject *Object_setSize( BPy_Object * self, PyObject * args );
-static PyObject *Object_setTimeOffset( BPy_Object * self, PyObject * args );
-static PyObject *Object_makeTrack( BPy_Object * self, PyObject * args );
-static PyObject *Object_shareFrom( BPy_Object * self, PyObject * args );
-static PyObject *Object_Select( BPy_Object * self, PyObject * args );
-static PyObject *Object_getAllProperties( BPy_Object * self );
-static PyObject *Object_addProperty( BPy_Object * self, PyObject * args );
-static PyObject *Object_removeProperty( BPy_Object * self, PyObject * args );
-static PyObject *Object_getProperty( BPy_Object * self, PyObject * args );
-static PyObject *Object_removeAllProperties( BPy_Object * self );
-static PyObject *Object_copyAllPropertiesTo( BPy_Object * self,
+static PyObject *V24_Object_buildParts( V24_BPy_Object * self );
+static PyObject *V24_Object_clearIpo( V24_BPy_Object * self );
+static PyObject *V24_Object_clrParent( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_clearTrack( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getData(V24_BPy_Object *self, PyObject *args, PyObject *kwd);
+static PyObject *V24_Object_getDeltaLocation( V24_BPy_Object * self );
+static PyObject *V24_Object_getDrawMode( V24_BPy_Object * self );
+static PyObject *V24_Object_getDrawType( V24_BPy_Object * self );
+static PyObject *V24_Object_GetEuler( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getInverseMatrix( V24_BPy_Object * self );
+static PyObject *V24_Object_getIpo( V24_BPy_Object * self );
+static PyObject *V24_Object_getLocation( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getMaterials( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getMatrix( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getParent( V24_BPy_Object * self );
+static PyObject *V24_Object_getParentBoneName( V24_BPy_Object * self );
+static int V24_Object_setParentBoneName( V24_BPy_Object * self, PyObject * value );
+static PyObject *V24_Object_getSize( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getTimeOffset( V24_BPy_Object * self );
+static PyObject *V24_Object_getTracked( V24_BPy_Object * self );
+static PyObject *V24_Object_getType( V24_BPy_Object * self );
+static PyObject *V24_Object_getBoundBox( V24_BPy_Object * self );
+static PyObject *V24_Object_getAction( V24_BPy_Object * self );
+static PyObject *V24_Object_getPose( V24_BPy_Object * self );
+static PyObject *V24_Object_evaluatePose( V24_BPy_Object * self, PyObject *args );
+static PyObject *V24_Object_getSelected( V24_BPy_Object * self );
+static PyObject *V24_Object_makeDisplayList( V24_BPy_Object * self );
+static PyObject *V24_Object_link( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_makeParent( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_join( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_makeParentDeform( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_makeParentVertex( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_makeParentBone( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_materialUsage( void );
+static PyObject *V24_Object_getDupliObjects ( V24_BPy_Object * self);
+static PyObject *V24_Object_getEffects( V24_BPy_Object * self );
+static PyObject *V24_Object_setDeltaLocation( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_SetDrawMode( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_SetDrawType( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_SetEuler( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_SetMatrix( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_SetIpo( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_insertIpoKey( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_insertPoseKey( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_insertCurrentPoseKey( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_setConstraintInfluenceForBone( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_setLocation( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_setMaterials( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_setSize( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_setTimeOffset( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_makeTrack( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_shareFrom( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_Select( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getAllProperties( V24_BPy_Object * self );
+static PyObject *V24_Object_addProperty( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_removeProperty( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getProperty( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_removeAllProperties( V24_BPy_Object * self );
+static PyObject *V24_Object_copyAllPropertiesTo( V24_BPy_Object * self,
 					     PyObject * args );
-static PyObject *Object_getScriptLinks( BPy_Object * self, PyObject * value );
-static PyObject *Object_addScriptLink( BPy_Object * self, PyObject * args );
-static PyObject *Object_clearScriptLinks( BPy_Object * self, PyObject *args );
-static PyObject *Object_getPIStrength( BPy_Object * self );
-static PyObject *Object_setPIStrength( BPy_Object * self, PyObject * args );
-static PyObject *Object_getPIFalloff( BPy_Object * self );
-static PyObject *Object_setPIFalloff( BPy_Object * self, PyObject * args );
-static PyObject *Object_getPIMaxDist( BPy_Object * self );
-static PyObject *Object_setPIMaxDist( BPy_Object * self, PyObject * args );
-static PyObject *Object_getPIUseMaxDist( BPy_Object * self );
-static PyObject *Object_SetPIUseMaxDist( BPy_Object * self, PyObject * args );
-static PyObject *Object_getPIType( BPy_Object * self );
-static PyObject *Object_SetPIType( BPy_Object * self, PyObject * args );
-static PyObject *Object_getPIPerm( BPy_Object * self );
-static PyObject *Object_SetPIPerm( BPy_Object * self, PyObject * args );
-static PyObject *Object_getPIRandomDamp( BPy_Object * self );
-static PyObject *Object_setPIRandomDamp( BPy_Object * self, PyObject * args );
-static PyObject *Object_getPISurfaceDamp( BPy_Object * self );
-static PyObject *Object_SetPISurfaceDamp( BPy_Object * self, PyObject * args );
-static PyObject *Object_getPIDeflection( BPy_Object * self );
-static PyObject *Object_SetPIDeflection( BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getScriptLinks( V24_BPy_Object * self, PyObject * value );
+static PyObject *V24_Object_addScriptLink( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_clearScriptLinks( V24_BPy_Object * self, PyObject *args );
+static PyObject *V24_Object_getPIStrength( V24_BPy_Object * self );
+static PyObject *V24_Object_setPIStrength( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getPIFalloff( V24_BPy_Object * self );
+static PyObject *V24_Object_setPIFalloff( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getPIMaxDist( V24_BPy_Object * self );
+static PyObject *V24_Object_setPIMaxDist( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getPIUseMaxDist( V24_BPy_Object * self );
+static PyObject *V24_Object_SetPIUseMaxDist( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getPIType( V24_BPy_Object * self );
+static PyObject *V24_Object_SetPIType( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getPIPerm( V24_BPy_Object * self );
+static PyObject *V24_Object_SetPIPerm( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getPIRandomDamp( V24_BPy_Object * self );
+static PyObject *V24_Object_setPIRandomDamp( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getPISurfaceDamp( V24_BPy_Object * self );
+static PyObject *V24_Object_SetPISurfaceDamp( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getPIDeflection( V24_BPy_Object * self );
+static PyObject *V24_Object_SetPIDeflection( V24_BPy_Object * self, PyObject * args );
 
-static int Object_setRBMass( BPy_Object * self, PyObject * args );
-static int Object_setRBFlags( BPy_Object * self, PyObject * args );
-static int Object_setRBShapeBoundType( BPy_Object * self, PyObject * args );
+static int V24_Object_setRBMass( V24_BPy_Object * self, PyObject * args );
+static int V24_Object_setRBFlags( V24_BPy_Object * self, PyObject * args );
+static int V24_Object_setRBShapeBoundType( V24_BPy_Object * self, PyObject * args );
 
-static PyObject *Object_getSBMass( BPy_Object * self );
-static PyObject *Object_setSBMass( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBGravity( BPy_Object * self );
-static PyObject *Object_setSBGravity( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBFriction( BPy_Object * self );
-static PyObject *Object_setSBFriction( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBErrorLimit( BPy_Object * self );
-static PyObject *Object_setSBErrorLimit( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBGoalSpring( BPy_Object * self );
-static PyObject *Object_setSBGoalSpring( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBGoalFriction( BPy_Object * self );
-static PyObject *Object_setSBGoalFriction( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBMinGoal( BPy_Object * self );
-static PyObject *Object_setSBMinGoal( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBMaxGoal( BPy_Object * self );
-static PyObject *Object_setSBMaxGoal( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBInnerSpring( BPy_Object * self );
-static PyObject *Object_setSBInnerSpring( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBInnerSpringFriction( BPy_Object * self );
-static PyObject *Object_setSBInnerSpringFriction( BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBMass( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBMass( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBGravity( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBGravity( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBFriction( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBFriction( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBErrorLimit( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBErrorLimit( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBGoalSpring( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBGoalSpring( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBGoalFriction( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBGoalFriction( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBMinGoal( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBMinGoal( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBMaxGoal( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBMaxGoal( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBInnerSpring( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBInnerSpring( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBInnerSpringFriction( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBInnerSpringFriction( V24_BPy_Object * self, PyObject * args );
 
-static PyObject *Object_isSB( BPy_Object * self );
-static PyObject *Object_getSBDefaultGoal( BPy_Object * self );
-static PyObject *Object_setSBDefaultGoal( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBUseGoal( BPy_Object * self );
-static PyObject *Object_SetSBUseGoal( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBUseEdges( BPy_Object * self );
-static PyObject *Object_SetSBUseEdges( BPy_Object * self, PyObject * args );
-static PyObject *Object_getSBStiffQuads( BPy_Object * self );
-static PyObject *Object_SetSBStiffQuads( BPy_Object * self, PyObject * args );
-static PyObject *Object_insertShapeKey(BPy_Object * self);
-static PyObject *Object_copyNLA( BPy_Object * self, PyObject * args );
-static PyObject *Object_convertActionToStrip( BPy_Object * self );
-static PyObject *Object_copy(BPy_Object * self); /* __copy__ */
+static PyObject *V24_Object_isSB( V24_BPy_Object * self );
+static PyObject *V24_Object_getSBDefaultGoal( V24_BPy_Object * self );
+static PyObject *V24_Object_setSBDefaultGoal( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBUseGoal( V24_BPy_Object * self );
+static PyObject *V24_Object_SetSBUseGoal( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBUseEdges( V24_BPy_Object * self );
+static PyObject *V24_Object_SetSBUseEdges( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_getSBStiffQuads( V24_BPy_Object * self );
+static PyObject *V24_Object_SetSBStiffQuads( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_insertShapeKey(V24_BPy_Object * self);
+static PyObject *V24_Object_copyNLA( V24_BPy_Object * self, PyObject * args );
+static PyObject *V24_Object_convertActionToStrip( V24_BPy_Object * self );
+static PyObject *V24_Object_copy(V24_BPy_Object * self); /* __copy__ */
 
 /*****************************************************************************/
-/* Python BPy_Object methods table:					   */
+/* Python V24_BPy_Object methods table:					   */
 /*****************************************************************************/
-static PyMethodDef BPy_Object_methods[] = {
+static PyMethodDef V24_BPy_Object_methods[] = {
 	/* name, method, flags, doc */
-	{"buildParts", ( PyCFunction ) Object_buildParts, METH_NOARGS,
+	{"buildParts", ( PyCFunction ) V24_Object_buildParts, METH_NOARGS,
 	 "Recalcs particle system (if any) "},
-	{"getIpo", ( PyCFunction ) Object_getIpo, METH_NOARGS,
+	{"getIpo", ( PyCFunction ) V24_Object_getIpo, METH_NOARGS,
 	 "Returns the ipo of this object (if any) "},
-	{"clrParent", ( PyCFunction ) Object_clrParent, METH_VARARGS,
+	{"clrParent", ( PyCFunction ) V24_Object_clrParent, METH_VARARGS,
 	 "Clears parent object. Optionally specify:\n\
 mode\n\tnonzero: Keep object transform\nfast\n\t>0: Don't update scene \
 hierarchy (faster)"},
-	{"clearTrack", ( PyCFunction ) Object_clearTrack, METH_VARARGS,
+	{"clearTrack", ( PyCFunction ) V24_Object_clearTrack, METH_VARARGS,
 	 "Make this object not track another anymore. Optionally specify:\n\
 mode\n\t2: Keep object transform\nfast\n\t>0: Don't update scene \
 hierarchy (faster)"},
-	{"getData", ( PyCFunction ) Object_getData, METH_VARARGS | METH_KEYWORDS,
+	{"getData", ( PyCFunction ) V24_Object_getData, METH_VARARGS | METH_KEYWORDS,
 	 "(name_only = 0, mesh = 0) - Returns the datablock object containing the object's \
 data, e.g. Mesh.\n\
 If 'name_only' is nonzero or True, only the name of the datablock is returned"},
-	{"getDeltaLocation", ( PyCFunction ) Object_getDeltaLocation,
+	{"getDeltaLocation", ( PyCFunction ) V24_Object_getDeltaLocation,
 	 METH_NOARGS,
 	 "Returns the object's delta location (x, y, z)"},
-	{"getDrawMode", ( PyCFunction ) Object_getDrawMode, METH_NOARGS,
+	{"getDrawMode", ( PyCFunction ) V24_Object_getDrawMode, METH_NOARGS,
 	 "Returns the object draw modes"},
-	{"getDrawType", ( PyCFunction ) Object_getDrawType, METH_NOARGS,
+	{"getDrawType", ( PyCFunction ) V24_Object_getDrawType, METH_NOARGS,
 	 "Returns the object draw type"},
-	{"getAction", ( PyCFunction ) Object_getAction, METH_NOARGS,
+	{"getAction", ( PyCFunction ) V24_Object_getAction, METH_NOARGS,
 	 "Returns the active action for this object"},
-	{"evaluatePose", ( PyCFunction ) Object_evaluatePose, METH_VARARGS,
+	{"evaluatePose", ( PyCFunction ) V24_Object_evaluatePose, METH_VARARGS,
 	"(framenum) - Updates the pose to a certain frame number when the Object is\
 	bound to an Action"},
-	{"getPose", ( PyCFunction ) Object_getPose, METH_NOARGS,
+	{"getPose", ( PyCFunction ) V24_Object_getPose, METH_NOARGS,
 	"() - returns the pose from an object if it exists, else None"},
-	{"isSelected", ( PyCFunction ) Object_getSelected, METH_NOARGS,
+	{"isSelected", ( PyCFunction ) V24_Object_getSelected, METH_NOARGS,
 	 "Return a 1 or 0 depending on whether the object is selected"},
-	{"getEuler", ( PyCFunction ) Object_GetEuler, METH_VARARGS,
+	{"getEuler", ( PyCFunction ) V24_Object_GetEuler, METH_VARARGS,
 	 "(space = 'localspace' / 'worldspace') - Returns the object's rotation as Euler rotation vector\n\
 (rotX, rotY, rotZ)"},
-	{"getInverseMatrix", ( PyCFunction ) Object_getInverseMatrix,
+	{"getInverseMatrix", ( PyCFunction ) V24_Object_getInverseMatrix,
 	 METH_NOARGS,
 	 "Returns the object's inverse matrix"},
-	{"getLocation", ( PyCFunction ) Object_getLocation, METH_VARARGS,
+	{"getLocation", ( PyCFunction ) V24_Object_getLocation, METH_VARARGS,
 	 "(space = 'localspace' / 'worldspace') - Returns the object's location (x, y, z)\n\
 "},
-	{"getMaterials", ( PyCFunction ) Object_getMaterials, METH_VARARGS,
+	{"getMaterials", ( PyCFunction ) V24_Object_getMaterials, METH_VARARGS,
 	 "(i = 0) - Returns list of materials assigned to the object.\n\
 if i is nonzero, empty slots are not ignored: they are returned as None's."},
-	{"getMatrix", ( PyCFunction ) Object_getMatrix, METH_VARARGS,
+	{"getMatrix", ( PyCFunction ) V24_Object_getMatrix, METH_VARARGS,
 	 "(str = 'worldspace') - Returns the object matrix.\n\
 (str = 'worldspace') - the desired matrix: worldspace (default), localspace\n\
 or old_worldspace.\n\
@@ -517,145 +517,145 @@ or old_worldspace.\n\
 matrix is not updated for changes made by the script itself\n\
 (like obj.LocX = 10) until a redraw happens, either called by the script or\n\
 automatic when the script finishes."},
-	{"getName", ( PyCFunction ) GenericLib_getName, METH_NOARGS,
+	{"getName", ( PyCFunction ) V24_GenericLib_getName, METH_NOARGS,
 	 "Returns the name of the object"},
-	{"getParent", ( PyCFunction ) Object_getParent, METH_NOARGS,
+	{"getParent", ( PyCFunction ) V24_Object_getParent, METH_NOARGS,
 	 "Returns the object's parent object"},
-	{"getParentBoneName", ( PyCFunction ) Object_getParentBoneName, METH_NOARGS,
+	{"getParentBoneName", ( PyCFunction ) V24_Object_getParentBoneName, METH_NOARGS,
 	 "Returns None, or the 'sub-name' of the parent (eg. Bone name)"},
-	{"getSize", ( PyCFunction ) Object_getSize, METH_VARARGS,
+	{"getSize", ( PyCFunction ) V24_Object_getSize, METH_VARARGS,
 	 "(space = 'localspace' / 'worldspace') - Returns the object's size (x, y, z)"},
-	{"getTimeOffset", ( PyCFunction ) Object_getTimeOffset, METH_NOARGS,
+	{"getTimeOffset", ( PyCFunction ) V24_Object_getTimeOffset, METH_NOARGS,
 	 "Returns the object's time offset"},
-	{"getTracked", ( PyCFunction ) Object_getTracked, METH_NOARGS,
+	{"getTracked", ( PyCFunction ) V24_Object_getTracked, METH_NOARGS,
 	 "Returns the object's tracked object"},
-	{"getType", ( PyCFunction ) Object_getType, METH_NOARGS,
+	{"getType", ( PyCFunction ) V24_Object_getType, METH_NOARGS,
 	 "Returns type of string of Object"},
 /* Particle Interaction */
 	 
-	{"getPIStrength", ( PyCFunction ) Object_getPIStrength, METH_NOARGS,
+	{"getPIStrength", ( PyCFunction ) V24_Object_getPIStrength, METH_NOARGS,
 	 "Returns Particle Interaction Strength"},
-	{"setPIStrength", ( PyCFunction ) Object_setPIStrength, METH_VARARGS,
+	{"setPIStrength", ( PyCFunction ) V24_Object_setPIStrength, METH_VARARGS,
 	 "Sets Particle Interaction Strength"},
-	{"getPIFalloff", ( PyCFunction ) Object_getPIFalloff, METH_NOARGS,
+	{"getPIFalloff", ( PyCFunction ) V24_Object_getPIFalloff, METH_NOARGS,
 	 "Returns Particle Interaction Falloff"},
-	{"setPIFalloff", ( PyCFunction ) Object_setPIFalloff, METH_VARARGS,
+	{"setPIFalloff", ( PyCFunction ) V24_Object_setPIFalloff, METH_VARARGS,
 	 "Sets Particle Interaction Falloff"},
-	{"getPIMaxDist", ( PyCFunction ) Object_getPIMaxDist, METH_NOARGS,
+	{"getPIMaxDist", ( PyCFunction ) V24_Object_getPIMaxDist, METH_NOARGS,
 	 "Returns Particle Interaction Max Distance"},
-	{"setPIMaxDist", ( PyCFunction ) Object_setPIMaxDist, METH_VARARGS,
+	{"setPIMaxDist", ( PyCFunction ) V24_Object_setPIMaxDist, METH_VARARGS,
 	 "Sets Particle Interaction Max Distance"},
-	{"getPIUseMaxDist", ( PyCFunction ) Object_getPIUseMaxDist, METH_NOARGS,
+	{"getPIUseMaxDist", ( PyCFunction ) V24_Object_getPIUseMaxDist, METH_NOARGS,
 	 "Returns bool for Use Max Distace in Particle Interaction "},
-	{"setPIUseMaxDist", ( PyCFunction ) Object_SetPIUseMaxDist, METH_VARARGS,
+	{"setPIUseMaxDist", ( PyCFunction ) V24_Object_SetPIUseMaxDist, METH_VARARGS,
 	 "Sets if Max Distance should be used in Particle Interaction"},
-	{"getPIType", ( PyCFunction ) Object_getPIType, METH_NOARGS,
+	{"getPIType", ( PyCFunction ) V24_Object_getPIType, METH_NOARGS,
 	 "Returns Particle Interaction Type"},
-	{"setPIType", ( PyCFunction ) Object_SetPIType, METH_VARARGS,
+	{"setPIType", ( PyCFunction ) V24_Object_SetPIType, METH_VARARGS,
 	 "sets Particle Interaction Type"},
-	{"getPIPerm", ( PyCFunction ) Object_getPIPerm, METH_NOARGS,
+	{"getPIPerm", ( PyCFunction ) V24_Object_getPIPerm, METH_NOARGS,
 	 "Returns Particle Interaction Permiability"},
-	{"setPIPerm", ( PyCFunction ) Object_SetPIPerm, METH_VARARGS,
+	{"setPIPerm", ( PyCFunction ) V24_Object_SetPIPerm, METH_VARARGS,
 	 "Sets Particle Interaction Permiability"},
-	{"getPISurfaceDamp", ( PyCFunction ) Object_getPISurfaceDamp, METH_NOARGS,
+	{"getPISurfaceDamp", ( PyCFunction ) V24_Object_getPISurfaceDamp, METH_NOARGS,
 	 "Returns Particle Interaction Surface Damping"},
-	{"setPISurfaceDamp", ( PyCFunction ) Object_SetPISurfaceDamp, METH_VARARGS,
+	{"setPISurfaceDamp", ( PyCFunction ) V24_Object_SetPISurfaceDamp, METH_VARARGS,
 	 "Sets Particle Interaction Surface Damping"},
-	{"getPIRandomDamp", ( PyCFunction ) Object_getPIRandomDamp, METH_NOARGS,
+	{"getPIRandomDamp", ( PyCFunction ) V24_Object_getPIRandomDamp, METH_NOARGS,
 	 "Returns Particle Interaction Random Damping"},
-	{"setPIRandomDamp", ( PyCFunction ) Object_setPIRandomDamp, METH_VARARGS,
+	{"setPIRandomDamp", ( PyCFunction ) V24_Object_setPIRandomDamp, METH_VARARGS,
 	 "Sets Particle Interaction Random Damping"},
-	{"getPIDeflection", ( PyCFunction ) Object_getPIDeflection, METH_NOARGS,
+	{"getPIDeflection", ( PyCFunction ) V24_Object_getPIDeflection, METH_NOARGS,
 	 "Returns Particle Interaction Deflection"},
-	{"setPIDeflection", ( PyCFunction ) Object_SetPIDeflection, METH_VARARGS,
+	{"setPIDeflection", ( PyCFunction ) V24_Object_SetPIDeflection, METH_VARARGS,
 	 "Sets Particle Interaction Deflection"},  
 
 /* Softbody */
 
-	{"isSB", ( PyCFunction ) Object_isSB, METH_NOARGS,
+	{"isSB", ( PyCFunction ) V24_Object_isSB, METH_NOARGS,
 	 "True if object is a soft body"},
-	{"getSBMass", ( PyCFunction ) Object_getSBMass, METH_NOARGS,
+	{"getSBMass", ( PyCFunction ) V24_Object_getSBMass, METH_NOARGS,
 	 "Returns SB Mass"},
-	{"setSBMass", ( PyCFunction ) Object_setSBMass, METH_VARARGS,
+	{"setSBMass", ( PyCFunction ) V24_Object_setSBMass, METH_VARARGS,
 	 "Sets SB Mass"}, 
-	{"getSBGravity", ( PyCFunction ) Object_getSBGravity, METH_NOARGS,
+	{"getSBGravity", ( PyCFunction ) V24_Object_getSBGravity, METH_NOARGS,
 	 "Returns SB Gravity"},
-	{"setSBGravity", ( PyCFunction ) Object_setSBGravity, METH_VARARGS,
+	{"setSBGravity", ( PyCFunction ) V24_Object_setSBGravity, METH_VARARGS,
 	 "Sets SB Gravity"}, 
-	{"getSBFriction", ( PyCFunction ) Object_getSBFriction, METH_NOARGS,
+	{"getSBFriction", ( PyCFunction ) V24_Object_getSBFriction, METH_NOARGS,
 	 "Returns SB Friction"},
-	{"setSBFriction", ( PyCFunction ) Object_setSBFriction, METH_VARARGS,
+	{"setSBFriction", ( PyCFunction ) V24_Object_setSBFriction, METH_VARARGS,
 	 "Sets SB Friction"}, 
-	{"getSBErrorLimit", ( PyCFunction ) Object_getSBErrorLimit, METH_NOARGS,
+	{"getSBErrorLimit", ( PyCFunction ) V24_Object_getSBErrorLimit, METH_NOARGS,
 	 "Returns SB ErrorLimit"},
-	{"setSBErrorLimit", ( PyCFunction ) Object_setSBErrorLimit, METH_VARARGS,
+	{"setSBErrorLimit", ( PyCFunction ) V24_Object_setSBErrorLimit, METH_VARARGS,
 	 "Sets SB ErrorLimit"}, 
-	{"getSBGoalSpring", ( PyCFunction ) Object_getSBGoalSpring, METH_NOARGS,
+	{"getSBGoalSpring", ( PyCFunction ) V24_Object_getSBGoalSpring, METH_NOARGS,
 	 "Returns SB GoalSpring"},
-	{"setSBGoalSpring", ( PyCFunction ) Object_setSBGoalSpring, METH_VARARGS,
+	{"setSBGoalSpring", ( PyCFunction ) V24_Object_setSBGoalSpring, METH_VARARGS,
 	 "Sets SB GoalSpring"}, 
-	{"getSBGoalFriction", ( PyCFunction ) Object_getSBGoalFriction, METH_NOARGS,
+	{"getSBGoalFriction", ( PyCFunction ) V24_Object_getSBGoalFriction, METH_NOARGS,
 	 "Returns SB GoalFriction"},
-	{"setSBGoalFriction", ( PyCFunction ) Object_setSBGoalFriction, METH_VARARGS,
+	{"setSBGoalFriction", ( PyCFunction ) V24_Object_setSBGoalFriction, METH_VARARGS,
 	 "Sets SB GoalFriction"}, 
-	{"getSBMinGoal", ( PyCFunction ) Object_getSBMinGoal, METH_NOARGS,
+	{"getSBMinGoal", ( PyCFunction ) V24_Object_getSBMinGoal, METH_NOARGS,
 	 "Returns SB MinGoal"},
-	{"setSBMinGoal", ( PyCFunction ) Object_setSBMinGoal, METH_VARARGS,
+	{"setSBMinGoal", ( PyCFunction ) V24_Object_setSBMinGoal, METH_VARARGS,
 	 "Sets SB MinGoal "}, 
-	{"getSBMaxGoal", ( PyCFunction ) Object_getSBMaxGoal, METH_NOARGS,
+	{"getSBMaxGoal", ( PyCFunction ) V24_Object_getSBMaxGoal, METH_NOARGS,
 	 "Returns SB MaxGoal"},
-	{"setSBMaxGoal", ( PyCFunction ) Object_setSBMaxGoal, METH_VARARGS,
+	{"setSBMaxGoal", ( PyCFunction ) V24_Object_setSBMaxGoal, METH_VARARGS,
 	 "Sets SB MaxGoal"},  
-	{"getSBInnerSpring", ( PyCFunction ) Object_getSBInnerSpring, METH_NOARGS,
+	{"getSBInnerSpring", ( PyCFunction ) V24_Object_getSBInnerSpring, METH_NOARGS,
 	 "Returns SB InnerSpring"},
-	{"setSBInnerSpring", ( PyCFunction ) Object_setSBInnerSpring, METH_VARARGS,
+	{"setSBInnerSpring", ( PyCFunction ) V24_Object_setSBInnerSpring, METH_VARARGS,
 	 "Sets SB InnerSpring"}, 	 
-	{"getSBInnerSpringFriction", ( PyCFunction ) Object_getSBInnerSpringFriction, METH_NOARGS,
+	{"getSBInnerSpringFriction", ( PyCFunction ) V24_Object_getSBInnerSpringFriction, METH_NOARGS,
 	 "Returns SB InnerSpringFriction"},
-	{"setSBInnerSpringFriction", ( PyCFunction ) Object_setSBInnerSpringFriction, METH_VARARGS,
+	{"setSBInnerSpringFriction", ( PyCFunction ) V24_Object_setSBInnerSpringFriction, METH_VARARGS,
 	 "Sets SB InnerSpringFriction"}, 	
-	{"getSBDefaultGoal", ( PyCFunction ) Object_getSBDefaultGoal, METH_NOARGS,
+	{"getSBDefaultGoal", ( PyCFunction ) V24_Object_getSBDefaultGoal, METH_NOARGS,
 	 "Returns SB DefaultGoal"},
-	{"setSBDefaultGoal", ( PyCFunction ) Object_setSBDefaultGoal, METH_VARARGS,
+	{"setSBDefaultGoal", ( PyCFunction ) V24_Object_setSBDefaultGoal, METH_VARARGS,
 	 "Sets SB DefaultGoal"}, 		 
-	{"getSBUseGoal", ( PyCFunction ) Object_getSBUseGoal, METH_NOARGS,
+	{"getSBUseGoal", ( PyCFunction ) V24_Object_getSBUseGoal, METH_NOARGS,
 	 "Returns SB UseGoal"},
-	{"setSBUseGoal", ( PyCFunction ) Object_SetSBUseGoal, METH_VARARGS,
+	{"setSBUseGoal", ( PyCFunction ) V24_Object_SetSBUseGoal, METH_VARARGS,
 	 "Sets SB UseGoal"}, 
-	{"getSBUseEdges", ( PyCFunction ) Object_getSBUseEdges, METH_NOARGS,
+	{"getSBUseEdges", ( PyCFunction ) V24_Object_getSBUseEdges, METH_NOARGS,
 	 "Returns SB UseEdges"},
-	{"setSBUseEdges", ( PyCFunction ) Object_SetSBUseEdges, METH_VARARGS,
+	{"setSBUseEdges", ( PyCFunction ) V24_Object_SetSBUseEdges, METH_VARARGS,
 	 "Sets SB UseEdges"}, 
-	{"getSBStiffQuads", ( PyCFunction ) Object_getSBStiffQuads, METH_NOARGS,
+	{"getSBStiffQuads", ( PyCFunction ) V24_Object_getSBStiffQuads, METH_NOARGS,
 	 "Returns SB StiffQuads"},
-	{"setSBStiffQuads", ( PyCFunction ) Object_SetSBStiffQuads, METH_VARARGS,
+	{"setSBStiffQuads", ( PyCFunction ) V24_Object_SetSBStiffQuads, METH_VARARGS,
 	 "Sets SB StiffQuads"},
-	{"getBoundBox", ( PyCFunction ) Object_getBoundBox, METH_NOARGS,
+	{"getBoundBox", ( PyCFunction ) V24_Object_getBoundBox, METH_NOARGS,
 	 "Returns the object's bounding box"},
-	{"makeDisplayList", ( PyCFunction ) Object_makeDisplayList, METH_NOARGS,
+	{"makeDisplayList", ( PyCFunction ) V24_Object_makeDisplayList, METH_NOARGS,
 	 "Update this object's Display List. Some changes like turning\n\
 'SubSurf' on for a mesh need this method (followed by a Redraw) to\n\
 show the changes on the 3d window."},
-	{"link", ( PyCFunction ) Object_link, METH_VARARGS,
+	{"link", ( PyCFunction ) V24_Object_link, METH_VARARGS,
 	 "Links Object with data provided in the argument. The data must\n\
 match the Object's type, so you cannot link a Lamp to a Mesh type object."},
-	{"makeParent", ( PyCFunction ) Object_makeParent, METH_VARARGS,
+	{"makeParent", ( PyCFunction ) V24_Object_makeParent, METH_VARARGS,
 	 "Makes the object the parent of the objects provided in the\n\
 argument which must be a list of valid Objects. Optional extra arguments:\n\
 mode:\n\t0: make parent with inverse\n\t1: without inverse\n\
 fast:\n\t0: update scene hierarchy automatically\n\t\
 don't update scene hierarchy (faster). In this case, you must\n\t\
 explicitly update the Scene hierarchy."},
-	{"join", ( PyCFunction ) Object_join, METH_VARARGS,
+	{"join", ( PyCFunction ) V24_Object_join, METH_VARARGS,
 	 "(object_list) - Joins the objects in object list of the same type, into this object."},
-	{"makeParentDeform", ( PyCFunction ) Object_makeParentDeform, METH_VARARGS,
+	{"makeParentDeform", ( PyCFunction ) V24_Object_makeParentDeform, METH_VARARGS,
 	 "Makes the object the deformation parent of the objects provided in the \n\
 argument which must be a list of valid Objects. Optional extra arguments:\n\
 mode:\n\t0: make parent with inverse\n\t1: without inverse\n\
 fast:\n\t0: update scene hierarchy automatically\n\t\
 don't update scene hierarchy (faster). In this case, you must\n\t\
 explicitly update the Scene hierarchy."},
-	{"makeParentVertex", ( PyCFunction ) Object_makeParentVertex, METH_VARARGS,
+	{"makeParentVertex", ( PyCFunction ) V24_Object_makeParentVertex, METH_VARARGS,
 	 "Makes the object the vertex parent of the objects provided in the \n\
 argument which must be a list of valid Objects. \n\
 The second argument is a tuple of 1 or 3 positive integers which corresponds \
@@ -665,7 +665,7 @@ mode:\n\t0: make parent with inverse\n\t1: without inverse\n\
 fast:\n\t0: update scene hierarchy automatically\n\t\
 don't update scene hierarchy (faster). In this case, you must\n\t\
 explicitly update the Scene hierarchy."},
-	{"makeParentBone", ( PyCFunction ) Object_makeParentBone, METH_VARARGS,
+	{"makeParentBone", ( PyCFunction ) V24_Object_makeParentBone, METH_VARARGS,
 	 "Makes this armature objects bone, the parent of the objects provided in the \n\
 argument which must be a list of valid Objects. Optional extra arguments:\n\
 mode:\n\t0: make parent with inverse\n\t1: without inverse\n\
@@ -673,98 +673,98 @@ fast:\n\t0: update scene hierarchy automatically\n\t\
 don't update scene hierarchy (faster). In this case, you must\n\t\
 explicitely update the Scene hierarchy."},
 
-	{"materialUsage", ( PyCFunction ) Object_materialUsage, METH_NOARGS,
+	{"materialUsage", ( PyCFunction ) V24_Object_materialUsage, METH_NOARGS,
 	 "Determines the way the material is used and returns status.\n\
 Possible arguments (provide as strings):\n\
 \tData:   Materials assigned to the object's data are shown. (default)\n\
 \tObject: Materials assigned to the object are shown."},
-	{"setDeltaLocation", ( PyCFunction ) Object_setDeltaLocation,
+	{"setDeltaLocation", ( PyCFunction ) V24_Object_setDeltaLocation,
 	 METH_VARARGS,
 	 "Sets the object's delta location which must be a vector triple."},
-	{"setDrawMode", ( PyCFunction ) Object_SetDrawMode, METH_VARARGS,
+	{"setDrawMode", ( PyCFunction ) V24_Object_SetDrawMode, METH_VARARGS,
 	 "Sets the object's drawing mode. The argument can be a sum of:\n\
 2: axis\n4: texspace\n8: drawname\n16: drawimage\n32: drawwire\n64: drawxray\n128: drawtransp"},
-	{"setDrawType", ( PyCFunction ) Object_SetDrawType, METH_VARARGS,
+	{"setDrawType", ( PyCFunction ) V24_Object_SetDrawType, METH_VARARGS,
 	 "Sets the object's drawing type. The argument must be one of:\n\
 1: Bounding box\n2: Wire\n3: Solid\n4: Shaded\n5: Textured"},
-	{"setEuler", ( PyCFunction ) Object_SetEuler, METH_VARARGS,
+	{"setEuler", ( PyCFunction ) V24_Object_SetEuler, METH_VARARGS,
 	 "Set the object's rotation according to the specified Euler\n\
 angles. The argument must be a vector triple"},
-	{"setMatrix", ( PyCFunction ) Object_SetMatrix, METH_VARARGS,
+	{"setMatrix", ( PyCFunction ) V24_Object_SetMatrix, METH_VARARGS,
 	 "Set and apply a new local matrix for the object"},
-	{"setLocation", ( PyCFunction ) Object_setLocation, METH_VARARGS,
+	{"setLocation", ( PyCFunction ) V24_Object_setLocation, METH_VARARGS,
 	 "Set the object's location. The first argument must be a vector\n\
 triple."},
-	{"setMaterials", ( PyCFunction ) Object_setMaterials, METH_VARARGS,
+	{"setMaterials", ( PyCFunction ) V24_Object_setMaterials, METH_VARARGS,
 	 "Sets materials. The argument must be a list of valid material\n\
 objects."},
-	{"setName", ( PyCFunction ) GenericLib_setName_with_method, METH_VARARGS,
+	{"setName", ( PyCFunction ) V24_GenericLib_setName_with_method, METH_VARARGS,
 	 "Sets the name of the object"},
-	{"setSize", ( PyCFunction ) Object_setSize, METH_VARARGS,
+	{"setSize", ( PyCFunction ) V24_Object_setSize, METH_VARARGS,
 	 "Set the object's size. The first argument must be a vector\n\
 triple."},
-	{"setTimeOffset", ( PyCFunction ) Object_setTimeOffset, METH_VARARGS,
+	{"setTimeOffset", ( PyCFunction ) V24_Object_setTimeOffset, METH_VARARGS,
 	 "Set the object's time offset."},
-	{"makeTrack", ( PyCFunction ) Object_makeTrack, METH_VARARGS,
+	{"makeTrack", ( PyCFunction ) V24_Object_makeTrack, METH_VARARGS,
 	 "(trackedobj, fast = 0) - Make this object track another.\n\
 	 (trackedobj) - the object that will be tracked.\n\
 	 (fast = 0) - if 0: update the scene hierarchy automatically.  If you\n\
 	 set 'fast' to a nonzero value, don't forget to update the scene yourself\n\
 	 (see scene.update())."},
-	{"shareFrom", ( PyCFunction ) Object_shareFrom, METH_VARARGS,
+	{"shareFrom", ( PyCFunction ) V24_Object_shareFrom, METH_VARARGS,
 	 "Link data of self with object specified in the argument. This\n\
 works only if self and the object specified are of the same type."},
-	{"select", ( PyCFunction ) Object_Select, METH_VARARGS,
+	{"select", ( PyCFunction ) V24_Object_Select, METH_VARARGS,
 	 "( 1 or 0 )  - Set the selected state of the object.\n\
    1 is selected, 0 not selected "},
-	{"setIpo", ( PyCFunction ) Object_SetIpo, METH_VARARGS,
+	{"setIpo", ( PyCFunction ) V24_Object_SetIpo, METH_VARARGS,
 	 "(Blender Ipo) - Sets the object's ipo"},
-	{"clearIpo", ( PyCFunction ) Object_clearIpo, METH_NOARGS,
+	{"clearIpo", ( PyCFunction ) V24_Object_clearIpo, METH_NOARGS,
 	 "() - Unlink ipo from this object"},
 
-	 {"insertIpoKey", ( PyCFunction ) Object_insertIpoKey, METH_VARARGS,
+	 {"insertIpoKey", ( PyCFunction ) V24_Object_insertIpoKey, METH_VARARGS,
 	 "( Object IPO type ) - Inserts a key into IPO"},
-	 {"insertPoseKey", ( PyCFunction ) Object_insertPoseKey, METH_VARARGS,
+	 {"insertPoseKey", ( PyCFunction ) V24_Object_insertPoseKey, METH_VARARGS,
 	 "( Object Pose type ) - Inserts a key into Action"},
-	 {"insertCurrentPoseKey", ( PyCFunction ) Object_insertCurrentPoseKey, METH_VARARGS,
+	 {"insertCurrentPoseKey", ( PyCFunction ) V24_Object_insertCurrentPoseKey, METH_VARARGS,
 	 "( Object Pose type ) - Inserts a key into Action based on current pose"},
-	 {"setConstraintInfluenceForBone", ( PyCFunction ) Object_setConstraintInfluenceForBone, METH_VARARGS,
+	 {"setConstraintInfluenceForBone", ( PyCFunction ) V24_Object_setConstraintInfluenceForBone, METH_VARARGS,
 	  "(  ) - sets a constraint influence for a certain bone in this (armature)object."},
-	 {"copyNLA", ( PyCFunction ) Object_copyNLA, METH_VARARGS,
+	 {"copyNLA", ( PyCFunction ) V24_Object_copyNLA, METH_VARARGS,
 	  "(  ) - copies all NLA strips from another object to this object."},
-	{"convertActionToStrip", ( PyCFunction ) Object_convertActionToStrip, METH_NOARGS,
+	{"convertActionToStrip", ( PyCFunction ) V24_Object_convertActionToStrip, METH_NOARGS,
 	 "(  ) - copies all NLA strips from another object to this object."},
-	{"getAllProperties", ( PyCFunction ) Object_getAllProperties, METH_NOARGS,
+	{"getAllProperties", ( PyCFunction ) V24_Object_getAllProperties, METH_NOARGS,
 	 "() - Get all the properties from this object"},
-	{"addProperty", ( PyCFunction ) Object_addProperty, METH_VARARGS,
+	{"addProperty", ( PyCFunction ) V24_Object_addProperty, METH_VARARGS,
 	 "() - Add a property to this object"},
-	{"removeProperty", ( PyCFunction ) Object_removeProperty, METH_VARARGS,
+	{"removeProperty", ( PyCFunction ) V24_Object_removeProperty, METH_VARARGS,
 	 "() - Remove a property from  this object"},
-	{"getProperty", ( PyCFunction ) Object_getProperty, METH_VARARGS,
+	{"getProperty", ( PyCFunction ) V24_Object_getProperty, METH_VARARGS,
 	 "() - Get a property from this object by name"},
-	{"removeAllProperties", ( PyCFunction ) Object_removeAllProperties,
+	{"removeAllProperties", ( PyCFunction ) V24_Object_removeAllProperties,
 	 METH_NOARGS,
 	 "() - removeAll a properties from this object"},
-	{"copyAllPropertiesTo", ( PyCFunction ) Object_copyAllPropertiesTo,
+	{"copyAllPropertiesTo", ( PyCFunction ) V24_Object_copyAllPropertiesTo,
 	 METH_VARARGS,
 	 "() - copy all properties from this object to another object"},
-	{"getScriptLinks", ( PyCFunction ) Object_getScriptLinks, METH_O,
+	{"getScriptLinks", ( PyCFunction ) V24_Object_getScriptLinks, METH_O,
 	 "(eventname) - Get a list of this object's scriptlinks (Text names) "
 	 "of the given type\n"
 	 "(eventname) - string: FrameChanged, Redraw or Render."},
-	{"addScriptLink", ( PyCFunction ) Object_addScriptLink, METH_VARARGS,
+	{"addScriptLink", ( PyCFunction ) V24_Object_addScriptLink, METH_VARARGS,
 	 "(text, evt) - Add a new object scriptlink.\n"
 	 "(text) - string: an existing Blender Text name;\n"
 	 "(evt) string: FrameChanged, Redraw or Render."},
-	{"clearScriptLinks", ( PyCFunction ) Object_clearScriptLinks,
+	{"clearScriptLinks", ( PyCFunction ) V24_Object_clearScriptLinks,
 	 METH_VARARGS,
 	 "() - Delete all scriptlinks from this object.\n"
 	 "([s1<,s2,s3...>]) - Delete specified scriptlinks from this object."},
-	{"insertShapeKey", ( PyCFunction ) Object_insertShapeKey, METH_NOARGS,
+	{"insertShapeKey", ( PyCFunction ) V24_Object_insertShapeKey, METH_NOARGS,
 	 "() - Insert a Shape Key in the current object"},
-	{"__copy__", ( PyCFunction ) Object_copy, METH_NOARGS,
+	{"__copy__", ( PyCFunction ) V24_Object_copy, METH_NOARGS,
 	 "() - Return a copy of this object."},
-	{"copy", ( PyCFunction ) Object_copy, METH_NOARGS,
+	{"copy", ( PyCFunction ) V24_Object_copy, METH_NOARGS,
 	 "() - Return a copy of this object."},
 	{NULL, NULL, 0, NULL}
 };
@@ -772,12 +772,12 @@ works only if self and the object specified are of the same type."},
 /*****************************************************************************/
 /* PythonTypeObject callback function prototypes			 */
 /*****************************************************************************/
-static void Object_dealloc( BPy_Object * obj );
-static PyObject *Object_repr( BPy_Object * obj );
-static int Object_compare( BPy_Object * a, BPy_Object * b );
+static void V24_Object_dealloc( V24_BPy_Object * obj );
+static PyObject *V24_Object_repr( V24_BPy_Object * obj );
+static int V24_Object_compare( V24_BPy_Object * a, V24_BPy_Object * b );
 
 /*****************************************************************************/
-/* Function:			  M_Object_New				 */
+/* Function:			  V24_M_Object_New				 */
 /* Python equivalent:	  Blender.Object.New				 */
 /*****************************************************************************/
 
@@ -792,17 +792,17 @@ static int Object_compare( BPy_Object * a, BPy_Object * b );
  * debugging messages.
  */
 
-PyObject *M_Object_New( PyObject * self_unused, PyObject * args )
+PyObject *V24_M_Object_New( PyObject * self_unused, PyObject * args )
 {
 	struct Object *object;
 	int type;
 	char *str_type;
 	char *name = NULL;
 	PyObject *py_object;
-	BPy_Object *blen_object;
+	V24_BPy_Object *blen_object;
 
 	if( !PyArg_ParseTuple( args, "s|s", &str_type, &name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"string expected as argument" );
 
 	if( strcmp( str_type, "Armature" ) == 0 )
@@ -827,7 +827,7 @@ PyObject *M_Object_New( PyObject * self_unused, PyObject * args )
 	else if( strcmp( str_type, "Empty" ) == 0 )
 		type = OB_EMPTY;
 	else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"Unknown type specified" );
 
 	/* Create a new object. */
@@ -841,12 +841,12 @@ PyObject *M_Object_New( PyObject * self_unused, PyObject * args )
 	object->lay = 1;	/* Layer, by default visible*/
 	object->data = NULL;
 
-	/* user count is incremented in Object_CreatePyObject */
+	/* user count is incremented in V24_Object_CreatePyObject */
 	object->id.us = 0;
 
 	/* Create a Python object from it. */
-	py_object = Object_CreatePyObject( object );
-	blen_object = (BPy_Object *)py_object;
+	py_object = V24_Object_CreatePyObject( object );
+	blen_object = (V24_BPy_Object *)py_object;
 
 	/* store the real object type in the PyObject, treat this as an Empty
 	 * until it has some obdata */
@@ -857,10 +857,10 @@ PyObject *M_Object_New( PyObject * self_unused, PyObject * args )
 }
 
 /*****************************************************************************/
-/* Function:	  M_Object_Get						*/
+/* Function:	  V24_M_Object_Get						*/
 /* Python equivalent:	  Blender.Object.Get				*/
 /*****************************************************************************/
-PyObject *M_Object_Get( PyObject * self_unused, PyObject * args )
+PyObject *V24_M_Object_Get( PyObject * self_unused, PyObject * args )
 {
 	struct Object *object;
 	PyObject *blen_object;
@@ -869,14 +869,14 @@ PyObject *M_Object_Get( PyObject * self_unused, PyObject * args )
 	PyArg_ParseTuple( args, "|s", &name );
 
 	if( name != NULL ) {
-		object = ( Object * ) GetIdFromList( &( G.main->object ), name );
+		object = ( Object * ) V24_GetIdFromList( &( G.main->object ), name );
 
 			/* No object exists with the name specified in the argument name. */
 		if( !object ){
 			char buffer[128];
 			PyOS_snprintf( buffer, sizeof(buffer),
 						   "object \"%s\" not found", name);
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 										  buffer );
 		}
 
@@ -884,7 +884,7 @@ PyObject *M_Object_Get( PyObject * self_unused, PyObject * args )
 		if (bpy_during_pydriver())
 			bpy_pydriver_appendToList(object);
  
-		return Object_CreatePyObject( object );
+		return V24_Object_CreatePyObject( object );
 	} else {
 		/* No argument has been given. Return a list of all objects. */
 		PyObject *obj_list;
@@ -894,20 +894,20 @@ PyObject *M_Object_Get( PyObject * self_unused, PyObject * args )
 		/* do not allow Get() (w/o arguments) inside pydriver, otherwise
 		 * we'd have to update all objects in the DAG */
 		if (bpy_during_pydriver())
-			return EXPP_ReturnPyObjError( PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"Object.Get requires an argument when used in pydrivers" );
 
 		obj_list = PyList_New( BLI_countlist( &( G.main->object ) ) );
 
 		if( !obj_list )
-			return EXPP_ReturnPyObjError( PyExc_SystemError,
+			return V24_EXPP_ReturnPyObjError( PyExc_SystemError,
 				"List creation failed." );
 
 		link = G.main->object.first;
 		index = 0;
 		while( link ) {
 			object = ( Object * ) link;
-			blen_object = Object_CreatePyObject( object );
+			blen_object = V24_Object_CreatePyObject( object );
 			if( !blen_object ) {
 				Py_DECREF( obj_list );
 				Py_RETURN_NONE;
@@ -921,10 +921,10 @@ PyObject *M_Object_Get( PyObject * self_unused, PyObject * args )
 }
 
 /*****************************************************************************/
-/* Function:	  M_Object_GetSelected				*/
+/* Function:	  V24_M_Object_GetSelected				*/
 /* Python equivalent:	  Blender.Object.GetSelected		*/
 /*****************************************************************************/
-static PyObject *M_Object_GetSelected( PyObject * self_unused )
+static PyObject *V24_M_Object_GetSelected( PyObject * self_unused )
 {
 	PyObject *blen_object;
 	PyObject *list;
@@ -942,7 +942,7 @@ static PyObject *M_Object_GetSelected( PyObject * self_unused )
 	      ( G.scene->basact->lay & G.vd->lay ) ) ) {
 
 		/* Active object is first in the list. */
-		blen_object = Object_CreatePyObject( G.scene->basact->object );
+		blen_object = V24_Object_CreatePyObject( G.scene->basact->object );
 		if( !blen_object ) {
 			Py_DECREF( list );
 			Py_RETURN_NONE;
@@ -957,7 +957,7 @@ static PyObject *M_Object_GetSelected( PyObject * self_unused )
 				( base_iter->lay & G.vd->lay ) ) &&
 				( base_iter != G.scene->basact ) ) {
 
-			blen_object = Object_CreatePyObject( base_iter->object );
+			blen_object = V24_Object_CreatePyObject( base_iter->object );
 			if( blen_object ) {
 				PyList_Append( list, blen_object );
 				Py_DECREF( blen_object );
@@ -970,10 +970,10 @@ static PyObject *M_Object_GetSelected( PyObject * self_unused )
 
 
 /*****************************************************************************/
-/* Function:			  M_Object_Duplicate				 */
+/* Function:			  V24_M_Object_Duplicate				 */
 /* Python equivalent:	  Blender.Object.Duplicate				 */
 /*****************************************************************************/
-static PyObject *M_Object_Duplicate( PyObject * self_unused,
+static PyObject *V24_M_Object_Duplicate( PyObject * self_unused,
 		PyObject * args, PyObject *kwd )
 {
 	int dupflag= 0; /* this a flag, passed to adduplicate() and used instead of U.dupflag sp python can set what is duplicated */	
@@ -995,14 +995,14 @@ static PyObject *M_Object_Duplicate( PyObject * self_unused,
 	
 	/* duplicating in background causes segfaults */
 	if( G.background == 1 )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"cannot duplicate objects in background mode" );
 	
 	
 	if (!PyArg_ParseTupleAndKeywords(args, kwd, "|iiiiiiiiii", kwlist,
 		&mesh_dupe, &surface_dupe, &curve_dupe, &text_dupe, &metaball_dupe,
 		&armature_dupe, &lamp_dupe, &material_dupe, &texture_dupe, &ipo_dupe))
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected nothing or bool keywords 'mesh', 'surface', 'curve', 'text', 'metaball', 'armature', 'lamp' 'material', 'texture' and 'ipo' as arguments" );
 	
 	/* USER_DUP_ACT for actions is not supported in the UI so dont support it here */
@@ -1022,16 +1022,16 @@ static PyObject *M_Object_Duplicate( PyObject * self_unused,
 
 
 /*****************************************************************************/
-/* Python BPy_Object methods:					*/
+/* Python V24_BPy_Object methods:					*/
 /*****************************************************************************/
 
-static PyObject *Object_buildParts( BPy_Object * self )
+static PyObject *V24_Object_buildParts( V24_BPy_Object * self )
 {
 	build_particle_system( self->object );
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_clearIpo( BPy_Object * self )
+static PyObject *V24_Object_clearIpo( V24_BPy_Object * self )
 {
 	Object *ob = self->object;
 	Ipo *ipo = ( Ipo * ) ob->ipo;
@@ -1048,13 +1048,13 @@ static PyObject *Object_clearIpo( BPy_Object * self )
 	Py_RETURN_FALSE; /* no ipo found */
 }
 
-static PyObject *Object_clrParent( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_clrParent( V24_BPy_Object * self, PyObject * args )
 {
 	int mode = 0;
 	int fast = 0;
 
 	if( !PyArg_ParseTuple( args, "|ii", &mode, &fast ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected one or two optional integers as arguments" );
 
 	/* Remove the link only, the object is still in the scene. */
@@ -1071,13 +1071,13 @@ static PyObject *Object_clrParent( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_clearTrack( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_clearTrack( V24_BPy_Object * self, PyObject * args )
 {
 	int mode = 0;
 	int fast = 0;
 
 	if( !PyArg_ParseTuple( args, "|ii", &mode, &fast ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected one or two optional integers as arguments" );
 
 	/* Remove the link only, the object is still in the scene. */
@@ -1095,7 +1095,7 @@ static PyObject *Object_clearTrack( BPy_Object * self, PyObject * args )
 }
 
 /* adds object data to a Blender object, if object->data = NULL */
-int EXPP_add_obdata( struct Object *object )
+int V24_EXPP_add_obdata( struct Object *object )
 {
 	if( object->data != NULL )
 		return -1;
@@ -1130,7 +1130,7 @@ int EXPP_add_obdata( struct Object *object )
 		break;
 
 		/* TODO the following types will be supported later,
-		   be sure to update Scene_link when new types are supported
+		   be sure to update V24_Scene_link when new types are supported
 		   case OB_SURF:
 		   object->data = add_curve(OB_SURF);
 		   G.totcurve++;
@@ -1152,32 +1152,32 @@ int EXPP_add_obdata( struct Object *object )
 	return 0;
 }
 
-static PyObject *Object_getDeltaLocation( BPy_Object * self )
+static PyObject *V24_Object_getDeltaLocation( V24_BPy_Object * self )
 {
 	return Py_BuildValue( "fff", self->object->dloc[0],
 			self->object->dloc[1], self->object->dloc[2] );
 }
 
-static PyObject *Object_getAction( BPy_Object * self )
+static PyObject *V24_Object_getAction( V24_BPy_Object * self )
 {
 	if( self->object->action )
-		return Action_CreatePyObject( self->object->action );
+		return V24_Action_CreatePyObject( self->object->action );
 	Py_RETURN_NONE;
 }
 
-static int Object_setAction( BPy_Object * self, PyObject * value )
+static int V24_Object_setAction( V24_BPy_Object * self, PyObject * value )
 {
-	return GenericLib_assignData(value, (void **) &self->object->action, 0, 1, ID_AC, 0);
+	return V24_GenericLib_assignData(value, (void **) &self->object->action, 0, 1, ID_AC, 0);
 }
 
-static PyObject *Object_evaluatePose(BPy_Object *self, PyObject *args)
+static PyObject *V24_Object_evaluatePose(V24_BPy_Object *self, PyObject *args)
 {
 	int frame = 1;
 	if( !PyArg_ParseTuple( args, "i", &frame ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected int argument" );
 
-	frame = EXPP_ClampInt(frame, MINFRAME, MAXFRAME);
+	frame = V24_EXPP_ClampInt(frame, MINFRAME, MAXFRAME);
 	G.scene->r.cfra = frame;
 	do_all_pose_actions(self->object);
 	where_is_pose (self->object);
@@ -1185,13 +1185,13 @@ static PyObject *Object_evaluatePose(BPy_Object *self, PyObject *args)
 	Py_RETURN_NONE;
 }
 
-static PyObject * Object_getPose(BPy_Object *self)
+static PyObject * V24_Object_getPose(V24_BPy_Object *self)
 {
 	/*if there is no pose will return PyNone*/
-	return PyPose_FromPose(self->object->pose, self->object->id.name+2);
+	return V24_PyPose_FromPose(self->object->pose, self->object->id.name+2);
 }
 
-static PyObject *Object_getSelected( BPy_Object * self )
+static PyObject *V24_Object_getSelected( V24_BPy_Object * self )
 {
 	Base *base;
 
@@ -1206,17 +1206,17 @@ static PyObject *Object_getSelected( BPy_Object * self )
 		}
 		base = base->next;
 	}
-	return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"could not find object's selection state" );
 }
 
-static int Object_setSelect( BPy_Object * self, PyObject * value )
+static int V24_Object_setSelect( V24_BPy_Object * self, PyObject * value )
 {
 	Base *base;
 	int param = PyObject_IsTrue( value );
 
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 
 	base = FIRSTBASE;
@@ -1240,13 +1240,13 @@ static int Object_setSelect( BPy_Object * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Object_GetEuler( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_GetEuler( V24_BPy_Object * self, PyObject * args )
 {
 	char *space = "localspace";	/* default to local */
 	float eul[3];
 	
 	if( !PyArg_ParseTuple( args, "|s", &space ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a string or nothing" );
 	
 	if( BLI_streq( space, "worldspace" ) ) {	/* Worldspace matrix */
@@ -1261,37 +1261,37 @@ static PyObject *Object_GetEuler( BPy_Object * self, PyObject * args )
 		eul[1] = self->object->rot[1];
 		eul[2] = self->object->rot[2];
 	} else {
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"expected either nothing, 'localspace' (default) or 'worldspace'" );
 	}
 
 	return ( PyObject * ) newEulerObject( eul, Py_NEW );
 }
 
-static PyObject *Object_getInverseMatrix( BPy_Object * self )
+static PyObject *V24_Object_getInverseMatrix( V24_BPy_Object * self )
 {
-	MatrixObject *inverse =
-		( MatrixObject * ) newMatrixObject( NULL, 4, 4, Py_NEW );
+	V24_MatrixObject *inverse =
+		( V24_MatrixObject * ) newMatrixObject( NULL, 4, 4, Py_NEW );
 	Mat4Invert( (float ( * )[4])*inverse->matrix, self->object->obmat );
 
 	return ( ( PyObject * ) inverse );
 }
 
-static PyObject *Object_getIpo( BPy_Object * self )
+static PyObject *V24_Object_getIpo( V24_BPy_Object * self )
 {
 	struct Ipo *ipo = self->object->ipo;
 
 	if( ipo )
-		return Ipo_CreatePyObject( ipo );
+		return V24_Ipo_CreatePyObject( ipo );
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getLocation( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_getLocation( V24_BPy_Object * self, PyObject * args )
 {
 	char *space = "localspace";	/* default to local */
 	PyObject *attr;
 	if( !PyArg_ParseTuple( args, "|s", &space ) ) 
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a string or nothing" );
 
 	if( BLI_streq( space, "worldspace" ) ) {	/* Worldspace matrix */
@@ -1310,43 +1310,43 @@ static PyObject *Object_getLocation( BPy_Object * self, PyObject * args )
 					self->object->loc[1],
 					self->object->loc[2] );
 	} else {
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"expected either nothing, 'localspace' (default) or 'worldspace'" );
 	}
 
 	return attr;
 }
 
-static PyObject *Object_getMaterials( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_getMaterials( V24_BPy_Object * self, PyObject * args )
 {
 	int all = 0;
 
 	if( !PyArg_ParseTuple( args, "|i", &all ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an int or nothing" );
 
-	return EXPP_PyList_fromMaterialList( self->object->mat,
+	return V24_EXPP_PyList_fromMaterialList( self->object->mat,
 					       self->object->totcol, all );
 }
 
-static PyObject *Object_getParent( BPy_Object * self )
+static PyObject *V24_Object_getParent( V24_BPy_Object * self )
 {
-	return Object_CreatePyObject( self->object->parent );
+	return V24_Object_CreatePyObject( self->object->parent );
 }
 
-static PyObject *Object_getParentBoneName( BPy_Object * self )
+static PyObject *V24_Object_getParentBoneName( V24_BPy_Object * self )
 {
 	if( self->object->parent && self->object->parent->type==OB_ARMATURE && self->object->parsubstr[0] != '\0' )
 		return PyString_FromString( self->object->parsubstr );
 	Py_RETURN_NONE;
 }
 
-static int Object_setParentBoneName( BPy_Object * self, PyObject *value )
+static int V24_Object_setParentBoneName( V24_BPy_Object * self, PyObject *value )
 {
 	char *bonename;
 	
 	if (!PyString_Check(value))
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected an int or nothing" );
 	
 	if (
@@ -1354,13 +1354,13 @@ static int Object_setParentBoneName( BPy_Object * self, PyObject *value )
 		self->object->parent->type == OB_ARMATURE &&
 		self->object->partype == PARBONE
 	) {/* its all good */} else
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"can only set the parent bone name for objects that already have a bone parent" );
 	
 	bonename = PyString_AsString(value);
 
 	if (!get_named_bone(self->object->parent->data, bonename))
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"cannot parent to this bone: invalid bone name" );
 	
 	strcpy(self->object->parsubstr, bonename);
@@ -1368,12 +1368,12 @@ static int Object_setParentBoneName( BPy_Object * self, PyObject *value )
 	return 0;
 }
 
-static PyObject *Object_getSize( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_getSize( V24_BPy_Object * self, PyObject * args )
 {
 	char *space = "localspace";	/* default to local */
 	PyObject *attr;
 	if( !PyArg_ParseTuple( args, "|s", &space ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected a string or nothing" );
 
 	if( BLI_streq( space, "worldspace" ) ) {	/* Worldspace matrix */
@@ -1401,23 +1401,23 @@ static PyObject *Object_getSize( BPy_Object * self, PyObject * args )
 					self->object->size[1],
 					self->object->size[2] );
 	} else {
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 			"expected either nothing, 'localspace' (default) or 'worldspace'" );
 	}
 	return attr;
 }
 
-static PyObject *Object_getTimeOffset( BPy_Object * self )
+static PyObject *V24_Object_getTimeOffset( V24_BPy_Object * self )
 {
 	return PyFloat_FromDouble ( (double) self->object->sf );
 }
 
-static PyObject *Object_getTracked( BPy_Object * self )
+static PyObject *V24_Object_getTracked( V24_BPy_Object * self )
 {
-	return Object_CreatePyObject( self->object->track );
+	return V24_Object_CreatePyObject( self->object->track );
 }
 
-static PyObject *Object_getType( BPy_Object * self )
+static PyObject *V24_Object_getType( V24_BPy_Object * self )
 {
 	char *str;
 	int type = self->object->type;
@@ -1468,14 +1468,14 @@ static PyObject *Object_getType( BPy_Object * self )
 	return PyString_FromString( str );
 }
 
-static PyObject *Object_getBoundBox( BPy_Object * self )
+static PyObject *V24_Object_getBoundBox( V24_BPy_Object * self )
 {
 	int i;
 	float *vec = NULL;
 	PyObject *vector, *bbox;
 
 	if( !self->object->data )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"This object isn't linked to any object data (mesh, curve, etc) yet" );
 
 	if( !self->object->bb ) {	/* if no ob bbox, we look in obdata */
@@ -1512,7 +1512,7 @@ static PyObject *Object_getBoundBox( BPy_Object * self )
 
 			bbox = PyList_New( 8 );
 			if( !bbox )
-				return EXPP_ReturnPyObjError
+				return V24_EXPP_ReturnPyObjError
 					( PyExc_MemoryError,
 					  "couldn't create pylist" );
 			for( i = 0, from = vec; i < 8; i++, from += 3 ) {
@@ -1541,7 +1541,7 @@ static PyObject *Object_getBoundBox( BPy_Object * self )
 				   we must create vectors that allocate space */
 
 				vector = newVectorObject( NULL, 3, Py_NEW);
-				memcpy( ( ( VectorObject * ) vector )->vec,
+				memcpy( ( ( V24_VectorObject * ) vector )->vec,
 					tmpvec, 3 * sizeof( float ) );
 				PyList_SET_ITEM( bbox, i, vector );
 			}
@@ -1550,13 +1550,13 @@ static PyObject *Object_getBoundBox( BPy_Object * self )
 		vec = ( float * ) self->object->bb->vec;
 
 		if( !vec )
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						      "couldn't retrieve bounding box data" );
 
 		bbox = PyList_New( 8 );
 
 		if( !bbox )
-			return EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						      "couldn't create pylist" );
 
 		/* create vectors referencing object bounding box coords */
@@ -1570,7 +1570,7 @@ static PyObject *Object_getBoundBox( BPy_Object * self )
 	return bbox;
 }
 
-static PyObject *Object_makeDisplayList( BPy_Object * self )
+static PyObject *V24_Object_makeDisplayList( V24_BPy_Object * self )
 {
 	Object *ob = self->object;
 
@@ -1585,7 +1585,7 @@ static PyObject *Object_makeDisplayList( BPy_Object * self )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_link( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_link( V24_BPy_Object * self, PyObject * args )
 {
 	PyObject *py_data;
 	ID *id;
@@ -1595,15 +1595,15 @@ static PyObject *Object_link( BPy_Object * self, PyObject * args )
 	int ok;
 
 	if( !PyArg_ParseTuple( args, "O", &py_data ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an object as argument" );
 
 	if( BPy_Armature_Check( py_data ) )
-		data = ( void * ) PyArmature_AsArmature((BPy_Armature*)py_data);
+		data = ( void * ) PyArmature_AsArmature((V24_BPy_Armature*)py_data);
 	else if( BPy_Camera_Check( py_data ) )
-		data = ( void * ) Camera_FromPyObject( py_data );
+		data = ( void * ) V24_Camera_FromPyObject( py_data );
 	else if( BPy_Lamp_Check( py_data ) )
-		data = ( void * ) Lamp_FromPyObject( py_data );
+		data = ( void * ) V24_Lamp_FromPyObject( py_data );
 	else if( BPy_Curve_Check( py_data ) )
 		data = ( void * ) Curve_FromPyObject( py_data );
 	else if( BPy_NMesh_Check( py_data ) ) {
@@ -1611,17 +1611,17 @@ static PyObject *Object_link( BPy_Object * self, PyObject * args )
 		if( !data )		/* NULL means there is already an error */
 			return NULL;
 	} else if( BPy_Mesh_Check( py_data ) )
-		data = ( void * ) Mesh_FromPyObject( py_data, self->object );
+		data = ( void * ) V24_Mesh_FromPyObject( py_data, self->object );
 	else if( BPy_Lattice_Check( py_data ) )
-		data = ( void * ) Lattice_FromPyObject( py_data );
+		data = ( void * ) V24_Lattice_FromPyObject( py_data );
 	else if( BPy_Metaball_Check( py_data ) )
-		data = ( void * ) Metaball_FromPyObject( py_data );
-	else if( BPy_Text3d_Check( py_data ) )
+		data = ( void * ) V24_Metaball_FromPyObject( py_data );
+	else if( V24_BPy_Text3d_Check( py_data ) )
 		data = ( void * ) Text3d_FromPyObject( py_data );
 
 	/* have we set data to something good? */
 	if( !data )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"link argument type is not supported " );
 
 	oldid = ( ID * ) self->object->data;
@@ -1673,12 +1673,12 @@ static PyObject *Object_link( BPy_Object * self, PyObject * args )
 		}
 		break;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"Linking this object type is not supported" );
 	}
 
 	if( !ok )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"The 'link' object is incompatible with the base object" );
 	self->object->data = data;
 
@@ -1691,7 +1691,7 @@ static PyObject *Object_link( BPy_Object * self, PyObject * args )
 		if( oldid->us > 0 ) {
 			oldid->us--;
 		} else {
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"old object reference count below 0" );
 		}
 	}
@@ -1702,7 +1702,7 @@ static PyObject *Object_link( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_makeParentVertex( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_makeParentVertex( V24_BPy_Object * self, PyObject * args )
 {
 	PyObject *list;
 	PyObject *vlist;
@@ -1717,52 +1717,52 @@ static PyObject *Object_makeParentVertex( BPy_Object * self, PyObject * args )
 
 	/* Check if the arguments passed to makeParent are valid. */
 	if( !PyArg_ParseTuple( args, "OO|ii", &list, &vlist, &noninverse, &fast ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a list of objects, a tuple of integers and one or two integers as arguments" );
 
 	if( !PySequence_Check( list ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected a list of objects" );
 
 	if (!PyTuple_Check( vlist ))
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected a tuple of integers" );
 
 	switch( PyTuple_Size( vlist ) ) {
 	case 1:
 		if( !PyArg_ParseTuple( vlist, "i", &v1 ) )
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a tuple of 1 or 3 integers" );
 
 		if ( v1 < 0 )
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"indices must be strictly positive" );
 
 		partype = PARVERT1;
 		break;
 	case 3:
 		if( !PyArg_ParseTuple( vlist, "iii", &v1, &v2, &v3 ) )
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected a tuple of 1 or 3 integers" );
 
 		if ( v1 < 0 || v2 < 0 || v3 < 0)
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					   	"indices must be strictly positive" );
 		partype = PARVERT3;
 		break;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a tuple of 1 or 3 integers" );
 	}
 
 	parent = ( Object * ) self->object;
 
 	if (!ELEM3(parent->type, OB_MESH, OB_CURVE, OB_SURF))
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"Parent Vertex only applies to curve, mesh or surface objects" );
 
 	if (parent->id.us == 0)
-		return EXPP_ReturnPyObjError (PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError (PyExc_RuntimeError,
 			"object must be linked to a scene before it can become a parent");
 
 	/* Check if the PyObject passed in list is a Blender object. */
@@ -1787,7 +1787,7 @@ static PyObject *Object_makeParentVertex( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_makeParentDeform( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_makeParentDeform( V24_BPy_Object * self, PyObject * args )
 {
 	PyObject *list;
 	PyObject *py_child;
@@ -1799,21 +1799,21 @@ static PyObject *Object_makeParentDeform( BPy_Object * self, PyObject * args )
 
 	/* Check if the arguments passed to makeParent are valid. */
 	if( !PyArg_ParseTuple( args, "O|ii", &list, &noninverse, &fast ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a list of objects and one or two integers as arguments" );
 
 	if( !PySequence_Check( list ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a list of objects" );
 
 	parent = ( Object * ) self->object;
 
 	if (parent->type != OB_CURVE && parent->type != OB_ARMATURE)
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"Parent Deform only applies to curve or armature objects" );
 
 	if (parent->id.us == 0)
-		return EXPP_ReturnPyObjError (PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError (PyExc_RuntimeError,
 			"object must be linked to a scene before it can become a parent");
 
 	/* Check if the PyObject passed in list is a Blender object. */
@@ -1839,7 +1839,7 @@ static PyObject *Object_makeParentDeform( BPy_Object * self, PyObject * args )
 }
 
 
-static PyObject *Object_makeParentBone( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_makeParentBone( V24_BPy_Object * self, PyObject * args )
 {
 	char *bonename;
 	PyObject *list;
@@ -1852,25 +1852,25 @@ static PyObject *Object_makeParentBone( BPy_Object * self, PyObject * args )
 	
 	/* Check if the arguments passed to makeParent are valid. */
 	if( !PyArg_ParseTuple( args, "Os|ii", &list, &bonename, &noninverse, &fast ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a list of objects, bonename and optionally two integers as arguments" );
 	
 	parent = ( Object * ) self->object;
 	
 	if (parent->type != OB_ARMATURE)
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"Parent Bone only applies to armature objects" );
 
 	if (parent->id.us == 0)
-		return EXPP_ReturnPyObjError (PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError (PyExc_RuntimeError,
 			"object must be linked to a scene before it can become a parent");
 	
 	if (!parent->data)
-		return EXPP_ReturnPyObjError (PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError (PyExc_RuntimeError,
 			"object must be linked to armature data");
 	
 	if (!get_named_bone(parent->data, bonename))
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"Parent Bone Name is not in the armature" );
 	
 	/* Check if the PyObject passed in list is a Blender object. */
@@ -1896,7 +1896,7 @@ static PyObject *Object_makeParentBone( BPy_Object * self, PyObject * args )
 }
 
 
-static PyObject *Object_makeParent( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_makeParent( V24_BPy_Object * self, PyObject * args )
 {
 	PyObject *list;
 	PyObject *py_child;
@@ -1908,17 +1908,17 @@ static PyObject *Object_makeParent( BPy_Object * self, PyObject * args )
 
 	/* Check if the arguments passed to makeParent are valid. */
 	if( !PyArg_ParseTuple( args, "O|ii", &list, &noninverse, &fast ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected a list of objects and one or two integers as arguments" );
 
 	if( !PySequence_Check( list ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a list of objects" );
 
 	parent = ( Object * ) self->object;
 
 	if (parent->id.us == 0)
-		return EXPP_ReturnPyObjError (PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError (PyExc_RuntimeError,
 			"object must be linked to a scene before it can become a parent");
 
 	/* Check if the PyObject passed in list is a Blender object. */
@@ -1943,7 +1943,7 @@ static PyObject *Object_makeParent( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_join( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_join( V24_BPy_Object * self, PyObject * args )
 {
 	PyObject *list;
 	PyObject *py_child;
@@ -1957,16 +1957,16 @@ static PyObject *Object_join( BPy_Object * self, PyObject * args )
 
 	/* joining in background causes segfaults */
 	if( G.background == 1 )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"cannot join objects in background mode" );
 
 	/* Check if the arguments passed to makeParent are valid. */
 	if( !PyArg_ParseTuple( args, "O", &list ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a list of objects" );
 	
 	if( !PySequence_Check( list ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected a list of objects" );
 	
 	list_length = PySequence_Length( list ); /* if there are no objects to join then exit silently */
@@ -1980,11 +1980,11 @@ static PyObject *Object_join( BPy_Object * self, PyObject * args )
 	
 	/* Only these object types are sypported */
 	if( type!=OB_MESH && type!=OB_CURVE && type!=OB_SURF && type!=OB_ARMATURE )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"Base object is not a type Blender can join" );
 	
 	if( !object_in_scene( parent, G.scene ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"object must be in the current scene" );
 
 	/* exit editmode so join can be done */
@@ -1994,7 +1994,7 @@ static PyObject *Object_join( BPy_Object * self, PyObject * args )
 	temp_scene = add_scene( "Scene" ); /* make the new scene */
 	temp_scene->lay= 1; /* first layer on */
 	
-	/* TODO: use EXPP_check_sequence_consistency here */
+	/* TODO: use V24_EXPP_check_sequence_consistency here */
 
 	/* Check if the PyObject passed in list is a Blender object. */
 	for( i = 0; i < list_length; i++ ) {
@@ -2003,16 +2003,16 @@ static PyObject *Object_join( BPy_Object * self, PyObject * args )
 			/* Cleanup */
 			free_libblock( &G.main->scene, temp_scene );
 			Py_DECREF( py_child );
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected a list of objects, one or more of the list items is not a Blender Object." );
 		} else {
 			/* List item is an object, is it the same type? */
-			child = ( Object * ) Object_FromPyObject( py_child );
+			child = ( Object * ) V24_Object_FromPyObject( py_child );
 			Py_DECREF( py_child );
 			if( parent->type == child->type ) {
 				if( !object_in_scene( child, G.scene ) ) {
 					free_libblock( &G.main->scene, temp_scene );
-					return EXPP_ReturnPyObjError( PyExc_AttributeError,
+					return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 							"object must be in the current scene" );
 				}
 
@@ -2079,7 +2079,7 @@ static PyObject *Object_join( BPy_Object * self, PyObject * args )
 
 	/* If the join failed then raise an error */
 	if (!ret_value)
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 "Blender failed to join the objects, this is not a script error.\n\
 Please add exception handling to your script with a RuntimeError exception\n\
 letting the user know that their data could not be joined." ) );
@@ -2096,14 +2096,14 @@ static PyObject *internal_makeParent(Object *parent, PyObject *py_child,
 	Object *child = NULL;
 
 	if( BPy_Object_Check( py_child ) )
-		child = ( Object * ) Object_FromPyObject( py_child );
+		child = ( Object * ) V24_Object_FromPyObject( py_child );
 
 	if( child == NULL )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"Object Type expected" );
 
 	if( test_parent_loop( parent, child ) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"parenting loop detected - parenting failed" );
 
 	if (partype == PARSKEL && child->type != OB_MESH)
@@ -2125,7 +2125,7 @@ static PyObject *internal_makeParent(Object *parent, PyObject *py_child,
 	
 
 	child->parent = parent;
-	/* py_obj_child = (BPy_Object *) py_child; */
+	/* py_obj_child = (V24_BPy_Object *) py_child; */
 	if( noninverse == 1 ) {
 		Mat4One(child->parentinv);
 		/* Parent inverse = unity */
@@ -2144,13 +2144,13 @@ static PyObject *internal_makeParent(Object *parent, PyObject *py_child,
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_materialUsage( void )
+static PyObject *V24_Object_materialUsage( void )
 {
-	return EXPP_ReturnPyObjError( PyExc_NotImplementedError,
+	return V24_EXPP_ReturnPyObjError( PyExc_NotImplementedError,
 			"materialUsage: not yet implemented" );
 }
 
-static PyObject *Object_setDeltaLocation( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setDeltaLocation( V24_BPy_Object * self, PyObject * args )
 {
 	float dloc1;
 	float dloc2;
@@ -2165,7 +2165,7 @@ static PyObject *Object_setDeltaLocation( BPy_Object * self, PyObject * args )
 					   &dloc3 );
 
 	if( !status )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected sequence argument of 3 floats" );
 
 	self->object->dloc[0] = dloc1;
@@ -2181,24 +2181,24 @@ static PyObject *Object_setDeltaLocation( BPy_Object * self, PyObject * args )
 #define DTX_MASK ( OB_AXIS | OB_TEXSPACE | OB_DRAWNAME | \
 		OB_DRAWIMAGE | OB_DRAWWIRE | OB_DRAWXRAY | OB_DRAWTRANSP )
 
-static PyObject *Object_getDrawMode( BPy_Object * self )
+static PyObject *V24_Object_getDrawMode( V24_BPy_Object * self )
 {
 	return PyInt_FromLong( (long)(self->object->dtx & DTX_MASK) );
 }
 
-static int Object_setDrawMode( BPy_Object * self, PyObject * args )
+static int V24_Object_setDrawMode( V24_BPy_Object * self, PyObject * args )
 {
 	PyObject* integer = PyNumber_Int( args );
 	int value;
 
 	if( !integer )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected integer argument" );
 
 	value = ( int )PyInt_AS_LONG( integer );
 	Py_DECREF( integer );
 	if( value & ~DTX_MASK )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"undefined bit(s) set in bitfield" );
 
 	self->object->dtx = value;
@@ -2207,21 +2207,21 @@ static int Object_setDrawMode( BPy_Object * self, PyObject * args )
 	return 0;
 }
 
-static PyObject *Object_getDrawType( BPy_Object * self )
+static PyObject *V24_Object_getDrawType( V24_BPy_Object * self )
 {
 	return PyInt_FromLong( (long)self->object->dt );
 }
 
-static int Object_setDrawType( BPy_Object * self, PyObject * value )
+static int V24_Object_setDrawType( V24_BPy_Object * self, PyObject * value )
 {
 	/* since we mess with object, we need to flag for DAG recalc */
 	self->object->recalc |= OB_RECALC_OB;  
 
-	return EXPP_setIValueRange( value, &self->object->dt,
+	return V24_EXPP_setIValueRange( value, &self->object->dt,
 			OB_BOUNDBOX, OB_TEXTURE, 'b' );
 }
 
-static int Object_setEuler( BPy_Object * self, PyObject * args )
+static int V24_Object_setEuler( V24_BPy_Object * self, PyObject * args )
 {
 	float rot1, rot2, rot3;
 	int status = 0;		/* failure */
@@ -2230,9 +2230,9 @@ static int Object_setEuler( BPy_Object * self, PyObject * args )
 		args = PyTuple_GET_ITEM( args, 0 );
 
 	if( EulerObject_Check( args ) ) {
-		rot1 = ( ( EulerObject * ) args )->eul[0];
-		rot2 = ( ( EulerObject * ) args )->eul[1];
-		rot3 = ( ( EulerObject * ) args )->eul[2];
+		rot1 = ( ( V24_EulerObject * ) args )->eul[0];
+		rot2 = ( ( V24_EulerObject * ) args )->eul[1];
+		rot3 = ( ( V24_EulerObject * ) args )->eul[2];
 		status = 1;
 	} else if( PySequence_Check( args ) && PySequence_Size( args ) == 3 ) {
 		if( PyList_Check( args ) )
@@ -2244,7 +2244,7 @@ static int Object_setEuler( BPy_Object * self, PyObject * args )
 	}
 
 	if( !status )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected euler or sequence of 3 floats" );
 
 	self->object->rot[0] = rot1;
@@ -2257,13 +2257,13 @@ static int Object_setEuler( BPy_Object * self, PyObject * args )
 	return 0;
 }
 
-static int Object_setMatrix( BPy_Object * self, MatrixObject * mat )
+static int V24_Object_setMatrix( V24_BPy_Object * self, V24_MatrixObject * mat )
 #if 0
 {
 	int x, y;
 
 	if( !MatrixObject_Check( mat ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected matrix object as argument" );
 
 	if( mat->rowSize == 4 && mat->colSize == 4 ) {
@@ -2283,7 +2283,7 @@ static int Object_setMatrix( BPy_Object * self, MatrixObject * mat )
 			self->object->obmat[x][3] = self->object->obmat[3][x] = 0.0;
 		self->object->obmat[3][3] = 1.0;
 	} else 
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"expected 3x3 or 4x4 matrix" );
 
 	apply_obmat( self->object );
@@ -2300,7 +2300,7 @@ static int Object_setMatrix( BPy_Object * self, MatrixObject * mat )
 	float invmat[4][4]; /* for the result */
 
 	if( !MatrixObject_Check( mat ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected matrix object as argument" );
 
 	if( mat->rowSize == 4 && mat->colSize == 4 ) {
@@ -2320,7 +2320,7 @@ static int Object_setMatrix( BPy_Object * self, MatrixObject * mat )
 			matrix[x][3] = matrix[3][x] = 0.0;
 		matrix[3][3] = 1.0;
 	} else 
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"expected 3x3 or 4x4 matrix" );
 
 	/* localspace matrix is truly relative to the parent, but parameters
@@ -2342,19 +2342,19 @@ static int Object_setMatrix( BPy_Object * self, MatrixObject * mat )
 
 
 /*
- * Object_insertIpoKey()
+ * V24_Object_insertIpoKey()
  *  inserts Object IPO key for LOC, ROT, SIZE, LOCROT, or LOCROTSIZE
  *  Note it also inserts actions! 
  */
 
-static PyObject *Object_insertIpoKey( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_insertIpoKey( V24_BPy_Object * self, PyObject * args )
 {
 	Object *ob= self->object;
 	int key = 0;
 	char *actname= NULL;
 
 	if( !PyArg_ParseTuple( args, "i", &key ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected int argument" );
 
 	if(ob->ipoflag & OB_ACTION_OB)
@@ -2389,24 +2389,24 @@ static PyObject *Object_insertIpoKey( BPy_Object * self, PyObject * args )
 	}
 
 	allspace(REMAKEIPO, 0);
-	EXPP_allqueue(REDRAWIPO, 0);
-	EXPP_allqueue(REDRAWVIEW3D, 0);
-	EXPP_allqueue(REDRAWACTION, 0);
-	EXPP_allqueue(REDRAWNLA, 0);
+	V24_EXPP_allqueue(REDRAWIPO, 0);
+	V24_EXPP_allqueue(REDRAWVIEW3D, 0);
+	V24_EXPP_allqueue(REDRAWACTION, 0);
+	V24_EXPP_allqueue(REDRAWNLA, 0);
 
 	Py_RETURN_NONE;
 }
 
 /*
- * Object_insertPoseKey()
+ * V24_Object_insertPoseKey()
  * inserts a Action Pose key from a given pose (sourceaction, frame) to the
  * active action to a given framenum
  */
 
-static PyObject *Object_insertPoseKey( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_insertPoseKey( V24_BPy_Object * self, PyObject * args )
 {
 	Object *ob= self->object;
-	BPy_Action *sourceact;
+	V24_BPy_Action *sourceact;
 	char *chanName;
 	int actframe;
 
@@ -2415,9 +2415,9 @@ static PyObject *Object_insertPoseKey( BPy_Object * self, PyObject * args )
 	int oldframe;
 	int curframe;
 
-	if( !PyArg_ParseTuple( args, "O!sii", &Action_Type, &sourceact,
+	if( !PyArg_ParseTuple( args, "O!sii", &V24_Action_Type, &sourceact,
 				&chanName, &actframe, &curframe ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expects an action to copy poses from, a string for chan/bone name, an int argument for frame to extract from the action and finally another int for the frame where to put the new key in the active object.action" );
 
 	extract_pose_from_action(ob->pose, sourceact->action, (float)actframe);
@@ -2442,21 +2442,21 @@ static PyObject *Object_insertPoseKey( BPy_Object * self, PyObject * args )
 	G.scene->r.cfra = oldframe;
 
 	allspace(REMAKEIPO, 0);
-	EXPP_allqueue(REDRAWIPO, 0);
-	EXPP_allqueue(REDRAWVIEW3D, 0);
-	EXPP_allqueue(REDRAWACTION, 0);
-	EXPP_allqueue(REDRAWNLA, 0);
+	V24_EXPP_allqueue(REDRAWIPO, 0);
+	V24_EXPP_allqueue(REDRAWVIEW3D, 0);
+	V24_EXPP_allqueue(REDRAWACTION, 0);
+	V24_EXPP_allqueue(REDRAWNLA, 0);
 
 	/* restore, but now with the new action in place */
 	/*extract_pose_from_action(ob->pose, ob->action, G.scene->r.cfra);
 	where_is_pose(ob);*/
 	
-	EXPP_allqueue(REDRAWACTION, 1);
+	V24_EXPP_allqueue(REDRAWACTION, 1);
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_insertCurrentPoseKey( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_insertCurrentPoseKey( V24_BPy_Object * self, PyObject * args )
 {
 	Object *ob= self->object;
 	char *chanName;
@@ -2466,7 +2466,7 @@ static PyObject *Object_insertCurrentPoseKey( BPy_Object * self, PyObject * args
 	int curframe;
 
 	if( !PyArg_ParseTuple( args, "si", &chanName, &curframe ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected chan/bone name, and a time (int) argument" );
 
 	oldframe = G.scene->r.cfra;
@@ -2488,21 +2488,21 @@ static PyObject *Object_insertCurrentPoseKey( BPy_Object * self, PyObject * args
 	G.scene->r.cfra = oldframe;
 
 	allspace(REMAKEIPO, 0);
-	EXPP_allqueue(REDRAWIPO, 0);
-	EXPP_allqueue(REDRAWVIEW3D, 0);
-	EXPP_allqueue(REDRAWACTION, 0);
-	EXPP_allqueue(REDRAWNLA, 0);
+	V24_EXPP_allqueue(REDRAWIPO, 0);
+	V24_EXPP_allqueue(REDRAWVIEW3D, 0);
+	V24_EXPP_allqueue(REDRAWACTION, 0);
+	V24_EXPP_allqueue(REDRAWNLA, 0);
 
 	/* restore */
 	extract_pose_from_action(ob->pose, ob->action, (float)G.scene->r.cfra);
 	where_is_pose(ob);
 
-	EXPP_allqueue(REDRAWACTION, 1);
+	V24_EXPP_allqueue(REDRAWACTION, 1);
 
 	Py_RETURN_NONE;
 }  
 
-static PyObject *Object_setConstraintInfluenceForBone( BPy_Object * self,
+static PyObject *V24_Object_setConstraintInfluenceForBone( V24_BPy_Object * self,
 		PyObject * args )
 {
 	char *boneName, *constName;
@@ -2510,14 +2510,14 @@ static PyObject *Object_setConstraintInfluenceForBone( BPy_Object * self,
 	IpoCurve *icu;
 
 	if( !PyArg_ParseTuple( args, "ssf", &boneName, &constName, &influence ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expects bonename, constraintname, influenceval" );
 	
 	icu = verify_ipocurve((ID *)self->object, ID_CO, boneName, constName, NULL,
 			CO_ENFORCE);
 	
 	if (!icu)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"cannot get a curve from this IPO, may be using libdata" );		
 	
 	insert_vert_icu(icu, (float)CFRA, influence, 0);
@@ -2526,11 +2526,11 @@ static PyObject *Object_setConstraintInfluenceForBone( BPy_Object * self,
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_copyNLA( BPy_Object * self, PyObject * args ) {
-	BPy_Object *bpy_fromob;
+static PyObject *V24_Object_copyNLA( V24_BPy_Object * self, PyObject * args ) {
+	V24_BPy_Object *bpy_fromob;
 
 	if( !PyArg_ParseTuple( args, "O", &bpy_fromob ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"requires a Blender Object to copy NLA strips from." );
 	copy_nlastrips(&self->object->nlastrips, &bpy_fromob->object->nlastrips);
 	self->object->recalc |= OB_RECALC_OB;  
@@ -2539,13 +2539,13 @@ static PyObject *Object_copyNLA( BPy_Object * self, PyObject * args ) {
 }
 
 /*Now that  BPY has a Strip type, return the created strip.*/
-static PyObject *Object_convertActionToStrip( BPy_Object * self )
+static PyObject *V24_Object_convertActionToStrip( V24_BPy_Object * self )
 {
 	bActionStrip *strip = convert_action_to_strip( self->object );
-	return ActionStrip_CreatePyObject( strip );
+	return V24_ActionStrip_CreatePyObject( strip );
 }
 
-static PyObject *Object_setLocation( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setLocation( V24_BPy_Object * self, PyObject * args )
 {
 	float loc1;
 	float loc2;
@@ -2559,7 +2559,7 @@ static PyObject *Object_setLocation( BPy_Object * self, PyObject * args )
 					   &loc3 );
 
 	if( !status )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected list argument of 3 floats" );
 
 	self->object->loc[0] = loc1;
@@ -2573,7 +2573,7 @@ static PyObject *Object_setLocation( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_setMaterials( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setMaterials( V24_BPy_Object * self, PyObject * args )
 {
 	PyObject *list;
 	int len;
@@ -2581,32 +2581,32 @@ static PyObject *Object_setMaterials( BPy_Object * self, PyObject * args )
 	Material **matlist = NULL;
 
 	if (!self->object->data)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"object must be linked to object data (e.g. to a mesh) first" );
 
 	if( !PyArg_ParseTuple( args, "O!", &PyList_Type, &list ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a list (of materials or None) as argument" );
 
 	len = PyList_Size(list);
 
-	/* Object_getMaterials can return '[]' (zero-length list), so that must
+	/* V24_Object_getMaterials can return '[]' (zero-length list), so that must
 	 * also be accepted by this method for
 	 * ob2.setMaterials(ob1.getMaterials()) to always work.
 	 * In other words, list can be '[]' and so len can be zero. */
 	if (len > 0) {
 		if( len > MAXMAT )
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					"list must have from 1 up to 16 materials" );
 
-		matlist = EXPP_newMaterialList_fromPyList( list );
+		matlist = V24_EXPP_newMaterialList_fromPyList( list );
 		if( !matlist )
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"material list must be a list of valid materials!" );
 	}
 
 	if( self->object->mat )
-		EXPP_releaseMaterialList( self->object->mat, self->object->totcol );
+		V24_EXPP_releaseMaterialList( self->object->mat, self->object->totcol );
 
 	/* Increase the user count on all materials */
 	for( i = 0; i < len; i++ ) {
@@ -2623,7 +2623,7 @@ static PyObject *Object_setMaterials( BPy_Object * self, PyObject * args )
 		case OB_MESH:	/* fall through */
 		case OB_MBALL:	/* fall through */
 		case OB_SURF:
-			EXPP_synchronizeMaterialLists( self->object );
+			V24_EXPP_synchronizeMaterialLists( self->object );
 			break;
 		default:
 			break;
@@ -2635,7 +2635,7 @@ static PyObject *Object_setMaterials( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_setSize( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSize( V24_BPy_Object * self, PyObject * args )
 {
 	float sizex;
 	float sizey;
@@ -2650,7 +2650,7 @@ static PyObject *Object_setSize( BPy_Object * self, PyObject * args )
 					   &sizez );
 
 	if( !status )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected list argument of 3 floats" );
 
 	self->object->size[0] = sizex;
@@ -2663,14 +2663,14 @@ static PyObject *Object_setSize( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_makeTrack( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_makeTrack( V24_BPy_Object * self, PyObject * args )
 {
-	BPy_Object *tracked = NULL;
+	V24_BPy_Object *tracked = NULL;
 	Object *ob = self->object;
 	int fast = 0;
 
-	if( !PyArg_ParseTuple( args, "O!|i", &Object_Type, &tracked, &fast ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "O!|i", &V24_Object_Type, &tracked, &fast ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an object and optionally also an int as arguments." );
 
 	ob->track = tracked->object;
@@ -2681,23 +2681,23 @@ static PyObject *Object_makeTrack( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_shareFrom( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_shareFrom( V24_BPy_Object * self, PyObject * args )
 {
-	BPy_Object *object;
+	V24_BPy_Object *object;
 	ID *id;
 	ID *oldid;
 
-	if( !PyArg_ParseTuple( args, "O!", &Object_Type, &object ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "O!", &V24_Object_Type, &object ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected an object argument" );
 
 	if( !object->object->data )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "Object argument has no data linked yet or is an empty" );
 	
 	if( self->object->type != object->object->type &&
 		self->realtype != object->object->type)
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "objects are not of same data type" );
 
 	switch ( object->object->type ) {
@@ -2721,7 +2721,7 @@ static PyObject *Object_shareFrom( BPy_Object * self, PyObject * args )
 
 		if( self->object->type == OB_MESH && id ) {
 			self->object->totcol = 0;
-			EXPP_synchronizeMaterialLists( self->object );
+			V24_EXPP_synchronizeMaterialLists( self->object );
 		}
 
 		id_us_plus( id );
@@ -2729,19 +2729,19 @@ static PyObject *Object_shareFrom( BPy_Object * self, PyObject * args )
 			if( oldid->us > 0 ) {
 				oldid->us--;
 			} else {
-				return EXPP_ReturnPyObjError ( PyExc_RuntimeError,
+				return V24_EXPP_ReturnPyObjError ( PyExc_RuntimeError,
 					   "old object reference count below 0" );
 			}
 		}
 		
 		Py_RETURN_NONE;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"object type not supported" );
 	}
 }
 
-static PyObject *Object_getAllProperties( BPy_Object * self )
+static PyObject *V24_Object_getAllProperties( V24_BPy_Object * self )
 {
 	PyObject *prop_list, *pyval;
 	bProperty *prop = NULL;
@@ -2750,7 +2750,7 @@ static PyObject *Object_getAllProperties( BPy_Object * self )
 
 	prop = self->object->prop.first;
 	while( prop ) {
-		pyval = Property_CreatePyObject( prop );
+		pyval = V24_Property_CreatePyObject( prop );
 		PyList_Append( prop_list, pyval );
 		Py_DECREF(pyval);
 		prop = prop->next;
@@ -2758,49 +2758,49 @@ static PyObject *Object_getAllProperties( BPy_Object * self )
 	return prop_list;
 }
 
-static PyObject *Object_getProperty( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_getProperty( V24_BPy_Object * self, PyObject * args )
 {
 	char *prop_name = NULL;
 	bProperty *prop = NULL;
 
 	if( !PyArg_ParseTuple( args, "s", &prop_name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a string" );
 
 	prop = get_property( self->object, prop_name );
 	if( prop )
-		return Property_CreatePyObject( prop );
+		return V24_Property_CreatePyObject( prop );
 
-	return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"couldn't find the property" );
 }
 
-static PyObject *Object_addProperty( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_addProperty( V24_BPy_Object * self, PyObject * args )
 {
 	bProperty *prop = NULL;
 	char *prop_name = NULL;
 	PyObject *prop_data = Py_None;
 	char *prop_type = NULL;
 	short type = -1;
-	BPy_Property *py_prop = NULL;
+	V24_BPy_Property *py_prop = NULL;
 	int argslen = PyObject_Length( args );
 
 	if( argslen == 3 || argslen == 2 ) {
 		if( !PyArg_ParseTuple( args, "sO|s", &prop_name, &prop_data,
 					&prop_type ) ) {
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expecting string, data, and optional string" );
 		}
 	} else if( argslen == 1 ) {
 		if( !PyArg_ParseTuple( args, "O!", &property_Type, &py_prop ) )
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expecting a Property" );
 
 		if( py_prop->property != NULL )
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					"Property is already added to an object" );
 	} else {
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected 1,2 or 3 arguments" );
 	}
 
@@ -2818,7 +2818,7 @@ static PyObject *Object_addProperty( BPy_Object * self, PyObject * args )
 			else if( BLI_streq( prop_type, "STRING" ) )
 				type = PROP_STRING;
 			else
-				return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+				return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					   "BOOL, INT, FLOAT, TIME or STRING expected" );
 		} else {
 			/*use the default*/
@@ -2857,7 +2857,7 @@ static PyObject *Object_addProperty( BPy_Object * self, PyObject * args )
 		 * proper to py_prop->property */
 
 		if( !updateProperyData( py_prop ) ) {
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 							"Could not update property data" );
 		}
 	}
@@ -2868,22 +2868,22 @@ static PyObject *Object_addProperty( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_removeProperty( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_removeProperty( V24_BPy_Object * self, PyObject * args )
 {
 	char *prop_name = NULL;
-	BPy_Property *py_prop = NULL;
+	V24_BPy_Property *py_prop = NULL;
 	bProperty *prop = NULL;
 
 	/* we accept either a property stringname or actual object */
 	if( PyTuple_Size( args ) == 1 ) {
 		PyObject *prop = PyTuple_GET_ITEM( args, 0 );
 		if( BPy_Property_Check( prop ) )
-			py_prop = (BPy_Property *)prop;
+			py_prop = (V24_BPy_Property *)prop;
 		else
 			prop_name = PyString_AsString( prop );
 	}
 	if( !py_prop && !prop_name )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a Property or a string" );
 
 	/*remove the link, free the data, and update the py struct*/
@@ -2903,56 +2903,56 @@ static PyObject *Object_removeProperty( BPy_Object * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_removeAllProperties( BPy_Object * self )
+static PyObject *V24_Object_removeAllProperties( V24_BPy_Object * self )
 {
 	free_properties( &self->object->prop );
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_copyAllPropertiesTo( BPy_Object * self,
+static PyObject *V24_Object_copyAllPropertiesTo( V24_BPy_Object * self,
 					     PyObject * args )
 {
 	PyObject *dest;
 	bProperty *prop = NULL;
 	bProperty *propn = NULL;
 
-	if( !PyArg_ParseTuple( args, "O!", &Object_Type, &dest ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "O!", &V24_Object_Type, &dest ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an Object" );
 
 	/*make a copy of all its properties*/
 	prop = self->object->prop.first;
 	while( prop ) {
 		propn = copy_property( prop );
-		BLI_addtail( &( ( BPy_Object * ) dest )->object->prop, propn );
+		BLI_addtail( &( ( V24_BPy_Object * ) dest )->object->prop, propn );
 		prop = prop->next;
 	}
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_addScriptLink( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_addScriptLink( V24_BPy_Object * self, PyObject * args )
 {
 	Object *obj = self->object;
 	ScriptLink *slink = &obj->scriptlink;
-	return EXPP_addScriptLink( slink, args, 0 );
+	return V24_EXPP_addScriptLink( slink, args, 0 );
 }
 
-static PyObject *Object_clearScriptLinks( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_clearScriptLinks( V24_BPy_Object * self, PyObject * args )
 {
 	Object *obj = self->object;
 	ScriptLink *slink = &obj->scriptlink;
-	return EXPP_clearScriptLinks( slink, args );
+	return V24_EXPP_clearScriptLinks( slink, args );
 }
 
-static PyObject *Object_getScriptLinks( BPy_Object * self, PyObject * value )
+static PyObject *V24_Object_getScriptLinks( V24_BPy_Object * self, PyObject * value )
 {
 	Object *obj = self->object;
 	ScriptLink *slink = &obj->scriptlink;
-	return EXPP_getScriptLinks( slink, value, 0 );
+	return V24_EXPP_getScriptLinks( slink, value, 0 );
 }
 
-static PyObject *Object_getNLAflagBits ( BPy_Object * self ) 
+static PyObject *V24_Object_getNLAflagBits ( V24_BPy_Object * self ) 
 {
 	if (self->object->nlaflag & OB_NLA_OVERRIDE)
 		Py_RETURN_TRUE;
@@ -2960,13 +2960,13 @@ static PyObject *Object_getNLAflagBits ( BPy_Object * self )
 		Py_RETURN_FALSE;
 }
 
-static int Object_setNLAflagBits ( BPy_Object * self, PyObject * value ) 
+static int V24_Object_setNLAflagBits ( V24_BPy_Object * self, PyObject * value ) 
 {
 	int param;
 
 	param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 
 	if (param)
@@ -2979,7 +2979,7 @@ static int Object_setNLAflagBits ( BPy_Object * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Object_getDupliObjects( BPy_Object * self )
+static PyObject *V24_Object_getDupliObjects( V24_BPy_Object * self )
 {
 	Object *ob= self->object;
 	
@@ -2999,14 +2999,14 @@ static PyObject *Object_getDupliObjects( BPy_Object * self )
 
 			list = PyList_New( BLI_countlist(duplilist) );
 			if( !list )
-				return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+				return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"PyList_New() failed" );
 
 			for(dupob= duplilist->first, index=0; dupob; dupob= dupob->next, index++) {
 				PyObject *pair;
 				pair = PyTuple_New( 2 );
 				
-				PyTuple_SET_ITEM( pair, 0, Object_CreatePyObject(dupob->ob) );
+				PyTuple_SET_ITEM( pair, 0, V24_Object_CreatePyObject(dupob->ob) );
 				PyTuple_SET_ITEM( pair, 1, newMatrixObject((float*)dupob->mat,4,4,Py_NEW) );
 				PyList_SET_ITEM( list, index, pair);
 			}
@@ -3017,35 +3017,35 @@ static PyObject *Object_getDupliObjects( BPy_Object * self )
 	return PyList_New( 0 );
 }
 
-static PyObject *Object_getDupliGroup( BPy_Object * self )
+static PyObject *V24_Object_getDupliGroup( V24_BPy_Object * self )
 {
 	Object *ob= self->object;
 
 	if( ob->dup_group )
-		return Group_CreatePyObject( ob->dup_group );
+		return V24_Group_CreatePyObject( ob->dup_group );
 
 	Py_RETURN_NONE;
 }
 
-static int Object_setDupliGroup( BPy_Object * self, PyObject * value )
+static int V24_Object_setDupliGroup( V24_BPy_Object * self, PyObject * value )
 {
-	return GenericLib_assignData(value, (void **) &self->object->dup_group, 0, 1, ID_GR, 0);
+	return V24_GenericLib_assignData(value, (void **) &self->object->dup_group, 0, 1, ID_GR, 0);
 }
 
-static PyObject *Object_getEffects( BPy_Object * self )
+static PyObject *V24_Object_getEffects( V24_BPy_Object * self )
 {
 	PyObject *effect_list, *pyval;
 	Effect *eff;
 
 	effect_list = PyList_New( 0 );
 	if( !effect_list )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"PyList_New() failed" );
 
 	eff = self->object->effect.first;
 
 	while( eff ) {
-		pyval = EffectCreatePyObject( eff, self->object );
+		pyval = V24_EffectCreatePyObject( eff, self->object );
 		PyList_Append( effect_list, pyval );
 		Py_DECREF(pyval);
 		eff = eff->next;
@@ -3053,34 +3053,34 @@ static PyObject *Object_getEffects( BPy_Object * self )
 	return effect_list;
 }
 
-static PyObject *Object_getActionStrips( BPy_Object * self )
+static PyObject *V24_Object_getActionStrips( V24_BPy_Object * self )
 {
-	return ActionStrips_CreatePyObject( self->object );
+	return V24_ActionStrips_CreatePyObject( self->object );
 }
 
-static PyObject *Object_getConstraints( BPy_Object * self )
+static PyObject *V24_Object_getConstraints( V24_BPy_Object * self )
 {
-	return ObConstraintSeq_CreatePyObject( self->object );
+	return V24_ObConstraintSeq_CreatePyObject( self->object );
 }
 
-static PyObject *Object_getModifiers( BPy_Object * self )
+static PyObject *V24_Object_getModifiers( V24_BPy_Object * self )
 {
-	return ModSeq_CreatePyObject( self->object, NULL );
+	return V24_ModSeq_CreatePyObject( self->object, NULL );
 }
 
-static int Object_setModifiers( BPy_Object * self, PyObject * value )
+static int V24_Object_setModifiers( V24_BPy_Object * self, PyObject * value )
 {
-	BPy_ModSeq *pymodseq;
+	V24_BPy_ModSeq *pymodseq;
 	ModifierData *md;
 	
 	if (!BPy_ModSeq_Check(value))
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"can only assign another objects modifiers" );
 	
-	pymodseq = ( BPy_ModSeq * ) value;
+	pymodseq = ( V24_BPy_ModSeq * ) value;
 	
 	if (self->object->type != pymodseq->object->type)
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"can only assign modifiers between objects of the same type" );
 	
 	if (self->object == pymodseq->object)
@@ -3099,36 +3099,36 @@ static int Object_setModifiers( BPy_Object * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Object_insertShapeKey(BPy_Object * self)
+static PyObject *V24_Object_insertShapeKey(V24_BPy_Object * self)
 {
 	insert_shapekey(self->object);
 	Py_RETURN_NONE;
 }
 
 /* __copy__() */
-static  PyObject *Object_copy(BPy_Object * self)
+static  PyObject *V24_Object_copy(V24_BPy_Object * self)
 {
 	/* copy_object never returns NULL */
 	struct Object *object= copy_object( self->object );
 	object->id.us= 0; /*is 1 by default, not sure why */
 	
 	/* Create a Python object from it. */
-	return Object_CreatePyObject( object );
+	return V24_Object_CreatePyObject( object );
 }
 
 /*****************************************************************************/
-/* Function:	Object_CreatePyObject					 */
+/* Function:	V24_Object_CreatePyObject					 */
 /* Description: This function will create a new BlenObject from an existing  */
 /*		Object structure.					 */
 /*****************************************************************************/
-PyObject *Object_CreatePyObject( struct Object * obj )
+PyObject *V24_Object_CreatePyObject( struct Object * obj )
 {
-	BPy_Object *blen_object;
+	V24_BPy_Object *blen_object;
 
 	if( !obj ) Py_RETURN_NONE;
 	
 	blen_object =
-		( BPy_Object * ) PyObject_NEW( BPy_Object, &Object_Type );
+		( V24_BPy_Object * ) PyObject_NEW( V24_BPy_Object, &V24_Object_Type );
 
 	if( blen_object == NULL ) {
 		return ( NULL );
@@ -3140,24 +3140,24 @@ PyObject *Object_CreatePyObject( struct Object * obj )
 }
 
 /*****************************************************************************/
-/* Function:	Object_FromPyObject					 */
+/* Function:	V24_Object_FromPyObject					 */
 /* Description: This function returns the Blender object from the given	 */
 /*		PyObject.						 */
 /*****************************************************************************/
-struct Object *Object_FromPyObject( PyObject * py_obj )
+struct Object *V24_Object_FromPyObject( PyObject * py_obj )
 {
-	BPy_Object *blen_obj;
+	V24_BPy_Object *blen_obj;
 
-	blen_obj = ( BPy_Object * ) py_obj;
+	blen_obj = ( V24_BPy_Object * ) py_obj;
 	return ( blen_obj->object );
 }
 
 /*****************************************************************************/
-/* Function:    Object_dealloc                                               */
+/* Function:    V24_Object_dealloc                                               */
 /* Description: This is a callback function for the BlenObject type. It is   */
 /*      the destructor function.                                             */
 /*****************************************************************************/
-static void Object_dealloc( BPy_Object * self )
+static void V24_Object_dealloc( V24_BPy_Object * self )
 {
 	if( self->realtype != OB_EMPTY ) 
 		free_libblock_us( &G.main->object, self->object );
@@ -3171,24 +3171,24 @@ static void Object_dealloc( BPy_Object * self )
 }
 
 /*****************************************************************************/
-/* Function:	Object_compare						 */
-/* Description: This is a callback function for the BPy_Object type. It	 */
-/*		compares two Object_Type objects. Only the "==" and "!="  */
+/* Function:	V24_Object_compare						 */
+/* Description: This is a callback function for the V24_BPy_Object type. It	 */
+/*		compares two V24_Object_Type objects. Only the "==" and "!="  */
 /*		comparisons are meaninful. Returns 0 for equality and -1 if  */
 /*		they don't point to the same Blender Object struct.	 */
 /*		In Python it becomes 1 if they are equal, 0 otherwise.	 */
 /*****************************************************************************/
-static int Object_compare( BPy_Object * a, BPy_Object * b )
+static int V24_Object_compare( V24_BPy_Object * a, V24_BPy_Object * b )
 {
 	return ( a->object == b->object ) ? 0 : -1;
 }
 
 /*****************************************************************************/
-/* Function:	Object_repr						 */
-/* Description: This is a callback function for the BPy_Object type. It	 */
+/* Function:	V24_Object_repr						 */
+/* Description: This is a callback function for the V24_BPy_Object type. It	 */
 /*		builds a meaninful string to represent object objects.	 */
 /*****************************************************************************/
-static PyObject *Object_repr( BPy_Object * self )
+static PyObject *V24_Object_repr( V24_BPy_Object * self )
 {
 	return PyString_FromFormat( "[Object \"%s\"]",
 				    self->object->id.name + 2 );
@@ -3196,26 +3196,26 @@ static PyObject *Object_repr( BPy_Object * self )
 
 /* Particle Deflection functions */
 
-static PyObject *Object_getPIDeflection( BPy_Object * self )
+static PyObject *V24_Object_getPIDeflection( V24_BPy_Object * self )
 {  
     if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	return PyBool_FromLong( ( long ) self->object->pd->deflect );
 }
 
-static int Object_setPIDeflection( BPy_Object * self, PyObject * value )
+static int V24_Object_setPIDeflection( V24_BPy_Object * self, PyObject * value )
 {
 	int param;
 
     if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected true/false argument" );
 
 	self->object->pd->deflect = (short)param;
@@ -3224,26 +3224,26 @@ static int Object_setPIDeflection( BPy_Object * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Object_getPIType( BPy_Object * self )
+static PyObject *V24_Object_getPIType( V24_BPy_Object * self )
 {
     if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
     return PyInt_FromLong( ( long )self->object->pd->forcefield );
 }
 
-static int Object_setPIType( BPy_Object * self, PyObject * value )
+static int V24_Object_setPIType( V24_BPy_Object * self, PyObject * value )
 {
 	int status;
 	int oldforcefield;
 
     if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	oldforcefield = self->object->pd->forcefield;
-	status = EXPP_setIValueRange( value, &self->object->pd->forcefield,
+	status = V24_EXPP_setIValueRange( value, &self->object->pd->forcefield,
 			PFIELD_FORCE, PFIELD_GUIDE, 'h' );
 
 	/*
@@ -3253,7 +3253,7 @@ static int Object_setPIType( BPy_Object * self, PyObject * value )
 	if( !status ) {
 		if ( self->object->pd->forcefield == PFIELD_MAGNET ) {
 			self->object->pd->forcefield = oldforcefield;
-			return EXPP_ReturnIntError( PyExc_ValueError,
+			return V24_EXPP_ReturnIntError( PyExc_ValueError,
 					"PFIELD_MAGNET not supported" );
 		}
 		self->object->recalc |= OB_RECALC_OB;  
@@ -3261,26 +3261,26 @@ static int Object_setPIType( BPy_Object * self, PyObject * value )
 	return status;
 }
 
-static PyObject *Object_getPIUseMaxDist( BPy_Object * self )
+static PyObject *V24_Object_getPIUseMaxDist( V24_BPy_Object * self )
 {  
     if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	return PyBool_FromLong( ( long )self->object->pd->flag );
 }
 
-static int Object_setPIUseMaxDist( BPy_Object * self, PyObject * value )
+static int V24_Object_setPIUseMaxDist( V24_BPy_Object * self, PyObject * value )
 {
 	int param;
 
     if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected true/false argument" );
 
 	self->object->pd->flag = (short)param;
@@ -3291,24 +3291,24 @@ static int Object_setPIUseMaxDist( BPy_Object * self, PyObject * value )
 
 /* RIGIDBODY FUNCTIONS */
 
-static PyObject *Object_getRBMass( BPy_Object * self )
+static PyObject *V24_Object_getRBMass( V24_BPy_Object * self )
 {
     return PyFloat_FromDouble( (double)self->object->mass );
 }
 
-static int Object_setRBMass( BPy_Object * self, PyObject * args )
+static int V24_Object_setRBMass( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 	PyObject* flt = PyNumber_Float( args );
 
 	if( !flt )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected float argument" );
 	value = (float)PyFloat_AS_DOUBLE( flt );
 	Py_DECREF( flt );
 
 	if( value < 0.0f )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 			"acceptable values are non-negative, 0.0 or more" );
 
 	self->object->mass = value;
@@ -3324,24 +3324,24 @@ static int Object_setRBMass( BPy_Object * self, PyObject * args )
 		OB_BOUNDS | OB_COLLISION_RESPONSE | OB_SECTOR | OB_PROP | \
 		OB_MAINACTOR )
 
-static PyObject *Object_getRBFlags( BPy_Object * self )
+static PyObject *V24_Object_getRBFlags( V24_BPy_Object * self )
 {
     return PyInt_FromLong( (long)( self->object->gameflag & GAMEFLAG_MASK ) );
 }
 
-static int Object_setRBFlags( BPy_Object * self, PyObject * args )
+static int V24_Object_setRBFlags( V24_BPy_Object * self, PyObject * args )
 {
 	PyObject* integer = PyNumber_Int( args );
 	int value;
 
 	if( !integer )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected integer argument" );
 
 	value = ( int )PyInt_AS_LONG( integer );
 	Py_DECREF( integer );
 	if( value & ~GAMEFLAG_MASK )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"undefined bit(s) set in bitfield" );
 
 	self->object->gameflag = value;
@@ -3350,21 +3350,21 @@ static int Object_setRBFlags( BPy_Object * self, PyObject * args )
 	return 0;
 }
 
-static PyObject *Object_getRBShapeBoundType( BPy_Object * self )
+static PyObject *V24_Object_getRBShapeBoundType( V24_BPy_Object * self )
 {
 	return PyInt_FromLong( (long)self->object->boundtype );
 }
 
-static int Object_setRBShapeBoundType( BPy_Object * self, PyObject * args )
+static int V24_Object_setRBShapeBoundType( V24_BPy_Object * self, PyObject * args )
 {
 	self->object->recalc |= OB_RECALC_OB;  
-	return EXPP_setIValueRange( args, &self->object->boundtype,
+	return V24_EXPP_setIValueRange( args, &self->object->boundtype,
 			0, OB_BOUND_DYN_MESH, 'h' );
 }
 
 /*  SOFTBODY FUNCTIONS */
 
-PyObject *Object_isSB(BPy_Object *self)
+PyObject *V24_Object_isSB(V24_BPy_Object *self)
 {
 	if( self->object->soft )
 		Py_RETURN_TRUE;
@@ -3372,10 +3372,10 @@ PyObject *Object_isSB(BPy_Object *self)
 		Py_RETURN_FALSE;
 }
 
-static PyObject *Object_getSBUseGoal( BPy_Object * self )
+static PyObject *V24_Object_getSBUseGoal( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     if( self->object->softflag & OB_SB_GOAL )
@@ -3384,16 +3384,16 @@ static PyObject *Object_getSBUseGoal( BPy_Object * self )
 		Py_RETURN_FALSE;
 }
 
-static int Object_setSBUseGoal( BPy_Object * self, PyObject * value )
+static int V24_Object_setSBUseGoal( V24_BPy_Object * self, PyObject * value )
 {
 	int setting = PyObject_IsTrue( value );
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( setting == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected true/false argument" );
 
     if( setting )
@@ -3405,10 +3405,10 @@ static int Object_setSBUseGoal( BPy_Object * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Object_getSBUseEdges( BPy_Object * self )
+static PyObject *V24_Object_getSBUseEdges( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
     
     if( self->object->softflag & OB_SB_EDGES )
@@ -3417,16 +3417,16 @@ static PyObject *Object_getSBUseEdges( BPy_Object * self )
 		Py_RETURN_FALSE;
 }
 
-static int Object_setSBUseEdges( BPy_Object * self, PyObject * value )
+static int V24_Object_setSBUseEdges( V24_BPy_Object * self, PyObject * value )
 {
 	int setting = PyObject_IsTrue( value );
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( setting == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected true/false argument" );
 
     if( setting )
@@ -3438,10 +3438,10 @@ static int Object_setSBUseEdges( BPy_Object * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Object_getSBStiffQuads( BPy_Object * self )
+static PyObject *V24_Object_getSBStiffQuads( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
     
     if( self->object->softflag & OB_SB_QUADS )
@@ -3450,16 +3450,16 @@ static PyObject *Object_getSBStiffQuads( BPy_Object * self )
 		Py_RETURN_FALSE;
 }
 
-static int Object_setSBStiffQuads( BPy_Object * self, PyObject * value )
+static int V24_Object_setSBStiffQuads( V24_BPy_Object * self, PyObject * value )
 {
 	int setting = PyObject_IsTrue( value );
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( setting == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected true/false argument" );
 
     if( setting )
@@ -3525,7 +3525,7 @@ static int setupPI( Object* ob )
  * call this from a bpy type update() method.
  */
 
-void Object_updateDag( void *data )
+void V24_Object_updateDag( void *data )
 {
 	Object *ob;
 
@@ -3547,7 +3547,7 @@ void Object_updateDag( void *data )
  * get integer attributes
  */
 
-static PyObject *getIntAttr( BPy_Object *self, void *type )
+static PyObject *getIntAttr( V24_BPy_Object *self, void *type )
 {
 	int param;
 	struct Object *object = self->object;
@@ -3591,7 +3591,7 @@ static PyObject *getIntAttr( BPy_Object *self, void *type )
 		param = object->shapenr;
 		break;		
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"undefined type in getIntAttr" );
 	}
 
@@ -3602,7 +3602,7 @@ static PyObject *getIntAttr( BPy_Object *self, void *type )
  * set integer attributes which require clamping
  */
 
-static int setIntAttrClamp( BPy_Object *self, PyObject *value, void *type )
+static int setIntAttrClamp( V24_BPy_Object *self, PyObject *value, void *type )
 {
 	void *param;
 	struct Object *object = self->object;
@@ -3660,26 +3660,26 @@ static int setIntAttrClamp( BPy_Object *self, PyObject *value, void *type )
 		break;
 	}
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setIntAttrClamp");
 	}
 
 	self->object->recalc |= OB_RECALC_OB;  
-	return EXPP_setIValueClamped( value, param, min, max, size );
+	return V24_EXPP_setIValueClamped( value, param, min, max, size );
 }
 
 /*
  * set integer attributes which require range checking
  */
 
-static int setIntAttrRange( BPy_Object *self, PyObject *value, void *type )
+static int setIntAttrRange( V24_BPy_Object *self, PyObject *value, void *type )
 {
 	void *param;
 	struct Object *object = self->object;
 	int min, max, size;
 
 	if( !PyInt_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected integer argument" );
 
 	/* these parameters require clamping */
@@ -3692,19 +3692,19 @@ static int setIntAttrRange( BPy_Object *self, PyObject *value, void *type )
 		param = (void *)&object->colbits;
 		break;
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setIntAttrRange" );
 	}
 
 	self->object->recalc |= OB_RECALC_OB;  
-	return EXPP_setIValueRange( value, param, min, max, size );
+	return V24_EXPP_setIValueRange( value, param, min, max, size );
 }
 
 /*
  * get floating point attributes
  */
 
-static PyObject *getFloatAttr( BPy_Object *self, void *type )
+static PyObject *getFloatAttr( V24_BPy_Object *self, void *type )
 {
 	float param;
 	struct Object *object = self->object;
@@ -3712,13 +3712,13 @@ static PyObject *getFloatAttr( BPy_Object *self, void *type )
 	if( (int)type >= EXPP_OBJ_ATTR_PI_SURFACEDAMP &&
 			(int)type <= EXPP_OBJ_ATTR_PI_SBOFACETHICK ) {
     	if( !self->object->pd && !setupPI(self->object) )
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 	}
 	else if( (int)type >= EXPP_OBJ_ATTR_SB_NODEMASS &&
 			(int)type <= EXPP_OBJ_ATTR_SB_INFRICT ) {
 		if( !self->object->soft && !setupSB(self->object) )
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"softbody could not be accessed" );    
     }
 
@@ -3850,7 +3850,7 @@ static PyObject *getFloatAttr( BPy_Object *self, void *type )
 		param = object->dupfacesca;
 		break;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError, 
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, 
 				"undefined type in getFloatAttr" );
 	}
 
@@ -3861,7 +3861,7 @@ static PyObject *getFloatAttr( BPy_Object *self, void *type )
  * set floating point attributes which require clamping
  */
 
-static int setFloatAttrClamp( BPy_Object *self, PyObject *value, void *type )
+static int setFloatAttrClamp( V24_BPy_Object *self, PyObject *value, void *type )
 {
 	float *param;
 	struct Object *object = self->object;
@@ -3870,13 +3870,13 @@ static int setFloatAttrClamp( BPy_Object *self, PyObject *value, void *type )
 	if( (int)type >= EXPP_OBJ_ATTR_PI_SURFACEDAMP &&
 			(int)type <= EXPP_OBJ_ATTR_PI_SBOFACETHICK ) {
     	if( !self->object->pd && !setupPI(self->object) )
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 	}
 	else if( (int)type >= EXPP_OBJ_ATTR_SB_NODEMASS &&
 			(int)type <= EXPP_OBJ_ATTR_SB_INFRICT ) {
 		if( !self->object->soft && !setupSB(self->object) )
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 						"softbody could not be accessed" );    
     }
 
@@ -4003,25 +4003,25 @@ static int setFloatAttrClamp( BPy_Object *self, PyObject *value, void *type )
 		break;
 		
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setFloatAttrClamp" );
 	}
 
 	self->object->recalc |= OB_RECALC_OB;  
-	return EXPP_setFloatClamped( value, param, min, max );
+	return V24_EXPP_setFloatClamped( value, param, min, max );
 }
 
 /*
  * set floating point attributes
  */
 
-static int setFloatAttr( BPy_Object *self, PyObject *value, void *type )
+static int setFloatAttr( V24_BPy_Object *self, PyObject *value, void *type )
 {
 	float param;
 	struct Object *object = self->object;
 
 	if( !PyNumber_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected float argument" );
 
 	param = (float)PyFloat_AsDouble( value );
@@ -4082,7 +4082,7 @@ static int setFloatAttr( BPy_Object *self, PyObject *value, void *type )
 		object->dsize[2] = param;
 		break;
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setFloatAttr	" );
 	}
 	self->object->recalc |= OB_RECALC_OB;  
@@ -4093,7 +4093,7 @@ static int setFloatAttr( BPy_Object *self, PyObject *value, void *type )
  * get 3-tuple floating point attributes
  */
 
-static PyObject *getFloat3Attr( BPy_Object *self, void *type )
+static PyObject *getFloat3Attr( V24_BPy_Object *self, void *type )
 {
 	float *param;
 	struct Object *object = self->object;
@@ -4115,7 +4115,7 @@ static PyObject *getFloat3Attr( BPy_Object *self, void *type )
 		param = object->dsize;
 		break;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"undefined type in getFloat3Attr" );
 	}
 
@@ -4126,7 +4126,7 @@ static PyObject *getFloat3Attr( BPy_Object *self, void *type )
  * set 3-tuple floating point attributes
  */
 
-static int setFloat3Attr( BPy_Object *self, PyObject *value, void *type )
+static int setFloat3Attr( V24_BPy_Object *self, PyObject *value, void *type )
 {
 	int i;
 	float *dst, param[3];
@@ -4136,7 +4136,7 @@ static int setFloat3Attr( BPy_Object *self, PyObject *value, void *type )
 
 	if( !value || !PyArg_ParseTuple( value, "fff", &param[0], &param[1], &param[2] ) ) {
 		Py_XDECREF( value );
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected a list or tuple of 3 floats" );
 	}
 
@@ -4158,7 +4158,7 @@ static int setFloat3Attr( BPy_Object *self, PyObject *value, void *type )
 		dst = object->dsize;
 		break;
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setFloat3Attr" );
 	}
 
@@ -4170,10 +4170,10 @@ static int setFloat3Attr( BPy_Object *self, PyObject *value, void *type )
 }
 
 /*****************************************************************************/
-/* BPy_Object methods and attribute handlers                                 */
+/* V24_BPy_Object methods and attribute handlers                                 */
 /*****************************************************************************/
 
-static PyObject *Object_getShapeFlag( BPy_Object *self, void *type )
+static PyObject *V24_Object_getShapeFlag( V24_BPy_Object *self, void *type )
 {
 	if (self->object->shapeflag & (int)type)
 		Py_RETURN_TRUE;
@@ -4181,7 +4181,7 @@ static PyObject *Object_getShapeFlag( BPy_Object *self, void *type )
 		Py_RETURN_FALSE;
 }
 
-static int Object_setShapeFlag( BPy_Object *self, PyObject *value,
+static int V24_Object_setShapeFlag( V24_BPy_Object *self, PyObject *value,
 		void *type )
 {
 	if (PyObject_IsTrue(value) )
@@ -4193,7 +4193,7 @@ static int Object_setShapeFlag( BPy_Object *self, PyObject *value,
 	return 0;
 }
 
-static PyObject *Object_getRestricted( BPy_Object *self, void *type )
+static PyObject *V24_Object_getRestricted( V24_BPy_Object *self, void *type )
 {
 	if (self->object->restrictflag & (int)type)
 		Py_RETURN_TRUE;
@@ -4201,12 +4201,12 @@ static PyObject *Object_getRestricted( BPy_Object *self, void *type )
 		Py_RETURN_FALSE;
 }
 
-static int Object_setRestricted( BPy_Object *self, PyObject *value,
+static int V24_Object_setRestricted( V24_BPy_Object *self, PyObject *value,
 		void *type )
 {
 	int param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 	
 	if ( param )
@@ -4217,40 +4217,40 @@ static int Object_setRestricted( BPy_Object *self, PyObject *value,
 	return 0;
 }
 
-static PyObject *Object_getDrawModeBits( BPy_Object *self, void *type )
+static PyObject *V24_Object_getDrawModeBits( V24_BPy_Object *self, void *type )
 {
-	return EXPP_getBitfield( (void *)&self->object->dtx, (int)type, 'b' );
+	return V24_EXPP_getBitfield( (void *)&self->object->dtx, (int)type, 'b' );
 }
 
-static int Object_setDrawModeBits( BPy_Object *self, PyObject *value,
+static int V24_Object_setDrawModeBits( V24_BPy_Object *self, PyObject *value,
 		void *type )
 {
 	self->object->recalc |= OB_RECALC_OB;  
-	return EXPP_setBitfield( value, (void *)&self->object->dtx,
+	return V24_EXPP_setBitfield( value, (void *)&self->object->dtx,
 			(int)type, 'b' );
 }
 
-static PyObject *Object_getTransflagBits( BPy_Object *self, void *type )
+static PyObject *V24_Object_getTransflagBits( V24_BPy_Object *self, void *type )
 {
-	return EXPP_getBitfield( (void *)&self->object->transflag,
+	return V24_EXPP_getBitfield( (void *)&self->object->transflag,
 			(int)type, 'h' );
 }
 
-static int Object_setTransflagBits( BPy_Object *self, PyObject *value,
+static int V24_Object_setTransflagBits( V24_BPy_Object *self, PyObject *value,
 		void *type )
 {
 	self->object->recalc |= OB_RECALC_OB;  
-	return EXPP_setBitfield( value, (void *)&self->object->transflag,
+	return V24_EXPP_setBitfield( value, (void *)&self->object->transflag,
 			(int)type, 'h' );
 }
 
-static PyObject *Object_getLayers( BPy_Object * self )
+static PyObject *V24_Object_getLayers( V24_BPy_Object * self )
 {
 	int layers, bit;
 	PyObject *laylist = PyList_New( 0 );
 
 	if( !laylist )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 				"PyList_New() failed" );
 
 	layers = self->object->lay & 0xfffff;		/* get layer bitmask */
@@ -4276,13 +4276,13 @@ static PyObject *Object_getLayers( BPy_Object * self )
  * to update and redraw the interface
  */
 
-static int Object_setLayers( BPy_Object * self, PyObject *value )
+static int V24_Object_setLayers( V24_BPy_Object * self, PyObject *value )
 {
 	int layers = 0, val, i, len_list, local;
 	Base *base;
 
 	if( !PyList_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected a list of integers in the range [1, 20]" );
 
 	len_list = PyList_Size( value );
@@ -4294,10 +4294,10 @@ static int Object_setLayers( BPy_Object * self, PyObject *value )
 		val = PyInt_AsLong( integer );
 		Py_XDECREF( integer );
 		if( !integer )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				  "list must contain only integer numbers" );
 		if( val < 1 || val > 20 )
-			return EXPP_ReturnIntError ( PyExc_ValueError,
+			return V24_EXPP_ReturnIntError ( PyExc_ValueError,
 				  "layer values must be in the range [1, 20]" );
 		layers |= 1 << ( val - 1 );
 	}
@@ -4326,13 +4326,13 @@ static int Object_setLayers( BPy_Object * self, PyObject *value )
 	return 0;
 }
 
-static int Object_setLayersMask( BPy_Object *self, PyObject *value )
+static int V24_Object_setLayersMask( V24_BPy_Object *self, PyObject *value )
 {
 	int layers = 0, local;
 	Base *base;
 
 	if( !PyInt_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected an integer (bitmask) as argument" );
 
 	layers = PyInt_AS_LONG( value );
@@ -4340,7 +4340,7 @@ static int Object_setLayersMask( BPy_Object *self, PyObject *value )
 	/* make sure some bits are set, and only those bits are set */
 
 	if( !( layers & 0xFFFFF ) || ( layers & 0xFFF00000 ) )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 			"bitmask must have between 1 and 20 bits set" );
 
 	/* update any bases pointing to our object */
@@ -4365,18 +4365,18 @@ static int Object_setLayersMask( BPy_Object *self, PyObject *value )
 
 /*
  * this should accept a Py_None argument and just delete the Ipo link
- * (as Object_clearIpo() does)
+ * (as V24_Object_clearIpo() does)
  */
 
-static int Object_setIpo( BPy_Object * self, PyObject * value )
+static int V24_Object_setIpo( V24_BPy_Object * self, PyObject * value )
 {
-	return GenericLib_assignData(value, (void **) &self->object->ipo, 0, 1, ID_IP, ID_OB);
+	return V24_GenericLib_assignData(value, (void **) &self->object->ipo, 0, 1, ID_IP, ID_OB);
 }
 
-static int Object_setTracked( BPy_Object * self, PyObject * value )
+static int V24_Object_setTracked( V24_BPy_Object * self, PyObject * value )
 {
 	int ret;
-	ret = GenericLib_assignData(value, (void **) &self->object->track, 0, 0, ID_OB, 0);
+	ret = V24_GenericLib_assignData(value, (void **) &self->object->track, 0, 0, ID_OB, 0);
 	if (ret==0) {
 		self->object->recalc |= OB_RECALC_OB;  
 		DAG_scene_sort( G.scene );
@@ -4386,7 +4386,7 @@ static int Object_setTracked( BPy_Object * self, PyObject * value )
 
 /* Localspace matrix */
 
-static PyObject *Object_getMatrixLocal( BPy_Object * self )
+static PyObject *V24_Object_getMatrixLocal( V24_BPy_Object * self )
 {
 	if( self->object->parent ) {
 		float matrix[4][4]; /* for the result */
@@ -4405,7 +4405,7 @@ static PyObject *Object_getMatrixLocal( BPy_Object * self )
 
 /* Worldspace matrix */
 
-static PyObject *Object_getMatrixWorld( BPy_Object * self )
+static PyObject *V24_Object_getMatrixWorld( V24_BPy_Object * self )
 {
 	disable_where_script( 1 );
 	where_is_object( self->object );
@@ -4415,7 +4415,7 @@ static PyObject *Object_getMatrixWorld( BPy_Object * self )
 
 /* Parent Inverse matrix */
 
-static PyObject *Object_getMatrixParentInverse( BPy_Object * self )
+static PyObject *V24_Object_getMatrixParentInverse( V24_BPy_Object * self )
 {
 	return newMatrixObject((float*)self->object->parentinv,4,4,Py_WRAP);
 }
@@ -4426,7 +4426,7 @@ static PyObject *Object_getMatrixParentInverse( BPy_Object * self )
  * called by the script or upon its exit.
  */
 
-static PyObject *Object_getMatrixOldWorld( BPy_Object * self )
+static PyObject *V24_Object_getMatrixOldWorld( V24_BPy_Object * self )
 {
 	return newMatrixObject((float*)self->object->obmat,4,4,Py_WRAP);
 }
@@ -4435,51 +4435,51 @@ static PyObject *Object_getMatrixOldWorld( BPy_Object * self )
  * get one of three different matrix representations
  */
 
-static PyObject *Object_getMatrix( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_getMatrix( V24_BPy_Object * self, PyObject * args )
 {
 	char *space = "worldspace";	/* default to world */
 	char *errstr = "expected nothing, 'worldspace' (default), 'localspace' or 'old_worldspace'";
 
 	if( !PyArg_ParseTuple( args, "|s", &space ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError, errstr );
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError, errstr );
 
 	if( BLI_streq( space, "worldspace" ) )
-		return Object_getMatrixWorld( self );
+		return V24_Object_getMatrixWorld( self );
 	else if( BLI_streq( space, "localspace" ) )
-		return Object_getMatrixLocal( self );
+		return V24_Object_getMatrixLocal( self );
 	else if( BLI_streq( space, "old_worldspace" ) )
-		return Object_getMatrixOldWorld( self );
+		return V24_Object_getMatrixOldWorld( self );
 	else
-		return EXPP_ReturnPyObjError( PyExc_ValueError, errstr );
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, errstr );
 }
 
-static PyObject *get_obj_data( BPy_Object *self, int mesh )
+static PyObject *get_obj_data( V24_BPy_Object *self, int mesh )
 {
 	Object *object = self->object;
 	PyObject *data_object = NULL;
 
 	switch ( object->type ) {
 	case OB_ARMATURE:
-		data_object = Armature_CreatePyObject( object->data );
+		data_object = V24_Armature_CreatePyObject( object->data );
 		break;
 	case OB_CAMERA:
-		data_object = Camera_CreatePyObject( object->data );
+		data_object = V24_Camera_CreatePyObject( object->data );
 		break;
 	case OB_CURVE:
 	case OB_SURF:
-		data_object = Curve_CreatePyObject( object->data );
+		data_object = V24_Curve_CreatePyObject( object->data );
 		break;
 	case ID_IM:
-		data_object = Image_CreatePyObject( object->data );
+		data_object = V24_Image_CreatePyObject( object->data );
 		break;
 	case ID_IP:
-		data_object = Ipo_CreatePyObject( object->data );
+		data_object = V24_Ipo_CreatePyObject( object->data );
 		break;
 	case OB_LAMP:
-		data_object = Lamp_CreatePyObject( object->data );
+		data_object = V24_Lamp_CreatePyObject( object->data );
 		break;
 	case OB_LATTICE:
-		data_object = Lattice_CreatePyObject( object->data );
+		data_object = V24_Lattice_CreatePyObject( object->data );
 		break;
 	case ID_MA:
 		break;
@@ -4487,18 +4487,18 @@ static PyObject *get_obj_data( BPy_Object *self, int mesh )
 		if( !mesh ) /* get as NMesh (default) */
 			data_object = NMesh_CreatePyObject( object->data, object );
 		else		/* else get as Mesh */
-			data_object = Mesh_CreatePyObject( object->data, object );
+			data_object = V24_Mesh_CreatePyObject( object->data, object );
 		break;
 	case OB_MBALL:
-		data_object = Metaball_CreatePyObject( object->data );
+		data_object = V24_Metaball_CreatePyObject( object->data );
 		break;
 	case ID_OB:
-		data_object = Object_CreatePyObject( object->data );
+		data_object = V24_Object_CreatePyObject( object->data );
 		break;
 	case ID_SCE:
 		break;
 	case OB_FONT:
-		data_object = Text3d_CreatePyObject( object->data );
+		data_object = V24_Text3d_CreatePyObject( object->data );
 		break;		
 	case ID_WO:
 		break;
@@ -4512,7 +4512,7 @@ static PyObject *get_obj_data( BPy_Object *self, int mesh )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getData( BPy_Object *self, PyObject *args,
+static PyObject *V24_Object_getData( V24_BPy_Object *self, PyObject *args,
 		PyObject *kwd )
 {
 	Object *object = self->object;
@@ -4522,7 +4522,7 @@ static PyObject *Object_getData( BPy_Object *self, PyObject *args,
 
 	if( !PyArg_ParseTupleAndKeywords(args, kwd, "|ii", kwlist,
 				&name_only, &mesh) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected nothing or bool keywords 'name_only' or 'mesh' as argument" );
 
 	/* if there's no obdata, try to create it */
@@ -4533,7 +4533,7 @@ static PyObject *Object_getData( BPy_Object *self, PyObject *args,
 		if( self->realtype != OB_EMPTY )	
 			object->type = self->realtype;
 
-		if( EXPP_add_obdata( object ) != 0 ) {	/* couldn't create obdata */
+		if( V24_EXPP_add_obdata( object ) != 0 ) {	/* couldn't create obdata */
 			object->type = tmptype;			/* restore previous type */
 			Py_RETURN_NONE;
 		}
@@ -4551,7 +4551,7 @@ static PyObject *Object_getData( BPy_Object *self, PyObject *args,
 	return get_obj_data( self, mesh );
 }
 
-static PyObject *Object_getEuler( BPy_Object * self )
+static PyObject *V24_Object_getEuler( V24_BPy_Object * self )
 {
 	return ( PyObject * ) newEulerObject( self->object->rot, Py_WRAP );
 }
@@ -4560,24 +4560,24 @@ static PyObject *Object_getEuler( BPy_Object * self )
 		OB_LOCK_ROTX | OB_LOCK_ROTY | OB_LOCK_ROTZ | \
 		OB_LOCK_SCALEX | OB_LOCK_SCALEY | OB_LOCK_SCALEZ )
 
-static PyObject *Object_getProtectFlags( BPy_Object * self )
+static PyObject *V24_Object_getProtectFlags( V24_BPy_Object * self )
 {
 	return PyInt_FromLong( (long)(self->object->protectflag & PROTFLAGS_MASK) );
 }
 
-static int Object_setProtectFlags( BPy_Object * self, PyObject * args )
+static int V24_Object_setProtectFlags( V24_BPy_Object * self, PyObject * args )
 {
 	PyObject* integer = PyNumber_Int( args );
 	short value;
 
 	if( !integer )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected integer argument" );
 
 	value = ( short )PyInt_AS_LONG( integer );
 	Py_DECREF( integer );
 	if( value & ~PROTFLAGS_MASK )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"undefined bit(s) set in bitfield" );
 
 	self->object->protectflag = value;
@@ -4585,24 +4585,24 @@ static int Object_setProtectFlags( BPy_Object * self, PyObject * args )
 	return 0;
 }
 
-static PyObject *Object_getRBRadius( BPy_Object * self )
+static PyObject *V24_Object_getRBRadius( V24_BPy_Object * self )
 {
     return PyFloat_FromDouble( (double) self->object->inertia );
 }
 
-static int Object_setRBRadius( BPy_Object * self, PyObject * args )
+static int V24_Object_setRBRadius( V24_BPy_Object * self, PyObject * args )
 {
     float value;
     PyObject* flt = PyNumber_Float( args );
 
     if( !flt )
-        return EXPP_ReturnIntError( PyExc_TypeError,
+        return V24_EXPP_ReturnIntError( PyExc_TypeError,
                 "expected float argument" );
     value = (float)PyFloat_AS_DOUBLE( flt );
 	Py_DECREF( flt );
 
     if( value < 0.0f )
-        return EXPP_ReturnIntError( PyExc_ValueError,
+        return V24_EXPP_ReturnIntError( PyExc_ValueError,
             "acceptable values are non-negative, 0.0 or more" );
 
     self->object->inertia = value;
@@ -4611,7 +4611,7 @@ static int Object_setRBRadius( BPy_Object * self, PyObject * args )
     return 0;
 }
 
-static PyObject *Object_getRBHalfExtents( BPy_Object * self )
+static PyObject *V24_Object_getRBHalfExtents( V24_BPy_Object * self )
 {
 	float center[3], extents[3];
 
@@ -4619,7 +4619,7 @@ static PyObject *Object_getRBHalfExtents( BPy_Object * self )
 	return Py_BuildValue( "[fff]", extents[0], extents[1], extents[2] );
 }
 
-static PyGetSetDef BPy_Object_getseters[] = {
+static PyGetSetDef V24_BPy_Object_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
 	{"LocX",
 	 (getter)getFloatAttr, (setter)setFloatAttr,
@@ -4703,7 +4703,7 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	 "The delta (X,Y,Z) location coordinates of the object",
 	 (void *)EXPP_OBJ_ATTR_DLOC},
 	{"rot",
-	 (getter)Object_getEuler, (setter)Object_setEuler,
+	 (getter)V24_Object_getEuler, (setter)V24_Object_setEuler,
 	 "The (X,Y,Z) rotation angles (in degrees) of the object",
 	 NULL},
 	{"drot",
@@ -4719,19 +4719,19 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	 "The delta (X,Y,Z) size of the object",
 	 (void *)EXPP_OBJ_ATTR_DSIZE},
 	{"Layer",
-	 (getter)getIntAttr, (setter)Object_setLayersMask,
+	 (getter)getIntAttr, (setter)V24_Object_setLayersMask,
 	 "The object layers (bitfield)",
 	 (void *)EXPP_OBJ_ATTR_LAYERMASK},
 	{"Layers",
-	 (getter)getIntAttr, (setter)Object_setLayersMask,
+	 (getter)getIntAttr, (setter)V24_Object_setLayersMask,
 	 "The object layers (bitfield)",
 	 (void *)EXPP_OBJ_ATTR_LAYERMASK},
 	{"layers",
-	 (getter)Object_getLayers, (setter)Object_setLayers,
+	 (getter)V24_Object_getLayers, (setter)V24_Object_setLayers,
 	 "The object layers (list of ints)",
 	 NULL},
 	{"ipo",
-	 (getter)Object_getIpo, (setter)Object_setIpo,
+	 (getter)V24_Object_getIpo, (setter)V24_Object_setIpo,
 	 "Object's Ipo data",
 	 NULL},
 	{"colbits",
@@ -4739,11 +4739,11 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	 "The Material usage bitfield",
 	 (void *)EXPP_OBJ_ATTR_COLBITS},
 	{"drawMode",
-	 (getter)getIntAttr, (setter)Object_setDrawMode,
+	 (getter)getIntAttr, (setter)V24_Object_setDrawMode,
 	 "The object's drawing mode bitfield",
 	 (void *)EXPP_OBJ_ATTR_DRAWMODE},
 	{"drawType",
-	 (getter)getIntAttr, (setter)Object_setDrawType,
+	 (getter)getIntAttr, (setter)V24_Object_setDrawType,
 	 "The object's drawing type",
 	 (void *)EXPP_OBJ_ATTR_DRAWTYPE},
 	{"parentType",
@@ -4775,27 +4775,27 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	 "Index for the active material (displayed in the material panel)",
 	 (void *)EXPP_OBJ_ATTR_ACT_MATERIAL},
 	{"mat",
-	 (getter)Object_getMatrixWorld, (setter)NULL,
+	 (getter)V24_Object_getMatrixWorld, (setter)NULL,
 	 "worldspace matrix: absolute, takes vertex parents, tracking and Ipos into account",
 	 NULL},
 	{"matrix",
-	 (getter)Object_getMatrixWorld, (setter)NULL,
+	 (getter)V24_Object_getMatrixWorld, (setter)NULL,
 	 "worldspace matrix: absolute, takes vertex parents, tracking and Ipos into account",
 	 NULL},
 	{"matrixWorld",
-	 (getter)Object_getMatrixWorld, (setter)NULL,
+	 (getter)V24_Object_getMatrixWorld, (setter)NULL,
 	 "worldspace matrix: absolute, takes vertex parents, tracking and Ipos into account",
 	 NULL},
 	{"matrixLocal",
-	 (getter)Object_getMatrixLocal, (setter)Object_setMatrix,
+	 (getter)V24_Object_getMatrixLocal, (setter)V24_Object_setMatrix,
 	 "localspace matrix: relative to the object's parent",
 	 NULL},
 	{"matrixParentInverse",
-	 (getter)Object_getMatrixParentInverse, (setter)NULL,
+	 (getter)V24_Object_getMatrixParentInverse, (setter)NULL,
 	 "parents inverse matrix: parents localspace inverted matrix",
 	 NULL},
 	{"matrixOldWorld",
-	 (getter)Object_getMatrixOldWorld, (setter)NULL,
+	 (getter)V24_Object_getMatrixOldWorld, (setter)NULL,
 	 "old-type worldspace matrix (prior to Blender 2.34)",
 	 NULL},
 	{"data",
@@ -4803,19 +4803,19 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	 "The Datablock object linked to this object",
 	 NULL},
 	{"sel",
-	 (getter)Object_getSelected, (setter)Object_setSelect,
+	 (getter)V24_Object_getSelected, (setter)V24_Object_setSelect,
 	 "The object's selection state",
 	 NULL},
 	{"parent",
-	 (getter)Object_getParent, (setter)NULL,
+	 (getter)V24_Object_getParent, (setter)NULL,
 	 "The object's parent object (if parented)",
 	 NULL},
 	{"parentbonename",
-	 (getter)Object_getParentBoneName, (setter)Object_setParentBoneName,
+	 (getter)V24_Object_getParentBoneName, (setter)V24_Object_setParentBoneName,
 	 "The object's parent object's sub name",
 	 NULL},
 	{"track",
-	 (getter)Object_getTracked, (setter)Object_setTracked,
+	 (getter)V24_Object_getTracked, (setter)V24_Object_setTracked,
 	 "The object's tracked object",
 	 NULL},
 	{"timeOffset",
@@ -4823,19 +4823,19 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	 "The time offset of the object's animation",
 	 (void *)EXPP_OBJ_ATTR_TIMEOFFSET},
 	{"type",
-	 (getter)Object_getType, (setter)NULL,
+	 (getter)V24_Object_getType, (setter)NULL,
 	 "The object's type",
 	 NULL},
 	{"boundingBox",
-	 (getter)Object_getBoundBox, (setter)NULL,
+	 (getter)V24_Object_getBoundBox, (setter)NULL,
 	 "The bounding box of this object",
 	 NULL},
 	{"action",
-	 (getter)Object_getAction, (setter)Object_setAction,
+	 (getter)V24_Object_getAction, (setter)V24_Object_setAction,
 	 "The action associated with this object (if defined)",
 	 NULL},
 	{"game_properties",
-	 (getter)Object_getAllProperties, (setter)NULL,
+	 (getter)V24_Object_getAllProperties, (setter)NULL,
 	 "The object's properties",
 	 NULL},
 	 
@@ -4877,15 +4877,15 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	 (void *)EXPP_OBJ_ATTR_PI_SBOFACETHICK},
 
 	{"piDeflection",
-	 (getter)Object_getPIDeflection, (setter)Object_setPIDeflection,
+	 (getter)V24_Object_getPIDeflection, (setter)V24_Object_setPIDeflection,
 	 "Deflects particles based on collision",
 	 NULL},
 	{"piType",
-	 (getter)Object_getPIType, (setter)Object_setPIType,
+	 (getter)V24_Object_getPIType, (setter)V24_Object_setPIType,
 	 "Type of particle interaction (force field, wind, etc)",
 	 NULL},
 	{"piUseMaxDist",
-	 (getter)Object_getPIUseMaxDist, (setter)Object_setPIUseMaxDist,
+	 (getter)V24_Object_getPIUseMaxDist, (setter)V24_Object_setPIUseMaxDist,
 	 "Use a maximum distance for the field to work",
 	 NULL},
 
@@ -4938,62 +4938,62 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	 "Softbody edge spring friction", 	
 	 (void *)EXPP_OBJ_ATTR_SB_INFRICT},
 	{"isSoftBody",
-	 (getter)Object_isSB, (setter)NULL,
+	 (getter)V24_Object_isSB, (setter)NULL,
 	 "True if object is a soft body",
 	 NULL},
 	{"sbUseGoal",
-	 (getter)Object_getSBUseGoal, (setter)Object_setSBUseGoal,
+	 (getter)V24_Object_getSBUseGoal, (setter)V24_Object_setSBUseGoal,
 	 "Softbody forces for vertices to stick to animated position enabled", 
 	 NULL},
 	{"sbUseEdges",
-	 (getter)Object_getSBUseEdges, (setter)Object_setSBUseEdges,
+	 (getter)V24_Object_getSBUseEdges, (setter)V24_Object_setSBUseEdges,
 	 "Softbody use edges as springs enabled", 
 	 NULL},
 	{"sbStiffQuads",
-	 (getter)Object_getSBStiffQuads, (setter)Object_setSBStiffQuads,
+	 (getter)V24_Object_getSBStiffQuads, (setter)V24_Object_setSBStiffQuads,
 	 "Softbody adds diagonal springs on 4-gons enabled",
 	 NULL},
 
 	{"axis",
-	 (getter)Object_getDrawModeBits, (setter)Object_setDrawModeBits,
+	 (getter)V24_Object_getDrawModeBits, (setter)V24_Object_setDrawModeBits,
 	 "Display of active object's center and axis enabled",
 	 (void *)OB_AXIS},
 	{"texSpace",
-	 (getter)Object_getDrawModeBits, (setter)Object_setDrawModeBits,
+	 (getter)V24_Object_getDrawModeBits, (setter)V24_Object_setDrawModeBits,
 	 "Display of active object's texture space enabled",
 	 (void *)OB_TEXSPACE},
 	{"nameMode",
-	 (getter)Object_getDrawModeBits, (setter)Object_setDrawModeBits,
+	 (getter)V24_Object_getDrawModeBits, (setter)V24_Object_setDrawModeBits,
 	 "Display of active object's name enabled",
 	 (void *)OB_DRAWNAME},
 	{"wireMode",
-	 (getter)Object_getDrawModeBits, (setter)Object_setDrawModeBits,
+	 (getter)V24_Object_getDrawModeBits, (setter)V24_Object_setDrawModeBits,
 	 "Add the active object's wireframe over solid drawing enabled",
 	 (void *)OB_DRAWWIRE},
 	{"xRay",
-	 (getter)Object_getDrawModeBits, (setter)Object_setDrawModeBits,
+	 (getter)V24_Object_getDrawModeBits, (setter)V24_Object_setDrawModeBits,
 	 "Draw the active object in front of others enabled",
 	 (void *)OB_DRAWXRAY},
 	{"transp",
-	 (getter)Object_getDrawModeBits, (setter)Object_setDrawModeBits,
+	 (getter)V24_Object_getDrawModeBits, (setter)V24_Object_setDrawModeBits,
 	 "Transparent materials for the active object (mesh only) enabled",
 	 (void *)OB_DRAWTRANSP},
 
 	{"enableNLAOverride",
-	 (getter)Object_getNLAflagBits, (setter)Object_setNLAflagBits,
+	 (getter)V24_Object_getNLAflagBits, (setter)V24_Object_setNLAflagBits,
 	 "Toggles Action-NLA based animation",
 	 (void *)OB_NLA_OVERRIDE},
 
 	{"enableDupVerts",
-	 (getter)Object_getTransflagBits, (setter)Object_setTransflagBits,
+	 (getter)V24_Object_getTransflagBits, (setter)V24_Object_setTransflagBits,
 	 "Duplicate child objects on all vertices",
 	 (void *)OB_DUPLIVERTS},
 	{"enableDupFaces",
-	 (getter)Object_getTransflagBits, (setter)Object_setTransflagBits,
+	 (getter)V24_Object_getTransflagBits, (setter)V24_Object_setTransflagBits,
 	 "Duplicate child objects on all faces",
 	 (void *)OB_DUPLIFACES},
 	{"enableDupFacesScale",
-	 (getter)Object_getTransflagBits, (setter)Object_setTransflagBits,
+	 (getter)V24_Object_getTransflagBits, (setter)V24_Object_setTransflagBits,
 	 "Use face scale to scale all dupliFaces",
 	 (void *)OB_DUPLIFACES_SCALE},
 	{"dupFacesScaleFac",
@@ -5001,48 +5001,48 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	"Use face scale to scale all dupliFaces",
 	 (void *)EXPP_OBJ_ATTR_DUPFACESCALEFAC},
 	{"enableDupFrames",
-	 (getter)Object_getTransflagBits, (setter)Object_setTransflagBits,
+	 (getter)V24_Object_getTransflagBits, (setter)V24_Object_setTransflagBits,
 	 "Make copy of object for every frame",
 	 (void *)OB_DUPLIFRAMES},
 	{"enableDupGroup",
-	 (getter)Object_getTransflagBits, (setter)Object_setTransflagBits,
+	 (getter)V24_Object_getTransflagBits, (setter)V24_Object_setTransflagBits,
 	 "Enable group instancing",
 	 (void *)OB_DUPLIGROUP},
 	{"enableDupRot",
-	 (getter)Object_getTransflagBits, (setter)Object_setTransflagBits,
+	 (getter)V24_Object_getTransflagBits, (setter)V24_Object_setTransflagBits,
 	 "Rotate dupli according to vertex normal",
 	 (void *)OB_DUPLIROT},
 	{"enableDupNoSpeed",
-	 (getter)Object_getTransflagBits, (setter)Object_setTransflagBits,
+	 (getter)V24_Object_getTransflagBits, (setter)V24_Object_setTransflagBits,
 	 "Set dupliframes to still, regardless of frame",
 	 (void *)OB_DUPLINOSPEED},
 	{"DupObjects",
-	 (getter)Object_getDupliObjects, (setter)NULL,
+	 (getter)V24_Object_getDupliObjects, (setter)NULL,
 	 "Get a list of tuple pairs (object, matrix), for getting dupli objects",
 	 NULL},
 	{"DupGroup",
-	 (getter)Object_getDupliGroup, (setter)Object_setDupliGroup,
+	 (getter)V24_Object_getDupliGroup, (setter)V24_Object_setDupliGroup,
 	 "Get a list of tuples for object duplicated by dupliframe",
 	 NULL},
 
 	{"effects",
-	 (getter)Object_getEffects, (setter)NULL, 
+	 (getter)V24_Object_getEffects, (setter)NULL, 
 	 "The list of particle effects associated with the object",
 	 NULL},
 	{"actionStrips",
-	 (getter)Object_getActionStrips, (setter)NULL, 
+	 (getter)V24_Object_getActionStrips, (setter)NULL, 
 	 "The action strips associated with the object",
 	 NULL},
 	{"constraints",
-	 (getter)Object_getConstraints, (setter)NULL, 
+	 (getter)V24_Object_getConstraints, (setter)NULL, 
 	 "The constraints associated with the object",
 	 NULL},
 	{"modifiers",
-	 (getter)Object_getModifiers, (setter)Object_setModifiers, 
+	 (getter)V24_Object_getModifiers, (setter)V24_Object_setModifiers, 
 	 "The modifiers associated with the object",
 	 NULL},
 	{"protectFlags",
-	 (getter)Object_getProtectFlags, (setter)Object_setProtectFlags, 
+	 (getter)V24_Object_getProtectFlags, (setter)V24_Object_setProtectFlags, 
 	 "The \"transform locking\" bitfield for the object",
 	 NULL},
 	{"drawSize",
@@ -5051,41 +5051,41 @@ static PyGetSetDef BPy_Object_getseters[] = {
 	 (void *)EXPP_OBJ_ATTR_DRAWSIZE},
 
 	{"rbFlags",
-	 (getter)Object_getRBFlags, (setter)Object_setRBFlags, 
+	 (getter)V24_Object_getRBFlags, (setter)V24_Object_setRBFlags, 
 	 "Rigid body flags",
 	 NULL},
 	{"rbMass",
-	 (getter)Object_getRBMass, (setter)Object_setRBMass, 
+	 (getter)V24_Object_getRBMass, (setter)V24_Object_setRBMass, 
 	 "Rigid body object mass",
 	 NULL},
 	{"rbRadius",
-	 (getter)Object_getRBRadius, (setter)Object_setRBRadius, 
+	 (getter)V24_Object_getRBRadius, (setter)V24_Object_setRBRadius, 
 	 "Rigid body bounding sphere size",
 	 NULL},
 	{"rbShapeBoundType",
-	 (getter)Object_getRBShapeBoundType, (setter)Object_setRBShapeBoundType, 
+	 (getter)V24_Object_getRBShapeBoundType, (setter)V24_Object_setRBShapeBoundType, 
 	 "Rigid body physics bounds object type",
 	 NULL},
 	{"rbHalfExtents",
-	 (getter)Object_getRBHalfExtents, (setter)NULL, 
+	 (getter)V24_Object_getRBHalfExtents, (setter)NULL, 
 	 "Rigid body physics bounds object type",
 	 NULL},
 
 	{"restrictDisplay",
-	 (getter)Object_getRestricted, (setter)Object_setRestricted, 
+	 (getter)V24_Object_getRestricted, (setter)V24_Object_setRestricted, 
 	 "Toggle object restrictions",
 	 (void *)OB_RESTRICT_VIEW},
 	{"restrictSelect",
-	 (getter)Object_getRestricted, (setter)Object_setRestricted, 
+	 (getter)V24_Object_getRestricted, (setter)V24_Object_setRestricted, 
 	 "Toggle object restrictions",
 	 (void *)OB_RESTRICT_SELECT},
 	{"restrictRender",
-	 (getter)Object_getRestricted, (setter)Object_setRestricted, 
+	 (getter)V24_Object_getRestricted, (setter)V24_Object_setRestricted, 
 	 "Toggle object restrictions",
 	 (void *)OB_RESTRICT_RENDER},
 
 	{"pinShape",
-	 (getter)Object_getShapeFlag, (setter)Object_setShapeFlag, 
+	 (getter)V24_Object_getShapeFlag, (setter)V24_Object_setShapeFlag, 
 	 "Set the state for pinning this object",
 	 (void *)OB_SHAPE_LOCK},
 	{"activeShape",
@@ -5098,24 +5098,24 @@ static PyGetSetDef BPy_Object_getseters[] = {
 };
 
 /*****************************************************************************/
-/* Python Object_Type structure definition:                                  */
+/* Python V24_Object_Type structure definition:                                  */
 /*****************************************************************************/
-PyTypeObject Object_Type = {
+PyTypeObject V24_Object_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Object",           /* char *tp_name; */
-	sizeof( BPy_Object ),       /* int tp_basicsize; */
+	sizeof( V24_BPy_Object ),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	( destructor ) Object_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_Object_dealloc,/* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Object_compare, /* cmpfunc tp_compare; */
-	( reprfunc ) Object_repr,   /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Object_compare, /* cmpfunc tp_compare; */
+	( reprfunc ) V24_Object_repr,   /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -5125,7 +5125,7 @@ PyTypeObject Object_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -5158,9 +5158,9 @@ PyTypeObject Object_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Object_methods,         /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Object_methods,         /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Object_getseters,       /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Object_getseters,       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -5182,153 +5182,153 @@ PyTypeObject Object_Type = {
 	NULL
 };
 
-static PyObject *M_Object_DrawModesDict( void )
+static PyObject *V24_M_Object_DrawModesDict( void )
 {
-	PyObject *M = PyConstant_New(  );
+	PyObject *M = V24_PyConstant_New(  );
 
 	if( M ) {
-		BPy_constant *d = ( BPy_constant * ) M;
-		PyConstant_Insert( d, "AXIS", PyInt_FromLong( OB_AXIS ) );
-		PyConstant_Insert( d, "TEXSPACE", PyInt_FromLong( OB_TEXSPACE ) );
-		PyConstant_Insert( d, "NAME", PyInt_FromLong( OB_DRAWNAME ) );
-		PyConstant_Insert( d, "WIRE", PyInt_FromLong( OB_DRAWWIRE ) );
-		PyConstant_Insert( d, "XRAY", PyInt_FromLong( OB_DRAWXRAY ) );
-		PyConstant_Insert( d, "TRANSP", PyInt_FromLong( OB_DRAWTRANSP ) );
+		V24_BPy_constant *d = ( V24_BPy_constant * ) M;
+		V24_PyConstant_Insert( d, "AXIS", PyInt_FromLong( OB_AXIS ) );
+		V24_PyConstant_Insert( d, "TEXSPACE", PyInt_FromLong( OB_TEXSPACE ) );
+		V24_PyConstant_Insert( d, "NAME", PyInt_FromLong( OB_DRAWNAME ) );
+		V24_PyConstant_Insert( d, "WIRE", PyInt_FromLong( OB_DRAWWIRE ) );
+		V24_PyConstant_Insert( d, "XRAY", PyInt_FromLong( OB_DRAWXRAY ) );
+		V24_PyConstant_Insert( d, "TRANSP", PyInt_FromLong( OB_DRAWTRANSP ) );
 	}
 	return M;
 }
 
-static PyObject *M_Object_DrawTypesDict( void )
+static PyObject *V24_M_Object_DrawTypesDict( void )
 {
-	PyObject *M = PyConstant_New(  );
+	PyObject *M = V24_PyConstant_New(  );
 
 	if( M ) {
-		BPy_constant *d = ( BPy_constant * ) M;
-		PyConstant_Insert( d, "BOUNDBOX", PyInt_FromLong( OB_BOUNDBOX ) );
-		PyConstant_Insert( d, "WIRE", PyInt_FromLong( OB_WIRE ) );
-		PyConstant_Insert( d, "SOLID", PyInt_FromLong( OB_SOLID ) );
-		PyConstant_Insert( d, "SHADED", PyInt_FromLong( OB_SHADED ) );
+		V24_BPy_constant *d = ( V24_BPy_constant * ) M;
+		V24_PyConstant_Insert( d, "BOUNDBOX", PyInt_FromLong( OB_BOUNDBOX ) );
+		V24_PyConstant_Insert( d, "WIRE", PyInt_FromLong( OB_WIRE ) );
+		V24_PyConstant_Insert( d, "SOLID", PyInt_FromLong( OB_SOLID ) );
+		V24_PyConstant_Insert( d, "SHADED", PyInt_FromLong( OB_SHADED ) );
 	}
 	return M;
 }
 
-static PyObject *M_Object_ParentTypesDict( void )
+static PyObject *V24_M_Object_ParentTypesDict( void )
 {
-	PyObject *M = PyConstant_New(  );
+	PyObject *M = V24_PyConstant_New(  );
 
 	if( M ) {
-		BPy_constant *d = ( BPy_constant * ) M;
-		PyConstant_Insert( d, "OBJECT", PyInt_FromLong( PAROBJECT ) );
-		PyConstant_Insert( d, "CURVE", PyInt_FromLong( PARCURVE ) );
+		V24_BPy_constant *d = ( V24_BPy_constant * ) M;
+		V24_PyConstant_Insert( d, "OBJECT", PyInt_FromLong( PAROBJECT ) );
+		V24_PyConstant_Insert( d, "CURVE", PyInt_FromLong( PARCURVE ) );
 		
 		/*	2.43 was released as LATTICE as PARKEY, my bad,
 			lattice uses PARSKEL also - Campbell */
-		PyConstant_Insert( d, "LATTICE", PyInt_FromLong( PARSKEL ) ); 
+		V24_PyConstant_Insert( d, "LATTICE", PyInt_FromLong( PARSKEL ) ); 
 		
-		PyConstant_Insert( d, "ARMATURE", PyInt_FromLong( PARSKEL ) );
-		PyConstant_Insert( d, "VERT1", PyInt_FromLong( PARVERT1 ) );
-		PyConstant_Insert( d, "VERT3", PyInt_FromLong( PARVERT3 ) );
-		PyConstant_Insert( d, "BONE", PyInt_FromLong( PARBONE ) );
+		V24_PyConstant_Insert( d, "ARMATURE", PyInt_FromLong( PARSKEL ) );
+		V24_PyConstant_Insert( d, "VERT1", PyInt_FromLong( PARVERT1 ) );
+		V24_PyConstant_Insert( d, "VERT3", PyInt_FromLong( PARVERT3 ) );
+		V24_PyConstant_Insert( d, "BONE", PyInt_FromLong( PARBONE ) );
 	}
 	return M;
 }
 
-static PyObject *M_Object_PITypesDict( void )
+static PyObject *V24_M_Object_PITypesDict( void )
 {
-	PyObject *M = PyConstant_New(  );
+	PyObject *M = V24_PyConstant_New(  );
 
 	if( M ) {
-		BPy_constant *d = ( BPy_constant * ) M;
-		PyConstant_Insert( d, "NONE", PyInt_FromLong( 0 ) );
-		PyConstant_Insert( d, "FORCE", PyInt_FromLong( PFIELD_FORCE ) );
-		PyConstant_Insert( d, "VORTEX", PyInt_FromLong( PFIELD_VORTEX ) );
-		PyConstant_Insert( d, "WIND", PyInt_FromLong( PFIELD_WIND ) );
-		PyConstant_Insert( d, "GUIDE", PyInt_FromLong( PFIELD_GUIDE ) );
+		V24_BPy_constant *d = ( V24_BPy_constant * ) M;
+		V24_PyConstant_Insert( d, "NONE", PyInt_FromLong( 0 ) );
+		V24_PyConstant_Insert( d, "FORCE", PyInt_FromLong( PFIELD_FORCE ) );
+		V24_PyConstant_Insert( d, "VORTEX", PyInt_FromLong( PFIELD_VORTEX ) );
+		V24_PyConstant_Insert( d, "WIND", PyInt_FromLong( PFIELD_WIND ) );
+		V24_PyConstant_Insert( d, "GUIDE", PyInt_FromLong( PFIELD_GUIDE ) );
 	}
 	return M;
 }
 
-static PyObject *M_Object_ProtectDict( void )
+static PyObject *V24_M_Object_ProtectDict( void )
 {
-	PyObject *M = PyConstant_New(  );
+	PyObject *M = V24_PyConstant_New(  );
 
 	if( M ) {
-		BPy_constant *d = ( BPy_constant * ) M;
-		PyConstant_Insert( d, "LOCX", PyInt_FromLong( OB_LOCK_LOCX ) );
-		PyConstant_Insert( d, "LOCY", PyInt_FromLong( OB_LOCK_LOCY ) );
-		PyConstant_Insert( d, "LOCZ", PyInt_FromLong( OB_LOCK_LOCZ ) );
-		PyConstant_Insert( d, "LOC", PyInt_FromLong( OB_LOCK_LOC ) );
-		PyConstant_Insert( d, "ROTX", PyInt_FromLong( OB_LOCK_ROTX ) );
-		PyConstant_Insert( d, "ROTY", PyInt_FromLong( OB_LOCK_ROTY ) );
-		PyConstant_Insert( d, "ROTZ", PyInt_FromLong( OB_LOCK_ROTZ ) );
-		PyConstant_Insert( d, "ROT",
+		V24_BPy_constant *d = ( V24_BPy_constant * ) M;
+		V24_PyConstant_Insert( d, "LOCX", PyInt_FromLong( OB_LOCK_LOCX ) );
+		V24_PyConstant_Insert( d, "LOCY", PyInt_FromLong( OB_LOCK_LOCY ) );
+		V24_PyConstant_Insert( d, "LOCZ", PyInt_FromLong( OB_LOCK_LOCZ ) );
+		V24_PyConstant_Insert( d, "LOC", PyInt_FromLong( OB_LOCK_LOC ) );
+		V24_PyConstant_Insert( d, "ROTX", PyInt_FromLong( OB_LOCK_ROTX ) );
+		V24_PyConstant_Insert( d, "ROTY", PyInt_FromLong( OB_LOCK_ROTY ) );
+		V24_PyConstant_Insert( d, "ROTZ", PyInt_FromLong( OB_LOCK_ROTZ ) );
+		V24_PyConstant_Insert( d, "ROT",
 				PyInt_FromLong( OB_LOCK_ROTX|OB_LOCK_ROTY|OB_LOCK_ROTZ ) );
-		PyConstant_Insert( d, "SCALEX", PyInt_FromLong( OB_LOCK_SCALEX ) );
-		PyConstant_Insert( d, "SCALEY", PyInt_FromLong( OB_LOCK_SCALEY ) );
-		PyConstant_Insert( d, "SCALEZ", PyInt_FromLong( OB_LOCK_SCALEZ ) );
-		PyConstant_Insert( d, "SCALE",
+		V24_PyConstant_Insert( d, "SCALEX", PyInt_FromLong( OB_LOCK_SCALEX ) );
+		V24_PyConstant_Insert( d, "SCALEY", PyInt_FromLong( OB_LOCK_SCALEY ) );
+		V24_PyConstant_Insert( d, "SCALEZ", PyInt_FromLong( OB_LOCK_SCALEZ ) );
+		V24_PyConstant_Insert( d, "SCALE",
 				PyInt_FromLong( OB_LOCK_SCALEX|OB_LOCK_SCALEY|OB_LOCK_SCALEZ ) );
 	}
 	return M;
 }
 
-static PyObject *M_Object_RBFlagsDict( void )
+static PyObject *V24_M_Object_RBFlagsDict( void )
 {
-	PyObject *M = PyConstant_New(  );
+	PyObject *M = V24_PyConstant_New(  );
 
 	if( M ) {
-		BPy_constant *d = ( BPy_constant * ) M;
-		PyConstant_Insert( d, "DYNAMIC", PyInt_FromLong( OB_DYNAMIC ) );
-		PyConstant_Insert( d, "CHILD", PyInt_FromLong( OB_CHILD ) );
-		PyConstant_Insert( d, "ACTOR", PyInt_FromLong( OB_ACTOR ) );
-		PyConstant_Insert( d, "USEFH", PyInt_FromLong(  OB_DO_FH ) );
-		PyConstant_Insert( d, "ROTFH", PyInt_FromLong( OB_ROT_FH ) );
-		PyConstant_Insert( d, "ANISOTROPIC",
+		V24_BPy_constant *d = ( V24_BPy_constant * ) M;
+		V24_PyConstant_Insert( d, "DYNAMIC", PyInt_FromLong( OB_DYNAMIC ) );
+		V24_PyConstant_Insert( d, "CHILD", PyInt_FromLong( OB_CHILD ) );
+		V24_PyConstant_Insert( d, "ACTOR", PyInt_FromLong( OB_ACTOR ) );
+		V24_PyConstant_Insert( d, "USEFH", PyInt_FromLong(  OB_DO_FH ) );
+		V24_PyConstant_Insert( d, "ROTFH", PyInt_FromLong( OB_ROT_FH ) );
+		V24_PyConstant_Insert( d, "ANISOTROPIC",
 				PyInt_FromLong( OB_ANISOTROPIC_FRICTION ) );
-		PyConstant_Insert( d, "GHOST", PyInt_FromLong( OB_GHOST ) );
-		PyConstant_Insert( d, "RIGIDBODY", PyInt_FromLong( OB_RIGID_BODY ) );
-		PyConstant_Insert( d, "BOUNDS", PyInt_FromLong( OB_BOUNDS ) );
-		PyConstant_Insert( d, "COLLISION_RESPONSE",
+		V24_PyConstant_Insert( d, "GHOST", PyInt_FromLong( OB_GHOST ) );
+		V24_PyConstant_Insert( d, "RIGIDBODY", PyInt_FromLong( OB_RIGID_BODY ) );
+		V24_PyConstant_Insert( d, "BOUNDS", PyInt_FromLong( OB_BOUNDS ) );
+		V24_PyConstant_Insert( d, "COLLISION_RESPONSE",
 				PyInt_FromLong( OB_COLLISION_RESPONSE ) );
-		PyConstant_Insert( d, "SECTOR", PyInt_FromLong( OB_SECTOR ) );
-		PyConstant_Insert( d, "PROP", PyInt_FromLong( OB_PROP ) );
-		PyConstant_Insert( d, "MAINACTOR", PyInt_FromLong( OB_MAINACTOR ) );
+		V24_PyConstant_Insert( d, "SECTOR", PyInt_FromLong( OB_SECTOR ) );
+		V24_PyConstant_Insert( d, "PROP", PyInt_FromLong( OB_PROP ) );
+		V24_PyConstant_Insert( d, "MAINACTOR", PyInt_FromLong( OB_MAINACTOR ) );
 	}
 	return M;
 }
 
-static PyObject *M_Object_RBShapeBoundDict( void )
+static PyObject *V24_M_Object_RBShapeBoundDict( void )
 {
-	PyObject *M = PyConstant_New(  );
+	PyObject *M = V24_PyConstant_New(  );
 
 	if( M ) {
-		BPy_constant *d = ( BPy_constant * ) M;
-		PyConstant_Insert( d, "BOX", PyInt_FromLong( OB_BOUND_BOX ) );
-		PyConstant_Insert( d, "SPHERE", PyInt_FromLong( OB_BOUND_SPHERE ) );
-		PyConstant_Insert( d, "CYLINDER", PyInt_FromLong( OB_BOUND_CYLINDER ) );
-		PyConstant_Insert( d, "CONE", PyInt_FromLong( OB_BOUND_CONE ) );
-		PyConstant_Insert( d, "POLYHEDERON", PyInt_FromLong( OB_BOUND_POLYH ) );
+		V24_BPy_constant *d = ( V24_BPy_constant * ) M;
+		V24_PyConstant_Insert( d, "BOX", PyInt_FromLong( OB_BOUND_BOX ) );
+		V24_PyConstant_Insert( d, "SPHERE", PyInt_FromLong( OB_BOUND_SPHERE ) );
+		V24_PyConstant_Insert( d, "CYLINDER", PyInt_FromLong( OB_BOUND_CYLINDER ) );
+		V24_PyConstant_Insert( d, "CONE", PyInt_FromLong( OB_BOUND_CONE ) );
+		V24_PyConstant_Insert( d, "POLYHEDERON", PyInt_FromLong( OB_BOUND_POLYH ) );
 	}
 	return M;
 }
 
-static PyObject *M_Object_IpoKeyTypesDict( void )
+static PyObject *V24_M_Object_IpoKeyTypesDict( void )
 {
-	PyObject *M = PyConstant_New(  );
+	PyObject *M = V24_PyConstant_New(  );
 
 	if( M ) {
-		BPy_constant *d = ( BPy_constant * ) M;
-		PyConstant_Insert( d, "LOC", PyInt_FromLong( IPOKEY_LOC ) );
-		PyConstant_Insert( d, "ROT", PyInt_FromLong( IPOKEY_ROT ) );
-		PyConstant_Insert( d, "SIZE", PyInt_FromLong( IPOKEY_SIZE ) );
-		PyConstant_Insert( d, "LOCROT", PyInt_FromLong( IPOKEY_LOCROT ) );
-		PyConstant_Insert( d, "LOCROTSIZE", PyInt_FromLong( IPOKEY_LOCROTSIZE ) );
+		V24_BPy_constant *d = ( V24_BPy_constant * ) M;
+		V24_PyConstant_Insert( d, "LOC", PyInt_FromLong( IPOKEY_LOC ) );
+		V24_PyConstant_Insert( d, "ROT", PyInt_FromLong( IPOKEY_ROT ) );
+		V24_PyConstant_Insert( d, "SIZE", PyInt_FromLong( IPOKEY_SIZE ) );
+		V24_PyConstant_Insert( d, "LOCROT", PyInt_FromLong( IPOKEY_LOCROT ) );
+		V24_PyConstant_Insert( d, "LOCROTSIZE", PyInt_FromLong( IPOKEY_LOCROTSIZE ) );
 		
-		PyConstant_Insert( d, "PI_STRENGTH", PyInt_FromLong( IPOKEY_PI_STRENGTH ) );
-		PyConstant_Insert( d, "PI_FALLOFF", PyInt_FromLong( IPOKEY_PI_FALLOFF ) );
-		PyConstant_Insert( d, "PI_SURFACEDAMP", PyInt_FromLong( IPOKEY_PI_SURFACEDAMP ) );
-		PyConstant_Insert( d, "PI_RANDOMDAMP", PyInt_FromLong( IPOKEY_PI_RANDOMDAMP ) );
-		PyConstant_Insert( d, "PI_PERM", PyInt_FromLong( IPOKEY_PI_PERM ) );
+		V24_PyConstant_Insert( d, "PI_STRENGTH", PyInt_FromLong( IPOKEY_PI_STRENGTH ) );
+		V24_PyConstant_Insert( d, "PI_FALLOFF", PyInt_FromLong( IPOKEY_PI_FALLOFF ) );
+		V24_PyConstant_Insert( d, "PI_SURFACEDAMP", PyInt_FromLong( IPOKEY_PI_SURFACEDAMP ) );
+		V24_PyConstant_Insert( d, "PI_RANDOMDAMP", PyInt_FromLong( IPOKEY_PI_RANDOMDAMP ) );
+		V24_PyConstant_Insert( d, "PI_PERM", PyInt_FromLong( IPOKEY_PI_PERM ) );
 	}
 	return M;
 }
@@ -5336,22 +5336,22 @@ static PyObject *M_Object_IpoKeyTypesDict( void )
 /*****************************************************************************/
 /* Function:	 initObject						*/
 /*****************************************************************************/
-PyObject *Object_Init( void )
+PyObject *V24_Object_Init( void )
 {
 	PyObject *module, *dict;
-	PyObject *DrawModesDict = M_Object_DrawModesDict( );
-	PyObject *DrawTypesDict = M_Object_DrawTypesDict( );
-	PyObject *ParentTypesDict = M_Object_ParentTypesDict( );
-	PyObject *ProtectDict = M_Object_ProtectDict( );
-	PyObject *PITypesDict = M_Object_PITypesDict( );
-	PyObject *RBFlagsDict = M_Object_RBFlagsDict( );
-	PyObject *RBShapesDict = M_Object_RBShapeBoundDict( );
-	PyObject *IpoKeyTypesDict = M_Object_IpoKeyTypesDict( );
+	PyObject *DrawModesDict = V24_M_Object_DrawModesDict( );
+	PyObject *DrawTypesDict = V24_M_Object_DrawTypesDict( );
+	PyObject *ParentTypesDict = V24_M_Object_ParentTypesDict( );
+	PyObject *ProtectDict = V24_M_Object_ProtectDict( );
+	PyObject *PITypesDict = V24_M_Object_PITypesDict( );
+	PyObject *RBFlagsDict = V24_M_Object_RBFlagsDict( );
+	PyObject *RBShapesDict = V24_M_Object_RBShapeBoundDict( );
+	PyObject *IpoKeyTypesDict = V24_M_Object_IpoKeyTypesDict( );
 
-	PyType_Ready( &Object_Type ) ;
+	PyType_Ready( &V24_Object_Type ) ;
 
 	module = Py_InitModule3( "Blender.Object", M_Object_methods,
-				 M_Object_doc );
+				 V24_M_Object_doc );
 	
 	
 	/* We Should Remove these!!!! */
@@ -5394,54 +5394,54 @@ PyObject *Object_Init( void )
 
 		/*Add SUBMODULES to the module*/
 	dict = PyModule_GetDict( module ); /*borrowed*/
-	PyDict_SetItemString(dict, "Pose", Pose_Init()); /*creates a *new* module*/
-	/*PyDict_SetItemString(dict, "Constraint", Constraint_Init()); */ /*creates a *new* module*/
+	PyDict_SetItemString(dict, "Pose", V24_Pose_Init()); /*creates a *new* module*/
+	/*PyDict_SetItemString(dict, "Constraint", V24_Constraint_Init()); */ /*creates a *new* module*/
 
 	return ( module );
 }
 
 /* #####DEPRECATED###### */
 
-static PyObject *Object_SetIpo( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetIpo( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Object_setIpo );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Object_setIpo );
 }
 
-static PyObject *Object_Select( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_Select( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Object_setSelect );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Object_setSelect );
 }
 
-static PyObject *Object_SetDrawMode( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetDrawMode( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)Object_setDrawMode );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_Object_setDrawMode );
 }
 
-static PyObject *Object_SetDrawType( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetDrawType( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)Object_setDrawType );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_Object_setDrawType );
 }
 
-static PyObject *Object_SetMatrix( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetMatrix( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)Object_setMatrix );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_Object_setMatrix );
 }
 
-static PyObject *Object_SetEuler( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetEuler( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapperTuple( (void *)self, args,
-			(setter)Object_setEuler );
+	return V24_EXPP_setterWrapperTuple( (void *)self, args,
+			(setter)V24_Object_setEuler );
 }
 
-static PyObject *Object_setTimeOffset( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setTimeOffset( V24_BPy_Object * self, PyObject * args )
 {
 	float newTimeOffset;
 
 	if( !PyArg_ParseTuple( args, "f", &newTimeOffset ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a float as argument" );
 
 	self->object->sf = newTimeOffset;
@@ -5455,173 +5455,173 @@ static PyObject *Object_setTimeOffset( BPy_Object * self, PyObject * args )
 /* particle defection methods                                            */
 /*************************************************************************/
 
-static PyObject *Object_SetPIDeflection( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetPIDeflection( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)Object_setPIDeflection );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_Object_setPIDeflection );
 }
 
-static PyObject *Object_SetPIType( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetPIType( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)Object_setPIType );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_Object_setPIType );
 }
 
-static PyObject *Object_SetPIUseMaxDist( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetPIUseMaxDist( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)Object_setPIUseMaxDist );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_Object_setPIUseMaxDist );
 }
 
-static PyObject *Object_getPISurfaceDamp( BPy_Object * self )
+static PyObject *V24_Object_getPISurfaceDamp( V24_BPy_Object * self )
 {
     if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
     
     return PyFloat_FromDouble( ( double ) self->object->pd->pdef_damp );
 }
 
-static PyObject *Object_SetPISurfaceDamp( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetPISurfaceDamp( V24_BPy_Object * self, PyObject * args )
 {
 	float value;
 
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
 		return NULL;
 
-	self->object->pd->pdef_damp = EXPP_ClampFloat( value,
+	self->object->pd->pdef_damp = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_PIDAMP_MIN, EXPP_OBJECT_PIDAMP_MAX );
 	self->object->recalc |= OB_RECALC_OB;  
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getPIPerm( BPy_Object * self )
+static PyObject *V24_Object_getPIPerm( V24_BPy_Object * self )
 {
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 	return PyFloat_FromDouble ( (double) self->object->pd->pdef_perm );
 }
 
-static PyObject *Object_SetPIPerm( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetPIPerm( V24_BPy_Object * self, PyObject * args )
 {
 	float value;
 
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
 		return NULL;
 
-	self->object->pd->pdef_perm = EXPP_ClampFloat( value,
+	self->object->pd->pdef_perm = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_PIPERM_MIN, EXPP_OBJECT_PIPERM_MAX );
 	self->object->recalc |= OB_RECALC_OB;  
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getPIStrength( BPy_Object * self )
+static PyObject *V24_Object_getPIStrength( V24_BPy_Object * self )
 {
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	return PyFloat_FromDouble( ( double ) self->object->pd->f_strength );
 }
 
-static PyObject *Object_setPIStrength( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setPIStrength( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected float argument" );
 
-	self->object->pd->f_strength = EXPP_ClampFloat( value,
+	self->object->pd->f_strength = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_PISTRENGTH_MIN, EXPP_OBJECT_PISTRENGTH_MAX );
 	self->object->recalc |= OB_RECALC_OB;  
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getPIFalloff( BPy_Object * self )
+static PyObject *V24_Object_getPIFalloff( V24_BPy_Object * self )
 {
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
     return PyFloat_FromDouble( ( double ) self->object->pd->f_power );
 }
 
-static PyObject *Object_setPIFalloff( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setPIFalloff( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected float argument" );
 
-	self->object->pd->f_power = EXPP_ClampFloat( value,
+	self->object->pd->f_power = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_PIPOWER_MIN, EXPP_OBJECT_PIPOWER_MAX );
 	self->object->recalc |= OB_RECALC_OB;  
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getPIMaxDist( BPy_Object * self )
+static PyObject *V24_Object_getPIMaxDist( V24_BPy_Object * self )
 {
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
     return PyFloat_FromDouble( ( double ) self->object->pd->maxdist );
 }
 
-static PyObject *Object_setPIMaxDist( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setPIMaxDist( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected float argument" );
 
-	self->object->pd->maxdist = EXPP_ClampFloat( value,
+	self->object->pd->maxdist = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_PIMAXDIST_MIN, EXPP_OBJECT_PIMAXDIST_MAX );
 	self->object->recalc |= OB_RECALC_OB;  
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getPIRandomDamp( BPy_Object * self )
+static PyObject *V24_Object_getPIRandomDamp( V24_BPy_Object * self )
 {
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
     return PyFloat_FromDouble( ( double ) self->object->pd->pdef_rdamp );
 }
 
-static PyObject *Object_setPIRandomDamp( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setPIRandomDamp( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
 	if( !self->object->pd && !setupPI(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
 		return NULL;
 
-	self->object->pd->pdef_rdamp = EXPP_ClampFloat( value,
+	self->object->pd->pdef_rdamp = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_PIRDAMP_MIN, EXPP_OBJECT_PIRDAMP_MAX );
 	self->object->recalc |= OB_RECALC_OB;  
 	Py_RETURN_NONE;
@@ -5631,328 +5631,328 @@ static PyObject *Object_setPIRandomDamp( BPy_Object * self, PyObject * args )
 /* softbody methods                                                      */
 /*************************************************************************/
 
-static PyObject *Object_getSBMass( BPy_Object * self )
+static PyObject *V24_Object_getSBMass( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->nodemass );
 }
 
-static PyObject *Object_setSBMass( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBMass( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->nodemass = EXPP_ClampFloat( value,
+	self->object->soft->nodemass = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBNODEMASSMIN, EXPP_OBJECT_SBNODEMASSMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBGravity( BPy_Object * self )
+static PyObject *V24_Object_getSBGravity( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->grav );
 }
 
-static PyObject *Object_setSBGravity( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBGravity( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->grav = EXPP_ClampFloat( value,
+	self->object->soft->grav = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBGRAVMIN, EXPP_OBJECT_SBGRAVMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBFriction( BPy_Object * self )
+static PyObject *V24_Object_getSBFriction( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->mediafrict );
 }
 
-static PyObject *Object_setSBFriction( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBFriction( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->mediafrict = EXPP_ClampFloat( value,
+	self->object->soft->mediafrict = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBMEDIAFRICTMIN, EXPP_OBJECT_SBMEDIAFRICTMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBErrorLimit( BPy_Object * self )
+static PyObject *V24_Object_getSBErrorLimit( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->rklimit );
 }
 
-static PyObject *Object_setSBErrorLimit( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBErrorLimit( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->rklimit = EXPP_ClampFloat( value,
+	self->object->soft->rklimit = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBRKLIMITMIN, EXPP_OBJECT_SBRKLIMITMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBGoalSpring( BPy_Object * self )
+static PyObject *V24_Object_getSBGoalSpring( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->goalspring );
 }
 
-static PyObject *Object_setSBGoalSpring( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBGoalSpring( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->goalspring = EXPP_ClampFloat( value,
+	self->object->soft->goalspring = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBGOALSPRINGMIN, EXPP_OBJECT_SBGOALSPRINGMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBGoalFriction( BPy_Object * self )
+static PyObject *V24_Object_getSBGoalFriction( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->goalfrict );
 }
 
-static PyObject *Object_setSBGoalFriction( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBGoalFriction( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->goalfrict = EXPP_ClampFloat( value,
+	self->object->soft->goalfrict = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBGOALFRICTMIN, EXPP_OBJECT_SBGOALFRICTMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBMinGoal( BPy_Object * self )
+static PyObject *V24_Object_getSBMinGoal( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->mingoal );
 }
 
-static PyObject *Object_setSBMinGoal( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBMinGoal( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->mingoal = EXPP_ClampFloat( value,
+	self->object->soft->mingoal = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBMINGOALMIN, EXPP_OBJECT_SBMINGOALMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBMaxGoal( BPy_Object * self )
+static PyObject *V24_Object_getSBMaxGoal( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->maxgoal );
 }
 
-static PyObject *Object_setSBMaxGoal( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBMaxGoal( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->maxgoal = EXPP_ClampFloat( value,
+	self->object->soft->maxgoal = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBMAXGOALMIN, EXPP_OBJECT_SBMAXGOALMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBDefaultGoal( BPy_Object * self )
+static PyObject *V24_Object_getSBDefaultGoal( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->defgoal );
 }
 
-static PyObject *Object_setSBDefaultGoal( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBDefaultGoal( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->defgoal = EXPP_ClampFloat( value,
+	self->object->soft->defgoal = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBDEFGOALMIN, EXPP_OBJECT_SBDEFGOALMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBInnerSpring( BPy_Object * self )
+static PyObject *V24_Object_getSBInnerSpring( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->inspring );
 }
 
-static PyObject *Object_setSBInnerSpring( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_setSBInnerSpring( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->inspring = EXPP_ClampFloat( value,
+	self->object->soft->inspring = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBINSPRINGMIN, EXPP_OBJECT_SBINSPRINGMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_getSBInnerSpringFriction( BPy_Object * self )
+static PyObject *V24_Object_getSBInnerSpringFriction( V24_BPy_Object * self )
 {
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
     return PyFloat_FromDouble( ( double ) self->object->soft->infrict );
 }
 
-static PyObject *Object_setSBInnerSpringFriction( BPy_Object * self,
+static PyObject *V24_Object_setSBInnerSpringFriction( V24_BPy_Object * self,
 		PyObject * args )
 {
     float value;
 
     if( !self->object->soft && !setupSB(self->object) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected float argument" );
 
-	self->object->soft->infrict = EXPP_ClampFloat( value,
+	self->object->soft->infrict = V24_EXPP_ClampFloat( value,
 			EXPP_OBJECT_SBINFRICTMIN, EXPP_OBJECT_SBINFRICTMAX );
 	self->object->recalc |= OB_RECALC_OB;  
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Object_SetSBUseGoal( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetSBUseGoal( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)Object_setSBUseGoal );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_Object_setSBUseGoal );
 }
 
-static PyObject *Object_SetSBUseEdges( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetSBUseEdges( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)Object_setSBUseEdges );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_Object_setSBUseEdges );
 }
 
-static PyObject *Object_SetSBStiffQuads( BPy_Object * self, PyObject * args )
+static PyObject *V24_Object_SetSBStiffQuads( V24_BPy_Object * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)Object_setSBStiffQuads );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_Object_setSBStiffQuads );
 }

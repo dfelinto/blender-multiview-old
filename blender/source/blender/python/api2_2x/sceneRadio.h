@@ -37,15 +37,15 @@
 #include "DNA_radio_types.h"
 #include "DNA_scene_types.h"
 
-/* BPy_Radio declaration */
+/* V24_BPy_Radio declaration */
 typedef struct {
 	PyObject_HEAD 
 	struct Radio *radio;
 	struct Scene *scene;
-} BPy_Radio;
+} V24_BPy_Radio;
 
-PyObject *Radio_Init( void );
+PyObject *V24_Radio_Init( void );
 
-PyObject *Radio_CreatePyObject( struct Scene *scene );
+PyObject *V24_Radio_CreatePyObject( struct Scene *scene );
 
 #endif				/* EXPP_SCENERADIO_H */

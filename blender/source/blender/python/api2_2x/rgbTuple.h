@@ -39,18 +39,18 @@
  * objects, so this header file must contain only 'public' declarations */
 
 /*****************************************************************************/
-/* Python BPy_rgbTuple structure definition:                               */
+/* Python V24_BPy_rgbTuple structure definition:                               */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD float *rgb[3];	/* array of three pointers to floats */
 
-} BPy_rgbTuple;
+} V24_BPy_rgbTuple;
 
 /*****************************************************************************/
 /* Python API function prototypes for the rgbTuple helper module.            */
 /*****************************************************************************/
 PyObject *rgbTuple_New( float *rgb[3] );
-PyObject *rgbTuple_getCol( BPy_rgbTuple * self );
-int rgbTuple_setCol( BPy_rgbTuple * self, PyObject * args );
+PyObject *rgbTuple_getCol( V24_BPy_rgbTuple * self );
+int rgbTuple_setCol( V24_BPy_rgbTuple * self, PyObject * args );
 
 #endif				/* EXPP_rgbTuple_H */

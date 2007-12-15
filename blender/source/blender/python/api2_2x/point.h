@@ -49,7 +49,7 @@ typedef struct {
 	int size;
 	int wrapped;			//is wrapped data?
 	PyObject *coerced_object;
-} PointObject;
+} V24_PointObject;
 /*coerced_object is a pointer to the object that it was
 coerced from when a dummy vector needs to be created from
 the coerce() function for numeric protocol operations*/
@@ -60,8 +60,8 @@ be stored in py_data) or be a wrapper for data allocated through
 blender (stored in blend_data). This is an either/or struct not both*/
 
 //prototypes
-PyObject *Point_Zero( PointObject * self );
-PyObject *Point_toVector(PointObject * self);
+PyObject *V24_Point_Zero( V24_PointObject * self );
+PyObject *V24_Point_toVector(V24_PointObject * self);
 PyObject *newPointObject(float *coord, int size, int type);
 
 #endif				/* EXPP_point_h */

@@ -33,7 +33,7 @@ struct ID; /*keep me up here */
 
 #include "Blender.h" /*This must come first */
 
-/* for open, close in Blender_Load */
+/* for open, close in V24_Blender_Load */
 #include <fcntl.h>
 #include "BDR_editobject.h"	/* exit_editmode() */
 #include "BIF_usiblender.h"
@@ -98,33 +98,33 @@ struct ID; /*keep me up here */
 /**********************************************************/
 /* Python API function prototypes for the Blender module.	*/
 /**********************************************************/
-static PyObject *Blender_Set( PyObject * self, PyObject * args );
-static PyObject *Blender_Get( PyObject * self, PyObject * value );
-static PyObject *Blender_Redraw( PyObject * self, PyObject * args );
-static PyObject *Blender_Quit( PyObject * self );
-static PyObject *Blender_Load( PyObject * self, PyObject * args );
-static PyObject *Blender_Save( PyObject * self, PyObject * args );
-static PyObject *Blender_Run( PyObject * self, PyObject * value );
-static PyObject *Blender_ShowHelp( PyObject * self, PyObject * script );
-static PyObject *Blender_UpdateMenus( PyObject * self);
-static PyObject *Blender_PackAll( PyObject * self);
-static PyObject *Blender_UnpackAll( PyObject * self, PyObject * value);
-static PyObject *Blender_CountPackedFiles( PyObject * self );
+static PyObject *V24_Blender_Set( PyObject * self, PyObject * args );
+static PyObject *V24_Blender_Get( PyObject * self, PyObject * value );
+static PyObject *V24_Blender_Redraw( PyObject * self, PyObject * args );
+static PyObject *V24_Blender_Quit( PyObject * self );
+static PyObject *V24_Blender_Load( PyObject * self, PyObject * args );
+static PyObject *V24_Blender_Save( PyObject * self, PyObject * args );
+static PyObject *V24_Blender_Run( PyObject * self, PyObject * value );
+static PyObject *V24_Blender_ShowHelp( PyObject * self, PyObject * script );
+static PyObject *V24_Blender_UpdateMenus( PyObject * self);
+static PyObject *V24_Blender_PackAll( PyObject * self);
+static PyObject *V24_Blender_UnpackAll( PyObject * self, PyObject * value);
+static PyObject *V24_Blender_CountPackedFiles( PyObject * self );
 
-extern PyObject *Text3d_Init( void ); /* missing in some include */
+extern PyObject *V24_Text3d_Init( void ); /* missing in some include */
 
 /*****************************************************************************/
 /* The following string definitions are used for documentation strings.	 */
 /* In Python these will be written to the console when doing a		 */
 /* Blender.__doc__	 */
 /*****************************************************************************/
-static char Blender_Set_doc[] =
+static char V24_Blender_Set_doc[] =
 	"(request, data) - Update settings in Blender\n\
 \n\
 (request) A string identifying the setting to change\n\
 	'curframe'	- Sets the current frame using the number in data";
 
-static char Blender_Get_doc[] = "(request) - Retrieve settings from Blender\n\
+static char V24_Blender_Get_doc[] = "(request) - Retrieve settings from Blender\n\
 \n\
 (request) A string indentifying the data to be returned\n\
 	'curframe'	- Returns the current animation frame\n\
@@ -138,12 +138,12 @@ static char Blender_Get_doc[] = "(request) - Retrieve settings from Blender\n\
 	'uscriptsdir' - Returns the user defined dir for scripts, if available\n\
 	'version'	- Returns the Blender version number";
 
-static char Blender_Redraw_doc[] = "() - Redraw all 3D windows";
+static char V24_Blender_Redraw_doc[] = "() - Redraw all 3D windows";
 
-static char Blender_Quit_doc[] =
+static char V24_Blender_Quit_doc[] =
 	"() - Quit Blender.  The current data is saved as 'quit.blend' before leaving.";
 
-static char Blender_Load_doc[] = "(filename) - Load the given file.\n\
+static char V24_Blender_Load_doc[] = "(filename) - Load the given file.\n\
 Supported formats:\n\
 Blender, DXF, Inventor 1.0 ASCII, VRML 1.0 asc, STL, Videoscape, radiogour.\n\
 \n\
@@ -156,7 +156,7 @@ Notes:\n\
 5 - This function only works if the script where it's executed is the\n\
 only one running at the moment.";
 
-static char Blender_Save_doc[] =
+static char V24_Blender_Save_doc[] =
 	"(filename) - Save data to a file based on the filename's extension.\n\
 Supported are: Blender's .blend and the builtin exporters:\n\
 VRML 1.0 (.wrl), Videoscape (.obj), DXF (.dxf) and STL (.stl)\n\
@@ -166,11 +166,11 @@ Note 2: only .blend raises an error if file wasn't saved.\n\
 \tYou can use Blender.sys.exists(filename) to make sure the file was saved\n\
 \twhen writing to one of the other formats.";
 
-static char Blender_Run_doc[] =
+static char V24_Blender_Run_doc[] =
 	"(script) - Run the given Python script.\n\
 (script) - the path to a file or the name of an available Blender Text.";
 
-static char Blender_ShowHelp_doc[] =
+static char V24_Blender_ShowHelp_doc[] =
 "(script) - Show help for the given Python script.\n\
   This will try to open the 'Scripts Help Browser' script, so to have\n\
 any help displayed the passed 'script' must be properly documented\n\
@@ -179,38 +179,38 @@ for examples).\n\n\
 (script) - the filename of a script in the default or user defined\n\
            scripts dir (no need to supply the full path name)."; 
 
-static char Blender_UpdateMenus_doc[] =
+static char V24_Blender_UpdateMenus_doc[] =
 	"() - Update the menus where scripts are registered.  Only needed for\n\
 scripts that save other new scripts in the default or user defined folders.";
 
-static char Blender_PackAll_doc[] =
+static char V24_Blender_PackAll_doc[] =
 "() - Pack all files.\n\
 All files will packed into the blend file.";
-static char Blender_UnpackAll_doc[] =
+static char V24_Blender_UnpackAll_doc[] =
 "(mode) - Unpack files.\n\
 All files will be unpacked using specified mode.\n\n\
 (mode) - the unpack mode.";
 
-static char Blender_CountPackedFiles_doc[] =
+static char V24_Blender_CountPackedFiles_doc[] =
 "() - Returns the number of packed files.";
 
 /*****************************************************************************/
 /* Python method structure definition.		 */
 /*****************************************************************************/
 static struct PyMethodDef Blender_methods[] = {
-	{"Set", Blender_Set, METH_VARARGS, Blender_Set_doc},
-	{"Get", Blender_Get, METH_O, Blender_Get_doc},
-	{"Redraw", Blender_Redraw, METH_VARARGS, Blender_Redraw_doc},
-	{"Quit", ( PyCFunction ) Blender_Quit, METH_NOARGS, Blender_Quit_doc},
-	{"Load", Blender_Load, METH_VARARGS, Blender_Load_doc},
-	{"Save", Blender_Save, METH_VARARGS, Blender_Save_doc},
-	{"Run", Blender_Run, METH_O, Blender_Run_doc},
-	{"ShowHelp", Blender_ShowHelp, METH_O, Blender_ShowHelp_doc},
-	{"CountPackedFiles", ( PyCFunction ) Blender_CountPackedFiles, METH_NOARGS, Blender_CountPackedFiles_doc},
-	{"PackAll", ( PyCFunction ) Blender_PackAll, METH_NOARGS, Blender_PackAll_doc},
-	{"UnpackAll", Blender_UnpackAll, METH_O, Blender_UnpackAll_doc},
-	{"UpdateMenus", ( PyCFunction ) Blender_UpdateMenus, METH_NOARGS,
-	 Blender_UpdateMenus_doc},
+	{"Set", V24_Blender_Set, METH_VARARGS, V24_Blender_Set_doc},
+	{"Get", V24_Blender_Get, METH_O, V24_Blender_Get_doc},
+	{"Redraw", V24_Blender_Redraw, METH_VARARGS, V24_Blender_Redraw_doc},
+	{"Quit", ( PyCFunction ) V24_Blender_Quit, METH_NOARGS, V24_Blender_Quit_doc},
+	{"Load", V24_Blender_Load, METH_VARARGS, V24_Blender_Load_doc},
+	{"Save", V24_Blender_Save, METH_VARARGS, V24_Blender_Save_doc},
+	{"Run", V24_Blender_Run, METH_O, V24_Blender_Run_doc},
+	{"ShowHelp", V24_Blender_ShowHelp, METH_O, V24_Blender_ShowHelp_doc},
+	{"CountPackedFiles", ( PyCFunction ) V24_Blender_CountPackedFiles, METH_NOARGS, V24_Blender_CountPackedFiles_doc},
+	{"PackAll", ( PyCFunction ) V24_Blender_PackAll, METH_NOARGS, V24_Blender_PackAll_doc},
+	{"UnpackAll", V24_Blender_UnpackAll, METH_O, V24_Blender_UnpackAll_doc},
+	{"UpdateMenus", ( PyCFunction ) V24_Blender_UpdateMenus, METH_NOARGS,
+	 V24_Blender_UpdateMenus_doc},
 	{NULL, NULL, 0, NULL}
 };
 
@@ -220,20 +220,20 @@ static struct PyMethodDef Blender_methods[] = {
 PyObject *g_blenderdict;
 
 /*****************************************************************************/
-/* Function:	Blender_Set		 */
+/* Function:	V24_Blender_Set		 */
 /* Python equivalent:	Blender.Set		 */
 /*****************************************************************************/
-static PyObject *Blender_Set( PyObject * self, PyObject * args )
+static PyObject *V24_Blender_Set( PyObject * self, PyObject * args )
 {
 	char *name, *dir = NULL;
 	PyObject *arg;
 
 	if( !PyArg_ParseTuple( args, "sO", &name, &arg ) )
-		return EXPP_ReturnPyObjError( PyExc_ValueError, "expected 2 args, where the first is always a string" );
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected 2 args, where the first is always a string" );
 
-	if( StringEqual( name, "curframe" ) ) {
+	if( V24_StringEqual( name, "curframe" ) ) {
 		if( !PyInt_Check( arg ) )
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					"expected an integer" );
 
 		G.scene->r.cfra = (short)PyInt_AsLong( arg ) ;
@@ -242,47 +242,47 @@ static PyObject *Blender_Set( PyObject * self, PyObject * args )
 		 in a scene without worrying about the view layers */
 		scene_update_for_newframe(G.scene, (1<<20) - 1);
 		
-	} else if (StringEqual( name , "uscriptsdir" ) ) {
+	} else if (V24_StringEqual( name , "uscriptsdir" ) ) {
 		if ( !PyArg_Parse( arg , "s" , &dir ))
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
 		BLI_strncpy(U.pythondir, dir, FILE_MAXDIR);
-	} else if (StringEqual( name , "yfexportdir" ) ) {
+	} else if (V24_StringEqual( name , "yfexportdir" ) ) {
 		if ( !PyArg_Parse( arg , "s" , &dir ))
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
 		BLI_strncpy(U.yfexportdir, dir, FILE_MAXDIR);		
-	} else if (StringEqual( name , "fontsdir" ) ) {
+	} else if (V24_StringEqual( name , "fontsdir" ) ) {
 		if ( !PyArg_Parse( arg , "s" , &dir ))
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
 		BLI_strncpy(U.fontdir, dir, FILE_MAXDIR);
-	} else if (StringEqual( name , "texturesdir" ) ) {
+	} else if (V24_StringEqual( name , "texturesdir" ) ) {
 		if ( !PyArg_Parse( arg , "s" , &dir ))
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
 		BLI_strncpy(U.textudir, dir, FILE_MAXDIR);
-	} else if (StringEqual( name , "texpluginsdir" ) ) {
+	} else if (V24_StringEqual( name , "texpluginsdir" ) ) {
 		if ( !PyArg_Parse( arg , "s" , &dir ))
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
 		BLI_strncpy(U.plugtexdir, dir, FILE_MAXDIR);
-	} else if (StringEqual( name , "seqpluginsdir" ) ) {
+	} else if (V24_StringEqual( name , "seqpluginsdir" ) ) {
 		if ( !PyArg_Parse( arg , "s" , &dir ))
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
 		BLI_strncpy(U.plugseqdir, dir, FILE_MAXDIR);
-	} else if (StringEqual( name , "renderdir" ) ) {
+	} else if (V24_StringEqual( name , "renderdir" ) ) {
 		if ( !PyArg_Parse( arg , "s" , &dir ))
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
 		BLI_strncpy(U.renderdir, dir, FILE_MAXDIR);
-	} else if (StringEqual( name , "soundsdir" ) ) {
+	} else if (V24_StringEqual( name , "soundsdir" ) ) {
 		if ( !PyArg_Parse( arg , "s" , &dir ))
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
 		BLI_strncpy(U.sounddir, dir, FILE_MAXDIR);
-	} else if (StringEqual( name , "tempdir" ) ) {
+	} else if (V24_StringEqual( name , "tempdir" ) ) {
 		if ( !PyArg_Parse( arg , "s" , &dir ))
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string" );
 		BLI_strncpy(U.tempdir, dir, FILE_MAXDIR);
-	} else if (StringEqual( name , "compressfile" ) ) {
+	} else if (V24_StringEqual( name , "compressfile" ) ) {
 		int value = PyObject_IsTrue( arg );
 		
 		if (value==-1)
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					"expected an integer" );
 		
 		if (value)		
@@ -291,48 +291,48 @@ static PyObject *Blender_Set( PyObject * self, PyObject * args )
 		 U.flag &= ~USER_FILECOMPRESS;
 		
 	}else
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"value given is not a blender setting" ) );
 	Py_RETURN_NONE;
 }
 
 /*****************************************************************************/
-/* Function:		Blender_Get	 */
+/* Function:		V24_Blender_Get	 */
 /* Python equivalent:	Blender.Get		 */
 /*****************************************************************************/
-static PyObject *Blender_Get( PyObject * self, PyObject * value )
+static PyObject *V24_Blender_Get( PyObject * self, PyObject * value )
 {
 	PyObject *ret = NULL;
 	char *str = PyString_AsString(value);
 
 	if( !str )
-		return EXPP_ReturnPyObjError (PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError (PyExc_TypeError,
 			"expected string argument");
 
-	if( StringEqual( str, "curframe" ) )
+	if( V24_StringEqual( str, "curframe" ) )
 		ret = PyInt_FromLong( G.scene->r.cfra );
-	else if( StringEqual( str, "curtime" ) )
+	else if( V24_StringEqual( str, "curtime" ) )
 		ret = PyFloat_FromDouble( frame_to_float( G.scene->r.cfra ) );
-	else if( StringEqual( str, "rt" ) )
+	else if( V24_StringEqual( str, "rt" ) )
 		ret = PyInt_FromLong( (long)frame_to_float( G.rt ) );
-	else if( StringEqual( str, "staframe" ) )
+	else if( V24_StringEqual( str, "staframe" ) )
 		ret = PyInt_FromLong( G.scene->r.sfra );
-	else if( StringEqual( str, "endframe" ) )
+	else if( V24_StringEqual( str, "endframe" ) )
 		ret = PyInt_FromLong( G.scene->r.efra );
-	else if( StringEqual( str, "filename" ) ) {
+	else if( V24_StringEqual( str, "filename" ) ) {
 		if ( strstr(G.main->name, ".B.blend") != 0)
 			ret = PyString_FromString("");
 		else
 			ret = PyString_FromString(G.main->name);
 	}
-	else if( StringEqual( str, "homedir" ) ) {
+	else if( V24_StringEqual( str, "homedir" ) ) {
 		char *hdir = bpy_gethome(0);
 		if( hdir && BLI_exists( hdir ))
 			ret = PyString_FromString( hdir );
 		else
-			ret = EXPP_incr_ret( Py_None );
+			ret = V24_EXPP_incr_ret( Py_None );
 	}
-	else if( StringEqual( str, "datadir" ) ) {
+	else if( V24_StringEqual( str, "datadir" ) ) {
 		char datadir[FILE_MAXDIR];
 		char *sdir = bpy_gethome(1);
 
@@ -341,9 +341,9 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( datadir ) )
 				ret = PyString_FromString( datadir );
 		}
-		if (!ret) ret = EXPP_incr_ret( Py_None );
+		if (!ret) ret = V24_EXPP_incr_ret( Py_None );
 	}
-	else if(StringEqual(str, "udatadir")) {
+	else if(V24_StringEqual(str, "udatadir")) {
 		if (U.pythondir[0] != '\0') {
 			char upydir[FILE_MAXDIR];
 
@@ -359,17 +359,17 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 					ret = PyString_FromString(udatadir);
 			}
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}
-	else if( StringEqual( str, "scriptsdir" ) ) {
+	else if( V24_StringEqual( str, "scriptsdir" ) ) {
 		char *sdir = bpy_gethome(1);
 
 		if (sdir)
 			ret = PyString_FromString(sdir);
 		else
-			ret = EXPP_incr_ret( Py_None );
+			ret = V24_EXPP_incr_ret( Py_None );
 	}
-	else if( StringEqual( str, "uscriptsdir" ) ) {
+	else if( V24_StringEqual( str, "uscriptsdir" ) ) {
 		if (U.pythondir[0] != '\0') {
 			char upydir[FILE_MAXDIR];
 
@@ -379,10 +379,10 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( upydir ) )
 				ret = PyString_FromString( upydir );
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}
 	/* USER PREFS: */
-	else if( StringEqual( str, "yfexportdir" ) ) {
+	else if( V24_StringEqual( str, "yfexportdir" ) ) {
 		if (U.yfexportdir[0] != '\0') {
 			char yfexportdir[FILE_MAXDIR];
 
@@ -392,10 +392,10 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( yfexportdir ) )
 				ret = PyString_FromString( yfexportdir );
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}
 	/* fontsdir */
-	else if( StringEqual( str, "fontsdir" ) ) {
+	else if( V24_StringEqual( str, "fontsdir" ) ) {
 		if (U.fontdir[0] != '\0') {
 			char fontdir[FILE_MAXDIR];
 
@@ -405,10 +405,10 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( fontdir ) )
 				ret = PyString_FromString( fontdir );
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}	
 	/* texturesdir */
-	else if( StringEqual( str, "texturesdir" ) ) {
+	else if( V24_StringEqual( str, "texturesdir" ) ) {
 		if (U.textudir[0] != '\0') {
 			char textudir[FILE_MAXDIR];
 
@@ -418,10 +418,10 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( textudir ) )
 				ret = PyString_FromString( textudir );
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}		
 	/* texpluginsdir */
-	else if( StringEqual( str, "texpluginsdir" ) ) {
+	else if( V24_StringEqual( str, "texpluginsdir" ) ) {
 		if (U.plugtexdir[0] != '\0') {
 			char plugtexdir[FILE_MAXDIR];
 
@@ -431,10 +431,10 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( plugtexdir ) )
 				ret = PyString_FromString( plugtexdir );
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}			
 	/* seqpluginsdir */
-	else if( StringEqual( str, "seqpluginsdir" ) ) {
+	else if( V24_StringEqual( str, "seqpluginsdir" ) ) {
 		if (U.plugseqdir[0] != '\0') {
 			char plugseqdir[FILE_MAXDIR];
 
@@ -444,10 +444,10 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( plugseqdir ) )
 				ret = PyString_FromString( plugseqdir );
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}			
 	/* renderdir */
-	else if( StringEqual( str, "renderdir" ) ) {
+	else if( V24_StringEqual( str, "renderdir" ) ) {
 		if (U.renderdir[0] != '\0') {
 			char renderdir[FILE_MAXDIR];
 
@@ -457,10 +457,10 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( renderdir ) )
 				ret = PyString_FromString( renderdir );
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}		
 	/* soundsdir */
-	else if( StringEqual( str, "soundsdir" ) ) {
+	else if( V24_StringEqual( str, "soundsdir" ) ) {
 		if (U.sounddir[0] != '\0') {
 			char sounddir[FILE_MAXDIR];
 
@@ -470,10 +470,10 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( sounddir ) )
 				ret = PyString_FromString( sounddir );
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}		
 	/* tempdir */
-	else if( StringEqual( str, "tempdir" ) ) {
+	else if( V24_StringEqual( str, "tempdir" ) ) {
 		if (U.tempdir[0] != '\0') {
 			char tempdir[FILE_MAXDIR];
 
@@ -483,10 +483,10 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 			if( BLI_exists( tempdir ) )
 				ret = PyString_FromString( tempdir );
 		}
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}
 	/* icondir */
-	else if( StringEqual( str, "icondir" ) ) {
+	else if( V24_StringEqual( str, "icondir" ) ) {
 		
 		char icondirstr[FILE_MAXDIR];
 
@@ -499,52 +499,52 @@ static PyObject *Blender_Get( PyObject * self, PyObject * value )
 		if( BLI_exists( icondirstr ) )
 			ret = PyString_FromString( icondirstr );
 		
-		if (!ret) ret = EXPP_incr_ret(Py_None);
+		if (!ret) ret = V24_EXPP_incr_ret(Py_None);
 	}
 	/* According to the old file (opy_blender.c), the following if
 	   statement is a quick hack and needs some clean up. */
-	else if( StringEqual( str, "vrmloptions" ) ) {
+	else if( V24_StringEqual( str, "vrmloptions" ) ) {
 		ret = PyDict_New(  );
 
-		EXPP_dict_set_item_str( ret, "twoside",
+		V24_EXPP_dict_set_item_str( ret, "twoside",
 			PyInt_FromLong( U.vrmlflag & USER_VRML_TWOSIDED ) );
 
-		EXPP_dict_set_item_str( ret, "layers",
+		V24_EXPP_dict_set_item_str( ret, "layers",
 			PyInt_FromLong( U.vrmlflag & USER_VRML_LAYERS ) );
 
-		EXPP_dict_set_item_str( ret, "autoscale",
+		V24_EXPP_dict_set_item_str( ret, "autoscale",
 			PyInt_FromLong( U.vrmlflag & USER_VRML_AUTOSCALE ) );
 
 	} /* End 'quick hack' part. */
-	else if(StringEqual( str, "version" ))
+	else if(V24_StringEqual( str, "version" ))
 		ret = PyInt_FromLong( G.version );
 		
-	else if(StringEqual( str, "compressfile" ))
+	else if(V24_StringEqual( str, "compressfile" ))
 		ret = PyInt_FromLong( (U.flag & USER_FILECOMPRESS) >> 15  );
 		
 	else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError, "unknown attribute" );
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, "unknown attribute" );
 
 	if (ret) return ret;
 	else
-		return EXPP_ReturnPyObjError (PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError (PyExc_MemoryError,
 			"could not create pystring!");
 }
 
 /*****************************************************************************/
-/* Function:		Blender_Redraw		 */
+/* Function:		V24_Blender_Redraw		 */
 /* Python equivalent:	Blender.Redraw			 */
 /*****************************************************************************/
-static PyObject *Blender_Redraw( PyObject * self, PyObject * args )
+static PyObject *V24_Blender_Redraw( PyObject * self, PyObject * args )
 {
-	return M_Window_Redraw( self, args );
+	return V24_M_Window_Redraw( self, args );
 }
 
 /*****************************************************************************/
-/* Function:		Blender_Quit		 */
+/* Function:		V24_Blender_Quit		 */
 /* Python equivalent:	Blender.Quit			 */
 /*****************************************************************************/
-static PyObject *Blender_Quit( PyObject * self )
+static PyObject *V24_Blender_Quit( PyObject * self )
 {
 	BIF_write_autosave(  );	/* save the current data first */
 
@@ -558,7 +558,7 @@ static PyObject *Blender_Quit( PyObject * self )
  * loads Blender's .blend, DXF, radiogour(?), STL, Videoscape,
  * Inventor 1.0 ASCII, VRML 1.0 asc.
  */
-static PyObject *Blender_Load( PyObject * self, PyObject * args )
+static PyObject *V24_Blender_Load( PyObject * self, PyObject * args )
 {
 	char *fname = NULL;
 	int keep_oldfname = 0;
@@ -567,15 +567,15 @@ static PyObject *Blender_Load( PyObject * self, PyObject * args )
 	int file, is_blend_file = 0;
 
 	if( !PyArg_ParseTuple( args, "|si", &fname, &keep_oldfname ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected filename and optional int or nothing as arguments" );
 
 	if( fname ) {
 		if( strlen( fname ) > FILE_MAXDIR )	/* G.main->name's max length */
-			return EXPP_ReturnPyObjError( PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						      "filename too long!" );
 		else if( !BLI_exists( fname ) )
-			return EXPP_ReturnPyObjError( PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						      "requested file doesn't exist!" );
 
 		if( keep_oldfname )
@@ -586,14 +586,14 @@ static PyObject *Blender_Load( PyObject * self, PyObject * args )
 	 * scripts running, since loading a new file will close and remove them. */
 
 	if( G.main->script.first != G.main->script.last )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "there are other scripts running at the Scripts win, close them first!" );
 
 	if( fname ) {
 		file = open( fname, O_BINARY | O_RDONLY );
 
 		if( file <= 0 ) {
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						      "cannot open file!" );
 		} else {
 			read( file, str, 31 );
@@ -617,7 +617,7 @@ static PyObject *Blender_Load( PyObject * self, PyObject * args )
 			if( during_slink == 1 )
 				disable_where_scriptlink( -1 );
 			else {
-				return EXPP_ReturnPyObjError
+				return V24_EXPP_ReturnPyObjError
 					( PyExc_EnvironmentError,
 					  "Blender.Load: cannot load .blend files from a nested scriptlink." );
 			}
@@ -639,7 +639,7 @@ static PyObject *Blender_Load( PyObject * self, PyObject * args )
 		if (is_blend_file)
 			BKE_read_file(fname, NULL);
 		else {
-			return EXPP_ReturnPyObjError(PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 				"only .blend files can be loaded from command line,\n\
 	other file types require interactive mode.");
 		}
@@ -666,7 +666,7 @@ static PyObject *Blender_Load( PyObject * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Blender_Save( PyObject * self, PyObject * args )
+static PyObject *V24_Blender_Save( PyObject * self, PyObject * args )
 {
 	char *fname = NULL;
 	int overwrite = 0, len = 0;
@@ -674,12 +674,12 @@ static PyObject *Blender_Save( PyObject * self, PyObject * args )
 	Library *li;
 
 	if( !PyArg_ParseTuple( args, "s|i", &fname, &overwrite ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected filename and optional int (overwrite flag) as arguments" );
 
 	for( li = G.main->library.first; li; li = li->id.next ) {
 		if( BLI_streq( li->name, fname ) ) {
-			return EXPP_ReturnPyObjError( PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						      "cannot overwrite used library" );
 		}
 	}
@@ -687,16 +687,16 @@ static PyObject *Blender_Save( PyObject * self, PyObject * args )
 	/* for safety, any filename with .B.blend is considered the default one
 	 * and not accepted here. */
 	if( strstr( fname, ".B.blend" ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "filename can't contain the substring \".B.blend\" in it." );
 
 	len = strlen( fname );
 
 	if( len > FILE_MAXDIR + FILE_MAXFILE )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "filename is too long!" );
 	else if( BLI_exists( fname ) && !overwrite )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "file already exists and overwrite flag was not given." );
 
 	disable_where_script( 1 );	/* to avoid error popups in the write_* functions */
@@ -712,7 +712,7 @@ static PyObject *Blender_Save( PyObject * self, PyObject * args )
 		
 		if( !BLO_write_file( fname, writeflags, &error ) ) {
 			disable_where_script( 0 );
-			return EXPP_ReturnPyObjError( PyExc_SystemError,
+			return V24_EXPP_ReturnPyObjError( PyExc_SystemError,
 						      error );
 		}
 	} else if( BLI_testextensie( fname, ".dxf" ) )
@@ -725,7 +725,7 @@ static PyObject *Blender_Save( PyObject * self, PyObject * args )
 		write_videoscape( fname );
 	else {
 		disable_where_script( 0 );
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "unknown file extension." );
 	}
 
@@ -734,14 +734,14 @@ static PyObject *Blender_Save( PyObject * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Blender_ShowHelp(PyObject *self, PyObject *script)
+static PyObject *V24_Blender_ShowHelp(PyObject *self, PyObject *script)
 {
 	char hspath[FILE_MAXDIR + FILE_MAXFILE]; /* path to help_browser.py */
 	char *sdir = bpy_gethome(1);
 	PyObject *rkeyd = NULL, *arglist = NULL;
 
 	if (!PyString_Check(script))
-		return EXPP_ReturnPyObjError(PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 			"expected a script filename as argument");
 
 	/* first we try to find the help_browser script */
@@ -756,7 +756,7 @@ static PyObject *Blender_ShowHelp(PyObject *self, PyObject *script)
 			BLI_make_file_string("/", hspath, upydir, "help_browser.py");
 
 			if (!BLI_exists(hspath))
-				return EXPP_ReturnPyObjError(PyExc_RuntimeError,
+				return V24_EXPP_ReturnPyObjError(PyExc_RuntimeError,
 					"can't find script help_browser.py");
 	}
 
@@ -764,23 +764,23 @@ static PyObject *Blender_ShowHelp(PyObject *self, PyObject *script)
 	 * help_browser to show help info for it */
 	rkeyd = PyDict_New();
 	if (!rkeyd)
-		return EXPP_ReturnPyObjError(PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError(PyExc_MemoryError,
 			"can't create py dictionary!");
 
-	/* note: don't use EXPP_dict_set_item_str for 'script', which is an
+	/* note: don't use V24_EXPP_dict_set_item_str for 'script', which is an
 	 * argument to the function we're in and so shouldn't be decref'ed: */
 	PyDict_SetItemString(rkeyd, "script", script);
 
-	EXPP_dict_set_item_str(bpy_registryDict, "__help_browser", rkeyd);
+	V24_EXPP_dict_set_item_str(bpy_registryDict, "__help_browser", rkeyd);
 
 	arglist = Py_BuildValue("(s)", hspath);
-	Blender_Run(self, arglist);
+	V24_Blender_Run(self, arglist);
 	Py_DECREF(arglist);
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Blender_Run(PyObject *self, PyObject *value)
+static PyObject *V24_Blender_Run(PyObject *self, PyObject *value)
 {
 	char *fname = PyString_AsString(value);
 	Text *text = NULL;
@@ -788,7 +788,7 @@ static PyObject *Blender_Run(PyObject *self, PyObject *value)
 	Script *script = NULL;
 
 	if (!fname)
-		return EXPP_ReturnPyObjError(PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 			"expected a filename or a Blender Text name as argument");
 
 	if (!BLI_exists(fname)) {	/* if there's no such filename ... */
@@ -800,7 +800,7 @@ static PyObject *Blender_Run(PyObject *self, PyObject *value)
 		}
 
 		if (!text) {
-			return EXPP_ReturnPyObjError(PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 				"no such file or Blender text");
 		}
 		else is_blender_text = 1;	/* fn is already a Blender Text */
@@ -810,14 +810,14 @@ static PyObject *Blender_Run(PyObject *self, PyObject *value)
 		text = add_text(fname);
 
 		if (!text) {
-			return EXPP_ReturnPyObjError(PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_RuntimeError,
 				"couldn't create Blender Text from given file");
 		}
 	}
 
-	/* (this is messy, check Draw.c's Method_Register and Window.c's file
+	/* (this is messy, check Draw.c's V24_Method_Register and Window.c's file
 	 * selector for more info)
-	 * - caller script is the one that called this Blender_Run function;
+	 * - caller script is the one that called this V24_Blender_Run function;
 	 * - called script is the argument to this function: fname;
 	 * To mark scripts whose global dicts can't be freed right after
 	 * the script execution (or better, 'first pass', since these scripts
@@ -843,66 +843,66 @@ static PyObject *Blender_Run(PyObject *self, PyObject *value)
 	Py_RETURN_NONE;
 }
 
-static PyObject * Blender_UpdateMenus( PyObject * self )
+static PyObject * V24_Blender_UpdateMenus( PyObject * self )
 {
 
 	BPyMenu_RemoveAllEntries();
 
 	if (BPyMenu_Init(1) == -1)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"invalid scripts dir");
 
 	Py_RETURN_NONE;
 }
 
 /*****************************************************************************/
-/* Function:		Blender_PackAll		 */
+/* Function:		V24_Blender_PackAll		 */
 /* Python equivalent:	Blender.PackAll			 */
 /*****************************************************************************/
-static PyObject *Blender_PackAll( PyObject * self)
+static PyObject *V24_Blender_PackAll( PyObject * self)
 {
 	packAll();
 	Py_RETURN_NONE;
 }
 
 /*****************************************************************************/
-/* Function:		Blender_UnpackAll		 */
+/* Function:		V24_Blender_UnpackAll		 */
 /* Python equivalent:	Blender.UnpackAll			 */
 /*****************************************************************************/
-static PyObject *Blender_UnpackAll( PyObject * self, PyObject *value)
+static PyObject *V24_Blender_UnpackAll( PyObject * self, PyObject *value)
 {
 	int mode = PyInt_AsLong(value);
 	
 	if (mode==-1)
-		return EXPP_ReturnPyObjError( PyExc_ValueError, "expected an int Blender.UnpackModes");
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected an int Blender.UnpackModes");
 	unpackAll(mode);
 	Py_RETURN_NONE;
 }
  
 /*****************************************************************************/
-/* Function:		Blender_CountPackedFiles		 */
+/* Function:		V24_Blender_CountPackedFiles		 */
 /* Python equivalent:	Blender.CountPackedFiles			 */
 /*****************************************************************************/
-static PyObject *Blender_CountPackedFiles( PyObject * self )
+static PyObject *V24_Blender_CountPackedFiles( PyObject * self )
 {
 	int nfiles = countPackedFiles();
 	return PyInt_FromLong( nfiles );
 }
-static PyObject *Blender_UnpackModesDict( void )
+static PyObject *V24_Blender_UnpackModesDict( void )
 {
-	PyObject *UnpackModes = PyConstant_New(  );
+	PyObject *UnpackModes = V24_PyConstant_New(  );
 	if( UnpackModes ) {
-		BPy_constant *d = ( BPy_constant * ) UnpackModes;
-		PyConstant_Insert( d, "EQUAL", PyInt_FromLong((long)PF_EQUAL) );
-		PyConstant_Insert( d, "DIFFERS",PyInt_FromLong((long)PF_DIFFERS) );
-		PyConstant_Insert( d, "NOFILE", PyInt_FromLong((long)PF_NOFILE) );
-		PyConstant_Insert( d, "WRITE_ORIGINAL", PyInt_FromLong((long)PF_WRITE_ORIGINAL) );
-		PyConstant_Insert( d, "WRITE_LOCAL", PyInt_FromLong((long)PF_WRITE_LOCAL) );
-		PyConstant_Insert( d, "USE_LOCAL", PyInt_FromLong((long)PF_USE_LOCAL) );
-		PyConstant_Insert( d, "USE_ORIGINAL", PyInt_FromLong((long)PF_USE_ORIGINAL) );
-		PyConstant_Insert( d, "KEEP", PyInt_FromLong((long)PF_KEEP) );
-		PyConstant_Insert( d, "NOOP", PyInt_FromLong((long)PF_NOOP) );
-		PyConstant_Insert( d, "ASK", PyInt_FromLong((long)PF_EQUAL) );
+		V24_BPy_constant *d = ( V24_BPy_constant * ) UnpackModes;
+		V24_PyConstant_Insert( d, "EQUAL", PyInt_FromLong((long)PF_EQUAL) );
+		V24_PyConstant_Insert( d, "DIFFERS",PyInt_FromLong((long)PF_DIFFERS) );
+		V24_PyConstant_Insert( d, "NOFILE", PyInt_FromLong((long)PF_NOFILE) );
+		V24_PyConstant_Insert( d, "WRITE_ORIGINAL", PyInt_FromLong((long)PF_WRITE_ORIGINAL) );
+		V24_PyConstant_Insert( d, "WRITE_LOCAL", PyInt_FromLong((long)PF_WRITE_LOCAL) );
+		V24_PyConstant_Insert( d, "USE_LOCAL", PyInt_FromLong((long)PF_USE_LOCAL) );
+		V24_PyConstant_Insert( d, "USE_ORIGINAL", PyInt_FromLong((long)PF_USE_ORIGINAL) );
+		V24_PyConstant_Insert( d, "KEEP", PyInt_FromLong((long)PF_KEEP) );
+		V24_PyConstant_Insert( d, "NOOP", PyInt_FromLong((long)PF_NOOP) );
+		V24_PyConstant_Insert( d, "ASK", PyInt_FromLong((long)PF_EQUAL) );
 	}
 	return UnpackModes;
 }
@@ -911,7 +911,7 @@ static PyObject *Blender_UnpackModesDict( void )
 /* Function:		initBlender		 */
 /*****************************************************************************/
 
-void M_Blender_Init(void)
+void V24_M_Blender_Init(void)
 {
 	PyObject *module;
 	PyObject *dict, *smode, *SpaceHandlers, *UnpackModes;
@@ -933,16 +933,16 @@ void M_Blender_Init(void)
 	types_InitAll();	/* set all our pytypes to &PyType_Type */
 
 	/* constants for packed files*/
-	UnpackModes = Blender_UnpackModesDict(  );
+	UnpackModes = V24_Blender_UnpackModesDict(  );
 	if( UnpackModes )
 		PyModule_AddObject( module, "UnpackModes", UnpackModes );
  
-	SpaceHandlers = PyConstant_New();
+	SpaceHandlers = V24_PyConstant_New();
 	if (SpaceHandlers) {
-		BPy_constant *d = (BPy_constant *)SpaceHandlers;
+		V24_BPy_constant *d = (V24_BPy_constant *)SpaceHandlers;
 
-		PyConstant_Insert(d,"VIEW3D_EVENT",PyInt_FromLong(SPACEHANDLER_VIEW3D_EVENT));
-		PyConstant_Insert(d,"VIEW3D_DRAW", PyInt_FromLong(SPACEHANDLER_VIEW3D_DRAW));
+		V24_PyConstant_Insert(d,"VIEW3D_EVENT",PyInt_FromLong(SPACEHANDLER_VIEW3D_EVENT));
+		V24_PyConstant_Insert(d,"VIEW3D_DRAW", PyInt_FromLong(SPACEHANDLER_VIEW3D_DRAW));
 
 		PyModule_AddObject(module, "SpaceHandlers", SpaceHandlers);
 	}
@@ -958,47 +958,47 @@ void M_Blender_Init(void)
 	PyModule_AddIntConstant(module, "TRUE", 1);
 	PyModule_AddIntConstant( module, "FALSE", 0 );
 
-	EXPP_dict_set_item_str(dict, "bylink", EXPP_incr_ret_False());
+	V24_EXPP_dict_set_item_str(dict, "bylink", V24_EXPP_incr_ret_False());
 	PyDict_SetItemString(dict, "link", Py_None);
-	EXPP_dict_set_item_str(dict, "event", PyString_FromString(""));
-	EXPP_dict_set_item_str(dict, "mode", smode);
+	V24_EXPP_dict_set_item_str(dict, "event", PyString_FromString(""));
+	V24_EXPP_dict_set_item_str(dict, "mode", smode);
 
-	PyDict_SetItemString(dict, "Armature", Armature_Init());
-	PyDict_SetItemString(dict, "BezTriple", BezTriple_Init());
-	PyDict_SetItemString(dict, "BGL", BGL_Init());
-	PyDict_SetItemString(dict, "CurNurb", CurNurb_Init());
-	PyDict_SetItemString(dict, "Constraint", Constraint_Init());
-	PyDict_SetItemString(dict, "Curve", Curve_Init());
-	PyDict_SetItemString(dict, "Camera", Camera_Init());
-	PyDict_SetItemString(dict, "Draw", Draw_Init());
-	PyDict_SetItemString(dict, "Effect", Effect_Init());
-	PyDict_SetItemString(dict, "Ipo", Ipo_Init());
-	PyDict_SetItemString(dict, "IpoCurve", IpoCurve_Init());
-	PyDict_SetItemString(dict, "Image", Image_Init());
-	PyDict_SetItemString(dict, "Key", Key_Init());
-	PyDict_SetItemString(dict, "Lamp", Lamp_Init());
-	PyDict_SetItemString(dict, "Lattice", Lattice_Init());
+	PyDict_SetItemString(dict, "Armature", V24_Armature_Init());
+	PyDict_SetItemString(dict, "BezTriple", V24_BezTriple_Init());
+	PyDict_SetItemString(dict, "BGL", V24_BGL_Init());
+	PyDict_SetItemString(dict, "CurNurb", V24_CurNurb_Init());
+	PyDict_SetItemString(dict, "Constraint", V24_Constraint_Init());
+	PyDict_SetItemString(dict, "Curve", V24_Curve_Init());
+	PyDict_SetItemString(dict, "Camera", V24_Camera_Init());
+	PyDict_SetItemString(dict, "Draw", V24_Draw_Init());
+	PyDict_SetItemString(dict, "Effect", V24_Effect_Init());
+	PyDict_SetItemString(dict, "Ipo", V24_Ipo_Init());
+	PyDict_SetItemString(dict, "IpoCurve", V24_IpoCurve_Init());
+	PyDict_SetItemString(dict, "Image", V24_Image_Init());
+	PyDict_SetItemString(dict, "Key", V24_Key_Init());
+	PyDict_SetItemString(dict, "Lamp", V24_Lamp_Init());
+	PyDict_SetItemString(dict, "Lattice", V24_Lattice_Init());
 	PyDict_SetItemString(dict, "Library", oldLibrary_Init());
-	PyDict_SetItemString(dict, "Material", Material_Init());
-	PyDict_SetItemString(dict, "Mesh", Mesh_Init()); 
-	PyDict_SetItemString(dict, "Metaball", Metaball_Init());
-	PyDict_SetItemString(dict, "Mathutils", Mathutils_Init());
-	PyDict_SetItemString(dict, "Geometry", Geometry_Init());
-	PyDict_SetItemString(dict, "Modifier", Modifier_Init());
+	PyDict_SetItemString(dict, "Material", V24_Material_Init());
+	PyDict_SetItemString(dict, "Mesh", V24_Mesh_Init()); 
+	PyDict_SetItemString(dict, "Metaball", V24_Metaball_Init());
+	PyDict_SetItemString(dict, "Mathutils", V24_Mathutils_Init());
+	PyDict_SetItemString(dict, "Geometry", V24_Geometry_Init());
+	PyDict_SetItemString(dict, "Modifier", V24_Modifier_Init());
 	PyDict_SetItemString(dict, "NMesh", NMesh_Init());
-	PyDict_SetItemString(dict, "Noise", Noise_Init());
-	PyDict_SetItemString(dict, "Object", Object_Init());
-	PyDict_SetItemString(dict, "Group", Group_Init());
-	PyDict_SetItemString(dict, "Registry", Registry_Init());
-	PyDict_SetItemString(dict, "Scene", Scene_Init());
-	PyDict_SetItemString(dict, "Sound", Sound_Init());
-	PyDict_SetItemString(dict, "SurfNurb", SurfNurb_Init());
+	PyDict_SetItemString(dict, "Noise", V24_Noise_Init());
+	PyDict_SetItemString(dict, "Object", V24_Object_Init());
+	PyDict_SetItemString(dict, "Group", V24_Group_Init());
+	PyDict_SetItemString(dict, "Registry", V24_Registry_Init());
+	PyDict_SetItemString(dict, "Scene", V24_Scene_Init());
+	PyDict_SetItemString(dict, "Sound", V24_Sound_Init());
+	PyDict_SetItemString(dict, "SurfNurb", V24_SurfNurb_Init());
 	PyDict_SetItemString(dict, "sys", sys_Init());
-	PyDict_SetItemString(dict, "Types", Types_Init());
-	PyDict_SetItemString(dict, "Text", Text_Init());
-	PyDict_SetItemString(dict, "Text3d", Text3d_Init());
-	PyDict_SetItemString(dict, "Texture", Texture_Init());
-	PyDict_SetItemString(dict, "Window", Window_Init());
-	PyDict_SetItemString(dict, "World", World_Init());
+	PyDict_SetItemString(dict, "Types", V24_Types_Init());
+	PyDict_SetItemString(dict, "Text", V24_Text_Init());
+	PyDict_SetItemString(dict, "Text3d", V24_Text3d_Init());
+	PyDict_SetItemString(dict, "Texture", V24_Texture_Init());
+	PyDict_SetItemString(dict, "Window", V24_Window_Init());
+	PyDict_SetItemString(dict, "World", V24_World_Init());
 
 }

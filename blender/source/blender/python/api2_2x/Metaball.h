@@ -37,45 +37,45 @@
 #include "DNA_meta_types.h"
 
 
-extern PyTypeObject Metaball_Type;
+extern PyTypeObject V24_Metaball_Type;
 
-#define BPy_Metaball_Check(v) ((v)->ob_type==&Metaball_Type)
+#define BPy_Metaball_Check(v) ((v)->ob_type==&V24_Metaball_Type)
 
 
-/* Python BPy_Metaball structure definition */
+/* Python V24_BPy_Metaball structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	MetaBall * metaball; /* libdata must be second */
-} BPy_Metaball;
+} V24_BPy_Metaball;
 
 
-extern PyTypeObject Metaelem_Type;
+extern PyTypeObject V24_Metaelem_Type;
 
-#define BPy_Metaelem_Check(v) ((v)->ob_type==&Metaelem_Type)
+#define BPy_Metaelem_Check(v) ((v)->ob_type==&V24_Metaelem_Type)
 
-/* Python BPy_Metaelem structure definition */
+/* Python V24_BPy_Metaelem structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	MetaElem * metaelem;
-} BPy_Metaelem;
+} V24_BPy_Metaelem;
 
-extern PyTypeObject MetaElemSeq_Type;
+extern PyTypeObject V24_MetaElemSeq_Type;
 
-#define BPy_MetaElemSeq_Check(v) ((v)->ob_type==&MetaElemSeq_Type)
+#define BPy_MetaElemSeq_Check(v) ((v)->ob_type==&V24_MetaElemSeq_Type)
 
-/* Python BPy_MetaElemSeq structure definition */
+/* Python V24_BPy_MetaElemSeq structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
-	BPy_Metaball *bpymetaball; /* link to the python group so we can know if its been removed */
+	V24_BPy_Metaball *bpymetaball; /* link to the python group so we can know if its been removed */
 	MetaElem * iter; /* so we can iterate over the objects */
-} BPy_MetaElemSeq;
+} V24_BPy_MetaElemSeq;
 
 /*
  * prototypes
  */
 
-PyObject *Metaball_Init( void );
-PyObject *Metaball_CreatePyObject( MetaBall * mball );
-MetaBall *Metaball_FromPyObject( PyObject * py_obj );
+PyObject *V24_Metaball_Init( void );
+PyObject *V24_Metaball_CreatePyObject( MetaBall * mball );
+MetaBall *V24_Metaball_FromPyObject( PyObject * py_obj );
 
 #endif				/* EXPP_METABALL_H */

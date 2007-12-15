@@ -41,27 +41,27 @@
 /* ID functions for all libdata */
 #define	GENERIC_LIB_GETSETATTR \
 	{"name",\
-	 (getter)GenericLib_getName, (setter)GenericLib_setName,\
+	 (getter)V24_GenericLib_getName, (setter)V24_GenericLib_setName,\
 	 "name",\
 	 NULL},\
 	{"lib",\
-	 (getter)GenericLib_getLib, (setter)NULL,\
+	 (getter)V24_GenericLib_getLib, (setter)NULL,\
 	 "external library path",\
 	 NULL},\
 	{"users",\
-	 (getter)GenericLib_getUsers, (setter)NULL,\
+	 (getter)V24_GenericLib_getUsers, (setter)NULL,\
 	 "user count",\
 	 NULL},\
 	{"fakeUser",\
-	 (getter)GenericLib_getFakeUser, (setter)GenericLib_setFakeUser,\
+	 (getter)V24_GenericLib_getFakeUser, (setter)V24_GenericLib_setFakeUser,\
 	 "fake user state",\
 	 NULL},\
 	{"properties",\
-	 (getter)GenericLib_getProperties, (setter)NULL,\
+	 (getter)V24_GenericLib_getProperties, (setter)NULL,\
 	 "properties",\
 	 NULL},\
 	{"tag",\
-	 (getter)GenericLib_getTag, (setter)GenericLib_setTag,\
+	 (getter)V24_GenericLib_getTag, (setter)V24_GenericLib_setTag,\
 	 "temproary tag",\
 	 NULL}
 
@@ -69,26 +69,26 @@
 typedef struct {
 	PyObject_HEAD		/* required python macro */
 	ID *id;
-} BPy_GenericLib;
+} V24_BPy_GenericLib;
 
-int GenericLib_setName( void *self, PyObject *value );
-PyObject *GenericLib_getName( void *self );
-PyObject *GenericLib_getFakeUser( void *self );
-int GenericLib_setFakeUser( void *self, PyObject *value );
-PyObject *GenericLib_getTag( void *self );
-int GenericLib_setTag( void *self, PyObject *value );
-PyObject *GenericLib_getLib( void *self );
-PyObject *GenericLib_getUsers( void *self );
-PyObject *GenericLib_getProperties( void *self );
+int V24_GenericLib_setName( void *self, PyObject *value );
+PyObject *V24_GenericLib_getName( void *self );
+PyObject *V24_GenericLib_getFakeUser( void *self );
+int V24_GenericLib_setFakeUser( void *self, PyObject *value );
+PyObject *V24_GenericLib_getTag( void *self );
+int V24_GenericLib_setTag( void *self, PyObject *value );
+PyObject *V24_GenericLib_getLib( void *self );
+PyObject *V24_GenericLib_getUsers( void *self );
+PyObject *V24_GenericLib_getProperties( void *self );
 
 /* use this for oldstyle somedata.getName("name") */
-PyObject * GenericLib_setName_with_method( void *self, PyObject *value ); 
+PyObject * V24_GenericLib_setName_with_method( void *self, PyObject *value ); 
 
-int GenericLib_assignData(PyObject *value, void **data, void **ndata, short refcount, short type, short subtype);
-short GenericLib_getType(PyObject * pydata);
+int V24_GenericLib_assignData(PyObject *value, void **data, void **ndata, short refcount, short type, short subtype);
+short V24_GenericLib_getType(PyObject * pydata);
 
 /* Other ID functions */
-ID			*GetIdFromList( ListBase * list, char *name );
-PyObject	*GetPyObjectFromID( ID * id );
-long GenericLib_hash(BPy_GenericLib * pydata);
+ID			*V24_GetIdFromList( ListBase * list, char *name );
+PyObject	*V24_GetPyObjectFromID( ID * id );
+long V24_GenericLib_hash(V24_BPy_GenericLib * pydata);
 #endif				/* EXPP_gen_library_h */

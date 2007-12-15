@@ -67,9 +67,9 @@ extern int BLI_exist(char *name);
 /*****************************************************************************/
 /* Python API function prototypes for the Text3D module.                     */
 /*****************************************************************************/
-static PyObject *M_Text3d_New( PyObject * self, PyObject * args );
-static PyObject *M_Text3d_Get( PyObject * self, PyObject * args );
-PyObject *M_Text3d_LoadFont (PyObject * self, PyObject * args );
+static PyObject *V24_M_Text3d_New( PyObject * self, PyObject * args );
+static PyObject *V24_M_Text3d_Get( PyObject * self, PyObject * args );
+PyObject *V24_M_Text3d_LoadFont (PyObject * self, PyObject * args );
 
 /*****************************************************************************
  * Python callback function prototypes for the Text3D module.  
@@ -81,156 +81,156 @@ static PyObject *generate_ModuleIntConstant(char *name, int value);
 /* Python method structure definition for Blender.Text3d module:             */
 /*****************************************************************************/
 struct PyMethodDef M_Text3d_methods[] = {
-	{"New", ( PyCFunction ) M_Text3d_New, METH_VARARGS, NULL},
-	{"Get", ( PyCFunction ) M_Text3d_Get, METH_VARARGS, NULL},
-	{"LoadFont", ( PyCFunction ) M_Text3d_LoadFont, METH_O, NULL},
+	{"New", ( PyCFunction ) V24_M_Text3d_New, METH_VARARGS, NULL},
+	{"Get", ( PyCFunction ) V24_M_Text3d_Get, METH_VARARGS, NULL},
+	{"LoadFont", ( PyCFunction ) V24_M_Text3d_LoadFont, METH_O, NULL},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python Text3d_Type callback function prototypes:                          */
+/* Python V24_Text3d_Type callback function prototypes:                          */
 /*****************************************************************************/
-/* int Text3dPrint (BPy_Text3d *msh, FILE *fp, int flags); */
+/* int Text3dPrint (V24_BPy_Text3d *msh, FILE *fp, int flags); */
 
 
-static PyObject *Text3d_repr( BPy_Text3d * self );
-static int Text3d_compare( BPy_Text3d * a, BPy_Text3d * b );
+static PyObject *V24_Text3d_repr( V24_BPy_Text3d * self );
+static int V24_Text3d_compare( V24_BPy_Text3d * a, V24_BPy_Text3d * b );
 
 /*****************************************************************************/
-/* Python BPy_Text3d methods declarations:                                   */
+/* Python V24_BPy_Text3d methods declarations:                                   */
 /*****************************************************************************/
-/*PyObject *Text3d_getType(BPy_Text3d *self);*/
-static PyObject *Text3d_getName( BPy_Text3d * self );
-static PyObject *Text3d_setName( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_setText( BPy_Text3d * self, PyObject * value );
-static PyObject *Text3d_getText( BPy_Text3d * self );
-static PyObject *Text3d_getDrawMode( BPy_Text3d * self );
-static PyObject *Text3d_setDrawMode( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getUVorco( BPy_Text3d * self );
-static PyObject *Text3d_setUVorco( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getBevelAmount( BPy_Text3d * self );
-static PyObject *Text3d_setBevelAmount( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getDefaultResolution( BPy_Text3d * self );
-static PyObject *Text3d_setDefaultResolution( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getWidth( BPy_Text3d * self );
-static PyObject *Text3d_setWidth( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getExtrudeDepth( BPy_Text3d * self );
-static PyObject *Text3d_setExtrudeDepth( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getExtrudeBevelDepth( BPy_Text3d * self );
-static PyObject *Text3d_setExtrudeBevelDepth( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getShear( BPy_Text3d * self );
-static PyObject *Text3d_setShear( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getSize( BPy_Text3d * self );
-static PyObject *Text3d_setSize( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getLineSeparation( BPy_Text3d * self );
-static PyObject *Text3d_setLineSeparation( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getSpacing( BPy_Text3d * self );
-static PyObject *Text3d_setSpacing( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getXoffset( BPy_Text3d * self );
-static PyObject *Text3d_setXoffset( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getYoffset( BPy_Text3d * self );
-static PyObject *Text3d_setYoffset( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getAlignment( BPy_Text3d * self );
-static PyObject *Text3d_setAlignment( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_getFont( BPy_Text3d * self );
-static PyObject *Text3d_setFont( BPy_Text3d * self, PyObject * args );
-static PyObject *Text3d_addFrame( BPy_Text3d * self );
-static PyObject *Text3d_removeFrame( BPy_Text3d * self, PyObject * args );
+/*PyObject *Text3d_getType(V24_BPy_Text3d *self);*/
+static PyObject *V24_Text3d_getName( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setName( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_setText( V24_BPy_Text3d * self, PyObject * value );
+static PyObject *V24_Text3d_getText( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_getDrawMode( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setDrawMode( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getUVorco( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setUVorco( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getBevelAmount( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setBevelAmount( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getDefaultResolution( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setDefaultResolution( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getWidth( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setWidth( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getExtrudeDepth( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setExtrudeDepth( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getExtrudeBevelDepth( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setExtrudeBevelDepth( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getShear( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setShear( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getSize( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setSize( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getLineSeparation( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setLineSeparation( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getSpacing( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setSpacing( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getXoffset( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setXoffset( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getYoffset( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setYoffset( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getAlignment( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setAlignment( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_getFont( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_setFont( V24_BPy_Text3d * self, PyObject * args );
+static PyObject *V24_Text3d_addFrame( V24_BPy_Text3d * self );
+static PyObject *V24_Text3d_removeFrame( V24_BPy_Text3d * self, PyObject * args );
 
 /*****************************************************************************/
-/* Python BPy_Text3d methods table:                                            */
+/* Python V24_BPy_Text3d methods table:                                            */
 /*****************************************************************************/
-char M_Text3D_doc[] = "The Blender Text3D module\n\n\
+char V24_M_Text3D_doc[] = "The Blender Text3D module\n\n\
 	This module provides control over Text Curve objects in Blender.\n";
 
-static PyMethodDef BPy_Text3d_methods[] = {
-	{"getName", ( PyCFunction ) Text3d_getName,
+static PyMethodDef V24_BPy_Text3d_methods[] = {
+	{"getName", ( PyCFunction ) V24_Text3d_getName,
 	 METH_NOARGS, "() - Return Text3d Data name"},
-	{"setName", ( PyCFunction ) Text3d_setName,
+	{"setName", ( PyCFunction ) V24_Text3d_setName,
 	 METH_VARARGS, "() - Sets Text3d Data name"},
-	{"setText", ( PyCFunction ) Text3d_setText,
+	{"setText", ( PyCFunction ) V24_Text3d_setText,
 	 METH_O, "() - Sets Text3d Data"},
-	{"getText", ( PyCFunction ) Text3d_getText,
+	{"getText", ( PyCFunction ) V24_Text3d_getText,
 	 METH_NOARGS, "() - Gets Text3d Data"},		 
-	{"getDrawMode", ( PyCFunction ) Text3d_getDrawMode,
+	{"getDrawMode", ( PyCFunction ) V24_Text3d_getDrawMode,
 	METH_NOARGS, "() - Return the font drawing mode"},
-	{"setDrawMode", ( PyCFunction ) Text3d_setDrawMode,
+	{"setDrawMode", ( PyCFunction ) V24_Text3d_setDrawMode,
 	METH_VARARGS, "(int) - Set the font drawing mode"},
- 	{"getUVorco", ( PyCFunction ) Text3d_getUVorco,
+ 	{"getUVorco", ( PyCFunction ) V24_Text3d_getUVorco,
 	METH_NOARGS, "() - Return wether UV coords are used for Texture mapping"},
-	{"setUVorco", ( PyCFunction ) Text3d_setUVorco,
+	{"setUVorco", ( PyCFunction ) V24_Text3d_setUVorco,
 	METH_VARARGS, "() - Set the font to use UV coords for Texture mapping"},
-	{"getBevelAmount", ( PyCFunction ) Text3d_getBevelAmount,
+	{"getBevelAmount", ( PyCFunction ) V24_Text3d_getBevelAmount,
 	METH_NOARGS, "() - Return bevel resolution"},
-	{"setBevelAmount", ( PyCFunction ) Text3d_setBevelAmount,
+	{"setBevelAmount", ( PyCFunction ) V24_Text3d_setBevelAmount,
 	METH_VARARGS, "() - Sets bevel resolution"},
-	{"getDefaultResolution", ( PyCFunction ) Text3d_getDefaultResolution,
+	{"getDefaultResolution", ( PyCFunction ) V24_Text3d_getDefaultResolution,
 	METH_NOARGS, "() - Return Default text resolution"},
-	{"setDefaultResolution", ( PyCFunction ) Text3d_setDefaultResolution,
+	{"setDefaultResolution", ( PyCFunction ) V24_Text3d_setDefaultResolution,
 	METH_VARARGS, "() - Sets Default text Resolution"},
-	{"getWidth", ( PyCFunction ) Text3d_getWidth,
+	{"getWidth", ( PyCFunction ) V24_Text3d_getWidth,
 	METH_NOARGS, "() - Return curve width"},
-	{"setWidth", ( PyCFunction ) Text3d_setWidth,
+	{"setWidth", ( PyCFunction ) V24_Text3d_setWidth,
 	METH_VARARGS, "(int) - Sets curve width"},
-	{"getExtrudeDepth", ( PyCFunction ) Text3d_getExtrudeDepth,
+	{"getExtrudeDepth", ( PyCFunction ) V24_Text3d_getExtrudeDepth,
 	METH_NOARGS, "() - Gets Text3d ExtrudeDepth"},
-	{"setExtrudeDepth", ( PyCFunction ) Text3d_setExtrudeDepth,
+	{"setExtrudeDepth", ( PyCFunction ) V24_Text3d_setExtrudeDepth,
 	METH_VARARGS, "() - Sets Text3d ExtrudeDepth"},
-	{"getExtrudeBevelDepth", ( PyCFunction ) Text3d_getExtrudeBevelDepth,
+	{"getExtrudeBevelDepth", ( PyCFunction ) V24_Text3d_getExtrudeBevelDepth,
 	METH_NOARGS, "() - Gets Text3d ExtrudeBevelDepth"},
-	{"setExtrudeBevelDepth", ( PyCFunction ) Text3d_setExtrudeBevelDepth,
+	{"setExtrudeBevelDepth", ( PyCFunction ) V24_Text3d_setExtrudeBevelDepth,
 	METH_VARARGS, "() - Sets Text3d ExtrudeBevelDepth"},
-	{"getShear", ( PyCFunction ) Text3d_getShear,
+	{"getShear", ( PyCFunction ) V24_Text3d_getShear,
 	METH_NOARGS, "() - Gets Text3d Shear Data"},
-	{"setShear", ( PyCFunction ) Text3d_setShear,
+	{"setShear", ( PyCFunction ) V24_Text3d_setShear,
 	METH_VARARGS, "() - Sets Text3d Shear Data"},
- 	{"getSize", ( PyCFunction ) Text3d_getSize,
+ 	{"getSize", ( PyCFunction ) V24_Text3d_getSize,
 	METH_NOARGS, "() - Gets Text3d Size Data"},
-	{"setSize", ( PyCFunction ) Text3d_setSize,
+	{"setSize", ( PyCFunction ) V24_Text3d_setSize,
 	METH_VARARGS, "() - Sets Text3d Size Data"},
- 	{"getLineSeparation", ( PyCFunction ) Text3d_getLineSeparation,
+ 	{"getLineSeparation", ( PyCFunction ) V24_Text3d_getLineSeparation,
 	METH_NOARGS, "() - Gets Text3d LineSeparation Data"},
-	{"setLineSeparation", ( PyCFunction ) Text3d_setLineSeparation,
+	{"setLineSeparation", ( PyCFunction ) V24_Text3d_setLineSeparation,
 	METH_VARARGS, "() - Sets Text3d LineSeparation Data"},
- 	{"getSpacing", ( PyCFunction ) Text3d_getSpacing,
+ 	{"getSpacing", ( PyCFunction ) V24_Text3d_getSpacing,
 	METH_NOARGS, "() - Gets Text3d letter spacing"},
-	{"setSpacing", ( PyCFunction ) Text3d_setSpacing,
+	{"setSpacing", ( PyCFunction ) V24_Text3d_setSpacing,
 	METH_VARARGS, "() - Sets Text3d letter spacing"},
- 	{"getXoffset", ( PyCFunction ) Text3d_getXoffset,
+ 	{"getXoffset", ( PyCFunction ) V24_Text3d_getXoffset,
 	METH_NOARGS, "() - Gets Text3d Xoffset Data"},
-	{"setXoffset", ( PyCFunction ) Text3d_setXoffset,
+	{"setXoffset", ( PyCFunction ) V24_Text3d_setXoffset,
 	METH_VARARGS, "() - Sets Text3d Xoffset Data"},
- 	{"getYoffset", ( PyCFunction ) Text3d_getYoffset,
+ 	{"getYoffset", ( PyCFunction ) V24_Text3d_getYoffset,
 	METH_NOARGS, "() - Gets Text3d Yoffset Data"},
-	{"setYoffset", ( PyCFunction ) Text3d_setYoffset,
+	{"setYoffset", ( PyCFunction ) V24_Text3d_setYoffset,
 	METH_VARARGS, "() - Sets Text3d Yoffset Data"},
- 	{"getAlignment", ( PyCFunction ) Text3d_getAlignment,
+ 	{"getAlignment", ( PyCFunction ) V24_Text3d_getAlignment,
 	METH_NOARGS, "() - Gets Text3d Alignment Data"},
-	{"setAlignment", ( PyCFunction ) Text3d_setAlignment,
+	{"setAlignment", ( PyCFunction ) V24_Text3d_setAlignment,
 	METH_VARARGS, "() - Sets Text3d Alignment Data"},
- 	{"getFont", ( PyCFunction ) Text3d_getFont,
+ 	{"getFont", ( PyCFunction ) V24_Text3d_getFont,
 	METH_NOARGS, "() - Gets font list for Text3d"},
- 	{"setFont", ( PyCFunction ) Text3d_setFont,
+ 	{"setFont", ( PyCFunction ) V24_Text3d_setFont,
  	METH_VARARGS, "() - Sets font for Text3d"},
- 	{"addFrame", ( PyCFunction ) Text3d_addFrame,
+ 	{"addFrame", ( PyCFunction ) V24_Text3d_addFrame,
  	METH_NOARGS, "() - adds a new text frame"},
- 	{"removeFrame", ( PyCFunction ) Text3d_removeFrame,
+ 	{"removeFrame", ( PyCFunction ) V24_Text3d_removeFrame,
  	METH_VARARGS, "(index) - remove this frame"},
 	{NULL, NULL, 0, NULL}
 };
 
 
-static PyObject *Text3d_getTotalFrames( BPy_Text3d * self )
+static PyObject *V24_Text3d_getTotalFrames( V24_BPy_Text3d * self )
 {
 	return PyInt_FromLong( (long)(self->curve->totbox ) );
 }
 
-static PyObject *Text3d_getActiveFrame( BPy_Text3d * self )
+static PyObject *V24_Text3d_getActiveFrame( V24_BPy_Text3d * self )
 {
 	return PyInt_FromLong( (long)(self->curve->actbox-1) );
 }
 
-static int Text3d_setActiveFrame( BPy_Text3d * self, PyObject * value )
+static int V24_Text3d_setActiveFrame( V24_BPy_Text3d * self, PyObject * value )
 {
 	struct Curve *curve= self->curve;	
 	PyObject* frame_int = PyNumber_Int( value );
@@ -238,13 +238,13 @@ static int Text3d_setActiveFrame( BPy_Text3d * self, PyObject * value )
 	
 
 	if( !frame_int )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected integer argument" );
 	
 	index = ( int )PyInt_AS_LONG( frame_int );
 	index ++;
 	if (index < 1 || index > curve->totbox)
-		return EXPP_ReturnIntError( PyExc_IndexError,
+		return V24_EXPP_ReturnIntError( PyExc_IndexError,
 				"index out of range" );
 	
 	curve->actbox = index;
@@ -253,7 +253,7 @@ static int Text3d_setActiveFrame( BPy_Text3d * self, PyObject * value )
 }
 
 
-static PyObject *getFloatAttr( BPy_Text3d *self, void *type )
+static PyObject *getFloatAttr( V24_BPy_Text3d *self, void *type )
 {
 	float param;
 	struct Curve *curve= self->curve;
@@ -273,13 +273,13 @@ static PyObject *getFloatAttr( BPy_Text3d *self, void *type )
 		break;
 	
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError, 
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, 
 				"undefined type in getFloatAttr" );
 	}
 	return PyFloat_FromDouble( param );
 }
 
-static int setFloatAttrClamp( BPy_Text3d *self, PyObject *value, void *type )
+static int setFloatAttrClamp( V24_BPy_Text3d *self, PyObject *value, void *type )
 {
 	float *param;
 	struct Curve *curve= self->curve;
@@ -308,24 +308,24 @@ static int setFloatAttrClamp( BPy_Text3d *self, PyObject *value, void *type )
 		break;
 	
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setFloatAttrClamp" );
 	}
 
-	return EXPP_setFloatClamped( value, param, min, max );
+	return V24_EXPP_setFloatClamped( value, param, min, max );
 }
 
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_Text3d_getseters[] = {
+static PyGetSetDef V24_BPy_Text3d_getseters[] = {
 	GENERIC_LIB_GETSETATTR, /* didnt have any attributes, at least lets have the standard ID attrs */
 	{"activeFrame",
-	 (getter)Text3d_getActiveFrame, (setter)Text3d_setActiveFrame,
+	 (getter)V24_Text3d_getActiveFrame, (setter)V24_Text3d_setActiveFrame,
 	 "the index of the active text frame",
 	 NULL},
 	{"totalFrames",
-	 (getter)Text3d_getTotalFrames, (setter)NULL,
+	 (getter)V24_Text3d_getTotalFrames, (setter)NULL,
 	 "the total number of text frames",
 	 NULL},
 
@@ -349,21 +349,21 @@ static PyGetSetDef BPy_Text3d_getseters[] = {
 };
 
 /*****************************************************************************/
-/* Python Text3d_Type structure definition:                                  */
+/* Python V24_Text3d_Type structure definition:                                  */
 /*****************************************************************************/
-PyTypeObject Text3d_Type = {
+PyTypeObject V24_Text3d_Type = {
 	PyObject_HEAD_INIT( NULL )
 	0,		/* ob_size */
 	"Text3d",		/* tp_name */
-	sizeof( BPy_Text3d ),	/* tp_basicsize */
+	sizeof( V24_BPy_Text3d ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
 	NULL,			/* tp_dealloc */
 	NULL,			/* tp_print */
 	NULL,			/* tp_getattr */
 	NULL,			/* tp_setattr */
-	( cmpfunc ) Text3d_compare,			/* tp_compare */
-	( reprfunc ) Text3d_repr,	/* tp_repr */
+	( cmpfunc ) V24_Text3d_compare,			/* tp_compare */
+	( reprfunc ) V24_Text3d_repr,	/* tp_repr */
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
@@ -372,7 +372,7 @@ PyTypeObject Text3d_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -405,9 +405,9 @@ PyTypeObject Text3d_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Text3d_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Text3d_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Text3d_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Text3d_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -431,28 +431,28 @@ PyTypeObject Text3d_Type = {
 
 
 /* 
- *   Text3d_update( )
+ *   V24_Text3d_update( )
  *   method to update display list for a Curve.
  */
-static PyObject *Text3d_update( BPy_Text3d * self )
+static PyObject *V24_Text3d_update( V24_BPy_Text3d * self )
 {
 	freedisplist( &self->curve->disp );
 	Py_RETURN_NONE;
 }
 
 /*****************************************************************************/
-/* Function:              M_Text3d_New                                       */
+/* Function:              V24_M_Text3d_New                                       */
 /* Python equivalent:     Blender.Text3d.New                                 */
 /*****************************************************************************/
 
-PyObject *M_Text3d_New( PyObject * self, PyObject * args )
+PyObject *V24_M_Text3d_New( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
-	BPy_Text3d *pytext3d;	/* for Curve Data object wrapper in Python */
+	V24_BPy_Text3d *pytext3d;	/* for Curve Data object wrapper in Python */
 	Text3d *bltext3d = 0;	/* for actual Curve Data we create in Blender */
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_AttributeError,
 			   "expected string argument or no argument" ) );
 
@@ -469,17 +469,17 @@ PyObject *M_Text3d_New( PyObject * self, PyObject * args )
 	bltext3d->tb[0].w = bltext3d->tb[0].h = 0.0;
 	
 	if( bltext3d == NULL )	/* bail out if add_curve() failed */
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_RuntimeError,
 			   "couldn't create Curve Data in Blender" ) );
 
 	/* return user count to zero because add_curve() inc'd it */
 	bltext3d->id.us = 0;
 	/* create python wrapper obj */
-	pytext3d = ( BPy_Text3d * ) PyObject_NEW( BPy_Text3d, &Text3d_Type );
+	pytext3d = ( V24_BPy_Text3d * ) PyObject_NEW( V24_BPy_Text3d, &V24_Text3d_Type );
 
 	if( pytext3d == NULL )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_MemoryError,
 			   "couldn't create Curve Data object" ) );
 
@@ -487,18 +487,18 @@ PyObject *M_Text3d_New( PyObject * self, PyObject * args )
 	if( name )
 		rename_id( &bltext3d->id, name );
 	
-	Text3d_update ( pytext3d );
+	V24_Text3d_update ( pytext3d );
 	return ( PyObject * ) pytext3d;
 }
 
-PyObject *M_Text3d_Get( PyObject * self, PyObject * args )
+PyObject *V24_M_Text3d_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	Text3d *curv_iter;
-	BPy_Text3d *wanted_curv;
+	V24_BPy_Text3d *wanted_curv;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )	/* expects nothing or a string */
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected string argument" ) );
 	if( name ) {		/*a name has been given */
 		/* Use the name to search for the curve requested */
@@ -508,8 +508,8 @@ PyObject *M_Text3d_Get( PyObject * self, PyObject * args )
 		while( ( curv_iter ) && ( wanted_curv == NULL ) ) {
 
 			if( strcmp( name, curv_iter->id.name + 2 ) == 0 ) {
-				wanted_curv = ( BPy_Text3d * )
-					PyObject_NEW( BPy_Text3d, &Text3d_Type );
+				wanted_curv = ( V24_BPy_Text3d * )
+					PyObject_NEW( V24_BPy_Text3d, &V24_Text3d_Type );
 				if( wanted_curv )
 					wanted_curv->curve = curv_iter;
 			}
@@ -521,7 +521,7 @@ PyObject *M_Text3d_Get( PyObject * self, PyObject * args )
 			char error_msg[64];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Curve \"%s\" not found", name );
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_NameError, error_msg ) );
 		}
 
@@ -535,13 +535,13 @@ PyObject *M_Text3d_Get( PyObject * self, PyObject * args )
 		curvlist = PyList_New( 0 );
 
 		if( curvlist == NULL )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 							"couldn't create PyList" ) );
 
 		while( curv_iter && curv_iter->vfont ) {
-			BPy_Text3d *found_text3d =
-				( BPy_Text3d * ) PyObject_NEW( BPy_Text3d,
-							      &Text3d_Type );
+			V24_BPy_Text3d *found_text3d =
+				( V24_BPy_Text3d * ) PyObject_NEW( V24_BPy_Text3d,
+							      &V24_Text3d_Type );
 			found_text3d->curve = curv_iter;
 			PyList_Append( curvlist, ( PyObject * ) found_text3d );
 			Py_DECREF(found_text3d);
@@ -553,28 +553,28 @@ PyObject *M_Text3d_Get( PyObject * self, PyObject * args )
 
 static PyObject *generate_ModuleIntConstant(char *name, int value)
 {
-	PyObject *constant = PyConstant_New();
+	PyObject *constant = V24_PyConstant_New();
 
-	PyConstant_Insert((BPy_constant*)constant, 
+	V24_PyConstant_Insert((V24_BPy_constant*)constant, 
 		"value", PyInt_FromLong(value));
-	PyConstant_Insert((BPy_constant*)constant, 
+	V24_PyConstant_Insert((V24_BPy_constant*)constant, 
 		"name", PyString_FromString(name));
 
 	Py_INCREF(constant);
 	return constant;
 }
 
-PyObject *Text3d_Init( void )
+PyObject *V24_Text3d_Init( void )
 {
 	//module
 	PyObject *submodule, *dict;
 
 	//add module...
-	if( PyType_Ready( &Text3d_Type ) < 0 )
+	if( PyType_Ready( &V24_Text3d_Type ) < 0 )
 		return NULL;
 	
 	submodule = Py_InitModule3( "Blender.Text3d", M_Text3d_methods, 
-		M_Text3D_doc);
+		V24_M_Text3D_doc);
 
 	//add constants to module...
 	PyModule_AddObject( submodule, "LEFT", 
@@ -596,18 +596,18 @@ PyObject *Text3d_Init( void )
 	PyModule_AddObject( submodule, "UVORCO",
 		generate_ModuleIntConstant("Text3d.UVORCO", CU_UV_ORCO));
 	dict = PyModule_GetDict( submodule );
-	PyDict_SetItemString( dict, "Font", Font_Init(  ) );
+	PyDict_SetItemString( dict, "Font", V24_Font_Init(  ) );
 	return ( submodule );
 }
 
 /****************************************************************************
- * Function:    Text3d_repr                                                   
- * Description: Callback function for the BPy_Text3d type to It      
+ * Function:    V24_Text3d_repr                                                   
+ * Description: Callback function for the V24_BPy_Text3d type to It      
  *               build a meaninful string to represent Text3d objects.      
  *
  ***************************************************************************/
 
-static PyObject *Text3d_repr( BPy_Text3d * self )
+static PyObject *V24_Text3d_repr( V24_BPy_Text3d * self )
 {
 	/* skip over CU in idname.  CUTEXT */
 	return PyString_FromFormat( "[Text3d \"%s\"]",
@@ -615,22 +615,22 @@ static PyObject *Text3d_repr( BPy_Text3d * self )
 }
 
 /****************************************************************************
- * Function:    Text3d_compare                                                   
- * Description: Callback function for the BPy_Text3d type to Compare 2 types
+ * Function:    V24_Text3d_compare                                                   
+ * Description: Callback function for the V24_BPy_Text3d type to Compare 2 types
  *
  ***************************************************************************/
 
 /* mat_a==mat_b or mat_a!=mat_b*/
-static int Text3d_compare( BPy_Text3d * a, BPy_Text3d * b )
+static int V24_Text3d_compare( V24_BPy_Text3d * a, V24_BPy_Text3d * b )
 {
 	return ( a->curve == b->curve) ? 0 : -1;
 }
 
 struct Text3d *Text3d_FromPyObject( PyObject * py_obj )
 {
-	BPy_Text3d *blen_obj;
+	V24_BPy_Text3d *blen_obj;
 
-	blen_obj = ( BPy_Text3d * ) py_obj;
+	blen_obj = ( V24_BPy_Text3d * ) py_obj;
 	return ((struct Text3d*) blen_obj->curve );
 }
 
@@ -640,36 +640,36 @@ static PyObject *return_ModuleConstant( char *constant_name){
 
 	module = PyImport_AddModule("Blender.Text3d");
 	if(!module){	//null = error returning module
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"error encountered with returning module constant..." ) );
 	}
 	dict = PyModule_GetDict(module); //never fails
 
 	constant = PyDict_GetItemString(dict, constant_name);
 	if(!constant){	//null = key not found
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"error encountered with returning module constant..." ) );
 	}
 	
-	return EXPP_incr_ret( constant );
+	return V24_EXPP_incr_ret( constant );
 }
 
-static PyObject *Text3d_getName( BPy_Text3d * self )
+static PyObject *V24_Text3d_getName( V24_BPy_Text3d * self )
 {
-	return Curve_getName( (BPy_Curve*)self );
+	return V24_Curve_getName( (V24_BPy_Curve*)self );
 }
 
-static PyObject *Text3d_setName( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setName( V24_BPy_Text3d * self, PyObject * args )
 {
-	return Curve_setName( (BPy_Curve*)self,args );
+	return V24_Curve_setName( (V24_BPy_Curve*)self,args );
 }
 
-static PyObject *Text3d_setText( BPy_Text3d * self, PyObject * value )
+static PyObject *V24_Text3d_setText( V24_BPy_Text3d * self, PyObject * value )
 {
 	char *text = PyString_AsString(value);
 
 	if( !text )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"expected string argument" );
 
 	/*
@@ -701,7 +701,7 @@ static PyObject *Text3d_setText( BPy_Text3d * self, PyObject * value )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Text3d_getText( BPy_Text3d * self )
+static PyObject *V24_Text3d_getText( V24_BPy_Text3d * self )
 {
 	if( self->curve->str )
 		return PyString_FromString( self->curve->str );
@@ -709,7 +709,7 @@ static PyObject *Text3d_getText( BPy_Text3d * self )
 	Py_RETURN_NONE;
 }
 
-static PyObject* Text3d_getDrawMode(BPy_Text3d* self)
+static PyObject* V24_Text3d_getDrawMode(V24_BPy_Text3d* self)
 {
 	PyObject *tuple = NULL;
 	int size = 0, pos = 0;
@@ -742,7 +742,7 @@ static PyObject* Text3d_getDrawMode(BPy_Text3d* self)
 	return tuple;
 }
 
-static PyObject* Text3d_setDrawMode(BPy_Text3d* self,PyObject* args)
+static PyObject* V24_Text3d_setDrawMode(V24_BPy_Text3d* self,PyObject* args)
 {
 	PyObject *listObject = NULL;
 	int size, i;
@@ -763,7 +763,7 @@ static PyObject* Text3d_setDrawMode(BPy_Text3d* self,PyObject* args)
 	}
 	if ( size > 3 || size < 1 ) {
 		//bad number of arguments
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"too many parameters - expects 1 - 3 constants" ) );
 	}
 	//clear bits
@@ -784,18 +784,18 @@ static PyObject* Text3d_setDrawMode(BPy_Text3d* self,PyObject* args)
 		if (v == NULL) { //unable to return item - null = failure
 			Py_DECREF(listObject);
 			self->curve->flag = temp;
-			return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"unable to parse list" ) );	
 		}
 		if( !BPy_Constant_Check(v)){
 			Py_DECREF(listObject);
 			Py_DECREF(v);
 			self->curve->flag = temp;
-			return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"bad argument types - expects module constants" ) );
 		}
 		value = PyInt_AS_LONG(PyDict_GetItemString(
-			((BPy_constant*)v)->dict, "value"));
+			((V24_BPy_constant*)v)->dict, "value"));
 		self->curve->flag |= (short)value;
 		Py_DECREF(v);
 	}
@@ -803,24 +803,24 @@ static PyObject* Text3d_setDrawMode(BPy_Text3d* self,PyObject* args)
 	Py_RETURN_NONE;
 }
 
-static PyObject* Text3d_getUVorco(BPy_Text3d* self)
+static PyObject* V24_Text3d_getUVorco(V24_BPy_Text3d* self)
 {
 	if(self->curve->flag & CU_UV_ORCO)
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	else
-		return EXPP_incr_ret_False();
+		return V24_EXPP_incr_ret_False();
 }
 
-static PyObject* Text3d_setUVorco(BPy_Text3d* self,PyObject* args)
+static PyObject* V24_Text3d_setUVorco(V24_BPy_Text3d* self,PyObject* args)
 {
 	int flag;
 
 	if( !PyArg_ParseTuple( args, "i", &flag ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			   "expected TRUE or FALSE (1 or 0)" );
 
 	if( flag < 0 || flag > 1 )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			   "expected TRUE or FALSE (1 or 0)" );
 
 	if( flag )
@@ -831,218 +831,218 @@ static PyObject* Text3d_setUVorco(BPy_Text3d* self,PyObject* args)
 	Py_RETURN_NONE;
 }
 
-static PyObject* Text3d_getBevelAmount(BPy_Text3d* self)
+static PyObject* V24_Text3d_getBevelAmount(V24_BPy_Text3d* self)
 {
-	return Curve_getBevresol((BPy_Curve*)self);
+	return V24_Curve_getBevresol((V24_BPy_Curve*)self);
 }
 
-static PyObject* Text3d_setBevelAmount(BPy_Text3d* self,PyObject* args)
+static PyObject* V24_Text3d_setBevelAmount(V24_BPy_Text3d* self,PyObject* args)
 {
-	return Curve_setBevresol((BPy_Curve*)self,args);
+	return V24_Curve_setBevresol((V24_BPy_Curve*)self,args);
 }
 
-static PyObject *Text3d_getDefaultResolution( BPy_Text3d * self )
+static PyObject *V24_Text3d_getDefaultResolution( V24_BPy_Text3d * self )
 {
-	return Curve_getResolu( (BPy_Curve*)self );
+	return V24_Curve_getResolu( (V24_BPy_Curve*)self );
 }
 
-static PyObject *Text3d_setDefaultResolution( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setDefaultResolution( V24_BPy_Text3d * self, PyObject * args )
 {
-	return Curve_setResolu( (BPy_Curve*)self,args );
+	return V24_Curve_setResolu( (V24_BPy_Curve*)self,args );
 }
 
-static PyObject *Text3d_getWidth( BPy_Text3d * self )
+static PyObject *V24_Text3d_getWidth( V24_BPy_Text3d * self )
 {
-	return Curve_getWidth( (BPy_Curve*)self );
+	return V24_Curve_getWidth( (V24_BPy_Curve*)self );
 }
 
-static PyObject *Text3d_setWidth( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setWidth( V24_BPy_Text3d * self, PyObject * args )
 {
-	return Curve_setWidth( (BPy_Curve*)self,args );
+	return V24_Curve_setWidth( (V24_BPy_Curve*)self,args );
 }
 
-static PyObject *Text3d_getExtrudeDepth( BPy_Text3d * self )
+static PyObject *V24_Text3d_getExtrudeDepth( V24_BPy_Text3d * self )
 {
-	return Curve_getExt1( (BPy_Curve*)self );
+	return V24_Curve_getExt1( (V24_BPy_Curve*)self );
 }
 
-static PyObject *Text3d_setExtrudeDepth( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setExtrudeDepth( V24_BPy_Text3d * self, PyObject * args )
 {
-	return Curve_setExt1( (BPy_Curve*)self,args );
+	return V24_Curve_setExt1( (V24_BPy_Curve*)self,args );
 }
 
-static PyObject *Text3d_getExtrudeBevelDepth( BPy_Text3d * self )
+static PyObject *V24_Text3d_getExtrudeBevelDepth( V24_BPy_Text3d * self )
 {
-	return Curve_getExt2( (BPy_Curve*)self );
+	return V24_Curve_getExt2( (V24_BPy_Curve*)self );
 }
 
-static PyObject *Text3d_setExtrudeBevelDepth( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setExtrudeBevelDepth( V24_BPy_Text3d * self, PyObject * args )
 {
-	return Curve_setExt2( (BPy_Curve*)self,args );
+	return V24_Curve_setExt2( (V24_BPy_Curve*)self,args );
 }
 
-static PyObject *Text3d_getShear( BPy_Text3d * self )
+static PyObject *V24_Text3d_getShear( V24_BPy_Text3d * self )
 {
 	PyObject *attr = PyFloat_FromDouble( (double) self->curve->shear );
 
 	if( attr )
 		return attr;
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 		"couldn't get Curve.shear attribute" ) );
 }
 
-static PyObject *Text3d_setShear( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setShear( V24_BPy_Text3d * self, PyObject * args )
 {
 	float value;
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected float argument" ) );
 
 	if(value > 1.0f || value < -1.0f)
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"acceptable values are between 1.0 and -1.0" ) );
 	self->curve->shear = value;
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Text3d_getSize( BPy_Text3d * self )
+static PyObject *V24_Text3d_getSize( V24_BPy_Text3d * self )
 {
 	PyObject *attr = PyFloat_FromDouble( (double) self->curve->fsize );
 
 	if( attr )
 		return attr;
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 		"couldn't get Curve.fsize attribute" ) );
 }
 
-static PyObject *Text3d_setSize( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setSize( V24_BPy_Text3d * self, PyObject * args )
 {
 	float value;
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected float argument" ) );
 
 	if(value > 10.0f || value < 0.1f)
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"acceptable values are between 10.0 and 0.1" ) );
 	self->curve->fsize = value;
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Text3d_getLineSeparation( BPy_Text3d * self )
+static PyObject *V24_Text3d_getLineSeparation( V24_BPy_Text3d * self )
 {
 	PyObject *attr = PyFloat_FromDouble( (double) self->curve->linedist );
 
 	if( attr )
 		return attr;
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 		"couldn't get Curve.linedist attribute" ) );
 }
 
-static PyObject *Text3d_setLineSeparation( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setLineSeparation( V24_BPy_Text3d * self, PyObject * args )
 {
 	float value;
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected float argument" ) );
 
 	if(value > 10.0f || value < 0.0f)
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"acceptable values are between 10.0 and 0.0" ) );
 	self->curve->linedist = value;
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Text3d_getSpacing( BPy_Text3d * self )
+static PyObject *V24_Text3d_getSpacing( V24_BPy_Text3d * self )
 {
 	PyObject *attr = PyFloat_FromDouble( (double) self->curve->spacing );
 
 	if( attr )
 		return attr;
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 		"couldn't get Curve.spacing attribute" ) );
 }
 
-static PyObject *Text3d_setSpacing( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setSpacing( V24_BPy_Text3d * self, PyObject * args )
 {
 	float value;
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected float argument" ) );
 
 	if(value > 10.0f || value < 0.0f)
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"acceptable values are between 10.0 and 0.0" ) );
 	self->curve->spacing = value;
 
 	Py_RETURN_NONE;
 }
-static PyObject *Text3d_getXoffset( BPy_Text3d * self )
+static PyObject *V24_Text3d_getXoffset( V24_BPy_Text3d * self )
 {
 	PyObject *attr = PyFloat_FromDouble( (double) self->curve->xof );
 
 	if( attr )
 		return attr;
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 		"couldn't get Curve.xof attribute" ) );
 }
 
-static PyObject *Text3d_setXoffset( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setXoffset( V24_BPy_Text3d * self, PyObject * args )
 {
 	float value;
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 		"expected float argument" ) );
 
 	if(value > 50.0f || value < -50.0f)
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"acceptable values are between 50.0 and -50.0" ) );
 	self->curve->xof = value;
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Text3d_getYoffset( BPy_Text3d * self )
+static PyObject *V24_Text3d_getYoffset( V24_BPy_Text3d * self )
 {
 	PyObject *attr = PyFloat_FromDouble( (double) self->curve->yof );
 
 	if( attr )
 		return attr;
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 		"couldn't get Curve.yof attribute" ) );
 }
 
-static PyObject *Text3d_setYoffset( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setYoffset( V24_BPy_Text3d * self, PyObject * args )
 {
 	float value;
 
 	if( !PyArg_ParseTuple( args, "f", &value ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 		"expected float argument" ) );
 
 	if(value > 50.0f || value < -50.0f)
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"acceptable values are between 50.0 and -50.0" ) );
 	self->curve->yof = value;
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Text3d_getAlignment( BPy_Text3d * self )
+static PyObject *V24_Text3d_getAlignment( V24_BPy_Text3d * self )
 {
 	if(self->curve->spacemode == CU_LEFT){
 		return return_ModuleConstant("LEFT");
@@ -1056,17 +1056,17 @@ static PyObject *Text3d_getAlignment( BPy_Text3d * self )
 		return return_ModuleConstant("JUSTIFY");
 	}
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 		"couldn't get Curve.spacemode attribute" ) );
 }
 
-static PyObject *Text3d_setAlignment( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setAlignment( V24_BPy_Text3d * self, PyObject * args )
 {
-	BPy_constant *constant;
+	V24_BPy_constant *constant;
 	int value;
 
 	if( !PyArg_ParseTuple( args, "O!", &constant_Type, &constant ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected module constant" ) );
 
 	value = PyInt_AS_LONG(PyDict_GetItemString(constant->dict, "value"));
@@ -1077,43 +1077,43 @@ static PyObject *Text3d_setAlignment( BPy_Text3d * self, PyObject * args )
 
 
 /*****************************************************************************
- * Function:    Text3d_CreatePyObject                                       
- * Description: This function will create a new BPy_Text3d from an existing   
+ * Function:    V24_Text3d_CreatePyObject                                       
+ * Description: This function will create a new V24_BPy_Text3d from an existing   
  *               Blender structure.                                     
  *****************************************************************************/
 
-PyObject *Text3d_CreatePyObject( Text3d * text3d )
+PyObject *V24_Text3d_CreatePyObject( Text3d * text3d )
 {
-	BPy_Text3d *pytext3d;
+	V24_BPy_Text3d *pytext3d;
 
-	pytext3d = ( BPy_Text3d * ) PyObject_NEW( BPy_Text3d, &Text3d_Type );
+	pytext3d = ( V24_BPy_Text3d * ) PyObject_NEW( V24_BPy_Text3d, &V24_Text3d_Type );
 
 	if( !pytext3d )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "couldn't create BPy_Text3d object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "couldn't create V24_BPy_Text3d object" );
 
 	pytext3d->curve = text3d;
 
 	return ( PyObject * ) pytext3d;
 }
 
-static PyObject *Text3d_getFont( BPy_Text3d * self )
+static PyObject *V24_Text3d_getFont( V24_BPy_Text3d * self )
 {
 	if (self->curve) 
-		return Font_CreatePyObject (self->curve->vfont);
+		return V24_Font_CreatePyObject (self->curve->vfont);
 	else
 		Py_RETURN_NONE;
 }
 
-static PyObject *Text3d_setFont( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_setFont( V24_BPy_Text3d * self, PyObject * args )
 {
-	BPy_Font  *pyobj= NULL;
+	V24_BPy_Font  *pyobj= NULL;
 	VFont *vf; //, *vfont;
-	if( !PyArg_ParseTuple( args, "|O!",&Font_Type, &pyobj) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "|O!",&V24_Font_Type, &pyobj) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a string" );
 	if( !pyobj ) {
-	//	pyobj= M_Text3d_LoadFont (self, Py_BuildValue("(s)", "<builtin>"));
+	//	pyobj= V24_M_Text3d_LoadFont (self, Py_BuildValue("(s)", "<builtin>"));
 		self->curve->vfont= get_builtin_font ();
 		Py_RETURN_NONE;
 	}
@@ -1134,12 +1134,12 @@ static PyObject *Text3d_setFont( BPy_Text3d * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Text3d_addFrame( BPy_Text3d * self )
+static PyObject *V24_Text3d_addFrame( V24_BPy_Text3d * self )
 {
 	Curve *cu = self->curve;
 	
 	if (cu->totbox >= 256)	
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"limited to 256 frames" );
 	
 	cu->totbox++;	
@@ -1147,23 +1147,23 @@ static PyObject *Text3d_addFrame( BPy_Text3d * self )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Text3d_removeFrame( BPy_Text3d * self, PyObject * args )
+static PyObject *V24_Text3d_removeFrame( V24_BPy_Text3d * self, PyObject * args )
 {
 	Curve *cu = self->curve;
 	int index, i;
 	
 	if (cu->totbox == 1)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"cannot remove the last frame" );
 	
 	index = cu->totbox-1;
 	
 	if( !PyArg_ParseTuple( args, "|i", &index ) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"expected an int" );
 	
 	if (index < 0 || index >= cu->totbox )
-		return EXPP_ReturnPyObjError( PyExc_IndexError,
+		return V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 			"index out of range" );
 	
 	for (i = index; i < cu->totbox; i++) cu->tb[i]= cu->tb[i+1];
@@ -1173,18 +1173,18 @@ static PyObject *Text3d_removeFrame( BPy_Text3d * self, PyObject * args )
 }
 
 
-PyObject *M_Text3d_LoadFont( PyObject * self, PyObject * value )
+PyObject *V24_M_Text3d_LoadFont( PyObject * self, PyObject * value )
 {
 	char *fontfile= PyString_AsString(value);
 	FILE *file= NULL;
 	VFont *vf= NULL;
 
 	if( !fontfile )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a string" );
 	vf= exist_vfont(fontfile);
 	if( vf )
-		return Font_CreatePyObject( vf );
+		return V24_Font_CreatePyObject( vf );
 	/* No use for that -- lukep
 	 else
 		vf= NULL;
@@ -1196,11 +1196,11 @@ PyObject *M_Text3d_LoadFont( PyObject * self, PyObject * value )
 		if(file) fclose( file );
 		vf = exist_vfont( fontfile );
 		if(vf)
-			return Font_CreatePyObject( vf );
+			return V24_Font_CreatePyObject( vf );
 		Py_RETURN_NONE;
 	}
 
-	return EXPP_ReturnPyObjError( PyExc_TypeError,
+	return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				      "string isn't filename or fontpath" );
 }
 

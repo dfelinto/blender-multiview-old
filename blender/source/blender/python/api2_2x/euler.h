@@ -48,7 +48,7 @@ typedef struct {
 	}data;
 	float *eul;				//1D array of data (alias)
 	int wrapped;			//is wrapped data?
-} EulerObject;
+} V24_EulerObject;
 
 /*struct data contains a pointer to the actual data that the
 object uses. It can use either PyMem allocated data (which will
@@ -56,12 +56,12 @@ be stored in py_data) or be a wrapper for data allocated through
 blender (stored in blend_data). This is an either/or struct not both*/
 
 //prototypes
-PyObject *Euler_Zero( EulerObject * self );
-PyObject *Euler_Unique( EulerObject * self );
-PyObject *Euler_ToMatrix( EulerObject * self );
-PyObject *Euler_ToQuat( EulerObject * self );
-PyObject *Euler_Rotate( EulerObject * self, PyObject *args );
-PyObject *Euler_copy( EulerObject * self, PyObject *args );
+PyObject *V24_Euler_Zero( V24_EulerObject * self );
+PyObject *V24_Euler_Unique( V24_EulerObject * self );
+PyObject *V24_Euler_ToMatrix( V24_EulerObject * self );
+PyObject *V24_Euler_ToQuat( V24_EulerObject * self );
+PyObject *V24_Euler_Rotate( V24_EulerObject * self, PyObject *args );
+PyObject *V24_Euler_copy( V24_EulerObject * self, PyObject *args );
 PyObject *newEulerObject( float *eul, int type );
 
 #endif				/* EXPP_euler_h */

@@ -44,45 +44,45 @@
  * forward declarations go here
  */
 
-static PyObject *M_CurNurb_New( PyObject * self, PyObject * args );
-static PyObject *CurNurb_oldsetMatIndex( BPy_CurNurb * self, PyObject * args );
-static int CurNurb_setMatIndex( BPy_CurNurb * self, PyObject * args );
-static PyObject *CurNurb_getMatIndex( BPy_CurNurb * self );
-static PyObject *CurNurb_getFlagU( BPy_CurNurb * self );
-static PyObject *CurNurb_oldsetFlagU( BPy_CurNurb * self, PyObject * args );
-static int CurNurb_setFlagU( BPy_CurNurb * self, PyObject * args );
-static PyObject *CurNurb_getFlagV( BPy_CurNurb * self );
-static PyObject *CurNurb_oldsetFlagV( BPy_CurNurb * self, PyObject * args );
-static int CurNurb_setFlagV( BPy_CurNurb * self, PyObject * args );
-static PyObject *CurNurb_getType( BPy_CurNurb * self );
-static PyObject *CurNurb_oldsetType( BPy_CurNurb * self, PyObject * args );
-static int CurNurb_setType( BPy_CurNurb * self, PyObject * args );
-static PyObject *CurNurb_getKnotsU( BPy_CurNurb * self );
-static PyObject *CurNurb_getKnotsV( BPy_CurNurb * self );
-static PyObject *CurNurb_getPoints( BPy_CurNurb * self );
-/* static PyObject* CurNurb_setXXX( BPy_CurNurb* self, PyObject* args ); */
-static int CurNurb_setPoint( BPy_CurNurb * self, int index, PyObject * ob );
-static int CurNurb_length( PyInstanceObject * inst );
-static PyObject *CurNurb_getIter( BPy_CurNurb * self );
-static PyObject *CurNurb_iterNext( BPy_CurNurb * self );
-PyObject *CurNurb_append( BPy_CurNurb * self, PyObject * value );
+static PyObject *V24_M_CurNurb_New( PyObject * self, PyObject * args );
+static PyObject *V24_CurNurb_oldsetMatIndex( V24_BPy_CurNurb * self, PyObject * args );
+static int V24_CurNurb_setMatIndex( V24_BPy_CurNurb * self, PyObject * args );
+static PyObject *V24_CurNurb_getMatIndex( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_getFlagU( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_oldsetFlagU( V24_BPy_CurNurb * self, PyObject * args );
+static int V24_CurNurb_setFlagU( V24_BPy_CurNurb * self, PyObject * args );
+static PyObject *V24_CurNurb_getFlagV( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_oldsetFlagV( V24_BPy_CurNurb * self, PyObject * args );
+static int V24_CurNurb_setFlagV( V24_BPy_CurNurb * self, PyObject * args );
+static PyObject *V24_CurNurb_getType( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_oldsetType( V24_BPy_CurNurb * self, PyObject * args );
+static int V24_CurNurb_setType( V24_BPy_CurNurb * self, PyObject * args );
+static PyObject *V24_CurNurb_getKnotsU( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_getKnotsV( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_getPoints( V24_BPy_CurNurb * self );
+/* static PyObject* CurNurb_setXXX( V24_BPy_CurNurb* self, PyObject* args ); */
+static int V24_CurNurb_setPoint( V24_BPy_CurNurb * self, int index, PyObject * ob );
+static int V24_CurNurb_length( PyInstanceObject * inst );
+static PyObject *V24_CurNurb_getIter( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_iterNext( V24_BPy_CurNurb * self );
+PyObject *V24_CurNurb_append( V24_BPy_CurNurb * self, PyObject * value );
 
-static PyObject *CurNurb_isNurb( BPy_CurNurb * self );
-static PyObject *CurNurb_isCyclic( BPy_CurNurb * self );
-static PyObject *CurNurb_dump( BPy_CurNurb * self );
-static PyObject *CurNurb_switchDirection( BPy_CurNurb * self );
-static PyObject *CurNurb_recalc( BPy_CurNurb * self );
-static PyObject *CurNurb_getFlagBits( BPy_CurNurb * self, void *type );
-static int CurNurb_setFlagBits( BPy_CurNurb * self, PyObject *value, void *type );
-char M_CurNurb_doc[] = "CurNurb";
+static PyObject *V24_CurNurb_isNurb( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_isCyclic( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_dump( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_switchDirection( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_recalc( V24_BPy_CurNurb * self );
+static PyObject *V24_CurNurb_getFlagBits( V24_BPy_CurNurb * self, void *type );
+static int V24_CurNurb_setFlagBits( V24_BPy_CurNurb * self, PyObject *value, void *type );
+char V24_M_CurNurb_doc[] = "CurNurb";
 
 
 /*	
-  CurNurb_Type callback function prototypes:                          
+  V24_CurNurb_Type callback function prototypes:                          
 */
 
-static int CurNurb_compare( BPy_CurNurb * a, BPy_CurNurb * b );
-static PyObject *CurNurb_repr( BPy_CurNurb * self );
+static int V24_CurNurb_compare( V24_BPy_CurNurb * a, V24_BPy_CurNurb * b );
+static PyObject *V24_CurNurb_repr( V24_BPy_CurNurb * self );
 
 /*
    table of module methods
@@ -91,9 +91,9 @@ static PyObject *CurNurb_repr( BPy_CurNurb * self );
   
 */
 
-static PyMethodDef M_CurNurb_methods[] = {
+static PyMethodDef V24_M_CurNurb_methods[] = {
 /*   name, method, flags, doc_string                */
-	{"New", ( PyCFunction ) M_CurNurb_New, METH_VARARGS | METH_KEYWORDS,
+	{"New", ( PyCFunction ) V24_M_CurNurb_New, METH_VARARGS | METH_KEYWORDS,
 	 " () - doc string"},
 /*  {"Get", (PyCFunction) M_CurNurb_method, METH_NOARGS, " () - doc string"}, */
 /*   {"method", (PyCFunction) M_CurNurb_method, METH_NOARGS, " () - doc string"}, */
@@ -109,36 +109,36 @@ static PyMethodDef M_CurNurb_methods[] = {
  * these methods are invoked on an instance of the type.
 */
 
-static PyMethodDef BPy_CurNurb_methods[] = {
+static PyMethodDef V24_BPy_CurNurb_methods[] = {
 /*   name,     method,                    flags,         doc               */
 /*  {"method", (PyCFunction) CurNurb_method, METH_NOARGS, " () - doc string"} */
-	{"setMatIndex", ( PyCFunction ) CurNurb_oldsetMatIndex, METH_VARARGS,
+	{"setMatIndex", ( PyCFunction ) V24_CurNurb_oldsetMatIndex, METH_VARARGS,
 	 "( index ) - set index into materials list"},
-	{"getMatIndex", ( PyCFunction ) CurNurb_getMatIndex, METH_NOARGS,
+	{"getMatIndex", ( PyCFunction ) V24_CurNurb_getMatIndex, METH_NOARGS,
 	 "( ) - get current material index"},
-	{"setFlagU", ( PyCFunction ) CurNurb_oldsetFlagU, METH_VARARGS,
+	{"setFlagU", ( PyCFunction ) V24_CurNurb_oldsetFlagU, METH_VARARGS,
 	 "( index ) - set flagU and recalculate the knots (0: uniform, 1: endpoints, 2: bezier)"},
-	{"getFlagU", ( PyCFunction ) CurNurb_getFlagU, METH_NOARGS,
+	{"getFlagU", ( PyCFunction ) V24_CurNurb_getFlagU, METH_NOARGS,
 	 "( ) - get flagU of the knots"},
-	{"setFlagV", ( PyCFunction ) CurNurb_oldsetFlagV, METH_VARARGS,
+	{"setFlagV", ( PyCFunction ) V24_CurNurb_oldsetFlagV, METH_VARARGS,
 	 "( index ) - set flagV and recalculate the knots (0: uniform, 1: endpoints, 2: bezier)"},
-	{"getFlagV", ( PyCFunction ) CurNurb_getFlagV, METH_NOARGS,
+	{"getFlagV", ( PyCFunction ) V24_CurNurb_getFlagV, METH_NOARGS,
 	 "( ) - get flagV of the knots"},
-	{"setType", ( PyCFunction ) CurNurb_oldsetType, METH_VARARGS,
+	{"setType", ( PyCFunction ) V24_CurNurb_oldsetType, METH_VARARGS,
 	 "( type ) - change the type of the curve (Poly: 0, Bezier: 1, NURBS: 4)"},
-	{"getType", ( PyCFunction ) CurNurb_getType, METH_NOARGS,
+	{"getType", ( PyCFunction ) V24_CurNurb_getType, METH_NOARGS,
 	 "( ) - get the type of the curve (Poly: 0, Bezier: 1, NURBS: 4)"},
-	{"append", ( PyCFunction ) CurNurb_append, METH_O,
+	{"append", ( PyCFunction ) V24_CurNurb_append, METH_O,
 	 "( point ) - add a new point.  arg is BezTriple or list of x,y,z,w floats"},
-	{"isNurb", ( PyCFunction ) CurNurb_isNurb, METH_NOARGS,
+	{"isNurb", ( PyCFunction ) V24_CurNurb_isNurb, METH_NOARGS,
 	 "( ) - boolean function tests if this spline is type nurb or bezier"},
-	{"isCyclic", ( PyCFunction ) CurNurb_isCyclic, METH_NOARGS,
+	{"isCyclic", ( PyCFunction ) V24_CurNurb_isCyclic, METH_NOARGS,
 	 "( ) - boolean function tests if this spline is cyclic (closed) or not (open)"},
-	{"dump", ( PyCFunction ) CurNurb_dump, METH_NOARGS,
+	{"dump", ( PyCFunction ) V24_CurNurb_dump, METH_NOARGS,
 	 "( ) - dumps Nurb data)"},
-	{"switchDirection", ( PyCFunction ) CurNurb_switchDirection, METH_NOARGS,
+	{"switchDirection", ( PyCFunction ) V24_CurNurb_switchDirection, METH_NOARGS,
 	 "( ) - swaps curve beginning and end)"},
-	{"recalc", ( PyCFunction ) CurNurb_recalc, METH_NOARGS,
+	{"recalc", ( PyCFunction ) V24_CurNurb_recalc, METH_NOARGS,
 	 "( ) - recalc Nurb data)"},
 	{NULL, NULL, 0, NULL}
 };
@@ -147,50 +147,50 @@ static PyMethodDef BPy_CurNurb_methods[] = {
  *   methods for CurNurb as sequece
  */
 
-static PySequenceMethods CurNurb_as_sequence = {
-	( inquiry ) CurNurb_length,	/* sq_length   */
+static PySequenceMethods V24_CurNurb_as_sequence = {
+	( inquiry ) V24_CurNurb_length,	/* sq_length   */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
-	( intargfunc ) CurNurb_getPoint,	/* sq_item */
+	( intargfunc ) V24_CurNurb_getPoint,	/* sq_item */
 	( intintargfunc ) 0,	/* sq_slice */
-	( intobjargproc ) CurNurb_setPoint,	/* sq_ass_item */
+	( intobjargproc ) V24_CurNurb_setPoint,	/* sq_ass_item */
 	0,			/* sq_ass_slice */
 	( objobjproc ) 0,	/* sq_contains */
 	0,
 	0
 };
 
-static PyGetSetDef BPy_CurNurb_getseters[] = {
+static PyGetSetDef V24_BPy_CurNurb_getseters[] = {
 	{"mat_index",
-	 (getter)CurNurb_getMatIndex, (setter)CurNurb_setMatIndex,
+	 (getter)V24_CurNurb_getMatIndex, (setter)V24_CurNurb_setMatIndex,
 	 "CurNurb's material index",
 	 NULL},
 	{"points",
-	 (getter)CurNurb_getPoints, (setter)NULL,
+	 (getter)V24_CurNurb_getPoints, (setter)NULL,
 	 "The number of curve points",
 	 NULL},
 	{"flagU",
-	 (getter)CurNurb_getFlagU, (setter)CurNurb_setFlagU,
+	 (getter)V24_CurNurb_getFlagU, (setter)V24_CurNurb_setFlagU,
 	 "The knot type in the U direction",
 	 NULL},
 	{"flagV",
-	 (getter)CurNurb_getFlagV, (setter)CurNurb_setFlagV,
+	 (getter)V24_CurNurb_getFlagV, (setter)V24_CurNurb_setFlagV,
 	 "The knot type in the V direction",
 	 NULL},
 	{"type",
-	 (getter)CurNurb_getType, (setter)CurNurb_setType,
+	 (getter)V24_CurNurb_getType, (setter)V24_CurNurb_setType,
 	 "The curve type (poly: bezier, or NURBS)",
 	 NULL},
 	{"knotsU",
-	 (getter)CurNurb_getKnotsU, (setter)NULL,
+	 (getter)V24_CurNurb_getKnotsU, (setter)NULL,
 	 "The The knot vector in the U direction",
 	 NULL},
 	{"knotsV",
-	 (getter)CurNurb_getKnotsV, (setter)NULL,
+	 (getter)V24_CurNurb_getKnotsV, (setter)NULL,
 	 "The The knot vector in the V direction",
 	 NULL},
 	{"smooth",
-	 (getter)CurNurb_getFlagBits, (setter)CurNurb_setFlagBits,
+	 (getter)V24_CurNurb_getFlagBits, (setter)V24_CurNurb_setFlagBits,
 	 "The smooth bool setting",
 	 (void *)ME_SMOOTH},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
@@ -203,12 +203,12 @@ static PyGetSetDef BPy_CurNurb_getseters[] = {
    this is why.
 */
 
-PyTypeObject CurNurb_Type = {
+PyTypeObject V24_CurNurb_Type = {
 	PyObject_HEAD_INIT( NULL ) /* required py macro */
 	0,	/* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"CurNurb",		/* char *tp_name; */
-	sizeof( CurNurb_Type ),	/* int tp_basicsize, */
+	sizeof( V24_CurNurb_Type ),	/* int tp_basicsize, */
 	0,			/* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -217,13 +217,13 @@ PyTypeObject CurNurb_Type = {
 	NULL,					/*    printfunc tp_print; */
 	NULL,					/*    getattrfunc tp_getattr; */
 	NULL,					/*    setattrfunc tp_setattr; */
-	( cmpfunc ) CurNurb_compare,	/*    cmpfunc tp_compare; */
-	( reprfunc ) CurNurb_repr,	/*    reprfunc tp_repr; */
+	( cmpfunc ) V24_CurNurb_compare,	/*    cmpfunc tp_compare; */
+	( reprfunc ) V24_CurNurb_repr,	/*    reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
 	0,			/*    PyNumberMethods *tp_as_number; */
-	&CurNurb_as_sequence,	/*    PySequenceMethods *tp_as_sequence; */
+	&V24_CurNurb_as_sequence,	/*    PySequenceMethods *tp_as_sequence; */
 	0,			/*    PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
@@ -257,13 +257,13 @@ PyTypeObject CurNurb_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc ) CurNurb_getIter,	/*    getiterfunc tp_iter; */
-	( iternextfunc ) CurNurb_iterNext,	/*    iternextfunc tp_iternext; */
+	( getiterfunc ) V24_CurNurb_getIter,	/*    getiterfunc tp_iter; */
+	( iternextfunc ) V24_CurNurb_iterNext,	/*    iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_CurNurb_methods,	/*    struct PyMethodDef *tp_methods; */
+	V24_BPy_CurNurb_methods,	/*    struct PyMethodDef *tp_methods; */
 	0,			/*    struct PyMemberDef *tp_members; */
-	BPy_CurNurb_getseters,			/*    struct PyGetSetDef *tp_getset; */
+	V24_BPy_CurNurb_getseters,			/*    struct PyGetSetDef *tp_getset; */
 	0,			/*    struct _typeobject *tp_base; */
 	0,			/*    PyObject *tp_dict; */
 	0,			/*    descrgetfunc tp_descr_get; */
@@ -291,7 +291,7 @@ PyTypeObject CurNurb_Type = {
   blender data.
 */
 
-static int CurNurb_compare( BPy_CurNurb * a, BPy_CurNurb * b )
+static int V24_CurNurb_compare( V24_BPy_CurNurb * a, V24_BPy_CurNurb * b )
 {
 	Nurb *pa = a->nurb;
 	Nurb *pb = b->nurb;
@@ -301,18 +301,18 @@ static int CurNurb_compare( BPy_CurNurb * a, BPy_CurNurb * b )
 
 
 /*
-  factory method to create a BPy_CurNurb from a Blender Nurb
+  factory method to create a V24_BPy_CurNurb from a Blender Nurb
 */
 
-PyObject *CurNurb_CreatePyObject( Nurb * blen_nurb )
+PyObject *V24_CurNurb_CreatePyObject( Nurb * blen_nurb )
 {
-	BPy_CurNurb *pyNurb;
+	V24_BPy_CurNurb *pyNurb;
 
-	pyNurb = ( BPy_CurNurb * ) PyObject_NEW( BPy_CurNurb, &CurNurb_Type );
+	pyNurb = ( V24_BPy_CurNurb * ) PyObject_NEW( V24_BPy_CurNurb, &V24_CurNurb_Type );
 
 	if( !pyNurb )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "could not create BPy_CurNurb PyObject" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "could not create V24_BPy_CurNurb PyObject" );
 
 	pyNurb->nurb = blen_nurb;
 	return ( PyObject * ) pyNurb;
@@ -320,16 +320,16 @@ PyObject *CurNurb_CreatePyObject( Nurb * blen_nurb )
 
 
 /*
- *  CurNurb_repr
+ *  V24_CurNurb_repr
  */
-static PyObject *CurNurb_repr( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_repr( V24_BPy_CurNurb * self )
 {				/* used by 'repr' */
 
 	return PyString_FromFormat( "[CurNurb \"%d\"]", self->nurb->type );
 }
 
 /* XXX Can't this be simply removed? */
-static PyObject *M_CurNurb_New( PyObject * self, PyObject * args )
+static PyObject *V24_M_CurNurb_New( PyObject * self, PyObject * args )
 {
 	return ( PyObject * ) 0;
 
@@ -338,7 +338,7 @@ static PyObject *M_CurNurb_New( PyObject * self, PyObject * args )
 /*
  *	Curve.getType
  */
-static PyObject *CurNurb_getType( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_getType( V24_BPy_CurNurb * self )
 {
 	/* type is on 3 first bits only */
 	return PyInt_FromLong( self->nurb->type & 7 );
@@ -349,13 +349,13 @@ static PyObject *CurNurb_getType( BPy_CurNurb * self )
  *
  *	Convert the curve using Blender's convertspline fonction
  */
-static int CurNurb_setType( BPy_CurNurb * self, PyObject * args )
+static int V24_CurNurb_setType( V24_BPy_CurNurb * self, PyObject * args )
 {
 	PyObject* integer = PyNumber_Int( args );
 	short value;
 
 	if( !integer )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected integer argument" );
 
 	value = ( short )PyInt_AS_LONG( integer );
@@ -363,32 +363,32 @@ static int CurNurb_setType( BPy_CurNurb * self, PyObject * args )
 
 	/* parameter value checking */
 	if (value != CU_POLY && value != CU_BEZIER && value != CU_NURBS)
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"expected integer argument" );
 
 	/* convert and raise error if impossible */
 	if (convertspline(value, self->nurb))
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"Conversion Impossible" );
 
 	return 0;
 }
 
 /*
- * CurNurb_getKnotsU
+ * V24_CurNurb_getKnotsU
  *
  * returns curve's knotsU in a tuple. Empty tuple is returned if curve
  * isn't Nurbs or it doesn't have knots in U
  */
 
-static PyObject *CurNurb_getKnotsU( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_getKnotsU( V24_BPy_CurNurb * self )
 {
 	if(self->nurb->knotsu) {
 		int len = KNOTSU(self->nurb);
 		int i;
 		PyObject *knotsu = PyTuple_New(len);
 		if( !knotsu )
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"could not get CurNurb.knotsU attribute" );
 
 		for(i = 0; i < len; ++i)
@@ -401,19 +401,19 @@ static PyObject *CurNurb_getKnotsU( BPy_CurNurb * self )
 }
 
 /*
- * CurNurb_getKnotsV
+ * V24_CurNurb_getKnotsV
  *
  * returns curve's knotsV in a tuple. Empty tuple is returned if curve doesn't have knots in V
  */
 
-static PyObject *CurNurb_getKnotsV( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_getKnotsV( V24_BPy_CurNurb * self )
 {
 	if(self->nurb->knotsv) {
 		int len = KNOTSV(self->nurb);
 		int i;
 		PyObject *knotsv = PyTuple_New(len);
 		if( !knotsv )
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"could not get CurNurb.knotsV index" );
 
 		for(i = 0; i < len; ++i)
@@ -425,43 +425,43 @@ static PyObject *CurNurb_getKnotsV( BPy_CurNurb * self )
 	return PyTuple_New(0);
 }
 
-static PyObject *CurNurb_getPoints( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_getPoints( V24_BPy_CurNurb * self )
 {
 	return PyInt_FromLong( ( long ) self->nurb->pntsu );
 }
 
-static PyObject *CurNurb_getFlagBits( BPy_CurNurb * self, void *type )
+static PyObject *V24_CurNurb_getFlagBits( V24_BPy_CurNurb * self, void *type )
 {
-	return EXPP_getBitfield( (void *)&self->nurb->flag,
+	return V24_EXPP_getBitfield( (void *)&self->nurb->flag,
 							  (int)type, 'h' );
 }
 
-static int CurNurb_setFlagBits( BPy_CurNurb * self, PyObject *value,
+static int V24_CurNurb_setFlagBits( V24_BPy_CurNurb * self, PyObject *value,
 									void *type )
 {
-	return EXPP_setBitfield( value, (void *)&self->nurb->flag,
+	return V24_EXPP_setBitfield( value, (void *)&self->nurb->flag,
 							 (int)type, 'h' );
 }
 
 /*
- * CurNurb_append( point )
+ * V24_CurNurb_append( point )
  * append a new point to a nurb curve.
  * arg is BezTriple or list of xyzw floats 
  */
 
-PyObject *CurNurb_append( BPy_CurNurb * self, PyObject * value )
+PyObject *V24_CurNurb_append( V24_BPy_CurNurb * self, PyObject * value )
 {
-	return CurNurb_appendPointToNurb( self->nurb, value );
+	return V24_CurNurb_appendPointToNurb( self->nurb, value );
 }
 
 
 /*
- * CurNurb_appendPointToNurb
+ * V24_CurNurb_appendPointToNurb
  * this is a non-bpy utility func to add a point to a given nurb.
  * notice the first arg is Nurb*.
  */
 
-PyObject *CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
+PyObject *V24_CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 {
 
 	int i;
@@ -479,7 +479,7 @@ PyObject *CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 		else if (PySequence_Check( value ))
 			nurb->type |= CU_NURBS;
 		else
-			return( EXPP_ReturnPyObjError( PyExc_TypeError,
+			return( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					  "Expected a BezTriple or a Sequence of 4 (or 5) floats" ) );
 	}
 
@@ -489,7 +489,7 @@ PyObject *CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 		BezTriple *tmp;
 
 		if( !BPy_BezTriple_Check( value ) )
-			return( EXPP_ReturnPyObjError( PyExc_TypeError,
+			return( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					  "Expected a BezTriple\n" ) );
 
 /*		printf("\ndbg: got a BezTriple\n"); */
@@ -497,10 +497,10 @@ PyObject *CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 		nurb->bezt =
 			( BezTriple * ) MEM_mallocN( sizeof( BezTriple ) *
 						     ( npoints + 1 ),
-						     "CurNurb_append2" );
+						     "V24_CurNurb_append2" );
 
 		if( !nurb->bezt )
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_MemoryError, "allocation failed" ) );
 
 		/* copy old points to new */
@@ -512,7 +512,7 @@ PyObject *CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 		nurb->pntsu++;
 		/* add new point to end of list */
 		memcpy( nurb->bezt + npoints,
-			BezTriple_FromPyObject( value ), sizeof( BezTriple ) );
+			V24_BezTriple_FromPyObject( value ), sizeof( BezTriple ) );
 
 	}
 	else if( PySequence_Check( value ) ) {
@@ -526,9 +526,9 @@ PyObject *CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 			nurb->bp =
 				( BPoint * ) MEM_mallocN( sizeof( BPoint ) *
 							  ( npoints + 1 ),
-							  "CurNurb_append1" );
+							  "V24_CurNurb_append1" );
 			if( !nurb->bp )
-				return ( EXPP_ReturnPyObjError
+				return ( V24_EXPP_ReturnPyObjError
 					 ( PyExc_MemoryError,
 					   "allocation failed" ) );
 
@@ -568,13 +568,13 @@ PyObject *CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 			makeknots( nurb, 1, nurb->flagu >> 1 );
 
 		} else {
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected a sequence of 4 or 5 floats" );
 		}
 
 	} else {
 		/* bail with error */
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected a sequence of 4 or 5 floats" );
 
 	}
@@ -584,53 +584,53 @@ PyObject *CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 
 
 /*
- *  CurNurb_setMatIndex
+ *  V24_CurNurb_setMatIndex
  *
  *  set index into material list
  */
 
-static int CurNurb_setMatIndex( BPy_CurNurb * self, PyObject * args )
+static int V24_CurNurb_setMatIndex( V24_BPy_CurNurb * self, PyObject * args )
 {
 	printf ("%d\n", self->nurb->mat_nr);
-	return EXPP_setIValueRange( args, &self->nurb->mat_nr, 0, 15, 'h' );
+	return V24_EXPP_setIValueRange( args, &self->nurb->mat_nr, 0, 15, 'h' );
 }
 
 /*
- * CurNurb_getMatIndex
+ * V24_CurNurb_getMatIndex
  *
  * returns index into material list
  */
 
-static PyObject *CurNurb_getMatIndex( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_getMatIndex( V24_BPy_CurNurb * self )
 {
 	PyObject *index = PyInt_FromLong( ( long ) self->nurb->mat_nr );
 
 	if( index )
 		return index;
 
-	return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"could not get material index" );
 }
 
 /*
- * CurNurb_getFlagU
+ * V24_CurNurb_getFlagU
  *
  * returns curve's flagu
  */
 
-static PyObject *CurNurb_getFlagU( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_getFlagU( V24_BPy_CurNurb * self )
 {
 	PyObject *flagu = PyInt_FromLong( ( long ) self->nurb->flagu );
 
 	if( flagu )
 		return flagu;
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"could not get CurNurb.flagu index" ) );
 }
 
 /*
- *  CurNurb_setFlagU
+ *  V24_CurNurb_setFlagU
  *
  *  set curve's flagu and recalculate the knots
  *
@@ -638,20 +638,20 @@ static PyObject *CurNurb_getFlagU( BPy_CurNurb * self )
  *    bit 0 controls CU_CYCLIC
  */
 
-static int CurNurb_setFlagU( BPy_CurNurb * self, PyObject * args )
+static int V24_CurNurb_setFlagU( V24_BPy_CurNurb * self, PyObject * args )
 {
 	PyObject* integer = PyNumber_Int( args );
 	short value;
 
 	if( !integer )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected integer argument" );
 
 	value = ( short )PyInt_AS_LONG( integer );
 	Py_DECREF( integer );
 
 	if( value < 0 || value > 5 )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"expected integer argument in range [0,5]" );
 
 	if( self->nurb->flagu != value ) {
@@ -663,44 +663,44 @@ static int CurNurb_setFlagU( BPy_CurNurb * self, PyObject * args )
 }
 
 /*
- * CurNurb_getFlagV
+ * V24_CurNurb_getFlagV
  *
  * returns curve's flagu
  */
 
-static PyObject *CurNurb_getFlagV( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_getFlagV( V24_BPy_CurNurb * self )
 {
 	PyObject *flagv = PyInt_FromLong( ( long ) self->nurb->flagv );
 
 	if( flagv )
 		return flagv;
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"could not get CurNurb.flagv" ) );
 }
 
 /*
- *  CurNurb_setFlagV
+ *  V24_CurNurb_setFlagV
  *
  *  set curve's flagu and recalculate the knots
  *
  *  Possible values: 0 - uniform, 1 - endpoints, 2 - bezier
  */
 
-static int CurNurb_setFlagV( BPy_CurNurb * self, PyObject * args )
+static int V24_CurNurb_setFlagV( V24_BPy_CurNurb * self, PyObject * args )
 {
 	PyObject* integer = PyNumber_Int( args );
 	short value;
 
 	if( !integer )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected integer argument" );
 
 	value = ( short )PyInt_AS_LONG( integer );
 	Py_DECREF( integer );
 
 	if( value < 0 || value > 5 )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"expected integer argument in range [0,5]" );
 
 	if( self->nurb->flagv != value ) {
@@ -712,13 +712,13 @@ static int CurNurb_setFlagV( BPy_CurNurb * self, PyObject * args )
 }
 
 /*
- * CurNurb_getIter
+ * V24_CurNurb_getIter
  *
  * create an iterator for our CurNurb.
  * this iterator returns the points for this CurNurb.
  */
 
-static PyObject *CurNurb_getIter( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_getIter( V24_BPy_CurNurb * self )
 {
 	self->bp = self->nurb->bp;
 	self->bezt = self->nurb->bezt;
@@ -734,7 +734,7 @@ static PyObject *CurNurb_getIter( BPy_CurNurb * self )
 }
 
 
-static PyObject *CurNurb_iterNext( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_iterNext( V24_BPy_CurNurb * self )
 {
 	PyObject *po;		/* return value */
 	Nurb *pnurb = self->nurb;
@@ -742,12 +742,12 @@ static PyObject *CurNurb_iterNext( BPy_CurNurb * self )
 
 	/* are we at end already? */
 	if( self->atEnd )
-		return ( EXPP_ReturnPyObjError( PyExc_StopIteration,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 						"iterator at end" ) );
 
 	if( self->nextPoint < npoints ) {
 
-		po = CurNurb_pointAtIndex( self->nurb, self->nextPoint );
+		po = V24_CurNurb_pointAtIndex( self->nurb, self->nextPoint );
 		self->nextPoint++;
 
 		return po;
@@ -756,18 +756,18 @@ static PyObject *CurNurb_iterNext( BPy_CurNurb * self )
 		self->atEnd = 1;	/* set flag true */
 	}
 
-	return ( EXPP_ReturnPyObjError( PyExc_StopIteration,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 					"iterator at end" ) );
 }
 
 
 
 /*
- * CurNurb_isNurb()
+ * V24_CurNurb_isNurb()
  * test whether spline nurb or bezier
  */
 
-static PyObject *CurNurb_isNurb( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_isNurb( V24_BPy_CurNurb * self )
 {
 	/* NOTE: a Nurb has bp and bezt pointers
 	 * depending on type.
@@ -783,11 +783,11 @@ static PyObject *CurNurb_isNurb( BPy_CurNurb * self )
 }
 
 /*
- * CurNurb_isCyclic()
+ * V24_CurNurb_isCyclic()
  * test whether spline cyclic (closed) or not (open)
  */
 
-static PyObject *CurNurb_isCyclic( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_isCyclic( V24_BPy_CurNurb * self )
 {
         /* supposing that the flagu is always set */ 
 
@@ -799,34 +799,34 @@ static PyObject *CurNurb_isCyclic( BPy_CurNurb * self )
 }
 
 /*
- * CurNurb_length
+ * V24_CurNurb_length
  * returns the number of points in a Nurb
  * this is a tp_as_sequence method, not a regular instance method.
  */
 
-static int CurNurb_length( PyInstanceObject * inst )
+static int V24_CurNurb_length( PyInstanceObject * inst )
 {
 	Nurb *nurb;
 	int len;
 
 	if( BPy_CurNurb_Check( ( PyObject * ) inst ) ) {
-		nurb = ( ( BPy_CurNurb * ) inst )->nurb;
+		nurb = ( ( V24_BPy_CurNurb * ) inst )->nurb;
 		len = nurb->pntsu;
 		return len;
 	}
 
-	return EXPP_ReturnIntError( PyExc_RuntimeError,
-				    "arg is not a BPy_CurNurb" );
+	return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
+				    "arg is not a V24_BPy_CurNurb" );
 }
 
 /*
- * CurNurb_getPoint
+ * V24_CurNurb_getPoint
  * returns the Nth point in a Nurb
  * this is one of the tp_as_sequence methods, hence the int N argument.
  * it is called via the [] operator, not as a usual instance method.
  */
 
-PyObject *CurNurb_getPoint( BPy_CurNurb * self, int index )
+PyObject *V24_CurNurb_getPoint( V24_BPy_CurNurb * self, int index )
 {
 	Nurb *myNurb;
 
@@ -848,31 +848,31 @@ PyObject *CurNurb_getPoint( BPy_CurNurb * self, int index )
 
 	/* bail if no Nurbs in Curve */
 	if( npoints == 0 )
-		return ( EXPP_ReturnPyObjError( PyExc_IndexError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 						"no points in this CurNurb" ) );
 
 	/* check index limits */
 	if( index >= npoints || index < 0 )
-		return ( EXPP_ReturnPyObjError( PyExc_IndexError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 						"index out of range" ) );
 
-	return CurNurb_pointAtIndex( myNurb, index );
+	return V24_CurNurb_pointAtIndex( myNurb, index );
 }
 
 /*
- * CurNurb_setPoint
+ * V24_CurNurb_setPoint
  * modifies the Nth point in a Nurb
  * this is one of the tp_as_sequence methods, hence the int N argument.
  * it is called via the [] = operator, not as a usual instance method.
  */
-static int CurNurb_setPoint( BPy_CurNurb * self, int index, PyObject * pyOb )
+static int V24_CurNurb_setPoint( V24_BPy_CurNurb * self, int index, PyObject * pyOb )
 {
 	Nurb *nurb = self->nurb;
 	int size;
 
 	/* check index limits */
 	if( index < 0 || index >= nurb->pntsu )
-		return EXPP_ReturnIntError( PyExc_IndexError,
+		return V24_EXPP_ReturnIntError( PyExc_IndexError,
 					    "array assignment index out of range" );
 
 
@@ -880,12 +880,12 @@ static int CurNurb_setPoint( BPy_CurNurb * self, int index, PyObject * pyOb )
 	if ((nurb->type & 7)==CU_BEZIER) {	/* BEZIER */
 		/* check parameter type */
 		if( !BPy_BezTriple_Check( pyOb ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 							"expected a BezTriple" );
 
 		/* copy bezier in array */
 		memcpy( nurb->bezt + index,
-			BezTriple_FromPyObject( pyOb ), sizeof( BezTriple ) );
+			V24_BezTriple_FromPyObject( pyOb ), sizeof( BezTriple ) );
 
 		return 0;	/* finished correctly */
 	}
@@ -894,14 +894,14 @@ static int CurNurb_setPoint( BPy_CurNurb * self, int index, PyObject * pyOb )
 
 		/* check parameter type */
 		if (!PySequence_Check( pyOb ))
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 							"expected a list of 4 (or optionally 5 if the curve is 3D) floats" );
 
 		size = PySequence_Size( pyOb );
 
 		/* check sequence size */
 		if( size != 4 && size != 5 ) 
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 							"expected a list of 4 (or optionally 5 if the curve is 3D) floats" );
 
 		/* copy x, y, z, w */
@@ -937,7 +937,7 @@ static int CurNurb_setPoint( BPy_CurNurb * self, int index, PyObject * pyOb )
  * this is an internal routine.  not callable directly from python
  */
 
-PyObject *CurNurb_pointAtIndex( Nurb * nurb, int index )
+PyObject *V24_CurNurb_pointAtIndex( Nurb * nurb, int index )
 {
 	PyObject *pyo;
 
@@ -961,11 +961,11 @@ PyObject *CurNurb_pointAtIndex( Nurb * nurb, int index )
 
 	} else if( nurb->bezt ) {	/* we have a bezier */
 		/* if an error occurs, we just pass it on */
-		pyo = BezTriple_CreatePyObject( &( nurb->bezt[index] ) );
+		pyo = V24_BezTriple_CreatePyObject( &( nurb->bezt[index] ) );
 
 	} else			/* something is horribly wrong */
 		/* neither bp or bezt is set && pntsu != 0 */
-		return EXPP_ReturnPyObjError( PyExc_SystemError,
+		return V24_EXPP_ReturnPyObjError( PyExc_SystemError,
 						"inconsistant structure found" );
 
 	return pyo;
@@ -975,7 +975,7 @@ PyObject *CurNurb_pointAtIndex( Nurb * nurb, int index )
   dump nurb
 */
 
-PyObject *CurNurb_dump( BPy_CurNurb * self )
+PyObject *V24_CurNurb_dump( V24_BPy_CurNurb * self )
 {
 	BPoint *bp = NULL;
 	BezTriple *bezt = NULL;
@@ -983,7 +983,7 @@ PyObject *CurNurb_dump( BPy_CurNurb * self )
 	int npoints = 0;
 
 	if( !self->nurb )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"no Nurb in this CurNurb");
 
 	printf(" type: %d, mat_nr: %d hide: %d flag: %d",
@@ -1045,16 +1045,16 @@ PyObject *CurNurb_dump( BPy_CurNurb * self )
   recalc nurb
 */
 
-static PyObject *CurNurb_recalc( BPy_CurNurb * self )
+static PyObject *V24_CurNurb_recalc( V24_BPy_CurNurb * self )
 {
 	calchandlesNurb ( self->nurb );
 	Py_RETURN_NONE;
 }
 
-PyObject *CurNurb_switchDirection( BPy_CurNurb * self )
+PyObject *V24_CurNurb_switchDirection( V24_BPy_CurNurb * self )
 {
 	if( !self->nurb )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"no Nurb in this CurNurb");
 	
 	switchdirectionNurb( self->nurb );
@@ -1062,37 +1062,37 @@ PyObject *CurNurb_switchDirection( BPy_CurNurb * self )
 	Py_RETURN_NONE;
 }
 
-PyObject *CurNurb_Init( void )
+PyObject *V24_CurNurb_Init( void )
 {
-	if( PyType_Ready( &CurNurb_Type ) < 0)
+	if( PyType_Ready( &V24_CurNurb_Type ) < 0)
 		return NULL;
 
-	return Py_InitModule3( "Blender.CurNurb", M_CurNurb_methods,
-				M_CurNurb_doc );
+	return Py_InitModule3( "Blender.CurNurb", V24_M_CurNurb_methods,
+				V24_M_CurNurb_doc );
 }
 
 /* #####DEPRECATED###### */
 
-static PyObject *CurNurb_oldsetType( BPy_CurNurb * self, PyObject * args )
+static PyObject *V24_CurNurb_oldsetType( V24_BPy_CurNurb * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)CurNurb_setType );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_CurNurb_setType );
 }
 
-static PyObject *CurNurb_oldsetMatIndex( BPy_CurNurb * self, PyObject * args )
+static PyObject *V24_CurNurb_oldsetMatIndex( V24_BPy_CurNurb * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)CurNurb_setMatIndex );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_CurNurb_setMatIndex );
 }
 
-static PyObject *CurNurb_oldsetFlagU( BPy_CurNurb * self, PyObject * args )
+static PyObject *V24_CurNurb_oldsetFlagU( V24_BPy_CurNurb * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)CurNurb_setFlagU );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_CurNurb_setFlagU );
 }
 
-static PyObject *CurNurb_oldsetFlagV( BPy_CurNurb * self, PyObject * args )
+static PyObject *V24_CurNurb_oldsetFlagV( V24_BPy_CurNurb * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args,
-			(setter)CurNurb_setFlagV );
+	return V24_EXPP_setterWrapper( (void *)self, args,
+			(setter)V24_CurNurb_setFlagV );
 }

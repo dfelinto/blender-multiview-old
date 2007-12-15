@@ -40,7 +40,7 @@ extern PyTypeObject property_Type;
 
 #define BPy_Property_Check(v)       ((v)->ob_type == &property_Type)
 
-//--------------------------Python BPy_Property structure definition.----
+//--------------------------Python V24_BPy_Property structure definition.----
 typedef struct {
 	PyObject_HEAD
 		//reference to property data if object linked
@@ -49,13 +49,13 @@ typedef struct {
 	char *name;
 	PyObject *data;
 	short type;
-} BPy_Property;
+} V24_BPy_Property;
 
 //------------------------------visible prototypes-----------------------
-PyObject *Property_CreatePyObject( struct bProperty *prop );
-bProperty *Property_FromPyObject( PyObject * py_obj );
+PyObject *V24_Property_CreatePyObject( struct bProperty *prop );
+bProperty *V24_Property_FromPyObject( PyObject * py_obj );
 PyObject *newPropertyObject( char *name, PyObject * data, int type );
-int updatePyProperty( BPy_Property * self );
-int updateProperyData( BPy_Property * self );
+int updatePyProperty( V24_BPy_Property * self );
+int updateProperyData( V24_BPy_Property * self );
 
 #endif

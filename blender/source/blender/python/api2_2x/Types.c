@@ -36,39 +36,39 @@
    is only need here now
 */
 
-extern PyTypeObject IDGroup_Type, IDArray_Type;
-extern PyTypeObject Action_Type, Armature_Type;
-extern PyTypeObject Pose_Type;
-extern PyTypeObject BezTriple_Type, Bone_Type, Button_Type;
-extern PyTypeObject Camera_Type;
-extern PyTypeObject CurNurb_Type, SurfNurb_Type;
-extern PyTypeObject Curve_Type;
-extern PyTypeObject Effect_Type, Font_Type;
-extern PyTypeObject Image_Type, Ipo_Type, IpoCurve_Type;
-extern PyTypeObject Lamp_Type, Lattice_Type;
-extern PyTypeObject Material_Type, Metaball_Type, MTex_Type;
+extern PyTypeObject V24_IDGroup_Type, V24_IDArray_Type;
+extern PyTypeObject V24_Action_Type, V24_Armature_Type;
+extern PyTypeObject V24_Pose_Type;
+extern PyTypeObject V24_BezTriple_Type, V24_Bone_Type, V24_Button_Type;
+extern PyTypeObject V24_Camera_Type;
+extern PyTypeObject V24_CurNurb_Type, V24_SurfNurb_Type;
+extern PyTypeObject V24_Curve_Type;
+extern PyTypeObject V24_Effect_Type, V24_Font_Type;
+extern PyTypeObject V24_Image_Type, V24_Ipo_Type, V24_IpoCurve_Type;
+extern PyTypeObject V24_Lamp_Type, V24_Lattice_Type;
+extern PyTypeObject V24_Material_Type, V24_Metaball_Type, V24_MTex_Type;
 extern PyTypeObject NMFace_Type, NMEdge_Type, NMVert_Type, NMCol_Type,
 	   NMesh_Type;
-extern PyTypeObject MFace_Type, MVert_Type, PVert_Type, MEdge_Type, MCol_Type,
-	   Mesh_Type;
+extern PyTypeObject V24_MFace_Type, V24_MVert_Type, V24_PVert_Type, V24_MEdge_Type, V24_MCol_Type,
+	   V24_Mesh_Type;
 
-extern PyTypeObject Object_Type;
-extern PyTypeObject Group_Type;
-extern PyTypeObject Particle_Type;
-extern PyTypeObject Scene_Type, RenderData_Type;
-extern PyTypeObject Text_Type, Text3d_Type, Texture_Type;
-extern PyTypeObject World_Type;
+extern PyTypeObject V24_Object_Type;
+extern PyTypeObject V24_Group_Type;
+extern PyTypeObject V24_Particle_Type;
+extern PyTypeObject V24_Scene_Type, V24_RenderData_Type;
+extern PyTypeObject V24_Text_Type, V24_Text3d_Type, V24_Texture_Type;
+extern PyTypeObject V24_World_Type;
 extern PyTypeObject property_Type;
 extern PyTypeObject buffer_Type, constant_Type, euler_Type;
 extern PyTypeObject matrix_Type, quaternion_Type, rgbTuple_Type, vector_Type;
 extern PyTypeObject point_Type;
-extern PyTypeObject Modifier_Type, ModSeq_Type;
-extern PyTypeObject EditBone_Type;
-extern PyTypeObject ThemeSpace_Type;
-extern PyTypeObject ThemeUI_Type;
-extern PyTypeObject TimeLine_Type;
+extern PyTypeObject V24_Modifier_Type, V24_ModSeq_Type;
+extern PyTypeObject V24_EditBone_Type;
+extern PyTypeObject V24_ThemeSpace_Type;
+extern PyTypeObject V24_ThemeUI_Type;
+extern PyTypeObject V24_TimeLine_Type;
 
-char M_Types_doc[] = "The Blender Types module\n\n\
+char V24_M_Types_doc[] = "The Blender Types module\n\n\
 This module is a dictionary of all Blender Python types";
 
 struct PyMethodDef Null_methods[] = { {NULL, NULL, 0, NULL} };
@@ -84,45 +84,45 @@ struct PyMethodDef Null_methods[] = { {NULL, NULL, 0, NULL} };
 
 void types_InitAll( void )
 {
-	Action_Type.ob_type = &PyType_Type;
-	Pose_Type.ob_type = &PyType_Type;
-	Armature_Type.ob_type = &PyType_Type;
-	BezTriple_Type.ob_type = &PyType_Type;
-	Bone_Type.ob_type = &PyType_Type;
-	Button_Type.ob_type = &PyType_Type;
-	Camera_Type.ob_type = &PyType_Type;
-	CurNurb_Type.ob_type = &PyType_Type;
-	Curve_Type.ob_type = &PyType_Type;
-	Effect_Type.ob_type = &PyType_Type;
-	Image_Type.ob_type = &PyType_Type;
-	Ipo_Type.ob_type = &PyType_Type;
-	IpoCurve_Type.ob_type = &PyType_Type;
-	Lamp_Type.ob_type = &PyType_Type;
-	Lattice_Type.ob_type = &PyType_Type;
-	Material_Type.ob_type = &PyType_Type;
-	Metaball_Type.ob_type = &PyType_Type;
-	MTex_Type.ob_type = &PyType_Type;
+	V24_Action_Type.ob_type = &PyType_Type;
+	V24_Pose_Type.ob_type = &PyType_Type;
+	V24_Armature_Type.ob_type = &PyType_Type;
+	V24_BezTriple_Type.ob_type = &PyType_Type;
+	V24_Bone_Type.ob_type = &PyType_Type;
+	V24_Button_Type.ob_type = &PyType_Type;
+	V24_Camera_Type.ob_type = &PyType_Type;
+	V24_CurNurb_Type.ob_type = &PyType_Type;
+	V24_Curve_Type.ob_type = &PyType_Type;
+	V24_Effect_Type.ob_type = &PyType_Type;
+	V24_Image_Type.ob_type = &PyType_Type;
+	V24_Ipo_Type.ob_type = &PyType_Type;
+	V24_IpoCurve_Type.ob_type = &PyType_Type;
+	V24_Lamp_Type.ob_type = &PyType_Type;
+	V24_Lattice_Type.ob_type = &PyType_Type;
+	V24_Material_Type.ob_type = &PyType_Type;
+	V24_Metaball_Type.ob_type = &PyType_Type;
+	V24_MTex_Type.ob_type = &PyType_Type;
 	NMCol_Type.ob_type = &PyType_Type;
 	NMFace_Type.ob_type = &PyType_Type;
 	NMEdge_Type.ob_type = &PyType_Type;
 	NMVert_Type.ob_type = &PyType_Type;
 	NMesh_Type.ob_type = &PyType_Type;
-	MFace_Type.ob_type = &PyType_Type;
-   	MVert_Type.ob_type = &PyType_Type;
-   	PVert_Type.ob_type = &PyType_Type;
-   	MEdge_Type.ob_type = &PyType_Type;
-   	MCol_Type.ob_type = &PyType_Type;
-   	Mesh_Type.ob_type = &PyType_Type;
-	Object_Type.ob_type = &PyType_Type;
-	Group_Type.ob_type = &PyType_Type;
-	RenderData_Type.ob_type = &PyType_Type;
-	Scene_Type.ob_type = &PyType_Type;
-	SurfNurb_Type.ob_type = &PyType_Type;
-	Text_Type.ob_type = &PyType_Type;
-	Text3d_Type.ob_type = &PyType_Type;
-	Texture_Type.ob_type = &PyType_Type;
-	//TimeLine_Type.ob_type = &PyType_Type;
-	World_Type.ob_type = &PyType_Type;
+	V24_MFace_Type.ob_type = &PyType_Type;
+   	V24_MVert_Type.ob_type = &PyType_Type;
+   	V24_PVert_Type.ob_type = &PyType_Type;
+   	V24_MEdge_Type.ob_type = &PyType_Type;
+   	V24_MCol_Type.ob_type = &PyType_Type;
+   	V24_Mesh_Type.ob_type = &PyType_Type;
+	V24_Object_Type.ob_type = &PyType_Type;
+	V24_Group_Type.ob_type = &PyType_Type;
+	V24_RenderData_Type.ob_type = &PyType_Type;
+	V24_Scene_Type.ob_type = &PyType_Type;
+	V24_SurfNurb_Type.ob_type = &PyType_Type;
+	V24_Text_Type.ob_type = &PyType_Type;
+	V24_Text3d_Type.ob_type = &PyType_Type;
+	V24_Texture_Type.ob_type = &PyType_Type;
+	//V24_TimeLine_Type.ob_type = &PyType_Type;
+	V24_World_Type.ob_type = &PyType_Type;
 	buffer_Type.ob_type = &PyType_Type;
 	constant_Type.ob_type = &PyType_Type;
 	euler_Type.ob_type = &PyType_Type;
@@ -132,39 +132,39 @@ void types_InitAll( void )
 	vector_Type.ob_type = &PyType_Type;
 	property_Type.ob_type = &PyType_Type;
 	point_Type.ob_type = &PyType_Type;
-	PyType_Ready( &Modifier_Type );
-	PyType_Ready( &ModSeq_Type );
-	PyType_Ready( &EditBone_Type );
-	PyType_Ready( &ThemeSpace_Type );
-	PyType_Ready( &ThemeUI_Type );
-	IDProp_Init_Types();
+	PyType_Ready( &V24_Modifier_Type );
+	PyType_Ready( &V24_ModSeq_Type );
+	PyType_Ready( &V24_EditBone_Type );
+	PyType_Ready( &V24_ThemeSpace_Type );
+	PyType_Ready( &V24_ThemeUI_Type );
+	V24_IDProp_Init_Types();
 }
 
 /*****************************************************************************/
-/* Function:	 Types_Init					 	*/
+/* Function:	 V24_Types_Init					 	*/
 /*****************************************************************************/
-PyObject *Types_Init( void )
+PyObject *V24_Types_Init( void )
 {
 	PyObject *submodule, *dict;
 
 	submodule =
-		Py_InitModule3( "Blender.Types", Null_methods, M_Types_doc );
+		Py_InitModule3( "Blender.Types", Null_methods, V24_M_Types_doc );
 
 	dict = PyModule_GetDict( submodule );
 
 	/* The Blender Object Type */
 
 	PyDict_SetItemString( dict, "ObjectType",
-			      ( PyObject * ) &Object_Type );
+			      ( PyObject * ) &V24_Object_Type );
 
 	/* Blender Object Data Types */
 
 	PyDict_SetItemString( dict, "GroupType",
-			      ( PyObject * ) &Group_Type );
+			      ( PyObject * ) &V24_Group_Type );
 
-	PyDict_SetItemString( dict, "SceneType", ( PyObject * ) &Scene_Type );
+	PyDict_SetItemString( dict, "SceneType", ( PyObject * ) &V24_Scene_Type );
 	PyDict_SetItemString( dict, "RenderDataType",
-			      ( PyObject * ) &RenderData_Type );
+			      ( PyObject * ) &V24_RenderData_Type );
 
 	PyDict_SetItemString( dict, "NMeshType", ( PyObject * ) &NMesh_Type );
 	PyDict_SetItemString( dict, "NMFaceType",
@@ -175,49 +175,49 @@ PyObject *Types_Init( void )
 			      ( PyObject * ) &NMEdge_Type );
 	PyDict_SetItemString( dict, "NMColType", ( PyObject * ) &NMCol_Type );
 
-	PyDict_SetItemString( dict, "MeshType", ( PyObject * ) &Mesh_Type );
+	PyDict_SetItemString( dict, "MeshType", ( PyObject * ) &V24_Mesh_Type );
 	PyDict_SetItemString( dict, "MFaceType",
-			      ( PyObject * ) &MFace_Type );
+			      ( PyObject * ) &V24_MFace_Type );
 	PyDict_SetItemString( dict, "MEdgeType",
-			      ( PyObject * ) &MEdge_Type );
+			      ( PyObject * ) &V24_MEdge_Type );
 	PyDict_SetItemString( dict, "MVertType",
-			      ( PyObject * ) &MVert_Type );
+			      ( PyObject * ) &V24_MVert_Type );
 	PyDict_SetItemString( dict, "PVertType",
-			      ( PyObject * ) &PVert_Type );
-	PyDict_SetItemString( dict, "MColType", ( PyObject * ) &MCol_Type );
+			      ( PyObject * ) &V24_PVert_Type );
+	PyDict_SetItemString( dict, "MColType", ( PyObject * ) &V24_MCol_Type );
 
 	PyDict_SetItemString( dict, "ArmatureType",
-			      ( PyObject * ) &Armature_Type );
-	PyDict_SetItemString( dict, "BoneType", ( PyObject * ) &Bone_Type );
+			      ( PyObject * ) &V24_Armature_Type );
+	PyDict_SetItemString( dict, "BoneType", ( PyObject * ) &V24_Bone_Type );
 
-	PyDict_SetItemString( dict, "CurNurb_Type",
-			      ( PyObject * ) &CurNurb_Type );
-	PyDict_SetItemString( dict, "SurfNurb_Type",
-			      ( PyObject * ) &SurfNurb_Type );
-	PyDict_SetItemString( dict, "CurveType", ( PyObject * ) &Curve_Type );
+	PyDict_SetItemString( dict, "V24_CurNurb_Type",
+			      ( PyObject * ) &V24_CurNurb_Type );
+	PyDict_SetItemString( dict, "V24_SurfNurb_Type",
+			      ( PyObject * ) &V24_SurfNurb_Type );
+	PyDict_SetItemString( dict, "CurveType", ( PyObject * ) &V24_Curve_Type );
 
-	PyDict_SetItemString( dict, "IpoType", ( PyObject * ) &Ipo_Type );
+	PyDict_SetItemString( dict, "IpoType", ( PyObject * ) &V24_Ipo_Type );
 	PyDict_SetItemString( dict, "MetaballType",
-			      ( PyObject * ) &Metaball_Type );
+			      ( PyObject * ) &V24_Metaball_Type );
 
 	PyDict_SetItemString( dict, "CameraType",
-			      ( PyObject * ) &Camera_Type );
-	PyDict_SetItemString( dict, "ImageType", ( PyObject * ) &Image_Type );
-	PyDict_SetItemString( dict, "LampType", ( PyObject * ) &Lamp_Type );
-	PyDict_SetItemString( dict, "TextType", ( PyObject * ) &Text_Type );
-	PyDict_SetItemString( dict, "Text3dType", ( PyObject * ) &Text3d_Type );
+			      ( PyObject * ) &V24_Camera_Type );
+	PyDict_SetItemString( dict, "ImageType", ( PyObject * ) &V24_Image_Type );
+	PyDict_SetItemString( dict, "LampType", ( PyObject * ) &V24_Lamp_Type );
+	PyDict_SetItemString( dict, "TextType", ( PyObject * ) &V24_Text_Type );
+	PyDict_SetItemString( dict, "Text3dType", ( PyObject * ) &V24_Text3d_Type );
 	PyDict_SetItemString( dict, "MaterialType",
-			      ( PyObject * ) &Material_Type );
+			      ( PyObject * ) &V24_Material_Type );
 
 	PyDict_SetItemString( dict, "ButtonType",
-			      ( PyObject * ) &Button_Type );
+			      ( PyObject * ) &V24_Button_Type );
 
 	PyDict_SetItemString( dict, "LatticeType",
-			      ( PyObject * ) &Lattice_Type );
+			      ( PyObject * ) &V24_Lattice_Type );
 
 	PyDict_SetItemString( dict, "TextureType",
-			      ( PyObject * ) &Texture_Type );
-	PyDict_SetItemString( dict, "MTexType", ( PyObject * ) &MTex_Type );
+			      ( PyObject * ) &V24_Texture_Type );
+	PyDict_SetItemString( dict, "MTexType", ( PyObject * ) &V24_MTex_Type );
 
 	/* External helper Types available to the main ones above */
 
@@ -235,28 +235,28 @@ PyObject *Types_Init( void )
 	PyDict_SetItemString( dict, "quaternionType",
 			      ( PyObject * ) &quaternion_Type );
 	PyDict_SetItemString( dict, "BezTripleType",
-			      ( PyObject * ) &BezTriple_Type );
+			      ( PyObject * ) &V24_BezTriple_Type );
 	PyDict_SetItemString( dict, "ActionType",
-			      ( PyObject * ) &Action_Type );
+			      ( PyObject * ) &V24_Action_Type );
 	PyDict_SetItemString( dict, "PoseType",
-			      ( PyObject * ) &Pose_Type );
+			      ( PyObject * ) &V24_Pose_Type );
 	PyDict_SetItemString( dict, "propertyType",
 			      ( PyObject * ) &property_Type );
 	PyDict_SetItemString( dict, "pointType",
 			      ( PyObject * ) &point_Type );
 	PyDict_SetItemString( dict, "ModifierType",
-			      ( PyObject * ) &Modifier_Type );
+			      ( PyObject * ) &V24_Modifier_Type );
 	PyDict_SetItemString( dict, "ModSeqType",
-			      ( PyObject * ) &ModSeq_Type );
+			      ( PyObject * ) &V24_ModSeq_Type );
 	PyDict_SetItemString( dict, "EditBoneType",
-			      ( PyObject * ) &EditBone_Type);
+			      ( PyObject * ) &V24_EditBone_Type);
 	PyDict_SetItemString( dict, "ThemeSpaceType",
-			      ( PyObject * ) &ThemeSpace_Type);
-	PyDict_SetItemString( dict, "ThemeUI_Type",
-			      ( PyObject * ) &ThemeUI_Type);
+			      ( PyObject * ) &V24_ThemeSpace_Type);
+	PyDict_SetItemString( dict, "V24_ThemeUI_Type",
+			      ( PyObject * ) &V24_ThemeUI_Type);
 	PyDict_SetItemString( dict, "IDGroupType",
-			      ( PyObject * ) &IDGroup_Type);
+			      ( PyObject * ) &V24_IDGroup_Type);
 	PyDict_SetItemString( dict, "IDArrayType",
-			      ( PyObject * ) &IDArray_Type);
+			      ( PyObject * ) &V24_IDArray_Type);
 	return submodule;
 }

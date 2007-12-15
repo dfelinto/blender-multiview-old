@@ -36,21 +36,21 @@
 #include <Python.h>
 #include "DNA_curve_types.h"
 
-extern PyTypeObject Text3d_Type;
+extern PyTypeObject V24_Text3d_Type;
 
-#define BPy_Text3d_Check(v) ((v)->ob_type==&Text3d_Type)
+#define V24_BPy_Text3d_Check(v) ((v)->ob_type==&V24_Text3d_Type)
 typedef Curve Text3d; 
 
 /*prototypes*/
-PyObject *Text3d_Init( void );
+PyObject *V24_Text3d_Init( void );
 struct Text3d *Text3d_FromPyObject( PyObject * py_obj );
-PyObject *Text3d_CreatePyObject( Text3d* text3d );
+PyObject *V24_Text3d_CreatePyObject( Text3d* text3d );
 
-/* Python BPy_Text3d structure definition */
+/* Python V24_BPy_Text3d structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	Text3d * curve;
-} BPy_Text3d;
+} V24_BPy_Text3d;
 
 #endif				/* EXPP_TEXT3D_H */
 

@@ -37,6 +37,6 @@
 #include <Python.h>
 #include "vector.h"
 
-PyObject *Geometry_Init( void );
+PyObject *V24_Geometry_Init( void );
 
 #endif				/* EXPP_Geometry_H */

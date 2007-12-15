@@ -55,8 +55,8 @@
 #include "gen_library.h"
 
 /* checks for the scene being removed */
-#define MODIFIER_DEL_CHECK_PY(bpy_modifier) if (!(bpy_modifier->md)) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "Modifier has been removed" ) )
-#define MODIFIER_DEL_CHECK_INT(bpy_modifier) if (!(bpy_modifier->md)) return ( EXPP_ReturnIntError( PyExc_RuntimeError, "Modifier has been removed" ) )
+#define MODIFIER_DEL_CHECK_PY(bpy_modifier) if (!(bpy_modifier->md)) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "Modifier has been removed" ) )
+#define MODIFIER_DEL_CHECK_INT(bpy_modifier) if (!(bpy_modifier->md)) return ( V24_EXPP_ReturnIntError( PyExc_RuntimeError, "Modifier has been removed" ) )
 
 enum mod_constants {
 	/*Apply to all modifiers*/
@@ -149,63 +149,63 @@ enum mod_constants {
 };
 
 /*****************************************************************************/
-/* Python BPy_Modifier methods declarations:                                 */
+/* Python V24_BPy_Modifier methods declarations:                                 */
 /*****************************************************************************/
-static PyObject *Modifier_getName( BPy_Modifier * self );
-static int Modifier_setName( BPy_Modifier * self, PyObject *arg );
-static PyObject *Modifier_getType( BPy_Modifier * self );
-static PyObject *Modifier_reset( BPy_Modifier * self );
+static PyObject *V24_Modifier_getName( V24_BPy_Modifier * self );
+static int V24_Modifier_setName( V24_BPy_Modifier * self, PyObject *arg );
+static PyObject *V24_Modifier_getType( V24_BPy_Modifier * self );
+static PyObject *V24_Modifier_reset( V24_BPy_Modifier * self );
 
-static PyObject *Modifier_getData( BPy_Modifier * self, PyObject * key );
-static int Modifier_setData( BPy_Modifier * self, PyObject * key, 
+static PyObject *V24_Modifier_getData( V24_BPy_Modifier * self, PyObject * key );
+static int V24_Modifier_setData( V24_BPy_Modifier * self, PyObject * key, 
 		PyObject * value );
 
 /*****************************************************************************/
-/* Python BPy_Modifier methods table:                                        */
+/* Python V24_BPy_Modifier methods table:                                        */
 /*****************************************************************************/
-static PyMethodDef BPy_Modifier_methods[] = {
+static PyMethodDef V24_BPy_Modifier_methods[] = {
 	/* name, method, flags, doc */
-	{"reset", (PyCFunction)Modifier_reset, METH_NOARGS,
+	{"reset", (PyCFunction)V24_Modifier_reset, METH_NOARGS,
 		"resets a hook modifier location"},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python BPy_Modifier attributes get/set structure:                         */
+/* Python V24_BPy_Modifier attributes get/set structure:                         */
 /*****************************************************************************/
-static PyGetSetDef BPy_Modifier_getseters[] = {
+static PyGetSetDef V24_BPy_Modifier_getseters[] = {
 	{"name",
-	(getter)Modifier_getName, (setter)Modifier_setName,
+	(getter)V24_Modifier_getName, (setter)V24_Modifier_setName,
 	 "Modifier name", NULL},
 	{"type",
-	(getter)Modifier_getType, (setter)NULL,
+	(getter)V24_Modifier_getType, (setter)NULL,
 	 "Modifier type (read only)", NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
 /*****************************************************************************/
-/* Python Modifier_Type Mapping Methods table:                               */
+/* Python V24_Modifier_Type Mapping Methods table:                               */
 /*****************************************************************************/
-static PyMappingMethods Modifier_as_mapping = {
+static PyMappingMethods V24_Modifier_as_mapping = {
 	NULL,                               /* mp_length        */
-	( binaryfunc ) Modifier_getData,	/* mp_subscript     */
-	( objobjargproc ) Modifier_setData,	/* mp_ass_subscript */
+	( binaryfunc ) V24_Modifier_getData,	/* mp_subscript     */
+	( objobjargproc ) V24_Modifier_setData,	/* mp_ass_subscript */
 };
 
 /*****************************************************************************/
-/* Python Modifier_Type callback function prototypes:                        */
+/* Python V24_Modifier_Type callback function prototypes:                        */
 /*****************************************************************************/
-static PyObject *Modifier_repr( BPy_Modifier * self );
+static PyObject *V24_Modifier_repr( V24_BPy_Modifier * self );
 
 /*****************************************************************************/
-/* Python Modifier_Type structure definition:                                */
+/* Python V24_Modifier_Type structure definition:                                */
 /*****************************************************************************/
-PyTypeObject Modifier_Type = {
+PyTypeObject V24_Modifier_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Modifier",         /* char *tp_name; */
-	sizeof( BPy_Modifier ),     /* int tp_basicsize; */
+	sizeof( V24_BPy_Modifier ),     /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -215,13 +215,13 @@ PyTypeObject Modifier_Type = {
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
 	NULL,                       /* cmpfunc tp_compare; */
-	( reprfunc ) Modifier_repr, /* reprfunc tp_repr; */
+	( reprfunc ) V24_Modifier_repr, /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
 	NULL,                       /* PySequenceMethods *tp_as_sequence; */
-	&Modifier_as_mapping,       /* PyMappingMethods *tp_as_mapping; */
+	&V24_Modifier_as_mapping,       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
 
@@ -258,9 +258,9 @@ PyTypeObject Modifier_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Modifier_methods,       /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Modifier_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Modifier_getseters,     /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Modifier_getseters,     /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -283,14 +283,14 @@ PyTypeObject Modifier_Type = {
 };
 
 /*****************************************************************************/
-/* Python BPy_Modifier methods:                                              */
+/* Python V24_BPy_Modifier methods:                                              */
 /*****************************************************************************/
 
 /*
  * return the name of this modifier
  */
 
-static PyObject *Modifier_getName( BPy_Modifier * self )
+static PyObject *V24_Modifier_getName( V24_BPy_Modifier * self )
 {
 	MODIFIER_DEL_CHECK_PY(self);
 	return PyString_FromString( self->md->name );
@@ -300,11 +300,11 @@ static PyObject *Modifier_getName( BPy_Modifier * self )
  * set the name of this modifier
  */
 
-static int Modifier_setName( BPy_Modifier * self, PyObject * attr )
+static int V24_Modifier_setName( V24_BPy_Modifier * self, PyObject * attr )
 {
 	char *name = PyString_AsString( attr );
 	if( !name )
-		return EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
 
 	MODIFIER_DEL_CHECK_INT(self);
 	
@@ -317,14 +317,14 @@ static int Modifier_setName( BPy_Modifier * self, PyObject * attr )
  * return the type of this modifier
  */
 
-static PyObject *Modifier_getType( BPy_Modifier * self )
+static PyObject *V24_Modifier_getType( V24_BPy_Modifier * self )
 {
 	MODIFIER_DEL_CHECK_PY(self);
 	
 	return PyInt_FromLong( self->md->type );
 }
 
-static PyObject *subsurf_getter( BPy_Modifier * self, int type )
+static PyObject *subsurf_getter( V24_BPy_Modifier * self, int type )
 {
 	SubsurfModifierData *md = ( SubsurfModifierData *)(self->md);
 
@@ -342,137 +342,137 @@ static PyObject *subsurf_getter( BPy_Modifier * self, int type )
 		return PyBool_FromLong( ( long ) 
 				( md->flags & eSubsurfModifierFlag_SubsurfUv ) ) ;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError,
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError,
 				"key not found" );
 	}
 }
 
-static int subsurf_setter( BPy_Modifier * self, int type,
+static int subsurf_setter( V24_BPy_Modifier * self, int type,
 		PyObject *value )
 {
 	SubsurfModifierData *md = (SubsurfModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_TYPES:
-		return EXPP_setIValueRange( value, &md->subdivType, 0, 1, 'h' );
+		return V24_EXPP_setIValueRange( value, &md->subdivType, 0, 1, 'h' );
 	case EXPP_MOD_LEVELS:
-		return EXPP_setIValueClamped( value, &md->levels, 1, 6, 'h' );
+		return V24_EXPP_setIValueClamped( value, &md->levels, 1, 6, 'h' );
 	case EXPP_MOD_RENDLEVELS:
-		return EXPP_setIValueClamped( value, &md->renderLevels, 1, 6, 'h' );
+		return V24_EXPP_setIValueClamped( value, &md->renderLevels, 1, 6, 'h' );
 	case EXPP_MOD_OPTIMAL:
-		return EXPP_setBitfield( value, &md->flags,
+		return V24_EXPP_setBitfield( value, &md->flags,
 				eSubsurfModifierFlag_ControlEdges, 'h' );
 	case EXPP_MOD_UV:
-		return EXPP_setBitfield( value, &md->flags,
+		return V24_EXPP_setBitfield( value, &md->flags,
 				eSubsurfModifierFlag_SubsurfUv, 'h' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *armature_getter( BPy_Modifier * self, int type )
+static PyObject *armature_getter( V24_BPy_Modifier * self, int type )
 {
 	ArmatureModifierData *md = (ArmatureModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_OBJECT:
-		return Object_CreatePyObject( md->object );
+		return V24_Object_CreatePyObject( md->object );
 	case EXPP_MOD_VERTGROUP:
 		return PyBool_FromLong( ( long )( md->deformflag & 1 ) ) ;
 	case EXPP_MOD_ENVELOPES:
 		return PyBool_FromLong( ( long )( md->deformflag & 2 ) ) ;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int armature_setter( BPy_Modifier *self, int type, PyObject *value )
+static int armature_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	ArmatureModifierData *md = (ArmatureModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_OBJECT: 
-		return GenericLib_assignData(value, (void **) &md->object, 0, 0, ID_OB, OB_ARMATURE);
+		return V24_GenericLib_assignData(value, (void **) &md->object, 0, 0, ID_OB, OB_ARMATURE);
 	case EXPP_MOD_VERTGROUP:
-		return EXPP_setBitfield( value, &md->deformflag, 1, 'h' );
+		return V24_EXPP_setBitfield( value, &md->deformflag, 1, 'h' );
 	case EXPP_MOD_ENVELOPES:
-		return EXPP_setBitfield( value, &md->deformflag, 2, 'h' );
+		return V24_EXPP_setBitfield( value, &md->deformflag, 2, 'h' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *lattice_getter( BPy_Modifier * self, int type )
+static PyObject *lattice_getter( V24_BPy_Modifier * self, int type )
 {
 	LatticeModifierData *md = (LatticeModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_OBJECT:
-		return Object_CreatePyObject( md->object );
+		return V24_Object_CreatePyObject( md->object );
 	case EXPP_MOD_VERTGROUP:
 		return PyString_FromString( md->name ) ;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int lattice_setter( BPy_Modifier *self, int type, PyObject *value )
+static int lattice_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	LatticeModifierData *md = (LatticeModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_OBJECT:
-		return GenericLib_assignData(value, (void **) &md->object, (void **) &self->object, 0, ID_OB, OB_LATTICE);
+		return V24_GenericLib_assignData(value, (void **) &md->object, (void **) &self->object, 0, ID_OB, OB_LATTICE);
 	case EXPP_MOD_VERTGROUP: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 		BLI_strncpy( md->name, name, sizeof( md->name ) );
 		break;
 		}
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 	return 0;
 }
 
-static PyObject *curve_getter( BPy_Modifier * self, int type )
+static PyObject *curve_getter( V24_BPy_Modifier * self, int type )
 {
 	CurveModifierData *md = (CurveModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_OBJECT:
-		return Object_CreatePyObject( md->object );
+		return V24_Object_CreatePyObject( md->object );
 	case EXPP_MOD_VERTGROUP:
 		return PyString_FromString( md->name ) ;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int curve_setter( BPy_Modifier *self, int type, PyObject *value )
+static int curve_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	CurveModifierData *md = (CurveModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_OBJECT:
-		return GenericLib_assignData(value, (void **) &md->object, (void **) &self->object, 0, ID_OB, OB_CURVE);
+		return V24_GenericLib_assignData(value, (void **) &md->object, (void **) &self->object, 0, ID_OB, OB_CURVE);
 	case EXPP_MOD_VERTGROUP: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 		BLI_strncpy( md->name, name, sizeof( md->name ) );
 		break;
 		}
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 	return 0;
 }
 
-static PyObject *build_getter( BPy_Modifier * self, int type )
+static PyObject *build_getter( V24_BPy_Modifier * self, int type )
 {
 	BuildModifierData *md = (BuildModifierData *)(self->md);
 
@@ -486,29 +486,29 @@ static PyObject *build_getter( BPy_Modifier * self, int type )
 	case EXPP_MOD_RANDOMIZE:
 		return PyBool_FromLong( ( long )md->randomize ) ;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int build_setter( BPy_Modifier *self, int type, PyObject *value )
+static int build_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	BuildModifierData *md = (BuildModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_START:
-		return EXPP_setFloatClamped( value, &md->start, 1.0, MAXFRAMEF );
+		return V24_EXPP_setFloatClamped( value, &md->start, 1.0, MAXFRAMEF );
 	case EXPP_MOD_LENGTH:
-		return EXPP_setFloatClamped( value, &md->length, 1.0, MAXFRAMEF );
+		return V24_EXPP_setFloatClamped( value, &md->length, 1.0, MAXFRAMEF );
 	case EXPP_MOD_SEED:
-		return EXPP_setIValueClamped( value, &md->seed, 1, MAXFRAME, 'i' );
+		return V24_EXPP_setIValueClamped( value, &md->seed, 1, MAXFRAME, 'i' );
 	case EXPP_MOD_RANDOMIZE:
-		return EXPP_setBitfield( value, &md->randomize, 1, 'i' );
+		return V24_EXPP_setBitfield( value, &md->randomize, 1, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *mirror_getter( BPy_Modifier * self, int type )
+static PyObject *mirror_getter( V24_BPy_Modifier * self, int type )
 {
 	MirrorModifierData *md = (MirrorModifierData *)(self->md);
 
@@ -527,31 +527,31 @@ static PyObject *mirror_getter( BPy_Modifier * self, int type )
 		return PyBool_FromLong( ( long ) 
 				( md->flag & MOD_MIR_AXIS_Z ) ) ;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int mirror_setter( BPy_Modifier *self, int type, PyObject *value )
+static int mirror_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	MirrorModifierData *md = (MirrorModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_LIMIT:
-		return EXPP_setFloatClamped( value, &md->tolerance, 0.0, 1.0 );
+		return V24_EXPP_setFloatClamped( value, &md->tolerance, 0.0, 1.0 );
 	case EXPP_MOD_FLAG:
-		return EXPP_setBitfield( value, &md->flag, MOD_MIR_CLIPPING, 'i' );
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_MIR_CLIPPING, 'i' );
 	case EXPP_MOD_AXIS_X:
-		return EXPP_setBitfield( value, &md->flag, MOD_MIR_AXIS_X, 'h' );
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_MIR_AXIS_X, 'h' );
 	case EXPP_MOD_AXIS_Y:
-		return EXPP_setBitfield( value, &md->flag, MOD_MIR_AXIS_Y, 'h' );
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_MIR_AXIS_Y, 'h' );
 	case EXPP_MOD_AXIS_Z:
-		return EXPP_setBitfield( value, &md->flag, MOD_MIR_AXIS_Z, 'h' );
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_MIR_AXIS_Z, 'h' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *decimate_getter( BPy_Modifier * self, int type )
+static PyObject *decimate_getter( V24_BPy_Modifier * self, int type )
 {
 	DecimateModifierData *md = (DecimateModifierData *)(self->md);
 
@@ -559,22 +559,22 @@ static PyObject *decimate_getter( BPy_Modifier * self, int type )
 		return PyFloat_FromDouble( (double)md->percent );
 	else if( type == EXPP_MOD_COUNT )
 		return PyInt_FromLong( (long)md->faceCount );
-	return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+	return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 }
 
-static int decimate_setter( BPy_Modifier *self, int type, PyObject *value )
+static int decimate_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	DecimateModifierData *md = (DecimateModifierData *)(self->md);
 
 	if( type == EXPP_MOD_RATIO )
-		return EXPP_setFloatClamped( value, &md->percent, 0.0, 1.0 );
+		return V24_EXPP_setFloatClamped( value, &md->percent, 0.0, 1.0 );
 	else if( type == EXPP_MOD_COUNT )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 				"value is read-only" );
-	return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+	return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 }
 
-static PyObject *smooth_getter( BPy_Modifier * self, int type )
+static PyObject *smooth_getter( V24_BPy_Modifier * self, int type )
 {
 	SmoothModifierData *md = (SmoothModifierData *)(self->md);
 
@@ -586,43 +586,43 @@ static PyObject *smooth_getter( BPy_Modifier * self, int type )
 	case EXPP_MOD_VERTGROUP:
 		return PyString_FromString( md->defgrp_name ) ;
 	case EXPP_MOD_ENABLE_X:
-		return EXPP_getBitfield( &md->flag, MOD_SMOOTH_X, 'h' );
+		return V24_EXPP_getBitfield( &md->flag, MOD_SMOOTH_X, 'h' );
 	case EXPP_MOD_ENABLE_Y:
-		return EXPP_getBitfield( &md->flag, MOD_SMOOTH_Y, 'h' );
+		return V24_EXPP_getBitfield( &md->flag, MOD_SMOOTH_Y, 'h' );
 	case EXPP_MOD_ENABLE_Z:
-		return EXPP_getBitfield( &md->flag, MOD_SMOOTH_Z, 'h' );
+		return V24_EXPP_getBitfield( &md->flag, MOD_SMOOTH_Z, 'h' );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int smooth_setter( BPy_Modifier *self, int type, PyObject *value )
+static int smooth_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	SmoothModifierData *md = (SmoothModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_FACTOR:
-		return EXPP_setFloatClamped( value, &md->fac, -10.0, 10.0 );
+		return V24_EXPP_setFloatClamped( value, &md->fac, -10.0, 10.0 );
 	case EXPP_MOD_REPEAT:
-		return EXPP_setIValueRange( value, &md->repeat, 0, 30, 'h' );
+		return V24_EXPP_setIValueRange( value, &md->repeat, 0, 30, 'h' );
 	case EXPP_MOD_VERTGROUP: {
 		char *name = PyString_AsString( value );
-		if( !name ) return EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
+		if( !name ) return V24_EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
 		BLI_strncpy( md->defgrp_name, name, sizeof( md->defgrp_name ) );
 		return 0;
 	}
 	case EXPP_MOD_ENABLE_X:
-		return EXPP_setBitfield( value, &md->flag, MOD_SMOOTH_X, 'h' ); 
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_SMOOTH_X, 'h' ); 
 	case EXPP_MOD_ENABLE_Y:
-		return EXPP_setBitfield( value, &md->flag, MOD_SMOOTH_Y, 'h' ); 
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_SMOOTH_Y, 'h' ); 
 	case EXPP_MOD_ENABLE_Z:
-		return EXPP_setBitfield( value, &md->flag, MOD_SMOOTH_Z, 'h' ); 
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_SMOOTH_Z, 'h' ); 
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *cast_getter( BPy_Modifier * self, int type )
+static PyObject *cast_getter( V24_BPy_Modifier * self, int type )
 {
 	CastModifierData *md = (CastModifierData *)(self->md);
 
@@ -636,72 +636,72 @@ static PyObject *cast_getter( BPy_Modifier * self, int type )
 	case EXPP_MOD_SIZE:
 		return PyFloat_FromDouble( (double)md->size );
 	case EXPP_MOD_OBJECT:
-		return Object_CreatePyObject( md->object );
+		return V24_Object_CreatePyObject( md->object );
 	case EXPP_MOD_VERTGROUP:
 		return PyString_FromString( md->defgrp_name ) ;
 	case EXPP_MOD_ENABLE_X:
-		return EXPP_getBitfield( &md->flag, MOD_CAST_X, 'h' );
+		return V24_EXPP_getBitfield( &md->flag, MOD_CAST_X, 'h' );
 	case EXPP_MOD_ENABLE_Y:
-		return EXPP_getBitfield( &md->flag, MOD_CAST_Y, 'h' );
+		return V24_EXPP_getBitfield( &md->flag, MOD_CAST_Y, 'h' );
 	case EXPP_MOD_ENABLE_Z:
-		return EXPP_getBitfield( &md->flag, MOD_CAST_Z, 'h' );
+		return V24_EXPP_getBitfield( &md->flag, MOD_CAST_Z, 'h' );
 	case EXPP_MOD_USE_OB_TRANSFORM:
-		return EXPP_getBitfield( &md->flag, MOD_CAST_USE_OB_TRANSFORM, 'h' );
+		return V24_EXPP_getBitfield( &md->flag, MOD_CAST_USE_OB_TRANSFORM, 'h' );
 	case EXPP_MOD_SIZE_FROM_RADIUS:
-		return EXPP_getBitfield( &md->flag, MOD_CAST_SIZE_FROM_RADIUS, 'h' );
+		return V24_EXPP_getBitfield( &md->flag, MOD_CAST_SIZE_FROM_RADIUS, 'h' );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int cast_setter( BPy_Modifier *self, int type, PyObject *value )
+static int cast_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	CastModifierData *md = (CastModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_TYPES:
-		return EXPP_setIValueRange( value, &md->type, 0, MOD_CAST_TYPE_CUBOID, 'h' );
+		return V24_EXPP_setIValueRange( value, &md->type, 0, MOD_CAST_TYPE_CUBOID, 'h' );
 	case EXPP_MOD_FACTOR:
-		return EXPP_setFloatClamped( value, &md->fac, -10.0, 10.0 );
+		return V24_EXPP_setFloatClamped( value, &md->fac, -10.0, 10.0 );
 	case EXPP_MOD_RADIUS:
-		return EXPP_setFloatClamped( value, &md->radius, 0.0, 100.0 );
+		return V24_EXPP_setFloatClamped( value, &md->radius, 0.0, 100.0 );
 	case EXPP_MOD_SIZE:
-		return EXPP_setFloatClamped( value, &md->size, 0.0, 100.0 );
+		return V24_EXPP_setFloatClamped( value, &md->size, 0.0, 100.0 );
 	case EXPP_MOD_OBJECT: {
 		Object *ob_new=NULL;
 		if (value == Py_None) {
 			md->object = NULL;
 		} else if (BPy_Object_Check( value )) {
-			ob_new = ((( BPy_Object * )value)->object);
+			ob_new = ((( V24_BPy_Object * )value)->object);
 			md->object = ob_new;
 		} else {
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"Expected an Object or None value" );
 		}
 		return 0;
 	}
 	case EXPP_MOD_VERTGROUP: {
 		char *name = PyString_AsString( value );
-		if( !name ) return EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
+		if( !name ) return V24_EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
 		BLI_strncpy( md->defgrp_name, name, sizeof( md->defgrp_name ) );
 		return 0;
 	}
 	case EXPP_MOD_ENABLE_X:
-		return EXPP_setBitfield( value, &md->flag, MOD_CAST_X, 'h' ); 
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_CAST_X, 'h' ); 
 	case EXPP_MOD_ENABLE_Y:
-		return EXPP_setBitfield( value, &md->flag, MOD_CAST_Y, 'h' ); 
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_CAST_Y, 'h' ); 
 	case EXPP_MOD_ENABLE_Z:
-		return EXPP_setBitfield( value, &md->flag, MOD_CAST_Z, 'h' ); 
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_CAST_Z, 'h' ); 
 	case EXPP_MOD_USE_OB_TRANSFORM:
-		return EXPP_setBitfield( value, &md->flag, MOD_CAST_USE_OB_TRANSFORM, 'h' ); 
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_CAST_USE_OB_TRANSFORM, 'h' ); 
 	case EXPP_MOD_SIZE_FROM_RADIUS:
-		return EXPP_setBitfield( value, &md->flag, MOD_CAST_SIZE_FROM_RADIUS, 'h' ); 
+		return V24_EXPP_setBitfield( value, &md->flag, MOD_CAST_SIZE_FROM_RADIUS, 'h' ); 
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *wave_getter( BPy_Modifier * self, int type )
+static PyObject *wave_getter( V24_BPy_Modifier * self, int type )
 {
 	WaveModifierData *md = (WaveModifierData *)(self->md);
 
@@ -727,49 +727,49 @@ static PyObject *wave_getter( BPy_Modifier * self, int type )
 	case EXPP_MOD_FLAG:
 		return PyInt_FromLong( (long)md->flag );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int wave_setter( BPy_Modifier *self, int type, PyObject *value )
+static int wave_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	WaveModifierData *md = (WaveModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_STARTX:
-		return EXPP_setFloatClamped( value, &md->startx, -100.0, 100.0 );
+		return V24_EXPP_setFloatClamped( value, &md->startx, -100.0, 100.0 );
 	case EXPP_MOD_STARTY:
-		return EXPP_setFloatClamped( value, &md->starty, -100.0, 100.0 );
+		return V24_EXPP_setFloatClamped( value, &md->starty, -100.0, 100.0 );
 	case EXPP_MOD_HEIGHT:
-		return EXPP_setFloatClamped( value, &md->height, -2.0, 2.0 );
+		return V24_EXPP_setFloatClamped( value, &md->height, -2.0, 2.0 );
 	case EXPP_MOD_WIDTH:
-		return EXPP_setFloatClamped( value, &md->width, 0.0, 5.0 );
+		return V24_EXPP_setFloatClamped( value, &md->width, 0.0, 5.0 );
 	case EXPP_MOD_NARROW:
-		return EXPP_setFloatClamped( value, &md->width, 0.0, 5.0 );
+		return V24_EXPP_setFloatClamped( value, &md->width, 0.0, 5.0 );
 	case EXPP_MOD_SPEED:
-		return EXPP_setFloatClamped( value, &md->speed, -2.0, 2.0 );
+		return V24_EXPP_setFloatClamped( value, &md->speed, -2.0, 2.0 );
 	case EXPP_MOD_DAMP:
-		return EXPP_setFloatClamped( value, &md->damp, -MAXFRAMEF, MAXFRAMEF );
+		return V24_EXPP_setFloatClamped( value, &md->damp, -MAXFRAMEF, MAXFRAMEF );
 	case EXPP_MOD_LIFETIME:
-		return EXPP_setFloatClamped( value, &md->lifetime, -MAXFRAMEF, MAXFRAMEF );
+		return V24_EXPP_setFloatClamped( value, &md->lifetime, -MAXFRAMEF, MAXFRAMEF );
 	case EXPP_MOD_TIMEOFFS:
-		return EXPP_setFloatClamped( value, &md->timeoffs, -MAXFRAMEF, MAXFRAMEF );
+		return V24_EXPP_setFloatClamped( value, &md->timeoffs, -MAXFRAMEF, MAXFRAMEF );
 	case EXPP_MOD_FLAG:
-		return EXPP_setIValueRange( value, &md->flag, 0, 
+		return V24_EXPP_setIValueRange( value, &md->flag, 0, 
 				MOD_WAVE_X | MOD_WAVE_Y | MOD_WAVE_CYCL, 'h' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *array_getter( BPy_Modifier * self, int type )
+static PyObject *array_getter( V24_BPy_Modifier * self, int type )
 {
 	ArrayModifierData *md = (ArrayModifierData *)(self->md);
 
 	if( type == EXPP_MOD_OBJECT_OFFSET )
-		return Object_CreatePyObject( md->offset_ob );
+		return V24_Object_CreatePyObject( md->offset_ob );
 	else if( type == EXPP_MOD_OBJECT_CURVE )
-		return Object_CreatePyObject( md->curve_ob );	
+		return V24_Object_CreatePyObject( md->curve_ob );	
 	else if( type == EXPP_MOD_COUNT )
 		return PyInt_FromLong( (long)md->count );
 	else if( type == EXPP_MOD_LENGTH )
@@ -781,60 +781,60 @@ static PyObject *array_getter( BPy_Modifier * self, int type )
 	else if( type == EXPP_MOD_SCALE_VEC)
 		return newVectorObject( md->scale, 3, Py_NEW );
 	
-	return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+	return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 }
 
-static int array_setter( BPy_Modifier *self, int type, PyObject *value )
+static int array_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	ArrayModifierData *md = (ArrayModifierData *)(self->md);
 	switch( type ) {
 	case EXPP_MOD_OBJECT_OFFSET:
-		return GenericLib_assignData(value, (void **) &md->offset_ob, (void **) &self->object, 0, ID_OB, 0);
+		return V24_GenericLib_assignData(value, (void **) &md->offset_ob, (void **) &self->object, 0, ID_OB, 0);
 	case EXPP_MOD_OBJECT_CURVE:
-		return GenericLib_assignData(value, (void **) &md->curve_ob, 0, 0, ID_OB, OB_CURVE);
+		return V24_GenericLib_assignData(value, (void **) &md->curve_ob, 0, 0, ID_OB, OB_CURVE);
 	case EXPP_MOD_COUNT:
-		return EXPP_setIValueClamped( value, &md->count, 1, 1000, 'i' );
+		return V24_EXPP_setIValueClamped( value, &md->count, 1, 1000, 'i' );
 	case EXPP_MOD_LENGTH:
-		return EXPP_setFloatClamped( value, &md->length, 0.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &md->length, 0.0, 1000.0 );
 	case EXPP_MOD_MERGE_DIST:
-		return EXPP_setFloatClamped( value, &md->merge_dist, 0.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &md->merge_dist, 0.0, 1000.0 );
 	case EXPP_MOD_OFFSET_VEC:
-		return EXPP_setVec3Clamped( value, md->offset, -10000.0, 10000.0 );
+		return V24_EXPP_setVec3Clamped( value, md->offset, -10000.0, 10000.0 );
 	case EXPP_MOD_SCALE_VEC:
-		return EXPP_setVec3Clamped( value, md->scale, -10000.0, 10000.0 );
+		return V24_EXPP_setVec3Clamped( value, md->scale, -10000.0, 10000.0 );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *boolean_getter( BPy_Modifier * self, int type )
+static PyObject *boolean_getter( V24_BPy_Modifier * self, int type )
 {
 	BooleanModifierData *md = (BooleanModifierData *)(self->md);
 
 	if( type == EXPP_MOD_OBJECT )
-		return Object_CreatePyObject( md->object );
+		return V24_Object_CreatePyObject( md->object );
 	else if( type == EXPP_MOD_OPERATION )
 		return PyInt_FromLong( ( long )md->operation ) ;
 
-	return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+	return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 }
 
-static int boolean_setter( BPy_Modifier *self, int type, PyObject *value )
+static int boolean_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	BooleanModifierData *md = (BooleanModifierData *)(self->md);
 
 	if( type == EXPP_MOD_OBJECT )
-		return GenericLib_assignData(value, (void **) &md->object, (void **) &self->object, 0, ID_OB, OB_MESH);
+		return V24_GenericLib_assignData(value, (void **) &md->object, (void **) &self->object, 0, ID_OB, OB_MESH);
 	else if( type == EXPP_MOD_OPERATION )
-		return EXPP_setIValueRange( value, &md->operation, 
+		return V24_EXPP_setIValueRange( value, &md->operation, 
 				eBooleanModifierOp_Intersect, eBooleanModifierOp_Difference,
 				'h' );
 
-	return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+	return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 }
 
 
-static PyObject *edgesplit_getter( BPy_Modifier * self, int type )
+static PyObject *edgesplit_getter( V24_BPy_Modifier * self, int type )
 {
 	EdgeSplitModifierData *md = (EdgeSplitModifierData *)(self->md);
 
@@ -849,36 +849,36 @@ static PyObject *edgesplit_getter( BPy_Modifier * self, int type )
 				( md->flags & MOD_EDGESPLIT_FROMFLAG ) ) ;
 	
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int edgesplit_setter( BPy_Modifier *self, int type, PyObject *value )
+static int edgesplit_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	EdgeSplitModifierData *md = (EdgeSplitModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_EDGESPLIT_ANGLE:
-		return EXPP_setFloatClamped( value, &md->split_angle, 0.0, 180.0 );
+		return V24_EXPP_setFloatClamped( value, &md->split_angle, 0.0, 180.0 );
 	case EXPP_MOD_EDGESPLIT_FROM_ANGLE:
-		return EXPP_setBitfield( value, &md->flags,
+		return V24_EXPP_setBitfield( value, &md->flags,
 				MOD_EDGESPLIT_FROMANGLE, 'h' );
 	case EXPP_MOD_EDGESPLIT_FROM_SHARP:
-		return EXPP_setBitfield( value, &md->flags,
+		return V24_EXPP_setBitfield( value, &md->flags,
 				MOD_EDGESPLIT_FROMFLAG, 'h' );
 	
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *displace_getter( BPy_Modifier * self, int type )
+static PyObject *displace_getter( V24_BPy_Modifier * self, int type )
 {
 	DisplaceModifierData *md = (DisplaceModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_TEXTURE:
-		if (md->texture)	Texture_CreatePyObject( md->texture );
+		if (md->texture)	V24_Texture_CreatePyObject( md->texture );
 		else				Py_RETURN_NONE;
 	case EXPP_MOD_STRENGTH:
 		return PyFloat_FromDouble( (double)md->strength );
@@ -891,39 +891,39 @@ static PyObject *displace_getter( BPy_Modifier * self, int type )
 	case EXPP_MOD_MAPPING:
 		PyInt_FromLong( md->texmapping );
 	case EXPP_MOD_OBJECT:
-		return Object_CreatePyObject( md->map_object );
+		return V24_Object_CreatePyObject( md->map_object );
 	case EXPP_MOD_UVLAYER:
 		return PyString_FromString( md->uvlayer_name );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int displace_setter( BPy_Modifier *self, int type, PyObject *value )
+static int displace_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	DisplaceModifierData *md = (DisplaceModifierData *)(self->md);
 
 	switch( type ) {
 	case EXPP_MOD_TEXTURE:
-		return GenericLib_assignData(value, (void **) &md->texture, 0, 1, ID_TE, 0);
+		return V24_GenericLib_assignData(value, (void **) &md->texture, 0, 1, ID_TE, 0);
 	case EXPP_MOD_STRENGTH:
-		return EXPP_setFloatClamped( value, &md->strength, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &md->strength, -1000.0, 1000.0 );
 	
 	case EXPP_MOD_DIRECTION:
-		return EXPP_setIValueClamped( value, &md->direction,
+		return V24_EXPP_setIValueClamped( value, &md->direction,
 				MOD_DISP_DIR_X, MOD_DISP_DIR_RGB_XYZ, 'i' );
 	
 	case EXPP_MOD_VERTGROUP: {
 		char *name = PyString_AsString( value );
-		if( !name ) return EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
+		if( !name ) return V24_EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
 		BLI_strncpy( md->defgrp_name, name, sizeof( md->defgrp_name ) );
 		return 0;
 	}
 	case EXPP_MOD_MID_LEVEL:
-		return EXPP_setFloatClamped( value, &md->midlevel, 0.0, 1.0 );
+		return V24_EXPP_setFloatClamped( value, &md->midlevel, 0.0, 1.0 );
 	
 	case EXPP_MOD_MAPPING:
-		return EXPP_setIValueClamped( value, &md->texmapping,
+		return V24_EXPP_setIValueClamped( value, &md->texmapping,
 				MOD_DISP_MAP_LOCAL, MOD_DISP_MAP_UV, 'i' );
 	
 	case EXPP_MOD_OBJECT: {
@@ -931,10 +931,10 @@ static int displace_setter( BPy_Modifier *self, int type, PyObject *value )
 		if (value == Py_None) {
 			md->map_object = NULL;
 		} else if (BPy_Object_Check( value )) {
-			ob_new = ((( BPy_Object * )value)->object);
+			ob_new = ((( V24_BPy_Object * )value)->object);
 			md->map_object = ob_new;
 		} else {
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"Expected an Object or None value" );
 		}
 		return 0;
@@ -942,17 +942,17 @@ static int displace_setter( BPy_Modifier *self, int type, PyObject *value )
 	
 	case EXPP_MOD_UVLAYER: {
 		char *name = PyString_AsString( value );
-		if( !name ) return EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
+		if( !name ) return V24_EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
 		BLI_strncpy( md->uvlayer_name, name, sizeof( md->uvlayer_name ) );
 		return 0;
 	}
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
 
-/* static PyObject *uvproject_getter( BPy_Modifier * self, int type )
+/* static PyObject *uvproject_getter( V24_BPy_Modifier * self, int type )
 {
 	DisplaceModifierData *md = (DisplaceModifierData *)(self->md);
 
@@ -960,11 +960,11 @@ static int displace_setter( BPy_Modifier *self, int type, PyObject *value )
 	case EXPP_MOD_MID_LEVEL:
 		return PyFloat_FromDouble( (double)md->midlevel );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int uvproject_setter( BPy_Modifier *self, int type, PyObject *value )
+static int uvproject_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 {
 	DisplaceModifierData *md = (DisplaceModifierData *)(self->md);
 
@@ -972,7 +972,7 @@ static int uvproject_setter( BPy_Modifier *self, int type, PyObject *value )
 	case EXPP_MOD_TEXTURE:
 		return 0;
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 } */
 
@@ -981,12 +981,12 @@ static int uvproject_setter( BPy_Modifier *self, int type, PyObject *value )
  * get data from a modifier
  */
 
-static PyObject *Modifier_getData( BPy_Modifier * self, PyObject * key )
+static PyObject *V24_Modifier_getData( V24_BPy_Modifier * self, PyObject * key )
 {
 	int setting;
 
 	if( !PyInt_Check( key ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an int arg as stored in Blender.Modifier.Settings" );
 
 	MODIFIER_DEL_CHECK_PY(self);
@@ -994,13 +994,13 @@ static PyObject *Modifier_getData( BPy_Modifier * self, PyObject * key )
 	setting = PyInt_AsLong( key );
 	switch( setting ) {
 	case EXPP_MOD_RENDER:
-		return EXPP_getBitfield( &self->md->mode, eModifierMode_Render, 'h' );
+		return V24_EXPP_getBitfield( &self->md->mode, eModifierMode_Render, 'h' );
 	case EXPP_MOD_REALTIME:
-		return EXPP_getBitfield( &self->md->mode, eModifierMode_Realtime, 'h' );
+		return V24_EXPP_getBitfield( &self->md->mode, eModifierMode_Realtime, 'h' );
 	case EXPP_MOD_EDITMODE:
-		return EXPP_getBitfield( &self->md->mode, eModifierMode_Editmode, 'h' );
+		return V24_EXPP_getBitfield( &self->md->mode, eModifierMode_Editmode, 'h' );
 	case EXPP_MOD_ONCAGE:
-		return EXPP_getBitfield( &self->md->mode, eModifierMode_OnCage, 'h' );
+		return V24_EXPP_getBitfield( &self->md->mode, eModifierMode_OnCage, 'h' );
 	default:
 		switch( self->md->type ) {
 			case eModifierType_Subsurf:
@@ -1039,17 +1039,17 @@ static PyObject *Modifier_getData( BPy_Modifier * self, PyObject * key )
 				Py_RETURN_NONE;
 		}
 	}
-	return EXPP_ReturnPyObjError( PyExc_KeyError,
+	return V24_EXPP_ReturnPyObjError( PyExc_KeyError,
 			"unknown key or modifier type" );
 }
 
-static int Modifier_setData( BPy_Modifier * self, PyObject * key, 
+static int V24_Modifier_setData( V24_BPy_Modifier * self, PyObject * key, 
 		PyObject * arg )
 {
 	int key_int;
 
 	if( !PyNumber_Check( key ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected an int arg as stored in Blender.Modifier.Settings" );
 	
 	MODIFIER_DEL_CHECK_INT(self);
@@ -1059,16 +1059,16 @@ static int Modifier_setData( BPy_Modifier * self, PyObject * key,
 	/* Chach for standard modifier settings */
 	switch( key_int ) {
 	case EXPP_MOD_RENDER:
-		return EXPP_setBitfield( arg, &self->md->mode,
+		return V24_EXPP_setBitfield( arg, &self->md->mode,
 				eModifierMode_Render, 'h' );
 	case EXPP_MOD_REALTIME:
-		return EXPP_setBitfield( arg, &self->md->mode,
+		return V24_EXPP_setBitfield( arg, &self->md->mode,
 				eModifierMode_Realtime, 'h' );
 	case EXPP_MOD_EDITMODE:
-		return EXPP_setBitfield( arg, &self->md->mode,
+		return V24_EXPP_setBitfield( arg, &self->md->mode,
 				eModifierMode_Editmode, 'h' );
 	case EXPP_MOD_ONCAGE:
-		return EXPP_setBitfield( arg, &self->md->mode,
+		return V24_EXPP_setBitfield( arg, &self->md->mode,
 				eModifierMode_OnCage, 'h' );
 	}
 	
@@ -1108,12 +1108,12 @@ static int Modifier_setData( BPy_Modifier * self, PyObject * key,
 		case eModifierType_None:
 			return 0;
 	}
-	return EXPP_ReturnIntError( PyExc_RuntimeError,
+	return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 			"unsupported modifier setting" );
 }
 
 
-static PyObject *Modifier_reset( BPy_Modifier * self )
+static PyObject *V24_Modifier_reset( V24_BPy_Modifier * self )
 {
 	Object *ob = self->object;
 	ModifierData *md = self->md;
@@ -1122,7 +1122,7 @@ static PyObject *Modifier_reset( BPy_Modifier * self )
 	MODIFIER_DEL_CHECK_PY(self);
 	
 	if (md->type != eModifierType_Hook)
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"can only reset hooks" );
 	
 	if (hmd->object) {
@@ -1133,11 +1133,11 @@ static PyObject *Modifier_reset( BPy_Modifier * self )
 }
 
 /*****************************************************************************/
-/* Function:    Modifier_repr                                                */
-/* Description: This is a callback function for the BPy_Modifier type. It    */
+/* Function:    V24_Modifier_repr                                                */
+/* Description: This is a callback function for the V24_BPy_Modifier type. It    */
 /*              builds a meaningful string to represent modifier objects.    */
 /*****************************************************************************/
-static PyObject *Modifier_repr( BPy_Modifier * self )
+static PyObject *V24_Modifier_repr( V24_BPy_Modifier * self )
 {
 	ModifierTypeInfo *mti;
 	if (self->md==NULL)
@@ -1147,33 +1147,33 @@ static PyObject *Modifier_repr( BPy_Modifier * self )
 	return PyString_FromFormat( "[Modifier \"%s\", Type \"%s\"]", self->md->name, mti->name );
 }
 
-/* Three Python Modifier_Type helper functions needed by the Object module: */
+/* Three Python V24_Modifier_Type helper functions needed by the Object module: */
 
 /*****************************************************************************/
-/* Function:    Modifier_CreatePyObject                                      */
-/* Description: This function will create a new BPy_Modifier from an         */
+/* Function:    V24_Modifier_CreatePyObject                                      */
+/* Description: This function will create a new V24_BPy_Modifier from an         */
 /*              existing Blender modifier structure.                         */
 /*****************************************************************************/
-PyObject *Modifier_CreatePyObject( Object *ob, ModifierData * md )
+PyObject *V24_Modifier_CreatePyObject( Object *ob, ModifierData * md )
 {
-	BPy_Modifier *pymod;
-	pymod = ( BPy_Modifier * ) PyObject_NEW( BPy_Modifier, &Modifier_Type );
+	V24_BPy_Modifier *pymod;
+	pymod = ( V24_BPy_Modifier * ) PyObject_NEW( V24_BPy_Modifier, &V24_Modifier_Type );
 	if( !pymod )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "couldn't create BPy_Modifier object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "couldn't create V24_BPy_Modifier object" );
 	pymod->md = md;
 	pymod->object = ob;
 	return ( PyObject * ) pymod;
 }
 
 /*****************************************************************************/
-/* Function:    Modifier_FromPyObject                                        */
+/* Function:    V24_Modifier_FromPyObject                                        */
 /* Description: This function returns the Blender modifier from the given    */
 /*              PyObject.                                                    */
 /*****************************************************************************/
-ModifierData *Modifier_FromPyObject( PyObject * pyobj )
+ModifierData *V24_Modifier_FromPyObject( PyObject * pyobj )
 {
-	return ( ( BPy_Modifier * ) pyobj )->md;
+	return ( ( V24_BPy_Modifier * ) pyobj )->md;
 }
 
 /*****************************************************************************/
@@ -1184,13 +1184,13 @@ ModifierData *Modifier_FromPyObject( PyObject * pyobj )
  * Initialize the interator
  */
 
-static PyObject *ModSeq_getIter( BPy_ModSeq * self )
+static PyObject *V24_ModSeq_getIter( V24_BPy_ModSeq * self )
 {
 	if (!self->iter) {
 		self->iter = (ModifierData *)self->object->modifiers.first;
-		return EXPP_incr_ret ( (PyObject *) self );
+		return V24_EXPP_incr_ret ( (PyObject *) self );
 	} else {
-		return ModSeq_CreatePyObject(self->object, (ModifierData *)self->object->modifiers.first);
+		return V24_ModSeq_CreatePyObject(self->object, (ModifierData *)self->object->modifiers.first);
 	}
 }
 
@@ -1198,55 +1198,55 @@ static PyObject *ModSeq_getIter( BPy_ModSeq * self )
  * Get the next Modifier
  */
 
-static PyObject *ModSeq_nextIter( BPy_ModSeq * self )
+static PyObject *V24_ModSeq_nextIter( V24_BPy_ModSeq * self )
 {
 	ModifierData *iter = self->iter;
 	if( iter ) {
 		self->iter = iter->next;
-		return Modifier_CreatePyObject( self->object, iter );
+		return V24_Modifier_CreatePyObject( self->object, iter );
 	}
 	
 	self->iter= NULL; /* mark as not iterating */
-	return EXPP_ReturnPyObjError( PyExc_StopIteration,
+	return V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 			"iterator at end" );
 }
 
 /* return the number of modifiers */
 
-static int ModSeq_length( BPy_ModSeq * self )
+static int V24_ModSeq_length( V24_BPy_ModSeq * self )
 {
 	return BLI_countlist( &self->object->modifiers );
 }
 
 /* return a modifier */
 
-static PyObject *ModSeq_item( BPy_ModSeq * self, int i )
+static PyObject *V24_ModSeq_item( V24_BPy_ModSeq * self, int i )
 {
 	ModifierData *md = NULL;
 
 	/* if index is negative, start counting from the end of the list */
 	if( i < 0 )
-		i += ModSeq_length( self );
+		i += V24_ModSeq_length( self );
 
 	/* skip through the list until we get the modifier or end of list */
 
 	for( md = self->object->modifiers.first; i && md; --i ) md = md->next;
 
 	if( md )
-		return Modifier_CreatePyObject( self->object, md );
+		return V24_Modifier_CreatePyObject( self->object, md );
 	else
-		return EXPP_ReturnPyObjError( PyExc_IndexError,
+		return V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 				"array index out of range" );
 }
 
 /*****************************************************************************/
-/* Python BPy_ModSeq sequence table:                                      */
+/* Python V24_BPy_ModSeq sequence table:                                      */
 /*****************************************************************************/
-static PySequenceMethods ModSeq_as_sequence = {
-	( inquiry ) ModSeq_length,	/* sq_length */
+static PySequenceMethods V24_ModSeq_as_sequence = {
+	( inquiry ) V24_ModSeq_length,	/* sq_length */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
-	( intargfunc ) ModSeq_item,	/* sq_item */
+	( intargfunc ) V24_ModSeq_item,	/* sq_item */
 	( intintargfunc ) 0,	/* sq_slice */
 	( intobjargproc ) 0,	/* sq_ass_item */
 	( intintobjargproc ) 0,	/* sq_ass_slice */
@@ -1259,18 +1259,18 @@ static PySequenceMethods ModSeq_as_sequence = {
  * helper function to check for a valid modifier argument
  */
 
-static ModifierData *locate_modifier( BPy_ModSeq *self, BPy_Modifier * value )
+static ModifierData *locate_modifier( V24_BPy_ModSeq *self, V24_BPy_Modifier * value )
 {
 	ModifierData *md;
 
 	/* check that argument is a modifier */
 	if( !BPy_Modifier_Check(value) )
-		return (ModifierData *)EXPP_ReturnPyObjError( PyExc_TypeError,
+		return (ModifierData *)V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an modifier as an argument" );
 
 	/* check whether modifier has been removed */
 	if( !value->md )
-		return (ModifierData *)EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return (ModifierData *)V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"This modifier has been removed!" );
 
 	/* find the modifier in the object's list */
@@ -1279,28 +1279,28 @@ static ModifierData *locate_modifier( BPy_ModSeq *self, BPy_Modifier * value )
 			return md;
 
 	/* return exception if we can't find the modifier */
-	return (ModifierData *)EXPP_ReturnPyObjError( PyExc_AttributeError,
+	return (ModifierData *)V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"This modifier is not in the object's stack" );
 }
 
 /* create a new modifier at the end of the list */
 
-static PyObject *ModSeq_append( BPy_ModSeq *self, PyObject *value )
+static PyObject *V24_ModSeq_append( V24_BPy_ModSeq *self, PyObject *value )
 {
 	int type = PyInt_AsLong(value);
 	
 	/* type 0 is eModifierType_None, should we be able to add one of these? */
 	if( type <= 0 || type >= NUM_MODIFIER_TYPES )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"Not an int or argument out of range, expected an int from Blender.Modifier.Type" );
 	
 	BLI_addtail( &self->object->modifiers, modifier_new( type ) );
-	return Modifier_CreatePyObject( self->object, self->object->modifiers.last );
+	return V24_Modifier_CreatePyObject( self->object, self->object->modifiers.last );
 }
 
 /* remove an existing modifier */
 
-static PyObject *ModSeq_remove( BPy_ModSeq *self, BPy_Modifier *value )
+static PyObject *V24_ModSeq_remove( V24_BPy_ModSeq *self, V24_BPy_Modifier *value )
 {
 	ModifierData *md = locate_modifier( self, value );
 
@@ -1320,7 +1320,7 @@ static PyObject *ModSeq_remove( BPy_ModSeq *self, BPy_Modifier *value )
 
 /* move the modifier up in the stack */
 
-static PyObject *ModSeq_moveUp( BPy_ModSeq * self, BPy_Modifier * value )
+static PyObject *V24_ModSeq_moveUp( V24_BPy_ModSeq * self, V24_BPy_Modifier * value )
 {
 	ModifierData *md = locate_modifier( self, value );
 
@@ -1329,7 +1329,7 @@ static PyObject *ModSeq_moveUp( BPy_ModSeq * self, BPy_Modifier * value )
 		return (PyObject *)NULL;
 	
 	if( mod_moveUp( self->object, md ) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"cannot move above a modifier requiring original data" );
 
 	Py_RETURN_NONE;
@@ -1337,7 +1337,7 @@ static PyObject *ModSeq_moveUp( BPy_ModSeq * self, BPy_Modifier * value )
 
 /* move the modifier down in the stack */
 
-static PyObject *ModSeq_moveDown( BPy_ModSeq * self, BPy_Modifier *value )
+static PyObject *V24_ModSeq_moveDown( V24_BPy_ModSeq * self, V24_BPy_Modifier *value )
 {
 	ModifierData *md = locate_modifier( self, value );
 
@@ -1346,37 +1346,37 @@ static PyObject *ModSeq_moveDown( BPy_ModSeq * self, BPy_Modifier *value )
 		return (PyObject *)NULL;
 	
 	if( mod_moveDown( self->object, md ) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"cannot move beyond a non-deforming modifier" );
 
 	Py_RETURN_NONE;
 }
 
 /*****************************************************************************/
-/* Python BPy_ModSeq methods table:                                       */
+/* Python V24_BPy_ModSeq methods table:                                       */
 /*****************************************************************************/
-static PyMethodDef BPy_ModSeq_methods[] = {
+static PyMethodDef V24_BPy_ModSeq_methods[] = {
 	/* name, method, flags, doc */
-	{"append", ( PyCFunction ) ModSeq_append, METH_O,
+	{"append", ( PyCFunction ) V24_ModSeq_append, METH_O,
 	 "(type) - add a new modifier, where type is the type of modifier"},
-	{"remove", ( PyCFunction ) ModSeq_remove, METH_O,
+	{"remove", ( PyCFunction ) V24_ModSeq_remove, METH_O,
 	 "(modifier) - remove an existing modifier, where modifier is a modifier from this object."},
-	{"moveUp", ( PyCFunction ) ModSeq_moveUp, METH_O,
+	{"moveUp", ( PyCFunction ) V24_ModSeq_moveUp, METH_O,
 	 "(modifier) - Move a modifier up in stack"},
-	{"moveDown", ( PyCFunction ) ModSeq_moveDown, METH_O,
+	{"moveDown", ( PyCFunction ) V24_ModSeq_moveDown, METH_O,
 	 "(modifier) - Move a modifier down in stack"},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python ModSeq_Type structure definition:                               */
+/* Python V24_ModSeq_Type structure definition:                               */
 /*****************************************************************************/
-PyTypeObject ModSeq_Type = {
+PyTypeObject V24_ModSeq_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender.Modifiers",        /* char *tp_name; */
-	sizeof( BPy_ModSeq ),       /* int tp_basicsize; */
+	sizeof( V24_BPy_ModSeq ),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -1391,7 +1391,7 @@ PyTypeObject ModSeq_Type = {
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&ModSeq_as_sequence,        /* PySequenceMethods *tp_as_sequence; */
+	&V24_ModSeq_as_sequence,        /* PySequenceMethods *tp_as_sequence; */
 	NULL,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
@@ -1425,11 +1425,11 @@ PyTypeObject ModSeq_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc )ModSeq_getIter, /* getiterfunc tp_iter; */
-    ( iternextfunc )ModSeq_nextIter, /* iternextfunc tp_iternext; */
+	( getiterfunc )V24_ModSeq_getIter, /* getiterfunc tp_iter; */
+    ( iternextfunc )V24_ModSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_ModSeq_methods,         /* struct PyMethodDef *tp_methods; */
+	V24_BPy_ModSeq_methods,         /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	NULL,                       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
@@ -1454,68 +1454,68 @@ PyTypeObject ModSeq_Type = {
 };
 
 /*****************************************************************************/
-/* Function:    ModSeq_CreatePyObject                                     */
-/* Description: This function will create a new BPy_ModSeq from an        */
+/* Function:    V24_ModSeq_CreatePyObject                                     */
+/* Description: This function will create a new V24_BPy_ModSeq from an        */
 /*              existing  ListBase structure.                                */
 /*****************************************************************************/
-PyObject *ModSeq_CreatePyObject( Object *ob, ModifierData *iter )
+PyObject *V24_ModSeq_CreatePyObject( Object *ob, ModifierData *iter )
 {
-	BPy_ModSeq *pymod;
-	pymod = ( BPy_ModSeq * ) PyObject_NEW( BPy_ModSeq, &ModSeq_Type );
+	V24_BPy_ModSeq *pymod;
+	pymod = ( V24_BPy_ModSeq * ) PyObject_NEW( V24_BPy_ModSeq, &V24_ModSeq_Type );
 	if( !pymod )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-				"couldn't create BPy_ModSeq object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+				"couldn't create V24_BPy_ModSeq object" );
 	pymod->object = ob;
 	pymod->iter = iter;
 	return ( PyObject * ) pymod;
 }
 
-static PyObject *M_Modifier_TypeDict( void )
+static PyObject *V24_M_Modifier_TypeDict( void )
 {
-	PyObject *S = PyConstant_New(  );
+	PyObject *S = V24_PyConstant_New(  );
 
 	if( S ) {
-		BPy_constant *d = ( BPy_constant * ) S;
+		V24_BPy_constant *d = ( V24_BPy_constant * ) S;
 
-		PyConstant_Insert( d, "SUBSURF", 
+		V24_PyConstant_Insert( d, "SUBSURF", 
 				PyInt_FromLong( eModifierType_Subsurf ) );
-		PyConstant_Insert( d, "ARMATURE",
+		V24_PyConstant_Insert( d, "ARMATURE",
 				PyInt_FromLong( eModifierType_Armature ) );
-		PyConstant_Insert( d, "LATTICE",
+		V24_PyConstant_Insert( d, "LATTICE",
 				PyInt_FromLong( eModifierType_Lattice ) );
-		PyConstant_Insert( d, "CURVE",
+		V24_PyConstant_Insert( d, "CURVE",
 				PyInt_FromLong( eModifierType_Curve ) );
-		PyConstant_Insert( d, "BUILD",
+		V24_PyConstant_Insert( d, "BUILD",
 				PyInt_FromLong( eModifierType_Build ) );
-		PyConstant_Insert( d, "MIRROR",
+		V24_PyConstant_Insert( d, "MIRROR",
 				PyInt_FromLong( eModifierType_Mirror ) );
-		PyConstant_Insert( d, "DECIMATE",
+		V24_PyConstant_Insert( d, "DECIMATE",
 				PyInt_FromLong( eModifierType_Decimate ) );
-		PyConstant_Insert( d, "WAVE",
+		V24_PyConstant_Insert( d, "WAVE",
 				PyInt_FromLong( eModifierType_Wave ) );
-		PyConstant_Insert( d, "BOOLEAN",
+		V24_PyConstant_Insert( d, "BOOLEAN",
 				PyInt_FromLong( eModifierType_Boolean ) );
-		PyConstant_Insert( d, "ARRAY",
+		V24_PyConstant_Insert( d, "ARRAY",
 				PyInt_FromLong( eModifierType_Array ) );
-		PyConstant_Insert( d, "EDGESPLIT",
+		V24_PyConstant_Insert( d, "EDGESPLIT",
 				PyInt_FromLong( eModifierType_EdgeSplit ) );
-		PyConstant_Insert( d, "SMOOTH",
+		V24_PyConstant_Insert( d, "SMOOTH",
 				PyInt_FromLong( eModifierType_Smooth ) );
-		PyConstant_Insert( d, "CAST",
+		V24_PyConstant_Insert( d, "CAST",
 				PyInt_FromLong( eModifierType_Cast ) );
-		PyConstant_Insert( d, "DISPLACE",
+		V24_PyConstant_Insert( d, "DISPLACE",
 				PyInt_FromLong( eModifierType_Displace ) );
 	}
 	return S;
 }
 
 
-static PyObject *M_Modifier_SettingsDict( void )
+static PyObject *V24_M_Modifier_SettingsDict( void )
 {
-	PyObject *S = PyConstant_New(  );
+	PyObject *S = V24_PyConstant_New(  );
 	
 	if( S ) {
-		BPy_constant *d = ( BPy_constant * ) S;
+		V24_BPy_constant *d = ( V24_BPy_constant * ) S;
 
 /*
 # The lines below are a python script that uses the enum variables to create 
@@ -1529,7 +1529,7 @@ st='''
 '''
 
 base= '''
-			PyConstant_Insert( d, "%s", 
+			V24_PyConstant_Insert( d, "%s", 
 				PyInt_FromLong( EXPP_MOD_%s ) );
 '''
 for var in st.replace(',','').split('\n'):
@@ -1545,117 +1545,117 @@ for var in st.replace(',','').split('\n'):
 */
 			
 			/*Auto generated from the above script*/
-			PyConstant_Insert( d, "RENDER", 
+			V24_PyConstant_Insert( d, "RENDER", 
 				PyInt_FromLong( EXPP_MOD_RENDER ) );
-			PyConstant_Insert( d, "REALTIME", 
+			V24_PyConstant_Insert( d, "REALTIME", 
 				PyInt_FromLong( EXPP_MOD_REALTIME ) );
-			PyConstant_Insert( d, "EDITMODE", 
+			V24_PyConstant_Insert( d, "EDITMODE", 
 				PyInt_FromLong( EXPP_MOD_EDITMODE ) );
-			PyConstant_Insert( d, "ONCAGE", 
+			V24_PyConstant_Insert( d, "ONCAGE", 
 				PyInt_FromLong( EXPP_MOD_ONCAGE ) );
-			PyConstant_Insert( d, "OBJECT", 
+			V24_PyConstant_Insert( d, "OBJECT", 
 				PyInt_FromLong( EXPP_MOD_OBJECT ) );
-			PyConstant_Insert( d, "VERTGROUP", 
+			V24_PyConstant_Insert( d, "VERTGROUP", 
 				PyInt_FromLong( EXPP_MOD_VERTGROUP ) );
-			PyConstant_Insert( d, "LIMIT", 
+			V24_PyConstant_Insert( d, "LIMIT", 
 				PyInt_FromLong( EXPP_MOD_LIMIT ) );
-			PyConstant_Insert( d, "FLAG", 
+			V24_PyConstant_Insert( d, "FLAG", 
 				PyInt_FromLong( EXPP_MOD_FLAG ) );
-			PyConstant_Insert( d, "COUNT", 
+			V24_PyConstant_Insert( d, "COUNT", 
 				PyInt_FromLong( EXPP_MOD_COUNT ) );
-			PyConstant_Insert( d, "LENGTH", 
+			V24_PyConstant_Insert( d, "LENGTH", 
 				PyInt_FromLong( EXPP_MOD_LENGTH ) );
-			PyConstant_Insert( d, "FACTOR", 
+			V24_PyConstant_Insert( d, "FACTOR", 
 				PyInt_FromLong( EXPP_MOD_FACTOR ) );
-			PyConstant_Insert( d, "ENABLE_X", 
+			V24_PyConstant_Insert( d, "ENABLE_X", 
 				PyInt_FromLong( EXPP_MOD_ENABLE_X ) );
-			PyConstant_Insert( d, "ENABLE_Y", 
+			V24_PyConstant_Insert( d, "ENABLE_Y", 
 				PyInt_FromLong( EXPP_MOD_ENABLE_Y ) );
-			PyConstant_Insert( d, "ENABLE_Z", 
+			V24_PyConstant_Insert( d, "ENABLE_Z", 
 				PyInt_FromLong( EXPP_MOD_ENABLE_Z ) );
-			PyConstant_Insert( d, "TYPES", 
+			V24_PyConstant_Insert( d, "TYPES", 
 				PyInt_FromLong( EXPP_MOD_TYPES ) );
-			PyConstant_Insert( d, "LEVELS", 
+			V24_PyConstant_Insert( d, "LEVELS", 
 				PyInt_FromLong( EXPP_MOD_LEVELS ) );
-			PyConstant_Insert( d, "RENDLEVELS", 
+			V24_PyConstant_Insert( d, "RENDLEVELS", 
 				PyInt_FromLong( EXPP_MOD_RENDLEVELS ) );
-			PyConstant_Insert( d, "OPTIMAL", 
+			V24_PyConstant_Insert( d, "OPTIMAL", 
 				PyInt_FromLong( EXPP_MOD_OPTIMAL ) );
-			PyConstant_Insert( d, "UV", 
+			V24_PyConstant_Insert( d, "UV", 
 				PyInt_FromLong( EXPP_MOD_UV ) );
-			PyConstant_Insert( d, "ENVELOPES", 
+			V24_PyConstant_Insert( d, "ENVELOPES", 
 				PyInt_FromLong( EXPP_MOD_ENVELOPES ) );
-			PyConstant_Insert( d, "OBJECT_OFFSET", 
+			V24_PyConstant_Insert( d, "OBJECT_OFFSET", 
 				PyInt_FromLong( EXPP_MOD_OBJECT_OFFSET ) );
-			PyConstant_Insert( d, "OBJECT_CURVE", 
+			V24_PyConstant_Insert( d, "OBJECT_CURVE", 
 				PyInt_FromLong( EXPP_MOD_OBJECT_CURVE ) );
-			PyConstant_Insert( d, "OFFSET_VEC", 
+			V24_PyConstant_Insert( d, "OFFSET_VEC", 
 				PyInt_FromLong( EXPP_MOD_OFFSET_VEC ) );
-			PyConstant_Insert( d, "SCALE_VEC", 
+			V24_PyConstant_Insert( d, "SCALE_VEC", 
 				PyInt_FromLong( EXPP_MOD_SCALE_VEC ) );
-			PyConstant_Insert( d, "MERGE_DIST", 
+			V24_PyConstant_Insert( d, "MERGE_DIST", 
 				PyInt_FromLong( EXPP_MOD_MERGE_DIST ) );
-			PyConstant_Insert( d, "START", 
+			V24_PyConstant_Insert( d, "START", 
 				PyInt_FromLong( EXPP_MOD_START ) );
-			PyConstant_Insert( d, "SEED", 
+			V24_PyConstant_Insert( d, "SEED", 
 				PyInt_FromLong( EXPP_MOD_SEED ) );
-			PyConstant_Insert( d, "RANDOMIZE", 
+			V24_PyConstant_Insert( d, "RANDOMIZE", 
 				PyInt_FromLong( EXPP_MOD_RANDOMIZE ) );
-			PyConstant_Insert( d, "AXIS_X", 
+			V24_PyConstant_Insert( d, "AXIS_X", 
 				PyInt_FromLong( EXPP_MOD_AXIS_X ) );
-			PyConstant_Insert( d, "AXIS_Y", 
+			V24_PyConstant_Insert( d, "AXIS_Y", 
 				PyInt_FromLong( EXPP_MOD_AXIS_Y ) );
-			PyConstant_Insert( d, "AXIS_Z", 
+			V24_PyConstant_Insert( d, "AXIS_Z", 
 				PyInt_FromLong( EXPP_MOD_AXIS_Z ) );
-			PyConstant_Insert( d, "RATIO", 
+			V24_PyConstant_Insert( d, "RATIO", 
 				PyInt_FromLong( EXPP_MOD_RATIO ) );
-			PyConstant_Insert( d, "STARTX", 
+			V24_PyConstant_Insert( d, "STARTX", 
 				PyInt_FromLong( EXPP_MOD_STARTX ) );
-			PyConstant_Insert( d, "STARTY", 
+			V24_PyConstant_Insert( d, "STARTY", 
 				PyInt_FromLong( EXPP_MOD_STARTY ) );
-			PyConstant_Insert( d, "HEIGHT", 
+			V24_PyConstant_Insert( d, "HEIGHT", 
 				PyInt_FromLong( EXPP_MOD_HEIGHT ) );
-			PyConstant_Insert( d, "WIDTH", 
+			V24_PyConstant_Insert( d, "WIDTH", 
 				PyInt_FromLong( EXPP_MOD_WIDTH ) );
-			PyConstant_Insert( d, "NARROW", 
+			V24_PyConstant_Insert( d, "NARROW", 
 				PyInt_FromLong( EXPP_MOD_NARROW ) );
-			PyConstant_Insert( d, "SPEED", 
+			V24_PyConstant_Insert( d, "SPEED", 
 				PyInt_FromLong( EXPP_MOD_SPEED ) );
-			PyConstant_Insert( d, "DAMP", 
+			V24_PyConstant_Insert( d, "DAMP", 
 				PyInt_FromLong( EXPP_MOD_DAMP ) );
-			PyConstant_Insert( d, "LIFETIME", 
+			V24_PyConstant_Insert( d, "LIFETIME", 
 				PyInt_FromLong( EXPP_MOD_LIFETIME ) );
-			PyConstant_Insert( d, "TIMEOFFS", 
+			V24_PyConstant_Insert( d, "TIMEOFFS", 
 				PyInt_FromLong( EXPP_MOD_TIMEOFFS ) );
-			PyConstant_Insert( d, "OPERATION", 
+			V24_PyConstant_Insert( d, "OPERATION", 
 				PyInt_FromLong( EXPP_MOD_OPERATION ) );
-			PyConstant_Insert( d, "EDGESPLIT_ANGLE", 
+			V24_PyConstant_Insert( d, "EDGESPLIT_ANGLE", 
 				PyInt_FromLong( EXPP_MOD_EDGESPLIT_ANGLE ) );
-			PyConstant_Insert( d, "EDGESPLIT_FROM_ANGLE", 
+			V24_PyConstant_Insert( d, "EDGESPLIT_FROM_ANGLE", 
 				PyInt_FromLong( EXPP_MOD_EDGESPLIT_FROM_ANGLE ) );
-			PyConstant_Insert( d, "EDGESPLIT_FROM_SHARP", 
+			V24_PyConstant_Insert( d, "EDGESPLIT_FROM_SHARP", 
 				PyInt_FromLong( EXPP_MOD_EDGESPLIT_FROM_SHARP ) );
-			PyConstant_Insert( d, "UVLAYER",
+			V24_PyConstant_Insert( d, "UVLAYER",
 				PyInt_FromLong( EXPP_MOD_UVLAYER ) );
-			PyConstant_Insert( d, "MID_LEVEL",
+			V24_PyConstant_Insert( d, "MID_LEVEL",
 				PyInt_FromLong( EXPP_MOD_MID_LEVEL ) );
-			PyConstant_Insert( d, "STRENGTH",
+			V24_PyConstant_Insert( d, "STRENGTH",
 				PyInt_FromLong( EXPP_MOD_STRENGTH ) );
-			PyConstant_Insert( d, "TEXTURE", 
+			V24_PyConstant_Insert( d, "TEXTURE", 
 				PyInt_FromLong( EXPP_MOD_TEXTURE ) );
-			PyConstant_Insert( d, "MAPPING", 
+			V24_PyConstant_Insert( d, "MAPPING", 
 				PyInt_FromLong( EXPP_MOD_MAPPING ) );
-			PyConstant_Insert( d, "DIRECTION", 
+			V24_PyConstant_Insert( d, "DIRECTION", 
 				PyInt_FromLong( EXPP_MOD_DIRECTION ) );
-			PyConstant_Insert( d, "REPEAT", 
+			V24_PyConstant_Insert( d, "REPEAT", 
 				PyInt_FromLong( EXPP_MOD_REPEAT ) );
-			PyConstant_Insert( d, "RADIUS", 
+			V24_PyConstant_Insert( d, "RADIUS", 
 				PyInt_FromLong( EXPP_MOD_RADIUS ) );
-			PyConstant_Insert( d, "SIZE", 
+			V24_PyConstant_Insert( d, "SIZE", 
 				PyInt_FromLong( EXPP_MOD_SIZE ) );
-			PyConstant_Insert( d, "USE_OB_TRANSFORM", 
+			V24_PyConstant_Insert( d, "USE_OB_TRANSFORM", 
 				PyInt_FromLong( EXPP_MOD_USE_OB_TRANSFORM ) );
-			PyConstant_Insert( d, "SIZE_FROM_RADIUS", 
+			V24_PyConstant_Insert( d, "SIZE_FROM_RADIUS", 
 				PyInt_FromLong( EXPP_MOD_SIZE_FROM_RADIUS ) );
 			/*End Auto generated code*/
 	}
@@ -1663,16 +1663,16 @@ for var in st.replace(',','').split('\n'):
 }
 
 /*****************************************************************************/
-/* Function:              Modifier_Init                                      */
+/* Function:              V24_Modifier_Init                                      */
 /*****************************************************************************/
-PyObject *Modifier_Init( void )
+PyObject *V24_Modifier_Init( void )
 {
 	PyObject *submodule;
-	PyObject *TypeDict = M_Modifier_TypeDict( );
-	PyObject *SettingsDict = M_Modifier_SettingsDict( );
+	PyObject *TypeDict = V24_M_Modifier_TypeDict( );
+	PyObject *SettingsDict = V24_M_Modifier_SettingsDict( );
 
-	if( PyType_Ready( &ModSeq_Type ) < 0 ||
-			PyType_Ready( &Modifier_Type ) < 0 )
+	if( PyType_Ready( &V24_ModSeq_Type ) < 0 ||
+			PyType_Ready( &V24_Modifier_Type ) < 0 )
 		return NULL;
 
 	submodule = Py_InitModule3( "Blender.Modifier", NULL,

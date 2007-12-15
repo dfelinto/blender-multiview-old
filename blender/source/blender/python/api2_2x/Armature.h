@@ -35,13 +35,13 @@
 #include "DNA_armature_types.h"
 
 //-------------------TYPE CHECKS---------------------------------
-#define BPy_Armature_Check(v) ((v)->ob_type == &Armature_Type)
-#define BPy_BonesDict_Check(v) ((v)->ob_type == &BonesDict_Type)
+#define BPy_Armature_Check(v) ((v)->ob_type == &V24_Armature_Type)
+#define BPy_BonesDict_Check(v) ((v)->ob_type == &V24_BonesDict_Type)
 //-------------------MODULE INIT---------------------------------
-PyObject *Armature_Init( void );
+PyObject *V24_Armature_Init( void );
 //-------------------TYPEOBJECT----------------------------------
-extern PyTypeObject Armature_Type;
-extern PyTypeObject BonesDict_Type;
+extern PyTypeObject V24_Armature_Type;
+extern PyTypeObject V24_BonesDict_Type;
 //-------------------STRUCT DEFINITION---------------------------
 typedef struct {
 	PyObject_HEAD 
@@ -50,20 +50,20 @@ typedef struct {
 	ListBase *bones;            //pointer to armature->bonebase
 	ListBase editbones;         //allocated list of EditBones 
 	short editmode_flag;       //1 = in , 0 = not in
-} BPy_BonesDict;
+} V24_BPy_BonesDict;
 
 typedef struct {
 	PyObject_HEAD 
 	struct bArmature * armature;
-	BPy_BonesDict *Bones;          //BPy_BonesDict
+	V24_BPy_BonesDict *Bones;          //V24_BPy_BonesDict
 	PyObject *weaklist;
-} BPy_Armature;
+} V24_BPy_Armature;
 
 //-------------------VISIBLE PROTOTYPES-------------------------
-PyObject *Armature_CreatePyObject(struct bArmature *armature);
-struct bArmature *PyArmature_AsArmature(BPy_Armature *py_armature);
-PyObject * Armature_RebuildEditbones(PyObject *pyarmature);
-PyObject *Armature_RebuildBones(PyObject *pyarmature);
+PyObject *V24_Armature_CreatePyObject(struct bArmature *armature);
+struct bArmature *PyArmature_AsArmature(V24_BPy_Armature *py_armature);
+PyObject * V24_Armature_RebuildEditbones(PyObject *pyarmature);
+PyObject *V24_Armature_RebuildBones(PyObject *pyarmature);
 
 struct bArmature  *Armature_FromPyObject( PyObject * py_obj );
 

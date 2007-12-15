@@ -41,6 +41,6 @@
 
 /* PROTOS */
 
-PyObject *MeshPrimitives_Init( void );
+PyObject *V24_MeshPrimitives_Init( void );
 
 #endif				/* EXPP_MESHPRIMITIVES_H */

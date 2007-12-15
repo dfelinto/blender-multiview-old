@@ -47,7 +47,7 @@
 #include "gen_library.h"
 
 /*****************************************************************************/
-/* Python BPy_Lamp defaults:                                                 */
+/* Python V24_BPy_Lamp defaults:                                                 */
 /*****************************************************************************/
 
 /* Lamp types */
@@ -125,7 +125,7 @@
 #define EXPP_LAMP_AREASIZE_MIN 0.01f
 #define EXPP_LAMP_AREASIZE_MAX 100.0f
 
-/* Lamp_setComponent() keys for which color to get/set */
+/* V24_Lamp_setComponent() keys for which color to get/set */
 #define	EXPP_LAMP_COMP_R			0x00
 #define	EXPP_LAMP_COMP_G			0x01
 #define	EXPP_LAMP_COMP_B			0x02
@@ -139,16 +139,16 @@
 /*****************************************************************************/
 /* Python API function prototypes for the Lamp module.                       */
 /*****************************************************************************/
-static PyObject *M_Lamp_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_Lamp_New( PyObject * self, PyObject * args,
 			     PyObject * keywords );
-static PyObject *M_Lamp_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_Lamp_Get( PyObject * self, PyObject * args );
 
 /*****************************************************************************/
 /* The following string definitions are used for documentation strings.      */
 /* In Python these will be written to the console when doing a               */
 /* Blender.Lamp.__doc__                                                      */
 /*****************************************************************************/
-static char M_Lamp_doc[] = "The Blender Lamp module\n\n\
+static char V24_M_Lamp_doc[] = "The Blender Lamp module\n\n\
 This module provides control over **Lamp Data** objects in Blender.\n\n\
 Example::\n\n\
   from Blender import Lamp\n\
@@ -157,10 +157,10 @@ Example::\n\n\
   ob = Object.New('Lamp')         # create new lamp object\n\
   ob.link(l)                      # link lamp obj with lamp data\n";
 
-static char M_Lamp_New_doc[] = "Lamp.New (type = 'Lamp', name = 'LampData'):\n\
+static char V24_M_Lamp_New_doc[] = "Lamp.New (type = 'Lamp', name = 'LampData'):\n\
         Return a new Lamp Data object with the given type and name.";
 
-static char M_Lamp_Get_doc[] = "Lamp.Get (name = None):\n\
+static char V24_M_Lamp_Get_doc[] = "Lamp.Get (name = None):\n\
         Return the Lamp Data with the given name, None if not found, or\n\
         Return a list with all Lamp Data objects in the current scene,\n\
         if no argument was given.";
@@ -169,208 +169,208 @@ static char M_Lamp_Get_doc[] = "Lamp.Get (name = None):\n\
 /* Python method structure definition for Blender.Lamp module:               */
 /*****************************************************************************/
 struct PyMethodDef M_Lamp_methods[] = {
-	{"New", ( PyCFunction ) M_Lamp_New, METH_VARARGS | METH_KEYWORDS,
-	 M_Lamp_New_doc},
-	{"Get", M_Lamp_Get, METH_VARARGS, M_Lamp_Get_doc},
-	{"get", M_Lamp_Get, METH_VARARGS, M_Lamp_Get_doc},
+	{"New", ( PyCFunction ) V24_M_Lamp_New, METH_VARARGS | METH_KEYWORDS,
+	 V24_M_Lamp_New_doc},
+	{"Get", V24_M_Lamp_Get, METH_VARARGS, V24_M_Lamp_Get_doc},
+	{"get", V24_M_Lamp_Get, METH_VARARGS, V24_M_Lamp_Get_doc},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python BPy_Lamp methods declarations:                                     */
+/* Python V24_BPy_Lamp methods declarations:                                     */
 /*****************************************************************************/
-static PyObject *Lamp_getType( BPy_Lamp * self );
-static PyObject *Lamp_getTypesConst( void );
-static PyObject *Lamp_getMode( BPy_Lamp * self );
-static PyObject *Lamp_getModesConst( void );
-static PyObject *Lamp_getSamples( BPy_Lamp * self );
-static PyObject *Lamp_getRaySamplesX( BPy_Lamp * self );
-static PyObject *Lamp_getRaySamplesY( BPy_Lamp * self );
-static PyObject *Lamp_getAreaSizeX( BPy_Lamp * self );
-static PyObject *Lamp_getAreaSizeY( BPy_Lamp * self );
-static PyObject *Lamp_getBufferSize( BPy_Lamp * self );
-static PyObject *Lamp_getHaloStep( BPy_Lamp * self );
-static PyObject *Lamp_getEnergy( BPy_Lamp * self );
-static PyObject *Lamp_getDist( BPy_Lamp * self );
-static PyObject *Lamp_getSpotSize( BPy_Lamp * self );
-static PyObject *Lamp_getSpotBlend( BPy_Lamp * self );
-static PyObject *Lamp_getClipStart( BPy_Lamp * self );
-static PyObject *Lamp_getClipEnd( BPy_Lamp * self );
-static PyObject *Lamp_getBias( BPy_Lamp * self );
-static PyObject *Lamp_getSoftness( BPy_Lamp * self );
-static PyObject *Lamp_getHaloInt( BPy_Lamp * self );
-static PyObject *Lamp_getQuad1( BPy_Lamp * self );
-static PyObject *Lamp_getQuad2( BPy_Lamp * self );
-static PyObject *Lamp_getCol( BPy_Lamp * self );
-static PyObject *Lamp_getIpo( BPy_Lamp * self );
-static PyObject *Lamp_getComponent( BPy_Lamp * self, void * closure );
-static PyObject *Lamp_clearIpo( BPy_Lamp * self );
-static PyObject *Lamp_insertIpoKey( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetIpo( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetType( BPy_Lamp * self, PyObject * value );
-static PyObject *Lamp_oldsetMode( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetSamples( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetRaySamplesX( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetRaySamplesY( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetAreaSizeX( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetAreaSizeY( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetBufferSize( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetHaloStep( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetEnergy( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetDist( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetSpotSize( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetSpotBlend( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetClipStart( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetClipEnd( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetBias( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetSoftness( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetHaloInt( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetQuad1( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetQuad2( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_oldsetCol( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_copy( BPy_Lamp * self );
-static int Lamp_setIpo( BPy_Lamp * self, PyObject * args );
-static int Lamp_setType( BPy_Lamp * self, PyObject * args );
-static int Lamp_setMode( BPy_Lamp * self, PyObject * args );
-static int Lamp_setSamples( BPy_Lamp * self, PyObject * args );
-static int Lamp_setRaySamplesX( BPy_Lamp * self, PyObject * args );
-static int Lamp_setRaySamplesY( BPy_Lamp * self, PyObject * args );
-static int Lamp_setAreaSizeX( BPy_Lamp * self, PyObject * args );
-static int Lamp_setAreaSizeY( BPy_Lamp * self, PyObject * args );
-static int Lamp_setBufferSize( BPy_Lamp * self, PyObject * args );
-static int Lamp_setHaloStep( BPy_Lamp * self, PyObject * args );
-static int Lamp_setEnergy( BPy_Lamp * self, PyObject * args );
-static int Lamp_setDist( BPy_Lamp * self, PyObject * args );
-static int Lamp_setSpotSize( BPy_Lamp * self, PyObject * args );
-static int Lamp_setSpotBlend( BPy_Lamp * self, PyObject * args );
-static int Lamp_setClipStart( BPy_Lamp * self, PyObject * args );
-static int Lamp_setClipEnd( BPy_Lamp * self, PyObject * args );
-static int Lamp_setBias( BPy_Lamp * self, PyObject * args );
-static int Lamp_setSoftness( BPy_Lamp * self, PyObject * args );
-static int Lamp_setHaloInt( BPy_Lamp * self, PyObject * args );
-static int Lamp_setQuad1( BPy_Lamp * self, PyObject * args );
-static int Lamp_setQuad2( BPy_Lamp * self, PyObject * args );
-static int Lamp_setCol( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_getScriptLinks( BPy_Lamp * self, PyObject * value );
-static PyObject *Lamp_addScriptLink( BPy_Lamp * self, PyObject * args );
-static PyObject *Lamp_clearScriptLinks( BPy_Lamp * self, PyObject * args );
-static int Lamp_setComponent( BPy_Lamp * self, PyObject * value, void * closure );
+static PyObject *V24_Lamp_getType( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getTypesConst( void );
+static PyObject *V24_Lamp_getMode( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getModesConst( void );
+static PyObject *V24_Lamp_getSamples( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getRaySamplesX( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getRaySamplesY( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getAreaSizeX( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getAreaSizeY( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getBufferSize( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getHaloStep( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getEnergy( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getDist( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getSpotSize( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getSpotBlend( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getClipStart( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getClipEnd( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getBias( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getSoftness( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getHaloInt( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getQuad1( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getQuad2( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getCol( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getIpo( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_getComponent( V24_BPy_Lamp * self, void * closure );
+static PyObject *V24_Lamp_clearIpo( V24_BPy_Lamp * self );
+static PyObject *V24_Lamp_insertIpoKey( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetIpo( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetType( V24_BPy_Lamp * self, PyObject * value );
+static PyObject *V24_Lamp_oldsetMode( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetSamples( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetRaySamplesX( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetRaySamplesY( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetAreaSizeX( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetAreaSizeY( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetBufferSize( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetHaloStep( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetEnergy( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetDist( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetSpotSize( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetSpotBlend( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetClipStart( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetClipEnd( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetBias( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetSoftness( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetHaloInt( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetQuad1( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetQuad2( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_oldsetCol( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_copy( V24_BPy_Lamp * self );
+static int V24_Lamp_setIpo( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setType( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setMode( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setSamples( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setRaySamplesX( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setRaySamplesY( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setAreaSizeX( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setAreaSizeY( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setBufferSize( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setHaloStep( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setEnergy( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setDist( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setSpotSize( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setSpotBlend( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setClipStart( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setClipEnd( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setBias( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setSoftness( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setHaloInt( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setQuad1( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setQuad2( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setCol( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_getScriptLinks( V24_BPy_Lamp * self, PyObject * value );
+static PyObject *V24_Lamp_addScriptLink( V24_BPy_Lamp * self, PyObject * args );
+static PyObject *V24_Lamp_clearScriptLinks( V24_BPy_Lamp * self, PyObject * args );
+static int V24_Lamp_setComponent( V24_BPy_Lamp * self, PyObject * value, void * closure );
 
 /*****************************************************************************/
-/* Python BPy_Lamp methods table:                                            */
+/* Python V24_BPy_Lamp methods table:                                            */
 /*****************************************************************************/
-static PyMethodDef BPy_Lamp_methods[] = {
+static PyMethodDef V24_BPy_Lamp_methods[] = {
 	/* name, method, flags, doc */
 	
-	{"getType", ( PyCFunction ) Lamp_getType, METH_NOARGS,
+	{"getType", ( PyCFunction ) V24_Lamp_getType, METH_NOARGS,
 	 "() - return Lamp type - 'Lamp':0, 'Sun':1, 'Spot':2, 'Hemi':3, 'Area':4, 'Photon':5"},
-	{"getMode", ( PyCFunction ) Lamp_getMode, METH_NOARGS,
+	{"getMode", ( PyCFunction ) V24_Lamp_getMode, METH_NOARGS,
 	 "() - return Lamp mode flags (or'ed value)"},
-	{"getSamples", ( PyCFunction ) Lamp_getSamples, METH_NOARGS,
+	{"getSamples", ( PyCFunction ) V24_Lamp_getSamples, METH_NOARGS,
 	 "() - return Lamp samples value"},
-	{"getRaySamplesX", ( PyCFunction ) Lamp_getRaySamplesX, METH_NOARGS,
+	{"getRaySamplesX", ( PyCFunction ) V24_Lamp_getRaySamplesX, METH_NOARGS,
 	 "() - return Lamp raytracing samples on the X axis"},
-	{"getRaySamplesY", ( PyCFunction ) Lamp_getRaySamplesY, METH_NOARGS,
+	{"getRaySamplesY", ( PyCFunction ) V24_Lamp_getRaySamplesY, METH_NOARGS,
 	 "() - return Lamp raytracing samples on the Y axis"},
-	{"getAreaSizeX", ( PyCFunction ) Lamp_getAreaSizeX, METH_NOARGS,
+	{"getAreaSizeX", ( PyCFunction ) V24_Lamp_getAreaSizeX, METH_NOARGS,
 	 "() - return Lamp area size on the X axis"},
-	{"getAreaSizeY", ( PyCFunction ) Lamp_getAreaSizeY, METH_NOARGS,
+	{"getAreaSizeY", ( PyCFunction ) V24_Lamp_getAreaSizeY, METH_NOARGS,
 	 "() - return Lamp area size on the Y axis"},
-	{"getBufferSize", ( PyCFunction ) Lamp_getBufferSize, METH_NOARGS,
+	{"getBufferSize", ( PyCFunction ) V24_Lamp_getBufferSize, METH_NOARGS,
 	 "() - return Lamp buffer size value"},
-	{"getHaloStep", ( PyCFunction ) Lamp_getHaloStep, METH_NOARGS,
+	{"getHaloStep", ( PyCFunction ) V24_Lamp_getHaloStep, METH_NOARGS,
 	 "() - return Lamp halo step value"},
-	{"getEnergy", ( PyCFunction ) Lamp_getEnergy, METH_NOARGS,
+	{"getEnergy", ( PyCFunction ) V24_Lamp_getEnergy, METH_NOARGS,
 	 "() - return Lamp energy value"},
-	{"getDist", ( PyCFunction ) Lamp_getDist, METH_NOARGS,
+	{"getDist", ( PyCFunction ) V24_Lamp_getDist, METH_NOARGS,
 	 "() - return Lamp clipping distance value"},
-	{"getSpotSize", ( PyCFunction ) Lamp_getSpotSize, METH_NOARGS,
+	{"getSpotSize", ( PyCFunction ) V24_Lamp_getSpotSize, METH_NOARGS,
 	 "() - return Lamp spot size value"},
-	{"getSpotBlend", ( PyCFunction ) Lamp_getSpotBlend, METH_NOARGS,
+	{"getSpotBlend", ( PyCFunction ) V24_Lamp_getSpotBlend, METH_NOARGS,
 	 "() - return Lamp spot blend value"},
-	{"getClipStart", ( PyCFunction ) Lamp_getClipStart, METH_NOARGS,
+	{"getClipStart", ( PyCFunction ) V24_Lamp_getClipStart, METH_NOARGS,
 	 "() - return Lamp clip start value"},
-	{"getClipEnd", ( PyCFunction ) Lamp_getClipEnd, METH_NOARGS,
+	{"getClipEnd", ( PyCFunction ) V24_Lamp_getClipEnd, METH_NOARGS,
 	 "() - return Lamp clip end value"},
-	{"getBias", ( PyCFunction ) Lamp_getBias, METH_NOARGS,
+	{"getBias", ( PyCFunction ) V24_Lamp_getBias, METH_NOARGS,
 	 "() - return Lamp bias value"},
-	{"getSoftness", ( PyCFunction ) Lamp_getSoftness, METH_NOARGS,
+	{"getSoftness", ( PyCFunction ) V24_Lamp_getSoftness, METH_NOARGS,
 	 "() - return Lamp softness value"},
-	{"getHaloInt", ( PyCFunction ) Lamp_getHaloInt, METH_NOARGS,
+	{"getHaloInt", ( PyCFunction ) V24_Lamp_getHaloInt, METH_NOARGS,
 	 "() - return Lamp halo intensity value"},
-	{"getQuad1", ( PyCFunction ) Lamp_getQuad1, METH_NOARGS,
+	{"getQuad1", ( PyCFunction ) V24_Lamp_getQuad1, METH_NOARGS,
 	 "() - return light intensity value #1 for a Quad Lamp"},
-	{"getQuad2", ( PyCFunction ) Lamp_getQuad2, METH_NOARGS,
+	{"getQuad2", ( PyCFunction ) V24_Lamp_getQuad2, METH_NOARGS,
 	 "() - return light intensity value #2 for a Quad Lamp"},
-	{"getCol", ( PyCFunction ) Lamp_getCol, METH_NOARGS,
+	{"getCol", ( PyCFunction ) V24_Lamp_getCol, METH_NOARGS,
 	 "() - return light rgb color triplet"},
-	{"setName", ( PyCFunction ) GenericLib_setName_with_method, METH_VARARGS,
+	{"setName", ( PyCFunction ) V24_GenericLib_setName_with_method, METH_VARARGS,
 	 "(str) - rename Lamp"},
-	{"setType", ( PyCFunction ) Lamp_oldsetType, METH_O,
+	{"setType", ( PyCFunction ) V24_Lamp_oldsetType, METH_O,
 	 "(str) - change Lamp type, which can be 'Lamp', 'Sun', 'Spot', 'Hemi', 'Area', 'Photon'"},
-	{"setMode", ( PyCFunction ) Lamp_oldsetMode, METH_VARARGS,
+	{"setMode", ( PyCFunction ) V24_Lamp_oldsetMode, METH_VARARGS,
 	 "([up to eight str's]) - Set Lamp mode flag(s)"},
-	{"setSamples", ( PyCFunction ) Lamp_oldsetSamples, METH_VARARGS,
+	{"setSamples", ( PyCFunction ) V24_Lamp_oldsetSamples, METH_VARARGS,
 	 "(int) - change Lamp samples value"},
-	{"setRaySamplesX", ( PyCFunction ) Lamp_oldsetRaySamplesX, METH_VARARGS,
+	{"setRaySamplesX", ( PyCFunction ) V24_Lamp_oldsetRaySamplesX, METH_VARARGS,
 	 "(int) - change Lamp ray X samples value in [1,16]"},
-	{"setRaySamplesY", ( PyCFunction ) Lamp_oldsetRaySamplesY, METH_VARARGS,
+	{"setRaySamplesY", ( PyCFunction ) V24_Lamp_oldsetRaySamplesY, METH_VARARGS,
 	 "(int) - change Lamp ray Y samples value in [1,16]"},
-	{"setAreaSizeX", ( PyCFunction ) Lamp_oldsetAreaSizeX, METH_VARARGS,
+	{"setAreaSizeX", ( PyCFunction ) V24_Lamp_oldsetAreaSizeX, METH_VARARGS,
 	 "(float) - change Lamp ray X size for area lamps, value in [0.01, 100.0]"},
-	{"setAreaSizeY", ( PyCFunction ) Lamp_oldsetAreaSizeY, METH_VARARGS,
+	{"setAreaSizeY", ( PyCFunction ) V24_Lamp_oldsetAreaSizeY, METH_VARARGS,
 	 "(float) - change Lamp ray Y size for area lamps, value in [0.01, 100.0]"},
-	{"setBufferSize", ( PyCFunction ) Lamp_oldsetBufferSize, METH_VARARGS,
+	{"setBufferSize", ( PyCFunction ) V24_Lamp_oldsetBufferSize, METH_VARARGS,
 	 "(int) - change Lamp buffer size value"},
-	{"setHaloStep", ( PyCFunction ) Lamp_oldsetHaloStep, METH_VARARGS,
+	{"setHaloStep", ( PyCFunction ) V24_Lamp_oldsetHaloStep, METH_VARARGS,
 	 "(int) - change Lamp halo step value"},
-	{"setEnergy", ( PyCFunction ) Lamp_oldsetEnergy, METH_VARARGS,
+	{"setEnergy", ( PyCFunction ) V24_Lamp_oldsetEnergy, METH_VARARGS,
 	 "(float) - change Lamp energy value"},
-	{"setDist", ( PyCFunction ) Lamp_oldsetDist, METH_VARARGS,
+	{"setDist", ( PyCFunction ) V24_Lamp_oldsetDist, METH_VARARGS,
 	 "(float) - change Lamp clipping distance value"},
-	{"setSpotSize", ( PyCFunction ) Lamp_oldsetSpotSize, METH_VARARGS,
+	{"setSpotSize", ( PyCFunction ) V24_Lamp_oldsetSpotSize, METH_VARARGS,
 	 "(float) - change Lamp spot size value"},
-	{"setSpotBlend", ( PyCFunction ) Lamp_oldsetSpotBlend, METH_VARARGS,
+	{"setSpotBlend", ( PyCFunction ) V24_Lamp_oldsetSpotBlend, METH_VARARGS,
 	 "(float) - change Lamp spot blend value"},
-	{"setClipStart", ( PyCFunction ) Lamp_oldsetClipStart, METH_VARARGS,
+	{"setClipStart", ( PyCFunction ) V24_Lamp_oldsetClipStart, METH_VARARGS,
 	 "(float) - change Lamp clip start value"},
-	{"setClipEnd", ( PyCFunction ) Lamp_oldsetClipEnd, METH_VARARGS,
+	{"setClipEnd", ( PyCFunction ) V24_Lamp_oldsetClipEnd, METH_VARARGS,
 	 "(float) - change Lamp clip end value"},
-	{"setBias", ( PyCFunction ) Lamp_oldsetBias, METH_VARARGS,
+	{"setBias", ( PyCFunction ) V24_Lamp_oldsetBias, METH_VARARGS,
 	 "(float) - change Lamp draw size value"},
-	{"setSoftness", ( PyCFunction ) Lamp_oldsetSoftness, METH_VARARGS,
+	{"setSoftness", ( PyCFunction ) V24_Lamp_oldsetSoftness, METH_VARARGS,
 	 "(float) - change Lamp softness value"},
-	{"setHaloInt", ( PyCFunction ) Lamp_oldsetHaloInt, METH_VARARGS,
+	{"setHaloInt", ( PyCFunction ) V24_Lamp_oldsetHaloInt, METH_VARARGS,
 	 "(float) - change Lamp halo intensity value"},
-	{"setQuad1", ( PyCFunction ) Lamp_oldsetQuad1, METH_VARARGS,
+	{"setQuad1", ( PyCFunction ) V24_Lamp_oldsetQuad1, METH_VARARGS,
 	 "(float) - change light intensity value #1 for a Quad Lamp"},
-	{"setQuad2", ( PyCFunction ) Lamp_oldsetQuad2, METH_VARARGS,
+	{"setQuad2", ( PyCFunction ) V24_Lamp_oldsetQuad2, METH_VARARGS,
 	 "(float) - change light intensity value #2 for a Quad Lamp"},
-	{"setCol", ( PyCFunction ) Lamp_oldsetCol, METH_VARARGS,
+	{"setCol", ( PyCFunction ) V24_Lamp_oldsetCol, METH_VARARGS,
 	 "(f,f,f) or ([f,f,f]) - change light's rgb color triplet"},
-	{"getScriptLinks", ( PyCFunction ) Lamp_getScriptLinks, METH_O,
+	{"getScriptLinks", ( PyCFunction ) V24_Lamp_getScriptLinks, METH_O,
 	 "(eventname) - Get a list of this lamp's scriptlinks (Text names) "
 	 "of the given type\n"
 	 "(eventname) - string: FrameChanged, Redraw or Render."},
-	{"addScriptLink", ( PyCFunction ) Lamp_addScriptLink, METH_VARARGS,
+	{"addScriptLink", ( PyCFunction ) V24_Lamp_addScriptLink, METH_VARARGS,
 	 "(text, evt) - Add a new lamp scriptlink.\n"
 	 "(text) - string: an existing Blender Text name;\n"
 	 "(evt) string: FrameChanged, Redraw or Render."},
-	{"clearScriptLinks", ( PyCFunction ) Lamp_clearScriptLinks,
+	{"clearScriptLinks", ( PyCFunction ) V24_Lamp_clearScriptLinks,
 	 METH_VARARGS,
 	 "() - Delete all scriptlinks from this lamp.\n"
 	 "([s1<,s2,s3...>]) - Delete specified scriptlinks from this lamp."},
-	{"getIpo", ( PyCFunction ) Lamp_getIpo, METH_NOARGS,
+	{"getIpo", ( PyCFunction ) V24_Lamp_getIpo, METH_NOARGS,
 	 "() - get IPO for this lamp"},
-	{"clearIpo", ( PyCFunction ) Lamp_clearIpo, METH_NOARGS,
+	{"clearIpo", ( PyCFunction ) V24_Lamp_clearIpo, METH_NOARGS,
 	 "() - unlink the IPO for this lamp"},
-	{"setIpo", ( PyCFunction ) Lamp_oldsetIpo, METH_VARARGS,
+	{"setIpo", ( PyCFunction ) V24_Lamp_oldsetIpo, METH_VARARGS,
 	 "( lamp-ipo ) - link an IPO to this lamp"},
-	 {"insertIpoKey", ( PyCFunction ) Lamp_insertIpoKey, METH_VARARGS,
+	 {"insertIpoKey", ( PyCFunction ) V24_Lamp_insertIpoKey, METH_VARARGS,
 	 "( Lamp IPO type ) - Inserts a key into IPO"},
-	{"__copy__", ( PyCFunction ) Lamp_copy, METH_NOARGS,
+	{"__copy__", ( PyCFunction ) V24_Lamp_copy, METH_NOARGS,
 	 "() - Makes a copy of this lamp."},
-	{"copy", ( PyCFunction ) Lamp_copy, METH_NOARGS,
+	{"copy", ( PyCFunction ) V24_Lamp_copy, METH_NOARGS,
 	 "() - Makes a copy of this lamp."},
 	{NULL, NULL, 0, NULL}
 };
@@ -378,126 +378,126 @@ static PyMethodDef BPy_Lamp_methods[] = {
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_Lamp_getseters[] = {
+static PyGetSetDef V24_BPy_Lamp_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
 	{"bias",
-	 (getter)Lamp_getBias, (setter)Lamp_setBias,
+	 (getter)V24_Lamp_getBias, (setter)V24_Lamp_setBias,
 	 "Lamp shadow map sampling bias",
 	 NULL},
 	{"bufferSize",
-	 (getter)Lamp_getBufferSize, (setter)Lamp_setBufferSize,
+	 (getter)V24_Lamp_getBufferSize, (setter)V24_Lamp_setBufferSize,
 	 "Lamp shadow buffer size",
 	 NULL},
 	{"clipEnd",
-	 (getter)Lamp_getClipEnd, (setter)Lamp_setClipEnd,
+	 (getter)V24_Lamp_getClipEnd, (setter)V24_Lamp_setClipEnd,
 	 "Lamp shadow map clip end",
 	 NULL},
 	{"clipStart",
-	 (getter)Lamp_getClipStart, (setter)Lamp_setClipStart,
+	 (getter)V24_Lamp_getClipStart, (setter)V24_Lamp_setClipStart,
 	 "Lamp shadow map clip start",
 	 NULL},
 	{"col",
-	 (getter)Lamp_getCol, (setter)Lamp_setCol,
+	 (getter)V24_Lamp_getCol, (setter)V24_Lamp_setCol,
 	 "Lamp RGB color triplet",
 	 NULL},
 	{"dist",
-	 (getter)Lamp_getDist, (setter)Lamp_setDist,
+	 (getter)V24_Lamp_getDist, (setter)V24_Lamp_setDist,
 	 "Lamp clipping distance",
 	 NULL},
 	{"energy",
-	 (getter)Lamp_getEnergy, (setter)Lamp_setEnergy,
+	 (getter)V24_Lamp_getEnergy, (setter)V24_Lamp_setEnergy,
 	 "Lamp light intensity",
 	 NULL},
 	{"haloInt",
-	 (getter)Lamp_getHaloInt, (setter)Lamp_setHaloInt,
+	 (getter)V24_Lamp_getHaloInt, (setter)V24_Lamp_setHaloInt,
 	 "Lamp spotlight halo intensity",
 	 NULL},
 	{"haloStep",
-	 (getter)Lamp_getHaloStep, (setter)Lamp_setHaloStep,
+	 (getter)V24_Lamp_getHaloStep, (setter)V24_Lamp_setHaloStep,
 	 "Lamp volumetric halo sampling frequency",
 	 NULL},
 	{"ipo",
-	 (getter)Lamp_getIpo, (setter)Lamp_setIpo,
+	 (getter)V24_Lamp_getIpo, (setter)V24_Lamp_setIpo,
 	 "Lamp Ipo",
 	 NULL},
 	{"mode",
-	 (getter)Lamp_getMode, (setter)Lamp_setMode,
+	 (getter)V24_Lamp_getMode, (setter)V24_Lamp_setMode,
 	 "Lamp mode bitmask",
 	 NULL},
 	{"quad1",
-	 (getter)Lamp_getQuad1, (setter)Lamp_setQuad1,
+	 (getter)V24_Lamp_getQuad1, (setter)V24_Lamp_setQuad1,
 	 "Quad lamp linear distance attenuation",
 	 NULL},
 	{"quad2",
-	 (getter)Lamp_getQuad2, (setter)Lamp_setQuad2,
+	 (getter)V24_Lamp_getQuad2, (setter)V24_Lamp_setQuad2,
 	 "Quad lamp quadratic distance attenuation",
 	 NULL},
 	{"samples",
-	 (getter)Lamp_getSamples, (setter)Lamp_setSamples,
+	 (getter)V24_Lamp_getSamples, (setter)V24_Lamp_setSamples,
 	 "Lamp shadow map samples",
 	 NULL},
 	{"raySamplesX",
-	 (getter)Lamp_getRaySamplesX, (setter)Lamp_setRaySamplesX,
+	 (getter)V24_Lamp_getRaySamplesX, (setter)V24_Lamp_setRaySamplesX,
 	 "Lamp raytracing samples on the X axis",
 	 NULL},
 	{"raySamplesY",
-	 (getter)Lamp_getRaySamplesY, (setter)Lamp_setRaySamplesY,
+	 (getter)V24_Lamp_getRaySamplesY, (setter)V24_Lamp_setRaySamplesY,
 	 "Lamp raytracing samples on the Y axis",
 	 NULL},
 	{"areaSizeX",
-	 (getter)Lamp_getAreaSizeX, (setter)Lamp_setAreaSizeX,
+	 (getter)V24_Lamp_getAreaSizeX, (setter)V24_Lamp_setAreaSizeX,
 	 "Lamp X size for an arealamp",
 	 NULL},
 	{"areaSizeY",
-	 (getter)Lamp_getAreaSizeY, (setter)Lamp_setAreaSizeY,
+	 (getter)V24_Lamp_getAreaSizeY, (setter)V24_Lamp_setAreaSizeY,
 	 "Lamp Y size for an arealamp",
 	 NULL},
 	{"softness",
-	 (getter)Lamp_getSoftness, (setter)Lamp_setSoftness,
+	 (getter)V24_Lamp_getSoftness, (setter)V24_Lamp_setSoftness,
 	 "Lamp shadow sample area size",
 	 NULL},
 	{"spotBlend",
-	 (getter)Lamp_getSpotBlend, (setter)Lamp_setSpotBlend,
+	 (getter)V24_Lamp_getSpotBlend, (setter)V24_Lamp_setSpotBlend,
 	 "Lamp spotlight edge softness",
 	 NULL},
 	{"spotSize",
-	 (getter)Lamp_getSpotSize, (setter)Lamp_setSpotSize,
+	 (getter)V24_Lamp_getSpotSize, (setter)V24_Lamp_setSpotSize,
 	 "Lamp spotlight beam angle (in degrees)",
 	 NULL},
 	{"type",
-	 (getter)Lamp_getType, (setter)Lamp_setType,
+	 (getter)V24_Lamp_getType, (setter)V24_Lamp_setType,
 	 "Lamp type",
 	 NULL},
 	{"R",
-	 (getter)Lamp_getComponent, (setter)Lamp_setComponent,
+	 (getter)V24_Lamp_getComponent, (setter)V24_Lamp_setComponent,
 	 "Lamp color red component",
 	 (void *)EXPP_LAMP_COMP_R},
 	{"r",
-	 (getter)Lamp_getComponent, (setter)Lamp_setComponent,
+	 (getter)V24_Lamp_getComponent, (setter)V24_Lamp_setComponent,
 	 "Lamp color red component",
 	 (void *)EXPP_LAMP_COMP_R},
 	{"G",
-	 (getter)Lamp_getComponent, (setter)Lamp_setComponent,
+	 (getter)V24_Lamp_getComponent, (setter)V24_Lamp_setComponent,
 	 "Lamp color green component",
 	 (void *)EXPP_LAMP_COMP_G},
 	{"g",
-	 (getter)Lamp_getComponent, (setter)Lamp_setComponent,
+	 (getter)V24_Lamp_getComponent, (setter)V24_Lamp_setComponent,
 	 "Lamp color green component",
 	 (void *)EXPP_LAMP_COMP_G},
 	{"B",
-	 (getter)Lamp_getComponent, (setter)Lamp_setComponent,
+	 (getter)V24_Lamp_getComponent, (setter)V24_Lamp_setComponent,
 	 "Lamp color blue component",
 	 (void *)EXPP_LAMP_COMP_B},
 	{"b",
-	 (getter)Lamp_getComponent, (setter)Lamp_setComponent,
+	 (getter)V24_Lamp_getComponent, (setter)V24_Lamp_setComponent,
 	 "Lamp color blue component",
 	 (void *)EXPP_LAMP_COMP_B},
 	{"Modes",
-	 (getter)Lamp_getModesConst, (setter)NULL,
+	 (getter)V24_Lamp_getModesConst, (setter)NULL,
 	 "Dictionary of values for 'mode' attribute",
 	 NULL},
 	{"Types",
-	 (getter)Lamp_getTypesConst, (setter)NULL,
+	 (getter)V24_Lamp_getTypesConst, (setter)NULL,
 	 "Dictionary of values for 'type' attribute",
 	 NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
@@ -506,29 +506,29 @@ static PyGetSetDef BPy_Lamp_getseters[] = {
 /*****************************************************************************/
 /* Python TypeLamp callback function prototypes:                             */
 /*****************************************************************************/
-static void Lamp_dealloc( BPy_Lamp * lamp );
-static int Lamp_compare( BPy_Lamp * a, BPy_Lamp * b );
-static PyObject *Lamp_repr( BPy_Lamp * lamp );
+static void V24_Lamp_dealloc( V24_BPy_Lamp * lamp );
+static int V24_Lamp_compare( V24_BPy_Lamp * a, V24_BPy_Lamp * b );
+static PyObject *V24_Lamp_repr( V24_BPy_Lamp * lamp );
 
 /*****************************************************************************/
 /* Python TypeLamp structure definition:                                     */
 /*****************************************************************************/
-PyTypeObject Lamp_Type = {
+PyTypeObject V24_Lamp_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Lamp",             /* char *tp_name; */
-	sizeof( BPy_Lamp ),         /* int tp_basicsize; */
+	sizeof( V24_BPy_Lamp ),         /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	( destructor ) Lamp_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_Lamp_dealloc,/* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Lamp_compare,   /* cmpfunc tp_compare; */
-	( reprfunc ) Lamp_repr,     /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Lamp_compare,   /* cmpfunc tp_compare; */
+	( reprfunc ) V24_Lamp_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -538,7 +538,7 @@ PyTypeObject Lamp_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -571,9 +571,9 @@ PyTypeObject Lamp_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Lamp_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Lamp_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Lamp_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Lamp_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -596,36 +596,36 @@ PyTypeObject Lamp_Type = {
 };
 
 /*****************************************************************************/
-/* Function:              M_Lamp_New                                         */
+/* Function:              V24_M_Lamp_New                                         */
 /* Python equivalent:     Blender.Lamp.New                                   */
 /*****************************************************************************/
-static PyObject *M_Lamp_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_Lamp_New( PyObject * self, PyObject * args,
 			     PyObject * keywords )
 {
 	char *type_str = "Lamp";
 	char *name_str = "Lamp";
 	static char *kwlist[] = { "type_str", "name_str", NULL };
-	BPy_Lamp *py_lamp;	/* for Lamp Data object wrapper in Python */
+	V24_BPy_Lamp *py_lamp;	/* for Lamp Data object wrapper in Python */
 	Lamp *bl_lamp;		/* for actual Lamp Data we create in Blender */
 
 	if( !PyArg_ParseTupleAndKeywords( args, keywords, "|ss", kwlist,
 					  &type_str, &name_str ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected string(s) or empty argument" ) );
 	
 	bl_lamp = add_lamp( name_str );	/* first create in Blender */
 	
 	if( bl_lamp )		/* now create the wrapper obj in Python */
-		py_lamp = ( BPy_Lamp * ) Lamp_CreatePyObject( bl_lamp );
+		py_lamp = ( V24_BPy_Lamp * ) V24_Lamp_CreatePyObject( bl_lamp );
 	else
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create Lamp Data in Blender" ) );
 
 	/* let's return user count to zero, because ... */
 	bl_lamp->id.us = 0;	/* ... add_lamp() incref'ed it */
 
 	if( py_lamp == NULL )
-		return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						"couldn't create Lamp Data object" ) );
 
 	if( strcmp( type_str, "Lamp" ) == 0 )
@@ -641,41 +641,41 @@ static PyObject *M_Lamp_New( PyObject * self, PyObject * args,
 	else if( strcmp( type_str, "Photon" ) == 0 )
 		bl_lamp->type = ( short ) EXPP_LAMP_TYPE_YF_PHOTON;
 	else
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"unknown lamp type" ) );
 
 	return ( PyObject * ) py_lamp;
 }
 
 /*****************************************************************************/
-/* Function:              M_Lamp_Get                                         */
+/* Function:              V24_M_Lamp_Get                                         */
 /* Python equivalent:     Blender.Lamp.Get                                   */
 /* Description:           Receives a string and returns the lamp data obj    */
 /*                        whose name matches the string.  If no argument is  */
 /*                        passed in, a list of all lamp data names in the    */
 /*                        current scene is returned.                         */
 /*****************************************************************************/
-static PyObject *M_Lamp_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_Lamp_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	Lamp *lamp_iter;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected string argument (or nothing)" ) );
 
 	lamp_iter = G.main->lamp.first;
 
 	if( name ) {		/* (name) - Search lamp by name */
 
-		BPy_Lamp *wanted_lamp = NULL;
+		V24_BPy_Lamp *wanted_lamp = NULL;
 
 		while( ( lamp_iter ) && ( wanted_lamp == NULL ) ) {
 
 			if( strcmp( name, lamp_iter->id.name + 2 ) == 0 )
 				wanted_lamp =
-					( BPy_Lamp * )
-					Lamp_CreatePyObject( lamp_iter );
+					( V24_BPy_Lamp * )
+					V24_Lamp_CreatePyObject( lamp_iter );
 
 			lamp_iter = lamp_iter->id.next;
 		}
@@ -684,7 +684,7 @@ static PyObject *M_Lamp_Get( PyObject * self, PyObject * args )
 			char error_msg[64];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Lamp \"%s\" not found", name );
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_NameError, error_msg ) );
 		}
 
@@ -698,15 +698,15 @@ static PyObject *M_Lamp_Get( PyObject * self, PyObject * args )
 		lamplist = PyList_New( BLI_countlist( &( G.main->lamp ) ) );
 
 		if( lamplist == NULL )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 							"couldn't create PyList" ) );
 
 		while( lamp_iter ) {
-			pyobj = Lamp_CreatePyObject( lamp_iter );
+			pyobj = V24_Lamp_CreatePyObject( lamp_iter );
 
 			if( !pyobj ) {
 				Py_DECREF(lamplist);
-				return ( EXPP_ReturnPyObjError
+				return ( V24_EXPP_ReturnPyObjError
 					 ( PyExc_MemoryError,
 					   "couldn't create PyLamp" ) );
 			}
@@ -721,58 +721,58 @@ static PyObject *M_Lamp_Get( PyObject * self, PyObject * args )
 	}
 }
 
-static PyObject *Lamp_TypesDict( void )
+static PyObject *V24_Lamp_TypesDict( void )
 {	/* create the Blender.Lamp.Types constant dict */
-	PyObject *Types = PyConstant_New(  );
+	PyObject *Types = V24_PyConstant_New(  );
 
 	if( Types ) {
-		BPy_constant *c = ( BPy_constant * ) Types;
+		V24_BPy_constant *c = ( V24_BPy_constant * ) Types;
 
-		PyConstant_Insert( c, "Lamp",
+		V24_PyConstant_Insert( c, "Lamp",
 				 PyInt_FromLong( EXPP_LAMP_TYPE_LAMP ) );
-		PyConstant_Insert( c, "Sun",
+		V24_PyConstant_Insert( c, "Sun",
 				 PyInt_FromLong( EXPP_LAMP_TYPE_SUN ) );
-		PyConstant_Insert( c, "Spot",
+		V24_PyConstant_Insert( c, "Spot",
 				 PyInt_FromLong( EXPP_LAMP_TYPE_SPOT ) );
-		PyConstant_Insert( c, "Hemi",
+		V24_PyConstant_Insert( c, "Hemi",
 				 PyInt_FromLong( EXPP_LAMP_TYPE_HEMI ) );
-		PyConstant_Insert( c, "Area",
+		V24_PyConstant_Insert( c, "Area",
 				 PyInt_FromLong( EXPP_LAMP_TYPE_AREA ) );
-		PyConstant_Insert( c, "Photon",
+		V24_PyConstant_Insert( c, "Photon",
 				 PyInt_FromLong( EXPP_LAMP_TYPE_YF_PHOTON ) );
 	}
 
 	return Types;
 }
 
-static PyObject *Lamp_ModesDict( void )
+static PyObject *V24_Lamp_ModesDict( void )
 {			/* create the Blender.Lamp.Modes constant dict */
-	PyObject *Modes = PyConstant_New(  );
+	PyObject *Modes = V24_PyConstant_New(  );
 
 	if( Modes ) {
-		BPy_constant *c = ( BPy_constant * ) Modes;
+		V24_BPy_constant *c = ( V24_BPy_constant * ) Modes;
 
-		PyConstant_Insert( c, "Shadows",
+		V24_PyConstant_Insert( c, "Shadows",
 				 PyInt_FromLong( EXPP_LAMP_MODE_SHADOWS ) );
-		PyConstant_Insert( c, "Halo",
+		V24_PyConstant_Insert( c, "Halo",
 				 PyInt_FromLong( EXPP_LAMP_MODE_HALO ) );
-		PyConstant_Insert( c, "Layer",
+		V24_PyConstant_Insert( c, "Layer",
 				 PyInt_FromLong( EXPP_LAMP_MODE_LAYER ) );
-		PyConstant_Insert( c, "Quad",
+		V24_PyConstant_Insert( c, "Quad",
 				 PyInt_FromLong( EXPP_LAMP_MODE_QUAD ) );
-		PyConstant_Insert( c, "Negative",
+		V24_PyConstant_Insert( c, "Negative",
 				 PyInt_FromLong( EXPP_LAMP_MODE_NEGATIVE ) );
-		PyConstant_Insert( c, "Sphere",
+		V24_PyConstant_Insert( c, "Sphere",
 				 PyInt_FromLong( EXPP_LAMP_MODE_SPHERE ) );
-		PyConstant_Insert( c, "Square",
+		V24_PyConstant_Insert( c, "Square",
 				 PyInt_FromLong( EXPP_LAMP_MODE_SQUARE ) );
-		PyConstant_Insert( c, "OnlyShadow",
+		V24_PyConstant_Insert( c, "OnlyShadow",
 				 PyInt_FromLong( EXPP_LAMP_MODE_ONLYSHADOW ) );
-		PyConstant_Insert( c, "NoDiffuse",
+		V24_PyConstant_Insert( c, "NoDiffuse",
 				 PyInt_FromLong( EXPP_LAMP_MODE_NODIFFUSE ) );
-		PyConstant_Insert( c, "NoSpecular",
+		V24_PyConstant_Insert( c, "NoSpecular",
 				 PyInt_FromLong( EXPP_LAMP_MODE_NOSPECULAR ) );
-		PyConstant_Insert( c, "RayShadow",
+		V24_PyConstant_Insert( c, "RayShadow",
 				 PyInt_FromLong( EXPP_LAMP_MODE_SHAD_RAY ) );
 	}
 
@@ -780,21 +780,21 @@ static PyObject *Lamp_ModesDict( void )
 }
 
 /*****************************************************************************/
-/* Function:              Lamp_Init                                          */
+/* Function:              V24_Lamp_Init                                          */
 /*****************************************************************************/
 /* Needed by the Blender module, to register the Blender.Lamp submodule */
-PyObject *Lamp_Init( void )
+PyObject *V24_Lamp_Init( void )
 {
 	PyObject *submodule, *Types, *Modes;
 
-	if( PyType_Ready( &Lamp_Type ) < 0)
+	if( PyType_Ready( &V24_Lamp_Type ) < 0)
 		return NULL;
 
-	Types = Lamp_TypesDict(  );
-	Modes = Lamp_ModesDict(  );
+	Types = V24_Lamp_TypesDict(  );
+	Modes = V24_Lamp_ModesDict(  );
 
 	submodule =
-		Py_InitModule3( "Blender.Lamp", M_Lamp_methods, M_Lamp_doc );
+		Py_InitModule3( "Blender.Lamp", M_Lamp_methods, V24_M_Lamp_doc );
 
 	if( Types )
 		PyModule_AddObject( submodule, "Types", Types );
@@ -810,23 +810,23 @@ PyObject *Lamp_Init( void )
 	return submodule;
 }
 
-/* Three Python Lamp_Type helper functions needed by the Object module: */
+/* Three Python V24_Lamp_Type helper functions needed by the Object module: */
 
 /*****************************************************************************/
-/* Function:    Lamp_CreatePyObject                                          */
-/* Description: This function will create a new BPy_Lamp from an existing    */
+/* Function:    V24_Lamp_CreatePyObject                                          */
+/* Description: This function will create a new V24_BPy_Lamp from an existing    */
 /*              Blender lamp structure.                                      */
 /*****************************************************************************/
-PyObject *Lamp_CreatePyObject( Lamp * lamp )
+PyObject *V24_Lamp_CreatePyObject( Lamp * lamp )
 {
-	BPy_Lamp *pylamp;
+	V24_BPy_Lamp *pylamp;
 	float *rgb[3];
 
-	pylamp = ( BPy_Lamp * ) PyObject_NEW( BPy_Lamp, &Lamp_Type );
+	pylamp = ( V24_BPy_Lamp * ) PyObject_NEW( V24_BPy_Lamp, &V24_Lamp_Type );
 
 	if( !pylamp )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "couldn't create BPy_Lamp object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "couldn't create V24_BPy_Lamp object" );
 
 	pylamp->lamp = lamp;
 
@@ -834,146 +834,146 @@ PyObject *Lamp_CreatePyObject( Lamp * lamp )
 	rgb[1] = &lamp->g;
 	rgb[2] = &lamp->b;
 
-	pylamp->color = ( BPy_rgbTuple * ) rgbTuple_New( rgb );
+	pylamp->color = ( V24_BPy_rgbTuple * ) rgbTuple_New( rgb );
 	Py_INCREF(pylamp->color);
 	
 	return ( PyObject * ) pylamp;
 }
 
 /*****************************************************************************/
-/* Function:    Lamp_FromPyObject                                            */
+/* Function:    V24_Lamp_FromPyObject                                            */
 /* Description: This function returns the Blender lamp from the given        */
 /*              PyObject.                                                    */
 /*****************************************************************************/
-Lamp *Lamp_FromPyObject( PyObject * pyobj )
+Lamp *V24_Lamp_FromPyObject( PyObject * pyobj )
 {
-	return ( ( BPy_Lamp * ) pyobj )->lamp;
+	return ( ( V24_BPy_Lamp * ) pyobj )->lamp;
 }
 
 /*****************************************************************************/
-/* Python BPy_Lamp methods:                                                  */
+/* Python V24_BPy_Lamp methods:                                                  */
 /*****************************************************************************/
 
 /* Lamp.__copy__ */
-static PyObject *Lamp_copy( BPy_Lamp * self )
+static PyObject *V24_Lamp_copy( V24_BPy_Lamp * self )
 {
 	Lamp *lamp = copy_lamp(self->lamp );
 	lamp->id.us = 0;
-	return Lamp_CreatePyObject(lamp);
+	return V24_Lamp_CreatePyObject(lamp);
 }
 
-static PyObject *Lamp_getType( BPy_Lamp * self )
+static PyObject *V24_Lamp_getType( V24_BPy_Lamp * self )
 {
 	return PyInt_FromLong( self->lamp->type );
 }
 
-static PyObject *Lamp_getMode( BPy_Lamp * self )
+static PyObject *V24_Lamp_getMode( V24_BPy_Lamp * self )
 {
 	return PyInt_FromLong( self->lamp->mode );
 }
 
-static PyObject *Lamp_getSamples( BPy_Lamp * self )
+static PyObject *V24_Lamp_getSamples( V24_BPy_Lamp * self )
 {
 	return PyInt_FromLong( self->lamp->samp );
 }
 
-static PyObject *Lamp_getRaySamplesX( BPy_Lamp * self )
+static PyObject *V24_Lamp_getRaySamplesX( V24_BPy_Lamp * self )
 {
 	return PyInt_FromLong( self->lamp->ray_samp );
 }
 
-static PyObject *Lamp_getRaySamplesY( BPy_Lamp * self )
+static PyObject *V24_Lamp_getRaySamplesY( V24_BPy_Lamp * self )
 {
 	return PyInt_FromLong( self->lamp->ray_sampy );
 }
 
-static PyObject *Lamp_getAreaSizeX( BPy_Lamp * self )
+static PyObject *V24_Lamp_getAreaSizeX( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->area_size );
 }
 
-static PyObject *Lamp_getAreaSizeY( BPy_Lamp * self )
+static PyObject *V24_Lamp_getAreaSizeY( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->area_sizey );
 }
 
-static PyObject *Lamp_getBufferSize( BPy_Lamp * self )
+static PyObject *V24_Lamp_getBufferSize( V24_BPy_Lamp * self )
 {
 	return PyInt_FromLong( self->lamp->bufsize );
 }
 
-static PyObject *Lamp_getHaloStep( BPy_Lamp * self )
+static PyObject *V24_Lamp_getHaloStep( V24_BPy_Lamp * self )
 {
 	return PyInt_FromLong( self->lamp->shadhalostep );
 }
 
-static PyObject *Lamp_getEnergy( BPy_Lamp * self )
+static PyObject *V24_Lamp_getEnergy( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->energy );
 }
 
-static PyObject *Lamp_getDist( BPy_Lamp * self )
+static PyObject *V24_Lamp_getDist( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->dist );
 }
 
-static PyObject *Lamp_getSpotSize( BPy_Lamp * self )
+static PyObject *V24_Lamp_getSpotSize( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->spotsize );
 }
 
-static PyObject *Lamp_getSpotBlend( BPy_Lamp * self )
+static PyObject *V24_Lamp_getSpotBlend( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->spotblend );
 }
 
-static PyObject *Lamp_getClipStart( BPy_Lamp * self )
+static PyObject *V24_Lamp_getClipStart( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->clipsta );
 }
 
-static PyObject *Lamp_getClipEnd( BPy_Lamp * self )
+static PyObject *V24_Lamp_getClipEnd( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->clipend );
 }
 
-static PyObject *Lamp_getBias( BPy_Lamp * self )
+static PyObject *V24_Lamp_getBias( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->bias );
 }
 
-static PyObject *Lamp_getSoftness( BPy_Lamp * self )
+static PyObject *V24_Lamp_getSoftness( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->soft );
 }
 
-static PyObject *Lamp_getHaloInt( BPy_Lamp * self )
+static PyObject *V24_Lamp_getHaloInt( V24_BPy_Lamp * self )
 {
 	return PyFloat_FromDouble( self->lamp->haint );
 }
 
-static PyObject *Lamp_getQuad1( BPy_Lamp * self )
+static PyObject *V24_Lamp_getQuad1( V24_BPy_Lamp * self )
 {				/* should we complain if Lamp is not of type Quad? */
 	return PyFloat_FromDouble( self->lamp->att1 );
 }
 
-static PyObject *Lamp_getQuad2( BPy_Lamp * self )
+static PyObject *V24_Lamp_getQuad2( V24_BPy_Lamp * self )
 {			/* should we complain if Lamp is not of type Quad? */
 	return PyFloat_FromDouble( self->lamp->att2 );
 }
 
-static PyObject *Lamp_getCol( BPy_Lamp * self )
+static PyObject *V24_Lamp_getCol( V24_BPy_Lamp * self )
 {
 	return rgbTuple_getCol( self->color );
 }
 
-static int Lamp_setType( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setType( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setIValueRange ( value, &self->lamp->type,
+	return V24_EXPP_setIValueRange ( value, &self->lamp->type,
 				  				0, EXPP_LAMP_TYPE_MAX, 'h' );
 }
 
-static int Lamp_setMode( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setMode( V24_BPy_Lamp * self, PyObject * value )
 {
 	short param;
 	static short bitmask = EXPP_LAMP_MODE_SHADOWS
@@ -991,12 +991,12 @@ static int Lamp_setMode( BPy_Lamp * self, PyObject * value )
 	if( !PyInt_Check ( value ) ) {
 		char errstr[128];
 		sprintf ( errstr , "expected int bitmask of 0x%04x", bitmask );
-		return EXPP_ReturnIntError( PyExc_TypeError, errstr );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, errstr );
 	}
 	param = (short)PyInt_AS_LONG ( value );
 
 	if ( ( param & bitmask ) != param )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 						"invalid bit(s) set in mask" );
 
 	self->lamp->mode = param; 
@@ -1004,134 +1004,134 @@ static int Lamp_setMode( BPy_Lamp * self, PyObject * value )
 	return 0;
 }
 
-static int Lamp_setSamples( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setSamples( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->lamp->samp,
+	return V24_EXPP_setIValueClamped ( value, &self->lamp->samp,
 								EXPP_LAMP_SAMPLES_MIN,
 								EXPP_LAMP_SAMPLES_MAX, 'h' );
 }
 
 
-static int Lamp_setRaySamplesX( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setRaySamplesX( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->lamp->ray_samp, 
+	return V24_EXPP_setIValueClamped ( value, &self->lamp->ray_samp, 
 								EXPP_LAMP_RAYSAMPLES_MIN,
 								EXPP_LAMP_RAYSAMPLES_MAX, 'h' );
 }
 
-static int Lamp_setRaySamplesY( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setRaySamplesY( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->lamp->ray_sampy,
+	return V24_EXPP_setIValueClamped ( value, &self->lamp->ray_sampy,
 								EXPP_LAMP_RAYSAMPLES_MIN,
 								EXPP_LAMP_RAYSAMPLES_MAX, 'h' );
 }
 
-static int Lamp_setAreaSizeX( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setAreaSizeX( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->area_size, 
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->area_size, 
 								EXPP_LAMP_AREASIZE_MIN,
 								EXPP_LAMP_AREASIZE_MAX );
 }
 
-static int Lamp_setAreaSizeY( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setAreaSizeY( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->area_sizey, 
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->area_sizey, 
 								EXPP_LAMP_AREASIZE_MIN,
 								EXPP_LAMP_AREASIZE_MAX );
 }
 
-static int Lamp_setBufferSize( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setBufferSize( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->lamp->bufsize,
+	return V24_EXPP_setIValueClamped ( value, &self->lamp->bufsize,
 								EXPP_LAMP_BUFFERSIZE_MIN,
 								EXPP_LAMP_BUFFERSIZE_MAX, 'h' );
 }
 
-static int Lamp_setHaloStep( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setHaloStep( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->lamp->shadhalostep,
+	return V24_EXPP_setIValueClamped ( value, &self->lamp->shadhalostep,
 								EXPP_LAMP_HALOSTEP_MIN,
 								EXPP_LAMP_HALOSTEP_MAX, 'h' );
 }
 
-static int Lamp_setEnergy( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setEnergy( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->energy, 
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->energy, 
 								EXPP_LAMP_ENERGY_MIN,
 								EXPP_LAMP_ENERGY_MAX );
 }
 
-static int Lamp_setDist( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setDist( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->dist, 
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->dist, 
 								EXPP_LAMP_DIST_MIN,
 								EXPP_LAMP_DIST_MAX );
 }
 
-static int Lamp_setSpotSize( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setSpotSize( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->spotsize, 
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->spotsize, 
 								EXPP_LAMP_SPOTSIZE_MIN,
 								EXPP_LAMP_SPOTSIZE_MAX );
 }
 
-static int Lamp_setSpotBlend( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setSpotBlend( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->spotblend, 
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->spotblend, 
 								EXPP_LAMP_SPOTBLEND_MIN,
 								EXPP_LAMP_SPOTBLEND_MAX );
 }
 
-static int Lamp_setClipStart( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setClipStart( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->clipsta, 
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->clipsta, 
 								EXPP_LAMP_CLIPSTART_MIN,
 								EXPP_LAMP_CLIPSTART_MAX );
 }
 
-static int Lamp_setClipEnd( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setClipEnd( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->clipend, 
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->clipend, 
 								EXPP_LAMP_CLIPEND_MIN,
 								EXPP_LAMP_CLIPEND_MAX );
 }
 
-static int Lamp_setBias( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setBias( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->bias,
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->bias,
 								EXPP_LAMP_BIAS_MIN,
 								EXPP_LAMP_BIAS_MAX );
 }
 
-static int Lamp_setSoftness( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setSoftness( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->soft,
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->soft,
 								EXPP_LAMP_SOFTNESS_MIN,
 								EXPP_LAMP_SOFTNESS_MAX );
 }
 
-static int Lamp_setHaloInt( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setHaloInt( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->haint,
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->haint,
 								EXPP_LAMP_HALOINT_MIN,
 								EXPP_LAMP_HALOINT_MAX );
 }
 
-static int Lamp_setQuad1( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setQuad1( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->att1,
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->att1,
 								EXPP_LAMP_QUAD1_MIN,
 								EXPP_LAMP_QUAD1_MAX );
 }
 
-static int Lamp_setQuad2( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setQuad2( V24_BPy_Lamp * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->lamp->att2,
+	return V24_EXPP_setFloatClamped ( value, &self->lamp->att2,
 								EXPP_LAMP_QUAD2_MIN,
 								EXPP_LAMP_QUAD2_MAX );
 }
 
-static PyObject *Lamp_getComponent( BPy_Lamp * self, void * closure )
+static PyObject *V24_Lamp_getComponent( V24_BPy_Lamp * self, void * closure )
 {
 	switch ( (int)closure ) {
 	case EXPP_LAMP_COMP_R:
@@ -1141,22 +1141,22 @@ static PyObject *Lamp_getComponent( BPy_Lamp * self, void * closure )
 	case EXPP_LAMP_COMP_B:
 		return PyFloat_FromDouble( self->lamp->b );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"unknown color component specified" );
 	}
 }
 
-static int Lamp_setComponent( BPy_Lamp * self, PyObject * value,
+static int V24_Lamp_setComponent( V24_BPy_Lamp * self, PyObject * value,
 							void * closure )
 {
 	float color;
 
 	if( !PyNumber_Check ( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"expected float argument in [0.0,1.0]" );
 
 	color = (float)PyFloat_AsDouble( value );
-	color = EXPP_ClampFloat( color, EXPP_LAMP_COL_MIN, EXPP_LAMP_COL_MAX );
+	color = V24_EXPP_ClampFloat( color, EXPP_LAMP_COL_MIN, EXPP_LAMP_COL_MAX );
 
 	switch ( (int)closure ) {
 	case EXPP_LAMP_COMP_R:
@@ -1169,39 +1169,39 @@ static int Lamp_setComponent( BPy_Lamp * self, PyObject * value,
 		self->lamp->b = color;
 		return 0;
 	}
-	return EXPP_ReturnIntError( PyExc_RuntimeError,
+	return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"unknown color component specified" );
 }
 
-static int Lamp_setCol( BPy_Lamp * self, PyObject * args )
+static int V24_Lamp_setCol( V24_BPy_Lamp * self, PyObject * args )
 {
 	return rgbTuple_setCol( self->color, args );
 }
 
 /* lamp.addScriptLink */
-static PyObject *Lamp_addScriptLink( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_addScriptLink( V24_BPy_Lamp * self, PyObject * args )
 {
 	Lamp *lamp = self->lamp;
 	ScriptLink *slink = NULL;
 
 	slink = &( lamp )->scriptlink;
 
-	return EXPP_addScriptLink( slink, args, 0 );
+	return V24_EXPP_addScriptLink( slink, args, 0 );
 }
 
 /* lamp.clearScriptLinks */
-static PyObject *Lamp_clearScriptLinks( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_clearScriptLinks( V24_BPy_Lamp * self, PyObject * args )
 {
 	Lamp *lamp = self->lamp;
 	ScriptLink *slink = NULL;
 
 	slink = &( lamp )->scriptlink;
 
-	return EXPP_clearScriptLinks( slink, args );
+	return V24_EXPP_clearScriptLinks( slink, args );
 }
 
 /* mat.getScriptLinks */
-static PyObject *Lamp_getScriptLinks( BPy_Lamp * self, PyObject * value )
+static PyObject *V24_Lamp_getScriptLinks( V24_BPy_Lamp * self, PyObject * value )
 {
 	Lamp *lamp = self->lamp;
 	ScriptLink *slink = NULL;
@@ -1209,7 +1209,7 @@ static PyObject *Lamp_getScriptLinks( BPy_Lamp * self, PyObject * value )
 
 	slink = &( lamp )->scriptlink;
 
-	ret = EXPP_getScriptLinks( slink, value, 0 );
+	ret = V24_EXPP_getScriptLinks( slink, value, 0 );
 
 	if( ret )
 		return ret;
@@ -1218,70 +1218,70 @@ static PyObject *Lamp_getScriptLinks( BPy_Lamp * self, PyObject * value )
 }
 
 /*****************************************************************************/
-/* Function:    Lamp_dealloc                                                 */
-/* Description: This is a callback function for the BPy_Lamp type. It is     */
+/* Function:    V24_Lamp_dealloc                                                 */
+/* Description: This is a callback function for the V24_BPy_Lamp type. It is     */
 /*              the destructor function.                                     */
 /*****************************************************************************/
-static void Lamp_dealloc( BPy_Lamp * self )
+static void V24_Lamp_dealloc( V24_BPy_Lamp * self )
 {
 	Py_DECREF( self->color );
 	PyObject_DEL( self );
 }
 
 /*****************************************************************************/
-/* Function:    Lamp_compare                                                 */
-/* Description: This is a callback function for the BPy_Lamp type. It        */
-/*              compares two Lamp_Type objects. Only the "==" and "!="       */
+/* Function:    V24_Lamp_compare                                                 */
+/* Description: This is a callback function for the V24_BPy_Lamp type. It        */
+/*              compares two V24_Lamp_Type objects. Only the "==" and "!="       */
 /*              comparisons are meaningful. Returns 0 for equality and -1    */
 /*              if they don't point to the same Blender Lamp struct.         */
 /*              In Python it becomes 1 if they are equal, 0 otherwise.       */
 /*****************************************************************************/
-static int Lamp_compare( BPy_Lamp * a, BPy_Lamp * b )
+static int V24_Lamp_compare( V24_BPy_Lamp * a, V24_BPy_Lamp * b )
 {
 	return ( a->lamp == b->lamp ) ? 0 : -1;
 }
 
 /*****************************************************************************/
-/* Function:    Lamp_repr                                                    */
-/* Description: This is a callback function for the BPy_Lamp type. It        */
+/* Function:    V24_Lamp_repr                                                    */
+/* Description: This is a callback function for the V24_BPy_Lamp type. It        */
 /*              builds a meaninful string to represent lamp objects.         */
 /*****************************************************************************/
-static PyObject *Lamp_repr( BPy_Lamp * self )
+static PyObject *V24_Lamp_repr( V24_BPy_Lamp * self )
 {
 	return PyString_FromFormat( "[Lamp \"%s\"]", self->lamp->id.name + 2 );
 }
 
-static PyObject *Lamp_getIpo( BPy_Lamp * self )
+static PyObject *V24_Lamp_getIpo( V24_BPy_Lamp * self )
 {
 	struct Ipo *ipo = self->lamp->ipo;
 
 	if( !ipo )
 		Py_RETURN_NONE;
 
-	return Ipo_CreatePyObject( ipo );
+	return V24_Ipo_CreatePyObject( ipo );
 }
 
 /*
  * this should accept a Py_None argument and just delete the Ipo link
- * (as Lamp_clearIpo() does)
+ * (as V24_Lamp_clearIpo() does)
  */
 
-static int Lamp_setIpo( BPy_Lamp * self, PyObject * value )
+static int V24_Lamp_setIpo( V24_BPy_Lamp * self, PyObject * value )
 {
-	return GenericLib_assignData(value, (void **) &self->lamp->ipo, 0, 1, ID_IP, ID_LA);
+	return V24_GenericLib_assignData(value, (void **) &self->lamp->ipo, 0, 1, ID_IP, ID_LA);
 }
 
 /*
- * Lamp_insertIpoKey()
+ * V24_Lamp_insertIpoKey()
  *  inserts Lamp IPO key for RGB,ENERGY,SPOTSIZE,OFFSET,SIZE
  */
 
-static PyObject *Lamp_insertIpoKey( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_insertIpoKey( V24_BPy_Lamp * self, PyObject * args )
 {
 	int key = 0, map;
 
 	if( !PyArg_ParseTuple( args, "i", &( key ) ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 										"expected int argument" ) );
 
 	map = texchannel_to_adrcode(self->lamp->texact);
@@ -1309,15 +1309,15 @@ static PyObject *Lamp_insertIpoKey( BPy_Lamp * self, PyObject * args )
 	}
 
 	allspace(REMAKEIPO, 0);
-	EXPP_allqueue(REDRAWIPO, 0);
-	EXPP_allqueue(REDRAWVIEW3D, 0);
-	EXPP_allqueue(REDRAWACTION, 0);
-	EXPP_allqueue(REDRAWNLA, 0);
+	V24_EXPP_allqueue(REDRAWIPO, 0);
+	V24_EXPP_allqueue(REDRAWVIEW3D, 0);
+	V24_EXPP_allqueue(REDRAWACTION, 0);
+	V24_EXPP_allqueue(REDRAWNLA, 0);
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Lamp_getModesConst( void )
+static PyObject *V24_Lamp_getModesConst( void )
 {
 	return Py_BuildValue
 			( "{s:h,s:h,s:h,s:h,s:h,s:h,s:h,s:h,s:h,s:h,s:h}",
@@ -1333,7 +1333,7 @@ static PyObject *Lamp_getModesConst( void )
 			  EXPP_LAMP_MODE_SHAD_RAY);
 }
 
-static PyObject *Lamp_getTypesConst( void )
+static PyObject *V24_Lamp_getTypesConst( void )
 {
 	return Py_BuildValue( "{s:h,s:h,s:h,s:h,s:h,s:h}",
 				      "Lamp", EXPP_LAMP_TYPE_LAMP,
@@ -1346,104 +1346,104 @@ static PyObject *Lamp_getTypesConst( void )
 
 /* #####DEPRECATED###### */
 
-static PyObject *Lamp_oldsetSamples( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetSamples( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setSamples );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setSamples );
 }
 
-static PyObject *Lamp_oldsetRaySamplesX( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetRaySamplesX( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setRaySamplesX );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setRaySamplesX );
 }
 
-static PyObject *Lamp_oldsetRaySamplesY( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetRaySamplesY( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setRaySamplesY );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setRaySamplesY );
 }
 
-static PyObject *Lamp_oldsetAreaSizeX( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetAreaSizeX( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setAreaSizeX );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setAreaSizeX );
 }
 
-static PyObject *Lamp_oldsetAreaSizeY( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetAreaSizeY( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setAreaSizeY );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setAreaSizeY );
 }
 
-static PyObject *Lamp_oldsetBufferSize( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetBufferSize( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setBufferSize );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setBufferSize );
 }
 
-static PyObject *Lamp_oldsetHaloStep( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetHaloStep( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setHaloStep );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setHaloStep );
 }
 
-static PyObject *Lamp_oldsetEnergy( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetEnergy( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setEnergy );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setEnergy );
 }
 
-static PyObject *Lamp_oldsetDist( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetDist( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setDist );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setDist );
 }
 
-static PyObject *Lamp_oldsetSpotSize( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetSpotSize( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setSpotSize );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setSpotSize );
 }
 
-static PyObject *Lamp_oldsetSpotBlend( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetSpotBlend( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setSpotBlend );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setSpotBlend );
 }
 
-static PyObject *Lamp_oldsetClipStart( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetClipStart( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setClipStart );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setClipStart );
 }
 
-static PyObject *Lamp_oldsetClipEnd( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetClipEnd( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setClipEnd );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setClipEnd );
 }
 
-static PyObject *Lamp_oldsetBias( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetBias( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setBias );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setBias );
 }
 
-static PyObject *Lamp_oldsetSoftness( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetSoftness( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setSoftness );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setSoftness );
 }
 
-static PyObject *Lamp_oldsetHaloInt( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetHaloInt( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setHaloInt );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setHaloInt );
 }
 
-static PyObject *Lamp_oldsetQuad1( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetQuad1( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setQuad1 );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setQuad1 );
 }
 
-static PyObject *Lamp_oldsetQuad2( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetQuad2( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setQuad2 );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setQuad2 );
 }
 
-static PyObject *Lamp_oldsetIpo( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetIpo( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setIpo );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setIpo );
 }
 
-static PyObject *Lamp_oldsetCol( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetCol( V24_BPy_Lamp * self, PyObject * args )
 {
-	return EXPP_setterWrapper ( (void *)self, args, (setter)Lamp_setCol );
+	return V24_EXPP_setterWrapper ( (void *)self, args, (setter)V24_Lamp_setCol );
 }
 
 /* 
@@ -1455,24 +1455,24 @@ static PyObject *Lamp_oldsetCol( BPy_Lamp * self, PyObject * args )
  * clearIpo() returns True/False depending on whether lamp has an Ipo
  */
 
-static PyObject *Lamp_clearIpo( BPy_Lamp * self )
+static PyObject *V24_Lamp_clearIpo( V24_BPy_Lamp * self )
 {
 	/* if Ipo defined, delete it and return true */
 
 	if( self->lamp->ipo ) {
 		PyObject *value = Py_BuildValue( "(O)", Py_None );
-		EXPP_setterWrapper ( (void *)self, value, (setter)Lamp_setIpo );
+		V24_EXPP_setterWrapper ( (void *)self, value, (setter)V24_Lamp_setIpo );
 		Py_DECREF ( value );
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	}
-	return EXPP_incr_ret_False(); /* no ipo found */
+	return V24_EXPP_incr_ret_False(); /* no ipo found */
 }
 
 /*
  * setType() accepts a string while mode setter takes an integer
  */
 
-static PyObject *Lamp_oldsetType( BPy_Lamp * self, PyObject * value )
+static PyObject *V24_Lamp_oldsetType( V24_BPy_Lamp * self, PyObject * value )
 {
 	char *type = PyString_AsString(value);
 	PyObject *arg, *error;
@@ -1480,7 +1480,7 @@ static PyObject *Lamp_oldsetType( BPy_Lamp * self, PyObject * value )
 	/* parse string argument */
 
 	if( !value )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected string argument" ) );
 
 	/* check for valid arguments, set type accordingly */
@@ -1498,13 +1498,13 @@ static PyObject *Lamp_oldsetType( BPy_Lamp * self, PyObject * value )
 	else if( !strcmp( type, "Photon" ) )
 		self->lamp->type = ( short ) EXPP_LAMP_TYPE_YF_PHOTON;
 	else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"unknown lamp type" );
 
 	/* build tuple, call wrapper */
 
 	arg = Py_BuildValue( "(i)", type );
-	error = EXPP_setterWrapper ( (void *)self, arg, (setter)Lamp_setType );
+	error = V24_EXPP_setterWrapper ( (void *)self, arg, (setter)V24_Lamp_setType );
 	Py_DECREF ( arg );
 	return error;
 }
@@ -1513,7 +1513,7 @@ static PyObject *Lamp_oldsetType( BPy_Lamp * self, PyObject * value )
  * setMode() accepts up to ten strings while mode setter takes an integer
  */
 
-static PyObject *Lamp_oldsetMode( BPy_Lamp * self, PyObject * args )
+static PyObject *V24_Lamp_oldsetMode( V24_BPy_Lamp * self, PyObject * args )
 {
 	short i, flag = 0;
 	PyObject *error, *value;
@@ -1522,7 +1522,7 @@ static PyObject *Lamp_oldsetMode( BPy_Lamp * self, PyObject * args )
 	/* check that we're passed a tuple of no more than 10 args*/
 
 	if ( !PyTuple_Check( args ) || PyTuple_Size( args ) > 10 )
-		return EXPP_ReturnPyObjError ( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError ( PyExc_AttributeError,
 					"expected up to 10 string arguments" );
 
 	/* check each argument for type, find its value */
@@ -1530,7 +1530,7 @@ static PyObject *Lamp_oldsetMode( BPy_Lamp * self, PyObject * args )
 	for ( i = (short)PyTuple_Size( args ); i-- ; ) {
  		name = PyString_AsString ( PyTuple_GET_ITEM( args, i ) );
 		if( !name )
-			return EXPP_ReturnPyObjError ( PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError ( PyExc_AttributeError,
 					"expected string argument" );
 
 		if( !strcmp( name, "Shadows" ) )
@@ -1556,14 +1556,14 @@ static PyObject *Lamp_oldsetMode( BPy_Lamp * self, PyObject * args )
 		else if( !strcmp( name, "RayShadow" ) )
 			flag |= ( short ) EXPP_LAMP_MODE_SHAD_RAY;
 		else
-			return EXPP_ReturnPyObjError( PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 							"unknown lamp flag argument" );
 	}
 
 	/* build tuple, call wrapper */
 
 	value = Py_BuildValue( "(i)", flag );
-	error = EXPP_setterWrapper ( (void *)self, value, (setter)Lamp_setMode );
+	error = V24_EXPP_setterWrapper ( (void *)self, value, (setter)V24_Lamp_setMode );
 	Py_DECREF ( value );
 	return error;
 }

@@ -36,47 +36,47 @@
 #include "BLI_blenlib.h"
 #include "gen_utils.h"
 
-//--------------- Python BPy_Property methods declarations:---------------
-static PyObject *Property_getName( BPy_Property * self );
-static PyObject *Property_setName( BPy_Property * self, PyObject * value );
-static PyObject *Property_getData( BPy_Property * self );
-static PyObject *Property_setData( BPy_Property * self, PyObject * args );
-static PyObject *Property_getType( BPy_Property * self );
-//--------------- Python BPy_Property methods table:----------------------
-static PyMethodDef BPy_Property_methods[] = {
-	{"getName", ( PyCFunction ) Property_getName, METH_NOARGS,
+//--------------- Python V24_BPy_Property methods declarations:---------------
+static PyObject *V24_Property_getName( V24_BPy_Property * self );
+static PyObject *V24_Property_setName( V24_BPy_Property * self, PyObject * value );
+static PyObject *V24_Property_getData( V24_BPy_Property * self );
+static PyObject *V24_Property_setData( V24_BPy_Property * self, PyObject * args );
+static PyObject *V24_Property_getType( V24_BPy_Property * self );
+//--------------- Python V24_BPy_Property methods table:----------------------
+static PyMethodDef V24_BPy_Property_methods[] = {
+	{"getName", ( PyCFunction ) V24_Property_getName, METH_NOARGS,
 	 "() - return Property name"},
-	{"setName", ( PyCFunction ) Property_setName, METH_O,
+	{"setName", ( PyCFunction ) V24_Property_setName, METH_O,
 	 "() - set the name of this Property"},
-	{"getData", ( PyCFunction ) Property_getData, METH_NOARGS,
+	{"getData", ( PyCFunction ) V24_Property_getData, METH_NOARGS,
 	 "() - return Property data"},
-	{"setData", ( PyCFunction ) Property_setData, METH_VARARGS,
+	{"setData", ( PyCFunction ) V24_Property_setData, METH_VARARGS,
 	 "() - set the data of this Property"},
-	{"getType", ( PyCFunction ) Property_getType, METH_NOARGS,
+	{"getType", ( PyCFunction ) V24_Property_getType, METH_NOARGS,
 	 "() - return Property type"},
 	{NULL, NULL, 0, NULL}
 };
 //--------------- Python TypeProperty callback function prototypes--------
-static void Property_dealloc( BPy_Property * Property );
-static PyObject *Property_getAttr( BPy_Property * Property, char *name );
-static int Property_setAttr( BPy_Property * Property, char *name,
+static void V24_Property_dealloc( V24_BPy_Property * Property );
+static PyObject *V24_Property_getAttr( V24_BPy_Property * Property, char *name );
+static int V24_Property_setAttr( V24_BPy_Property * Property, char *name,
 			     PyObject * v );
-static PyObject *Property_repr( BPy_Property * Property );
-static int Property_compare( BPy_Property * a1, BPy_Property * a2 );
+static PyObject *V24_Property_repr( V24_BPy_Property * Property );
+static int V24_Property_compare( V24_BPy_Property * a1, V24_BPy_Property * a2 );
 //--------------- Python TypeProperty structure definition----------------
 PyTypeObject property_Type = {
 	PyObject_HEAD_INIT( NULL ) 
 	0,	/* ob_size */
 	"Blender Property",	/* tp_name */
-	sizeof( BPy_Property ),	/* tp_basicsize */
+	sizeof( V24_BPy_Property ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
-	( destructor ) Property_dealloc,	/* tp_dealloc */
+	( destructor ) V24_Property_dealloc,	/* tp_dealloc */
 	0,			/* tp_print */
-	( getattrfunc ) Property_getAttr,	/* tp_getattr */
-	( setattrfunc ) Property_setAttr,	/* tp_setattr */
-	( cmpfunc ) Property_compare,	/* tp_compare */
-	( reprfunc ) Property_repr,	/* tp_repr */
+	( getattrfunc ) V24_Property_getAttr,	/* tp_getattr */
+	( setattrfunc ) V24_Property_setAttr,	/* tp_setattr */
+	( cmpfunc ) V24_Property_compare,	/* tp_compare */
+	( reprfunc ) V24_Property_repr,	/* tp_repr */
 	0,			/* tp_as_number */
 	0,			/* tp_as_sequence */
 	0,			/* tp_as_mapping */
@@ -84,14 +84,14 @@ PyTypeObject property_Type = {
 	0, 0, 0, 0, 0, 0,
 	0,			/* tp_doc */
 	0, 0, 0, 0, 0, 0,
-	BPy_Property_methods,	/* tp_methods */
+	V24_BPy_Property_methods,	/* tp_methods */
 	0,			/* tp_members */
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 //--------------- Property module internal callbacks-------------------
 
 //--------------- updatePyProperty-------------------------------------
-int updatePyProperty( BPy_Property * self )
+int updatePyProperty( V24_BPy_Property * self )
 {
 	if( !self->property ) {
 		return 0;	//nothing to update - not linked
@@ -100,9 +100,9 @@ int updatePyProperty( BPy_Property * self )
 		self->type = self->property->type;
 		if( self->property->type == PROP_BOOL ) {
 			if( *( ( int * ) &self->property->poin ) ) {
-				self->data = EXPP_incr_ret_True();
+				self->data = V24_EXPP_incr_ret_True();
 			} else {
-				self->data = EXPP_incr_ret_False();
+				self->data = V24_EXPP_incr_ret_False();
 			}
 		} else if( self->property->type == PROP_INT ) {
 			self->data = PyInt_FromLong( self->property->data );
@@ -125,7 +125,7 @@ int updatePyProperty( BPy_Property * self )
 }
 
 //--------------- updatePropertyData------------------------------------
-int updateProperyData( BPy_Property * self )
+int updateProperyData( V24_BPy_Property * self )
 {
 	if( !self->property ) {
 		//nothing to update - not linked
@@ -149,7 +149,7 @@ int updateProperyData( BPy_Property * self )
 }
 
 //--------------- checkValidData_ptr--------------------------------
-static int checkValidData_ptr( BPy_Property * self )
+static int checkValidData_ptr( V24_BPy_Property * self )
 {
 	int length;
 	/* test pointer to see if data was removed (oops) */
@@ -163,52 +163,52 @@ static int checkValidData_ptr( BPy_Property * self )
 	}
 }
 
-//---------------BPy_Property internal callbacks/methods------------
+//---------------V24_BPy_Property internal callbacks/methods------------
 
 //--------------- dealloc-------------------------------------------
-static void Property_dealloc( BPy_Property * self )
+static void V24_Property_dealloc( V24_BPy_Property * self )
 {
 	PyMem_Free( self->name );
 	PyObject_DEL( self );
 }
 
 //---------------getattr--------------------------------------------
-static PyObject *Property_getAttr( BPy_Property * self, char *name )
+static PyObject *V24_Property_getAttr( V24_BPy_Property * self, char *name )
 {
 	checkValidData_ptr( self );
 	if( strcmp( name, "name" ) == 0 )
-		return Property_getName( self );
+		return V24_Property_getName( self );
 	else if( strcmp( name, "data" ) == 0 )
-		return Property_getData( self );
+		return V24_Property_getData( self );
 	else if( strcmp( name, "type" ) == 0 )
-		return Property_getType( self );
+		return V24_Property_getType( self );
 	else if( strcmp( name, "__members__" ) == 0 ) {
 		return Py_BuildValue( "[s,s,s]", "name", "data", "type" );
 	}
 
-	return Py_FindMethod( BPy_Property_methods, ( PyObject * ) self, name );
+	return Py_FindMethod( V24_BPy_Property_methods, ( PyObject * ) self, name );
 }
 
 //--------------- setattr-------------------------------------------
 static int
-Property_setAttr( BPy_Property * self, char *name, PyObject * value )
+V24_Property_setAttr( V24_BPy_Property * self, char *name, PyObject * value )
 {
 	PyObject *error = NULL;
 
 	checkValidData_ptr( self );
 
 	if( strcmp( name, "name" ) == 0 ) {
-		error = Property_setName( self, value );
+		error = V24_Property_setName( self, value );
 	} else if( strcmp( name, "data" ) == 0 ) {
 		PyObject *valtuple = Py_BuildValue( "(O)", value );
 		if( !valtuple )
-			return EXPP_ReturnIntError( PyExc_MemoryError,
+			return V24_EXPP_ReturnIntError( PyExc_MemoryError,
 						    "PropertySetAttr: couldn't create tuple" );
 		
-		error = Property_setData( self, valtuple );
+		error = V24_Property_setData( self, valtuple );
 		Py_DECREF( valtuple );
 	} else {
-		return ( EXPP_ReturnIntError
+		return ( V24_EXPP_ReturnIntError
 			 ( PyExc_KeyError, "attribute not found" ) );
 	}
 	
@@ -221,7 +221,7 @@ Property_setAttr( BPy_Property * self, char *name, PyObject * value )
 }
 
 //--------------- repr----------------------------------------------
-static PyObject *Property_repr( BPy_Property * self )
+static PyObject *V24_Property_repr( V24_BPy_Property * self )
 {
 	checkValidData_ptr( self );
 	if( self->property ) {
@@ -234,9 +234,9 @@ static PyObject *Property_repr( BPy_Property * self )
 
 //--------------- compare-------------------------------------------
 //compares property.name and property.data
-static int Property_compare( BPy_Property * a, BPy_Property * b )
+static int V24_Property_compare( V24_BPy_Property * a, V24_BPy_Property * b )
 {
-	BPy_Property *py_propA, *py_propB;
+	V24_BPy_Property *py_propA, *py_propB;
 	int retval = -1;
 
 	checkValidData_ptr( a );
@@ -314,13 +314,13 @@ static int Property_compare( BPy_Property * a, BPy_Property * b )
 }
 
 //--------------- Property visible functions------------------------
-//--------------- Property_CreatePyObject---------------------------
-PyObject *Property_CreatePyObject( struct bProperty * Property )
+//--------------- V24_Property_CreatePyObject---------------------------
+PyObject *V24_Property_CreatePyObject( struct bProperty * Property )
 {
-	BPy_Property *py_property;
+	V24_BPy_Property *py_property;
 
 	py_property =
-		( BPy_Property * ) PyObject_NEW( BPy_Property,
+		( V24_BPy_Property * ) PyObject_NEW( V24_BPy_Property,
 						 &property_Type );
 
 	//set the struct flag
@@ -330,18 +330,18 @@ PyObject *Property_CreatePyObject( struct bProperty * Property )
 	py_property->name = PyMem_Malloc( 32 );
 
 	if( !updatePyProperty( py_property ) )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_AttributeError, "Property struct empty" ) );
 
 	return ( ( PyObject * ) py_property );
 }
 
-//--------------- Property_FromPyObject-----------------------------
-struct bProperty *Property_FromPyObject( PyObject * py_obj )
+//--------------- V24_Property_FromPyObject-----------------------------
+struct bProperty *V24_Property_FromPyObject( PyObject * py_obj )
 {
-	BPy_Property *py_property;
+	V24_BPy_Property *py_property;
 
-	py_property = ( BPy_Property * ) py_obj;
+	py_property = ( V24_BPy_Property * ) py_obj;
 	if( !py_property->property )
 		return NULL;
 	else
@@ -351,10 +351,10 @@ struct bProperty *Property_FromPyObject( PyObject * py_obj )
 //--------------- newPropertyObject()-------------------------------
 PyObject *newPropertyObject( char *name, PyObject * data, int type )
 {
-	BPy_Property *py_property;
+	V24_BPy_Property *py_property;
 
 	py_property =
-		( BPy_Property * ) PyObject_NEW( BPy_Property,
+		( V24_BPy_Property * ) PyObject_NEW( V24_BPy_Property,
 						 &property_Type );
 	py_property->name = PyMem_Malloc( 32 );
 	py_property->property = NULL;
@@ -366,9 +366,9 @@ PyObject *newPropertyObject( char *name, PyObject * data, int type )
 	return ( PyObject * ) py_property;
 }
 
-//--------------- Python BPy_Property methods-----------------------
-//--------------- BPy_Property.getName()----------------------------
-static PyObject *Property_getName( BPy_Property * self )
+//--------------- Python V24_BPy_Property methods-----------------------
+//--------------- V24_BPy_Property.getName()----------------------------
+static PyObject *V24_Property_getName( V24_BPy_Property * self )
 {
 	if( !self->property )
 		return PyString_FromString( self->name );
@@ -376,13 +376,13 @@ static PyObject *Property_getName( BPy_Property * self )
 		return PyString_FromString( self->property->name );
 }
 
-//--------------- BPy_Property.setName()----------------------------
-static PyObject *Property_setName( BPy_Property * self, PyObject * value )
+//--------------- V24_BPy_Property.setName()----------------------------
+static PyObject *V24_Property_setName( V24_BPy_Property * self, PyObject * value )
 {
 	char *name = PyString_AsString(value);
 
 	if( !name )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected string argument" ) );
 
 	if( !self->property ) {
@@ -395,19 +395,19 @@ static PyObject *Property_setName( BPy_Property * self, PyObject * value )
 	Py_RETURN_NONE;
 }
 
-//--------------- BPy_Property.getData()----------------------------
-static PyObject *Property_getData( BPy_Property * self )
+//--------------- V24_BPy_Property.getData()----------------------------
+static PyObject *V24_Property_getData( V24_BPy_Property * self )
 {
 	PyObject *attr = NULL;
 
 	if( !self->property ) {
-		attr = EXPP_incr_ret( self->data );
+		attr = V24_EXPP_incr_ret( self->data );
 	} else {
 		if( self->property->type == PROP_BOOL ) {
 			if( self->property->data )
-				attr = EXPP_incr_ret_True();
+				attr = V24_EXPP_incr_ret_True();
 			else
-				attr = EXPP_incr_ret_False();
+				attr = V24_EXPP_incr_ret_False();
 		} else if( self->property->type == PROP_INT ) {
 			attr = PyInt_FromLong( self->property->data );
 		} else if( self->property->type == PROP_FLOAT ||
@@ -422,12 +422,12 @@ static PyObject *Property_getData( BPy_Property * self )
 	if( attr )
 		return attr;
 
-	return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"couldn't get Property.data attribute" ) );
 }
 
-//--------------- BPy_Property.setData()----------------------------
-static PyObject *Property_setData( BPy_Property * self, PyObject * args )
+//--------------- V24_BPy_Property.setData()----------------------------
+static PyObject *V24_Property_setData( V24_BPy_Property * self, PyObject * args )
 {
 	PyObject *data;
 	char *type_str = NULL;
@@ -435,12 +435,12 @@ static PyObject *Property_setData( BPy_Property * self, PyObject * args )
 	short *p_type = NULL;
 
 	if( !PyArg_ParseTuple( args, "O|s", &data, &type_str ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected object  and optional string argument" ) );
 
 	if( !PyInt_Check( data ) && !PyFloat_Check( data )
 	    && !PyString_Check( data ) )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_RuntimeError,
 			   "float, int, or string expected as data" ) );
 
@@ -457,7 +457,7 @@ static PyObject *Property_setData( BPy_Property * self, PyObject * args )
 		else if( BLI_streq( type_str, "STRING" ) )
 			type = PROP_STRING;
 		else
-			return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 							"BOOL, INT, FLOAT, TIME or STRING expected" ) );
 	}
 	//get pointer to type
@@ -481,7 +481,7 @@ static PyObject *Property_setData( BPy_Property * self, PyObject * args )
 		if( type == -1 || type == PROP_STRING )
 			*p_type = PROP_STRING;
 	} else {
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"cant set unknown data type" ) );
 	}
 
@@ -505,8 +505,8 @@ static PyObject *Property_setData( BPy_Property * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-//--------------- BPy_Property.getType()----------------------------
-static PyObject *Property_getType( BPy_Property * self )
+//--------------- V24_BPy_Property.getType()----------------------------
+static PyObject *V24_Property_getType( V24_BPy_Property * self )
 {
 	int type;
 

@@ -41,14 +41,14 @@ struct View3D;
 #include "DNA_space_types.h"	/* SPACE_VIEW3D, SPACE_SEQ */
 #include "DNA_screen_types.h"
 #include "DNA_userdef_types.h" /* U.userdefs */
-#include "DNA_object_types.h" /* SceneObSeq_new */
+#include "DNA_object_types.h" /* V24_SceneObSeq_new */
 #include "BKE_depsgraph.h"
 #include "BKE_library.h"
 #include "BKE_object.h"
 #include "BKE_scene.h"
 #include "BKE_font.h"
 #include "BKE_idprop.h"
-#include "BLI_blenlib.h" /* only for SceneObSeq_new */
+#include "BLI_blenlib.h" /* only for V24_SceneObSeq_new */
 #include "BSE_drawview.h"	/* for play_anim */
 #include "BSE_headerbuttons.h"	/* for copy_scene */
 #include "BIF_drawscene.h"	/* for set_scene */
@@ -60,7 +60,7 @@ struct View3D;
 /* python types */
 #include "Object.h"
 #include "Camera.h"
-/* only for SceneObSeq_new */
+/* only for V24_SceneObSeq_new */
 #include "BKE_material.h"
 #include "BLI_arithb.h"
 #include "Armature.h"
@@ -86,11 +86,11 @@ struct View3D;
 #include "BKE_utildefines.h" /* vec copy */
 #include "vector.h"
 
-PyObject *M_Object_Get( PyObject * self, PyObject * args ); /* from Object.c */
+PyObject *V24_M_Object_Get( PyObject * self, PyObject * args ); /* from Object.c */
 
 /* checks for the scene being removed */
-#define SCENE_DEL_CHECK_PY(bpy_scene) if (!(bpy_scene->scene)) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "Scene has been removed" ) )
-#define SCENE_DEL_CHECK_INT(bpy_scene) if (!(bpy_scene->scene)) return ( EXPP_ReturnIntError( PyExc_RuntimeError, "Scene has been removed" ) )
+#define SCENE_DEL_CHECK_PY(bpy_scene) if (!(bpy_scene->scene)) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "Scene has been removed" ) )
+#define SCENE_DEL_CHECK_INT(bpy_scene) if (!(bpy_scene->scene)) return ( V24_EXPP_ReturnIntError( PyExc_RuntimeError, "Scene has been removed" ) )
 
 
 enum obj_consts {
@@ -101,121 +101,121 @@ enum obj_consts {
 
 
 /*-----------------------Python API function prototypes for the Scene module--*/
-static PyObject *M_Scene_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_Scene_New( PyObject * self, PyObject * args,
 			      PyObject * keywords );
-static PyObject *M_Scene_Get( PyObject * self, PyObject * args );
-static PyObject *M_Scene_GetCurrent( PyObject * self );
-static PyObject *M_Scene_getCurrent_deprecated( PyObject * self );
-static PyObject *M_Scene_Unlink( PyObject * self, PyObject * arg );
+static PyObject *V24_M_Scene_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_Scene_GetCurrent( PyObject * self );
+static PyObject *V24_M_Scene_getCurrent_deprecated( PyObject * self );
+static PyObject *V24_M_Scene_Unlink( PyObject * self, PyObject * arg );
 /*-----------------------Scene module doc strings-----------------------------*/
-static char M_Scene_doc[] = "The Blender.Scene submodule";
-static char M_Scene_New_doc[] =
+static char V24_M_Scene_doc[] = "The Blender.Scene submodule";
+static char V24_M_Scene_New_doc[] =
 	"(name = 'Scene') - Create a new Scene called 'name' in Blender.";
-static char M_Scene_Get_doc[] =
+static char V24_M_Scene_Get_doc[] =
 	"(name = None) - Return the scene called 'name'. If 'name' is None, return a list with all Scenes.";
-static char M_Scene_GetCurrent_doc[] =
+static char V24_M_Scene_GetCurrent_doc[] =
 	"() - Return the currently active Scene in Blender.";
-static char M_Scene_Unlink_doc[] =
+static char V24_M_Scene_Unlink_doc[] =
 	"(scene) - Unlink (delete) scene 'Scene' from Blender. (scene) is of type Blender scene.";
 /*----------------------Scene module method def----------------------------*/
 struct PyMethodDef M_Scene_methods[] = {
-	{"New", ( PyCFunction ) M_Scene_New, METH_VARARGS | METH_KEYWORDS,
-	 M_Scene_New_doc},
-	{"Get", M_Scene_Get, METH_VARARGS, M_Scene_Get_doc},
-	{"get", M_Scene_Get, METH_VARARGS, M_Scene_Get_doc},
-	{"GetCurrent", ( PyCFunction ) M_Scene_GetCurrent,
-	 METH_NOARGS, M_Scene_GetCurrent_doc},
-	{"getCurrent", ( PyCFunction ) M_Scene_getCurrent_deprecated,
-	 METH_NOARGS, M_Scene_GetCurrent_doc},
-	{"Unlink", M_Scene_Unlink, METH_VARARGS, M_Scene_Unlink_doc},
-	{"unlink", M_Scene_Unlink, METH_VARARGS, M_Scene_Unlink_doc},
+	{"New", ( PyCFunction ) V24_M_Scene_New, METH_VARARGS | METH_KEYWORDS,
+	 V24_M_Scene_New_doc},
+	{"Get", V24_M_Scene_Get, METH_VARARGS, V24_M_Scene_Get_doc},
+	{"get", V24_M_Scene_Get, METH_VARARGS, V24_M_Scene_Get_doc},
+	{"GetCurrent", ( PyCFunction ) V24_M_Scene_GetCurrent,
+	 METH_NOARGS, V24_M_Scene_GetCurrent_doc},
+	{"getCurrent", ( PyCFunction ) V24_M_Scene_getCurrent_deprecated,
+	 METH_NOARGS, V24_M_Scene_GetCurrent_doc},
+	{"Unlink", V24_M_Scene_Unlink, METH_VARARGS, V24_M_Scene_Unlink_doc},
+	{"unlink", V24_M_Scene_Unlink, METH_VARARGS, V24_M_Scene_Unlink_doc},
 	{NULL, NULL, 0, NULL}
 };
-/*-----------------------BPy_Scene  method declarations--------------------*/
-static PyObject *Scene_getLayerList( BPy_Scene * self );
-static PyObject *Scene_oldsetLayers( BPy_Scene * self, PyObject * arg );
-static PyObject *Scene_copy( BPy_Scene * self, PyObject * arg );
-static PyObject *Scene_makeCurrent( BPy_Scene * self );
-static PyObject *Scene_update( BPy_Scene * self, PyObject * args );
-static PyObject *Scene_link( BPy_Scene * self, PyObject * args );
-static PyObject *Scene_unlink( BPy_Scene * self, PyObject * args );
-static PyObject *Scene_getChildren( BPy_Scene * self );
-static PyObject *Scene_getActiveObject(BPy_Scene *self);
-static PyObject *Scene_getCurrentCamera( BPy_Scene * self );
-static PyObject *Scene_setCurrentCamera( BPy_Scene * self, PyObject * args );
-static PyObject *Scene_getRenderingContext( BPy_Scene * self );
-static PyObject *Scene_getRadiosityContext( BPy_Scene * self );
-static PyObject *Scene_getScriptLinks( BPy_Scene * self, PyObject * value );
-static PyObject *Scene_getSequence( BPy_Scene * self );
-static PyObject *Scene_addScriptLink( BPy_Scene * self, PyObject * args );
-static PyObject *Scene_clearScriptLinks( BPy_Scene * self, PyObject * args );
-static PyObject *Scene_play( BPy_Scene * self, PyObject * args );
-static PyObject *Scene_getTimeLine( BPy_Scene * self );
+/*-----------------------V24_BPy_Scene  method declarations--------------------*/
+static PyObject *V24_Scene_getLayerList( V24_BPy_Scene * self );
+static PyObject *V24_Scene_oldsetLayers( V24_BPy_Scene * self, PyObject * arg );
+static PyObject *V24_Scene_copy( V24_BPy_Scene * self, PyObject * arg );
+static PyObject *V24_Scene_makeCurrent( V24_BPy_Scene * self );
+static PyObject *V24_Scene_update( V24_BPy_Scene * self, PyObject * args );
+static PyObject *V24_Scene_link( V24_BPy_Scene * self, PyObject * args );
+static PyObject *V24_Scene_unlink( V24_BPy_Scene * self, PyObject * args );
+static PyObject *V24_Scene_getChildren( V24_BPy_Scene * self );
+static PyObject *V24_Scene_getActiveObject(V24_BPy_Scene *self);
+static PyObject *V24_Scene_getCurrentCamera( V24_BPy_Scene * self );
+static PyObject *V24_Scene_setCurrentCamera( V24_BPy_Scene * self, PyObject * args );
+static PyObject *V24_Scene_getRenderingContext( V24_BPy_Scene * self );
+static PyObject *V24_Scene_getRadiosityContext( V24_BPy_Scene * self );
+static PyObject *V24_Scene_getScriptLinks( V24_BPy_Scene * self, PyObject * value );
+static PyObject *V24_Scene_getSequence( V24_BPy_Scene * self );
+static PyObject *V24_Scene_addScriptLink( V24_BPy_Scene * self, PyObject * args );
+static PyObject *V24_Scene_clearScriptLinks( V24_BPy_Scene * self, PyObject * args );
+static PyObject *V24_Scene_play( V24_BPy_Scene * self, PyObject * args );
+static PyObject *V24_Scene_getTimeLine( V24_BPy_Scene * self );
 
 
 /*internal*/
-static int Scene_compare( BPy_Scene * a, BPy_Scene * b );
-static PyObject *Scene_repr( BPy_Scene * self );
+static int V24_Scene_compare( V24_BPy_Scene * a, V24_BPy_Scene * b );
+static PyObject *V24_Scene_repr( V24_BPy_Scene * self );
 
 /*object seq*/
-static PyObject *SceneObSeq_CreatePyObject( BPy_Scene *self, Base *iter, int mode);
+static PyObject *V24_SceneObSeq_CreatePyObject( V24_BPy_Scene *self, Base *iter, int mode);
 
-/*-----------------------BPy_Scene method def------------------------------*/
-static PyMethodDef BPy_Scene_methods[] = {
+/*-----------------------V24_BPy_Scene method def------------------------------*/
+static PyMethodDef V24_BPy_Scene_methods[] = {
 	/* name, method, flags, doc */
-	{"getName", ( PyCFunction ) GenericLib_getName, METH_NOARGS,
+	{"getName", ( PyCFunction ) V24_GenericLib_getName, METH_NOARGS,
 	 "() - Return Scene name"},
-	{"setName", ( PyCFunction ) GenericLib_setName_with_method, METH_VARARGS,
+	{"setName", ( PyCFunction ) V24_GenericLib_setName_with_method, METH_VARARGS,
 	 "(str) - Change Scene name"},
-	{"getLayers", ( PyCFunction ) Scene_getLayerList, METH_NOARGS,
+	{"getLayers", ( PyCFunction ) V24_Scene_getLayerList, METH_NOARGS,
 	 "() - Return a list of layers int indices which are set in this scene "},
-	{"setLayers", ( PyCFunction ) Scene_oldsetLayers, METH_VARARGS,
+	{"setLayers", ( PyCFunction ) V24_Scene_oldsetLayers, METH_VARARGS,
 	 "(layers) - Change layers which are set in this scene\n"
 	 "(layers) - list of integers in the range [1, 20]."},
-	{"copy", ( PyCFunction ) Scene_copy, METH_VARARGS,
+	{"copy", ( PyCFunction ) V24_Scene_copy, METH_VARARGS,
 	 "(duplicate_objects = 1) - Return a copy of this scene\n"
 	 "The optional argument duplicate_objects defines how the scene\n"
 	 "children are duplicated:\n\t0: Link Objects\n\t1: Link Object Data"
 	 "\n\t2: Full copy\n"},
-	{"makeCurrent", ( PyCFunction ) Scene_makeCurrent, METH_NOARGS,
+	{"makeCurrent", ( PyCFunction ) V24_Scene_makeCurrent, METH_NOARGS,
 	 "() - Make self the current scene"},
-	{"update", ( PyCFunction ) Scene_update, METH_VARARGS,
+	{"update", ( PyCFunction ) V24_Scene_update, METH_VARARGS,
 	 "(full = 0) - Update scene self.\n"
 	 "full = 0: sort the base list of objects."
 	 "full = 1: full update -- also regroups, does ipos, keys"},
-	{"link", ( PyCFunction ) Scene_link, METH_VARARGS,
+	{"link", ( PyCFunction ) V24_Scene_link, METH_VARARGS,
 	 "(obj) - Link Object obj to this scene"},
-	{"unlink", ( PyCFunction ) Scene_unlink, METH_VARARGS,
+	{"unlink", ( PyCFunction ) V24_Scene_unlink, METH_VARARGS,
 	 "(obj) - Unlink Object obj from this scene"},
-	{"getChildren", ( PyCFunction ) Scene_getChildren, METH_NOARGS,
+	{"getChildren", ( PyCFunction ) V24_Scene_getChildren, METH_NOARGS,
 	 "() - Return list of all objects linked to this scene"},
-	{"getActiveObject", (PyCFunction)Scene_getActiveObject, METH_NOARGS,
+	{"getActiveObject", (PyCFunction)V24_Scene_getActiveObject, METH_NOARGS,
 	 "() - Return this scene's active object"},
-	{"getCurrentCamera", ( PyCFunction ) Scene_getCurrentCamera,
+	{"getCurrentCamera", ( PyCFunction ) V24_Scene_getCurrentCamera,
 	 METH_NOARGS,
 	 "() - Return current active Camera"},
-	{"getScriptLinks", ( PyCFunction ) Scene_getScriptLinks, METH_O,
+	{"getScriptLinks", ( PyCFunction ) V24_Scene_getScriptLinks, METH_O,
 	 "(eventname) - Get a list of this scene's scriptlinks (Text names) "
 	 "of the given type\n"
 	 "(eventname) - string: FrameChanged, OnLoad, OnSave, Redraw or Render."},
-	{"addScriptLink", ( PyCFunction ) Scene_addScriptLink, METH_VARARGS,
+	{"addScriptLink", ( PyCFunction ) V24_Scene_addScriptLink, METH_VARARGS,
 	 "(text, evt) - Add a new scene scriptlink.\n"
 	 "(text) - string: an existing Blender Text name;\n"
 	 "(evt) string: FrameChanged, OnLoad, OnSave, Redraw or Render."},
-	{"clearScriptLinks", ( PyCFunction ) Scene_clearScriptLinks,
+	{"clearScriptLinks", ( PyCFunction ) V24_Scene_clearScriptLinks,
 	 METH_VARARGS,
 	 "() - Delete all scriptlinks from this scene.\n"
 	 "([s1<,s2,s3...>]) - Delete specified scriptlinks from this scene."},
-	{"setCurrentCamera", ( PyCFunction ) Scene_setCurrentCamera,
+	{"setCurrentCamera", ( PyCFunction ) V24_Scene_setCurrentCamera,
 	 METH_VARARGS,
 	 "() - Set the currently active Camera"},
-	{"getRenderingContext", ( PyCFunction ) Scene_getRenderingContext,
+	{"getRenderingContext", ( PyCFunction ) V24_Scene_getRenderingContext,
 	 METH_NOARGS,
-	 "() - Get the rendering context for the scene and return it as a BPy_RenderData"},
-	{"getRadiosityContext", ( PyCFunction ) Scene_getRadiosityContext,
+	 "() - Get the rendering context for the scene and return it as a V24_BPy_RenderData"},
+	{"getRadiosityContext", ( PyCFunction ) V24_Scene_getRadiosityContext,
 	 METH_NOARGS,
 	 "() - Get the radiosity context for this scene."},
-	{"play", ( PyCFunction ) Scene_play, METH_VARARGS,
+	{"play", ( PyCFunction ) V24_Scene_play, METH_VARARGS,
 	 "(mode = 0, win = VIEW3D) - Play realtime animation in Blender"
 	 " (not rendered).\n"
 	 "(mode) - int:\n"
@@ -228,36 +228,36 @@ static PyMethodDef BPy_Scene_methods[] = {
 	 "since they can be used just as an interruptible timer.  If 'win' is not"
 	 "available or invalid, VIEW3D is tried, then any bigger window."
 	 "Returns 0 for normal exit or 1 when canceled by user input."},
-	{"getTimeLine", ( PyCFunction ) Scene_getTimeLine, METH_NOARGS,
+	{"getTimeLine", ( PyCFunction ) V24_Scene_getTimeLine, METH_NOARGS,
 	"() - Get time line of this Scene"},
 	{NULL, NULL, 0, NULL}
 };
 
 
 /*****************************************************************************/
-/* Python BPy_Scene getsetattr funcs:                                        */
+/* Python V24_BPy_Scene getsetattr funcs:                                        */
 /*****************************************************************************/
-static PyObject *Scene_getLayerMask( BPy_Scene * self )
+static PyObject *V24_Scene_getLayerMask( V24_BPy_Scene * self )
 {
 	SCENE_DEL_CHECK_PY(self);
 	return PyInt_FromLong( self->scene->lay & ((1<<20)-1) );
 }
 
-static int Scene_setLayerMask( BPy_Scene * self, PyObject * value )
+static int V24_Scene_setLayerMask( V24_BPy_Scene * self, PyObject * value )
 {
 	int laymask = 0;
 	
 	SCENE_DEL_CHECK_INT(self);
 	
 	if (!PyInt_Check(value)) {
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 			"expected an integer (bitmask) as argument" );
 	}
 	
 	laymask = PyInt_AsLong(value);
 
 	if (laymask <= 0 || laymask > (1<<20) - 1) /* binary: 1111 1111 1111 1111 1111 */
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 			"bitmask must have from 1 up to 20 bits set");
 
 	self->scene->lay = laymask;
@@ -280,7 +280,7 @@ static int Scene_setLayerMask( BPy_Scene * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Scene_getLayerList( BPy_Scene * self )
+static PyObject *V24_Scene_getLayerList( V24_BPy_Scene * self )
 {
 	PyObject *laylist, *item;
 	int layers, bit = 0, val = 0;
@@ -290,7 +290,7 @@ static PyObject *Scene_getLayerList( BPy_Scene * self )
 	laylist = PyList_New( 0 );
 	
 	if( !laylist )
-		return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 			"couldn't create pylist!" ) );
 
 	layers = self->scene->lay;
@@ -307,7 +307,7 @@ static PyObject *Scene_getLayerList( BPy_Scene * self )
 	return laylist;
 }
 
-static int Scene_setLayerList( BPy_Scene * self, PyObject * value )
+static int V24_Scene_setLayerList( V24_BPy_Scene * self, PyObject * value )
 {
 	PyObject *item = NULL;
 	int layers = 0, val, i, len_list;
@@ -315,13 +315,13 @@ static int Scene_setLayerList( BPy_Scene * self, PyObject * value )
 	SCENE_DEL_CHECK_INT(self);
 	
 	if( !PySequence_Check( value ) )
-		return ( EXPP_ReturnIntError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected a list of integers in the range [1, 20]" ) );
 
 	len_list = PySequence_Size(value);
 
 	if (len_list == 0)
-		return ( EXPP_ReturnIntError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_AttributeError,
 			"list can't be empty, at least one layer must be set" ) );
 
 	for( i = 0; i < len_list; i++ ) {
@@ -329,14 +329,14 @@ static int Scene_setLayerList( BPy_Scene * self, PyObject * value )
 		
 		if( !PyInt_Check( item ) ) {
 			Py_DECREF( item );
-			return EXPP_ReturnIntError
+			return V24_EXPP_ReturnIntError
 				( PyExc_AttributeError,
 				  "list must contain only integer numbers" );
 		}
 		
 		val = ( int ) PyInt_AsLong( item );
 		if( val < 1 || val > 20 )
-			return EXPP_ReturnIntError
+			return V24_EXPP_ReturnIntError
 				( PyExc_AttributeError,
 				  "layer values must be in the range [1, 20]" );
 
@@ -361,46 +361,46 @@ static int Scene_setLayerList( BPy_Scene * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Scene_getWorld( BPy_Scene * self )
+static PyObject *V24_Scene_getWorld( V24_BPy_Scene * self )
 {
 	SCENE_DEL_CHECK_PY(self);
 	
 	if (!self->scene->world)
 		Py_RETURN_NONE;
-	return World_CreatePyObject(self->scene->world);
+	return V24_World_CreatePyObject(self->scene->world);
 }
 
-static int Scene_setWorld( BPy_Scene * self, PyObject * value )
+static int V24_Scene_setWorld( V24_BPy_Scene * self, PyObject * value )
 {
 	SCENE_DEL_CHECK_INT(self);
-	return GenericLib_assignData(value, (void **) &self->scene->world, NULL, 1, ID_WO, 0);
+	return V24_GenericLib_assignData(value, (void **) &self->scene->world, NULL, 1, ID_WO, 0);
 }
 
 /* accessed from scn.objects */
-static PyObject *Scene_getObjects( BPy_Scene *self) 
+static PyObject *V24_Scene_getObjects( V24_BPy_Scene *self) 
 {
 	SCENE_DEL_CHECK_PY(self);
-	return SceneObSeq_CreatePyObject(self, NULL, 0);
+	return V24_SceneObSeq_CreatePyObject(self, NULL, 0);
 }
 
-static PyObject *Scene_getCursor( BPy_Scene * self )
+static PyObject *V24_Scene_getCursor( V24_BPy_Scene * self )
 {
 	SCENE_DEL_CHECK_PY(self);
 	return newVectorObject( self->scene->cursor, 3, Py_WRAP );
 }
 
-static int Scene_setCursor( BPy_Scene * self, PyObject * value )
+static int V24_Scene_setCursor( V24_BPy_Scene * self, PyObject * value )
 {	
-	VectorObject *bpy_vec;
+	V24_VectorObject *bpy_vec;
 	SCENE_DEL_CHECK_INT(self);
 	if (!VectorObject_Check(value))
-		return ( EXPP_ReturnIntError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected a vector" ) );
 	
-	bpy_vec = (VectorObject *)value;
+	bpy_vec = (V24_VectorObject *)value;
 	
 	if (bpy_vec->size != 3)
-		return ( EXPP_ReturnIntError( PyExc_ValueError,
+		return ( V24_EXPP_ReturnIntError( PyExc_ValueError,
 			"can only assign a 3D vector" ) );
 	
 	VECCOPY(self->scene->cursor, bpy_vec->vec);
@@ -410,43 +410,43 @@ static int Scene_setCursor( BPy_Scene * self, PyObject * value )
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_Scene_getseters[] = {
+static PyGetSetDef V24_BPy_Scene_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
 	{"Layers",
-	 (getter)Scene_getLayerMask, (setter)Scene_setLayerMask,
+	 (getter)V24_Scene_getLayerMask, (setter)V24_Scene_setLayerMask,
 	 "Scene layer bitmask",
 	 NULL},
 	{"layers",
-	 (getter)Scene_getLayerList, (setter)Scene_setLayerList,
+	 (getter)V24_Scene_getLayerList, (setter)V24_Scene_setLayerList,
 	 "Scene layer list",
 	 NULL},
 	{"world",
-	 (getter)Scene_getWorld, (setter)Scene_setWorld,
+	 (getter)V24_Scene_getWorld, (setter)V24_Scene_setWorld,
 	 "Scene layer bitmask",
 	 NULL},
 	{"cursor",
-	 (getter)Scene_getCursor, (setter)Scene_setCursor,
+	 (getter)V24_Scene_getCursor, (setter)V24_Scene_setCursor,
 	 "Scene layer bitmask",
 	 NULL},
 	{"timeline",
-	 (getter)Scene_getTimeLine, (setter)NULL,
+	 (getter)V24_Scene_getTimeLine, (setter)NULL,
 	 "Scenes timeline (read only)",
 	 NULL},
 	{"render",
-	 (getter)Scene_getRenderingContext, (setter)NULL,
+	 (getter)V24_Scene_getRenderingContext, (setter)NULL,
 	 "Scenes rendering context (read only)",
 	 NULL},
 	{"radiosity",
-	 (getter)Scene_getRadiosityContext, (setter)NULL,
+	 (getter)V24_Scene_getRadiosityContext, (setter)NULL,
 	 "Scenes radiosity context (read only)",
 	 NULL},
 	{"sequence",
-	 (getter)Scene_getSequence, (setter)NULL,
+	 (getter)V24_Scene_getSequence, (setter)NULL,
 	 "Scene sequencer data (read only)",
 	 NULL},
 	 
 	{"objects",
-	 (getter)Scene_getObjects, (setter)NULL,
+	 (getter)V24_Scene_getObjects, (setter)NULL,
 	 "Scene object iterator",
 	 NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
@@ -454,20 +454,20 @@ static PyGetSetDef BPy_Scene_getseters[] = {
 
 
 
-/*-----------------------BPy_Scene method def------------------------------*/
-PyTypeObject Scene_Type = {
+/*-----------------------V24_BPy_Scene method def------------------------------*/
+PyTypeObject V24_Scene_Type = {
 	PyObject_HEAD_INIT( NULL ) 
 	0,	/* ob_size */
 	"Scene",		/* tp_name */
-	sizeof( BPy_Scene ),	/* tp_basicsize */
+	sizeof( V24_BPy_Scene ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
 	NULL,						/* tp_dealloc */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Scene_compare,	/* tp_compare */
-	( reprfunc ) Scene_repr,	/* tp_repr */
+	( cmpfunc ) V24_Scene_compare,	/* tp_compare */
+	( reprfunc ) V24_Scene_repr,	/* tp_repr */
 
 	/* Method suites for standard classes */
 
@@ -477,7 +477,7 @@ PyTypeObject Scene_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -510,9 +510,9 @@ PyTypeObject Scene_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Scene_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Scene_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Scene_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Scene_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -535,35 +535,35 @@ PyTypeObject Scene_Type = {
 };
 
 /*-----------------------Scene module Init())-----------------------------*/
-PyObject *Scene_Init( void )
+PyObject *V24_Scene_Init( void )
 {
 
 	PyObject *submodule;
 	PyObject *dict;
 	
-	if( PyType_Ready( &Scene_Type ) < 0 )
+	if( PyType_Ready( &V24_Scene_Type ) < 0 )
 		return NULL;
-	if( PyType_Ready( &SceneObSeq_Type ) < 0 )
+	if( PyType_Ready( &V24_SceneObSeq_Type ) < 0 )
 		return NULL;
 	
-	submodule = Py_InitModule3( "Blender.Scene", M_Scene_methods, M_Scene_doc );
+	submodule = Py_InitModule3( "Blender.Scene", M_Scene_methods, V24_M_Scene_doc );
 
 	dict = PyModule_GetDict( submodule );
-	PyDict_SetItemString( dict, "Render", Render_Init(  ) );
-	PyDict_SetItemString( dict, "Radio", Radio_Init(  ) );
-	PyDict_SetItemString( dict, "Sequence", Sequence_Init(  ) );
+	PyDict_SetItemString( dict, "Render", V24_Render_Init(  ) );
+	PyDict_SetItemString( dict, "Radio", V24_Radio_Init(  ) );
+	PyDict_SetItemString( dict, "Sequence", V24_Sequence_Init(  ) );
 	
 	return submodule;
 }
 
 /*-----------------------compare----------------------------------------*/
-static int Scene_compare( BPy_Scene * a, BPy_Scene * b )
+static int V24_Scene_compare( V24_BPy_Scene * a, V24_BPy_Scene * b )
 {
 	return ( a->scene == b->scene ) ? 0 : -1;
 }
 
 /*----------------------repr--------------------------------------------*/
-static PyObject *Scene_repr( BPy_Scene * self )
+static PyObject *V24_Scene_repr( V24_BPy_Scene * self )
 {
 	if( !(self->scene) )
 		return PyString_FromString( "[Scene - Removed]");
@@ -573,15 +573,15 @@ static PyObject *Scene_repr( BPy_Scene * self )
 }
 
 /*-----------------------CreatePyObject---------------------------------*/
-PyObject *Scene_CreatePyObject( Scene * scene )
+PyObject *V24_Scene_CreatePyObject( Scene * scene )
 {
-	BPy_Scene *pyscene;
+	V24_BPy_Scene *pyscene;
 
-	pyscene = ( BPy_Scene * ) PyObject_NEW( BPy_Scene, &Scene_Type );
+	pyscene = ( V24_BPy_Scene * ) PyObject_NEW( V24_BPy_Scene, &V24_Scene_Type );
 
 	if( !pyscene )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "couldn't create BPy_Scene object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "couldn't create V24_BPy_Scene object" );
 
 	pyscene->scene = scene;
 
@@ -589,14 +589,14 @@ PyObject *Scene_CreatePyObject( Scene * scene )
 }
 
 /*-----------------------FromPyObject-----------------------------------*/
-Scene *Scene_FromPyObject( PyObject * pyobj )
+Scene *V24_Scene_FromPyObject( PyObject * pyobj )
 {
-	return ( ( BPy_Scene * ) pyobj )->scene;
+	return ( ( V24_BPy_Scene * ) pyobj )->scene;
 }
 
 /*-----------------------Scene module function defintions---------------*/
 /*-----------------------Scene.New()------------------------------------*/
-static PyObject *M_Scene_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_Scene_New( PyObject * self, PyObject * args,
 			      PyObject * kword )
 {
 	char *name = "Scene";
@@ -605,7 +605,7 @@ static PyObject *M_Scene_New( PyObject * self, PyObject * args,
 	Scene *blscene;		/* for the actual Scene we create in Blender */
 
 	if( !PyArg_ParseTupleAndKeywords( args, kword, "|s", kw, &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected a string or an empty argument list" ) );
 
 	blscene = add_scene( name );	/* first create the Scene in Blender */
@@ -618,26 +618,26 @@ static PyObject *M_Scene_New( PyObject * self, PyObject * args,
 		 */
 
 		/* now create the wrapper obj in Python */
-		pyscene = Scene_CreatePyObject( blscene );
+		pyscene = V24_Scene_CreatePyObject( blscene );
 	} else
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create Scene obj in Blender" ) );
 
 	if( pyscene == NULL )
-		return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						"couldn't create Scene PyObject" ) );
 
 	return pyscene;
 }
 
 /*-----------------------Scene.Get()------------------------------------*/
-static PyObject *M_Scene_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_Scene_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	Scene *scene_iter;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected string argument (or nothing)" ) );
 
 	scene_iter = G.main->scene.first;
@@ -650,7 +650,7 @@ static PyObject *M_Scene_Get( PyObject * self, PyObject * args )
 
 			if( strcmp( name, scene_iter->id.name + 2 ) == 0 )
 				wanted_scene =
-					Scene_CreatePyObject( scene_iter );
+					V24_Scene_CreatePyObject( scene_iter );
 
 			scene_iter = scene_iter->id.next;
 		}
@@ -659,7 +659,7 @@ static PyObject *M_Scene_Get( PyObject * self, PyObject * args )
 			char error_msg[64];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Scene \"%s\" not found", name );
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_NameError, error_msg ) );
 		}
 
@@ -673,15 +673,15 @@ static PyObject *M_Scene_Get( PyObject * self, PyObject * args )
 		sce_pylist = PyList_New( BLI_countlist( &( G.main->scene ) ) );
 
 		if( sce_pylist == NULL )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 							"couldn't create PyList" ) );
 
 		while( scene_iter ) {
-			pyobj = Scene_CreatePyObject( scene_iter );
+			pyobj = V24_Scene_CreatePyObject( scene_iter );
 
 			if( !pyobj ) {
 				Py_DECREF(sce_pylist);
-				return ( EXPP_ReturnPyObjError
+				return ( V24_EXPP_ReturnPyObjError
 					 ( PyExc_MemoryError,
 					   "couldn't create PyString" ) );
 			}
@@ -696,12 +696,12 @@ static PyObject *M_Scene_Get( PyObject * self, PyObject * args )
 }
 
 /*-----------------------Scene.GetCurrent()------------------------------*/
-static PyObject *M_Scene_GetCurrent( PyObject * self )
+static PyObject *V24_M_Scene_GetCurrent( PyObject * self )
 {
-	return Scene_CreatePyObject( ( Scene * ) G.scene );
+	return V24_Scene_CreatePyObject( ( Scene * ) G.scene );
 }
 
-static PyObject *M_Scene_getCurrent_deprecated( PyObject * self )
+static PyObject *V24_M_Scene_getCurrent_deprecated( PyObject * self )
 {
 	static char warning = 1;
 	if( warning ) {
@@ -709,28 +709,28 @@ static PyObject *M_Scene_getCurrent_deprecated( PyObject * self )
 		--warning;
 	}
 
-	return Scene_CreatePyObject( ( Scene * ) G.scene );
+	return V24_Scene_CreatePyObject( ( Scene * ) G.scene );
 }
 
 
 /*-----------------------Scene.Unlink()----------------------------------*/
-static PyObject *M_Scene_Unlink( PyObject * self, PyObject * args )
+static PyObject *V24_M_Scene_Unlink( PyObject * self, PyObject * args )
 {
 	PyObject *pyobj;
-	BPy_Scene *pyscn;
+	V24_BPy_Scene *pyscn;
 	Scene *scene;
 
-	if( !PyArg_ParseTuple( args, "O!", &Scene_Type, &pyobj ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "O!", &V24_Scene_Type, &pyobj ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected Scene PyType object" );
 	
-	pyscn = (BPy_Scene *)pyobj;
+	pyscn = (V24_BPy_Scene *)pyobj;
 	scene = pyscn->scene;
 	
 	SCENE_DEL_CHECK_PY(pyscn);
 	
 	if( scene == G.scene )
-		return EXPP_ReturnPyObjError( PyExc_SystemError,
+		return V24_EXPP_ReturnPyObjError( PyExc_SystemError,
 					      "current Scene cannot be removed!" );
 
 	free_libblock( &G.main->scene, scene );
@@ -740,18 +740,18 @@ static PyObject *M_Scene_Unlink( PyObject * self, PyObject * args )
 }
 
 /* DEPRECATE ME !!! */
-/*-----------------------BPy_Scene function defintions-------------------*/
+/*-----------------------V24_BPy_Scene function defintions-------------------*/
 
 /*-----------------------Scene.setLayers()---------------------------------*/
-static PyObject *Scene_oldsetLayers( BPy_Scene * self, PyObject * args )
+static PyObject *V24_Scene_oldsetLayers( V24_BPy_Scene * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Scene_setLayerList );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Scene_setLayerList );
 }
 /* END DEPRECATE CODE */
 
 
 /*-----------------------Scene.copy()------------------------------------*/
-static PyObject *Scene_copy( BPy_Scene * self, PyObject * args )
+static PyObject *V24_Scene_copy( V24_BPy_Scene * self, PyObject * args )
 {
 	short dup_objs = 1;
 	Scene *scene = self->scene;
@@ -759,14 +759,14 @@ static PyObject *Scene_copy( BPy_Scene * self, PyObject * args )
 	SCENE_DEL_CHECK_PY(self);
 
 	if( !PyArg_ParseTuple( args, "|h", &dup_objs ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected int in [0,2] or nothing as argument" );
 
-	return Scene_CreatePyObject( copy_scene( scene, dup_objs ) );
+	return V24_Scene_CreatePyObject( copy_scene( scene, dup_objs ) );
 }
 
 /*-----------------------Scene.makeCurrent()-----------------------------*/
-static PyObject *Scene_makeCurrent( BPy_Scene * self )
+static PyObject *V24_Scene_makeCurrent( V24_BPy_Scene * self )
 {
 	Scene *scene = self->scene;
 #if 0	/* add back in when bpy becomes "official" */
@@ -788,14 +788,14 @@ static PyObject *Scene_makeCurrent( BPy_Scene * self )
 }
 
 /*-----------------------Scene.update()----------------------------------*/
-static PyObject *Scene_update( BPy_Scene * self, PyObject * args )
+static PyObject *V24_Scene_update( V24_BPy_Scene * self, PyObject * args )
 {
 	Scene *scene = self->scene;
 	int full = 0;
 	
 	SCENE_DEL_CHECK_PY(self);
 	if( !PyArg_ParseTuple( args, "|i", &full ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected nothing or int (0 or 1) argument" );
 
 /* Under certain circunstances, DAG_scene_sort *here* can crash Blender.
@@ -817,7 +817,7 @@ static PyObject *Scene_update( BPy_Scene * self, PyObject * args )
 		/*re-enabled scriptlinks if necassary.*/
 		if (enablescripts) G.f |= G_DOSCRIPTLINKS;
 	} else
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "in method scene.update(full), full should be:\n"
 					      "0: to only sort scene elements (old behavior); or\n"
 					      "1: for a full update (regroups, does ipos, keys, etc.)" );
@@ -826,10 +826,10 @@ static PyObject *Scene_update( BPy_Scene * self, PyObject * args )
 }
 
 /*-----------------------Scene.link()------------------------------------*/
-static PyObject *Scene_link( BPy_Scene * self, PyObject * args )
+static PyObject *V24_Scene_link( V24_BPy_Scene * self, PyObject * args )
 {
 	Scene *scene = self->scene;
-	BPy_Object *bpy_obj;
+	V24_BPy_Object *bpy_obj;
 	Object *object = NULL;
 	static char warning = 1;
 
@@ -840,19 +840,19 @@ static PyObject *Scene_link( BPy_Scene * self, PyObject * args )
 
 	SCENE_DEL_CHECK_PY(self);
 	
-	if( !PyArg_ParseTuple( args, "O!", &Object_Type, &bpy_obj ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "O!", &V24_Object_Type, &bpy_obj ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected Object argument" );
 	
 	
-		/*return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		/*return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					          "Could not create data on demand for this object type!" );*/
 	
 	object = bpy_obj->object;
 	
-	/* Object.c's EXPP_add_obdata does not support these objects */
+	/* Object.c's V24_EXPP_add_obdata does not support these objects */
 	if (!object->data && (object->type == OB_SURF || object->type == OB_FONT || object->type == OB_WAVE )) {
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "Object has no data and new data cant be automaticaly created for Surf, Text or Wave type objects!" );
 	} else {
 		/* Ok, all is fine, let's try to link it */
@@ -865,7 +865,7 @@ static PyObject *Scene_link( BPy_Scene * self, PyObject * args )
 		base = object_in_scene( object, scene );
 		/* if base is not NULL ... */
 		if( base )	/* ... the object is already in one of the Scene Bases */
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						      "object already in scene!" );
 
 		/* not linked, go get mem for a new base object */
@@ -873,7 +873,7 @@ static PyObject *Scene_link( BPy_Scene * self, PyObject * args )
 		base = MEM_callocN( sizeof( Base ), "pynewbase" );
 
 		if( !base )
-			return EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						      "couldn't allocate new Base for object" );
 
 		/*  if the object has not yet been linked to object data, then
@@ -887,7 +887,7 @@ static PyObject *Scene_link( BPy_Scene * self, PyObject * args )
 		/* check if this object has obdata, case not, try to create it */
 
 		if( !object->data && ( object->type != OB_EMPTY ) )
-			EXPP_add_obdata( object ); /* returns -1 on error, defined in Object.c */
+			V24_EXPP_add_obdata( object ); /* returns -1 on error, defined in Object.c */
 
 		base->object = object;	/* link object to the new base */
 		base->lay = object->lay;
@@ -902,9 +902,9 @@ static PyObject *Scene_link( BPy_Scene * self, PyObject * args )
 }
 
 /*-----------------------Scene.unlink()----------------------------------*/
-static PyObject *Scene_unlink( BPy_Scene * self, PyObject * args )
+static PyObject *V24_Scene_unlink( V24_BPy_Scene * self, PyObject * args )
 {
-	BPy_Object *bpy_obj = NULL;
+	V24_BPy_Object *bpy_obj = NULL;
 	Scene *scene = self->scene;
 	Base *base;
 	static char warning = 1;
@@ -916,8 +916,8 @@ static PyObject *Scene_unlink( BPy_Scene * self, PyObject * args )
 
 	SCENE_DEL_CHECK_PY(self);
 	
-	if( !PyArg_ParseTuple( args, "O!", &Object_Type, &bpy_obj ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "O!", &V24_Object_Type, &bpy_obj ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected Object as argument" );
 
 	/* is the object really in the scene? */
@@ -935,7 +935,7 @@ static PyObject *Scene_unlink( BPy_Scene * self, PyObject * args )
 }
 
 /*-----------------------Scene.getChildren()-----------------------------*/
-static PyObject *Scene_getChildren( BPy_Scene * self )
+static PyObject *V24_Scene_getChildren( V24_BPy_Scene * self )
 {
 	Scene *scene = self->scene;
 	PyObject *pylist;
@@ -958,11 +958,11 @@ static PyObject *Scene_getChildren( BPy_Scene * self )
 	while( base ) {
 		object = base->object;
 		
-		bpy_obj = Object_CreatePyObject( object );
+		bpy_obj = V24_Object_CreatePyObject( object );
 		
 		if( !bpy_obj ) {
 			Py_DECREF(pylist);
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						      "couldn't create new object wrapper" );
 		}
 		PyList_Append( pylist, bpy_obj );
@@ -975,7 +975,7 @@ static PyObject *Scene_getChildren( BPy_Scene * self )
 }
 
 /*-----------------------Scene.getActiveObject()------------------------*/
-static PyObject *Scene_getActiveObject(BPy_Scene *self)
+static PyObject *V24_Scene_getActiveObject(V24_BPy_Scene *self)
 {
 	Scene *scene = self->scene;
 	PyObject *pyob;
@@ -992,10 +992,10 @@ static PyObject *Scene_getActiveObject(BPy_Scene *self)
 	ob = ((scene->basact) ? (scene->basact->object) : 0);
 
 	if (ob) {
-		pyob = Object_CreatePyObject( ob );
+		pyob = V24_Object_CreatePyObject( ob );
 
 		if (!pyob)
-			return EXPP_ReturnPyObjError(PyExc_MemoryError,
+			return V24_EXPP_ReturnPyObjError(PyExc_MemoryError,
 					"couldn't create new object wrapper!");
 
 		return pyob;
@@ -1005,7 +1005,7 @@ static PyObject *Scene_getActiveObject(BPy_Scene *self)
 }
 
 /*-----------------------Scene.getCurrentCamera()------------------------*/
-static PyObject *Scene_getCurrentCamera( BPy_Scene * self )
+static PyObject *V24_Scene_getCurrentCamera( V24_BPy_Scene * self )
 {
 	static char warning = 1;
 	
@@ -1016,14 +1016,14 @@ static PyObject *Scene_getCurrentCamera( BPy_Scene * self )
 
 	SCENE_DEL_CHECK_PY(self);
 	/* None is ok */
-	return Object_CreatePyObject( self->scene->camera );
+	return V24_Object_CreatePyObject( self->scene->camera );
 }
 
 /*-----------------------Scene.setCurrentCamera()------------------------*/
-static PyObject *Scene_setCurrentCamera( BPy_Scene * self, PyObject * args )
+static PyObject *V24_Scene_setCurrentCamera( V24_BPy_Scene * self, PyObject * args )
 {
 	Object *object;
-	BPy_Object *cam_obj;
+	V24_BPy_Object *cam_obj;
 	Scene *scene = self->scene;
 	static char warning = 1;
 
@@ -1034,13 +1034,13 @@ static PyObject *Scene_setCurrentCamera( BPy_Scene * self, PyObject * args )
 
 	SCENE_DEL_CHECK_PY(self);
 	
-	if( !PyArg_ParseTuple( args, "O!", &Object_Type, &cam_obj ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "O!", &V24_Object_Type, &cam_obj ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected Camera Object as argument" );
 
 	object = cam_obj->object;
 	if( object->type != OB_CAMERA )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "expected Camera Object as argument" );
 
 	scene->camera = object;	/* set the current Camera */
@@ -1056,29 +1056,29 @@ static PyObject *Scene_setCurrentCamera( BPy_Scene * self, PyObject * args )
 }
 
 /*-----------------------Scene.getRenderingContext()---------------------*/
-static PyObject *Scene_getRenderingContext( BPy_Scene * self )
+static PyObject *V24_Scene_getRenderingContext( V24_BPy_Scene * self )
 {
 	SCENE_DEL_CHECK_PY(self);
-	return RenderData_CreatePyObject( self->scene );
+	return V24_RenderData_CreatePyObject( self->scene );
 }
 
-static PyObject *Scene_getRadiosityContext( BPy_Scene * self )
+static PyObject *V24_Scene_getRadiosityContext( V24_BPy_Scene * self )
 {
 	SCENE_DEL_CHECK_PY(self);
-	return Radio_CreatePyObject( self->scene );
+	return V24_Radio_CreatePyObject( self->scene );
 }
 
-static PyObject *Scene_getSequence( BPy_Scene * self )
+static PyObject *V24_Scene_getSequence( V24_BPy_Scene * self )
 {
 	SCENE_DEL_CHECK_PY(self);
 	if (self->scene->ed) /* we should create this if its not there :/ */
-		return SceneSeq_CreatePyObject( self->scene, NULL );
+		return V24_SceneSeq_CreatePyObject( self->scene, NULL );
 	else
 		Py_RETURN_NONE;
 }
 
 /* scene.addScriptLink */
-static PyObject *Scene_addScriptLink( BPy_Scene * self, PyObject * args )
+static PyObject *V24_Scene_addScriptLink( V24_BPy_Scene * self, PyObject * args )
 {
 	Scene *scene = self->scene;
 	ScriptLink *slink = NULL;
@@ -1087,11 +1087,11 @@ static PyObject *Scene_addScriptLink( BPy_Scene * self, PyObject * args )
 
 	slink = &( scene )->scriptlink;
 
-	return EXPP_addScriptLink( slink, args, 1 );
+	return V24_EXPP_addScriptLink( slink, args, 1 );
 }
 
 /* scene.clearScriptLinks */
-static PyObject *Scene_clearScriptLinks( BPy_Scene * self, PyObject * args )
+static PyObject *V24_Scene_clearScriptLinks( V24_BPy_Scene * self, PyObject * args )
 {
 	Scene *scene = self->scene;
 	ScriptLink *slink = NULL;
@@ -1100,11 +1100,11 @@ static PyObject *Scene_clearScriptLinks( BPy_Scene * self, PyObject * args )
 
 	slink = &( scene )->scriptlink;
 
-	return EXPP_clearScriptLinks( slink, args );
+	return V24_EXPP_clearScriptLinks( slink, args );
 }
 
 /* scene.getScriptLinks */
-static PyObject *Scene_getScriptLinks( BPy_Scene * self, PyObject * value )
+static PyObject *V24_Scene_getScriptLinks( V24_BPy_Scene * self, PyObject * value )
 {
 	Scene *scene = self->scene;
 	ScriptLink *slink = NULL;
@@ -1114,7 +1114,7 @@ static PyObject *Scene_getScriptLinks( BPy_Scene * self, PyObject * value )
 
 	slink = &( scene )->scriptlink;
 
-	ret = EXPP_getScriptLinks( slink, value, 1 );
+	ret = V24_EXPP_getScriptLinks( slink, value, 1 );
 
 	if( ret )
 		return ret;
@@ -1122,7 +1122,7 @@ static PyObject *Scene_getScriptLinks( BPy_Scene * self, PyObject * value )
 		return NULL;
 }
 
-static PyObject *Scene_play( BPy_Scene * self, PyObject * args )
+static PyObject *V24_Scene_play( V24_BPy_Scene * self, PyObject * args )
 {
 	int mode = 0, win = SPACE_VIEW3D;
 	PyObject *ret = NULL;
@@ -1131,11 +1131,11 @@ static PyObject *Scene_play( BPy_Scene * self, PyObject * args )
 	SCENE_DEL_CHECK_PY(self);
 
 	if( !PyArg_ParseTuple( args, "|ii", &mode, &win ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected nothing, or or two ints as arguments." );
 
 	if( mode < 0 || mode > 3 )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "mode should be in range [0, 3]." );
 
 	switch ( win ) {
@@ -1178,16 +1178,16 @@ static PyObject *Scene_play( BPy_Scene * self, PyObject * args )
 	return ret;
 }
 
-static PyObject *Scene_getTimeLine( BPy_Scene *self ) 
+static PyObject *V24_Scene_getTimeLine( V24_BPy_Scene *self ) 
 {
-	BPy_TimeLine *tm; 
+	V24_BPy_TimeLine *tm; 
 
 	SCENE_DEL_CHECK_PY(self);
 	
-	tm= (BPy_TimeLine *) PyObject_NEW (BPy_TimeLine, &TimeLine_Type);
+	tm= (V24_BPy_TimeLine *) PyObject_NEW (V24_BPy_TimeLine, &V24_TimeLine_Type);
 	if (!tm)
-		return EXPP_ReturnPyObjError (PyExc_MemoryError,
-					      "couldn't create BPy_TimeLine object");
+		return V24_EXPP_ReturnPyObjError (PyExc_MemoryError,
+					      "couldn't create V24_BPy_TimeLine object");
 	tm->marker_list= &(self->scene->markers);
 	tm->sfra= (int) self->scene->r.sfra;
 	tm->efra= (int) self->scene->r.efra;
@@ -1205,13 +1205,13 @@ static PyObject *Scene_getTimeLine( BPy_Scene *self )
  */
 
 /* accessed from scn.objects.selected or scn.objects.context */
-static PyObject *SceneObSeq_getObjects( BPy_SceneObSeq *self, void *mode) 
+static PyObject *V24_SceneObSeq_getObjects( V24_BPy_SceneObSeq *self, void *mode) 
 {
 	SCENE_DEL_CHECK_PY(self->bpyscene);
-	return SceneObSeq_CreatePyObject(self->bpyscene, NULL, (int)((long)mode));
+	return V24_SceneObSeq_CreatePyObject(self->bpyscene, NULL, (int)((long)mode));
 }
 
-int SceneObSeq_setObjects( BPy_SceneObSeq *self, PyObject *value, void *_mode_) 
+int V24_SceneObSeq_setObjects( V24_BPy_SceneObSeq *self, PyObject *value, void *_mode_) 
 {
 	/*
 	ONLY SUPPORTS scn.objects.selected and scn.objects.context 
@@ -1227,12 +1227,12 @@ int SceneObSeq_setObjects( BPy_SceneObSeq *self, PyObject *value, void *_mode_)
 	
 	/* scn.objects.selected = scn.objects  - shortcut to select all */
 	if (BPy_SceneObSeq_Check(value)) {
-		BPy_SceneObSeq *bpy_sceneseq = (BPy_SceneObSeq *)value;
+		V24_BPy_SceneObSeq *bpy_sceneseq = (V24_BPy_SceneObSeq *)value;
 		if (self->bpyscene->scene != bpy_sceneseq->bpyscene->scene)
-			return EXPP_ReturnIntError( PyExc_ValueError,
+			return V24_EXPP_ReturnIntError( PyExc_ValueError,
 					"Cannot assign a SceneObSeq type from another scene" );
 		if (bpy_sceneseq->mode != EXPP_OBSEQ_NORMAL)
-			return EXPP_ReturnIntError( PyExc_ValueError,
+			return V24_EXPP_ReturnIntError( PyExc_ValueError,
 					"Can only assign scn.objects to scn.objects.context or scn.objects.selected" );
 		
 		for (base= scene->base.first; base; base= base->next) {
@@ -1247,7 +1247,7 @@ int SceneObSeq_setObjects( BPy_SceneObSeq *self, PyObject *value, void *_mode_)
 	}
 
 	if (!PySequence_Check(value))
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"Error, must assign a sequence of objects to scn.objects.selected" );
 	
 	/* for context and selected, just deselect, dont remove */
@@ -1260,8 +1260,8 @@ int SceneObSeq_setObjects( BPy_SceneObSeq *self, PyObject *value, void *_mode_)
 	while (size) {
 		size--;
 		item = PySequence_GetItem(value, size);
-		if ( PyObject_TypeCheck(item, &Object_Type) ) {
-			blen_ob= ((BPy_Object *)item)->object;
+		if ( PyObject_TypeCheck(item, &V24_Object_Type) ) {
+			blen_ob= ((V24_BPy_Object *)item)->object;
 			base = object_in_scene( blen_ob, scene );
 			if (base) {
 				blen_ob->flag |= SELECT;
@@ -1278,16 +1278,16 @@ int SceneObSeq_setObjects( BPy_SceneObSeq *self, PyObject *value, void *_mode_)
 }
 
 
-static PyObject *SceneObSeq_CreatePyObject( BPy_Scene *self, Base *iter, int mode )
+static PyObject *V24_SceneObSeq_CreatePyObject( V24_BPy_Scene *self, Base *iter, int mode )
 {
-	BPy_SceneObSeq *seq = PyObject_NEW( BPy_SceneObSeq, &SceneObSeq_Type);
+	V24_BPy_SceneObSeq *seq = PyObject_NEW( V24_BPy_SceneObSeq, &V24_SceneObSeq_Type);
 	seq->bpyscene = self; Py_INCREF(self);
 	seq->iter = iter;
 	seq->mode = mode;
 	return (PyObject *)seq;
 }
 
-static int SceneObSeq_len( BPy_SceneObSeq * self )
+static int V24_SceneObSeq_len( V24_BPy_SceneObSeq * self )
 {
 	Scene *scene= self->bpyscene->scene;
 	SCENE_DEL_CHECK_INT(self->bpyscene);
@@ -1325,7 +1325,7 @@ static int SceneObSeq_len( BPy_SceneObSeq * self )
  * retrive a single Object from somewhere in the Object list
  */
 
-static PyObject *SceneObSeq_item( BPy_SceneObSeq * self, int i )
+static PyObject *V24_SceneObSeq_item( V24_BPy_SceneObSeq * self, int i )
 {
 	int index=0;
 	Base *base= NULL;
@@ -1351,17 +1351,17 @@ static PyObject *SceneObSeq_item( BPy_SceneObSeq * self, int i )
 	}
 	
 	if (!(base))
-		return EXPP_ReturnPyObjError( PyExc_IndexError,
+		return V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 					      "array index out of range" );
 	
-	return Object_CreatePyObject( base->object );
+	return V24_Object_CreatePyObject( base->object );
 }
 
-static PySequenceMethods SceneObSeq_as_sequence = {
-	( inquiry ) SceneObSeq_len,	/* sq_length */
+static PySequenceMethods V24_SceneObSeq_as_sequence = {
+	( inquiry ) V24_SceneObSeq_len,	/* sq_length */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
-	( intargfunc ) SceneObSeq_item,	/* sq_item */
+	( intargfunc ) V24_SceneObSeq_item,	/* sq_item */
 	( intintargfunc ) 0,	/* sq_slice */
 	( intobjargproc ) 0,	/* sq_ass_item */
 	( intintobjargproc ) 0,	/* sq_ass_slice */
@@ -1371,7 +1371,7 @@ static PySequenceMethods SceneObSeq_as_sequence = {
 
 /************************************************************************
  *
- * Python SceneObSeq_Type iterator (iterates over GroupObjects)
+ * Python V24_SceneObSeq_Type iterator (iterates over GroupObjects)
  *
  ************************************************************************/
 
@@ -1379,7 +1379,7 @@ static PySequenceMethods SceneObSeq_as_sequence = {
  * Initialize the interator index
  */
 
-static PyObject *SceneObSeq_getIter( BPy_SceneObSeq * self )
+static PyObject *V24_SceneObSeq_getIter( V24_BPy_SceneObSeq * self )
 {
 	/* we need to get the first base, but for selected context we may need to advance
 	to the first selected or first conext base */
@@ -1400,9 +1400,9 @@ static PyObject *SceneObSeq_getIter( BPy_SceneObSeq * self )
 	/* create a new iterator if were alredy using this one */
 	if (self->iter==NULL) {
 		self->iter = base;
-		return EXPP_incr_ret ( (PyObject *) self );
+		return V24_EXPP_incr_ret ( (PyObject *) self );
 	} else {
-		return SceneObSeq_CreatePyObject(self->bpyscene, base, self->mode);
+		return V24_SceneObSeq_CreatePyObject(self->bpyscene, base, self->mode);
 	}
 }
 
@@ -1410,17 +1410,17 @@ static PyObject *SceneObSeq_getIter( BPy_SceneObSeq * self )
  * Return next SceneOb.
  */
 
-static PyObject *SceneObSeq_nextIter( BPy_SceneObSeq * self )
+static PyObject *V24_SceneObSeq_nextIter( V24_BPy_SceneObSeq * self )
 {
 	PyObject *object;
 	Base *base;
 	if( !(self->iter) ||  !(self->bpyscene->scene) ) {
 		self->iter= NULL;
-		return EXPP_ReturnPyObjError( PyExc_StopIteration,
+		return V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 				"iterator at end" );
 	}
 	
-	object= Object_CreatePyObject( self->iter->object ); 
+	object= V24_Object_CreatePyObject( self->iter->object ); 
 	base= self->iter->next;
 	
 	if (self->mode==EXPP_OBSEQ_SELECTED)
@@ -1438,33 +1438,33 @@ static PyObject *SceneObSeq_nextIter( BPy_SceneObSeq * self )
 }
 
 
-static PyObject *SceneObSeq_link( BPy_SceneObSeq * self, PyObject *pyobj )
+static PyObject *V24_SceneObSeq_link( V24_BPy_SceneObSeq * self, PyObject *pyobj )
 {	
 	SCENE_DEL_CHECK_PY(self->bpyscene);
 	
-	/* this shold eventually replace Scene_link */
+	/* this shold eventually replace V24_Scene_link */
 	if (self->mode != EXPP_OBSEQ_NORMAL)
-		return (EXPP_ReturnPyObjError( PyExc_TypeError,
+		return (V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "Cannot link to objects.selection or objects.context!" ));	
 	
 	/*
 	if (self->iter != NULL)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "Cannot modify scene objects while iterating" );
 	*/
 	
 	if( PyTuple_Size(pyobj) == 1 ) {
-		BPy_LibraryData *seq = ( BPy_LibraryData * )PyTuple_GET_ITEM( pyobj, 0 );
+		V24_BPy_LibraryData *seq = ( V24_BPy_LibraryData * )PyTuple_GET_ITEM( pyobj, 0 );
 		if( BPy_LibraryData_Check( seq ) )
-			return LibraryData_importLibData( seq, seq->name,
+			return V24_LibraryData_importLibData( seq, seq->name,
 					( seq->kind == OBJECT_IS_LINK ? FILE_LINK : 0 ),
 					self->bpyscene->scene );
 	}
-	return Scene_link(self->bpyscene, pyobj);
+	return V24_Scene_link(self->bpyscene, pyobj);
 }
 
 /* This is buggy with new object data not already linked to an object, for now use the above code */
-static PyObject *SceneObSeq_new( BPy_SceneObSeq * self, PyObject *args )
+static PyObject *V24_SceneObSeq_new( V24_BPy_SceneObSeq * self, PyObject *args )
 {
 	
 	void *data = NULL;
@@ -1479,21 +1479,21 @@ static PyObject *SceneObSeq_new( BPy_SceneObSeq * self, PyObject *args )
 	SCENE_DEL_CHECK_PY(self->bpyscene);
 	
 	if (self->mode != EXPP_OBSEQ_NORMAL)
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"Cannot add new to objects.selection or objects.context!" );	
 
 	if( !PyArg_ParseTuple( args, "O|s", &py_data, &name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"scene.objects.new(obdata) - expected obdata to be\n\ta python obdata type or the string 'Empty'" );
 
 	if( BPy_Armature_Check( py_data ) ) {
 		data = ( void * ) Armature_FromPyObject( py_data );
 		type = OB_ARMATURE;
 	} else if( BPy_Camera_Check( py_data ) ) {
-		data = ( void * ) Camera_FromPyObject( py_data );
+		data = ( void * ) V24_Camera_FromPyObject( py_data );
 		type = OB_CAMERA;
 	} else if( BPy_Lamp_Check( py_data ) ) {
-		data = ( void * ) Lamp_FromPyObject( py_data );
+		data = ( void * ) V24_Lamp_FromPyObject( py_data );
 		type = OB_LAMP;
 	} else if( BPy_Curve_Check( py_data ) ) {
 		data = ( void * ) Curve_FromPyObject( py_data );
@@ -1504,15 +1504,15 @@ static PyObject *SceneObSeq_new( BPy_SceneObSeq * self, PyObject *args )
 		if( !data )		/* NULL means there is already an error */
 			return NULL;
 	} else if( BPy_Mesh_Check( py_data ) ) {
-		data = ( void * ) Mesh_FromPyObject( py_data, NULL );
+		data = ( void * ) V24_Mesh_FromPyObject( py_data, NULL );
 		type = OB_MESH;
 	} else if( BPy_Lattice_Check( py_data ) ) {
-		data = ( void * ) Lattice_FromPyObject( py_data );
+		data = ( void * ) V24_Lattice_FromPyObject( py_data );
 		type = OB_LATTICE;
 	} else if( BPy_Metaball_Check( py_data ) ) {
-		data = ( void * ) Metaball_FromPyObject( py_data );
+		data = ( void * ) V24_Metaball_FromPyObject( py_data );
 		type = OB_MBALL;
-	} else if( BPy_Text3d_Check( py_data ) ) {
+	} else if( V24_BPy_Text3d_Check( py_data ) ) {
 		data = ( void * ) Text3d_FromPyObject( py_data );
 		type = OB_FONT;
 	} else if( ( desc = PyString_AsString( (PyObject *)py_data ) ) != NULL ) {
@@ -1523,7 +1523,7 @@ static PyObject *SceneObSeq_new( BPy_SceneObSeq * self, PyObject *args )
 			goto typeError;
 	} else {
 typeError:
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an object and optionally a string as arguments" );
 	}
 
@@ -1551,7 +1551,7 @@ typeError:
 	base = MEM_callocN( sizeof( Base ), "pynewbase" );
 
 	if( !base )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						  "couldn't allocate new Base for object" );
 
 	base->object = object;	/* link object to the new base */
@@ -1578,13 +1578,13 @@ typeError:
 	
 	/* so we can deal with vertex groups */
 	if (type == OB_MESH)
-		((BPy_Mesh *)py_data)->object = object;
+		((V24_BPy_Mesh *)py_data)->object = object;
 	
-	return Object_CreatePyObject( object );
+	return V24_Object_CreatePyObject( object );
 
 }
 
-static PyObject *SceneObSeq_unlink( BPy_SceneObSeq * self, PyObject *args )
+static PyObject *V24_SceneObSeq_unlink( V24_BPy_SceneObSeq * self, PyObject *args )
 {
 	PyObject *pyobj;
 	Object *blen_ob;
@@ -1594,14 +1594,14 @@ static PyObject *SceneObSeq_unlink( BPy_SceneObSeq * self, PyObject *args )
 	SCENE_DEL_CHECK_PY(self->bpyscene);
 	
 	if (self->mode != EXPP_OBSEQ_NORMAL)
-		return (EXPP_ReturnPyObjError( PyExc_TypeError,
+		return (V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "Cannot add new to objects.selection or objects.context!" ));	
 	
-	if( !PyArg_ParseTuple( args, "O!", &Object_Type, &pyobj ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "O!", &V24_Object_Type, &pyobj ) )
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a python object as an argument" ) );
 	
-	blen_ob = ( ( BPy_Object * ) pyobj )->object;
+	blen_ob = ( ( V24_BPy_Object * ) pyobj )->object;
 	
 	scene = self->bpyscene->scene;
 	
@@ -1616,30 +1616,30 @@ static PyObject *SceneObSeq_unlink( BPy_SceneObSeq * self, PyObject *args )
 	Py_RETURN_FALSE;
 }
 
-PyObject *SceneObSeq_getActive(BPy_SceneObSeq *self)
+PyObject *V24_SceneObSeq_getActive(V24_BPy_SceneObSeq *self)
 {
 	Base *base;
 	SCENE_DEL_CHECK_PY(self->bpyscene);
 	
 	if (self->mode!=EXPP_OBSEQ_NORMAL)
-			return (EXPP_ReturnPyObjError( PyExc_TypeError,
+			return (V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"cannot get active from objects.selected or objects.context" ));
 	
 	base= self->bpyscene->scene->basact;
 	if (!base)
 		Py_RETURN_NONE;
 	
-	return Object_CreatePyObject( base->object );
+	return V24_Object_CreatePyObject( base->object );
 }
 
-static int SceneObSeq_setActive(BPy_SceneObSeq *self, PyObject *value)
+static int V24_SceneObSeq_setActive(V24_BPy_SceneObSeq *self, PyObject *value)
 {
 	Base *base;
 	
 	SCENE_DEL_CHECK_INT(self->bpyscene);
 	
 	if (self->mode!=EXPP_OBSEQ_NORMAL)
-			return (EXPP_ReturnIntError( PyExc_TypeError,
+			return (V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"cannot set active from objects.selected or objects.context" ));
 	
 	if (value==Py_None) {
@@ -1648,40 +1648,40 @@ static int SceneObSeq_setActive(BPy_SceneObSeq *self, PyObject *value)
 	}
 	
 	if (!BPy_Object_Check(value))
-		return (EXPP_ReturnIntError( PyExc_ValueError,
+		return (V24_EXPP_ReturnIntError( PyExc_ValueError,
 					      "Object or None types can only be assigned to active!" ));
 	
-	base = object_in_scene( ((BPy_Object *)value)->object, self->bpyscene->scene );
+	base = object_in_scene( ((V24_BPy_Object *)value)->object, self->bpyscene->scene );
 	
 	if (!base)
-		return (EXPP_ReturnIntError( PyExc_ValueError,
+		return (V24_EXPP_ReturnIntError( PyExc_ValueError,
 					"cannot assign an active object outside the scene." ));
 	
 	self->bpyscene->scene->basact= base;
 	return 0;
 }
 
-PyObject *SceneObSeq_getCamera(BPy_SceneObSeq *self)
+PyObject *V24_SceneObSeq_getCamera(V24_BPy_SceneObSeq *self)
 {
 	SCENE_DEL_CHECK_PY(self->bpyscene);
 	
 	if (self->mode!=EXPP_OBSEQ_NORMAL)
-			return (EXPP_ReturnPyObjError( PyExc_TypeError,
+			return (V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"cannot get camera from objects.selected or objects.context" ));
 	
-	return Object_CreatePyObject( self->bpyscene->scene->camera );
+	return V24_Object_CreatePyObject( self->bpyscene->scene->camera );
 }
 
-static int SceneObSeq_setCamera(BPy_SceneObSeq *self, PyObject *value)
+static int V24_SceneObSeq_setCamera(V24_BPy_SceneObSeq *self, PyObject *value)
 {
 	int ret;
 
 	SCENE_DEL_CHECK_INT(self->bpyscene);
 	if (self->mode!=EXPP_OBSEQ_NORMAL)
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"cannot set camera from objects.selected or objects.context" );
 	
-	ret = GenericLib_assignData(value, (void **) &self->bpyscene->scene->camera, 0, 0, ID_OB, 0);
+	ret = V24_GenericLib_assignData(value, (void **) &self->bpyscene->scene->camera, 0, 0, ID_OB, 0);
 	
 	/* if this is the current scene, update its window now */
 	if( ret == 0 && !G.background && self->bpyscene->scene == G.scene ) /* Traced a crash to redrawing while in background mode -Campbell */
@@ -1695,28 +1695,28 @@ static int SceneObSeq_setCamera(BPy_SceneObSeq *self, PyObject *value)
 
 
 static struct PyMethodDef BPy_SceneObSeq_methods[] = {
-	{"link", (PyCFunction)SceneObSeq_link, METH_VARARGS,
+	{"link", (PyCFunction)V24_SceneObSeq_link, METH_VARARGS,
 		"link object to this scene"},
-	{"new", (PyCFunction)SceneObSeq_new, METH_VARARGS,
+	{"new", (PyCFunction)V24_SceneObSeq_new, METH_VARARGS,
 		"Create a new object in this scene from the obdata given and return a new object"},
-	{"unlink", (PyCFunction)SceneObSeq_unlink, METH_VARARGS,
+	{"unlink", (PyCFunction)V24_SceneObSeq_unlink, METH_VARARGS,
 		"unlinks the object from the scene"},
 	{NULL, NULL, 0, NULL}
 };
 
 /************************************************************************
  *
- * Python SceneObSeq_Type standard operations
+ * Python V24_SceneObSeq_Type standard operations
  *
  ************************************************************************/
 
-static void SceneObSeq_dealloc( BPy_SceneObSeq * self )
+static void V24_SceneObSeq_dealloc( V24_BPy_SceneObSeq * self )
 {
 	Py_DECREF(self->bpyscene);
 	PyObject_DEL( self );
 }
 
-static int SceneObSeq_compare( BPy_SceneObSeq * a, BPy_SceneObSeq * b )
+static int V24_SceneObSeq_compare( V24_BPy_SceneObSeq * a, V24_BPy_SceneObSeq * b )
 {
 	return ( a->bpyscene->scene == b->bpyscene->scene && a->mode == b->mode) ? 0 : -1;	
 }
@@ -1725,7 +1725,7 @@ static int SceneObSeq_compare( BPy_SceneObSeq * a, BPy_SceneObSeq * b )
  * repr function
  * callback functions building meaninful string to representations
  */
-static PyObject *SceneObSeq_repr( BPy_SceneObSeq * self )
+static PyObject *V24_SceneObSeq_repr( V24_BPy_SceneObSeq * self )
 {
 	if( !(self->bpyscene->scene) )
 		return PyString_FromFormat( "[Scene ObjectSeq Removed]" );
@@ -1741,50 +1741,50 @@ static PyObject *SceneObSeq_repr( BPy_SceneObSeq * self )
 					self->bpyscene->scene->id.name + 2 );
 }
 
-static PyGetSetDef SceneObSeq_getseters[] = {
+static PyGetSetDef V24_SceneObSeq_getseters[] = {
 	{"selected",
-	 (getter)SceneObSeq_getObjects, (setter)SceneObSeq_setObjects,
+	 (getter)V24_SceneObSeq_getObjects, (setter)V24_SceneObSeq_setObjects,
 	 "sequence of selected objects",
 	 (void *)EXPP_OBSEQ_SELECTED},
 	{"context",
-	 (getter)SceneObSeq_getObjects, (setter)SceneObSeq_setObjects,
+	 (getter)V24_SceneObSeq_getObjects, (setter)V24_SceneObSeq_setObjects,
 	 "sequence of user context objects",
 	 (void *)EXPP_OBSEQ_CONTEXT},
 	{"active",
-	 (getter)SceneObSeq_getActive, (setter)SceneObSeq_setActive,
+	 (getter)V24_SceneObSeq_getActive, (setter)V24_SceneObSeq_setActive,
 	 "active object",
 	 NULL},
 	{"camera",
-	 (getter)SceneObSeq_getCamera, (setter)SceneObSeq_setCamera,
+	 (getter)V24_SceneObSeq_getCamera, (setter)V24_SceneObSeq_setCamera,
 	 "camera object",
 	 NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
 /*****************************************************************************/
-/* Python SceneObSeq_Type structure definition:                               */
+/* Python V24_SceneObSeq_Type structure definition:                               */
 /*****************************************************************************/
-PyTypeObject SceneObSeq_Type = {
+PyTypeObject V24_SceneObSeq_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender SceneObSeq",           /* char *tp_name; */
-	sizeof( BPy_SceneObSeq ),       /* int tp_basicsize; */
+	sizeof( V24_BPy_SceneObSeq ),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	( destructor ) SceneObSeq_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_SceneObSeq_dealloc,/* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) SceneObSeq_compare, /* cmpfunc tp_compare; */
-	( reprfunc ) SceneObSeq_repr,   /* reprfunc tp_repr; */
+	( cmpfunc ) V24_SceneObSeq_compare, /* cmpfunc tp_compare; */
+	( reprfunc ) V24_SceneObSeq_repr,   /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&SceneObSeq_as_sequence,	    /* PySequenceMethods *tp_as_sequence; */
+	&V24_SceneObSeq_as_sequence,	    /* PySequenceMethods *tp_as_sequence; */
 	NULL,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
@@ -1818,13 +1818,13 @@ PyTypeObject SceneObSeq_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc) SceneObSeq_getIter, /* getiterfunc tp_iter; */
-	( iternextfunc ) SceneObSeq_nextIter, /* iternextfunc tp_iternext; */
+	( getiterfunc) V24_SceneObSeq_getIter, /* getiterfunc tp_iter; */
+	( iternextfunc ) V24_SceneObSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
 	BPy_SceneObSeq_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	SceneObSeq_getseters,       /* struct PyGetSetDef *tp_getset; */
+	V24_SceneObSeq_getseters,       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */

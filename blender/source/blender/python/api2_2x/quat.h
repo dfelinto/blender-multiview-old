@@ -49,7 +49,7 @@ typedef struct {
 	float *quat;				//1D array of data (alias)
 	int wrapped;			//is wrapped data?
 	PyObject *coerced_object;
-} QuaternionObject;
+} V24_QuaternionObject;
 /*coerced_object is a pointer to the object that it was
 coerced from when a dummy vector needs to be created from
 the coerce() function for numeric protocol operations*/
@@ -60,14 +60,14 @@ be stored in py_data) or be a wrapper for data allocated through
 blender (stored in blend_data). This is an either/or struct not both*/
 
 //prototypes
-PyObject *Quaternion_Identity( QuaternionObject * self );
-PyObject *Quaternion_Negate( QuaternionObject * self );
-PyObject *Quaternion_Conjugate( QuaternionObject * self );
-PyObject *Quaternion_Inverse( QuaternionObject * self );
-PyObject *Quaternion_Normalize( QuaternionObject * self );
-PyObject *Quaternion_ToEuler( QuaternionObject * self );
-PyObject *Quaternion_ToMatrix( QuaternionObject * self );
-PyObject *Quaternion_copy( QuaternionObject * self );
+PyObject *V24_Quaternion_Identity( V24_QuaternionObject * self );
+PyObject *V24_Quaternion_Negate( V24_QuaternionObject * self );
+PyObject *V24_Quaternion_Conjugate( V24_QuaternionObject * self );
+PyObject *V24_Quaternion_Inverse( V24_QuaternionObject * self );
+PyObject *V24_Quaternion_Normalize( V24_QuaternionObject * self );
+PyObject *V24_Quaternion_ToEuler( V24_QuaternionObject * self );
+PyObject *V24_Quaternion_ToMatrix( V24_QuaternionObject * self );
+PyObject *V24_Quaternion_copy( V24_QuaternionObject * self );
 PyObject *newQuaternionObject( float *quat, int type );
 
 #endif				/* EXPP_quat_h */

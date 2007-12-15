@@ -57,7 +57,7 @@
 #include "IDProp.h"
 
 /*****************************************************************************/
-/* Python BPy_Material defaults: */
+/* Python V24_BPy_Material defaults: */
 /*****************************************************************************/
 /* Material MIN, MAX values */
 #define EXPP_MAT_ADD_MIN			 0.0f
@@ -194,22 +194,22 @@
 /*****************************************************************************/
 /* Python API function prototypes for the Material module.                   */
 /*****************************************************************************/
-static PyObject *M_Material_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_Material_New( PyObject * self, PyObject * args,
 				 PyObject * keywords );
-static PyObject *M_Material_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_Material_Get( PyObject * self, PyObject * args );
 
 /*****************************************************************************/
 /* The following string definitions are used for documentation strings.  In  */
 /* Python these will be written to the console when doing a                  */
 /* Blender.Material.__doc__                                                  */
 /*****************************************************************************/
-static char M_Material_doc[] = "The Blender Material module";
+static char V24_M_Material_doc[] = "The Blender Material module";
 
-static char M_Material_New_doc[] =
+static char V24_M_Material_New_doc[] =
 	"(name) - return a new material called 'name'\n\
 () - return a new material called 'Mat'";
 
-static char M_Material_Get_doc[] =
+static char V24_M_Material_Get_doc[] =
 	"(name) - return the material called 'name', None if not found.\n\
 () - return a list of all materials in the current scene.";
 
@@ -217,29 +217,29 @@ static char M_Material_Get_doc[] =
 /* Python method structure definition for Blender.Material module:           */
 /*****************************************************************************/
 struct PyMethodDef M_Material_methods[] = {
-	{"New", ( PyCFunction ) M_Material_New, METH_VARARGS | METH_KEYWORDS,
-	 M_Material_New_doc},
-	{"Get", M_Material_Get, METH_VARARGS, M_Material_Get_doc},
-	{"get", M_Material_Get, METH_VARARGS, M_Material_Get_doc},
+	{"New", ( PyCFunction ) V24_M_Material_New, METH_VARARGS | METH_KEYWORDS,
+	 V24_M_Material_New_doc},
+	{"Get", V24_M_Material_Get, METH_VARARGS, V24_M_Material_Get_doc},
+	{"get", V24_M_Material_Get, METH_VARARGS, V24_M_Material_Get_doc},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Function:	M_Material_New                                               */
+/* Function:	V24_M_Material_New                                               */
 /* Python equivalent:		Blender.Material.New                             */
 /*****************************************************************************/
-static PyObject *M_Material_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_Material_New( PyObject * self, PyObject * args,
 				 PyObject * keywords )
 {
 	char *name = "Mat";
 	static char *kwlist[] = { "name", NULL };
-	BPy_Material *pymat; /* for Material Data object wrapper in Python */
+	V24_BPy_Material *pymat; /* for Material Data object wrapper in Python */
 	Material *blmat; /* for actual Material Data we create in Blender */
 	char buf[21];
 
 	if( !PyArg_ParseTupleAndKeywords
 	    ( args, keywords, "|s", kwlist, &name ) )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_AttributeError,
 			   "expected string or nothing as argument" ) );
 
@@ -249,50 +249,50 @@ static PyObject *M_Material_New( PyObject * self, PyObject * args,
 	blmat = add_material( name );	/* first create the Material Data in Blender */
 
 	if( blmat )		/* now create the wrapper obj in Python */
-		pymat = ( BPy_Material * ) Material_CreatePyObject( blmat );
+		pymat = ( V24_BPy_Material * ) V24_Material_CreatePyObject( blmat );
 	else
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create Material Data in Blender" ) );
 
 	blmat->id.us = 0;	/* was incref'ed by add_material() above */
 
 	if( pymat == NULL )
-		return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						"couldn't create Material Data object" ) );
 
 	return ( PyObject * ) pymat;
 }
 
 /*****************************************************************************/
-/* Function:	M_Material_Get	 */
+/* Function:	V24_M_Material_Get	 */
 /* Python equivalent:	Blender.Material.Get */
 /* Description:		Receives a string and returns the material whose */
 /*			name matches the string.	If no argument is */
 /*			passed in, a list with all materials in the	 */
 /*			current scene is returned.			 */
 /*****************************************************************************/
-static PyObject *M_Material_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_Material_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	Material *mat_iter;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected string argument (or nothing)" ) );
 
 	if( name ) {		/* (name) - Search material by name */
 
-		mat_iter = ( Material * ) GetIdFromList( &( G.main->mat ), name );
+		mat_iter = ( Material * ) V24_GetIdFromList( &( G.main->mat ), name );
 
 		if( mat_iter == NULL ) { /* Requested material doesn't exist */
 			char error_msg[64];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Material \"%s\" not found", name );
-			return EXPP_ReturnPyObjError( PyExc_NameError,
+			return V24_EXPP_ReturnPyObjError( PyExc_NameError,
 						      error_msg );
 		}
 
-		return Material_CreatePyObject( mat_iter );
+		return V24_Material_CreatePyObject( mat_iter );
 	}
 
 	else {			/* () - return a list with all materials in the scene */
@@ -302,16 +302,16 @@ static PyObject *M_Material_Get( PyObject * self, PyObject * args )
 		matlist = PyList_New( BLI_countlist( &( G.main->mat ) ) );
 
 		if( !matlist )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 							"couldn't create PyList" ) );
 		
 		mat_iter = G.main->mat.first;
 		while( mat_iter ) {
-			pyobj = Material_CreatePyObject( mat_iter );
+			pyobj = V24_Material_CreatePyObject( mat_iter );
 
 			if( !pyobj ) {
 				Py_DECREF(matlist);
-				return ( EXPP_ReturnPyObjError
+				return ( V24_EXPP_ReturnPyObjError
 					 ( PyExc_MemoryError,
 					   "couldn't create PyObject" ) );
 			}
@@ -325,70 +325,70 @@ static PyObject *M_Material_Get( PyObject * self, PyObject * args )
 	}
 }
 
-static PyObject *Material_ModesDict( void )
+static PyObject *V24_Material_ModesDict( void )
 {
-	PyObject *Modes = PyConstant_New(  );
+	PyObject *Modes = V24_PyConstant_New(  );
 
 	if( Modes ) {
-		BPy_constant *c = ( BPy_constant * ) Modes;
+		V24_BPy_constant *c = ( V24_BPy_constant * ) Modes;
 
-		PyConstant_Insert(c, "TRACEABLE", PyInt_FromLong(MA_TRACEBLE));
-		PyConstant_Insert(c, "SHADOW", PyInt_FromLong(MA_SHADOW));
-		PyConstant_Insert(c, "SHADOWBUF", PyInt_FromLong(MA_SHADBUF));
-		PyConstant_Insert(c, "TANGENTSTR", PyInt_FromLong(MA_TANGENT_STR));
-		PyConstant_Insert(c, "FULLOSA", PyInt_FromLong(MA_FULL_OSA));
-		PyConstant_Insert(c, "RAYBIAS", PyInt_FromLong(MA_RAYBIAS));
-		PyConstant_Insert(c, "TRANSPSHADOW", PyInt_FromLong(MA_SHADOW_TRA));
-		PyConstant_Insert(c, "RAMPCOL", PyInt_FromLong(MA_RAMP_COL));
-		PyConstant_Insert(c, "RAMPSPEC", PyInt_FromLong(MA_RAMP_SPEC));
-		PyConstant_Insert(c, "SHADELESS", PyInt_FromLong(MA_SHLESS));
-		PyConstant_Insert(c, "WIRE", PyInt_FromLong(MA_WIRE));
-		PyConstant_Insert(c, "VCOL_LIGHT", PyInt_FromLong(MA_VERTEXCOL));
-		PyConstant_Insert(c, "HALO", PyInt_FromLong(MA_HALO));
-		PyConstant_Insert(c, "ZTRANSP", PyInt_FromLong(MA_ZTRA));
-		PyConstant_Insert(c, "VCOL_PAINT", PyInt_FromLong(MA_VERTEXCOLP));
-		PyConstant_Insert(c, "ZINVERT", PyInt_FromLong(MA_ZINV));
-		PyConstant_Insert(c, "HALORINGS", PyInt_FromLong(MA_HALO_RINGS));
-		PyConstant_Insert(c, "ENV", PyInt_FromLong(MA_ENV));
-		PyConstant_Insert(c, "HALOLINES", PyInt_FromLong(MA_HALO_LINES));
-		PyConstant_Insert(c, "ONLYSHADOW", PyInt_FromLong(MA_ONLYSHADOW));
-		PyConstant_Insert(c, "HALOXALPHA", PyInt_FromLong(MA_HALO_XALPHA));
-		PyConstant_Insert(c, "HALOSTAR", PyInt_FromLong(MA_STAR));
-		PyConstant_Insert(c, "TEXFACE", PyInt_FromLong(MA_FACETEXTURE));
-		PyConstant_Insert(c, "HALOTEX", PyInt_FromLong(MA_HALOTEX));
-		PyConstant_Insert(c, "HALOPUNO", PyInt_FromLong(MA_HALOPUNO));
-		PyConstant_Insert(c, "NOMIST", PyInt_FromLong(MA_NOMIST));
-		PyConstant_Insert(c, "HALOSHADE", PyInt_FromLong(MA_HALO_SHADE));
-		PyConstant_Insert(c, "HALOFLARE", PyInt_FromLong(MA_HALO_FLARE));
-		PyConstant_Insert(c, "RADIO", PyInt_FromLong(MA_RADIO));
-		PyConstant_Insert(c, "RAYMIRROR", PyInt_FromLong(MA_RAYMIRROR));
-		PyConstant_Insert(c, "ZTRA", PyInt_FromLong(MA_ZTRA));
-		PyConstant_Insert(c, "RAYTRANSP", PyInt_FromLong(MA_RAYTRANSP));
-		PyConstant_Insert(c, "TANGENT_V", PyInt_FromLong(MA_TANGENT_V));
-		PyConstant_Insert(c, "NMAP_TS", PyInt_FromLong(MA_NORMAP_TANG));
-		PyConstant_Insert(c, "GROUP_EXCLUSIVE", PyInt_FromLong(MA_GROUP_NOLAY));
+		V24_PyConstant_Insert(c, "TRACEABLE", PyInt_FromLong(MA_TRACEBLE));
+		V24_PyConstant_Insert(c, "SHADOW", PyInt_FromLong(MA_SHADOW));
+		V24_PyConstant_Insert(c, "SHADOWBUF", PyInt_FromLong(MA_SHADBUF));
+		V24_PyConstant_Insert(c, "TANGENTSTR", PyInt_FromLong(MA_TANGENT_STR));
+		V24_PyConstant_Insert(c, "FULLOSA", PyInt_FromLong(MA_FULL_OSA));
+		V24_PyConstant_Insert(c, "RAYBIAS", PyInt_FromLong(MA_RAYBIAS));
+		V24_PyConstant_Insert(c, "TRANSPSHADOW", PyInt_FromLong(MA_SHADOW_TRA));
+		V24_PyConstant_Insert(c, "RAMPCOL", PyInt_FromLong(MA_RAMP_COL));
+		V24_PyConstant_Insert(c, "RAMPSPEC", PyInt_FromLong(MA_RAMP_SPEC));
+		V24_PyConstant_Insert(c, "SHADELESS", PyInt_FromLong(MA_SHLESS));
+		V24_PyConstant_Insert(c, "WIRE", PyInt_FromLong(MA_WIRE));
+		V24_PyConstant_Insert(c, "VCOL_LIGHT", PyInt_FromLong(MA_VERTEXCOL));
+		V24_PyConstant_Insert(c, "HALO", PyInt_FromLong(MA_HALO));
+		V24_PyConstant_Insert(c, "ZTRANSP", PyInt_FromLong(MA_ZTRA));
+		V24_PyConstant_Insert(c, "VCOL_PAINT", PyInt_FromLong(MA_VERTEXCOLP));
+		V24_PyConstant_Insert(c, "ZINVERT", PyInt_FromLong(MA_ZINV));
+		V24_PyConstant_Insert(c, "HALORINGS", PyInt_FromLong(MA_HALO_RINGS));
+		V24_PyConstant_Insert(c, "ENV", PyInt_FromLong(MA_ENV));
+		V24_PyConstant_Insert(c, "HALOLINES", PyInt_FromLong(MA_HALO_LINES));
+		V24_PyConstant_Insert(c, "ONLYSHADOW", PyInt_FromLong(MA_ONLYSHADOW));
+		V24_PyConstant_Insert(c, "HALOXALPHA", PyInt_FromLong(MA_HALO_XALPHA));
+		V24_PyConstant_Insert(c, "HALOSTAR", PyInt_FromLong(MA_STAR));
+		V24_PyConstant_Insert(c, "TEXFACE", PyInt_FromLong(MA_FACETEXTURE));
+		V24_PyConstant_Insert(c, "HALOTEX", PyInt_FromLong(MA_HALOTEX));
+		V24_PyConstant_Insert(c, "HALOPUNO", PyInt_FromLong(MA_HALOPUNO));
+		V24_PyConstant_Insert(c, "NOMIST", PyInt_FromLong(MA_NOMIST));
+		V24_PyConstant_Insert(c, "HALOSHADE", PyInt_FromLong(MA_HALO_SHADE));
+		V24_PyConstant_Insert(c, "HALOFLARE", PyInt_FromLong(MA_HALO_FLARE));
+		V24_PyConstant_Insert(c, "RADIO", PyInt_FromLong(MA_RADIO));
+		V24_PyConstant_Insert(c, "RAYMIRROR", PyInt_FromLong(MA_RAYMIRROR));
+		V24_PyConstant_Insert(c, "ZTRA", PyInt_FromLong(MA_ZTRA));
+		V24_PyConstant_Insert(c, "RAYTRANSP", PyInt_FromLong(MA_RAYTRANSP));
+		V24_PyConstant_Insert(c, "TANGENT_V", PyInt_FromLong(MA_TANGENT_V));
+		V24_PyConstant_Insert(c, "NMAP_TS", PyInt_FromLong(MA_NORMAP_TANG));
+		V24_PyConstant_Insert(c, "GROUP_EXCLUSIVE", PyInt_FromLong(MA_GROUP_NOLAY));
 	}
 
 	return Modes;
 }
 
 
-static PyObject *Material_ShadersDict( void )
+static PyObject *V24_Material_ShadersDict( void )
 {
-	PyObject *Shaders = PyConstant_New(  );
+	PyObject *Shaders = V24_PyConstant_New(  );
 
 	if( Shaders ) {
-		BPy_constant *c = ( BPy_constant * ) Shaders;
+		V24_BPy_constant *c = ( V24_BPy_constant * ) Shaders;
 
-		PyConstant_Insert(c, "DIFFUSE_LAMBERT", PyInt_FromLong(MA_DIFF_LAMBERT));
-		PyConstant_Insert(c, "DIFFUSE_ORENNAYAR", PyInt_FromLong(MA_DIFF_ORENNAYAR));
-		PyConstant_Insert(c, "DIFFUSE_TOON", PyInt_FromLong(MA_DIFF_TOON));
-		PyConstant_Insert(c, "DIFFUSE_MINNAERT", PyInt_FromLong(MA_DIFF_MINNAERT));
-		PyConstant_Insert(c, "SPEC_COOKTORR", PyInt_FromLong(MA_SPEC_COOKTORR));
-		PyConstant_Insert(c, "SPEC_PHONG", PyInt_FromLong(MA_SPEC_PHONG));
-		PyConstant_Insert(c, "SPEC_BLINN", PyInt_FromLong(MA_SPEC_BLINN));
-		PyConstant_Insert(c, "SPEC_TOON", PyInt_FromLong(MA_SPEC_TOON));
-		PyConstant_Insert(c, "SPEC_WARDISO", PyInt_FromLong(MA_SPEC_WARDISO));
+		V24_PyConstant_Insert(c, "DIFFUSE_LAMBERT", PyInt_FromLong(MA_DIFF_LAMBERT));
+		V24_PyConstant_Insert(c, "DIFFUSE_ORENNAYAR", PyInt_FromLong(MA_DIFF_ORENNAYAR));
+		V24_PyConstant_Insert(c, "DIFFUSE_TOON", PyInt_FromLong(MA_DIFF_TOON));
+		V24_PyConstant_Insert(c, "DIFFUSE_MINNAERT", PyInt_FromLong(MA_DIFF_MINNAERT));
+		V24_PyConstant_Insert(c, "SPEC_COOKTORR", PyInt_FromLong(MA_SPEC_COOKTORR));
+		V24_PyConstant_Insert(c, "SPEC_PHONG", PyInt_FromLong(MA_SPEC_PHONG));
+		V24_PyConstant_Insert(c, "SPEC_BLINN", PyInt_FromLong(MA_SPEC_BLINN));
+		V24_PyConstant_Insert(c, "SPEC_TOON", PyInt_FromLong(MA_SPEC_TOON));
+		V24_PyConstant_Insert(c, "SPEC_WARDISO", PyInt_FromLong(MA_SPEC_WARDISO));
 
 	}
 
@@ -397,20 +397,20 @@ static PyObject *Material_ShadersDict( void )
 
 
 /*****************************************************************************/
-/* Function:	Material_Init */
+/* Function:	V24_Material_Init */
 /*****************************************************************************/
-PyObject *Material_Init( void )
+PyObject *V24_Material_Init( void )
 {
 	PyObject *submodule, *Modes, *Shaders;
 
-	if( PyType_Ready( &Material_Type ) < 0)
+	if( PyType_Ready( &V24_Material_Type ) < 0)
 		return NULL;
 
-	Modes = Material_ModesDict(  );
-	Shaders = Material_ShadersDict(  );
+	Modes = V24_Material_ModesDict(  );
+	Shaders = V24_Material_ShadersDict(  );
 
 	submodule = Py_InitModule3( "Blender.Material",
-				    M_Material_methods, M_Material_doc );
+				    M_Material_methods, V24_M_Material_doc );
 
 	if( Modes )
 		PyModule_AddObject( submodule, "Modes", Modes );
@@ -434,428 +434,428 @@ PyObject *Material_Init( void )
 /*** The Material PyType ***/
 /***************************/
 
-static PyObject *Matr_oldsetAdd( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetAlpha( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetAmb( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetEmit( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetFilter( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetFlareBoost( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetFlareSeed( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetFlareSize( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetFresnelMirr( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetFresnelMirrFac( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetFresnelTrans( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetFresnelTransFac( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetHaloSeed( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetHaloSize( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetHardness( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetIOR( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetNFlares( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetNLines( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetNRings( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetNStars( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetRayMirr( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetMirrDepth( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetRef( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetSpec( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetSpecTransp( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetSubSize( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetTransDepth( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetZOffset( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetMode( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetIpo( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetRGBCol( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetSpecCol( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetSpecShader( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetMirCol( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetDiffuseShader( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetRoughness( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetSpecSize( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetDiffuseSize( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetSpecSmooth( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetDiffuseSmooth( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetDiffuseDarkness( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetRefracIndex( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetRms( BPy_Material * self, PyObject * args );
-static PyObject *Matr_oldsetTranslucency( BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetAdd( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetAlpha( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetAmb( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetEmit( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetFilter( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetFlareBoost( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetFlareSeed( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetFlareSize( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetFresnelMirr( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetFresnelMirrFac( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetFresnelTrans( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetFresnelTransFac( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetHaloSeed( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetHaloSize( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetHardness( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetIOR( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetNFlares( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetNLines( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetNRings( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetNStars( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetRayMirr( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetMirrDepth( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetRef( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetSpec( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetSpecTransp( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetSubSize( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetTransDepth( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetZOffset( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetMode( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetIpo( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetRGBCol( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetSpecCol( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetSpecShader( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetMirCol( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetDiffuseShader( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetRoughness( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetSpecSize( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetDiffuseSize( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetSpecSmooth( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetDiffuseSmooth( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetDiffuseDarkness( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetRefracIndex( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetRms( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Matr_oldsetTranslucency( V24_BPy_Material * self, PyObject * args );
 
-static int Material_setIpo( BPy_Material * self, PyObject * value );
+static int V24_Material_setIpo( V24_BPy_Material * self, PyObject * value );
 
-static int Material_setMode( BPy_Material * self, PyObject * value );
-static int Material_setRGBCol( BPy_Material * self, PyObject * value );
-static int Material_setSpecCol( BPy_Material * self, PyObject * value );
-static int Material_setMirCol( BPy_Material * self, PyObject * value );
-static int Material_setSssCol( BPy_Material * self, PyObject * value );
-static int Material_setColorComponent( BPy_Material * self, PyObject * value,
+static int V24_Material_setMode( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setRGBCol( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSpecCol( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setMirCol( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSssCol( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setColorComponent( V24_BPy_Material * self, PyObject * value,
 							void * closure );
-static int Material_setAmb( BPy_Material * self, PyObject * value );
-static int Material_setEmit( BPy_Material * self, PyObject * value );
-static int Material_setSpecTransp( BPy_Material * self, PyObject * value );
-static int Material_setAlpha( BPy_Material * self, PyObject * value );
-static int Material_setShadAlpha( BPy_Material * self, PyObject * value );
-static int Material_setRef( BPy_Material * self, PyObject * value );
-static int Material_setSpec( BPy_Material * self, PyObject * value );
-static int Material_setZOffset( BPy_Material * self, PyObject * value );
-static int Material_setLightGroup( BPy_Material * self, PyObject * value );
-static int Material_setAdd( BPy_Material * self, PyObject * value );
-static int Material_setHaloSize( BPy_Material * self, PyObject * value );
-static int Material_setFlareSize( BPy_Material * self, PyObject * value );
-static int Material_setFlareBoost( BPy_Material * self, PyObject * value );
-static int Material_setSubSize( BPy_Material * self, PyObject * value );
-static int Material_setHaloSeed( BPy_Material * self, PyObject * value );
-static int Material_setFlareSeed( BPy_Material * self, PyObject * value );
-static int Material_setHardness( BPy_Material * self, PyObject * value );
-static int Material_setNFlares( BPy_Material * self, PyObject * value );
-static int Material_setNStars( BPy_Material * self, PyObject * value );
-static int Material_setNLines( BPy_Material * self, PyObject * value );
-static int Material_setNRings( BPy_Material * self, PyObject * value );
-static int Material_setRayMirr( BPy_Material * self, PyObject * value );
-static int Material_setMirrDepth( BPy_Material * self, PyObject * value );
-static int Material_setFresnelMirr( BPy_Material * self, PyObject * value );
-static int Material_setFresnelMirrFac( BPy_Material * self, PyObject * value );
-static int Material_setIOR( BPy_Material * self, PyObject * value );
-static int Material_setTransDepth( BPy_Material * self, PyObject * value );
-static int Material_setFresnelTrans( BPy_Material * self, PyObject * value );
-static int Material_setFresnelTransFac( BPy_Material * self, PyObject * value );
-static int Material_setRigidBodyFriction( BPy_Material * self, PyObject * value );
-static int Material_setRigidBodyRestitution( BPy_Material * self, PyObject * value );
+static int V24_Material_setAmb( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setEmit( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSpecTransp( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setAlpha( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setShadAlpha( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setRef( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSpec( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setZOffset( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setLightGroup( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setAdd( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setHaloSize( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setFlareSize( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setFlareBoost( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSubSize( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setHaloSeed( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setFlareSeed( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setHardness( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setNFlares( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setNStars( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setNLines( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setNRings( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setRayMirr( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setMirrDepth( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setFresnelMirr( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setFresnelMirrFac( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setIOR( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setTransDepth( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setFresnelTrans( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setFresnelTransFac( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setRigidBodyFriction( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setRigidBodyRestitution( V24_BPy_Material * self, PyObject * value );
 
-static int Material_setSpecShader( BPy_Material * self, PyObject * value );
-static int Material_setDiffuseShader( BPy_Material * self, PyObject * value );
-static int Material_setRoughness( BPy_Material * self, PyObject * value );
-static int Material_setSpecSize( BPy_Material * self, PyObject * value );
-static int Material_setDiffuseSize( BPy_Material * self, PyObject * value );
-static int Material_setSpecSmooth( BPy_Material * self, PyObject * value );
-static int Material_setDiffuseSmooth( BPy_Material * self, PyObject * value );
-static int Material_setDiffuseDarkness( BPy_Material * self, PyObject * value );
-static int Material_setRefracIndex( BPy_Material * self, PyObject * value );
-static int Material_setRms( BPy_Material * self, PyObject * value );
-static int Material_setFilter( BPy_Material * self, PyObject * value );
-static int Material_setTranslucency( BPy_Material * self, PyObject * value );
+static int V24_Material_setSpecShader( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setDiffuseShader( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setRoughness( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSpecSize( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setDiffuseSize( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSpecSmooth( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setDiffuseSmooth( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setDiffuseDarkness( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setRefracIndex( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setRms( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setFilter( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setTranslucency( V24_BPy_Material * self, PyObject * value );
 
-static int Material_setSssEnable( BPy_Material * self, PyObject * value );
-static int Material_setSssScale( BPy_Material * self, PyObject * value );
-static int Material_setSssRadius( BPy_Material * self, PyObject * value, void * type );
-static int Material_setSssIOR( BPy_Material * self, PyObject * value );
-static int Material_setSssError( BPy_Material * self, PyObject * value );
-static int Material_setSssColorBlend( BPy_Material * self, PyObject * value );
-static int Material_setSssTexScatter( BPy_Material * self, PyObject * value );
-static int Material_setSssFront( BPy_Material * self, PyObject * value );
-static int Material_setSssBack( BPy_Material * self, PyObject * value );
-static int Material_setSssBack( BPy_Material * self, PyObject * value );
+static int V24_Material_setSssEnable( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSssScale( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSssRadius( V24_BPy_Material * self, PyObject * value, void * type );
+static int V24_Material_setSssIOR( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSssError( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSssColorBlend( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSssTexScatter( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSssFront( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSssBack( V24_BPy_Material * self, PyObject * value );
+static int V24_Material_setSssBack( V24_BPy_Material * self, PyObject * value );
 
-static PyObject *Material_getColorComponent( BPy_Material * self,
+static PyObject *V24_Material_getColorComponent( V24_BPy_Material * self,
 							void * closure );
 
-/*static int Material_setSeptex( BPy_Material * self, PyObject * value );
-  static PyObject *Material_getSeptex( BPy_Material * self );*/
+/*static int Material_setSeptex( V24_BPy_Material * self, PyObject * value );
+  static PyObject *Material_getSeptex( V24_BPy_Material * self );*/
 
 /*****************************************************************************/
-/* Python BPy_Material methods declarations: */
+/* Python V24_BPy_Material methods declarations: */
 /*****************************************************************************/
-static PyObject *Material_getIpo( BPy_Material * self );
-static PyObject *Material_getMode( BPy_Material * self );
-static PyObject *Material_getRGBCol( BPy_Material * self );
-/*static PyObject *Material_getAmbCol(BPy_Material *self);*/
-static PyObject *Material_getSpecCol( BPy_Material * self );
-static PyObject *Material_getMirCol( BPy_Material * self );
-static PyObject *Material_getSssCol( BPy_Material * self );
-static PyObject *Material_getAmb( BPy_Material * self );
-static PyObject *Material_getEmit( BPy_Material * self );
-static PyObject *Material_getAlpha( BPy_Material * self );
-static PyObject *Material_getShadAlpha( BPy_Material * self );
-static PyObject *Material_getRef( BPy_Material * self );
-static PyObject *Material_getSpec( BPy_Material * self );
-static PyObject *Material_getSpecTransp( BPy_Material * self );
-static PyObject *Material_getAdd( BPy_Material * self );
-static PyObject *Material_getZOffset( BPy_Material * self );
-static PyObject *Material_getLightGroup( BPy_Material * self );
-static PyObject *Material_getHaloSize( BPy_Material * self );
-static PyObject *Material_getHaloSeed( BPy_Material * self );
-static PyObject *Material_getFlareSize( BPy_Material * self );
-static PyObject *Material_getFlareSeed( BPy_Material * self );
-static PyObject *Material_getFlareBoost( BPy_Material * self );
-static PyObject *Material_getSubSize( BPy_Material * self );
-static PyObject *Material_getHardness( BPy_Material * self );
-static PyObject *Material_getNFlares( BPy_Material * self );
-static PyObject *Material_getNStars( BPy_Material * self );
-static PyObject *Material_getNLines( BPy_Material * self );
-static PyObject *Material_getNRings( BPy_Material * self );
+static PyObject *V24_Material_getIpo( V24_BPy_Material * self );
+static PyObject *V24_Material_getMode( V24_BPy_Material * self );
+static PyObject *V24_Material_getRGBCol( V24_BPy_Material * self );
+/*static PyObject *Material_getAmbCol(V24_BPy_Material *self);*/
+static PyObject *V24_Material_getSpecCol( V24_BPy_Material * self );
+static PyObject *V24_Material_getMirCol( V24_BPy_Material * self );
+static PyObject *V24_Material_getSssCol( V24_BPy_Material * self );
+static PyObject *V24_Material_getAmb( V24_BPy_Material * self );
+static PyObject *V24_Material_getEmit( V24_BPy_Material * self );
+static PyObject *V24_Material_getAlpha( V24_BPy_Material * self );
+static PyObject *V24_Material_getShadAlpha( V24_BPy_Material * self );
+static PyObject *V24_Material_getRef( V24_BPy_Material * self );
+static PyObject *V24_Material_getSpec( V24_BPy_Material * self );
+static PyObject *V24_Material_getSpecTransp( V24_BPy_Material * self );
+static PyObject *V24_Material_getAdd( V24_BPy_Material * self );
+static PyObject *V24_Material_getZOffset( V24_BPy_Material * self );
+static PyObject *V24_Material_getLightGroup( V24_BPy_Material * self );
+static PyObject *V24_Material_getHaloSize( V24_BPy_Material * self );
+static PyObject *V24_Material_getHaloSeed( V24_BPy_Material * self );
+static PyObject *V24_Material_getFlareSize( V24_BPy_Material * self );
+static PyObject *V24_Material_getFlareSeed( V24_BPy_Material * self );
+static PyObject *V24_Material_getFlareBoost( V24_BPy_Material * self );
+static PyObject *V24_Material_getSubSize( V24_BPy_Material * self );
+static PyObject *V24_Material_getHardness( V24_BPy_Material * self );
+static PyObject *V24_Material_getNFlares( V24_BPy_Material * self );
+static PyObject *V24_Material_getNStars( V24_BPy_Material * self );
+static PyObject *V24_Material_getNLines( V24_BPy_Material * self );
+static PyObject *V24_Material_getNRings( V24_BPy_Material * self );
 /* Shader settings */
-static PyObject *Material_getSpecShader( BPy_Material * self );
-static PyObject *Material_getDiffuseShader( BPy_Material * self );
-static PyObject *Material_getRoughness( BPy_Material * self );
-static PyObject *Material_getSpecSize( BPy_Material * self );
-static PyObject *Material_getDiffuseSize( BPy_Material * self );
-static PyObject *Material_getSpecSmooth( BPy_Material * self );
-static PyObject *Material_getDiffuseSmooth( BPy_Material * self );
-static PyObject *Material_getDiffuseDarkness( BPy_Material * self );
-static PyObject *Material_getRefracIndex( BPy_Material * self );
-static PyObject *Material_getRms( BPy_Material * self );
+static PyObject *V24_Material_getSpecShader( V24_BPy_Material * self );
+static PyObject *V24_Material_getDiffuseShader( V24_BPy_Material * self );
+static PyObject *V24_Material_getRoughness( V24_BPy_Material * self );
+static PyObject *V24_Material_getSpecSize( V24_BPy_Material * self );
+static PyObject *V24_Material_getDiffuseSize( V24_BPy_Material * self );
+static PyObject *V24_Material_getSpecSmooth( V24_BPy_Material * self );
+static PyObject *V24_Material_getDiffuseSmooth( V24_BPy_Material * self );
+static PyObject *V24_Material_getDiffuseDarkness( V24_BPy_Material * self );
+static PyObject *V24_Material_getRefracIndex( V24_BPy_Material * self );
+static PyObject *V24_Material_getRms( V24_BPy_Material * self );
 
-static PyObject *Material_getRayMirr( BPy_Material * self );
-static PyObject *Material_getMirrDepth( BPy_Material * self );
-static PyObject *Material_getFresnelMirr( BPy_Material * self );
-static PyObject *Material_getFresnelMirrFac( BPy_Material * self );
-static PyObject *Material_getIOR( BPy_Material * self );
-static PyObject *Material_getTransDepth( BPy_Material * self );
-static PyObject *Material_getFresnelTrans( BPy_Material * self );
-static PyObject *Material_getFresnelTransFac( BPy_Material * self );
-static PyObject *Material_getRigidBodyFriction( BPy_Material * self );
-static PyObject *Material_getRigidBodyRestitution( BPy_Material * self );
+static PyObject *V24_Material_getRayMirr( V24_BPy_Material * self );
+static PyObject *V24_Material_getMirrDepth( V24_BPy_Material * self );
+static PyObject *V24_Material_getFresnelMirr( V24_BPy_Material * self );
+static PyObject *V24_Material_getFresnelMirrFac( V24_BPy_Material * self );
+static PyObject *V24_Material_getIOR( V24_BPy_Material * self );
+static PyObject *V24_Material_getTransDepth( V24_BPy_Material * self );
+static PyObject *V24_Material_getFresnelTrans( V24_BPy_Material * self );
+static PyObject *V24_Material_getFresnelTransFac( V24_BPy_Material * self );
+static PyObject *V24_Material_getRigidBodyFriction( V24_BPy_Material * self );
+static PyObject *V24_Material_getRigidBodyRestitution( V24_BPy_Material * self );
 
-static PyObject *Material_getSssEnable( BPy_Material * self );
-static PyObject *Material_getSssScale( BPy_Material * self );
-static PyObject *Material_getSssRadius( BPy_Material * self, void * type );
-static PyObject *Material_getSssIOR( BPy_Material * self );
-static PyObject *Material_getSssError( BPy_Material * self );
-static PyObject *Material_getSssColorBlend( BPy_Material * self );
-static PyObject *Material_getSssTexScatter( BPy_Material * self );
-static PyObject *Material_getSssFront( BPy_Material * self );
-static PyObject *Material_getSssBack( BPy_Material * self );
-static PyObject *Material_getSssBack( BPy_Material * self );
+static PyObject *V24_Material_getSssEnable( V24_BPy_Material * self );
+static PyObject *V24_Material_getSssScale( V24_BPy_Material * self );
+static PyObject *V24_Material_getSssRadius( V24_BPy_Material * self, void * type );
+static PyObject *V24_Material_getSssIOR( V24_BPy_Material * self );
+static PyObject *V24_Material_getSssError( V24_BPy_Material * self );
+static PyObject *V24_Material_getSssColorBlend( V24_BPy_Material * self );
+static PyObject *V24_Material_getSssTexScatter( V24_BPy_Material * self );
+static PyObject *V24_Material_getSssFront( V24_BPy_Material * self );
+static PyObject *V24_Material_getSssBack( V24_BPy_Material * self );
+static PyObject *V24_Material_getSssBack( V24_BPy_Material * self );
 
-static PyObject *Material_getFilter( BPy_Material * self );
-static PyObject *Material_getTranslucency( BPy_Material * self );
-static PyObject *Material_getTextures( BPy_Material * self );
-static PyObject *Material_clearIpo( BPy_Material * self );
+static PyObject *V24_Material_getFilter( V24_BPy_Material * self );
+static PyObject *V24_Material_getTranslucency( V24_BPy_Material * self );
+static PyObject *V24_Material_getTextures( V24_BPy_Material * self );
+static PyObject *V24_Material_clearIpo( V24_BPy_Material * self );
 
-static PyObject *Material_setTexture( BPy_Material * self, PyObject * args );
-static PyObject *Material_clearTexture( BPy_Material * self, PyObject * value );
+static PyObject *V24_Material_setTexture( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Material_clearTexture( V24_BPy_Material * self, PyObject * value );
 
-static PyObject *Material_getScriptLinks(BPy_Material *self, PyObject * value );
-static PyObject *Material_addScriptLink(BPy_Material * self, PyObject * args );
-static PyObject *Material_clearScriptLinks(BPy_Material *self, PyObject *args);
+static PyObject *V24_Material_getScriptLinks(V24_BPy_Material *self, PyObject * value );
+static PyObject *V24_Material_addScriptLink(V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Material_clearScriptLinks(V24_BPy_Material *self, PyObject *args);
 
-static PyObject *Material_insertIpoKey( BPy_Material * self, PyObject * args );
-static PyObject *Material_getColorband( BPy_Material * self, void * type);
-int Material_setColorband( BPy_Material * self, PyObject * value, void * type);
-static PyObject *Material_copy( BPy_Material * self );
+static PyObject *V24_Material_insertIpoKey( V24_BPy_Material * self, PyObject * args );
+static PyObject *V24_Material_getColorband( V24_BPy_Material * self, void * type);
+int V24_Material_setColorband( V24_BPy_Material * self, PyObject * value, void * type);
+static PyObject *V24_Material_copy( V24_BPy_Material * self );
 
 
 /*****************************************************************************/
-/* Python BPy_Material methods table: */
+/* Python V24_BPy_Material methods table: */
 /*****************************************************************************/
-static PyMethodDef BPy_Material_methods[] = {
+static PyMethodDef V24_BPy_Material_methods[] = {
 	/* name, method, flags, doc */
-	{"getName", ( PyCFunction ) GenericLib_getName, METH_NOARGS,
+	{"getName", ( PyCFunction ) V24_GenericLib_getName, METH_NOARGS,
 	 "() - Return Material's name"},
-	{"getIpo", ( PyCFunction ) Material_getIpo, METH_NOARGS,
+	{"getIpo", ( PyCFunction ) V24_Material_getIpo, METH_NOARGS,
 	 "() - Return Material's ipo or None if not found"},
-	{"getMode", ( PyCFunction ) Material_getMode, METH_NOARGS,
+	{"getMode", ( PyCFunction ) V24_Material_getMode, METH_NOARGS,
 	 "() - Return Material's mode flags"},
-	{"getRGBCol", ( PyCFunction ) Material_getRGBCol, METH_NOARGS,
+	{"getRGBCol", ( PyCFunction ) V24_Material_getRGBCol, METH_NOARGS,
 	 "() - Return Material's rgb color triplet"},
 /*	{"getAmbCol", (PyCFunction)Material_getAmbCol, METH_NOARGS,
 			"() - Return Material's ambient color"},*/
-	{"getSpecCol", ( PyCFunction ) Material_getSpecCol, METH_NOARGS,
+	{"getSpecCol", ( PyCFunction ) V24_Material_getSpecCol, METH_NOARGS,
 	 "() - Return Material's specular color"},
-	{"getMirCol", ( PyCFunction ) Material_getMirCol, METH_NOARGS,
+	{"getMirCol", ( PyCFunction ) V24_Material_getMirCol, METH_NOARGS,
 	 "() - Return Material's mirror color"},
-	{"getAmb", ( PyCFunction ) Material_getAmb, METH_NOARGS,
+	{"getAmb", ( PyCFunction ) V24_Material_getAmb, METH_NOARGS,
 	 "() - Return Material's ambient color blend factor"},
-	{"getEmit", ( PyCFunction ) Material_getEmit, METH_NOARGS,
+	{"getEmit", ( PyCFunction ) V24_Material_getEmit, METH_NOARGS,
 	 "() - Return Material's emitting light intensity"},
-	{"getAlpha", ( PyCFunction ) Material_getAlpha, METH_NOARGS,
+	{"getAlpha", ( PyCFunction ) V24_Material_getAlpha, METH_NOARGS,
 	 "() - Return Material's alpha (transparency) value"},
-	{"getRef", ( PyCFunction ) Material_getRef, METH_NOARGS,
+	{"getRef", ( PyCFunction ) V24_Material_getRef, METH_NOARGS,
 	 "() - Return Material's reflectivity"},
-	{"getSpec", ( PyCFunction ) Material_getSpec, METH_NOARGS,
+	{"getSpec", ( PyCFunction ) V24_Material_getSpec, METH_NOARGS,
 	 "() - Return Material's specularity"},
 	/* Shader specific settings */
-	{"getSpecShader", ( PyCFunction ) Material_getSpecShader, METH_NOARGS,
+	{"getSpecShader", ( PyCFunction ) V24_Material_getSpecShader, METH_NOARGS,
 	 "() - Returns Material's specular shader" },
-	{"getDiffuseShader", ( PyCFunction ) Material_getDiffuseShader, METH_NOARGS,
+	{"getDiffuseShader", ( PyCFunction ) V24_Material_getDiffuseShader, METH_NOARGS,
 	 "() - Returns Material's diffuse shader" },
-	 {"getRoughness", ( PyCFunction ) Material_getRoughness, METH_NOARGS,
+	 {"getRoughness", ( PyCFunction ) V24_Material_getRoughness, METH_NOARGS,
 	 "() - Returns Material's Roughness (applies to the \"Oren Nayar\" Diffuse Shader only)" },
-	{"getSpecSize", ( PyCFunction ) Material_getSpecSize, METH_NOARGS,
+	{"getSpecSize", ( PyCFunction ) V24_Material_getSpecSize, METH_NOARGS,
 	 "() - Returns Material's size of specular area (applies to the \"Toon\" Specular Shader only)" },
-	{"getDiffuseSize", ( PyCFunction ) Material_getDiffuseSize, METH_NOARGS,
+	{"getDiffuseSize", ( PyCFunction ) V24_Material_getDiffuseSize, METH_NOARGS,
 	 "() - Returns Material's size of diffuse area (applies to the \"Toon\" Diffuse Shader only)" },
-	{"getSpecSmooth", ( PyCFunction ) Material_getSpecSmooth, METH_NOARGS,
+	{"getSpecSmooth", ( PyCFunction ) V24_Material_getSpecSmooth, METH_NOARGS,
 	 "() - Returns Material's smoothing of specular area (applies to the \"Toon\" Diffuse Shader only)" },
-	{"getDiffuseSmooth", ( PyCFunction ) Material_getDiffuseSmooth, METH_NOARGS,
+	{"getDiffuseSmooth", ( PyCFunction ) V24_Material_getDiffuseSmooth, METH_NOARGS,
 	 "() - Returns Material's smoothing of diffuse area (applies to the \"Toon\" Diffuse Shader only)" },
-	{"getDiffuseDarkness", ( PyCFunction ) Material_getDiffuseDarkness, METH_NOARGS,
+	{"getDiffuseDarkness", ( PyCFunction ) V24_Material_getDiffuseDarkness, METH_NOARGS,
 	 "() - Returns Material's diffuse darkness (applies to the \"Minnaert\" Diffuse Shader only)" },
-	{"getRefracIndex", ( PyCFunction ) Material_getRefracIndex, METH_NOARGS,
+	{"getRefracIndex", ( PyCFunction ) V24_Material_getRefracIndex, METH_NOARGS,
 	 "() - Returns Material's Index of Refraction (applies to the \"Blinn\" Specular Shader only)" },	 
-	{"getRms", ( PyCFunction ) Material_getRms, METH_NOARGS,
+	{"getRms", ( PyCFunction ) V24_Material_getRms, METH_NOARGS,
 	 "() - Returns Material's standard deviation of surface slope (applies to the \"WardIso\" Specular Shader only)" },
 	/* End shader settings */
-	{"getSpecTransp", ( PyCFunction ) Material_getSpecTransp, METH_NOARGS,
+	{"getSpecTransp", ( PyCFunction ) V24_Material_getSpecTransp, METH_NOARGS,
 	 "() - Return Material's specular transparency"},
-	{"getAdd", ( PyCFunction ) Material_getAdd, METH_NOARGS,
+	{"getAdd", ( PyCFunction ) V24_Material_getAdd, METH_NOARGS,
 	 "() - Return Material's glow factor"},
-	{"getZOffset", ( PyCFunction ) Material_getZOffset, METH_NOARGS,
+	{"getZOffset", ( PyCFunction ) V24_Material_getZOffset, METH_NOARGS,
 	 "() - Return Material's artificial offset for faces"},
-	{"getHaloSize", ( PyCFunction ) Material_getHaloSize, METH_NOARGS,
+	{"getHaloSize", ( PyCFunction ) V24_Material_getHaloSize, METH_NOARGS,
 	 "() - Return Material's halo size"},
-	{"getHaloSeed", ( PyCFunction ) Material_getHaloSeed, METH_NOARGS,
+	{"getHaloSeed", ( PyCFunction ) V24_Material_getHaloSeed, METH_NOARGS,
 	 "() - Return Material's seed for random ring dimension and line "
 	 "location in halos"},
-	{"getFlareSize", ( PyCFunction ) Material_getFlareSize, METH_NOARGS,
+	{"getFlareSize", ( PyCFunction ) V24_Material_getFlareSize, METH_NOARGS,
 	 "() - Return Material's (flare size)/(halo size) factor"},
-	{"getFlareSeed", ( PyCFunction ) Material_getFlareSeed, METH_NOARGS,
+	{"getFlareSeed", ( PyCFunction ) V24_Material_getFlareSeed, METH_NOARGS,
 	 "() - Return Material's flare offset in the seed table"},
-	{"getFlareBoost", ( PyCFunction ) Material_getFlareBoost, METH_NOARGS,
+	{"getFlareBoost", ( PyCFunction ) V24_Material_getFlareBoost, METH_NOARGS,
 	 "() - Return Material's flare boost"},
-	{"getSubSize", ( PyCFunction ) Material_getSubSize, METH_NOARGS,
+	{"getSubSize", ( PyCFunction ) V24_Material_getSubSize, METH_NOARGS,
 	 "() - Return Material's dimension of subflare, dots and circles"},
-	{"getHardness", ( PyCFunction ) Material_getHardness, METH_NOARGS,
+	{"getHardness", ( PyCFunction ) V24_Material_getHardness, METH_NOARGS,
 	 "() - Return Material's specular hardness"},
-	{"getNFlares", ( PyCFunction ) Material_getNFlares, METH_NOARGS,
+	{"getNFlares", ( PyCFunction ) V24_Material_getNFlares, METH_NOARGS,
 	 "() - Return Material's number of flares in halo"},
-	{"getNStars", ( PyCFunction ) Material_getNStars, METH_NOARGS,
+	{"getNStars", ( PyCFunction ) V24_Material_getNStars, METH_NOARGS,
 	 "() - Return Material's number of points in the halo stars"},
-	{"getNLines", ( PyCFunction ) Material_getNLines, METH_NOARGS,
+	{"getNLines", ( PyCFunction ) V24_Material_getNLines, METH_NOARGS,
 	 "() - Return Material's number of lines in halo"},
-	{"getNRings", ( PyCFunction ) Material_getNRings, METH_NOARGS,
+	{"getNRings", ( PyCFunction ) V24_Material_getNRings, METH_NOARGS,
 	 "() - Return Material's number of rings in halo"},
-	{"getRayMirr", ( PyCFunction ) Material_getRayMirr, METH_NOARGS,
+	{"getRayMirr", ( PyCFunction ) V24_Material_getRayMirr, METH_NOARGS,
 	 "() - Return mount mirror"},
-	{"getMirrDepth", ( PyCFunction ) Material_getMirrDepth, METH_NOARGS,
+	{"getMirrDepth", ( PyCFunction ) V24_Material_getMirrDepth, METH_NOARGS,
 	 "() - Return amount mirror depth"},
-	{"getFresnelMirr", ( PyCFunction ) Material_getFresnelMirr, METH_NOARGS,
+	{"getFresnelMirr", ( PyCFunction ) V24_Material_getFresnelMirr, METH_NOARGS,
 	 "() - Return fresnel power for refractions"},
-	{"getFresnelMirrFac", ( PyCFunction ) Material_getFresnelMirrFac, METH_NOARGS,
+	{"getFresnelMirrFac", ( PyCFunction ) V24_Material_getFresnelMirrFac, METH_NOARGS,
 	 "() - Return fresnel power for refractions factor"},
-	{"getFilter", ( PyCFunction ) Material_getFilter, METH_NOARGS,
+	{"getFilter", ( PyCFunction ) V24_Material_getFilter, METH_NOARGS,
 	 "() - Return the amount of filtering when transparent raytrace is enabled"},
-	{"getTranslucency", ( PyCFunction ) Material_getTranslucency, METH_NOARGS,
+	{"getTranslucency", ( PyCFunction ) V24_Material_getTranslucency, METH_NOARGS,
 	 "() - Return the Translucency, the amount of diffuse shading of the back side"},
-	{"getIOR", ( PyCFunction ) Material_getIOR, METH_NOARGS,
+	{"getIOR", ( PyCFunction ) V24_Material_getIOR, METH_NOARGS,
 	 "() - Return IOR"},
-	{"getTransDepth", ( PyCFunction ) Material_getTransDepth, METH_NOARGS,
+	{"getTransDepth", ( PyCFunction ) V24_Material_getTransDepth, METH_NOARGS,
 	 "() - Return amount inter-refractions"},
-	{"getFresnelTrans", ( PyCFunction ) Material_getFresnelTrans, METH_NOARGS,
+	{"getFresnelTrans", ( PyCFunction ) V24_Material_getFresnelTrans, METH_NOARGS,
 	 "() - Return fresnel power for refractions"},
-	{"getFresnelTransFac", ( PyCFunction ) Material_getFresnelTransFac, METH_NOARGS,
+	{"getFresnelTransFac", ( PyCFunction ) V24_Material_getFresnelTransFac, METH_NOARGS,
 	 "() - Return fresnel power for refractions factor"},
 
-	{"getTextures", ( PyCFunction ) Material_getTextures, METH_NOARGS,
+	{"getTextures", ( PyCFunction ) V24_Material_getTextures, METH_NOARGS,
 	 "() - Return Material's texture list as a tuple"},
-	{"setName", ( PyCFunction ) GenericLib_setName_with_method, METH_VARARGS,
+	{"setName", ( PyCFunction ) V24_GenericLib_setName_with_method, METH_VARARGS,
 	 "(s) - Change Material's name"},
-	{"setIpo", ( PyCFunction ) Matr_oldsetIpo, METH_VARARGS,
+	{"setIpo", ( PyCFunction ) V24_Matr_oldsetIpo, METH_VARARGS,
 	 "(Blender Ipo) - Change Material's Ipo"},
-	{"clearIpo", ( PyCFunction ) Material_clearIpo, METH_NOARGS,
+	{"clearIpo", ( PyCFunction ) V24_Material_clearIpo, METH_NOARGS,
 	 "(Blender Ipo) - Unlink Ipo from this Material"},
-	{"insertIpoKey", ( PyCFunction ) Material_insertIpoKey, METH_VARARGS,
+	{"insertIpoKey", ( PyCFunction ) V24_Material_insertIpoKey, METH_VARARGS,
 	 "(Material Ipo Constant) - Insert IPO Key at current frame"},	 
-	{"setMode", ( PyCFunction ) Matr_oldsetMode, METH_VARARGS,
+	{"setMode", ( PyCFunction ) V24_Matr_oldsetMode, METH_VARARGS,
 	 "([s[,s]]) - Set Material's mode flag(s)"},
-	{"setRGBCol", ( PyCFunction ) Matr_oldsetRGBCol, METH_VARARGS,
+	{"setRGBCol", ( PyCFunction ) V24_Matr_oldsetRGBCol, METH_VARARGS,
 	 "(f,f,f or [f,f,f]) - Set Material's rgb color triplet"},
 /*	{"setAmbCol", (PyCFunction)Matr_oldsetAmbCol, METH_VARARGS,
 			"(f,f,f or [f,f,f]) - Set Material's ambient color"},*/
-	{"setSpecCol", ( PyCFunction ) Matr_oldsetSpecCol, METH_VARARGS,
+	{"setSpecCol", ( PyCFunction ) V24_Matr_oldsetSpecCol, METH_VARARGS,
 	 "(f,f,f or [f,f,f]) - Set Material's specular color"},
 	 
 	/* Shader spesific settings */
-	{"setSpecShader", ( PyCFunction ) Matr_oldsetSpecShader, METH_VARARGS,
+	{"setSpecShader", ( PyCFunction ) V24_Matr_oldsetSpecShader, METH_VARARGS,
 	 "(i) - Set the Material's specular shader" },
-	{"setDiffuseShader", ( PyCFunction ) Matr_oldsetDiffuseShader, METH_VARARGS,
+	{"setDiffuseShader", ( PyCFunction ) V24_Matr_oldsetDiffuseShader, METH_VARARGS,
 	 "(i) - Set the Material's diffuse shader" },
-	 {"setRoughness", ( PyCFunction ) Matr_oldsetRoughness, METH_VARARGS,
+	 {"setRoughness", ( PyCFunction ) V24_Matr_oldsetRoughness, METH_VARARGS,
 	 "(f) - Set the Material's Roughness (applies to the \"Oren Nayar\" Diffuse Shader only)" },
-	{"setSpecSize", ( PyCFunction ) Matr_oldsetSpecSize, METH_VARARGS,
+	{"setSpecSize", ( PyCFunction ) V24_Matr_oldsetSpecSize, METH_VARARGS,
 	 "(f) - Set the Material's size of specular area (applies to the \"Toon\" Specular Shader only)" },
-	{"setDiffuseSize", ( PyCFunction ) Matr_oldsetDiffuseSize, METH_VARARGS,
+	{"setDiffuseSize", ( PyCFunction ) V24_Matr_oldsetDiffuseSize, METH_VARARGS,
 	 "(f) - Set the Material's size of diffuse area (applies to the \"Toon\" Diffuse Shader only)" },
-	{"setSpecSmooth", ( PyCFunction ) Matr_oldsetSpecSmooth, METH_VARARGS,
+	{"setSpecSmooth", ( PyCFunction ) V24_Matr_oldsetSpecSmooth, METH_VARARGS,
 	 "(f) - Set the Material's smoothing of specular area (applies to the \"Toon\" Specular Shader only)" },
-	{"setDiffuseSmooth", ( PyCFunction ) Matr_oldsetDiffuseSmooth, METH_VARARGS,
+	{"setDiffuseSmooth", ( PyCFunction ) V24_Matr_oldsetDiffuseSmooth, METH_VARARGS,
 	 "(f) - Set the Material's smoothing of diffuse area (applies to the \"Toon\" Diffuse Shader only)" },
-	{"setDiffuseDarkness", ( PyCFunction ) Matr_oldsetDiffuseDarkness, METH_VARARGS,
+	{"setDiffuseDarkness", ( PyCFunction ) V24_Matr_oldsetDiffuseDarkness, METH_VARARGS,
 	 "(f) - Set the Material's diffuse darkness (applies to the \"Minnaert\" Diffuse Shader only)" },
-	{"setRefracIndex", ( PyCFunction ) Matr_oldsetRefracIndex, METH_VARARGS,
+	{"setRefracIndex", ( PyCFunction ) V24_Matr_oldsetRefracIndex, METH_VARARGS,
 	 "(f) - Set the Material's Index of Refraction (applies to the \"Blinn\" Specular Shader only)" },	 
-	{"setRms", ( PyCFunction ) Matr_oldsetRms, METH_VARARGS,
+	{"setRms", ( PyCFunction ) V24_Matr_oldsetRms, METH_VARARGS,
 	 "(f) - Set the Material's standard deviation of surface slope (applies to the \"WardIso\" Specular Shader only)" },
 	/* End shader settings */
 	 
-	{"setMirCol", ( PyCFunction ) Matr_oldsetMirCol, METH_VARARGS,
+	{"setMirCol", ( PyCFunction ) V24_Matr_oldsetMirCol, METH_VARARGS,
 	 "(f,f,f or [f,f,f]) - Set Material's mirror color"},
-	{"setAmb", ( PyCFunction ) Matr_oldsetAmb, METH_VARARGS,
+	{"setAmb", ( PyCFunction ) V24_Matr_oldsetAmb, METH_VARARGS,
 	 "(f) - Set how much the Material's color is affected"
 	 " by \nthe global ambient colors - [0.0, 1.0]"},
-	{"setEmit", ( PyCFunction ) Matr_oldsetEmit, METH_VARARGS,
+	{"setEmit", ( PyCFunction ) V24_Matr_oldsetEmit, METH_VARARGS,
 	 "(f) - Set Material's emitting light intensity - [0.0, 1.0]"},
-	{"setAlpha", ( PyCFunction ) Matr_oldsetAlpha, METH_VARARGS,
+	{"setAlpha", ( PyCFunction ) V24_Matr_oldsetAlpha, METH_VARARGS,
 	 "(f) - Set Material's alpha (transparency) - [0.0, 1.0]"},
-	{"setRef", ( PyCFunction ) Matr_oldsetRef, METH_VARARGS,
+	{"setRef", ( PyCFunction ) V24_Matr_oldsetRef, METH_VARARGS,
 	 "(f) - Set Material's reflectivity - [0.0, 1.0]"},
-	{"setSpec", ( PyCFunction ) Matr_oldsetSpec, METH_VARARGS,
+	{"setSpec", ( PyCFunction ) V24_Matr_oldsetSpec, METH_VARARGS,
 	 "(f) - Set Material's specularity - [0.0, 2.0]"},
-	{"setSpecTransp", ( PyCFunction ) Matr_oldsetSpecTransp, METH_VARARGS,
+	{"setSpecTransp", ( PyCFunction ) V24_Matr_oldsetSpecTransp, METH_VARARGS,
 	 "(f) - Set Material's specular transparency - [0.0, 1.0]"},
-	{"setAdd", ( PyCFunction ) Matr_oldsetAdd, METH_VARARGS,
+	{"setAdd", ( PyCFunction ) V24_Matr_oldsetAdd, METH_VARARGS,
 	 "(f) - Set Material's glow factor - [0.0, 1.0]"},
-	{"setZOffset", ( PyCFunction ) Matr_oldsetZOffset, METH_VARARGS,
+	{"setZOffset", ( PyCFunction ) V24_Matr_oldsetZOffset, METH_VARARGS,
 	 "(f) - Set Material's artificial offset - [0.0, 10.0]"},
-	{"setHaloSize", ( PyCFunction ) Matr_oldsetHaloSize, METH_VARARGS,
+	{"setHaloSize", ( PyCFunction ) V24_Matr_oldsetHaloSize, METH_VARARGS,
 	 "(f) - Set Material's halo size - [0.0, 100.0]"},
-	{"setHaloSeed", ( PyCFunction ) Matr_oldsetHaloSeed, METH_VARARGS,
+	{"setHaloSeed", ( PyCFunction ) V24_Matr_oldsetHaloSeed, METH_VARARGS,
 	 "(i) - Set Material's halo seed - [0, 255]"},
-	{"setFlareSize", ( PyCFunction ) Matr_oldsetFlareSize, METH_VARARGS,
+	{"setFlareSize", ( PyCFunction ) V24_Matr_oldsetFlareSize, METH_VARARGS,
 	 "(f) - Set Material's factor: (flare size)/(halo size) - [0.1, 25.0]"},
-	{"setFlareSeed", ( PyCFunction ) Matr_oldsetFlareSeed, METH_VARARGS,
+	{"setFlareSeed", ( PyCFunction ) V24_Matr_oldsetFlareSeed, METH_VARARGS,
 	 "(i) - Set Material's flare seed - [0, 255]"},
-	{"setFlareBoost", ( PyCFunction ) Matr_oldsetFlareBoost, METH_VARARGS,
+	{"setFlareBoost", ( PyCFunction ) V24_Matr_oldsetFlareBoost, METH_VARARGS,
 	 "(f) - Set Material's flare boost - [0.1, 10.0]"},
-	{"setSubSize", ( PyCFunction ) Matr_oldsetSubSize, METH_VARARGS,
+	{"setSubSize", ( PyCFunction ) V24_Matr_oldsetSubSize, METH_VARARGS,
 	 "(f) - Set Material's dimension of subflare,"
 	 " dots and circles - [0.1, 25.0]"},
-	{"setHardness", ( PyCFunction ) Matr_oldsetHardness, METH_VARARGS,
+	{"setHardness", ( PyCFunction ) V24_Matr_oldsetHardness, METH_VARARGS,
 	 "(i) - Set Material's hardness - [1, 255 (127 if halo mode is ON)]"},
-	{"setNFlares", ( PyCFunction ) Matr_oldsetNFlares, METH_VARARGS,
+	{"setNFlares", ( PyCFunction ) V24_Matr_oldsetNFlares, METH_VARARGS,
 	 "(i) - Set Material's number of flares in halo - [1, 32]"},
-	{"setNStars", ( PyCFunction ) Matr_oldsetNStars, METH_VARARGS,
+	{"setNStars", ( PyCFunction ) V24_Matr_oldsetNStars, METH_VARARGS,
 	 "(i) - Set Material's number of stars in halo - [3, 50]"},
-	{"setNLines", ( PyCFunction ) Matr_oldsetNLines, METH_VARARGS,
+	{"setNLines", ( PyCFunction ) V24_Matr_oldsetNLines, METH_VARARGS,
 	 "(i) - Set Material's number of lines in halo - [0, 250]"},
-	{"setNRings", ( PyCFunction ) Matr_oldsetNRings, METH_VARARGS,
+	{"setNRings", ( PyCFunction ) V24_Matr_oldsetNRings, METH_VARARGS,
 	 "(i) - Set Material's number of rings in halo - [0, 24]"},
-	{"setRayMirr", ( PyCFunction ) Matr_oldsetRayMirr, METH_VARARGS,
+	{"setRayMirr", ( PyCFunction ) V24_Matr_oldsetRayMirr, METH_VARARGS,
 	 "(f) - Set amount mirror - [0.0, 1.0]"},
-	{"setMirrDepth", ( PyCFunction ) Matr_oldsetMirrDepth, METH_VARARGS,
+	{"setMirrDepth", ( PyCFunction ) V24_Matr_oldsetMirrDepth, METH_VARARGS,
 	 "(i) - Set amount inter-reflections - [0, 10]"},
-	{"setFresnelMirr", ( PyCFunction ) Matr_oldsetFresnelMirr, METH_VARARGS,
+	{"setFresnelMirr", ( PyCFunction ) V24_Matr_oldsetFresnelMirr, METH_VARARGS,
 	 "(f) - Set fresnel power for mirror - [0.0, 5.0]"},
-	{"setFresnelMirrFac", ( PyCFunction ) Matr_oldsetFresnelMirrFac, METH_VARARGS,
+	{"setFresnelMirrFac", ( PyCFunction ) V24_Matr_oldsetFresnelMirrFac, METH_VARARGS,
 	 "(f) - Set blend fac for mirror fresnel - [1.0, 5.0]"},
-	{"setFilter", ( PyCFunction ) Matr_oldsetFilter, METH_VARARGS,
+	{"setFilter", ( PyCFunction ) V24_Matr_oldsetFilter, METH_VARARGS,
 	 "(f) - Set the amount of filtering when transparent raytrace is enabled"},
-	{"setTranslucency", ( PyCFunction ) Matr_oldsetTranslucency, METH_VARARGS,
+	{"setTranslucency", ( PyCFunction ) V24_Matr_oldsetTranslucency, METH_VARARGS,
 	 "(f) - Set the Translucency, the amount of diffuse shading of the back side"},
-	{"setIOR", ( PyCFunction ) Matr_oldsetIOR, METH_VARARGS,
+	{"setIOR", ( PyCFunction ) V24_Matr_oldsetIOR, METH_VARARGS,
 	 "(f) - Set IOR - [1.0, 3.0]"},
-	{"setTransDepth", ( PyCFunction ) Matr_oldsetTransDepth, METH_VARARGS,
+	{"setTransDepth", ( PyCFunction ) V24_Matr_oldsetTransDepth, METH_VARARGS,
 	 "(i) - Set amount inter-refractions - [0, 10]"},
-	{"setFresnelTrans", ( PyCFunction ) Matr_oldsetFresnelTrans, METH_VARARGS,
+	{"setFresnelTrans", ( PyCFunction ) V24_Matr_oldsetFresnelTrans, METH_VARARGS,
 	 "(f) - Set fresnel power for refractions - [0.0, 5.0]"},
-	{"setFresnelTransFac", ( PyCFunction ) Matr_oldsetFresnelTransFac, METH_VARARGS,
+	{"setFresnelTransFac", ( PyCFunction ) V24_Matr_oldsetFresnelTransFac, METH_VARARGS,
 	 "(f) - Set fresnel power for refractions factor- [0.0, 5.0]"},
-	{"setTexture", ( PyCFunction ) Material_setTexture, METH_VARARGS,
+	{"setTexture", ( PyCFunction ) V24_Material_setTexture, METH_VARARGS,
 	 "(n,tex,texco=0,mapto=0) - Set numbered texture to tex"},
-	{"clearTexture", ( PyCFunction ) Material_clearTexture, METH_O,
+	{"clearTexture", ( PyCFunction ) V24_Material_clearTexture, METH_O,
 	 "(n) - Remove texture from numbered slot"},
-	{"getScriptLinks", ( PyCFunction ) Material_getScriptLinks, METH_O,
+	{"getScriptLinks", ( PyCFunction ) V24_Material_getScriptLinks, METH_O,
 	 "(eventname) - Get a list of this material's scriptlinks (Text names) "
 	 "of the given type\n"
 	 "(eventname) - string: FrameChanged, Redraw or Render."},
-	{"addScriptLink", ( PyCFunction ) Material_addScriptLink, METH_VARARGS,
+	{"addScriptLink", ( PyCFunction ) V24_Material_addScriptLink, METH_VARARGS,
 	 "(text, evt) - Add a new material scriptlink.\n"
 	 "(text) - string: an existing Blender Text name;\n"
 	 "(evt) string: FrameChanged, Redraw or Render."},
-	{"clearScriptLinks", ( PyCFunction ) Material_clearScriptLinks, METH_VARARGS,
+	{"clearScriptLinks", ( PyCFunction ) V24_Material_clearScriptLinks, METH_VARARGS,
 	 "() - Delete all scriptlinks from this material.\n"
 	 "([s1<,s2,s3...>]) - Delete specified scriptlinks from this material."},
-	{"__copy__", ( PyCFunction ) Material_copy, METH_NOARGS,
+	{"__copy__", ( PyCFunction ) V24_Material_copy, METH_NOARGS,
 	 "() - Return a copy of the material."},
-	{"copy", ( PyCFunction ) Material_copy, METH_NOARGS,
+	{"copy", ( PyCFunction ) V24_Material_copy, METH_NOARGS,
 	 "() - Return a copy of the material."},
 	{NULL, NULL, 0, NULL}
 };
@@ -864,336 +864,336 @@ static PyMethodDef BPy_Material_methods[] = {
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 
-static PyGetSetDef BPy_Material_getseters[] = {
+static PyGetSetDef V24_BPy_Material_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
 	{"add",
-	 (getter)Material_getAdd, (setter)Material_setAdd,
+	 (getter)V24_Material_getAdd, (setter)V24_Material_setAdd,
 	 "Strength of the add effect",
 	 NULL},
 	{"alpha",
-	 (getter)Material_getAlpha, (setter)Material_setAlpha,
+	 (getter)V24_Material_getAlpha, (setter)V24_Material_setAlpha,
 	 "Alpha setting ",
 	 NULL},
 	{"shadAlpha",
-	 (getter)Material_getShadAlpha, (setter)Material_setShadAlpha,
+	 (getter)V24_Material_getShadAlpha, (setter)V24_Material_setShadAlpha,
 	 "Shadow Alpha setting",
 	 NULL},
 	{"amb",
-	 (getter)Material_getAmb, (setter)Material_setAmb,
+	 (getter)V24_Material_getAmb, (setter)V24_Material_setAmb,
 	 "Amount of global ambient color material receives",
 	 NULL},
 	{"diffuseDarkness",
-	 (getter)Material_getDiffuseDarkness, (setter)Material_setDiffuseDarkness,
+	 (getter)V24_Material_getDiffuseDarkness, (setter)V24_Material_setDiffuseDarkness,
 	 "Material's diffuse darkness (\"Minnaert\" diffuse shader only)",
 	 NULL},
 	{"diffuseShader",
-	 (getter)Material_getDiffuseShader, (setter)Material_setDiffuseShader,
+	 (getter)V24_Material_getDiffuseShader, (setter)V24_Material_setDiffuseShader,
 	 "Diffuse shader type",
 	 NULL},
 	{"diffuseSize",
-	 (getter)Material_getDiffuseSize, (setter)Material_setDiffuseSize,
+	 (getter)V24_Material_getDiffuseSize, (setter)V24_Material_setDiffuseSize,
 	 "Material's diffuse area size (\"Toon\" diffuse shader only)",
 	 NULL},
 	{"diffuseSmooth",
-	 (getter)Material_getDiffuseSmooth, (setter)Material_setDiffuseSmooth,
+	 (getter)V24_Material_getDiffuseSmooth, (setter)V24_Material_setDiffuseSmooth,
 	 "Material's diffuse area smoothing (\"Toon\" diffuse shader only)",
 	 NULL},
 	{"emit",
-	 (getter)Material_getEmit, (setter)Material_setEmit,
+	 (getter)V24_Material_getEmit, (setter)V24_Material_setEmit,
 	 "Amount of light the material emits",
 	 NULL},
 	{"filter",
-	 (getter)Material_getFilter, (setter)Material_setFilter,
+	 (getter)V24_Material_getFilter, (setter)V24_Material_setFilter,
 	 "Amount of filtering when transparent raytrace is enabled",
 	 NULL},
 	{"flareBoost",
-	 (getter)Material_getFlareBoost, (setter)Material_setFlareBoost,
+	 (getter)V24_Material_getFlareBoost, (setter)V24_Material_setFlareBoost,
 	 "Flare's extra strength",
 	 NULL},
 	{"flareSeed",
-	 (getter)Material_getFlareSeed, (setter)Material_setFlareSeed,
+	 (getter)V24_Material_getFlareSeed, (setter)V24_Material_setFlareSeed,
 	 "Offset in the flare seed table",
 	 NULL},
 	{"flareSize",
-	 (getter)Material_getFlareSize, (setter)Material_setFlareSize,
+	 (getter)V24_Material_getFlareSize, (setter)V24_Material_setFlareSize,
 	 "Ratio of flare size to halo size",
 	 NULL},
 	{"fresnelDepth",
-	 (getter)Material_getFresnelMirr, (setter)Material_setFresnelMirr,
+	 (getter)V24_Material_getFresnelMirr, (setter)V24_Material_setFresnelMirr,
 	 "Power of Fresnel for mirror reflection",
 	 NULL},
 	{"fresnelDepthFac",
-	 (getter)Material_getFresnelMirrFac, (setter)Material_setFresnelMirrFac,
+	 (getter)V24_Material_getFresnelMirrFac, (setter)V24_Material_setFresnelMirrFac,
 	 "Blending factor for Fresnel mirror",
 	 NULL},
 	{"fresnelTrans",
-	 (getter)Material_getFresnelTrans, (setter)Material_setFresnelTrans,
+	 (getter)V24_Material_getFresnelTrans, (setter)V24_Material_setFresnelTrans,
 	 "Power of Fresnel for transparency",
 	 NULL},
 	{"fresnelTransFac",
-	 (getter)Material_getFresnelTransFac, (setter)Material_setFresnelTransFac,
+	 (getter)V24_Material_getFresnelTransFac, (setter)V24_Material_setFresnelTransFac,
 	 "Blending factor for Fresnel transparency",
 	 NULL},
 	 {"rbFriction",
-	 (getter)Material_getRigidBodyFriction, (setter)Material_setRigidBodyFriction,
+	 (getter)V24_Material_getRigidBodyFriction, (setter)V24_Material_setRigidBodyFriction,
 	 "Rigid Body Friction coefficient",
 	 NULL},
 	 {"rbRestitution",
-	 (getter)Material_getRigidBodyRestitution, (setter)Material_setRigidBodyRestitution,
+	 (getter)V24_Material_getRigidBodyRestitution, (setter)V24_Material_setRigidBodyRestitution,
 	 "Rigid Body Restitution coefficient",
 	 NULL},
 
 	{"haloSeed",
-	 (getter)Material_getHaloSeed, (setter)Material_setHaloSeed,
+	 (getter)V24_Material_getHaloSeed, (setter)V24_Material_setHaloSeed,
 	 "Randomizes halo ring dimension and line location",
 	 NULL},
 	{"haloSize",
-	 (getter)Material_getHaloSize, (setter)Material_setHaloSize,
+	 (getter)V24_Material_getHaloSize, (setter)V24_Material_setHaloSize,
 	 "Dimension of the halo",
 	 NULL},
 	{"hard",
-	 (getter)Material_getHardness, (setter)Material_setHardness,
+	 (getter)V24_Material_getHardness, (setter)V24_Material_setHardness,
 	 "Specularity hardness",
 	 NULL},
 	{"IOR",
-	 (getter)Material_getIOR, (setter)Material_setIOR,
+	 (getter)V24_Material_getIOR, (setter)V24_Material_setIOR,
 	 "Angular index of refraction for raytrace",
 	 NULL},
 	{"ipo",
-	 (getter)Material_getIpo, (setter)Material_setIpo,
+	 (getter)V24_Material_getIpo, (setter)V24_Material_setIpo,
 	 "Material Ipo data",
 	 NULL},
 	{"mirCol",
-	 (getter)Material_getMirCol, (setter)Material_setMirCol,
+	 (getter)V24_Material_getMirCol, (setter)V24_Material_setMirCol,
 	 "Mirror RGB color triplet",
 	 NULL},
 	{"mirR",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "Mirror color red component",
 	 (void *) EXPP_MAT_COMP_MIRR },
 	{"mirG",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "Mirror color green component",
 	 (void *) EXPP_MAT_COMP_MIRG },
 	{"mirB",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "Mirror color blue component",
 	 (void *) EXPP_MAT_COMP_MIRB },
 	{"sssCol",
-	 (getter)Material_getSssCol, (setter)Material_setSssCol,
+	 (getter)V24_Material_getSssCol, (setter)V24_Material_setSssCol,
 	 "Sss RGB color triplet",
 	 NULL},
 	{"sssR",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "SSS color red component",
 	 (void *) EXPP_MAT_COMP_SSSR },
 	{"sssG",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "SSS color green component",
 	 (void *) EXPP_MAT_COMP_SSSG },
 	{"sssB",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "SSS color blue component",
 	 (void *) EXPP_MAT_COMP_SSSB },
 	{"mode",
-	 (getter)Material_getMode, (setter)Material_setMode,
+	 (getter)V24_Material_getMode, (setter)V24_Material_setMode,
 	 "Material mode bitmask",
 	 NULL},
 	{"nFlares",
-	 (getter)Material_getNFlares, (setter)Material_setNFlares,
+	 (getter)V24_Material_getNFlares, (setter)V24_Material_setNFlares,
 	 "Number of subflares with halo",
 	 NULL},
 	{"nLines",
-	 (getter)Material_getNLines, (setter)Material_setNLines,
+	 (getter)V24_Material_getNLines, (setter)V24_Material_setNLines,
 	 "Number of star-shaped lines with halo",
 	 NULL},
 	{"nRings",
-	 (getter)Material_getNRings, (setter)Material_setNRings,
+	 (getter)V24_Material_getNRings, (setter)V24_Material_setNRings,
 	 "Number of rings with halo",
 	 NULL},
 	{"nStars",
-	 (getter)Material_getNStars, (setter)Material_setNStars,
+	 (getter)V24_Material_getNStars, (setter)V24_Material_setNStars,
 	 "Number of star points with halo",
 	 NULL},
 	{"rayMirr",
-	 (getter)Material_getRayMirr, (setter)Material_setRayMirr,
+	 (getter)V24_Material_getRayMirr, (setter)V24_Material_setRayMirr,
 	 "Mirror reflection amount for raytrace",
 	 NULL},
 	{"rayMirrDepth",
-	 (getter)Material_getMirrDepth, (setter)Material_setMirrDepth,
+	 (getter)V24_Material_getMirrDepth, (setter)V24_Material_setMirrDepth,
 	 "Amount of raytrace inter-reflections",
 	 NULL},
 	{"ref",
-	 (getter)Material_getRef, (setter)Material_setRef,
+	 (getter)V24_Material_getRef, (setter)V24_Material_setRef,
 	 "Amount of reflections (for shader)",
 	 NULL},
 	{"refracIndex",
-	 (getter)Material_getRefracIndex, (setter)Material_setRefracIndex,
+	 (getter)V24_Material_getRefracIndex, (setter)V24_Material_setRefracIndex,
 	 "Material's Index of Refraction (applies to the \"Blinn\" Specular Shader only",
 	 NULL},
 	{"rgbCol",
-	 (getter)Material_getRGBCol, (setter)Material_setRGBCol,
+	 (getter)V24_Material_getRGBCol, (setter)V24_Material_setRGBCol,
 	 "Diffuse RGB color triplet",
 	 NULL},
 	{"rms",
-	 (getter)Material_getRms, (setter)Material_setRms,
+	 (getter)V24_Material_getRms, (setter)V24_Material_setRms,
 	 "Material's surface slope standard deviation (\"WardIso\" specular shader only)",
 	 NULL},
 	{"roughness",
-	 (getter)Material_getRoughness, (setter)Material_setRoughness,
+	 (getter)V24_Material_getRoughness, (setter)V24_Material_setRoughness,
 	 "Material's roughness (\"Oren Nayar\" diffuse shader only)",
 	 NULL},
 	{"spec",
-	 (getter)Material_getSpec, (setter)Material_setSpec,
+	 (getter)V24_Material_getSpec, (setter)V24_Material_setSpec,
 	 "Degree of specularity",
 	 NULL},
 	{"specCol",
-	 (getter)Material_getSpecCol, (setter)Material_setSpecCol,
+	 (getter)V24_Material_getSpecCol, (setter)V24_Material_setSpecCol,
 	 "Specular RGB color triplet",
 	 NULL},
 	{"specR",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "Specular color red component",
 	 (void *) EXPP_MAT_COMP_SPECR },
 	{"specG",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "Specular color green component",
 	 (void *) EXPP_MAT_COMP_SPECG },
 	{"specB",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "Specular color blue component",
 	 (void *) EXPP_MAT_COMP_SPECB },
 	{"specTransp",
-	 (getter)Material_getSpecTransp, (setter)Material_setSpecTransp,
+	 (getter)V24_Material_getSpecTransp, (setter)V24_Material_setSpecTransp,
 	 "Makes specular areas opaque on transparent materials",
 	 NULL},
 	{"specShader",
-	 (getter)Material_getSpecShader, (setter)Material_setSpecShader,
+	 (getter)V24_Material_getSpecShader, (setter)V24_Material_setSpecShader,
 	 "Specular shader type",
 	 NULL},
 	{"specSize",
-	 (getter)Material_getSpecSize, (setter)Material_setSpecSize,
+	 (getter)V24_Material_getSpecSize, (setter)V24_Material_setSpecSize,
 	 "Material's specular area size (\"Toon\" specular shader only)",
 	 NULL},
 	{"specSmooth",
-	 (getter)Material_getSpecSmooth, (setter)Material_setSpecSmooth,
+	 (getter)V24_Material_getSpecSmooth, (setter)V24_Material_setSpecSmooth,
 	 "Sets the smoothness of specular toon area",
 	 NULL},
 	{"subSize",
-	 (getter)Material_getSubSize, (setter)Material_setSubSize,
+	 (getter)V24_Material_getSubSize, (setter)V24_Material_setSubSize,
 	 "Dimension of subflares, dots and circles",
 	 NULL},
 	{"transDepth",
-	 (getter)Material_getTransDepth, (setter)Material_setTransDepth,
+	 (getter)V24_Material_getTransDepth, (setter)V24_Material_setTransDepth,
 	 "Amount of refractions for raytrace",
 	 NULL},
 	{"translucency",
-	 (getter)Material_getTranslucency, (setter)Material_setTranslucency,
+	 (getter)V24_Material_getTranslucency, (setter)V24_Material_setTranslucency,
 	 "Amount of diffuse shading of the back side",
 	 NULL},
 	{"zOffset",
-	 (getter)Material_getZOffset, (setter)Material_setZOffset,
+	 (getter)V24_Material_getZOffset, (setter)V24_Material_setZOffset,
 	 "Artificial offset in the Z buffer (for Ztransp option)",
 	 NULL},
 	{"lightGroup",
-	 (getter)Material_getLightGroup, (setter)Material_setLightGroup,
+	 (getter)V24_Material_getLightGroup, (setter)V24_Material_setLightGroup,
 	 "Set the light group for this material",
 	 NULL},
 	{"R",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "Diffuse color red component",
 	 (void *) EXPP_MAT_COMP_R },
 	{"G",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "Diffuse color green component",
 	 (void *) EXPP_MAT_COMP_G },
 	{"B",
-	 (getter)Material_getColorComponent, (setter)Material_setColorComponent,
+	 (getter)V24_Material_getColorComponent, (setter)V24_Material_setColorComponent,
 	 "Diffuse color blue component",
 	 (void *) EXPP_MAT_COMP_B },
 	{"colorbandDiffuse",
-	 (getter)Material_getColorband, (setter)Material_setColorband,
+	 (getter)V24_Material_getColorband, (setter)V24_Material_setColorband,
 	 "The diffuse colorband for this material",
 	 (void *) 0},
 	{"colorbandSpecular",
-	 (getter)Material_getColorband, (setter)Material_setColorband,
+	 (getter)V24_Material_getColorband, (setter)V24_Material_setColorband,
 	 "The specular colorband for this material",
 	 (void *) 1},
 	
 	/* SSS settings */
 	{"enableSSS",
-	 (getter)Material_getSssEnable, (setter)Material_setSssEnable,
+	 (getter)V24_Material_getSssEnable, (setter)V24_Material_setSssEnable,
 	 "if true, SSS will be rendered for this material",
 	 NULL},
 	{"sssScale",
-	 (getter)Material_getSssScale, (setter)Material_setSssScale,
+	 (getter)V24_Material_getSssScale, (setter)V24_Material_setSssScale,
 	 "object scale for sss",
 	 NULL},
 	{"sssRadiusRed",
-	 (getter)Material_getSssRadius, (setter)Material_setSssRadius,
+	 (getter)V24_Material_getSssRadius, (setter)V24_Material_setSssRadius,
 	 "Mean red scattering path length",
 	 (void *) 0},
 	{"sssRadiusGreen",
-	 (getter)Material_getSssRadius, (setter)Material_setSssRadius,
+	 (getter)V24_Material_getSssRadius, (setter)V24_Material_setSssRadius,
 	 "Mean red scattering path length",
 	 (void *) 1},
 	{"sssRadiusBlue",
-	 (getter)Material_getSssRadius, (setter)Material_setSssRadius,
+	 (getter)V24_Material_getSssRadius, (setter)V24_Material_setSssRadius,
 	 "Mean red scattering path length",
 	 (void *) 0},
 	{"sssIOR",
-	 (getter)Material_getSssIOR, (setter)Material_setSssIOR,
+	 (getter)V24_Material_getSssIOR, (setter)V24_Material_setSssIOR,
 	 "index of refraction",
 	 NULL},
 	{"sssError",
-	 (getter)Material_getSssError, (setter)Material_setSssError,
+	 (getter)V24_Material_getSssError, (setter)V24_Material_setSssError,
 	 "Error",
 	 NULL},
 	{"sssColorBlend",
-	 (getter)Material_getSssColorBlend, (setter)Material_setSssColorBlend,
+	 (getter)V24_Material_getSssColorBlend, (setter)V24_Material_setSssColorBlend,
 	 "Blend factor for SSS Colors",
 	 NULL},
 	{"sssTextureScatter",
-	 (getter)Material_getSssTexScatter, (setter)Material_setSssTexScatter,
+	 (getter)V24_Material_getSssTexScatter, (setter)V24_Material_setSssTexScatter,
 	 "Texture scattering factor",
 	 NULL},
 	{"sssFont",
-	 (getter)Material_getSssFront, (setter)Material_setSssFront,
+	 (getter)V24_Material_getSssFront, (setter)V24_Material_setSssFront,
 	 "Front scattering weight",
 	 NULL},
 	{"sssBack",
-	 (getter)Material_getSssBack, (setter)Material_setSssBack,
+	 (getter)V24_Material_getSssBack, (setter)V24_Material_setSssBack,
 	 "Back scattering weight",
 	 NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
 /*****************************************************************************/
-/* Python Material_Type callback function prototypes: */
+/* Python V24_Material_Type callback function prototypes: */
 /*****************************************************************************/
-static void Material_dealloc( BPy_Material * self );
-static int Material_compare( BPy_Material * a, BPy_Material * b);
-static PyObject *Material_repr( BPy_Material * self );
+static void V24_Material_dealloc( V24_BPy_Material * self );
+static int V24_Material_compare( V24_BPy_Material * a, V24_BPy_Material * b);
+static PyObject *V24_Material_repr( V24_BPy_Material * self );
 
 /*****************************************************************************/
-/* Python Material_Type structure definition:                                */
+/* Python V24_Material_Type structure definition:                                */
 /*****************************************************************************/
-PyTypeObject Material_Type = {
+PyTypeObject V24_Material_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Material",         /* char *tp_name; */
-	sizeof( BPy_Material ),     /* int tp_basicsize; */
+	sizeof( V24_BPy_Material ),     /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	( destructor ) Material_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_Material_dealloc,/* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Material_compare,/* cmpfunc tp_compare; */
-	( reprfunc ) Material_repr, /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Material_compare,/* cmpfunc tp_compare; */
+	( reprfunc ) V24_Material_repr, /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -1203,7 +1203,7 @@ PyTypeObject Material_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -1236,9 +1236,9 @@ PyTypeObject Material_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Material_methods,       /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Material_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Material_getseters,     /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Material_getseters,     /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -1261,11 +1261,11 @@ PyTypeObject Material_Type = {
 };
 
 /*****************************************************************************/
-/* Function:	Material_dealloc          */
-/* Description: This is a callback function for the BPy_Material type. It is */
+/* Function:	V24_Material_dealloc          */
+/* Description: This is a callback function for the V24_BPy_Material type. It is */
 /*		the destructor function.				 */
 /*****************************************************************************/
-static void Material_dealloc( BPy_Material * self )
+static void V24_Material_dealloc( V24_BPy_Material * self )
 {
 	Py_DECREF( self->col );
 	Py_DECREF( self->amb );
@@ -1276,21 +1276,21 @@ static void Material_dealloc( BPy_Material * self )
 }
 
 /*****************************************************************************/
-/* Function:	Material_CreatePyObject		*/
-/* Description: Create a new BPy_Material from an  existing */
+/* Function:	V24_Material_CreatePyObject		*/
+/* Description: Create a new V24_BPy_Material from an  existing */
 /*		 Blender material structure.	 */
 /*****************************************************************************/
-PyObject *Material_CreatePyObject( struct Material *mat )
+PyObject *V24_Material_CreatePyObject( struct Material *mat )
 {
-	BPy_Material *pymat;
+	V24_BPy_Material *pymat;
 	float *col[3], *amb[3], *spec[3], *mir[3], *sss[3];
 
-	pymat = ( BPy_Material * ) PyObject_NEW( BPy_Material,
-						 &Material_Type );
+	pymat = ( V24_BPy_Material * ) PyObject_NEW( V24_BPy_Material,
+						 &V24_Material_Type );
 
 	if( !pymat )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "couldn't create BPy_Material object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "couldn't create V24_BPy_Material object" );
 
 	pymat->material = mat;
 
@@ -1314,328 +1314,328 @@ PyObject *Material_CreatePyObject( struct Material *mat )
 	sss[1] = &mat->sss_col[1];
 	sss[2] = &mat->sss_col[2];
 
-	pymat->col = ( BPy_rgbTuple * ) rgbTuple_New( col );
-	pymat->amb = ( BPy_rgbTuple * ) rgbTuple_New( amb );
-	pymat->spec = ( BPy_rgbTuple * ) rgbTuple_New( spec );
-	pymat->mir = ( BPy_rgbTuple * ) rgbTuple_New( mir );
-	pymat->sss = ( BPy_rgbTuple * ) rgbTuple_New( sss );
+	pymat->col = ( V24_BPy_rgbTuple * ) rgbTuple_New( col );
+	pymat->amb = ( V24_BPy_rgbTuple * ) rgbTuple_New( amb );
+	pymat->spec = ( V24_BPy_rgbTuple * ) rgbTuple_New( spec );
+	pymat->mir = ( V24_BPy_rgbTuple * ) rgbTuple_New( mir );
+	pymat->sss = ( V24_BPy_rgbTuple * ) rgbTuple_New( sss );
 
 	return ( PyObject * ) pymat;
 }
 
 /*****************************************************************************/
-/* Function:		Material_FromPyObject	 */
+/* Function:		V24_Material_FromPyObject	 */
 /* Description: This function returns the Blender material from the given */
 /*		PyObject.	 */
 /*****************************************************************************/
-Material *Material_FromPyObject( PyObject * pyobj )
+Material *V24_Material_FromPyObject( PyObject * pyobj )
 {
-	return ( ( BPy_Material * ) pyobj )->material;
+	return ( ( V24_BPy_Material * ) pyobj )->material;
 }
 
-static PyObject *Material_getIpo( BPy_Material * self )
+static PyObject *V24_Material_getIpo( V24_BPy_Material * self )
 {
 	Ipo *ipo = self->material->ipo;
 
 	if( !ipo )
 		Py_RETURN_NONE;
 
-	return Ipo_CreatePyObject( ipo );
+	return V24_Ipo_CreatePyObject( ipo );
 }
 
-static PyObject *Material_getMode( BPy_Material * self )
+static PyObject *V24_Material_getMode( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->mode );
 }
 
-static PyObject *Material_getRGBCol( BPy_Material * self )
+static PyObject *V24_Material_getRGBCol( V24_BPy_Material * self )
 {
 	return rgbTuple_getCol( self->col );
 }
 
 /*
-static PyObject *Material_getAmbCol(BPy_Material *self)
+static PyObject *Material_getAmbCol(V24_BPy_Material *self)
 {
 	return rgbTuple_getCol(self->amb);
 }
 */
-static PyObject *Material_getSpecCol( BPy_Material * self )
+static PyObject *V24_Material_getSpecCol( V24_BPy_Material * self )
 {
 	return rgbTuple_getCol( self->spec );
 }
 
-static PyObject *Material_getMirCol( BPy_Material * self )
+static PyObject *V24_Material_getMirCol( V24_BPy_Material * self )
 {
 	return rgbTuple_getCol( self->mir );
 }
 
-static PyObject *Material_getSssCol( BPy_Material * self )
+static PyObject *V24_Material_getSssCol( V24_BPy_Material * self )
 {
 	return rgbTuple_getCol( self->sss );
 }
 
-static PyObject *Material_getSpecShader( BPy_Material * self )
+static PyObject *V24_Material_getSpecShader( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->spec_shader );
 }
 
-static PyObject *Material_getDiffuseShader( BPy_Material * self )
+static PyObject *V24_Material_getDiffuseShader( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->diff_shader );
 }
 
-static PyObject *Material_getRoughness( BPy_Material * self )
+static PyObject *V24_Material_getRoughness( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->roughness );
 }
 
-static PyObject *Material_getSpecSize( BPy_Material * self )
+static PyObject *V24_Material_getSpecSize( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->param[2] );
 }
 
-static PyObject *Material_getDiffuseSize( BPy_Material * self )
+static PyObject *V24_Material_getDiffuseSize( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->param[0] );
 }
 
-static PyObject *Material_getSpecSmooth( BPy_Material * self )
+static PyObject *V24_Material_getSpecSmooth( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->param[3] );
 }
 
-static PyObject *Material_getDiffuseSmooth( BPy_Material * self )
+static PyObject *V24_Material_getDiffuseSmooth( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->param[1] );
 }
 
-static PyObject *Material_getDiffuseDarkness( BPy_Material * self )
+static PyObject *V24_Material_getDiffuseDarkness( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->darkness );
 }
 
-static PyObject *Material_getRefracIndex( BPy_Material * self )
+static PyObject *V24_Material_getRefracIndex( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->refrac );
 }
 	
-static PyObject *Material_getRms( BPy_Material * self )
+static PyObject *V24_Material_getRms( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->rms );
 }
 
-static PyObject *Material_getAmb( BPy_Material * self )
+static PyObject *V24_Material_getAmb( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->amb );
 }
 
-static PyObject *Material_getEmit( BPy_Material * self )
+static PyObject *V24_Material_getEmit( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->emit );
 }
 
-static PyObject *Material_getAlpha( BPy_Material * self )
+static PyObject *V24_Material_getAlpha( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->alpha );
 }
 
-static PyObject *Material_getShadAlpha( BPy_Material * self )
+static PyObject *V24_Material_getShadAlpha( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->shad_alpha );
 }
 
-static PyObject *Material_getRef( BPy_Material * self )
+static PyObject *V24_Material_getRef( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->ref );
 }
 
-static PyObject *Material_getSpec( BPy_Material * self )
+static PyObject *V24_Material_getSpec( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->spec );
 }
 
-static PyObject *Material_getSpecTransp( BPy_Material * self )
+static PyObject *V24_Material_getSpecTransp( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->spectra );
 }
 
-static PyObject *Material_getAdd( BPy_Material * self )
+static PyObject *V24_Material_getAdd( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->add );
 }
 
-static PyObject *Material_getZOffset( BPy_Material * self )
+static PyObject *V24_Material_getZOffset( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->zoffs );
 }
 
-static PyObject *Material_getLightGroup( BPy_Material * self )
+static PyObject *V24_Material_getLightGroup( V24_BPy_Material * self )
 {
-	return Group_CreatePyObject( self->material->group );
+	return V24_Group_CreatePyObject( self->material->group );
 }
 
-static PyObject *Material_getHaloSize( BPy_Material * self )
+static PyObject *V24_Material_getHaloSize( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->hasize );
 }
 
-static PyObject *Material_getFlareSize( BPy_Material * self )
+static PyObject *V24_Material_getFlareSize( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->flaresize );
 }
 
-static PyObject *Material_getFlareBoost( BPy_Material * self )
+static PyObject *V24_Material_getFlareBoost( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->flareboost );
 }
 
-static PyObject *Material_getSubSize( BPy_Material * self )
+static PyObject *V24_Material_getSubSize( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->subsize );
 }
 
-static PyObject *Material_getHaloSeed( BPy_Material * self )
+static PyObject *V24_Material_getHaloSeed( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->seed1 );
 }
 
-static PyObject *Material_getFlareSeed( BPy_Material * self )
+static PyObject *V24_Material_getFlareSeed( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->seed2 );
 }
 
-static PyObject *Material_getHardness( BPy_Material * self )
+static PyObject *V24_Material_getHardness( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->har );
 }
 
-static PyObject *Material_getNFlares( BPy_Material * self )
+static PyObject *V24_Material_getNFlares( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->flarec );
 }
 
-static PyObject *Material_getNStars( BPy_Material * self )
+static PyObject *V24_Material_getNStars( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->starc );
 }
 
-static PyObject *Material_getNLines( BPy_Material * self )
+static PyObject *V24_Material_getNLines( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->linec );
 }
 
-static PyObject *Material_getNRings( BPy_Material * self )
+static PyObject *V24_Material_getNRings( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->ringc );
 }
 
-static PyObject *Material_getRayMirr( BPy_Material * self )
+static PyObject *V24_Material_getRayMirr( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->ray_mirror );
 }
 
-static PyObject *Material_getMirrDepth( BPy_Material * self )
+static PyObject *V24_Material_getMirrDepth( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->ray_depth );
 }
 
-static PyObject *Material_getFresnelMirr( BPy_Material * self )
+static PyObject *V24_Material_getFresnelMirr( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->fresnel_mir );
 }
 
-static PyObject *Material_getFresnelMirrFac( BPy_Material * self )
+static PyObject *V24_Material_getFresnelMirrFac( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->fresnel_mir_i );
 }
 
-static PyObject *Material_getFilter( BPy_Material * self )
+static PyObject *V24_Material_getFilter( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->filter );
 }
 
-static PyObject *Material_getTranslucency( BPy_Material * self )
+static PyObject *V24_Material_getTranslucency( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->translucency );
 }
 
-static PyObject *Material_getIOR( BPy_Material * self )
+static PyObject *V24_Material_getIOR( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->ang );
 }
 
-static PyObject *Material_getTransDepth( BPy_Material * self )
+static PyObject *V24_Material_getTransDepth( V24_BPy_Material * self )
 {
 	return PyInt_FromLong( ( long ) self->material->ray_depth_tra );
 }
 
-static PyObject *Material_getFresnelTrans( BPy_Material * self )
+static PyObject *V24_Material_getFresnelTrans( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->fresnel_tra );
 }
 
-static PyObject *Material_getFresnelTransFac( BPy_Material * self )
+static PyObject *V24_Material_getFresnelTransFac( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->fresnel_tra_i );
 }
 
-static PyObject* Material_getRigidBodyFriction( BPy_Material * self )
+static PyObject* V24_Material_getRigidBodyFriction( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->friction );
 }
 
-static PyObject* Material_getRigidBodyRestitution( BPy_Material * self )
+static PyObject* V24_Material_getRigidBodyRestitution( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->reflect );
 }
 
 /* SSS */
-static PyObject* Material_getSssEnable( BPy_Material * self )
+static PyObject* V24_Material_getSssEnable( V24_BPy_Material * self )
 {
-	return EXPP_getBitfield( &self->material->sss_flag, MA_DIFF_SSS, 'h' );
+	return V24_EXPP_getBitfield( &self->material->sss_flag, MA_DIFF_SSS, 'h' );
 }
 
-static PyObject* Material_getSssScale( BPy_Material * self )
+static PyObject* V24_Material_getSssScale( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->sss_scale );
 }
 
-static PyObject* Material_getSssRadius( BPy_Material * self, void * type )
+static PyObject* V24_Material_getSssRadius( V24_BPy_Material * self, void * type )
 {
 	return PyFloat_FromDouble( ( double ) (self->material->sss_radius[(int)type]) );
 }
 
-static PyObject* Material_getSssIOR( BPy_Material * self )
+static PyObject* V24_Material_getSssIOR( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->sss_ior);
 }
 
-static PyObject* Material_getSssError( BPy_Material * self )
+static PyObject* V24_Material_getSssError( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->sss_error);
 }
 
-static PyObject* Material_getSssColorBlend( BPy_Material * self )
+static PyObject* V24_Material_getSssColorBlend( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->sss_colfac);
 }
 
-static PyObject* Material_getSssTexScatter( BPy_Material * self )
+static PyObject* V24_Material_getSssTexScatter( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->sss_texfac);
 }
 
-static PyObject* Material_getSssFront( BPy_Material * self )
+static PyObject* V24_Material_getSssFront( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->sss_front);
 }
 
-static PyObject* Material_getSssBack( BPy_Material * self )
+static PyObject* V24_Material_getSssBack( V24_BPy_Material * self )
 {
 	return PyFloat_FromDouble( ( double ) self->material->sss_back);
 }
 
-static PyObject *Material_getTextures( BPy_Material * self )
+static PyObject *V24_Material_getTextures( V24_BPy_Material * self )
 {
 	int i;
 	struct MTex *mtex;
@@ -1647,7 +1647,7 @@ static PyObject *Material_getTextures( BPy_Material * self )
 		mtex = self->material->mtex[i];
 
 		if( mtex ) {
-			t[i] = MTex_CreatePyObject( mtex );
+			t[i] = V24_MTex_CreatePyObject( mtex );
 		} else {
 			Py_INCREF( Py_None );
 			t[i] = Py_None;
@@ -1658,34 +1658,34 @@ static PyObject *Material_getTextures( BPy_Material * self )
 	tuple = Py_BuildValue( "NNNNNNNNNN", t[0], t[1], t[2], t[3],
 			       t[4], t[5], t[6], t[7], t[8], t[9] );
 	if( !tuple )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "Material_getTextures: couldn't create PyTuple" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "V24_Material_getTextures: couldn't create PyTuple" );
 
 	return tuple;
 }
 
 /*
  * this should accept a Py_None argument and just delete the Ipo link
- * (as Lamp_clearIpo() does)
+ * (as V24_Lamp_clearIpo() does)
  */
 
-static int Material_setIpo( BPy_Material * self, PyObject * value )
+static int V24_Material_setIpo( V24_BPy_Material * self, PyObject * value )
 {
-	return GenericLib_assignData(value, (void **) &self->material->ipo, 0, 1, ID_IP, ID_MA);
+	return V24_GenericLib_assignData(value, (void **) &self->material->ipo, 0, 1, ID_IP, ID_MA);
 }
 
 
 /* 
- *  Material_insertIpoKey( key )
+ *  V24_Material_insertIpoKey( key )
  *   inserts Material IPO key at current frame
  */
 
-static PyObject *Material_insertIpoKey( BPy_Material * self, PyObject * args )
+static PyObject *V24_Material_insertIpoKey( V24_BPy_Material * self, PyObject * args )
 {
     int key = 0, map;
     
 	if( !PyArg_ParseTuple( args, "i", &( key ) ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected int argument" ) ); 
     				
 	map = texchannel_to_adrcode(self->material->texact);
@@ -1746,27 +1746,27 @@ static PyObject *Material_insertIpoKey( BPy_Material * self, PyObject * args )
 	}
 
 	allspace(REMAKEIPO, 0);
-	EXPP_allqueue(REDRAWIPO, 0);
-	EXPP_allqueue(REDRAWVIEW3D, 0);
-	EXPP_allqueue(REDRAWACTION, 0);
-	EXPP_allqueue(REDRAWNLA, 0);
+	V24_EXPP_allqueue(REDRAWIPO, 0);
+	V24_EXPP_allqueue(REDRAWVIEW3D, 0);
+	V24_EXPP_allqueue(REDRAWACTION, 0);
+	V24_EXPP_allqueue(REDRAWNLA, 0);
 
 	Py_RETURN_NONE;
 }
 
-static int Material_setMode( BPy_Material * self, PyObject * value )
+static int V24_Material_setMode( V24_BPy_Material * self, PyObject * value )
 {
 	int param;
 
 	if( !PyInt_Check( value ) ) {
 		char errstr[128];
 		sprintf ( errstr , "expected int bitmask of 0x%08x", MA_MODE_MASK );
-		return EXPP_ReturnIntError( PyExc_TypeError, errstr );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, errstr );
 	}
 	param = PyInt_AS_LONG ( value );
 
 	if ( ( param & MA_MODE_MASK ) != param )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 						"invalid bit(s) set in mask" );
 
 	self->material->mode &= ( MA_RAMP_COL | MA_RAMP_SPEC );
@@ -1775,44 +1775,44 @@ static int Material_setMode( BPy_Material * self, PyObject * value )
 	return 0;
 }
 
-static int Material_setRGBCol( BPy_Material * self, PyObject * value )
+static int V24_Material_setRGBCol( V24_BPy_Material * self, PyObject * value )
 {
 	return rgbTuple_setCol( self->col, value );
 }
 
 /*
-static PyObject *Material_setAmbCol (BPy_Material *self, PyObject * value )
+static PyObject *Material_setAmbCol (V24_BPy_Material *self, PyObject * value )
 {
 	return rgbTuple_setCol(self->amb, value);
 }
 */
 
-static int Material_setSpecCol( BPy_Material * self, PyObject * value )
+static int V24_Material_setSpecCol( V24_BPy_Material * self, PyObject * value )
 {
 	return rgbTuple_setCol( self->spec, value );
 }
 
-static int Material_setMirCol( BPy_Material * self, PyObject * value )
+static int V24_Material_setMirCol( V24_BPy_Material * self, PyObject * value )
 {
 	return rgbTuple_setCol( self->mir, value );
 }
 
-static int Material_setSssCol( BPy_Material * self, PyObject * value )
+static int V24_Material_setSssCol( V24_BPy_Material * self, PyObject * value )
 {
 	return rgbTuple_setCol( self->sss, value );
 }
 
-static int Material_setColorComponent( BPy_Material * self, PyObject * value,
+static int V24_Material_setColorComponent( V24_BPy_Material * self, PyObject * value,
 							void * closure )
 {
 	float param;
 
 	if( !PyNumber_Check ( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"expected float argument in [0.0,1.0]" );
 
 	param = (float)PyFloat_AsDouble( value );
-	param = EXPP_ClampFloat( param, EXPP_MAT_COL_MIN, EXPP_MAT_COL_MAX );
+	param = V24_EXPP_ClampFloat( param, EXPP_MAT_COL_MIN, EXPP_MAT_COL_MAX );
 
 	switch ( (int)closure ) {
 	case EXPP_MAT_COMP_R:
@@ -1852,223 +1852,223 @@ static int Material_setColorComponent( BPy_Material * self, PyObject * value,
 		self->material->sss_col[2] = param;
 		return 0;
 	}
-	return EXPP_ReturnIntError( PyExc_RuntimeError,
+	return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"unknown color component specified" );
 }
 
-/*#define setFloatWrapper(val, min, max) {return EXPP_setFloatClamped ( value, &self->material->#val, #min, #max}*/
+/*#define setFloatWrapper(val, min, max) {return V24_EXPP_setFloatClamped ( value, &self->material->#val, #min, #max}*/
 
-static int Material_setAmb( BPy_Material * self, PyObject * value )
+static int V24_Material_setAmb( V24_BPy_Material * self, PyObject * value )
 { 
-	return EXPP_setFloatClamped ( value, &self->material->amb,
+	return V24_EXPP_setFloatClamped ( value, &self->material->amb,
 								EXPP_MAT_AMB_MIN,
 					       		EXPP_MAT_AMB_MAX );
 }
 
-static int Material_setEmit( BPy_Material * self, PyObject * value )
+static int V24_Material_setEmit( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->emit,
+	return V24_EXPP_setFloatClamped ( value, &self->material->emit,
 								EXPP_MAT_EMIT_MIN,
 								EXPP_MAT_EMIT_MAX );
 }
 
-static int Material_setSpecTransp( BPy_Material * self, PyObject * value )
+static int V24_Material_setSpecTransp( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->spectra,
+	return V24_EXPP_setFloatClamped ( value, &self->material->spectra,
 								EXPP_MAT_SPECTRA_MIN,
 								EXPP_MAT_SPECTRA_MAX );
 }
 
-static int Material_setAlpha( BPy_Material * self, PyObject * value )
+static int V24_Material_setAlpha( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->alpha,
+	return V24_EXPP_setFloatClamped ( value, &self->material->alpha,
 								EXPP_MAT_ALPHA_MIN,
 								EXPP_MAT_ALPHA_MAX );
 }
 
-static int Material_setShadAlpha( BPy_Material * self, PyObject * value )
+static int V24_Material_setShadAlpha( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->shad_alpha,
+	return V24_EXPP_setFloatClamped ( value, &self->material->shad_alpha,
 								EXPP_MAT_ALPHA_MIN,
 								EXPP_MAT_ALPHA_MAX );
 }
 
-static int Material_setRef( BPy_Material * self, PyObject * value )
+static int V24_Material_setRef( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->ref,
+	return V24_EXPP_setFloatClamped ( value, &self->material->ref,
 								EXPP_MAT_REF_MIN,
 								EXPP_MAT_REF_MAX );
 }
 
-static int Material_setSpec( BPy_Material * self, PyObject * value )
+static int V24_Material_setSpec( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->spec,
+	return V24_EXPP_setFloatClamped ( value, &self->material->spec,
 								EXPP_MAT_SPEC_MIN,
 								EXPP_MAT_SPEC_MAX );
 }
 
-static int Material_setZOffset( BPy_Material * self, PyObject * value )
+static int V24_Material_setZOffset( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->zoffs,
+	return V24_EXPP_setFloatClamped ( value, &self->material->zoffs,
 		   						EXPP_MAT_ZOFFS_MIN,
 								EXPP_MAT_ZOFFS_MAX );
 }
 
-static int Material_setLightGroup( BPy_Material * self, PyObject * value )
+static int V24_Material_setLightGroup( V24_BPy_Material * self, PyObject * value )
 {
-	return GenericLib_assignData(value, (void **) &self->material->group, NULL, 1, ID_GR, 0);
+	return V24_GenericLib_assignData(value, (void **) &self->material->group, NULL, 1, ID_GR, 0);
 }
 
-static int Material_setAdd( BPy_Material * self, PyObject * value )
+static int V24_Material_setAdd( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->add,
+	return V24_EXPP_setFloatClamped ( value, &self->material->add,
 								EXPP_MAT_ADD_MIN,
 								EXPP_MAT_ADD_MAX );
 }
 
-static int Material_setHaloSize( BPy_Material * self, PyObject * value )
+static int V24_Material_setHaloSize( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->hasize,
+	return V24_EXPP_setFloatClamped ( value, &self->material->hasize,
 		   						EXPP_MAT_HALOSIZE_MIN,
 								EXPP_MAT_HALOSIZE_MAX );
 }
 
-static int Material_setFlareSize( BPy_Material * self, PyObject * value )
+static int V24_Material_setFlareSize( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->flaresize,
+	return V24_EXPP_setFloatClamped ( value, &self->material->flaresize,
 								EXPP_MAT_FLARESIZE_MIN,
 								EXPP_MAT_FLARESIZE_MAX );
 }
 
-static int Material_setFlareBoost( BPy_Material * self, PyObject * value )
+static int V24_Material_setFlareBoost( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->flareboost,
+	return V24_EXPP_setFloatClamped ( value, &self->material->flareboost,
 								EXPP_MAT_FLAREBOOST_MIN,
 								EXPP_MAT_FLAREBOOST_MAX );
 }
 
-static int Material_setSubSize( BPy_Material * self, PyObject * value )
+static int V24_Material_setSubSize( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->subsize,
+	return V24_EXPP_setFloatClamped ( value, &self->material->subsize,
 								EXPP_MAT_SUBSIZE_MIN,
 								EXPP_MAT_SUBSIZE_MAX );
 }
 
-static int Material_setHaloSeed( BPy_Material * self, PyObject * value )
+static int V24_Material_setHaloSeed( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->material->seed1,
+	return V24_EXPP_setIValueClamped ( value, &self->material->seed1,
 								EXPP_MAT_HALOSEED_MIN,
 								EXPP_MAT_HALOSEED_MAX, 'b' );
 }
 
-static int Material_setFlareSeed( BPy_Material * self, PyObject * value )
+static int V24_Material_setFlareSeed( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->material->seed2,
+	return V24_EXPP_setIValueClamped ( value, &self->material->seed2,
 								EXPP_MAT_FLARESEED_MIN,
 								EXPP_MAT_FLARESEED_MAX, 'b' );
 }
 
-static int Material_setHardness( BPy_Material * self, PyObject * value )
+static int V24_Material_setHardness( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->material->har,
+	return V24_EXPP_setIValueClamped ( value, &self->material->har,
 		   						EXPP_MAT_HARD_MIN,
 								EXPP_MAT_HARD_MAX, 'h' );
 }
 
-static int Material_setNFlares( BPy_Material * self, PyObject * value )
+static int V24_Material_setNFlares( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->material->flarec,
+	return V24_EXPP_setIValueClamped ( value, &self->material->flarec,
 								EXPP_MAT_NFLARES_MIN,
 								EXPP_MAT_NFLARES_MAX, 'h' );
 }
 
-static int Material_setNStars( BPy_Material * self, PyObject * value )
+static int V24_Material_setNStars( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->material->starc,
+	return V24_EXPP_setIValueClamped ( value, &self->material->starc,
 								EXPP_MAT_NSTARS_MIN,
 								EXPP_MAT_NSTARS_MAX, 'h' );
 }
 
-static int Material_setNLines( BPy_Material * self, PyObject * value )
+static int V24_Material_setNLines( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->material->linec,
+	return V24_EXPP_setIValueClamped ( value, &self->material->linec,
 								EXPP_MAT_NLINES_MIN,
 								EXPP_MAT_NLINES_MAX, 'h' );
 }
 
-static int Material_setNRings( BPy_Material * self, PyObject * value )
+static int V24_Material_setNRings( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->material->ringc,
+	return V24_EXPP_setIValueClamped ( value, &self->material->ringc,
 		   						EXPP_MAT_NRINGS_MIN,
 								EXPP_MAT_NRINGS_MAX, 'h' );
 }
 
-static int Material_setRayMirr( BPy_Material * self, PyObject * value )
+static int V24_Material_setRayMirr( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->ray_mirror,
+	return V24_EXPP_setFloatClamped ( value, &self->material->ray_mirror,
 								EXPP_MAT_RAYMIRR_MIN,
 								EXPP_MAT_RAYMIRR_MAX );
 }
 
-static int Material_setMirrDepth( BPy_Material * self, PyObject * value )
+static int V24_Material_setMirrDepth( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->material->ray_depth,
+	return V24_EXPP_setIValueClamped ( value, &self->material->ray_depth,
 								EXPP_MAT_MIRRDEPTH_MIN,
 								EXPP_MAT_MIRRDEPTH_MAX, 'h' );
 }
 
-static int Material_setFresnelMirr( BPy_Material * self, PyObject * value )
+static int V24_Material_setFresnelMirr( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->fresnel_mir,
+	return V24_EXPP_setFloatClamped ( value, &self->material->fresnel_mir,
 								EXPP_MAT_FRESNELMIRR_MIN,
 								EXPP_MAT_FRESNELMIRR_MAX );
 }
 
-static int Material_setFresnelMirrFac( BPy_Material * self, PyObject * value )
+static int V24_Material_setFresnelMirrFac( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->fresnel_mir_i,
+	return V24_EXPP_setFloatClamped ( value, &self->material->fresnel_mir_i,
 								EXPP_MAT_FRESNELMIRRFAC_MIN,
 								EXPP_MAT_FRESNELMIRRFAC_MAX );
 }
 
-static int Material_setIOR( BPy_Material * self, PyObject * value )
+static int V24_Material_setIOR( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->ang,
+	return V24_EXPP_setFloatClamped ( value, &self->material->ang,
 								EXPP_MAT_IOR_MIN,
 								EXPP_MAT_IOR_MAX );
 }
 
-static int Material_setTransDepth( BPy_Material * self, PyObject * value )
+static int V24_Material_setTransDepth( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueClamped ( value, &self->material->ray_depth_tra,
+	return V24_EXPP_setIValueClamped ( value, &self->material->ray_depth_tra,
 								EXPP_MAT_TRANSDEPTH_MIN,
 								EXPP_MAT_TRANSDEPTH_MAX, 'h' );
 }
 
-static int Material_setFresnelTrans( BPy_Material * self, PyObject * value )
+static int V24_Material_setFresnelTrans( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->fresnel_tra,
+	return V24_EXPP_setFloatClamped ( value, &self->material->fresnel_tra,
 								EXPP_MAT_FRESNELTRANS_MIN,
 								EXPP_MAT_FRESNELTRANS_MAX );
 }
 
-static int Material_setFresnelTransFac( BPy_Material * self, PyObject * value )
+static int V24_Material_setFresnelTransFac( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->fresnel_tra_i,
+	return V24_EXPP_setFloatClamped ( value, &self->material->fresnel_tra_i,
 								EXPP_MAT_FRESNELTRANSFAC_MIN,
 								EXPP_MAT_FRESNELTRANSFAC_MAX );
 }
 
-static int Material_setRigidBodyFriction( BPy_Material * self, PyObject * value )
+static int V24_Material_setRigidBodyFriction( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->friction,
+	return V24_EXPP_setFloatClamped ( value, &self->material->friction,
 								0.f,
 								100.f );
 }
 
-static int Material_setRigidBodyRestitution( BPy_Material * self, PyObject * value )
+static int V24_Material_setRigidBodyRestitution( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->reflect,
+	return V24_EXPP_setFloatClamped ( value, &self->material->reflect,
 								0.f,
 								1.f );
 }
@@ -2076,148 +2076,148 @@ static int Material_setRigidBodyRestitution( BPy_Material * self, PyObject * val
 
 
 
-static int Material_setSpecShader( BPy_Material * self, PyObject * value )
+static int V24_Material_setSpecShader( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueRange( value, &self->material->spec_shader,
+	return V24_EXPP_setIValueRange( value, &self->material->spec_shader,
 								MA_SPEC_COOKTORR,
 								MA_SPEC_WARDISO, 'h' );
 }
 
-static int Material_setDiffuseShader( BPy_Material * self, PyObject * value )
+static int V24_Material_setDiffuseShader( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setIValueRange( value, &self->material->diff_shader,
+	return V24_EXPP_setIValueRange( value, &self->material->diff_shader,
 								MA_DIFF_LAMBERT,
 								MA_DIFF_MINNAERT, 'h' );
 }
 
-static int Material_setRoughness( BPy_Material * self, PyObject * value )
+static int V24_Material_setRoughness( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->roughness,
+	return V24_EXPP_setFloatClamped ( value, &self->material->roughness,
 								EXPP_MAT_ROUGHNESS_MIN,
 								EXPP_MAT_ROUGHNESS_MAX );
 }
 
-static int Material_setSpecSize( BPy_Material * self, PyObject * value )
+static int V24_Material_setSpecSize( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->param[2],
+	return V24_EXPP_setFloatClamped ( value, &self->material->param[2],
 								EXPP_MAT_SPECSIZE_MIN,
 								EXPP_MAT_SPECSIZE_MAX );
 }
 
-static int Material_setDiffuseSize( BPy_Material * self, PyObject * value )
+static int V24_Material_setDiffuseSize( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->param[0],
+	return V24_EXPP_setFloatClamped ( value, &self->material->param[0],
 								EXPP_MAT_DIFFUSESIZE_MIN,
 								EXPP_MAT_DIFFUSESIZE_MAX );
 }
 
-static int Material_setSpecSmooth( BPy_Material * self, PyObject * value )
+static int V24_Material_setSpecSmooth( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->param[3],
+	return V24_EXPP_setFloatClamped ( value, &self->material->param[3],
 								EXPP_MAT_SPECSMOOTH_MIN,
 								EXPP_MAT_SPECSMOOTH_MAX );
 }
 
-static int Material_setDiffuseSmooth( BPy_Material * self, PyObject * value )
+static int V24_Material_setDiffuseSmooth( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->param[1],
+	return V24_EXPP_setFloatClamped ( value, &self->material->param[1],
 								EXPP_MAT_DIFFUSESMOOTH_MIN,
 								EXPP_MAT_DIFFUSESMOOTH_MAX );
 }
 
-static int Material_setDiffuseDarkness( BPy_Material * self, PyObject * value )
+static int V24_Material_setDiffuseDarkness( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->darkness,
+	return V24_EXPP_setFloatClamped ( value, &self->material->darkness,
 								EXPP_MAT_DIFFUSE_DARKNESS_MIN,
 								EXPP_MAT_DIFFUSE_DARKNESS_MAX );
 }
 
-static int Material_setRefracIndex( BPy_Material * self, PyObject * value )
+static int V24_Material_setRefracIndex( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->refrac,
+	return V24_EXPP_setFloatClamped ( value, &self->material->refrac,
 								EXPP_MAT_REFRACINDEX_MIN,
 								EXPP_MAT_REFRACINDEX_MAX );
 }
 
-static int Material_setRms( BPy_Material * self, PyObject * value )
+static int V24_Material_setRms( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->rms,
+	return V24_EXPP_setFloatClamped ( value, &self->material->rms,
 								EXPP_MAT_RMS_MIN,
 								EXPP_MAT_RMS_MAX );
 }
 
-static int Material_setFilter( BPy_Material * self, PyObject * value )
+static int V24_Material_setFilter( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->filter,
+	return V24_EXPP_setFloatClamped ( value, &self->material->filter,
 								EXPP_MAT_FILTER_MIN,
 								EXPP_MAT_FILTER_MAX );
 }
 
-static int Material_setTranslucency( BPy_Material * self, PyObject * value )
+static int V24_Material_setTranslucency( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->translucency,
+	return V24_EXPP_setFloatClamped ( value, &self->material->translucency,
 								EXPP_MAT_TRANSLUCENCY_MIN,
 								EXPP_MAT_TRANSLUCENCY_MAX );
 }
 
 /* SSS */
-static int Material_setSssEnable( BPy_Material * self, PyObject * value )
+static int V24_Material_setSssEnable( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setBitfield( value, &self->material->sss_flag, MA_DIFF_SSS, 'h' );
+	return V24_EXPP_setBitfield( value, &self->material->sss_flag, MA_DIFF_SSS, 'h' );
 }
 
-static int Material_setSssScale( BPy_Material * self, PyObject * value )
+static int V24_Material_setSssScale( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->sss_scale,
+	return V24_EXPP_setFloatClamped ( value, &self->material->sss_scale,
 								EXPP_MAT_SSS_SCALE_MIN,
 								EXPP_MAT_SSS_SCALE_MAX);
 }
 
-static int Material_setSssRadius( BPy_Material * self, PyObject * value, void *type )
+static int V24_Material_setSssRadius( V24_BPy_Material * self, PyObject * value, void *type )
 {
-	return EXPP_setFloatClamped ( value, &self->material->sss_radius[(int)type],
+	return V24_EXPP_setFloatClamped ( value, &self->material->sss_radius[(int)type],
 								EXPP_MAT_SSS_RADIUS_MIN,
 								EXPP_MAT_SSS_RADIUS_MAX);
 }
 
-static int Material_setSssIOR( BPy_Material * self, PyObject * value )
+static int V24_Material_setSssIOR( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->sss_ior,
+	return V24_EXPP_setFloatClamped ( value, &self->material->sss_ior,
 								EXPP_MAT_SSS_IOR_MIN,
 								EXPP_MAT_SSS_IOR_MAX);
 }
 
-static int Material_setSssError( BPy_Material * self, PyObject * value )
+static int V24_Material_setSssError( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->sss_error,
+	return V24_EXPP_setFloatClamped ( value, &self->material->sss_error,
 								EXPP_MAT_SSS_IOR_MIN,
 								EXPP_MAT_SSS_IOR_MAX);
 }
 
-static int Material_setSssColorBlend( BPy_Material * self, PyObject * value )
+static int V24_Material_setSssColorBlend( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->sss_colfac,
+	return V24_EXPP_setFloatClamped ( value, &self->material->sss_colfac,
 								0.0,
 								1.0);
 }
 
-static int Material_setSssTexScatter( BPy_Material * self, PyObject * value )
+static int V24_Material_setSssTexScatter( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->sss_texfac,
+	return V24_EXPP_setFloatClamped ( value, &self->material->sss_texfac,
 								0.0,
 								1.0);
 }
 
-static int Material_setSssFront( BPy_Material * self, PyObject * value )
+static int V24_Material_setSssFront( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->sss_front,
+	return V24_EXPP_setFloatClamped ( value, &self->material->sss_front,
 								EXPP_MAT_SSS_FRONT_MIN,
 								EXPP_MAT_SSS_FRONT_MAX);
 }
 
-static int Material_setSssBack( BPy_Material * self, PyObject * value )
+static int V24_Material_setSssBack( V24_BPy_Material * self, PyObject * value )
 {
-	return EXPP_setFloatClamped ( value, &self->material->sss_back,
+	return V24_EXPP_setFloatClamped ( value, &self->material->sss_back,
 								EXPP_MAT_SSS_BACK_MIN,
 								EXPP_MAT_SSS_BACK_MAX);
 }
@@ -2225,22 +2225,22 @@ static int Material_setSssBack( BPy_Material * self, PyObject * value )
 
 
 
-static PyObject *Material_setTexture( BPy_Material * self, PyObject * args )
+static PyObject *V24_Material_setTexture( V24_BPy_Material * self, PyObject * args )
 {
 	int texnum;
 	PyObject *pytex;
 	Tex *bltex;
 	int texco = TEXCO_ORCO, mapto = MAP_COL;
 
-	if( !PyArg_ParseTuple( args, "iO!|ii", &texnum, &Texture_Type, &pytex,
+	if( !PyArg_ParseTuple( args, "iO!|ii", &texnum, &V24_Texture_Type, &pytex,
 			       &texco, &mapto ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected int in [0,9] and Texture" );
 	if( ( texnum < 0 ) || ( texnum >= MAX_MTEX ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected int in [0,9] and Texture" );
 
-	bltex = Texture_FromPyObject( pytex );
+	bltex = V24_Texture_FromPyObject( pytex );
 
 	if( !self->material->mtex[texnum] ) {
 		/* there isn't an mtex for this slot so we need to make one */
@@ -2258,13 +2258,13 @@ static PyObject *Material_setTexture( BPy_Material * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Material_clearTexture( BPy_Material * self, PyObject * value )
+static PyObject *V24_Material_clearTexture( V24_BPy_Material * self, PyObject * value )
 {
 	int texnum = (int)PyInt_AsLong(value);
 	struct MTex *mtex;
 	/* non ints will be -1 */
 	if( ( texnum < 0 ) || ( texnum >= MAX_MTEX ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected int in [0,9]" );
 
 	mtex = self->material->mtex[texnum];
@@ -2279,29 +2279,29 @@ static PyObject *Material_clearTexture( BPy_Material * self, PyObject * value )
 }
 
 /* mat.addScriptLink */
-static PyObject *Material_addScriptLink( BPy_Material * self, PyObject * args )
+static PyObject *V24_Material_addScriptLink( V24_BPy_Material * self, PyObject * args )
 {
 	Material *mat = self->material;
 	ScriptLink *slink = NULL;
 
 	slink = &( mat )->scriptlink;
 
-	return EXPP_addScriptLink( slink, args, 0 );
+	return V24_EXPP_addScriptLink( slink, args, 0 );
 }
 
 /* mat.clearScriptLinks */
-static PyObject *Material_clearScriptLinks(BPy_Material *self, PyObject *args )
+static PyObject *V24_Material_clearScriptLinks(V24_BPy_Material *self, PyObject *args )
 {
 	Material *mat = self->material;
 	ScriptLink *slink = NULL;
 
 	slink = &( mat )->scriptlink;
 
-	return EXPP_clearScriptLinks( slink, args );
+	return V24_EXPP_clearScriptLinks( slink, args );
 }
 
 /* mat.getScriptLinks */
-static PyObject *Material_getScriptLinks( BPy_Material * self,
+static PyObject *V24_Material_getScriptLinks( V24_BPy_Material * self,
 					  PyObject * value )
 {
 	Material *mat = self->material;
@@ -2313,7 +2313,7 @@ static PyObject *Material_getScriptLinks( BPy_Material * self,
 	/* can't this just return?  EXP_getScriptLinks() returns a PyObject*
 	 * or NULL anyway */
 
-	ret = EXPP_getScriptLinks( slink, value, 0 );
+	ret = V24_EXPP_getScriptLinks( slink, value, 0 );
 
 	if( ret )
 		return ret;
@@ -2322,40 +2322,40 @@ static PyObject *Material_getScriptLinks( BPy_Material * self,
 }
 
 /* mat.__copy__ */
-static PyObject *Material_copy( BPy_Material * self )
+static PyObject *V24_Material_copy( V24_BPy_Material * self )
 {
-	BPy_Material *pymat; /* for Material Data object wrapper in Python */
+	V24_BPy_Material *pymat; /* for Material Data object wrapper in Python */
 	Material *blmat; /* for actual Material Data we create in Blender */
 	
 	blmat = copy_material( self->material );	/* first copy the Material Data in Blender */
 
 	if( blmat )		/* now create the wrapper obj in Python */
-		pymat = ( BPy_Material * ) Material_CreatePyObject( blmat );
+		pymat = ( V24_BPy_Material * ) V24_Material_CreatePyObject( blmat );
 	else
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create Material Data in Blender" ) );
 
 	blmat->id.us = 0;	/* was incref'ed by add_material() above */
 
 	if( pymat == NULL )
-		return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						"couldn't create Material Data object" ) );
 
 	return ( PyObject * ) pymat;
 }
 
 /* mat_a==mat_b or mat_a!=mat_b*/
-static int Material_compare( BPy_Material * a, BPy_Material * b )
+static int V24_Material_compare( V24_BPy_Material * a, V24_BPy_Material * b )
 {
 	return ( a->material == b->material) ? 0 : -1;
 }
 
 /*****************************************************************************/
-/* Function:	Material_repr	 */
-/* Description: This is a callback function for the BPy_Material type. It  */
+/* Function:	V24_Material_repr	 */
+/* Description: This is a callback function for the V24_BPy_Material type. It  */
 /*		 builds a meaninful string to represent material objects.   */
 /*****************************************************************************/
-static PyObject *Material_repr( BPy_Material * self )
+static PyObject *V24_Material_repr( V24_BPy_Material * self )
 {
 	return PyString_FromFormat( "[Material \"%s\"]",
 				    self->material->id.name + 2 );
@@ -2364,7 +2364,7 @@ static PyObject *Material_repr( BPy_Material * self )
 /*****************************************************************************/
 /* These functions are used here and in in Texture.c						*/
 /*****************************************************************************/
-PyObject *EXPP_PyList_fromColorband( ColorBand *coba )
+PyObject *V24_EXPP_PyList_fromColorband( ColorBand *coba )
 {
 	short i;
 	PyObject *cbls;
@@ -2388,7 +2388,7 @@ PyObject *EXPP_PyList_fromColorband( ColorBand *coba )
 }
 
 /* make sure you coba is not none before calling this */
-int EXPP_Colorband_fromPyList( ColorBand **coba, PyObject * value )
+int V24_EXPP_Colorband_fromPyList( ColorBand **coba, PyObject * value )
 {
 	short totcol, i;
 	PyObject *colseq;
@@ -2396,12 +2396,12 @@ int EXPP_Colorband_fromPyList( ColorBand **coba, PyObject * value )
 	float f;
 	
 	if ( !PySequence_Check( value )  )
-		return ( EXPP_ReturnIntError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"Colorband must be a sequence" ) );
 	
 	totcol = PySequence_Size(value);
 	if ( totcol > 31)
-		return ( EXPP_ReturnIntError( PyExc_ValueError,
+		return ( V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"Colorband must be between 1 and 31 in length" ) );
 	
 	if (totcol==0) {
@@ -2417,13 +2417,13 @@ int EXPP_Colorband_fromPyList( ColorBand **coba, PyObject * value )
 		colseq = PySequence_GetItem( value, i );
 		if ( !PySequence_Check( colseq ) || PySequence_Size( colseq ) != 5) {
 			Py_DECREF ( colseq );
-			return ( EXPP_ReturnIntError( PyExc_ValueError,
+			return ( V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"Colorband colors must be sequences of 5 floats" ) );
 		}
 		for (i=0; i<5; i++) {
 			pyflt = PySequence_GetItem( colseq, i );
 			if (!PyNumber_Check(pyflt)) {
-				return ( EXPP_ReturnIntError( PyExc_ValueError,
+				return ( V24_EXPP_ReturnIntError( PyExc_ValueError,
 					"Colorband colors must be sequences of 5 floats" ) );
 				Py_DECREF ( pyflt );
 				Py_DECREF ( colseq );
@@ -2477,7 +2477,7 @@ int EXPP_Colorband_fromPyList( ColorBand **coba, PyObject * value )
 /*****************************************************************************/
 /* These functions are used in NMesh.c and Object.c	 */
 /*****************************************************************************/
-PyObject *EXPP_PyList_fromMaterialList( Material ** matlist, int len, int all )
+PyObject *V24_EXPP_PyList_fromMaterialList( Material ** matlist, int len, int all )
 {
 	PyObject *list;
 	int i;
@@ -2491,7 +2491,7 @@ PyObject *EXPP_PyList_fromMaterialList( Material ** matlist, int len, int all )
 		PyObject *ob;
 
 		if( mat ) {
-			ob = Material_CreatePyObject( mat );
+			ob = V24_Material_CreatePyObject( mat );
 			PyList_Append( list, ob );
 			Py_DECREF( ob );	/* because Append increfs */
 		} else if( all ) {	/* return NULL mats (empty slots) as Py_None */
@@ -2502,10 +2502,10 @@ PyObject *EXPP_PyList_fromMaterialList( Material ** matlist, int len, int all )
 	return list;
 }
 
-Material **EXPP_newMaterialList_fromPyList( PyObject * list )
+Material **V24_EXPP_newMaterialList_fromPyList( PyObject * list )
 {
 	int i, len;
-	BPy_Material *pymat = 0;
+	V24_BPy_Material *pymat = 0;
 	Material *mat;
 	Material **matlist;
 
@@ -2515,11 +2515,11 @@ Material **EXPP_newMaterialList_fromPyList( PyObject * list )
 	else if( len <= 0 )
 		return NULL;
 
-	matlist = EXPP_newMaterialList( len );
+	matlist = V24_EXPP_newMaterialList( len );
 
 	for( i = 0; i < len; i++ ) {
 
-		pymat = ( BPy_Material * ) PySequence_GetItem( list, i );
+		pymat = ( V24_BPy_Material * ) PySequence_GetItem( list, i );
 
 		if( BPy_Material_Check( ( PyObject * ) pymat ) ) {
 			mat = pymat->material;
@@ -2538,7 +2538,7 @@ Material **EXPP_newMaterialList_fromPyList( PyObject * list )
 	return matlist;
 }
 
-Material **EXPP_newMaterialList( int len )
+Material **V24_EXPP_newMaterialList( int len )
 {
 	Material **matlist =
 		( Material ** ) MEM_mallocN( len * sizeof( Material * ),
@@ -2547,7 +2547,7 @@ Material **EXPP_newMaterialList( int len )
 	return matlist;
 }
 
-int EXPP_releaseMaterialList( Material ** matlist, int len )
+int V24_EXPP_releaseMaterialList( Material ** matlist, int len )
 {
 	int i;
 	Material *mat;
@@ -2594,7 +2594,7 @@ static int expandPtrArray( void **p, int oldsize, int newsize )
 	return 1;
 }
 
-int EXPP_synchronizeMaterialLists( Object * object )
+int V24_EXPP_synchronizeMaterialLists( Object * object )
 {
 	Material ***p_dataMaterials = give_matarar( object );
 	short *nmaterials = give_totcolp( object );
@@ -2617,7 +2617,7 @@ int EXPP_synchronizeMaterialLists( Object * object )
 	return result;		/* 1 if changed, 0 otherwise */
 }
 
-void EXPP_incr_mats_us( Material ** matlist, int len )
+void V24_EXPP_incr_mats_us( Material ** matlist, int len )
 {
 	int i;
 	Material *mat;
@@ -2634,7 +2634,7 @@ void EXPP_incr_mats_us( Material ** matlist, int len )
 	return;
 }
 
-static PyObject *Material_getColorComponent( BPy_Material * self, 
+static PyObject *V24_Material_getColorComponent( V24_BPy_Material * self, 
 							void * closure )
 {
 	switch ( (int)closure ) {
@@ -2663,249 +2663,249 @@ static PyObject *Material_getColorComponent( BPy_Material * self,
 	case EXPP_MAT_COMP_SSSB:
 		return PyFloat_FromDouble( ( double ) self->material->sss_col[2] );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"unknown color component specified" );
 	}
 }
 
-static PyObject *Material_getColorband( BPy_Material * self, void * type)
+static PyObject *V24_Material_getColorband( V24_BPy_Material * self, void * type)
 {
 	switch( (long)type ) {
     case 0:	/* these are backwards, but that how it works */
-		return EXPP_PyList_fromColorband( self->material->ramp_col );
+		return V24_EXPP_PyList_fromColorband( self->material->ramp_col );
     case 1:
-		return EXPP_PyList_fromColorband( self->material->ramp_spec );
+		return V24_EXPP_PyList_fromColorband( self->material->ramp_spec );
 	}
 	Py_RETURN_NONE;
 }
 
-int Material_setColorband( BPy_Material * self, PyObject * value, void * type)
+int V24_Material_setColorband( V24_BPy_Material * self, PyObject * value, void * type)
 {
 	switch( (long)type ) {
     case 0:	/* these are backwards, but that how it works */
-		return EXPP_Colorband_fromPyList( &self->material->ramp_col, value );
+		return V24_EXPP_Colorband_fromPyList( &self->material->ramp_col, value );
     case 1:
-		return EXPP_Colorband_fromPyList( &self->material->ramp_spec, value );
+		return V24_EXPP_Colorband_fromPyList( &self->material->ramp_spec, value );
 	}
 	return 0;
 }
 
 /* #####DEPRECATED###### */
 
-static PyObject *Matr_oldsetAdd( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetAdd( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setAdd );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setAdd );
 }
 
-static PyObject *Matr_oldsetAlpha( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetAlpha( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setAlpha );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setAlpha );
 }
 
-static PyObject *Matr_oldsetAmb( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetAmb( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setAmb );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setAmb );
 }
 
-static PyObject *Matr_oldsetDiffuseDarkness( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetDiffuseDarkness( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setDiffuseDarkness );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setDiffuseDarkness );
 }
 
-static PyObject *Matr_oldsetDiffuseShader( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetDiffuseShader( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setDiffuseShader );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setDiffuseShader );
 }
 
-static PyObject *Matr_oldsetDiffuseSize( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetDiffuseSize( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setDiffuseSize );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setDiffuseSize );
 }
 
-static PyObject *Matr_oldsetDiffuseSmooth( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetDiffuseSmooth( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setDiffuseSmooth );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setDiffuseSmooth );
 }
 
-static PyObject *Matr_oldsetEmit( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetEmit( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setEmit );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setEmit );
 }
 
-static PyObject *Matr_oldsetFilter( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetFilter( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setFilter );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setFilter );
 }
 
-static PyObject *Matr_oldsetFlareBoost( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetFlareBoost( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setFlareBoost );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setFlareBoost );
 }
 
-static PyObject *Matr_oldsetFlareSeed( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetFlareSeed( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setFlareSeed );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setFlareSeed );
 }
 
-static PyObject *Matr_oldsetFlareSize( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetFlareSize( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setFlareSize );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setFlareSize );
 }
 
-static PyObject *Matr_oldsetFresnelMirr( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetFresnelMirr( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setFresnelMirr );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setFresnelMirr );
 }
 
-static PyObject *Matr_oldsetFresnelMirrFac( BPy_Material * self,
+static PyObject *V24_Matr_oldsetFresnelMirrFac( V24_BPy_Material * self,
 					     PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setFresnelMirrFac );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setFresnelMirrFac );
 }
 
-static PyObject *Matr_oldsetFresnelTrans( BPy_Material * self,
+static PyObject *V24_Matr_oldsetFresnelTrans( V24_BPy_Material * self,
 					   PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setFresnelTrans );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setFresnelTrans );
 }
 
-static PyObject *Matr_oldsetFresnelTransFac( BPy_Material * self,
+static PyObject *V24_Matr_oldsetFresnelTransFac( V24_BPy_Material * self,
 					      PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setFresnelTransFac );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setFresnelTransFac );
 }
 
-static PyObject *Matr_oldsetHaloSeed( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetHaloSeed( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setHaloSeed );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setHaloSeed );
 }
 
-static PyObject *Matr_oldsetHaloSize( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetHaloSize( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setHaloSize );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setHaloSize );
 }
 
-static PyObject *Matr_oldsetHardness( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetHardness( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setHardness );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setHardness );
 }
 
-static PyObject *Matr_oldsetIOR( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetIOR( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setIOR );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setIOR );
 }
 
-static PyObject *Matr_oldsetNFlares( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetNFlares( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setNFlares );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setNFlares );
 }
 
-static PyObject *Matr_oldsetNLines( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetNLines( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setNLines );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setNLines );
 }
 
-static PyObject *Matr_oldsetNRings( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetNRings( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setNRings );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setNRings );
 }
 
-static PyObject *Matr_oldsetNStars( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetNStars( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setNStars );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setNStars );
 }
 
-static PyObject *Matr_oldsetRayMirr( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetRayMirr( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setRayMirr );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setRayMirr );
 }
 
-static PyObject *Matr_oldsetRoughness( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetRoughness( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setRoughness );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setRoughness );
 }
 
-static PyObject *Matr_oldsetMirrDepth( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetMirrDepth( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setMirrDepth );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setMirrDepth );
 }
 
-static PyObject *Matr_oldsetRef( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetRef( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setRef );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setRef );
 }
 
-static PyObject *Matr_oldsetRefracIndex( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetRefracIndex( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setRefracIndex );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setRefracIndex );
 }
 
-static PyObject *Matr_oldsetRms( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetRms( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setRms );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setRms );
 }
 
-static PyObject *Matr_oldsetSpec( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetSpec( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setSpec );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setSpec );
 }
 
-static PyObject *Matr_oldsetSpecShader( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetSpecShader( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setSpecShader );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setSpecShader );
 }
 
-static PyObject *Matr_oldsetSpecSize( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetSpecSize( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setSpecSize );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setSpecSize );
 }
 
-static PyObject *Matr_oldsetSpecSmooth( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetSpecSmooth( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setSpecSmooth );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setSpecSmooth );
 }
 
-static PyObject *Matr_oldsetSpecTransp( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetSpecTransp( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setSpecTransp );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setSpecTransp );
 }
 
-static PyObject *Matr_oldsetSubSize( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetSubSize( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setSubSize );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setSubSize );
 }
 
-static PyObject *Matr_oldsetTranslucency( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetTranslucency( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setTranslucency );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setTranslucency );
 }
 
-static PyObject *Matr_oldsetTransDepth( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetTransDepth( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setTransDepth );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setTransDepth );
 }
 
-static PyObject *Matr_oldsetZOffset( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetZOffset( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setZOffset );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setZOffset );
 }
 
-static PyObject *Matr_oldsetRGBCol( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetRGBCol( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapperTuple( (void *)self, args,
-			(setter)Material_setRGBCol );
+	return V24_EXPP_setterWrapperTuple( (void *)self, args,
+			(setter)V24_Material_setRGBCol );
 }
 
-static PyObject *Matr_oldsetSpecCol( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetSpecCol( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapperTuple( (void *)self, args,
-			(setter)Material_setSpecCol );
+	return V24_EXPP_setterWrapperTuple( (void *)self, args,
+			(setter)V24_Material_setSpecCol );
 }
 
-static PyObject *Matr_oldsetMirCol( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetMirCol( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapperTuple( (void *)self, args,
-			(setter)Material_setMirCol );
+	return V24_EXPP_setterWrapperTuple( (void *)self, args,
+			(setter)V24_Material_setMirCol );
 }
 
 
@@ -2914,7 +2914,7 @@ static PyObject *Matr_oldsetMirCol( BPy_Material * self, PyObject * args )
  * onlyShadow, xalpha, star, faceTexture, haloTex, haloPuno, noMist,
  * haloShaded, haloFlare */
 
-static PyObject *Matr_oldsetMode( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetMode( V24_BPy_Material * self, PyObject * args )
 {
 	unsigned int i, flag = 0, ok = 0;
 	PyObject *value, *error;
@@ -3004,7 +3004,7 @@ static PyObject *Matr_oldsetMode( BPy_Material * self, PyObject * args )
 			else if( strcmp( m[i], "Env" ) == 0 )
 				flag |= MA_ENV;
 			else
-				return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+				return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 								"unknown Material mode argument" ) );
 		}
 		ok = 1;
@@ -3013,36 +3013,36 @@ static PyObject *Matr_oldsetMode( BPy_Material * self, PyObject * args )
 	/* if neither input method worked, then throw an exception */
 
 	if ( ok == 0 )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_AttributeError,
 			   "expected nothing, an integer or up to 22 string argument(s)" ) );
 	/* build tuple, call wrapper */
 
 	value = Py_BuildValue("(i)", flag);
-	error = EXPP_setterWrapper( (void *)self, value, (setter)Material_setMode );
+	error = V24_EXPP_setterWrapper( (void *)self, value, (setter)V24_Material_setMode );
 	Py_DECREF ( value );
 	return error;
 }
 
-static PyObject *Matr_oldsetIpo( BPy_Material * self, PyObject * args )
+static PyObject *V24_Matr_oldsetIpo( V24_BPy_Material * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Material_setIpo );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Material_setIpo );
 }
 
 /*
  * clearIpo() returns True/False depending on whether material has an Ipo
  */
 
-static PyObject *Material_clearIpo( BPy_Material * self )
+static PyObject *V24_Material_clearIpo( V24_BPy_Material * self )
 {
 	/* if Ipo defined, delete it and return true */
 
 	if( self->material->ipo ) {
 		PyObject *value = Py_BuildValue( "(O)", Py_None );
-		EXPP_setterWrapper( (void *)self, value, (setter)Material_setIpo );
+		V24_EXPP_setterWrapper( (void *)self, value, (setter)V24_Material_setIpo );
 		Py_DECREF ( value );
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	}
-	return EXPP_incr_ret_False(); /* no ipo found */
+	return V24_EXPP_incr_ret_False(); /* no ipo found */
 }
 

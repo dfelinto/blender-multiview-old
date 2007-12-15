@@ -36,23 +36,23 @@
 #include <Python.h>
 #include "DNA_world_types.h"
 
-#define BPy_World_Check(v) ((v)->ob_type==&World_Type)
+#define BPy_World_Check(v) ((v)->ob_type==&V24_World_Type)
 
-/* Python BPy_World structure definition */
+/* Python V24_BPy_World structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	World * world;		/* Libdata must be second */
-} BPy_World;
+} V24_BPy_World;
 
-extern PyTypeObject World_Type;
+extern PyTypeObject V24_World_Type;
 
 /*****************************************************************************/
-/* Python World_Type helper functions needed by Blender (the Init function) */
+/* Python V24_World_Type helper functions needed by Blender (the Init function) */
 /* and Object modules.                                                       */
 /*****************************************************************************/
 
-PyObject *World_Init( void );
-PyObject *World_CreatePyObject( World * world );
-World *World_FromPyObject( PyObject * pyobj );
+PyObject *V24_World_Init( void );
+PyObject *V24_World_CreatePyObject( World * world );
+World *V24_World_FromPyObject( PyObject * pyobj );
 
 #endif				/* EXPP_WORLD_H */

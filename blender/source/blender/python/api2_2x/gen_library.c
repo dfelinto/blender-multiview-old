@@ -1,7 +1,7 @@
 #include "gen_library.h"
 #include "gen_utils.h" /*This must come first*/
 
-/* use for GenericLib_getProperties */
+/* use for V24_GenericLib_getProperties */
 #include "BKE_idprop.h"
 #include "IDProp.h"
 
@@ -34,22 +34,22 @@
 
 
 /* Generic get/set attrs */
-PyObject *GenericLib_getName( void *self )
+PyObject *V24_GenericLib_getName( void *self )
 {	
-	ID *id = ((BPy_GenericLib *)self)->id;
-	if (!id) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
+	ID *id = ((V24_BPy_GenericLib *)self)->id;
+	if (!id) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
 	return PyString_FromString( id->name + 2 );
 }
 
-int GenericLib_setName( void *self, PyObject *value )
+int V24_GenericLib_setName( void *self, PyObject *value )
 {
-	ID *id = ((BPy_GenericLib *)self)->id;
+	ID *id = ((V24_BPy_GenericLib *)self)->id;
 	char *name = NULL;
-	if (!id) return ( EXPP_ReturnIntError( PyExc_RuntimeError, "data has been removed" ) );
+	if (!id) return ( V24_EXPP_ReturnIntError( PyExc_RuntimeError, "data has been removed" ) );
 	
 	name = PyString_AsString ( value );
 	if( !name )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					      "expected string argument" );
 
 	rename_id( id, name );
@@ -57,25 +57,25 @@ int GenericLib_setName( void *self, PyObject *value )
 	return 0;
 }
 
-PyObject *GenericLib_getFakeUser( void *self )
+PyObject *V24_GenericLib_getFakeUser( void *self )
 {	
-	ID *id = ((BPy_GenericLib *)self)->id;
-	if (!id) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
+	ID *id = ((V24_BPy_GenericLib *)self)->id;
+	if (!id) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
 	if (id->flag & LIB_FAKEUSER)
 		Py_RETURN_TRUE;
 	else
 		Py_RETURN_FALSE;
 }
 
-int GenericLib_setFakeUser( void *self, PyObject *value )
+int V24_GenericLib_setFakeUser( void *self, PyObject *value )
 {
 	int param;
-	ID *id = ((BPy_GenericLib *)self)->id;
-	if (!id) return ( EXPP_ReturnIntError( PyExc_RuntimeError, "data has been removed" ) );
+	ID *id = ((V24_BPy_GenericLib *)self)->id;
+	if (!id) return ( V24_EXPP_ReturnIntError( PyExc_RuntimeError, "data has been removed" ) );
 	
 	param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 	
 	if (param) {
@@ -92,25 +92,25 @@ int GenericLib_setFakeUser( void *self, PyObject *value )
 	return 0;
 }
 
-PyObject *GenericLib_getTag( void *self )
+PyObject *V24_GenericLib_getTag( void *self )
 {	
-	ID *id = ((BPy_GenericLib *)self)->id;
-	if (!id) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
+	ID *id = ((V24_BPy_GenericLib *)self)->id;
+	if (!id) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
 	if (id->flag & LIB_DOIT)
 		Py_RETURN_TRUE;
 	else
 		Py_RETURN_FALSE;
 }
 
-int GenericLib_setTag( void *self, PyObject *value )
+int V24_GenericLib_setTag( void *self, PyObject *value )
 {
 	int param;
-	ID *id = ((BPy_GenericLib *)self)->id;
-	if (!id) return ( EXPP_ReturnIntError( PyExc_RuntimeError, "data has been removed" ) );
+	ID *id = ((V24_BPy_GenericLib *)self)->id;
+	if (!id) return ( V24_EXPP_ReturnIntError( PyExc_RuntimeError, "data has been removed" ) );
 	
 	param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected int argument in range [0,1]" );
 	
 	if (param)
@@ -122,35 +122,35 @@ int GenericLib_setTag( void *self, PyObject *value )
 
 
 /* read only */
-PyObject *GenericLib_getLib( void *self )
+PyObject *V24_GenericLib_getLib( void *self )
 {	
-	ID *id = ((BPy_GenericLib *)self)->id;
-	if (!id) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
+	ID *id = ((V24_BPy_GenericLib *)self)->id;
+	if (!id) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
 	
 	if (id->lib)
 		return PyString_FromString(id->lib->name);
 	else
-		return EXPP_incr_ret( Py_None );
+		return V24_EXPP_incr_ret( Py_None );
 }
 
-PyObject *GenericLib_getUsers( void *self )
+PyObject *V24_GenericLib_getUsers( void *self )
 {	
-	ID *id = ((BPy_GenericLib *)self)->id;
-	if (!id) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
+	ID *id = ((V24_BPy_GenericLib *)self)->id;
+	if (!id) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
 	return PyInt_FromLong(id->us);
 }
 
-PyObject *GenericLib_getProperties( void *self )
+PyObject *V24_GenericLib_getProperties( void *self )
 {	
-	ID *id = ((BPy_GenericLib *)self)->id;
-	if (!id) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
-	return BPy_Wrap_IDProperty( id, IDP_GetProperties(id, 1), NULL );
+	ID *id = ((V24_BPy_GenericLib *)self)->id;
+	if (!id) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "data has been removed" ) );
+	return V24_BPy_Wrap_IDProperty( id, IDP_GetProperties(id, 1), NULL );
 }
 
 /* use for any.setName("name")*/
-PyObject * GenericLib_setName_with_method( void *self, PyObject *args )
+PyObject * V24_GenericLib_setName_with_method( void *self, PyObject *args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)GenericLib_setName );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_GenericLib_setName );
 }
 
 
@@ -158,10 +158,10 @@ PyObject * GenericLib_setName_with_method( void *self, PyObject *args )
  * returns the Blender lib type code from a PyObject
  * -1 for no match, only give this function libdata
  * 
- * At the moment this is only used by GenericLib_assignData
+ * At the moment this is only used by V24_GenericLib_assignData
  * so not all types are needed.
  */
-short GenericLib_getType(PyObject * pydata)
+short V24_GenericLib_getType(PyObject * pydata)
 {
 	//~ if (BPy_Scene_Check(pydata))	return ID_SCE;
 	if (BPy_Object_Check(pydata))	return ID_OB;
@@ -209,7 +209,7 @@ short GenericLib_getType(PyObject * pydata)
  * 		being assigned.
  * 
  */
-int GenericLib_assignData(PyObject *value, void **data, void **ndata, short refcount, short type, short subtype)
+int V24_GenericLib_assignData(PyObject *value, void **data, void **ndata, short refcount, short type, short subtype)
 {
 	ID *id= NULL;
 	
@@ -217,7 +217,7 @@ int GenericLib_assignData(PyObject *value, void **data, void **ndata, short refc
 		id = ((ID*)*data);
 		
 		if (ndata && *data == *ndata) {
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"Cannot set this data to its self" );
 		}
 	}
@@ -225,32 +225,32 @@ int GenericLib_assignData(PyObject *value, void **data, void **ndata, short refc
 	if (value == Py_None) {
 		*data = NULL;
 		if (refcount && id) id->us--;
-	} else if (GenericLib_getType(value) == type) {
+	} else if (V24_GenericLib_getType(value) == type) {
 		
 		/* object subtypes */
 		if (subtype != 0) {
 			if (type == ID_OB) {
-				Object *ob= (Object *)(((BPy_GenericLib *)value)->id);
+				Object *ob= (Object *)(((V24_BPy_GenericLib *)value)->id);
 				if (ob->type != subtype)
-					return EXPP_ReturnIntError( PyExc_TypeError,
+					return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"Object type not supported" );
 			}
 			
 			if (type == ID_IP) {
-				Ipo *ipo = (Ipo *)(((BPy_GenericLib *)value)->id);
+				Ipo *ipo = (Ipo *)(((V24_BPy_GenericLib *)value)->id);
 				if (ipo->blocktype != subtype)
-					return EXPP_ReturnIntError( PyExc_TypeError,
+					return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						"Ipo type does is not compatible" );
 			}
 			
 			
 		}
 		if (refcount && id) id->us--;
-		id = ((BPy_GenericLib *)value)->id;
+		id = ((V24_BPy_GenericLib *)value)->id;
 		id->us++;
 		*data = id;
 	} else {
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"Could not assign Python Type - None or Library Object" );
 	}
 	return 0;
@@ -261,7 +261,7 @@ int GenericLib_assignData(PyObject *value, void **data, void **ndata, short refc
  * returns the ID of the object with given name
  * from a given list.
  */
-ID *GetIdFromList( ListBase * list, char *name )
+ID *V24_GetIdFromList( ListBase * list, char *name )
 {
 	ID *id = list->first;
 
@@ -275,57 +275,57 @@ ID *GetIdFromList( ListBase * list, char *name )
 }
 
 
-PyObject *GetPyObjectFromID( ID * id )
+PyObject *V24_GetPyObjectFromID( ID * id )
 {
 	switch ( MAKE_ID2( id->name[0], id->name[1] ) ) {
 	case ID_SCE:
-		return Scene_CreatePyObject( ( Scene *) id );
+		return V24_Scene_CreatePyObject( ( Scene *) id );
 	case ID_OB:
-		return Object_CreatePyObject( (Object *) id );
+		return V24_Object_CreatePyObject( (Object *) id );
 	case ID_ME:
-		return Mesh_CreatePyObject( (Mesh *)id, NULL );
+		return V24_Mesh_CreatePyObject( (Mesh *)id, NULL );
 	case ID_CU:
 		switch (curve_type((Curve *)id)) {
 		case OB_FONT:
-			return Text3d_CreatePyObject( (Text3d *)id );
+			return V24_Text3d_CreatePyObject( (Text3d *)id );
 		default:
-			return Curve_CreatePyObject( (Curve *)id );
+			return V24_Curve_CreatePyObject( (Curve *)id );
 		}
 	case ID_MB:
-		return Metaball_CreatePyObject((MetaBall *)id);
+		return V24_Metaball_CreatePyObject((MetaBall *)id);
 	case ID_MA:
-		return Material_CreatePyObject((Material *)id);
+		return V24_Material_CreatePyObject((Material *)id);
 	case ID_TE:
-		return Texture_CreatePyObject((Tex *)id);
+		return V24_Texture_CreatePyObject((Tex *)id);
 	case ID_IM:
-		return Image_CreatePyObject((Image *)id);
+		return V24_Image_CreatePyObject((Image *)id);
 	case ID_LT:
-		return Lattice_CreatePyObject((Lattice *)id);
+		return V24_Lattice_CreatePyObject((Lattice *)id);
 	case ID_LA:
-		return Lamp_CreatePyObject((Lamp *)id);
+		return V24_Lamp_CreatePyObject((Lamp *)id);
 	case ID_CA:
-		return Camera_CreatePyObject((Camera *)id);
+		return V24_Camera_CreatePyObject((Camera *)id);
 	case ID_IP:
-		return Ipo_CreatePyObject((Ipo *)id);
+		return V24_Ipo_CreatePyObject((Ipo *)id);
 	case ID_WO:
-		return World_CreatePyObject((World *)id);
+		return V24_World_CreatePyObject((World *)id);
 	case ID_VF:
-		return Font_CreatePyObject((VFont *)id);
+		return V24_Font_CreatePyObject((VFont *)id);
 	case ID_TXT:
-		return Text_CreatePyObject((Text *)id);
+		return V24_Text_CreatePyObject((Text *)id);
 	case ID_SO:
-		return Sound_CreatePyObject((bSound *)id);
+		return V24_Sound_CreatePyObject((bSound *)id);
 	case ID_GR:
-		return Group_CreatePyObject((Group *)id);
+		return V24_Group_CreatePyObject((Group *)id);
 	case ID_AR:
-		return Armature_CreatePyObject((bArmature *)id);
+		return V24_Armature_CreatePyObject((bArmature *)id);
 	case ID_AC:
-		return Action_CreatePyObject((bAction *)id);
+		return V24_Action_CreatePyObject((bAction *)id);
 	}
 	Py_RETURN_NONE;
 }
 
-long GenericLib_hash(BPy_GenericLib * pydata)
+long V24_GenericLib_hash(V24_BPy_GenericLib * pydata)
 {
 	return (long)pydata->id;
 }

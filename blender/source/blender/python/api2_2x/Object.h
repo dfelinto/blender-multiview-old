@@ -37,26 +37,26 @@
 #include "DNA_object_types.h"
 
 /* The Object PyType Object defined in Object.c */
-extern PyTypeObject Object_Type;
+extern PyTypeObject V24_Object_Type;
 
 #define BPy_Object_Check(v) \
-    ((v)->ob_type == &Object_Type)	/* for type checking */
+    ((v)->ob_type == &V24_Object_Type)	/* for type checking */
 
 /*****************************************************************************/
-/* Python BPy_Object structure definition.                                  */
+/* Python V24_BPy_Object structure definition.                                  */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD 
 	struct Object *object; /* libdata must be second */
 	short realtype;
-} BPy_Object;
+} V24_BPy_Object;
 
-PyObject *Object_Init( void );
-PyObject *Object_CreatePyObject( struct Object *obj );
-Object *Object_FromPyObject( PyObject * py_obj );
+PyObject *V24_Object_Init( void );
+PyObject *V24_Object_CreatePyObject( struct Object *obj );
+Object *V24_Object_FromPyObject( PyObject * py_obj );
 
-void Object_updateDag( void *data );
+void V24_Object_updateDag( void *data );
 
-int EXPP_add_obdata( struct Object *object );
+int V24_EXPP_add_obdata( struct Object *object );
 
 #endif				/* EXPP_OBJECT_H */

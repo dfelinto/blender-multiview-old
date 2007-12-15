@@ -45,11 +45,11 @@
 
 #include "constant.h"
 
-/*---------------------- EXPP_FloatsAreEqual -------------------------
+/*---------------------- V24_EXPP_FloatsAreEqual -------------------------
   Floating point comparisons 
   floatStep = number of representable floats allowable in between
    float A and float B to be considered equal. */
-int EXPP_FloatsAreEqual(float A, float B, int floatSteps)
+int V24_EXPP_FloatsAreEqual(float A, float B, int floatSteps)
 {
 	int a, b, delta;
     assert(floatSteps > 0 && floatSteps < (4 * 1024 * 1024));
@@ -64,20 +64,20 @@ int EXPP_FloatsAreEqual(float A, float B, int floatSteps)
 		return 1;
     return 0;
 }
-/*---------------------- EXPP_VectorsAreEqual -------------------------
-  Builds on EXPP_FloatsAreEqual to test vectors */
-int EXPP_VectorsAreEqual(float *vecA, float *vecB, int size, int floatSteps){
+/*---------------------- V24_EXPP_VectorsAreEqual -------------------------
+  Builds on V24_EXPP_FloatsAreEqual to test vectors */
+int V24_EXPP_VectorsAreEqual(float *vecA, float *vecB, int size, int floatSteps){
 
 	int x;
 	for (x=0; x< size; x++){
-		if (EXPP_FloatsAreEqual(vecA[x], vecB[x], floatSteps) == 0)
+		if (V24_EXPP_FloatsAreEqual(vecA[x], vecB[x], floatSteps) == 0)
 			return 0;
 	}
 	return 1;
 }
-/*---------------------- EXPP_GetModuleConstant -------------------------
+/*---------------------- V24_EXPP_GetModuleConstant -------------------------
   Helper function for returning a module constant */
-PyObject *EXPP_GetModuleConstant(char *module, char *constant)
+PyObject *V24_EXPP_GetModuleConstant(char *module, char *constant)
 {
 	PyObject *py_module = NULL, *py_dict = NULL, *py_constant = NULL;
 
@@ -85,25 +85,25 @@ PyObject *EXPP_GetModuleConstant(char *module, char *constant)
 	* else you add a empty module somewhere*/
 	py_module = PyImport_AddModule(module);
 	if(!py_module){   /*null = error returning module*/
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"error encountered with returning module constant..." ) );
 	}
 	py_dict = PyModule_GetDict(py_module); /*never fails*/
 
 	py_constant = PyDict_GetItemString(py_dict, constant);
 	if(!py_constant){   /*null = key not found*/
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"error encountered with returning module constant..." ) );
 	}
 
-	return EXPP_incr_ret(py_constant);
+	return V24_EXPP_incr_ret(py_constant);
 }
 
 /*****************************************************************************/
 /* Description: This function clamps an int to the given interval	  */
 /*							[min, max].	   */
 /*****************************************************************************/
-int EXPP_ClampInt( int value, int min, int max )
+int V24_EXPP_ClampInt( int value, int min, int max )
 {
 	if( value < min )
 		return min;
@@ -116,7 +116,7 @@ int EXPP_ClampInt( int value, int min, int max )
 /* Description: This function clamps a float to the given interval	 */
 /*							[min, max].	 */
 /*****************************************************************************/
-float EXPP_ClampFloat( float value, float min, float max )
+float V24_EXPP_ClampFloat( float value, float min, float max )
 {
 	if( value < min )
 		return min;
@@ -129,7 +129,7 @@ float EXPP_ClampFloat( float value, float min, float max )
 /* Description: This function returns true if both given strings are equal,  */
 /*		otherwise it returns false.				*/
 /*****************************************************************************/
-int StringEqual( const char *string1, const char *string2 )
+int V24_StringEqual( const char *string1, const char *string2 )
 {
 	return ( strcmp( string1, string2 ) == 0 );
 }
@@ -140,19 +140,19 @@ int StringEqual( const char *string1, const char *string2 )
 /*		  and error_msg arguments.				     */
 /*****************************************************************************/
 
-PyObject *EXPP_ReturnPyObjError( PyObject * type, char *error_msg )
+PyObject *V24_EXPP_ReturnPyObjError( PyObject * type, char *error_msg )
 {				/* same as above, just to change its name smoothly */
 	PyErr_SetString( type, error_msg );
 	return NULL;
 }
 
-int EXPP_ReturnIntError( PyObject * type, char *error_msg )
+int V24_EXPP_ReturnIntError( PyObject * type, char *error_msg )
 {
 	PyErr_SetString( type, error_msg );
 	return -1;
 }
 
-int EXPP_intError(PyObject *type, const char *format, ...)
+int V24_EXPP_intError(PyObject *type, const char *format, ...)
 {
 	PyObject *error;
 	va_list vlist;
@@ -165,8 +165,8 @@ int EXPP_intError(PyObject *type, const char *format, ...)
 	Py_DECREF(error);
 	return -1;
 }
-/*Like EXPP_ReturnPyObjError but takes a printf format string and multiple arguments*/
-PyObject *EXPP_objError(PyObject *type, const char *format, ...)
+/*Like V24_EXPP_ReturnPyObjError but takes a printf format string and multiple arguments*/
+PyObject *V24_EXPP_objError(PyObject *type, const char *format, ...)
 {
 	PyObject *error;
 	va_list vlist;
@@ -185,7 +185,7 @@ PyObject *EXPP_objError(PyObject *type, const char *format, ...)
 /*			 Python object (usually Py_None) and returns it.    */
 /*****************************************************************************/
 
-PyObject *EXPP_incr_ret( PyObject * object )
+PyObject *V24_EXPP_incr_ret( PyObject * object )
 {
 	Py_INCREF( object );
 	return ( object );
@@ -193,38 +193,38 @@ PyObject *EXPP_incr_ret( PyObject * object )
 
 /* return Py_False - to avoid warnings, we use the fact that
  * 0 == False in Python: */
-PyObject *EXPP_incr_ret_False()
+PyObject *V24_EXPP_incr_ret_False()
 {
 	return Py_BuildValue("i", 0);
 }
 
 /* return Py_True - to avoid warnings, we use the fact that
  * 1 == True in Python: */
-PyObject *EXPP_incr_ret_True()
+PyObject *V24_EXPP_incr_ret_True()
 {
 	return Py_BuildValue("i", 1);
 }
 
-void EXPP_incr2( PyObject * ob1, PyObject * ob2 )
+void V24_EXPP_incr2( PyObject * ob1, PyObject * ob2 )
 {
   	    Py_INCREF( ob1 );
   	    Py_INCREF( ob2 );
 }
 
-void EXPP_incr3( PyObject * ob1, PyObject * ob2, PyObject * ob3 )
+void V24_EXPP_incr3( PyObject * ob1, PyObject * ob2, PyObject * ob3 )
 {
   	    Py_INCREF( ob1 );
   	    Py_INCREF( ob2 );
   	    Py_INCREF( ob3 );
 }
 
-void EXPP_decr2( PyObject * ob1, PyObject * ob2 )
+void V24_EXPP_decr2( PyObject * ob1, PyObject * ob2 )
 {
   	    Py_DECREF( ob1 );
   	    Py_DECREF( ob2 );
 }
 
-void EXPP_decr3( PyObject * ob1, PyObject * ob2, PyObject * ob3 )
+void V24_EXPP_decr3( PyObject * ob1, PyObject * ob2, PyObject * ob3 )
 {
   	    Py_DECREF( ob1 );
   	    Py_DECREF( ob2 );
@@ -257,7 +257,7 @@ char *event_to_name( short event )
 /* Description: Checks whether all objects in a PySequence are of a same  */
 /*		given type.  Returns 0 if not, 1 on success.		 */
 /*****************************************************************************/
-int EXPP_check_sequence_consistency( PyObject * seq, PyTypeObject * against )
+int V24_EXPP_check_sequence_consistency( PyObject * seq, PyTypeObject * against )
 {
 	PyObject *ob;
 	int len = PySequence_Length( seq );
@@ -276,7 +276,7 @@ int EXPP_check_sequence_consistency( PyObject * seq, PyTypeObject * against )
 	return result;		/* 1 if all of 'against' type, 2 if there are (also) Nones */
 }
 
-PyObject *EXPP_tuple_repr( PyObject * self, int size )
+PyObject *V24_EXPP_tuple_repr( PyObject * self, int size )
 {
 	PyObject *repr, *item;
 	int i;
@@ -306,11 +306,11 @@ PyObject *EXPP_tuple_repr( PyObject * self, int size )
 /*		 pair is present, its ival is stored in *ival and nonzero is */
 /*		 returned. If the pair is absent, zero is returned.	*/
 /****************************************************************************/
-int EXPP_map_getIntVal( const EXPP_map_pair * map, const char *sval,
+int V24_EXPP_map_getIntVal( const V24_EXPP_map_pair * map, const char *sval,
 			int *ival )
 {
 	while( map->sval ) {
-		if( StringEqual( sval, map->sval ) ) {
+		if( V24_StringEqual( sval, map->sval ) ) {
 			*ival = map->ival;
 			return 1;
 		}
@@ -320,7 +320,7 @@ int EXPP_map_getIntVal( const EXPP_map_pair * map, const char *sval,
 }
 
 /* same as above, but string case is ignored */
-int EXPP_map_case_getIntVal( const EXPP_map_pair * map, const char *sval,
+int V24_EXPP_map_case_getIntVal( const V24_EXPP_map_pair * map, const char *sval,
 			     int *ival )
 {
 	while( map->sval ) {
@@ -337,14 +337,14 @@ int EXPP_map_case_getIntVal( const EXPP_map_pair * map, const char *sval,
 /* Description: searches through a map for a pair with a given name. If the */
 /*		 pair is present, its ival is stored in *ival and nonzero is */
 /*	     	returned. If the pair is absent, zero is returned.	     */
-/* note: this function is identical to EXPP_map_getIntVal except that the  */
+/* note: this function is identical to V24_EXPP_map_getIntVal except that the  */
 /*		output is stored in a short value.	                   */
 /****************************************************************************/
-int EXPP_map_getShortVal( const EXPP_map_pair * map,
+int V24_EXPP_map_getShortVal( const V24_EXPP_map_pair * map,
 			  const char *sval, short *ival )
 {
 	while( map->sval ) {
-		if( StringEqual( sval, map->sval ) ) {
+		if( V24_StringEqual( sval, map->sval ) ) {
 			*ival = (short)map->ival;
 			return 1;
 		}
@@ -359,7 +359,7 @@ int EXPP_map_getShortVal( const EXPP_map_pair * map,
 /*		and nonzero is returned. If the pair is absent, zero is	*/
 /*		returned.		                                */
 /****************************************************************************/
-int EXPP_map_getStrVal( const EXPP_map_pair * map, int ival,
+int V24_EXPP_map_getStrVal( const V24_EXPP_map_pair * map, int ival,
 			const char **sval )
 {
 	while( map->sval ) {
@@ -375,7 +375,7 @@ int EXPP_map_getStrVal( const EXPP_map_pair * map, int ival,
 /* Redraw wrappers */
 
 /* this queues redraws if we're not in background mode: */
-void EXPP_allqueue(unsigned short event, short val)
+void V24_EXPP_allqueue(unsigned short event, short val)
 {
 	if (!G.background) allqueue(event, val);
 }
@@ -383,7 +383,7 @@ void EXPP_allqueue(unsigned short event, short val)
 /************************************************************************/
 /* Scriptlink-related functions, used by scene, object, etc. bpyobjects */
 /************************************************************************/
-PyObject *EXPP_getScriptLinks( ScriptLink * slink, PyObject * value,
+PyObject *V24_EXPP_getScriptLinks( ScriptLink * slink, PyObject * value,
 			       int is_scene )
 {
 	PyObject *list = NULL, *tmpstr;
@@ -392,12 +392,12 @@ PyObject *EXPP_getScriptLinks( ScriptLink * slink, PyObject * value,
 
 
 	if( !eventname )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected event name (string) as argument" );
 	
 	list = PyList_New( 0 );
 	if( !list )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					      "couldn't create PyList!" );
 
 	/* actually !scriptlink shouldn't happen ... */
@@ -416,7 +416,7 @@ PyObject *EXPP_getScriptLinks( ScriptLink * slink, PyObject * value,
 		event = SCRIPT_ONSAVE;
 	else {
 		Py_DECREF(list);
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "invalid event name" );
 	}
 	
@@ -431,7 +431,7 @@ PyObject *EXPP_getScriptLinks( ScriptLink * slink, PyObject * value,
 	return list;
 }
 
-PyObject *EXPP_clearScriptLinks( ScriptLink * slink, PyObject * args )
+PyObject *V24_EXPP_clearScriptLinks( ScriptLink * slink, PyObject * args )
 {
 	int i, j, totLinks, deleted = 0;
 	PyObject *seq = NULL;
@@ -440,7 +440,7 @@ PyObject *EXPP_clearScriptLinks( ScriptLink * slink, PyObject * args )
 
 	/* check for an optional list of strings */
 	if( !PyArg_ParseTuple( args, "|O", &seq ) )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_TypeError,
 			   "expected no arguments or a list of strings" ) );
 
@@ -449,14 +449,14 @@ PyObject *EXPP_clearScriptLinks( ScriptLink * slink, PyObject * args )
 	if ( seq != NULL ) {
 		/* check that parameter IS list of strings */
 		if ( !PyList_Check ( seq ) )
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_TypeError,
 				   "expected a list of strings" ) );
 
 		totLinks = PyList_Size ( seq );
 		for ( i = 0 ; i < totLinks ; ++i ) {
 			if ( !PyString_Check ( PySequence_GetItem( seq, i ) ) )
-				return ( EXPP_ReturnPyObjError
+				return ( V24_EXPP_ReturnPyObjError
 					 ( PyExc_TypeError,
 					   "expected list to contain strings" ) );
 		}
@@ -510,7 +510,7 @@ PyObject *EXPP_clearScriptLinks( ScriptLink * slink, PyObject * args )
 		MEM_freeN( stmp );
 		MEM_freeN( ftmp );
 
-		/*EXPP_allqueue (REDRAWBUTSSCRIPT, 0 );*/
+		/*V24_EXPP_allqueue (REDRAWBUTSSCRIPT, 0 );*/
 		slink->actscript = 1;
 	} else {
 
@@ -526,11 +526,11 @@ PyObject *EXPP_clearScriptLinks( ScriptLink * slink, PyObject * args )
 		slink->totscript = slink->actscript = 0;
 	}
 
-	return EXPP_incr_ret( Py_None );
+	return V24_EXPP_incr_ret( Py_None );
 }
 
 
-PyObject *EXPP_addScriptLink(ScriptLink *slink, PyObject *args, int is_scene)
+PyObject *V24_EXPP_addScriptLink(ScriptLink *slink, PyObject *args, int is_scene)
 {
 	int event = 0, found_txt = 0;
 	void *stmp = NULL, *ftmp = NULL;
@@ -540,12 +540,12 @@ PyObject *EXPP_addScriptLink(ScriptLink *slink, PyObject *args, int is_scene)
 
 	/* !scriptlink shouldn't happen ... */
 	if( !slink ) {
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"internal error: no scriptlink!" );
 	}
 
 	if( !PyArg_ParseTuple( args, "ss", &textname, &eventname ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 	    "expected two strings as arguments" );
 
 	while( bltxt ) {
@@ -557,7 +557,7 @@ PyObject *EXPP_addScriptLink(ScriptLink *slink, PyObject *args, int is_scene)
 	}
 
 	if( !found_txt )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 	    "no such Blender Text" );
 
 	if( !strcmp( eventname, "FrameChanged" ) )
@@ -571,7 +571,7 @@ PyObject *EXPP_addScriptLink(ScriptLink *slink, PyObject *args, int is_scene)
 	else if( is_scene && !strcmp( eventname, "OnSave" ) )
 		event = SCRIPT_ONSAVE;
 	else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"invalid event name" );
 
 	stmp = slink->scripts;
@@ -602,7 +602,7 @@ PyObject *EXPP_addScriptLink(ScriptLink *slink, PyObject *args, int is_scene)
 	if( slink->actscript < 1 )
 		slink->actscript = 1;
 
-	return EXPP_incr_ret (Py_None);		/* normal exit */
+	return V24_EXPP_incr_ret (Py_None);		/* normal exit */
 }
 
 /*
@@ -619,21 +619,21 @@ PyObject *EXPP_addScriptLink(ScriptLink *slink, PyObject *args, int is_scene)
  * Return 0 on success, -1 on error.
  */
 
-int EXPP_setFloatClamped( PyObject *value, float *param,
+int V24_EXPP_setFloatClamped( PyObject *value, float *param,
 								float min, float max )
 {
 	if( !PyNumber_Check ( value ) ) {
 		char errstr[128];
 		sprintf ( errstr, "expected float argument in [%f,%f]", min, max );
-		return EXPP_ReturnIntError( PyExc_TypeError, errstr );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, errstr );
 	}
 
-	*param = EXPP_ClampFloat( (float)PyFloat_AsDouble( value ), min, max );
+	*param = V24_EXPP_ClampFloat( (float)PyFloat_AsDouble( value ), min, max );
 
 	return 0;
 }
 
-int EXPP_setIValueClamped( PyObject *value, void *param,
+int V24_EXPP_setIValueClamped( PyObject *value, void *param,
 								int min, int max, char type )
 {
 	int number;
@@ -641,39 +641,39 @@ int EXPP_setIValueClamped( PyObject *value, void *param,
 	if( !PyInt_Check( value ) ) {
 		char errstr[128];
 		sprintf ( errstr, "expected int argument in [%d,%d]", min, max );
-		return EXPP_ReturnIntError( PyExc_TypeError, errstr );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, errstr );
 	}
 
 	number = PyInt_AS_LONG( value );
 
 	switch ( type ) {
 	case 'b':
-		*(char *)param = (char)EXPP_ClampInt( number, min, max );
+		*(char *)param = (char)V24_EXPP_ClampInt( number, min, max );
 		return 0;
 	case 'h':
-		*(short *)param = (short)EXPP_ClampInt( number, min, max );
+		*(short *)param = (short)V24_EXPP_ClampInt( number, min, max );
 		return 0;
 	case 'H':
-		*(unsigned short *)param = (unsigned short)EXPP_ClampInt( number, min, max );
+		*(unsigned short *)param = (unsigned short)V24_EXPP_ClampInt( number, min, max );
 		return 0;
 	case 'i':
-		*(int *)param = EXPP_ClampInt( number, min, max );
+		*(int *)param = V24_EXPP_ClampInt( number, min, max );
 		return 0;
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
-			   "EXPP_setIValueClamped(): invalid type code" );
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
+			   "V24_EXPP_setIValueClamped(): invalid type code" );
 	}
 }
 
-int EXPP_setVec3Clamped( PyObject *value, float *param,
+int V24_EXPP_setVec3Clamped( PyObject *value, float *param,
 								float min, float max )
 {	
 	if( VectorObject_Check( value ) ) {
-		VectorObject *vect = (VectorObject *)value;
+		V24_VectorObject *vect = (V24_VectorObject *)value;
 		if( vect->size == 3 ) {
-			param[0] = EXPP_ClampFloat( vect->vec[0], min, max );
-			param[1] = EXPP_ClampFloat( vect->vec[1], min, max );
-			param[2] = EXPP_ClampFloat( vect->vec[2], min, max );
+			param[0] = V24_EXPP_ClampFloat( vect->vec[0], min, max );
+			param[1] = V24_EXPP_ClampFloat( vect->vec[1], min, max );
+			param[2] = V24_EXPP_ClampFloat( vect->vec[2], min, max );
 			return 0;
 		}
 	}
@@ -681,7 +681,7 @@ int EXPP_setVec3Clamped( PyObject *value, float *param,
 	if (1) {
 		char errstr[128];
 		sprintf ( errstr, "expected vector argument in [%f,%f]", min, max );
-		return EXPP_ReturnIntError( PyExc_TypeError, errstr );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, errstr );
 	}
 }
 
@@ -702,7 +702,7 @@ int EXPP_setVec3Clamped( PyObject *value, float *param,
  * Return 0 on success, -1 on error.
  */
 
-int EXPP_setFloatRange( PyObject *value, float *param,
+int V24_EXPP_setFloatRange( PyObject *value, float *param,
 								float min, float max )
 {
 	char errstr[128];
@@ -711,17 +711,17 @@ int EXPP_setFloatRange( PyObject *value, float *param,
 	sprintf ( errstr, "expected int argument in [%f,%f]", min, max );
 
 	if( !PyNumber_Check ( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError, errstr );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, errstr );
 
 	number = (float)PyFloat_AsDouble( value );
 	if ( number < min || number > max )
-		return EXPP_ReturnIntError( PyExc_ValueError, errstr );
+		return V24_EXPP_ReturnIntError( PyExc_ValueError, errstr );
 
 	*param = number;
 	return 0;
 }
 
-int EXPP_setIValueRange( PyObject *value, void *param,
+int V24_EXPP_setIValueRange( PyObject *value, void *param,
 								int min, int max, char type )
 {
 	char errstr[128];
@@ -730,11 +730,11 @@ int EXPP_setIValueRange( PyObject *value, void *param,
 	sprintf ( errstr, "expected int argument in [%d,%d]", min, max );
 
 	if( !PyInt_Check ( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError, errstr );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, errstr );
 
 	number = PyInt_AS_LONG( value );
 	if( number < min || number > max )
-		return EXPP_ReturnIntError( PyExc_ValueError, errstr );
+		return V24_EXPP_ReturnIntError( PyExc_ValueError, errstr );
 
 	switch ( type ) {
 	case 'b':
@@ -750,8 +750,8 @@ int EXPP_setIValueRange( PyObject *value, void *param,
 		*(int *)param = number;
 		return 0;
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
-			   "EXPP_setIValueRange(): invalid type code" );
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
+			   "V24_EXPP_setIValueRange(): invalid type code" );
 	}
 }
 
@@ -768,17 +768,17 @@ int EXPP_setIValueRange( PyObject *value, void *param,
  * Return 0 on success, -1 on error.
  */
 
-int EXPP_setModuleConstant ( BPy_constant *constant, void *param, char type )
+int V24_EXPP_setModuleConstant ( V24_BPy_constant *constant, void *param, char type )
 {
 	PyObject *item;
 
 	if( constant->ob_type != &constant_Type )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			   "expected module constant" );
 
 	item = PyDict_GetItemString( constant->dict, "value" );
 	if( !item )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 			   "module constant has no \"value\" key" );
 
 	switch ( type ) {
@@ -793,8 +793,8 @@ int EXPP_setModuleConstant ( BPy_constant *constant, void *param, char type )
 		Py_DECREF(item); /* line above increfs */
 		return 0;
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
-			   "EXPP_setModuleConstant(): invalid type code" );
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
+			   "V24_EXPP_setModuleConstant(): invalid type code" );
 	}
 }
 
@@ -808,30 +808,30 @@ int EXPP_setModuleConstant ( BPy_constant *constant, void *param, char type )
  *    type: pointer type ('h' == short, 'i' == integer)
  */
 
-PyObject *EXPP_getBitfield( void *param, int setting, char type )
+PyObject *V24_EXPP_getBitfield( void *param, int setting, char type )
 {
 	switch ( type ) {
 	case 'b':
 		return (*(char *)param & setting)
-				? EXPP_incr_ret_True() : EXPP_incr_ret_False();
+				? V24_EXPP_incr_ret_True() : V24_EXPP_incr_ret_False();
 	case 'h':
 		return (*(short *)param & setting)
-				? EXPP_incr_ret_True() : EXPP_incr_ret_False();
+				? V24_EXPP_incr_ret_True() : V24_EXPP_incr_ret_False();
 	case 'i':
 		return (*(int *)param & setting)
-				? EXPP_incr_ret_True() : EXPP_incr_ret_False();
+				? V24_EXPP_incr_ret_True() : V24_EXPP_incr_ret_False();
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			   "EXPP_getBit(): invalid type code" );
 	}
 }
 
-int EXPP_setBitfield( PyObject * value, void *param, int setting, char type )
+int V24_EXPP_setBitfield( PyObject * value, void *param, int setting, char type )
 {
 	int param_bool = PyObject_IsTrue( value );
 
 	if( param_bool == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 	
 	switch ( type ) {
@@ -854,7 +854,7 @@ int EXPP_setBitfield( PyObject * value, void *param, int setting, char type )
 			*(int *)param &= ~setting;
 		return 0;
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 			   "EXPP_setBit(): invalid type code" );
 	}
 }
@@ -865,13 +865,13 @@ int EXPP_setBitfield( PyObject * value, void *param, int setting, char type )
  * the specified tp_getset setter for the corresponding attribute.
  */
 
-PyObject *EXPP_setterWrapper ( PyObject * self, PyObject * args,
+PyObject *V24_EXPP_setterWrapper ( PyObject * self, PyObject * args,
 				setter func)
 {
 	int error;
 
 	if ( !PyTuple_Check( args ) || PyTuple_Size( args ) != 1 )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "expected tuple of one item" );
 
 	error = func ( self, PyTuple_GET_ITEM( args, 0 ), NULL );
@@ -888,13 +888,13 @@ PyObject *EXPP_setterWrapper ( PyObject * self, PyObject * args,
  * the corresponding attribute.
  */
 
-PyObject *EXPP_setterWrapperTuple ( PyObject * self, PyObject * args,
+PyObject *V24_EXPP_setterWrapperTuple ( PyObject * self, PyObject * args,
 									setter func)
 {
 	int error;
 
 	if ( !PyTuple_Check( args ) )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "expected tuple" );
 
 	error = func ( self, args, NULL );
@@ -911,7 +911,7 @@ PyObject *EXPP_setterWrapperTuple ( PyObject * self, PyObject * args,
  * to be decremented so it can be reclaimed.
  */
 
-int EXPP_dict_set_item_str( PyObject *dict, char *key, PyObject *value)
+int V24_EXPP_dict_set_item_str( PyObject *dict, char *key, PyObject *value)
 {
    	/* add value to dictionary */
 	int ret = PyDict_SetItemString(dict, key, value);
@@ -928,7 +928,7 @@ int EXPP_dict_set_item_str( PyObject *dict, char *key, PyObject *value)
  * remember to Py_DECREF the tuple after
  */
 
-PyObject * EXPP_PyTuple_New_Prepend(PyObject *tuple, PyObject *value)
+PyObject * V24_EXPP_PyTuple_New_Prepend(PyObject *tuple, PyObject *value)
 {
 	PyObject *item;
 	PyObject *new_tuple;

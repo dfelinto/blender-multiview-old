@@ -35,7 +35,7 @@
 #include "MEM_guardedalloc.h"	/* for MEM_callocN */
 #include "DNA_space_types.h"	/* SPACE_VIEW3D, SPACE_SEQ */
 #include "DNA_scene_types.h"
-#include "DNA_object_types.h" /* LibBlockSeq_new */
+#include "DNA_object_types.h" /* V24_LibBlockSeq_new */
 #include "DNA_texture_types.h"
 #include "DNA_curve_types.h"
 #include "DNA_ipo_types.h"
@@ -115,22 +115,22 @@
 
 extern VFont *get_builtin_font(void);
 
-static PyObject *LibBlockSeq_CreatePyObject( Link *iter, int type )
+static PyObject *V24_LibBlockSeq_CreatePyObject( Link *iter, int type )
 {
-	BPy_LibBlockSeq *seq = PyObject_NEW( BPy_LibBlockSeq, &LibBlockSeq_Type);
+	V24_BPy_LibBlockSeq *seq = PyObject_NEW( V24_BPy_LibBlockSeq, &V24_LibBlockSeq_Type);
 	seq->iter = iter;
 	seq->type = type;
 	return (PyObject *)seq;
 }
 
 
-static int LibBlockSeq_len( BPy_LibBlockSeq * self )
+static int V24_LibBlockSeq_len( V24_BPy_LibBlockSeq * self )
 {
 	ListBase *lb = wich_libbase(G.main, self->type);
 	return BLI_countlist( lb );
 }
 
-static PyObject * LibBlockSeq_subscript(BPy_LibBlockSeq * self, PyObject *key)
+static PyObject * V24_LibBlockSeq_subscript(V24_BPy_LibBlockSeq * self, PyObject *key)
 {
 	char *name;
 	char *lib= NULL;
@@ -148,7 +148,7 @@ static PyObject * LibBlockSeq_subscript(BPy_LibBlockSeq * self, PyObject *key)
 		/* Get the first arg */
 		pydata = PyTuple_GET_ITEM(key, 0);
 		if (!PyString_Check(pydata)) {
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"the data name must be a string" );
 		}
 		
@@ -164,11 +164,11 @@ static PyObject * LibBlockSeq_subscript(BPy_LibBlockSeq * self, PyObject *key)
 				lib = NULL; /* and empty string also means data must be local */
 			}
 		} else {
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"the lib name must be a string or None" );
 		}
 	} else {
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected the a name string or a tuple (lib, name)" );
 	}
 	
@@ -180,24 +180,24 @@ static PyObject * LibBlockSeq_subscript(BPy_LibBlockSeq * self, PyObject *key)
 				(lib && use_lib && id->lib && (!strcmp( id->lib->name, lib))) /* only external lib */
 			)
 			{
-				return GetPyObjectFromID(id);
+				return V24_GetPyObjectFromID(id);
 			}
 		}
 	}
-	return ( EXPP_ReturnPyObjError
+	return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_KeyError, "Requested data does not exist") );
 }
 
-static PyMappingMethods LibBlockSeq_as_mapping = {
-	( inquiry ) LibBlockSeq_len,	/* mp_length */
-	( binaryfunc ) LibBlockSeq_subscript,	/* mp_subscript */
+static PyMappingMethods V24_LibBlockSeq_as_mapping = {
+	( inquiry ) V24_LibBlockSeq_len,	/* mp_length */
+	( binaryfunc ) V24_LibBlockSeq_subscript,	/* mp_subscript */
 	( objobjargproc ) 0,	/* mp_ass_subscript */
 };
 
 
 /************************************************************************
  *
- * Python LibBlockSeq_Type iterator (iterates over GroupObjects)
+ * Python V24_LibBlockSeq_Type iterator (iterates over GroupObjects)
  *
  ************************************************************************/
 
@@ -205,7 +205,7 @@ static PyMappingMethods LibBlockSeq_as_mapping = {
  * Initialize the interator index
  */
 
-static PyObject *LibBlockSeq_getIter( BPy_LibBlockSeq * self )
+static PyObject *V24_LibBlockSeq_getIter( V24_BPy_LibBlockSeq * self )
 {
 	/* we need to get the first base, but for selected context we may need to advance
 	to the first selected or first conext base */
@@ -219,9 +219,9 @@ static PyObject *LibBlockSeq_getIter( BPy_LibBlockSeq * self )
 	/* create a new iterator if were alredy using this one */
 	if (self->iter==NULL) {
 		self->iter = link;
-		return EXPP_incr_ret ( (PyObject *) self );
+		return V24_EXPP_incr_ret ( (PyObject *) self );
 	} else {
-		return LibBlockSeq_CreatePyObject(link, self->type);
+		return V24_LibBlockSeq_CreatePyObject(link, self->type);
 	}
 }
 
@@ -229,31 +229,31 @@ static PyObject *LibBlockSeq_getIter( BPy_LibBlockSeq * self )
  * Return next LibBlockSeq iter.
  */
 
-static PyObject *LibBlockSeq_nextIter( BPy_LibBlockSeq * self )
+static PyObject *V24_LibBlockSeq_nextIter( V24_BPy_LibBlockSeq * self )
 {
 	PyObject *object;
 	Link *link;
 	if( !(self->iter) ) {
 		self->iter= NULL;
-		return EXPP_ReturnPyObjError( PyExc_StopIteration,
+		return V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 				"iterator at end" );
 	}
 	
-	object = GetPyObjectFromID((ID *)self->iter);
+	object = V24_GetPyObjectFromID((ID *)self->iter);
 	
 	link= self->iter->next;
 	self->iter= link;
 	return object;
 }
 
-PyObject *LibBlockSeq_getActive(BPy_LibBlockSeq *self)
+PyObject *V24_LibBlockSeq_getActive(V24_BPy_LibBlockSeq *self)
 {
 	switch (self->type) {
 	case ID_SCE:
 		if ( !G.scene ) {
 			Py_RETURN_NONE;
 		} else {
-			return Scene_CreatePyObject( ( Scene * ) G.scene );
+			return V24_Scene_CreatePyObject( ( Scene * ) G.scene );
 		}
 		
 		break;
@@ -262,7 +262,7 @@ PyObject *LibBlockSeq_getActive(BPy_LibBlockSeq *self)
 			Py_RETURN_NONE;
 		} else {
 			what_image( G.sima );	/* make sure image data exists */
-			return Image_CreatePyObject( G.sima->image );
+			return V24_Image_CreatePyObject( G.sima->image );
 		}
 		break;
 	case ID_TXT: {
@@ -271,31 +271,31 @@ PyObject *LibBlockSeq_getActive(BPy_LibBlockSeq *self)
 			if (st->spacetype!=SPACE_TEXT || st->text==NULL) {
 				Py_RETURN_NONE;
 			} else {
-				return Text_CreatePyObject( st->text );
+				return V24_Text_CreatePyObject( st->text );
 			}
 		}
 	}
 	
-	return EXPP_ReturnPyObjError( PyExc_TypeError,
+	return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"Only Scene and Image types have the active attribute" );
 }
 
-static int LibBlockSeq_setActive(BPy_LibBlockSeq *self, PyObject *value)
+static int V24_LibBlockSeq_setActive(V24_BPy_LibBlockSeq *self, PyObject *value)
 {
 	switch (self->type) {
 	case ID_SCE:
 		if (!BPy_Scene_Check(value)) {
-			return EXPP_ReturnIntError(PyExc_TypeError,
+			return V24_EXPP_ReturnIntError(PyExc_TypeError,
 					"Must be a scene" );
 		} else {
-			BPy_Scene *bpydata;
+			V24_BPy_Scene *bpydata;
 			Scene *data;
 			
-			bpydata = (BPy_Scene *)value;
+			bpydata = (V24_BPy_Scene *)value;
 			data= bpydata->scene;
 			
 			if (!data)
-				return EXPP_ReturnIntError(PyExc_RuntimeError,
+				return V24_EXPP_ReturnIntError(PyExc_RuntimeError,
 					"This Scene has been removed" );
 			
 			if (data != G.scene) {
@@ -307,20 +307,20 @@ static int LibBlockSeq_setActive(BPy_LibBlockSeq *self, PyObject *value)
 		
 	case ID_IM:
 		if (!BPy_Image_Check(value)) {
-			return EXPP_ReturnIntError(PyExc_TypeError,
+			return V24_EXPP_ReturnIntError(PyExc_TypeError,
 					"Must be a scene" );
 		} else {
-			BPy_Image *bpydata;
+			V24_BPy_Image *bpydata;
 			Image *data;
 			
 			if (!G.sima) 
 				return 0;
 			
-			bpydata = (BPy_Image *)value;
+			bpydata = (V24_BPy_Image *)value;
 			data= bpydata->image;
 			
 			if (!data)
-				return EXPP_ReturnIntError(PyExc_RuntimeError,
+				return V24_EXPP_ReturnIntError(PyExc_RuntimeError,
 					"This Scene has been removed" );
 			
 			if (data != G.sima->image)
@@ -330,14 +330,14 @@ static int LibBlockSeq_setActive(BPy_LibBlockSeq *self, PyObject *value)
 	
 	case ID_TXT:
 		if (!BPy_Text_Check(value)) {
-			return EXPP_ReturnIntError(PyExc_TypeError,
+			return V24_EXPP_ReturnIntError(PyExc_TypeError,
 					"Must be a text" );
 		} else {
 			SpaceText *st= curarea->spacedata.first;	
-			Text *data = ((BPy_Text *)value)->text;
+			Text *data = ((V24_BPy_Text *)value)->text;
 			
 			if( !data )
-				return EXPP_ReturnIntError( PyExc_RuntimeError,
+				return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 						      "This object isn't linked to a Blender Text Object" );
 			if(st->spacetype!=SPACE_TEXT)
 				return 0;
@@ -346,17 +346,17 @@ static int LibBlockSeq_setActive(BPy_LibBlockSeq *self, PyObject *value)
 		return 0;
 	}
 	
-	return EXPP_ReturnIntError( PyExc_TypeError,
+	return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"Only Scene and Image types have the active attribute" );
 }
 
-static int LibBlockSeq_setTag(BPy_LibBlockSeq *self, PyObject *value)
+static int V24_LibBlockSeq_setTag(V24_BPy_LibBlockSeq *self, PyObject *value)
 {
 	ID *id;
 	int param = PyObject_IsTrue( value );
 	
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 	
 	id = (ID *)wich_libbase(G.main, self->type)->first;
@@ -390,7 +390,7 @@ Mesh *add_mesh__internal(char *name)
 }
 
 /* used for new and load */
-PyObject *LibBlockSeq_new(BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
+PyObject *V24_LibBlockSeq_new(V24_BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
 {
 	ID *id = NULL;
 	char *name=NULL, *filename=NULL, *data_type=NULL;
@@ -410,44 +410,44 @@ PyObject *LibBlockSeq_new(BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
 			PyObject *ret= NULL;
 			
 			if (strlen(filename) > FILE_MAXDIR + FILE_MAXFILE - 1)
-					return ( EXPP_ReturnPyObjError( PyExc_IOError,
+					return ( V24_EXPP_ReturnPyObjError( PyExc_IOError,
 								"filename too long" ) );
 			
 			if (self->type == ID_IM) {
 				Image *img = BKE_add_image_file( filename );
 				if (!img)
-					return ( EXPP_ReturnPyObjError( PyExc_IOError,
+					return ( V24_EXPP_ReturnPyObjError( PyExc_IOError,
 								"couldn't load image" ) );
-				ret = Image_CreatePyObject( img );
+				ret = V24_Image_CreatePyObject( img );
 				
 			} else if (self->type == ID_VF) {
 				VFont *vf = load_vfont (filename);
 				if (!vf)
-					return EXPP_ReturnPyObjError( PyExc_IOError,
+					return V24_EXPP_ReturnPyObjError( PyExc_IOError,
 								"couldn't load font" );
-				ret = Font_CreatePyObject(vf);
+				ret = V24_Font_CreatePyObject(vf);
 				
 			} else if (self->type == ID_SO) {
 				bSound  *snd = sound_new_sound( filename );
 				if (!snd)
-					return EXPP_ReturnPyObjError( PyExc_IOError,
+					return V24_EXPP_ReturnPyObjError( PyExc_IOError,
 								"couldn't load sound" );
-				ret = Sound_CreatePyObject(snd);
+				ret = V24_Sound_CreatePyObject(snd);
 				
 			} else if (self->type == ID_TXT) {
 				Text *txt = NULL;
 				txt = add_text( filename );
 				if( !txt )
-					return EXPP_ReturnPyObjError( PyExc_IOError,
+					return V24_EXPP_ReturnPyObjError( PyExc_IOError,
 						      "couldn't load text" );
-				ret = Text_CreatePyObject(txt);
+				ret = V24_Text_CreatePyObject(txt);
 			}
 			
 			if (!ret)
-					return EXPP_ReturnPyObjError( PyExc_IOError,
+					return V24_EXPP_ReturnPyObjError( PyExc_IOError,
 						      "couldn't create pyobject on load, unknown error" );
 			if (name) {
-				ID *id = ((BPy_GenericLib *)ret)->id;
+				ID *id = ((V24_BPy_GenericLib *)ret)->id;
 				rename_id( id, name );
 			}
 			return ret;
@@ -458,7 +458,7 @@ PyObject *LibBlockSeq_new(BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
 	if (self->type == ID_IM) {
 		/* Image, accepts width and height*/
 		if( !PyArg_ParseTuple( args, "|sii", &name, &img_width, &img_height ) )
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"one string and two ints expected as arguments" );
 		CLAMP(img_width,  4, 5000);
 		CLAMP(img_height, 4, 5000);
@@ -466,19 +466,19 @@ PyObject *LibBlockSeq_new(BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
 	} else if (self->type == ID_CU) {
 		/* Curve, needs name and type strings */
 		if( !PyArg_ParseTuple( args, "ss", &name, &data_type ) )
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"two strings expected as arguments" );
 		
 		if(      !strcmp( data_type, "Curve" ) )		data_code = OB_CURVE;
 		else if( !strcmp( data_type, "Text3d" ) )			data_code = OB_FONT;/*
 		else if( !strcmp( data_type, "Surf" ) )			data_code = OB_SURF;*/
-		else return EXPP_ReturnPyObjError( PyExc_TypeError,
+		else return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"Second argument for Curve type incorrect\t\nmust be a string in (Curve or Text - Surf is not supported yet)" );
 	
 	} else if (self->type == ID_IP) {
 		/* IPO, needs name and type strings */
 		if( !PyArg_ParseTuple( args, "ss", &name, &data_type ) )
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"two strings expected as arguments" );
 		
 		if(      !strcmp( data_type, "Object" ) )		data_code = ID_OB;
@@ -492,13 +492,13 @@ PyObject *LibBlockSeq_new(BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
 		else if( !strcmp( data_type, "Sequence" ) )		data_code = ID_SEQ;
 		else if( !strcmp( data_type, "Curve" ) )		data_code = ID_CU;
 		else if( !strcmp( data_type, "Key" ) )			data_code = ID_KE;
-		else return EXPP_ReturnPyObjError( PyExc_TypeError,
+		else return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"Second argument for IPO type incorrect\t\nmust be a string in (Object, Camera, World, Material, Texture, Lamp, Action, Sequence, Curve, Key)" );
 		
 	} else {
 		/* Other types only need the name */
 		if( !PyArg_ParseTuple( args, "|s", &name ) )
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"new(name) - name must be a string argument" );
 	}
 	
@@ -508,7 +508,7 @@ PyObject *LibBlockSeq_new(BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
 		user_count = 1;
 		break;
 	case ID_OB:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"Add objects through the scenes objects iterator" );
 	case ID_ME:
 		id = (ID *)add_mesh__internal( name?name:"Mesh" );
@@ -540,8 +540,8 @@ PyObject *LibBlockSeq_new(BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
 	{
 		id = (ID *)BKE_add_image_size(img_width, img_height, name?name:"Image", 0, color);
 		if( !id )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
-				"couldn't create PyObject Image_Type" ) );
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+				"couldn't create PyObject V24_Image_Type" ) );
 		/* new images have zero user count */
 		break;
 	}
@@ -561,14 +561,14 @@ PyObject *LibBlockSeq_new(BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
 		id = (ID *)add_world( name?name:"World" );
 		break;
 	case ID_VF:
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"Cannot create new fonts, use the load() function to load from a file" );
 	case ID_TXT:
 		id = (ID *)add_empty_text( name?name:"Text" );
 		user_count = 1;
 		break;
 	case ID_SO:
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"Cannot create new sounds, use the load() function to load from a file" );
 	case ID_GR:	
 		id = (ID *)add_group( name?name:"Group" );
@@ -589,38 +589,38 @@ PyObject *LibBlockSeq_new(BPy_LibBlockSeq *self, PyObject * args, PyObject *kwd)
 	/* set some types user count to 1, otherwise zero */
 	id->us = user_count;
 	
-	return GetPyObjectFromID(id);
+	return V24_GetPyObjectFromID(id);
 }
 
 
-PyObject *LibBlockSeq_unlink(BPy_LibBlockSeq *self, PyObject * value)
+PyObject *V24_LibBlockSeq_unlink(V24_BPy_LibBlockSeq *self, PyObject * value)
 {
 	switch (self->type) {
 	case ID_SCE:
 		if( !BPy_Scene_Check(value) ) {
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected Scene object" );
 		} else {
-			Scene *data = ((BPy_Scene *)value)->scene;
+			Scene *data = ((V24_BPy_Scene *)value)->scene;
 			
 			if (!data)
-				return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+				return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"This Scene has been removed" );
 			
 			/* Run the removal code */
 			free_libblock( &G.main->scene, data );
-			((BPy_Scene *)value)->scene = NULL;
+			((V24_BPy_Scene *)value)->scene = NULL;
 			Py_RETURN_NONE;
 		}
 	case ID_GR:
 		if( !BPy_Group_Check(value) ) {
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected Group object" );
 		} else {
-			Group *data = ((BPy_Group *)value)->group;
+			Group *data = ((V24_BPy_Group *)value)->group;
 			
 			if (!data)
-				return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+				return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"This Group has been removed alredy" );
 			
 			/* Run the removal code */
@@ -628,20 +628,20 @@ PyObject *LibBlockSeq_unlink(BPy_LibBlockSeq *self, PyObject * value)
 			unlink_group(data);
 			data->id.us= 0;
 			free_libblock( &G.main->group, data );
-			((BPy_Group *)value)->group = NULL;
+			((V24_BPy_Group *)value)->group = NULL;
 			
 			Py_RETURN_NONE;
 		}
 
 	case ID_TXT:
 		if( !BPy_Text_Check(value) ) {
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected Text object" );
 		} else {
-			Text *data = ((BPy_Text *)value)->text;
+			Text *data = ((V24_BPy_Text *)value)->text;
 			
 			if (!data)
-				return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+				return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"This Group has been removed alredy" );
 			
 			/* Run the removal code */
@@ -649,16 +649,16 @@ PyObject *LibBlockSeq_unlink(BPy_LibBlockSeq *self, PyObject * value)
 			free_text_controllers( data );
 			unlink_text( data );
 			free_libblock( &G.main->text, data );
-			((BPy_Text *)value)->text = NULL;
+			((V24_BPy_Text *)value)->text = NULL;
 			
 			Py_RETURN_NONE;
 		}
 	}
-	return EXPP_ReturnPyObjError( PyExc_TypeError,
+	return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				      "Only types Scene, Group and Text can unlink" );	
 }
 
-static int LibBlockSeq_compare( BPy_LibBlockSeq * a, BPy_LibBlockSeq * b )
+static int V24_LibBlockSeq_compare( V24_BPy_LibBlockSeq * a, V24_BPy_LibBlockSeq * b )
 {
 	return ( a->type == b->type) ? 0 : -1;	
 }
@@ -667,40 +667,40 @@ static int LibBlockSeq_compare( BPy_LibBlockSeq * a, BPy_LibBlockSeq * b )
  * repr function
  * callback functions building meaninful string to representations
  */
-static PyObject *LibBlockSeq_repr( BPy_LibBlockSeq * self )
+static PyObject *V24_LibBlockSeq_repr( V24_BPy_LibBlockSeq * self )
 {
 	return PyString_FromFormat( "[LibBlockSeq Iterator]");
 }
 
-static PyGetSetDef LibBlockSeq_getseters[] = {
+static PyGetSetDef V24_LibBlockSeq_getseters[] = {
 	{"active",
-	 (getter)LibBlockSeq_getActive, (setter)LibBlockSeq_setActive,
+	 (getter)V24_LibBlockSeq_getActive, (setter)V24_LibBlockSeq_setActive,
 	 "active object",
 	 NULL},
 	{"tag",
-	 (getter)NULL, (setter)LibBlockSeq_setTag,
+	 (getter)NULL, (setter)V24_LibBlockSeq_setTag,
 	 "tag all data in True or False (write only)",
 	 NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
 static struct PyMethodDef BPy_LibBlockSeq_methods[] = {
-	{"new", (PyCFunction)LibBlockSeq_new, METH_VARARGS | METH_KEYWORDS,
+	{"new", (PyCFunction)V24_LibBlockSeq_new, METH_VARARGS | METH_KEYWORDS,
 		"(name) - Create a new object in this scene from the obdata given and return a new object"},
-	{"unlink", (PyCFunction)LibBlockSeq_unlink, METH_O,
+	{"unlink", (PyCFunction)V24_LibBlockSeq_unlink, METH_O,
 		"unlinks the object from the scene"},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python LibBlockSeq_Type structure definition:                               */
+/* Python V24_LibBlockSeq_Type structure definition:                               */
 /*****************************************************************************/
-PyTypeObject LibBlockSeq_Type = {
+PyTypeObject V24_LibBlockSeq_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender LibBlockSeq",           /* char *tp_name; */
-	sizeof( BPy_LibBlockSeq ),       /* int tp_basicsize; */
+	sizeof( V24_BPy_LibBlockSeq ),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -709,14 +709,14 @@ PyTypeObject LibBlockSeq_Type = {
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) LibBlockSeq_compare, /* cmpfunc tp_compare; */
-	( reprfunc ) LibBlockSeq_repr,   /* reprfunc tp_repr; */
+	( cmpfunc ) V24_LibBlockSeq_compare, /* cmpfunc tp_compare; */
+	( reprfunc ) V24_LibBlockSeq_repr,   /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
 	NULL,	    /* PySequenceMethods *tp_as_sequence; */
-	&LibBlockSeq_as_mapping,                       /* PyMappingMethods *tp_as_mapping; */
+	&V24_LibBlockSeq_as_mapping,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
 
@@ -749,13 +749,13 @@ PyTypeObject LibBlockSeq_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc) LibBlockSeq_getIter, /* getiterfunc tp_iter; */
-	( iternextfunc ) LibBlockSeq_nextIter, /* iternextfunc tp_iternext; */
+	( getiterfunc) V24_LibBlockSeq_getIter, /* getiterfunc tp_iter; */
+	( iternextfunc ) V24_LibBlockSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
 	BPy_LibBlockSeq_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	LibBlockSeq_getseters,       /* struct PyGetSetDef *tp_getset; */
+	V24_LibBlockSeq_getseters,       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -780,38 +780,38 @@ PyTypeObject LibBlockSeq_Type = {
 
 /*-----------------------------BPy module Init())-----------------------------*/
 
-PyObject * Data_Init( void )
+PyObject * V24_Data_Init( void )
 {
 	PyObject *module;
 	PyObject *dict;
 	
 	
-	PyType_Ready( &LibBlockSeq_Type );
-	PyType_Ready( &Config_Type );
+	PyType_Ready( &V24_LibBlockSeq_Type );
+	PyType_Ready( &V24_Config_Type );
 	
 	/*submodule = Py_InitModule3( "Blender.Main", NULL, M_Main_doc );*/
 	module = Py_InitModule3( "bpy.data", NULL, "The bpy.data submodule" );
 	dict = PyModule_GetDict( module );
 	
 	/* Python Data Types */
-	PyModule_AddObject( module, "scenes", 	LibBlockSeq_CreatePyObject(NULL, ID_SCE) );
-	PyModule_AddObject( module, "objects",	LibBlockSeq_CreatePyObject(NULL, ID_OB) );
-	PyModule_AddObject( module, "meshes",	LibBlockSeq_CreatePyObject(NULL, ID_ME) );
-	PyModule_AddObject( module, "curves",	LibBlockSeq_CreatePyObject(NULL, ID_CU) );
-	PyModule_AddObject( module, "metaballs",LibBlockSeq_CreatePyObject(NULL, ID_MB) );
-	PyModule_AddObject( module, "materials",LibBlockSeq_CreatePyObject(NULL, ID_MA) );
-	PyModule_AddObject( module, "textures",	LibBlockSeq_CreatePyObject(NULL, ID_TE) );
-	PyModule_AddObject( module, "images",	LibBlockSeq_CreatePyObject(NULL, ID_IM) );
-	PyModule_AddObject( module, "lattices",	LibBlockSeq_CreatePyObject(NULL, ID_LT) );
-	PyModule_AddObject( module, "lamps",	LibBlockSeq_CreatePyObject(NULL, ID_LA) );
-	PyModule_AddObject( module, "cameras",	LibBlockSeq_CreatePyObject(NULL, ID_CA) );
-	PyModule_AddObject( module, "ipos",		LibBlockSeq_CreatePyObject(NULL, ID_IP) );
-	PyModule_AddObject( module, "worlds",	LibBlockSeq_CreatePyObject(NULL, ID_WO) );
-	PyModule_AddObject( module, "fonts",	LibBlockSeq_CreatePyObject(NULL, ID_VF) );
-	PyModule_AddObject( module, "texts",	LibBlockSeq_CreatePyObject(NULL, ID_TXT) );
-	PyModule_AddObject( module, "sounds",	LibBlockSeq_CreatePyObject(NULL, ID_SO) );
-	PyModule_AddObject( module, "groups",	LibBlockSeq_CreatePyObject(NULL, ID_GR) );
-	PyModule_AddObject( module, "armatures",LibBlockSeq_CreatePyObject(NULL, ID_AR) );
-	PyModule_AddObject( module, "actions",	LibBlockSeq_CreatePyObject(NULL, ID_AC) );
+	PyModule_AddObject( module, "scenes", 	V24_LibBlockSeq_CreatePyObject(NULL, ID_SCE) );
+	PyModule_AddObject( module, "objects",	V24_LibBlockSeq_CreatePyObject(NULL, ID_OB) );
+	PyModule_AddObject( module, "meshes",	V24_LibBlockSeq_CreatePyObject(NULL, ID_ME) );
+	PyModule_AddObject( module, "curves",	V24_LibBlockSeq_CreatePyObject(NULL, ID_CU) );
+	PyModule_AddObject( module, "metaballs",V24_LibBlockSeq_CreatePyObject(NULL, ID_MB) );
+	PyModule_AddObject( module, "materials",V24_LibBlockSeq_CreatePyObject(NULL, ID_MA) );
+	PyModule_AddObject( module, "textures",	V24_LibBlockSeq_CreatePyObject(NULL, ID_TE) );
+	PyModule_AddObject( module, "images",	V24_LibBlockSeq_CreatePyObject(NULL, ID_IM) );
+	PyModule_AddObject( module, "lattices",	V24_LibBlockSeq_CreatePyObject(NULL, ID_LT) );
+	PyModule_AddObject( module, "lamps",	V24_LibBlockSeq_CreatePyObject(NULL, ID_LA) );
+	PyModule_AddObject( module, "cameras",	V24_LibBlockSeq_CreatePyObject(NULL, ID_CA) );
+	PyModule_AddObject( module, "ipos",		V24_LibBlockSeq_CreatePyObject(NULL, ID_IP) );
+	PyModule_AddObject( module, "worlds",	V24_LibBlockSeq_CreatePyObject(NULL, ID_WO) );
+	PyModule_AddObject( module, "fonts",	V24_LibBlockSeq_CreatePyObject(NULL, ID_VF) );
+	PyModule_AddObject( module, "texts",	V24_LibBlockSeq_CreatePyObject(NULL, ID_TXT) );
+	PyModule_AddObject( module, "sounds",	V24_LibBlockSeq_CreatePyObject(NULL, ID_SO) );
+	PyModule_AddObject( module, "groups",	V24_LibBlockSeq_CreatePyObject(NULL, ID_GR) );
+	PyModule_AddObject( module, "armatures",V24_LibBlockSeq_CreatePyObject(NULL, ID_AR) );
+	PyModule_AddObject( module, "actions",	V24_LibBlockSeq_CreatePyObject(NULL, ID_AC) );
 	return module;
 }

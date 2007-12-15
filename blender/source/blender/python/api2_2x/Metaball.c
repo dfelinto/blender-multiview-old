@@ -49,166 +49,166 @@
 #include "BKE_material.h"
 
 /* checks for the metaelement being removed */
-#define METAELEM_DEL_CHECK_PY(bpy_meta_elem) if (!(bpy_meta_elem->metaelem)) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "Metaball has been removed" ) );
-#define METAELEM_DEL_CHECK_INT(bpy_meta_elem) if (!(bpy_meta_elem->metaelem)) return ( EXPP_ReturnIntError( PyExc_RuntimeError, "Metaball has been removed" ) );
+#define METAELEM_DEL_CHECK_PY(bpy_meta_elem) if (!(bpy_meta_elem->metaelem)) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "Metaball has been removed" ) );
+#define METAELEM_DEL_CHECK_INT(bpy_meta_elem) if (!(bpy_meta_elem->metaelem)) return ( V24_EXPP_ReturnIntError( PyExc_RuntimeError, "Metaball has been removed" ) );
 
 /*****************************************************************************/
 /* Python API function prototypes for the Metaball module.                   */
 /*****************************************************************************/
-static PyObject *M_Metaball_New( PyObject * self, PyObject * args );
-static PyObject *M_Metaball_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_Metaball_New( PyObject * self, PyObject * args );
+static PyObject *V24_M_Metaball_Get( PyObject * self, PyObject * args );
 
 /*****************************************************************************/
 /* The following string definitions are used for documentation strings.      */
 /* In Python these will be written to the console when doing a               */
 /* Blender.Metaball.__doc__                                                  */
 /*****************************************************************************/
-static char M_Metaball_doc[] =
+static char V24_M_Metaball_doc[] =
 	"The Blender Metaball module\n\n\nMetaballs are primitive shapes\
  such as balls, pipes, boxes and planes,\
  that can join each other to create smooth,\
  organic volumes\n. The shapes themseves are called\
  'Metaelements' and can be accessed from the Metaball module.";
 
-static char M_Metaball_New_doc[] = "Creates new metaball object data";
+static char V24_M_Metaball_New_doc[] = "Creates new metaball object data";
 
-static char M_Metaball_Get_doc[] = "Retreives an existing metaball object data";
+static char V24_M_Metaball_Get_doc[] = "Retreives an existing metaball object data";
 
 /*****************************************************************************/
 /* Python method structure definition for Blender.Metaball module:           */
 /*****************************************************************************/
 struct PyMethodDef M_Metaball_methods[] = {
-	{"New", M_Metaball_New, METH_VARARGS, M_Metaball_New_doc},
-	{"Get", M_Metaball_Get, METH_VARARGS, M_Metaball_Get_doc},
+	{"New", V24_M_Metaball_New, METH_VARARGS, V24_M_Metaball_New_doc},
+	{"Get", V24_M_Metaball_Get, METH_VARARGS, V24_M_Metaball_Get_doc},
 	{NULL, NULL, 0, NULL}
 };
 
-static PyObject *M_MetaElem_TypesDict( void )
+static PyObject *V24_M_MetaElem_TypesDict( void )
 {
-	PyObject *Types = PyConstant_New(  );
+	PyObject *Types = V24_PyConstant_New(  );
 
 	if( Types ) {
-		BPy_constant *d = ( BPy_constant * ) Types;
+		V24_BPy_constant *d = ( V24_BPy_constant * ) Types;
 
-		PyConstant_Insert( d, "BALL",	PyInt_FromLong( MB_BALL ) );
-		/* PyConstant_Insert( d, "TUBEX",	PyInt_FromLong( MB_TUBEX ) );  - DEPRICATED */
-		/* PyConstant_Insert( d, "TUBEY",	PyInt_FromLong( MB_TUBEY ) );  - DEPRICATED */
-		/* PyConstant_Insert( d, "TUBEZ",	PyInt_FromLong( MB_TUBEZ ) );  - DEPRICATED */
-		PyConstant_Insert( d, "TUBE",	PyInt_FromLong( MB_TUBE ) );
-		PyConstant_Insert( d, "PLANE",	PyInt_FromLong( MB_PLANE ) );
-		PyConstant_Insert( d, "ELIPSOID",PyInt_FromLong( MB_ELIPSOID ) );
-		PyConstant_Insert( d, "CUBE",	PyInt_FromLong( MB_CUBE ) );
+		V24_PyConstant_Insert( d, "BALL",	PyInt_FromLong( MB_BALL ) );
+		/* V24_PyConstant_Insert( d, "TUBEX",	PyInt_FromLong( MB_TUBEX ) );  - DEPRICATED */
+		/* V24_PyConstant_Insert( d, "TUBEY",	PyInt_FromLong( MB_TUBEY ) );  - DEPRICATED */
+		/* V24_PyConstant_Insert( d, "TUBEZ",	PyInt_FromLong( MB_TUBEZ ) );  - DEPRICATED */
+		V24_PyConstant_Insert( d, "TUBE",	PyInt_FromLong( MB_TUBE ) );
+		V24_PyConstant_Insert( d, "PLANE",	PyInt_FromLong( MB_PLANE ) );
+		V24_PyConstant_Insert( d, "ELIPSOID",PyInt_FromLong( MB_ELIPSOID ) );
+		V24_PyConstant_Insert( d, "CUBE",	PyInt_FromLong( MB_CUBE ) );
 	}
 
 	return Types;
 }
 
-static PyObject *M_MetaElem_UpdateDict( void )
+static PyObject *V24_M_MetaElem_UpdateDict( void )
 {
-	PyObject *Update = PyConstant_New(  );
+	PyObject *Update = V24_PyConstant_New(  );
 
 	if( Update ) {
-		BPy_constant *d = ( BPy_constant * ) Update;
-		PyConstant_Insert( d, "ALWAYS",	PyInt_FromLong( MB_UPDATE_ALWAYS ) );
-		PyConstant_Insert( d, "HALFRES",PyInt_FromLong( MB_UPDATE_HALFRES ) );
-		PyConstant_Insert( d, "FAST",	PyInt_FromLong( MB_UPDATE_FAST ) );
-		PyConstant_Insert( d, "NEVER",	PyInt_FromLong( MB_UPDATE_NEVER ) );
+		V24_BPy_constant *d = ( V24_BPy_constant * ) Update;
+		V24_PyConstant_Insert( d, "ALWAYS",	PyInt_FromLong( MB_UPDATE_ALWAYS ) );
+		V24_PyConstant_Insert( d, "HALFRES",PyInt_FromLong( MB_UPDATE_HALFRES ) );
+		V24_PyConstant_Insert( d, "FAST",	PyInt_FromLong( MB_UPDATE_FAST ) );
+		V24_PyConstant_Insert( d, "NEVER",	PyInt_FromLong( MB_UPDATE_NEVER ) );
 	}
 
 	return Update;
 }
 
 /*****************************************************************************/
-/* Python BPy_Metaball methods declarations:                                */
+/* Python V24_BPy_Metaball methods declarations:                                */
 /*****************************************************************************/
-static PyObject *Metaball_getElements( BPy_Metaball * self );
-static PyObject *Metaball_getMaterials( BPy_Metaball * self );
-static int Metaball_setMaterials( BPy_Metaball * self, PyObject * value );
-static PyObject *Metaball_getWiresize( BPy_Metaball * self );
-static int Metaball_setWiresize( BPy_Metaball * self, PyObject * value );
-static PyObject *Metaball_getRendersize( BPy_Metaball * self );
-static int Metaball_setRendersize( BPy_Metaball * self, PyObject * value);
-static PyObject *Metaball_getThresh( BPy_Metaball * self );
-static int Metaball_setThresh( BPy_Metaball * self, PyObject * args );
-static PyObject *Metaball_getUpdate( BPy_Metaball * self );
-static int Metaball_setUpdate( BPy_Metaball * self, PyObject * args );
-static PyObject *Metaball_copy( BPy_Metaball * self );
+static PyObject *V24_Metaball_getElements( V24_BPy_Metaball * self );
+static PyObject *V24_Metaball_getMaterials( V24_BPy_Metaball * self );
+static int V24_Metaball_setMaterials( V24_BPy_Metaball * self, PyObject * value );
+static PyObject *V24_Metaball_getWiresize( V24_BPy_Metaball * self );
+static int V24_Metaball_setWiresize( V24_BPy_Metaball * self, PyObject * value );
+static PyObject *V24_Metaball_getRendersize( V24_BPy_Metaball * self );
+static int V24_Metaball_setRendersize( V24_BPy_Metaball * self, PyObject * value);
+static PyObject *V24_Metaball_getThresh( V24_BPy_Metaball * self );
+static int V24_Metaball_setThresh( V24_BPy_Metaball * self, PyObject * args );
+static PyObject *V24_Metaball_getUpdate( V24_BPy_Metaball * self );
+static int V24_Metaball_setUpdate( V24_BPy_Metaball * self, PyObject * args );
+static PyObject *V24_Metaball_copy( V24_BPy_Metaball * self );
 
 /*****************************************************************************/
-/* Python BPy_Metaball methods table:                                       */
+/* Python V24_BPy_Metaball methods table:                                       */
 /*****************************************************************************/
-static PyMethodDef BPy_Metaball_methods[] = {
+static PyMethodDef V24_BPy_Metaball_methods[] = {
 	/* name, method, flags, doc */
-	{"__copy__", ( PyCFunction ) Metaball_copy,
+	{"__copy__", ( PyCFunction ) V24_Metaball_copy,
 	 METH_NOARGS, "() - Return a copy of this metaball"},
-	{"copy", ( PyCFunction ) Metaball_copy,
+	{"copy", ( PyCFunction ) V24_Metaball_copy,
 	 METH_NOARGS, "() - Return a copy of this metaball"},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python BPy_Metaelem methods table:                                        */
+/* Python V24_BPy_Metaelem methods table:                                        */
 /*****************************************************************************/
-static PyMethodDef BPy_Metaelem_methods[] = {
+static PyMethodDef V24_BPy_Metaelem_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python Metaball_Type callback function prototypes:                       */
+/* Python V24_Metaball_Type callback function prototypes:                       */
 /*****************************************************************************/
-static PyObject *Metaball_repr( BPy_Metaball * self );
-static int Metaball_compare( BPy_Metaball * a, BPy_Metaball * b );
+static PyObject *V24_Metaball_repr( V24_BPy_Metaball * self );
+static int V24_Metaball_compare( V24_BPy_Metaball * a, V24_BPy_Metaball * b );
 
 /*****************************************************************************/
-/* Python Metaelem_Type callback function prototypes:                        */
+/* Python V24_Metaelem_Type callback function prototypes:                        */
 /*****************************************************************************/
-static void Metaelem_dealloc( BPy_Metaelem * self );
-static PyObject *Metaelem_repr( BPy_Metaelem * self );
-static int Metaelem_compare( BPy_Metaelem * a, BPy_Metaelem * b );
+static void V24_Metaelem_dealloc( V24_BPy_Metaelem * self );
+static PyObject *V24_Metaelem_repr( V24_BPy_Metaelem * self );
+static int V24_Metaelem_compare( V24_BPy_Metaelem * a, V24_BPy_Metaelem * b );
 
-static PyObject *Metaelem_getType( BPy_Metaelem *self );
-static int Metaelem_setType( BPy_Metaelem * self,  PyObject * args );
-static PyObject *Metaelem_getCoord( BPy_Metaelem * self );
-static int Metaelem_setCoord( BPy_Metaelem * self,  VectorObject * value );
-static PyObject *Metaelem_getDims( BPy_Metaelem * self );
-static int Metaelem_setDims( BPy_Metaelem * self,  VectorObject * value );
-static PyObject *Metaelem_getQuat( BPy_Metaelem * self );
-static int Metaelem_setQuat( BPy_Metaelem * self,  QuaternionObject * value );
-static PyObject *Metaelem_getStiffness( BPy_Metaelem * self );
-static int Metaelem_setStiffness( BPy_Metaelem * self,  PyObject * value );
-static PyObject *Metaelem_getRadius( BPy_Metaelem * self );
-static int Metaelem_setRadius( BPy_Metaelem * self,  PyObject * value );
+static PyObject *V24_Metaelem_getType( V24_BPy_Metaelem *self );
+static int V24_Metaelem_setType( V24_BPy_Metaelem * self,  PyObject * args );
+static PyObject *V24_Metaelem_getCoord( V24_BPy_Metaelem * self );
+static int V24_Metaelem_setCoord( V24_BPy_Metaelem * self,  V24_VectorObject * value );
+static PyObject *V24_Metaelem_getDims( V24_BPy_Metaelem * self );
+static int V24_Metaelem_setDims( V24_BPy_Metaelem * self,  V24_VectorObject * value );
+static PyObject *V24_Metaelem_getQuat( V24_BPy_Metaelem * self );
+static int V24_Metaelem_setQuat( V24_BPy_Metaelem * self,  V24_QuaternionObject * value );
+static PyObject *V24_Metaelem_getStiffness( V24_BPy_Metaelem * self );
+static int V24_Metaelem_setStiffness( V24_BPy_Metaelem * self,  PyObject * value );
+static PyObject *V24_Metaelem_getRadius( V24_BPy_Metaelem * self );
+static int V24_Metaelem_setRadius( V24_BPy_Metaelem * self,  PyObject * value );
 
-static PyObject *Metaelem_getMFlagBits( BPy_Metaelem * self, void * type );
-static int Metaelem_setMFlagBits( BPy_Metaelem * self, PyObject * value, void * type );
+static PyObject *V24_Metaelem_getMFlagBits( V24_BPy_Metaelem * self, void * type );
+static int V24_Metaelem_setMFlagBits( V24_BPy_Metaelem * self, PyObject * value, void * type );
 
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_Metaball_getseters[] = {
+static PyGetSetDef V24_BPy_Metaball_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
 	{"materials",
-	 (getter)Metaball_getMaterials, (setter)Metaball_setMaterials,
+	 (getter)V24_Metaball_getMaterials, (setter)V24_Metaball_setMaterials,
 	 "Number of metaball users",
 	 NULL},
 	{"elements",
-	 (getter)Metaball_getElements, (setter)NULL,
+	 (getter)V24_Metaball_getElements, (setter)NULL,
 	 "Elements in this metaball",
 	 NULL},
 	{"wiresize",
-	 (getter)Metaball_getWiresize, (setter)Metaball_setWiresize,
+	 (getter)V24_Metaball_getWiresize, (setter)V24_Metaball_setWiresize,
 	 "The density to draw the metaball in the 3D view",
 	 NULL},
 	{"rendersize",
-	 (getter)Metaball_getRendersize, (setter)Metaball_setRendersize,
+	 (getter)V24_Metaball_getRendersize, (setter)V24_Metaball_setRendersize,
 	 "The density to render wire",
 	 NULL},
 	{"thresh",
-	 (getter)Metaball_getThresh, (setter)Metaball_setThresh,
+	 (getter)V24_Metaball_getThresh, (setter)V24_Metaball_setThresh,
 	 "The density to render wire",
 	 NULL},
 	{"update",
-	 (getter)Metaball_getUpdate, (setter)Metaball_setUpdate,
+	 (getter)V24_Metaball_getUpdate, (setter)V24_Metaball_setUpdate,
 	 "The setting for updating this metaball data",
 	 NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
@@ -218,12 +218,12 @@ static PyGetSetDef BPy_Metaball_getseters[] = {
 /*****************************************************************************/
 /* Python TypeMetaball structure definition:                                     */
 /*****************************************************************************/
-PyTypeObject Metaball_Type = {
+PyTypeObject V24_Metaball_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Metaball",             /* char *tp_name; */
-	sizeof( BPy_Metaball ),         /* int tp_basicsize; */
+	sizeof( V24_BPy_Metaball ),         /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -232,8 +232,8 @@ PyTypeObject Metaball_Type = {
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Metaball_compare,   /* cmpfunc tp_compare; */
-	( reprfunc ) Metaball_repr,     /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Metaball_compare,   /* cmpfunc tp_compare; */
+	( reprfunc ) V24_Metaball_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -243,7 +243,7 @@ PyTypeObject Metaball_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -276,9 +276,9 @@ PyTypeObject Metaball_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Metaball_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Metaball_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Metaball_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Metaball_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -301,37 +301,37 @@ PyTypeObject Metaball_Type = {
 };
 
 
-static PyGetSetDef BPy_Metaelem_getseters[] = {
+static PyGetSetDef V24_BPy_Metaelem_getseters[] = {
 	{"type",
-	 (getter)Metaelem_getType, (setter)Metaelem_setType,
+	 (getter)V24_Metaelem_getType, (setter)V24_Metaelem_setType,
 	 "Metaelem Type",
 	 NULL},
 	{"co",
-	 (getter)Metaelem_getCoord, (setter)Metaelem_setCoord,
+	 (getter)V24_Metaelem_getCoord, (setter)V24_Metaelem_setCoord,
 	 "Metaelem Location",
 	 NULL},
 	{"quat",
-	 (getter)Metaelem_getQuat, (setter)Metaelem_setQuat,
+	 (getter)V24_Metaelem_getQuat, (setter)V24_Metaelem_setQuat,
 	 "Metaelem Rotation Quat",
 	 NULL},
 	{"dims",
-	 (getter)Metaelem_getDims, (setter)Metaelem_setDims,
+	 (getter)V24_Metaelem_getDims, (setter)V24_Metaelem_setDims,
 	 "Metaelem Dimensions",
 	 NULL},
 	{"stiffness",
-	 (getter)Metaelem_getStiffness, (setter)Metaelem_setStiffness,
+	 (getter)V24_Metaelem_getStiffness, (setter)V24_Metaelem_setStiffness,
 	 "MetaElem stiffness",
 	 NULL},
 	{"radius",
-	 (getter)Metaelem_getRadius, (setter)Metaelem_setRadius,
+	 (getter)V24_Metaelem_getRadius, (setter)V24_Metaelem_setRadius,
 	 "The radius of the MetaElem",
 	 NULL},
 	{"negative",
-	 (getter)Metaelem_getMFlagBits, (setter)Metaelem_setMFlagBits,
+	 (getter)V24_Metaelem_getMFlagBits, (setter)V24_Metaelem_setMFlagBits,
 	 "The density to render wire",
 	 (void *)MB_NEGATIVE},
 	{"hide",
-	 (getter)Metaelem_getMFlagBits, (setter)Metaelem_setMFlagBits,
+	 (getter)V24_Metaelem_getMFlagBits, (setter)V24_Metaelem_setMFlagBits,
 	 "The density to render wire",
 	 (void *)MB_HIDE},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
@@ -341,22 +341,22 @@ static PyGetSetDef BPy_Metaelem_getseters[] = {
 /*****************************************************************************/
 /* Python TypeMetaelem structure definition:                                     */
 /*****************************************************************************/
-PyTypeObject Metaelem_Type = {
+PyTypeObject V24_Metaelem_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Metaelem",             /* char *tp_name; */
-	sizeof( BPy_Metaelem ),         /* int tp_basicsize; */
+	sizeof( V24_BPy_Metaelem ),         /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	( destructor ) Metaelem_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_Metaelem_dealloc,/* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Metaelem_compare,   /* cmpfunc tp_compare; */
-	( reprfunc ) Metaelem_repr,     /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Metaelem_compare,   /* cmpfunc tp_compare; */
+	( reprfunc ) V24_Metaelem_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -399,9 +399,9 @@ PyTypeObject Metaelem_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Metaelem_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Metaelem_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Metaelem_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Metaelem_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -425,17 +425,17 @@ PyTypeObject Metaelem_Type = {
 
 
 /*****************************************************************************/
-/* Function:              M_Metaball_New                                     */
+/* Function:              V24_M_Metaball_New                                     */
 /* Python equivalent:     Blender.Metaball.New                               */
 /*****************************************************************************/
-static PyObject *M_Metaball_New( PyObject * self, PyObject * args )
+static PyObject *V24_M_Metaball_New( PyObject * self, PyObject * args )
 {
 	char *name = 0;
-	BPy_Metaball *pymball;	/* for Data object wrapper in Python */
+	V24_BPy_Metaball *pymball;	/* for Data object wrapper in Python */
 	MetaBall *blmball;	/* for actual Data we create in Blender */
 	
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"Metaball.New() - expected string argument (or nothing)" ) );
 
 	/* first create the MetaBall Data in Blender */
@@ -449,14 +449,14 @@ static PyObject *M_Metaball_New( PyObject * self, PyObject * args )
 		blmball->id.us = 0;
 		/* now create the wrapper obj in Python */
 		pymball =
-			( BPy_Metaball * ) PyObject_NEW( BPy_Metaball,
-							 &Metaball_Type );
+			( V24_BPy_Metaball * ) PyObject_NEW( V24_BPy_Metaball,
+							 &V24_Metaball_Type );
 	} else
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"Metaball.New() - couldn't create data in Blender" ) );
 
 	if( pymball == NULL )
-		return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						"couldn't create MetaBall Data object" ) );
 
 	pymball->metaball = blmball;
@@ -467,33 +467,33 @@ static PyObject *M_Metaball_New( PyObject * self, PyObject * args )
 
 
 /*****************************************************************************/
-/* Function:             M_Metaball_Get                                     */
+/* Function:             V24_M_Metaball_Get                                     */
 /* Python equivalent:    Blender.Metaball.Get                               */
 /* Description:          Receives a string and returns the metaball data obj */
 /*                       whose name matches the string.  If no argument is  */
 /*                       passed in, a list of all metaball data names in the */
 /*                       current scene is returned.                         */
 /*****************************************************************************/
-static PyObject *M_Metaball_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_Metaball_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	MetaBall *mball_iter = NULL;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"Metaball.Get() - expected string argument (or nothing)" ) );
 
 	if( name ) {		/* (name) - Search mball by name */
-		mball_iter = ( MetaBall * ) GetIdFromList( &( G.main->mball ), name );
+		mball_iter = ( MetaBall * ) V24_GetIdFromList( &( G.main->mball ), name );
 		
 		if (!mball_iter) {
 			char error_msg[128];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Metaball.Get(\"%s\") - not found", name );
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_NameError, error_msg ) );
 		}
-		return Metaball_CreatePyObject(mball_iter);
+		return V24_Metaball_CreatePyObject(mball_iter);
 	
 	} else {			/* () - return a list of all mballs in the scene */
 		
@@ -501,12 +501,12 @@ static PyObject *M_Metaball_Get( PyObject * self, PyObject * args )
 		int index=0;
 		
 		if( mballlist == NULL )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 							"MetaBall.Get() - couldn't create PyList" ) );
 		
 		mball_iter = G.main->mball.first;
 		while( mball_iter ) {
-			PyList_SetItem( mballlist, index, Metaball_CreatePyObject(mball_iter) );
+			PyList_SetItem( mballlist, index, V24_Metaball_CreatePyObject(mball_iter) );
 			index++;
 			mball_iter = mball_iter->id.next;
 		}
@@ -519,53 +519,53 @@ static PyObject *M_Metaball_Get( PyObject * self, PyObject * args )
 /*****************************************************************************/
 /* Function:	 initObject						*/
 /*****************************************************************************/
-PyObject *Metaball_Init( void )
+PyObject *V24_Metaball_Init( void )
 {
 	PyObject *submodule;
-	PyObject *Types=	M_MetaElem_TypesDict( );
-	PyObject *Update=	M_MetaElem_UpdateDict( );
+	PyObject *Types=	V24_M_MetaElem_TypesDict( );
+	PyObject *Update=	V24_M_MetaElem_UpdateDict( );
 	
-	if( PyType_Ready( &Metaball_Type ) < 0 )
+	if( PyType_Ready( &V24_Metaball_Type ) < 0 )
 		return NULL;
-	if( PyType_Ready( &Metaelem_Type ) < 0 )
+	if( PyType_Ready( &V24_Metaelem_Type ) < 0 )
 		return NULL;
-	if( PyType_Ready( &MetaElemSeq_Type ) < 0 )
+	if( PyType_Ready( &V24_MetaElemSeq_Type ) < 0 )
 		return NULL;
 	
-	submodule = Py_InitModule3( "Blender.Metaball", M_Metaball_methods, M_Metaball_doc);
+	submodule = Py_InitModule3( "Blender.Metaball", M_Metaball_methods, V24_M_Metaball_doc);
 
 	if( Types )
 		PyModule_AddObject( submodule, "Types", Types );
 		PyModule_AddObject( submodule, "Update", Update );
 	
 	/*Add SUBMODULES to the module*/
-	/*PyDict_SetItemString(dict, "Constraint", Constraint_Init()); */ /*creates a *new* module*/
+	/*PyDict_SetItemString(dict, "Constraint", V24_Constraint_Init()); */ /*creates a *new* module*/
 	return submodule;
 }
 
-MetaBall *Metaball_FromPyObject( PyObject * pyobj )
+MetaBall *V24_Metaball_FromPyObject( PyObject * pyobj )
 {
-	return ( ( BPy_Metaball * ) pyobj )->metaball;
+	return ( ( V24_BPy_Metaball * ) pyobj )->metaball;
 }
 
-static PyObject *Metaball_getMaterials( BPy_Metaball *self )
+static PyObject *V24_Metaball_getMaterials( V24_BPy_Metaball *self )
 {
-	return EXPP_PyList_fromMaterialList( self->metaball->mat,
+	return V24_EXPP_PyList_fromMaterialList( self->metaball->mat,
 			self->metaball->totcol, 1 );
 }
-static int Metaball_setMaterials( BPy_Metaball *self, PyObject * value )
+static int V24_Metaball_setMaterials( V24_BPy_Metaball *self, PyObject * value )
 {
     Material **matlist;
 	int len;
 
     if( !PySequence_Check( value ) ||
-			!EXPP_check_sequence_consistency( value, &Material_Type ) )
-        return EXPP_ReturnIntError( PyExc_TypeError,
+			!V24_EXPP_check_sequence_consistency( value, &V24_Material_Type ) )
+        return V24_EXPP_ReturnIntError( PyExc_TypeError,
                   "metaball.materials - list should only contain materials or None)" );
 
     len = PyList_Size( value );
     if( len > 16 )
-        return EXPP_ReturnIntError( PyExc_TypeError,
+        return V24_EXPP_ReturnIntError( PyExc_TypeError,
                           "metaball.materials - list can't have more than 16 materials" );
 
 	/* free old material list (if it exists) and adjust user counts */
@@ -580,8 +580,8 @@ static int Metaball_setMaterials( BPy_Metaball *self, PyObject * value )
 
 	/* build the new material list, increment user count, store it */
 
-	matlist = EXPP_newMaterialList_fromPyList( value );
-	EXPP_incr_mats_us( matlist, len );
+	matlist = V24_EXPP_newMaterialList_fromPyList( value );
+	V24_EXPP_incr_mats_us( matlist, len );
 	self->metaball->mat = matlist;
     	self->metaball->totcol = (short)len;
 
@@ -596,84 +596,84 @@ static int Metaball_setMaterials( BPy_Metaball *self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Metaball_getWiresize( BPy_Metaball * self )
+static PyObject *V24_Metaball_getWiresize( V24_BPy_Metaball * self )
 {
 	return PyFloat_FromDouble( self->metaball->wiresize );
 }
 
-static int Metaball_setWiresize( BPy_Metaball * self, PyObject * value )
+static int V24_Metaball_setWiresize( V24_BPy_Metaball * self, PyObject * value )
 {
 	float param;
 	if( !PyNumber_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"metaball.wiresize - expected float argument" );
 
 	param = (float)PyFloat_AsDouble( value );
 
-	self->metaball->wiresize = EXPP_ClampFloat(param, 0.05f, 1.0);
+	self->metaball->wiresize = V24_EXPP_ClampFloat(param, 0.05f, 1.0);
 	return 0;
 
 }
-static PyObject *Metaball_getRendersize( BPy_Metaball * self )
+static PyObject *V24_Metaball_getRendersize( V24_BPy_Metaball * self )
 {
 	return PyFloat_FromDouble( self->metaball->rendersize );
 }
 
-static int Metaball_setRendersize( BPy_Metaball * self, PyObject * value )
+static int V24_Metaball_setRendersize( V24_BPy_Metaball * self, PyObject * value )
 {
 
 	float param;
 	if( !PyNumber_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"metaball.rendersize - expected float argument" );
 
 	param = (float)PyFloat_AsDouble( value );
 
-	self->metaball->rendersize = EXPP_ClampFloat(param, 0.05f, 1.0);
+	self->metaball->rendersize = V24_EXPP_ClampFloat(param, 0.05f, 1.0);
 	return 0;
 }
 
-static PyObject *Metaball_getThresh( BPy_Metaball * self )
+static PyObject *V24_Metaball_getThresh( V24_BPy_Metaball * self )
 {
 	return PyFloat_FromDouble( self->metaball->thresh );
 }
 
-static int Metaball_setThresh( BPy_Metaball * self, PyObject * value )
+static int V24_Metaball_setThresh( V24_BPy_Metaball * self, PyObject * value )
 {
 
 	float param;
 	if( !PyNumber_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"metaball.thresh - expected float argument" );
 
 	param = (float)PyFloat_AsDouble( value );
 
-	self->metaball->thresh = EXPP_ClampFloat(param, 0.0, 5.0);
+	self->metaball->thresh = V24_EXPP_ClampFloat(param, 0.0, 5.0);
 	return 0;
 }
 
-static PyObject *Metaball_getUpdate( BPy_Metaball * self )
+static PyObject *V24_Metaball_getUpdate( V24_BPy_Metaball * self )
 {
 	return PyInt_FromLong( (long)self->metaball->flag );
 }
 
-static int Metaball_setUpdate( BPy_Metaball * self, PyObject * value )
+static int V24_Metaball_setUpdate( V24_BPy_Metaball * self, PyObject * value )
 {
 
 	int param;
 	if( !PyInt_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"metaball.update - expected an int argument" );
 
 	param = (int)PyInt_AS_LONG( value );
 
-	self->metaball->flag = EXPP_ClampInt( param, 0, 3 );
+	self->metaball->flag = V24_EXPP_ClampInt( param, 0, 3 );
 	return 0;
 }
 
-static PyObject *Metaball_copy( BPy_Metaball * self )
+static PyObject *V24_Metaball_copy( V24_BPy_Metaball * self )
 {
-	BPy_Metaball *pymball;	/* for Data object wrapper in Python */
+	V24_BPy_Metaball *pymball;	/* for Data object wrapper in Python */
 	MetaBall *blmball;	/* for actual Data we create in Blender */
 	
 	blmball = copy_mball( self->metaball );	/* first create the MetaBall Data in Blender */
@@ -683,14 +683,14 @@ static PyObject *Metaball_copy( BPy_Metaball * self )
 		blmball->id.us = 0;
 		/* now create the wrapper obj in Python */
 		pymball =
-			( BPy_Metaball * ) PyObject_NEW( BPy_Metaball,
-							 &Metaball_Type );
+			( V24_BPy_Metaball * ) PyObject_NEW( V24_BPy_Metaball,
+							 &V24_Metaball_Type );
 	} else
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"metaball.__copy__() - couldn't create data in Blender" ) );
 
 	if( pymball == NULL )
-		return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						"metaball.__copy__() - couldn't create data in Blender" ) );
 
 	pymball->metaball = blmball;
@@ -700,13 +700,13 @@ static PyObject *Metaball_copy( BPy_Metaball * self )
 
 
 /* These are needed by Object.c */
-PyObject *Metaball_CreatePyObject( MetaBall * mball)
+PyObject *V24_Metaball_CreatePyObject( MetaBall * mball)
 {
-	BPy_Metaball *py_mball= PyObject_NEW( BPy_Metaball, &Metaball_Type );
+	V24_BPy_Metaball *py_mball= PyObject_NEW( V24_BPy_Metaball, &V24_Metaball_Type );
 
 	if( !py_mball )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-				"couldn't create BPy_Metaball object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+				"couldn't create V24_BPy_Metaball object" );
 
 	py_mball->metaball= mball;
 
@@ -714,9 +714,9 @@ PyObject *Metaball_CreatePyObject( MetaBall * mball)
 }
 
 
-static PyObject *MetaElemSeq_CreatePyObject(BPy_Metaball *self, MetaElem *iter)
+static PyObject *V24_MetaElemSeq_CreatePyObject(V24_BPy_Metaball *self, MetaElem *iter)
 {
-	BPy_MetaElemSeq *seq = PyObject_NEW( BPy_MetaElemSeq, &MetaElemSeq_Type);
+	V24_BPy_MetaElemSeq *seq = PyObject_NEW( V24_BPy_MetaElemSeq, &V24_MetaElemSeq_Type);
 	seq->bpymetaball = self; Py_INCREF(self);
 	seq->iter= iter;
 	return (PyObject *)seq;
@@ -725,16 +725,16 @@ static PyObject *MetaElemSeq_CreatePyObject(BPy_Metaball *self, MetaElem *iter)
 /*
  * Element, get an instance of the iterator.
  */
-static PyObject *Metaball_getElements( BPy_Metaball * self )
+static PyObject *V24_Metaball_getElements( V24_BPy_Metaball * self )
 {
-	return MetaElemSeq_CreatePyObject(self, NULL);
+	return V24_MetaElemSeq_CreatePyObject(self, NULL);
 }
 
 /*
  * Metaelem dealloc - free from memory
  */
-/* This is a callback function for the BPy_Metaelem type. It is */
-static void Metaelem_dealloc( BPy_Metaelem * self )
+/* This is a callback function for the V24_BPy_Metaelem type. It is */
+static void V24_Metaelem_dealloc( V24_BPy_Metaelem * self )
 {
 	self->metaelem= NULL; /* so any references to the same bpyobject will raise an error */
 	PyObject_DEL( self );
@@ -743,17 +743,17 @@ static void Metaelem_dealloc( BPy_Metaelem * self )
 /*
  * elem.type - int to set the shape of the element
  */
-static PyObject *Metaelem_getType( BPy_Metaelem *self )
+static PyObject *V24_Metaelem_getType( V24_BPy_Metaelem *self )
 {	
 	METAELEM_DEL_CHECK_PY(self);
 	
 	return PyInt_FromLong( self->metaelem->type );
 }
-static int Metaelem_setType( BPy_Metaelem * self,  PyObject * value )
+static int V24_Metaelem_setType( V24_BPy_Metaelem * self,  PyObject * value )
 {
 	int type;
 	if( !PyInt_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"metaelem.type - expected an integer (bitmask) as argument" );
 	
 	METAELEM_DEL_CHECK_INT(self);
@@ -761,7 +761,7 @@ static int Metaelem_setType( BPy_Metaelem * self,  PyObject * value )
 	type = PyInt_AS_LONG( value );
 	
 	if( (type < 0) || ( type > ( MB_BALL | MB_TUBEX | MB_TUBEY | MB_TUBEZ | MB_TUBE | MB_PLANE | MB_ELIPSOID | MB_CUBE ) ))
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 					      "metaelem.type - value out of range" );
 	
 	self->metaelem->type= type;
@@ -771,7 +771,7 @@ static int Metaelem_setType( BPy_Metaelem * self,  PyObject * value )
 /*
  * elem.co - non wrapped vector representing location
  */
-static PyObject *Metaelem_getCoord( BPy_Metaelem * self )
+static PyObject *V24_Metaelem_getCoord( V24_BPy_Metaelem * self )
 {
 	float co[3];
 	
@@ -783,11 +783,11 @@ static PyObject *Metaelem_getCoord( BPy_Metaelem * self )
 	
 	return newVectorObject( co, 3, Py_NEW );
 }
-static int Metaelem_setCoord( BPy_Metaelem * self,  VectorObject * value )
+static int V24_Metaelem_setCoord( V24_BPy_Metaelem * self,  V24_VectorObject * value )
 {
 
 	if( !VectorObject_Check( value ) || value->size != 3 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"metaelem.co - expected vector argument of size 3" );
 	
 	METAELEM_DEL_CHECK_INT(self);
@@ -802,7 +802,7 @@ static int Metaelem_setCoord( BPy_Metaelem * self,  VectorObject * value )
  * elem.dims - non wrapped vector representing the xyz dimensions
  * only effects some element types
  */
-static PyObject *Metaelem_getDims( BPy_Metaelem * self )
+static PyObject *V24_Metaelem_getDims( V24_BPy_Metaelem * self )
 {
 	float co[3];
 	METAELEM_DEL_CHECK_PY(self);
@@ -812,17 +812,17 @@ static PyObject *Metaelem_getDims( BPy_Metaelem * self )
 	co[2]= self->metaelem->expz;
 	return newVectorObject( co, 3, Py_NEW );
 }
-static int Metaelem_setDims( BPy_Metaelem * self,  VectorObject * value )
+static int V24_Metaelem_setDims( V24_BPy_Metaelem * self,  V24_VectorObject * value )
 {
 	if( !VectorObject_Check( value ) || value->size != 3 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"metaelem.dims - expected vector argument of size 3" );
 
 	METAELEM_DEL_CHECK_INT(self);
 	
-	self->metaelem->expx= EXPP_ClampFloat(value->vec[0], 0.0, 20.0);
-	self->metaelem->expy= EXPP_ClampFloat(value->vec[1], 0.0, 20.0);
-	self->metaelem->expz= EXPP_ClampFloat(value->vec[2], 0.0, 20.0);
+	self->metaelem->expx= V24_EXPP_ClampFloat(value->vec[0], 0.0, 20.0);
+	self->metaelem->expy= V24_EXPP_ClampFloat(value->vec[1], 0.0, 20.0);
+	self->metaelem->expz= V24_EXPP_ClampFloat(value->vec[2], 0.0, 20.0);
 	return 0;
 }
 
@@ -830,16 +830,16 @@ static int Metaelem_setDims( BPy_Metaelem * self,  VectorObject * value )
  * elem.quat - non wrapped quat representing the rotation
  * only effects some element types - a rotated ball has no effect for eg.
  */
-static PyObject *Metaelem_getQuat( BPy_Metaelem * self )
+static PyObject *V24_Metaelem_getQuat( V24_BPy_Metaelem * self )
 {
 	METAELEM_DEL_CHECK_PY(self);
 	return newQuaternionObject(self->metaelem->quat, Py_NEW); 
 }
-static int Metaelem_setQuat( BPy_Metaelem * self,  QuaternionObject * value )
+static int V24_Metaelem_setQuat( V24_BPy_Metaelem * self,  V24_QuaternionObject * value )
 {
 	int i;
 	if( !QuaternionObject_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"metaelem.quat - expected quat argument" );
 	
 	METAELEM_DEL_CHECK_INT(self);
@@ -856,53 +856,53 @@ static int Metaelem_setQuat( BPy_Metaelem * self,  QuaternionObject * value )
 /*
  * elem.hide and elem.sel - get/set true false
  */
-static PyObject *Metaelem_getMFlagBits( BPy_Metaelem * self, void * type )
+static PyObject *V24_Metaelem_getMFlagBits( V24_BPy_Metaelem * self, void * type )
 {
 	METAELEM_DEL_CHECK_PY(self);
-	return EXPP_getBitfield( &(self->metaelem->flag), (int)((long)type ), 'h' );
+	return V24_EXPP_getBitfield( &(self->metaelem->flag), (int)((long)type ), 'h' );
 }
-static int Metaelem_setMFlagBits( BPy_Metaelem * self, PyObject * value,
+static int V24_Metaelem_setMFlagBits( V24_BPy_Metaelem * self, PyObject * value,
 		void * type )
 {
 	METAELEM_DEL_CHECK_INT(self);
-	return EXPP_setBitfield( value, &(self->metaelem->flag), 
+	return V24_EXPP_setBitfield( value, &(self->metaelem->flag), 
 			(int)((long)type), 'h' );
 }
 
 /*
  * elem.stiffness - floating point, the volume of this element.
  */
-static PyObject *Metaelem_getStiffness( BPy_Metaelem *self )
+static PyObject *V24_Metaelem_getStiffness( V24_BPy_Metaelem *self )
 {
 	METAELEM_DEL_CHECK_PY(self);
 	return PyFloat_FromDouble( self->metaelem->s );
 }
-static int Metaelem_setStiffness( BPy_Metaelem *self, PyObject *value)
+static int V24_Metaelem_setStiffness( V24_BPy_Metaelem *self, PyObject *value)
 {
 	if( !PyNumber_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"metaelem.stiffness - expected float argument" );
 
-	self->metaelem->s = EXPP_ClampFloat((float)PyFloat_AsDouble( value ), 0.0, 10.0);
+	self->metaelem->s = V24_EXPP_ClampFloat((float)PyFloat_AsDouble( value ), 0.0, 10.0);
 	return 0;
 }
 
 /*
  * elem.radius- floating point, the size if the element
  */
-static PyObject *Metaelem_getRadius( BPy_Metaelem *self )
+static PyObject *V24_Metaelem_getRadius( V24_BPy_Metaelem *self )
 {
 	METAELEM_DEL_CHECK_PY(self);
 	return PyFloat_FromDouble( self->metaelem->rad );
 }
-static int Metaelem_setRadius( BPy_Metaelem *self, PyObject *value)
+static int V24_Metaelem_setRadius( V24_BPy_Metaelem *self, PyObject *value)
 {
 	if( !PyNumber_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"metaelem.radius - expected float argument" );
 
 	self->metaelem->rad = /* is 5000 too small? */
-			EXPP_ClampFloat((float)PyFloat_AsDouble( value ), 0.0, 5000.0);
+			V24_EXPP_ClampFloat((float)PyFloat_AsDouble( value ), 0.0, 5000.0);
 	
 	return 0;
 }
@@ -910,24 +910,24 @@ static int Metaelem_setRadius( BPy_Metaelem *self, PyObject *value)
 
 /*
  * callback functions for comparison.
- * It compares two Metaball_Type objects. Only the "==" and "!="
+ * It compares two V24_Metaball_Type objects. Only the "==" and "!="
  * comparisons are meaninful. Returns 0 for equality and -1 if
  * they don't point to the same Blender struct.
  * In Python it becomes 1 if they are equal, 0 otherwise.	
  */
-static int Metaball_compare( BPy_Metaball * a, BPy_Metaball * b )
+static int V24_Metaball_compare( V24_BPy_Metaball * a, V24_BPy_Metaball * b )
 {
 	MetaBall *pa = a->metaball, *pb = b->metaball;
 	return ( pa == pb ) ? 0 : -1;
 }
 
-static int MetaElemSeq_compare( BPy_MetaElemSeq * a, BPy_MetaElemSeq * b )
+static int V24_MetaElemSeq_compare( V24_BPy_MetaElemSeq * a, V24_BPy_MetaElemSeq * b )
 {
 	MetaBall *pa = a->bpymetaball->metaball, *pb = b->bpymetaball->metaball;
 	return ( pa == pb ) ? 0 : -1;
 }
 
-static int Metaelem_compare( BPy_Metaelem * a, BPy_Metaelem * b )
+static int V24_Metaelem_compare( V24_BPy_Metaelem * a, V24_BPy_Metaelem * b )
 {
 	MetaElem *pa = a->metaelem, *pb = b->metaelem;
 	return ( pa == pb ) ? 0 : -1;
@@ -937,18 +937,18 @@ static int Metaelem_compare( BPy_Metaelem * a, BPy_Metaelem * b )
  * repr function
  * callback functions building meaninful string to representations
  */
-static PyObject *Metaball_repr( BPy_Metaball * self )
+static PyObject *V24_Metaball_repr( V24_BPy_Metaball * self )
 {
 	return PyString_FromFormat( "[Metaball \"%s\"]",
 				    self->metaball->id.name + 2 );
 }
 
-static PyObject *Metaelem_repr( BPy_Metaelem * self )
+static PyObject *V24_Metaelem_repr( V24_BPy_Metaelem * self )
 {
 	return PyString_FromString( "Metaelem" );
 }
 
-static PyObject *MetaElemSeq_repr( BPy_MetaElemSeq * self )
+static PyObject *V24_MetaElemSeq_repr( V24_BPy_MetaElemSeq * self )
 {
 	return PyString_FromFormat( "[Metaball Iterator \"%s\"]",
 				    self->bpymetaball->metaball->id.name + 2 );
@@ -960,21 +960,21 @@ static PyObject *MetaElemSeq_repr( BPy_MetaElemSeq * self )
  * MeteElem Seq sequence 
  */
 
-static PyObject *MetaElem_CreatePyObject( MetaElem *metaelem )
+static PyObject *V24_MetaElem_CreatePyObject( MetaElem *metaelem )
 {
-	BPy_Metaelem *elem= PyObject_NEW( BPy_Metaelem, &Metaelem_Type);
+	V24_BPy_Metaelem *elem= PyObject_NEW( V24_BPy_Metaelem, &V24_Metaelem_Type);
 	elem->metaelem = metaelem; Py_INCREF(elem);
 	return (PyObject *)elem;
 }
 
-static int MetaElemSeq_len( BPy_MetaElemSeq * self )
+static int V24_MetaElemSeq_len( V24_BPy_MetaElemSeq * self )
 {
 	return BLI_countlist( &( self->bpymetaball->metaball->elems ) );
 }
 
 
-static PySequenceMethods MetaElemSeq_as_sequence = {
-	( inquiry ) MetaElemSeq_len,	/* sq_length */
+static PySequenceMethods V24_MetaElemSeq_as_sequence = {
+	( inquiry ) V24_MetaElemSeq_len,	/* sq_length */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
 	( intargfunc ) 0,	/* sq_item */
@@ -986,7 +986,7 @@ static PySequenceMethods MetaElemSeq_as_sequence = {
 
 /************************************************************************
  *
- * Python MetaElemSeq_Type iterator (iterates over Metaballs)
+ * Python V24_MetaElemSeq_Type iterator (iterates over Metaballs)
  *
  ************************************************************************/
 
@@ -994,29 +994,29 @@ static PySequenceMethods MetaElemSeq_as_sequence = {
  * Initialize the interator
  */
 
-static PyObject *MetaElemSeq_getIter( BPy_MetaElemSeq * self )
+static PyObject *V24_MetaElemSeq_getIter( V24_BPy_MetaElemSeq * self )
 {
 	if (!self->iter) { /* not alredy looping on this data, */
 		self->iter = self->bpymetaball->metaball->elems.first;
-		return EXPP_incr_ret ( (PyObject *) self );
+		return V24_EXPP_incr_ret ( (PyObject *) self );
 	} else
-		return MetaElemSeq_CreatePyObject(self->bpymetaball, self->bpymetaball->metaball->elems.first);
+		return V24_MetaElemSeq_CreatePyObject(self->bpymetaball, self->bpymetaball->metaball->elems.first);
 }
 
 /*
  * Return next MetaElem.
  */
 
-static PyObject *MetaElemSeq_nextIter( BPy_MetaElemSeq * self )
+static PyObject *V24_MetaElemSeq_nextIter( V24_BPy_MetaElemSeq * self )
 {
 	PyObject *object;
 	if( !(self->iter) ||  !(self->bpymetaball->metaball) ) {
 		self->iter= NULL;
-		return EXPP_ReturnPyObjError( PyExc_StopIteration,
+		return V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 				"iterator at end" );
 	}
 	
-	object= MetaElem_CreatePyObject( self->iter ); 
+	object= V24_MetaElem_CreatePyObject( self->iter ); 
 	self->iter= self->iter->next;
 	return object;
 }
@@ -1026,7 +1026,7 @@ static PyObject *MetaElemSeq_nextIter( BPy_MetaElemSeq * self )
  * no args are taken so the returned metaball must be modified after adding.
  * Accessed as mball.elements.add() where mball is a python metaball data type.
  */
-static PyObject *MetaElemSeq_add( BPy_MetaElemSeq * self )
+static PyObject *V24_MetaElemSeq_add( V24_BPy_MetaElemSeq * self )
 {
 	MetaElem *ml;
 
@@ -1048,7 +1048,7 @@ static PyObject *MetaElemSeq_add( BPy_MetaElemSeq * self )
 	ml->expz = 1;
 	ml->type = MB_BALL;
 
-	return MetaElem_CreatePyObject(ml);
+	return V24_MetaElem_CreatePyObject(ml);
 }
 
 
@@ -1057,12 +1057,12 @@ static PyObject *MetaElemSeq_add( BPy_MetaElemSeq * self )
  * no args are taken so the returned metaball must be modified after adding.
  * Accessed as mball.elements.add() where mball is a python metaball data type.
  */
-static PyObject *MetaElemSeq_remove( BPy_MetaElemSeq * self, BPy_Metaelem *elem )
+static PyObject *V24_MetaElemSeq_remove( V24_BPy_MetaElemSeq * self, V24_BPy_Metaelem *elem )
 {
 	MetaElem *ml_iter, *ml_py;
 	
 	if( !BPy_Metaelem_Check(elem) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"elements.remove(metaelem) - expected a Metaball element" );
 	
 	METAELEM_DEL_CHECK_PY(elem);
@@ -1077,55 +1077,55 @@ static PyObject *MetaElemSeq_remove( BPy_MetaElemSeq * self, BPy_Metaelem *elem 
 		}
 	}
 	
-	return EXPP_ReturnPyObjError( PyExc_ValueError,
+	return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 		"elements.remove(elem): elem not in meta elements" );	
 	
 }
 
 static struct PyMethodDef BPy_MetaElemSeq_methods[] = {
-	{"add", (PyCFunction)MetaElemSeq_add, METH_NOARGS,
+	{"add", (PyCFunction)V24_MetaElemSeq_add, METH_NOARGS,
 		"add metaelem to metaball data"},
-	{"remove", (PyCFunction)MetaElemSeq_remove, METH_O,
+	{"remove", (PyCFunction)V24_MetaElemSeq_remove, METH_O,
 		"remove element from metaball data"},
 	{NULL, NULL, 0, NULL}
 };
 
 /************************************************************************
  *
- * Python MetaElemSeq_Type standard operations
+ * Python V24_MetaElemSeq_Type standard operations
  *
  ************************************************************************/
 
-static void MetaElemSeq_dealloc( BPy_MetaElemSeq * self )
+static void V24_MetaElemSeq_dealloc( V24_BPy_MetaElemSeq * self )
 {
 	Py_DECREF(self->bpymetaball);
 	PyObject_DEL( self );
 }
 
 /*****************************************************************************/
-/* Python MetaElemSeq_Type structure definition:                               */
+/* Python V24_MetaElemSeq_Type structure definition:                               */
 /*****************************************************************************/
-PyTypeObject MetaElemSeq_Type = {
+PyTypeObject V24_MetaElemSeq_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender MetaElemSeq",           /* char *tp_name; */
-	sizeof( BPy_MetaElemSeq ),       /* int tp_basicsize; */
+	sizeof( V24_BPy_MetaElemSeq ),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	( destructor ) MetaElemSeq_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_MetaElemSeq_dealloc,/* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) MetaElemSeq_compare,   /* cmpfunc tp_compare; */
-	( reprfunc ) MetaElemSeq_repr,     /* reprfunc tp_repr; */
+	( cmpfunc ) V24_MetaElemSeq_compare,   /* cmpfunc tp_compare; */
+	( reprfunc ) V24_MetaElemSeq_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&MetaElemSeq_as_sequence,	    /* PySequenceMethods *tp_as_sequence; */
+	&V24_MetaElemSeq_as_sequence,	    /* PySequenceMethods *tp_as_sequence; */
 	NULL,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
@@ -1159,8 +1159,8 @@ PyTypeObject MetaElemSeq_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc) MetaElemSeq_getIter, /* getiterfunc tp_iter; */
-	( iternextfunc ) MetaElemSeq_nextIter, /* iternextfunc tp_iternext; */
+	( getiterfunc) V24_MetaElemSeq_getIter, /* getiterfunc tp_iter; */
+	( iternextfunc ) V24_MetaElemSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
 	BPy_MetaElemSeq_methods,       /* struct PyMethodDef *tp_methods; */

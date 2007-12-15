@@ -36,23 +36,23 @@
 #include <Python.h>
 #include <DNA_scene_types.h>
 
-extern PyTypeObject TimeLine_Type;
+extern PyTypeObject V24_TimeLine_Type;
 #define BPy_TimeLine_Check (v) \
-    ((v)->ob_type == &TimeLine_Type)	
+    ((v)->ob_type == &V24_TimeLine_Type)	
 
 typedef struct {
 	PyObject_HEAD 
 	ListBase *marker_list;
 	int sfra, efra;
-} BPy_TimeLine;
+} V24_BPy_TimeLine;
 
-//---------------------------Python BPy_TimeLine visible prototypes-----------
-// Python TimeLine_Type helper functions needed by Blender (the Init function) and Object modules. 
+//---------------------------Python V24_BPy_TimeLine visible prototypes-----------
+// Python V24_TimeLine_Type helper functions needed by Blender (the Init function) and Object modules. 
 
 
-PyObject *TimeLine_Init (void);
-PyObject *TimeLine_CreatePyObject (BPy_TimeLine *tl);
-BPy_TimeLine *TimeLine_FromPyObject (PyObject * pyobj);
+PyObject *V24_TimeLine_Init (void);
+PyObject *V24_TimeLine_CreatePyObject (V24_BPy_TimeLine *tl);
+V24_BPy_TimeLine *V24_TimeLine_FromPyObject (PyObject * pyobj);
 
 #endif				/* EXPP_TMARKER_H */
 

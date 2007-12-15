@@ -50,51 +50,51 @@
 #include "gen_library.h"
 
 /* checks for the group being removed */
-#define GROUP_DEL_CHECK_PY(bpy_group) if (!(bpy_group->group)) return ( EXPP_ReturnPyObjError( PyExc_RuntimeError, "Group has been removed" ) )
-#define GROUP_DEL_CHECK_INT(bpy_group) if (!(bpy_group->group)) return ( EXPP_ReturnIntError( PyExc_RuntimeError, "Group has been removed" ) )
+#define GROUP_DEL_CHECK_PY(bpy_group) if (!(bpy_group->group)) return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "Group has been removed" ) )
+#define GROUP_DEL_CHECK_INT(bpy_group) if (!(bpy_group->group)) return ( V24_EXPP_ReturnIntError( PyExc_RuntimeError, "Group has been removed" ) )
 
 /*****************************************************************************/
 /* Python API function prototypes for the Blender module.		 */
 /*****************************************************************************/
-static PyObject *M_Group_New( PyObject * self, PyObject * args );
-PyObject *M_Group_Get( PyObject * self, PyObject * args );
-PyObject *M_Group_Unlink( PyObject * self, BPy_Group * pygrp );
+static PyObject *V24_M_Group_New( PyObject * self, PyObject * args );
+PyObject *V24_M_Group_Get( PyObject * self, PyObject * args );
+PyObject *V24_M_Group_Unlink( PyObject * self, V24_BPy_Group * pygrp );
 
 /* internal */
-static PyObject *GroupObSeq_CreatePyObject( BPy_Group *self, GroupObject *iter );
+static PyObject *V24_GroupObSeq_CreatePyObject( V24_BPy_Group *self, GroupObject *iter );
 
 /*****************************************************************************/
 /* Python method structure definition for Blender.Object module:	 */
 /*****************************************************************************/
 struct PyMethodDef M_Group_methods[] = {
-	{"New", ( PyCFunction ) M_Group_New, METH_VARARGS,
+	{"New", ( PyCFunction ) V24_M_Group_New, METH_VARARGS,
 	 "(name) Add a new empty group"},
-	{"Get", ( PyCFunction ) M_Group_Get, METH_VARARGS,
+	{"Get", ( PyCFunction ) V24_M_Group_Get, METH_VARARGS,
 "(name) - return the group with the name 'name',\
 returns None if notfound.\nIf 'name' is not specified, it returns a list of all groups."},
-	{"Unlink", ( PyCFunction ) M_Group_Unlink, METH_O,
+	{"Unlink", ( PyCFunction ) V24_M_Group_Unlink, METH_O,
 	 "(group) - Unlink (delete) this group from Blender."},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python BPy_Group methods table:					   */
+/* Python V24_BPy_Group methods table:					   */
 /*****************************************************************************/
-static PyObject *BPy_Group_copy( BPy_Group * self );
+static PyObject *V24_BPy_Group_copy( V24_BPy_Group * self );
 
-static PyMethodDef BPy_Group_methods[] = {
+static PyMethodDef V24_BPy_Group_methods[] = {
 	/* name, method, flags, doc */
-	{"__copy__", ( PyCFunction ) BPy_Group_copy, METH_VARARGS,
+	{"__copy__", ( PyCFunction ) V24_BPy_Group_copy, METH_VARARGS,
 	 "() - Return a copy of the group containing the same objects."},
-	{"copy", ( PyCFunction ) BPy_Group_copy, METH_VARARGS,
+	{"copy", ( PyCFunction ) V24_BPy_Group_copy, METH_VARARGS,
 	 "() - Return a copy of the group containing the same objects."},
 	{NULL, NULL, 0, NULL}
 };
 
 
-static PyObject *BPy_Group_copy( BPy_Group * self )
+static PyObject *V24_BPy_Group_copy( V24_BPy_Group * self )
 {
-	BPy_Group *py_group;	/* for Group Data object wrapper in Python */
+	V24_BPy_Group *py_group;	/* for Group Data object wrapper in Python */
 	struct Group *bl_group;
 	GroupObject *group_ob, *group_ob_new; /* Group object, copied and added to the groups */
 	
@@ -103,9 +103,9 @@ static PyObject *BPy_Group_copy( BPy_Group * self )
 	bl_group= add_group( self->group->id.name + 2 );
 	
 	if( bl_group )		/* now create the wrapper grp in Python */
-		py_group = ( BPy_Group * ) Group_CreatePyObject( bl_group );
+		py_group = ( V24_BPy_Group * ) V24_Group_CreatePyObject( bl_group );
 	else
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create Group Data in Blender" ) );
 	
 	bl_group->id.us = 1;
@@ -127,12 +127,12 @@ static PyObject *BPy_Group_copy( BPy_Group * self )
 
 /************************************************************************
  *
- * Python BPy_Object attributes
+ * Python V24_BPy_Object attributes
  *
  ************************************************************************/
-static PyObject *Group_getObjects( BPy_Group * self )
+static PyObject *V24_Group_getObjects( V24_BPy_Group * self )
 {
-	return GroupObSeq_CreatePyObject(self, NULL);
+	return V24_GroupObSeq_CreatePyObject(self, NULL);
 }
 
 
@@ -150,7 +150,7 @@ static void add_to_group_wraper(Group *group, Object *ob) {
 }
 
 /* only for internal use Blender.Group.Get("MyGroup").objects= []*/
-static int Group_setObjects( BPy_Group * self, PyObject * args )
+static int V24_Group_setObjects( V24_BPy_Group * self, PyObject * args )
 {
 	int i, list_size;
 	Group *group;
@@ -160,15 +160,15 @@ static int Group_setObjects( BPy_Group * self, PyObject * args )
 	GROUP_DEL_CHECK_INT(self);
 	
 	if( PyList_Check( args ) ) {
-		if( EXPP_check_sequence_consistency( args, &Object_Type ) != 1)
-			return ( EXPP_ReturnIntError( PyExc_TypeError, 
+		if( V24_EXPP_check_sequence_consistency( args, &V24_Object_Type ) != 1)
+			return ( V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected a list of objects" ) );
 		
 		/* remove all from the list and add the new items */
 		free_group(group); /* unlink all objects from this group, keep the group */
 		list_size= PyList_Size( args );
 		for( i = 0; i < list_size; i++ ) {
-			blen_ob= ((BPy_Object *)PyList_GET_ITEM( args, i ))->object;
+			blen_ob= ((V24_BPy_Object *)PyList_GET_ITEM( args, i ))->object;
 			add_to_group_wraper(group, blen_ob);
 		}
 	} else if (PyIter_Check(args)) {
@@ -176,14 +176,14 @@ static int Group_setObjects( BPy_Group * self, PyObject * args )
 		PyObject *item;
 		if (iterator == NULL) {
 			Py_DECREF(iterator);
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 			"expected a list of objects, This iterator cannot be used." );
 		}
 		free_group(group); /* unlink all objects from this group, keep the group */
 		item = PyIter_Next(iterator);
 		while (item) {
-			if ( PyObject_TypeCheck(item, &Object_Type) ) {
-				blen_ob= ((BPy_Object *)item)->object;
+			if ( PyObject_TypeCheck(item, &V24_Object_Type) ) {
+				blen_ob= ((V24_BPy_Object *)item)->object;
 				add_to_group_wraper(group, blen_ob);
 			}
 			Py_DECREF(item);
@@ -193,12 +193,12 @@ static int Group_setObjects( BPy_Group * self, PyObject * args )
 		Py_DECREF(iterator);
 
 		if (PyErr_Occurred()) {
-			return EXPP_ReturnIntError( PyExc_RuntimeError, 
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError, 
 			"An unknown error occured while adding iterator objects to the group.\nThe group has been modified." );
 		}
 
 	} else
-		return EXPP_ReturnIntError( PyExc_TypeError, 
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 				"expected a list or sequence of objects" );
 	return 0;
 }
@@ -208,26 +208,26 @@ static int Group_setObjects( BPy_Group * self, PyObject * args )
 /*****************************************************************************/
 /* PythonTypeObject callback function prototypes			 */
 /*****************************************************************************/
-static PyObject *Group_repr( BPy_Group * obj );
-static int Group_compare( BPy_Group * a, BPy_Group * b );
+static PyObject *V24_Group_repr( V24_BPy_Group * obj );
+static int V24_Group_compare( V24_BPy_Group * a, V24_BPy_Group * b );
 
 /*****************************************************************************/
-/* Python BPy_Group getsetattr funcs:                                        */
+/* Python V24_BPy_Group getsetattr funcs:                                        */
 /*****************************************************************************/
-static int Group_setLayers( BPy_Group * self, PyObject * value )
+static int V24_Group_setLayers( V24_BPy_Group * self, PyObject * value )
 {
 	unsigned int laymask = 0;
 	
 	GROUP_DEL_CHECK_INT(self);
 	
 	if( !PyInt_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected an integer (bitmask) as argument" );
 	
 	laymask = ( unsigned int )PyInt_AS_LONG( value );
 	
 	if( laymask <= 0 )
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 					      "layer value cannot be zero or below" );
 	
 	self->group->layer= laymask & ((1<<20) - 1);
@@ -235,7 +235,7 @@ static int Group_setLayers( BPy_Group * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Group_getLayers( BPy_Group * self )
+static PyObject *V24_Group_getLayers( V24_BPy_Group * self )
 {
 	return PyInt_FromLong( self->group->layer );
 }
@@ -244,14 +244,14 @@ static PyObject *Group_getLayers( BPy_Group * self )
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_Group_getseters[] = {
+static PyGetSetDef V24_BPy_Group_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
 	{"layers",
-	 (getter)Group_getLayers, (setter)Group_setLayers,
+	 (getter)V24_Group_getLayers, (setter)V24_Group_setLayers,
 	 "layer mask for this group",
 	 NULL},
 	{"objects",
-	 (getter)Group_getObjects, (setter)Group_setObjects,
+	 (getter)V24_Group_getObjects, (setter)V24_Group_setObjects,
 	 "objects in this group",
 	 NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
@@ -260,12 +260,12 @@ static PyGetSetDef BPy_Group_getseters[] = {
 /*****************************************************************************/
 /* Python TypeGroup structure definition:                                     */
 /*****************************************************************************/
-PyTypeObject Group_Type = {
+PyTypeObject V24_Group_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Group",             /* char *tp_name; */
-	sizeof( BPy_Group ),         /* int tp_basicsize; */
+	sizeof( V24_BPy_Group ),         /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -274,8 +274,8 @@ PyTypeObject Group_Type = {
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Group_compare,   /* cmpfunc tp_compare; */
-	( reprfunc ) Group_repr,     /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Group_compare,   /* cmpfunc tp_compare; */
+	( reprfunc ) V24_Group_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -285,7 +285,7 @@ PyTypeObject Group_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -318,9 +318,9 @@ PyTypeObject Group_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Group_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Group_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Group_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Group_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -347,25 +347,25 @@ PyTypeObject Group_Type = {
 
 
 /*****************************************************************************/
-/* Function:			  M_Group_New				 */
+/* Function:			  V24_M_Group_New				 */
 /* Python equivalent:	  Blender.Group.New				 */
 /*****************************************************************************/
-PyObject *M_Group_New( PyObject * self, PyObject * args )
+PyObject *V24_M_Group_New( PyObject * self, PyObject * args )
 {
 	char *name = "Group";
-	BPy_Group *py_group;	/* for Group Data object wrapper in Python */
+	V24_BPy_Group *py_group;	/* for Group Data object wrapper in Python */
 	struct Group *bl_group;
 	
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"string expected as argument or nothing" );
 	
 	bl_group= add_group( name );
 	
 	if( bl_group )		/* now create the wrapper grp in Python */
-		py_group = ( BPy_Group * ) Group_CreatePyObject( bl_group );
+		py_group = ( V24_BPy_Group * ) V24_Group_CreatePyObject( bl_group );
 	else
-		return ( EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"couldn't create Group Data in Blender" ) );
 	
 	bl_group->id.us = 1;
@@ -374,30 +374,30 @@ PyObject *M_Group_New( PyObject * self, PyObject * args )
 }
 
 /*****************************************************************************/
-/* Function:	  M_Group_Get						*/
+/* Function:	  V24_M_Group_Get						*/
 /* Python equivalent:	  Blender.Group.Get				*/
 /*****************************************************************************/
-PyObject *M_Group_Get( PyObject * self, PyObject * args )
+PyObject *V24_M_Group_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	Group *group_iter;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected string argument (or nothing)" ) );
 
 	group_iter = G.main->group.first;
 
 	if( name ) {		/* (name) - Search group by name */
 
-		BPy_Group *wanted_group = NULL;
+		V24_BPy_Group *wanted_group = NULL;
 
 		while( ( group_iter ) && ( wanted_group == NULL ) ) {
 
 			if( strcmp( name, group_iter->id.name + 2 ) == 0 )
 				wanted_group =
-					( BPy_Group * )
-					Group_CreatePyObject( group_iter );
+					( V24_BPy_Group * )
+					V24_Group_CreatePyObject( group_iter );
 
 			group_iter = group_iter->id.next;
 		}
@@ -406,7 +406,7 @@ PyObject *M_Group_Get( PyObject * self, PyObject * args )
 			char error_msg[64];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Group \"%s\" not found", name );
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_NameError, error_msg ) );
 		}
 
@@ -420,15 +420,15 @@ PyObject *M_Group_Get( PyObject * self, PyObject * args )
 		grouplist = PyList_New( BLI_countlist( &( G.main->group ) ) );
 
 		if( grouplist == NULL )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 							"couldn't create group list" ) );
 
 		while( group_iter ) {
-			pyobj = Group_CreatePyObject( group_iter );
+			pyobj = V24_Group_CreatePyObject( group_iter );
 
 			if( !pyobj ) {
 				Py_DECREF(grouplist);
-				return ( EXPP_ReturnPyObjError
+				return ( V24_EXPP_ReturnPyObjError
 					 ( PyExc_MemoryError,
 					   "couldn't create Object" ) );
 			}
@@ -444,14 +444,14 @@ PyObject *M_Group_Get( PyObject * self, PyObject * args )
 
 
 /*****************************************************************************/
-/* Function:	  M_Group_Unlink						*/
+/* Function:	  V24_M_Group_Unlink						*/
 /* Python equivalent:	  Blender.Group.Unlink				*/
 /*****************************************************************************/
-PyObject *M_Group_Unlink( PyObject * self, BPy_Group * pygrp )
+PyObject *V24_M_Group_Unlink( PyObject * self, V24_BPy_Group * pygrp )
 {
 	Group *group;
 	if( !BPy_Group_Check(pygrp) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected a group" ) );
 	
 	GROUP_DEL_CHECK_PY(pygrp);
@@ -470,12 +470,12 @@ PyObject *M_Group_Unlink( PyObject * self, BPy_Group * pygrp )
 /*****************************************************************************/
 /* Function:	 initObject						*/
 /*****************************************************************************/
-PyObject *Group_Init( void )
+PyObject *V24_Group_Init( void )
 {
 	PyObject *submodule;
-	if( PyType_Ready( &Group_Type ) < 0 )
+	if( PyType_Ready( &V24_Group_Type ) < 0 )
 		return NULL;
-	if( PyType_Ready( &GroupObSeq_Type ) < 0 )
+	if( PyType_Ready( &V24_GroupObSeq_Type ) < 0 )
 		return NULL;
 	
 	submodule = Py_InitModule3( "Blender.Group", M_Group_methods,
@@ -483,25 +483,25 @@ PyObject *Group_Init( void )
 This module provides access to **Group Data** in Blender.\n" );
 
 	/*Add SUBMODULES to the module*/
-	/*PyDict_SetItemString(dict, "Constraint", Constraint_Init()); //creates a *new* module*/
+	/*PyDict_SetItemString(dict, "Constraint", V24_Constraint_Init()); //creates a *new* module*/
 	return submodule;
 }
 
 
 /*****************************************************************************/
-/* Function:	Group_CreatePyObject					 */
+/* Function:	V24_Group_CreatePyObject					 */
 /* Description: This function will create a new BlenObject from an existing  */
 /*		Object structure.					 */
 /*****************************************************************************/
-PyObject *Group_CreatePyObject( struct Group * grp )
+PyObject *V24_Group_CreatePyObject( struct Group * grp )
 {
-	BPy_Group *pygrp;
+	V24_BPy_Group *pygrp;
 
 	if( !grp )
 		Py_RETURN_NONE;
 
 	pygrp =
-		( BPy_Group * ) PyObject_NEW( BPy_Group, &Group_Type );
+		( V24_BPy_Group * ) PyObject_NEW( V24_BPy_Group, &V24_Group_Type );
 
 	if( pygrp == NULL ) {
 		return ( NULL );
@@ -511,38 +511,38 @@ PyObject *Group_CreatePyObject( struct Group * grp )
 }
 
 /*****************************************************************************/
-/* Function:	Group_FromPyObject					 */
+/* Function:	V24_Group_FromPyObject					 */
 /* Description: This function returns the Blender group from the given	 */
 /*		PyObject.						 */
 /*****************************************************************************/
-Group *Group_FromPyObject( PyObject * py_grp )
+Group *V24_Group_FromPyObject( PyObject * py_grp )
 {
-	BPy_Group *blen_grp;
+	V24_BPy_Group *blen_grp;
 
-	blen_grp = ( BPy_Group * ) py_grp;
+	blen_grp = ( V24_BPy_Group * ) py_grp;
 	return ( blen_grp->group );
 }
 
 /*****************************************************************************/
-/* Function:	Group_compare						 */
-/* Description: This is a callback function for the BPy_Group type. It	 */
-/*		compares two Group_Type objects. Only the "==" and "!="  */
+/* Function:	V24_Group_compare						 */
+/* Description: This is a callback function for the V24_BPy_Group type. It	 */
+/*		compares two V24_Group_Type objects. Only the "==" and "!="  */
 /*		comparisons are meaninful. Returns 0 for equality and -1 if  */
 /*		they don't point to the same Blender Object struct.	 */
 /*		In Python it becomes 1 if they are equal, 0 otherwise.	 */
 /*****************************************************************************/
-static int Group_compare( BPy_Group * a, BPy_Group * b )
+static int V24_Group_compare( V24_BPy_Group * a, V24_BPy_Group * b )
 {
 	Group *pa = a->group, *pb = b->group;
 	return ( pa == pb ) ? 0 : -1;
 }
 
 /*****************************************************************************/
-/* Function:	Group_repr						 */
-/* Description: This is a callback function for the BPy_Group type. It	 */
+/* Function:	V24_Group_repr						 */
+/* Description: This is a callback function for the V24_BPy_Group type. It	 */
 /*		builds a meaninful string to represent object objects.	 */
 /*****************************************************************************/
-static PyObject *Group_repr( BPy_Group * self )
+static PyObject *V24_Group_repr( V24_BPy_Group * self )
 {
 	if (!self->group)
 		return PyString_FromString( "[Group - Removed]" );
@@ -561,16 +561,16 @@ static PyObject *Group_repr( BPy_Group * self )
  * create a thin GroupOb object
  */
 
-static PyObject *GroupObSeq_CreatePyObject( BPy_Group *self, GroupObject *iter )
+static PyObject *V24_GroupObSeq_CreatePyObject( V24_BPy_Group *self, GroupObject *iter )
 {
-	BPy_GroupObSeq *seq = PyObject_NEW( BPy_GroupObSeq, &GroupObSeq_Type);
+	V24_BPy_GroupObSeq *seq = PyObject_NEW( V24_BPy_GroupObSeq, &V24_GroupObSeq_Type);
 	seq->bpygroup = self; Py_INCREF(self);
 	seq->iter= iter;
 	return (PyObject *)seq;
 }
 
 
-static int GroupObSeq_len( BPy_GroupObSeq * self )
+static int V24_GroupObSeq_len( V24_BPy_GroupObSeq * self )
 {
 	GROUP_DEL_CHECK_INT(self->bpygroup);
 	return BLI_countlist( &( self->bpygroup->group->gobject ) );
@@ -580,7 +580,7 @@ static int GroupObSeq_len( BPy_GroupObSeq * self )
  * retrive a single GroupOb from somewhere in the GroupObex list
  */
 
-static PyObject *GroupObSeq_item( BPy_GroupObSeq * self, int i )
+static PyObject *V24_GroupObSeq_item( V24_BPy_GroupObSeq * self, int i )
 {
 	Group *group= self->bpygroup->group;
 	int index=0;
@@ -592,24 +592,24 @@ static PyObject *GroupObSeq_item( BPy_GroupObSeq * self, int i )
 	for (gob= group->gobject.first; gob && i!=index; gob= gob->next, index++) {}
 	
 	if (!(gob))
-		return EXPP_ReturnPyObjError( PyExc_IndexError,
+		return V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 					      "array index out of range" );
 	
-	bpy_obj = Object_CreatePyObject( gob->ob );
+	bpy_obj = V24_Object_CreatePyObject( gob->ob );
 
 	if( !bpy_obj )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"PyObject_New() failed" );
 
 	return (PyObject *)bpy_obj;
 	
 }
 
-static PySequenceMethods GroupObSeq_as_sequence = {
-	( inquiry ) GroupObSeq_len,	/* sq_length */
+static PySequenceMethods V24_GroupObSeq_as_sequence = {
+	( inquiry ) V24_GroupObSeq_len,	/* sq_length */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
-	( intargfunc ) GroupObSeq_item,	/* sq_item */
+	( intargfunc ) V24_GroupObSeq_item,	/* sq_item */
 	( intintargfunc ) 0,	/* sq_slice */
 	( intobjargproc ) 0,	/* sq_ass_item */
 	( intintobjargproc ) 0,	/* sq_ass_slice */
@@ -618,7 +618,7 @@ static PySequenceMethods GroupObSeq_as_sequence = {
 
 /************************************************************************
  *
- * Python GroupObSeq_Type iterator (iterates over GroupObjects)
+ * Python V24_GroupObSeq_Type iterator (iterates over GroupObjects)
  *
  ************************************************************************/
 
@@ -626,15 +626,15 @@ static PySequenceMethods GroupObSeq_as_sequence = {
  * Initialize the interator index
  */
 
-static PyObject *GroupObSeq_getIter( BPy_GroupObSeq * self )
+static PyObject *V24_GroupObSeq_getIter( V24_BPy_GroupObSeq * self )
 {
 	GROUP_DEL_CHECK_PY(self->bpygroup);
 	
 	if (!self->iter) {
 		self->iter = self->bpygroup->group->gobject.first;
-		return EXPP_incr_ret ( (PyObject *) self );
+		return V24_EXPP_incr_ret ( (PyObject *) self );
 	} else {
-		return GroupObSeq_CreatePyObject(self->bpygroup, self->bpygroup->group->gobject.first);
+		return V24_GroupObSeq_CreatePyObject(self->bpygroup, self->bpygroup->group->gobject.first);
 	}
 }
 
@@ -642,34 +642,34 @@ static PyObject *GroupObSeq_getIter( BPy_GroupObSeq * self )
  * Return next GroupOb.
  */
 
-static PyObject *GroupObSeq_nextIter( BPy_GroupObSeq * self )
+static PyObject *V24_GroupObSeq_nextIter( V24_BPy_GroupObSeq * self )
 {
 	PyObject *object;
 	if( !(self->iter) ||  !(self->bpygroup->group) ) {
 		self->iter = NULL; /* so we can add objects again */
-		return EXPP_ReturnPyObjError( PyExc_StopIteration,
+		return V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 				"iterator at end" );
 	}
 	
-	object= Object_CreatePyObject( self->iter->ob ); 
+	object= V24_Object_CreatePyObject( self->iter->ob ); 
 	self->iter= self->iter->next;
 	return object;
 }
 
 
-static PyObject *GroupObSeq_link( BPy_GroupObSeq * self, BPy_Object *value )
+static PyObject *V24_GroupObSeq_link( V24_BPy_GroupObSeq * self, V24_BPy_Object *value )
 {
 	Object *blen_ob;
 	
 	GROUP_DEL_CHECK_PY(self->bpygroup);
 	
 	if( !BPy_Object_Check(value) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a python object as an argument" ) );
 	
 	/*
 	if (self->iter != NULL)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "Cannot modify group objects while iterating" );
 	*/
 	
@@ -680,7 +680,7 @@ static PyObject *GroupObSeq_link( BPy_GroupObSeq * self, BPy_Object *value )
 	Py_RETURN_NONE;
 }
 
-static PyObject *GroupObSeq_unlink( BPy_GroupObSeq * self, BPy_Object *value )
+static PyObject *V24_GroupObSeq_unlink( V24_BPy_GroupObSeq * self, V24_BPy_Object *value )
 {
 	Object *blen_ob;
 	Base *base= NULL;
@@ -688,7 +688,7 @@ static PyObject *GroupObSeq_unlink( BPy_GroupObSeq * self, BPy_Object *value )
 	GROUP_DEL_CHECK_PY(self->bpygroup);
 	
 	if( !BPy_Object_Check(value) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a python object as an argument" ) );
 	
 	blen_ob = value->object;
@@ -708,39 +708,39 @@ static PyObject *GroupObSeq_unlink( BPy_GroupObSeq * self, BPy_Object *value )
 }
 
 static struct PyMethodDef BPy_GroupObSeq_methods[] = {
-	{"link", (PyCFunction)GroupObSeq_link, METH_O,
+	{"link", (PyCFunction)V24_GroupObSeq_link, METH_O,
 		"make the object a part of this group"},
-	{"unlink", (PyCFunction)GroupObSeq_unlink, METH_O,
+	{"unlink", (PyCFunction)V24_GroupObSeq_unlink, METH_O,
 		"unlink an object from this group"},
 	{NULL, NULL, 0, NULL}	
 };
 
 /************************************************************************
  *
- * Python GroupObSeq_Type standard operations
+ * Python V24_GroupObSeq_Type standard operations
  *
  ************************************************************************/
 
-static void GroupObSeq_dealloc( BPy_GroupObSeq * self )
+static void V24_GroupObSeq_dealloc( V24_BPy_GroupObSeq * self )
 {
 	Py_DECREF(self->bpygroup);
 	PyObject_DEL( self );
 }
 
 /*****************************************************************************/
-/* Python GroupObSeq_Type structure definition:                               */
+/* Python V24_GroupObSeq_Type structure definition:                               */
 /*****************************************************************************/
-PyTypeObject GroupObSeq_Type = {
+PyTypeObject V24_GroupObSeq_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender GroupObSeq",           /* char *tp_name; */
-	sizeof( BPy_GroupObSeq ),       /* int tp_basicsize; */
+	sizeof( V24_BPy_GroupObSeq ),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	( destructor ) GroupObSeq_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_GroupObSeq_dealloc,/* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -750,7 +750,7 @@ PyTypeObject GroupObSeq_Type = {
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&GroupObSeq_as_sequence,	    /* PySequenceMethods *tp_as_sequence; */
+	&V24_GroupObSeq_as_sequence,	    /* PySequenceMethods *tp_as_sequence; */
 	NULL,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
@@ -784,8 +784,8 @@ PyTypeObject GroupObSeq_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc) GroupObSeq_getIter, /* getiterfunc tp_iter; */
-	( iternextfunc ) GroupObSeq_nextIter, /* iternextfunc tp_iternext; */
+	( getiterfunc) V24_GroupObSeq_getIter, /* getiterfunc tp_iter; */
+	( iternextfunc ) V24_GroupObSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
 	BPy_GroupObSeq_methods,       /* struct PyMethodDef *tp_methods; */

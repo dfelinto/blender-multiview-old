@@ -48,7 +48,7 @@
 #define EXPP_THEME_DRAWTYPE_MAX 4
 
 #define EXPP_THEME_NUMBEROFTHEMES 16
-static const EXPP_map_pair themes_map[] = {
+static const V24_EXPP_map_pair themes_map[] = {
 	{"ui", -1},
 	{"buts", SPACE_BUTS},
 	{"view3d", SPACE_VIEW3D},
@@ -68,20 +68,20 @@ static const EXPP_map_pair themes_map[] = {
 	{NULL, 0}
 };
 
-static PyObject *M_Theme_New( PyObject * self, PyObject * args );
-static PyObject *M_Theme_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_Theme_New( PyObject * self, PyObject * args );
+static PyObject *V24_M_Theme_Get( PyObject * self, PyObject * args );
 
-static char M_Theme_doc[] = "The Blender Theme module\n\n\
+static char V24_M_Theme_doc[] = "The Blender Theme module\n\n\
 This module provides access to UI Theme data in Blender";
 
-static char M_Theme_New_doc[] = "Theme.New (name = 'New Theme',\
+static char V24_M_Theme_New_doc[] = "Theme.New (name = 'New Theme',\
 theme = <default>):\n\
 	Return a new Theme Data object.\n\
 (name) - string: the Theme's name, it defaults to 'New Theme';\n\
 (theme) - bpy Theme: a base Theme to copy all data from, it defaults to the\n\
 current one.";
 
-static char M_Theme_Get_doc[] = "Theme.Get (name = None):\n\
+static char V24_M_Theme_Get_doc[] = "Theme.Get (name = None):\n\
 	Return the theme data with the given 'name', None if not found, or\n\
 	Return a list with all Theme Data objects if no argument was given.";
 
@@ -89,34 +89,34 @@ static char M_Theme_Get_doc[] = "Theme.Get (name = None):\n\
 /* Python method structure definition for Blender.Theme module:		   */
 /*****************************************************************************/
 struct PyMethodDef M_Theme_methods[] = {
-	{"New", M_Theme_New, METH_VARARGS, M_Theme_New_doc},
-	{"Get", M_Theme_Get, METH_VARARGS, M_Theme_Get_doc},
+	{"New", V24_M_Theme_New, METH_VARARGS, V24_M_Theme_New_doc},
+	{"Get", V24_M_Theme_Get, METH_VARARGS, V24_M_Theme_Get_doc},
 	{NULL, NULL, 0, NULL}
 };
 
-static void ThemeSpace_dealloc( BPy_ThemeSpace * self );
-static int ThemeSpace_compare( BPy_ThemeSpace * a, BPy_ThemeSpace * b );
-static PyObject *ThemeSpace_repr( BPy_ThemeSpace * self );
-static PyObject *ThemeSpace_getAttr( BPy_ThemeSpace * self, char *name );
-static int ThemeSpace_setAttr( BPy_ThemeSpace * self, char *name,
+static void V24_ThemeSpace_dealloc( V24_BPy_ThemeSpace * self );
+static int V24_ThemeSpace_compare( V24_BPy_ThemeSpace * a, V24_BPy_ThemeSpace * b );
+static PyObject *V24_ThemeSpace_repr( V24_BPy_ThemeSpace * self );
+static PyObject *V24_ThemeSpace_getAttr( V24_BPy_ThemeSpace * self, char *name );
+static int V24_ThemeSpace_setAttr( V24_BPy_ThemeSpace * self, char *name,
 			       PyObject * val );
 
-static PyMethodDef BPy_ThemeSpace_methods[] = {
+static PyMethodDef V24_BPy_ThemeSpace_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
-PyTypeObject ThemeSpace_Type = {
+PyTypeObject V24_ThemeSpace_Type = {
 	PyObject_HEAD_INIT( NULL ) 0,	/* ob_size */
 	"Blender Space Theme",	/* tp_name */
-	sizeof( BPy_ThemeSpace ),	/* tp_basicsize */
+	sizeof( V24_BPy_ThemeSpace ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
-	( destructor ) ThemeSpace_dealloc,	/* tp_dealloc */
+	( destructor ) V24_ThemeSpace_dealloc,	/* tp_dealloc */
 	0,			/* tp_print */
-	( getattrfunc ) ThemeSpace_getAttr,	/* tp_getattr */
-	( setattrfunc ) ThemeSpace_setAttr,	/* tp_setattr */
-	( cmpfunc ) ThemeSpace_compare,	/* tp_compare */
-	( reprfunc ) ThemeSpace_repr,	/* tp_repr */
+	( getattrfunc ) V24_ThemeSpace_getAttr,	/* tp_getattr */
+	( setattrfunc ) V24_ThemeSpace_setAttr,	/* tp_setattr */
+	( cmpfunc ) V24_ThemeSpace_compare,	/* tp_compare */
+	( reprfunc ) V24_ThemeSpace_repr,	/* tp_repr */
 	0,			/* tp_as_number */
 	0,			/* tp_as_sequence */
 	0,			/* tp_as_mapping */
@@ -124,12 +124,12 @@ PyTypeObject ThemeSpace_Type = {
 	0, 0, 0, 0, 0, 0,
 	0,			/* tp_doc */
 	0, 0, 0, 0, 0, 0,
-	0,			//BPy_ThemeSpace_methods,            /* tp_methods */
+	0,			//V24_BPy_ThemeSpace_methods,            /* tp_methods */
 	0,			/* tp_members */
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
-static void ThemeSpace_dealloc( BPy_ThemeSpace * self )
+static void V24_ThemeSpace_dealloc( V24_BPy_ThemeSpace * self )
 {
 	PyObject_DEL( self );
 }
@@ -143,7 +143,7 @@ static void ThemeSpace_dealloc( BPy_ThemeSpace * self )
  * 	attrib = charRGBA_New(&tsp->back[0])
  */
 
-static PyObject *ThemeSpace_getAttr( BPy_ThemeSpace * self, char *name )
+static PyObject *V24_ThemeSpace_getAttr( V24_BPy_ThemeSpace * self, char *name )
 {
 	PyObject *attrib = Py_None;
 	ThemeSpace *tsp = self->tsp;
@@ -218,11 +218,11 @@ static PyObject *ThemeSpace_getAttr( BPy_ThemeSpace * self, char *name )
 	if( attrib != Py_None )
 		return attrib;
 
-	return Py_FindMethod( BPy_ThemeSpace_methods, ( PyObject * ) self,
+	return Py_FindMethod( V24_BPy_ThemeSpace_methods, ( PyObject * ) self,
 			      name );
 }
 
-static int ThemeSpace_setAttr( BPy_ThemeSpace * self, char *name,
+static int V24_ThemeSpace_setAttr( V24_BPy_ThemeSpace * self, char *name,
 			       PyObject * value )
 {
 	PyObject *attrib = NULL;
@@ -278,11 +278,11 @@ static int ThemeSpace_setAttr( BPy_ThemeSpace * self, char *name,
 		int val;
 
 		if( !PyInt_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected integer value" );
 
 		val = ( int ) PyInt_AsLong( value );
-		tsp->vertex_size = (char)EXPP_ClampInt( val,
+		tsp->vertex_size = (char)V24_EXPP_ClampInt( val,
 						  EXPP_THEME_VTX_SIZE_MIN,
 						  EXPP_THEME_VTX_SIZE_MAX );
 		ret = 0;
@@ -291,16 +291,16 @@ static int ThemeSpace_setAttr( BPy_ThemeSpace * self, char *name,
 		int val;
 
 		if( !PyInt_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected integer value" );
 
 		val = ( int ) PyInt_AsLong( value );
-		tsp->vertex_size = (char)EXPP_ClampInt( val,
+		tsp->vertex_size = (char)V24_EXPP_ClampInt( val,
 						  EXPP_THEME_FDOT_SIZE_MIN,
 						  EXPP_THEME_FDOT_SIZE_MAX );
 		ret = 0;
 	} else
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					    "attribute not found" );
 
 	if( attrib ) {
@@ -308,10 +308,10 @@ static int ThemeSpace_setAttr( BPy_ThemeSpace * self, char *name,
 		PyObject *valtuple = Py_BuildValue( "(O)", value );
 
 		if( !valtuple )
-			return EXPP_ReturnIntError( PyExc_MemoryError,
+			return V24_EXPP_ReturnIntError( PyExc_MemoryError,
 						    "couldn't create tuple!" );
 
-		pyret = charRGBA_setCol( ( BPy_charRGBA * ) attrib, valtuple );
+		pyret = charRGBA_setCol( ( V24_BPy_charRGBA * ) attrib, valtuple );
 		Py_DECREF( valtuple );
 
 		if( pyret == Py_None ) {
@@ -325,40 +325,40 @@ static int ThemeSpace_setAttr( BPy_ThemeSpace * self, char *name,
 	return ret;		/* 0 if all went well */
 }
 
-static int ThemeSpace_compare( BPy_ThemeSpace * a, BPy_ThemeSpace * b )
+static int V24_ThemeSpace_compare( V24_BPy_ThemeSpace * a, V24_BPy_ThemeSpace * b )
 {
 	ThemeSpace *pa = a->tsp, *pb = b->tsp;
 	return ( pa == pb ) ? 0 : -1;
 }
 
-static PyObject *ThemeSpace_repr( BPy_ThemeSpace * self )
+static PyObject *V24_ThemeSpace_repr( V24_BPy_ThemeSpace * self )
 {
 	return PyString_FromFormat( "[Space theme from theme \"%s\"]",
 				    self->theme->name );
 }
 
-static void ThemeUI_dealloc( BPy_ThemeUI * self );
-static int ThemeUI_compare( BPy_ThemeUI * a, BPy_ThemeUI * b );
-static PyObject *ThemeUI_repr( BPy_ThemeUI * self );
-static PyObject *ThemeUI_getAttr( BPy_ThemeUI * self, char *name );
-static int ThemeUI_setAttr( BPy_ThemeUI * self, char *name, PyObject * val );
+static void V24_ThemeUI_dealloc( V24_BPy_ThemeUI * self );
+static int V24_ThemeUI_compare( V24_BPy_ThemeUI * a, V24_BPy_ThemeUI * b );
+static PyObject *V24_ThemeUI_repr( V24_BPy_ThemeUI * self );
+static PyObject *V24_ThemeUI_getAttr( V24_BPy_ThemeUI * self, char *name );
+static int V24_ThemeUI_setAttr( V24_BPy_ThemeUI * self, char *name, PyObject * val );
 
-static PyMethodDef BPy_ThemeUI_methods[] = {
+static PyMethodDef V24_BPy_ThemeUI_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
-PyTypeObject ThemeUI_Type = {
+PyTypeObject V24_ThemeUI_Type = {
 	PyObject_HEAD_INIT( NULL ) 0,	/* ob_size */
 	"Blender UI Theme",	/* tp_name */
-	sizeof( BPy_ThemeUI ),	/* tp_basicsize */
+	sizeof( V24_BPy_ThemeUI ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
-	( destructor ) ThemeUI_dealloc,	/* tp_dealloc */
+	( destructor ) V24_ThemeUI_dealloc,	/* tp_dealloc */
 	0,			/* tp_print */
-	( getattrfunc ) ThemeUI_getAttr,	/* tp_getattr */
-	( setattrfunc ) ThemeUI_setAttr,	/* tp_setattr */
-	( cmpfunc ) ThemeUI_compare,	/* tp_compare */
-	( reprfunc ) ThemeUI_repr,	/* tp_repr */
+	( getattrfunc ) V24_ThemeUI_getAttr,	/* tp_getattr */
+	( setattrfunc ) V24_ThemeUI_setAttr,	/* tp_setattr */
+	( cmpfunc ) V24_ThemeUI_compare,	/* tp_compare */
+	( reprfunc ) V24_ThemeUI_repr,	/* tp_repr */
 	0,			/* tp_as_number */
 	0,			/* tp_as_sequence */
 	0,			/* tp_as_mapping */
@@ -366,12 +366,12 @@ PyTypeObject ThemeUI_Type = {
 	0, 0, 0, 0, 0, 0,
 	0,			/* tp_doc */
 	0, 0, 0, 0, 0, 0,
-	0,			//BPy_ThemeUI_methods,         /* tp_methods */
+	0,			//V24_BPy_ThemeUI_methods,         /* tp_methods */
 	0,			/* tp_members */
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
-static void ThemeUI_dealloc( BPy_ThemeUI * self )
+static void V24_ThemeUI_dealloc( V24_BPy_ThemeUI * self )
 {
 	PyObject_DEL( self );
 }
@@ -385,7 +385,7 @@ static void ThemeUI_dealloc( BPy_ThemeUI * self )
  * 	attr = charRGBA_New(&tui->outline[0])
  */
 
-static PyObject *ThemeUI_getAttr( BPy_ThemeUI * self, char *name )
+static PyObject *V24_ThemeUI_getAttr( V24_BPy_ThemeUI * self, char *name )
 {
 	PyObject *attrib = Py_None;
 	ThemeUI *tui = self->tui;
@@ -425,10 +425,10 @@ static PyObject *ThemeUI_getAttr( BPy_ThemeUI * self, char *name )
 	if( attrib != Py_None )
 		return attrib;
 
-	return Py_FindMethod( BPy_ThemeUI_methods, ( PyObject * ) self, name );
+	return Py_FindMethod( V24_BPy_ThemeUI_methods, ( PyObject * ) self, name );
 }
 
-static int ThemeUI_setAttr( BPy_ThemeUI * self, char *name, PyObject * value )
+static int V24_ThemeUI_setAttr( V24_BPy_ThemeUI * self, char *name, PyObject * value )
 {
 	PyObject *attrib = NULL;
 	ThemeUI *tui = self->tui;
@@ -456,17 +456,17 @@ static int ThemeUI_setAttr( BPy_ThemeUI * self, char *name, PyObject * value )
 		int val;
 
 		if( !PyInt_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected integer value" );
 
 		val = ( int ) PyInt_AsLong( value );
-		tui->but_drawtype = (char)EXPP_ClampInt( val,
+		tui->but_drawtype = (char)V24_EXPP_ClampInt( val,
 						   EXPP_THEME_DRAWTYPE_MIN,
 						   EXPP_THEME_DRAWTYPE_MAX );
 		ret = 0;
 	} else if ( !strcmp( name, "iconTheme" ) ) {
 		if ( !PyString_Check(value) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected string value" );
 		BLI_strncpy(tui->iconfile, PyString_AsString(value), 80);
 		
@@ -475,7 +475,7 @@ static int ThemeUI_setAttr( BPy_ThemeUI * self, char *name, PyObject * value )
 		
 		ret = 0;
 	} else
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					    "attribute not found" );
 
 	if( attrib ) {
@@ -483,10 +483,10 @@ static int ThemeUI_setAttr( BPy_ThemeUI * self, char *name, PyObject * value )
 		PyObject *valtuple = Py_BuildValue( "(O)", value );
 
 		if( !valtuple )
-			return EXPP_ReturnIntError( PyExc_MemoryError,
+			return V24_EXPP_ReturnIntError( PyExc_MemoryError,
 						    "couldn't create tuple!" );
 
-		pyret = charRGBA_setCol( ( BPy_charRGBA * ) attrib, valtuple );
+		pyret = charRGBA_setCol( ( V24_BPy_charRGBA * ) attrib, valtuple );
 		Py_DECREF( valtuple );
 
 		if( pyret == Py_None ) {
@@ -501,54 +501,54 @@ static int ThemeUI_setAttr( BPy_ThemeUI * self, char *name, PyObject * value )
 }
 
 
-static int ThemeUI_compare( BPy_ThemeUI * a, BPy_ThemeUI * b )
+static int V24_ThemeUI_compare( V24_BPy_ThemeUI * a, V24_BPy_ThemeUI * b )
 {
 	ThemeUI *pa = a->tui, *pb = b->tui;
 	return ( pa == pb ) ? 0 : -1;
 }
 
-static PyObject *ThemeUI_repr( BPy_ThemeUI * self )
+static PyObject *V24_ThemeUI_repr( V24_BPy_ThemeUI * self )
 {
 	return PyString_FromFormat( "[UI theme from theme \"%s\"]",
 				    self->theme->name );
 }
 
-static void Theme_dealloc( BPy_Theme * self );
-static int Theme_compare( BPy_Theme * a, BPy_Theme * b );
-static PyObject *Theme_getAttr( BPy_Theme * self, char *name );
-static PyObject *Theme_repr( BPy_Theme * self );
+static void V24_Theme_dealloc( V24_BPy_Theme * self );
+static int V24_Theme_compare( V24_BPy_Theme * a, V24_BPy_Theme * b );
+static PyObject *V24_Theme_getAttr( V24_BPy_Theme * self, char *name );
+static PyObject *V24_Theme_repr( V24_BPy_Theme * self );
 
-static PyObject *Theme_get( BPy_Theme * self, PyObject * args );
-static PyObject *Theme_getName( BPy_Theme * self );
-static PyObject *Theme_setName( BPy_Theme * self, PyObject * value );
+static PyObject *V24_Theme_get( V24_BPy_Theme * self, PyObject * args );
+static PyObject *V24_Theme_getName( V24_BPy_Theme * self );
+static PyObject *V24_Theme_setName( V24_BPy_Theme * self, PyObject * value );
 
-static PyMethodDef BPy_Theme_methods[] = {
-	{"get", ( PyCFunction ) Theme_get, METH_VARARGS,
+static PyMethodDef V24_BPy_Theme_methods[] = {
+	{"get", ( PyCFunction ) V24_Theme_get, METH_VARARGS,
 	 "(param) - Return UI or Space theme object.\n\
 (param) - the chosen theme object as an int or a string:\n\
 - () - default: UI;\n\
 - (i) - int: an entry from the Blender.Window.Types dictionary;\n\
 - (s) - string: 'UI' or a space name, like 'VIEW3D', etc."},
-	{"getName", ( PyCFunction ) Theme_getName, METH_NOARGS,
+	{"getName", ( PyCFunction ) V24_Theme_getName, METH_NOARGS,
 	 "() - Return Theme name"},
-	{"setName", ( PyCFunction ) Theme_setName, METH_O,
+	{"setName", ( PyCFunction ) V24_Theme_setName, METH_O,
 	 "(s) - Set Theme name"},
 	{NULL, NULL, 0, NULL}
 };
 
-PyTypeObject Theme_Type = {
+PyTypeObject V24_Theme_Type = {
 	PyObject_HEAD_INIT( NULL ) 
 	0,	/* ob_size */
 	"Blender Theme",	/* tp_name */
-	sizeof( BPy_Theme ),	/* tp_basicsize */
+	sizeof( V24_BPy_Theme ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
-	( destructor ) Theme_dealloc,	/* tp_dealloc */
+	( destructor ) V24_Theme_dealloc,	/* tp_dealloc */
 	0,			/* tp_print */
-	( getattrfunc ) Theme_getAttr,	/* tp_getattr */
+	( getattrfunc ) V24_Theme_getAttr,	/* tp_getattr */
 	0,			//(setattrfunc) Theme_setAttr,        /* tp_setattr */
-	( cmpfunc ) Theme_compare,	/* tp_compare */
-	( reprfunc ) Theme_repr,	/* tp_repr */
+	( cmpfunc ) V24_Theme_compare,	/* tp_compare */
+	( reprfunc ) V24_Theme_repr,	/* tp_repr */
 	0,			/* tp_as_number */
 	0,			/* tp_as_sequence */
 	0,			/* tp_as_mapping */
@@ -556,20 +556,20 @@ PyTypeObject Theme_Type = {
 	0, 0, 0, 0, 0, 0,
 	0,			/* tp_doc */
 	0, 0, 0, 0, 0, 0,
-	0,			/*BPy_Theme_methods,*/ /* tp_methods */
+	0,			/*V24_BPy_Theme_methods,*/ /* tp_methods */
 	0,			/* tp_members */
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
-static PyObject *M_Theme_New( PyObject * self, PyObject * args )
+static PyObject *V24_M_Theme_New( PyObject * self, PyObject * args )
 {
 	char *name = "New Theme";
-	BPy_Theme *pytheme = NULL, *base_pytheme = NULL;
+	V24_BPy_Theme *pytheme = NULL, *base_pytheme = NULL;
 	bTheme *btheme = NULL, *newtheme = NULL;
 
 	if( !PyArg_ParseTuple
-	    ( args, "|sO!", &name, &Theme_Type, &base_pytheme ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+	    ( args, "|sO!", &name, &V24_Theme_Type, &base_pytheme ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected nothing or a name and optional theme object as arguments" );
 
 	if( base_pytheme )
@@ -580,9 +580,9 @@ static PyObject *M_Theme_New( PyObject * self, PyObject * args )
 	newtheme = MEM_callocN( sizeof( bTheme ), "theme" );
 
 	if( newtheme )
-		pytheme = PyObject_New( BPy_Theme, &Theme_Type );
+		pytheme = PyObject_New( V24_BPy_Theme, &V24_Theme_Type );
 	if( !pytheme )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "couldn't create Theme Data in Blender" );
 
 	memcpy( newtheme, btheme, sizeof( bTheme ) );
@@ -594,25 +594,25 @@ static PyObject *M_Theme_New( PyObject * self, PyObject * args )
 	return ( PyObject * ) pytheme;
 }
 
-static PyObject *M_Theme_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_Theme_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	bTheme *iter;
 	PyObject *ret;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument (or nothing)" );
 
 	iter = U.themes.first;
 
 	if( name ) {		/* (name) - return requested theme */
-		BPy_Theme *wanted = NULL;
+		V24_BPy_Theme *wanted = NULL;
 
 		while( iter ) {
 			if( strcmp( name, iter->name ) == 0 ) {
-				wanted = PyObject_New( BPy_Theme,
-						       &Theme_Type );
+				wanted = PyObject_New( V24_BPy_Theme,
+						       &V24_Theme_Type );
 				wanted->theme = iter;
 				break;
 			}
@@ -623,7 +623,7 @@ static PyObject *M_Theme_Get( PyObject * self, PyObject * args )
 			char emsg[64];
 			PyOS_snprintf( emsg, sizeof( emsg ),
 				       "Theme \"%s\" not found", name );
-			return EXPP_ReturnPyObjError( PyExc_NameError, emsg );
+			return V24_EXPP_ReturnPyObjError( PyExc_NameError, emsg );
 		}
 
 		ret = ( PyObject * ) wanted;
@@ -632,21 +632,21 @@ static PyObject *M_Theme_Get( PyObject * self, PyObject * args )
 	else {			/* () - return list with all themes */
 		int index = 0;
 		PyObject *list = NULL;
-		BPy_Theme *pytheme = NULL;
+		V24_BPy_Theme *pytheme = NULL;
 
 		list = PyList_New( BLI_countlist( &( U.themes ) ) );
 
 		if( !list )
-			return EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						      "couldn't create PyList" );
 
 		while( iter ) {
-			pytheme = PyObject_New( BPy_Theme, &Theme_Type );
+			pytheme = PyObject_New( V24_BPy_Theme, &V24_Theme_Type );
 			pytheme->theme = iter;
 
 			if( !pytheme ) {
 				Py_DECREF(list);
-				return EXPP_ReturnPyObjError
+				return V24_EXPP_ReturnPyObjError
 					( PyExc_MemoryError,
 					  "couldn't create Theme PyObject" );
 			}
@@ -662,25 +662,25 @@ static PyObject *M_Theme_Get( PyObject * self, PyObject * args )
 	return ret;
 }
 
-static PyObject *Theme_get( BPy_Theme * self, PyObject * args )
+static PyObject *V24_Theme_get( V24_BPy_Theme * self, PyObject * args )
 {
 	bTheme *btheme = self->theme;
 	ThemeUI *tui = NULL;
 	ThemeSpace *tsp = NULL;
 	PyObject *pyob = NULL;
-	BPy_ThemeUI *retUI = NULL;
-	BPy_ThemeSpace *retSpc = NULL;
+	V24_BPy_ThemeUI *retUI = NULL;
+	V24_BPy_ThemeSpace *retSpc = NULL;
 	int type;
 
 	if( !PyArg_ParseTuple( args, "|O", &pyob ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string or int argument or nothing" );
 
 	if( !pyob ) {		/* (): return list with all names */
 		PyObject *ret = PyList_New( EXPP_THEME_NUMBEROFTHEMES );
 
 		if( !ret )
-			return EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						      "couldn't create pylist!" );
 
 		type = 0;	/* using as a counter only */
@@ -698,11 +698,11 @@ static PyObject *Theme_get( BPy_Theme * self, PyObject * args )
 		type = ( int ) PyInt_AsLong( pyob );
 	else if( PyString_Check( pyob ) ) {	/* (str) */
 		char *str = PyString_AsString( pyob );
-		if( !EXPP_map_case_getIntVal( themes_map, str, &type ) )
-			return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		if( !V24_EXPP_map_case_getIntVal( themes_map, str, &type ) )
+			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						      "unknown string argument" );
 	} else
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string or int argument or nothing" );
 
 	switch ( type ) {
@@ -757,72 +757,72 @@ static PyObject *Theme_get( BPy_Theme * self, PyObject * args )
 	}
 
 	if( tui ) {
-		retUI = PyObject_New( BPy_ThemeUI, &ThemeUI_Type );
+		retUI = PyObject_New( V24_BPy_ThemeUI, &V24_ThemeUI_Type );
 		retUI->theme = btheme;
 		retUI->tui = tui;
 		return ( PyObject * ) retUI;
 	} else if( tsp ) {
-		retSpc = PyObject_New( BPy_ThemeSpace, &ThemeSpace_Type );
+		retSpc = PyObject_New( V24_BPy_ThemeSpace, &V24_ThemeSpace_Type );
 		retSpc->theme = btheme;
 		retSpc->tsp = tsp;
 		return ( PyObject * ) retSpc;
 	} else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "invalid parameter" );
 }
 
-static PyObject *Theme_getName( BPy_Theme * self )
+static PyObject *V24_Theme_getName( V24_BPy_Theme * self )
 {
 	return PyString_FromString( self->theme->name );
 }
 
-static PyObject *Theme_setName( BPy_Theme * self, PyObject * value )
+static PyObject *V24_Theme_setName( V24_BPy_Theme * self, PyObject * value )
 {
 	char *name = PyString_AsString(value);
 
 	if( !name )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument" );
 
 	BLI_strncpy( self->theme->name, name, 32 );
 
-	return EXPP_incr_ret( Py_None );
+	return V24_EXPP_incr_ret( Py_None );
 }
 
-PyObject *Theme_Init( void )
+PyObject *V24_Theme_Init( void )
 {
 	PyObject *submodule;
 
-	Theme_Type.ob_type = &PyType_Type;
+	V24_Theme_Type.ob_type = &PyType_Type;
 
 	submodule = Py_InitModule3( "Blender.Window.Theme",
-				    M_Theme_methods, M_Theme_doc );
+				    M_Theme_methods, V24_M_Theme_doc );
 
 	return submodule;
 }
 
-static void Theme_dealloc( BPy_Theme * self )
+static void V24_Theme_dealloc( V24_BPy_Theme * self )
 {
 	PyObject_DEL( self );
 }
 
-static PyObject *Theme_getAttr( BPy_Theme * self, char *name )
+static PyObject *V24_Theme_getAttr( V24_BPy_Theme * self, char *name )
 {
 	if( !strcmp( name, "name" ) )
 		return PyString_FromString( self->theme->name );
 	else if( !strcmp( name, "__members__" ) )
 		return Py_BuildValue( "[s]", "name" );
 
-	return Py_FindMethod( BPy_Theme_methods, ( PyObject * ) self, name );
+	return Py_FindMethod( V24_BPy_Theme_methods, ( PyObject * ) self, name );
 }
 
-static int Theme_compare( BPy_Theme * a, BPy_Theme * b )
+static int V24_Theme_compare( V24_BPy_Theme * a, V24_BPy_Theme * b )
 {
 	bTheme *pa = a->theme, *pb = b->theme;
 	return ( pa == pb ) ? 0 : -1;
 }
 
-static PyObject *Theme_repr( BPy_Theme * self )
+static PyObject *V24_Theme_repr( V24_BPy_Theme * self )
 {
 	return PyString_FromFormat( "[Theme \"%s\"]", self->theme->name );
 }

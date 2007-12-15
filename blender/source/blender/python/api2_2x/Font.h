@@ -36,17 +36,17 @@
 #include <Python.h>
 #include "DNA_vfont_types.h"
 
-extern PyTypeObject Font_Type;
+extern PyTypeObject V24_Font_Type;
 
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	VFont * font;		/* libdata must be second */
-} BPy_Font;
+} V24_BPy_Font;
 
 /*------------------------------visible prototypes----------------------*/
-PyObject *Font_CreatePyObject( struct VFont * font );
+PyObject *V24_Font_CreatePyObject( struct VFont * font );
 struct VFont *Font_FromPyObject( PyObject * py_obj );
-PyObject *Font_Init( void );
+PyObject *V24_Font_Init( void );
 
 #endif
 

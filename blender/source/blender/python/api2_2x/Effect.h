@@ -37,22 +37,22 @@
 #include "DNA_effect_types.h"
 #include "DNA_object_types.h"
 
-extern PyTypeObject Effect_Type;
+extern PyTypeObject V24_Effect_Type;
 
-#define BPy_Effect_Check(v) ((v)->ob_type==&Effect_Type)
+#define BPy_Effect_Check(v) ((v)->ob_type==&V24_Effect_Type)
 
-/* Python BPy_Effect structure definition */
+/* Python V24_BPy_Effect structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	PartEff * effect;
 	Object * object;
-} BPy_Effect;
+} V24_BPy_Effect;
 
 /*****************************************************************************/
-/* Python Effect_Type helpder function prototypes:                           */
+/* Python V24_Effect_Type helpder function prototypes:                           */
 /*****************************************************************************/
-PyObject *Effect_Init( void );
-int EffectCheckPyObject( PyObject * py_obj );
-PyObject *EffectCreatePyObject( Effect * eff, Object * ob );
+PyObject *V24_Effect_Init( void );
+int V24_EffectCheckPyObject( PyObject * py_obj );
+PyObject *V24_EffectCreatePyObject( Effect * eff, Object * ob );
 
 #endif				/* EXPP_EFFECT_H */

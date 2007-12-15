@@ -56,7 +56,7 @@ extern PyTypeObject NMCol_Type;
 extern PyTypeObject NMEdge_Type;
 
 
-struct BPy_Object;
+struct V24_BPy_Object;
 
 /* These are from blender/src/editdeform.c, should be declared elsewhere,
  * maybe in BIF_editdeform.h, after proper testing of vgrouping methods XXX */
@@ -148,7 +148,7 @@ Mesh *NMesh_FromPyObject( PyObject * pyobj, Object * ob );
 
 void mesh_update( Mesh * mesh , Object * ob );
 PyObject *new_NMesh( Mesh * oldmesh );
-Mesh *Mesh_fromNMesh( BPy_NMesh * nmesh );
+Mesh *V24_Mesh_fromNMesh( BPy_NMesh * nmesh );
 PyObject *NMesh_assignMaterials_toObject( BPy_NMesh * nmesh, Object * ob );
 Material **nmesh_updateMaterials( BPy_NMesh * nmesh );
 Material **newMaterialList_fromPyList( PyObject * list );

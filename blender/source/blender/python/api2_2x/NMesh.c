@@ -332,26 +332,26 @@ static int check_NMeshLists( BPy_NMesh *nmesh )
 	int i;
 
 	if( !PySequence_Check( nmesh->verts ) )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh verts are not a sequence" );
 	if( !PySequence_Check( nmesh->edges ) )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh edges are not a sequence" );
 	if( !PySequence_Check( nmesh->faces ) )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh faces are not a sequence" );
 	if( !PySequence_Check( nmesh->materials ) )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh materials are not a sequence" );
 
-	if( EXPP_check_sequence_consistency( nmesh->verts, &NMVert_Type ) != 1 )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+	if( V24_EXPP_check_sequence_consistency( nmesh->verts, &NMVert_Type ) != 1 )
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh vertices must be NMVerts" );
-	if( EXPP_check_sequence_consistency( nmesh->edges, &NMEdge_Type ) != 1 )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+	if( V24_EXPP_check_sequence_consistency( nmesh->edges, &NMEdge_Type ) != 1 )
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh edges must be NMEdges" );
-	if( EXPP_check_sequence_consistency( nmesh->faces, &NMFace_Type ) != 1 )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+	if( V24_EXPP_check_sequence_consistency( nmesh->faces, &NMFace_Type ) != 1 )
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh faces must be NMFaces" );
 	for( i = 0 ; i < PySequence_Length(nmesh->faces); ++i ) {
 		int j, err=0;
@@ -362,12 +362,12 @@ static int check_NMeshLists( BPy_NMesh *nmesh )
 		uv = face->uv;
 		v = face->v;
 		Py_DECREF( face );
-		if( EXPP_check_sequence_consistency( face->col, &NMCol_Type ) != 1 ) {
-			return EXPP_ReturnIntError( PyExc_AttributeError,
+		if( V24_EXPP_check_sequence_consistency( face->col, &NMCol_Type ) != 1 ) {
+			return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh face col must be NMCols" );
 		}
-		if( EXPP_check_sequence_consistency( face->v, &NMVert_Type ) != 1 )
-			return EXPP_ReturnIntError( PyExc_AttributeError,
+		if( V24_EXPP_check_sequence_consistency( face->v, &NMVert_Type ) != 1 )
+			return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh face v must be NMVerts" );
 
 		for( j = 0 ; !err && j < PySequence_Length( face->uv ); ++j ) {
@@ -387,7 +387,7 @@ static int check_NMeshLists( BPy_NMesh *nmesh )
 			Py_DECREF( uv );
 		}
 		if( err )
-			return EXPP_ReturnIntError( PyExc_AttributeError,
+			return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 					      "nmesh face uv must contain sequence of 2 floats" );
 	}
 	return 0;
@@ -440,7 +440,7 @@ static PyObject *NMCol_getattr( PyObject * self, char *name )
 	else if( strcmp( name, "__members__" ) == 0 )
 		return Py_BuildValue( "[s,s,s,s]", "r", "g", "b", "a" );
 
-	return EXPP_ReturnPyObjError( PyExc_AttributeError, name );
+	return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, name );
 }
 
 static int NMCol_setattr( PyObject * self, char *name, PyObject * v )
@@ -451,7 +451,7 @@ static int NMCol_setattr( PyObject * self, char *name, PyObject * v )
 	if( !PyArg_Parse( v, "b", &ival ) )
 		return -1;
 
-	ival = ( char ) EXPP_ClampInt( ival, 0, 255 );
+	ival = ( char ) V24_EXPP_ClampInt( ival, 0, 255 );
 
 	if( strcmp( name, "r" ) == 0 )
 		mc->r = (unsigned char)ival;
@@ -526,7 +526,7 @@ static PyObject *new_NMFace( PyObject * vertexlist )
 
 		if( !vlcopy ) {
 			Py_DECREF(mf);
-			return EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						      "couldn't create PyList" );
 		}
 		for( i = 0; i < len; i++ ) {
@@ -537,7 +537,7 @@ static PyObject *new_NMFace( PyObject * vertexlist )
 			else {
 				Py_DECREF(mf);
 				Py_DECREF(vlcopy);
-				return EXPP_ReturnPyObjError
+				return V24_EXPP_ReturnPyObjError
 					( PyExc_RuntimeError,
 					  "couldn't get vertex from a PyList" );
 			}
@@ -565,7 +565,7 @@ static PyObject *M_NMesh_Face( PyObject * self, PyObject * args )
 	PyObject *vertlist = NULL;
 
 	if( !PyArg_ParseTuple( args, "|O!", &PyList_Type, &vertlist ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a list of vertices or nothing as argument" );
 
 /*	if (!vertlist) vertlist = PyList_New(0); */
@@ -579,7 +579,7 @@ static PyObject *NMFace_append( PyObject * self, PyObject * args )
 	BPy_NMFace *f = ( BPy_NMFace * ) self;
 
 	if( !PyArg_ParseTuple( args, "O!", &NMVert_Type, &vert ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected an NMVert object" );
 
 	PyList_Append( f->v, vert );
@@ -616,7 +616,7 @@ static PyObject *NMFace_getattr( PyObject * self, char *name )
 
 	else if( strcmp( name, "image" ) == 0 ) {
 		if( mf->image )
-			return Image_CreatePyObject( mf->image );
+			return V24_Image_CreatePyObject( mf->image );
 		else
 			Py_RETURN_NONE;
 	}
@@ -633,7 +633,7 @@ static PyObject *NMFace_getattr( PyObject * self, char *name )
 	else if( ( strcmp( name, "normal" ) == 0 )
 		 || ( strcmp( name, "no" ) == 0 ) ) {
 
-		if( EXPP_check_sequence_consistency( mf->v, &NMVert_Type ) ==
+		if( V24_EXPP_check_sequence_consistency( mf->v, &NMVert_Type ) ==
 		    1 ) {
 
 			float fNormal[3] = { 0.0, 0.0, 0.0 };
@@ -642,7 +642,7 @@ static PyObject *NMFace_getattr( PyObject * self, char *name )
 			int loop;
 
 			if( nSize != 3 && nSize != 4 )
-				return EXPP_ReturnPyObjError
+				return V24_EXPP_ReturnPyObjError
 					( PyExc_AttributeError,
 					  "face must contain either 3 or 4 verts" );
 
@@ -662,8 +662,8 @@ static PyObject *NMFace_getattr( PyObject * self, char *name )
 
 			return Py_BuildValue( "[f,f,f]", fNormal[0],
 					      fNormal[1], fNormal[2] );
-		} else		// EXPP_check_sequence_consistency failed
-			return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		} else		// V24_EXPP_check_sequence_consistency failed
+			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						      "this face does not contain a series of NMVerts" );
 	}
 
@@ -685,7 +685,7 @@ static int NMFace_setattr( PyObject * self, char *name, PyObject * v )
 
 		if( PySequence_Check( v ) ) {
 			Py_DECREF( mf->v );
-			mf->v = EXPP_incr_ret( v );
+			mf->v = V24_EXPP_incr_ret( v );
 
 			return 0;
 		}
@@ -693,7 +693,7 @@ static int NMFace_setattr( PyObject * self, char *name, PyObject * v )
 
 		if( PySequence_Check( v ) ) {
 			Py_DECREF( mf->col );
-			mf->col = EXPP_incr_ret( v );
+			mf->col = V24_EXPP_incr_ret( v );
 
 			return 0;
 		}
@@ -725,7 +725,7 @@ static int NMFace_setattr( PyObject * self, char *name, PyObject * v )
 
 		if( PySequence_Check( v ) ) {
 			Py_DECREF( mf->uv );
-			mf->uv = EXPP_incr_ret( v );
+			mf->uv = V24_EXPP_incr_ret( v );
 
 			return 0;
 		}
@@ -746,8 +746,8 @@ static int NMFace_setattr( PyObject * self, char *name, PyObject * v )
 		return 0;
 	} else if( strcmp( name, "image" ) == 0 ) {
 		PyObject *pyimg;
-		if( !PyArg_Parse( v, "O!", &Image_Type, &pyimg ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+		if( !PyArg_Parse( v, "O!", &V24_Image_Type, &pyimg ) )
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected image object" );
 
 		if( pyimg == Py_None ) {
@@ -756,12 +756,12 @@ static int NMFace_setattr( PyObject * self, char *name, PyObject * v )
 			return 0;
 		}
 
-		mf->image = ( ( BPy_Image * ) pyimg )->image;
+		mf->image = ( ( V24_BPy_Image * ) pyimg )->image;
 
 		return 0;
 	}
 
-	return EXPP_ReturnIntError( PyExc_AttributeError, name );
+	return V24_EXPP_ReturnIntError( PyExc_AttributeError, name );
 }
 
 static PyObject *NMFace_repr( PyObject * self )
@@ -835,7 +835,7 @@ static PyObject *M_NMesh_Vert( PyObject * self, PyObject * args )
 	float co[3] = { 0.0, 0.0, 0.0 };
 
 	if( !PyArg_ParseTuple( args, "|fff", &co[0], &co[1], &co[2] ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected three floats (or nothing) as arguments" );
 
 	return ( PyObject * ) newvert( co );
@@ -865,7 +865,7 @@ static PyObject *NMVert_getattr( PyObject * self, char *name )
 		return Py_BuildValue( "[s,s,s,s,s]", "co", "no", "uvco",
 				      "index", "sel" );
 
-	return EXPP_ReturnPyObjError( PyExc_AttributeError, name );
+	return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, name );
 }
 
 static int NMVert_setattr( PyObject * self, char *name, PyObject * v )
@@ -886,13 +886,13 @@ static int NMVert_setattr( PyObject * self, char *name, PyObject * v )
 		if( !PyArg_ParseTuple( v, "ff|f",
 				       &( mv->uvco[0] ), &( mv->uvco[1] ),
 				       &( mv->uvco[2] ) ) )
-			return EXPP_ReturnIntError( PyExc_AttributeError,
+			return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 						    "Vector tuple or triple expected" );
 
 		return 0;
 	}
 
-	return EXPP_ReturnIntError( PyExc_AttributeError, name );
+	return V24_EXPP_ReturnIntError( PyExc_AttributeError, name );
 }
 
 static int NMVert_len( BPy_NMVert * self )
@@ -903,7 +903,7 @@ static int NMVert_len( BPy_NMVert * self )
 static PyObject *NMVert_item( BPy_NMVert * self, int i )
 {
 	if( i < 0 || i >= 3 )
-		return EXPP_ReturnPyObjError( PyExc_IndexError,
+		return V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 					      "array index out of range" );
 
 	return Py_BuildValue( "f", self->co[i] );
@@ -933,11 +933,11 @@ static PyObject *NMVert_slice( BPy_NMVert * self, int begin, int end )
 static int NMVert_ass_item( BPy_NMVert * self, int i, PyObject * ob )
 {
 	if( i < 0 || i >= 3 )
-		return EXPP_ReturnIntError( PyExc_IndexError,
+		return V24_EXPP_ReturnIntError( PyExc_IndexError,
 					    "array assignment index out of range" );
 
 	if( !PyNumber_Check( ob ) )
-		return EXPP_ReturnIntError( PyExc_IndexError,
+		return V24_EXPP_ReturnIntError( PyExc_IndexError,
 					    "NMVert member must be a number" );
 
 	self->co[i] = (float)PyFloat_AsDouble( ob );
@@ -958,11 +958,11 @@ static int NMVert_ass_slice( BPy_NMVert * self, int begin, int end,
 		begin = end;
 
 	if( !PySequence_Check( seq ) )
-		EXPP_ReturnIntError( PyExc_TypeError,
+		V24_EXPP_ReturnIntError( PyExc_TypeError,
 				     "illegal argument type for built-in operation" );
 
 	if( PySequence_Length( seq ) != ( end - begin ) )
-		EXPP_ReturnIntError( PyExc_TypeError,
+		V24_EXPP_ReturnIntError( PyExc_TypeError,
 				     "size mismatch in slice assignment" );
 
 	for( count = begin; count < end; count++ ) {
@@ -1023,8 +1023,8 @@ static BPy_NMEdge *new_NMEdge( BPy_NMVert * v1, BPy_NMVert * v2, char crease, sh
 
   edge = PyObject_NEW( BPy_NMEdge, &NMEdge_Type );
 
-  edge->v1=EXPP_incr_ret((PyObject*)v1);
-  edge->v2=EXPP_incr_ret((PyObject*)v2);
+  edge->v1=V24_EXPP_incr_ret((PyObject*)v1);
+  edge->v2=V24_EXPP_incr_ret((PyObject*)v2);
   edge->flag=flag;
   edge->crease=crease;
 
@@ -1046,9 +1046,9 @@ static PyObject *NMEdge_getattr( PyObject * self, char *name )
   BPy_NMEdge *edge=(BPy_NMEdge *)self;
 
   if      ( strcmp( name, "v1" ) == 0 )
-		return EXPP_incr_ret( edge->v1 );
+		return V24_EXPP_incr_ret( edge->v1 );
   else if ( strcmp( name, "v2" ) == 0 )
-    return EXPP_incr_ret( edge->v2 );
+    return V24_EXPP_incr_ret( edge->v2 );
   else if ( strcmp( name, "flag" ) == 0 )
     return PyInt_FromLong( edge->flag );
   else if ( strcmp( name, "crease" ) == 0 )
@@ -1057,7 +1057,7 @@ static PyObject *NMEdge_getattr( PyObject * self, char *name )
     return Py_BuildValue( "[s,s,s,s]",
                           "v1", "v2", "flag", "crease" );
   
-  return EXPP_ReturnPyObjError( PyExc_AttributeError, name );
+  return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, name );
 }
 
 static int NMEdge_setattr( PyObject * self, char *name, PyObject * v )
@@ -1068,7 +1068,7 @@ static int NMEdge_setattr( PyObject * self, char *name, PyObject * v )
   {
     short flag=0;
     if( !PyInt_Check( v ) )
-      return EXPP_ReturnIntError( PyExc_TypeError,
+      return V24_EXPP_ReturnIntError( PyExc_TypeError,
                                   "expected int argument" );
 
     flag = ( short ) PyInt_AsLong( v );
@@ -1081,7 +1081,7 @@ static int NMEdge_setattr( PyObject * self, char *name, PyObject * v )
   {
     char crease=0;
     if( !PyInt_Check( v ) )
-      return EXPP_ReturnIntError( PyExc_TypeError,
+      return V24_EXPP_ReturnIntError( PyExc_TypeError,
                                   "expected int argument" );
 
     crease = ( char ) PyInt_AsLong( v );
@@ -1091,7 +1091,7 @@ static int NMEdge_setattr( PyObject * self, char *name, PyObject * v )
     return 0;
   }
 
-  return EXPP_ReturnIntError( PyExc_AttributeError, name );
+  return V24_EXPP_ReturnIntError( PyExc_AttributeError, name );
 }
 
 PyTypeObject NMEdge_Type = {
@@ -1133,20 +1133,20 @@ static PyObject *NMesh_getMaterials( PyObject * self, PyObject * args )
 	int all = -1;
 
 	if( !PyArg_ParseTuple( args, "|i", &all ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected nothing or an int (bool) as argument" );
 
 	if( all >= 0 ) {
 		if (!me)
-			return EXPP_ReturnPyObjError(PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 					"meshes obtained with GetRawFromObject don't support this option");
 
-		list = EXPP_PyList_fromMaterialList( me->mat, me->totcol,
+		list = V24_EXPP_PyList_fromMaterialList( me->mat, me->totcol,
 						     all );
 		Py_DECREF( nm->materials );	/* update nmesh.materials attribute */
-		nm->materials = EXPP_incr_ret( list );
+		nm->materials = V24_EXPP_incr_ret( list );
 	} else
-		list = EXPP_incr_ret( nm->materials );
+		list = V24_EXPP_incr_ret( nm->materials );
 
 	return list;
 }
@@ -1157,19 +1157,19 @@ static PyObject *NMesh_setMaterials( PyObject * self, PyObject * args )
 	PyObject *pymats = NULL;
 
 	if( !PyArg_ParseTuple( args, "O!", &PyList_Type, &pymats ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a list of materials (None's also accepted) as argument" );
 
-	if( !EXPP_check_sequence_consistency( pymats, &Material_Type ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !V24_EXPP_check_sequence_consistency( pymats, &V24_Material_Type ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "list should only contain materials (None's also accepted)" );
 
 	if( PyList_Size( pymats ) > 16 )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "list can't have more than 16 materials" );
 
 	Py_DECREF( me->materials );
-	me->materials = EXPP_incr_ret( pymats );
+	me->materials = V24_EXPP_incr_ret( pymats );
 
 	Py_RETURN_NONE;
 }
@@ -1177,26 +1177,26 @@ static PyObject *NMesh_setMaterials( PyObject * self, PyObject * args )
 static PyObject *NMesh_addMaterial( PyObject * self, PyObject * args )
 {
 	BPy_NMesh *me = ( BPy_NMesh * ) self;
-	BPy_Material *pymat;
+	V24_BPy_Material *pymat;
 	Material *mat;
 	PyObject *iter;
 	int i, len = 0;
 
-	if( !PyArg_ParseTuple( args, "O!", &Material_Type, &pymat ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+	if( !PyArg_ParseTuple( args, "O!", &V24_Material_Type, &pymat ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected Blender Material PyObject" );
 
 	mat = pymat->material;
 	len = PyList_Size( me->materials );
 
 	if( len >= 16 )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "object data material lists can't have more than 16 materials" );
 
 	for( i = 0; i < len; i++ ) {
 		iter = PyList_GetItem( me->materials, i );
-		if( mat == Material_FromPyObject( iter ) )
-			return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		if( mat == V24_Material_FromPyObject( iter ) )
+			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						      "material already in the list" );
 	}
 
@@ -1210,9 +1210,9 @@ static PyObject *NMesh_getKey( BPy_NMesh * self )
 	PyObject *keyobj;
 
 	if( self->mesh->key )
-		keyobj = Key_CreatePyObject(self->mesh->key);
+		keyobj = V24_Key_CreatePyObject(self->mesh->key);
 	else
-		keyobj = EXPP_incr_ret(Py_None);
+		keyobj = V24_EXPP_incr_ret(Py_None);
 	
 	return keyobj;
 }
@@ -1223,16 +1223,16 @@ static PyObject *NMesh_removeAllKeys( PyObject * self, PyObject * args )
 	Mesh *me = nm->mesh;
 
 	if( !PyArg_ParseTuple( args, "" ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "this function expects no arguments" );
 
 	if( !me || !me->key )
-		return EXPP_incr_ret_False();
+		return V24_EXPP_incr_ret_False();
 
 	me->key->id.us--;
 	me->key = 0;
 
-	return EXPP_incr_ret_True();
+	return V24_EXPP_incr_ret_True();
 }
 
 static PyObject *NMesh_insertKey( PyObject * self, PyObject * args )
@@ -1244,7 +1244,7 @@ static PyObject *NMesh_insertKey( PyObject * self, PyObject * args )
 	Mesh *mesh = nm->mesh;
 
 	if( !PyArg_ParseTuple( args, "|is", &fra, &type ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected nothing or an int and optionally a string as arguments" );
 
 	if( !type || !strcmp( type, "relative" ) )
@@ -1252,17 +1252,17 @@ static PyObject *NMesh_insertKey( PyObject * self, PyObject * args )
 	else if( !strcmp( type, "absolute" ) )
 		typenum = 2;
 	else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "if given, type should be 'relative' or 'absolute'" );
 
 	if( fra > 0 ) {
-		fra = EXPP_ClampInt( fra, 1, NMESH_FRAME_MAX );
+		fra = V24_EXPP_ClampInt( fra, 1, NMESH_FRAME_MAX );
 		oldfra = G.scene->r.cfra;
 		G.scene->r.cfra = (int)fra;
 	}
 
 	if( !mesh )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "update this NMesh first with its .update() method" );
 
 	insert_meshkey( mesh, typenum );
@@ -1282,7 +1282,7 @@ static PyObject *NMesh_getSelectedFaces( PyObject * self, PyObject * args )
 	PyObject *l, *pyval;
 
 	if( !PyArg_ParseTuple( args, "|i", &flag ) )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "expected int argument (or nothing)" );
 	
 	l = PyList_New( 0 );
@@ -1323,7 +1323,7 @@ static PyObject *NMesh_hasVertexUV( PyObject * self, PyObject * args )
 	int flag = -1;
 
 	if( !PyArg_ParseTuple( args, "|i", &flag ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected int argument (or nothing)" );
 
 	switch ( flag ) {
@@ -1338,9 +1338,9 @@ static PyObject *NMesh_hasVertexUV( PyObject * self, PyObject * args )
 	}
 
 	if( me->flags & NMESH_HASVERTUV )
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	else
-		return EXPP_incr_ret_False();
+		return V24_EXPP_incr_ret_False();
 }
 
 static PyObject *NMesh_hasFaceUV( PyObject * self, PyObject * args )
@@ -1349,7 +1349,7 @@ static PyObject *NMesh_hasFaceUV( PyObject * self, PyObject * args )
 	int flag = -1;
 
 	if( !PyArg_ParseTuple( args, "|i", &flag ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected int argument (or nothing)" );
 
 	switch ( flag ) {
@@ -1364,9 +1364,9 @@ static PyObject *NMesh_hasFaceUV( PyObject * self, PyObject * args )
 	}
 
 	if( me->flags & NMESH_HASFACEUV )
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	else
-		return EXPP_incr_ret_False();
+		return V24_EXPP_incr_ret_False();
 }
 
 static PyObject *NMesh_hasVertexColours( PyObject * self, PyObject * args )
@@ -1375,7 +1375,7 @@ static PyObject *NMesh_hasVertexColours( PyObject * self, PyObject * args )
 	int flag = -1;
 
 	if( !PyArg_ParseTuple( args, "|i", &flag ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected int argument (or nothing)" );
 
 	switch ( flag ) {
@@ -1390,9 +1390,9 @@ static PyObject *NMesh_hasVertexColours( PyObject * self, PyObject * args )
 	}
 
 	if( me->flags & NMESH_HASMCOL )
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	else
-		return EXPP_incr_ret_False();
+		return V24_EXPP_incr_ret_False();
 }
 
 static PyObject *NMesh_update( PyObject *self, PyObject *a, PyObject *kwd )
@@ -1407,7 +1407,7 @@ static PyObject *NMesh_update( PyObject *self, PyObject *a, PyObject *kwd )
 
 	if (!PyArg_ParseTupleAndKeywords(a, kwd, "|iii", kwlist, &recalc_normals,
 		&store_edges, &vertex_shade ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"expected nothing or one to three bool(s) (0 or 1) as argument" );
 
 	if( check_NMeshLists( nmesh ) )
@@ -1420,7 +1420,7 @@ static PyObject *NMesh_update( PyObject *self, PyObject *a, PyObject *kwd )
 			return NULL;
 		if (mesh->dvert) check_dverts(mesh, old_totvert);
 	} else {
-		mesh = Mesh_fromNMesh( nmesh );
+		mesh = V24_Mesh_fromNMesh( nmesh );
 		/* if mesh is NULL, there was an error */
 		if( !mesh )
 			return NULL;
@@ -1442,11 +1442,11 @@ static PyObject *NMesh_update( PyObject *self, PyObject *a, PyObject *kwd )
 		Base *base = FIRSTBASE;
 
 		if (!nmesh->object)
-			return EXPP_ReturnPyObjError(PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_RuntimeError,
 	    	"link this mesh to an object first with ob.link(mesh)" );
 
 		if (G.obedit)
-			return EXPP_ReturnPyObjError(PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_RuntimeError,
 	    	"can't shade vertices while in edit mode" );
 
 		while (base) {
@@ -1468,7 +1468,7 @@ static PyObject *NMesh_update( PyObject *self, PyObject *a, PyObject *kwd )
 	}
 
 	if( !during_script(  ) && needs_redraw)
-		EXPP_allqueue( REDRAWVIEW3D, 0 );
+		V24_EXPP_allqueue( REDRAWVIEW3D, 0 );
 
 	return PyInt_FromLong( 1 );
 }
@@ -1488,21 +1488,21 @@ static PyObject *NMesh_getVertexInfluences( PyObject * self, PyObject * args )
 
 	/* Get a reference to the mesh object wrapped in here. */
 	if( !me )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"unlinked nmesh: call its .update() method first" );
 
 	if( !object )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"This mesh must be linked to an object" ); 
 
 	/* Parse the parameters: only on integer (vertex index) */
 	if( !PyArg_ParseTuple( args, "i", &index ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected int argument (index of the vertex)" );
 
 	/* check for valid index */
 	if( index < 0 || index >= me->totvert )
-		return EXPP_ReturnPyObjError( PyExc_IndexError,
+		return V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 				"vertex index out of range" );
 
 	influence_list = PyList_New( 0 );
@@ -1531,7 +1531,7 @@ static PyObject *NMesh_getVertexInfluences( PyObject * self, PyObject * args )
 	return influence_list;
 }
 
-Mesh *Mesh_fromNMesh( BPy_NMesh * nmesh )
+Mesh *V24_Mesh_fromNMesh( BPy_NMesh * nmesh )
 {
 	Mesh *mesh = NULL;
 	
@@ -1563,11 +1563,11 @@ static PyObject *NMesh_setMaxSmoothAngle( PyObject * self, PyObject * args )
 	BPy_NMesh *nmesh = ( BPy_NMesh * ) self;
 
 	if( !PyArg_ParseTuple( args, "h", &value ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected an int in [1, 80] as argument" );
 
 	nmesh->smoothresh =
-		( short ) EXPP_ClampInt( value, NMESH_SMOOTHRESH_MIN,
+		( short ) V24_EXPP_ClampInt( value, NMESH_SMOOTHRESH_MIN,
 					 NMESH_SMOOTHRESH_MAX );
 
 	Py_RETURN_NONE;
@@ -1584,15 +1584,15 @@ static PyObject *NMesh_setSubDivLevels( PyObject * self, PyObject * args )
 	BPy_NMesh *nmesh = ( BPy_NMesh * ) self;
 
 	if( !PyArg_ParseTuple( args, "(hh)", &display, &render ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected a sequence [int, int] as argument" );
 
 	nmesh->subdiv[0] =
-		( short ) EXPP_ClampInt( display, NMESH_SUBDIV_MIN,
+		( short ) V24_EXPP_ClampInt( display, NMESH_SUBDIV_MIN,
 					 NMESH_SUBDIV_MAX );
 
 	nmesh->subdiv[1] =
-		( short ) EXPP_ClampInt( render, NMESH_SUBDIV_MIN,
+		( short ) V24_EXPP_ClampInt( render, NMESH_SUBDIV_MIN,
 					 NMESH_SUBDIV_MAX );
 
 	Py_RETURN_NONE;
@@ -1611,7 +1611,7 @@ static PyObject *NMesh_setMode( PyObject * self, PyObject * args )
 	short i, mode = 0;
 
 	if( !PyArg_ParseTuple ( args, "|Ossss", &arg1, &m[1], &m[2], &m[3], &m[4] ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected an int or from none to 5 strings as argument(s)" );
 
 	if (arg1) {
@@ -1631,11 +1631,11 @@ static PyObject *NMesh_setMode( PyObject * self, PyObject * args )
 				else if( m[i][0] == '\0' )
 					mode = 0;
 				else
-					return EXPP_ReturnPyObjError( PyExc_AttributeError,
+					return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 		    	  "unknown NMesh mode" );
 			}
 		}
-		else return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		else return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected an int or from none to 5 strings as argument(s)" );
 	}
 
@@ -1703,10 +1703,10 @@ static PyObject *NMesh_getattr( PyObject * self, char *name )
 	BPy_NMesh *me = ( BPy_NMesh * ) self;
 
 	if( strcmp( name, "name" ) == 0 )
-		return EXPP_incr_ret( me->name );
+		return V24_EXPP_incr_ret( me->name );
 
 	else if ( strcmp( name, "properties" ) == 0 )
-		return BPy_Wrap_IDProperty( (ID*)me->mesh, IDP_GetProperties((ID*)me->mesh, 1), NULL );
+		return V24_BPy_Wrap_IDProperty( (ID*)me->mesh, IDP_GetProperties((ID*)me->mesh, 1), NULL );
 
 	else if( strcmp( name, "mode" ) == 0 )
 		return PyInt_FromLong( me->mode );
@@ -1715,10 +1715,10 @@ static PyObject *NMesh_getattr( PyObject * self, char *name )
 		return PyString_FromString( "NMesh" );
 
 	else if( strcmp( name, "materials" ) == 0 )
-		return EXPP_incr_ret( me->materials );
+		return V24_EXPP_incr_ret( me->materials );
 
 	else if( strcmp( name, "verts" ) == 0 )
-		return EXPP_incr_ret( me->verts );
+		return V24_EXPP_incr_ret( me->verts );
 
 	else if( strcmp( name, "maxSmoothAngle" ) == 0 )
 		return PyInt_FromLong( me->smoothresh );
@@ -1737,11 +1737,11 @@ static PyObject *NMesh_getattr( PyObject * self, char *name )
 		return NMesh_getKey((BPy_NMesh*)self);
 
 	else if( strcmp( name, "faces" ) == 0 )
-		return EXPP_incr_ret( me->faces );
+		return V24_EXPP_incr_ret( me->faces );
 
   else if( strcmp( name, "edges" ) == 0 )
   {
-    return EXPP_incr_ret( me->edges );
+    return V24_EXPP_incr_ret( me->edges );
   }
 	else if( strcmp( name, "__members__" ) == 0 )
 		return Py_BuildValue( "[s,s,s,s,s,s,s,s,s,s,s]",
@@ -1759,25 +1759,25 @@ static int NMesh_setattr( PyObject * self, char *name, PyObject * v )
 	if( !strcmp( name, "name" ) ) {
 
 		if( !PyString_Check( v ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected string argument" );
 
 		Py_DECREF( me->name );
-		me->name = EXPP_incr_ret( v );
+		me->name = V24_EXPP_incr_ret( v );
 	}
 
 	else if( !strcmp( name, "mode" ) ) {
 		short mode;
 
 		if( !PyInt_Check( v ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected int argument" );
 
 		mode = ( short ) PyInt_AsLong( v );
 		if( mode >= 0 )
 			me->mode = mode;
 		else
-			return EXPP_ReturnIntError( PyExc_ValueError,
+			return V24_EXPP_ReturnIntError( PyExc_ValueError,
 						    "expected positive int argument" );
 	}
 
@@ -1788,18 +1788,18 @@ static int NMesh_setattr( PyObject * self, char *name, PyObject * v )
 
 			if( strcmp( name, "materials" ) == 0 ) {
 				Py_DECREF( me->materials );
-				me->materials = EXPP_incr_ret( v );
+				me->materials = V24_EXPP_incr_ret( v );
 			} else if( strcmp( name, "verts" ) == 0 ) {
 				Py_DECREF( me->verts );
-				me->verts = EXPP_incr_ret( v );
+				me->verts = V24_EXPP_incr_ret( v );
 			} else {
 				Py_DECREF( me->faces );
-				me->faces = EXPP_incr_ret( v );
+				me->faces = V24_EXPP_incr_ret( v );
 			}
 		}
 
 		else
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected a list" );
 	}
 
@@ -1807,13 +1807,13 @@ static int NMesh_setattr( PyObject * self, char *name, PyObject * v )
 		short smoothresh = 0;
 
 		if( !PyInt_Check( v ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected int argument" );
 
 		smoothresh = ( short ) PyInt_AsLong( v );
 
 		me->smoothresh =
-			(short)EXPP_ClampInt( smoothresh, NMESH_SMOOTHRESH_MIN,
+			(short)V24_EXPP_ClampInt( smoothresh, NMESH_SMOOTHRESH_MIN,
 				       NMESH_SMOOTHRESH_MAX );
 	}
 
@@ -1823,7 +1823,7 @@ static int NMesh_setattr( PyObject * self, char *name, PyObject * v )
 		PyObject *tmp;
 
 		if( !PySequence_Check( v ) || ( PySequence_Length( v ) != 2 ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 						    "expected a list [int, int] as argument" );
 
 		for( i = 0; i < 2; i++ ) {
@@ -1831,19 +1831,19 @@ static int NMesh_setattr( PyObject * self, char *name, PyObject * v )
 			if( tmp ) {
 				if( !PyInt_Check( tmp ) ) {
 					Py_DECREF( tmp );
-					return EXPP_ReturnIntError
+					return V24_EXPP_ReturnIntError
 						( PyExc_TypeError,
 						  "expected a list [int, int] as argument" );
 				}
 
 				subdiv[i] = PyInt_AsLong( tmp );
 				me->subdiv[i] =
-					( short ) EXPP_ClampInt( subdiv[i],
+					( short ) V24_EXPP_ClampInt( subdiv[i],
 								 NMESH_SUBDIV_MIN,
 								 NMESH_SUBDIV_MAX );
 				Py_DECREF( tmp );
 			} else
-				return EXPP_ReturnIntError( PyExc_RuntimeError,
+				return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 							    "couldn't retrieve subdiv values from list" );
 		}
 	}
@@ -1852,11 +1852,11 @@ static int NMesh_setattr( PyObject * self, char *name, PyObject * v )
     if (PySequence_Check(v))
     {
       Py_DECREF(me->edges);
-      me->edges = EXPP_incr_ret( v );
+      me->edges = V24_EXPP_incr_ret( v );
     }
   }
 	else
-		return EXPP_ReturnIntError( PyExc_AttributeError, name );
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError, name );
 
 	return 0;
 }
@@ -1890,7 +1890,7 @@ static BPy_NMFace *nmface_from_data( BPy_NMesh * mesh, int vidxs[4],
 
 	for( i = 0; i < len; i++ )
 		PyList_SetItem( newf->v, i,
-				EXPP_incr_ret( PyList_GetItem
+				V24_EXPP_incr_ret( PyList_GetItem
 					       ( mesh->verts, vidxs[i] ) ) );
 
 	if( tface ) {
@@ -2024,7 +2024,7 @@ static BPy_NMFace *nmface_from_index( BPy_NMesh * mesh, int vidxs[4], char mat_n
 
 	for( i = 0; i < len; i++ )
 		PyList_SetItem( newf->v, i,
-				EXPP_incr_ret( PyList_GetItem
+				V24_EXPP_incr_ret( PyList_GetItem
 					       ( mesh->verts, vidxs[i] ) ) );
 
 	newf->mode = TF_DYNAMIC;	/* just to initialize it to something meaninful, */
@@ -2099,7 +2099,7 @@ static PyObject *new_NMesh_displist(ListBase *lb, Object *ob)
 		one_normal = 1;
 
 	me = PyObject_NEW( BPy_NMesh, &NMesh_Type );
-	me->name = EXPP_incr_ret( Py_None );
+	me->name = V24_EXPP_incr_ret( Py_None );
 	me->flags = 0;
 	me->mode = ME_TWOSIDED;	/* default for new meshes */
 	me->subdiv[0] = NMESH_SUBDIV;
@@ -2108,7 +2108,7 @@ static PyObject *new_NMesh_displist(ListBase *lb, Object *ob)
 	me->edges = PyList_New( 0 );
 
 	me->object = ob;
-	me->materials = EXPP_PyList_fromMaterialList( ob->mat, ob->totcol, 0 );
+	me->materials = V24_EXPP_PyList_fromMaterialList( ob->mat, ob->totcol, 0 );
 
 	me->verts = PyList_New( 0 ); 
 	me->faces = PyList_New( 0 );
@@ -2244,7 +2244,7 @@ static PyObject *new_NMesh_internal( Mesh * oldmesh,
 	me->object = NULL;	/* not linked to any object yet */
 
 	if( !oldmesh ) {
-		me->name = EXPP_incr_ret( Py_None );
+		me->name = V24_EXPP_incr_ret( Py_None );
 		me->materials = PyList_New( 0 );
 		me->verts = PyList_New( 0 );
 		me->edges = PyList_New( 0 );
@@ -2354,7 +2354,7 @@ static PyObject *new_NMesh_internal( Mesh * oldmesh,
 			PyList_SetItem( me->edges, i, (PyObject*)nmedge_from_data ( me, edge ) );
 		}
 
-		me->materials = EXPP_PyList_fromMaterialList( oldmesh->mat, oldmesh->totcol, 0 );
+		me->materials = V24_EXPP_PyList_fromMaterialList( oldmesh->mat, oldmesh->totcol, 0 );
 	}
 
 	return ( PyObject * ) me;
@@ -2371,7 +2371,7 @@ static PyObject *M_NMesh_New( PyObject * self, PyObject * args )
 	PyObject *ret = NULL;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected nothing or a string as argument" );
 
 	ret = new_NMesh( NULL );
@@ -2391,14 +2391,14 @@ static PyObject *M_NMesh_GetRaw( PyObject * self, PyObject * args )
 	Mesh *oldmesh = NULL;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument (or nothing)" );
 
 	if( name ) {
-		oldmesh = ( Mesh * ) GetIdFromList( &( G.main->mesh ), name );
+		oldmesh = ( Mesh * ) V24_GetIdFromList( &( G.main->mesh ), name );
 
 		if( !oldmesh )
-			return EXPP_incr_ret( Py_None );
+			return V24_EXPP_incr_ret( Py_None );
 	}
 
 	return new_NMesh( oldmesh );
@@ -2430,13 +2430,13 @@ static PyObject *M_NMesh_GetRawFromObject( PyObject * self, PyObject * args )
 	char *name;
 
 	if( !PyArg_ParseTuple( args, "s", &name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument" );
 
-	ob = ( Object * ) GetIdFromList( &( G.main->object ), name );
+	ob = ( Object * ) V24_GetIdFromList( &( G.main->object ), name );
 
 	if( !ob )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError, name );
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, name );
 
  
  	switch (ob->type) {
@@ -2447,7 +2447,7 @@ static PyObject *M_NMesh_GetRawFromObject( PyObject * self, PyObject * args )
  			nmesh = new_NMesh_displist(lb, ob);
  		}
  		else {
- 			return EXPP_ReturnPyObjError( PyExc_AttributeError, "Object does not have geometry data" );
+ 			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, "Object does not have geometry data" );
  		}
  		break;
  	case OB_FONT:
@@ -2460,7 +2460,7 @@ static PyObject *M_NMesh_GetRawFromObject( PyObject * self, PyObject * args )
  
  			dl= lb->first;
  			if(dl==0)
- 				return EXPP_ReturnPyObjError( PyExc_AttributeError, "Object does not have geometry data" );
+ 				return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, "Object does not have geometry data" );
  			
  			if(dl->nors==0) addnormalsDispList(ob, lb);
  
@@ -2474,7 +2474,7 @@ static PyObject *M_NMesh_GetRawFromObject( PyObject * self, PyObject * args )
  		
  		dl= lb->first;
  		if(dl==0)
- 			return EXPP_ReturnPyObjError( PyExc_AttributeError, "Object does not have geometry data" );
+ 			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, "Object does not have geometry data" );
  		
  		if(dl->nors==0) addnormalsDispList(ob, lb);
  		nmesh = new_NMesh_displist(lb, ob);
@@ -2490,7 +2490,7 @@ static PyObject *M_NMesh_GetRawFromObject( PyObject * self, PyObject * args )
  		}
  		break;
  	default:
- 		return EXPP_ReturnPyObjError( PyExc_AttributeError, "Object does not have geometry data" );
+ 		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, "Object does not have geometry data" );
   	}
 
 /* @hack: to mark that (deformed) mesh is readonly, so the update function
@@ -2660,7 +2660,7 @@ static int check_validFaceUV( BPy_NMesh * nmesh )
 }
 
 /* this is a copy of unlink_mesh in mesh.c, because ... */
-static void EXPP_unlink_mesh( Mesh * me )
+static void V24_EXPP_unlink_mesh( Mesh * me )
 {
 	int a;
 
@@ -2689,7 +2689,7 @@ static int unlink_existingMeshData( Mesh * mesh )
 {
 	MDeformVert *dvert= NULL;
 
-	EXPP_unlink_mesh( mesh );
+	V24_EXPP_unlink_mesh( mesh );
 
 	if(mesh->dvert) {
 		/* we don't want to remove dvert here, check_dverts still needs it */
@@ -2728,8 +2728,8 @@ Material **nmesh_updateMaterials( BPy_NMesh * nmesh )
 	}
 
 	if( len > 0 ) {
-		matlist = EXPP_newMaterialList_fromPyList( nmesh->materials );
-		EXPP_incr_mats_us( matlist, len );
+		matlist = V24_EXPP_newMaterialList_fromPyList( nmesh->materials );
+		V24_EXPP_incr_mats_us( matlist, len );
 
 		if( mesh->mat )
 			MEM_freeN( mesh->mat );
@@ -2753,7 +2753,7 @@ Material **nmesh_updateMaterials( BPy_NMesh * nmesh )
 
 PyObject *NMesh_assignMaterials_toObject( BPy_NMesh * nmesh, Object * ob )
 {
-	BPy_Material *pymat;
+	V24_BPy_Material *pymat;
 	Material *ma;
 	int i;
 	short old_matmask;
@@ -2778,7 +2778,7 @@ PyObject *NMesh_assignMaterials_toObject( BPy_NMesh * nmesh, Object * ob )
 	}
 
 	for( i = 0; i < nmats; i++ ) {
-		pymat = ( BPy_Material * ) PySequence_GetItem( nmesh->
+		pymat = ( V24_BPy_Material * ) PySequence_GetItem( nmesh->
 							       materials, i );
 
 		if( BPy_Material_Check( ( PyObject * ) pymat ) ) {
@@ -2786,7 +2786,7 @@ PyObject *NMesh_assignMaterials_toObject( BPy_NMesh * nmesh, Object * ob )
 			assign_material( ob, ma, i + 1 );	/*@ XXX don't use this function anymore */
 		} else {
 			Py_DECREF( pymat );
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						      "expected Material type in attribute list 'materials'!" );
 		}
 
@@ -3079,14 +3079,14 @@ static PyObject *M_NMesh_PutRaw( PyObject * self, PyObject * args )
 
 	if( !PyArg_ParseTuple( args, "O!|sii",
 			       &NMesh_Type, &nmesh, &name, &recalc_normals, &store_edges ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected an NMesh object and optionally also a string and two ints" );
 
 	if( check_NMeshLists( nmesh ) )
 		return NULL;
 
 	if( name )
-		mesh = ( Mesh * ) GetIdFromList( &( G.main->mesh ), name );
+		mesh = ( Mesh * ) V24_GetIdFromList( &( G.main->mesh ), name );
 
 	if( !mesh || mesh->id.us == 0 ) {
 		ob = add_object( OB_MESH );
@@ -3125,7 +3125,7 @@ static PyObject *M_NMesh_PutRaw( PyObject * self, PyObject * args )
 	mesh_update( mesh, nmesh->object );
 
 	if( !during_script(  ) )
-		EXPP_allqueue( REDRAWVIEW3D, 0 );
+		V24_EXPP_allqueue( REDRAWVIEW3D, 0 );
 
 	if (ob && G.obedit) { /* prevents a crash when a new object is created */
 		exit_editmode(EM_FREEDATA);
@@ -3155,12 +3155,12 @@ static PyObject *M_NMesh_PutRaw( PyObject * self, PyObject * args )
 
 	if( ob ) {		// we created a new object
 		NMesh_assignMaterials_toObject( nmesh, ob );
-		EXPP_synchronizeMaterialLists( ob );
-		return Object_CreatePyObject( ob );
+		V24_EXPP_synchronizeMaterialLists( ob );
+		return V24_Object_CreatePyObject( ob );
 	} else {
 		mesh->mat =
-			EXPP_newMaterialList_fromPyList( nmesh->materials );
-		EXPP_incr_mats_us( mesh->mat,
+			V24_EXPP_newMaterialList_fromPyList( nmesh->materials );
+		V24_EXPP_incr_mats_us( mesh->mat,
 				   PyList_Size( nmesh->materials ) );
 		Py_RETURN_NONE;
 	}
@@ -3186,17 +3186,17 @@ static struct PyMethodDef M_NMesh_methods[] = {
 
 static PyObject *M_NMesh_Modes( void )
 {
-	PyObject *Modes = PyConstant_New(  );
+	PyObject *Modes = V24_PyConstant_New(  );
 
 	if( Modes ) {
-		BPy_constant *d = ( BPy_constant * ) Modes;
+		V24_BPy_constant *d = ( V24_BPy_constant * ) Modes;
 
-		PyConstant_Insert( d, "NOVNORMALSFLIP",
+		V24_PyConstant_Insert( d, "NOVNORMALSFLIP",
 				 PyInt_FromLong
 				 ( ME_NOPUNOFLIP ) );
-		PyConstant_Insert( d, "TWOSIDED",
+		V24_PyConstant_Insert( d, "TWOSIDED",
 				 PyInt_FromLong( ME_TWOSIDED ) );
-		PyConstant_Insert( d, "AUTOSMOOTH",
+		V24_PyConstant_Insert( d, "AUTOSMOOTH",
 				 PyInt_FromLong
 				 ( ME_AUTOSMOOTH ) );
 	}
@@ -3206,31 +3206,31 @@ static PyObject *M_NMesh_Modes( void )
 
 #undef EXPP_ADDCONST
 #define EXPP_ADDCONST(dict, name) \
-			 PyConstant_Insert(dict, #name, PyInt_FromLong(TF_##name))
+			 V24_PyConstant_Insert(dict, #name, PyInt_FromLong(TF_##name))
 /* Set constants for face drawing mode -- see drawmesh.c */
 
 static PyObject *M_NMesh_FaceModesDict( void )
 {
-	PyObject *FM = PyConstant_New(  );
+	PyObject *FM = V24_PyConstant_New(  );
 
 	if( FM ) {
-		BPy_constant *d = ( BPy_constant * ) FM;
+		V24_BPy_constant *d = ( V24_BPy_constant * ) FM;
 
-		PyConstant_Insert( d, "BILLBOARD",
+		V24_PyConstant_Insert( d, "BILLBOARD",
 		                       PyInt_FromLong( TF_BILLBOARD2 ) );
-		PyConstant_Insert( d, "ALL", PyInt_FromLong( 0x7fff ) );
-		PyConstant_Insert( d, "HALO", PyInt_FromLong( TF_BILLBOARD ) );
-		PyConstant_Insert( d, "DYNAMIC", PyInt_FromLong( TF_DYNAMIC ) );
-		PyConstant_Insert( d, "INVISIBLE", PyInt_FromLong( TF_INVISIBLE ) );
-		PyConstant_Insert( d, "LIGHT", PyInt_FromLong( TF_LIGHT ) );
-		PyConstant_Insert( d, "OBCOL", PyInt_FromLong( TF_OBCOL ) );
-		PyConstant_Insert( d, "SHADOW", PyInt_FromLong( TF_SHADOW ) );
-		PyConstant_Insert( d, "TEXT", PyInt_FromLong( TF_BMFONT ) );
-		PyConstant_Insert( d, "SHAREDVERT", PyInt_FromLong( TF_SHAREDVERT ) );
-		PyConstant_Insert( d, "SHAREDCOL", PyInt_FromLong( TF_SHAREDCOL ) );
-		PyConstant_Insert( d, "TEX", PyInt_FromLong( TF_TEX ) );
-		PyConstant_Insert( d, "TILES", PyInt_FromLong( TF_TILES ) );
-		PyConstant_Insert( d, "TWOSIDE", PyInt_FromLong( TF_TWOSIDE ) );
+		V24_PyConstant_Insert( d, "ALL", PyInt_FromLong( 0x7fff ) );
+		V24_PyConstant_Insert( d, "HALO", PyInt_FromLong( TF_BILLBOARD ) );
+		V24_PyConstant_Insert( d, "DYNAMIC", PyInt_FromLong( TF_DYNAMIC ) );
+		V24_PyConstant_Insert( d, "INVISIBLE", PyInt_FromLong( TF_INVISIBLE ) );
+		V24_PyConstant_Insert( d, "LIGHT", PyInt_FromLong( TF_LIGHT ) );
+		V24_PyConstant_Insert( d, "OBCOL", PyInt_FromLong( TF_OBCOL ) );
+		V24_PyConstant_Insert( d, "SHADOW", PyInt_FromLong( TF_SHADOW ) );
+		V24_PyConstant_Insert( d, "TEXT", PyInt_FromLong( TF_BMFONT ) );
+		V24_PyConstant_Insert( d, "SHAREDVERT", PyInt_FromLong( TF_SHAREDVERT ) );
+		V24_PyConstant_Insert( d, "SHAREDCOL", PyInt_FromLong( TF_SHAREDCOL ) );
+		V24_PyConstant_Insert( d, "TEX", PyInt_FromLong( TF_TEX ) );
+		V24_PyConstant_Insert( d, "TILES", PyInt_FromLong( TF_TILES ) );
+		V24_PyConstant_Insert( d, "TWOSIDE", PyInt_FromLong( TF_TWOSIDE ) );
 	}
 
 	return FM;
@@ -3238,10 +3238,10 @@ static PyObject *M_NMesh_FaceModesDict( void )
 
 static PyObject *M_NMesh_FaceFlagsDict( void )
 {
-	PyObject *FF = PyConstant_New(  );
+	PyObject *FF = V24_PyConstant_New(  );
 
 	if( FF ) {
-		BPy_constant *d = ( BPy_constant * ) FF;
+		V24_BPy_constant *d = ( V24_BPy_constant * ) FF;
 
 		EXPP_ADDCONST( d, SELECT );
 		EXPP_ADDCONST( d, HIDE );
@@ -3253,10 +3253,10 @@ static PyObject *M_NMesh_FaceFlagsDict( void )
 
 static PyObject *M_NMesh_FaceTranspModesDict( void )
 {
-	PyObject *FTM = PyConstant_New(  );
+	PyObject *FTM = V24_PyConstant_New(  );
 
 	if( FTM ) {
-		BPy_constant *d = ( BPy_constant * ) FTM;
+		V24_BPy_constant *d = ( V24_BPy_constant * ) FTM;
 
 		EXPP_ADDCONST( d, SOLID );
 		EXPP_ADDCONST( d, ADD );
@@ -3269,16 +3269,16 @@ static PyObject *M_NMesh_FaceTranspModesDict( void )
 
 static PyObject *M_NMesh_EdgeFlagsDict( void )
 {
-	PyObject *EF = PyConstant_New(  );
+	PyObject *EF = V24_PyConstant_New(  );
 
 	if( EF ) {
-		BPy_constant *d = ( BPy_constant * ) EF;
+		V24_BPy_constant *d = ( V24_BPy_constant * ) EF;
 
-		PyConstant_Insert(d, "SELECT", PyInt_FromLong(1));
-		PyConstant_Insert(d, "EDGEDRAW", PyInt_FromLong(ME_EDGEDRAW));
-		PyConstant_Insert(d, "EDGERENDER", PyInt_FromLong(ME_EDGERENDER));
-		PyConstant_Insert(d, "SEAM", PyInt_FromLong(ME_SEAM));
-		PyConstant_Insert(d, "FGON", PyInt_FromLong(ME_FGON));
+		V24_PyConstant_Insert(d, "SELECT", PyInt_FromLong(1));
+		V24_PyConstant_Insert(d, "EDGEDRAW", PyInt_FromLong(ME_EDGEDRAW));
+		V24_PyConstant_Insert(d, "EDGERENDER", PyInt_FromLong(ME_EDGERENDER));
+		V24_PyConstant_Insert(d, "SEAM", PyInt_FromLong(ME_SEAM));
+		V24_PyConstant_Insert(d, "FGON", PyInt_FromLong(ME_FGON));
 	}
 
 	return EF;
@@ -3345,7 +3345,7 @@ Mesh *NMesh_FromPyObject( PyObject * pyobj, Object * ob )
 		if( nmesh->mesh ) {
 			mesh = nmesh->mesh;
 		} else {
-			mesh = Mesh_fromNMesh( nmesh );
+			mesh = V24_Mesh_fromNMesh( nmesh );
 			if( !mesh )	/* NULL means an PyError */
 				return NULL;
 
@@ -3378,7 +3378,7 @@ static PyObject *findEdge( BPy_NMesh *nmesh, BPy_NMVert *v1, BPy_NMVert *v2, int
     if (!BPy_NMEdge_Check(edge)) continue;
     if ( POINTER_CROSS_EQ((BPy_NMVert*)edge->v1, (BPy_NMVert*)edge->v2, v1, v2) )
     {
-      return EXPP_incr_ret((PyObject*)edge);
+      return V24_EXPP_incr_ret((PyObject*)edge);
     }
   }
 
@@ -3450,12 +3450,12 @@ static PyObject *NMesh_addEdge( PyObject * self, PyObject * args )
 
   if (!PyArg_ParseTuple
 	    ( args, "O!O!", &NMVert_Type, &v1, &NMVert_Type, &v2 ) ) {
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMVert, NMVert" );
 	}
 
   if (v1==v2)
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "vertices must be different" );
 
   return findEdge(bmesh, v1, v2, 1);
@@ -3468,12 +3468,12 @@ static PyObject *NMesh_findEdge( PyObject * self, PyObject * args )
 
   if (!PyArg_ParseTuple
 	    ( args, "O!O!", &NMVert_Type, &v1, &NMVert_Type, &v2 ) ) {
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMVert, NMVert" );
 	}
 
   if (v1==v2)
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "vertices must be different" );
 
   return findEdge(bmesh, v1, v2, 0);
@@ -3486,12 +3486,12 @@ static PyObject *NMesh_removeEdge( PyObject * self, PyObject * args )
 
   if (!PyArg_ParseTuple
 	    ( args, "O!O!", &NMVert_Type, &v1, &NMVert_Type, &v2 ) ) {
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMVert, NMVert" );
 	}
 
   if (v1==v2)
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "vertices must be different" );
   removeEdge(bmesh, v1, v2, 0);
 
@@ -3508,7 +3508,7 @@ static PyObject *NMesh_addFace( PyObject * self, PyObject * args )
   
   if (!PyArg_ParseTuple
 	    ( args, "O!", &NMFace_Type, &face ) ) {
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMFace argument" );
 	}
 
@@ -3560,7 +3560,7 @@ static PyObject *NMesh_removeFace( PyObject * self, PyObject * args )
   
   if (!PyArg_ParseTuple
 	    ( args, "O!", &NMFace_Type, &face ) ) {
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected NMFace argument" );
 	}
 
@@ -3654,11 +3654,11 @@ static PyObject *NMesh_addVertGroup( PyObject * self, PyObject * args )
 	PyObject *tempStr;
 
 	if( !PyArg_ParseTuple( args, "s", &groupStr ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument" );
 
 	if( ( ( BPy_NMesh * ) self )->object == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "mesh must be linked to an object first..." );
 
 	object = ( ( BPy_NMesh * ) self )->object;
@@ -3669,7 +3669,7 @@ static PyObject *NMesh_addVertGroup( PyObject * self, PyObject * args )
 
 	add_defgroup_name( object, groupStr );
 
-	EXPP_allqueue( REDRAWBUTSALL, 1 );
+	V24_EXPP_allqueue( REDRAWBUTSALL, 1 );
 
 	Py_RETURN_NONE;
 }
@@ -3682,30 +3682,30 @@ static PyObject *NMesh_removeVertGroup( PyObject * self, PyObject * args )
 	bDeformGroup *pGroup;
 
 	if( !PyArg_ParseTuple( args, "s", &groupStr ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument" );
 
 	if( ( ( BPy_NMesh * ) self )->object == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "mesh must be linked to an object first..." );
 
 	object = ( ( BPy_NMesh * ) self )->object;
 
 	pGroup = get_named_vertexgroup( object, groupStr );
 	if( pGroup == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "group does not exist!" );
 
 	nIndex = get_defgroup_num( object, pGroup );
 	if( nIndex == -1 )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "no deform groups assigned to mesh" );
 	nIndex++;
 	object->actdef = (unsigned short)nIndex;
 
 	del_defgroup( object );
 
-	EXPP_allqueue( REDRAWBUTSALL, 1 );
+	V24_EXPP_allqueue( REDRAWBUTSALL, 1 );
 
 	Py_RETURN_NONE;
 }
@@ -3732,30 +3732,30 @@ static PyObject *NMesh_assignVertsToGroup( PyObject * self, PyObject * args )
 	int x;
 
 	if( ( ( BPy_NMesh * ) self )->object == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "mesh must be linked to an object first..." );
 
 	if( !PyArg_ParseTuple
 	    ( args, "sO!fs", &groupStr, &PyList_Type, &listObject, &weight,
 	      &assignmodeStr ) ) {
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string, list,	float, string arguments" );
 	}
 
 	object = ( ( BPy_NMesh * ) self )->object;
 
 	if( object->data == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "object contains no data..." );
 
 	pGroup = get_named_vertexgroup( object, groupStr );
 	if( pGroup == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "group does not exist!" );
 
 	nIndex = get_defgroup_num( object, pGroup );
 	if( nIndex == -1 )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "no deform groups assigned to mesh" );
 
 	if( assignmodeStr == NULL )
@@ -3767,7 +3767,7 @@ static PyObject *NMesh_assignVertsToGroup( PyObject * self, PyObject * args )
 	else if( STREQ( assignmodeStr, "subtract" ) )
 		assignmode = 3;
 	else
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "bad assignment mode" );
 
 	//makes a set of dVerts corresponding to the mVerts
@@ -3780,13 +3780,13 @@ static PyObject *NMesh_assignVertsToGroup( PyObject * self, PyObject * args )
 		    ( PyArg_Parse
 		      ( ( PyList_GetItem( listObject, x ) ), "i",
 			&tempInt ) ) ) {
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						      "python list integer not parseable" );
 		}
 
 		if( tempInt < 0
 		    || tempInt >= ( ( Mesh * ) object->data )->totvert ) {
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 						      "bad vertex index in list" );
 		}
 
@@ -3813,31 +3813,31 @@ static PyObject *NMesh_removeVertsFromGroup( PyObject * self, PyObject * args )
 
 	if( !PyArg_ParseTuple
 	    ( args, "s|O!", &groupStr, &PyList_Type, &listObject ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string and optional list argument" );
 
 	if( ( ( BPy_NMesh * ) self )->object == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "mesh must be linked to an object first..." );
 
 	object = ( ( BPy_NMesh * ) self )->object;
 
 	if( object->data == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "object contains no data..." );
 
 	if( ( !( ( Mesh * ) object->data )->dvert ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "this mesh contains no deform vertices...'" );
 
 	pGroup = get_named_vertexgroup( object, groupStr );
 	if( pGroup == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "group does not exist!" );
 
 	nIndex = get_defgroup_num( object, pGroup );
 	if( nIndex == -1 )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "no deform groups assigned to mesh" );
 
 	if( argc == 1 ) {	/* no list given */
@@ -3866,13 +3866,13 @@ static PyObject *NMesh_removeVertsFromGroup( PyObject * self, PyObject * args )
 			    ( PyArg_Parse
 			      ( ( PyList_GetItem( listObject, x ) ), "i",
 				&tempInt ) ) )
-				return EXPP_ReturnPyObjError( PyExc_TypeError,
+				return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 							      "python list integer not parseable" );
 
 			if( tempInt < 0
 			    || tempInt >=
 			    ( ( Mesh * ) object->data )->totvert )
-				return EXPP_ReturnPyObjError( PyExc_ValueError,
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 							      "bad vertex index in list" );
 
 			remove_vert_def_nr( object, nIndex, tempInt );
@@ -3912,41 +3912,41 @@ static PyObject *NMesh_getVertsFromGroup( PyObject * self, PyObject * args )
 
 	if( !PyArg_ParseTuple( args, "s|iO!", &groupStr, &weightRet,
 			       &PyList_Type, &listObject ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string and optional int and list arguments" );
 
 	if( weightRet < 0 || weightRet > 1 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "return weights flag must be 0 or 1..." );
 
 	if( ( ( BPy_NMesh * ) self )->object == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "mesh must be linked to an object first..." );
 
 	object = ( ( BPy_NMesh * ) self )->object;
 
 	if( object->data == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "object contains no data..." );
 
 	if( ( !( ( Mesh * ) object->data )->dvert ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "this mesh contains no deform vertices...'" );
 
 	pGroup = get_named_vertexgroup( object, groupStr );
 	if( pGroup == NULL )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "group does not exist!" );
 
 	nIndex = get_defgroup_num( object, pGroup );
 	if( nIndex == -1 )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "no deform groups assigned to mesh" );
 
 	//temporary list
 	tempVertexList = PyList_New( ( ( Mesh * ) object->data )->totvert );
 	if( tempVertexList == NULL )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "getVertsFromGroup: can't create pylist!" );
 
 	count = 0;
@@ -3988,14 +3988,14 @@ static PyObject *NMesh_getVertsFromGroup( PyObject * self, PyObject * args )
 			      ( ( PyList_GetItem( listObject, x ) ), "i",
 				&tempInt ) ) ) {
 				Py_DECREF(tempVertexList);
-				return EXPP_ReturnPyObjError( PyExc_TypeError,
+				return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 							      "python list integer not parseable" );
 			}
 			if( tempInt < 0
 			    || tempInt >=
 			    ( ( Mesh * ) object->data )->totvert ) {
 				Py_DECREF(tempVertexList);
-				return EXPP_ReturnPyObjError( PyExc_ValueError,
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 							      "bad vertex index in list" );
 			}
 			num = tempInt;
@@ -4050,18 +4050,18 @@ static PyObject *NMesh_renameVertGroup( PyObject * self, PyObject * args )
 
 
 	if( !( ( BPy_NMesh * ) self )->object )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "This mesh must be linked to an object" );
 
 	if( !PyArg_ParseTuple( args, "ss", &oldGr, &newGr ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "Expected string & string argument" );
 
 	defGroup =
 		get_named_vertexgroup( ( ( BPy_NMesh * ) self )->object,
 				       oldGr );
 	if( defGroup == NULL )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "Couldn't find the expected vertex group" );
 
 	PyOS_snprintf( defGroup->name, 32, newGr );
@@ -4076,7 +4076,7 @@ static PyObject *NMesh_getVertGroupNames( PyObject * self )
 	PyObject *list, *tmpstr;
 
 	if( !( ( BPy_NMesh * ) self )->object )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "This mesh must be linked to an object" );
 
 	list = PyList_New( 0 );
@@ -4087,7 +4087,7 @@ static PyObject *NMesh_getVertGroupNames( PyObject * self )
 		if( PyList_Append( list,  tmpstr) < 0 ) {
 			Py_XDECREF(list);
 			Py_XDECREF(tmpstr);
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError, "Couldn't add item to list" );
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "Couldn't add item to list" );
 		}
 		Py_XDECREF(tmpstr);
 	}
@@ -4100,18 +4100,18 @@ static PyObject *NMesh_transform (PyObject *self, PyObject *args)
 	BPy_NMesh *nmesh = ( BPy_NMesh * ) self;
 	BPy_NMVert *mv;
 	PyObject *ob1 = NULL;
-	MatrixObject *mat;
+	V24_MatrixObject *mat;
 	float vx, vy, vz;
 	int i, recalc_normals = 0;
 
 	if( !PyArg_ParseTuple( args, "O!|i", &matrix_Type, &ob1, &recalc_normals ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected matrix and optionally an int as arguments" ) );
 
-	mat = ( MatrixObject * ) ob1;
+	mat = ( V24_MatrixObject * ) ob1;
 
 	if( mat->colSize != 4 || mat->rowSize != 4 )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"matrix must be a 4x4 transformation matrix\n"
 			"for example as returned by object.getMatrix()" ) );
 	
@@ -4142,7 +4142,7 @@ static PyObject *NMesh_transform (PyObject *self, PyObject *args)
 		/* we only need to invert a 3x3 submatrix, because the 4th component of
 		 * affine vectors is 0, but Mat4Invert reports non invertible matrices */
 		if (!Mat4Invert((float(*)[4])*invmat, (float(*)[4])*mat->matrix))
-			return EXPP_ReturnPyObjError (PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError (PyExc_AttributeError,
 				"given matrix is not invertible");
 
 		for( i = 0; i < PySequence_Length(nmesh->verts); i++ ) {

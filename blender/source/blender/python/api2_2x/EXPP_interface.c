@@ -141,7 +141,7 @@ char *bpy_gethome(int append_scriptsdir)
  * eval each expression to collect the ob refs. in it.
  */
 
-/* these are checked for example in Object.c: M_Object_Get (Object.Get())
+/* these are checked for example in Object.c: V24_M_Object_Get (Object.Get())
  * to collect the refs. */
 static int pydriver_running = 0;
 

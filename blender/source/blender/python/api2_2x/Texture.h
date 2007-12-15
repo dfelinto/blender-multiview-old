@@ -39,26 +39,26 @@
 #include "DNA_texture_types.h"
 
 /*****************************************************************************/
-/* Python BPy_Texture structure definition                                   */
+/* Python V24_BPy_Texture structure definition                                   */
 /*****************************************************************************/
 
 typedef struct {
 	PyObject_HEAD 
 	Tex * texture; /* libdata must be second */
-} BPy_Texture;
+} V24_BPy_Texture;
 
-extern PyTypeObject Texture_Type;
+extern PyTypeObject V24_Texture_Type;
 
-#define BPy_Texture_Check(v)  ((v)->ob_type == &Texture_Type)
+#define BPy_Texture_Check(v)  ((v)->ob_type == &V24_Texture_Type)
 
 
 /*****************************************************************************/
 /* Module Blender.Texture - public functions                                 */
 /*****************************************************************************/
 
-PyObject *Texture_Init( void );
-PyObject *Texture_CreatePyObject( struct Tex *tex );
-Tex *Texture_FromPyObject( PyObject * pyobj );
+PyObject *V24_Texture_Init( void );
+PyObject *V24_Texture_CreatePyObject( struct Tex *tex );
+Tex *V24_Texture_FromPyObject( PyObject * pyobj );
 
 
 #endif				/* EXPP_TEXTURE_H */

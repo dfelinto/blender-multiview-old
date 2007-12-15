@@ -64,7 +64,7 @@
 #include "api2_2x/EXPP_interface.h"
 #include "api2_2x/constant.h"
 #include "api2_2x/gen_utils.h"
-#include "api2_2x/gen_library.h" /* GetPyObjectFromID */
+#include "api2_2x/gen_library.h" /* V24_GetPyObjectFromID */
 #include "api2_2x/BGL.h" 
 #include "api2_2x/Blender.h"
 #include "api2_2x/Camera.h"
@@ -137,7 +137,7 @@ int setup_armature_weakrefs()
  * support for packages here e.g. import `package.module` */
 
 static struct _inittab BPy_Inittab_Modules[] = {
-	{"Blender", M_Blender_Init},
+	{"Blender", V24_M_Blender_Init},
 	{"bpy", m_bpy_init},
 	{NULL, NULL}
 };
@@ -268,7 +268,7 @@ void BPY_end_python( void )
 	BPyMenu_RemoveAllEntries(  );	/* freeing bpymenu mem */
 
 	/* a script might've opened a .blend file but didn't close it, so: */
-	EXPP_Library_Close(  );
+	V24_EXPP_Library_Close(  );
 
 	return;
 }
@@ -318,7 +318,7 @@ void init_syspath( int first_time )
 
 	if( mod ) {
 		d = PyModule_GetDict( mod );
-		EXPP_dict_set_item_str( d, "progname", path );
+		V24_EXPP_dict_set_item_str( d, "progname", path );
 		Py_DECREF( mod );
 	} else
 		printf( "Warning: could not set Blender.sys.progname\n" );
@@ -366,7 +366,7 @@ void init_syspath( int first_time )
 
 	if( mod ) {
 		d = PyModule_GetDict( mod );	/* borrowed ref */
-		EXPP_dict_set_item_str( d, "executable",
+		V24_EXPP_dict_set_item_str( d, "executable",
 				      Py_BuildValue( "s", bprogname ) );
 		Py_DECREF( mod );
 	} else{
@@ -559,7 +559,7 @@ void BPY_Err_Handle( char *script_name )
 int BPY_txt_do_python_Text( struct Text *text )
 {
 	PyObject *py_dict, *py_result;
-	BPy_constant *info;
+	V24_BPy_constant *info;
 	char textname[24];
 	Script *script = G.main->script.first;
 
@@ -611,13 +611,13 @@ int BPY_txt_do_python_Text( struct Text *text )
 
 	script->py_globaldict = py_dict;
 
-	info = ( BPy_constant * ) PyConstant_New(  );
+	info = ( V24_BPy_constant * ) V24_PyConstant_New(  );
 	if( info ) {
-		PyConstant_Insert( info, "name",
+		V24_PyConstant_Insert( info, "name",
 				 PyString_FromString( script->id.name + 2 ) );
 		Py_INCREF( Py_None );
-		PyConstant_Insert( info, "arg", Py_None );
-		EXPP_dict_set_item_str( py_dict, "__script__",
+		V24_PyConstant_Insert( info, "arg", Py_None );
+		V24_EXPP_dict_set_item_str( py_dict, "__script__",
 				      ( PyObject * ) info );
 	}
 
@@ -713,7 +713,7 @@ void BPY_run_python_script( char *fn )
 int BPY_menu_do_python( short menutype, int event )
 {
 	PyObject *py_dict, *py_res, *pyarg = NULL;
-	BPy_constant *info;
+	V24_BPy_constant *info;
 	BPyMenu *pym;
 	BPySubMenu *pysm;
 	FILE *fp = NULL;
@@ -856,12 +856,12 @@ int BPY_menu_do_python( short menutype, int event )
 
 	script->py_globaldict = py_dict;
 
-	info = ( BPy_constant * ) PyConstant_New(  );
+	info = ( V24_BPy_constant * ) V24_PyConstant_New(  );
 	if( info ) {
-		PyConstant_Insert( info, "name",
+		V24_PyConstant_Insert( info, "name",
 				 PyString_FromString( script->id.name + 2 ) );
-		PyConstant_Insert( info, "arg", pyarg );
-		EXPP_dict_set_item_str( py_dict, "__script__",
+		V24_PyConstant_Insert( info, "arg", pyarg );
+		V24_EXPP_dict_set_item_str( py_dict, "__script__",
 				      ( PyObject * ) info );
 	}
 
@@ -1296,7 +1296,7 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 	PyObject *gval;
 	PyObject *pyargs, *retval;
 	bConstraintTarget *ct;
-	MatrixObject *retmat;
+	V24_MatrixObject *retmat;
 	int row, col, index;
 	
 	if (!con->text) return;
@@ -1310,7 +1310,7 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 	 *	- targets are presented as a list of matrices
 	 */
 	srcmat = newMatrixObject((float *)cob->matrix, 4, 4, Py_NEW);
-	idprop = BPy_Wrap_IDProperty(NULL, con->prop, NULL);
+	idprop = V24_BPy_Wrap_IDProperty(NULL, con->prop, NULL);
 	
 	tarmats= PyList_New(con->tarnum); 
 	for (ct=targets->first, index=0; ct; ct=ct->next, index++) {
@@ -1408,7 +1408,7 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 		return;
 	}
 	
-	retmat = (MatrixObject *)retval;
+	retmat = (V24_MatrixObject *)retval;
 	if (retmat->rowSize != 4 || retmat->colSize != 4) {
 		printf("Error in PyConstraint - doConstraint: Matrix returned is the wrong size!\n");
 		con->flag |= PYCON_SCRIPTERROR;
@@ -1450,7 +1450,7 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 	PyObject *globals;
 	PyObject *gval;
 	PyObject *pyargs, *retval;
-	MatrixObject *retmat;
+	V24_MatrixObject *retmat;
 	int row, col;
 	
 	if (!con->text) return;
@@ -1459,17 +1459,17 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 	
 	globals = CreateGlobalDictionary();
 	
-	tar = Object_CreatePyObject(ct->tar);
+	tar = V24_Object_CreatePyObject(ct->tar);
 	if ((ct->tar) && (ct->tar->type==OB_ARMATURE)) {
 		bPoseChannel *pchan;
 		pchan = get_pose_channel(ct->tar->pose, ct->subtarget);
-		subtar = PyPoseBone_FromPosechannel(pchan);
+		subtar = V24_PyPoseBone_FromPosechannel(pchan);
 	}
 	else
 		subtar = PyString_FromString(ct->subtarget);
 	
 	tarmat = newMatrixObject((float *)ct->matrix, 4, 4, Py_NEW);
-	idprop = BPy_Wrap_IDProperty( NULL, con->prop, NULL);
+	idprop = V24_BPy_Wrap_IDProperty( NULL, con->prop, NULL);
 	
 /*  since I can't remember what the armature weakrefs do, I'll just leave this here
     commented out.  This function was based on pydrivers, and it might still be relevent.
@@ -1559,7 +1559,7 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 		return;
 	}
 	
-	retmat = (MatrixObject *)retval;
+	retmat = (V24_MatrixObject *)retval;
 	if (retmat->rowSize != 4 || retmat->colSize != 4) {
 		printf("Error in PyConstraint - doTarget: Matrix returned is the wrong size!\n");
 		con->flag |= PYCON_SCRIPTERROR;
@@ -1606,7 +1606,7 @@ void BPY_pyconstraint_settings(void *arg1, void *arg2)
 	
 	globals = CreateGlobalDictionary();
 	
-	idprop = BPy_Wrap_IDProperty( NULL, con->prop, NULL);
+	idprop = V24_BPy_Wrap_IDProperty( NULL, con->prop, NULL);
 	
 	retval = RunPython(con->text, globals);
 
@@ -1733,14 +1733,14 @@ float BPY_pydriver_eval(IpoDriver *driver)
 	}
 
 	if (driver->ob)
-		bpy_ob = Object_CreatePyObject(driver->ob);
+		bpy_ob = V24_Object_CreatePyObject(driver->ob);
 
 	if (!bpy_ob) {
 		Py_INCREF(Py_None);
 		bpy_ob = Py_None;
 	}
 
-	setitem_retval = EXPP_dict_set_item_str(bpy_pydriver_Dict, "self", bpy_ob);
+	setitem_retval = V24_EXPP_dict_set_item_str(bpy_pydriver_Dict, "self", bpy_ob);
 
 	if( !setup_armature_weakrefs()){
 		fprintf( stderr, "Oops - weakref dict setup\n");
@@ -1768,7 +1768,7 @@ float BPY_pydriver_eval(IpoDriver *driver)
 	return result;
 }
 
-/* Button Python Evaluation */
+/* V24V24__Button Python Evaluation */
 
 /* Python evaluation for gui buttons:
  *	users can write any valid Python expression (that evals to an int or float)
@@ -1809,7 +1809,7 @@ int BPY_button_eval(char *expr, double *value)
 	if (!bpy_pydriver_Dict) {
 		if (bpy_pydriver_create_dict() != 0) {
 			fprintf(stderr,
-				"Button Python Eval error: couldn't create Python dictionary");
+				"V24V24__Button Python Eval error: couldn't create Python dictionary");
 			return -1;
 		}
 	}
@@ -1952,7 +1952,7 @@ void BPY_do_pyscript( ID * id, short event )
 			return;
 		}
 		
-		value = GetPyObjectFromID( id );
+		value = V24_GetPyObjectFromID( id );
 		if( !value){
 			printf("Oops - could not get a valid python object for Blender.link, this is a bug\n");
 			return;
@@ -1966,8 +1966,8 @@ void BPY_do_pyscript( ID * id, short event )
 
 		/* set globals in Blender module to identify scriptlink */
 		PyDict_SetItemString(	g_blenderdict, "bylink", Py_True);
-		EXPP_dict_set_item_str( g_blenderdict, "link", value );
-		EXPP_dict_set_item_str( g_blenderdict, "event",
+		V24_EXPP_dict_set_item_str( g_blenderdict, "link", value );
+		V24_EXPP_dict_set_item_str( g_blenderdict, "event",
 				      PyString_FromString( event_to_name
 							   ( event ) ) );
 		if (event == SCRIPT_POSTRENDER) event = SCRIPT_RENDER;
@@ -2007,7 +2007,7 @@ void BPY_do_pyscript( ID * id, short event )
 		 */
 		PyDict_SetItemString(g_blenderdict, "bylink", Py_False);
 		PyDict_SetItemString( g_blenderdict, "link", Py_None );
-		EXPP_dict_set_item_str( g_blenderdict, "event", PyString_FromString( "" ) );
+		V24_EXPP_dict_set_item_str( g_blenderdict, "event", PyString_FromString( "" ) );
 	}
 }
 
@@ -2190,9 +2190,9 @@ int BPY_do_spacehandlers( ScrArea *sa, unsigned short event,
 		/* set globals in Blender module to identify space handler scriptlink */
 		PyDict_SetItemString(g_blenderdict, "bylink", Py_True);
 		/* unlike normal scriptlinks, here Blender.link is int (space event type) */
-		EXPP_dict_set_item_str(g_blenderdict, "link", PyInt_FromLong(space_event));
+		V24_EXPP_dict_set_item_str(g_blenderdict, "link", PyInt_FromLong(space_event));
 		/* note: DRAW space_events set event to 0 */
-		EXPP_dict_set_item_str(g_blenderdict, "event", PyInt_FromLong(event));
+		V24_EXPP_dict_set_item_str(g_blenderdict, "event", PyInt_FromLong(event));
 		/* now run all assigned space handlers for this space and space_event */
 		for( index = 0; index < scriptlink->totscript; index++ ) {
 
@@ -2249,7 +2249,7 @@ int BPY_do_spacehandlers( ScrArea *sa, unsigned short event,
 
 		PyDict_SetItemString(g_blenderdict, "bylink", Py_False);
 		PyDict_SetItemString(g_blenderdict, "link", Py_None );
-		EXPP_dict_set_item_str(g_blenderdict, "event", PyString_FromString(""));
+		V24_EXPP_dict_set_item_str(g_blenderdict, "event", PyString_FromString(""));
 	}
 	
 	/* retval:
@@ -2429,7 +2429,7 @@ PyObject *CreateGlobalDictionary( void )
 	PyObject *dict = PyDict_New(  );
 
 	PyDict_SetItemString( dict, "__builtins__", PyEval_GetBuiltins(  ) );
-	EXPP_dict_set_item_str( dict, "__name__",
+	V24_EXPP_dict_set_item_str( dict, "__name__",
 			      PyString_FromString( "__main__" ) );
 
 	return dict;
@@ -2554,7 +2554,7 @@ void init_ourImport( void )
 	m = PyImport_AddModule( "__builtin__" );
 	d = PyModule_GetDict( m );
 	
-	EXPP_dict_set_item_str( d, "__import__", import );
+	V24_EXPP_dict_set_item_str( d, "__import__", import );
 }
 
 /*
@@ -2655,5 +2655,5 @@ void init_ourReload( void )
 
 	m = PyImport_AddModule( "__builtin__" );
 	d = PyModule_GetDict( m );
-	EXPP_dict_set_item_str( d, "reload", reload );
+	V24_EXPP_dict_set_item_str( d, "reload", reload );
 }

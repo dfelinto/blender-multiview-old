@@ -32,30 +32,30 @@
 
 struct ID;
 struct IDProperty;
-struct BPy_IDGroup_Iter;
+struct V24_BPy_IDGroup_Iter;
 
-typedef struct BPy_IDProperty {
+typedef struct V24_BPy_IDProperty {
 	PyObject_VAR_HEAD
 	struct ID *id;
 	struct IDProperty *prop, *parent;
 	PyObject *data_wrap;
-} BPy_IDProperty;
+} V24_BPy_IDProperty;
 
-typedef struct BPy_IDArray {
+typedef struct V24_BPy_IDArray {
 	PyObject_VAR_HEAD
 	struct ID *id;
 	struct IDProperty *prop;
-} BPy_IDArray;
+} V24_BPy_IDArray;
 
-typedef struct BPy_IDGroup_Iter {
+typedef struct V24_BPy_IDGroup_Iter {
 	PyObject_VAR_HEAD
-	BPy_IDProperty *group;
+	V24_BPy_IDProperty *group;
 	struct IDProperty *cur;
 	int mode;
-} BPy_IDGroup_Iter;
+} V24_BPy_IDGroup_Iter;
 
-PyObject *BPy_Wrap_IDProperty(struct ID *id, struct IDProperty *prop, struct IDProperty *parent);
-void IDProp_Init_Types(void);
+PyObject *V24_BPy_Wrap_IDProperty(struct ID *id, struct IDProperty *prop, struct IDProperty *parent);
+void V24_IDProp_Init_Types(void);
 
 #define IDPROP_ITER_KEYS	0
 #define IDPROP_ITER_ITEMS	1

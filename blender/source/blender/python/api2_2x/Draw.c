@@ -1,5 +1,4 @@
 /* 
- * $Id$
  *
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
@@ -70,30 +69,30 @@ current image frame, some images change frame if they are a sequence */
 #define EXPP_BUTTON_EVENTS_MIN 0
 #define EXPP_BUTTON_EVENTS_MAX 15382 /* 16384 - 1 - OFFSET */
 
-#define ButtonObject_Check(v) ((v)->ob_type == &Button_Type)
+#define ButtonObject_Check(v) ((v)->ob_type == &V24_Button_Type)
 
 #define UI_METHOD_ERRORCHECK \
 	if (check_button_event(&event) == -1)\
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,\
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,\
 			"button event argument must be in the range [0, 16382]");\
 	if (callback && !PyCallable_Check(callback))\
-		return EXPP_ReturnPyObjError( PyExc_ValueError,\
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,\
 			"callback is not a python function");\
 
 /* pointer to main dictionary defined in Blender.c */
 extern PyObject *g_blenderdict;
 
 /*@ hack to flag that window redraw has happened inside slider callback: */
-int EXPP_disable_force_draw = 0;
+int V24_EXPP_disable_force_draw = 0;
 
 /* forward declarations for internal functions */
-static void Button_dealloc( PyObject * self );
-static PyObject *Button_getattr( PyObject * self, char *name );
-static PyObject *Button_repr( PyObject * self );
-static PyObject *Button_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type);
-static int Button_setattr( PyObject * self, char *name, PyObject * v );
+static void V24_Button_dealloc( PyObject * self );
+static PyObject *V24_Button_getattr( PyObject * self, char *name );
+static PyObject *V24_Button_repr( PyObject * self );
+static PyObject *V24_Button_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type);
+static int V24_Button_setattr( PyObject * self, char *name, PyObject * v );
 
-static Button *newbutton( void );
+static V24V24__Button *newbutton( void );
 
 /* GUI interface routines */
 
@@ -103,49 +102,49 @@ static void exec_callback( SpaceScript * sc, PyObject * callback,
 static void spacescript_do_pywin_buttons( SpaceScript * sc,
 					  unsigned short event );
 
-static PyObject *Method_Exit( PyObject * self );
-static PyObject *Method_Register( PyObject * self, PyObject * args );
-static PyObject *Method_Redraw( PyObject * self, PyObject * args );
-static PyObject *Method_Draw( PyObject * self );
-static PyObject *Method_Create( PyObject * self, PyObject * args );
-static PyObject *Method_UIBlock( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Exit( PyObject * self );
+static PyObject *V24_Method_Register( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Redraw( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Draw( PyObject * self );
+static PyObject *V24_Method_Create( PyObject * self, PyObject * args );
+static PyObject *V24_Method_UIBlock( PyObject * self, PyObject * args );
 
-static PyObject *Method_Button( PyObject * self, PyObject * args );
-static PyObject *Method_Menu( PyObject * self, PyObject * args );
-static PyObject *Method_Toggle( PyObject * self, PyObject * args );
-static PyObject *Method_Slider( PyObject * self, PyObject * args );
-static PyObject *Method_Scrollbar( PyObject * self, PyObject * args );
-static PyObject *Method_ColorPicker( PyObject * self, PyObject * args );
-static PyObject *Method_Normal( PyObject * self, PyObject * args );
-static PyObject *Method_Number( PyObject * self, PyObject * args );
-static PyObject *Method_String( PyObject * self, PyObject * args );
-static PyObject *Method_GetStringWidth( PyObject * self, PyObject * args );
-static PyObject *Method_Text( PyObject * self, PyObject * args );
-static PyObject *Method_Label( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Button( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Menu( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Toggle( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Slider( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Scrollbar( PyObject * self, PyObject * args );
+static PyObject *V24_Method_ColorPicker( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Normal( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Number( PyObject * self, PyObject * args );
+static PyObject *V24_Method_String( PyObject * self, PyObject * args );
+static PyObject *V24_Method_GetStringWidth( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Text( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Label( PyObject * self, PyObject * args );
 /* by Campbell: */
-static PyObject *Method_PupMenu( PyObject * self, PyObject * args );
-static PyObject *Method_PupIntInput( PyObject * self, PyObject * args );
-static PyObject *Method_PupFloatInput( PyObject * self, PyObject * args );
-static PyObject *Method_PupStrInput( PyObject * self, PyObject * args );
-static PyObject *Method_BeginAlign( PyObject * self, PyObject * args  );
-static PyObject *Method_EndAlign( PyObject * self, PyObject * args  );
+static PyObject *V24_Method_PupMenu( PyObject * self, PyObject * args );
+static PyObject *V24_Method_PupIntInput( PyObject * self, PyObject * args );
+static PyObject *V24_Method_PupFloatInput( PyObject * self, PyObject * args );
+static PyObject *V24_Method_PupStrInput( PyObject * self, PyObject * args );
+static PyObject *V24_Method_BeginAlign( PyObject * self, PyObject * args  );
+static PyObject *V24_Method_EndAlign( PyObject * self, PyObject * args  );
 /* next by Jonathan Merritt (lancelet): */
-static PyObject *Method_Image( PyObject * self, PyObject * args);
+static PyObject *V24_Method_Image( PyObject * self, PyObject * args);
 /* CLEVER NUMBUT */
-static PyObject *Method_PupBlock( PyObject * self, PyObject * args );
+static PyObject *V24_Method_PupBlock( PyObject * self, PyObject * args );
 
-static uiBlock *Get_uiBlock( void );
+static uiBlock *V24_Get_uiBlock( void );
 
 static void py_slider_update( void *butv, void *data2_unused );
 
 /* hack to get 1 block for the UIBlock, only ever 1 at a time */
 static uiBlock *uiblock=NULL;
 
-static char Draw_doc[] = "The Blender.Draw submodule";
+static char V24_Draw_doc[] = "The Blender.Draw submodule";
 
-static char Method_UIBlock_doc[] = "(drawfunc, x,y) - Popup dialog where buttons can be drawn (expemental)";
+static char V24_Method_UIBlock_doc[] = "(drawfunc, x,y) - Popup dialog where buttons can be drawn (expemental)";
 
-static char Method_Register_doc[] =
+static char V24_Method_Register_doc[] =
 	"(draw, event, button) - Register callbacks for windowing\n\n\
 (draw) A function to draw the screen, taking no arguments\n\
 (event) A function to handle events, taking 2 arguments (evt, val)\n\
@@ -156,39 +155,39 @@ static char Method_Register_doc[] =
 A None object can be passed if a callback is unused.";
 
 
-static char Method_Redraw_doc[] = "([after]) - Queue a redraw event\n\n\
+static char V24_Method_Redraw_doc[] = "([after]) - Queue a redraw event\n\n\
 [after=0] Determines whether the redraw is processed before\n\
 or after other input events.\n\n\
 Redraw events are buffered so that regardless of how many events\n\
 are queued the window only receives one redraw event.";
 
-static char Method_Draw_doc[] = "() - Force an immediate redraw\n\n\
+static char V24_Method_Draw_doc[] = "() - Force an immediate redraw\n\n\
 Forced redraws are not buffered, in other words the window is redrawn\n\
 exactly once for everytime this function is called.";
 
 
-static char Method_Create_doc[] =
-	"(value) - Create a default Button object\n\n\
+static char V24_Method_Create_doc[] =
+	"(value) - Create a default V24V24__Button object\n\n\
  (value) - The value to store in the button\n\n\
  Valid values are ints, floats, and strings";
 
-static char Method_Button_doc[] =
-	"(name, event, x, y, width, height, [tooltip]) - Create a new Button \
+static char V24_Method_Button_doc[] =
+	"(name, event, x, y, width, height, [tooltip]) - Create a new V24V24__Button \
 (push) button\n\n\
 (name) A string to display on the button\n\
 (event) The event number to pass to the button event function when activated\n\
 (x, y) The lower left coordinate of the button\n\
 (width, height) The button width and height\n\
 [tooltip=] The button's tooltip\n\n\
-This function can be called as Button() or PushButton().";
+This function can be called as V24V24__Button() or PushButton().";
 
-static char Method_BeginAlign_doc[] =
+static char V24_Method_BeginAlign_doc[] =
 	"Buttons after this function will draw aligned (button layout only)";
 
-static char Method_EndAlign_doc[] =
+static char V24_Method_EndAlign_doc[] =
 	"Use after BeginAlign() to stop aligning the buttons (button layout only).";
 
-static char Method_Menu_doc[] =
+static char V24_Method_Menu_doc[] =
 	"(name, event, x, y, width, height, default, [tooltip]) - Create a new Menu \
 button\n\n\
 (name) A string to display on the button\n\
@@ -204,7 +203,7 @@ Valid format codes are\n\
 	%t - The option should be used as the title\n\
 	%xN - The option should set the integer N in the button value.";
 
-static char Method_Toggle_doc[] =
+static char V24_Method_Toggle_doc[] =
 	"(name, event, x, y, width, height, default, [tooltip]) - Create a new Toggle \
 button\n\n\
 (name) A string to display on the button\n\
@@ -215,7 +214,7 @@ button\n\n\
 [tooltip=] The button's tooltip";
 
 
-static char Method_Slider_doc[] =
+static char V24_Method_Slider_doc[] =
 	"(name, event, x, y, width, height, initial, min, max, [update, tooltip]) - \
 Create a new Slider button\n\n\
 (name) A string to display on the button\n\
@@ -230,9 +229,9 @@ is edited.\n\
 [tooltip=] The button's tooltip";
 
 
-static char Method_Scrollbar_doc[] =
+static char V24_Method_Scrollbar_doc[] =
 	"(event, x, y, width, height, initial, min, max, [update, tooltip]) - Create a \
-new Scrollbar\n\n\
+new V24_Scrollbar\n\n\
 (event) The event number to pass to the button event function when activated\n\
 (x, y) The lower left coordinate of the button\n\
 (width, height) The button width and height\n\
@@ -241,8 +240,8 @@ new Scrollbar\n\n\
 	A non-zero value (default) enables the events. A zero value supresses them.\n\
 [tooltip=] The button's tooltip";
 
-static char Method_ColorPicker_doc[] = 
-	"(event, x, y, width, height, initial, [tooltip]) - Create a new Button \
+static char V24_Method_ColorPicker_doc[] = 
+	"(event, x, y, width, height, initial, [tooltip]) - Create a new V24V24__Button \
 Color picker button\n\n\
 (event) The event number to pass to the button event function when the color changes\n\
 (x, y) The lower left coordinate of the button\n\
@@ -250,8 +249,8 @@ Color picker button\n\n\
 (initial) 3-Float tuple of the color (values between 0 and 1)\
 [tooltip=] The button's tooltip";
 
-static char Method_Normal_doc[] = 
-	"(event, x, y, width, height, initial, [tooltip]) - Create a new Button \
+static char V24_Method_Normal_doc[] = 
+	"(event, x, y, width, height, initial, [tooltip]) - Create a new V24V24__Button \
 Normal button (a sphere that you can roll to change the normal)\n\n\
 (event) The event number to pass to the button event function when the color changes\n\
 (x, y) The lower left coordinate of the button\n\
@@ -259,7 +258,7 @@ Normal button (a sphere that you can roll to change the normal)\n\n\
 (initial) 3-Float tuple of the normal vector (values between -1 and 1)\
 [tooltip=] The button's tooltip";
 
-static char Method_Number_doc[] =
+static char V24_Method_Number_doc[] =
 	"(name, event, x, y, width, height, initial, min, max, [tooltip]) - Create a \
 new Number button\n\n\
 (name) A string to display on the button\n\
@@ -270,7 +269,7 @@ new Number button\n\n\
 limit values.\n\
 [tooltip=] The button's tooltip";
 
-static char Method_String_doc[] =
+static char V24_Method_String_doc[] =
 	"(name, event, x, y, width, height, initial, length, [tooltip]) - Create a \
 new String button\n\n\
 (name) A string to display on the button\n\
@@ -281,22 +280,22 @@ new String button\n\n\
 (length) The maximum input length\n\
 [tooltip=] The button's tooltip";
 
-static char Method_GetStringWidth_doc[] =
+static char V24_Method_GetStringWidth_doc[] =
 	"(text, font = 'normal') - Return the width in pixels of the given string\n\
 (font) The font size: 'normal' (default), 'small' or 'tiny'.";
 
-static char Method_Text_doc[] =
+static char V24_Method_Text_doc[] =
 	"(text, font = 'normal') - Draw text onscreen\n\n\
 (text) The text to draw\n\
 (font) The font size: 'normal' (default), 'small' or 'tiny'.\n\n\
 This function returns the width of the drawn string.";
 
-static char Method_Label_doc[] =
+static char V24_Method_Label_doc[] =
 	"(text, x, y) - Draw a text label onscreen\n\n\
 (text) The text to draw\n\
 (x, y) The lower left coordinate of the lable";
 
-static char Method_PupMenu_doc[] =
+static char V24_Method_PupMenu_doc[] =
 	"(string, maxrow = None) - Display a pop-up menu at the screen.\n\
 The contents of the pop-up are specified through the 'string' argument,\n\
 like with Draw.Menu.\n\
@@ -308,13 +307,13 @@ Valid format codes are\n\
 	%xN - The option should set the integer N in the button value.\n\n\
 Ex: Draw.PupMenu('OK?%t|QUIT BLENDER') # should be familiar ...";
 
-static char Method_PupIntInput_doc[] =
+static char V24_Method_PupIntInput_doc[] =
 	"(text, default, min, max) - Display an int pop-up input.\n\
 (text) - text string to display on the button;\n\
 (default, min, max) - the default, min and max int values for the button;\n\
 Return the user input value or None on user exit";
 
-static char Method_PupFloatInput_doc[] =
+static char V24_Method_PupFloatInput_doc[] =
 	"(text, default, min, max, clickStep, floatLen) - Display a float pop-up input.\n\
 (text) - text string to display on the button;\n\
 (default, min, max) - the default, min and max float values for the button;\n\
@@ -323,7 +322,7 @@ static char Method_PupFloatInput_doc[] =
 the float value show.\n\
 Return the user input value or None on user exit";
 
-static char Method_Image_doc[] =
+static char V24_Method_Image_doc[] =
 	"(image, x, y, zoomx = 1.0, zoomy = 1.0, [clipx, clipy, clipw, cliph])) \n\
     - Draw an image.\n\
 (image) - Blender.Image to draw.\n\
@@ -331,14 +330,14 @@ static char Method_Image_doc[] =
 (zoomx, zoomy) - float zoom factors in horizontal and vertical directions.\n\
 (clipx, clipy, clipw, cliph) - integers specifying a clipping rectangle within the original image.";
 
-static char Method_PupStrInput_doc[] =
+static char V24_Method_PupStrInput_doc[] =
 	"(text, default, max = 20) - Display a float pop-up input.\n\
 (text) - text string to display on the button;\n\
 (default) - the initial string to display (truncated to 'max' chars);\n\
 (max = 20) - The maximum number of chars the user can input;\n\
 Return the user input value or None on user exit";
 
-static char Method_PupBlock_doc[] =
+static char V24_Method_PupBlock_doc[] =
 	"(title, sequence) - Display a pop-up block.\n\
 (title) - The title of the block.\n\
 (sequence) - A sequence defining what the block contains. \
@@ -354,56 +353,56 @@ Return 1 if the pop-up is confirmed, 0 otherwise. \n\
 Warning: On cancel, the value objects are brought back to there previous values, \
 \texcept for string values which will still contain the modified values.\n";
 
-static char Method_Exit_doc[] = "() - Exit the windowing interface";
+static char V24_Method_Exit_doc[] = "() - Exit the windowing interface";
 
 /*This is needed for button callbacks.  Any button that uses a callback gets added to this list.
   On the C side of drawing begin, this list should be cleared.
   Each entry is a tuple of the form (button, callback py object)
 */
-PyObject *M_Button_List = NULL;
+PyObject *V24_M_Button_List = NULL;
 
 static struct PyMethodDef Draw_methods[] = {
-	{"Create", (PyCFunction)Method_Create, METH_VARARGS, Method_Create_doc},
-	{"UIBlock", (PyCFunction)Method_UIBlock, METH_VARARGS, Method_UIBlock_doc},
-	{"Button", (PyCFunction)Method_Button, METH_VARARGS, Method_Button_doc},
-	{"Toggle", (PyCFunction)Method_Toggle, METH_VARARGS, Method_Toggle_doc},
-	{"Menu", (PyCFunction)Method_Menu, METH_VARARGS, Method_Menu_doc},
-	{"Slider", (PyCFunction)Method_Slider, METH_VARARGS, Method_Slider_doc},
-	{"Scrollbar", (PyCFunction)Method_Scrollbar, METH_VARARGS, Method_Scrollbar_doc},
-	{"ColorPicker", (PyCFunction)Method_ColorPicker, METH_VARARGS, Method_ColorPicker_doc},
-	{"Normal", (PyCFunction)Method_Normal, METH_VARARGS, Method_Normal_doc},
-	{"Number", (PyCFunction)Method_Number, METH_VARARGS, Method_Number_doc},
-	{"String", (PyCFunction)Method_String, METH_VARARGS, Method_String_doc},
-	{"GetStringWidth", (PyCFunction)Method_GetStringWidth, METH_VARARGS, Method_GetStringWidth_doc},
-	{"Text", (PyCFunction)Method_Text, METH_VARARGS, Method_Text_doc},
-	{"Label", (PyCFunction)Method_Label, METH_VARARGS, Method_Label_doc},
-	{"PupMenu", (PyCFunction)Method_PupMenu, METH_VARARGS, Method_PupMenu_doc},
-	{"PupIntInput", (PyCFunction)Method_PupIntInput, METH_VARARGS, Method_PupIntInput_doc},
-	{"PupFloatInput", (PyCFunction)Method_PupFloatInput, METH_VARARGS, Method_PupFloatInput_doc},
-	{"PupStrInput", (PyCFunction)Method_PupStrInput, METH_VARARGS, Method_PupStrInput_doc},
-	{"PupBlock", (PyCFunction)Method_PupBlock, METH_VARARGS, Method_PupBlock_doc},
-	{"Image", (PyCFunction)Method_Image, METH_VARARGS, Method_Image_doc},
-	{"Exit", (PyCFunction)Method_Exit, METH_NOARGS, Method_Exit_doc},
-	{"Redraw", (PyCFunction)Method_Redraw, METH_VARARGS, Method_Redraw_doc},
-	{"Draw", (PyCFunction)Method_Draw, METH_NOARGS, Method_Draw_doc},
-	{"Register", (PyCFunction)Method_Register, METH_VARARGS, Method_Register_doc},
-	{"PushButton", (PyCFunction)Method_Button, METH_VARARGS, Method_Button_doc},
-	{"BeginAlign", (PyCFunction)Method_BeginAlign, METH_VARARGS, Method_BeginAlign_doc},
-	{"EndAlign", (PyCFunction)Method_EndAlign, METH_VARARGS, Method_EndAlign_doc},
+	{"Create", (PyCFunction)V24_Method_Create, METH_VARARGS, V24_Method_Create_doc},
+	{"UIBlock", (PyCFunction)V24_Method_UIBlock, METH_VARARGS, V24_Method_UIBlock_doc},
+	{"V24V24__Button", (PyCFunction)V24_Method_Button, METH_VARARGS, V24_Method_Button_doc},
+	{"Toggle", (PyCFunction)V24_Method_Toggle, METH_VARARGS, V24_Method_Toggle_doc},
+	{"Menu", (PyCFunction)V24_Method_Menu, METH_VARARGS, V24_Method_Menu_doc},
+	{"Slider", (PyCFunction)V24_Method_Slider, METH_VARARGS, V24_Method_Slider_doc},
+	{"V24_Scrollbar", (PyCFunction)V24_Method_Scrollbar, METH_VARARGS, V24_Method_Scrollbar_doc},
+	{"ColorPicker", (PyCFunction)V24_Method_ColorPicker, METH_VARARGS, V24_Method_ColorPicker_doc},
+	{"Normal", (PyCFunction)V24_Method_Normal, METH_VARARGS, V24_Method_Normal_doc},
+	{"Number", (PyCFunction)V24_Method_Number, METH_VARARGS, V24_Method_Number_doc},
+	{"String", (PyCFunction)V24_Method_String, METH_VARARGS, V24_Method_String_doc},
+	{"GetStringWidth", (PyCFunction)V24_Method_GetStringWidth, METH_VARARGS, V24_Method_GetStringWidth_doc},
+	{"Text", (PyCFunction)V24_Method_Text, METH_VARARGS, V24_Method_Text_doc},
+	{"Label", (PyCFunction)V24_Method_Label, METH_VARARGS, V24_Method_Label_doc},
+	{"PupMenu", (PyCFunction)V24_Method_PupMenu, METH_VARARGS, V24_Method_PupMenu_doc},
+	{"PupIntInput", (PyCFunction)V24_Method_PupIntInput, METH_VARARGS, V24_Method_PupIntInput_doc},
+	{"PupFloatInput", (PyCFunction)V24_Method_PupFloatInput, METH_VARARGS, V24_Method_PupFloatInput_doc},
+	{"PupStrInput", (PyCFunction)V24_Method_PupStrInput, METH_VARARGS, V24_Method_PupStrInput_doc},
+	{"PupBlock", (PyCFunction)V24_Method_PupBlock, METH_VARARGS, V24_Method_PupBlock_doc},
+	{"Image", (PyCFunction)V24_Method_Image, METH_VARARGS, V24_Method_Image_doc},
+	{"Exit", (PyCFunction)V24_Method_Exit, METH_NOARGS, V24_Method_Exit_doc},
+	{"Redraw", (PyCFunction)V24_Method_Redraw, METH_VARARGS, V24_Method_Redraw_doc},
+	{"Draw", (PyCFunction)V24_Method_Draw, METH_NOARGS, V24_Method_Draw_doc},
+	{"Register", (PyCFunction)V24_Method_Register, METH_VARARGS, V24_Method_Register_doc},
+	{"PushButton", (PyCFunction)V24_Method_Button, METH_VARARGS, V24_Method_Button_doc},
+	{"BeginAlign", (PyCFunction)V24_Method_BeginAlign, METH_VARARGS, V24_Method_BeginAlign_doc},
+	{"EndAlign", (PyCFunction)V24_Method_EndAlign, METH_VARARGS, V24_Method_EndAlign_doc},
 	{NULL, NULL, 0, NULL}
 };
 
-PyTypeObject Button_Type = {
+PyTypeObject V24_Button_Type = {
 	PyObject_HEAD_INIT( NULL ) 0,	/*ob_size */
-	"Button",		/*tp_name */
-	sizeof( Button ),	/*tp_basicsize */
+	"V24V24__Button",		/*tp_name */
+	sizeof( V24V24__Button ),	/*tp_basicsize */
 	0,			/*tp_itemsize */
-	( destructor ) Button_dealloc,	/*tp_dealloc */
+	( destructor ) V24_Button_dealloc,	/*tp_dealloc */
 	( printfunc ) 0,	/*tp_print */
-	( getattrfunc ) Button_getattr,	/*tp_getattr */
-	( setattrfunc ) Button_setattr,	/*tp_setattr */
+	( getattrfunc ) V24_Button_getattr,	/*tp_getattr */
+	( setattrfunc ) V24_Button_setattr,	/*tp_setattr */
 	NULL,		/*tp_cmp */
-	( reprfunc ) Button_repr,	/*tp_repr */
+	( reprfunc ) V24_Button_repr,	/*tp_repr */
 
 	/* Method suites for standard classes */
 
@@ -435,7 +434,7 @@ PyTypeObject Button_Type = {
 
   /***  Assigned meaning in release 2.1 ***/
   /*** rich comparisons ***/
-	(richcmpfunc)Button_richcmpr,                       /* richcmpfunc tp_richcompare; */
+	(richcmpfunc)V24_Button_richcmpr,                       /* richcmpfunc tp_richcompare; */
 
   /***  weak reference enabler ***/
 	0,                          /* long tp_weaklistoffset; */
@@ -470,9 +469,9 @@ PyTypeObject Button_Type = {
 	NULL
 };
 
-static void Button_dealloc( PyObject * self )
+static void V24_Button_dealloc( PyObject * self )
 {
-	Button *but = ( Button * ) self;
+	V24V24__Button *but = ( V24V24__Button * ) self;
 
 	if( but->type == BSTRING_TYPE ) {
 		if( but->val.asstr )
@@ -482,9 +481,9 @@ static void Button_dealloc( PyObject * self )
 	PyObject_DEL( self );
 }
 
-static PyObject *Button_getattr( PyObject * self, char *name )
+static PyObject *V24_Button_getattr( PyObject * self, char *name )
 {
-	Button *but = ( Button * ) self;
+	V24V24__Button *but = ( V24V24__Button * ) self;
 	
 	if( strcmp( name, "val" ) == 0 ) {
 		if( but->type == BINT_TYPE )
@@ -501,9 +500,9 @@ static PyObject *Button_getattr( PyObject * self, char *name )
 	return NULL;
 }
 
-static int Button_setattr( PyObject * self, char *name, PyObject * v )
+static int V24_Button_setattr( PyObject * self, char *name, PyObject * v )
 {
-	Button *but = ( Button * ) self;
+	V24V24__Button *but = ( V24V24__Button * ) self;
 
 	if( strcmp( name, "val" ) == 0 ) {
 		if( but->type == BINT_TYPE && PyNumber_Check(v) ) {
@@ -533,7 +532,7 @@ static int Button_setattr( PyObject * self, char *name, PyObject * v )
 			PyString_AsStringAndSize( v, &newstr, (int *)&newlen );
 			
 			if (newlen+1> UI_MAX_DRAW_STR)
-				return EXPP_ReturnIntError( PyExc_ValueError, "Error: button string length exceeded max limit (399 chars).");
+				return V24_EXPP_ReturnIntError( PyExc_ValueError, "Error: button string length exceeded max limit (399 chars).");
 
 			/* if the length of the new string is the same as */
 			/* the old one, just copy, else delete and realloc. */
@@ -559,39 +558,39 @@ static int Button_setattr( PyObject * self, char *name, PyObject * v )
 		/*
 		 * Accessing the wrong attribute.
 		 */
-		return EXPP_ReturnIntError( PyExc_AttributeError, name );
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError, name );
 	}
 
 	/*
 	 * Correct attribute but value is incompatible with current button value.
 	 */
-	return EXPP_ReturnIntError( PyExc_ValueError, "value incompatible with current button type" );
+	return V24_EXPP_ReturnIntError( PyExc_ValueError, "value incompatible with current button type" );
 }
 
-static PyObject *Button_repr( PyObject * self )
+static PyObject *V24_Button_repr( PyObject * self )
 {
-	return PyObject_Repr( Button_getattr( self, "val" ) );
+	return PyObject_Repr( V24_Button_getattr( self, "val" ) );
 }
 
-static PyObject *Button_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type)
+static PyObject *V24_Button_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type)
 {
 	PyObject *ret, *valA=NULL, *valB=NULL;
 	if (ButtonObject_Check(objectA))
-		objectA = valA = Button_getattr( objectA, "val" );
+		objectA = valA = V24_Button_getattr( objectA, "val" );
 	if (ButtonObject_Check(objectB))
-		objectB = valB = Button_getattr( objectB, "val" );
+		objectB = valB = V24_Button_getattr( objectB, "val" );
 	ret = PyObject_RichCompare(objectA, objectB, comparison_type);
-	Py_XDECREF(valA); /* Button_getattr created with 1 ref, we dont care about them now */
+	Py_XDECREF(valA); /* V24_Button_getattr created with 1 ref, we dont care about them now */
 	Py_XDECREF(valB);
 	return ret;
 }
 
 
-static Button *newbutton( void )
+static V24V24__Button *newbutton( void )
 {
-	Button *but = NULL;
+	V24V24__Button *but = NULL;
 	
-	but = ( Button * ) PyObject_NEW( Button, &Button_Type );
+	but = ( V24V24__Button * ) PyObject_NEW( V24V24__Button, &V24_Button_Type );
 	but->tooltip[0] = 0; /*NULL-terminate tooltip string*/
 	but->tooltip[255] = 0; /*necassary to insure we always have a NULL-terminated string, as
 	                         according to the docs strncpy doesn't do this for us.*/
@@ -659,7 +658,7 @@ static void exec_callback( SpaceScript * sc, PyObject * callback,
 /* BPY_spacescript_do_pywin_draw, the static spacescript_do_pywin_buttons and
  * BPY_spacescript_do_pywin_event are the three functions responsible for
  * calling the draw, buttons and event callbacks registered with Draw.Register
- * (see Method_Register below).  They are called (only the two BPY_ ones)
+ * (see V24_Method_Register below).  They are called (only the two BPY_ ones)
  * from blender/src/drawscript.c */
 
 void BPY_spacescript_do_pywin_draw( SpaceScript * sc )
@@ -735,13 +734,13 @@ void BPY_spacescript_do_pywin_event( SpaceScript * sc, unsigned short event,
 		int pass_ascii = 0;
 		if (ascii > 31 && ascii != 127) {
 			pass_ascii = 1;
-			EXPP_dict_set_item_str(g_blenderdict, "event",
+			V24_EXPP_dict_set_item_str(g_blenderdict, "event",
 					PyInt_FromLong((long)ascii));
 		}
 		exec_callback( sc, sc->script->py_event,
 			Py_BuildValue( "(ii)", event, val ) );
 		if (pass_ascii)
-			EXPP_dict_set_item_str(g_blenderdict, "event",
+			V24_EXPP_dict_set_item_str(g_blenderdict, "event",
 					PyString_FromString(""));
 	}
 }
@@ -759,7 +758,7 @@ static void exec_but_callback(void *pyobj, void *data)
 	if (callback==NULL || callback == Py_None)
 		return;
 	
-	/* Button types support
+	/* V24V24__Button types support
 	case MENU:	
 	case TEX:
 	case TOG:
@@ -826,17 +825,17 @@ static void exec_but_callback(void *pyobj, void *data)
 }
 
 /*note that this function populates the drawbutton ref lists.*/
-static void set_pycallback(uiBut *ubut, PyObject *callback, Button *but)
+static void set_pycallback(uiBut *ubut, PyObject *callback, V24V24__Button *but)
 {
 	PyObject *tuple;
 	if (!callback || !PyCallable_Check(callback)) {
-		if (M_Button_List && but) {
-			PyList_Append(M_Button_List, (PyObject*)but);
+		if (V24_M_Button_List && but) {
+			PyList_Append(V24_M_Button_List, (PyObject*)but);
 		}
 		return;
 	}
 	
-	if (M_Button_List) {
+	if (V24_M_Button_List) {
 		if (but) tuple = PyTuple_New(2);
 		else tuple = PyTuple_New(1);
 		
@@ -847,7 +846,7 @@ static void set_pycallback(uiBut *ubut, PyObject *callback, Button *but)
 		PyTuple_SET_ITEM(tuple, 0, callback);
 		if (but) PyTuple_SET_ITEM(tuple, 1, (PyObject*)but);
 		
-		PyList_Append(M_Button_List, tuple);
+		PyList_Append(V24_M_Button_List, tuple);
 		Py_DECREF(tuple); /*we have to do this to aovid double references.*/
 		
 		uiButSetFunc(ubut, exec_but_callback, callback, ubut);
@@ -856,21 +855,21 @@ static void set_pycallback(uiBut *ubut, PyObject *callback, Button *but)
 
 void BPy_Set_DrawButtonsList(void *list)
 {
-	M_Button_List = list;
+	V24_M_Button_List = list;
 }
 
 /*this MUST be called after doing UI stuff.*/
 void BPy_Free_DrawButtonsList(void)
 {
 	/*Clear the list.*/
-	if (M_Button_List) {
-		PyList_SetSlice(M_Button_List, 0, PyList_Size(M_Button_List), NULL);
-		Py_DECREF(M_Button_List);
-		M_Button_List = NULL;
+	if (V24_M_Button_List) {
+		PyList_SetSlice(V24_M_Button_List, 0, PyList_Size(V24_M_Button_List), NULL);
+		Py_DECREF(V24_M_Button_List);
+		V24_M_Button_List = NULL;
 	}
 }
 
-static PyObject *Method_Exit( PyObject * self )
+static PyObject *V24_Method_Exit( PyObject * self )
 {
 	SpaceScript *sc;
 	Script *script;
@@ -892,12 +891,12 @@ static PyObject *Method_Exit( PyObject * self )
 	Py_RETURN_NONE;
 }
 
-/* Method_Register (Draw.Register) registers callbacks for drawing, events
+/* V24_Method_Register (Draw.Register) registers callbacks for drawing, events
  * and gui button events, so a script can continue executing after the
  * interpreter reached its end and returned control to Blender.  Everytime
  * the SPACE_SCRIPT window with this script is redrawn, the registered
  * callbacks are executed. */
-static PyObject *Method_Register( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Register( PyObject * self, PyObject * args )
 {
 	PyObject *newdrawc = NULL, *neweventc = NULL, *newbuttonc = NULL;
 	SpaceScript *sc;
@@ -906,7 +905,7 @@ static PyObject *Method_Register( PyObject * self, PyObject * args )
 
 	if( !PyArg_ParseTuple
 	    ( args, "O|OO", &newdrawc, &neweventc, &newbuttonc ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected one or three PyObjects" );
 
 	if( !PyCallable_Check( newdrawc ) )
@@ -930,7 +929,7 @@ static PyObject *Method_Register( PyObject * self, PyObject * args )
 	/* There are two kinds of scripts:
 	 * a) those that simply run, finish and return control to Blender;
 	 * b) those that do like 'a)' above but leave callbacks for drawing,
-	 * events and button events, with this Method_Register (Draw.Register
+	 * events and button events, with this V24_Method_Register (Draw.Register
 	 * in Python).  These callbacks are called by scriptspaces (Scripts windows).
 	 *
 	 * We need to flag scripts that leave callbacks so their namespaces are
@@ -949,7 +948,7 @@ static PyObject *Method_Register( PyObject * self, PyObject * args )
 		/* not new, it's a left callback calling Register again */
  		script = sc->script;
 		if( !script ) {
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"Draw.Register can't be used inside script links" );
 		}
 	}
@@ -980,12 +979,12 @@ static PyObject *Method_Register( PyObject * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Method_Redraw( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Redraw( PyObject * self, PyObject * args )
 {
 	int after = 0;
 
 	if( !PyArg_ParseTuple( args, "|i", &after ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected int argument (or nothing)" );
 
 	if( after )
@@ -996,10 +995,10 @@ static PyObject *Method_Redraw( PyObject * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Method_Draw( PyObject * self )
+static PyObject *V24_Method_Draw( PyObject * self )
 {
 	/*@ If forced drawing is disable queue a redraw event instead */
-	if( EXPP_disable_force_draw ) {
+	if( V24_EXPP_disable_force_draw ) {
 		scrarea_queue_winredraw( curarea );
 		Py_RETURN_NONE;
 	}
@@ -1011,9 +1010,9 @@ static PyObject *Method_Draw( PyObject * self )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Method_Create( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Create( PyObject * self, PyObject * args )
 {
-	Button *but = NULL;
+	V24V24__Button *but = NULL;
 	PyObject *val;
 	char *newstr;
 
@@ -1059,18 +1058,18 @@ static PyObject *Method_Create( PyObject * self, PyObject * args )
 }
 
 
-static PyObject *Method_UIBlock( PyObject * self, PyObject * args )
+static PyObject *V24_Method_UIBlock( PyObject * self, PyObject * args )
 {
 	PyObject *val = NULL;
 	PyObject *result = NULL;
 	ListBase listb= {NULL, NULL};
 
 	if ( !PyArg_ParseTuple( args, "O", &val ) || !PyCallable_Check( val ) ) 
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected 1 python function and 2 ints" );
 
 	if (uiblock)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 	      "cannot run more then 1 UIBlock at a time" );
 
 	BPy_Set_DrawButtonsList(PyList_New(0));
@@ -1114,12 +1113,12 @@ static PyObject *Method_UIBlock( PyObject * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-void Set_uiBlock(uiBlock *block)
+void V24_Set_uiBlock(uiBlock *block)
 {
 	uiblock = block;
 }
 
-static uiBlock *Get_uiBlock( void )
+static uiBlock *V24_Get_uiBlock( void )
 {
 	char butblock[32];
 	/* Global, used now for UIBlock */
@@ -1149,9 +1148,9 @@ static int check_button_event(int *event) {
 	return 0;
 }
 
-static PyObject *Method_BeginAlign( PyObject * self, PyObject * args )
+static PyObject *V24_Method_BeginAlign( PyObject * self, PyObject * args )
 {
-	uiBlock *block = Get_uiBlock(  );
+	uiBlock *block = V24_Get_uiBlock(  );
 	
 	if (block)
 		uiBlockBeginAlign(block);
@@ -1159,9 +1158,9 @@ static PyObject *Method_BeginAlign( PyObject * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Method_EndAlign( PyObject * self, PyObject * args )
+static PyObject *V24_Method_EndAlign( PyObject * self, PyObject * args )
 {
-	uiBlock *block = Get_uiBlock(  );
+	uiBlock *block = V24_Get_uiBlock(  );
 	
 	if (block)
 		uiBlockEndAlign(block);
@@ -1169,7 +1168,7 @@ static PyObject *Method_EndAlign( PyObject * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Method_Button( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Button( PyObject * self, PyObject * args )
 {
 	uiBlock *block;
 	char *name, *tip = NULL;
@@ -1179,12 +1178,12 @@ static PyObject *Method_Button( PyObject * self, PyObject * args )
 
 	if( !PyArg_ParseTuple( args, "siiiii|sO", &name, &event,
 			       &x, &y, &w, &h, &tip, &callback ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a string, five ints and optionally string and callback arguments" );
 
 	UI_METHOD_ERRORCHECK;
 
-	block = Get_uiBlock(  );
+	block = V24_Get_uiBlock(  );
 	if( block ) {
 		uiBut *ubut = uiDefBut( block, BUT, event, name, (short)x, (short)y, (short)w, (short)h, 0, 0, 0, 0, 0, tip );
 		set_pycallback(ubut, callback, NULL);
@@ -1192,18 +1191,18 @@ static PyObject *Method_Button( PyObject * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Method_Menu( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Menu( PyObject * self, PyObject * args )
 {
 	uiBlock *block;
 	char *name, *tip = NULL;
 	int event, def;
 	int x, y, w, h;
-	Button *but;
+	V24V24__Button *but;
 	PyObject *callback=NULL;
 
 	if( !PyArg_ParseTuple( args, "siiiiii|sO", &name, &event,
 			       &x, &y, &w, &h, &def, &tip, &callback ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a string, six ints and optionally string and callback arguments" );
 
 	UI_METHOD_ERRORCHECK;
@@ -1213,7 +1212,7 @@ static PyObject *Method_Menu( PyObject * self, PyObject * args )
 	but->val.asint = def;
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
 	
-	block = Get_uiBlock(  );
+	block = V24_Get_uiBlock(  );
 	if( block ) {
 		uiBut *ubut = uiDefButI( block, MENU, event, name, (short)x, (short)y, (short)w, (short)h,
 			   &but->val.asint, 0, 0, 0, 0, but->tooltip );
@@ -1222,18 +1221,18 @@ static PyObject *Method_Menu( PyObject * self, PyObject * args )
 	return ( PyObject * ) but;
 }
 
-static PyObject *Method_Toggle( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Toggle( PyObject * self, PyObject * args )
 {
 	uiBlock *block;
 	char *name, *tip = NULL;
 	int event;
 	int x, y, w, h, def;
-	Button *but;
+	V24V24__Button *but;
 	PyObject *callback=NULL;
 
 	if( !PyArg_ParseTuple( args, "siiiiii|sO", &name, &event,
 			       &x, &y, &w, &h, &def, &tip, &callback ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a string, six ints and optionally string and callback arguments" );
 
 	UI_METHOD_ERRORCHECK;
@@ -1243,7 +1242,7 @@ static PyObject *Method_Toggle( PyObject * self, PyObject * args )
 	but->val.asint = def;
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
 	
-	block = Get_uiBlock(  );
+	block = V24_Get_uiBlock(  );
 	if( block ) {
 		uiBut *ubut = uiDefButI( block, TOG, event, name, (short)x, (short)y, (short)w, (short)h,
 			   &but->val.asint, 0, 0, 0, 0, but->tooltip );
@@ -1265,7 +1264,7 @@ static void py_slider_update( void *butv, void *data2_unused )
 	PyObject *ref = Py_BuildValue( "(i)", SPACE_VIEW3D );
 	PyObject *ret = NULL;
 
-	EXPP_disable_force_draw = 1;
+	V24_EXPP_disable_force_draw = 1;
 	/*@ Disable forced drawing, otherwise the button object which
 	 * is still being used might be deleted */
 
@@ -1278,30 +1277,30 @@ static void py_slider_update( void *butv, void *data2_unused )
 		(unsigned short)uiButGetRetVal( but ) -  EXPP_BUTTON_EVENTS_OFFSET );
 
 	/* XXX useless right now, investigate better before a bcon 5 */
-	ret = M_Window_Redraw( 0, ref );
+	ret = V24_M_Window_Redraw( 0, ref );
 
 	Py_XDECREF(ref);
 	Py_XDECREF(ret);
 
 	disable_where_script( 0 );
 
-	EXPP_disable_force_draw = 0;
+	V24_EXPP_disable_force_draw = 0;
 }
 
-static PyObject *Method_Slider( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Slider( PyObject * self, PyObject * args )
 {
 	uiBlock *block;
 	char *name, *tip = NULL;
 	int event;
 	int x, y, w, h, realtime = 1;
-	Button *but;
+	V24V24__Button *but;
 	PyObject *mino, *maxo, *inio;
 	PyObject *callback=NULL;
 
 	if( !PyArg_ParseTuple( args, "siiiiiOOO|isO", &name, &event,
 			       &x, &y, &w, &h, &inio, &mino, &maxo, &realtime,
 			       &tip, &callback ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a string, five ints, three PyObjects\n\
 			and optionally int, string and callback arguments" );
 
@@ -1323,7 +1322,7 @@ static PyObject *Method_Slider( PyObject * self, PyObject * args )
 		but->val.asfloat = ini;
 		if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
 		
-		block = Get_uiBlock(  );
+		block = V24_Get_uiBlock(  );
 		if( block ) {
 			uiBut *ubut;
 			ubut = uiDefButF( block, NUMSLI, event, name, (short)x, (short)y, (short)w,
@@ -1345,7 +1344,7 @@ static PyObject *Method_Slider( PyObject * self, PyObject * args )
 		but->val.asint = ini;
 		if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
 		
-		block = Get_uiBlock(  );
+		block = V24_Get_uiBlock(  );
 		if( block ) {
 			uiBut *ubut;
 			ubut = uiDefButI( block, NUMSLI, event, name, (short)x, (short)y, (short)w,
@@ -1360,30 +1359,30 @@ static PyObject *Method_Slider( PyObject * self, PyObject * args )
 	return ( PyObject * ) but;
 }
 
-static PyObject *Method_Scrollbar( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Scrollbar( PyObject * self, PyObject * args )
 {
 	char *tip = NULL;
 	uiBlock *block;
 	int event;
 	int x, y, w, h, realtime = 1;
-	Button *but;
+	V24V24__Button *but;
 	PyObject *mino, *maxo, *inio;
 	float ini, min, max;
 	uiBut *ubut;
 	
 	if( !PyArg_ParseTuple( args, "iiiiiOOO|isO", &event, &x, &y, &w, &h,
 			       &inio, &mino, &maxo, &realtime, &tip ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected five ints, three PyObjects and optionally\n\
 another int and string as arguments" );
 
 	if( !PyNumber_Check( inio ) || !PyNumber_Check( inio )
 	    || !PyNumber_Check( inio ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected numbers for initial, min, and max" );
 
 	if (check_button_event(&event) == -1)
-	return EXPP_ReturnPyObjError( PyExc_AttributeError,
+	return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 		"button event argument must be in the range [0, 16382]");
 
 	but = newbutton(  );
@@ -1398,7 +1397,7 @@ another int and string as arguments" );
 	min = (float)PyFloat_AsDouble( mino );
 	max = (float)PyFloat_AsDouble( maxo );
 	
-	block = Get_uiBlock(  );
+	block = V24_Get_uiBlock(  );
 
 	if( block ) {
 		if( but->type == BFLOAT_TYPE ) {
@@ -1418,10 +1417,10 @@ another int and string as arguments" );
 	return ( PyObject * ) but;
 }
 
-static PyObject *Method_ColorPicker( PyObject * self, PyObject * args )
+static PyObject *V24_Method_ColorPicker( PyObject * self, PyObject * args )
 {
 	char USAGE_ERROR[] = "expected a 3-float tuple of values between 0 and 1";
-	Button *but;
+	V24V24__Button *but;
 	PyObject *inio;
 	uiBlock *block;
 	char *tip = NULL;
@@ -1432,21 +1431,21 @@ static PyObject *Method_ColorPicker( PyObject * self, PyObject * args )
 	
 	if( !PyArg_ParseTuple( args, "ihhhhO!|sO", &event,
 			       &x, &y, &w, &h, &PyTuple_Type, &inio, &tip, &callback ) )
- 		return EXPP_ReturnPyObjError( PyExc_TypeError,
+ 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected five ints, one tuple and optionally string and callback arguments" );
  
 	UI_METHOD_ERRORCHECK;
  
 	if ( !PyArg_ParseTuple( inio, "fff", col, col+1, col+2 ) )
-		return EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
 
 	if	(	col[0] < 0 || col[0] > 1
 		||	col[1] < 0 || col[1] > 1
 		||	col[2] < 0 || col[2] > 1 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
 
-	if ( EXPP_check_sequence_consistency( inio, &PyFloat_Type ) != 1 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
+	if ( V24_EXPP_check_sequence_consistency( inio, &PyFloat_Type ) != 1 )
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
  
 	but = newbutton();
  
@@ -1456,7 +1455,7 @@ static PyObject *Method_ColorPicker( PyObject * self, PyObject * args )
 	but->val.asvec[2] = col[2];
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
 	
-	block = Get_uiBlock(  );
+	block = V24_Get_uiBlock(  );
 	if( block ) {
 		uiBut *ubut;
 		ubut = uiDefButF( block, COL, event, "", x, y, w, h, but->val.asvec, 0, 0, 0, 0, but->tooltip);
@@ -1468,10 +1467,10 @@ static PyObject *Method_ColorPicker( PyObject * self, PyObject * args )
 
 
 
-static PyObject *Method_Normal( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Normal( PyObject * self, PyObject * args )
 {
 	char USAGE_ERROR[] = "expected a 3-float tuple of values between -1 and 1";
-	Button *but;
+	V24V24__Button *but;
 	PyObject *inio;
 	uiBlock *block;
 	char *tip = NULL;
@@ -1482,16 +1481,16 @@ static PyObject *Method_Normal( PyObject * self, PyObject * args )
 	
 	if( !PyArg_ParseTuple( args, "ihhhhO!|sO", &event,
 			       &x, &y, &w, &h, &PyTuple_Type, &inio, &tip, &callback ) )
- 		return EXPP_ReturnPyObjError( PyExc_TypeError,
+ 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected five ints, one tuple and optionally string and callback arguments" );
  
 	UI_METHOD_ERRORCHECK;
  
 	if ( !PyArg_ParseTuple( inio, "fff", nor, nor+1, nor+2 ) )
-		return EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
 
-	if ( EXPP_check_sequence_consistency( inio, &PyFloat_Type ) != 1 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
+	if ( V24_EXPP_check_sequence_consistency( inio, &PyFloat_Type ) != 1 )
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
  
 	but = newbutton();
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
@@ -1501,7 +1500,7 @@ static PyObject *Method_Normal( PyObject * self, PyObject * args )
 	but->val.asvec[1] = nor[1];
 	but->val.asvec[2] = nor[2];
 	
-	block = Get_uiBlock(  );
+	block = V24_Get_uiBlock(  );
 	if( block ) {
 		uiBut *ubut;
 		ubut = uiDefButF( block, BUT_NORMAL, event, "", x, y, w, h, but->val.asvec, 0.0f, 1.0f, 0, 0, but->tooltip);
@@ -1511,20 +1510,20 @@ static PyObject *Method_Normal( PyObject * self, PyObject * args )
  	return ( PyObject * ) but;
 }
 
-static PyObject *Method_Number( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Number( PyObject * self, PyObject * args )
 {
 	uiBlock *block;
 	char *name, *tip = NULL;
 	int event;
 	int x, y, w, h;
-	Button *but;
+	V24V24__Button *but;
 	PyObject *mino, *maxo, *inio;
 	PyObject *callback=NULL;
 	uiBut *ubut= NULL;
 	
 	if( !PyArg_ParseTuple( args, "siiiiiOOO|sO", &name, &event,
 			       &x, &y, &w, &h, &inio, &mino, &maxo, &tip, &callback ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a string, five ints, three PyObjects and\n\
 			optionally string and callback arguments" );
 
@@ -1532,7 +1531,7 @@ static PyObject *Method_Number( PyObject * self, PyObject * args )
 
 	but = newbutton(  );
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
-	block = Get_uiBlock(  );
+	block = V24_Get_uiBlock(  );
 	
 	if( PyFloat_Check( inio ) ) {
 		float ini, min, max, range, precission=0;
@@ -1577,26 +1576,26 @@ static PyObject *Method_Number( PyObject * self, PyObject * args )
 	return ( PyObject * ) but;
 }
 
-static PyObject *Method_String( PyObject * self, PyObject * args )
+static PyObject *V24_Method_String( PyObject * self, PyObject * args )
 {
 	uiBlock *block;
 	char *info_arg = NULL, *tip = NULL, *newstr = NULL;
 	char *info_str = NULL, *info_str0 = " ";
 	int event;
 	int x, y, w, h, len, real_len = 0;
-	Button *but;
+	V24V24__Button *but;
 	PyObject *callback=NULL;
 
 	if( !PyArg_ParseTuple( args, "siiiiisi|sO", &info_arg, &event,
 			&x, &y, &w, &h, &newstr, &len, &tip, &callback ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected a string, five ints, a string, an int and\n\
 	optionally string and callback arguments" );
 
 	UI_METHOD_ERRORCHECK;
 
 	if (len > (UI_MAX_DRAW_STR - 1))
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 			"The maximum length of a string is 399, your value is too high.");
 
 	real_len = strlen(newstr);
@@ -1614,7 +1613,7 @@ static PyObject *Method_String( PyObject * self, PyObject * args )
 	if (info_arg[0] == '\0') info_str = info_str0;
 	else info_str = info_arg;
 
-	block = Get_uiBlock(  );
+	block = V24_Get_uiBlock(  );
 	if( block ) {
 		uiBut *ubut = uiDefBut( block, TEX, event, info_str, (short)x, (short)y, (short)w, (short)h,
 			  but->val.asstr, 0, (float)len, 0, 0, but->tooltip );
@@ -1623,7 +1622,7 @@ static PyObject *Method_String( PyObject * self, PyObject * args )
 	return ( PyObject * ) but;
 }
 
-static PyObject *Method_GetStringWidth( PyObject * self, PyObject * args )
+static PyObject *V24_Method_GetStringWidth( PyObject * self, PyObject * args )
 {
 	char *text;
 	char *font_str = "normal";
@@ -1631,7 +1630,7 @@ static PyObject *Method_GetStringWidth( PyObject * self, PyObject * args )
 	PyObject *width;
 
 	if( !PyArg_ParseTuple( args, "s|s", &text, &font_str ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected one or two string arguments" );
 
 	if( !strcmp( font_str, "normal" ) )
@@ -1643,26 +1642,26 @@ static PyObject *Method_GetStringWidth( PyObject * self, PyObject * args )
 	else if( !strcmp( font_str, "tiny" ) )
 		font = ( &G )->fontss;
 	else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "\"font\" must be: 'large', 'normal' (default), 'small' or 'tiny'." );
 
 	width = PyInt_FromLong( BMF_GetStringWidth( font, text ) );
 
 	if( !width )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					      "couldn't create PyInt" );
 
 	return width;
 }
 
-static PyObject *Method_Text( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Text( PyObject * self, PyObject * args )
 {
 	char *text;
 	char *font_str = NULL;
 	struct BMF_Font *font;
 
 	if( !PyArg_ParseTuple( args, "s|s", &text, &font_str ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected one or two string arguments" );
 
 	if( !font_str )
@@ -1676,7 +1675,7 @@ static PyObject *Method_Text( PyObject * self, PyObject * args )
 	else if( !strcmp( font_str, "tiny" ) )
 		font = ( &G )->fontss;
 	else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "\"font\" must be: 'normal' (default), 'large', 'small' or 'tiny'." );
 
 	BMF_DrawString( font, text );
@@ -1684,31 +1683,31 @@ static PyObject *Method_Text( PyObject * self, PyObject * args )
 	return PyInt_FromLong( BMF_GetStringWidth( font, text ) );
 }
 
-static PyObject *Method_Label( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Label( PyObject * self, PyObject * args )
 {
 	uiBlock *block;
 	char *text;
 	int x, y, w, h;
 
 	if( !PyArg_ParseTuple( args, "siiii", &text, &x, &y, &w, &h ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected a string and four ints" );
 
-	block = Get_uiBlock(  );
+	block = V24_Get_uiBlock(  );
 	uiDefBut(block, LABEL, 0, text, x, y, w, h, 0, 0, 0, 0, 0, "");
 	
 	Py_RETURN_NONE;
 }
 
 
-static PyObject *Method_PupMenu( PyObject * self, PyObject * args )
+static PyObject *V24_Method_PupMenu( PyObject * self, PyObject * args )
 {
 	char *text;
 	int maxrow = -1;
 	PyObject *ret;
 
 	if( !PyArg_ParseTuple( args, "s|i", &text, &maxrow ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a string and optionally an int as arguments" );
 
 	if( maxrow >= 0 )
@@ -1719,11 +1718,11 @@ static PyObject *Method_PupMenu( PyObject * self, PyObject * args )
 	if( ret )
 		return ret;
 
-	return EXPP_ReturnPyObjError( PyExc_MemoryError,
+	return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 				      "couldn't create a PyInt" );
 }
 
-static PyObject *Method_PupIntInput( PyObject * self, PyObject * args )
+static PyObject *V24_Method_PupIntInput( PyObject * self, PyObject * args )
 {
 	char *text = NULL;
 	int min = 0, max = 1;
@@ -1731,7 +1730,7 @@ static PyObject *Method_PupIntInput( PyObject * self, PyObject * args )
 	PyObject *ret = NULL;
 
 	if( !PyArg_ParseTuple( args, "s|hii", &text, &var, &min, &max ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected 1 string and 3 int arguments" );
 
 	if( button( &var, (short)min, (short)max, text ) == 0 ) {
@@ -1742,11 +1741,11 @@ static PyObject *Method_PupIntInput( PyObject * self, PyObject * args )
 	if( ret )
 		return ret;
 
-	return EXPP_ReturnPyObjError( PyExc_MemoryError,
+	return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 				      "couldn't create a PyInt" );
 }
 
-static PyObject *Method_PupFloatInput( PyObject * self, PyObject * args )
+static PyObject *V24_Method_PupFloatInput( PyObject * self, PyObject * args )
 {
 	char *text = NULL;
 	float min = 0, max = 1, var = 0, a1 = 10, a2 = 2;
@@ -1754,7 +1753,7 @@ static PyObject *Method_PupFloatInput( PyObject * self, PyObject * args )
 
 	if( !PyArg_ParseTuple
 	    ( args, "s|fffff", &text, &var, &min, &max, &a1, &a2 ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected 1 string and 5 float arguments" );
 
 	if( fbutton( &var, min, max, a1, a2, text ) == 0 ) {
@@ -1765,11 +1764,11 @@ static PyObject *Method_PupFloatInput( PyObject * self, PyObject * args )
 	if( ret )
 		return ret;
 
-	return EXPP_ReturnPyObjError( PyExc_MemoryError,
+	return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 				      "couldn't create a PyFloat" );
 }
 
-static PyObject *Method_PupStrInput( PyObject * self, PyObject * args )
+static PyObject *V24_Method_PupStrInput( PyObject * self, PyObject * args )
 {
 	char *text = NULL, *textMsg = NULL;
 	char tmp[101];
@@ -1777,11 +1776,11 @@ static PyObject *Method_PupStrInput( PyObject * self, PyObject * args )
 	PyObject *ret = NULL;
 
 	if( !PyArg_ParseTuple( args, "ss|b", &textMsg, &text, &max ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected 2 strings and 1 int" );
 
 	if( ( max <= 0 ) || ( max > 100 ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "max string length value must be in the range [1, 100]." );
 
 	/* copying the text string handles both cases:
@@ -1799,11 +1798,11 @@ static PyObject *Method_PupStrInput( PyObject * self, PyObject * args )
 	if( ret )
 		return ret;
 
-	return EXPP_ReturnPyObjError( PyExc_MemoryError,
+	return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 				      "couldn't create a PyString" );
 }
 
-static PyObject *Method_PupBlock( PyObject * self, PyObject * args )
+static PyObject *V24_Method_PupBlock( PyObject * self, PyObject * args )
 {
 	PyObject *pyList, *pyItem;
 	float min, max;
@@ -1811,21 +1810,21 @@ static PyObject *Method_PupBlock( PyObject * self, PyObject * args )
 	char *title;
 
 	if (!PyArg_ParseTuple( args, "sO", &title, &pyList ) || !PySequence_Check( pyList ))
-		return EXPP_ReturnPyObjError( PyExc_TypeError, "expected a string and a sequence" );
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError, "expected a string and a sequence" );
 
 
 	len = PySequence_Length(pyList);
 
 	if (len == 0)
-		return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string and a non-empty sequence." );
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string and a non-empty sequence." );
 
 	if (len > 120) /* LIMIT DEFINED IN toolbox.c	*/
-		return EXPP_ReturnPyObjError( PyExc_ValueError, "sequence cannot have more than 120 elements" );
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "sequence cannot have more than 120 elements" );
 
 	for ( i=0 ; i<len ; i++ ) {
 		PyObject *pyMin = NULL, *pyMax = NULL;
 		PyObject *f1, *f2;
-		Button *but = NULL;
+		V24V24__Button *but = NULL;
 		int tlen;
 		char *text, *tip = NULL;
 
@@ -1843,7 +1842,7 @@ static PyObject *Method_PupBlock( PyObject * self, PyObject * args )
 		else {
 			/* Neither a string or a tuple, error */
 			Py_DECREF( pyItem );
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string or a tuple containing 2 to 5 values." );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string or a tuple containing 2 to 5 values." );
 		}
 
 		switch (tlen) {
@@ -1853,23 +1852,23 @@ static PyObject *Method_PupBlock( PyObject * self, PyObject * args )
 			break;
 		case 2:		/*	TOGGLE	(no tooltip)	*/
 		case 3:		/*	TOGGLE	*/
-			if (!PyArg_ParseTuple( pyItem, "sO!|s", &text, &Button_Type, &but, &tip )) {
+			if (!PyArg_ParseTuple( pyItem, "sO!|s", &text, &V24_Button_Type, &but, &tip )) {
 				Py_DECREF( pyItem );
-				return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a Button object and optionally a string for toggles" );
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a V24V24__Button object and optionally a string for toggles" );
 			}
 
 			if (but->type != BINT_TYPE) {
 				Py_DECREF( pyItem );
-				return EXPP_ReturnPyObjError( PyExc_ValueError, "Button object for toggles should hold an integer" );
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "V24V24__Button object for toggles should hold an integer" );
 			}
 
 			add_numbut(i, TOG|INT, text, 0, 0, &but->val.asint, tip);
 			break;
 		case 4:		/*	TEX and NUM (no tooltip)	*/
 		case 5:		/*	TEX and NUM	*/
-			if (!PyArg_ParseTuple( pyItem, "sO!OO|s", &text, &Button_Type, &but, &pyMin, &pyMax, &tip )) {
+			if (!PyArg_ParseTuple( pyItem, "sO!OO|s", &text, &V24_Button_Type, &but, &pyMin, &pyMax, &tip )) {
 				Py_DECREF( pyItem );
-				return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a Button object, two numerical values and optionally a string for Text and Num buttons" );
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a V24V24__Button object, two numerical values and optionally a string for Text and Num buttons" );
 			}
 
 			f1 = PyNumber_Float(pyMin);
@@ -1877,7 +1876,7 @@ static PyObject *Method_PupBlock( PyObject * self, PyObject * args )
 
 			if (!f1 || !f2) {
 				Py_DECREF( pyItem );
-				return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a Button object, two numerical values and optionally a string for Text and Num buttons" );
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a tuple containing a string, a V24V24__Button object, two numerical values and optionally a string for Text and Num buttons" );
 			}
 
 			min = (float)PyFloat_AS_DOUBLE(f1);
@@ -1895,7 +1894,7 @@ static PyObject *Method_PupBlock( PyObject * self, PyObject * args )
 			case BSTRING_TYPE:
 				if (max+1>UI_MAX_DRAW_STR) {
 					Py_DECREF( pyItem );
-					return EXPP_ReturnPyObjError( PyExc_ValueError, "length of a string buttons must be less then 400" );
+					return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "length of a string buttons must be less then 400" );
 				}
 				max = (float)floor(max);
 
@@ -1914,28 +1913,28 @@ static PyObject *Method_PupBlock( PyObject * self, PyObject * args )
 			break;
 		default:
 			Py_DECREF( pyItem );
-			return EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string or a tuple containing 2 to 5 values." );
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError, "expected a string or a tuple containing 2 to 5 values." );
 		}
 		Py_DECREF( pyItem );
 	}
 
 	if (do_clever_numbuts(title, len, REDRAW))
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	else
-		return EXPP_incr_ret_False();
+		return V24_EXPP_incr_ret_False();
 }
 
 
 /*****************************************************************************
- * Function:            Method_Image                                         *
+ * Function:            V24_Method_Image                                         *
  * Python equivalent:   Blender.Draw.Image                                   *
  *                                                                           *
  * @author Jonathan Merritt <j.merritt@pgrad.unimelb.edu.au>                 *
  ****************************************************************************/
-static PyObject *Method_Image( PyObject * self, PyObject * args )
+static PyObject *V24_Method_Image( PyObject * self, PyObject * args )
 {
 	PyObject *pyObjImage;
-	BPy_Image *py_img;
+	V24_BPy_Image *py_img;
 	Image *image;
 	ImBuf *ibuf;
 	float originX, originY;
@@ -1947,29 +1946,29 @@ static PyObject *Method_Image( PyObject * self, PyObject * args )
 	if( !PyArg_ParseTuple( args, "Off|ffiiii", &pyObjImage, 
 		&originX, &originY, &zoomX, &zoomY, 
 		&clipX, &clipY, &clipW, &clipH ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected a Blender.Image and 2 floats, and " \
 			"optionally 2 floats and 4 ints as arguments" );
 	/* check that the first PyObject is actually a Blender.Image */
 	if( !BPy_Image_Check( pyObjImage ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected a Blender.Image and 2 floats, and " \
 			"optionally 2 floats and 4 ints as arguments" );
 	/* check that the zoom factors are valid */
 	if( ( zoomX <= 0.0 ) || ( zoomY <= 0.0 ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"invalid zoom factors - they must be >= 0.0" );
 
 	/* fetch a C Image pointer from the passed-in Python object */
-	py_img = ( BPy_Image * ) pyObjImage;
+	py_img = ( V24_BPy_Image * ) pyObjImage;
 	image = py_img->image;
 	ibuf = BKE_image_get_ibuf( image, NULL );
 		
 	if( !ibuf )      /* if failed to load the image */
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 									  "couldn't load image data in Blender" );
 	if( !ibuf->rect )      /* no float yet */
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 									  "Image has no byte rect" );
 	
 	/* Update the time tag of the image */
@@ -1980,8 +1979,8 @@ static PyObject *Method_Image( PyObject * self, PyObject * args )
 	 * the clipping is just checked against the bounds of the image.
 	 * if clipW or clipH are less than zero then they include as much of
 	 * the image as they can. */
-	clipX = EXPP_ClampInt( clipX, 0, ibuf->x );
-	clipY = EXPP_ClampInt( clipY, 0, ibuf->y );
+	clipX = V24_EXPP_ClampInt( clipX, 0, ibuf->x );
+	clipY = V24_EXPP_ClampInt( clipY, 0, ibuf->y );
 	if( ( clipW < 0 ) || ( clipW > ( ibuf->x - clipW ) ) )
 		clipW = ibuf->x - clipX;
 	if( ( clipH < 0 ) || ( clipH > ( ibuf->y - clipH ) ) )
@@ -2051,23 +2050,23 @@ static PyObject *Method_Image( PyObject * self, PyObject * args )
 
 }
 
-PyObject *Draw_Init( void )
+PyObject *V24_Draw_Init( void )
 {
 	PyObject *submodule, *dict;
 
-	if( PyType_Ready( &Button_Type) < 0)
+	if( PyType_Ready( &V24_Button_Type) < 0)
 		Py_RETURN_NONE;
 
-	submodule = Py_InitModule3( "Blender.Draw", Draw_methods, Draw_doc );
+	submodule = Py_InitModule3( "Blender.Draw", Draw_methods, V24_Draw_doc );
 
 	dict = PyModule_GetDict( submodule );
 
 #define EXPP_ADDCONST(x) \
-	EXPP_dict_set_item_str(dict, #x, PyInt_FromLong(x))
+	V24_EXPP_dict_set_item_str(dict, #x, PyInt_FromLong(x))
 
 	/* So, for example:
 	 * EXPP_ADDCONST(LEFTMOUSE) becomes
-	 * EXPP_dict_set_item_str(dict, "LEFTMOUSE", PyInt_FromLong(LEFTMOUSE)) 
+	 * V24_EXPP_dict_set_item_str(dict, "LEFTMOUSE", PyInt_FromLong(LEFTMOUSE)) 
 	 */
 
 	EXPP_ADDCONST( LEFTMOUSE );

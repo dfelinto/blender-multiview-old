@@ -42,8 +42,8 @@
 #include <DNA_key_types.h>
 #include <DNA_curve_types.h>
 
-extern PyTypeObject Key_Type;
-extern PyTypeObject KeyBlock_Type;
+extern PyTypeObject V24_Key_Type;
+extern PyTypeObject V24_KeyBlock_Type;
 
 typedef struct {
 	PyObject_HEAD		/* required python macro   */
@@ -51,18 +51,18 @@ typedef struct {
 	/* Object *object;*/		/* for vertex grouping info, since it's stored on the object */
 	/*PyObject *keyBlock;*/
 	/*PyObject *ipo;*/
-} BPy_Key;
+} V24_BPy_Key;
 
 typedef struct {
 	PyObject_HEAD		/* required python macro   */
 	Key *key;
 	KeyBlock * keyblock;
 	/* Object *object;*/		/* for vertex grouping info, since it's stored on the object */
-} BPy_KeyBlock;
+} V24_BPy_KeyBlock;
 
-PyObject *Key_CreatePyObject( Key * k );
-PyObject *KeyBlock_CreatePyObject( KeyBlock * k, Key *parentKey );
+PyObject *V24_Key_CreatePyObject( Key * k );
+PyObject *V24_KeyBlock_CreatePyObject( KeyBlock * k, Key *parentKey );
 
-PyObject *Key_Init( void );
+PyObject *V24_Key_Init( void );
 
 #endif /* EXPP_KEY_H */

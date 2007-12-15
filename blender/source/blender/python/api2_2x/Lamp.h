@@ -37,25 +37,25 @@
 #include "DNA_lamp_types.h"
 #include "rgbTuple.h"
 
-extern PyTypeObject Lamp_Type;
+extern PyTypeObject V24_Lamp_Type;
 
 #define BPy_Lamp_Check(v) \
-    ((v)->ob_type == &Lamp_Type)	/* for type checking */
+    ((v)->ob_type == &V24_Lamp_Type)	/* for type checking */
 
-/* Python BPy_Lamp structure definition */
+/* Python V24_BPy_Lamp structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	Lamp * lamp;		/* libdata must be second */
-	BPy_rgbTuple *color;
-} BPy_Lamp;
+	V24_BPy_rgbTuple *color;
+} V24_BPy_Lamp;
 
 
 /*
  *   prototypes
  */
 
-PyObject *Lamp_Init( void );
-PyObject *Lamp_CreatePyObject( struct Lamp *lamp );
-Lamp *Lamp_FromPyObject( PyObject * pyobj );
+PyObject *V24_Lamp_Init( void );
+PyObject *V24_Lamp_CreatePyObject( struct Lamp *lamp );
+Lamp *V24_Lamp_FromPyObject( PyObject * pyobj );
 
 #endif				/* EXPP_LAMP_H */

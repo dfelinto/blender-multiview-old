@@ -42,7 +42,7 @@
 #include "MEM_guardedalloc.h"
 #include "BLI_blenlib.h"
 
-/* needed for EXPP_ReturnPyObjError and EXPP_check_sequence_consistency */
+/* needed for V24_EXPP_ReturnPyObjError and V24_EXPP_check_sequence_consistency */
 #include "gen_utils.h"
  
 #include "BKE_utildefines.h"
@@ -53,42 +53,42 @@
 #define eul 0.000001
 
 /*-- forward declarations -- */
-static PyObject *M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSeq );
-static PyObject *M_Geometry_LineIntersect2D( PyObject * self, PyObject * args );
-static PyObject *M_Geometry_ClosestPointOnLine( PyObject * self, PyObject * args );
-static PyObject *M_Geometry_PointInTriangle2D( PyObject * self, PyObject * args );
-static PyObject *M_Geometry_BoxPack2D( PyObject * self, PyObject * args );
+static PyObject *V24_M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSeq );
+static PyObject *V24_M_Geometry_LineIntersect2D( PyObject * self, PyObject * args );
+static PyObject *V24_M_Geometry_ClosestPointOnLine( PyObject * self, PyObject * args );
+static PyObject *V24_M_Geometry_PointInTriangle2D( PyObject * self, PyObject * args );
+static PyObject *V24_M_Geometry_BoxPack2D( PyObject * self, PyObject * args );
 
 
 /*-------------------------DOC STRINGS ---------------------------*/
-static char M_Geometry_doc[] = "The Blender Geometry module\n\n";
-static char M_Geometry_PolyFill_doc[] = "(veclist_list) - takes a list of polylines (each point a vector) and returns the point indicies for a polyline filled with triangles";
-static char M_Geometry_LineIntersect2D_doc[] = "(lineA_p1, lineA_p2, lineB_p1, lineB_p2) - takes 2 lines (as 4 vectors) and returns a vector for their point of intersection or None";
-static char M_Geometry_ClosestPointOnLine_doc[] = "(pt, line_p1, line_p2) - takes a point and a line and returns a (Vector, Bool) for the point on the line, and the bool so you can know if the point was between the 2 points";
-static char M_Geometry_PointInTriangle2D_doc[] = "(pt, tri_p1, tri_p2, tri_p3) - takes 4 vectors, one is the point and the next 3 define the triabgle, only the x and y are used from the vectors";
-static char M_Geometry_BoxPack2D_doc[] = "";
+static char V24_M_Geometry_doc[] = "The Blender Geometry module\n\n";
+static char V24_M_Geometry_PolyFill_doc[] = "(veclist_list) - takes a list of polylines (each point a vector) and returns the point indicies for a polyline filled with triangles";
+static char V24_M_Geometry_LineIntersect2D_doc[] = "(lineA_p1, lineA_p2, lineB_p1, lineB_p2) - takes 2 lines (as 4 vectors) and returns a vector for their point of intersection or None";
+static char V24_M_Geometry_ClosestPointOnLine_doc[] = "(pt, line_p1, line_p2) - takes a point and a line and returns a (Vector, Bool) for the point on the line, and the bool so you can know if the point was between the 2 points";
+static char V24_M_Geometry_PointInTriangle2D_doc[] = "(pt, tri_p1, tri_p2, tri_p3) - takes 4 vectors, one is the point and the next 3 define the triabgle, only the x and y are used from the vectors";
+static char V24_M_Geometry_BoxPack2D_doc[] = "";
 /*-----------------------METHOD DEFINITIONS ----------------------*/
 struct PyMethodDef M_Geometry_methods[] = {
-	{"PolyFill", ( PyCFunction ) M_Geometry_PolyFill, METH_O, M_Geometry_PolyFill_doc},
-	{"LineIntersect2D", ( PyCFunction ) M_Geometry_LineIntersect2D, METH_VARARGS, M_Geometry_LineIntersect2D_doc},
-	{"ClosestPointOnLine", ( PyCFunction ) M_Geometry_ClosestPointOnLine, METH_VARARGS, M_Geometry_ClosestPointOnLine_doc},
-	{"PointInTriangle2D", ( PyCFunction ) M_Geometry_PointInTriangle2D, METH_VARARGS, M_Geometry_PointInTriangle2D_doc},
-	{"BoxPack2D", ( PyCFunction ) M_Geometry_BoxPack2D, METH_O, M_Geometry_BoxPack2D_doc},
+	{"PolyFill", ( PyCFunction ) V24_M_Geometry_PolyFill, METH_O, V24_M_Geometry_PolyFill_doc},
+	{"LineIntersect2D", ( PyCFunction ) V24_M_Geometry_LineIntersect2D, METH_VARARGS, V24_M_Geometry_LineIntersect2D_doc},
+	{"ClosestPointOnLine", ( PyCFunction ) V24_M_Geometry_ClosestPointOnLine, METH_VARARGS, V24_M_Geometry_ClosestPointOnLine_doc},
+	{"PointInTriangle2D", ( PyCFunction ) V24_M_Geometry_PointInTriangle2D, METH_VARARGS, V24_M_Geometry_PointInTriangle2D_doc},
+	{"BoxPack2D", ( PyCFunction ) V24_M_Geometry_BoxPack2D, METH_O, V24_M_Geometry_BoxPack2D_doc},
 	{NULL, NULL, 0, NULL}
 };
 /*----------------------------MODULE INIT-------------------------*/
-PyObject *Geometry_Init(void)
+PyObject *V24_Geometry_Init(void)
 {
 	PyObject *submodule;
 
 	submodule = Py_InitModule3("Blender.Geometry",
-				    M_Geometry_methods, M_Geometry_doc);
+				    M_Geometry_methods, V24_M_Geometry_doc);
 	return (submodule);
 }
 
 /*----------------------------------Geometry.PolyFill() -------------------*/
 /* PolyFill function, uses Blenders scanfill to fill multiple poly lines */
-static PyObject *M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSeq )
+static PyObject *V24_M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSeq )
 {
 	PyObject *tri_list; /*return this list of tri's */
 	PyObject *polyLine, *polyVec;
@@ -105,7 +105,7 @@ static PyObject *M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSeq )
 	
 	
 	if(!PySequence_Check(polyLineSeq)) {
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a sequence of poly lines" );
 	}
 	
@@ -116,16 +116,16 @@ static PyObject *M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSeq )
 		if (!PySequence_Check(polyLine)) {
 			freedisplist(&dispbase);
 			Py_XDECREF(polyLine); /* may be null so use Py_XDECREF*/
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				  "One or more of the polylines is not a sequence of Mathutils.Vector's" );
 		}
 		
 		len_polypoints= PySequence_Size( polyLine );
 		if (len_polypoints>0) { /* dont bother adding edges as polylines */
-			if (EXPP_check_sequence_consistency( polyLine, &vector_Type ) != 1) {
+			if (V24_EXPP_check_sequence_consistency( polyLine, &vector_Type ) != 1) {
 				freedisplist(&dispbase);
 				Py_DECREF(polyLine);
-				return EXPP_ReturnPyObjError( PyExc_TypeError,
+				return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					  "A point in one of the polylines is not a Mathutils.Vector type" );
 			}
 			
@@ -142,10 +142,10 @@ static PyObject *M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSeq )
 			for( index = 0; index<len_polypoints; ++index, fp+=3) {
 				polyVec= PySequence_GetItem( polyLine, index );
 				
-				fp[0] = ((VectorObject *)polyVec)->vec[0];
-				fp[1] = ((VectorObject *)polyVec)->vec[1];
-				if( ((VectorObject *)polyVec)->size > 2 )
-					fp[2] = ((VectorObject *)polyVec)->vec[2];
+				fp[0] = ((V24_VectorObject *)polyVec)->vec[0];
+				fp[1] = ((V24_VectorObject *)polyVec)->vec[1];
+				if( ((V24_VectorObject *)polyVec)->size > 2 )
+					fp[2] = ((V24_VectorObject *)polyVec)->vec[2];
 				else
 					fp[2]= 0.0f; /* if its a 2d vector then set the z to be zero */
 				
@@ -167,7 +167,7 @@ static PyObject *M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSeq )
 		tri_list= PyList_New(dl->parts);
 		if( !tri_list ) {
 			freedisplist(&dispbase);
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"Geometry.PolyFill failed to make a new list" );
 		}
 		
@@ -188,9 +188,9 @@ static PyObject *M_Geometry_PolyFill( PyObject * self, PyObject * polyLineSeq )
 }
 
 
-static PyObject *M_Geometry_LineIntersect2D( PyObject * self, PyObject * args )
+static PyObject *V24_M_Geometry_LineIntersect2D( PyObject * self, PyObject * args )
 {
-	VectorObject *line_a1, *line_a2, *line_b1, *line_b2;
+	V24_VectorObject *line_a1, *line_a2, *line_b1, *line_b2;
 	float a1x, a1y, a2x, a2y,  b1x, b1y, b2x, b2y, xi, yi, a1,a2,b1,b2, newvec[2];
 	if( !PyArg_ParseTuple ( args, "O!O!O!O!",
 	  &vector_Type, &line_a1,
@@ -198,7 +198,7 @@ static PyObject *M_Geometry_LineIntersect2D( PyObject * self, PyObject * args )
 	  &vector_Type, &line_b1,
 	  &vector_Type, &line_b2)
 	)
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_TypeError, "expected 4 vector types\n" ) );
 	
 	a1x= line_a1->vec[0];
@@ -282,9 +282,9 @@ static PyObject *M_Geometry_LineIntersect2D( PyObject * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *M_Geometry_ClosestPointOnLine( PyObject * self, PyObject * args )
+static PyObject *V24_M_Geometry_ClosestPointOnLine( PyObject * self, PyObject * args )
 {
-	VectorObject *pt, *line_1, *line_2;
+	V24_VectorObject *pt, *line_1, *line_2;
 	float pt_in[3], pt_out[3], l1[3], l2[3];
 	float lambda;
 	PyObject *ret;
@@ -294,7 +294,7 @@ static PyObject *M_Geometry_ClosestPointOnLine( PyObject * self, PyObject * args
 	&vector_Type, &line_1,
 	&vector_Type, &line_2)
 	  )
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 				( PyExc_TypeError, "expected 3 vector types\n" ) );
 	
 	/* accept 2d verts */
@@ -319,9 +319,9 @@ static PyObject *M_Geometry_ClosestPointOnLine( PyObject * self, PyObject * args
 #define SIDE_OF_LINE(pa,pb,pp)	((pa[0]-pp[0])*(pb[1]-pp[1]))-((pb[0]-pp[0])*(pa[1]-pp[1]))
 #define POINT_IN_TRI(p0,p1,p2,p3)	((SIDE_OF_LINE(p1,p2,p0)>=0) && (SIDE_OF_LINE(p2,p3,p0)>=0) && (SIDE_OF_LINE(p3,p1,p0)>=0))
 
-static PyObject *M_Geometry_PointInTriangle2D( PyObject * self, PyObject * args )
+static PyObject *V24_M_Geometry_PointInTriangle2D( PyObject * self, PyObject * args )
 {
-	VectorObject *pt_vec, *tri_p1, *tri_p2, *tri_p3;
+	V24_VectorObject *pt_vec, *tri_p1, *tri_p2, *tri_p3;
 	
 	if( !PyArg_ParseTuple ( args, "O!O!O!O!",
 	  &vector_Type, &pt_vec,
@@ -329,7 +329,7 @@ static PyObject *M_Geometry_PointInTriangle2D( PyObject * self, PyObject * args 
 	  &vector_Type, &tri_p2,
 	  &vector_Type, &tri_p3)
 	)
-		return ( EXPP_ReturnPyObjError
+		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_TypeError, "expected 4 vector types\n" ) );
 	
 	if POINT_IN_TRI(pt_vec->vec, tri_p1->vec, tri_p2->vec, tri_p3->vec)
@@ -347,7 +347,7 @@ int boxPack_FromPyObject(PyObject * value, boxPack **boxarray )
 	
 	/* Error checking must alredy be done */
 	if( !PyList_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"can only back a list of [x,y,x,w]" );
 	
 	len = PyList_Size( value );
@@ -359,7 +359,7 @@ int boxPack_FromPyObject(PyObject * value, boxPack **boxarray )
 		list_item = PyList_GET_ITEM( value, i );
 		if( !PyList_Check( list_item ) || PyList_Size( list_item ) < 4 ) {
 			MEM_freeN(*boxarray);
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"can only back a list of [x,y,x,w]" );
 		}
 		
@@ -370,7 +370,7 @@ int boxPack_FromPyObject(PyObject * value, boxPack **boxarray )
 		
 		if (!PyNumber_Check(item_1) || !PyNumber_Check(item_2)) {
 			MEM_freeN(*boxarray);
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"can only back a list of 2d boxes [x,y,x,w]" );
 		}
 		
@@ -400,7 +400,7 @@ void boxPack_ToPyObject(PyObject * value, boxPack **boxarray)
 }
 
 
-static PyObject *M_Geometry_BoxPack2D( PyObject * self, PyObject * boxlist )
+static PyObject *V24_M_Geometry_BoxPack2D( PyObject * self, PyObject * boxlist )
 {
 	boxPack *boxarray;
 	float tot_width, tot_height;
@@ -408,7 +408,7 @@ static PyObject *M_Geometry_BoxPack2D( PyObject * self, PyObject * boxlist )
 	int error;
 	
 	if(!PyList_Check(boxlist))
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a sequence of boxes [[x,y,w,h], ... ]" );
 	
 	len = PyList_Size( boxlist );

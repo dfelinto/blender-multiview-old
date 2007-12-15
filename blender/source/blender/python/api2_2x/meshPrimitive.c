@@ -54,7 +54,7 @@ static PyObject *make_mesh( int type, char *name, short tot, short seg,
 	float cent[3] = {0,0,0};
 	float imat[3][3]={{1,0,0},{0,1,0},{0,0,1}};
 	Mesh *me;
-	BPy_Mesh *obj;
+	V24_BPy_Mesh *obj;
 	Object *ob;
 	Base *base;
 
@@ -90,8 +90,8 @@ static PyObject *make_mesh( int type, char *name, short tot, short seg,
 	if( base )
 		scene_select_base(G.scene, base);
 
-	/* create the BPy_Mesh that wraps this mesh */
-	obj = (BPy_Mesh *)PyObject_NEW( BPy_Mesh, &Mesh_Type );
+	/* create the V24_BPy_Mesh that wraps this mesh */
+	obj = (V24_BPy_Mesh *)PyObject_NEW( V24_BPy_Mesh, &V24_Mesh_Type );
 
 	rename_id( &me->id, name );
 	obj->mesh = me;
@@ -100,25 +100,25 @@ static PyObject *make_mesh( int type, char *name, short tot, short seg,
 	return (PyObject *) obj;
 }
 
-static PyObject *M_MeshPrim_Plane( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_Plane( PyObject *self_unused, PyObject *args )
 {
 	float size = 2.0;
 
 	if( !PyArg_ParseTuple( args, "|f", &size ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected optional float arg" );
 
 	size *= (float)(sqrt(2.0)/2.0);
 	return make_mesh( 0, "Plane", 4, 0, 0, size, -size, 0, 1 );
 }
 
-static PyObject *M_MeshPrim_Cube( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_Cube( PyObject *self_unused, PyObject *args )
 {
 	float height = 2.0;
 	float dia;
 
 	if( !PyArg_ParseTuple( args, "|f", &height ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected optional float arg" );
 
 	height /= 2.0;
@@ -126,154 +126,154 @@ static PyObject *M_MeshPrim_Cube( PyObject *self_unused, PyObject *args )
 	return make_mesh( 1, "Cube", 4, 32, 2, dia, -height, 1, 1 );
 }
 
-static PyObject *M_MeshPrim_Circle( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_Circle( PyObject *self_unused, PyObject *args )
 {
 	int tot = 32;
 	float size = 2;
 
 	if( !PyArg_ParseTuple( args, "|if", &tot, &size ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected int and optional float arg" );
 	if( tot < 3 || tot > 100 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"number of vertices must be in the range [3:100]" );
 
 	size /= 2.0;
 	return make_mesh( 4, "Circle", tot, 0, 0, size, -size, 0, 0 );
 }
 
-static PyObject *M_MeshPrim_Cylinder( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_Cylinder( PyObject *self_unused, PyObject *args )
 {
 	int tot = 32;
 	float size = 2.0;
 	float len = 2.0;
 
 	if( !PyArg_ParseTuple( args, "|iff", &tot, &size, &len ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected int and optional float arg" );
 	if( tot < 3 || tot > 100 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"number of vertices must be in the range [3:100]" );
 
 	return make_mesh( 5, "Cylinder", tot, 0, 0, size/2.0, -len/2.0, 1, 1 );
 }
 
-static PyObject *M_MeshPrim_Tube( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_Tube( PyObject *self_unused, PyObject *args )
 {
 	int tot = 32;
 	float size = 2.0;
 	float len = 2.0;
 
 	if( !PyArg_ParseTuple( args, "|iff", &tot, &size, &len ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected int and optional float arg" );
 	if( tot < 3 || tot > 100 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"number of vertices must be in the range [3:100]" );
 
 	return make_mesh( 6, "Tube", tot, 0, 0, size/2.0, -len/2.0, 1, 0 );
 }
 
-static PyObject *M_MeshPrim_Cone( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_Cone( PyObject *self_unused, PyObject *args )
 {
 	int tot = 32;
 	float size = 2.0;
 	float len = 2.0;
 
 	if( !PyArg_ParseTuple( args, "|iff", &tot, &size, &len ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected int and optional float arg" );
 	if( tot < 3 || tot > 100 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"number of vertices must be in the range [3:100]" );
 
 	return make_mesh( 7, "Cone", tot, 0, 0, size/2.0, -len/2.0, 0, 1 );
 }
 
-static PyObject *M_MeshPrim_Grid( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_Grid( PyObject *self_unused, PyObject *args )
 {
 	int xres = 32;
 	int yres = 32;
 	float size = 2.0;
 
 	if( !PyArg_ParseTuple( args, "|iif", &xres, &yres, &size ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected two ints and an optional float arg" );
 	if( xres < 2 || xres > 100 || yres < 2 || yres > 100 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"resolution must be in the range [2:100]" );
 
 	size /= 2.0;
 	return make_mesh( 10, "Grid", xres, yres, 0, size, -size, 0, 0 );
 }
 
-static PyObject *M_MeshPrim_UVsphere( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_UVsphere( PyObject *self_unused, PyObject *args )
 {
 	int segs = 32;
 	int rings = 32;
 	float size = 2.0;
 
 	if( !PyArg_ParseTuple( args, "|iif", &segs, &rings, &size ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected two ints and an optional float arg" );
 	if( segs < 3 || segs > 100 || rings < 3 || rings > 100 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"segments and rings must be in the range [3:100]" );
 
 	size /= 2.0;
 	return make_mesh( 11, "UVsphere", segs, rings, 0, size, -size, 0, 0 );
 }
 
-static PyObject *M_MeshPrim_Icosphere( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_Icosphere( PyObject *self_unused, PyObject *args )
 {
 	int subdiv = 2;
 	float size = 2.0;
 
 	if( !PyArg_ParseTuple( args, "|if", &subdiv, &size ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected int and an optional float arg" );
 	if( subdiv < 1 || subdiv > 5 )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"subdivisions must be in the range [1:5]" );
 
 	size /= 2.0;
 	return make_mesh( 12, "Icosphere", 0, 0, subdiv, size, -size, 0, 0 );
 }
 
-static PyObject *M_MeshPrim_Suzanne( PyObject *self_unused, PyObject *args )
+static PyObject *V24_M_MeshPrim_Suzanne( PyObject *self_unused, PyObject *args )
 {
 	return make_mesh( 13, "Monkey", 0, 0, 0, 0, 0, 0, 0 );
 }
 
 static struct PyMethodDef M_MeshPrim_methods[] = {
-	{"Plane", (PyCFunction)M_MeshPrim_Plane, METH_VARARGS,
+	{"Plane", (PyCFunction)V24_M_MeshPrim_Plane, METH_VARARGS,
 		"Create a plane mesh"},
-	{"Cube", (PyCFunction)M_MeshPrim_Cube, METH_VARARGS,
+	{"Cube", (PyCFunction)V24_M_MeshPrim_Cube, METH_VARARGS,
 		"Create a cube mesh"},
-	{"Circle", (PyCFunction)M_MeshPrim_Circle, METH_VARARGS,
+	{"Circle", (PyCFunction)V24_M_MeshPrim_Circle, METH_VARARGS,
 		"Create a circle mesh"},
-	{"Cylinder", (PyCFunction)M_MeshPrim_Cylinder, METH_VARARGS,
+	{"Cylinder", (PyCFunction)V24_M_MeshPrim_Cylinder, METH_VARARGS,
 		"Create a cylindrical mesh"},
-	{"Tube", (PyCFunction)M_MeshPrim_Tube, METH_VARARGS,
+	{"Tube", (PyCFunction)V24_M_MeshPrim_Tube, METH_VARARGS,
 		"Create a tube mesh"},
-	{"Cone", (PyCFunction)M_MeshPrim_Cone, METH_VARARGS,
+	{"Cone", (PyCFunction)V24_M_MeshPrim_Cone, METH_VARARGS,
 		"Create a conic mesh"},
-	{"Grid", (PyCFunction)M_MeshPrim_Grid, METH_VARARGS,
+	{"Grid", (PyCFunction)V24_M_MeshPrim_Grid, METH_VARARGS,
 		"Create a 2D grid mesh"},
-	{"UVsphere", (PyCFunction)M_MeshPrim_UVsphere, METH_VARARGS,
+	{"UVsphere", (PyCFunction)V24_M_MeshPrim_UVsphere, METH_VARARGS,
 		"Create a UV sphere mesh"},
-	{"Icosphere", (PyCFunction)M_MeshPrim_Icosphere, METH_VARARGS,
+	{"Icosphere", (PyCFunction)V24_M_MeshPrim_Icosphere, METH_VARARGS,
 		"Create a Ico sphere mesh"},
-	{"Monkey", (PyCFunction)M_MeshPrim_Suzanne, METH_NOARGS,
+	{"Monkey", (PyCFunction)V24_M_MeshPrim_Suzanne, METH_NOARGS,
 		"Create a Suzanne mesh"},
 	{NULL, NULL, 0, NULL},
 };
 
-static char M_MeshPrim_doc[] = "The Blender.Mesh.Primitives submodule";
+static char V24_M_MeshPrim_doc[] = "The Blender.Mesh.Primitives submodule";
 
-PyObject *MeshPrimitives_Init( void )
+PyObject *V24_MeshPrimitives_Init( void )
 {
 	return Py_InitModule3( "Blender.Mesh.Primitives",
-				M_MeshPrim_methods, M_MeshPrim_doc );
+				M_MeshPrim_methods, V24_M_MeshPrim_doc );
 }
 

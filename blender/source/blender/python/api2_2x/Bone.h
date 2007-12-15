@@ -35,17 +35,17 @@
 #include "DNA_armature_types.h"
 
 /*-------------------TYPE CHECKS---------------------------------*/
-#define BoneObject_Check(v) ((v)->ob_type == &Bone_Type)
-#define EditBoneObject_Check(v) ((v)->ob_type == &EditBone_Type)
+#define BoneObject_Check(v) ((v)->ob_type == &V24_Bone_Type)
+#define EditBoneObject_Check(v) ((v)->ob_type == &V24_EditBone_Type)
 /*-------------------TYPEOBJECT----------------------------------*/
-extern PyTypeObject EditBone_Type;
-extern PyTypeObject Bone_Type;
+extern PyTypeObject V24_EditBone_Type;
+extern PyTypeObject V24_Bone_Type;
 /*-------------------STRUCT DEFINITION----------------------------*/
 
 typedef struct {
 	PyObject_HEAD
 	Bone * bone;
-} BPy_Bone;
+} V24_BPy_Bone;
 
 typedef struct {
 	PyObject_HEAD
@@ -66,11 +66,11 @@ typedef struct {
 	float rad_tail;
 	short segments;
 	short layer;
-} BPy_EditBone;
+} V24_BPy_EditBone;
 /*-------------------VISIBLE PROTOTYPES-------------------------*/
-PyObject *PyBone_FromBone(struct Bone *bone);
-struct Bone *PyBone_AsBone(BPy_Bone *py_Bone);
-PyObject *PyEditBone_FromBone(Bone *bone);
-PyObject *PyEditBone_FromEditBone(struct EditBone *editbone);
+PyObject *V24_PyBone_FromBone(struct Bone *bone);
+struct Bone *PyBone_AsBone(V24_BPy_Bone *py_Bone);
+PyObject *V24_PyEditBone_FromBone(Bone *bone);
+PyObject *V24_PyEditBone_FromEditBone(struct EditBone *editbone);
 
 #endif

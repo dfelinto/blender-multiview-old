@@ -36,17 +36,17 @@
 #include <Python.h>
 
 /* The Main PyType Object defined in Main.c */
-extern PyTypeObject Config_Type;
+extern PyTypeObject V24_Config_Type;
 
 #define BPy_Config_Check(v) \
-    ((v)->ob_type == &Config_Type)
+    ((v)->ob_type == &V24_Config_Type)
 
 /* Main sequence, iterate on the libdatas listbase*/
 typedef struct {
 	PyObject_VAR_HEAD /* required python macro   */
-} BPy_Config;
+} V24_BPy_Config;
 
-PyObject *Config_CreatePyObject();
+PyObject *V24_Config_CreatePyObject();
 
 
 #endif				/* EXPP_BPY_CONFIG_H */

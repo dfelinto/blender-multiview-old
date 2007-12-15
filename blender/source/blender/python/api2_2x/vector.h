@@ -44,18 +44,18 @@ typedef struct {
 	float *vec;				/*1D array of data (alias), wrapped status depends on wrapped status */
 	short size;				/* vec size 2,3 or 4 */
 	short wrapped;			/* is wrapped data? */
-} VectorObject;
+} V24_VectorObject;
 
 /*prototypes*/
-PyObject *Vector_Zero( VectorObject * self );
-PyObject *Vector_Normalize( VectorObject * self );
-PyObject *Vector_Negate( VectorObject * self );
-PyObject *Vector_Resize2D( VectorObject * self );
-PyObject *Vector_Resize3D( VectorObject * self );
-PyObject *Vector_Resize4D( VectorObject * self );
-PyObject *Vector_toPoint( VectorObject * self );
-PyObject *Vector_ToTrackQuat( VectorObject * self, PyObject * args );
-PyObject *Vector_copy( VectorObject * self );
+PyObject *V24_Vector_Zero( V24_VectorObject * self );
+PyObject *V24_Vector_Normalize( V24_VectorObject * self );
+PyObject *V24_Vector_Negate( V24_VectorObject * self );
+PyObject *V24_Vector_Resize2D( V24_VectorObject * self );
+PyObject *V24_Vector_Resize3D( V24_VectorObject * self );
+PyObject *V24_Vector_Resize4D( V24_VectorObject * self );
+PyObject *V24_Vector_toPoint( V24_VectorObject * self );
+PyObject *V24_Vector_ToTrackQuat( V24_VectorObject * self, PyObject * args );
+PyObject *V24_Vector_copy( V24_VectorObject * self );
 PyObject *newVectorObject(float *vec, int size, int type);
 
 #endif				/* EXPP_vector_h */

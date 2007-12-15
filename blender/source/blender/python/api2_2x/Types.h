@@ -35,7 +35,7 @@
 
 #include <Python.h>
 
-PyObject *Types_Init( void );
+PyObject *V24_Types_Init( void );
 void types_InitAll( void );
 
 #endif				/* EXPP_TYPES_H */

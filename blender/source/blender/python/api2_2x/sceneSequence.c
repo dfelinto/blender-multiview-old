@@ -79,40 +79,40 @@ returns None if notfound.\nIf 'name' is not specified, it returns a list of all 
 };*/
 
 /*****************************************************************************/
-/* Python BPy_Sequence methods table:					   */
+/* Python V24_BPy_Sequence methods table:					   */
 /*****************************************************************************/
-static PyObject *Sequence_copy( BPy_Sequence * self );
-static PyObject *Sequence_new( BPy_Sequence * self, PyObject * args );
-static PyObject *Sequence_remove( BPy_Sequence * self, PyObject * args );
+static PyObject *V24_Sequence_copy( V24_BPy_Sequence * self );
+static PyObject *V24_Sequence_new( V24_BPy_Sequence * self, PyObject * args );
+static PyObject *V24_Sequence_remove( V24_BPy_Sequence * self, PyObject * args );
 
-static PyObject *SceneSeq_new( BPy_SceneSeq * self, PyObject * args );
-static PyObject *SceneSeq_remove( BPy_SceneSeq * self, PyObject * args );
+static PyObject *V24_SceneSeq_new( V24_BPy_SceneSeq * self, PyObject * args );
+static PyObject *V24_SceneSeq_remove( V24_BPy_SceneSeq * self, PyObject * args );
 static void intern_pos_update(Sequence * seq); 
 
-static PyMethodDef BPy_Sequence_methods[] = {
+static PyMethodDef V24_BPy_Sequence_methods[] = {
 	/* name, method, flags, doc */
-	{"new", ( PyCFunction ) Sequence_new, METH_VARARGS,
+	{"new", ( PyCFunction ) V24_Sequence_new, METH_VARARGS,
 	 "(data) - Return a new sequence."},
-	{"remove", ( PyCFunction ) Sequence_remove, METH_VARARGS,
+	{"remove", ( PyCFunction ) V24_Sequence_remove, METH_VARARGS,
 	 "(data) - Remove a strip."},
-	{"__copy__", ( PyCFunction ) Sequence_copy, METH_NOARGS,
+	{"__copy__", ( PyCFunction ) V24_Sequence_copy, METH_NOARGS,
 	 "() - Return a copy of the sequence containing the same objects."},
-	{"copy", ( PyCFunction ) Sequence_copy, METH_NOARGS,
+	{"copy", ( PyCFunction ) V24_Sequence_copy, METH_NOARGS,
 	 "() - Return a copy of the sequence containing the same objects."},
 	{NULL, NULL, 0, NULL}
 };
 
-static PyMethodDef BPy_SceneSeq_methods[] = {
+static PyMethodDef V24_BPy_SceneSeq_methods[] = {
 	/* name, method, flags, doc */
-	{"new", ( PyCFunction ) SceneSeq_new, METH_VARARGS,
+	{"new", ( PyCFunction ) V24_SceneSeq_new, METH_VARARGS,
 	 "(data) - Return a new sequence."},
-	{"remove", ( PyCFunction ) SceneSeq_remove, METH_VARARGS,
+	{"remove", ( PyCFunction ) V24_SceneSeq_remove, METH_VARARGS,
 	 "(data) - Remove a strip."},
 	{NULL, NULL, 0, NULL}
 };
 
 /* use to add a sequence to a scene or its listbase */
-static PyObject *NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
+static PyObject *V24_NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 {
 	PyObject *py_data = NULL;
 	
@@ -123,7 +123,7 @@ static PyObject *NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 	int start, machine;
 	
 	if( !PyArg_ParseTuple( args, "Oii", &py_data, &start, &machine ) )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 			"expect sequence data then 2 ints - (seqdata, start, track)" );
 	
 	seq = alloc_sequence(seqbase, start, machine); /* warning, this sets last */
@@ -137,7 +137,7 @@ static PyObject *NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 			BLI_remlink(seqbase, seq);
 			MEM_freeN(seq);
 			
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"images data needs to be a tuple of a string and a list of images - (path, [filenames...])" );
 		}
 		
@@ -162,7 +162,7 @@ static PyObject *NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 	} else if (BPy_Sound_Check(py_data)) {
 		/* sound */
 		int totframe;
-		bSound *sound = (( BPy_Sound * )py_data)->sound;
+		bSound *sound = (( V24_BPy_Sound * )py_data)->sound;
 		
 		
 		seq->type= SEQ_RAM_SOUND;
@@ -185,7 +185,7 @@ static PyObject *NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 		
 	} else if (BPy_Scene_Check(py_data)) {
 		/* scene */
-		Scene *sce = ((BPy_Scene *)py_data)->scene;
+		Scene *sce = ((V24_BPy_Scene *)py_data)->scene;
 		
 		seq->type= SEQ_SCENE;
 		seq->scene= sce;
@@ -206,7 +206,7 @@ static PyObject *NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 			BLI_remlink(seqbase, seq);
 			MEM_freeN(seq);
 			
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expects a string for chan/bone name and an int for the frame where to put the new key" );
 		}
 		
@@ -214,17 +214,17 @@ static PyObject *NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 	}
 	strncpy(seq->name+2, "Untitled", 21);
 	intern_pos_update(seq);
-	return Sequence_CreatePyObject(seq, NULL, sce);
+	return V24_Sequence_CreatePyObject(seq, NULL, sce);
 }
 
-static PyObject *Sequence_new( BPy_Sequence * self, PyObject * args )
+static PyObject *V24_Sequence_new( V24_BPy_Sequence * self, PyObject * args )
 {
-	return NewSeq_internal(&self->seq->seqbase, args, self->scene);
+	return V24_NewSeq_internal(&self->seq->seqbase, args, self->scene);
 }
 
-static PyObject *SceneSeq_new( BPy_SceneSeq * self, PyObject * args )
+static PyObject *V24_SceneSeq_new( V24_BPy_SceneSeq * self, PyObject * args )
 {
-	return NewSeq_internal( &((Editing *)self->scene->ed)->seqbase, args, self->scene);
+	return V24_NewSeq_internal( &((Editing *)self->scene->ed)->seqbase, args, self->scene);
 }
 
 static void del_seq__internal(Sequence *seq)
@@ -250,17 +250,17 @@ static void recurs_del_seq(ListBase *lb)
 	}
 }
 
-static PyObject *RemoveSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
+static PyObject *V24_RemoveSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 {
-	BPy_Sequence *bpy_seq = NULL;
+	V24_BPy_Sequence *bpy_seq = NULL;
 	
-	if( !PyArg_ParseTuple( args, "O!", &Sequence_Type, &bpy_seq ) )
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+	if( !PyArg_ParseTuple( args, "O!", &V24_Sequence_Type, &bpy_seq ) )
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 			"expects a sequence object" );
 	
 	/* quick way to tell if we dont have the seq */
 	if (sce != bpy_seq->scene)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"Sequence does not exist here, cannot remove" );
 	
 	recurs_del_seq(&bpy_seq->seq->seqbase);
@@ -269,18 +269,18 @@ static PyObject *RemoveSeq_internal(ListBase *seqbase, PyObject * args, Scene *s
 	Py_RETURN_NONE;
 }
 
-static PyObject *Sequence_remove( BPy_Sequence * self, PyObject * args )
+static PyObject *V24_Sequence_remove( V24_BPy_Sequence * self, PyObject * args )
 {
-	return RemoveSeq_internal(&self->seq->seqbase, args, self->scene);
+	return V24_RemoveSeq_internal(&self->seq->seqbase, args, self->scene);
 }
 
-static PyObject *SceneSeq_remove( BPy_SceneSeq * self, PyObject * args )
+static PyObject *V24_SceneSeq_remove( V24_BPy_SceneSeq * self, PyObject * args )
 {
-	return RemoveSeq_internal( &((Editing *)self->scene->ed)->seqbase, args, self->scene);
+	return V24_RemoveSeq_internal( &((Editing *)self->scene->ed)->seqbase, args, self->scene);
 }
 
 
-static PyObject *Sequence_copy( BPy_Sequence * self )
+static PyObject *V24_Sequence_copy( V24_BPy_Sequence * self )
 {
 	printf("Sequence Copy not implimented yet!\n");
 	Py_RETURN_NONE;
@@ -289,37 +289,37 @@ static PyObject *Sequence_copy( BPy_Sequence * self )
 /*****************************************************************************/
 /* PythonTypeObject callback function prototypes			 */
 /*****************************************************************************/
-static PyObject *Sequence_repr( BPy_Sequence * obj );
-static PyObject *SceneSeq_repr( BPy_SceneSeq * obj );
-static int Sequence_compare( BPy_Sequence * a, BPy_Sequence * b );
-static int SceneSeq_compare( BPy_SceneSeq * a, BPy_SceneSeq * b );
+static PyObject *V24_Sequence_repr( V24_BPy_Sequence * obj );
+static PyObject *V24_SceneSeq_repr( V24_BPy_SceneSeq * obj );
+static int V24_Sequence_compare( V24_BPy_Sequence * a, V24_BPy_Sequence * b );
+static int V24_SceneSeq_compare( V24_BPy_SceneSeq * a, V24_BPy_SceneSeq * b );
 
 /*****************************************************************************/
-/* Python BPy_Sequence methods:                                                  */
+/* Python V24_BPy_Sequence methods:                                                  */
 /*****************************************************************************/
 
 
-static PyObject *Sequence_getIter( BPy_Sequence * self )
+static PyObject *V24_Sequence_getIter( V24_BPy_Sequence * self )
 {
 	Sequence *iter = self->seq->seqbase.first;
 	
 	if (!self->iter) {
 		self->iter = iter;
-		return EXPP_incr_ret ( (PyObject *) self );
+		return V24_EXPP_incr_ret ( (PyObject *) self );
 	} else {
-		return Sequence_CreatePyObject(self->seq, iter, self->scene);
+		return V24_Sequence_CreatePyObject(self->seq, iter, self->scene);
 	}
 }
 
-static PyObject *SceneSeq_getIter( BPy_SceneSeq * self )
+static PyObject *V24_SceneSeq_getIter( V24_BPy_SceneSeq * self )
 {
 	Sequence *iter = ((Editing *)self->scene->ed)->seqbase.first;
 	
 	if (!self->iter) {
 		self->iter = iter;
-		return EXPP_incr_ret ( (PyObject *) self );
+		return V24_EXPP_incr_ret ( (PyObject *) self );
 	} else {
-		return SceneSeq_CreatePyObject(self->scene, iter);
+		return V24_SceneSeq_CreatePyObject(self->scene, iter);
 	}
 }
 
@@ -327,16 +327,16 @@ static PyObject *SceneSeq_getIter( BPy_SceneSeq * self )
 /*
  * Return next Seq
  */
-static PyObject *Sequence_nextIter( BPy_Sequence * self )
+static PyObject *V24_Sequence_nextIter( V24_BPy_Sequence * self )
 {
 	PyObject *object;
 	if( !(self->iter) ) {
 		self->iter = NULL; /* so we can add objects again */
-		return EXPP_ReturnPyObjError( PyExc_StopIteration,
+		return V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 				"iterator at end" );
 	}
 	
-	object= Sequence_CreatePyObject( self->iter, NULL, self->scene ); 
+	object= V24_Sequence_CreatePyObject( self->iter, NULL, self->scene ); 
 	self->iter= self->iter->next;
 	return object;
 }
@@ -345,34 +345,34 @@ static PyObject *Sequence_nextIter( BPy_Sequence * self )
 /*
  * Return next Seq
  */
-static PyObject *SceneSeq_nextIter( BPy_Sequence * self )
+static PyObject *V24_SceneSeq_nextIter( V24_BPy_Sequence * self )
 {
 	PyObject *object;
 	if( !(self->iter) ) {
 		self->iter = NULL; /* so we can add objects again */
-		return EXPP_ReturnPyObjError( PyExc_StopIteration,
+		return V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 				"iterator at end" );
 	}
 	
-	object= Sequence_CreatePyObject( self->iter, NULL, self->scene );
+	object= V24_Sequence_CreatePyObject( self->iter, NULL, self->scene );
 	self->iter= self->iter->next;
 	return object;
 }
 
 
 
-static PyObject *Sequence_getName( BPy_Sequence * self )
+static PyObject *V24_Sequence_getName( V24_BPy_Sequence * self )
 {
 	return PyString_FromString( self->seq->name+2 );
 }
 
-static int Sequence_setName( BPy_Sequence * self, PyObject * value )
+static int V24_Sequence_setName( V24_BPy_Sequence * self, PyObject * value )
 {
 	char *name = NULL;
 	
 	name = PyString_AsString ( value );
 	if( !name )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					      "expected string argument" );
 
 	strncpy(self->seq->name+2, name, 21);
@@ -380,32 +380,32 @@ static int Sequence_setName( BPy_Sequence * self, PyObject * value )
 }
 
 
-static PyObject *Sequence_getSound( BPy_Sequence * self )
+static PyObject *V24_Sequence_getSound( V24_BPy_Sequence * self )
 {
 	if (self->seq->type == SEQ_RAM_SOUND && self->seq->sound)
-		return Sound_CreatePyObject(self->seq->sound);
+		return V24_Sound_CreatePyObject(self->seq->sound);
 	Py_RETURN_NONE;
 }
 
-static PyObject *Sequence_getIpo( BPy_Sequence * self )
+static PyObject *V24_Sequence_getIpo( V24_BPy_Sequence * self )
 {
 	struct Ipo *ipo;
 	
 	ipo = self->seq->ipo;
 
 	if( ipo )
-		return Ipo_CreatePyObject( ipo );
+		return V24_Ipo_CreatePyObject( ipo );
 	Py_RETURN_NONE;
 }
 
 
-static PyObject *SceneSeq_getActive( BPy_SceneSeq * self )
+static PyObject *V24_SceneSeq_getActive( V24_BPy_SceneSeq * self )
 {
 	Sequence *last_seq = NULL, *seq;
 	Editing *ed = self->scene->ed;
 
 	if (!ed)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "scene has no sequence data to edit" );
 	
 	seq = ed->seqbasep->first;
@@ -417,18 +417,18 @@ static PyObject *SceneSeq_getActive( BPy_SceneSeq * self )
 		seq = seq->next;
 	}
 	if (last_seq)
-		return Sequence_CreatePyObject(last_seq, NULL, self->scene );
+		return V24_Sequence_CreatePyObject(last_seq, NULL, self->scene );
 	
 	Py_RETURN_NONE;
 }
 
-static PyObject *SceneSeq_getMetaStrip( BPy_SceneSeq * self )
+static PyObject *V24_SceneSeq_getMetaStrip( V24_BPy_SceneSeq * self )
 {
 	Sequence *seq = NULL;
 	Editing *ed = self->scene->ed;
 	MetaStack *ms;
 	if (!ed)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "scene has no sequence data to edit" );
 	
 	ms = ed->metastack.last;
@@ -436,16 +436,16 @@ static PyObject *SceneSeq_getMetaStrip( BPy_SceneSeq * self )
 		Py_RETURN_NONE;
 	
 	seq = ms->parseq;
-	return Sequence_CreatePyObject(seq, NULL, self->scene);
+	return V24_Sequence_CreatePyObject(seq, NULL, self->scene);
 }
 
 
 /*
  * this should accept a Py_None argument and just delete the Ipo link
- * (as Object_clearIpo() does)
+ * (as V24_Object_clearIpo() does)
  */
 
-static int Sequence_setIpo( BPy_Sequence * self, PyObject * value )
+static int V24_Sequence_setIpo( V24_BPy_Sequence * self, PyObject * value )
 {
 	Ipo *ipo = NULL;
 	Ipo *oldipo;
@@ -457,17 +457,17 @@ static int Sequence_setIpo( BPy_Sequence * self, PyObject * value )
 
 	if ( value != Py_None ) {
 		if ( !BPy_Ipo_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected an Ipo object" );
 
-		ipo = Ipo_FromPyObject( value );
+		ipo = V24_Ipo_FromPyObject( value );
 
 		if( !ipo )
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 					"null ipo!" );
 
 		if( ipo->blocktype != ID_SEQ )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"Ipo is not a sequence data Ipo" );
 	}
 
@@ -488,19 +488,19 @@ static int Sequence_setIpo( BPy_Sequence * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Sequence_getScene( BPy_Sequence * self )
+static PyObject *V24_Sequence_getScene( V24_BPy_Sequence * self )
 {
 	struct Scene *scene;
 	
 	scene = self->seq->scene;
 
 	if( scene )
-		return Scene_CreatePyObject( scene );
+		return V24_Scene_CreatePyObject( scene );
 	Py_RETURN_NONE;
 }
 
 
-static PyObject *Sequence_getImages( BPy_Sequence * self )
+static PyObject *V24_Sequence_getImages( V24_BPy_Sequence * self )
 {
 	Strip *strip;
 	StripElem *se;
@@ -514,7 +514,7 @@ static PyObject *Sequence_getImages( BPy_Sequence * self )
 		return ret;
 	}
 	
-			/*return EXPP_ReturnPyObjError( PyExc_TypeError,
+			/*return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"Sequence is not an image type" );*/
 	
 	
@@ -531,7 +531,7 @@ static PyObject *Sequence_getImages( BPy_Sequence * self )
 	return ret;
 }
 
-static int Sequence_setImages( BPy_Sequence * self, PyObject *value )
+static int V24_Sequence_setImages( V24_BPy_Sequence * self, PyObject *value )
 {
 	Strip *strip;
 	StripElem *se;
@@ -540,13 +540,13 @@ static int Sequence_setImages( BPy_Sequence * self, PyObject *value )
 	char *basepath, *name;
 	
 	if (self->seq->type != SEQ_IMAGE) {
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"Sequence is not an image type" );
 	}
 	
 	if( !PyArg_ParseTuple
 	    ( value, "sO!", &basepath, &PyList_Type, &list ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					      "expected string and optional list argument" );
 	
 	strip = self->seq->strip;
@@ -554,7 +554,7 @@ static int Sequence_setImages( BPy_Sequence * self, PyObject *value )
 	
 	/* for now dont support different image list sizes */
 	if (PyList_Size(list) != strip->len) {
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"at the moment only image lista with the same number of images as the strip are supported" );
 	}
 	
@@ -575,7 +575,7 @@ static int Sequence_setImages( BPy_Sequence * self, PyObject *value )
 /*
  * get floating point attributes
  */
-static PyObject *getIntAttr( BPy_Sequence *self, void *type )
+static PyObject *getIntAttr( V24_BPy_Sequence *self, void *type )
 {
 	int param;
 	struct Sequence *seq= self->seq;
@@ -607,7 +607,7 @@ static PyObject *getIntAttr( BPy_Sequence *self, void *type )
 		param = seq->endstill;
 		break;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError, 
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, 
 				"undefined type in getIntAttr" );
 	}
 
@@ -632,13 +632,13 @@ void intern_recursive_pos_update(Sequence * seq, int offset) {
 }
 
 
-static int setIntAttrClamp( BPy_Sequence *self, PyObject *value, void *type )
+static int setIntAttrClamp( V24_BPy_Sequence *self, PyObject *value, void *type )
 {
 	struct Sequence *seq= self->seq;
 	int number, origval=0;
 
 	if( !PyInt_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError, "expected an int value" );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, "expected an int value" );
 	
 	number = PyInt_AS_LONG( value );
 		
@@ -649,7 +649,7 @@ static int setIntAttrClamp( BPy_Sequence *self, PyObject *value, void *type )
 		break;
 	case EXPP_SEQ_ATTR_START:
 		if (self->seq->type == SEQ_EFFECT)
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"cannot set the location of an effect directly" );
 		CLAMP(number, -MAXFRAME, MAXFRAME);
 		origval = seq->start;
@@ -658,42 +658,42 @@ static int setIntAttrClamp( BPy_Sequence *self, PyObject *value, void *type )
 	
 	case EXPP_SEQ_ATTR_STARTOFS:
 		if (self->seq->type == SEQ_EFFECT)
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"This property dosnt apply to an effect" );
 		CLAMP(number, 0, seq->len - seq->endofs);
 		seq->startofs = number;
 		break;
 	case EXPP_SEQ_ATTR_ENDOFS:
 		if (self->seq->type == SEQ_EFFECT)
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"This property dosnt apply to an effect" );
 		CLAMP(number, 0, seq->len - seq->startofs);
 		seq->endofs = number;
 		break;
 	case EXPP_SEQ_ATTR_STARTSTILL:
 		if (self->seq->type == SEQ_EFFECT)
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"This property dosnt apply to an effect" );
 		CLAMP(number, 1, MAXFRAME);
 		seq->startstill = number;
 		break;
 	case EXPP_SEQ_ATTR_ENDSTILL:
 		if (self->seq->type == SEQ_EFFECT)
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"This property dosnt apply to an effect" );
 		CLAMP(number, seq->startstill+1, MAXFRAME);
 		seq->endstill = number;
 		break;
 	case EXPP_SEQ_ATTR_LENGTH:
 		if (self->seq->type == SEQ_EFFECT)
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"cannot set the length of an effect directly" );
 		CLAMP(number, 1, MAXFRAME);
 		origval = seq->len;
 		seq->start = number;
 		break;
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setFloatAttrClamp" );
 	}
 	
@@ -706,7 +706,7 @@ static int setIntAttrClamp( BPy_Sequence *self, PyObject *value, void *type )
 }
 
 
-static PyObject *getFlagAttr( BPy_Sequence *self, void *type )
+static PyObject *getFlagAttr( V24_BPy_Sequence *self, void *type )
 {
 	if (self->seq->flag & (int)type)
 		Py_RETURN_TRUE;
@@ -719,13 +719,13 @@ static PyObject *getFlagAttr( BPy_Sequence *self, void *type )
  * set floating point attributes which require clamping
  */
 
-static int setFlagAttr( BPy_Sequence *self, PyObject *value, void *type )
+static int setFlagAttr( V24_BPy_Sequence *self, PyObject *value, void *type )
 {
 	int t = (int)type;
 	int param = PyObject_IsTrue( value );
 	
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 	
 	if (param)
@@ -744,26 +744,26 @@ static int setFlagAttr( BPy_Sequence *self, PyObject *value, void *type )
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_Sequence_getseters[] = {
+static PyGetSetDef V24_BPy_Sequence_getseters[] = {
 	{"name",
-	 (getter)Sequence_getName, (setter)Sequence_setName,
+	 (getter)V24_Sequence_getName, (setter)V24_Sequence_setName,
 	 "Sequence name",
 	  NULL},
 	{"ipo",
-	 (getter)Sequence_getIpo, (setter)Sequence_setIpo,
+	 (getter)V24_Sequence_getIpo, (setter)V24_Sequence_setIpo,
 	 "Sequence ipo",
 	  NULL},
 
 	{"scene",
-	 (getter)Sequence_getScene, (setter)NULL,
+	 (getter)V24_Sequence_getScene, (setter)NULL,
 	 "Sequence scene",
 	  NULL},
 	{"sound",
-	 (getter)Sequence_getSound, (setter)NULL,
+	 (getter)V24_Sequence_getSound, (setter)NULL,
 	 "Sequence name",
 	  NULL},
 	{"images",
-	 (getter)Sequence_getImages, (setter)Sequence_setImages,
+	 (getter)V24_Sequence_getImages, (setter)V24_Sequence_setImages,
 	 "Sequence scene",
 	  NULL},
 	  
@@ -844,13 +844,13 @@ static PyGetSetDef BPy_Sequence_getseters[] = {
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_SceneSeq_getseters[] = {
+static PyGetSetDef V24_BPy_SceneSeq_getseters[] = {
 	{"active",
-	 (getter)SceneSeq_getActive, (setter)NULL,
+	 (getter)V24_SceneSeq_getActive, (setter)NULL,
 	 "the active strip",
 	  NULL},
 	{"metastrip",
-	 (getter)SceneSeq_getMetaStrip, (setter)NULL,
+	 (getter)V24_SceneSeq_getMetaStrip, (setter)NULL,
 	 "The currently active metastrip the user is editing",
 	  NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
@@ -859,12 +859,12 @@ static PyGetSetDef BPy_SceneSeq_getseters[] = {
 /*****************************************************************************/
 /* Python TypeSequence structure definition:                                 */
 /*****************************************************************************/
-PyTypeObject Sequence_Type = {
+PyTypeObject V24_Sequence_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Sequence",             /* char *tp_name; */
-	sizeof( BPy_Sequence ),         /* int tp_basicsize; */
+	sizeof( V24_BPy_Sequence ),         /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -873,8 +873,8 @@ PyTypeObject Sequence_Type = {
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Sequence_compare,   /* cmpfunc tp_compare; */
-	( reprfunc ) Sequence_repr,     /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Sequence_compare,   /* cmpfunc tp_compare; */
+	( reprfunc ) V24_Sequence_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -913,13 +913,13 @@ PyTypeObject Sequence_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc ) Sequence_getIter,           /* getiterfunc tp_iter; */
-	( iternextfunc ) Sequence_nextIter,           /* iternextfunc tp_iternext; */
+	( getiterfunc ) V24_Sequence_getIter,           /* getiterfunc tp_iter; */
+	( iternextfunc ) V24_Sequence_nextIter,           /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Sequence_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Sequence_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Sequence_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Sequence_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -946,12 +946,12 @@ PyTypeObject Sequence_Type = {
 /*****************************************************************************/
 /* Python TypeSequence structure definition:                                 */
 /*****************************************************************************/
-PyTypeObject SceneSeq_Type = {
+PyTypeObject V24_SceneSeq_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender SceneSeq",             /* char *tp_name; */
-	sizeof( BPy_Sequence ),         /* int tp_basicsize; */
+	sizeof( V24_BPy_Sequence ),         /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -960,8 +960,8 @@ PyTypeObject SceneSeq_Type = {
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) SceneSeq_compare,   /* cmpfunc tp_compare; */
-	( reprfunc ) SceneSeq_repr,     /* reprfunc tp_repr; */
+	( cmpfunc ) V24_SceneSeq_compare,   /* cmpfunc tp_compare; */
+	( reprfunc ) V24_SceneSeq_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -1000,13 +1000,13 @@ PyTypeObject SceneSeq_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc ) SceneSeq_getIter,           /* getiterfunc tp_iter; */
-	( iternextfunc ) SceneSeq_nextIter,           /* iternextfunc tp_iternext; */
+	( getiterfunc ) V24_SceneSeq_getIter,           /* getiterfunc tp_iter; */
+	( iternextfunc ) V24_SceneSeq_nextIter,           /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_SceneSeq_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_SceneSeq_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_SceneSeq_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_SceneSeq_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -1036,19 +1036,19 @@ PyTypeObject SceneSeq_Type = {
 /*
 PyObject *M_Sequence_Get( PyObject * self, PyObject * args )
 {
-	return SceneSeq_CreatePyObject( G.scene, NULL );
+	return V24_SceneSeq_CreatePyObject( G.scene, NULL );
 }
 */
 
 /*****************************************************************************/
 /* Function:	 initObject						*/
 /*****************************************************************************/
-PyObject *Sequence_Init( void )
+PyObject *V24_Sequence_Init( void )
 {
 	PyObject *submodule;
-	if( PyType_Ready( &Sequence_Type ) < 0 )
+	if( PyType_Ready( &V24_Sequence_Type ) < 0 )
 		return NULL;
-	if( PyType_Ready( &SceneSeq_Type ) < 0 )
+	if( PyType_Ready( &V24_SceneSeq_Type ) < 0 )
 		return NULL;
 	
 	/* NULL was M_Sequence_methods*/
@@ -1057,25 +1057,25 @@ PyObject *Sequence_Init( void )
 This module provides access to **Sequence Data** in Blender.\n" );
 
 	/*Add SUBMODULES to the module*/
-	/*PyDict_SetItemString(dict, "Constraint", Constraint_Init()); //creates a *new* module*/
+	/*PyDict_SetItemString(dict, "Constraint", V24_Constraint_Init()); //creates a *new* module*/
 	return submodule;
 }
 
 
 /*****************************************************************************/
-/* Function:	Sequence_CreatePyObject					 */
+/* Function:	V24_Sequence_CreatePyObject					 */
 /* Description: This function will create a new BlenObject from an existing  */
 /*		Object structure.					 */
 /*****************************************************************************/
-PyObject *Sequence_CreatePyObject( struct Sequence * seq, struct Sequence * iter, struct Scene *sce)
+PyObject *V24_Sequence_CreatePyObject( struct Sequence * seq, struct Sequence * iter, struct Scene *sce)
 {
-	BPy_Sequence *pyseq;
+	V24_BPy_Sequence *pyseq;
 
 	if( !seq )
 		Py_RETURN_NONE;
 
 	pyseq =
-		( BPy_Sequence * ) PyObject_NEW( BPy_Sequence, &Sequence_Type );
+		( V24_BPy_Sequence * ) PyObject_NEW( V24_BPy_Sequence, &V24_Sequence_Type );
 
 	if( pyseq == NULL ) {
 		return ( NULL );
@@ -1088,19 +1088,19 @@ PyObject *Sequence_CreatePyObject( struct Sequence * seq, struct Sequence * iter
 }
 
 /*****************************************************************************/
-/* Function:	SceneSeq_CreatePyObject					 */
+/* Function:	V24_SceneSeq_CreatePyObject					 */
 /* Description: This function will create a new BlenObject from an existing  */
 /*		Object structure.					 */
 /*****************************************************************************/
-PyObject *SceneSeq_CreatePyObject( struct Scene * scn, struct Sequence * iter)
+PyObject *V24_SceneSeq_CreatePyObject( struct Scene * scn, struct Sequence * iter)
 {
-	BPy_SceneSeq *pysceseq;
+	V24_BPy_SceneSeq *pysceseq;
 
 	if( !scn )
 		Py_RETURN_NONE;
 
 	pysceseq =
-		( BPy_SceneSeq * ) PyObject_NEW( BPy_SceneSeq, &SceneSeq_Type );
+		( V24_BPy_SceneSeq * ) PyObject_NEW( V24_BPy_SceneSeq, &V24_SceneSeq_Type );
 
 	if( pysceseq == NULL ) {
 		return ( NULL );
@@ -1118,27 +1118,27 @@ PyObject *SceneSeq_CreatePyObject( struct Scene * scn, struct Sequence * iter)
 /*****************************************************************************/
 struct Sequence *Sequence_FromPyObject( PyObject * py_seq )
 {
-	BPy_Sequence *blen_seq;
+	V24_BPy_Sequence *blen_seq;
 
-	blen_seq = ( BPy_Sequence * ) py_seq;
+	blen_seq = ( V24_BPy_Sequence * ) py_seq;
 	return ( blen_seq->seq );
 }
 
 /*****************************************************************************/
-/* Function:	Sequence_compare						 */
-/* Description: This is a callback function for the BPy_Sequence type. It	 */
-/*		compares two Sequence_Type objects. Only the "==" and "!="  */
+/* Function:	V24_Sequence_compare						 */
+/* Description: This is a callback function for the V24_BPy_Sequence type. It	 */
+/*		compares two V24_Sequence_Type objects. Only the "==" and "!="  */
 /*		comparisons are meaninful. Returns 0 for equality and -1 if  */
 /*		they don't point to the same Blender Object struct.	 */
 /*		In Python it becomes 1 if they are equal, 0 otherwise.	 */
 /*****************************************************************************/
-static int Sequence_compare( BPy_Sequence * a, BPy_Sequence * b )
+static int V24_Sequence_compare( V24_BPy_Sequence * a, V24_BPy_Sequence * b )
 {
 	Sequence *pa = a->seq, *pb = b->seq;
 	return ( pa == pb ) ? 0 : -1;
 }
 
-static int SceneSeq_compare( BPy_SceneSeq * a, BPy_SceneSeq * b )
+static int V24_SceneSeq_compare( V24_BPy_SceneSeq * a, V24_BPy_SceneSeq * b )
 {
 	
 	Scene *pa = a->scene, *pb = b->scene;
@@ -1146,16 +1146,16 @@ static int SceneSeq_compare( BPy_SceneSeq * a, BPy_SceneSeq * b )
 }
 
 /*****************************************************************************/
-/* Function:	Sequence_repr / SceneSeq_repr						 */
-/* Description: This is a callback function for the BPy_Sequence type. It	 */
+/* Function:	V24_Sequence_repr / V24_SceneSeq_repr						 */
+/* Description: This is a callback function for the V24_BPy_Sequence type. It	 */
 /*		builds a meaninful string to represent object objects.	 */
 /*****************************************************************************/
-static PyObject *Sequence_repr( BPy_Sequence * self )
+static PyObject *V24_Sequence_repr( V24_BPy_Sequence * self )
 {
 	return PyString_FromFormat( "[Sequence Strip \"%s\"]",
 					self->seq->name + 2 );
 }
-static PyObject *SceneSeq_repr( BPy_SceneSeq * self )
+static PyObject *V24_SceneSeq_repr( V24_BPy_SceneSeq * self )
 {
 	return PyString_FromFormat( "[Scene Sequence \"%s\"]",
 				self->scene->id.name + 2 );

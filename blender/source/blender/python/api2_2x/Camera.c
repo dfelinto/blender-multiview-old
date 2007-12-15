@@ -67,16 +67,16 @@ enum cam_consts {
 /*****************************************************************************/
 /* Python API function prototypes for the Camera module.                     */
 /*****************************************************************************/
-static PyObject *M_Camera_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_Camera_New( PyObject * self, PyObject * args,
 			       PyObject * keywords );
-static PyObject *M_Camera_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_Camera_Get( PyObject * self, PyObject * args );
 
 /*****************************************************************************/
 /* The following string definitions are used for documentation strings.      */
 /* In Python these will be written to the console when doing a               */
 /* Blender.Camera.__doc__                                                    */
 /*****************************************************************************/
-static char M_Camera_doc[] = "The Blender Camera module\n\
+static char V24_M_Camera_doc[] = "The Blender Camera module\n\
 \n\
 This module provides access to **Camera Data** objects in Blender\n\
 \n\
@@ -89,11 +89,11 @@ Example::\n\
   ob = scn.objects.new(c)      # Make an object from this data in the scene\n\
   cur.setCurrentCamera(ob)     # make this camera the active";
 
-static char M_Camera_New_doc[] =
+static char V24_M_Camera_New_doc[] =
 	"Camera.New (type = 'persp', name = 'CamData'):\n\
         Return a new Camera Data object with the given type and name.";
 
-static char M_Camera_Get_doc[] = "Camera.Get (name = None):\n\
+static char V24_M_Camera_Get_doc[] = "Camera.Get (name = None):\n\
         Return the camera data with the given 'name', None if not found, or\n\
         Return a list with all Camera Data objects in the current scene,\n\
         if no argument was given.";
@@ -102,113 +102,113 @@ static char M_Camera_Get_doc[] = "Camera.Get (name = None):\n\
 /* Python method structure definition for Blender.Camera module:             */
 /*****************************************************************************/
 struct PyMethodDef M_Camera_methods[] = {
-	{"New", ( PyCFunction ) M_Camera_New, METH_VARARGS | METH_KEYWORDS,
-	 M_Camera_New_doc},
-	{"Get", M_Camera_Get, METH_VARARGS, M_Camera_Get_doc},
-	{"get", M_Camera_Get, METH_VARARGS, M_Camera_Get_doc},
+	{"New", ( PyCFunction ) V24_M_Camera_New, METH_VARARGS | METH_KEYWORDS,
+	 V24_M_Camera_New_doc},
+	{"Get", V24_M_Camera_Get, METH_VARARGS, V24_M_Camera_Get_doc},
+	{"get", V24_M_Camera_Get, METH_VARARGS, V24_M_Camera_Get_doc},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python BPy_Camera methods declarations:                                   */
+/* Python V24_BPy_Camera methods declarations:                                   */
 /*****************************************************************************/
-static PyObject *Camera_oldgetType( BPy_Camera * self );
-static PyObject *Camera_oldgetMode( BPy_Camera * self );
-static PyObject *Camera_oldgetLens( BPy_Camera * self );
-static PyObject *Camera_oldgetClipStart( BPy_Camera * self );
-static PyObject *Camera_oldgetClipEnd( BPy_Camera * self );
-static PyObject *Camera_oldgetDrawSize( BPy_Camera * self );
-static PyObject *Camera_oldgetScale( BPy_Camera * self );
-static PyObject *Camera_getIpo( BPy_Camera * self );
-static int Camera_setIpo( BPy_Camera * self, PyObject * value );
-static PyObject *Camera_oldsetIpo( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_oldsetType( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_oldsetMode( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_oldsetLens( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_oldsetClipStart( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_oldsetClipEnd( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_oldsetDrawSize( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_oldsetScale( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_oldgetScriptLinks( BPy_Camera * self, PyObject * value );
-static PyObject *Camera_addScriptLink( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_oldclearIpo( BPy_Camera * self );
-static PyObject *Camera_clearScriptLinks( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_insertIpoKey( BPy_Camera * self, PyObject * args );
-static PyObject *Camera_copy( BPy_Camera * self );
+static PyObject *V24_Camera_oldgetType( V24_BPy_Camera * self );
+static PyObject *V24_Camera_oldgetMode( V24_BPy_Camera * self );
+static PyObject *V24_Camera_oldgetLens( V24_BPy_Camera * self );
+static PyObject *V24_Camera_oldgetClipStart( V24_BPy_Camera * self );
+static PyObject *V24_Camera_oldgetClipEnd( V24_BPy_Camera * self );
+static PyObject *V24_Camera_oldgetDrawSize( V24_BPy_Camera * self );
+static PyObject *V24_Camera_oldgetScale( V24_BPy_Camera * self );
+static PyObject *V24_Camera_getIpo( V24_BPy_Camera * self );
+static int V24_Camera_setIpo( V24_BPy_Camera * self, PyObject * value );
+static PyObject *V24_Camera_oldsetIpo( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_oldsetType( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_oldsetMode( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_oldsetLens( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_oldsetClipStart( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_oldsetClipEnd( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_oldsetDrawSize( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_oldsetScale( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_oldgetScriptLinks( V24_BPy_Camera * self, PyObject * value );
+static PyObject *V24_Camera_addScriptLink( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_oldclearIpo( V24_BPy_Camera * self );
+static PyObject *V24_Camera_clearScriptLinks( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_insertIpoKey( V24_BPy_Camera * self, PyObject * args );
+static PyObject *V24_Camera_copy( V24_BPy_Camera * self );
 
 
 /*****************************************************************************/
-/* Python BPy_Camera methods table:                                          */
+/* Python V24_BPy_Camera methods table:                                          */
 /*****************************************************************************/
-static PyMethodDef BPy_Camera_methods[] = {
+static PyMethodDef V24_BPy_Camera_methods[] = {
 	/* name, method, flags, doc */
-	{"getIpo", ( PyCFunction ) Camera_getIpo, METH_NOARGS,
+	{"getIpo", ( PyCFunction ) V24_Camera_getIpo, METH_NOARGS,
 	 "() - Return Camera Data Ipo"},
-	{"getName", ( PyCFunction ) GenericLib_getName, METH_NOARGS,
+	{"getName", ( PyCFunction ) V24_GenericLib_getName, METH_NOARGS,
 	 "() - Return Camera Data name"},
-	{"getType", ( PyCFunction ) Camera_oldgetType, METH_NOARGS,
+	{"getType", ( PyCFunction ) V24_Camera_oldgetType, METH_NOARGS,
 	 "() - Return Camera type - 'persp':0, 'ortho':1"},
-	{"getMode", ( PyCFunction ) Camera_oldgetMode, METH_NOARGS,
+	{"getMode", ( PyCFunction ) V24_Camera_oldgetMode, METH_NOARGS,
 	 "() - Return Camera mode flags (or'ed value) -\n"
 	 "     'showLimits':1, 'showMist':2"},
-	{"getLens", ( PyCFunction ) Camera_oldgetLens, METH_NOARGS,
+	{"getLens", ( PyCFunction ) V24_Camera_oldgetLens, METH_NOARGS,
 	 "() - Return *perspective* Camera lens value"},
-	{"getScale", ( PyCFunction ) Camera_oldgetScale, METH_NOARGS,
+	{"getScale", ( PyCFunction ) V24_Camera_oldgetScale, METH_NOARGS,
 	 "() - Return *ortho* Camera scale value"},
-	{"getClipStart", ( PyCFunction ) Camera_oldgetClipStart, METH_NOARGS,
+	{"getClipStart", ( PyCFunction ) V24_Camera_oldgetClipStart, METH_NOARGS,
 	 "() - Return Camera clip start value"},
-	{"getClipEnd", ( PyCFunction ) Camera_oldgetClipEnd, METH_NOARGS,
+	{"getClipEnd", ( PyCFunction ) V24_Camera_oldgetClipEnd, METH_NOARGS,
 	 "() - Return Camera clip end value"},
-	{"getDrawSize", ( PyCFunction ) Camera_oldgetDrawSize, METH_NOARGS,
+	{"getDrawSize", ( PyCFunction ) V24_Camera_oldgetDrawSize, METH_NOARGS,
 	 "() - Return Camera draw size value"},
-	{"setIpo", ( PyCFunction ) Camera_oldsetIpo, METH_VARARGS,
+	{"setIpo", ( PyCFunction ) V24_Camera_oldsetIpo, METH_VARARGS,
 	 "(Blender Ipo) - Set Camera Ipo"},
-	{"clearIpo", ( PyCFunction ) Camera_oldclearIpo, METH_NOARGS,
+	{"clearIpo", ( PyCFunction ) V24_Camera_oldclearIpo, METH_NOARGS,
 	 "() - Unlink Ipo from this Camera."},
-	 {"insertIpoKey", ( PyCFunction ) Camera_insertIpoKey, METH_VARARGS,
+	 {"insertIpoKey", ( PyCFunction ) V24_Camera_insertIpoKey, METH_VARARGS,
 	 "( Camera IPO type ) - Inserts a key into IPO"},
-	{"setName", ( PyCFunction ) GenericLib_setName_with_method, METH_VARARGS,
+	{"setName", ( PyCFunction ) V24_GenericLib_setName_with_method, METH_VARARGS,
 	 "(s) - Set Camera Data name"},
-	{"setType", ( PyCFunction ) Camera_oldsetType, METH_O,
+	{"setType", ( PyCFunction ) V24_Camera_oldsetType, METH_O,
 	 "(s) - Set Camera type, which can be 'persp' or 'ortho'"},
-	{"setMode", ( PyCFunction ) Camera_oldsetMode, METH_VARARGS,
+	{"setMode", ( PyCFunction ) V24_Camera_oldsetMode, METH_VARARGS,
 	 "(<s<,s>>) - Set Camera mode flag(s): 'showLimits' and 'showMist'"},
-	{"setLens", ( PyCFunction ) Camera_oldsetLens, METH_O,
+	{"setLens", ( PyCFunction ) V24_Camera_oldsetLens, METH_O,
 	 "(f) - Set *perpective* Camera lens value"},
-	{"setScale", ( PyCFunction ) Camera_oldsetScale, METH_O,
+	{"setScale", ( PyCFunction ) V24_Camera_oldsetScale, METH_O,
 	 "(f) - Set *ortho* Camera scale value"},
-	{"setClipStart", ( PyCFunction ) Camera_oldsetClipStart, METH_O,
+	{"setClipStart", ( PyCFunction ) V24_Camera_oldsetClipStart, METH_O,
 	 "(f) - Set Camera clip start value"},
-	{"setClipEnd", ( PyCFunction ) Camera_oldsetClipEnd, METH_O,
+	{"setClipEnd", ( PyCFunction ) V24_Camera_oldsetClipEnd, METH_O,
 	 "(f) - Set Camera clip end value"},
-	{"setDrawSize", ( PyCFunction ) Camera_oldsetDrawSize, METH_O,
+	{"setDrawSize", ( PyCFunction ) V24_Camera_oldsetDrawSize, METH_O,
 	 "(f) - Set Camera draw size value"},
-	{"getScriptLinks", ( PyCFunction ) Camera_oldgetScriptLinks, METH_O,
+	{"getScriptLinks", ( PyCFunction ) V24_Camera_oldgetScriptLinks, METH_O,
 	 "(eventname) - Get a list of this camera's scriptlinks (Text names) "
 	 "of the given type\n"
 	 "(eventname) - string: FrameChanged, Redraw or Render."},
-	{"addScriptLink", ( PyCFunction ) Camera_addScriptLink, METH_VARARGS,
+	{"addScriptLink", ( PyCFunction ) V24_Camera_addScriptLink, METH_VARARGS,
 	 "(text, evt) - Add a new camera scriptlink.\n"
 	 "(text) - string: an existing Blender Text name;\n"
 	 "(evt) string: FrameChanged, Redraw or Render."},
-	{"clearScriptLinks", ( PyCFunction ) Camera_clearScriptLinks,
+	{"clearScriptLinks", ( PyCFunction ) V24_Camera_clearScriptLinks,
 	 METH_NOARGS,
 	 "() - Delete all scriptlinks from this camera.\n"
 	 "([s1<,s2,s3...>]) - Delete specified scriptlinks from this camera."},
-	{"__copy__", ( PyCFunction ) Camera_copy, METH_NOARGS,
+	{"__copy__", ( PyCFunction ) V24_Camera_copy, METH_NOARGS,
 	 "() - Return a copy of the camera."},
-	{"copy", ( PyCFunction ) Camera_copy, METH_NOARGS,
+	{"copy", ( PyCFunction ) V24_Camera_copy, METH_NOARGS,
 	 "() - Return a copy of the camera."},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python Camera_Type callback function prototypes:                          */
+/* Python V24_Camera_Type callback function prototypes:                          */
 /*****************************************************************************/
-static int Camera_compare( BPy_Camera * a, BPy_Camera * b );
-static PyObject *Camera_repr( BPy_Camera * self );
+static int V24_Camera_compare( V24_BPy_Camera * a, V24_BPy_Camera * b );
+static PyObject *V24_Camera_repr( V24_BPy_Camera * self );
 
-static PyObject *M_Camera_New( PyObject * self, PyObject * args,
+static PyObject *V24_M_Camera_New( PyObject * self, PyObject * args,
 			       PyObject * kwords )
 {
 	char *type_str = "persp";	/* "persp" is type 0, "ortho" is type 1 */
@@ -221,15 +221,15 @@ static PyObject *M_Camera_New( PyObject * self, PyObject * args,
 	if( !PyArg_ParseTupleAndKeywords( args, kwords, "|ss", kwlist,
 					  &type_str, &name_str ) )
 		/* We expected string(s) (or nothing) as argument, but we didn't get that. */
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected zero, one or two strings as arguments" );
 
 	blcam = add_camera( name_str );	/* first create the Camera Data in Blender */
 
 	if( blcam )		/* now create the wrapper obj in Python */
-		pycam = Camera_CreatePyObject( blcam );
+		pycam = V24_Camera_CreatePyObject( blcam );
 	else
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "couldn't create Camera Data in Blender" );
 
 	/* let's return user count to zero, because ... */
@@ -237,7 +237,7 @@ static PyObject *M_Camera_New( PyObject * self, PyObject * args,
 	/* XXX XXX Do this in other modules, too */
 
 	if( pycam == NULL )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					      "couldn't create Camera PyObject" );
 
 	if( strcmp( type_str, "persp" ) == 0 )
@@ -248,19 +248,19 @@ static PyObject *M_Camera_New( PyObject * self, PyObject * args,
 	else if( strcmp( type_str, "ortho" ) == 0 )
 		blcam->type = ( short ) EXPP_CAM_TYPE_ORTHO;
 	else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "unknown camera type" );
 	
 	return pycam;
 }
 
-static PyObject *M_Camera_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_Camera_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	Camera *cam_iter;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument (or nothing)" );
 
 	cam_iter = G.main->camera.first;
@@ -272,7 +272,7 @@ static PyObject *M_Camera_Get( PyObject * self, PyObject * args )
 		while( cam_iter && !wanted_cam ) {
 
 			if( strcmp( name, cam_iter->id.name + 2 ) == 0 ) {
-				wanted_cam = Camera_CreatePyObject( cam_iter );
+				wanted_cam = V24_Camera_CreatePyObject( cam_iter );
 				break;
 			}
 
@@ -283,7 +283,7 @@ static PyObject *M_Camera_Get( PyObject * self, PyObject * args )
 			char error_msg[64];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Camera \"%s\" not found", name );
-			return EXPP_ReturnPyObjError( PyExc_NameError,
+			return V24_EXPP_ReturnPyObjError( PyExc_NameError,
 						      error_msg );
 		}
 
@@ -298,15 +298,15 @@ static PyObject *M_Camera_Get( PyObject * self, PyObject * args )
 			PyList_New( BLI_countlist( &( G.main->camera ) ) );
 
 		if( !cam_pylist )
-			return EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 						      "couldn't create PyList" );
 
 		while( cam_iter ) {
-			pyobj = Camera_CreatePyObject( cam_iter );
+			pyobj = V24_Camera_CreatePyObject( cam_iter );
 
 			if( !pyobj ) {
 				Py_DECREF(cam_pylist);
-				return EXPP_ReturnPyObjError
+				return V24_EXPP_ReturnPyObjError
 					( PyExc_MemoryError,
 					  "couldn't create Camera PyObject" );
 			}
@@ -320,15 +320,15 @@ static PyObject *M_Camera_Get( PyObject * self, PyObject * args )
 	}
 }
 
-PyObject *Camera_Init( void )
+PyObject *V24_Camera_Init( void )
 {
 	PyObject *submodule;
 
-	if( PyType_Ready( &Camera_Type ) < 0 )
+	if( PyType_Ready( &V24_Camera_Type ) < 0 )
 		return NULL;
 	
 	submodule = Py_InitModule3( "Blender.Camera",
-				    M_Camera_methods, M_Camera_doc );
+				    M_Camera_methods, V24_M_Camera_doc );
 
 	PyModule_AddIntConstant( submodule, "LENS",     IPOKEY_LENS );
 	PyModule_AddIntConstant( submodule, "CLIPPING", IPOKEY_CLIPPING );
@@ -336,74 +336,74 @@ PyObject *Camera_Init( void )
 	return submodule;
 }
 
-/* Three Python Camera_Type helper functions needed by the Object module: */
+/* Three Python V24_Camera_Type helper functions needed by the Object module: */
 
-PyObject *Camera_CreatePyObject( Camera * cam )
+PyObject *V24_Camera_CreatePyObject( Camera * cam )
 {
-	BPy_Camera *pycam;
+	V24_BPy_Camera *pycam;
 
-	pycam = ( BPy_Camera * ) PyObject_NEW( BPy_Camera, &Camera_Type );
+	pycam = ( V24_BPy_Camera * ) PyObject_NEW( V24_BPy_Camera, &V24_Camera_Type );
 
 	if( !pycam )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "couldn't create BPy_Camera PyObject" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "couldn't create V24_BPy_Camera PyObject" );
 
 	pycam->camera = cam;
 	return ( PyObject * ) pycam;
 }
 
-Camera *Camera_FromPyObject( PyObject * pyobj )
+Camera *V24_Camera_FromPyObject( PyObject * pyobj )
 {
-	return ( ( BPy_Camera * ) pyobj )->camera;
+	return ( ( V24_BPy_Camera * ) pyobj )->camera;
 }
 
 /*****************************************************************************/
-/* Python BPy_Camera methods:                                               */
+/* Python V24_BPy_Camera methods:                                               */
 /*****************************************************************************/
 
-static PyObject *Camera_oldgetType( BPy_Camera * self )
+static PyObject *V24_Camera_oldgetType( V24_BPy_Camera * self )
 {
 	return PyInt_FromLong( self->camera->type );
 }
 
-static PyObject *Camera_oldgetMode( BPy_Camera * self )
+static PyObject *V24_Camera_oldgetMode( V24_BPy_Camera * self )
 {
 	return PyInt_FromLong( self->camera->flag );
 }
 
-static PyObject *Camera_oldgetLens( BPy_Camera * self )
+static PyObject *V24_Camera_oldgetLens( V24_BPy_Camera * self )
 {
 	return PyFloat_FromDouble( self->camera->lens );
 }
 
-static PyObject *Camera_oldgetScale( BPy_Camera * self )
+static PyObject *V24_Camera_oldgetScale( V24_BPy_Camera * self )
 {
 	return PyFloat_FromDouble( self->camera->ortho_scale );
 }
 
-static PyObject *Camera_oldgetClipStart( BPy_Camera * self )
+static PyObject *V24_Camera_oldgetClipStart( V24_BPy_Camera * self )
 {
 	return PyFloat_FromDouble( self->camera->clipsta );
 }
 
-static PyObject *Camera_oldgetClipEnd( BPy_Camera * self )
+static PyObject *V24_Camera_oldgetClipEnd( V24_BPy_Camera * self )
 {
 	return PyFloat_FromDouble( self->camera->clipend );
 }
 
-static PyObject *Camera_oldgetDrawSize( BPy_Camera * self )
+static PyObject *V24_Camera_oldgetDrawSize( V24_BPy_Camera * self )
 {
 	return PyFloat_FromDouble( self->camera->drawsize );
 }
 
 
 
-static PyObject *Camera_oldsetIpo( BPy_Camera * self, PyObject * args )
+static PyObject *V24_Camera_oldsetIpo( V24_BPy_Camera * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Camera_setIpo );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Camera_setIpo );
 }
 
-static PyObject *Camera_oldclearIpo( BPy_Camera * self )
+static PyObject *V24_Camera_oldclearIpo( V24_BPy_Camera * self )
 {
 	Camera *cam = self->camera;
 	Ipo *ipo = ( Ipo * ) cam->ipo;
@@ -414,18 +414,18 @@ static PyObject *Camera_oldclearIpo( BPy_Camera * self )
 			id->us--;
 		cam->ipo = NULL;
 
-		return EXPP_incr_ret_True();
+		return V24_EXPP_incr_ret_True();
 	}
 
-	return EXPP_incr_ret_False(); /* no ipo found */
+	return V24_EXPP_incr_ret_False(); /* no ipo found */
 }
 
-static PyObject *Camera_oldsetType( BPy_Camera * self, PyObject * value )
+static PyObject *V24_Camera_oldsetType( V24_BPy_Camera * self, PyObject * value )
 {
 	char *type = PyString_AsString(value);
 
 	if(!value)
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument" );
 
 	if( strcmp( type, "persp" ) == 0 )
@@ -433,19 +433,19 @@ static PyObject *Camera_oldsetType( BPy_Camera * self, PyObject * value )
 	else if( strcmp( type, "ortho" ) == 0 )
 		self->camera->type = ( short ) EXPP_CAM_TYPE_ORTHO;
 	else
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "unknown camera type" );
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Camera_oldsetMode( BPy_Camera * self, PyObject * args )
+static PyObject *V24_Camera_oldsetMode( V24_BPy_Camera * self, PyObject * args )
 {
 	char *mode_str1 = NULL, *mode_str2 = NULL;
 	short flag = 0;
 
 	if( !PyArg_ParseTuple( args, "|ss", &mode_str1, &mode_str2 ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected one or two strings as arguments" );
 
 	if( mode_str1 != NULL ) {
@@ -454,7 +454,7 @@ static PyObject *Camera_oldsetMode( BPy_Camera * self, PyObject * args )
 		else if( strcmp( mode_str1, "showMist" ) == 0 )
 			flag |= ( short ) EXPP_CAM_MODE_SHOWMIST;
 		else
-			return EXPP_ReturnPyObjError( PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						      "first argument is an unknown camera flag" );
 
 		if( mode_str2 != NULL ) {
@@ -463,7 +463,7 @@ static PyObject *Camera_oldsetMode( BPy_Camera * self, PyObject * args )
 			else if( strcmp( mode_str2, "showMist" ) == 0 )
 				flag |= ( short ) EXPP_CAM_MODE_SHOWMIST;
 			else
-				return EXPP_ReturnPyObjError
+				return V24_EXPP_ReturnPyObjError
 					( PyExc_AttributeError,
 					  "second argument is an unknown camera flag" );
 		}
@@ -474,75 +474,75 @@ static PyObject *Camera_oldsetMode( BPy_Camera * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static PyObject *Camera_oldsetLens( BPy_Camera * self, PyObject * value )
+static PyObject *V24_Camera_oldsetLens( V24_BPy_Camera * self, PyObject * value )
 {
 	float param = PyFloat_AsDouble(value);
 
 	if( !PyFloat_Check(value) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected float argument" );
 
-	self->camera->lens = EXPP_ClampFloat( param,
+	self->camera->lens = V24_EXPP_ClampFloat( param,
 					      EXPP_CAM_LENS_MIN,
 					      EXPP_CAM_LENS_MAX );
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Camera_oldsetScale( BPy_Camera * self, PyObject * value )
+static PyObject *V24_Camera_oldsetScale( V24_BPy_Camera * self, PyObject * value )
 {
 	float param = PyFloat_AsDouble(value);
 
 	if( !PyFloat_Check(value) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected float argument" );
 
-	self->camera->ortho_scale = EXPP_ClampFloat( param,
+	self->camera->ortho_scale = V24_EXPP_ClampFloat( param,
 					      EXPP_CAM_SCALE_MIN,
 					      EXPP_CAM_SCALE_MAX );
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Camera_oldsetClipStart( BPy_Camera * self, PyObject * value )
+static PyObject *V24_Camera_oldsetClipStart( V24_BPy_Camera * self, PyObject * value )
 {
 	float param = PyFloat_AsDouble(value);
 
 	if( !PyFloat_Check(value) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected float argument" );
 
-	self->camera->clipsta = EXPP_ClampFloat( param,
+	self->camera->clipsta = V24_EXPP_ClampFloat( param,
 						 EXPP_CAM_CLIPSTART_MIN,
 						 EXPP_CAM_CLIPSTART_MAX );
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Camera_oldsetClipEnd( BPy_Camera * self, PyObject * value )
+static PyObject *V24_Camera_oldsetClipEnd( V24_BPy_Camera * self, PyObject * value )
 {
 	float param = PyFloat_AsDouble(value);
 
 	if( !PyFloat_Check(value) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected float argument" );
 
-	self->camera->clipend = EXPP_ClampFloat( param,
+	self->camera->clipend = V24_EXPP_ClampFloat( param,
 						 EXPP_CAM_CLIPEND_MIN,
 						 EXPP_CAM_CLIPEND_MAX );
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Camera_oldsetDrawSize( BPy_Camera * self, PyObject * value )
+static PyObject *V24_Camera_oldsetDrawSize( V24_BPy_Camera * self, PyObject * value )
 {
 	float param = PyFloat_AsDouble(value);
 
 	if( !PyFloat_Check(value) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected float argument" );
 
-	self->camera->drawsize = EXPP_ClampFloat( param,
+	self->camera->drawsize = V24_EXPP_ClampFloat( param,
 						  EXPP_CAM_DRAWSIZE_MIN,
 						  EXPP_CAM_DRAWSIZE_MAX );
 
@@ -550,29 +550,29 @@ static PyObject *Camera_oldsetDrawSize( BPy_Camera * self, PyObject * value )
 }
 
 /* cam.addScriptLink */
-static PyObject *Camera_addScriptLink( BPy_Camera * self, PyObject * args )
+static PyObject *V24_Camera_addScriptLink( V24_BPy_Camera * self, PyObject * args )
 {
 	Camera *cam = self->camera;
 	ScriptLink *slink = NULL;
 
 	slink = &( cam )->scriptlink;
 
-	return EXPP_addScriptLink( slink, args, 0 );
+	return V24_EXPP_addScriptLink( slink, args, 0 );
 }
 
 /* cam.clearScriptLinks */
-static PyObject *Camera_clearScriptLinks( BPy_Camera * self, PyObject * args )
+static PyObject *V24_Camera_clearScriptLinks( V24_BPy_Camera * self, PyObject * args )
 {
 	Camera *cam = self->camera;
 	ScriptLink *slink = NULL;
 
 	slink = &( cam )->scriptlink;
 
-	return EXPP_clearScriptLinks( slink, args );
+	return V24_EXPP_clearScriptLinks( slink, args );
 }
 
 /* cam.getScriptLinks */
-static PyObject *Camera_oldgetScriptLinks( BPy_Camera * self, PyObject * value )
+static PyObject *V24_Camera_oldgetScriptLinks( V24_BPy_Camera * self, PyObject * value )
 {
 	Camera *cam = self->camera;
 	ScriptLink *slink = NULL;
@@ -580,7 +580,7 @@ static PyObject *Camera_oldgetScriptLinks( BPy_Camera * self, PyObject * value )
 
 	slink = &( cam )->scriptlink;
 
-	ret = EXPP_getScriptLinks( slink, value, 0 );
+	ret = V24_EXPP_getScriptLinks( slink, value, 0 );
 
 	if( ret )
 		return ret;
@@ -589,7 +589,7 @@ static PyObject *Camera_oldgetScriptLinks( BPy_Camera * self, PyObject * value )
 }
 
 /* cam.__copy__ */
-static PyObject *Camera_copy( BPy_Camera * self )
+static PyObject *V24_Camera_copy( V24_BPy_Camera * self )
 {
 	PyObject *pycam;	/* for Camera Data object wrapper in Python */
 	Camera *blcam;		/* for actual Camera Data we create in Blender */
@@ -597,9 +597,9 @@ static PyObject *Camera_copy( BPy_Camera * self )
 	blcam = copy_camera( self->camera );	/* first create the Camera Data in Blender */
 
 	if( blcam )		/* now create the wrapper obj in Python */
-		pycam = Camera_CreatePyObject( blcam );
+		pycam = V24_Camera_CreatePyObject( blcam );
 	else
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "couldn't create Camera Data in Blender" );
 
 	/* let's return user count to zero, because ... */
@@ -607,13 +607,13 @@ static PyObject *Camera_copy( BPy_Camera * self )
 	/* XXX XXX Do this in other modules, too */
 
 	if( pycam == NULL )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					      "couldn't create Camera PyObject" );
 
 	return pycam;
 }
 
-static PyObject *Camera_getType( BPy_Camera * self )
+static PyObject *V24_Camera_getType( V24_BPy_Camera * self )
 {
 	if (self->camera->type == EXPP_CAM_TYPE_PERSP)
 		return PyString_FromString("persp");
@@ -621,13 +621,13 @@ static PyObject *Camera_getType( BPy_Camera * self )
 		return PyString_FromString("ortho");
 }
 
-static int Camera_setType( BPy_Camera * self, PyObject * value )
+static int V24_Camera_setType( V24_BPy_Camera * self, PyObject * value )
 {
 	char *type = NULL;
 	type = PyString_AsString(value);
 	
 	if (!type)
-		return EXPP_ReturnIntError( PyExc_ValueError,
+		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 					      "expected a string" );
 	if (strcmp("persp", type)==0) {
 		self->camera->type = EXPP_CAM_TYPE_PERSP;
@@ -637,23 +637,23 @@ static int Camera_setType( BPy_Camera * self, PyObject * value )
 		return 0;
 	}
 	
-	return EXPP_ReturnIntError( PyExc_ValueError,
+	return V24_EXPP_ReturnIntError( PyExc_ValueError,
 		"expected a string \"ortho\" or \"persp\"" );
 }
 
 
 
-static PyObject *Camera_getMode( BPy_Camera * self )
+static PyObject *V24_Camera_getMode( V24_BPy_Camera * self )
 {
 	return PyInt_FromLong(self->camera->flag);
 }
 
-static int Camera_setMode( BPy_Camera * self, PyObject * value )
+static int V24_Camera_setMode( V24_BPy_Camera * self, PyObject * value )
 {
 	unsigned int flag = 0;
 	
 	if( !PyInt_Check( value ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected an integer (bitmask) as argument" );
 	
 	flag = ( unsigned int )PyInt_AS_LONG( value );
@@ -662,25 +662,25 @@ static int Camera_setMode( BPy_Camera * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Camera_getIpo( BPy_Camera * self )
+static PyObject *V24_Camera_getIpo( V24_BPy_Camera * self )
 {
 	struct Ipo *ipo = self->camera->ipo;
 
 	if( ipo )
-		return Ipo_CreatePyObject( ipo );
+		return V24_Ipo_CreatePyObject( ipo );
 	Py_RETURN_NONE;
 }
 
-static int Camera_setIpo( BPy_Camera * self, PyObject * value )
+static int V24_Camera_setIpo( V24_BPy_Camera * self, PyObject * value )
 {
-	return GenericLib_assignData(value, (void **) &self->camera->ipo, 0, 1, ID_IP, ID_CA);
+	return V24_GenericLib_assignData(value, (void **) &self->camera->ipo, 0, 1, ID_IP, ID_CA);
 }
 
 /*
  * get floating point attributes
  */
 
-static PyObject *getFloatAttr( BPy_Camera *self, void *type )
+static PyObject *getFloatAttr( V24_BPy_Camera *self, void *type )
 {
 	float param;
 	struct Camera *cam= self->camera;
@@ -718,7 +718,7 @@ static PyObject *getFloatAttr( BPy_Camera *self, void *type )
 		break;
 	
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError, 
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, 
 				"undefined type in getFloatAttr" );
 	}
 
@@ -731,7 +731,7 @@ static PyObject *getFloatAttr( BPy_Camera *self, void *type )
  * set floating point attributes which require clamping
  */
 
-static int setFloatAttrClamp( BPy_Camera *self, PyObject *value, void *type )
+static int setFloatAttrClamp( V24_BPy_Camera *self, PyObject *value, void *type )
 {
 	float *param;
 	struct Camera *cam = self->camera;
@@ -791,11 +791,11 @@ static int setFloatAttrClamp( BPy_Camera *self, PyObject *value, void *type )
 		break;
 	
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setFloatAttrClamp" );
 	}
 
-	ret = EXPP_setFloatClamped( value, param, min, max );
+	ret = V24_EXPP_setFloatClamped( value, param, min, max );
 	
 	if (ret==0) {
 		if ((int)type == EXPP_CAM_ATTR_ANGLE) {
@@ -810,7 +810,7 @@ static int setFloatAttrClamp( BPy_Camera *self, PyObject *value, void *type )
  * get floating point attributes
  */
 
-static PyObject *getFlagAttr( BPy_Camera *self, void *type )
+static PyObject *getFlagAttr( V24_BPy_Camera *self, void *type )
 {
 	if (self->camera->flag & (int)type)
 		Py_RETURN_TRUE;
@@ -822,11 +822,11 @@ static PyObject *getFlagAttr( BPy_Camera *self, void *type )
  * set floating point attributes which require clamping
  */
 
-static int setFlagAttr( BPy_Camera *self, PyObject *value, void *type )
+static int setFlagAttr( V24_BPy_Camera *self, PyObject *value, void *type )
 {
 	int param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 	
 	if (param)
@@ -840,18 +840,18 @@ static int setFlagAttr( BPy_Camera *self, PyObject *value, void *type )
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_Camera_getseters[] = {
+static PyGetSetDef V24_BPy_Camera_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
 	{"type",
-	 (getter)Camera_getType, (setter)Camera_setType,
+	 (getter)V24_Camera_getType, (setter)V24_Camera_setType,
 	 "camera type \"persp\" or \"ortho\"",
 	 NULL},
 	{"mode",
-	 (getter)Camera_getMode, (setter)Camera_setMode,
+	 (getter)V24_Camera_getMode, (setter)V24_Camera_setMode,
 	 "Cameras mode",
 	 NULL},
 	{"ipo",
-	 (getter)Camera_getIpo, (setter)Camera_setIpo,
+	 (getter)V24_Camera_getIpo, (setter)V24_Camera_setIpo,
 	 "Cameras ipo",
 	 NULL},
 	
@@ -928,14 +928,14 @@ static PyGetSetDef BPy_Camera_getseters[] = {
 
 
 /*****************************************************************************/
-/* Python Camera_Type structure definition:                               */
+/* Python V24_Camera_Type structure definition:                               */
 /*****************************************************************************/
-PyTypeObject Camera_Type = {
+PyTypeObject V24_Camera_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Camera",           /* char *tp_name; */
-	sizeof( BPy_Camera ),       /* int tp_basicsize; */
+	sizeof( V24_BPy_Camera ),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -944,8 +944,8 @@ PyTypeObject Camera_Type = {
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Camera_compare, /* cmpfunc tp_compare; */
-	( reprfunc ) Camera_repr,   /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Camera_compare, /* cmpfunc tp_compare; */
+	( reprfunc ) V24_Camera_repr,   /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -988,9 +988,9 @@ PyTypeObject Camera_Type = {
 	NULL, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Camera_methods,       /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Camera_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Camera_getseters,                       /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Camera_getseters,                       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -1014,29 +1014,29 @@ PyTypeObject Camera_Type = {
 
 
 
-static int Camera_compare( BPy_Camera * a, BPy_Camera * b )
+static int V24_Camera_compare( V24_BPy_Camera * a, V24_BPy_Camera * b )
 {
 	Camera *pa = a->camera, *pb = b->camera;
 	return ( pa == pb ) ? 0 : -1;
 }
 
-static PyObject *Camera_repr( BPy_Camera * self )
+static PyObject *V24_Camera_repr( V24_BPy_Camera * self )
 {
 	return PyString_FromFormat( "[Camera \"%s\"]",
 				    self->camera->id.name + 2 );
 }
 
 /*
- * Camera_insertIpoKey()
+ * V24_Camera_insertIpoKey()
  *  inserts Camera IPO key for LENS and CLIPPING
  */
 
-static PyObject *Camera_insertIpoKey( BPy_Camera * self, PyObject * args )
+static PyObject *V24_Camera_insertIpoKey( V24_BPy_Camera * self, PyObject * args )
 {
 	int key = 0;
 
 	if( !PyArg_ParseTuple( args, "i", &( key ) ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 										"expected int argument" ) );
 
 	if (key == IPOKEY_LENS){
@@ -1048,10 +1048,10 @@ static PyObject *Camera_insertIpoKey( BPy_Camera * self, PyObject * args )
 	}
 
 	allspace(REMAKEIPO, 0);
-	EXPP_allqueue(REDRAWIPO, 0);
-	EXPP_allqueue(REDRAWVIEW3D, 0);
-	EXPP_allqueue(REDRAWACTION, 0);
-	EXPP_allqueue(REDRAWNLA, 0);
+	V24_EXPP_allqueue(REDRAWIPO, 0);
+	V24_EXPP_allqueue(REDRAWVIEW3D, 0);
+	V24_EXPP_allqueue(REDRAWACTION, 0);
+	V24_EXPP_allqueue(REDRAWNLA, 0);
 
 	Py_RETURN_NONE;
 }

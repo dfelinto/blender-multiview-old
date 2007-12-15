@@ -37,7 +37,7 @@
 
 #include <Python.h>
 
-PyObject *Window_Init( void );
-PyObject *M_Window_Redraw( PyObject * self, PyObject * args );
+PyObject *V24_Window_Init( void );
+PyObject *V24_M_Window_Redraw( PyObject * self, PyObject * args );
 
 #endif				/* EXPP_WINDOW_H */

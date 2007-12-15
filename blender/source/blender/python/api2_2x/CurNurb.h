@@ -35,11 +35,11 @@
 #include <Python.h>
 #include "DNA_curve_types.h"
 
-extern PyTypeObject CurNurb_Type;
+extern PyTypeObject V24_CurNurb_Type;
 
-#define BPy_CurNurb_Check(v)  ((v)->ob_type == &CurNurb_Type)	/* for type checking */
+#define BPy_CurNurb_Check(v)  ((v)->ob_type == &V24_CurNurb_Type)	/* for type checking */
 
-/* Python BPy_CurNurb structure definition */
+/* Python V24_BPy_CurNurb structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	Nurb * nurb;		/* pointer to Blender data */
@@ -51,20 +51,20 @@ typedef struct {
 	int atEnd;		/* iter exhausted flag  */
 	int nextPoint;
 
-} BPy_CurNurb;
+} V24_BPy_CurNurb;
 
 
 /*
  *  prototypes
  */
 
-PyObject *CurNurb_Init( void );
-PyObject *CurNurb_CreatePyObject( Nurb * bzt );
-Nurb *CurNurb_FromPyObject( PyObject * pyobj );
+PyObject *V24_CurNurb_Init( void );
+PyObject *V24_CurNurb_CreatePyObject( Nurb * bzt );
+Nurb *V24_CurNurb_FromPyObject( PyObject * pyobj );
 
-PyObject *CurNurb_getPoint( BPy_CurNurb * self, int index );
-PyObject *CurNurb_pointAtIndex( Nurb * nurb, int index );
+PyObject *V24_CurNurb_getPoint( V24_BPy_CurNurb * self, int index );
+PyObject *V24_CurNurb_pointAtIndex( Nurb * nurb, int index );
 
-PyObject *CurNurb_appendPointToNurb( Nurb * nurb, PyObject * args );
+PyObject *V24_CurNurb_appendPointToNurb( Nurb * nurb, PyObject * args );
 
 #endif				/* EXPP_NURB_H */

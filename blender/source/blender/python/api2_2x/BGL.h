@@ -306,7 +306,7 @@ typedef struct _Buffer {
 
 #define ret_def_void
 #define ret_set_void
-#define ret_ret_void    return EXPP_incr_ret(Py_None)
+#define ret_ret_void    return V24_EXPP_incr_ret(Py_None)
 
 #define ret_def_GLint   int ret_int
 #define ret_set_GLint   ret_int=

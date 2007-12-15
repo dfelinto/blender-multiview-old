@@ -188,70 +188,70 @@ enum constraint_constants {
 };
 
 /*****************************************************************************/
-/* Python BPy_Constraint methods declarations:                               */
+/* Python V24_BPy_Constraint methods declarations:                               */
 /*****************************************************************************/
-static PyObject *Constraint_getName( BPy_Constraint * self );
-static int Constraint_setName( BPy_Constraint * self, PyObject *arg );
-static PyObject *Constraint_getType( BPy_Constraint * self );
-static PyObject *Constraint_getInfluence( BPy_Constraint * self );
-static int Constraint_setInfluence( BPy_Constraint * self, PyObject * arg );
+static PyObject *V24_Constraint_getName( V24_BPy_Constraint * self );
+static int V24_Constraint_setName( V24_BPy_Constraint * self, PyObject *arg );
+static PyObject *V24_Constraint_getType( V24_BPy_Constraint * self );
+static PyObject *V24_Constraint_getInfluence( V24_BPy_Constraint * self );
+static int V24_Constraint_setInfluence( V24_BPy_Constraint * self, PyObject * arg );
 
-static PyObject *Constraint_insertKey( BPy_Constraint * self, PyObject * arg );
+static PyObject *V24_Constraint_insertKey( V24_BPy_Constraint * self, PyObject * arg );
 
-static PyObject *Constraint_getData( BPy_Constraint * self, PyObject * key );
-static int Constraint_setData( BPy_Constraint * self, PyObject * key, 
+static PyObject *V24_Constraint_getData( V24_BPy_Constraint * self, PyObject * key );
+static int V24_Constraint_setData( V24_BPy_Constraint * self, PyObject * key, 
 		PyObject * value );
 
 /*****************************************************************************/
-/* Python BPy_Constraint methods table:                                      */
+/* Python V24_BPy_Constraint methods table:                                      */
 /*****************************************************************************/
-static PyMethodDef BPy_Constraint_methods[] = {
+static PyMethodDef V24_BPy_Constraint_methods[] = {
 	/* name, method, flags, doc */
-	{"insertKey", ( PyCFunction ) Constraint_insertKey, METH_O,
+	{"insertKey", ( PyCFunction ) V24_Constraint_insertKey, METH_O,
 	 "Insert influence keyframe for constraint"},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python BPy_Constraint attributes get/set structure:                       */
+/* Python V24_BPy_Constraint attributes get/set structure:                       */
 /*****************************************************************************/
-static PyGetSetDef BPy_Constraint_getseters[] = {
+static PyGetSetDef V24_BPy_Constraint_getseters[] = {
 	{"name",
-	(getter)Constraint_getName, (setter)Constraint_setName,
+	(getter)V24_Constraint_getName, (setter)V24_Constraint_setName,
 	 "Constraint name", NULL},
 	{"type",
-	(getter)Constraint_getType, (setter)NULL,
+	(getter)V24_Constraint_getType, (setter)NULL,
 	 "Constraint type (read only)", NULL},
 	{"influence",
-	(getter)Constraint_getInfluence, (setter)Constraint_setInfluence,
+	(getter)V24_Constraint_getInfluence, (setter)V24_Constraint_setInfluence,
 	 "Constraint influence", NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
 /*****************************************************************************/
-/* Python Constraint_Type Mapping Methods table:                             */
+/* Python V24_Constraint_Type Mapping Methods table:                             */
 /*****************************************************************************/
-static PyMappingMethods Constraint_as_mapping = {
+static PyMappingMethods V24_Constraint_as_mapping = {
 	NULL,                               /* mp_length        */
-	( binaryfunc ) Constraint_getData,	/* mp_subscript     */
-	( objobjargproc ) Constraint_setData,	/* mp_ass_subscript */
+	( binaryfunc ) V24_Constraint_getData,	/* mp_subscript     */
+	( objobjargproc ) V24_Constraint_setData,	/* mp_ass_subscript */
 };
 
 /*****************************************************************************/
-/* Python Constraint_Type callback function prototypes:                      */
+/* Python V24_Constraint_Type callback function prototypes:                      */
 /*****************************************************************************/
-static PyObject *Constraint_repr( BPy_Constraint * self );
-static int Constraint_compare( BPy_Constraint * a, BPy_Constraint * b );
+static PyObject *V24_Constraint_repr( V24_BPy_Constraint * self );
+static int V24_Constraint_compare( V24_BPy_Constraint * a, V24_BPy_Constraint * b );
 
 /*****************************************************************************/
-/* Python Constraint_Type structure definition:                              */
+/* Python V24_Constraint_Type structure definition:                              */
 /*****************************************************************************/
-PyTypeObject Constraint_Type = {
+PyTypeObject V24_Constraint_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Constraint",         /* char *tp_name; */
-	sizeof( BPy_Constraint ),     /* int tp_basicsize; */
+	sizeof( V24_BPy_Constraint ),     /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -260,14 +260,14 @@ PyTypeObject Constraint_Type = {
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) Constraint_compare, /* cmpfunc tp_compare; */
-	( reprfunc ) Constraint_repr, /* reprfunc tp_repr; */
+	( cmpfunc ) V24_Constraint_compare, /* cmpfunc tp_compare; */
+	( reprfunc ) V24_Constraint_repr, /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
 	NULL,                       /* PySequenceMethods *tp_as_sequence; */
-	&Constraint_as_mapping,       /* PyMappingMethods *tp_as_mapping; */
+	&V24_Constraint_as_mapping,       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
 
@@ -304,9 +304,9 @@ PyTypeObject Constraint_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Constraint_methods,       /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Constraint_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Constraint_getseters,     /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Constraint_getseters,     /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -329,17 +329,17 @@ PyTypeObject Constraint_Type = {
 };
 
 /*****************************************************************************/
-/* Python BPy_Constraint methods:                                            */
+/* Python V24_BPy_Constraint methods:                                            */
 /*****************************************************************************/
 
 /*
  * return the name of this constraint
  */
 
-static PyObject *Constraint_getName( BPy_Constraint * self )
+static PyObject *V24_Constraint_getName( V24_BPy_Constraint * self )
 {
 	if( !self->con )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"This constraint has been removed!" );
 	
 	return PyString_FromString( self->con->name );
@@ -349,14 +349,14 @@ static PyObject *Constraint_getName( BPy_Constraint * self )
  * set the name of this constraint
  */
 
-static int Constraint_setName( BPy_Constraint * self, PyObject * attr )
+static int V24_Constraint_setName( V24_BPy_Constraint * self, PyObject * attr )
 {
 	char *name = PyString_AsString( attr );
 	if( !name )
-		return EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
+		return V24_EXPP_ReturnIntError( PyExc_TypeError, "expected string arg" );
 
 	if( !self->con )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"This constraint has been removed!" );
 	
 	BLI_strncpy( self->con->name, name, sizeof( self->con->name ) );
@@ -368,10 +368,10 @@ static int Constraint_setName( BPy_Constraint * self, PyObject * attr )
  * return the influence of this constraint
  */
 
-static PyObject *Constraint_getInfluence( BPy_Constraint * self )
+static PyObject *V24_Constraint_getInfluence( V24_BPy_Constraint * self )
 {
 	if( !self->con )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"This constraint has been removed!" );
 	
 	return PyFloat_FromDouble( (double)self->con->enforce );
@@ -381,23 +381,23 @@ static PyObject *Constraint_getInfluence( BPy_Constraint * self )
  * set the influence of this constraint
  */
 
-static int Constraint_setInfluence( BPy_Constraint * self, PyObject * value )
+static int V24_Constraint_setInfluence( V24_BPy_Constraint * self, PyObject * value )
 {
 	if( !self->con )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"This constraint has been removed!" );
 
-	return EXPP_setFloatClamped( value, &self->con->enforce, 0.0, 1.0 );
+	return V24_EXPP_setFloatClamped( value, &self->con->enforce, 0.0, 1.0 );
 }
 
 /*
  * return the type of this constraint
  */
 
-static PyObject *Constraint_getType( BPy_Constraint * self )
+static PyObject *V24_Constraint_getType( V24_BPy_Constraint * self )
 {
 	if( !self->con )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"This constraint has been removed!" );
 	
 	return PyInt_FromLong( self->con->type );
@@ -407,7 +407,7 @@ static PyObject *Constraint_getType( BPy_Constraint * self )
  * add keyframe for influence
 	base on code in add_influence_key_to_constraint_func()
  */
-static PyObject *Constraint_insertKey( BPy_Constraint * self, PyObject * value )
+static PyObject *V24_Constraint_insertKey( V24_BPy_Constraint * self, PyObject * value )
 {
 	bConstraint *con = self->con;
 	Object *ob = self->obj;
@@ -417,12 +417,12 @@ static PyObject *Constraint_insertKey( BPy_Constraint * self, PyObject * value )
 	char actname[32] = "";
 	
 	if( !self->con )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"This constraint has been removed!" );
 
 	/* get frame for inserting key */
 	if( PyFloat_Check(value) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a float argument" );
 	
 	/* find actname for locating that action-channel that a constraint channel should be added to */
@@ -437,13 +437,13 @@ static PyObject *Constraint_insertKey( BPy_Constraint * self, PyObject * value )
 		}
 	}
 	else {
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"constraint doesn't belong to anything" );
 	}
 	icu= verify_ipocurve((ID *)ob, ID_CO, actname, con->name, NULL, CO_ENFORCE);
 	
 	if (!icu)
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"cannot get a curve from this IPO, may be using libdata" );
 	
 	if( ob->action )
@@ -461,7 +461,7 @@ static PyObject *Constraint_insertKey( BPy_Constraint * self, PyObject * value )
 /*		- They are only called from Constraint_g/setData					  */
 /******************************************************************************/
 
-static PyObject *constspace_getter( BPy_Constraint * self, int type )
+static PyObject *constspace_getter( V24_BPy_Constraint * self, int type )
 {
 	bConstraint *con= (bConstraint *)(self->con);
 	
@@ -498,10 +498,10 @@ static PyObject *constspace_getter( BPy_Constraint * self, int type )
 	}
 	
 	/* raise error if failed */
-	return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+	return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 }
 
-static int constspace_setter( BPy_Constraint *self, int type, PyObject *value )
+static int constspace_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bConstraint *con= (bConstraint *)(self->con);
 	
@@ -523,11 +523,11 @@ static int constspace_setter( BPy_Constraint *self, int type, PyObject *value )
 			{
 				/* only copy depending on ownertype */
 				if (self->pchan) {
-					return EXPP_setIValueClamped( value, &con->ownspace, 
+					return V24_EXPP_setIValueClamped( value, &con->ownspace, 
 							CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_PARLOCAL, 'h' );
 				}
 				else {
-					return EXPP_setIValueClamped( value, &con->ownspace, 
+					return V24_EXPP_setIValueClamped( value, &con->ownspace, 
 							CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_LOCAL, 'h' );
 				}
 			}
@@ -555,11 +555,11 @@ static int constspace_setter( BPy_Constraint *self, int type, PyObject *value )
 				
 				/* only copy depending on target-type */
 				if (tar && subtarget[0]) {
-					return EXPP_setIValueClamped( value, &con->tarspace, 
+					return V24_EXPP_setIValueClamped( value, &con->tarspace, 
 							CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_PARLOCAL, 'h' );
 				}
 				else if (tar) {
-					return EXPP_setIValueClamped( value, &con->tarspace, 
+					return V24_EXPP_setIValueClamped( value, &con->tarspace, 
 							CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_LOCAL, 'h' );
 				}
 			}
@@ -568,20 +568,20 @@ static int constspace_setter( BPy_Constraint *self, int type, PyObject *value )
 	}
 	
 	/* raise error if failed */
-	return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+	return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 }
 
 /*****************************************************************************/
 /* Specific constraint get/set procedures                                    */
 /*****************************************************************************/
 
-static PyObject *kinematic_getter( BPy_Constraint * self, int type )
+static PyObject *kinematic_getter( V24_BPy_Constraint * self, int type )
 {
 	bKinematicConstraint *con = (bKinematicConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_STRETCH:
@@ -599,19 +599,19 @@ static PyObject *kinematic_getter( BPy_Constraint * self, int type )
 	case EXPP_CONSTR_USETIP:
 		return PyBool_FromLong( (long)( con->flag & CONSTRAINT_IK_TIP ) ) ;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int kinematic_setter( BPy_Constraint *self, int type, PyObject *value )
+static int kinematic_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bKinematicConstraint *con = (bKinematicConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -619,7 +619,7 @@ static int kinematic_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -627,35 +627,35 @@ static int kinematic_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_STRETCH:
-		return EXPP_setBitfield( value, &con->flag, CONSTRAINT_IK_STRETCH, 'h' );
+		return V24_EXPP_setBitfield( value, &con->flag, CONSTRAINT_IK_STRETCH, 'h' );
 	case EXPP_CONSTR_ITERATIONS:
-		return EXPP_setIValueClamped( value, &con->iterations, 1, 10000, 'h' );
+		return V24_EXPP_setIValueClamped( value, &con->iterations, 1, 10000, 'h' );
 	case EXPP_CONSTR_CHAINLEN:
-		return EXPP_setIValueClamped( value, &con->rootbone, 0, 255, 'i' );
+		return V24_EXPP_setIValueClamped( value, &con->rootbone, 0, 255, 'i' );
 	case EXPP_CONSTR_POSWEIGHT:
-		return EXPP_setFloatClamped( value, &con->weight, 0.01f, 1.0 );
+		return V24_EXPP_setFloatClamped( value, &con->weight, 0.01f, 1.0 );
 	case EXPP_CONSTR_ROTWEIGHT:
-		return EXPP_setFloatClamped( value, &con->orientweight, 0.01f, 1.0 );
+		return V24_EXPP_setFloatClamped( value, &con->orientweight, 0.01f, 1.0 );
 	case EXPP_CONSTR_ROTATE:
-		return EXPP_setBitfield( value, &con->flag, CONSTRAINT_IK_ROT, 'h' );
+		return V24_EXPP_setBitfield( value, &con->flag, CONSTRAINT_IK_ROT, 'h' );
 	case EXPP_CONSTR_USETIP:
-		return EXPP_setBitfield( value, &con->flag, CONSTRAINT_IK_TIP, 'h' );
+		return V24_EXPP_setBitfield( value, &con->flag, CONSTRAINT_IK_TIP, 'h' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *action_getter( BPy_Constraint * self, int type )
+static PyObject *action_getter( V24_BPy_Constraint * self, int type )
 {
 	bActionConstraint *con = (bActionConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_ACTION:
-		return Action_CreatePyObject( con->act );
+		return V24_Action_CreatePyObject( con->act );
 	case EXPP_CONSTR_START:
 		return PyInt_FromLong( (long)con->start );
 	case EXPP_CONSTR_END:
@@ -667,19 +667,19 @@ static PyObject *action_getter( BPy_Constraint * self, int type )
 	case EXPP_CONSTR_KEYON:
 		return PyInt_FromLong( (long)con->type );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int action_setter( BPy_Constraint *self, int type, PyObject *value )
+static int action_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bActionConstraint *con = (bActionConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -687,7 +687,7 @@ static int action_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -695,46 +695,46 @@ static int action_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_ACTION: {
-		bAction *act = (( BPy_Action * )value)->action;
+		bAction *act = (( V24_BPy_Action * )value)->action;
 		if( !BPy_Action_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy action argument" );
 		con->act = act;
 		return 0;
 		}
 	case EXPP_CONSTR_START:
-		return EXPP_setIValueClamped( value, &con->start, 1, MAXFRAME, 'h' );
+		return V24_EXPP_setIValueClamped( value, &con->start, 1, MAXFRAME, 'h' );
 	case EXPP_CONSTR_END:
-		return EXPP_setIValueClamped( value, &con->end, 1, MAXFRAME, 'h' );
+		return V24_EXPP_setIValueClamped( value, &con->end, 1, MAXFRAME, 'h' );
 	case EXPP_CONSTR_MIN:
 		if (con->type < 10)
-			return EXPP_setFloatClamped( value, &con->min, -180.0, 180.0 );
+			return V24_EXPP_setFloatClamped( value, &con->min, -180.0, 180.0 );
 		else if (con->type < 20)
-			return EXPP_setFloatClamped( value, &con->min, 0.0001, 1000.0 );
+			return V24_EXPP_setFloatClamped( value, &con->min, 0.0001, 1000.0 );
 		else 
-			return EXPP_setFloatClamped( value, &con->min, -1000.0, 1000.0 );
+			return V24_EXPP_setFloatClamped( value, &con->min, -1000.0, 1000.0 );
 	case EXPP_CONSTR_MAX:
 		if (con->type < 10)
-			return EXPP_setFloatClamped( value, &con->max, -180.0, 180.0 );
+			return V24_EXPP_setFloatClamped( value, &con->max, -180.0, 180.0 );
 		else if (con->type < 20)
-			return EXPP_setFloatClamped( value, &con->max, 0.0001, 1000.0 );
+			return V24_EXPP_setFloatClamped( value, &con->max, 0.0001, 1000.0 );
 		else 
-			return EXPP_setFloatClamped( value, &con->max, -1000.0, 1000.0 );
+			return V24_EXPP_setFloatClamped( value, &con->max, -1000.0, 1000.0 );
 	case EXPP_CONSTR_KEYON:
-		return EXPP_setIValueRange( value, &con->type,
+		return V24_EXPP_setIValueRange( value, &con->type,
 				EXPP_CONSTR_XROT, EXPP_CONSTR_ZLOC, 'h' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *trackto_getter( BPy_Constraint * self, int type )
+static PyObject *trackto_getter( V24_BPy_Constraint * self, int type )
 {
 	bTrackToConstraint *con = (bTrackToConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_TRACK:
@@ -742,19 +742,19 @@ static PyObject *trackto_getter( BPy_Constraint * self, int type )
 	case EXPP_CONSTR_UP:
 		return PyInt_FromLong( (long)con->reserved2 );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int trackto_setter( BPy_Constraint *self, int type, PyObject *value )
+static int trackto_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bTrackToConstraint *con = (bTrackToConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -762,7 +762,7 @@ static int trackto_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -770,23 +770,23 @@ static int trackto_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_TRACK:
-		return EXPP_setIValueRange( value, &con->reserved1,
+		return V24_EXPP_setIValueRange( value, &con->reserved1,
 				TRACK_X, TRACK_nZ, 'i' );
 	case EXPP_CONSTR_UP:
-		return EXPP_setIValueRange( value, &con->reserved2,
+		return V24_EXPP_setIValueRange( value, &con->reserved2,
 				UP_X, UP_Z, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *stretchto_getter( BPy_Constraint * self, int type )
+static PyObject *stretchto_getter( V24_BPy_Constraint * self, int type )
 {
 	bStretchToConstraint *con = (bStretchToConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_RESTLENGTH:
@@ -798,19 +798,19 @@ static PyObject *stretchto_getter( BPy_Constraint * self, int type )
 	case EXPP_CONSTR_PLANE:
 		return PyInt_FromLong( (long)con->plane );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int stretchto_setter( BPy_Constraint *self, int type, PyObject *value )
+static int stretchto_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bStretchToConstraint *con = (bStretchToConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -818,7 +818,7 @@ static int stretchto_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -826,35 +826,35 @@ static int stretchto_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_RESTLENGTH:
-		return EXPP_setFloatClamped( value, &con->orglength, 0.0, 100.0 );
+		return V24_EXPP_setFloatClamped( value, &con->orglength, 0.0, 100.0 );
 	case EXPP_CONSTR_VOLVARIATION:
-		return EXPP_setFloatClamped( value, &con->bulge, 0.0, 100.0 );
+		return V24_EXPP_setFloatClamped( value, &con->bulge, 0.0, 100.0 );
 	case EXPP_CONSTR_VOLUMEMODE:
-		return EXPP_setIValueRange( value, &con->volmode,
+		return V24_EXPP_setIValueRange( value, &con->volmode,
 				VOLUME_XZ, NO_VOLUME, 'h' );
 	case EXPP_CONSTR_PLANE: {
 		int status, oldcode = con->plane;
-		status = EXPP_setIValueRange( value, &con->plane,
+		status = V24_EXPP_setIValueRange( value, &con->plane,
 				PLANE_X, PLANE_Z, 'h' );
 		if( !status && con->plane == PLANE_Y ) {
 			con->plane = oldcode;
-			return EXPP_ReturnIntError( PyExc_ValueError,
+			return V24_EXPP_ReturnIntError( PyExc_ValueError,
 					"value must be either PLANEX or PLANEZ" );
 		}
 		return status;
 		}
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *followpath_getter( BPy_Constraint * self, int type )
+static PyObject *followpath_getter( V24_BPy_Constraint * self, int type )
 {
 	bFollowPathConstraint *con = (bFollowPathConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_FOLLOW:
 		return PyBool_FromLong( (long)( con->followflag & SELECT ) );
 	case EXPP_CONSTR_OFFSET:
@@ -864,84 +864,84 @@ static PyObject *followpath_getter( BPy_Constraint * self, int type )
 	case EXPP_CONSTR_UP:
 		return PyInt_FromLong( (long)con->upflag );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int followpath_setter( BPy_Constraint *self, int type, PyObject *value )
+static int followpath_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bFollowPathConstraint *con = (bFollowPathConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
 		}
 	case EXPP_CONSTR_FOLLOW:
-		return EXPP_setBitfield( value, &con->followflag, SELECT, 'i' );
+		return V24_EXPP_setBitfield( value, &con->followflag, SELECT, 'i' );
 	case EXPP_CONSTR_OFFSET:
-		return EXPP_setFloatClamped( value, &con->offset,
+		return V24_EXPP_setFloatClamped( value, &con->offset,
 				-MAXFRAMEF, MAXFRAMEF );
 	case EXPP_CONSTR_FORWARD:
-		return EXPP_setIValueRange( value, &con->trackflag,
+		return V24_EXPP_setIValueRange( value, &con->trackflag,
 				TRACK_X, TRACK_nZ, 'i' );
 	case EXPP_CONSTR_UP:
-		return EXPP_setIValueRange( value, &con->upflag,
+		return V24_EXPP_setIValueRange( value, &con->upflag,
 				UP_X, UP_Z, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *clampto_getter( BPy_Constraint * self, int type )
+static PyObject *clampto_getter( V24_BPy_Constraint * self, int type )
 {
 	bClampToConstraint *con = (bClampToConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_CLAMP:
 		return PyInt_FromLong( (long)con->flag );
 	case EXPP_CONSTR_CLAMPCYCLIC:
 		return PyBool_FromLong( (long)(con->flag2 & CLAMPTO_CYCLIC) );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int clampto_setter( BPy_Constraint *self, int type, PyObject *value )
+static int clampto_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bClampToConstraint *con = (bClampToConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
 		}
 	case EXPP_CONSTR_CLAMP:
-		return EXPP_setIValueRange( value, &con->flag,
+		return V24_EXPP_setIValueRange( value, &con->flag,
 				CLAMPTO_AUTO, CLAMPTO_Z, 'i' );
 	case EXPP_CONSTR_CLAMPCYCLIC:
-		return EXPP_setBitfield( value, &con->flag2, CLAMPTO_CYCLIC, 'i' );
+		return V24_EXPP_setBitfield( value, &con->flag2, CLAMPTO_CYCLIC, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
-static PyObject *locktrack_getter( BPy_Constraint * self, int type )
+static PyObject *locktrack_getter( V24_BPy_Constraint * self, int type )
 {
 	bLockTrackConstraint *con = (bLockTrackConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_TRACK:
@@ -949,19 +949,19 @@ static PyObject *locktrack_getter( BPy_Constraint * self, int type )
 	case EXPP_CONSTR_LOCK:
 		return PyInt_FromLong( (long)con->lockflag );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int locktrack_setter( BPy_Constraint *self, int type, PyObject *value )
+static int locktrack_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bLockTrackConstraint *con = (bLockTrackConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -969,7 +969,7 @@ static int locktrack_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -977,23 +977,23 @@ static int locktrack_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_TRACK:
-		return EXPP_setIValueRange( value, &con->trackflag,
+		return V24_EXPP_setIValueRange( value, &con->trackflag,
 				TRACK_X, TRACK_nZ, 'i' );
 	case EXPP_CONSTR_LOCK:
-		return EXPP_setIValueRange( value, &con->lockflag,
+		return V24_EXPP_setIValueRange( value, &con->lockflag,
 				LOCK_X, LOCK_Z, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *floor_getter( BPy_Constraint * self, int type )
+static PyObject *floor_getter( V24_BPy_Constraint * self, int type )
 {
 	bMinMaxConstraint *con = (bMinMaxConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_MINMAX:
@@ -1003,19 +1003,19 @@ static PyObject *floor_getter( BPy_Constraint * self, int type )
 	case EXPP_CONSTR_STICKY:
 		return PyBool_FromLong( (long)( con->flag & MINMAX_STICKY ) ) ;
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int floor_setter( BPy_Constraint *self, int type, PyObject *value )
+static int floor_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bMinMaxConstraint *con = (bMinMaxConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -1023,7 +1023,7 @@ static int floor_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -1031,42 +1031,42 @@ static int floor_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_MINMAX:
-		return EXPP_setIValueRange( value, &con->minmaxflag,
+		return V24_EXPP_setIValueRange( value, &con->minmaxflag,
 				EXPP_CONSTR_MAXX, EXPP_CONSTR_MINZ, 'i' );
 	case EXPP_CONSTR_OFFSET:
-		return EXPP_setFloatClamped( value, &con->offset, -100.0, 100.0 );
+		return V24_EXPP_setFloatClamped( value, &con->offset, -100.0, 100.0 );
 	case EXPP_CONSTR_STICKY:
-		return EXPP_setBitfield( value, &con->flag, MINMAX_STICKY, 'h' );
+		return V24_EXPP_setBitfield( value, &con->flag, MINMAX_STICKY, 'h' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *locatelike_getter( BPy_Constraint * self, int type )
+static PyObject *locatelike_getter( V24_BPy_Constraint * self, int type )
 {
 	bLocateLikeConstraint *con = (bLocateLikeConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_COPY:
 		return PyInt_FromLong( (long)con->flag );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int locatelike_setter( BPy_Constraint *self, int type, PyObject *value )
+static int locatelike_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bLocateLikeConstraint *con = (bLocateLikeConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -1074,7 +1074,7 @@ static int locatelike_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -1082,38 +1082,38 @@ static int locatelike_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_COPY:
-		return EXPP_setIValueRange( value, &con->flag,
+		return V24_EXPP_setIValueRange( value, &con->flag,
 				0, LOCLIKE_X | LOCLIKE_Y | LOCLIKE_Z | LOCLIKE_X_INVERT | LOCLIKE_Y_INVERT | LOCLIKE_Z_INVERT, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *rotatelike_getter( BPy_Constraint * self, int type )
+static PyObject *rotatelike_getter( V24_BPy_Constraint * self, int type )
 {
 	bRotateLikeConstraint *con = (bRotateLikeConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_COPY:
 		return PyInt_FromLong( (long)con->flag );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int rotatelike_setter( BPy_Constraint *self, int type, PyObject *value )
+static int rotatelike_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bRotateLikeConstraint *con = (bRotateLikeConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -1121,7 +1121,7 @@ static int rotatelike_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -1129,38 +1129,38 @@ static int rotatelike_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_COPY:
-		return EXPP_setIValueRange( value, &con->flag,
+		return V24_EXPP_setIValueRange( value, &con->flag,
 				0, ROTLIKE_X | ROTLIKE_Y | ROTLIKE_Z | ROTLIKE_X_INVERT | ROTLIKE_Y_INVERT | ROTLIKE_Z_INVERT, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *sizelike_getter( BPy_Constraint * self, int type )
+static PyObject *sizelike_getter( V24_BPy_Constraint * self, int type )
 {
 	bSizeLikeConstraint *con = (bSizeLikeConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_COPY:
 		return PyInt_FromLong( (long)con->flag );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int sizelike_setter( BPy_Constraint *self, int type, PyObject *value )
+static int sizelike_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bSizeLikeConstraint *con = (bSizeLikeConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -1168,7 +1168,7 @@ static int sizelike_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -1176,14 +1176,14 @@ static int sizelike_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_COPY:
-		return EXPP_setIValueRange( value, &con->flag,
+		return V24_EXPP_setIValueRange( value, &con->flag,
 				0, SIZELIKE_X | SIZELIKE_Y | SIZELIKE_Z, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *loclimit_getter( BPy_Constraint * self, int type)
+static PyObject *loclimit_getter( V24_BPy_Constraint * self, int type)
 {
 	bLocLimitConstraint *con = (bLocLimitConstraint *)(self->con->data);
 
@@ -1203,36 +1203,36 @@ static PyObject *loclimit_getter( BPy_Constraint * self, int type)
 	case EXPP_CONSTR_ZMAX:
 		return PyFloat_FromDouble( (double)con->zmax );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );	
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );	
 	}
 }
 
-static int loclimit_setter( BPy_Constraint *self, int type, PyObject *value )
+static int loclimit_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bLocLimitConstraint *con = (bLocLimitConstraint *)(self->con->data);	
 	
 	switch( type ) {
 	case EXPP_CONSTR_LIMIT:
-		return EXPP_setIValueRange( value, &con->flag, 0, 
+		return V24_EXPP_setIValueRange( value, &con->flag, 0, 
 			LIMIT_XMIN | LIMIT_XMAX | LIMIT_YMIN | LIMIT_YMAX | LIMIT_ZMIN | LIMIT_ZMAX , 'i' );
 	case EXPP_CONSTR_XMIN:
-		return EXPP_setFloatClamped( value, &con->xmin, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->xmin, -1000.0, 1000.0 );
 	case EXPP_CONSTR_XMAX:
-		return EXPP_setFloatClamped( value, &con->xmax, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->xmax, -1000.0, 1000.0 );
 	case EXPP_CONSTR_YMIN:
-		return EXPP_setFloatClamped( value, &con->ymin, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->ymin, -1000.0, 1000.0 );
 	case EXPP_CONSTR_YMAX:
-		return EXPP_setFloatClamped( value, &con->ymax, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->ymax, -1000.0, 1000.0 );
 	case EXPP_CONSTR_ZMIN:
-		return EXPP_setFloatClamped( value, &con->zmin, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->zmin, -1000.0, 1000.0 );
 	case EXPP_CONSTR_ZMAX:
-		return EXPP_setFloatClamped( value, &con->zmax, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->zmax, -1000.0, 1000.0 );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *rotlimit_getter( BPy_Constraint * self, int type )
+static PyObject *rotlimit_getter( V24_BPy_Constraint * self, int type )
 {
 	bRotLimitConstraint *con = (bRotLimitConstraint *)(self->con->data);
 
@@ -1252,36 +1252,36 @@ static PyObject *rotlimit_getter( BPy_Constraint * self, int type )
 	case EXPP_CONSTR_ZMAX:
 		return PyFloat_FromDouble( (double)con->zmax );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );	
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );	
 	}
 }
 
-static int rotlimit_setter( BPy_Constraint *self, int type, PyObject *value )
+static int rotlimit_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bRotLimitConstraint *con = (bRotLimitConstraint *)(self->con->data);	
 	
 	switch( type ) {
 	case EXPP_CONSTR_LIMIT:
-		return EXPP_setIValueRange( value, &con->flag, 0, 
+		return V24_EXPP_setIValueRange( value, &con->flag, 0, 
 			LIMIT_XROT | LIMIT_YROT | LIMIT_ZROT, 'i' );
 	case EXPP_CONSTR_XMIN:
-		return EXPP_setFloatClamped( value, &con->xmin, -360.0, 360.0 );
+		return V24_EXPP_setFloatClamped( value, &con->xmin, -360.0, 360.0 );
 	case EXPP_CONSTR_XMAX:
-		return EXPP_setFloatClamped( value, &con->xmax, -360.0, 360.0 );
+		return V24_EXPP_setFloatClamped( value, &con->xmax, -360.0, 360.0 );
 	case EXPP_CONSTR_YMIN:
-		return EXPP_setFloatClamped( value, &con->ymin, -360.0, 360.0 );
+		return V24_EXPP_setFloatClamped( value, &con->ymin, -360.0, 360.0 );
 	case EXPP_CONSTR_YMAX:
-		return EXPP_setFloatClamped( value, &con->ymax, -360.0, 360.0 );
+		return V24_EXPP_setFloatClamped( value, &con->ymax, -360.0, 360.0 );
 	case EXPP_CONSTR_ZMIN:
-		return EXPP_setFloatClamped( value, &con->zmin, -360.0, 360.0 );
+		return V24_EXPP_setFloatClamped( value, &con->zmin, -360.0, 360.0 );
 	case EXPP_CONSTR_ZMAX:
-		return EXPP_setFloatClamped( value, &con->zmax, -360.0, 360.0 );
+		return V24_EXPP_setFloatClamped( value, &con->zmax, -360.0, 360.0 );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *sizelimit_getter( BPy_Constraint * self, int type)
+static PyObject *sizelimit_getter( V24_BPy_Constraint * self, int type)
 {
 	bSizeLimitConstraint *con = (bSizeLimitConstraint *)(self->con->data);
 
@@ -1301,64 +1301,64 @@ static PyObject *sizelimit_getter( BPy_Constraint * self, int type)
 	case EXPP_CONSTR_ZMAX:
 		return PyFloat_FromDouble( (double)con->zmax );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );	
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );	
 	}
 }
 
-static int sizelimit_setter( BPy_Constraint *self, int type, PyObject *value )
+static int sizelimit_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bSizeLimitConstraint *con = (bSizeLimitConstraint *)(self->con->data);	
 	
 	switch( type ) {
 	case EXPP_CONSTR_LIMIT:
-		return EXPP_setIValueRange( value, &con->flag, 0, 
+		return V24_EXPP_setIValueRange( value, &con->flag, 0, 
 			LIMIT_XMIN | LIMIT_XMAX | LIMIT_YMIN | LIMIT_YMAX | LIMIT_ZMIN | LIMIT_ZMAX, 'i' );
 	case EXPP_CONSTR_XMIN:
-		return EXPP_setFloatClamped( value, &con->xmin, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->xmin, -1000.0, 1000.0 );
 	case EXPP_CONSTR_XMAX:
-		return EXPP_setFloatClamped( value, &con->xmax, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->xmax, -1000.0, 1000.0 );
 	case EXPP_CONSTR_YMIN:
-		return EXPP_setFloatClamped( value, &con->ymin, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->ymin, -1000.0, 1000.0 );
 	case EXPP_CONSTR_YMAX:
-		return EXPP_setFloatClamped( value, &con->ymax, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->ymax, -1000.0, 1000.0 );
 	case EXPP_CONSTR_ZMIN:
-		return EXPP_setFloatClamped( value, &con->zmin, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->zmin, -1000.0, 1000.0 );
 	case EXPP_CONSTR_ZMAX:
-		return EXPP_setFloatClamped( value, &con->zmax, -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->zmax, -1000.0, 1000.0 );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *script_getter( BPy_Constraint * self, int type )
+static PyObject *script_getter( V24_BPy_Constraint * self, int type )
 {
 	bPythonConstraint *con = (bPythonConstraint *)(self->con->data);
 
 	switch( type ) {
 		// FIXME!!!
 	//case EXPP_CONSTR_TARGET:
-	//	return Object_CreatePyObject( con->tar );
+	//	return V24_Object_CreatePyObject( con->tar );
 	//case EXPP_CONSTR_BONE:
 	//	return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_SCRIPT:
-		return Text_CreatePyObject( con->text );
+		return V24_Text_CreatePyObject( con->text );
 	case EXPP_CONSTR_PROPS:
-		return BPy_Wrap_IDProperty( NULL, con->prop, NULL);
+		return V24_BPy_Wrap_IDProperty( NULL, con->prop, NULL);
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int script_setter( BPy_Constraint *self, int type, PyObject *value )
+static int script_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bPythonConstraint *con = (bPythonConstraint *)(self->con->data);
 
 	switch( type ) {
 		// FIXME!!!
 	//case EXPP_CONSTR_TARGET: {
-	//	Object *obj = (( BPy_Object * )value)->object;
+	//	Object *obj = (( V24_BPy_Object * )value)->object;
 	//	if( !BPy_Object_Check( value ) )
-	//		return EXPP_ReturnIntError( PyExc_TypeError, 
+	//		return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 	//				"expected BPy object argument" );
 	//	con->tar = obj;
 	//	return 0;
@@ -1366,7 +1366,7 @@ static int script_setter( BPy_Constraint *self, int type, PyObject *value )
 	//case EXPP_CONSTR_BONE: {
 	//	char *name = PyString_AsString( value );
 	//	if( !name )
-	//		return EXPP_ReturnIntError( PyExc_TypeError,
+	//		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 	//				"expected string arg" );
 	//
 	//	BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -1374,29 +1374,29 @@ static int script_setter( BPy_Constraint *self, int type, PyObject *value )
 	//	return 0;
 	//	}
 	case EXPP_CONSTR_SCRIPT: {
-		Text *text = (( BPy_Text * )value)->text;
+		Text *text = (( V24_BPy_Text * )value)->text;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy text argument" );
 		con->text = text;
 		return 0;
 		}
 	case EXPP_CONSTR_PROPS:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 					"setting ID-Properties of PyConstraints this way is not supported" );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
 
-static PyObject *rigidbody_getter( BPy_Constraint * self, int type)
+static PyObject *rigidbody_getter( V24_BPy_Constraint * self, int type)
 {
 	bRigidBodyJointConstraint *con = (bRigidBodyJointConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_RB_PIVX:
 		return PyFloat_FromDouble( (double)con->pivX );
 	case EXPP_CONSTR_RB_PIVY:
@@ -1441,98 +1441,98 @@ static PyObject *rigidbody_getter( BPy_Constraint * self, int type)
 	case EXPP_CONSTR_RB_TYPE:
 		return PyInt_FromLong( (int)con->type );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );	
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );	
 	}
 }
 
 
-static int rigidbody_setter( BPy_Constraint *self, int type, PyObject *value )
+static int rigidbody_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bRigidBodyJointConstraint *con = (bRigidBodyJointConstraint *)(self->con->data);	
 	
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
 		}
 	case EXPP_CONSTR_RB_PIVX:
-		return EXPP_setFloatClamped( value, &con->pivX , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->pivX , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_PIVY:
-		return EXPP_setFloatClamped( value, &con->pivY , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->pivY , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_PIVZ:
-		return EXPP_setFloatClamped( value, &con->pivZ , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->pivZ , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_AXX:
-		return EXPP_setFloatClamped( value, &con->axX , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->axX , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_AXY:
-		return EXPP_setFloatClamped( value, &con->axY , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->axY , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_AXZ:
-		return EXPP_setFloatClamped( value, &con->axZ , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->axZ , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MINLIMIT0:
-		return EXPP_setFloatClamped( value, &con->minLimit[0] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->minLimit[0] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MINLIMIT1:
-		return EXPP_setFloatClamped( value, &con->minLimit[1] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->minLimit[1] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MINLIMIT2:
-		return EXPP_setFloatClamped( value, &con->minLimit[2] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->minLimit[2] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MINLIMIT3:
-		return EXPP_setFloatClamped( value, &con->minLimit[3] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->minLimit[3] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MINLIMIT4:
-		return EXPP_setFloatClamped( value, &con->minLimit[4] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->minLimit[4] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MINLIMIT5:
-		return EXPP_setFloatClamped( value, &con->minLimit[5] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->minLimit[5] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MAXLIMIT0:
-		return EXPP_setFloatClamped( value, &con->maxLimit[0] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->maxLimit[0] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MAXLIMIT1:
-		return EXPP_setFloatClamped( value, &con->maxLimit[1] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->maxLimit[1] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MAXLIMIT2:
-		return EXPP_setFloatClamped( value, &con->maxLimit[2] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->maxLimit[2] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MAXLIMIT3:
-		return EXPP_setFloatClamped( value, &con->maxLimit[3] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->maxLimit[3] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MAXLIMIT4:
-		return EXPP_setFloatClamped( value, &con->maxLimit[4] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->maxLimit[4] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_MAXLIMIT5:
-		return EXPP_setFloatClamped( value, &con->maxLimit[5] , -1000.0, 1000.0 );
+		return V24_EXPP_setFloatClamped( value, &con->maxLimit[5] , -1000.0, 1000.0 );
 	case EXPP_CONSTR_RB_EXTRAFZ:
-		return EXPP_setFloatClamped( value, &con->extraFz , -1000.0, 1000.0 );						
+		return V24_EXPP_setFloatClamped( value, &con->extraFz , -1000.0, 1000.0 );						
 	case EXPP_CONSTR_LIMIT:
-		return EXPP_setIValueRange( value, &con->flag, 0, 
+		return V24_EXPP_setIValueRange( value, &con->flag, 0, 
 			LIMIT_XMIN | LIMIT_XMAX | LIMIT_YMIN | LIMIT_YMAX | LIMIT_ZMIN | LIMIT_ZMAX, 'i' );
 	case EXPP_CONSTR_RB_TYPE:
-		return EXPP_setIValueRange( value, &con->type, 0, 
+		return V24_EXPP_setIValueRange( value, &con->type, 0, 
 			EXPP_CONSTR_RB_BALL | EXPP_CONSTR_RB_HINGE | EXPP_CONSTR_RB_GENERIC6DOF | EXPP_CONSTR_RB_VEHICLE, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *childof_getter( BPy_Constraint * self, int type )
+static PyObject *childof_getter( V24_BPy_Constraint * self, int type )
 {
 	bChildOfConstraint *con = (bChildOfConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_COPY:
 		return PyInt_FromLong( (long)con->flag );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int childof_setter( BPy_Constraint *self, int type, PyObject *value )
+static int childof_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bChildOfConstraint *con = (bChildOfConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -1540,7 +1540,7 @@ static int childof_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -1548,21 +1548,21 @@ static int childof_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_COPY:
-		return EXPP_setIValueRange( value, &con->flag,
+		return V24_EXPP_setIValueRange( value, &con->flag,
 				0, CHILDOF_LOCX| CHILDOF_LOCY | CHILDOF_LOCZ | CHILDOF_ROTX | CHILDOF_ROTY | CHILDOF_ROTZ |
 					CHILDOF_SIZEX |CHILDOF_SIZEY| CHILDOF_SIZEZ, 'i' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static PyObject *transf_getter( BPy_Constraint * self, int type )
+static PyObject *transf_getter( V24_BPy_Constraint * self, int type )
 {
 	bTransformConstraint *con = (bTransformConstraint *)(self->con->data);
 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET:
-		return Object_CreatePyObject( con->tar );
+		return V24_Object_CreatePyObject( con->tar );
 	case EXPP_CONSTR_BONE:
 		return PyString_FromString( con->subtarget );
 	case EXPP_CONSTR_FROM:
@@ -1602,11 +1602,11 @@ static PyObject *transf_getter( BPy_Constraint * self, int type )
 	case EXPP_CONSTR_EXPO:
 		return PyBool_FromLong( (long)con->expo );
 	default:
-		return EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError, "key not found" );
 	}
 }
 
-static int transf_setter( BPy_Constraint *self, int type, PyObject *value )
+static int transf_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 {
 	bTransformConstraint *con = (bTransformConstraint *)(self->con->data);
 	float fmin, fmax, tmin, tmax;
@@ -1639,9 +1639,9 @@ static int transf_setter( BPy_Constraint *self, int type, PyObject *value )
 	
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
-		Object *obj = (( BPy_Object * )value)->object;
+		Object *obj = (( V24_BPy_Object * )value)->object;
 		if( !BPy_Object_Check( value ) )
-			return EXPP_ReturnIntError( PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
 		return 0;
@@ -1649,7 +1649,7 @@ static int transf_setter( BPy_Constraint *self, int type, PyObject *value )
 	case EXPP_CONSTR_BONE: {
 		char *name = PyString_AsString( value );
 		if( !name )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected string arg" );
 
 		BLI_strncpy( con->subtarget, name, sizeof( con->subtarget ) );
@@ -1657,43 +1657,43 @@ static int transf_setter( BPy_Constraint *self, int type, PyObject *value )
 		return 0;
 		}
 	case EXPP_CONSTR_FROM:
-		return EXPP_setIValueClamped( value, &con->from, 0, 3, 'h' );
+		return V24_EXPP_setIValueClamped( value, &con->from, 0, 3, 'h' );
 	case EXPP_CONSTR_TO:
-		return EXPP_setIValueClamped( value, &con->to, 0, 3, 'h' );
+		return V24_EXPP_setIValueClamped( value, &con->to, 0, 3, 'h' );
 	case EXPP_CONSTR_MAPX:
-		return EXPP_setIValueClamped( value, &con->map[0], 0, 3, 'h' );
+		return V24_EXPP_setIValueClamped( value, &con->map[0], 0, 3, 'h' );
 	case EXPP_CONSTR_MAPY:
-		return EXPP_setIValueClamped( value, &con->map[1], 0, 3, 'h' );
+		return V24_EXPP_setIValueClamped( value, &con->map[1], 0, 3, 'h' );
 	case EXPP_CONSTR_MAPZ:
-		return EXPP_setIValueClamped( value, &con->map[2], 0, 3, 'h' );
+		return V24_EXPP_setIValueClamped( value, &con->map[2], 0, 3, 'h' );
 	case EXPP_CONSTR_FROMMINX:
-		return EXPP_setFloatClamped( value, &con->from_min[0], fmin, fmax );
+		return V24_EXPP_setFloatClamped( value, &con->from_min[0], fmin, fmax );
 	case EXPP_CONSTR_FROMMAXX:
-		return EXPP_setFloatClamped( value, &con->from_max[0], fmin, fmax );
+		return V24_EXPP_setFloatClamped( value, &con->from_max[0], fmin, fmax );
 	case EXPP_CONSTR_FROMMINY:
-		return EXPP_setFloatClamped( value, &con->from_min[1], fmin, fmax );
+		return V24_EXPP_setFloatClamped( value, &con->from_min[1], fmin, fmax );
 	case EXPP_CONSTR_FROMMAXY:
-		return EXPP_setFloatClamped( value, &con->from_max[1], fmin, fmax );
+		return V24_EXPP_setFloatClamped( value, &con->from_max[1], fmin, fmax );
 	case EXPP_CONSTR_FROMMINZ:
-		return EXPP_setFloatClamped( value, &con->from_min[2], fmin, fmax );
+		return V24_EXPP_setFloatClamped( value, &con->from_min[2], fmin, fmax );
 	case EXPP_CONSTR_FROMMAXZ:
-		return EXPP_setFloatClamped( value, &con->from_max[2], fmin, fmax );
+		return V24_EXPP_setFloatClamped( value, &con->from_max[2], fmin, fmax );
 	case EXPP_CONSTR_TOMINX:
-		return EXPP_setFloatClamped( value, &con->to_min[0], tmin, tmax );
+		return V24_EXPP_setFloatClamped( value, &con->to_min[0], tmin, tmax );
 	case EXPP_CONSTR_TOMAXX:
-		return EXPP_setFloatClamped( value, &con->to_max[0], tmin, tmax );
+		return V24_EXPP_setFloatClamped( value, &con->to_max[0], tmin, tmax );
 	case EXPP_CONSTR_TOMINY:
-		return EXPP_setFloatClamped( value, &con->to_min[1], tmin, tmax );
+		return V24_EXPP_setFloatClamped( value, &con->to_min[1], tmin, tmax );
 	case EXPP_CONSTR_TOMAXY:
-		return EXPP_setFloatClamped( value, &con->to_max[1], tmin, tmax );
+		return V24_EXPP_setFloatClamped( value, &con->to_max[1], tmin, tmax );
 	case EXPP_CONSTR_TOMINZ:
-		return EXPP_setFloatClamped( value, &con->to_min[2], tmin, tmax );
+		return V24_EXPP_setFloatClamped( value, &con->to_min[2], tmin, tmax );
 	case EXPP_CONSTR_TOMAXZ:
-		return EXPP_setFloatClamped( value, &con->to_max[2], tmin, tmax );
+		return V24_EXPP_setFloatClamped( value, &con->to_max[2], tmin, tmax );
 	case EXPP_CONSTR_EXPO:
-		return EXPP_setBitfield( value, &con->expo, 1, 'h' );
+		return V24_EXPP_setBitfield( value, &con->expo, 1, 'h' );
 	default:
-		return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+		return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 	}
 }
 
@@ -1701,16 +1701,16 @@ static int transf_setter( BPy_Constraint *self, int type, PyObject *value )
  * get data from a constraint
  */
 
-static PyObject *Constraint_getData( BPy_Constraint * self, PyObject * key )
+static PyObject *V24_Constraint_getData( V24_BPy_Constraint * self, PyObject * key )
 {
 	int setting;
 
 	if( !PyInt_Check( key ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an int arg" );
 
 	if( !self->con )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"This constraint has been removed!" );
 	
 	setting = PyInt_AsLong( key );
@@ -1761,21 +1761,21 @@ static PyObject *Constraint_getData( BPy_Constraint * self, PyObject * key )
 		case CONSTRAINT_TYPE_TRANSFORM:
 			return transf_getter( self, setting );
 		default:
-			return EXPP_ReturnPyObjError( PyExc_KeyError,
+			return V24_EXPP_ReturnPyObjError( PyExc_KeyError,
 					"unknown constraint type" );
 	}
 }
 
-static int Constraint_setData( BPy_Constraint * self, PyObject * key, 
+static int V24_Constraint_setData( V24_BPy_Constraint * self, PyObject * key, 
 		PyObject * arg )
 {
 	int key_int, result;
 
 	if( !PyNumber_Check( key ) )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected an int arg" );
 	if( !self->con )
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"This constraint has been removed!" );
 	
 	key_int = PyInt_AsLong( key );
@@ -1843,9 +1843,9 @@ static int Constraint_setData( BPy_Constraint * self, PyObject * key,
 			result = transf_setter( self, key_int, arg);
 			break;
 		case CONSTRAINT_TYPE_NULL:
-			return EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
+			return V24_EXPP_ReturnIntError( PyExc_KeyError, "key not found" );
 		default:
-			return EXPP_ReturnIntError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 					"unsupported constraint setting" );
 		}
 	}
@@ -1855,21 +1855,21 @@ static int Constraint_setData( BPy_Constraint * self, PyObject * key,
 }
 
 /*****************************************************************************/
-/* Function:    Constraint_compare                                           */
+/* Function:    V24_Constraint_compare                                           */
 /* Description: This compares 2 constraint python types, == or != only.      */
 /*****************************************************************************/
-static int Constraint_compare( BPy_Constraint * a, BPy_Constraint * b )
+static int V24_Constraint_compare( V24_BPy_Constraint * a, V24_BPy_Constraint * b )
 {
 	return ( a->con == b->con ) ? 0 : -1;
 }
 
 /*****************************************************************************/
-/* Function:    Constraint_repr                                              */
-/* Description: This is a callback function for the BPy_Constraint type. It  */
+/* Function:    V24_Constraint_repr                                              */
+/* Description: This is a callback function for the V24_BPy_Constraint type. It  */
 /*              builds a meaningful string to represent constraint objects.  */
 /*****************************************************************************/
 
-static PyObject *Constraint_repr( BPy_Constraint * self )
+static PyObject *V24_Constraint_repr( V24_BPy_Constraint * self )
 {
 	bConstraintTypeInfo *cti;
 
@@ -1887,22 +1887,22 @@ static PyObject *Constraint_repr( BPy_Constraint * self )
 	}
 }
 
-/* Three Python Constraint_Type helper functions needed by the Object module: */
+/* Three Python V24_Constraint_Type helper functions needed by the Object module: */
 
 /*****************************************************************************/
-/* Function:    Constraint_CreatePyObject                                    */
-/* Description: This function will create a new BPy_Constraint from an       */
+/* Function:    V24_Constraint_CreatePyObject                                    */
+/* Description: This function will create a new V24_BPy_Constraint from an       */
 /*              existing Blender constraint structure.                       */
 /*****************************************************************************/
-PyObject *Constraint_CreatePyObject( bPoseChannel *pchan, Object *obj,
+PyObject *V24_Constraint_CreatePyObject( bPoseChannel *pchan, Object *obj,
 		bConstraint *con )
 {
-	BPy_Constraint *pycon;
-	pycon = ( BPy_Constraint * ) PyObject_NEW( BPy_Constraint,
-			&Constraint_Type );
+	V24_BPy_Constraint *pycon;
+	pycon = ( V24_BPy_Constraint * ) PyObject_NEW( V24_BPy_Constraint,
+			&V24_Constraint_Type );
 	if( !pycon )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "couldn't create BPy_Constraint object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "couldn't create V24_BPy_Constraint object" );
 
 	pycon->con = con;
 
@@ -1913,11 +1913,11 @@ PyObject *Constraint_CreatePyObject( bPoseChannel *pchan, Object *obj,
 }
 
 /*****************************************************************************/
-/* Function:    Constraint_FromPyObject                                      */
+/* Function:    V24_Constraint_FromPyObject                                      */
 /* Description: This function returns the Blender constraint from the given  */
 /*              PyObject.                                                    */
 /*****************************************************************************/
-bConstraint *Constraint_FromPyObject( BPy_Constraint * self )
+bConstraint *V24_Constraint_FromPyObject( V24_BPy_Constraint * self )
 {
 	return self->con;
 }
@@ -1930,34 +1930,34 @@ bConstraint *Constraint_FromPyObject( BPy_Constraint * self )
  * Initialize the interator
  */
 
-static PyObject *ConstraintSeq_getIter( BPy_ConstraintSeq * self )
+static PyObject *V24_ConstraintSeq_getIter( V24_BPy_ConstraintSeq * self )
 {
 	if( self->pchan )
 		self->iter = (bConstraint *)self->pchan->constraints.first;
 	else
 		self->iter = (bConstraint *)self->obj->constraints.first;
-	return EXPP_incr_ret ( (PyObject *) self );
+	return V24_EXPP_incr_ret ( (PyObject *) self );
 }
 
 /*
  * Get the next Constraint
  */
 
-static PyObject *ConstraintSeq_nextIter( BPy_ConstraintSeq * self )
+static PyObject *V24_ConstraintSeq_nextIter( V24_BPy_ConstraintSeq * self )
 {
 	bConstraint *this = self->iter;
 	if( this ) {
 		self->iter = this->next;
-		return Constraint_CreatePyObject( self->pchan, self->obj, this );
+		return V24_Constraint_CreatePyObject( self->pchan, self->obj, this );
 	}
 
-	return EXPP_ReturnPyObjError( PyExc_StopIteration,
+	return V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 			"iterator at end" );
 }
 
 /* return the number of constraints */
 
-static int ConstraintSeq_length( BPy_ConstraintSeq * self )
+static int V24_ConstraintSeq_length( V24_BPy_ConstraintSeq * self )
 {
 	return BLI_countlist( self->pchan ?
 		&self->pchan->constraints : &self->obj->constraints );
@@ -1965,13 +1965,13 @@ static int ConstraintSeq_length( BPy_ConstraintSeq * self )
 
 /* return a constraint */
 
-static PyObject *ConstraintSeq_item( BPy_ConstraintSeq * self, int i )
+static PyObject *V24_ConstraintSeq_item( V24_BPy_ConstraintSeq * self, int i )
 {
 	bConstraint *con = NULL;
 
 	/* if index is negative, start counting from the end of the list */
 	if( i < 0 )
-		i += ConstraintSeq_length( self );
+		i += V24_ConstraintSeq_length( self );
 
 	/* skip through the list until we get the constraint or end of list */
 
@@ -1986,20 +1986,20 @@ static PyObject *ConstraintSeq_item( BPy_ConstraintSeq * self, int i )
 	}
 
 	if( con )
-		return Constraint_CreatePyObject( self->pchan, self->obj, con );
+		return V24_Constraint_CreatePyObject( self->pchan, self->obj, con );
 	else
-		return EXPP_ReturnPyObjError( PyExc_IndexError,
+		return V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 				"array index out of range" );
 }
 
 /*****************************************************************************/
-/* Python BPy_ConstraintSeq sequence table:                                  */
+/* Python V24_BPy_ConstraintSeq sequence table:                                  */
 /*****************************************************************************/
-static PySequenceMethods ConstraintSeq_as_sequence = {
-	( inquiry ) ConstraintSeq_length,	/* sq_length */
+static PySequenceMethods V24_ConstraintSeq_as_sequence = {
+	( inquiry ) V24_ConstraintSeq_length,	/* sq_length */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
-	( intargfunc ) ConstraintSeq_item,	/* sq_item */
+	( intargfunc ) V24_ConstraintSeq_item,	/* sq_item */
 	( intintargfunc ) 0,	/* sq_slice */
 	( intobjargproc ) 0,	/* sq_ass_item */
 	( intintobjargproc ) 0,	/* sq_ass_slice */
@@ -2012,18 +2012,18 @@ static PySequenceMethods ConstraintSeq_as_sequence = {
  * helper function to check for a valid constraint argument
  */
 
-static bConstraint *locate_constr( BPy_ConstraintSeq *self, BPy_Constraint * value )
+static bConstraint *locate_constr( V24_BPy_ConstraintSeq *self, V24_BPy_Constraint * value )
 {
 	bConstraint *con;
 
 	/* check that argument is a modifier */
 	if (!BPy_Constraint_Check(value))
-		return (bConstraint *)EXPP_ReturnPyObjError( PyExc_TypeError,
+		return (bConstraint *)V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a constraint as an argument" );
 
 	/* check whether constraint has been removed */
 	if( !value->con )
-		return (bConstraint *)EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return (bConstraint *)V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"This constraint has been removed!" );
 
 	/* verify the constraint is still exists in the stack */
@@ -2036,7 +2036,7 @@ static bConstraint *locate_constr( BPy_ConstraintSeq *self, BPy_Constraint * val
 
 	/* if we didn't find it, exception */
 	if( !con )
-		return (bConstraint *)EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return (bConstraint *)V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"This constraint is no longer in the object's stack" );
 
 	return con;
@@ -2045,7 +2045,7 @@ static bConstraint *locate_constr( BPy_ConstraintSeq *self, BPy_Constraint * val
 
 /* create a new constraint at the end of the list */
 
-static PyObject *ConstraintSeq_append( BPy_ConstraintSeq *self, PyObject *value )
+static PyObject *V24_ConstraintSeq_append( V24_BPy_ConstraintSeq *self, PyObject *value )
 {
 	int type = (int)PyInt_AsLong(value);
 	bConstraint *con;
@@ -2053,7 +2053,7 @@ static PyObject *ConstraintSeq_append( BPy_ConstraintSeq *self, PyObject *value 
 	/* type 0 is CONSTRAINT_TYPE_NULL, should we be able to add one of these?
 	 * if the value is not an int it will be -1 */
 	if( type < CONSTRAINT_TYPE_NULL || type > CONSTRAINT_TYPE_RIGIDBODYJOINT ) 
-		return EXPP_ReturnPyObjError( PyExc_ValueError,
+		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 				"arg not in int or out of range" );
 
 	con = add_new_constraint( type );
@@ -2064,12 +2064,12 @@ static PyObject *ConstraintSeq_append( BPy_ConstraintSeq *self, PyObject *value 
 	else
 		BLI_addtail( &self->obj->constraints, con );
 
-	return Constraint_CreatePyObject( self->pchan, self->obj, con );
+	return V24_Constraint_CreatePyObject( self->pchan, self->obj, con );
 }
 
 /* move the constraint up in the stack */
 
-static PyObject *ConstraintSeq_moveUp( BPy_ConstraintSeq *self, BPy_Constraint *value )
+static PyObject *V24_ConstraintSeq_moveUp( V24_BPy_ConstraintSeq *self, V24_BPy_Constraint *value )
 {
 	bConstraint *con = locate_constr( self,  value );
 
@@ -2083,7 +2083,7 @@ static PyObject *ConstraintSeq_moveUp( BPy_ConstraintSeq *self, BPy_Constraint *
 
 /* move the constraint down in the stack */
 
-static PyObject *ConstraintSeq_moveDown( BPy_ConstraintSeq *self, BPy_Constraint *value )
+static PyObject *V24_ConstraintSeq_moveDown( V24_BPy_ConstraintSeq *self, V24_BPy_Constraint *value )
 {
 	bConstraint *con = locate_constr( self,  value );
 
@@ -2097,7 +2097,7 @@ static PyObject *ConstraintSeq_moveDown( BPy_ConstraintSeq *self, BPy_Constraint
 
 /* remove an existing constraint */
 
-static PyObject *ConstraintSeq_remove( BPy_ConstraintSeq *self, BPy_Constraint *value )
+static PyObject *V24_ConstraintSeq_remove( V24_BPy_ConstraintSeq *self, V24_BPy_Constraint *value )
 {
 	bConstraint *con = locate_constr( self,  value );
 
@@ -2119,45 +2119,45 @@ static PyObject *ConstraintSeq_remove( BPy_ConstraintSeq *self, BPy_Constraint *
 }
 
 /*****************************************************************************/
-/* Function:    ConstraintSeq_dealloc                                        */
-/* Description: This is a callback function for the BPy_ConstraintSeq type.  */
+/* Function:    V24_ConstraintSeq_dealloc                                        */
+/* Description: This is a callback function for the V24_BPy_ConstraintSeq type.  */
 /*              It destroys data when the object is deleted.                 */
 /*****************************************************************************/
-static void ConstraintSeq_dealloc( BPy_Constraint * self )
+static void V24_ConstraintSeq_dealloc( V24_BPy_Constraint * self )
 {
 	PyObject_DEL( self );
 }
 
 /*****************************************************************************/
-/* Python BPy_ConstraintSeq methods table:                                   */
+/* Python V24_BPy_ConstraintSeq methods table:                                   */
 /*****************************************************************************/
-static PyMethodDef BPy_ConstraintSeq_methods[] = {
+static PyMethodDef V24_BPy_ConstraintSeq_methods[] = {
 	/* name, method, flags, doc */
-	{"append", ( PyCFunction ) ConstraintSeq_append, METH_O,
+	{"append", ( PyCFunction ) V24_ConstraintSeq_append, METH_O,
 	 "(type) - add a new constraint, where type is the constraint type"},
-	{"remove", ( PyCFunction ) ConstraintSeq_remove, METH_O,
+	{"remove", ( PyCFunction ) V24_ConstraintSeq_remove, METH_O,
 	 "(con) - remove an existing constraint, where con is a constraint from this object."},
-	{"moveUp", ( PyCFunction ) ConstraintSeq_moveUp, METH_O,
+	{"moveUp", ( PyCFunction ) V24_ConstraintSeq_moveUp, METH_O,
 	 "(con) - Move constraint up in stack"},
-	{"moveDown", ( PyCFunction ) ConstraintSeq_moveDown, METH_O,
+	{"moveDown", ( PyCFunction ) V24_ConstraintSeq_moveDown, METH_O,
 	 "(con) - Move constraint down in stack"},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python ConstraintSeq_Type structure definition:                           */
+/* Python V24_ConstraintSeq_Type structure definition:                           */
 /*****************************************************************************/
-PyTypeObject ConstraintSeq_Type = {
+PyTypeObject V24_ConstraintSeq_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender.Constraints",      /* char *tp_name; */
-	sizeof( BPy_ConstraintSeq ),     /* int tp_basicsize; */
+	sizeof( V24_BPy_ConstraintSeq ),     /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	( destructor ) ConstraintSeq_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_ConstraintSeq_dealloc,/* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -2167,7 +2167,7 @@ PyTypeObject ConstraintSeq_Type = {
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&ConstraintSeq_as_sequence,        /* PySequenceMethods *tp_as_sequence; */
+	&V24_ConstraintSeq_as_sequence,        /* PySequenceMethods *tp_as_sequence; */
 	NULL,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
@@ -2201,11 +2201,11 @@ PyTypeObject ConstraintSeq_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc )ConstraintSeq_getIter, /* getiterfunc tp_iter; */
-    ( iternextfunc )ConstraintSeq_nextIter, /* iternextfunc tp_iternext; */
+	( getiterfunc )V24_ConstraintSeq_getIter, /* getiterfunc tp_iter; */
+    ( iternextfunc )V24_ConstraintSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_ConstraintSeq_methods,         /* struct PyMethodDef *tp_methods; */
+	V24_BPy_ConstraintSeq_methods,         /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	NULL,                       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
@@ -2230,13 +2230,13 @@ PyTypeObject ConstraintSeq_Type = {
 };
 
 /*****************************************************************************/
-/* Function:    PoseConstraintSeq_CreatePyObject                             */
-/* Description: This function will create a new BPy_ConstraintSeq from an    */
+/* Function:    V24_PoseConstraintSeq_CreatePyObject                             */
+/* Description: This function will create a new V24_BPy_ConstraintSeq from an    */
 /*              existing ListBase structure.                                 */
 /*****************************************************************************/
-PyObject *PoseConstraintSeq_CreatePyObject( bPoseChannel *pchan )
+PyObject *V24_PoseConstraintSeq_CreatePyObject( bPoseChannel *pchan )
 {
-	BPy_ConstraintSeq *pyseq;
+	V24_BPy_ConstraintSeq *pyseq;
 	Object *ob;
 
 	for( ob = G.main->object.first; ob; ob = ob->id.next ) {
@@ -2244,11 +2244,11 @@ PyObject *PoseConstraintSeq_CreatePyObject( bPoseChannel *pchan )
 			bPoseChannel *p = ob->pose->chanbase.first;
 			while( p ) {
 				if( p == pchan ) {
-					pyseq = ( BPy_ConstraintSeq * ) PyObject_NEW( 
-							BPy_ConstraintSeq, &ConstraintSeq_Type );
+					pyseq = ( V24_BPy_ConstraintSeq * ) PyObject_NEW( 
+							V24_BPy_ConstraintSeq, &V24_ConstraintSeq_Type );
 					if( !pyseq )
-						return EXPP_ReturnPyObjError( PyExc_MemoryError,
-								"couldn't create BPy_ConstraintSeq object" );
+						return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+								"couldn't create V24_BPy_ConstraintSeq object" );
 					pyseq->pchan = pchan;
 					pyseq->obj = ob;
 					return ( PyObject * ) pyseq;
@@ -2257,426 +2257,426 @@ PyObject *PoseConstraintSeq_CreatePyObject( bPoseChannel *pchan )
 			}
 		}
 	}
-	return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+	return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"couldn't find ANY armature with the pose!" );
 
 }
 
 /*****************************************************************************/
-/* Function:    ObConstraintSeq_CreatePyObject                               */
-/* Description: This function will create a new BPy_ConstraintSeq from an    */
+/* Function:    V24_ObConstraintSeq_CreatePyObject                               */
+/* Description: This function will create a new V24_BPy_ConstraintSeq from an    */
 /*              existing ListBase structure.                                 */
 /*****************************************************************************/
-PyObject *ObConstraintSeq_CreatePyObject( Object *obj )
+PyObject *V24_ObConstraintSeq_CreatePyObject( Object *obj )
 {
-	BPy_ConstraintSeq *pyseq;
-	pyseq = ( BPy_ConstraintSeq * ) PyObject_NEW( BPy_ConstraintSeq,
-			&ConstraintSeq_Type );
+	V24_BPy_ConstraintSeq *pyseq;
+	pyseq = ( V24_BPy_ConstraintSeq * ) PyObject_NEW( V24_BPy_ConstraintSeq,
+			&V24_ConstraintSeq_Type );
 	if( !pyseq )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "couldn't create BPy_ConstraintSeq object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "couldn't create V24_BPy_ConstraintSeq object" );
 	pyseq->obj = obj;
 	pyseq->pchan = NULL;
 	return ( PyObject * ) pyseq;
 }
 
-static PyObject *M_Constraint_TypeDict( void )
+static PyObject *V24_M_Constraint_TypeDict( void )
 {
-	PyObject *S = PyConstant_New(  );
+	PyObject *S = V24_PyConstant_New(  );
 
 	if( S ) {
-		BPy_constant *d = ( BPy_constant * ) S;
-		PyConstant_Insert( d, "NULL", 
+		V24_BPy_constant *d = ( V24_BPy_constant * ) S;
+		V24_PyConstant_Insert( d, "NULL", 
 				PyInt_FromLong( CONSTRAINT_TYPE_NULL ) );
-		PyConstant_Insert( d, "TRACKTO",
+		V24_PyConstant_Insert( d, "TRACKTO",
 				PyInt_FromLong( CONSTRAINT_TYPE_TRACKTO ) );
-		PyConstant_Insert( d, "IKSOLVER", 
+		V24_PyConstant_Insert( d, "IKSOLVER", 
 				PyInt_FromLong( CONSTRAINT_TYPE_KINEMATIC ) );
-		PyConstant_Insert( d, "FOLLOWPATH", 
+		V24_PyConstant_Insert( d, "FOLLOWPATH", 
 				PyInt_FromLong( CONSTRAINT_TYPE_FOLLOWPATH ) );
-		PyConstant_Insert( d, "COPYROT", 
+		V24_PyConstant_Insert( d, "COPYROT", 
 				PyInt_FromLong( CONSTRAINT_TYPE_ROTLIKE ) );
-		PyConstant_Insert( d, "COPYLOC", 
+		V24_PyConstant_Insert( d, "COPYLOC", 
 				PyInt_FromLong( CONSTRAINT_TYPE_LOCLIKE ) );
-		PyConstant_Insert( d, "COPYSIZE", 
+		V24_PyConstant_Insert( d, "COPYSIZE", 
 				PyInt_FromLong( CONSTRAINT_TYPE_SIZELIKE ) );
-		PyConstant_Insert( d, "ACTION", 
+		V24_PyConstant_Insert( d, "ACTION", 
 				PyInt_FromLong( CONSTRAINT_TYPE_ACTION ) );
-		PyConstant_Insert( d, "LOCKTRACK", 
+		V24_PyConstant_Insert( d, "LOCKTRACK", 
 				PyInt_FromLong( CONSTRAINT_TYPE_LOCKTRACK ) );
-		PyConstant_Insert( d, "STRETCHTO", 
+		V24_PyConstant_Insert( d, "STRETCHTO", 
 				PyInt_FromLong( CONSTRAINT_TYPE_STRETCHTO ) );
-		PyConstant_Insert( d, "FLOOR", 
+		V24_PyConstant_Insert( d, "FLOOR", 
 				PyInt_FromLong( CONSTRAINT_TYPE_MINMAX ) );
-		PyConstant_Insert( d, "LIMITLOC", 
+		V24_PyConstant_Insert( d, "LIMITLOC", 
 				PyInt_FromLong( CONSTRAINT_TYPE_LOCLIMIT ) );
-		PyConstant_Insert( d, "LIMITROT", 
+		V24_PyConstant_Insert( d, "LIMITROT", 
 				PyInt_FromLong( CONSTRAINT_TYPE_ROTLIMIT ) );
-		PyConstant_Insert( d, "LIMITSIZE", 
+		V24_PyConstant_Insert( d, "LIMITSIZE", 
 				PyInt_FromLong( CONSTRAINT_TYPE_SIZELIMIT ) );
-		PyConstant_Insert( d, "RIGIDBODYJOINT", 
+		V24_PyConstant_Insert( d, "RIGIDBODYJOINT", 
 				PyInt_FromLong( CONSTRAINT_TYPE_RIGIDBODYJOINT ) );
-		PyConstant_Insert( d, "CLAMPTO", 
+		V24_PyConstant_Insert( d, "CLAMPTO", 
 				PyInt_FromLong( CONSTRAINT_TYPE_CLAMPTO ) );
-		PyConstant_Insert( d, "PYTHON",
+		V24_PyConstant_Insert( d, "PYTHON",
 				PyInt_FromLong( CONSTRAINT_TYPE_PYTHON ) );
-		PyConstant_Insert( d, "CHILDOF",
+		V24_PyConstant_Insert( d, "CHILDOF",
 				PyInt_FromLong( CONSTRAINT_TYPE_CHILDOF ) );
-		PyConstant_Insert( d, "TRANSFORM",
+		V24_PyConstant_Insert( d, "TRANSFORM",
 				PyInt_FromLong( CONSTRAINT_TYPE_TRANSFORM ) );
 	}
 	return S;
 }
 
-static PyObject *M_Constraint_SettingsDict( void )
+static PyObject *V24_M_Constraint_SettingsDict( void )
 {
-	PyObject *S = PyConstant_New(  );
+	PyObject *S = V24_PyConstant_New(  );
 	
 	if( S ) {
-		BPy_constant *d = ( BPy_constant * ) S;
-		PyConstant_Insert( d, "XROT",
+		V24_BPy_constant *d = ( V24_BPy_constant * ) S;
+		V24_PyConstant_Insert( d, "XROT",
 				PyInt_FromLong( EXPP_CONSTR_XROT ) );
-		PyConstant_Insert( d, "YROT",
+		V24_PyConstant_Insert( d, "YROT",
 				PyInt_FromLong( EXPP_CONSTR_YROT ) );
-		PyConstant_Insert( d, "ZROT",
+		V24_PyConstant_Insert( d, "ZROT",
 				PyInt_FromLong( EXPP_CONSTR_ZROT ) );
-		PyConstant_Insert( d, "XSIZE",
+		V24_PyConstant_Insert( d, "XSIZE",
 				PyInt_FromLong( EXPP_CONSTR_XSIZE ) );
-		PyConstant_Insert( d, "YSIZE",
+		V24_PyConstant_Insert( d, "YSIZE",
 				PyInt_FromLong( EXPP_CONSTR_YSIZE ) );
-		PyConstant_Insert( d, "ZSIZE",
+		V24_PyConstant_Insert( d, "ZSIZE",
 				PyInt_FromLong( EXPP_CONSTR_ZSIZE ) );
-		PyConstant_Insert( d, "XLOC",
+		V24_PyConstant_Insert( d, "XLOC",
 				PyInt_FromLong( EXPP_CONSTR_XLOC ) );
-		PyConstant_Insert( d, "YLOC",
+		V24_PyConstant_Insert( d, "YLOC",
 				PyInt_FromLong( EXPP_CONSTR_YLOC ) );
-		PyConstant_Insert( d, "ZLOC",
+		V24_PyConstant_Insert( d, "ZLOC",
 				PyInt_FromLong( EXPP_CONSTR_ZLOC ) );
 
-		PyConstant_Insert( d, "UPX",
+		V24_PyConstant_Insert( d, "UPX",
 				PyInt_FromLong( UP_X ) );
-		PyConstant_Insert( d, "UPY",
+		V24_PyConstant_Insert( d, "UPY",
 				PyInt_FromLong( UP_Y ) );
-		PyConstant_Insert( d, "UPZ",
+		V24_PyConstant_Insert( d, "UPZ",
 				PyInt_FromLong( UP_Z ) );
 
-		PyConstant_Insert( d, "TRACKX",
+		V24_PyConstant_Insert( d, "TRACKX",
 				PyInt_FromLong( TRACK_X ) );
-		PyConstant_Insert( d, "TRACKY",
+		V24_PyConstant_Insert( d, "TRACKY",
 				PyInt_FromLong( TRACK_Y ) );
-		PyConstant_Insert( d, "TRACKZ",
+		V24_PyConstant_Insert( d, "TRACKZ",
 				PyInt_FromLong( TRACK_Z ) );
-		PyConstant_Insert( d, "TRACKNEGX",
+		V24_PyConstant_Insert( d, "TRACKNEGX",
 				PyInt_FromLong( TRACK_nX ) );
-		PyConstant_Insert( d, "TRACKNEGY",
+		V24_PyConstant_Insert( d, "TRACKNEGY",
 				PyInt_FromLong( TRACK_nY ) );
-		PyConstant_Insert( d, "TRACKNEGZ",
+		V24_PyConstant_Insert( d, "TRACKNEGZ",
 				PyInt_FromLong( TRACK_nZ ) );
 
-		PyConstant_Insert( d, "VOLUMEXZ",
+		V24_PyConstant_Insert( d, "VOLUMEXZ",
 				PyInt_FromLong( VOLUME_XZ ) );
-		PyConstant_Insert( d, "VOLUMEX",
+		V24_PyConstant_Insert( d, "VOLUMEX",
 				PyInt_FromLong( VOLUME_X ) );
-		PyConstant_Insert( d, "VOLUMEZ",
+		V24_PyConstant_Insert( d, "VOLUMEZ",
 				PyInt_FromLong( VOLUME_Z ) );
-		PyConstant_Insert( d, "VOLUMENONE",
+		V24_PyConstant_Insert( d, "VOLUMENONE",
 				PyInt_FromLong( NO_VOLUME ) );
 
-		PyConstant_Insert( d, "PLANEX",
+		V24_PyConstant_Insert( d, "PLANEX",
 				PyInt_FromLong( PLANE_X ) );
-		PyConstant_Insert( d, "PLANEY",
+		V24_PyConstant_Insert( d, "PLANEY",
 				PyInt_FromLong( PLANE_Y ) );
-		PyConstant_Insert( d, "PLANEZ",
+		V24_PyConstant_Insert( d, "PLANEZ",
 				PyInt_FromLong( PLANE_Z ) );
 
-		PyConstant_Insert( d, "LOCKX",
+		V24_PyConstant_Insert( d, "LOCKX",
 				PyInt_FromLong( LOCK_X ) );
-		PyConstant_Insert( d, "LOCKY",
+		V24_PyConstant_Insert( d, "LOCKY",
 				PyInt_FromLong( LOCK_Y ) );
-		PyConstant_Insert( d, "LOCKZ",
+		V24_PyConstant_Insert( d, "LOCKZ",
 				PyInt_FromLong( LOCK_Z ) );
 
-		PyConstant_Insert( d, "MAXX",
+		V24_PyConstant_Insert( d, "MAXX",
 				PyInt_FromLong( EXPP_CONSTR_MAXX ) );
-		PyConstant_Insert( d, "MAXY",
+		V24_PyConstant_Insert( d, "MAXY",
 				PyInt_FromLong( EXPP_CONSTR_MAXY ) );
-		PyConstant_Insert( d, "MAXZ",
+		V24_PyConstant_Insert( d, "MAXZ",
 				PyInt_FromLong( EXPP_CONSTR_MAXZ ) );
-		PyConstant_Insert( d, "MINX",
+		V24_PyConstant_Insert( d, "MINX",
 				PyInt_FromLong( EXPP_CONSTR_MINX ) );
-		PyConstant_Insert( d, "MINY",
+		V24_PyConstant_Insert( d, "MINY",
 				PyInt_FromLong( EXPP_CONSTR_MINY ) );
-		PyConstant_Insert( d, "MINZ",
+		V24_PyConstant_Insert( d, "MINZ",
 				PyInt_FromLong( EXPP_CONSTR_MINZ ) );
 
-		PyConstant_Insert( d, "COPYX",
+		V24_PyConstant_Insert( d, "COPYX",
 				PyInt_FromLong( LOCLIKE_X ) );
-		PyConstant_Insert( d, "COPYY",
+		V24_PyConstant_Insert( d, "COPYY",
 				PyInt_FromLong( LOCLIKE_Y ) );
-		PyConstant_Insert( d, "COPYZ",
+		V24_PyConstant_Insert( d, "COPYZ",
 				PyInt_FromLong( LOCLIKE_Z ) );
-		PyConstant_Insert( d, "COPYXINVERT",
+		V24_PyConstant_Insert( d, "COPYXINVERT",
 				PyInt_FromLong( LOCLIKE_X_INVERT ) );
-		PyConstant_Insert( d, "COPYYINVERT",
+		V24_PyConstant_Insert( d, "COPYYINVERT",
 				PyInt_FromLong( LOCLIKE_Y_INVERT ) );
-		PyConstant_Insert( d, "COPYZINVERT",
+		V24_PyConstant_Insert( d, "COPYZINVERT",
 				PyInt_FromLong( LOCLIKE_Z_INVERT ) );
 				
-		PyConstant_Insert( d, "PARLOCX",
+		V24_PyConstant_Insert( d, "PARLOCX",
 				PyInt_FromLong( CHILDOF_LOCX ) );
-		PyConstant_Insert( d, "PARLOCY",
+		V24_PyConstant_Insert( d, "PARLOCY",
 				PyInt_FromLong( CHILDOF_LOCY ) );
-		PyConstant_Insert( d, "PARLOCZ",
+		V24_PyConstant_Insert( d, "PARLOCZ",
 				PyInt_FromLong( CHILDOF_LOCZ ) );
-		PyConstant_Insert( d, "PARROTX",
+		V24_PyConstant_Insert( d, "PARROTX",
 				PyInt_FromLong( CHILDOF_ROTX ) );
-		PyConstant_Insert( d, "PARROTY",
+		V24_PyConstant_Insert( d, "PARROTY",
 				PyInt_FromLong( CHILDOF_ROTY ) );
-		PyConstant_Insert( d, "PARROTZ",
+		V24_PyConstant_Insert( d, "PARROTZ",
 				PyInt_FromLong( CHILDOF_ROTZ ) );
-		PyConstant_Insert( d, "PARSIZEX",
+		V24_PyConstant_Insert( d, "PARSIZEX",
 				PyInt_FromLong( CHILDOF_LOCX ) );
-		PyConstant_Insert( d, "PARSIZEY",
+		V24_PyConstant_Insert( d, "PARSIZEY",
 				PyInt_FromLong( CHILDOF_SIZEY ) );
-		PyConstant_Insert( d, "PARSIZEZ",
+		V24_PyConstant_Insert( d, "PARSIZEZ",
 				PyInt_FromLong( CHILDOF_SIZEZ ) );
 				
-		PyConstant_Insert( d, "CLAMPAUTO",
+		V24_PyConstant_Insert( d, "CLAMPAUTO",
 				PyInt_FromLong( CLAMPTO_AUTO ) );
-		PyConstant_Insert( d, "CLAMPX",
+		V24_PyConstant_Insert( d, "CLAMPX",
 				PyInt_FromLong( CLAMPTO_X ) );
-		PyConstant_Insert( d, "CLAMPY",
+		V24_PyConstant_Insert( d, "CLAMPY",
 				PyInt_FromLong( CLAMPTO_Y ) );
-		PyConstant_Insert( d, "CLAMPZ",
+		V24_PyConstant_Insert( d, "CLAMPZ",
 				PyInt_FromLong( CLAMPTO_Z ) );
-		PyConstant_Insert( d, "CLAMPCYCLIC",
+		V24_PyConstant_Insert( d, "CLAMPCYCLIC",
 				PyInt_FromLong( EXPP_CONSTR_CLAMPCYCLIC ));
 
-		PyConstant_Insert( d, "TARGET",
+		V24_PyConstant_Insert( d, "TARGET",
 				PyInt_FromLong( EXPP_CONSTR_TARGET ) );
-		PyConstant_Insert( d, "STRETCH", 
+		V24_PyConstant_Insert( d, "STRETCH", 
 				PyInt_FromLong( EXPP_CONSTR_STRETCH ) );
-		PyConstant_Insert( d, "ITERATIONS", 
+		V24_PyConstant_Insert( d, "ITERATIONS", 
 				PyInt_FromLong( EXPP_CONSTR_ITERATIONS ) );
-		PyConstant_Insert( d, "BONE", 
+		V24_PyConstant_Insert( d, "BONE", 
 				PyInt_FromLong( EXPP_CONSTR_BONE ) );
-		PyConstant_Insert( d, "CHAINLEN", 
+		V24_PyConstant_Insert( d, "CHAINLEN", 
 				PyInt_FromLong( EXPP_CONSTR_CHAINLEN ) );
-		PyConstant_Insert( d, "POSWEIGHT", 
+		V24_PyConstant_Insert( d, "POSWEIGHT", 
 				PyInt_FromLong( EXPP_CONSTR_POSWEIGHT ) );
-		PyConstant_Insert( d, "ROTWEIGHT", 
+		V24_PyConstant_Insert( d, "ROTWEIGHT", 
 				PyInt_FromLong( EXPP_CONSTR_ROTWEIGHT ) );
-		PyConstant_Insert( d, "ROTATE", 
+		V24_PyConstant_Insert( d, "ROTATE", 
 				PyInt_FromLong( EXPP_CONSTR_ROTATE ) );
-		PyConstant_Insert( d, "USETIP", 
+		V24_PyConstant_Insert( d, "USETIP", 
 				PyInt_FromLong( EXPP_CONSTR_USETIP ) );
 
-		PyConstant_Insert( d, "ACTION", 
+		V24_PyConstant_Insert( d, "ACTION", 
 				PyInt_FromLong( EXPP_CONSTR_ACTION ) );
-		PyConstant_Insert( d, "START", 
+		V24_PyConstant_Insert( d, "START", 
 				PyInt_FromLong( EXPP_CONSTR_START ) );
-		PyConstant_Insert( d, "END", 
+		V24_PyConstant_Insert( d, "END", 
 				PyInt_FromLong( EXPP_CONSTR_END ) );
-		PyConstant_Insert( d, "MIN", 
+		V24_PyConstant_Insert( d, "MIN", 
 				PyInt_FromLong( EXPP_CONSTR_MIN ) );
-		PyConstant_Insert( d, "MAX", 
+		V24_PyConstant_Insert( d, "MAX", 
 				PyInt_FromLong( EXPP_CONSTR_MAX ) );
-		PyConstant_Insert( d, "KEYON", 
+		V24_PyConstant_Insert( d, "KEYON", 
 				PyInt_FromLong( EXPP_CONSTR_KEYON ) );
 
-		PyConstant_Insert( d, "TRACK", 
+		V24_PyConstant_Insert( d, "TRACK", 
 				PyInt_FromLong( EXPP_CONSTR_TRACK ) );
-		PyConstant_Insert( d, "UP", 
+		V24_PyConstant_Insert( d, "UP", 
 				PyInt_FromLong( EXPP_CONSTR_UP ) );
 
-		PyConstant_Insert( d, "RESTLENGTH",
+		V24_PyConstant_Insert( d, "RESTLENGTH",
 				PyInt_FromLong( EXPP_CONSTR_RESTLENGTH ) );
-		PyConstant_Insert( d, "VOLVARIATION",
+		V24_PyConstant_Insert( d, "VOLVARIATION",
 				PyInt_FromLong( EXPP_CONSTR_VOLVARIATION ) );
-		PyConstant_Insert( d, "VOLUMEMODE",
+		V24_PyConstant_Insert( d, "VOLUMEMODE",
 				PyInt_FromLong( EXPP_CONSTR_VOLUMEMODE ) );
-		PyConstant_Insert( d, "PLANE",
+		V24_PyConstant_Insert( d, "PLANE",
 				PyInt_FromLong( EXPP_CONSTR_PLANE ) );
 
-		PyConstant_Insert( d, "FOLLOW",
+		V24_PyConstant_Insert( d, "FOLLOW",
 				PyInt_FromLong( EXPP_CONSTR_FOLLOW ) );
-		PyConstant_Insert( d, "OFFSET",
+		V24_PyConstant_Insert( d, "OFFSET",
 				PyInt_FromLong( EXPP_CONSTR_OFFSET ) );
-		PyConstant_Insert( d, "FORWARD",
+		V24_PyConstant_Insert( d, "FORWARD",
 				PyInt_FromLong( EXPP_CONSTR_FORWARD ) );
 
-		PyConstant_Insert( d, "LOCK",
+		V24_PyConstant_Insert( d, "LOCK",
 				PyInt_FromLong( EXPP_CONSTR_LOCK ) );
 
-		PyConstant_Insert( d, "COPY",
+		V24_PyConstant_Insert( d, "COPY",
 				PyInt_FromLong( EXPP_CONSTR_COPY ) );
-		PyConstant_Insert( d, "LIMIT",
+		V24_PyConstant_Insert( d, "LIMIT",
 				PyInt_FromLong( EXPP_CONSTR_LIMIT ) );
-		PyConstant_Insert( d, "CLAMP",
+		V24_PyConstant_Insert( d, "CLAMP",
 				PyInt_FromLong( EXPP_CONSTR_CLAMP ) );
 		
-		PyConstant_Insert( d, "LIMIT_XMIN",
+		V24_PyConstant_Insert( d, "LIMIT_XMIN",
 				PyInt_FromLong( EXPP_CONSTR_LIMXMIN ) );
-		PyConstant_Insert( d, "LIMIT_XMAX",
+		V24_PyConstant_Insert( d, "LIMIT_XMAX",
 				PyInt_FromLong( EXPP_CONSTR_LIMXMAX ) );
-		PyConstant_Insert( d, "LIMIT_YMIN",
+		V24_PyConstant_Insert( d, "LIMIT_YMIN",
 				PyInt_FromLong( EXPP_CONSTR_LIMYMIN ) );
-		PyConstant_Insert( d, "LIMIT_YMAX",
+		V24_PyConstant_Insert( d, "LIMIT_YMAX",
 				PyInt_FromLong( EXPP_CONSTR_LIMYMAX ) );
-		PyConstant_Insert( d, "LIMIT_ZMIN",
+		V24_PyConstant_Insert( d, "LIMIT_ZMIN",
 				PyInt_FromLong( EXPP_CONSTR_LIMZMIN ) );
-		PyConstant_Insert( d, "LIMIT_ZMAX",
+		V24_PyConstant_Insert( d, "LIMIT_ZMAX",
 				PyInt_FromLong( EXPP_CONSTR_LIMZMAX ) );
 		
-		PyConstant_Insert( d, "LIMIT_XROT",
+		V24_PyConstant_Insert( d, "LIMIT_XROT",
 				PyInt_FromLong( EXPP_CONSTR_LIMXROT ) );
-		PyConstant_Insert( d, "LIMIT_YROT",
+		V24_PyConstant_Insert( d, "LIMIT_YROT",
 				PyInt_FromLong( EXPP_CONSTR_LIMYROT ) );
-		PyConstant_Insert( d, "LIMIT_ZROT",
+		V24_PyConstant_Insert( d, "LIMIT_ZROT",
 				PyInt_FromLong( EXPP_CONSTR_LIMZROT ) );
 		
-		PyConstant_Insert( d, "XMIN",
+		V24_PyConstant_Insert( d, "XMIN",
 				PyInt_FromLong( EXPP_CONSTR_XMIN ) );
-		PyConstant_Insert( d, "XMAX",
+		V24_PyConstant_Insert( d, "XMAX",
 				PyInt_FromLong( EXPP_CONSTR_XMAX ) );
-		PyConstant_Insert( d, "YMIN",
+		V24_PyConstant_Insert( d, "YMIN",
 				PyInt_FromLong( EXPP_CONSTR_YMIN ) );
-		PyConstant_Insert( d, "YMAX",
+		V24_PyConstant_Insert( d, "YMAX",
 				PyInt_FromLong( EXPP_CONSTR_YMAX ) );
-		PyConstant_Insert( d, "ZMIN",
+		V24_PyConstant_Insert( d, "ZMIN",
 				PyInt_FromLong( EXPP_CONSTR_ZMIN ) );
-		PyConstant_Insert( d, "ZMAX",
+		V24_PyConstant_Insert( d, "ZMAX",
 				PyInt_FromLong( EXPP_CONSTR_ZMAX ) );
 				
-		PyConstant_Insert( d, "SCRIPT",
+		V24_PyConstant_Insert( d, "SCRIPT",
 				PyInt_FromLong( EXPP_CONSTR_SCRIPT ) );
-		PyConstant_Insert( d, "PROPERTIES",
+		V24_PyConstant_Insert( d, "PROPERTIES",
 				PyInt_FromLong( EXPP_CONSTR_PROPS ) );
 				
-		PyConstant_Insert( d, "FROM",
+		V24_PyConstant_Insert( d, "FROM",
 				PyInt_FromLong( EXPP_CONSTR_FROM ) );
-		PyConstant_Insert( d, "TO",
+		V24_PyConstant_Insert( d, "TO",
 				PyInt_FromLong( EXPP_CONSTR_TO ) );
-		PyConstant_Insert( d, "EXTRAPOLATE",
+		V24_PyConstant_Insert( d, "EXTRAPOLATE",
 				PyInt_FromLong( EXPP_CONSTR_EXPO ) );
-		PyConstant_Insert( d, "MAPX",
+		V24_PyConstant_Insert( d, "MAPX",
 				PyInt_FromLong( EXPP_CONSTR_MAPX ) );
-		PyConstant_Insert( d, "MAPY",
+		V24_PyConstant_Insert( d, "MAPY",
 				PyInt_FromLong( EXPP_CONSTR_MAPY ) );
-		PyConstant_Insert( d, "MAPZ",
+		V24_PyConstant_Insert( d, "MAPZ",
 				PyInt_FromLong( EXPP_CONSTR_MAPZ ) );
-		PyConstant_Insert( d, "FROM_MINX",
+		V24_PyConstant_Insert( d, "FROM_MINX",
 				PyInt_FromLong( EXPP_CONSTR_FROMMINX ) );
-		PyConstant_Insert( d, "FROM_MAXX",
+		V24_PyConstant_Insert( d, "FROM_MAXX",
 				PyInt_FromLong( EXPP_CONSTR_FROMMAXX ) );
-		PyConstant_Insert( d, "FROM_MINY",
+		V24_PyConstant_Insert( d, "FROM_MINY",
 				PyInt_FromLong( EXPP_CONSTR_FROMMINY ) );
-		PyConstant_Insert( d, "FROM_MAXY",
+		V24_PyConstant_Insert( d, "FROM_MAXY",
 				PyInt_FromLong( EXPP_CONSTR_FROMMAXY ) );
-		PyConstant_Insert( d, "FROM_MINZ",
+		V24_PyConstant_Insert( d, "FROM_MINZ",
 				PyInt_FromLong( EXPP_CONSTR_FROMMINZ ) );
-		PyConstant_Insert( d, "FROM_MAXZ",
+		V24_PyConstant_Insert( d, "FROM_MAXZ",
 				PyInt_FromLong( EXPP_CONSTR_FROMMAXZ ) );
-		PyConstant_Insert( d, "TO_MINX",
+		V24_PyConstant_Insert( d, "TO_MINX",
 				PyInt_FromLong( EXPP_CONSTR_TOMINX ) );
-		PyConstant_Insert( d, "TO_MAXX",
+		V24_PyConstant_Insert( d, "TO_MAXX",
 				PyInt_FromLong( EXPP_CONSTR_TOMAXX ) );
-		PyConstant_Insert( d, "TO_MINY",
+		V24_PyConstant_Insert( d, "TO_MINY",
 				PyInt_FromLong( EXPP_CONSTR_TOMINY ) );
-		PyConstant_Insert( d, "TO_MAXY",
+		V24_PyConstant_Insert( d, "TO_MAXY",
 				PyInt_FromLong( EXPP_CONSTR_TOMAXY ) );
-		PyConstant_Insert( d, "TO_MINZ",
+		V24_PyConstant_Insert( d, "TO_MINZ",
 				PyInt_FromLong( EXPP_CONSTR_TOMINZ ) );
-		PyConstant_Insert( d, "TO_MAXZ",
+		V24_PyConstant_Insert( d, "TO_MAXZ",
 				PyInt_FromLong( EXPP_CONSTR_TOMAXZ ) );
 				
-		PyConstant_Insert( d, "LOC",
+		V24_PyConstant_Insert( d, "LOC",
 				PyInt_FromLong( 0 ) );
-		PyConstant_Insert( d, "ROT",
+		V24_PyConstant_Insert( d, "ROT",
 				PyInt_FromLong( 1 ) );
-		PyConstant_Insert( d, "SCALE",
+		V24_PyConstant_Insert( d, "SCALE",
 				PyInt_FromLong( 2 ) );
 				
-		PyConstant_Insert( d, "CONSTR_RB_TYPE",
+		V24_PyConstant_Insert( d, "CONSTR_RB_TYPE",
 				PyInt_FromLong( EXPP_CONSTR_RB_TYPE ) );
-		PyConstant_Insert( d, "CONSTR_RB_BALL",
+		V24_PyConstant_Insert( d, "CONSTR_RB_BALL",
 				PyInt_FromLong( EXPP_CONSTR_RB_BALL ) );
-		PyConstant_Insert( d, "CONSTR_RB_HINGE",
+		V24_PyConstant_Insert( d, "CONSTR_RB_HINGE",
 				PyInt_FromLong( EXPP_CONSTR_RB_HINGE ) );
-		PyConstant_Insert( d, "CONSTR_RB_GENERIC6DOF",
+		V24_PyConstant_Insert( d, "CONSTR_RB_GENERIC6DOF",
 				PyInt_FromLong( EXPP_CONSTR_RB_GENERIC6DOF ) );
-		PyConstant_Insert( d, "CONSTR_RB_VEHICLE",
+		V24_PyConstant_Insert( d, "CONSTR_RB_VEHICLE",
 				PyInt_FromLong( EXPP_CONSTR_RB_VEHICLE ) );
-		PyConstant_Insert( d, "CONSTR_RB_PIVX",
+		V24_PyConstant_Insert( d, "CONSTR_RB_PIVX",
 				PyInt_FromLong( EXPP_CONSTR_RB_PIVX ) );
-		PyConstant_Insert( d, "CONSTR_RB_PIVY",
+		V24_PyConstant_Insert( d, "CONSTR_RB_PIVY",
 				PyInt_FromLong( EXPP_CONSTR_RB_PIVY ) );
-		PyConstant_Insert( d, "CONSTR_RB_PIVZ",
+		V24_PyConstant_Insert( d, "CONSTR_RB_PIVZ",
 				PyInt_FromLong( EXPP_CONSTR_RB_PIVZ ) );
-		PyConstant_Insert( d, "CONSTR_RB_AXX",
+		V24_PyConstant_Insert( d, "CONSTR_RB_AXX",
 				PyInt_FromLong( EXPP_CONSTR_RB_AXX ) );
-		PyConstant_Insert( d, "CONSTR_RB_AXY",
+		V24_PyConstant_Insert( d, "CONSTR_RB_AXY",
 				PyInt_FromLong( EXPP_CONSTR_RB_AXY ) );
-		PyConstant_Insert( d, "CONSTR_RB_AXZ",
+		V24_PyConstant_Insert( d, "CONSTR_RB_AXZ",
 				PyInt_FromLong( EXPP_CONSTR_RB_AXZ ) );
-		PyConstant_Insert( d, "CONSTR_RB_MINLIMIT0",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MINLIMIT0",
 				PyInt_FromLong( EXPP_CONSTR_RB_MINLIMIT0 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MINLIMIT1",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MINLIMIT1",
 				PyInt_FromLong( EXPP_CONSTR_RB_MINLIMIT1 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MINLIMIT2",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MINLIMIT2",
 				PyInt_FromLong( EXPP_CONSTR_RB_MINLIMIT2 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MINLIMIT3",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MINLIMIT3",
 				PyInt_FromLong( EXPP_CONSTR_RB_MINLIMIT3 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MINLIMIT4",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MINLIMIT4",
 				PyInt_FromLong( EXPP_CONSTR_RB_MINLIMIT4 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MINLIMIT5",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MINLIMIT5",
 				PyInt_FromLong( EXPP_CONSTR_RB_MINLIMIT5 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT0",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT0",
 				PyInt_FromLong( EXPP_CONSTR_RB_MAXLIMIT0 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT1",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT1",
 				PyInt_FromLong( EXPP_CONSTR_RB_MAXLIMIT1 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT2",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT2",
 				PyInt_FromLong( EXPP_CONSTR_RB_MAXLIMIT2 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT3",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT3",
 				PyInt_FromLong( EXPP_CONSTR_RB_MAXLIMIT3 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT4",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT4",
 				PyInt_FromLong( EXPP_CONSTR_RB_MAXLIMIT4 ) );
-		PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT5",
+		V24_PyConstant_Insert( d, "CONSTR_RB_MAXLIMIT5",
 				PyInt_FromLong( EXPP_CONSTR_RB_MAXLIMIT5 ) );				
-		PyConstant_Insert( d, "CONSTR_RB_EXTRAFZ",
+		V24_PyConstant_Insert( d, "CONSTR_RB_EXTRAFZ",
 				PyInt_FromLong( EXPP_CONSTR_RB_EXTRAFZ ) );
-		PyConstant_Insert( d, "CONSTR_RB_FLAG",
+		V24_PyConstant_Insert( d, "CONSTR_RB_FLAG",
 				PyInt_FromLong( EXPP_CONSTR_RB_FLAG ) );
 				
 				
-		PyConstant_Insert( d, "OWNERSPACE",
+		V24_PyConstant_Insert( d, "OWNERSPACE",
 				PyInt_FromLong( EXPP_CONSTR_OWNSPACE ) );
-		PyConstant_Insert( d, "TARGETSPACE",
+		V24_PyConstant_Insert( d, "TARGETSPACE",
 				PyInt_FromLong( EXPP_CONSTR_TARSPACE ) );
 				
-		PyConstant_Insert( d, "SPACE_WORLD",
+		V24_PyConstant_Insert( d, "SPACE_WORLD",
 				PyInt_FromLong( CONSTRAINT_SPACE_WORLD) );
-		PyConstant_Insert( d, "SPACE_LOCAL",
+		V24_PyConstant_Insert( d, "SPACE_LOCAL",
 				PyInt_FromLong( CONSTRAINT_SPACE_LOCAL ) );
-		PyConstant_Insert( d, "SPACE_POSE",
+		V24_PyConstant_Insert( d, "SPACE_POSE",
 				PyInt_FromLong( CONSTRAINT_SPACE_POSE) );
-		PyConstant_Insert( d, "SPACE_PARLOCAL",
+		V24_PyConstant_Insert( d, "SPACE_PARLOCAL",
 				PyInt_FromLong( CONSTRAINT_SPACE_PARLOCAL ) );
 	}
 	return S;
 }
 
 /*****************************************************************************/
-/* Function:              Constraint_Init                                    */
+/* Function:              V24_Constraint_Init                                    */
 /*****************************************************************************/
-PyObject *Constraint_Init( void )
+PyObject *V24_Constraint_Init( void )
 {
 	PyObject *submodule;
-	PyObject *TypeDict = M_Constraint_TypeDict( );
-	PyObject *SettingsDict = M_Constraint_SettingsDict( );
+	PyObject *TypeDict = V24_M_Constraint_TypeDict( );
+	PyObject *SettingsDict = V24_M_Constraint_SettingsDict( );
 
-	if( PyType_Ready( &ConstraintSeq_Type ) < 0
-			|| PyType_Ready( &Constraint_Type ) < 0 )
+	if( PyType_Ready( &V24_ConstraintSeq_Type ) < 0
+			|| PyType_Ready( &V24_Constraint_Type ) < 0 )
 		return NULL;
 
 	submodule = Py_InitModule3( "Blender.Constraint", NULL,

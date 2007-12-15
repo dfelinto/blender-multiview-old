@@ -36,17 +36,17 @@
 #include <Python.h>
 #include "DNA_text_types.h"
 
-extern PyTypeObject Text_Type;
+extern PyTypeObject V24_Text_Type;
 
 /* Type checking for EXPP PyTypes */
-#define BPy_Text_Check(v)       ((v)->ob_type == &Text_Type)
+#define BPy_Text_Check(v)       ((v)->ob_type == &V24_Text_Type)
 
 typedef struct {
 	PyObject_HEAD
 	Text * text; /* libdata must be second */
-} BPy_Text;
+} V24_BPy_Text;
 
-PyObject *Text_Init( void );
-PyObject *Text_CreatePyObject( Text * txt );
+PyObject *V24_Text_Init( void );
+PyObject *V24_Text_CreatePyObject( Text * txt );
 
 #endif				/* EXPP_TEXT_H */

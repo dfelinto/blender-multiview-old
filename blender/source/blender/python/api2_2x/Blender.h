@@ -36,6 +36,6 @@
 #include <Python.h>
 
 extern PyObject *g_blenderdict;
-void M_Blender_Init( void );
+void V24_M_Blender_Init( void );
 
 #endif				/* EXPP_BLENDER_H */

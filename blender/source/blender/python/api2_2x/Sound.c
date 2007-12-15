@@ -45,7 +45,7 @@
 #include "DNA_space_types.h" /* for FILE_MAXDIR only */
 
 /*****************************************************************************/
-/* Python BPy_Sound defaults:					*/
+/* Python V24_BPy_Sound defaults:					*/
 /*****************************************************************************/
 
 #define EXPP_SND_volume_MIN   0.0
@@ -58,22 +58,22 @@
 /*****************************************************************************/
 /* Python API function prototypes for the Sound module.		*/
 /*****************************************************************************/
-static PyObject *M_Sound_Get( PyObject * self, PyObject * args );
-static PyObject *M_Sound_Load( PyObject * self, PyObject * value );
+static PyObject *V24_M_Sound_Get( PyObject * self, PyObject * args );
+static PyObject *V24_M_Sound_Load( PyObject * self, PyObject * value );
 
 /************************************************************************/
 /* The following string definitions are used for documentation strings.	*/
 /* In Python these will be written to the console when doing a		*/
 /* Blender.Sound.__doc__						*/
 /************************************************************************/
-static char M_Sound_doc[] = "The Blender Sound module\n\n";
+static char V24_M_Sound_doc[] = "The Blender Sound module\n\n";
 
-static char M_Sound_Get_doc[] =
+static char V24_M_Sound_Get_doc[] =
 	"(name) - return the sound with the name 'name', \
 returns None if not found.\n If 'name' is not specified, \
 it returns a list of all sounds in the\ncurrent scene.";
 
-static char M_Sound_Load_doc[] =
+static char V24_M_Sound_Load_doc[] =
 	"(filename) - return sound from file filename as a Sound Object,\n\
 returns None if not found.";
 
@@ -81,53 +81,53 @@ returns None if not found.";
 /* Python method structure definition for Blender.Sound module:							 */
 /*****************************************************************************/
 struct PyMethodDef M_Sound_methods[] = {
-	{"Get", M_Sound_Get, METH_VARARGS, M_Sound_Get_doc},
-	{"Load", M_Sound_Load, METH_O, M_Sound_Load_doc},
+	{"Get", V24_M_Sound_Get, METH_VARARGS, V24_M_Sound_Get_doc},
+	{"Load", V24_M_Sound_Load, METH_O, V24_M_Sound_Load_doc},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Python Sound_Type callback function prototypes:			*/
+/* Python V24_Sound_Type callback function prototypes:			*/
 /*****************************************************************************/
-static int Sound_compare( BPy_Sound * a, BPy_Sound * b );
-static PyObject *Sound_repr( BPy_Sound * self );
+static int V24_Sound_compare( V24_BPy_Sound * a, V24_BPy_Sound * b );
+static PyObject *V24_Sound_repr( V24_BPy_Sound * self );
 
 #define SOUND_FLOAT_METHODS(funcname, varname)					\
-static PyObject *Sound_get ## funcname(BPy_Sound *self) {		\
+static PyObject *V24_Sound_get ## funcname(V24_BPy_Sound *self) {		\
     return PyFloat_FromDouble(self->sound->varname);			\
 }																\
-static PyObject *Sound_set ## funcname(BPy_Sound *self, PyObject *args) { \
+static PyObject *V24_Sound_set ## funcname(V24_BPy_Sound *self, PyObject *args) { \
     float	f = 0;													\
     if (!PyArg_ParseTuple(args, "f", &f))							\
-	    return (EXPP_ReturnPyObjError (PyExc_TypeError,				\
+	    return (V24_EXPP_ReturnPyObjError (PyExc_TypeError,				\
 		    "expected float argument"));							\
-    self->sound->varname = EXPP_ClampFloat(f,						\
+    self->sound->varname = V24_EXPP_ClampFloat(f,						\
 			EXPP_SND_##varname##_MIN, EXPP_SND_##varname##_MAX);	\
     Py_RETURN_NONE;													\
 }
 
 #define SOUND_FLOAT_METHOD_FUNCS(varname)							\
-{"get"#varname, (PyCFunction)Sound_get ## varname, METH_NOARGS,		\
+{"get"#varname, (PyCFunction)V24_Sound_get ## varname, METH_NOARGS,		\
 "() - Return Sound object "#varname},								\
-{"set"#varname, (PyCFunction)Sound_set ## varname, METH_VARARGS,	\
+{"set"#varname, (PyCFunction)V24_Sound_set ## varname, METH_VARARGS,	\
 "(float) - Change Sound object "#varname},
 
 
 /*****************************************************************************/
-/* Python BPy_Sound methods declarations:				*/
+/* Python V24_BPy_Sound methods declarations:				*/
 /*****************************************************************************/
-static PyObject *Sound_getName( BPy_Sound * self );
-static PyObject *Sound_getFilename( BPy_Sound * self );
-static PyObject *Sound_setName( BPy_Sound * self, PyObject * args );
-static int 		 Sound_setFilename( BPy_Sound * self, PyObject * args );
-static PyObject *Sound_oldsetFilename( BPy_Sound * self, PyObject * args );
-static PyObject *Sound_setCurrent( BPy_Sound * self );
-static PyObject *Sound_play( BPy_Sound * self );
-static PyObject *Sound_unpack( BPy_Sound * self, PyObject * args);
-static PyObject *Sound_pack( BPy_Sound * self );
-/*static PyObject *Sound_reload ( BPy_Sound * self );*/
+static PyObject *V24_Sound_getName( V24_BPy_Sound * self );
+static PyObject *V24_Sound_getFilename( V24_BPy_Sound * self );
+static PyObject *V24_Sound_setName( V24_BPy_Sound * self, PyObject * args );
+static int 		 V24_Sound_setFilename( V24_BPy_Sound * self, PyObject * args );
+static PyObject *V24_Sound_oldsetFilename( V24_BPy_Sound * self, PyObject * args );
+static PyObject *V24_Sound_setCurrent( V24_BPy_Sound * self );
+static PyObject *V24_Sound_play( V24_BPy_Sound * self );
+static PyObject *V24_Sound_unpack( V24_BPy_Sound * self, PyObject * args);
+static PyObject *V24_Sound_pack( V24_BPy_Sound * self );
+/*static PyObject *Sound_reload ( V24_BPy_Sound * self );*/
 SOUND_FLOAT_METHODS( Volume, volume )
-SOUND_FLOAT_METHODS( Attenuation, attenuation )
+SOUND_FLOAT_METHODS( V24_Attenuation, attenuation )
 SOUND_FLOAT_METHODS( Pitch, pitch )
 /* these can't be set via interface, removed for now */
 /*
@@ -138,33 +138,33 @@ SOUND_FLOAT_METHODS( Distance, distance )
 */
 
 /*****************************************************************************/
-/* Python BPy_Sound methods table:				         */
+/* Python V24_BPy_Sound methods table:				         */
 /*****************************************************************************/
-static PyMethodDef BPy_Sound_methods[] = {
+static PyMethodDef V24_BPy_Sound_methods[] = {
 	/* name, method, flags, doc */
-	{"getName", ( PyCFunction ) Sound_getName, METH_NOARGS,
+	{"getName", ( PyCFunction ) V24_Sound_getName, METH_NOARGS,
 	 "() - Return Sound object name"},
-	{"getFilename", ( PyCFunction ) Sound_getFilename, METH_NOARGS,
+	{"getFilename", ( PyCFunction ) V24_Sound_getFilename, METH_NOARGS,
 	 "() - Return Sound object filename"},
-	{"setName", ( PyCFunction ) Sound_setName, METH_VARARGS,
+	{"setName", ( PyCFunction ) V24_Sound_setName, METH_VARARGS,
 	 "(name) - Set Sound object name"},
-	{"setFilename", ( PyCFunction ) Sound_oldsetFilename, METH_VARARGS,
+	{"setFilename", ( PyCFunction ) V24_Sound_oldsetFilename, METH_VARARGS,
 	 "(filename) - Set Sound object filename"},
-	{"setCurrent", ( PyCFunction ) Sound_setCurrent, METH_NOARGS,
+	{"setCurrent", ( PyCFunction ) V24_Sound_setCurrent, METH_NOARGS,
 	 "() - make this the active sound in the sound buttons win (also redraws)"},
-	{"play", ( PyCFunction ) Sound_play, METH_NOARGS,
+	{"play", ( PyCFunction ) V24_Sound_play, METH_NOARGS,
 				 "() - play this sound"},
-	{"unpack", ( PyCFunction ) Sound_unpack, METH_VARARGS,
+	{"unpack", ( PyCFunction ) V24_Sound_unpack, METH_VARARGS,
 		         "(int) - Unpack sound. Uses one of the values defined in Blender.UnpackModes."},
-	{"pack", ( PyCFunction ) Sound_pack, METH_NOARGS,
+	{"pack", ( PyCFunction ) V24_Sound_pack, METH_NOARGS,
 		         "() Pack the sound"},
 /*
-	{"reload", ( PyCFunction ) Sound_setCurrent, METH_NOARGS,
+	{"reload", ( PyCFunction ) V24_Sound_setCurrent, METH_NOARGS,
 	 "() - reload this Sound object's sample.\n\
     This is only useful if the original sound file has changed."},
 */
 	SOUND_FLOAT_METHOD_FUNCS( Volume )
-	SOUND_FLOAT_METHOD_FUNCS( Attenuation )
+	SOUND_FLOAT_METHOD_FUNCS( V24_Attenuation )
 	SOUND_FLOAT_METHOD_FUNCS( Pitch )
 	/*
 	SOUND_FLOAT_METHOD_FUNCS( Panning )
@@ -179,33 +179,33 @@ static PyMethodDef BPy_Sound_methods[] = {
  * macro-ize them, or C++ templates eventually?
  */
 /****************************************************************************/
-/* Function:		M_Sound_Get				*/
+/* Function:		V24_M_Sound_Get				*/
 /* Python equivalent:	Blender.Sound.Get			 */
 /* Description:		Receives a string and returns the Sound object	 */
 /*			whose name matches the string.	If no argument is  */
 /*			passed in, a list of all Sound names in the	 */
 /*			current scene is returned.			 */
 /****************************************************************************/
-static PyObject *M_Sound_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_Sound_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	bSound *snd_iter;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected string argument (or nothing)" ) );
 
 	snd_iter = G.main->sound.first;
 
 	if( name ) {		/* (name) - Search Sound by name */
 
-		BPy_Sound *wanted_Sound = NULL;
+		V24_BPy_Sound *wanted_Sound = NULL;
 
 		while( ( snd_iter ) && ( wanted_Sound == NULL ) ) {
 			if( strcmp( name, snd_iter->id.name + 2 ) == 0 ) {
 				wanted_Sound =
-					( BPy_Sound * )
-					PyObject_NEW( BPy_Sound, &Sound_Type );
+					( V24_BPy_Sound * )
+					PyObject_NEW( V24_BPy_Sound, &V24_Sound_Type );
 				if( wanted_Sound ) {
 					wanted_Sound->sound = snd_iter;
 					break;
@@ -218,7 +218,7 @@ static PyObject *M_Sound_Get( PyObject * self, PyObject * args )
 			char error_msg[64];
 			PyOS_snprintf( error_msg, sizeof( error_msg ),
 				       "Sound \"%s\" not found", name );
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_NameError, error_msg ) );
 		}
 
@@ -232,15 +232,15 @@ static PyObject *M_Sound_Get( PyObject * self, PyObject * args )
 		snd_list = PyList_New( BLI_countlist( &( G.main->sound ) ) );
 
 		if( snd_list == NULL )
-			return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
+			return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 							"couldn't create PyList" ) );
 
 		while( snd_iter ) {
-			pyobj = Sound_CreatePyObject( snd_iter );
+			pyobj = V24_Sound_CreatePyObject( snd_iter );
 
 			if( !pyobj ) {
 				Py_DECREF(snd_list);
-				return ( EXPP_ReturnPyObjError
+				return ( V24_EXPP_ReturnPyObjError
 					 ( PyExc_MemoryError,
 					   "couldn't create PyObject" ) );
 			}
@@ -255,26 +255,26 @@ static PyObject *M_Sound_Get( PyObject * self, PyObject * args )
 }
 
 /*****************************************************************************/
-/* Function:	M_Sound_Load						*/
+/* Function:	V24_M_Sound_Load						*/
 /* Python equivalent:	Blender.Sound.Load				*/
 /* Description:		Receives a string and returns the Sound object	 */
 /*			whose filename matches the string.		 */
 /*****************************************************************************/
-static PyObject *M_Sound_Load( PyObject * self, PyObject * value )
+static PyObject *V24_M_Sound_Load( PyObject * self, PyObject * value )
 {
 	char *fname = PyString_AsString(value);
 	bSound *snd_ptr;
-	BPy_Sound *snd;
+	V24_BPy_Sound *snd;
 
 	if( !fname )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected string argument" ) );
 
-	snd = ( BPy_Sound * ) PyObject_NEW( BPy_Sound, &Sound_Type );
+	snd = ( V24_BPy_Sound * ) PyObject_NEW( V24_BPy_Sound, &V24_Sound_Type );
 
 	if( !snd )
-		return ( EXPP_ReturnPyObjError( PyExc_MemoryError,
-						"couldn't create PyObject Sound_Type" ) );
+		return ( V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+						"couldn't create PyObject V24_Sound_Type" ) );
 
 	snd_ptr = sound_new_sound( fname );
 
@@ -285,7 +285,7 @@ static PyObject *M_Sound_Load( PyObject * self, PyObject * value )
 	}
 
 	if( !snd_ptr )
-		return ( EXPP_ReturnPyObjError( PyExc_IOError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_IOError,
 						"not a valid sound sample" ) );
 
 	snd->sound = snd_ptr;
@@ -294,18 +294,18 @@ static PyObject *M_Sound_Load( PyObject * self, PyObject * value )
 }
 
 /*****************************************************************************/
-/* Function:	Sound_Init					*/
+/* Function:	V24_Sound_Init					*/
 /*****************************************************************************/
-PyObject *Sound_Init( void )
+PyObject *V24_Sound_Init( void )
 {
 	PyObject *submodule;
 
-	if( PyType_Ready( &Sound_Type ) < 0 )
+	if( PyType_Ready( &V24_Sound_Type ) < 0 )
 		return NULL;
 
 	submodule =
 		Py_InitModule3( "Blender.Sound", M_Sound_methods,
-				M_Sound_doc );
+				V24_M_Sound_doc );
 
 	return ( submodule );
 }
@@ -316,19 +316,19 @@ PyObject *Sound_Init( void )
 
 
 /*****************************************************************************/
-/* Function:	Sound_CreatePyObject					*/
-/* Description: This function will create a new BPy_Sound from an existing  */
+/* Function:	V24_Sound_CreatePyObject					*/
+/* Description: This function will create a new V24_BPy_Sound from an existing  */
 /*		Blender Sound structure.				*/
 /*****************************************************************************/
-PyObject *Sound_CreatePyObject( bSound * snd )
+PyObject *V24_Sound_CreatePyObject( bSound * snd )
 {
-	BPy_Sound *py_snd;
+	V24_BPy_Sound *py_snd;
 
-	py_snd = ( BPy_Sound * ) PyObject_NEW( BPy_Sound, &Sound_Type );
+	py_snd = ( V24_BPy_Sound * ) PyObject_NEW( V24_BPy_Sound, &V24_Sound_Type );
 
 	if( !py_snd )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "couldn't create BPy_Sound object" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "couldn't create V24_BPy_Sound object" );
 
 	py_snd->sound = snd;
 
@@ -336,28 +336,28 @@ PyObject *Sound_CreatePyObject( bSound * snd )
 }
 
 /*****************************************************************************/
-/* Function:	Sound_FromPyObject				*/
+/* Function:	V24_Sound_FromPyObject				*/
 /* Description: Returns the Blender Sound associated with this object	 */
 /*****************************************************************************/
-bSound *Sound_FromPyObject( PyObject * pyobj )
+bSound *V24_Sound_FromPyObject( PyObject * pyobj )
 {
-	return ( ( BPy_Sound * ) pyobj )->sound;
+	return ( ( V24_BPy_Sound * ) pyobj )->sound;
 }
 
 /*****************************************************************************/
-/* Python BPy_Sound methods:	*/
+/* Python V24_BPy_Sound methods:	*/
 /*****************************************************************************/
-static PyObject *Sound_getName( BPy_Sound * self )
+static PyObject *V24_Sound_getName( V24_BPy_Sound * self )
 {
 	return PyString_FromString( self->sound->id.name + 2 );
 }
 
-static PyObject *Sound_getFilename( BPy_Sound * self )
+static PyObject *V24_Sound_getFilename( V24_BPy_Sound * self )
 {
 	return PyString_FromString( self->sound->name );
 }
 
-static PyObject *Sound_getPacked( BPy_Sound * self )
+static PyObject *V24_Sound_getPacked( V24_BPy_Sound * self )
 {
 	if (!sound_sample_is_null(self->sound))	{
 		bSample *sample = sound_find_sample(self->sound);
@@ -367,12 +367,12 @@ static PyObject *Sound_getPacked( BPy_Sound * self )
 	Py_RETURN_FALSE;
 }
 
-static PyObject *Sound_setName( BPy_Sound * self, PyObject * args )
+static PyObject *V24_Sound_setName( V24_BPy_Sound * self, PyObject * args )
 {
 	char *name;
 
 	if( !PyArg_ParseTuple( args, "s", &name ) ) {
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected a String as argument" ) );
 	}
 
@@ -381,34 +381,34 @@ static PyObject *Sound_setName( BPy_Sound * self, PyObject * args )
 	Py_RETURN_NONE;
 }
 
-static int Sound_setFilename( BPy_Sound * self, PyObject * value )
+static int V24_Sound_setFilename( V24_BPy_Sound * self, PyObject * value )
 {
 	char *name;
 
 	/* max len is FILE_MAXDIR = 160 chars like in DNA_image_types.h */
 	name = PyString_AsString(value);
 	if (!name || strlen(name) > FILE_MAXDIR)
-		return ( EXPP_ReturnIntError( PyExc_ValueError,
+		return ( V24_EXPP_ReturnIntError( PyExc_ValueError,
 						"string argument is limited to 160 chars at most" ) );
 
 	strcpy( self->sound->name, name );
 	return 0;
 }
 
-static PyObject *Sound_oldsetFilename( BPy_Sound * self, PyObject * args )
+static PyObject *V24_Sound_oldsetFilename( V24_BPy_Sound * self, PyObject * args )
 {
-	return EXPP_setterWrapper( (void *)self, args, (setter)Sound_setFilename );
+	return V24_EXPP_setterWrapper( (void *)self, args, (setter)V24_Sound_setFilename );
 }
 
 
-static PyObject *Sound_play( BPy_Sound * self )
+static PyObject *V24_Sound_play( V24_BPy_Sound * self )
 {
 	sound_play_sound( self->sound );
 
 	Py_RETURN_NONE;
 }
 
-static PyObject *Sound_setCurrent( BPy_Sound * self )
+static PyObject *V24_Sound_setCurrent( V24_BPy_Sound * self )
 {
 	bSound *snd_ptr = self->sound;
 
@@ -418,58 +418,58 @@ static PyObject *Sound_setCurrent( BPy_Sound * self )
 		}
 	}
 
-	EXPP_allqueue( REDRAWSOUND, 0 );
-	EXPP_allqueue( REDRAWBUTSLOGIC, 0 );
+	V24_EXPP_allqueue( REDRAWSOUND, 0 );
+	V24_EXPP_allqueue( REDRAWBUTSLOGIC, 0 );
 
 	Py_RETURN_NONE;
 }
 
 /* unpack sound */
 
-static PyObject *Sound_unpack( BPy_Sound * self, PyObject * args )
+static PyObject *V24_Sound_unpack( V24_BPy_Sound * self, PyObject * args )
 {
 	bSound *sound = self->sound;
 	int mode;
 	if( !PyArg_ParseTuple( args, "i", &mode ) )
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 							"expected an integer from Blender.UnpackModes" );
 
 	if (!sound_sample_is_null(sound)) {
 	    bSample *sample = sound_find_sample(sound);
 		if (sample->packedfile) {
 			if (unpackSample(sample, mode) == RET_ERROR)
-					return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+					return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 									"error unpacking sound");
 		}
 	} else {
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError, "sound has no samples" );
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, "sound has no samples" );
 	}
 	Py_RETURN_NONE;
 }
 
 /* pack sound */
 
-static PyObject *Sound_pack( BPy_Sound * self )
+static PyObject *V24_Sound_pack( V24_BPy_Sound * self )
 {
 	bSound *sound = self->sound;
 	if (!sound_sample_is_null(sound))
 	{
 		bSample *sample = sound_find_sample(sound);
 		if (sample->packedfile )
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					"sound alredy packed" );
 		sound_set_packedfile(sample, newPackedFile(sample->name));
 	}
 	else
 	{
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"sound has no samples" );
 	}
 	Py_RETURN_NONE;
 }
 
 /*
-static PyObject *Sound_reload( BPy_Sound * self)
+static PyObject *Sound_reload( V24_BPy_Sound * self)
 {
 	sound_free_sample();
 
@@ -485,24 +485,24 @@ static PyObject *Sound_reload( BPy_Sound * self)
 
 
 /*****************************************************************************/
-/* Function:	Sound_compare					*/
-/* Description: This is a callback function for the BPy_Sound type. It	 */
-/*		compares two Sound_Type objects. Only the "==" and "!="	  */
+/* Function:	V24_Sound_compare					*/
+/* Description: This is a callback function for the V24_BPy_Sound type. It	 */
+/*		compares two V24_Sound_Type objects. Only the "==" and "!="	  */
 /*		comparisons are meaninful. Returns 0 for equality and -1 if  */
 /*	 	they don't point to the same Blender Sound struct.	 */
 /*		In Python it becomes 1 if they are equal, 0 otherwise.	 */
 /*****************************************************************************/
-static int Sound_compare( BPy_Sound * a, BPy_Sound * b )
+static int V24_Sound_compare( V24_BPy_Sound * a, V24_BPy_Sound * b )
 {
 	return ( a->sound == b->sound ) ? 0 : -1;
 }
 
 /*****************************************************************************/
-/* Function:	Sound_repr						*/
-/* Description: This is a callback function for the BPy_Sound type. It	*/
+/* Function:	V24_Sound_repr						*/
+/* Description: This is a callback function for the V24_BPy_Sound type. It	*/
 /*		builds a meaninful string to represent Sound objects.	 */
 /*****************************************************************************/
-static PyObject *Sound_repr( BPy_Sound * self )
+static PyObject *V24_Sound_repr( V24_BPy_Sound * self )
 {
 	return PyString_FromFormat( "[Sound \"%s\"]",
 				    self->sound->id.name + 2 );
@@ -511,11 +511,11 @@ static PyObject *Sound_repr( BPy_Sound * self )
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef BPy_Sound_getseters[] = {
+static PyGetSetDef V24_BPy_Sound_getseters[] = {
 	GENERIC_LIB_GETSETATTR,
-	{"filename", (getter)Sound_getFilename, (setter)Sound_setFilename,
+	{"filename", (getter)V24_Sound_getFilename, (setter)V24_Sound_setFilename,
 	 "text filename", NULL},
-	{"packed", (getter)Sound_getPacked, (setter)NULL,
+	{"packed", (getter)V24_Sound_getPacked, (setter)NULL,
 	 "text filename", NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
@@ -523,21 +523,21 @@ static PyGetSetDef BPy_Sound_getseters[] = {
 
 
 /*****************************************************************************/
-/* Python Sound_Type structure definition:				*/
+/* Python V24_Sound_Type structure definition:				*/
 /*****************************************************************************/
-PyTypeObject Sound_Type = {
+PyTypeObject V24_Sound_Type = {
 	PyObject_HEAD_INIT( NULL )
 	0,		/* ob_size */
 	"Blender Sound",	/* tp_name */
-	sizeof( BPy_Sound ),	/* tp_basicsize */
+	sizeof( V24_BPy_Sound ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
 	NULL,	/* tp_dealloc */
 	0,		/* tp_print */
 	NULL,	/* tp_getattr */
 	NULL,	/* tp_setattr */
-	( cmpfunc ) Sound_compare,	/* tp_compare */
-	( reprfunc ) Sound_repr,	/* tp_repr */
+	( cmpfunc ) V24_Sound_compare,	/* tp_compare */
+	( reprfunc ) V24_Sound_repr,	/* tp_repr */
 
 	/* Method suites for standard classes */
 
@@ -547,7 +547,7 @@ PyTypeObject Sound_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -580,9 +580,9 @@ PyTypeObject Sound_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_Sound_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_BPy_Sound_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Sound_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Sound_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */

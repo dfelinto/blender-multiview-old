@@ -42,32 +42,32 @@ PyObject *bpy_registryDict = NULL;
 /*****************************************************************************/
 /* Python API function prototypes for the Registry module.                   */
 /*****************************************************************************/
-static PyObject *M_Registry_Keys( PyObject * self );
-static PyObject *M_Registry_GetKey( PyObject * self, PyObject * args );
-static PyObject *M_Registry_SetKey( PyObject * self, PyObject * args );
-static PyObject *M_Registry_RemoveKey( PyObject * self, PyObject * args );
+static PyObject *V24_M_Registry_Keys( PyObject * self );
+static PyObject *V24_M_Registry_GetKey( PyObject * self, PyObject * args );
+static PyObject *V24_M_Registry_SetKey( PyObject * self, PyObject * args );
+static PyObject *V24_M_Registry_RemoveKey( PyObject * self, PyObject * args );
 
 /*****************************************************************************/
 /* The following string definitions are used for documentation strings.      */
 /* In Python these will be written to the console when doing a               */
 /* Blender.Registry.__doc__                                                  */
 /*****************************************************************************/
-char M_Registry_doc[] =
+char V24_M_Registry_doc[] =
 	"The Blender Registry module (persistent data cache)\n\n\
     Use this module to store configuration data that a script can reload\n\
     when it is executed again.\n";
 
-char M_Registry_Keys_doc[] =
+char V24_M_Registry_Keys_doc[] =
 	"() - Get all keys in the Registry dictionary.\n\n\
     Each key references another dict with saved data from a specific script.\n";
 
-char M_Registry_GetKey_doc[] =
+char V24_M_Registry_GetKey_doc[] =
 	"(name, disk = False) - Get an entry (a dict) from the Registry dictionary\n\
  (name) - a string that references a specific script;\n\
  (disk = False) - search on the user (if available) or default scripts config\n\
 data dir.\n";
 
-char M_Registry_SetKey_doc[] =
+char V24_M_Registry_SetKey_doc[] =
 	"(key, dict, disk = False) - Store an entry in the Registry dictionary.\n\
     If an entry with the same 'key' already exists, it is substituted.\n\
  (key) - the string to use as a key for the dict being saved.\n\
@@ -75,7 +75,7 @@ char M_Registry_SetKey_doc[] =
  (disk = False) - also write data as a config file inside the user (if\n\
 available) or default scripts config data dir.\n";
 
-char M_Registry_RemoveKey_doc[] =
+char V24_M_Registry_RemoveKey_doc[] =
 	"(key, disk = False) - Remove the dict with key 'key' from the Registry.\n\
  (key) - the name of the key to delete;\n\
  (disk = False) - if True the respective config file is also deleted.\n";
@@ -84,52 +84,52 @@ char M_Registry_RemoveKey_doc[] =
 /* Python method structure definition for Blender.Registry module:           */
 /*****************************************************************************/
 struct PyMethodDef M_Registry_methods[] = {
-	{"Keys", ( PyCFunction ) M_Registry_Keys, METH_VARARGS,
-	 M_Registry_Keys_doc},
-	{"GetKey", M_Registry_GetKey, METH_VARARGS, M_Registry_GetKey_doc},
-	{"SetKey", M_Registry_SetKey, METH_VARARGS, M_Registry_SetKey_doc},
-	{"RemoveKey", M_Registry_RemoveKey, METH_VARARGS,
-	 M_Registry_RemoveKey_doc},
+	{"Keys", ( PyCFunction ) V24_M_Registry_Keys, METH_VARARGS,
+	 V24_M_Registry_Keys_doc},
+	{"GetKey", V24_M_Registry_GetKey, METH_VARARGS, V24_M_Registry_GetKey_doc},
+	{"SetKey", V24_M_Registry_SetKey, METH_VARARGS, V24_M_Registry_SetKey_doc},
+	{"RemoveKey", V24_M_Registry_RemoveKey, METH_VARARGS,
+	 V24_M_Registry_RemoveKey_doc},
 	{NULL, NULL, 0, NULL}
 };
 
 /*****************************************************************************/
-/* Function:              M_Registry_Keys                                    */
+/* Function:              V24_M_Registry_Keys                                    */
 /* Python equivalent:     Blender.Registry.Keys                              */
 /*****************************************************************************/
-PyObject *M_Registry_Keys( PyObject * self )
+PyObject *V24_M_Registry_Keys( PyObject * self )
 {
 	PyObject *pydict = NULL;
 
 	if( !bpy_registryDict )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "No Registry dictionary found!" );
 
 	pydict = PyDict_Keys( bpy_registryDict );
 
 	if( !pydict )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "Registry_Keys: couldn't get keys" );
 
 	return pydict;
 }
 
 /*****************************************************************************/
-/* Function:              M_Registry_GetKey                                  */
+/* Function:              V24_M_Registry_GetKey                                  */
 /* Python equivalent:     Blender.Registry.GetKey                            */
 /*****************************************************************************/
-static PyObject *M_Registry_GetKey( PyObject * self, PyObject * args )
+static PyObject *V24_M_Registry_GetKey( PyObject * self, PyObject * args )
 {
 	PyObject *pyentry = NULL;
 	PyObject *pydict = NULL;
 	int disk = 0;
 
 	if( !bpy_registryDict )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"No Registry dictionary found!" );
 
 	if( !PyArg_ParseTuple( args, "O!|i", &PyString_Type, &pyentry, &disk ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected a string and optionally a bool" );
 
 	pydict = PyDict_GetItem( bpy_registryDict, pyentry );	/* borrowed ... */
@@ -150,31 +150,31 @@ static PyObject *M_Registry_GetKey( PyObject * self, PyObject * args )
 			pydict = Py_None; /* Py_None means no key (all valid keys are dicts) */
 	}
 
-	return EXPP_incr_ret (pydict); /* ... so we incref it */
+	return V24_EXPP_incr_ret (pydict); /* ... so we incref it */
 }
 
 /*****************************************************************************/
-/* Function:              M_Registry_SetKey                                  */
+/* Function:              V24_M_Registry_SetKey                                  */
 /* Python equivalent:     Blender.Registry.SetKey                            */
 /*****************************************************************************/
-static PyObject *M_Registry_SetKey( PyObject * self, PyObject * args )
+static PyObject *V24_M_Registry_SetKey( PyObject * self, PyObject * args )
 {
 	PyObject *pystr = NULL;
 	PyObject *pydict = NULL;
 	int disk = 0;
 
 	if( !bpy_registryDict )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "No Registry dictionary found!" );
 
 	if( !PyArg_ParseTuple( args, "O!O!|i",
 			       &PyString_Type, &pystr, &PyDict_Type,
 			       &pydict, &disk ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected a string and a dictionary" );
 
 	if( PyDict_SetItem( bpy_registryDict, pystr, pydict ) )	/* 0 on success */
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "Registry_SetKey: couldn't update the Registry dict" );
 
 	if (disk) {
@@ -195,24 +195,24 @@ static PyObject *M_Registry_SetKey( PyObject * self, PyObject * args )
 }
 
 /*****************************************************************************/
-/* Function:              M_Registry_RemoveKey                               */
+/* Function:              V24_M_Registry_RemoveKey                               */
 /* Python equivalent:     Blender.Registry.RemoveKey                         */
 /*****************************************************************************/
-static PyObject *M_Registry_RemoveKey( PyObject * self, PyObject * args )
+static PyObject *V24_M_Registry_RemoveKey( PyObject * self, PyObject * args )
 {
 	PyObject *pystr = NULL;
 	int disk = 0;
 
 	if( !bpy_registryDict )
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "No Registry dictionary found!" );
 
 	if( !PyArg_ParseTuple( args, "O!|i", &PyString_Type, &pystr, &disk ) )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected a string and optionally a bool" );
 
 	if( PyDict_DelItem( bpy_registryDict, pystr ) )	/* returns 0 on success */
-		return EXPP_ReturnPyObjError( PyExc_KeyError,
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError,
 					      "no such key in the Registry" );
 	else if (disk) {
 		/* try to delete from disk too */
@@ -232,14 +232,14 @@ static PyObject *M_Registry_RemoveKey( PyObject * self, PyObject * args )
 }
 
 /*****************************************************************************/
-/* Function:              Registry_Init                                      */
+/* Function:              V24_Registry_Init                                      */
 /*****************************************************************************/
-PyObject *Registry_Init( void )
+PyObject *V24_Registry_Init( void )
 {
 	PyObject *submodule;
 
 	submodule = Py_InitModule3( "Blender.Registry", M_Registry_methods,
-				    M_Registry_doc );
+				    V24_M_Registry_doc );
 
 	return submodule;
 }

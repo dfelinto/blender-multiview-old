@@ -36,29 +36,29 @@
 #include <Python.h>
 #include "DNA_curve_types.h"
 
-extern PyTypeObject BezTriple_Type;
+extern PyTypeObject V24_BezTriple_Type;
 
 /* type check macro */
 #define BPy_BezTriple_Check(o) \
- ( (o)->ob_type == &BezTriple_Type)
+ ( (o)->ob_type == &V24_BezTriple_Type)
 
 /****************************************************************************
- Python BPy_BezTriple structure definition:              
+ Python V24_BPy_BezTriple structure definition:              
 ****************************************************************************/
 
 typedef struct {
 	PyObject_HEAD		/* required python macro */
 	BezTriple * beztriple;
 	int own_memory;   /* true == we own this memory and must delete. */
-} BPy_BezTriple;
+} V24_BPy_BezTriple;
 
 /*
  *    prototypes
  */
 
-PyObject *BezTriple_CreatePyObject( BezTriple * bzt );
-BezTriple *BezTriple_FromPyObject( PyObject * pyobj );
+PyObject *V24_BezTriple_CreatePyObject( BezTriple * bzt );
+BezTriple *V24_BezTriple_FromPyObject( PyObject * pyobj );
 PyObject *newBezTriple( float *args );
-PyObject *BezTriple_Init( void );
+PyObject *V24_BezTriple_Init( void );
 
 #endif				/* EXPP_BEZTRIPLE_H */

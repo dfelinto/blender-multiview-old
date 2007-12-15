@@ -37,34 +37,34 @@
 #include "DNA_scene_types.h"
 
 /* The Scene PyType Object defined in Scene.c */
-extern PyTypeObject Scene_Type;
-extern PyTypeObject SceneObSeq_Type;
+extern PyTypeObject V24_Scene_Type;
+extern PyTypeObject V24_SceneObSeq_Type;
 
 #define BPy_Scene_Check(v) \
-    ((v)->ob_type == &Scene_Type)
+    ((v)->ob_type == &V24_Scene_Type)
 #define BPy_SceneObSeq_Check(v) \
-    ((v)->ob_type == &SceneObSeq_Type)
+    ((v)->ob_type == &V24_SceneObSeq_Type)
 
-/*---------------------------Python BPy_Scene structure definition----------*/
+/*---------------------------Python V24_BPy_Scene structure definition----------*/
 typedef struct {
 	PyObject_HEAD 
 	Scene * scene; /* libdata must be second */
-} BPy_Scene;
-/*---------------------------Python BPy_Scene visible prototypes-----------*/
-/* Python Scene_Type helper functions needed by Blender (the Init function) and Object modules. */
+} V24_BPy_Scene;
+/*---------------------------Python V24_BPy_Scene visible prototypes-----------*/
+/* Python V24_Scene_Type helper functions needed by Blender (the Init function) and Object modules. */
 
 
 /* Scene object sequence, iterate on the scene object listbase*/
 typedef struct {
 	PyObject_VAR_HEAD /* required python macro   */
-	BPy_Scene *bpyscene; /* link to the python scene so we can know if its been removed */
+	V24_BPy_Scene *bpyscene; /* link to the python scene so we can know if its been removed */
 	Base *iter; /* so we can iterate over the objects */
 	int mode; /*0:all objects, 1:selected objects, 2:user context*/
-} BPy_SceneObSeq;
+} V24_BPy_SceneObSeq;
 
 
-PyObject *Scene_Init( void );
-PyObject *Scene_CreatePyObject( Scene * scene );
-/*Scene *Scene_FromPyObject( PyObject * pyobj );*/  /* not used yet */
+PyObject *V24_Scene_Init( void );
+PyObject *V24_Scene_CreatePyObject( Scene * scene );
+/*Scene *V24_Scene_FromPyObject( PyObject * pyobj );*/  /* not used yet */
 
 #endif				/* EXPP_SCENE_H */

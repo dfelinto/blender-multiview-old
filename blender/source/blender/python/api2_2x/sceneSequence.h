@@ -37,15 +37,15 @@
 #include "DNA_sequence_types.h"
 
 /* The Sequence PyTypeObject defined in Sequence.c */
-extern PyTypeObject Sequence_Type;
-extern PyTypeObject SceneSeq_Type;
+extern PyTypeObject V24_Sequence_Type;
+extern PyTypeObject V24_SceneSeq_Type;
 
-#define BPy_Sequence_Check(v)       ((v)->ob_type == &Sequence_Type)
-#define BPy_SceneSeq_Check(v)       ((v)->ob_type == &SceneSeq_Type)
+#define BPy_Sequence_Check(v)       ((v)->ob_type == &V24_Sequence_Type)
+#define BPy_SceneSeq_Check(v)       ((v)->ob_type == &V24_SceneSeq_Type)
 
 
 /*****************************************************************************/
-/* Python BPy_Sequence structure definition.                                  */
+/* Python V24_BPy_Sequence structure definition.                                  */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD /* required python macro   */
@@ -58,12 +58,12 @@ typedef struct {
 	
 	struct Scene *scene;
 	
-} BPy_Sequence;
+} V24_BPy_Sequence;
 
 
 
 /*****************************************************************************/
-/* Python BPy_Sequence structure definition.                                  */
+/* Python V24_BPy_Sequence structure definition.                                  */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD /* required python macro   */
@@ -73,11 +73,11 @@ typedef struct {
 	
 	/* used for looping over the scene or the strips strips */
 	struct Sequence *iter;/* if not NULL, this sequence is a Metaseq */
-} BPy_SceneSeq;
+} V24_BPy_SceneSeq;
 
-PyObject *Sequence_Init( void );
-PyObject *Sequence_CreatePyObject( struct Sequence * seq, struct Sequence * iter, struct Scene * scn);
-PyObject *SceneSeq_CreatePyObject( struct Scene * scn, struct Sequence * iter);
+PyObject *V24_Sequence_Init( void );
+PyObject *V24_Sequence_CreatePyObject( struct Sequence * seq, struct Sequence * iter, struct Scene * scn);
+PyObject *V24_SceneSeq_CreatePyObject( struct Scene * scn, struct Sequence * iter);
 struct Sequence *Sequence_FromPyObject( PyObject * py_obj );
 
 #endif				/* EXPP_SEQUENCE_H */

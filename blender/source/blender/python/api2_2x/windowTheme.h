@@ -42,19 +42,19 @@ typedef struct {
 	PyObject_HEAD struct bTheme *theme;
 	struct ThemeUI *tui;
 
-} BPy_ThemeUI;
+} V24_BPy_ThemeUI;
 
 typedef struct {
 	PyObject_HEAD struct bTheme *theme;
 	struct ThemeSpace *tsp;
 
-} BPy_ThemeSpace;
+} V24_BPy_ThemeSpace;
 
 typedef struct {
 	PyObject_HEAD struct bTheme *theme;
 
-} BPy_Theme;
+} V24_BPy_Theme;
 
-PyObject *Theme_Init( void );
+PyObject *V24_Theme_Init( void );
 
 #endif				/* EXPP_WINDOWTHEME_H */

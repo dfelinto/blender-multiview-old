@@ -40,7 +40,7 @@ extern PyTypeObject matrix_Type;
 #define MatrixObject_Check(v) ((v)->ob_type == &matrix_Type)
 
 typedef float **ptRow;
-typedef struct _Matrix {
+typedef struct V24__Matrix {
 	PyObject_VAR_HEAD 
 	struct{
 		float *py_data;		/*python managed*/
@@ -52,7 +52,7 @@ typedef struct _Matrix {
 	int colSize;
 	int wrapped;			/*is wrapped data?*/
 	PyObject *coerced_object;
-} MatrixObject;
+} V24_MatrixObject;
 /*coerced_object is a pointer to the object that it was
 coerced from when a dummy vector needs to be created from
 the coerce() function for numeric protocol operations*/
@@ -63,18 +63,18 @@ be stored in py_data) or be a wrapper for data allocated through
 blender (stored in blend_data). This is an either/or struct not both*/
 
 /*prototypes*/
-PyObject *Matrix_Zero( MatrixObject * self );
-PyObject *Matrix_Identity( MatrixObject * self );
-PyObject *Matrix_Transpose( MatrixObject * self );
-PyObject *Matrix_Determinant( MatrixObject * self );
-PyObject *Matrix_Invert( MatrixObject * self );
-PyObject *Matrix_TranslationPart( MatrixObject * self );
-PyObject *Matrix_RotationPart( MatrixObject * self );
-PyObject *Matrix_scalePart( MatrixObject * self );
-PyObject *Matrix_Resize4x4( MatrixObject * self );
-PyObject *Matrix_toEuler( MatrixObject * self );
-PyObject *Matrix_toQuat( MatrixObject * self );
-PyObject *Matrix_copy( MatrixObject * self );
+PyObject *V24_Matrix_Zero( V24_MatrixObject * self );
+PyObject *V24_Matrix_Identity( V24_MatrixObject * self );
+PyObject *V24_Matrix_Transpose( V24_MatrixObject * self );
+PyObject *V24_Matrix_Determinant( V24_MatrixObject * self );
+PyObject *V24_Matrix_Invert( V24_MatrixObject * self );
+PyObject *V24_Matrix_TranslationPart( V24_MatrixObject * self );
+PyObject *V24_Matrix_RotationPart( V24_MatrixObject * self );
+PyObject *V24_Matrix_scalePart( V24_MatrixObject * self );
+PyObject *V24_Matrix_Resize4x4( V24_MatrixObject * self );
+PyObject *V24_Matrix_toEuler( V24_MatrixObject * self );
+PyObject *V24_Matrix_toQuat( V24_MatrixObject * self );
+PyObject *V24_Matrix_copy( V24_MatrixObject * self );
 PyObject *newMatrixObject(float *mat, int rowSize, int colSize, int type);
 
 #endif				/* EXPP_matrix_H */

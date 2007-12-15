@@ -42,13 +42,13 @@
  * forward declarations go here
  */
 
-static int SurfNurb_setPoint( BPy_SurfNurb * self, int index, PyObject * ob );
-static int SurfNurb_length( PyInstanceObject * inst );
-static PyObject *SurfNurb_getIter( BPy_SurfNurb * self );
-static PyObject *SurfNurb_iterNext( BPy_SurfNurb * self );
-PyObject *SurfNurb_append( BPy_SurfNurb * self, PyObject * args );
+static int V24_SurfNurb_setPoint( V24_BPy_SurfNurb * self, int index, PyObject * ob );
+static int V24_SurfNurb_length( PyInstanceObject * inst );
+static PyObject *V24_SurfNurb_getIter( V24_BPy_SurfNurb * self );
+static PyObject *V24_SurfNurb_iterNext( V24_BPy_SurfNurb * self );
+PyObject *V24_SurfNurb_append( V24_BPy_SurfNurb * self, PyObject * args );
 
-char M_SurfNurb_doc[] = "SurfNurb";
+char V24_M_SurfNurb_doc[] = "SurfNurb";
 
 /*
    table of module methods
@@ -56,7 +56,7 @@ char M_SurfNurb_doc[] = "SurfNurb";
    you do not need an object instance to call one.
 */
 
-static PyMethodDef M_SurfNurb_methods[] = {
+static PyMethodDef V24_M_SurfNurb_methods[] = {
 /*   name, method, flags, doc_string                */
 /*  {"Get", (PyCFunction) M_SurfNurb_method, METH_NOARGS, " () - doc string"}, */
 /*   {"method", (PyCFunction) M_SurfNurb_method, METH_NOARGS, " () - doc string"}, */
@@ -70,22 +70,22 @@ static PyMethodDef M_SurfNurb_methods[] = {
  * these methods are invoked on an instance of the type.
 */
 
-static PyMethodDef BPy_SurfNurb_methods[] = {
+static PyMethodDef V24_BPy_SurfNurb_methods[] = {
 # if 0
-	{"append", ( PyCFunction ) SurfNurb_append, METH_VARARGS,
+	{"append", ( PyCFunction ) V24_SurfNurb_append, METH_VARARGS,
 	 "( point ) - add a new point.  arg is BezTriple or list of x,y,z,w floats"},
 #endif
 	{NULL, NULL, 0, NULL}
 };
 
 /*
- * SurfNurb_appendPointToNurb
+ * V24_SurfNurb_appendPointToNurb
  * this is a non-bpy utility func to add a point to a given nurb.
  * notice the first arg is Nurb*.
  */
 
 #if 0
-static PyObject *SurfNurb_appendPointToNurb( Nurb * nurb, PyObject * args )
+static PyObject *V24_SurfNurb_appendPointToNurb( Nurb * nurb, PyObject * args )
 {
 
 	int i;
@@ -97,7 +97,7 @@ static PyObject *SurfNurb_appendPointToNurb( Nurb * nurb, PyObject * args )
 	   do we have a list of four floats or a BezTriple?
 	*/
 	if( !PyArg_ParseTuple( args, "O", &pyOb ))
-		return EXPP_ReturnPyObjError
+		return V24_EXPP_ReturnPyObjError
 				( PyExc_RuntimeError,
 				  "Internal error parsing arguments" );
 
@@ -110,7 +110,7 @@ static PyObject *SurfNurb_appendPointToNurb( Nurb * nurb, PyObject * args )
 		else if (PySequence_Check( pyOb ))
 			nurb->type |= CU_NURBS;
 		else
-			return( EXPP_ReturnPyObjError( PyExc_TypeError,
+			return( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					  "Expected a BezTriple or a Sequence of 4 (or 5) floats" ) );
 	}
 
@@ -120,7 +120,7 @@ static PyObject *SurfNurb_appendPointToNurb( Nurb * nurb, PyObject * args )
 		BezTriple *tmp;
 
 		if( !BPy_BezTriple_Check( pyOb ) )
-			return( EXPP_ReturnPyObjError( PyExc_TypeError,
+			return( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					  "Expected a BezTriple\n" ) );
 
 /*		printf("\ndbg: got a BezTriple\n"); */
@@ -128,10 +128,10 @@ static PyObject *SurfNurb_appendPointToNurb( Nurb * nurb, PyObject * args )
 		nurb->bezt =
 			( BezTriple * ) MEM_mallocN( sizeof( BezTriple ) *
 						     ( npoints + 1 ),
-						     "SurfNurb_append2" );
+						     "V24_SurfNurb_append2" );
 
 		if( !nurb->bezt )
-			return ( EXPP_ReturnPyObjError
+			return ( V24_EXPP_ReturnPyObjError
 				 ( PyExc_MemoryError, "allocation failed" ) );
 
 		/* copy old points to new */
@@ -143,7 +143,7 @@ static PyObject *SurfNurb_appendPointToNurb( Nurb * nurb, PyObject * args )
 		nurb->pntsu++;
 		/* add new point to end of list */
 		memcpy( nurb->bezt + npoints,
-			BezTriple_FromPyObject( pyOb ), sizeof( BezTriple ) );
+			V24_BezTriple_FromPyObject( pyOb ), sizeof( BezTriple ) );
 
 	}
 	else if( PySequence_Check( pyOb ) ) {
@@ -157,9 +157,9 @@ static PyObject *SurfNurb_appendPointToNurb( Nurb * nurb, PyObject * args )
 			nurb->bp =
 				( BPoint * ) MEM_mallocN( sizeof( BPoint ) *
 							  ( npoints + 1 ),
-							  "SurfNurb_append1" );
+							  "V24_SurfNurb_append1" );
 			if( !nurb->bp )
-				return ( EXPP_ReturnPyObjError
+				return ( V24_EXPP_ReturnPyObjError
 					 ( PyExc_MemoryError,
 					   "allocation failed" ) );
 
@@ -199,58 +199,58 @@ static PyObject *SurfNurb_appendPointToNurb( Nurb * nurb, PyObject * args )
 			makeknots( nurb, 1, nurb->flagu >> 1 );
 
 		} else {
-			return EXPP_ReturnPyObjError( PyExc_TypeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected a sequence of 4 or 5 floats" );
 		}
 
 	} else {
 		/* bail with error */
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected a sequence of 4 or 5 floats" );
 
 	}
 
-	return ( EXPP_incr_ret( Py_None ) );
+	return ( V24_EXPP_incr_ret( Py_None ) );
 }
 
 /*
- * SurfNurb_append( point )
+ * V24_SurfNurb_append( point )
  * append a new point to a nurb curve.
  * arg is BezTriple or list of xyzw floats 
  */
 
-PyObject *SurfNurb_append( BPy_SurfNurb * self, PyObject * args )
+PyObject *V24_SurfNurb_append( V24_BPy_SurfNurb * self, PyObject * args )
 {
 	Nurb *nurb = self->nurb;
 
-	return SurfNurb_appendPointToNurb( nurb, args );
+	return V24_SurfNurb_appendPointToNurb( nurb, args );
 }
 #endif
 
 #if 0
 /*
- * SurfNurb_getMatIndex
+ * V24_SurfNurb_getMatIndex
  *
  * returns index into material list
  */
 
-static PyObject *SurfNurb_getMatIndex( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getMatIndex( V24_BPy_SurfNurb * self )
 {
 	return PyInt_FromLong( ( long ) self->nurb->mat_nr );
 }
 
 /*
- *  SurfNurb_setMatIndex
+ *  V24_SurfNurb_setMatIndex
  *
  *  set index into material list
  */
 
-static int SurfNurb_setMatIndex( BPy_SurfNurb * self, PyObject * args )
+static int V24_SurfNurb_setMatIndex( V24_BPy_SurfNurb * self, PyObject * args )
 {
 	args = PyNumber_Int( args );
 
 	if( !args )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			   "expected integer argument" );
 
 	/* fixme:  some range checking would be nice! */
@@ -263,40 +263,40 @@ static int SurfNurb_setMatIndex( BPy_SurfNurb * self, PyObject * args )
 #endif
 
 /*
- * SurfNurb_getPointsU
+ * V24_SurfNurb_getPointsU
  *
  * returns number of control points in U direction
  */
 
-static PyObject *SurfNurb_getPointsU( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getPointsU( V24_BPy_SurfNurb * self )
 {
 	return PyInt_FromLong( ( long ) self->nurb->pntsu );
 }
 
 /*
- * SurfNurb_getPointsV
+ * V24_SurfNurb_getPointsV
  *
  * returns number of control points in V direction
  */
 
-static PyObject *SurfNurb_getPointsV( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getPointsV( V24_BPy_SurfNurb * self )
 {
 	return PyInt_FromLong( ( long ) self->nurb->pntsv );
 }
 
 /*
- * SurfNurb_getFlagU
+ * V24_SurfNurb_getFlagU
  *
  * returns curve's flagu
  */
 
-static PyObject *SurfNurb_getFlagU( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getFlagU( V24_BPy_SurfNurb * self )
 {
 	return PyInt_FromLong( ( long ) (self->nurb->flagu >> 1) );
 }
 
 /*
- *  SurfNurb_setFlagU
+ *  V24_SurfNurb_setFlagU
  *
  *  set curve's flagu and recalculate the knots
  *
@@ -304,20 +304,20 @@ static PyObject *SurfNurb_getFlagU( BPy_SurfNurb * self )
  *    bit 0 controls CU_CYCLIC
  */
 
-static int SurfNurb_setFlagU( BPy_SurfNurb * self, PyObject * args )
+static int V24_SurfNurb_setFlagU( V24_BPy_SurfNurb * self, PyObject * args )
 {
 	int flagu;
 
 	args = PyNumber_Int( args );
 	if( !args )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			   "expected integer argument" );
 
 	flagu = ( int )PyInt_AS_LONG( args );
 	Py_DECREF( args );
 
 	if( flagu < 0 || flagu > 2 )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 				"expected integer argument in range [0,2]" );
 
 	flagu = (flagu << 1) | (self->nurb->flagu & CU_CYCLIC);
@@ -330,38 +330,38 @@ static int SurfNurb_setFlagU( BPy_SurfNurb * self, PyObject * args )
 }
 
 /*
- * SurfNurb_getFlagV
+ * V24_SurfNurb_getFlagV
  *
  * returns curve's flagu
  */
 
-static PyObject *SurfNurb_getFlagV( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getFlagV( V24_BPy_SurfNurb * self )
 {
 	return PyInt_FromLong( ( long ) (self->nurb->flagv >> 1) );
 }
 
 /*
- *  SurfNurb_setFlagV
+ *  V24_SurfNurb_setFlagV
  *
  *  set curve's flagu and recalculate the knots
  *
  *  Possible values: 0 - uniform, 1 - endpoints, 2 - bezier
  */
 
-static int SurfNurb_setFlagV( BPy_SurfNurb * self, PyObject * args )
+static int V24_SurfNurb_setFlagV( V24_BPy_SurfNurb * self, PyObject * args )
 {
 	int flagv;
 
 	args = PyNumber_Int( args );
 	if( !args )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			   "expected integer argument" );
 
 	flagv = ( int )PyInt_AS_LONG( args );
 	Py_DECREF( args );
 
 	if( flagv < 0 || flagv > 2 )
-		return EXPP_ReturnIntError( PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError( PyExc_AttributeError,
 				"expected integer argument in range [0,2]" );
 
 	flagv = (flagv << 1) | (self->nurb->flagv & CU_CYCLIC);
@@ -379,18 +379,18 @@ static int SurfNurb_setFlagV( BPy_SurfNurb * self, PyObject * args )
  * returns curve's order
  */
 
-static PyObject *SurfNurb_getOrderU( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getOrderU( V24_BPy_SurfNurb * self )
 {
 	return PyInt_FromLong( ( long ) self->nurb->orderu );
 }
 
-static int SurfNurb_setOrderU( BPy_SurfNurb * self, PyObject * args )
+static int V24_SurfNurb_setOrderU( V24_BPy_SurfNurb * self, PyObject * args )
 {
 	int order;
 
 	args = PyNumber_Int( args );
 	if( !args )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			   "expected integer argument" );
 
 	order = ( int )PyInt_AS_LONG( args );
@@ -408,18 +408,18 @@ static int SurfNurb_setOrderU( BPy_SurfNurb * self, PyObject * args )
 	return 0;
 }
 
-static PyObject *SurfNurb_getOrderV( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getOrderV( V24_BPy_SurfNurb * self )
 {
 	return PyInt_FromLong( ( long ) self->nurb->orderv );
 }
 
-static int SurfNurb_setOrderV( BPy_SurfNurb * self, PyObject * args )
+static int V24_SurfNurb_setOrderV( V24_BPy_SurfNurb * self, PyObject * args )
 {
 	int order;
 
 	args = PyNumber_Int( args );
 	if( !args )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			   "expected integer argument" );
 
 	order = ( int )PyInt_AS_LONG( args );
@@ -441,7 +441,7 @@ static int SurfNurb_setOrderV( BPy_SurfNurb * self, PyObject * args )
  * test whether surface is cyclic (closed) or not (open)
  */
 
-static PyObject *SurfNurb_getCyclicU( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getCyclicU( V24_BPy_SurfNurb * self )
 {
 	if( self->nurb->flagu & CU_CYCLIC )
 		Py_RETURN_TRUE;
@@ -449,7 +449,7 @@ static PyObject *SurfNurb_getCyclicU( BPy_SurfNurb * self )
 		Py_RETURN_FALSE;
 }
 
-static PyObject *SurfNurb_getCyclicV( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getCyclicV( V24_BPy_SurfNurb * self )
 {
 	if( self->nurb->flagv & CU_CYCLIC )
 		Py_RETURN_TRUE;
@@ -457,11 +457,11 @@ static PyObject *SurfNurb_getCyclicV( BPy_SurfNurb * self )
 		Py_RETURN_FALSE;
 }
 
-static int SurfNurb_setCyclicU( BPy_SurfNurb * self, PyObject * value )
+static int V24_SurfNurb_setCyclicU( V24_BPy_SurfNurb * self, PyObject * value )
 {
 	int param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 	
 	if( param )
@@ -472,11 +472,11 @@ static int SurfNurb_setCyclicU( BPy_SurfNurb * self, PyObject * value )
 	return 0;
 }
 
-static int SurfNurb_setCyclicV( BPy_SurfNurb * self, PyObject * value )
+static int V24_SurfNurb_setCyclicV( V24_BPy_SurfNurb * self, PyObject * value )
 {
 	int param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 	
 	if( param )
@@ -489,13 +489,13 @@ static int SurfNurb_setCyclicV( BPy_SurfNurb * self, PyObject * value )
 
 
 /*
- * SurfNurb_getIter
+ * V24_SurfNurb_getIter
  *
  * create an iterator for our SurfNurb.
  * this iterator returns the points for this SurfNurb.
  */
 
-static PyObject *SurfNurb_getIter( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_getIter( V24_BPy_SurfNurb * self )
 {
 	self->bp = self->nurb->bp;
 	self->bezt = self->nurb->bezt;
@@ -505,46 +505,46 @@ static PyObject *SurfNurb_getIter( BPy_SurfNurb * self )
 	return ( PyObject * ) self;
 }
 
-static PyObject *SurfNurb_iterNext( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_iterNext( V24_BPy_SurfNurb * self )
 {
 	Nurb *pnurb = self->nurb;
 	int npoints = pnurb->pntsu * pnurb->pntsv;
 
 	if( self->bp && self->nextPoint < npoints )
-		return SurfNurb_pointAtIndex( self->nurb, self->nextPoint++ );
+		return V24_SurfNurb_pointAtIndex( self->nurb, self->nextPoint++ );
 	else
-		return EXPP_ReturnPyObjError( PyExc_StopIteration,
+		return V24_EXPP_ReturnPyObjError( PyExc_StopIteration,
 						"iterator at end" );
 }
 
 /*
- * SurfNurb_length
+ * V24_SurfNurb_length
  * returns the number of points in a Nurb
  * this is a tp_as_sequence method, not a regular instance method.
  */
 
-static int SurfNurb_length( PyInstanceObject * inst )
+static int V24_SurfNurb_length( PyInstanceObject * inst )
 {
 	Nurb *nurb;
 
 	if( BPy_SurfNurb_Check( ( PyObject * ) inst ) ) {
-		nurb = ( ( BPy_SurfNurb * ) inst )->nurb;
+		nurb = ( ( V24_BPy_SurfNurb * ) inst )->nurb;
 		return (int)(nurb->pntsu * nurb->pntsu);
 	}
 
-	return EXPP_ReturnIntError( PyExc_RuntimeError,
-				    "arg is not a BPy_SurfNurb" );
+	return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
+				    "arg is not a V24_BPy_SurfNurb" );
 }
 
 
 /*
- * SurfNurb_getPoint
+ * V24_SurfNurb_getPoint
  * returns the Nth point in a Nurb
  * this is one of the tp_as_sequence methods, hence the int N argument.
  * it is called via the [] operator, not as a usual instance method.
  */
 
-PyObject *SurfNurb_getPoint( BPy_SurfNurb * self, int index )
+PyObject *V24_SurfNurb_getPoint( V24_BPy_SurfNurb * self, int index )
 {
 	Nurb *myNurb;
 
@@ -556,31 +556,31 @@ PyObject *SurfNurb_getPoint( BPy_SurfNurb * self, int index )
 
 	/* bail if no Nurbs in Curve */
 	if( npoints == 0 )
-		return ( EXPP_ReturnPyObjError( PyExc_IndexError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 						"no points in this SurfNurb" ) );
 
 	/* check index limits */
 	if( index >= npoints || index < 0 )
-		return ( EXPP_ReturnPyObjError( PyExc_IndexError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_IndexError,
 						"index out of range" ) );
 
-	return SurfNurb_pointAtIndex( myNurb, index );
+	return V24_SurfNurb_pointAtIndex( myNurb, index );
 }
 
 /*
- * SurfNurb_setPoint
+ * V24_SurfNurb_setPoint
  * modifies the Nth point in a Nurb
  * this is one of the tp_as_sequence methods, hence the int N argument.
  * it is called via the [] = operator, not as a usual instance method.
  */
-static int SurfNurb_setPoint( BPy_SurfNurb * self, int index, PyObject * pyOb )
+static int V24_SurfNurb_setPoint( V24_BPy_SurfNurb * self, int index, PyObject * pyOb )
 {
 	Nurb *nurb = self->nurb;
 	int size;
 
 	/* check index limits */
 	if( index < 0 || index >= nurb->pntsu * nurb->pntsv )
-		return EXPP_ReturnIntError( PyExc_IndexError,
+		return V24_EXPP_ReturnIntError( PyExc_IndexError,
 					    "array assignment index out of range\n" );
 
 	/* branch by curve type */
@@ -588,12 +588,12 @@ static int SurfNurb_setPoint( BPy_SurfNurb * self, int index, PyObject * pyOb )
 	if ((nurb->type & 7)==CU_BEZIER) {	/* BEZIER */
 		/* check parameter type */
 		if( !BPy_BezTriple_Check( pyOb ) )
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 							"expected a BezTriple\n" );
 
 		/* copy bezier in array */
 		memcpy( nurb->bezt + index,
-			BezTriple_FromPyObject( pyOb ), sizeof( BezTriple ) );
+			V24_BezTriple_FromPyObject( pyOb ), sizeof( BezTriple ) );
 
 		return 0;	/* finished correctly */
 	}
@@ -604,14 +604,14 @@ static int SurfNurb_setPoint( BPy_SurfNurb * self, int index, PyObject * pyOb )
 
 		/* check parameter type */
 		if (!PySequence_Check( pyOb ))
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 							"expected a list of 4 (or optionaly 5 if the curve is 3D) floats\n" );
 
 		size = PySequence_Size( pyOb );
 
 		/* check sequence size */
 		if( size != 4 && size != 5 ) 
-			return EXPP_ReturnIntError( PyExc_TypeError,
+			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 							"expected a list of 4 (or optionaly 5 if the curve is 3D) floats\n" );
 
 		/* copy x, y, z, w */
@@ -647,7 +647,7 @@ static int SurfNurb_setPoint( BPy_SurfNurb * self, int index, PyObject * pyOb )
  * this is an internal routine.  not callable directly from python
  */
 
-PyObject *SurfNurb_pointAtIndex( Nurb * nurb, int index )
+PyObject *V24_SurfNurb_pointAtIndex( Nurb * nurb, int index )
 {
 	PyObject *pyo;
 
@@ -672,7 +672,7 @@ PyObject *SurfNurb_pointAtIndex( Nurb * nurb, int index )
 		return pyo;
 
 	} else			/* something is horribly wrong */
-		return EXPP_ReturnPyObjError( PyExc_SystemError,
+		return V24_EXPP_ReturnPyObjError( PyExc_SystemError,
 						"non-NURB surface found" );
 }
 
@@ -680,48 +680,48 @@ PyObject *SurfNurb_pointAtIndex( Nurb * nurb, int index )
  *   methods for SurfNurb as sequence
  */
 
-static PySequenceMethods SurfNurb_as_sequence = {
-	( inquiry ) SurfNurb_length,	/* sq_length   */
+static PySequenceMethods V24_SurfNurb_as_sequence = {
+	( inquiry ) V24_SurfNurb_length,	/* sq_length   */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
-	( intargfunc ) SurfNurb_getPoint,	/* sq_item */
+	( intargfunc ) V24_SurfNurb_getPoint,	/* sq_item */
 	( intintargfunc ) 0,	/* sq_slice */
-	( intobjargproc ) SurfNurb_setPoint,	/* sq_ass_item */
+	( intobjargproc ) V24_SurfNurb_setPoint,	/* sq_ass_item */
 	0,			/* sq_ass_slice */
 	( objobjproc ) 0,	/* sq_contains */
 	0,
 	0
 };
 
-static PyGetSetDef BPy_SurfNurb_getseters[] = {
+static PyGetSetDef V24_BPy_SurfNurb_getseters[] = {
 #if 0
 	{"matIndex",
-	 (getter)SurfNurb_getMatIndex, (setter)SurfNurb_setMatIndex,
+	 (getter)V24_SurfNurb_getMatIndex, (setter)V24_SurfNurb_setMatIndex,
 	 "material index", NULL},
 #endif
 	{"pointsU",
-	 (getter)SurfNurb_getPointsU, (setter)NULL,
+	 (getter)V24_SurfNurb_getPointsU, (setter)NULL,
 	 "number of control points in U direction", NULL},
 	{"pointsV",
-	 (getter)SurfNurb_getPointsV, (setter)NULL,
+	 (getter)V24_SurfNurb_getPointsV, (setter)NULL,
 	 "number of control points in V direction", NULL},
 	{"flagU",
-	 (getter)SurfNurb_getFlagU, (setter)SurfNurb_setFlagU,
+	 (getter)V24_SurfNurb_getFlagU, (setter)V24_SurfNurb_setFlagU,
 	 "knot flag for U direction", NULL},
 	{"flagV",
-	 (getter)SurfNurb_getFlagV, (setter)SurfNurb_setFlagV,
+	 (getter)V24_SurfNurb_getFlagV, (setter)V24_SurfNurb_setFlagV,
 	 "knot flag for V direction", NULL},
 	{"cyclicU",
-	 (getter)SurfNurb_getCyclicU, (setter)SurfNurb_setCyclicU,
+	 (getter)V24_SurfNurb_getCyclicU, (setter)V24_SurfNurb_setCyclicU,
 	 "cyclic setting for U direction", NULL},
 	{"cyclicV",
-	 (getter)SurfNurb_getCyclicV, (setter)SurfNurb_setCyclicV,
+	 (getter)V24_SurfNurb_getCyclicV, (setter)V24_SurfNurb_setCyclicV,
 	 "cyclic setting for V direction", NULL},
 	{"orderU",
-	 (getter)SurfNurb_getOrderU, (setter)SurfNurb_setOrderU,
+	 (getter)V24_SurfNurb_getOrderU, (setter)V24_SurfNurb_setOrderU,
 	 "order setting for U direction", NULL},
 	{"orderV",
-	 (getter)SurfNurb_getOrderV, (setter)SurfNurb_setOrderV,
+	 (getter)V24_SurfNurb_getOrderV, (setter)V24_SurfNurb_setOrderV,
 	 "order setting for V direction", NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
@@ -731,28 +731,28 @@ static PyGetSetDef BPy_SurfNurb_getseters[] = {
  * in this case, we consider two SurfNurbs equal, if they point to the same
  * blender data.
 */
-static int SurfNurb_compare( BPy_SurfNurb * a, BPy_SurfNurb * b )
+static int V24_SurfNurb_compare( V24_BPy_SurfNurb * a, V24_BPy_SurfNurb * b )
 {
 	return ( a->nurb == b->nurb ) ? 0 : -1;
 }
 
 /*
- *  SurfNurb_repr
+ *  V24_SurfNurb_repr
  */
-static PyObject *SurfNurb_repr( BPy_SurfNurb * self )
+static PyObject *V24_SurfNurb_repr( V24_BPy_SurfNurb * self )
 {
 	return PyString_FromFormat( "[SurfNurb \"%d\"]", self->nurb->type );
 }
 
 /*****************************************************************************/
-/* Python SurfNurb_Type structure definition:                                */
+/* Python V24_SurfNurb_Type structure definition:                                */
 /*****************************************************************************/
-PyTypeObject SurfNurb_Type = {
+PyTypeObject V24_SurfNurb_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"SurfNurb",                 /* char *tp_name; */
-	sizeof( BPy_SurfNurb ),     /* int tp_basicsize; */
+	sizeof( V24_BPy_SurfNurb ),     /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -761,13 +761,13 @@ PyTypeObject SurfNurb_Type = {
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	( cmpfunc ) SurfNurb_compare, /* cmpfunc tp_compare; */
-	( reprfunc ) SurfNurb_repr, /* reprfunc tp_repr; */
+	( cmpfunc ) V24_SurfNurb_compare, /* cmpfunc tp_compare; */
+	( reprfunc ) V24_SurfNurb_repr, /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&SurfNurb_as_sequence,      /* PySequenceMethods *tp_as_sequence; */
+	&V24_SurfNurb_as_sequence,      /* PySequenceMethods *tp_as_sequence; */
 	NULL,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
@@ -801,13 +801,13 @@ PyTypeObject SurfNurb_Type = {
 
   /*** Added in release 2.2 ***/
 	/*   Iterators */
-	( getiterfunc ) SurfNurb_getIter,	/*    getiterfunc tp_iter; */
-	( iternextfunc ) SurfNurb_iterNext,	/*    iternextfunc tp_iternext; */
+	( getiterfunc ) V24_SurfNurb_getIter,	/*    getiterfunc tp_iter; */
+	( iternextfunc ) V24_SurfNurb_iterNext,	/*    iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_SurfNurb_methods,       /* struct PyMethodDef *tp_methods; */
+	V24_BPy_SurfNurb_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_SurfNurb_getseters,     /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_SurfNurb_getseters,     /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -830,28 +830,28 @@ PyTypeObject SurfNurb_Type = {
 };
 
 /*
-  factory method to create a BPy_SurfNurb from a Blender Nurb
+  factory method to create a V24_BPy_SurfNurb from a Blender Nurb
 */
 
-PyObject *SurfNurb_CreatePyObject( Nurb * blen_nurb )
+PyObject *V24_SurfNurb_CreatePyObject( Nurb * blen_nurb )
 {
-	BPy_SurfNurb *pyNurb;
+	V24_BPy_SurfNurb *pyNurb;
 
-	pyNurb = ( BPy_SurfNurb * ) PyObject_NEW( BPy_SurfNurb, &SurfNurb_Type );
+	pyNurb = ( V24_BPy_SurfNurb * ) PyObject_NEW( V24_BPy_SurfNurb, &V24_SurfNurb_Type );
 
 	if( !pyNurb )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
-					      "could not create BPy_SurfNurb PyObject" );
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
+					      "could not create V24_BPy_SurfNurb PyObject" );
 
 	pyNurb->nurb = blen_nurb;
 	return ( PyObject * ) pyNurb;
 }
 
 
-PyObject *SurfNurb_Init( void )
+PyObject *V24_SurfNurb_Init( void )
 {
-	PyType_Ready( &SurfNurb_Type );
-	return Py_InitModule3( "Blender.SurfNurb", M_SurfNurb_methods,
-				M_SurfNurb_doc );
+	PyType_Ready( &V24_SurfNurb_Type );
+	return Py_InitModule3( "Blender.SurfNurb", V24_M_SurfNurb_methods,
+				V24_M_SurfNurb_doc );
 }
 

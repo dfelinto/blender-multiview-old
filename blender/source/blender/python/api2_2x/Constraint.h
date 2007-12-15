@@ -40,7 +40,7 @@
 #include "DNA_listBase.h"
 
 /*****************************************************************************/
-/* Python BPy_Modifier structure definition:                                 */
+/* Python V24_BPy_Modifier structure definition:                                 */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD		/* required macro */
@@ -49,28 +49,28 @@ typedef struct {
 	/* if con this is null, the constraint has been removed and we need to
 	 * raise an error when its data is accessed */
 	bConstraint *con;
-} BPy_Constraint;
+} V24_BPy_Constraint;
 
-extern PyTypeObject Constraint_Type;
+extern PyTypeObject V24_Constraint_Type;
 
-#define BPy_Constraint_Check(v)  ((v)->ob_type == &Constraint_Type)	/* for type checking */
+#define BPy_Constraint_Check(v)  ((v)->ob_type == &V24_Constraint_Type)	/* for type checking */
 typedef struct {
 	PyObject_HEAD		/* required macro */
 	Object *obj;		/* "parent" object */
 	bPoseChannel *pchan;/* "parent" pose channel */
 	bConstraint *iter;
-} BPy_ConstraintSeq;
+} V24_BPy_ConstraintSeq;
 
 /* 
  *   prototypes
  */
 
-PyObject *Constraint_Init( void );
-PyObject *Constraint_CreatePyObject( bPoseChannel *pchan, Object *obj,
+PyObject *V24_Constraint_Init( void );
+PyObject *V24_Constraint_CreatePyObject( bPoseChannel *pchan, Object *obj,
 		bConstraint *con );
-bConstraint *Constraint_FromPyObject( BPy_Constraint * obj );
+bConstraint *V24_Constraint_FromPyObject( V24_BPy_Constraint * obj );
 
-PyObject *PoseConstraintSeq_CreatePyObject( bPoseChannel *pchan );
-PyObject *ObConstraintSeq_CreatePyObject( Object *obj );
+PyObject *V24_PoseConstraintSeq_CreatePyObject( bPoseChannel *pchan );
+PyObject *V24_ObConstraintSeq_CreatePyObject( Object *obj );
 
 #endif				/* EXPP_CONSTRAINT_H */

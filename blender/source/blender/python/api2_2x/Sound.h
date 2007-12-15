@@ -36,22 +36,22 @@
 #include <Python.h>
 #include "DNA_sound_types.h"
 
-#define BPy_Sound_Check(v)       ((v)->ob_type == &Sound_Type)
-extern PyTypeObject Sound_Type;
+#define BPy_Sound_Check(v)       ((v)->ob_type == &V24_Sound_Type)
+extern PyTypeObject V24_Sound_Type;
 
 /*****************************************************************************/
-/* Python BPy_Sound structure definition                                     */
+/* Python V24_BPy_Sound structure definition                                     */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD 
 	bSound * sound;
-} BPy_Sound;
+} V24_BPy_Sound;
 
 /*****************************************************************************/
 /* Module Blender.Sound - public functions                                   */
 /*****************************************************************************/
-PyObject *Sound_Init( void );
-PyObject *Sound_CreatePyObject( bSound * sound );
-bSound *Sound_FromPyObject( PyObject * pyobj );
+PyObject *V24_Sound_Init( void );
+PyObject *V24_Sound_CreatePyObject( bSound * sound );
+bSound *V24_Sound_FromPyObject( PyObject * pyobj );
 
 #endif				/* EXPP_SOUND_H */

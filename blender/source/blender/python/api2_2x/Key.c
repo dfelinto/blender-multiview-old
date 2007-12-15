@@ -61,91 +61,91 @@
 #define KEY_TYPE_CURVE   1
 #define KEY_TYPE_LATTICE 2
 
-static int Key_compare( BPy_Key * a, BPy_Key * b );
-static PyObject *Key_repr( BPy_Key * self );
-static void Key_dealloc( BPy_Key * self );
+static int V24_Key_compare( V24_BPy_Key * a, V24_BPy_Key * b );
+static PyObject *V24_Key_repr( V24_BPy_Key * self );
+static void V24_Key_dealloc( V24_BPy_Key * self );
 
-static PyObject *Key_getBlocks( BPy_Key * self );
-static PyObject *Key_getType( BPy_Key * self );
-static PyObject *Key_getRelative( BPy_Key * self );
-static PyObject *Key_getIpo( BPy_Key * self );
-static int Key_setIpo( BPy_Key * self, PyObject * args );
-static PyObject *Key_getValue( BPy_Key * self );
-static int Key_setRelative( BPy_Key * self, PyObject * value );
+static PyObject *V24_Key_getBlocks( V24_BPy_Key * self );
+static PyObject *V24_Key_getType( V24_BPy_Key * self );
+static PyObject *V24_Key_getRelative( V24_BPy_Key * self );
+static PyObject *V24_Key_getIpo( V24_BPy_Key * self );
+static int V24_Key_setIpo( V24_BPy_Key * self, PyObject * args );
+static PyObject *V24_Key_getValue( V24_BPy_Key * self );
+static int V24_Key_setRelative( V24_BPy_Key * self, PyObject * value );
 
 static struct PyMethodDef Key_methods[] = {
-	{ "getBlocks", (PyCFunction) Key_getBlocks, METH_NOARGS, "Get key blocks" },
-	{ "getIpo", (PyCFunction) Key_getIpo, METH_NOARGS, "Get key Ipo" },
+	{ "getBlocks", (PyCFunction) V24_Key_getBlocks, METH_NOARGS, "Get key blocks" },
+	{ "getIpo", (PyCFunction) V24_Key_getIpo, METH_NOARGS, "Get key Ipo" },
 	{ 0, 0, 0, 0 }
 };
 
-static PyGetSetDef BPy_Key_getsetters[] = {
-	{"type",(getter)Key_getType, (setter)NULL,
+static PyGetSetDef V24_BPy_Key_getsetters[] = {
+	{"type",(getter)V24_Key_getType, (setter)NULL,
 	 "Key Type",NULL},
-	{"value",(getter)Key_getValue, (setter)NULL,
+	{"value",(getter)V24_Key_getValue, (setter)NULL,
 	 "Key value",NULL},
-	{"ipo",(getter)Key_getIpo, (setter)Key_setIpo,
+	{"ipo",(getter)V24_Key_getIpo, (setter)V24_Key_setIpo,
 	 "Ipo linked to key",NULL},
-	{"blocks",(getter)Key_getBlocks, (setter)NULL,
+	{"blocks",(getter)V24_Key_getBlocks, (setter)NULL,
 	 "Blocks linked to the key",NULL},
-	{"relative",(getter)Key_getRelative, (setter)Key_setRelative,
+	{"relative",(getter)V24_Key_getRelative, (setter)V24_Key_setRelative,
 	 "Non-zero is key is relative",NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
-static PyObject *KeyBlock_getData( PyObject * self );
-static PyObject *KeyBlock_getCurval( BPy_KeyBlock * self );
-static PyObject *KeyBlock_getName( BPy_KeyBlock * self );
-static PyObject *KeyBlock_getPos( BPy_KeyBlock * self );
-static PyObject *KeyBlock_getSlidermin( BPy_KeyBlock * self );
-static PyObject *KeyBlock_getSlidermax( BPy_KeyBlock * self );
-static PyObject *KeyBlock_getVgroup( BPy_KeyBlock * self );
+static PyObject *V24_KeyBlock_getData( PyObject * self );
+static PyObject *V24_KeyBlock_getCurval( V24_BPy_KeyBlock * self );
+static PyObject *V24_KeyBlock_getName( V24_BPy_KeyBlock * self );
+static PyObject *V24_KeyBlock_getPos( V24_BPy_KeyBlock * self );
+static PyObject *V24_KeyBlock_getSlidermin( V24_BPy_KeyBlock * self );
+static PyObject *V24_KeyBlock_getSlidermax( V24_BPy_KeyBlock * self );
+static PyObject *V24_KeyBlock_getVgroup( V24_BPy_KeyBlock * self );
 
-static int KeyBlock_setName( BPy_KeyBlock *, PyObject * args  );
-static int KeyBlock_setVgroup( BPy_KeyBlock *, PyObject * args  );
-static int KeyBlock_setSlidermin( BPy_KeyBlock *, PyObject * args  );
-static int KeyBlock_setSlidermax( BPy_KeyBlock *, PyObject * args  );
+static int V24_KeyBlock_setName( V24_BPy_KeyBlock *, PyObject * args  );
+static int V24_KeyBlock_setVgroup( V24_BPy_KeyBlock *, PyObject * args  );
+static int V24_KeyBlock_setSlidermin( V24_BPy_KeyBlock *, PyObject * args  );
+static int V24_KeyBlock_setSlidermax( V24_BPy_KeyBlock *, PyObject * args  );
 
-static void KeyBlock_dealloc( BPy_KeyBlock * self );
-static int KeyBlock_compare( BPy_KeyBlock * a, BPy_KeyBlock * b );
-static PyObject *KeyBlock_repr( BPy_KeyBlock * self );
+static void V24_KeyBlock_dealloc( V24_BPy_KeyBlock * self );
+static int V24_KeyBlock_compare( V24_BPy_KeyBlock * a, V24_BPy_KeyBlock * b );
+static PyObject *V24_KeyBlock_repr( V24_BPy_KeyBlock * self );
 
 static struct PyMethodDef KeyBlock_methods[] = {
-	{ "getData", (PyCFunction) KeyBlock_getData, METH_NOARGS,
+	{ "getData", (PyCFunction) V24_KeyBlock_getData, METH_NOARGS,
 		"Get keyblock data" },
 	{ 0, 0, 0, 0 }
 };
 
-static PyGetSetDef BPy_KeyBlock_getsetters[] = {
-		{"curval",(getter)KeyBlock_getCurval, (setter)NULL,
+static PyGetSetDef V24_BPy_KeyBlock_getsetters[] = {
+		{"curval",(getter)V24_KeyBlock_getCurval, (setter)NULL,
 		 "Current value of the corresponding IpoCurve",NULL},
-		{"name",(getter)KeyBlock_getName, (setter)KeyBlock_setName,
+		{"name",(getter)V24_KeyBlock_getName, (setter)V24_KeyBlock_setName,
 		 "Keyblock Name",NULL},
-		{"pos",(getter)KeyBlock_getPos, (setter)NULL,
+		{"pos",(getter)V24_KeyBlock_getPos, (setter)NULL,
 		 "Keyblock Pos",NULL},
-		{"slidermin",(getter)KeyBlock_getSlidermin, (setter)KeyBlock_setSlidermin,
+		{"slidermin",(getter)V24_KeyBlock_getSlidermin, (setter)V24_KeyBlock_setSlidermin,
 		 "Keyblock Slider Minimum",NULL},
-		{"slidermax",(getter)KeyBlock_getSlidermax, (setter)KeyBlock_setSlidermax,
+		{"slidermax",(getter)V24_KeyBlock_getSlidermax, (setter)V24_KeyBlock_setSlidermax,
 		 "Keyblock Slider Maximum",NULL},
-		{"vgroup",(getter)KeyBlock_getVgroup, (setter)KeyBlock_setVgroup,
+		{"vgroup",(getter)V24_KeyBlock_getVgroup, (setter)V24_KeyBlock_setVgroup,
 		 "Keyblock VGroup",NULL},
-		{"data",(getter)KeyBlock_getData, (setter)NULL,
+		{"data",(getter)V24_KeyBlock_getData, (setter)NULL,
 		 "Keyblock VGroup",NULL},
 		{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
-PyTypeObject Key_Type = {
+PyTypeObject V24_Key_Type = {
 	PyObject_HEAD_INIT( NULL ) 0,	/*ob_size */
 	"Blender Key",					/*tp_name */
-	sizeof( BPy_Key ),				/*tp_basicsize */
+	sizeof( V24_BPy_Key ),				/*tp_basicsize */
 	0,								/*tp_itemsize */
 	/* methods */
-	( destructor ) Key_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_Key_dealloc,/* destructor tp_dealloc; */
 	( printfunc ) 0,				/*tp_print */
 	( getattrfunc ) 0,	/*tp_getattr */
 	( setattrfunc ) 0,			 	/*tp_setattr */
-	( cmpfunc) Key_compare, 		/*tp_compare*/
-	( reprfunc ) Key_repr, 			/* tp_repr */
+	( cmpfunc) V24_Key_compare, 		/*tp_compare*/
+	( reprfunc ) V24_Key_repr, 			/* tp_repr */
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
@@ -154,7 +154,7 @@ PyTypeObject Key_Type = {
 
 	/* More standard operations (here for binary compatibility) */
 
-	( hashfunc ) GenericLib_hash,	/* hashfunc tp_hash; */
+	( hashfunc ) V24_GenericLib_hash,	/* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -189,7 +189,7 @@ PyTypeObject Key_Type = {
   /*** Attribute descriptor and subclassing stuff ***/
 	Key_methods,           		/* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_Key_getsetters,     	/* struct PyGetSetDef *tp_getset; */
+	V24_BPy_Key_getsetters,     	/* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                      	/* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -211,18 +211,18 @@ PyTypeObject Key_Type = {
 	NULL
 };
 
-PyTypeObject KeyBlock_Type = {
+PyTypeObject V24_KeyBlock_Type = {
 	PyObject_HEAD_INIT( NULL ) 0,	/*ob_size */
 	"Blender KeyBlock",	/*tp_name */
-	sizeof( BPy_KeyBlock ),	/*tp_basicsize */
+	sizeof( V24_BPy_KeyBlock ),	/*tp_basicsize */
 	0,			/*tp_itemsize */
 	/* methods */
-	( destructor ) KeyBlock_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_KeyBlock_dealloc,/* destructor tp_dealloc; */
 	( printfunc ) 0,				/*tp_print */
 	( getattrfunc ) 0,	/*tp_getattr */
 	( setattrfunc ) 0,			 	/*tp_setattr */
-	( cmpfunc) KeyBlock_compare, 		/*tp_compare*/
-	( reprfunc ) KeyBlock_repr, 			/* tp_repr */
+	( cmpfunc) V24_KeyBlock_compare, 		/*tp_compare*/
+	( reprfunc ) V24_KeyBlock_repr, 			/* tp_repr */
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
@@ -266,7 +266,7 @@ PyTypeObject KeyBlock_Type = {
   /*** Attribute descriptor and subclassing stuff ***/
 	KeyBlock_methods, 			/* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	BPy_KeyBlock_getsetters,    /* struct PyGetSetDef *tp_getset; */
+	V24_BPy_KeyBlock_getsetters,    /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -288,42 +288,42 @@ PyTypeObject KeyBlock_Type = {
 	NULL
 };
 
-PyObject *Key_CreatePyObject( Key * blenkey )
+PyObject *V24_Key_CreatePyObject( Key * blenkey )
 {
-	BPy_Key *bpykey = PyObject_NEW( BPy_Key, &Key_Type );
+	V24_BPy_Key *bpykey = PyObject_NEW( V24_BPy_Key, &V24_Key_Type );
 	/* blenkey may be NULL so be careful */
 	bpykey->key = blenkey;
 	return ( PyObject * ) bpykey;
 }
 
-static void Key_dealloc( BPy_Key * self )
+static void V24_Key_dealloc( V24_BPy_Key * self )
 {
 	PyObject_DEL( self );
 }
 
-static int Key_compare( BPy_Key * a, BPy_Key * b )
+static int V24_Key_compare( V24_BPy_Key * a, V24_BPy_Key * b )
 {
 	return ( a->key == b->key ) ? 0 : -1;
 }
 
-static PyObject *Key_repr( BPy_Key * self )
+static PyObject *V24_Key_repr( V24_BPy_Key * self )
 {
 	return PyString_FromFormat( "[Key \"%s\"]", self->key->id.name + 2 );
 }
 
-static PyObject *Key_getIpo( BPy_Key * self )
+static PyObject *V24_Key_getIpo( V24_BPy_Key * self )
 {
 	if (self->key->ipo)
-		return Ipo_CreatePyObject( self->key->ipo );
+		return V24_Ipo_CreatePyObject( self->key->ipo );
 	Py_RETURN_NONE;
 }
 
-static int Key_setIpo( BPy_Key * self, PyObject * value )
+static int V24_Key_setIpo( V24_BPy_Key * self, PyObject * value )
 {
-	return GenericLib_assignData(value, (void **) &self->key->ipo, 0, 1, ID_IP, ID_KE);
+	return V24_GenericLib_assignData(value, (void **) &self->key->ipo, 0, 1, ID_IP, ID_KE);
 }
 
-static PyObject *Key_getRelative( BPy_Key * self )
+static PyObject *V24_Key_getRelative( V24_BPy_Key * self )
 {
 	if( self->key->type == KEY_RELATIVE )
 		Py_RETURN_TRUE;
@@ -331,11 +331,11 @@ static PyObject *Key_getRelative( BPy_Key * self )
 		Py_RETURN_FALSE;
 }
 
-static int Key_setRelative( BPy_Key * self, PyObject * value )
+static int V24_Key_setRelative( V24_BPy_Key * self, PyObject * value )
 {
 	int param = PyObject_IsTrue( value );
 	if( param == -1 )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected True/False or 0/1" );
 	
 	if( param )
@@ -348,7 +348,7 @@ static int Key_setRelative( BPy_Key * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Key_getType( BPy_Key * self )
+static PyObject *V24_Key_getType( V24_BPy_Key * self )
 {
 	int idcode;
 	int type = -1;
@@ -370,7 +370,7 @@ static PyObject *Key_getType( BPy_Key * self )
 	return PyInt_FromLong( type );
 }
 
-static PyObject *Key_getBlocks( BPy_Key * self )
+static PyObject *V24_Key_getBlocks( V24_BPy_Key * self )
 {
 	Key *key = self->key;
 	KeyBlock *kb;
@@ -378,96 +378,96 @@ static PyObject *Key_getBlocks( BPy_Key * self )
 	PyObject *l = PyList_New( BLI_countlist( &(key->block)) );
 
 	for (kb = key->block.first; kb; kb = kb->next, i++)
-		PyList_SET_ITEM( l, i, KeyBlock_CreatePyObject( kb, key ) );
+		PyList_SET_ITEM( l, i, V24_KeyBlock_CreatePyObject( kb, key ) );
 	
 	return l;
 }
 
-static PyObject *Key_getValue( BPy_Key * self )
+static PyObject *V24_Key_getValue( V24_BPy_Key * self )
 {
-	BPy_Key *k = ( BPy_Key * ) self;
+	V24_BPy_Key *k = ( V24_BPy_Key * ) self;
 
 	return PyFloat_FromDouble( k->key->curval );
 }
 
 /* ------------ Key Block Functions -------------- */
-PyObject *KeyBlock_CreatePyObject( KeyBlock * keyblock, Key *parentKey )
+PyObject *V24_KeyBlock_CreatePyObject( KeyBlock * keyblock, Key *parentKey )
 {
-	BPy_KeyBlock *bpykb = PyObject_NEW( BPy_KeyBlock, &KeyBlock_Type );
+	V24_BPy_KeyBlock *bpykb = PyObject_NEW( V24_BPy_KeyBlock, &V24_KeyBlock_Type );
 	bpykb->key = parentKey;
 	bpykb->keyblock = keyblock; /* keyblock maye be NULL, thats ok */
 	return ( PyObject * ) bpykb;
 }
 
-static PyObject *KeyBlock_getCurval( BPy_KeyBlock * self ) {
+static PyObject *V24_KeyBlock_getCurval( V24_BPy_KeyBlock * self ) {
 	return PyFloat_FromDouble( self->keyblock->curval );
 }
 
-static PyObject *KeyBlock_getName( BPy_KeyBlock * self ) {
+static PyObject *V24_KeyBlock_getName( V24_BPy_KeyBlock * self ) {
 	return PyString_FromString(self->keyblock->name);
 }
 
-static PyObject *KeyBlock_getPos( BPy_KeyBlock * self ){
+static PyObject *V24_KeyBlock_getPos( V24_BPy_KeyBlock * self ){
 	return PyFloat_FromDouble( self->keyblock->pos );			
 }
 
-static PyObject *KeyBlock_getSlidermin( BPy_KeyBlock * self ){
+static PyObject *V24_KeyBlock_getSlidermin( V24_BPy_KeyBlock * self ){
 	return PyFloat_FromDouble( self->keyblock->slidermin );	
 }
 
-static PyObject *KeyBlock_getSlidermax( BPy_KeyBlock * self ){
+static PyObject *V24_KeyBlock_getSlidermax( V24_BPy_KeyBlock * self ){
 	return PyFloat_FromDouble( self->keyblock->slidermax );
 }
 
-static PyObject *KeyBlock_getVgroup( BPy_KeyBlock * self ){
+static PyObject *V24_KeyBlock_getVgroup( V24_BPy_KeyBlock * self ){
 	return PyString_FromString(self->keyblock->vgroup);
 }
 
-static int KeyBlock_setName( BPy_KeyBlock * self, PyObject * args ){
+static int V24_KeyBlock_setName( V24_BPy_KeyBlock * self, PyObject * args ){
 	char* text = NULL;
  
 	text = PyString_AsString ( args );
 	if( !text )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					      "expected string argument" );							
 	strncpy( self->keyblock->name, text , 32);
 
 	return 0;	
 }
 
-static int KeyBlock_setVgroup( BPy_KeyBlock * self, PyObject * args  ){
+static int V24_KeyBlock_setVgroup( V24_BPy_KeyBlock * self, PyObject * args  ){
 	char* text = NULL;
 
 	text = PyString_AsString ( args );
 	if( !text )
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					      "expected string argument" );							
 	strncpy( self->keyblock->vgroup, text , 32);
 
 	return 0;	
 }
-static int KeyBlock_setSlidermin( BPy_KeyBlock * self, PyObject * args  ){
-	return EXPP_setFloatClamped ( args, &self->keyblock->slidermin,
+static int V24_KeyBlock_setSlidermin( V24_BPy_KeyBlock * self, PyObject * args  ){
+	return V24_EXPP_setFloatClamped ( args, &self->keyblock->slidermin,
 								-10.0f,
 								10.0f );	
 }
-static int KeyBlock_setSlidermax( BPy_KeyBlock * self, PyObject * args  ){
-	return EXPP_setFloatClamped ( args, &self->keyblock->slidermax,
+static int V24_KeyBlock_setSlidermax( V24_BPy_KeyBlock * self, PyObject * args  ){
+	return V24_EXPP_setFloatClamped ( args, &self->keyblock->slidermax,
 								-10.0f,
 								10.0f );
 }
 
-static void KeyBlock_dealloc( BPy_KeyBlock * self )
+static void V24_KeyBlock_dealloc( V24_BPy_KeyBlock * self )
 {
 	PyObject_DEL( self );
 }
 
-static int KeyBlock_compare( BPy_KeyBlock * a, BPy_KeyBlock * b )
+static int V24_KeyBlock_compare( V24_BPy_KeyBlock * a, V24_BPy_KeyBlock * b )
 {
 	return ( a->keyblock == b->keyblock ) ? 0 : -1;
 }
 
-static PyObject *KeyBlock_repr( BPy_KeyBlock * self )
+static PyObject *V24_KeyBlock_repr( V24_BPy_KeyBlock * self )
 {
 	return PyString_FromFormat( "[KeyBlock \"%s\"]", self->keyblock->name );
 }
@@ -487,7 +487,7 @@ static Curve *find_curve( Key *key )
 	return cu;
 }
 
-static PyObject *KeyBlock_getData( PyObject * self )
+static PyObject *V24_KeyBlock_getData( PyObject * self )
 {
 	/* If this is a mesh key, data is an array of MVert coords.
 	   If lattice, data is an array of BPoint coords
@@ -500,7 +500,7 @@ static PyObject *KeyBlock_getData( PyObject * self )
 	Curve *cu;
 	Nurb* nu;
 	PyObject *l;
-	BPy_KeyBlock *kb = ( BPy_KeyBlock * ) self;
+	V24_BPy_KeyBlock *kb = ( V24_BPy_KeyBlock * ) self;
 	Key *key = kb->key;
 
 	if( !kb->keyblock->data ) {
@@ -509,7 +509,7 @@ static PyObject *KeyBlock_getData( PyObject * self )
 
 	l = PyList_New( kb->keyblock->totelem );
 	if( !l )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 				"PyList_New() failed" );							
 
 	idcode = GS( key->from->name );
@@ -520,7 +520,7 @@ static PyObject *KeyBlock_getData( PyObject * self )
 		for (i=0, datap = kb->keyblock->data; i<kb->keyblock->totelem; i++) {
 			PyObject *vec = newVectorObject((float*)datap, 3, Py_WRAP);
 			
-			if (!vec) return EXPP_ReturnPyObjError( PyExc_MemoryError,
+			if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 
 			PyList_SetItem(l, i, vec);
@@ -531,7 +531,7 @@ static PyObject *KeyBlock_getData( PyObject * self )
 	case ID_CU:
 		cu = find_curve ( key );
 		if( !cu )
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "key is no linked to any curve!" );							
 		datasize = count_curveverts(&cu->nurb);
 		nu = cu->nurb.first;
@@ -544,25 +544,25 @@ static PyObject *KeyBlock_getData( PyObject * self )
 				PyObject *tuple = PyTuple_New(4), *vec;
 				float *vecs = (float*)datap;
 				
-				if (!tuple) return EXPP_ReturnPyObjError( PyExc_MemoryError,
+				if (!tuple) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "PyTuple_New() failed!" );
 					  
 				vec = newVectorObject(vecs, 3, Py_WRAP);
-				if (!vec) return EXPP_ReturnPyObjError( PyExc_MemoryError,
+				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 					  
 				PyTuple_SET_ITEM( tuple, 0, vec);
 				
 				vecs += 3;
 				vec = newVectorObject(vecs, 3, Py_WRAP);
-				if (!vec) return EXPP_ReturnPyObjError( PyExc_MemoryError,
+				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 
 				PyTuple_SET_ITEM( tuple, 1, vec);
 				
 				vecs += 3;
 				vec = newVectorObject(vecs, 3, Py_WRAP);
-				if (!vec) return EXPP_ReturnPyObjError( PyExc_MemoryError,
+				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 
 				PyTuple_SET_ITEM( tuple, 2, vec);
@@ -570,7 +570,7 @@ static PyObject *KeyBlock_getData( PyObject * self )
 				/*tilts*/
 				vecs += 3;				
 				vec = newVectorObject(vecs, 3, Py_WRAP);
-				if (!vec) return EXPP_ReturnPyObjError( PyExc_MemoryError,
+				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 
 				PyTuple_SET_ITEM( tuple, 3, vec);
@@ -581,7 +581,7 @@ static PyObject *KeyBlock_getData( PyObject * self )
 			for( i = 0, datap = kb->keyblock->data; i < datasize;
 					i++, datap += kb->key->elemsize ) {
 				PyObject *vec = newVectorObject((float*)datap, 4, Py_WRAP);
-				if (!vec) return EXPP_ReturnPyObjError( PyExc_MemoryError,
+				if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 				
 				PyList_SetItem( l, i, vec );
@@ -593,7 +593,7 @@ static PyObject *KeyBlock_getData( PyObject * self )
 		for( i = 0, datap = kb->keyblock->data; i < kb->keyblock->totelem;
 				i++, datap += kb->key->elemsize ) {
 			PyObject *vec = newVectorObject((float*)datap, 3, Py_WRAP);
-			if (!vec) return EXPP_ReturnPyObjError( PyExc_MemoryError,
+			if (!vec) return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 					  "Could not allocate memory for Blender.Mathutils.Vector wrapper!" );
 			
 			PyList_SetItem( l, i, vec );
@@ -604,7 +604,7 @@ static PyObject *KeyBlock_getData( PyObject * self )
 	return l;
 }
 
-static PyObject *M_Key_Get( PyObject * self, PyObject * args )
+static PyObject *V24_M_Key_Get( PyObject * self, PyObject * args )
 {
 	char *name = NULL;
 	Key *key_iter;
@@ -612,20 +612,20 @@ static PyObject *M_Key_Get( PyObject * self, PyObject * args )
 	int i;
 
 	if( !PyArg_ParseTuple( args, "|s", &name ) )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected string argument (or nothing)" ) );
 
 	if ( name ) {
 		for (key_iter = G.main->key.first; key_iter; 
 				key_iter=key_iter->id.next) {
 			if  (strcmp ( key_iter->id.name + 2, name ) == 0 ) {
-				return Key_CreatePyObject( key_iter );
+				return V24_Key_CreatePyObject( key_iter );
 			}
 		}
 
 		PyOS_snprintf( error_msg, sizeof( error_msg ),
 			"Key \"%s\" not found", name );
-		return EXPP_ReturnPyObjError ( PyExc_NameError, error_msg );
+		return V24_EXPP_ReturnPyObjError ( PyExc_NameError, error_msg );
 		
 	} else {
 
@@ -635,44 +635,44 @@ static PyObject *M_Key_Get( PyObject * self, PyObject * args )
 
 		for ( i=0, key_iter = G.main->key.first; key_iter;
 				key_iter=key_iter->id.next, i++ ) {
-			PyList_SetItem(keylist, i, Key_CreatePyObject(key_iter));
+			PyList_SetItem(keylist, i, V24_Key_CreatePyObject(key_iter));
 		}
 		return keylist;
 	}
 }
 
 struct PyMethodDef M_Key_methods[] = {
-	{"Get", M_Key_Get, METH_VARARGS, "Get a key or all key names"},
+	{"Get", V24_M_Key_Get, METH_VARARGS, "Get a key or all key names"},
 	{NULL, NULL, 0, NULL}
 };
 
-static PyObject *M_Key_TypesDict( void )
+static PyObject *V24_M_Key_TypesDict( void )
 {
-	PyObject *T = PyConstant_New(  );
+	PyObject *T = V24_PyConstant_New(  );
 
 	if( T ) {
-		BPy_constant *d = ( BPy_constant * ) T;
+		V24_BPy_constant *d = ( V24_BPy_constant * ) T;
 
-		PyConstant_Insert( d, "MESH", PyInt_FromLong( KEY_TYPE_MESH ) );
-		PyConstant_Insert( d, "CURVE", PyInt_FromLong( KEY_TYPE_CURVE ) );
-		PyConstant_Insert( d, "LATTICE", PyInt_FromLong( KEY_TYPE_LATTICE ) );
+		V24_PyConstant_Insert( d, "MESH", PyInt_FromLong( KEY_TYPE_MESH ) );
+		V24_PyConstant_Insert( d, "CURVE", PyInt_FromLong( KEY_TYPE_CURVE ) );
+		V24_PyConstant_Insert( d, "LATTICE", PyInt_FromLong( KEY_TYPE_LATTICE ) );
 	}
 
 	return T;
 }
 
-PyObject *Key_Init( void )
+PyObject *V24_Key_Init( void )
 {
 	PyObject *submodule;
 	PyObject *Types = NULL;
 
-	if( PyType_Ready( &Key_Type ) < 0 || PyType_Ready( &KeyBlock_Type ) < 0 )
+	if( PyType_Ready( &V24_Key_Type ) < 0 || PyType_Ready( &V24_KeyBlock_Type ) < 0 )
 		return NULL;
 
 	submodule =
 		Py_InitModule3( "Blender.Key", M_Key_methods, "Key module" );
 
-	Types = M_Key_TypesDict(  );
+	Types = V24_M_Key_TypesDict(  );
 	if( Types )
 		PyModule_AddObject( submodule, "Types", Types );
 

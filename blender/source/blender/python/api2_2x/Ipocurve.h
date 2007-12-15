@@ -37,21 +37,21 @@
 #include "DNA_curve_types.h"	/* declaration of IpoCurve */
 
 /*****************************************************************************/
-/* Python C_IpoCurve structure definition:                                   */
+/* Python V24_C_IpoCurve structure definition:                                   */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD		/* required macro */
 	IpoCurve * ipocurve;
 	char wrapped;
-} C_IpoCurve;
+} V24_C_IpoCurve;
 
-extern PyTypeObject IpoCurve_Type;
+extern PyTypeObject V24_IpoCurve_Type;
 
-#define BPy_IpoCurve_Check(v)  ((v)->ob_type == &IpoCurve_Type)	/* for type checking */
+#define BPy_IpoCurve_Check(v)  ((v)->ob_type == &V24_IpoCurve_Type)	/* for type checking */
 
-PyObject *IpoCurve_Init( void );
-PyObject *IpoCurve_CreatePyObject( IpoCurve * ipo );
-IpoCurve *IpoCurve_FromPyObject( PyObject * pyobj );
+PyObject *V24_IpoCurve_Init( void );
+PyObject *V24_IpoCurve_CreatePyObject( IpoCurve * ipo );
+IpoCurve *V24_IpoCurve_FromPyObject( PyObject * pyobj );
 char *getIpoCurveName( IpoCurve * icu );
 
 

@@ -37,30 +37,30 @@
 #include "DNA_group_types.h"
 
 /* The Group PyTypeObject defined in Group.c */
-extern PyTypeObject Group_Type;
-extern PyTypeObject GroupObSeq_Type;
+extern PyTypeObject V24_Group_Type;
+extern PyTypeObject V24_GroupObSeq_Type;
 
-#define BPy_Group_Check(v)       ((v)->ob_type == &Group_Type)
-#define BPy_GroupObSeq_Check(v)      ((v)->ob_type == &GroupObSeq_Type)
+#define BPy_Group_Check(v)       ((v)->ob_type == &V24_Group_Type)
+#define BPy_GroupObSeq_Check(v)      ((v)->ob_type == &V24_GroupObSeq_Type)
 
 /*****************************************************************************/
-/* Python BPy_Group structure definition.                                  */
+/* Python V24_BPy_Group structure definition.                                  */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD
 	struct Group *group; 
-} BPy_Group;
+} V24_BPy_Group;
 
 
 /* Group object sequence, iterate on the groups object listbase*/
 typedef struct {
 	PyObject_VAR_HEAD /* required python macro   */
-	BPy_Group *bpygroup; /* link to the python group so we can know if its been removed */
+	V24_BPy_Group *bpygroup; /* link to the python group so we can know if its been removed */
 	GroupObject *iter; /* so we can iterate over the objects */
-} BPy_GroupObSeq;
+} V24_BPy_GroupObSeq;
 
-PyObject *Group_Init( void );
-PyObject *Group_CreatePyObject( struct Group *group );
-Group *Group_FromPyObject( PyObject * py_obj );
+PyObject *V24_Group_Init( void );
+PyObject *V24_Group_CreatePyObject( struct Group *group );
+Group *V24_Group_FromPyObject( PyObject * py_obj );
 
 #endif				/* EXPP_GROUP_H */

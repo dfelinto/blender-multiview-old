@@ -37,40 +37,40 @@
 
 
 /*-------------------------DOC STRINGS ---------------------------*/
-char Vector_Zero_doc[] = "() - set all values in the vector to 0";
-char Vector_Normalize_doc[] = "() - normalize the vector";
-char Vector_Negate_doc[] = "() - changes vector to it's additive inverse";
-char Vector_Resize2D_doc[] = "() - resize a vector to [x,y]";
-char Vector_Resize3D_doc[] = "() - resize a vector to [x,y,z]";
-char Vector_Resize4D_doc[] = "() - resize a vector to [x,y,z,w]";
-char Vector_toPoint_doc[] = "() - create a new Point Object from this vector";
-char Vector_ToTrackQuat_doc[] = "(track, up) - extract a quaternion from the vector and the track and up axis";
-char Vector_copy_doc[] = "() - return a copy of the vector";
+char V24_Vector_Zero_doc[] = "() - set all values in the vector to 0";
+char V24_Vector_Normalize_doc[] = "() - normalize the vector";
+char V24_Vector_Negate_doc[] = "() - changes vector to it's additive inverse";
+char V24_Vector_Resize2D_doc[] = "() - resize a vector to [x,y]";
+char V24_Vector_Resize3D_doc[] = "() - resize a vector to [x,y,z]";
+char V24_Vector_Resize4D_doc[] = "() - resize a vector to [x,y,z,w]";
+char V24_Vector_toPoint_doc[] = "() - create a new Point Object from this vector";
+char V24_Vector_ToTrackQuat_doc[] = "(track, up) - extract a quaternion from the vector and the track and up axis";
+char V24_Vector_copy_doc[] = "() - return a copy of the vector";
 /*-----------------------METHOD DEFINITIONS ----------------------*/
 struct PyMethodDef Vector_methods[] = {
-	{"zero", (PyCFunction) Vector_Zero, METH_NOARGS, Vector_Zero_doc},
-	{"normalize", (PyCFunction) Vector_Normalize, METH_NOARGS, Vector_Normalize_doc},
-	{"negate", (PyCFunction) Vector_Negate, METH_NOARGS, Vector_Negate_doc},
-	{"resize2D", (PyCFunction) Vector_Resize2D, METH_NOARGS, Vector_Resize2D_doc},
-	{"resize3D", (PyCFunction) Vector_Resize3D, METH_NOARGS, Vector_Resize2D_doc},
-	{"resize4D", (PyCFunction) Vector_Resize4D, METH_NOARGS, Vector_Resize2D_doc},
-	{"toPoint", (PyCFunction) Vector_toPoint, METH_NOARGS, Vector_toPoint_doc},
-	{"toTrackQuat", ( PyCFunction ) Vector_ToTrackQuat, METH_VARARGS, Vector_ToTrackQuat_doc},
-	{"copy", (PyCFunction) Vector_copy, METH_NOARGS, Vector_copy_doc},
-	{"__copy__", (PyCFunction) Vector_copy, METH_NOARGS, Vector_copy_doc},
+	{"zero", (PyCFunction) V24_Vector_Zero, METH_NOARGS, V24_Vector_Zero_doc},
+	{"normalize", (PyCFunction) V24_Vector_Normalize, METH_NOARGS, V24_Vector_Normalize_doc},
+	{"negate", (PyCFunction) V24_Vector_Negate, METH_NOARGS, V24_Vector_Negate_doc},
+	{"resize2D", (PyCFunction) V24_Vector_Resize2D, METH_NOARGS, V24_Vector_Resize2D_doc},
+	{"resize3D", (PyCFunction) V24_Vector_Resize3D, METH_NOARGS, V24_Vector_Resize2D_doc},
+	{"resize4D", (PyCFunction) V24_Vector_Resize4D, METH_NOARGS, V24_Vector_Resize2D_doc},
+	{"toPoint", (PyCFunction) V24_Vector_toPoint, METH_NOARGS, V24_Vector_toPoint_doc},
+	{"toTrackQuat", ( PyCFunction ) V24_Vector_ToTrackQuat, METH_VARARGS, V24_Vector_ToTrackQuat_doc},
+	{"copy", (PyCFunction) V24_Vector_copy, METH_NOARGS, V24_Vector_copy_doc},
+	{"__copy__", (PyCFunction) V24_Vector_copy, METH_NOARGS, V24_Vector_copy_doc},
 	{NULL, NULL, 0, NULL}
 };
 
 /*-----------------------------METHODS----------------------------
   --------------------------Vector.toPoint()----------------------
   create a new point object to represent this vector */
-PyObject *Vector_toPoint(VectorObject * self)
+PyObject *V24_Vector_toPoint(V24_VectorObject * self)
 {
 	float coord[3];
 	int i;
 
 	if(self->size < 2 || self->size > 3) {
-		return EXPP_ReturnPyObjError(PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector.toPoint(): inappropriate vector size - expects 2d or 3d vector\n");
 	} 
 	for(i = 0; i < self->size; i++){
@@ -81,17 +81,17 @@ PyObject *Vector_toPoint(VectorObject * self)
 }
 /*----------------------------Vector.zero() ----------------------
   set the vector data to 0,0,0 */
-PyObject *Vector_Zero(VectorObject * self)
+PyObject *V24_Vector_Zero(V24_VectorObject * self)
 {
 	int i;
 	for(i = 0; i < self->size; i++) {
 		self->vec[i] = 0.0f;
 	}
-	return EXPP_incr_ret((PyObject*)self);
+	return V24_EXPP_incr_ret((PyObject*)self);
 }
 /*----------------------------Vector.normalize() -----------------
   normalize the vector data to a unit vector */
-PyObject *Vector_Normalize(VectorObject * self)
+PyObject *V24_Vector_Normalize(V24_VectorObject * self)
 {
 	int i;
 	float norm = 0.0f;
@@ -103,56 +103,56 @@ PyObject *Vector_Normalize(VectorObject * self)
 	for(i = 0; i < self->size; i++) {
 		self->vec[i] /= norm;
 	}
-	return EXPP_incr_ret((PyObject*)self);
+	return V24_EXPP_incr_ret((PyObject*)self);
 }
 
 
 /*----------------------------Vector.resize2D() ------------------
   resize the vector to x,y */
-PyObject *Vector_Resize2D(VectorObject * self)
+PyObject *V24_Vector_Resize2D(V24_VectorObject * self)
 {
 	if(self->wrapped==Py_WRAP)
-		return EXPP_ReturnPyObjError(PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 			"vector.resize2d(): cannot resize wrapped data - only python vectors\n");
 
 	self->vec = PyMem_Realloc(self->vec, (sizeof(float) * 2));
 	if(self->vec == NULL)
-		return EXPP_ReturnPyObjError(PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError(PyExc_MemoryError,
 			"vector.resize2d(): problem allocating pointer space\n\n");
 	
 	self->size = 2;
-	return EXPP_incr_ret((PyObject*)self);
+	return V24_EXPP_incr_ret((PyObject*)self);
 }
 /*----------------------------Vector.resize3D() ------------------
   resize the vector to x,y,z */
-PyObject *Vector_Resize3D(VectorObject * self)
+PyObject *V24_Vector_Resize3D(V24_VectorObject * self)
 {
 	if (self->wrapped==Py_WRAP)
-		return EXPP_ReturnPyObjError(PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 			"vector.resize3d(): cannot resize wrapped data - only python vectors\n");
 
 	self->vec = PyMem_Realloc(self->vec, (sizeof(float) * 3));
 	if(self->vec == NULL)
-		return EXPP_ReturnPyObjError(PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError(PyExc_MemoryError,
 			"vector.resize3d(): problem allocating pointer space\n\n");
 	
 	if(self->size == 2)
 		self->vec[2] = 0.0f;
 	
 	self->size = 3;
-	return EXPP_incr_ret((PyObject*)self);
+	return V24_EXPP_incr_ret((PyObject*)self);
 }
 /*----------------------------Vector.resize4D() ------------------
   resize the vector to x,y,z,w */
-PyObject *Vector_Resize4D(VectorObject * self)
+PyObject *V24_Vector_Resize4D(V24_VectorObject * self)
 {
 	if(self->wrapped==Py_WRAP)
-		return EXPP_ReturnPyObjError(PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 			"vector.resize4d(): cannot resize wrapped data - only python vectors\n");
 
 	self->vec = PyMem_Realloc(self->vec, (sizeof(float) * 4));
 	if(self->vec == NULL)
-		return EXPP_ReturnPyObjError(PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError(PyExc_MemoryError,
 			"vector.resize4d(): problem allocating pointer space\n\n");
 	
 	if(self->size == 2){
@@ -162,22 +162,22 @@ PyObject *Vector_Resize4D(VectorObject * self)
 		self->vec[3] = 1.0f;
 	}
 	self->size = 4;
-	return EXPP_incr_ret((PyObject*)self);
+	return V24_EXPP_incr_ret((PyObject*)self);
 }
 /*----------------------------Vector.toTrackQuat(track, up) ----------------------
   extract a quaternion from the vector and the track and up axis */
-PyObject *Vector_ToTrackQuat( VectorObject * self, PyObject * args )
+PyObject *V24_Vector_ToTrackQuat( V24_VectorObject * self, PyObject * args )
 {
 	float vec[3];
 	char *strack, *sup;
 	short track = 2, up = 1;
 
 	if( !PyArg_ParseTuple ( args, "|ss", &strack, &sup ) ) {
-		return EXPP_ReturnPyObjError( PyExc_TypeError, 
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError, 
 			"expected optional two strings\n" );
 	}
 	if (self->size != 3) {
-		return EXPP_ReturnPyObjError( PyExc_TypeError, "only for 3D vectors\n" );
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError, "only for 3D vectors\n" );
 	}
 
 	if (strack) {
@@ -197,12 +197,12 @@ PyObject *Vector_ToTrackQuat( VectorObject * self, PyObject * args )
 						track = 5;
 						break;
 					default:
-						return EXPP_ReturnPyObjError( PyExc_ValueError,
+						return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 										  "only X, -X, Y, -Y, Z or -Z for track axis\n" );
 				}
 			}
 			else {
-				return EXPP_ReturnPyObjError( PyExc_ValueError,
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 								  "only X, -X, Y, -Y, Z or -Z for track axis\n" );
 			}
 		}
@@ -222,12 +222,12 @@ PyObject *Vector_ToTrackQuat( VectorObject * self, PyObject * args )
 				track = 2;
 				break;
 			default:
-				return EXPP_ReturnPyObjError( PyExc_ValueError,
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 								  "only X, -X, Y, -Y, Z or -Z for track axis\n" );
 			}
 		}
 		else {
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 							  "only X, -X, Y, -Y, Z or -Z for track axis\n" );
 		}
 	}
@@ -248,18 +248,18 @@ PyObject *Vector_ToTrackQuat( VectorObject * self, PyObject * args )
 				up = 2;
 				break;
 			default:
-				return EXPP_ReturnPyObjError( PyExc_ValueError,
+				return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 								  "only X, Y or Z for up axis\n" );
 			}
 		}
 		else {
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 							  "only X, Y or Z for up axis\n" );
 		}
 	}
 
 	if (track == up) {
-			return EXPP_ReturnPyObjError( PyExc_ValueError,
+			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 						      "Can't have the same axis for track and up\n" );
 	}
 
@@ -278,14 +278,14 @@ PyObject *Vector_ToTrackQuat( VectorObject * self, PyObject * args )
 
 /*----------------------------Vector.copy() --------------------------------------
   return a copy of the vector */
-PyObject *Vector_copy(VectorObject * self)
+PyObject *V24_Vector_copy(V24_VectorObject * self)
 {
 	return newVectorObject(self->vec, self->size, Py_NEW);
 }
 
 /*----------------------------dealloc()(internal) ----------------
   free the py_object */
-static void Vector_dealloc(VectorObject * self)
+static void V24_Vector_dealloc(V24_VectorObject * self)
 {
 	/* only free non wrapped */
 	if(self->wrapped != Py_WRAP){
@@ -296,7 +296,7 @@ static void Vector_dealloc(VectorObject * self)
 
 /*----------------------------print object (internal)-------------
   print the object to screen */
-static PyObject *Vector_repr(VectorObject * self)
+static PyObject *V24_Vector_repr(V24_VectorObject * self)
 {
 	int i;
 	char buffer[48], str[1024];
@@ -318,16 +318,16 @@ static PyObject *Vector_repr(VectorObject * self)
 /*---------------------SEQUENCE PROTOCOLS------------------------
   ----------------------------len(object)------------------------
   sequence length*/
-static int Vector_len(VectorObject * self)
+static int V24_Vector_len(V24_VectorObject * self)
 {
 	return self->size;
 }
 /*----------------------------object[]---------------------------
   sequence accessor (get)*/
-static PyObject *Vector_item(VectorObject * self, int i)
+static PyObject *V24_Vector_item(V24_VectorObject * self, int i)
 {
 	if(i < 0 || i >= self->size)
-		return EXPP_ReturnPyObjError(PyExc_IndexError,
+		return V24_EXPP_ReturnPyObjError(PyExc_IndexError,
 		"vector[index]: out of range\n");
 
 	return PyFloat_FromDouble(self->vec[i]);
@@ -335,16 +335,16 @@ static PyObject *Vector_item(VectorObject * self, int i)
 }
 /*----------------------------object[]-------------------------
   sequence accessor (set)*/
-static int Vector_ass_item(VectorObject * self, int i, PyObject * ob)
+static int V24_Vector_ass_item(V24_VectorObject * self, int i, PyObject * ob)
 {
 	
 	if(!(PyNumber_Check(ob))) { /* parsed item not a number */
-		return EXPP_ReturnIntError(PyExc_TypeError, 
+		return V24_EXPP_ReturnIntError(PyExc_TypeError, 
 			"vector[index] = x: index argument not a number\n");
 	}
 
 	if(i < 0 || i >= self->size){
-		return EXPP_ReturnIntError(PyExc_IndexError,
+		return V24_EXPP_ReturnIntError(PyExc_IndexError,
 			"vector[index] = x: assignment index out of range\n");
 	}
 	self->vec[i] = (float)PyFloat_AsDouble(ob);
@@ -353,7 +353,7 @@ static int Vector_ass_item(VectorObject * self, int i, PyObject * ob)
 
 /*----------------------------object[z:y]------------------------
   sequence slice (get) */
-static PyObject *Vector_slice(VectorObject * self, int begin, int end)
+static PyObject *V24_Vector_slice(V24_VectorObject * self, int begin, int end)
 {
 	PyObject *list = NULL;
 	int count;
@@ -373,7 +373,7 @@ static PyObject *Vector_slice(VectorObject * self, int begin, int end)
 }
 /*----------------------------object[z:y]------------------------
   sequence slice (set) */
-static int Vector_ass_slice(VectorObject * self, int begin, int end,
+static int V24_Vector_ass_slice(V24_VectorObject * self, int begin, int end,
 			     PyObject * seq)
 {
 	int i, y, size = 0;
@@ -387,20 +387,20 @@ static int Vector_ass_slice(VectorObject * self, int begin, int end,
 
 	size = PySequence_Length(seq);
 	if(size != (end - begin)){
-		return EXPP_ReturnIntError(PyExc_TypeError,
+		return V24_EXPP_ReturnIntError(PyExc_TypeError,
 			"vector[begin:end] = []: size mismatch in slice assignment\n");
 	}
 
 	for (i = 0; i < size; i++) {
 		v = PySequence_GetItem(seq, i);
 		if (v == NULL) { /* Failed to read sequence */
-			return EXPP_ReturnIntError(PyExc_RuntimeError, 
+			return V24_EXPP_ReturnIntError(PyExc_RuntimeError, 
 				"vector[begin:end] = []: unable to read sequence\n");
 		}
 		
 		if(!PyNumber_Check(v)) { /* parsed item not a number */
 			Py_DECREF(v);
-			return EXPP_ReturnIntError(PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError(PyExc_TypeError, 
 				"vector[begin:end] = []: sequence argument not a number\n");
 		}
 
@@ -416,24 +416,24 @@ static int Vector_ass_slice(VectorObject * self, int begin, int end,
 /*------------------------NUMERIC PROTOCOLS----------------------
   ------------------------obj + obj------------------------------
   addition*/
-static PyObject *Vector_add(PyObject * v1, PyObject * v2)
+static PyObject *V24_Vector_add(PyObject * v1, PyObject * v2)
 {
 	int i;
 	float vec[4];
 
-	VectorObject *vec1 = NULL, *vec2 = NULL;
+	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 	
 	if VectorObject_Check(v1)
-		vec1= (VectorObject *)v1;
+		vec1= (V24_VectorObject *)v1;
 	
 	if VectorObject_Check(v2)
-		vec2= (VectorObject *)v2;
+		vec2= (V24_VectorObject *)v2;
 	
 	/* make sure v1 is always the vector */
 	if (vec1 && vec2 ) {
 		/*VECTOR + VECTOR*/
 		if(vec1->size != vec2->size)
-			return EXPP_ReturnPyObjError(PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector addition: vectors must have the same dimensions for this operation\n");
 		
 		for(i = 0; i < vec1->size; i++) {
@@ -444,42 +444,42 @@ static PyObject *Vector_add(PyObject * v1, PyObject * v2)
 	
 	if(PointObject_Check(v2)){  /*VECTOR + POINT*/
 		/*Point translation*/
-		PointObject *pt = (PointObject*)v2;
+		V24_PointObject *pt = (V24_PointObject*)v2;
 		
 		if(pt->size == vec1->size){
 			for(i = 0; i < vec1->size; i++){
 				vec[i] = vec1->vec[i] + pt->coord[i];
 			}
 		}else{
-			return EXPP_ReturnPyObjError(PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 				"Vector addition: arguments are the wrong size....\n");
 		}
 		return newPointObject(vec, vec1->size, Py_NEW);
 	}
 	
-	return EXPP_ReturnPyObjError(PyExc_AttributeError,
+	return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 		"Vector addition: arguments not valid for this operation....\n");
 }
 
 /*  ------------------------obj += obj------------------------------
   addition in place */
-static PyObject *Vector_iadd(PyObject * v1, PyObject * v2)
+static PyObject *V24_Vector_iadd(PyObject * v1, PyObject * v2)
 {
 	int i;
 
-	VectorObject *vec1 = NULL, *vec2 = NULL;
+	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 	
 	if VectorObject_Check(v1)
-		vec1= (VectorObject *)v1;
+		vec1= (V24_VectorObject *)v1;
 	
 	if VectorObject_Check(v2)
-		vec2= (VectorObject *)v2;
+		vec2= (V24_VectorObject *)v2;
 	
 	/* make sure v1 is always the vector */
 	if (vec1 && vec2 ) {
 		/*VECTOR + VECTOR*/
 		if(vec1->size != vec2->size)
-			return EXPP_ReturnPyObjError(PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector addition: vectors must have the same dimensions for this operation\n");
 		
 		for(i = 0; i < vec1->size; i++) {
@@ -491,41 +491,41 @@ static PyObject *Vector_iadd(PyObject * v1, PyObject * v2)
 	
 	if(PointObject_Check(v2)){  /*VECTOR + POINT*/
 		/*Point translation*/
-		PointObject *pt = (PointObject*)v2;
+		V24_PointObject *pt = (V24_PointObject*)v2;
 		
 		if(pt->size == vec1->size){
 			for(i = 0; i < vec1->size; i++){
 				vec1->vec[i] += pt->coord[i];
 			}
 		}else{
-			return EXPP_ReturnPyObjError(PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 				"Vector addition: arguments are the wrong size....\n");
 		}
 		Py_INCREF( v1 );
 		return v1;
 	}
 	
-	return EXPP_ReturnPyObjError(PyExc_AttributeError,
+	return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 		"Vector addition: arguments not valid for this operation....\n");
 }
 
 /*------------------------obj - obj------------------------------
   subtraction*/
-static PyObject *Vector_sub(PyObject * v1, PyObject * v2)
+static PyObject *V24_Vector_sub(PyObject * v1, PyObject * v2)
 {
 	int i;
 	float vec[4];
-	VectorObject *vec1 = NULL, *vec2 = NULL;
+	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 
 	if (!VectorObject_Check(v1) || !VectorObject_Check(v2))
-		return EXPP_ReturnPyObjError(PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector subtraction: arguments not valid for this operation....\n");
 	
-	vec1 = (VectorObject*)v1;
-	vec2 = (VectorObject*)v2;
+	vec1 = (V24_VectorObject*)v1;
+	vec2 = (V24_VectorObject*)v2;
 	
 	if(vec1->size != vec2->size)
-		return EXPP_ReturnPyObjError(PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 		"Vector subtraction: vectors must have the same dimensions for this operation\n");
 	
 	for(i = 0; i < vec1->size; i++) {
@@ -537,20 +537,20 @@ static PyObject *Vector_sub(PyObject * v1, PyObject * v2)
 
 /*------------------------obj -= obj------------------------------
   subtraction*/
-static PyObject *Vector_isub(PyObject * v1, PyObject * v2)
+static PyObject *V24_Vector_isub(PyObject * v1, PyObject * v2)
 {
 	int i, size;
-	VectorObject *vec1 = NULL, *vec2 = NULL;
+	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 
 	if (!VectorObject_Check(v1) || !VectorObject_Check(v2))
-		return EXPP_ReturnPyObjError(PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector subtraction: arguments not valid for this operation....\n");
 	
-	vec1 = (VectorObject*)v1;
-	vec2 = (VectorObject*)v2;
+	vec1 = (V24_VectorObject*)v1;
+	vec2 = (V24_VectorObject*)v2;
 	
 	if(vec1->size != vec2->size)
-		return EXPP_ReturnPyObjError(PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 		"Vector subtraction: vectors must have the same dimensions for this operation\n");
 
 	size = vec1->size;
@@ -564,15 +564,15 @@ static PyObject *Vector_isub(PyObject * v1, PyObject * v2)
 
 /*------------------------obj * obj------------------------------
   mulplication*/
-static PyObject *Vector_mul(PyObject * v1, PyObject * v2)
+static PyObject *V24_Vector_mul(PyObject * v1, PyObject * v2)
 {
-	VectorObject *vec1 = NULL, *vec2 = NULL;
+	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 	
 	if VectorObject_Check(v1)
-		vec1= (VectorObject *)v1;
+		vec1= (V24_VectorObject *)v1;
 	
 	if VectorObject_Check(v2)
-		vec2= (VectorObject *)v2;
+		vec2= (V24_VectorObject *)v2;
 	
 	/* make sure v1 is always the vector */
 	if (vec1 && vec2 ) {
@@ -580,7 +580,7 @@ static PyObject *Vector_mul(PyObject * v1, PyObject * v2)
 		double dot = 0.0f;
 		
 		if(vec1->size != vec2->size)
-		return EXPP_ReturnPyObjError(PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector multiplication: vectors must have the same dimensions for this operation\n");
 		
 		/*dot product*/
@@ -610,27 +610,27 @@ static PyObject *Vector_mul(PyObject * v1, PyObject * v2)
 	} else if (MatrixObject_Check(v2)) {
 		/* VEC * MATRIX */
 		if (v1==v2) /* mat*vec, we have swapped the order */
-			return column_vector_multiplication((MatrixObject*)v2, vec1);
+			return column_vector_multiplication((V24_MatrixObject*)v2, vec1);
 		else /* vec*mat */
-			return row_vector_multiplication(vec1, (MatrixObject*)v2);
+			return row_vector_multiplication(vec1, (V24_MatrixObject*)v2);
 	} else if (QuaternionObject_Check(v2)) {
-		QuaternionObject *quat = (QuaternionObject*)v2;
+		V24_QuaternionObject *quat = (V24_QuaternionObject*)v2;
 		if(vec1->size != 3)
-			return EXPP_ReturnPyObjError(PyExc_TypeError, 
+			return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 				"Vector multiplication: only 3D vector rotations (with quats) currently supported\n");
 		
 		return quat_rotation((PyObject*)vec1, (PyObject*)quat);
 	}
 	
-	return EXPP_ReturnPyObjError(PyExc_TypeError,
+	return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 		"Vector multiplication: arguments not acceptable for this operation\n");
 }
 
 /*------------------------obj *= obj------------------------------
   in place mulplication */
-static PyObject *Vector_imul(PyObject * v1, PyObject * v2)
+static PyObject *V24_Vector_imul(PyObject * v1, PyObject * v2)
 {
-	VectorObject *vec = (VectorObject *)v1;
+	V24_VectorObject *vec = (V24_VectorObject *)v1;
 	int i;
 	
 	/* only support vec*=float and vec*=mat
@@ -649,11 +649,11 @@ static PyObject *Vector_imul(PyObject * v1, PyObject * v2)
 	} else if (MatrixObject_Check(v2)) {
 		float vecCopy[4];
 		int x,y, size = vec->size;
-		MatrixObject *mat= (MatrixObject*)v2;
+		V24_MatrixObject *mat= (V24_MatrixObject*)v2;
 		
 		if(mat->colSize != size){
 			if(mat->rowSize == 4 && vec->size != 3){
-				return EXPP_ReturnPyObjError(PyExc_AttributeError, 
+				return V24_EXPP_ReturnPyObjError(PyExc_AttributeError, 
 					"vector * matrix: matrix column size and the vector size must be the same");
 			} else {
 				vecCopy[3] = 1.0f;
@@ -677,32 +677,32 @@ static PyObject *Vector_imul(PyObject * v1, PyObject * v2)
 		Py_INCREF( v1 );
 		return v1;
 	}
-	return EXPP_ReturnPyObjError(PyExc_TypeError,
+	return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 		"Vector multiplication: arguments not acceptable for this operation\n");
 }
 
 /*------------------------obj / obj------------------------------
   divide*/
-static PyObject *Vector_div(PyObject * v1, PyObject * v2)
+static PyObject *V24_Vector_div(PyObject * v1, PyObject * v2)
 {
 	int i, size;
 	float vec[4], scalar;
-	VectorObject *vec1 = NULL;
+	V24_VectorObject *vec1 = NULL;
 	
 	if(!VectorObject_Check(v1)) /* not a vector */
-		return EXPP_ReturnPyObjError(PyExc_TypeError, 
+		return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 			"Vector division: Vector must be divided by a float\n");
 	
-	vec1 = (VectorObject*)v1; /* vector */
+	vec1 = (V24_VectorObject*)v1; /* vector */
 	
 	if(!PyNumber_Check(v2)) /* parsed item not a number */
-		return EXPP_ReturnPyObjError(PyExc_TypeError, 
+		return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 			"Vector division: Vector must be divided by a float\n");
 
 	scalar = (float)PyFloat_AsDouble(v2);
 	
 	if(scalar==0.0) /* not a vector */
-		return EXPP_ReturnPyObjError(PyExc_ZeroDivisionError, 
+		return V24_EXPP_ReturnPyObjError(PyExc_ZeroDivisionError, 
 			"Vector division: divide by zero error.\n");
 	
 	size = vec1->size;
@@ -714,26 +714,26 @@ static PyObject *Vector_div(PyObject * v1, PyObject * v2)
 
 /*------------------------obj / obj------------------------------
   divide*/
-static PyObject *Vector_idiv(PyObject * v1, PyObject * v2)
+static PyObject *V24_Vector_idiv(PyObject * v1, PyObject * v2)
 {
 	int i, size;
 	float scalar;
-	VectorObject *vec1 = NULL;
+	V24_VectorObject *vec1 = NULL;
 	
 	/*if(!VectorObject_Check(v1))
-		return EXPP_ReturnIntError(PyExc_TypeError, 
+		return V24_EXPP_ReturnIntError(PyExc_TypeError, 
 			"Vector division: Vector must be divided by a float\n");*/
 	
-	vec1 = (VectorObject*)v1; /* vector */
+	vec1 = (V24_VectorObject*)v1; /* vector */
 	
 	if(!PyNumber_Check(v2)) /* parsed item not a number */
-		return EXPP_ReturnPyObjError(PyExc_TypeError, 
+		return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 			"Vector division: Vector must be divided by a float\n");
 
 	scalar = (float)PyFloat_AsDouble(v2);
 	
 	if(scalar==0.0) /* not a vector */
-		return EXPP_ReturnPyObjError(PyExc_ZeroDivisionError, 
+		return V24_EXPP_ReturnPyObjError(PyExc_ZeroDivisionError, 
 			"Vector division: divide by zero error.\n");
 	
 	size = vec1->size;
@@ -746,7 +746,7 @@ static PyObject *Vector_idiv(PyObject * v1, PyObject * v2)
 
 /*-------------------------- -obj -------------------------------
   returns the negative of this object*/
-static PyObject *Vector_neg(VectorObject *self)
+static PyObject *V24_Vector_neg(V24_VectorObject *self)
 {
 	int i;
 	float vec[4];
@@ -757,7 +757,7 @@ static PyObject *Vector_neg(VectorObject *self)
 	return newVectorObject(vec, self->size, Py_NEW);
 }
 /*------------------------coerce(obj, obj)-----------------------
-  coercion of unknown types to type VectorObject for numeric protocols
+  coercion of unknown types to type V24_VectorObject for numeric protocols
   Coercion() is called whenever a math operation has 2 operands that
  it doesn't understand how to evaluate. 2+Matrix for example. We want to 
  evaluate some of these operations like: (vector * 2), however, for math
@@ -766,7 +766,7 @@ static PyObject *Vector_neg(VectorObject *self)
  then call vector.multiply(vector, scalar_cast_as_vector)*/
 
 
-static int Vector_coerce(PyObject ** v1, PyObject ** v2)
+static int V24_Vector_coerce(PyObject ** v1, PyObject ** v2)
 {
 	/* Just incref, each functon must raise errors for bad types */
 	Py_INCREF (*v1);
@@ -776,7 +776,7 @@ static int Vector_coerce(PyObject ** v1, PyObject ** v2)
 
 
 /*------------------------tp_doc*/
-static char VectorObject_doc[] = "This is a wrapper for vector objects.";
+static char V24_VectorObject_doc[] = "This is a wrapper for vector objects.";
 /*------------------------vec_magnitude_nosqrt (internal) - for comparing only */
 static double vec_magnitude_nosqrt(float *data, int size)
 {
@@ -796,28 +796,28 @@ static double vec_magnitude_nosqrt(float *data, int size)
 
 /*------------------------tp_richcmpr
   returns -1 execption, 0 false, 1 true */
-PyObject* Vector_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type)
+PyObject* V24_Vector_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type)
 {
-	VectorObject *vecA = NULL, *vecB = NULL;
+	V24_VectorObject *vecA = NULL, *vecB = NULL;
 	int result = 0;
 	float epsilon = .000001f;
 	double lenA,lenB;
 
 	if (!VectorObject_Check(objectA) || !VectorObject_Check(objectB)){
 		if (comparison_type == Py_NE){
-			return EXPP_incr_ret(Py_True); 
+			return V24_EXPP_incr_ret(Py_True); 
 		}else{
-			return EXPP_incr_ret(Py_False);
+			return V24_EXPP_incr_ret(Py_False);
 		}
 	}
-	vecA = (VectorObject*)objectA;
-	vecB = (VectorObject*)objectB;
+	vecA = (V24_VectorObject*)objectA;
+	vecB = (V24_VectorObject*)objectB;
 
 	if (vecA->size != vecB->size){
 		if (comparison_type == Py_NE){
-			return EXPP_incr_ret(Py_True); 
+			return V24_EXPP_incr_ret(Py_True); 
 		}else{
-			return EXPP_incr_ret(Py_False);
+			return V24_EXPP_incr_ret(Py_False);
 		}
 	}
 
@@ -839,10 +839,10 @@ PyObject* Vector_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_t
 			}
 			break;
 		case Py_EQ:
-			result = EXPP_VectorsAreEqual(vecA->vec, vecB->vec, vecA->size, 1);
+			result = V24_EXPP_VectorsAreEqual(vecA->vec, vecB->vec, vecA->size, 1);
 			break;
 		case Py_NE:
-			result = EXPP_VectorsAreEqual(vecA->vec, vecB->vec, vecA->size, 1);
+			result = V24_EXPP_VectorsAreEqual(vecA->vec, vecB->vec, vecA->size, 1);
 			if (result == 0){
 				result = 1;
 			}else{
@@ -870,20 +870,20 @@ PyObject* Vector_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_t
 			break;
 	}
 	if (result == 1){
-		return EXPP_incr_ret(Py_True);
+		return V24_EXPP_incr_ret(Py_True);
 	}else{
-		return EXPP_incr_ret(Py_False);
+		return V24_EXPP_incr_ret(Py_False);
 	}
 }
 /*-----------------PROTCOL DECLARATIONS--------------------------*/
-static PySequenceMethods Vector_SeqMethods = {
-	(inquiry) Vector_len,						/* sq_length */
+static PySequenceMethods V24_Vector_SeqMethods = {
+	(inquiry) V24_Vector_len,						/* sq_length */
 	(binaryfunc) 0,								/* sq_concat */
 	(intargfunc) 0,								/* sq_repeat */
-	(intargfunc) Vector_item,					/* sq_item */
-	(intintargfunc) Vector_slice,				/* sq_slice */
-	(intobjargproc) Vector_ass_item,			/* sq_ass_item */
-	(intintobjargproc) Vector_ass_slice,		/* sq_ass_slice */
+	(intargfunc) V24_Vector_item,					/* sq_item */
+	(intintargfunc) V24_Vector_slice,				/* sq_slice */
+	(intobjargproc) V24_Vector_ass_item,			/* sq_ass_item */
+	(intintobjargproc) V24_Vector_ass_slice,		/* sq_ass_slice */
 };
 
 
@@ -895,15 +895,15 @@ static PySequenceMethods Vector_SeqMethods = {
    arguments for proper type and implement the necessary conversions
    in the slot functions themselves. */
  
-static PyNumberMethods Vector_NumMethods = {
-	(binaryfunc) Vector_add,					/* __add__ */
-	(binaryfunc) Vector_sub,					/* __sub__ */
-	(binaryfunc) Vector_mul,					/* __mul__ */
-	(binaryfunc) Vector_div,					/* __div__ */
+static PyNumberMethods V24_Vector_NumMethods = {
+	(binaryfunc) V24_Vector_add,					/* __add__ */
+	(binaryfunc) V24_Vector_sub,					/* __sub__ */
+	(binaryfunc) V24_Vector_mul,					/* __mul__ */
+	(binaryfunc) V24_Vector_div,					/* __div__ */
 	(binaryfunc) NULL,							/* __mod__ */
 	(binaryfunc) NULL,							/* __divmod__ */
 	(ternaryfunc) NULL,							/* __pow__ */
-	(unaryfunc) Vector_neg,						/* __neg__ */
+	(unaryfunc) V24_Vector_neg,						/* __neg__ */
 	(unaryfunc) NULL,							/* __pos__ */
 	(unaryfunc) NULL,							/* __abs__ */
 	(inquiry) NULL,								/* __nonzero__ */
@@ -913,7 +913,7 @@ static PyNumberMethods Vector_NumMethods = {
 	(binaryfunc) NULL,							/* __and__ */
 	(binaryfunc) NULL,							/* __xor__ */
 	(binaryfunc) NULL,							/* __or__ */
-	(coercion)  Vector_coerce,					/* __coerce__ */
+	(coercion)  V24_Vector_coerce,					/* __coerce__ */
 	(unaryfunc) NULL,							/* __int__ */
 	(unaryfunc) NULL,							/* __long__ */
 	(unaryfunc) NULL,							/* __float__ */
@@ -921,10 +921,10 @@ static PyNumberMethods Vector_NumMethods = {
 	(unaryfunc) NULL,							/* __hex__ */
 	
 	/* Added in release 2.0 */
-	(binaryfunc) Vector_iadd,					/*__iadd__*/
-	(binaryfunc) Vector_isub,					/*__isub__*/
-	(binaryfunc) Vector_imul,					/*__imul__*/
-	(binaryfunc) Vector_idiv,					/*__idiv__*/
+	(binaryfunc) V24_Vector_iadd,					/*__iadd__*/
+	(binaryfunc) V24_Vector_isub,					/*__isub__*/
+	(binaryfunc) V24_Vector_imul,					/*__imul__*/
+	(binaryfunc) V24_Vector_idiv,					/*__idiv__*/
 	(binaryfunc) NULL,							/*__imod__*/
 	(ternaryfunc) NULL,							/*__ipow__*/
 	(binaryfunc) NULL,							/*__ilshift__*/
@@ -946,7 +946,7 @@ static PyNumberMethods Vector_NumMethods = {
  * vector axis, vector.x/y/z/w
  */
 	
-static PyObject *Vector_getAxis( VectorObject * self, void *type )
+static PyObject *V24_Vector_getAxis( V24_VectorObject * self, void *type )
 {
 	switch( (long)type ) {
     case 'X':	/* these are backwards, but that how it works */
@@ -955,32 +955,32 @@ static PyObject *Vector_getAxis( VectorObject * self, void *type )
 		return PyFloat_FromDouble(self->vec[1]);
     case 'Z':	/* these are backwards, but that how it works */
 		if(self->size < 3)
-			return EXPP_ReturnPyObjError(PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 				"vector.z: error, cannot get this axis for a 2D vector\n");
 		else
 			return PyFloat_FromDouble(self->vec[2]);
     case 'W':
 		if(self->size < 4)
-			return EXPP_ReturnPyObjError(PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 				"vector.w: error, cannot get this axis for a 3D vector\n");
 	
 		return PyFloat_FromDouble(self->vec[3]);
 	default:
 		{
 			char errstr[1024];
-			sprintf( errstr, "undefined type '%d' in Vector_getAxis",
+			sprintf( errstr, "undefined type '%d' in V24_Vector_getAxis",
 					(int)((long)type & 0xff));
-			return EXPP_ReturnPyObjError( PyExc_RuntimeError, errstr );
+			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError, errstr );
 		}
 	}
 }
 
-static int Vector_setAxis( VectorObject * self, PyObject * value, void * type )
+static int V24_Vector_setAxis( V24_VectorObject * self, PyObject * value, void * type )
 {
 	float param;
 	
 	if (!PyNumber_Check(value))
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected a number for the vector axis" );
 	
 	param= (float)PyFloat_AsDouble( value );
@@ -994,13 +994,13 @@ static int Vector_setAxis( VectorObject * self, PyObject * value, void * type )
 		break;
     case 'Z':	/* these are backwards, but that how it works */
 		if(self->size < 3)
-			return EXPP_ReturnIntError(PyExc_AttributeError,
+			return V24_EXPP_ReturnIntError(PyExc_AttributeError,
 				"vector.z: error, cannot get this axis for a 2D vector\n");
 		self->vec[2]= param;
 		break;
     case 'W':
 		if(self->size < 4)
-			return EXPP_ReturnIntError(PyExc_AttributeError,
+			return V24_EXPP_ReturnIntError(PyExc_AttributeError,
 				"vector.w: error, cannot get this axis for a 3D vector\n");
 	
 		self->vec[3]= param;
@@ -1008,9 +1008,9 @@ static int Vector_setAxis( VectorObject * self, PyObject * value, void * type )
 	default:
 		{
 			char errstr[1024];
-			sprintf( errstr, "undefined type '%d' in Vector_setAxis",
+			sprintf( errstr, "undefined type '%d' in V24_Vector_setAxis",
 					(int)((long)type & 0xff));
-			return EXPP_ReturnIntError( PyExc_RuntimeError, errstr );
+			return V24_EXPP_ReturnIntError( PyExc_RuntimeError, errstr );
 		}
 	}
 
@@ -1018,7 +1018,7 @@ static int Vector_setAxis( VectorObject * self, PyObject * value, void * type )
 }
 
 /* vector.length */
-static PyObject *Vector_getLength( VectorObject * self, void *type )
+static PyObject *V24_Vector_getLength( V24_VectorObject * self, void *type )
 {
 	double dot = 0.0f;
 	int i;
@@ -1029,19 +1029,19 @@ static PyObject *Vector_getLength( VectorObject * self, void *type )
 	return PyFloat_FromDouble(sqrt(dot));
 }
 
-static int Vector_setLength( VectorObject * self, PyObject * value )
+static int V24_Vector_setLength( V24_VectorObject * self, PyObject * value )
 {
 	double dot = 0.0f, param;
 	int i;
 	
 	if (!PyNumber_Check(value))
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected a number for the vector axis" );
 	
 	param= PyFloat_AsDouble( value );
 	
 	if (param < 0)
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"cannot set a vectors length to a negative value" );
 	
 	if (param==0) {
@@ -1072,7 +1072,7 @@ static int Vector_setLength( VectorObject * self, PyObject * value )
 	return 0;
 }
 
-static PyObject *Vector_getWrapped( VectorObject * self, void *type )
+static PyObject *V24_Vector_getWrapped( V24_VectorObject * self, void *type )
 {
 	if (self->wrapped == Py_WRAP)
 		Py_RETURN_TRUE;
@@ -1084,33 +1084,33 @@ static PyObject *Vector_getWrapped( VectorObject * self, void *type )
 /*****************************************************************************/
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
-static PyGetSetDef Vector_getseters[] = {
+static PyGetSetDef V24_Vector_getseters[] = {
 	{"x",
-	 (getter)Vector_getAxis, (setter)Vector_setAxis,
+	 (getter)V24_Vector_getAxis, (setter)V24_Vector_setAxis,
 	 "Vector X axis",
 	 (void *)'X'},
 	{"y",
-	 (getter)Vector_getAxis, (setter)Vector_setAxis,
+	 (getter)V24_Vector_getAxis, (setter)V24_Vector_setAxis,
 	 "Vector Y axis",
 	 (void *)'Y'},
 	{"z",
-	 (getter)Vector_getAxis, (setter)Vector_setAxis,
+	 (getter)V24_Vector_getAxis, (setter)V24_Vector_setAxis,
 	 "Vector Z axis",
 	 (void *)'Z'},
 	{"w",
-	 (getter)Vector_getAxis, (setter)Vector_setAxis,
+	 (getter)V24_Vector_getAxis, (setter)V24_Vector_setAxis,
 	 "Vector Z axis",
 	 (void *)'W'},
 	{"length",
-	 (getter)Vector_getLength, (setter)Vector_setLength,
+	 (getter)V24_Vector_getLength, (setter)V24_Vector_setLength,
 	 "Vector Length",
 	 NULL},
 	{"magnitude",
-	 (getter)Vector_getLength, (setter)Vector_setLength,
+	 (getter)V24_Vector_getLength, (setter)V24_Vector_setLength,
 	 "Vector Length",
 	 NULL},
 	{"wrapped",
-	 (getter)Vector_getWrapped, (setter)NULL,
+	 (getter)V24_Vector_getWrapped, (setter)NULL,
 	 "Vector Length",
 	 NULL},
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
@@ -1121,7 +1121,7 @@ static PyGetSetDef Vector_getseters[] = {
 /* Note
  Py_TPFLAGS_CHECKTYPES allows us to avoid casting all types to Vector when coercing
  but this means for eg that 
- vec*mat and mat*vec both get sent to Vector_mul and it neesd to sort out the order
+ vec*mat and mat*vec both get sent to V24_Vector_mul and it neesd to sort out the order
 */
 
 PyTypeObject vector_Type = {
@@ -1129,22 +1129,22 @@ PyTypeObject vector_Type = {
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Vector",             /* char *tp_name; */
-	sizeof( VectorObject ),         /* int tp_basicsize; */
+	sizeof( V24_VectorObject ),         /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	( destructor ) Vector_dealloc,/* destructor tp_dealloc; */
+	( destructor ) V24_Vector_dealloc,/* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
 	NULL,   /* cmpfunc tp_compare; */
-	( reprfunc ) Vector_repr,     /* reprfunc tp_repr; */
+	( reprfunc ) V24_Vector_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
-	&Vector_NumMethods,                       /* PyNumberMethods *tp_as_number; */
-	&Vector_SeqMethods,                       /* PySequenceMethods *tp_as_sequence; */
+	&V24_Vector_NumMethods,                       /* PyNumberMethods *tp_as_number; */
+	&V24_Vector_SeqMethods,                       /* PySequenceMethods *tp_as_sequence; */
 	NULL,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
@@ -1161,7 +1161,7 @@ PyTypeObject vector_Type = {
   /*** Flags to define presence of optional/expanded features ***/
 	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES,         /* long tp_flags; */
 
-	VectorObject_doc,                       /*  char *tp_doc;  Documentation string */
+	V24_VectorObject_doc,                       /*  char *tp_doc;  Documentation string */
   /*** Assigned meaning in release 2.0 ***/
 	/* call function for all accessible objects */
 	NULL,                       /* traverseproc tp_traverse; */
@@ -1171,7 +1171,7 @@ PyTypeObject vector_Type = {
 
   /***  Assigned meaning in release 2.1 ***/
   /*** rich comparisons ***/
-	(richcmpfunc)Vector_richcmpr,                       /* richcmpfunc tp_richcompare; */
+	(richcmpfunc)V24_Vector_richcmpr,                       /* richcmpfunc tp_richcompare; */
 
   /***  weak reference enabler ***/
 	0,                          /* long tp_weaklistoffset; */
@@ -1184,7 +1184,7 @@ PyTypeObject vector_Type = {
   /*** Attribute descriptor and subclassing stuff ***/
 	Vector_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	Vector_getseters,         /* struct PyGetSetDef *tp_getset; */
+	V24_Vector_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -1216,7 +1216,7 @@ PyTypeObject vector_Type = {
 PyObject *newVectorObject(float *vec, int size, int type)
 {
 	int i;
-	VectorObject *self = PyObject_NEW(VectorObject, &vector_Type);
+	V24_VectorObject *self = PyObject_NEW(V24_VectorObject, &vector_Type);
 	
 	if(size > 4 || size < 2)
 		return NULL;
@@ -1250,14 +1250,14 @@ PyObject *newVectorObject(float *vec, int size, int type)
   #######################################################################
   ----------------------------Vector.negate() --------------------
   set the vector to it's negative -x, -y, -z */
-PyObject *Vector_Negate(VectorObject * self)
+PyObject *V24_Vector_Negate(V24_VectorObject * self)
 {
 	int i;
 	for(i = 0; i < self->size; i++) {
 		self->vec[i] = -(self->vec[i]);
 	}
 	/*printf("Vector.negate(): Deprecated: use -vector instead\n");*/
-	return EXPP_incr_ret((PyObject*)self);
+	return V24_EXPP_incr_ret((PyObject*)self);
 }
 /*###################################################################
   ###########################DEPRECATED##############################*/

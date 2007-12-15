@@ -37,24 +37,24 @@
 #include "DNA_lattice_types.h"
 
 /* The Group PyTypeObject defined in Lattice.c */
-extern PyTypeObject Lattice_Type;
+extern PyTypeObject V24_Lattice_Type;
 
-#define BPy_Lattice_Check(v)       ((v)->ob_type == &Lattice_Type)
+#define BPy_Lattice_Check(v)       ((v)->ob_type == &V24_Lattice_Type)
 
 /*****************************************************************************/
-/* Python BPy_Lattice structure definition:   */
+/* Python V24_BPy_Lattice structure definition:   */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD 
 	Lattice * lattice; /* libdata must be second */
-} BPy_Lattice;
+} V24_BPy_Lattice;
 
 /*
  * prototypes
  */
 
-PyObject *Lattice_Init( void );
-PyObject *Lattice_CreatePyObject( Lattice * lt );
-Lattice *Lattice_FromPyObject( PyObject * pyobj );
+PyObject *V24_Lattice_Init( void );
+PyObject *V24_Lattice_CreatePyObject( Lattice * lt );
+Lattice *V24_Lattice_FromPyObject( PyObject * pyobj );
 
 #endif				/* EXPP_LATTICE_H */

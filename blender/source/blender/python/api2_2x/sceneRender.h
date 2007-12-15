@@ -36,17 +36,17 @@
 #include <Python.h>
 #include "DNA_scene_types.h"
 
-#define BPy_RenderData_Check(v)       ((v)->ob_type == &RenderData_Type)
+#define BPy_RenderData_Check(v)       ((v)->ob_type == &V24_RenderData_Type)
 
 //------------------------------------Struct definitions-------
 typedef struct {
 	PyObject_HEAD 
 	struct RenderData *renderContext;
 	Scene *scene;
-} BPy_RenderData;
+} V24_BPy_RenderData;
 //------------------------------------Visible prototypes-------
-PyObject *Render_Init( void );
+PyObject *V24_Render_Init( void );
 
-PyObject *RenderData_CreatePyObject( struct Scene *scene );
+PyObject *V24_RenderData_CreatePyObject( struct Scene *scene );
 
 #endif				/* EXPP_SCENERENDER_H */

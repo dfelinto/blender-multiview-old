@@ -35,11 +35,11 @@
 #include <Python.h>
 #include "DNA_curve_types.h"
 
-extern PyTypeObject SurfNurb_Type;
+extern PyTypeObject V24_SurfNurb_Type;
 
-#define BPy_SurfNurb_Check(v)  ((v)->ob_type == &SurfNurb_Type)	/* for type checking */
+#define BPy_SurfNurb_Check(v)  ((v)->ob_type == &V24_SurfNurb_Type)	/* for type checking */
 
-/* Python BPy_SurfNurb structure definition */
+/* Python V24_BPy_SurfNurb structure definition */
 typedef struct {
 	PyObject_HEAD
 	Nurb * nurb;
@@ -51,18 +51,18 @@ typedef struct {
 	int atEnd;		/* iter exhausted flag  */
 	int nextPoint;
 
-} BPy_SurfNurb;
+} V24_BPy_SurfNurb;
 
 
 /*
  *  prototypes
  */
 
-PyObject *SurfNurb_Init( void );
-PyObject *SurfNurb_CreatePyObject( Nurb * bzt );
-Nurb *SurfNurb_FromPyObject( PyObject * pyobj );
+PyObject *V24_SurfNurb_Init( void );
+PyObject *V24_SurfNurb_CreatePyObject( Nurb * bzt );
+Nurb *V24_SurfNurb_FromPyObject( PyObject * pyobj );
 
-PyObject *SurfNurb_getPoint( BPy_SurfNurb * self, int index );
-PyObject *SurfNurb_pointAtIndex( Nurb * nurb, int index );
+PyObject *V24_SurfNurb_getPoint( V24_BPy_SurfNurb * self, int index );
+PyObject *V24_SurfNurb_pointAtIndex( Nurb * nurb, int index );
 
 #endif				/* EXPP_SURFNURB_H */

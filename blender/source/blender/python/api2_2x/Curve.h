@@ -36,43 +36,43 @@
 #include <Python.h>
 #include "DNA_curve_types.h"
 
-extern PyTypeObject Curve_Type;
+extern PyTypeObject V24_Curve_Type;
 
-#define BPy_Curve_Check(v) ((v)->ob_type==&Curve_Type)
+#define BPy_Curve_Check(v) ((v)->ob_type==&V24_Curve_Type)
 
-/* Python BPy_Curve structure definition */
+/* Python V24_BPy_Curve structure definition */
 typedef struct {
 	PyObject_HEAD		/* required py macro */
 	Curve * curve;		/* libdata must be second */
 	/* pointer for iterator:  does not point to owned memory */
 	Nurb *iter_pointer;
-} BPy_Curve;
+} V24_BPy_Curve;
 
 
 /*
  *  protoypes
  */
 
-PyObject *Curve_Init( void );
-PyObject *Curve_CreatePyObject( struct Curve * curve );
+PyObject *V24_Curve_Init( void );
+PyObject *V24_Curve_CreatePyObject( struct Curve * curve );
 struct Curve *Curve_FromPyObject( PyObject * py_obj );
-PyObject *Curve_update( BPy_Curve * self );
+PyObject *V24_Curve_update( V24_BPy_Curve * self );
 
-PyObject *Curve_getName( BPy_Curve * self );
-PyObject *Curve_setName( BPy_Curve * self, PyObject * args );
-PyObject *Curve_getMode( BPy_Curve * self );
-PyObject *Curve_setMode( BPy_Curve * self, PyObject * args );
-PyObject *Curve_getBevresol( BPy_Curve * self );
-PyObject *Curve_setBevresol( BPy_Curve * self, PyObject * args );
-PyObject *Curve_getResolu( BPy_Curve * self );
-PyObject *Curve_setResolu( BPy_Curve * self, PyObject * args );
-PyObject *Curve_getResolv( BPy_Curve * self );
-PyObject *Curve_setResolv( BPy_Curve * self, PyObject * args );
-PyObject *Curve_getExt1( BPy_Curve * self );
-PyObject *Curve_setExt1( BPy_Curve * self, PyObject * args );
-PyObject *Curve_getExt2( BPy_Curve * self );
-PyObject *Curve_setExt2( BPy_Curve * self, PyObject * args );
-PyObject *Curve_getWidth( BPy_Curve * self );
-PyObject *Curve_setWidth( BPy_Curve * self, PyObject * args );
+PyObject *V24_Curve_getName( V24_BPy_Curve * self );
+PyObject *V24_Curve_setName( V24_BPy_Curve * self, PyObject * args );
+PyObject *V24_Curve_getMode( V24_BPy_Curve * self );
+PyObject *V24_Curve_setMode( V24_BPy_Curve * self, PyObject * args );
+PyObject *V24_Curve_getBevresol( V24_BPy_Curve * self );
+PyObject *V24_Curve_setBevresol( V24_BPy_Curve * self, PyObject * args );
+PyObject *V24_Curve_getResolu( V24_BPy_Curve * self );
+PyObject *V24_Curve_setResolu( V24_BPy_Curve * self, PyObject * args );
+PyObject *V24_Curve_getResolv( V24_BPy_Curve * self );
+PyObject *V24_Curve_setResolv( V24_BPy_Curve * self, PyObject * args );
+PyObject *V24_Curve_getExt1( V24_BPy_Curve * self );
+PyObject *V24_Curve_setExt1( V24_BPy_Curve * self, PyObject * args );
+PyObject *V24_Curve_getExt2( V24_BPy_Curve * self );
+PyObject *V24_Curve_setExt2( V24_BPy_Curve * self, PyObject * args );
+PyObject *V24_Curve_getWidth( V24_BPy_Curve * self );
+PyObject *V24_Curve_setWidth( V24_BPy_Curve * self, PyObject * args );
 
 #endif				/* EXPP_CURVE_H */

@@ -43,155 +43,155 @@
 /*****************************************************************************/
 /* Python API function prototypes for the Particle module.                   */
 /*****************************************************************************/
-PyObject *M_Particle_New( PyObject * self, PyObject * args );
-PyObject *M_Particle_Get( PyObject * self, PyObject * args );
+PyObject *V24_M_Particle_New( PyObject * self, PyObject * args );
+PyObject *V24_M_Particle_Get( PyObject * self, PyObject * args );
 
 /*****************************************************************************/
-/* Python BPy_Particle methods declarations:                                 */
+/* Python V24_BPy_Particle methods declarations:                                 */
 /*****************************************************************************/
-PyObject *Effect_getType( BPy_Effect * self );
-PyObject *Effect_setType( BPy_Effect * self, PyObject * args );
-PyObject *Effect_getFlag( BPy_Effect * self );
-PyObject *Effect_setFlag( BPy_Effect * self, PyObject * args );
-PyObject *Particle_getSta( BPy_Particle * self );
-PyObject *Particle_setSta( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getEnd( BPy_Particle * self );
-PyObject *Particle_setEnd( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getLifetime( BPy_Particle * self );
-PyObject *Particle_setLifetime( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getNormfac( BPy_Particle * self );
-PyObject *Particle_setNormfac( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getObfac( BPy_Particle * self );
-PyObject *Particle_setObfac( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getRandfac( BPy_Particle * self );
-PyObject *Particle_setRandfac( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getTexfac( BPy_Particle * self );
-PyObject *Particle_setTexfac( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getRandlife( BPy_Particle * self );
-PyObject *Particle_setRandlife( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getNabla( BPy_Particle * self );
-PyObject *Particle_setNabla( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getVectsize( BPy_Particle * self );
-PyObject *Particle_setVectsize( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getTotpart( BPy_Particle * self );
-PyObject *Particle_setTotpart( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getTotkey( BPy_Particle * self );
-PyObject *Particle_setTotkey( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getSeed( BPy_Particle * self );
-PyObject *Particle_setSeed( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getForce( BPy_Particle * self );
-PyObject *Particle_setForce( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getMult( BPy_Particle * self );
-PyObject *Particle_setMult( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getLife( BPy_Particle * self );
-PyObject *Particle_setLife( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getMat( BPy_Particle * self );
-PyObject *Particle_setMat( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getChild( BPy_Particle * self );
-PyObject *Particle_setChild( BPy_Particle * self, PyObject * a );
-PyObject *Particle_getDefvec( BPy_Particle * self );
-PyObject *Particle_setDefvec( BPy_Particle * self, PyObject * a );
+PyObject *V24_Effect_getType( V24_BPy_Effect * self );
+PyObject *V24_Effect_setType( V24_BPy_Effect * self, PyObject * args );
+PyObject *V24_Effect_getFlag( V24_BPy_Effect * self );
+PyObject *V24_Effect_setFlag( V24_BPy_Effect * self, PyObject * args );
+PyObject *V24_Particle_getSta( V24_BPy_Particle * self );
+PyObject *V24_Particle_setSta( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getEnd( V24_BPy_Particle * self );
+PyObject *V24_Particle_setEnd( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getLifetime( V24_BPy_Particle * self );
+PyObject *V24_Particle_setLifetime( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getNormfac( V24_BPy_Particle * self );
+PyObject *V24_Particle_setNormfac( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getObfac( V24_BPy_Particle * self );
+PyObject *V24_Particle_setObfac( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getRandfac( V24_BPy_Particle * self );
+PyObject *V24_Particle_setRandfac( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getTexfac( V24_BPy_Particle * self );
+PyObject *V24_Particle_setTexfac( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getRandlife( V24_BPy_Particle * self );
+PyObject *V24_Particle_setRandlife( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getNabla( V24_BPy_Particle * self );
+PyObject *V24_Particle_setNabla( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getVectsize( V24_BPy_Particle * self );
+PyObject *V24_Particle_setVectsize( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getTotpart( V24_BPy_Particle * self );
+PyObject *V24_Particle_setTotpart( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getTotkey( V24_BPy_Particle * self );
+PyObject *V24_Particle_setTotkey( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getSeed( V24_BPy_Particle * self );
+PyObject *V24_Particle_setSeed( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getForce( V24_BPy_Particle * self );
+PyObject *V24_Particle_setForce( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getMult( V24_BPy_Particle * self );
+PyObject *V24_Particle_setMult( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getLife( V24_BPy_Particle * self );
+PyObject *V24_Particle_setLife( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getMat( V24_BPy_Particle * self );
+PyObject *V24_Particle_setMat( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getChild( V24_BPy_Particle * self );
+PyObject *V24_Particle_setChild( V24_BPy_Particle * self, PyObject * a );
+PyObject *V24_Particle_getDefvec( V24_BPy_Particle * self );
+PyObject *V24_Particle_setDefvec( V24_BPy_Particle * self, PyObject * a );
 
 /*****************************************************************************/
-/* Python Particle_Type callback function prototypes:                        */
+/* Python V24_Particle_Type callback function prototypes:                        */
 /*****************************************************************************/
-void ParticleDeAlloc( BPy_Particle * msh );
-//int ParticlePrint (BPy_Particle *msh, FILE *fp, int flags);
-int ParticleSetAttr( BPy_Particle * msh, char *name, PyObject * v );
-PyObject *ParticleGetAttr( BPy_Particle * msh, char *name );
-PyObject *ParticleRepr( void );
-PyObject *ParticleCreatePyObject( struct Effect *particle );
-int ParticleCheckPyObject( PyObject * py_obj );
+void V24_ParticleDeAlloc( V24_BPy_Particle * msh );
+//int ParticlePrint (V24_BPy_Particle *msh, FILE *fp, int flags);
+int V24_ParticleSetAttr( V24_BPy_Particle * msh, char *name, PyObject * v );
+PyObject *V24_ParticleGetAttr( V24_BPy_Particle * msh, char *name );
+PyObject *V24_ParticleRepr( void );
+PyObject *V24_ParticleCreatePyObject( struct Effect *particle );
+int V24_ParticleCheckPyObject( PyObject * py_obj );
 struct Particle *ParticleFromPyObject( PyObject * py_obj );
 
  
 /*****************************************************************************/
-/* Python BPy_Particle methods table:                                        */
+/* Python V24_BPy_Particle methods table:                                        */
 /*****************************************************************************/
-static PyMethodDef BPy_Particle_methods[] = {
-	{"getType", ( PyCFunction ) Effect_getType,
+static PyMethodDef V24_BPy_Particle_methods[] = {
+	{"getType", ( PyCFunction ) V24_Effect_getType,
 	 METH_NOARGS, "() - Return Effect type"},
-	{"setType", ( PyCFunction ) Effect_setType,
+	{"setType", ( PyCFunction ) V24_Effect_setType,
 	 METH_VARARGS, "() - Set Effect type"},
-	{"getFlag", ( PyCFunction ) Effect_getFlag,
+	{"getFlag", ( PyCFunction ) V24_Effect_getFlag,
 	 METH_NOARGS, "() - Return Effect flag"},
-	{"setFlag", ( PyCFunction ) Effect_setFlag,
+	{"setFlag", ( PyCFunction ) V24_Effect_setFlag,
 	 METH_VARARGS, "() - Set Effect flag"},
-	{"getStartTime", ( PyCFunction ) Particle_getSta,
+	{"getStartTime", ( PyCFunction ) V24_Particle_getSta,
 	 METH_NOARGS, "()-Return particle start time"},
-	{"setStartTime", ( PyCFunction ) Particle_setSta, METH_VARARGS,
+	{"setStartTime", ( PyCFunction ) V24_Particle_setSta, METH_VARARGS,
 	 "()- Sets particle start time"},
-	{"getEndTime", ( PyCFunction ) Particle_getEnd,
+	{"getEndTime", ( PyCFunction ) V24_Particle_getEnd,
 	 METH_NOARGS, "()-Return particle end time"},
-	{"setEndTime", ( PyCFunction ) Particle_setEnd, METH_VARARGS,
+	{"setEndTime", ( PyCFunction ) V24_Particle_setEnd, METH_VARARGS,
 	 "()- Sets particle end time"},
-	{"getLifetime", ( PyCFunction ) Particle_getLifetime,
+	{"getLifetime", ( PyCFunction ) V24_Particle_getLifetime,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setLifetime", ( PyCFunction ) Particle_setLifetime, METH_VARARGS,
+	{"setLifetime", ( PyCFunction ) V24_Particle_setLifetime, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getNormfac", ( PyCFunction ) Particle_getNormfac,
+	{"getNormfac", ( PyCFunction ) V24_Particle_getNormfac,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setNormfac", ( PyCFunction ) Particle_setNormfac, METH_VARARGS,
+	{"setNormfac", ( PyCFunction ) V24_Particle_setNormfac, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getObfac", ( PyCFunction ) Particle_getObfac,
+	{"getObfac", ( PyCFunction ) V24_Particle_getObfac,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setObfac", ( PyCFunction ) Particle_setObfac, METH_VARARGS,
+	{"setObfac", ( PyCFunction ) V24_Particle_setObfac, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getRandfac", ( PyCFunction ) Particle_getRandfac,
+	{"getRandfac", ( PyCFunction ) V24_Particle_getRandfac,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setRandfac", ( PyCFunction ) Particle_setRandfac, METH_VARARGS,
+	{"setRandfac", ( PyCFunction ) V24_Particle_setRandfac, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getTexfac", ( PyCFunction ) Particle_getTexfac,
+	{"getTexfac", ( PyCFunction ) V24_Particle_getTexfac,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setTexfac", ( PyCFunction ) Particle_setTexfac, METH_VARARGS,
+	{"setTexfac", ( PyCFunction ) V24_Particle_setTexfac, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getRandlife", ( PyCFunction ) Particle_getRandlife,
+	{"getRandlife", ( PyCFunction ) V24_Particle_getRandlife,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setRandlife", ( PyCFunction ) Particle_setRandlife, METH_VARARGS,
+	{"setRandlife", ( PyCFunction ) V24_Particle_setRandlife, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getNabla", ( PyCFunction ) Particle_getNabla,
+	{"getNabla", ( PyCFunction ) V24_Particle_getNabla,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setNabla", ( PyCFunction ) Particle_setNabla, METH_VARARGS,
+	{"setNabla", ( PyCFunction ) V24_Particle_setNabla, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getVectsize", ( PyCFunction ) Particle_getVectsize,
+	{"getVectsize", ( PyCFunction ) V24_Particle_getVectsize,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setVectsize", ( PyCFunction ) Particle_setVectsize, METH_VARARGS,
+	{"setVectsize", ( PyCFunction ) V24_Particle_setVectsize, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getTotpart", ( PyCFunction ) Particle_getTotpart,
+	{"getTotpart", ( PyCFunction ) V24_Particle_getTotpart,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setTotpart", ( PyCFunction ) Particle_setTotpart, METH_VARARGS,
+	{"setTotpart", ( PyCFunction ) V24_Particle_setTotpart, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getTotkey", ( PyCFunction ) Particle_getTotkey,
+	{"getTotkey", ( PyCFunction ) V24_Particle_getTotkey,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setTotkey", ( PyCFunction ) Particle_setTotkey, METH_VARARGS,
+	{"setTotkey", ( PyCFunction ) V24_Particle_setTotkey, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getSeed", ( PyCFunction ) Particle_getSeed,
+	{"getSeed", ( PyCFunction ) V24_Particle_getSeed,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setSeed", ( PyCFunction ) Particle_setSeed, METH_VARARGS,
+	{"setSeed", ( PyCFunction ) V24_Particle_setSeed, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getForce", ( PyCFunction ) Particle_getForce,
+	{"getForce", ( PyCFunction ) V24_Particle_getForce,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setForce", ( PyCFunction ) Particle_setForce, METH_VARARGS,
+	{"setForce", ( PyCFunction ) V24_Particle_setForce, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getMult", ( PyCFunction ) Particle_getMult,
+	{"getMult", ( PyCFunction ) V24_Particle_getMult,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setMult", ( PyCFunction ) Particle_setMult, METH_VARARGS,
+	{"setMult", ( PyCFunction ) V24_Particle_setMult, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getLife", ( PyCFunction ) Particle_getLife,
+	{"getLife", ( PyCFunction ) V24_Particle_getLife,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setLife", ( PyCFunction ) Particle_setLife, METH_VARARGS,
+	{"setLife", ( PyCFunction ) V24_Particle_setLife, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getMat", ( PyCFunction ) Particle_getMat,
+	{"getMat", ( PyCFunction ) V24_Particle_getMat,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setMat", ( PyCFunction ) Particle_setMat, METH_VARARGS,
+	{"setMat", ( PyCFunction ) V24_Particle_setMat, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getChild", ( PyCFunction ) Particle_getChild,
+	{"getChild", ( PyCFunction ) V24_Particle_getChild,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setChild", ( PyCFunction ) Particle_setChild, METH_VARARGS,
+	{"setChild", ( PyCFunction ) V24_Particle_setChild, METH_VARARGS,
 	 "()- Sets particle life time "},
-	{"getDefvec", ( PyCFunction ) Particle_getDefvec,
+	{"getDefvec", ( PyCFunction ) V24_Particle_getDefvec,
 	 METH_NOARGS, "()-Return particle life time"},
-	{"setDefvec", ( PyCFunction ) Particle_setDefvec, METH_VARARGS,
+	{"setDefvec", ( PyCFunction ) V24_Particle_setDefvec, METH_VARARGS,
 	 "()- Sets particle life time "},
 	
 	
@@ -199,34 +199,34 @@ static PyMethodDef BPy_Particle_methods[] = {
 };
 
 /**************** prototypes ********************/
-PyObject *Particle_Init( void );
+PyObject *V24_Particle_Init( void );
 
 
 /*****************************************************************************/
-/* Python Particle_Type structure definition:                                */
+/* Python V24_Particle_Type structure definition:                                */
 /*****************************************************************************/
 
-PyTypeObject Particle_Type = {
+PyTypeObject V24_Particle_Type = {
 	PyObject_HEAD_INIT( NULL )
 		0,
 	"Particle",
-	sizeof( BPy_Particle ),
+	sizeof( V24_BPy_Particle ),
 	0,
 
-	( destructor ) ParticleDeAlloc,
+	( destructor ) V24_ParticleDeAlloc,
 	0,
-	( getattrfunc ) ParticleGetAttr,
-	( setattrfunc ) ParticleSetAttr,
+	( getattrfunc ) V24_ParticleGetAttr,
+	( setattrfunc ) V24_ParticleSetAttr,
 	0,
-	( reprfunc ) ParticleRepr,
-	0,
-	0,
+	( reprfunc ) V24_ParticleRepr,
 	0,
 	0,
-	0, 0, 0, 0, 0, 0,
+	0,
 	0,
 	0, 0, 0, 0, 0, 0,
-	BPy_Particle_methods,
+	0,
+	0, 0, 0, 0, 0, 0,
+	V24_BPy_Particle_methods,
 	0,
 };
 /*****************************************************************************/
@@ -234,44 +234,44 @@ PyTypeObject Particle_Type = {
 /* In Python these will be written to the console when doing a               */
 /* Blender.Particle.__doc__                                                  */
 /*****************************************************************************/
-char M_Particle_doc[] = "The Blender Particle module\n\n\
+char V24_M_Particle_doc[] = "The Blender Particle module\n\n\
 This module provides access to **Object Data** in Blender.\n\
 Functions :\n\
 	New(object mesh's name) : creates a new part object and adds it to the given mesh object \n\
 	Get(name) : retreives a particle  with the given name (mandatory)\n\
 	get(name) : same as Get.  Kept for compatibility reasons.\n";
-char M_Particle_New_doc[] = "New(name) : creates a new part object and adds it to the given mesh object\n";
-char M_Particle_Get_doc[] = "xxx";
+char V24_M_Particle_New_doc[] = "New(name) : creates a new part object and adds it to the given mesh object\n";
+char V24_M_Particle_Get_doc[] = "xxx";
 
 
 /*****************************************************************************/
 /* Python method structure definition for Blender.Particle module:           */
 /*****************************************************************************/
 struct PyMethodDef M_Particle_methods[] = {
-	{"New", ( PyCFunction ) M_Particle_New, METH_VARARGS, M_Particle_New_doc},
-	{"Get", M_Particle_Get, METH_VARARGS, M_Particle_Get_doc},
-	{"get", M_Particle_Get, METH_VARARGS, M_Particle_Get_doc},
+	{"New", ( PyCFunction ) V24_M_Particle_New, METH_VARARGS, V24_M_Particle_New_doc},
+	{"Get", V24_M_Particle_Get, METH_VARARGS, V24_M_Particle_Get_doc},
+	{"get", V24_M_Particle_Get, METH_VARARGS, V24_M_Particle_Get_doc},
 	{NULL, NULL, 0, NULL}
 };
 
 
 /*****************************************************************************/
-/* Function:              M_Particle_New                                     */
+/* Function:              V24_M_Particle_New                                     */
 /* Python equivalent:     Blender.Effect.Particle.New                        */
 /* Description :          Create a particle effect and add a link            */
 /*                        to the given mesh-type Object                      */
 /* Data  :                String  mesh object name                           */
 /* Return :               pyobject particle                                  */
 /*****************************************************************************/
-PyObject *M_Particle_New( PyObject * self, PyObject * args )
+PyObject *V24_M_Particle_New( PyObject * self, PyObject * args )
 {
-	BPy_Effect *pyeffect;
+	V24_BPy_Effect *pyeffect;
 	Effect *bleffect = 0;
 	Object *ob;
 	char *name = NULL;
 
 	if( !PyArg_ParseTuple( args, "s", &name ) )
-		return EXPP_ReturnPyObjError( PyExc_TypeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected string argument" );
 
 	for( ob = G.main->object.first; ob; ob = ob->id.next )
@@ -279,22 +279,22 @@ PyObject *M_Particle_New( PyObject * self, PyObject * args )
 			break;
 
 	if( !ob )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError, 
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, 
 				"object does not exist" );
 
 	if( ob->type != OB_MESH )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError, 
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError, 
 				"object is not a mesh" );
 
-	pyeffect = ( BPy_Effect * ) PyObject_NEW( BPy_Effect, &Effect_Type );
+	pyeffect = ( V24_BPy_Effect * ) PyObject_NEW( V24_BPy_Effect, &V24_Effect_Type );
 	if( !pyeffect )
-		return EXPP_ReturnPyObjError( PyExc_MemoryError,
+		return V24_EXPP_ReturnPyObjError( PyExc_MemoryError,
 				"couldn't create Effect Data object" );
 
 	bleffect = add_effect( EFF_PARTICLE );
 	if( !bleffect ) {
 		Py_DECREF( pyeffect );
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"couldn't create Effect Data in Blender" );
 	}
 
@@ -305,26 +305,26 @@ PyObject *M_Particle_New( PyObject * self, PyObject * args )
 }
 
 /*****************************************************************************/
-/* Function:              M_Particle_Get                                     */
+/* Function:              V24_M_Particle_Get                                     */
 /* Python equivalent:     Blender.Effect.Particle.Get                        */
 /*****************************************************************************/
-PyObject *M_Particle_Get( PyObject * self, PyObject * args )
+PyObject *V24_M_Particle_Get( PyObject * self, PyObject * args )
 {
 	/*arguments : string object name
 	   int : position of effect in the obj's effect list  */
 	char *name = 0;
 	Object *object_iter;
 	Effect *eff;
-	BPy_Particle *wanted_eff;
+	V24_BPy_Particle *wanted_eff;
 	int num, i;
 
 	if( !PyArg_ParseTuple( args, "si", &name, &num ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected string int argument" ) );
 
 	object_iter = G.main->object.first;
 	if( !object_iter )
-		return EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"Scene contains no object" );
 
 	while( object_iter ) {
@@ -340,13 +340,13 @@ PyObject *M_Particle_Get( PyObject * self, PyObject * args )
 					continue;
 				eff = eff->next;
 				if( !eff )
-					return ( EXPP_ReturnPyObjError
+					return ( V24_EXPP_ReturnPyObjError
 						 ( PyExc_AttributeError,
 						   "Object" ) );
 			}
 			wanted_eff =
-				( BPy_Particle * ) PyObject_NEW( BPy_Particle,
-								 &Particle_Type );
+				( V24_BPy_Particle * ) PyObject_NEW( V24_BPy_Particle,
+								 &V24_Particle_Type );
 			wanted_eff->particle = eff;
 			return ( PyObject * ) wanted_eff;
 		}
@@ -357,25 +357,25 @@ PyObject *M_Particle_Get( PyObject * self, PyObject * args )
 }
 
 /*****************************************************************************/
-/* Function:              Particle_Init                                      */
+/* Function:              V24_Particle_Init                                      */
 /*****************************************************************************/
-PyObject *Particle_Init( void )
+PyObject *V24_Particle_Init( void )
 {
 	PyObject *submodule;
 	
-	if( PyType_Ready( &Particle_Type) < 0)
+	if( PyType_Ready( &V24_Particle_Type) < 0)
 		return NULL;
 	
 	submodule =
-		Py_InitModule3( "Blender.Particle", M_Particle_methods,	M_Particle_doc );
+		Py_InitModule3( "Blender.Particle", M_Particle_methods,	V24_M_Particle_doc );
 	return ( submodule );
 }
 
 /*****************************************************************************/
-/* Python BPy_Particle methods:                                                */
+/* Python V24_BPy_Particle methods:                                                */
 /*****************************************************************************/
 
-PyObject *Particle_getSta( BPy_Particle * self )
+PyObject *V24_Particle_getSta( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -384,19 +384,19 @@ PyObject *Particle_getSta( BPy_Particle * self )
 
 
 
-PyObject *Particle_setSta( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setSta( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val = 0;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->sta = val;
 	Py_INCREF( Py_None );
 	return Py_None;
 }
 
-PyObject *Particle_getEnd( BPy_Particle * self )
+PyObject *V24_Particle_getEnd( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -405,19 +405,19 @@ PyObject *Particle_getEnd( BPy_Particle * self )
 
 
 
-PyObject *Particle_setEnd( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setEnd( V24_BPy_Particle * self, PyObject * args )
 {
 	float val = 0;
 	PartEff *ptr = ( PartEff * ) self->particle;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->end = val;
 	Py_INCREF( Py_None );
 	return Py_None;
 }
 
-PyObject *Particle_getLifetime( BPy_Particle * self )
+PyObject *V24_Particle_getLifetime( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -426,12 +426,12 @@ PyObject *Particle_getLifetime( BPy_Particle * self )
 
 
 
-PyObject *Particle_setLifetime( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setLifetime( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val = 0;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->lifetime = val;
 	Py_INCREF( Py_None );
@@ -439,7 +439,7 @@ PyObject *Particle_setLifetime( BPy_Particle * self, PyObject * args )
 }
 
 
-PyObject *Particle_getNormfac( BPy_Particle * self )
+PyObject *V24_Particle_getNormfac( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -448,12 +448,12 @@ PyObject *Particle_getNormfac( BPy_Particle * self )
 
 
 
-PyObject *Particle_setNormfac( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setNormfac( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val = 0;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->normfac = val;
 	Py_INCREF( Py_None );
@@ -462,7 +462,7 @@ PyObject *Particle_setNormfac( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getObfac( BPy_Particle * self )
+PyObject *V24_Particle_getObfac( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -471,12 +471,12 @@ PyObject *Particle_getObfac( BPy_Particle * self )
 
 
 
-PyObject *Particle_setObfac( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setObfac( V24_BPy_Particle * self, PyObject * args )
 {
 	float val = 0;
 	PartEff *ptr = ( PartEff * ) self->particle;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->obfac = val;
 	Py_INCREF( Py_None );
@@ -485,7 +485,7 @@ PyObject *Particle_setObfac( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getRandfac( BPy_Particle * self )
+PyObject *V24_Particle_getRandfac( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -494,12 +494,12 @@ PyObject *Particle_getRandfac( BPy_Particle * self )
 
 
 
-PyObject *Particle_setRandfac( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setRandfac( V24_BPy_Particle * self, PyObject * args )
 {
 	float val = 0;
 	PartEff *ptr = ( PartEff * ) self->particle;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->randfac = val;
 	Py_INCREF( Py_None );
@@ -508,7 +508,7 @@ PyObject *Particle_setRandfac( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getTexfac( BPy_Particle * self )
+PyObject *V24_Particle_getTexfac( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -517,12 +517,12 @@ PyObject *Particle_getTexfac( BPy_Particle * self )
 
 
 
-PyObject *Particle_setTexfac( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setTexfac( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val = 0;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->texfac = val;
 	Py_INCREF( Py_None );
@@ -531,7 +531,7 @@ PyObject *Particle_setTexfac( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getRandlife( BPy_Particle * self )
+PyObject *V24_Particle_getRandlife( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -540,12 +540,12 @@ PyObject *Particle_getRandlife( BPy_Particle * self )
 
 
 
-PyObject *Particle_setRandlife( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setRandlife( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val = 0;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->randlife = val;
 	Py_INCREF( Py_None );
@@ -554,7 +554,7 @@ PyObject *Particle_setRandlife( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getNabla( BPy_Particle * self )
+PyObject *V24_Particle_getNabla( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -563,12 +563,12 @@ PyObject *Particle_getNabla( BPy_Particle * self )
 
 
 
-PyObject *Particle_setNabla( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setNabla( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val = 0;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->nabla = val;
 	Py_INCREF( Py_None );
@@ -577,7 +577,7 @@ PyObject *Particle_setNabla( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getVectsize( BPy_Particle * self )
+PyObject *V24_Particle_getVectsize( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -586,12 +586,12 @@ PyObject *Particle_getVectsize( BPy_Particle * self )
 
 
 
-PyObject *Particle_setVectsize( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setVectsize( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val = 0;
 	if( !PyArg_ParseTuple( args, "f", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected float argument" ) );
 	ptr->vectsize = val;
 	Py_INCREF( Py_None );
@@ -599,7 +599,7 @@ PyObject *Particle_setVectsize( BPy_Particle * self, PyObject * args )
 }
 
 
-PyObject *Particle_getTotpart( BPy_Particle * self )
+PyObject *V24_Particle_getTotpart( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -608,12 +608,12 @@ PyObject *Particle_getTotpart( BPy_Particle * self )
 
 
 
-PyObject *Particle_setTotpart( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setTotpart( V24_BPy_Particle * self, PyObject * args )
 {
 	int val = 0;
 	PartEff *ptr = ( PartEff * ) self->particle;
 	if( !PyArg_ParseTuple( args, "i", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected int argument" ) );
 	ptr->totpart = val;
 	Py_INCREF( Py_None );
@@ -621,7 +621,7 @@ PyObject *Particle_setTotpart( BPy_Particle * self, PyObject * args )
 }
 
 
-PyObject *Particle_getTotkey( BPy_Particle * self )
+PyObject *V24_Particle_getTotkey( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -630,12 +630,12 @@ PyObject *Particle_getTotkey( BPy_Particle * self )
 
 
 
-PyObject *Particle_setTotkey( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setTotkey( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	int val = 0;
 	if( !PyArg_ParseTuple( args, "i", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected int argument" ) );
 	ptr->totkey = val;
 	Py_INCREF( Py_None );
@@ -644,7 +644,7 @@ PyObject *Particle_setTotkey( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getSeed( BPy_Particle * self )
+PyObject *V24_Particle_getSeed( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -653,19 +653,19 @@ PyObject *Particle_getSeed( BPy_Particle * self )
 
 
 
-PyObject *Particle_setSeed( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setSeed( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	int val = 0;
 	if( !PyArg_ParseTuple( args, "i", &val ) )
-		return ( EXPP_ReturnPyObjError( PyExc_AttributeError,
+		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						"expected int argument" ) );
 	ptr->seed = val;
 	Py_INCREF( Py_None );
 	return Py_None;
 }
 
-PyObject *Particle_getForce( BPy_Particle * self )
+PyObject *V24_Particle_getForce( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -674,7 +674,7 @@ PyObject *Particle_getForce( BPy_Particle * self )
 }
 
 
-PyObject *Particle_setForce( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setForce( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val[3];
@@ -685,7 +685,7 @@ PyObject *Particle_setForce( BPy_Particle * self, PyObject * args )
 	val[2] = (float)PyFloat_AsDouble( PyTuple_GetItem( args, 2 ) );
 	/*
 	   if (!PyArg_ParseTuple(args, "fff", val,val+1,val+2 ))
-	   return(EXPP_ReturnPyObjError(PyExc_AttributeError,\
+	   return(V24_EXPP_ReturnPyObjError(PyExc_AttributeError,\
 	   "expected three float arguments"));
 	 */
 	ptr->force[0] = val[0];
@@ -695,7 +695,7 @@ PyObject *Particle_setForce( BPy_Particle * self, PyObject * args )
 	return Py_None;
 }
 
-PyObject *Particle_getMult( BPy_Particle * self )
+PyObject *V24_Particle_getMult( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -705,7 +705,7 @@ PyObject *Particle_getMult( BPy_Particle * self )
 }
 
 
-PyObject *Particle_setMult( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setMult( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val[4];
@@ -726,7 +726,7 @@ PyObject *Particle_setMult( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getLife( BPy_Particle * self )
+PyObject *V24_Particle_getLife( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -736,7 +736,7 @@ PyObject *Particle_getLife( BPy_Particle * self )
 }
 
 
-PyObject *Particle_setLife( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setLife( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val[4];
@@ -756,7 +756,7 @@ PyObject *Particle_setLife( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getChild( BPy_Particle * self )
+PyObject *V24_Particle_getChild( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -766,7 +766,7 @@ PyObject *Particle_getChild( BPy_Particle * self )
 }
 
 
-PyObject *Particle_setChild( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setChild( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val[4];
@@ -786,7 +786,7 @@ PyObject *Particle_setChild( BPy_Particle * self, PyObject * args )
 
 
 
-PyObject *Particle_getMat( BPy_Particle * self )
+PyObject *V24_Particle_getMat( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -796,7 +796,7 @@ PyObject *Particle_getMat( BPy_Particle * self )
 }
 
 
-PyObject *Particle_setMat( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setMat( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val[4];
@@ -815,7 +815,7 @@ PyObject *Particle_setMat( BPy_Particle * self, PyObject * args )
 }
 
 
-PyObject *Particle_getDefvec( BPy_Particle * self )
+PyObject *V24_Particle_getDefvec( V24_BPy_Particle * self )
 {
 
 	PartEff *ptr = ( PartEff * ) self->particle;
@@ -824,7 +824,7 @@ PyObject *Particle_getDefvec( BPy_Particle * self )
 }
 
 
-PyObject *Particle_setDefvec( BPy_Particle * self, PyObject * args )
+PyObject *V24_Particle_setDefvec( V24_BPy_Particle * self, PyObject * args )
 {
 	PartEff *ptr = ( PartEff * ) self->particle;
 	float val[3];
@@ -842,76 +842,76 @@ PyObject *Particle_setDefvec( BPy_Particle * self, PyObject * args )
 
 
 /*****************************************************************************/
-/* Function:    ParticleDeAlloc                                              */
-/* Description: This is a callback function for the BPy_Particle type. It is   */
+/* Function:    V24_ParticleDeAlloc                                              */
+/* Description: This is a callback function for the V24_BPy_Particle type. It is   */
 /*              the destructor function.                                     */
 /*****************************************************************************/
-void ParticleDeAlloc( BPy_Particle * self )
+void V24_ParticleDeAlloc( V24_BPy_Particle * self )
 {
 	PartEff *ptr = ( PartEff * ) self;
 	PyObject_DEL( ptr );
 }
 
 /*****************************************************************************/
-/* Function:    ParticleGetAttr                                              */
-/* Description: This is a callback function for the BPy_Particle type. It is */
-/*              the function that accesses BPy_Particle "member variables"   */
+/* Function:    V24_ParticleGetAttr                                              */
+/* Description: This is a callback function for the V24_BPy_Particle type. It is */
+/*              the function that accesses V24_BPy_Particle "member variables"   */
 /*              and  methods.                                                */
 /*****************************************************************************/
 
 
-PyObject *ParticleGetAttr( BPy_Particle * self, char *name )
+PyObject *V24_ParticleGetAttr( V24_BPy_Particle * self, char *name )
 {
 
 	if( strcmp( name, "seed" ) == 0 )
-		return Particle_getSeed( self );
+		return V24_Particle_getSeed( self );
 	else if( strcmp( name, "nabla" ) == 0 )
-		return Particle_getNabla( self );
+		return V24_Particle_getNabla( self );
 	else if( strcmp( name, "sta" ) == 0 )
-		return Particle_getSta( self );
+		return V24_Particle_getSta( self );
 	else if( strcmp( name, "end" ) == 0 )
-		return Particle_getEnd( self );
+		return V24_Particle_getEnd( self );
 	else if( strcmp( name, "lifetime" ) == 0 )
-		return Particle_getLifetime( self );
+		return V24_Particle_getLifetime( self );
 	else if( strcmp( name, "normfac" ) == 0 )
-		return Particle_getNormfac( self );
+		return V24_Particle_getNormfac( self );
 	else if( strcmp( name, "obfac" ) == 0 )
-		return Particle_getObfac( self );
+		return V24_Particle_getObfac( self );
 	else if( strcmp( name, "randfac" ) == 0 )
-		return Particle_getRandfac( self );
+		return V24_Particle_getRandfac( self );
 	else if( strcmp( name, "texfac" ) == 0 )
-		return Particle_getTexfac( self );
+		return V24_Particle_getTexfac( self );
 	else if( strcmp( name, "randlife" ) == 0 )
-		return Particle_getRandlife( self );
+		return V24_Particle_getRandlife( self );
 	else if( strcmp( name, "vectsize" ) == 0 )
-		return Particle_getVectsize( self );
+		return V24_Particle_getVectsize( self );
 	else if( strcmp( name, "totpart" ) == 0 )
-		return Particle_getTotpart( self );
+		return V24_Particle_getTotpart( self );
 	else if( strcmp( name, "force" ) == 0 )
-		return Particle_getForce( self );
+		return V24_Particle_getForce( self );
 	else if( strcmp( name, "mult" ) == 0 )
-		return Particle_getMult( self );
+		return V24_Particle_getMult( self );
 	else if( strcmp( name, "life" ) == 0 )
-		return Particle_getLife( self );
+		return V24_Particle_getLife( self );
 	else if( strcmp( name, "child" ) == 0 )
-		return Particle_getChild( self );
+		return V24_Particle_getChild( self );
 	else if( strcmp( name, "mat" ) == 0 )
-		return Particle_getMat( self );
+		return V24_Particle_getMat( self );
 	else if( strcmp( name, "defvec" ) == 0 )
-		return Particle_getDefvec( self );
+		return V24_Particle_getDefvec( self );
 
 
-	return Py_FindMethod( BPy_Particle_methods, ( PyObject * ) self,
+	return Py_FindMethod( V24_BPy_Particle_methods, ( PyObject * ) self,
 			      name );
 }
 
 /*****************************************************************************/
-/* Function:    ParticleSetAttr                                              */
-/* Description: This is a callback function for the BPy_Particle type.     */
+/* Function:    V24_ParticleSetAttr                                              */
+/* Description: This is a callback function for the V24_BPy_Particle type.     */
 /*              It is the  function that sets Particle Data attributes     */
 /*              (member vars)    */
 /*****************************************************************************/
-int ParticleSetAttr( BPy_Particle * self, char *name, PyObject * value )
+int V24_ParticleSetAttr( V24_BPy_Particle * self, char *name, PyObject * value )
 {
 
 	PyObject *valtuple;
@@ -920,60 +920,60 @@ int ParticleSetAttr( BPy_Particle * self, char *name, PyObject * value )
 	valtuple = Py_BuildValue( "(N)", value );
 
 	if( !valtuple )
-		return EXPP_ReturnIntError( PyExc_MemoryError,
-					    "ParticleSetAttr: couldn't create PyTuple" );
+		return V24_EXPP_ReturnIntError( PyExc_MemoryError,
+					    "V24_ParticleSetAttr: couldn't create PyTuple" );
 
 	if( strcmp( name, "seed" ) == 0 )
-		error = Particle_setSeed( self, valtuple );
+		error = V24_Particle_setSeed( self, valtuple );
 	else if( strcmp( name, "nabla" ) == 0 )
-		error = Particle_setNabla( self, valtuple );
+		error = V24_Particle_setNabla( self, valtuple );
 	else if( strcmp( name, "sta" ) == 0 )
-		error = Particle_setSta( self, valtuple );
+		error = V24_Particle_setSta( self, valtuple );
 	else if( strcmp( name, "end" ) == 0 )
-		error = Particle_setEnd( self, valtuple );
+		error = V24_Particle_setEnd( self, valtuple );
 	else if( strcmp( name, "lifetime" ) == 0 )
-		error = Particle_setLifetime( self, valtuple );
+		error = V24_Particle_setLifetime( self, valtuple );
 	else if( strcmp( name, "normfac" ) == 0 )
-		error = Particle_setNormfac( self, valtuple );
+		error = V24_Particle_setNormfac( self, valtuple );
 	else if( strcmp( name, "obfac" ) == 0 )
-		error = Particle_setObfac( self, valtuple );
+		error = V24_Particle_setObfac( self, valtuple );
 	else if( strcmp( name, "randfac" ) == 0 )
-		error = Particle_setRandfac( self, valtuple );
+		error = V24_Particle_setRandfac( self, valtuple );
 	else if( strcmp( name, "texfac" ) == 0 )
-		error = Particle_setTexfac( self, valtuple );
+		error = V24_Particle_setTexfac( self, valtuple );
 	else if( strcmp( name, "randlife" ) == 0 )
-		error = Particle_setRandlife( self, valtuple );
+		error = V24_Particle_setRandlife( self, valtuple );
 	else if( strcmp( name, "nabla" ) == 0 )
-		error = Particle_setNabla( self, valtuple );
+		error = V24_Particle_setNabla( self, valtuple );
 	else if( strcmp( name, "vectsize" ) == 0 )
-		error = Particle_setVectsize( self, valtuple );
+		error = V24_Particle_setVectsize( self, valtuple );
 	else if( strcmp( name, "totpart" ) == 0 )
-		error = Particle_setTotpart( self, valtuple );
+		error = V24_Particle_setTotpart( self, valtuple );
 	else if( strcmp( name, "seed" ) == 0 )
-		error = Particle_setSeed( self, valtuple );
+		error = V24_Particle_setSeed( self, valtuple );
 	else if( strcmp( name, "force" ) == 0 )
-		error = Particle_setForce( self, valtuple );
+		error = V24_Particle_setForce( self, valtuple );
 	else if( strcmp( name, "mult" ) == 0 )
-		error = Particle_setMult( self, valtuple );
+		error = V24_Particle_setMult( self, valtuple );
 	else if( strcmp( name, "life" ) == 0 )
-		error = Particle_setLife( self, valtuple );
+		error = V24_Particle_setLife( self, valtuple );
 	else if( strcmp( name, "child" ) == 0 )
-		error = Particle_setChild( self, valtuple );
+		error = V24_Particle_setChild( self, valtuple );
 	else if( strcmp( name, "mat" ) == 0 )
-		error = Particle_setMat( self, valtuple );
+		error = V24_Particle_setMat( self, valtuple );
 	else if( strcmp( name, "defvec" ) == 0 )
-		error = Particle_setDefvec( self, valtuple );
+		error = V24_Particle_setDefvec( self, valtuple );
 
 	else {
 		Py_DECREF( valtuple );
 
 		if( ( strcmp( name, "Types" ) == 0 ) ||
 		    ( strcmp( name, "Modes" ) == 0 ) )
-			return ( EXPP_ReturnIntError( PyExc_AttributeError,
+			return ( V24_EXPP_ReturnIntError( PyExc_AttributeError,
 						      "constant dictionary -- cannot be changed" ) );
 
 		else
-			return ( EXPP_ReturnIntError( PyExc_KeyError,
+			return ( V24_EXPP_ReturnIntError( PyExc_KeyError,
 						      "attribute not found" ) );
 	}
 
@@ -987,34 +987,34 @@ int ParticleSetAttr( BPy_Particle * self, char *name, PyObject * value )
 
 /*****************************************************************************/
 /* Function:    ParticlePrint                                                */
-/* Description: This is a callback function for the BPy_Particle type. It    */
+/* Description: This is a callback function for the V24_BPy_Particle type. It    */
 /*              particles a meaninful string to 'print' particle objects.    */
 /*****************************************************************************/
 /*
-int ParticlePrint(BPy_Particle *self, FILE *fp, int flags) 
+int ParticlePrint(V24_BPy_Particle *self, FILE *fp, int flags) 
 { 
   printf("Hi, I'm a particle!");	
   return 0;
 }
 */
 /*****************************************************************************/
-/* Function:    ParticleRepr                                                 */
-/* Description: This is a callback function for the BPy_Particle type. It    */
+/* Function:    V24_ParticleRepr                                                 */
+/* Description: This is a callback function for the V24_BPy_Particle type. It    */
 /*              particles a meaninful string to represent particle objects.  */
 /*****************************************************************************/
-PyObject *ParticleRepr( void )
+PyObject *V24_ParticleRepr( void )
 {
 	return PyString_FromString( "Particle" );
 }
 
-PyObject *ParticleCreatePyObject( struct Effect * particle )
+PyObject *V24_ParticleCreatePyObject( struct Effect * particle )
 {
-	BPy_Particle *blen_object;
+	V24_BPy_Particle *blen_object;
 
 
 	blen_object =
-		( BPy_Particle * ) PyObject_NEW( BPy_Particle,
-						 &Particle_Type );
+		( V24_BPy_Particle * ) PyObject_NEW( V24_BPy_Particle,
+						 &V24_Particle_Type );
 
 	if( blen_object == NULL ) {
 		return ( NULL );
@@ -1024,17 +1024,17 @@ PyObject *ParticleCreatePyObject( struct Effect * particle )
 
 }
 
-int ParticleCheckPyObject( PyObject * py_obj )
+int V24_ParticleCheckPyObject( PyObject * py_obj )
 {
-	return ( py_obj->ob_type == &Particle_Type );
+	return ( py_obj->ob_type == &V24_Particle_Type );
 }
 
 
 struct Particle *ParticleFromPyObject( PyObject * py_obj )
 {
-	BPy_Particle *blen_obj;
+	V24_BPy_Particle *blen_obj;
 
-	blen_obj = ( BPy_Particle * ) py_obj;
+	blen_obj = ( V24_BPy_Particle * ) py_obj;
 	return ( ( struct Particle * ) blen_obj->particle );
 
 }

@@ -36,18 +36,18 @@
 #include "gen_utils.h"
 
 //-------------------------DOC STRINGS ---------------------------
-char Point_Zero_doc[] = "() - set all values in the point to 0";
-char Point_toVector_doc[] = "() - create a vector representation of this point";
+char V24_Point_Zero_doc[] = "() - set all values in the point to 0";
+char V24_Point_toVector_doc[] = "() - create a vector representation of this point";
 //-----------------------METHOD DEFINITIONS ----------------------
 struct PyMethodDef Point_methods[] = {
-	{"zero", (PyCFunction) Point_Zero, METH_NOARGS, Point_Zero_doc},
-	{"toVector", (PyCFunction) Point_toVector, METH_NOARGS, Point_toVector_doc},
+	{"zero", (PyCFunction) V24_Point_Zero, METH_NOARGS, V24_Point_Zero_doc},
+	{"toVector", (PyCFunction) V24_Point_toVector, METH_NOARGS, V24_Point_toVector_doc},
 	{NULL, NULL, 0, NULL}
 };
 //-----------------------------METHODS----------------------------
 //--------------------------Vector.toPoint()----------------------
 //create a new point object to represent this vector
-PyObject *Point_toVector(PointObject * self)
+PyObject *V24_Point_toVector(V24_PointObject * self)
 {
 	float vec[3];
 	int x;
@@ -60,17 +60,17 @@ PyObject *Point_toVector(PointObject * self)
 }
 //----------------------------Point.zero() ----------------------
 //set the point data to 0,0,0
-PyObject *Point_Zero(PointObject * self)
+PyObject *V24_Point_Zero(V24_PointObject * self)
 {
 	int x;
 	for(x = 0; x < self->size; x++) {
 		self->coord[x] = 0.0f;
 	}
-	return EXPP_incr_ret((PyObject*)self);
+	return V24_EXPP_incr_ret((PyObject*)self);
 }
 //----------------------------dealloc()(internal) ----------------
 //free the py_object
-static void Point_dealloc(PointObject * self)
+static void V24_Point_dealloc(V24_PointObject * self)
 {
 	Py_XDECREF(self->coerced_object);
 	//only free py_data
@@ -81,7 +81,7 @@ static void Point_dealloc(PointObject * self)
 }
 //----------------------------getattr()(internal) ----------------
 //object.attribute access (get)
-static PyObject *Point_getattr(PointObject * self, char *name)
+static PyObject *V24_Point_getattr(V24_PointObject * self, char *name)
 {
 	if(STREQ(name,"x")){
 		return PyFloat_FromDouble(self->coord[0]);
@@ -91,27 +91,27 @@ static PyObject *Point_getattr(PointObject * self, char *name)
 		if(self->size > 2){
 			return PyFloat_FromDouble(self->coord[2]);
 		}else{
-			return EXPP_ReturnPyObjError(PyExc_AttributeError,
+			return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 				"point.z: illegal attribute access\n");
 		}
 	}
 	if(STREQ(name, "wrapped")){
 		if(self->wrapped == Py_WRAP)
-			return EXPP_incr_ret((PyObject *)Py_True);
+			return V24_EXPP_incr_ret((PyObject *)Py_True);
 		else 
-			return EXPP_incr_ret((PyObject *)Py_False);
+			return V24_EXPP_incr_ret((PyObject *)Py_False);
 	}
 	return Py_FindMethod(Point_methods, (PyObject *) self, name);
 }
 //----------------------------setattr()(internal) ----------------
 //object.attribute access (set)
-static int Point_setattr(PointObject * self, char *name, PyObject * v)
+static int V24_Point_setattr(V24_PointObject * self, char *name, PyObject * v)
 {
 	PyObject *f = NULL;
 
 	f = PyNumber_Float(v);
 	if(f == NULL) { // parsed item not a number
-		return EXPP_ReturnIntError(PyExc_TypeError, 
+		return V24_EXPP_ReturnIntError(PyExc_TypeError, 
 			"point.attribute = x: argument not a number\n");
 	}
 
@@ -124,12 +124,12 @@ static int Point_setattr(PointObject * self, char *name, PyObject * v)
 			self->coord[2] = (float)PyFloat_AS_DOUBLE(f);
 		}else{
 			Py_DECREF(f);
-			return EXPP_ReturnIntError(PyExc_AttributeError,
+			return V24_EXPP_ReturnIntError(PyExc_AttributeError,
 				"point.z = x: illegal attribute access\n");
 		}
 	}else{
 		Py_DECREF(f);
-		return EXPP_ReturnIntError(PyExc_AttributeError,
+		return V24_EXPP_ReturnIntError(PyExc_AttributeError,
 				"point.attribute = x: unknown attribute\n");
 	}
 
@@ -138,7 +138,7 @@ static int Point_setattr(PointObject * self, char *name, PyObject * v)
 }
 //----------------------------print object (internal)-------------
 //print the object to screen
-static PyObject *Point_repr(PointObject * self)
+static PyObject *V24_Point_repr(V24_PointObject * self)
 {
 	int i;
 	char buffer[48], str[1024];
@@ -160,16 +160,16 @@ static PyObject *Point_repr(PointObject * self)
 //---------------------SEQUENCE PROTOCOLS------------------------
 //----------------------------len(object)------------------------
 //sequence length
-static int Point_len(PointObject * self)
+static int V24_Point_len(V24_PointObject * self)
 {
 	return self->size;
 }
 //----------------------------object[]---------------------------
 //sequence accessor (get)
-static PyObject *Point_item(PointObject * self, int i)
+static PyObject *V24_Point_item(V24_PointObject * self, int i)
 {
 	if(i < 0 || i >= self->size)
-		return EXPP_ReturnPyObjError(PyExc_IndexError,
+		return V24_EXPP_ReturnPyObjError(PyExc_IndexError,
 		"point[attribute]: array index out of range\n");
 
 	return PyFloat_FromDouble( (double)self->coord[i] );
@@ -177,19 +177,19 @@ static PyObject *Point_item(PointObject * self, int i)
 }
 //----------------------------object[]-------------------------
 //sequence accessor (set)
-static int Point_ass_item(PointObject * self, int i, PyObject * ob)
+static int V24_Point_ass_item(V24_PointObject * self, int i, PyObject * ob)
 {
 	PyObject *f = NULL;
 
 	f = PyNumber_Float(ob);
 	if(f == NULL) { // parsed item not a number
-		return EXPP_ReturnIntError(PyExc_TypeError, 
+		return V24_EXPP_ReturnIntError(PyExc_TypeError, 
 			"point[attribute] = x: argument not a number\n");
 	}
 
 	if(i < 0 || i >= self->size){
 		Py_DECREF(f);
-		return EXPP_ReturnIntError(PyExc_IndexError,
+		return V24_EXPP_ReturnIntError(PyExc_IndexError,
 			"point[attribute] = x: array assignment index out of range\n");
 	}
 	self->coord[i] = (float)PyFloat_AS_DOUBLE(f);
@@ -198,7 +198,7 @@ static int Point_ass_item(PointObject * self, int i, PyObject * ob)
 }
 //----------------------------object[z:y]------------------------
 //sequence slice (get)
-static PyObject *Point_slice(PointObject * self, int begin, int end)
+static PyObject *V24_Point_slice(V24_PointObject * self, int begin, int end)
 {
 	PyObject *list = NULL;
 	int count;
@@ -217,7 +217,7 @@ static PyObject *Point_slice(PointObject * self, int begin, int end)
 }
 //----------------------------object[z:y]------------------------
 //sequence slice (set)
-static int Point_ass_slice(PointObject * self, int begin, int end,
+static int V24_Point_ass_slice(V24_PointObject * self, int begin, int end,
 			     PyObject * seq)
 {
 	int i, y, size = 0;
@@ -230,25 +230,25 @@ static int Point_ass_slice(PointObject * self, int begin, int end,
 
 	size = PySequence_Length(seq);
 	if(size != (end - begin)){
-		return EXPP_ReturnIntError(PyExc_TypeError,
+		return V24_EXPP_ReturnIntError(PyExc_TypeError,
 			"point[begin:end] = []: size mismatch in slice assignment\n");
 	}
 
 	for (i = 0; i < size; i++) {
 		v = PySequence_GetItem(seq, i);
 		if (v == NULL) { // Failed to read sequence
-			return EXPP_ReturnIntError(PyExc_RuntimeError, 
+			return V24_EXPP_ReturnIntError(PyExc_RuntimeError, 
 				"point[begin:end] = []: unable to read sequence\n");
 		}
 		f = PyNumber_Float(v);
 		if(f == NULL) { // parsed item not a number
 			Py_DECREF(v);
-			return EXPP_ReturnIntError(PyExc_TypeError, 
+			return V24_EXPP_ReturnIntError(PyExc_TypeError, 
 				"point[begin:end] = []: sequence argument not a number\n");
 		}
 
 		coord[i] = (float)PyFloat_AS_DOUBLE(f);
-		EXPP_decr2(f,v);
+		V24_EXPP_decr2(f,v);
 	}
 	//parsed well - now set in point
 	for(y = 0; y < size; y++){
@@ -259,28 +259,28 @@ static int Point_ass_slice(PointObject * self, int begin, int end,
 //------------------------NUMERIC PROTOCOLS----------------------
 //------------------------obj + obj------------------------------
 //addition
-static PyObject *Point_add(PyObject * v1, PyObject * v2)
+static PyObject *V24_Point_add(PyObject * v1, PyObject * v2)
 {
 	int x, size;
 	float coord[3];
-	PointObject *coord1 = NULL, *coord2 = NULL;
-	VectorObject *vec = NULL;
+	V24_PointObject *coord1 = NULL, *coord2 = NULL;
+	V24_VectorObject *vec = NULL;
 
-	coord1 = (PointObject*)v1;
-	coord2 = (PointObject*)v2;
+	coord1 = (V24_PointObject*)v1;
+	coord2 = (V24_PointObject*)v2;
 
 	if(!coord1->coerced_object){
 		if(coord2->coerced_object){
 			if(VectorObject_Check(coord2->coerced_object)){  //POINT + VECTOR
 				//Point translation
-				vec = (VectorObject*)coord2->coerced_object;
+				vec = (V24_VectorObject*)coord2->coerced_object;
 				size = coord1->size;
 				if(vec->size == size){
 					for(x = 0; x < size; x++){
 						coord[x] = coord1->coord[x] + vec->vec[x];
 					}	
 				}else{
-					return EXPP_ReturnPyObjError(PyExc_AttributeError,
+					return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 						"Point addition: arguments are the wrong size....\n");
 				}
 				return newPointObject(coord, size, Py_NEW);
@@ -292,33 +292,33 @@ static PyObject *Point_add(PyObject * v1, PyObject * v2)
 					coord[x] = coord1->coord[x] + coord2->coord[x];
 				}
 			}else{
-				return EXPP_ReturnPyObjError(PyExc_AttributeError,
+				return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 					"Point addition: arguments are the wrong size....\n");
 			}
 			return newPointObject(coord, size, Py_NEW);
 		}
 	}
 
-	return EXPP_ReturnPyObjError(PyExc_AttributeError,
+	return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 		"Point addition: arguments not valid for this operation....\n");
 }
 //------------------------obj - obj------------------------------
 //subtraction
-static PyObject *Point_sub(PyObject * v1, PyObject * v2)
+static PyObject *V24_Point_sub(PyObject * v1, PyObject * v2)
 {
 	int x, size;
 	float coord[3];
-	PointObject *coord1 = NULL, *coord2 = NULL;
+	V24_PointObject *coord1 = NULL, *coord2 = NULL;
 
-	coord1 = (PointObject*)v1;
-	coord2 = (PointObject*)v2;
+	coord1 = (V24_PointObject*)v1;
+	coord2 = (V24_PointObject*)v2;
 
 	if(coord1->coerced_object || coord2->coerced_object){
-		return EXPP_ReturnPyObjError(PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Point subtraction: arguments not valid for this operation....\n");
 	}
 	if(coord1->size != coord2->size){
-		return EXPP_ReturnPyObjError(PyExc_AttributeError,
+		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 		"Point subtraction: points must have the same dimensions for this operation\n");
 	}
 
@@ -332,24 +332,24 @@ static PyObject *Point_sub(PyObject * v1, PyObject * v2)
 }
 //------------------------obj * obj------------------------------
 //mulplication
-static PyObject *Point_mul(PyObject * p1, PyObject * p2)
+static PyObject *V24_Point_mul(PyObject * p1, PyObject * p2)
 {
 	int x, size;
 	float coord[3], scalar;
-	PointObject *coord1 = NULL, *coord2 = NULL;
+	V24_PointObject *coord1 = NULL, *coord2 = NULL;
 	PyObject *f = NULL;
-	MatrixObject *mat = NULL;
-	QuaternionObject *quat = NULL;
+	V24_MatrixObject *mat = NULL;
+	V24_QuaternionObject *quat = NULL;
 
-	coord1 = (PointObject*)p1;
-	coord2 = (PointObject*)p2;
+	coord1 = (V24_PointObject*)p1;
+	coord2 = (V24_PointObject*)p2;
 
 	if(coord1->coerced_object){
 		if (PyFloat_Check(coord1->coerced_object) || 
 			PyInt_Check(coord1->coerced_object)){	// FLOAT/INT * POINT
 			f = PyNumber_Float(coord1->coerced_object);
 			if(f == NULL) { // parsed item not a number
-				return EXPP_ReturnPyObjError(PyExc_TypeError, 
+				return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 					"Point multiplication: arguments not acceptable for this operation\n");
 			}
 
@@ -367,7 +367,7 @@ static PyObject *Point_mul(PyObject * p1, PyObject * p2)
 				PyInt_Check(coord2->coerced_object)){	// POINT * FLOAT/INT
 				f = PyNumber_Float(coord2->coerced_object);
 				if(f == NULL) { // parsed item not a number
-					return EXPP_ReturnPyObjError(PyExc_TypeError, 
+					return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 						"Point multiplication: arguments not acceptable for this operation\n");
 				}
 
@@ -379,12 +379,12 @@ static PyObject *Point_mul(PyObject * p1, PyObject * p2)
 				Py_DECREF(f);
 				return newPointObject(coord, size, Py_NEW);
 			}else if(MatrixObject_Check(coord2->coerced_object)){ //POINT * MATRIX
-				mat = (MatrixObject*)coord2->coerced_object;
+				mat = (V24_MatrixObject*)coord2->coerced_object;
 				return row_point_multiplication(coord1, mat);
 			}else if(QuaternionObject_Check(coord2->coerced_object)){  //POINT * QUATERNION
-				quat = (QuaternionObject*)coord2->coerced_object;
+				quat = (V24_QuaternionObject*)coord2->coerced_object;
 				if(coord1->size != 3){
-					return EXPP_ReturnPyObjError(PyExc_TypeError, 
+					return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 						"Point multiplication: only 3D point rotations (with quats) currently supported\n");
 				}
 				return quat_rotation((PyObject*)coord1, (PyObject*)quat);
@@ -392,12 +392,12 @@ static PyObject *Point_mul(PyObject * p1, PyObject * p2)
 		}
 	}
 
-	return EXPP_ReturnPyObjError(PyExc_TypeError, 
+	return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 		"Point multiplication: arguments not acceptable for this operation\n");
 }
 //-------------------------- -obj -------------------------------
 //returns the negative of this object
-static PyObject *Point_neg(PointObject *self)
+static PyObject *V24_Point_neg(V24_PointObject *self)
 {
 	int x;
 	float coord[3];
@@ -409,46 +409,46 @@ static PyObject *Point_neg(PointObject *self)
 }
 
 //------------------------coerce(obj, obj)-----------------------
-//coercion of unknown types to type PointObject for numeric protocols
+//coercion of unknown types to type V24_PointObject for numeric protocols
 /*Coercion() is called whenever a math operation has 2 operands that
  it doesn't understand how to evaluate. 2+Matrix for example. We want to 
  evaluate some of these operations like: (vector * 2), however, for math
  to proceed, the unknown operand must be cast to a type that python math will
  understand. (e.g. in the case above case, 2 must be cast to a vector and 
  then call vector.multiply(vector, scalar_cast_as_vector)*/
-static int Point_coerce(PyObject ** p1, PyObject ** p2)
+static int V24_Point_coerce(PyObject ** p1, PyObject ** p2)
 {
 	if(VectorObject_Check(*p2) || PyFloat_Check(*p2) || PyInt_Check(*p2) ||
 			MatrixObject_Check(*p2) || QuaternionObject_Check(*p2)) {
-		PyObject *coerced = EXPP_incr_ret(*p2);
+		PyObject *coerced = V24_EXPP_incr_ret(*p2);
 		*p2 = newPointObject(NULL,3,Py_NEW);
-		((PointObject*)*p2)->coerced_object = coerced;
+		((V24_PointObject*)*p2)->coerced_object = coerced;
 		Py_INCREF (*p1);
 		return 0;
 	}
 
-	return EXPP_ReturnIntError(PyExc_TypeError, 
+	return V24_EXPP_ReturnIntError(PyExc_TypeError, 
 		"point.coerce(): unknown operand - can't coerce for numeric protocols");
 }
 //-----------------PROTOCOL DECLARATIONS--------------------------
-static PySequenceMethods Point_SeqMethods = {
-	(inquiry) Point_len,						/* sq_length */
+static PySequenceMethods V24_Point_SeqMethods = {
+	(inquiry) V24_Point_len,						/* sq_length */
 	(binaryfunc) 0,								/* sq_concat */
 	(intargfunc) 0,								/* sq_repeat */
-	(intargfunc) Point_item,					/* sq_item */
-	(intintargfunc) Point_slice,				/* sq_slice */
-	(intobjargproc) Point_ass_item,				/* sq_ass_item */
-	(intintobjargproc) Point_ass_slice,			/* sq_ass_slice */
+	(intargfunc) V24_Point_item,					/* sq_item */
+	(intintargfunc) V24_Point_slice,				/* sq_slice */
+	(intobjargproc) V24_Point_ass_item,				/* sq_ass_item */
+	(intintobjargproc) V24_Point_ass_slice,			/* sq_ass_slice */
 };
-static PyNumberMethods Point_NumMethods = {
-	(binaryfunc) Point_add,						/* __add__ */
-	(binaryfunc) Point_sub,						/* __sub__ */
-	(binaryfunc) Point_mul,						/* __mul__ */
+static PyNumberMethods V24_Point_NumMethods = {
+	(binaryfunc) V24_Point_add,						/* __add__ */
+	(binaryfunc) V24_Point_sub,						/* __sub__ */
+	(binaryfunc) V24_Point_mul,						/* __mul__ */
 	(binaryfunc) 0,								/* __div__ */
 	(binaryfunc) 0,								/* __mod__ */
 	(binaryfunc) 0,								/* __divmod__ */
 	(ternaryfunc) 0,							/* __pow__ */
-	(unaryfunc) Point_neg,						/* __neg__ */
+	(unaryfunc) V24_Point_neg,						/* __neg__ */
 	(unaryfunc) 0,								/* __pos__ */
 	(unaryfunc) 0,								/* __abs__ */
 	(inquiry) 0,								/* __nonzero__ */
@@ -458,7 +458,7 @@ static PyNumberMethods Point_NumMethods = {
 	(binaryfunc) 0,								/* __and__ */
 	(binaryfunc) 0,								/* __xor__ */
 	(binaryfunc) 0,								/* __or__ */
-	(coercion)  Point_coerce,					/* __coerce__ */
+	(coercion)  V24_Point_coerce,					/* __coerce__ */
 	(unaryfunc) 0,								/* __int__ */
 	(unaryfunc) 0,								/* __long__ */
 	(unaryfunc) 0,								/* __float__ */
@@ -471,16 +471,16 @@ PyTypeObject point_Type = {
 	PyObject_HEAD_INIT(NULL) 
 	0,											/*ob_size */
 	"point",									/*tp_name */
-	sizeof(PointObject),						/*tp_basicsize */
+	sizeof(V24_PointObject),						/*tp_basicsize */
 	0,											/*tp_itemsize */
-	(destructor) Point_dealloc,					/*tp_dealloc */
+	(destructor) V24_Point_dealloc,					/*tp_dealloc */
 	(printfunc) 0,								/*tp_print */
-	(getattrfunc) Point_getattr,				/*tp_getattr */
-	(setattrfunc) Point_setattr,				/*tp_setattr */
+	(getattrfunc) V24_Point_getattr,				/*tp_getattr */
+	(setattrfunc) V24_Point_setattr,				/*tp_setattr */
 	0,											/*tp_compare */
-	(reprfunc) Point_repr,						/*tp_repr */
-	&Point_NumMethods,							/*tp_as_number */
-	&Point_SeqMethods,							/*tp_as_sequence */
+	(reprfunc) V24_Point_repr,						/*tp_repr */
+	&V24_Point_NumMethods,							/*tp_as_number */
+	&V24_Point_SeqMethods,							/*tp_as_sequence */
 };
 //------------------------newPointObject (internal)-------------
 //creates a new point object
@@ -490,11 +490,11 @@ PyTypeObject point_Type = {
  (i.e. it must be created here with PyMEM_malloc())*/
 PyObject *newPointObject(float *coord, int size, int type)
 {
-	PointObject *self;
+	V24_PointObject *self;
 	int x;
 
 	point_Type.ob_type = &PyType_Type;
-	self = PyObject_NEW(PointObject, &point_Type);
+	self = PyObject_NEW(V24_PointObject, &point_Type);
 	self->data.blend_data = NULL;
 	self->data.py_data = NULL;
 	if(size > 3 || size < 2)

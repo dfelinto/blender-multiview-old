@@ -42,7 +42,7 @@ extern struct LinkNode *bpy_pydriver_oblist;
 void initBlenderApi2_2x( void );
 char *bpy_gethome( int append_scriptsdir );
 void discardFromBDict( char *key );
-void EXPP_Library_Close( void );   /* in Library.c, used by BPY_end_python */
+void V24_EXPP_Library_Close( void );   /* in Library.c, used by BPY_end_python */
 
 /* PyDrivers */
 

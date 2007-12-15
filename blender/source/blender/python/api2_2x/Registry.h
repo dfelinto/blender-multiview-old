@@ -45,6 +45,6 @@
 #include <Python.h>
 
 extern PyObject *bpy_registryDict;
-PyObject *Registry_Init( void );
+PyObject *V24_Registry_Init( void );
 
 #endif				/* EXPP_REGISTRY_H */

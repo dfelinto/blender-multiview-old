@@ -40,39 +40,39 @@
 #include "rgbTuple.h"
 
 /*****************************************************************************/
-/* Python BPy_Material structure definition:        */
+/* Python V24_BPy_Material structure definition:        */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD 
 	Material * material; /* libdata must be second */
-	BPy_rgbTuple *col, *amb, *spec, *mir, *sss;
-} BPy_Material;
+	V24_BPy_rgbTuple *col, *amb, *spec, *mir, *sss;
+} V24_BPy_Material;
 
-extern PyTypeObject Material_Type;	/* The Material PyType Object */
+extern PyTypeObject V24_Material_Type;	/* The Material PyType Object */
 
 #define BPy_Material_Check(v) \
-		((v)->ob_type == &Material_Type)	/* for type checking */
+		((v)->ob_type == &V24_Material_Type)	/* for type checking */
 
 /*****************************************************************************/
 /* Module Blender.Material - public functions	 */
 /*****************************************************************************/
-PyObject *M_Material_Init( void );
+PyObject *V24_M_Material_Init( void );
 
-PyObject *Material_Init( void );
-PyObject *Material_CreatePyObject( Material * mat );
-Material *Material_FromPyObject( PyObject * pyobj );
+PyObject *V24_Material_Init( void );
+PyObject *V24_Material_CreatePyObject( Material * mat );
+Material *V24_Material_FromPyObject( PyObject * pyobj );
 
 /* colorband tp_getseters */
-PyObject *EXPP_PyList_fromColorband( ColorBand *coba );
-int EXPP_Colorband_fromPyList( ColorBand **coba, PyObject * value );
+PyObject *V24_EXPP_PyList_fromColorband( ColorBand *coba );
+int V24_EXPP_Colorband_fromPyList( ColorBand **coba, PyObject * value );
 
 /* Some functions needed by NMesh, Curve and friends */
-PyObject *EXPP_PyList_fromMaterialList( Material ** matlist, int len,
+PyObject *V24_EXPP_PyList_fromMaterialList( Material ** matlist, int len,
 					int all );
-Material **EXPP_newMaterialList_fromPyList( PyObject * list );
-Material **EXPP_newMaterialList( int len );
-void EXPP_incr_mats_us( Material ** matlist, int len );
-int EXPP_synchronizeMaterialLists( Object * object );
-int EXPP_releaseMaterialList( Material ** matlist, int len );
+Material **V24_EXPP_newMaterialList_fromPyList( PyObject * list );
+Material **V24_EXPP_newMaterialList( int len );
+void V24_EXPP_incr_mats_us( Material ** matlist, int len );
+int V24_EXPP_synchronizeMaterialLists( Object * object );
+int V24_EXPP_releaseMaterialList( Material ** matlist, int len );
 
 #endif				/* EXPP_MATERIAL_H */

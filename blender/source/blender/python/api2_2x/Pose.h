@@ -36,36 +36,36 @@
 #include "DNA_object_types.h"
 
 //-------------------TYPE CHECKS---------------------------------
-#define BPy_Pose_Check(v) ((v)->ob_type == &Pose_Type)
-#define BPy_PoseBone_Check(v) ((v)->ob_type == &PoseBone_Type)
-#define BPy_PoseBonesDict_Check(v) ((v)->ob_type == &PoseBonesDict_Type)
+#define BPy_Pose_Check(v) ((v)->ob_type == &V24_Pose_Type)
+#define BPy_PoseBone_Check(v) ((v)->ob_type == &V24_PoseBone_Type)
+#define BPy_PoseBonesDict_Check(v) ((v)->ob_type == &V24_PoseBonesDict_Type)
 //-------------------TYPEOBJECT----------------------------------
-extern PyTypeObject Pose_Type;
-extern PyTypeObject PoseBone_Type;
-extern PyTypeObject PoseBonesDict_Type;
+extern PyTypeObject V24_Pose_Type;
+extern PyTypeObject V24_PoseBone_Type;
+extern PyTypeObject V24_PoseBonesDict_Type;
 //-------------------STRUCT DEFINITION----------------------------
 typedef struct {
 	PyObject_HEAD 
 	PyObject *bonesMap;
 	ListBase *bones;  
-} BPy_PoseBonesDict;
+} V24_BPy_PoseBonesDict;
 
 typedef struct {
 	PyObject_HEAD
 	bPose *pose;
 	char name[24];   //because poses have not names :(
-	BPy_PoseBonesDict *Bones; 
-} BPy_Pose;
+	V24_BPy_PoseBonesDict *Bones; 
+} V24_BPy_Pose;
 
 typedef struct {
 	PyObject_HEAD
 	bPoseChannel *posechannel;
 	
-} BPy_PoseBone;
+} V24_BPy_PoseBone;
 
 //-------------------VISIBLE PROTOTYPES-------------------------
-PyObject *Pose_Init(void);
-PyObject *PyPose_FromPose(bPose *pose, char *name);
-PyObject *PyPoseBone_FromPosechannel(bPoseChannel *pchan);
-Object *Object_FromPoseChannel(bPoseChannel *curr_pchan);
+PyObject *V24_Pose_Init(void);
+PyObject *V24_PyPose_FromPose(bPose *pose, char *name);
+PyObject *V24_PyPoseBone_FromPosechannel(bPoseChannel *pchan);
+Object *V24_Object_FromPoseChannel(bPoseChannel *curr_pchan);
 #endif

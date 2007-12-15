@@ -44,10 +44,10 @@
 void initDraw( void );
 
 /* 
- * Button Object stuct 
+ * V24V24__Button Object stuct 
  */
 
-typedef struct _Button {
+typedef struct V24__Button {
 	PyObject_VAR_HEAD	/* required Py Macro */
 	int type;		/*@ 1 == int, 2 == float, 3 == string */
 	unsigned int slen;	/*@ length of string (if type == 3) */
@@ -58,7 +58,7 @@ typedef struct _Button {
 		float asvec[3];
 	} val;
 	char tooltip[256];
-} Button;
+} V24V24__Button;
 
 #define BPY_MAX_TOOLTIP	255
 
@@ -71,7 +71,7 @@ typedef struct _Button {
  * these are declared in ../BPY_extern.h 
 */
 
-PyObject *M_Draw_Init( void );
-PyObject *Draw_Init( void );
+PyObject *V24_M_Draw_Init( void );
+PyObject *V24_Draw_Init( void );
 
 #endif				/* EXPP_DRAW_H */

@@ -30,7 +30,7 @@
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
 */
 
-/* for open, close in Blender_Load */
+/* for open, close in V24_Blender_Load */
 
 #include "BLI_blenlib.h"
 #include "BKE_global.h"
@@ -79,8 +79,8 @@ void m_bpy_init(void)
 	dict = PyModule_GetDict(module);
 	g_bpydict = dict;
 	
-	PyModule_AddObject( module, "config", Config_CreatePyObject() );
-	PyDict_SetItemString( dict, "data", Data_Init());
-	PyDict_SetItemString( dict, "libraries", Library_Init(  ) );
+	PyModule_AddObject( module, "config", V24_Config_CreatePyObject() );
+	PyDict_SetItemString( dict, "data", V24_Data_Init());
+	PyDict_SetItemString( dict, "libraries", V24_Library_Init(  ) );
 	
 }

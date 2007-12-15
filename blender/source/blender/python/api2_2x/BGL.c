@@ -105,7 +105,7 @@ PyTypeObject buffer_Type = {
 /* #ifndef __APPLE__ */
 
 #define BGL_Wrap(nargs, funcname, ret, arg_list) \
-static PyObject *Method_##funcname (PyObject *self, PyObject *args) {\
+static PyObject *V24_Method_##funcname (PyObject *self, PyObject *args) {\
 	arg_def##nargs arg_list; \
 	ret_def_##ret; \
 	if(!PyArg_ParseTuple(args, arg_str##nargs arg_list, arg_ref##nargs arg_list)) return NULL;\
@@ -114,7 +114,7 @@ static PyObject *Method_##funcname (PyObject *self, PyObject *args) {\
 }
 
 #define BGLU_Wrap(nargs, funcname, ret, arg_list) \
-static PyObject *Method_##funcname (PyObject *self, PyObject *args) {\
+static PyObject *V24_Method_##funcname (PyObject *self, PyObject *args) {\
 	arg_def##nargs arg_list; \
 	ret_def_##ret; \
 	if(!PyArg_ParseTuple(args, arg_str##nargs arg_list, arg_ref##nargs arg_list)) return NULL;\
@@ -124,7 +124,7 @@ static PyObject *Method_##funcname (PyObject *self, PyObject *args) {\
 
 /* #endif */
 
-PyObject *BGL_Init( void );
+PyObject *V24_BGL_Init( void );
 
 /********/
 static int type_size(int type)
@@ -189,7 +189,7 @@ static PyObject *Method_Buffer (PyObject *self, PyObject *args)
 	int *dimensions = 0, ndimensions = 0;
 	
 	if (!PyArg_ParseTuple(args, "iO|O", &type, &length_ob, &template))
-	        return EXPP_ReturnPyObjError(PyExc_AttributeError,
+	        return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 	                        "expected an int and one or two PyObjects");
 
 	if (type!=GL_BYTE && type!=GL_SHORT && type!=GL_INT && type!=GL_FLOAT && type!=GL_DOUBLE) {
@@ -757,8 +757,8 @@ BGLU_Wrap(9, Project,			GLint,		(GLdouble, GLdouble, GLdouble, GLdoubleP, GLdoub
 BGLU_Wrap(9, UnProject,			GLint,		(GLdouble, GLdouble, GLdouble, GLdoubleP, GLdoubleP, GLintP, GLdoubleP, GLdoubleP, GLdoubleP))
 
 #undef MethodDef
-#define MethodDef(func) {"gl"#func, Method_##func, METH_VARARGS, "no string"}
-#define MethodDefu(func) {"glu"#func, Method_##func, METH_VARARGS, "no string"}
+#define MethodDef(func) {"gl"#func, V24_Method_##func, METH_VARARGS, "no string"}
+#define MethodDefu(func) {"glu"#func, V24_Method_##func, METH_VARARGS, "no string"}
 /* So that MethodDef(Accum) becomes:
  * {"glAccum", Method_Accumfunc, METH_VARARGS} */
 
@@ -1091,7 +1091,7 @@ static struct PyMethodDef BGL_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
-PyObject *BGL_Init(void) 
+PyObject *V24_BGL_Init(void) 
 {
 	PyObject *mod= Py_InitModule("Blender.BGL", BGL_methods);
 	PyObject *dict= PyModule_GetDict(mod);
@@ -1099,7 +1099,7 @@ PyObject *BGL_Init(void)
 	if( PyType_Ready( &buffer_Type) < 0)
 		Py_RETURN_NONE;
 
-#define EXPP_ADDCONST(x) EXPP_dict_set_item_str(dict, #x, PyInt_FromLong(x))
+#define EXPP_ADDCONST(x) V24_EXPP_dict_set_item_str(dict, #x, PyInt_FromLong(x))
 
 /* So, for example:
  * EXPP_ADDCONST(GL_CURRENT_BIT) becomes

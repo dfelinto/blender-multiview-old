@@ -40,19 +40,19 @@ PyTypeObject constant_Type;
 //------------------METHOD IMPLEMENTATIONS-----------------------------
 //------------------------constant.items()
 //Returns a list of key:value pairs like dict.items()
-PyObject* constant_items(BPy_constant *self)
+PyObject* constant_items(V24_BPy_constant *self)
 {
 	return PyDict_Items(self->dict);
 }
 //------------------------constant.keys()
 //Returns a list of keys like dict.keys()
-PyObject* constant_keys(BPy_constant *self)
+PyObject* constant_keys(V24_BPy_constant *self)
 {
 	return PyDict_Keys(self->dict);
 }
 //------------------------constant.values()
 //Returns a list of values like dict.values()
-PyObject* constant_values(BPy_constant *self)
+PyObject* constant_values(V24_BPy_constant *self)
 {
 	return PyDict_Values(self->dict);
 }
@@ -62,15 +62,15 @@ PyObject* constant_values(BPy_constant *self)
 //Creates a new constant object
 static PyObject *new_const(void) 
 {				
-	BPy_constant *constant;
+	V24_BPy_constant *constant;
 
-	constant =	(BPy_constant *) PyObject_NEW(BPy_constant, &constant_Type);
+	constant =	(V24_BPy_constant *) PyObject_NEW(V24_BPy_constant, &constant_Type);
 	if(constant == NULL){
-		return (EXPP_ReturnPyObjError(PyExc_MemoryError, 
+		return (V24_EXPP_ReturnPyObjError(PyExc_MemoryError, 
 			"couldn't create constant object"));
 	}
 	if((constant->dict = PyDict_New()) == NULL){
-		return (EXPP_ReturnPyObjError(PyExc_MemoryError,
+		return (V24_EXPP_ReturnPyObjError(PyExc_MemoryError,
 			"couldn't create constant object's dictionary"));
 	}
 
@@ -78,12 +78,12 @@ static PyObject *new_const(void)
 }
 //------------------------tp_doc
 //The __doc__ string for this object
-static char BPy_constant_doc[] = "This is an internal subobject of armature\
+static char V24_BPy_constant_doc[] = "This is an internal subobject of armature\
 designed to act as a Py_Bone dictionary.";
 
 //------------------------tp_methods
 //This contains a list of all methods the object contains
-static PyMethodDef BPy_constant_methods[] = {
+static PyMethodDef V24_BPy_constant_methods[] = {
 	{"items", (PyCFunction) constant_items, METH_NOARGS, 
 		"() - Returns the key:value pairs from the dictionary"},
 	{"keys", (PyCFunction) constant_keys, METH_NOARGS, 
@@ -93,30 +93,30 @@ static PyMethodDef BPy_constant_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 //------------------------mp_length
-static int constantLength(BPy_constant *self)
+static int constantLength(V24_BPy_constant *self)
 {
 	return 0;
 }
 //------------------------mp_subscript
-static PyObject *constantSubscript(BPy_constant *self, PyObject *key)
+static PyObject *constantSubscript(V24_BPy_constant *self, PyObject *key)
 {
 	if(self->dict) {
 		PyObject *v = PyDict_GetItem(self->dict, key);
 		if(v) {
-			return EXPP_incr_ret(v);
+			return V24_EXPP_incr_ret(v);
 		}
-		return EXPP_ReturnPyObjError( PyExc_KeyError,
+		return V24_EXPP_ReturnPyObjError( PyExc_KeyError,
 				"key not found" );
 	}
 	return NULL;
 }
 //------------------------mp_ass_subscript
-static int constantAssSubscript(BPy_constant *self, PyObject *who, PyObject *cares)
+static int constantAssSubscript(V24_BPy_constant *self, PyObject *who, PyObject *cares)
 {
 	return 0; /* no user assignments allowed */
 }
 //------------------------tp_getattro
-static PyObject *constant_getAttro(BPy_constant * self, PyObject *value)
+static PyObject *constant_getAttro(V24_BPy_constant * self, PyObject *value)
 {
 	if(self->dict) {
 		PyObject *v;
@@ -133,15 +133,15 @@ static PyObject *constant_getAttro(BPy_constant * self, PyObject *value)
 
 		v = PyDict_GetItemString(self->dict, name);
 		if(v) {
-			return EXPP_incr_ret(v); /* was a borrowed ref */
+			return V24_EXPP_incr_ret(v); /* was a borrowed ref */
 		}
 		return PyObject_GenericGetAttr( (PyObject *)self, value );
 	}
-	return (EXPP_ReturnPyObjError(PyExc_RuntimeError,
+	return (V24_EXPP_ReturnPyObjError(PyExc_RuntimeError,
 					"constant object lacks a dictionary"));
 }
 //------------------------tp_repr
-static PyObject *constant_repr(BPy_constant * self)
+static PyObject *constant_repr(V24_BPy_constant * self)
 {
 	char str[4096];
 	PyObject *key, *value, *tempstr;
@@ -169,7 +169,7 @@ static PyObject *constant_repr(BPy_constant * self)
 	return PyString_FromString(str);
 }
 //------------------------tp_dealloc
-static void constant_dealloc(BPy_constant * self)
+static void constant_dealloc(V24_BPy_constant * self)
 {
 	Py_DECREF(self->dict);
 	PyObject_DEL(self);
@@ -186,7 +186,7 @@ PyTypeObject constant_Type = {
 	PyObject_HEAD_INIT(NULL)		//tp_head
 	0,								//tp_internal
 	"Constant",						//tp_name
-	sizeof(BPy_constant),			//tp_basicsize
+	sizeof(V24_BPy_constant),			//tp_basicsize
 	0,								//tp_itemsize
 	(destructor)constant_dealloc,	//tp_dealloc
 	0,								//tp_print
@@ -204,14 +204,14 @@ PyTypeObject constant_Type = {
 	0,								//tp_setattro
 	0,								//tp_as_buffer
 	Py_TPFLAGS_DEFAULT,				//tp_flags
-	BPy_constant_doc,				//tp_doc
+	V24_BPy_constant_doc,				//tp_doc
 	0,								//tp_traverse
 	0,								//tp_clear
 	0,								//tp_richcompare
 	0,								//tp_weaklistoffset
 	0,								//tp_iter
 	0,								//tp_iternext
-	BPy_constant_methods,			//tp_methods
+	V24_BPy_constant_methods,			//tp_methods
 	0,								//tp_members
 	0,								//tp_getset
 	0,								//tp_base
@@ -233,37 +233,37 @@ PyTypeObject constant_Type = {
 };
 //------------------VISIBLE PROTOTYPE IMPLEMENTATION-------------------
 //Creates a default empty constant
-PyObject *PyConstant_New(void)
+PyObject *V24_PyConstant_New(void)
 {				
 	return new_const();
 }
 //Inserts a key:value pair into the constant and then returns 0/1
-int PyConstant_Insert(BPy_constant *self, char *name, PyObject *value)
+int V24_PyConstant_Insert(V24_BPy_constant *self, char *name, PyObject *value)
 {
 	PyType_Ready( &constant_Type );
-	return EXPP_dict_set_item_str(self->dict, name, value);
+	return V24_EXPP_dict_set_item_str(self->dict, name, value);
 }
 //This is a helper function for generating constants......
-PyObject *PyConstant_NewInt(char *name, int value)
+PyObject *V24_PyConstant_NewInt(char *name, int value)
 {
-        PyObject *constant = PyConstant_New();
+        PyObject *constant = V24_PyConstant_New();
 
 		if (constant)
 		{                
-			PyConstant_Insert((BPy_constant*)constant, "name", PyString_FromString(name));
-			PyConstant_Insert((BPy_constant*)constant, "value", PyInt_FromLong(value));
+			V24_PyConstant_Insert((V24_BPy_constant*)constant, "name", PyString_FromString(name));
+			V24_PyConstant_Insert((V24_BPy_constant*)constant, "value", PyInt_FromLong(value));
 		}
 		return constant;
 }
 //This is a helper function for generating constants......
-PyObject *PyConstant_NewString(char *name, char *value)
+PyObject *V24_PyConstant_NewString(char *name, char *value)
 {
-		PyObject *constant = PyConstant_New();
+		PyObject *constant = V24_PyConstant_New();
 
 		if (constant)
 		{
-			PyConstant_Insert((BPy_constant*)constant, "name", PyString_FromString(name));
-			PyConstant_Insert((BPy_constant*)constant, "value", PyString_FromString(value));
+			V24_PyConstant_Insert((V24_BPy_constant*)constant, "name", PyString_FromString(name));
+			V24_PyConstant_Insert((V24_BPy_constant*)constant, "value", PyString_FromString(value));
 		}
 		return constant;
 }

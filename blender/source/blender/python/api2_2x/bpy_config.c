@@ -55,9 +55,9 @@ enum conf_consts {
 	EXPP_CONF_ATTR_FONT_SIZE
 };
 
-PyObject *Config_CreatePyObject( )
+PyObject *V24_Config_CreatePyObject( )
 {
-	BPy_Config *conf = PyObject_NEW( BPy_Config, &Config_Type);
+	V24_BPy_Config *conf = PyObject_NEW( V24_BPy_Config, &V24_Config_Type);
 	return (PyObject *)conf;
 }
 
@@ -65,7 +65,7 @@ PyObject *Config_CreatePyObject( )
  * repr function
  * callback functions building meaninful string to representations
  */
-static PyObject *Config_repr( BPy_Config * self )
+static PyObject *V24_Config_repr( V24_BPy_Config * self )
 {
 	return PyString_FromFormat( "[Blender Configuration Data]");
 }
@@ -87,7 +87,7 @@ static struct PyMethodDef BPy_Config_methods[] = {
 /*
  * get integer attributes
  */
-static PyObject *getStrAttr( BPy_Config *self, void *type )
+static PyObject *getStrAttr( V24_BPy_Config *self, void *type )
 {
 	char *param = NULL;
 	
@@ -121,7 +121,7 @@ static PyObject *getStrAttr( BPy_Config *self, void *type )
 		break;	
 	
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"undefined type in getStrAttr" );
 	}
 
@@ -132,14 +132,14 @@ static PyObject *getStrAttr( BPy_Config *self, void *type )
  * set integer attributes which require clamping
  */
 
-static int setStrAttr( BPy_Config *self, PyObject *value, void *type )
+static int setStrAttr( V24_BPy_Config *self, PyObject *value, void *type )
 {
 	char *param;
 	int len=160;
 	char *str = PyString_AsString(value);
 	
 	if (!str)
-		return EXPP_ReturnIntError( PyExc_TypeError,
+		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"error, must assign a python string for setStrAttr");
 	
 	switch( (int)type ) {
@@ -172,7 +172,7 @@ static int setStrAttr( BPy_Config *self, PyObject *value, void *type )
 		break;
 		
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setStrAttr");
 	}
 	
@@ -185,7 +185,7 @@ static int setStrAttr( BPy_Config *self, PyObject *value, void *type )
  * get integer attributes
  */
 
-static PyObject *getIntAttr( BPy_Config *self, void *type )
+static PyObject *getIntAttr( V24_BPy_Config *self, void *type )
 {
 	int param;
 
@@ -207,7 +207,7 @@ static PyObject *getIntAttr( BPy_Config *self, void *type )
 		break;
 	
 	default:
-		return EXPP_ReturnPyObjError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"undefined type in getIntAttr" );
 	}
 
@@ -218,7 +218,7 @@ static PyObject *getIntAttr( BPy_Config *self, void *type )
  * set integer attributes which require clamping
  */
 
-static int setIntAttrClamp( BPy_Config *self, PyObject *value, void *type )
+static int setIntAttrClamp( V24_BPy_Config *self, PyObject *value, void *type )
 {
 	void *param;
 	int min, max, size;
@@ -256,13 +256,13 @@ static int setIntAttrClamp( BPy_Config *self, PyObject *value, void *type )
 		break;
 		
 	default:
-		return EXPP_ReturnIntError( PyExc_RuntimeError,
+		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"undefined type in setIntAttrClamp");
 	}
-	return EXPP_setIValueClamped( value, param, min, max, size );
+	return V24_EXPP_setIValueClamped( value, param, min, max, size );
 }
 
-static PyGetSetDef Config_getseters[] = {
+static PyGetSetDef V24_Config_getseters[] = {
 	
 	/* ints & shorts */
 	{"undoSteps",
@@ -329,14 +329,14 @@ static PyGetSetDef Config_getseters[] = {
 
 
 /*
- *  Python Config_Type structure definition
+ *  Python V24_Config_Type structure definition
  */
-PyTypeObject Config_Type = {
+PyTypeObject V24_Config_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
 	"Blender Config",           /* char *tp_name; */
-	sizeof( BPy_Config ),       /* int tp_basicsize; */
+	sizeof( V24_BPy_Config ),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
@@ -346,7 +346,7 @@ PyTypeObject Config_Type = {
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
 	NULL, /* cmpfunc tp_compare; */
-	(reprfunc)Config_repr,   /* reprfunc tp_repr; */
+	(reprfunc)V24_Config_repr,   /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
@@ -391,7 +391,7 @@ PyTypeObject Config_Type = {
   /*** Attribute descriptor and subclassing stuff ***/
 	NULL,  /*BPy_Config_methods*/     /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	Config_getseters,       /* struct PyGetSetDef *tp_getset; */
+	V24_Config_getseters,       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */

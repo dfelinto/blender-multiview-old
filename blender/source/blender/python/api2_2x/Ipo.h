@@ -37,27 +37,27 @@
 #include "DNA_ipo_types.h"
 
 /*****************************************************************************/
-/* Python BPy_Ipo structure definition:                                     */
+/* Python V24_BPy_Ipo structure definition:                                     */
 /*****************************************************************************/
 typedef struct {
 	PyObject_HEAD		/* required macro */
 	Ipo * ipo;		/* libdata must be second */
 	short iter;
 	short mtex; 
-} BPy_Ipo;
+} V24_BPy_Ipo;
 
-extern PyTypeObject Ipo_Type;
+extern PyTypeObject V24_Ipo_Type;
 
-#define BPy_Ipo_Check(v)  ((v)->ob_type == &Ipo_Type)	/* for type checking */
+#define BPy_Ipo_Check(v)  ((v)->ob_type == &V24_Ipo_Type)	/* for type checking */
 
 
 /* 
  *   prototypes
  */
 
-PyObject *Ipo_Init( void );
-PyObject *Ipo_CreatePyObject( struct Ipo *ipo );
-Ipo *Ipo_FromPyObject( PyObject * py_obj );
+PyObject *V24_Ipo_Init( void );
+PyObject *V24_Ipo_CreatePyObject( struct Ipo *ipo );
+Ipo *V24_Ipo_FromPyObject( PyObject * py_obj );
 
 
 #endif				/* EXPP_IPO_H */
