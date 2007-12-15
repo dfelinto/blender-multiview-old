@@ -5393,7 +5393,7 @@ static PyObject *V24_MFaceSeq_delete( V24_BPy_MFaceSeq * self, PyObject *args )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"sequence must contain at least one int or MFace" );
 
-	face_table = (unsigned int *)MEM_callocN( len*sizeof( unsigned int ),
+	face_table = MEM_callocN( len*sizeof( unsigned int ),
 			"face_table" );
 
 	/* get the indices of faces to be removed */
@@ -5517,14 +5517,11 @@ static PyObject *V24_MFaceSeq_delete( V24_BPy_MFaceSeq * self, PyObject *args )
 			}
 		}
 
-		/* for each face, deselect each edge */
+		/* for each remaining face, select all edges */
 		tmpface = mesh->mface;
 		fface = (struct fourEdges *)face_edges;
 		for( i = mesh->totface; i--; ++tmpface, ++fface ) {
 			if( tmpface->v1 != UINT_MAX ) {
-				V24_FaceEdges (*face)[4];
-				face = (void *)face_edges;
-				face += face_table[i];
 				fface->v[0]->sel = 1;
 				fface->v[1]->sel = 1;
 				fface->v[2]->sel = 1;
@@ -5532,7 +5529,6 @@ static PyObject *V24_MFaceSeq_delete( V24_BPy_MFaceSeq * self, PyObject *args )
 					fface->v[3]->sel = 1;
 			}
 		}
-
 		/* now mark the selected edges for deletion */
 
 		edge_count = 0;
