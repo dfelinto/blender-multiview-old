@@ -39,7 +39,7 @@
 #include "DNA_listBase.h"
 
 /* ID functions for all libdata */
-#define	V24_GENERIC_LIB_GETSETATTR \
+#define	GENERIC_LIB_GETSETATTR \
 	{"name",\
 	 (getter)V24_GenericLib_getName, (setter)V24_GenericLib_setName,\
 	 "name",\

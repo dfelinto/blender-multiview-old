@@ -35,8 +35,8 @@
 #include "DNA_armature_types.h"
 
 //-------------------TYPE CHECKS---------------------------------
-#define V24_BPy_Armature_Check(v) ((v)->ob_type == &V24_Armature_Type)
-#define V24_BPy_BonesDict_Check(v) ((v)->ob_type == &V24_BonesDict_Type)
+#define BPy_Armature_Check(v) ((v)->ob_type == &V24_Armature_Type)
+#define BPy_BonesDict_Check(v) ((v)->ob_type == &V24_BonesDict_Type)
 //-------------------MODULE INIT---------------------------------
 PyObject *V24_Armature_Init( void );
 //-------------------TYPEOBJECT----------------------------------
@@ -61,10 +61,10 @@ typedef struct {
 
 //-------------------VISIBLE PROTOTYPES-------------------------
 PyObject *V24_Armature_CreatePyObject(struct bArmature *armature);
-struct bArmature *PyArmature_AsArmature(V24_BPy_Armature *py_armature);
+struct bArmature *V24_PyArmature_AsArmature(V24_BPy_Armature *py_armature);
 PyObject * V24_Armature_RebuildEditbones(PyObject *pyarmature);
 PyObject *V24_Armature_RebuildBones(PyObject *pyarmature);
 
-struct bArmature  *Armature_FromPyObject( PyObject * py_obj );
+struct bArmature  *V24_Armature_FromPyObject( PyObject * py_obj );
 
 #endif				

@@ -39,7 +39,7 @@
 /* The Group PyTypeObject defined in Lattice.c */
 extern PyTypeObject V24_Lattice_Type;
 
-#define V24_BPy_Lattice_Check(v)       ((v)->ob_type == &V24_Lattice_Type)
+#define BPy_Lattice_Check(v)       ((v)->ob_type == &V24_Lattice_Type)
 
 /*****************************************************************************/
 /* Python V24_BPy_Lattice structure definition:   */

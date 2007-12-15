@@ -50,7 +50,7 @@ typedef struct {
 
 extern PyTypeObject V24_Material_Type;	/* The Material PyType Object */
 
-#define V24_BPy_Material_Check(v) \
+#define BPy_Material_Check(v) \
 		((v)->ob_type == &V24_Material_Type)	/* for type checking */
 
 /*****************************************************************************/

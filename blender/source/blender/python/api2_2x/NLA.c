@@ -73,7 +73,7 @@ char V24_M_NLA_GetActions_doc[] = "(name) - Returns a dictionary of actions.";
 /*****************************************************************************/
 /* Python method structure definition for Blender.Armature.NLA module:	 */
 /*****************************************************************************/
-struct PyMethodDef M_NLA_methods[] = {
+struct PyMethodDef V24_M_NLA_methods[] = {
 	{"NewAction", ( PyCFunction ) V24_M_NLA_NewAction, METH_VARARGS,
 	 V24_M_NLA_NewAction_doc},
 	{"CopyAction", ( PyCFunction ) V24_M_NLA_CopyAction, METH_VARARGS,
@@ -456,7 +456,7 @@ struct bAction *V24_Action_FromPyObject( PyObject * py_obj )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Action_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
@@ -951,7 +951,7 @@ static int V24_ActionStrip_setGroupTarget( V24_BPy_ActionStrip * self, PyObject 
 
 	if( (PyObject *)args == Py_None )
 		self->strip->object = NULL;
-	else if( V24_BPy_Object_Check( args ) )
+	else if( BPy_Object_Check( args ) )
 		self->strip->object = ((V24_BPy_Object *)args)->object;
 	else
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
@@ -1569,22 +1569,22 @@ PyObject *V24_NLA_Init( void )
 	PyObject *FlagsDict = V24_M_ActionStrip_FlagsDict( );
 	PyObject *AxisDict = V24_M_ActionStrip_AxisDict( );
 	PyObject *ModeDict = V24_M_ActionStrip_ModeDict( );
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	if( PyType_Ready( &V24_Action_Type ) < 0
 			|| PyType_Ready( &V24_ActionStrip_Type ) < 0
 			|| PyType_Ready( &V24_ActionStrips_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.Armature.NLA",
-				    M_NLA_methods, V24_M_NLA_doc );
+	V24_submodule = Py_InitModule3( "Blender.Armature.NLA",
+				    V24_M_NLA_methods, V24_M_NLA_doc );
 
 	if( FlagsDict )
-		PyModule_AddObject( submodule, "Flags", FlagsDict );
+		PyModule_AddObject( V24_submodule, "Flags", FlagsDict );
 	if( AxisDict )
-		PyModule_AddObject( submodule, "StrideAxes", AxisDict );
+		PyModule_AddObject( V24_submodule, "StrideAxes", AxisDict );
 	if( ModeDict )
-		PyModule_AddObject( submodule, "Modes", ModeDict );
+		PyModule_AddObject( V24_submodule, "Modes", ModeDict );
 
-	return submodule;
+	return V24_submodule;
 }

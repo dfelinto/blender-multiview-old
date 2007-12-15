@@ -73,7 +73,7 @@ static int V24_Key_setIpo( V24_BPy_Key * self, PyObject * args );
 static PyObject *V24_Key_getValue( V24_BPy_Key * self );
 static int V24_Key_setRelative( V24_BPy_Key * self, PyObject * value );
 
-static struct PyMethodDef Key_methods[] = {
+static struct PyMethodDef V24_Key_methods[] = {
 	{ "getBlocks", (PyCFunction) V24_Key_getBlocks, METH_NOARGS, "Get key blocks" },
 	{ "getIpo", (PyCFunction) V24_Key_getIpo, METH_NOARGS, "Get key Ipo" },
 	{ 0, 0, 0, 0 }
@@ -110,7 +110,7 @@ static void V24_KeyBlock_dealloc( V24_BPy_KeyBlock * self );
 static int V24_KeyBlock_compare( V24_BPy_KeyBlock * a, V24_BPy_KeyBlock * b );
 static PyObject *V24_KeyBlock_repr( V24_BPy_KeyBlock * self );
 
-static struct PyMethodDef KeyBlock_methods[] = {
+static struct PyMethodDef V24_KeyBlock_methods[] = {
 	{ "getData", (PyCFunction) V24_KeyBlock_getData, METH_NOARGS,
 		"Get keyblock data" },
 	{ 0, 0, 0, 0 }
@@ -187,7 +187,7 @@ PyTypeObject V24_Key_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	Key_methods,           		/* struct PyMethodDef *tp_methods; */
+	V24_Key_methods,           		/* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	V24_BPy_Key_getsetters,     	/* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
@@ -264,7 +264,7 @@ PyTypeObject V24_KeyBlock_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	KeyBlock_methods, 			/* struct PyMethodDef *tp_methods; */
+	V24_KeyBlock_methods, 			/* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	V24_BPy_KeyBlock_getsetters,    /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
@@ -641,7 +641,7 @@ static PyObject *V24_M_Key_Get( PyObject * self, PyObject * args )
 	}
 }
 
-struct PyMethodDef M_Key_methods[] = {
+struct PyMethodDef V24_M_Key_methods[] = {
 	{"Get", V24_M_Key_Get, METH_VARARGS, "Get a key or all key names"},
 	{NULL, NULL, 0, NULL}
 };
@@ -663,19 +663,19 @@ static PyObject *V24_M_Key_TypesDict( void )
 
 PyObject *V24_Key_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *Types = NULL;
 
 	if( PyType_Ready( &V24_Key_Type ) < 0 || PyType_Ready( &V24_KeyBlock_Type ) < 0 )
 		return NULL;
 
-	submodule =
-		Py_InitModule3( "Blender.Key", M_Key_methods, "Key module" );
+	V24_submodule =
+		Py_InitModule3( "Blender.Key", V24_M_Key_methods, "Key module" );
 
 	Types = V24_M_Key_TypesDict(  );
 	if( Types )
-		PyModule_AddObject( submodule, "Types", Types );
+		PyModule_AddObject( V24_submodule, "Types", Types );
 
-	return submodule;
+	return V24_submodule;
 }
 

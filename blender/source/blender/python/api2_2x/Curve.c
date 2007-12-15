@@ -944,7 +944,7 @@ static PyObject *V24_Curve_getBevOb( V24_BPy_Curve * self)
 static int V24_Curve_newsetBevOb( V24_BPy_Curve * self, PyObject * args )
 {
 	
-	if (V24_BPy_Object_Check( args ) && ((V24_BPy_Object *)args)->object->data == self->curve )
+	if (BPy_Object_Check( args ) && ((V24_BPy_Object *)args)->object->data == self->curve )
 		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"Can't bevel an object to itself" );
 	
@@ -971,7 +971,7 @@ static PyObject *V24_Curve_getTaperOb( V24_BPy_Curve * self)
 
 static int V24_Curve_newsetTaperOb( V24_BPy_Curve * self, PyObject * args )
 {
-	if (V24_BPy_Object_Check( args ) && ((V24_BPy_Object *)args)->object->data == self->curve )
+	if (BPy_Object_Check( args ) && ((V24_BPy_Object *)args)->object->data == self->curve )
 		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 				"Can't taper an object to itself" );
 	
@@ -1065,7 +1065,7 @@ static PyObject *V24_Curve_iterNext( V24_BPy_Curve * self )
 
 static int V24_Curve_length( PyInstanceObject * inst )
 {
-	if( V24_BPy_Curve_Check( ( PyObject * ) inst ) )
+	if( BPy_Curve_Check( ( PyObject * ) inst ) )
 		return ( ( int ) PyInt_AsLong
 			 ( V24_Curve_getNumCurves( ( V24_BPy_Curve * ) inst ) ) );
 
@@ -1172,7 +1172,7 @@ static PyObject *V24_Curve_repr( V24_BPy_Curve * self )
 /* attributes for curves */
 
 static PyGetSetDef V24_Curve_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"pathlen",
 	 (getter)V24_Curve_getPathLen, (setter)V24_Curve_newsetPathLen,
 	 "The path length,  used to set the number of frames for an animation (not the physical length)",
@@ -1348,7 +1348,7 @@ static PyObject *V24_M_Curve_Get( PyObject * self, PyObject * args )
 /*****************************************************************************/
 /*  Python method definitions for Blender.Curve module:             */
 /*****************************************************************************/
-struct PyMethodDef M_Curve_methods[] = {
+struct PyMethodDef V24_M_Curve_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Curve_New, METH_VARARGS, V24_M_Curve_New_doc},
 	{"Get", V24_M_Curve_Get, METH_VARARGS, V24_M_Curve_Get_doc},
 	{"get", V24_M_Curve_Get, METH_VARARGS, V24_M_Curve_Get_doc},
@@ -1561,15 +1561,15 @@ PyTypeObject V24_Curve_Type = {
 /*****************************************************************************/
 PyObject *V24_Curve_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	if( PyType_Ready( &V24_Curve_Type) < 0) /* set exception.  -1 is failure */
 		return NULL;
 
-	submodule =
-		Py_InitModule3( "Blender.Curve", M_Curve_methods,
+	V24_submodule =
+		Py_InitModule3( "Blender.Curve", V24_M_Curve_methods,
 				V24_M_Curve_doc );
-	return ( submodule );
+	return ( V24_submodule );
 }
 
 
@@ -1592,7 +1592,7 @@ PyObject *V24_Curve_CreatePyObject( struct Curve * curve )
 
 }
 
-struct Curve *Curve_FromPyObject( PyObject * py_obj )
+struct Curve *V24_Curve_FromPyObject( PyObject * py_obj )
 {
 	V24_BPy_Curve *blen_obj;
 

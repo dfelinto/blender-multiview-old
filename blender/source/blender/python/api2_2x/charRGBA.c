@@ -37,7 +37,7 @@
 	 Blender */
 
 /*****************************************************************************/
-/* Python V24_charRGBA_Type callback function prototypes:			  */
+/* Python charRGBA_Type callback function prototypes:			  */
 /*****************************************************************************/
 static PyObject *V24_charRGBA_repr( V24_BPy_charRGBA * self );
 
@@ -56,18 +56,18 @@ static PyObject *V24_charRGBA_getColor( V24_BPy_charRGBA * self, void * type);
 static int V24_charRGBA_setColor( V24_BPy_charRGBA * self, PyObject * value, void * type);
 
 /*****************************************************************************/
-/* Python V24_charRGBA_Type Mapping Methods table:			*/
+/* Python charRGBA_Type Mapping Methods table:			*/
 /*****************************************************************************/
-static PyMappingMethods V24_charRGBAAsMapping = {
+static PyMappingMethods charRGBAAsMapping = {
 	( inquiry ) V24_charRGBALength,	/* mp_length                            */
 	( binaryfunc ) V24_charRGBASubscript,	/* mp_subscript                 */
 	( objobjargproc ) V24_charRGBAAssSubscript,	/* mp_ass_subscript */
 };
 
 /*****************************************************************************/
-/* Python V24_charRGBA_Type Sequence Methods table:			*/
+/* Python charRGBA_Type Sequence Methods table:			*/
 /*****************************************************************************/
-static PySequenceMethods V24_charRGBAAsSequence = {
+static PySequenceMethods charRGBAAsSequence = {
 	( inquiry ) V24_charRGBALength,	/* sq_length */
 	( binaryfunc ) 0,	/* sq_concat */
 	( intargfunc ) 0,	/* sq_repeat */
@@ -77,7 +77,7 @@ static PySequenceMethods V24_charRGBAAsSequence = {
 	( intintobjargproc ) V24_charRGBAAssSlice,	/* sq_ass_slice       */
 };
 
-static PyGetSetDef V24_charRGBA_getseters[] = {
+static PyGetSetDef charRGBA_getseters[] = {
 	{"R",
 	 (getter)V24_charRGBA_getColor, (setter)V24_charRGBA_setColor,
 	 "the red component",
@@ -114,9 +114,9 @@ static PyGetSetDef V24_charRGBA_getseters[] = {
 };
 
 /*****************************************************************************/
-/* Python V24_charRGBA_Type structure definition:				*/
+/* Python charRGBA_Type structure definition:				*/
 /*****************************************************************************/
-PyTypeObject V24_charRGBA_Type = {
+PyTypeObject charRGBA_Type = {
 	PyObject_HEAD_INIT( NULL )  /* required py macro */
 	0,                          /* ob_size */
 	/*  For printing, in format "<module>.<name>" */
@@ -136,8 +136,8 @@ PyTypeObject V24_charRGBA_Type = {
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&V24_charRGBAAsSequence,	    /* PySequenceMethods *tp_as_sequence; */
-	&V24_charRGBAAsMapping,	        /* PyMappingMethods *tp_as_mapping; */
+	&charRGBAAsSequence,	    /* PySequenceMethods *tp_as_sequence; */
+	&charRGBAAsMapping,	        /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
 
@@ -176,7 +176,7 @@ PyTypeObject V24_charRGBA_Type = {
   /*** Attribute descriptor and subclassing stuff ***/
 	NULL,                       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	V24_charRGBA_getseters,         /* struct PyGetSetDef *tp_getset; */
+	charRGBA_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
@@ -206,14 +206,14 @@ PyObject *V24_charRGBA_New( char *rgba )
 	V24_BPy_charRGBA *charRGBA = NULL;
 
 	/*
-	 * When called the first time, V24_charRGBA_Type.tp_dealloc will be NULL.
+	 * When called the first time, charRGBA_Type.tp_dealloc will be NULL.
 	 * If that's the case, initialize the PyTypeObject.  If the
 	 * initialization succeeds, then create a new object.
 	 */
 
-	if( V24_charRGBA_Type.tp_dealloc || PyType_Ready( &V24_charRGBA_Type ) >= 0 ) {
+	if( charRGBA_Type.tp_dealloc || PyType_Ready( &charRGBA_Type ) >= 0 ) {
 		charRGBA = ( V24_BPy_charRGBA * ) PyObject_NEW( V24_BPy_charRGBA,
-				&V24_charRGBA_Type );
+				&charRGBA_Type );
 	}
 
 	if( charRGBA == NULL )

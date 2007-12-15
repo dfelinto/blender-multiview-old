@@ -38,7 +38,7 @@
 
 extern PyTypeObject V24_Camera_Type;
 
-#define V24_BPy_Camera_Check(v) \
+#define BPy_Camera_Check(v) \
     ((v)->ob_type == &V24_Camera_Type)	/* for type checking */
 
 /* Python V24_BPy_Camera structure definition */

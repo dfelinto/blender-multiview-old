@@ -66,7 +66,7 @@ static PyObject *V24_GroupObSeq_CreatePyObject( V24_BPy_Group *self, GroupObject
 /*****************************************************************************/
 /* Python method structure definition for Blender.Object module:	 */
 /*****************************************************************************/
-struct PyMethodDef M_Group_methods[] = {
+struct PyMethodDef V24_M_Group_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Group_New, METH_VARARGS,
 	 "(name) Add a new empty group"},
 	{"Get", ( PyCFunction ) V24_M_Group_Get, METH_VARARGS,
@@ -245,7 +245,7 @@ static PyObject *V24_Group_getLayers( V24_BPy_Group * self )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Group_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"layers",
 	 (getter)V24_Group_getLayers, (setter)V24_Group_setLayers,
 	 "layer mask for this group",
@@ -450,7 +450,7 @@ PyObject *V24_M_Group_Get( PyObject * self, PyObject * args )
 PyObject *V24_M_Group_Unlink( PyObject * self, V24_BPy_Group * pygrp )
 {
 	Group *group;
-	if( !V24_BPy_Group_Check(pygrp) )
+	if( !BPy_Group_Check(pygrp) )
 		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						"expected a group" ) );
 	
@@ -472,19 +472,19 @@ PyObject *V24_M_Group_Unlink( PyObject * self, V24_BPy_Group * pygrp )
 /*****************************************************************************/
 PyObject *V24_Group_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	if( PyType_Ready( &V24_Group_Type ) < 0 )
 		return NULL;
 	if( PyType_Ready( &V24_GroupObSeq_Type ) < 0 )
 		return NULL;
 	
-	submodule = Py_InitModule3( "Blender.Group", M_Group_methods,
+	V24_submodule = Py_InitModule3( "Blender.Group", V24_M_Group_methods,
 				 "The Blender Group module\n\n\
 This module provides access to **Group Data** in Blender.\n" );
 
 	/*Add SUBMODULES to the module*/
 	/*PyDict_SetItemString(dict, "Constraint", V24_Constraint_Init()); //creates a *new* module*/
-	return submodule;
+	return V24_submodule;
 }
 
 
@@ -663,7 +663,7 @@ static PyObject *V24_GroupObSeq_link( V24_BPy_GroupObSeq * self, V24_BPy_Object 
 	
 	GROUP_DEL_CHECK_PY(self->bpygroup);
 	
-	if( !V24_BPy_Object_Check(value) )
+	if( !BPy_Object_Check(value) )
 		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a python object as an argument" ) );
 	
@@ -687,7 +687,7 @@ static PyObject *V24_GroupObSeq_unlink( V24_BPy_GroupObSeq * self, V24_BPy_Objec
 	
 	GROUP_DEL_CHECK_PY(self->bpygroup);
 	
-	if( !V24_BPy_Object_Check(value) )
+	if( !BPy_Object_Check(value) )
 		return ( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a python object as an argument" ) );
 	
@@ -707,7 +707,7 @@ static PyObject *V24_GroupObSeq_unlink( V24_BPy_GroupObSeq * self, V24_BPy_Objec
 	Py_RETURN_NONE;
 }
 
-static struct PyMethodDef BPy_GroupObSeq_methods[] = {
+static struct PyMethodDef V24_BPy_GroupObSeq_methods[] = {
 	{"link", (PyCFunction)V24_GroupObSeq_link, METH_O,
 		"make the object a part of this group"},
 	{"unlink", (PyCFunction)V24_GroupObSeq_unlink, METH_O,
@@ -788,7 +788,7 @@ PyTypeObject V24_GroupObSeq_Type = {
 	( iternextfunc ) V24_GroupObSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_GroupObSeq_methods,       /* struct PyMethodDef *tp_methods; */
+	V24_BPy_GroupObSeq_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	NULL,                       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */

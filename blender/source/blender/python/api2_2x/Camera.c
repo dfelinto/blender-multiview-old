@@ -101,7 +101,7 @@ static char V24_M_Camera_Get_doc[] = "Camera.Get (name = None):\n\
 /*****************************************************************************/
 /* Python method structure definition for Blender.Camera module:             */
 /*****************************************************************************/
-struct PyMethodDef M_Camera_methods[] = {
+struct PyMethodDef V24_M_Camera_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Camera_New, METH_VARARGS | METH_KEYWORDS,
 	 V24_M_Camera_New_doc},
 	{"Get", V24_M_Camera_Get, METH_VARARGS, V24_M_Camera_Get_doc},
@@ -322,18 +322,18 @@ static PyObject *V24_M_Camera_Get( PyObject * self, PyObject * args )
 
 PyObject *V24_Camera_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	if( PyType_Ready( &V24_Camera_Type ) < 0 )
 		return NULL;
 	
-	submodule = Py_InitModule3( "Blender.Camera",
-				    M_Camera_methods, V24_M_Camera_doc );
+	V24_submodule = Py_InitModule3( "Blender.Camera",
+				    V24_M_Camera_methods, V24_M_Camera_doc );
 
-	PyModule_AddIntConstant( submodule, "LENS",     IPOKEY_LENS );
-	PyModule_AddIntConstant( submodule, "CLIPPING", IPOKEY_CLIPPING );
+	PyModule_AddIntConstant( V24_submodule, "LENS",     IPOKEY_LENS );
+	PyModule_AddIntConstant( V24_submodule, "CLIPPING", IPOKEY_CLIPPING );
 
-	return submodule;
+	return V24_submodule;
 }
 
 /* Three Python V24_Camera_Type helper functions needed by the Object module: */
@@ -841,7 +841,7 @@ static int setFlagAttr( V24_BPy_Camera *self, PyObject *value, void *type )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Camera_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"type",
 	 (getter)V24_Camera_getType, (setter)V24_Camera_setType,
 	 "camera type \"persp\" or \"ortho\"",

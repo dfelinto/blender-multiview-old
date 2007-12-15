@@ -47,12 +47,12 @@ typedef struct {
 
 extern PyTypeObject V24_IpoCurve_Type;
 
-#define V24_BPy_IpoCurve_Check(v)  ((v)->ob_type == &V24_IpoCurve_Type)	/* for type checking */
+#define BPy_IpoCurve_Check(v)  ((v)->ob_type == &V24_IpoCurve_Type)	/* for type checking */
 
 PyObject *V24_IpoCurve_Init( void );
 PyObject *V24_IpoCurve_CreatePyObject( IpoCurve * ipo );
 IpoCurve *V24_IpoCurve_FromPyObject( PyObject * pyobj );
-char *getIpoCurveName( IpoCurve * icu );
+char *V24_getIpoCurveName( IpoCurve * icu );
 
 
 #endif				/* EXPP_IPOCURVE_H */

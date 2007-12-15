@@ -59,7 +59,7 @@ extern int seq_ar[];
 extern int te_ar[];
 extern int wo_ar[];
 
-PyObject *submodule;
+PyObject *V24_submodule;
 
 /*****************************************************************************/
 /* Python API function prototypes for the Ipo module.                        */
@@ -81,7 +81,7 @@ char V24_M_Ipo_Get_doc[] = "";
 /* Python method structure definition for Blender.Ipo module:             */
 /*****************************************************************************/
 
-struct PyMethodDef M_Ipo_methods[] = {
+struct PyMethodDef V24_M_Ipo_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Ipo_New, METH_VARARGS | METH_KEYWORDS,
 	 V24_M_Ipo_New_doc},
 	{"Get", V24_M_Ipo_Get, METH_VARARGS, V24_M_Ipo_Get_doc},
@@ -179,7 +179,7 @@ static PyMethodDef V24_BPy_Ipo_methods[] = {
 /* Python V24_BPy_Ipo attributes get/set structure:                              */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Ipo_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"curves",
 	 (getter)V24_Ipo_getCurves, (setter)NULL,
 	 "Ipo curves",
@@ -792,7 +792,7 @@ static PyObject *V24_M_Ipo_Get( PyObject * self_unused, PyObject * args )
 /*****************************************************************************/
 static PyObject *V24_M_Ipo_Recalc( PyObject * self_unused, PyObject * value )
 {
-	if( !V24_BPy_IpoCurve_Check(value) )
+	if( !BPy_IpoCurve_Check(value) )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected Ipo curve argument" );
 
@@ -961,7 +961,7 @@ static PyObject *V24_Ipo_delCurve( V24_BPy_Ipo * self, PyObject * value )
 				"expected string argument" );
 
 	for( icu = self->ipo->curve.first; icu; icu = icu->next ) {
-		if( !strcmp( strname, getIpoCurveName( icu ) ) ) {
+		if( !strcmp( strname, V24_getIpoCurveName( icu ) ) ) {
 			del_ipocurve( self->ipo, icu );
     		Py_RETURN_NONE;
 		}
@@ -989,7 +989,7 @@ static PyObject *V24_Ipo_getCurve( V24_BPy_Ipo * self, PyObject * args )
     if( PyString_Check( value ) ) {
 		char *str = PyString_AsString( value );
         for( icu = self->ipo->curve.first; icu; icu = icu->next ) {
-            if( !strcmp( str, getIpoCurveName( icu ) ) )
+            if( !strcmp( str, V24_getIpoCurveName( icu ) ) )
                 return V24_IpoCurve_CreatePyObject( icu );
         }
     	Py_RETURN_NONE;
@@ -1133,7 +1133,7 @@ static PyObject *V24_Ipo_getCurveNames( V24_BPy_Ipo * self )
 	 * with string as key and adrcode as value
 	 */
 
-	dict = PyModule_GetDict( submodule );
+	dict = PyModule_GetDict( V24_submodule );
 	attr = V24_PyConstant_New();
 
 	while( size-- ) {
@@ -1589,15 +1589,15 @@ static PyObject *V24_Ipo_nextIter( V24_BPy_Ipo * self )
 /*****************************************************************************/
 PyObject *V24_Ipo_Init( void )
 {
-	/* PyObject *submodule; */
+	/* PyObject *V24_submodule; */
 
 	if( PyType_Ready( &V24_Ipo_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.Ipo", M_Ipo_methods, V24_M_Ipo_doc );
-	generate_curveconsts( submodule );
+	V24_submodule = Py_InitModule3( "Blender.Ipo", V24_M_Ipo_methods, V24_M_Ipo_doc );
+	generate_curveconsts( V24_submodule );
 
-	return submodule;
+	return V24_submodule;
 }
 
 /*
@@ -1813,7 +1813,7 @@ static PyObject *V24_Ipo_getCurvecurval( V24_BPy_Ipo * self, PyObject * args )
 				 ( PyExc_TypeError,
 				   "expected int or string argument" ) );
 		while( icu ) {
-			str1 = getIpoCurveName( icu );
+			str1 = V24_getIpoCurveName( icu );
 			if( !strcmp( str1, stringname ) )
 				break;
 			icu = icu->next;

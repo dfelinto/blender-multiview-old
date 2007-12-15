@@ -69,7 +69,7 @@ current image frame, some images change frame if they are a sequence */
 #define EXPP_BUTTON_EVENTS_MIN 0
 #define EXPP_BUTTON_EVENTS_MAX 15382 /* 16384 - 1 - OFFSET */
 
-#define V24_ButtonObject_Check(v) ((v)->ob_type == &V24_Button_Type)
+#define ButtonObject_Check(v) ((v)->ob_type == &V24_Button_Type)
 
 #define UI_METHOD_ERRORCHECK \
 	if (check_button_event(&event) == -1)\
@@ -80,7 +80,7 @@ current image frame, some images change frame if they are a sequence */
 			"callback is not a python function");\
 
 /* pointer to main dictionary defined in Blender.c */
-extern PyObject *g_blenderdict;
+extern PyObject *V24_g_blenderdict;
 
 /*@ hack to flag that window redraw has happened inside slider callback: */
 int V24_EXPP_disable_force_draw = 0;
@@ -92,14 +92,14 @@ static PyObject *V24_Button_repr( PyObject * self );
 static PyObject *V24_Button_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type);
 static int V24_Button_setattr( PyObject * self, char *name, PyObject * v );
 
-static V24_Button *newbutton( void );
+static V24_Button *V24_newbutton( void );
 
 /* GUI interface routines */
 
-static void exit_pydraw( SpaceScript * sc, short error );
-static void exec_callback( SpaceScript * sc, PyObject * callback,
+static void V24_exit_pydraw( SpaceScript * sc, short error );
+static void V24_exec_callback( SpaceScript * sc, PyObject * callback,
 			   PyObject * args );
-static void spacescript_do_pywin_buttons( SpaceScript * sc,
+static void V24_spacescript_do_pywin_buttons( SpaceScript * sc,
 					  unsigned short event );
 
 static PyObject *V24_Method_Exit( PyObject * self );
@@ -135,12 +135,12 @@ static PyObject *V24_Method_PupBlock( PyObject * self, PyObject * args );
 
 static uiBlock *V24_Get_uiBlock( void );
 
-static void py_slider_update( void *butv, void *data2_unused );
+static void V24_py_slider_update( void *butv, void *data2_unused );
 
 /* hack to get 1 block for the UIBlock, only ever 1 at a time */
-static uiBlock *uiblock=NULL;
+static uiBlock *V24_uiblock=NULL;
 
-static char V24_Draw_doc[] = "The Blender.Draw submodule";
+static char V24_Draw_doc[] = "The Blender.Draw V24_submodule";
 
 static char V24_Method_UIBlock_doc[] = "(drawfunc, x,y) - Popup dialog where buttons can be drawn (expemental)";
 
@@ -176,7 +176,7 @@ static char V24_Method_Button_doc[] =
 (push) button\n\n\
 (name) A string to display on the button\n\
 (event) The event number to pass to the button event function when activated\n\
-(x, y) The lower left coordinate of the button\n\
+(x, y) The lower V24_left coordinate of the button\n\
 (width, height) The button width and height\n\
 [tooltip=] The button's tooltip\n\n\
 This function can be called as V24_Button() or PushButton().";
@@ -192,7 +192,7 @@ static char V24_Method_Menu_doc[] =
 button\n\n\
 (name) A string to display on the button\n\
 (event) The event number to pass to the button event function when activated\n\
-(x, y) The lower left coordinate of the button\n\
+(x, y) The lower V24_left coordinate of the button\n\
 (width, height) The button width and height\n\
 (default) The number of the option to be selected by default\n\
 [tooltip=" "] The button's tooltip\n\n\
@@ -208,7 +208,7 @@ static char V24_Method_Toggle_doc[] =
 button\n\n\
 (name) A string to display on the button\n\
 (event) The event number to pass to the button event function when activated\n\
-(x, y) The lower left coordinate of the button\n\
+(x, y) The lower V24_left coordinate of the button\n\
 (width, height) The button width and height\n\
 (default) An integer (0 or 1) specifying the default state\n\
 [tooltip=] The button's tooltip";
@@ -219,7 +219,7 @@ static char V24_Method_Slider_doc[] =
 Create a new Slider button\n\n\
 (name) A string to display on the button\n\
 (event) The event number to pass to the button event function when activated\n\
-(x, y) The lower left coordinate of the button\n\
+(x, y) The lower V24_left coordinate of the button\n\
 (width, height) The button width and height\n\
 (initial, min, max) Three values (int or float) specifying the initial \
 				and limit values.\n\
@@ -233,7 +233,7 @@ static char V24_Method_Scrollbar_doc[] =
 	"(event, x, y, width, height, initial, min, max, [update, tooltip]) - Create a \
 new V24_Scrollbar\n\n\
 (event) The event number to pass to the button event function when activated\n\
-(x, y) The lower left coordinate of the button\n\
+(x, y) The lower V24_left coordinate of the button\n\
 (width, height) The button width and height\n\
 (initial, min, max) Three values (int or float) specifying the initial and limit values.\n\
 [update=1] A value controlling whether the slider will emit events as it is edited.\n\
@@ -244,7 +244,7 @@ static char V24_Method_ColorPicker_doc[] =
 	"(event, x, y, width, height, initial, [tooltip]) - Create a new V24_Button \
 Color picker button\n\n\
 (event) The event number to pass to the button event function when the color changes\n\
-(x, y) The lower left coordinate of the button\n\
+(x, y) The lower V24_left coordinate of the button\n\
 (width, height) The button width and height\n\
 (initial) 3-Float tuple of the color (values between 0 and 1)\
 [tooltip=] The button's tooltip";
@@ -253,7 +253,7 @@ static char V24_Method_Normal_doc[] =
 	"(event, x, y, width, height, initial, [tooltip]) - Create a new V24_Button \
 Normal button (a sphere that you can roll to change the normal)\n\n\
 (event) The event number to pass to the button event function when the color changes\n\
-(x, y) The lower left coordinate of the button\n\
+(x, y) The lower V24_left coordinate of the button\n\
 (width, height) The button width and height - non square will gave odd results\n\
 (initial) 3-Float tuple of the normal vector (values between -1 and 1)\
 [tooltip=] The button's tooltip";
@@ -263,7 +263,7 @@ static char V24_Method_Number_doc[] =
 new Number button\n\n\
 (name) A string to display on the button\n\
 (event) The event number to pass to the button event function when activated\n\
-(x, y) The lower left coordinate of the button\n\
+(x, y) The lower V24_left coordinate of the button\n\
 (width, height) The button width and height\n\
 (initial, min, max) Three values (int or float) specifying the initial and \
 limit values.\n\
@@ -274,7 +274,7 @@ static char V24_Method_String_doc[] =
 new String button\n\n\
 (name) A string to display on the button\n\
 (event) The event number to pass to the button event function when activated\n\
-(x, y) The lower left coordinate of the button\n\
+(x, y) The lower V24_left coordinate of the button\n\
 (width, height) The button width and height\n\
 (initial) The string to display initially\n\
 (length) The maximum input length\n\
@@ -293,7 +293,7 @@ This function returns the width of the drawn string.";
 static char V24_Method_Label_doc[] =
 	"(text, x, y) - Draw a text label onscreen\n\n\
 (text) The text to draw\n\
-(x, y) The lower left coordinate of the lable";
+(x, y) The lower V24_left coordinate of the lable";
 
 static char V24_Method_PupMenu_doc[] =
 	"(string, maxrow = None) - Display a pop-up menu at the screen.\n\
@@ -361,7 +361,7 @@ static char V24_Method_Exit_doc[] = "() - Exit the windowing interface";
 */
 PyObject *V24_M_Button_List = NULL;
 
-static struct PyMethodDef Draw_methods[] = {
+static struct PyMethodDef V24_Draw_methods[] = {
 	{"Create", (PyCFunction)V24_Method_Create, METH_VARARGS, V24_Method_Create_doc},
 	{"UIBlock", (PyCFunction)V24_Method_UIBlock, METH_VARARGS, V24_Method_UIBlock_doc},
 	{"V24_Button", (PyCFunction)V24_Method_Button, METH_VARARGS, V24_Method_Button_doc},
@@ -575,9 +575,9 @@ static PyObject *V24_Button_repr( PyObject * self )
 static PyObject *V24_Button_richcmpr(PyObject *objectA, PyObject *objectB, int comparison_type)
 {
 	PyObject *ret, *valA=NULL, *valB=NULL;
-	if (V24_ButtonObject_Check(objectA))
+	if (ButtonObject_Check(objectA))
 		objectA = valA = V24_Button_getattr( objectA, "val" );
-	if (V24_ButtonObject_Check(objectB))
+	if (ButtonObject_Check(objectB))
 		objectB = valB = V24_Button_getattr( objectB, "val" );
 	ret = PyObject_RichCompare(objectA, objectB, comparison_type);
 	Py_XDECREF(valA); /* V24_Button_getattr created with 1 ref, we dont care about them now */
@@ -586,7 +586,7 @@ static PyObject *V24_Button_richcmpr(PyObject *objectA, PyObject *objectB, int c
 }
 
 
-static V24_Button *newbutton( void )
+static V24_Button *V24_newbutton( void )
 {
 	V24_Button *but = NULL;
 	
@@ -599,7 +599,7 @@ static V24_Button *newbutton( void )
 
 /* GUI interface routines */
 
-static void exit_pydraw( SpaceScript * sc, short err )
+static void V24_exit_pydraw( SpaceScript * sc, short err )
 {
 	Script *script = NULL;
 
@@ -626,7 +626,7 @@ static void exit_pydraw( SpaceScript * sc, short err )
 	script->py_draw = script->py_event = script->py_button = NULL;
 }
 
-static void exec_callback( SpaceScript * sc, PyObject * callback,
+static void V24_exec_callback( SpaceScript * sc, PyObject * callback,
 			   PyObject * args )
 {
 	PyObject *result = PyObject_CallObject( callback, args );
@@ -648,14 +648,14 @@ static void exec_callback( SpaceScript * sc, PyObject * callback,
 				text = text->id.next;
 			}
 		}
-		exit_pydraw( sc, 1 );
+		V24_exit_pydraw( sc, 1 );
 	}
 
 	Py_XDECREF( result );
 	Py_DECREF( args );
 }
 
-/* BPY_spacescript_do_pywin_draw, the static spacescript_do_pywin_buttons and
+/* BPY_spacescript_do_pywin_draw, the static V24_spacescript_do_pywin_buttons and
  * BPY_spacescript_do_pywin_event are the three functions responsible for
  * calling the draw, buttons and event callbacks registered with Draw.Register
  * (see V24_Method_Register below).  They are called (only the two BPY_ ones)
@@ -680,7 +680,7 @@ void BPY_spacescript_do_pywin_draw( SpaceScript * sc )
 		BPy_Set_DrawButtonsList(sc->but_refs);
 		
 		glPushAttrib( GL_ALL_ATTRIB_BITS );
-		exec_callback( sc, script->py_draw, Py_BuildValue( "()" ) );
+		V24_exec_callback( sc, script->py_draw, Py_BuildValue( "()" ) );
 		glPopAttrib(  );
 	} else {
 		glClearColor( 0.4375, 0.4375, 0.4375, 0.0 );
@@ -692,11 +692,11 @@ void BPY_spacescript_do_pywin_draw( SpaceScript * sc )
 	curarea->win_swap = WIN_BACK_OK;
 }
 
-static void spacescript_do_pywin_buttons( SpaceScript * sc,
+static void V24_spacescript_do_pywin_buttons( SpaceScript * sc,
 					  unsigned short event )
 {
 	if( sc->script->py_button )
-		exec_callback( sc, sc->script->py_button,
+		V24_exec_callback( sc, sc->script->py_button,
 			       Py_BuildValue( "(i)", event ) );
 }
 
@@ -707,7 +707,7 @@ void BPY_spacescript_do_pywin_event( SpaceScript * sc, unsigned short event,
 		/* finish script: user pressed ALT+Q or CONTROL+Q */
 		Script *script = sc->script;
 
-		exit_pydraw( sc, 0 );
+		V24_exit_pydraw( sc, 0 );
 
 		script->flags &= ~SCRIPT_GUI;	/* we're done with this script */
 
@@ -722,7 +722,7 @@ void BPY_spacescript_do_pywin_event( SpaceScript * sc, unsigned short event,
 			/* check that event is in free range for script button events;
 			 * read the comment before check_button_event() below to understand */
 			if (val >= EXPP_BUTTON_EVENTS_OFFSET && val < 0x4000)
-				spacescript_do_pywin_buttons(sc, val - EXPP_BUTTON_EVENTS_OFFSET);
+				V24_spacescript_do_pywin_buttons(sc, val - EXPP_BUTTON_EVENTS_OFFSET);
 			return;
 		}
 	}
@@ -734,13 +734,13 @@ void BPY_spacescript_do_pywin_event( SpaceScript * sc, unsigned short event,
 		int pass_ascii = 0;
 		if (ascii > 31 && ascii != 127) {
 			pass_ascii = 1;
-			V24_EXPP_dict_set_item_str(g_blenderdict, "event",
+			V24_EXPP_dict_set_item_str(V24_g_blenderdict, "event",
 					PyInt_FromLong((long)ascii));
 		}
-		exec_callback( sc, sc->script->py_event,
+		V24_exec_callback( sc, sc->script->py_event,
 			Py_BuildValue( "(ii)", event, val ) );
 		if (pass_ascii)
-			V24_EXPP_dict_set_item_str(g_blenderdict, "event",
+			V24_EXPP_dict_set_item_str(V24_g_blenderdict, "event",
 					PyString_FromString(""));
 	}
 }
@@ -806,7 +806,7 @@ static void exec_but_callback(void *pyobj, void *data)
 	}
 	
 	arg = PyTuple_New( 2 );
-	if (uiblock==NULL)
+	if (V24_uiblock==NULL)
 		PyTuple_SetItem( arg, 0, PyInt_FromLong(but->retval - EXPP_BUTTON_EVENTS_OFFSET) );
 	else
 		PyTuple_SetItem( arg, 0, PyInt_FromLong(but->retval) );
@@ -881,7 +881,7 @@ static PyObject *V24_Method_Exit( PyObject * self )
 	else
 		Py_RETURN_NONE;
 
-	exit_pydraw( sc, 0 );
+	V24_exit_pydraw( sc, 0 );
 
 	script = sc->script;
 
@@ -945,7 +945,7 @@ static PyObject *V24_Method_Register( PyObject * self, PyObject * args )
 	}
 
 	if( !script ) {
-		/* not new, it's a left callback calling Register again */
+		/* not new, it's a V24_left callback calling Register again */
  		script = sc->script;
 		if( !script ) {
 			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
@@ -963,7 +963,7 @@ static PyObject *V24_Method_Register( PyObject * self, PyObject * args )
 		script->lastspace = startspace;
 
 	/* clean the old callbacks */
-	exit_pydraw( sc, 0 );
+	V24_exit_pydraw( sc, 0 );
 
 	/* prepare the new ones and insert them */
 	Py_XINCREF( newdrawc );
@@ -1016,7 +1016,7 @@ static PyObject *V24_Method_Create( PyObject * self, PyObject * args )
 	PyObject *val;
 	char *newstr;
 
-	but = newbutton();
+	but = V24_newbutton();
 	/* If this function dosnt sucseed this will need to be deallocated,
 	 * make sure the type is NOT BSTRING_TYPE before deallocing -1 is ok.
 	 * so we dont dealloc with an uninitialized value wich would be bad! */
@@ -1068,16 +1068,16 @@ static PyObject *V24_Method_UIBlock( PyObject * self, PyObject * args )
 		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected 1 python function and 2 ints" );
 
-	if (uiblock)
+	if (V24_uiblock)
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 	      "cannot run more then 1 UIBlock at a time" );
 
 	BPy_Set_DrawButtonsList(PyList_New(0));
 	
 	mywinset(G.curscreen->mainwin);
-	uiblock= uiNewBlock(&listb, "numbuts", UI_EMBOSS, UI_HELV, G.curscreen->mainwin);
+	V24_uiblock= uiNewBlock(&listb, "numbuts", UI_EMBOSS, UI_HELV, G.curscreen->mainwin);
 	
-	uiBlockSetFlag(uiblock, UI_BLOCK_LOOP|UI_BLOCK_REDRAW);
+	uiBlockSetFlag(V24_uiblock, UI_BLOCK_LOOP|UI_BLOCK_REDRAW);
 	result = PyObject_CallObject( val, Py_BuildValue( "()" ) );
 	
 	if (!result) {
@@ -1088,7 +1088,7 @@ static PyObject *V24_Method_UIBlock( PyObject * self, PyObject * args )
 		
 		/* Clear all events so tooltips work, this is not ideal and
 		only needed because calls from the menu still have some events
-		left over when do_clever_numbuts is called.
+		V24_left over when do_clever_numbuts is called.
 		Calls from keyshortcuts do not have this problem.*/
 		ScrArea *sa;
 		BWinEvent temp_bevt;
@@ -1102,11 +1102,11 @@ static PyObject *V24_Method_UIBlock( PyObject * self, PyObject * args )
 		}
 		/* Done clearing events */
 		
-		uiBoundsBlock(uiblock, 5);
+		uiBoundsBlock(V24_uiblock, 5);
 		uiDoBlocks(&listb, 0, 1);
 	}
 	uiFreeBlocks(&listb);
-	uiblock = NULL;
+	V24_uiblock = NULL;
 	BPy_Free_DrawButtonsList(); /*clear all temp button references*/
 	
 	Py_XDECREF( result );
@@ -1115,15 +1115,15 @@ static PyObject *V24_Method_UIBlock( PyObject * self, PyObject * args )
 
 void V24_Set_uiBlock(uiBlock *block)
 {
-	uiblock = block;
+	V24_uiblock = block;
 }
 
 static uiBlock *V24_Get_uiBlock( void )
 {
 	char butblock[32];
 	/* Global, used now for UIBlock */
-	if (uiblock) {
-		return uiblock;
+	if (V24_uiblock) {
+		return V24_uiblock;
 	}
 	/* Local */
 	sprintf( butblock, "win %d", curarea->win );
@@ -1143,7 +1143,7 @@ static int check_button_event(int *event) {
 			(*event > EXPP_BUTTON_EVENTS_MAX)) {
 		return -1;
 	}
-	if (uiblock==NULL) /* For UIBlock we need non offset UI elements */
+	if (V24_uiblock==NULL) /* For UIBlock we need non offset UI elements */
 		*event += EXPP_BUTTON_EVENTS_OFFSET;
 	return 0;
 }
@@ -1207,7 +1207,7 @@ static PyObject *V24_Method_Menu( PyObject * self, PyObject * args )
 
 	UI_METHOD_ERRORCHECK;
 	
-	but = newbutton(  );
+	but = V24_newbutton(  );
 	but->type = BINT_TYPE;
 	but->val.asint = def;
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
@@ -1237,7 +1237,7 @@ static PyObject *V24_Method_Toggle( PyObject * self, PyObject * args )
 
 	UI_METHOD_ERRORCHECK;
 	
-	but = newbutton(  );
+	but = V24_newbutton(  );
 	but->type = BINT_TYPE;
 	but->val.asint = def;
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
@@ -1258,7 +1258,7 @@ static PyObject *V24_Method_Toggle( PyObject * self, PyObject * args )
 	 XXX This is condemned to be dinosource in future - it's a hack.
 	 */
 
-static void py_slider_update( void *butv, void *data2_unused )
+static void V24_py_slider_update( void *butv, void *data2_unused )
 {
 	uiBut *but = butv;
 	PyObject *ref = Py_BuildValue( "(i)", SPACE_VIEW3D );
@@ -1273,7 +1273,7 @@ static void py_slider_update( void *butv, void *data2_unused )
 
 	disable_where_script( 1 );
 
-	spacescript_do_pywin_buttons( curarea->spacedata.first,
+	V24_spacescript_do_pywin_buttons( curarea->spacedata.first,
 		(unsigned short)uiButGetRetVal( but ) -  EXPP_BUTTON_EVENTS_OFFSET );
 
 	/* XXX useless right now, investigate better before a bcon 5 */
@@ -1304,12 +1304,12 @@ static PyObject *V24_Method_Slider( PyObject * self, PyObject * args )
 					      "expected a string, five ints, three PyObjects\n\
 			and optionally int, string and callback arguments" );
 
-	if(realtime && uiblock)
+	if(realtime && V24_uiblock)
 		realtime = 0; /* realtime dosnt work with UIBlock */
 
 	UI_METHOD_ERRORCHECK;
 	
-	but = newbutton(  );
+	but = V24_newbutton(  );
 
 	if( PyFloat_Check( inio ) ) {
 		float ini, min, max;
@@ -1329,7 +1329,7 @@ static PyObject *V24_Method_Slider( PyObject * self, PyObject * args )
 					  (short)h, &but->val.asfloat, min, max, 0, 0,
 					  but->tooltip );
 			if( realtime )
-				uiButSetFunc( ubut, py_slider_update, ubut, NULL );
+				uiButSetFunc( ubut, V24_py_slider_update, ubut, NULL );
 			else
 				set_pycallback(ubut, callback, but);
 		}
@@ -1351,7 +1351,7 @@ static PyObject *V24_Method_Slider( PyObject * self, PyObject * args )
 					  (short)h, &but->val.asint, (float)min, (float)max, 0, 0,
 					  but->tooltip );
 			if( realtime )
-				uiButSetFunc( ubut, py_slider_update, ubut, NULL );
+				uiButSetFunc( ubut, V24_py_slider_update, ubut, NULL );
 			else
 				set_pycallback(ubut, callback, but);
 		}
@@ -1385,7 +1385,7 @@ another int and string as arguments" );
 	return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 		"button event argument must be in the range [0, 16382]");
 
-	but = newbutton(  );
+	but = V24_newbutton(  );
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
 	
 	if( PyFloat_Check( inio ) )
@@ -1405,13 +1405,13 @@ another int and string as arguments" );
 			ubut = uiDefButF( block, SCROLL, event, "", (short)x, (short)y, (short)w, (short)h,
 					  &but->val.asfloat, min, max, 0, 0, but->tooltip );
 			if( realtime )
-				uiButSetFunc( ubut, py_slider_update, ubut, NULL );
+				uiButSetFunc( ubut, V24_py_slider_update, ubut, NULL );
 		} else {
 			but->val.asint = (int)ini;
 			ubut = uiDefButI( block, SCROLL, event, "", (short)x, (short)y, (short)w, (short)h,
 					  &but->val.asint, min, max, 0, 0, but->tooltip );
 			if( realtime )
-				uiButSetFunc( ubut, py_slider_update, ubut, NULL );
+				uiButSetFunc( ubut, V24_py_slider_update, ubut, NULL );
 		}
 	}
 	return ( PyObject * ) but;
@@ -1447,7 +1447,7 @@ static PyObject *V24_Method_ColorPicker( PyObject * self, PyObject * args )
 	if ( V24_EXPP_check_sequence_consistency( inio, &PyFloat_Type ) != 1 )
 		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
  
-	but = newbutton();
+	but = V24_newbutton();
  
 	but->type = BVECTOR_TYPE;
 	but->val.asvec[0] = col[0];
@@ -1492,7 +1492,7 @@ static PyObject *V24_Method_Normal( PyObject * self, PyObject * args )
 	if ( V24_EXPP_check_sequence_consistency( inio, &PyFloat_Type ) != 1 )
 		return V24_EXPP_ReturnPyObjError( PyExc_ValueError, USAGE_ERROR);
  
-	but = newbutton();
+	but = V24_newbutton();
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
 	
 	but->type = BVECTOR_TYPE;
@@ -1529,7 +1529,7 @@ static PyObject *V24_Method_Number( PyObject * self, PyObject * args )
 
 	UI_METHOD_ERRORCHECK;
 
-	but = newbutton(  );
+	but = V24_newbutton(  );
 	if (tip) strncpy(but->tooltip, tip, BPY_MAX_TOOLTIP);
 	block = V24_Get_uiBlock(  );
 	
@@ -1601,7 +1601,7 @@ static PyObject *V24_Method_String( PyObject * self, PyObject * args )
 	real_len = strlen(newstr);
 	if (real_len > len) real_len = len;
 	
-	but = newbutton(  );
+	but = V24_newbutton(  );
 	but->type = BSTRING_TYPE;
 	but->slen = len;
 	but->val.asstr = MEM_mallocN( len + 1, "pybutton str" );
@@ -1950,7 +1950,7 @@ static PyObject *V24_Method_Image( PyObject * self, PyObject * args )
 			"expected a Blender.Image and 2 floats, and " \
 			"optionally 2 floats and 4 ints as arguments" );
 	/* check that the first PyObject is actually a Blender.Image */
-	if( !V24_BPy_Image_Check( pyObjImage ) )
+	if( !BPy_Image_Check( pyObjImage ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"expected a Blender.Image and 2 floats, and " \
 			"optionally 2 floats and 4 ints as arguments" );
@@ -1996,14 +1996,14 @@ static PyObject *V24_Method_Image( PyObject * self, PyObject * args )
 	 * window and then use glBitmap() with a NULL image pointer to offset 
 	 * it to the true position we require.  To pick an initial valid 
 	 * raster position within the viewport, we query the clipping rectangle
-	 * and use its lower-left pixel.
+	 * and use its lower-V24_left pixel.
 	 *
 	 * This particular technique is documented in the glRasterPos() man
 	 * page, although I haven't seen it used elsewhere in Blender.
 	 */
 
 	/* update (W): to fix a bug where images wouldn't get drawn if the bottom
-	 * left corner of the Scripts win were above a given height or to the right
+	 * V24_left corner of the Scripts win were above a given height or to the right
 	 * of a given width, the code below is being commented out.  It should not
 	 * be needed anyway, because spaces in Blender are projected to lie inside
 	 * their areas, see src/drawscript.c for example.  Note: the
@@ -2052,14 +2052,14 @@ static PyObject *V24_Method_Image( PyObject * self, PyObject * args )
 
 PyObject *V24_Draw_Init( void )
 {
-	PyObject *submodule, *dict;
+	PyObject *V24_submodule, *dict;
 
 	if( PyType_Ready( &V24_Button_Type) < 0)
 		Py_RETURN_NONE;
 
-	submodule = Py_InitModule3( "Blender.Draw", Draw_methods, V24_Draw_doc );
+	V24_submodule = Py_InitModule3( "Blender.Draw", V24_Draw_methods, V24_Draw_doc );
 
-	dict = PyModule_GetDict( submodule );
+	dict = PyModule_GetDict( V24_submodule );
 
 #define EXPP_ADDCONST(x) \
 	V24_EXPP_dict_set_item_str(dict, #x, PyInt_FromLong(x))
@@ -2192,5 +2192,5 @@ PyObject *V24_Draw_Init( void )
 	EXPP_ADDCONST( PAGEDOWNKEY );
 	EXPP_ADDCONST( ENDKEY );
 
-	return submodule;
+	return V24_submodule;
 }

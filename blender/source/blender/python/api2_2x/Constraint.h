@@ -53,7 +53,7 @@ typedef struct {
 
 extern PyTypeObject V24_Constraint_Type;
 
-#define V24_BPy_Constraint_Check(v)  ((v)->ob_type == &V24_Constraint_Type)	/* for type checking */
+#define BPy_Constraint_Check(v)  ((v)->ob_type == &V24_Constraint_Type)	/* for type checking */
 typedef struct {
 	PyObject_HEAD		/* required macro */
 	Object *obj;		/* "parent" object */

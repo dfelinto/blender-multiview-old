@@ -35,7 +35,7 @@
 
 #include <Python.h>
 
-extern PyObject *g_blenderdict;
+extern PyObject *V24_g_blenderdict;
 void V24_M_Blender_Init( void );
 
 #endif				/* EXPP_BLENDER_H */

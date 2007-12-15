@@ -49,11 +49,11 @@
 #include "Image.h"
 
 /* EXPP PyType Objects */
-extern PyTypeObject V24_NMesh_Type;
-extern PyTypeObject V24_NMFace_Type;
-extern PyTypeObject V24_NMVert_Type;
-extern PyTypeObject V24_NMCol_Type;
-extern PyTypeObject V24_NMEdge_Type;
+extern PyTypeObject NMesh_Type;
+extern PyTypeObject NMFace_Type;
+extern PyTypeObject NMVert_Type;
+extern PyTypeObject NMCol_Type;
+extern PyTypeObject NMEdge_Type;
 
 
 struct V24_BPy_Object;
@@ -68,11 +68,11 @@ extern void remove_vert_def_nr( Object * ob, int def_nr, int vertnum );
 
 
 /* Type checking for EXPP PyTypes */
-#define V24_BPy_NMesh_Check(v)       ((v)->ob_type == &V24_NMesh_Type)
-#define V24_BPy_NMFace_Check(v)      ((v)->ob_type == &V24_NMFace_Type)
-#define V24_BPy_NMVert_Check(v)      ((v)->ob_type == &V24_NMVert_Type)
-#define V24_BPy_NMCol_Check(v)       ((v)->ob_type == &V24_NMCol_Type)
-#define V24_BPy_NMEdge_Check(v)      ((v)->ob_type == &V24_NMEdge_Type)
+#define BPy_NMesh_Check(v)       ((v)->ob_type == &NMesh_Type)
+#define BPy_NMFace_Check(v)      ((v)->ob_type == &NMFace_Type)
+#define BPy_NMVert_Check(v)      ((v)->ob_type == &NMVert_Type)
+#define BPy_NMCol_Check(v)       ((v)->ob_type == &NMCol_Type)
+#define BPy_NMEdge_Check(v)      ((v)->ob_type == &NMEdge_Type)
 
 /* Typedefs for the new types */
 
@@ -142,15 +142,15 @@ typedef struct {
 
 /* PROTOS */
 
-PyObject *V24_NMesh_Init( void );
-PyObject *V24_NMesh_CreatePyObject( Mesh * me, Object * ob );
-Mesh *V24_NMesh_FromPyObject( PyObject * pyobj, Object * ob );
+PyObject *NMesh_Init( void );
+PyObject *NMesh_CreatePyObject( Mesh * me, Object * ob );
+Mesh *NMesh_FromPyObject( PyObject * pyobj, Object * ob );
 
 void V24_mesh_update( Mesh * mesh , Object * ob );
-PyObject *V24_new_NMesh( Mesh * oldmesh );
+PyObject *new_NMesh( Mesh * oldmesh );
 Mesh *V24_Mesh_fromNMesh( BPy_NMesh * nmesh );
-PyObject *V24_NMesh_assignMaterials_toObject( BPy_NMesh * nmesh, Object * ob );
-Material **V24_nmesh_updateMaterials( BPy_NMesh * nmesh );
+PyObject *NMesh_assignMaterials_toObject( BPy_NMesh * nmesh, Object * ob );
+Material **nmesh_updateMaterials( BPy_NMesh * nmesh );
 Material **V24_newMaterialList_fromPyList( PyObject * list );
 
 

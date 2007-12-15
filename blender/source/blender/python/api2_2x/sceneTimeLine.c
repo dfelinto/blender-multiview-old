@@ -44,7 +44,7 @@ static PyObject *V24_M_TimeLine_Get (PyObject *self, PyObject *args);
 static char V24_M_TimeLine_Get_doc[]= "Return the Scene.TimeLine.";
 
 //----------------------Scene.TimeMarker subsubmodule method def----------------------------
-struct PyMethodDef M_TimeLine_methods[]= {
+struct PyMethodDef V24_M_TimeLine_methods[]= {
 //	{"New", (PyCFunction) M_TimeMarker_New, METH_NOVAR,
 //	 M_TimeLine_New_doc},
 	{"Get", (PyCFunction) V24_M_TimeLine_Get, METH_VARARGS,
@@ -142,14 +142,14 @@ PyTypeObject V24_TimeLine_Type = {
 
 PyObject *V24_TimeLine_Init (void) 
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	if (PyType_Ready (&V24_TimeLine_Type) < 0)
 		return NULL;
-	submodule= Py_InitModule3 ("Blender.Scene.TimeLine", M_TimeLine_methods,
+	V24_submodule= Py_InitModule3 ("Blender.Scene.TimeLine", V24_M_TimeLine_methods,
 			"The Blender TimeLine subsubmodule");
 
-	return submodule;
+	return V24_submodule;
 }
 
 PyObject *V24_TimeLine_CreatePyObject (V24_BPy_TimeLine *tl) {

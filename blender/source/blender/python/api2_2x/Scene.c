@@ -108,7 +108,7 @@ static PyObject *V24_M_Scene_GetCurrent( PyObject * self );
 static PyObject *V24_M_Scene_getCurrent_deprecated( PyObject * self );
 static PyObject *V24_M_Scene_Unlink( PyObject * self, PyObject * arg );
 /*-----------------------Scene module doc strings-----------------------------*/
-static char V24_M_Scene_doc[] = "The Blender.Scene submodule";
+static char V24_M_Scene_doc[] = "The Blender.Scene V24_submodule";
 static char V24_M_Scene_New_doc[] =
 	"(name = 'Scene') - Create a new Scene called 'name' in Blender.";
 static char V24_M_Scene_Get_doc[] =
@@ -118,7 +118,7 @@ static char V24_M_Scene_GetCurrent_doc[] =
 static char V24_M_Scene_Unlink_doc[] =
 	"(scene) - Unlink (delete) scene 'Scene' from Blender. (scene) is of type Blender scene.";
 /*----------------------Scene module method def----------------------------*/
-struct PyMethodDef M_Scene_methods[] = {
+struct PyMethodDef V24_M_Scene_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Scene_New, METH_VARARGS | METH_KEYWORDS,
 	 V24_M_Scene_New_doc},
 	{"Get", V24_M_Scene_Get, METH_VARARGS, V24_M_Scene_Get_doc},
@@ -393,7 +393,7 @@ static int V24_Scene_setCursor( V24_BPy_Scene * self, PyObject * value )
 {	
 	V24_VectorObject *bpy_vec;
 	SCENE_DEL_CHECK_INT(self);
-	if (!V24_VectorObject_Check(value))
+	if (!VectorObject_Check(value))
 		return ( V24_EXPP_ReturnIntError( PyExc_TypeError,
 			"expected a vector" ) );
 	
@@ -411,7 +411,7 @@ static int V24_Scene_setCursor( V24_BPy_Scene * self, PyObject * value )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Scene_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"Layers",
 	 (getter)V24_Scene_getLayerMask, (setter)V24_Scene_setLayerMask,
 	 "Scene layer bitmask",
@@ -538,7 +538,7 @@ PyTypeObject V24_Scene_Type = {
 PyObject *V24_Scene_Init( void )
 {
 
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *dict;
 	
 	if( PyType_Ready( &V24_Scene_Type ) < 0 )
@@ -546,14 +546,14 @@ PyObject *V24_Scene_Init( void )
 	if( PyType_Ready( &V24_SceneObSeq_Type ) < 0 )
 		return NULL;
 	
-	submodule = Py_InitModule3( "Blender.Scene", M_Scene_methods, V24_M_Scene_doc );
+	V24_submodule = Py_InitModule3( "Blender.Scene", V24_M_Scene_methods, V24_M_Scene_doc );
 
-	dict = PyModule_GetDict( submodule );
+	dict = PyModule_GetDict( V24_submodule );
 	PyDict_SetItemString( dict, "Render", V24_Render_Init(  ) );
 	PyDict_SetItemString( dict, "Radio", V24_Radio_Init(  ) );
 	PyDict_SetItemString( dict, "Sequence", V24_Sequence_Init(  ) );
 	
-	return submodule;
+	return V24_submodule;
 }
 
 /*-----------------------compare----------------------------------------*/
@@ -1226,7 +1226,7 @@ int V24_SceneObSeq_setObjects( V24_BPy_SceneObSeq *self, PyObject *value, void *
 	SCENE_DEL_CHECK_INT(self->bpyscene);
 	
 	/* scn.objects.selected = scn.objects  - shortcut to select all */
-	if (V24_BPy_SceneObSeq_Check(value)) {
+	if (BPy_SceneObSeq_Check(value)) {
 		V24_BPy_SceneObSeq *bpy_sceneseq = (V24_BPy_SceneObSeq *)value;
 		if (self->bpyscene->scene != bpy_sceneseq->bpyscene->scene)
 			return V24_EXPP_ReturnIntError( PyExc_ValueError,
@@ -1455,7 +1455,7 @@ static PyObject *V24_SceneObSeq_link( V24_BPy_SceneObSeq * self, PyObject *pyobj
 	
 	if( PyTuple_Size(pyobj) == 1 ) {
 		V24_BPy_LibraryData *seq = ( V24_BPy_LibraryData * )PyTuple_GET_ITEM( pyobj, 0 );
-		if( V24_BPy_LibraryData_Check( seq ) )
+		if( BPy_LibraryData_Check( seq ) )
 			return V24_LibraryData_importLibData( seq, seq->name,
 					( seq->kind == OBJECT_IS_LINK ? FILE_LINK : 0 ),
 					self->bpyscene->scene );
@@ -1486,34 +1486,34 @@ static PyObject *V24_SceneObSeq_new( V24_BPy_SceneObSeq * self, PyObject *args )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"scene.objects.new(obdata) - expected obdata to be\n\ta python obdata type or the string 'Empty'" );
 
-	if( V24_BPy_Armature_Check( py_data ) ) {
-		data = ( void * ) Armature_FromPyObject( py_data );
+	if( BPy_Armature_Check( py_data ) ) {
+		data = ( void * ) V24_Armature_FromPyObject( py_data );
 		type = OB_ARMATURE;
-	} else if( V24_BPy_Camera_Check( py_data ) ) {
+	} else if( BPy_Camera_Check( py_data ) ) {
 		data = ( void * ) V24_Camera_FromPyObject( py_data );
 		type = OB_CAMERA;
-	} else if( V24_BPy_Lamp_Check( py_data ) ) {
+	} else if( BPy_Lamp_Check( py_data ) ) {
 		data = ( void * ) V24_Lamp_FromPyObject( py_data );
 		type = OB_LAMP;
-	} else if( V24_BPy_Curve_Check( py_data ) ) {
-		data = ( void * ) Curve_FromPyObject( py_data );
+	} else if( BPy_Curve_Check( py_data ) ) {
+		data = ( void * ) V24_Curve_FromPyObject( py_data );
 		type = OB_CURVE;
-	} else if( V24_BPy_NMesh_Check( py_data ) ) {
-		data = ( void * ) V24_NMesh_FromPyObject( py_data, NULL );
+	} else if( BPy_NMesh_Check( py_data ) ) {
+		data = ( void * ) NMesh_FromPyObject( py_data, NULL );
 		type = OB_MESH;
 		if( !data )		/* NULL means there is already an error */
 			return NULL;
-	} else if( V24_BPy_Mesh_Check( py_data ) ) {
+	} else if( BPy_Mesh_Check( py_data ) ) {
 		data = ( void * ) V24_Mesh_FromPyObject( py_data, NULL );
 		type = OB_MESH;
-	} else if( V24_BPy_Lattice_Check( py_data ) ) {
+	} else if( BPy_Lattice_Check( py_data ) ) {
 		data = ( void * ) V24_Lattice_FromPyObject( py_data );
 		type = OB_LATTICE;
-	} else if( V24_BPy_Metaball_Check( py_data ) ) {
+	} else if( BPy_Metaball_Check( py_data ) ) {
 		data = ( void * ) V24_Metaball_FromPyObject( py_data );
 		type = OB_MBALL;
 	} else if( V24_BPy_Text3d_Check( py_data ) ) {
-		data = ( void * ) Text3d_FromPyObject( py_data );
+		data = ( void * ) V24_Text3d_FromPyObject( py_data );
 		type = OB_FONT;
 	} else if( ( desc = PyString_AsString( (PyObject *)py_data ) ) != NULL ) {
 		if( !strcmp( desc, "Empty" ) ) {
@@ -1647,7 +1647,7 @@ static int V24_SceneObSeq_setActive(V24_BPy_SceneObSeq *self, PyObject *value)
 		return 0;
 	}
 	
-	if (!V24_BPy_Object_Check(value))
+	if (!BPy_Object_Check(value))
 		return (V24_EXPP_ReturnIntError( PyExc_ValueError,
 					      "Object or None types can only be assigned to active!" ));
 	
@@ -1694,7 +1694,7 @@ static int V24_SceneObSeq_setCamera(V24_BPy_SceneObSeq *self, PyObject *value)
 }
 
 
-static struct PyMethodDef BPy_SceneObSeq_methods[] = {
+static struct PyMethodDef V24_BPy_SceneObSeq_methods[] = {
 	{"link", (PyCFunction)V24_SceneObSeq_link, METH_VARARGS,
 		"link object to this scene"},
 	{"new", (PyCFunction)V24_SceneObSeq_new, METH_VARARGS,
@@ -1822,7 +1822,7 @@ PyTypeObject V24_SceneObSeq_Type = {
 	( iternextfunc ) V24_SceneObSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_SceneObSeq_methods,       /* struct PyMethodDef *tp_methods; */
+	V24_BPy_SceneObSeq_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	V24_SceneObSeq_getseters,       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */

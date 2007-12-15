@@ -197,7 +197,7 @@ static char V24_Blender_CountPackedFiles_doc[] =
 /*****************************************************************************/
 /* Python method structure definition.		 */
 /*****************************************************************************/
-static struct PyMethodDef Blender_methods[] = {
+static struct PyMethodDef V24_Blender_methods[] = {
 	{"Set", V24_Blender_Set, METH_VARARGS, V24_Blender_Set_doc},
 	{"Get", V24_Blender_Get, METH_O, V24_Blender_Get_doc},
 	{"Redraw", V24_Blender_Redraw, METH_VARARGS, V24_Blender_Redraw_doc},
@@ -217,7 +217,7 @@ static struct PyMethodDef Blender_methods[] = {
 /*****************************************************************************/
 /* Global variables	 */
 /*****************************************************************************/
-PyObject *g_blenderdict;
+PyObject *V24_g_blenderdict;
 
 /*****************************************************************************/
 /* Function:	V24_Blender_Set		 */
@@ -771,7 +771,7 @@ static PyObject *V24_Blender_ShowHelp(PyObject *self, PyObject *script)
 	 * argument to the function we're in and so shouldn't be decref'ed: */
 	PyDict_SetItemString(rkeyd, "script", script);
 
-	V24_EXPP_dict_set_item_str(bpy_registryDict, "__help_browser", rkeyd);
+	V24_EXPP_dict_set_item_str(V24_bpy_registryDict, "__help_browser", rkeyd);
 
 	arglist = Py_BuildValue("(s)", hspath);
 	V24_Blender_Run(self, arglist);
@@ -927,10 +927,10 @@ void V24_M_Blender_Init(void)
 		G.scene= sce;
 	}
 	
-	module = Py_InitModule3("Blender", Blender_methods,
+	module = Py_InitModule3("Blender", V24_Blender_methods,
 		"The main Blender module");
 
-	V24_types_InitAll();	/* set all our pytypes to &PyType_Type */
+	types_InitAll();	/* set all our pytypes to &PyType_Type */
 
 	/* constants for packed files*/
 	UnpackModes = V24_Blender_UnpackModesDict(  );
@@ -953,7 +953,7 @@ void V24_M_Blender_Init(void)
 		smode = PyString_FromString("interactive");
 
 	dict = PyModule_GetDict(module);
-	g_blenderdict = dict;
+	V24_g_blenderdict = dict;
 
 	PyModule_AddIntConstant(module, "TRUE", 1);
 	PyModule_AddIntConstant( module, "FALSE", 0 );
@@ -978,14 +978,14 @@ void V24_M_Blender_Init(void)
 	PyDict_SetItemString(dict, "Key", V24_Key_Init());
 	PyDict_SetItemString(dict, "Lamp", V24_Lamp_Init());
 	PyDict_SetItemString(dict, "Lattice", V24_Lattice_Init());
-	PyDict_SetItemString(dict, "Library", oldLibrary_Init());
+	PyDict_SetItemString(dict, "Library", V24_oldLibrary_Init());
 	PyDict_SetItemString(dict, "Material", V24_Material_Init());
 	PyDict_SetItemString(dict, "Mesh", V24_Mesh_Init()); 
 	PyDict_SetItemString(dict, "Metaball", V24_Metaball_Init());
 	PyDict_SetItemString(dict, "Mathutils", V24_Mathutils_Init());
 	PyDict_SetItemString(dict, "Geometry", V24_Geometry_Init());
 	PyDict_SetItemString(dict, "Modifier", V24_Modifier_Init());
-	PyDict_SetItemString(dict, "NMesh", V24_NMesh_Init());
+	PyDict_SetItemString(dict, "NMesh", NMesh_Init());
 	PyDict_SetItemString(dict, "Noise", V24_Noise_Init());
 	PyDict_SetItemString(dict, "Object", V24_Object_Init());
 	PyDict_SetItemString(dict, "Group", V24_Group_Init());

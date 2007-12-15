@@ -463,7 +463,7 @@ static PyObject *V24_PoseBone_insertKey(V24_BPy_PoseBone *self, PyObject *args)
 				Py_DECREF(item);
 			}
 			self->posechannel->flag = (short)numeric_value;
-		}else if (V24_BPy_Constant_Check(constants)){
+		}else if (BPy_Constant_Check(constants)){
 			if (constants == V24_EXPP_GetModuleConstant("Blender.Object.Pose", "ROT")){
 				numeric_value |= POSE_ROT;
 			}else if (constants == V24_EXPP_GetModuleConstant("Blender.Object.Pose", "LOC")){
@@ -732,7 +732,7 @@ static int V24_PoseBone_setPoseMatrix(V24_BPy_PoseBone *self, V24_MatrixObject *
 	float delta_mat[4][4], quat[4]; /* rotation */
 	float size[4]; /* size only */
 	
-	if( !V24_MatrixObject_Check( value ) )
+	if( !MatrixObject_Check( value ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 									"expected matrix object as argument" );
 	
@@ -1289,7 +1289,7 @@ PyTypeObject V24_PoseBone_Type = {
 };
 //-------------------MODULE METHODS IMPLEMENTATION------------------------
 //-------------------MODULE METHODS DEFINITION-----------------------------
-struct PyMethodDef M_Pose_methods[] = {
+struct PyMethodDef V24_M_Pose_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 //-------------------MODULE INITIALIZATION--------------------------------
@@ -1304,7 +1304,7 @@ PyObject *V24_Pose_Init(void)
 	}
 
 	//Register the module
-	module = Py_InitModule3("Blender.Object.Pose", M_Pose_methods, 
+	module = Py_InitModule3("Blender.Object.Pose", V24_M_Pose_methods, 
 		"The Blender Pose module"); 
 
 	//Add TYPEOBJECTS to the module

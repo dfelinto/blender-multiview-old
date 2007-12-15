@@ -60,7 +60,7 @@ char V24_M_Font_Load_doc[] =
 returns None if not found.\n";
 
 /*----- Python method structure definition for Blender.Text3d.Font module---*/
-struct PyMethodDef M_Font_methods[] = {
+struct PyMethodDef V24_M_Font_methods[] = {
 	{"Get", ( PyCFunction ) V24_M_Font_Get, METH_VARARGS, V24_M_Font_Get_doc},
 	{"Load", ( PyCFunction ) V24_M_Font_Load, METH_O, V24_M_Font_Load_doc},
 	{NULL, NULL, 0, NULL}
@@ -238,7 +238,7 @@ static PyObject *V24_Font_getPacked( V24_BPy_Font * self )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Font_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"filename",
 	 (getter)V24_Font_getFilename, (setter)V24_Font_setFilename,
 	 "Font filepath",
@@ -343,15 +343,15 @@ PyTypeObject V24_Font_Type = {
 /*--------------- Font Module Init-----------------------------*/
 PyObject *V24_Font_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	if( PyType_Ready( &V24_Font_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.Text3d.Font",
-				    M_Font_methods, V24_M_Font_doc );
+	V24_submodule = Py_InitModule3( "Blender.Text3d.Font",
+				    V24_M_Font_methods, V24_M_Font_doc );
 
-	return ( submodule );
+	return ( V24_submodule );
 }
 
 /*--------------- Font module internal callbacks-----------------*/
@@ -385,8 +385,8 @@ PyObject *V24_Font_CreatePyObject( struct VFont * font )
 	return ( ( PyObject * ) blen_font );
 }
 
-/*--------------- Font_FromPyObject---------------------------------*/
-struct VFont *Font_FromPyObject( PyObject * py_obj )
+/*--------------- V24_Font_FromPyObject---------------------------------*/
+struct VFont *V24_Font_FromPyObject( PyObject * py_obj )
 {
 	V24_BPy_Font *blen_obj;
 

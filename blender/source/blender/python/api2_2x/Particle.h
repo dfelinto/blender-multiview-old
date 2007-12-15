@@ -38,7 +38,7 @@
 
 extern PyTypeObject V24_Particle_Type;
 
-#define V24_BPy_Particle_Check(v) ((v)->ob_type==&V24_Particle_Type)
+#define BPy_Particle_Check(v) ((v)->ob_type==&V24_Particle_Type)
 
 /* Python V24_BPy_Particle structure definition */
 typedef struct {
@@ -59,7 +59,7 @@ PyObject *V24_ParticleGetAttr( V24_BPy_Particle * msh, char *name );
 PyObject *V24_ParticleRepr( void );
 PyObject *V24_ParticleCreatePyObject( struct Effect *particle );
 int V24_ParticleCheckPyObject( PyObject * py_obj );
-struct Particle *ParticleFromPyObject( PyObject * py_obj );
+struct Particle *V24_ParticleFromPyObject( PyObject * py_obj );
 #endif
 
 

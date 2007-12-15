@@ -474,7 +474,7 @@ PyObject *V24_CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 	
 	/* if curve is empty, adjust type depending on input type */
 	if (nurb->bezt==NULL && nurb->bp==NULL) {
-		if (V24_BPy_BezTriple_Check( value ))
+		if (BPy_BezTriple_Check( value ))
 			nurb->type |= CU_BEZIER;
 		else if (PySequence_Check( value ))
 			nurb->type |= CU_NURBS;
@@ -488,7 +488,7 @@ PyObject *V24_CurNurb_appendPointToNurb( Nurb * nurb, PyObject * value )
 	if ((nurb->type & 7)==CU_BEZIER) {
 		BezTriple *tmp;
 
-		if( !V24_BPy_BezTriple_Check( value ) )
+		if( !BPy_BezTriple_Check( value ) )
 			return( V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					  "Expected a BezTriple\n" ) );
 
@@ -809,7 +809,7 @@ static int V24_CurNurb_length( PyInstanceObject * inst )
 	Nurb *nurb;
 	int len;
 
-	if( V24_BPy_CurNurb_Check( ( PyObject * ) inst ) ) {
+	if( BPy_CurNurb_Check( ( PyObject * ) inst ) ) {
 		nurb = ( ( V24_BPy_CurNurb * ) inst )->nurb;
 		len = nurb->pntsu;
 		return len;
@@ -879,7 +879,7 @@ static int V24_CurNurb_setPoint( V24_BPy_CurNurb * self, int index, PyObject * p
 	/* branch by curve type */
 	if ((nurb->type & 7)==CU_BEZIER) {	/* BEZIER */
 		/* check parameter type */
-		if( !V24_BPy_BezTriple_Check( pyOb ) )
+		if( !BPy_BezTriple_Check( pyOb ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 							"expected a BezTriple" );
 

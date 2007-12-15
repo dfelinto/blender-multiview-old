@@ -37,7 +37,7 @@
 
 extern PyTypeObject V24_matrix_Type;
 
-#define V24_MatrixObject_Check(v) ((v)->ob_type == &V24_matrix_Type)
+#define MatrixObject_Check(v) ((v)->ob_type == &V24_matrix_Type)
 
 typedef float **ptRow;
 typedef struct V24__Matrix {

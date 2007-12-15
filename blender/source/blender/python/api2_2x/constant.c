@@ -35,24 +35,24 @@
 #include "gen_utils.h"
 #include "BLI_blenlib.h"
 
-PyTypeObject V24_constant_Type;
+PyTypeObject constant_Type;
 
 //------------------METHOD IMPLEMENTATIONS-----------------------------
 //------------------------constant.items()
 //Returns a list of key:value pairs like dict.items()
-PyObject* V24_constant_items(V24_BPy_constant *self)
+PyObject* constant_items(V24_BPy_constant *self)
 {
 	return PyDict_Items(self->dict);
 }
 //------------------------constant.keys()
 //Returns a list of keys like dict.keys()
-PyObject* V24_constant_keys(V24_BPy_constant *self)
+PyObject* constant_keys(V24_BPy_constant *self)
 {
 	return PyDict_Keys(self->dict);
 }
 //------------------------constant.values()
 //Returns a list of values like dict.values()
-PyObject* V24_constant_values(V24_BPy_constant *self)
+PyObject* constant_values(V24_BPy_constant *self)
 {
 	return PyDict_Values(self->dict);
 }
@@ -60,11 +60,11 @@ PyObject* V24_constant_values(V24_BPy_constant *self)
 //------------------TYPE_OBECT IMPLEMENTATION--------------------------
 //-----------------------(internal)
 //Creates a new constant object
-static PyObject *new_const(void) 
+static PyObject *V24_new_const(void) 
 {				
 	V24_BPy_constant *constant;
 
-	constant =	(V24_BPy_constant *) PyObject_NEW(V24_BPy_constant, &V24_constant_Type);
+	constant =	(V24_BPy_constant *) PyObject_NEW(V24_BPy_constant, &constant_Type);
 	if(constant == NULL){
 		return (V24_EXPP_ReturnPyObjError(PyExc_MemoryError, 
 			"couldn't create constant object"));
@@ -84,21 +84,21 @@ designed to act as a Py_Bone dictionary.";
 //------------------------tp_methods
 //This contains a list of all methods the object contains
 static PyMethodDef V24_BPy_constant_methods[] = {
-	{"items", (PyCFunction) V24_constant_items, METH_NOARGS, 
+	{"items", (PyCFunction) constant_items, METH_NOARGS, 
 		"() - Returns the key:value pairs from the dictionary"},
-	{"keys", (PyCFunction) V24_constant_keys, METH_NOARGS, 
+	{"keys", (PyCFunction) constant_keys, METH_NOARGS, 
 		"() - Returns the keys the dictionary"},
-	{"values", (PyCFunction) V24_constant_values, METH_NOARGS, 
+	{"values", (PyCFunction) constant_values, METH_NOARGS, 
 		"() - Returns the values from the dictionary"},
 	{NULL, NULL, 0, NULL}
 };
 //------------------------mp_length
-static int V24_constantLength(V24_BPy_constant *self)
+static int constantLength(V24_BPy_constant *self)
 {
 	return 0;
 }
 //------------------------mp_subscript
-static PyObject *V24_constantSubscript(V24_BPy_constant *self, PyObject *key)
+static PyObject *constantSubscript(V24_BPy_constant *self, PyObject *key)
 {
 	if(self->dict) {
 		PyObject *v = PyDict_GetItem(self->dict, key);
@@ -111,12 +111,12 @@ static PyObject *V24_constantSubscript(V24_BPy_constant *self, PyObject *key)
 	return NULL;
 }
 //------------------------mp_ass_subscript
-static int V24_constantAssSubscript(V24_BPy_constant *self, PyObject *who, PyObject *cares)
+static int constantAssSubscript(V24_BPy_constant *self, PyObject *who, PyObject *cares)
 {
 	return 0; /* no user assignments allowed */
 }
 //------------------------tp_getattro
-static PyObject *V24_constant_getAttro(V24_BPy_constant * self, PyObject *value)
+static PyObject *constant_getAttro(V24_BPy_constant * self, PyObject *value)
 {
 	if(self->dict) {
 		PyObject *v;
@@ -141,7 +141,7 @@ static PyObject *V24_constant_getAttro(V24_BPy_constant * self, PyObject *value)
 					"constant object lacks a dictionary"));
 }
 //------------------------tp_repr
-static PyObject *V24_constant_repr(V24_BPy_constant * self)
+static PyObject *constant_repr(V24_BPy_constant * self)
 {
 	char str[4096];
 	PyObject *key, *value, *tempstr;
@@ -169,38 +169,38 @@ static PyObject *V24_constant_repr(V24_BPy_constant * self)
 	return PyString_FromString(str);
 }
 //------------------------tp_dealloc
-static void V24_constant_dealloc(V24_BPy_constant * self)
+static void constant_dealloc(V24_BPy_constant * self)
 {
 	Py_DECREF(self->dict);
 	PyObject_DEL(self);
 }
 
 //------------------TYPE_OBECT DEFINITION------------------------------
-static PyMappingMethods V24_constantAsMapping = {
-	(inquiry) V24_constantLength,					// mp_length 
-	(binaryfunc) V24_constantSubscript,				// mp_subscript
-	(objobjargproc) V24_constantAssSubscript,		// mp_ass_subscript
+static PyMappingMethods constantAsMapping = {
+	(inquiry) constantLength,					// mp_length 
+	(binaryfunc) constantSubscript,				// mp_subscript
+	(objobjargproc) constantAssSubscript,		// mp_ass_subscript
 };
 
-PyTypeObject V24_constant_Type = {
+PyTypeObject constant_Type = {
 	PyObject_HEAD_INIT(NULL)		//tp_head
 	0,								//tp_internal
 	"Constant",						//tp_name
 	sizeof(V24_BPy_constant),			//tp_basicsize
 	0,								//tp_itemsize
-	(destructor)V24_constant_dealloc,	//tp_dealloc
+	(destructor)constant_dealloc,	//tp_dealloc
 	0,								//tp_print
 	0,								//tp_getattr
 	0,								//tp_setattr
 	0,								//tp_compare
-	(reprfunc) V24_constant_repr,		//tp_repr
+	(reprfunc) constant_repr,		//tp_repr
 	0,								//tp_as_number
 	0,								//tp_as_sequence
-	&V24_constantAsMapping,				//tp_as_mapping
+	&constantAsMapping,				//tp_as_mapping
 	0,								//tp_hash
 	0,								//tp_call
 	0,								//tp_str
-	(getattrofunc)V24_constant_getAttro,	//tp_getattro
+	(getattrofunc)constant_getAttro,	//tp_getattro
 	0,								//tp_setattro
 	0,								//tp_as_buffer
 	Py_TPFLAGS_DEFAULT,				//tp_flags
@@ -235,12 +235,12 @@ PyTypeObject V24_constant_Type = {
 //Creates a default empty constant
 PyObject *V24_PyConstant_New(void)
 {				
-	return new_const();
+	return V24_new_const();
 }
 //Inserts a key:value pair into the constant and then returns 0/1
 int V24_PyConstant_Insert(V24_BPy_constant *self, char *name, PyObject *value)
 {
-	PyType_Ready( &V24_constant_Type );
+	PyType_Ready( &constant_Type );
 	return V24_EXPP_dict_set_item_str(self->dict, name, value);
 }
 //This is a helper function for generating constants......

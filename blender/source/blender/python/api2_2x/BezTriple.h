@@ -39,7 +39,7 @@
 extern PyTypeObject V24_BezTriple_Type;
 
 /* type check macro */
-#define V24_BPy_BezTriple_Check(o) \
+#define BPy_BezTriple_Check(o) \
  ( (o)->ob_type == &V24_BezTriple_Type)
 
 /****************************************************************************

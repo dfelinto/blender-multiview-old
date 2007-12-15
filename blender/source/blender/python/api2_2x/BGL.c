@@ -32,7 +32,7 @@
 
 /* This file is the Blender.BGL part of opy_draw.c, from the old
  * bpython/intern dir, with minor changes to adapt it to the new Python
- * implementation.  The BGL submodule "wraps" OpenGL functions and constants,
+ * implementation.  The BGL V24_submodule "wraps" OpenGL functions and constants,
  * allowing script writers to make OpenGL calls in their Python scripts. */
 
 #include "BGL.h" /*This must come first */
@@ -40,15 +40,15 @@
 #include "MEM_guardedalloc.h"
 #include "gen_utils.h"
 
-static int type_size( int type );
-static Buffer *make_buffer( int type, int ndimensions, int *dimensions );
+static int V24_type_size( int type );
+static V24_Buffer *V24_make_buffer( int type, int ndimensions, int *dimensions );
 
-static char Method_Buffer_doc[] =
-	"(type, dimensions, [template]) - Create a new Buffer object\n\n\
+static char V24_Method_Buffer_doc[] =
+	"(type, dimensions, [template]) - Create a new V24_Buffer object\n\n\
 (type) - The format to store data in\n\
 (dimensions) - An int or sequence specifying the dimensions of the buffer\n\
 [template] - A sequence of matching dimensions to the buffer to be created\n\
-  which will be used to initialize the Buffer.\n\n\
+  which will be used to initialize the V24_Buffer.\n\n\
 If a template is not passed in all fields will be initialized to 0.\n\n\
 The type should be one of GL_BYTE, GL_SHORT, GL_INT, GL_FLOAT, or GL_DOUBLE.\n\
 If the dimensions are specified as an int a linear buffer will be\n\
@@ -59,47 +59,47 @@ For example, passing [100, 100] will create a 2 dimensional\n\
 square buffer. Passing [16, 16, 32] will create a 3 dimensional\n\
 buffer which is twice as deep as it is wide or high.";
 
-static PyObject *Method_Buffer( PyObject * self, PyObject * args );
+static PyObject *V24_Method_Buffer( PyObject * self, PyObject * args );
 
-/* Buffer sequence methods */
+/* V24_Buffer sequence methods */
 
-static int Buffer_len( PyObject * self );
-static PyObject *Buffer_item( PyObject * self, int i );
-static PyObject *Buffer_slice( PyObject * self, int begin, int end );
-static int Buffer_ass_item( PyObject * self, int i, PyObject * v );
-static int Buffer_ass_slice( PyObject * self, int begin, int end,
+static int V24_Buffer_len( PyObject * self );
+static PyObject *V24_Buffer_item( PyObject * self, int i );
+static PyObject *V24_Buffer_slice( PyObject * self, int begin, int end );
+static int V24_Buffer_ass_item( PyObject * self, int i, PyObject * v );
+static int V24_Buffer_ass_slice( PyObject * self, int begin, int end,
 			     PyObject * seq );
 
-static PySequenceMethods Buffer_SeqMethods = {
-	( inquiry ) Buffer_len,	/*sq_length */
+static PySequenceMethods V24_Buffer_SeqMethods = {
+	( inquiry ) V24_Buffer_len,	/*sq_length */
 	( binaryfunc ) 0,	/*sq_concat */
 	( intargfunc ) 0,	/*sq_repeat */
-	( intargfunc ) Buffer_item,	/*sq_item */
-	( intintargfunc ) Buffer_slice,	/*sq_slice */
-	( intobjargproc ) Buffer_ass_item,	/*sq_ass_item */
-	( intintobjargproc ) Buffer_ass_slice,	/*sq_ass_slice */
+	( intargfunc ) V24_Buffer_item,	/*sq_item */
+	( intintargfunc ) V24_Buffer_slice,	/*sq_slice */
+	( intobjargproc ) V24_Buffer_ass_item,	/*sq_ass_item */
+	( intintobjargproc ) V24_Buffer_ass_slice,	/*sq_ass_slice */
 };
 
-static void Buffer_dealloc( PyObject * self );
-static PyObject *Buffer_tolist( PyObject * self );
-static PyObject *Buffer_dimensions( PyObject * self );
-static PyObject *Buffer_getattr( PyObject * self, char *name );
-static PyObject *Buffer_repr( PyObject * self );
+static void V24_Buffer_dealloc( PyObject * self );
+static PyObject *V24_Buffer_tolist( PyObject * self );
+static PyObject *V24_Buffer_dimensions( PyObject * self );
+static PyObject *V24_Buffer_getattr( PyObject * self, char *name );
+static PyObject *V24_Buffer_repr( PyObject * self );
 
-PyTypeObject buffer_Type = {
+PyTypeObject V24_buffer_Type = {
 	PyObject_HEAD_INIT( NULL )      /* required python macro */
 	0,	/*ob_size */
 	"buffer",		/*tp_name */
-	sizeof( Buffer ),	/*tp_basicsize */
+	sizeof( V24_Buffer ),	/*tp_basicsize */
 	0,			/*tp_itemsize */
-	( destructor ) Buffer_dealloc,	/*tp_dealloc */
+	( destructor ) V24_Buffer_dealloc,	/*tp_dealloc */
 	( printfunc ) 0,	/*tp_print */
-	( getattrfunc ) Buffer_getattr,	/*tp_getattr */
+	( getattrfunc ) V24_Buffer_getattr,	/*tp_getattr */
 	( setattrfunc ) 0,	/*tp_setattr */
 	( cmpfunc ) 0,		/*tp_compare */
-	( reprfunc ) Buffer_repr,	/*tp_repr */
+	( reprfunc ) V24_Buffer_repr,	/*tp_repr */
 	0,			/*tp_as_number */
-	&Buffer_SeqMethods,	/*tp_as_sequence */
+	&V24_Buffer_SeqMethods,	/*tp_as_sequence */
 };
 
 /* #ifndef __APPLE__ */
@@ -127,7 +127,7 @@ static PyObject *V24_Method_##funcname (PyObject *self, PyObject *args) {\
 PyObject *V24_BGL_Init( void );
 
 /********/
-static int type_size(int type)
+static int V24_type_size(int type)
 {
 	switch (type) {
 		case GL_BYTE: 
@@ -144,9 +144,9 @@ static int type_size(int type)
 	return -1;
 }
 
-static Buffer *make_buffer(int type, int ndimensions, int *dimensions)
+static V24_Buffer *V24_make_buffer(int type, int ndimensions, int *dimensions)
 {
-	Buffer *buffer;
+	V24_Buffer *buffer;
 	void *buf= NULL;
 	int i, size, length;
  
@@ -154,11 +154,11 @@ static Buffer *make_buffer(int type, int ndimensions, int *dimensions)
 	for (i=0; i<ndimensions; i++) 
 		length*= dimensions[i];
  
-	size= type_size(type);
+	size= V24_type_size(type);
  
-	buf= MEM_mallocN(length*size, "Buffer buffer");
+	buf= MEM_mallocN(length*size, "V24_Buffer buffer");
  
-	buffer= (Buffer *) PyObject_NEW(Buffer, &buffer_Type);
+	buffer= (V24_Buffer *) PyObject_NEW(V24_Buffer, &V24_buffer_Type);
 	buffer->parent= NULL;
 	buffer->ndimensions= ndimensions;
 	buffer->dimensions= dimensions;
@@ -180,10 +180,10 @@ static Buffer *make_buffer(int type, int ndimensions, int *dimensions)
 	return buffer;
 }
 
-static PyObject *Method_Buffer (PyObject *self, PyObject *args)
+static PyObject *V24_Method_Buffer (PyObject *self, PyObject *args)
 {
 	PyObject *length_ob= NULL, *template= NULL;
-	Buffer *buffer;
+	V24_Buffer *buffer;
 	
 	int i, type;
 	int *dimensions = 0, ndimensions = 0;
@@ -199,11 +199,11 @@ static PyObject *Method_Buffer (PyObject *self, PyObject *args)
 
 	if (PyNumber_Check(length_ob)) {
 		ndimensions= 1;
-		dimensions= MEM_mallocN(ndimensions*sizeof(int), "Buffer dimensions");
+		dimensions= MEM_mallocN(ndimensions*sizeof(int), "V24_Buffer dimensions");
 		dimensions[0]= PyInt_AsLong(length_ob);
 	} else if (PySequence_Check(length_ob)) {
 		ndimensions= PySequence_Length(length_ob);
-		dimensions= MEM_mallocN(ndimensions*sizeof(int), "Buffer dimensions");
+		dimensions= MEM_mallocN(ndimensions*sizeof(int), "V24_Buffer dimensions");
 		for (i=0; i<ndimensions; i++) {
 			PyObject *ob= PySequence_GetItem(length_ob, i);
 
@@ -213,9 +213,9 @@ static PyObject *Method_Buffer (PyObject *self, PyObject *args)
 		}
 	}
 	
-	buffer= make_buffer(type, ndimensions, dimensions);
+	buffer= V24_make_buffer(type, ndimensions, dimensions);
 	if (template && ndimensions) {
-		if (Buffer_ass_slice((PyObject *) buffer, 0, dimensions[0], template)) {
+		if (V24_Buffer_ass_slice((PyObject *) buffer, 0, dimensions[0], template)) {
 			Py_DECREF(buffer);
 			return NULL;
 		}
@@ -224,17 +224,17 @@ static PyObject *Method_Buffer (PyObject *self, PyObject *args)
 	return (PyObject *) buffer;
 }
 
-/*@ Buffer sequence methods */
+/*@ V24_Buffer sequence methods */
 
-static int Buffer_len(PyObject *self)
+static int V24_Buffer_len(PyObject *self)
 {
-	Buffer *buf= (Buffer *) self;
+	V24_Buffer *buf= (V24_Buffer *) self;
 	return buf->dimensions[0];
 }
 
-static PyObject *Buffer_item(PyObject *self, int i)
+static PyObject *V24_Buffer_item(PyObject *self, int i)
 {
-	Buffer *buf= (Buffer *) self;
+	V24_Buffer *buf= (V24_Buffer *) self;
 
 	if (i >= buf->dimensions[0]) {
 		PyErr_SetString(PyExc_IndexError, "array index out of range");
@@ -250,16 +250,16 @@ static PyObject *Buffer_item(PyObject *self, int i)
 			case GL_DOUBLE: return Py_BuildValue("d", buf->buf.asdouble[i]);
 		}
 	} else {
-		Buffer *newbuf;
+		V24_Buffer *newbuf;
 		int j, length, size;
  
 		length= 1;
 		for (j=1; j<buf->ndimensions; j++) {
 			length*= buf->dimensions[j];
 		}
-		size= type_size(buf->type);
+		size= V24_type_size(buf->type);
 
-		newbuf= (Buffer *) PyObject_NEW(Buffer, &buffer_Type);
+		newbuf= (V24_Buffer *) PyObject_NEW(V24_Buffer, &V24_buffer_Type);
     
 		Py_INCREF(self);
 		newbuf->parent= self;
@@ -268,7 +268,7 @@ static PyObject *Buffer_item(PyObject *self, int i)
 		newbuf->type= buf->type;
 		newbuf->buf.asvoid= buf->buf.asbyte + i*length*size;
 		newbuf->dimensions= MEM_mallocN(newbuf->ndimensions*sizeof(int),
-			"Buffer dimensions");
+			"V24_Buffer dimensions");
 		memcpy(newbuf->dimensions, buf->dimensions+1,
 			newbuf->ndimensions*sizeof(int));
 
@@ -278,9 +278,9 @@ static PyObject *Buffer_item(PyObject *self, int i)
 	return NULL;
 }
 
-static PyObject *Buffer_slice(PyObject *self, int begin, int end)
+static PyObject *V24_Buffer_slice(PyObject *self, int begin, int end)
 {
-	Buffer *buf= (Buffer *) self;
+	V24_Buffer *buf= (V24_Buffer *) self;
 	PyObject *list;
 	int count;
 	
@@ -292,14 +292,14 @@ static PyObject *Buffer_slice(PyObject *self, int begin, int end)
 	list= PyList_New(end-begin);
 
 	for (count= begin; count<end; count++)
-		PyList_SetItem(list, count-begin, Buffer_item(self, count));
+		PyList_SetItem(list, count-begin, V24_Buffer_item(self, count));
 	
 	return list;
 }
 
-static int Buffer_ass_item(PyObject *self, int i, PyObject *v)
+static int V24_Buffer_ass_item(PyObject *self, int i, PyObject *v)
 {
-	Buffer *buf= (Buffer *) self;
+	V24_Buffer *buf= (V24_Buffer *) self;
 	
 	if (i >= buf->dimensions[0]) {
 		PyErr_SetString(PyExc_IndexError, "array assignment index out of range");
@@ -307,11 +307,11 @@ static int Buffer_ass_item(PyObject *self, int i, PyObject *v)
 	}
 	
 	if (buf->ndimensions!=1) {
-		PyObject *row= Buffer_item(self, i);
+		PyObject *row= V24_Buffer_item(self, i);
 		int ret;
 
 		if (!row) return -1;
-		ret= Buffer_ass_slice(row, 0, buf->dimensions[1], v);
+		ret= V24_Buffer_ass_slice(row, 0, buf->dimensions[1], v);
 		Py_DECREF(row);
 		return ret;
 	}
@@ -336,9 +336,9 @@ static int Buffer_ass_item(PyObject *self, int i, PyObject *v)
 	return 0;
 }
 
-static int Buffer_ass_slice(PyObject *self, int begin, int end, PyObject *seq)
+static int V24_Buffer_ass_slice(PyObject *self, int begin, int end, PyObject *seq)
 {
-	Buffer *buf= (Buffer *) self;
+	V24_Buffer *buf= (V24_Buffer *) self;
 	PyObject *item;
 	int count, err=0;
 	
@@ -359,16 +359,16 @@ static int Buffer_ass_slice(PyObject *self, int begin, int end, PyObject *seq)
 	
 	for (count= begin; count<end; count++) {
 		item= PySequence_GetItem(seq, count-begin);
-		err= Buffer_ass_item(self, count, item);
+		err= V24_Buffer_ass_item(self, count, item);
 		Py_DECREF(item);
 		if (err) break;
 	}
 	return err;
 }
 
-static void Buffer_dealloc(PyObject *self)
+static void V24_Buffer_dealloc(PyObject *self)
 {
-	Buffer *buf = (Buffer *)self;
+	V24_Buffer *buf = (V24_Buffer *)self;
 
 	if (buf->parent) Py_DECREF (buf->parent);
 	else MEM_freeN (buf->buf.asvoid);
@@ -378,21 +378,21 @@ static void Buffer_dealloc(PyObject *self)
 	PyObject_DEL (self);
 }
 
-static PyObject *Buffer_tolist(PyObject *self)
+static PyObject *V24_Buffer_tolist(PyObject *self)
 {
-	int i, len= ((Buffer *)self)->dimensions[0];
+	int i, len= ((V24_Buffer *)self)->dimensions[0];
 	PyObject *list= PyList_New(len);
 	
 	for (i=0; i<len; i++) {
-	  PyList_SetItem(list, i, Buffer_item(self, i));
+	  PyList_SetItem(list, i, V24_Buffer_item(self, i));
 	}
 	
 	return list;
 }
 
-static PyObject *Buffer_dimensions(PyObject *self)
+static PyObject *V24_Buffer_dimensions(PyObject *self)
 {
-	Buffer *buffer= (Buffer *) self;
+	V24_Buffer *buffer= (V24_Buffer *) self;
 	PyObject *list= PyList_New(buffer->ndimensions);
 	int i;
 	  
@@ -403,18 +403,18 @@ static PyObject *Buffer_dimensions(PyObject *self)
 	return list;
 }
 
-static PyObject *Buffer_getattr(PyObject *self, char *name)
+static PyObject *V24_Buffer_getattr(PyObject *self, char *name)
 {
-	if (strcmp(name, "list")==0) return Buffer_tolist(self);
-	else if (strcmp(name, "dimensions")==0) return Buffer_dimensions(self);
+	if (strcmp(name, "list")==0) return V24_Buffer_tolist(self);
+	else if (strcmp(name, "dimensions")==0) return V24_Buffer_dimensions(self);
 	
 	PyErr_SetString(PyExc_AttributeError, name);
 	return NULL;
 }
 
-static PyObject *Buffer_repr(PyObject *self)
+static PyObject *V24_Buffer_repr(PyObject *self)
 {
-	PyObject *list= Buffer_tolist(self);
+	PyObject *list= V24_Buffer_tolist(self);
 	PyObject *repr= PyObject_Repr(list);
 	Py_DECREF(list);
 	
@@ -762,8 +762,8 @@ BGLU_Wrap(9, UnProject,			GLint,		(GLdouble, GLdouble, GLdouble, GLdoubleP, GLdo
 /* So that MethodDef(Accum) becomes:
  * {"glAccum", Method_Accumfunc, METH_VARARGS} */
 
-static struct PyMethodDef BGL_methods[] = {
-  {"Buffer", Method_Buffer, METH_VARARGS, Method_Buffer_doc}, 
+static struct PyMethodDef V24_BGL_methods[] = {
+  {"V24_Buffer", V24_Method_Buffer, METH_VARARGS, V24_Method_Buffer_doc}, 
 
 /* #ifndef __APPLE__ */
 	MethodDef(Accum),
@@ -1093,10 +1093,10 @@ static struct PyMethodDef BGL_methods[] = {
 
 PyObject *V24_BGL_Init(void) 
 {
-	PyObject *mod= Py_InitModule("Blender.BGL", BGL_methods);
+	PyObject *mod= Py_InitModule("Blender.BGL", V24_BGL_methods);
 	PyObject *dict= PyModule_GetDict(mod);
 	
-	if( PyType_Ready( &buffer_Type) < 0)
+	if( PyType_Ready( &V24_buffer_Type) < 0)
 		Py_RETURN_NONE;
 
 #define EXPP_ADDCONST(x) V24_EXPP_dict_set_item_str(dict, #x, PyInt_FromLong(x))

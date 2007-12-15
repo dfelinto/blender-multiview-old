@@ -2,7 +2,7 @@
  * $Id$
  *
  * Blender.Noise BPython module implementation.
- * This submodule has functions to generate noise of various types.
+ * This V24_submodule has functions to generate noise of various types.
  * 
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
@@ -101,8 +101,8 @@
 #define TWIST(u,v) ((MIXBITS(u,v) >> 1) ^ ((v)&1UL ? MATRIX_A : 0UL))
 
 static unsigned long state[N];	/* the array for the state vector  */
-static int left = 1;
-static int initf = 0;
+static int V24_left = 1;
+static int V24_initf = 0;
 static unsigned long *next;
 
 PyObject *V24_Noise_Init(void);
@@ -122,8 +122,8 @@ static void init_genrand( unsigned long s )
 		/* 2002/01/09 modified by Makoto Matsumoto             */
 		state[j] &= 0xffffffffUL;	/* for >32 bit machines */
 	}
-	left = 1;
-	initf = 1;
+	V24_left = 1;
+	V24_initf = 1;
 }
 
 static void next_state( void )
@@ -133,10 +133,10 @@ static void next_state( void )
 
 	/* if init_genrand() has not been called, */
 	/* a default initial seed is used         */
-	if( initf == 0 )
+	if( V24_initf == 0 )
 		init_genrand( 5489UL );
 
-	left = N;
+	V24_left = N;
 	next = state;
 
 	for( j = N - M + 1; --j; p++ )
@@ -163,7 +163,7 @@ static float frand(  )
 {
 	unsigned long y;
 
-	if( --left == 0 )
+	if( --V24_left == 0 )
 		next_state(  );
 	y = *next++;
 
@@ -464,25 +464,25 @@ static PyObject *V24_Noise_cellNoiseV( PyObject * self, PyObject * args )
    In the original module I actually kept the docs stings with the functions themselves,
    but I grouped them here so that it can easily be moved to a header if anyone thinks that is necessary. */
 
-static char random__doc__[] = "() No arguments.\n\n\
+static char V24_random__doc__[] = "() No arguments.\n\n\
 Returns a random floating point number in the range [0, 1)";
 
-static char randuvec__doc__[] =
+static char V24_randuvec__doc__[] =
 	"() No arguments.\n\nReturns a random unit vector (3-float list).";
 
-static char setRandomSeed__doc__[] = "(seed value)\n\n\
+static char V24_setRandomSeed__doc__[] = "(seed value)\n\n\
 Initializes random number generator.\n\
 if seed is zero, the current time will be used instead.";
 
-static char noise__doc__[] = "((x,y,z) tuple, [noisetype])\n\n\
+static char V24_noise__doc__[] = "((x,y,z) tuple, [noisetype])\n\n\
 Returns general noise of the optional specified type.\n\
 Optional argument noisetype determines the type of noise, STDPERLIN by default, see V24_NoiseTypes.";
 
-static char vNoise__doc__[] = "((x,y,z) tuple, [noisetype])\n\n\
+static char V24_vNoise__doc__[] = "((x,y,z) tuple, [noisetype])\n\n\
 Returns noise vector (3-float list) of the optional specified type.\
 Optional argument noisetype determines the type of noise, STDPERLIN by default, see V24_NoiseTypes.";
 
-static char turbulence__doc__[] =
+static char V24_turbulence__doc__[] =
 	"((x,y,z) tuple, octaves, hard, [noisebasis], [ampscale], [freqscale])\n\n\
 Returns general turbulence value using the optional specified noisebasis function.\n\
 octaves (integer) is the number of noise values added.\n\
@@ -492,7 +492,7 @@ noisebasis determines the type of noise used for the turbulence, STDPERLIN by de
 ampscale sets the amplitude scale value of the noise frequencies added, 0.5 by default.\n\
 freqscale sets the frequency scale factor, 2.0 by default.";
 
-static char vTurbulence__doc__[] =
+static char V24_vTurbulence__doc__[] =
 	"((x,y,z) tuple, octaves, hard, [noisebasis], [ampscale], [freqscale])\n\n\
 Returns general turbulence vector (3-float list) using the optional specified noisebasis function.\n\
 octaves (integer) is the number of noise values added.\n\
@@ -502,7 +502,7 @@ noisebasis determines the type of noise used for the turbulence, STDPERLIN by de
 ampscale sets the amplitude scale value of the noise frequencies added, 0.5 by default.\n\
 freqscale sets the frequency scale factor, 2.0 by default.";
 
-static char fBm__doc__[] =
+static char V24_fBm__doc__[] =
 	"((x,y,z) tuple, H, lacunarity, octaves, [noisebasis])\n\n\
 Returns Fractal Brownian Motion noise value(fBm).\n\
 H is the fractal increment parameter.\n\
@@ -510,7 +510,7 @@ lacunarity is the gap between successive frequencies.\n\
 octaves is the number of frequencies in the fBm.\n\
 Optional argument noisebasis determines the type of noise used for the turbulence, STDPERLIN by default, see V24_NoiseTypes.";
 
-static char multiFractal__doc__[] =
+static char V24_multiFractal__doc__[] =
 	"((x,y,z) tuple, H, lacunarity, octaves, [noisebasis])\n\n\
 Returns Multifractal noise value.\n\
 H determines the highest fractal dimension.\n\
@@ -518,14 +518,14 @@ lacunarity is gap between successive frequencies.\n\
 octaves is the number of frequencies in the fBm.\n\
 Optional argument noisebasis determines the type of noise used for the turbulence, STDPERLIN by default, see V24_NoiseTypes.";
 
-static char vlNoise__doc__[] =
+static char V24_vlNoise__doc__[] =
 	"((x,y,z) tuple, distortion, [noisetype1], [noisetype2])\n\n\
 Returns Variable Lacunarity Noise value, a distorted variety of noise.\n\
 distortion sets the amount of distortion.\n\
 Optional arguments noisetype1 and noisetype2 set the noisetype to distort and the noisetype used for the distortion respectively.\n\
 See V24_NoiseTypes, both are STDPERLIN by default.";
 
-static char heteroTerrain__doc__[] =
+static char V24_heteroTerrain__doc__[] =
 	"((x,y,z) tuple, H, lacunarity, octaves, offset, [noisebasis])\n\n\
 returns Heterogeneous Terrain value\n\
 H determines the fractal dimension of the roughest areas.\n\
@@ -534,7 +534,7 @@ octaves is the number of frequencies in the fBm.\n\
 offset raises the terrain from 'sea level'.\n\
 Optional argument noisebasis determines the type of noise used for the turbulence, STDPERLIN by default, see V24_NoiseTypes.";
 
-static char hybridMFractal__doc__[] =
+static char V24_hybridMFractal__doc__[] =
 	"((x,y,z) tuple, H, lacunarity, octaves, offset, gain, [noisebasis])\n\n\
 returns Hybrid Multifractal value.\n\
 H determines the fractal dimension of the roughest areas.\n\
@@ -544,7 +544,7 @@ offset raises the terrain from 'sea level'.\n\
 gain scales the values.\n\
 Optional argument noisebasis determines the type of noise used for the turbulence, STDPERLIN by default, see V24_NoiseTypes.";
 
-static char ridgedMFractal__doc__[] =
+static char V24_ridgedMFractal__doc__[] =
 	"((x,y,z) tuple, H, lacunarity, octaves, offset, gain [noisebasis])\n\n\
 returns Ridged Multifractal value.\n\
 H determines the fractal dimension of the roughest areas.\n\
@@ -554,7 +554,7 @@ offset raises the terrain from 'sea level'.\n\
 gain scales the values.\n\
 Optional argument noisebasis determines the type of noise used for the turbulence, STDPERLIN by default, see V24_NoiseTypes.";
 
-static char voronoi__doc__[] =
+static char V24_voronoi__doc__[] =
 	"((x,y,z) tuple, distance_metric, [exponent])\n\n\
 returns a list, containing a list of distances in order of closest feature,\n\
 and a list containing the positions of the four closest features\n\
@@ -562,10 +562,10 @@ Optional arguments:\n\
 distance_metric: see DistanceMetrics, default is DISTANCE\n\
 exponent is only used with MINKOVSKY, default is 2.5.";
 
-static char cellNoise__doc__[] = "((x,y,z) tuple)\n\n\
+static char V24_cellNoise__doc__[] = "((x,y,z) tuple)\n\n\
 returns cellnoise float value.";
 
-static char cellNoiseV__doc__[] = "((x,y,z) tuple)\n\n\
+static char V24_cellNoiseV__doc__[] = "((x,y,z) tuple)\n\n\
 returns cellnoise vector/point/color (3-float list).";
 
 static char V24_Noise__doc__[] = "Blender Noise and Turbulence Module\n\n\
@@ -620,33 +620,33 @@ static PyObject *V24_Noise_cellNoiseV(PyObject *self, PyObject *args);
 
 static PyMethodDef V24_NoiseMethods[] = {
 	{"setRandomSeed", ( PyCFunction ) V24_Noise_setRandomSeed, METH_VARARGS,
-	 setRandomSeed__doc__},
-	{"random", ( PyCFunction ) V24_Noise_random, METH_NOARGS, random__doc__},
+	 V24_setRandomSeed__doc__},
+	{"random", ( PyCFunction ) V24_Noise_random, METH_NOARGS, V24_random__doc__},
 	{"randuvec", ( PyCFunction ) V24_Noise_randuvec, METH_NOARGS,
-	 randuvec__doc__},
-	{"noise", ( PyCFunction ) V24_Noise_noise, METH_VARARGS, noise__doc__},
-	{"vNoise", ( PyCFunction ) V24_Noise_vNoise, METH_VARARGS, vNoise__doc__},
+	 V24_randuvec__doc__},
+	{"noise", ( PyCFunction ) V24_Noise_noise, METH_VARARGS, V24_noise__doc__},
+	{"vNoise", ( PyCFunction ) V24_Noise_vNoise, METH_VARARGS, V24_vNoise__doc__},
 	{"turbulence", ( PyCFunction ) V24_Noise_turbulence, METH_VARARGS,
-	 turbulence__doc__},
+	 V24_turbulence__doc__},
 	{"vTurbulence", ( PyCFunction ) V24_Noise_vTurbulence, METH_VARARGS,
-	 vTurbulence__doc__},
-	{"fBm", ( PyCFunction ) V24_Noise_fBm, METH_VARARGS, fBm__doc__},
+	 V24_vTurbulence__doc__},
+	{"fBm", ( PyCFunction ) V24_Noise_fBm, METH_VARARGS, V24_fBm__doc__},
 	{"multiFractal", ( PyCFunction ) V24_Noise_multiFractal, METH_VARARGS,
-	 multiFractal__doc__},
+	 V24_multiFractal__doc__},
 	{"vlNoise", ( PyCFunction ) V24_Noise_vlNoise, METH_VARARGS,
-	 vlNoise__doc__},
+	 V24_vlNoise__doc__},
 	{"heteroTerrain", ( PyCFunction ) V24_Noise_heteroTerrain, METH_VARARGS,
-	 heteroTerrain__doc__},
+	 V24_heteroTerrain__doc__},
 	{"hybridMFractal", ( PyCFunction ) V24_Noise_hybridMFractal, METH_VARARGS,
-	 hybridMFractal__doc__},
+	 V24_hybridMFractal__doc__},
 	{"ridgedMFractal", ( PyCFunction ) V24_Noise_ridgedMFractal, METH_VARARGS,
-	 ridgedMFractal__doc__},
+	 V24_ridgedMFractal__doc__},
 	{"voronoi", ( PyCFunction ) V24_Noise_voronoi, METH_VARARGS,
-	 voronoi__doc__},
+	 V24_voronoi__doc__},
 	{"cellNoise", ( PyCFunction ) V24_Noise_cellNoise, METH_VARARGS,
-	 cellNoise__doc__},
+	 V24_cellNoise__doc__},
 	{"cellNoiseV", ( PyCFunction ) V24_Noise_cellNoiseV, METH_VARARGS,
-	 cellNoiseV__doc__},
+	 V24_cellNoiseV__doc__},
 	{NULL, NULL, 0, NULL}
 };
 

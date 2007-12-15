@@ -37,7 +37,7 @@
 
 extern PyTypeObject V24_CurNurb_Type;
 
-#define V24_BPy_CurNurb_Check(v)  ((v)->ob_type == &V24_CurNurb_Type)	/* for type checking */
+#define BPy_CurNurb_Check(v)  ((v)->ob_type == &V24_CurNurb_Type)	/* for type checking */
 
 /* Python V24_BPy_CurNurb structure definition */
 typedef struct {

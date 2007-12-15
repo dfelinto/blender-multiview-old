@@ -74,13 +74,13 @@ PyObject *V24_M_Text3d_LoadFont (PyObject * self, PyObject * args );
 /*****************************************************************************
  * Python callback function prototypes for the Text3D module.  
  *****************************************************************************/
-static PyObject *return_ModuleConstant( char *constant_name);
-static PyObject *generate_ModuleIntConstant(char *name, int value);
+static PyObject *V24_return_ModuleConstant( char *constant_name);
+static PyObject *V24_generate_ModuleIntConstant(char *name, int value);
 
 /*****************************************************************************/
 /* Python method structure definition for Blender.Text3d module:             */
 /*****************************************************************************/
-struct PyMethodDef M_Text3d_methods[] = {
+struct PyMethodDef V24_M_Text3d_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Text3d_New, METH_VARARGS, NULL},
 	{"Get", ( PyCFunction ) V24_M_Text3d_Get, METH_VARARGS, NULL},
 	{"LoadFont", ( PyCFunction ) V24_M_Text3d_LoadFont, METH_O, NULL},
@@ -319,7 +319,7 @@ static int setFloatAttrClamp( V24_BPy_Text3d *self, PyObject *value, void *type 
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Text3d_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR, /* didnt have any attributes, at least lets have the standard ID attrs */
+	GENERIC_LIB_GETSETATTR, /* didnt have any attributes, at least lets have the standard ID attrs */
 	{"activeFrame",
 	 (getter)V24_Text3d_getActiveFrame, (setter)V24_Text3d_setActiveFrame,
 	 "the index of the active text frame",
@@ -551,7 +551,7 @@ PyObject *V24_M_Text3d_Get( PyObject * self, PyObject * args )
 	}
 }
 
-static PyObject *generate_ModuleIntConstant(char *name, int value)
+static PyObject *V24_generate_ModuleIntConstant(char *name, int value)
 {
 	PyObject *constant = V24_PyConstant_New();
 
@@ -567,37 +567,37 @@ static PyObject *generate_ModuleIntConstant(char *name, int value)
 PyObject *V24_Text3d_Init( void )
 {
 	//module
-	PyObject *submodule, *dict;
+	PyObject *V24_submodule, *dict;
 
 	//add module...
 	if( PyType_Ready( &V24_Text3d_Type ) < 0 )
 		return NULL;
 	
-	submodule = Py_InitModule3( "Blender.Text3d", M_Text3d_methods, 
+	V24_submodule = Py_InitModule3( "Blender.Text3d", V24_M_Text3d_methods, 
 		V24_M_Text3D_doc);
 
 	//add constants to module...
-	PyModule_AddObject( submodule, "LEFT", 
-		generate_ModuleIntConstant("Text3d.LEFT", CU_LEFT));
-	PyModule_AddObject( submodule, "MIDDLE", 
-		generate_ModuleIntConstant("Text3d.MIDDLE", CU_MIDDLE));
-	PyModule_AddObject( submodule, "RIGHT",
-		generate_ModuleIntConstant("Text3d.RIGHT", CU_RIGHT));
-	PyModule_AddObject( submodule, "FLUSH",
-		generate_ModuleIntConstant("Text3d.FLUSH", CU_FLUSH));
-	PyModule_AddObject( submodule, "JUSTIFY",
-		generate_ModuleIntConstant("Text3d.JUSTIFY", CU_JUSTIFY));
-	PyModule_AddObject( submodule, "DRAW3D",
-		generate_ModuleIntConstant("Text3d.DRAW3D", CU_3D));
-	PyModule_AddObject( submodule, "DRAWFRONT",
-		generate_ModuleIntConstant("Text3d.DRAWFRONT", CU_FRONT));
-	PyModule_AddObject( submodule, "DRAWBACK",
-		generate_ModuleIntConstant("Text3d.DRAWBACK", CU_BACK));
-	PyModule_AddObject( submodule, "UVORCO",
-		generate_ModuleIntConstant("Text3d.UVORCO", CU_UV_ORCO));
-	dict = PyModule_GetDict( submodule );
+	PyModule_AddObject( V24_submodule, "LEFT", 
+		V24_generate_ModuleIntConstant("Text3d.LEFT", CU_LEFT));
+	PyModule_AddObject( V24_submodule, "MIDDLE", 
+		V24_generate_ModuleIntConstant("Text3d.MIDDLE", CU_MIDDLE));
+	PyModule_AddObject( V24_submodule, "RIGHT",
+		V24_generate_ModuleIntConstant("Text3d.RIGHT", CU_RIGHT));
+	PyModule_AddObject( V24_submodule, "FLUSH",
+		V24_generate_ModuleIntConstant("Text3d.FLUSH", CU_FLUSH));
+	PyModule_AddObject( V24_submodule, "JUSTIFY",
+		V24_generate_ModuleIntConstant("Text3d.JUSTIFY", CU_JUSTIFY));
+	PyModule_AddObject( V24_submodule, "DRAW3D",
+		V24_generate_ModuleIntConstant("Text3d.DRAW3D", CU_3D));
+	PyModule_AddObject( V24_submodule, "DRAWFRONT",
+		V24_generate_ModuleIntConstant("Text3d.DRAWFRONT", CU_FRONT));
+	PyModule_AddObject( V24_submodule, "DRAWBACK",
+		V24_generate_ModuleIntConstant("Text3d.DRAWBACK", CU_BACK));
+	PyModule_AddObject( V24_submodule, "UVORCO",
+		V24_generate_ModuleIntConstant("Text3d.UVORCO", CU_UV_ORCO));
+	dict = PyModule_GetDict( V24_submodule );
 	PyDict_SetItemString( dict, "Font", V24_Font_Init(  ) );
-	return ( submodule );
+	return ( V24_submodule );
 }
 
 /****************************************************************************
@@ -626,7 +626,7 @@ static int V24_Text3d_compare( V24_BPy_Text3d * a, V24_BPy_Text3d * b )
 	return ( a->curve == b->curve) ? 0 : -1;
 }
 
-struct Text3d *Text3d_FromPyObject( PyObject * py_obj )
+struct Text3d *V24_Text3d_FromPyObject( PyObject * py_obj )
 {
 	V24_BPy_Text3d *blen_obj;
 
@@ -634,7 +634,7 @@ struct Text3d *Text3d_FromPyObject( PyObject * py_obj )
 	return ((struct Text3d*) blen_obj->curve );
 }
 
-static PyObject *return_ModuleConstant( char *constant_name){
+static PyObject *V24_return_ModuleConstant( char *constant_name){
 
 	PyObject *module = NULL, *dict = NULL, *constant = NULL;;
 
@@ -727,15 +727,15 @@ static PyObject* V24_Text3d_getDrawMode(V24_BPy_Text3d* self)
 
 	//load tuple
 	if(self->curve->flag & CU_3D){
-		PyTuple_SET_ITEM( tuple, pos, return_ModuleConstant("DRAW3D"));
+		PyTuple_SET_ITEM( tuple, pos, V24_return_ModuleConstant("DRAW3D"));
 		pos++;
 	}
 	if (self->curve->flag & CU_FRONT){
-		PyTuple_SET_ITEM( tuple, pos, return_ModuleConstant("DRAWFRONT"));
+		PyTuple_SET_ITEM( tuple, pos, V24_return_ModuleConstant("DRAWFRONT"));
 		pos++;
 	}
 	if (self->curve->flag & CU_BACK){
-		PyTuple_SET_ITEM( tuple, pos, return_ModuleConstant("DRAWBACK"));
+		PyTuple_SET_ITEM( tuple, pos, V24_return_ModuleConstant("DRAWBACK"));
 		pos++;
 	}
 
@@ -787,7 +787,7 @@ static PyObject* V24_Text3d_setDrawMode(V24_BPy_Text3d* self,PyObject* args)
 			return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 				"unable to parse list" ) );	
 		}
-		if( !V24_BPy_Constant_Check(v)){
+		if( !BPy_Constant_Check(v)){
 			Py_DECREF(listObject);
 			Py_DECREF(v);
 			self->curve->flag = temp;
@@ -1045,15 +1045,15 @@ static PyObject *V24_Text3d_setYoffset( V24_BPy_Text3d * self, PyObject * args )
 static PyObject *V24_Text3d_getAlignment( V24_BPy_Text3d * self )
 {
 	if(self->curve->spacemode == CU_LEFT){
-		return return_ModuleConstant("LEFT");
+		return V24_return_ModuleConstant("LEFT");
 	}else if (self->curve->spacemode == CU_MIDDLE){
-		return return_ModuleConstant("MIDDLE");
+		return V24_return_ModuleConstant("MIDDLE");
 	}else if (self->curve->spacemode == CU_RIGHT){
-		return return_ModuleConstant("RIGHT");
+		return V24_return_ModuleConstant("RIGHT");
 	}else if (self->curve->spacemode == CU_FLUSH){
-		return return_ModuleConstant("FLUSH");
+		return V24_return_ModuleConstant("FLUSH");
 	}else if (self->curve->spacemode == CU_JUSTIFY){ 
-		return return_ModuleConstant("JUSTIFY");
+		return V24_return_ModuleConstant("JUSTIFY");
 	}
 
 	return ( V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
@@ -1065,7 +1065,7 @@ static PyObject *V24_Text3d_setAlignment( V24_BPy_Text3d * self, PyObject * args
 	V24_BPy_constant *constant;
 	int value;
 
-	if( !PyArg_ParseTuple( args, "O!", &V24_constant_Type, &constant ) )
+	if( !PyArg_ParseTuple( args, "O!", &constant_Type, &constant ) )
 		return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected module constant" ) );
 

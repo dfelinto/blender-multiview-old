@@ -36,9 +36,9 @@
 
 #include <Python.h>
 
-extern PyTypeObject V24_euler_Type;
+extern PyTypeObject euler_Type;
 
-#define V24_EulerObject_Check(v) ((v)->ob_type == &V24_euler_Type)
+#define EulerObject_Check(v) ((v)->ob_type == &euler_Type)
 
 typedef struct {
 	PyObject_VAR_HEAD 

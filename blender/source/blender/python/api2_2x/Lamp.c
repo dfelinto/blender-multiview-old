@@ -168,7 +168,7 @@ static char V24_M_Lamp_Get_doc[] = "Lamp.Get (name = None):\n\
 /*****************************************************************************/
 /* Python method structure definition for Blender.Lamp module:               */
 /*****************************************************************************/
-struct PyMethodDef M_Lamp_methods[] = {
+struct PyMethodDef V24_M_Lamp_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Lamp_New, METH_VARARGS | METH_KEYWORDS,
 	 V24_M_Lamp_New_doc},
 	{"Get", V24_M_Lamp_Get, METH_VARARGS, V24_M_Lamp_Get_doc},
@@ -379,7 +379,7 @@ static PyMethodDef V24_BPy_Lamp_methods[] = {
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Lamp_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"bias",
 	 (getter)V24_Lamp_getBias, (setter)V24_Lamp_setBias,
 	 "Lamp shadow map sampling bias",
@@ -782,10 +782,10 @@ static PyObject *V24_Lamp_ModesDict( void )
 /*****************************************************************************/
 /* Function:              V24_Lamp_Init                                          */
 /*****************************************************************************/
-/* Needed by the Blender module, to register the Blender.Lamp submodule */
+/* Needed by the Blender module, to register the Blender.Lamp V24_submodule */
 PyObject *V24_Lamp_Init( void )
 {
-	PyObject *submodule, *Types, *Modes;
+	PyObject *V24_submodule, *Types, *Modes;
 
 	if( PyType_Ready( &V24_Lamp_Type ) < 0)
 		return NULL;
@@ -793,21 +793,21 @@ PyObject *V24_Lamp_Init( void )
 	Types = V24_Lamp_TypesDict(  );
 	Modes = V24_Lamp_ModesDict(  );
 
-	submodule =
-		Py_InitModule3( "Blender.Lamp", M_Lamp_methods, V24_M_Lamp_doc );
+	V24_submodule =
+		Py_InitModule3( "Blender.Lamp", V24_M_Lamp_methods, V24_M_Lamp_doc );
 
 	if( Types )
-		PyModule_AddObject( submodule, "Types", Types );
+		PyModule_AddObject( V24_submodule, "Types", Types );
 	if( Modes )
-		PyModule_AddObject( submodule, "Modes", Modes );
+		PyModule_AddObject( V24_submodule, "Modes", Modes );
 
-	PyModule_AddIntConstant( submodule, "RGB",      IPOKEY_RGB );
-	PyModule_AddIntConstant( submodule, "ENERGY",   IPOKEY_ENERGY );
-	PyModule_AddIntConstant( submodule, "SPOTSIZE", IPOKEY_SPOTSIZE );
-	PyModule_AddIntConstant( submodule, "OFFSET",   IPOKEY_OFFSET );
-	PyModule_AddIntConstant( submodule, "SIZE",     IPOKEY_SIZE );
+	PyModule_AddIntConstant( V24_submodule, "RGB",      IPOKEY_RGB );
+	PyModule_AddIntConstant( V24_submodule, "ENERGY",   IPOKEY_ENERGY );
+	PyModule_AddIntConstant( V24_submodule, "SPOTSIZE", IPOKEY_SPOTSIZE );
+	PyModule_AddIntConstant( V24_submodule, "OFFSET",   IPOKEY_OFFSET );
+	PyModule_AddIntConstant( V24_submodule, "SIZE",     IPOKEY_SIZE );
 	
-	return submodule;
+	return V24_submodule;
 }
 
 /* Three Python V24_Lamp_Type helper functions needed by the Object module: */

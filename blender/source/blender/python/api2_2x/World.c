@@ -145,7 +145,7 @@ None if the Scene has no world";
 /*****************************************************************************/
 /* Python method structure definition for Blender.World module:              */
 /*****************************************************************************/
-struct PyMethodDef M_World_methods[] = {
+struct PyMethodDef V24_M_World_methods[] = {
 	{"New", ( PyCFunction ) V24_M_World_New, METH_VARARGS | METH_KEYWORDS,
 	 V24_M_World_New_doc},
 	{"Get", V24_M_World_Get, METH_VARARGS, V24_M_World_Get_doc},
@@ -238,7 +238,7 @@ static PyMethodDef V24_BPy_World_methods[] = {
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_World_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"skytype", (getter)V24_World_getSkytype, (setter)V24_World_setSkytype,
 	 "sky settings as a list", NULL},
 	{"mode", (getter)V24_World_getMode, (setter)V24_World_setMode,
@@ -348,7 +348,7 @@ PyTypeObject V24_World_Type = {
 /**
  * \brief Python module function: Blender.World.New()
  *
- * This is the .New() function of the Blender.World submodule. It creates
+ * This is the .New() function of the Blender.World V24_submodule. It creates
  * new World Data in Blender and returns its Python wrapper object.  The
  * name parameter is mandatory.
  * \param <name> - string: The World Data name.
@@ -391,7 +391,7 @@ static PyObject *V24_M_World_New( PyObject * self, PyObject * args,
 /**
  * \brief Python module function: Blender.World.Get()
  *
- * This is the .Get() function of the Blender.World submodule.	It searches
+ * This is the .Get() function of the Blender.World V24_submodule.	It searches
  * the list of current World Data objects and returns a Python wrapper for
  * the one with the name provided by the user.	If called with no arguments,
  * it returns a list of all current World Data object names in Blender.
@@ -470,31 +470,31 @@ static PyObject *V24_M_World_GetCurrent( PyObject * self )
 /*@}*/
 
 /**
- * \brief Initializes the Blender.World submodule
+ * \brief Initializes the Blender.World V24_submodule
  *
  * This function is used by Blender_Init() in Blender.c to register the
- * Blender.World submodule in the main Blender module.
- * \return PyObject*: The initialized submodule.
+ * Blender.World V24_submodule in the main Blender module.
+ * \return PyObject*: The initialized V24_submodule.
  */
 
 PyObject *V24_World_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	if( PyType_Ready( &V24_World_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.World",
-				    M_World_methods, V24_M_World_doc );
+	V24_submodule = Py_InitModule3( "Blender.World",
+				    V24_M_World_methods, V24_M_World_doc );
 
-	PyModule_AddIntConstant( submodule, "ZENITH",      IPOKEY_ZENITH );
-	PyModule_AddIntConstant( submodule, "HORIZON",     IPOKEY_HORIZON );
-	PyModule_AddIntConstant( submodule, "MIST",        IPOKEY_MIST );
-	PyModule_AddIntConstant( submodule, "STARS",       IPOKEY_STARS );
-	PyModule_AddIntConstant( submodule, "OFFSET",      IPOKEY_OFFSET );
-	PyModule_AddIntConstant( submodule, "SIZE",        IPOKEY_SIZE );
+	PyModule_AddIntConstant( V24_submodule, "ZENITH",      IPOKEY_ZENITH );
+	PyModule_AddIntConstant( V24_submodule, "HORIZON",     IPOKEY_HORIZON );
+	PyModule_AddIntConstant( V24_submodule, "MIST",        IPOKEY_MIST );
+	PyModule_AddIntConstant( V24_submodule, "STARS",       IPOKEY_STARS );
+	PyModule_AddIntConstant( V24_submodule, "OFFSET",      IPOKEY_OFFSET );
+	PyModule_AddIntConstant( V24_submodule, "SIZE",        IPOKEY_SIZE );
 
-	return ( submodule );
+	return ( V24_submodule );
 }
 
 /*****************************************************************************/

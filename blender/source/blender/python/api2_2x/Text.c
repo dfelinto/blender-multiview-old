@@ -77,7 +77,7 @@ static char V24_M_Text_unlink_doc[] =
 /*****************************************************************************/
 /* Python method structure definition for Blender.Text module:               */
 /*****************************************************************************/
-struct PyMethodDef M_Text_methods[] = {
+struct PyMethodDef V24_M_Text_methods[] = {
 	{"New", V24_M_Text_New, METH_VARARGS, V24_M_Text_New_doc},
 	{"Get", V24_M_Text_Get, METH_VARARGS, V24_M_Text_Get_doc},
 	{"get", V24_M_Text_Get, METH_VARARGS, V24_M_Text_Get_doc},
@@ -304,15 +304,15 @@ static PyObject *V24_M_Text_unlink( PyObject * self, PyObject * args )
 /*****************************************************************************/
 PyObject *V24_Text_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	if( PyType_Ready( &V24_Text_Type ) < 0 )
 		return NULL;
 
-	submodule =
-		Py_InitModule3( "Blender.Text", M_Text_methods, V24_M_Text_doc );
+	V24_submodule =
+		Py_InitModule3( "Blender.Text", V24_M_Text_methods, V24_M_Text_doc );
 
-	return ( submodule );
+	return ( V24_submodule );
 }
 
 /*****************************************************************************/
@@ -483,7 +483,7 @@ static PyObject *V24_Text_getMode(V24_BPy_Text * self)
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Text_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"filename", (getter)V24_Text_getFilename, (setter)NULL,
 	 "text filename", NULL},
 	{"mode", (getter)V24_Text_getMode, (setter)NULL,

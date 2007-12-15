@@ -68,7 +68,7 @@ static char V24_M_Geometry_ClosestPointOnLine_doc[] = "(pt, line_p1, line_p2) - 
 static char V24_M_Geometry_PointInTriangle2D_doc[] = "(pt, tri_p1, tri_p2, tri_p3) - takes 4 vectors, one is the point and the next 3 define the triabgle, only the x and y are used from the vectors";
 static char V24_M_Geometry_BoxPack2D_doc[] = "";
 /*-----------------------METHOD DEFINITIONS ----------------------*/
-struct PyMethodDef M_Geometry_methods[] = {
+struct PyMethodDef V24_M_Geometry_methods[] = {
 	{"PolyFill", ( PyCFunction ) V24_M_Geometry_PolyFill, METH_O, V24_M_Geometry_PolyFill_doc},
 	{"LineIntersect2D", ( PyCFunction ) V24_M_Geometry_LineIntersect2D, METH_VARARGS, V24_M_Geometry_LineIntersect2D_doc},
 	{"ClosestPointOnLine", ( PyCFunction ) V24_M_Geometry_ClosestPointOnLine, METH_VARARGS, V24_M_Geometry_ClosestPointOnLine_doc},
@@ -79,11 +79,11 @@ struct PyMethodDef M_Geometry_methods[] = {
 /*----------------------------MODULE INIT-------------------------*/
 PyObject *V24_Geometry_Init(void)
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
-	submodule = Py_InitModule3("Blender.Geometry",
-				    M_Geometry_methods, V24_M_Geometry_doc);
-	return (submodule);
+	V24_submodule = Py_InitModule3("Blender.Geometry",
+				    V24_M_Geometry_methods, V24_M_Geometry_doc);
+	return (V24_submodule);
 }
 
 /*----------------------------------Geometry.PolyFill() -------------------*/
@@ -255,7 +255,7 @@ static PyObject *V24_M_Geometry_LineIntersect2D( PyObject * self, PyObject * arg
 		xi = (float)(((b1x / fabs(b1y - b2y)) * fabs(b2y - a1y)) + ((b2x / fabs(b1y - b2y)) * fabs(b1y - a1y)));
 		if (xi > MAX2(a1x, a2x)) { /* New point right of hoz line1's */
 			Py_RETURN_NONE;
-		} else if (xi < MIN2(a1x, a2x)) { /*New point left of seg1's hoz line */
+		} else if (xi < MIN2(a1x, a2x)) { /*New point V24_left of seg1's hoz line */
 			Py_RETURN_NONE;
 		}
 		newvec[0]= xi;

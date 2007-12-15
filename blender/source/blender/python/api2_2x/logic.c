@@ -90,8 +90,8 @@ PyTypeObject V24_property_Type = {
 };
 //--------------- Property module internal callbacks-------------------
 
-//--------------- V24_updatePyProperty-------------------------------------
-int V24_updatePyProperty( V24_BPy_Property * self )
+//--------------- updatePyProperty-------------------------------------
+int updatePyProperty( V24_BPy_Property * self )
 {
 	if( !self->property ) {
 		return 0;	//nothing to update - not linked
@@ -329,7 +329,7 @@ PyObject *V24_Property_CreatePyObject( struct bProperty * Property )
 	//allocate space for python vars
 	py_property->name = PyMem_Malloc( 32 );
 
-	if( !V24_updatePyProperty( py_property ) )
+	if( !updatePyProperty( py_property ) )
 		return ( V24_EXPP_ReturnPyObjError
 			 ( PyExc_AttributeError, "Property struct empty" ) );
 
@@ -389,7 +389,7 @@ static PyObject *V24_Property_setName( V24_BPy_Property * self, PyObject * value
 		BLI_strncpy( self->name, name, 32 );
 	} else {
 		BLI_strncpy( self->property->name, name, 32 );
-		V24_updatePyProperty( self );
+		updatePyProperty( self );
 	}
 
 	Py_RETURN_NONE;
@@ -498,7 +498,7 @@ static PyObject *V24_Property_setData( V24_BPy_Property * self, PyObject * args 
 				     PyString_AsString( data ),
 				     MAX_PROPSTRING );
 		}
-		V24_updatePyProperty( self );
+		updatePyProperty( self );
 	} else {
 		self->data = data;
 	}

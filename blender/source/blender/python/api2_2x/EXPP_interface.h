@@ -37,11 +37,11 @@ struct Object;
 struct Script;
 struct LinkNode;
 
-extern struct LinkNode *bpy_pydriver_oblist;
+extern struct LinkNode *V24_bpy_pydriver_oblist;
 
-void V24_initBlenderApi2_2x( void );
+void initBlenderApi2_2x( void );
 char *bpy_gethome( int append_scriptsdir );
-void discardFromBDict( char *key );
+void V24_discardFromBDict( char *key );
 void V24_EXPP_Library_Close( void );   /* in Library.c, used by BPY_end_python */
 
 /* PyDrivers */

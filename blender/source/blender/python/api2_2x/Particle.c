@@ -102,7 +102,7 @@ PyObject *V24_ParticleGetAttr( V24_BPy_Particle * msh, char *name );
 PyObject *V24_ParticleRepr( void );
 PyObject *V24_ParticleCreatePyObject( struct Effect *particle );
 int V24_ParticleCheckPyObject( PyObject * py_obj );
-struct Particle *ParticleFromPyObject( PyObject * py_obj );
+struct Particle *V24_ParticleFromPyObject( PyObject * py_obj );
 
  
 /*****************************************************************************/
@@ -247,7 +247,7 @@ char V24_M_Particle_Get_doc[] = "xxx";
 /*****************************************************************************/
 /* Python method structure definition for Blender.Particle module:           */
 /*****************************************************************************/
-struct PyMethodDef M_Particle_methods[] = {
+struct PyMethodDef V24_M_Particle_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Particle_New, METH_VARARGS, V24_M_Particle_New_doc},
 	{"Get", V24_M_Particle_Get, METH_VARARGS, V24_M_Particle_Get_doc},
 	{"get", V24_M_Particle_Get, METH_VARARGS, V24_M_Particle_Get_doc},
@@ -361,14 +361,14 @@ PyObject *V24_M_Particle_Get( PyObject * self, PyObject * args )
 /*****************************************************************************/
 PyObject *V24_Particle_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	
 	if( PyType_Ready( &V24_Particle_Type) < 0)
 		return NULL;
 	
-	submodule =
-		Py_InitModule3( "Blender.Particle", M_Particle_methods,	V24_M_Particle_doc );
-	return ( submodule );
+	V24_submodule =
+		Py_InitModule3( "Blender.Particle", V24_M_Particle_methods,	V24_M_Particle_doc );
+	return ( V24_submodule );
 }
 
 /*****************************************************************************/
@@ -1030,7 +1030,7 @@ int V24_ParticleCheckPyObject( PyObject * py_obj )
 }
 
 
-struct Particle *ParticleFromPyObject( PyObject * py_obj )
+struct Particle *V24_ParticleFromPyObject( PyObject * py_obj )
 {
 	V24_BPy_Particle *blen_obj;
 

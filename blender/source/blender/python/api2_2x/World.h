@@ -36,7 +36,7 @@
 #include <Python.h>
 #include "DNA_world_types.h"
 
-#define V24_BPy_World_Check(v) ((v)->ob_type==&V24_World_Type)
+#define BPy_World_Check(v) ((v)->ob_type==&V24_World_Type)
 
 /* Python V24_BPy_World structure definition */
 typedef struct {

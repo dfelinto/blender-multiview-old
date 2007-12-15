@@ -74,7 +74,7 @@ static char V24_M_Mathutils_QuadNormal_doc[] = "(v1, v2, v3, v4) - returns the n
 static char V24_M_Mathutils_LineIntersect_doc[] = "(v1, v2, v3, v4) - returns a tuple with the points on each line respectively closest to the other";
 static char V24_M_Mathutils_Point_doc[] = "Creates a 2d or 3d point object";
 //-----------------------METHOD DEFINITIONS ----------------------
-struct PyMethodDef M_Mathutils_methods[] = {
+struct PyMethodDef V24_M_Mathutils_methods[] = {
 	{"Rand", (PyCFunction) V24_M_Mathutils_Rand, METH_VARARGS, V24_M_Mathutils_Rand_doc},
 	{"Vector", (PyCFunction) V24_M_Mathutils_Vector, METH_VARARGS, V24_M_Mathutils_Vector_doc},
 	{"CrossVecs", (PyCFunction) V24_M_Mathutils_CrossVecs, METH_VARARGS, V24_M_Mathutils_CrossVecs_doc},
@@ -112,7 +112,7 @@ struct PyMethodDef M_Mathutils_methods[] = {
 //----------------------------MODULE INIT-------------------------
 PyObject *V24_Mathutils_Init(void)
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	//seed the generator for the rand function
 	BLI_srand((unsigned int) (PIL_check_seconds_timer() *
@@ -123,14 +123,14 @@ PyObject *V24_Mathutils_Init(void)
 		return NULL;
 	if( PyType_Ready( &V24_matrix_Type ) < 0 )
 		return NULL;	
-	if( PyType_Ready( &V24_euler_Type ) < 0 )
+	if( PyType_Ready( &euler_Type ) < 0 )
 		return NULL;
 	if( PyType_Ready( &V24_quaternion_Type ) < 0 )
 		return NULL;
 	
-	submodule = Py_InitModule3("Blender.Mathutils",
-				    M_Mathutils_methods, V24_M_Mathutils_doc);
-	return (submodule);
+	V24_submodule = Py_InitModule3("Blender.Mathutils",
+				    V24_M_Mathutils_methods, V24_M_Mathutils_doc);
+	return (V24_submodule);
 }
 //-----------------------------METHODS----------------------------
 //----------------V24_column_vector_multiplication (internal)---------
@@ -262,20 +262,20 @@ PyObject *V24_row_point_multiplication(V24_PointObject* pt, V24_MatrixObject * m
 	}
 	return V24_newPointObject(ptNew, size, Py_NEW);
 }
-//-----------------quat_rotation (internal)-----------
+//-----------------V24_quat_rotation (internal)-----------
 //This function multiplies a vector/point * quat or vice versa
 //to rotate the point/vector by the quaternion
 //arguments should all be 3D
-PyObject *quat_rotation(PyObject *arg1, PyObject *arg2)
+PyObject *V24_quat_rotation(PyObject *arg1, PyObject *arg2)
 {
 	float rot[3];
 	V24_QuaternionObject *quat = NULL;
 	V24_VectorObject *vec = NULL;
 	V24_PointObject *pt = NULL;
 
-	if(V24_QuaternionObject_Check(arg1)){
+	if(QuaternionObject_Check(arg1)){
 		quat = (V24_QuaternionObject*)arg1;
-		if(V24_VectorObject_Check(arg2)){
+		if(VectorObject_Check(arg2)){
 			vec = (V24_VectorObject*)arg2;
 			rot[0] = quat->quat[0]*quat->quat[0]*vec->vec[0] + 2*quat->quat[2]*quat->quat[0]*vec->vec[2] - 
 				2*quat->quat[3]*quat->quat[0]*vec->vec[1] + quat->quat[1]*quat->quat[1]*vec->vec[0] + 
@@ -290,7 +290,7 @@ PyObject *quat_rotation(PyObject *arg1, PyObject *arg2)
 				quat->quat[2]*quat->quat[2]*vec->vec[2] + 2*quat->quat[0]*quat->quat[1]*vec->vec[1] - 
 				quat->quat[1]*quat->quat[1]*vec->vec[2] + quat->quat[0]*quat->quat[0]*vec->vec[2];
 			return V24_newVectorObject(rot, 3, Py_NEW);
-		}else if(V24_PointObject_Check(arg2)){
+		}else if(PointObject_Check(arg2)){
 			pt = (V24_PointObject*)arg2;
 			rot[0] = quat->quat[0]*quat->quat[0]*pt->coord[0] + 2*quat->quat[2]*quat->quat[0]*pt->coord[2] - 
 				2*quat->quat[3]*quat->quat[0]*pt->coord[1] + quat->quat[1]*quat->quat[1]*pt->coord[0] + 
@@ -306,9 +306,9 @@ PyObject *quat_rotation(PyObject *arg1, PyObject *arg2)
 				quat->quat[1]*quat->quat[1]*pt->coord[2] + quat->quat[0]*quat->quat[0]*pt->coord[2];
 			return V24_newPointObject(rot, 3, Py_NEW);
 		}
-	}else if(V24_VectorObject_Check(arg1)){
+	}else if(VectorObject_Check(arg1)){
 		vec = (V24_VectorObject*)arg1;
-		if(V24_QuaternionObject_Check(arg2)){
+		if(QuaternionObject_Check(arg2)){
 			quat = (V24_QuaternionObject*)arg2;
 			rot[0] = quat->quat[0]*quat->quat[0]*vec->vec[0] + 2*quat->quat[2]*quat->quat[0]*vec->vec[2] - 
 				2*quat->quat[3]*quat->quat[0]*vec->vec[1] + quat->quat[1]*quat->quat[1]*vec->vec[0] + 
@@ -324,9 +324,9 @@ PyObject *quat_rotation(PyObject *arg1, PyObject *arg2)
 				quat->quat[1]*quat->quat[1]*vec->vec[2] + quat->quat[0]*quat->quat[0]*vec->vec[2];
 			return V24_newVectorObject(rot, 3, Py_NEW);
 		}
-	}else if(V24_PointObject_Check(arg1)){
+	}else if(PointObject_Check(arg1)){
 		pt = (V24_PointObject*)arg1;
-		if(V24_QuaternionObject_Check(arg2)){
+		if(QuaternionObject_Check(arg2)){
 			quat = (V24_QuaternionObject*)arg2;
 			rot[0] = quat->quat[0]*quat->quat[0]*pt->coord[0] + 2*quat->quat[2]*quat->quat[0]*pt->coord[2] - 
 				2*quat->quat[3]*quat->quat[0]*pt->coord[1] + quat->quat[1]*quat->quat[1]*pt->coord[0] + 
@@ -345,7 +345,7 @@ PyObject *quat_rotation(PyObject *arg1, PyObject *arg2)
 	}
 
 	return (V24_EXPP_ReturnPyObjError(PyExc_RuntimeError,
-		"quat_rotation(internal): internal problem rotating vector/point\n"));
+		"V24_quat_rotation(internal): internal problem rotating vector/point\n"));
 }
 
 //----------------------------------Mathutils.Rand() --------------------
@@ -588,7 +588,7 @@ PyObject *V24_M_Mathutils_Matrix(PyObject * self, PyObject * args)
 	}else if (argSize == 1){
 		//copy constructor for matrix objects
 		argObject = PySequence_GetItem(args, 0);
-		if(V24_MatrixObject_Check(argObject)){
+		if(MatrixObject_Check(argObject)){
 			mat = (V24_MatrixObject*)argObject;
 
 			argSize = mat->rowSize; //rows
@@ -778,7 +778,7 @@ PyObject *V24_M_Mathutils_TranslationMatrix(PyObject * self, V24_VectorObject * 
 	float mat[16] = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f};
 	
-	if(!V24_VectorObject_Check(vec)) {
+	if(!VectorObject_Check(vec)) {
 		return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 						"Mathutils.TranslationMatrix(): expected vector\n");
 	}
@@ -1753,7 +1753,7 @@ PyObject *V24_M_Mathutils_RotateEuler(PyObject * self, PyObject * args)
 		--warning;
 	}
 
-	if(!PyArg_ParseTuple(args, "O!fs", &V24_euler_Type, &Eul, &angle, &axis))
+	if(!PyArg_ParseTuple(args, "O!fs", &euler_Type, &Eul, &angle, &axis))
 		return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
 			   "Mathutils.RotateEuler(): expected euler type & float & string");
 

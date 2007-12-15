@@ -58,7 +58,7 @@ char V24_M_IpoCurve_Get_doc[] = "";
 /* Python method structure definition for Blender.IpoCurve module:           */
 /*****************************************************************************/
 
-struct PyMethodDef M_IpoCurve_methods[] = {
+struct PyMethodDef V24_M_IpoCurve_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
@@ -321,7 +321,7 @@ static char *get_key_curvename( IpoCurve *ipocurve )
  * no issues with who owns pointers.
  */
 
-char *getIpoCurveName( IpoCurve * icu )
+char *V24_getIpoCurveName( IpoCurve * icu )
 {
 	switch ( icu->blocktype ) {
 	case ID_MA:
@@ -502,7 +502,7 @@ static PyObject *V24_IpoCurve_append( V24_C_IpoCurve * self, PyObject * value )
 	IpoCurve *icu = self->ipocurve;
 
 	/* if args is a already a beztriple, tack onto end of list */
-	if( V24_BPy_BezTriple_Check ( value ) ) {
+	if( BPy_BezTriple_Check ( value ) ) {
 		V24_BPy_BezTriple *bobj = (V24_BPy_BezTriple *)value;
 
 		BezTriple *newb = MEM_callocN( (icu->totvert+1)*sizeof(BezTriple),
@@ -664,7 +664,7 @@ static int V24_IpoCurve_compare( V24_C_IpoCurve * a, V24_C_IpoCurve * b )
 static PyObject *V24_IpoCurve_repr( V24_C_IpoCurve * self )
 {
 	return PyString_FromFormat( "[IpoCurve \"%s\"]",
-			getIpoCurveName( self->ipocurve ) );
+			V24_getIpoCurveName( self->ipocurve ) );
 }
 
 /* Three Python V24_IpoCurve_Type helper functions needed by the Object module: */
@@ -851,7 +851,7 @@ static int V24_IpoCurve_setDriverObject( V24_C_IpoCurve * self, PyObject * arg )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 					      "This IpoCurve does not have an active driver" );
 
-	if(!V24_BPy_Object_Check(arg) )
+	if(!BPy_Object_Check(arg) )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 					      "expected an object argument" );
 	ipo->driver->ob = ((V24_BPy_Object *)arg)->object;
@@ -964,33 +964,33 @@ static PyObject *V24_M_IpoCurve_InterpDict( void )
 /*****************************************************************************/
 PyObject *V24_IpoCurve_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *ExtendTypes = V24_M_IpoCurve_ExtendDict( );
 	PyObject *InterpTypes = V24_M_IpoCurve_InterpDict( );
 
 	if( PyType_Ready( &V24_IpoCurve_Type ) < 0)
 		return NULL;
 
-	submodule =
-		Py_InitModule3( "Blender.IpoCurve", M_IpoCurve_methods,
+	V24_submodule =
+		Py_InitModule3( "Blender.IpoCurve", V24_M_IpoCurve_methods,
 				V24_M_IpoCurve_doc );
 
-	PyModule_AddIntConstant( submodule, "LOC_X", OB_LOC_X );
-	PyModule_AddIntConstant( submodule, "LOC_Y", OB_LOC_Y );
-	PyModule_AddIntConstant( submodule, "LOC_Z", OB_LOC_Z );	
-	PyModule_AddIntConstant( submodule, "ROT_X", OB_ROT_X );
-	PyModule_AddIntConstant( submodule, "ROT_Y", OB_ROT_Y );
-	PyModule_AddIntConstant( submodule, "ROT_Z", OB_ROT_Z );	
-	PyModule_AddIntConstant( submodule, "SIZE_X", OB_SIZE_X );
-	PyModule_AddIntConstant( submodule, "SIZE_Y", OB_SIZE_Y );
-	PyModule_AddIntConstant( submodule, "SIZE_Z", OB_SIZE_Z );	
+	PyModule_AddIntConstant( V24_submodule, "LOC_X", OB_LOC_X );
+	PyModule_AddIntConstant( V24_submodule, "LOC_Y", OB_LOC_Y );
+	PyModule_AddIntConstant( V24_submodule, "LOC_Z", OB_LOC_Z );	
+	PyModule_AddIntConstant( V24_submodule, "ROT_X", OB_ROT_X );
+	PyModule_AddIntConstant( V24_submodule, "ROT_Y", OB_ROT_Y );
+	PyModule_AddIntConstant( V24_submodule, "ROT_Z", OB_ROT_Z );	
+	PyModule_AddIntConstant( V24_submodule, "SIZE_X", OB_SIZE_X );
+	PyModule_AddIntConstant( V24_submodule, "SIZE_Y", OB_SIZE_Y );
+	PyModule_AddIntConstant( V24_submodule, "SIZE_Z", OB_SIZE_Z );	
 
 	if( ExtendTypes )
-		PyModule_AddObject( submodule, "ExtendTypes", ExtendTypes );
+		PyModule_AddObject( V24_submodule, "ExtendTypes", ExtendTypes );
 	if( InterpTypes )
-		PyModule_AddObject( submodule, "InterpTypes", InterpTypes );
+		PyModule_AddObject( V24_submodule, "InterpTypes", InterpTypes );
 
-	return submodule;
+	return V24_submodule;
 }
 
 /*

@@ -49,7 +49,7 @@ char V24_Matrix_toEuler_doc[] = "() - convert matrix to a euler angle rotation";
 char V24_Matrix_toQuat_doc[] = "() - convert matrix to a quaternion rotation";
 char V24_Matrix_copy_doc[] = "() - return a copy of the matrix";
 /*-----------------------METHOD DEFINITIONS ----------------------*/
-struct PyMethodDef Matrix_methods[] = {
+struct PyMethodDef V24_Matrix_methods[] = {
 	{"zero", (PyCFunction) V24_Matrix_Zero, METH_NOARGS, V24_Matrix_Zero_doc},
 	{"identity", (PyCFunction) V24_Matrix_Identity, METH_NOARGS, V24_Matrix_Identity_doc},
 	{"transpose", (PyCFunction) V24_Matrix_Transpose, METH_NOARGS, V24_Matrix_Transpose_doc},
@@ -394,7 +394,7 @@ static PyObject *V24_Matrix_getattr(V24_MatrixObject * self, char *name)
 		else 
 			return V24_EXPP_incr_ret((PyObject *)Py_False);
 	}
-	return Py_FindMethod(Matrix_methods, (PyObject *) self, name);
+	return Py_FindMethod(V24_Matrix_methods, (PyObject *) self, name);
 }
 /*----------------------------setattr()(internal) ----------------*/
 /*object.attribute access (set)*/
@@ -436,7 +436,7 @@ static PyObject* V24_Matrix_richcmpr(PyObject *objectA, PyObject *objectB, int c
 	V24_MatrixObject *matA = NULL, *matB = NULL;
 	int result = 0;
 
-	if (!V24_MatrixObject_Check(objectA) || !V24_MatrixObject_Check(objectB)){
+	if (!MatrixObject_Check(objectA) || !MatrixObject_Check(objectB)){
 		if (comparison_type == Py_NE){
 			return V24_EXPP_incr_ret(Py_True); 
 		}else{
@@ -732,11 +732,11 @@ static PyObject *V24_Matrix_mul(PyObject * m1, PyObject * m2)
 	}else{
 		if(mat2->coerced_object){
 			/* MATRIX * VECTOR   operation is now being done by vector */
-			/*if(V24_VectorObject_Check(mat2->coerced_object)){ 
+			/*if(VectorObject_Check(mat2->coerced_object)){ 
 				vec = (V24_VectorObject*)mat2->coerced_object;
 				return V24_column_vector_multiplication(mat1, vec);
 			}else */
-			if(V24_PointObject_Check(mat2->coerced_object)){ /*MATRIX * POINT*/
+			if(PointObject_Check(mat2->coerced_object)){ /*MATRIX * POINT*/
 				pt = (V24_PointObject*)mat2->coerced_object;
 				return V24_column_point_multiplication(mat1, pt);
 			}else if (PyFloat_Check(mat2->coerced_object) || 
@@ -792,8 +792,8 @@ PyObject* V24_Matrix_inv(V24_MatrixObject *self)
  then call vector.multiply(vector, scalar_cast_as_vector)*/
 static int V24_Matrix_coerce(PyObject ** m1, PyObject ** m2)
 {
-	if(V24_VectorObject_Check(*m2) || PyFloat_Check(*m2) || PyInt_Check(*m2) ||
-			V24_PointObject_Check(*m2)) {
+	if(VectorObject_Check(*m2) || PyFloat_Check(*m2) || PyInt_Check(*m2) ||
+			PointObject_Check(*m2)) {
 		PyObject *coerced = V24_EXPP_incr_ret(*m2);
 		*m2 = V24_newMatrixObject(NULL,3,3,Py_NEW);
 		((V24_MatrixObject*)*m2)->coerced_object = coerced;

@@ -217,7 +217,7 @@ returns None if not found.\n";
 /*****************************************************************************/
 /* Python method structure definition for Blender.Image module:		 */
 /*****************************************************************************/
-struct PyMethodDef M_Image_methods[] = {
+struct PyMethodDef V24_M_Image_methods[] = {
 	{"New", V24_M_Image_New, METH_VARARGS, V24_M_Image_New_doc},
 	{"Get", V24_M_Image_Get, METH_VARARGS, V24_M_Image_Get_doc},
 	{"GetCurrent", ( PyCFunction ) V24_M_Image_GetCurrent, METH_NOARGS, V24_M_Image_GetCurrent_doc},	
@@ -740,20 +740,20 @@ static PyObject *V24_M_Image_SourceDict( void )
 /*****************************************************************************/
 PyObject *V24_Image_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *Sources = V24_M_Image_SourceDict( );
 
 	if( PyType_Ready( &V24_Image_Type ) < 0 )
 		return NULL;
 
-	submodule =
-		Py_InitModule3( "Blender.Image", M_Image_methods,
+	V24_submodule =
+		Py_InitModule3( "Blender.Image", V24_M_Image_methods,
 				V24_M_Image_doc );
 
 	if( Sources )
-		PyModule_AddObject( submodule, "Sources", Sources );
+		PyModule_AddObject( V24_submodule, "Sources", Sources );
 
-	return submodule;
+	return V24_submodule;
 }
 
 /*****************************************************************************/
@@ -1212,7 +1212,7 @@ static int setIntAttrClamp( V24_BPy_Image *self, PyObject *value, void *type )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Image_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"filename", (getter)V24_Image_getFilename, (setter)V24_Image_setFilename,
 	 "image path", NULL},
 	/* readonly */

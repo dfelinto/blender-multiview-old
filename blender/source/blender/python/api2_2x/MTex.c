@@ -48,7 +48,7 @@ static PyObject *V24_MTex_setTexMethod( V24_BPy_MTex * self, PyObject * args );
 /*****************************************************************************/
 /* Python method structure definition for Blender.Texture.MTex module:       */
 /*****************************************************************************/
-struct PyMethodDef M_MTex_methods[] = {
+struct PyMethodDef V24_M_MTex_methods[] = {
 	{NULL, NULL, 0, NULL}
 };
 
@@ -237,16 +237,16 @@ PyTypeObject V24_MTex_Type = {
 
 PyObject *V24_MTex_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 /*	PyObject *dict; */
 
 	/* call PyType_Ready() to init dictionaries & such */
 	if( PyType_Ready( &V24_MTex_Type) < 0)
 		Py_RETURN_NONE;
 
-	submodule = Py_InitModule( "Blender.Texture.MTex", M_MTex_methods );
+	V24_submodule = Py_InitModule( "Blender.Texture.MTex", V24_M_MTex_methods );
 
-	return submodule;
+	return V24_submodule;
 }
 
 PyObject *V24_MTex_CreatePyObject( MTex * mtex )

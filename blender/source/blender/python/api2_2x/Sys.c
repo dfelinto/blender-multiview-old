@@ -67,7 +67,7 @@ static PyObject *V24_M_sys_expandpath( PyObject *self, PyObject *value);
 /* In Python these will be written to the console when doing a               */
 /* Blender.sys.__doc__                                                       */
 /*****************************************************************************/
-static char V24_M_sys_doc[] = "The Blender.sys submodule\n\
+static char V24_M_sys_doc[] = "The Blender.sys V24_submodule\n\
 \n\
 This is a minimal system module to supply simple functionality available\n\
 in the default Python module os.";
@@ -130,7 +130,7 @@ If the special chars are not found in the given path, it is simply returned.";
 /*****************************************************************************/
 /* Python method structure definition for Blender.sys module:                */
 /*****************************************************************************/
-struct PyMethodDef M_sys_methods[] = {
+struct PyMethodDef V24_M_sys_methods[] = {
 	{"basename", V24_M_sys_basename, METH_O, V24_M_sys_basename_doc},
 	{"dirname", V24_M_sys_dirname, METH_O, V24_M_sys_dirname_doc},
 	{"join", V24_M_sys_join, METH_VARARGS, V24_M_sys_join_doc},
@@ -147,22 +147,22 @@ struct PyMethodDef M_sys_methods[] = {
 
 /* Module Functions */
 
-static PyObject *g_sysmodule = NULL;	/* pointer to Blender.sys module */
+static PyObject *V24_g_sysmodule = NULL;	/* pointer to Blender.sys module */
 
 PyObject *V24_sys_Init( void )
 {
-	PyObject *submodule, *dict;
+	PyObject *V24_submodule, *dict;
 
-	submodule = Py_InitModule3( "Blender.sys", M_sys_methods, V24_M_sys_doc );
+	V24_submodule = Py_InitModule3( "Blender.sys", V24_M_sys_methods, V24_M_sys_doc );
 
-	g_sysmodule = submodule;
+	V24_g_sysmodule = V24_submodule;
 
-	dict = PyModule_GetDict( submodule );
+	dict = PyModule_GetDict( V24_submodule );
 	
 	V24_EXPP_dict_set_item_str( dict, "dirsep", PyString_FromString(DIRSEP_STR) );
 	V24_EXPP_dict_set_item_str( dict, "sep", PyString_FromString(DIRSEP_STR) );
 
-	return submodule;
+	return V24_submodule;
 }
 
 static PyObject *V24_M_sys_basename( PyObject * self, PyObject * value )

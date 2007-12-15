@@ -48,7 +48,7 @@
 #define EXPP_THEME_DRAWTYPE_MAX 4
 
 #define EXPP_THEME_NUMBEROFTHEMES 16
-static const V24_EXPP_map_pair themes_map[] = {
+static const V24_EXPP_map_pair V24_themes_map[] = {
 	{"ui", -1},
 	{"buts", SPACE_BUTS},
 	{"view3d", SPACE_VIEW3D},
@@ -88,7 +88,7 @@ static char V24_M_Theme_Get_doc[] = "Theme.Get (name = None):\n\
 /*****************************************************************************/
 /* Python method structure definition for Blender.Theme module:		   */
 /*****************************************************************************/
-struct PyMethodDef M_Theme_methods[] = {
+struct PyMethodDef V24_M_Theme_methods[] = {
 	{"New", V24_M_Theme_New, METH_VARARGS, V24_M_Theme_New_doc},
 	{"Get", V24_M_Theme_Get, METH_VARARGS, V24_M_Theme_Get_doc},
 	{NULL, NULL, 0, NULL}
@@ -687,7 +687,7 @@ static PyObject *V24_Theme_get( V24_BPy_Theme * self, PyObject * args )
 
 		while( type < EXPP_THEME_NUMBEROFTHEMES ) {
 			PyList_SET_ITEM( ret, type,
-					 PyString_FromString( themes_map[type].sval ) );
+					 PyString_FromString( V24_themes_map[type].sval ) );
 			type++;
 		}
 
@@ -698,7 +698,7 @@ static PyObject *V24_Theme_get( V24_BPy_Theme * self, PyObject * args )
 		type = ( int ) PyInt_AsLong( pyob );
 	else if( PyString_Check( pyob ) ) {	/* (str) */
 		char *str = PyString_AsString( pyob );
-		if( !V24_EXPP_map_case_getIntVal( themes_map, str, &type ) )
+		if( !V24_EXPP_map_case_getIntVal( V24_themes_map, str, &type ) )
 			return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 						      "unknown string argument" );
 	} else
@@ -791,14 +791,14 @@ static PyObject *V24_Theme_setName( V24_BPy_Theme * self, PyObject * value )
 
 PyObject *V24_Theme_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	V24_Theme_Type.ob_type = &PyType_Type;
 
-	submodule = Py_InitModule3( "Blender.Window.Theme",
-				    M_Theme_methods, V24_M_Theme_doc );
+	V24_submodule = Py_InitModule3( "Blender.Window.Theme",
+				    V24_M_Theme_methods, V24_M_Theme_doc );
 
-	return submodule;
+	return V24_submodule;
 }
 
 static void V24_Theme_dealloc( V24_BPy_Theme * self )

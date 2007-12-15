@@ -30,7 +30,7 @@
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
 */
 
-/* This submodule was introduced as a way to preserve configured data in
+/* This V24_submodule was introduced as a way to preserve configured data in
  * scripts.  A very simple idea: the script writer saves this data in a dict
  * and registers this dict in the "Registry" dict.  This way we can discard
  * the global interpreter dictionary after a script is executed, since the
@@ -44,7 +44,7 @@
 
 #include <Python.h>
 
-extern PyObject *bpy_registryDict;
+extern PyObject *V24_bpy_registryDict;
 PyObject *V24_Registry_Init( void );
 
 #endif				/* EXPP_REGISTRY_H */

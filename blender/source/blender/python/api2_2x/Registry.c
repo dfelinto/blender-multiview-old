@@ -37,7 +37,7 @@
 
 
 /* the Registry dictionary */
-PyObject *bpy_registryDict = NULL;
+PyObject *V24_bpy_registryDict = NULL;
 
 /*****************************************************************************/
 /* Python API function prototypes for the Registry module.                   */
@@ -83,7 +83,7 @@ char V24_M_Registry_RemoveKey_doc[] =
 /*****************************************************************************/
 /* Python method structure definition for Blender.Registry module:           */
 /*****************************************************************************/
-struct PyMethodDef M_Registry_methods[] = {
+struct PyMethodDef V24_M_Registry_methods[] = {
 	{"Keys", ( PyCFunction ) V24_M_Registry_Keys, METH_VARARGS,
 	 V24_M_Registry_Keys_doc},
 	{"GetKey", V24_M_Registry_GetKey, METH_VARARGS, V24_M_Registry_GetKey_doc},
@@ -101,11 +101,11 @@ PyObject *V24_M_Registry_Keys( PyObject * self )
 {
 	PyObject *pydict = NULL;
 
-	if( !bpy_registryDict )
+	if( !V24_bpy_registryDict )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "No Registry dictionary found!" );
 
-	pydict = PyDict_Keys( bpy_registryDict );
+	pydict = PyDict_Keys( V24_bpy_registryDict );
 
 	if( !pydict )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
@@ -124,7 +124,7 @@ static PyObject *V24_M_Registry_GetKey( PyObject * self, PyObject * args )
 	PyObject *pydict = NULL;
 	int disk = 0;
 
-	if( !bpy_registryDict )
+	if( !V24_bpy_registryDict )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"No Registry dictionary found!" );
 
@@ -132,7 +132,7 @@ static PyObject *V24_M_Registry_GetKey( PyObject * self, PyObject * args )
 		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 			"expected a string and optionally a bool" );
 
-	pydict = PyDict_GetItem( bpy_registryDict, pyentry );	/* borrowed ... */
+	pydict = PyDict_GetItem( V24_bpy_registryDict, pyentry );	/* borrowed ... */
 
 	if (!pydict) {
 		if (disk > 0) {
@@ -142,7 +142,7 @@ static PyObject *V24_M_Registry_GetKey( PyObject * self, PyObject * args )
 				"import Blender, BPyRegistry; BPyRegistry.LoadConfigData('%s')",
 				PyString_AsString(pyentry));
 			if (!PyRun_SimpleString(buf))
-				pydict = PyDict_GetItem(bpy_registryDict, pyentry);
+				pydict = PyDict_GetItem(V24_bpy_registryDict, pyentry);
 			else PyErr_Clear();
 		}
 
@@ -163,7 +163,7 @@ static PyObject *V24_M_Registry_SetKey( PyObject * self, PyObject * args )
 	PyObject *pydict = NULL;
 	int disk = 0;
 
-	if( !bpy_registryDict )
+	if( !V24_bpy_registryDict )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "No Registry dictionary found!" );
 
@@ -173,7 +173,7 @@ static PyObject *V24_M_Registry_SetKey( PyObject * self, PyObject * args )
 		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected a string and a dictionary" );
 
-	if( PyDict_SetItem( bpy_registryDict, pystr, pydict ) )	/* 0 on success */
+	if( PyDict_SetItem( V24_bpy_registryDict, pystr, pydict ) )	/* 0 on success */
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "Registry_SetKey: couldn't update the Registry dict" );
 
@@ -203,7 +203,7 @@ static PyObject *V24_M_Registry_RemoveKey( PyObject * self, PyObject * args )
 	PyObject *pystr = NULL;
 	int disk = 0;
 
-	if( !bpy_registryDict )
+	if( !V24_bpy_registryDict )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 					      "No Registry dictionary found!" );
 
@@ -211,7 +211,7 @@ static PyObject *V24_M_Registry_RemoveKey( PyObject * self, PyObject * args )
 		return V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 					      "expected a string and optionally a bool" );
 
-	if( PyDict_DelItem( bpy_registryDict, pystr ) )	/* returns 0 on success */
+	if( PyDict_DelItem( V24_bpy_registryDict, pystr ) )	/* returns 0 on success */
 		return V24_EXPP_ReturnPyObjError( PyExc_KeyError,
 					      "no such key in the Registry" );
 	else if (disk) {
@@ -236,10 +236,10 @@ static PyObject *V24_M_Registry_RemoveKey( PyObject * self, PyObject * args )
 /*****************************************************************************/
 PyObject *V24_Registry_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
-	submodule = Py_InitModule3( "Blender.Registry", M_Registry_methods,
+	V24_submodule = Py_InitModule3( "Blender.Registry", V24_M_Registry_methods,
 				    V24_M_Registry_doc );
 
-	return submodule;
+	return V24_submodule;
 }

@@ -64,9 +64,9 @@ typedef struct {
 } V24_BPy_ActionStrips;
 
 /* Type checking for EXPP PyTypes */
-#define V24_BPy_Action_Check(v)       ((v)->ob_type == &V24_Action_Type)
-#define V24_BPy_ActionStrip_Check(v)  ((v)->ob_type == &V24_ActionStrip_Type)
-#define V24_BPy_ActionStrips_Check(v) ((v)->ob_type == &V24_ActionStrips_Type)
+#define BPy_Action_Check(v)       ((v)->ob_type == &V24_Action_Type)
+#define BPy_ActionStrip_Check(v)  ((v)->ob_type == &V24_ActionStrip_Type)
+#define BPy_ActionStrips_Check(v) ((v)->ob_type == &V24_ActionStrips_Type)
 
 PyObject *V24_Action_CreatePyObject( struct bAction *action );
 bAction *V24_Action_FromPyObject( PyObject * py_obj );

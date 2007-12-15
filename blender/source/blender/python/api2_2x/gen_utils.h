@@ -87,9 +87,9 @@ PyObject *V24_EXPP_GetModuleConstant(char *module, char *constant);
 int V24_StringEqual( const char *string1, const char *string2 );
 
 PyObject *V24_PythonReturnErrorObject( PyObject * type, char *error_msg );
-PyObject *PythonIncRef( PyObject * object );
+PyObject *V24_PythonIncRef( PyObject * object );
 
-char *event_to_name( short event );
+char *V24_event_to_name( short event );
 
 float V24_EXPP_ClampFloat( float value, float min, float max );
 int V24_EXPP_ClampInt( int value, int min, int max );

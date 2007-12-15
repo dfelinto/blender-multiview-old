@@ -39,7 +39,7 @@
 /* The Object PyType Object defined in Object.c */
 extern PyTypeObject V24_Object_Type;
 
-#define V24_BPy_Object_Check(v) \
+#define BPy_Object_Check(v) \
     ((v)->ob_type == &V24_Object_Type)	/* for type checking */
 
 /*****************************************************************************/

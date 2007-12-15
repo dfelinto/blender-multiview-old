@@ -671,7 +671,7 @@ static int cast_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 		Object *ob_new=NULL;
 		if (value == Py_None) {
 			md->object = NULL;
-		} else if (V24_BPy_Object_Check( value )) {
+		} else if (BPy_Object_Check( value )) {
 			ob_new = ((( V24_BPy_Object * )value)->object);
 			md->object = ob_new;
 		} else {
@@ -930,7 +930,7 @@ static int displace_setter( V24_BPy_Modifier *self, int type, PyObject *value )
 		Object *ob_new=NULL;
 		if (value == Py_None) {
 			md->map_object = NULL;
-		} else if (V24_BPy_Object_Check( value )) {
+		} else if (BPy_Object_Check( value )) {
 			ob_new = ((( V24_BPy_Object * )value)->object);
 			md->map_object = ob_new;
 		} else {
@@ -1264,7 +1264,7 @@ static ModifierData *locate_modifier( V24_BPy_ModSeq *self, V24_BPy_Modifier * v
 	ModifierData *md;
 
 	/* check that argument is a modifier */
-	if( !V24_BPy_Modifier_Check(value) )
+	if( !BPy_Modifier_Check(value) )
 		return (ModifierData *)V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an modifier as an argument" );
 
@@ -1667,7 +1667,7 @@ for var in st.replace(',','').split('\n'):
 /*****************************************************************************/
 PyObject *V24_Modifier_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *TypeDict = V24_M_Modifier_TypeDict( );
 	PyObject *SettingsDict = V24_M_Modifier_SettingsDict( );
 
@@ -1675,19 +1675,19 @@ PyObject *V24_Modifier_Init( void )
 			PyType_Ready( &V24_Modifier_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.Modifier", NULL,
+	V24_submodule = Py_InitModule3( "Blender.Modifier", NULL,
 			"Modifer module for accessing and creating object modifier data" );
 
 	if( TypeDict ) {
-		PyModule_AddObject( submodule, "Type", TypeDict ); /* deprecated */
+		PyModule_AddObject( V24_submodule, "Type", TypeDict ); /* deprecated */
 		/* since PyModule_AddObject() steals a reference, we need to
 		   incref TypeDict to use it again */
 		Py_INCREF( TypeDict);
-		PyModule_AddObject( submodule, "Types", TypeDict );
+		PyModule_AddObject( V24_submodule, "Types", TypeDict );
 	}
 	
 	if( SettingsDict )
-		PyModule_AddObject( submodule, "Settings", SettingsDict );
+		PyModule_AddObject( V24_submodule, "Settings", SettingsDict );
 	
-	return submodule;
+	return V24_submodule;
 }

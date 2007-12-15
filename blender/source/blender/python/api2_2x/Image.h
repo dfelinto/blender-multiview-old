@@ -48,7 +48,7 @@ typedef struct {
 
 extern PyTypeObject V24_Image_Type;	/* The Image PyType Object */
 
-#define V24_BPy_Image_Check(v)  ((v)->ob_type == &V24_Image_Type)	/*for type checking */
+#define BPy_Image_Check(v)  ((v)->ob_type == &V24_Image_Type)	/*for type checking */
 
 /*****************************************************************************/
 /* Module Blender.Image - public functions                                   */

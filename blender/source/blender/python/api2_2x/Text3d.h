@@ -43,7 +43,7 @@ typedef Curve Text3d;
 
 /*prototypes*/
 PyObject *V24_Text3d_Init( void );
-struct Text3d *Text3d_FromPyObject( PyObject * py_obj );
+struct Text3d *V24_Text3d_FromPyObject( PyObject * py_obj );
 PyObject *V24_Text3d_CreatePyObject( Text3d* text3d );
 
 /* Python V24_BPy_Text3d structure definition */

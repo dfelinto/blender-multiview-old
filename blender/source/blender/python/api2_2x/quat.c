@@ -47,7 +47,7 @@ char V24_Quaternion_ToEuler_doc[] = "() - return a euler rotation representing t
 char V24_Quaternion_ToMatrix_doc[] = "() - return a rotation matrix representing the quaternion";
 char V24_Quaternion_copy_doc[] = "() - return a copy of the quat";
 //-----------------------METHOD DEFINITIONS ----------------------
-struct PyMethodDef Quaternion_methods[] = {
+struct PyMethodDef V24_Quaternion_methods[] = {
 	{"identity", (PyCFunction) V24_Quaternion_Identity, METH_NOARGS, V24_Quaternion_Identity_doc},
 	{"negate", (PyCFunction) V24_Quaternion_Negate, METH_NOARGS, V24_Quaternion_Negate_doc},
 	{"conjugate", (PyCFunction) V24_Quaternion_Conjugate, METH_NOARGS, V24_Quaternion_Conjugate_doc},
@@ -211,7 +211,7 @@ static PyObject *V24_Quaternion_getattr(V24_QuaternionObject * self, char *name)
 			return V24_EXPP_incr_ret((PyObject *)Py_False);
 	}
 
-	return Py_FindMethod(Quaternion_methods, (PyObject *) self, name);
+	return Py_FindMethod(V24_Quaternion_methods, (PyObject *) self, name);
 }
 //----------------------------setattr()(internal) ------------------
 //object.attribute access (set)
@@ -270,7 +270,7 @@ static PyObject* V24_Quaternion_richcmpr(PyObject *objectA, PyObject *objectB, i
 	V24_QuaternionObject *quatA = NULL, *quatB = NULL;
 	int result = 0;
 
-	if (!V24_QuaternionObject_Check(objectA) || !V24_QuaternionObject_Check(objectB)){
+	if (!QuaternionObject_Check(objectA) || !QuaternionObject_Check(objectB)){
 		if (comparison_type == Py_NE){
 			return V24_EXPP_incr_ret(Py_True); 
 		}else{
@@ -495,20 +495,20 @@ static PyObject *V24_Quaternion_mul(PyObject * q1, PyObject * q2)
 					quat[x] = quat1->quat[x] * scalar;
 				}
 				return V24_newQuaternionObject(quat, Py_NEW);
-			}else if(V24_VectorObject_Check(quat2->coerced_object)){  //QUAT * VEC
+			}else if(VectorObject_Check(quat2->coerced_object)){  //QUAT * VEC
 				vec = (V24_VectorObject*)quat2->coerced_object;
 				if(vec->size != 3){
 					return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 						"Quaternion multiplication: only 3D vector rotations currently supported\n");
 				}
-				return quat_rotation((PyObject*)quat1, (PyObject*)vec);
-			}else if(V24_PointObject_Check(quat2->coerced_object)){  //QUAT * POINT
+				return V24_quat_rotation((PyObject*)quat1, (PyObject*)vec);
+			}else if(PointObject_Check(quat2->coerced_object)){  //QUAT * POINT
 				pt = (V24_PointObject*)quat2->coerced_object;
 				if(pt->size != 3){
 					return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 						"Quaternion multiplication: only 3D point rotations currently supported\n");
 				}
-				return quat_rotation((PyObject*)quat1, (PyObject*)pt);
+				return V24_quat_rotation((PyObject*)quat1, (PyObject*)pt);
 			}
 		}else{  //QUAT * QUAT (dot product)
 			for(x = 0; x < 4; x++) {
@@ -531,8 +531,8 @@ static PyObject *V24_Quaternion_mul(PyObject * q1, PyObject * q2)
  then call vector.multiply(vector, scalar_cast_as_vector)*/
 static int V24_Quaternion_coerce(PyObject ** q1, PyObject ** q2)
 {
-	if(V24_VectorObject_Check(*q2) || PyFloat_Check(*q2) || PyInt_Check(*q2) ||
-			V24_PointObject_Check(*q2)) {
+	if(VectorObject_Check(*q2) || PyFloat_Check(*q2) || PyInt_Check(*q2) ||
+			PointObject_Check(*q2)) {
 		PyObject *coerced = V24_EXPP_incr_ret(*q2);
 		*q2 = V24_newQuaternionObject(NULL,Py_NEW);
 		((V24_QuaternionObject*)*q2)->coerced_object = coerced;

@@ -854,13 +854,13 @@ static PyMethodDef V24_M_Radio_methods[] = { {NULL, NULL, 0, NULL} };
 
 PyObject *V24_Radio_Init( void )
 {
-	PyObject *submodule, *Modes, *DrawTypes;
+	PyObject *V24_submodule, *Modes, *DrawTypes;
 
 	if( PyType_Ready( &V24_Radio_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.Scene.Radio", V24_M_Radio_methods,
-				    "The Blender Radiosity submodule" );
+	V24_submodule = Py_InitModule3( "Blender.Scene.Radio", V24_M_Radio_methods,
+				    "The Blender Radiosity V24_submodule" );
 
 	Modes = V24_PyConstant_New(  );
 	DrawTypes = V24_PyConstant_New(  );
@@ -872,7 +872,7 @@ PyObject *V24_Radio_Init( void )
 				 PyInt_FromLong( EXPP_RADIO_flag_SHOWLIM ) );
 		V24_PyConstant_Insert( d, "Z", PyInt_FromLong( EXPP_RADIO_flag_Z ) );
 
-		PyModule_AddObject( submodule, "Modes", Modes );
+		PyModule_AddObject( V24_submodule, "Modes", Modes );
 	}
 
 	if( DrawTypes ) {
@@ -886,8 +886,8 @@ PyObject *V24_Radio_Init( void )
 				 PyInt_FromLong
 				 ( EXPP_RADIO_drawtype_GOURAUD ) );
 
-		PyModule_AddObject( submodule, "DrawTypes", DrawTypes );
+		PyModule_AddObject( V24_submodule, "DrawTypes", DrawTypes );
 	}
 
-	return submodule;
+	return V24_submodule;
 }

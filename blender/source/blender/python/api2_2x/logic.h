@@ -38,7 +38,7 @@
 
 extern PyTypeObject V24_property_Type;
 
-#define V24_BPy_Property_Check(v)       ((v)->ob_type == &V24_property_Type)
+#define BPy_Property_Check(v)       ((v)->ob_type == &V24_property_Type)
 
 //--------------------------Python V24_BPy_Property structure definition.----
 typedef struct {
@@ -55,7 +55,7 @@ typedef struct {
 PyObject *V24_Property_CreatePyObject( struct bProperty *prop );
 bProperty *V24_Property_FromPyObject( PyObject * py_obj );
 PyObject *V24_newPropertyObject( char *name, PyObject * data, int type );
-int V24_updatePyProperty( V24_BPy_Property * self );
+int updatePyProperty( V24_BPy_Property * self );
 int V24_updateProperyData( V24_BPy_Property * self );
 
 #endif

@@ -289,7 +289,7 @@ static PyObject *V24_M_Object_GetSelected( PyObject * self );
 static PyObject *V24_M_Object_Duplicate( PyObject * self, PyObject * args, PyObject *kwd);
 
 /* HELPER FUNCTION FOR PARENTING */
-static PyObject *internal_makeParent(Object *parent, PyObject *py_child, int partype, int noninverse, int fast, int v1, int v2, int v3, char *bonename);
+static PyObject *V24_internal_makeParent(Object *parent, PyObject *py_child, int partype, int noninverse, int fast, int v1, int v2, int v3, char *bonename);
 
 /*****************************************************************************/
 /* The following string definitions are used for documentation strings.	 */
@@ -319,7 +319,7 @@ char V24_M_Object_Duplicate_doc[] =
 /*****************************************************************************/
 /* Python method structure definition for Blender.Object module:	 */
 /*****************************************************************************/
-struct PyMethodDef M_Object_methods[] = {
+struct PyMethodDef V24_M_Object_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Object_New, METH_VARARGS,
 	 V24_M_Object_New_doc},
 	{"Get", ( PyCFunction ) V24_M_Object_Get, METH_VARARGS,
@@ -335,8 +335,8 @@ struct PyMethodDef M_Object_methods[] = {
 /*****************************************************************************/
 /* Python V24_BPy_Object methods declarations:				   */
 /*****************************************************************************/
-static int setupSB(Object* ob); /*Make sure Softbody Pointer is initialized */
-static int setupPI(Object* ob);
+static int V24_setupSB(Object* ob); /*Make sure Softbody Pointer is initialized */
+static int V24_setupPI(Object* ob);
 
 static PyObject *V24_Object_buildParts( V24_BPy_Object * self );
 static PyObject *V24_Object_clearIpo( V24_BPy_Object * self );
@@ -1598,26 +1598,26 @@ static PyObject *V24_Object_link( V24_BPy_Object * self, PyObject * args )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected an object as argument" );
 
-	if( V24_BPy_Armature_Check( py_data ) )
-		data = ( void * ) PyArmature_AsArmature((V24_BPy_Armature*)py_data);
-	else if( V24_BPy_Camera_Check( py_data ) )
+	if( BPy_Armature_Check( py_data ) )
+		data = ( void * ) V24_PyArmature_AsArmature((V24_BPy_Armature*)py_data);
+	else if( BPy_Camera_Check( py_data ) )
 		data = ( void * ) V24_Camera_FromPyObject( py_data );
-	else if( V24_BPy_Lamp_Check( py_data ) )
+	else if( BPy_Lamp_Check( py_data ) )
 		data = ( void * ) V24_Lamp_FromPyObject( py_data );
-	else if( V24_BPy_Curve_Check( py_data ) )
-		data = ( void * ) Curve_FromPyObject( py_data );
-	else if( V24_BPy_NMesh_Check( py_data ) ) {
-		data = ( void * ) V24_NMesh_FromPyObject( py_data, self->object );
+	else if( BPy_Curve_Check( py_data ) )
+		data = ( void * ) V24_Curve_FromPyObject( py_data );
+	else if( BPy_NMesh_Check( py_data ) ) {
+		data = ( void * ) NMesh_FromPyObject( py_data, self->object );
 		if( !data )		/* NULL means there is already an error */
 			return NULL;
-	} else if( V24_BPy_Mesh_Check( py_data ) )
+	} else if( BPy_Mesh_Check( py_data ) )
 		data = ( void * ) V24_Mesh_FromPyObject( py_data, self->object );
-	else if( V24_BPy_Lattice_Check( py_data ) )
+	else if( BPy_Lattice_Check( py_data ) )
 		data = ( void * ) V24_Lattice_FromPyObject( py_data );
-	else if( V24_BPy_Metaball_Check( py_data ) )
+	else if( BPy_Metaball_Check( py_data ) )
 		data = ( void * ) V24_Metaball_FromPyObject( py_data );
 	else if( V24_BPy_Text3d_Check( py_data ) )
-		data = ( void * ) Text3d_FromPyObject( py_data );
+		data = ( void * ) V24_Text3d_FromPyObject( py_data );
 
 	/* have we set data to something good? */
 	if( !data )
@@ -1769,7 +1769,7 @@ static PyObject *V24_Object_makeParentVertex( V24_BPy_Object * self, PyObject * 
 	for( i = 0; i < PySequence_Length( list ); i++ ) {
 		py_child = PySequence_GetItem( list, i );
 
-		ret_val = internal_makeParent(parent, py_child, partype, noninverse, fast, v1, v2, v3, NULL);
+		ret_val = V24_internal_makeParent(parent, py_child, partype, noninverse, fast, v1, v2, v3, NULL);
 		Py_DECREF (py_child);
 
 		if (ret_val)
@@ -1820,7 +1820,7 @@ static PyObject *V24_Object_makeParentDeform( V24_BPy_Object * self, PyObject * 
 	for( i = 0; i < PySequence_Length( list ); i++ ) {
 		py_child = PySequence_GetItem( list, i );
 
-		ret_val = internal_makeParent(parent, py_child, PARSKEL, noninverse, fast, 0, 0, 0, NULL);
+		ret_val = V24_internal_makeParent(parent, py_child, PARSKEL, noninverse, fast, 0, 0, 0, NULL);
 		Py_DECREF (py_child);
 
 		if (ret_val)
@@ -1877,7 +1877,7 @@ static PyObject *V24_Object_makeParentBone( V24_BPy_Object * self, PyObject * ar
 	for( i = 0; i < PySequence_Length( list ); i++ ) {
 		py_child = PySequence_GetItem( list, i );
 
-		ret_val = internal_makeParent(parent, py_child, PARBONE, noninverse, fast, 0, 0, 0, bonename);
+		ret_val = V24_internal_makeParent(parent, py_child, PARBONE, noninverse, fast, 0, 0, 0, bonename);
 		Py_DECREF (py_child);
 
 		if (ret_val)
@@ -1925,7 +1925,7 @@ static PyObject *V24_Object_makeParent( V24_BPy_Object * self, PyObject * args )
 	for( i = 0; i < PySequence_Length( list ); i++ ) {
 		py_child = PySequence_GetItem( list, i );
 
-		ret_val = internal_makeParent(parent, py_child, PAROBJECT, noninverse, fast, 0, 0, 0, NULL);
+		ret_val = V24_internal_makeParent(parent, py_child, PAROBJECT, noninverse, fast, 0, 0, 0, NULL);
 		Py_DECREF (py_child);
 
 		if (ret_val)
@@ -1999,7 +1999,7 @@ static PyObject *V24_Object_join( V24_BPy_Object * self, PyObject * args )
 	/* Check if the PyObject passed in list is a Blender object. */
 	for( i = 0; i < list_length; i++ ) {
 		py_child = PySequence_GetItem( list, i );
-		if( !V24_BPy_Object_Check( py_child ) ) {
+		if( !BPy_Object_Check( py_child ) ) {
 			/* Cleanup */
 			free_libblock( &G.main->scene, temp_scene );
 			Py_DECREF( py_child );
@@ -2087,7 +2087,7 @@ letting the user know that their data could not be joined." ) );
 	Py_RETURN_NONE;
 }
 
-static PyObject *internal_makeParent(Object *parent, PyObject *py_child,
+static PyObject *V24_internal_makeParent(Object *parent, PyObject *py_child,
 		int partype,                /* parenting type */
 		int noninverse, int fast,   /* parenting arguments */
 		int v1, int v2, int v3,     /* for vertex parent */
@@ -2095,7 +2095,7 @@ static PyObject *internal_makeParent(Object *parent, PyObject *py_child,
 {
 	Object *child = NULL;
 
-	if( V24_BPy_Object_Check( py_child ) )
+	if( BPy_Object_Check( py_child ) )
 		child = ( Object * ) V24_Object_FromPyObject( py_child );
 
 	if( child == NULL )
@@ -2229,7 +2229,7 @@ static int V24_Object_setEuler( V24_BPy_Object * self, PyObject * args )
 	if( PyTuple_Check( args ) && PyTuple_Size( args ) == 1 )
 		args = PyTuple_GET_ITEM( args, 0 );
 
-	if( V24_EulerObject_Check( args ) ) {
+	if( EulerObject_Check( args ) ) {
 		rot1 = ( ( V24_EulerObject * ) args )->eul[0];
 		rot2 = ( ( V24_EulerObject * ) args )->eul[1];
 		rot3 = ( ( V24_EulerObject * ) args )->eul[2];
@@ -2262,7 +2262,7 @@ static int V24_Object_setMatrix( V24_BPy_Object * self, V24_MatrixObject * mat )
 {
 	int x, y;
 
-	if( !V24_MatrixObject_Check( mat ) )
+	if( !MatrixObject_Check( mat ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected matrix object as argument" );
 
@@ -2299,7 +2299,7 @@ static int V24_Object_setMatrix( V24_BPy_Object * self, V24_MatrixObject * mat )
 	float matrix[4][4]; /* for the result */
 	float invmat[4][4]; /* for the result */
 
-	if( !V24_MatrixObject_Check( mat ) )
+	if( !MatrixObject_Check( mat ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected matrix object as argument" );
 
@@ -2877,7 +2877,7 @@ static PyObject *V24_Object_removeProperty( V24_BPy_Object * self, PyObject * ar
 	/* we accept either a property stringname or actual object */
 	if( PyTuple_Size( args ) == 1 ) {
 		PyObject *prop = PyTuple_GET_ITEM( args, 0 );
-		if( V24_BPy_Property_Check( prop ) )
+		if( BPy_Property_Check( prop ) )
 			py_prop = (V24_BPy_Property *)prop;
 		else
 			prop_name = PyString_AsString( prop );
@@ -2889,7 +2889,7 @@ static PyObject *V24_Object_removeProperty( V24_BPy_Object * self, PyObject * ar
 	/*remove the link, free the data, and update the py struct*/
 	if( py_prop ) {
 		BLI_remlink( &self->object->prop, py_prop->property );
-		if( V24_updatePyProperty( py_prop ) ) {
+		if( updatePyProperty( py_prop ) ) {
 			free_property( py_prop->property );
 			py_prop->property = NULL;
 		}
@@ -3073,7 +3073,7 @@ static int V24_Object_setModifiers( V24_BPy_Object * self, PyObject * value )
 	V24_BPy_ModSeq *pymodseq;
 	ModifierData *md;
 	
-	if (!V24_BPy_ModSeq_Check(value))
+	if (!BPy_ModSeq_Check(value))
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"can only assign another objects modifiers" );
 	
@@ -3198,7 +3198,7 @@ static PyObject *V24_Object_repr( V24_BPy_Object * self )
 
 static PyObject *V24_Object_getPIDeflection( V24_BPy_Object * self )
 {  
-    if( !self->object->pd && !setupPI(self->object) )
+    if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -3209,7 +3209,7 @@ static int V24_Object_setPIDeflection( V24_BPy_Object * self, PyObject * value )
 {
 	int param;
 
-    if( !self->object->pd && !setupPI(self->object) )
+    if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -3226,7 +3226,7 @@ static int V24_Object_setPIDeflection( V24_BPy_Object * self, PyObject * value )
 
 static PyObject *V24_Object_getPIType( V24_BPy_Object * self )
 {
-    if( !self->object->pd && !setupPI(self->object) )
+    if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -3238,7 +3238,7 @@ static int V24_Object_setPIType( V24_BPy_Object * self, PyObject * value )
 	int status;
 	int oldforcefield;
 
-    if( !self->object->pd && !setupPI(self->object) )
+    if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -3263,7 +3263,7 @@ static int V24_Object_setPIType( V24_BPy_Object * self, PyObject * value )
 
 static PyObject *V24_Object_getPIUseMaxDist( V24_BPy_Object * self )
 {  
-    if( !self->object->pd && !setupPI(self->object) )
+    if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -3274,7 +3274,7 @@ static int V24_Object_setPIUseMaxDist( V24_BPy_Object * self, PyObject * value )
 {
 	int param;
 
-    if( !self->object->pd && !setupPI(self->object) )
+    if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -3374,7 +3374,7 @@ PyObject *V24_Object_isSB(V24_BPy_Object *self)
 
 static PyObject *V24_Object_getSBUseGoal( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -3388,7 +3388,7 @@ static int V24_Object_setSBUseGoal( V24_BPy_Object * self, PyObject * value )
 {
 	int setting = PyObject_IsTrue( value );
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -3407,7 +3407,7 @@ static int V24_Object_setSBUseGoal( V24_BPy_Object * self, PyObject * value )
 
 static PyObject *V24_Object_getSBUseEdges( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
     
@@ -3421,7 +3421,7 @@ static int V24_Object_setSBUseEdges( V24_BPy_Object * self, PyObject * value )
 {
 	int setting = PyObject_IsTrue( value );
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -3440,7 +3440,7 @@ static int V24_Object_setSBUseEdges( V24_BPy_Object * self, PyObject * value )
 
 static PyObject *V24_Object_getSBStiffQuads( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
     
@@ -3454,7 +3454,7 @@ static int V24_Object_setSBStiffQuads( V24_BPy_Object * self, PyObject * value )
 {
 	int setting = PyObject_IsTrue( value );
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -3471,7 +3471,7 @@ static int V24_Object_setSBStiffQuads( V24_BPy_Object * self, PyObject * value )
 	return 0;
 }
 
-static int setupSB( Object* ob )
+static int V24_setupSB( Object* ob )
 {
 	ob->soft= sbNew();
 	ob->softflag |= OB_SB_GOAL|OB_SB_EDGES;
@@ -3497,7 +3497,7 @@ static int setupSB( Object* ob )
 	return 1;
 } 
 
-static int setupPI( Object* ob )
+static int V24_setupPI( Object* ob )
 {
 	if( ob->pd==NULL ) {
 		ob->pd= MEM_callocN(sizeof(PartDeflect), "PartDeflect");
@@ -3711,13 +3711,13 @@ static PyObject *getFloatAttr( V24_BPy_Object *self, void *type )
 
 	if( (int)type >= EXPP_OBJ_ATTR_PI_SURFACEDAMP &&
 			(int)type <= EXPP_OBJ_ATTR_PI_SBOFACETHICK ) {
-    	if( !self->object->pd && !setupPI(self->object) )
+    	if( !self->object->pd && !V24_setupPI(self->object) )
 			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 	}
 	else if( (int)type >= EXPP_OBJ_ATTR_SB_NODEMASS &&
 			(int)type <= EXPP_OBJ_ATTR_SB_INFRICT ) {
-		if( !self->object->soft && !setupSB(self->object) )
+		if( !self->object->soft && !V24_setupSB(self->object) )
 			return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 						"softbody could not be accessed" );    
     }
@@ -3869,13 +3869,13 @@ static int setFloatAttrClamp( V24_BPy_Object *self, PyObject *value, void *type 
 
 	if( (int)type >= EXPP_OBJ_ATTR_PI_SURFACEDAMP &&
 			(int)type <= EXPP_OBJ_ATTR_PI_SBOFACETHICK ) {
-    	if( !self->object->pd && !setupPI(self->object) )
+    	if( !self->object->pd && !V24_setupPI(self->object) )
 			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 	}
 	else if( (int)type >= EXPP_OBJ_ATTR_SB_NODEMASS &&
 			(int)type <= EXPP_OBJ_ATTR_SB_INFRICT ) {
-		if( !self->object->soft && !setupSB(self->object) )
+		if( !self->object->soft && !V24_setupSB(self->object) )
 			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 						"softbody could not be accessed" );    
     }
@@ -4485,7 +4485,7 @@ static PyObject *get_obj_data( V24_BPy_Object *self, int mesh )
 		break;
 	case OB_MESH:
 		if( !mesh ) /* get as NMesh (default) */
-			data_object = V24_NMesh_CreatePyObject( object->data, object );
+			data_object = NMesh_CreatePyObject( object->data, object );
 		else		/* else get as Mesh */
 			data_object = V24_Mesh_CreatePyObject( object->data, object );
 		break;
@@ -4620,7 +4620,7 @@ static PyObject *V24_Object_getRBHalfExtents( V24_BPy_Object * self )
 }
 
 static PyGetSetDef V24_BPy_Object_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"LocX",
 	 (getter)getFloatAttr, (setter)setFloatAttr,
 	 "The X location coordinate of the object",
@@ -5350,7 +5350,7 @@ PyObject *V24_Object_Init( void )
 
 	PyType_Ready( &V24_Object_Type ) ;
 
-	module = Py_InitModule3( "Blender.Object", M_Object_methods,
+	module = Py_InitModule3( "Blender.Object", V24_M_Object_methods,
 				 V24_M_Object_doc );
 	
 	
@@ -5475,7 +5475,7 @@ static PyObject *V24_Object_SetPIUseMaxDist( V24_BPy_Object * self, PyObject * a
 
 static PyObject *V24_Object_getPISurfaceDamp( V24_BPy_Object * self )
 {
-    if( !self->object->pd && !setupPI(self->object) )
+    if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
     
@@ -5486,7 +5486,7 @@ static PyObject *V24_Object_SetPISurfaceDamp( V24_BPy_Object * self, PyObject * 
 {
 	float value;
 
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -5501,7 +5501,7 @@ static PyObject *V24_Object_SetPISurfaceDamp( V24_BPy_Object * self, PyObject * 
 
 static PyObject *V24_Object_getPIPerm( V24_BPy_Object * self )
 {
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 	return PyFloat_FromDouble ( (double) self->object->pd->pdef_perm );
@@ -5511,7 +5511,7 @@ static PyObject *V24_Object_SetPIPerm( V24_BPy_Object * self, PyObject * args )
 {
 	float value;
 
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -5526,7 +5526,7 @@ static PyObject *V24_Object_SetPIPerm( V24_BPy_Object * self, PyObject * args )
 
 static PyObject *V24_Object_getPIStrength( V24_BPy_Object * self )
 {
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -5537,7 +5537,7 @@ static PyObject *V24_Object_setPIStrength( V24_BPy_Object * self, PyObject * arg
 {
     float value;
 
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -5553,7 +5553,7 @@ static PyObject *V24_Object_setPIStrength( V24_BPy_Object * self, PyObject * arg
 
 static PyObject *V24_Object_getPIFalloff( V24_BPy_Object * self )
 {
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -5576,7 +5576,7 @@ static PyObject *V24_Object_setPIFalloff( V24_BPy_Object * self, PyObject * args
 
 static PyObject *V24_Object_getPIMaxDist( V24_BPy_Object * self )
 {
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -5587,7 +5587,7 @@ static PyObject *V24_Object_setPIMaxDist( V24_BPy_Object * self, PyObject * args
 {
     float value;
 
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -5603,7 +5603,7 @@ static PyObject *V24_Object_setPIMaxDist( V24_BPy_Object * self, PyObject * args
 
 static PyObject *V24_Object_getPIRandomDamp( V24_BPy_Object * self )
 {
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -5614,7 +5614,7 @@ static PyObject *V24_Object_setPIRandomDamp( V24_BPy_Object * self, PyObject * a
 {
     float value;
 
-	if( !self->object->pd && !setupPI(self->object) )
+	if( !self->object->pd && !V24_setupPI(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"particle deflection could not be accessed" );
 
@@ -5633,7 +5633,7 @@ static PyObject *V24_Object_setPIRandomDamp( V24_BPy_Object * self, PyObject * a
 
 static PyObject *V24_Object_getSBMass( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5644,7 +5644,7 @@ static PyObject *V24_Object_setSBMass( V24_BPy_Object * self, PyObject * args )
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5661,7 +5661,7 @@ static PyObject *V24_Object_setSBMass( V24_BPy_Object * self, PyObject * args )
 
 static PyObject *V24_Object_getSBGravity( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5672,7 +5672,7 @@ static PyObject *V24_Object_setSBGravity( V24_BPy_Object * self, PyObject * args
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5689,7 +5689,7 @@ static PyObject *V24_Object_setSBGravity( V24_BPy_Object * self, PyObject * args
 
 static PyObject *V24_Object_getSBFriction( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5700,7 +5700,7 @@ static PyObject *V24_Object_setSBFriction( V24_BPy_Object * self, PyObject * arg
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5716,7 +5716,7 @@ static PyObject *V24_Object_setSBFriction( V24_BPy_Object * self, PyObject * arg
 
 static PyObject *V24_Object_getSBErrorLimit( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5727,7 +5727,7 @@ static PyObject *V24_Object_setSBErrorLimit( V24_BPy_Object * self, PyObject * a
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5744,7 +5744,7 @@ static PyObject *V24_Object_setSBErrorLimit( V24_BPy_Object * self, PyObject * a
 
 static PyObject *V24_Object_getSBGoalSpring( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5755,7 +5755,7 @@ static PyObject *V24_Object_setSBGoalSpring( V24_BPy_Object * self, PyObject * a
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5772,7 +5772,7 @@ static PyObject *V24_Object_setSBGoalSpring( V24_BPy_Object * self, PyObject * a
 
 static PyObject *V24_Object_getSBGoalFriction( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5783,7 +5783,7 @@ static PyObject *V24_Object_setSBGoalFriction( V24_BPy_Object * self, PyObject *
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5800,7 +5800,7 @@ static PyObject *V24_Object_setSBGoalFriction( V24_BPy_Object * self, PyObject *
 
 static PyObject *V24_Object_getSBMinGoal( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5811,7 +5811,7 @@ static PyObject *V24_Object_setSBMinGoal( V24_BPy_Object * self, PyObject * args
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5828,7 +5828,7 @@ static PyObject *V24_Object_setSBMinGoal( V24_BPy_Object * self, PyObject * args
 
 static PyObject *V24_Object_getSBMaxGoal( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5839,7 +5839,7 @@ static PyObject *V24_Object_setSBMaxGoal( V24_BPy_Object * self, PyObject * args
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5856,7 +5856,7 @@ static PyObject *V24_Object_setSBMaxGoal( V24_BPy_Object * self, PyObject * args
 
 static PyObject *V24_Object_getSBDefaultGoal( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5867,7 +5867,7 @@ static PyObject *V24_Object_setSBDefaultGoal( V24_BPy_Object * self, PyObject * 
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5884,7 +5884,7 @@ static PyObject *V24_Object_setSBDefaultGoal( V24_BPy_Object * self, PyObject * 
 
 static PyObject *V24_Object_getSBInnerSpring( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5895,7 +5895,7 @@ static PyObject *V24_Object_setSBInnerSpring( V24_BPy_Object * self, PyObject * 
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5912,7 +5912,7 @@ static PyObject *V24_Object_setSBInnerSpring( V24_BPy_Object * self, PyObject * 
 
 static PyObject *V24_Object_getSBInnerSpringFriction( V24_BPy_Object * self )
 {
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 
@@ -5924,7 +5924,7 @@ static PyObject *V24_Object_setSBInnerSpringFriction( V24_BPy_Object * self,
 {
     float value;
 
-    if( !self->object->soft && !setupSB(self->object) )
+    if( !self->object->soft && !V24_setupSB(self->object) )
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 				"softbody could not be accessed" );    
 

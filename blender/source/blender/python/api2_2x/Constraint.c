@@ -610,7 +610,7 @@ static int kinematic_setter( V24_BPy_Constraint *self, int type, PyObject *value
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -678,7 +678,7 @@ static int action_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -696,7 +696,7 @@ static int action_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 		}
 	case EXPP_CONSTR_ACTION: {
 		bAction *act = (( V24_BPy_Action * )value)->action;
-		if( !V24_BPy_Action_Check( value ) )
+		if( !BPy_Action_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy action argument" );
 		con->act = act;
@@ -753,7 +753,7 @@ static int trackto_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -809,7 +809,7 @@ static int stretchto_setter( V24_BPy_Constraint *self, int type, PyObject *value
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -875,7 +875,7 @@ static int followpath_setter( V24_BPy_Constraint *self, int type, PyObject *valu
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -920,7 +920,7 @@ static int clampto_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -960,7 +960,7 @@ static int locktrack_setter( V24_BPy_Constraint *self, int type, PyObject *value
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -1014,7 +1014,7 @@ static int floor_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -1065,7 +1065,7 @@ static int locatelike_setter( V24_BPy_Constraint *self, int type, PyObject *valu
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -1112,7 +1112,7 @@ static int rotatelike_setter( V24_BPy_Constraint *self, int type, PyObject *valu
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -1159,7 +1159,7 @@ static int sizelike_setter( V24_BPy_Constraint *self, int type, PyObject *value 
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -1357,7 +1357,7 @@ static int script_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 		// FIXME!!!
 	//case EXPP_CONSTR_TARGET: {
 	//	Object *obj = (( V24_BPy_Object * )value)->object;
-	//	if( !V24_BPy_Object_Check( value ) )
+	//	if( !BPy_Object_Check( value ) )
 	//		return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 	//				"expected BPy object argument" );
 	//	con->tar = obj;
@@ -1375,7 +1375,7 @@ static int script_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 	//	}
 	case EXPP_CONSTR_SCRIPT: {
 		Text *text = (( V24_BPy_Text * )value)->text;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy text argument" );
 		con->text = text;
@@ -1453,7 +1453,7 @@ static int rigidbody_setter( V24_BPy_Constraint *self, int type, PyObject *value
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -1531,7 +1531,7 @@ static int childof_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -1640,7 +1640,7 @@ static int transf_setter( V24_BPy_Constraint *self, int type, PyObject *value )
 	switch( type ) {
 	case EXPP_CONSTR_TARGET: {
 		Object *obj = (( V24_BPy_Object * )value)->object;
-		if( !V24_BPy_Object_Check( value ) )
+		if( !BPy_Object_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError, 
 					"expected BPy object argument" );
 		con->tar = obj;
@@ -2017,7 +2017,7 @@ static bConstraint *locate_constr( V24_BPy_ConstraintSeq *self, V24_BPy_Constrai
 	bConstraint *con;
 
 	/* check that argument is a modifier */
-	if (!V24_BPy_Constraint_Check(value))
+	if (!BPy_Constraint_Check(value))
 		return (bConstraint *)V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 				"expected a constraint as an argument" );
 
@@ -2671,7 +2671,7 @@ static PyObject *V24_M_Constraint_SettingsDict( void )
 /*****************************************************************************/
 PyObject *V24_Constraint_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *TypeDict = V24_M_Constraint_TypeDict( );
 	PyObject *SettingsDict = V24_M_Constraint_SettingsDict( );
 
@@ -2679,14 +2679,14 @@ PyObject *V24_Constraint_Init( void )
 			|| PyType_Ready( &V24_Constraint_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.Constraint", NULL,
+	V24_submodule = Py_InitModule3( "Blender.Constraint", NULL,
 			"Constraint module for accessing and creating constraint data" );
 
 	if( TypeDict )
-		PyModule_AddObject( submodule, "Type", TypeDict );
+		PyModule_AddObject( V24_submodule, "Type", TypeDict );
 	
 	if( SettingsDict )
-		PyModule_AddObject( submodule, "Settings", SettingsDict );
+		PyModule_AddObject( V24_submodule, "Settings", SettingsDict );
 	
-	return submodule;
+	return V24_submodule;
 }

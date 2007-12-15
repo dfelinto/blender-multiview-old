@@ -74,7 +74,7 @@ static char V24_M_Lattice_Get_doc[] = "() - get a Lattice from blender";
 /*****************************************************************************/
 /* Python method structure definition for Blender.Lattice module:	*/
 /*****************************************************************************/
-struct PyMethodDef M_Lattice_methods[] = {
+struct PyMethodDef V24_M_Lattice_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Lattice_New, METH_VARARGS,
 	 V24_M_Lattice_New_doc},
 	{"Get", ( PyCFunction ) V24_M_Lattice_Get, METH_VARARGS,
@@ -262,7 +262,7 @@ PyObject *V24_Lattice_Init( void )
 	if( PyType_Ready( &V24_Lattice_Type ) < 0 )
 		return NULL;
 	
-	mod = Py_InitModule3( "Blender.Lattice", M_Lattice_methods,
+	mod = Py_InitModule3( "Blender.Lattice", V24_M_Lattice_methods,
 				V24_M_Lattice_doc );
 	
 	dict = PyModule_GetDict( mod );
@@ -706,7 +706,7 @@ static PyObject *V24_Lattice_getAxisType(V24_BPy_Lattice * self, void * type)
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Lattice_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"width", (getter)V24_Lattice_getWidth, (setter)NULL,
 	 "lattice U subdivision ", NULL},
 	{"height", (getter)V24_Lattice_getHeight, (setter)NULL,

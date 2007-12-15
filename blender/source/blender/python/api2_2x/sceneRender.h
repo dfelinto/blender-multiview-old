@@ -36,7 +36,7 @@
 #include <Python.h>
 #include "DNA_scene_types.h"
 
-#define V24_BPy_RenderData_Check(v)       ((v)->ob_type == &V24_RenderData_Type)
+#define BPy_RenderData_Check(v)       ((v)->ob_type == &V24_RenderData_Type)
 
 //------------------------------------Struct definitions-------
 typedef struct {

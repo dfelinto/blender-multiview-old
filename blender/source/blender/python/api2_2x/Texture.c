@@ -183,7 +183,7 @@
 /* Texture String->Int maps                                                 */
 /****************************************************************************/
 
-static const V24_EXPP_map_pair tex_type_map[] = {
+static const V24_EXPP_map_pair V24_tex_type_map[] = {
 	{"None", EXPP_TEX_TYPE_NONE},
 	{"Clouds", TEX_CLOUDS},
 	{"Wood", TEX_WOOD},
@@ -201,7 +201,7 @@ static const V24_EXPP_map_pair tex_type_map[] = {
 	{NULL, 0}
 };
 
-static const V24_EXPP_map_pair tex_flag_map[] = {
+static const V24_EXPP_map_pair V24_tex_flag_map[] = {
 /* NOTE "CheckerOdd" and "CheckerEven" are new */
 	{"ColorBand",  TEX_COLORBAND },
 	{"FlipBlend", TEX_FLIPBLEND},
@@ -215,7 +215,7 @@ static const V24_EXPP_map_pair tex_flag_map[] = {
 };
 
 /* NOTE: flags moved to image... */
-static const V24_EXPP_map_pair tex_imageflag_map[] = {
+static const V24_EXPP_map_pair V24_tex_imageflag_map[] = {
 	{"InterPol", TEX_INTERPOL},
 	{"UseAlpha", TEX_USEALPHA},
 	{"MipMap", TEX_MIPMAP},
@@ -225,7 +225,7 @@ static const V24_EXPP_map_pair tex_imageflag_map[] = {
 	{NULL, 0}
 };
 
-static const V24_EXPP_map_pair tex_extend_map[] = {
+static const V24_EXPP_map_pair V24_tex_extend_map[] = {
 	{"Extend", TEX_EXTEND},
 	{"Clip", TEX_CLIP},
 	{"ClipCube", TEX_CLIPCUBE},
@@ -236,17 +236,17 @@ static const V24_EXPP_map_pair tex_extend_map[] = {
 };
 
 /* array of maps for stype */
-static const V24_EXPP_map_pair tex_stype_default_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_default_map[] = {
 	{"Default", 0},
 	{NULL, 0}
 };
-static const V24_EXPP_map_pair tex_stype_clouds_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_clouds_map[] = {
 	{"Default", 0},
 	{"CloudDefault", EXPP_TEX_STYPE_CLD_DEFAULT},
 	{"CloudColor", EXPP_TEX_STYPE_CLD_COLOR},
 	{NULL, 0}
 };
-static const V24_EXPP_map_pair tex_stype_wood_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_wood_map[] = {
 	{"Default", 0},
 	{"WoodBands", EXPP_TEX_STYPE_WOD_BANDS},
 	{"WoodRings", EXPP_TEX_STYPE_WOD_RINGS},
@@ -254,14 +254,14 @@ static const V24_EXPP_map_pair tex_stype_wood_map[] = {
 	{"WoodRingNoise", EXPP_TEX_STYPE_WOD_RINGNOISE},
 	{NULL, 0}
 };
-static const V24_EXPP_map_pair tex_stype_marble_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_marble_map[] = {
 	{"Default", 0},
 	{"MarbleSoft", EXPP_TEX_STYPE_MBL_SOFT},
 	{"MarbleSharp", EXPP_TEX_STYPE_MBL_SHARP},
 	{"MarbleSharper", EXPP_TEX_STYPE_MBL_SHARPER},
 	{NULL, 0}
 };
-static const V24_EXPP_map_pair tex_stype_blend_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_blend_map[] = {
 	{"Default", 0},
 	{"BlendLin", EXPP_TEX_STYPE_BLN_LIN},
 	{"BlendQuad", EXPP_TEX_STYPE_BLN_QUAD},
@@ -271,14 +271,14 @@ static const V24_EXPP_map_pair tex_stype_blend_map[] = {
 	{"BlendHalo", EXPP_TEX_STYPE_BLN_HALO},
 	{NULL, 0}
 };
-static const V24_EXPP_map_pair tex_stype_stucci_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_stucci_map[] = {
 	{"Default", 0},
 	{"StucciPlastic", EXPP_TEX_STYPE_STC_PLASTIC},
 	{"StucciWallIn", EXPP_TEX_STYPE_STC_WALLIN},
 	{"StucciWallOut", EXPP_TEX_STYPE_STC_WALLOUT},
 	{NULL, 0}
 };
-static const V24_EXPP_map_pair tex_stype_envmap_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_envmap_map[] = {
 	{"Default", 0},
 	{"EnvmapStatic", EXPP_TEX_STYPE_ENV_STATIC},
 	{"EnvmapAnim", EXPP_TEX_STYPE_ENV_ANIM},
@@ -286,7 +286,7 @@ static const V24_EXPP_map_pair tex_stype_envmap_map[] = {
 	{NULL, 0}
 };
 
-static const V24_EXPP_map_pair tex_stype_musg_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_musg_map[] = {
 	{"Default", 0},
 	{"MultiFractal", EXPP_TEX_STYPE_MUS_MFRACTAL},
 	{"HeteroTerrain", EXPP_TEX_STYPE_MUS_HTERRAIN},
@@ -296,7 +296,7 @@ static const V24_EXPP_map_pair tex_stype_musg_map[] = {
 	{NULL, 0}
 };
 
-static const V24_EXPP_map_pair tex_stype_distortednoise_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_distortednoise_map[] = {
 	{"Default", 0},
 	{"BlenderOriginal", TEX_BLENDER},
 	{"OriginalPerlin", TEX_STDPERLIN},
@@ -311,7 +311,7 @@ static const V24_EXPP_map_pair tex_stype_distortednoise_map[] = {
 	{NULL, 0}
 };
 
-static const V24_EXPP_map_pair tex_stype_voronoi_map[] = {
+static const V24_EXPP_map_pair V24_tex_stype_voronoi_map[] = {
 	{"Default", 0},
 	{"Int", EXPP_TEX_STYPE_VN_INT},
 	{"Col1", EXPP_TEX_STYPE_VN_COL1},
@@ -320,7 +320,7 @@ static const V24_EXPP_map_pair tex_stype_voronoi_map[] = {
 	{NULL, 0}
 };
 
-static const V24_EXPP_map_pair tex_distance_voronoi_map[] = {
+static const V24_EXPP_map_pair V24_tex_distance_voronoi_map[] = {
 	{"Default", 0},
 	{"Distance", TEX_DISTANCE},
 	{"DistanceSquared", TEX_DISTANCE_SQUARED},
@@ -332,22 +332,22 @@ static const V24_EXPP_map_pair tex_distance_voronoi_map[] = {
 	{NULL, 0}
 };
 
-static const V24_EXPP_map_pair *tex_stype_map[] = {
-	tex_stype_default_map,	/* none */
-	tex_stype_clouds_map,
-	tex_stype_wood_map,
-	tex_stype_marble_map,
-	tex_stype_default_map,	/* magic */
-	tex_stype_blend_map,
-	tex_stype_stucci_map,
-	tex_stype_default_map,	/* noise */
-	tex_stype_default_map,	/* image */
-	tex_stype_default_map,	/* plugin */
-	tex_stype_envmap_map,
-	tex_stype_musg_map,	/* musgrave */
-	tex_stype_voronoi_map,	/* voronoi */
-	tex_stype_distortednoise_map,	/* distorted noise */
-	tex_distance_voronoi_map
+static const V24_EXPP_map_pair *V24_tex_stype_map[] = {
+	V24_tex_stype_default_map,	/* none */
+	V24_tex_stype_clouds_map,
+	V24_tex_stype_wood_map,
+	V24_tex_stype_marble_map,
+	V24_tex_stype_default_map,	/* magic */
+	V24_tex_stype_blend_map,
+	V24_tex_stype_stucci_map,
+	V24_tex_stype_default_map,	/* noise */
+	V24_tex_stype_default_map,	/* image */
+	V24_tex_stype_default_map,	/* plugin */
+	V24_tex_stype_envmap_map,
+	V24_tex_stype_musg_map,	/* musgrave */
+	V24_tex_stype_voronoi_map,	/* voronoi */
+	V24_tex_stype_distortednoise_map,	/* distorted noise */
+	V24_tex_distance_voronoi_map
 };
 
 /*****************************************************************************/
@@ -377,7 +377,7 @@ static char V24_M_Texture_Get_doc[] = "Texture.Get (name = None):\n\
 /*****************************************************************************/
 /* Python method structure definition for Blender.Texture module:            */
 /*****************************************************************************/
-struct PyMethodDef M_Texture_methods[] = {
+struct PyMethodDef V24_M_Texture_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Texture_New, METH_VARARGS | METH_KEYWORDS,
 	 V24_M_Texture_New_doc},
 	{"Get", V24_M_Texture_Get, METH_VARARGS, V24_M_Texture_Get_doc},
@@ -561,7 +561,7 @@ static PyMethodDef V24_BPy_Texture_methods[] = {
 /* Python V24_Texture_Type attributes get/set structure:                         */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Texture_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"animFrames",
 	 (getter)V24_Texture_getAnimFrames, (setter)V24_Texture_setAnimFrames,
 	 "Number of frames of a movie to use",
@@ -1269,7 +1269,7 @@ static PyObject *V24_M_Texture_ProjDict( void )
 
 PyObject *V24_Texture_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *dict;
 
 	/* constants */
@@ -1288,37 +1288,37 @@ PyObject *V24_Texture_Init( void )
 	if( PyType_Ready( &V24_Texture_Type ) < 0)
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.Texture",
-				    M_Texture_methods, V24_M_Texture_doc );
+	V24_submodule = Py_InitModule3( "Blender.Texture",
+				    V24_M_Texture_methods, V24_M_Texture_doc );
 
 	if( Types )
-		PyModule_AddObject( submodule, "Types", Types );
+		PyModule_AddObject( V24_submodule, "Types", Types );
 	if( STypes )
-		PyModule_AddObject( submodule, "STypes", STypes );
+		PyModule_AddObject( V24_submodule, "STypes", STypes );
 	if( TexCo )
-		PyModule_AddObject( submodule, "TexCo", TexCo );
+		PyModule_AddObject( V24_submodule, "TexCo", TexCo );
 	if( MapTo )
-		PyModule_AddObject( submodule, "MapTo", MapTo );
+		PyModule_AddObject( V24_submodule, "MapTo", MapTo );
 	if( Flags )
-		PyModule_AddObject( submodule, "Flags", Flags );
+		PyModule_AddObject( V24_submodule, "Flags", Flags );
 	if( ExtendModes )
-		PyModule_AddObject( submodule, "ExtendModes", ExtendModes );
+		PyModule_AddObject( V24_submodule, "ExtendModes", ExtendModes );
 	if( ImageFlags )
-		PyModule_AddObject( submodule, "ImageFlags", ImageFlags );
+		PyModule_AddObject( V24_submodule, "ImageFlags", ImageFlags );
 	if( Noise )
-		PyModule_AddObject( submodule, "Noise", Noise );
+		PyModule_AddObject( V24_submodule, "Noise", Noise );
 	if ( BlendModes )
-		PyModule_AddObject( submodule, "BlendModes", BlendModes );
+		PyModule_AddObject( V24_submodule, "BlendModes", BlendModes );
 	if ( Mappings )
-		PyModule_AddObject( submodule, "Mappings", Mappings );
+		PyModule_AddObject( V24_submodule, "Mappings", Mappings );
 	if ( Proj )
-		PyModule_AddObject( submodule, "Proj", Proj );
+		PyModule_AddObject( V24_submodule, "Proj", Proj );
 
-	/* Add the MTex submodule to this module */
-	dict = PyModule_GetDict( submodule );
+	/* Add the MTex V24_submodule to this module */
+	dict = PyModule_GetDict( V24_submodule );
 	PyDict_SetItemString( dict, "MTex", V24_MTex_Init(  ) );
 
-	return submodule;
+	return V24_submodule;
 }
 
 PyObject *V24_Texture_CreatePyObject( Tex * tex )
@@ -1348,7 +1348,7 @@ static PyObject *V24_Texture_getExtend( V24_BPy_Texture * self )
 	const char *extend = NULL;
 
 	if( V24_EXPP_map_getStrVal
-	    ( tex_extend_map, self->texture->extend, &extend ) )
+	    ( V24_tex_extend_map, self->texture->extend, &extend ) )
 		return PyString_FromString( extend );
 
 	return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
@@ -1382,7 +1382,7 @@ static PyObject *V24_Texture_oldgetSType( V24_BPy_Texture * self )
 	else 
 		n_stype = self->texture->stype;
 
-	if( V24_EXPP_map_getStrVal( tex_stype_map[self->texture->type],
+	if( V24_EXPP_map_getStrVal( V24_tex_stype_map[self->texture->type],
 				n_stype, &stype ) )
 		return PyString_FromString( stype );
 
@@ -1395,7 +1395,7 @@ static PyObject *V24_Texture_oldgetType( V24_BPy_Texture * self )
 {
 	const char *type = NULL;
 
-	if( V24_EXPP_map_getStrVal( tex_type_map, self->texture->type, &type ) )
+	if( V24_EXPP_map_getStrVal( V24_tex_type_map, self->texture->type, &type ) )
 		return PyString_FromString( type );
 	
 	return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
@@ -1562,7 +1562,7 @@ static int V24_Texture_setImage( V24_BPy_Texture * self, PyObject * value )
 {
 	Image *blimg = NULL;
 
-	if( !V24_BPy_Image_Check (value) )
+	if( !BPy_Image_Check (value) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					      "expected an Image" );
 	blimg = V24_Image_FromPyObject( value );
@@ -1792,7 +1792,7 @@ static int V24_Texture_setSType( V24_BPy_Texture * self, PyObject * value )
 	 * note that this will allow CLD_COLOR when type is ENVMAP. there's not *
 	 * much that we can do about this though.                               */
 	if( !V24_EXPP_map_getStrVal
-	    ( tex_stype_map[self->texture->type], param, &dummy ) )
+	    ( V24_tex_stype_map[self->texture->type], param, &dummy ) )
 		return V24_EXPP_ReturnIntError( PyExc_ValueError,
 					      "invalid stype (for this type)" );
 
@@ -1876,7 +1876,7 @@ static int V24_Texture_setDistMetric( V24_BPy_Texture * self, PyObject * value )
 
 	/* can we really trust texture->type? */
 	if( self->texture->type == TEX_VORONOI &&
-	    !V24_EXPP_map_getShortVal( tex_stype_map[self->texture->type + 2],
+	    !V24_EXPP_map_getShortVal( V24_tex_stype_map[self->texture->type + 2],
 				   dist, &self->texture->vn_distm ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "invalid dist metric type" );
@@ -1955,7 +1955,7 @@ static int V24_Texture_setIpo( V24_BPy_Texture * self, PyObject * value )
 	/* if parameter is not None, check for valid Ipo */
 
 	if ( value != Py_None ) {
-		if ( !V24_BPy_Ipo_Check( value ) )
+		if ( !BPy_Ipo_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_RuntimeError,
 					      	"expected an Ipo object" );
 
@@ -2274,7 +2274,7 @@ static PyObject *V24_Texture_oldsetFlags( V24_BPy_Texture * self, PyObject * arg
 			return V24_EXPP_ReturnPyObjError ( PyExc_AttributeError,
 					"expected string argument" );
 
-		if( !V24_EXPP_map_getShortVal( tex_flag_map, name, &thisflag ) )
+		if( !V24_EXPP_map_getShortVal( V24_tex_flag_map, name, &thisflag ) )
 			return ( V24_EXPP_ReturnPyObjError( PyExc_AttributeError,
 							"unknown Texture flag argument" ) );
 
@@ -2304,7 +2304,7 @@ static PyObject *V24_Texture_oldsetType( V24_BPy_Texture * self, PyObject * args
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument" );
 
-	if( !V24_EXPP_map_getShortVal( tex_type_map, type, &self->texture->type ) )
+	if( !V24_EXPP_map_getShortVal( V24_tex_type_map, type, &self->texture->type ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "invalid texture type" );
 
@@ -2331,7 +2331,7 @@ static PyObject *V24_Texture_oldsetExtend( V24_BPy_Texture * self, PyObject * ar
 					      "expected string argument" );
 
 	if( !V24_EXPP_map_getShortVal
-	    ( tex_extend_map, extend, &self->texture->extend ) )
+	    ( V24_tex_extend_map, extend, &self->texture->extend ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "invalid extend mode" );
 
@@ -2344,7 +2344,7 @@ static PyObject *V24_Texture_oldsetExtend( V24_BPy_Texture * self, PyObject * ar
  *   V24_Texture_oldsetImageFlags()
  *
  * these old setter methods behave differently from the attribute
- * setters, so they are left unchanged.
+ * setters, so they are V24_left unchanged.
  */
 
 static PyObject *V24_Texture_oldsetNoiseBasis( V24_BPy_Texture * self, PyObject * args )
@@ -2356,10 +2356,10 @@ static PyObject *V24_Texture_oldsetNoiseBasis( V24_BPy_Texture * self, PyObject 
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 						  "expected string argument" );
 	if( self->texture->type == TEX_MUSGRAVE &&
-	    V24_EXPP_map_getShortVal( tex_stype_map[TEX_DISTNOISE],
+	    V24_EXPP_map_getShortVal( V24_tex_stype_map[TEX_DISTNOISE],
 				  nbasis, &self->texture->noisebasis ) );
 	else if( self->texture->type == TEX_DISTNOISE &&
-		 !V24_EXPP_map_getShortVal( tex_stype_map[TEX_DISTNOISE],
+		 !V24_EXPP_map_getShortVal( V24_tex_stype_map[TEX_DISTNOISE],
 					nbasis, &self->texture->noisebasis2 ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "invalid noise basis" );
@@ -2376,7 +2376,7 @@ static PyObject *V24_Texture_oldsetDistNoise( V24_BPy_Texture * self, PyObject *
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected string argument" );
 	if( self->texture->type == TEX_DISTNOISE &&
-	    !V24_EXPP_map_getShortVal( tex_stype_map[TEX_DISTNOISE],
+	    !V24_EXPP_map_getShortVal( V24_tex_stype_map[TEX_DISTNOISE],
 				   nbasis, &self->texture->noisebasis ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "invalid noise basis" );
@@ -2393,19 +2393,19 @@ static PyObject *V24_Texture_oldsetSType( V24_BPy_Texture * self, PyObject * arg
 
 	/* can we really trust texture->type? */
 	if( ( self->texture->type == TEX_VORONOI &&
-	      V24_EXPP_map_getShortVal( tex_stype_map[self->texture->type],
+	      V24_EXPP_map_getShortVal( V24_tex_stype_map[self->texture->type],
 				    stype, &self->texture->vn_coltype ) ) );
 #if 0
 	else if( ( self->texture->type == TEX_MUSGRAVE &&
-		   V24_EXPP_map_getShortVal( tex_stype_map
+		   V24_EXPP_map_getShortVal( V24_tex_stype_map
 					 [TEX_DISTNOISE], stype,
 					 &self->texture->noisebasis ) ) );
 #endif
 	else if( ( self->texture->type == TEX_ENVMAP &&
-	      V24_EXPP_map_getShortVal( tex_stype_map[self->texture->type],
+	      V24_EXPP_map_getShortVal( V24_tex_stype_map[self->texture->type],
 				    stype, &self->texture->env->stype ) ) );
 	else if( !V24_EXPP_map_getShortVal
-		 ( tex_stype_map[self->texture->type], stype,
+		 ( V24_tex_stype_map[self->texture->type], stype,
 		   &self->texture->stype ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "invalid texture stype" );
@@ -2423,7 +2423,7 @@ static PyObject *V24_Texture_oldsetDistMetric( V24_BPy_Texture * self, PyObject 
 					      "expected string argument" );
 	/* can we really trust texture->type? */
 	if( self->texture->type == TEX_VORONOI &&
-	    !V24_EXPP_map_getShortVal( tex_stype_map[self->texture->type + 2],
+	    !V24_EXPP_map_getShortVal( V24_tex_stype_map[self->texture->type + 2],
 				   dist, &self->texture->vn_distm ) )
 		return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 					      "invalid dist metric type" );
@@ -2450,7 +2450,7 @@ static PyObject *V24_Texture_oldsetImageFlags( V24_BPy_Texture * self, PyObject 
 			return V24_EXPP_ReturnPyObjError ( PyExc_AttributeError,
 					"expected string argument" );
 
-		if( !V24_EXPP_map_getShortVal( tex_imageflag_map, name, &thisflag ) )
+		if( !V24_EXPP_map_getShortVal( V24_tex_imageflag_map, name, &thisflag ) )
 			return V24_EXPP_ReturnPyObjError( PyExc_ValueError,
 						      "unknown Texture image flag name" );
 
@@ -2478,7 +2478,7 @@ static PyObject *V24_Texture_evaluate( V24_BPy_Texture * self, PyObject * value 
 	float vec[4];
 	/* int rgbnor; dont use now */
 	
-	if (V24_VectorObject_Check(value)) {
+	if (VectorObject_Check(value)) {
 		if(((V24_VectorObject *)value)->size < 3)
 			return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 					"expects a 3D vector object or a tuple of 3 numbers");

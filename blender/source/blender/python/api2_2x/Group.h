@@ -40,8 +40,8 @@
 extern PyTypeObject V24_Group_Type;
 extern PyTypeObject V24_GroupObSeq_Type;
 
-#define V24_BPy_Group_Check(v)       ((v)->ob_type == &V24_Group_Type)
-#define V24_BPy_GroupObSeq_Check(v)      ((v)->ob_type == &V24_GroupObSeq_Type)
+#define BPy_Group_Check(v)       ((v)->ob_type == &V24_Group_Type)
+#define BPy_GroupObSeq_Check(v)      ((v)->ob_type == &V24_GroupObSeq_Type)
 
 /*****************************************************************************/
 /* Python V24_BPy_Group structure definition.                                  */

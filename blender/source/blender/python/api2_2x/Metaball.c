@@ -77,7 +77,7 @@ static char V24_M_Metaball_Get_doc[] = "Retreives an existing metaball object da
 /*****************************************************************************/
 /* Python method structure definition for Blender.Metaball module:           */
 /*****************************************************************************/
-struct PyMethodDef M_Metaball_methods[] = {
+struct PyMethodDef V24_M_Metaball_methods[] = {
 	{"New", V24_M_Metaball_New, METH_VARARGS, V24_M_Metaball_New_doc},
 	{"Get", V24_M_Metaball_Get, METH_VARARGS, V24_M_Metaball_Get_doc},
 	{NULL, NULL, 0, NULL}
@@ -186,7 +186,7 @@ static int V24_Metaelem_setMFlagBits( V24_BPy_Metaelem * self, PyObject * value,
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Metaball_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"materials",
 	 (getter)V24_Metaball_getMaterials, (setter)V24_Metaball_setMaterials,
 	 "Number of metaball users",
@@ -521,7 +521,7 @@ static PyObject *V24_M_Metaball_Get( PyObject * self, PyObject * args )
 /*****************************************************************************/
 PyObject *V24_Metaball_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *Types=	V24_M_MetaElem_TypesDict( );
 	PyObject *Update=	V24_M_MetaElem_UpdateDict( );
 	
@@ -532,15 +532,15 @@ PyObject *V24_Metaball_Init( void )
 	if( PyType_Ready( &V24_MetaElemSeq_Type ) < 0 )
 		return NULL;
 	
-	submodule = Py_InitModule3( "Blender.Metaball", M_Metaball_methods, V24_M_Metaball_doc);
+	V24_submodule = Py_InitModule3( "Blender.Metaball", V24_M_Metaball_methods, V24_M_Metaball_doc);
 
 	if( Types )
-		PyModule_AddObject( submodule, "Types", Types );
-		PyModule_AddObject( submodule, "Update", Update );
+		PyModule_AddObject( V24_submodule, "Types", Types );
+		PyModule_AddObject( V24_submodule, "Update", Update );
 	
 	/*Add SUBMODULES to the module*/
 	/*PyDict_SetItemString(dict, "Constraint", V24_Constraint_Init()); */ /*creates a *new* module*/
-	return submodule;
+	return V24_submodule;
 }
 
 MetaBall *V24_Metaball_FromPyObject( PyObject * pyobj )
@@ -786,7 +786,7 @@ static PyObject *V24_Metaelem_getCoord( V24_BPy_Metaelem * self )
 static int V24_Metaelem_setCoord( V24_BPy_Metaelem * self,  V24_VectorObject * value )
 {
 
-	if( !V24_VectorObject_Check( value ) || value->size != 3 )
+	if( !VectorObject_Check( value ) || value->size != 3 )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"metaelem.co - expected vector argument of size 3" );
 	
@@ -814,7 +814,7 @@ static PyObject *V24_Metaelem_getDims( V24_BPy_Metaelem * self )
 }
 static int V24_Metaelem_setDims( V24_BPy_Metaelem * self,  V24_VectorObject * value )
 {
-	if( !V24_VectorObject_Check( value ) || value->size != 3 )
+	if( !VectorObject_Check( value ) || value->size != 3 )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"metaelem.dims - expected vector argument of size 3" );
 
@@ -838,7 +838,7 @@ static PyObject *V24_Metaelem_getQuat( V24_BPy_Metaelem * self )
 static int V24_Metaelem_setQuat( V24_BPy_Metaelem * self,  V24_QuaternionObject * value )
 {
 	int i;
-	if( !V24_QuaternionObject_Check( value ) )
+	if( !QuaternionObject_Check( value ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"metaelem.quat - expected quat argument" );
 	
@@ -1061,7 +1061,7 @@ static PyObject *V24_MetaElemSeq_remove( V24_BPy_MetaElemSeq * self, V24_BPy_Met
 {
 	MetaElem *ml_iter, *ml_py;
 	
-	if( !V24_BPy_Metaelem_Check(elem) )
+	if( !BPy_Metaelem_Check(elem) )
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 			"elements.remove(metaelem) - expected a Metaball element" );
 	
@@ -1082,7 +1082,7 @@ static PyObject *V24_MetaElemSeq_remove( V24_BPy_MetaElemSeq * self, V24_BPy_Met
 	
 }
 
-static struct PyMethodDef BPy_MetaElemSeq_methods[] = {
+static struct PyMethodDef V24_BPy_MetaElemSeq_methods[] = {
 	{"add", (PyCFunction)V24_MetaElemSeq_add, METH_NOARGS,
 		"add metaelem to metaball data"},
 	{"remove", (PyCFunction)V24_MetaElemSeq_remove, METH_O,
@@ -1163,7 +1163,7 @@ PyTypeObject V24_MetaElemSeq_Type = {
 	( iternextfunc ) V24_MetaElemSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_MetaElemSeq_methods,       /* struct PyMethodDef *tp_methods; */
+	V24_BPy_MetaElemSeq_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	NULL,                       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */

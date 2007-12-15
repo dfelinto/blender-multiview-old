@@ -39,7 +39,7 @@
 char V24_Point_Zero_doc[] = "() - set all values in the point to 0";
 char V24_Point_toVector_doc[] = "() - create a vector representation of this point";
 //-----------------------METHOD DEFINITIONS ----------------------
-struct PyMethodDef Point_methods[] = {
+struct PyMethodDef V24_Point_methods[] = {
 	{"zero", (PyCFunction) V24_Point_Zero, METH_NOARGS, V24_Point_Zero_doc},
 	{"toVector", (PyCFunction) V24_Point_toVector, METH_NOARGS, V24_Point_toVector_doc},
 	{NULL, NULL, 0, NULL}
@@ -101,7 +101,7 @@ static PyObject *V24_Point_getattr(V24_PointObject * self, char *name)
 		else 
 			return V24_EXPP_incr_ret((PyObject *)Py_False);
 	}
-	return Py_FindMethod(Point_methods, (PyObject *) self, name);
+	return Py_FindMethod(V24_Point_methods, (PyObject *) self, name);
 }
 //----------------------------setattr()(internal) ----------------
 //object.attribute access (set)
@@ -271,7 +271,7 @@ static PyObject *V24_Point_add(PyObject * v1, PyObject * v2)
 
 	if(!coord1->coerced_object){
 		if(coord2->coerced_object){
-			if(V24_VectorObject_Check(coord2->coerced_object)){  //POINT + VECTOR
+			if(VectorObject_Check(coord2->coerced_object)){  //POINT + VECTOR
 				//Point translation
 				vec = (V24_VectorObject*)coord2->coerced_object;
 				size = coord1->size;
@@ -378,16 +378,16 @@ static PyObject *V24_Point_mul(PyObject * p1, PyObject * p2)
 				}
 				Py_DECREF(f);
 				return V24_newPointObject(coord, size, Py_NEW);
-			}else if(V24_MatrixObject_Check(coord2->coerced_object)){ //POINT * MATRIX
+			}else if(MatrixObject_Check(coord2->coerced_object)){ //POINT * MATRIX
 				mat = (V24_MatrixObject*)coord2->coerced_object;
 				return V24_row_point_multiplication(coord1, mat);
-			}else if(V24_QuaternionObject_Check(coord2->coerced_object)){  //POINT * QUATERNION
+			}else if(QuaternionObject_Check(coord2->coerced_object)){  //POINT * QUATERNION
 				quat = (V24_QuaternionObject*)coord2->coerced_object;
 				if(coord1->size != 3){
 					return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 						"Point multiplication: only 3D point rotations (with quats) currently supported\n");
 				}
-				return quat_rotation((PyObject*)coord1, (PyObject*)quat);
+				return V24_quat_rotation((PyObject*)coord1, (PyObject*)quat);
 			}
 		}
 	}
@@ -418,8 +418,8 @@ static PyObject *V24_Point_neg(V24_PointObject *self)
  then call vector.multiply(vector, scalar_cast_as_vector)*/
 static int V24_Point_coerce(PyObject ** p1, PyObject ** p2)
 {
-	if(V24_VectorObject_Check(*p2) || PyFloat_Check(*p2) || PyInt_Check(*p2) ||
-			V24_MatrixObject_Check(*p2) || V24_QuaternionObject_Check(*p2)) {
+	if(VectorObject_Check(*p2) || PyFloat_Check(*p2) || PyInt_Check(*p2) ||
+			MatrixObject_Check(*p2) || QuaternionObject_Check(*p2)) {
 		PyObject *coerced = V24_EXPP_incr_ret(*p2);
 		*p2 = V24_newPointObject(NULL,3,Py_NEW);
 		((V24_PointObject*)*p2)->coerced_object = coerced;

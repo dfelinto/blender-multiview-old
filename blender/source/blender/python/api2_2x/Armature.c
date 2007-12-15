@@ -60,9 +60,9 @@ static const char V24_sArmatureBadArgs[] = "ArmatureType - Bad Arguments: ";
 static const char V24_sModuleError[] = "Blender.Armature - Error: ";
 static const char V24_sModuleBadArgs[] = "Blender.Armature - Bad Arguments: ";
 
-PyObject * arm_weakref_callback_weakref_dealloc(PyObject *self, PyObject *weakref);
+PyObject * V24_arm_weakref_callback_weakref_dealloc(PyObject *self, PyObject *weakref);
 /* python callable */
-PyObject * arm_weakref_callback_weakref_dealloc__pyfunc;
+PyObject * V24_arm_weakref_callback_weakref_dealloc__pyfunc;
 
 //################## V24_BonesDict_Type (internal) ########################
 /*This is an internal psuedo-dictionary type that allows for manipulation
@@ -273,7 +273,7 @@ static int V24_BonesDict_SetItem(V24_BPy_BonesDict *self, PyObject *key, PyObjec
 		return V24_EXPP_intError(PyExc_AttributeError, "%s%s", 
 				V24_sBoneDictBadArgs,  "The key must be the name of an editbone");
 	
-	if (value && !V24_EditBoneObject_Check(value))
+	if (value && !EditBoneObject_Check(value))
 		return V24_EXPP_intError(PyExc_AttributeError, "%s%s",
 				V24_sBoneDictBadArgs,  "Can only assign editbones as values");
 	
@@ -657,7 +657,7 @@ static int V24_Armature_setDrawType(V24_BPy_Armature *self, PyObject *value, voi
 	long numeric_value;
 
 	if(value){
-		if(V24_BPy_Constant_Check(value)){
+		if(BPy_Constant_Check(value)){
 			name = PyDict_GetItemString(((V24_BPy_constant*)value)->dict, "name");
 			if (!STREQ2(PyString_AsString(name), "OCTAHEDRON", "STICK") &&
 				!STREQ2(PyString_AsString(name), "BBONE", "ENVELOPE"))
@@ -975,7 +975,7 @@ static PyMethodDef V24_BPy_Armature_methods[] = {
 //------------------------tp_getset
 //This contains methods for attributes that require checking
 static PyGetSetDef V24_BPy_Armature_getset[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"bones", (getter)V24_Armature_getBoneDict, (setter)V24_Armature_setBoneDict, 
 		"The armature's Bone dictionary", NULL},
 	{"vertexGroups", (getter)V24_Armature_getVertexGroups, (setter)V24_Armature_setVertexGroups, 
@@ -1042,7 +1042,7 @@ RuntimeError:
 //This methods does initialization of the new object
 //This method will get called in python by 'myObject(argument, keyword=value)'
 //tp_new will be automatically called before this
-static int Armature_init(V24_BPy_Armature *self, PyObject *args, PyObject *kwds)
+static int V24_Armature_init(V24_BPy_Armature *self, PyObject *args, PyObject *kwds)
 {
 	char buf[21];
 	char *name = "myArmature";
@@ -1087,7 +1087,7 @@ static PyObject *V24_Armature_repr(V24_BPy_Armature *self)
 //------------------------tp_dealloc
 //This tells how to 'tear-down' our object when ref count hits 0
 ///tp_dealloc
-static void Armature_dealloc(V24_BPy_Armature * self)
+static void V24_Armature_dealloc(V24_BPy_Armature * self)
 {
 	if (self->weaklist != NULL)
 		PyObject_ClearWeakRefs((PyObject *) self); /* this causes the weakref dealloc func to be called */
@@ -1102,7 +1102,7 @@ PyTypeObject V24_Armature_Type = {
 	"Armature",						//tp_name
 	sizeof(V24_BPy_Armature),			//tp_basicsize
 	0,								//tp_itemsize
-	(destructor)Armature_dealloc,	//tp_dealloc
+	(destructor)V24_Armature_dealloc,	//tp_dealloc
 	0,								//tp_print
 	0,								//tp_getattr
 	0,								//tp_setattr
@@ -1133,7 +1133,7 @@ PyTypeObject V24_Armature_Type = {
 	0,								//tp_descr_get
 	0,								//tp_descr_set
 	0,								//tp_dictoffset
-	(initproc)Armature_init,		//tp_init
+	(initproc)V24_Armature_init,		//tp_init
 	0,								//tp_alloc
 	(newfunc)V24_Armature_new,			//tp_new
 	0,								//tp_free
@@ -1276,7 +1276,7 @@ AttributeError:
 
 
 //----------------Blender.Armature.New()
-static PyObject *M_Armature_New(PyObject * self, PyObject * args)
+static PyObject *V24_M_Armature_New(PyObject * self, PyObject * args)
 {
 	char *name = "Armature";
 	struct bArmature *armature;
@@ -1307,9 +1307,9 @@ static char V24_M_Armature_Get_doc[] = "(name) - return the armature with the na
 
 static char V24_M_Armature_New_doc[] = "(name) - return a new armature object.";
 
-struct PyMethodDef M_Armature_methods[] = {
+struct PyMethodDef V24_M_Armature_methods[] = {
 	{"Get", V24_M_Armature_Get, METH_VARARGS, V24_M_Armature_Get_doc},
-	{"New", M_Armature_New, METH_VARARGS, V24_M_Armature_New_doc},
+	{"New", V24_M_Armature_New, METH_VARARGS, V24_M_Armature_New_doc},
 	{NULL, NULL, 0, NULL}
 };
 //------------------VISIBLE PROTOTYPE IMPLEMENTATION-----------------------
@@ -1326,7 +1326,7 @@ PyObject *V24_Armature_RebuildBones(PyObject *pyarmature)
 }
 
 /* internal func to remove weakref from weakref list */
-PyObject * arm_weakref_callback_weakref_dealloc(PyObject *self, PyObject *weakref)
+PyObject * V24_arm_weakref_callback_weakref_dealloc(PyObject *self, PyObject *weakref)
 {
 	char *list_name = ARM_WEAKREF_LIST_NAME;
 	PyObject *maindict = NULL, *armlist = NULL;
@@ -1371,7 +1371,7 @@ PyObject *V24_Armature_CreatePyObject(struct bArmature *armature)
 	/* see if we alredy have it */
 	for (i=0; i< PyList_Size(armlist); i++) { 
 		py_armature = (V24_BPy_Armature *)PyWeakref_GetObject(PyList_GET_ITEM(armlist, i));
-		if (V24_BPy_Armature_Check(py_armature) && py_armature->armature == armature) {
+		if (BPy_Armature_Check(py_armature) && py_armature->armature == armature) {
 			Py_INCREF(py_armature);
 			/*printf("reusing armature\n");*/
 			return (PyObject *)py_armature;
@@ -1397,7 +1397,7 @@ PyObject *V24_Armature_CreatePyObject(struct bArmature *armature)
 		goto RuntimeError;
 	}
 	
-	weakref = PyWeakref_NewRef((PyObject*)py_armature, arm_weakref_callback_weakref_dealloc__pyfunc);
+	weakref = PyWeakref_NewRef((PyObject*)py_armature, V24_arm_weakref_callback_weakref_dealloc__pyfunc);
 	if (PyList_Append(armlist, weakref) == -1){
 		printf("Oops - list-append failed\n");
 		goto RuntimeError;
@@ -1412,19 +1412,19 @@ RuntimeError:
 }
 //-----------------(internal)
 //Converts a PyArmature to a bArmature
-struct bArmature *PyArmature_AsArmature(V24_BPy_Armature *py_armature)
+struct bArmature *V24_PyArmature_AsArmature(V24_BPy_Armature *py_armature)
 {
 	return (py_armature->armature);
 }
 
-struct bArmature *Armature_FromPyObject( PyObject * py_obj )
+struct bArmature *V24_Armature_FromPyObject( PyObject * py_obj )
 {
-	return PyArmature_AsArmature((V24_BPy_Armature*)py_obj);
+	return V24_PyArmature_AsArmature((V24_BPy_Armature*)py_obj);
 }
 
 /* internal use only */
-static PyMethodDef bpy_arm_weakref_callback_weakref_dealloc[] = {
-	{"arm_weakref_callback_weakref_dealloc", arm_weakref_callback_weakref_dealloc, METH_O, ""}
+static PyMethodDef V24_bpy_arm_weakref_callback_weakref_dealloc[] = {
+	{"V24_arm_weakref_callback_weakref_dealloc", V24_arm_weakref_callback_weakref_dealloc, METH_O, ""}
 };
 
 //-------------------MODULE INITIALIZATION--------------------------------
@@ -1440,11 +1440,11 @@ PyObject *V24_Armature_Init(void)
 
 	/* Weakref management - used for callbacks so we can
 	 * tell when a callback has been removed that a UI button referenced */
-	arm_weakref_callback_weakref_dealloc__pyfunc = PyCFunction_New(bpy_arm_weakref_callback_weakref_dealloc, NULL);
+	V24_arm_weakref_callback_weakref_dealloc__pyfunc = PyCFunction_New(V24_bpy_arm_weakref_callback_weakref_dealloc, NULL);
 	
 	
 	//Register the module
-	module = Py_InitModule3("Blender.Armature", M_Armature_methods, 
+	module = Py_InitModule3("Blender.Armature", V24_M_Armature_methods, 
 		"The Blender Armature module"); 
 
 	//Add TYPEOBJECTS to the module

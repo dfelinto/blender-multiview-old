@@ -87,7 +87,7 @@ static PyObject *V24_Sequence_remove( V24_BPy_Sequence * self, PyObject * args )
 
 static PyObject *V24_SceneSeq_new( V24_BPy_SceneSeq * self, PyObject * args );
 static PyObject *V24_SceneSeq_remove( V24_BPy_SceneSeq * self, PyObject * args );
-static void intern_pos_update(Sequence * seq); 
+static void V24_intern_pos_update(Sequence * seq); 
 
 static PyMethodDef V24_BPy_Sequence_methods[] = {
 	/* name, method, flags, doc */
@@ -159,7 +159,7 @@ static PyObject *V24_NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *
 			se++;
 		}		
 		
-	} else if (V24_BPy_Sound_Check(py_data)) {
+	} else if (BPy_Sound_Check(py_data)) {
 		/* sound */
 		int totframe;
 		bSound *sound = (( V24_BPy_Sound * )py_data)->sound;
@@ -183,7 +183,7 @@ static PyObject *V24_NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *
 		/* name sound in first strip */
 		strncpy(se->name, sound->name, FILE_MAXFILE-1);
 		
-	} else if (V24_BPy_Scene_Check(py_data)) {
+	} else if (BPy_Scene_Check(py_data)) {
 		/* scene */
 		Scene *sce = ((V24_BPy_Scene *)py_data)->scene;
 		
@@ -213,7 +213,7 @@ static PyObject *V24_NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *
 		seq->type= SEQ_MOVIE;
 	}
 	strncpy(seq->name+2, "Untitled", 21);
-	intern_pos_update(seq);
+	V24_intern_pos_update(seq);
 	return V24_Sequence_CreatePyObject(seq, NULL, sce);
 }
 
@@ -456,7 +456,7 @@ static int V24_Sequence_setIpo( V24_BPy_Sequence * self, PyObject * value )
 	/* if parameter is not None, check for valid Ipo */
 
 	if ( value != Py_None ) {
-		if ( !V24_BPy_Ipo_Check( value ) )
+		if ( !BPy_Ipo_Check( value ) )
 			return V24_EXPP_ReturnIntError( PyExc_TypeError,
 					"expected an Ipo object" );
 
@@ -615,14 +615,14 @@ static PyObject *getIntAttr( V24_BPy_Sequence *self, void *type )
 }
 
 /* internal functions for recursivly updating metastrip locatons */
-static void intern_pos_update(Sequence * seq) {
+static void V24_intern_pos_update(Sequence * seq) {
 	/* update startdisp and enddisp */
 	calc_sequence_disp(seq);
 }
 
 void intern_recursive_pos_update(Sequence * seq, int offset) {
 	Sequence *iterseq;
-	intern_pos_update(seq);
+	V24_intern_pos_update(seq);
 	if (seq->type != SEQ_META) return;
 	
 	for (iterseq = seq->seqbase.first; iterseq; iterseq= iterseq->next) {
@@ -697,7 +697,7 @@ static int setIntAttrClamp( V24_BPy_Sequence *self, PyObject *value, void *type 
 				"undefined type in setFloatAttrClamp" );
 	}
 	
-	intern_pos_update(seq);
+	V24_intern_pos_update(seq);
 	
 	if ((int)type == EXPP_SEQ_ATTR_START && number != origval )
 		intern_recursive_pos_update(seq, origval - seq->start);
@@ -1045,20 +1045,20 @@ PyObject *M_Sequence_Get( PyObject * self, PyObject * args )
 /*****************************************************************************/
 PyObject *V24_Sequence_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	if( PyType_Ready( &V24_Sequence_Type ) < 0 )
 		return NULL;
 	if( PyType_Ready( &V24_SceneSeq_Type ) < 0 )
 		return NULL;
 	
 	/* NULL was M_Sequence_methods*/
-	submodule = Py_InitModule3( "Blender.Scene.Sequence", NULL,
+	V24_submodule = Py_InitModule3( "Blender.Scene.Sequence", NULL,
 "The Blender Sequence module\n\n\
 This module provides access to **Sequence Data** in Blender.\n" );
 
 	/*Add SUBMODULES to the module*/
 	/*PyDict_SetItemString(dict, "Constraint", V24_Constraint_Init()); //creates a *new* module*/
-	return submodule;
+	return V24_submodule;
 }
 
 
@@ -1112,11 +1112,11 @@ PyObject *V24_SceneSeq_CreatePyObject( struct Scene * scn, struct Sequence * ite
 }
 
 /*****************************************************************************/
-/* Function:	Sequence_FromPyObject					 */
+/* Function:	V24_Sequence_FromPyObject					 */
 /* Description: This function returns the Blender sequence from the given	 */
 /*		PyObject.						 */
 /*****************************************************************************/
-struct Sequence *Sequence_FromPyObject( PyObject * py_seq )
+struct Sequence *V24_Sequence_FromPyObject( PyObject * py_seq )
 {
 	V24_BPy_Sequence *blen_seq;
 

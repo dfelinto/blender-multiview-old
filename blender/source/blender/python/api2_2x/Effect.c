@@ -223,7 +223,7 @@ static char V24_M_Effect_Get_doc[] = "xxx";
 /*****************************************************************************/
 /* Python method structure definition for Blender.Particle module:           */
 /*****************************************************************************/
-static struct PyMethodDef M_Particle_methods[] = {
+static struct PyMethodDef V24_M_Particle_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Effect_New, METH_VARARGS, V24_M_Effect_New_doc},
 	{"Get", V24_M_Effect_Get, METH_VARARGS, V24_M_Effect_Get_doc},
 	{"get", V24_M_Effect_Get, METH_VARARGS, V24_M_Effect_Get_doc},
@@ -551,7 +551,7 @@ PyTypeObject V24_Effect_Type = {
 /* Python method structure definition for Blender.Effect module:             */
 /*****************************************************************************/
 
-struct PyMethodDef M_Effect_methods[] = {
+struct PyMethodDef V24_M_Effect_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Effect_New, METH_VARARGS, NULL},
 	{"Get", V24_M_Effect_Get, METH_VARARGS, NULL},
 	{"get", V24_M_Effect_Get, METH_VARARGS, NULL},
@@ -742,7 +742,7 @@ static PyObject *V24_Effect_SpeedTypeDict( void )
 
 PyObject *V24_Effect_Init( void )
 {
-	PyObject *submodule, *dict;
+	PyObject *V24_submodule, *dict;
 	PyObject *particle;
 	PyObject *Flags;
 	PyObject *Types;
@@ -753,19 +753,19 @@ PyObject *V24_Effect_Init( void )
 	Flags = V24_Effect_FlagsDict(  );
 	Types = V24_Effect_SpeedTypeDict( );
 
-	submodule = Py_InitModule3( "Blender.Effect", M_Effect_methods, 0 );
+	V24_submodule = Py_InitModule3( "Blender.Effect", V24_M_Effect_methods, 0 );
 	if( Flags )
-		PyModule_AddObject( submodule, "Flags", Flags );
+		PyModule_AddObject( V24_submodule, "Flags", Flags );
 	if( Types )
-		PyModule_AddObject( submodule, "SpeedTypes", Types );
+		PyModule_AddObject( V24_submodule, "SpeedTypes", Types );
 
-	particle = Py_InitModule3( "Blender.Particle", M_Particle_methods,
+	particle = Py_InitModule3( "Blender.Particle", V24_M_Particle_methods,
 			V24_M_Particle_doc );
 
-	dict = PyModule_GetDict( submodule );
+	dict = PyModule_GetDict( V24_submodule );
 
 	PyDict_SetItemString( dict, "Particle", particle );
-	return ( submodule );
+	return ( V24_submodule );
 }
 
 /*****************************************************************************/

@@ -2,7 +2,7 @@
  * $Id$
  *
  * Blender.Library BPython module implementation.
- * This submodule has functions to append data from .blend files.
+ * This V24_submodule has functions to append data from .blend files.
  * 
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
@@ -56,12 +56,12 @@
 /**
  * Global variables.
  */
-static BlendHandle *bpy_openlib = NULL;	/* ptr to the open .blend file */
-static char *bpy_openlibname = NULL;	/* its pathname */
-static int bpy_relative= 0;
+static BlendHandle *V24_bpy_openlib = NULL;	/* ptr to the open .blend file */
+static char *V24_bpy_openlibname = NULL;	/* its pathname */
+static int V24_bpy_relative= 0;
 
 /**
- * Function prototypes for the Library submodule.
+ * Function prototypes for the Library V24_submodule.
  */
 static PyObject *V24_M_Library_Open( PyObject * self, PyObject * args );
 static PyObject *V24_M_Library_Close( PyObject * self );
@@ -78,7 +78,7 @@ void V24_EXPP_Library_Close( void );
 /**
  * Module doc strings.
  */
-static char V24_M_Library_doc[] = "The Blender.Library submodule:\n\n\
+static char V24_M_Library_doc[] = "The Blender.Library V24_submodule:\n\n\
 This module gives access to .blend files, using them as libraries of\n\
 data that can be loaded into the current scene in Blender.";
 
@@ -120,9 +120,9 @@ static char V24_Library_LinkedLibs_doc[] =
 	"() - Get all libs used in the the open .blend file.";
 	
 /**
- * Python method structure definition for Blender.Library submodule.
+ * Python method structure definition for Blender.Library V24_submodule.
  */
-struct PyMethodDef oldM_Library_methods[] = {
+struct PyMethodDef V24_oldM_Library_methods[] = {
 	{"Open", V24_M_Library_Open, METH_O, V24_Library_Open_doc},
 	{"Close", ( PyCFunction ) V24_M_Library_Close, METH_NOARGS,
 	 V24_Library_Close_doc},
@@ -155,14 +155,14 @@ static PyObject *V24_M_Library_Open( PyObject * self, PyObject * value )
 	
 	int len = 0;
 
-	bpy_relative= 0; /* assume non relative each time we load */
+	V24_bpy_relative= 0; /* assume non relative each time we load */
 	
 	if( !fname ) {
 		return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					      "expected a .blend filename" );
 	}
 
-	if( bpy_openlib ) {
+	if( V24_bpy_openlib ) {
 		V24_M_Library_Close( self );
 		Py_DECREF( Py_None );	/* incref'ed by above function */
 	}
@@ -173,22 +173,22 @@ static PyObject *V24_M_Library_Open( PyObject * self, PyObject * value )
 	
    	/* G.sce = last file loaded, save for UI and restore after opening file */
 	BLI_strncpy(filename, G.sce, sizeof(filename));
-	bpy_openlib = BLO_blendhandle_from_file( fname1 );
+	V24_bpy_openlib = BLO_blendhandle_from_file( fname1 );
 	BLI_strncpy(G.sce, filename, sizeof(filename)); 
 	
-	if( !bpy_openlib )
+	if( !V24_bpy_openlib )
 		return V24_EXPP_ReturnPyObjError( PyExc_IOError, "file not found" );
 
 	/* "//someblend.blend" enables relative paths */
 	if (sizeof(fname) > 2 && fname[0] == '/' && fname[1] == '/')
-		bpy_relative= 1; /* global that makes the library relative on loading */ 
+		V24_bpy_relative= 1; /* global that makes the library relative on loading */ 
 	
 	len = strlen( fname1 ) + 1;	/* +1 for terminating '\0' */
 
-	bpy_openlibname = MEM_mallocN( len, "bpy_openlibname" );
+	V24_bpy_openlibname = MEM_mallocN( len, "V24_bpy_openlibname" );
 
-	if( bpy_openlibname )
-		PyOS_snprintf( bpy_openlibname, len, "%s", fname1 );
+	if( V24_bpy_openlibname )
+		PyOS_snprintf( V24_bpy_openlibname, len, "%s", fname1 );
 
 	Py_RETURN_TRUE;
 }
@@ -198,14 +198,14 @@ static PyObject *V24_M_Library_Open( PyObject * self, PyObject * value )
  */
 static PyObject *V24_M_Library_Close( PyObject * self )
 {
-	if( bpy_openlib ) {
-		BLO_blendhandle_close( bpy_openlib );
-		bpy_openlib = NULL;
+	if( V24_bpy_openlib ) {
+		BLO_blendhandle_close( V24_bpy_openlib );
+		V24_bpy_openlib = NULL;
 	}
 
-	if( bpy_openlibname ) {
-		MEM_freeN( bpy_openlibname );
-		bpy_openlibname = NULL;
+	if( V24_bpy_openlibname ) {
+		MEM_freeN( V24_bpy_openlibname );
+		V24_bpy_openlibname = NULL;
 	}
 
 	Py_RETURN_NONE;
@@ -217,14 +217,14 @@ static PyObject *V24_M_Library_Close( PyObject * self )
  */
 void V24_EXPP_Library_Close( void )
 {
-	if( bpy_openlib ) {
-		BLO_blendhandle_close( bpy_openlib );
-		bpy_openlib = NULL;
+	if( V24_bpy_openlib ) {
+		BLO_blendhandle_close( V24_bpy_openlib );
+		V24_bpy_openlib = NULL;
 	}
 
-	if( bpy_openlibname ) {
-		MEM_freeN( bpy_openlibname );
-		bpy_openlibname = NULL;
+	if( V24_bpy_openlibname ) {
+		MEM_freeN( V24_bpy_openlibname );
+		V24_bpy_openlibname = NULL;
 	}
 }
 
@@ -233,8 +233,8 @@ void V24_EXPP_Library_Close( void )
  */
 static PyObject *V24_M_Library_GetName( PyObject * self )
 {
-	if( bpy_openlib && bpy_openlibname )
-		return Py_BuildValue( "s", bpy_openlibname );
+	if( V24_bpy_openlib && V24_bpy_openlibname )
+		return Py_BuildValue( "s", V24_bpy_openlibname );
 
 	Py_INCREF( Py_None );
 	return Py_None;
@@ -251,7 +251,7 @@ static PyObject *V24_M_Library_Datablocks( PyObject * self, PyObject * value )
 	LinkNode *l = NULL, *names = NULL;
 	PyObject *list = NULL;
 
-	if( !bpy_openlib ) {
+	if( !V24_bpy_openlib ) {
 		return V24_EXPP_ReturnPyObjError( PyExc_IOError,
 					      "no library file: open one first with Blender.Lib_Open(filename)" );
 	}
@@ -268,7 +268,7 @@ static PyObject *V24_M_Library_Datablocks( PyObject * self, PyObject * value )
 					      "no such Blender datablock type" );
 	}
 
-	names = BLO_blendhandle_get_datablock_names( bpy_openlib, blocktype );
+	names = BLO_blendhandle_get_datablock_names( V24_bpy_openlib, blocktype );
 
 	if( names ) {
 		int counter = 0;
@@ -294,12 +294,12 @@ static PyObject *V24_M_Library_LinkableGroups( PyObject * self )
 	LinkNode *l = NULL, *names = NULL;
 	PyObject *list = NULL;
 
-	if( !bpy_openlib ) {
+	if( !V24_bpy_openlib ) {
 		return V24_EXPP_ReturnPyObjError( PyExc_IOError,
 					      "no library file: open one first with Blender.Lib_Open(filename)" );
 	}
 
-	names = BLO_blendhandle_get_linkable_groups( bpy_openlib );
+	names = BLO_blendhandle_get_linkable_groups( V24_bpy_openlib );
 	list = PyList_New( BLI_linklist_length( names ) );
 	
 	if( names ) {
@@ -344,7 +344,7 @@ static PyObject *oldM_Library_Load( PyObject * self, PyObject * args )
 	int blocktype = 0;
 	int linked = 0;
 
-	if( !bpy_openlib ) {
+	if( !V24_bpy_openlib ) {
 		return V24_EXPP_ReturnPyObjError( PyExc_IOError,
 					      "no library file: you need to open one, first." );
 	}
@@ -361,20 +361,20 @@ static PyObject *oldM_Library_Load( PyObject * self, PyObject * args )
 					      "no such Blender datablock type" );
 	
 	if (linked)
-		BLO_script_library_append( bpy_openlib, bpy_openlibname, name, blocktype, FILE_LINK, G.scene);
+		BLO_script_library_append( V24_bpy_openlib, V24_bpy_openlibname, name, blocktype, FILE_LINK, G.scene);
 	else
-		BLO_script_library_append( bpy_openlib, bpy_openlibname, name, blocktype, 0, G.scene);
+		BLO_script_library_append( V24_bpy_openlib, V24_bpy_openlibname, name, blocktype, 0, G.scene);
 	
 	if( update ) {
 		V24_M_Library_Update( self );
 		Py_DECREF( Py_None );	/* incref'ed by above function */
 	}
 	
-	if( bpy_relative ) {
+	if( V24_bpy_relative ) {
 		/* and now find the latest append lib file */
 		Library *lib = G.main->library.first;
 		while( lib ) {
-			if( strcmp( bpy_openlibname, lib->name ) == 0 ) {
+			if( strcmp( V24_bpy_openlibname, lib->name ) == 0 ) {
 				
 				/* use the full path, this could have been read by other library even */
 				BLI_strncpy(lib->name, lib->filename, sizeof(lib->name));
@@ -404,13 +404,13 @@ static PyObject *V24_M_Library_Update( PyObject * self )
 		 * can be replaced with depgraph calls - zr
 		 */
 
-	if( bpy_openlibname ) {
-		strcpy( G.lib, bpy_openlibname );
+	if( V24_bpy_openlibname ) {
+		strcpy( G.lib, V24_bpy_openlibname );
 
 		/* and now find the latest append lib file */
 		lib = G.main->library.first;
 		while( lib ) {
-			if( strcmp( bpy_openlibname, lib->name ) == 0 )
+			if( strcmp( V24_bpy_openlibname, lib->name ) == 0 )
 				break;
 			lib = lib->id.next;
 		}
@@ -422,15 +422,15 @@ static PyObject *V24_M_Library_Update( PyObject * self )
 }
 
 /**
- * Initialize the Blender.Library submodule.
+ * Initialize the Blender.Library V24_submodule.
  * Called by Blender_Init in Blender.c .
- * @return the registered submodule.
+ * @return the registered V24_submodule.
  */
-PyObject *oldLibrary_Init( void )
+PyObject *V24_oldLibrary_Init( void )
 {
 	PyObject *submod;
 
-	submod = Py_InitModule3( "Blender.Library", oldM_Library_methods,
+	submod = Py_InitModule3( "Blender.Library", V24_oldM_Library_methods,
 				 V24_M_Library_doc );
 
 	return submod;
@@ -744,7 +744,7 @@ static PyObject *V24_LibraryData_nextIter( V24_BPy_LibraryData * self )
  * Python LibraryData_type methods structure
  ************************************************************************/
 
-static struct PyMethodDef BPy_LibraryData_methods[] = {
+static struct PyMethodDef V24_BPy_LibraryData_methods[] = {
 	{"append", (PyCFunction)V24_LibraryData_getAppend, METH_O,
 	 "(str) - create new data from library"},
 	{"link", (PyCFunction)V24_LibraryData_getLink, METH_O,
@@ -904,7 +904,7 @@ PyTypeObject V24_LibraryData_Type = {
 	(iternextfunc)V24_LibraryData_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_LibraryData_methods,    /* struct PyMethodDef *tp_methods; */
+	V24_BPy_LibraryData_methods,    /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	NULL,                       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
@@ -1080,7 +1080,7 @@ static PyObject *V24_M_Library_Load(PyObject *self, PyObject * value)
 	return (PyObject *)lib;
 }
 
-static struct PyMethodDef M_Library_methods[] = {
+static struct PyMethodDef V24_M_Library_methods[] = {
 	{"load", (PyCFunction)V24_M_Library_Load, METH_O,
 	"(string) - declare a .blend file for use as a library"},
 	{NULL, NULL, 0, NULL}
@@ -1175,18 +1175,18 @@ PyTypeObject V24_Library_Type = {
  * Library module initialization
  */
 
-static char V24_M_newLibrary_doc[] = "The Blender.lib submodule";
+static char V24_M_newLibrary_doc[] = "The Blender.lib V24_submodule";
 
 PyObject *V24_Library_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	if( PyType_Ready( &V24_Library_Type ) < 0 )
 		return NULL;
 	if( PyType_Ready( &V24_LibraryData_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.lib", M_Library_methods,
+	V24_submodule = Py_InitModule3( "Blender.lib", V24_M_Library_methods,
 			V24_M_newLibrary_doc );
-	return submodule;
+	return V24_submodule;
 }

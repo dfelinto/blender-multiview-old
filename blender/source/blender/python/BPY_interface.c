@@ -85,7 +85,7 @@
 #include "DNA_scene_types.h"
 #include "DNA_material_types.h"
 
-/* bpy_registryDict is declared in api2_2x/Registry.h and defined
+/* V24_bpy_registryDict is declared in api2_2x/Registry.h and defined
  * in api2_2x/Registry.c
  * This Python dictionary will be used to store data that scripts
  * choose to preserve after they are executed, so user changes can be
@@ -194,8 +194,8 @@ void BPY_start_python( int argc, char **argv )
 	}
 
 	//stuff for Registry module
-	bpy_registryDict = PyDict_New(  );/* check comment at start of this file */
-	if( !bpy_registryDict )
+	V24_bpy_registryDict = PyDict_New(  );/* check comment at start of this file */
+	if( !V24_bpy_registryDict )
 		printf( "Error: Couldn't create the Registry Python Dictionary!" );
 	Py_SetProgramName( "blender" );
 
@@ -231,7 +231,7 @@ void BPY_start_python( int argc, char **argv )
 	init_ourReload(  );
 
 	//init a global dictionary
-	g_blenderdict = NULL;
+	V24_g_blenderdict = NULL;
 
 	//Look for a python installation
 	init_syspath( first_time ); /* not first_time: some msgs are suppressed */
@@ -246,9 +246,9 @@ void BPY_end_python( void )
 {
 	Script *script = NULL;
 
-	if( bpy_registryDict ) {
-		Py_DECREF( bpy_registryDict );
-		bpy_registryDict = NULL;
+	if( V24_bpy_registryDict ) {
+		Py_DECREF( V24_bpy_registryDict );
+		V24_bpy_registryDict = NULL;
 	}
 
 	if( bpy_pydriver_Dict ) {
@@ -1139,7 +1139,7 @@ static int bpy_pydriver_create_dict(void)
 /* error return function for BPY_eval_pydriver */
 static float pydriver_error(IpoDriver *driver) {
 
-	if (bpy_pydriver_oblist)
+	if (V24_bpy_pydriver_oblist)
 		bpy_pydriver_freeList();
 
 	if (bpy_pydriver_Dict) { /* free the global dict used by pydrivers */
@@ -1781,7 +1781,7 @@ float BPY_pydriver_eval(IpoDriver *driver)
 
 static int bpy_button_eval_error(char *expr) {
 
-	if (bpy_pydriver_oblist)
+	if (V24_bpy_pydriver_oblist)
 		bpy_pydriver_freeList();
 
 	if (bpy_pydriver_Dict) { /* free the persistent global dict */
@@ -1965,10 +1965,10 @@ void BPY_do_pyscript( ID * id, short event )
 		disable_where_scriptlink( (short)during_slink );
 
 		/* set globals in Blender module to identify scriptlink */
-		PyDict_SetItemString(	g_blenderdict, "bylink", Py_True);
-		V24_EXPP_dict_set_item_str( g_blenderdict, "link", value );
-		V24_EXPP_dict_set_item_str( g_blenderdict, "event",
-				      PyString_FromString( event_to_name
+		PyDict_SetItemString(	V24_g_blenderdict, "bylink", Py_True);
+		V24_EXPP_dict_set_item_str( V24_g_blenderdict, "link", value );
+		V24_EXPP_dict_set_item_str( V24_g_blenderdict, "event",
+				      PyString_FromString( V24_event_to_name
 							   ( event ) ) );
 		if (event == SCRIPT_POSTRENDER) event = SCRIPT_RENDER;
 
@@ -2005,9 +2005,9 @@ void BPY_do_pyscript( ID * id, short event )
 		/* cleanup bylink flag and clear link so PyObject
 		 * can be released 
 		 */
-		PyDict_SetItemString(g_blenderdict, "bylink", Py_False);
-		PyDict_SetItemString( g_blenderdict, "link", Py_None );
-		V24_EXPP_dict_set_item_str( g_blenderdict, "event", PyString_FromString( "" ) );
+		PyDict_SetItemString(V24_g_blenderdict, "bylink", Py_False);
+		PyDict_SetItemString( V24_g_blenderdict, "link", Py_None );
+		V24_EXPP_dict_set_item_str( V24_g_blenderdict, "event", PyString_FromString( "" ) );
 	}
 }
 
@@ -2188,11 +2188,11 @@ int BPY_do_spacehandlers( ScrArea *sa, unsigned short event,
 		}
 		
 		/* set globals in Blender module to identify space handler scriptlink */
-		PyDict_SetItemString(g_blenderdict, "bylink", Py_True);
+		PyDict_SetItemString(V24_g_blenderdict, "bylink", Py_True);
 		/* unlike normal scriptlinks, here Blender.link is int (space event type) */
-		V24_EXPP_dict_set_item_str(g_blenderdict, "link", PyInt_FromLong(space_event));
+		V24_EXPP_dict_set_item_str(V24_g_blenderdict, "link", PyInt_FromLong(space_event));
 		/* note: DRAW space_events set event to 0 */
-		V24_EXPP_dict_set_item_str(g_blenderdict, "event", PyInt_FromLong(event));
+		V24_EXPP_dict_set_item_str(V24_g_blenderdict, "event", PyInt_FromLong(event));
 		/* now run all assigned space handlers for this space and space_event */
 		for( index = 0; index < scriptlink->totscript; index++ ) {
 
@@ -2221,7 +2221,7 @@ int BPY_do_spacehandlers( ScrArea *sa, unsigned short event,
 					 * if the script sets Blender.event to None it accepted it;
 					 * otherwise the space's event handling callback that called us
 					 * can go on processing the event */
-					if (event && (PyDict_GetItemString(g_blenderdict,"event") == Py_None))
+					if (event && (PyDict_GetItemString(V24_g_blenderdict,"event") == Py_None))
 						retval = 1; /* event was swallowed */
 				}
 
@@ -2247,9 +2247,9 @@ int BPY_do_spacehandlers( ScrArea *sa, unsigned short event,
 
 		}
 
-		PyDict_SetItemString(g_blenderdict, "bylink", Py_False);
-		PyDict_SetItemString(g_blenderdict, "link", Py_None );
-		V24_EXPP_dict_set_item_str(g_blenderdict, "event", PyString_FromString(""));
+		PyDict_SetItemString(V24_g_blenderdict, "bylink", Py_False);
+		PyDict_SetItemString(V24_g_blenderdict, "link", Py_None );
+		V24_EXPP_dict_set_item_str(V24_g_blenderdict, "event", PyString_FromString(""));
 	}
 	
 	/* retval:

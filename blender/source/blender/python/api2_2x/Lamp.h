@@ -39,7 +39,7 @@
 
 extern PyTypeObject V24_Lamp_Type;
 
-#define V24_BPy_Lamp_Check(v) \
+#define BPy_Lamp_Check(v) \
     ((v)->ob_type == &V24_Lamp_Type)	/* for type checking */
 
 /* Python V24_BPy_Lamp structure definition */

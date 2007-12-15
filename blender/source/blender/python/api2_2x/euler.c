@@ -45,7 +45,7 @@ char V24_Euler_ToQuat_doc[] = "() - returns a quaternion representing the euler 
 char V24_Euler_Rotate_doc[] = "() - rotate a euler by certain amount around an axis of rotation";
 char V24_Euler_copy_doc[] = "() - returns a copy of the euler.";
 //-----------------------METHOD DEFINITIONS ----------------------
-struct PyMethodDef Euler_methods[] = {
+struct PyMethodDef V24_Euler_methods[] = {
 	{"zero", (PyCFunction) V24_Euler_Zero, METH_NOARGS, V24_Euler_Zero_doc},
 	{"unique", (PyCFunction) V24_Euler_Unique, METH_NOARGS, V24_Euler_Unique_doc},
 	{"toMatrix", (PyCFunction) V24_Euler_ToMatrix, METH_NOARGS, V24_Euler_ToMatrix_doc},
@@ -209,7 +209,7 @@ static PyObject *V24_Euler_getattr(V24_EulerObject * self, char *name)
 		else 
 			return V24_EXPP_incr_ret((PyObject *)Py_False);
 	}
-	return Py_FindMethod(Euler_methods, (PyObject *) self, name);
+	return Py_FindMethod(V24_Euler_methods, (PyObject *) self, name);
 }
 //----------------------------setattr()(internal) ------------------
 //object.attribute access (set)
@@ -266,7 +266,7 @@ static PyObject* V24_Euler_richcmpr(PyObject *objectA, PyObject *objectB, int co
 	V24_EulerObject *eulA = NULL, *eulB = NULL;
 	int result = 0;
 
-	if (!V24_EulerObject_Check(objectA) || !V24_EulerObject_Check(objectB)){
+	if (!EulerObject_Check(objectA) || !EulerObject_Check(objectB)){
 		if (comparison_type == Py_NE){
 			return V24_EXPP_incr_ret(Py_True); 
 		}else{
@@ -413,7 +413,7 @@ static PySequenceMethods V24_Euler_SeqMethods = {
 	(intintobjargproc) V24_Euler_ass_slice,			/* sq_ass_slice */
 };
 //------------------PY_OBECT DEFINITION--------------------------
-PyTypeObject V24_euler_Type = {
+PyTypeObject euler_Type = {
 	PyObject_HEAD_INIT(NULL)		//tp_head
 	0,								//tp_internal
 	"euler",						//tp_name
@@ -473,7 +473,7 @@ PyObject *V24_newEulerObject(float *eul, int type)
 	V24_EulerObject *self;
 	int x;
 
-	self = PyObject_NEW(V24_EulerObject, &V24_euler_Type);
+	self = PyObject_NEW(V24_EulerObject, &euler_Type);
 	self->data.blend_data = NULL;
 	self->data.py_data = NULL;
 

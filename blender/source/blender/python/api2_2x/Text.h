@@ -39,7 +39,7 @@
 extern PyTypeObject V24_Text_Type;
 
 /* Type checking for EXPP PyTypes */
-#define V24_BPy_Text_Check(v)       ((v)->ob_type == &V24_Text_Type)
+#define BPy_Text_Check(v)       ((v)->ob_type == &V24_Text_Type)
 
 typedef struct {
 	PyObject_HEAD

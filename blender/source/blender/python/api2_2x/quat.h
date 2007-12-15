@@ -38,7 +38,7 @@
 
 extern PyTypeObject V24_quaternion_Type;
 
-#define V24_QuaternionObject_Check(v) ((v)->ob_type == &V24_quaternion_Type)
+#define QuaternionObject_Check(v) ((v)->ob_type == &V24_quaternion_Type)
 
 typedef struct {
 	PyObject_VAR_HEAD 

@@ -40,9 +40,9 @@
 extern PyTypeObject V24_Scene_Type;
 extern PyTypeObject V24_SceneObSeq_Type;
 
-#define V24_BPy_Scene_Check(v) \
+#define BPy_Scene_Check(v) \
     ((v)->ob_type == &V24_Scene_Type)
-#define V24_BPy_SceneObSeq_Check(v) \
+#define BPy_SceneObSeq_Check(v) \
     ((v)->ob_type == &V24_SceneObSeq_Type)
 
 /*---------------------------Python V24_BPy_Scene structure definition----------*/

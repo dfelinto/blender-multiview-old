@@ -35,7 +35,7 @@
 
 #include <Python.h>
 
-extern PyObject *g_bpydict;
+extern PyObject *V24_g_bpydict;
 void m_bpy_init( void );
 
 #endif				/* EXPP_BPYMOD_H */

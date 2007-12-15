@@ -2312,7 +2312,7 @@ static int V24_RenderData_setSet( V24_BPy_RenderData *self, PyObject *value )
 	}
 
 	/* be sure argument is a Scene */
-	if( !V24_BPy_Scene_Check( value ) )
+	if( !BPy_Scene_Check( value ) )
 		return V24_EXPP_ReturnIntError( PyExc_TypeError,
 				"expected Scene as argument" );
 
@@ -3001,7 +3001,7 @@ PyTypeObject V24_RenderData_Type = {
 /***************************************************************************/
 /* Render method def                                                       */
 /***************************************************************************/
-struct PyMethodDef M_Render_methods[] = {
+struct PyMethodDef V24_M_Render_methods[] = {
 	{"CloseRenderWindow", ( PyCFunction ) V24_M_Render_CloseRenderWindow,
 	 METH_NOARGS,
 	 "() - close the rendering window"},
@@ -3074,7 +3074,7 @@ static PyObject *V24_M_Render_GameFramingDict( void )
 /***************************************************************************/
 PyObject *V24_Render_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *ModesDict = V24_M_Render_ModesDict( );
 	PyObject *SceModesDict = V24_M_Render_SceModesDict( );
 	PyObject *GFramingDict = V24_M_Render_GameFramingDict( );
@@ -3082,58 +3082,58 @@ PyObject *V24_Render_Init( void )
 	if( PyType_Ready( &V24_RenderData_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.Scene.Render",
-				    M_Render_methods, V24_M_Render_doc );
+	V24_submodule = Py_InitModule3( "Blender.Scene.Render",
+				    V24_M_Render_methods, V24_M_Render_doc );
 
 	if( ModesDict )
-		PyModule_AddObject( submodule, "Modes", ModesDict );
+		PyModule_AddObject( V24_submodule, "Modes", ModesDict );
 	if( SceModesDict )
-		PyModule_AddObject( submodule, "SceModes", SceModesDict );
+		PyModule_AddObject( V24_submodule, "SceModes", SceModesDict );
 	if( GFramingDict )
-		PyModule_AddObject( submodule, "FramingModes", GFramingDict );
+		PyModule_AddObject( V24_submodule, "FramingModes", GFramingDict );
 
 	/* ugh: why aren't these in a constant dict? */
 
-	PyModule_AddIntConstant( submodule, "INTERNAL", R_INTERN );
-	PyModule_AddIntConstant( submodule, "YAFRAY", R_YAFRAY );
-	PyModule_AddIntConstant( submodule, "AVIRAW", R_AVIRAW );
-	PyModule_AddIntConstant( submodule, "AVIJPEG", R_AVIJPEG );
-	PyModule_AddIntConstant( submodule, "AVICODEC", R_AVICODEC );
-	PyModule_AddIntConstant( submodule, "QUICKTIME", R_QUICKTIME );
-	PyModule_AddIntConstant( submodule, "TARGA", R_TARGA );
-	PyModule_AddIntConstant( submodule, "RAWTGA", R_RAWTGA );
-	PyModule_AddIntConstant( submodule, "HDR", R_RADHDR );
-	PyModule_AddIntConstant( submodule, "PNG", R_PNG );
-	PyModule_AddIntConstant( submodule, "BMP", R_BMP );
-	PyModule_AddIntConstant( submodule, "JPEG", R_JPEG90 );
-	PyModule_AddIntConstant( submodule, "HAMX", R_HAMX );
-	PyModule_AddIntConstant( submodule, "IRIS", R_IRIS );
-	PyModule_AddIntConstant( submodule, "IRISZ", R_IRIZ );
-	PyModule_AddIntConstant( submodule, "FTYPE", R_FTYPE );
-	PyModule_AddIntConstant( submodule, "PAL", B_PR_PAL );
-	PyModule_AddIntConstant( submodule, "NTSC", B_PR_NTSC );
-	PyModule_AddIntConstant( submodule, "DEFAULT", B_PR_PRESET );
-	PyModule_AddIntConstant( submodule, "PREVIEW", B_PR_PRV );
-	PyModule_AddIntConstant( submodule, "PC", B_PR_PC );
-	PyModule_AddIntConstant( submodule, "PAL169", B_PR_PAL169 );
-	PyModule_AddIntConstant( submodule, "PANO", B_PR_PANO );
-	PyModule_AddIntConstant( submodule, "FULL", B_PR_FULL );
-	PyModule_AddIntConstant( submodule, "NONE", PY_NONE );
-	PyModule_AddIntConstant( submodule, "LOW", PY_LOW );
-	PyModule_AddIntConstant( submodule, "MEDIUM", PY_MEDIUM );
-	PyModule_AddIntConstant( submodule, "HIGH", PY_HIGH );
-	PyModule_AddIntConstant( submodule, "HIGHER", PY_HIGHER );
-	PyModule_AddIntConstant( submodule, "BEST", PY_BEST );
-	PyModule_AddIntConstant( submodule, "USEAOSETTINGS", PY_USEAOSETTINGS );
-	PyModule_AddIntConstant( submodule, "SKYDOME", PY_SKYDOME );
-	PyModule_AddIntConstant( submodule, "GIFULL", PY_FULL );
-	PyModule_AddIntConstant( submodule, "OPENEXR", R_OPENEXR );
-	PyModule_AddIntConstant( submodule, "TIFF", R_TIFF );
-	PyModule_AddIntConstant( submodule, "FFMPEG", R_FFMPEG );
-	PyModule_AddIntConstant( submodule, "CINEON", R_CINEON );
-	PyModule_AddIntConstant( submodule, "DPX", R_DPX );
+	PyModule_AddIntConstant( V24_submodule, "INTERNAL", R_INTERN );
+	PyModule_AddIntConstant( V24_submodule, "YAFRAY", R_YAFRAY );
+	PyModule_AddIntConstant( V24_submodule, "AVIRAW", R_AVIRAW );
+	PyModule_AddIntConstant( V24_submodule, "AVIJPEG", R_AVIJPEG );
+	PyModule_AddIntConstant( V24_submodule, "AVICODEC", R_AVICODEC );
+	PyModule_AddIntConstant( V24_submodule, "QUICKTIME", R_QUICKTIME );
+	PyModule_AddIntConstant( V24_submodule, "TARGA", R_TARGA );
+	PyModule_AddIntConstant( V24_submodule, "RAWTGA", R_RAWTGA );
+	PyModule_AddIntConstant( V24_submodule, "HDR", R_RADHDR );
+	PyModule_AddIntConstant( V24_submodule, "PNG", R_PNG );
+	PyModule_AddIntConstant( V24_submodule, "BMP", R_BMP );
+	PyModule_AddIntConstant( V24_submodule, "JPEG", R_JPEG90 );
+	PyModule_AddIntConstant( V24_submodule, "HAMX", R_HAMX );
+	PyModule_AddIntConstant( V24_submodule, "IRIS", R_IRIS );
+	PyModule_AddIntConstant( V24_submodule, "IRISZ", R_IRIZ );
+	PyModule_AddIntConstant( V24_submodule, "FTYPE", R_FTYPE );
+	PyModule_AddIntConstant( V24_submodule, "PAL", B_PR_PAL );
+	PyModule_AddIntConstant( V24_submodule, "NTSC", B_PR_NTSC );
+	PyModule_AddIntConstant( V24_submodule, "DEFAULT", B_PR_PRESET );
+	PyModule_AddIntConstant( V24_submodule, "PREVIEW", B_PR_PRV );
+	PyModule_AddIntConstant( V24_submodule, "PC", B_PR_PC );
+	PyModule_AddIntConstant( V24_submodule, "PAL169", B_PR_PAL169 );
+	PyModule_AddIntConstant( V24_submodule, "PANO", B_PR_PANO );
+	PyModule_AddIntConstant( V24_submodule, "FULL", B_PR_FULL );
+	PyModule_AddIntConstant( V24_submodule, "NONE", PY_NONE );
+	PyModule_AddIntConstant( V24_submodule, "LOW", PY_LOW );
+	PyModule_AddIntConstant( V24_submodule, "MEDIUM", PY_MEDIUM );
+	PyModule_AddIntConstant( V24_submodule, "HIGH", PY_HIGH );
+	PyModule_AddIntConstant( V24_submodule, "HIGHER", PY_HIGHER );
+	PyModule_AddIntConstant( V24_submodule, "BEST", PY_BEST );
+	PyModule_AddIntConstant( V24_submodule, "USEAOSETTINGS", PY_USEAOSETTINGS );
+	PyModule_AddIntConstant( V24_submodule, "SKYDOME", PY_SKYDOME );
+	PyModule_AddIntConstant( V24_submodule, "GIFULL", PY_FULL );
+	PyModule_AddIntConstant( V24_submodule, "OPENEXR", R_OPENEXR );
+	PyModule_AddIntConstant( V24_submodule, "TIFF", R_TIFF );
+	PyModule_AddIntConstant( V24_submodule, "FFMPEG", R_FFMPEG );
+	PyModule_AddIntConstant( V24_submodule, "CINEON", R_CINEON );
+	PyModule_AddIntConstant( V24_submodule, "DPX", R_DPX );
 
-	return ( submodule );
+	return ( V24_submodule );
 }
 
 /***************************************************************************/

@@ -37,7 +37,7 @@
 
 extern PyTypeObject V24_point_Type;
 
-#define V24_PointObject_Check(v) ((v)->ob_type == &V24_point_Type)
+#define PointObject_Check(v) ((v)->ob_type == &V24_point_Type)
 
 typedef struct {
 	PyObject_VAR_HEAD 

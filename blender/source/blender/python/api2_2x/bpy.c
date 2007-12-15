@@ -50,7 +50,7 @@
 /*****************************************************************************/
 /* Global variables	 */
 /*****************************************************************************/
-PyObject *g_bpydict;
+PyObject *V24_g_bpydict;
 
 /*****************************************************************************/
 /* Function:		initBlender		 */
@@ -74,10 +74,10 @@ void m_bpy_init(void)
 	
 	module = Py_InitModule3("bpy", NULL, "The main bpy module");
 
-	V24_types_InitAll();	/* set all our pytypes to &PyType_Type */
+	types_InitAll();	/* set all our pytypes to &PyType_Type */
 
 	dict = PyModule_GetDict(module);
-	g_bpydict = dict;
+	V24_g_bpydict = dict;
 	
 	PyModule_AddObject( module, "config", V24_Config_CreatePyObject() );
 	PyDict_SetItemString( dict, "data", V24_Data_Init());

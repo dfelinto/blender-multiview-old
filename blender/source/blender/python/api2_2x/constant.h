@@ -36,9 +36,9 @@
 #include <Python.h>
 
 /*-------------------TYPE CHECKS-------------------------------*/
-#define V24_BPy_Constant_Check(v) ((v)->ob_type==&V24_constant_Type)
+#define BPy_Constant_Check(v) ((v)->ob_type==&constant_Type)
 /*-------------------TYPEOBJECT--------------------------------*/
-extern PyTypeObject V24_constant_Type;
+extern PyTypeObject constant_Type;
 /*-------------------STRUCT DEFINITION-------------------------*/
 typedef struct {
 	PyObject_HEAD 

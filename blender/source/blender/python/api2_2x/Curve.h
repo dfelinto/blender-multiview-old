@@ -38,7 +38,7 @@
 
 extern PyTypeObject V24_Curve_Type;
 
-#define V24_BPy_Curve_Check(v) ((v)->ob_type==&V24_Curve_Type)
+#define BPy_Curve_Check(v) ((v)->ob_type==&V24_Curve_Type)
 
 /* Python V24_BPy_Curve structure definition */
 typedef struct {
@@ -55,7 +55,7 @@ typedef struct {
 
 PyObject *V24_Curve_Init( void );
 PyObject *V24_Curve_CreatePyObject( struct Curve * curve );
-struct Curve *Curve_FromPyObject( PyObject * py_obj );
+struct Curve *V24_Curve_FromPyObject( PyObject * py_obj );
 PyObject *V24_Curve_update( V24_BPy_Curve * self );
 
 PyObject *V24_Curve_getName( V24_BPy_Curve * self );

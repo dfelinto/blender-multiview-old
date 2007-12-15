@@ -41,7 +41,7 @@
 #include "DNA_space_types.h"
 #include "DNA_text_types.h"
 
-void V24_initDraw( void );
+void initDraw( void );
 
 /* 
  * V24_Button Object stuct 

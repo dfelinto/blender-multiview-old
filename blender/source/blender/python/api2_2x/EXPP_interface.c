@@ -143,30 +143,30 @@ char *bpy_gethome(int append_scriptsdir)
 
 /* these are checked for example in Object.c: V24_M_Object_Get (Object.Get())
  * to collect the refs. */
-static int pydriver_running = 0;
+static int V24_pydriver_running = 0;
 
 int bpy_during_pydriver(void)
 {
-	return pydriver_running;
+	return V24_pydriver_running;
 }
 
 void bpy_pydriver_running(int state)
 {
-	pydriver_running = state;
+	V24_pydriver_running = state;
 }
 
 /* Obj references are collected in this extern linked list: */
-LinkNode *bpy_pydriver_oblist = NULL;
+LinkNode *V24_bpy_pydriver_oblist = NULL;
 
 void bpy_pydriver_freeList(void)
 {
-	BLI_linklist_free(bpy_pydriver_oblist, NULL);
-	bpy_pydriver_oblist = NULL;
+	BLI_linklist_free(V24_bpy_pydriver_oblist, NULL);
+	V24_bpy_pydriver_oblist = NULL;
 }
 
 void bpy_pydriver_appendToList(struct Object *ob)
 {
-	LinkNode *ln = bpy_pydriver_oblist;
+	LinkNode *ln = V24_bpy_pydriver_oblist;
 
 	/* check that the expression is not referencing its owner object */
 
@@ -188,7 +188,7 @@ void bpy_pydriver_appendToList(struct Object *ob)
 	}
 
 	if (!ln) /* ... not yet, append it */
-		BLI_linklist_append(&bpy_pydriver_oblist, (void *)ob);
+		BLI_linklist_append(&V24_bpy_pydriver_oblist, (void *)ob);
 
 	return;
 }
@@ -201,9 +201,9 @@ struct Object **bpy_pydriver_obArrayFromList(void)
 {
 	Object **obarray = NULL;
 	
-	if (bpy_pydriver_oblist) {
+	if (V24_bpy_pydriver_oblist) {
 		int i;
-		short len = BLI_linklist_length(bpy_pydriver_oblist);
+		short len = BLI_linklist_length(V24_bpy_pydriver_oblist);
 
 		if (len > 1) {
 
@@ -211,7 +211,7 @@ struct Object **bpy_pydriver_obArrayFromList(void)
 					"pydriver array");
 
 			if (obarray) {
-				LinkNode *ln = bpy_pydriver_oblist;
+				LinkNode *ln = V24_bpy_pydriver_oblist;
 				ln = ln->next; /* skip first ob, which is the pydriver owner */	
 
 				for (i = 0; i < len-1; i++) {

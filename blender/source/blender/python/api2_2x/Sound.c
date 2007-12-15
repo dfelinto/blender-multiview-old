@@ -80,7 +80,7 @@ returns None if not found.";
 /*****************************************************************************/
 /* Python method structure definition for Blender.Sound module:							 */
 /*****************************************************************************/
-struct PyMethodDef M_Sound_methods[] = {
+struct PyMethodDef V24_M_Sound_methods[] = {
 	{"Get", V24_M_Sound_Get, METH_VARARGS, V24_M_Sound_Get_doc},
 	{"Load", V24_M_Sound_Load, METH_O, V24_M_Sound_Load_doc},
 	{NULL, NULL, 0, NULL}
@@ -298,16 +298,16 @@ static PyObject *V24_M_Sound_Load( PyObject * self, PyObject * value )
 /*****************************************************************************/
 PyObject *V24_Sound_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 
 	if( PyType_Ready( &V24_Sound_Type ) < 0 )
 		return NULL;
 
-	submodule =
-		Py_InitModule3( "Blender.Sound", M_Sound_methods,
+	V24_submodule =
+		Py_InitModule3( "Blender.Sound", V24_M_Sound_methods,
 				V24_M_Sound_doc );
 
-	return ( submodule );
+	return ( V24_submodule );
 }
 
 /************************/
@@ -512,7 +512,7 @@ static PyObject *V24_Sound_repr( V24_BPy_Sound * self )
 /* Python attributes get/set structure:                                      */
 /*****************************************************************************/
 static PyGetSetDef V24_BPy_Sound_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"filename", (getter)V24_Sound_getFilename, (setter)V24_Sound_setFilename,
 	 "text filename", NULL},
 	{"packed", (getter)V24_Sound_getPacked, (setter)NULL,

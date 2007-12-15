@@ -317,7 +317,7 @@ static char V24_M_Window_GetPivot_doc[] =
 /*****************************************************************************/
 /* Python method structure definition for Blender.Window module:	*/
 /*****************************************************************************/
-struct PyMethodDef M_Window_methods[] = {
+struct PyMethodDef V24_M_Window_methods[] = {
 	{"Redraw", V24_M_Window_Redraw, METH_VARARGS, V24_M_Window_Redraw_doc},
 	{"RedrawAll", V24_M_Window_RedrawAll, METH_VARARGS,
 	 V24_M_Window_RedrawAll_doc},
@@ -412,7 +412,7 @@ struct PyMethodDef M_Window_methods[] = {
 /* Function:	V24_M_Window_Redraw						*/
 /* Python equivalent:	Blender.Window.Redraw				*/
 /*****************************************************************************/
-/* not static so py_slider_update in Draw.[ch] can use it */
+/* not static so V24_py_slider_update in Draw.[ch] can use it */
 PyObject *V24_M_Window_Redraw( PyObject * self, PyObject * args )
 {
 	ScrArea *tempsa, *sa;
@@ -1515,13 +1515,13 @@ static PyObject *V24_M_Window_SetPivot( PyObject * self, PyObject * value)
 /*****************************************************************************/
 PyObject *V24_Window_Init( void )
 {
-	PyObject *submodule, *Types, *Qual, *MButs, *PivotTypes, *dict;
+	PyObject *V24_submodule, *Types, *Qual, *MButs, *PivotTypes, *dict;
 
-	submodule =
-		Py_InitModule3( "Blender.Window", M_Window_methods,
+	V24_submodule =
+		Py_InitModule3( "Blender.Window", V24_M_Window_methods,
 				V24_M_Window_doc );
 
-	dict = PyModule_GetDict( submodule );
+	dict = PyModule_GetDict( V24_submodule );
 	if( dict )
 		PyDict_SetItemString( dict, "Theme", V24_Theme_Init(  ) );
 
@@ -1550,7 +1550,7 @@ PyObject *V24_Window_Init( void )
 		V24_PyConstant_Insert( d, "TIME", PyInt_FromLong( SPACE_TIME ) );
 		V24_PyConstant_Insert( d, "NODE", PyInt_FromLong( SPACE_NODE ) );
 
-		PyModule_AddObject( submodule, "Types", Types );
+		PyModule_AddObject( V24_submodule, "Types", Types );
 	}
 
 	if( Qual ) {
@@ -1566,7 +1566,7 @@ PyObject *V24_Window_Init( void )
 		V24_PyConstant_Insert( d, "RSHIFT", PyInt_FromLong( R_SHIFTKEY ) );
 		V24_PyConstant_Insert( d, "SHIFT", PyInt_FromLong( LR_SHIFTKEY ) );
 
-		PyModule_AddObject( submodule, "Qual", Qual );
+		PyModule_AddObject( V24_submodule, "Qual", Qual );
 	}
 
 	if( MButs ) {
@@ -1576,7 +1576,7 @@ PyObject *V24_Window_Init( void )
 		V24_PyConstant_Insert( d, "M", PyInt_FromLong( M_MOUSE ) );
 		V24_PyConstant_Insert( d, "R", PyInt_FromLong( R_MOUSE ) );
 
-		PyModule_AddObject( submodule, "MButs", MButs );
+		PyModule_AddObject( V24_submodule, "MButs", MButs );
 	}
 
 	if( PivotTypes ) {
@@ -1588,7 +1588,7 @@ PyObject *V24_Window_Init( void )
 		V24_PyConstant_Insert(d, "ACTIVE", PyInt_FromLong( PIVOT_ACTIVE ) );
 		V24_PyConstant_Insert(d, "INDIVIDUAL", PyInt_FromLong( PIVOT_INDIVIDUAL ) );
 
-		PyModule_AddObject( submodule, "PivotTypes", PivotTypes );
+		PyModule_AddObject( V24_submodule, "PivotTypes", PivotTypes );
 	}
-	return submodule;
+	return V24_submodule;
 }

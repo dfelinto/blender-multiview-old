@@ -37,7 +37,7 @@
 
 extern PyTypeObject V24_vector_Type;
 
-#define V24_VectorObject_Check(v) ((v)->ob_type == &V24_vector_Type)
+#define VectorObject_Check(v) ((v)->ob_type == &V24_vector_Type)
 
 typedef struct {
 	PyObject_VAR_HEAD 

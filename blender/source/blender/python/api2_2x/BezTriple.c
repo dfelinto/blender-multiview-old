@@ -62,7 +62,7 @@ static PyObject *V24_BezTriple_getTriple( V24_BPy_BezTriple * self );
  Python method structure definition for Blender.BezTriple module:          
 ****************************************************************************/
 
-struct PyMethodDef M_BezTriple_methods[] = {
+struct PyMethodDef V24_M_BezTriple_methods[] = {
 	{"New", ( PyCFunction ) V24_M_BezTriple_New, METH_VARARGS | METH_KEYWORDS,
 	 0},
 /*	{"New", ( PyCFunction ) V24_M_BezTriple_New, METH_O, 0}, */
@@ -617,20 +617,20 @@ static PyObject *V24_M_BezTriple_HandleDict( void )
 
 PyObject *V24_BezTriple_Init( void )
 {
-	PyObject *submodule;
+	PyObject *V24_submodule;
 	PyObject *HandleTypes = V24_M_BezTriple_HandleDict( );
 
 	if( PyType_Ready( &V24_BezTriple_Type ) < 0 )
 		return NULL;
 
-	submodule = Py_InitModule3( "Blender.BezTriple",
-								M_BezTriple_methods,
+	V24_submodule = Py_InitModule3( "Blender.BezTriple",
+								V24_M_BezTriple_methods,
 								V24_M_BezTriple_doc );
 	if( HandleTypes )
-		PyModule_AddObject( submodule, "HandleTypes", HandleTypes );
+		PyModule_AddObject( V24_submodule, "HandleTypes", HandleTypes );
 
 
-	return submodule;
+	return V24_submodule;
 }
 
 /* Three Python V24_BezTriple_Type helper functions needed by the Object module: */

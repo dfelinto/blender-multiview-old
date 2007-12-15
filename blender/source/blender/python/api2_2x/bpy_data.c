@@ -284,7 +284,7 @@ static int V24_LibBlockSeq_setActive(V24_BPy_LibBlockSeq *self, PyObject *value)
 {
 	switch (self->type) {
 	case ID_SCE:
-		if (!V24_BPy_Scene_Check(value)) {
+		if (!BPy_Scene_Check(value)) {
 			return V24_EXPP_ReturnIntError(PyExc_TypeError,
 					"Must be a scene" );
 		} else {
@@ -306,7 +306,7 @@ static int V24_LibBlockSeq_setActive(V24_BPy_LibBlockSeq *self, PyObject *value)
 		return 0;
 		
 	case ID_IM:
-		if (!V24_BPy_Image_Check(value)) {
+		if (!BPy_Image_Check(value)) {
 			return V24_EXPP_ReturnIntError(PyExc_TypeError,
 					"Must be a scene" );
 		} else {
@@ -329,7 +329,7 @@ static int V24_LibBlockSeq_setActive(V24_BPy_LibBlockSeq *self, PyObject *value)
 		return 0;
 	
 	case ID_TXT:
-		if (!V24_BPy_Text_Check(value)) {
+		if (!BPy_Text_Check(value)) {
 			return V24_EXPP_ReturnIntError(PyExc_TypeError,
 					"Must be a text" );
 		} else {
@@ -376,7 +376,7 @@ static int V24_LibBlockSeq_setTag(V24_BPy_LibBlockSeq *self, PyObject *value)
 
 
 /* New Data, internal functions */
-Mesh *add_mesh__internal(char *name)
+Mesh *V24_add_mesh__internal(char *name)
 {
 	Mesh *mesh = add_mesh(name); /* doesn't return NULL now, but might someday */
 	
@@ -511,7 +511,7 @@ PyObject *V24_LibBlockSeq_new(V24_BPy_LibBlockSeq *self, PyObject * args, PyObje
 		return V24_EXPP_ReturnPyObjError( PyExc_RuntimeError,
 			"Add objects through the scenes objects iterator" );
 	case ID_ME:
-		id = (ID *)add_mesh__internal( name?name:"Mesh" );
+		id = (ID *)V24_add_mesh__internal( name?name:"Mesh" );
 		break;
 	case ID_CU:
 		id = (ID *)add_curve( name?name:"Curve", data_code );
@@ -597,7 +597,7 @@ PyObject *V24_LibBlockSeq_unlink(V24_BPy_LibBlockSeq *self, PyObject * value)
 {
 	switch (self->type) {
 	case ID_SCE:
-		if( !V24_BPy_Scene_Check(value) ) {
+		if( !BPy_Scene_Check(value) ) {
 			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected Scene object" );
 		} else {
@@ -613,7 +613,7 @@ PyObject *V24_LibBlockSeq_unlink(V24_BPy_LibBlockSeq *self, PyObject * value)
 			Py_RETURN_NONE;
 		}
 	case ID_GR:
-		if( !V24_BPy_Group_Check(value) ) {
+		if( !BPy_Group_Check(value) ) {
 			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected Group object" );
 		} else {
@@ -634,7 +634,7 @@ PyObject *V24_LibBlockSeq_unlink(V24_BPy_LibBlockSeq *self, PyObject * value)
 		}
 
 	case ID_TXT:
-		if( !V24_BPy_Text_Check(value) ) {
+		if( !BPy_Text_Check(value) ) {
 			return V24_EXPP_ReturnPyObjError( PyExc_TypeError,
 					"expected Text object" );
 		} else {
@@ -684,7 +684,7 @@ static PyGetSetDef V24_LibBlockSeq_getseters[] = {
 	{NULL,NULL,NULL,NULL,NULL}  /* Sentinel */
 };
 
-static struct PyMethodDef BPy_LibBlockSeq_methods[] = {
+static struct PyMethodDef V24_BPy_LibBlockSeq_methods[] = {
 	{"new", (PyCFunction)V24_LibBlockSeq_new, METH_VARARGS | METH_KEYWORDS,
 		"(name) - Create a new object in this scene from the obdata given and return a new object"},
 	{"unlink", (PyCFunction)V24_LibBlockSeq_unlink, METH_O,
@@ -753,7 +753,7 @@ PyTypeObject V24_LibBlockSeq_Type = {
 	( iternextfunc ) V24_LibBlockSeq_nextIter, /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	BPy_LibBlockSeq_methods,       /* struct PyMethodDef *tp_methods; */
+	V24_BPy_LibBlockSeq_methods,       /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	V24_LibBlockSeq_getseters,       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
@@ -789,8 +789,8 @@ PyObject * V24_Data_Init( void )
 	PyType_Ready( &V24_LibBlockSeq_Type );
 	PyType_Ready( &V24_Config_Type );
 	
-	/*submodule = Py_InitModule3( "Blender.Main", NULL, M_Main_doc );*/
-	module = Py_InitModule3( "bpy.data", NULL, "The bpy.data submodule" );
+	/*V24_submodule = Py_InitModule3( "Blender.Main", NULL, M_Main_doc );*/
+	module = Py_InitModule3( "bpy.data", NULL, "The bpy.data V24_submodule" );
 	dict = PyModule_GetDict( module );
 	
 	/* Python Data Types */

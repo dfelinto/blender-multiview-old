@@ -216,7 +216,7 @@ static char V24_M_Material_Get_doc[] =
 /*****************************************************************************/
 /* Python method structure definition for Blender.Material module:           */
 /*****************************************************************************/
-struct PyMethodDef M_Material_methods[] = {
+struct PyMethodDef V24_M_Material_methods[] = {
 	{"New", ( PyCFunction ) V24_M_Material_New, METH_VARARGS | METH_KEYWORDS,
 	 V24_M_Material_New_doc},
 	{"Get", V24_M_Material_Get, METH_VARARGS, V24_M_Material_Get_doc},
@@ -401,7 +401,7 @@ static PyObject *V24_Material_ShadersDict( void )
 /*****************************************************************************/
 PyObject *V24_Material_Init( void )
 {
-	PyObject *submodule, *Modes, *Shaders;
+	PyObject *V24_submodule, *Modes, *Shaders;
 
 	if( PyType_Ready( &V24_Material_Type ) < 0)
 		return NULL;
@@ -409,25 +409,25 @@ PyObject *V24_Material_Init( void )
 	Modes = V24_Material_ModesDict(  );
 	Shaders = V24_Material_ShadersDict(  );
 
-	submodule = Py_InitModule3( "Blender.Material",
-				    M_Material_methods, V24_M_Material_doc );
+	V24_submodule = Py_InitModule3( "Blender.Material",
+				    V24_M_Material_methods, V24_M_Material_doc );
 
 	if( Modes )
-		PyModule_AddObject( submodule, "Modes", Modes );
+		PyModule_AddObject( V24_submodule, "Modes", Modes );
 	if( Shaders )
-		PyModule_AddObject( submodule, "Shaders", Shaders );
+		PyModule_AddObject( V24_submodule, "Shaders", Shaders );
 	
-	PyModule_AddIntConstant( submodule, "RGB", IPOKEY_RGB );
-	PyModule_AddIntConstant( submodule, "ALPHA", IPOKEY_ALPHA );
-	PyModule_AddIntConstant( submodule, "HALOSIZE", IPOKEY_HALOSIZE );
-	PyModule_AddIntConstant( submodule, "MODE", IPOKEY_MODE );
-	PyModule_AddIntConstant( submodule, "ALLCOLOR", IPOKEY_ALLCOLOR );
-	PyModule_AddIntConstant( submodule, "ALLMIRROR", IPOKEY_ALLMIRROR );
-	PyModule_AddIntConstant( submodule, "OFS", IPOKEY_OFS );
-	PyModule_AddIntConstant( submodule, "SIZE", IPOKEY_SIZE );
-	PyModule_AddIntConstant( submodule, "ALLMAPPING", IPOKEY_ALLMAPPING );
+	PyModule_AddIntConstant( V24_submodule, "RGB", IPOKEY_RGB );
+	PyModule_AddIntConstant( V24_submodule, "ALPHA", IPOKEY_ALPHA );
+	PyModule_AddIntConstant( V24_submodule, "HALOSIZE", IPOKEY_HALOSIZE );
+	PyModule_AddIntConstant( V24_submodule, "MODE", IPOKEY_MODE );
+	PyModule_AddIntConstant( V24_submodule, "ALLCOLOR", IPOKEY_ALLCOLOR );
+	PyModule_AddIntConstant( V24_submodule, "ALLMIRROR", IPOKEY_ALLMIRROR );
+	PyModule_AddIntConstant( V24_submodule, "OFS", IPOKEY_OFS );
+	PyModule_AddIntConstant( V24_submodule, "SIZE", IPOKEY_SIZE );
+	PyModule_AddIntConstant( V24_submodule, "ALLMAPPING", IPOKEY_ALLMAPPING );
 
-	return ( submodule );
+	return ( V24_submodule );
 }
 
 /***************************/
@@ -865,7 +865,7 @@ static PyMethodDef V24_BPy_Material_methods[] = {
 /*****************************************************************************/
 
 static PyGetSetDef V24_BPy_Material_getseters[] = {
-	V24_GENERIC_LIB_GETSETATTR,
+	GENERIC_LIB_GETSETATTR,
 	{"add",
 	 (getter)V24_Material_getAdd, (setter)V24_Material_setAdd,
 	 "Strength of the add effect",
@@ -2521,7 +2521,7 @@ Material **V24_EXPP_newMaterialList_fromPyList( PyObject * list )
 
 		pymat = ( V24_BPy_Material * ) PySequence_GetItem( list, i );
 
-		if( V24_BPy_Material_Check( ( PyObject * ) pymat ) ) {
+		if( BPy_Material_Check( ( PyObject * ) pymat ) ) {
 			mat = pymat->material;
 			matlist[i] = mat;
 		} else if( ( PyObject * ) pymat == Py_None ) {

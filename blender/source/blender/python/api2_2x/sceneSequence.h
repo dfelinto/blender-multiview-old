@@ -40,8 +40,8 @@
 extern PyTypeObject V24_Sequence_Type;
 extern PyTypeObject V24_SceneSeq_Type;
 
-#define V24_BPy_Sequence_Check(v)       ((v)->ob_type == &V24_Sequence_Type)
-#define V24_BPy_SceneSeq_Check(v)       ((v)->ob_type == &V24_SceneSeq_Type)
+#define BPy_Sequence_Check(v)       ((v)->ob_type == &V24_Sequence_Type)
+#define BPy_SceneSeq_Check(v)       ((v)->ob_type == &V24_SceneSeq_Type)
 
 
 /*****************************************************************************/
@@ -78,6 +78,6 @@ typedef struct {
 PyObject *V24_Sequence_Init( void );
 PyObject *V24_Sequence_CreatePyObject( struct Sequence * seq, struct Sequence * iter, struct Scene * scn);
 PyObject *V24_SceneSeq_CreatePyObject( struct Scene * scn, struct Sequence * iter);
-struct Sequence *Sequence_FromPyObject( PyObject * py_obj );
+struct Sequence *V24_Sequence_FromPyObject( PyObject * py_obj );
 
 #endif				/* EXPP_SEQUENCE_H */

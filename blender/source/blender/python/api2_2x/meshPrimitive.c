@@ -245,7 +245,7 @@ static PyObject *V24_M_MeshPrim_Suzanne( PyObject *self_unused, PyObject *args )
 	return make_mesh( 13, "Monkey", 0, 0, 0, 0, 0, 0, 0 );
 }
 
-static struct PyMethodDef M_MeshPrim_methods[] = {
+static struct PyMethodDef V24_M_MeshPrim_methods[] = {
 	{"Plane", (PyCFunction)V24_M_MeshPrim_Plane, METH_VARARGS,
 		"Create a plane mesh"},
 	{"Cube", (PyCFunction)V24_M_MeshPrim_Cube, METH_VARARGS,
@@ -269,11 +269,11 @@ static struct PyMethodDef M_MeshPrim_methods[] = {
 	{NULL, NULL, 0, NULL},
 };
 
-static char V24_M_MeshPrim_doc[] = "The Blender.Mesh.Primitives submodule";
+static char V24_M_MeshPrim_doc[] = "The Blender.Mesh.Primitives V24_submodule";
 
 PyObject *V24_MeshPrimitives_Init( void )
 {
 	return Py_InitModule3( "Blender.Mesh.Primitives",
-				M_MeshPrim_methods, V24_M_MeshPrim_doc );
+				V24_M_MeshPrim_methods, V24_M_MeshPrim_doc );
 }
 

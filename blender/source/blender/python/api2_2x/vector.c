@@ -47,7 +47,7 @@ char V24_Vector_toPoint_doc[] = "() - create a new Point Object from this vector
 char V24_Vector_ToTrackQuat_doc[] = "(track, up) - extract a quaternion from the vector and the track and up axis";
 char V24_Vector_copy_doc[] = "() - return a copy of the vector";
 /*-----------------------METHOD DEFINITIONS ----------------------*/
-struct PyMethodDef Vector_methods[] = {
+struct PyMethodDef V24_Vector_methods[] = {
 	{"zero", (PyCFunction) V24_Vector_Zero, METH_NOARGS, V24_Vector_Zero_doc},
 	{"normalize", (PyCFunction) V24_Vector_Normalize, METH_NOARGS, V24_Vector_Normalize_doc},
 	{"negate", (PyCFunction) V24_Vector_Negate, METH_NOARGS, V24_Vector_Negate_doc},
@@ -423,10 +423,10 @@ static PyObject *V24_Vector_add(PyObject * v1, PyObject * v2)
 
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 	
-	if V24_VectorObject_Check(v1)
+	if VectorObject_Check(v1)
 		vec1= (V24_VectorObject *)v1;
 	
-	if V24_VectorObject_Check(v2)
+	if VectorObject_Check(v2)
 		vec2= (V24_VectorObject *)v2;
 	
 	/* make sure v1 is always the vector */
@@ -442,7 +442,7 @@ static PyObject *V24_Vector_add(PyObject * v1, PyObject * v2)
 		return V24_newVectorObject(vec, vec1->size, Py_NEW);
 	}
 	
-	if(V24_PointObject_Check(v2)){  /*VECTOR + POINT*/
+	if(PointObject_Check(v2)){  /*VECTOR + POINT*/
 		/*Point translation*/
 		V24_PointObject *pt = (V24_PointObject*)v2;
 		
@@ -469,10 +469,10 @@ static PyObject *V24_Vector_iadd(PyObject * v1, PyObject * v2)
 
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 	
-	if V24_VectorObject_Check(v1)
+	if VectorObject_Check(v1)
 		vec1= (V24_VectorObject *)v1;
 	
-	if V24_VectorObject_Check(v2)
+	if VectorObject_Check(v2)
 		vec2= (V24_VectorObject *)v2;
 	
 	/* make sure v1 is always the vector */
@@ -489,7 +489,7 @@ static PyObject *V24_Vector_iadd(PyObject * v1, PyObject * v2)
 		return v1;
 	}
 	
-	if(V24_PointObject_Check(v2)){  /*VECTOR + POINT*/
+	if(PointObject_Check(v2)){  /*VECTOR + POINT*/
 		/*Point translation*/
 		V24_PointObject *pt = (V24_PointObject*)v2;
 		
@@ -517,7 +517,7 @@ static PyObject *V24_Vector_sub(PyObject * v1, PyObject * v2)
 	float vec[4];
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 
-	if (!V24_VectorObject_Check(v1) || !V24_VectorObject_Check(v2))
+	if (!VectorObject_Check(v1) || !VectorObject_Check(v2))
 		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector subtraction: arguments not valid for this operation....\n");
 	
@@ -542,7 +542,7 @@ static PyObject *V24_Vector_isub(PyObject * v1, PyObject * v2)
 	int i, size;
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 
-	if (!V24_VectorObject_Check(v1) || !V24_VectorObject_Check(v2))
+	if (!VectorObject_Check(v1) || !VectorObject_Check(v2))
 		return V24_EXPP_ReturnPyObjError(PyExc_AttributeError,
 			"Vector subtraction: arguments not valid for this operation....\n");
 	
@@ -568,10 +568,10 @@ static PyObject *V24_Vector_mul(PyObject * v1, PyObject * v2)
 {
 	V24_VectorObject *vec1 = NULL, *vec2 = NULL;
 	
-	if V24_VectorObject_Check(v1)
+	if VectorObject_Check(v1)
 		vec1= (V24_VectorObject *)v1;
 	
-	if V24_VectorObject_Check(v2)
+	if VectorObject_Check(v2)
 		vec2= (V24_VectorObject *)v2;
 	
 	/* make sure v1 is always the vector */
@@ -607,19 +607,19 @@ static PyObject *V24_Vector_mul(PyObject * v1, PyObject * v2)
 		}
 		return V24_newVectorObject(vec, vec1->size, Py_NEW);
 		
-	} else if (V24_MatrixObject_Check(v2)) {
+	} else if (MatrixObject_Check(v2)) {
 		/* VEC * MATRIX */
 		if (v1==v2) /* mat*vec, we have swapped the order */
 			return V24_column_vector_multiplication((V24_MatrixObject*)v2, vec1);
 		else /* vec*mat */
 			return V24_row_vector_multiplication(vec1, (V24_MatrixObject*)v2);
-	} else if (V24_QuaternionObject_Check(v2)) {
+	} else if (QuaternionObject_Check(v2)) {
 		V24_QuaternionObject *quat = (V24_QuaternionObject*)v2;
 		if(vec1->size != 3)
 			return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 				"Vector multiplication: only 3D vector rotations (with quats) currently supported\n");
 		
-		return quat_rotation((PyObject*)vec1, (PyObject*)quat);
+		return V24_quat_rotation((PyObject*)vec1, (PyObject*)quat);
 	}
 	
 	return V24_EXPP_ReturnPyObjError(PyExc_TypeError,
@@ -646,7 +646,7 @@ static PyObject *V24_Vector_imul(PyObject * v1, PyObject * v2)
 		Py_INCREF( v1 );
 		return v1;
 		
-	} else if (V24_MatrixObject_Check(v2)) {
+	} else if (MatrixObject_Check(v2)) {
 		float vecCopy[4];
 		int x,y, size = vec->size;
 		V24_MatrixObject *mat= (V24_MatrixObject*)v2;
@@ -689,7 +689,7 @@ static PyObject *V24_Vector_div(PyObject * v1, PyObject * v2)
 	float vec[4], scalar;
 	V24_VectorObject *vec1 = NULL;
 	
-	if(!V24_VectorObject_Check(v1)) /* not a vector */
+	if(!VectorObject_Check(v1)) /* not a vector */
 		return V24_EXPP_ReturnPyObjError(PyExc_TypeError, 
 			"Vector division: Vector must be divided by a float\n");
 	
@@ -720,7 +720,7 @@ static PyObject *V24_Vector_idiv(PyObject * v1, PyObject * v2)
 	float scalar;
 	V24_VectorObject *vec1 = NULL;
 	
-	/*if(!V24_VectorObject_Check(v1))
+	/*if(!VectorObject_Check(v1))
 		return V24_EXPP_ReturnIntError(PyExc_TypeError, 
 			"Vector division: Vector must be divided by a float\n");*/
 	
@@ -803,7 +803,7 @@ PyObject* V24_Vector_richcmpr(PyObject *objectA, PyObject *objectB, int comparis
 	float epsilon = .000001f;
 	double lenA,lenB;
 
-	if (!V24_VectorObject_Check(objectA) || !V24_VectorObject_Check(objectB)){
+	if (!VectorObject_Check(objectA) || !VectorObject_Check(objectB)){
 		if (comparison_type == Py_NE){
 			return V24_EXPP_incr_ret(Py_True); 
 		}else{
@@ -1182,7 +1182,7 @@ PyTypeObject V24_vector_Type = {
 	NULL,                       /* iternextfunc tp_iternext; */
 
   /*** Attribute descriptor and subclassing stuff ***/
-	Vector_methods,           /* struct PyMethodDef *tp_methods; */
+	V24_Vector_methods,           /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	V24_Vector_getseters,         /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
