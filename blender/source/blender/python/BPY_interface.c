@@ -365,10 +365,10 @@ PyObject *traceback_getFilename( PyObject * tb );
 * to NULL, after this, using this data will raise an error.
 ****************************************************************************/
 
-GHash *bpy_idhash_text;
-GHash *bpy_idhash_scene;
-GHash *bpy_idhash_object;
-GHash *bpy_idhash_group;
+GHash *bpy_idhash_text = NULL;
+GHash *bpy_idhash_scene = NULL;
+GHash *bpy_idhash_object = NULL;
+GHash *bpy_idhash_group = NULL;
 
 static GHash * idhash__internal(ID *id)
 {
@@ -388,7 +388,6 @@ static GHash * idhash__internal(ID *id)
 /* Use so duplicate PyObjects are never created */
 void * BPY_idhash_get(ID *id) 
 {
-	printf("getting hash\n");
 	return BLI_ghash_lookup(idhash__internal(id), id);
 }
 /* Use when python decref's the data
@@ -399,7 +398,7 @@ void BPY_idhash_remove(ID *id)
 	GHash *hash = idhash__internal(id);
 	if (!hash) /* TODO - Dont allow invalid hashes at all*/
 		return;
-	
+	printf("remove hash %s\n", id->name);
 	BLI_ghash_remove(hash, id, NULL, NULL);
 }
 
@@ -412,9 +411,11 @@ static void genlib_invalidate(void * genlib)
 void BPY_idhash_invalidate(ID *id)
 {
 	GHash *hash = idhash__internal(id);
+	
 	if (!hash) /* TODO - Dont allow invalid hashes */
 		return;
 	
+	printf("invalidate hash %s\n", id->name);
 	BLI_ghash_remove(hash, id, NULL, genlib_invalidate);
 	
 }
@@ -423,7 +424,7 @@ void BPY_idhash_invalidate(ID *id)
 void BPY_idhash_add(void *value)
 {
 	ID *id = ((BPyGenericLibObject *)value)->id;
-	printf("adding hash\n");
+	printf("adding hash %s\n", id->name);
 	BLI_ghash_insert(idhash__internal(id), (void *)id, (void *)value);
 }	
 /* END OF BPY ID HASH */
