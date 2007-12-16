@@ -163,7 +163,9 @@ static PyObject *NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 		/* sound */
 		int totframe;
 		bSound *sound = (( BPySoundObject * )py_data)->sound;
-		
+
+		/* scene */
+		Scene *sce = ((BPySceneObject *)py_data)->scene;
 		
 		seq->type= SEQ_RAM_SOUND;
 		seq->sound = sound;
@@ -182,9 +184,6 @@ static PyObject *NewSeq_internal(ListBase *seqbase, PyObject * args, Scene *sce)
 
 		/* name sound in first strip */
 		strncpy(se->name, sound->name, FILE_MAXFILE-1);
-
-		/* scene */
-		Scene *sce = ((BPySceneObject *)py_data)->scene;
 		
 		seq->type= SEQ_SCENE;
 		seq->scene= sce;
