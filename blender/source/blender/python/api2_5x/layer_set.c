@@ -276,7 +276,7 @@ static int LayerSet_length(BPyLayerSetObject *self)
 
 static PyObject * LayerSet_contains(BPyLayerSetObject *self, PyObject *key);
 static PySequenceMethods LayerSet_as_sequence = {
-	(lenfunc)LayerSet_length,		/* sq_length */
+	(inquiry)LayerSet_length,		/* sq_length */
 	0,								/* sq_concat */
 	0,								/* sq_repeat */
 	0,								/* sq_item */
