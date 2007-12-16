@@ -48,15 +48,15 @@
 #include "BLI_blenlib.h"
 #include "MEM_guardedalloc.h"
 #include "DNA_userdef_types.h"	/* for U.pythondir */
-#include "api2_2x/EXPP_interface.h" /* for bpy_gethome() */
+#include "api2_5x/EXPP_interface.h" /* for bpy_gethome() */
 
 #define BPYMENU_DATAFILE "Bpymenus"
 #define MAX_DIR_DEPTH 4 /* max depth for traversing scripts dirs */
 #define MAX_DIR_NUMBER 30 /* max number of dirs in scripts dirs trees */
 
 static int DEBUG;
-static int V24_Dir_Depth;
-static int V24_Dirs_Number;
+static int Dir_Depth;
+static int Dirs_Number;
 
 /* BPyMenuTable holds all registered pymenus, as linked lists for each menu
  * where they can appear (see PYMENUHOOKS enum in BPY_menus.h).
@@ -272,8 +272,8 @@ void BPyMenu_RemoveAllEntries( void )
 		BPyMenuTable[i] = NULL;
 	}
 
-	V24_Dirs_Number = 0;
-	V24_Dir_Depth = 0;
+	Dirs_Number = 0;
+	Dir_Depth = 0;
 
 	return;
 }
@@ -891,16 +891,16 @@ static int bpymenu_ParseDir(char *dirname, char *parentdir, int is_userdir )
 			}
 
 			else if (S_ISDIR(status.st_mode)) { /* is subdir */
-				V24_Dirs_Number++;
-				V24_Dir_Depth++;
-				if (V24_Dirs_Number > MAX_DIR_NUMBER) {
+				Dirs_Number++;
+				Dir_Depth++;
+				if (Dirs_Number > MAX_DIR_NUMBER) {
 					if (DEBUG) {
 						fprintf(stderr, "BPyMenus error: too many subdirs.\n");
 					}
 					closedir(dir);
 					return -1;
 				}
-				else if (V24_Dir_Depth > MAX_DIR_DEPTH) {
+				else if (Dir_Depth > MAX_DIR_DEPTH) {
 					if (DEBUG)
 						fprintf(stderr,
 							"BPyMenus error: max depth reached traversing dir tree.\n");
@@ -917,7 +917,7 @@ static int bpymenu_ParseDir(char *dirname, char *parentdir, int is_userdir )
 					closedir(dir);
 					return -1;
 				}
-				V24_Dir_Depth--;
+				Dir_Depth--;
 			}
 
 		}

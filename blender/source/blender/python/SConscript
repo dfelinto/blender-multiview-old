@@ -1,9 +1,9 @@
 #!/usr/bin/python
 Import ('env')
 
-sources = Split('BPY_interface.c BPY_menus.c') + env.Glob('api2_2x/*.c')
+sources = Split('BPY_interface.c BPY_menus.c') + env.Glob('api2_5x/*.c') + env.Glob('api2_4x/*.c')
 
-incs = 'api2_2x ../blenkernel ../blenlib ../blenloader'
+incs = 'api2_5x api2_4x ../blenkernel ../blenlib ../blenloader'
 incs += ' ../render/extern/include ../radiosity/extern/include'
 incs += ' ../makesdna #intern/guardedalloc #intern/bmfont ../imbuf ../include'
 incs += ' ' + env['BF_PYTHON_INC']
