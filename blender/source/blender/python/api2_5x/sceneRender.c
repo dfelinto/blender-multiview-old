@@ -39,6 +39,7 @@ struct View3D; /* keep me up here */
 #include "BKE_global.h"
 #include "BKE_screen.h"
 #include "BKE_scene.h"
+#include "BKE_ipo.h"
 
 #include "BIF_drawscene.h"
 #include "BIF_renderwin.h"
@@ -487,7 +488,7 @@ PyObject *RenderData_Play( BPyRenderObject * self )
 	if( r->imtype == R_QUICKTIME ) {
 
 		strcpy( file, r->pic );
-		BLI_convertstringcode( file, (char *) self->scene,
+		BLI_convertstringcode( file, (char *) self->bpysce->scene,
 				       r->cfra );
 		BLI_make_existing_file( file );
 		if( BLI_strcasecmp( file + strlen( file ) - 4, ".mov" ) ) {
