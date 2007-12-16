@@ -112,7 +112,8 @@ endif
 
     export WITH_OPENEXR ?= true
     export WITH_DDS ?= true
-
+	export WITH_PYAPI_V24X ?= true
+	
     ifeq ($(OS),windows)
 	export NAN_WINTAB ?= $(LCGDIR)/wintab
       ifeq ($(FREE_WINDOWS), true)

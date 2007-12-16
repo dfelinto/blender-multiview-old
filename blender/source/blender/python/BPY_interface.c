@@ -75,7 +75,9 @@
 #include "api2_5x/bpy.h" /* for the new "bpy" module */
 
 /* old 2.4x api */
+#ifdef WITH_PYAPI_V24X
 #include "api2_4x/Blender.h"
+#endif
 
 /*these next two are for pyconstraints*/
 #include "api2_5x/IDProp.h"
@@ -319,8 +321,10 @@ int setup_armature_weakrefs()
  * support for packages here e.g. import `package.module` */
 
 static struct _inittab BPyInittab_Modules[] = {
-	{"Blender", V24_M_Blender_Init},
 	{"bpy", m_bpy_init},
+#ifdef WITH_PYAPI_V24X
+	{"Blender", V24_M_Blender_Init},
+#endif
 	{NULL, NULL}
 };
 
@@ -396,9 +400,9 @@ void * BPY_idhash_get(ID *id)
 void BPY_idhash_remove(ID *id)
 {
 	GHash *hash = idhash__internal(id);
-	if (!hash) /* TODO - Dont allow invalid hashes at all*/
+	if (hash==NULL)
 		return;
-	printf("remove hash %s\n", id->name);
+	//printf("remove hash %s\n", id->name);
 	BLI_ghash_remove(hash, id, NULL, NULL);
 }
 
@@ -412,10 +416,10 @@ void BPY_idhash_invalidate(ID *id)
 {
 	GHash *hash = idhash__internal(id);
 	
-	if (!hash) /* TODO - Dont allow invalid hashes */
+	if (hash==NULL)
 		return;
 	
-	printf("invalidate hash %s\n", id->name);
+	//printf("invalidate hash %s\n", id->name);
 	BLI_ghash_remove(hash, id, NULL, genlib_invalidate);
 	
 }
@@ -424,7 +428,7 @@ void BPY_idhash_invalidate(ID *id)
 void BPY_idhash_add(void *value)
 {
 	ID *id = ((BPyGenericLibObject *)value)->id;
-	printf("adding hash %s\n", id->name);
+	//printf("adding hash %s\n", id->name);
 	BLI_ghash_insert(idhash__internal(id), (void *)id, (void *)value);
 }	
 /* END OF BPY ID HASH */
@@ -536,10 +540,10 @@ void BPY_end_python( void )
 	EXPP_Library_Close(  );
 
 	// free id hashes
-	BLI_ghash_free(bpy_idhash_text, NULL, NULL);
-	BLI_ghash_free(bpy_idhash_scene, NULL, NULL);
-	BLI_ghash_free(bpy_idhash_group, NULL, NULL);
-	BLI_ghash_free(bpy_idhash_object, NULL, NULL);
+	BLI_ghash_free(bpy_idhash_text, NULL, NULL);	bpy_idhash_text = NULL;
+	BLI_ghash_free(bpy_idhash_scene, NULL, NULL);	bpy_idhash_scene = NULL;
+	BLI_ghash_free(bpy_idhash_group, NULL, NULL);	bpy_idhash_group = NULL;
+	BLI_ghash_free(bpy_idhash_object, NULL, NULL);	bpy_idhash_object = NULL;
 	
 	return;
 }
