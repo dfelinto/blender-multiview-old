@@ -482,7 +482,7 @@ static PyObject * BPyList_inplace_repeat(BPyListObject *self, int i)
 }
 
 static PySequenceMethods BPyList_as_sequence = {
-	(inquiry)BPyList_length,			/* sq_length */
+	(lenfunc)BPyList_length,			/* sq_length */
 	(binaryfunc)BPyList_concat,		/* sq_concat */
 	(ssizeargfunc)BPyList_repeat,		/* sq_repeat */
 	(ssizeargfunc)BPyList_item,		/* sq_item */
@@ -513,7 +513,7 @@ static int BPyList_ass_subscript(BPyListObject *self, PyObject *item, PyObject *
 }
 
 static PyMappingMethods BPyList_as_mapping = {
-	(inquiry)BPyList_length,
+	(lenfunc)BPyList_length,
 	(binaryfunc)BPyList_subscript,
 	(objobjargproc)BPyList_ass_subscript
 };

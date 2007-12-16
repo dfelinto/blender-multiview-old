@@ -73,6 +73,8 @@ int EXPP_Anonymous_compare( BPyAnonymousObject * a, BPyAnonymousObject * b );
 typedef int Py_ssize_t;
 #define PY_SSIZE_T_MAX INT_MAX
 #define PY_SSIZE_T_MIN INT_MIN
+#define lenfunc inquiry
+#define ssizeargfunc intargfunc
 #else  
 /* Py 2.5 and later */
 #define  intargfunc  ssizeargfunc
