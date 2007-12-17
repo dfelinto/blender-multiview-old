@@ -833,7 +833,7 @@ PyTypeObject BPyList_Type = {
 	BPyList_methods,	/* tp_methods */
 	0,					/* tp_members */
 	0, /*BPyList_getset,*/			/* tp_getset */
-	&PyList_Type,		/* tp_base */
+	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */ 
@@ -856,7 +856,7 @@ PyObject *BPyList_get( BPyGenericLibObject *genlib, void * type)
 	obj = (BPyListObject *)BPyList_Type.tp_new(&BPyList_Type, args, NULL);
 	BPyList_Type.tp_init((PyObject *)obj, args, NULL);
 	obj->genlib = genlib;
-	obj->type = (char)type;
+	obj->type = *((char *)type);
 	if (genlib) {/* this is a genlib user */
 		Py_INCREF(genlib); 
 	}
@@ -877,7 +877,7 @@ int BPyList_set( BPyGenericLibObject *genlib, PyObject * value, void * type)
 	 * Because that would mean imposing limits on the list being assigned and thats a NONO
 	 * */
 	PyObject *pyob;
-	if (!BPyList_CompatSeq(value, (char)type))
+	if (!BPyList_CompatSeq(value, *((char *)type)))
 		return ( EXPP_ReturnIntError( PyExc_ValueError, "this type cannot be assigned to a list" ) );
 	
 	pyob = BPyList_get(genlib, type);
@@ -887,6 +887,7 @@ int BPyList_set( BPyGenericLibObject *genlib, PyObject * value, void * type)
 
 PyObject *BPyListType_Init( void )
 {
+	BPyList_Type.tp_base= &PyList_Type;
 	PyType_Ready( &BPyList_Type );
 	return (PyObject *) &BPyList_Type;
 }

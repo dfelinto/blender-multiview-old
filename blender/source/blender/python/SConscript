@@ -3,6 +3,20 @@ Import ('env')
 
 sources = Split('BPY_interface.c BPY_menus.c') + env.Glob('api2_5x/*.c')
 
+if env['BF_SPLIT_SRC'] == 1:
+	numobj = len(sources) 	 
+	maxobj = 30 	 
+
+	numlibs = numobj / maxobj 	 
+	if (numobj % maxobj): 	 
+		numlibs = numlibs + 1 	 
+	subsources = [] 	 
+	 
+	if (env['OURPLATFORM'] == 'win32-mingw'): 	 
+		for i in range(numlibs - 1): 	 
+			subsources.append(sources[i*maxobj:(i+1)*maxobj]) 	 
+		subsources.append(sources[(numlibs-1)*maxobj:])
+
 incs = 'api2_5x ../blenkernel ../blenlib ../blenloader'
 incs += ' ../render/extern/include ../radiosity/extern/include'
 incs += ' ../makesdna #intern/guardedalloc #intern/bmfont ../imbuf ../include'
@@ -28,4 +42,8 @@ if env['WITH_BF_PYAPI_V24X']==1:
 	sources += env.Glob('api2_4x/*.c')
 	incs += ' api2_4x'
 
-env.BlenderLib ( libname='blender_python', sources = Split(sources), includes = Split(incs), defines = defs, libtype=['core','game2'], priority = [60,115] )
+if (env['BF_SPLIT_SRC'] == 1) and (env['OURPLATFORM'] == 'win32-mingw'): 	 
+	for i in range(numlibs): 	
+		env.BlenderLib ( libname='blender_python%d' % (i), sources = subsources[i], includes = Split(incs), defines = defs, libtype=['core','game2'], priority = [60,115] )
+else:
+	env.BlenderLib ( libname='blender_python', sources = Split(sources), includes = Split(incs), defines = defs, libtype=['core','game2'], priority = [60,115] )

@@ -148,7 +148,7 @@ PyTypeObject BPyFloat_Type = {
 
 PyObject *BPyFloatType_Init( void )
 {
-	PyFloat_Type.tp_base = &PyFloat_Type;
+	BPyFloat_Type.tp_base = &PyFloat_Type;
 	PyType_Ready( &BPyFloat_Type );
 	return (PyObject *) &BPyFloat_Type;
 }

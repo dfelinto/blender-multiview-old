@@ -46,6 +46,7 @@
 #include "BKE_object.h"		/* during_scriptlink() */
 #include "BKE_text.h"
 #include "BKE_constraint.h" /* for bConstraintOb */
+#include "BKE_idprop.h"
 
 #include "DNA_curve_types.h" /* for struct IpoDriver */
 #include "DNA_ID.h" /* ipo driver */

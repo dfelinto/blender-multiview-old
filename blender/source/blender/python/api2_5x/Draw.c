@@ -1100,7 +1100,6 @@ static PyObject *Method_Toggle( PyObject * self, PyObject * args )
 	 But it works anyway.
 	 XXX This is condemned to be dinosource in future - it's a hack.
 	 */
-extern void spacescript_do_pywin_buttons( SpaceScript * sc, unsigned short event ); /* moved to BPY_interface.c */
 static void py_slider_update( void *butv, void *data2_unused )
 {
 	uiBut *but = butv;

@@ -299,7 +299,7 @@ static int GLBuffer_ass_item(BPyGLBufferObject *self, int i, PyObject *v)
 	}
 	
 	if (self->ndimensions!=1) {
-		BPyGLBufferObject *row= GLBuffer_item(self, i);
+		BPyGLBufferObject *row= (BPyGLBufferObject *)GLBuffer_item(self, i);
 		int ret;
 
 		if (!row) return -1;

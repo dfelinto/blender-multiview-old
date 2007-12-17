@@ -684,7 +684,7 @@ PyTypeObject BPyLayerSet_Type = {
 	LayerSet_methods,	/* tp_methods */
 	0,					/* tp_members */
 	0, /*LayerSet_getset,*/			/* tp_getset */
-	&PySet_Type,		/* tp_base */
+	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */ 
@@ -733,6 +733,7 @@ int LayerSet_AssignPyObject( BPyGenericLibObject *genlib, PyObject * value)
 
 PyObject *LayerSetType_Init( void )
 {
+	BPyLayerSet_Type.tp_base= &PySet_Type;
 	PyType_Ready( &BPyLayerSet_Type );
 	return (PyObject *) &BPyLayerSet_Type;
 }
