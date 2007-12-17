@@ -70,7 +70,6 @@ int EXPP_Anonymous_compare( BPyAnonymousObject * a, BPyAnonymousObject * b );
 
 /*  for pre Py 2.5 */
 #if PY_VERSION_HEX < 0x02050000
-typedef int Py_ssize_t;
 #define PY_SSIZE_T_MAX INT_MAX
 #define PY_SSIZE_T_MIN INT_MIN
 #define lenfunc inquiry
@@ -80,8 +79,23 @@ typedef int Py_ssize_t;
 #define  intargfunc  ssizeargfunc
 #define intintargfunc  ssizessizeargfunc 
 #endif
-
 #endif
+
+/* Py 2.4 dosnt have these */
+#ifndef ssizessizeargfunc 
+#define ssizessizeargfunc intintargfunc
+#endif
+
+#ifndef ssizeobjargproc
+#define ssizeobjargproc intintargfunc
+#endif
+
+#ifndef ssizessizeobjargproc
+#define ssizessizeobjargproc intintobjargproc
+#endif
+
+
+
 
 /* name of list of Armature weak refs built into __main__ */
 #define ARM_WEAKREF_LIST_NAME "__arm_weakrefs"
