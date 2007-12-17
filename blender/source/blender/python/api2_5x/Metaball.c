@@ -228,7 +228,7 @@ PyTypeObject BPyMetaball_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -1003,6 +1003,7 @@ PyObject *MetaballType_Init( void )
 		BPyMetaball_Type.tp_dict = PyDict_New();
 		PyConstCategory_AddObjectToDict( BPyMetaball_Type.tp_dict, &updateTypes);
 		PyType_Ready( &BPyMetaball_Type ) ;
+		BPyMetaball_Type.tp_dealloc = (destructor)&PyObject_Del;
 	}
 	return (PyObject *) &BPyMetaball_Type ;
 }

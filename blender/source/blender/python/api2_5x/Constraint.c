@@ -257,7 +257,7 @@ PyTypeObject BPyConstraint_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -2138,7 +2138,7 @@ PyTypeObject ConstraintSeq_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -2607,6 +2607,7 @@ PyObject *ConstraintType_Init( void )
 		BPyConstraint_Type.tp_dict = PyDict_New();
 		PyConstCategory_AddObjectToDict( BPyConstraint_Type.tp_dict, &constraintTypes );
 		PyType_Ready( &BPyConstraint_Type ) ;
+		BPyConstraint_Type.tp_dealloc = (destructor)&PyObject_Del;
 	}
 	return (PyObject *) &BPyConstraint_Type ;
 }
@@ -2614,6 +2615,7 @@ PyObject *ConstraintType_Init( void )
 PyObject *ConstraintSeqType_Init( void )
 {
 	PyType_Ready( &ConstraintSeq_Type );
+	ConstraintSeq_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &ConstraintSeq_Type;
 }
 

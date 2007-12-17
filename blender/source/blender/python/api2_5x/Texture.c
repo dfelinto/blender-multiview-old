@@ -1230,7 +1230,7 @@ PyTypeObject BPyTexture_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -1321,6 +1321,7 @@ PyObject *TextureType_Init( void )
 		PyConstCategory_AddObjectToDict( BPyTexture_Type.tp_dict, &envmapTypes );
 		PyConstCategory_AddObjectToDict( BPyTexture_Type.tp_dict, &voronoiTypes );
 		PyType_Ready( &BPyTexture_Type ) ;
+		BPyTexture_Type.tp_dealloc = (destructor)&PyObject_Del;
 	}
 	return (PyObject *) &BPyTexture_Type ;
 }

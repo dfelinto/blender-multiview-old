@@ -1,4 +1,6 @@
 /*
+ * $Id: bpy_float.c 10235 2007-03-10 11:47:24Z campbellbarton $
+ *
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -134,7 +136,7 @@ PyTypeObject BPyFloat_Type = {
 	BPyFloat_methods,	/* tp_methods */
 	0,					/* tp_members */
 	BPyFloat_getset,	/* tp_getset */
-	&PyFloat_Type,		/* tp_base */
+	0,					/* tp_base */
 	0,					/* tp_dict */
 	0,					/* tp_descr_get */
 	0,					/* tp_descr_set */ 
@@ -146,6 +148,7 @@ PyTypeObject BPyFloat_Type = {
 
 PyObject *BPyFloatType_Init( void )
 {
+	PyFloat_Type.tp_base = &PyFloat_Type;
 	PyType_Ready( &BPyFloat_Type );
 	return (PyObject *) &BPyFloat_Type;
 }

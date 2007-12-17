@@ -571,7 +571,7 @@ PyTypeObject BPyLibBlockSeq_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -646,6 +646,7 @@ PyTypeObject BPyLibBlockSeq_Type = {
 PyObject *LibBlockSeqType_Init( void )
 {
 	PyType_Ready( &BPyLibBlockSeq_Type );
+	BPyLibBlockSeq_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyLibBlockSeq_Type;
 }
 

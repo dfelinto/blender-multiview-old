@@ -211,7 +211,7 @@ PyTypeObject BPyModifier_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -1380,7 +1380,7 @@ PyTypeObject BPyModSeq_Type = {
 
 	/* Methods to implement standard operations */
 
-	NULL,						/* destructor tp_dealloc; */
+	NULL,                       /* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -1673,6 +1673,7 @@ PyObject *ModifierType_Init( void )
 		BPyModifier_Type.tp_dict = PyDict_New();
 		PyConstCategory_AddObjectToDict( BPyModifier_Type.tp_dict, &modifierTypes );
 		PyType_Ready( &BPyModifier_Type ) ;
+		BPyModifier_Type.tp_dealloc = (destructor)&PyObject_Del;
 	}
 	return (PyObject *) &BPyModifier_Type ;
 }

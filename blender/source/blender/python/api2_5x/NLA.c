@@ -922,7 +922,7 @@ PyTypeObject BPyActionStrip_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -1367,6 +1367,7 @@ PyObject *ActionStripType_Init( void )
 		PyConstCategory_AddObjectToDict( BPyActionStrip_Type.tp_dict, &strideAxis );
 		PyConstCategory_AddObjectToDict( BPyActionStrip_Type.tp_dict, &blendMode );
 		PyType_Ready( &BPyActionStrip_Type ) ;
+		BPyActionStrip_Type.tp_dealloc = (destructor)&PyObject_Del;
 	}
 	return (PyObject *) &BPyActionStrip_Type ;
 }

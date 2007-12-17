@@ -537,7 +537,7 @@ PyTypeObject BPyIDGroup_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,     /* getattrfunc tp_getattr; */
 	NULL,     /* setattrfunc tp_setattr; */
@@ -719,7 +719,7 @@ PyTypeObject BPyIDArray_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,     /* getattrfunc tp_getattr; */
 	NULL,     /* setattrfunc tp_setattr; */
@@ -837,7 +837,7 @@ PyTypeObject BPyIDGroupIter_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,     /* getattrfunc tp_getattr; */
 	NULL,     /* setattrfunc tp_setattr; */
@@ -889,16 +889,19 @@ PyTypeObject BPyIDGroupIter_Type = {
 PyObject *IDGroupType_Init( void )
 {
 	PyType_Ready( &BPyIDGroup_Type );
+	BPyIDGroup_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyIDGroup_Type;
 }
 PyObject *IDGroupIterType_Init( void )
 {
 	PyType_Ready( &BPyIDGroupIter_Type );
+	BPyIDGroupIter_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyIDGroupIter_Type;
 }
 PyObject *IDArrayType_Init( void )
 {
 	PyType_Ready( &BPyIDArray_Type );
+	BPyIDArray_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyIDArray_Type;
 }
 

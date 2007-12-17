@@ -439,7 +439,7 @@ static int MTex_setTexture( BPyMTexObject *self, PyObject *value )
 		return 0;	
 	}
 	
-	return EXPP_ReturnPyObjError( PyExc_TypeError,
+	return EXPP_ReturnIntError( PyExc_TypeError,
 			"expected None or a Texture" );
 	
 }
@@ -733,7 +733,7 @@ PyTypeObject BPyMTex_Type = {
 	sizeof( BPyMTexObject ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
-	(destructor)PyObject_Del, /* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	0,			/* tp_print */
 	0,	/* tp_getattr */
 	0,	/* tp_setattr */
@@ -782,6 +782,7 @@ PyObject *MTexType_Init( void )
 		PyConstCategory_AddObjectToDict( BPyMTex_Type.tp_dict, &mappingTypes );
 		PyConstCategory_AddObjectToDict( BPyMTex_Type.tp_dict, &blendTypes );
 		PyType_Ready( &BPyMTex_Type ) ;
+		BPyMTex_Type.tp_dealloc = (destructor)&PyObject_Del;
 	}
 	return (PyObject *) &BPyMTex_Type ;
 }

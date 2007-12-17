@@ -127,7 +127,7 @@ PyTypeObject BPyCharRGBA_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -467,5 +467,6 @@ static PyObject *CharRGBA_repr( BPyCharRGBAObject * self )
 PyObject *CharRGBAType_Init( void )
 {
 	PyType_Ready( &BPyCharRGBA_Type );
+	BPyCharRGBA_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyCharRGBA_Type;
 }

@@ -39,6 +39,7 @@
 #include "BKE_main.h"
 
 #include "DNA_scene_types.h"
+#include "gen_utils.h"
 
 /*****************************************************************************/
 /* Global variables	 */
@@ -75,3 +76,4 @@ PyObject* m_state_init(void)
 	
 	return module;
 }
+

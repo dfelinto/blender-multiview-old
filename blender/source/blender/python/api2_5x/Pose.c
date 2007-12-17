@@ -1,5 +1,5 @@
 /* 
- * $Id:
+ * $Id: Pose.c 11446 2007-07-31 16:11:32Z campbellbarton $
  *
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
@@ -1154,7 +1154,7 @@ PyTypeObject BPyPoseBone_Type = {
 	"PoseBone",							//tp_name
 	sizeof(BPyPoseBoneObject),			//tp_basicsize
 	0,										//tp_itemsize
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	0,										//tp_print
 	0,										//tp_getattr
 	0,										//tp_setattr
@@ -1282,6 +1282,7 @@ PyObject *PoseType_Init(void)
 PyObject *PoseBoneType_Init(void)
 {
 	PyType_Ready( &BPyPoseBone_Type );
+	BPyPoseBone_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyPoseBone_Type;
 }
 

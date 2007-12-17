@@ -134,7 +134,7 @@ PyTypeObject BPyKey_Type = {
 	sizeof( BPyKeyObject ),				/*tp_basicsize */
 	0,								/*tp_itemsize */
 	/* methods */
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	0,								/*tp_print */
 	0,								/*tp_getattr */
 	0,								/*tp_setattr */
@@ -211,7 +211,7 @@ PyTypeObject BPyKeyBlock_Type = {
 	sizeof( BPyKeyBlockObject ),	/*tp_basicsize */
 	0,			/*tp_itemsize */
 	/* methods */
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	( printfunc ) 0,				/*tp_print */
 	( getattrfunc ) 0,	/*tp_getattr */
 	( setattrfunc ) 0,			 	/*tp_setattr */
@@ -563,11 +563,13 @@ static PyObject *KeyBlock_getData( PyObject * self )
 PyObject *KeyType_Init( void )
 {
 	PyType_Ready( &BPyKey_Type );
+	BPyKey_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyKey_Type;
 }
 
 PyObject *KeyBlockType_Init( void )
 {
 	PyType_Ready( &BPyKeyBlock_Type );
+	BPyKeyBlock_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyKeyBlock_Type;
 }

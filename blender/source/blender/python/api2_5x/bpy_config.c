@@ -389,7 +389,7 @@ PyTypeObject BPyConfig_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -465,5 +465,6 @@ PyTypeObject BPyConfig_Type = {
 PyObject *ConfigType_Init( void )
 {
 	PyType_Ready( &BPyConfig_Type );
+	BPyConfig_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyConfig_Type;
 }

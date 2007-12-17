@@ -211,6 +211,7 @@ PyObject *MaterialType_Init( void )
 		PyConstCategory_AddObjectToDict( BPyMaterial_Type.tp_dict, &diffShader );
 		PyConstCategory_AddObjectToDict( BPyMaterial_Type.tp_dict, &specShader );
 		PyType_Ready( &BPyMaterial_Type ) ;
+		BPyMaterial_Type.tp_dealloc = (destructor)&PyObject_Del;
 	}
 	return (PyObject *) &BPyMaterial_Type ;
 }
@@ -761,7 +762,7 @@ PyTypeObject BPyMaterial_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */

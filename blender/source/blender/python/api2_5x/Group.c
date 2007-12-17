@@ -377,7 +377,7 @@ PyTypeObject BPyGroup_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -699,6 +699,7 @@ PyTypeObject BPyGroupObSeq_Type = {
 PyObject * GroupType_Init( void )
 {
 	PyType_Ready( &BPyGroup_Type );
+	BPyGroup_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyGroup_Type;
 }
 

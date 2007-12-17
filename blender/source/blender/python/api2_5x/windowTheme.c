@@ -115,7 +115,7 @@ PyTypeObject BPyThemeSpace_Type = {
 	sizeof( BPyThemeSpaceObject ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	0,			/* tp_print */
 	( getattrfunc ) ThemeSpace_getAttr,	/* tp_getattr */
 	( setattrfunc ) ThemeSpace_setAttr,	/* tp_setattr */
@@ -351,7 +351,7 @@ PyTypeObject BPyThemeUI_Type = {
 	sizeof( BPyThemeUIObject ),	/* tp_basicsize */
 	0,			/* tp_itemsize */
 	/* methods */
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	0,			/* tp_print */
 	( getattrfunc ) ThemeUI_getAttr,	/* tp_getattr */
 	( setattrfunc ) ThemeUI_setAttr,	/* tp_setattr */
@@ -538,7 +538,7 @@ PyTypeObject Theme_Type = {
 	sizeof( BPyThemeObject ),	/* tp_basicsize */
 	0,							/* tp_itemsize */
 	/* methods */
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	0,							/* tp_print */
 	0,							/* tp_getattr */
 	0,							//(setattrfunc) Theme_setAttr,        /* tp_setattr */
@@ -781,17 +781,20 @@ PyObject *ThemeSpaceType_Init( void )
 		BPyThemeSpace_Type.tp_dict = PyDict_New();
 		PyConstCategory_AddObjectToDict( BPyThemeSpace_Type.tp_dict, &themeSpaceTypes );
 		PyType_Ready( &BPyThemeSpace_Type ) ;
+		BPyThemeSpace_Type.tp_dealloc = (destructor)&PyObject_Del;
 	}
 	return (PyObject *) &BPyThemeSpace_Type ;
 }
 PyObject *ThemeUIType_Init( void )
 {
 	PyType_Ready( &BPyThemeUI_Type );
+	BPyThemeUI_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyThemeUI_Type;
 }
 PyObject *ThemeType_Init( void )
 {
 	PyType_Ready( &Theme_Type );
+	Theme_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &Theme_Type;
 }
 

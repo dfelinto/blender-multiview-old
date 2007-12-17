@@ -346,7 +346,7 @@ PyTypeObject Const_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -435,7 +435,7 @@ PyTypeObject ConstCategory_Type = {
 
 	/* Methods to implement standard operations */
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
@@ -608,6 +608,7 @@ PyObject * ConstType_Init( void )
 {
 	/* perform type initialization if it hasn't been done already */
 	PyType_Ready( &Const_Type );
+	Const_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &Const_Type;
 }
 
@@ -615,5 +616,6 @@ PyObject * ConstCategoryType_Init( void )
 {
 	/* perform type initialization if it hasn't been done already */
 	PyType_Ready( &ConstCategory_Type );	
+	ConstCategory_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &ConstCategory_Type;
 }

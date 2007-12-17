@@ -203,7 +203,7 @@ PyTypeObject BPyParticle_Type = {
 	sizeof( BPyParticleObject ),
 	0,
 
-	(destructor)PyObject_Del,	/* tp_dealloc */
+	NULL,                       /* tp_dealloc; */
 	0,
 	( getattrfunc ) ParticleGetAttr,
 	( setattrfunc ) ParticleSetAttr,
@@ -985,5 +985,6 @@ struct Particle *ParticleFromPyObject( PyObject * py_obj )
 PyObject *ParticleType_Init( void )
 {
 	PyType_Ready( &BPyParticle_Type );
+	BPyParticle_Type.tp_dealloc = (destructor)&PyObject_Del;
 	return (PyObject *) &BPyParticle_Type;
 }
