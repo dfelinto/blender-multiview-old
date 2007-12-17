@@ -921,7 +921,7 @@ static PyObject *V24_M_Window_GetPerspMatrix( PyObject * self )
 static int update_armature_weakrefs()
 {
 	/* stuff for armature weak refs */
-	char *list_name = ARM_WEAKREF_LIST_NAME;
+	char *list_name = V24_ARM_WEAKREF_LIST_NAME;
 	PyObject *maindict = NULL, *armlist = NULL;
 	PyObject *pyarmature = NULL;
 	int x;

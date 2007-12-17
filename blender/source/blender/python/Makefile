@@ -35,7 +35,7 @@ SOURCEDIR = source/blender/python
 
 DIRS = api2_5x
 
-ifeq ($(WITH_PYAPI_V24X), true)
+ifeq ($(WITH_BPYAPI_V24X), true)
 	DIRS += api2_4x
 endif
 

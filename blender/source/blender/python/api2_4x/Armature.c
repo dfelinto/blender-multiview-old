@@ -1328,7 +1328,7 @@ PyObject *V24_Armature_RebuildBones(PyObject *pyarmature)
 /* internal func to remove weakref from weakref list */
 PyObject * V24_arm_weakref_callback_weakref_dealloc(PyObject *self, PyObject *weakref)
 {
-	char *list_name = ARM_WEAKREF_LIST_NAME;
+	char *list_name = V24_ARM_WEAKREF_LIST_NAME;
 	PyObject *maindict = NULL, *armlist = NULL;
 	int i;
 	
@@ -1356,7 +1356,7 @@ PyObject *V24_Armature_CreatePyObject(struct bArmature *armature)
 	V24_BPy_Armature *py_armature = NULL;
 	PyObject *maindict = NULL, *weakref = NULL;
 	PyObject *armlist = NULL;  /* list of armature weak refs */
-	char *list_name = ARM_WEAKREF_LIST_NAME;
+	char *list_name = V24_ARM_WEAKREF_LIST_NAME;
 	int i;
 
 	//put a weakreference in __main__

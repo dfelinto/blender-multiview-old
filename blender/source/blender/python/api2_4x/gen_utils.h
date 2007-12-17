@@ -77,7 +77,7 @@ typedef int Py_ssize_t;
 #endif
 
 /* name of list of Armature weak refs built into __main__ */
-#define ARM_WEAKREF_LIST_NAME "__arm_weakrefs"
+#define V24_ARM_WEAKREF_LIST_NAME "__V24_arm_weakrefs"
 
 int V24_EXPP_FloatsAreEqual(float A, float B, int floatSteps);
 int V24_EXPP_VectorsAreEqual(float *vecA, float *vecB, int size, int floatSteps);

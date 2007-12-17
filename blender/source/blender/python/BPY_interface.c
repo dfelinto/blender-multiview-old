@@ -66,7 +66,6 @@
 #include "api2_5x/gen_utils.h"
 #include "api2_5x/gen_library.h" /* GetPyObjectFromID */
 #include "api2_5x/bpy_gl.h" 
-#include "api2_5x/bpy.h"
 #include "api2_5x/bpy_state.h"
 #include "api2_5x/Camera.h"
 #include "api2_5x/Draw.h"
@@ -76,14 +75,14 @@
 #include "api2_5x/bpy.h" /* for the new "bpy" module */
 
 /* old 2.4x api */
-#ifdef WITH_PYAPI_V24X
+#ifdef WITH_BPYAPI_V24X
 #include "api2_4x/Blender.h"
+#include "api2_4x/gen_utils.h"
 #endif
 
 /*these next two are for pyconstraints*/
 #include "api2_5x/IDProp.h"
 #include "api2_5x/matrix.h"
-
 #include "api2_5x/gen_utils.h"
 #include "api2_5x/gen_library.h"
 #include "blendef.h"
@@ -267,16 +266,25 @@ void BPY_spacescript_do_pywin_event( SpaceScript * sc, unsigned short event,
 	 * inside scriptlinks, so this is ok) */
 	if( sc->script->py_event ) {
 		int pass_ascii = 0;
+		PyObject *pyval;
 		if (ascii > 31 && ascii != 127) {
 			pass_ascii = 1;
-			EXPP_dict_set_item_str(g_bpystatedict, "event",
-					PyInt_FromLong((long)ascii));
+			pyval = PyInt_FromLong((long)ascii);
+#ifdef WITH_BPYAPI_V24X
+			EXPP_dict_set_item_str(V24_g_blenderdict, "event", pyval);
+#endif
 		}
+		
 		exec_callback( sc, sc->script->py_event,
 			Py_BuildValue( "(ii)", event, val ) );
-		if (pass_ascii)
-			EXPP_dict_set_item_str(g_bpystatedict, "event",
-					PyString_FromString(""));
+		
+		if (pass_ascii) {
+			pyval = PyString_FromString("");
+			EXPP_dict_set_item_str(g_bpystatedict, "event", pyval);
+#ifdef WITH_BPYAPI_V24X
+			EXPP_dict_set_item_str(V24_g_blenderdict, "event", pyval);
+#endif
+		}
 	}
 }
 
@@ -285,12 +293,10 @@ void BPY_spacescript_do_pywin_event( SpaceScript * sc, unsigned short event,
  * set up a weakref list for Armatures
  *    creates list in __main__ module dict 
  */
-  
-int setup_armature_weakrefs()
+static int setup_armature_weakrefs__internal(char *list_name)
 {
 	PyObject *maindict;
 	PyObject *main_module;
-	char *list_name = ARM_WEAKREF_LIST_NAME;
 
 	main_module = PyImport_AddModule( "__main__");
 	if(main_module){
@@ -317,13 +323,25 @@ int setup_armature_weakrefs()
 	return 1;
 }
 
+/* This just accounts for there being 2 weakref armature lists */
+int setup_armature_weakrefs( void )
+{
+	if (!setup_armature_weakrefs__internal(ARM_WEAKREF_LIST_NAME))
+		return 0;
+#ifdef WITH_BPYAPI_V24X
+	if (!setup_armature_weakrefs__internal(V24_ARM_WEAKREF_LIST_NAME))
+		return 0;
+#endif
+	return 1;
+}
+
 /* Declares the modules and their initialization functions
  * These are TOP-LEVEL modules e.g. import `module` - there is no
  * support for packages here e.g. import `package.module` */
 
 static struct _inittab BPyInittab_Modules[] = {
 	{"bpy", m_bpy_init},
-#ifdef WITH_PYAPI_V24X
+#ifdef WITH_BPYAPI_V24X
 	{"Blender", V24_M_Blender_Init},
 #endif
 	{NULL, NULL}
@@ -490,11 +508,13 @@ void BPY_start_python( int argc, char **argv )
 	init_ourImport(  );
 	init_ourReload(  );
 
-	//init a global dictionary
+	/*init a global dictionary and module*/
 	g_bpystatedict = NULL;
-	
-	/* Init the module here! */
 	m_bpy_init();
+#ifdef WITH_BPYAPI_V24X
+	V24_g_blenderdict = NULL;
+	V24_M_Blender_Init();
+#endif
 	
 	//Look for a python installation
 	init_syspath( first_time ); /* not first_time: some msgs are suppressed */
