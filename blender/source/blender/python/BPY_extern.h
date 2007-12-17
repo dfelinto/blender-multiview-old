@@ -130,10 +130,10 @@ extern "C" {
 	void BPY_free_finished_script( struct Script *script );
 
 /* tell python were removing this ID so python can NULL the pointers */
-	void BPY_idhash_add(void * value);
-	void *BPY_idhash_get(ID *id);
-	void BPY_idhash_remove(ID *id);
-	void BPY_idhash_invalidate(ID *id);
+	void BPY_idhash_add(void *value);
+	void *BPY_idhash_get(struct ID *id);
+	void BPY_idhash_remove(struct ID *id);
+	void BPY_idhash_invalidate(struct ID *id);
 
 /* void BPY_Err_Handle(struct Text *text); */
 /* void BPY_clear_bad_scriptlink(struct ID *id, struct Text *byebye); */
