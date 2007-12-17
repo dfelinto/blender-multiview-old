@@ -48,7 +48,7 @@
 #include "BLI_blenlib.h"
 #include "MEM_guardedalloc.h"
 #include "DNA_userdef_types.h"	/* for U.pythondir */
-#include "api2_5x/EXPP_interface.h" /* for bpy_gethome() */
+#include "api2_2x/EXPP_interface.h" /* for bpy_gethome() */
 
 #define BPYMENU_DATAFILE "Bpymenus"
 #define MAX_DIR_DEPTH 4 /* max depth for traversing scripts dirs */

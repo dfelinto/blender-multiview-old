@@ -30,11 +30,8 @@
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
  */
 
-
 #ifndef BPY_EXTERN_H
 #define BPY_EXTERN_H
-
-#define EXPP_BUTTON_EVENTS_OFFSET 1001
 
 extern char bprogname[];	/* holds a copy of argv[0], from creator.c */
 
@@ -124,16 +121,8 @@ extern "C" {
 	void BPY_spacescript_do_pywin_draw( struct SpaceScript *sc );
 	void BPY_spacescript_do_pywin_event( struct SpaceScript *sc,
 					     unsigned short event, short val, char ascii );
-	void BPY_spacescript_do_pywin_event( struct SpaceScript *sc, 
-						 unsigned short event, short val, char ascii );
 	void BPY_clear_script( struct Script *script );
 	void BPY_free_finished_script( struct Script *script );
-
-/* tell python were removing this ID so python can NULL the pointers */
-	void BPY_idhash_add(void *value);
-	void *BPY_idhash_get(struct ID *id);
-	void BPY_idhash_remove(struct ID *id);
-	void BPY_idhash_invalidate(struct ID *id);
 
 /* void BPY_Err_Handle(struct Text *text); */
 /* void BPY_clear_bad_scriptlink(struct ID *id, struct Text *byebye); */

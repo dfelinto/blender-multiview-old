@@ -32,11 +32,6 @@
 # Bounces make to subdirectories.
 
 SOURCEDIR = source/blender/python
-
-DIRS = api2_5x
-
-ifeq ($(WITH_BPYAPI_V24X), true)
-	DIRS += api2_4x
-endif
+DIRS = api2_2x
 
 include nan_subdirs.mk

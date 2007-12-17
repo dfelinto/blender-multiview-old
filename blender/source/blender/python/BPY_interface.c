@@ -36,7 +36,6 @@
 #include "compile.h"		/* for the PyCodeObject */
 #include "eval.h"		/* for PyEval_EvalCode */
 #include "BLI_blenlib.h"	/* for BLI_last_slash() */
-#include "BLI_ghash.h"	/* for tracking removed data */
 #include "BIF_interface.h"	/* for pupmenu() */
 #include "BIF_space.h"
 #include "BIF_screen.h"
@@ -62,31 +61,22 @@
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_armature.h"
-#include "api2_5x/EXPP_interface.h"
-#include "api2_5x/gen_utils.h"
-#include "api2_5x/gen_library.h" /* GetPyObjectFromID */
-#include "api2_5x/bpy_gl.h" 
-#include "api2_5x/bpy_state.h"
-#include "api2_5x/Camera.h"
-#include "api2_5x/Draw.h"
-#include "api2_5x/Object.h"
-#include "api2_5x/Registry.h"
-#include "api2_5x/Pose.h"
-#include "api2_5x/bpy.h" /* for the new "bpy" module */
-
-/* old 2.4x api */
-#ifdef WITH_BPYAPI_V24X
-#include "api2_4x/Blender.h"
-#include "api2_4x/gen_utils.h"
-#endif
+#include "api2_2x/EXPP_interface.h"
+#include "api2_2x/constant.h"
+#include "api2_2x/gen_utils.h"
+#include "api2_2x/gen_library.h" /* GetPyObjectFromID */
+#include "api2_2x/BGL.h" 
+#include "api2_2x/Blender.h"
+#include "api2_2x/Camera.h"
+#include "api2_2x/Draw.h"
+#include "api2_2x/Object.h"
+#include "api2_2x/Registry.h"
+#include "api2_2x/Pose.h"
+#include "api2_2x/bpy.h" /* for the new "bpy" module */
 
 /*these next two are for pyconstraints*/
-#include "api2_5x/IDProp.h"
-#include "api2_5x/matrix.h"
-#include "api2_5x/gen_utils.h"
-#include "api2_5x/gen_library.h"
-#include "blendef.h"
-#include "BKE_utildefines.h"
+#include "api2_2x/IDProp.h"
+#include "api2_2x/matrix.h"
 
 /* for scriptlinks */
 #include "DNA_lamp_types.h"
@@ -95,208 +85,27 @@
 #include "DNA_scene_types.h"
 #include "DNA_material_types.h"
 
-#include "DNA_ID.h"
-
-#include "mydevice.h"		/*@ for all the event constants, only because we have to access QKEY etc */
-
-/* bpy_registryDict is declared in api2_5x/Registry.h and defined
- * in api2_5x/Registry.c
+/* bpy_registryDict is declared in api2_2x/Registry.h and defined
+ * in api2_2x/Registry.c
  * This Python dictionary will be used to store data that scripts
  * choose to preserve after they are executed, so user changes can be
  * restored next time the script is used.  Check the Blender.Registry module. 
  */
-/*#include "api2_5x/Registry.h" */
+/*#include "api2_2x/Registry.h" */
 
 /* for pydrivers (ipo drivers defined by one-line Python expressions) */
 PyObject *bpy_pydriver_Dict = NULL;
-
-
-/*This is needed for button callbacks.  Any button that uses a callback gets added to this list.
-  On the C side of drawing begin, this list should be cleared.
-  Each entry is a tuple of the form (button, callback py object)
-*/
-PyObject *M_Button_List = NULL;
-
-void BPy_Set_DrawButtonsList(void *list)
-{
-	M_Button_List = list;
-}
-
-/*this MUST be called after doing UI stuff.*/
-void BPy_Free_DrawButtonsList(void)
-{
-	/*Clear the list.*/
-	if (M_Button_List) {
-		PyList_SetSlice(M_Button_List, 0, PyList_Size(M_Button_List), NULL);
-		Py_DECREF(M_Button_List);
-		M_Button_List = NULL;
-	}
-}
-
-void exit_pydraw( SpaceScript * sc, short err )
-{
-	Script *script = NULL;
-
-	if( !sc || !sc->script )
-		return;
-
-	script = sc->script;
-
-	if( err ) {
-		PyErr_Print(  );
-		script->flags = 0;	/* mark script struct for deletion */
-		error( "Python script error: check console" );
-		scrarea_queue_redraw( sc->area );
-	}
-
-	BPy_Set_DrawButtonsList(sc->but_refs);
-	BPy_Free_DrawButtonsList(); /*clear all temp button references*/
-	sc->but_refs = NULL;
-	
-	Py_XDECREF( ( PyObject * ) script->py_draw );
-	Py_XDECREF( ( PyObject * ) script->py_event );
-	Py_XDECREF( ( PyObject * ) script->py_button );
-
-	script->py_draw = script->py_event = script->py_button = NULL;
-}
-
-static void exec_callback( SpaceScript * sc, PyObject * callback,
-			   PyObject * args )
-{
-	PyObject *result = PyObject_CallObject( callback, args );
-
-	if( result == NULL && sc->script ) {	/* errors in the script */
-
-		if( sc->script->lastspace == SPACE_TEXT ) {	/*if it can be an ALT+P script */
-			Text *text = G.main->text.first;
-
-			while( text ) {	/* find it and free its compiled code */
-
-				if( !strcmp
-				    ( text->id.name + 2,
-				      sc->script->id.name + 2 ) ) {
-					BPY_free_compiled_text( text );
-					break;
-				}
-
-				text = text->id.next;
-			}
-		}
-		exit_pydraw( sc, 1 );
-	}
-
-	Py_XDECREF( result );
-	Py_DECREF( args );
-}
-
-/* BPY_spacescript_do_pywin_draw, the static spacescript_do_pywin_buttons and
- * BPY_spacescript_do_pywin_event are the three functions responsible for
- * calling the draw, buttons and event callbacks registered with Draw.Register
- * (see Method_Register below).  They are called (only the two BPY_ ones)
- * from blender/src/drawscript.c */
-
-void BPY_spacescript_do_pywin_draw( SpaceScript * sc )
-{
-	uiBlock *block;
-	char butblock[20];
-	Script *script = sc->script;
-
-	sprintf( butblock, "win %d", curarea->win );
-	block = uiNewBlock( &curarea->uiblocks, butblock, UI_EMBOSSX,
-			    UI_HELV, curarea->win );
-
-	if( script->py_draw ) {
-		if (sc->but_refs) {
-			BPy_Set_DrawButtonsList(sc->but_refs);
-			BPy_Free_DrawButtonsList(); /*clear all temp button references*/
-		}
-		sc->but_refs = PyList_New(0);
-		BPy_Set_DrawButtonsList(sc->but_refs);
-		
-		glPushAttrib( GL_ALL_ATTRIB_BITS );
-		exec_callback( sc, script->py_draw, Py_BuildValue( "()" ) );
-		glPopAttrib(  );
-	} else {
-		glClearColor( 0.4375, 0.4375, 0.4375, 0.0 );
-		glClear( GL_COLOR_BUFFER_BIT );
-	}
-
-	uiDrawBlock( block );
-
-	curarea->win_swap = WIN_BACK_OK;
-}
-
-void spacescript_do_pywin_buttons( SpaceScript * sc,
-					  unsigned short event )
-{
-	if( sc->script->py_button )
-		exec_callback( sc, sc->script->py_button,
-			       Py_BuildValue( "(i)", event ) );
-}
-
-void BPY_spacescript_do_pywin_event( SpaceScript * sc, unsigned short event,
-	short val, char ascii )
-{
-	if( event == QKEY && G.qual & ( LR_ALTKEY | LR_CTRLKEY ) ) {
-		/* finish script: user pressed ALT+Q or CONTROL+Q */
-		Script *script = sc->script;
-
-		exit_pydraw( sc, 0 );
-
-		script->flags &= ~SCRIPT_GUI;	/* we're done with this script */
-
-		return;
-	}
-
-	if (val) {
-
-		if (uiDoBlocks( &curarea->uiblocks, event, 1 ) != UI_NOTHING) event = 0;
-
-		if (event == UI_BUT_EVENT) {
-			/* check that event is in free range for script button events;
-			 * read the comment before check_button_event() below to understand */
-			if (val >= EXPP_BUTTON_EVENTS_OFFSET && val < 0x4000)
-				spacescript_do_pywin_buttons(sc, val - EXPP_BUTTON_EVENTS_OFFSET);
-			return;
-		}
-	}
-
-	/* We use the "event" main module var, used by scriptlinks, to pass the ascii
-	 * value to event callbacks (gui/event/button callbacks are not allowed
-	 * inside scriptlinks, so this is ok) */
-	if( sc->script->py_event ) {
-		int pass_ascii = 0;
-		PyObject *pyval;
-		if (ascii > 31 && ascii != 127) {
-			pass_ascii = 1;
-			pyval = PyInt_FromLong((long)ascii);
-#ifdef WITH_BPYAPI_V24X
-			EXPP_dict_set_item_str(V24_g_blenderdict, "event", pyval);
-#endif
-		}
-		
-		exec_callback( sc, sc->script->py_event,
-			Py_BuildValue( "(ii)", event, val ) );
-		
-		if (pass_ascii) {
-			pyval = PyString_FromString("");
-			EXPP_dict_set_item_str(g_bpystatedict, "event", pyval);
-#ifdef WITH_BPYAPI_V24X
-			EXPP_dict_set_item_str(V24_g_blenderdict, "event", pyval);
-#endif
-		}
-	}
-}
-
 
 /*
  * set up a weakref list for Armatures
  *    creates list in __main__ module dict 
  */
-static int setup_armature_weakrefs__internal(char *list_name)
+  
+int setup_armature_weakrefs()
 {
 	PyObject *maindict;
 	PyObject *main_module;
+	char *list_name = ARM_WEAKREF_LIST_NAME;
 
 	main_module = PyImport_AddModule( "__main__");
 	if(main_module){
@@ -323,27 +132,13 @@ static int setup_armature_weakrefs__internal(char *list_name)
 	return 1;
 }
 
-/* This just accounts for there being 2 weakref armature lists */
-int setup_armature_weakrefs( void )
-{
-	if (!setup_armature_weakrefs__internal(ARM_WEAKREF_LIST_NAME))
-		return 0;
-#ifdef WITH_BPYAPI_V24X
-	if (!setup_armature_weakrefs__internal(V24_ARM_WEAKREF_LIST_NAME))
-		return 0;
-#endif
-	return 1;
-}
-
 /* Declares the modules and their initialization functions
  * These are TOP-LEVEL modules e.g. import `module` - there is no
  * support for packages here e.g. import `package.module` */
 
-static struct _inittab BPyInittab_Modules[] = {
+static struct _inittab BPy_Inittab_Modules[] = {
+	{"Blender", M_Blender_Init},
 	{"bpy", m_bpy_init},
-#ifdef WITH_BPYAPI_V24X
-	{"Blender", V24_M_Blender_Init},
-#endif
 	{NULL, NULL}
 };
 
@@ -380,79 +175,6 @@ PyObject *RunPython2( Text * text, PyObject * globaldict, PyObject *localdict );
 void BPY_Err_Handle( char *script_name );
 PyObject *traceback_getFilename( PyObject * tb );
 
-
-/****************************************************************************
-* Description: These functions deal with maintaining a python hash of ID
-* types that can be removed. This is important because when blender data is
-* removed, python needs to invalidate the BPy data by setting its ID pointer
-* to NULL, after this, using this data will raise an error.
-****************************************************************************/
-
-GHash *bpy_idhash_text = NULL;
-GHash *bpy_idhash_scene = NULL;
-GHash *bpy_idhash_object = NULL;
-GHash *bpy_idhash_group = NULL;
-
-static GHash * idhash__internal(ID *id)
-{
-	switch (GS(id->name)) {
-	case ID_TXT:
-		return bpy_idhash_text;
-	case ID_SCE:
-		return bpy_idhash_scene;
-	case ID_OB:
-		return bpy_idhash_object;
-	case ID_GR:
-		return bpy_idhash_group;
-	}
-	return NULL; /* WARNING - this will crash BLI_ghash_lookup */
-}
-
-/* Use so duplicate PyObjects are never created */
-void * BPY_idhash_get(ID *id) 
-{
-	return BLI_ghash_lookup(idhash__internal(id), id);
-}
-/* Use when python decref's the data
- * no need to worry about a loose pointer because python
- * isnt referencing any more */
-void BPY_idhash_remove(ID *id)
-{
-	GHash *hash = idhash__internal(id);
-	if (hash==NULL)
-		return;
-	//printf("remove hash %s\n", id->name);
-	BLI_ghash_remove(hash, id, NULL, NULL);
-}
-
-static void genlib_invalidate(void * genlib)
-{
-	((BPyGenericLibObject *)genlib)->id = NULL;
-}
-
-/* Use when removing the data data */
-void BPY_idhash_invalidate(ID *id)
-{
-	GHash *hash = idhash__internal(id);
-	
-	if (hash==NULL)
-		return;
-	
-	//printf("invalidate hash %s\n", id->name);
-	BLI_ghash_remove(hash, id, NULL, genlib_invalidate);
-	
-}
-
-/* Use when creating a new pyobject */
-void BPY_idhash_add(void *value)
-{
-	ID *id = ((BPyGenericLibObject *)value)->id;
-	//printf("adding hash %s\n", id->name);
-	BLI_ghash_insert(idhash__internal(id), (void *)id, (void *)value);
-}	
-/* END OF BPY ID HASH */
-
-	
 /****************************************************************************
 * Description: This function will start the interpreter and load all modules
 * as well as search for a python installation.
@@ -498,7 +220,7 @@ void BPY_start_python( int argc, char **argv )
 
 
 	//Initialize the TOP-LEVEL modules
-	PyImport_ExtendInittab(BPyInittab_Modules);
+	PyImport_ExtendInittab(BPy_Inittab_Modules);
 	
 	//Start the interpreter
 	Py_Initialize(  );
@@ -508,24 +230,12 @@ void BPY_start_python( int argc, char **argv )
 	init_ourImport(  );
 	init_ourReload(  );
 
-	/*init a global dictionary and module*/
-	g_bpystatedict = NULL;
-	m_bpy_init();
-#ifdef WITH_BPYAPI_V24X
-	V24_g_blenderdict = NULL;
-	V24_M_Blender_Init();
-#endif
-	
+	//init a global dictionary
+	g_blenderdict = NULL;
+
 	//Look for a python installation
 	init_syspath( first_time ); /* not first_time: some msgs are suppressed */
-	
-	// init hash 
-	// printf("initializing HASH\n");
-	bpy_idhash_text = BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp);
-	bpy_idhash_scene = BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp);
-	bpy_idhash_object = BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp);
-	bpy_idhash_group = BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp);
-	
+
 	return;
 }
 
@@ -560,36 +270,37 @@ void BPY_end_python( void )
 	/* a script might've opened a .blend file but didn't close it, so: */
 	EXPP_Library_Close(  );
 
-	// free id hashes
-	BLI_ghash_free(bpy_idhash_text, NULL, NULL);	bpy_idhash_text = NULL;
-	BLI_ghash_free(bpy_idhash_scene, NULL, NULL);	bpy_idhash_scene = NULL;
-	BLI_ghash_free(bpy_idhash_group, NULL, NULL);	bpy_idhash_group = NULL;
-	BLI_ghash_free(bpy_idhash_object, NULL, NULL);	bpy_idhash_object = NULL;
-	
 	return;
 }
 
 void syspath_append( char *dirname )
 {
-	PyObject *mod_sys, *dict, *path, *dir;
-
+	PyObject *mod_sys= NULL, *dict= NULL, *path= NULL, *dir= NULL;
+	short ok=1;
 	PyErr_Clear(  );
 
 	dir = Py_BuildValue( "s", dirname );
 
 	mod_sys = PyImport_ImportModule( "sys" );	/* new ref */
-	dict = PyModule_GetDict( mod_sys );	/* borrowed ref */
-	path = PyDict_GetItemString( dict, "path" );	/* borrowed ref */
+	
+	if (mod_sys) {
+		dict = PyModule_GetDict( mod_sys );	/* borrowed ref */
+		path = PyDict_GetItemString( dict, "path" );	/* borrowed ref */
+		if ( !PyList_Check( path ) ) {
+			ok = 0;
+		}
+	} else {
+		/* cant get the sys module */
+		ok = 0;
+	}
 
-	if( !PyList_Check( path ) )
-		return;
+	if (ok && PyList_Append( path, dir ) != 0)
+		ok = 0; /* append failed */
 
-	PyList_Append( path, dir );
+	if( (ok==0) || PyErr_Occurred(  ) )
+		Py_FatalError( "could import or build sys.path, can't continue" );
 
-	if( PyErr_Occurred(  ) )
-		Py_FatalError( "could not build sys.path" );
-
-	Py_DECREF( mod_sys );
+	Py_XDECREF( mod_sys );
 }
 
 void init_syspath( int first_time )
@@ -603,7 +314,7 @@ void init_syspath( int first_time )
 
 	path = Py_BuildValue( "s", bprogname );
 
-	mod = PyImport_ImportModule( "bpy.app" );
+	mod = PyImport_ImportModule( "Blender.sys" );
 
 	if( mod ) {
 		d = PyModule_GetDict( mod );
@@ -848,7 +559,7 @@ void BPY_Err_Handle( char *script_name )
 int BPY_txt_do_python_Text( struct Text *text )
 {
 	PyObject *py_dict, *py_result;
-	PyObject *info;
+	BPy_constant *info;
 	char textname[24];
 	Script *script = G.main->script.first;
 
@@ -900,14 +611,14 @@ int BPY_txt_do_python_Text( struct Text *text )
 
 	script->py_globaldict = py_dict;
 
-	info = PyDict_New();
+	info = ( BPy_constant * ) PyConstant_New(  );
 	if( info ) {
-		PyObject *tmpstr = PyString_FromString( script->id.name + 2 );
-		PyDict_SetItemString(info, "name",	tmpstr );
-		Py_DECREF(tmpstr);
-		PyDict_SetItemString(info, "arg",	Py_None);
-		PyDict_SetItemString( py_dict, "__script__", info );
-		Py_DECREF(info);
+		PyConstant_Insert( info, "name",
+				 PyString_FromString( script->id.name + 2 ) );
+		Py_INCREF( Py_None );
+		PyConstant_Insert( info, "arg", Py_None );
+		EXPP_dict_set_item_str( py_dict, "__script__",
+				      ( PyObject * ) info );
 	}
 
 	py_result = RunPython( text, py_dict );	/* Run the script */
@@ -1002,7 +713,7 @@ void BPY_run_python_script( char *fn )
 int BPY_menu_do_python( short menutype, int event )
 {
 	PyObject *py_dict, *py_res, *pyarg = NULL;
-	PyObject *info;
+	BPy_constant *info;
 	BPyMenu *pym;
 	BPySubMenu *pysm;
 	FILE *fp = NULL;
@@ -1144,15 +855,14 @@ int BPY_menu_do_python( short menutype, int event )
 	py_dict = CreateGlobalDictionary(  );
 
 	script->py_globaldict = py_dict;
-	
-	info = PyDict_New();
+
+	info = ( BPy_constant * ) PyConstant_New(  );
 	if( info ) {
-		PyObject *tmpstr = PyString_FromString( script->id.name + 2 );
-		PyDict_SetItemString(info, "name",	tmpstr );
-		Py_DECREF(tmpstr);
-		PyDict_SetItemString(info, "arg",	pyarg);
-		PyDict_SetItemString( py_dict, "__script__", info );
-		Py_DECREF(info);
+		PyConstant_Insert( info, "name",
+				 PyString_FromString( script->id.name + 2 ) );
+		PyConstant_Insert( info, "arg", pyarg );
+		EXPP_dict_set_item_str( py_dict, "__script__",
+				      ( PyObject * ) info );
 	}
 
 	/* Previously we used PyRun_File to run directly the code on a FILE 
@@ -1352,9 +1062,9 @@ static int bpy_pydriver_create_dict(void)
 
 	PyDict_SetItemString(d, "__builtins__", PyEval_GetBuiltins());
 
-	mod = PyImport_ImportModule("bpy");
+	mod = PyImport_ImportModule("Blender");
 	if (mod) {
-		PyDict_SetItemString(d, "bpy", mod);
+		PyDict_SetItemString(d, "Blender", mod);
 		PyDict_SetItemString(d, "b", mod);
 		Py_DECREF(mod);
 	}
@@ -1362,9 +1072,14 @@ static int bpy_pydriver_create_dict(void)
 	mod = PyImport_ImportModule("math");
 	if (mod) {
 		PyDict_Merge(d, PyModule_GetDict(mod), 0); /* 0 - dont overwrite existing values */
+		
+		/* Only keep for backwards compat! - just import all math into root, they are standard */
+		PyDict_SetItemString(d, "math", mod);
+		PyDict_SetItemString(d, "m", mod);
+		Py_DECREF(mod);
 	} 
 
-	mod = PyImport_ImportModule("bpy.math.noise");
+	mod = PyImport_ImportModule("Blender.Noise");
 	if (mod) {
 		PyDict_SetItemString(d, "noise", mod);
 		PyDict_SetItemString(d, "n", mod);
@@ -1581,7 +1296,7 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 	PyObject *gval;
 	PyObject *pyargs, *retval;
 	bConstraintTarget *ct;
-	BPyMatrixObject *retmat;
+	MatrixObject *retmat;
 	int row, col, index;
 	
 	if (!con->text) return;
@@ -1594,12 +1309,12 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 	 *	- id-properties are wrapped using the id-properties pyapi
 	 *	- targets are presented as a list of matrices
 	 */
-	srcmat = Matrix_CreatePyObject( (float*)cob->matrix, 4, 4, (PyObject *)NULL );
-	idprop = IDProperty_CreatePyObject( NULL, con->prop, NULL);
+	srcmat = newMatrixObject((float *)cob->matrix, 4, 4, Py_NEW);
+	idprop = BPy_Wrap_IDProperty(NULL, con->prop, NULL);
 	
 	tarmats= PyList_New(con->tarnum); 
 	for (ct=targets->first, index=0; ct; ct=ct->next, index++) {
-		tarmat = Matrix_CreatePyObject( (float*)ct->matrix, 4, 4, (PyObject *)NULL );
+		tarmat = newMatrixObject((float *)ct->matrix, 4, 4, Py_NEW);
 		PyList_SET_ITEM(tarmats, index, tarmat);
 	}
 	
@@ -1679,7 +1394,7 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 	}
 	
 	
-	if (!BPyMatrix_Check(retval)) {
+	if (!PyObject_TypeCheck(retval, &matrix_Type)) {
 		printf("Error in PyConstraint - doConstraint: Function not returning a matrix!\n");
 		con->flag |= PYCON_SCRIPTERROR;
 		
@@ -1693,7 +1408,7 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 		return;
 	}
 	
-	retmat = (BPyMatrixObject *)retval;
+	retmat = (MatrixObject *)retval;
 	if (retmat->rowSize != 4 || retmat->colSize != 4) {
 		printf("Error in PyConstraint - doConstraint: Matrix returned is the wrong size!\n");
 		con->flag |= PYCON_SCRIPTERROR;
@@ -1711,7 +1426,7 @@ void BPY_pyconstraint_eval(bPythonConstraint *con, bConstraintOb *cob, ListBase 
 	/* this is the reverse of code taken from newMatrix() */
 	for(row = 0; row < 4; row++) {
 		for(col = 0; col < 4; col++) {
-			cob->matrix[row][col] = retmat->matrix[0][row*4+col];
+			cob->matrix[row][col] = retmat->contigPtr[row*4+col];
 		}
 	}
 	
@@ -1735,7 +1450,7 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 	PyObject *globals;
 	PyObject *gval;
 	PyObject *pyargs, *retval;
-	BPyMatrixObject *retmat;
+	MatrixObject *retmat;
 	int row, col;
 	
 	if (!con->text) return;
@@ -1753,8 +1468,8 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 	else
 		subtar = PyString_FromString(ct->subtarget);
 	
-	tarmat = Matrix_CreatePyObject( (float*)ct->matrix, 4, 4, (PyObject *)NULL );
-	idprop = IDProperty_CreatePyObject( NULL, con->prop, NULL); 
+	tarmat = newMatrixObject((float *)ct->matrix, 4, 4, Py_NEW);
+	idprop = BPy_Wrap_IDProperty( NULL, con->prop, NULL);
 	
 /*  since I can't remember what the armature weakrefs do, I'll just leave this here
     commented out.  This function was based on pydrivers, and it might still be relevent.
@@ -1831,7 +1546,7 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 		return;
 	}
 	
-	if (!BPyMatrix_Check(retval)) {
+	if (!PyObject_TypeCheck(retval, &matrix_Type)) {
 		con->flag |= PYCON_SCRIPTERROR;
 		
 		Py_XDECREF(tar);
@@ -1844,7 +1559,7 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 		return;
 	}
 	
-	retmat = (BPyMatrixObject *)retval;
+	retmat = (MatrixObject *)retval;
 	if (retmat->rowSize != 4 || retmat->colSize != 4) {
 		printf("Error in PyConstraint - doTarget: Matrix returned is the wrong size!\n");
 		con->flag |= PYCON_SCRIPTERROR;
@@ -1862,7 +1577,7 @@ void BPY_pyconstraint_target(bPythonConstraint *con, bConstraintTarget *ct)
 	/* this is the reverse of code taken from newMatrix() */
 	for(row = 0; row < 4; row++) {
 		for(col = 0; col < 4; col++) {
-			ct->matrix[row][col] = retmat->matrix[0][row*4+col];
+			ct->matrix[row][col] = retmat->contigPtr[row*4+col];
 		}
 	}
 	
@@ -1891,7 +1606,7 @@ void BPY_pyconstraint_settings(void *arg1, void *arg2)
 	
 	globals = CreateGlobalDictionary();
 	
-	idprop = IDProperty_CreatePyObject( NULL, con->prop, NULL);
+	idprop = BPy_Wrap_IDProperty( NULL, con->prop, NULL);
 	
 	retval = RunPython(con->text, globals);
 
@@ -2250,9 +1965,9 @@ void BPY_do_pyscript( ID * id, short event )
 		disable_where_scriptlink( (short)during_slink );
 
 		/* set globals in Blender module to identify scriptlink */
-		PyDict_SetItemString(	g_bpystatedict, "bylink", Py_True);
-		EXPP_dict_set_item_str( g_bpystatedict, "link", value );
-		EXPP_dict_set_item_str( g_bpystatedict, "event",
+		PyDict_SetItemString(	g_blenderdict, "bylink", Py_True);
+		EXPP_dict_set_item_str( g_blenderdict, "link", value );
+		EXPP_dict_set_item_str( g_blenderdict, "event",
 				      PyString_FromString( event_to_name
 							   ( event ) ) );
 		if (event == SCRIPT_POSTRENDER) event = SCRIPT_RENDER;
@@ -2276,7 +1991,7 @@ void BPY_do_pyscript( ID * id, short event )
 					Py_DECREF( ret );
 				}
 				/* If a scriptlink has just loaded a new .blend file, the
-				 * scriptlink pointer became invalid (see api2_5x/Blender.c),
+				 * scriptlink pointer became invalid (see api2_2x/Blender.c),
 				 * so we stop here. */
 				if( during_scriptlink(  ) == -1 ) {
 					during_slink = 1;
@@ -2290,9 +2005,9 @@ void BPY_do_pyscript( ID * id, short event )
 		/* cleanup bylink flag and clear link so PyObject
 		 * can be released 
 		 */
-		PyDict_SetItemString(g_bpystatedict, "bylink", Py_False);
-		PyDict_SetItemString( g_bpystatedict, "link", Py_None );
-		EXPP_dict_set_item_str( g_bpystatedict, "event", PyString_FromString( "" ) );
+		PyDict_SetItemString(g_blenderdict, "bylink", Py_False);
+		PyDict_SetItemString( g_blenderdict, "link", Py_None );
+		EXPP_dict_set_item_str( g_blenderdict, "event", PyString_FromString( "" ) );
 	}
 }
 
@@ -2473,11 +2188,11 @@ int BPY_do_spacehandlers( ScrArea *sa, unsigned short event,
 		}
 		
 		/* set globals in Blender module to identify space handler scriptlink */
-		PyDict_SetItemString(g_bpystatedict, "bylink", Py_True);
+		PyDict_SetItemString(g_blenderdict, "bylink", Py_True);
 		/* unlike normal scriptlinks, here Blender.link is int (space event type) */
-		EXPP_dict_set_item_str(g_bpystatedict, "link", PyInt_FromLong(space_event));
+		EXPP_dict_set_item_str(g_blenderdict, "link", PyInt_FromLong(space_event));
 		/* note: DRAW space_events set event to 0 */
-		EXPP_dict_set_item_str(g_bpystatedict, "event", PyInt_FromLong(event));
+		EXPP_dict_set_item_str(g_blenderdict, "event", PyInt_FromLong(event));
 		/* now run all assigned space handlers for this space and space_event */
 		for( index = 0; index < scriptlink->totscript; index++ ) {
 
@@ -2506,12 +2221,12 @@ int BPY_do_spacehandlers( ScrArea *sa, unsigned short event,
 					 * if the script sets Blender.event to None it accepted it;
 					 * otherwise the space's event handling callback that called us
 					 * can go on processing the event */
-					if (event && (PyDict_GetItemString(g_bpystatedict,"event") == Py_None))
+					if (event && (PyDict_GetItemString(g_blenderdict,"event") == Py_None))
 						retval = 1; /* event was swallowed */
 				}
 
 				/* If a scriptlink has just loaded a new .blend file, the
-				 * scriptlink pointer became invalid (see api2_5x/Blender.c),
+				 * scriptlink pointer became invalid (see api2_2x/Blender.c),
 				 * so we stop here. */
 				if( during_scriptlink(  ) == -1 ) {
 					during_slink = 1;
@@ -2531,9 +2246,10 @@ int BPY_do_spacehandlers( ScrArea *sa, unsigned short event,
 			}
 
 		}
-		PyDict_SetItemString(g_bpystatedict, "bylink", Py_False);
-		PyDict_SetItemString(g_bpystatedict, "link", Py_None );
-		EXPP_dict_set_item_str(g_bpystatedict, "event", PyString_FromString(""));
+
+		PyDict_SetItemString(g_blenderdict, "bylink", Py_False);
+		PyDict_SetItemString(g_blenderdict, "link", Py_None );
+		EXPP_dict_set_item_str(g_blenderdict, "event", PyString_FromString(""));
 	}
 	
 	/* retval:
