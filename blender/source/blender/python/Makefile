@@ -1,5 +1,5 @@
 #
-# $Id: Makefile 1823 2004-01-05 00:06:11Z larstiq $
+# $Id$
 #
 # ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
 #
@@ -32,6 +32,11 @@
 # Bounces make to subdirectories.
 
 SOURCEDIR = source/blender/python
-DIRS = api2_2x
+
+DIRS = api2_5x
+
+ifeq ($(WITH_BPYAPI_V24X), true)
+	DIRS += api2_4x
+endif
 
 include nan_subdirs.mk

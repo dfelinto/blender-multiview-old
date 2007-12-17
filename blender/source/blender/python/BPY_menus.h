@@ -1,5 +1,5 @@
 /* 
- * $Id: BPY_menus.h 10443 2007-04-02 09:58:01Z campbellbarton $
+ * $Id$
  *
  * ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
  *
