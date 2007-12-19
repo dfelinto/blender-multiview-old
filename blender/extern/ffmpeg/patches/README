@@ -1,8 +1,8 @@
 In this directory, I collect patches to FFMPEG, to make it
 work / faster with blender.
 
-Currently, there is only a small MMX acceleration for the
-YUV -> BGRA32 
-transformation.
+Currently: 
+- MMX acceleration for the YUV -> BGRA32 transformation.
+- Bugfix for swscale, that screwed up RGB -> RGB32 with RAW AVIs
 
 -- Peter 
