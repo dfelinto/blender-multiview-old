@@ -530,7 +530,7 @@ static void draw_constraint (uiBlock *block, ListBase *list, bConstraint *con, s
 		proxy_protected= (con->flag & CONSTRAINT_PROXY_LOCAL) ? 0 : 1;
 	}
 	else
-		proxy_protected= 1;
+		proxy_protected= 0;
 		
 	/* unless button has own callback, it adds this callback to button */
 	uiBlockSetFunc(block, constraint_active_func, ob, con);
