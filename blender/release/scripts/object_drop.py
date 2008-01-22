@@ -1,6 +1,6 @@
 #!BPY
 """
-Name: 'Drop Onto Ground'
+Name: 'TimeOffset from Active's Path'
 Blender: 243
 Group: 'Object'
 Tooltip: 'Drop the selected objects onto "ground" objects'
