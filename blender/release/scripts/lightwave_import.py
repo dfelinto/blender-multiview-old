@@ -1639,13 +1639,9 @@ def main():
 		return
 	
 	Blender.Window.FileSelector(read, "Import LWO", '*.lwo')
-	
-'''
+
 if __name__=='__main__':
 	main()
-'''
-
-read('/home/ideasman42/Desktop/Risco.lwo')
 
 
 # Cams debugging lwo loader
