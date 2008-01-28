@@ -3438,12 +3438,11 @@ void add_transp_speed(RenderLayer *rl, int offset, float *speed, float alpha, lo
 	}
 }
 
-static void add_transp_obindex(RenderLayer *rl, int offset, int obi, int facenr)
+static void add_transp_obindex(RenderLayer *rl, int offset, int obi)
 {
 	ObjectRen *obr= R.objectinstance[obi].obr;
-	VlakRen *vlr= RE_findOrAddVlak(obr, (facenr-1) & RE_QUAD_MASK);
 
-	if(vlr && obr->ob) {
+	if(obr->ob) {
 		RenderPass *rpass;
 		
 		for(rpass= rl->passes.first; rpass; rpass= rpass->next) {
@@ -4024,7 +4023,7 @@ unsigned short *zbuffer_transp_shade(RenderPart *pa, RenderLayer *rl, float *pas
 						pa->rectz[od]= zrow[totface-1].z;
 				
 				if(addpassflag & SCE_PASS_INDEXOB)
-					add_transp_obindex(rl, od, zrow[totface-1].obi, zrow[totface-1].p);
+					add_transp_obindex(rl, od, zrow[totface-1].obi);
 				
 				if(R.osa==0) {
 					while(totface>0) {
