@@ -20,7 +20,7 @@
 # ***** END GPL LICENCE BLOCK *****
 # --------------------------------------------------------------------------
 
-import sys, struct
+import struct
 
 # In Blender, selecting scenes in the databrowser (shift+f4) will tag for rendering.
 
@@ -39,7 +39,7 @@ def read_blend_rend_chunk(path):
 	file = open(path, 'rb')
 	
 	if file.read(len('BLENDER')) != 'BLENDER':
-		return
+		return []
 	
 	# 
 	if file.read(1) == '-':
@@ -56,6 +56,8 @@ def read_blend_rend_chunk(path):
 	# Now read the bhead chunk!!!
 	file.read(3) # skip the version
 	
+	scenes = []
+	
 	while file.read(4) == 'REND':
 	
 		if is64bit:		sizeof_bhead = sizeof_bhead_left = 24 # 64bit
@@ -69,10 +71,9 @@ def read_blend_rend_chunk(path):
 		sizeof_bhead_left -= 4
 		
 		# We dont care about the rest of the bhead struct
-		sizeof_bhead_left, file.read(sizeof_bhead_left)
+		file.read(sizeof_bhead_left)
 		
 		# Now we want the scene name, start and end frame. this is 32bites long
-		#file.read(sizeof_bhead_left)
 		
 		if isBigEndian:	start_frame, end_frame = struct.unpack('>2i', file.read(8))
 		else:			start_frame, end_frame = struct.unpack('<2i', file.read(8))
@@ -80,9 +81,11 @@ def read_blend_rend_chunk(path):
 		scene_name = file.read(24)
 		scene_name = scene_name[ : scene_name.index('\0') ]
 		
-		return start_frame, end_frame, scene_name
+		scenes.append( (start_frame, end_frame, scene_name) )
+	return scenes
 
 def main():
+	import sys
 	for arg in sys.argv[1:]:
 		if arg.lower().endswith('.blend'):
 			print read_blend_rend_chunk(arg)
