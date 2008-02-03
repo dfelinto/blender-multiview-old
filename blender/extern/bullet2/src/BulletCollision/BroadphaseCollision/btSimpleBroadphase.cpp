@@ -85,6 +85,7 @@ btBroadphaseProxy*	btSimpleBroadphase::createProxy(  const btVector3& min,  cons
 
 	btSimpleBroadphaseProxy* proxy1 = &m_proxies[0];
 		
+	int	index = int(proxy - proxy1);
 	btAssert(index == freeIndex);
 
 	m_pProxies[m_numProxies] = proxy;

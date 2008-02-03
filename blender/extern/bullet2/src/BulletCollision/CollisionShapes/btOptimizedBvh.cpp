@@ -528,6 +528,7 @@ int	btOptimizedBvh::sortAndCalcSplittingIndex(int startIndex,int endIndex,int sp
 		splitIndex = startIndex+ (numIndices>>1);
 	}
 
+	bool unbal = (splitIndex==startIndex) || (splitIndex == (endIndex));
 	btAssert(!unbal);
 
 	return splitIndex;
