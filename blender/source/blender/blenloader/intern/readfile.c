@@ -6999,7 +6999,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				ntree_version_245(sce->nodetree);
 
 		for(ntree=main->nodetree.first; ntree; ntree= ntree->id.next)
-			ntree_version_245(sce->nodetree);
+			ntree_version_245(ntree);
 
 		if (main->versionfile < 245 || main->subversionfile < 12)
 		{
