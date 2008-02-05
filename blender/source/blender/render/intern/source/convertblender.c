@@ -3320,7 +3320,6 @@ static GroupObject *add_render_lamp(Render *re, Object *ob)
 	LampRen *lar;
 	GroupObject *go;
 	float mat[4][4], angle, xn, yn;
-	float vec[3];
 	int c;
 
 	/* previewrender sets this to zero... prevent accidents */
@@ -3404,9 +3403,7 @@ static GroupObject *add_render_lamp(Render *re, Object *ob)
 	
 	lar->adapt_thresh= la->adapt_thresh;
 	
-	lar->sunsky = NULL;
-	
-	if( ELEM(lar->type, LA_SPOT, LA_LOCAL)) {
+	if( ELEM3(lar->type, LA_SPOT, LA_SUN, LA_LOCAL)) {
 		lar->ray_totsamp= lar->ray_samp*lar->ray_samp;
 		lar->area_shape = LA_AREA_SQUARE;
 		lar->area_sizey= lar->area_size;
@@ -3435,26 +3432,6 @@ static GroupObject *add_render_lamp(Render *re, Object *ob)
 
 		area_lamp_vectors(lar);
 		init_jitter_plane(lar);	// subsamples
-	}
-	else if(lar->type==LA_SUN){
-		lar->ray_totsamp= lar->ray_samp*lar->ray_samp;
-		lar->area_shape = LA_AREA_SQUARE;
-		lar->area_sizey= lar->area_size;
-
-		if((la->sun_effect_type & LA_SUN_EFFECT_SKY) ||
-				(la->sun_effect_type & LA_SUN_EFFECT_AP)){
-			lar->sunsky = (struct SunSky*)MEM_callocN(sizeof(struct SunSky), "sunskyren");
-			lar->sunsky->effect_type = la->sun_effect_type;
-		
-			VECCOPY(vec,ob->obmat[2]);
-		    Normalize(vec);
-		    
-			InitSunSky(lar->sunsky, la->atm_turbidity, vec, la->horizon_brightness, 
-					la->spread, la->sun_brightness, la->sun_size, la->backscattered_light);
-			
-			InitAtmosphere(lar->sunsky, 1.0, 1.0, la->atm_inscattering_factor, la->atm_extinction_factor,
-					la->atm_distance_factor, la->atm_distance_over_sky);
-		}
 	}
 	else lar->ray_totsamp= 0;
 	
@@ -4174,7 +4151,6 @@ void RE_Database_Free(Render *re)
 		freeshadowbuf(lar);
 		if(lar->jitter) MEM_freeN(lar->jitter);
 		if(lar->shadsamp) MEM_freeN(lar->shadsamp);
-		if(lar->sunsky) MEM_freeN(lar->sunsky);
 		if(lar->qsa) free_lamp_qmcsampler(lar);
 		curvemapping_free(lar->curfalloff);
 	}

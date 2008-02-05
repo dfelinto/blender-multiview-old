@@ -519,59 +519,12 @@ void shadeSkyView(float *colf, float *rco, float *view, float *dxyview)
 	}
 }
 
-/* shade sky according to sun lamps and mix it with sky color, all parameters are like shadeSkyView except sunsky*/
-void shadeSunView(struct SunSky *sunsky, float *colf, float *rco, float *view, float *dxyview)
-{
-	float sunAngle;
-	float colorxyz[3];
-	float sunColor[3];
-	float  sunDir[3],scale;
-			
-	sunAngle = sqrt(sunsky->sunSolidAngle / M_PI);
-
-	sunDir[0] = sunsky->toSun[0];
-	sunDir[1] = sunsky->toSun[1];
-	sunDir[2] = sunsky->toSun[2];
-			
-	ConvertSpectrumDataToCIEXYZ(sunsky->sunSpectralRaddata, colorxyz);
-	
-	scale = MAX3(colorxyz[0], colorxyz[1], colorxyz[2]);
-	colorxyz[0] /= scale;
-	colorxyz[1] /= scale;
-	colorxyz[2] /= scale;
-	xyz_to_rgb(colorxyz[0], colorxyz[1], colorxyz[2], &sunColor[0], &sunColor[1], &sunColor[2]);
-	
-
-	Normalize(view);
-	MTC_Mat3MulVecfl(R.imat, view);
-	if (view[2] < 0.0)
-		view[2] = 0.0;
-	Normalize(view);
-	GetSkyXYZRadiancef(sunsky, view, colorxyz);
-	scale = MAX3(colorxyz[0], colorxyz[1], colorxyz[2]);
-	colorxyz[0] /= scale;
-	colorxyz[1] /= scale;
-	colorxyz[2] /= scale;
-	
-	xyz_to_rgb(colorxyz[0], colorxyz[1], colorxyz[2], &colf[0], &colf[1], &colf[2]);
-	if(acos(Inpf(view, sunDir)) < sunAngle)
-	{
-		colf[0] = 0.8*colf[0] + 0.2*sunColor[0];
-		colf[1] = 0.8*colf[1] + 0.2*sunColor[1];
-		colf[2] = 0.8*colf[2] + 0.2*sunColor[2];
-	}
-	ClipColour(colf);
-}
-
 /*
   Stuff the sky color into the collector.
  */
 void shadeSkyPixel(float *collector, float fx, float fy) 
 {
 	float view[3], dxyview[2];
-	float sun_collector[3], mix_facor;
-	GroupObject *go;
-	LampRen *lar;
 	
 	/*
 	  The rules for sky:
@@ -584,6 +537,7 @@ void shadeSkyPixel(float *collector, float fx, float fy)
 	/* 1. Do a backbuffer image: */ 
 	if(R.r.bufflag & 1) {
 		fillBackgroundImage(collector, fx, fy);
+		return;
 	} 
 	else if((R.wrld.skytype & (WO_SKYBLEND+WO_SKYTEX))==0) {
 		/* 2. solid color */
@@ -618,34 +572,7 @@ void shadeSkyPixel(float *collector, float fx, float fy)
 		shadeSkyView(collector, NULL, view, dxyview);
 		collector[3] = 0.0f;
 	}
-	
-	mix_facor = 0.5;
-	
-	for(go=R.lights.first; go; go= go->next) {
-		lar= go->lampren;
-		if(lar->type==LA_SUN &&	lar->sunsky && (lar->sunsky->effect_type & LA_SUN_EFFECT_SKY)){
-
-			calc_view_vector(view, fx, fy);
-			Normalize(view);
-
-			shadeSunView(lar->sunsky, sun_collector, NULL, view, NULL);
-			collector[0] = (1-mix_facor)*collector[0] + mix_facor*sun_collector[0];
-			collector[1] = (1-mix_facor)*collector[1] + mix_facor*sun_collector[1];
-			collector[2] = (1-mix_facor)*collector[2] + mix_facor*sun_collector[2];
-			collector[3]= 0.0f;
-		}
-	}
 }
 
-/* aerial perspective */
-void shadeAtmPixel(struct SunSky *sunsky, float *collector, float fx, float fy, float intensity, float distance)
-{
-	float view[3];
-		
-	calc_view_vector(view, fx, fy);
-	Normalize(view);
-	/*MTC_Mat3MulVecfl(R.imat, view);*/
-	atmosphere_pixle_shader(sunsky, view, distance, intensity, collector);
-}
 
 /* eof */

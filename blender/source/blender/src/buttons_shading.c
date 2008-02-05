@@ -2746,38 +2746,6 @@ static void lamp_panel_yafray(Object *ob, Lamp *la)
 
 }
 
-static void lamp_panel_atmosphere(Object *ob, Lamp *la)
-{
-	uiBlock *block;
-	int y;
-	block= uiNewBlock(&curarea->uiblocks, "lamp_panel_atm", UI_EMBOSS, UI_HELV, curarea->win);
-	uiNewPanelTabbed("Lamp", "Lamp");
-	if(uiNewPanel(curarea, block, "Atmosphere", "Lmap", PANELX, PANELY, PANELW, PANELH)==0) return;
-
-	uiSetButLock(la->id.lib!=0, ERROR_LIBDATA_MESSAGE);
-	
-	y = 205;
-	uiDefButF(block, NUM, B_LAMPREDRAW, "Turbidity:",10,205,BUTW2,19, &(la->atm_turbidity), 1.000f, 30.0f, 1, 0, "Sky Turbidity");
-	if(la->sun_effect_type & LA_SUN_EFFECT_SKY)
-	{
-		uiDefButF(block, NUM, B_LAMPREDRAW, "Horizon brightness:",10,y-25,BUTW2,19, &(la->horizon_brightness), 0.10f, 10.00f, 10, 0, "Sets horizon brightness.");
-		uiDefButF(block, NUM, B_LAMPREDRAW, "Spread:",14+BUTW2,y-25,BUTW2,19, &(la->spread), 0.10f, 10.00f, 10, 0, "Sets spread.");
-		uiDefButF(block, NUM, B_LAMPREDRAW, "Sun brightness:",10,y-50,BUTW2,19, &(la->sun_brightness), 0.10f, 10.0f, 10, 0, "Sets sun brightness.");
-		uiDefButF(block, NUM, B_LAMPREDRAW, "Sun Size:",14+BUTW2,y-50,BUTW2,19, &(la->sun_size), 0.10f, 10.00f, 10, 0, "Sets sun size.");
-		uiDefButF(block, NUM, B_LAMPREDRAW, "Backscattered light:",10,y-75,BUTW2,19, &(la->backscattered_light), 0.10f, 10.00f, 10, 0, "Sets backscattered light.");
-		y-=75;
-	}
-	if(la->sun_effect_type & LA_SUN_EFFECT_AP)
-	{
-		uiDefButF(block, NUM, B_LAMPREDRAW, "Inscattering F.:",10,y-25,BUTW2,19, &(la->atm_inscattering_factor), 0.00f, 1.00f, 10, 0, "In Scattering Contribution Factor.");
-		uiDefButF(block, NUM, B_LAMPREDRAW, "Extinction F.:",14+BUTW2,y-25,BUTW2,19, &(la->atm_extinction_factor), 0.00f, 1.00f, 10, 0, "Extinction Scattering Contribution Factor.");
-		uiDefButF(block, NUM, B_LAMPREDRAW, "Distance F.:",10,y-50,BUTW2,19, &(la->atm_distance_factor), 0.000f, 500.0f, 10, 0, "Scale blender distance to real distance.");
-		y-=50;
-		uiDefButBitS(block, TOG, LA_SUN_EFFECT_AP_OVER_SKY, 0, "Aerial Perspective over Sky:",	10,y-25,BUTW2,19, &la->sun_effect_type, 0, 0, 0, 0, "Apply aerial perspective over sky.");
-		uiDefButF(block, NUM, B_LAMPREDRAW, "Distance over sky:",14+BUTW2,y-25,BUTW2,19, &(la->atm_distance_over_sky), 0.00f, 10000.00f, 10, 0, "Sets distance to sky to apply aerial perspective over it.");
-	}
-}
-
 static void lamp_panel_falloff(Object *ob, Lamp *la)
 {
 	uiBlock *block;
@@ -2840,11 +2808,6 @@ static void lamp_panel_lamp(Object *ob, Lamp *la)
 		uiDefButS(block, MENU, B_LAMPREDRAW,  "Falloff %t|Constant %x0|Inverse Linear %x1|Inverse Square %x2|Custom Curve %x3|Lin/Quad Weighted %x4|",
 			10,150,100,19, &la->falloff_type, 0,0,0,0, "Lamp falloff - intensity decay with distance");	
 		uiDefButBitS(block, TOG, LA_SPHERE, REDRAWVIEW3D,"Sphere",	10,130,100,19,&la->mode, 0, 0, 0, 0, "Sets light intensity to zero for objects beyond the distance value");
-	}
-	else if(la->type==LA_SUN)
-	{
-		uiDefButBitS(block, TOG, LA_SUN_EFFECT_SKY, REDRAWVIEW3D, "Sky", 10,150,100,19,&la->sun_effect_type, 0, 0, 0, 0, "Apply sun light effect on sky.");
-		uiDefButBitS(block, TOG, LA_SUN_EFFECT_AP, REDRAWVIEW3D, "Atmosphere", 10,130,100,19,&la->sun_effect_type, 0, 0, 0, 0, "Apply sun light effect on atmosphere.");
 	}
 
 	uiBlockBeginAlign(block);
@@ -4277,9 +4240,6 @@ void lamp_panels()
 
 	lamp_panel_preview(ob, ob->data);
 	lamp_panel_lamp(ob, ob->data);
-	if(la->type == LA_SUN && ((la->sun_effect_type & LA_SUN_EFFECT_SKY) ||
-			(la->sun_effect_type & LA_SUN_EFFECT_AP)))
-		lamp_panel_atmosphere(ob, ob->data);
 	
 	if (ELEM(la->type, LA_SPOT, LA_LOCAL) && (la->falloff_type == LA_FALLOFF_CURVE))
 		lamp_panel_falloff(ob, ob->data);
