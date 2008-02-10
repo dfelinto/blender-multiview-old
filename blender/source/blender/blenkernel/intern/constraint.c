@@ -3057,23 +3057,23 @@ static void transform_evaluate (bConstraint *con, bConstraintOb *cob, ListBase *
 		float dvec[3], sval[3];
 		short i;
 		
-		/* obtain target effect */
-		switch (data->from) {
-			case 2:	/* scale */
-				Mat4ToSize(ct->matrix, dvec);
-				break;
-			case 1: /* rotation */
-				Mat4ToEul(ct->matrix, dvec);
-				break;
-			default: /* location */
-				VecCopyf(dvec, ct->matrix[3]);
-				break;
-		}
-		
 		/* extract components of owner's matrix */
 		VECCOPY(loc, cob->matrix[3]);
 		Mat4ToEul(cob->matrix, eul);
 		Mat4ToSize(cob->matrix, size);
+		
+		/* obtain target effect */
+		switch (data->from) {
+			case 2:	/* scale */
+				VecCopyf(dvec, size);
+				break;
+			case 1: /* rotation */
+				VecCopyf(dvec, eul);
+				break;
+			default: /* location */
+				VecCopyf(dvec, loc);
+				break;
+		}		
 		
 		/* determine where in range current transforms lie */
 		if (data->expo) {
