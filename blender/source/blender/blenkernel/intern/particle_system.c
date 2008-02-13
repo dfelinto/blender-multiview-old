@@ -4121,7 +4121,7 @@ static void dynamics_step(Object *ob, ParticleSystem *psys, ParticleSystemModifi
 			if(pa->alive==PARS_UNBORN
 				|| pa->alive==PARS_KILLED
 				|| ELEM(part->phystype,PART_PHYS_NO,PART_PHYS_KEYED)
-				|| pa->time >= ctime){
+				|| pa->time >= cfra){
 				/* allways reset particles to emitter before birth */
 				reset_particle(pa,psys,psmd,ob,dtime,cfra,vg_vel,vg_tan,vg_rot);
 				copy_particle_key(key,&pa->state,1);
