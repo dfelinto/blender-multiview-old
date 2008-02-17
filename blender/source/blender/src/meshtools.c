@@ -746,7 +746,7 @@ long mesh_octree_table(Object *ob, float *co, char mode)
 			mesh_octree_table(ob, NULL, 's');
 	   
 		if(MeshOctree.table) {
-			Mesh *me= ob->data;mesh_octree_table
+			Mesh *me= ob->data;
 			bt= MeshOctree.table + mesh_octree_get_base_offs(co, MeshOctree.offs, MeshOctree.div);
 			if(ob==G.obedit)
 				return mesh_octree_find_index(bt, NULL, NULL, co);
