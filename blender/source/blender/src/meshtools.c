@@ -650,6 +650,13 @@ static void mesh_octree_add_nodes(MocNode **basetable, float *co, float *offs, f
 	float fx, fy, fz;
 	int vx, vy, vz;
 	
+	if (isnan(co[0]) || !finite(co[0]) ||
+		isnan(co[1]) || !finite(co[1]) ||
+		isnan(co[2]) || !finite(co[2])
+	) {
+		return;
+	}
+	
 	fx= (co[0]-offs[0])/div[0];
 	fy= (co[1]-offs[1])/div[1];
 	fz= (co[2]-offs[2])/div[2];
@@ -739,7 +746,7 @@ long mesh_octree_table(Object *ob, float *co, char mode)
 			mesh_octree_table(ob, NULL, 's');
 	   
 		if(MeshOctree.table) {
-			Mesh *me= ob->data;
+			Mesh *me= ob->data;mesh_octree_table
 			bt= MeshOctree.table + mesh_octree_get_base_offs(co, MeshOctree.offs, MeshOctree.div);
 			if(ob==G.obedit)
 				return mesh_octree_find_index(bt, NULL, NULL, co);
@@ -799,7 +806,7 @@ long mesh_octree_table(Object *ob, float *co, char mode)
 		
 		if(ob==G.obedit) {
 			EditVert *eve;
-			
+
 			for(eve= G.editMesh->verts.first; eve; eve= eve->next) {
 				mesh_octree_add_nodes(MeshOctree.table, eve->co, MeshOctree.offs, MeshOctree.div, (long)(eve));
 			}
@@ -860,6 +867,13 @@ EditVert *editmesh_get_x_mirror_vert(Object *ob, float *co)
 {
 	float vec[3];
 	long poinval;
+	
+	/* ignore nan verts */
+	if (isnan(co[0]) || !finite(co[0]) ||
+		isnan(co[1]) || !finite(co[1]) ||
+		isnan(co[2]) || !finite(co[2])
+	   )
+		return NULL;
 	
 	vec[0]= -co[0];
 	vec[1]= co[1];
