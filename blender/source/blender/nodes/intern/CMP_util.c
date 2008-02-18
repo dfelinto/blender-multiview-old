@@ -585,7 +585,7 @@ void premul_compbuf(CompBuf *img, int inversed)
    drect= img->rect;
    if(inversed) {
       for(x=img->x*img->y; x>0; x--, drect+=4) {
-		 if(drect[3] == 0.0f) {
+		 if(fabs(drect[3]) < 1e-5f) {
 			 drect[0]= 0.0f;
 			 drect[1]= 0.0f;
 			 drect[2]= 0.0f;
