@@ -2651,14 +2651,9 @@ void do_effectors(int pa_no, ParticleData *pa, ParticleKey *state, Object *ob, P
 				if(falloff<=0.0f)
 					;	/* don't do anything */
 				else if(pd->forcefield==PFIELD_TEXTURE) {
-					if 
-						do_texture_effector(pd->tex, pd->tex_mode, pd->flag&PFIELD_TEX_2D, pd->tex_nabla,
-										pd->flag & PFIELD_TEX_OBJECT, (pd->flag & PFIELD_TEX_ROOTCO) ? rootco, eob->obmat,
-										pd->f_strength, falloff, force_field);
-					else
-						do_texture_effector(pd->tex, pd->tex_mode, pd->flag&PFIELD_TEX_2D, pd->tex_nabla,
-										pd->flag & PFIELD_TEX_OBJECT, state->co, eob->obmat,
-										pd->f_strength, falloff, force_field);
+					do_texture_effector(pd->tex, pd->tex_mode, pd->flag&PFIELD_TEX_2D, pd->tex_nabla,
+									pd->flag & PFIELD_TEX_OBJECT, (pd->flag & PFIELD_TEX_ROOTCO) ? rootco : state->co, eob->obmat,
+									pd->f_strength, falloff, force_field);
 				} else {
 					do_physical_effector(pd->forcefield,pd->f_strength,distance,
 										falloff,pd->f_dist,pd->f_damp,eob->obmat[2],vec_to_part,
