@@ -1473,11 +1473,12 @@ void action_buttons(void)
 					  "Select", xco, -2, xmax-3, 24, "");
 		xco+= xmax;
 		
-		// TODO: options in channel menu only work for actions... disable this in other cases...
-		xmax= GetButStringLength("Channel");
-		uiDefPulldownBut(block, action_channelmenu, NULL, 
-					  "Channel", xco, -2, xmax-3, 24, "");
-		xco+= xmax;
+		if (G.saction->action) {
+			xmax= GetButStringLength("Channel");
+			uiDefPulldownBut(block, action_channelmenu, NULL, 
+						  "Channel", xco, -2, xmax-3, 24, "");
+			xco+= xmax;
+		}
 		
 		xmax= GetButStringLength("Marker");
 		uiDefPulldownBut(block, action_markermenu, NULL, 
