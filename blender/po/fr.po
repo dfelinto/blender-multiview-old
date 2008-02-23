@@ -23,24 +23,61 @@
 ###  Menu bar  FILE
 ###  Menu bar  ANIM
 ###  Menu bar  GAME
-###  Menu bar  RENDERs
+###  Menu bar  RENDER
 ###  Menu bar  HELP
+###  Menu bar  View
 ###  Menu bar  Select  
-###  Menubar  Mode  
+###  Menubar  Object
+###  Menubar  Mode
+###  Menubar  Draw type
+###  Menubar  Pivot
+###  Menubar  Snap
+###  Menubar Edit Mode  
 ###  Menubar MESH
-###  Menubar Face (mode UV face select)
-###  Menubar Spécial Draw Mode (D)  
-###  WINDOW  PREFERENCE  
-###  SECTION  NODE EDITOR  
-###  SECTION  OUTLINER  
-###  Editing Armature (F9)  
-###  ToolBox  ACTOR  
-###  ToolBox  SHADING (F5)  
+###  SPACE MENU:  ADD
+###  SPACE MENU:  OBJECT
+###  SPACE MENU:  EDIT
+###  SPACE MENU:  TRANSFORM
+###  SPACE MENU:  VIEW
+###  SPACE MENU:  SELEC
+###  SPACE MENU:  SURFACE
+###  SPACE MENU: RENDER
+###  ToolBox  BUTTONS
+###  ToolBox  ACTOR
+###  ToolBox  SHADING (F5) 
+###  ToolBox  OBJECT (F7)
+###  ToolBox  EDITING (F9)
+###  Editing Armature (F9) 
 ###  ToolBox  RENDER (F10)  
-###  Menu Make Parent (CTRL-P en mode edition)  
-###  Menu Clear Parent (ALT-P en mode edition)  
-###  Menu Make Links (CTRL-L)  
+###  SECTION TEXT EDITOR
+###  SECTION TIMELINE
+###  SECTION  SEQUENCE
+###  SECTION  UV/IMAGE EDITOR
+###  SECTION  IPO CURVE EDITOR
+###  SECTION  OUTLINER 
+###  SECTION  NODE EDITOR 
+###  WINDOW  PREFERENCE 
+###  Tooltip du panneau "Background Image"
+###  Menu extrusion
+###  Menu Booléen (W hotkey in object mode)
+###  Menu Separate
+###  Menu Loop/Cut (K hotkey in edit mode)
+###  Menu Cut Type (SHIFT-K hotkey in edit mode)
+###  Menu Specials (W hotkey in edit mode)
+###  Menu Select grouped (SHIFT-G hotkey in object mode)
+###  Menu groups (CTRL-G hotkey in object mode)
+###  Menu Spécial d'Edition (CTRL-E)
+###  Menubar Spécial Draw Mode (D)   
+###  Texte (Objet texte)
+###  Courbe Bezier (mode edition)
+###  Metaballs (mode edition)
+###  Armatures (édition)
+###  Header
+###  Menu Make Parent (CTRL-P en mode edition) 
+###  Menu Clear Parent (ALT-P en mode edition) 
+###  Menu Make Links (CTRL-L)
 ###  Menu Make Faces (F)  
+###  Menu Unwrap (U)  
 ###
 ###########################################################
 
@@ -309,20 +346,23 @@ msgstr "Enregistrer Sous"
 msgid "Save"
 msgstr "Enregistrer"
 
-msgid "Save Image..."
-msgstr "Sauver Rendu -> Image"
+msgid "Save Rendered Image..."
+msgstr "Sauver le Rendu"
 
-msgid "Dump Subwindow"
-msgstr "Sauver Fenêtre -> Image"
+msgid "Screenshot Subwindow"
+msgstr "Capture de Fenêtre"
 
-msgid "Dump Screen"
-msgstr "Sauver Interface -> Image"
+msgid "Screenshot All"
+msgstr "Capture de l'Interface"
 
 msgid "Save Runtime..."
 msgstr "Sauver le Jeu en exécutable"
 
 msgid "Append or Link"
 msgstr "Importer/Lier depuis un .blend"
+
+msgid "Append or Link (Image Browser)" 
+msgstr "Importer/Lier depuis un .blend (Vignettes)"
 
 msgid "Import"
 msgstr "Importer"
@@ -336,11 +376,26 @@ msgstr "Enregistrer -> Scène de Démarrage"
 msgid "Load Factory Settings"
 msgstr "Charger la Scène de Démarrage par Défaut"
 
-msgid "Pack Data"
-msgstr "Empaqueter le projet"
+msgid "External Data"
+msgstr "Données Externes"
 
-msgid "Unpack Data..."
-msgstr "Dépaqueter le projet"
+msgid "Pack into Blend"
+msgstr "Archiver"
+
+msgid "Unpack into Files..."
+msgstr "Désarchiver"
+
+msgid "Make all Paths Relative"
+msgstr "Chemins Relatifs"
+
+msgid "Make all Paths Absolute"
+msgstr "Chemins Absolus"
+
+msgid "Report Missing Files"
+msgstr "Lister Fichiers Manquants"
+
+msgid "Find Missing Files"
+msgstr "Chercher Fichiers Manquants"
 
 msgid "Quit Blender"
 msgstr "Quitter sans sauvegarder"
@@ -396,7 +451,7 @@ msgstr "Aller à la Première Image"
 
 ###########################################################
 ###
-###  Menu bar  Game
+###  Menu bar  GAME
 ###
 ###########################################################
 
@@ -476,28 +531,28 @@ msgstr "Aucune Image UV trouvée"
 ###########################################################
 
 msgid "Getting Started"
-msgstr "Premiers Pas (Eng)"
+msgstr "Premiers Pas (En)"
 
 msgid "HotKey and MouseAction Reference"
-msgstr "Liste des Raccourcis Clavier (Eng)"
+msgstr "Liste des Raccourcis Clavier (En)"
 
 msgid "Manual"
-msgstr "Manuel (Eng)"
+msgstr "Manuel (En)"
 
 msgid "Python Scripting Reference"
-msgstr "Documentation sur le Script Python (Eng)"
+msgstr "Documentation sur le Script Python (En)"
 
 msgid "Release Notes"
-msgstr "Notes de Version (Eng)"
+msgstr "Notes de Version (En)"
 
 msgid "ID Property Browser"
-msgstr "Edition des Propriétés ID (Eng)"
+msgstr "Edition des Propriétés ID (En)"
 
 msgid "Scripts Help Browser"
-msgstr "Aides des Scripts Python (Eng)"
+msgstr "Notice des Scripts Python (En)"
 
 msgid "Tutorials"
-msgstr "Tutoriels (Eng)"
+msgstr "Tutoriels (En)"
 
 msgid "About Blender..."
 msgstr "A propos de Blender"
@@ -656,13 +711,16 @@ msgid "All Object Centers"
 msgstr "Tous les Centres"
 
 msgid "Set Clipping Border"
-msgstr "Activer Coupe 3D"
+msgstr "Coupe 3D"
 
 msgid "Clear Clipping Border"
 msgstr "Désactiver Coupe 3D"
 
 msgid "Render Preview..."
 msgstr "Rendu Interactif"
+
+msgid "Zoom Within Border..."
+msgstr "Zoom par Cadre..."
 
 ###########################################################
 ###
@@ -688,6 +746,9 @@ msgstr "Par Type"
 msgid "Linked"
 msgstr "Par Affinités"
 
+msgid "Random"
+msgstr "Aléatoire"
+
 msgid "Grouped"
 msgstr "Par Parenté"
 
@@ -706,15 +767,30 @@ msgstr "1er Enfant"
 msgid "Linked Vertices"
 msgstr "Sommets liés"
 
+msgid "Similar to Selection..."
+msgstr "Similaire à la Sélection..."
+
+msgid "Select Similar Vertices "
+msgstr "Sélectionne les Sommets Similaires"
+
+msgid "Select Similar Edges "
+msgstr "Sélectionne les Arêtes Similaires"
+
+msgid "Select Similar Faces "
+msgstr "Sélectionne les Faces Similaires"
+
 # messagebox
 msgid "No active face, or active face has no UV texture"
 msgstr "Pas de face active, ou la face active n'a pas de coordonnées de texture UV"
 
 ###########################################################
 ###
-###  Menubar  OBJECT
+###  Menubar  Object
 ###
 ###########################################################
+
+msgid "Show/Hide Objects"
+msgstr "Aff./Cacher Objets"
 
 msgid "Move to Layer..."
 msgstr "Changer de Calque"
@@ -771,7 +847,7 @@ msgid "Duplicate Linked"
 msgstr "Copie Liée"
 
 msgid "Insert Keyframe"
-msgstr "Insérer une image clé"
+msgstr "Insérer une Image Clé"
 
 msgid "Duplicate"
 msgstr "Copie"
@@ -821,6 +897,12 @@ msgstr "Accrochage Grille"
 msgid "Snap "
 msgstr "Accrochage"
 
+msgid "Snap Closest"
+msgstr "Accrochage Distance"
+
+msgid "Snap Center"
+msgstr "Accrochage Centre"
+
 msgid "Selection -> Grid"
 msgstr "Sélection -> Grille"
 
@@ -847,6 +929,9 @@ msgstr "Sélection -> Centre"
 
 msgid "Mirror"
 msgstr "Miroir"
+
+msgid "Interactive Mirror"
+msgstr "Miroir Interactif"
 
 msgid "Transform"
 msgstr "Transformer"
@@ -1055,43 +1140,11 @@ msgstr "Linéaire"
 msgid "Constant"
 msgstr "Constante"
 
+msgid "UV Unwrap"
+msgstr "Dépliage UV"
 
-###########################################################
-###
-###  Menubar Face (mode UV face select)
-###
-###########################################################
-
-msgid "Show/Hide Faces"
-msgstr "Afficher/Cacher Faces"
-
-msgid "Hide Selected Faces"
-msgstr "Cacher les Faces Sélectionnées"
-
-msgid "Hide Deselected Faces"
-msgstr "Cacher les Faces Non-sélectionnées"
-
-msgid "Show Hidden Faces"
-msgstr "Afficher les Faces Cachées"
-
-msgid "Mirror UVs"
-msgstr "Miroir UVs"
-
-msgid "Rotate UVs"
-msgstr "Rotation UVs"
-
-msgid "Unwrap UVs"
-msgstr "Déplier UVs"
-
-#Rotates UVs message box
-msgid "Rotate "
-msgstr "Rotation"
-
-msgid "UV Co-ordinates "
-msgstr "Coordonnées UVs"
-
-msgid "UV Calculation "
-msgstr "Méthode de calcul UV"
+msgid "Proportional Editing"
+msgstr "Edition Proportionnelle"
 
 
 ###########################################################
@@ -1363,10 +1416,10 @@ msgid "Knife Subdivide..."
 msgstr "Coupe au Couteau..."
 
 msgid "Mark Seam"
-msgstr "Marquer Couture"
+msgstr "Marquer Couture UV"
 
 msgid "Clear Seam"
-msgstr "Effacer Couture"
+msgstr "Effacer Couture UV"
 
 msgid "Slide Edge"
 msgstr "Déplacer l'arête"
@@ -1416,7 +1469,7 @@ msgstr "Rendu Solide"
 ###
 ###########################################################
 
-msgid "Proportional Editing"
+msgid "Proportional Edit"
 msgstr "Edition Proportionnelle"
 
 msgid "Scale on Axi"
@@ -1715,6 +1768,9 @@ msgstr "Moteur Physique"
 msgid "DataBrowse "
 msgstr "Parcourir"
 
+msgid "Mist / Stars / Physics"
+msgstr "Brouillard / Physique"
+
 #Tip
 msgid "Physics Engine"
 msgstr "Moteur Physique"
@@ -1727,6 +1783,15 @@ msgstr "Brouillard"
 
 msgid "Stars"
 msgstr "Etoiles"
+
+msgid "Gather Method"
+msgstr "Méthode de Calcul"
+
+msgid "Raytrace "
+msgstr "Lancer de Rayons"
+
+msgid "Approximate "
+msgstr "Approximatif"
 
 msgid "Sub"
 msgstr "Soustraire"
@@ -1756,10 +1821,10 @@ msgid "Colorband"
 msgstr "Dégradé"
 
 msgid "SSS"
-msgstr "Translucidité"
+msgstr "Translucidité SSS"
 
 msgid "Subsurface Scattering"
-msgstr "Translucidité SSS"
+msgstr "Activer"
 
 msgid "Enables diffuse subsurface scattering"
 msgstr "Active la translucidité du matériau en utilisant la méthode 'SSS' (SubSurface Scattering)."
@@ -2322,7 +2387,7 @@ msgid "Displays edges of hidden faces"
 msgstr "Affiche les arêtes des faces cachées"
 
 msgid "Draw Seams"
-msgstr "Afficher Coutures"
+msgstr "Afficher Coutures UV"
 
 msgid "Edge Length"
 msgstr "Afficher Longueurs"
@@ -2681,7 +2746,7 @@ msgid "Bake"
 msgstr "Rendu vers Textures"
 
 msgid "BAKE"
-msgstr "Rendu vers Textures UV"
+msgstr "Calculer"
 
 # Panneau Format
 msgid "Size preset: Image size - 720x576, Aspect ratio - 54x51, 25 fps"
@@ -2775,6 +2840,22 @@ msgstr "Désactive le son stéréo"
 msgid "Enables hardware pageflip stereo method"
 msgstr "Active la méthode 'pageflip' pour synchroniser les canaux audios avec des tampons OpenGL."
 
+# Panneau Stamp
+msgid "Stamp"
+msgstr "Étiquette"
+
+msgid "Enable Stamp"
+msgstr "Paramétrer"
+
+msgid "Draw Stamp"
+msgstr "Activer Étiquette"
+
+msgid "Filename"
+msgstr "Nom de Fichier"
+
+msgid "Time"
+msgstr "Temps"
+
 # Panneau Animation
 msgid "Sync"
 msgstr "Synchronisation"
@@ -2819,11 +2900,48 @@ msgstr "Ré-Ouvrir"
 ###
 ###########################################################
 
+msgid "Jump To Prev Key"
+msgstr "Aller à la Clé Préc."
+
+msgid "Jump To Next Key"
+msgstr "Aller à la Clé Suiv."
+
+msgid "Jump To Prev Marker"
+msgstr "Aller au Repère Préc."
+
+msgid "Jump To Next Marker"
+msgstr "Aller au Repère Suiv."
+
 msgid "Frame"
 msgstr "Image"
 
+msgid "Add Marker"
+msgstr "Ajouter un Repère"
+
+msgid "Duplicate Marker"
+msgstr "Copier Repère"
+
+msgid "Delete Marker"
+msgstr "Supprimer Repère"
+
+msgid "Name Marker"
+msgstr "(Re)Nommer Repère"
+
+msgid "Grab/Move Marker"
+msgstr "Déplacer Repère"
+
 msgid "Playback"
 msgstr "Lecture"
+
+#T hotkey menu
+msgid "Time value"
+msgstr "Échelle de Temps"
+
+msgid "Frames "
+msgstr "Images"
+
+msgid "Seconds"
+msgstr "Secondes "
 
 ###########################################################
 ###
@@ -2835,10 +2953,16 @@ msgid "Play Back Animation in 3D View"
 msgstr "Jouer l'Animation dans la Vue 3D"
 
 msgid "Show Frames"
-msgstr "Afficher Images"
+msgstr "Échelle: Images"
 
 msgid "Show Seconds"
-msgstr "Afficher Secondes"
+msgstr "Échelle: Secondes"
+
+msgid "Marker"
+msgstr "Repère"
+
+msgid "(Re)Name Marker"
+msgstr "(Re)Nommer Repère"
 
 msgid "Effect"
 msgstr "Effet"
@@ -2906,6 +3030,43 @@ msgstr "Afficher Faces"
 msgid "New..."
 msgstr "Nouveau..."
 
+msgid "Image Properties..."
+msgstr "Paramètres de l'Image..."
+
+msgid "Image Properties"
+msgstr "Paramètres de l'Image"
+
+msgid "Paint Tool..."
+msgstr "Outils de Peinture..."
+
+msgid "Image Paint"
+msgstr "Outils de Peinture..."
+
+msgid "Curves Tool..."
+msgstr "Courbes de Couleur..."
+
+msgid "Curves"
+msgstr "Courbes"
+
+msgid "Real-time Properties..."
+msgstr "Propriétés Temps Réel"
+
+msgid "Real-time Properties"
+msgstr "Propriétés Temps Réel"
+
+msgid "Update Automatically"
+msgstr "Mise à jour Automatique"
+
+msgid "Pack Image"
+msgstr "Archiver"
+
+msgid "Reload"
+msgstr "Recharger"
+
+msgid "Replace..."
+msgstr "Remplacer..."
+
+
 ###########################################################
 ###
 ###  SECTION  IPO CURVE EDITOR
@@ -2927,8 +3088,18 @@ msgstr "Image Courante"
 msgid "Join"
 msgstr "Fusionner"
 
+#marche pas?
 msgid "Interpolation Mode"
-msgstr "Mode d'Interpolation"
+msgstr "Interpolation"
+
+msgid "Extend Mode"
+msgstr "Extension"
+
+msgid "Cyclic"
+msgstr "Cyclique"
+
+msgid "Cyclic Extrapolation"
+msgstr "Extrapolation Cyclique"
 
 msgid "Object "
 msgstr "Objet"
@@ -3026,8 +3197,23 @@ msgstr "Conversion"
 msgid "Filter"
 msgstr "Filtre"
 
+msgid "Separate RGB"
+msgstr "Séparer RVB"
+
+msgid "Combine RGB"
+msgstr "Combiner RVB"
+
+msgid "Invert"
+msgstr "Inverser"
+
 msgid "Blur"
 msgstr "Flou"
+
+msgid "Directional Blur"
+msgstr "Flou Directionnel"
+
+msgid "Bilateral Blur"
+msgstr "Flou Bilatéral"
 
 msgid "RGB Curves"
 msgstr "Courbes RVB"
@@ -3073,6 +3259,9 @@ msgstr "Distortion"
 
 msgid "Translate"
 msgstr "Déplacer"
+
+msgid "Lens Distortion"
+msgstr "Effet de Lentille"
 
 msgid "File Output"
 msgstr "Fichier"
@@ -3139,6 +3328,9 @@ msgstr "Info Objet"
 #tip
 msgid "Display active object name and frame number in the 3D View"
 msgstr "Affiche le nom de l'objet actif ainsi que le 42wlg66"
+
+msgid "View Name"
+msgstr "Nom de la Vue"
 
 msgid "Scal"
 msgstr "Echelle"
@@ -3403,7 +3595,7 @@ msgstr "Par région"
 
 ###########################################################
 ###
-###  Menu Booléen (W en mode objet)
+###  Menu Booléen (W hotkey in object mode)
 ###
 ###########################################################
 
@@ -3555,10 +3747,10 @@ msgid "Edge Specials"
 msgstr "Arêtes Spécial"
 
 msgid "Mark Seam "
-msgstr "Marquer les coutures"
+msgstr "Marquer coutures UV"
 
 msgid "Clear Seam "
-msgstr "Effacer les coutures"
+msgstr "Effacer coutures UV"
 
 msgid "Rotate Edge CW"
 msgstr "Tourner l'arête à droite"
@@ -3724,7 +3916,7 @@ msgstr "Convertir la sélection en points Nurbs"
 
 ###########################################################
 ###
-###  Courbe Bezier (mode edition)
+###  Metaballs (mode edition)
 ###
 ###########################################################
 
@@ -3845,6 +4037,35 @@ msgid "The selected vertices already form a face"
 msgstr "Les sommets sélectionnés forment déja une face"
 
 
+###########################################################
+###
+###  Menu Unwrap (U)  
+###
+###########################################################
+
+msgid "UV Calculation "
+msgstr "Méthode de calcul UV"
+
+msgid "Unwrap "
+msgstr "Déplier"
+
+msgid "Cube Projection "
+msgstr "Projection Cube"
+
+msgid "Cylinder from View "
+msgstr "Projection Cylindre"
+
+msgid "Sphere from View "
+msgstr "Projection Sphère"
+
+msgid "Projection From View "
+msgstr "Projection depuis la Vue"
+
+msgid "Projection From View (Bounds) "
+msgstr "Projection depuis la Vue (Limites)"
+
+msgid "Reset "
+msgstr "Réinitialiser"
 
 
 
