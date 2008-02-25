@@ -2548,8 +2548,10 @@ static int assignFaceUV( MTFace * tf, BPy_NMFace * nmface )
 		    ( tmp, "ff", &( tf->uv[i][0] ), &( tf->uv[i][1] ) ) ) {
 				PyErr_SetString ( PyExc_TypeError,
 						      "expected tuple of two floats for uv" );
+				Py_DECREF( tmp );
 				return 0;
 		}
+		Py_DECREF( tmp );
 	}
 	if( nmface->image ) {	/* image assigned ? */
 		tf->tpage = ( void * ) nmface->image;
