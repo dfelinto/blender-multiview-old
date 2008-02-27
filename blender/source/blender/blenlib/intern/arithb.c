@@ -74,10 +74,9 @@
 
 float saacos(float fac)
 {
-	printf("saacos %.20f", fac);
-	if(fac<= -1.0f) { printf("pi\n"); return (float)M_PI; }
-	else if(fac>=1.0f) { printf("zero\n"); return 0.0; }
-	else { printf("%.20lf\n", acos(fac)); return (float)acos(fac); }
+	if(fac<= -1.0f) return (float)M_PI;
+	else if(fac>=1.0f) return 0.0;
+	else return (float)acos(fac);
 }
 
 float saasin(float fac)
