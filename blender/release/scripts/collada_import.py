@@ -64,6 +64,27 @@ except:
     print 'Error! Could not find reader.Sax2 module'
     _ERROR = True
 
+if _ERROR:
+	from sys import version_info
+	version = '%s.%s' % version_info[0:2]
+	print """
+This script requires the xml module that is part of a
+default standalone Python install.
+
+To run the collada importer and exporter you need to have
+Python version %s installed in your system. It can be downloaded from:
+
+http://www.python.org
+
+Notes:
+- The minor (third) version number doesn't matter, you can have either
+Python %s.1 or %s.2 or higher.
+- If you do have Python %s installed and still can't run the scripts, then
+make sure Blender's Python interpreter is finding the standalone modules
+(run 'System Information' from Blender's Help -> System menu).
+""" % (version, version, version, version)
+	Draw.PupMenu("Please install full version of python %t | Check the console for more info")
+	
 import re
 
 #filename = 'C:\\test.xml'

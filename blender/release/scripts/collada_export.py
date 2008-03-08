@@ -51,27 +51,26 @@ Notes: the script does not export animations yet.
 _ERROR = False
 
 try:
-    import math
+	import math
 except:
-    print "Error! Could not find math module"
-    _ERROR = True
-
+	print "Error! Could not find math module"
+	_ERROR = True
 try:
-    import Blender
-    from Blender import *
+	import Blender
+	from Blender import *
 except:
-    print "Error! Could not find Blender modules!"
-    _ERROR = True
+	print "Error! Could not find Blender modules!"
+	_ERROR = True
 try:
-    from xml.dom.minidom import Document, Element, Childless, Text, _write_data
+	from xml.dom.minidom import Document, Element, Childless, Text, _write_data
 except:
-    print "\nError! Could not find XML modules!"
-    _ERROR = True
+	print "\nError! Could not find XML modules!"
+	_ERROR = True
 
 if _ERROR:
-    from sys import version_info
-    version = '%s.%s' % version_info[0:2]
-    print """
+	from sys import version_info
+	version = '%s.%s' % version_info[0:2]
+	print """
 This script requires the xml module that is part of a
 default standalone Python install.
 
@@ -87,7 +86,7 @@ Python %s.1 or %s.2 or higher.
 make sure Blender's Python interpreter is finding the standalone modules
 (run 'System Information' from Blender's Help -> System menu).
 """ % (version, version, version, version)
-    Draw.PupMenu("Error: missing module(s), please check console")
+	Draw.PupMenu("Please install full version of python %t | Check the console for more info")
 
 
 # === GLOBAL EXPORT SETTINGS ===
