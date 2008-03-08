@@ -592,7 +592,7 @@ static int constspace_setter( BPy_Constraint *self, int type, PyObject *value )
 								return EXPP_ReturnIntError(PyExc_TypeError, errorstr);
 							}
 							
-							for (ct=targets.first; ct; ct=ct->nex, i++) {
+							for (ct=targets.first; ct; ct=ct->next, i++) {
 								if (ct->tar && ct->subtarget[0]) {
 									PyObject *val= PySequence_ITEM(value, i);
 									
