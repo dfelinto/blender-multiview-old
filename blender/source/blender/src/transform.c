@@ -4353,12 +4353,46 @@ static void applyTimeSlide(TransInfo *t, float sval)
 	float minx= *((float *)(t->customData));
 	float maxx= *((float *)(t->customData) + 1);
 	
+	#if 0
+	  if (NLA_ACTION_SCALED) 	 
+	                 sval[0]= get_action_frame(OBACT, sval[0]); 	 
+	  	 
+	         /* used for drawing */ 	 
+	         if (mode=='t') { 	 
+	                 G.saction->flag |= SACTION_MOVING; 	 
+	                 G.saction->timeslide= sval[0]; 	 
+	         }
+			 
+	/// WHAT FOLLOWS IS IN THE LOOP
+	 if (NLA_ACTION_SCALED) 	 
+		 cval[0]= get_action_frame(OBACT, cval[0]); 	 
+
+	if (mode=='t') 	 
+		 G.saction->timeslide= cval[0];
+
+	 if( sval[0] > minx && sval[0] < maxx) { 	 
+		 float timefac, cvalc= CLAMPIS(cval[0], minx, maxx); 	 
+
+		 /* left half */ 	 
+		 if(tv[i].oldloc[0] < sval[0]) { 	 
+				 timefac= ( sval[0] - tv[i].oldloc[0])/(sval[0] - minx); 	 
+				 tv[i].loc[0]= cvalc - timefac*( cvalc - minx); 	 
+		 } 	 
+		 else { 	 
+				 timefac= (tv[i].oldloc[0] - sval[0])/(maxx - sval[0]); 	 
+				 tv[i].loc[0]= cvalc + timefac*(maxx- cvalc); 	 
+		 } 	 
+	 }
+#endif
+	
 	/* set value for drawing black line */
 	if (t->spacetype == SPACE_ACTION) {
-		G.saction->timeslide= t->fac;
+		float cvalf = t->fac;
 		
 		if (NLA_ACTION_SCALED)
-			sval= get_action_frame(OBACT, sval);
+			cvalf= get_action_frame(OBACT, cvalf);
+			
+		G.saction->timeslide= cvalf;
 	}
 	
 	/* it doesn't matter whether we apply to t->data or t->data2d, but t->data2d is more convenient */
@@ -4374,7 +4408,7 @@ static void applyTimeSlide(TransInfo *t, float sval)
 			cval= get_action_frame(ob, cval);
 		
 		/* only apply to data if in range */
-		if (sval > minx && sval < maxx) {
+		if ((sval > minx) && (sval < maxx)) {
 			float cvalc= CLAMPIS(cval, minx, maxx);
 			float timefac;
 			
