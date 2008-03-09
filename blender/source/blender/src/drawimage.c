@@ -584,7 +584,7 @@ void draw_uvs_sima(void)
 			case SI_UVDT_STRETCH_AREA:
 			{
 				float totarea, totuvarea, areadiff, uvarea, area, col[3];
-				
+				int uvarea_error = 0;
 				for (efa= em->faces.first; efa; efa= efa->next) {
 					tface= CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
 					
@@ -600,15 +600,32 @@ void draw_uvs_sima(void)
 					}
 				}
 				
+				if (totarea==0.0 || totarea==0.0) {
+					col[0] - 1.0;
+					col[1] = col[2] = 0.0;
+					glColor3fv(col);
+					for (efa= em->faces.first; efa; efa= efa->next) {
+						glBegin(efa->v4?GL_QUADS:GL_TRIANGLES);
+							glVertex2fv(tface->uv[0]);
+							glVertex2fv(tface->uv[1]);
+							glVertex2fv(tface->uv[2]);
+							if(efa->v4) glVertex2fv(tface->uv[3]);
+						glEnd();
+					}
+				}
+				
 				for (efa= em->faces.first; efa; efa= efa->next) {
 					if ((tface=(MTFace *)efa->tmp.p)) {
 						area = EM_face_area(efa) / totarea;
 						uvarea = tface_area(tface, efa->v4!=0) / totuvarea;
-						if (area>uvarea) {
+						if (area==0.0 || uvarea==0.0) {
+							areadiff = 1.0;
+						} else if (area>uvarea) {
 							areadiff = 1.0-(uvarea/area);
 						} else {
 							areadiff = 1.0-(area/uvarea);
 						}
+						
 						weight_to_rgb(areadiff, col, col+1, col+2);
 						glColor3fv(col);
 						
@@ -699,11 +716,6 @@ void draw_uvs_sima(void)
 				break;
 			}
 		}
-		
-		
-		/* draw stretch angles */
-
-		
 	} else if(G.f & G_DRAWFACES) {
 		/* draw transparent faces */
 		BIF_GetThemeColor4ubv(TH_FACE, col1);
@@ -712,7 +724,6 @@ void draw_uvs_sima(void)
 		glEnable(GL_BLEND);
 		
 		for (efa= em->faces.first; efa; efa= efa->next) {
-			int lastsel=-1;
 			tface= CustomData_em_get(&em->fdata, efa->data, CD_MTFACE);
 			
 			if (simaFaceDraw_Check(efa, tface)) {
