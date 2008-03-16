@@ -123,7 +123,11 @@ for lib in all_libs:
     sources = list(Set(objs.split()))
     sources = [lib + "/" + x for x in sources]
 
-    defs = "HAVE_AV_CONFIG_H _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _ISOC9X_SOURCE"
+    if env['OURPLATFORM'] in ['win32-mingw', 'win32-vc' , 'darwin'] :
+    	defs = "HAVE_AV_CONFIG_H  _ISOC9X_SOURCE"
+    	print "passing switch"
+    else :
+		defs = "HAVE_AV_CONFIG_H _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _ISOC9X_SOURCE"
     cflags = ""
     
     if "CFLAGS" in vars:
