@@ -1,7 +1,5 @@
 # Italian translation for blender
 #
-#msgid ""
-#msgstr ""
 #"Project-Id-Version: it-246\n"
 #"POT-Creation-Date: \n"
 #"PO-Revision-Date: 2008-02-29 21:39+0100\n"
@@ -311,7 +309,7 @@ msgid "Merge Limit:"
 msgstr "Limite Unione:"
 
 msgid "Distance from axis within which mirrored vertices are merged"
-msgstr "Distanza da asse da dove i vertici e i riflessi vengono uniti"
+msgstr "Distanza da assi a dove i vertici riflessi si uniscono"
 
 msgid "Specify the axis to mirror about"
 msgstr "Specifica su quale asse fare la specchiatura"
@@ -320,7 +318,7 @@ msgid "Do Clipping"
 msgstr "Taglia"
 
 msgid "Prevents during Transform vertices to go through Mirror"
-msgstr "Evita durante la Trasformazione i vertici che superano lo specchio"
+msgstr "Evita durante la Trasformazione che i vertici superano il Mirror"
 
 msgid "Ratio:"
 msgstr "Rapporto:"
@@ -428,7 +426,7 @@ msgid "Recalculate and clear offset (transform) of hook"
 msgstr "Ricalcola e cancella l'offset (trasformazione) del gancio"
 
 msgid "Recenter"
-msgstr "Rincentra"
+msgstr "Ricentra"
 
 msgid "Sets hook center to cursor position"
 msgstr "Imposta il centro del gancio dalla posizione del cursore"
@@ -6281,7 +6279,7 @@ msgid "Sets the size of the shadow buffer"
 msgstr "Imposta la dimensione del buffer delle ombre"
 
 msgid "Sets the radius of the lightsource, 0 is same as pointlight"
-msgstr "Imposta il raggio della sorgente di luce, 0 = a punto luce"
+msgstr "Imposta il raggio della sorgente di luce, 0 = punto luce"
 
 msgid "Sets the distance value at which light intensity is half"
 msgstr "Imposta la distanza alla quale l'intensità della luce é dimezzata"
@@ -6464,7 +6462,7 @@ msgid "Let the texture displace the surface"
 msgstr "Fà si che la texture deformi la superfice"
 
 msgid "Sets the amount the texture displaces the surface"
-msgstr "Stabilisce quanto la texture deforma la superfice"
+msgstr "Stabilisce di quanto la texture deforma la superfice"
 
 msgid "Let the texture warp texture coordinates of next channels"
 msgstr "Consenti alla texture di influenzare le coordinate della texture sui canali successivi"
@@ -6668,7 +6666,7 @@ msgid "Enable jittering of wavelenghts, adds noise"
 msgstr "Abilita lunghezza d'onda del jittering, aggiunge rumore"
 
 msgid "Renders material as a halo"
-msgstr "Restituisce il materiali come un alone"
+msgstr "Restituisce il materiali con un alone"
 
 msgid "HaloSize: "
 msgstr "DimAlone: "
@@ -6887,16 +6885,16 @@ msgid "Show Col Ramp"
 msgstr "Visualizza Rampe Colore"
 
 msgid "Show ramp buttons for material diffuse color"
-msgstr "Visualizza bottoni rampe per colore diffuso del materiale"
+msgstr "Visualizza bottoni rampa per colore diffuso del materiale"
 
 msgid "Show Spec Ramp"
 msgstr "Visualizza Rampe Spec"
 
 msgid "Show ramp buttons for material specular color"
-msgstr "Visualizza bottoni rampe per colore speculare del materiale"
+msgstr "Visualizza bottoni rampa per colore speculare del materiale"
 
 msgid "Toggles colorband ramp operations"
-msgstr "Abilita/Disabilita operazioni rampe banda colore"
+msgstr "Abilita/Disabilita operazioni rampa banda colore"
 
 msgid "Factor"
 msgstr "Fattore"
@@ -6938,7 +6936,7 @@ msgid "Lighten "
 msgstr "Chiaro "
 
 msgid "Blending method for Ramp (uses alpha in Colorband)"
-msgstr "Metodo per la sfumatura delle rampe (usa trasparenza nelle banda colore)"
+msgstr "Metodo per la sfumatura della rampa (usa trasparenza nelle banda colore)"
 
 msgid "Blending factor (also uses alpha in Colorband)"
 msgstr "Fattore sfumatura (usa trasparenza nelle banda colore)"
@@ -10253,7 +10251,7 @@ msgid "Point"
 msgstr "Punto"
 
 msgid "Can't change because of pinned data"
-msgstr "Impossibile cambiare perché dati bloccati"
+msgstr "Impossibile cambiare : dati bloccati"
 
 msgid "Sets Ipo to be included in an Action or not"
 msgstr "Imposta l'Ipo per essere inclusa in una Azione o no"
@@ -12971,7 +12969,7 @@ msgid "X-axis mirror"
 msgstr "Specchio asse-X"
 
 msgid "While using transforms, mirrors the transformation"
-msgstr "Rispecchia la trasformazione mentre trasformi"
+msgstr "Rifletti la trasformazione mentre trasformi"
 
 msgid "Empty Display:"
 msgstr "Visualizza Empty:"
@@ -13076,7 +13074,7 @@ msgid "Show domain boundary options."
 msgstr "Mostra opzioni proprietà confine"
 
 msgid "Obstacle causes zero normal and tangential velocity (=sticky). Default for all. Only option for moving objects."
-msgstr "L'ostacolo causa l'azzeramento della velocità normale e tangenziale (=viscoso).Prefissato per tutto.Solo opzione per oggetti in movimento."
+msgstr "L'ostacolo causa l'azzeramento della velocità normale e tangenziale (=viscoso).Prefissato per tutto.Opzione solo per oggetti in movimento."
 
 msgid "Mix between no-slip and free-slip. Non moving objects only!"
 msgstr "Mixa tra antiscivolo e scivoloso. Solo oggetti non in movimento!"
@@ -13211,7 +13209,7 @@ msgid "Render Sky or backbuffer in this Layer"
 msgstr "Render del cielo o backbuffer in questo livello"
 
 msgid "Render Edge-enhance in this Layer (only works for Solid faces)"
-msgstr "Migliora i bordi nel render in questo livello (funziona solo per facce solide)"
+msgstr "Migliora i bordi nel render in questo livello (funziona solo con facce solide)"
 
 msgid "Render Solid faces in this Layer"
 msgstr "Render delle facce solide in questo livello"
@@ -15659,7 +15657,7 @@ msgid "Calculate the Path travelled by the Bone's Head instead of Tail"
 msgstr "Calcola l'itinerario dalla testa dell'osso invece che dalla coda"
 
 msgid "(Re)calculates the paths of the selected bones"
-msgstr "(Re)Calcola il percorso delle ossa selezionate"
+msgstr "(Ri)Calcola il percorso delle ossa selezionate"
 
 msgid "Clears all bone paths"
 msgstr "Cancella tutti i percorsi ossa"
@@ -16268,7 +16266,7 @@ msgid "<Self Collision> not available because there"
 msgstr "<Auto collisione> non disponibile perché"
 
 msgid "are no edges, enable <Use Edges>"
-msgstr "Non ci sono lati, abilita <Use Edges (Usa Bordi)>"
+msgstr "Non ci sono bordi, abilita <Use Edges (Usa Bordi)>"
 
 msgid "Makes this object visible to other softbody objects"
 msgstr "Rende questo oggetto visibile ad altri oggetti softbody"
