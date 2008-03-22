@@ -125,7 +125,6 @@ for lib in all_libs:
 
     if env['OURPLATFORM'] in ['win32-mingw', 'win32-vc' , 'darwin'] :
     	defs = "HAVE_AV_CONFIG_H  _ISOC9X_SOURCE"
-    	print "passing switch"
     else :
 		defs = "HAVE_AV_CONFIG_H _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _ISOC9X_SOURCE"
     cflags = ""
