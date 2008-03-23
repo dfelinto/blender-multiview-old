@@ -1660,10 +1660,12 @@ static void do_build_seq_ibuf(Sequence * seq, TStripElem *se, int cfra,
 
 				se->ibuf = i;
 
-				input_preprocess(seq, se, cfra);
-
 				use_limiter = TRUE;
 			}
+		}
+
+		if (use_limiter) {
+			input_preprocess(seq, se, cfra);
 		}
 	} else if(seq->type & SEQ_EFFECT) {
 		/* should the effect be recalculated? */
