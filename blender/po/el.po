@@ -2,24 +2,13 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: 2008-02-15 02:10+0200\n"
+"PO-Revision-Date: 2008-03-23 12:20+0200\n"
 "Last-Translator: Kostas Karvouniaris <neogen556@yahoo.gr>\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-# Project-Id-Version: \n"
-# POT-Creation-Date: \n"
-# PO-Revision-Date: \n"
-# Last-Translator: \n"
-# Language-Team: \n"
-# MIME-Version: 1.0\n"
-# Content-Type: text/plain; charset=utf-8\n"
-# Content-Transfer-Encoding: 8bit\n"
-# X-Poedit-Language: Ukrainian\n"
-# X-Poedit-Country: UKRAINE\n"
-# X-Poedit-SourceCharset: utf-8\n"
 msgid "(De)Select All"
 msgstr "(Απο)Επιλογή Όλων"
 
@@ -457,6 +446,9 @@ msgstr "Antishift"
 msgid "Append"
 msgstr "Συγχώνευση"
 
+msgid "Append or Link"
+msgstr "Συγχώνευση ή Σύνδεση"
+
 msgid "Append...|Shift F1"
 msgstr "Συγχώνευση...|Shift F1"
 
@@ -641,6 +633,9 @@ msgstr ""
 
 msgid "Back"
 msgstr "Πίσω"
+
+msgid "Back 10 Frames"
+msgstr "Πίσω 10 καρέ"
 
 msgid "Back 10 Frames|downarrow"
 msgstr "Πίσω 10 καρέ |κάτω βέλος"
@@ -2627,6 +2622,12 @@ msgstr "Τύπος Απεικόνισης %t|όρια %x1|Πλέγμα %x2|Στ�
 msgid "Drawtype|ctrl C, 4"
 msgstr "Τύπος Απεικόνισης|ctrl C, 4"
 
+msgid "Dump Subwindow"
+msgstr "Φωτογράφιση υποπαραθύρου"
+
+msgid "Dump Screen"
+msgstr "Φωτογράφιση οθόνης"
+
 msgid "Dupend"
 msgstr "Αντ.τέλος"
 
@@ -2920,7 +2921,7 @@ msgstr "Τέλος"
 msgid "End Frame|Shift Rightarrow"
 msgstr "Τελευταίο Καρέ|Shift Rightarrow"
 
-msgid "End frame"
+msgid "End Frame"
 msgstr "Τελευταίο Καρέ"
 
 msgid "End:"
@@ -3355,6 +3356,9 @@ msgstr ""
 msgid "Format"
 msgstr "Μορφοποίηση"
 
+msgid "Forward 10 Frames"
+msgstr "Μπροστά 10 Καρέ"
+
 msgid "Forward 10 Frames|Uparrow"
 msgstr "Μπροστά 10 Καρέ|Uparrow"
 
@@ -3549,6 +3553,9 @@ msgstr "Δημιουργεί μια σειρά από εικόνες που θα
 
 msgid "Generates an automatic name"
 msgstr "Δημιουργεί ένα αυτόματο όνομα"
+
+msgid "Generate Display Lists"
+msgstr "Δημιουργία Λιστών Οθόνης"
 
 msgid "Generates hard noise"
 msgstr "Δημιουργεί σκληρό θόρυβο"
@@ -3775,7 +3782,7 @@ msgid "Help"
 msgstr "Βοήθεια"
 
 msgid "Hemi"
-msgstr ""
+msgstr "Ημισφαίριο"
 
 msgid "Hi:"
 msgstr ""
@@ -3882,6 +3889,9 @@ msgstr "ΕΙΣΑΓΩΓΗ"
 
 msgid "IOR "
 msgstr ""
+
+msgid "IcoSphere"
+msgstr "Ισόσφαιρα"
 
 msgid "Icosphere|"
 msgstr "Ισόσφαιρα"
@@ -4282,6 +4292,9 @@ msgstr "Αριστερό κλικ για σχεδίαση, Enter για ολοκ
 
 msgid "LMB:"
 msgstr ""
+
+msgid "Load Factory Settings"
+msgstr "Φόρτωση εργοστασιακών ρυθμίσεων"
 
 msgid "LOAD FILE"
 msgstr "ΦΟΡΤΩΣΗ ΑΡΧΕΙΟΥ"
@@ -5424,8 +5437,14 @@ msgstr "Νέο|Ctrl X"
 msgid "Next"
 msgstr "Επόμενο"
 
+msgid "Next Frame"
+msgstr "Επόμενο Καρε"
+
 msgid "Next Frame|Rightarrow"
 msgstr "Επόμενο Καρε|Rightarrow"
+
+msgid "Next Keyframe"
+msgstr "Επόμενο Καρέ με Κλειδί"
 
 msgid "Next Keyframe|Ctrl Pageup"
 msgstr "Επόμενο Καρέ με Κλειδί|Ctrl Pageup"
@@ -6010,6 +6029,9 @@ msgstr ""
 msgid "Open file: %s"
 msgstr ""
 
+msgid "Open..."
+msgstr "Άνοιγμα..."
+
 msgid "Open...|"
 msgstr "Άνοιγμα...|"
 
@@ -6129,7 +6151,7 @@ msgid "PWD"
 msgstr ""
 
 msgid "Pack Data"
-msgstr "Πακετάρισε τα Δεδομένα"
+msgstr "Πακετάρισμα Δεδομένων"
 
 msgid "Pack Image"
 msgstr "Πακετάρισε την Εικόνα"
@@ -6432,8 +6454,14 @@ msgstr "Προηγ"
 msgid "Preview"
 msgstr "Προεπισκόπιση"
 
+msgid "Previous Frame"
+msgstr "Προηγούμενο Καρέ"
+
 msgid "Previous Frame|Leftarrow"
 msgstr "Προηγούμενο Καρέ|Leftarrow"
+
+msgid "Previous Keyframe"
+msgstr "Προηγούμενο καρέ με κλειδί"
 
 msgid "Previous Keyframe|Ctrl Pagedown"
 msgstr "Προηγούμενο καρέ με κλειδί|Ctrl Pagedown"
@@ -6508,8 +6536,8 @@ msgstr "Σφάλμα Python script, έλεγξε την κονσόλα"
 msgid "Q"
 msgstr ""
 
-msgid "QUIT BLENDER"
-msgstr "ΕΞΟΔΟΣ"
+msgid "Quit Blender"
+msgstr "Έξοδος"
 
 msgid "Qtcodecdata"
 msgstr ""
@@ -6724,6 +6752,9 @@ msgstr "Recalculate samples"
 msgid "Recieves transparent shadows based at material color and alpha"
 msgstr "Recieves transparent shadows based at material color and alpha"
 
+msgid "Record Game Physics to IPO"
+msgstr "Καταγραφή φυσικής παιχνιδιού στα IPO"
+
 msgid "Record Mouse %t|Still %x1|Play anim %x2"
 msgstr "Record Mouse %t|Still %x1|Play anim %x2"
 
@@ -6736,6 +6767,9 @@ msgstr "Recording... %d\n"
 
 msgid "Recursive delete is unsupported on Windows"
 msgstr ""
+
+msgid "Recover Last Session"
+msgstr "Επαναφορά τελευταίας συνεδρίας"
 
 msgid "Red"
 msgstr ""
@@ -6892,13 +6926,19 @@ msgid "Render"
 msgstr "Render"
 
 msgid "Render Animation"
-msgstr "Render Animation"
+msgstr "Απόδοση Animation"
+
+msgid "Render Current Frame"
+msgstr "Απόδοση τρέχοντος καρέ"
 
 msgid "Render Current Frame|F12"
 msgstr "Render Current Frame|F12"
 
 msgid "Render Daemon"
 msgstr "Render Daemon"
+
+msgid "Render Settings"
+msgstr "Ρυθμίσεις απόδοσης"
 
 msgid "Render Settings|F10"
 msgstr "Render Settings|F10"
@@ -7229,6 +7269,9 @@ msgstr "ΑΠΟΘΗΚΕΥΣΗ"
 msgid "SAVE BMP"
 msgstr "ΑΠΟΘΗΚΕΥΣΗ BMP"
 
+msgid "Save Default Settings"
+msgstr "Αποθήκευση ρυθμίσεων εκκίνησης"
+
 msgid "SAVE FILE"
 msgstr "ΑΠΟΘΗΚΕΥΣΗ ΑΡΧΕΙΟΥ"
 
@@ -7390,8 +7433,8 @@ msgstr "Αποθήκευση ως...|F2"
 msgid "Save Default Settings|Ctrl U"
 msgstr "Αποθήκευση προκαθορισμένων Ρυθμίσεων|Ctrl U"
 
-msgid "Save Dynamic Runtime"
-msgstr ""
+msgid "Save Dynamic Runtime..."
+msgstr "Αποθήκευση Δυναμικού Εκτελέσιμου(exe)"
 
 msgid "Save Envmap"
 msgstr "Αποθήκευση ΠεριβΧάρτη"
@@ -7399,14 +7442,17 @@ msgstr "Αποθήκευση ΠεριβΧάρτη"
 msgid "Save Image"
 msgstr "Αποθήκευση εικόνας"
 
+msgid "Save Image..."
+msgstr "Αποθήκευση εικόνας..."
+
 msgid "Save Image...|F3"
 msgstr "Αποθήκευση εικόνας...|F3"
 
 msgid "Save Painted Image..."
 msgstr "Αποθήκευση Ζωγραφισμένης Εικόνας..."
 
-msgid "Save Runtime"
-msgstr ""
+msgid "Save Runtime..."
+msgstr "Αποθήκευση Εκτελέσιμου (exe)"
 
 msgid "Save Userprefs"
 msgstr ""
@@ -7585,11 +7631,17 @@ msgstr "Επιλογή Συνδεδεμένων%t|Ipo Αντικειμένου%x
 msgid "Select Next"
 msgstr "Επιλογή Επόμενου"
 
+msgid "Select Next Keyframe"
+msgstr "Επιλογή Επόμενου Καρέ-κλειδιού"
+
 msgid "Select Next Keyframe|Pageup"
 msgstr "Επιλογή Επόμενου Καρέ-κλειδιού"
 
 msgid "Select Prev"
 msgstr "Επιλογή Προηγούμενου"
+
+msgid "Select Previous Keyframe"
+msgstr "Επιλογή Προηγούμενου Καρέ-κλειδιού"
 
 msgid "Select Previous Keyframe|Pagedown"
 msgstr "Επιλογή Προηγούμενου Καρέ-κλειδιού"
@@ -7900,6 +7952,9 @@ msgstr ""
 #, c-format
 msgid "Set pitch to: %f\n"
 msgstr ""
+
+msgid "Set Render Border"
+msgstr "Ορισμός πλαισίου απόδοσης"
 
 msgid "Set render size to 1/2 of defined size"
 msgstr "Θέτει το μέγεθος της εικόνας απόδοσης στο 1/2 του καθορισμένου μεγέθους"
@@ -8534,6 +8589,9 @@ msgstr "Εμφάνιση"
 msgid "Show Actuators"
 msgstr "Εμφάνιση Ενεργοποιητών"
 
+msgid "Show and Select Keyframes"
+msgstr "Εμφάνιση κ επιλογή καρέ με κλειδί"
+
 msgid "Show Controllers"
 msgstr "Εμφάνιση Ελεγκτών"
 
@@ -8549,6 +8607,9 @@ msgstr "Εμφάνιση Κρυμμένων Επιφανειών|Alt H"
 msgid "Show Hidden|Alt H"
 msgstr "Εμφάνιση Κρυμμένων|Alt H"
 
+msgid "Show Keyframes"
+msgstr "Εμφάνιση Καρέ-κλειδιών"
+
 msgid "Show Keyframes|K"
 msgstr "Εμφάνιση Καρέ-κλειδιών|K"
 
@@ -8560,6 +8621,9 @@ msgstr "Εμφάνιση Ομίχλης"
 
 msgid "Show Objects"
 msgstr "Εμφάνιση Αντικειμένων"
+
+msgid "Show Physics Visualization"
+msgstr "Εμφάνιση Ορίων Φυσικής"
 
 msgid "Show Render Buffer|F11"
 msgstr "Εμφάνιση Προχείρου Απόδοσης|F11"
@@ -9209,8 +9273,14 @@ msgstr "Starsi"
 msgid "Stars"
 msgstr "Άστρα"
 
+msgid "Start Frame"
+msgstr "Καρέ εκκίνησης"
+
 msgid "Start Frame|Shift Leftarrow"
 msgstr "Καρέ εκκίνησης|Shift Leftarrow"
+
+msgid "Start Game"
+msgstr "Έναρξη Παιχνιδιού"
 
 msgid "Start Game|P"
 msgstr "Έναρξη Παιχνιδιού|P"
@@ -9412,6 +9482,9 @@ msgstr "Συγχρον"
 
 msgid "System & OPENGL"
 msgstr "Σύστημα & OPENGL"
+
+msgid "System"
+msgstr "Σύστημα"
 
 msgid "System:"
 msgstr "Σύστημα:"
@@ -9856,6 +9929,9 @@ msgstr "Κορυφή|Numpad 7"
 msgid "Torque"
 msgstr "Ροπή"
 
+msgid "Torus"
+msgstr "Δαχτυλίδι"
+
 msgid "Tot:"
 msgstr "Σύνολο:"
 
@@ -9969,7 +10045,7 @@ msgid "Turns:"
 msgstr "Στροφές:"
 
 msgid "Two"
-msgstr ""
+msgstr "Δύο"
 
 msgid "Two Sided"
 msgstr "Διπλής Όψης"
@@ -10027,6 +10103,9 @@ msgstr "UV Πρωτότ"
 
 msgid "Uvs"
 msgstr ""
+
+msgid "UVsphere"
+msgstr "Σφαίρα UV"
 
 msgid "Uvsphere"
 msgstr "Σφαίρα UV"
@@ -10218,6 +10297,9 @@ msgstr "Χρήση του αλγορίθμου B spline για υπολογισ�
 
 msgid "Use Background Image"
 msgstr "Χρήση εικόνας φόντου"
+
+msgid "Use Blender Materials"
+msgstr "Χρήση υλικών του Blender"
 
 msgid "Use Fh settings in Materials"
 msgstr "Χρήση ρυθμίσεων Fh στα υλικά"
@@ -11434,7 +11516,7 @@ msgid "Splits selected verts to separate sub-mesh."
 msgstr "Splits selected verts to separate sub-mesh."
 
 msgid "Sets the amount of red colour at the horizon"
-msgstr "ÐÑÑaÐ½Ð¾Ð²Ð¸ÑÐ¸ Ð²ÐµÐ»Ð¸ÑÐ¸Ð½Ñ Ð§ÐµÑÐ²Ð¾Ð½Ð¾Ð³Ð¾ ÐºÐ¾Ð»ÑÐ¾ÑÑ Ð´Ð»Ñ ÐÐ¾ÑÐ¸Ð·Ð¾Ð½ÑÑ"
+msgstr "Sets the amount of red colour at the horizon"
 
 msgid "Sets the amount of green colour at the horizon"
 msgstr "Sets the amount of green colour at the horizon"
@@ -11458,13 +11540,13 @@ msgid "Toggles whether to continue displaying the last frame past the end of the
 msgstr "Toggles whether to continue displaying the last frame past the end of the strip"
 
 msgid "Enable rolling physics"
-msgstr "Enable rolling physics"
+msgstr "Ενεργοποίηση φύσικής κύλισης"
 
 msgid "Specify a bounds object for physics"
 msgstr "Specify a bounds object for physics"
 
 msgid "Physics Engine"
-msgstr "Physics Engine"
+msgstr "Μηχανή Φυσικής"
 
 msgid "Ambient Occlusion"
 msgstr ""
