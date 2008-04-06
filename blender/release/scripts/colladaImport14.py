@@ -61,7 +61,7 @@ scriptsDir = ""
 
 try:
 	import colladaImEx.cstartup
-	if Blender.Get('scriptsdir') is None:
+	if Blender.Get('scriptsdir') is None and Blender.Get('uscriptsdir') is None:
 		if scriptsDir == '' or scriptsDir is None:
 			Blender.Draw.PupMenu("Cannot find folder %t | Please set path in file 'colladaImport14.py'")
 			error = True
