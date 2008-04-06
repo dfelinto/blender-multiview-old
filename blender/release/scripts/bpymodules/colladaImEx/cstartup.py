@@ -125,7 +125,12 @@ def Main(doImp, scriptsLoc):
 
 	doImport = doImp
 	if scriptsLoc == "":
-		scriptsLocation = Blender.Get('scriptsdir')+Blender.sys.sep+'bpymodules'+Blender.sys.sep+'colladaImEx'+Blender.sys.sep
+		scriptsLoc = Blender.Get('scriptsdir')
+		if not scriptsLoc: scriptsLoc = Blender.Get('uscriptsdir')
+		if scriptsLoc:
+			scriptsLocation = scriptsLoc+Blender.sys.sep+'bpymodules'+Blender.sys.sep+'colladaImEx'+Blender.sys.sep
+		else:
+			print 'Could not find a scripts path'
 	else:
 		scriptsLocation = scriptsLoc
 	

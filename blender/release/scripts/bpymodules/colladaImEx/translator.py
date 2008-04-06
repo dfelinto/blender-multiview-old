@@ -2050,7 +2050,7 @@ class SceneNode(object):
 			daePhysicsMaterial = collada.DaePhysicsMaterial()
 
 			physicsMaterials = bNode.getData().getMaterials()
-			if not (physicsMaterials is None):
+			if (not (physicsMaterials is None)) and len(physicsMaterials) > 0:
 				physicsMaterial = physicsMaterials[0]
 				if not (physicsMaterial is None):
 					daePhysicsMaterial.techniqueCommon.restitution = physicsMaterial.rbRestitution
@@ -3100,7 +3100,7 @@ class MaterialNode(object):
 			textures = bMaterial.getTextures()
 			for mTex in textures:
 				# Check if this texture is mapped to Color
-				if not mTex is None and mTex.mapto == Blender.Texture.MapTo.COL:
+				if not mTex is None and mTex.mapto == Blender.Texture.MapTo.COL and mTex.tex.image != None:
 					texture = mTex.tex
 					textureNode = TextureNode(self.document);
 					textureNode.AddImageTexture(daeEffect, texture.image);
