@@ -1592,7 +1592,7 @@ float hyp3,hyp4,b4,b5
 			if(angle == 0.0f) {
 				b1 = posy;
 				b2 = y;
-				hyp = y - posy;
+				hyp = fabs(y - posy);
 			}
 			else {
 				b1 = posy - (-angle)*posx;
@@ -1628,8 +1628,11 @@ float hyp3,hyp4,b4,b5
 			hwidth = width*0.5f;
 			if (angle == 0) {
 				b1 = posy*0.5f;
-				b2 = y;
 				b3 = yo-posy*0.5f;
+				b2 = y;
+
+				hyp = abs(y - posy*0.5f);
+				hyp2 = abs(y - (yo-posy*0.5f));
 			}
 			else {
 				b1 = posy*0.5f - (-angle)*posx*0.5f;
