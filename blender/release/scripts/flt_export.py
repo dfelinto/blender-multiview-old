@@ -1388,7 +1388,7 @@ def dbexport():
 	Blender.Window.WaitCursor(False)
 	
 	#optional: Copy textures
-	if options.state['copy_textures']:
+	if options.state['copytex']:
 		for imgname in tex_files:
 			#Check to see if texture exists in target directory
 			if not os.path.exists(tex_files[imgname]):
