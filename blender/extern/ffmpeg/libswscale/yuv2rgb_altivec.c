@@ -423,10 +423,8 @@ static int altivec_##name (SwsContext *c,                               \
             vi   += 8;                                                  \
                                                                         \
         }                                                               \
-                                                                        \
         outo  += (outstrides[0])>>4;                                    \
         oute  += (outstrides[0])>>4;                                    \
-                                                                        \
         ui    += instrides_scl[1];                                      \
         vi    += instrides_scl[2];                                      \
         y1i   += instrides_scl[0];                                      \

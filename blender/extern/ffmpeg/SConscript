@@ -6,9 +6,13 @@ all_libs = ['libavformat', 'libavcodec', 'libswscale', 'libavutil']
 root = "extern/ffmpeg"
 
 if env['OURPLATFORM'] == 'win32-mingw':
-    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-pthreads"
+    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-pthreads --enable-libx264"
 else:
-    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-memalign-hack"
+    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-memalign-hack --enable-libx264"
+
+extra_variables = { }
+extra_variables["CONFIG_LIBX264"] = "yes"
+extra_includes = [ "../x264" ]
 
 import sys
 import os
@@ -75,7 +79,7 @@ def makeparseblock(fp, variables):
             return
                 
 def getmakevars(filenames):
-    variables = { }
+    variables = extra_variables.copy()
     for filename in filenames:
        fp = open(filename)
        print "Processing makefile: " + filename
@@ -90,7 +94,7 @@ print "Configuring ffmpeg..."
 
 if not os.path.isfile(root + "/config.mak"):
     os.chdir(root);
-    os.system('sh configure ' + ffmpeg_switches)
+    os.system("sh -c './configure " + ffmpeg_switches + "'")
     os.chdir("../..");
 else:
     print "(skipped, config.mak already exists)"
@@ -126,7 +130,7 @@ for lib in all_libs:
     if env['OURPLATFORM'] in ['win32-mingw', 'win32-vc' , 'darwin'] :
     	defs = "HAVE_AV_CONFIG_H  _ISOC9X_SOURCE"
     else :
-		defs = "HAVE_AV_CONFIG_H _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _ISOC9X_SOURCE"
+	defs = "HAVE_AV_CONFIG_H _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _ISOC9X_SOURCE"
     cflags = ""
     
     if "CFLAGS" in vars:
@@ -146,7 +150,7 @@ for lib in all_libs:
                             root + "/include/ffmpeg/" + h)
 
     ff_env.BlenderLib (libname="extern_" + lib, sources=sources,
-                    includes=["."] + all_libs,
+                    includes=["."] + all_libs + extra_includes,
                     defines=Split(defs),
                     libtype=['core', 'intern', 'player'],
                     priority = [5, 5, 200],

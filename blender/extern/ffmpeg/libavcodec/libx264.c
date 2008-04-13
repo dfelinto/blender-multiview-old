@@ -265,8 +265,10 @@ X264_init(AVCodecContext *avctx)
     }
 
     x4->enc = x264_encoder_open(&x4->params);
-    if(!x4->enc)
-        return -1;
+    if(!x4->enc) {
+	    av_log(avctx, AV_LOG_ERROR, "FFMPEG: X264 encoder open failed!\n");
+	    return -1;
+    }
 
     avctx->coded_frame = &x4->out_pic;
 
