@@ -8,14 +8,17 @@ Currently:
 Additionally:
 - To make ffmpeg work with scons, you have to disable the libx264 library
   test! (or you have to install libx264 seperately, your choice)
+  same goes for XVid
 
   change
 
   enabled libx264    && require x264 x264.h x264_encoder_open -lx264
+  enabled libxvid    && require Xvid xvid.h xvid_global -lxvidcore
 
   into
 
   # enabled libx264    && require x264 x264.h x264_encoder_open -lx264
+  # enabled libxvid    && require Xvid xvid.h xvid_global -lxvidcore
 
   within configure
 

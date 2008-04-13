@@ -6,13 +6,12 @@ all_libs = ['libavformat', 'libavcodec', 'libswscale', 'libavutil']
 root = "extern/ffmpeg"
 
 if env['OURPLATFORM'] == 'win32-mingw':
-    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-pthreads --enable-libx264"
+    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-pthreads --enable-libx264 --enable-libxvid"
 else:
-    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-memalign-hack --enable-libx264"
+    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-memalign-hack --enable-libx264 --enable-libxvid"
 
 extra_variables = { }
-extra_variables["CONFIG_LIBX264"] = "yes"
-extra_includes = [ "../x264" ]
+extra_includes = [ "../x264", "../xvidcore/src" ]
 
 import sys
 import os
