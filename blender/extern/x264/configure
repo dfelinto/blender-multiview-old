@@ -407,7 +407,7 @@ fi
 if [ "$debug" = "yes" ]; then
     CFLAGS="-O1 -g $CFLAGS"
 else
-    CFLAGS="-O4 -ffast-math $CFLAGS"
+    CFLAGS="-O2 $CFLAGS"
 fi
 
 if cc_check "stdio.h" "" "fseeko(stdin,0,0);" ; then
