@@ -1726,7 +1726,7 @@ elif enabled optimize; then
         add_cflags  "-O5"
         add_ldflags "-O5"
     else
-        add_cflags "-O3"
+        add_cflags "-O2"
     fi
 fi
 
