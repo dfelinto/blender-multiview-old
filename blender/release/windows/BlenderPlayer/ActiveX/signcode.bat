@@ -1,15 +1,12 @@
 rem
 rem $Id$
 rem
-rem ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
+rem ***** BEGIN GPL LICENSE BLOCK *****
 rem
 rem This program is free software; you can redistribute it and/or
 rem modify it under the terms of the GNU General Public License
 rem as published by the Free Software Foundation; either version 2
-rem of the License, or (at your option) any later version. The Blender
-rem Foundation also sells licenses for use in proprietary software under
-rem the Blender License.  See http://www.blender.org/BL/ for information
-rem about this.
+rem of the License, or (at your option) any later version.
 rem
 rem This program is distributed in the hope that it will be useful,
 rem but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -27,5 +24,5 @@ rem The Original Code is: all of this file.
 rem
 rem Contributor(s): none yet.
 rem
-rem ***** END GPL/BL DUAL LICENSE BLOCK *****
+rem ***** END GPL LICENSE BLOCK *****
 SignCode.exe -spc a:\mycredentials.spc -v a:\myprivatekey.pvk -n "Blender3DPlugin" -i http://www.blender.nl/plugin -$ commercial -t http://timestamp.verisign.com/scripts/timstamp.dll Blender3DPlugin.cab
