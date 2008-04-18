@@ -1,12 +1,29 @@
+#!/bin/bash
 # epy_docgen.sh
 # generates blender python doc using epydoc
 # requires epydoc in your PATH.
 # run from the doc directory containing the .py files
-# usage:  sh epy_docgen.sh
+# usage: ./epy_docgen.sh
 
-# set posix locale so regex works properly for [A-Z]*.py
-LC_ALL=POSIX
+# force posix locale so [A-Z]*.py glob uses ASCII ordering
+LC_COLLATE=POSIX
 
-epydoc -o BPY_API --url "http://www.blender.org" -t API_intro.py \
- -n "Blender" --no-private --no-frames \
-$( ls [A-Z]*.py )
+EPY_VER=$( epydoc --version | sed -e "s/^.* version //" )
+case $EPY_VER in
+    3*)
+        EPY_PARAMS="--top API_intro --name \"Blender\""
+        ;;
+
+    [12]*)
+        EPY_PARAMS="-t API_intro.py -n \"Blender\""
+        ;;
+
+    *)
+        echo ERROR: Unknown epydoc version
+        exit 1
+        ;;
+
+esac
+
+epydoc -o BPY_API --url "http://www.blender.org" -n "Blender" \
+ --no-private --no-frames $EPY_PARAMS [A-Z]*.py
