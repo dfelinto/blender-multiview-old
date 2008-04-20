@@ -6,9 +6,9 @@ Group: 'Import'
 Tooltip: 'Import from 3DS file format (.3ds)'
 """
 
-__author__= ['Bob Holcomb', 'Richard L?rk?ng', 'Damien McGinnes', 'Campbell Barton']
+__author__= ['Bob Holcomb', 'Richard L?rk?ng', 'Damien McGinnes', 'Campbell Barton', 'Mario Lapin']
 __url__ = ("blenderartists.org", "www.blender.org", "www.gametutorials.com", "lib3ds.sourceforge.net/")
-__version__= '0.995'
+__version__= '0.996'
 __bpydoc__= '''\
 
 3ds Importer
@@ -17,6 +17,15 @@ This script imports a 3ds file and the materials into Blender for editing.
 
 Loader is based on 3ds loader from www.gametutorials.com (Thanks DigiBen).
 
+0.996 by Mario Lapin (mario.lapin@gmail.com) 13/04/200 <br>
+ - Implemented workaround to correct association between name, geometry and materials of
+   imported meshes.
+   
+   Without this patch, version 0.995 of this importer would associate to each mesh object the
+   geometry and the materials of the previously parsed mesh object. By so, the name of the
+   first mesh object would be thrown away, and the name of the last mesh object would be
+   automatically merged with a '.001' at the end. No object would desappear, however object's
+   names and materials would be completely jumbled.
 
 0.995 by Campbell Barton<br>
 - workaround for buggy mesh vert delete
@@ -424,8 +433,7 @@ def process_next_chunk(file, previous_chunk, importedObjects, IMAGE_SEARCH):
 	new_chunk= chunk()
 	temp_chunk= chunk()
 	
-	## @@ PATCH
-	shouldCreate = 0
+	CreateBlenderObject = False
 
 	#loop through all the data for this chunk (previous chunk) and see what it is
 	while (previous_chunk.bytes_read<previous_chunk.length):
@@ -458,8 +466,8 @@ def process_next_chunk(file, previous_chunk, importedObjects, IMAGE_SEARCH):
 
 		#is it an object chunk?
 		elif (new_chunk.ID==OBJECT):
-			## @@ PATCH
-			if shouldCreate:
+			
+			if CreateBlenderObject:
 				putContextMesh(contextMesh_vertls, contextMesh_facels, contextMeshMaterials)
 				contextMesh_vertls= []; contextMesh_facels= []
 			
@@ -471,7 +479,7 @@ def process_next_chunk(file, previous_chunk, importedObjects, IMAGE_SEARCH):
 				contextMatrix_rot= None
 				#contextMatrix_tx= None
 				
-			shouldCreate=1
+			CreateBlenderObject= True
 			tempName= read_string(file)
 			contextObName= tempName
 			new_chunk.bytes_read += len(tempName)+1
