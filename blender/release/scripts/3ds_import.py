@@ -319,6 +319,7 @@ def process_next_chunk(file, previous_chunk, importedObjects, IMAGE_SEARCH):
 	contextMesh_vertls= None
 	contextMesh_facels= None
 	contextMeshMaterials= {} # matname:[face_idxs]
+	contextMeshUV= None
 	
 	TEXTURE_DICT={}
 	MATDICT={}
@@ -422,6 +423,9 @@ def process_next_chunk(file, previous_chunk, importedObjects, IMAGE_SEARCH):
 	#a spare chunk
 	new_chunk= chunk()
 	temp_chunk= chunk()
+	
+	## @@ PATCH
+	shouldCreate = 0
 
 	#loop through all the data for this chunk (previous chunk) and see what it is
 	while (previous_chunk.bytes_read<previous_chunk.length):
@@ -454,6 +458,20 @@ def process_next_chunk(file, previous_chunk, importedObjects, IMAGE_SEARCH):
 
 		#is it an object chunk?
 		elif (new_chunk.ID==OBJECT):
+			## @@ PATCH
+			if shouldCreate:
+				putContextMesh(contextMesh_vertls, contextMesh_facels, contextMeshMaterials)
+				contextMesh_vertls= []; contextMesh_facels= []
+			
+				## preparando para receber o proximo objeto
+				contextMeshMaterials= {} # matname:[face_idxs]
+				contextMeshUV= None
+				#contextMesh.vertexUV= 1 # Make sticky coords.
+				# Reset matrix
+				contextMatrix_rot= None
+				#contextMatrix_tx= None
+				
+			shouldCreate=1
 			tempName= read_string(file)
 			contextObName= tempName
 			new_chunk.bytes_read += len(tempName)+1
@@ -637,20 +655,9 @@ def process_next_chunk(file, previous_chunk, importedObjects, IMAGE_SEARCH):
 			#contextMatrix_tx= None
 			#print contextLamp.name, 
 			
-			
 		elif (new_chunk.ID==OBJECT_MESH):
-			# print 'Found an OBJECT_MESH chunk'
-			if contextMesh_facels != None: # Write context mesh if we have one.
-				putContextMesh(contextMesh_vertls, contextMesh_facels, contextMeshMaterials)
-			
-			contextMesh_vertls= []; contextMesh_facels= []
-			
-			contextMeshMaterials= {} # matname:[face_idxs]
-			contextMeshUV= None
-			#contextMesh.vertexUV= 1 # Make sticky coords.
-			# Reset matrix
-			contextMatrix_rot= None
-			#contextMatrix_tx= None
+			## @@ PATCH
+			print 'Found an OBJECT_MESH chunk'
 		
 		elif (new_chunk.ID==OBJECT_VERTICES):
 			'''
