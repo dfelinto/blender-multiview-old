@@ -109,6 +109,9 @@ cflags = ""
 if "CFLAGS" in vars:
     cflags += " " + vars["CFLAGS"]
 
+if "ALTIVECFLAGS" in vars:
+    cflags += " " + vars["ALTIVECFLAGS"]
+
 asflags = ""
 
 for a in vars['ASFLAGS'].split():
