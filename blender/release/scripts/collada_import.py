@@ -8,7 +8,7 @@ Tooltip: 'Import scene from COLLADA format (.dae)'
 """
 
 __author__ = "Mikael Lagre"
-__url__ = ("blender", "elysiun", "Project homepage, http://colladablender.sourceforge.net",)
+__url__ = ("blender", "blenderartist.org", "Project homepage, http://colladablender.sourceforge.net",)
 __version__ = "0.4"
 __bpydoc__ = """\Description: Imports a COLLADA 1.3.1 file into a Blender scene.
 Usage: Run the script from the menu or inside Blender.  

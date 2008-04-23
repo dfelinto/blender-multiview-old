@@ -8,7 +8,7 @@ Tooltip: 'Export scene to COLLADA format (.dae)'
 """
 
 __author__ = "Mikael Lagre"
-__url__ = ("blender", "elysiun", "Project homepage, http://colladablender.sourceforge.net", "Official Collada site, http://www.collada.org")
+__url__ = ("blender", "blenderartists.org", "Project homepage, http://colladablender.sourceforge.net", "Official Collada site, http://www.collada.org")
 __version__ = "0.4"
 __bpydoc__ = """
 Description:
