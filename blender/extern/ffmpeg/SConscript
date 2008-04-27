@@ -3,9 +3,6 @@
 
 Import('env')
 
-print env['BF_FFMPEG_EXTRA']
-
-
 all_libs = ['libavformat', 'libavcodec', 'libswscale', 'libavutil']
 root = "extern/ffmpeg"
 
@@ -17,7 +14,6 @@ else:
 #--enable-libx264
 extra_variables = { }
 extra_includes = [ "../x264", "../xvidcore/src", "../libmp3lame" ]
-#extra_includes = [ "../xvidcore/src" ]
 
 import sys
 import os
