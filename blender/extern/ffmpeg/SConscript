@@ -1,6 +1,10 @@
 #!/usr/bin/python
 
+
 Import('env')
+
+print env['BF_FFMPEG_EXTRA']
+
 
 all_libs = ['libavformat', 'libavcodec', 'libswscale', 'libavutil']
 root = "extern/ffmpeg"
@@ -10,8 +14,10 @@ if env['OURPLATFORM'] == 'win32-mingw':
 else:
     ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-memalign-hack --enable-libx264 --enable-libxvid --enable-libmp3lame"
 
+#--enable-libx264
 extra_variables = { }
 extra_includes = [ "../x264", "../xvidcore/src", "../libmp3lame" ]
+#extra_includes = [ "../xvidcore/src" ]
 
 import sys
 import os
@@ -129,8 +135,12 @@ for lib in all_libs:
     if env['OURPLATFORM'] in ['win32-mingw', 'win32-vc' , 'darwin'] :
     	defs = "HAVE_AV_CONFIG_H  _ISOC9X_SOURCE"
     else :
-	defs = "HAVE_AV_CONFIG_H _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _ISOC9X_SOURCE"
-    cflags = ""
+    	defs = "HAVE_AV_CONFIG_H _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _ISOC9X_SOURCE"
+
+    if env['BF_FFMPEG_EXTRA']:
+        cflags = env['BF_FFMPEG_EXTRA']
+    else :
+        cflags = ""
     
     if "CFLAGS" in vars:
         cflags += " " + vars["CFLAGS"]

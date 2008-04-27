@@ -104,7 +104,11 @@ srcs += asm_srcs
 sources = list(Set(srcs.split()))
 
 defs = ""
-cflags = ""
+
+if x264_env['BF_FFMPEG_EXTRA'] != '':
+    cflags = x264_env['BF_FFMPEG_EXTRA']
+else :
+    cflags = ""
     
 if "CFLAGS" in vars:
     cflags += " " + vars["CFLAGS"]
