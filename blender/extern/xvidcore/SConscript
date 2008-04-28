@@ -91,7 +91,12 @@ print "Configuring libxvidcore..."
 
 if not os.path.isfile(buildroot + "/platform.inc"):
     os.chdir(buildroot);
-    os.system("sh -c './configure'")
+    code = -1
+    if xvidcore_env['BF_XVIDCORE_CONFIG'] != '':
+        code = os.system("sh -c './configure %s'"%xvidcore_env['BF_XVIDCORE_CONFIG'])
+    if code != 0:
+        os.system("sh -c './configure'")
+  
     os.chdir("../../../..");
 else:
     print "(skipped, build/generic/platform.inc already exists)"

@@ -84,7 +84,11 @@ print "Configuring libx264..."
 
 if not os.path.isfile(root + "/config.mak"):
     os.chdir(root);
-    os.system("sh -c './configure'")
+    code = -1
+    if x264_env['BF_X264_CONFIG'] != '':
+        code = os.system("sh -c './configure %s'"%x264_env['BF_X264_CONFIG'])
+    if code != 0:
+        os.system("sh -c './configure'")
     os.chdir("../..");
 else:
     print "(skipped, config.mak already exists)"
