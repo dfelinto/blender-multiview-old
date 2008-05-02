@@ -361,10 +361,10 @@ static int pysockets_to_blendersockets(PyObject *tuple, bNodeSocketType **socks,
 
 	len = PyTuple_Size(tuple);
 
-	if (len > MAX_SOCKET) {
+	if (len >= MAX_SOCKET) {
 		char error_msg[70];
 		PyOS_snprintf(error_msg, sizeof(error_msg),
-			"limit exceeded: each node can't have more than %d i/o sockets", MAX_SOCKET);
+			"limit exceeded: each node can't have more than %d i/o sockets", MAX_SOCKET - 1);
 		PyErr_SetString(PyExc_AttributeError, error_msg);
 		len = 0;
 		retval = -1;
