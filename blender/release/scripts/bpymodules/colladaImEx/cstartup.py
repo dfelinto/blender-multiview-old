@@ -23,6 +23,7 @@
 # ***** END GPL LICENCE BLOCK *****
 # --------------------------------------------------------------------------
 
+#debug = True
 debug = False
 _ERROR = False
 _PERROR = False
@@ -43,7 +44,10 @@ Blender.Window.WaitCursor(1)
 # indicates if the user can choose a file to import
 useDefaultFile = True
 
-defaultFileUrl = ''
+defaultFileUrl = 'animation.DAE'
+#defaultFileUrl = 'animation.DAE'
+#defaultFileUrl = 'animated_letters.DAE'
+#defaultFileUrl = 'animation_robot.DAE'
 defaultExportUrl = ''
 
 # Check if full version of python is installed.	
@@ -151,7 +155,7 @@ def Main(doImp, scriptsLoc):
 	cutils.Debug.Debug('Illusoft Collada 1.4 Plugin v%s started'%(__version__),'FEEDBACK')
 	# Create a Collada <-> Blender Translator
 	if debug:
-		#keep track of the time to execute this script
+		print 'keep track of the time to execute this script' #---------
 		startTime = Blender.sys.time()
 		
 		##fileurl = scriptsDir
@@ -160,6 +164,7 @@ def Main(doImp, scriptsLoc):
 			fileurl+= defaultFileUrl
 		else :
 			fileurl += defaultExportUrl
+		print 'deb: fileurl=',fileurl #-------
 
 		useTriangles = False
 		usePolygons = False
@@ -181,6 +186,7 @@ def Main(doImp, scriptsLoc):
 		##translator = Translator(False,__version__,debug,scriptsDir+defaultExportUrl)		  
 		##translator = Translator(True,__version__,debug,scriptsDir+defaultExportUrl)
 		# Redraw al 3D windows.
+		print 'deb: ---- the end ----' #-----
 		Blender.Window.RedrawAll()	  
 		
 		# calculate the elapsed time

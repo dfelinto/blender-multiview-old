@@ -125,12 +125,13 @@ elif not error:
 		reload(colladaImEx.cstartup)
 		colladaImEx.cstartup.Main(True, loc)
 	except StandardError:
-	"""a try to receive error messages to the console:
-	except:
-		print 'deb: PROBLEM !!!!!' #-------
-		#print sys.exc_info()[1]
-		#print sys.exc_info()
-		print sys.exc_type, sys.exc_value #-------
-		#traceback.print_exc(file=sys.stdout)
-	"""
 		pass
+
+"""a try to receive error messages to the console:
+except:
+	print 'deb: PROBLEM !!!!!' #-------
+	#print sys.exc_info()[1]
+	#print sys.exc_info()
+	print sys.exc_type, sys.exc_value #-------
+	#traceback.print_exc(file=sys.stdout)
+"""
