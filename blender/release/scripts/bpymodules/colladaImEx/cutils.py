@@ -4,6 +4,7 @@
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # Copyright (C) 2006: Illusoft - colladablender@illusoft.com
+# 2008.05.08 modif. for debug mode by migius (AKA Remigiusz Fiedler)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,27 +31,29 @@ from Blender.Mathutils import *
 #---Classes---
 
 class Debug(object):
-	
+
 	__debugLevels = ['ALL','DEBUG','FEEDBACK','WARNING','ERROR','NONE']
-	
+
 	# the current debugLevel
 	debugLevel = 'ALL'
-	
+
 	# Method: Debug a message
 	def Debug(message, level):
+		#print 'deb:', level, message #deb--------
 		currentLevelIndex = Debug.__debugLevels.index(Debug.debugLevel)
 		if str(level).isdigit() and level >= currentLevelIndex:
-			print Debug.__debugLevels[level] + ': ' + message 
+			print Debug.__debugLevels[level] + ': ' + message
 		else:
 			try:
 				i = Debug.__debugLevels.index(level)
 				if i >= currentLevelIndex :
 					print level + ': ' + str(message)
 			except:
+				print 'exception in cutils.py-Debug()'
 				pass
 	# make Debug a static method
 	Debug = staticmethod(Debug)
-	
+
 	# Method: Set the Debug Level
 	def SetLevel(level):
 		try:
@@ -62,10 +65,10 @@ class Debug(object):
 			return False
 	# Make SetLevel a static method
 	SetLevel = staticmethod(SetLevel)
-	
-	
-		
-	
+
+
+
+
 #---Functions----
 
 angleToRadian = 3.1415926 / 180.0
@@ -84,7 +87,7 @@ def ToInt(val):
 		return None
 	else:
 		return int(val)
-	
+
 # Convert a string to a list of 3 floats e.g '1.0 2.0 3.0' -> [1.0, 2.0, 3.0]
 def ToFloat3(stringValue):
 	if stringValue is None:
@@ -112,14 +115,14 @@ def CreateRelativePath(basePath, filePath):
 			return ''
 	except TypeError:
 		return ''
-	
+
 	basePathAr = basePath.lower().split(Blender.sys.sep)
 	filePathAr = filePath.lower().split(Blender.sys.sep)
 	filePathLength = len(filePathAr)
-	
+
 	if not basePathAr[0] == filePathAr[0]: # Files must have the same root.
 		return filePath
-	
+
 	result =  ''
 	equalIndex = -1
 	for i in range(len(basePathAr)-1):
@@ -135,14 +138,14 @@ def CreateRelativePath(basePath, filePath):
 		result += filePathAr[i]
 		if not i == filePathLength-1:
 			result += Blender.sys.sep
-		
+
 	return result
 
 def ToList(var):
 	result = []
 	if var is None:
 		return result
-	
+
 	split = var.split( )
 	for i in split:
 		result.append(i)
@@ -152,11 +155,11 @@ def ToFloatList(var):
 	result = []
 	if var is None:
 		return result
-		
+
 	if type(var) == list:
 		for i in var:
 			result.append(float(i))
-	else:	 
+	else:
 		split = var.split( )
 		for i in split:
 			result.append(float(i))
@@ -170,7 +173,7 @@ def ToIntList(lst):
 		for i in lst:
 			result.append(int(i))
 	else:
-		split = lst.split( )		
+		split = lst.split( )
 		for i in split:
 			result.append(int(i))
 	return result
@@ -202,7 +205,7 @@ def ToMatrix4( matrixElement ):
 		return None
 	if not isinstance(matrixElement,list):
 		data = matrixElement.split( )
-		
+
 		vec1 = [ float(data[0]), float(data[4]), float(data[8]), float(data[12]) ]
 		vec2 = [ float(data[1]), float(data[5]), float(data[9]), float(data[13]) ]
 		vec3 = [ float(data[2]), float(data[6]), float(data[10]), float(data[14]) ]
@@ -212,18 +215,18 @@ def ToMatrix4( matrixElement ):
 		vec2 = matrixElement[4:8]
 		vec3 = matrixElement[8:12]
 		vec4 =  matrixElement[12:16]
-			
+
 	return Blender.Mathutils.Matrix( vec1, vec2, vec3, vec4 )
 
 def ToMatrix3(matrixElement):
 	data = matrixElement.split( )
-	
+
 	vec1 = [ float(data[0]), float(data[3]), float(data[6]) ]
 	vec2 = [ float(data[1]), float(data[4]), float(data[7])]
 	vec3 = [ float(data[2]), float(data[5]), float(data[8])]
-	
+
 	return Blender.Mathutils.Matrix( vec1, vec2, vec3)
-	
+
 def GetVector3( element ):
 	value = [ float( element[ 0 ] ), float( element[ 1 ] ), float( element[ 2 ] ) ]
 	return Blender.Mathutils.Vector( value )
@@ -238,7 +241,7 @@ def AddEuler(euler1, euler2):
 	euler1.x += euler2.x
 	euler1.y += euler2.y
 	euler1.z += euler2.z
-	
+
 # Clear the console
 def ClearConsole():
 	if sys.platform == 'linux-i386' or sys.platform == 'linux2':
@@ -247,20 +250,20 @@ def ClearConsole():
 		sysCommand = 'cls'
 	else :
 		sysCommand = 'unknown'
-			
+
 	if sysCommand != 'unknown':
 		os.system(sysCommand)
-		
+
 def MatrixToString(mat, nDigits):
 	result = ''
 	if mat is None:
 		return result
-	
+
 	for vec in mat:
 		result += '\n\t'
 		for i in vec:
 			result += str(round(i, nDigits))+' '
-		
+
 	return result+'\n'
 
 def MatrixToList(mat):
@@ -268,7 +271,7 @@ def MatrixToList(mat):
 	for vec in mat:
 		result.extend(list(vec))
 	return result
-			
+
 def RoundList(lst, nDigits):
 	result = []
 	for i in lst:
@@ -277,7 +280,7 @@ def RoundList(lst, nDigits):
 			val = 0
 		result.append(round(i, nDigits))
 	return result
-		
+
 
 def ListToString(lst, nDigits = 5):
 	val  = ''
@@ -296,7 +299,7 @@ def ListToString(lst, nDigits = 5):
 
 def GetValidFilename(filename):
 	filename = Blender.sys.expandpath( filename )
-	filename = filename.replace( "//", "/" )	
+	filename = filename.replace( "//", "/" )
 	filename = filename.replace( Blender.sys.sep, "/" )
 	return "file://" + filename
 

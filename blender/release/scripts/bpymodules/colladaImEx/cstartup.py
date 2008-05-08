@@ -4,6 +4,7 @@
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # Copyright (C) 2006: Illusoft - colladablender@illusoft.com
+# 2008.05.08 modif. for debug mode by migius (AKA Remigiusz Fiedler)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -159,8 +160,24 @@ def Main(doImp, scriptsLoc):
 			fileurl+= defaultFileUrl
 		else :
 			fileurl += defaultExportUrl
-		transl = translator.Translator(doImport,__version__,debug,fileurl)		  
-		
+
+		useTriangles = False
+		usePolygons = False
+		bakeMatrices = False
+		exportSelection = False
+		newScene = True
+		clearScene = False
+		lookAt = False
+		usePhysics = True
+		exportCurrentScene = False
+		exportRelativePaths = False
+		useUV = False
+		sampleAnimation = False
+		onlyMainScene = False
+
+		transl = translator.Translator(doImport,__version__,debug,fileurl, useTriangles, usePolygons, bakeMatrices, exportSelection, newScene, clearScene, lookAt, usePhysics, exportCurrentScene, exportRelativePaths, useUV, sampleAnimation, onlyMainScene)
+	
+		##transl = translator.Translator(doImport,__version__,debug,fileurl)		  
 		##translator = Translator(False,__version__,debug,scriptsDir+defaultExportUrl)		  
 		##translator = Translator(True,__version__,debug,scriptsDir+defaultExportUrl)
 		# Redraw al 3D windows.

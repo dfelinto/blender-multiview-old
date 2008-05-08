@@ -17,7 +17,7 @@ Description: Imports a COLLADA 1.4 file into a Blender scene.
 
 Bugs and Features: check the project website: http://colladablender.illusoft.com
 
-Usage: Run the script from the menu or inside Blender. 
+Usage: Run the script from the menu or inside Blender.
 """
 
 # --------------------------------------------------------------------------
@@ -26,6 +26,7 @@ Usage: Run the script from the menu or inside Blender.
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # Copyright (C) 2006: Illusoft - colladablender@illusoft.com
+# 2008.05.08 modif. for debug mode by migius (AKA Remigiusz Fiedler)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,13 +51,13 @@ import Blender
 error = False
 
 ######################## SET PATH TO FOLDER consisting 'colladaImEx' here (if necessary)
-	
+
 # Example:
-   
+
 # scriptsDir = "C:/Temp/"
-   
+
 scriptsDir = ""
-	
+
 #############################################################################
 
 try:
@@ -76,7 +77,7 @@ except ImportError:
 		pythonFull = True
 	except ImportError:
 		pythonFull = False
-	
+
 	if not pythonFull:
 		from sys import version_info
 		version = '%s.%s' % version_info[0:2]
@@ -98,7 +99,7 @@ make sure Blender's Python interpreter is finding the standalone modules
 """ % (version, version, version, version)
 		Blender.Draw.PupMenu("Please install full version of python %t | Check the console for more info")
 		error = True
-	else:	
+	else:
 		if scriptsDir == "":
 			Blender.Draw.PupMenu("Cannot find folder %t | Please set path in file 'colladaImport14.py'")
 			error = True
@@ -113,10 +114,23 @@ make sure Blender's Python interpreter is finding the standalone modules
 				error = True
 except StandardError:
 	error = True
-				
-if not error:
+
+debug = False #or True
+if debug:
+	#hack for debug outputs to the console
+	reload(colladaImEx.cstartup)
+	colladaImEx.cstartup.Main(True, loc)
+elif not error:
 	try:
 		reload(colladaImEx.cstartup)
 		colladaImEx.cstartup.Main(True, loc)
 	except StandardError:
+	"""a try to receive error messages to the console:
+	except:
+		print 'deb: PROBLEM !!!!!' #-------
+		#print sys.exc_info()[1]
+		#print sys.exc_info()
+		print sys.exc_type, sys.exc_value #-------
+		#traceback.print_exc(file=sys.stdout)
+	"""
 		pass
