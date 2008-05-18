@@ -31,6 +31,7 @@
 ###  Menubar  Mode
 ###  Menubar  Draw type
 ###  Menubar  Pivot
+###  Menubar  Transform Manipulator
 ###  Menubar  Snap
 ###  Menubar Edit Mode  
 ###  Menubar MESH
@@ -364,6 +365,13 @@ msgstr "Importer/Lier depuis un .blend"
 msgid "Append or Link (Image Browser)" 
 msgstr "Importer/Lier depuis un .blend (Vignettes)"
 
+#file select panel
+msgid "Append" 
+msgstr "Copier"
+
+msgid "Active Layer" 
+msgstr "Calque Actif"
+
 msgid "Import"
 msgstr "Importer"
 
@@ -510,7 +518,7 @@ msgid "Bake Selected Meshes "
 msgstr "Type de Rendu"
 
 msgid "Full Render"
-msgstr "Rendu final"
+msgstr "Rendu Complet"
 
 msgid "Ambient Occlusion"
 msgstr "Occlusion Ambiante"
@@ -519,7 +527,7 @@ msgid "Normals "
 msgstr "Normales"
 
 msgid "Texture Only"
-msgstr "Textures seulement"
+msgstr "Textures"
 
 msgid "No Images found to bake to"
 msgstr "Aucune Image UV trouvée"
@@ -719,6 +727,13 @@ msgstr "Désactiver Coupe 3D"
 msgid "Render Preview..."
 msgstr "Rendu Interactif"
 
+msgid "Transform Orientations..."
+msgstr "Axes de Transformation..."
+
+#window
+msgid "Transform Orientations"
+msgstr "Axes de Transformation"
+
 msgid "Zoom Within Border..."
 msgstr "Zoom par Cadre..."
 
@@ -858,14 +873,20 @@ msgstr "Supprimer"
 msgid "Copy Attributes"
 msgstr "Copier les Propriétés"
 
-msgid "Object Constaints"
-msgstr "Contraintes Objet"
+msgid "Object Constraints"
+msgstr "Contraintes"
 
 msgid "Location"
 msgstr "Position"
 
 msgid "Size"
 msgstr "Echelle"
+
+msgid "Make Local"
+msgstr "Dé-Lier d'un fichier ext."
+
+msgid "Selected Objects and Data"
+msgstr "Objets et Données Sélectionnés"
 
 msgid "Make Single User"
 msgstr "Dé-Lier"
@@ -878,6 +899,9 @@ msgstr "Lier"
 
 msgid "Materials"
 msgstr "Matériaux"
+
+msgid "To Scene..."
+msgstr "Vers Scène..."
 
 msgid "Mesh Data"
 msgstr "Données"
@@ -898,10 +922,10 @@ msgid "Snap "
 msgstr "Accrochage"
 
 msgid "Snap Closest"
-msgstr "Accrochage Distance"
+msgstr "Accrochage au plus Proche"
 
 msgid "Snap Center"
-msgstr "Accrochage Centre"
+msgstr "Accrochage au Centre"
 
 msgid "Selection -> Grid"
 msgstr "Sélection -> Grille"
@@ -1062,12 +1086,34 @@ msgstr "Centre de la Boite Englobante"
 
 ###########################################################
 ###
+###  Menubar  Transform Manipulator
+###
+###########################################################
+
+msgid "Use 3d transform manipulator (Ctrl Space)"
+msgstr "Affiche le repère de transformation (Ctrl Espace)"
+
+msgid "Orientation"
+msgstr "Axes:"
+
+msgid "Toggles Layer visibility (Num, Shift Num)"
+msgstr "Calques à afficher, Shift-clic pour en afficher plusieurs (Num, Shift Num)"
+
+###########################################################
+###
 ###  Menubar  Snap
 ###
 ###########################################################
 
 msgid "Closest"
-msgstr "Distance"
+msgstr "Proche"
+
+#tips
+msgid "Snap while Ctrl is held during transform (Shift Tab)"
+msgstr "Accrochage aux Sommets en maintenant Ctrl appuyé (Shift Tab)"
+
+msgid "Use Snap or Grid (Shift Tab)"
+msgstr "Accrochage à la Grille en maintenant Ctrl appuyé(Shift Tab)"
 
 ###########################################################
 ###
@@ -1145,6 +1191,9 @@ msgstr "Dépliage UV"
 
 msgid "Proportional Editing"
 msgstr "Edition Proportionnelle"
+
+msgid "Flip Triangle Edges"
+msgstr "Modifier Triangulation"
 
 
 ###########################################################
@@ -1339,8 +1388,11 @@ msgstr "Fusionner..."
 msgid "Separate"
 msgstr "Séparer en Nouvel Objet"
 
+msgid "Separate "
+msgstr "Séparer en Nouvel Objet"
+
 msgid "Split"
-msgstr "Séparer"
+msgstr "Séparer les Sommets"
 
 msgid "Recalculate Outside"
 msgstr "Recalculer à l'Extérieur"
@@ -1404,7 +1456,7 @@ msgid "Collapse"
 msgstr "Fusionner"
 
 msgid "Bevel"
-msgstr "Chanfrain"
+msgstr "Chanfrein"
 
 msgid "Loop Subdivide"
 msgstr "Coupe Circulaire"
@@ -2306,20 +2358,20 @@ msgid "Make"
 msgstr "Créer"
 
 msgid "Center"
-msgstr "Centrer"
+msgstr "Centre"
 
 msgid "Center New"
-msgstr "Reset Centre"
+msgstr "Maillage"
 
 msgid "Center Cursor"
-msgstr "Centre au Curseur"
+msgstr "Centre > Curseur"
 
 #tip
 msgid "Shifts object data to be centered about object's origin"
 msgstr "Décale les données de l'objet pour qu'elles soient centrées sur l'origine de l'objet"
 
 msgid "Double Sided"
-msgstr "Doubles Faces"
+msgstr "Faces Doubles"
 
 #tip
 msgid "Render/display the mesh as double or single sided"
@@ -2361,7 +2413,7 @@ msgid "Copy"
 msgstr "Copier"
 
 msgid "Rem Doubles"
-msgstr "Suppr Doubles"
+msgstr "Supp Doubles"
 
 msgid "Flip Normals"
 msgstr "Inv Normales"
@@ -2371,6 +2423,9 @@ msgstr "Adoucir"
 
 msgid "Draw Normals"
 msgstr "Afficher Normales"
+
+msgid "Draw VNormals"
+msgstr "Afficher VNormales"
 
 msgid "Draw Edges"
 msgstr "Afficher Arêtes"
@@ -2396,7 +2451,7 @@ msgid "Edge Angles"
 msgstr "Afficher Angles"
 
 msgid "Face Area"
-msgstr "Afficher Aires"
+msgstr "Afficher Surfaces"
 
 msgid "Mesh Tools"
 msgstr "Outils Maillage"
@@ -2457,6 +2512,9 @@ msgstr "Sens Horaire"
 
 msgid "Screw"
 msgstr "Visser"
+
+msgid "Join Triangles"
+msgstr "Tirangles > Quads"
 
 msgid "Shapes"
 msgstr "Mémoire de Formes"
@@ -2654,10 +2712,16 @@ msgid "Edge"
 msgstr "Arête"
 
 msgid "Edge Settings"
-msgstr "Arête Param"
+msgstr "Paramètres"
 
 msgid "Output"
 msgstr "Sortie"
+
+msgid "No Overwrite"
+msgstr "Ne Pas Écraser"
+
+msgid "Disable Tex"
+msgstr "Sans Textures"
 
 msgid "Render Display "
 msgstr "Affichage du Rendu"
@@ -2689,7 +2753,7 @@ msgid "Layer:"
 msgstr "Calques:"
 
 msgid "Combined"
-msgstr "RGBA Combinés"
+msgstr "RGB/A"
 
 # Panneau Render
 msgid "OSA"
@@ -2699,10 +2763,13 @@ msgid "Enables Oversampling (Anti-aliasing)"
 msgstr "Active l'Anticrénelage"
 
 msgid "RENDER"
-msgstr "RENDU"
+msgstr "Rendu Image Simple"
 
 msgid "Shadow"
 msgstr "Ombres"
+
+msgid "SS"
+msgstr "SSS"
 
 msgid "Sky"
 msgstr "Ciel"
@@ -2746,7 +2813,7 @@ msgid "Bake"
 msgstr "Rendu vers Textures"
 
 msgid "BAKE"
-msgstr "Calculer"
+msgstr "Rendu vers Textures"
 
 # Panneau Format
 msgid "Size preset: Image size - 720x576, Aspect ratio - 54x51, 25 fps"
@@ -2863,6 +2930,17 @@ msgstr "Synchronisation"
 #tooltip
 msgid "Use sample clock for syncing animation to audio"
 msgstr "Utilise une horloge pour respecter la vitesse d'animation"
+
+# Panneau Sound
+msgid "Sound"
+msgstr "Son"
+
+msgid "Sequencer"
+msgstr "Séquenceur"
+
+msgid "Audio sequencer settings"
+msgstr "Paramètres du séquenceur audio"
+
 
 ###########################################################
 ###
@@ -3623,9 +3701,6 @@ msgstr "Ajout. Mod. Différence"
 ###
 ###########################################################
 
-msgid "Separate "
-msgstr "Séparer"
-
 msgid "Selected"
 msgstr "Sélection"
 
@@ -3698,7 +3773,7 @@ msgid "Subdivide Smooth"
 msgstr "Subdiviser (Adoucir)"
 
 msgid "Bevel "
-msgstr "Chanfrain"
+msgstr "Chanfrein"
 
 ###########################################################
 ###
@@ -4002,8 +4077,11 @@ msgstr "Suivre le Chemin"
 ###
 ###########################################################
 
-msgid "Clear Parent"
+msgid "Clear Parent "
 msgstr "Supprimer Parenté"
+
+msgid "Clear and Keep Transformation (Clear Track) "
+msgstr "Supprimer Parenté mais Garder les Transformations"
 
 ###########################################################
 ###
