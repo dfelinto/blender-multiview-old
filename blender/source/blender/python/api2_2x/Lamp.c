@@ -1550,7 +1550,7 @@ static PyObject *Lamp_oldsetType( BPy_Lamp * self, PyObject * value )
 
 	/* build tuple, call wrapper */
 
-	arg = Py_BuildValue( "(i)", type );
+	arg = Py_BuildValue( "(i)", self->lamp->type );
 	error = EXPP_setterWrapper ( (void *)self, arg, (setter)Lamp_setType );
 	Py_DECREF ( arg );
 	return error;
