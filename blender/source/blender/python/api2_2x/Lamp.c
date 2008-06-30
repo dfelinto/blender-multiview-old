@@ -1520,14 +1520,9 @@ static PyObject *Lamp_oldsetType( BPy_Lamp * self, PyObject * value )
 	char *type = PyString_AsString(value);
 	PyObject *arg, *error;
 
-	/* parse string argument */
-
-	if( !value )
-		return ( EXPP_ReturnPyObjError( PyExc_TypeError,
-						"expected string argument" ) );
-	
+	/* parse string argument */	
 	if( !type ) 
-		return EXPP_ReturnPyObjError ( PyExc_AttributeError,
+		return EXPP_ReturnPyObjError ( PyExc_TypeError,
 					       "expected string argument" );
 	
 	/* check for valid arguments, set type accordingly */
