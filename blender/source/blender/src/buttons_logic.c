@@ -387,7 +387,6 @@ void do_logic_buts(unsigned short event)
 	bSensor *sens;
 	bController *cont;
 	bActuator *act;
-	Base *base;
 	Object *ob;
 	int didit, bit;
 	
@@ -610,7 +609,6 @@ void do_logic_buts(unsigned short event)
 				}
 				act= act->next;
 			}
-			base= base->next;
 		}
 		BIF_undo_push("Delete actuator");
 		allqueue(REDRAWBUTSLOGIC, 0);
