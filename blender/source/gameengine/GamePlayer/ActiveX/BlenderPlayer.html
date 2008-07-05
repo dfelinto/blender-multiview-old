@@ -1,0 +1,108 @@
+<html>
+<head>
+<title>Blender 3D Plug-in Active X Control</title>
+
+<script language="JavaScript">
+<!-- hide me
+function setURL()
+{
+	var the_url = window.document.the_form1.the_url.value;
+    var good_url = the_url; //fixURL(the_url);
+	window.document.Blender3DPlugin.blenderURL=good_url
+	// alert("URL set");
+}
+
+function fixURL(the_url)
+{
+    var the_first_seven = the_url.substring(0,7);
+    the_first_seven = the_first_seven.toLowerCase();
+    if (the_first_seven != 'http://') 
+    {
+        the_url = "http://" + the_url;
+    }
+    return the_url;
+}
+// show me -->
+</script>
+
+</head>
+
+<body bgcolor="#3F3FFF">
+<center>
+
+<font face="Verdana, Arial, Helvetica">
+<font size=6><B>Blender Player Active X Control</b></font><br>
+<font size=3>NaN Technologies BV</font><br>
+<font size=3>Maarten Gribnau</font>
+
+<p>
+<!--	codebase="http://www.blender.nl/plugin/test/Blender3DPlugin.cab#Version=2,22,1,0" -->
+<!--    <param name="loadingURL" value="file://c:\blend\webclown.blend"> -->
+<object
+    classid="clsid:5DB05CB8-7751-469D-A1DD-45C8C201C013"
+    id=Blender3DPlugin
+    width = "640"
+    height = "400">
+    <param name="blenderURL" value="c:\blend\haloparty.blend">
+    <param name="ForeColor" value=65280>
+    <param name="BackColor" value=255>
+    <param name="frameRate" value=59>
+    <param name="showFrameCount" value="true">
+    <param name="useFileBackColor" value="true">
+</object>
+</p>
+
+<p>
+<form>
+<input type="button" value="frame count" onClick="Blender3DPlugin.showFrameCount=!Blender3DPlugin.showFrameCount;">
+<input type="button" value="profile info" onClick="Blender3DPlugin.showProfileInfo=!Blender3DPlugin.showProfileInfo;">
+<input type="button" value="object debug properties" onClick="Blender3DPlugin.showProperties=!Blender3DPlugin.showProperties;">
+<input type="button" value="rewind" onClick="Blender3DPlugin.Rewind();">
+<input type="button" value="load from TU Delft" onClick="Blender3DPlugin.blenderURL='http://www.io.tudelft.nl/id-studiolab/gribnau/downloads/skategirl.blend';">
+</form>
+</p>
+
+<p>
+<form name="the_form1" onSubmit="setURL(); return false;">
+<input type="text" name="the_url" value="c:\blend\walkthrough_demo.blend" size=40>
+<input type="button" value="load" onClick="setURL();">
+</form>
+</p>
+
+<p>
+<form name="the_form2" onSubmit="Blender3DPlugin.SendMessage(the_to.value, the_from.value, the_subject.value, the_body.value); return false;">
+<table>
+<tr>
+<td>to:</td><td><input type="text" name="the_to" value="" size=30></td>
+</tr>
+<tr>
+<td>from:</td><td><input type="text" name="the_from" value="" size=30></td>
+</tr>
+<tr>
+<td>subject:</td><td><input type="text" name="the_subject" value="" size=30></td>
+</tr>
+<tr>
+<td>body:</td><td><input type="text" name="the_body" value="" size=30></td>
+</tr>
+<tr>
+<td>&nbsp</td><td><input type="button" value="send" onClick="Blender3DPlugin.SendMessage(the_to.value, the_from.value, the_subject.value, the_body.value);"></td>
+</tr>
+</table>
+</form>
+</p>
+
+<p>
+<form name="the_form3">
+<input type="button" value="frameRate=5" onClick="Blender3DPlugin.frameRate=5; return false;;">
+<input type="button" value="frameRate=20" onClick="Blender3DPlugin.frameRate=20; return false;;">
+<input type="button" value="frameRate=100" onClick="Blender3DPlugin.frameRate=100; return false;;">
+</form>
+</p>
+
+</center>
+</font>
+</body>
+</html>
+
+
+

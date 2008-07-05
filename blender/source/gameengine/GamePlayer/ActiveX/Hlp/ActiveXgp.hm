@@ -1,0 +1,8 @@
+ 
+// Commands (ID_* and IDM_*) 
+// Prompts (IDP_*) 
+// Resources (IDR_*) 
+// Dialogs (IDD_*) 
+HIDD_PROPPAGE_ACTIVEXGP                 0x200C8
+HIDD_ABOUTBOX_ACTIVEXGP                 0x20001
+// Frame Controls (IDW_*) 

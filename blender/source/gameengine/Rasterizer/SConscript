@@ -1,0 +1,17 @@
+#!/usr/bin/python
+Import ('env')
+
+sources = env.Glob('*.cpp')
+
+if env['WITH_BF_GLEXT'] == 1:
+        env['CPPFLAGS'].append('-DWITH_GLEXT')
+
+
+incs = '. #source/kernel/gen_system #intern/string #intern/moto/include #source/gameengine/BlenderRoutines #extern/glew/include'
+
+if env['OURPLATFORM']=='win32-vc':
+	cflags = []
+	cflags.append('/Ox')
+	env.BlenderLib ( 'bf_rasterizer', sources, Split(incs), [], libtype=['game','player'], priority=[35,115], compileflags = cflags )
+else:
+	env.BlenderLib ( 'bf_rasterizer', sources, Split(incs), [], libtype=['game','player'], priority=[35,115] )

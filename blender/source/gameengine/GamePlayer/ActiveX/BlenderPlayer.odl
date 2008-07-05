@@ -1,0 +1,80 @@
+// BlenderPlayer.odl : type library source for ActiveX Control project.
+
+// This file will be processed by the Make Type Library (mktyplib) tool to
+// produce the type library (BlenderPlayer.tlb) that will become a resource in
+// BlenderPlayer.ocx.
+
+#include <olectl.h>
+#include <idispids.h>
+
+[ uuid(B7A2076C-3DD8-4F9D-9D76-5FE71ECC0EF1), version(1.0),
+  helpfile("Blender3DPlugin.hlp"),
+  helpstring("Blender 3D Plug-in ActiveX Control module"),
+  control ]
+library BLENDERPLAYERLib
+{
+	importlib(STDOLE_TLB);
+	importlib(STDTYPE_TLB);
+
+	//  Primary dispatch interface for CBlenderPlayerCtrl
+
+	[ uuid(75BE7171-64C0-4125-99A8-1AE50EA49D6C),
+	  helpstring("Dispatch interface for Blender 3D Plug-in Active X Control"), hidden ]
+	dispinterface _DBlenderPlayer
+	{
+		properties:
+			// NOTE - ClassWizard will maintain property information here.
+			//    Use extreme caution when editing this section.
+			//{{AFX_ODL_PROP(CBlenderPlayerCtrl)
+			[id(1)] boolean showFrameCount;
+			[id(2)] boolean showProfileInfo;
+			[id(3)] BSTR blenderURL;
+			[id(4)] boolean showProperties;
+			[id(5)] BSTR loadingURL;
+			[id(DISPID_BACKCOLOR), bindable, requestedit] OLE_COLOR BackColor;
+			[id(DISPID_FORECOLOR), bindable, requestedit] OLE_COLOR ForeColor;
+			[id(6)] short frameRate;
+			[id(7)] boolean useFileBackColor;
+			//}}AFX_ODL_PROP
+
+		methods:
+			// NOTE - ClassWizard will maintain method information here.
+			//    Use extreme caution when editing this section.
+			//{{AFX_ODL_METHOD(CBlenderPlayerCtrl)
+			[id(8)] void Rewind();
+			[id(9)] boolean SendMessage(BSTR to, BSTR from, BSTR subject, BSTR message);
+			//}}AFX_ODL_METHOD
+
+			[id(DISPID_ABOUTBOX)] void AboutBox();
+	};
+
+	//  Event dispatch interface for CBlenderPlayerCtrl
+
+	[ uuid(7990FCE5-09A6-4E39-94B6-3E470ED5C22A),
+	  helpstring("Event interface for Blender 3D Plug-in Active X Control") ]
+	dispinterface _DBlenderPlayerEvents
+	{
+		properties:
+			//  Event interface has no properties
+
+		methods:
+			// NOTE - ClassWizard will maintain event information here.
+			//    Use extreme caution when editing this section.
+			//{{AFX_ODL_EVENT(CBlenderPlayerCtrl)
+			//}}AFX_ODL_EVENT
+	};
+
+	//  Class information for CBlenderPlayerCtrl
+
+	[ uuid(5DB05CB8-7751-469D-A1DD-45C8C201C013),
+	  helpstring("Blender 3D Plug-in Active X Control"), control ]
+	coclass BlenderPlayer
+	{
+		[default] dispinterface _DBlenderPlayer;
+		[default, source] dispinterface _DBlenderPlayerEvents;
+	};
+
+
+	//{{AFX_APPEND_ODL}}
+	//}}AFX_APPEND_ODL}}
+};
