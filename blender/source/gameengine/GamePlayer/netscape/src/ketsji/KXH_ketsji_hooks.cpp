@@ -566,8 +566,8 @@ initialize_gameengine(ketsji_engine_data* k, struct BlendFileData * active_file)
 				       k->audiodevice,
 				       startSceneName->Ptr());
 		
-		initRasterizer(k->rasterizer, k->canvas_device);
-		initGameLogic(startscene);
+		initRasterizer(k->rasterizer, k->canvas_device);;
+		PyDict_SetItemString(dictionaryobject, "GameLogic", initGameLogic(startscene)); // Same as importing the module
 		initGameKeys();
 		initPythonConstraintBinding();
 		

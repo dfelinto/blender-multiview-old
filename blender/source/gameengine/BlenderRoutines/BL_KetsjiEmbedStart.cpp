@@ -400,7 +400,14 @@ extern "C" void StartKetsjiShell(struct ScrArea *area,
 				exitstring = ketsjiengine->GetExitString();
 				
 				// when exiting the mainloop
-				dictionaryClearByHand(gameLogic);
+				
+				// Clears the dictionary by hand:
+				// This prevents, extra references to global variables
+				// inside the GameLogic dictionary when the python interpreter is finalized.
+				// which allows the scene to safely delete them :)
+				// see: (space.c)->start_game
+				PyDict_Clear(PyModule_GetDict(gameLogic));
+				
 				ketsjiengine->StopEngine();
 				exitGamePythonScripting();
 				networkdevice->Disconnect();

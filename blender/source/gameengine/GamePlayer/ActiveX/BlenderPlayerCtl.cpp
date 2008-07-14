@@ -668,7 +668,7 @@ bool CBlenderPlayerCtrl::startEngine(void)
 			m_ketsjiengine->SetPythonDictionary(m_dictionaryobject);
 
 			initRasterizer(m_rasterizer, m_canvas);			
-			initGameLogic(startscene);
+			PyDict_SetItemString(m_dictionaryobject, "GameLogic", initGameLogic(startscene)); // Same as importing the module
 			initGameKeys();
 			
 			initPythonConstraintBinding();
