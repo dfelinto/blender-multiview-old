@@ -332,6 +332,7 @@ extern "C" void StartKetsjiShell(struct ScrArea *area,
 			ketsjiengine->SetPythonDictionary(dictionaryobject);
 			initRasterizer(rasterizer, canvas);
 			PyObject *gameLogic = initGameLogic(startscene);
+			PyDict_SetItemString(dictionaryobject, "GameLogic", gameLogic); // Same as importing the module.
 			initGameKeys();
 			initPythonConstraintBinding();
 
@@ -591,6 +592,7 @@ extern "C" void StartKetsjiShellSimulation(struct ScrArea *area,
 			ketsjiengine->SetPythonDictionary(dictionaryobject);
 			initRasterizer(rasterizer, canvas);
 			PyObject *gameLogic = initGameLogic(startscene);
+			PyDict_SetItemString(dictionaryobject, "GameLogic", gameLogic); // Same as importing the module
 			initGameKeys();
 			initPythonConstraintBinding();
 
