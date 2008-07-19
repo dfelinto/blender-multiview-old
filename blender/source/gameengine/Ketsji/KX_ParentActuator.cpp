@@ -46,19 +46,22 @@
 
 KX_ParentActuator::KX_ParentActuator(SCA_IObject *gameobj, 
 									 int mode,
-									 CValue *ob,
+									 SCA_IObject *ob,
 									 PyTypeObject* T)
 	: SCA_IActuator(gameobj, T),
 	  m_mode(mode),
 	  m_ob(ob)
 {
+	if (m_ob)
+		m_ob->RegisterActuator(this);
 } 
 
 
 
 KX_ParentActuator::~KX_ParentActuator()
 {
-	/* intentionally empty */ 
+	if (m_ob)
+		m_ob->UnregisterActuator(this);
 } 
 
 
@@ -73,6 +76,36 @@ CValue* KX_ParentActuator::GetReplica()
 	return replica;
 }
 
+void KX_ParentActuator::ProcessReplica()
+{
+	if (m_ob)
+		m_ob->RegisterActuator(this);
+	SCA_IActuator::ProcessReplica();
+}
+
+
+bool KX_ParentActuator::UnlinkObject(SCA_IObject* clientobj)
+{
+	if (clientobj == m_ob)
+	{
+		// this object is being deleted, we cannot continue to track it.
+		m_ob = NULL;
+		return true;
+	}
+	return false;
+}
+
+void KX_ParentActuator::Relink(GEN_Map<GEN_HashedPtr, void*> *obj_map)
+{
+	void **h_obj = (*obj_map)[m_ob];
+	if (h_obj) {
+		if (m_ob)
+			m_ob->UnregisterActuator(this);
+		m_ob = (SCA_IObject*)(*h_obj);
+		m_ob->RegisterActuator(this);
+	}
+}
+
 
 
 bool KX_ParentActuator::Update()
@@ -80,7 +113,7 @@ bool KX_ParentActuator::Update()
 	bool bNegativeEvent = IsNegativeEvent();
 	RemoveAllEvents();
 
-	if (bNegativeEvent)
+	if (bNegativeEvent || !m_ob)
 		return false; // do nothing on negative events
 
 	KX_GameObject *obj = (KX_GameObject*) GetParent();
@@ -148,7 +181,11 @@ PyObject* KX_ParentActuator::PySetObject(PyObject* self, PyObject* args, PyObjec
 	PyObject* gameobj;
 	if (PyArg_ParseTuple(args, "O!", &KX_GameObject::Type, &gameobj))
 	{
-		m_ob = (CValue*)gameobj;
+		if (m_ob != NULL)
+			m_ob->UnregisterActuator(this);
+		m_ob = (SCA_IObject*)gameobj;
+		if (m_ob)
+			m_ob->RegisterActuator(this);
 		Py_Return;
 	}
 	PyErr_Clear();
@@ -156,10 +193,13 @@ PyObject* KX_ParentActuator::PySetObject(PyObject* self, PyObject* args, PyObjec
 	char* objectname;
 	if (PyArg_ParseTuple(args, "s", &objectname))
 	{
-		CValue *object = (CValue*)SCA_ILogicBrick::m_sCurrentLogicManager->GetGameObjectByName(STR_String(objectname));
+		SCA_IObject *object = (SCA_IObject*)SCA_ILogicBrick::m_sCurrentLogicManager->GetGameObjectByName(STR_String(objectname));
 		if(object)
 		{
+			if (m_ob != NULL)
+				m_ob->UnregisterActuator(this);
 			m_ob = object;
+			m_ob->RegisterActuator(this);
 			Py_Return;
 		}
 	}
