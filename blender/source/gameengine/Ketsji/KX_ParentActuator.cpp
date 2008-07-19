@@ -113,14 +113,15 @@ bool KX_ParentActuator::Update()
 	bool bNegativeEvent = IsNegativeEvent();
 	RemoveAllEvents();
 
-	if (bNegativeEvent || !m_ob)
+	if (bNegativeEvent)
 		return false; // do nothing on negative events
 
 	KX_GameObject *obj = (KX_GameObject*) GetParent();
 	KX_Scene *scene = PHY_GetActiveScene();
 	switch (m_mode) {
 		case KX_PARENT_SET:
-			obj->SetParent(scene, (KX_GameObject*)m_ob);
+			if (m_ob)
+				obj->SetParent(scene, (KX_GameObject*)m_ob);
 			break;
 		case KX_PARENT_REMOVE:
 			obj->RemoveParent(scene);
