@@ -1171,6 +1171,7 @@ class DaeNode(DaeElement):
 
 		# Get transforms
 		xmlUtils.RemoveWhiteSpaceNode(xmlNode)
+		xmlUtils.RemoveComments(xmlNode)
 		child = xmlNode.firstChild
 		while child != None:
 			name = child.localName

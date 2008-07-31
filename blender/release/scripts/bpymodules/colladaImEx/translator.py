@@ -3000,8 +3000,23 @@ class MaterialNode(object):
 						alpha = 1 - tkey * (tcol[0]*0.21 + tcol[1]*0.71 + tcol[2]*0.08)
 						bMat.setAlpha(alpha)
 					if not (shader.transparent.texture is None): # Texture
-						texture = shader.transparent.texture.texture
-						if not(texture is None):
+						textureSampler = shader.transparent.texture.texture
+						print "shader"
+						print shader.transparent.texture
+						print "shader end"
+						if not(textureSampler is None):
+							#support 1.4.0:
+							texture = textureSampler;
+
+							#support 1.4.1
+							for newParam in daeEffect.profileCommon.newParams:
+								if newParam.sid == textureSampler:
+									surfaceID = newParam.sampler.source
+									for newSurface in daeEffect.profileCommon.newParams:
+										if newSurface.sid == surfaceID:
+											texture = newSurface.surface.initfrom
+
+							texture = self.document.colladaDocument.imagesLibrary.FindObject(texture)
 							bTexture = self.document.texturesLibrary.FindObject(texture, True)
 							if not bTexture is None:
 								bMat.setTexture(0, bTexture, Blender.Texture.TexCo.UV, Blender.Texture.MapTo.ALPHA)
@@ -3021,18 +3036,18 @@ class MaterialNode(object):
 							color = shader.diffuse.color.rgba
 							bMat.setRGBCol(color[0],color[1], color[2])
 						if not (shader.diffuse.texture is None): # Texture
-							textureSampler = shader.diffuse.texture.texture;
+							textureSampler = shader.diffuse.texture.texture
 							if not (textureSampler is None):
 								#support 1.4.0:
-								texture = textureSampler;
+								texture = textureSampler
 
 								#support 1.4.1
 								for newParam in daeEffect.profileCommon.newParams:
 									if newParam.sid == textureSampler:
-										surfaceID = newParam.sampler.source;
+										surfaceID = newParam.sampler.source
 										for newSurface in daeEffect.profileCommon.newParams:
 											if newSurface.sid == surfaceID:
-												texture = newSurface.surface.initfrom;
+												texture = newSurface.surface.initfrom
 
 								texture = self.document.colladaDocument.imagesLibrary.FindObject(texture)
 								bTexture = self.document.texturesLibrary.FindObject(texture, True)

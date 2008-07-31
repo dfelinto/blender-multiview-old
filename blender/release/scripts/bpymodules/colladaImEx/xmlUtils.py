@@ -79,6 +79,12 @@ def RemoveWhiteSpaceNode(parent):
 		if child.nodeType == child.TEXT_NODE and child.data.strip()=='':
 			parent.removeChild(child)
 	return parent
+
+def RemoveComments(parent):
+	for child in list(parent.childNodes):
+		if child.__class__.__name__ == "Comment":
+			parent.removeChild(child)
+	return parent
 			
 ##def RemoveWhiteSpace(node):
 ##	  removeList = []
@@ -171,4 +177,6 @@ def AppendChilds(xmlNode, syntax, lst):
 		xmlNode.appendChild(el)
 	
 	return xmlNode
+
+
 
