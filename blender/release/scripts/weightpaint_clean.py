@@ -52,7 +52,7 @@ def weightClean(me, PREF_THRESH, PREF_KEEP_SINGLE, PREF_OTHER_GROUPS):
 			l = len(wd)
 			if not PREF_KEEP_SINGLE or l > 1:
 				# cant use iteritems because the dict is having items removed
-					for group in wd.keys():
+				for group in wd.keys():
 					w= wd[group]
 					if w <= PREF_THRESH:
 						# small weight, remove.
