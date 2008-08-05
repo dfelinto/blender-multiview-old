@@ -669,9 +669,9 @@ bool CBlenderPlayerCtrl::startEngine(void)
 
 			initRasterizer(m_rasterizer, m_canvas);			
 			PyDict_SetItemString(m_dictionaryobject, "GameLogic", initGameLogic(startscene)); // Same as importing the module
-			initGameKeys();
-			
+			initGameKeys();			
 			initPythonConstraintBinding();
+			initMathutils();
 			
 			m_sceneconverter->ConvertScene(
 				startscenename,

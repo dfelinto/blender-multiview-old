@@ -570,6 +570,7 @@ initialize_gameengine(ketsji_engine_data* k, struct BlendFileData * active_file)
 		PyDict_SetItemString(dictionaryobject, "GameLogic", initGameLogic(startscene)); // Same as importing the module
 		initGameKeys();
 		initPythonConstraintBinding();
+		initMathutils();
 		
 		KXH_log_entry("APH_initialize_gameengine:: will enter kx engine");
 		
