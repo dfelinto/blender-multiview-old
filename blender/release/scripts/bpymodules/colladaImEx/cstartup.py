@@ -23,8 +23,8 @@
 # ***** END GPL LICENCE BLOCK *****
 # --------------------------------------------------------------------------
 
-#debug = True
-debug = False
+debug = False #--- debug mode
+debprn = False #--- print debug "print 'deb: ..."
 _ERROR = False
 _PERROR = False
 
@@ -36,7 +36,7 @@ except NameError:
 	print "Error! Could not find Blender modules!"
 	_ERROR = True
 
-__version__ = '0.3.159'
+__version__ = '0.3.160'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)
@@ -50,13 +50,13 @@ defaultFileUrl = 'animation.DAE'
 #defaultFileUrl = 'animation_robot.DAE'
 defaultExportUrl = ''
 
-# Check if full version of python is installed.	
+# Check if full version of python is installed.
 try:
 	import os
 except ImportError:
 	print"Error! Could not find full version of Python..."
 	_ERROR = True
-	
+
 if _ERROR:
 	from sys import version_info
 	version = '%s.%s' % version_info[0:2]
@@ -83,44 +83,44 @@ else:
 	except NameError:
 		print "\nError! Could not find Collada Utils (cutils) module!"
 		_ERROR = True
-	
+
 	try:
 		import xmlUtils
 	except NameError:
 		print "\nError! Could not find XML module!"
 		_PERROR = True
-		
+
 	try:
 		import collada
 	except NameError:
 		print "Error! Could not find Collada(collada.py) module"
 		_PERROR = True
-		
+
 	try:
 		import translator
 	except NameError:
 		print "Error! Could not find Collada Translator (translator.py) module"
 		_PERROR = True
-		
+
 	try:
 		import helperObjects
 	except NameError:
 		print "Error! Could not find Collada helperObjects (helperObjects.py) module"
 		_PERROR = True
-	
+
 	# Try to load extra python modules
 	try:
 		import math
 	except NameError:
 		print "Error! Could not find math module"
 		_PERROR = True
-		
+
 	if _PERROR:
 		Blender.Draw.PupMenu("Cannot load plugin modules.")
 	else:
 		# A List with al the modules (in the scriptsdir) to be reloaded
 		modules = [cutils, xmlUtils, collada, helperObjects, translator]
-		
+
 
 def Main(doImp, scriptsLoc):
 	global debug, __version__, doImport, scriptsLocation, defaultFilename, valsLoaded
@@ -138,33 +138,33 @@ def Main(doImp, scriptsLoc):
 			print 'Could not find a scripts path'
 	else:
 		scriptsLocation = scriptsLoc
-	
-	
+
+
 	if not ReloadModules():
 		print 'cannot reload all modules'
 		return False
 	# Clear the console
 	cutils.ClearConsole()
-	
+
 	# set the debuglevel
 	if debug:
 		cutils.Debug.SetLevel('DEBUG')
 	else:
 		cutils.Debug.SetLevel('FEEDBACK')
-	
+
 	cutils.Debug.Debug('Illusoft Collada 1.4 Plugin v%s started'%(__version__),'FEEDBACK')
 	# Create a Collada <-> Blender Translator
 	if debug:
 		print 'keep track of the time to execute this script' #---------
 		startTime = Blender.sys.time()
-		
+
 		##fileurl = scriptsDir
 		fileurl = ''
 		if doImport:
 			fileurl+= defaultFileUrl
 		else :
 			fileurl += defaultExportUrl
-		print 'deb: fileurl=',fileurl #-------
+		if debprn: print 'deb: fileurl=',fileurl #-------
 
 		useTriangles = False
 		usePolygons = False
@@ -181,37 +181,37 @@ def Main(doImp, scriptsLoc):
 		onlyMainScene = False
 
 		transl = translator.Translator(doImport,__version__,debug,fileurl, useTriangles, usePolygons, bakeMatrices, exportSelection, newScene, clearScene, lookAt, usePhysics, exportCurrentScene, exportRelativePaths, useUV, sampleAnimation, onlyMainScene)
-	
-		##transl = translator.Translator(doImport,__version__,debug,fileurl)		  
-		##translator = Translator(False,__version__,debug,scriptsDir+defaultExportUrl)		  
+
+		##transl = translator.Translator(doImport,__version__,debug,fileurl)
+		##translator = Translator(False,__version__,debug,scriptsDir+defaultExportUrl)
 		##translator = Translator(True,__version__,debug,scriptsDir+defaultExportUrl)
 		# Redraw al 3D windows.
-		print 'deb: ---- the end ----' #-----
-		Blender.Window.RedrawAll()	  
-		
+		if debprn: print 'deb: ---- the end ----' #-----
+		Blender.Window.RedrawAll()
+
 		# calculate the elapsed time
 		endTime = Blender.sys.time()
 		elapsedTime = endTime - startTime
 		cutils.Debug.Debug('FINISHED - time elapsed: %.1f'%(elapsedTime),'FEEDBACK')
-		
+
 		# Hide the wait cursor in blender
 		Blender.Window.WaitCursor(0)
 	else:
 		defFilename = Blender.sys.dirname(Blender.sys.progname)+Blender.sys.sep
 		colladaReg = Blender.Registry.GetKey('collada',True)
-			
+
 		if not (colladaReg is None) and 'path' in colladaReg and Blender.sys.exists(colladaReg['path']):
 			defFilename = colladaReg['path']
 		elif not (doImport):
 			defFilename += 'untitled.dae'
-		
+
 		defaultFilename = defFilename
-		
+
 		Blender.Draw.Register(Gui, Event, ButtonEvent)	# registering the 3 callbacks
-	
-def ReloadModules():	
+
+def ReloadModules():
 	# Loop through all the modules and try to reload them
-	for module in modules:		  
+	for module in modules:
 		try:
 			reload(module)
 		except NameError:
@@ -221,13 +221,13 @@ def ReloadModules():
 
 def FileSelected(fileName):
 	global doImport, fileButton
-	
+
 	if fileName != '':
 		# check if file exists
 		if Blender.sys.exists(fileName) != 1 and doImport:
 			cutils.Debug.Debug('File(%s) does not exist' % (fileName),'ERROR')
 			return False
-		
+
 		# must the file to import end with .dae or .xml?
 ##		  if doImport:
 ##			  # Check if the file has a valid extension .DAE or .XML
@@ -235,7 +235,7 @@ def FileSelected(fileName):
 ##			  if extension != 'xml' and extension != 'dae':
 ##				  cutils.Debug.Debug('File(%s) is not a .dae or .xml file' % (fileName),'ERROR')
 		fileButton.val = fileName
-		##transl = translator.Translator(doImport,__version__,debug,fileName)			
+		##transl = translator.Translator(doImport,__version__,debug,fileName)
 	else:
 		cutils.Debug.Debug('ERROR: filename is empty','ERROR')
 
@@ -258,10 +258,10 @@ toggleOnlyMainScene = None
 
 def LoadDefaultVals():
 	global toggleLookAt, toggleBakeMatrix, toggleSampleAnimation, toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, toggleExportSelection, scriptsLocation, doImport, defaultFilename, fileButton, valsLoaded, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths, toggleUseUV, toggleOnlyMainScene
-	
+
 	if valsLoaded:
 		return None
-	
+
 	colladaReg = Blender.Registry.GetKey('collada',True)
 	if not (colladaReg is None):
 		fileButton.val = colladaReg.get('path', '')
@@ -277,12 +277,12 @@ def LoadDefaultVals():
 					if i != partCount - 1:
 						filePath = filePath + "\\" + fileParts[i];
 					else:
-						filePath = filePath + "\\";	
+						filePath = filePath + "\\";
 
 		blenderFilename = Blender.Get('filename');
 		fileParts = []
 		fileParts = blenderFilename.split("\\");
-		partCount = len(fileParts);		
+		partCount = len(fileParts);
 		if partCount > 0 :
 			blenderFileOnlyName = fileParts[partCount -1];
 			blenderFileOnlyName = blenderFileOnlyName.replace(".blend", ".dae");
@@ -293,7 +293,7 @@ def LoadDefaultVals():
 
 		if len(filePath) > 0 :
 			fileButton.val = filePath;
-				
+
 		if doImport:
 			toggleOnlyMainScene.val = colladaReg.get('onlyMainScene', False)
 			toggleNewScene.val = colladaReg.get('newScene', False)
@@ -303,7 +303,7 @@ def LoadDefaultVals():
 			toggleBakeMatrix.val = colladaReg.get('bakeMatrices', False)
 			toggleTriangles.val = colladaReg.get('useTriangles', False)
 			togglePolygons.val = colladaReg.get('usePolygons', False)
-			toggleExportSelection.val = colladaReg.get('exportSelection', False)			
+			toggleExportSelection.val = colladaReg.get('exportSelection', False)
 			togglePhysics.val = not colladaReg.get('usePhysics', True)
 			toggleExportCurrentScene.val = colladaReg.get('exportCurrentScene', False)
 			toggleExportRelativePaths.val = colladaReg.get('exportRelativePaths', True)
@@ -321,38 +321,38 @@ def Gui():
 	try:
 		logoImage = Blender.Image.Load(scriptsLocation + 'logo.png')
 		Blender.BGL.glEnable(Blender.BGL.GL_BLEND ) # Only needed for alpha blending images with background.
-		Blender.BGL.glBlendFunc(Blender.BGL.GL_SRC_ALPHA, Blender.BGL.GL_ONE_MINUS_SRC_ALPHA)	  
-		Blender.Draw.Image(logoImage, 45, size[1]-30)	  
-		Blender.BGL.glDisable(Blender.BGL.GL_BLEND) 	   
+		Blender.BGL.glBlendFunc(Blender.BGL.GL_SRC_ALPHA, Blender.BGL.GL_ONE_MINUS_SRC_ALPHA)
+		Blender.Draw.Image(logoImage, 45, size[1]-30)
+		Blender.BGL.glDisable(Blender.BGL.GL_BLEND)
 	except IOError: # image not found
 		Blender.BGL.glColor3i(0.255,0.255,0.2)
 		Blender.BGL.glRasterPos2i(45, size[1]-30)
-		Blender.Draw.Text("Collada 1.4.0 Plugin for Blender", "large") 
-		
+		Blender.Draw.Text("Collada 1.4.0 Plugin for Blender", "large")
+
 	Blender.BGL.glColor3f(0.255,0.255,0.2)
 	Blender.BGL.glRasterPos2i(45, size[1]-40)
 	Blender.Draw.Text("Version: %s"%(__version__),"small")
-	
+
 	# Write donation text
 	donateText1 = "If this plugin is valuable to you or your company, please consider a donation at"
 	donateText2 = "http://colladablender.illusoft.com to support this plugin. Thanks a lot!"
 	Blender.BGL.glRasterPos2i(45, size[1]-60)
-	Blender.Draw.Text(donateText1, "small")    
+	Blender.Draw.Text(donateText1, "small")
 	Blender.BGL.glRasterPos2i(45, size[1]-70)
-	Blender.Draw.Text(donateText2, "small") 
-	
+	Blender.Draw.Text(donateText2, "small")
+
 	# Write import / export text
 	Blender.BGL.glColor3f(0.9,0.08,0.08)
 	Blender.BGL.glRasterPos2i(45, size[1]-95)
 	if doImport:
 		importExportText = "Import"
 	else:
-		importExportText = "Export" 	   
+		importExportText = "Export"
 	Blender.Draw.Text(importExportText, "normal")
-	
+
 	Blender.BGL.glColor3f(0.255,0.255,0.2)
-	
-	# Create File path input	
+
+	# Create File path input
 	yval = size[1]-130
 	Blender.BGL.glRasterPos2i(45, yval)
 	if fileButton is None or fileButton.val == '':
@@ -365,45 +365,45 @@ def Gui():
 		fileWidth = maxWidth
 	else:
 		fileWidth = size[0] - (105 + 35)
-	fileButton = Blender.Draw.String('', 5, 105, yval-5, fileWidth, 20, fileName, 255) 
+	fileButton = Blender.Draw.String('', 5, 105, yval-5, fileWidth, 20, fileName, 255)
 	Blender.Draw.PushButton('...', 2, 105 + fileWidth, yval-5, 30, 20, 'browse file')
-	
+
 	Blender.Draw.PushButton("Cancel", 3, 45, 10, 55, 20, "Cancel")
 	Blender.Draw.PushButton(importExportText + ' and Close', 4, 45+55+35, 10, 100, 20, importExportText + ' and close this screen')
-	
-	# Create Export Options:	
+
+	# Create Export Options:
 	if not doImport:
 		yval = yval - 50
-		# Create Triangle / Polygons Options	
+		# Create Triangle / Polygons Options
 		if not (toggleTriangles is None):
 			toggleTrianglesVal = toggleTriangles.val
 		else:
 			toggleTrianglesVal = 0
-		
+
 		if not (togglePolygons is None):
 			togglePolygonsVal = togglePolygons.val
 		else:
 			togglePolygonsVal = 0
-			
+
 		toggleTriangles = Blender.Draw.Toggle('Triangles',6,45, yval, 60, 20, toggleTrianglesVal, 'Export all geometry as triangles')
 		togglePolygons = Blender.Draw.Toggle('Polygons',7,45+60 + 30, yval, 60, 20, togglePolygonsVal, 'Export all geometry as polygons')
-		
+
 		yval = yval - 40
 		# Create Export Selection Option
 		if not (toggleExportSelection is None):
 			toggleExportSelectionVal = toggleExportSelection.val
 		else:
 			toggleExportSelectionVal = 0
-			
+
 		toggleExportSelection = Blender.Draw.Toggle('Only Export Selection',8,45, yval, 150, 20, toggleExportSelectionVal, 'Only export selected objects')
-		
+
 		yval = yval - 40
 		# Create Bake Matrix Option
 		if not (toggleBakeMatrix is None):
 			toggleBakeMatrixVal = toggleBakeMatrix.val
 		else:
 			toggleBakeMatrixVal = 0
-			
+
 		toggleBakeMatrix = Blender.Draw.Toggle('Bake Matrices',11,45, yval, 150, 20, toggleBakeMatrixVal, 'Put all transformations in a single matrix')
 
 		yval = yval - 40
@@ -412,55 +412,55 @@ def Gui():
 			toggleSampleAnimationVal = toggleSampleAnimation.val
 		else:
 			toggleSampleAnimationVal = 0
-			
+
 		toggleSampleAnimation = Blender.Draw.Toggle('Sample Animation',16,45, yval, 150, 20, toggleSampleAnimationVal, 'Export information for every frame of animation.')
-		
-		
+
+
 		yval = yval - 40
 		#Create Physics Option
 		if not (togglePhysics is None):
 			togglePhysicsVal = togglePhysics.val
 		else:
 			togglePhysicsVal = 0
-			
+
 		togglePhysics = Blender.Draw.Toggle('Disable Physics',13,45, yval, 150, 20, togglePhysicsVal, 'Disable Export physics information')
-		
-		
+
+
 		yval = yval - 40
 		#Create Physics Option
 		if not (toggleExportCurrentScene is None):
 			toggleExportCurrentSceneVal = toggleExportCurrentScene.val
 		else:
 			toggleExportCurrentSceneVal = 0
-			
+
 		toggleExportCurrentScene = Blender.Draw.Toggle('Only Current Scene',14,45, yval, 150, 20, toggleExportCurrentSceneVal, 'Only Export the current scene')
-		
+
 		yval = yval - 40
 		#Create Relative Path's Option
 		if not (toggleExportRelativePaths is None):
 			toggleExportRelativePathsVal = toggleExportRelativePaths.val
 		else:
 			toggleExportRelativePathsVal = 0
-			
+
 		toggleExportRelativePaths = Blender.Draw.Toggle('Use Relative Paths',15,45, yval, 150, 20, toggleExportRelativePathsVal, 'Export paths relative to the collada file')
-		
+
 		yval = yval - 40
 		#Create Relative Path's Option
 		if not (toggleUseUV is None):
 			toggleUseUVVal = toggleUseUV.val
 		else:
 			toggleUseUVVal = 0
-			
+
 		toggleUseUV = Blender.Draw.Toggle('Use UV Image Mats',15,45, yval, 150, 20, toggleUseUVVal, 'Use UV Image instead of the material textures. Use this if you did not use the Material Textures window. Note: If you reimport this file, they will have moved to the materials section!!')
-		
+
 		# Create Lookat  Option
 		if not (toggleLookAt is None):
 			toggleLookAtVal = toggleLookAt.val
 		else:
 			toggleLookAtVal = 0
-			
+
 		##toggleLookAt = Blender.Draw.Toggle('Camera as Lookat',14,45, yval, 150, 20, toggleLookAtVal, 'Export the transformation of camera\'s as lookat')
-		
+
 		Blender.Draw.PushButton(importExportText, 12, 45+55+35+100+35, 10, 55, 20, importExportText)
 	else: # IMPORT GUI
 		yval = yval - 50
@@ -469,44 +469,44 @@ def Gui():
 			toggleNewSceneVal = toggleNewScene.val
 		else:
 			toggleNewSceneVal = 0
-		
+
 		if not (toggleClearScene is None):
 			toggleClearSceneVal = toggleClearScene.val
 		else:
 			toggleClearSceneVal = 0
-			
+
 		if not (toggleOnlyMainScene is None):
 			toggleOnlyMainSceneVal = toggleOnlyMainScene.val
 		else:
 			toggleOnlyMainSceneVal = 0
-			
+
 		if toggleOnlyMainSceneVal == 0:
 			if toggleClearSceneVal == 0 and toggleNewSceneVal == 0:
 				toggleNewSceneVal = 1
-			
+
 		newSceneText = 'Import file into a new Scene';
 		newSceneTitle = 'New Scene'
 		clearSceneText = 'Clear everything on the current scene'
-		clearSceneTitle = 'Clear Scene'		
+		clearSceneTitle = 'Clear Scene'
 		if toggleOnlyMainSceneVal == 0:
 			newSceneText = 'Import file into a new Scenes'
 			newSceneTitle = 'New Scenes'
 			clearSceneText = 'Delete all the Blender Scenes'
 			clearSceneTitle = 'Delete Scenes'
 		toggleOnlyMainScene = Blender.Draw.Toggle('Only Import Main Scene',17,40, yval, 190, 20, toggleOnlyMainSceneVal, 'Only import the main scene from Collada')
-		yval = yval - 40	
+		yval = yval - 40
 		toggleNewScene = Blender.Draw.Toggle(newSceneTitle,9,40, yval, 90, 20, toggleNewSceneVal, newSceneText)
 		toggleClearScene = Blender.Draw.Toggle(clearSceneTitle,10,40+90 + 10, yval, 90, 20, toggleClearSceneVal, clearSceneText)
-	
+
 	LoadDefaultVals()
-		
-	   
+
+
 def Event(evt, val):
 	pass
-		
+
 def ButtonEvent(evt):
 	global toggleLookAt, toggleBakeMatrix, toggleExportSelection,toggleNewScene, toggleClearScene, toggleTriangles, togglePolygons, doImport, defaultFilename, fileSelectorShown, fileButton, valsLoaded, togglePhysics, toggleExportCurrentScene, toggleExportRelativePaths, toggleUseUV, toggleSampleAnimation, toggleOnlyMainScene
-	checkImportButtons = False	
+	checkImportButtons = False
 	if evt == 1:
 		toggle = 1 - toggle
 		Blender.Draw.Redraw(1)
@@ -538,78 +538,78 @@ def ButtonEvent(evt):
 			Blender.Draw.PupMenu("Path is not valid: %t|"+dirName)
 			cutils.Debug.Debug('Path is not valid: %s' % (dirName),'ERROR')
 			return False
-		
+
 		if toggleTriangles is None:
 			useTriangles = False
 		else:
 			useTriangles = bool(toggleTriangles.val)
-			
+
 		if togglePolygons is None:
 			usePolygons = False
 		else:
 			usePolygons = bool(togglePolygons.val)
-			
+
 		if toggleBakeMatrix is None:
 			bakeMatrices = False
 		else:
 			bakeMatrices = bool(toggleBakeMatrix.val)
-			
+
 		if toggleExportSelection is None:
 			exportSelection = False
 		else:
 			exportSelection = bool(toggleExportSelection.val)
-			
+
 		if toggleNewScene is None:
 			newScene = False
 		else:
 			newScene = bool(toggleNewScene.val)
-		
+
 		if toggleClearScene is None:
 			clearScene = False
 		else:
 			clearScene = bool(toggleClearScene.val)
-		
+
 		if toggleOnlyMainScene is None:
 			onlyMainScene = False
 		else:
 			onlyMainScene = bool(toggleOnlyMainScene.val)
-			
+
 		if toggleLookAt is None:
 			lookAt = False
 		else:
 			lookAt = bool(toggleLookAt.val)
-			
+
 		if togglePhysics is None:
 			usePhysics = True
 		else:
 			usePhysics = not bool(togglePhysics.val)
-			
+
 		if toggleExportCurrentScene is None:
 			exportCurrentScene = False
 		else:
 			exportCurrentScene = bool(toggleExportCurrentScene.val)
-			
+
 		if toggleExportRelativePaths is None:
 			exportRelativePaths = False
 		else:
 			exportRelativePaths = bool(toggleExportRelativePaths.val)
-			
+
 		if toggleUseUV is None:
 			useUV = False
 		else:
 			useUV = bool(toggleUseUV.val)
-			
+
 		if toggleSampleAnimation is None:
 			sampleAnimation = False
 		else:
 			sampleAnimation = bool(toggleSampleAnimation.val)
-		
-		
+
+
 		d = Blender.Registry.GetKey('collada',True)
 		if d is None:
 			d = dict()
 		d['path'] = fileName
-		
+
 		if doImport:
 			d['newScene'] = newScene
 			d['clearScene'] = clearScene
@@ -625,19 +625,19 @@ def ButtonEvent(evt):
 			d['exportRelativePaths'] = exportRelativePaths
 			d['useUV'] = useUV
 			d['sampleAnimation'] = sampleAnimation
-			
+
 		Blender.Registry.SetKey('collada',d, True)
-		
+
 		if doImport:
 			importExportText = "Import"
 		else:
-			importExportText = "Export" 	   
-		
+			importExportText = "Export"
+
 		try:
 			transl = translator.Translator(doImport,__version__,debug,fileName, useTriangles, usePolygons, bakeMatrices, exportSelection, newScene, clearScene, lookAt, usePhysics, exportCurrentScene, exportRelativePaths, useUV, sampleAnimation, onlyMainScene)
 			# Redraw al 3D windows.
-			Blender.Window.RedrawAll()	  
-			
+			Blender.Window.RedrawAll()
+
 			# calculate the elapsed time
 			endTime = Blender.sys.time()
 			elapsedTime = endTime - startTime
@@ -647,11 +647,11 @@ def ButtonEvent(evt):
 			elapsedTime = endTime - startTime
 			Blender.Draw.PupMenu(importExportText + "ing failed%t | Check the console for more info")
 			raise # throw the exception
-		
+
 		cutils.Debug.Debug('FINISHED - time elapsed: %.1f'%(elapsedTime),'FEEDBACK')
-		
+
 		# Hide the wait cursor in blender
-		Blender.Window.WaitCursor(0)		
+		Blender.Window.WaitCursor(0)
 		if evt == 4:
 			Blender.Draw.Exit()
 		valsLoaded = False
@@ -670,11 +670,11 @@ def ButtonEvent(evt):
 	elif evt == 10: # Toggle Clear current Scene
 		if toggleClearScene.val:
 			toggleNewScene.val = 0
-		checkImportButtons = True	
+		checkImportButtons = True
 	elif evt == 17: # Toggle Only Main Scene
 		checkImportButtons = True
-	
-	
+
+
 	if checkImportButtons:
 		if not toggleOnlyMainScene.val:
 			if not toggleClearScene.val and not toggleNewScene.val:

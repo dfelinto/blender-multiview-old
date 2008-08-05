@@ -26,16 +26,18 @@ import Blender
 import collada
 from Blender.Mathutils import *
 
-class Armature(object):	
+debprn = False #--- print debug "print 'deb: ..."
+
+class Armature(object):
 	# static vars
 	# A list of all created armatures
 	_armatures = dict()
-	
+
 	def __init__(self, armatureBObject, daeNode):
 		self.armatureBObject = armatureBObject
-		self.blenderArmature = Blender.Armature.New ();
-		self.armatureBObject.link(self.blenderArmature);
-		print self.armatureBObject;
+		self.blenderArmature = Blender.Armature.New()
+		self.armatureBObject.link(self.blenderArmature)
+		print self.armatureBObject
 		self.boneInfos = dict()
 		self.rootBoneInfos = dict()
 		# The real blender name of this armature
@@ -47,10 +49,10 @@ class Armature(object):
 
 	def GetBlenderArmature(self):
 		return self.blenderArmature
-	
+
 	def HasBone(self, boneName):
 		return boneName in self.boneInfos
-	
+
 	def AddNewBone(self, boneName, parentBoneName, daeNode):
 		# Create a new Editbone.
 		editBone = Blender.Armature.Editbone()
@@ -60,28 +62,29 @@ class Armature(object):
 		parentBoneInfo = None
 		if not parentBoneName is None and parentBoneName in self.boneInfos:
 			parentBoneInfo = self.boneInfos[parentBoneName]
+
 		# Create a new boneInfo object
 		boneInfo = BoneInfo(boneName, parentBoneInfo, self, daeNode)
 		# Store the boneInfo object in the boneInfos collection of this armature.
 		self.boneInfos[boneName] = boneInfo
-		
+
 		# If this bone has a parent, set it.
-		if not parentBoneName is None and parentBoneName in self.boneInfos:			
+		if not parentBoneName is None and parentBoneName in self.boneInfos:
 			parentBoneInfo = self.boneInfos[parentBoneName]
 			parentBoneInfo.childs[boneName] = boneInfo
 			editBone.parent = self.GetBone(parentBoneName)
 			##boneInfo.SetConnected()
 		else:
 			self.rootBoneInfos[boneName] = boneInfo
-		
+
 		return boneInfo
-	
+
 	def MakeEditable(self,makeEditable):
 		if makeEditable:
 			self.GetBlenderArmature().makeEditable()
 		else:
 			self.GetBlenderArmature().update()
-	
+
 	def GetBone(self, boneName):
 		if boneName is None or not (boneName in self.blenderArmature.bones.keys()):
 			return None
@@ -91,7 +94,7 @@ class Armature(object):
 	# Get the location of the armature (VECTOR)
 	def GetLocation(self):
 		return Vector(self.armatureBObject.loc).resize4D()
-	
+
 	def GetTransformation(self):
 		return self.armatureBObject.matrix
 
@@ -100,7 +103,7 @@ class Armature(object):
 			return None
 		else:
 			return self.boneInfos[boneName]
-		
+
 	def GetBoneInfoFromJoint(self, jointName):
 		for boneInfo in self.boneInfos:
 			if boneInfo.jointName == jointName:
@@ -114,22 +117,22 @@ class Armature(object):
 		return result
 
 	#---CLASSMETHODS
-	
+
 	# Factory method
-	def CreateArmature(cls,objectName,armatureName, realArmatureName, daeNode):		
+	def CreateArmature(cls,objectName,armatureName, realArmatureName, daeNode):
 		armatureBObject = armature_obj = Blender.Object.New ('Armature', objectName)
 		armatureBObject.name = str(realArmatureName)
-		armature = Armature(armatureBObject, daeNode)		
+		armature = Armature(armatureBObject, daeNode)
 		armature.name = armatureName
 		cls._armatures[armatureName] = armature
-		
+
 		return armature
 	CreateArmature = classmethod(CreateArmature)
-	
+
 	def GetArmature(cls, armatureName):
 		return cls._armatures.setdefault(armatureName)
 	GetArmature = classmethod(GetArmature)
-	
+
 	def FindArmatureWithJoint(cls, jointName):
 		for armature in cls._armatures.values():
 			jointList = armature.GetJointList()
@@ -137,22 +140,31 @@ class Armature(object):
 				return armature
 		return None
 	FindArmatureWithJoint = classmethod(FindArmatureWithJoint)
-	
+
 class BoneInfo(object):
-	
+
 	def __init__(self, boneName, parentBoneInfo, armature, daeNode):
+		if debprn: print 'deb:class BoneInfo_INITIALIZE............' #--------
+		if debprn: print 'deb:       boneName=', boneName #--------
+		if debprn: print 'deb: parentBoneInfo=', #--------
+		if parentBoneInfo: print parentBoneInfo.name #, parentBoneInfo #--------
+		else: print parentBoneInfo #--------
+		#if debprn: print 'deb: armature=', #--------
+		#if armature: print armature.name #, armature #--------
+		#else:	print armature, #--------
+
 		self.name = boneName
 		self.parent = parentBoneInfo
 		self.armature = armature
 		self.childs = dict()
 		self.daeNode = daeNode
-		
+
 		self.headTransformMatrix = None
 		self.tailTransformMatrix = None
-		
+
 		self.localTransformMatrix = Matrix()
 		self.worldTransformMatrix = Matrix()
-	
+
 	def GetBone(self):
 		return self.armature.GetBone(self.name)
 
@@ -160,7 +172,7 @@ class BoneInfo(object):
 		if len(tailLocVector) == 4:
 			tailLocVector.resize3D()
 		self.GetBone().tail = tailLocVector
-	
+
 	def GetTail(self):
 		return self.GetBone().tail
 
@@ -168,13 +180,13 @@ class BoneInfo(object):
 		if len(headLocVector) == 4:
 			headLocVector.resize3D()
 		self.GetBone().head = headLocVector
-	
+
 	def GetHead(self):
 		return self.GetBone().head
 
-	def SetConnected(self):		
+	def SetConnected(self):
 		self.GetBone().options = Blender.Armature.CONNECTED
-		
+
 	def IsEnd(self):
 		return len(self.childs) == 0
 
@@ -193,11 +205,11 @@ class BoneInfo(object):
 
 class AnimationInfo(object):
 	_animations = dict()
-	
+
 	def __init__(self, nodeId):
 		self.nodeId = nodeId
 		self.times = dict()
-	
+
 	def GetTypes(self, daeNode):
 		types = []
 		if len(self.times) > 0:
@@ -206,16 +218,16 @@ class AnimationInfo(object):
 				if ta[0] == collada.DaeSyntax.TRANSLATE and not Blender.Object.Pose.LOC in types:
 					types.append(Blender.Object.Pose.LOC)
 				elif ta[0] == collada.DaeSyntax.ROTATE and not Blender.Object.Pose.ROT in types:
-					types.append(Blender.Object.Pose.ROT)						
-		return types			
-	
+					types.append(Blender.Object.Pose.ROT)
+		return types
+
 	def GetType(self, daeNode, target):
 		ta = target.split('.', 1)
 		for t in daeNode.transforms:
 			if t[2] == ta[0]:
 				return [t[0], ta]
-				
-	
+
+
 	def CreateAnimations(cls, animationsLibrary, fps, axiss):
 		for daeAnimation in animationsLibrary.daeLibrary.items:
 			for channel in daeAnimation.channels:
@@ -225,13 +237,13 @@ class AnimationInfo(object):
 				targetId = targetArray[1]
 				# Get the animationInfo object for this node (or create a new one)
 				animation = cls._animations.setdefault(nodeId, AnimationInfo(nodeId))
-				
+
 				# loop trough all samplers
 				sampler = None
 				for s in daeAnimation.samplers:
 					if s.id == channel.source[1:]:
 						sampler = s
-				
+
 				# Get the values for all the inputs
 				if not sampler is None:
 					input = sampler.GetInput("INPUT")
@@ -243,7 +255,7 @@ class AnimationInfo(object):
 						accessorCount = outputAccessor.count
 						accessorStride = outputAccessor.stride
 						times = [x*fps for x in inputSource.source.data]
-						
+
 						for timeIndex in range(len(times)):
 							time = animation.times.setdefault(times[timeIndex], dict())
 							target = time.setdefault(targetId, dict())
@@ -251,13 +263,12 @@ class AnimationInfo(object):
 								target[outputAccessor.params[j]] = outputSource.source.data[timeIndex*accessorStride + j]
 
 	CreateAnimations = classmethod(CreateAnimations)
-	
-	
-		
+
+
+
 	def GetAnimationInfo(cls, nodeId):
 		for animation in cls._animations.values():
 			if animation.nodeId == nodeId:
 				return animation
 		return None
 	GetAnimationInfo = classmethod(GetAnimationInfo)
-

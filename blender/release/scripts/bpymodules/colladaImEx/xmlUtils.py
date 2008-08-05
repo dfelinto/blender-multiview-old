@@ -26,6 +26,8 @@ from datetime import *
 from cutils import *
 from xml.dom.minidom import *
 
+debprn = False #--- print debug "print 'deb: ..."
+
 #---XML Utils---
 
 # Returns the first child of the specified type in node
@@ -52,7 +54,7 @@ def FindElementsByTagName(parentNode, type):
 def ReadAttribute(node,attributeName):
 	if node != None and attributeName != None:
 		attribute = node.getAttribute(attributeName)
-		return attribute		
+		return attribute
 	return None
 
 def ReadContents(node):
@@ -67,7 +69,7 @@ def ReadDateTime(node):
 		return None
 	return GetDateTime(ReadContents(node))
 
-def RemoveWhiteSpace(parent):	 
+def RemoveWhiteSpace(parent):
 	for child in list(parent.childNodes):
 		if child.nodeType==child.TEXT_NODE and child.data.strip()=='':
 			parent.removeChild(child)
@@ -85,7 +87,7 @@ def RemoveComments(parent):
 		if child.__class__.__name__ == "Comment":
 			parent.removeChild(child)
 	return parent
-			
+
 ##def RemoveWhiteSpace(node):
 ##	  removeList = []
 ##	  for child in node.childNodes:
@@ -93,7 +95,7 @@ def RemoveComments(parent):
 ##			  removeList.append(child)
 ##		  elif child.hasChildNodes():
 ##			  RemoveWhiteSpace(child)
-##	  
+##
 ##	  for node in removeList:
 ##		  node.parentNode.removeChild(node)
 
@@ -103,7 +105,7 @@ def GetDateTime(xmlvalue):
 	timestr =  vals[1]
 	date = datestr.split('-')
 	time = timestr.split(':')
-	time[2]=time[2].rstrip('Z')    
+	time[2]=time[2].rstrip('Z')
 	return datetime(int(date[0]), int(date[1]), int(date[2]),int(time[0]), int(time[1]), int(float(time[2])))
 
 def ToDateTime(val):
@@ -116,14 +118,14 @@ def GetStringArrayFromNodes(xmlNodes):
 	for xmlNode in xmlNodes:
 		stringvals = ReadContents(xmlNode).split( )
 		for string in stringvals:
-			vals.append(string) 		   
+			vals.append(string)
 	return vals
 
 def GetListFromNodes(xmlNodes, cast=None):
 	result = []
 	if xmlNodes is None:
 		return result
-	
+
 	for xmlNode in xmlNodes:
 		val = ReadContents(xmlNode).split( )
 		if cast == float:
@@ -133,12 +135,12 @@ def GetListFromNodes(xmlNodes, cast=None):
 		elif cast == bool:
 			val = ToBoolList(val)
 		result.append(val)
-	return result			 
-		
+	return result
+
 
 def ToXml(xmlNode, indent='\t', newl='\n'):
 	return '<?xml version="1.0" encoding="utf-8"?>\n%s'%(__ToXml(xmlNode, indent,newl))
-	
+
 def __ToXml(xmlNode, indent='\t',newl='\n',totalIndent=''):
 	childs = xmlNode.childNodes
 	if len(childs) > 0:
@@ -151,11 +153,11 @@ def __ToXml(xmlNode, indent='\t',newl='\n',totalIndent=''):
 		result = '%s<%s%s>'%(totalIndent,xmlNode.localName,attrs)
 		tempnewl = newl
 		tempTotIndent = totalIndent
-		for child in childs:			
+		for child in childs:
 			if child.nodeType == child.TEXT_NODE:
 				tempnewl = ''
 				tempTotIndent = ''
-			
+
 			result += '%s%s'%(tempnewl,__ToXml(child, indent, newl, totalIndent+indent))
 		result += '%s%s</%s>'%(tempnewl,tempTotIndent,xmlNode.localName)
 		return result
@@ -168,15 +170,14 @@ def __ToXml(xmlNode, indent='\t',newl='\n',totalIndent=''):
 def AppendChilds(xmlNode, syntax, lst):
 	if lst is None or syntax is None or xmlNode is None:
 		return
-	
+
 	for i in lst:
 		el = Element(syntax)
 		text = Text()
 		text.data = ListToString(i)
 		el.appendChild(text)
 		xmlNode.appendChild(el)
-	
-	return xmlNode
 
+	return xmlNode
 
 
