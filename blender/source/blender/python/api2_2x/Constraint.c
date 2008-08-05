@@ -29,6 +29,7 @@
 
 #include "Constraint.h" /*This must come first*/
 
+#include "DNA_armature_types.h"
 #include "DNA_object_types.h"
 #include "DNA_effect_types.h"
 #include "DNA_vec_types.h"
