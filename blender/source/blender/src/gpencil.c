@@ -821,14 +821,14 @@ static void gp_session_initpaint (tGPsdata *p)
 			}
 		}
 			break;	
-		case SPACE_SIMA:
+		case SPACE_IMAGE:
 		{
 			SpaceImage *sima= curarea->spacedata.first;
 			
 			/* set the current area */
 			p->sa= curarea;
 			p->v2d= &sima->v2d;
-			p->ibuf= BKE_image_get_ibuf(sima->image, &sima->iuser);
+			//p->ibuf= BKE_image_get_ibuf(sima->image, &sima->iuser);
 		}
 			break;
 		/* unsupported views */
