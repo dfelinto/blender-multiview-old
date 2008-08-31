@@ -28,6 +28,8 @@ import xmlUtils
 from cutils import *
 from datetime import *
 
+debprn = 0 #False #--- print debug "print 'deb: ..."
+
 # The number of decimals to export floats to
 ROUND = 5
 
@@ -483,11 +485,11 @@ class DaeChannel(DaeEntity):
 		self.target = xmlUtils.ReadAttribute(xmlNode, DaeSyntax.TARGET)
 
 	def SaveToXml(self, daeDocument):
-#		if debprn: print 'deb:DaeChannel() self.source=', self.source #-------
-#		if debprn: print 'deb:DaeChannel() self.target=', self.target #-------
+		if debprn: print 'deb:DaeChannel() self.source=', self.source #-------
+		if debprn: print 'deb:DaeChannel() self.target=', self.target #-------
 		node = super(DaeChannel, self).SaveToXml(daeDocument)
-#org		SetAttribute(node, DaeSyntax.SOURCE, StripString('#'+self.source.id))
-		SetAttribute(node, DaeSyntax.SOURCE, StripString('#'+self.source))
+		SetAttribute(node, DaeSyntax.SOURCE, StripString('#'+self.source.id))
+		##SetAttribute(node, DaeSyntax.SOURCE, StripString('#'+self.source))
 		SetAttribute(node, DaeSyntax.TARGET, self.target)
 		return node
 

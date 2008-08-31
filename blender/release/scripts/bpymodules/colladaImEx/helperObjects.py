@@ -26,7 +26,7 @@ import Blender
 import collada
 from Blender.Mathutils import *
 
-debprn = False #--- print debug "print 'deb: ..."
+debprn = 0 #False #--- print debug "print 'deb: ..."
 
 class Armature(object):
 	# static vars
@@ -219,6 +219,9 @@ class AnimationInfo(object):
 					types.append(Blender.Object.Pose.LOC)
 				elif ta[0] == collada.DaeSyntax.ROTATE and not Blender.Object.Pose.ROT in types:
 					types.append(Blender.Object.Pose.ROT)
+				#TODO: check if scale correct implemented
+				elif ta[0] == collada.DaeSyntax.SCALE and not Blender.Object.Pose.SCALE in types:
+					types.append(Blender.Object.Pose.SCALE)
 		return types
 
 	def GetType(self, daeNode, target):
@@ -237,11 +240,16 @@ class AnimationInfo(object):
 				targetId = targetArray[1]
 				# Get the animationInfo object for this node (or create a new one)
 				animation = cls._animations.setdefault(nodeId, AnimationInfo(nodeId))
+				#if debprn: print 'deb:helperObj.py:class AnimationInfo CreateAnimations() dir(animation)',  dir(animation) #----------
 
 				# loop trough all samplers
 				sampler = None
+				if debprn: print 'deb:helperObj.py:class AnimationInfo CreateAnimations() \ndeb: channel.source= ',  channel.source #----------
 				for s in daeAnimation.samplers:
-					if s.id == channel.source[1:]:
+					#if debprn: print 'deb: sampler.id        = ', s.id #----------
+					#if debprn: print 'deb: channel.source[1:]= ', channel.source[1:] #----------
+#org					if s.id == channel.source[1:]:
+					if s.id == channel.source:
 						sampler = s
 
 				# Get the values for all the inputs
@@ -249,18 +257,41 @@ class AnimationInfo(object):
 					input = sampler.GetInput("INPUT")
 					inputSource = daeAnimation.GetSource(input.source)
 					if inputSource.techniqueCommon.accessor.HasParam("TIME") and len(inputSource.techniqueCommon.accessor.params) == 1:
+						if debprn: print 'deb: DDDDD getting target' #----------
 						output = sampler.GetInput("OUTPUT")
 						outputSource = daeAnimation.GetSource(output.source)
 						outputAccessor = outputSource.techniqueCommon.accessor
 						accessorCount = outputAccessor.count
 						accessorStride = outputAccessor.stride
-						times = [x*fps for x in inputSource.source.data]
+						interpolations = sampler.GetInput("INTERPOLATION")
+						interpolationsSource = daeAnimation.GetSource(interpolations.source)
+						if 0: #because probably interpolationsAccessor is identical to outputAccessor
+							interpolationsAccessor = interpolationsSource.techniqueCommon.accessor
+							accessorCount = interpolationsAccessor.count
+							accessorStride = interpolationsAccessor.stride
 
+						if debprn: print 'deb: outputSource.source.data: ',  outputSource.source.data #----------
+						#if debprn: print 'deb: dir(outputAccessor.params): ',  dir(outputAccessor.params) #----------
+						#if debprn: print 'deb: dir(outputAccessor.params[0]): ',  str(outputAccessor.params[0]) #----------
+						times = [x*fps for x in inputSource.source.data]
+						if debprn: print 'deb: times=', times #---------
 						for timeIndex in range(len(times)):
 							time = animation.times.setdefault(times[timeIndex], dict())
 							target = time.setdefault(targetId, dict())
+							#interp = time.setdefault(targetId, dict())
+							#if debprn: print 'deb: accessorStride=', accessorStride #---------
+							value = []
 							for j in range(accessorStride):
-								target[outputAccessor.params[j]] = outputSource.source.data[timeIndex*accessorStride + j]
+								#if debprn: print 'deb: timeIndex,j,data=',timeIndex, j, outputSource.source.data[timeIndex*accessorStride + j] #---------
+								#if debprn: print 'deb: outputAccessor.params[j]=',outputAccessor.params[j] #---------
+								#target[outputAccessor.params[j]] = outputSource.source.data[timeIndex*accessorStride + j]
+								value.append(outputSource.source.data[timeIndex*accessorStride + j])
+							if debprn: print 'deb: value=', value #---------
+							target[outputAccessor.params[0]] = value
+							#interp[outputAccessor.params[j]] = interpolationsSource.source.data[timeIndex*accessorStride + j]
+							if debprn: print 'deb: time=', time #---------
+							if debprn: print 'deb: target=', target #---------
+					#if debprn: print 'deb:helperObj.py: X X X X X X X X X class AnimationInfo CreateAnimations() animation=',  animation #----------
 
 	CreateAnimations = classmethod(CreateAnimations)
 
