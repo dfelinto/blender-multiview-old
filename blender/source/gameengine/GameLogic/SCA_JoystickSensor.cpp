@@ -334,7 +334,7 @@ char SCA_JoystickSensor::SetIndex_doc[] =
 "\tSets the joystick index to use.\n";
 PyObject* SCA_JoystickSensor::PySetIndex( PyObject* self, PyObject* value ) {
 	int index = PyInt_AsLong( value ); /* -1 on error, will raise an error in this case */
-	if (index < 0 or index >= JOYINDEX_MAX) {
+	if (index < 0 || index >= JOYINDEX_MAX) {
 		PyErr_SetString(PyExc_ValueError, "joystick index out of range or not an int");
 		return NULL;
 	}
