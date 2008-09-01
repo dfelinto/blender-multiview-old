@@ -296,7 +296,7 @@ PyParentObject SCA_JoystickSensor::Parents[] = {
 
 PyMethodDef SCA_JoystickSensor::Methods[] = {
 	{"getIndex", 	 (PyCFunction) SCA_JoystickSensor::sPyGetIndex,		METH_NOARGS,	GetIndex_doc},
-	{"setIndex",	 (PyCFunction) SCA_JoystickSensor::sPySetIndex,		METH_O,	SetIndex_doc},
+	{"setIndex",	 (PyCFunction) SCA_JoystickSensor::sPySetIndex,		METH_O,			SetIndex_doc},
 	{"getAxis", 	 (PyCFunction) SCA_JoystickSensor::sPyGetAxis,		METH_NOARGS,	GetAxis_doc},
 	{"setAxis", 	 (PyCFunction) SCA_JoystickSensor::sPySetAxis,		METH_VARARGS,	SetAxis_doc},
 	{"getAxisValue", (PyCFunction) SCA_JoystickSensor::sPyGetRealAxis,	METH_NOARGS,	GetRealAxis_doc},
@@ -309,6 +309,7 @@ PyMethodDef SCA_JoystickSensor::Methods[] = {
 	{"getNumAxes",	 (PyCFunction) SCA_JoystickSensor::sPyNumberOfAxes,	METH_NOARGS,	NumberOfAxes_doc},
 	{"getNumButtons",(PyCFunction) SCA_JoystickSensor::sPyNumberOfButtons,METH_NOARGS,	NumberOfButtons_doc},
 	{"getNumHats",	 (PyCFunction) SCA_JoystickSensor::sPyNumberOfHats,	METH_NOARGS,	NumberOfHats_doc},
+	{"getConnected", (PyCFunction) SCA_JoystickSensor::sPyConnected,	METH_NOARGS,	Connected_doc},
 	{NULL,NULL} //Sentinel
 };
 
@@ -473,4 +474,12 @@ char SCA_JoystickSensor::NumberOfHats_doc[] =
 PyObject* SCA_JoystickSensor::PyNumberOfHats( PyObject* self ) {
 	SCA_Joystick *joy = m_pJoystickMgr->GetJoystickDevice(m_joyindex);
 	return PyInt_FromLong( joy->GetNumberOfHats() );
+}
+
+char SCA_JoystickSensor::Connected_doc[] = 
+"getConnected\n"
+"\tReturns True if a joystick is connected at this joysticks index.\n";
+PyObject* SCA_JoystickSensor::PyConnected( PyObject* self ) {
+	SCA_Joystick *joy = m_pJoystickMgr->GetJoystickDevice(m_joyindex);
+	return PyBool_FromLong( joy->Connected() );
 }
