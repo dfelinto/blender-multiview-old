@@ -124,7 +124,7 @@ def rem_unused_materials(me):
 		f_mat = f.mat
 		# Make sure the face index isnt too big. this happens sometimes.
 		if f_mat >= len_materials:
-			f_mat=0
+			f_mat = f.mat = 0
 		material_users[f_mat] += 1
 	
 	# mat_idx_subtract= 0
