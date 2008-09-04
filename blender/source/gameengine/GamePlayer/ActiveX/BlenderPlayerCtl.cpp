@@ -659,7 +659,8 @@ bool CBlenderPlayerCtrl::startEngine(void)
 				m_mouse,
 				m_networkdevice,
 				m_audiodevice,
-				startscenename);
+				startscenename,
+				m_gamedata->curscene);
 			
 			PyObject* m_dictionaryobject = initGamePlayerPythonScripting("Ketsji", psl_Highest);
 			//PyObject* m_dictionaryobject = initGamePlayerPythonScripting("Ketsji", psl_Lowest);
@@ -668,7 +669,7 @@ bool CBlenderPlayerCtrl::startEngine(void)
 			m_ketsjiengine->SetPythonDictionary(m_dictionaryobject);
 
 			initRasterizer(m_rasterizer, m_canvas);			
-			PyDict_SetItemString(m_dictionaryobject, "GameLogic", initGameLogic(startscene)); // Same as importing the module
+			PyDict_SetItemString(m_dictionaryobject, "GameLogic", initGameLogic(m_ketsjiengine, startscene)); // Same as importing the module
 			initGameKeys();			
 			initPythonConstraintBinding();
 			initMathutils();
