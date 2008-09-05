@@ -1101,66 +1101,6 @@ static void traverse(BVHOverlapData *data, BVHNode *node1, BVHNode *node2)
 	return;
 }
 
-// general function for traversing the tree
-void BLI_bvhtree_traverse(BVHOverlapData *data, BVHNode *node1, BVHNode *node2)
-{
-	int j;
-	
-	if(tree_overlap(node1, node2, data->start_axis, data->stop_axis))
-	{
-		// check if node1 is a leaf
-		if(!node1->totnode)
-		{
-			// check if node2 is a leaf
-			if(!node2->totnode)
-			{
-				
-				if(node1 == node2)
-				{
-					return;
-				}
-					
-				if(data->i >= data->max_overlap)
-				{	
-					// try to make alloc'ed memory bigger
-					data->overlap = realloc(data->overlap, sizeof(BVHTreeOverlap)*data->max_overlap*2);
-					
-					if(!data->overlap)
-					{
-						printf("Out of Memory in traverse\n");
-						return;
-					}
-					data->max_overlap *= 2;
-				}
-				
-				// both leafs, insert overlap!
-				data->overlap[data->i].indexA = node1->index;
-				data->overlap[data->i].indexB = node2->index;
-
-				data->i++;
-			}
-			else
-			{
-				for(j = 0; j < data->tree2->tree_type; j++)
-				{
-					if(node2->children[j])
-						traverse(data, node1, node2->children[j]);
-				}
-			}
-		}
-		else
-		{
-			
-			for(j = 0; j < data->tree2->tree_type; j++)
-			{
-				if(node1->children[j])
-					traverse(data, node1->children[j], node2);
-			}
-		}
-	}
-	return;
-}
-
 BVHTreeOverlap *BLI_bvhtree_overlap(BVHTree *tree1, BVHTree *tree2, int *result)
 {
 	int j, total = 0;
