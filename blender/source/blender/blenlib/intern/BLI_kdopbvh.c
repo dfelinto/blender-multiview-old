@@ -1108,7 +1108,7 @@ BVHTreeOverlap *BLI_bvhtree_overlap(BVHTree *tree1, BVHTree *tree2, int *result)
 	BVHOverlapData **data;
 	
 	// check for compatibility of both trees (can't compare 14-DOP with 18-DOP)
-	if((tree1->axis != tree2->axis) && ((tree1->axis == 14) || tree2->axis == 14))
+	if((tree1->axis != tree2->axis) && ((tree1->axis == 14) || tree2->axis == 14) && (tree1->axis == 18) || tree2->axis == 18))
 		return 0;
 	
 	// fast check root nodes for collision before doing big splitting + traversal
