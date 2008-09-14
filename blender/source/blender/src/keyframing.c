@@ -1096,7 +1096,6 @@ bKeyingSet defks_buts_shading_tex[] =
 	{NULL, "Color Filter", ID_TE, 0, 5, 
 		{TE_COL_R,TE_COL_G,TE_COL_B,TE_BRIGHT,TE_CONTRA}},
 	
-	
 	{NULL, "%l", 0, -1, 0, {}}, // separator
 	
 	{NULL, "Available", ID_TE, -2, 0, {}}
@@ -1125,6 +1124,8 @@ bKeyingSet defks_buts_object[] =
 	{NULL, "Force Strength", ID_OB, 0, 1, {OB_PD_FSTR}},
 	{NULL, "Force Falloff", ID_OB, 0, 1, {OB_PD_FFALL}},
 	
+	{NULL, "%l", 0, -1, 0, {}}, // separator
+	
 	{NULL, "Available", ID_OB, -2, 0, {}}  // this will include ob-transforms too!
 };
 
@@ -1144,7 +1145,7 @@ static short incl_buts_cam2 (bKeyingSet *ks, const char mode[])
 	return (G.scene->r.renderer!=R_INTERN);
 }
 
-/* array for texture keyingset defines */
+/* array for camera keyingset defines */
 bKeyingSet defks_buts_cam[] = 
 {
 	/* include_cb, name, blocktype, flag, chan_num, adrcodes */
@@ -1158,6 +1159,7 @@ bKeyingSet defks_buts_cam[] =
 	{incl_buts_cam2, "Aperture", ID_CA, 0, 1, {CAM_YF_APERT}},
 	{incl_buts_cam1, "Viewplane Shift", ID_CA, 0, 2, {CAM_SHIFT_X,CAM_SHIFT_Y}},
 	
+	{NULL, "%l", 0, -1, 0, {}}, // separator
 	
 	{NULL, "Available", ID_CA, -2, 0, {}}
 };
@@ -1501,9 +1503,11 @@ static char *build_keyingsets_menu (bKeyingContext *ksc, const char mode[48])
 		/* check if keyingset can be used */
 		if (ks->flag == -1) {
 			/* optional separator? */
-			if ( (ks->include_cb==NULL) || (ks->include_cb(ks, mode)) ) {
-				BLI_snprintf( buf, 64, "%s%s", ks->name, ((n < ksc->tot)?"|":"") );
-				BLI_dynstr_append(pupds, buf);
+			if (ks->include_cb) {
+				if (ks->include_cb(ks, mode)) {
+					BLI_snprintf( buf, 64, "%s%s", ks->name, ((n < ksc->tot)?"|":"") );
+					BLI_dynstr_append(pupds, buf);
+				}
 			}
 			else {
 				BLI_snprintf( buf, 64, "%%l%s", ((n < ksc->tot)?"|":"") );
