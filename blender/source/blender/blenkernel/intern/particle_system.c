@@ -2329,13 +2329,8 @@ static void add_to_effectors(ListBase *lb, Object *ob, Object *obsrc, ParticleSy
 		ec->type=type;
 		ec->distances=0;
 		ec->locations=0;
-		ec->rng = NULL;
-		
-		if(pd && pd->forcefield == PFIELD_WIND)
-		{
-			ec->rng = rng_new(1);
-			rng_srandom(ec->rng, (unsigned int)(ceil(PIL_check_seconds_timer()))); // use better seed
-		}
+		ec->rng = rng_new(1);
+		rng_srandom(ec->rng, (unsigned int)(ceil(PIL_check_seconds_timer()))); // use better seed
 		
 		BLI_addtail(lb, ec);
 	}
@@ -2372,14 +2367,9 @@ static void add_to_effectors(ListBase *lb, Object *ob, Object *obsrc, ParticleSy
 					ec->ob= ob;
 					ec->type=type;
 					ec->psys_nbr=i;
-					ec->rng = NULL;
+					ec->rng = rng_new(1);
+					rng_srandom(ec->rng, (unsigned int)(ceil(PIL_check_seconds_timer())));
 					
-					if(pd && pd->forcefield == PFIELD_WIND)
-					{
-						ec->rng = rng_new(1);
-						rng_srandom(ec->rng, (unsigned int)(ceil(PIL_check_seconds_timer()))); // use better seed
-					}
-		
 					BLI_addtail(lb, ec);
 				}
 			}
