@@ -1,7 +1,7 @@
 # French UI Translation
-# eon <eon.2007@free.fr>, 2007
-#"Last-Translator: eon <eon.2007@free.fr>\n"
-#"PO-Revision-Date: 2007-05-07 01:00+0100\n"
+# eon <eon.2008@free.fr>, 2008
+#"Last-Translator: eon <eon.2008@free.fr>\n"
+#"PO-Revision-Date: 2008-08-08 01:00+0100\n"
 #"Content-Type: text/plain; charset=UTF-8\n"
 #"Content-Transfer-Encoding: 8bit\n"
 #"Language-Team: eon (eon@jabber.fr) , serialsiner , kaal / project page : http://wiki.blender.org/index.php/Interface/fr"
@@ -35,6 +35,7 @@
 ###  Menubar  Snap
 ###  Menubar Edit Mode  
 ###  Menubar MESH
+###  Menubar Sculpt
 ###  SPACE MENU:  ADD
 ###  SPACE MENU:  OBJECT
 ###  SPACE MENU:  EDIT
@@ -134,7 +135,7 @@ msgid "Free "
 msgstr "Libre "
 
 msgid "Indicates this is a Packed file. See File menu."
-msgstr "Indique si c'est un projet empaqueté. Voir le menu 'Fichier'"
+msgstr "Indique si c'est un projet emballé. Voir le menu 'Fichier'"
 
 #CTRL-Z
 msgid "No undo available"
@@ -305,9 +306,6 @@ msgstr "Vue"
 msgid "Game"
 msgstr "Jeu"
 
-msgid "Tools"
-msgstr "Outils"
-
 msgid "Render"
 msgstr "Rendu"
 
@@ -387,11 +385,11 @@ msgstr "Charger la Scène de Démarrage par Défaut"
 msgid "External Data"
 msgstr "Données Externes"
 
-msgid "Pack into Blend"
-msgstr "Archiver"
+msgid "Pack into .blend file"
+msgstr "Empaqueter dans le fichier .blend"
 
 msgid "Unpack into Files..."
-msgstr "Désarchiver"
+msgstr "Déballer"
 
 msgid "Make all Paths Relative"
 msgstr "Chemins Relatifs"
@@ -399,10 +397,10 @@ msgstr "Chemins Relatifs"
 msgid "Make all Paths Absolute"
 msgstr "Chemins Absolus"
 
-msgid "Report Missing Files"
+msgid "Report Missing Files..."
 msgstr "Lister Fichiers Manquants"
 
-msgid "Find Missing Files"
+msgid "Find Missing Files..."
 msgstr "Chercher Fichiers Manquants"
 
 msgid "Quit Blender"
@@ -518,7 +516,7 @@ msgid "Bake Selected Meshes "
 msgstr "Type de Rendu"
 
 msgid "Full Render"
-msgstr "Rendu Complet"
+msgstr "Tout"
 
 msgid "Ambient Occlusion"
 msgstr "Occlusion Ambiante"
@@ -528,6 +526,9 @@ msgstr "Normales"
 
 msgid "Texture Only"
 msgstr "Textures"
+
+msgid "Displacement"
+msgstr "Déplacement"
 
 msgid "No Images found to bake to"
 msgstr "Aucune Image UV trouvée"
@@ -547,8 +548,8 @@ msgstr "Liste des Raccourcis Clavier (En)"
 msgid "Manual"
 msgstr "Manuel (En)"
 
-msgid "Python Scripting Reference"
-msgstr "Documentation sur le Script Python (En)"
+msgid "Blender/Python Scripting API"
+msgstr "Documentation sur les Scripts Python (En)"
 
 msgid "Release Notes"
 msgstr "Notes de Version (En)"
@@ -557,7 +558,7 @@ msgid "ID Property Browser"
 msgstr "Edition des Propriétés ID (En)"
 
 msgid "Scripts Help Browser"
-msgstr "Notice des Scripts Python (En)"
+msgstr "Liste des Scripts Python (En)"
 
 msgid "Tutorials"
 msgstr "Tutoriels (En)"
@@ -566,7 +567,7 @@ msgid "About Blender..."
 msgstr "A propos de Blender"
 
 msgid "Websites"
-msgstr "Sites Web"
+msgstr "Sites Web (En)"
 
 msgid "A french speaking users community"
 msgstr "Zoo-Blender : Communauté française"
@@ -669,6 +670,9 @@ msgstr "Vue Entière"
 
 msgid "Local View"
 msgstr "Vue Sélection Isolée"
+
+msgid "Show All Layers"
+msgstr "Voir Tous les Calques"
 
 msgid "Orthographic"
 msgstr "Orthogonale"
@@ -1023,13 +1027,19 @@ msgid "Mode: "
 msgstr "Modes:"
 
 msgid "Edit Mode "
-msgstr "Mode Edition"
+msgstr "Édition"
 
 msgid "Object Mode "
-msgstr "Mode Objet"
+msgstr "Objet"
 
-msgid "UV Face Select "
-msgstr "Mode Faces UV"
+msgid "Sculpt Mode "
+msgstr "Scultpure"
+
+msgid "Texture Paint "
+msgstr "Peinture sur Texture"
+
+msgid "Vertex Paint "
+msgstr "Peinture sur Sommets"
 
 ###########################################################
 ###
@@ -1105,6 +1115,9 @@ msgstr "Calques à afficher, Shift-clic pour en afficher plusieurs (Num, Shift N
 ###
 ###########################################################
 
+msgid "Vertex"
+msgstr "Sommet"
+
 msgid "Closest"
 msgstr "Proche"
 
@@ -1113,7 +1126,7 @@ msgid "Snap while Ctrl is held during transform (Shift Tab)"
 msgstr "Accrochage aux Sommets en maintenant Ctrl appuyé (Shift Tab)"
 
 msgid "Use Snap or Grid (Shift Tab)"
-msgstr "Accrochage à la Grille en maintenant Ctrl appuyé(Shift Tab)"
+msgstr "Accrochage à la Grille en maintenant Ctrl appuyé (Shift Tab)"
 
 ###########################################################
 ###
@@ -1195,6 +1208,29 @@ msgstr "Edition Proportionnelle"
 msgid "Flip Triangle Edges"
 msgstr "Modifier Triangulation"
 
+###########################################################
+###
+###  Menubar Sculpt
+###
+###########################################################
+
+msgid "X Symmetry"
+msgstr "Symétrie en X"
+
+msgid "Y Symmetry"
+msgstr "Symétrie en Y"
+
+msgid "Z Symmetry"
+msgstr "Symétrie en Z"
+
+msgid "Strengthen Brush"
+msgstr "Dureté de la Brosse"
+
+msgid "Scale Brush"
+msgstr "Taille de la Brosse"
+
+msgid "Sculpt Properties"
+msgstr "Paramètres de Scultpure"
 
 ###########################################################
 ###
@@ -1261,6 +1297,12 @@ msgstr "Polyhèdre"
 
 msgid "Grid"
 msgstr "Grille"
+
+msgid "Empty mesh"
+msgstr "Maillage vide"
+
+msgid "Torus"
+msgstr "Anneau"
 
 msgid "Monkey"
 msgstr "Singe"
@@ -2192,7 +2234,7 @@ msgid "Specify the axis that points up"
 msgstr "Spécifie l'axe orienté vers le haut"
 
 msgid "Draw"
-msgstr "Afficher"
+msgstr "Dessiner"
 
 msgid "Layers"
 msgstr "Calques"
@@ -2453,11 +2495,14 @@ msgstr "Afficher Angles"
 msgid "Face Area"
 msgstr "Afficher Surfaces"
 
-msgid "Mesh Tools"
-msgstr "Outils Maillage"
+msgid " Tools"
+msgstr "Outils"
 
-msgid "Mesh Tools 1"
-msgstr "Outils Maillage 2"
+msgid "Mesh Tools More"
+msgstr "Affichage"
+
+msgid "UV Calculation"
+msgstr "Dépliage UV"
 
 msgid "Add Modifier"
 msgstr "Ajouter Modificateur"
@@ -2502,7 +2547,7 @@ msgid "Reveal"
 msgstr "Tout Montrer"
 
 msgid "AutoTexSpace"
-msgstr "Dimension Texture Auto"
+msgstr "Déform. Texture Auto"
 
 msgid "Keep Original"
 msgstr "Garder l'Original"
@@ -2673,8 +2718,44 @@ msgstr "Dessine le champ de vision"
 msgid "Draw the active camera's name in camera view"
 msgstr "Affiche le nom de la caméra utilisée dans la vue caméra"
 
+msgid "Paint"
+msgstr "Peinture"
+
+msgid "Mul"
+msgstr "Multiplier"
+
+msgid "Lighter"
+msgstr "+ Clair"
+
+msgid "Darker"
+msgstr "+ Sombre"
+
 msgid "Add Multires"
 msgstr "Ajouter Multires"
+
+msgid "Sculpt"
+msgstr "Sculpture"
+
+msgid "Brush"
+msgstr "Brosse"
+
+msgid "Pinch"
+msgstr "Pincer"
+
+msgid "Inflate"
+msgstr "Grossir"
+
+msgid "Grab"
+msgstr "Déplacer"
+
+msgid "Flatten"
+msgstr "Aplatir"
+
+msgid "Shape"
+msgstr "Forme"
+
+msgid "Symmetry"
+msgstr "Symétrie"
 
 ###########################################################
 ###
@@ -2912,7 +2993,7 @@ msgid "Stamp"
 msgstr "Étiquette"
 
 msgid "Enable Stamp"
-msgstr "Paramétrer"
+msgstr "Réglages"
 
 msgid "Draw Stamp"
 msgstr "Activer Étiquette"
@@ -3136,7 +3217,10 @@ msgid "Update Automatically"
 msgstr "Mise à jour Automatique"
 
 msgid "Pack Image"
-msgstr "Archiver"
+msgstr "Empaqueter"
+
+msgid "Pack Image as PNG"
+msgstr "Empaqueter en PNG"
 
 msgid "Reload"
 msgstr "Recharger"
@@ -3144,6 +3228,8 @@ msgstr "Recharger"
 msgid "Replace..."
 msgstr "Remplacer..."
 
+msgid "Texture Paint"
+msgstr "Mode Peinture"
 
 ###########################################################
 ###
@@ -3260,6 +3346,9 @@ msgstr "Entrée"
 msgid "Color"
 msgstr "Couleur"
 
+msgid "Geometry"
+msgstr "Géométrie"
+
 msgid "Camera Data"
 msgstr "Données Camera"
 
@@ -3319,6 +3408,21 @@ msgstr "Séparer TSLA"
 
 msgid "Combine HSVA"
 msgstr "Combiner TSLA"
+
+msgid "Separate YUVA"
+msgstr "Séparer YUVA"
+
+msgid "Combine YUVA"
+msgstr "Combiner YUVA"
+
+msgid "Separate YCbCrA"
+msgstr "Séparer YCbCrA"
+
+msgid "Combine YCbCrA"
+msgstr "Combiner YCbCrA"
+
+msgid "Alpha Convert"
+msgstr "Conversion Alpha"
 
 msgid "Vector Blur"
 msgstr "Flou de Mouvement"
@@ -3382,6 +3486,12 @@ msgstr "Lien suivant"
 
 msgid "Select Linked From"
 msgstr "Lien précédent"
+
+msgid "Free Unused"
+msgstr "Nettoyer"
+
+msgid "Backdrop"
+msgstr "Prévisual."
 
 
 ###########################################################
@@ -3785,13 +3895,13 @@ msgid "Select Grouped"
 msgstr "Sélectionner par Groupe"
 
 msgid "Objects of Same Type"
-msgstr "Objets du Même Type"
+msgstr "Même Type"
 
 msgid "Objects on Shared Layers"
-msgstr "Objets sur le Même Calque"
+msgstr "Même Calque"
 
 msgid "Objects in Same Group"
-msgstr "Objets du Même Groupe"
+msgstr "Même Groupe"
 
 
 ###########################################################
@@ -3912,7 +4022,7 @@ msgid "Change font for object"
 msgstr "Changer la police de l'objet"
 
 msgid "Pack/Unpack this font"
-msgstr "Empaqueter/Dépaqueter cette police"
+msgstr "Emballer/Déballer cette police"
 
 msgid "Left align the text from the object centre"
 msgstr "Aligner le texte à gauche par rapport au centre de l'objet"
