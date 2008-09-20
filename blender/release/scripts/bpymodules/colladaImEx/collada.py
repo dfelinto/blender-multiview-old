@@ -2250,21 +2250,21 @@ class DaeFxSampler2D(DaeElement):
 		self.syntax = DaeFxSyntax.SAMPLER2D
 		self.source = DaeSamplerSource();
 		self.minfilter = DaeMinFilter();
-		self.maxfilter = DaeMaxFilter();
+		self.magfilter = DaeMagFilter();
 
 	def LoadFromXml(self, daeDocument, xmlNode):
 		super(DaeFxSampler2D, self).LoadFromXml(daeDocument, xmlNode)
 		self.source = str(xmlUtils.ReadContents(xmlUtils.FindElementByTagName(xmlNode, DaeSyntax.SOURCE)))
 #remi self.source = CreateObjectFromXml(daeDocument, xmlNode, "source", DaeSyntax.SOURCE)
 		self.minfilter = CreateObjectFromXml(daeDocument, xmlNode, "minfilter", DaeMinFilter)
-		self.maxfilter = CreateObjectFromXml(daeDocument, xmlNode, "maxfilter", DaeMaxFilter)
+		self.magfilter = CreateObjectFromXml(daeDocument, xmlNode, "magfilter", DaeMagFilter)
 
 	def SaveToXml(self, daeDocument):
 		node = super(DaeFxSampler2D,self).SaveToXml(daeDocument)
 #		if debprn: print 'deb:####class DaeFxSampler2D SaveToXml self.source=', self.source #----------
 		AppendChild(daeDocument, node, self.source) #bug----
 		AppendChild(daeDocument, node, self.minfilter);
-		AppendChild(daeDocument, node, self.maxfilter);
+		AppendChild(daeDocument, node, self.magfilter);
 		return node
 
 	def __str__(self):
@@ -2323,9 +2323,9 @@ class DaeMinFilter(DaeElement):
 		AppendTextInChild(node, self.value)
 		return node
 
-class DaeMaxFilter(DaeElement):
+class DaeMagFilter(DaeElement):
 	def __init__(self):
-		self.syntax = "maxfilter"
+		self.syntax = "magfilter"
 		self.id = ""
 		self.name = ""
 		self.value = "LINEAR";
@@ -2334,7 +2334,7 @@ class DaeMaxFilter(DaeElement):
 		self.value = xmlUtils.ReadContents(xmlNode)
 
 	def SaveToXml(self, daeDocument):
-		node = super(DaeMaxFilter,self).SaveToXml(daeDocument)
+		node = super(DaeMagFilter,self).SaveToXml(daeDocument)
 		AppendTextInChild(node, self.value)
 		return node
 
