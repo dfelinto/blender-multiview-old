@@ -24,10 +24,12 @@
 # --------------------------------------------------------------------------
 
 # History
+# 2008.09.20 by migius:
+# - bugfix meshes with more than 16 materials: material index bigger than 15 replaced with 15.
 # 2008.08.31 by migius:
 # - added support for import IPOs interpolation type: LINEAR,BEZIER
 # - include patch jointVertexWeight from Dmitri: http://projects.blender.org/tracker/index.php?func=detail&aid=17427
-# - non-armature-animation export/import seams to work
+# - non-armature-animation export/import correted
 # - still buggy: armatures-position and armature-animation export&import
 # 2008.08.04 by migius:
 # - bugfix/refactor localTransformMatrix usage in hierarchies:
@@ -640,7 +642,7 @@ class Controller(object):
 		# Get the BindMatrix for the head of this bone.
 		headMatrix = bindMatrices[jointName]
 		# Get the name of the tail joint.
-		tailJointName = boneInfo.GetTailName()##armature.boneInfos[boneName].tailJointName
+		tailJointName = boneInfo.GetTailName() ##armature.boneInfos[boneName].tailJointName
 		# If there is a tail joint, get the BindMatrix for that joint.
 
 		tailMatrix = bindMatrices[tailJointName]
@@ -1216,17 +1218,21 @@ class Animation(object):
 			#collect quats
 			quatKey = dict()
 			for cur in curves:
-				if cur.getName().startswith("Quat"):
-					quatKey[cur.getName()] = []
-
-					for point in cur.bezierPoints:
-						if cur.getName()[-1] == 'X':
+				curName = cur.getName()
+				if curName.startswith("Quat"):
+					quatKey[curName] = []
+					curNameIndex = curName[-1]
+					if curNameIndex == 'X':
+						for point in cur.bezierPoints:
 							quatXList[point.pt[0]] = point.pt[1]
-						if cur.getName()[-1] == 'Y':
+					elif curNameIndex == 'Y':
+						for point in cur.bezierPoints:
 							quatYList[point.pt[0]] = point.pt[1]
-						if cur.getName()[-1] == 'Z':
+					elif curNameIndex == 'Z':
+						for point in cur.bezierPoints:
 							quatZList[point.pt[0]] = point.pt[1]
-						if cur.getName()[-1] == 'W':
+					elif curNameIndex == 'W':
+						for point in cur.bezierPoints:
 							quatWList[point.pt[0]] = point.pt[1]
 
 			quats = dict()
@@ -1245,7 +1251,6 @@ class Animation(object):
 			#assign value
 			for key in xKeyList:
 				quats[key].x = quatXList[key]
-
 			for key in yKeyList:
 				quats[key].y = quatYList[key]
 			for key in zKeyList:
@@ -1256,24 +1261,30 @@ class Animation(object):
 			for key in quats:
 				euler = quats[key].toEuler()
 
-				if not joint is None:
+				if joint is not None:
 					if dmitri:
 						bindMatrix = Matrix(joint.matrix["ARMATURESPACE"]).resize4x4().transpose()
 					else:
 						headPos = joint.head["ARMATURESPACE"]
 						bindMatrix = Matrix([1,0,0,headPos.x], [0,1,0,headPos.y], [0,0,1,headPos.z],[0,0,0,1])
 					armMatrix = Matrix(bindMatrix)
-					if ( not joint.hasParent() ):
+					if not joint.hasParent():
 						armMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose().invert()
 						armMatrix *= bindMatrix
 
-					poseMatrix = Matrix(bParentMatrix).invert() * armMatrix
-					poseMatrix.transpose()
+					if 1: #migius
+						swap = euler.y
+						euler.y = - euler.z
+						euler.z = swap
 
-					poseEuler = poseMatrix.toEuler()
-					euler.x += poseEuler.x
-					euler.y += poseEuler.y
-					euler.z += poseEuler.z
+					else:
+						poseMatrix = Matrix(bParentMatrix).invert() * armMatrix
+						poseMatrix.transpose()
+
+						poseEuler = poseMatrix.toEuler()
+						euler.x += poseEuler.x
+						euler.y += poseEuler.y
+						euler.z += poseEuler.z
 					#if debprn: print 'deb: getEuler: ', joint.name , poseEuler, euler
 
 				eulers[key] = euler
@@ -2446,17 +2457,18 @@ class MeshNode(object):
 		meshID = daeGeometry.id
 		meshName = daeGeometry.name
 
-		# Create a new meshObject
-		bMesh2 = Blender.NMesh.New(self.document.CreateNameForObject(meshID,replaceNames,'mesh'))
-
 		if isinstance(daeGeometry.data,collada.DaeMesh): # check if it's a mesh
+			# Create a new meshObject
+			bMesh2 = Blender.NMesh.New(self.document.CreateNameForObject(meshID,replaceNames,'mesh'))
+
 			materials = []
 			for matName, material in self.materials.iteritems():
 				materials.append(material)
 			bMesh2.materials = materials
+			if len(materials)>16:
+				print 'Warning: Mesh-Object:"%s" has more than 16 materials:' %meshName
 
 			faces = []
-
 			daeMesh = daeGeometry.data
 			daeVertices = daeMesh.vertices
 
@@ -2473,14 +2485,12 @@ class MeshNode(object):
 				# Get the Normal Input
 				vNorInput = daeVertices.FindInput('NORMAL')
 
-
 				# Keep track of the Blender Vertices
 				pVertices = []
-
 				self.document.ProgressPart(0.0,'Create Vertices')
-
 				vertIndex = 0
 				self.verts = range(len(sources[vPosInput.source]))
+
 				# Create all the vertices.
 				for i in sources[vPosInput.source]:
 					vPosVector = Vector(i[0], i[1], i[2]) * self.document.tMatOLD
@@ -2488,7 +2498,6 @@ class MeshNode(object):
 					self.verts[vertIndex] = bVert
 					pVertices.append(bVert)
 					vertIndex += 1
-
 				bMesh2.verts = pVertices
 
 				faceVerts = [] # The list of vertices for each face to add
@@ -2538,6 +2547,7 @@ class MeshNode(object):
 							pIndex = maxOffset * 2
 							vertexInput = primitive.FindInput("VERTEX")
 							uvInput = primitive.FindInput("TEXCOORD")
+							norInput = primitive.FindInput("NORMAL")
 
 							if not vertexInput is None:
 								firstVertIndex = p[vertexInput.offset]
@@ -2549,6 +2559,9 @@ class MeshNode(object):
 							realVertCount = 1
 						else:
 							pIndex = 0
+						if isinstance(primitive, collada.DaePolygons): #patch from tera_api
+							vertCount = len(p)/maxOffset
+							realVertCount = vertCount
 						# A list with edges in this face
 						faceEdges = []
 						# a list to store all the created faces in to add them to the mesh afterwards.
@@ -2607,12 +2620,14 @@ class MeshNode(object):
 										else:
 											uvList.append((uvs[inputVal][0],uvs[inputVal][1]))
 									elif input.semantic == "NORMAL":
-										pass
+										pass #TODO: support for normals
+
 							if vertCount > 2:
 								if isinstance(primitive, collada.DaeTriFans):
 									faceCount = 1
 								else:
 									faceCount = 1 + (realVertCount-4) / 2 + (realVertCount-4) % 2
+									#print 'deb: VertCount/realVertCount/faceCount:',VertCount,' / ',realVertCount,' / ',faceCount # ---------
 								firstIndex = 2
 								lastIndex = 1
 								for a in range(faceCount):
@@ -2622,7 +2637,6 @@ class MeshNode(object):
 									else:
 										newFirstIndex = (firstIndex + 1) % realVertCount
 										newLastIndex = (lastIndex -1) % realVertCount
-
 									fuv = []
 									if newFirstIndex != newLastIndex:
 										fv = [curFaceVerts2[firstIndex]] + [curFaceVerts2[newFirstIndex]] + [curFaceVerts2[newLastIndex]] +  [curFaceVerts2[lastIndex]]
@@ -2639,34 +2653,42 @@ class MeshNode(object):
 									# Set the UV Coordinates
 									newFace.uv = fuv
 									# Add the new face to the list
+									#bMesh2.addFace(newFace)
 									faces.append(newFace)
 									# Add the material to this face
 									if primitive.material != '':
 										if self.materials.has_key(primitive.material):
+											#print 'deb: primitive.material:', primitive.material # ---------
 											# Find the material index.
 											matIndex = self.FindMaterial(bMesh2.materials, self.materials[primitive.material].name)
 											# Set the material index for the new face.
-											newFace.materialIndex = matIndex
+											if 15 > matIndex > -1:
+												newFace.materialIndex = matIndex
+											else:
+												newFace.materialIndex = 15 #TODO: fake for all material index bigger than 15
+												print 'material Index:%s, outside specification! set to 15 ----' %matIndex # ---------
 											textures = self.materials[primitive.material].getTextures()
-											if len(textures) > 0 and not (textures[0] is None):
-												texture = textures[0]
-												image = texture.tex.getImage()
-												if not image is None:
-													newFace.image = image
+											#if len(textures) > 0 and textures[0]!=None:
+											for texture in textures: #searching for any texture-image
+												if texture is not None:
+													image = texture.tex.getImage()
+													if image is not None:
+														newFace.image = image
+														break
 										else:
 											print "Warning: Cannot find material:", primitive.material
-							else:
+							elif vertCount == 2:
 								bMesh2.addEdge(curFaceVerts2[0], curFaceVerts2[1])
-
+							else: pass
 							# update the index
 							if isinstance(primitive, collada.DaeTriFans) or isinstance(primitive, collada.DaeTriStrips):
 								pIndex += maxOffset
 							else:
 								pIndex += realVertCount * maxOffset
 
-
-						bMesh2.faces = faces
-		return bMesh2
+				bMesh2.faces = faces
+			return bMesh2
+		return
 
 	def SaveToDae(self, bMesh):
 		global useTriangles, usePolygons, useUV
@@ -3125,13 +3147,12 @@ class MaterialNode(object):
 						bMat.setAlpha(alpha)
 					if shader.transparent.texture!=None: # Texture
 						textureSampler = shader.transparent.texture.texture
-						print "shader"
-						print shader.transparent.texture
-						print "shader end"
+						if debprn: print "shader:" #---------
+						if debprn: print shader.transparent.texture #---------
+						if debprn: print "shader end" #---------
 						if not(textureSampler is None):
 							#support 1.4.0:
 							texture = textureSampler
-
 							#support 1.4.1
 							for newParam in daeEffect.profileCommon.newParams:
 								if newParam.sid == textureSampler:
@@ -3586,7 +3607,7 @@ class AnimationsLibrary(Library):
 				#if debprn: print 'deb:------> ta=', ta #---------
 				if ta[0] == daeNodeId:
 					daeAnimations.append(daeAnimation)
-		if debprn: print 'deb:--> daeAnimations=', daeAnimations #------------
+		#if debprn: print 'deb:--> daeAnimations=', daeAnimations #------------
 		return daeAnimations
 
 class ControllersLibrary(Library):
