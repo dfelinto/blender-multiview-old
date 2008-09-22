@@ -768,7 +768,7 @@ class DaeConvexMesh(DaeEntity):
 
 	def SaveToXml(self, daeDocument):
 		node = super(DaeConvexMesh, self).SaveToXml(daeDocument)
-		SetAttribute(node, DaeSyntax.CONVEX_HULL_OF, StripString(self.convexHullOf))
+		SetAttribute(node, DaeSyntax.CONVEX_HULL_OF, StripString('#'+self.convexHullOf))
 		return node
 
 class DaeMesh(DaeEntity):
@@ -2269,6 +2269,9 @@ class DaeFxSampler2D(DaeElement):
 
 	def __str__(self):
 		return super(DaeFxSampler2D, self).__str__() + ', source: %s, minfilter: %s, maxfilter: %s' % (self.source, self.minfilter, self.maxfilter)
+
+	def AddShader(self, daeShader):
+		self.profileCommon.technique.shader = daeShader
 
 
 class DaeFxSurface(DaeElement):
