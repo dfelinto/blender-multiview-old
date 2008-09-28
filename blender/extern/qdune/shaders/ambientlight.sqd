@@ -1,7 +1,0 @@
-light ambientlight
-param uniform float intensity 1
-param uniform color lightcolor 1 1 1
-global Cl
-codesegment
-	mulvvf	Cl lightcolor intensity
-	return

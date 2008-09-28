@@ -1,8 +1,0 @@
-# constant color with additive blending
-surface constadd
-const float $1 0
-global Oi Ci Cs
-codesegment
-	movvf Oi $1
-	movvv Ci Cs
-	return

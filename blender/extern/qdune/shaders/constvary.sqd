@@ -1,9 +1,0 @@
-# varying parameter test
-surface constant
-param varying color vcol 1 1 1
-global Oi Os Ci Cs
-codesegment
-	movvv   Oi Os
-	mulvvv  Ci Cs Oi
-	mulvvv  Ci Ci vcol
-	return

@@ -1,6 +1,0 @@
-surface constant
-global Oi Os Ci Cs
-codesegment
-	movvv Oi Os
-	mulvvv Ci Cs Oi
-	return
