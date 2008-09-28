@@ -148,7 +148,7 @@
 #define HAVE_LIMITS_H 1
 
 /* Define to 1 if the compiler supports `long double' */
-#define HAVE_LONG_DOUBLE 1
+/* #undef HAVE_LONG_DOUBLE */
 
 /* Define to 1 if you have the `mach_absolute_time' function. */
 /* #undef HAVE_MACH_ABSOLUTE_TIME */
@@ -298,13 +298,14 @@
 #define STDC_HEADERS 1
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
-#define TIME_WITH_SYS_TIME 1
+/* #undef TIME_WITH_SYS_TIME */
 
 /* Define if we have and are using OpenMP multithreading directives */
 /* #undef USING_OPENMP_THREADS */
 
 /* Define if we have and are using POSIX threads. */
 /* #undef USING_POSIX_THREADS */
+#define USING_POSIX_THREADS 1
 
 /* Version number of package */
 #define VERSION "3.1.2"
