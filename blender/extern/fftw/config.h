@@ -121,7 +121,7 @@
 /* #undef HAVE_GETHRTIME */
 
 /* Define to 1 if you have the `gettimeofday' function. */
-#define HAVE_GETTIMEOFDAY 1
+/* #undef HAVE_GETTIMEOFDAY */
 
 /* Define to 1 if hrtime_t is defined in <sys/time.h> */
 /* #undef HAVE_HRTIME_T */
