@@ -2206,7 +2206,7 @@ def getTargetNameFromCurveName( curveName ):
 # --- Write mesh information to dae file ---
 def writeLight( libraryElement, light ):
     
-    lightName = light.getName( )
+    lightName = light.name
     lightID = lightName + "-Lib"
     lightType = light.getType( )
     lightFlags = light.getMode( )

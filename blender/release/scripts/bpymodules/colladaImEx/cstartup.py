@@ -323,7 +323,8 @@ def Gui():
 		logoImage = Blender.Image.Load(scriptsLocation + 'logo.png')
 		Blender.BGL.glEnable(Blender.BGL.GL_BLEND ) # Only needed for alpha blending images with background.
 		Blender.BGL.glBlendFunc(Blender.BGL.GL_SRC_ALPHA, Blender.BGL.GL_ONE_MINUS_SRC_ALPHA)
-		Blender.Draw.Image(logoImage, 45, size[1]-30)
+		try:		Blender.Draw.Image(logoImage, 45, size[1]-30)
+		except:		pass
 		Blender.BGL.glDisable(Blender.BGL.GL_BLEND)
 	except IOError: # image not found
 		Blender.BGL.glColor3i(0.255,0.255,0.2)

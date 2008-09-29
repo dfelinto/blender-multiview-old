@@ -2124,7 +2124,7 @@ class SceneNode(object):
 			if not usePhysics:
 				return None
 
-		rbFlags = [0 for a in range(16)]
+		rbFlags = [0]*32
 		rbF = bNode.rbFlags
 		lastIndex = 0
 		# Get the bit flags.
@@ -3398,7 +3398,7 @@ class LampNode(object):
 		elif bLamp.type == Blender.Lamp.Types.Sun: # Directional
 			daeTechniqueCommon = collada.DaeLight.DaeDirectional()
 		else: # area
-			daeTechniqueCommon = collada.DaeOptics.TechniqueCommon()
+			daeTechniqueCommon = collada.DaeOptics.DaeTechniqueCommon()
 
 		daeTechniqueCommon.color = bLamp.col
 		daeLight.techniqueCommon = daeTechniqueCommon
