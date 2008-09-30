@@ -3439,8 +3439,6 @@ static GroupObject *add_render_lamp(Render *re, Object *ob)
 
 	lar->type= la->type;
 	lar->mode= la->mode;
-	
-	lar->fast_soft_shadows = la->fast_soft_shadows;
 
 	lar->energy= la->energy;
 	if(la->mode & LA_NEG) lar->energy= -lar->energy;

@@ -72,7 +72,7 @@ typedef struct Lamp {
 	float area_size, area_sizey, area_sizez;
 	float adapt_thresh;
 	short ray_samp_method;
-	short fast_soft_shadows;
+	short pad1;
 	
 	/* texact is for buttons */
 	short texact, shadhalostep;

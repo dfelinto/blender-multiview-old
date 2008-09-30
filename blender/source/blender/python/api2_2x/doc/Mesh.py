@@ -110,16 +110,9 @@ done once.
 	- VERTEX: vertex select mode.
 	- EDGE: edge select mode.
 	- FACE: face select mode.
-@type ExtrudeModes: readonly dictionary.
-@var ExtrudeModes: The available mesh extrusion modes.
-	- REGION: extrude region.
-	- ONLYVERTS: extrude only vertices.
-	- ONLYEDGES: extrude only edges.
-	- INDIVFACES: extrude individual faces.
 """
 
 AssignModes = {'REPLACE':1}
-ExtrudeModes = {'REGION':0}
 
 def Get(name=None):
 	"""
@@ -1260,21 +1253,7 @@ class Mesh:
 		@param direction: specifies outward (0) or inward (1) normals.  Outward
 		is the default.  Value must be in the range [0,1].
 		"""
-	
-	def extrude(translate = None, mode = ExtrudeModes['REGION']):
-		"""
-		Extrudes selected vertices according to the required mode. The extruded
-		geometry may also be optionally translated.
-		@type translate: vector or float
-		@param translate: amount by which the extruded region gets translated;
-		if float, it is intended as a multiplier for the individual faces normal
-		(INDIVFACES), or for the average normal of the entire region (all other
-		cases)
-		@type mode: module constant
-		@param mode: four choices: REGION, ONLYVERTS, ONLYEDGES and INDIVFACES.
-			See L{ExtrudeModes} for a complete description.
-		"""
-		
+
 	def __copy__ ():
 		"""
 		Make a copy of this mesh
