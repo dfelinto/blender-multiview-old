@@ -455,6 +455,9 @@ typedef struct LampRen {
 	/** A small depth offset to prevent self-shadowing. */
 	float bias;
 	
+	/* fast soft shadow rendering */
+	short fast_soft_shadows;
+	
 	short ray_samp, ray_sampy, ray_sampz, ray_samp_method, ray_samp_type, area_shape, ray_totsamp;
 	short xold[BLENDER_MAX_THREADS], yold[BLENDER_MAX_THREADS];	/* last jitter table for area lights */
 	float area_size, area_sizey, area_sizez;

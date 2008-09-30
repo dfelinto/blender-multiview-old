@@ -370,7 +370,7 @@ void handle_view3d_around()
 void handle_view3d_lock()
 {	
 	if (G.vd != NULL && curarea != NULL ) {
-		if(G.vd->localview==0 && G.vd->scenelock && curarea->spacetype==SPACE_VIEW3D) {
+		if(G.vd->localview==0 && G.vd->scenelock/* && curarea->spacetype==SPACE_VIEW3D*/) {
 
 			/* copy to scene */
 			G.scene->lay= G.vd->lay;

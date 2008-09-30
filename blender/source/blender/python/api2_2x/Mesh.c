@@ -73,6 +73,7 @@
 #include "BLI_arithb.h"
 #include "BLI_blenlib.h"
 #include "BLI_memarena.h"
+#include "BLI_editVert.h"
 
 #include "blendef.h"
 #include "mydevice.h"
@@ -88,6 +89,7 @@
 #include "gen_utils.h"
 #include "gen_library.h"
 #include "multires.h"
+#include "editmesh.h"		/* for extrusion tools */
 
 /* EXPP Mesh defines */
 
@@ -117,6 +119,7 @@
 #define MESH_TOOL_RECALCNORM           6
 #define MESH_TOOL_TRI2QUAD             7
 #define MESH_TOOL_QUAD2TRI             8
+#define MESH_TOOL_EXTRUSION            9
 
 static PyObject *MVertSeq_CreatePyObject( Mesh * mesh );
 static PyObject *MFaceSeq_CreatePyObject( Mesh * mesh );
@@ -7278,6 +7281,54 @@ static PyObject *Mesh_Tools( BPy_Mesh * self, int type, void **args )
 	case MESH_TOOL_QUAD2TRI:
 		convert_to_triface( *((int *)args[0]) );
 		break;
+	case MESH_TOOL_EXTRUSION:
+		{
+			float nor[3]= {0.0, 0.0, 0.0};
+			int only = *((int *)args[0]);
+			VectorObject *vec = *((VectorObject **) args[1]);
+			float mult = *((float *) args[2]);
+			
+			if (only == 3)
+				extrudeflag_face_indiv(SELECT, nor);
+			else if (only == 2)
+				extrudeflag_edges_indiv(SELECT, nor);
+			else if (only == 1)
+				extrudeflag_verts_indiv(SELECT, nor);
+			else	
+				extrudeflag(SELECT, nor);
+			
+			if (vec != NULL)
+				translateflag(SELECT, vec->vec);
+			else if (mult != 0.0)
+			{
+				if (only != 3)
+				{
+					VecMulf(nor, mult);
+					translateflag(SELECT, nor);
+				}
+				else /* individual faces */
+				{
+					EditMesh * em = G.editMesh;
+					EditFace * efa= em->faces.first;
+					
+					while (efa)
+					{
+						if (efa->f & SELECT)
+						{
+							VECCOPY(nor, efa->n)
+							VecMulf(nor, mult);
+							VecAddf(efa->v1->co, efa->v1->co, nor);
+							VecAddf(efa->v2->co, efa->v2->co, nor);
+							VecAddf(efa->v3->co, efa->v3->co, nor);
+							if (efa->v4)
+								VecAddf(efa->v4->co, efa->v4->co, nor);
+						}
+						efa = efa->next;
+					}
+				}
+			}
+		}
+		break;
 	}
 
 	/* exit edit mode, free edit mesh */
@@ -7420,6 +7471,47 @@ static PyObject *Mesh_fill( BPy_Mesh * self )
 	return Mesh_Tools( self, MESH_TOOL_FILL, NULL );
 }
 
+static PyObject *Mesh_extrude( BPy_Mesh * self, PyObject *args, PyObject *kwd )
+{
+	int only = 0;
+	PyObject * ob = NULL;
+	VectorObject *vec = NULL;
+	float mult = 0.0;
+	void *params[] = {(void *)&only, (void *)&vec, (void *)&mult};
+	static char *kwlist[] = {"translate", "mode", NULL};
+	
+	/*
+	if( !PyArg_ParseTupleAndKeywords( args, kwd, "|O!i", kwlist, &vector_Type, &vec, &only ) )
+			return EXPP_ReturnPyObjError( PyExc_TypeError,
+					"expected nothing or a 3D vector and an optional ExtrudeMode flag" );
+	 */
+	
+	if( !PyArg_ParseTupleAndKeywords( args, kwd, "|Oi", kwlist, &ob, &only ) )
+			return EXPP_ReturnPyObjError( PyExc_TypeError,
+					"expected nothing or a 3D vector and an optional ExtrudeMode flag" );
+	
+	if( ob )
+	{
+		if (PyObject_TypeCheck(ob, &vector_Type))
+		{
+			vec = (VectorObject *)ob;
+			
+			if( vec->size != 3 )
+				return EXPP_ReturnPyObjError(PyExc_AttributeError, 
+					"Mesh.extrude(vec) expects a 3D vector object\n");
+		}
+		else if (PyFloat_Check(ob))
+		{
+			mult = (float)PyFloat_AsDouble(ob);
+		}
+	}
+	
+	if( only < 0 || only > 3 )
+			return EXPP_ReturnPyObjError( PyExc_ValueError,
+					"expected ExtrudeMode flag" );
+	
+	return Mesh_Tools( self, MESH_TOOL_EXTRUSION, params );
+}
 
 /*
  * "pointInside" function
@@ -7466,7 +7558,7 @@ static PyObject *Mesh_pointInside( BPy_Mesh * self, PyObject * args, PyObject *k
 	VectorObject *vec;
 	static char *kwlist[] = {"point", "selected_only", NULL};
 	
-	if( !PyArg_ParseTupleAndKeywords(args, kwd, "|O!i", kwlist,
+	if( !PyArg_ParseTupleAndKeywords(args, kwd, "O!|i", kwlist,
 		 &vector_Type, &vec, &selected_only) ) {
 			 return EXPP_ReturnPyObjError( PyExc_TypeError, "expected a vector and an optional bool argument");
 	}
@@ -7746,6 +7838,8 @@ static struct PyMethodDef BPy_Mesh_methods[] = {
 		"Recalculates inside or outside normals (experimental)"},
 	{"getTangents", (PyCFunction)Mesh_getTangents, METH_VARARGS|METH_KEYWORDS,
 		"Return a list of face tangents"},
+	{"extrude", (PyCFunction)Mesh_extrude, METH_VARARGS|METH_KEYWORDS,
+		"Extrudes selected region (experimental)"},
 		
 	/* mesh custom data layers */
 	{"addUVLayer", (PyCFunction)Mesh_addUVLayer, METH_VARARGS,
@@ -8792,6 +8886,19 @@ static PyObject *M_Mesh_SelectModeDict( void )
 	return Mode;
 }
 
+static PyObject *M_Mesh_ExtrudeModeDict( void )
+{
+	PyObject *Mode = PyConstant_New(  );
+	if( Mode ) {
+		BPy_constant *d = ( BPy_constant * ) Mode;
+		PyConstant_Insert(d, "REGION", PyInt_FromLong(0));
+		PyConstant_Insert(d, "ONLYVERTS", PyInt_FromLong(1));
+		PyConstant_Insert(d, "ONLYEDGES", PyInt_FromLong(2));
+		PyConstant_Insert(d, "INDIVFACES", PyInt_FromLong(3));
+	}
+	return Mode;
+}
+
 static char M_Mesh_doc[] = "The Blender.Mesh submodule";
 
 PyObject *Mesh_Init( void )
@@ -8806,6 +8913,7 @@ PyObject *Mesh_Init( void )
 	PyObject *AssignModes = M_Mesh_VertAssignDict( );
 	PyObject *SelectModes = M_Mesh_SelectModeDict( );
 	PyObject *PropertyTypes = M_Mesh_PropertiesTypeDict( );
+	PyObject *ExtrudeModes = M_Mesh_ExtrudeModeDict( );
 	
 	if( PyType_Ready( &MCol_Type ) < 0 )
 		return NULL;
@@ -8848,6 +8956,8 @@ PyObject *Mesh_Init( void )
 		PyModule_AddObject( submodule, "SelectModes", SelectModes );
 	if( PropertyTypes )
 		PyModule_AddObject( submodule, "PropertyTypes", PropertyTypes );
+	if( ExtrudeModes )
+		PyModule_AddObject( submodule, "ExtrudeModes", ExtrudeModes );
 
 
 
