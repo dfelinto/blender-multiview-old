@@ -1094,7 +1094,7 @@ void		CcdPhysicsController::GetVelocity(const float posX,const float posY,const 
 	btRigidBody* body = GetRigidBody();
 	if (body)
 	{
-		btVector3 linvel = body->getVelocityInLocalPoint(rel_pos);
+		btVector3 linvel = body->getVelocityInLocalPoint(pos);
 		linvX = linvel.x();
 		linvY = linvel.y();
 		linvZ = linvel.z();
