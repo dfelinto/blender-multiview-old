@@ -11,9 +11,13 @@ if env['OURPLATFORM'] == 'win32-mingw':
 else:
     ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-network --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-memalign-hack --enable-libx264 --enable-libxvid --enable-libmp3lame"
 
+if env['WITH_BF_OGG']:
+    ffmpeg_switches += " --enable-libogg --enable-libtheora --enable-libvorbis"
+
 #--enable-libx264
 extra_variables = { }
 extra_includes = [ "../x264", "../xvidcore/src", "../libmp3lame" ]
+#
 
 import sys
 import os
