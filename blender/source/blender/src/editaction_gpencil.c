@@ -560,12 +560,11 @@ void paste_gpdata ()
 						/* append stroke to frame */
 						BLI_addtail(&gpf->strokes, gpsn);
 					}
-					else {
-						// TODO: should remove this frame if it is new, as it doesn't have any strokes...
-						//if (gpf->strokes.first == NULL)
-						//	gpencil_layer_delframe(gpld, gpf);
-					}
 				}
+				
+				/* if no strokes (i.e. new frame) added, free gpf */
+				if (gpf->strokes.first == NULL)
+					gpencil_layer_delframe(gpld, gpf);
 			}
 			
 			/* unapply offset from buffer-frame */
