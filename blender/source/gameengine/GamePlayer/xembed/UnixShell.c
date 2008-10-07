@@ -57,11 +57,14 @@
 
 #include "blender_plugin_types.h"
 
+#include <signal.h>
+
 /* --------------------------------------------------------------------- */
 
 /** If defined: write to the plugin log file */
+#ifndef NDEBUG
 #define NZC_GENERATE_LOG
-
+#endif
 
 int32 STREAMBUFSIZE;
 
@@ -69,6 +72,9 @@ int32 STREAMBUFSIZE;
 static void
 log_entry(char* msg);
 
+
+void
+execute_blenderplayer(BlenderPluginInstance*);
 
 /* --------------------------------------------------------------------- */
 /* Implementations:                                                      */
@@ -225,16 +231,20 @@ NPP_Destroy( NPP instance, NPSavedData** save )
 	if (This != NULL) {
 
 		if (This->pID != 0) {
-			kill(This->pID, 9);
+#ifdef WITH_PRIVSEP
+			kill(This->pID, SIGTERM);
+#else 
+			kill(This->pID, SIGKILL); //if I have to kill blenderplayer directly I need to send SIGKILL
+#endif
 			wait(This->pID);
 			unlink(This->temp_mail_file_name);
 		}
 
 		// sometimes FF doesn't delete it's own window...
 		//printf("%s \n", NPN_UserAgent(instance));
-		if (This->display != NULL && This->window != 0)
+		/*if (This->display != NULL && This->window != 0)
 			XDestroyWindow(This->display, This->window);
-		
+		*/
 		if (This->blend_file) NPN_MemFree(This->blend_file);
 		if (This->temp_mail_file_name) NPN_MemFree(This->temp_mail_file_name);
 		if (This->main_file_store) NPN_MemFree(This->main_file_store);
@@ -300,9 +310,12 @@ NPP_NewStream(
 
 	This = (BlenderPluginInstance*) instance->pdata;
 
+	if (!This) 
+		return NPERR_INVALID_INSTANCE_ERROR;
+
 	printf("Loading main file %s (%s)\n", stream->url, type);
 	if ( strcmp(type,"text/html") == 0 ) // original HTML file 
-		return;
+		return NPERR_NO_ERROR;
 	
 	This->stream_total = stream->end;
 	This->stream_retrieved = 0;
@@ -316,6 +329,7 @@ NPP_NewStream(
 	This->main_file_stream = stream;
 
 	return NPERR_NO_ERROR;
+		
 }
 
 
@@ -345,8 +359,13 @@ NPP_WriteReady(
 	
  	log_entry("NPP_WriteReady"); 
 
-	if (instance != NULL)
-		This = (BlenderPluginInstance*) instance->pdata;
+	if (instance == NULL)	
+		return NPERR_INVALID_INSTANCE_ERROR;
+
+	This = (BlenderPluginInstance*) instance->pdata;
+
+	if (This == NULL)	
+		return NPERR_INVALID_INSTANCE_ERROR;
 
 	/* Check whether buffers already exist: */
 
@@ -372,68 +391,36 @@ NPP_Write(
 	int accepted = 0;
 	
  	log_entry("NPP_Write"); 
+
+	if (instance == NULL)	
+		return NPERR_INVALID_INSTANCE_ERROR;
 	
 	This = (BlenderPluginInstance*) instance->pdata;
+
+	if (This == NULL)	
+		return NPERR_INVALID_INSTANCE_ERROR;
+
 	
-	if (instance != NULL)
-	{
-		if (stream == This->main_file_stream) {
-			log_entry("NPP_Write: loading main_file_stream"); 
-			memcpy(((unsigned char*)This->main_file_store) + This->stream_retrieved, buffer, len);
-			accepted = len;
-			This->stream_retrieved += len;
-			if (This->stream_retrieved >= This->stream_total) {
-
-				fflush(stderr);
-				log_entry("NPP_Write: main_file_stream loaded"); 
-
-				char file_name[] = "/tmp/blender.XXXXXX";
-				
-				int fd = mkstemp(file_name);
-				ssize_t real_size = write(fd, This->main_file_store, This->stream_retrieved);
-				close(fd);
-
-				This->temp_mail_file_name = NPN_MemAlloc(strlen(file_name) + 1);
-				strcpy(This->temp_mail_file_name, file_name);
-
-				This->pID = fork();
-				//XSelectInput(This->display , This->window, SubstructureNotifyMask);
-				//XSync(This->display, FALSE);
-				
-				if (This->pID == 0) {              // child
-					const char* blenderplayer = "blenderplayer";
-					char window_id[50];
-					sprintf(window_id, "%d", This->window);
-					
-					execlp(blenderplayer, "blenderplayer", "-i", window_id, file_name, (char*)NULL);
-				\
-				} else if (This->pID < 0) {           // failed to fork
-					printf("Failed to fork!!!\n");					
-				}
-
-				/*XEvent e;
-				int started = 0;
-				while(!started) {
-					XNextEvent(This->display, &e);
-					printf("Event type %d\n", e.type);					
-					if (e.type == MapNotify) {
-						started = 1;
-						XCreateWindowEvent event =  e.xcreatewindow;
-						printf("Created window x:%d, y: %d, h: %d, w: %d\n", event.x, event.y, event.height, event.width);
-					}
-				}*/
-
-			}
-		} else {
-			/* the stream ref wasn't set yet..*/
-			log_entry("NPP_Write: ?????"); 
-
-			accepted = 0;
+	if (stream == This->main_file_stream) {
+		log_entry("NPP_Write: loading main_file_stream"); 
+		memcpy(((unsigned char*)This->main_file_store) + This->stream_retrieved, buffer, len);
+		accepted = len;
+		This->stream_retrieved += len;
+		if (This->stream_retrieved >= This->stream_total) {
+			log_entry("NPP_Write: main_file_stream loaded"); 
+			execute_blenderplayer(This);
 		}
+	} else {
+		/* the stream ref wasn't set yet..*/
+		log_entry("NPP_Write: not main stream"); 
+		log_entry(stream->url);
+
+		accepted = len;
 	}
 
 	return accepted;
 }
+
 
 
 NPError 
@@ -493,12 +480,67 @@ NPP_Print(NPP instance, NPPrint* printInfo )
 	}
 }
 
+
+void
+execute_blenderplayer(BlenderPluginInstance* instance){
+
+	char file_name[] = "/tmp/blender.XXXXXX";
+	int fd = mkstemp(file_name);
+
+	ssize_t real_size = write(fd, instance->main_file_store, instance->stream_retrieved);
+	close(fd);
+
+	instance->temp_mail_file_name = NPN_MemAlloc(strlen(file_name) + 1);
+	strcpy(instance->temp_mail_file_name, file_name);
+
+	instance->pID = fork();
+	//XSelectInput(This->display , This->window, SubstructureNotifyMask);
+	//XSync(This->display, FALSE);
+	
+
+#if defined(WITH_APPARMOR)
+	const char* executable = "blenderplayer-web"; 
+#elif defined(WITH_PRIVSEP)
+	const char* executable = "blenderplayer-wrapper";
+#else   
+	const char* executable = "blenderplayer";
+#endif
+
+	if (instance->pID == 0) {              // child
+		char window_id[50];
+		sprintf(window_id, "%d", instance->window);
+		//exit(0);
+#ifdef WITH_PRIVSEP
+		execlp(executable, executable, file_name, window_id, (char*)NULL);
+#else 
+		execlp(executable, executable, "-i", window_id, file_name, (char*)NULL);
+#endif
+	
+	} else if (instance->pID < 0) {           // failed to fork
+		printf("Failed to fork!!!\n");					
+	}
+
+	/*XEvent e;
+	int started = 0;
+	while(!started) {
+		XNextEvent(This->display, &e);
+		printf("Event type %d\n", e.type);					
+		if (e.type == MapNotify) {
+			started = 1;
+			XCreateWindowEvent event =  e.xcreatewindow;
+			printf("Created window x:%d, y: %d, h: %d, w: %d\n", event.x, event.y, event.height, event.width);
+		}
+	}*/
+
+}
+
+
 /* --------------------------------------------------------------------- */
 
 static void
 log_entry(char* msg)
 {
-#ifdef NZC_GENERATE_LOG
+#ifdef NZC_GENERATE_LOG 
 	FILE* fp = fopen("/tmp/plugin_log","a");
 	if (!fp) return;
   	fprintf(fp, "--> Unixshell:: %s\n", 
