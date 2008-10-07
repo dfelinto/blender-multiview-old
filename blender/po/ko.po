@@ -138,19 +138,19 @@ msgstr "빠르게 그리기"
 msgid "Displays the active object faster by omitting some edges when drawing"
 msgstr "그릴 때 몇몇 모서리를 생략시 활성 객체를 빠르게 보이기"
 
-msgid "Centre"
+msgid "Center"
 msgstr "중앙"
 
 msgid "Shifts object data to be centered about object's origin"
 msgstr "객체 자료가 객체 원본에 대하여 중앙에 위치하도록 이동"
 
-msgid "Centre New"
+msgid "Center New"
 msgstr "새로 중앙"
 
 msgid "Shifts object's origin to center of object data"
 msgstr "객체 원본을 객체 자료 중앙으로 이동"
 
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr "커서 중앙"
 
 msgid "Shifts object's origin to cursor location"
@@ -603,19 +603,16 @@ msgstr "커서위치에 Lorem Ipsum 문구 삽입"
 msgid "Left"
 msgstr "왼쪽"
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr "객체 중앙으로부터 텍스트를 왼쪽 배열"
 
-msgid "Center"
-msgstr "중앙"
-
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr "객체 중앙으로부터 텍스트를 중간 배열"
 
 msgid "Right"
 msgstr "오른쪽"
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr "객체 중앙으로부터 텍스트를 오른쪽 배열"
 
 msgid "Justify"
@@ -675,7 +672,7 @@ msgstr "개별 문자의 공백"
 msgid "X offset:"
 msgstr "X 옵셋:"
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr "객체 중심에서 수평 위치"
 
 msgid "UL position:"
@@ -693,7 +690,7 @@ msgstr "문자의 이탤릭 각도"
 msgid "Y offset:"
 msgstr "Y 옵셋:"
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr "객체 중심으로부터 수직 위치"
 
 msgid "UL height:"
@@ -9591,7 +9588,7 @@ msgstr "삭제된 구운 부드러운 몸체"
 msgid "Editmode"
 msgstr "편집모드"
 
-msgid "Do Centre"
+msgid "Do Center"
 msgstr "중간에 두다"
 
 msgid "Move to layer"
@@ -11813,12 +11810,6 @@ msgstr "이미지 종횡비로"
 
 msgid "ObData to Center"
 msgstr "객체 자료를 중앙에"
-
-msgid "Center New"
-msgstr "새로 중앙에"
-
-msgid "Center Cursor"
-msgstr "커서 중앙에"
 
 msgid "Align to Transform Orientation"
 msgstr "변환 방향으로 정렬"
@@ -15197,9 +15188,6 @@ msgstr "단일 사용자로..."
 
 msgid "Boolean Operation"
 msgstr "부울식"
-
-msgid "Centre View to Cursor"
-msgstr "커서가 중앙으로"
 
 msgid "Viewport Shading"
 msgstr "음영 보기형태"

@@ -143,8 +143,6 @@ msgid "&gt;Curve"
 msgstr "&gt;Corba"
 msgid "&gt;Circle"
 msgstr "&gt;Cercle"
-msgid "&gt;Suface"
-msgstr "&gt;Superfície"
 msgid "&gt;Surface"
 msgstr "&gt;Superfície"
 msgid "&gt;Sphere"
@@ -362,7 +360,7 @@ msgstr "Zoom d'Imatge"
 ###  ToolBox &gt;&gt; VIEW
 ###
 ###########################################################
-msgid "Centre"
+msgid "Center"
 msgstr "Centre"
 msgid "Home"
 msgstr "Casa"
@@ -466,7 +464,7 @@ msgstr "Camí"
 ###  Menu bar &gt;&gt; Add &gt;&gt; Surface
 ###
 ###########################################################
-msgid "NURBS Suface"
+msgid "NURBS Surface"
 msgstr "Superfície NURBS"
 msgid "NURBS Tube"
 msgstr "Tub NURBS"
@@ -491,8 +489,6 @@ msgid "Zoom In"
 msgstr "Ampliar"
 msgid "Zoom Out"
 msgstr "Reduir"
-msgid "Center"
-msgstr "Centrar"
 msgid "View All"
 msgstr "Mostrar Tot"
 

@@ -114,7 +114,7 @@ msgid ">Curve"
 msgstr ">曲線"
 msgid ">Circle"
 msgstr ">Circle"
-msgid ">Suface"
+msgid ">Surface"
 msgstr ">サーフェス"
 msgid ">Sphere"
 msgstr ">Sphere"
@@ -329,8 +329,8 @@ msgstr "画像拡大"
 ###  ToolBox >> VIEW
 ###
 ###########################################################
-msgid "Centre"
-msgstr "Centre"
+msgid "Center"
+msgstr "Center"
 msgid "Home"
 msgstr "HOME"
 msgid "Z-Buffer"
@@ -433,7 +433,7 @@ msgstr "パス"
 ###  Menu bar >> Add >> Surface
 ###
 ###########################################################
-msgid "NURBS Suface"
+msgid "NURBS Surface"
 msgstr "NURBS Surface"
 msgid "NURBS Tube"
 msgstr "NURBS チューブ"
@@ -458,8 +458,6 @@ msgid "Zoom In"
 msgstr "拡大"
 msgid "Zoom Out"
 msgstr "縮小"
-msgid "Center"
-msgstr "Center"
 msgid "View All"
 msgstr "全て表示"
 

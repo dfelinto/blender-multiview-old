@@ -223,7 +223,7 @@ msgstr "Salir del Blender"
 
 msgid "Play Back Animation"
 msgstr "Ver Animación"
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr "Centrar Cursor"
 msgid "Align View to Selected"
 msgstr "Alinear Vista a Selección"
@@ -525,7 +525,7 @@ msgstr "Zoom de Imagen"
 ###  ToolBox &gt;&gt; VIEW
 ###
 ###########################################################
-msgid "Centre"
+msgid "Center"
 msgstr "Centro"
 msgid "Home"
 msgstr "Casa"
@@ -637,7 +637,7 @@ msgstr "Camino"
 ###  Menu bar &gt;&gt; Add &gt;&gt; Surface
 ###
 ###########################################################
-msgid "NURBS Suface"
+msgid "NURBS Surface"
 msgstr "Superficie NURBS"
 msgid "NURBS Tube"
 msgstr "Tubo NURBS"
@@ -662,8 +662,6 @@ msgid "Zoom In"
 msgstr "Acercar"
 msgid "Zoom Out"
 msgstr "Alejar"
-msgid "Center"
-msgstr "Centrar"
 msgid "View All"
 msgstr "Ver Todo"
 msgid "Orbit Left"

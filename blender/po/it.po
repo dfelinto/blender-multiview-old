@@ -128,20 +128,17 @@ msgstr "VisualVeloce"
 msgid "Displays the active object faster by omitting some edges when drawing"
 msgstr "Mostra l'oggetto attivo omettendo alcuni bordi durante il disegno"
 
-msgid "Centre"
+msgid "Center"
 msgstr "Centro"
 
 msgid "Shifts object data to be centered about object's origin"
 msgstr "Trasla i dati dell'oggetto centrandoli rispetto alla sua origine"
 
-msgid "Centre New"
+msgid "Center New"
 msgstr "Nuovo Centro"
 
 msgid "Shifts object's origin to center of object data"
 msgstr "Trasla l'origine degli oggetti centrandola rispetto ai dati dell'oggetto"
-
-msgid "Centre Cursor"
-msgstr "Centro al cursore"
 
 msgid "Shifts object's origin to cursor location"
 msgstr "Trasla l'origine degli oggetti alla posizione del cursore"
@@ -590,19 +587,16 @@ msgstr "Inserisci un paragrafo di Lorem Ipsum alla posizione del cursore"
 msgid "Left"
 msgstr "Sinistra"
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr "Allinea il testo a sinistra rispetto al centro dell'oggetto"
 
-msgid "Center"
-msgstr "Centrato"
-
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr "Allinea il testo in mezzo rispetto al centro dell'oggetto"
 
 msgid "Right"
 msgstr "Destra"
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr "Allinea il testo a destra rispetto al centro dell'oggetto"
 
 msgid "Justify"
@@ -662,7 +656,7 @@ msgstr "Spaziatura tra caratteri"
 msgid "X offset:"
 msgstr "Offset X:"
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr "Posizione orizzontale rispetto al centro dell'oggetto"
 
 msgid "UL position:"
@@ -680,7 +674,7 @@ msgstr "Inclinazione caratteri in corsivo"
 msgid "Y offset:"
 msgstr "Offset Y:"
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr "Posizione verticale rispetto al centro dell'oggetto"
 
 msgid "UL height:"
@@ -8849,7 +8843,7 @@ msgstr "SoftBody Baked Annullato"
 msgid "Editmode"
 msgstr "ModoModifica"
 
-msgid "Do Centre"
+msgid "Do Center"
 msgstr "Fai Centro"
 
 msgid "Move to layer"
@@ -10867,9 +10861,6 @@ msgstr "Scala in rapporto ad immagine"
 
 msgid "ObData to Center"
 msgstr "DatiOgg al Centro"
-
-msgid "Center New"
-msgstr "Nuovo Centro"
 
 msgid "Center Cursor"
 msgstr "Centro al Cursore"
@@ -14128,9 +14119,6 @@ msgstr "Crea singolo utente..."
 
 msgid "Boolean Operation"
 msgstr "Operazione Booleana"
-
-msgid "Centre View to Cursor"
-msgstr "Centra Vista a cursore"
 
 msgid "Viewport Shading"
 msgstr "Rappresentazione visuale"

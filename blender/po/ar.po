@@ -186,9 +186,6 @@ msgstr "&gt;منحني"
 msgid "&gt;Circle"
 msgstr "&gt;دائرة"
 
-msgid "&gt;Suface"
-msgstr "&gt;مسطح"
-
 msgid "&gt;Surface"
 msgstr "&gt;مسطح"
 
@@ -487,7 +484,7 @@ msgstr "تكبير الصورة"
 ###
 ###########################################################
 #, fuzzy
-msgid "Centre"
+msgid "Center"
 msgstr "المركز"
 
 #, fuzzy
@@ -617,7 +614,7 @@ msgstr "مسار"
 ###  Menu bar &gt;&gt; Add &gt;&gt; Surface
 ###
 ###########################################################
-msgid "NURBS Suface"
+msgid "NURBS Surface"
 msgstr "مسطح ناعم"
 
 msgid "NURBS Tube"
@@ -651,10 +648,6 @@ msgstr "تكبير"
 
 msgid "Zoom Out"
 msgstr "تصغير"
-
-#, fuzzy
-msgid "Center"
-msgstr "المركز"
 
 msgid "View All"
 msgstr "عرض الكل"

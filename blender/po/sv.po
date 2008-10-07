@@ -454,7 +454,7 @@ msgstr "Bild Zoom"
 ###  ToolBox &gt;&gt; VIEW
 ###
 ###########################################################
-msgid "Centre"
+msgid "Center"
 msgstr "Mitten"
 
 msgid "Home"
@@ -577,7 +577,7 @@ msgstr "Bana"
 ###  Menu bar &gt;&gt; Add &gt;&gt; Surface
 ###
 ###########################################################
-msgid "NURBS Suface"
+msgid "NURBS Surface"
 msgstr "NURBS Yta"
 
 msgid "NURBS Tube"
@@ -608,9 +608,6 @@ msgstr "Zooma In"
 
 msgid "Zoom Out"
 msgstr "Zooma Ut"
-
-msgid "Center"
-msgstr "Centrera"
 
 msgid "View All"
 msgstr "Visa Alla"

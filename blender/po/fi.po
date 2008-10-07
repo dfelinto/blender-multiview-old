@@ -194,9 +194,6 @@ msgstr "&gt;käyrä"
 msgid "&gt;Circle"
 msgstr "&gt;ympyrä"
 
-msgid "&gt;Suface"
-msgstr "&gt;Pinta"
-
 msgid "&gt;Surface"
 msgstr "&gt;Pinta"
 
@@ -579,7 +576,7 @@ msgstr "Polku"
 ###  Menu bar &gt;&gt; Add &gt;&gt; Surface
 ###
 ###########################################################
-msgid "NURBS Suface"
+msgid "NURBS Surface"
 msgstr "NURBS pinta"
 
 msgid "NURBS Tube"

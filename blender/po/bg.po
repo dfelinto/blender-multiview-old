@@ -141,19 +141,19 @@ msgstr "БързоРис"
 msgid "Displays the active object faster by omitting some edges when drawing"
 msgstr "Показва активния обект по-бързо, пропускайки някои ръбове при изчертаване"
 
-msgid "Centre"
+msgid "Center"
 msgstr "Център"
 
 msgid "Shifts object data to be centered about object's origin"
 msgstr "Премества данните за обекта центрирано по оригиналната позиция"
 
-msgid "Centre New"
+msgid "Center New"
 msgstr "Нов център"
 
 msgid "Shifts object's origin to center of object data"
 msgstr "Премества оригиналната позиция центрирано по обекта"
 
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr "Центриране на показалеца"
 
 msgid "Shifts object's origin to cursor location"
@@ -609,19 +609,16 @@ msgstr "Вмъква параграф от Lorem Ipsum от показалеца
 msgid "Left"
 msgstr "Ляво"
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr "Ляво равняване на текста спрямо центъра на обекта"
 
-msgid "Center"
-msgstr "Центрирано"
-
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr "Средно равняване на текста спрямо центъра на обекта"
 
 msgid "Right"
 msgstr "Дясно"
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr "Дясно равняване на текста спрямо центъра на обекта"
 
 msgid "Justify"
@@ -681,7 +678,7 @@ msgstr "Разстояние между символите"
 msgid "X offset:"
 msgstr "Отместване по X:"
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr "Хоризонтално положение от центъра на обекта"
 
 msgid "UL position:"
@@ -699,7 +696,7 @@ msgstr "Курсивен наклон на символите"
 msgid "Y offset:"
 msgstr "Отместване по Y:"
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr "Вертикално положение от центъра на обекта"
 
 msgid "UL height:"
@@ -3297,7 +3294,7 @@ msgstr "Избор на тип на оказване на обгражданет
 msgid "Axis"
 msgstr "Ос"
 
-msgid "Displays the active object's centre and axis"
+msgid "Displays the active object's center and axis"
 msgstr "Показва центъра и оста на активния обект"
 
 msgid "TexSpace"
@@ -9585,7 +9582,7 @@ msgstr ""
 msgid "Editmode"
 msgstr ""
 
-msgid "Do Centre"
+msgid "Do Center"
 msgstr ""
 
 msgid "Move to layer"
@@ -11794,12 +11791,6 @@ msgid "Scale to Image Aspect Ratio"
 msgstr ""
 
 msgid "ObData to Center"
-msgstr ""
-
-msgid "Center New"
-msgstr ""
-
-msgid "Center Cursor"
 msgstr ""
 
 msgid "Apply Size/Rotation"

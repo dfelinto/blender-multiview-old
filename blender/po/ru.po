@@ -1338,16 +1338,16 @@ msgstr "Текстура влияет на Зеркальный цвет"
 msgid "Center View to Current Frame|C"
 msgstr "Центр Вид к Текущему Кадру|C"
 
-msgid "Centre"
+msgid "Center"
 msgstr "Центр"
 
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr "Центр Курсор"
 
-msgid "Centre New"
+msgid "Center New"
 msgstr "Центр Новый"
 
-msgid "Centre View to Cursor|C"
+msgid "Center View to Cursor|C"
 msgstr "Центрировать Вид к Курсору|C"
 
 msgid "Chance"
@@ -2684,7 +2684,7 @@ msgstr "Показывать активный обьект прорисовыв�
 msgid "Displays the active object's bounds"
 msgstr "Показывать габариты активного обьекта"
 
-msgid "Displays the active object's centre and axis"
+msgid "Displays the active object's center and axis"
 msgstr "Показывать центр и оси активного обьекта"
 
 msgid "Displays the active object's name"
@@ -4159,7 +4159,7 @@ msgstr "Грзнт"
 msgid "Horizontal Align"
 msgstr "Горизонтальное равнение"
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr "Горизонтальная позиция от центра Обьекта"
 
 msgid "Horizontal|Shift S, 1"
@@ -4700,7 +4700,7 @@ msgstr "Развёрт Обрез к Размер Изобр|"
 msgid "Left"
 msgstr "Лево"
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr "Разместить текст слева от центра обьекта"
 
 msgid "Leftalt"
@@ -5576,7 +5576,7 @@ msgstr "Метод"
 msgid "Middle"
 msgstr "Cредне"
 
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr "Расположить текст посередине от центра обьекта"
 
 msgid "Middle mouse button:"
@@ -7779,7 +7779,7 @@ msgstr "Показать скрытые вершины"
 msgid "Right"
 msgstr "Право"
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr "Расположить текст справо от центра обьекта"
 
 msgid "Rightalt"
@@ -11599,7 +11599,7 @@ msgstr ""
 msgid "Vertical Align"
 msgstr "Вертикальное равнение"
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr "Вертикальное положение от центра обьекта"
 
 msgid "Vertices"
@@ -12179,7 +12179,7 @@ msgstr "невозможно копировать\n"
 msgid "cdact"
 msgstr ""
 
-msgid "centre far out of view"
+msgid "center far out of view"
 msgstr "центр за пределами вида"
 
 msgid "change with this value"

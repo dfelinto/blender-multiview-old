@@ -143,7 +143,7 @@ msgid ">Curve"
 msgstr ">Curve"
 msgid ">Circle"
 msgstr ">Cirkel"
-msgid ">Suface"
+msgid ">Surface"
 msgstr ">Oppervlak"
 msgid ">Sphere"
 msgstr ">Sphere"
@@ -360,7 +360,7 @@ msgstr "Show+Sel"
 ###  ToolBox >> VIEW
 ###
 ###########################################################
-msgid "Centre"
+msgid "Center"
 msgstr "Centrum"
 msgid "Home"
 msgstr "HOME"
@@ -464,7 +464,7 @@ msgstr "Pad"
 ###  Menu bar >> Add >> Surface
 ###
 ###########################################################
-msgid "NURBS Suface"
+msgid "NURBS Surface"
 msgstr "NURBS Surface"
 msgid "NURBS Tube"
 msgstr "NURBS Tube"
@@ -489,8 +489,6 @@ msgid "Zoom In"
 msgstr "Vergroot"
 msgid "Zoom Out"
 msgstr "Verklein"
-msgid "Center"
-msgstr "Centreer"
 msgid "View All"
 msgstr "Toon Alles"
 

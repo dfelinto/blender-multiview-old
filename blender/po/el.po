@@ -1231,16 +1231,16 @@ msgstr "Κάνει την επιφάνεια να επηρεάζει την τι
 msgid "Center View to Current Frame|c"
 msgstr "Κεντράρισε την οπτική στο τρέχον πλαίσιο|c"
 
-msgid "Centre"
+msgid "Center"
 msgstr "Κεντράρισμα"
 
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr "Κέντρο στο Δρομέα"
 
-msgid "Centre New"
+msgid "Center New"
 msgstr "Νέο Κέντρο"
 
-msgid "Centre View to Cursor|c"
+msgid "Center View to Cursor|c"
 msgstr "Κεντράρισε την οπτική στο Δρομέα|c"
 
 msgid "Chance"
@@ -2479,7 +2479,7 @@ msgstr "Εμφανίζει το ενεργό αντικείμενο με όλε�
 msgid "Displays the active object's bounds"
 msgstr "Εμφανίζει τα όρια του ενεργού αντικειμένου"
 
-msgid "Displays the active object's centre and axis"
+msgid "Displays the active object's center and axis"
 msgstr "Εμφανίζει το κέντρο και τον άξονα του ενεργού αντικειμένου"
 
 msgid "Displays the active object's name"
@@ -3865,7 +3865,7 @@ msgstr "Ορίζ"
 msgid "Horizontal Align"
 msgstr "Οριζόντια Ευθυγράμμιση"
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr "Οριζόντια θέση από το κέντρο του αντικειμένου"
 
 msgid "Horizontal|Shift S, 1"
@@ -4365,7 +4365,7 @@ msgstr "Διάταξη Περιορισμένη στο Μέγεθος Εικόν
 msgid "Left"
 msgstr "Αριστερά"
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr "Αριστερή στοίχιση του κειμένου σε σχέση με το κέντρο του αντικειμένου"
 
 msgid "Leftbracket"
@@ -5105,7 +5105,7 @@ msgstr "Μέθοδος"
 msgid "Middle"
 msgstr "Μέση"
 
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr "Μεσαία στοίχιση  του κειμένου ως προς το κέντρο του αντικειμένου"
 
 msgid "Middle mouse button:"
@@ -7099,8 +7099,8 @@ msgstr "Reveals selected faces"
 msgid "Right"
 msgstr "Right"
 
-msgid "Right align the text from the object centre"
-msgstr "Right align the text from the object centre"
+msgid "Right align the text from the object center"
+msgstr "Right align the text from the object center"
 
 msgid "Rightarrow"
 msgstr ""
@@ -10590,7 +10590,7 @@ msgstr ""
 msgid "Vertical Align"
 msgstr "Κατακόρυφη Ευθυγράμμιση"
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr "Κατακόρυφη απόσταση από το κέντρο του αντικειμένου"
 
 msgid "Vertices"
@@ -11097,8 +11097,8 @@ msgstr "cannot copy\n"
 msgid "cdact"
 msgstr ""
 
-msgid "centre far out of view"
-msgstr "centre far out of view"
+msgid "center far out of view"
+msgstr "center far out of view"
 
 msgid "change with this value"
 msgstr "change with this value"

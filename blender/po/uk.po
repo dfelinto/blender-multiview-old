@@ -146,7 +146,7 @@ msgstr "Швидке промалювання"
 msgid "Displays the active object faster by omitting some edges when drawing"
 msgstr "Показувати активний об'єкт швидше, не промальовував деякі ребра"
 
-msgid "Centre"
+msgid "Center"
 msgstr "Центр"
 
 #, fuzzy
@@ -154,7 +154,7 @@ msgid "Shifts object data to be centered about object's origin"
 msgstr "Зрушити Данниє обє'кта туди де знаходиться origin обє'кта"
 
 #, fuzzy
-msgid "Centre New"
+msgid "Center New"
 msgstr "Центр Новий"
 
 #, fuzzy
@@ -162,7 +162,7 @@ msgid "Shifts object's origin to center of object data"
 msgstr "Зрушити Данниє обє'кта туди де знаходиться origin обє'кта"
 
 #, fuzzy
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr "Центр Курсор"
 
 msgid "Shifts object's origin to cursor location"
@@ -669,19 +669,16 @@ msgstr ""
 msgid "Left"
 msgstr "Вліво"
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr "Розмістити текст зліва від центру обє'кта"
 
-msgid "Center"
-msgstr "Центр"
-
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr "Розташувати текст посередині від центру обє'кта"
 
 msgid "Right"
 msgstr "Вправо"
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr "Розташувати текст справо від центру обє'кта"
 
 msgid "Justify"
@@ -745,7 +742,7 @@ msgstr "Відстань між окремими символами"
 msgid "X offset:"
 msgstr "Зсув по X:"
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr "Горизонтальна позиція від центру обє'кта"
 
 #, fuzzy
@@ -767,7 +764,7 @@ msgstr "Символи з нахилом Italic"
 msgid "Y offset:"
 msgstr "Зсув по Y:"
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr "Вертикальне положення від центру обє'кта"
 
 #, fuzzy
@@ -9968,7 +9965,7 @@ msgid "Editmode"
 msgstr "Режим редагування"
 
 #, fuzzy
-msgid "Do Centre"
+msgid "Do Center"
 msgstr "Центр"
 
 #, fuzzy
@@ -12256,14 +12253,6 @@ msgstr ""
 
 msgid "ObData to Center"
 msgstr "ObData у центр"
-
-#, fuzzy
-msgid "Center New"
-msgstr "Центр Новий"
-
-#, fuzzy
-msgid "Center Cursor"
-msgstr "Центр Курсор"
 
 #, fuzzy
 msgid "Apply Size/Rotation"
@@ -15968,9 +15957,6 @@ msgstr "Зробит"
 #, fuzzy
 msgid "Boolean Operation"
 msgstr "Логічні операції..."
-
-msgid "Centre View to Cursor"
-msgstr "Центрувати вигляд до курсору"
 
 #, fuzzy
 msgid "Viewport Shading"

@@ -138,20 +138,20 @@ msgstr ""
 msgid "Displays the active object faster by omitting some edges when drawing"
 msgstr "afișează obiectul activ mai rapid prin omiterea unor muchii la desenarea acestuia pe ecran"
 
-msgid "Centre"
+msgid "Center"
 msgstr "Centru"
 
 msgid "Shifts object data to be centered about object's origin"
 msgstr "decalează coordonatele obiectului pentru a fi centrate la originea acestuia"
 
-msgid "Centre New"
+msgid "Center New"
 msgstr ""
 
 #, fuzzy
 msgid "Shifts object's origin to center of object data"
 msgstr "mută originea obiectului la centrul dat de coordonatele obiectului"
 
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr ""
 
 msgid "Shifts object's origin to cursor location"
@@ -613,19 +613,16 @@ msgstr "inserează un paragraf de Lorem Ipsum unde se află cursorul"
 msgid "Left"
 msgstr ""
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr "aliniază textul la stânga de centrul obiectului"
 
-msgid "Center"
-msgstr ""
-
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr "centrează textul la centrul obiectului"
 
 msgid "Right"
 msgstr ""
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr "aliniază textul la dreapta de centrul obiectului"
 
 msgid "Justify"
@@ -685,7 +682,7 @@ msgstr "spațierea dintre caracterele individuale"
 msgid "X offset:"
 msgstr ""
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr "poziția pe orizontală față de centrul obiectului"
 
 msgid "UL position:"
@@ -703,7 +700,7 @@ msgstr "unghiul de înclinare a caracterelor"
 msgid "Y offset:"
 msgstr ""
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr "poziția pe verticală față de centrul obiectului"
 
 msgid "UL height:"
@@ -3338,7 +3335,7 @@ msgstr "selectează tipul de afișare a limitelor proporțiilor"
 msgid "Axis"
 msgstr ""
 
-msgid "Displays the active object's centre and axis"
+msgid "Displays the active object's center and axis"
 msgstr "afișează centrul și axa obiectului activ"
 
 msgid "TexSpace"
@@ -9709,7 +9706,7 @@ msgstr ""
 msgid "Editmode"
 msgstr ""
 
-msgid "Do Centre"
+msgid "Do Center"
 msgstr ""
 
 msgid "Move to layer"
@@ -11921,12 +11918,6 @@ msgid "Scale to Image Aspect Ratio"
 msgstr ""
 
 msgid "ObData to Center"
-msgstr ""
-
-msgid "Center New"
-msgstr ""
-
-msgid "Center Cursor"
 msgstr ""
 
 msgid "Apply Size/Rotation"

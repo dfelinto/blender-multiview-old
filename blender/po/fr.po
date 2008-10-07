@@ -602,9 +602,6 @@ msgstr "Aligner la vue sur..."
 msgid "Center View to Cursor"
 msgstr "Sur le Curseur"
 
-msgid "Centre View to Cursor"
-msgstr "Sur le Curseur"
-
 msgid "Align View to Selected"
 msgstr "Sur Sélection  (Axes local)"
 
@@ -2216,7 +2213,7 @@ msgstr "Affiche la transparence d'une matière d'un objet de type maillage dans 
 msgid "Displays the active object's name"
 msgstr "Affiche le nom de l'objet sur son centre (son pivot)."
 
-msgid "Displays the active object's centre and axis"
+msgid "Displays the active object's center and axis"
 msgstr "Affiche l'axe de l'objet sur son centre (son pivot)."
 #Tooltips fin
 
@@ -4024,13 +4021,13 @@ msgstr "Changer la police de l'objet"
 msgid "Pack/Unpack this font"
 msgstr "Emballer/Déballer cette police"
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr "Aligner le texte à gauche par rapport au centre de l'objet"
 
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr "Aligner le texte au milieu par rapport au centre de l'objet"
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr "Aligner le texte à droite par rapport au centre de l'objet"
 
 msgid "Toggle between upper and lower case in editmode"
@@ -4051,10 +4048,10 @@ msgstr "Espacement entre les caractères"
 msgid "Italic angle of the characters"
 msgstr "Angle de l'italique des caractères"
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr "Position horizontale par rapport au centre de l'objet"
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr "Position verticale par rapport au centre de l'objet"
 
 

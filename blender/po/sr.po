@@ -1565,16 +1565,16 @@ msgstr "Омогућава да текстура утиче на боју одр
 msgid "Center View to Current Frame"
 msgstr ""
 
-msgid "Centre"
+msgid "Center"
 msgstr "Центар"
 
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr "Центр. курсор"
 
-msgid "Centre New"
+msgid "Center New"
 msgstr "Нови центар"
 
-msgid "Centre View to Cursor"
+msgid "Center View to Cursor"
 msgstr "Поглед према курсору"
 
 msgid "Chance"
@@ -2892,7 +2892,7 @@ msgstr "Прикажи активни објекат са свим ивицам�
 msgid "Displays the active object's bounds"
 msgstr "Приказ граница активног објекта"
 
-msgid "Displays the active object's centre and axis"
+msgid "Displays the active object's center and axis"
 msgstr "Приказује центар и осу активног објекта"
 
 msgid "Displays the active object's name"
@@ -4507,7 +4507,7 @@ msgstr ""
 msgid "Horizontal Align"
 msgstr "Водоравно поравнање"
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr ""
 
 msgid "Horizontal"
@@ -5040,7 +5040,7 @@ msgstr ""
 msgid "Left"
 msgstr ""
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr ""
 
 #, fuzzy
@@ -5883,7 +5883,7 @@ msgstr "Метод"
 msgid "Middle"
 msgstr ""
 
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr ""
 
 msgid "Middle mouse button:"
@@ -8029,7 +8029,7 @@ msgstr "Открива изабрана лица"
 msgid "Right"
 msgstr ""
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr ""
 
 #, fuzzy
@@ -11891,7 +11891,7 @@ msgstr "Низови чворова"
 msgid "Vertical Align"
 msgstr "Усправно поравнање"
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr ""
 
 msgid "Vertices"
@@ -12772,7 +12772,7 @@ msgstr ""
 msgid "cdact"
 msgstr ""
 
-msgid "centre far out of view"
+msgid "center far out of view"
 msgstr ""
 
 msgid "change with this value"

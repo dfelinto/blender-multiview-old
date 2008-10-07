@@ -479,7 +479,7 @@ msgstr "Poravnaj pogled"
 msgid "View Navigation"
 msgstr "Navigacija pogleda"
 
-msgid "Centre View to Cursor"
+msgid "Center View to Cursor"
 msgstr "Centar pogleda prema kursoru"
 
 msgid "Align Active Camera to View"
@@ -1425,7 +1425,7 @@ msgstr "Prikazuje rubove aktivnog objekta u sjenčanom načinu prikaza"
 msgid "Axis"
 msgstr "Osi"
 
-msgid "Displays the active object's centre and axis"
+msgid "Displays the active object's center and axis"
 msgstr "Prikazuje centar i osi aktivnog objekta"
 
 msgid "TexSpace"
@@ -1578,19 +1578,19 @@ msgid "Displays all edges in object mode without optimisation"
 msgstr "Prikazuje  sve rubove u objektnom modu, bez optimizacije"
 
 # ########### Mesh ##########
-msgid "Centre"
+msgid "Center"
 msgstr ""
 
 msgid "Shifts object data to be centered about object's origin"
 msgstr "Centrira objekt oko njegova ishodišta"
 
-msgid "Centre New"
+msgid "Center New"
 msgstr ""
 
 msgid "Shifts object's origin to center of object data"
 msgstr "Premješta ishodište objekta na njegovo težište"
 
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr ""
 
 msgid "Shifts object's origin to cursor location"

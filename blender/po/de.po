@@ -143,8 +143,6 @@ msgid "&gt;Curve"
 msgstr "&gt;Kurve"
 msgid "&gt;Circle"
 msgstr "&gt;Zirkel"
-msgid "&gt;Suface"
-msgstr "&gt;Oberfläche"
 msgid "&gt;Surface"
 msgstr "&gt;Oberfläche"
 msgid "&gt;Sphere"
@@ -362,7 +360,7 @@ msgstr "Bild-Zoom"
 ###  ToolBox &gt;&gt; VIEW
 ###
 ###########################################################
-msgid "Centre"
+msgid "Center"
 msgstr "Mitte"
 msgid "Home"
 msgstr "HOME"
@@ -466,7 +464,7 @@ msgstr "Pfad"
 ###  Menu bar &gt;&gt; Add &gt;&gt; Surface
 ###
 ###########################################################
-msgid "NURBS Suface"
+msgid "NURBS Surface"
 msgstr "NURBS-Oberfläche"
 msgid "NURBS Tube"
 msgstr "NURBS-Rohr"
@@ -491,8 +489,6 @@ msgid "Zoom In"
 msgstr "Vergrößern"
 msgid "Zoom Out"
 msgstr "Verkleinern"
-msgid "Center"
-msgstr "Zentrieren"
 msgid "View All"
 msgstr "Zeige Alles"
 

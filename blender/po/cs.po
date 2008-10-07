@@ -379,7 +379,7 @@ msgstr "Nelze změnit střed meshe s vertex klíči"
 msgid "Can't apply to a multi user armature"
 msgstr "Nelze aplikovat na násobně použitou Armaturu"
 
-msgid "Do Centre"
+msgid "Do Center"
 msgstr "Vycentrovat"
 
 msgid "Unable to center new in Edit Mode"
@@ -2346,19 +2346,13 @@ msgstr "Retopo vše"
 msgid "Apply the re-topology tool to all selected vertices"
 msgstr "Aplikuje nástroj re-topologie na všechny označené vertexy"
 
-msgid "Centre"
-msgstr "Centrovat"
-
 msgid "Shifts object data to be centered about object's origin"
 msgstr "Přesune objekt na pozici středu a vycentruje jej s ním"
-
-msgid "Centre New"
-msgstr "Nový střed"
 
 msgid "Shifts object's origin to center of object data"
 msgstr "Přesune střed doprostřed objektu"
 
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr "Kurzorový střed"
 
 msgid "Shifts object's origin to cursor location"
@@ -3142,19 +3136,19 @@ msgstr ""
 msgid "Left"
 msgstr "Z leva"
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr ""
 
 msgid "Center"
 msgstr "Vycentrovat"
 
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr ""
 
 msgid "Right"
 msgstr "Z prava"
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr ""
 
 msgid "Justify"
@@ -3221,7 +3215,7 @@ msgstr ""
 msgid "X offset:"
 msgstr ""
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr ""
 
 msgid "UL position:"
@@ -3240,7 +3234,7 @@ msgstr ""
 msgid "Y offset:"
 msgstr ""
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr ""
 
 msgid "UL height:"
@@ -7680,7 +7674,7 @@ msgstr "Vybrat typ zobrazené obálky"
 msgid "Axis"
 msgstr "Osy"
 
-msgid "Displays the active object's centre and axis"
+msgid "Displays the active object's center and axis"
 msgstr "Zobrazí střed aktivního objektu a osy"
 
 msgid "TexSpace"
@@ -14911,9 +14905,6 @@ msgstr ""
 msgid "Center New"
 msgstr "Nový střed"
 
-msgid "Center Cursor"
-msgstr "Centrovat kurzor"
-
 msgid "Snap Closest"
 msgstr ""
 
@@ -17743,7 +17734,7 @@ msgstr "Zobrazovat čárkované čáry indikující vztahy rodiče-potomek, vazb
 msgid "View Locking:"
 msgstr ""
 
-msgid "Lock view to centre always on this Object"
+msgid "Lock view to center always on this Object"
 msgstr ""
 
 msgid "If view locked to Object, use this Bone to lock to view to"
@@ -22031,9 +22022,6 @@ msgstr "Obálka"
 
 msgid "Wireframe"
 msgstr "Drátěný"
-
-msgid "Centre View to Cursor"
-msgstr ""
 
 msgid "Viewport Shading"
 msgstr "Typ zobrazení scéný"

@@ -1605,7 +1605,7 @@ msgstr "图象缩放"
 ###
 ###########################################################
 
-msgid "Centre"
+msgid "Center"
 msgstr "所选物体居中"
 
 msgid "Home"
@@ -1800,9 +1800,6 @@ msgstr "缩小"
 
 #~ msgid "Zooms out current viewport"
 #~ msgstr "缩小视图"
-
-msgid "Center"
-msgstr "中心"
 
 #~ msgid "Centers selected item in current viewport"
 #~ msgstr "原点居中显示"
@@ -3161,7 +3158,7 @@ msgstr "不能旋转"
 msgid "Can't write file"
 msgstr "写入文件失败"
 
-msgid "Centre New"
+msgid "Center New"
 msgstr "自动指定重心"
 
 msgid "Choose rendering engine"
@@ -4120,7 +4117,7 @@ msgstr "把物体居中到物体的原点"
 msgid "Shifts object's origin to center of object data"
 msgstr "把物体的原点移到物体的中心"
 
-msgid "Centre Cursor"
+msgid "Center Cursor"
 msgstr "指针中心"
 
 msgid "Shifts object's origin to cursor location"
@@ -4641,16 +4638,16 @@ msgstr "Lorem"
 msgid "Insert a paragraph of Lorem Ipsum at cursor"
 msgstr "在指针处插入一个Lorem Ipsum段落"
 
-msgid "Left align the text from the object centre"
+msgid "Left align the text from the object center"
 msgstr "相对物体中心左对齐文本"
 
-msgid "Middle align the text from the object centre"
+msgid "Middle align the text from the object center"
 msgstr "相对物体中心居中文本"
 
 msgid "Right"
 msgstr "右"
 
-msgid "Right align the text from the object centre"
+msgid "Right align the text from the object center"
 msgstr "相对物体中心右对齐文本"
 
 msgid "Justify"
@@ -4707,7 +4704,7 @@ msgstr "字符之间的间距"
 msgid "X offset:"
 msgstr "X偏移:"
 
-msgid "Horizontal position from object centre"
+msgid "Horizontal position from object center"
 msgstr "相对物体中心的水平位置"
 
 msgid "UL position:"
@@ -4725,7 +4722,7 @@ msgstr "斜体字的倾斜角度"
 msgid "Y offset:"
 msgstr "Y偏移:"
 
-msgid "Vertical position from object centre"
+msgid "Vertical position from object center"
 msgstr "相对物体中心的垂直位置"
 
 msgid "UL height:"
@@ -7391,7 +7388,7 @@ msgstr "选择边界显示类型"
 msgid "Axis"
 msgstr "轴"
 
-msgid "Displays the active object's centre and axis"
+msgid "Displays the active object's center and axis"
 msgstr "显示激活物体的中心和轴"
 
 msgid "TexSpace"
@@ -14664,7 +14661,7 @@ msgstr "清除烘培的软体"
 msgid "Editmode"
 msgstr "编辑模式"
 
-msgid "Do Centre"
+msgid "Do Center"
 msgstr ""
 
 msgid "Move from localview"
@@ -17594,12 +17591,6 @@ msgstr "缩放到图像纵横比"
 msgid "ObData to Center"
 msgstr "物体数据到中心点"
 
-msgid "Center New"
-msgstr "新中心点"
-
-msgid "Center Cursor"
-msgstr "中心点到指针"
-
 msgid "Apply Size/Rotation"
 msgstr "应用尺寸/旋转"
 
@@ -20478,9 +20469,6 @@ msgstr "范围框"
 
 msgid "Wireframe"
 msgstr "线框"
-
-msgid "Centre View to Cursor"
-msgstr "居中视图到指针"
 
 msgid "Viewport Shading"
 msgstr "视图光阴"
