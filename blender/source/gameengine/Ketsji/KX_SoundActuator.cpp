@@ -101,7 +101,6 @@ bool KX_SoundActuator::Update(double curtime, bool frame)
 	if (!frame)
 		return true;
 	bool result = false;
-	bool isplaying = (m_soundObject->GetPlaystate() != SND_STOPPED) ? true : false;
 
 	// do nothing on negative events, otherwise sounds are played twice!
 	bool bNegativeEvent = IsNegativeEvent();
@@ -110,6 +109,9 @@ bool KX_SoundActuator::Update(double curtime, bool frame)
 
 	if (!m_soundObject)
 		return false;
+
+	// actual audio device playing state
+	bool isplaying = (m_soundObject->GetPlaystate() != SND_STOPPED) ? true : false;
 
 	if (m_pino)
 	{
