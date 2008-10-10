@@ -4412,9 +4412,6 @@ msgstr "Visina Fh podrucja"
 msgid "Height:"
 msgstr "Visina:"
 
-msgid "Heigth:"
-msgstr "Visina:"
-
 #, fuzzy
 msgid "Hello world"
 msgstr "svet"

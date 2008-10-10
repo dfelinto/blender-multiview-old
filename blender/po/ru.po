@@ -4060,9 +4060,6 @@ msgstr "Высота области Fh"
 msgid "Height:"
 msgstr ""
 
-msgid "Heigth:"
-msgstr ""
-
 msgid "Help"
 msgstr "Помощь"
 

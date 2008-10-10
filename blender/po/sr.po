@@ -4405,9 +4405,6 @@ msgstr "Висина Fh подручја"
 msgid "Height:"
 msgstr "Висина:"
 
-msgid "Heigth:"
-msgstr "Висина:"
-
 #, fuzzy
 msgid "Hello world"
 msgstr "свет"

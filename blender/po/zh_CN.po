@@ -4363,9 +4363,6 @@ msgstr "速度"
 msgid "Specify the wave speed"
 msgstr "指定波浪的速度"
 
-msgid "Heigth:"
-msgstr "高度:"
-
 msgid "Specify the amplitude of the wave"
 msgstr "指定波浪的振幅"
 

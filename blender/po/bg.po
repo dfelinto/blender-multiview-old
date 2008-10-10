@@ -390,9 +390,6 @@ msgstr "Скорост:"
 msgid "Specify the wave speed"
 msgstr "Задава скоростта на вълната"
 
-msgid "Heigth:"
-msgstr "Височина:"
-
 msgid "Specify the amplitude of the wave"
 msgstr "Задава амплитуда на вълната"
 

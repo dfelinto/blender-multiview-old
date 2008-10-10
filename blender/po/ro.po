@@ -392,9 +392,6 @@ msgstr ""
 msgid "Specify the wave speed"
 msgstr "specifică viteza undei"
 
-msgid "Heigth:"
-msgstr ""
-
 msgid "Specify the amplitude of the wave"
 msgstr "specifică amplitudinea undei"
 

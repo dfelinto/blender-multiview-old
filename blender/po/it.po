@@ -10,7 +10,7 @@
 #"Content-Transfer-Encoding: 8bit\n"
 #"X-Poedit-Language: Italian\n"
 #"X-Poedit-Country: ITALY\n"
-#"X-Poedit-SourceCharset: utf-8\n"
+#"X-Poedit-SourceCharset: UTF-8\n"
 #"X-Generator: KBabel 1.11.4\n"
 #"X-Poedit-Bookmarks: 221,-1,-1,-1,-1,-1,-1,-1,-1,-1\n"
 
@@ -373,9 +373,6 @@ msgstr "Velocità:"
 
 msgid "Specify the wave speed"
 msgstr "Specifica la velocità dell'onda"
-
-msgid "Heigth:"
-msgstr "Altezza:"
 
 msgid "Specify the amplitude of the wave"
 msgstr "Specifica l'ampiezza dell'onda"

@@ -2805,9 +2805,6 @@ msgstr "Rychlost:"
 msgid "Specify the wave speed"
 msgstr "Určuje rychlost vlny"
 
-msgid "Heigth:"
-msgstr "Výška:"
-
 msgid "Specify the amplitude of the wave"
 msgstr "Určuje amplitudu vlny"
 
