@@ -1,11 +1,11 @@
 # French UI Translation
 # eon <eon.2008@free.fr>, 2008
 #"Last-Translator: eon <eon.2008@free.fr>\n"
-#"PO-Revision-Date: 2008-08-08 01:00+0100\n"
+#"PO-Revision-Date: 2008-09-29 01:00+0100\n"
 #"Content-Type: text/plain; charset=UTF-8\n"
 #"Content-Transfer-Encoding: 8bit\n"
 #"Language-Team: eon (eon@jabber.fr) , serialsiner , kaal / project page : http://wiki.blender.org/index.php/Interface/fr"
-#"X-Generator: Gedit 2.18.0\n"
+#"X-Generator: Gedit 2.22.0\n"
 
 # Copyright (C) 2005 Free Software Foundation, Inc.
 #
@@ -485,6 +485,30 @@ msgstr "Enregistrer la Physique du Jeu en IPO"
 msgid "Autostart"
 msgstr "Lancement Automatique"
 
+msgid "Blender GLSL Materials"
+msgstr "Matériaux GLSL"
+
+msgid "GLSL Material Settings"
+msgstr "Paramètres GLSL"
+
+msgid "Enable Lights"
+msgstr "Activer Lumières"
+
+msgid "Enable Shadows"
+msgstr "Activer Ombres"
+
+msgid "Enable Shaders"
+msgstr "Activer Ombrage Matériaux"
+
+msgid "Enable Ramps"
+msgstr "Activer Dégradés"
+
+msgid "Enable Nodes"
+msgstr "Activer Noeuds"
+
+msgid "Enable Extra Textures"
+msgstr "Activer Textures"
+
 ###########################################################
 ###
 ###  Menu bar  RENDER
@@ -671,8 +695,47 @@ msgstr "Vue Sélection Isolée"
 msgid "Show All Layers"
 msgstr "Voir Tous les Calques"
 
+msgid "Show Previous Layers"
+msgstr "Voir les Calques Précédents"
+
 msgid "Orthographic"
 msgstr "Orthogonale"
+
+msgid "Grease Pencil..."
+msgstr "Crayon..."
+
+msgid "Grease Pencil"
+msgstr "Crayon"
+
+msgid "Use Grease Pencil"
+msgstr "Activer Crayon"
+
+msgid "Add New Layer"
+msgstr "Nouveau Calque"
+
+msgid "Draw Mode"
+msgstr "Dessiner"
+
+msgid "Sketch in 3D"
+msgstr "3D"
+
+msgid "Convert to..."
+msgstr "Convertir Tracé"
+
+msgid "Del Last Stroke"
+msgstr "Annuler"
+
+msgid "Grease Pencil Convert "
+msgstr "Conversion du Tracé"
+
+msgid "Active Layer To Path"
+msgstr "Calque Actif en Chemin"
+
+msgid "Active Layer to Bezier"
+msgstr "Calque Actif en Courbe de Bézier"
+
+msgid "Active Layer to Armature"
+msgstr "Calque Actif en Armature"
 
 msgid "Background Image..."
 msgstr "Image d'Arrière Plan"
@@ -864,6 +927,9 @@ msgstr "Copie Liée"
 
 msgid "Insert Keyframe"
 msgstr "Insérer une Image Clé"
+
+msgid "Delete Keyframe"
+msgstr "Supprimer une Image Clé"
 
 msgid "Duplicate"
 msgstr "Copie"
@@ -1841,6 +1907,12 @@ msgstr "Aperçu"
 msgid "Shadow and Spot"
 msgstr "Ombre et Spot"
 
+msgid "Sky/Atmosphere"
+msgstr "Ciel / Atmosphère"
+
+msgid "Atmosphere"
+msgstr "Atmosphère"
+
 msgid "Hem"
 msgstr "Envir"
 
@@ -2290,35 +2362,86 @@ msgstr "Ajouter une nouvelle contrainte"
 msgid "Object center attracts or repels particles"
 msgstr "Le centre de l'objet attire ou repousse les particules"
 
-msgid "Wind "
+msgid "Wind"
 msgstr "Vent"
 
 msgid "NEW"
 msgstr "Nouveau"
 
-msgid "Particles " 
+msgid "Kill"
+msgstr "Tuer"
+
+msgid "Cloth "
+msgstr "Tissu"
+
+msgid "Cloth"
+msgstr "Tissu"
+
+msgid "Advanced"
+msgstr "Avancé"
+
+msgid "Fluid"
+msgstr "Fluide"
+
+msgid "Particle System" 
 msgstr "Particules"
 
-msgid "Particle Motion" 
-msgstr "Mouvement Particules"
+msgid "Basic:" 
+msgstr "Basique:"
 
-msgid "Only Mesh Objects can generate particles"
-msgstr "Seuls les Objets à maillage peuvent générer des particules"
+msgid "Emit From:" 
+msgstr "Émission depuis:"
 
-msgid "Static"
-msgstr "Statique"
+msgid "Even" 
+msgstr "Réparti"
 
-msgid "Animated"
-msgstr "Animées"
+msgid "Hair" 
+msgstr "Poil"
 
-msgid "Emit:"
-msgstr "Emission:"
+msgid "Emitter" 
+msgstr "Émetteur"
 
-msgid "Children:"
-msgstr "Enfants:"
+msgid "Physics" 
+msgstr "Physique"
 
-msgid "Velocity:"
-msgstr "Vitesse:"
+msgid "Newtonian" 
+msgstr "Newton"
+
+msgid "Initial velocity:" 
+msgstr "Vitesse initiale:"
+
+msgid "Visualization" 
+msgstr "Visualisation"
+
+msgid "Line " 
+msgstr "Ligne"
+
+msgid "Axis " 
+msgstr "Axes"
+
+msgid "Circle " 
+msgstr "Cercle"
+
+msgid "Cross " 
+msgstr "Croix"
+
+msgid "Path " 
+msgstr "Chemin"
+
+msgid "Draw:" 
+msgstr "Affichage:"
+
+msgid "Render:" 
+msgstr "Rendu:"
+
+msgid "Died" 
+msgstr "Mortes"
+
+msgid "Free Bake" 
+msgstr "Effacer"
+
+msgid "No simulation frames in disk cache." 
+msgstr "Aucune simulation précalculée"
 
 #tip
 msgid "Create a new Particle effect"
@@ -2339,13 +2462,10 @@ msgstr "Fluides"
 msgid "Enable"
 msgstr "Activer"
 
-msgid "Object not enabled for fluid simulation..."
+msgid "Object not enabled for fluid simulation."
 msgstr "Simulation des fluides désactivée pour cet objet"
 
-msgid "Soft Body Collision"
-msgstr "Collision Corps Mou"
-
-msgid "Object is not a softbody"
+msgid "Object is not a softbody."
 msgstr "L'Objet n'est pas un corps mou"
 
 ###########################################################
@@ -2888,7 +3008,7 @@ msgstr "Lire"
 
 # Panneau Bake
 msgid "Bake"
-msgstr "Rendu vers Textures"
+msgstr "Précalculer"
 
 msgid "BAKE"
 msgstr "Rendu vers Textures"
@@ -3049,6 +3169,27 @@ msgstr "OUVRIR"
 
 msgid "Reopen"
 msgstr "Ré-Ouvrir"
+
+###########################################################
+###
+###  SECTION NLA
+###
+###########################################################
+
+msgid "Auto-Snap Strips/Keyframes "
+msgstr "Accrochage"
+
+msgid "No Snap "
+msgstr "Aucun"
+
+msgid "Frame Step "
+msgstr "Images"
+
+msgid "Only Objects On Visible Layers"
+msgstr "Aff. seulement les Calques Visibles"
+
+msgid "Select/Deselect All Keys"
+msgstr "(Dé)Sélectionner Toutes les Clés"
 
 ###########################################################
 ###
@@ -3331,6 +3472,24 @@ msgstr "Scène Active"
 msgid "Active "
 msgstr "Actif"
 
+msgid "Show Active"
+msgstr "Zoom sur Sélection"
+
+msgid "Show Hierarchy"
+msgstr "Réduire tout"
+
+msgid "Show/Hide All"
+msgstr "Développer tout"
+
+msgid "Collapse One Level"
+msgstr "Réduire"
+
+msgid "Expand One Level"
+msgstr "Développer"
+
+msgid "Show Restriction Columns"
+msgstr "Afficher Attributs"
+
 ###########################################################
 ###
 ###  SECTION  NODE EDITOR  
@@ -3496,6 +3655,51 @@ msgstr "Prévisual."
 ###  WINDOW  PREFERENCE  
 ###
 ###########################################################
+
+msgid "Auto Save Temp Files"
+msgstr "Sauv. auto dans fichier temp."
+
+msgid "Global Undo"
+msgstr "Historique Global"
+
+msgid "Plain Menus"
+msgstr "Colonne"
+
+msgid "Paste on MMB"
+msgstr "Coller par Clic Milieu"
+
+msgid "Open on Mouse Over"
+msgstr "Ouverture sous le Curseur"
+
+msgid "Global Pivot"
+msgstr "Pivot Global"
+
+msgid "Playback FPS"
+msgstr "Images/Sec"
+
+msgid "Add new objects:"
+msgstr "Ajout d'un nouvel objet:"
+
+msgid "Switch to Edit Mode"
+msgstr "Entrer en Mode Edition"
+
+msgid "Aligned to View"
+msgstr "Axes sur la Vue"
+
+msgid "Transform:"
+msgstr "Transformations:"
+
+msgid "Drag Immediately"
+msgstr "Déplacer en 1 clic"
+
+msgid "Grease Pencil:"
+msgstr "Crayon:"
+
+msgid "Auto Run Python Scripts"
+msgstr "Lancement Auto. Scripts Python"
+
+msgid "Enabled by Default"
+msgstr "Activé par défaut"
 
 msgid "Display:"
 msgstr "Affichage:"
