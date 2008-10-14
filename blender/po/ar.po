@@ -1,0 +1,687 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Blender\n"
+"POT-Creation-Date: \n"
+"PO-Revision-Date: 2006-11-14 15:33+0300\n"
+"Last-Translator: M. Bashir Al-Noimi <bashir.storm@gmail.com>\n"
+"Language-Team: arabeyes.org <bashir.storm@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Arabic\n"
+"X-Poedit-Country: SYRIAN ARAB REPUBLIC\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+
+# Copyright (C) 2003 Free Software Foundation, Inc.
+# snts &lt;snutlix@hotmail.com&gt;, 2003.
+#
+###########################################################
+###
+###  Render Window
+###
+###########################################################
+msgid "Start the rendering"
+msgstr "بدء عملية الاخراج"
+
+msgid "Display edge settings"
+msgstr "عرض اعدادات الحواف"
+
+msgid "Enable shadow calculation"
+msgstr "تمكين حساب الظل"
+
+msgid "Start rendering a sequence"
+msgstr "بدء سلسلة الاخراج"
+
+###########################################################
+###
+###  ToolBox (Popup Menu)
+###
+###########################################################
+msgid "ADD"
+msgstr "اضافة"
+
+msgid "FILE"
+msgstr "ملف"
+
+msgid "EDIT"
+msgstr "تحرير"
+
+msgid "OBJECT"
+msgstr "كائن"
+
+msgid "MESH"
+msgstr "مجسم شبكي"
+
+msgid "CURVE"
+msgstr "منحني"
+
+msgid "KEY"
+msgstr "مفتاح"
+
+msgid "VIEW"
+msgstr "عرض"
+
+msgid "RENDER"
+msgstr "اخراج"
+
+msgid "SEQUENCE"
+msgstr "سلسلة"
+
+###########################################################
+###
+###  General Messages
+###
+###########################################################
+msgid "QUIT BLENDER"
+msgstr "خروج"
+
+msgid "Not allowed"
+msgstr "غير مسموح"
+
+msgid "ERASE ALL"
+msgstr "مسح الكل"
+
+###########################################################
+###
+###  General Terms
+###
+###########################################################
+###########################################################
+###
+###  FileSelect Commands
+###
+###########################################################
+msgid "LOAD FILE"
+msgstr "فتح ملف"
+
+msgid "SAVE FILE"
+msgstr "حفظ ملف"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD
+###
+###########################################################
+msgid "Mesh"
+msgstr "مجسم شبكي"
+
+msgid "Curve"
+msgstr "منحني"
+
+msgid "Surface"
+msgstr "مسطح"
+
+msgid "Text"
+msgstr "نص"
+
+msgid "Camera"
+msgstr "آلة التصوير"
+
+msgid "Lamp"
+msgstr "مصباح"
+
+msgid "Armature"
+msgstr "محرك"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Mesh
+###
+###########################################################
+msgid "&gt;Plane"
+msgstr "&gt;أرضية"
+
+msgid "&gt;Cube"
+msgstr "&gt;مكعب"
+
+msgid "&gt;UVsphere"
+msgstr ""
+
+msgid "&gt;Icosphere"
+msgstr ""
+
+msgid "&gt;Cylinder"
+msgstr "&gt;اسطوانة"
+
+msgid "&gt;Tube"
+msgstr "&gt;أنبوب"
+
+msgid "&gt;Cone"
+msgstr "&gt;مخروط"
+
+msgid "&gt;Grid"
+msgstr "&gt;خطوط الشبكة"
+
+msgid "&gt;Monkey"
+msgstr "&gt;قرد"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Curve
+###
+###########################################################
+msgid "&gt;Bezier Curve"
+msgstr "&gt;منحني بيزيير"
+
+msgid "&gt;Bezier Circle"
+msgstr "&gt;دائرة بيزيير"
+
+msgid "&gt;Nurbs Curve"
+msgstr "&gt;منحني ناعم"
+
+msgid "&gt;Nurbs Circle"
+msgstr "&gt;دائرة ناعمة"
+
+msgid "&gt;Path"
+msgstr "&gt;مسار"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Surface
+###
+###########################################################
+msgid "&gt;Curve"
+msgstr "&gt;منحني"
+
+msgid "&gt;Circle"
+msgstr "&gt;دائرة"
+
+msgid "&gt;Surface"
+msgstr "&gt;مسطح"
+
+msgid "&gt;Sphere"
+msgstr "&gt;كرة"
+
+msgid "&gt;Donut"
+msgstr "&gt;حلقة"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; FILE
+###
+###########################################################
+msgid "New"
+msgstr "جديد"
+
+msgid "Open"
+msgstr "فتح"
+
+msgid "Reopen Last"
+msgstr "اعادة فتح الملف السابق"
+
+msgid "Append"
+msgstr "اضافة"
+
+msgid "Save As"
+msgstr "حفظ باسم"
+
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Save Image"
+msgstr "حفظ كصورة"
+
+msgid "Save VRML"
+msgstr "حفظ بصيغة VRML"
+
+msgid "Save DXF"
+msgstr "حفظ بصيغة DXF"
+
+msgid "Save VideoScape"
+msgstr "حفظ بصيغة VideoScape"
+
+msgid "Save UserPrefs"
+msgstr "حفظ اعدادات المستخدم"
+
+msgid "Quit"
+msgstr "خروج"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Edit
+###
+###########################################################
+msgid "(De)Select All"
+msgstr "الغاء تحديد الكل"
+
+#, fuzzy
+msgid "Select Linked"
+msgstr "قائمة موصولة"
+
+msgid "Hide Selected"
+msgstr "اخفاء العنصر المحدد"
+
+msgid "Border Select"
+msgstr "تحديد الاطار"
+
+msgid "Duplicate"
+msgstr "مضاعفة"
+
+msgid "Delete"
+msgstr "حذف"
+
+msgid "Edit Mode"
+msgstr "نمط التحرير"
+
+#, fuzzy
+msgid "Grabber"
+msgstr "المنتزع"
+
+msgid "Rotate"
+msgstr "تدوير"
+
+msgid "Scale"
+msgstr "تغيير القياس"
+
+msgid "Shrink/Fatten"
+msgstr "توسيع/تقليص"
+
+msgid "Shear"
+msgstr "قص"
+
+msgid "Warp/Bend"
+msgstr "امالة/انحناء"
+
+msgid "Snap Menu"
+msgstr "قائمة الالتقاط"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (1)
+###
+###########################################################
+msgid "Clear Size"
+msgstr "مسح القياس"
+
+msgid "Clear Rotation"
+msgstr "مسح التدوير"
+
+#, fuzzy
+msgid "Clear Location"
+msgstr "موقع الذاكرة"
+
+#, fuzzy
+msgid "Clear Origin"
+msgstr "ملقم الأصل"
+
+#, fuzzy
+msgid "Make Parent"
+msgstr "دليل أب: الدليل الموجود فوق الدليل الحالي ضمن البنية للشجرية للأدلة في نظام DOS. "
+
+#, fuzzy
+msgid "Clear Parent"
+msgstr "دليل أب: الدليل الموجود فوق الدليل الحالي ضمن البنية للشجرية للأدلة في نظام DOS. "
+
+#, fuzzy
+msgid "Make Track"
+msgstr "المسار سبعة"
+
+#, fuzzy
+msgid "Clear Track"
+msgstr "المسار سبعة"
+
+#, fuzzy
+msgid "Image Displist"
+msgstr "ثابت الصورة"
+
+msgid "Image Aspect"
+msgstr "مظهر الصورة"
+
+#, fuzzy
+msgid "Vect Paint"
+msgstr "برنامج الرسام: برنامج تطبيقي لإنشاء الرسوم كخريطة بتات، وهو يتعامل مع الرسم كمجموعة من النقاط ويقدم للمستخدم مجموعة أدوات مساعدة لرسم الخطوط والمنحنيات والأشكال الهندسية، ولكنه لا يستطيع معالجة كل عنصر على حدة بدون إضاعة بعض المعلومات الخاصة، انظر الشكل.  قارن: drawing program "
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (2)
+###
+###########################################################
+msgid "Move To Layer"
+msgstr "نقل لطبقة"
+
+msgid "Delete All"
+msgstr "حذف الكل"
+
+#, fuzzy
+msgid "Apply Size/Rot"
+msgstr "حجم كتلة التخصيص: حجم كتلة التخزين الأصغرية على وسيط التخزين (كالقرص الصلب)، ويحدد هذا الحجم بعدة عوامل كالحجم الكلي للقرص وخيارات التقطيع."
+
+msgid "Apply Deform"
+msgstr ""
+
+msgid "Join"
+msgstr "ضمّ"
+
+#msgid "Make Local"
+#msgstr "Mache Lokal"
+#msgid "Select Linked"
+#msgstr "Selektiere verknÃ¼pfte"
+#msgid "Make Links"
+#msgstr "Erstelle Links"
+#msgid "Copy Menu"
+#msgstr "MenÃ¼ Kopieren"
+#msgid "Convert Menu"
+#msgstr "MenÃ¼ Konvertieren"
+#, fuzzy
+msgid "Boolean Op"
+msgstr "تعليمة اللاعمل, . انظر: no-operation instruction"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Mesh
+###
+###########################################################
+#, fuzzy
+msgid "Make edge/face"
+msgstr "إهمال الأوجه الخلفية: طريقة تستخدمها برامج الرسم بحيث تتجاهل رسم وجه أو أكثر من أوجه المضلعات أو الأشكال إذا كانت هذه الأوجه خلفية غير ظاهرة، مما يزيد من سرعة إظهار أو إعادة توليد الرسوم."
+
+msgid "Fill"
+msgstr "ملئ"
+
+msgid "Split"
+msgstr "فصل"
+
+#, fuzzy
+msgid "Undo/reload"
+msgstr "مرحلة التراجع"
+
+msgid "Calc Normals"
+msgstr ""
+
+msgid "Separete"
+msgstr ""
+
+#, fuzzy
+msgid "Write Videosc"
+msgstr "حماية من الكتابة على"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Curve
+###
+###########################################################
+#, fuzzy
+msgid "Deselect Linked"
+msgstr "قائمة موصولة"
+
+#, fuzzy
+msgid "Extrude"
+msgstr "إقذف"
+
+msgid "Delete Menu"
+msgstr "قائمة الحذف"
+
+#, fuzzy
+msgid "Make Segment"
+msgstr "قطعة بيانات"
+
+#, fuzzy
+msgid "Cyclic"
+msgstr "دوري"
+
+#, fuzzy
+msgid "Select Row"
+msgstr "الصفّ المنفرد"
+
+#, fuzzy
+msgid "Calc Handle"
+msgstr "مقبض الملف: رقم افتراضي يُستخدم في أنظمة التشغيل MS-DOS و OS/2 و Windows، وذلك لتعريف أو الإشارة إلى الملف المفتوح أو أحياناً إلى جهاز ما."
+
+#, fuzzy
+msgid "Auto Handle"
+msgstr "مقبض الملف: رقم افتراضي يُستخدم في أنظمة التشغيل MS-DOS و OS/2 و Windows، وذلك لتعريف أو الإشارة إلى الملف المفتوح أو أحياناً إلى جهاز ما."
+
+#, fuzzy
+msgid "Vect Handle"
+msgstr "مقبض الملف: رقم افتراضي يُستخدم في أنظمة التشغيل MS-DOS و OS/2 و Windows، وذلك لتعريف أو الإشارة إلى الملف المفتوح أو أحياناً إلى جهاز ما."
+
+#, fuzzy
+msgid "Specials"
+msgstr "خاصيات"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Key
+###
+###########################################################
+msgid "Insert"
+msgstr "ادراج"
+
+msgid "Show"
+msgstr "اعرض"
+
+msgid "Next"
+msgstr "التالي"
+
+msgid "Prev"
+msgstr "السابق"
+
+#, fuzzy
+msgid "Show+Sel"
+msgstr "عرض الشرائح: قائمة محددة من التخطيطات والرسومات يتم عرضها واحدة تلو الأخرى في العروض التقديمية الرسومية."
+
+###########################################################
+###
+###  ToolBox &gt;&gt; RENDER
+###
+###########################################################
+msgid "Render Window"
+msgstr "نافذة الاخراج"
+
+msgid "Render"
+msgstr "اخراج"
+
+#, fuzzy
+msgid "Set Border"
+msgstr "الحدود العليا"
+
+msgid "Image Zoom"
+msgstr "تكبير الصورة"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; VIEW
+###
+###########################################################
+#, fuzzy
+msgid "Center"
+msgstr "المركز"
+
+#, fuzzy
+msgid "Home"
+msgstr "البيت"
+
+#, fuzzy
+msgid "Z-Buffer"
+msgstr "مرحلة وسيطية، عازل: دارة إلكترونية وظيفتها عزل (isolate) وحماية النظام من الأخطاء التي يمكن أن لتأتي من إشارات الدخل من أجهزة القيادة أو الأجهزة المحيطية. ذاكرة مؤقتة: موقع تخزين مؤقت يستخدم كمرحلة وسيطية بين جهاز دخل بطيء كلوحة المفاتيح والحاسب الذي يعمل بسرعة تشغيل عالية."
+
+###########################################################
+###
+###  ToolBox &gt;&gt; SEQUENCE
+###
+###########################################################
+#, fuzzy
+msgid "Add Strip"
+msgstr "سلسلة هزلية: مجموعة من الصور المتلاحقة التي تعرض بمجملها قصة هزلية معينة. وتنتشر هذه السلاسل عادة في الصحف والمجلات."
+
+#, fuzzy
+msgid "Change Str"
+msgstr "التغيير"
+
+#, fuzzy
+msgid "Delete Str"
+msgstr "مفتاح الحذف"
+
+#, fuzzy
+msgid "Make Meta"
+msgstr "بيانات-أعلى"
+
+msgid "Str Params"
+msgstr ""
+
+###########################################################
+###
+###  Menu bar
+###
+###########################################################
+msgid "File"
+msgstr "ملف"
+
+msgid "Edit"
+msgstr "تحرير"
+
+msgid "Add"
+msgstr "اضافة"
+
+msgid "View"
+msgstr "عرض"
+
+msgid "Game"
+msgstr "لعبة"
+
+msgid "Tools"
+msgstr "أدوات"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add
+###
+###########################################################
+msgid "MetaBall"
+msgstr ""
+
+msgid "Empty"
+msgstr "فارغ"
+
+msgid "Lattice"
+msgstr ""
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Mesh
+###
+###########################################################
+#, fuzzy
+msgid "Plane"
+msgstr "الطائرة"
+
+msgid "Cube"
+msgstr "مكعب"
+
+msgid "Circle"
+msgstr "دائرة"
+
+msgid "UVsphere"
+msgstr ""
+
+msgid "IcoSphere"
+msgstr ""
+
+msgid "Cylinder"
+msgstr "اسطوانة"
+
+msgid "Tube"
+msgstr "أنبوب"
+
+msgid "Cone"
+msgstr "مخروط"
+
+msgid "Grid"
+msgstr "خطوط الشبكة"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Curve
+###
+###########################################################
+msgid "Bezier Curve"
+msgstr "منحنيات بيزيير"
+
+msgid "Bezier Circle"
+msgstr "دائرة بيزيير"
+
+msgid "NURBS Curve"
+msgstr "منحني ناعم"
+
+msgid "NURBS Circle"
+msgstr "دائرة ناعمة"
+
+msgid "Path"
+msgstr "مسار"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Surface
+###
+###########################################################
+msgid "NURBS Surface"
+msgstr "مسطح ناعم"
+
+msgid "NURBS Tube"
+msgstr "أنبوب ناعم"
+
+msgid "NURBS Sphere"
+msgstr "كرة ناعمة"
+
+msgid "NURBS Donut"
+msgstr "حلقة ناعمة"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; View
+###
+###########################################################
+#, fuzzy
+msgid "Front"
+msgstr "الجبهة"
+
+#, fuzzy
+msgid "Right"
+msgstr "الجهة العليا اليمنى"
+
+#, fuzzy
+msgid "Top"
+msgstr "القمّة"
+
+msgid "Zoom In"
+msgstr "تكبير"
+
+msgid "Zoom Out"
+msgstr "تصغير"
+
+msgid "View All"
+msgstr "عرض الكل"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Game
+###
+###########################################################
+msgid "Start Game"
+msgstr "بدء اللعبة"
+
+msgid "Enable All Frame"
+msgstr "تمكين كل الاطارات"
+
+msgid "Show framerate and profile"
+msgstr ""
+
+msgid "Autostart"
+msgstr "تشغيل تلقائي"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Tools
+###
+###########################################################
+#, fuzzy
+msgid "Pack Data"
+msgstr "البيانات خاطبت"
+
+msgid "Unpack Data to current dir"
+msgstr ""
+
+#, fuzzy
+msgid "Advanced Unpack"
+msgstr "واجهة التكوين المتقدم للطاقة: , : انظر ACPI."
+

@@ -1,0 +1,122 @@
+#!/bin/sh
+#
+# $Id$
+#
+# ***** BEGIN GPL LICENSE BLOCK *****
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+#
+# The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
+# All rights reserved.
+#
+# The Original Code is: all of this file.
+#
+# Contributor(s): none yet.
+#
+# ***** END GPL LICENSE BLOCK *****
+
+# Be kind, temporarily ...
+if [ -z "$SRCHOME" ]; then
+    SRCHOME="$NANBLENDERHOME/source"
+    export SRCHOME
+fi
+
+# CG format: CPU-MANUFACTURER-OS(VERSION)-PossibleOtherStuff
+CG=`$SRCHOME/tools/guess/config.guess`
+# NaN format: OS-VERSION-CPU
+
+CPU=`echo $CG|sed -e 's/^\([^-]*\)-\([^-]*\)-\([^-]*\).*$/\1/' \
+	-e 's/i.86/i386/' -e 's/ev56//'`
+MANUFACTURER=`echo $CG|sed -e 's/^\([^-]*\)-\([^-]*\)-\([^-]*\).*$/\2/'`
+OS=`echo $CG|sed -e 's/^\([^-]*\)-\([^-]*\)-\([^-]*\).*$/\3/' \
+	-e 's/[0-9\.]*$//' -e 's/elf$//'`
+OS_VERSION=`echo $CG|sed -e 's/^\([^-]*\)-\([^-]*\)-\([^-]*\).*$/\3/' \
+	-e 's/[^0-9]*//'`
+
+# Patch BeOS
+if [ "$OS" = "beos" -a  -z "$OS_VERSION" ]; then
+    OS_VERSION=`/bin/uname -r`
+fi
+
+# Patch mips
+if [ "$CPU" = "mips" -a ! -z "$NAN_MIPS" ]; then
+    CPU="$NAN_MIPS"
+fi
+
+# Patch Linux
+if [ "$OS" = "linux" ]; then
+    dummydir=/tmp/
+    dummy=${dummydir}dummy-$$
+    trap 'rm -f $dummy.c $dummy.o $dummy; exit 1' 1 2 15
+    sed 's/^	//' << EOF >$dummy.c
+	#include <stdio.h>
+	#include <gnu/libc-version.h>
+	int main (void) {
+	    printf("%s", gnu_get_libc_version());
+	}
+EOF
+    gcc $dummy.c -o $dummy
+    OS_VERSION=`$dummy | sed -e 's/^/glibc/'`
+    rm -f $dummy.c $dummy
+fi
+
+# Patch Solaris
+if [ "$OS" = "solaris" ]; then
+    # Adds the address space to the cpu if its 64bit
+	if [ `isainfo -b` = "64" ]; then
+		if [ "$CPU" = "i386" ]; then
+			CPU=x86_64
+		else	# will probably be sparc in this case
+			CPU="$CPU"_64
+		fi
+	fi
+fi
+
+# Patch Windows
+if [ "$OS" = "cygwin" ]; then
+    OS="windows"
+    CPU=""
+fi
+
+# Patch Windows
+if [ "$OS" = "mingw" ]; then
+    OS="windows"
+    OS_VERSION=""
+    CPU=""
+fi
+
+# Create NANGUESS string
+if [ -z "$OS_VERSION" ]; then
+    if [ -z "$CPU" ]; then
+	NANGUESS="$OS"
+    else
+	NANGUESS="$OS-$CPU"
+    fi
+else
+    NANGUESS="$OS-$OS_VERSION-$CPU"
+fi
+
+# Parse arguments
+if [ -z "$1" ]; then
+    # No arguments, just echo OS-VERSION-CPU
+    echo $NANGUESS
+elif [ "$1" = "-s" ]; then
+    # bourne shell output style
+    echo "CONFIG_GUESS=$NANGUESS; export CONFIG_GUESS;"
+    echo "CPU=$CPU; export CPU;"
+    echo "MANUFACTURER=$MANUFACTURER; export MANUFACTURER;"
+    echo "OS=$OS; export OS;"
+    echo "OS_VERSION=$OS_VERSION; export OS_VERSION;"
+fi

@@ -1,0 +1,2748 @@
+# Croatian Translation. Version 0.1
+# tommy5  tommy555@net.hr, 2004
+# Blender version: 2.32 
+#"Project-Id-Version: \n"
+#"POT-Creation-Date: \n"
+#"PO-Revision-Date: 2004-04-21 12:39+0100\n"
+#"Last-Translator: Tomislav Čorak <tommy555@net.hr>\n"
+#"Language-Team: \n"
+#"MIME-Version: 1.0\n"
+#"Content-Type: text/plain; charset=UTF-8\n"
+#"Content-Transfer-Encoding: 8bit\n"
+
+# #########################################################
+# #
+# #   Pulldown Menus
+# #
+# ##########################################################
+msgid "File"
+msgstr "Datoteka"
+
+msgid "New"
+msgstr "Nova..."
+
+msgid "Open..."
+msgstr "Otvori..."
+
+msgid "Reopen Last"
+msgstr "Otvori zadnju"
+
+msgid "Save"
+msgstr "Spremi"
+
+msgid "Save As..."
+msgstr "Spremi kao..."
+
+msgid "Save Image..."
+msgstr "Spremi sliku..."
+
+msgid "Save Default Settings"
+msgstr "Spremi pocetne postavke"
+
+msgid "Append..."
+msgstr "Pridodaj..."
+
+msgid "Import"
+msgstr "Uvoz"
+
+msgid "Export"
+msgstr "Izvoz"
+
+msgid "Pack Data"
+msgstr "Pakiraj podatke"
+
+msgid "Unpack Data..."
+msgstr "Odpakiraj podatke..."
+
+msgid "Quit Blender"
+msgstr "Izlaz"
+
+# ######### Save Image ####################################
+msgid "SAVE PNG"
+msgstr "Spremi PNG"
+
+msgid "SAVE TARGA"
+msgstr "Spremi TARGA"
+
+msgid "SAVE RAW TARGA"
+msgstr "Spremi RAW TARGA"
+
+msgid "SAVE IRIS"
+msgstr "Spremi IRIS"
+
+msgid "SAVE HAMX"
+msgstr "Spremi HAMX"
+
+msgid "SAVE FTYPE"
+msgstr "Spremi FTYPE"
+
+msgid "SAVE JPEG"
+msgstr "Spremi JPEG"
+
+msgid "SAVE IMAGE"
+msgstr "Spremi sliku"
+
+msgid "No image rendered"
+msgstr "Nema iscrtane slike"
+
+msgid "Select an image type in DisplayButtons(F10)"
+msgstr "Potrebno je odabrati format slike (F10)"
+
+#  Add  #########################################
+msgid "Add"
+msgstr "Dodati"
+
+msgid "Mesh"
+msgstr ""
+
+msgid "Curve"
+msgstr "Krivulja"
+
+msgid "Meta"
+msgstr ""
+
+msgid "Text"
+msgstr "Tekst"
+
+msgid "Camera"
+msgstr "Kamera"
+
+msgid "Lamp"
+msgstr "Svijetlo"
+
+msgid "Surface"
+msgstr "Površina"
+
+msgid "Armature"
+msgstr "Armatura"
+
+msgid "Empty"
+msgstr ""
+
+msgid "Lattice"
+msgstr ""
+
+msgid "Plane"
+msgstr "Ploha"
+
+msgid "Cube"
+msgstr "Kocka"
+
+msgid "Circle"
+msgstr "Krug"
+
+msgid "UVsphere"
+msgstr "UV kugla"
+
+msgid "IcoSphere"
+msgstr "Ico Kugla"
+
+msgid "Cylinder"
+msgstr "Cilindar"
+
+msgid "Tube"
+msgstr "Valjak"
+
+msgid "Cone"
+msgstr "Stožac"
+
+msgid "Grid"
+msgstr "Mreza"
+
+msgid "Monkey"
+msgstr "Majmun"
+
+msgid "Bezier Curve"
+msgstr "Bezierova krivulja"
+
+msgid "Bezier Circle"
+msgstr "Bezirov krug"
+
+msgid "NURBS Curve"
+msgstr "NURBS Krivulja"
+
+msgid "NURBS Circle"
+msgstr "NURBS Krug"
+
+msgid "Path"
+msgstr "Putanja"
+
+msgid "NURBS Surface"
+msgstr "NURBS Površina"
+
+msgid "NURBS Tube"
+msgstr "NURBS Valjak"
+
+msgid "NURBS Sphere"
+msgstr "NURBS Kugla"
+
+msgid "NURBS Donut"
+msgstr "NURBS Prsten"
+
+#   Help #######################################################
+msgid "Help"
+msgstr "Pomoć"
+
+msgid "About Blender..."
+msgstr "O Blenderu"
+
+msgid "Benchmark"
+msgstr "Test brzine"
+
+# Render  ############################################
+msgid "Render"
+msgstr ""
+
+msgid "Render Current Frame"
+msgstr ""
+
+msgid "Render Animation"
+msgstr ""
+
+msgid "Show Render Buffer"
+msgstr ""
+
+msgid "Play Back Renderd Animation"
+msgstr ""
+
+msgid "Set Render Border"
+msgstr ""
+
+msgid "Render Settings"
+msgstr ""
+
+# Timeline ##########################################
+msgid "Timeline"
+msgstr ""
+
+msgid "Show Keyframes"
+msgstr ""
+
+msgid "Show and Select Keyframes"
+msgstr ""
+
+msgid "Select Next Keyframe"
+msgstr ""
+
+msgid "Select Previous Keyframe"
+msgstr ""
+
+msgid "Next Keyframe"
+msgstr ""
+
+msgid "Previous Keyframe"
+msgstr ""
+
+msgid "Next Frame"
+msgstr ""
+
+msgid "Previous Frame"
+msgstr ""
+
+msgid "Forward 10 Frames"
+msgstr ""
+
+msgid "Back 10 Frames"
+msgstr ""
+
+msgid "End Frame"
+msgstr ""
+
+msgid "Start Frame"
+msgstr ""
+
+#  Game   #############################################
+msgid "Game"
+msgstr "Igra"
+
+msgid "Start Game"
+msgstr "Pokreni igru"
+
+msgid "Enable All Frames"
+msgstr ""
+
+msgid "Show Framerate and Profile"
+msgstr "Prikaži Framerate i profil"
+
+msgid "Show Debug Properties"
+msgstr "Prikaži Debug opcije"
+
+msgid "Autostart"
+msgstr ""
+
+# Object  #########################################
+msgid "Object"
+msgstr "Objekt"
+
+msgid "Move to Layer..."
+msgstr "Prebaci u sloj"
+
+msgid "Convert Object Type..."
+msgstr "Pretvoti u objekt tipa..."
+
+msgid "Join Objects..."
+msgstr "Spoji objekte"
+
+msgid "Join Objects"
+msgstr "Spoji objekte"
+
+msgid "Boolean Operation"
+msgstr "Booleove operacije"
+
+msgid "Track"
+msgstr ""
+
+msgid "Parent"
+msgstr "Roditelj"
+
+msgid "Make Track"
+msgstr ""
+
+msgid "Clear Track"
+msgstr ""
+
+msgid "Make Parent..."
+msgstr "Stvori roditeljsku vezu"
+
+msgid "Clear Parent..."
+msgstr "Obriši roditeljsku vezu"
+
+msgid "Copy Attributes..."
+msgstr "Kopiraj osobine"
+
+msgid "Copy Attributes"
+msgstr "Kopir aj osobinu"
+
+msgid "Location"
+msgstr "Lokacija"
+
+msgid "Rotation"
+msgstr "Rotacija"
+
+msgid "Size"
+msgstr "Veličina"
+
+msgid "Drawtype"
+msgstr "Način iscrtavanja"
+
+msgid "Time Offset"
+msgstr "Vremenski pomak"
+
+msgid "Dupli"
+msgstr "Duplikat"
+
+msgid "Mass"
+msgstr "Masa"
+
+msgid "Damping"
+msgstr "Odlaganje"
+
+msgid "Properties"
+msgstr "Značajke"
+
+msgid "Logic Bricks"
+msgstr ""
+
+msgid "Object Constrains"
+msgstr ""
+
+msgid "Texture Space"
+msgstr "Teksturni prostor"
+
+msgid "Subdiv"
+msgstr ""
+
+msgid "Make Single User..."
+msgstr ""
+
+msgid "Make Links"
+msgstr "Stvori veze"
+
+msgid "Make Links..."
+msgstr "Stvori veze"
+
+msgid "Object & ObData"
+msgstr ""
+
+msgid "Object & ObData & Materials+Tex"
+msgstr ""
+
+msgid "Materials+Tex"
+msgstr ""
+
+msgid "To Scene..."
+msgstr ""
+
+msgid "Object Ipo"
+msgstr ""
+
+msgid "Mesh Data"
+msgstr ""
+
+msgid "Materials"
+msgstr "Materijal"
+
+msgid "Delete"
+msgstr "Obriši"
+
+msgid "Insert Keyframe"
+msgstr "Ubaci ključni frame"
+
+msgid "Duplicate"
+msgstr "Kopiraj"
+
+msgid "Duplicate Linked"
+msgstr "Kopiraj povezano"
+
+msgid "Snap"
+msgstr "Poravnanje"
+
+msgid "Selection -> Grid"
+msgstr ""
+
+msgid "Selection -> Cursor"
+msgstr ""
+
+msgid "Cursor -> Grid"
+msgstr ""
+
+msgid "Cursor -> Selection"
+msgstr ""
+
+msgid "Selection -> Center"
+msgstr ""
+
+msgid "Transform"
+msgstr "Transformacija"
+
+msgid "Apply Size/Rotation"
+msgstr "Primjeni veličinu/rotaciju"
+
+msgid "Apply Deform"
+msgstr "Primjeni deformaciju"
+
+msgid "Apply Deformation"
+msgstr "Primjeni deformaciju"
+
+msgid "Clear Location"
+msgstr "Briši lokaciju"
+
+msgid "Clear Rotation"
+msgstr "Briši rotaciju"
+
+msgid "Clear Size"
+msgstr "Briši veličinu"
+
+msgid "Clear Origin"
+msgstr "Briši početnu točku objekta"
+
+msgid "Transform Properties"
+msgstr "Značajke trasformiranja"
+
+msgid "Edit"
+msgstr "Uređivanje"
+
+msgid "Enter Editmode"
+msgstr "Mod za uređivanje"
+
+msgid "Object Keys"
+msgstr "Ključevi objekta"
+
+msgid "Show/Hide"
+msgstr "Pokaži/sakrij"
+
+msgid "Select Next"
+msgstr "Oznaći slijedeće"
+
+msgid "Select Prev"
+msgstr "Označi predhodno"
+
+# View #########################################################
+msgid "View"
+msgstr "Pogled"
+
+msgid "Play Back Animation"
+msgstr ""
+
+msgid "Maximize Window"
+msgstr "Maksimiziraj prozor"
+
+msgid "View All"
+msgstr "Pogled na sve"
+
+msgid "View Selected"
+msgstr "Pogled na označeno"
+
+msgid "Align View"
+msgstr "Poravnaj pogled"
+
+msgid "View Navigation"
+msgstr "Navigacija pogleda"
+
+msgid "Center View to Cursor"
+msgstr "Centar pogleda prema kursoru"
+
+msgid "Align Active Camera to View"
+msgstr "Poravnaj kameru prema pogledu"
+
+msgid "Align View to Selected"
+msgstr "Poravnaj pogled prema označenom"
+
+msgid "Orbit Left"
+msgstr "Kruži lijevo"
+
+msgid "Orbit Right"
+msgstr "Kruži desno"
+
+msgid "Orbit Up"
+msgstr "Kruži gore"
+
+msgid "Orbit Down"
+msgstr "Kruži dolje"
+
+msgid "Pan Left"
+msgstr ""
+
+msgid "Pan Right"
+msgstr ""
+
+msgid "Pan Up"
+msgstr ""
+
+msgid "Pan Down"
+msgstr ""
+
+msgid "Zoom In"
+msgstr "Povećaj zum"
+
+msgid "Zoom Out"
+msgstr "Smanji zum"
+
+msgid "Reset Zoom"
+msgstr "Resetiraj zum"
+
+msgid "Global View"
+msgstr "Globalan pogled"
+
+msgid "Local View"
+msgstr "Lokalni pogled"
+
+msgid "Orthographic"
+msgstr "Ortogonalni pogled"
+
+msgid "Perspective"
+msgstr "Pogled iz perspektive"
+
+msgid "Side"
+msgstr "Bokocrt"
+
+msgid "Front"
+msgstr "Nacrt"
+
+msgid "Top"
+msgstr "Tlocrt"
+
+msgid "User"
+msgstr "Korisnik"
+
+msgid "Background Image..."
+msgstr "Pozadinska slika"
+
+msgid "View Properties"
+msgstr "Značajke Pogleda"
+
+# Select ################################
+msgid "Select"
+msgstr "Označi"
+
+msgid "Grouped"
+msgstr "Grupirano"
+
+msgid "Children"
+msgstr "Djeca"
+
+msgid "Immediate Children"
+msgstr "Neposredna djeca"
+
+msgid "Objects on Shared Layers"
+msgstr "Objekte na zajedničkim slojevima"
+
+msgid "Linked"
+msgstr "Povezano"
+
+msgid "ObData"
+msgstr ""
+
+msgid "Texture"
+msgstr ""
+
+msgid "Select All by Type"
+msgstr "Označi sve po tipu"
+
+msgid "Select All by Layer"
+msgstr "Označi sve po sloju"
+
+msgid "Select/Deselect All"
+msgstr "Označi sve/ništa"
+
+msgid "Border Select"
+msgstr "Označi granice"
+
+# transform  ##############################
+msgid "Grab/Move"
+msgstr "Pomakni"
+
+msgid "Grab/Move on Axis"
+msgstr "Pomakni po osi"
+
+msgid "Rotate"
+msgstr "Rotiraj"
+
+msgid "Rotate on Axis"
+msgstr "Rotiraj po osi"
+
+msgid "Scale"
+msgstr "Povećaj/smanji"
+
+msgid "Scale on Axis"
+msgstr "Povećaj/smanji po osi"
+
+msgid "Clear/Apply"
+msgstr "Briši/primjeni"
+
+msgid "Viewport Shading"
+msgstr "Prikaz objekata"
+
+msgid "Bounding Box"
+msgstr "Granična kocka"
+
+msgid "Wireframe"
+msgstr "Žičani okvir"
+
+msgid "Solid"
+msgstr "Ispunjeno"
+
+msgid "Shaded"
+msgstr "Sjenčano"
+
+msgid "Textured"
+msgstr "Texturirano"
+
+msgid "Ortho/Perspective"
+msgstr "Ortogonalno/perspektiva"
+
+msgid "Local/Global View"
+msgstr "Lokalni/globalni pogled"
+
+# #########################################################
+# #
+# #  Render Window
+# #
+# #########################################################
+msgid "Directory/name to save rendered Pics to"
+msgstr "Ime mape/datoteke za spremanje slika"
+
+msgid "Image to use as background for rendering"
+msgstr "Slika za pozadinu kod iscrtavanja"
+
+msgid "Backbuf"
+msgstr ""
+
+msgid "Enable/Disable use of Backbuf image"
+msgstr "Omogućuje korištenje pozadinske slike"
+
+msgid "Image to use with FTYPE Image type"
+msgstr ""
+
+msgid "Ftype"
+msgstr ""
+
+msgid "Scene to link as a Set"
+msgstr ""
+
+msgid "Remove Set link"
+msgstr ""
+
+msgid "Edge Settings |>> "
+msgstr ""
+
+msgid "Display edge settings"
+msgstr ""
+
+msgid "Edge"
+msgstr ""
+
+msgid "Enable Toon shading"
+msgstr "Omogućuje iscrtavanje rubova"
+
+msgid "Render window placement on screen"
+msgstr "Mjesto pojavljivanja iscrtane slike na ekranu"
+
+msgid "DispView"
+msgstr ""
+
+msgid "Sets render output to display in 3D view"
+msgstr "Prikazuje iscrtavanje u 3D Pogledu"
+
+msgid "DispWin"
+msgstr ""
+
+msgid "Sets render output to display in a seperate window"
+msgstr "Prikazuje iscrtavanje u posebnom prozoru"
+
+msgid "Extensions"
+msgstr ""
+
+msgid "Adds extensions to the output when rendering animations"
+msgstr "Dodaje nastavke iscrtanim datotekama"
+
+msgid "Start the rendering"
+msgstr "Pokreće iscrtavanje"
+
+msgid "OSA"
+msgstr ""
+
+msgid "Enables Oversampling (Anti-aliasing)"
+msgstr "Omogućuje zaglađivanje (Anti-aliasing)"
+
+msgid "Sets oversample level to 5"
+msgstr "Razina zaglađivanja 5"
+
+msgid "Sets oversample level to 8"
+msgstr "Razina zaglađivanja 8"
+
+msgid "Sets oversample level to 11"
+msgstr "Razina zaglađivanja 11"
+
+msgid "Sets oversample level to 16"
+msgstr "Razina zaglađivanja 16"
+
+msgid "MBLUR"
+msgstr ""
+
+msgid "Enables Motion Blur calculation"
+msgstr "Omogućuje zamućivanje pokreta"
+
+msgid "Sets motion blur factor"
+msgstr "Faktor zamućivanja"
+
+msgid "Xparts:"
+msgstr ""
+
+msgid "Sets the number of horizontal parts to render image in (For panorama sets number of camera slices)"
+msgstr "Broj vodoravnih podjeljaka slike kod iscrtavanja"
+
+msgid "Yparts:"
+msgstr ""
+
+msgid "Sets the number of vertical parts to render image in"
+msgstr "Broj okomitih podjeljaka slike kod iscrtavanja"
+
+msgid "Sky"
+msgstr ""
+
+msgid "Fill background with sky"
+msgstr ""
+
+msgid "Premul"
+msgstr ""
+
+msgid "Multiply alpha in advance"
+msgstr "Množenje alfa kanala unaprijed"
+
+msgid "Key"
+msgstr ""
+
+msgid "Alpha and colour values remain unchanged"
+msgstr "Vrijednosti boje i alfa kanala ostaju nepromijenjene"
+
+msgid "Shadow"
+msgstr ""
+
+msgid "Enable shadow calculation"
+msgstr "Omogućuje iscrtavanje sjene"
+
+msgid "Pan"
+msgstr ""
+
+msgid "Set render size to defined size"
+msgstr "Iscrtavanje u definiranim dimenzijama"
+
+msgid "Ray"
+msgstr ""
+
+msgid "Enable ray tracing"
+msgstr "Omogućuje raytracing"
+
+msgid "Radio"
+msgstr ""
+
+msgid "Enable radiosity rendering"
+msgstr "Omogućuje radiosity sjenčanje"
+
+msgid "EnvMap"
+msgstr ""
+
+msgid "Enable environment map renering"
+msgstr "Omogućuje mapiranje okoliša prije iscrtavanja slike"
+
+msgid "Enable panorama rendering (output width is multiplied by Xparts)"
+msgstr "Omogućuje iscrtavanje panoramske slike (širina se množi sa Xparts)"
+
+msgid "Set render size to 3/4 of defined size"
+msgstr "Iscrtavanje u 3/4 definirane dimenzije"
+
+msgid "Set render size to 1/2 of defined size"
+msgstr "Iscrtavanje u 1/2 definirane dimenzije"
+
+msgid "Set render size to 1/4 of defined size"
+msgstr "Iscrtavanje u 1/4 definirane dimenzije"
+
+msgid "Enables field rendering"
+msgstr "Omogućuje iscrtavanje parnih i neparnih linija"
+
+msgid "Odd"
+msgstr ""
+
+msgid "Enables Odd field first rendering (Default: Even field)"
+msgstr "Omogućuje iscrtavanje prvo neparnih linija"
+
+msgid "x"
+msgstr ""
+
+msgid "Disables time difference in field calculations"
+msgstr "Onemogućuje vremensku razliku za parne i neparne linije"
+
+msgid "Border"
+msgstr ""
+
+msgid "Render a small cut-out of the image"
+msgstr "Iscrtavanje isječka slike"
+
+msgid "Gamma"
+msgstr ""
+
+msgid "Enable gamma correction"
+msgstr "Omogućuje ispravljanje gama faktora"
+
+msgid "ANIM"
+msgstr ""
+
+msgid "Start rendering a sequence"
+msgstr "Iscrtavanje animacije"
+
+msgid "Do Sequence"
+msgstr ""
+
+msgid "Enables sequence output rendering (Default: 3D rendering)"
+msgstr "Omogućuje iscrtavanje sekvenci (Iz sekvencnog editora)"
+
+msgid "Render Daemon"
+msgstr ""
+
+msgid "Let external network render current scene"
+msgstr "Omogućuje uporabu mrežnog programa za iscrtavanje"
+
+msgid "PLAY"
+msgstr ""
+
+msgid "Play animation of rendered images/avi (searches Pics: field)"
+msgstr "Prikazuje iscrtanu animaciju ili niz slika"
+
+msgid "rt:"
+msgstr ""
+
+msgid "General testing/debug button"
+msgstr ""
+
+msgid "Sta:"
+msgstr ""
+
+msgid "The start frame of the animation"
+msgstr "Početna sličica animacije"
+
+msgid "End:"
+msgstr ""
+
+msgid "The end  frame of the animation"
+msgstr "Završni sličica animacije"
+
+msgid "Game framing settings >>"
+msgstr ""
+
+msgid "Display game framing settings"
+msgstr ""
+
+msgid "SizeX:"
+msgstr ""
+
+msgid "The image width in pixels"
+msgstr "Širina slike u pikselima"
+
+msgid "AspX:"
+msgstr ""
+
+msgid "The horizontal aspect ratio"
+msgstr "Vodoravni omjer širine i visine"
+
+msgid "SizeY:"
+msgstr ""
+
+msgid "The image height in scanlines"
+msgstr "Visina slike u linijama"
+
+msgid "AspY:"
+msgstr ""
+
+msgid "The vertical aspect ratio"
+msgstr "Vertikalni omjer širine i visine"
+
+msgid "Images are saved in this file format"
+msgstr "Format datoteke za spremanje slike/animacije "
+
+msgid "Set codec"
+msgstr ""
+
+msgid "Set codec settings for AVI"
+msgstr "Odabir kodera za AVI format"
+
+msgid "Quality: "
+msgstr ""
+
+msgid "Quality setting for JPEG images, AVI Jpeg and SGI movies"
+msgstr "Kvaliteta za JPEG slike, AVI Jpeg i SGI filmove"
+
+msgid "Frs/sec: "
+msgstr ""
+
+msgid "Frames per second"
+msgstr "Broj sličica u sekundi"
+
+msgid "Crop"
+msgstr ""
+
+msgid "Exclude border rendering from total image"
+msgstr "Izuzeti okvir slike iz konačne slike"
+
+msgid "BW"
+msgstr ""
+
+msgid "Images are saved with BW (grayscale) data"
+msgstr "Sprema crno-bijelu sliku (grayscale)"
+
+msgid "Images are saved with RGB (color) data"
+msgstr "Sprema sliku u bojama (RGB)"
+
+msgid "Images are saved with RGB and Alpha data (if supported)"
+msgstr "Sprema sliku u bojama i alfa kanal (ako format podržava)"
+
+msgid "PAL"
+msgstr ""
+
+msgid "Size preset: Image size - 720x576, Aspect ratio - 54x51, 25 fps"
+msgstr "Veličina slike: 720x576, omjer širine i visinee: 54x51, 25 sličica u sekundi"
+
+msgid "NTSC"
+msgstr ""
+
+msgid "Size preset: Image size - 720x480, Aspect ratio - 10x11, 30 fps"
+msgstr "Veličina slike:720x480, omjer širine i visinee: 10x11, 30 sličica u sekundi"
+
+msgid "Default"
+msgstr ""
+
+msgid "Same as PAL, with render settings (OSA, Shadows, Fields)"
+msgstr "Kao PAL, uključeno zaglađivanje, sjene i iscrtavanje po linijama"
+
+msgid "Preview"
+msgstr ""
+
+msgid "Size preset: Image size - 640x512, Render size 50%"
+msgstr "Veličina slike: 640x512 na 50 posto"
+
+msgid "PC"
+msgstr ""
+
+msgid "Size preset: Image size - 640x480, Aspect ratio - 100x100"
+msgstr "Veličina slike: 640x480, omjer širine i visinee: 64x45"
+
+msgid "PAL 16:9"
+msgstr ""
+
+msgid "Size preset: Image size - 720x576, Aspect ratio - 64x45"
+msgstr "Veličina slike: 720x576, omjer širine i visinee: 64x45"
+
+msgid "PANO"
+msgstr ""
+
+msgid "Standard panorama settings"
+msgstr "Postavke za panoramski prikaz slike"
+
+msgid "FULL"
+msgstr ""
+
+msgid "Size preset: Image size - 1280x1024, Aspect ratio - 1x1"
+msgstr "Veličina slike: 1280x1024, omjer širine i visinee: 1x1"
+
+msgid "Unified Renderer"
+msgstr ""
+
+msgid "Use the unified renderer."
+msgstr ""
+
+# #########################################################
+# #
+# #  General Messages, Need's testing
+# #
+# #########################################################
+msgid "QUIT BLENDER"
+msgstr "IZLAZ IZ BLENDERA"
+
+msgid "Not allowed "
+msgstr "Nije dozvoljeno"
+
+msgid "Open file: "
+msgstr "Otvori:"
+
+msgid "ERASE ALL"
+msgstr "Obriši sve"
+
+msgid "ERROR: %s"
+msgstr "GREŠKA: %s"
+
+msgid "Erase All"
+msgstr "Obriši sve"
+
+msgid "OK?"
+msgstr "U redu?"
+
+# #########################################################
+# #
+# #  FileSelect Commands
+# #
+# #########################################################
+msgid "Open"
+msgstr "Otvori"
+
+msgid "Save As"
+msgstr "Spremi"
+
+msgid "Cancel"
+msgstr "Odustani"
+
+msgid "Sorts files alphabetically"
+msgstr "Poredak po abecedi"
+
+msgid "Sorts files by time"
+msgstr "Poredak po datumu"
+
+msgid "Sorts files by size"
+msgstr "Poredak po veličini"
+
+msgid "Toggles long info"
+msgstr "Manje/više informacija"
+
+msgid "Hides dot files"
+msgstr "Skriva datoteke samo sa ekstenzijom"
+
+msgid "Move to the parent directory (PKEY)"
+msgstr "Predhodna mapa (tipka P)"
+
+msgid "Open file: %s"
+msgstr "Otvori: %s"
+
+msgid "Load Library"
+msgstr "Otvori biblioteku"
+
+msgid "Link"
+msgstr "Veza"
+
+msgid "Creates a link to selected data from current project"
+msgstr "Stvara vezu na označene podatke iz trenutnog projekta"
+
+# ####  Image Browser  ##############
+msgid "Toggles display of directory information"
+msgstr "Prikaz informacija o mapi"
+
+msgid "Toggles display of selected image information"
+msgstr "Prikaz informacija o označenoj slici"
+
+msgid "Toggles magnified view of thumbnail of images under mouse pointer"
+msgstr "Povećava sličicu ispod kursora"
+
+# #########################################################
+# #
+# #  General window stuff
+# #
+# #########################################################
+msgid "Object Mode "
+msgstr "Objektni mod "
+
+msgid "Edit Mode "
+msgstr "Editni mod "
+
+msgid "3D View "
+msgstr "3D Pogled"
+
+msgid "Displays Current Window Type. Click for menu of available types."
+msgstr "Prikazuje trenutni tip prozora. Klikni za izbor."
+
+msgid "Zooms view to area"
+msgstr "Zumiraj pogled"
+
+msgid "Makes current window full screen (CTRL+Down arrow)"
+msgstr "Proširuje trenutni prozor na cijeli ekran"
+
+msgid "Returns to multiple views window (CTRL+Up arrow)"
+msgstr "Vraća prošireni prozor u predhodno stanje"
+
+msgid "Lamp buttons"
+msgstr "Kontrole svijetla"
+
+msgid "Material buttons"
+msgstr "Kontrole materijala"
+
+msgid "Texture buttons(F6) "
+msgstr "Kontrole teksture"
+
+msgid "Object (F7) "
+msgstr "Objekt (F7)"
+
+msgid "Realtime buttons (F8) "
+msgstr ""
+
+msgid "Editing (F9) "
+msgstr "Geometrija (F9)"
+
+msgid "Constraint buttons"
+msgstr "Kontrole ograničenja"
+
+msgid "Sound block buttons"
+msgstr "Kontrole zvuka"
+
+msgid "World buttons"
+msgstr "Kontrole svijeta"
+
+msgid "Paint buttons"
+msgstr ""
+
+msgid "Radiosity buttons"
+msgstr "Radiosity kontrole"
+
+msgid "Script "
+msgstr "Skripta"
+
+msgid "Scene (F10) "
+msgstr "Scena (F10)"
+
+msgid "Logic (F4) "
+msgstr ""
+
+msgid "Shading (F5) "
+msgstr "Sjenčanje (F5)"
+
+msgid "Render buttons "
+msgstr "Kontrole iscrtavanja"
+
+msgid "Anim/playback buttons"
+msgstr "Kontrole animacije i prikaza animacije"
+
+msgid "Panels"
+msgstr "Paneli"
+
+msgid "Horizontal Align"
+msgstr "Vodoravno poravnanje"
+
+msgid "Vertical Align"
+msgstr "Okomito poravnanje"
+
+msgid "Free Align"
+msgstr "Bez poravnanja"
+
+msgid "Browses existing choices or adds NEW"
+msgstr "Odabir postojećeg ili dodavanje novog"
+
+msgid "Displays current Datablock name. Click to change."
+msgstr "Prikazuje ime trenutnog podatkovnog bloka. Klikni za promjenu."
+
+msgid "Displays number of users of this data. Click to make a single-user copy."
+msgstr "Prikazuje broj korisnika ovih podataka. Klikni za jednokorisničku kopiju."
+
+msgid "Deletes link to this Datablock"
+msgstr "Briše vezu na podatkovni link"
+
+msgid "Saves this datablock even if it has no users"
+msgstr "Sprema podatkovni blok iako se ne koristi"
+
+msgid "Displays Current Frame of animation. Click to change."
+msgstr "Prikaz trenutne sličice u animaciji. Klikni za promjenu."
+
+msgid "Toggles Blender to fullscreen mode"
+msgstr "Cijeli ekran/prozor"
+
+msgid "Hides pulldown menus"
+msgstr "Skriva izbornike"
+
+msgid "Enables display of pulldown menus"
+msgstr "Prikazuje izbornike"
+
+# ####### Header ##############################
+msgid "Header "
+msgstr "Zaglavlje"
+
+msgid "Bottom "
+msgstr "Dolje"
+
+msgid "No Header "
+msgstr "Bez Zaglavlja"
+
+# #########################################################
+#  OOPS Schematic
+# #########################################################
+msgid "Zooms view (CTRL+MiddleMouse)"
+msgstr "Zumiranje (CTRL+srednja tipka miša"
+
+msgid "Displays Objects based on layer"
+msgstr ""
+
+msgid "Displays Scene data"
+msgstr ""
+
+msgid "Displays Object data"
+msgstr ""
+
+msgid "Displays Mesh data"
+msgstr ""
+
+msgid "Displays Curve/Surface/Font data"
+msgstr ""
+
+msgid "Displays Metaball data"
+msgstr ""
+
+msgid "Displays Lattice data"
+msgstr ""
+
+msgid "Displays Lamp data"
+msgstr ""
+
+msgid "Displays Material data"
+msgstr ""
+
+msgid "Displays Texture data"
+msgstr ""
+
+msgid "Displays Ipo data"
+msgstr ""
+
+msgid "Displays Image data"
+msgstr ""
+
+msgid "Displays Library data"
+msgstr ""
+
+# #########################################################
+# #  Text Editor
+# #########################################################
+msgid "Hides line numbers"
+msgstr "Sakriva brojeve linija"
+
+msgid "Displays line numbers"
+msgstr "Prikazuje brojeve linija"
+
+msgid "Open Text File"
+msgstr "Otvori tekstuanu datoteku"
+
+msgid "SAVE TEXT FILE"
+msgstr "Spremi tekst"
+
+msgid "Save over?"
+msgstr ""
+
+msgid "Create new file?"
+msgstr ""
+
+msgid "Unable to save file"
+msgstr "Datoteka se ne može spremiti"
+
+msgid "Jump..."
+msgstr "Skoči na..."
+
+msgid "Find..."
+msgstr "Traži..."
+
+msgid "Find Again"
+msgstr "Traži ponovno"
+
+msgid "Cut"
+msgstr "Izreži"
+
+msgid "Copy"
+msgstr "Kopiraj"
+
+msgid "Paste"
+msgstr "Zalijepi"
+
+# #########################################################
+# #
+# #  Audio Timeline
+# #
+# #########################################################
+msgid "SELECT WAV FILE"
+msgstr "Otvori WAV zvučnu datoteku"
+
+msgid "OPEN NEW"
+msgstr "Otvori novo"
+
+# #########################################################
+# #
+# #  Video Sequence Editor
+# #
+# #########################################################
+msgid "Toggles image display"
+msgstr "Mijenja prikaz slike"
+
+msgid "Clear"
+msgstr "Obriši"
+
+msgid "Forces a clear of all buffered images in memory"
+msgstr "Briše sve slike iz međuspremnika"
+
+# #########################################################
+# #
+# #  NLA Editor
+# #
+# #########################################################
+msgid "Toggles forced redraw of other windows to reflect changes in real time"
+msgstr ""
+
+# #########################################################
+# #
+# #  Action Editor
+# #
+# #########################################################
+msgid "Bake"
+msgstr ""
+
+msgid "Keeps this view displaying the current data regardless of what object is selected"
+msgstr ""
+
+# #########################################################
+# #
+# #  IPO Curve Editor
+# #
+# #########################################################
+msgid "Copies the selected curves to the buffer"
+msgstr "Kopira označene krivulje u međuspremnik"
+
+msgid "Pastes the curves from the buffer"
+msgstr "Zaljepi krivulje iz međuspremnika"
+
+# #########################################################
+# #
+# #  3D ViewPort
+# #
+# #########################################################
+msgid "Toggles Layer visibility"
+msgstr "Prikazuje/Skriva slojeve"
+
+msgid "Locks layers and used Camera to Scene"
+msgstr ""
+
+msgid "Viewport Shading (Hotkeys: Z, Shift Z, Ctrl Z, Alt Z,"
+msgstr "Sjenčanje 3D prozora"
+
+msgid "Bounding Box "
+msgstr "Granična kocka"
+
+msgid "Wireframe "
+msgstr "Žičani okvir"
+
+msgid "Solid "
+msgstr "Ispunjeno"
+
+msgid "Shaded "
+msgstr "Sjenčano"
+
+msgid "Textured "
+msgstr "Texturirano"
+
+msgid "Rotation/Scaling Pivot (Hotkeys: Comma, Period) "
+msgstr "Os rotiranja/skaliranja"
+
+msgid "Individual Object Centers "
+msgstr "Centar svakog objekta"
+
+msgid "3D Cursor "
+msgstr "3D kursor"
+
+msgid "Median Point "
+msgstr "Aritmeticka sredina"
+
+msgid "Bounding Box Center "
+msgstr "Centar granicne kocke"
+
+msgid "Toggles FaceSelect Mode (FKEY)"
+msgstr ""
+
+msgid "Copies the current pose to the buffer"
+msgstr ""
+
+msgid "Pastes the pose from the buffer"
+msgstr ""
+
+msgid "Pastes the mirrored pose from the buffer"
+msgstr ""
+
+msgid "Renders this view (Hold SHIFT for Anim render)"
+msgstr ""
+
+# #########################################
+# Object (F7)
+# #########################################
+# ######## Draw #########
+msgid "Drawtyp"
+msgstr " Tip prikaza"
+
+msgid "Sets the drawing type of the active object"
+msgstr "Određuje način prikaza objekta"
+
+msgid "Bounds"
+msgstr "Granice"
+
+msgid "Displays the active object's bounds"
+msgstr "Prikaz obrisa (granica) aktivnog objekta"
+
+msgid "Selects the boundary display type"
+msgstr "Vrsta oblika prikaza granice objekta"
+
+msgid "Wire"
+msgstr "Žica"
+
+msgid "Display the active object's wireframe in shaded drawing modes"
+msgstr "Prikazuje rubove aktivnog objekta u sjenčanom načinu prikaza"
+
+msgid "Axis"
+msgstr "Osi"
+
+msgid "Displays the active object's center and axis"
+msgstr "Prikazuje centar i osi aktivnog objekta"
+
+msgid "TexSpace"
+msgstr ""
+
+msgid "Displays the active object's texture space"
+msgstr "Prikazuje teksturni prostor aktivnog objekta"
+
+msgid "Name"
+msgstr "Ime"
+
+msgid "Displays the active object's name"
+msgstr "Prikazuje ime aktivnog objekta"
+
+# #########################################
+# Edit Mode (F9)
+# #########################################
+# ########### Link and Materials #######
+msgid "AutoTexSpace"
+msgstr ""
+
+msgid "Adjusts active object's texture space automatically when transforming object"
+msgstr "Automatski prilagođava koordinate teksture pri transformaciji objekta"
+
+msgid "Displays total number of material indices and the current index"
+msgstr "Prikazuje broj materijala pridruženih objektu i broj aktivnog materijala"
+
+msgid "In EditMode, sets the active material index from selected faces"
+msgstr "U Edit modu, pridružuje aktivni index materijala sa označenih faceova"
+
+msgid "Adds a new Material index"
+msgstr "Dodaje novi indeks materijala"
+
+msgid "Deletes this Material index"
+msgstr "Briše indeks materijala"
+
+msgid "Assign"
+msgstr "Pridruži"
+
+msgid "In EditMode, assigns the active index to selected faces"
+msgstr "U Edit modu, pridružuje aktivni index materijala na označene faceove"
+
+msgid "In EditMode, selects faces that have the active index"
+msgstr "U Edit modu, označuje faceove sa aktivnim indexom"
+
+msgid "Deselect"
+msgstr ""
+
+msgid "Deselects everything with current indexnumber"
+msgstr "Odznačuje sve s trenutnim brojem indeksa"
+
+msgid "Set Smooth"
+msgstr ""
+
+msgid "In EditMode, 	 'smooth' rendering of selected faces"
+msgstr "U Edit modu, zaglađuje označene faceove"
+
+msgid "Set Solid"
+msgstr ""
+
+msgid "In EditMode, sets 'solid' rendering of selected faces"
+msgstr "U Edit modu, 'ravna' označene faceove"
+
+msgid "Vertex Groups"
+msgstr ""
+
+msgid "Browses available vertex groups"
+msgstr "Pretražuje postojeće vertex grupe"
+
+msgid "Displays current vertex group name. Click to change. (Match bone name for deformation.)"
+msgstr "Prikazuje ime trenutne vertex grupe. Klikni za promjenu. (Uskladi s imenom kosti, za deformacije)"
+
+msgid "Weight:"
+msgstr ""
+
+msgid "Sets the current vertex group's bone deformation strength"
+msgstr "Postavlja jačinu deformacije kosti za trenutnu vertex grupu"
+
+msgid "Creates a new vertex group"
+msgstr "Stvara vertex grupu"
+
+msgid "Removes the current vertex group"
+msgstr "Briše vertex grupu"
+
+msgid "Assigns selected vertices to the current vertex group"
+msgstr "Pridružuje označene točke u grupu"
+
+msgid "Remove"
+msgstr ""
+
+msgid "Removes selected vertices from the current vertex group"
+msgstr "Briše označene točke iz trenutne grupe"
+
+msgid "Selects vertices belonging to the current vertex group"
+msgstr "Označuje točke koje pripadaju trenutnoj grupi"
+
+msgid "Desel."
+msgstr ""
+
+msgid "Deselects vertices belonging to the current vertex group"
+msgstr "Odznačuje točke koje pripadaju trenutnoj grupi"
+
+# ########### Mesh Tools 1  ##################
+msgid "Hide"
+msgstr ""
+
+msgid "Hides selected faces"
+msgstr "Skriva označene faceove"
+
+msgid "Reveal"
+msgstr ""
+
+msgid "Reveals selected faces"
+msgstr "Otkriva označene faceove"
+
+msgid "Select Swap"
+msgstr ""
+
+msgid "Selects unselected faces, and deselects selected faces"
+msgstr "Označava odznačeno i obratno"
+
+msgid "NSize:"
+msgstr ""
+
+msgid "Sets the length to use when displaying face normals"
+msgstr "Dužina prikaza normale"
+
+msgid "Draw Normals"
+msgstr ""
+
+msgid "Displays face normals as line"
+msgstr "Prikazuje normale faceova"
+
+msgid "Draw Faces"
+msgstr ""
+
+msgid "Displays all faces as shades"
+msgstr "Prikazuje lagano sjenčane facove"
+
+msgid "Draw Edges"
+msgstr ""
+
+msgid "Displays selected edges using hilights"
+msgstr "Prikazuje označene rubove"
+
+msgid "All edges"
+msgstr ""
+
+msgid "Displays all edges in object mode without optimisation"
+msgstr "Prikazuje  sve rubove u objektnom modu, bez optimizacije"
+
+# ########### Mesh ##########
+msgid "Center"
+msgstr ""
+
+msgid "Shifts object data to be centered about object's origin"
+msgstr "Centrira objekt oko njegova ishodišta"
+
+msgid "Center New"
+msgstr ""
+
+msgid "Shifts object's origin to center of object data"
+msgstr "Premješta ishodište objekta na njegovo težište"
+
+msgid "Center Cursor"
+msgstr ""
+
+msgid "Shifts object's origin to cursor location"
+msgstr "Premješta ishodište objekta na lokaciju 3d kursora"
+
+msgid "Auto Smooth"
+msgstr ""
+
+msgid "Treats all faces with angles less than Degr: as 'smooth' during render"
+msgstr "Svi faceovi sa kutom manjim od Degr: biti će zaglađrni"
+
+msgid "Degr:"
+msgstr "Degr:"
+
+msgid "Defines maximum angle between face normals that 'Auto Smooth' will operate on"
+msgstr "Maximalan kut do kojeg će raditi Auto Smooth"
+
+msgid "SubSurf"
+msgstr ""
+
+msgid "Treats the active object as a Subdivision Surface"
+msgstr "Subdivision Surface - podjela faceova"
+
+msgid "Selects type of Subsurf algorithm."
+msgstr "Odabir Subsurf algoritma"
+
+msgid "Defines the level of subdivision to display in real time interactively"
+msgstr "Broj podjela objekta u 3D prikazu"
+
+msgid "Defines the level of subdivision to apply during rendering"
+msgstr "Broj podjela objekta u iscrtavanju slike"
+
+msgid "Optimal"
+msgstr ""
+
+msgid "Only draws optimal wireframe"
+msgstr "Optimalni prikaz žičanog okvira objekta"
+
+msgid "Double Sided"
+msgstr ""
+
+msgid "Toggles selected faces as doublesided or single-sided"
+msgstr "Dvostrani faceovi"
+
+msgid "Sticky"
+msgstr ""
+
+msgid "Make"
+msgstr ""
+
+msgid "Creates Sticky coordinates for the active object from the current camera view background picture"
+msgstr "Stvara ljepljive koordinate aktivnog objekta iz pozadinske slike trenutnog pogleda kamere"
+
+msgid "Deletes Sticky texture coordinates"
+msgstr "Briše ljepljive koordinate"
+
+msgid "VertCol"
+msgstr ""
+
+msgid "Enables vertex colours painting on active object"
+msgstr "Omogućuje bojanje vertexa aktivnog objekta"
+
+msgid "TexFace"
+msgstr ""
+
+msgid "Enables the active object's faces for UV coordinate mapping"
+msgstr "Omogućuje faceove aktivnog objekta da prime UV koordinate"
+
+msgid "Deletes vertex colours on active object"
+msgstr "Berše vertex boje aktivnog objekta"
+
+msgid "Deletes UV coordinates for active object's faces"
+msgstr "Berše UV koordinate aktivnog objekta"
+
+msgid "TexMesh:"
+msgstr ""
+
+msgid "Enter the name of a Meshblock"
+msgstr "Upiši ime Mesh bloka"
+
+msgid "Decimator:"
+msgstr ""
+
+msgid "Defines the number of trianglar faces to decimate the active Mesh object to"
+msgstr "Broj trokutastih faceova na koje treba smanjiti aktivni mesh"
+
+msgid "Restores the Mesh to its original number of faces"
+msgstr "Vraća mesh na originalni broja faceova"
+
+msgid "Apply"
+msgstr ""
+
+msgid "Applys the decimation to the active Mesh object"
+msgstr "Smanjuje brij faceova"
+
+# ##############  Mesh Tools  #############
+msgid "Extrude"
+msgstr ""
+
+msgid "Converts selected edges to faces and selects the new vertices"
+msgstr "'Izvlači' označene rubove i facove, i označuje nove točke"
+
+msgid "Spin Dup"
+msgstr ""
+
+msgid "Creates copies of the selected vertices in a circle around the cursor in the indicated viewport"
+msgstr "Stvara kopije označenih točaka u krugu oko kursora prema trenutnom Pogledu"
+
+msgid "Spin"
+msgstr ""
+
+msgid "Extrudes the selected vertices in a circle around the cursor in the indicated viewport"
+msgstr "'Izvlači' označene točke oko kursora prema trenutnom Pogledu"
+
+msgid "Screw"
+msgstr ""
+
+msgid "Activates the screw tool"
+msgstr "Aktivira alat za uvijanje"
+
+msgid "Extrude Dup"
+msgstr ""
+
+msgid "Creates copies of the selected vertices in a straight line away from the current viewport"
+msgstr "Stvara kopije označenih točaka u smjeru pravca od trenutnog Pogleda"
+
+msgid "Specifies the number of degrees 'Spin' revolves"
+msgstr "Broj stupnjeva kod zakretanja (Spin)"
+
+msgid "Steps:"
+msgstr ""
+
+msgid "Specifies the total number of 'Spin' slices"
+msgstr "Broj koraka zakretanja"
+
+msgid "Turns:"
+msgstr ""
+
+msgid "Specifies the number of revolutions the screw turns"
+msgstr "Broj punih orketa kod uvijanja"
+
+msgid "Clockwise"
+msgstr ""
+
+msgid "Specify the direction for 'Screw' and 'Spin'"
+msgstr "Smjer zakretanja i uvijanja"
+
+msgid "Keep Original"
+msgstr ""
+
+msgid "Keeps a copy of the original vertices and faces after executing tools"
+msgstr "Zadržava originalne točke i faceove poslje 'izvlačenja'"
+
+msgid "Offset:"
+msgstr ""
+
+msgid "Set the distance between each copy for 'Extrude Dup'"
+msgstr "Udaljenost između kopija 'Extrude Dup'"
+
+msgid "Beauty"
+msgstr ""
+
+msgid "Causes 'Subdivide' to split faces in halves instead of quarters"
+msgstr "Dijeli faceove na polovine umjesto na četvrtine"
+
+msgid "Split"
+msgstr ""
+
+msgid "Flatterns angles of selected faces"
+msgstr "Odvaja označene faceove"
+
+msgid "To Sphere"
+msgstr ""
+
+msgid "Moves selected vertices outwards into a spherical shape"
+msgstr "Pomiče označene točke prema van u oblik kugle"
+
+msgid "Subdivide"
+msgstr ""
+
+msgid "Splits selected faces into halves or quarters"
+msgstr "Dijeli označene faceove u polovine ili četvrtine"
+
+msgid "Fract Subd"
+msgstr ""
+
+msgid "Subdivides selected faces with random factor"
+msgstr "Dijeli označene faceove nasumično"
+
+msgid "Use vertex coordinate as texture coordinate"
+msgstr "Uzima koordinate točaka (vertexa) za koordinate teksture"
+
+msgid "Smooth"
+msgstr ""
+
+msgid "Flatten angles of selected faces"
+msgstr "Zaglađuje kuteve među označenim faceovima"
+
+msgid "Xsort"
+msgstr ""
+
+msgid "Sorts selected vertice data in the X direction"
+msgstr "Indeksira označene točke u X smjeru"
+
+msgid "Hash"
+msgstr ""
+
+msgid "Randomizes selected vertice sequence data"
+msgstr "Nasumični poredak u indeksiranju točaka"
+
+msgid "Limit:"
+msgstr ""
+
+msgid "Specifies the max distance 'Rem Doubles' will consider vertices as 'doubled'"
+msgstr "Maksimalna udanjenost za koju 'Rem Doubles' smatra točke duplikatima"
+
+msgid "Rem Doubles"
+msgstr ""
+
+msgid "Removes duplicates from selected vertices"
+msgstr "Briše duplicirane među označenim točkama"
+
+msgid "Flip Normals"
+msgstr ""
+
+msgid "Toggles the direction of the selected face's normals"
+msgstr "Mijenja smijer normale označenih faceova"
+
+msgid "SlowerDraw"
+msgstr ""
+
+msgid "Displays the active object whit all possible edges shown"
+msgstr "Spori prikaz aktivnog objekta, iscrtani svim rubovi"
+
+msgid "FasterDraw"
+msgstr ""
+
+msgid "Displays the active object faster by omitting some edges when drawing"
+msgstr "Brži prikaz aktivnog objekta, optimizirani rubovi"
+
+# #########################################
+# Material editor
+# #########################################
+# ##########  Material ##############
+msgid "Links material to object"
+msgstr "Veže materijal za objekt"
+
+msgid "Shows the block the material is linked to"
+msgstr "Prikazuje blok na koji je vezan materijal"
+
+msgid "Shows the number of materials on object and the active material"
+msgstr "Prikaz broja materijala na objektu i broj aktivnog materijala"
+
+msgid "Copies Material to the buffer"
+msgstr "Kopira materijal u međuspremnik"
+
+msgid "Pastes Material from the buffer"
+msgstr "Vraća materijal iz međuspremnika"
+
+msgid "Sets the basic colour of the material"
+msgstr "Osnovna boja materijala"
+
+msgid "Spec "
+msgstr ""
+
+msgid "Sets the specular colour of the material"
+msgstr "Specular boja materijala"
+
+msgid "Mir"
+msgstr ""
+
+msgid "Sets the mirror colour of the material"
+msgstr "Mirror boja materijala"
+
+msgid "RGB"
+msgstr ""
+
+msgid "Creates colour using red, green and blue"
+msgstr "Dobivanje boje iz crvene, zelene i plave komponente"
+
+msgid "HSV"
+msgstr ""
+
+msgid "Creates colour using hue, saturation and value"
+msgstr "Dobivanje boje pomoću nijanse, zasićenosti i vrijednosti"
+
+msgid "DYN"
+msgstr ""
+
+msgid "VCol Light"
+msgstr ""
+
+msgid "Adds vertex colours as extra light"
+msgstr "Dodaje vertex boje kao posebno svijetlo"
+
+msgid "VCol Paint"
+msgstr ""
+
+msgid "Replaces material's colours with vertex colours"
+msgstr "Zamjenjuje boju materijala sa vertex bojama"
+
+msgid "Sets UV-Editor assigned texture as color and texture info for faces"
+msgstr "Pridružuje texturu i boje iz UV-Editora"
+
+msgid "Shadeless"
+msgstr ""
+
+msgid "Makes material insensitive to light or shadow"
+msgstr "Materijal ne prima svjetlost i sjene"
+
+msgid "Renders only the edges of faces as a wireframe"
+msgstr "Iscrtava rubove face-ova tj. žičani okvir"
+
+msgid "ZInvert"
+msgstr ""
+
+msgid "Renders material's faces with inverted Z Buffer"
+msgstr "Iscrtavanje face-ova sa invertiranim Z međuspremnikom"
+
+msgid "Zoffs:"
+msgstr ""
+
+msgid "Gives faces an artificial offset in the Z buffer"
+msgstr ""
+
+msgid "Alpha"
+msgstr "Alfa kanal - prozirnost"
+
+msgid "Adjusts parameters for dynamics options"
+msgstr "Parametri za dinamička (fizikalna) svojstva "
+
+msgid "Restitut "
+msgstr ""
+
+msgid "Elasticity of collisions"
+msgstr "Elastičnost sudara"
+
+msgid "Friction "
+msgstr ""
+
+msgid "Coulomb friction coefficient"
+msgstr "Koeficijent trenja"
+
+msgid "Fh Force "
+msgstr ""
+
+msgid "Upward spring force within the Fh area"
+msgstr "Gornja vrijednost opružne sile u Fh području"
+
+msgid "Fh Damp "
+msgstr ""
+
+msgid "Damping of the Fh spring force"
+msgstr "Prigušenje Fh opružne sile"
+
+msgid "Fh Dist "
+msgstr ""
+
+msgid "Height of the Fh area"
+msgstr "Visina Fh područja"
+
+msgid "Fh Norm"
+msgstr ""
+
+msgid "Add a horizontal spring force on slopes"
+msgstr "Dodaje vodoravnu opružnu silu na kosini"
+
+msgid "Sets the colour of the halo with the RGB sliders"
+msgstr "Boja aureole (kruga svjetlosti)"
+
+msgid "Line"
+msgstr ""
+
+msgid "Sets the colour of the lines with the RGB sliders"
+msgstr "Boja linija"
+
+msgid "Ring"
+msgstr ""
+
+msgid "Sets the colour of the rings with the RGB sliders"
+msgstr "Boja prstena"
+
+# ########## SHaders  ###############
+msgid "IOR "
+msgstr ""
+
+msgid "Sets the angular index of refraction for raytrace"
+msgstr "Kutni index refrakcije "
+
+msgid "Ref   "
+msgstr ""
+
+msgid "Sets the amount of reflection"
+msgstr "Iznos refleksije (svjetla)"
+
+msgid "Amb  "
+msgstr ""
+
+msgid "Sets the amount of global ambient color the material receives"
+msgstr "Iznos koliko boje prima materijal od okoline"
+
+msgid "Emit "
+msgstr ""
+
+msgid "Sets the amount of light the material emits"
+msgstr "Iznos emitiranog svjetla s površine materijala"
+
+msgid "Traceable"
+msgstr ""
+
+msgid "Makes material cast shadows in spotlights"
+msgstr "Materijal stvara sjene"
+
+msgid "Makes material receive shadows from spotlights"
+msgstr "Materijal prima sjene"
+
+# ### Halo 
+msgid "HaloSize: "
+msgstr ""
+
+msgid "Sets the dimension of the halo"
+msgstr "Veličina aureole (kruga svijetlosti)"
+
+msgid "Hard "
+msgstr ""
+
+msgid "Sets the hardness of the halo"
+msgstr "'Tvrdoća' aureole"
+
+msgid "Add  "
+msgstr ""
+
+msgid "Sets the strength of the add effect"
+msgstr "Jačina efekta dodavanja (multipleksiranje)"
+
+msgid "Rings: "
+msgstr ""
+
+msgid "Sets the number of rings rendered over the halo"
+msgstr "Broj prstenja oko aureole"
+
+msgid "Lines: "
+msgstr ""
+
+msgid "Sets the number of star shaped lines rendered over the halo"
+msgstr "Broj linija iz aureole"
+
+msgid "Star: "
+msgstr ""
+
+msgid "Sets the number of points on the star shaped halo"
+msgstr "Broj vrhova zvijezde"
+
+msgid "Seed: "
+msgstr ""
+
+msgid "Randomizes ring dimension and line location"
+msgstr "Nasumična veličina prstenja i smjer linija"
+
+msgid "FlareSize: "
+msgstr ""
+
+msgid "Sets the factor by which the flare is larger than the halo"
+msgstr "Faktor veličine bljeska u odnosu na aureolu"
+
+msgid "Sub Size: "
+msgstr ""
+
+msgid "Sets the dimension of the subflares, dots and circles"
+msgstr "Veličina odbljeska, točaka i krugova"
+
+msgid "Boost: "
+msgstr ""
+
+msgid "Gives the flare extra strength"
+msgstr "Dodatna jačina efekta bljeska"
+
+msgid "Fl.seed: "
+msgstr ""
+
+msgid "Specifys an offset in the seed table"
+msgstr "Pomak u redosljedu podbljeskova"
+
+msgid "Flares: "
+msgstr ""
+
+msgid "Sets the nuber of subflares"
+msgstr "Broj podbljeskova"
+
+msgid "Flare"
+msgstr ""
+
+msgid "Renders halo as a lensflare"
+msgstr "Uključuje efekt odbljeska svjetla na leći kamere"
+
+msgid "Renders rings over halo"
+msgstr "Uključuje prstenje oko aureole"
+
+msgid "Renders star shaped lines over halo"
+msgstr "Uključuje linije oko aureole"
+
+msgid "Star"
+msgstr ""
+
+msgid "Renders halo as a star"
+msgstr "Zvijezdasti oblik aureole "
+
+msgid "Renders material as a halo"
+msgstr "Iscrtavanje materijala kao aureole"
+
+msgid "HaloTex"
+msgstr ""
+
+msgid "Gives halo a texture"
+msgstr "Daje texsturu aureoli"
+
+msgid "HaloPuno"
+msgstr ""
+
+msgid "Uses the vertex normal to specify the dimension of the halo"
+msgstr "Veličina aureole ovisi o kutu kamere"
+
+msgid "X Alpha"
+msgstr ""
+
+msgid "Uses extreme alpha"
+msgstr "Pojačava alfa efekt"
+
+msgid "Lets halo receive light and shadows"
+msgstr "Aureola prima svjetlost i sjene"
+
+# ####### Mirror Transp ########
+msgid "ZTransp"
+msgstr ""
+
+msgid "Enables Z-Buffering of transparent faces"
+msgstr "Omogućuje spremanje prozirnih faceova u Z-buffer"
+
+msgid "OnlyShadow"
+msgstr ""
+
+msgid "Renders shadows falling on material only"
+msgstr "Prikazuje samo sjene koje padaju na materijal"
+
+msgid "No Mist"
+msgstr ""
+
+msgid "Sets the material to ignore mist values"
+msgstr "Materijal ignorira maglu ispred sebe"
+
+msgid "Env"
+msgstr ""
+
+msgid "Causes faces to render whit alpha zero: alllows sky/backdrop to show trough"
+msgstr "Materijal postaje nevidljiv i kroz njega se vidi pozadina"
+
+# ######## Map input ##########
+msgid "Uses linked object's coordinates for texture coordinates"
+msgstr "Koristi koordinate linkanog objekta za koordinate teksture"
+
+msgid "UV"
+msgstr ""
+
+msgid "Uses UV coordinates for texture coordinates"
+msgstr "Koristi UV koordinate za koordinate teksture"
+
+msgid "Glob"
+msgstr ""
+
+msgid "Uses global coordinates for the texture coordinates"
+msgstr "Koristi globalne koordinate za koordinate teksture"
+
+msgid "Orco"
+msgstr ""
+
+msgid "Uses the original coordinates of the mesh"
+msgstr "Koristi originalne koordinate objekta"
+
+msgid "Stick"
+msgstr ""
+
+msgid "Uses mesh's sticky coordaintes for the texture coordinates"
+msgstr "Koristi ljepljive koordinate za koordinate teksture"
+
+msgid "Win"
+msgstr ""
+
+msgid "Uses screen coordinates as texture coordinates"
+msgstr "Koristi koordinate ekrana za koordinate teksture"
+
+msgid "Nor"
+msgstr ""
+
+msgid "Uses normal vector as texture coordinates"
+msgstr "Koristi vektore normala za koordinate teksture"
+
+msgid "Refl"
+msgstr ""
+
+msgid "Uses reflection vector as texture coordinates"
+msgstr "Koristi vektore refleksije za koordinate teksture"
+
+msgid "Flat"
+msgstr ""
+
+msgid "Maps X and Y coordinates directly"
+msgstr "Mapira teksturu po X i Y koordinatama"
+
+msgid "Maps using the normal vector"
+msgstr "Mapiranje pomoću vektora normale"
+
+msgid "Maps with Z as central axis (tube-like)"
+msgstr "Mapiranje sa Z kao centralnom osi (Valjak mapiranje)"
+
+msgid "Sphe"
+msgstr ""
+
+msgid "Maps with Z as central axis (sphere-like)"
+msgstr "Mapiranje sa Z kao centralnom osi (Kugla mapiranje)"
+
+msgid "ofsX"
+msgstr ""
+
+msgid "Fine tunes texture mapping X coordinate"
+msgstr "Fino podešavanje mapiranja X koordinate"
+
+msgid "ofsY"
+msgstr ""
+
+msgid "Fine tunes texture mapping Y coordinate"
+msgstr "Fino podešavanje mapiranja Y koordinate"
+
+msgid "ofsZ"
+msgstr ""
+
+msgid "Fine tunes texture mapping Z coordinate"
+msgstr "Fino podešavanje mapiranja Z koordinate"
+
+msgid "sizeX"
+msgstr ""
+
+msgid "Sets scaling for the texture's X size"
+msgstr "Skaliranje teksture po X koordinati"
+
+msgid "sizeY"
+msgstr ""
+
+msgid "Sets scaling for the texture's Y size"
+msgstr "Skaliranje teksture po Y koordinati"
+
+msgid "sizeZ"
+msgstr ""
+
+msgid "Sets scaling for the texture's Z size"
+msgstr "Skaliranje teksture po Z koordinati"
+
+# ####### Texture ###############
+msgid "Displays name of the texture block: clik to change"
+msgstr "Prikaz imena teksturnog bloka, klikni za promjenu"
+
+msgid "Selects an existing texture or creates new"
+msgstr "Odabir postojeće ili nove teksture"
+
+msgid "Auto-assigns name to texture"
+msgstr "Automatsko imenovanje teksture"
+
+msgid "Erases link to texture"
+msgstr "Briše link na teksturu"
+
+msgid "Click to disable or enable this texture channel"
+msgstr "Klikni za uključenje/isključenje teksturnog kanala"
+
+# ######### Map to ##############
+msgid "Stencil"
+msgstr ""
+
+msgid "Sets the  texture mapping to stencil mode"
+msgstr ""
+
+msgid "Neg"
+msgstr ""
+
+msgid "Inverts the values of the texture to reverse its effect"
+msgstr "Invertira vrijednosti teksture"
+
+msgid "No RGB"
+msgstr ""
+
+msgid "Converts texture RGB values to intensity (gray) values"
+msgstr "Prebacije RGB vrijednosti u crno bijele vrijednosti (intenzitet)"
+
+msgid "Browses existing datablocks"
+msgstr ""
+
+msgid "Sets the amount of red the intensity texture blends"
+msgstr "Iznos crvene boje s kojom se miješa tekstura"
+
+msgid "Sets the amount of green the intensity texture blends"
+msgstr "Iznos zelene boje s kojom se miješa tekstura"
+
+msgid "Sets the amount of blue the intensity texture blends"
+msgstr "Iznos plave boje s kojom se miješa tekstura"
+
+msgid "DVar "
+msgstr ""
+
+msgid "Sets the amount the texture blends with the basic value"
+msgstr "Iznos koliko boje teksture se miješa s osnovnom bojom materijela"
+
+msgid "Col"
+msgstr ""
+
+msgid "Causes the texture to affect basic colour of the material"
+msgstr "Tekstura utječe na osnovnu boju"
+
+msgid "Causes the texture to affect rendered normal"
+msgstr "Tekstura utječe na normale (BUMPINES - hrapavost)"
+
+msgid "Csp"
+msgstr ""
+
+msgid "Causes the to texture affect the specularity colour"
+msgstr "Tekstura utječe na specular boju"
+
+msgid "Cmir"
+msgstr ""
+
+msgid "Causes the texture to affext the mirror colour"
+msgstr "Tekstura utječe na mirror boju"
+
+msgid "Causes the texture to affect the value of the materials reflectivity"
+msgstr "Tekstura utječe na vrijednost refleksije"
+
+msgid "Causes the texture to affect the value of specularity"
+msgstr "Tekstura utječe na vrijednost specular"
+
+msgid "Causes the texture to affect the hardness value"
+msgstr "Tekstura utječe na vrijednost tvrdoće"
+
+msgid "Causes the texture to affect the alpha value"
+msgstr "Tekstura utječe na alfa vrijednost"
+
+msgid "Causes the texture to affect the emit value"
+msgstr "Tekstura utječe na emit vrijednost"
+
+msgid "Sets texture to blend the values or colour"
+msgstr "Tekstura se miješa s vrijednostima ili bojama"
+
+msgid "The texture multiplies the values or colour"
+msgstr "Tekstura se množi s vrijednostima ili bojama"
+
+msgid "The texture adds the values or colour"
+msgstr "Tekstura se zbraja s vrijednostima ili bojama"
+
+msgid "The texture subtracts the values or colour"
+msgstr "Tekstura se oduzima s vrijednostima ili bojama"
+
+msgid "Col "
+msgstr ""
+
+msgid "Sets the amount the texture affects colour values"
+msgstr "Iznos koliko tekstura utječe na boju materijala"
+
+msgid "Nor "
+msgstr ""
+
+msgid "Sets the amount the texture affects normal values"
+msgstr "Iznos koliko tekstura utječe na vrijednost normale"
+
+msgid "Var "
+msgstr ""
+
+msgid "Sets the amount the texture affects other values"
+msgstr "Iznos koliko tekstura utječe na ostale vrijednosti"
+
+# #########################################################
+# #
+# #  User Preferences
+# #
+# #########################################################
+# ############### View & Controls ###########
+msgid "View & Controls"
+msgstr ""
+
+msgid "Display:"
+msgstr ""
+
+msgid "ToolTips"
+msgstr ""
+
+msgid "Displays tooltips (help tags) over buttons"
+msgstr "Prikazuje kratki opis iznad gumba (tooltips)"
+
+msgid "Object Info"
+msgstr ""
+
+msgid "Displays current object name and frame number in the 3D viewport"
+msgstr "Prikazuje ime objekta u 3D prozoru"
+
+msgid "Global Scene"
+msgstr ""
+
+msgid "Forces the current Scene to be displayed in all Screens"
+msgstr "Trenutna scena će biti prikazana u svim scenama"
+
+msgid "Snap to grid:"
+msgstr ""
+
+msgid "Grab"
+msgstr ""
+
+msgid "Move objects to grid units"
+msgstr "Miče objekte za cjelobrojne vrijednsti"
+
+msgid "Rotate objects to grid units"
+msgstr "Rotira objekte za cjelobrojne vrijednsti"
+
+msgid "Scale objects to grid units"
+msgstr "Skalira objekte za cjelobrojne vrijednsti"
+
+msgid "View rotation:"
+msgstr ""
+
+msgid "Trackball"
+msgstr ""
+
+msgid "Use trackball style rotation with middle mouse button"
+msgstr ""
+
+msgid "Turntable"
+msgstr ""
+
+msgid "Use turntable style rotation with middle mouse button"
+msgstr ""
+
+msgid "Middle mouse button:"
+msgstr ""
+
+msgid "Rotate View"
+msgstr ""
+
+msgid "Default action for the middle mouse button"
+msgstr "Standardna akcija za srednju tipku miša"
+
+msgid "Pan View"
+msgstr ""
+
+msgid "Emulate 3 Buttons"
+msgstr ""
+
+msgid "Emulates a middle mouse button with ALT+LeftMouse"
+msgstr "Emulira srednju tipku miša sa ALT+Lijeva tipka miša"
+
+msgid "Mousewheel:"
+msgstr ""
+
+msgid "Invert Wheel Zoom"
+msgstr ""
+
+msgid "Swaps mouse wheel zoom direction"
+msgstr "Mijenja smjer zumiranja kotačićem na mišu"
+
+msgid "Scroll Lines:"
+msgstr ""
+
+msgid "The number of lines scrolled at a time with the mouse wheel"
+msgstr "Broj linija teksta skroliranih s kotačićem miša"
+
+# ################### Edit Methods	
+msgid "Edit Methods"
+msgstr ""
+
+msgid "Material linked to:"
+msgstr ""
+
+msgid "Link new objects' material to the obData block"
+msgstr ""
+
+msgid "Link new objects' material to the object block"
+msgstr ""
+
+msgid "Auto keyframe on:"
+msgstr ""
+
+msgid "Action"
+msgstr ""
+
+msgid "Automatic keyframe insertion in action ipo curve"
+msgstr ""
+
+msgid "Automatic keyframe insertion in object ipo curve"
+msgstr ""
+
+msgid "Duplicate with object:"
+msgstr ""
+
+msgid "Causes mesh data to be duplicated with Shift+D"
+msgstr ""
+
+msgid "Causes armature data to be duplicated with Shift+D"
+msgstr ""
+
+msgid "Causes surface data to be duplicated with Shift+D"
+msgstr ""
+
+msgid "Causes lamp data to be duplicated with Shift+D"
+msgstr ""
+
+msgid "Causes curve data to be duplicated with Shift+D"
+msgstr ""
+
+msgid "Causes material data to be duplicated with Shift+D"
+msgstr ""
+
+msgid "Causes text data to be duplicated with Shift+D"
+msgstr ""
+
+msgid "Causes texture data to be duplicated with Shift+D"
+msgstr ""
+
+msgid "Causes metaball data to be duplicated with Shift+D"
+msgstr ""
+
+msgid "Ipo"
+msgstr ""
+
+msgid "Causes ipo data to be duplicated with Shift+D"
+msgstr ""
+
+# ################ Language & Font
+msgid "Language & Font"
+msgstr ""
+
+msgid "Interface Font: "
+msgstr ""
+
+msgid "International Fonts"
+msgstr ""
+
+msgid "Activate international interface"
+msgstr "Aktiviranje internacionalne podrške"
+
+msgid "Select Font"
+msgstr ""
+
+msgid "Select a new font for the interface"
+msgstr "Biranje fonta za sučelje"
+
+msgid "Font Size:"
+msgstr ""
+
+msgid "Current interface font size (points)"
+msgstr "Veličina fonta"
+
+msgid "Select interface language"
+msgstr "Biranje jezika"
+
+msgid "Tooltips"
+msgstr ""
+
+msgid "Translate tooltips"
+msgstr "Prijevod opis alata"
+
+msgid "Buttons"
+msgstr ""
+
+msgid "Translate button labels"
+msgstr "Prijevod imena gumbova"
+
+msgid "Toolbox"
+msgstr ""
+
+msgid "Translate toolbox menu"
+msgstr "Prijevod alatnih okvira"
+
+# ############### Auto Save #####################
+msgid "Auto Save"
+msgstr "Automatsko spremanje"
+
+msgid "Auto Save Temp Files"
+msgstr ""
+
+msgid "Enables automatic saving of temporary files"
+msgstr "Automatsko spremanje privremenih datoteka"
+
+msgid "Open Recent"
+msgstr ""
+
+msgid "Opens the most recently saved temporary file"
+msgstr "Otvara zadnju sačuvanu privremenu datoteku"
+
+msgid "Minutes:"
+msgstr ""
+
+msgid "The time (in minutes) to wait between automatic temporary saves"
+msgstr "Vrijeme (u minutama) između automatskog spremanja"
+
+msgid "Versions:"
+msgstr ""
+
+msgid "The number of old versions to maintain when saving"
+msgstr "Broj starih verzija datoteke koje treba čuvati pri spremanju"
+
+# ################################## File Paths ######
+msgid "File Paths"
+msgstr ""
+
+msgid "Fonts: "
+msgstr ""
+
+msgid "The default directory to search for loading fonts"
+msgstr "Osnovna mapa za traženje fontova"
+
+msgid "Select the default font directory"
+msgstr "Biraj osnovnu mapu"
+
+msgid "Textures: "
+msgstr ""
+
+msgid "The default directory to search for textures"
+msgstr "Osnovna mapa za traženje tekstura"
+
+msgid "Select the default texture location"
+msgstr "Biraj osnovnu mapu"
+
+msgid "Tex Plugins: "
+msgstr ""
+
+msgid "The default directory to search for texture plugins"
+msgstr "Osnovna mapa za traženje texture plugins"
+
+msgid "Select the default texture plugin location"
+msgstr "Biraj osnovnu mapu"
+
+msgid "Seq Plugins: "
+msgstr ""
+
+msgid "The default directory to search for sequence plugins"
+msgstr "Osnovna mapa za traženje sequence plugins"
+
+msgid "Select the default sequence plugin location"
+msgstr "Biraj osnovnu mapu"
+
+msgid "Render: "
+msgstr ""
+
+msgid "The default directory for rendering output"
+msgstr "Osnovna mapa za izlazne slike i filmove"
+
+msgid "Select the default render output location"
+msgstr "Biraj osnovnu mapu"
+
+msgid "Python: "
+msgstr ""
+
+msgid "The default directory to search for Python scripts"
+msgstr "Osnovna mapa za traženje Python skripti"
+
+msgid "Select the default Python script location"
+msgstr "Biraj osnovnu mapu"
+
+msgid "Sounds: "
+msgstr ""
+
+msgid "The default directory to search for sounds"
+msgstr "Osnovna mapa za traženje zvučnih datoteka"
+
+msgid "Select the default sound location"
+msgstr "Biraj osnovnu mapu"
+
+msgid "Temp: "
+msgstr ""
+
+msgid "The directory for storing temporary save files"
+msgstr "Mapa za spremanje privremenih datoteka"
+
+msgid "Select the default temporary save file location"
+msgstr "Biraj osnovnu mapu"
+
+# ########################## System & OpenGL
+msgid "System & OpenGL"
+msgstr ""
+
+msgid "Win Codecs:"
+msgstr ""
+
+msgid "Enable all codecs"
+msgstr ""
+
+msgid "Allows all codecs for rendering (not guaranteed)"
+msgstr ""
+
+msgid "Audio:"
+msgstr ""
+
+msgid "Mixing buffer 256"
+msgstr ""
+
+msgid "Set audio buffer size to 256 samples"
+msgstr ""
+
+msgid "Set audio buffer size to 512 samples"
+msgstr ""
+
+msgid "Set audio buffer size to 1024 samples"
+msgstr ""
+
+msgid "Set audio buffer size to 2048 samples"
+msgstr ""
+
+msgid "Keyboard:"
+msgstr ""
+
+msgid "Emulate Numpad"
+msgstr ""
+
+msgid "Causes the 1 to 0 keys to act as the numpad (useful for laptops)"
+msgstr ""
+
+msgid "Disable Caps Lock"
+msgstr ""
+
+msgid "Disables the Caps Lock key when entering text"
+msgstr ""
+
+msgid "System:"
+msgstr ""
+
+msgid "Disable Sound"
+msgstr ""
+
+msgid "Disables sounds from being played"
+msgstr ""
+
+msgid "Filter File Extensions"
+msgstr ""
+
+msgid "Display only files with extensions in the image select window"
+msgstr ""
+
+msgid "OpenGL:"
+msgstr ""
+
+msgid "Mipmaps"
+msgstr ""
+
+msgid "Toggles between mipmap textures on (beautiful) and off (fast)"
+msgstr ""
+
+msgid "Vertex Arrays"
+msgstr ""
+
+msgid "Toggles between vertex arrays on (less reliable) and off (more reliable)"
+msgstr ""
+

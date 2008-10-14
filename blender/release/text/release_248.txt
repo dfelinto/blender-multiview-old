@@ -1,0 +1,15 @@
+------------------------- Blender 2.48 release ----------------
+
+October 2008
+
+This is the 2.48 release of Blender, featuring the results of the
+Apricot Open Game project; a lot of improvements in game editing
+and real-time 3D rendering. Apart from that a lot of other cool
+features were added, and plenty of bug fixes have been done.
+
+For html versions of release logs, please check:
+http://www.blender.org
+
+Have fun!
+
+The blender.org team.

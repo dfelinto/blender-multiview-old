@@ -1,0 +1,23 @@
+#!/usr/bin/python
+import sys
+
+Import('env')
+
+defs = []
+cflags = []
+incs = 'api kernel dft rdft reodft . dft/codelets/standard dft/codelets rdft/codelets rdft/codelets/hc2r rdft/codelets/r2hc rdft/codelets/r2r'
+
+api= env.Glob('api/*.c') 
+kernel= env.Glob('kernel/*.c')
+dft= env.Glob('dft/*.c') + env.Glob('dft/codelets/*.c') + env.Glob('dft/codelets/standard/*.c') 
+rdft= env.Glob('rdft/*.c') + env.Glob('rdft/codelets/*.c')
+rdft2= env.Glob('rdft/codelets/hc2r/*.c') + env.Glob('rdft/codelets/r2hc/*.c') + env.Glob('rdft/codelets/r2r/*.c')
+reodft= env.Glob('reodft/*.c')
+
+
+env.BlenderLib ( libname='extern_fftw_api', sources=api, includes=Split(incs), defines=Split(defs), libtype=['intern','player'], priority=[45, 75] , compileflags = cflags)
+env.BlenderLib ( libname='extern_fftw_kernel', sources=kernel, includes=Split(incs), defines=Split(defs), libtype=['intern','player'], priority=[45, 75] , compileflags = cflags)
+env.BlenderLib ( libname='extern_fftw_dft', sources=dft, includes=Split(incs), defines=Split(defs), libtype=['intern','player'], priority=[45, 75] , compileflags = cflags)
+env.BlenderLib ( libname='extern_fftw_rdft', sources=rdft, includes=Split(incs), defines=Split(defs), libtype=['intern','player'], priority=[45, 75] , compileflags = cflags)
+env.BlenderLib ( libname='extern_fftw_rdft2', sources=rdft2, includes=Split(incs), defines=Split(defs), libtype=['intern','player'], priority=[45, 75] , compileflags = cflags)
+env.BlenderLib ( libname='extern_fftw_reodft', sources=reodft, includes=Split(incs), defines=Split(defs), libtype=['intern','player'], priority=[45, 75] , compileflags = cflags)

@@ -1,0 +1,645 @@
+# translation of sv.po to Svenska
+# sten <ztonzy@yahoo.se>, 2003
+#"Last-Translator: sten <ztonzy@yahoo.se>\n"
+#"PO-Revision-Date: 2003-04-19 21:47+0200\n"
+#"Project-Id-Version: sv\n"
+#"Language-Team: Svenska <sv@li.org>\n"
+#"Content-Type: text/plain; charset=UTF-8\n"
+#"Content-Transfer-Encoding: 8bit\n"
+#"X-Generator: KBabel 1.0\n"
+
+# Copyright (C) 2003 Free Software Foundation, Inc.
+# snts &lt;snutlix@hotmail.com&gt;, 2003.
+#
+###########################################################
+###
+###  Render Window
+###
+###########################################################
+msgid "Start the rendering"
+msgstr "Starta rendering"
+
+msgid "Display edge settings"
+msgstr "Visa inställningar för kant"
+
+msgid "Enable shadow calculation"
+msgstr "Aktivera beräkning av Skugga"
+
+msgid "Start rendering a sequence"
+msgstr "Starta rendering av sekvens"
+
+###########################################################
+###
+###  ToolBox (Popup Menu)
+###
+###########################################################
+msgid "ADD"
+msgstr "LÄGG TILL"
+
+msgid "FILE"
+msgstr "ARKIV"
+
+msgid "EDIT"
+msgstr "REDIGERA"
+
+msgid "OBJECT"
+msgstr "OBJEKT"
+
+msgid "MESH"
+msgstr "MESH"
+
+msgid "CURVE"
+msgstr "BANOR"
+
+msgid "KEY"
+msgstr "NYCKELBILD"
+
+msgid "VIEW"
+msgstr "VISA"
+
+msgid "RENDER"
+msgstr "RENDERN"
+
+msgid "SEQUENCE"
+msgstr "SEKVENS"
+
+###########################################################
+###
+###  General Messages
+###
+###########################################################
+msgid "QUIT BLENDER"
+msgstr "AVSLUTA BLENDER"
+
+msgid "Not allowed"
+msgstr "Otillåtet"
+
+msgid "ERASE ALL"
+msgstr "RADERA ALLT"
+
+###########################################################
+###
+###  General Terms
+###
+###########################################################
+
+###########################################################
+###
+###  FileSelect Commands
+###
+###########################################################
+msgid "LOAD FILE"
+msgstr "Öppna Fil"
+
+msgid "SAVE FILE"
+msgstr "Spara Fil"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD
+###
+###########################################################
+msgid "Mesh"
+msgstr "Mesh"
+
+msgid "Curve"
+msgstr "Bana"
+
+msgid "Surface"
+msgstr "Yta"
+
+msgid "Text"
+msgstr "Text"
+
+msgid "Camera"
+msgstr "Kamera"
+
+msgid "Lamp"
+msgstr "Lampa"
+
+msgid "Armature"
+msgstr "Armatur"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Mesh
+###
+###########################################################
+msgid "&gt;Plane"
+msgstr "&gt;Plan"
+
+msgid "&gt;Cube"
+msgstr "&gt;Kub"
+
+msgid "&gt;UVsphere"
+msgstr "&gt;UVsfär"
+
+msgid "&gt;Icosphere"
+msgstr "&gt;Icosfär"
+
+msgid "&gt;Cylinder"
+msgstr "&gt;Cylinder"
+
+msgid "&gt;Tube"
+msgstr "&gt;Tub"
+
+msgid "&gt;Cone"
+msgstr "&gt;Kon"
+
+msgid "&gt;Grid"
+msgstr "&gt;Rutnät"
+
+msgid "&gt;Monkey"
+msgstr "&gt;Apa"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Curve
+###
+###########################################################
+msgid "&gt;Bezier Curve"
+msgstr "&gt;Bezier Kurva"
+
+msgid "&gt;Bezier Circle"
+msgstr "&gt;Bezier Cirkel"
+
+msgid "&gt;Nurbs Curve"
+msgstr "&gt;Nurbs Kurva"
+
+msgid "&gt;Nurbs Circle"
+msgstr "&gt;Nurbs Cirkel"
+
+msgid "&gt;Path"
+msgstr "&gt;Bana"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Surface
+###
+###########################################################
+msgid "&gt;Curve"
+msgstr "&gt;Bana"
+
+msgid "&gt;Circle"
+msgstr "&gt;Cirkel"
+
+msgid "&gt;Surface"
+msgstr "&gt;Yta"
+
+msgid "&gt;Sphere"
+msgstr "&gt;Sfär"
+
+msgid "&gt;Donut"
+msgstr "&gt;Donut"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; FILE
+###
+###########################################################
+msgid "New"
+msgstr "Ny"
+
+msgid "Open"
+msgstr "Öppna"
+
+msgid "Reopen Last"
+msgstr "Öppna senaste"
+
+msgid "Append"
+msgstr "Infoga"
+
+msgid "Save As"
+msgstr "Spara som"
+
+msgid "Save"
+msgstr "Spara"
+
+msgid "Save Image"
+msgstr "Spara Bild"
+
+msgid "Save VRML"
+msgstr "Spara VRML"
+
+msgid "Save DXF"
+msgstr "Spara DXF"
+
+msgid "Save VideoScape"
+msgstr "Spara VideoScape"
+
+msgid "Save UserPrefs"
+msgstr "Spara användarinställn."
+
+msgid "Quit"
+msgstr "Avsluta"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Edit
+###
+###########################################################
+msgid "(De)Select All"
+msgstr "(Av)Markera Alla"
+
+msgid "Select Linked"
+msgstr "Markera Länkad"
+
+msgid "Hide Selected"
+msgstr "Göm Markerad"
+
+msgid "Border Select"
+msgstr "Ram Markering"
+
+msgid "Duplicate"
+msgstr "Duplicera"
+
+msgid "Delete"
+msgstr "Radera"
+
+msgid "Edit Mode"
+msgstr "Redigerings Läge"
+
+msgid "Grabber"
+msgstr "Flytta"
+
+msgid "Rotate"
+msgstr "Rotera"
+
+msgid "Scale"
+msgstr "Skala"
+
+msgid "Shrink/Fatten"
+msgstr "Krympa/Förtjocka"
+
+msgid "Shear"
+msgstr "Vrida"
+
+msgid "Warp/Bend"
+msgstr "Warp/Böj"
+
+msgid "Snap Menu"
+msgstr "Fäst Meny"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (1)
+###
+###########################################################
+msgid "Clear Size"
+msgstr "Rensa Storlek"
+
+msgid "Clear Rotation"
+msgstr "Rensa Rotation"
+
+msgid "Clear Location"
+msgstr "Rensa Placering"
+
+msgid "Clear Origin"
+msgstr "Rensa Ursprung"
+
+msgid "Make Parent"
+msgstr "Skapa Förälder"
+
+msgid "Clear Parent"
+msgstr "Rensa Förälder"
+
+msgid "Make Track"
+msgstr "Skapa Spår"
+
+msgid "Clear Track"
+msgstr "Rensa Spår"
+
+msgid "Image Displist"
+msgstr "Bild Displist"
+
+msgid "Image Aspect"
+msgstr "Bild Aspekt"
+
+msgid "Vect Paint"
+msgstr "Vektor Måla"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (2)
+###
+###########################################################
+msgid "Move To Layer"
+msgstr "Flytta Till Lager"
+
+msgid "Delete All"
+msgstr "Radera Allt"
+
+msgid "Apply Size/Rot"
+msgstr "Applicera Storlek/Rotation"
+
+msgid "Apply Deform"
+msgstr "Applicera Deformering"
+
+msgid "Join"
+msgstr "Förena"
+
+#msgid "Make Local"
+#msgstr "Mache Lokal"
+#msgid "Select Linked"
+#msgstr "Selektiere verknÃ¼pfte"
+#msgid "Make Links"
+#msgstr "Erstelle Links"
+#msgid "Copy Menu"
+#msgstr "MenÃ¼ Kopieren"
+#msgid "Convert Menu"
+#msgstr "MenÃ¼ Konvertieren"
+msgid "Boolean Op"
+msgstr "Boolean Operation"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Mesh
+###
+###########################################################
+msgid "Make edge/face"
+msgstr "Skapa kant/yta"
+
+msgid "Fill"
+msgstr "Fyll"
+
+msgid "Split"
+msgstr "Dela"
+
+msgid "Undo/reload"
+msgstr "Ångra/ladda om"
+
+msgid "Calc Normals"
+msgstr "Beräkna Normaler"
+
+msgid "Separete"
+msgstr "Separera"
+
+msgid "Write Videosc"
+msgstr "Skriv Videosc"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Curve
+###
+###########################################################
+msgid "Deselect Linked"
+msgstr "Avmarkera Länkad"
+
+msgid "Extrude"
+msgstr "Extrudera"
+
+msgid "Delete Menu"
+msgstr "Raderings Meny"
+
+msgid "Make Segment"
+msgstr "Skapa Segment"
+
+msgid "Cyclic"
+msgstr "Cyclist"
+
+msgid "Select Row"
+msgstr "Markera Rad"
+
+msgid "Calc Handle"
+msgstr "Beräkna Handtag"
+
+msgid "Auto Handle"
+msgstr "Auto Handtag"
+
+msgid "Vect Handle"
+msgstr "Vektor Handtag"
+
+msgid "Specials"
+msgstr "Special"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Key
+###
+###########################################################
+msgid "Insert"
+msgstr "Infoga"
+
+msgid "Show"
+msgstr "Visa"
+
+msgid "Next"
+msgstr "Nästa"
+
+msgid "Prev"
+msgstr "Föregående"
+
+msgid "Show+Sel"
+msgstr "Visa+Markera"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; RENDER
+###
+###########################################################
+msgid "Render Window"
+msgstr "Renderings Fönster"
+
+msgid "Render"
+msgstr "Rendera"
+
+msgid "Set Border"
+msgstr "Sätt Ram"
+
+msgid "Image Zoom"
+msgstr "Bild Zoom"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; VIEW
+###
+###########################################################
+msgid "Center"
+msgstr "Mitten"
+
+msgid "Home"
+msgstr "Hem"
+
+msgid "Z-Buffer"
+msgstr "Z-Buffer"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; SEQUENCE
+###
+###########################################################
+msgid "Add Strip"
+msgstr "Lägg till Stripp"
+
+msgid "Change Str"
+msgstr "Byta Stripp"
+
+msgid "Delete Str"
+msgstr "Radera Stripp"
+
+msgid "Make Meta"
+msgstr "Skapa Meta"
+
+msgid "Str Params"
+msgstr "Stripp Parameter"
+
+###########################################################
+###
+###  Menu bar
+###
+###########################################################
+msgid "File"
+msgstr "Arkiv"
+
+msgid "Edit"
+msgstr "Redigera"
+
+msgid "Add"
+msgstr "Ny"
+
+msgid "View"
+msgstr "Visa"
+
+msgid "Game"
+msgstr "Spel"
+
+msgid "Tools"
+msgstr "Verktyg"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add
+###
+###########################################################
+msgid "MetaBall"
+msgstr "Metaball"
+
+msgid "Empty"
+msgstr "Tom"
+
+msgid "Lattice"
+msgstr "Lattice"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Mesh
+###
+###########################################################
+msgid "Plane"
+msgstr "Plan"
+
+msgid "Cube"
+msgstr "Kub"
+
+msgid "Circle"
+msgstr "Cirkel"
+
+msgid "UVsphere"
+msgstr "UVsfär"
+
+msgid "IcoSphere"
+msgstr "Icosfär"
+
+msgid "Cylinder"
+msgstr "Cylinder"
+
+msgid "Tube"
+msgstr "Tub"
+
+msgid "Cone"
+msgstr "Kon"
+
+msgid "Grid"
+msgstr "Rutnät"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Curve
+###
+###########################################################
+msgid "Bezier Curve"
+msgstr "Bezier Kurva"
+
+msgid "Bezier Circle"
+msgstr "Bezier Cirkel"
+
+msgid "NURBS Curve"
+msgstr "NURBS Kurva"
+
+msgid "NURBS Circle"
+msgstr "NURBS Cirkel"
+
+msgid "Path"
+msgstr "Bana"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Surface
+###
+###########################################################
+msgid "NURBS Surface"
+msgstr "NURBS Yta"
+
+msgid "NURBS Tube"
+msgstr "NURBS Tub"
+
+msgid "NURBS Sphere"
+msgstr "NURBS Sfär"
+
+msgid "NURBS Donut"
+msgstr "NURBS Donut"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; View
+###
+###########################################################
+msgid "Front"
+msgstr "Fram"
+
+msgid "Right"
+msgstr "Höger"
+
+msgid "Top"
+msgstr "Ovan"
+
+msgid "Zoom In"
+msgstr "Zooma In"
+
+msgid "Zoom Out"
+msgstr "Zooma Ut"
+
+msgid "View All"
+msgstr "Visa Alla"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Game
+###
+###########################################################
+msgid "Start Game"
+msgstr "Starta Spel"
+
+msgid "Enable All Frame"
+msgstr "Aktivera alla Nyckelbilder"
+
+msgid "Show framerate and profile"
+msgstr "Visa fart på nyckelbilder och profil"
+
+msgid "Autostart"
+msgstr "Autostart"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Tools
+###
+###########################################################
+msgid "Pack Data"
+msgstr "Packa Data"
+
+msgid "Unpack Data to current dir"
+msgstr "Packa upp till aktuell katalog"
+
+msgid "Advanced Unpack"
+msgstr "Avancerad uppackning"
+

@@ -1,0 +1,176 @@
+#!/usr/bin/env perl
+# HMAKE, a filter and ANSI color wrapper for make and compiler output.
+# Copyright 2001 by Hans Lambermont <hans@lambermont.dyndns.org>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the same terms as Perl itself.
+# Copied Id: hmake,v 1.11 2002/03/14 09:08:07 hans Exp
+# $Id$
+# Latest source location: <http://lambermont.webhop.org/hmake>
+
+# Usage: just call 'hmake' where you would call 'make' or 'gmake'
+# Use this wrapper program to a filter and color make and cc/c++ output.
+#   Especially useful if your warning level is so high that the compiler
+#   starts to complain about your system header files.
+# gcc/g++ example: Increase warnings to paranoia level :
+#   -Wall -W -Wshadow -Wpointer-arith -Wbad-function-cast -Wcast-qual
+#   -Wcast-align -Waggregate-return -Wstrict-prototypes
+#   -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls
+#   -Wnested-externs
+#   Not recommended : -Wconversion (gives questionable output IMHO)
+
+require 5.001;
+use IPC::Open3;
+use strict;
+
+#-----------------------------------------------------------------------
+# Next follows a copy of the color function from ANSIColor-1.03.pm which
+# has the following copyright: Copyright 1996, 1997, 1998, 2000 Russ
+# Allbery <rra@stanford.edu> and Zenin <zenin@best.com>.  All rights
+# reserved.  This program is free software; you can redistribute it
+# and/or modify it under the same terms as Perl itself.
+
+use vars qw(%attributes $AUTORESET $EACHLINE);
+
+%attributes = ('clear' => 0, 'reset' => 0, 'bold' => 1, 'dark' => 2,
+  'underline' => 4, 'underscore' => 4, 'blink' => 5, 'reverse' => 7,
+  'concealed' => 8, 'black' => 30, 'on_black' => 40, 'red' => 31,
+  'on_red' => 41, 'green' => 32, 'on_green' => 42, 'yellow' => 33,
+  'on_yellow' => 43, 'blue' => 34, 'on_blue' => 44, 'magenta' => 35,
+  'on_magenta' => 45, 'cyan' => 36, 'on_cyan' => 46, 'white' => 37,
+  'on_white' => 47);
+
+# Return the escape code for a given set of color attributes.
+sub color {
+    my @codes = map { split } @_;
+    my $attribute = '';
+    foreach (@codes) {
+        $_ = lc $_;
+        unless (defined $attributes{$_}) {
+            require Carp;
+            Carp::croak ("Invalid attribute name $_");
+        }
+        $attribute .= $attributes{$_} . ';';
+    }
+    chop $attribute;
+    ($attribute ne '') ? "\e[${attribute}m" : undef;
+}
+# end of copied parts from ANSIColor-1.03.pm
+#-----------------------------------------------------------------------
+
+# call make and redirect stderr to stdout, honor the MAKE env.var.
+my $command;
+if (defined $ENV{MAKE}) {
+    $command = "$ENV{MAKE} @ARGV";
+} else {
+    $command = "make @ARGV";
+}
+my $pid = &open3(\*IN, \*OUT, "", $command);
+close(IN);
+
+# process every new stdout line. First some filters, then add color.
+while (<OUT>) {
+
+    # FIRST FILTER AWAY UNWANTED OUTPUT
+    # hmake is targetted at application programmers, so we don't want to
+    # see code warnings from the system (header) files.
+    # System header file warnings
+    next if /^\/usr\/.*warning.*$/;
+    # Cygwin specific system header file warnings
+    next if /^c:\\program.*warning.*$/;
+    next if /c:\\program.*while compiling.*$/;
+    # cc verbosity
+    next if /^.* +from .*:\d+[:,]$/;
+    next if /^.*: In function.*$/;
+    next if /Each undeclared identifier is reported only once/;
+    next if /for each function it appears in/;
+    # c++ verbosity
+    next if /^.*: In method .*$/;
+    next if /instantiated from/;
+    next if /In instantiation of/;
+    next if /^.*: At top level:$/;
+    next if /^.*more undefined references to .* follow$/;
+    # gmake
+    next if /Leaving directory/;
+    next if /Nothing to be done for/;
+    # FreeBSD specific. (fi linking with Python2.0)
+    next if /^.*consider using mkstemp.*$/;
+    # application specific (like OpenSSL)
+    next if /^You may get an error.*ignore.*$/;
+    # Personal libraries and libraries too far away are not considered
+    next if /^\/home.*warning.*$/;
+    next if /^\.\.\/\.\.\/.*warning.*$/;
+
+    # THEN REDUCE VERBOSITY
+    s/ +/ /g;
+    # cc verbosity
+    s/\(first use in this function\)//;
+    s/\(first use this function\)//;
+    # cpp verbosity
+    s/\(\.text\+0x\w*\)://g;
+    # rewrite gmake's way of telling where we are
+    s/^.*Entering directory/====>/;
+
+    # FINALLY ADD COLOR TO IMPORTANT STRINGS
+    # lighten up warnings
+    s/(warning)/color("bold white on_red") . $1 . color("reset")/egi;
+    s/(candidates are)/color("bold white on_red") . $1 . color("reset")/egi;
+    s/(\.[ch][p]*):(\d+):/"$1:" . color("bold red") . $2 . color("reset") . ":"/egi;
+    # lighten up errors
+    s/(error)/color("bold white on_magenta") . $1 . color("reset")/egi;
+    # na error geen; (windows). evt s erachter (osx)
+    s/(undeclared)/color("bold white on_magenta") . $1 .  color("reset")/egi;
+    s/(no matching function for call to)/color("bold white on_magenta") . $1 .  color("reset")/egi;
+    s/(too few arguments to function)/color("bold white on_magenta") . $1 .  color("reset")/egi;
+    s/(parameter name omitted)/color("bold white on_magenta") . $1 . color("reset")/eg;
+    s/(No such file or directory)/color("bold white on_magenta") . $1 . color("reset")/eg;
+    s/(undefined reference to)/color("bold white on_magenta") . $1 . color("reset")/eg;
+    s/(header file .* not found)/color("bold white on_magenta") . $1 . color("reset")/eg;
+    s/(undefined type)/color("bold white on_magenta") . $1 . color("reset")/eg;
+    # java errors
+    s/(cannot resolve symbol)/color("bold white on_magenta") . $1 .  color("reset")/eg;
+    s/(cannot be referenced from)/color("bold white on_magenta") . $1 .  color("reset")/eg;
+    s/(cannot be applied to)/color("bold white on_magenta") . $1 .  color("reset")/eg;
+    s/(possible loss of precision)/color("bold white on_magenta") . $1 .  color("reset")/eg;
+    s/(expected)/color("bold white on_magenta") . $1 .  color("reset")/eg;
+    s/(^symbol)/color("bold white on_magenta") . $1 .  color("reset")/eg;
+    s/(^location)/color("bold white on_magenta") . $1 .  color("reset")/eg;
+    s/(^found)/color("bold white on_magenta") . $1 .  color("reset")/eg;
+    s/(^required)/color("bold white on_magenta") . $1 .  color("reset")/eg;
+    # both warning and error ?!
+# c warning, c++ error
+#    s/(control reaches end of non-void function)/color("bold magenta") . $1 . color("reset")/eg;
+    s/(not suported)/color("bold magenta") . $1 . color("reset")/eg;
+    s/(Operation not permitted)/color("bold magenta") . $1 .  color("reset")/egi;
+    # now add color to important parts on what we're doing
+    # gcc/cc/CC/c++/javac/javah
+    s/(^[gc][c\+]+)/color("bold white on_blue") . $1 . color("reset")/eg;
+    s/(^java[ch])/color("bold white on_blue") . $1 . color("reset")/eg;
+    # personal cl.exe wrapper on cygwin
+    s/^.*(cl_wrapper.pl)/color("bold white on_blue") . $1 . color("reset")/eg;
+    # ar
+    s/(^ar)( )/color("bold white on_blue") . $1 . color("reset") . $2/eg;
+    s/(^a -)/color("blue") . $1 . color("reset")/eg;
+    # c and cpp and java files
+    s/( [^\. ]*\.c[p]*)/color("bold blue") . $1 . color("reset")/eg;
+    s/(^[^\. ]*\.c[p]*)/color("bold blue") . $1 . color("reset")/eg;
+    s/([^\.\/ ]*\.h)/color("bold blue") . $1 . color("reset")/eg;
+    s/([^\.\/ ]*\.java)/color("bold blue") . $1 . color("reset")/eg;
+    # archive files
+    s/([^ \/]*\.a)/color("blue") . $1 . color("reset")/eg;
+    # dll's
+    s/([^ \/]*\.dll)/color("blue") . $1 . color("reset")/eg;
+    # gmake's rewritten way of telling where we are
+    s/(^=+>.*$)/color("bold white on_green") . $1 . color("reset")/eg;
+    s/(^making.*$)/color("bold white on_green") . $1 . color("reset")/eg;
+    # common other way of telling what is going on
+    s/(^\*+>.*$)/color("bold green on_black") . $1 . color("reset")/eg;
+    # Personal environment variable wildcard
+    s/(NAN_[^ ]*)/color("cyan") . $1 . color("reset")/eg;
+
+    print $_;
+}
+
+wait;
+exit ($? / 256);
+
