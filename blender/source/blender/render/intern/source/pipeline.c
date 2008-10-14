@@ -2262,7 +2262,7 @@ static void renderresult_stampinfo()
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
-
+static testtesttest = 0;
 /* main loop: doing sequence + fields + blur + 3d render + compositing */
 static void do_render_all_options(Render *re)
 {
@@ -2290,7 +2290,7 @@ static void do_render_all_options(Render *re)
 		do_render_composite_fields_blur_3d(re);
 #endif
 	}
-	
+	testtesttest = 2;
 	/* for UI only */
 	renderresult_add_names(re->result);
 	
