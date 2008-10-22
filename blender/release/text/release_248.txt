@@ -7,6 +7,9 @@ Apricot Open Game project; a lot of improvements in game editing
 and real-time 3D rendering. Apart from that a lot of other cool
 features were added, and plenty of bug fixes have been done.
 
+2.48a update: several fixes, especially an important one for the
+game engine, made us doing a quick upgrade.
+
 For html versions of release logs, please check:
 http://www.blender.org
 
