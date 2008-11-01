@@ -32,7 +32,7 @@ DIR = $(OCGDIR)/extern/ffmpeg
 
 include nan_subdirs.mk
 
-ALLDIRS = libavcodec libavformat libavutil libswscale libavdevice
+ALLDIRS = libavcodec libavformat libavutil libswscale
 
 config::
 	./configure --disable-shared --enable-liba52bin --enable-gpl --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscaler --enable-pthreads 
