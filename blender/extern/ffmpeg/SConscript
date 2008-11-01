@@ -3,7 +3,7 @@
 
 Import('env')
 
-all_libs = ['libavformat', 'libavcodec', 'libswscale', 'libavutil']
+all_libs = ['libavformat', 'libavcodec', 'libswscale', 'libavutil', 'libavdevice']
 root = "extern/ffmpeg"
 
 if env['OURPLATFORM'] == 'win32-mingw':
