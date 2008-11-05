@@ -83,7 +83,8 @@ def main():
 			own.life += ob.life
 			ob.life = 0
 	print own.life
-	"""
+	"""
+
 main()
 '''
 
