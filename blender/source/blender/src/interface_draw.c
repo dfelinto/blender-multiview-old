@@ -68,7 +68,6 @@
 #include "BKE_global.h"
 #include "BKE_key.h"
 #include "BKE_utildefines.h"
-#include "BKE_texture.h"
 
 #include "datatoc.h"            /* std font */
 
@@ -1979,7 +1978,6 @@ static void ui_draw_but_COLORBAND(uiBut *but)
 	CBData *cbd;
 	float x1, y1, sizex, sizey;
 	float dx, v3[2], v1[2], v2[2], v1a[2], v2a[2];
-	float pos, colf[4];
 	int a;
 		
 	if(coba==NULL) return;
@@ -2000,7 +1998,7 @@ static void ui_draw_but_COLORBAND(uiBut *but)
 		v1[0]+= dx;
 	}
 	
-	glShadeModel(GL_FLAT);
+	glShadeModel(GL_SMOOTH);
 	glEnable(GL_BLEND);
 	
 	cbd= coba->data;
@@ -2014,16 +2012,17 @@ static void ui_draw_but_COLORBAND(uiBut *but)
 	glColor4fv( &cbd->r );
 	glVertex2fv(v1); glVertex2fv(v2);
 	
-	for( a = 1; a < sizex; a++ ) {
-		pos = ((float)a) / (sizex-1);
-		do_colorband( coba, pos, colf );
-
-		v1[0]=v2[0]= x1 + a;
-
-		glColor4fv( colf );
+	for(a=0; a<coba->tot; a++, cbd++) {
+		
+		v1[0]=v2[0]= x1+ cbd->pos*sizex;
+		
+		glColor4fv( &cbd->r );
 		glVertex2fv(v1); glVertex2fv(v2);
 	}
-
+	
+	v1[0]=v2[0]= x1+ sizex;
+	glVertex2fv(v1); glVertex2fv(v2);
+	
 	glEnd();
 	glShadeModel(GL_FLAT);
 	glDisable(GL_BLEND);
@@ -2204,17 +2203,11 @@ static void ui_draw_but_curve_grid(uiBut *but, float zoomx, float zoomy, float o
 static void ui_draw_but_CURVE(uiBut *but)
 {
 	CurveMapping *cumap= (CurveMapping *)but->poin;
-	CurveMap *cuma;
+	CurveMap *cuma= cumap->cm+cumap->cur;
 	CurveMapPoint *cmp;
 	float fx, fy, dx, dy, fac[2], zoomx, zoomy, offsx, offsy;
 	GLint scissor[4];
-	int a, i, c, tmp;
-
-	/* Check number of curves */
-	if(cumap->flag & CUMA_MULTI_CURVE)
-		c= 4;
-	else
-		c= 1;
+	int a;
 	
 	/* need scissor test, curve can draw outside of boundary */
 	glGetIntegerv(GL_VIEWPORT, scissor);
@@ -2293,105 +2286,57 @@ static void ui_draw_but_CURVE(uiBut *but)
 			glEnd();
 		}
 	}
-
-	/* Ugly hack to make sure all curves are there */
-    tmp= cumap->cur;
-	for(i= 0; i<c; i++) {
-        if (c>1) {
-            cumap->cur= i;
-	    	cuma= cumap->cm+i;
-        }
-        else
-            cuma= cumap->cm+cumap->cur;
-		if(cuma->table==NULL)
-			curvemapping_changed(cumap, 0);	/* 0 = no remove doubles */
-	}
-    cumap->cur= tmp;
 	
 	/* the curve */
-	for(i=0; i<c; i++) {
-		if(c>1) {
-			cuma= cumap->cm+i;
-			switch (i) {
-				case 0:
-					glColor3ub(240,20,20);
-					break;
-				case 1:
-					glColor3ub(20,240,20);
-					break;
-				case 2:
-					glColor3ub(20,20,240);
-					break;
-				default:
-					BIF_ThemeColorBlend(TH_TEXT, TH_BUT_NEUTRAL, 0.35);
-					break;			
-			}
-		}
-		else {
-			cuma= cumap->cm+cumap->cur;
-			switch(cumap->cur) {
-				case 0:
-					glColor3ub(240,20,20);
-					break;
-				case 1:
-					glColor3ub(20,240,20);
-					break;
-				case 2:
-					glColor3ub(20,20,240);
-					break;
-				default:
-					BIF_ThemeColorBlend(TH_TEXT, TH_BUT_NEUTRAL, 0.35);
-					break;
-			}
-		}
-		glEnable(GL_LINE_SMOOTH);
-		glEnable(GL_BLEND);
-		glBegin(GL_LINE_STRIP);
-		
-		cmp= cuma->table;
-		
-		/* first point */
-		if((cuma->flag & CUMA_EXTEND_EXTRAPOLATE)==0)
-			glVertex2f(but->x1, but->y1 + zoomy*(cmp[0].y-offsy));
-		else {
-			fx= but->x1 + zoomx*(cmp[0].x-offsx + cuma->ext_in[0]);
-			fy= but->y1 + zoomy*(cmp[0].y-offsy + cuma->ext_in[1]);
-			glVertex2f(fx, fy);
-		}
-		/* Points inbetween first and last */
-		for(a=0; a<=CM_TABLE; a++) {
-			fx= but->x1 + zoomx*(cmp[a].x-offsx);
-			fy= but->y1 + zoomy*(cmp[a].y-offsy);
-			glVertex2f(fx, fy);
-		}
-		/* last point */
-		if((cuma->flag & CUMA_EXTEND_EXTRAPOLATE)==0)
-			glVertex2f(but->x2, but->y1 + zoomy*(cmp[CM_TABLE].y-offsy));	
-		else {
-			fx= but->x1 + zoomx*(cmp[CM_TABLE].x-offsx - cuma->ext_out[0]);
-			fy= but->y1 + zoomy*(cmp[CM_TABLE].y-offsy - cuma->ext_out[1]);
-			glVertex2f(fx, fy);
-		}
-		glEnd();
-		glDisable(GL_LINE_SMOOTH);
-		glDisable(GL_BLEND);
+	BIF_ThemeColorBlend(TH_TEXT, TH_BUT_NEUTRAL, 0.35);
+	glEnable(GL_LINE_SMOOTH);
+	glEnable(GL_BLEND);
+	glBegin(GL_LINE_STRIP);
+	
+	if(cuma->table==NULL)
+		curvemapping_changed(cumap, 0);	/* 0 = no remove doubles */
+	cmp= cuma->table;
+	
+	/* first point */
+	if((cuma->flag & CUMA_EXTEND_EXTRAPOLATE)==0)
+		glVertex2f(but->x1, but->y1 + zoomy*(cmp[0].y-offsy));
+	else {
+		fx= but->x1 + zoomx*(cmp[0].x-offsx + cuma->ext_in[0]);
+		fy= but->y1 + zoomy*(cmp[0].y-offsy + cuma->ext_in[1]);
+		glVertex2f(fx, fy);
+	}
+	for(a=0; a<=CM_TABLE; a++) {
+		fx= but->x1 + zoomx*(cmp[a].x-offsx);
+		fy= but->y1 + zoomy*(cmp[a].y-offsy);
+		glVertex2f(fx, fy);
+	}
+	/* last point */
+	if((cuma->flag & CUMA_EXTEND_EXTRAPOLATE)==0)
+		glVertex2f(but->x2, but->y1 + zoomy*(cmp[CM_TABLE].y-offsy));	
+	else {
+		fx= but->x1 + zoomx*(cmp[CM_TABLE].x-offsx - cuma->ext_out[0]);
+		fy= but->y1 + zoomy*(cmp[CM_TABLE].y-offsy - cuma->ext_out[1]);
+		glVertex2f(fx, fy);
+	}
+	glEnd();
+	glDisable(GL_LINE_SMOOTH);
+	glDisable(GL_BLEND);
 
-        /* the points, use aspect to make them visible on edges */
-        cmp= cuma->curve;
-        glPointSize(3.0f);
-        bglBegin(GL_POINTS);
-        for(a=0; a<cuma->totpoint; a++) {
-            if(cmp[a].flag & SELECT)
-                BIF_ThemeColor(TH_TEXT_HI);
-            else
-                BIF_ThemeColor(TH_TEXT);
-            fac[0]= but->x1 + zoomx*(cmp[a].x-offsx);
-            fac[1]= but->y1 + zoomy*(cmp[a].y-offsy);
-            bglVertex2fv(fac);
-        }
-        bglEnd();
-        glPointSize(1.0f);
-    }
+	/* the points, use aspect to make them visible on edges */
+	cmp= cuma->curve;
+	glPointSize(3.0f);
+	bglBegin(GL_POINTS);
+	for(a=0; a<cuma->totpoint; a++) {
+		if(cmp[a].flag & SELECT)
+			BIF_ThemeColor(TH_TEXT_HI);
+		else
+			BIF_ThemeColor(TH_TEXT);
+		fac[0]= but->x1 + zoomx*(cmp[a].x-offsx);
+		fac[1]= but->y1 + zoomy*(cmp[a].y-offsy);
+		bglVertex2fv(fac);
+	}
+	bglEnd();
+	glPointSize(1.0f);
 	
 	/* restore scissortest */
 	glScissor(scissor[0], scissor[1], scissor[2], scissor[3]);
