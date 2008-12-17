@@ -23,6 +23,7 @@
 #include "riff.h"
 #include "avio.h"
 #include "isom.h"
+#include "avc.h"
 
 #undef NDEBUG
 #include <assert.h>
@@ -36,6 +37,7 @@
 #define MODE_PSP 3 // example working PSP command line:
 // ffmpeg -i testinput.avi  -f psp -r 14.985 -s 320x240 -b 768 -ar 24000 -ab 32 M4V00001.MP4
 #define MODE_3G2 4
+#define MODE_IPOD 5
 
 typedef struct MOVIentry {
     unsigned int flags, size;
@@ -59,7 +61,7 @@ typedef struct MOVIndex {
     int         hasBframes;
     int         language;
     int         trackID;
-    int         tag;
+    int         tag; ///< stsd fourcc
     AVCodecContext *enc;
 
     int         vosLen;
@@ -140,7 +142,7 @@ static int mov_write_stsz_tag(ByteIOContext *pb, MOVTrack* track)
         put_be32(pb, 0); // sample size
         put_be32(pb, entries); // sample count
         for (i=0; i<track->entry; i++) {
-            for ( j=0; j<track->cluster[i].entries; j++) {
+            for (j=0; j<track->cluster[i].entries; j++) {
                 put_be32(pb, track->cluster[i].size /
                          track->cluster[i].entries);
             }
@@ -322,6 +324,14 @@ static int mov_write_wave_tag(ByteIOContext *pb, MOVTrack* track)
     return updateSize (pb, pos);
 }
 
+static int mov_write_glbl_tag(ByteIOContext *pb, MOVTrack* track)
+{
+    put_be32(pb, track->vosLen+8);
+    put_tag(pb, "glbl");
+    put_buffer(pb, track->vosData, track->vosLen);
+    return 8+track->vosLen;
+}
+
 static int mov_write_audio_tag(ByteIOContext *pb, MOVTrack* track)
 {
     offset_t pos = url_ftell(pb);
@@ -372,10 +382,12 @@ static int mov_write_audio_tag(ByteIOContext *pb, MOVTrack* track)
         track->enc->codec_id == CODEC_ID_PCM_S24LE ||
         track->enc->codec_id == CODEC_ID_PCM_S32LE))
         mov_write_wave_tag(pb, track);
-    else if(track->enc->codec_id == CODEC_ID_AAC)
+    else if(track->tag == MKTAG('m','p','4','a'))
         mov_write_esds_tag(pb, track);
     else if(track->enc->codec_id == CODEC_ID_AMR_NB)
         mov_write_amr_tag(pb, track);
+    else if(track->vosLen > 0)
+        mov_write_glbl_tag(pb, track);
 
     return updateSize (pb, pos);
 }
@@ -405,171 +417,145 @@ static int mov_write_svq3_tag(ByteIOContext *pb)
     return 0x15;
 }
 
-static uint8_t *avc_find_startcode( uint8_t *p, uint8_t *end )
-{
-    uint8_t *a = p + 4 - ((long)p & 3);
-
-    for( end -= 3; p < a && p < end; p++ ) {
-        if( p[0] == 0 && p[1] == 0 && p[2] == 1 )
-            return p;
-    }
-
-    for( end -= 3; p < end; p += 4 ) {
-        uint32_t x = *(uint32_t*)p;
-//      if( (x - 0x01000100) & (~x) & 0x80008000 ) // little endian
-//      if( (x - 0x00010001) & (~x) & 0x00800080 ) // big endian
-        if( (x - 0x01010101) & (~x) & 0x80808080 ) { // generic
-            if( p[1] == 0 ) {
-                if( p[0] == 0 && p[2] == 1 )
-                    return p-1;
-                if( p[2] == 0 && p[3] == 1 )
-                    return p;
-            }
-            if( p[3] == 0 ) {
-                if( p[2] == 0 && p[4] == 1 )
-                    return p+1;
-                if( p[4] == 0 && p[5] == 1 )
-                    return p+2;
-            }
-        }
-    }
-
-    for( end += 3; p < end; p++ ) {
-        if( p[0] == 0 && p[1] == 0 && p[2] == 1 )
-            return p;
-    }
-
-    return end + 3;
-}
-
-static void avc_parse_nal_units(uint8_t **buf, int *size)
-{
-    ByteIOContext pb;
-    uint8_t *p = *buf;
-    uint8_t *end = p + *size;
-    uint8_t *nal_start, *nal_end;
-
-    url_open_dyn_buf(&pb);
-    nal_start = avc_find_startcode(p, end);
-    while (nal_start < end) {
-        while(!*(nal_start++));
-        nal_end = avc_find_startcode(nal_start, end);
-        put_be32(&pb, nal_end - nal_start);
-        put_buffer(&pb, nal_start, nal_end - nal_start);
-        nal_start = nal_end;
-    }
-    av_freep(buf);
-    *size = url_close_dyn_buf(&pb, buf);
-}
-
 static int mov_write_avcc_tag(ByteIOContext *pb, MOVTrack *track)
 {
     offset_t pos = url_ftell(pb);
 
     put_be32(pb, 0);
     put_tag(pb, "avcC");
-    if (track->vosLen > 6) {
-        /* check for h264 start code */
-        if (AV_RB32(track->vosData) == 0x00000001) {
-            uint8_t *buf, *end;
-            uint32_t sps_size=0, pps_size=0;
-            uint8_t *sps=0, *pps=0;
-
-            avc_parse_nal_units(&track->vosData, &track->vosLen);
-            buf = track->vosData;
-            end = track->vosData + track->vosLen;
-
-            /* look for sps and pps */
-            while (buf < end) {
-                unsigned int size;
-                uint8_t nal_type;
-                size = AV_RB32(buf);
-                nal_type = buf[4] & 0x1f;
-                if (nal_type == 7) { /* SPS */
-                    sps = buf + 4;
-                    sps_size = size;
-                } else if (nal_type == 8) { /* PPS */
-                    pps = buf + 4;
-                    pps_size = size;
-                }
-                buf += size + 4;
-            }
-            assert(sps);
-            assert(pps);
-
-            put_byte(pb, 1); /* version */
-            put_byte(pb, sps[1]); /* profile */
-            put_byte(pb, sps[2]); /* profile compat */
-            put_byte(pb, sps[3]); /* level */
-            put_byte(pb, 0xff); /* 6 bits reserved (111111) + 2 bits nal size length - 1 (11) */
-            put_byte(pb, 0xe1); /* 3 bits reserved (111) + 5 bits number of sps (00001) */
-
-            put_be16(pb, sps_size);
-            put_buffer(pb, sps, sps_size);
-            put_byte(pb, 1); /* number of pps */
-            put_be16(pb, pps_size);
-            put_buffer(pb, pps, pps_size);
-        } else {
-            put_buffer(pb, track->vosData, track->vosLen);
-        }
-    }
+    ff_isom_write_avcc(pb, track->vosData, track->vosLen);
     return updateSize(pb, pos);
 }
 
-static int mov_find_video_codec_tag(AVFormatContext *s, MOVTrack *track)
+/* also used by all avid codecs (dv, imx, meridien) and their variants */
+static int mov_write_avid_tag(ByteIOContext *pb, MOVTrack *track)
+{
+    int i;
+    put_be32(pb, 24); /* size */
+    put_tag(pb, "ACLR");
+    put_tag(pb, "ACLR");
+    put_tag(pb, "0001");
+    put_be32(pb, 1); /* yuv 1 / rgb 2 ? */
+    put_be32(pb, 0); /* unknown */
+
+    put_be32(pb, 24); /* size */
+    put_tag(pb, "APRG");
+    put_tag(pb, "APRG");
+    put_tag(pb, "0001");
+    put_be32(pb, 1); /* unknown */
+    put_be32(pb, 0); /* unknown */
+
+    put_be32(pb, 120); /* size */
+    put_tag(pb, "ARES");
+    put_tag(pb, "ARES");
+    put_tag(pb, "0001");
+    put_be32(pb, AV_RB32(track->vosData + 0x28)); /* dnxhd cid, some id ? */
+    put_be32(pb, track->enc->width);
+    /* values below are based on samples created with quicktime and avid codecs */
+    if (track->vosData[5] & 2) { // interlaced
+        put_be32(pb, track->enc->height/2);
+        put_be32(pb, 2); /* unknown */
+        put_be32(pb, 0); /* unknown */
+        put_be32(pb, 4); /* unknown */
+    } else {
+        put_be32(pb, track->enc->height);
+        put_be32(pb, 1); /* unknown */
+        put_be32(pb, 0); /* unknown */
+        if (track->enc->height == 1080)
+            put_be32(pb, 5); /* unknown */
+        else
+            put_be32(pb, 6); /* unknown */
+    }
+    /* padding */
+    for (i = 0; i < 10; i++)
+        put_be64(pb, 0);
+
+    /* extra padding for stsd needed */
+    put_be32(pb, 0);
+    return 0;
+}
+
+static const AVCodecTag codec_3gp_tags[] = {
+    { CODEC_ID_H263,   MKTAG('s','2','6','3') },
+    { CODEC_ID_H264,   MKTAG('a','v','c','1') },
+    { CODEC_ID_MPEG4,  MKTAG('m','p','4','v') },
+    { CODEC_ID_AAC,    MKTAG('m','p','4','a') },
+    { CODEC_ID_AMR_NB, MKTAG('s','a','m','r') },
+    { CODEC_ID_AMR_WB, MKTAG('s','a','w','b') },
+};
+
+static const AVCodecTag mov_pix_fmt_tags[] = {
+    { PIX_FMT_YUYV422, MKTAG('y','u','v','s') },
+    { PIX_FMT_UYVY422, MKTAG('2','v','u','y') },
+    { PIX_FMT_BGR555,  MKTAG('r','a','w',' ') },
+    { PIX_FMT_RGB24,   MKTAG('r','a','w',' ') },
+    { PIX_FMT_BGR32_1, MKTAG('r','a','w',' ') },
+};
+
+static int mov_find_codec_tag(AVFormatContext *s, MOVTrack *track)
 {
     int tag = track->enc->codec_tag;
-    if (!tag) {
+    if (track->mode == MODE_MP4 || track->mode == MODE_PSP || track->mode == MODE_IPOD) {
+        if (!codec_get_tag(ff_mp4_obj_type, track->enc->codec_id))
+            return 0;
+        if (track->enc->codec_id == CODEC_ID_H264)           tag = MKTAG('a','v','c','1');
+        else if (track->enc->codec_type == CODEC_TYPE_VIDEO) tag = MKTAG('m','p','4','v');
+        else if (track->enc->codec_type == CODEC_TYPE_AUDIO) tag = MKTAG('m','p','4','a');
+    } else if (track->mode == MODE_3GP || track->mode == MODE_3G2) {
+        tag = codec_get_tag(codec_3gp_tags, track->enc->codec_id);
+    } else if (!tag || (track->enc->strict_std_compliance >= FF_COMPLIANCE_NORMAL &&
+                        (tag == MKTAG('d','v','c','p') ||
+                         track->enc->codec_id == CODEC_ID_RAWVIDEO))) {
         if (track->enc->codec_id == CODEC_ID_DVVIDEO) {
-            if (track->enc->height == 480) { /* NTSC */
-                if (track->enc->pix_fmt == PIX_FMT_YUV422P)
-                    tag = MKTAG('d', 'v', '5', 'n');
-                else
-                    tag = MKTAG('d', 'v', 'c', ' ');
-            } else { /* assume PAL */
-                if (track->enc->pix_fmt == PIX_FMT_YUV422P)
-                    tag = MKTAG('d', 'v', '5', 'p');
-                else if (track->enc->pix_fmt == PIX_FMT_YUV420P)
-                    tag = MKTAG('d', 'v', 'c', 'p');
-                else
-                    tag = MKTAG('d', 'v', 'p', 'p');
-            }
-        } else if (track->enc->codec_id == CODEC_ID_H263) {
-            if (track->mode == MODE_MOV)
-                tag = MKTAG('h', '2', '6', '3');
-            else
-                tag = MKTAG('s', '2', '6', '3');
+            if (track->enc->height == 480) /* NTSC */
+                if  (track->enc->pix_fmt == PIX_FMT_YUV422P) tag = MKTAG('d','v','5','n');
+                else                                         tag = MKTAG('d','v','c',' ');
+            else if (track->enc->pix_fmt == PIX_FMT_YUV422P) tag = MKTAG('d','v','5','p');
+            else if (track->enc->pix_fmt == PIX_FMT_YUV420P) tag = MKTAG('d','v','c','p');
+            else                                             tag = MKTAG('d','v','p','p');
+        } else if (track->enc->codec_id == CODEC_ID_RAWVIDEO) {
+            tag = codec_get_tag(mov_pix_fmt_tags, track->enc->pix_fmt);
+            if (!tag) // restore tag
+                tag = track->enc->codec_tag;
         } else {
-            tag = codec_get_tag(codec_movvideo_tags, track->enc->codec_id);
+            if (track->enc->codec_type == CODEC_TYPE_VIDEO) {
+                tag = codec_get_tag(codec_movvideo_tags, track->enc->codec_id);
+                if (!tag) { // if no mac fcc found, try with Microsoft tags
+                    tag = codec_get_tag(codec_bmp_tags, track->enc->codec_id);
+                    if (tag)
+                        av_log(s, AV_LOG_INFO, "Warning, using MS style video codec tag, "
+                               "the file may be unplayable!\n");
+                }
+            } else if (track->enc->codec_type == CODEC_TYPE_AUDIO) {
+                tag = codec_get_tag(codec_movaudio_tags, track->enc->codec_id);
+                if (!tag) { // if no mac fcc found, try with Microsoft tags
+                    int ms_tag = codec_get_tag(codec_wav_tags, track->enc->codec_id);
+                    if (ms_tag) {
+                        tag = MKTAG('m', 's', ((ms_tag >> 8) & 0xff), (ms_tag & 0xff));
+                        av_log(s, AV_LOG_INFO, "Warning, using MS style audio codec tag, "
+                               "the file may be unplayable!\n");
+                    }
+                }
+            }
         }
     }
-    // if no mac fcc found, try with Microsoft tags
-    if (!tag) {
-        tag = codec_get_tag(codec_bmp_tags, track->enc->codec_id);
-        if (tag) {
-            av_log(s, AV_LOG_INFO, "Warning, using MS style video codec tag, the file may be unplayable!\n");
-        }
-    }
-    assert(tag);
     return tag;
 }
 
-static int mov_find_audio_codec_tag(AVFormatContext *s, MOVTrack *track)
+/** Write uuid atom.
+ * Needed to make file play in iPods running newest firmware
+ * goes after avcC atom in moov.trak.mdia.minf.stbl.stsd.avc1
+ */
+static int mov_write_uuid_tag_ipod(ByteIOContext *pb)
 {
-    int tag = track->enc->codec_tag;
-    if (!tag) {
-        tag = codec_get_tag(codec_movaudio_tags, track->enc->codec_id);
-    }
-    // if no mac fcc found, try with Microsoft tags
-    if (!tag) {
-        int ms_tag = codec_get_tag(codec_wav_tags, track->enc->codec_id);
-        if (ms_tag) {
-            tag = MKTAG('m', 's', ((ms_tag >> 8) & 0xff), (ms_tag & 0xff));
-            av_log(s, AV_LOG_INFO, "Warning, using MS style audio codec tag, the file may be unplayable!\n");
-        }
-    }
-    assert(tag);
-    return tag;
+    put_be32(pb, 28);
+    put_tag(pb, "uuid");
+    put_be32(pb, 0x6b6840f2);
+    put_be32(pb, 0x5f244fc5);
+    put_be32(pb, 0xba39a51b);
+    put_be32(pb, 0xcf0323f3);
+    put_be32(pb, 0x0);
+    return 28;
 }
 
 static int mov_write_video_tag(ByteIOContext *pb, MOVTrack* track)
@@ -613,16 +599,25 @@ static int mov_write_video_tag(ByteIOContext *pb, MOVTrack* track)
     put_byte(pb, strlen(compressor_name));
     put_buffer(pb, compressor_name, 31);
 
-    put_be16(pb, 0x18); /* Reserved */
+    if (track->mode == MODE_MOV && track->enc->bits_per_sample)
+        put_be16(pb, track->enc->bits_per_sample);
+    else
+        put_be16(pb, 0x18); /* Reserved */
     put_be16(pb, 0xffff); /* Reserved */
-    if(track->enc->codec_id == CODEC_ID_MPEG4)
+    if(track->tag == MKTAG('m','p','4','v'))
         mov_write_esds_tag(pb, track);
     else if(track->enc->codec_id == CODEC_ID_H263)
         mov_write_d263_tag(pb);
     else if(track->enc->codec_id == CODEC_ID_SVQ3)
         mov_write_svq3_tag(pb);
-    else if(track->enc->codec_id == CODEC_ID_H264)
+    else if(track->enc->codec_id == CODEC_ID_DNXHD)
+        mov_write_avid_tag(pb, track);
+    else if(track->enc->codec_id == CODEC_ID_H264) {
         mov_write_avcc_tag(pb, track);
+        if(track->mode == MODE_IPOD)
+            mov_write_uuid_tag_ipod(pb);
+    } else if(track->vosLen > 0)
+        mov_write_glbl_tag(pb, track);
 
     return updateSize (pb, pos);
 }
@@ -738,7 +733,7 @@ static int mov_write_stbl_tag(ByteIOContext *pb, MOVTrack* track)
     mov_write_stsd_tag(pb, track);
     mov_write_stts_tag(pb, track);
     if (track->enc->codec_type == CODEC_TYPE_VIDEO &&
-        track->hasKeyframes < track->entry)
+        track->hasKeyframes && track->hasKeyframes < track->entry)
         mov_write_stss_tag(pb, track);
     if (track->enc->codec_type == CODEC_TYPE_VIDEO &&
         track->hasBframes)
@@ -911,7 +906,7 @@ static int mov_write_tkhd_tag(ByteIOContext *pb, MOVTrack* track)
     /* Track width and height, for visual only */
     if(track->enc->codec_type == CODEC_TYPE_VIDEO) {
         double sample_aspect_ratio = av_q2d(track->enc->sample_aspect_ratio);
-        if( !sample_aspect_ratio ) sample_aspect_ratio = 1;
+        if(!sample_aspect_ratio) sample_aspect_ratio = 1;
         put_be32(pb, sample_aspect_ratio * track->enc->width*0x10000);
         put_be32(pb, track->enc->height*0x10000);
     }
@@ -1083,7 +1078,7 @@ static int mov_write_string_data_tag(ByteIOContext *pb, const char *data, int lo
 
 static int mov_write_string_tag(ByteIOContext *pb, const char *name, const char *value, int long_style){
     int size = 0;
-    if ( value && value[0] ) {
+    if (value && value[0]) {
         offset_t pos = url_ftell(pb);
         put_be32(pb, 0); /* size */
         put_tag(pb, name);
@@ -1109,7 +1104,7 @@ static int mov_write_trkn_tag(ByteIOContext *pb, MOVContext* mov,
                               AVFormatContext *s)
 {
     int size = 0;
-    if ( s->track ) {
+    if (s->track) {
         offset_t pos = url_ftell(pb);
         put_be32(pb, 0); /* size */
         put_tag(pb, "trkn");
@@ -1157,8 +1152,8 @@ static int mov_write_meta_tag(ByteIOContext *pb, MOVContext* mov,
     int size = 0;
 
     // only save meta tag if required
-    if ( s->title[0] || s->author[0] || s->album[0] || s->year ||
-         s->comment[0] || s->genre[0] || s->track ) {
+    if (s->title[0] || s->author[0] || s->album[0] || s->year ||
+         s->comment[0] || s->genre[0] || s->track) {
         offset_t pos = url_ftell(pb);
         put_be32(pb, 0); /* size */
         put_tag(pb, "meta");
@@ -1173,40 +1168,52 @@ static int mov_write_meta_tag(ByteIOContext *pb, MOVContext* mov,
 static int mov_write_udta_tag(ByteIOContext *pb, MOVContext* mov,
                               AVFormatContext *s)
 {
-    offset_t pos = url_ftell(pb);
-    int i;
+    int i, req = 0;
 
-    put_be32(pb, 0); /* size */
-    put_tag(pb, "udta");
-
-    /* iTunes meta data */
-    mov_write_meta_tag(pb, mov, s);
-
-  if(mov->mode == MODE_MOV){ // the title field breaks gtkpod with mp4 and my suspicion is that stuff is not valid in mp4
     /* Requirements */
     for (i=0; i<mov->nb_streams; i++) {
         if(mov->tracks[i].entry <= 0) continue;
         if (mov->tracks[i].enc->codec_id == CODEC_ID_AAC ||
             mov->tracks[i].enc->codec_id == CODEC_ID_MPEG4) {
-            mov_write_string_tag(pb, "\251req", "QuickTime 6.0 or greater", 0);
+            req = 1;
             break;
         }
     }
 
-    mov_write_string_tag(pb, "\251nam", s->title         , 0);
-    mov_write_string_tag(pb, "\251aut", s->author        , 0);
-    mov_write_string_tag(pb, "\251alb", s->album         , 0);
-    mov_write_day_tag(pb, s->year, 0);
-    if(mov->tracks[0].enc && !(mov->tracks[0].enc->flags & CODEC_FLAG_BITEXACT))
-        mov_write_string_tag(pb, "\251enc", LIBAVFORMAT_IDENT, 0);
-    mov_write_string_tag(pb, "\251des", s->comment       , 0);
-    mov_write_string_tag(pb, "\251gen", s->genre         , 0);
-  }
+    if (s->title[0]   || s->author[0] || s->album[0] || s->year ||
+        s->comment[0] || s->genre[0]  || s->track ||
+       (mov->mode == MODE_MOV &&
+      ((mov->tracks[0].enc && !mov->tracks[0].enc->flags & CODEC_FLAG_BITEXACT) || req))) {
+        offset_t pos = url_ftell(pb);
 
-    return updateSize(pb, pos);
+        put_be32(pb, 0); /* size */
+        put_tag(pb, "udta");
+
+        /* iTunes meta data */
+        mov_write_meta_tag(pb, mov, s);
+
+        if(mov->mode == MODE_MOV){ // the title field breaks gtkpod with mp4 and my suspicion is that stuff is not valid in mp4
+            /* Requirements */
+            if (req)
+                mov_write_string_tag(pb, "\251req", "QuickTime 6.0 or greater", 0);
+
+            mov_write_string_tag(pb, "\251nam", s->title         , 0);
+            mov_write_string_tag(pb, "\251aut", s->author        , 0);
+            mov_write_string_tag(pb, "\251alb", s->album         , 0);
+            mov_write_day_tag(pb, s->year, 0);
+            if(mov->tracks[0].enc && !(mov->tracks[0].enc->flags & CODEC_FLAG_BITEXACT))
+                mov_write_string_tag(pb, "\251enc", LIBAVFORMAT_IDENT, 0);
+            mov_write_string_tag(pb, "\251des", s->comment       , 0);
+            mov_write_string_tag(pb, "\251gen", s->genre         , 0);
+        }
+
+        return updateSize(pb, pos);
+    }
+
+    return 0;
 }
 
-static int utf8len(uint8_t *b){
+static int utf8len(const uint8_t *b){
     int len=0;
     int val;
     while(*b){
@@ -1216,7 +1223,7 @@ static int utf8len(uint8_t *b){
     return len;
 }
 
-static int ascii_to_wc (ByteIOContext *pb, uint8_t *b)
+static int ascii_to_wc (ByteIOContext *pb, const uint8_t *b)
 {
     int val;
     while(*b){
@@ -1243,9 +1250,9 @@ static int mov_write_uuidusmt_tag (ByteIOContext *pb, AVFormatContext *s)
         put_be32(pb, 0); /* size placeholder*/
         put_tag(pb, "uuid");
         put_tag(pb, "USMT");
-        put_be32(pb, 0x21d24fce ); /* 96 bit UUID */
-        put_be32(pb, 0xbb88695c );
-        put_be32(pb, 0xfac9c740 );
+        put_be32(pb, 0x21d24fce); /* 96 bit UUID */
+        put_be32(pb, 0xbb88695c);
+        put_be32(pb, 0xfac9c740);
         size += 24;
 
         put_be32(pb, 0); /* size placeholder*/
@@ -1336,7 +1343,7 @@ static int mov_write_moov_tag(ByteIOContext *pb, MOVContext *mov,
 
     if (mov->mode == MODE_PSP)
         mov_write_uuidusmt_tag(pb, s);
-    else
+    else if (mov->mode != MODE_3GP && mov->mode != MODE_3G2)
         mov_write_udta_tag(pb, mov, s);
 
     return updateSize(pb, pos);
@@ -1358,29 +1365,29 @@ static void mov_write_ftyp_tag (ByteIOContext *pb, AVFormatContext *s)
 {
     MOVContext *mov = s->priv_data;
 
-    put_be32(pb, 0x14 ); /* size */
+    put_be32(pb, 0x14); /* size */
     put_tag(pb, "ftyp");
 
-    if ( mov->mode == MODE_3GP )
+    if (mov->mode == MODE_3GP)
         put_tag(pb, "3gp4");
-    else if ( mov->mode == MODE_3G2 )
+    else if (mov->mode == MODE_3G2)
         put_tag(pb, "3g2a");
-    else if ( mov->mode == MODE_PSP )
+    else if (mov->mode == MODE_PSP)
         put_tag(pb, "MSNV");
-    else if ( mov->mode == MODE_MP4 )
+    else if (mov->mode == MODE_MP4 || mov->mode == MODE_IPOD)
         put_tag(pb, "isom");
     else
         put_tag(pb, "qt  ");
 
-    put_be32(pb, 0x200 );
+    put_be32(pb, 0x200);
 
-    if ( mov->mode == MODE_3GP )
+    if (mov->mode == MODE_3GP)
         put_tag(pb, "3gp4");
-    else if ( mov->mode == MODE_3G2 )
+    else if (mov->mode == MODE_3G2)
         put_tag(pb, "3g2a");
-    else if ( mov->mode == MODE_PSP )
+    else if (mov->mode == MODE_PSP)
         put_tag(pb, "MSNV");
-    else if ( mov->mode == MODE_MP4 )
+    else if (mov->mode == MODE_MP4 || mov->mode == MODE_IPOD)
         put_tag(pb, "mp41");
     else
         put_tag(pb, "qt  ");
@@ -1395,49 +1402,49 @@ static void mov_write_uuidprof_tag(ByteIOContext *pb, AVFormatContext *s)
     int audio_kbitrate= AudioCodec->bit_rate / 1000;
     int video_kbitrate= FFMIN(VideoCodec->bit_rate / 1000, 800 - audio_kbitrate);
 
-    put_be32(pb, 0x94 ); /* size */
+    put_be32(pb, 0x94); /* size */
     put_tag(pb, "uuid");
     put_tag(pb, "PROF");
 
-    put_be32(pb, 0x21d24fce ); /* 96 bit UUID */
-    put_be32(pb, 0xbb88695c );
-    put_be32(pb, 0xfac9c740 );
+    put_be32(pb, 0x21d24fce); /* 96 bit UUID */
+    put_be32(pb, 0xbb88695c);
+    put_be32(pb, 0xfac9c740);
 
-    put_be32(pb, 0x0 );  /* ? */
-    put_be32(pb, 0x3 );  /* 3 sections ? */
+    put_be32(pb, 0x0);  /* ? */
+    put_be32(pb, 0x3);  /* 3 sections ? */
 
-    put_be32(pb, 0x14 ); /* size */
+    put_be32(pb, 0x14); /* size */
     put_tag(pb, "FPRF");
-    put_be32(pb, 0x0 );  /* ? */
-    put_be32(pb, 0x0 );  /* ? */
-    put_be32(pb, 0x0 );  /* ? */
+    put_be32(pb, 0x0);  /* ? */
+    put_be32(pb, 0x0);  /* ? */
+    put_be32(pb, 0x0);  /* ? */
 
-    put_be32(pb, 0x2c );  /* size */
+    put_be32(pb, 0x2c);  /* size */
     put_tag(pb, "APRF");   /* audio */
-    put_be32(pb, 0x0 );
-    put_be32(pb, 0x2 );   /* TrackID */
+    put_be32(pb, 0x0);
+    put_be32(pb, 0x2);   /* TrackID */
     put_tag(pb, "mp4a");
-    put_be32(pb, 0x20f );
-    put_be32(pb, 0x0 );
+    put_be32(pb, 0x20f);
+    put_be32(pb, 0x0);
     put_be32(pb, audio_kbitrate);
     put_be32(pb, audio_kbitrate);
-    put_be32(pb, AudioRate );
-    put_be32(pb, AudioCodec->channels );
+    put_be32(pb, AudioRate);
+    put_be32(pb, AudioCodec->channels);
 
-    put_be32(pb, 0x34 );  /* size */
+    put_be32(pb, 0x34);  /* size */
     put_tag(pb, "VPRF");   /* video */
-    put_be32(pb, 0x0 );
-    put_be32(pb, 0x1 );    /* TrackID */
+    put_be32(pb, 0x0);
+    put_be32(pb, 0x1);    /* TrackID */
     if (VideoCodec->codec_id == CODEC_ID_H264) {
         put_tag(pb, "avc1");
-        put_be16(pb, 0x014D );
-        put_be16(pb, 0x0015 );
+        put_be16(pb, 0x014D);
+        put_be16(pb, 0x0015);
     } else {
         put_tag(pb, "mp4v");
-        put_be16(pb, 0x0000 );
-        put_be16(pb, 0x0103 );
+        put_be16(pb, 0x0000);
+        put_be16(pb, 0x0103);
     }
-    put_be32(pb, 0x0 );
+    put_be32(pb, 0x0);
     put_be32(pb, video_kbitrate);
     put_be32(pb, video_kbitrate);
     put_be32(pb, FrameRate);
@@ -1449,11 +1456,11 @@ static void mov_write_uuidprof_tag(ByteIOContext *pb, AVFormatContext *s)
 
 static int mov_write_header(AVFormatContext *s)
 {
-    ByteIOContext *pb = &s->pb;
+    ByteIOContext *pb = s->pb;
     MOVContext *mov = s->priv_data;
     int i;
 
-    if (url_is_streamed(&s->pb)) {
+    if (url_is_streamed(s->pb)) {
         av_log(s, AV_LOG_ERROR, "muxer does not support non seekable output\n");
         return -1;
     }
@@ -1466,10 +1473,11 @@ static int mov_write_header(AVFormatContext *s)
         else if (!strcmp("3g2", s->oformat->name)) mov->mode = MODE_3G2;
         else if (!strcmp("mov", s->oformat->name)) mov->mode = MODE_MOV;
         else if (!strcmp("psp", s->oformat->name)) mov->mode = MODE_PSP;
+        else if (!strcmp("ipod",s->oformat->name)) mov->mode = MODE_IPOD;
 
         mov_write_ftyp_tag(pb,s);
-        if ( mov->mode == MODE_PSP ) {
-            if ( s->nb_streams != 2 ) {
+        if (mov->mode == MODE_PSP) {
+            if (s->nb_streams != 2) {
                 av_log(s, AV_LOG_ERROR, "PSP mode need one video and one audio stream\n");
                 return -1;
             }
@@ -1484,17 +1492,20 @@ static int mov_write_header(AVFormatContext *s)
         track->enc = st->codec;
         track->language = ff_mov_iso639_to_lang(st->language, mov->mode != MODE_MOV);
         track->mode = mov->mode;
+        track->tag = mov_find_codec_tag(s, track);
+        if (!track->tag) {
+            av_log(s, AV_LOG_ERROR, "track %d: could not find tag for codec\n", i);
+            return -1;
+        }
         if(st->codec->codec_type == CODEC_TYPE_VIDEO){
-            track->tag = mov_find_video_codec_tag(s, track);
             track->timescale = st->codec->time_base.den;
             av_set_pts_info(st, 64, 1, st->codec->time_base.den);
-            if (track->timescale > 100000)
-                av_log(NULL, AV_LOG_WARNING,
+            if (track->mode == MODE_MOV && track->timescale > 100000)
+                av_log(s, AV_LOG_WARNING,
                        "WARNING codec timebase is very high. If duration is too long,\n"
                        "file may not be playable by quicktime. Specify a shorter timebase\n"
                        "or choose different container.\n");
         }else if(st->codec->codec_type == CODEC_TYPE_AUDIO){
-            track->tag = mov_find_audio_codec_tag(s, track);
             track->timescale = st->codec->sample_rate;
             av_set_pts_info(st, 64, 1, st->codec->sample_rate);
             if(!st->codec->frame_size){
@@ -1520,13 +1531,13 @@ static int mov_write_header(AVFormatContext *s)
 static int mov_write_packet(AVFormatContext *s, AVPacket *pkt)
 {
     MOVContext *mov = s->priv_data;
-    ByteIOContext *pb = &s->pb;
+    ByteIOContext *pb = s->pb;
     MOVTrack *trk = &mov->tracks[pkt->stream_index];
     AVCodecContext *enc = trk->enc;
     unsigned int samplesInChunk = 0;
     int size= pkt->size;
 
-    if (url_is_streamed(&s->pb)) return 0; /* Can't handle that */
+    if (url_is_streamed(s->pb)) return 0; /* Can't handle that */
     if (!size) return 0; /* Discard 0 sized packets */
 
     if (enc->codec_id == CODEC_ID_AMR_NB) {
@@ -1558,9 +1569,18 @@ static int mov_write_packet(AVFormatContext *s, AVPacket *pkt)
     if (enc->codec_id == CODEC_ID_H264 && trk->vosLen > 0 && *(uint8_t *)trk->vosData != 1) {
         /* from x264 or from bytestream h264 */
         /* nal reformating needed */
-        avc_parse_nal_units(&pkt->data, &pkt->size);
+        int ret = ff_avc_parse_nal_units(pkt->data, &pkt->data, &pkt->size);
+        if (ret < 0)
+            return ret;
         assert(pkt->size);
         size = pkt->size;
+    } else if (enc->codec_id == CODEC_ID_DNXHD && !trk->vosLen) {
+        /* copy frame header to create needed atoms */
+        if (size < 640)
+            return -1;
+        trk->vosLen = 640;
+        trk->vosData = av_malloc(trk->vosLen);
+        memcpy(trk->vosData, pkt->data, 640);
     }
 
     if (!(trk->entry % MOV_INDEX_CLUSTER_SIZE)) {
@@ -1597,7 +1617,7 @@ static int mov_write_packet(AVFormatContext *s, AVPacket *pkt)
 static int mov_write_trailer(AVFormatContext *s)
 {
     MOVContext *mov = s->priv_data;
-    ByteIOContext *pb = &s->pb;
+    ByteIOContext *pb = s->pb;
     int res = 0;
     int i;
 
@@ -1621,7 +1641,7 @@ static int mov_write_trailer(AVFormatContext *s)
     for (i=0; i<mov->nb_streams; i++) {
         av_freep(&mov->tracks[i].cluster);
 
-        if( mov->tracks[i].vosLen ) av_free( mov->tracks[i].vosData );
+        if(mov->tracks[i].vosLen) av_free(mov->tracks[i].vosData);
 
     }
 
@@ -1643,6 +1663,7 @@ AVOutputFormat mov_muxer = {
     mov_write_packet,
     mov_write_trailer,
     .flags = AVFMT_GLOBALHEADER,
+    .codec_tag = (const AVCodecTag*[]){codec_movvideo_tags, codec_movaudio_tags, 0},
 };
 #endif
 #ifdef CONFIG_TGP_MUXER
@@ -1658,6 +1679,7 @@ AVOutputFormat tgp_muxer = {
     mov_write_packet,
     mov_write_trailer,
     .flags = AVFMT_GLOBALHEADER,
+    .codec_tag = (const AVCodecTag*[]){codec_3gp_tags, 0},
 };
 #endif
 #ifdef CONFIG_MP4_MUXER
@@ -1673,6 +1695,7 @@ AVOutputFormat mp4_muxer = {
     mov_write_packet,
     mov_write_trailer,
     .flags = AVFMT_GLOBALHEADER,
+    .codec_tag = (const AVCodecTag*[]){ff_mp4_obj_type, 0},
 };
 #endif
 #ifdef CONFIG_PSP_MUXER
@@ -1688,6 +1711,7 @@ AVOutputFormat psp_muxer = {
     mov_write_packet,
     mov_write_trailer,
     .flags = AVFMT_GLOBALHEADER,
+    .codec_tag = (const AVCodecTag*[]){ff_mp4_obj_type, 0},
 };
 #endif
 #ifdef CONFIG_TG2_MUXER
@@ -1703,5 +1727,22 @@ AVOutputFormat tg2_muxer = {
     mov_write_packet,
     mov_write_trailer,
     .flags = AVFMT_GLOBALHEADER,
+    .codec_tag = (const AVCodecTag*[]){codec_3gp_tags, 0},
+};
+#endif
+#ifdef CONFIG_IPOD_MUXER
+AVOutputFormat ipod_muxer = {
+    "ipod",
+    "iPod H.264 mp4 format",
+    "application/mp4",
+    NULL,
+    sizeof(MOVContext),
+    CODEC_ID_AAC,
+    CODEC_ID_H264,
+    mov_write_header,
+    mov_write_packet,
+    mov_write_trailer,
+    .flags = AVFMT_GLOBALHEADER,
+    .codec_tag = (const AVCodecTag*[]){ff_mp4_obj_type, 0},
 };
 #endif

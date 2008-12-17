@@ -36,6 +36,7 @@
 
 #include "simple_idct.h"
 #include "faandct.h"
+#include "faanidct.h"
 
 #ifndef MAX
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
@@ -73,6 +74,7 @@ struct algo {
   void (* func) (DCTELEM *block);
   void (* ref)  (DCTELEM *block);
   enum formattag { NO_PERM,MMX_PERM, MMX_SIMPLE_PERM, SCALE_PERM } format;
+  int  mm_support;
 };
 
 #ifndef FAAN_POSTSCALE
@@ -81,40 +83,38 @@ struct algo {
 #define FAAN_SCALE NO_PERM
 #endif
 
-#define DCT_ERROR(name,is_idct,func,ref,form) {name,is_idct,func,ref,form}
-
-
 struct algo algos[] = {
-  DCT_ERROR( "REF-DBL",        0, fdct,               fdct, NO_PERM),
-  DCT_ERROR("FAAN",            0, ff_faandct,         fdct, FAAN_SCALE),
-  DCT_ERROR("IJG-AAN-INT",     0, fdct_ifast,         fdct, SCALE_PERM),
-  DCT_ERROR("IJG-LLM-INT",     0, ff_jpeg_fdct_islow, fdct, NO_PERM),
-  DCT_ERROR("REF-DBL",         1, idct,               idct, NO_PERM),
-  DCT_ERROR("INT",             1, j_rev_dct,          idct, MMX_PERM),
-  DCT_ERROR("SIMPLE-C",        1, simple_idct,        idct, NO_PERM),
+  {"REF-DBL",         0, fdct,               fdct, NO_PERM},
+  {"FAAN",            0, ff_faandct,         fdct, FAAN_SCALE},
+  {"FAANI",           1, ff_faanidct,        idct, NO_PERM},
+  {"IJG-AAN-INT",     0, fdct_ifast,         fdct, SCALE_PERM},
+  {"IJG-LLM-INT",     0, ff_jpeg_fdct_islow, fdct, NO_PERM},
+  {"REF-DBL",         1, idct,               idct, NO_PERM},
+  {"INT",             1, j_rev_dct,          idct, MMX_PERM},
+  {"SIMPLE-C",        1, ff_simple_idct,     idct, NO_PERM},
 
 #ifdef HAVE_MMX
-  DCT_ERROR("MMX",             0, ff_fdct_mmx,        fdct, NO_PERM),
+  {"MMX",             0, ff_fdct_mmx,        fdct, NO_PERM, MM_MMX},
 #ifdef HAVE_MMX2
-  DCT_ERROR("MMX2",            0, ff_fdct_mmx2,       fdct, NO_PERM),
+  {"MMX2",            0, ff_fdct_mmx2,       fdct, NO_PERM, MM_MMXEXT},
 #endif
 
 #ifdef CONFIG_GPL
-  DCT_ERROR("LIBMPEG2-MMX",    1, ff_mmx_idct,        idct, MMX_PERM),
-  DCT_ERROR("LIBMPEG2-MMXEXT", 1, ff_mmxext_idct,     idct, MMX_PERM),
+  {"LIBMPEG2-MMX",    1, ff_mmx_idct,        idct, MMX_PERM, MM_MMX},
+  {"LIBMPEG2-MMXEXT", 1, ff_mmxext_idct,     idct, MMX_PERM, MM_MMXEXT},
 #endif
-  DCT_ERROR("SIMPLE-MMX",      1, ff_simple_idct_mmx, idct, MMX_SIMPLE_PERM),
-  DCT_ERROR("XVID-MMX",        1, ff_idct_xvid_mmx,   idct, NO_PERM),
-  DCT_ERROR("XVID-MMX2",       1, ff_idct_xvid_mmx2,  idct, NO_PERM),
+  {"SIMPLE-MMX",      1, ff_simple_idct_mmx, idct, MMX_SIMPLE_PERM, MM_MMX},
+  {"XVID-MMX",        1, ff_idct_xvid_mmx,   idct, NO_PERM, MM_MMX},
+  {"XVID-MMX2",       1, ff_idct_xvid_mmx2,  idct, NO_PERM, MM_MMXEXT},
 #endif
 
 #ifdef HAVE_ALTIVEC
-  DCT_ERROR("altivecfdct",     0, fdct_altivec,       fdct, NO_PERM),
+  {"altivecfdct",     0, fdct_altivec,       fdct, NO_PERM, MM_ALTIVEC},
 #endif
 
 #ifdef ARCH_BFIN
-  DCT_ERROR("BFINfdct",        0, ff_bfin_fdct,       fdct, NO_PERM),
-  DCT_ERROR("BFINidct",        1, ff_bfin_idct,       idct, NO_PERM),
+  {"BFINfdct",        0, ff_bfin_fdct,       fdct, NO_PERM},
+  {"BFINidct",        1, ff_bfin_idct,       idct, NO_PERM},
 #endif
 
   { 0 }
@@ -169,7 +169,7 @@ void idct_mmx_init(void)
     }
 }
 
-static DCTELEM block[64] __attribute__ ((aligned (8)));
+static DCTELEM block[64] __attribute__ ((aligned (16)));
 static DCTELEM block1[64] __attribute__ ((aligned (8)));
 static DCTELEM block_org[64] __attribute__ ((aligned (8)));
 
@@ -529,6 +529,7 @@ int main(int argc, char **argv)
 
     init_fdct();
     idct_mmx_init();
+    mm_flags = mm_support();
 
     for(i=0;i<256;i++) cropTbl[i + MAX_NEG_CROP] = i;
     for(i=0;i<MAX_NEG_CROP;i++) {
@@ -559,10 +560,10 @@ int main(int argc, char **argv)
     printf("ffmpeg DCT/IDCT test\n");
 
     if (test_248_dct) {
-        idct248_error("SIMPLE-C", simple_idct248_put);
+        idct248_error("SIMPLE-C", ff_simple_idct248_put);
     } else {
       for (i=0;algos[i].name;i++)
-        if (algos[i].is_idct == test_idct) {
+        if (algos[i].is_idct == test_idct && !(~mm_flags & algos[i].mm_support)) {
           dct_error (algos[i].name, algos[i].is_idct, algos[i].func, algos[i].ref, algos[i].format, test);
         }
     }

@@ -26,8 +26,8 @@
  * @author Michael Niedermayer <michaelni@gmx.at>
  */
 
-#ifndef AVCODEC_H264DATA_H
-#define AVCODEC_H264DATA_H
+#ifndef FFMPEG_H264DATA_H
+#define FFMPEG_H264DATA_H
 
 #include <stdint.h>
 #include "mpegvideo.h"
@@ -54,7 +54,7 @@ NAL_SPS_EXT,
 NAL_AUXILIARY_SLICE=19
 };
 
-static const AVRational pixel_aspect[14]={
+static const AVRational pixel_aspect[17]={
  {0, 1},
  {1, 1},
  {12, 11},
@@ -69,10 +69,13 @@ static const AVRational pixel_aspect[14]={
  {15, 11},
  {64, 33},
  {160,99},
+ {4, 3},
+ {3, 2},
+ {2, 1},
 };
 
 static const uint8_t golomb_to_pict_type[5]=
-{P_TYPE, B_TYPE, I_TYPE, SP_TYPE, SI_TYPE};
+{FF_P_TYPE, FF_B_TYPE, FF_I_TYPE, FF_SP_TYPE, FF_SI_TYPE};
 
 static const uint8_t pict_type_to_golomb[7]=
 {-1, 2, 0, 1, -1, 4, 3};
@@ -1305,4 +1308,4 @@ static const int8_t cabac_context_init_PB[3][460][2] =
     }
 };
 
-#endif // AVCODEC_H264DATA_H
+#endif /* FFMPEG_H264DATA_H */

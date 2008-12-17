@@ -35,11 +35,11 @@
  * and Edouard Gomez <ed.gomez@free.fr>.
  */
 
+#include "config.h"
 #include "avformat.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
 #include <sys/time.h>
 #define _LINUX_TIME_H 1
 #include <time.h>
@@ -299,7 +299,7 @@ apply_masks(uint8_t *dst, int and, int or, int bits_per_pixel)
 /**
  * Paints a mouse pointer in an X11 image.
  *
- * @param image Image where to paint the mouse pointer
+ * @param image image to paint the mouse pointer to
  * @param s context used to retrieve original grabbing rectangle
  *          coordinates
  * @param x Mouse pointer coordinate

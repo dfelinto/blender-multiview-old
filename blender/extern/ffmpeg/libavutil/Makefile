@@ -1,11 +1,14 @@
 include ../config.mak
 
+NAME = avutil
+
 OBJS = adler32.o \
        aes.o \
        base64.o \
        crc.o \
-       intfloat_readwrite.o \
+       des.o \
        fifo.o \
+       intfloat_readwrite.o \
        lls.o \
        log.o \
        lzo.o \
@@ -14,6 +17,8 @@ OBJS = adler32.o \
        mem.o \
        random.o \
        rational.o \
+       rc4.o \
+       sha1.o \
        string.o \
        tree.o \
 
@@ -22,8 +27,8 @@ HEADERS = adler32.h \
           avutil.h \
           base64.h \
           common.h \
+          crc.h \
           fifo.h \
-          integer.h \
           intfloat_readwrite.h \
           log.h \
           lzo.h \
@@ -32,9 +37,13 @@ HEADERS = adler32.h \
           mem.h \
           random.h \
           rational.h \
+          sha1.h
 
-NAME=avutil
-LIBVERSION=$(LAVUVERSION)
-LIBMAJOR=$(LAVUMAJOR)
+TESTS = $(addsuffix -test$(EXESUF), adler32 aes crc des lls md5 sha1 softfloat tree)
 
 include ../common.mak
+
+lzo-test$(EXESUF): EXTRALIBS += -llzo2
+
+clean::
+	rm -f lzo-test$(EXESUF)

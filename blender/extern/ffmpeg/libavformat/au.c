@@ -37,6 +37,7 @@
 /* The ffmpeg codecs we support, and the IDs they have in the file */
 static const AVCodecTag codec_au_tags[] = {
     { CODEC_ID_PCM_MULAW, 1 },
+    { CODEC_ID_PCM_S8, 2 },
     { CODEC_ID_PCM_S16BE, 3 },
     { CODEC_ID_PCM_ALAW, 27 },
     { 0, 0 },
@@ -59,7 +60,7 @@ static int put_au_header(ByteIOContext *pb, AVCodecContext *enc)
 
 static int au_write_header(AVFormatContext *s)
 {
-    ByteIOContext *pb = &s->pb;
+    ByteIOContext *pb = s->pb;
 
     s->priv_data = NULL;
 
@@ -75,17 +76,17 @@ static int au_write_header(AVFormatContext *s)
 
 static int au_write_packet(AVFormatContext *s, AVPacket *pkt)
 {
-    ByteIOContext *pb = &s->pb;
+    ByteIOContext *pb = s->pb;
     put_buffer(pb, pkt->data, pkt->size);
     return 0;
 }
 
 static int au_write_trailer(AVFormatContext *s)
 {
-    ByteIOContext *pb = &s->pb;
+    ByteIOContext *pb = s->pb;
     offset_t file_size;
 
-    if (!url_is_streamed(&s->pb)) {
+    if (!url_is_streamed(s->pb)) {
 
         /* update file size */
         file_size = url_ftell(pb);
@@ -116,7 +117,7 @@ static int au_read_header(AVFormatContext *s,
 {
     int size;
     unsigned int tag;
-    ByteIOContext *pb = &s->pb;
+    ByteIOContext *pb = s->pb;
     unsigned int id, codec, channels, rate;
     AVStream *st;
 
@@ -158,9 +159,9 @@ static int au_read_packet(AVFormatContext *s,
 {
     int ret;
 
-    if (url_feof(&s->pb))
+    if (url_feof(s->pb))
         return AVERROR(EIO);
-    ret= av_get_packet(&s->pb, pkt, MAX_SIZE);
+    ret= av_get_packet(s->pb, pkt, MAX_SIZE);
     if (ret < 0)
         return AVERROR(EIO);
     pkt->stream_index = 0;

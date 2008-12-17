@@ -50,7 +50,6 @@
 #include <unistd.h>
 
 #include "avcodec.h"
-#include "dsputil.h"
 
 #define HUFFMAN_TABLE_SIZE 64 * 1024
 #define HUF_TOKENS 256
@@ -66,10 +65,9 @@ typedef struct
 typedef struct IdcinContext {
 
     AVCodecContext *avctx;
-    DSPContext dsp;
     AVFrame frame;
 
-    unsigned char *buf;
+    const unsigned char *buf;
     int size;
 
     hnode_t huff_nodes[256][HUF_TOKENS*2];
@@ -115,7 +113,7 @@ static int huff_smallest_node(hnode_t *hnodes, int num_hnodes) {
  *  num_huff_nodes[prev] - contains the index to the root node of the tree.
  *    That is: huff_nodes[prev][num_huff_nodes[prev]] is the root node.
  */
-static void huff_build_tree(IdcinContext *s, int prev) {
+static av_cold void huff_build_tree(IdcinContext *s, int prev) {
     hnode_t *node, *hnodes;
      int num_hnodes, i;
 
@@ -145,7 +143,7 @@ static void huff_build_tree(IdcinContext *s, int prev) {
     s->num_huff_nodes[prev] = num_hnodes - 1;
 }
 
-static int idcin_decode_init(AVCodecContext *avctx)
+static av_cold int idcin_decode_init(AVCodecContext *avctx)
 {
     IdcinContext *s = avctx->priv_data;
     int i, j, histogram_index = 0;
@@ -153,7 +151,6 @@ static int idcin_decode_init(AVCodecContext *avctx)
 
     s->avctx = avctx;
     avctx->pix_fmt = PIX_FMT_PAL8;
-    dsputil_init(&s->dsp, avctx);
 
     /* make sure the Huffman tables make it */
     if (s->avctx->extradata_size != HUFFMAN_TABLE_SIZE) {
@@ -212,7 +209,7 @@ static void idcin_decode_vlcs(IdcinContext *s)
 
 static int idcin_decode_frame(AVCodecContext *avctx,
                               void *data, int *data_size,
-                              uint8_t *buf, int buf_size)
+                              const uint8_t *buf, int buf_size)
 {
     IdcinContext *s = avctx->priv_data;
     AVPaletteControl *palette_control = avctx->palctrl;
@@ -245,7 +242,7 @@ static int idcin_decode_frame(AVCodecContext *avctx,
     return buf_size;
 }
 
-static int idcin_decode_end(AVCodecContext *avctx)
+static av_cold int idcin_decode_end(AVCodecContext *avctx)
 {
     IdcinContext *s = avctx->priv_data;
 

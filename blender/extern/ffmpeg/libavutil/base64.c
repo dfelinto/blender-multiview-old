@@ -29,7 +29,7 @@
 #include "base64.h"
 
 /* ---------------- private code */
-static uint8_t map2[] =
+static const uint8_t map2[] =
 {
     0x3e, 0xff, 0xff, 0xff, 0x3f, 0x34, 0x35, 0x36,
     0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0xff,
@@ -70,7 +70,7 @@ int av_base64_decode(uint8_t * out, const char *in, int out_length)
 * fixed edge cases and made it work from data (vs. strings) by ryan.
 *****************************************************************************/
 
-char *av_base64_encode(char * buf, int buf_len, uint8_t * src, int len)
+char *av_base64_encode(char * buf, int buf_len, const uint8_t * src, int len)
 {
     static const char b64[] =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -83,20 +83,18 @@ char *av_base64_encode(char * buf, int buf_len, uint8_t * src, int len)
         buf_len < len * 4 / 3 + 12)
         return NULL;
     ret = dst = buf;
-    if (len) {                  // special edge case, what should we really do here?
-        while (bytes_remaining) {
-            i_bits = (i_bits << 8) + *src++;
-            bytes_remaining--;
-            i_shift += 8;
+    while (bytes_remaining) {
+        i_bits = (i_bits << 8) + *src++;
+        bytes_remaining--;
+        i_shift += 8;
 
-            do {
-                *dst++ = b64[(i_bits << 6 >> i_shift) & 0x3f];
-                i_shift -= 6;
-            } while (i_shift > 6 || (bytes_remaining == 0 && i_shift > 0));
-        }
-        while ((dst - ret) & 3)
-            *dst++ = '=';
+        do {
+            *dst++ = b64[(i_bits << 6 >> i_shift) & 0x3f];
+            i_shift -= 6;
+        } while (i_shift > 6 || (bytes_remaining == 0 && i_shift > 0));
     }
+    while ((dst - ret) & 3)
+        *dst++ = '=';
     *dst = '\0';
 
     return ret;

@@ -444,7 +444,7 @@ static int amr_nb_decode_frame(AVCodecContext * avctx,
 {
     AMRContext *s = avctx->priv_data;
     uint8_t*amrData=buf;
-    static short block_size[16]={ 12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0 };
+    static const uint8_t block_size[16]={ 12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0 };
     enum Mode dec_mode;
     int packet_size;
 
@@ -523,7 +523,7 @@ AVCodec libamr_nb_encoder =
 #ifdef CONFIG_LIBAMR_WB
 
 #ifdef _TYPEDEF_H
-//To avoid duplicate typedefs from typdef in amr-nb
+//To avoid duplicate typedefs from typedef in amr-nb
 #define typedef_h
 #endif
 
@@ -656,6 +656,7 @@ static int amr_wb_decode_frame(AVCodecContext * avctx,
     uint8_t*amrData=buf;
     int mode;
     int packet_size;
+    static const uint8_t block_size[16] = {18, 23, 33, 37, 41, 47, 51, 59, 61, 6, 6, 0, 0, 0, 1, 1};
 
     if(buf_size==0) {
         /* nothing to do */

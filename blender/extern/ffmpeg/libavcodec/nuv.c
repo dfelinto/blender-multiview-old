@@ -69,7 +69,7 @@ static const uint8_t fallback_cquant[] = {
  * \param width width of the video frame
  * \param height height of the video frame
  */
-static void copy_frame(AVFrame *f, uint8_t *src,
+static void copy_frame(AVFrame *f, const uint8_t *src,
                        int width, int height) {
     AVPicture pic;
     avpicture_fill(&pic, src, PIX_FMT_YUV420P, width, height);
@@ -80,7 +80,7 @@ static void copy_frame(AVFrame *f, uint8_t *src,
  * \brief extract quantization tables from codec data into our context
  */
 static int get_quant(AVCodecContext *avctx, NuvContext *c,
-                     uint8_t *buf, int size) {
+                     const uint8_t *buf, int size) {
     int i;
     if (size < 2 * 64 * 4) {
         av_log(avctx, AV_LOG_ERROR, "insufficient rtjpeg quant data\n");
@@ -129,7 +129,7 @@ static int codec_reinit(AVCodecContext *avctx, int width, int height, int qualit
 }
 
 static int decode_frame(AVCodecContext *avctx, void *data, int *data_size,
-                        uint8_t *buf, int buf_size) {
+                        const uint8_t *buf, int buf_size) {
     NuvContext *c = avctx->priv_data;
     AVFrame *picture = data;
     int orig_size = buf_size;
@@ -236,7 +236,7 @@ static int decode_frame(AVCodecContext *avctx, void *data, int *data_size,
     return orig_size;
 }
 
-static int decode_init(AVCodecContext *avctx) {
+static av_cold int decode_init(AVCodecContext *avctx) {
     NuvContext *c = avctx->priv_data;
     avctx->pix_fmt = PIX_FMT_YUV420P;
     c->pic.data[0] = NULL;
@@ -253,7 +253,7 @@ static int decode_init(AVCodecContext *avctx) {
     return 0;
 }
 
-static int decode_end(AVCodecContext *avctx) {
+static av_cold int decode_end(AVCodecContext *avctx) {
     NuvContext *c = avctx->priv_data;
     av_freep(&c->decomp_buf);
     if (c->pic.data[0])

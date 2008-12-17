@@ -116,7 +116,7 @@ static inline int loco_predict(uint8_t* data, int stride, int step)
 }
 
 static int loco_decode_plane(LOCOContext *l, uint8_t *data, int width, int height,
-                             int stride, uint8_t *buf, int buf_size, int step)
+                             int stride, const uint8_t *buf, int buf_size, int step)
 {
     RICEContext rc;
     int val;
@@ -157,7 +157,7 @@ static int loco_decode_plane(LOCOContext *l, uint8_t *data, int width, int heigh
 
 static int decode_frame(AVCodecContext *avctx,
                         void *data, int *data_size,
-                        uint8_t *buf, int buf_size)
+                        const uint8_t *buf, int buf_size)
 {
     LOCOContext * const l = avctx->priv_data;
     AVFrame * const p= (AVFrame*)&l->pic;
@@ -225,7 +225,7 @@ static int decode_frame(AVCodecContext *avctx,
     return buf_size;
 }
 
-static int decode_init(AVCodecContext *avctx){
+static av_cold int decode_init(AVCodecContext *avctx){
     LOCOContext * const l = avctx->priv_data;
     int version;
 

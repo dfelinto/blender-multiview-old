@@ -107,7 +107,7 @@ static void allocate_buffers(ALACContext *alac)
 
 static int alac_set_info(ALACContext *alac)
 {
-    unsigned char *ptr = alac->avctx->extradata;
+    const unsigned char *ptr = alac->avctx->extradata;
 
     ptr += 4; /* size */
     ptr += 4; /* alac */
@@ -325,15 +325,15 @@ static void predictor_decompress_fir_adapt(int32_t *error_buffer,
 
 #if 0
     /* 4 and 8 are very common cases (the only ones i've seen). these
-     * should be unrolled and optimised
+     * should be unrolled and optimized
      */
     if (predictor_coef_num == 4) {
-        /* FIXME: optimised general case */
+        /* FIXME: optimized general case */
         return;
     }
 
     if (predictor_coef_table == 8) {
-        /* FIXME: optimised general case */
+        /* FIXME: optimized general case */
         return;
     }
 #endif
@@ -439,7 +439,7 @@ static void reconstruct_stereo_16(int32_t *buffer[MAX_CHANNELS],
 
 static int alac_decode_frame(AVCodecContext *avctx,
                              void *outbuffer, int *outputsize,
-                             uint8_t *inbuffer, int input_buffer_size)
+                             const uint8_t *inbuffer, int input_buffer_size)
 {
     ALACContext *alac = avctx->priv_data;
 
@@ -624,7 +624,7 @@ static int alac_decode_frame(AVCodecContext *avctx,
     return input_buffer_size;
 }
 
-static int alac_decode_init(AVCodecContext * avctx)
+static av_cold int alac_decode_init(AVCodecContext * avctx)
 {
     ALACContext *alac = avctx->priv_data;
     alac->avctx = avctx;
@@ -637,7 +637,7 @@ static int alac_decode_init(AVCodecContext * avctx)
     return 0;
 }
 
-static int alac_decode_close(AVCodecContext *avctx)
+static av_cold int alac_decode_close(AVCodecContext *avctx)
 {
     ALACContext *alac = avctx->priv_data;
 

@@ -24,10 +24,13 @@
  * mpeg audio layer common tables.
  */
 
-#ifndef MPEGAUDIODATA_H
-#define MPEGAUDIODATA_H
+#ifndef FFMPEG_MPEGAUDIODATA_H
+#define FFMPEG_MPEGAUDIODATA_H
 
 #include "common.h"
+
+#define MODE_EXT_MS_STEREO 2
+#define MODE_EXT_I_STEREO  1
 
 extern const uint16_t ff_mpa_bitrate_tab[2][3][15];
 extern const uint16_t ff_mpa_freq_tab[3];
@@ -37,4 +40,4 @@ extern const int ff_mpa_quant_steps[17];
 extern const int ff_mpa_quant_bits[17];
 extern const unsigned char *ff_mpa_alloc_tables[5];
 
-#endif /* MPEGAUDIODATA_H */
+#endif /* FFMPEG_MPEGAUDIODATA_H */

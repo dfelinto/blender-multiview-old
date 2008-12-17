@@ -158,7 +158,7 @@ static inline void idct_put(MDECContext *a, int mb_x, int mb_y){
 
 static int decode_frame(AVCodecContext *avctx,
                         void *data, int *data_size,
-                        uint8_t *buf, int buf_size)
+                        const uint8_t *buf, int buf_size)
 {
     MDECContext * const a = avctx->priv_data;
     AVFrame *picture = data;
@@ -173,11 +173,8 @@ static int decode_frame(AVCodecContext *avctx,
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;
     }
-    p->pict_type= I_TYPE;
+    p->pict_type= FF_I_TYPE;
     p->key_frame= 1;
-    a->last_dc[0]=
-    a->last_dc[1]=
-    a->last_dc[2]= 0;
 
     a->bitstream_buffer= av_fast_realloc(a->bitstream_buffer, &a->bitstream_buffer_size, buf_size + FF_INPUT_BUFFER_PADDING_SIZE);
     for(i=0; i<buf_size; i+=2){
@@ -191,6 +188,10 @@ static int decode_frame(AVCodecContext *avctx,
 
     a->qscale=  get_bits(&a->gb, 16);
     a->version= get_bits(&a->gb, 16);
+
+    a->last_dc[0]=
+    a->last_dc[1]=
+    a->last_dc[2]= 128;
 
 //    printf("qscale:%d (0x%X), version:%d (0x%X)\n", a->qscale, a->qscale, a->version, a->version);
 
@@ -214,7 +215,7 @@ static int decode_frame(AVCodecContext *avctx,
     return (get_bits_count(&a->gb)+31)/32*4;
 }
 
-static void mdec_common_init(AVCodecContext *avctx){
+static av_cold void mdec_common_init(AVCodecContext *avctx){
     MDECContext * const a = avctx->priv_data;
 
     dsputil_init(&a->dsp, avctx);
@@ -226,7 +227,7 @@ static void mdec_common_init(AVCodecContext *avctx){
     a->avctx= avctx;
 }
 
-static int decode_init(AVCodecContext *avctx){
+static av_cold int decode_init(AVCodecContext *avctx){
     MDECContext * const a = avctx->priv_data;
     AVFrame *p= (AVFrame*)&a->picture;
 
@@ -246,7 +247,7 @@ static int decode_init(AVCodecContext *avctx){
     return 0;
 }
 
-static int decode_end(AVCodecContext *avctx){
+static av_cold int decode_end(AVCodecContext *avctx){
     MDECContext * const a = avctx->priv_data;
 
     av_freep(&a->bitstream_buffer);

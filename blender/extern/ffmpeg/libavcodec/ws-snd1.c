@@ -36,7 +36,7 @@ static const char ws_adpcm_4bit[] = {
 
 #define CLIP8(a) if(a>127)a=127;if(a<-128)a=-128;
 
-static int ws_snd_decode_init(AVCodecContext * avctx)
+static av_cold int ws_snd_decode_init(AVCodecContext * avctx)
 {
 //    WSSNDContext *c = avctx->priv_data;
 
@@ -45,7 +45,7 @@ static int ws_snd_decode_init(AVCodecContext * avctx)
 
 static int ws_snd_decode_frame(AVCodecContext *avctx,
                 void *data, int *data_size,
-                uint8_t *buf, int buf_size)
+                const uint8_t *buf, int buf_size)
 {
 //    WSSNDContext *c = avctx->priv_data;
 

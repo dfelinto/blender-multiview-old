@@ -20,19 +20,29 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AAC_AC3_PARSER_H
-#define AAC_AC3_PARSER_H
+#ifndef FFMPEG_AAC_AC3_PARSER_H
+#define FFMPEG_AAC_AC3_PARSER_H
 
 #include <stdint.h>
 #include "avcodec.h"
 
 typedef struct AACAC3ParseContext {
-    uint8_t *inbuf_ptr;
     int frame_size;
     int header_size;
-    int (*sync)(const uint8_t *buf, int *channels, int *sample_rate,
-                int *bit_rate, int *samples);
-    uint8_t inbuf[8192]; /* input buffer */
+    int (*sync)(uint64_t state, struct AACAC3ParseContext *hdr_info,
+            int *need_next_header, int *new_frame_start);
+
+    int channels;
+    int sample_rate;
+    int bit_rate;
+    int samples;
+
+    ParseContext pc;
+    int remaining_size;
+    uint64_t state;
+
+    int need_next_header;
+    int new_frame_start;
 } AACAC3ParseContext;
 
 int ff_aac_ac3_parse(AVCodecParserContext *s1,
@@ -40,4 +50,4 @@ int ff_aac_ac3_parse(AVCodecParserContext *s1,
                      const uint8_t **poutbuf, int *poutbuf_size,
                      const uint8_t *buf, int buf_size);
 
-#endif /* AAC_AC3_PARSER_H */
+#endif /* FFMPEG_AAC_AC3_PARSER_H */

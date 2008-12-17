@@ -20,8 +20,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AC3_PARSER_H
-#define AC3_PARSER_H
+#ifndef FFMPEG_AC3_PARSER_H
+#define FFMPEG_AC3_PARSER_H
 
 #include "ac3.h"
 
@@ -30,6 +30,7 @@ typedef enum {
     AC3_PARSE_ERROR_BSID        = -2,
     AC3_PARSE_ERROR_SAMPLE_RATE = -3,
     AC3_PARSE_ERROR_FRAME_SIZE  = -4,
+    AC3_PARSE_ERROR_FRAME_TYPE  = -5,
 } AC3ParseError;
 
 /**
@@ -44,4 +45,4 @@ typedef enum {
  */
 int ff_ac3_parse_header(const uint8_t buf[7], AC3HeaderInfo *hdr);
 
-#endif /* AC3_PARSER_H */
+#endif /* FFMPEG_AC3_PARSER_H */

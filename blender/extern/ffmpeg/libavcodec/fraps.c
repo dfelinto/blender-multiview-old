@@ -33,22 +33,11 @@
 
 #include "avcodec.h"
 #include "bitstream.h"
+#include "huffman.h"
+#include "bytestream.h"
 #include "dsputil.h"
 
 #define FPS_TAG MKTAG('F', 'P', 'S', 'x')
-
-/* symbol for Huffman tree node */
-#define HNODE -1
-
-/**
- * Huffman node
- * FIXME one day this should belong to one general framework
- */
-typedef struct Node{
-    int16_t sym;
-    int16_t n0;
-    int count;
-}Node;
 
 /**
  * local variable storage
@@ -56,7 +45,6 @@ typedef struct Node{
 typedef struct FrapsContext{
     AVCodecContext *avctx;
     AVFrame frame;
-    Node nodes[512];
     uint8_t *tmpbuf;
     DSPContext dsp;
 } FrapsContext;
@@ -67,7 +55,7 @@ typedef struct FrapsContext{
  * @param avctx codec context
  * @return 0 on success or negative if fails
  */
-static int decode_init(AVCodecContext *avctx)
+static av_cold int decode_init(AVCodecContext *avctx)
 {
     FrapsContext * const s = avctx->priv_data;
 
@@ -92,91 +80,33 @@ static int huff_cmp(const void *va, const void *vb){
     return (a->count - b->count)*256 + a->sym - b->sym;
 }
 
-static void get_tree_codes(uint32_t *bits, int16_t *lens, uint8_t *xlat, Node *nodes, int node, uint32_t pfx, int pl, int *pos)
-{
-    int s;
-
-    s = nodes[node].sym;
-    if(s != HNODE || !nodes[node].count){
-        bits[*pos] = pfx;
-        lens[*pos] = pl;
-        xlat[*pos] = s;
-        (*pos)++;
-    }else{
-        pfx <<= 1;
-        pl++;
-        get_tree_codes(bits, lens, xlat, nodes, nodes[node].n0, pfx, pl, pos);
-        pfx |= 1;
-        get_tree_codes(bits, lens, xlat, nodes, nodes[node].n0+1, pfx, pl, pos);
-    }
-}
-
-static int build_huff_tree(VLC *vlc, Node *nodes, uint8_t *xlat)
-{
-    uint32_t bits[256];
-    int16_t lens[256];
-    int pos = 0;
-
-    get_tree_codes(bits, lens, xlat, nodes, 510, 0, 0, &pos);
-    return init_vlc(vlc, 9, pos, lens, 2, 2, bits, 4, 4, 0);
-}
-
-
 /**
  * decode Fraps v2 packed plane
  */
 static int fraps2_decode_plane(FrapsContext *s, uint8_t *dst, int stride, int w,
-                               int h, uint8_t *src, int size, int Uoff)
+                               int h, const uint8_t *src, int size, int Uoff,
+                               const int step)
 {
     int i, j;
-    int cur_node;
     GetBitContext gb;
     VLC vlc;
-    int64_t sum = 0;
-    uint8_t recode[256];
+    Node nodes[512];
 
-    for(i = 0; i < 256; i++){
-        s->nodes[i].sym = i;
-        s->nodes[i].count = AV_RL32(src);
-        s->nodes[i].n0 = -2;
-        if(s->nodes[i].count < 0) {
-            av_log(s->avctx, AV_LOG_ERROR, "Symbol count < 0\n");
-            return -1;
-        }
-        src += 4;
-        sum += s->nodes[i].count;
-    }
+    for(i = 0; i < 256; i++)
+        nodes[i].count = bytestream_get_le32(&src);
     size -= 1024;
-
-    if(sum >> 31) {
-        av_log(s->avctx, AV_LOG_ERROR, "Too high symbol frequencies. Tree construction is not possible\n");
+    if (ff_huff_build_tree(s->avctx, &vlc, 256, nodes, huff_cmp,
+                           FF_HUFFMAN_FLAG_ZERO_COUNT) < 0)
         return -1;
-    }
-    qsort(s->nodes, 256, sizeof(Node), huff_cmp);
-    cur_node = 256;
-    for(i = 0; i < 511; i += 2){
-        s->nodes[cur_node].sym = HNODE;
-        s->nodes[cur_node].count = s->nodes[i].count + s->nodes[i+1].count;
-        s->nodes[cur_node].n0 = i;
-        for(j = cur_node; j > 0; j--){
-            if(s->nodes[j].count >= s->nodes[j - 1].count) break;
-            FFSWAP(Node, s->nodes[j], s->nodes[j - 1]);
-        }
-        cur_node++;
-    }
-    if(build_huff_tree(&vlc, s->nodes, recode) < 0){
-        av_log(s->avctx, AV_LOG_ERROR, "Error building tree\n");
-        return -1;
-    }
     /* we have built Huffman table and are ready to decode plane */
 
     /* convert bits so they may be used by standard bitreader */
-    s->dsp.bswap_buf(s->tmpbuf, src, size >> 2);
+    s->dsp.bswap_buf((uint32_t *)s->tmpbuf, (const uint32_t *)src, size >> 2);
 
     init_get_bits(&gb, s->tmpbuf, size * 8);
     for(j = 0; j < h; j++){
-        for(i = 0; i < w; i++){
-            dst[i] = recode[get_vlc2(&gb, vlc.table, 9, 3)];
+        for(i = 0; i < w*step; i += step){
+            dst[i] = get_vlc2(&gb, vlc.table, 9, 3);
             /* lines are stored as deltas between previous lines
              * and we need to add 0x80 to the first lines of chroma planes
              */
@@ -200,7 +130,7 @@ static int fraps2_decode_plane(FrapsContext *s, uint8_t *dst, int stride, int w,
  */
 static int decode_frame(AVCodecContext *avctx,
                         void *data, int *data_size,
-                        uint8_t *buf, int buf_size)
+                        const uint8_t *buf, int buf_size)
 {
     FrapsContext * const s = avctx->priv_data;
     AVFrame *frame = data;
@@ -208,7 +138,7 @@ static int decode_frame(AVCodecContext *avctx,
     uint32_t header;
     unsigned int version,header_size;
     unsigned int x, y;
-    uint32_t *buf32;
+    const uint32_t *buf32;
     uint32_t *luma1,*luma2,*cb,*cr;
     uint32_t offs[4];
     int i, is_chroma, planes;
@@ -218,7 +148,7 @@ static int decode_frame(AVCodecContext *avctx,
     version = header & 0xff;
     header_size = (header & (1<<30))? 8 : 4; /* bit 30 means pad to 8 bytes */
 
-    if (version > 2 && version != 4) {
+    if (version > 2 && version != 4 && version != 5) {
         av_log(avctx, AV_LOG_ERROR,
                "This file is encoded with Fraps version %d. " \
                "This codec can only decode version 0, 1, 2 and 4.\n", version);
@@ -262,7 +192,7 @@ static int decode_frame(AVCodecContext *avctx,
         f->key_frame = f->pict_type == FF_I_TYPE;
 
         if (f->pict_type == FF_I_TYPE) {
-            buf32=(uint32_t*)buf;
+            buf32=(const uint32_t*)buf;
             for(y=0; y<avctx->height/2; y++){
                 luma1=(uint32_t*)&f->data[0][ y*2*f->linesize[0] ];
                 luma2=(uint32_t*)&f->data[0][ (y*2+1)*f->linesize[0] ];
@@ -352,7 +282,48 @@ static int decode_frame(AVCodecContext *avctx,
             is_chroma = !!i;
             s->tmpbuf = av_realloc(s->tmpbuf, offs[i + 1] - offs[i] - 1024 + FF_INPUT_BUFFER_PADDING_SIZE);
             if(fraps2_decode_plane(s, f->data[i], f->linesize[i], avctx->width >> is_chroma,
-                    avctx->height >> is_chroma, buf + offs[i], offs[i + 1] - offs[i], is_chroma) < 0) {
+                    avctx->height >> is_chroma, buf + offs[i], offs[i + 1] - offs[i], is_chroma, 1) < 0) {
+                av_log(avctx, AV_LOG_ERROR, "Error decoding plane %i\n", i);
+                return -1;
+            }
+        }
+        break;
+    case 5:
+        /* Virtually the same as version 4, but is for RGB24 */
+        avctx->pix_fmt = PIX_FMT_BGR24;
+        planes = 3;
+        f->reference = 1;
+        f->buffer_hints = FF_BUFFER_HINTS_VALID |
+                          FF_BUFFER_HINTS_PRESERVE |
+                          FF_BUFFER_HINTS_REUSABLE;
+        if (avctx->reget_buffer(avctx, f)) {
+            av_log(avctx, AV_LOG_ERROR, "reget_buffer() failed\n");
+            return -1;
+        }
+        /* skip frame */
+        if(buf_size == 8) {
+            f->pict_type = FF_P_TYPE;
+            f->key_frame = 0;
+            break;
+        }
+        f->pict_type = FF_I_TYPE;
+        f->key_frame = 1;
+        if ((AV_RL32(buf) != FPS_TAG)||(buf_size < (planes*1024 + 24))) {
+            av_log(avctx, AV_LOG_ERROR, "Fraps: error in data stream\n");
+            return -1;
+        }
+        for(i = 0; i < planes; i++) {
+            offs[i] = AV_RL32(buf + 4 + i * 4);
+            if(offs[i] >= buf_size || (i && offs[i] <= offs[i - 1] + 1024)) {
+                av_log(avctx, AV_LOG_ERROR, "Fraps: plane %i offset is out of bounds\n", i);
+                return -1;
+            }
+        }
+        offs[planes] = buf_size;
+        for(i = 0; i < planes; i++){
+            s->tmpbuf = av_realloc(s->tmpbuf, offs[i + 1] - offs[i] - 1024 + FF_INPUT_BUFFER_PADDING_SIZE);
+            if(fraps2_decode_plane(s, f->data[0] + i + (f->linesize[0] * (avctx->height - 1)), -f->linesize[0],
+                    avctx->width, avctx->height, buf + offs[i], offs[i + 1] - offs[i], 1, 3) < 0) {
                 av_log(avctx, AV_LOG_ERROR, "Error decoding plane %i\n", i);
                 return -1;
             }
@@ -372,7 +343,7 @@ static int decode_frame(AVCodecContext *avctx,
  * @param avctx codec context
  * @return 0 on success or negative if fails
  */
-static int decode_end(AVCodecContext *avctx)
+static av_cold int decode_end(AVCodecContext *avctx)
 {
     FrapsContext *s = (FrapsContext*)avctx->priv_data;
 

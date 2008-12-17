@@ -85,9 +85,6 @@ typedef struct GranuleDef {
     int32_t sb_hybrid[SBLIMIT * 18]; /* 576 samples */
 } GranuleDef;
 
-#define MODE_EXT_MS_STEREO 2
-#define MODE_EXT_I_STEREO  1
-
 #include "mpegaudiodata.h"
 #include "mpegaudiodectab.h"
 
@@ -128,6 +125,68 @@ static const int32_t scale_factor_mult2[3][3] = {
 };
 
 static DECLARE_ALIGNED_16(MPA_INT, window[512]);
+
+/**
+ * Convert region offsets to region sizes and truncate
+ * size to big_values.
+ */
+void ff_region_offset2size(GranuleDef *g){
+    int i, k, j=0;
+    g->region_size[2] = (576 / 2);
+    for(i=0;i<3;i++) {
+        k = FFMIN(g->region_size[i], g->big_values);
+        g->region_size[i] = k - j;
+        j = k;
+    }
+}
+
+void ff_init_short_region(MPADecodeContext *s, GranuleDef *g){
+    if (g->block_type == 2)
+        g->region_size[0] = (36 / 2);
+    else {
+        if (s->sample_rate_index <= 2)
+            g->region_size[0] = (36 / 2);
+        else if (s->sample_rate_index != 8)
+            g->region_size[0] = (54 / 2);
+        else
+            g->region_size[0] = (108 / 2);
+    }
+    g->region_size[1] = (576 / 2);
+}
+
+void ff_init_long_region(MPADecodeContext *s, GranuleDef *g, int ra1, int ra2){
+    int l;
+    g->region_size[0] =
+        band_index_long[s->sample_rate_index][ra1 + 1] >> 1;
+    /* should not overflow */
+    l = FFMIN(ra1 + ra2 + 2, 22);
+    g->region_size[1] =
+        band_index_long[s->sample_rate_index][l] >> 1;
+}
+
+void ff_compute_band_indexes(MPADecodeContext *s, GranuleDef *g){
+    if (g->block_type == 2) {
+        if (g->switch_point) {
+            /* if switched mode, we handle the 36 first samples as
+                long blocks.  For 8000Hz, we handle the 48 first
+                exponents as long blocks (XXX: check this!) */
+            if (s->sample_rate_index <= 2)
+                g->long_end = 8;
+            else if (s->sample_rate_index != 8)
+                g->long_end = 6;
+            else
+                g->long_end = 4; /* 8000 Hz */
+
+            g->short_start = 2 + (s->sample_rate_index != 8);
+        } else {
+            g->long_end = 0;
+            g->short_start = 0;
+        }
+    } else {
+        g->short_start = 13;
+        g->long_end = 22;
+    }
+}
 
 /* layer 1 unscaling */
 /* n = number of bits of the mantissa minus 1 */
@@ -2011,20 +2070,9 @@ static int mp_decode_layer3(MPADecodeContext *s)
                     g->table_select[i] = get_bits(&s->gb, 5);
                 for(i=0;i<3;i++)
                     g->subblock_gain[i] = get_bits(&s->gb, 3);
-                /* compute huffman coded region sizes */
-                if (g->block_type == 2)
-                    g->region_size[0] = (36 / 2);
-                else {
-                    if (s->sample_rate_index <= 2)
-                        g->region_size[0] = (36 / 2);
-                    else if (s->sample_rate_index != 8)
-                        g->region_size[0] = (54 / 2);
-                    else
-                        g->region_size[0] = (108 / 2);
-                }
-                g->region_size[1] = (576 / 2);
+                ff_init_short_region(s, g);
             } else {
-                int region_address1, region_address2, l;
+                int region_address1, region_address2;
                 g->block_type = 0;
                 g->switch_point = 0;
                 for(i=0;i<3;i++)
@@ -2034,47 +2082,10 @@ static int mp_decode_layer3(MPADecodeContext *s)
                 region_address2 = get_bits(&s->gb, 3);
                 dprintf(s->avctx, "region1=%d region2=%d\n",
                         region_address1, region_address2);
-                g->region_size[0] =
-                    band_index_long[s->sample_rate_index][region_address1 + 1] >> 1;
-                l = region_address1 + region_address2 + 2;
-                /* should not overflow */
-                if (l > 22)
-                    l = 22;
-                g->region_size[1] =
-                    band_index_long[s->sample_rate_index][l] >> 1;
+                ff_init_long_region(s, g, region_address1, region_address2);
             }
-            /* convert region offsets to region sizes and truncate
-               size to big_values */
-            g->region_size[2] = (576 / 2);
-            j = 0;
-            for(i=0;i<3;i++) {
-                k = FFMIN(g->region_size[i], g->big_values);
-                g->region_size[i] = k - j;
-                j = k;
-            }
-
-            /* compute band indexes */
-            if (g->block_type == 2) {
-                if (g->switch_point) {
-                    /* if switched mode, we handle the 36 first samples as
-                       long blocks.  For 8000Hz, we handle the 48 first
-                       exponents as long blocks (XXX: check this!) */
-                    if (s->sample_rate_index <= 2)
-                        g->long_end = 8;
-                    else if (s->sample_rate_index != 8)
-                        g->long_end = 6;
-                    else
-                        g->long_end = 4; /* 8000 Hz */
-
-                    g->short_start = 2 + (s->sample_rate_index != 8);
-                } else {
-                    g->long_end = 0;
-                    g->short_start = 0;
-                }
-            } else {
-                g->short_start = 13;
-                g->long_end = 22;
-            }
+            ff_region_offset2size(g);
+            ff_compute_band_indexes(s, g);
 
             g->preflag = 0;
             if (!s->lsf)
@@ -2290,12 +2301,15 @@ static int mp_decode_frame(MPADecodeContext *s,
     dprintf(s->avctx, "frame %d:\n", s->frame_count);
     switch(s->layer) {
     case 1:
+        s->avctx->frame_size = 384;
         nb_frames = mp_decode_layer1(s);
         break;
     case 2:
+        s->avctx->frame_size = 1152;
         nb_frames = mp_decode_layer2(s);
         break;
     case 3:
+        s->avctx->frame_size = s->lsf ? 576 : 1152;
     default:
         nb_frames = mp_decode_layer3(s);
 
@@ -2356,7 +2370,7 @@ static int mp_decode_frame(MPADecodeContext *s,
 
 static int decode_frame(AVCodecContext * avctx,
                         void *data, int *data_size,
-                        uint8_t * buf, int buf_size)
+                        const uint8_t * buf, int buf_size)
 {
     MPADecodeContext *s = avctx->priv_data;
     uint32_t header;
@@ -2384,20 +2398,6 @@ retry:
     avctx->channels = s->nb_channels;
     avctx->bit_rate = s->bit_rate;
     avctx->sub_id = s->layer;
-    switch(s->layer) {
-    case 1:
-        avctx->frame_size = 384;
-        break;
-    case 2:
-        avctx->frame_size = 1152;
-        break;
-    case 3:
-        if (s->lsf)
-            avctx->frame_size = 576;
-        else
-            avctx->frame_size = 1152;
-        break;
-    }
 
     if(s->frame_size<=0 || s->frame_size > buf_size){
         av_log(avctx, AV_LOG_ERROR, "incomplete frame\n");
@@ -2420,13 +2420,14 @@ retry:
 
 static void flush(AVCodecContext *avctx){
     MPADecodeContext *s = avctx->priv_data;
+    memset(s->synth_buf, 0, sizeof(s->synth_buf));
     s->last_buf_size= 0;
 }
 
 #ifdef CONFIG_MP3ADU_DECODER
 static int decode_frame_adu(AVCodecContext * avctx,
                         void *data, int *data_size,
-                        uint8_t * buf, int buf_size)
+                        const uint8_t * buf, int buf_size)
 {
     MPADecodeContext *s = avctx->priv_data;
     uint32_t header;
@@ -2460,7 +2461,7 @@ static int decode_frame_adu(AVCodecContext * avctx,
     avctx->bit_rate = s->bit_rate;
     avctx->sub_id = s->layer;
 
-    avctx->frame_size=s->frame_size = len;
+    s->frame_size = len;
 
     if (avctx->parse_only) {
         out_size = buf_size;
@@ -2512,7 +2513,7 @@ static int decode_init_mp3on4(AVCodecContext * avctx)
     /* Init the first mp3 decoder in standard way, so that all tables get builded
      * We replace avctx->priv_data with the context of the first decoder so that
      * decode_init() does not have to be changed.
-     * Other decoders will be inited here copying data from the first context
+     * Other decoders will be initialized here copying data from the first context
      */
     // Allocate zeroed memory for the first decoder context
     s->mp3decctx[0] = av_mallocz(sizeof(MPADecodeContext));
@@ -2552,7 +2553,7 @@ static int decode_close_mp3on4(AVCodecContext * avctx)
 
 static int decode_frame_mp3on4(AVCodecContext * avctx,
                         void *data, int *data_size,
-                        uint8_t * buf, int buf_size)
+                        const uint8_t * buf, int buf_size)
 {
     MP3On4DecodeContext *s = avctx->priv_data;
     MPADecodeContext *m;
@@ -2562,7 +2563,7 @@ static int decode_frame_mp3on4(AVCodecContext * avctx,
     OUT_INT decoded_buf[MPA_FRAME_SIZE * MPA_MAX_CHANNELS];
     OUT_INT *outptr, *bp;
     int fsize;
-    unsigned char *start2 = buf, *start;
+    const unsigned char *start2 = buf, *start;
     int fr, i, j, n;
     int off = avctx->channels;
     int *coff = chan_offset[s->chan_cfg];
@@ -2623,7 +2624,6 @@ static int decode_frame_mp3on4(AVCodecContext * avctx,
 
     /* update codec info */
     avctx->sample_rate = s->mp3decctx[0]->sample_rate;
-    avctx->frame_size= buf_size;
     avctx->bit_rate = 0;
     for (i = 0; i < s->frames; i++)
         avctx->bit_rate += s->mp3decctx[i]->bit_rate;
@@ -2645,6 +2645,7 @@ AVCodec mp2_decoder =
     NULL,
     decode_frame,
     CODEC_CAP_PARSE_ONLY,
+    .flush= flush,
 };
 #endif
 #ifdef CONFIG_MP3_DECODER

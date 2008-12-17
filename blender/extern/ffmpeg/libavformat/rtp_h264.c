@@ -163,9 +163,11 @@ static int h264_handle_packet(RTPDemuxContext * s,
                               AVPacket * pkt,
                               uint32_t * timestamp,
                               const uint8_t * buf,
-                              int len)
+                              int len, int flags)
 {
+#ifdef DEBUG
     h264_rtp_extra_data *data = s->dynamic_protocol_context;
+#endif
     uint8_t nal = buf[0];
     uint8_t type = (nal & 0x1f);
     int result= 0;

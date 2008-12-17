@@ -18,20 +18,32 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVUTIL_H
-#define AVUTIL_H
+#ifndef FFMPEG_AVUTIL_H
+#define FFMPEG_AVUTIL_H
 
 /**
  * @file avutil.h
- * external api header.
+ * external API header
  */
 
 
 #define AV_STRINGIFY(s)         AV_TOSTRING(s)
 #define AV_TOSTRING(s) #s
 
-#define LIBAVUTIL_VERSION_INT   ((49<<16)+(5<<8)+0)
-#define LIBAVUTIL_VERSION       49.5.0
+#define AV_VERSION_INT(a, b, c) (a<<16 | b<<8 | c)
+#define AV_VERSION_DOT(a, b, c) a ##.## b ##.## c
+#define AV_VERSION(a, b, c) AV_VERSION_DOT(a, b, c)
+
+#define LIBAVUTIL_VERSION_MAJOR 49
+#define LIBAVUTIL_VERSION_MINOR  6
+#define LIBAVUTIL_VERSION_MICRO  0
+
+#define LIBAVUTIL_VERSION_INT   AV_VERSION_INT(LIBAVUTIL_VERSION_MAJOR, \
+                                               LIBAVUTIL_VERSION_MINOR, \
+                                               LIBAVUTIL_VERSION_MICRO)
+#define LIBAVUTIL_VERSION       AV_VERSION(LIBAVUTIL_VERSION_MAJOR,     \
+                                           LIBAVUTIL_VERSION_MINOR,     \
+                                           LIBAVUTIL_VERSION_MICRO)
 #define LIBAVUTIL_BUILD         LIBAVUTIL_VERSION_INT
 
 #define LIBAVUTIL_IDENT         "Lavu" AV_STRINGIFY(LIBAVUTIL_VERSION)
@@ -40,7 +52,6 @@
 #include "common.h"
 #include "mathematics.h"
 #include "rational.h"
-#include "integer.h"
 #include "intfloat_readwrite.h"
 #include "log.h"
 
@@ -105,6 +116,7 @@ enum PixelFormat {
     PIX_FMT_GRAY16LE,  ///<        Y        , 16bpp, little-endian
     PIX_FMT_YUV440P,   ///< Planar YUV 4:4:0 (1 Cr & Cb sample per 1x2 Y samples)
     PIX_FMT_YUVJ440P,  ///< Planar YUV 4:4:0 full scale (jpeg)
+    PIX_FMT_YUVA420P,  ///< Planar YUV 4:2:0, 20bpp, (1 Cr & Cb sample per 2x2 Y & A samples)
     PIX_FMT_NB,        ///< number of pixel formats, DO NOT USE THIS if you want to link with shared libav* because the number of formats might differ between versions
 };
 
@@ -128,4 +140,4 @@ enum PixelFormat {
 #define PIX_FMT_YUV422  PIX_FMT_YUYV422
 #endif
 
-#endif /* AVUTIL_H */
+#endif /* FFMPEG_AVUTIL_H */

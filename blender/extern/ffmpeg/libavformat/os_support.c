@@ -23,16 +23,17 @@
 #include "avformat.h"
 #include <unistd.h>
 #include <fcntl.h>
+#include "os_support.h"
 
-#ifndef HAVE_SYS_POLL_H
+#ifdef CONFIG_NETWORK
+#ifndef HAVE_POLL_H
 #ifdef HAVE_WINSOCK2_H
 #include <winsock2.h>
-#else
+#elif defined (HAVE_SYS_SELECT_H)
 #include <sys/select.h>
 #endif
 #endif
 
-#ifdef CONFIG_NETWORK
 #include "network.h"
 
 #if !defined(HAVE_INET_ATON)
@@ -82,7 +83,7 @@ int ff_socket_nonblock(int socket, int enable)
 #endif /* CONFIG_NETWORK */
 
 #ifdef CONFIG_FFSERVER
-#ifndef HAVE_SYS_POLL_H
+#ifndef HAVE_POLL_H
 int poll(struct pollfd *fds, nfds_t numfds, int timeout)
 {
     fd_set read_set;
@@ -149,6 +150,6 @@ int poll(struct pollfd *fds, nfds_t numfds, int timeout)
 
     return rc;
 }
-#endif /* HAVE_SYS_POLL_H */
+#endif /* HAVE_POLL_H */
 #endif /* CONFIG_FFSERVER */
 

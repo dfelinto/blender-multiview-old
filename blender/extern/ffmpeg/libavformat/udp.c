@@ -21,6 +21,7 @@
 #include "avformat.h"
 #include <unistd.h>
 #include "network.h"
+#include "os_support.h"
 
 #ifndef IPV6_ADD_MEMBERSHIP
 #define IPV6_ADD_MEMBERSHIP IPV6_JOIN_GROUP
@@ -34,84 +35,98 @@ typedef struct {
     int local_port;
     int reuse_socket;
 #ifndef CONFIG_IPV6
-    struct ip_mreq mreq;
     struct sockaddr_in dest_addr;
 #else
     struct sockaddr_storage dest_addr;
-    size_t dest_addr_len;
 #endif
+    size_t dest_addr_len;
 } UDPContext;
 
 #define UDP_TX_BUF_SIZE 32768
 #define UDP_MAX_PKT_SIZE 65536
 
-#ifdef CONFIG_IPV6
-
-static int udp_ipv6_set_multicast_ttl(int sockfd, int mcastTTL, struct sockaddr *addr) {
+static int udp_set_multicast_ttl(int sockfd, int mcastTTL, struct sockaddr *addr) {
+#ifdef IP_MULTICAST_TTL
     if (addr->sa_family == AF_INET) {
         if (setsockopt(sockfd, IPPROTO_IP, IP_MULTICAST_TTL, &mcastTTL, sizeof(mcastTTL)) < 0) {
-            perror("setsockopt(IP_MULTICAST_TTL)");
+            av_log(NULL, AV_LOG_ERROR, "setsockopt(IP_MULTICAST_TTL): %s\n", strerror(errno));
             return -1;
         }
     }
+#endif
+#ifdef CONFIG_IPV6
     if (addr->sa_family == AF_INET6) {
         if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &mcastTTL, sizeof(mcastTTL)) < 0) {
-            perror("setsockopt(IPV6_MULTICAST_HOPS)");
+            av_log(NULL, AV_LOG_ERROR, "setsockopt(IPV6_MULTICAST_HOPS): %s\n", strerror(errno));
             return -1;
         }
     }
+#endif
     return 0;
 }
 
-static int udp_ipv6_join_multicast_group(int sockfd, struct sockaddr *addr) {
-    struct ip_mreq   mreq;
-    struct ipv6_mreq mreq6;
+static int udp_join_multicast_group(int sockfd, struct sockaddr *addr) {
+#ifdef IP_ADD_MEMBERSHIP
     if (addr->sa_family == AF_INET) {
+        struct ip_mreq mreq;
+
         mreq.imr_multiaddr.s_addr = ((struct sockaddr_in *)addr)->sin_addr.s_addr;
         mreq.imr_interface.s_addr= INADDR_ANY;
         if (setsockopt(sockfd, IPPROTO_IP, IP_ADD_MEMBERSHIP, (const void *)&mreq, sizeof(mreq)) < 0) {
-            perror("setsockopt(IP_ADD_MEMBERSHIP)");
+            av_log(NULL, AV_LOG_ERROR, "setsockopt(IP_ADD_MEMBERSHIP): %s\n", strerror(errno));
             return -1;
         }
     }
+#endif
+#ifdef CONFIG_IPV6
     if (addr->sa_family == AF_INET6) {
+        struct ipv6_mreq mreq6;
+
         memcpy(&mreq6.ipv6mr_multiaddr, &(((struct sockaddr_in6 *)addr)->sin6_addr), sizeof(struct in6_addr));
         mreq6.ipv6mr_interface= 0;
         if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq6, sizeof(mreq6)) < 0) {
-            perror("setsockopt(IPV6_ADD_MEMBERSHIP)");
+            av_log(NULL, AV_LOG_ERROR, "setsockopt(IPV6_ADD_MEMBERSHIP): %s\n", strerror(errno));
             return -1;
         }
     }
+#endif
     return 0;
 }
 
-static int udp_ipv6_leave_multicast_group(int sockfd, struct sockaddr *addr) {
-    struct ip_mreq   mreq;
-    struct ipv6_mreq mreq6;
+static int udp_leave_multicast_group(int sockfd, struct sockaddr *addr) {
+#ifdef IP_DROP_MEMBERSHIP
     if (addr->sa_family == AF_INET) {
+        struct ip_mreq mreq;
+
         mreq.imr_multiaddr.s_addr = ((struct sockaddr_in *)addr)->sin_addr.s_addr;
         mreq.imr_interface.s_addr= INADDR_ANY;
         if (setsockopt(sockfd, IPPROTO_IP, IP_DROP_MEMBERSHIP, (const void *)&mreq, sizeof(mreq)) < 0) {
-            perror("setsockopt(IP_DROP_MEMBERSHIP)");
+            av_log(NULL, AV_LOG_ERROR, "setsockopt(IP_DROP_MEMBERSHIP): %s\n", strerror(errno));
             return -1;
         }
     }
+#endif
+#ifdef CONFIG_IPV6
     if (addr->sa_family == AF_INET6) {
+        struct ipv6_mreq mreq6;
+
         memcpy(&mreq6.ipv6mr_multiaddr, &(((struct sockaddr_in6 *)addr)->sin6_addr), sizeof(struct in6_addr));
         mreq6.ipv6mr_interface= 0;
         if (setsockopt(sockfd, IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP, &mreq6, sizeof(mreq6)) < 0) {
-            perror("setsockopt(IPV6_DROP_MEMBERSHIP)");
+            av_log(NULL, AV_LOG_ERROR, "setsockopt(IPV6_DROP_MEMBERSHIP): %s\n", strerror(errno));
             return -1;
         }
     }
+#endif
     return 0;
 }
 
+#ifdef CONFIG_IPV6
 static struct addrinfo* udp_ipv6_resolve_host(const char *hostname, int port, int type, int family, int flags) {
     struct addrinfo hints, *res = 0;
     int error;
     char sport[16];
-    const char *node = 0, *service = 0;
+    const char *node = 0, *service = "0";
 
     if (port > 0) {
         snprintf(sport, sizeof(sport), "%d", port);
@@ -120,80 +135,54 @@ static struct addrinfo* udp_ipv6_resolve_host(const char *hostname, int port, in
     if ((hostname) && (hostname[0] != '\0') && (hostname[0] != '?')) {
         node = hostname;
     }
-    if ((node) || (service)) {
-        memset(&hints, 0, sizeof(hints));
-        hints.ai_socktype = type;
-        hints.ai_family   = family;
-        hints.ai_flags = flags;
-        if ((error = getaddrinfo(node, service, &hints, &res))) {
-            av_log(NULL, AV_LOG_ERROR, "udp_ipv6_resolve_host: %s\n", gai_strerror(error));
-        }
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_socktype = type;
+    hints.ai_family   = family;
+    hints.ai_flags = flags;
+    if ((error = getaddrinfo(node, service, &hints, &res))) {
+        av_log(NULL, AV_LOG_ERROR, "udp_ipv6_resolve_host: %s\n", gai_strerror(error));
     }
+
     return res;
 }
 
-static int udp_ipv6_set_remote_url(URLContext *h, const char *uri) {
-    UDPContext *s = h->priv_data;
-    char hostname[256];
-    int port;
+static int udp_set_url(struct sockaddr_storage *addr, const char *hostname, int port) {
     struct addrinfo *res0;
-    url_split(NULL, 0, NULL, 0, hostname, sizeof(hostname), &port, NULL, 0, uri);
+    int addr_len;
+
     res0 = udp_ipv6_resolve_host(hostname, port, SOCK_DGRAM, AF_UNSPEC, 0);
     if (res0 == 0) return AVERROR(EIO);
-    memcpy(&s->dest_addr, res0->ai_addr, res0->ai_addrlen);
-    s->dest_addr_len = res0->ai_addrlen;
+    memcpy(addr, res0->ai_addr, res0->ai_addrlen);
+    addr_len = res0->ai_addrlen;
     freeaddrinfo(res0);
-    return 0;
+
+    return addr_len;
 }
 
-static int udp_ipv6_set_local(URLContext *h) {
-    UDPContext *s = h->priv_data;
+static int udp_socket_create(UDPContext *s, struct sockaddr_storage *addr, int *addr_len)
+{
     int udp_fd = -1;
-    struct sockaddr_storage clientaddr;
-    socklen_t addrlen;
-    char sbuf[NI_MAXSERV];
-    char hbuf[NI_MAXHOST];
     struct addrinfo *res0 = NULL, *res = NULL;
+    int family = AF_UNSPEC;
 
-    if (s->local_port != 0) {
-        res0 = udp_ipv6_resolve_host(0, s->local_port, SOCK_DGRAM, AF_UNSPEC, AI_PASSIVE);
-        if (res0 == 0)
-            goto fail;
-        for (res = res0; res; res=res->ai_next) {
-            udp_fd = socket(res->ai_family, SOCK_DGRAM, 0);
-            if (udp_fd > 0) break;
-            perror("socket");
-        }
-    } else {
-        udp_fd = socket(s->dest_addr.ss_family, SOCK_DGRAM, 0);
-        if (udp_fd < 0)
-            perror("socket");
+    if (((struct sockaddr *) &s->dest_addr)->sa_family)
+        family = ((struct sockaddr *) &s->dest_addr)->sa_family;
+    res0 = udp_ipv6_resolve_host(0, s->local_port, SOCK_DGRAM, family, AI_PASSIVE);
+    if (res0 == 0)
+        goto fail;
+    for (res = res0; res; res=res->ai_next) {
+        udp_fd = socket(res->ai_family, SOCK_DGRAM, 0);
+        if (udp_fd > 0) break;
+        av_log(NULL, AV_LOG_ERROR, "socket: %s\n", strerror(errno));
     }
 
     if (udp_fd < 0)
         goto fail;
 
-    if (s->local_port != 0) {
-        if (bind(udp_fd, res0->ai_addr, res0->ai_addrlen) < 0) {
-            perror("bind");
-            goto fail;
-        }
-        freeaddrinfo(res0);
-        res0 = NULL;
-    }
+    memcpy(addr, res->ai_addr, res->ai_addrlen);
+    *addr_len = res->ai_addrlen;
 
-    addrlen = sizeof(clientaddr);
-    if (getsockname(udp_fd, (struct sockaddr *)&clientaddr, &addrlen) < 0) {
-        perror("getsockname");
-        goto fail;
-    }
-
-    if (getnameinfo((struct sockaddr *)&clientaddr, addrlen, hbuf, sizeof(hbuf),  sbuf, sizeof(sbuf), NI_NUMERICHOST | NI_NUMERICSERV) != 0) {
-        perror("getnameinfo");
-        goto fail;
-    }
-
-    s->local_port = strtol(sbuf, NULL, 10);
+    freeaddrinfo(res0);
 
     return udp_fd;
 
@@ -205,6 +194,51 @@ static int udp_ipv6_set_local(URLContext *h) {
     return -1;
 }
 
+static int udp_port(struct sockaddr_storage *addr, int addr_len)
+{
+    char sbuf[sizeof(int)*3+1];
+
+    if (getnameinfo((struct sockaddr *)addr, addr_len, NULL, 0,  sbuf, sizeof(sbuf), NI_NUMERICSERV) != 0) {
+        av_log(NULL, AV_LOG_ERROR, "getnameinfo: %s\n", strerror(errno));
+        return -1;
+    }
+
+    return strtol(sbuf, NULL, 10);
+}
+
+#else
+
+static int udp_set_url(struct sockaddr_in *addr, const char *hostname, int port)
+{
+    /* set the destination address */
+    if (resolve_host(&addr->sin_addr, hostname) < 0)
+        return AVERROR(EIO);
+    addr->sin_family = AF_INET;
+    addr->sin_port = htons(port);
+
+    return sizeof(struct sockaddr_in);
+}
+
+static int udp_socket_create(UDPContext *s, struct sockaddr_in *addr, int *addr_len)
+{
+    int fd;
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0)
+        return -1;
+
+    addr->sin_family = AF_INET;
+    addr->sin_addr.s_addr = htonl (INADDR_ANY);
+    addr->sin_port = htons(s->local_port);
+    *addr_len = sizeof(struct sockaddr_in);
+
+    return fd;
+}
+
+static int udp_port(struct sockaddr_in *addr, int len)
+{
+    return ntohs(addr->sin_port);
+}
 #endif /* CONFIG_IPV6 */
 
 
@@ -226,9 +260,6 @@ static int udp_ipv6_set_local(URLContext *h) {
  */
 int udp_set_remote_url(URLContext *h, const char *uri)
 {
-#ifdef CONFIG_IPV6
-    return udp_ipv6_set_remote_url(h, uri);
-#else
     UDPContext *s = h->priv_data;
     char hostname[256];
     int port;
@@ -236,12 +267,12 @@ int udp_set_remote_url(URLContext *h, const char *uri)
     url_split(NULL, 0, NULL, 0, hostname, sizeof(hostname), &port, NULL, 0, uri);
 
     /* set the destination address */
-    if (resolve_host(&s->dest_addr.sin_addr, hostname) < 0)
+    s->dest_addr_len = udp_set_url(&s->dest_addr, hostname, port);
+    if (s->dest_addr_len < 0) {
         return AVERROR(EIO);
-    s->dest_addr.sin_family = AF_INET;
-    s->dest_addr.sin_port = htons(port);
+    }
+
     return 0;
-#endif
 }
 
 /**
@@ -277,24 +308,23 @@ static int udp_open(URLContext *h, const char *uri, int flags)
     const char *p;
     char buf[256];
 #ifndef CONFIG_IPV6
-    struct sockaddr_in my_addr, my_addr1;
-    int len;
+    struct sockaddr_in my_addr;
+#else
+    struct sockaddr_storage my_addr;
 #endif
+    int len;
 
     h->is_streamed = 1;
     h->max_packet_size = 1472;
 
     is_output = (flags & URL_WRONLY);
 
-    s = av_malloc(sizeof(UDPContext));
+    s = av_mallocz(sizeof(UDPContext));
     if (!s)
         return AVERROR(ENOMEM);
 
     h->priv_data = s;
     s->ttl = 16;
-    s->is_multicast = 0;
-    s->local_port = 0;
-    s->reuse_socket = 0;
     p = strchr(uri, '?');
     if (p) {
         s->is_multicast = find_info_tag(buf, sizeof(buf), "multicast", p);
@@ -325,76 +355,41 @@ static int udp_open(URLContext *h, const char *uri, int flags)
     if(!ff_network_init())
         return AVERROR(EIO);
 
-#ifndef CONFIG_IPV6
-    udp_fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (s->is_multicast && !(h->flags & URL_WRONLY))
+        s->local_port = port;
+    udp_fd = udp_socket_create(s, &my_addr, &len);
     if (udp_fd < 0)
         goto fail;
-
-    my_addr.sin_family = AF_INET;
-    my_addr.sin_addr.s_addr = htonl (INADDR_ANY);
-    if (s->is_multicast && !(h->flags & URL_WRONLY)) {
-        /* special case: the bind must be done on the multicast address port */
-        my_addr.sin_port = s->dest_addr.sin_port;
-    } else {
-        my_addr.sin_port = htons(s->local_port);
-    }
 
     if (s->reuse_socket)
         if (setsockopt (udp_fd, SOL_SOCKET, SO_REUSEADDR, &(s->reuse_socket), sizeof(s->reuse_socket)) != 0)
             goto fail;
 
     /* the bind is needed to give a port to the socket now */
-    if (bind(udp_fd,(struct sockaddr *)&my_addr, sizeof(my_addr)) < 0)
+    if (bind(udp_fd,(struct sockaddr *)&my_addr, len) < 0)
         goto fail;
 
-    len = sizeof(my_addr1);
-    getsockname(udp_fd, (struct sockaddr *)&my_addr1, &len);
-    s->local_port = ntohs(my_addr1.sin_port);
+    len = sizeof(my_addr);
+    getsockname(udp_fd, (struct sockaddr *)&my_addr, &len);
+    s->local_port = udp_port(&my_addr, len);
 
-#ifdef IP_MULTICAST_TTL
     if (s->is_multicast) {
         if (h->flags & URL_WRONLY) {
             /* output */
-            if (setsockopt(udp_fd, IPPROTO_IP, IP_MULTICAST_TTL,
-                           &s->ttl, sizeof(s->ttl)) < 0) {
-                perror("IP_MULTICAST_TTL");
+            if (udp_set_multicast_ttl(udp_fd, s->ttl, (struct sockaddr *)&s->dest_addr) < 0)
                 goto fail;
-            }
         } else {
             /* input */
-            memset(&s->mreq, 0, sizeof(s->mreq));
-            s->mreq.imr_multiaddr = s->dest_addr.sin_addr;
-            s->mreq.imr_interface.s_addr = htonl (INADDR_ANY);
-            if (setsockopt(udp_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
-                           &s->mreq, sizeof(s->mreq)) < 0) {
-                perror("rtp: IP_ADD_MEMBERSHIP");
-                goto fail;
-            }
-        }
-    }
-#endif
-#else
-    if (s->is_multicast && !(h->flags & URL_WRONLY))
-        s->local_port = port;
-    udp_fd = udp_ipv6_set_local(h);
-    if (udp_fd < 0)
-        goto fail;
-    if (s->is_multicast) {
-        if (h->flags & URL_WRONLY) {
-            if (udp_ipv6_set_multicast_ttl(udp_fd, s->ttl, (struct sockaddr *)&s->dest_addr) < 0)
-                goto fail;
-        } else {
-            if (udp_ipv6_join_multicast_group(udp_fd, (struct sockaddr *)&s->dest_addr) < 0)
+            if (udp_join_multicast_group(udp_fd, (struct sockaddr *)&s->dest_addr) < 0)
                 goto fail;
         }
     }
-#endif /* CONFIG_IPV6 */
 
     if (is_output) {
         /* limit the tx buf size to limit latency */
         tmp = UDP_TX_BUF_SIZE;
         if (setsockopt(udp_fd, SOL_SOCKET, SO_SNDBUF, &tmp, sizeof(tmp)) < 0) {
-            perror("setsockopt sndbuf");
+            av_log(NULL, AV_LOG_ERROR, "setsockopt(SO_SNDBUF): %s\n", strerror(errno));
             goto fail;
         }
     } else {
@@ -416,18 +411,10 @@ static int udp_open(URLContext *h, const char *uri, int flags)
 static int udp_read(URLContext *h, uint8_t *buf, int size)
 {
     UDPContext *s = h->priv_data;
-#ifndef CONFIG_IPV6
-    struct sockaddr_in from;
-#else
-    struct sockaddr_storage from;
-#endif
-    socklen_t from_len;
     int len;
 
     for(;;) {
-        from_len = sizeof(from);
-        len = recvfrom (s->udp_fd, buf, size, 0,
-                        (struct sockaddr *)&from, &from_len);
+        len = recv(s->udp_fd, buf, size, 0);
         if (len < 0) {
             if (ff_neterrno() != FF_NETERROR(EAGAIN) &&
                 ff_neterrno() != FF_NETERROR(EINTR))
@@ -447,11 +434,7 @@ static int udp_write(URLContext *h, uint8_t *buf, int size)
     for(;;) {
         ret = sendto (s->udp_fd, buf, size, 0,
                       (struct sockaddr *) &s->dest_addr,
-#ifndef CONFIG_IPV6
-                      sizeof (s->dest_addr));
-#else
                       s->dest_addr_len);
-#endif
         if (ret < 0) {
             if (ff_neterrno() != FF_NETERROR(EINTR) &&
                 ff_neterrno() != FF_NETERROR(EAGAIN))
@@ -467,19 +450,8 @@ static int udp_close(URLContext *h)
 {
     UDPContext *s = h->priv_data;
 
-#ifndef CONFIG_IPV6
-#ifdef IP_DROP_MEMBERSHIP
-    if (s->is_multicast && !(h->flags & URL_WRONLY)) {
-        if (setsockopt(s->udp_fd, IPPROTO_IP, IP_DROP_MEMBERSHIP,
-                       &s->mreq, sizeof(s->mreq)) < 0) {
-            perror("IP_DROP_MEMBERSHIP");
-        }
-    }
-#endif
-#else
     if (s->is_multicast && !(h->flags & URL_WRONLY))
-        udp_ipv6_leave_multicast_group(s->udp_fd, (struct sockaddr *)&s->dest_addr);
-#endif
+        udp_leave_multicast_group(s->udp_fd, (struct sockaddr *)&s->dest_addr);
     closesocket(s->udp_fd);
     ff_network_close();
     av_free(s);

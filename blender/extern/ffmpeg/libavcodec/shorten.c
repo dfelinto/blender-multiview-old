@@ -100,7 +100,7 @@ typedef struct ShortenContext {
     int32_t lpcqoffset;
 } ShortenContext;
 
-static int shorten_decode_init(AVCodecContext * avctx)
+static av_cold int shorten_decode_init(AVCodecContext * avctx)
 {
     ShortenContext *s = avctx->priv_data;
     s->avctx = avctx;
@@ -268,7 +268,7 @@ static void decode_subframe_lpc(ShortenContext *s, int channel, int residual_siz
 
 static int shorten_decode_frame(AVCodecContext *avctx,
         void *data, int *data_size,
-        uint8_t *buf, int buf_size)
+        const uint8_t *buf, int buf_size)
 {
     ShortenContext *s = avctx->priv_data;
     int i, input_buf_size = 0;
@@ -345,7 +345,7 @@ static int shorten_decode_frame(AVCodecContext *avctx,
             s->lpcqoffset = V2LPCQOFFSET;
 
         if (get_ur_golomb_shorten(&s->gb, FNSIZE) != FN_VERBATIM) {
-            av_log(s->avctx, AV_LOG_ERROR, "missing verbatim section at begining of stream\n");
+            av_log(s->avctx, AV_LOG_ERROR, "missing verbatim section at beginning of stream\n");
             return -1;
         }
 
@@ -501,7 +501,7 @@ frame_done:
         return i;
 }
 
-static int shorten_decode_close(AVCodecContext *avctx)
+static av_cold int shorten_decode_close(AVCodecContext *avctx)
 {
     ShortenContext *s = avctx->priv_data;
     int i;

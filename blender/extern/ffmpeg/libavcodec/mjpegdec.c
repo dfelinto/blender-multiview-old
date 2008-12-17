@@ -73,7 +73,7 @@ static void build_basic_mjpeg_vlc(MJpegDecodeContext * s) {
               ff_mjpeg_val_ac_chrominance, 251, 0, 1);
 }
 
-int ff_mjpeg_decode_init(AVCodecContext *avctx)
+av_cold int ff_mjpeg_decode_init(AVCodecContext *avctx)
 {
     MJpegDecodeContext *s = avctx->priv_data;
 
@@ -332,7 +332,7 @@ int ff_mjpeg_decode_sof(MJpegDecodeContext *s)
         av_log(s->avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;
     }
-    s->picture.pict_type= I_TYPE;
+    s->picture.pict_type= FF_I_TYPE;
     s->picture.key_frame= 1;
 
     for(i=0; i<3; i++){
@@ -660,8 +660,23 @@ static int ljpeg_decode_yuv_scan(MJpegDecodeContext *s, int predictor, int point
 static int mjpeg_decode_scan(MJpegDecodeContext *s, int nb_components, int ss, int se, int Ah, int Al){
     int i, mb_x, mb_y;
     int EOBRUN = 0;
+    uint8_t* data[MAX_COMPONENTS];
+    int linesize[MAX_COMPONENTS];
 
     if(Ah) return 0; /* TODO decode refinement planes too */
+
+    for(i=0; i < nb_components; i++) {
+        int c = s->comp_index[i];
+        data[c] = s->picture.data[c];
+        linesize[c]=s->linesize[c];
+        if(s->avctx->codec->id==CODEC_ID_AMV) {
+            //picture should be flipped upside-down for this codec
+            assert(!(s->avctx->flags & CODEC_FLAG_EMU_EDGE));
+            data[c] += (linesize[c] * (s->v_scount[i] * (8 * s->mb_height -((s->height/s->v_max)&7)) - 1 ));
+            linesize[c] *= -1;
+        }
+    }
+
     for(mb_y = 0; mb_y < s->mb_height; mb_y++) {
         for(mb_x = 0; mb_x < s->mb_width; mb_x++) {
             if (s->restart_interval && !s->restart_count)
@@ -691,16 +706,16 @@ static int mjpeg_decode_scan(MJpegDecodeContext *s, int nb_components, int ss, i
                         return -1;
                     }
 //                    av_log(s->avctx, AV_LOG_DEBUG, "mb: %d %d processed\n", mb_y, mb_x);
-                    ptr = s->picture.data[c] +
-                        (((s->linesize[c] * (v * mb_y + y) * 8) +
+                    ptr = data[c] +
+                        (((linesize[c] * (v * mb_y + y) * 8) +
                         (h * mb_x + x) * 8) >> s->avctx->lowres);
                     if (s->interlaced && s->bottom_field)
-                        ptr += s->linesize[c] >> 1;
+                        ptr += linesize[c] >> 1;
 //av_log(NULL, AV_LOG_DEBUG, "%d %d %d %d %d %d %d %d \n", mb_x, mb_y, x, y, c, s->bottom_field, (v * mb_y + y) * 8, (h * mb_x + x) * 8);
                     if(!s->progressive)
-                        s->dsp.idct_put(ptr, s->linesize[c], s->block);
+                        s->dsp.idct_put(ptr, linesize[c], s->block);
                     else
-                        s->dsp.idct_add(ptr, s->linesize[c], s->block);
+                        s->dsp.idct_add(ptr, linesize[c], s->block);
                     if (++x == h) {
                         x = 0;
                         y++;
@@ -1058,9 +1073,9 @@ static int valid_marker_list[] =
 
 /* return the 8 bit start code value and update the search
    state. Return -1 if no start code found */
-static int find_marker(uint8_t **pbuf_ptr, uint8_t *buf_end)
+static int find_marker(const uint8_t **pbuf_ptr, const uint8_t *buf_end)
 {
-    uint8_t *buf_ptr;
+    const uint8_t *buf_ptr;
     unsigned int v, v2;
     int val;
 #ifdef DEBUG
@@ -1090,10 +1105,10 @@ found:
 
 int ff_mjpeg_decode_frame(AVCodecContext *avctx,
                               void *data, int *data_size,
-                              uint8_t *buf, int buf_size)
+                              const uint8_t *buf, int buf_size)
 {
     MJpegDecodeContext *s = avctx->priv_data;
-    uint8_t *buf_end, *buf_ptr;
+    const uint8_t *buf_end, *buf_ptr;
     int start_code;
     AVFrame *picture = data;
 
@@ -1121,7 +1136,7 @@ int ff_mjpeg_decode_frame(AVCodecContext *avctx,
                 /* unescape buffer of SOS, use special treatment for JPEG-LS */
                 if (start_code == SOS && !s->ls)
                 {
-                    uint8_t *src = buf_ptr;
+                    const uint8_t *src = buf_ptr;
                     uint8_t *dst = s->buffer;
 
                     while (src<buf_end)
@@ -1148,7 +1163,7 @@ int ff_mjpeg_decode_frame(AVCodecContext *avctx,
                            (buf_end - buf_ptr) - (dst - s->buffer));
                 }
                 else if(start_code == SOS && s->ls){
-                    uint8_t *src = buf_ptr;
+                    const uint8_t *src = buf_ptr;
                     uint8_t *dst = s->buffer;
                     int bit_count = 0;
                     int t = 0, b = 0;
@@ -1323,7 +1338,7 @@ the_end:
     return buf_ptr - buf;
 }
 
-int ff_mjpeg_decode_end(AVCodecContext *avctx)
+av_cold int ff_mjpeg_decode_end(AVCodecContext *avctx)
 {
     MJpegDecodeContext *s = avctx->priv_data;
     int i, j;

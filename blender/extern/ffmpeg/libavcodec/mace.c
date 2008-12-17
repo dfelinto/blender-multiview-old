@@ -263,7 +263,7 @@ static void chomp3(MACEContext *ctx,
 
 /* /// "Exp1to3()" */
 static void Exp1to3(MACEContext *ctx,
-             uint8_t *inBuffer,
+             const uint8_t *inBuffer,
              void *outBuffer,
              uint32_t cnt,
              uint32_t numChannels,
@@ -347,7 +347,7 @@ static void chomp6(MACEContext *ctx,
 
 /* /// "Exp1to6()" */
 static void Exp1to6(MACEContext *ctx,
-             uint8_t *inBuffer,
+             const uint8_t *inBuffer,
              void *outBuffer,
              uint32_t cnt,
              uint32_t numChannels,
@@ -392,7 +392,7 @@ static void Exp1to6(MACEContext *ctx,
 }
 /* \\\ */
 
-static int mace_decode_init(AVCodecContext * avctx)
+static av_cold int mace_decode_init(AVCodecContext * avctx)
 {
     if (avctx->channels > 2)
         return -1;
@@ -401,7 +401,7 @@ static int mace_decode_init(AVCodecContext * avctx)
 
 static int mace_decode_frame(AVCodecContext *avctx,
                             void *data, int *data_size,
-                            uint8_t *buf, int buf_size)
+                            const uint8_t *buf, int buf_size)
 {
     short *samples;
     MACEContext *c = avctx->priv_data;
@@ -409,18 +409,14 @@ static int mace_decode_frame(AVCodecContext *avctx,
     samples = (short *)data;
     switch (avctx->codec->id) {
     case CODEC_ID_MACE3:
-#ifdef DEBUG
-puts("mace_decode_frame[3]()");
-#endif
+        dprintf(avctx, "mace_decode_frame[3]()");
         Exp1to3(c, buf, samples, buf_size / 2 / avctx->channels, avctx->channels, 1);
         if (avctx->channels == 2)
             Exp1to3(c, buf, samples+1, buf_size / 2 / 2, 2, 2);
         *data_size = 2 * 3 * buf_size;
         break;
     case CODEC_ID_MACE6:
-#ifdef DEBUG
-puts("mace_decode_frame[6]()");
-#endif
+        dprintf(avctx, "mace_decode_frame[6]()");
         Exp1to6(c, buf, samples, buf_size / avctx->channels, avctx->channels, 1);
         if (avctx->channels == 2)
             Exp1to6(c, buf, samples+1, buf_size / 2, 2, 2);

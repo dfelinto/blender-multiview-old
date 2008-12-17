@@ -50,14 +50,14 @@ typedef struct {
     int16_t filters[32]; // filters for every subframe
 } TSContext;
 
-static int truespeech_decode_init(AVCodecContext * avctx)
+static av_cold int truespeech_decode_init(AVCodecContext * avctx)
 {
 //    TSContext *c = avctx->priv_data;
 
     return 0;
 }
 
-static void truespeech_read_frame(TSContext *dec, uint8_t *input)
+static void truespeech_read_frame(TSContext *dec, const uint8_t *input)
 {
     uint32_t t;
 
@@ -329,7 +329,7 @@ static void truespeech_save_prevvec(TSContext *c)
 
 static int truespeech_decode_frame(AVCodecContext *avctx,
                 void *data, int *data_size,
-                uint8_t *buf, int buf_size)
+                const uint8_t *buf, int buf_size)
 {
     TSContext *c = avctx->priv_data;
 

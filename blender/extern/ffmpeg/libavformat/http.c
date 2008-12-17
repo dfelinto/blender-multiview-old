@@ -21,6 +21,7 @@
 #include "avformat.h"
 #include <unistd.h>
 #include "network.h"
+#include "os_support.h"
 
 #include "base64.h"
 #include "avstring.h"
@@ -218,7 +219,7 @@ static int http_connect(URLContext *h, const char *path, const char *hoststr,
     /* send http header */
     post = h->flags & URL_WRONLY;
     auth_b64 = av_malloc(auth_b64_len);
-    av_base64_encode(auth_b64, auth_b64_len, (uint8_t *)auth, strlen(auth));
+    av_base64_encode(auth_b64, auth_b64_len, auth, strlen(auth));
     snprintf(s->buffer, sizeof(s->buffer),
              "%s %s HTTP/1.1\r\n"
              "User-Agent: %s\r\n"
@@ -246,7 +247,6 @@ static int http_connect(URLContext *h, const char *path, const char *hoststr,
     s->off = 0;
     s->filesize = -1;
     if (post) {
-        usleep(1000*1000);
         return 0;
     }
 

@@ -102,11 +102,6 @@ static void mpegvideo_extract_headers(AVCodecParserContext *s,
                                 s->repeat_pict = 1;
                             }
                         }
-
-                        /* the packet only represents half a frame
-                           XXX,FIXME maybe find a different solution */
-                        if(picture_structure != 3)
-                            s->repeat_pict = -1;
                     }
                     break;
                 }
@@ -181,5 +176,4 @@ AVCodecParser mpegvideo_parser = {
     NULL,
     mpegvideo_parse,
     ff_parse1_close,
-    mpegvideo_split,
 };

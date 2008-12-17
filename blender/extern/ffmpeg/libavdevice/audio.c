@@ -31,7 +31,6 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
 #include <sys/time.h>
 
 #define AUDIO_BLOCK_SIZE 4096

@@ -20,6 +20,9 @@
 
 #include "avstring.h"
 #include "avformat.h"
+#include "avc.h"
+#include "base64.h"
+#include "rtp.h"
 
 #ifdef CONFIG_RTP_MUXER
 #define MAX_EXTRADATA_SIZE ((INT_MAX - 10) / 2)
@@ -89,6 +92,49 @@ static int get_address(char *dest_addr, int size, int *ttl, const char *url)
     return port;
 }
 
+#define MAX_PSET_SIZE 1024
+static char *extradata2psets(AVCodecContext *c)
+{
+    char *psets, *p;
+    const uint8_t *r;
+    const char *pset_string = "; sprop-parameter-sets=";
+
+    if (c->extradata_size > MAX_EXTRADATA_SIZE) {
+        av_log(c, AV_LOG_ERROR, "Too many extra data!\n");
+
+        return NULL;
+    }
+
+    psets = av_mallocz(MAX_PSET_SIZE);
+    if (psets == NULL) {
+        av_log(c, AV_LOG_ERROR, "Cannot allocate memory for the parameter sets\n");
+        return NULL;
+    }
+    memcpy(psets, pset_string, strlen(pset_string));
+    p = psets + strlen(pset_string);
+    r = ff_avc_find_startcode(c->extradata, c->extradata + c->extradata_size);
+    while (r < c->extradata + c->extradata_size) {
+        const uint8_t *r1;
+
+        while (!*(r++));
+        r1 = ff_avc_find_startcode(r, c->extradata + c->extradata_size);
+        if (p != (psets + strlen(pset_string))) {
+            *p = ',';
+            p++;
+        }
+        if (av_base64_encode(p, MAX_PSET_SIZE - (p - psets), r, r1 - r) == NULL) {
+            av_log(c, AV_LOG_ERROR, "Cannot BASE64 encode %d %d!\n", MAX_PSET_SIZE - (p - psets), r1 - r);
+            av_free(psets);
+
+            return NULL;
+        }
+        p += strlen(p);
+        r = r1;
+    }
+
+    return psets;
+}
+
 static void digit_to_char(char *dst, uint8_t src)
 {
     if (src < 10) {
@@ -110,23 +156,23 @@ static char *data_to_hex(char *buff, const uint8_t *src, int s)
     return buff;
 }
 
-static char *extradata2config(const uint8_t *extradata, int extradata_size)
+static char *extradata2config(AVCodecContext *c)
 {
     char *config;
 
-    if (extradata_size > MAX_EXTRADATA_SIZE) {
-        av_log(NULL, AV_LOG_ERROR, "Too many extra data!\n");
+    if (c->extradata_size > MAX_EXTRADATA_SIZE) {
+        av_log(c, AV_LOG_ERROR, "Too many extra data!\n");
 
         return NULL;
     }
-    config = av_malloc(10 + extradata_size * 2);
+    config = av_malloc(10 + c->extradata_size * 2);
     if (config == NULL) {
-        av_log(NULL, AV_LOG_ERROR, "Cannot allocate memory for the config info\n");
+        av_log(c, AV_LOG_ERROR, "Cannot allocate memory for the config info\n");
         return NULL;
     }
     memcpy(config, "; config=", 9);
-    data_to_hex(config + 9, extradata, extradata_size);
-    config[9 + extradata_size * 2] = 0;
+    data_to_hex(config + 9, c->extradata, c->extradata_size);
+    config[9 + c->extradata_size * 2] = 0;
 
     return config;
 }
@@ -136,9 +182,18 @@ static char *sdp_media_attributes(char *buff, int size, AVCodecContext *c, int p
     char *config = NULL;
 
     switch (c->codec_id) {
+        case CODEC_ID_H264:
+            if (c->extradata_size) {
+                config = extradata2psets(c);
+            }
+            av_strlcatf(buff, size, "a=rtpmap:%d H264/90000\r\n"
+                                    "a=fmtp:%d packetization-mode=1%s\r\n",
+                                     payload_type,
+                                     payload_type, config ? config : "");
+            break;
         case CODEC_ID_MPEG4:
             if (c->extradata_size) {
-                config = extradata2config(c->extradata, c->extradata_size);
+                config = extradata2config(c);
             }
             av_strlcatf(buff, size, "a=rtpmap:%d MP4V-ES/90000\r\n"
                                     "a=fmtp:%d profile-level-id=1%s\r\n",
@@ -147,12 +202,12 @@ static char *sdp_media_attributes(char *buff, int size, AVCodecContext *c, int p
             break;
         case CODEC_ID_AAC:
             if (c->extradata_size) {
-                config = extradata2config(c->extradata, c->extradata_size);
+                config = extradata2config(c);
             } else {
                 /* FIXME: maybe we can forge config information based on the
                  *        codec parameters...
                  */
-                av_log(NULL, AV_LOG_ERROR, "AAC with no global headers is currently not supported\n");
+                av_log(c, AV_LOG_ERROR, "AAC with no global headers is currently not supported\n");
                 return NULL;
             }
             if (config == NULL) {
@@ -164,6 +219,24 @@ static char *sdp_media_attributes(char *buff, int size, AVCodecContext *c, int p
                                     "indexdeltalength=3%s\r\n",
                                      payload_type, c->sample_rate, c->channels,
                                      payload_type, config);
+            break;
+        case CODEC_ID_PCM_S16BE:
+            if (payload_type >= 96)
+                av_strlcatf(buff, size, "a=rtpmap:%d L16/%d/%d\r\n",
+                                         payload_type,
+                                         c->sample_rate, c->channels);
+            break;
+        case CODEC_ID_PCM_MULAW:
+            if (payload_type >= 96)
+                av_strlcatf(buff, size, "a=rtpmap:%d PCMU/%d/%d\r\n",
+                                         payload_type,
+                                         c->sample_rate, c->channels);
+            break;
+        case CODEC_ID_PCM_ALAW:
+            if (payload_type >= 96)
+                av_strlcatf(buff, size, "a=rtpmap:%d PCMA/%d/%d\r\n",
+                                         payload_type,
+                                         c->sample_rate, c->channels);
             break;
         default:
             /* Nothing special to do, here... */
@@ -194,6 +267,9 @@ static void sdp_write_media(char *buff, int size, AVCodecContext *c, const char 
 
     av_strlcatf(buff, size, "m=%s %d RTP/AVP %d\r\n", type, port, payload_type);
     dest_write(buff, size, dest_addr, ttl);
+    if (c->bit_rate) {
+        av_strlcatf(buff, size, "b=AS:%d\r\n", c->bit_rate / 1000);
+    }
 
     sdp_media_attributes(buff, size, c, payload_type);
 }

@@ -26,12 +26,13 @@
 #include "isom.h"
 
 /* http://www.mp4ra.org */
+/* ordered by muxing preference */
 const AVCodecTag ff_mp4_obj_type[] = {
     { CODEC_ID_MPEG4     ,  32 },
     { CODEC_ID_H264      ,  33 },
     { CODEC_ID_AAC       ,  64 },
-    { CODEC_ID_MPEG2VIDEO,  96 }, /* MPEG2 Simple */
     { CODEC_ID_MPEG2VIDEO,  97 }, /* MPEG2 Main */
+    { CODEC_ID_MPEG2VIDEO,  96 }, /* MPEG2 Simple */
     { CODEC_ID_MPEG2VIDEO,  98 }, /* MPEG2 SNR */
     { CODEC_ID_MPEG2VIDEO,  99 }, /* MPEG2 Spatial */
     { CODEC_ID_MPEG2VIDEO, 100 }, /* MPEG2 High */
@@ -39,22 +40,16 @@ const AVCodecTag ff_mp4_obj_type[] = {
     { CODEC_ID_AAC       , 102 }, /* MPEG2 AAC Main */
     { CODEC_ID_AAC       , 103 }, /* MPEG2 AAC Low */
     { CODEC_ID_AAC       , 104 }, /* MPEG2 AAC SSR */
+    { CODEC_ID_MP3       , 107 }, /* 11172-3 */
     { CODEC_ID_MP3       , 105 }, /* 13818-3 */
     { CODEC_ID_MPEG1VIDEO, 106 }, /* 11172-2 */
-    { CODEC_ID_MP3       , 107 }, /* 11172-3 */
     { CODEC_ID_MJPEG     , 108 }, /* 10918-1 */
     { CODEC_ID_PNG       , 109 },
     { CODEC_ID_JPEG2000  , 110 }, /* 15444-1 */
     { CODEC_ID_VC1       , 163 },
-    { CODEC_ID_VORBIS    , 221 },
-    { CODEC_ID_PCM_S16LE , 224 },
+    { CODEC_ID_VORBIS    , 221 }, /* non standard, gpac uses it */
+    { CODEC_ID_DVD_SUBTITLE, 224 }, /* non standard, see unsupported-embedded-subs-2.mp4 */
     { CODEC_ID_QCELP     , 225 },
-    { CODEC_ID_AC3       , 226 },
-    { CODEC_ID_PCM_ALAW  , 227 },
-    { CODEC_ID_PCM_MULAW , 228 },
-    { CODEC_ID_PCM_S16BE , 230 },
-    { CODEC_ID_H263      , 242 },
-    { CODEC_ID_H261      , 243 },
     { 0, 0 },
 };
 
@@ -110,8 +105,11 @@ const AVCodecTag codec_movvideo_tags[] = {
     { CODEC_ID_MPEG2VIDEO, MKTAG('h', 'd', 'v', '1') }, /* HDV 720p30 */
     { CODEC_ID_MPEG2VIDEO, MKTAG('h', 'd', 'v', '2') }, /* MPEG2 produced by Sony HD camera */
     { CODEC_ID_MPEG2VIDEO, MKTAG('h', 'd', 'v', '3') }, /* HDV produced by FCP */
+    { CODEC_ID_MPEG2VIDEO, MKTAG('h', 'd', 'v', '5') }, /* HDV 720p25 */
     { CODEC_ID_MPEG2VIDEO, MKTAG('m', 'x', '5', 'n') }, /* MPEG2 IMX NTSC 525/60 50mb/s produced by FCP */
     { CODEC_ID_MPEG2VIDEO, MKTAG('m', 'x', '5', 'p') }, /* MPEG2 IMX PAL 625/50 50mb/s produced by FCP */
+    { CODEC_ID_MPEG2VIDEO, MKTAG('m', 'x', '4', 'n') }, /* MPEG2 IMX NTSC 525/60 40mb/s produced by FCP */
+    { CODEC_ID_MPEG2VIDEO, MKTAG('m', 'x', '4', 'p') }, /* MPEG2 IMX PAL 625/50 40mb/s produced by FCP */
     { CODEC_ID_MPEG2VIDEO, MKTAG('m', 'x', '3', 'n') }, /* MPEG2 IMX NTSC 525/60 30mb/s produced by FCP */
     { CODEC_ID_MPEG2VIDEO, MKTAG('m', 'x', '3', 'p') }, /* MPEG2 IMX PAL 625/50 30mb/s produced by FCP */
     { CODEC_ID_MPEG2VIDEO, MKTAG('x', 'd', 'v', '2') }, /* XDCAM HD 1080i60 */
@@ -147,14 +145,12 @@ const AVCodecTag codec_movaudio_tags[] = {
     { CODEC_ID_PCM_ALAW,  MKTAG('a', 'l', 'a', 'w') }, /*  */
 
     { CODEC_ID_ADPCM_IMA_QT, MKTAG('i', 'm', 'a', '4') }, /* IMA-4 ADPCM */
-    { CODEC_ID_ADPCM_MS,     MKTAG('m', 's', 0x00, 0x02) }, /* MS ADPCM */
 
     { CODEC_ID_MACE3, MKTAG('M', 'A', 'C', '3') }, /* Macintosh Audio Compression and Expansion 3:1 */
     { CODEC_ID_MACE6, MKTAG('M', 'A', 'C', '6') }, /* Macintosh Audio Compression and Expansion 6:1 */
 
     { CODEC_ID_MP3, MKTAG('.', 'm', 'p', '3') }, /* MPEG layer 3 */ /* sample files at http://www.3ivx.com/showcase.html use this tag */
     { CODEC_ID_MP3, 0x6D730055 }, /* MPEG layer 3 */
-    { CODEC_ID_MP3, MKTAG('m', 's', 0x00, 0x55) }, /* MPEG layer 3 *//* XXX: check endianness */
 
 /*  { CODEC_ID_OGG_VORBIS, MKTAG('O', 'g', 'g', 'S') }, *//* sample files at http://heroinewarrior.com/xmovie.php3 use this tag */
 
@@ -163,14 +159,19 @@ const AVCodecTag codec_movaudio_tags[] = {
     { CODEC_ID_AMR_NB, MKTAG('s', 'a', 'm', 'r') }, /* AMR-NB 3gp */
     { CODEC_ID_AMR_WB, MKTAG('s', 'a', 'w', 'b') }, /* AMR-WB 3gp */
 
-    { CODEC_ID_AC3,  MKTAG('m', 's', 0x20, 0x00) }, /* Dolby AC-3 */
-
+    { CODEC_ID_GSM,  MKTAG('a', 'g', 's', 'm') },
     { CODEC_ID_ALAC, MKTAG('a', 'l', 'a', 'c') }, /* Apple Lossless */
     { CODEC_ID_QDM2, MKTAG('Q', 'D', 'M', '2') }, /* QDM2 */
 
     { CODEC_ID_DVAUDIO, MKTAG('v', 'd', 'v', 'a') },
     { CODEC_ID_DVAUDIO, MKTAG('d', 'v', 'c', 'a') },
 
+    { CODEC_ID_NONE, 0 },
+};
+
+const AVCodecTag ff_codec_movsubtitle_tags[] = {
+    { CODEC_ID_MOV_TEXT, MKTAG('t', 'e', 'x', 't') },
+    { CODEC_ID_MOV_TEXT, MKTAG('t', 'x', '3', 'g') },
     { CODEC_ID_NONE, 0 },
 };
 

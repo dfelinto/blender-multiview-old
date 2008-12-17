@@ -27,7 +27,7 @@
 #include "bitstream.h"
 #include "bytestream.h"
 #include "intreadwrite.h"
-#include "ogg2.h"
+#include "oggdec.h"
 #include "riff.h"
 
 static int
@@ -36,7 +36,7 @@ ogm_header(AVFormatContext *s, int idx)
     ogg_t *ogg = s->priv_data;
     ogg_stream_t *os = ogg->streams + idx;
     AVStream *st = s->streams[idx];
-    uint8_t *p = os->buf + os->pstart;
+    const uint8_t *p = os->buf + os->pstart;
     uint64_t time_unit;
     uint64_t spu;
     uint32_t default_len;
@@ -55,6 +55,10 @@ ogm_header(AVFormatContext *s, int idx)
         tag = bytestream_get_le32(&p);
         st->codec->codec_id = codec_get_id(codec_bmp_tags, tag);
         st->codec->codec_tag = tag;
+    } else if (*p == 't') {
+        st->codec->codec_type = CODEC_TYPE_SUBTITLE;
+        st->codec->codec_id = CODEC_ID_TEXT;
+        p += 12;
     } else {
         uint8_t acid[5];
         int cid;
@@ -134,6 +138,9 @@ ogm_packet(AVFormatContext *s, int idx)
     uint8_t *p = os->buf + os->pstart;
     int lb;
 
+    if(*p & 8)
+        os->pflags |= PKT_FLAG_KEY;
+
     lb = ((*p & 2) << 1) | ((*p >> 6) & 3);
     os->pstart += lb + 1;
     os->psize -= lb + 1;
@@ -151,6 +158,13 @@ ogg_codec_t ogm_video_codec = {
 ogg_codec_t ogm_audio_codec = {
     .magic = "\001audio",
     .magicsize = 6,
+    .header = ogm_header,
+    .packet = ogm_packet
+};
+
+ogg_codec_t ogm_text_codec = {
+    .magic = "\001text",
+    .magicsize = 5,
     .header = ogm_header,
     .packet = ogm_packet
 };

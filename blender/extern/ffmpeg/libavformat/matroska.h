@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef MATROSKA_H
-#define MATROSKA_H
+#ifndef FFMPEG_MATROSKA_H
+#define FFMPEG_MATROSKA_H
 
 #include "avcodec.h"
 
@@ -55,6 +55,7 @@
 #define MATROSKA_ID_CUES       0x1C53BB6B
 #define MATROSKA_ID_TAGS       0x1254C367
 #define MATROSKA_ID_SEEKHEAD   0x114D9B74
+#define MATROSKA_ID_ATTACHMENTS 0x1941A469
 #define MATROSKA_ID_CLUSTER    0x1F43B675
 
 /* IDs in the info master */
@@ -98,7 +99,7 @@
 #define MATROSKA_ID_VIDEOFLAGINTERLACED 0x9A
 #define MATROSKA_ID_VIDEOSTEREOMODE 0x53B9
 #define MATROSKA_ID_VIDEOASPECTRATIO 0x54B3
-#define MATROSKA_ID_VIDEOCOLOURSPACE 0x2EB524
+#define MATROSKA_ID_VIDEOCOLORSPACE 0x2EB524
 
 /* IDs in the trackaudio master */
 #define MATROSKA_ID_AUDIOSAMPLINGFREQ 0xB5
@@ -138,6 +139,13 @@
 #define MATROSKA_ID_BLOCKDURATION 0x9B
 #define MATROSKA_ID_BLOCKREFERENCE 0xFB
 
+/* IDs in the attachments master */
+#define MATROSKA_ID_ATTACHEDFILE        0x61A7
+#define MATROSKA_ID_FILENAME            0x466E
+#define MATROSKA_ID_FILEMIMETYPE        0x4660
+#define MATROSKA_ID_FILEDATA            0x465C
+#define MATROSKA_ID_FILEUID             0x46AE
+
 typedef enum {
   MATROSKA_TRACK_TYPE_VIDEO    = 0x1,
   MATROSKA_TRACK_TYPE_AUDIO    = 0x2,
@@ -169,7 +177,6 @@ typedef enum {
   MATROSKA_TRACK_ENABLED = (1<<0),
   MATROSKA_TRACK_DEFAULT = (1<<1),
   MATROSKA_TRACK_LACING  = (1<<2),
-  MATROSKA_TRACK_REAL_V  = (1<<4),
   MATROSKA_TRACK_SHIFT   = (1<<16)
 } MatroskaTrackFlags;
 
@@ -182,9 +189,14 @@ typedef enum {
  */
 
 typedef struct CodecTags{
-    const char *str;
+    char str[16];
     enum CodecID id;
 }CodecTags;
+
+typedef struct CodecMime{
+    char str[32];
+    enum CodecID id;
+}CodecMime;
 
 #define MATROSKA_CODEC_ID_VIDEO_VFW_FOURCC   "V_MS/VFW/FOURCC"
 #define MATROSKA_CODEC_ID_AUDIO_ACM          "A_MS/ACM"
@@ -192,6 +204,7 @@ typedef struct CodecTags{
 /* max. depth in the EBML tree structure */
 #define EBML_MAX_DEPTH 16
 
-extern CodecTags ff_mkv_codec_tags[];
+extern const CodecTags ff_mkv_codec_tags[];
+extern const CodecMime ff_mkv_mime_tags[];
 
-#endif /* MATROSKA_H */
+#endif /* FFMPEG_MATROSKA_H */

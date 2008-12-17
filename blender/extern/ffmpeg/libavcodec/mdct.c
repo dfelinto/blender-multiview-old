@@ -25,13 +25,36 @@
  * MDCT/IMDCT transforms.
  */
 
+// Generate a Kaiser-Bessel Derived Window.
+#define BESSEL_I0_ITER 50 // default: 50 iterations of Bessel I0 approximation
+void ff_kbd_window_init(float *window, float alpha, int n)
+{
+   int i, j;
+   double sum = 0.0, bessel, tmp;
+   double local_window[n];
+   double alpha2 = (alpha * M_PI / n) * (alpha * M_PI / n);
+
+   for (i = 0; i < n; i++) {
+       tmp = i * (n - i) * alpha2;
+       bessel = 1.0;
+       for (j = BESSEL_I0_ITER; j > 0; j--)
+           bessel = bessel * tmp / (j * j) + 1;
+       sum += bessel;
+       local_window[i] = sum;
+   }
+
+   sum++;
+   for (i = 0; i < n; i++)
+       window[i] = sqrt(local_window[i] / sum);
+}
+
 /**
  * init MDCT or IMDCT computation.
  */
 int ff_mdct_init(MDCTContext *s, int nbits, int inverse)
 {
     int n, n4, i;
-    float alpha;
+    double alpha;
 
     memset(s, 0, sizeof(*s));
     n = 1 << nbits;
@@ -62,10 +85,10 @@ int ff_mdct_init(MDCTContext *s, int nbits, int inverse)
 /* complex multiplication: p = a * b */
 #define CMUL(pre, pim, are, aim, bre, bim) \
 {\
-    float _are = (are);\
-    float _aim = (aim);\
-    float _bre = (bre);\
-    float _bim = (bim);\
+    double _are = (are);\
+    double _aim = (aim);\
+    double _bre = (bre);\
+    double _bim = (bim);\
     (pre) = _are * _bre - _aim * _bim;\
     (pim) = _are * _bim + _aim * _bre;\
 }

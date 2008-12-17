@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AV_SHA1_H
-#define AV_SHA1_H
+#ifndef FFMPEG_SHA1_H
+#define FFMPEG_SHA1_H
 
 #include <stdint.h>
 
@@ -28,6 +28,7 @@ extern const int av_sha1_size;
 struct AVSHA1;
 
 void av_sha1_init(struct AVSHA1* context);
-void av_sha1_update(struct AVSHA1* context, uint8_t* data, unsigned int len);
+void av_sha1_update(struct AVSHA1* context, const uint8_t* data, unsigned int len);
 void av_sha1_final(struct AVSHA1* context, uint8_t digest[20]);
-#endif
+
+#endif /* FFMPEG_SHA1_H */

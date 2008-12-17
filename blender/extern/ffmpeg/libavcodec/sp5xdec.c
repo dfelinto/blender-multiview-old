@@ -32,13 +32,14 @@
 
 static int sp5x_decode_frame(AVCodecContext *avctx,
                               void *data, int *data_size,
-                              uint8_t *buf, int buf_size)
+                              const uint8_t *buf, int buf_size)
 {
 #if 0
     MJpegDecodeContext *s = avctx->priv_data;
 #endif
     const int qscale = 5;
-    uint8_t *buf_ptr, *buf_end, *recoded;
+    const uint8_t *buf_ptr, *buf_end;
+    uint8_t *recoded;
     int i = 0, j = 0;
 
     if (!avctx->width || !avctx->height)
@@ -72,6 +73,10 @@ static int sp5x_decode_frame(AVCodecContext *avctx,
     memcpy(recoded+j, &sp5x_data_sos[0], sizeof(sp5x_data_sos));
     j += sizeof(sp5x_data_sos);
 
+    if(avctx->codec_id==CODEC_ID_AMV)
+        for (i = 2; i < buf_size-2 && j < buf_size+1024-2; i++)
+            recoded[j++] = buf[i];
+    else
     for (i = 14; i < buf_size && j < buf_size+1024-2; i++)
     {
         recoded[j++] = buf[i];
@@ -83,6 +88,7 @@ static int sp5x_decode_frame(AVCodecContext *avctx,
     recoded[j++] = 0xFF;
     recoded[j++] = 0xD9;
 
+    avctx->flags &= ~CODEC_FLAG_EMU_EDGE;
     i = ff_mjpeg_decode_frame(avctx, data, data_size, recoded, j);
 
     av_free(recoded);
@@ -119,7 +125,7 @@ static int sp5x_decode_frame(AVCodecContext *avctx,
         return -1;
     }
 
-    s->picture.pict_type = I_TYPE;
+    s->picture.pict_type = FF_I_TYPE;
     s->picture.key_frame = 1;
 
     for (i = 0; i < 3; i++)
@@ -193,4 +199,15 @@ AVCodec sp5x_decoder = {
     sp5x_decode_frame,
     CODEC_CAP_DR1,
     NULL
+};
+
+AVCodec amv_decoder = {
+    "amv",
+    CODEC_TYPE_VIDEO,
+    CODEC_ID_AMV,
+    sizeof(MJpegDecodeContext),
+    ff_mjpeg_decode_init,
+    NULL,
+    ff_mjpeg_decode_end,
+    sp5x_decode_frame
 };

@@ -36,7 +36,7 @@ typedef struct Mp3AudioContext {
     int buffer_index;
 } Mp3AudioContext;
 
-static int MP3lame_encode_init(AVCodecContext *avctx)
+static av_cold int MP3lame_encode_init(AVCodecContext *avctx)
 {
     Mp3AudioContext *s = avctx->priv_data;
 
@@ -61,6 +61,7 @@ static int MP3lame_encode_init(AVCodecContext *avctx)
         lame_set_VBR_q(s->gfp, avctx->global_quality / (float)FF_QP2LAMBDA);
     }
     lame_set_bWriteVbrTag(s->gfp,0);
+    lame_set_disable_reservoir(s->gfp, avctx->flags2 & CODEC_FLAG2_BIT_RESERVOIR ? 0 : 1);
     if (lame_init_params(s->gfp) < 0)
         goto err_close;
 
@@ -197,7 +198,7 @@ static int MP3lame_encode_frame(AVCodecContext *avctx,
             return 0;
 }
 
-static int MP3lame_encode_close(AVCodecContext *avctx)
+static av_cold int MP3lame_encode_close(AVCodecContext *avctx)
 {
     Mp3AudioContext *s = avctx->priv_data;
 

@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVCODEC_ROQVIDEO_H
-#define AVCODEC_ROQVIDEO_H
+#ifndef FFMPEG_ROQVIDEO_H
+#define FFMPEG_ROQVIDEO_H
 
 #include "avcodec.h"
 #include "dsputil.h"
@@ -51,7 +51,7 @@ typedef struct RoqContext {
     roq_cell cb2x2[256];
     roq_qcell cb4x4[256];
 
-    unsigned char *buf;
+    const unsigned char *buf;
     int size;
     int width, height;
 
@@ -89,4 +89,4 @@ void ff_apply_motion_4x4(RoqContext *ri, int x, int y, int deltax, int deltay);
 
 void ff_apply_motion_8x8(RoqContext *ri, int x, int y, int deltax, int deltay);
 
-#endif // AVCODEC_ROQVIDEO_H
+#endif /* FFMPEG_ROQVIDEO_H */

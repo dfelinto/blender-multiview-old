@@ -125,6 +125,7 @@ typedef struct {
 
     /* Primary audio coding header */
     int subframes;              ///< number of subframes
+    int total_channels;         ///< number of channels including extensions
     int prim_channels;          ///< number of primary audio channels
     int subband_activity[DCA_PRIM_CHANNELS_MAX];    ///< subband activity count
     int vq_start_subband[DCA_PRIM_CHANNELS_MAX];    ///< high frequency vq start subband
@@ -177,12 +178,12 @@ typedef struct {
     DSPContext dsp;
 } DCAContext;
 
-static void dca_init_vlcs(void)
+static av_cold void dca_init_vlcs(void)
 {
-    static int vlcs_inited = 0;
+    static int vlcs_initialized = 0;
     int i, j;
 
-    if (vlcs_inited)
+    if (vlcs_initialized)
         return;
 
     dca_bitalloc_index.offset = 1;
@@ -214,7 +215,7 @@ static void dca_init_vlcs(void)
                      bitalloc_bits[i][j], 1, 1,
                      bitalloc_codes[i][j], 2, 2, 1);
         }
-    vlcs_inited = 1;
+    vlcs_initialized = 1;
 }
 
 static inline void get_array(GetBitContext *gb, int *dst, int len, int bits)
@@ -320,7 +321,10 @@ static int dca_parse_frame_header(DCAContext * s)
 
     /* Primary audio coding header */
     s->subframes         = get_bits(&s->gb, 4) + 1;
-    s->prim_channels     = get_bits(&s->gb, 3) + 1;
+    s->total_channels    = get_bits(&s->gb, 3) + 1;
+    s->prim_channels     = s->total_channels;
+    if (s->prim_channels > DCA_PRIM_CHANNELS_MAX)
+        s->prim_channels = DCA_PRIM_CHANNELS_MAX;   /* We only support DTS core */
 
 
     for (i = 0; i < s->prim_channels; i++) {
@@ -427,7 +431,11 @@ static int dca_subframe_header(DCAContext * s)
                 s->bitalloc[j][k] = get_bits(&s->gb, 5);
             else if (s->bitalloc_huffman[j] == 5)
                 s->bitalloc[j][k] = get_bits(&s->gb, 4);
-            else {
+            else if (s->bitalloc_huffman[j] == 7) {
+                av_log(s->avctx, AV_LOG_ERROR,
+                       "Invalid bit allocation index\n");
+                return -1;
+            } else {
                 s->bitalloc[j][k] =
                     get_bitalloc(&s->gb, &dca_bitalloc_index, s->bitalloc_huffman[j]);
             }
@@ -453,15 +461,15 @@ static int dca_subframe_header(DCAContext * s)
     }
 
     for (j = 0; j < s->prim_channels; j++) {
-        uint32_t *scale_table;
+        const uint32_t *scale_table;
         int scale_sum;
 
         memset(s->scale_factor[j], 0, s->subband_activity[j] * sizeof(s->scale_factor[0][0][0]) * 2);
 
         if (s->scalefactor_huffman[j] == 6)
-            scale_table = (uint32_t *) scale_factor_quant7;
+            scale_table = scale_factor_quant7;
         else
-            scale_table = (uint32_t *) scale_factor_quant6;
+            scale_table = scale_factor_quant6;
 
         /* When huffman coded, only the difference is encoded */
         scale_sum = 0;
@@ -646,7 +654,7 @@ static void qmf_32_subbands(DCAContext * s, int chans,
                             float samples_in[32][8], float *samples_out,
                             float scale, float bias)
 {
-    float *prCoeff;
+    const float *prCoeff;
     int i, j, k;
     float praXin[33], *raXin = &praXin[1];
 
@@ -659,9 +667,9 @@ static void qmf_32_subbands(DCAContext * s, int chans,
 
     /* Select filter */
     if (!s->multirate_inter)    /* Non-perfect reconstruction */
-        prCoeff = (float *) fir_32bands_nonperfect;
+        prCoeff = fir_32bands_nonperfect;
     else                        /* Perfect reconstruction */
-        prCoeff = (float *) fir_32bands_perfect;
+        prCoeff = fir_32bands_perfect;
 
     /* Reconstructed channel sample index */
     for (subindex = 0; subindex < 8; subindex++) {
@@ -842,7 +850,7 @@ static int dca_subsubframe(DCAContext * s)
     int k, l;
     int subsubframe = s->current_subsubframe;
 
-    float *quant_step_table;
+    const float *quant_step_table;
 
     /* FIXME */
     float subband_samples[DCA_PRIM_CHANNELS_MAX][DCA_SUBBANDS][8];
@@ -853,9 +861,9 @@ static int dca_subsubframe(DCAContext * s)
 
     /* Select quantization step size table */
     if (s->bit_rate == 0x1f)
-        quant_step_table = (float *) lossless_quant_d;
+        quant_step_table = lossless_quant_d;
     else
-        quant_step_table = (float *) lossy_quant_d;
+        quant_step_table = lossy_quant_d;
 
     for (k = 0; k < s->prim_channels; k++) {
         for (l = 0; l < s->vq_start_subband[k]; l++) {
@@ -1001,7 +1009,7 @@ static int dca_subsubframe(DCAContext * s)
                               s->lfe_data + lfe_samples +
                               2 * s->lfe * subsubframe,
                               &s->samples[256 * i_channels],
-                              8388608.0, s->bias);
+                              256.0, 0 /* s->bias */);
         /* Outputs 20bits pcm samples */
     }
 
@@ -1091,12 +1099,13 @@ static int dca_decode_block(DCAContext * s)
 /**
  * Convert bitstream to one representation based on sync marker
  */
-static int dca_convert_bitstream(uint8_t * src, int src_size, uint8_t * dst,
+static int dca_convert_bitstream(const uint8_t * src, int src_size, uint8_t * dst,
                           int max_size)
 {
     uint32_t mrk;
     int i, tmp;
-    uint16_t *ssrc = (uint16_t *) src, *sdst = (uint16_t *) dst;
+    const uint16_t *ssrc = (const uint16_t *) src;
+    uint16_t *sdst = (uint16_t *) dst;
     PutBitContext pb;
 
     if((unsigned)src_size > (unsigned)max_size) {
@@ -1133,7 +1142,7 @@ static int dca_convert_bitstream(uint8_t * src, int src_size, uint8_t * dst,
  */
 static int dca_decode_frame(AVCodecContext * avctx,
                             void *data, int *data_size,
-                            uint8_t * buf, int buf_size)
+                            const uint8_t * buf, int buf_size)
 {
 
     int i, j, k;
@@ -1159,23 +1168,12 @@ static int dca_decode_frame(AVCodecContext * avctx,
     avctx->bit_rate = s->bit_rate;
 
     channels = s->prim_channels + !!s->lfe;
-    avctx->channels = avctx->request_channels;
-    if(avctx->channels == 0) {
-        avctx->channels = channels;
-    } else if(channels < avctx->channels) {
-        av_log(avctx, AV_LOG_WARNING, "DTS source channels are less than "
-               "specified: output to %d channels.\n", channels);
-        avctx->channels = channels;
-    }
-    if(avctx->channels == 2) {
+    if(avctx->request_channels == 2 && s->prim_channels > 2) {
+        channels = 2;
         s->output = DCA_STEREO;
-    } else if(avctx->channels != channels) {
-        av_log(avctx, AV_LOG_ERROR, "Cannot downmix DTS to %d channels.\n",
-               avctx->channels);
-        return -1;
     }
 
-    channels = avctx->channels;
+    avctx->channels = channels;
     if(*data_size < (s->sample_blocks / 8) * 256 * sizeof(int16_t) * channels)
         return -1;
     *data_size = 0;
@@ -1202,12 +1200,12 @@ static int dca_decode_frame(AVCodecContext * avctx,
  * @param s     pointer to the DCAContext
  */
 
-static void pre_calc_cosmod(DCAContext * s)
+static av_cold void pre_calc_cosmod(DCAContext * s)
 {
     int i, j, k;
-    static int cosmod_inited = 0;
+    static int cosmod_initialized = 0;
 
-    if(cosmod_inited) return;
+    if(cosmod_initialized) return;
     for (j = 0, k = 0; k < 16; k++)
         for (i = 0; i < 16; i++)
             cos_mod[j++] = cos((2 * i + 1) * (2 * k + 1) * M_PI / 64);
@@ -1222,7 +1220,7 @@ static void pre_calc_cosmod(DCAContext * s)
     for (k = 0; k < 16; k++)
         cos_mod[j++] = -0.25 / (2.0 * sin((2 * k + 1) * M_PI / 128));
 
-    cosmod_inited = 1;
+    cosmod_initialized = 1;
 }
 
 
@@ -1232,7 +1230,7 @@ static void pre_calc_cosmod(DCAContext * s)
  * @param avctx     pointer to the AVCodecContext
  */
 
-static int dca_decode_init(AVCodecContext * avctx)
+static av_cold int dca_decode_init(AVCodecContext * avctx)
 {
     DCAContext *s = avctx->priv_data;
 
@@ -1241,6 +1239,13 @@ static int dca_decode_init(AVCodecContext * avctx)
     pre_calc_cosmod(s);
 
     dsputil_init(&s->dsp, avctx);
+
+    /* allow downmixing to stereo */
+    if (avctx->channels > 0 && avctx->request_channels < avctx->channels &&
+            avctx->request_channels == 2) {
+        avctx->channels = avctx->request_channels;
+    }
+
     return 0;
 }
 

@@ -24,6 +24,11 @@
 
 AVCodecParser *av_first_parser = NULL;
 
+AVCodecParser* av_parser_next(AVCodecParser *p){
+    if(p) return p->next;
+    else  return av_first_parser;
+}
+
 void av_register_codec_parser(AVCodecParser *parser)
 {
     parser->next = av_first_parser;
@@ -192,7 +197,7 @@ int av_parser_change(AVCodecParserContext *s,
     *poutbuf_size= buf_size;
     if(avctx->extradata){
         if(  (keyframe && (avctx->flags2 & CODEC_FLAG2_LOCAL_HEADER))
-            /*||(s->pict_type != I_TYPE && (s->flags & PARSER_FLAG_DUMP_EXTRADATA_AT_NOKEY))*/
+            /*||(s->pict_type != FF_I_TYPE && (s->flags & PARSER_FLAG_DUMP_EXTRADATA_AT_NOKEY))*/
             /*||(? && (s->flags & PARSER_FLAG_DUMP_EXTRADATA_AT_BEGIN)*/){
             int size= buf_size + avctx->extradata_size;
             *poutbuf_size= size;
@@ -219,7 +224,7 @@ void av_parser_close(AVCodecParserContext *s)
 
 /**
  * combines the (truncated) bitstream to a complete frame
- * @returns -1 if no complete frame could be created
+ * @returns -1 if no complete frame could be created, AVERROR(ENOMEM) if there was a memory allocation error
  */
 int ff_combine_frame(ParseContext *pc, int next, const uint8_t **buf, int *buf_size)
 {
@@ -244,8 +249,11 @@ int ff_combine_frame(ParseContext *pc, int next, const uint8_t **buf, int *buf_s
 
     /* copy into buffer end return */
     if(next == END_NOT_FOUND){
-        pc->buffer= av_fast_realloc(pc->buffer, &pc->buffer_size, (*buf_size) + pc->index + FF_INPUT_BUFFER_PADDING_SIZE);
+        void* new_buffer = av_fast_realloc(pc->buffer, &pc->buffer_size, (*buf_size) + pc->index + FF_INPUT_BUFFER_PADDING_SIZE);
 
+        if(!new_buffer)
+            return AVERROR(ENOMEM);
+        pc->buffer = new_buffer;
         memcpy(&pc->buffer[pc->index], *buf, *buf_size);
         pc->index += *buf_size;
         return -1;
@@ -256,8 +264,11 @@ int ff_combine_frame(ParseContext *pc, int next, const uint8_t **buf, int *buf_s
 
     /* append to buffer */
     if(pc->index){
-        pc->buffer= av_fast_realloc(pc->buffer, &pc->buffer_size, next + pc->index + FF_INPUT_BUFFER_PADDING_SIZE);
+        void* new_buffer = av_fast_realloc(pc->buffer, &pc->buffer_size, next + pc->index + FF_INPUT_BUFFER_PADDING_SIZE);
 
+        if(!new_buffer)
+            return AVERROR(ENOMEM);
+        pc->buffer = new_buffer;
         memcpy(&pc->buffer[pc->index], *buf, next + FF_INPUT_BUFFER_PADDING_SIZE );
         pc->index = 0;
         *buf= pc->buffer;

@@ -1,30 +1,25 @@
+include $(SUBDIR)../config.mak
 
-include ../config.mak
+NAME = swscale
+FFLIBS = avutil
 
-NAME=swscale
-LIBVERSION=$(SWSVERSION)
-LIBMAJOR=$(SWSMAJOR)
+HEADERS = swscale.h
 
-EXTRALIBS := -L$(BUILD_ROOT)/libavutil -lavutil$(BUILDSUF) $(EXTRALIBS)
+OBJS = rgb2rgb.o swscale.o swscale_avoption.o
 
-OBJS = rgb2rgb.o swscale.o
-
+OBJS-$(ARCH_BFIN)          +=  internal_bfin.o swscale_bfin.o yuv2rgb_bfin.o
 OBJS-$(CONFIG_GPL)         +=  yuv2rgb.o
+OBJS-$(CONFIG_MLIB)        +=  yuv2rgb_mlib.o
 OBJS-$(HAVE_ALTIVEC)       +=  yuv2rgb_altivec.o
+OBJS-$(HAVE_VIS)           +=  yuv2rgb_vis.o
 
-OBJS-$(ARCH_BFIN)          +=  swscale_bfin.o \
-                               yuv2rgb_bfin.o \
+TESTS = cs_test swscale-example
 
-ASM_OBJS-$(ARCH_BFIN)      += internal_bfin.o
+CLEANFILES = cs_test swscale-example
 
-HEADERS = swscale.h rgb2rgb.h
+include $(SUBDIR)../common.mak
 
-include ../common.mak
+$(SUBDIR)cs_test: $(SUBDIR)cs_test.o $(SUBDIR)$(LIBNAME)
 
-cs_test: cs_test.o $(LIB)
-
-swscale-example: swscale-example.o $(LIB)
-swscale-example: EXTRALIBS += -lm
-
-clean::
-	rm -f cs_test swscale-example
+$(SUBDIR)swscale-example: $(SUBDIR)swscale-example.o $(SUBDIR)$(LIBNAME)
+$(SUBDIR)swscale-example: EXTRALIBS += -lm

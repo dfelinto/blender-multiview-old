@@ -24,8 +24,8 @@
  * Context Adaptive Binary Arithmetic Coder.
  */
 
-#ifndef CABAC_H
-#define CABAC_H
+#ifndef FFMPEG_CABAC_H
+#define FFMPEG_CABAC_H
 
 #include "bitstream.h"
 
@@ -90,6 +90,7 @@ static inline void renorm_cabac_encoder(CABACContext *c){
     }
 }
 
+#ifdef TEST
 static void put_cabac(CABACContext *c, uint8_t * const state, int bit){
     int RangeLPS= ff_h264_lps_range[2*(c->range&0xC0) + *state];
 
@@ -259,6 +260,7 @@ static void put_cabac_ueg(CABACContext *c, uint8_t * state, int v, int max, int 
             put_cabac_bypass(c, sign);
     }
 }
+#endif /* TEST */
 
 static void refill(CABACContext *c){
 #if CABAC_BITS == 16
@@ -270,6 +272,7 @@ static void refill(CABACContext *c){
     c->bytestream+= CABAC_BITS/8;
 }
 
+#if ! ( defined(ARCH_X86) && defined(HAVE_7REGS) && defined(HAVE_EBX_AVAILABLE) && !defined(BROKEN_RELOCATIONS) )
 static void refill2(CABACContext *c){
     int i, x;
 
@@ -287,6 +290,7 @@ static void refill2(CABACContext *c){
     c->low += x<<i;
     c->bytestream+= CABAC_BITS/8;
 }
+#endif
 
 static inline void renorm_cabac_decoder(CABACContext *c){
     while(c->range < 0x100){
@@ -323,7 +327,7 @@ static inline void renorm_cabac_decoder_once(CABACContext *c){
     //P3:665    athlon:517
     asm(
         "lea -0x100(%0), %%eax      \n\t"
-        "cdq                        \n\t"
+        "cltd                       \n\t"
         "mov %0, %%eax              \n\t"
         "and %%edx, %0              \n\t"
         "and %1, %%edx              \n\t"
@@ -595,7 +599,7 @@ static int get_cabac_bypass(CABACContext *c){
         "shl $17, %%ebx                         \n\t"
         "add %%eax, %%eax                       \n\t"
         "sub %%ebx, %%eax                       \n\t"
-        "cdq                                    \n\t"
+        "cltd                                   \n\t"
         "and %%edx, %%ebx                       \n\t"
         "add %%ebx, %%eax                       \n\t"
         "test %%ax, %%ax                        \n\t"
@@ -642,7 +646,7 @@ static av_always_inline int get_cabac_bypass_sign(CABACContext *c, int val){
         "shl $17, %%ebx                         \n\t"
         "add %%eax, %%eax                       \n\t"
         "sub %%ebx, %%eax                       \n\t"
-        "cdq                                    \n\t"
+        "cltd                                   \n\t"
         "and %%edx, %%ebx                       \n\t"
         "add %%ebx, %%eax                       \n\t"
         "xor %%edx, %%ecx                       \n\t"
@@ -727,14 +731,14 @@ static int decode_significance_x86(CABACContext *c, int max_coeff, uint8_t *sign
 
         "movl %%esi, "RANGE    "(%3)            \n\t"
         "movl %%ebx, "LOW      "(%3)            \n\t"
-        :"=&a"(coeff_count), "+r"(significant_coeff_ctx_base), "+m"(index)\
-        :"r"(c), "m"(minusstart), "m"(end), "m"(minusindex)\
-        : "%"REG_c, "%ebx", "%edx", "%esi", "memory"\
+        :"=&a"(coeff_count), "+r"(significant_coeff_ctx_base), "+m"(index)
+        :"r"(c), "m"(minusstart), "m"(end), "m"(minusindex)
+        : "%"REG_c, "%ebx", "%edx", "%esi", "memory"
     );
     return coeff_count;
 }
 
-static int decode_significance_8x8_x86(CABACContext *c, uint8_t *significant_coeff_ctx_base, int *index, uint8_t *sig_off){
+static int decode_significance_8x8_x86(CABACContext *c, uint8_t *significant_coeff_ctx_base, int *index, const uint8_t *sig_off){
     int minusindex= 4-(int)index;
     int coeff_count;
     long last=0;
@@ -783,9 +787,9 @@ static int decode_significance_8x8_x86(CABACContext *c, uint8_t *significant_coe
 
         "movl %%esi, "RANGE    "(%3)            \n\t"
         "movl %%ebx, "LOW      "(%3)            \n\t"
-        :"=&a"(coeff_count),"+m"(last), "+m"(index)\
-        :"r"(c), "m"(minusindex), "m"(significant_coeff_ctx_base), "m"(sig_off)\
-        : "%"REG_c, "%ebx", "%edx", "%esi", "%"REG_D, "memory"\
+        :"=&a"(coeff_count),"+m"(last), "+m"(index)
+        :"r"(c), "m"(minusindex), "m"(significant_coeff_ctx_base), "m"(sig_off)
+        : "%"REG_c, "%ebx", "%edx", "%esi", "%"REG_D, "memory"
     );
     return coeff_count;
 }
@@ -805,6 +809,7 @@ static int get_cabac_terminate(CABACContext *c){
     }
 }
 
+#if 0
 /**
  * Get (truncated) unary binarization.
  */
@@ -860,5 +865,6 @@ static int get_cabac_ueg(CABACContext *c, uint8_t * state, int max, int is_signe
     }else
         return i;
 }
+#endif /* 0 */
 
-#endif /* CABAC_H */
+#endif /* FFMPEG_CABAC_H */

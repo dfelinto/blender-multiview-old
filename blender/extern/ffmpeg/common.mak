@@ -57,7 +57,7 @@ include nan_compile.mk
 CFLAGS := $(CFLAGS_BACKUP)
 CFLAGS += -DHAVE_AV_CONFIG_H
 CFLAGS += -I.. -I../libavutil \
-	-I../libavcodec -I../libavformat -I../libswscale \
+	-I../libavcodec -I../libavformat -I../libswscale -I../libavdevice \
 	-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_ISOC9X_SOURCE \
 	$(OPTFLAGS)
 

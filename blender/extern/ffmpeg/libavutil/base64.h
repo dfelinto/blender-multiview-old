@@ -19,8 +19,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef AVUTIL_BASE64_H
-#define AVUTIL_BASE64_H
+#ifndef FFMPEG_BASE64_H
+#define FFMPEG_BASE64_H
 
 #include <stdint.h>
 
@@ -35,6 +35,6 @@ int av_base64_decode(uint8_t * out, const char *in, int out_length);
  * @param src data, not a string
  * @param buf output string
  */
-char *av_base64_encode(char * buf, int buf_len, uint8_t * src, int len);
+char *av_base64_encode(char * buf, int buf_len, const uint8_t * src, int len);
 
-#endif // AVUTIL_BASE64_H
+#endif /* FFMPEG_BASE64_H */

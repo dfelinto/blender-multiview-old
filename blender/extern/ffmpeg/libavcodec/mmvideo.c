@@ -47,7 +47,7 @@ typedef struct MmContext {
     AVFrame frame;
 } MmContext;
 
-static int mm_decode_init(AVCodecContext *avctx)
+static av_cold int mm_decode_init(AVCodecContext *avctx)
 {
     MmContext *s = avctx->priv_data;
 
@@ -150,7 +150,7 @@ static void mm_decode_inter(MmContext * s, int half_horiz, int half_vert, const 
 
 static int mm_decode_frame(AVCodecContext *avctx,
                             void *data, int *data_size,
-                            uint8_t *buf, int buf_size)
+                            const uint8_t *buf, int buf_size)
 {
     MmContext *s = avctx->priv_data;
     AVPaletteControl *palette_control = avctx->palctrl;
@@ -182,7 +182,7 @@ static int mm_decode_frame(AVCodecContext *avctx,
     return buf_size;
 }
 
-static int mm_decode_end(AVCodecContext *avctx)
+static av_cold int mm_decode_end(AVCodecContext *avctx)
 {
     MmContext *s = avctx->priv_data;
 

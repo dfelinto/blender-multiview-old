@@ -23,8 +23,8 @@
  * bitstream api header.
  */
 
-#ifndef BITSTREAM_H
-#define BITSTREAM_H
+#ifndef FFMPEG_BITSTREAM_H
+#define FFMPEG_BITSTREAM_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -137,8 +137,8 @@ static inline void flush_put_bits(PutBitContext *s)
 }
 
 void align_put_bits(PutBitContext *s);
-void ff_put_string(PutBitContext * pbc, char *s, int put_zero);
-void ff_copy_bits(PutBitContext *pb, uint8_t *src, int length);
+void ff_put_string(PutBitContext * pbc, const char *s, int put_zero);
+void ff_copy_bits(PutBitContext *pb, const uint8_t *src, int length);
 
 /* bit input */
 /* buffer, buffer_end and size_in_bits must be present and used by every reader */
@@ -950,4 +950,11 @@ static inline int decode012(GetBitContext *gb){
         return get_bits1(gb) + 1;
 }
 
-#endif /* BITSTREAM_H */
+static inline int decode210(GetBitContext *gb){
+    if (get_bits1(gb))
+        return 0;
+    else
+        return 2 - get_bits1(gb);
+}
+
+#endif /* FFMPEG_BITSTREAM_H */

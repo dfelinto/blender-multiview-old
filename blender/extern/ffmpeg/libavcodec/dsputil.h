@@ -27,8 +27,8 @@
  * absolutely necessary to call emms_c() between dsp & float/double code
  */
 
-#ifndef DSPUTIL_H
-#define DSPUTIL_H
+#ifndef FFMPEG_DSPUTIL_H
+#define FFMPEG_DSPUTIL_H
 
 #include "avcodec.h"
 
@@ -48,6 +48,7 @@ void j_rev_dct (DCTELEM *data);
 void j_rev_dct4 (DCTELEM *data);
 void j_rev_dct2 (DCTELEM *data);
 void j_rev_dct1 (DCTELEM *data);
+void ff_wmv2_idct_c(DCTELEM *data);
 
 void ff_fdct_mmx(DCTELEM *block);
 void ff_fdct_mmx2(DCTELEM *block);
@@ -92,11 +93,14 @@ void ff_gmc_c(uint8_t *dst, uint8_t *src, int stride, int h, int ox, int oy,
               int dxx, int dxy, int dyx, int dyy, int shift, int r, int width, int height);
 
 /* minimum alignment rules ;)
-if u notice errors in the align stuff, need more alignment for some asm code for some cpu
-or need to use a function with less aligned data then send a mail to the ffmpeg-dev list, ...
+If you notice errors in the align stuff, need more alignment for some ASM code
+for some CPU or need to use a function with less aligned data then send a mail
+to the ffmpeg-devel mailing list, ...
 
-!warning these alignments might not match reallity, (missing attribute((align)) stuff somewhere possible)
-i (michael) didnt check them, these are just the alignents which i think could be reached easily ...
+!warning These alignments might not match reality, (missing attribute((align))
+stuff somewhere possible).
+I (Michael) did not check them, these are just the alignments which I think
+could be reached easily ...
 
 !future video codecs might need functions with less strict alignment
 */
@@ -151,6 +155,25 @@ typedef int (*me_cmp_func)(void /*MpegEncContext*/ *s, uint8_t *blk1/*align widt
 
 // for snow slices
 typedef struct slice_buffer_s slice_buffer;
+
+/**
+ * Scantable.
+ */
+typedef struct ScanTable{
+    const uint8_t *scantable;
+    uint8_t permutated[64];
+    uint8_t raster_end[64];
+#ifdef ARCH_POWERPC
+                /** Used by dct_quantize_altivec to find last-non-zero */
+    DECLARE_ALIGNED(16, uint8_t, inverse[64]);
+#endif
+} ScanTable;
+
+void ff_init_scantable(uint8_t *, ScanTable *st, const uint8_t *src_scantable);
+
+void ff_emulated_edge_mc(uint8_t *buf, uint8_t *src, int linesize,
+                         int block_w, int block_h,
+                         int src_x, int src_y, int w, int h);
 
 /**
  * DSPContext.
@@ -303,13 +326,16 @@ typedef struct DSPContext {
 
     /* huffyuv specific */
     void (*add_bytes)(uint8_t *dst/*align 16*/, uint8_t *src/*align 16*/, int w);
+    void (*add_bytes_l2)(uint8_t *dst/*align 16*/, uint8_t *src1/*align 16*/, uint8_t *src2/*align 16*/, int w);
     void (*diff_bytes)(uint8_t *dst/*align 16*/, uint8_t *src1/*align 16*/, uint8_t *src2/*align 1*/,int w);
     /**
      * subtract huffyuv's variant of median prediction
      * note, this might read from src1[-1], src2[-1]
      */
     void (*sub_hfyu_median_prediction)(uint8_t *dst, uint8_t *src1, uint8_t *src2, int w, int *left, int *left_top);
-    void (*bswap_buf)(uint32_t *dst, uint32_t *src, int w);
+    /* this might write to dst[w] */
+    void (*add_png_paeth_prediction)(uint8_t *dst, uint8_t *src, uint8_t *top, int w, int bpp);
+    void (*bswap_buf)(uint32_t *dst, const uint32_t *src, int w);
 
     void (*h264_v_loop_filter_luma)(uint8_t *pix, int stride, int alpha, int beta, int8_t *tc0);
     void (*h264_h_loop_filter_luma)(uint8_t *pix, int stride, int alpha, int beta, int8_t *tc0);
@@ -326,8 +352,13 @@ typedef struct DSPContext {
 
     void (*h261_loop_filter)(uint8_t *src, int stride);
 
+    void (*x8_v_loop_filter)(uint8_t *src, int stride, int qscale);
+    void (*x8_h_loop_filter)(uint8_t *src, int stride, int qscale);
+
     /* assume len is a multiple of 4, and arrays are 16-byte aligned */
     void (*vorbis_inverse_coupling)(float *mag, float *ang, int blocksize);
+    /* no alignment needed */
+    void (*flac_compute_autocorr)(const int32_t *data, int len, int lag, double *autoc);
     /* assume len is a multiple of 8, and arrays are 16-byte aligned */
     void (*vector_fmul)(float *dst, const float *src, int len);
     void (*vector_fmul_reverse)(float *dst, const float *src0, const float *src1, int len);
@@ -348,13 +379,13 @@ typedef struct DSPContext {
     /**
      * block -> idct -> clip to unsigned 8 bit -> dest.
      * (-1392, 0, 0, ...) -> idct -> (-174, -174, ...) -> put -> (0, 0, ...)
-     * @param line_size size in bytes of a horizotal line of dest
+     * @param line_size size in bytes of a horizontal line of dest
      */
     void (*idct_put)(uint8_t *dest/*align 8*/, int line_size, DCTELEM *block/*align 16*/);
 
     /**
      * block -> idct -> add dest -> clip to unsigned 8 bit -> dest.
-     * @param line_size size in bytes of a horizotal line of dest
+     * @param line_size size in bytes of a horizontal line of dest
      */
     void (*idct_add)(uint8_t *dest/*align 8*/, int line_size, DCTELEM *block/*align 16*/);
 
@@ -383,6 +414,9 @@ typedef struct DSPContext {
 #define BASIS_SHIFT 16
 #define RECON_SHIFT 6
 
+    void (*draw_edges)(uint8_t *buf, int wrap, int width, int height, int w);
+#define EDGE_WIDTH 16
+
     /* h264 functions */
     void (*h264_idct_add)(uint8_t *dst, DCTELEM *block, int stride);
     void (*h264_idct8_add)(uint8_t *dst, DCTELEM *block, int stride);
@@ -401,15 +435,21 @@ typedef struct DSPContext {
 
     /* vc1 functions */
     void (*vc1_inv_trans_8x8)(DCTELEM *b);
-    void (*vc1_inv_trans_8x4)(DCTELEM *b, int n);
-    void (*vc1_inv_trans_4x8)(DCTELEM *b, int n);
-    void (*vc1_inv_trans_4x4)(DCTELEM *b, int n);
+    void (*vc1_inv_trans_8x4)(uint8_t *dest, int line_size, DCTELEM *block);
+    void (*vc1_inv_trans_4x8)(uint8_t *dest, int line_size, DCTELEM *block);
+    void (*vc1_inv_trans_4x4)(uint8_t *dest, int line_size, DCTELEM *block);
     void (*vc1_v_overlap)(uint8_t* src, int stride);
     void (*vc1_h_overlap)(uint8_t* src, int stride);
     /* put 8x8 block with bicubic interpolation and quarterpel precision
      * last argument is actually round value instead of height
      */
     op_pixels_func put_vc1_mspel_pixels_tab[16];
+
+    /* intrax8 functions */
+    void (*x8_spatial_compensation[12])(uint8_t *src , uint8_t *dst, int linesize);
+    void (*x8_setup_spatial_compensation)(uint8_t *src, uint8_t *dst, int linesize,
+           int * range, int * sum,  int edges);
+
 } DSPContext;
 
 void dsputil_static_init(void);
@@ -505,7 +545,7 @@ void put_signed_pixels_clamped_mmx(const DCTELEM *block, uint8_t *pixels, int li
 
 static inline void emms(void)
 {
-    __asm __volatile ("emms;":::"memory");
+    asm volatile ("emms;":::"memory");
 }
 
 
@@ -515,51 +555,19 @@ static inline void emms(void)
         emms();\
 }
 
-#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
-
-#define STRIDE_ALIGN 8
-
 void dsputil_init_pix_mmx(DSPContext* c, AVCodecContext *avctx);
 
 #elif defined(ARCH_ARMV4L)
 
-/* This is to use 4 bytes read to the IDCT pointers for some 'zero'
-   line optimizations */
-#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(4, t, v)
-#define STRIDE_ALIGN 4
-
 #define MM_IWMMXT    0x0100 /* XScale IWMMXT */
 
 extern int mm_flags;
-
-#elif defined(HAVE_MLIB)
-
-/* SPARC/VIS IDCT needs 8-byte aligned DCT blocks */
-#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
-#define STRIDE_ALIGN 8
-
-#elif defined(ARCH_SPARC)
-
-/* SPARC/VIS IDCT needs 8-byte aligned DCT blocks */
-#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
-#define STRIDE_ALIGN 8
-
-#elif defined(ARCH_ALPHA)
-
-#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
-#define STRIDE_ALIGN 8
 
 #elif defined(ARCH_POWERPC)
 
 #define MM_ALTIVEC    0x0001 /* standard AltiVec */
 
 extern int mm_flags;
-
-#if defined(HAVE_ALTIVEC) && !defined(__APPLE_CC__)
-#define pixel altivec_pixel
-#include <altivec.h>
-#undef pixel
-#endif
 
 #define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(16, t, v)
 #define STRIDE_ALIGN 16
@@ -569,21 +577,14 @@ extern int mm_flags;
 #define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(16, t, v)
 #define STRIDE_ALIGN 16
 
-#elif defined(ARCH_SH4)
+#endif
 
-#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
-#define STRIDE_ALIGN 8
+#ifndef DECLARE_ALIGNED_8
+#   define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
+#endif
 
-#elif defined(ARCH_BFIN)
-
-#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
-#define STRIDE_ALIGN 8
-
-#else
-
-#define DECLARE_ALIGNED_8(t, v) DECLARE_ALIGNED(8, t, v)
-#define STRIDE_ALIGN 8
-
+#ifndef STRIDE_ALIGN
+#   define STRIDE_ALIGN 8
 #endif
 
 /* PSNR */
@@ -639,6 +640,14 @@ typedef struct MDCTContext {
     FFTContext fft;
 } MDCTContext;
 
+/**
+ * Generate a Kaiser-Bessel Derived Window.
+ * @param   window  pointer to half window
+ * @param   alpha   determines window shape
+ * @param   n       size of half window
+ */
+void ff_kbd_window_init(float *window, float alpha, int n);
+
 int ff_mdct_init(MDCTContext *s, int nbits, int inverse);
 void ff_imdct_calc(MDCTContext *s, FFTSample *output,
                 const FFTSample *input, FFTSample *tmp);
@@ -650,13 +659,13 @@ void ff_mdct_calc(MDCTContext *s, FFTSample *out,
                const FFTSample *input, FFTSample *tmp);
 void ff_mdct_end(MDCTContext *s);
 
-#define WARPER8_16(name8, name16)\
+#define WRAPPER8_16(name8, name16)\
 static int name16(void /*MpegEncContext*/ *s, uint8_t *dst, uint8_t *src, int stride, int h){\
     return name8(s, dst           , src           , stride, h)\
           +name8(s, dst+8         , src+8         , stride, h);\
 }
 
-#define WARPER8_16_SQ(name8, name16)\
+#define WRAPPER8_16_SQ(name8, name16)\
 static int name16(void /*MpegEncContext*/ *s, uint8_t *dst, uint8_t *src, int stride, int h){\
     int score=0;\
     score +=name8(s, dst           , src           , stride, 8);\
@@ -747,4 +756,4 @@ static inline void copy_block17(uint8_t *dst, uint8_t *src, int dstStride, int s
     }
 }
 
-#endif
+#endif /* FFMPEG_DSPUTIL_H */

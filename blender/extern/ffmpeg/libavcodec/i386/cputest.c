@@ -22,20 +22,13 @@
 
 #include <stdlib.h>
 #include "dsputil.h"
+#include "x86_cpu.h"
 
 #undef printf
 
-#ifdef ARCH_X86_64
-#  define REG_b "rbx"
-#  define REG_S "rsi"
-#else
-#  define REG_b "ebx"
-#  define REG_S "esi"
-#endif
-
 /* ebx saving is necessary for PIC. gcc seems unable to see it alone */
 #define cpuid(index,eax,ebx,ecx,edx)\
-    __asm __volatile\
+    asm volatile\
         ("mov %%"REG_b", %%"REG_S"\n\t"\
          "cpuid\n\t"\
          "xchg %%"REG_b", %%"REG_S\
@@ -82,13 +75,17 @@ int mm_support(void)
         if (std_caps & (1<<23))
             rval |= FF_MM_MMX;
         if (std_caps & (1<<25))
-            rval |= FF_MM_MMXEXT | FF_MM_SSE;
+            rval |= FF_MM_MMXEXT
+#if !defined(__GNUC__) || __GNUC__ > 2
+                  | FF_MM_SSE;
         if (std_caps & (1<<26))
             rval |= FF_MM_SSE2;
         if (ecx & 1)
             rval |= FF_MM_SSE3;
         if (ecx & 0x00000200 )
-            rval |= FF_MM_SSSE3;
+            rval |= FF_MM_SSSE3
+#endif
+                  ;
     }
 
     cpuid(0x80000000, max_ext_level, ebx, ecx, edx);

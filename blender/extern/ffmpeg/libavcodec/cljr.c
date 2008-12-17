@@ -25,7 +25,8 @@
  */
 
 #include "avcodec.h"
-#include "mpegvideo.h"
+#include "dsputil.h"
+#include "bitstream.h"
 
 typedef struct CLJRContext{
     AVCodecContext *avctx;
@@ -37,7 +38,7 @@ typedef struct CLJRContext{
 
 static int decode_frame(AVCodecContext *avctx,
                         void *data, int *data_size,
-                        uint8_t *buf, int buf_size)
+                        const uint8_t *buf, int buf_size)
 {
     CLJRContext * const a = avctx->priv_data;
     AVFrame *picture = data;
@@ -52,7 +53,7 @@ static int decode_frame(AVCodecContext *avctx,
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;
     }
-    p->pict_type= I_TYPE;
+    p->pict_type= FF_I_TYPE;
     p->key_frame= 1;
 
     init_get_bits(&a->gb, buf, buf_size);
@@ -89,7 +90,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
     int mb_x, mb_y;
 
     *p = *pict;
-    p->pict_type= I_TYPE;
+    p->pict_type= FF_I_TYPE;
     p->key_frame= 1;
 
     emms_c();
@@ -104,14 +105,14 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
 }
 #endif
 
-static void common_init(AVCodecContext *avctx){
+static av_cold void common_init(AVCodecContext *avctx){
     CLJRContext * const a = avctx->priv_data;
 
     avctx->coded_frame= (AVFrame*)&a->picture;
     a->avctx= avctx;
 }
 
-static int decode_init(AVCodecContext *avctx){
+static av_cold int decode_init(AVCodecContext *avctx){
 
     common_init(avctx);
 
@@ -121,7 +122,7 @@ static int decode_init(AVCodecContext *avctx){
 }
 
 #if 0
-static int encode_init(AVCodecContext *avctx){
+static av_cold int encode_init(AVCodecContext *avctx){
 
     common_init(avctx);
 

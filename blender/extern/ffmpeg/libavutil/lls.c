@@ -53,8 +53,8 @@ void av_update_lls(LLSModel *m, double *var, double decay){
 
 void av_solve_lls(LLSModel *m, double threshold, int min_order){
     int i,j,k;
-    double (*factor)[MAX_VARS+1]= &m->covariance[1][0];
-    double (*covar )[MAX_VARS+1]= &m->covariance[1][1];
+    double (*factor)[MAX_VARS+1]= (void*)&m->covariance[1][0];
+    double (*covar )[MAX_VARS+1]= (void*)&m->covariance[1][1];
     double  *covar_y            =  m->covariance[0];
     int count= m->indep_count;
 
@@ -113,7 +113,7 @@ double av_evaluate_lls(LLSModel *m, double *param, int order){
 #include <stdlib.h>
 #include <stdio.h>
 
-int main(){
+int main(void){
     LLSModel m;
     int i, order;
 
@@ -121,7 +121,7 @@ int main(){
 
     for(i=0; i<100; i++){
         double var[4];
-        double eval, variance;
+        double eval;
 #if 0
         var[1] = rand() / (double)RAND_MAX;
         var[2] = rand() / (double)RAND_MAX;

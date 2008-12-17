@@ -28,8 +28,8 @@
 
 #include "gcc_fixes.h"
 
-#include "dsputil_altivec.h"
-
+#include "dsputil_ppc.h"
+#include "util_altivec.h"
 // Swaps two variables (used for altivec registers)
 #define SWAP(a,b) \
 do { \
@@ -66,12 +66,8 @@ do { \
 }
 
 
-#ifdef __APPLE_CC__
-#define FOUROF(a) (a)
-#else
-// slower, for dumb non-apple GCC
-#define FOUROF(a) {a,a,a,a}
-#endif
+#define FOUROF(a) AVV(a,a,a,a)
+
 int dct_quantize_altivec(MpegEncContext* s,
                         DCTELEM* data, int n,
                         int qscale, int* overflow)
@@ -79,8 +75,8 @@ int dct_quantize_altivec(MpegEncContext* s,
     int lastNonZero;
     vector float row0, row1, row2, row3, row4, row5, row6, row7;
     vector float alt0, alt1, alt2, alt3, alt4, alt5, alt6, alt7;
-    const_vector float zero = (const_vector float)FOUROF(0.);
-    // used after quantise step
+    const vector float zero = (const vector float)FOUROF(0.);
+    // used after quantize step
     int oldBaseValue = 0;
 
     // Load the data into the row/alt vectors
@@ -201,7 +197,7 @@ int dct_quantize_altivec(MpegEncContext* s,
                 // z4 = vec_add(z4, z5);  // z4 += z5;
 
                 // z2 = MULTIPLY(z2, - FIX_2_562915447); /* sqrt(2) * (-c1-c3) */
-                // Wow!  It's actually more effecient to roll this multiply
+                // Wow!  It's actually more efficient to roll this multiply
                 // into the adds below, even thought the multiply gets done twice!
                 // z2 = vec_madd(z2, vec_2_562915447, (vector float)zero);
 
@@ -258,7 +254,7 @@ int dct_quantize_altivec(MpegEncContext* s,
         }
     }
 
-    // perform the quantise step, using the floating point data
+    // perform the quantize step, using the floating point data
     // still in the row/alt registers
     {
         const int* biasAddr;
@@ -474,7 +470,7 @@ int dct_quantize_altivec(MpegEncContext* s,
         data[0] = (oldBaseValue + 4) >> 3;
     }
 
-    // We handled the tranpose permutation above and we don't
+    // We handled the transpose permutation above and we don't
     // need to permute the "no" permutation case.
     if ((lastNonZero > 0) &&
         (s->dsp.idct_permutation_type != FF_TRANSPOSE_IDCT_PERM) &&
@@ -486,7 +482,6 @@ int dct_quantize_altivec(MpegEncContext* s,
 
     return lastNonZero;
 }
-#undef FOUROF
 
 /*
   AltiVec version of dct_unquantize_h263
@@ -522,7 +517,7 @@ POWERPC_PERF_START_COUNT(altivec_dct_unquantize_h263_num, 1);
     }
 
     {
-      register const_vector signed short vczero = (const_vector signed short)vec_splat_s16(0);
+      register const vector signed short vczero = (const vector signed short)vec_splat_s16(0);
       DECLARE_ALIGNED_16(short, qmul8[]) =
           {
             qmul, qmul, qmul, qmul,
@@ -600,4 +595,51 @@ POWERPC_PERF_START_COUNT(altivec_dct_unquantize_h263_num, 1);
       }
     }
 POWERPC_PERF_STOP_COUNT(altivec_dct_unquantize_h263_num, nCoeffs == 63);
+}
+
+
+extern void idct_put_altivec(uint8_t *dest, int line_size, int16_t *block);
+extern void idct_add_altivec(uint8_t *dest, int line_size, int16_t *block);
+
+void MPV_common_init_altivec(MpegEncContext *s)
+{
+    if ((mm_flags & MM_ALTIVEC) == 0) return;
+
+    if (s->avctx->lowres==0)
+    {
+        if ((s->avctx->idct_algo == FF_IDCT_AUTO) ||
+                (s->avctx->idct_algo == FF_IDCT_ALTIVEC))
+        {
+            s->dsp.idct_put = idct_put_altivec;
+            s->dsp.idct_add = idct_add_altivec;
+            s->dsp.idct_permutation_type = FF_TRANSPOSE_IDCT_PERM;
+        }
+    }
+
+    // Test to make sure that the dct required alignments are met.
+    if ((((long)(s->q_intra_matrix) & 0x0f) != 0) ||
+        (((long)(s->q_inter_matrix) & 0x0f) != 0))
+    {
+        av_log(s->avctx, AV_LOG_INFO, "Internal Error: q-matrix blocks must be 16-byte aligned "
+                "to use AltiVec DCT. Reverting to non-AltiVec version.\n");
+        return;
+    }
+
+    if (((long)(s->intra_scantable.inverse) & 0x0f) != 0)
+    {
+        av_log(s->avctx, AV_LOG_INFO, "Internal Error: scan table blocks must be 16-byte aligned "
+                "to use AltiVec DCT. Reverting to non-AltiVec version.\n");
+        return;
+    }
+
+
+    if ((s->avctx->dct_algo == FF_DCT_AUTO) ||
+            (s->avctx->dct_algo == FF_DCT_ALTIVEC))
+    {
+#if 0 /* seems to cause trouble under some circumstances */
+        s->dct_quantize = dct_quantize_altivec;
+#endif
+        s->dct_unquantize_h263_intra = dct_unquantize_h263_altivec;
+        s->dct_unquantize_h263_inter = dct_unquantize_h263_altivec;
+    }
 }

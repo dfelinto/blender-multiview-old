@@ -155,11 +155,7 @@ POWERPC_PERF_START_COUNT(powerpc_clear_blocks_dcbz32, 1);
       i += 16;
     }
     for ( ; i < sizeof(DCTELEM)*6*64-31 ; i += 32) {
-#ifndef __MWERKS__
       asm volatile("dcbz %0,%1" : : "b" (blocks), "r" (i) : "memory");
-#else
-      __dcbz( blocks, i );
-#endif
     }
     if (misal) {
       ((unsigned long*)blocks)[188] = 0L;
@@ -214,7 +210,7 @@ void clear_blocks_dcbz128_ppc(DCTELEM *blocks)
    knows about dcbzl ... */
 long check_dcbzl_effect(void)
 {
-  register char *fakedata = (char*)av_malloc(1024);
+  register char *fakedata = av_malloc(1024);
   register char *fakedata_middle;
   register long zero = 0;
   register long i = 0;
@@ -261,7 +257,7 @@ static void prefetch_ppc(void *mem, int stride, int h)
 
 void dsputil_init_ppc(DSPContext* c, AVCodecContext *avctx)
 {
-    // Common optimizations whether Altivec is available or not
+    // Common optimizations whether AltiVec is available or not
     c->prefetch = prefetch_ppc;
     switch (check_dcbzl_effect()) {
         case 32:

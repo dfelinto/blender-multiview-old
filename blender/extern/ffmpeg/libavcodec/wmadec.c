@@ -755,7 +755,7 @@ static int wma_decode_frame(WMACodecContext *s, int16_t *samples)
 
 static int wma_decode_superframe(AVCodecContext *avctx,
                                  void *data, int *data_size,
-                                 uint8_t *buf, int buf_size)
+                                 const uint8_t *buf, int buf_size)
 {
     WMACodecContext *s = avctx->priv_data;
     int nb_frames, bit_offset, i, pos, len;
@@ -768,6 +768,9 @@ static int wma_decode_superframe(AVCodecContext *avctx,
         s->last_superframe_len = 0;
         return 0;
     }
+    if (buf_size < s->block_align)
+        return 0;
+    buf_size = s->block_align;
 
     samples = data;
 

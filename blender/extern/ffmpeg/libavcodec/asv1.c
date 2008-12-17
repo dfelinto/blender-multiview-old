@@ -27,7 +27,7 @@
 #include "avcodec.h"
 #include "bitstream.h"
 #include "dsputil.h"
-#include "mpegvideo.h"
+#include "mpeg12data.h"
 
 //#undef NDEBUG
 //#include <assert.h>
@@ -113,7 +113,7 @@ static VLC dc_ccp_vlc;
 static VLC ac_ccp_vlc;
 static VLC asv2_level_vlc;
 
-static void init_vlcs(ASV1Context *a){
+static av_cold void init_vlcs(ASV1Context *a){
     static int done = 0;
 
     if (!done) {
@@ -387,7 +387,7 @@ static inline void dct_get(ASV1Context *a, int mb_x, int mb_y){
 
 static int decode_frame(AVCodecContext *avctx,
                         void *data, int *data_size,
-                        uint8_t *buf, int buf_size)
+                        const uint8_t *buf, int buf_size)
 {
     ASV1Context * const a = avctx->priv_data;
     AVFrame *picture = data;
@@ -402,13 +402,13 @@ static int decode_frame(AVCodecContext *avctx,
         av_log(avctx, AV_LOG_ERROR, "get_buffer() failed\n");
         return -1;
     }
-    p->pict_type= I_TYPE;
+    p->pict_type= FF_I_TYPE;
     p->key_frame= 1;
 
     a->bitstream_buffer= av_fast_realloc(a->bitstream_buffer, &a->bitstream_buffer_size, buf_size + FF_INPUT_BUFFER_PADDING_SIZE);
 
     if(avctx->codec_id == CODEC_ID_ASV1)
-        a->dsp.bswap_buf((uint32_t*)a->bitstream_buffer, (uint32_t*)buf, buf_size/4);
+        a->dsp.bswap_buf((uint32_t*)a->bitstream_buffer, (const uint32_t*)buf, buf_size/4);
     else{
         int i;
         for(i=0; i<buf_size; i++)
@@ -476,7 +476,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
     init_put_bits(&a->pb, buf, buf_size);
 
     *p = *pict;
-    p->pict_type= I_TYPE;
+    p->pict_type= FF_I_TYPE;
     p->key_frame= 1;
 
     for(mb_y=0; mb_y<a->mb_height2; mb_y++){
@@ -521,7 +521,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
 }
 #endif /* CONFIG_ENCODERS */
 
-static void common_init(AVCodecContext *avctx){
+static av_cold void common_init(AVCodecContext *avctx){
     ASV1Context * const a = avctx->priv_data;
 
     dsputil_init(&a->dsp, avctx);
@@ -535,7 +535,7 @@ static void common_init(AVCodecContext *avctx){
     a->avctx= avctx;
 }
 
-static int decode_init(AVCodecContext *avctx){
+static av_cold int decode_init(AVCodecContext *avctx){
     ASV1Context * const a = avctx->priv_data;
     AVFrame *p= (AVFrame*)&a->picture;
     int i;
@@ -570,7 +570,7 @@ static int decode_init(AVCodecContext *avctx){
 }
 
 #ifdef CONFIG_ENCODERS
-static int encode_init(AVCodecContext *avctx){
+static av_cold int encode_init(AVCodecContext *avctx){
     ASV1Context * const a = avctx->priv_data;
     int i;
     const int scale= avctx->codec_id == CODEC_ID_ASV1 ? 1 : 2;
@@ -595,7 +595,7 @@ static int encode_init(AVCodecContext *avctx){
 }
 #endif
 
-static int decode_end(AVCodecContext *avctx){
+static av_cold int decode_end(AVCodecContext *avctx){
     ASV1Context * const a = avctx->priv_data;
 
     av_freep(&a->bitstream_buffer);

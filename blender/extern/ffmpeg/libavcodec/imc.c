@@ -41,6 +41,7 @@
 
 #include "imcdata.h"
 
+#define IMC_BLOCK_SIZE 64
 #define IMC_FRAME_ID 0x21
 #define BANDS 32
 #define COEFFS 256
@@ -89,7 +90,7 @@ typedef struct {
 } IMCContext;
 
 
-static int imc_decode_init(AVCodecContext * avctx)
+static av_cold int imc_decode_init(AVCodecContext * avctx)
 {
     int i, j;
     IMCContext *q = avctx->priv_data;
@@ -625,7 +626,7 @@ static int imc_get_coeffs (IMCContext* q) {
 
 static int imc_decode_frame(AVCodecContext * avctx,
                             void *data, int *data_size,
-                            uint8_t * buf, int buf_size)
+                            const uint8_t * buf, int buf_size)
 {
 
     IMCContext *q = avctx->priv_data;
@@ -635,13 +636,16 @@ static int imc_decode_frame(AVCodecContext * avctx,
     int flag;
     int bits, summer;
     int counter, bitscount;
-    uint16_t *buf16 = (uint16_t *) buf;
+    uint16_t buf16[IMC_BLOCK_SIZE / 2];
 
-    /* FIXME: input should not be modified */
-    for(i = 0; i < FFMIN(buf_size, avctx->block_align) / 2; i++)
-        buf16[i] = bswap_16(buf16[i]);
+    if (buf_size < IMC_BLOCK_SIZE) {
+        av_log(avctx, AV_LOG_ERROR, "imc frame too small!\n");
+        return -1;
+    }
+    for(i = 0; i < IMC_BLOCK_SIZE / 2; i++)
+        buf16[i] = bswap_16(((const uint16_t*)buf)[i]);
 
-    init_get_bits(&q->gb, buf, 512);
+    init_get_bits(&q->gb, (const uint8_t*)buf16, IMC_BLOCK_SIZE * 8);
 
     /* Check the frame header */
     imc_hdr = get_bits(&q->gb, 9);
@@ -788,11 +792,11 @@ static int imc_decode_frame(AVCodecContext * avctx,
 
     *data_size = COEFFS * sizeof(int16_t);
 
-    return avctx->block_align;
+    return IMC_BLOCK_SIZE;
 }
 
 
-static int imc_decode_close(AVCodecContext * avctx)
+static av_cold int imc_decode_close(AVCodecContext * avctx)
 {
     IMCContext *q = avctx->priv_data;
 
