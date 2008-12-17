@@ -12,7 +12,7 @@ else:
     ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-memalign-hack --enable-libx264 --enable-libxvid --enable-libmp3lame"
 
 if env['WITH_BF_OGG']:
-    ffmpeg_switches += " --enable-libogg --enable-libtheora --enable-libvorbis"
+    ffmpeg_switches += " --enable-libtheora --enable-libvorbis"
 
 #--enable-libx264
 extra_variables = { }
