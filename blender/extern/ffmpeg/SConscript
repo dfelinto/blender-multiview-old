@@ -7,9 +7,9 @@ all_libs = ['libavformat', 'libavcodec', 'libswscale', 'libavutil', 'libavdevice
 root = "extern/ffmpeg"
 
 if env['OURPLATFORM'] == 'win32-mingw':
-    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-pthreads --enable-libx264 --enable-libxvid --enable-libmp3lame"
+    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-pthreads --enable-libx264 --enable-libxvid --enable-libmp3lame"
 else:
-    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --disable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-memalign-hack --enable-libx264 --enable-libxvid --enable-libmp3lame"
+    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-memalign-hack --enable-libx264 --enable-libxvid --enable-libmp3lame"
     if env['OURPLATFORM'] == 'darwin':
         ffmpeg_switches += " --disable-mmx"
 

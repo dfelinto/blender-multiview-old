@@ -75,7 +75,8 @@ static int vp6_parse_header(vp56_context_t *s, const uint8_t *buf, int buf_size,
         /* buf[4] is number of displayed macroblock rows */
         /* buf[5] is number of displayed macroblock cols */
 
-        if (16*cols != s->avctx->coded_width ||
+        if (!s->macroblocks || /* first frame */
+			16*cols != s->avctx->coded_width ||
             16*rows != s->avctx->coded_height) {
             avcodec_set_dimensions(s->avctx, 16*cols, 16*rows);
             if (s->avctx->extradata_size == 1) {
@@ -135,6 +136,8 @@ static int vp6_parse_header(vp56_context_t *s, const uint8_t *buf, int buf_size,
     if (coeff_offset) {
         buf      += coeff_offset;
         buf_size -= coeff_offset;
+        if (buf_size < 0)
+            return 0;
         if (s->use_huffman) {
             s->parse_coeff = vp6_parse_coeff_huffman;
             init_get_bits(&s->gb, buf, buf_size<<3);
