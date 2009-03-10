@@ -235,7 +235,6 @@ endif
 PULIB = $(NAN_MOTO)/lib/libmoto.a
 PULIB += $(NAN_DECIMATION)/lib/libdecimation.a
 PULIB += $(NAN_ELBEEM)/lib/$(DEBUG_DIR)libelbeem.a
-PULIB += $(NAN_OPENNL)/lib/$(DEBUG_DIR)libopennl.a
 PULIB += $(OCGDIR)/blender/readblenfile/$(DEBUG_DIR)libreadblenfile.a
 PULIB += $(OCGDIR)/blender/src/$(DEBUG_DIR)libsrcpublisher.a
 
