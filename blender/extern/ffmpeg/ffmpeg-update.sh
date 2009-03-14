@@ -13,7 +13,10 @@ fi
 
 mkdir ffmpeg
 
-svn checkout svn://svn.mplayerhq.hu/ffmpeg/trunk ffmpeg
+# get the latest revision from SVN.
+# Please note that if you want to retrieve a specific revision,
+# libswscale has a different revision number than the rest of ffmpeg.
+svn checkout svn://svn.ffmpeg.org/ffmpeg/trunk ffmpeg
 
 rm -rf `find ffmpeg/ -type d -name ".svn"`
 

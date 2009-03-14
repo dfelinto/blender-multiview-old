@@ -1,6 +1,5 @@
 /*
- * software YUV to RGB converter using mediaLib
- *
+ * yuv2rgb_mlib.c, Software YUV to RGB converter using mediaLib
  * Copyright (C) 2003 Michael Niedermayer <michaelni@gmx.at>
  *
  * This file is part of FFmpeg.

@@ -3,18 +3,18 @@
  *
  * This file is part of FFmpeg.
  *
- * FFmpeg is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * FFmpeg is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
  * FFmpeg is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public
- * License along with FFmpeg; if not, write to the Free Software
+ * You should have received a copy of the GNU General Public License
+ * along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
@@ -25,9 +25,10 @@
 #include <stdarg.h>
 
 #undef HAVE_AV_CONFIG_H
-#include "libavutil/avutil.h"
+#include "avutil.h"
 #include "swscale.h"
 #include "swscale_internal.h"
+#include "rgb2rgb.h"
 
 static uint64_t getSSD(uint8_t *src1, uint8_t *src2, int stride1, int stride2, int w, int h){
     int x,y;
@@ -119,7 +120,7 @@ static int doTest(uint8_t *ref[3], int refStride[3], int w, int h, int srcFormat
     sws_scale(outContext, dst, dstStride, 0, dstH, out, refStride);
 
 #if defined(ARCH_X86)
-    __asm__ volatile ("emms\n\t");
+    asm volatile ("emms\n\t");
 #endif
 
     ssdY= getSSD(ref[0], out[0], refStride[0], refStride[0], w, h);
@@ -132,11 +133,13 @@ static int doTest(uint8_t *ref[3], int refStride[3], int w, int h, int srcFormat
     ssdU/= w*h/4;
     ssdV/= w*h/4;
 
-    printf(" %s %dx%d -> %s %4dx%4d flags=%2d SSD=%5lld,%5lld,%5lld\n",
-           sws_format_name(srcFormat), srcW, srcH,
-           sws_format_name(dstFormat), dstW, dstH,
-           flags, ssdY, ssdU, ssdV);
-    fflush(stdout);
+    if (ssdY>100 || ssdU>100 || ssdV>100){
+        printf(" %s %dx%d -> %s %4dx%4d flags=%2d SSD=%5lld,%5lld,%5lld\n",
+               sws_format_name(srcFormat), srcW, srcH,
+               sws_format_name(dstFormat), dstW, dstH,
+               flags,
+               ssdY, ssdU, ssdV);
+    }
 
     end:
 
@@ -153,6 +156,10 @@ static int doTest(uint8_t *ref[3], int refStride[3], int w, int h, int srcFormat
     return res;
 }
 
+void fast_memcpy(void *a, void *b, int s){ //FIXME
+    memcpy(a, b, s);
+}
+
 static void selfTest(uint8_t *src[3], int stride[3], int w, int h){
     enum PixelFormat srcFormat, dstFormat;
     int srcW, srcH, dstW, dstH;
@@ -163,7 +170,6 @@ static void selfTest(uint8_t *src[3], int stride[3], int w, int h){
             printf("%s -> %s\n",
                    sws_format_name(srcFormat),
                    sws_format_name(dstFormat));
-            fflush(stdout);
 
             srcW= w;
             srcH= h;
@@ -206,10 +212,15 @@ int main(int argc, char **argv){
             rgb_data[ x + y*4*W]= random();
         }
     }
+#if defined(ARCH_X86)
+    sws_rgb2rgb_init(SWS_CPU_CAPS_MMX*0);
+#else
+    sws_rgb2rgb_init(0);
+#endif
     sws_scale(sws, rgb_src, rgb_stride, 0, H, src, stride);
 
 #if defined(ARCH_X86)
-    __asm__ volatile ("emms\n\t");
+    asm volatile ("emms\n\t");
 #endif
 
     selfTest(src, stride, W, H);
