@@ -20,7 +20,7 @@
  */
 
 /**
- * @file indeo2.c
+ * @file libavcodec/indeo2.c
  * Intel Indeo 2 decoder.
  */
 #define ALT_BITSTREAM_READER_LE
@@ -219,4 +219,5 @@ AVCodec indeo2_decoder = {
     NULL,
     ir2_decode_frame,
     CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("Intel Indeo 2"),
 };

@@ -20,7 +20,7 @@
  */
 
 /**
- * @file vqavideo.c
+ * @file libavcodec/vqavideo.c
  * VQA Video Decoder by Mike Melanson (melanson@pcisys.net)
  * For more information about the VQA format, visit:
  *   http://wiki.multimedia.cx/index.php?title=VQA
@@ -54,7 +54,7 @@
  * file. This is an interesting technique, although it makes random file
  * seeking difficult despite the fact that the frames are all intracoded.
  *
- * V1,2 VQA uses 12-bit codebook indices. If the 12-bit indices were
+ * V1,2 VQA uses 12-bit codebook indexes. If the 12-bit indexes were
  * packed into bytes and then RLE compressed, bytewise, the results would
  * be poor. That is why the coding method divides each index into 2 parts,
  * the top 4 bits and the bottom 8 bits, then RL encodes the 4-bit pieces
@@ -68,6 +68,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
 #define PALETTE_COUNT 256
@@ -616,4 +617,5 @@ AVCodec vqa_decoder = {
     vqa_decode_end,
     vqa_decode_frame,
     CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("Westwood Studios VQA (Vector Quantized Animation) video"),
 };

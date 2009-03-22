@@ -7,9 +7,9 @@ all_libs = ['libavformat', 'libavcodec', 'libswscale', 'libavutil', 'libavdevice
 root = "extern/ffmpeg"
 
 if env['OURPLATFORM'] == 'win32-mingw':
-    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-pthreads --enable-libx264 --enable-libxvid --enable-libmp3lame"
+    ffmpeg_switches = "--disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-pthreads --enable-libx264 --enable-libxvid --enable-libmp3lame"
 else:
-    ffmpeg_switches = "--disable-shared --enable-liba52bin --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-memalign-hack --enable-libx264 --enable-libxvid --enable-libmp3lame"
+    ffmpeg_switches = "--disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-memalign-hack --enable-libx264 --enable-libxvid --enable-libmp3lame"
     if env['OURPLATFORM'] == 'darwin':
         ffmpeg_switches += " --disable-mmx"
 
@@ -53,13 +53,30 @@ def makeparseblock(fp, variables):
         if i >= 0:
             line = line[:i]
 
-        iter = makevarsubst.finditer(line[:])
-        for obj in iter:
-            (name) = obj.group(1)
-            s = ""
-            if name in variables:
-                s = variables[name]
-            line = line.replace('$(' + name + ')', s)
+        while makevarsubst.search(line):
+            iter = makevarsubst.finditer(line[:])
+            for obj in iter:
+                (name) = obj.group(1)
+                s = ""
+                i = name.find(':')
+                if i >= 0:
+                    subst = name[i+1:].split("=")
+                    nname = name[:i]
+                    if nname in variables:
+                        s = variables[nname]
+                    sl = list(Set(s.split()))
+                    fin = ""
+                    for x in sl:
+                        s_from = subst[0][:]
+                        s_to = subst[1][:]
+                        s_from = s_from.replace("%", x)
+                        s_to = s_to.replace("%", x)
+                        fin += x.replace(s_from, s_to) + " "
+                    s = fin
+                else:
+                    if name in variables:
+                        s = variables[name]
+                line = line.replace('$(' + name + ')', s)
 
         matchobj = makevardef.match(line)
         if matchobj:
@@ -114,26 +131,23 @@ if not os.path.isdir(root + "/include/ffmpeg"):
 for lib in all_libs:
     vars = getmakevars([root + '/config.mak', root + "/" + lib + '/Makefile'])
     objs = ""
-    if "OBJS-yes" in vars:
-        objs += vars['OBJS-yes']
-    if "OBJS" in vars:
-        objs += vars['OBJS']
 
-    objs += " "
-    objs = objs.replace(".o ", ".c ")
+    for v in [ "OBJS-yes", "OBJS", "ASM_OBJS" ]:
+        if v in vars:
+            objs += vars[v] + " "
 
-    asm_objs = ""
-    if "ASM_OBJS" in vars:
-        asm_objs += vars["ASM_OBJS"]
+    sources_ = list(Set(objs.split()))
+    sources = []
 
-    asm_objs += " "
-    asm_objs = asm_objs.replace(".o ", ".S ")
-
-    objs += asm_objs;
-    
-    sources = list(Set(objs.split()))
-    sources = [lib + "/" + x for x in sources]
-
+    for s in sources_:
+        s = lib + "/" + s
+        s = s.replace(".o", "")
+        for ext in [ ".S", ".c", ".asm" ]:
+            if os.path.isfile(root + "/" + s + ext):
+                s += ext
+                break
+        sources.append(s)
+        
     if env['OURPLATFORM'] in ['win32-mingw', 'win32-vc' , 'darwin'] :
     	defs = "HAVE_AV_CONFIG_H  _ISOC9X_SOURCE"
     else :

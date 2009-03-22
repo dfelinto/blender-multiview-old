@@ -21,11 +21,11 @@
 
 /**
  * TIFF image encoder
- * @file tiffenc.c
+ * @file libavcodec/tiffenc.c
  * @author Bartlomiej Wolowiec
  */
 #include "avcodec.h"
-#ifdef CONFIG_ZLIB
+#if CONFIG_ZLIB
 #include <zlib.h>
 #endif
 #include "bytestream.h"
@@ -151,7 +151,7 @@ static int encode_strip(TiffEncoderContext * s, const int8_t * src,
 {
 
     switch (compr) {
-#ifdef CONFIG_ZLIB
+#if CONFIG_ZLIB
     case TIFF_DEFLATE:
     case TIFF_ADOBE_DEFLATE:
         {
@@ -222,13 +222,14 @@ static int encode_frame(AVCodecContext * avctx, unsigned char *buf,
     *p = *pict;
     p->pict_type = FF_I_TYPE;
     p->key_frame = 1;
+    avctx->coded_frame= &s->picture;
 
     s->compr = TIFF_PACKBITS;
     if (avctx->compression_level == 0) {
         s->compr = TIFF_RAW;
     } else if(avctx->compression_level == 2) {
         s->compr = TIFF_LZW;
-#ifdef CONFIG_ZLIB
+#if CONFIG_ZLIB
     } else if ((avctx->compression_level >= 3)) {
         s->compr = TIFF_DEFLATE;
 #endif
@@ -314,7 +315,7 @@ static int encode_frame(AVCodecContext * avctx, unsigned char *buf,
         }
     }
 
-#ifdef CONFIG_ZLIB
+#if CONFIG_ZLIB
     if (s->compr == TIFF_DEFLATE || s->compr == TIFF_ADOBE_DEFLATE) {
         uint8_t *zbuf;
         int zlen, zn;
@@ -455,7 +456,7 @@ AVCodec tiff_encoder = {
                               PIX_FMT_MONOBLACK, PIX_FMT_MONOWHITE,
                               PIX_FMT_YUV420P, PIX_FMT_YUV422P,
                               PIX_FMT_YUV444P, PIX_FMT_YUV410P,
-                              PIX_FMT_YUV411P
-                              -1}
-
+                              PIX_FMT_YUV411P,
+                              PIX_FMT_NONE},
+    .long_name = NULL_IF_CONFIG_SMALL("TIFF image"),
 };

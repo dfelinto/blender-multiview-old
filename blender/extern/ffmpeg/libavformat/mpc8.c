@@ -18,9 +18,10 @@
  * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#include "libavcodec/bitstream.h"
+#include "libavcodec/unary.h"
 #include "avformat.h"
-#include "bitstream.h"
-#include "unary.h"
 
 /// Two-byte MPC tag
 #define MKMPCTAG(a, b) (a | (b << 8))
@@ -181,7 +182,7 @@ static int mpc8_read_header(AVFormatContext *s, AVFormatParameters *ap)
         return AVERROR(ENOMEM);
     st->codec->codec_type = CODEC_TYPE_AUDIO;
     st->codec->codec_id = CODEC_ID_MUSEPACK8;
-    st->codec->bits_per_sample = 16;
+    st->codec->bits_per_coded_sample = 16;
 
     st->codec->extradata_size = 2;
     st->codec->extradata = av_mallocz(st->codec->extradata_size + FF_INPUT_BUFFER_PADDING_SIZE);
@@ -234,7 +235,7 @@ static int mpc8_read_seek(AVFormatContext *s, int stream_index, int64_t timestam
 
 AVInputFormat mpc8_demuxer = {
     "mpc8",
-    "musepack8",
+    NULL_IF_CONFIG_SMALL("Musepack SV8"),
     sizeof(MPCContext),
     mpc8_probe,
     mpc8_read_header,

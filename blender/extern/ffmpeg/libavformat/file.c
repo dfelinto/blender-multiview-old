@@ -18,9 +18,13 @@
  * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#include "libavutil/avstring.h"
 #include "avformat.h"
-#include "avstring.h"
 #include <fcntl.h>
+#if HAVE_SETMODE
+#include <io.h>
+#endif
 #include <unistd.h>
 #include <sys/time.h>
 #include <stdlib.h>
@@ -66,7 +70,7 @@ static int file_write(URLContext *h, unsigned char *buf, int size)
 }
 
 /* XXX: use llseek */
-static offset_t file_seek(URLContext *h, offset_t pos, int whence)
+static int64_t file_seek(URLContext *h, int64_t pos, int whence)
 {
     int fd = (size_t)h->priv_data;
     return lseek(fd, pos, whence);
@@ -92,7 +96,7 @@ URLProtocol file_protocol = {
 static int pipe_open(URLContext *h, const char *filename, int flags)
 {
     int fd;
-    const char * final;
+    char *final;
     av_strstart(filename, "pipe:", &filename);
 
     fd = strtol(filename, &final, 10);
@@ -103,7 +107,7 @@ static int pipe_open(URLContext *h, const char *filename, int flags)
             fd = 0;
         }
     }
-#ifdef O_BINARY
+#if HAVE_SETMODE
     setmode(fd, O_BINARY);
 #endif
     h->priv_data = (void *)(size_t)fd;

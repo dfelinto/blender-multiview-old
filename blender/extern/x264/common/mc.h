@@ -1,10 +1,7 @@
 /*****************************************************************************
  * mc.h: h264 encoder library (Motion Compensation)
  *****************************************************************************
- * Copyright (C) 2003 Laurent Aimar
- * $Id: mc.h,v 1.1 2004/06/03 19:27:07 fenrir Exp $
- *
- * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ * Copyright (C) 2004-2008 Loren Merritt <lorenm@u.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,11 +15,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
-#ifndef _MC_H
-#define _MC_H 1
+#ifndef X264_MC_H
+#define X264_MC_H
 
 /* Do the MC
  * XXX: Only width = 4, 8 or 16 are valid
@@ -48,17 +45,17 @@ typedef struct
                       int mvx, int mvy,
                       int i_width, int i_height );
 
-    void (*avg[10])( uint8_t *dst, int, uint8_t *src, int );
-    void (*avg_weight[10])( uint8_t *dst, int, uint8_t *src, int, int i_weight );
+    void (*avg[10])( uint8_t *dst, int, uint8_t *src1, int, uint8_t *src2, int, int i_weight );
 
     /* only 16x16, 8x8, and 4x4 defined */
     void (*copy[7])( uint8_t *dst, int, uint8_t *src, int, int i_height );
+    void (*copy_16x16_unaligned)( uint8_t *dst, int, uint8_t *src, int, int i_height );
 
     void (*plane_copy)( uint8_t *dst, int i_dst,
                         uint8_t *src, int i_src, int w, int h);
 
     void (*hpel_filter)( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src,
-                         int i_stride, int i_width, int i_height );
+                         int i_stride, int i_width, int i_height, int16_t *buf );
 
     /* prefetch the next few macroblocks of fenc or fdec */
     void (*prefetch_fenc)( uint8_t *pix_y, int stride_y,
@@ -66,6 +63,17 @@ typedef struct
     /* prefetch the next few macroblocks of a hpel reference frame */
     void (*prefetch_ref)( uint8_t *pix, int stride, int parity );
 
+    void *(*memcpy_aligned)( void *dst, const void *src, size_t n );
+    void (*memzero_aligned)( void *dst, int n );
+
+    /* successive elimination prefilter */
+    void (*integral_init4h)( uint16_t *sum, uint8_t *pix, int stride );
+    void (*integral_init8h)( uint16_t *sum, uint8_t *pix, int stride );
+    void (*integral_init4v)( uint16_t *sum8, uint16_t *sum4, int stride );
+    void (*integral_init8v)( uint16_t *sum8, int stride );
+
+    void (*frame_init_lowres_core)( uint8_t *src0, uint8_t *dst0, uint8_t *dsth, uint8_t *dstv, uint8_t *dstc,
+                                    int src_stride, int dst_stride, int width, int height );
 } x264_mc_functions_t;
 
 void x264_mc_init( int cpu, x264_mc_functions_t *pf );

@@ -20,13 +20,14 @@
  */
 
 /**
- * @file dxa.c
+ * @file libavcodec/dxa.c
  * DXA Video decoder
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
 #include <zlib.h>
@@ -326,6 +327,7 @@ AVCodec dxa_decoder = {
     decode_init,
     NULL,
     decode_end,
-    decode_frame
+    decode_frame,
+    .long_name = NULL_IF_CONFIG_SMALL("Feeble Files/ScummVM DXA"),
 };
 

@@ -1,7 +1,7 @@
 /*
  * Video4Linux2 grab interface
- * Copyright (c) 2000,2001 Fabrice Bellard.
- * Copyright (c) 2006 Luca Abeni.
+ * Copyright (c) 2000,2001 Fabrice Bellard
+ * Copyright (c) 2006 Luca Abeni
  *
  * Part of this file is based on the V4L2 video capture example
  * (http://v4l2spec.bytesex.org/v4l2spec/capture.c)
@@ -27,16 +27,22 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#undef __STRICT_ANSI__ //workaround due to broken kernel headers
 #include "config.h"
-#include "avformat.h"
+#include "libavformat/avformat.h"
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/time.h>
+#if HAVE_SYS_VIDEOIO_H
+#include <sys/videoio.h>
+#else
 #include <asm/types.h>
 #include <linux/videodev2.h>
+#endif
 #include <time.h>
+#include <strings.h>
 
 static const int desired_video_buffers = 256;
 
@@ -51,8 +57,6 @@ struct video_data {
     int frame_format; /* V4L2_PIX_FMT_* */
     enum io_method io_method;
     int width, height;
-    int frame_rate;
-    int frame_rate_base;
     int frame_size;
     int top_field_first;
 
@@ -97,6 +101,14 @@ static struct fmt_map fmt_conversion_table[] = {
         .v4l2_fmt = V4L2_PIX_FMT_YUV410,
     },
     {
+        .ff_fmt = PIX_FMT_RGB555,
+        .v4l2_fmt = V4L2_PIX_FMT_RGB555,
+    },
+    {
+        .ff_fmt = PIX_FMT_RGB565,
+        .v4l2_fmt = V4L2_PIX_FMT_RGB565,
+    },
+    {
         .ff_fmt = PIX_FMT_BGR24,
         .v4l2_fmt = V4L2_PIX_FMT_BGR24,
     },
@@ -104,12 +116,10 @@ static struct fmt_map fmt_conversion_table[] = {
         .ff_fmt = PIX_FMT_RGB24,
         .v4l2_fmt = V4L2_PIX_FMT_RGB24,
     },
-    /*
     {
-        .ff_fmt = PIX_FMT_RGB32,
+        .ff_fmt = PIX_FMT_BGRA,
         .v4l2_fmt = V4L2_PIX_FMT_BGR32,
     },
-    */
     {
         .ff_fmt = PIX_FMT_GRAY8,
         .v4l2_fmt = V4L2_PIX_FMT_GREY,
@@ -181,6 +191,11 @@ static int device_init(AVFormatContext *ctx, int *width, int *height, int pix_fm
         *height = fmt.fmt.pix.height;
     }
 
+    if (pix_fmt != fmt.fmt.pix.pixelformat) {
+        av_log(ctx, AV_LOG_DEBUG, "The V4L2 driver changed the pixel format from 0x%08X to 0x%08X\n", pix_fmt, fmt.fmt.pix.pixelformat);
+        res = -1;
+    }
+
     return res;
 }
 
@@ -204,7 +219,7 @@ static uint32_t fmt_ff2v4l(enum PixelFormat pix_fmt)
 {
     int i;
 
-    for (i = 0; i < sizeof(fmt_conversion_table) / sizeof(struct fmt_map); i++) {
+    for (i = 0; i < FF_ARRAY_ELEMS(fmt_conversion_table); i++) {
         if (fmt_conversion_table[i].ff_fmt == pix_fmt) {
             return fmt_conversion_table[i].v4l2_fmt;
         }
@@ -217,13 +232,13 @@ static enum PixelFormat fmt_v4l2ff(uint32_t pix_fmt)
 {
     int i;
 
-    for (i = 0; i < sizeof(fmt_conversion_table) / sizeof(struct fmt_map); i++) {
+    for (i = 0; i < FF_ARRAY_ELEMS(fmt_conversion_table); i++) {
         if (fmt_conversion_table[i].v4l2_fmt == pix_fmt) {
             return fmt_conversion_table[i].ff_fmt;
         }
     }
 
-    return -1;
+    return PIX_FMT_NONE;
 }
 
 static int mmap_init(AVFormatContext *ctx)
@@ -309,6 +324,10 @@ static void mmap_release_buffer(AVPacket *pkt)
     struct v4l2_buffer buf;
     int res, fd;
     struct buff_data *buf_descriptor = pkt->priv;
+
+    if (pkt->data == NULL) {
+         return;
+    }
 
     memset(&buf, 0, sizeof(struct v4l2_buffer));
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -476,7 +495,7 @@ static int v4l2_set_parameters( AVFormatContext *s1, AVFormatParameters *ap )
         }
 
         av_log(s1, AV_LOG_DEBUG, "The V4L2 driver set standard: %s, id: %"PRIu64"\n",
-               ap->standard, standard.id);
+               ap->standard, (uint64_t)standard.id);
         if (ioctl(s->fd, VIDIOC_S_STD, &standard.id) < 0) {
             av_log(s1, AV_LOG_ERROR, "The V4L2 driver ioctl set standard(%s) failed\n",
                    ap->standard);
@@ -492,25 +511,19 @@ static int v4l2_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     struct video_data *s = s1->priv_data;
     AVStream *st;
     int width, height;
-    int res, frame_rate, frame_rate_base;
+    int res;
     uint32_t desired_format, capabilities;
 
-    if (ap->width <= 0 || ap->height <= 0 || ap->time_base.den <= 0) {
-        av_log(s1, AV_LOG_ERROR, "Missing/Wrong width, height or framerate\n");
-
+    if (ap->width <= 0 || ap->height <= 0) {
+        av_log(s1, AV_LOG_ERROR, "Wrong size (%dx%d)\n", ap->width, ap->height);
         return -1;
     }
 
     width = ap->width;
     height = ap->height;
-    frame_rate = ap->time_base.den;
-    frame_rate_base = ap->time_base.num;
 
-    if((unsigned)width > 32767 || (unsigned)height > 32767) {
-        av_log(s1, AV_LOG_ERROR, "Wrong size %dx%d\n", width, height);
-
+    if(avcodec_check_dimensions(s1, ap->width, ap->height) < 0)
         return -1;
-    }
 
     st = av_new_stream(s1, 0);
     if (!st) {
@@ -520,14 +533,10 @@ static int v4l2_read_header(AVFormatContext *s1, AVFormatParameters *ap)
 
     s->width = width;
     s->height = height;
-    s->frame_rate      = frame_rate;
-    s->frame_rate_base = frame_rate_base;
 
     capabilities = 0;
     s->fd = device_open(s1, &capabilities);
     if (s->fd < 0) {
-        av_free(st);
-
         return AVERROR(EIO);
     }
     av_log(s1, AV_LOG_INFO, "[%d]Capabilities: %x\n", s->fd, capabilities);
@@ -545,7 +554,7 @@ static int v4l2_read_header(AVFormatContext *s1, AVFormatParameters *ap)
             } else {
                done = 1;
             }
-            if (i == sizeof(fmt_conversion_table) / sizeof(struct fmt_map)) {
+            if (i == FF_ARRAY_ELEMS(fmt_conversion_table)) {
                done = 1;
             }
         }
@@ -553,7 +562,6 @@ static int v4l2_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     if (desired_format == 0) {
         av_log(s1, AV_LOG_ERROR, "Cannot find a proper format.\n");
         close(s->fd);
-        av_free(st);
 
         return AVERROR(EIO);
     }
@@ -576,7 +584,6 @@ static int v4l2_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     }
     if (res < 0) {
         close(s->fd);
-        av_free(st);
 
         return AVERROR(EIO);
     }
@@ -586,8 +593,8 @@ static int v4l2_read_header(AVFormatContext *s1, AVFormatParameters *ap)
     st->codec->codec_id = CODEC_ID_RAWVIDEO;
     st->codec->width = width;
     st->codec->height = height;
-    st->codec->time_base.den = frame_rate;
-    st->codec->time_base.num = frame_rate_base;
+    st->codec->time_base.den = ap->time_base.den;
+    st->codec->time_base.num = ap->time_base.num;
     st->codec->bit_rate = s->frame_size * 1/av_q2d(st->codec->time_base) * 8;
 
     return 0;
@@ -635,7 +642,7 @@ static int v4l2_read_close(AVFormatContext *s1)
 
 AVInputFormat v4l2_demuxer = {
     "video4linux2",
-    "video grab",
+    NULL_IF_CONFIG_SMALL("Video4Linux2 device grab"),
     sizeof(struct video_data),
     NULL,
     v4l2_read_header,

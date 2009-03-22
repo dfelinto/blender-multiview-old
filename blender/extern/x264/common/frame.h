@@ -1,10 +1,10 @@
 /*****************************************************************************
  * frame.h: h264 encoder library
  *****************************************************************************
- * Copyright (C) 2003 Laurent Aimar
- * $Id: frame.h,v 1.1 2004/06/03 19:27:06 fenrir Exp $
+ * Copyright (C) 2003-2008 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ *          Loren Merritt <lorenm@u.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,11 +18,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
-#ifndef _FRAME_H
-#define _FRAME_H 1
+#ifndef X264_FRAME_H
+#define X264_FRAME_H
 
 /* number of pixels past the edge of the frame, for motion estimation/compensation */
 #define PADH 32
@@ -56,12 +56,14 @@ typedef struct
 
     /* for unrestricted mv we allocate more data than needed
      * allocated data are stored in buffer */
-    void    *buffer[8];
-    void    *buffer_lowres[4];
+    uint8_t *buffer[4];
+    uint8_t *buffer_lowres[4];
 
     /* motion data */
     int8_t  *mb_type;
     int16_t (*mv[2])[2];
+    int16_t (*lowres_mvs[2][X264_BFRAME_MAX+1])[2];
+    int     *lowres_mv_costs[2][X264_BFRAME_MAX+1];
     int8_t  *ref[2];
     int     i_ref[2];
     int     ref_poc[2][16];
@@ -71,17 +73,22 @@ typedef struct
      * contains the SATD cost of the lowres frame encoded in various modes
      * FIXME: how big an array do we need? */
     int     i_cost_est[X264_BFRAME_MAX+2][X264_BFRAME_MAX+2];
+    int     i_cost_est_aq[X264_BFRAME_MAX+2][X264_BFRAME_MAX+2];
     int     i_satd; // the i_cost_est of the selected frametype
     int     i_intra_mbs[X264_BFRAME_MAX+2];
     int     *i_row_satds[X264_BFRAME_MAX+2][X264_BFRAME_MAX+2];
     int     *i_row_satd;
     int     *i_row_bits;
     int     *i_row_qp;
+    float   *f_qp_offset;
+    int     b_intra_calculated;
+    uint16_t *i_intra_cost;
+    uint16_t *i_inv_qscale_factor;
 
     /* threading */
     int     i_lines_completed; /* in pixels */
     int     i_reference_count; /* number of threads using this frame (not necessarily the number of pointers) */
-    x264_pthread_mutex_t mutex;      
+    x264_pthread_mutex_t mutex;
     x264_pthread_cond_t  cv;
 
 } x264_frame_t;

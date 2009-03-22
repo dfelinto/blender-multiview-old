@@ -1,10 +1,9 @@
 /*****************************************************************************
  * dct.h: h264 encoder library
  *****************************************************************************
- * Copyright (C) 2003 Laurent Aimar
- * $Id$
+ * Copyright (C) 2003-2008 x264 project
  *
- * Authors: Eric Petit <titer@m0k.org>
+ * Authors: Eric Petit <eric.petit@lapsus.org>
  *          Guillaume Poirier <gpoirier@mplayerhq.hu>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -19,11 +18,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
-#ifndef _PPC_DCT_H
-#define _PPC_DCT_H 1
+#ifndef X264_PPC_DCT_H
+#define X264_PPC_DCT_H
 
 void x264_sub4x4_dct_altivec( int16_t dct[4][4],
         uint8_t *pix1, uint8_t *pix2 );
@@ -44,10 +43,7 @@ void x264_sub16x16_dct8_altivec( int16_t dct[4][8][8],
 void x264_add8x8_idct8_altivec( uint8_t *dst, int16_t dct[8][8] );
 void x264_add16x16_idct8_altivec( uint8_t *dst, int16_t dct[4][8][8] );
 
-void x264_zigzag_scan_4x4_frame_altivec( int level[16], int16_t dct[4][4] );
-void x264_zigzag_scan_4x4ac_frame_altivec( int level[15], int16_t dct[4][4] );
-
-void x264_zigzag_scan_4x4_field_altivec( int level[16], int16_t dct[4][4] );
-void x264_zigzag_scan_4x4ac_field_altivec( int level[15], int16_t dct[4][4] );
+void x264_zigzag_scan_4x4_frame_altivec( int16_t level[16], int16_t dct[4][4] );
+void x264_zigzag_scan_4x4_field_altivec( int16_t level[16], int16_t dct[4][4] );
 
 #endif

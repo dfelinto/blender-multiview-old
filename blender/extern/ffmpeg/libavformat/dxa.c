@@ -1,6 +1,6 @@
 /*
  * DXA demuxer
- * Copyright (c) 2007 Konstantin Shishkov.
+ * Copyright (c) 2007 Konstantin Shishkov
  *
  * This file is part of FFmpeg.
  *
@@ -19,6 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavutil/intreadwrite.h"
 #include "avformat.h"
 #include "riff.h"
 
@@ -204,7 +205,7 @@ static int dxa_read_packet(AVFormatContext *s, AVPacket *pkt)
 
 AVInputFormat dxa_demuxer = {
     "dxa",
-    "dxa",
+    NULL_IF_CONFIG_SMALL("DXA"),
     sizeof(DXAContext),
     dxa_probe,
     dxa_read_header,

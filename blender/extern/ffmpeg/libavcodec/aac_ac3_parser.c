@@ -1,7 +1,7 @@
 /*
- * Common AAC and AC3 parser
- * Copyright (c) 2003 Fabrice Bellard.
- * Copyright (c) 2003 Michael Niedermayer.
+ * Common AAC and AC-3 parser
+ * Copyright (c) 2003 Fabrice Bellard
+ * Copyright (c) 2003 Michael Niedermayer
  *
  * This file is part of FFmpeg.
  *
@@ -31,56 +31,63 @@ int ff_aac_ac3_parse(AVCodecParserContext *s1,
     AACAC3ParseContext *s = s1->priv_data;
     ParseContext *pc = &s->pc;
     int len, i;
+    int new_frame_start;
 
-    while(s->remaining_size <= buf_size){
+get_next:
+    i=END_NOT_FOUND;
+    if(s->remaining_size <= buf_size){
         if(s->remaining_size && !s->need_next_header){
             i= s->remaining_size;
             s->remaining_size = 0;
-            goto output_frame;
         }else{ //we need a header first
             len=0;
             for(i=s->remaining_size; i<buf_size; i++){
                 s->state = (s->state<<8) + buf[i];
-                if((len=s->sync(s->state, s, &s->need_next_header, &s->new_frame_start)))
+                if((len=s->sync(s->state, s, &s->need_next_header, &new_frame_start)))
                     break;
             }
-            i-= s->header_size;
-            if(len>0){
-                s->remaining_size = len + i;
-
-                if(pc->index+i > 0 && s->new_frame_start){
-                    s->remaining_size -= i; // remaining_size=len
-output_frame:
-                    ff_combine_frame(pc, i, &buf, &buf_size);
-                    *poutbuf = buf;
-                    *poutbuf_size = buf_size;
-
-                    /* update codec info */
-                    avctx->sample_rate = s->sample_rate;
-                    /* allow downmixing to stereo (or mono for AC3) */
-                    if(avctx->request_channels > 0 &&
-                            avctx->request_channels < s->channels &&
-                            (avctx->request_channels <= 2 ||
-                            (avctx->request_channels == 1 &&
-                            avctx->codec_id == CODEC_ID_AC3))) {
-                        avctx->channels = avctx->request_channels;
-                    } else {
-                        avctx->channels = s->channels;
-                    }
-                    avctx->bit_rate = s->bit_rate;
-                    avctx->frame_size = s->samples;
-
-                    return i;
-                }
+            if(len<=0){
+                i=END_NOT_FOUND;
             }else{
-                break;
+                s->state=0;
+                i-= s->header_size -1;
+                s->remaining_size = len;
+                if(!new_frame_start || pc->index+i<=0){
+                    s->remaining_size += i;
+                    goto get_next;
+                }
             }
         }
     }
 
-    ff_combine_frame(pc, END_NOT_FOUND, &buf, &buf_size);
-    s->remaining_size -= FFMIN(s->remaining_size, buf_size);
-    *poutbuf = NULL;
-    *poutbuf_size = 0;
-    return buf_size;
+    if(ff_combine_frame(pc, i, &buf, &buf_size)<0){
+        s->remaining_size -= FFMIN(s->remaining_size, buf_size);
+        *poutbuf = NULL;
+        *poutbuf_size = 0;
+        return buf_size;
+    }
+
+    *poutbuf = buf;
+    *poutbuf_size = buf_size;
+
+    /* update codec info */
+    avctx->sample_rate = s->sample_rate;
+    if(s->codec_id)
+        avctx->codec_id = s->codec_id;
+
+    /* allow downmixing to stereo (or mono for AC-3) */
+    if(avctx->request_channels > 0 &&
+            avctx->request_channels < s->channels &&
+            (avctx->request_channels <= 2 ||
+            (avctx->request_channels == 1 &&
+            (avctx->codec_id == CODEC_ID_AC3 ||
+             avctx->codec_id == CODEC_ID_EAC3)))) {
+        avctx->channels = avctx->request_channels;
+    } else {
+        avctx->channels = s->channels;
+    }
+    avctx->bit_rate = s->bit_rate;
+    avctx->frame_size = s->samples;
+
+    return i;
 }

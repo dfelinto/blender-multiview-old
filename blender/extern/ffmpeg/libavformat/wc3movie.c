@@ -20,13 +20,14 @@
  */
 
 /**
- * @file wc3movie.c
+ * @file libavformat/wc3movie.c
  * Wing Commander III Movie file demuxer
  * by Mike Melanson (melanson@pcisys.net)
  * for more information on the WC3 .mve file format, visit:
  *   http://www.pcisys.net/~melanson/codecs/
  */
 
+#include "libavutil/intreadwrite.h"
 #include "avformat.h"
 
 #define WC3_PREAMBLE_SIZE 8
@@ -131,6 +132,7 @@ static int wc3_read_header(AVFormatContext *s,
     unsigned int size;
     AVStream *st;
     unsigned char preamble[WC3_PREAMBLE_SIZE];
+    char buffer[513];
     int ret = 0;
     int current_palette = 0;
     int bytes_to_read;
@@ -184,8 +186,10 @@ static int wc3_read_header(AVFormatContext *s,
                 bytes_to_read = size;
             else
                 bytes_to_read = 512;
-            if ((ret = get_buffer(pb, s->title, bytes_to_read)) != bytes_to_read)
+            if ((ret = get_buffer(pb, buffer, bytes_to_read)) != bytes_to_read)
                 return AVERROR(EIO);
+            buffer[bytes_to_read] = 0;
+            av_metadata_set(&s->metadata, "title", buffer);
             break;
 
         case SIZE_TAG:
@@ -259,10 +263,10 @@ static int wc3_read_header(AVFormatContext *s,
     st->codec->codec_id = CODEC_ID_PCM_S16LE;
     st->codec->codec_tag = 1;
     st->codec->channels = WC3_AUDIO_CHANNELS;
-    st->codec->bits_per_sample = WC3_AUDIO_BITS;
+    st->codec->bits_per_coded_sample = WC3_AUDIO_BITS;
     st->codec->sample_rate = WC3_SAMPLE_RATE;
     st->codec->bit_rate = st->codec->channels * st->codec->sample_rate *
-        st->codec->bits_per_sample;
+        st->codec->bits_per_coded_sample;
     st->codec->block_align = WC3_AUDIO_BITS * WC3_AUDIO_CHANNELS;
 
     return 0;
@@ -385,7 +389,7 @@ static int wc3_read_close(AVFormatContext *s)
 
 AVInputFormat wc3_demuxer = {
     "wc3movie",
-    "Wing Commander III movie format",
+    NULL_IF_CONFIG_SMALL("Wing Commander III movie format"),
     sizeof(Wc3DemuxContext),
     wc3_probe,
     wc3_read_header,

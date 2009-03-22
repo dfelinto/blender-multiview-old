@@ -21,7 +21,7 @@
  */
 
 /**
- * @file ffv1.c
+ * @file libavcodec/ffv1.c
  * FF Video Codec 1 (an experimental lossless codec)
  */
 
@@ -30,9 +30,12 @@
 #include "dsputil.h"
 #include "rangecoder.h"
 #include "golomb.h"
+#include "mathops.h"
 
 #define MAX_PLANES 4
 #define CONTEXT_SIZE 32
+
+extern const uint8_t ff_log2_run[32];
 
 static const int8_t quant3[256]={
  0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -141,12 +144,6 @@ static const int8_t quant13[256]={
 -5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,
 -5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,-5,
 -4,-4,-4,-4,-4,-4,-4,-4,-4,-3,-3,-3,-3,-2,-2,-1,
-};
-
-static const uint8_t log2_run[32]={
- 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,
- 4, 4, 5, 5, 6, 6, 7, 7,
- 8, 9,10,11,12,13,14,15,
 };
 
 typedef struct VlcState{
@@ -354,7 +351,7 @@ static inline int get_vlc_symbol(GetBitContext *gb, VlcState * const state, int 
     return ret;
 }
 
-#ifdef CONFIG_ENCODERS
+#if CONFIG_FFV1_ENCODER
 static inline int encode_line(FFV1Context *s, int w, int_fast16_t *sample[2], int plane_index, int bits){
     PlaneContext * const p= &s->plane[plane_index];
     RangeCoder * const c= &s->c;
@@ -396,13 +393,13 @@ static inline int encode_line(FFV1Context *s, int w, int_fast16_t *sample[2], in
             if(run_mode){
 
                 if(diff){
-                    while(run_count >= 1<<log2_run[run_index]){
-                        run_count -= 1<<log2_run[run_index];
+                    while(run_count >= 1<<ff_log2_run[run_index]){
+                        run_count -= 1<<ff_log2_run[run_index];
                         run_index++;
                         put_bits(&s->pb, 1, 1);
                     }
 
-                    put_bits(&s->pb, 1 + log2_run[run_index], run_count);
+                    put_bits(&s->pb, 1 + ff_log2_run[run_index], run_count);
                     if(run_index) run_index--;
                     run_count=0;
                     run_mode=0;
@@ -419,8 +416,8 @@ static inline int encode_line(FFV1Context *s, int w, int_fast16_t *sample[2], in
         }
     }
     if(run_mode){
-        while(run_count >= 1<<log2_run[run_index]){
-            run_count -= 1<<log2_run[run_index];
+        while(run_count >= 1<<ff_log2_run[run_index]){
+            run_count -= 1<<ff_log2_run[run_index];
             run_index++;
             put_bits(&s->pb, 1, 1);
         }
@@ -528,7 +525,7 @@ static void write_header(FFV1Context *f){
     for(i=0; i<5; i++)
         write_quant_table(c, f->quant_table[i]);
 }
-#endif /* CONFIG_ENCODERS */
+#endif /* CONFIG_FFV1_ENCODER */
 
 static av_cold int common_init(AVCodecContext *avctx){
     FFV1Context *s = avctx->priv_data;
@@ -547,7 +544,7 @@ static av_cold int common_init(AVCodecContext *avctx){
     return 0;
 }
 
-#ifdef CONFIG_ENCODERS
+#if CONFIG_FFV1_ENCODER
 static av_cold int encode_init(AVCodecContext *avctx)
 {
     FFV1Context *s = avctx->priv_data;
@@ -611,7 +608,7 @@ static av_cold int encode_init(AVCodecContext *avctx)
 
     return 0;
 }
-#endif /* CONFIG_ENCODERS */
+#endif /* CONFIG_FFV1_ENCODER */
 
 
 static void clear_state(FFV1Context *f){
@@ -636,7 +633,7 @@ static void clear_state(FFV1Context *f){
     }
 }
 
-#ifdef CONFIG_ENCODERS
+#if CONFIG_FFV1_ENCODER
 static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size, void *data){
     FFV1Context *f = avctx->priv_data;
     RangeCoder * const c= &f->c;
@@ -692,7 +689,7 @@ static int encode_frame(AVCodecContext *avctx, unsigned char *buf, int buf_size,
         return used_count + (put_bits_count(&f->pb)+7)/8;
     }
 }
-#endif /* CONFIG_ENCODERS */
+#endif /* CONFIG_FFV1_ENCODER */
 
 static av_cold int common_end(AVCodecContext *avctx){
     FFV1Context *s = avctx->priv_data;
@@ -735,10 +732,10 @@ static inline void decode_line(FFV1Context *s, int w, int_fast16_t *sample[2], i
             if(run_mode){
                 if(run_count==0 && run_mode==1){
                     if(get_bits1(&s->gb)){
-                        run_count = 1<<log2_run[run_index];
+                        run_count = 1<<ff_log2_run[run_index];
                         if(x + run_count <= w) run_index++;
                     }else{
-                        if(log2_run[run_index]) run_count = get_bits(&s->gb, log2_run[run_index]);
+                        if(ff_log2_run[run_index]) run_count = get_bits(&s->gb, ff_log2_run[run_index]);
                         else run_count=0;
                         if(run_index) run_index--;
                         run_mode=2;
@@ -768,7 +765,9 @@ static inline void decode_line(FFV1Context *s, int w, int_fast16_t *sample[2], i
 static void decode_plane(FFV1Context *s, uint8_t *src, int w, int h, int stride, int plane_index){
     int x, y;
     int_fast16_t sample_buffer[2][w+6];
-    int_fast16_t *sample[2]= {sample_buffer[0]+3, sample_buffer[1]+3};
+    int_fast16_t *sample[2];
+    sample[0]=sample_buffer[0]+3;
+    sample[1]=sample_buffer[1]+3;
 
     s->run_index=0;
 
@@ -795,10 +794,11 @@ static void decode_plane(FFV1Context *s, uint8_t *src, int w, int h, int stride,
 static void decode_rgb_frame(FFV1Context *s, uint32_t *src, int w, int h, int stride){
     int x, y, p;
     int_fast16_t sample_buffer[3][2][w+6];
-    int_fast16_t *sample[3][2]= {
-        {sample_buffer[0][0]+3, sample_buffer[0][1]+3},
-        {sample_buffer[1][0]+3, sample_buffer[1][1]+3},
-        {sample_buffer[2][0]+3, sample_buffer[2][1]+3}};
+    int_fast16_t *sample[3][2];
+    for(x=0; x<3; x++){
+        sample[x][0] = sample_buffer[x][0]+3;
+        sample[x][1] = sample_buffer[x][1]+3;
+    }
 
     s->run_index=0;
 
@@ -1022,10 +1022,11 @@ AVCodec ffv1_decoder = {
     common_end,
     decode_frame,
     CODEC_CAP_DR1 /*| CODEC_CAP_DRAW_HORIZ_BAND*/,
-    NULL
+    NULL,
+    .long_name= NULL_IF_CONFIG_SMALL("FFmpeg codec #1"),
 };
 
-#ifdef CONFIG_ENCODERS
+#if CONFIG_FFV1_ENCODER
 AVCodec ffv1_encoder = {
     "ffv1",
     CODEC_TYPE_VIDEO,
@@ -1034,6 +1035,7 @@ AVCodec ffv1_encoder = {
     encode_init,
     encode_frame,
     common_end,
-    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_YUV444P, PIX_FMT_YUV422P, PIX_FMT_YUV411P, PIX_FMT_YUV410P, PIX_FMT_RGB32, -1},
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_YUV444P, PIX_FMT_YUV422P, PIX_FMT_YUV411P, PIX_FMT_YUV410P, PIX_FMT_RGB32, PIX_FMT_NONE},
+    .long_name= NULL_IF_CONFIG_SMALL("FFmpeg codec #1"),
 };
 #endif

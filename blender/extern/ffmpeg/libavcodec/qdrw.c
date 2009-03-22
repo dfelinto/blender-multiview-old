@@ -20,10 +20,11 @@
  */
 
 /**
- * @file qdrw.c
+ * @file libavcodec/qdrw.c
  * Apple QuickDraw codec.
  */
 
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
 typedef struct QdrawContext{
@@ -151,4 +152,5 @@ AVCodec qdraw_decoder = {
     NULL,
     decode_frame,
     CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("Apple QuickDraw"),
 };

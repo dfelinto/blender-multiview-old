@@ -1,6 +1,6 @@
 /*
  * RTP input/output format
- * Copyright (c) 2002 Fabrice Bellard.
+ * Copyright (c) 2002 Fabrice Bellard
  *
  * This file is part of FFmpeg.
  *
@@ -18,13 +18,14 @@
  * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#include "libavcodec/bitstream.h"
 #include "avformat.h"
-#include "bitstream.h"
 
 #include <unistd.h>
 #include "network.h"
 
-#include "rtp_internal.h"
+#include "rtp.h"
 
 //#define DEBUG
 
@@ -56,8 +57,8 @@ static const struct
   {11, "L16",        CODEC_TYPE_AUDIO,   CODEC_ID_PCM_S16BE, 44100, 1},
   {12, "QCELP",      CODEC_TYPE_AUDIO,   CODEC_ID_QCELP, 8000, 1},
   {13, "CN",         CODEC_TYPE_AUDIO,   CODEC_ID_NONE, 8000, 1},
-  {14, "MPA",        CODEC_TYPE_AUDIO,   CODEC_ID_MP2, 90000, -1},
-  {14, "MPA",        CODEC_TYPE_AUDIO,   CODEC_ID_MP3, 90000, -1},
+  {14, "MPA",        CODEC_TYPE_AUDIO,   CODEC_ID_MP2, -1, -1},
+  {14, "MPA",        CODEC_TYPE_AUDIO,   CODEC_ID_MP3, -1, -1},
   {15, "G728",       CODEC_TYPE_AUDIO,   CODEC_ID_NONE, 8000, 1},
   {16, "DVI4",       CODEC_TYPE_AUDIO,   CODEC_ID_NONE, 11025, 1},
   {17, "DVI4",       CODEC_TYPE_AUDIO,   CODEC_ID_NONE, 22050, 1},
@@ -73,7 +74,7 @@ static const struct
   {-1, "",           CODEC_TYPE_UNKNOWN, CODEC_ID_NONE, -1, -1}
 };
 
-int rtp_get_codec_info(AVCodecContext *codec, int payload_type)
+int ff_rtp_get_codec_info(AVCodecContext *codec, int payload_type)
 {
     int i = 0;
 
@@ -92,7 +93,7 @@ int rtp_get_codec_info(AVCodecContext *codec, int payload_type)
     return -1;
 }
 
-int rtp_get_payload_type(AVCodecContext *codec)
+int ff_rtp_get_payload_type(AVCodecContext *codec)
 {
     int i, payload_type;
 

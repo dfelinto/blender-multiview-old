@@ -1,10 +1,7 @@
 /*****************************************************************************
  * cpu.h: h264 encoder library
  *****************************************************************************
- * Copyright (C) 2003 Laurent Aimar
- * $Id: cpu.h,v 1.1 2004/06/03 19:27:06 fenrir Exp $
- *
- * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ * Copyright (C) 2004-2008 Loren Merritt <lorenm@u.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,17 +15,16 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
-#ifndef _CPU_H
-#define _CPU_H 1
+#ifndef X264_CPU_H
+#define X264_CPU_H
 
 uint32_t x264_cpu_detect( void );
 int      x264_cpu_num_processors( void );
-
-/* probably MMX(EXT) centric but .... */
-void     x264_cpu_restore( uint32_t cpu );
+void     x264_emms( void );
+void     x264_cpu_mask_misalign_sse( void );
 
 /* kluge:
  * gcc can't give variables any greater alignment than the stack frame has.
@@ -39,9 +35,16 @@ void     x264_cpu_restore( uint32_t cpu );
  * This applies only to x86_32, since other architectures that need alignment
  * also have ABIs that ensure aligned stack. */
 #if defined(ARCH_X86) && defined(HAVE_MMX)
-void x264_stack_align( void (*func)(x264_t*), x264_t *arg );
+int x264_stack_align( void (*func)(x264_t*), x264_t *arg );
+#define x264_stack_align(func,arg) x264_stack_align((void (*)(x264_t*))func,arg)
 #else
 #define x264_stack_align(func,arg) func(arg)
 #endif
+
+typedef struct {
+    const char name[16];
+    int flags;
+} x264_cpu_name_t;
+extern const x264_cpu_name_t x264_cpu_names[];
 
 #endif

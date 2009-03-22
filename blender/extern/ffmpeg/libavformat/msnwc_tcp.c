@@ -18,8 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavcodec/bytestream.h"
 #include "avformat.h"
-#include "bytestream.h"
 
 #define HEADER_SIZE         24
 
@@ -132,7 +132,7 @@ static int msnwc_tcp_read_packet(AVFormatContext *ctx, AVPacket *pkt)
 
 AVInputFormat msnwc_tcp_demuxer = {
     "msnwctcp",
-    "MSN TCP Webcam stream",
+    NULL_IF_CONFIG_SMALL("MSN TCP Webcam stream"),
     0,
     msnwc_tcp_probe,
     msnwc_tcp_read_header,

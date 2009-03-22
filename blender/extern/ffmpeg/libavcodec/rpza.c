@@ -20,8 +20,8 @@
  */
 
 /**
- * @file rpza.c
- * QT RPZA Video Decoder by Roberto Togni <rtogni@bresciaonline.it>
+ * @file libavcodec/rpza.c
+ * QT RPZA Video Decoder by Roberto Togni
  * For more information about the RPZA format, visit:
  *   http://www.pcisys.net/~melanson/codecs/
  *
@@ -39,6 +39,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
 typedef struct RpzaContext {
@@ -283,4 +284,5 @@ AVCodec rpza_decoder = {
     rpza_decode_end,
     rpza_decode_frame,
     CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("QuickTime video (RPZA)"),
 };

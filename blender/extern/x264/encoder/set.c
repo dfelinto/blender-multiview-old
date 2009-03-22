@@ -1,10 +1,10 @@
 /*****************************************************************************
  * set: h264 encoder (SPS and PPS init and write)
  *****************************************************************************
- * Copyright (C) 2003 Laurent Aimar
- * $Id: set.c,v 1.1 2004/06/03 19:27:08 fenrir Exp $
+ * Copyright (C) 2003-2008 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ *          Loren Merritt <lorenm@u.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
 #include <math.h>
@@ -27,6 +27,9 @@
 #ifndef _MSC_VER
 #include "config.h"
 #endif
+#include "set.h"
+
+#define bs_write_ue bs_write_ue_big
 
 static void transpose( uint8_t *buf, int w )
 {
@@ -77,7 +80,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
 
     sps->b_qpprime_y_zero_transform_bypass = param->rc.i_rc_method == X264_RC_CQP && param->rc.i_qp_constant == 0;
     if( sps->b_qpprime_y_zero_transform_bypass )
-        sps->i_profile_idc  = PROFILE_HIGH444;
+        sps->i_profile_idc  = PROFILE_HIGH444_PREDICTIVE;
     else if( param->analyse.b_transform_8x8 || param->i_cqm_preset != X264_CQM_FLAT )
         sps->i_profile_idc  = PROFILE_HIGH;
     else if( param->b_cabac || param->i_bframe > 0 )
@@ -130,9 +133,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
         sps->i_mb_height = ( sps->i_mb_height + 1 ) & ~1;
     sps->b_frame_mbs_only = ! param->b_interlaced;
     sps->b_mb_adaptive_frame_field = param->b_interlaced;
-    sps->b_direct8x8_inference = param->analyse.i_direct_8x8_inference
-                              || ! sps->b_frame_mbs_only
-                              || !(param->analyse.inter & X264_ANALYSE_PSUB8x8);
+    sps->b_direct8x8_inference = 1;
 
     sps->crop.i_left   = 0;
     sps->crop.i_top    = 0;
@@ -148,11 +149,11 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
         sps->vui.i_sar_width = param->vui.i_sar_width;
         sps->vui.i_sar_height= param->vui.i_sar_height;
     }
-    
+
     sps->vui.b_overscan_info_present = ( param->vui.i_overscan ? 1 : 0 );
     if( sps->vui.b_overscan_info_present )
         sps->vui.b_overscan_info = ( param->vui.i_overscan == 2 ? 1 : 0 );
-    
+
     sps->vui.b_signal_type_present = 0;
     sps->vui.i_vidformat = ( param->vui.i_vidformat <= 5 ? param->vui.i_vidformat : 5 );
     sps->vui.b_fullrange = ( param->vui.b_fullrange ? 1 : 0 );
@@ -174,7 +175,7 @@ void x264_sps_init( x264_sps_t *sps, int i_id, x264_param_t *param )
     {
         sps->vui.b_signal_type_present = 1;
     }
-    
+
     /* FIXME: not sufficient for interlaced video */
     sps->vui.b_chroma_loc_info_present = ( param->vui.i_chroma_loc ? 1 : 0 );
     if( sps->vui.b_chroma_loc_info_present )
@@ -339,8 +340,8 @@ void x264_sps_write( bs_t *s, x264_sps_t *sps )
         bs_write1( s, sps->vui.b_timing_info_present );
         if( sps->vui.b_timing_info_present )
         {
-            bs_write( s, 32, sps->vui.i_num_units_in_tick );
-            bs_write( s, 32, sps->vui.i_time_scale );
+            bs_write32( s, sps->vui.i_num_units_in_tick );
+            bs_write32( s, sps->vui.i_time_scale );
             bs_write1( s, sps->vui.b_fixed_frame_rate );
         }
 
@@ -482,7 +483,7 @@ void x264_sei_version_write( x264_t *h, bs_t *s )
     int length;
 
     sprintf( version, "x264 - core %d%s - H.264/MPEG-4 AVC codec - "
-             "Copyleft 2003-2008 - http://www.videolan.org/x264.html - options: %s",
+             "Copyleft 2003-2009 - http://www.videolan.org/x264.html - options: %s",
              X264_BUILD, X264_VERSION, opts );
     length = strlen(version)+1+16;
 
@@ -524,34 +525,45 @@ const x264_level_t x264_levels[] =
     { 0 }
 };
 
-void x264_validate_levels( x264_t *h )
+#define ERROR(...)\
+{\
+    if( verbose )\
+        x264_log( h, X264_LOG_WARNING, __VA_ARGS__ );\
+    ret = 1;\
+}
+
+int x264_validate_levels( x264_t *h, int verbose )
 {
-    int mbs;
+    int ret = 0;
+    int mbs = h->sps->i_mb_width * h->sps->i_mb_height;
+    int dpb = mbs * 384 * h->sps->i_num_ref_frames;
+    int cbp_factor = h->sps->i_profile_idc==PROFILE_HIGH ? 5 : 4;
 
     const x264_level_t *l = x264_levels;
     while( l->level_idc != 0 && l->level_idc != h->param.i_level_idc )
         l++;
 
-    mbs = h->sps->i_mb_width * h->sps->i_mb_height;
     if( l->frame_size < mbs
         || l->frame_size*8 < h->sps->i_mb_width * h->sps->i_mb_width
         || l->frame_size*8 < h->sps->i_mb_height * h->sps->i_mb_height )
-        x264_log( h, X264_LOG_WARNING, "frame MB size (%dx%d) > level limit (%d)\n",
-                  h->sps->i_mb_width, h->sps->i_mb_height, l->frame_size );
+        ERROR( "frame MB size (%dx%d) > level limit (%d)\n",
+               h->sps->i_mb_width, h->sps->i_mb_height, l->frame_size );
+    if( dpb > l->dpb )
+        ERROR( "DPB size (%d frames, %d bytes) > level limit (%d frames, %d bytes)\n",
+                h->sps->i_num_ref_frames, dpb, (int)(l->dpb / (384*mbs)), l->dpb );
 
 #define CHECK( name, limit, val ) \
     if( (val) > (limit) ) \
-        x264_log( h, X264_LOG_WARNING, name " (%d) > level limit (%d)\n", (int)(val), (limit) );
+        ERROR( name " (%d) > level limit (%d)\n", (int)(val), (limit) );
 
-    CHECK( "DPB size", l->dpb, mbs * 384 * h->sps->i_num_ref_frames );
-    CHECK( "VBV bitrate", l->bitrate, h->param.rc.i_vbv_max_bitrate );
-    CHECK( "VBV buffer", l->cpb, h->param.rc.i_vbv_buffer_size );
+    CHECK( "VBV bitrate", (l->bitrate * cbp_factor) / 4, h->param.rc.i_vbv_max_bitrate );
+    CHECK( "VBV buffer", (l->cpb * cbp_factor) / 4, h->param.rc.i_vbv_buffer_size );
     CHECK( "MV range", l->mv_range, h->param.analyse.i_mv_range );
+    CHECK( "interlaced", !l->frame_only, h->param.b_interlaced );
 
     if( h->param.i_fps_den > 0 )
         CHECK( "MB rate", l->mbps, (int64_t)mbs * h->param.i_fps_num / h->param.i_fps_den );
-    if( h->sps->b_direct8x8_inference < l->direct8x8 )
-        x264_log( h, X264_LOG_WARNING, "direct 8x8 inference (0) < level requirement (1)\n" );
 
     /* TODO check the rest of the limits */
+    return ret;
 }

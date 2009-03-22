@@ -1,7 +1,7 @@
 /*
  * RTP packetization for MPEG video
- * Copyright (c) 2002 Fabrice Bellard.
- * Copyright (c) 2007 Luca Abeni.
+ * Copyright (c) 2002 Fabrice Bellard
+ * Copyright (c) 2007 Luca Abeni
  *
  * This file is part of FFmpeg.
  *
@@ -19,16 +19,16 @@
  * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
-#include "avformat.h"
-#include "rtp_internal.h"
 
-#include "mpegvideo.h"
+#include "libavcodec/mpegvideo.h"
+#include "avformat.h"
+#include "rtpenc.h"
 
 /* NOTE: a single frame must be passed with sequence header if
    needed. XXX: use slices. */
 void ff_rtp_send_mpegvideo(AVFormatContext *s1, const uint8_t *buf1, int size)
 {
-    RTPDemuxContext *s = s1->priv_data;
+    RTPMuxContext *s = s1->priv_data;
     int len, h, max_packet_size;
     uint8_t *q;
     int begin_of_slice, end_of_slice, frame_type, temporal_reference;
@@ -66,7 +66,7 @@ void ff_rtp_send_mpegvideo(AVFormatContext *s1, const uint8_t *buf1, int size)
                         begin_of_sequence = 1;
                     }
 
-                    if (r - buf1 < len) {
+                    if (r - buf1 - 4 <= len) {
                         /* The current slice fits in the packet */
                         if (begin_of_slice == 0) {
                             /* no slice at the beginning of the packet... */
@@ -76,7 +76,7 @@ void ff_rtp_send_mpegvideo(AVFormatContext *s1, const uint8_t *buf1, int size)
                         }
                         r1 = r;
                     } else {
-                        if (r - r1 < max_packet_size) {
+                        if ((r1 - buf1 > 4) && (r - r1 < max_packet_size)) {
                             len = r1 - buf1 - 4;
                             end_of_slice = 1;
                         }
@@ -104,7 +104,7 @@ void ff_rtp_send_mpegvideo(AVFormatContext *s1, const uint8_t *buf1, int size)
         memcpy(q, buf1, len);
         q += len;
 
-        /* 90 KHz time stamp */
+        /* 90kHz time stamp */
         s->timestamp = s->cur_timestamp;
         ff_rtp_send_data(s1, s->buf, q - s->buf, (len == size));
 

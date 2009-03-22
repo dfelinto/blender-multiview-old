@@ -21,6 +21,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 #include "s3tc.h"
 
@@ -162,5 +163,6 @@ AVCodec txd_decoder = {
     txd_end,
     txd_decode_frame,
     0,
-    NULL
+    NULL,
+    .long_name = NULL_IF_CONFIG_SMALL("Renderware TXD (TeXture Dictionary) image"),
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002 The FFmpeg Project.
+ * Copyright (c) 2002 The FFmpeg Project
  *
  * This file is part of FFmpeg.
  *
@@ -236,5 +236,6 @@ AVCodec wmv2_encoder = {
     wmv2_encode_init,
     MPV_encode_picture,
     MPV_encode_end,
-    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, -1},
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_NONE},
+    .long_name= NULL_IF_CONFIG_SMALL("Windows Media Video 8"),
 };

@@ -23,7 +23,7 @@
  */
 
 /**
- * @file qdm2.c
+ * @file libavcodec/qdm2.c
  * QDM2 decoder
  * @author Ewald Snel, Benjamin Larsson, Alex Beregszaszi, Roberto Togni
  * The decoder is not perfect yet, there are still some distortions
@@ -38,11 +38,6 @@
 #include "avcodec.h"
 #include "bitstream.h"
 #include "dsputil.h"
-
-#ifdef CONFIG_MPEGAUDIO_HP
-#define USE_HIGHPRECISION
-#endif
-
 #include "mpegaudio.h"
 
 #include "qdm2data.h"
@@ -103,9 +98,13 @@ typedef struct QDM2SubPNode {
 } QDM2SubPNode;
 
 typedef struct {
+    float re;
+    float im;
+} QDM2Complex;
+
+typedef struct {
     float level;
-    float *samples_im;
-    float *samples_re;
+    QDM2Complex *complex;
     const float *table;
     int   phase;
     int   phase_shift;
@@ -123,14 +122,7 @@ typedef struct {
 } FFTCoefficient;
 
 typedef struct {
-    float re;
-    float im;
-} QDM2Complex;
-
-typedef struct {
-    DECLARE_ALIGNED_16(QDM2Complex, complex[256 + 1]);
-    float       samples_im[MPA_MAX_CHANNELS][256];
-    float       samples_re[MPA_MAX_CHANNELS][256];
+    DECLARE_ALIGNED_16(QDM2Complex, complex[MPA_MAX_CHANNELS][256]);
 } QDM2FFT;
 
 /**
@@ -171,8 +163,7 @@ typedef struct {
     int fft_coefs_min_index[5];
     int fft_coefs_max_index[5];
     int fft_level_exp[6];
-    FFTContext fft_ctx;
-    FFTComplex exptab[128];
+    RDFTContext rdft_ctx;
     QDM2FFT fft;
 
     /// I/O data
@@ -231,7 +222,7 @@ static float noise_samples[128];
 static DECLARE_ALIGNED_16(MPA_INT, mpa_window[512]);
 
 
-static void softclip_table_init(void) {
+static av_cold void softclip_table_init(void) {
     int i;
     double dfl = SOFTCLIP_THRESHOLD - 32767;
     float delta = 1.0 / -dfl;
@@ -241,7 +232,7 @@ static void softclip_table_init(void) {
 
 
 // random generated table
-static void rnd_table_init(void) {
+static av_cold void rnd_table_init(void) {
     int i,j;
     uint32_t ldw,hdw;
     uint64_t tmp64_1;
@@ -277,7 +268,7 @@ static void rnd_table_init(void) {
 }
 
 
-static void init_noise_samples(void) {
+static av_cold void init_noise_samples(void) {
     int i;
     int random_seed = 0;
     float delta = 1.0 / 16384.0;
@@ -288,7 +279,7 @@ static void init_noise_samples(void) {
 }
 
 
-static void qdm2_init_vlc(void)
+static av_cold void qdm2_init_vlc(void)
 {
     init_vlc (&vlc_tab_level, 8, 24,
         vlc_tab_level_huffbits, 1, 1,
@@ -361,7 +352,7 @@ static void qdm2_init_vlc(void)
 
 
 /* for floating point to fixed point conversion */
-static float f2i_scale = (float) (1 << (FRAC_BITS - 15));
+static const float f2i_scale = (float) (1 << (FRAC_BITS - 15));
 
 
 static int qdm2_get_vlc (GetBitContext *gb, VLC *vlc, int flag, int depth)
@@ -684,7 +675,7 @@ static void fill_coding_method_array (sb_int8_array tone_level_idx, sb_int8_arra
         SAMPLES_NEEDED
         for (ch = 0; ch < nb_channels; ch++)
             for (sb = 0; sb < 30; sb++) {
-                for (j = 1; j < 64; j++) {
+                for (j = 1; j < 63; j++) {  // The loop only iterates to 63 so the code doesn't overflow the buffer
                     add1 = tone_level_idx[ch][sb][j] - 10;
                     if (add1 < 0)
                         add1 = 0;
@@ -1431,17 +1422,17 @@ static void qdm2_decode_fft_packets (QDM2Context *q)
     if (q->sub_packet_list_B[0].packet == NULL)
         return;
 
-    /* reset minimum indices for FFT coefficients */
+    /* reset minimum indexes for FFT coefficients */
     q->fft_coefs_index = 0;
     for (i=0; i < 5; i++)
         q->fft_coefs_min_index[i] = -1;
 
     /* process subpackets ordered by type, largest type first */
     for (i = 0, max = 256; i < q->sub_packets_B; i++) {
-        QDM2SubPacket *packet;
+        QDM2SubPacket *packet= NULL;
 
         /* find subpacket with largest type less than max */
-        for (j = 0, min = 0, packet = NULL; j < q->sub_packets_B; j++) {
+        for (j = 0, min = 0; j < q->sub_packets_B; j++) {
             value = q->sub_packet_list_B[j].packet->type;
             if (value > min && value < max) {
                 min = value;
@@ -1452,6 +1443,9 @@ static void qdm2_decode_fft_packets (QDM2Context *q)
         max = min;
 
         /* check for errors (?) */
+        if (!packet)
+            return;
+
         if (i == 0 && (packet->type < 16 || packet->type >= 48 || fft_subpackets[packet->type - 16]))
             return;
 
@@ -1481,7 +1475,7 @@ static void qdm2_decode_fft_packets (QDM2Context *q)
         }
     } // Loop on B packets
 
-    /* calculate maximum indices for FFT coefficients */
+    /* calculate maximum indexes for FFT coefficients */
     for (i = 0, j = -1; i < 5; i++)
         if (q->fft_coefs_min_index[i] >= 0) {
             if (j >= 0)
@@ -1509,10 +1503,10 @@ static void qdm2_fft_generate_tone (QDM2Context *q, FFTTone *tone)
 
     /* generate FFT coefficients for tone */
     if (tone->duration >= 3 || tone->cutoff >= 3) {
-        tone->samples_im[0] += c.im;
-        tone->samples_re[0] += c.re;
-        tone->samples_im[1] -= c.im;
-        tone->samples_re[1] -= c.re;
+        tone->complex[0].im += c.im;
+        tone->complex[0].re += c.re;
+        tone->complex[1].im -= c.im;
+        tone->complex[1].re -= c.re;
     } else {
         f[1] = -tone->table[4];
         f[0] =  tone->table[3] - tone->table[0];
@@ -1521,12 +1515,12 @@ static void qdm2_fft_generate_tone (QDM2Context *q, FFTTone *tone)
         f[4] =  tone->table[0] - tone->table[1];
         f[5] =  tone->table[2];
         for (i = 0; i < 2; i++) {
-            tone->samples_re[fft_cutoff_index_table[tone->cutoff][i]] += c.re * f[i];
-            tone->samples_im[fft_cutoff_index_table[tone->cutoff][i]] += c.im *((tone->cutoff <= i) ? -f[i] : f[i]);
+            tone->complex[fft_cutoff_index_table[tone->cutoff][i]].re += c.re * f[i];
+            tone->complex[fft_cutoff_index_table[tone->cutoff][i]].im += c.im *((tone->cutoff <= i) ? -f[i] : f[i]);
         }
         for (i = 0; i < 4; i++) {
-            tone->samples_re[i] += c.re * f[i+2];
-            tone->samples_im[i] += c.im * f[i+2];
+            tone->complex[i].re += c.re * f[i+2];
+            tone->complex[i].im += c.im * f[i+2];
         }
     }
 
@@ -1544,8 +1538,7 @@ static void qdm2_fft_tone_synthesizer (QDM2Context *q, int sub_packet)
     const double iscale = 0.25 * M_PI;
 
     for (ch = 0; ch < q->channels; ch++) {
-        memset(q->fft.samples_im[ch], 0, q->fft_size * sizeof(float));
-        memset(q->fft.samples_re[ch], 0, q->fft_size * sizeof(float));
+        memset(q->fft.complex[ch], 0, q->fft_size * sizeof(QDM2Complex));
     }
 
 
@@ -1563,10 +1556,10 @@ static void qdm2_fft_tone_synthesizer (QDM2Context *q, int sub_packet)
 
             c.re = level * cos(q->fft_coefs[i].phase * iscale);
             c.im = level * sin(q->fft_coefs[i].phase * iscale);
-            q->fft.samples_re[ch][q->fft_coefs[i].offset + 0] += c.re;
-            q->fft.samples_im[ch][q->fft_coefs[i].offset + 0] += c.im;
-            q->fft.samples_re[ch][q->fft_coefs[i].offset + 1] -= c.re;
-            q->fft.samples_im[ch][q->fft_coefs[i].offset + 1] -= c.im;
+            q->fft.complex[ch][q->fft_coefs[i].offset + 0].re += c.re;
+            q->fft.complex[ch][q->fft_coefs[i].offset + 0].im += c.im;
+            q->fft.complex[ch][q->fft_coefs[i].offset + 1].re -= c.re;
+            q->fft.complex[ch][q->fft_coefs[i].offset + 1].im -= c.im;
         }
 
     /* generate existing FFT tones */
@@ -1596,8 +1589,7 @@ static void qdm2_fft_tone_synthesizer (QDM2Context *q, int sub_packet)
                         tone.cutoff = (offset >= 60) ? 3 : 2;
 
                     tone.level = (q->fft_coefs[j].exp < 0) ? 0.0 : fft_tone_level_table[q->superblocktype_2_3 ? 0 : 1][q->fft_coefs[j].exp & 63];
-                    tone.samples_im = &q->fft.samples_im[ch][offset];
-                    tone.samples_re = &q->fft.samples_re[ch][offset];
+                    tone.complex = &q->fft.complex[ch][offset];
                     tone.table = fft_tone_sample_table[i][q->fft_coefs[j].offset - (offset << four_i)];
                     tone.phase = 64 * q->fft_coefs[j].phase - (offset << 8) - 128;
                     tone.phase_shift = (2 * q->fft_coefs[j].offset + 1) << (7 - four_i);
@@ -1614,37 +1606,14 @@ static void qdm2_fft_tone_synthesizer (QDM2Context *q, int sub_packet)
 
 static void qdm2_calculate_fft (QDM2Context *q, int channel, int sub_packet)
 {
-    const int n = 1 << (q->fft_order - 1);
-    const int n2 = n >> 1;
-    const float gain = (q->channels == 1 && q->nb_channels == 2) ? 0.25f : 0.50f;
-    float c, s, f0, f1, f2, f3;
-    int i, j;
-
-    /* prerotation (or something like that) */
-    for (i=1; i < n2; i++) {
-        j  = (n - i);
-        c = q->exptab[i].re;
-        s = -q->exptab[i].im;
-        f0 = (q->fft.samples_re[channel][i] - q->fft.samples_re[channel][j]) * gain;
-        f1 = (q->fft.samples_im[channel][i] + q->fft.samples_im[channel][j]) * gain;
-        f2 = (q->fft.samples_re[channel][i] + q->fft.samples_re[channel][j]) * gain;
-        f3 = (q->fft.samples_im[channel][i] - q->fft.samples_im[channel][j]) * gain;
-        q->fft.complex[i].re =  s * f0 - c * f1 + f2;
-        q->fft.complex[i].im =  c * f0 + s * f1 + f3;
-        q->fft.complex[j].re = -s * f0 + c * f1 + f2;
-        q->fft.complex[j].im =  c * f0 + s * f1 - f3;
-    }
-
-    q->fft.complex[ 0].re =  q->fft.samples_re[channel][ 0] * gain * 2.0;
-    q->fft.complex[ 0].im =  q->fft.samples_re[channel][ 0] * gain * 2.0;
-    q->fft.complex[n2].re =  q->fft.samples_re[channel][n2] * gain * 2.0;
-    q->fft.complex[n2].im = -q->fft.samples_im[channel][n2] * gain * 2.0;
-
-    ff_fft_permute(&q->fft_ctx, (FFTComplex *) q->fft.complex);
-    ff_fft_calc (&q->fft_ctx, (FFTComplex *) q->fft.complex);
+    const float gain = (q->channels == 1 && q->nb_channels == 2) ? 0.5f : 1.0f;
+    int i;
+    q->fft.complex[channel][0].re *= 2.0f;
+    q->fft.complex[channel][0].im = 0.0f;
+    ff_rdft_calc(&q->rdft_ctx, (FFTSample *)q->fft.complex[channel]);
     /* add samples to output buffer */
     for (i = 0; i < ((q->fft_frame_size + 15) & ~15); i++)
-        q->output_buffer[q->channels * i + channel] += ((float *) q->fft.complex)[i];
+        q->output_buffer[q->channels * i + channel] += ((float *) q->fft.complex[channel])[i] * gain;
 }
 
 
@@ -1691,7 +1660,7 @@ static void qdm2_synthesis_filter (QDM2Context *q, int index)
  *
  * @param q    context
  */
-static void qdm2_init(QDM2Context *q) {
+static av_cold void qdm2_init(QDM2Context *q) {
     static int initialized = 0;
 
     if (initialized != 0)
@@ -1757,14 +1726,12 @@ static void dump_context(QDM2Context *q)
 /**
  * Init parameters from codec extradata
  */
-static int qdm2_decode_init(AVCodecContext *avctx)
+static av_cold int qdm2_decode_init(AVCodecContext *avctx)
 {
     QDM2Context *s = avctx->priv_data;
     uint8_t *extradata;
     int extradata_size;
     int tmp_val, tmp, size;
-    int i;
-    float alpha;
 
     /* extradata parsing
 
@@ -1912,32 +1879,28 @@ static int qdm2_decode_init(AVCodecContext *avctx)
     else
         s->coeff_per_sb_select = 2;
 
-    // Fail on unknown fft order, if it's > 9 it can overflow s->exptab[]
+    // Fail on unknown fft order
     if ((s->fft_order < 7) || (s->fft_order > 9)) {
         av_log(avctx, AV_LOG_ERROR, "Unknown FFT order (%d), contact the developers!\n", s->fft_order);
         return -1;
     }
 
-    ff_fft_init(&s->fft_ctx, s->fft_order - 1, 1);
-
-    for (i = 1; i < (1 << (s->fft_order - 2)); i++) {
-        alpha = 2 * M_PI * (float)i / (float)(1 << (s->fft_order - 1));
-        s->exptab[i].re = cos(alpha);
-        s->exptab[i].im = sin(alpha);
-    }
+    ff_rdft_init(&s->rdft_ctx, s->fft_order, IRDFT);
 
     qdm2_init(s);
+
+    avctx->sample_fmt = SAMPLE_FMT_S16;
 
 //    dump_context(s);
     return 0;
 }
 
 
-static int qdm2_decode_close(AVCodecContext *avctx)
+static av_cold int qdm2_decode_close(AVCodecContext *avctx)
 {
     QDM2Context *s = avctx->priv_data;
 
-    ff_fft_end(&s->fft_ctx);
+    ff_rdft_end(&s->rdft_ctx);
 
     return 0;
 }
@@ -2038,4 +2001,5 @@ AVCodec qdm2_decoder =
     .init = qdm2_decode_init,
     .close = qdm2_decode_close,
     .decode = qdm2_decode_frame,
+    .long_name = NULL_IF_CONFIG_SMALL("QDesign Music Codec 2"),
 };

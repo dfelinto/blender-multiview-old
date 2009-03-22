@@ -23,18 +23,18 @@
 **/
 
 #include <stdlib.h>
+#include "libavutil/intreadwrite.h"
+#include "libavcodec/bitstream.h"
+#include "libavcodec/bytestream.h"
 #include "avformat.h"
-#include "bitstream.h"
-#include "bytestream.h"
-#include "intreadwrite.h"
 #include "oggdec.h"
 #include "riff.h"
 
 static int
 ogm_header(AVFormatContext *s, int idx)
 {
-    ogg_t *ogg = s->priv_data;
-    ogg_stream_t *os = ogg->streams + idx;
+    struct ogg *ogg = s->priv_data;
+    struct ogg_stream *os = ogg->streams + idx;
     AVStream *st = s->streams[idx];
     const uint8_t *p = os->buf + os->pstart;
     uint64_t time_unit;
@@ -68,6 +68,7 @@ ogm_header(AVFormatContext *s, int idx)
         acid[4] = 0;
         cid = strtol(acid, NULL, 16);
         st->codec->codec_id = codec_get_id(codec_wav_tags, cid);
+        st->need_parsing = AVSTREAM_PARSE_FULL;
     }
 
     p += 4;                     /* useless size field */
@@ -99,8 +100,8 @@ ogm_header(AVFormatContext *s, int idx)
 static int
 ogm_dshow_header(AVFormatContext *s, int idx)
 {
-    ogg_t *ogg = s->priv_data;
-    ogg_stream_t *os = ogg->streams + idx;
+    struct ogg *ogg = s->priv_data;
+    struct ogg_stream *os = ogg->streams + idx;
     AVStream *st = s->streams[idx];
     uint8_t *p = os->buf + os->pstart;
     uint32_t t;
@@ -133,8 +134,8 @@ ogm_dshow_header(AVFormatContext *s, int idx)
 static int
 ogm_packet(AVFormatContext *s, int idx)
 {
-    ogg_t *ogg = s->priv_data;
-    ogg_stream_t *os = ogg->streams + idx;
+    struct ogg *ogg = s->priv_data;
+    struct ogg_stream *os = ogg->streams + idx;
     uint8_t *p = os->buf + os->pstart;
     int lb;
 
@@ -148,28 +149,28 @@ ogm_packet(AVFormatContext *s, int idx)
     return 0;
 }
 
-ogg_codec_t ogm_video_codec = {
+const struct ogg_codec ff_ogm_video_codec = {
     .magic = "\001video",
     .magicsize = 6,
     .header = ogm_header,
     .packet = ogm_packet
 };
 
-ogg_codec_t ogm_audio_codec = {
+const struct ogg_codec ff_ogm_audio_codec = {
     .magic = "\001audio",
     .magicsize = 6,
     .header = ogm_header,
     .packet = ogm_packet
 };
 
-ogg_codec_t ogm_text_codec = {
+const struct ogg_codec ff_ogm_text_codec = {
     .magic = "\001text",
     .magicsize = 5,
     .header = ogm_header,
     .packet = ogm_packet
 };
 
-ogg_codec_t ogm_old_codec = {
+const struct ogg_codec ff_ogm_old_codec = {
     .magic = "\001Direct Show Samples embedded in Ogg",
     .magicsize = 35,
     .header = ogm_dshow_header,

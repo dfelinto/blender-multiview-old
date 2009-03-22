@@ -19,7 +19,7 @@
  */
 
 /*!
- * \file theoraenc.c
+ * \file libtheoraenc.c
  * \brief Theora encoder using libtheora.
  * \author Paul Richards <paul.richards@gmail.com>
  *
@@ -31,8 +31,9 @@
  */
 
 /* FFmpeg includes */
+#include "libavutil/intreadwrite.h"
+#include "libavutil/log.h"
 #include "avcodec.h"
-#include "log.h"
 
 /* libtheora includes */
 #include <theora/theora.h>
@@ -76,7 +77,7 @@ static int concatenate_packet(unsigned int* offset, AVCodecContext* avc_context,
     return 0;
 }
 
-static int encode_init(AVCodecContext* avc_context)
+static av_cold int encode_init(AVCodecContext* avc_context)
 {
     theora_info t_info;
     theora_comment t_comment;
@@ -239,7 +240,7 @@ static int encode_frame(
     return o_packet.bytes;
 }
 
-static int encode_close(AVCodecContext* avc_context)
+static av_cold int encode_close(AVCodecContext* avc_context)
 {
     ogg_packet o_packet;
     TheoraContext *h = avc_context->priv_data;
@@ -264,7 +265,7 @@ static int encode_close(AVCodecContext* avc_context)
     return -1;
 }
 
-static const enum PixelFormat supported_pixel_formats[] = { PIX_FMT_YUV420P, -1 };
+static const enum PixelFormat supported_pixel_formats[] = { PIX_FMT_YUV420P, PIX_FMT_NONE };
 
 /*! AVCodec struct exposed to libavcodec */
 AVCodec libtheora_encoder =
@@ -277,4 +278,5 @@ AVCodec libtheora_encoder =
     .close = encode_close,
     .encode = encode_frame,
     .pix_fmts = supported_pixel_formats,
+    .long_name = NULL_IF_CONFIG_SMALL("libtheora Theora"),
 };

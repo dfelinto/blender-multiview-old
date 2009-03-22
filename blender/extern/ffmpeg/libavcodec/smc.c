@@ -20,7 +20,7 @@
  */
 
 /**
- * @file smc.c
+ * @file libavcodec/smc.c
  * QT SMC Video Decoder by Mike Melanson (melanson@pcisys.net)
  * For more information about the SMC format, visit:
  *   http://www.pcisys.net/~melanson/codecs/
@@ -33,6 +33,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
 #define CPAIR 2
@@ -484,4 +485,5 @@ AVCodec smc_decoder = {
     smc_decode_end,
     smc_decode_frame,
     CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("QuickTime Graphics (SMC)"),
 };

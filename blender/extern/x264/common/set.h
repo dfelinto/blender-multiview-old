@@ -1,10 +1,10 @@
 /*****************************************************************************
  * set.h: h264 encoder
  *****************************************************************************
- * Copyright (C) 2003 Laurent Aimar
- * $Id: set.h,v 1.1 2004/06/03 19:27:07 fenrir Exp $
+ * Copyright (C) 2003-2008 x264 project
  *
- * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ * Authors: Loren Merritt <lorenm@u.washington.edu>
+ *          Laurent Aimar <fenrir@via.ecp.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,21 +18,22 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
-#ifndef _SET_H
-#define _SET_H 1
+#ifndef X264_SET_H
+#define X264_SET_H
 
 enum profile_e
 {
     PROFILE_BASELINE = 66,
     PROFILE_MAIN     = 77,
-    PROFILE_EXTENTED = 88,
+    PROFILE_EXTENDED = 88,
     PROFILE_HIGH    = 100,
     PROFILE_HIGH10  = 110,
     PROFILE_HIGH422 = 122,
-    PROFILE_HIGH444 = 144
+    PROFILE_HIGH444 = 144,
+    PROFILE_HIGH444_PREDICTIVE = 244,
 };
 
 enum cqm4_e
@@ -94,7 +95,7 @@ typedef struct
         int b_aspect_ratio_info_present;
         int i_sar_width;
         int i_sar_height;
-        
+
         int b_overscan_info_present;
         int b_overscan_info;
 

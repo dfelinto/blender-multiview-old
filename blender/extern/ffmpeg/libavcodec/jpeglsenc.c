@@ -21,13 +21,14 @@
  */
 
 /**
- * @file jpeglsenc.c
+ * @file libavcodec/jpeglsenc.c
  * JPEG-LS encoder.
  */
 
 #include "avcodec.h"
 #include "bitstream.h"
 #include "golomb.h"
+#include "mathops.h"
 #include "dsputil.h"
 #include "mjpeg.h"
 #include "jpegls.h"
@@ -389,5 +390,6 @@ AVCodec jpegls_encoder = { //FIXME avoid MPV_* lossless JPEG should not need the
     encode_init_ls,
     encode_picture_ls,
     NULL,
-    .pix_fmts= (enum PixelFormat[]){PIX_FMT_BGR24, PIX_FMT_RGB24, PIX_FMT_GRAY8, PIX_FMT_GRAY16, -1},
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_BGR24, PIX_FMT_RGB24, PIX_FMT_GRAY8, PIX_FMT_GRAY16, PIX_FMT_NONE},
+    .long_name= NULL_IF_CONFIG_SMALL("JPEG-LS"),
 };

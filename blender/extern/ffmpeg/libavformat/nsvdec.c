@@ -1,6 +1,6 @@
 /*
  * NSV demuxer
- * Copyright (c) 2004 The FFmpeg Project.
+ * Copyright (c) 2004 The FFmpeg Project
  *
  * This file is part of FFmpeg.
  *
@@ -140,7 +140,7 @@ struct nsv_pcm_header {
 #define TB_NSVF MKBETAG('N', 'S', 'V', 'f')
 #define TB_NSVS MKBETAG('N', 'S', 'V', 's')
 
-/* hardcoded stream indices */
+/* hardcoded stream indexes */
 #define NSV_ST_VIDEO 0
 #define NSV_ST_AUDIO 1
 #define NSV_ST_SUBT 2
@@ -180,6 +180,7 @@ typedef struct {
     uint32_t vtag, atag;
     uint16_t vwidth, vheight;
     int16_t avsync;
+    AVRational framerate;
     //DVDemuxContext* dv_demux;
 } NSVContext;
 
@@ -336,15 +337,7 @@ static int nsv_parse_NSVf_header(AVFormatContext *s, AVFormatParameters *ap)
                 break;
             *p++ = '\0';
             PRINT(("NSV NSVf INFO: %s='%s'\n", token, value));
-            if (!strcmp(token, "ASPECT")) {
-                /* don't care */
-            } else if (!strcmp(token, "CREATOR") || !strcmp(token, "Author")) {
-                strncpy(s->author, value, 512-1);
-            } else if (!strcmp(token, "Copyright")) {
-                strncpy(s->copyright, value, 512-1);
-            } else if (!strcmp(token, "TITLE") || !strcmp(token, "Title")) {
-                strncpy(s->title, value, 512-1);
-            }
+            av_metadata_set(&s->metadata, token, value);
         }
         av_free(strings);
     }
@@ -428,6 +421,7 @@ static int nsv_parse_NSVs_header(AVFormatContext *s, AVFormatParameters *ap)
         framerate= (AVRational){i, 1};
 
     nsv->avsync = get_le16(pb);
+    nsv->framerate = framerate;
 #ifdef DEBUG
     print_tag("NSV NSVs vtag", vtag, 0);
     print_tag("NSV NSVs atag", atag, 0);
@@ -454,7 +448,7 @@ static int nsv_parse_NSVs_header(AVFormatContext *s, AVFormatParameters *ap)
             st->codec->codec_id = codec_get_id(nsv_codec_video_tags, vtag);
             st->codec->width = vwidth;
             st->codec->height = vheight;
-            st->codec->bits_per_sample = 24; /* depth XXX */
+            st->codec->bits_per_coded_sample = 24; /* depth XXX */
 
             av_set_pts_info(st, 64, framerate.den, framerate.num);
             st->start_time = 0;
@@ -647,8 +641,8 @@ null_chunk_retry:
         if( nsv->state == NSV_HAS_READ_NSVS && st[NSV_ST_VIDEO] ) {
             /* on a nsvs frame we have new information on a/v sync */
             pkt->dts = (((NSVStream*)st[NSV_ST_VIDEO]->priv_data)->frame_offset-1);
-            pkt->dts *= (int64_t)1000 * st[NSV_ST_VIDEO]->time_base.num;
-            pkt->dts += (int64_t)nsv->avsync * st[NSV_ST_VIDEO]->time_base.den;
+            pkt->dts *= (int64_t)1000        * nsv->framerate.den;
+            pkt->dts += (int64_t)nsv->avsync * nsv->framerate.num;
             PRINT(("NSV AUDIO: sync:%d, dts:%"PRId64, nsv->avsync, pkt->dts));
         }
         nst->frame_offset++;
@@ -751,7 +745,7 @@ static int nsv_probe(AVProbeData *p)
 
 AVInputFormat nsv_demuxer = {
     "nsv",
-    "NullSoft Video format",
+    NULL_IF_CONFIG_SMALL("Nullsoft Streaming Video"),
     sizeof(NSVContext),
     nsv_probe,
     nsv_read_header,

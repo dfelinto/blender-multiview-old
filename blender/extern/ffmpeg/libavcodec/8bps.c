@@ -20,8 +20,8 @@
  */
 
 /**
- * @file 8bps.c
- * QT 8BPS Video Decoder by Roberto Togni <rtogni at bresciaonline dot it>
+ * @file libavcodec/8bps.c
+ * QT 8BPS Video Decoder by Roberto Togni
  * For more information about the 8BPS format, visit:
  *   http://www.pcisys.net/~melanson/codecs/
  *
@@ -34,10 +34,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
 
-static const enum PixelFormat pixfmt_rgb24[] = {PIX_FMT_BGR24, PIX_FMT_RGB32, -1};
+static const enum PixelFormat pixfmt_rgb24[] = {PIX_FMT_BGR24, PIX_FMT_RGB32, PIX_FMT_NONE};
 
 /*
  * Decoder context
@@ -160,7 +161,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
         return 1;
     }
 
-        switch (avctx->bits_per_sample) {
+        switch (avctx->bits_per_coded_sample) {
                 case 8:
                         avctx->pix_fmt = PIX_FMT_PAL8;
                         c->planes = 1;
@@ -193,7 +194,7 @@ static av_cold int decode_init(AVCodecContext *avctx)
 #endif
                         break;
                 default:
-                        av_log(avctx, AV_LOG_ERROR, "Error: Unsupported color depth: %u.\n", avctx->bits_per_sample);
+                        av_log(avctx, AV_LOG_ERROR, "Error: Unsupported color depth: %u.\n", avctx->bits_per_coded_sample);
                         return -1;
         }
 
@@ -230,4 +231,5 @@ AVCodec eightbps_decoder = {
         decode_end,
         decode_frame,
         CODEC_CAP_DR1,
+        .long_name = NULL_IF_CONFIG_SMALL("QuickTime 8BPS video"),
 };

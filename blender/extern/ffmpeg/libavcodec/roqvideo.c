@@ -20,8 +20,8 @@
  */
 
 /**
- * @file roqvideo.c
- * Id RoQ Video common functions based on work by Dr. Tim Ferguson
+ * @file libavcodec/roqvideo.c
+ * id RoQ Video common functions based on work by Dr. Tim Ferguson
  */
 
 #include "avcodec.h"

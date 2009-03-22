@@ -1,6 +1,6 @@
 /*
  * Raw Video Encoder
- * Copyright (c) 2001 Fabrice Bellard.
+ * Copyright (c) 2001 Fabrice Bellard
  *
  * This file is part of FFmpeg.
  *
@@ -20,7 +20,7 @@
  */
 
 /**
- * @file rawenc.c
+ * @file libavcodec/rawenc.c
  * Raw Video Encoder
  */
 
@@ -51,4 +51,5 @@ AVCodec rawvideo_encoder = {
     sizeof(AVFrame),
     raw_init_encoder,
     raw_encode,
+    .long_name = NULL_IF_CONFIG_SMALL("raw video"),
 };

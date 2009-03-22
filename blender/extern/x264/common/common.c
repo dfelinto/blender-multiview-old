@@ -1,10 +1,10 @@
 /*****************************************************************************
  * common.c: h264 library
  *****************************************************************************
- * Copyright (C) 2003 Laurent Aimar
- * $Id: common.c,v 1.1 2004/06/03 19:27:06 fenrir Exp $
+ * Copyright (C) 2003-2008 x264 project
  *
- * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ * Authors: Loren Merritt <lorenm@u.washington.edu>
+ *          Laurent Aimar <fenrir@via.ecp.fr>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,10 +18,11 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
 #include <stdarg.h>
+#include <ctype.h>
 
 #ifdef HAVE_MALLOC_H
 #include <malloc.h>
@@ -60,7 +61,7 @@ void    x264_param_default( x264_param_t *param )
     param->vui.i_chroma_loc= 0;  /* left center */
     param->i_fps_num       = 25;
     param->i_fps_den       = 1;
-    param->i_level_idc     = 51; /* as close to "unrestricted" as we can get */
+    param->i_level_idc     = -1;
 
     /* Encoder parameters */
     param->i_frame_reference = 1;
@@ -68,7 +69,7 @@ void    x264_param_default( x264_param_t *param )
     param->i_keyint_min = 25;
     param->i_bframe = 0;
     param->i_scenecut_threshold = 40;
-    param->b_bframe_adaptive = 1;
+    param->i_bframe_adaptive = X264_B_ADAPT_FAST;
     param->i_bframe_bias = 0;
     param->b_bframe_pyramid = 0;
 
@@ -92,12 +93,13 @@ void    x264_param_default( x264_param_t *param )
     param->rc.i_qp_step = 4;
     param->rc.f_ip_factor = 1.4;
     param->rc.f_pb_factor = 1.3;
+    param->rc.i_aq_mode = X264_AQ_VARIANCE;
+    param->rc.f_aq_strength = 1.0;
 
     param->rc.b_stat_write = 0;
     param->rc.psz_stat_out = "x264_2pass.log";
     param->rc.b_stat_read = 0;
     param->rc.psz_stat_in = "x264_2pass.log";
-    param->rc.psz_rc_eq = "blurCplx^(1-qComp)";
     param->rc.f_qcompress = 0.6;
     param->rc.f_qblur = 0.5;
     param->rc.f_complexity_blur = 20;
@@ -114,12 +116,13 @@ void    x264_param_default( x264_param_t *param )
                          | X264_ANALYSE_PSUB16x16 | X264_ANALYSE_BSUB16x16;
     param->analyse.i_direct_mv_pred = X264_DIRECT_PRED_SPATIAL;
     param->analyse.i_me_method = X264_ME_HEX;
+    param->analyse.f_psy_rd = 1.0;
+    param->analyse.f_psy_trellis = 0;
     param->analyse.i_me_range = 16;
-    param->analyse.i_subpel_refine = 5;
+    param->analyse.i_subpel_refine = 6;
     param->analyse.b_chroma_me = 1;
     param->analyse.i_mv_range_thread = -1;
     param->analyse.i_mv_range = -1; // set from level_idc
-    param->analyse.i_direct_8x8_inference = -1; // set from level_idc
     param->analyse.i_chroma_qp_offset = 0;
     param->analyse.b_fast_pskip = 1;
     param->analyse.b_dct_decimate = 1;
@@ -166,12 +169,12 @@ static int parse_cqm( const char *str, uint8_t *cqm, int length )
 
 static int x264_atobool( const char *str, int *b_error )
 {
-    if( !strcmp(str, "1") || 
-        !strcmp(str, "true") || 
+    if( !strcmp(str, "1") ||
+        !strcmp(str, "true") ||
         !strcmp(str, "yes") )
         return 1;
-    if( !strcmp(str, "0") || 
-        !strcmp(str, "false") || 
+    if( !strcmp(str, "0") ||
+        !strcmp(str, "false") ||
         !strcmp(str, "no") )
         return 0;
     *b_error = 1;
@@ -237,7 +240,25 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
 #define OPT2(STR0, STR1) else if( !strcmp( name, STR0 ) || !strcmp( name, STR1 ) )
     if(0);
     OPT("asm")
-        p->cpu = atobool(value) ? x264_cpu_detect() : 0;
+    {
+        p->cpu = isdigit(value[0]) ? atoi(value) :
+                 !strcmp(value, "auto") || atobool(value) ? x264_cpu_detect() : 0;
+        if( b_error )
+        {
+            char *buf = strdup(value);
+            char *tok, UNUSED *saveptr, *init;
+            b_error = 0;
+            p->cpu = 0;
+            for( init=buf; (tok=strtok_r(init, ",", &saveptr)); init=NULL )
+            {
+                for( i=0; x264_cpu_names[i].flags && strcasecmp(tok, x264_cpu_names[i].name); i++ );
+                p->cpu |= x264_cpu_names[i].flags;
+                if( !x264_cpu_names[i].flags )
+                    b_error = 1;
+            }
+            free( buf );
+        }
+    }
     OPT("threads")
     {
         if( !strcmp(value, "auto") )
@@ -302,13 +323,25 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
             p->i_keyint_max = p->i_keyint_min;
     }
     OPT("scenecut")
-        p->i_scenecut_threshold = atoi(value);
-    OPT("pre-scenecut")
-        p->b_pre_scenecut = atobool(value);
+    {
+        p->i_scenecut_threshold = atobool(value);
+        if( b_error || p->i_scenecut_threshold )
+        {
+            b_error = 0;
+            p->i_scenecut_threshold = atoi(value);
+        }
+    }
     OPT("bframes")
         p->i_bframe = atoi(value);
     OPT("b-adapt")
-        p->b_bframe_adaptive = atobool(value);
+    {
+        p->i_bframe_adaptive = atobool(value);
+        if( b_error )
+        {
+            b_error = 0;
+            p->i_bframe_adaptive = atoi(value);
+        }
+    }
     OPT("b-bias")
         p->i_bframe_bias = atoi(value);
     OPT("b-pyramid")
@@ -409,6 +442,8 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
     OPT("visualize")
         p->b_visualize = atobool(value);
 #endif
+    OPT("dump-yuv")
+        p->psz_dump_yuv = strdup(value);
     OPT2("analyse", "partitions")
     {
         p->analyse.inter = 0;
@@ -427,8 +462,6 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         p->analyse.b_weighted_bipred = atobool(value);
     OPT2("direct", "direct-pred")
         b_error |= parse_enum( value, x264_direct_pred_names, &p->analyse.i_direct_mv_pred );
-    OPT("direct-8x8")
-        p->analyse.i_direct_8x8_inference = atoi(value);
     OPT("chroma-qp-offset")
         p->analyse.i_chroma_qp_offset = atoi(value);
     OPT("me")
@@ -441,12 +474,23 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         p->analyse.i_mv_range_thread = atoi(value);
     OPT2("subme", "subq")
         p->analyse.i_subpel_refine = atoi(value);
-    OPT("bime")
-        p->analyse.b_bidir_me = atobool(value);
+    OPT("psy-rd")
+    {
+        if( 2 == sscanf( value, "%f:%f", &p->analyse.f_psy_rd, &p->analyse.f_psy_trellis ) ||
+            2 == sscanf( value, "%f,%f", &p->analyse.f_psy_rd, &p->analyse.f_psy_trellis ) )
+        { }
+        else if( sscanf( value, "%f", &p->analyse.f_psy_rd ) )
+        {
+            p->analyse.f_psy_trellis = 0;
+        }
+        else
+        {
+            p->analyse.f_psy_rd = 0;
+            p->analyse.f_psy_trellis = 0;
+        }
+    }
     OPT("chroma-me")
         p->analyse.b_chroma_me = atobool(value);
-    OPT2("b-rdo", "brdo")
-        p->analyse.b_bframe_rdo = atobool(value);
     OPT("mixed-refs")
         p->analyse.b_mixed_references = atobool(value);
     OPT("trellis")
@@ -494,6 +538,10 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         p->rc.f_ip_factor = atof(value);
     OPT2("pbratio", "pb-factor")
         p->rc.f_pb_factor = atof(value);
+    OPT("aq-mode")
+        p->rc.i_aq_mode = atoi(value);
+    OPT("aq-strength")
+        p->rc.f_aq_strength = atof(value);
     OPT("pass")
     {
         int i = x264_clip3( atoi(value), 0, 3 );
@@ -505,8 +553,6 @@ int x264_param_parse( x264_param_t *p, const char *name, const char *value )
         p->rc.psz_stat_in = strdup(value);
         p->rc.psz_stat_out = strdup(value);
     }
-    OPT("rceq")
-        p->rc.psz_rc_eq = strdup(value);
     OPT("qcomp")
         p->rc.f_qcompress = atof(value);
     OPT("qblur")
@@ -617,7 +663,6 @@ int x264_nal_encode( void *p_data, int *pi_data, int b_annexeb, x264_nal_t *nal 
     uint8_t *dst = p_data;
     uint8_t *src = nal->p_payload;
     uint8_t *end = &nal->p_payload[nal->i_payload];
-
     int i_count = 0;
 
     /* FIXME this code doesn't check overflow */
@@ -642,49 +687,14 @@ int x264_nal_encode( void *p_data, int *pi_data, int b_annexeb, x264_nal_t *nal 
             i_count = 0;
         }
         if( *src == 0 )
-        {
             i_count++;
-        }
         else
-        {
             i_count = 0;
-        }
         *dst++ = *src++;
     }
     *pi_data = dst - (uint8_t*)p_data;
 
     return *pi_data;
-}
-
-/****************************************************************************
- * x264_nal_decode:
- ****************************************************************************/
-int x264_nal_decode( x264_nal_t *nal, void *p_data, int i_data )
-{
-    uint8_t *src = p_data;
-    uint8_t *end = &src[i_data];
-    uint8_t *dst = nal->p_payload;
-
-    nal->i_type    = src[0]&0x1f;
-    nal->i_ref_idc = (src[0] >> 5)&0x03;
-
-    src++;
-
-    while( src < end )
-    {
-        if( src < end - 3 && src[0] == 0x00 && src[1] == 0x00  && src[2] == 0x03 )
-        {
-            *dst++ = 0x00;
-            *dst++ = 0x00;
-
-            src += 3;
-            continue;
-        }
-        *dst++ = *src++;
-    }
-
-    nal->i_payload = dst - (uint8_t*)p_data;
-    return 0;
 }
 
 
@@ -705,7 +715,7 @@ void *x264_malloc( int i_size )
     buf = (uint8_t *) malloc( i_size + 15 + sizeof( void ** ) +
               sizeof( int ) );
     align_buf = buf + 15 + sizeof( void ** ) + sizeof( int );
-    align_buf -= (long) align_buf & 15;
+    align_buf -= (intptr_t) align_buf & 15;
     *( (void **) ( align_buf - sizeof( void ** ) ) ) = buf;
     *( (int *) ( align_buf - sizeof( void ** ) - sizeof( int ) ) ) = i_size;
     return align_buf;
@@ -739,8 +749,8 @@ void *x264_realloc( void *p, int i_size )
     uint8_t * p_new;
     if( p )
     {
-        i_old_size = *( (int*) ( (uint8_t*) p ) - sizeof( void ** ) -
-                         sizeof( int ) );
+        i_old_size = *( (int*) ( (uint8_t*) p - sizeof( void ** ) -
+                         sizeof( int ) ) );
     }
     p_new = x264_malloc( i_size );
     if( i_old_size > 0 && i_size > 0 )
@@ -829,7 +839,7 @@ char *x264_param2string( x264_param_t *p, int b_res )
     s += sprintf( s, " analyse=%#x:%#x", p->analyse.intra, p->analyse.inter );
     s += sprintf( s, " me=%s", x264_motion_est_names[ p->analyse.i_me_method ] );
     s += sprintf( s, " subme=%d", p->analyse.i_subpel_refine );
-    s += sprintf( s, " brdo=%d", p->analyse.b_bframe_rdo );
+    s += sprintf( s, " psy_rd=%.1f:%.1f", p->analyse.f_psy_rd, p->analyse.f_psy_trellis );
     s += sprintf( s, " mixed_ref=%d", p->analyse.b_mixed_references );
     s += sprintf( s, " me_range=%d", p->analyse.i_me_range );
     s += sprintf( s, " chroma_me=%d", p->analyse.b_chroma_me );
@@ -846,15 +856,13 @@ char *x264_param2string( x264_param_t *p, int b_res )
     s += sprintf( s, " bframes=%d", p->i_bframe );
     if( p->i_bframe )
     {
-        s += sprintf( s, " b_pyramid=%d b_adapt=%d b_bias=%d direct=%d wpredb=%d bime=%d",
-                      p->b_bframe_pyramid, p->b_bframe_adaptive, p->i_bframe_bias,
-                      p->analyse.i_direct_mv_pred, p->analyse.b_weighted_bipred,
-                      p->analyse.b_bidir_me );
+        s += sprintf( s, " b_pyramid=%d b_adapt=%d b_bias=%d direct=%d wpredb=%d",
+                      p->b_bframe_pyramid, p->i_bframe_adaptive, p->i_bframe_bias,
+                      p->analyse.i_direct_mv_pred, p->analyse.b_weighted_bipred );
     }
 
-    s += sprintf( s, " keyint=%d keyint_min=%d scenecut=%d%s",
-                  p->i_keyint_max, p->i_keyint_min, p->i_scenecut_threshold,
-                  p->b_pre_scenecut ? "(pre)" : "" );
+    s += sprintf( s, " keyint=%d keyint_min=%d scenecut=%d",
+                  p->i_keyint_max, p->i_keyint_min, p->i_scenecut_threshold );
 
     s += sprintf( s, " rc=%s", p->rc.i_rc_method == X264_RC_ABR ?
                                ( p->rc.b_stat_read ? "2pass" : p->rc.i_vbv_buffer_size ? "cbr" : "abr" )
@@ -866,9 +874,8 @@ char *x264_param2string( x264_param_t *p, int b_res )
         else
             s += sprintf( s, " bitrate=%d ratetol=%.1f",
                           p->rc.i_bitrate, p->rc.f_rate_tolerance );
-        s += sprintf( s, " rceq='%s' qcomp=%.2f qpmin=%d qpmax=%d qpstep=%d",
-                      p->rc.psz_rc_eq, p->rc.f_qcompress,
-                      p->rc.i_qp_min, p->rc.i_qp_max, p->rc.i_qp_step );
+        s += sprintf( s, " qcomp=%.2f qpmin=%d qpmax=%d qpstep=%d",
+                      p->rc.f_qcompress, p->rc.i_qp_min, p->rc.i_qp_max, p->rc.i_qp_step );
         if( p->rc.b_stat_read )
             s += sprintf( s, " cplxblur=%.1f qblur=%.1f",
                           p->rc.f_complexity_blur, p->rc.f_qblur );
@@ -883,6 +890,9 @@ char *x264_param2string( x264_param_t *p, int b_res )
         s += sprintf( s, " ip_ratio=%.2f", p->rc.f_ip_factor );
         if( p->i_bframe )
             s += sprintf( s, " pb_ratio=%.2f", p->rc.f_pb_factor );
+        s += sprintf( s, " aq=%d", p->rc.i_aq_mode );
+        if( p->rc.i_aq_mode )
+            s += sprintf( s, ":%.2f", p->rc.f_aq_strength );
         if( p->rc.psz_zones )
             s += sprintf( s, " zones=%s", p->rc.psz_zones );
         else if( p->rc.i_zones )

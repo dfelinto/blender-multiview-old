@@ -1,10 +1,10 @@
 /*****************************************************************************
  * mc.c: h264 encoder library (Motion Compensation)
  *****************************************************************************
- * Copyright (C) 2003 Laurent Aimar
- * $Id: mc.c,v 1.1 2004/06/03 19:27:07 fenrir Exp $
+ * Copyright (C) 2003-2008 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ *          Loren Merritt <lorenm@u.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,28 +18,18 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
 #include "common.h"
-#include "clip1.h"
 
 #ifdef HAVE_MMX
-#include "i386/mc.h"
+#include "x86/mc.h"
 #endif
 #ifdef ARCH_PPC
 #include "ppc/mc.h"
 #endif
 
-
-static inline int x264_tapfilter( uint8_t *pix, int i_pix_next )
-{
-    return pix[-2*i_pix_next] - 5*pix[-1*i_pix_next] + 20*(pix[0] + pix[1*i_pix_next]) - 5*pix[ 2*i_pix_next] + pix[ 3*i_pix_next];
-}
-static inline int x264_tapfilter1( uint8_t *pix )
-{
-    return pix[-2] - 5*pix[-1] + 20*(pix[0] + pix[1]) - 5*pix[ 2] + pix[ 3];
-}
 
 static inline void pixel_avg( uint8_t *dst,  int i_dst_stride,
                               uint8_t *src1, int i_src1_stride,
@@ -59,45 +49,30 @@ static inline void pixel_avg( uint8_t *dst,  int i_dst_stride,
     }
 }
 
-static inline void pixel_avg_wxh( uint8_t *dst, int i_dst, uint8_t *src, int i_src, int width, int height )
+static inline void pixel_avg_wxh( uint8_t *dst, int i_dst, uint8_t *src1, int i_src1, uint8_t *src2, int i_src2, int width, int height )
 {
     int x, y;
     for( y = 0; y < height; y++ )
     {
         for( x = 0; x < width; x++ )
         {
-            dst[x] = ( dst[x] + src[x] + 1 ) >> 1;
+            dst[x] = ( src1[x] + src2[x] + 1 ) >> 1;
         }
+        src1 += i_src1;
+        src2 += i_src2;
         dst += i_dst;
-        src += i_src;
     }
 }
 
-#define PIXEL_AVG_C( name, width, height ) \
-static void name( uint8_t *pix1, int i_stride_pix1, \
-                  uint8_t *pix2, int i_stride_pix2 ) \
-{ \
-    pixel_avg_wxh( pix1, i_stride_pix1, pix2, i_stride_pix2, width, height ); \
-}
-PIXEL_AVG_C( pixel_avg_16x16, 16, 16 )
-PIXEL_AVG_C( pixel_avg_16x8,  16, 8 )
-PIXEL_AVG_C( pixel_avg_8x16,  8, 16 )
-PIXEL_AVG_C( pixel_avg_8x8,   8, 8 )
-PIXEL_AVG_C( pixel_avg_8x4,   8, 4 )
-PIXEL_AVG_C( pixel_avg_4x8,   4, 8 )
-PIXEL_AVG_C( pixel_avg_4x4,   4, 4 )
-PIXEL_AVG_C( pixel_avg_4x2,   4, 2 )
-PIXEL_AVG_C( pixel_avg_2x4,   2, 4 )
-PIXEL_AVG_C( pixel_avg_2x2,   2, 2 )
-
-
 /* Implicit weighted bipred only:
  * assumes log2_denom = 5, offset = 0, weight1 + weight2 = 64 */
-#define op_scale2(x) dst[x] = x264_clip_uint8( (dst[x]*i_weight1 + src[x]*i_weight2 + (1<<5)) >> 6 )
-static inline void pixel_avg_weight_wxh( uint8_t *dst, int i_dst, uint8_t *src, int i_src, int width, int height, int i_weight1 ){
+#define op_scale2(x) dst[x] = x264_clip_uint8( (src1[x]*i_weight1 + src2[x]*i_weight2 + (1<<5)) >> 6 )
+static inline void pixel_avg_weight_wxh( uint8_t *dst, int i_dst, uint8_t *src1, int i_src1, uint8_t *src2, int i_src2, int width, int height, int i_weight1 )
+{
     int y;
     const int i_weight2 = 64 - i_weight1;
-    for(y=0; y<height; y++, dst += i_dst, src += i_src){
+    for( y = 0; y<height; y++, dst += i_dst, src1 += i_src1, src2 += i_src2 )
+    {
         op_scale2(0);
         op_scale2(1);
         if(width==2) continue;
@@ -119,29 +94,28 @@ static inline void pixel_avg_weight_wxh( uint8_t *dst, int i_dst, uint8_t *src, 
         op_scale2(15);
     }
 }
-
-#define PIXEL_AVG_WEIGHT_C( width, height ) \
-static void pixel_avg_weight_##width##x##height( \
-                uint8_t *pix1, int i_stride_pix1, \
-                uint8_t *pix2, int i_stride_pix2, int i_weight1 ) \
-{ \
-    pixel_avg_weight_wxh( pix1, i_stride_pix1, pix2, i_stride_pix2, width, height, i_weight1 ); \
-}
-
-PIXEL_AVG_WEIGHT_C(16,16)
-PIXEL_AVG_WEIGHT_C(16,8)
-PIXEL_AVG_WEIGHT_C(8,16)
-PIXEL_AVG_WEIGHT_C(8,8)
-PIXEL_AVG_WEIGHT_C(8,4)
-PIXEL_AVG_WEIGHT_C(4,8)
-PIXEL_AVG_WEIGHT_C(4,4)
-PIXEL_AVG_WEIGHT_C(4,2)
-PIXEL_AVG_WEIGHT_C(2,4)
-PIXEL_AVG_WEIGHT_C(2,2)
 #undef op_scale2
-#undef PIXEL_AVG_WEIGHT_C
 
-typedef void (*pf_mc_t)(uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_stride, int i_width, int i_height );
+#define PIXEL_AVG_C( name, width, height ) \
+static void name( uint8_t *pix1, int i_stride_pix1, \
+                  uint8_t *pix2, int i_stride_pix2, \
+                  uint8_t *pix3, int i_stride_pix3, int weight ) \
+{ \
+    if( weight == 32 )\
+        pixel_avg_wxh( pix1, i_stride_pix1, pix2, i_stride_pix2, pix3, i_stride_pix3, width, height ); \
+    else\
+        pixel_avg_weight_wxh( pix1, i_stride_pix1, pix2, i_stride_pix2, pix3, i_stride_pix3, width, height, weight ); \
+}
+PIXEL_AVG_C( pixel_avg_16x16, 16, 16 )
+PIXEL_AVG_C( pixel_avg_16x8,  16, 8 )
+PIXEL_AVG_C( pixel_avg_8x16,  8, 16 )
+PIXEL_AVG_C( pixel_avg_8x8,   8, 8 )
+PIXEL_AVG_C( pixel_avg_8x4,   8, 4 )
+PIXEL_AVG_C( pixel_avg_4x8,   4, 8 )
+PIXEL_AVG_C( pixel_avg_4x4,   4, 4 )
+PIXEL_AVG_C( pixel_avg_4x2,   4, 2 )
+PIXEL_AVG_C( pixel_avg_2x4,   2, 4 )
+PIXEL_AVG_C( pixel_avg_2x2,   2, 2 )
 
 static void mc_copy( uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_stride, int i_width, int i_height )
 {
@@ -155,77 +129,29 @@ static void mc_copy( uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_str
         dst += i_dst_stride;
     }
 }
-static inline void mc_hh( uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_stride, int i_width, int i_height )
-{
-    int x, y;
 
-    for( y = 0; y < i_height; y++ )
-    {
-        for( x = 0; x < i_width; x++ )
-        {
-            dst[x] = x264_mc_clip1( ( x264_tapfilter1( &src[x] ) + 16 ) >> 5 );
-        }
-        src += i_src_stride;
-        dst += i_dst_stride;
-    }
-}
-static inline void mc_hv( uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_stride, int i_width, int i_height )
-{
-    int x, y;
-
-    for( y = 0; y < i_height; y++ )
-    {
-        for( x = 0; x < i_width; x++ )
-        {
-            dst[x] = x264_mc_clip1( ( x264_tapfilter( &src[x], i_src_stride ) + 16 ) >> 5 );
-        }
-        src += i_src_stride;
-        dst += i_dst_stride;
-    }
-}
-static inline void mc_hc( uint8_t *src, int i_src_stride, uint8_t *dst, int i_dst_stride, int i_width, int i_height )
-{
-    uint8_t *out;
-    uint8_t *pix;
-    int x, y;
-
-    for( x = 0; x < i_width; x++ )
-    {
-        int tap[6];
-
-        pix = &src[x];
-        out = &dst[x];
-
-        tap[0] = x264_tapfilter1( &pix[-2*i_src_stride] );
-        tap[1] = x264_tapfilter1( &pix[-1*i_src_stride] );
-        tap[2] = x264_tapfilter1( &pix[ 0*i_src_stride] );
-        tap[3] = x264_tapfilter1( &pix[ 1*i_src_stride] );
-        tap[4] = x264_tapfilter1( &pix[ 2*i_src_stride] );
-
-        for( y = 0; y < i_height; y++ )
-        {
-            tap[5] = x264_tapfilter1( &pix[ 3*i_src_stride] );
-
-            *out = x264_mc_clip1( ( tap[0] - 5*tap[1] + 20 * tap[2] + 20 * tap[3] -5*tap[4] + tap[5] + 512 ) >> 10 );
-
-            /* Next line */
-            pix += i_src_stride;
-            out += i_dst_stride;
-            tap[0] = tap[1];
-            tap[1] = tap[2];
-            tap[2] = tap[3];
-            tap[3] = tap[4];
-            tap[4] = tap[5];
-        }
-    }
-}
-
+#define TAPFILTER(pix, d) ((pix)[x-2*d] + (pix)[x+3*d] - 5*((pix)[x-d] + (pix)[x+2*d]) + 20*((pix)[x] + (pix)[x+d]))
 static void hpel_filter( uint8_t *dsth, uint8_t *dstv, uint8_t *dstc, uint8_t *src,
-                         int stride, int width, int height )
+                         int stride, int width, int height, int16_t *buf )
 {
-    mc_hh( src, stride, dsth, stride, width, height );
-    mc_hv( src, stride, dstv, stride, width, height );
-    mc_hc( src, stride, dstc, stride, width, height );
+    int x, y;
+    for( y=0; y<height; y++ )
+    {
+        for( x=-2; x<width+3; x++ )
+        {
+            int v = TAPFILTER(src,stride);
+            dstv[x] = x264_clip_uint8((v + 16) >> 5);
+            buf[x+2] = v;
+        }
+        for( x=0; x<width; x++ )
+            dstc[x] = x264_clip_uint8((TAPFILTER(buf+2,1) + 512) >> 10);
+        for( x=0; x<width; x++ )
+            dsth[x] = x264_clip_uint8((TAPFILTER(src,1) + 16) >> 5);
+        dsth += stride;
+        dstv += stride;
+        dstc += stride;
+        src += stride;
+    }
 }
 
 static const int hpel_ref0[16] = {0,1,1,1,0,1,1,1,2,3,3,3,0,1,1,1};
@@ -329,12 +255,106 @@ static void plane_copy( uint8_t *dst, int i_dst,
     }
 }
 
-void prefetch_fenc_null( uint8_t *pix_y, int stride_y,
-                         uint8_t *pix_uv, int stride_uv, int mb_x )
+static void prefetch_fenc_null( uint8_t *pix_y, int stride_y,
+                                uint8_t *pix_uv, int stride_uv, int mb_x )
 {}
 
-void prefetch_ref_null( uint8_t *pix, int stride, int parity )
+static void prefetch_ref_null( uint8_t *pix, int stride, int parity )
 {}
+
+static void memzero_aligned( void * dst, int n )
+{
+    memset( dst, 0, n );
+}
+
+static void integral_init4h( uint16_t *sum, uint8_t *pix, int stride )
+{
+    int x, v = pix[0]+pix[1]+pix[2]+pix[3];
+    for( x=0; x<stride-4; x++ )
+    {
+        sum[x] = v + sum[x-stride];
+        v += pix[x+4] - pix[x];
+    }
+}
+
+static void integral_init8h( uint16_t *sum, uint8_t *pix, int stride )
+{
+    int x, v = pix[0]+pix[1]+pix[2]+pix[3]+pix[4]+pix[5]+pix[6]+pix[7];
+    for( x=0; x<stride-8; x++ )
+    {
+        sum[x] = v + sum[x-stride];
+        v += pix[x+8] - pix[x];
+    }
+}
+
+static void integral_init4v( uint16_t *sum8, uint16_t *sum4, int stride )
+{
+    int x;
+    for( x=0; x<stride-8; x++ )
+        sum4[x] = sum8[x+4*stride] - sum8[x];
+    for( x=0; x<stride-8; x++ )
+        sum8[x] = sum8[x+8*stride] + sum8[x+8*stride+4] - sum8[x] - sum8[x+4];
+}
+
+static void integral_init8v( uint16_t *sum8, int stride )
+{
+    int x;
+    for( x=0; x<stride-8; x++ )
+        sum8[x] = sum8[x+8*stride] - sum8[x];
+}
+
+void x264_frame_init_lowres( x264_t *h, x264_frame_t *frame )
+{
+    uint8_t *src = frame->plane[0];
+    int i_stride = frame->i_stride[0];
+    int i_height = frame->i_lines[0];
+    int i_width  = frame->i_width[0];
+    int x, y;
+
+    // duplicate last row and column so that their interpolation doesn't have to be special-cased
+    for( y=0; y<i_height; y++ )
+        src[i_width+y*i_stride] = src[i_width-1+y*i_stride];
+    h->mc.memcpy_aligned( src+i_stride*i_height, src+i_stride*(i_height-1), i_width );
+    h->mc.frame_init_lowres_core( src, frame->lowres[0], frame->lowres[1], frame->lowres[2], frame->lowres[3],
+                                  i_stride, frame->i_stride_lowres, frame->i_width_lowres, frame->i_lines_lowres );
+    x264_frame_expand_border_lowres( frame );
+
+    memset( frame->i_cost_est, -1, sizeof(frame->i_cost_est) );
+
+    for( x = 0; x < h->param.i_bframe + 2; x++ )
+        for( y = 0; y < h->param.i_bframe + 2; y++ )
+            frame->i_row_satds[y][x][0] = -1;
+
+    for( y = 0; y <= !!h->param.i_bframe; y++ )
+        for( x = 0; x <= h->param.i_bframe; x++ )
+            frame->lowres_mvs[y][x][0][0] = 0x7FFF;
+}
+
+static void frame_init_lowres_core( uint8_t *src0, uint8_t *dst0, uint8_t *dsth, uint8_t *dstv, uint8_t *dstc,
+                                    int src_stride, int dst_stride, int width, int height )
+{
+    int x,y;
+    for( y=0; y<height; y++ )
+    {
+        uint8_t *src1 = src0+src_stride;
+        uint8_t *src2 = src1+src_stride;
+        for( x=0; x<width; x++ )
+        {
+            // slower than naive bilinear, but matches asm
+#define FILTER(a,b,c,d) ((((a+b+1)>>1)+((c+d+1)>>1)+1)>>1)
+            dst0[x] = FILTER(src0[2*x  ], src1[2*x  ], src0[2*x+1], src1[2*x+1]);
+            dsth[x] = FILTER(src0[2*x+1], src1[2*x+1], src0[2*x+2], src1[2*x+2]);
+            dstv[x] = FILTER(src1[2*x  ], src2[2*x  ], src1[2*x+1], src2[2*x+1]);
+            dstc[x] = FILTER(src1[2*x+1], src2[2*x+1], src1[2*x+2], src2[2*x+2]);
+#undef FILTER
+        }
+        src0 += src_stride*2;
+        dst0 += dst_stride;
+        dsth += dst_stride;
+        dstv += dst_stride;
+        dstc += dst_stride;
+    }
+}
 
 void x264_mc_init( int cpu, x264_mc_functions_t *pf )
 {
@@ -352,18 +372,8 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf )
     pf->avg[PIXEL_4x2]  = pixel_avg_4x2;
     pf->avg[PIXEL_2x4]  = pixel_avg_2x4;
     pf->avg[PIXEL_2x2]  = pixel_avg_2x2;
-    
-    pf->avg_weight[PIXEL_16x16]= pixel_avg_weight_16x16;
-    pf->avg_weight[PIXEL_16x8] = pixel_avg_weight_16x8;
-    pf->avg_weight[PIXEL_8x16] = pixel_avg_weight_8x16;
-    pf->avg_weight[PIXEL_8x8]  = pixel_avg_weight_8x8;
-    pf->avg_weight[PIXEL_8x4]  = pixel_avg_weight_8x4;
-    pf->avg_weight[PIXEL_4x8]  = pixel_avg_weight_4x8;
-    pf->avg_weight[PIXEL_4x4]  = pixel_avg_weight_4x4;
-    pf->avg_weight[PIXEL_4x2]  = pixel_avg_weight_4x2;
-    pf->avg_weight[PIXEL_2x4]  = pixel_avg_weight_2x4;
-    pf->avg_weight[PIXEL_2x2]  = pixel_avg_weight_2x2;
 
+    pf->copy_16x16_unaligned = mc_copy_w16;
     pf->copy[PIXEL_16x16] = mc_copy_w16;
     pf->copy[PIXEL_8x8]   = mc_copy_w8;
     pf->copy[PIXEL_4x4]   = mc_copy_w4;
@@ -373,14 +383,17 @@ void x264_mc_init( int cpu, x264_mc_functions_t *pf )
 
     pf->prefetch_fenc = prefetch_fenc_null;
     pf->prefetch_ref  = prefetch_ref_null;
+    pf->memcpy_aligned = memcpy;
+    pf->memzero_aligned = memzero_aligned;
+    pf->frame_init_lowres_core = frame_init_lowres_core;
+
+    pf->integral_init4h = integral_init4h;
+    pf->integral_init8h = integral_init8h;
+    pf->integral_init4v = integral_init4v;
+    pf->integral_init8v = integral_init8v;
 
 #ifdef HAVE_MMX
-    if( cpu&X264_CPU_MMXEXT ) {
-        x264_mc_mmxext_init( pf );
-        pf->mc_chroma = x264_mc_chroma_mmxext;
-    }
-    if( cpu&X264_CPU_SSE2 )
-        x264_mc_sse2_init( pf );
+    x264_mc_init_mmx( cpu, pf );
 #endif
 #ifdef ARCH_PPC
     if( cpu&X264_CPU_ALTIVEC )
@@ -393,10 +406,10 @@ void x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )
     const int b_interlaced = h->sh.b_mbaff;
     const int stride = frame->i_stride[0] << b_interlaced;
     const int width = frame->i_width[0];
-    int start = (mb_y*16 >> b_interlaced) - 8;
+    int start = (mb_y*16 >> b_interlaced) - 8; // buffer = 4 for deblock + 3 for 6tap, rounded to 8
     int height = ((b_end ? frame->i_lines[0] : mb_y*16) >> b_interlaced) + 8;
-    int offs = start*stride - 8; // buffer = 4 for deblock + 3 for 6tap, rounded to 8
-    int x, y;
+    int offs = start*stride - 8; // buffer = 3 for 6tap, aligned to 8 for simd
+    int y;
 
     if( mb_y & b_interlaced )
         return;
@@ -408,7 +421,8 @@ void x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )
             frame->filtered[2] + offs,
             frame->filtered[3] + offs,
             frame->plane[0] + offs,
-            stride, width + 16, height - start );
+            stride, width + 16, height - start,
+            h->scratch_buffer );
     }
 
     /* generate integral image:
@@ -424,63 +438,26 @@ void x264_frame_filter( x264_t *h, x264_frame_t *frame, int mb_y, int b_end )
             start = -PADV;
         }
         if( b_end )
-            height += PADV-8;
+            height += PADV-9;
         for( y = start; y < height; y++ )
         {
-            uint8_t  *ref  = frame->plane[0] + y * stride - PADH;
-            uint16_t *line = frame->integral + (y+1) * stride - PADH + 1;
-            uint16_t v = line[0] = 0;
-            for( x = 1; x < stride-1; x++ )
-                line[x] = v += ref[x] + line[x-stride] - line[x-stride-1];
-            line -= 8*stride;
-            if( y >= 9-PADV )
+            uint8_t  *pix  = frame->plane[0] + y * stride - PADH;
+            uint16_t *sum8 = frame->integral + (y+1) * stride - PADH;
+            uint16_t *sum4;
+            if( h->frames.b_have_sub8x8_esa )
             {
-                uint16_t *sum4 = line + stride * (frame->i_lines[0] + PADV*2);
-                for( x = 1; x < stride-8; x++, line++, sum4++ )
-                {
-                    sum4[0] =  line[4+4*stride] - line[4] - line[4*stride] + line[0];
-                    line[0] += line[8+8*stride] - line[8] - line[8*stride];
-                }
+                h->mc.integral_init4h( sum8, pix, stride );
+                sum8 -= 8*stride;
+                sum4 = sum8 + stride * (frame->i_lines[0] + PADV*2);
+                if( y >= 8-PADV )
+                    h->mc.integral_init4v( sum8, sum4, stride );
+            }
+            else
+            {
+                h->mc.integral_init8h( sum8, pix, stride );
+                if( y >= 8-PADV )
+                    h->mc.integral_init8v( sum8-8*stride, stride );
             }
         }
     }
 }
-
-void x264_frame_init_lowres( x264_t *h, x264_frame_t *frame )
-{
-    // FIXME: tapfilter?
-    const int i_stride = frame->i_stride[0];
-    const int i_stride2 = frame->i_stride_lowres;
-    const int i_width2 = frame->i_width_lowres;
-    int x, y, i;
-    for( y = 0; y < frame->i_lines_lowres - 1; y++ )
-    {
-        uint8_t *src0 = &frame->plane[0][2*y*i_stride];
-        uint8_t *src1 = src0+i_stride;
-        uint8_t *src2 = src1+i_stride;
-        uint8_t *dst0 = &frame->lowres[0][y*i_stride2];
-        uint8_t *dsth = &frame->lowres[1][y*i_stride2];
-        uint8_t *dstv = &frame->lowres[2][y*i_stride2];
-        uint8_t *dstc = &frame->lowres[3][y*i_stride2];
-        for( x = 0; x < i_width2 - 1; x++ )
-        {
-            dst0[x] = (src0[2*x  ] + src0[2*x+1] + src1[2*x  ] + src1[2*x+1] + 2) >> 2;
-            dsth[x] = (src0[2*x+1] + src0[2*x+2] + src1[2*x+1] + src1[2*x+2] + 2) >> 2;
-            dstv[x] = (src1[2*x  ] + src1[2*x+1] + src2[2*x  ] + src2[2*x+1] + 2) >> 2;
-            dstc[x] = (src1[2*x+1] + src1[2*x+2] + src2[2*x+1] + src2[2*x+2] + 2) >> 2;
-        }
-        dst0[x] = (src0[2*x  ] + src0[2*x+1] + src1[2*x  ] + src1[2*x+1] + 2) >> 2;
-        dstv[x] = (src1[2*x  ] + src1[2*x+1] + src2[2*x  ] + src2[2*x+1] + 2) >> 2;
-        dsth[x] = (src0[2*x+1] + src1[2*x+1] + 1) >> 1;
-        dstc[x] = (src1[2*x+1] + src2[2*x+1] + 1) >> 1;
-    }
-    for( i = 0; i < 4; i++ )
-        memcpy( &frame->lowres[i][y*i_stride2], &frame->lowres[i][(y-1)*i_stride2], i_width2 );
-
-    for( y = 0; y < 16; y++ )
-        for( x = 0; x < 16; x++ )
-            frame->i_cost_est[x][y] = -1;
-
-    x264_frame_expand_border_lowres( frame );
-}
-

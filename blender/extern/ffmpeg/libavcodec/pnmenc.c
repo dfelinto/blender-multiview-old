@@ -1,6 +1,6 @@
 /*
  * PNM image format
- * Copyright (c) 2002, 2003 Fabrice Bellard.
+ * Copyright (c) 2002, 2003 Fabrice Bellard
  *
  * This file is part of FFmpeg.
  *
@@ -63,6 +63,9 @@ static int pnm_decode_frame(AVCodecContext *avctx,
     switch(avctx->pix_fmt) {
     default:
         return -1;
+    case PIX_FMT_RGB48BE:
+        n = avctx->width * 6;
+        goto do_read;
     case PIX_FMT_RGB24:
         n = avctx->width * 3;
         goto do_read;
@@ -195,6 +198,10 @@ static int pnm_encode_frame(AVCodecContext *avctx, unsigned char *outbuf, int bu
         c = '6';
         n = avctx->width * 3;
         break;
+    case PIX_FMT_RGB48BE:
+        c = '6';
+        n = avctx->width * 6;
+        break;
     case PIX_FMT_YUV420P:
         c = '5';
         n = avctx->width;
@@ -209,7 +216,7 @@ static int pnm_encode_frame(AVCodecContext *avctx, unsigned char *outbuf, int bu
     s->bytestream += strlen(s->bytestream);
     if (avctx->pix_fmt != PIX_FMT_MONOWHITE) {
         snprintf(s->bytestream, s->bytestream_end - s->bytestream,
-                 "%d\n", (avctx->pix_fmt != PIX_FMT_GRAY16BE) ? 255 : 65535);
+                 "%d\n", (avctx->pix_fmt != PIX_FMT_GRAY16BE && avctx->pix_fmt != PIX_FMT_RGB48BE) ? 255 : 65535);
         s->bytestream += strlen(s->bytestream);
     }
 
@@ -354,7 +361,7 @@ static int pam_probe(AVProbeData *pd)
 #endif
 
 
-#ifdef CONFIG_PGM_ENCODER
+#if CONFIG_PGM_ENCODER
 AVCodec pgm_encoder = {
     "pgm",
     CODEC_TYPE_VIDEO,
@@ -364,11 +371,12 @@ AVCodec pgm_encoder = {
     pnm_encode_frame,
     NULL, //encode_end,
     pnm_decode_frame,
-    .pix_fmts= (enum PixelFormat[]){PIX_FMT_GRAY8, PIX_FMT_GRAY16BE, -1},
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_GRAY8, PIX_FMT_GRAY16BE, PIX_FMT_NONE},
+    .long_name= NULL_IF_CONFIG_SMALL("PGM (Portable GrayMap) image"),
 };
 #endif // CONFIG_PGM_ENCODER
 
-#ifdef CONFIG_PGMYUV_ENCODER
+#if CONFIG_PGMYUV_ENCODER
 AVCodec pgmyuv_encoder = {
     "pgmyuv",
     CODEC_TYPE_VIDEO,
@@ -378,11 +386,12 @@ AVCodec pgmyuv_encoder = {
     pnm_encode_frame,
     NULL, //encode_end,
     pnm_decode_frame,
-    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, -1},
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_YUV420P, PIX_FMT_NONE},
+    .long_name= NULL_IF_CONFIG_SMALL("PGMYUV (Portable GrayMap YUV) image"),
 };
 #endif // CONFIG_PGMYUV_ENCODER
 
-#ifdef CONFIG_PPM_ENCODER
+#if CONFIG_PPM_ENCODER
 AVCodec ppm_encoder = {
     "ppm",
     CODEC_TYPE_VIDEO,
@@ -392,11 +401,12 @@ AVCodec ppm_encoder = {
     pnm_encode_frame,
     NULL, //encode_end,
     pnm_decode_frame,
-    .pix_fmts= (enum PixelFormat[]){PIX_FMT_RGB24, -1},
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_RGB24, PIX_FMT_RGB48BE, PIX_FMT_NONE},
+    .long_name= NULL_IF_CONFIG_SMALL("PPM (Portable PixelMap) image"),
 };
 #endif // CONFIG_PPM_ENCODER
 
-#ifdef CONFIG_PBM_ENCODER
+#if CONFIG_PBM_ENCODER
 AVCodec pbm_encoder = {
     "pbm",
     CODEC_TYPE_VIDEO,
@@ -406,11 +416,12 @@ AVCodec pbm_encoder = {
     pnm_encode_frame,
     NULL, //encode_end,
     pnm_decode_frame,
-    .pix_fmts= (enum PixelFormat[]){PIX_FMT_MONOWHITE, -1},
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_MONOWHITE, PIX_FMT_NONE},
+    .long_name= NULL_IF_CONFIG_SMALL("PBM (Portable BitMap) image"),
 };
 #endif // CONFIG_PBM_ENCODER
 
-#ifdef CONFIG_PAM_ENCODER
+#if CONFIG_PAM_ENCODER
 AVCodec pam_encoder = {
     "pam",
     CODEC_TYPE_VIDEO,
@@ -420,6 +431,7 @@ AVCodec pam_encoder = {
     pam_encode_frame,
     NULL, //encode_end,
     pnm_decode_frame,
-    .pix_fmts= (enum PixelFormat[]){PIX_FMT_RGB24, PIX_FMT_RGB32, PIX_FMT_GRAY8, PIX_FMT_MONOWHITE, -1},
+    .pix_fmts= (enum PixelFormat[]){PIX_FMT_RGB24, PIX_FMT_RGB32, PIX_FMT_GRAY8, PIX_FMT_MONOWHITE, PIX_FMT_NONE},
+    .long_name= NULL_IF_CONFIG_SMALL("PAM (Portable AnyMap) image"),
 };
 #endif // CONFIG_PAM_ENCODER

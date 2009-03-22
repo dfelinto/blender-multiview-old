@@ -1,6 +1,6 @@
 /*
  * Smacker demuxer
- * Copyright (c) 2006 Konstantin Shishkov.
+ * Copyright (c) 2006 Konstantin Shishkov
  *
  * This file is part of FFmpeg.
  *
@@ -23,9 +23,9 @@
  * Based on http://wiki.multimedia.cx/index.php?title=Smacker
  */
 
+#include "libavutil/bswap.h"
+#include "libavutil/intreadwrite.h"
 #include "avformat.h"
-#include "riff.h"
-#include "bswap.h"
 
 #define SMACKER_PAL 0x01
 #define SMACKER_FLAG_RING_FRAME 0x01
@@ -65,7 +65,7 @@ typedef struct SmackerContext {
     int buf_sizes[7];
     int stream_id[7];
     int curstream;
-    offset_t nextpos;
+    int64_t nextpos;
     int64_t aud_pts[7];
 } SmackerContext;
 
@@ -180,11 +180,11 @@ static int smacker_read_header(AVFormatContext *s, AVFormatParameters *ap)
             ast[i]->codec->codec_tag = MKTAG('S', 'M', 'K', 'A');
             ast[i]->codec->channels = (smk->rates[i] & SMK_AUD_STEREO) ? 2 : 1;
             ast[i]->codec->sample_rate = smk->rates[i] & 0xFFFFFF;
-            ast[i]->codec->bits_per_sample = (smk->rates[i] & SMK_AUD_16BITS) ? 16 : 8;
-            if(ast[i]->codec->bits_per_sample == 16 && ast[i]->codec->codec_id == CODEC_ID_PCM_U8)
+            ast[i]->codec->bits_per_coded_sample = (smk->rates[i] & SMK_AUD_16BITS) ? 16 : 8;
+            if(ast[i]->codec->bits_per_coded_sample == 16 && ast[i]->codec->codec_id == CODEC_ID_PCM_U8)
                 ast[i]->codec->codec_id = CODEC_ID_PCM_S16LE;
             av_set_pts_info(ast[i], 64, 1, ast[i]->codec->sample_rate
-                    * ast[i]->codec->channels * ast[i]->codec->bits_per_sample / 8);
+                    * ast[i]->codec->channels * ast[i]->codec->bits_per_coded_sample / 8);
         }
     }
 
@@ -337,7 +337,7 @@ static int smacker_read_close(AVFormatContext *s)
 
 AVInputFormat smacker_demuxer = {
     "smk",
-    "Smacker Video",
+    NULL_IF_CONFIG_SMALL("Smacker video"),
     sizeof(SmackerContext),
     smacker_probe,
     smacker_read_header,

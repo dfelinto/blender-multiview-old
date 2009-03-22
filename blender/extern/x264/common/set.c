@@ -1,9 +1,7 @@
 /*****************************************************************************
  * set.c: h264 encoder library
  *****************************************************************************
- * Copyright (C) 2005 x264 project
- *
- * Authors: Loren Merritt <lorenm@u.washington.edu>
+ * Copyright (C) 2005-2008 Loren Merritt <lorenm@u.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +15,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
 #include "common.h"
@@ -77,7 +75,7 @@ int x264_cqm_init( x264_t *h )
     int quant8_mf[2][6][8][8];
     int q, i, j, i_list;
     int deadzone[4] = { 32 - h->param.analyse.i_luma_deadzone[1],
-                        32 - h->param.analyse.i_luma_deadzone[0], 
+                        32 - h->param.analyse.i_luma_deadzone[0],
                         32 - 11, 32 - 21 };
     int max_qp_err = -1;
 
@@ -197,7 +195,7 @@ void x264_cqm_delete( x264_t *h )
     }
 }
 
-int x264_cqm_parse_jmlist( x264_t *h, const char *buf, const char *name,
+static int x264_cqm_parse_jmlist( x264_t *h, const char *buf, const char *name,
                            uint8_t *cqm, const uint8_t *jvt, int length )
 {
     char *p;
@@ -249,7 +247,7 @@ int x264_cqm_parse_file( x264_t *h, const char *filename )
     int b_error = 0;
 
     h->param.i_cqm_preset = X264_CQM_CUSTOM;
-    
+
     buf = x264_slurp_file( filename );
     if( !buf )
     {

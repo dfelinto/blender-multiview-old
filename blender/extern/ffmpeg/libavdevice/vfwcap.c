@@ -1,6 +1,6 @@
 /*
  * VFW capture interface
- * Copyright (c) 2006-2008 Ramiro Polla.
+ * Copyright (c) 2006-2008 Ramiro Polla
  *
  * This file is part of FFmpeg.
  *
@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "avformat.h"
+#include "libavformat/avformat.h"
 #include <vfw.h>
 #include <windows.h>
 
@@ -27,58 +27,10 @@
 
 /* Defines for VFW missing from MinGW.
  * Remove this when MinGW incorporates them. */
-#define WM_CAP_START                (0x0400)
-#define WM_CAP_SET_CALLBACK_VIDEOSTREAM (WM_CAP_START + 6)
-#define WM_CAP_DRIVER_CONNECT       (WM_CAP_START + 10)
-#define WM_CAP_DRIVER_DISCONNECT    (WM_CAP_START + 11)
-#define WM_CAP_GET_VIDEOFORMAT      (WM_CAP_START + 44)
-#define WM_CAP_SET_VIDEOFORMAT      (WM_CAP_START + 45)
-#define WM_CAP_SET_PREVIEW          (WM_CAP_START + 50)
-#define WM_CAP_SET_OVERLAY          (WM_CAP_START + 51)
-#define WM_CAP_SEQUENCE_NOFILE      (WM_CAP_START + 63)
-#define WM_CAP_SET_SEQUENCE_SETUP   (WM_CAP_START + 64)
-#define WM_CAP_GET_SEQUENCE_SETUP   (WM_CAP_START + 65)
-
 #define HWND_MESSAGE                ((HWND)-3)
 
 #define BI_RGB                      0
 
-typedef struct videohdr_tag {
-    LPBYTE      lpData;
-    DWORD       dwBufferLength;
-    DWORD       dwBytesUsed;
-    DWORD       dwTimeCaptured;
-    DWORD       dwUser;
-    DWORD       dwFlags;
-    DWORD_PTR   dwReserved[4];
-} VIDEOHDR, NEAR *PVIDEOHDR, FAR * LPVIDEOHDR;
-
-typedef struct {
-    DWORD dwRequestMicroSecPerFrame;
-    BOOL  fMakeUserHitOKToCapture;
-    UINT  wPercentDropForError;
-    BOOL  fYield;
-    DWORD dwIndexSize;
-    UINT  wChunkGranularity;
-    BOOL  fUsingDOSMemory;
-    UINT  wNumVideoRequested;
-    BOOL  fCaptureAudio;
-    UINT  wNumAudioRequested;
-    UINT  vKeyAbort;
-    BOOL  fAbortLeftMouse;
-    BOOL  fAbortRightMouse;
-    BOOL  fLimitEnabled;
-    UINT  wTimeLimit;
-    BOOL  fMCIControl;
-    BOOL  fStepMCIDevice;
-    DWORD dwMCIStartTime;
-    DWORD dwMCIStopTime;
-    BOOL  fStepCaptureAt2x;
-    UINT  wStepCaptureAverageFrames;
-    DWORD dwAudioBufferSize;
-    BOOL  fDisableWriteCache;
-    UINT  AVStreamMaster;
-} CAPTUREPARMS;
 /* End of missing MinGW defines */
 
 struct vfw_ctx {
@@ -96,6 +48,8 @@ static enum PixelFormat vfw_pixfmt(DWORD biCompression, WORD biBitCount)
     switch(biCompression) {
     case MKTAG('Y', 'U', 'Y', '2'):
         return PIX_FMT_YUYV422;
+    case MKTAG('I', '4', '2', '0'):
+        return PIX_FMT_YUV420P;
     case BI_RGB:
         switch(biBitCount) { /* 1-8 are untested */
             case 1:
@@ -186,7 +140,7 @@ static int shall_we_drop(struct vfw_ctx *ctx)
 {
     AVFormatContext *s = ctx->s;
     const uint8_t dropscore[] = {62, 75, 87, 100};
-    const int ndropscores = sizeof(dropscore)/sizeof(dropscore[0]);
+    const int ndropscores = FF_ARRAY_ELEMS(dropscore);
     unsigned int buffer_fullness = (ctx->curbufsize*100)/s->max_picture_buffer;
 
     if(dropscore[++ctx->frame_num%ndropscores] <= buffer_fullness) {
@@ -285,8 +239,7 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
                       (LPARAM) videostream_cb);
     if(!ret) {
         av_log(s, AV_LOG_ERROR, "Could not set video stream callback.\n");
-        vfw_read_close(s);
-        return AVERROR_IO;
+        goto fail_io;
     }
 
     SetWindowLongPtr(ctx->hwnd, GWLP_USERDATA, (LONG_PTR) ctx);
@@ -299,21 +252,16 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     /* Set video format */
     bisize = SendMessage(ctx->hwnd, WM_CAP_GET_VIDEOFORMAT, 0, 0);
-    if(!bisize) {
-        vfw_read_close(s);
-        return AVERROR_IO;
-    }
+    if(!bisize)
+        goto fail_io;
     bi = av_malloc(bisize);
     if(!bi) {
         vfw_read_close(s);
         return AVERROR_NOMEM;
     }
     ret = SendMessage(ctx->hwnd, WM_CAP_GET_VIDEOFORMAT, bisize, (LPARAM) bi);
-    if(!ret) {
-        av_free(bi);
-        vfw_read_close(s);
-        return AVERROR_IO;
-    }
+    if(!ret)
+        goto fail_bi;
 
     dump_bih(s, &bi->bmiHeader);
 
@@ -322,12 +270,22 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
     bi->bmiHeader.biWidth  = width ;
     bi->bmiHeader.biHeight = height;
 
+#if 0
+    /* For testing yet unsupported compressions
+     * Copy these values from user-supplied verbose information */
+    bi->bmiHeader.biWidth       = 320;
+    bi->bmiHeader.biHeight      = 240;
+    bi->bmiHeader.biPlanes      = 1;
+    bi->bmiHeader.biBitCount    = 12;
+    bi->bmiHeader.biCompression = MKTAG('I','4','2','0');
+    bi->bmiHeader.biSizeImage   = 115200;
+    dump_bih(s, &bi->bmiHeader);
+#endif
+
     ret = SendMessage(ctx->hwnd, WM_CAP_SET_VIDEOFORMAT, bisize, (LPARAM) bi);
     if(!ret) {
         av_log(s, AV_LOG_ERROR, "Could not set Video Format.\n");
-        av_free(bi);
-        vfw_read_close(s);
-        return AVERROR_IO;
+        goto fail_bi;
     }
 
     biCompression = bi->bmiHeader.biCompression;
@@ -338,10 +296,8 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
     /* Set sequence setup */
     ret = SendMessage(ctx->hwnd, WM_CAP_GET_SEQUENCE_SETUP, sizeof(cparms),
                       (LPARAM) &cparms);
-    if(!ret) {
-        vfw_read_close(s);
-        return AVERROR_IO;
-    }
+    if(!ret)
+        goto fail_io;
 
     dump_captureparms(s, &cparms);
 
@@ -355,10 +311,8 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
 
     ret = SendMessage(ctx->hwnd, WM_CAP_SET_SEQUENCE_SETUP, sizeof(cparms),
                       (LPARAM) &cparms);
-    if(!ret) {
-        vfw_read_close(s);
-        return AVERROR_IO;
-    }
+    if(!ret)
+        goto fail_io;
 
     codec = st->codec;
     codec->time_base = ap->time_base;
@@ -368,7 +322,7 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
     codec->codec_id = CODEC_ID_RAWVIDEO;
     codec->pix_fmt = vfw_pixfmt(biCompression, biBitCount);
     if(biCompression == BI_RGB)
-        codec->bits_per_sample = biBitCount;
+        codec->bits_per_coded_sample = biBitCount;
 
     av_set_pts_info(st, 32, 1, 1000);
 
@@ -382,24 +336,28 @@ static int vfw_read_header(AVFormatContext *s, AVFormatParameters *ap)
     ctx->mutex = CreateMutex(NULL, 0, NULL);
     if(!ctx->mutex) {
         av_log(s, AV_LOG_ERROR, "Could not create Mutex.\n" );
-        vfw_read_close(s);
-        return AVERROR_IO;
+        goto fail_io;
     }
     ctx->event = CreateEvent(NULL, 1, 0, NULL);
     if(!ctx->event) {
         av_log(s, AV_LOG_ERROR, "Could not create Event.\n" );
-        vfw_read_close(s);
-        return AVERROR_IO;
+        goto fail_io;
     }
 
     ret = SendMessage(ctx->hwnd, WM_CAP_SEQUENCE_NOFILE, 0, 0);
     if(!ret) {
         av_log(s, AV_LOG_ERROR, "Could not start capture sequence.\n" );
-        vfw_read_close(s);
-        return AVERROR_IO;
+        goto fail_io;
     }
 
     return 0;
+
+fail_bi:
+    av_free(bi);
+
+fail_io:
+    vfw_read_close(s);
+    return AVERROR_IO;
 }
 
 static int vfw_read_packet(AVFormatContext *s, AVPacket *pkt)
@@ -450,7 +408,7 @@ static int vfw_read_close(AVFormatContext *s)
 
 AVInputFormat vfwcap_demuxer = {
     "vfwcap",
-    "VFW video capture",
+    NULL_IF_CONFIG_SMALL("VFW video capture"),
     sizeof(struct vfw_ctx),
     NULL,
     vfw_read_header,

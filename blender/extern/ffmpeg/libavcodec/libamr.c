@@ -65,7 +65,7 @@
 
 #include "avcodec.h"
 
-#ifdef CONFIG_LIBAMR_NB_FIXED
+#if CONFIG_LIBAMR_NB_FIXED
 
 #define MMS_IO
 
@@ -81,9 +81,9 @@
 #include <amrnb/interf_enc.h>
 #endif
 
-static const char *nb_bitrate_unsupported =
+static const char nb_bitrate_unsupported[] =
     "bitrate not supported: use one of 4.75k, 5.15k, 5.9k, 6.7k, 7.4k, 7.95k, 10.2k or 12.2k\n";
-static const char *wb_bitrate_unsupported =
+static const char wb_bitrate_unsupported[] =
     "bitrate not supported: use one of 6.6k, 8.85k, 12.65k, 14.25k, 15.85k, 18.25k, 19.85k, 23.05k, or 23.85k\n";
 
 /* Common code for fixed and float version*/
@@ -112,7 +112,7 @@ static int getBitrateMode(int bitrate)
     {
         if(rates[i].rate==bitrate)
         {
-            return(rates[i].mode);
+            return rates[i].mode;
         }
     }
     /* no bitrate matching, return an error */
@@ -134,9 +134,10 @@ static void amr_decode_fix_avctx(AVCodecContext * avctx)
     }
 
     avctx->frame_size = 160 * is_amr_wb;
+    avctx->sample_fmt = SAMPLE_FMT_S16;
 }
 
-#ifdef CONFIG_LIBAMR_NB_FIXED
+#if CONFIG_LIBAMR_NB_FIXED
 /* fixed point version*/
 /* frame size in serial bitstream file (frame type + serial stream + flags) */
 #define SERIAL_FRAMESIZE (1+MAX_SERIAL_SIZE+5)
@@ -155,7 +156,7 @@ typedef struct AMRContext {
     enum TXFrameType tx_frametype;
 } AMRContext;
 
-static int amr_nb_decode_init(AVCodecContext * avctx)
+static av_cold int amr_nb_decode_init(AVCodecContext * avctx)
 {
     AMRContext *s = avctx->priv_data;
 
@@ -183,7 +184,7 @@ static int amr_nb_decode_init(AVCodecContext * avctx)
     return 0;
 }
 
-static int amr_nb_encode_init(AVCodecContext * avctx)
+static av_cold int amr_nb_encode_init(AVCodecContext * avctx)
 {
     AMRContext *s = avctx->priv_data;
 
@@ -224,7 +225,7 @@ static int amr_nb_encode_init(AVCodecContext * avctx)
     return 0;
 }
 
-static int amr_nb_encode_close(AVCodecContext * avctx)
+static av_cold int amr_nb_encode_close(AVCodecContext * avctx)
 {
     AMRContext *s = avctx->priv_data;
 
@@ -234,7 +235,7 @@ static int amr_nb_encode_close(AVCodecContext * avctx)
     return 0;
 }
 
-static int amr_nb_decode_close(AVCodecContext * avctx)
+static av_cold int amr_nb_decode_close(AVCodecContext * avctx)
 {
     AMRContext *s = avctx->priv_data;
 
@@ -244,10 +245,10 @@ static int amr_nb_decode_close(AVCodecContext * avctx)
 
 static int amr_nb_decode_frame(AVCodecContext * avctx,
             void *data, int *data_size,
-            uint8_t * buf, int buf_size)
+            const uint8_t * buf, int buf_size)
 {
     AMRContext *s = avctx->priv_data;
-    uint8_t*amrData=buf;
+    const uint8_t*amrData=buf;
     int offset=0;
     UWord8 toc, q, ft;
     Word16 serial[SERIAL_FRAMESIZE];   /* coded bits */
@@ -352,7 +353,7 @@ static int amr_nb_encode_frame(AVCodecContext *avctx,
 }
 
 
-#elif defined(CONFIG_LIBAMR_NB) /* Float point version*/
+#elif CONFIG_LIBAMR_NB /* Float point version*/
 
 typedef struct AMRContext {
     int frameCount;
@@ -361,7 +362,7 @@ typedef struct AMRContext {
     int enc_bitrate;
 } AMRContext;
 
-static int amr_nb_decode_init(AVCodecContext * avctx)
+static av_cold int amr_nb_decode_init(AVCodecContext * avctx)
 {
     AMRContext *s = avctx->priv_data;
 
@@ -384,7 +385,7 @@ static int amr_nb_decode_init(AVCodecContext * avctx)
     return 0;
 }
 
-static int amr_nb_encode_init(AVCodecContext * avctx)
+static av_cold int amr_nb_encode_init(AVCodecContext * avctx)
 {
     AMRContext *s = avctx->priv_data;
 
@@ -421,7 +422,7 @@ static int amr_nb_encode_init(AVCodecContext * avctx)
     return 0;
 }
 
-static int amr_nb_decode_close(AVCodecContext * avctx)
+static av_cold int amr_nb_decode_close(AVCodecContext * avctx)
 {
     AMRContext *s = avctx->priv_data;
 
@@ -429,7 +430,7 @@ static int amr_nb_decode_close(AVCodecContext * avctx)
     return 0;
 }
 
-static int amr_nb_encode_close(AVCodecContext * avctx)
+static av_cold int amr_nb_encode_close(AVCodecContext * avctx)
 {
     AMRContext *s = avctx->priv_data;
 
@@ -440,10 +441,10 @@ static int amr_nb_encode_close(AVCodecContext * avctx)
 
 static int amr_nb_decode_frame(AVCodecContext * avctx,
             void *data, int *data_size,
-            uint8_t * buf, int buf_size)
+            const uint8_t * buf, int buf_size)
 {
     AMRContext *s = avctx->priv_data;
-    uint8_t*amrData=buf;
+    const uint8_t*amrData=buf;
     static const uint8_t block_size[16]={ 12, 13, 15, 17, 19, 20, 26, 31, 5, 0, 0, 0, 0, 0, 0, 0 };
     enum Mode dec_mode;
     int packet_size;
@@ -491,7 +492,7 @@ static int amr_nb_encode_frame(AVCodecContext *avctx,
 
 #endif
 
-#if defined(CONFIG_LIBAMR_NB) || defined(CONFIG_LIBAMR_NB_FIXED)
+#if CONFIG_LIBAMR_NB || CONFIG_LIBAMR_NB_FIXED
 
 AVCodec libamr_nb_decoder =
 {
@@ -503,6 +504,7 @@ AVCodec libamr_nb_decoder =
     NULL,
     amr_nb_decode_close,
     amr_nb_decode_frame,
+    .long_name = NULL_IF_CONFIG_SMALL("libamr-nb Adaptive Multi-Rate (AMR) Narrow-Band"),
 };
 
 AVCodec libamr_nb_encoder =
@@ -515,12 +517,14 @@ AVCodec libamr_nb_encoder =
     amr_nb_encode_frame,
     amr_nb_encode_close,
     NULL,
+    .sample_fmts = (enum SampleFormat[]){SAMPLE_FMT_S16,SAMPLE_FMT_NONE},
+    .long_name = NULL_IF_CONFIG_SMALL("libamr-nb Adaptive Multi-Rate (AMR) Narrow-Band"),
 };
 
 #endif
 
 /* -----------AMR wideband ------------*/
-#ifdef CONFIG_LIBAMR_WB
+#if CONFIG_LIBAMR_WB
 
 #ifdef _TYPEDEF_H
 //To avoid duplicate typedefs from typedef in amr-nb
@@ -557,7 +561,7 @@ static int getWBBitrateMode(int bitrate)
     {
         if(rates[i].rate==bitrate)
         {
-            return(rates[i].mode);
+            return rates[i].mode;
         }
     }
     /* no bitrate matching, return an error */
@@ -650,10 +654,10 @@ static int amr_wb_decode_init(AVCodecContext * avctx)
 
 static int amr_wb_decode_frame(AVCodecContext * avctx,
             void *data, int *data_size,
-            uint8_t * buf, int buf_size)
+            const uint8_t * buf, int buf_size)
 {
     AMRWBContext *s = avctx->priv_data;
-    uint8_t*amrData=buf;
+    const uint8_t*amrData=buf;
     int mode;
     int packet_size;
     static const uint8_t block_size[16] = {18, 23, 33, 37, 41, 47, 51, 59, 61, 6, 6, 0, 0, 0, 1, 1};
@@ -695,6 +699,7 @@ AVCodec libamr_wb_decoder =
     NULL,
     amr_wb_decode_close,
     amr_wb_decode_frame,
+    .long_name = NULL_IF_CONFIG_SMALL("libamr-wb Adaptive Multi-Rate (AMR) Wide-Band"),
 };
 
 AVCodec libamr_wb_encoder =
@@ -707,6 +712,8 @@ AVCodec libamr_wb_encoder =
     amr_wb_encode_frame,
     amr_wb_encode_close,
     NULL,
+    .sample_fmts = (enum SampleFormat[]){SAMPLE_FMT_S16,SAMPLE_FMT_NONE},
+    .long_name = NULL_IF_CONFIG_SMALL("libamr-wb Adaptive Multi-Rate (AMR) Wide-Band"),
 };
 
 #endif //CONFIG_LIBAMR_WB

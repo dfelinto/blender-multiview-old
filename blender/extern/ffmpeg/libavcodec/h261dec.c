@@ -21,7 +21,7 @@
  */
 
 /**
- * @file h261dec.c
+ * @file libavcodec/h261dec.c
  * H.261 decoder.
  */
 
@@ -66,7 +66,7 @@ static av_cold void h261_decode_init_vlc(H261Context *h){
                  &h261_cbp_tab[0][1], 2, 1,
                  &h261_cbp_tab[0][0], 2, 1, 1);
         init_rl(&h261_rl_tcoeff, ff_h261_rl_table_store);
-        init_vlc_rl(&h261_rl_tcoeff, 1);
+        INIT_VLC_RL(h261_rl_tcoeff, 552);
     }
 }
 
@@ -133,8 +133,11 @@ static int h261_decode_gob_header(H261Context *h){
         skip_bits(&s->gb, 8);
     }
 
-    if(s->qscale==0)
-        return -1;
+    if(s->qscale==0) {
+        av_log(s->avctx, AV_LOG_ERROR, "qscale has forbidden 0 value\n");
+        if (s->avctx->error_recognition >= FF_ER_COMPLIANT)
+            return -1;
+    }
 
     // For the first transmitted macroblock in a GOB, MBA is the absolute address. For
     // subsequent macroblocks, MBA is the difference between the absolute addresses of
@@ -647,4 +650,5 @@ AVCodec h261_decoder = {
     h261_decode_end,
     h261_decode_frame,
     CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("H.261"),
 };

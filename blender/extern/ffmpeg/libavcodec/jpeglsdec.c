@@ -21,13 +21,14 @@
  */
 
 /**
- * @file jpeglsdec.c
+ * @file libavcodec/jpeglsdec.c
  * JPEG-LS decoder.
  */
 
 #include "avcodec.h"
 #include "bitstream.h"
 #include "golomb.h"
+#include "mathops.h"
 #include "mjpeg.h"
 #include "mjpegdec.h"
 #include "jpegls.h"
@@ -372,4 +373,5 @@ AVCodec jpegls_decoder = {
     ff_mjpeg_decode_end,
     ff_mjpeg_decode_frame,
     CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("JPEG-LS"),
 };

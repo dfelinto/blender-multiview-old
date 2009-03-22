@@ -1,10 +1,10 @@
 /*****************************************************************************
  * cabac.c: h264 encoder library
  *****************************************************************************
- * Copyright (C) 2003 Laurent Aimar
- * $Id: cabac.c,v 1.1 2004/06/03 19:27:06 fenrir Exp $
+ * Copyright (C) 2003-2008 x264 project
  *
  * Authors: Laurent Aimar <fenrir@via.ecp.fr>
+ *          Loren Merritt <lorenm@u.washington.edu>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111, USA.
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02111, USA.
  *****************************************************************************/
 
 #include "common.h"
@@ -666,7 +666,7 @@ static const int8_t x264_cabac_context_init_PB[3][460][2] =
 
 /* FIXME could avoid this duplication by reversing the order of states
  * with MPS=0, but that would uglify the other tables */
-static const uint8_t x264_cabac_range_lps[128][4] =
+const uint8_t x264_cabac_range_lps[128][4] =
 {
     {   2,   2,   2,   2 },
     {   6,   7,   8,   9 }, {   6,   7,   9,  10 }, {   6,   8,   9,  11 },
@@ -715,104 +715,69 @@ static const uint8_t x264_cabac_range_lps[128][4] =
     {   2,   2,   2,   2 },
 };
 
-static const uint8_t x264_cabac_transition[2][128] =
-{{
-      0,  1,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
-     15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
-     31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46,
-     47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62,
-     63, 64, 65, 66, 66, 68, 68, 69, 70, 71, 72, 73, 73, 75, 75, 76,
-     77, 77, 79, 79, 80, 80, 82, 82, 83, 83, 85, 85, 86, 86, 87, 88,
-     88, 89, 90, 90, 91, 91, 92, 93, 93, 94, 94, 94, 95, 96, 96, 97,
-     97, 97, 98, 98, 99, 99, 99,100,100,100,101,101,101,102,102,127,
-},{
-      0, 25, 25, 26, 26, 26, 27, 27, 27, 28, 28, 28, 29, 29, 30, 30,
-     30, 31, 31, 32, 33, 33, 33, 34, 34, 35, 36, 36, 37, 37, 38, 39,
-     39, 40, 41, 41, 42, 42, 44, 44, 45, 45, 47, 47, 48, 48, 50, 50,
-     51, 52, 52, 54, 54, 55, 56, 57, 58, 59, 59, 61, 61, 62, 63, 64,
-     65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,
-     81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96,
-     97, 98, 99,100,101,102,103,104,105,106,107,108,109,110,111,112,
-    113,114,115,116,117,118,119,120,121,122,123,124,125,126,126,127,
-}};
+const uint8_t x264_cabac_transition[128][2] =
+{
+    {  0,  0}, {  1, 25}, {  1, 25}, {  2, 26}, {  3, 26}, {  4, 26}, {  5, 27}, {  6, 27},
+    {  7, 27}, {  8, 28}, {  9, 28}, { 10, 28}, { 11, 29}, { 12, 29}, { 13, 30}, { 14, 30},
+    { 15, 30}, { 16, 31}, { 17, 31}, { 18, 32}, { 19, 33}, { 20, 33}, { 21, 33}, { 22, 34},
+    { 23, 34}, { 24, 35}, { 25, 36}, { 26, 36}, { 27, 37}, { 28, 37}, { 29, 38}, { 30, 39},
+    { 31, 39}, { 32, 40}, { 33, 41}, { 34, 41}, { 35, 42}, { 36, 42}, { 37, 44}, { 38, 44},
+    { 39, 45}, { 40, 45}, { 41, 47}, { 42, 47}, { 43, 48}, { 44, 48}, { 45, 50}, { 46, 50},
+    { 47, 51}, { 48, 52}, { 49, 52}, { 50, 54}, { 51, 54}, { 52, 55}, { 53, 56}, { 54, 57},
+    { 55, 58}, { 56, 59}, { 57, 59}, { 58, 61}, { 59, 61}, { 60, 62}, { 61, 63}, { 62, 64},
+    { 63, 65}, { 64, 66}, { 65, 67}, { 66, 68}, { 66, 69}, { 68, 70}, { 68, 71}, { 69, 72},
+    { 70, 73}, { 71, 74}, { 72, 75}, { 73, 76}, { 73, 77}, { 75, 78}, { 75, 79}, { 76, 80},
+    { 77, 81}, { 77, 82}, { 79, 83}, { 79, 84}, { 80, 85}, { 80, 86}, { 82, 87}, { 82, 88},
+    { 83, 89}, { 83, 90}, { 85, 91}, { 85, 92}, { 86, 93}, { 86, 94}, { 87, 95}, { 88, 96},
+    { 88, 97}, { 89, 98}, { 90, 99}, { 90,100}, { 91,101}, { 91,102}, { 92,103}, { 93,104},
+    { 93,105}, { 94,106}, { 94,107}, { 94,108}, { 95,109}, { 96,110}, { 96,111}, { 97,112},
+    { 97,113}, { 97,114}, { 98,115}, { 98,116}, { 99,117}, { 99,118}, { 99,119}, {100,120},
+    {100,121}, {100,122}, {101,123}, {101,124}, {101,125}, {102,126}, {102,126}, {127,127},
+};
 
-static const uint8_t renorm_shift[64]= {
+const uint8_t x264_cabac_renorm_shift[64]= {
  6,5,4,4,3,3,3,3,2,2,2,2,2,2,2,2,
  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
-static const uint8_t x264_cabac_probability[128] =
-{
-    FIX8(0.9812), FIX8(0.9802), FIX8(0.9792), FIX8(0.9781),
-    FIX8(0.9769), FIX8(0.9757), FIX8(0.9744), FIX8(0.9730),
-    FIX8(0.9716), FIX8(0.9700), FIX8(0.9684), FIX8(0.9667),
-    FIX8(0.9650), FIX8(0.9631), FIX8(0.9611), FIX8(0.9590),
-    FIX8(0.9568), FIX8(0.9545), FIX8(0.9521), FIX8(0.9495),
-    FIX8(0.9468), FIX8(0.9440), FIX8(0.9410), FIX8(0.9378),
-    FIX8(0.9345), FIX8(0.9310), FIX8(0.9273), FIX8(0.9234),
-    FIX8(0.9193), FIX8(0.9150), FIX8(0.9105), FIX8(0.9057),
-    FIX8(0.9006), FIX8(0.8953), FIX8(0.8897), FIX8(0.8838),
-    FIX8(0.8776), FIX8(0.8710), FIX8(0.8641), FIX8(0.8569),
-    FIX8(0.8492), FIX8(0.8411), FIX8(0.8326), FIX8(0.8237),
-    FIX8(0.8143), FIX8(0.8043), FIX8(0.7938), FIX8(0.7828),
-    FIX8(0.7712), FIX8(0.7590), FIX8(0.7461), FIX8(0.7325),
-    FIX8(0.7182), FIX8(0.7031), FIX8(0.6872), FIX8(0.6705),
-    FIX8(0.6528), FIX8(0.6343), FIX8(0.6147), FIX8(0.5941),
-    FIX8(0.5724), FIX8(0.5495), FIX8(0.5254), FIX8(0.5000),
-    FIX8(0.5000), FIX8(0.4746), FIX8(0.4505), FIX8(0.4276),
-    FIX8(0.4059), FIX8(0.3853), FIX8(0.3657), FIX8(0.3472),
-    FIX8(0.3295), FIX8(0.3128), FIX8(0.2969), FIX8(0.2818),
-    FIX8(0.2675), FIX8(0.2539), FIX8(0.2410), FIX8(0.2288),
-    FIX8(0.2172), FIX8(0.2062), FIX8(0.1957), FIX8(0.1857),
-    FIX8(0.1763), FIX8(0.1674), FIX8(0.1589), FIX8(0.1508),
-    FIX8(0.1431), FIX8(0.1359), FIX8(0.1290), FIX8(0.1224),
-    FIX8(0.1162), FIX8(0.1103), FIX8(0.1047), FIX8(0.0994),
-    FIX8(0.0943), FIX8(0.0895), FIX8(0.0850), FIX8(0.0807),
-    FIX8(0.0766), FIX8(0.0727), FIX8(0.0690), FIX8(0.0655),
-    FIX8(0.0622), FIX8(0.0590), FIX8(0.0560), FIX8(0.0532),
-    FIX8(0.0505), FIX8(0.0479), FIX8(0.0455), FIX8(0.0432),
-    FIX8(0.0410), FIX8(0.0389), FIX8(0.0369), FIX8(0.0350),
-    FIX8(0.0333), FIX8(0.0316), FIX8(0.0300), FIX8(0.0284),
-    FIX8(0.0270), FIX8(0.0256), FIX8(0.0243), FIX8(0.0231),
-    FIX8(0.0219), FIX8(0.0208), FIX8(0.0198), FIX8(0.0187)
-};
 /* -ln2(probability) */
-static const uint16_t x264_cabac_entropy[128] =
+#define F(a,b) {FIX8(a),FIX8(b)}
+const uint16_t x264_cabac_entropy[128][2] =
 {
-    FIX8(0.0273), FIX8(0.0288), FIX8(0.0303), FIX8(0.0320),
-    FIX8(0.0337), FIX8(0.0355), FIX8(0.0375), FIX8(0.0395),
-    FIX8(0.0416), FIX8(0.0439), FIX8(0.0463), FIX8(0.0488),
-    FIX8(0.0515), FIX8(0.0543), FIX8(0.0572), FIX8(0.0604),
-    FIX8(0.0637), FIX8(0.0671), FIX8(0.0708), FIX8(0.0747),
-    FIX8(0.0788), FIX8(0.0832), FIX8(0.0878), FIX8(0.0926),
-    FIX8(0.0977), FIX8(0.1032), FIX8(0.1089), FIX8(0.1149),
-    FIX8(0.1214), FIX8(0.1282), FIX8(0.1353), FIX8(0.1429),
-    FIX8(0.1510), FIX8(0.1596), FIX8(0.1686), FIX8(0.1782),
-    FIX8(0.1884), FIX8(0.1992), FIX8(0.2107), FIX8(0.2229),
-    FIX8(0.2358), FIX8(0.2496), FIX8(0.2642), FIX8(0.2798),
-    FIX8(0.2964), FIX8(0.3142), FIX8(0.3331), FIX8(0.3532),
-    FIX8(0.3748), FIX8(0.3979), FIX8(0.4226), FIX8(0.4491),
-    FIX8(0.4776), FIX8(0.5082), FIX8(0.5412), FIX8(0.5768),
-    FIX8(0.6152), FIX8(0.6568), FIX8(0.7020), FIX8(0.7513),
-    FIX8(0.8050), FIX8(0.8638), FIX8(0.9285), FIX8(1.0000),
-    FIX8(1.0000), FIX8(1.0752), FIX8(1.1504), FIX8(1.2256),
-    FIX8(1.3008), FIX8(1.3759), FIX8(1.4511), FIX8(1.5263),
-    FIX8(1.6015), FIX8(1.6767), FIX8(1.7519), FIX8(1.8271),
-    FIX8(1.9023), FIX8(1.9775), FIX8(2.0527), FIX8(2.1278),
-    FIX8(2.2030), FIX8(2.2782), FIX8(2.3534), FIX8(2.4286),
-    FIX8(2.5038), FIX8(2.5790), FIX8(2.6542), FIX8(2.7294),
-    FIX8(2.8046), FIX8(2.8797), FIX8(2.9549), FIX8(3.0301),
-    FIX8(3.1053), FIX8(3.1805), FIX8(3.2557), FIX8(3.3309),
-    FIX8(3.4061), FIX8(3.4813), FIX8(3.5565), FIX8(3.6316),
-    FIX8(3.7068), FIX8(3.7820), FIX8(3.8572), FIX8(3.9324),
-    FIX8(4.0076), FIX8(4.0828), FIX8(4.1580), FIX8(4.2332),
-    FIX8(4.3083), FIX8(4.3836), FIX8(4.4588), FIX8(4.5339),
-    FIX8(4.6091), FIX8(4.6843), FIX8(4.7595), FIX8(4.8347),
-    FIX8(4.9099), FIX8(4.9851), FIX8(5.0602), FIX8(5.1354),
-    FIX8(5.2106), FIX8(5.2859), FIX8(5.3610), FIX8(5.4362),
-    FIX8(5.5114), FIX8(5.5866), FIX8(5.6618), FIX8(5.7370)
+    F(0.0273,5.7370), F(0.0288,5.6618), F(0.0303,5.5866), F(0.0320,5.5114),
+    F(0.0337,5.4362), F(0.0355,5.3610), F(0.0375,5.2859), F(0.0395,5.2106),
+    F(0.0416,5.1354), F(0.0439,5.0602), F(0.0463,4.9851), F(0.0488,4.9099),
+    F(0.0515,4.8347), F(0.0543,4.7595), F(0.0572,4.6843), F(0.0604,4.6091),
+    F(0.0637,4.5339), F(0.0671,4.4588), F(0.0708,4.3836), F(0.0747,4.3083),
+    F(0.0788,4.2332), F(0.0832,4.1580), F(0.0878,4.0828), F(0.0926,4.0076),
+    F(0.0977,3.9324), F(0.1032,3.8572), F(0.1089,3.7820), F(0.1149,3.7068),
+    F(0.1214,3.6316), F(0.1282,3.5565), F(0.1353,3.4813), F(0.1429,3.4061),
+    F(0.1510,3.3309), F(0.1596,3.2557), F(0.1686,3.1805), F(0.1782,3.1053),
+    F(0.1884,3.0301), F(0.1992,2.9549), F(0.2107,2.8797), F(0.2229,2.8046),
+    F(0.2358,2.7294), F(0.2496,2.6542), F(0.2642,2.5790), F(0.2798,2.5038),
+    F(0.2964,2.4286), F(0.3142,2.3534), F(0.3331,2.2782), F(0.3532,2.2030),
+    F(0.3748,2.1278), F(0.3979,2.0527), F(0.4226,1.9775), F(0.4491,1.9023),
+    F(0.4776,1.8271), F(0.5082,1.7519), F(0.5412,1.6767), F(0.5768,1.6015),
+    F(0.6152,1.5263), F(0.6568,1.4511), F(0.7020,1.3759), F(0.7513,1.3008),
+    F(0.8050,1.2256), F(0.8638,1.1504), F(0.9285,1.0752), F(1.0000,1.0000),
+    F(1.0000,1.0000), F(1.0752,0.9285), F(1.1504,0.8638), F(1.2256,0.8050),
+    F(1.3008,0.7513), F(1.3759,0.7020), F(1.4511,0.6568), F(1.5263,0.6152),
+    F(1.6015,0.5768), F(1.6767,0.5412), F(1.7519,0.5082), F(1.8271,0.4776),
+    F(1.9023,0.4491), F(1.9775,0.4226), F(2.0527,0.3979), F(2.1278,0.3748),
+    F(2.2030,0.3532), F(2.2782,0.3331), F(2.3534,0.3142), F(2.4286,0.2964),
+    F(2.5038,0.2798), F(2.5790,0.2642), F(2.6542,0.2496), F(2.7294,0.2358),
+    F(2.8046,0.2229), F(2.8797,0.2107), F(2.9549,0.1992), F(3.0301,0.1884),
+    F(3.1053,0.1782), F(3.1805,0.1686), F(3.2557,0.1596), F(3.3309,0.1510),
+    F(3.4061,0.1429), F(3.4813,0.1353), F(3.5565,0.1282), F(3.6316,0.1214),
+    F(3.7068,0.1149), F(3.7820,0.1089), F(3.8572,0.1032), F(3.9324,0.0977),
+    F(4.0076,0.0926), F(4.0828,0.0878), F(4.1580,0.0832), F(4.2332,0.0788),
+    F(4.3083,0.0747), F(4.3836,0.0708), F(4.4588,0.0671), F(4.5339,0.0637),
+    F(4.6091,0.0604), F(4.6843,0.0572), F(4.7595,0.0543), F(4.8347,0.0515),
+    F(4.9099,0.0488), F(4.9851,0.0463), F(5.0602,0.0439), F(5.1354,0.0416),
+    F(5.2106,0.0395), F(5.2859,0.0375), F(5.3610,0.0355), F(5.4362,0.0337),
+    F(5.5114,0.0320), F(5.5866,0.0303), F(5.6618,0.0288), F(5.7370,0.0273),
 };
 
 
@@ -864,21 +829,18 @@ static inline void x264_cabac_putbyte( x264_cabac_t *cb )
         }
         else
         {
-            int carry = out & 0x100;
+            int carry = out >> 8;
             int bytes_outstanding = cb->i_bytes_outstanding;
-            if( cb->p + bytes_outstanding + 1 >= cb->p_end )
-                return;
-            if( carry )
-            {
-                // this can't happen on the first byte (buffer underrun),
-                // because that would correspond to a probability > 1.
-                // this can't carry beyond the one byte, because any 0xff bytes
-                // are in bytes_outstanding and thus not written yet.
-                cb->p[-1]++;
-            }
+            // this can't modify before the beginning of the stream because
+            // that would correspond to a probability > 1.
+            // it will write before the beginning of the stream, which is ok
+            // because a slice header always comes before cabac data.
+            // this can't carry beyond the one byte, because any 0xff bytes
+            // are in bytes_outstanding and thus not written yet.
+            cb->p[-1] += carry;
             while( bytes_outstanding > 0 )
             {
-                *(cb->p++) = (carry >> 8) - 1;
+                *(cb->p++) = carry-1;
                 bytes_outstanding--;
             }
             *(cb->p++) = out;
@@ -889,28 +851,24 @@ static inline void x264_cabac_putbyte( x264_cabac_t *cb )
 
 static inline void x264_cabac_encode_renorm( x264_cabac_t *cb )
 {
-    int shift = renorm_shift[cb->i_range>>3];
+    int shift = x264_cabac_renorm_shift[cb->i_range>>3];
     cb->i_range <<= shift;
     cb->i_low   <<= shift;
     cb->i_queue  += shift;
     x264_cabac_putbyte( cb );
 }
 
-void x264_cabac_encode_decision( x264_cabac_t *cb, int i_ctx, int b )
+void x264_cabac_encode_decision_c( x264_cabac_t *cb, int i_ctx, int b )
 {
     int i_state = cb->state[i_ctx];
     int i_range_lps = x264_cabac_range_lps[i_state][(cb->i_range>>6)&0x03];
-
     cb->i_range -= i_range_lps;
-
     if( b != (i_state >> 6) )
     {
         cb->i_low += cb->i_range;
         cb->i_range = i_range_lps;
     }
-
-    cb->state[i_ctx] = x264_cabac_transition[b][i_state];
-
+    cb->state[i_ctx] = x264_cabac_transition[i_state][b];
     x264_cabac_encode_renorm( cb );
 }
 
@@ -920,6 +878,25 @@ void x264_cabac_encode_bypass( x264_cabac_t *cb, int b )
     cb->i_low += -b & cb->i_range;
     cb->i_queue += 1;
     x264_cabac_putbyte( cb );
+}
+
+void x264_cabac_encode_ue_bypass( x264_cabac_t *cb, int exp_bits, int val )
+{
+    int k, i;
+    uint32_t x;
+    for( k = exp_bits; val >= (1<<k); k++ )
+        val -= 1<<k;
+    x = (((1<<(k-exp_bits))-1)<<(k+1))+val;
+    k = 2*k+1-exp_bits;
+    i = ((k-1)&7)+1;
+    do {
+        k -= i;
+        cb->i_low <<= i;
+        cb->i_low += ((x>>k)&0xff) * cb->i_range;
+        cb->i_queue += i;
+        x264_cabac_putbyte( cb );
+        i = 8;
+    } while( k > 0 );
 }
 
 void x264_cabac_encode_terminal( x264_cabac_t *cb )
@@ -941,9 +918,6 @@ void x264_cabac_encode_flush( x264_t *h, x264_cabac_t *cb )
     cb->i_queue = 8;
     x264_cabac_putbyte( cb );
 
-    if( cb->p + cb->i_bytes_outstanding + 1 >= cb->p_end )
-        return; //FIXME throw an error instead of silently truncating the frame
-
     while( cb->i_bytes_outstanding > 0 )
     {
         *(cb->p++) = 0xff;
@@ -951,24 +925,3 @@ void x264_cabac_encode_flush( x264_t *h, x264_cabac_t *cb )
     }
 }
 
-/*****************************************************************************
- *
- *****************************************************************************/
-void x264_cabac_size_decision( x264_cabac_t *cb, int i_ctx, int b )
-{
-    int i_state = cb->state[i_ctx];
-    cb->state[i_ctx] = x264_cabac_transition[b][i_state];
-    cb->f8_bits_encoded += x264_cabac_entropy[ b ? 127 - i_state : i_state ];
-}
-
-int x264_cabac_size_decision2( uint8_t *state, int b )
-{
-    int i_state = *state;
-    *state = x264_cabac_transition[b][i_state];
-    return x264_cabac_entropy[ b ? 127 - i_state : i_state ];
-}
-
-int x264_cabac_size_decision_noup( uint8_t *state, int b )
-{
-    return x264_cabac_entropy[ b ? 127 - *state : *state ];
-}

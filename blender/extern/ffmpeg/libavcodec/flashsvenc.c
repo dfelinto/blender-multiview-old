@@ -23,7 +23,7 @@
 /* Encoding development sponsored by http://fh-campuswien.ac.at */
 
 /**
- * @file flashsvenc.c
+ * @file libavcodec/flashsvenc.c
  * Flash Screen Video encoder
  * @author Alex Beregszaszi
  * @author Benjamin Larsson
@@ -292,6 +292,7 @@ AVCodec flashsv_encoder = {
     flashsv_encode_init,
     flashsv_encode_frame,
     flashsv_encode_end,
-    .pix_fmts = (enum PixelFormat[]){PIX_FMT_BGR24, -1},
+    .pix_fmts = (enum PixelFormat[]){PIX_FMT_BGR24, PIX_FMT_NONE},
+    .long_name = NULL_IF_CONFIG_SMALL("Flash Screen Video"),
 };
 

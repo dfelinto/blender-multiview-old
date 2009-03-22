@@ -19,9 +19,9 @@
  */
 
 /**
- * @file roqvideodec.c
- * Id RoQ Video Decoder by Dr. Tim Ferguson
- * For more information about the Id RoQ format, visit:
+ * @file libavcodec/roqvideodec.c
+ * id RoQ Video Decoder by Dr. Tim Ferguson
+ * For more information about the id RoQ format, visit:
  *   http://www.csse.monash.edu.au/~timf/
  */
 
@@ -219,4 +219,5 @@ AVCodec roq_decoder = {
     roq_decode_end,
     roq_decode_frame,
     CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("id RoQ video"),
 };

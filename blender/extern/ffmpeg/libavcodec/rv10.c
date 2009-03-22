@@ -1,6 +1,6 @@
 /*
  * RV10 codec
- * Copyright (c) 2000,2001 Fabrice Bellard.
+ * Copyright (c) 2000,2001 Fabrice Bellard
  * Copyright (c) 2002-2004 Michael Niedermayer
  *
  * This file is part of FFmpeg.
@@ -21,7 +21,7 @@
  */
 
 /**
- * @file rv10.c
+ * @file libavcodec/rv10.c
  * RV10 codec.
  */
 
@@ -229,8 +229,8 @@ int rv_decode_dc(MpegEncContext *s, int n)
     return -code;
 }
 
-#ifdef CONFIG_ENCODERS
 
+#if CONFIG_RV10_ENCODER || CONFIG_RV20_ENCODER
 /* write RV 1.0 compatible frame header */
 void rv10_encode_picture_header(MpegEncContext *s, int picture_number)
 {
@@ -250,7 +250,7 @@ void rv10_encode_picture_header(MpegEncContext *s, int picture_number)
         /* specific MPEG like DC coding not used */
     }
     /* if multiple packets per frame are sent, the position at which
-       to display the macro blocks is coded here */
+       to display the macroblocks is coded here */
     if(!full_frame){
         put_bits(&s->pb, 6, 0); /* mb_x */
         put_bits(&s->pb, 6, 0); /* mb_y */
@@ -265,7 +265,7 @@ void rv20_encode_picture_header(MpegEncContext *s, int picture_number){
     put_bits(&s->pb, 1, 0);     /* unknown bit */
     put_bits(&s->pb, 5, s->qscale);
 
-    put_bits(&s->pb, 8, picture_number&0xFF); //FIXME wrong, but correct is not known
+    put_sbits(&s->pb, 8, picture_number); //FIXME wrong, but correct is not known
     s->mb_x= s->mb_y= 0;
     ff_h263_encode_mba(s);
 
@@ -304,7 +304,7 @@ static int get_num(GetBitContext *gb)
 }
 #endif
 
-#endif //CONFIG_ENCODERS
+#endif /* CONFIG_RV10_ENCODER || CONFIG_RV20_ENCODER */
 
 /* read RV 1.0 compatible frame header */
 static int rv10_decode_picture_header(MpegEncContext *s)
@@ -352,7 +352,7 @@ static int rv10_decode_picture_header(MpegEncContext *s)
         }
     }
     /* if multiple packets per frame are sent, the position at which
-       to display the macro blocks is coded here */
+       to display the macroblocks is coded here */
 
     mb_xy= s->mb_x + s->mb_y*s->mb_width;
     if(show_bits(&s->gb, 12)==0 || (mb_xy && mb_xy < s->mb_num)){
@@ -527,6 +527,11 @@ static av_cold int rv10_decode_init(AVCodecContext *avctx)
     MpegEncContext *s = avctx->priv_data;
     static int done=0;
 
+    if (avctx->extradata_size < 8) {
+        av_log(avctx, AV_LOG_ERROR, "Extradata is too small.\n");
+        return -1;
+    }
+
     MPV_decode_defaults(s);
 
     s->avctx= avctx;
@@ -541,6 +546,9 @@ static av_cold int rv10_decode_init(AVCodecContext *avctx)
 
     if (avctx->sub_id == 0x10000000) {
         s->rv10_version= 0;
+        s->low_delay=1;
+    } else if (avctx->sub_id == 0x10001000) {
+        s->rv10_version= 3;
         s->low_delay=1;
     } else if (avctx->sub_id == 0x10002000) {
         s->rv10_version= 3;
@@ -784,7 +792,9 @@ AVCodec rv10_decoder = {
     NULL,
     rv10_decode_end,
     rv10_decode_frame,
-    CODEC_CAP_DR1
+    CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("RealVideo 1.0"),
+    .pix_fmts= ff_pixfmt_list_420,
 };
 
 AVCodec rv20_decoder = {
@@ -798,5 +808,7 @@ AVCodec rv20_decoder = {
     rv10_decode_frame,
     CODEC_CAP_DR1 | CODEC_CAP_DELAY,
     .flush= ff_mpeg_flush,
+    .long_name = NULL_IF_CONFIG_SMALL("RealVideo 2.0"),
+    .pix_fmts= ff_pixfmt_list_420,
 };
 

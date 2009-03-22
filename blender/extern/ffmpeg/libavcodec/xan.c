@@ -20,7 +20,7 @@
  */
 
 /**
- * @file xan.c
+ * @file libavcodec/xan.c
  * Xan video decoder for Wing Commander III computer game
  * by Mario Brito (mbrito@student.dei.uc.pt)
  * and Mike Melanson (melanson@pcisys.net)
@@ -33,6 +33,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
 typedef struct XanContext {
@@ -471,6 +472,7 @@ AVCodec xan_wc3_decoder = {
     xan_decode_end,
     xan_decode_frame,
     CODEC_CAP_DR1,
+    .long_name = NULL_IF_CONFIG_SMALL("Wing Commander III / Xan"),
 };
 
 /*

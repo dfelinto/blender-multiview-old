@@ -36,13 +36,30 @@ def makeparseblock(fp, variables):
         if i >= 0:
             line = line[:i]
 
-        iter = makevarsubst.finditer(line[:])
-        for obj in iter:
-            (name) = obj.group(1)
-            s = ""
-            if name in variables:
-                s = variables[name]
-            line = line.replace('$(' + name + ')', s)
+        while makevarsubst.search(line):
+            iter = makevarsubst.finditer(line[:])
+            for obj in iter:
+                (name) = obj.group(1)
+                s = ""
+                i = name.find(':')
+                if i >= 0:
+                    subst = name[i+1:].split("=")
+                    nname = name[:i]
+                    if nname in variables:
+                        s = variables[nname]
+                    sl = list(Set(s.split()))
+                    fin = ""
+                    for x in sl:
+                        s_from = subst[0][:]
+                        s_to = subst[1][:]
+                        s_from = s_from.replace("%", x)
+                        s_to = s_to.replace("%", x)
+                        fin += x.replace(s_from, s_to) + " "
+                    s = fin
+                else:
+                    if name in variables:
+                        s = variables[name]
+                line = line.replace('$(' + name + ')', s)
 
         matchobj = makevardef.match(line)
         if matchobj:

@@ -1,6 +1,6 @@
 /*
  * DSP utils
- * Copyright (c) 2000, 2001 Fabrice Bellard.
+ * Copyright (c) 2000, 2001 Fabrice Bellard
  * Copyright (c) 2002-2004 Michael Niedermayer <michaelni@gmx.at>
  *
  * gmc & q-pel & 32/64 bit based MC by Michael Niedermayer <michaelni@gmx.at>
@@ -23,7 +23,7 @@
  */
 
 /**
- * @file dsputil.c
+ * @file libavcodec/dsputil.c
  * DSP utils
  */
 
@@ -32,6 +32,7 @@
 #include "simple_idct.h"
 #include "faandct.h"
 #include "faanidct.h"
+#include "mathops.h"
 #include "h263.h"
 #include "snow.h"
 
@@ -41,11 +42,17 @@ void ff_spatial_dwt(int *buffer, int width, int height, int stride, int type, in
 /* vorbis.c */
 void vorbis_inverse_coupling(float *mag, float *ang, int blocksize);
 
+/* ac3dec.c */
+void ff_ac3_downmix_c(float (*samples)[256], float (*matrix)[2], int out_ch, int in_ch, int len);
+
 /* flacenc.c */
 void ff_flac_compute_autocorr(const int32_t *data, int len, int lag, double *autoc);
 
 /* pngdec.c */
 void ff_add_png_paeth_prediction(uint8_t *dst, uint8_t *src, uint8_t *top, int w, int bpp);
+
+/* eaidct.c */
+void ff_ea_idct_put_c(uint8_t *dest, int linesize, DCTELEM *block);
 
 uint8_t ff_cropTbl[256 + 2 * MAX_NEG_CROP] = {0, };
 uint32_t ff_squareTbl[512] = {0, };
@@ -151,6 +158,8 @@ static const uint8_t simple_mmx_permutation[64]={
         0x32, 0x3A, 0x36, 0x3B, 0x33, 0x3E, 0x37, 0x3F,
 };
 
+static const uint8_t idct_sse2_row_perm[8] = {0, 4, 1, 5, 2, 6, 3, 7};
+
 void ff_init_scantable(uint8_t *permutation, ScanTable *st, const uint8_t *src_scantable){
     int i;
     int end;
@@ -161,7 +170,7 @@ void ff_init_scantable(uint8_t *permutation, ScanTable *st, const uint8_t *src_s
         int j;
         j = src_scantable[i];
         st->permutated[i] = permutation[j];
-#ifdef ARCH_POWERPC
+#if ARCH_PPC
         st->inverse[j] = i;
 #endif
     }
@@ -332,7 +341,7 @@ static int sse16_c(void *v, uint8_t *pix1, uint8_t *pix2, int line_size, int h)
 }
 
 
-#ifdef CONFIG_SNOW_ENCODER //dwt is in snow.c
+#if CONFIG_SNOW_ENCODER //dwt is in snow.c
 static inline int w_c(void *v, uint8_t * pix1, uint8_t * pix2, int line_size, int w, int h, int type){
     int s, i, j;
     const int dec_count= w==8 ? 3 : 4;
@@ -2703,7 +2712,7 @@ static void wmv2_mspel8_h_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int
     }
 }
 
-#ifdef CONFIG_CAVS_DECODER
+#if CONFIG_CAVS_DECODER
 /* AVS specific */
 void ff_cavsdsp_init(DSPContext* c, AVCodecContext *avctx);
 
@@ -2721,7 +2730,7 @@ void ff_avg_cavs_qpel16_mc00_c(uint8_t *dst, uint8_t *src, int stride) {
 }
 #endif /* CONFIG_CAVS_DECODER */
 
-#if defined(CONFIG_VC1_DECODER) || defined(CONFIG_WMV3_DECODER)
+#if CONFIG_VC1_DECODER || CONFIG_WMV3_DECODER
 /* VC-1 specific */
 void ff_vc1dsp_init(DSPContext* c, AVCodecContext *avctx);
 
@@ -2734,6 +2743,27 @@ void ff_intrax8dsp_init(DSPContext* c, AVCodecContext *avctx);
 
 /* H264 specific */
 void ff_h264dspenc_init(DSPContext* c, AVCodecContext *avctx);
+
+#if CONFIG_RV30_DECODER
+void ff_rv30dsp_init(DSPContext* c, AVCodecContext *avctx);
+#endif /* CONFIG_RV30_DECODER */
+
+#if CONFIG_RV40_DECODER
+static void put_rv40_qpel16_mc33_c(uint8_t *dst, uint8_t *src, int stride){
+    put_pixels16_xy2_c(dst, src, stride, 16);
+}
+static void avg_rv40_qpel16_mc33_c(uint8_t *dst, uint8_t *src, int stride){
+    avg_pixels16_xy2_c(dst, src, stride, 16);
+}
+static void put_rv40_qpel8_mc33_c(uint8_t *dst, uint8_t *src, int stride){
+    put_pixels8_xy2_c(dst, src, stride, 8);
+}
+static void avg_rv40_qpel8_mc33_c(uint8_t *dst, uint8_t *src, int stride){
+    avg_pixels8_xy2_c(dst, src, stride, 8);
+}
+
+void ff_rv40dsp_init(DSPContext* c, AVCodecContext *avctx);
+#endif /* CONFIG_RV40_DECODER */
 
 static void wmv2_mspel8_v_lowpass(uint8_t *dst, uint8_t *src, int dstStride, int srcStride, int w){
     uint8_t *cm = ff_cropTbl + MAX_NEG_CROP;
@@ -2813,7 +2843,7 @@ static void put_mspel8_mc22_c(uint8_t *dst, uint8_t *src, int stride){
 }
 
 static void h263_v_loop_filter_c(uint8_t *src, int stride, int qscale){
-    if(ENABLE_ANY_H263) {
+    if(CONFIG_ANY_H263) {
     int x;
     const int strength= ff_h263_loop_filter_strength[qscale];
 
@@ -2850,7 +2880,7 @@ static void h263_v_loop_filter_c(uint8_t *src, int stride, int qscale){
 }
 
 static void h263_h_loop_filter_c(uint8_t *src, int stride, int qscale){
-    if(ENABLE_ANY_H263) {
+    if(CONFIG_ANY_H263) {
     int y;
     const int strength= ff_h263_loop_filter_strength[qscale];
 
@@ -2960,6 +2990,63 @@ static void h264_v_loop_filter_luma_c(uint8_t *pix, int stride, int alpha, int b
 static void h264_h_loop_filter_luma_c(uint8_t *pix, int stride, int alpha, int beta, int8_t *tc0)
 {
     h264_loop_filter_luma_c(pix, 1, stride, alpha, beta, tc0);
+}
+
+static inline void h264_loop_filter_luma_intra_c(uint8_t *pix, int xstride, int ystride, int alpha, int beta)
+{
+    int d;
+    for( d = 0; d < 16; d++ ) {
+        const int p2 = pix[-3*xstride];
+        const int p1 = pix[-2*xstride];
+        const int p0 = pix[-1*xstride];
+
+        const int q0 = pix[ 0*xstride];
+        const int q1 = pix[ 1*xstride];
+        const int q2 = pix[ 2*xstride];
+
+        if( FFABS( p0 - q0 ) < alpha &&
+            FFABS( p1 - p0 ) < beta &&
+            FFABS( q1 - q0 ) < beta ) {
+
+            if(FFABS( p0 - q0 ) < (( alpha >> 2 ) + 2 )){
+                if( FFABS( p2 - p0 ) < beta)
+                {
+                    const int p3 = pix[-4*xstride];
+                    /* p0', p1', p2' */
+                    pix[-1*xstride] = ( p2 + 2*p1 + 2*p0 + 2*q0 + q1 + 4 ) >> 3;
+                    pix[-2*xstride] = ( p2 + p1 + p0 + q0 + 2 ) >> 2;
+                    pix[-3*xstride] = ( 2*p3 + 3*p2 + p1 + p0 + q0 + 4 ) >> 3;
+                } else {
+                    /* p0' */
+                    pix[-1*xstride] = ( 2*p1 + p0 + q1 + 2 ) >> 2;
+                }
+                if( FFABS( q2 - q0 ) < beta)
+                {
+                    const int q3 = pix[3*xstride];
+                    /* q0', q1', q2' */
+                    pix[0*xstride] = ( p1 + 2*p0 + 2*q0 + 2*q1 + q2 + 4 ) >> 3;
+                    pix[1*xstride] = ( p0 + q0 + q1 + q2 + 2 ) >> 2;
+                    pix[2*xstride] = ( 2*q3 + 3*q2 + q1 + q0 + p0 + 4 ) >> 3;
+                } else {
+                    /* q0' */
+                    pix[0*xstride] = ( 2*q1 + q0 + p1 + 2 ) >> 2;
+                }
+            }else{
+                /* p0', q0' */
+                pix[-1*xstride] = ( 2*p1 + p0 + q1 + 2 ) >> 2;
+                pix[ 0*xstride] = ( 2*q1 + q0 + p1 + 2 ) >> 2;
+            }
+        }
+        pix += ystride;
+    }
+}
+static void h264_v_loop_filter_luma_intra_c(uint8_t *pix, int stride, int alpha, int beta)
+{
+    h264_loop_filter_luma_intra_c(pix, stride, 1, alpha, beta);
+}
+static void h264_h_loop_filter_luma_intra_c(uint8_t *pix, int stride, int alpha, int beta)
+{
+    h264_loop_filter_luma_intra_c(pix, 1, stride, alpha, beta);
 }
 
 static inline void h264_loop_filter_chroma_c(uint8_t *pix, int xstride, int ystride, int alpha, int beta, int8_t *tc0)
@@ -3338,9 +3425,9 @@ static int zero_cmp(void *s, uint8_t *a, uint8_t *b, int stride, int h){
 void ff_set_cmp(DSPContext* c, me_cmp_func *cmp, int type){
     int i;
 
-    memset(cmp, 0, sizeof(void*)*5);
+    memset(cmp, 0, sizeof(void*)*6);
 
-    for(i=0; i<5; i++){
+    for(i=0; i<6; i++){
         switch(type&0xFF){
         case FF_CMP_SAD:
             cmp[i]= c->sad[i];
@@ -3381,7 +3468,7 @@ void ff_set_cmp(DSPContext* c, me_cmp_func *cmp, int type){
         case FF_CMP_NSSE:
             cmp[i]= c->nsse[i];
             break;
-#ifdef CONFIG_SNOW_ENCODER
+#if CONFIG_SNOW_ENCODER
         case FF_CMP_W53:
             cmp[i]= c->w53[i];
             break;
@@ -3393,6 +3480,11 @@ void ff_set_cmp(DSPContext* c, me_cmp_func *cmp, int type){
             av_log(NULL, AV_LOG_ERROR,"internal error in cmp function selection\n");
         }
     }
+}
+
+static void clear_block_c(DCTELEM *block)
+{
+    memset(block, 0, sizeof(DCTELEM)*64);
 }
 
 /**
@@ -3427,7 +3519,7 @@ static void add_bytes_l2_c(uint8_t *dst, uint8_t *src1, uint8_t *src2, int w){
 
 static void diff_bytes_c(uint8_t *dst, uint8_t *src1, uint8_t *src2, int w){
     long i;
-#ifndef HAVE_FAST_UNALIGNED
+#if !HAVE_FAST_UNALIGNED
     if((long)src2 & (sizeof(long)-1)){
         for(i=0; i+7<w; i+=8){
             dst[i+0] = src1[i+0]-src2[i+0];
@@ -3448,6 +3540,23 @@ static void diff_bytes_c(uint8_t *dst, uint8_t *src1, uint8_t *src2, int w){
     }
     for(; i<w; i++)
         dst[i+0] = src1[i+0]-src2[i+0];
+}
+
+static void add_hfyu_median_prediction_c(uint8_t *dst, uint8_t *src1, uint8_t *diff, int w, int *left, int *left_top){
+    int i;
+    uint8_t l, lt;
+
+    l= *left;
+    lt= *left_top;
+
+    for(i=0; i<w; i++){
+        l= mid_pred(l, src1[i], (l + src1[i] - lt)&0xFF) + diff[i];
+        lt= src1[i];
+        dst[i]= l;
+    }
+
+    *left= l;
+    *left_top= lt;
 }
 
 static void sub_hfyu_median_prediction_c(uint8_t *dst, uint8_t *src1, uint8_t *src2, int w, int *left, int *left_top){
@@ -3595,7 +3704,7 @@ static int dct_sad8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2
     return s->dsp.sum_abs_dctelem(temp);
 }
 
-#ifdef CONFIG_GPL
+#if CONFIG_GPL
 #define DCT8_1D {\
     const int s07 = SRC(0) + SRC(7);\
     const int s16 = SRC(1) + SRC(6);\
@@ -3696,7 +3805,7 @@ static int rd8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2, int
     DECLARE_ALIGNED_8 (uint64_t, aligned_bak[stride]);
     DCTELEM * const temp= (DCTELEM*)aligned_temp;
     uint8_t * const bak= (uint8_t*)aligned_bak;
-    int i, last, run, bits, level, distoration, start_i;
+    int i, last, run, bits, level, distortion, start_i;
     const int esc_length= s->ac_esc_length;
     uint8_t * length;
     uint8_t * last_length;
@@ -3763,9 +3872,9 @@ static int rd8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2, int
 
     s->dsp.idct_add(bak, stride, temp);
 
-    distoration= s->dsp.sse[1](NULL, bak, src1, stride, 8);
+    distortion= s->dsp.sse[1](NULL, bak, src1, stride, 8);
 
-    return distoration + ((bits*s->qscale*s->qscale*109 + 64)>>7);
+    return distortion + ((bits*s->qscale*s->qscale*109 + 64)>>7);
 }
 
 static int bit8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2, int stride, int h){
@@ -3828,20 +3937,23 @@ static int bit8x8_c(/*MpegEncContext*/ void *c, uint8_t *src1, uint8_t *src2, in
     return bits;
 }
 
-static int vsad_intra16_c(/*MpegEncContext*/ void *c, uint8_t *s, uint8_t *dummy, int stride, int h){
-    int score=0;
-    int x,y;
-
-    for(y=1; y<h; y++){
-        for(x=0; x<16; x+=4){
-            score+= FFABS(s[x  ] - s[x  +stride]) + FFABS(s[x+1] - s[x+1+stride])
-                   +FFABS(s[x+2] - s[x+2+stride]) + FFABS(s[x+3] - s[x+3+stride]);
-        }
-        s+= stride;
-    }
-
-    return score;
+#define VSAD_INTRA(size) \
+static int vsad_intra##size##_c(/*MpegEncContext*/ void *c, uint8_t *s, uint8_t *dummy, int stride, int h){ \
+    int score=0;                                                                                            \
+    int x,y;                                                                                                \
+                                                                                                            \
+    for(y=1; y<h; y++){                                                                                     \
+        for(x=0; x<size; x+=4){                                                                             \
+            score+= FFABS(s[x  ] - s[x  +stride]) + FFABS(s[x+1] - s[x+1+stride])                           \
+                   +FFABS(s[x+2] - s[x+2+stride]) + FFABS(s[x+3] - s[x+3+stride]);                          \
+        }                                                                                                   \
+        s+= stride;                                                                                         \
+    }                                                                                                       \
+                                                                                                            \
+    return score;                                                                                           \
 }
+VSAD_INTRA(8)
+VSAD_INTRA(16)
 
 static int vsad16_c(/*MpegEncContext*/ void *c, uint8_t *s1, uint8_t *s2, int stride, int h){
     int score=0;
@@ -3859,20 +3971,23 @@ static int vsad16_c(/*MpegEncContext*/ void *c, uint8_t *s1, uint8_t *s2, int st
 }
 
 #define SQ(a) ((a)*(a))
-static int vsse_intra16_c(/*MpegEncContext*/ void *c, uint8_t *s, uint8_t *dummy, int stride, int h){
-    int score=0;
-    int x,y;
-
-    for(y=1; y<h; y++){
-        for(x=0; x<16; x+=4){
-            score+= SQ(s[x  ] - s[x  +stride]) + SQ(s[x+1] - s[x+1+stride])
-                   +SQ(s[x+2] - s[x+2+stride]) + SQ(s[x+3] - s[x+3+stride]);
-        }
-        s+= stride;
-    }
-
-    return score;
+#define VSSE_INTRA(size) \
+static int vsse_intra##size##_c(/*MpegEncContext*/ void *c, uint8_t *s, uint8_t *dummy, int stride, int h){ \
+    int score=0;                                                                                            \
+    int x,y;                                                                                                \
+                                                                                                            \
+    for(y=1; y<h; y++){                                                                                     \
+        for(x=0; x<size; x+=4){                                                                               \
+            score+= SQ(s[x  ] - s[x  +stride]) + SQ(s[x+1] - s[x+1+stride])                                 \
+                   +SQ(s[x+2] - s[x+2+stride]) + SQ(s[x+3] - s[x+3+stride]);                                \
+        }                                                                                                   \
+        s+= stride;                                                                                         \
+    }                                                                                                       \
+                                                                                                            \
+    return score;                                                                                           \
 }
+VSSE_INTRA(8)
+VSSE_INTRA(16)
 
 static int vsse16_c(/*MpegEncContext*/ void *c, uint8_t *s1, uint8_t *s2, int stride, int h){
     int score=0;
@@ -3901,7 +4016,7 @@ static int ssd_int8_vs_int16_c(const int8_t *pix1, const int16_t *pix2,
 WRAPPER8_16_SQ(hadamard8_diff8x8_c, hadamard8_diff16_c)
 WRAPPER8_16_SQ(hadamard8_intra8x8_c, hadamard8_intra16_c)
 WRAPPER8_16_SQ(dct_sad8x8_c, dct_sad16_c)
-#ifdef CONFIG_GPL
+#if CONFIG_GPL
 WRAPPER8_16_SQ(dct264_sad8x8_c, dct264_sad16_c)
 #endif
 WRAPPER8_16_SQ(dct_max8x8_c, dct_max16_c)
@@ -3928,18 +4043,78 @@ void ff_vector_fmul_add_add_c(float *dst, const float *src0, const float *src1, 
         dst[i*step] = src0[i] * src1[i] + src2[i] + src3;
 }
 
-void ff_float_to_int16_c(int16_t *dst, const float *src, int len){
-    int i;
-    for(i=0; i<len; i++) {
-        int_fast32_t tmp = ((const int32_t*)src)[i];
-        if(tmp & 0xf0000){
-            tmp = (0x43c0ffff - tmp)>>31;
-            // is this faster on some gcc/cpu combinations?
-//          if(tmp > 0x43c0ffff) tmp = 0xFFFF;
-//          else                 tmp = 0;
-        }
-        dst[i] = tmp - 0x8000;
+void ff_vector_fmul_window_c(float *dst, const float *src0, const float *src1, const float *win, float add_bias, int len){
+    int i,j;
+    dst += len;
+    win += len;
+    src0+= len;
+    for(i=-len, j=len-1; i<0; i++, j--) {
+        float s0 = src0[i];
+        float s1 = src1[j];
+        float wi = win[i];
+        float wj = win[j];
+        dst[i] = s0*wj - s1*wi + add_bias;
+        dst[j] = s0*wi + s1*wj + add_bias;
     }
+}
+
+static void int32_to_float_fmul_scalar_c(float *dst, const int *src, float mul, int len){
+    int i;
+    for(i=0; i<len; i++)
+        dst[i] = src[i] * mul;
+}
+
+static av_always_inline int float_to_int16_one(const float *src){
+    int_fast32_t tmp = *(const int32_t*)src;
+    if(tmp & 0xf0000){
+        tmp = (0x43c0ffff - tmp)>>31;
+        // is this faster on some gcc/cpu combinations?
+//      if(tmp > 0x43c0ffff) tmp = 0xFFFF;
+//      else                 tmp = 0;
+    }
+    return tmp - 0x8000;
+}
+
+void ff_float_to_int16_c(int16_t *dst, const float *src, long len){
+    int i;
+    for(i=0; i<len; i++)
+        dst[i] = float_to_int16_one(src+i);
+}
+
+void ff_float_to_int16_interleave_c(int16_t *dst, const float **src, long len, int channels){
+    int i,j,c;
+    if(channels==2){
+        for(i=0; i<len; i++){
+            dst[2*i]   = float_to_int16_one(src[0]+i);
+            dst[2*i+1] = float_to_int16_one(src[1]+i);
+        }
+    }else{
+        for(c=0; c<channels; c++)
+            for(i=0, j=c; i<len; i++, j+=channels)
+                dst[j] = float_to_int16_one(src[c]+i);
+    }
+}
+
+static void add_int16_c(int16_t * v1, int16_t * v2, int order)
+{
+    while (order--)
+       *v1++ += *v2++;
+}
+
+static void sub_int16_c(int16_t * v1, int16_t * v2, int order)
+{
+    while (order--)
+        *v1++ -= *v2++;
+}
+
+static int32_t scalarproduct_int16_c(int16_t * v1, int16_t * v2, int order, int shift)
+{
+    int res = 0;
+
+    while (order--)
+        res += (*v1++ * *v2++) >> shift;
+
+    return res;
 }
 
 #define W0 2048
@@ -4098,7 +4273,7 @@ int ff_check_alignment(void){
 
     if((long)&aligned & 15){
         if(!did_fail){
-#if defined(HAVE_MMX) || defined(HAVE_ALTIVEC)
+#if HAVE_MMX || HAVE_ALTIVEC
             av_log(NULL, AV_LOG_ERROR,
                 "Compiler did not align stack variables. Libavcodec has been miscompiled\n"
                 "and may be very slow or crash. This is not a bug in libavcodec,\n"
@@ -4118,7 +4293,7 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
 
     ff_check_alignment();
 
-#ifdef CONFIG_ENCODERS
+#if CONFIG_ENCODERS
     if(avctx->dct_algo==FF_DCT_FASTINT) {
         c->fdct = fdct_ifast;
         c->fdct248 = fdct_ifast248;
@@ -4134,7 +4309,7 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
 #endif //CONFIG_ENCODERS
 
     if(avctx->lowres==1){
-        if(avctx->idct_algo==FF_IDCT_INT || avctx->idct_algo==FF_IDCT_AUTO || !ENABLE_H264_DECODER){
+        if(avctx->idct_algo==FF_IDCT_INT || avctx->idct_algo==FF_IDCT_AUTO || !CONFIG_H264_DECODER){
             c->idct_put= ff_jref_idct4_put;
             c->idct_add= ff_jref_idct4_add;
         }else{
@@ -4159,7 +4334,7 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
             c->idct_add= ff_jref_idct_add;
             c->idct    = j_rev_dct;
             c->idct_permutation_type= FF_LIBMPEG2_IDCT_PERM;
-        }else if((ENABLE_VP3_DECODER || ENABLE_VP5_DECODER || ENABLE_VP6_DECODER || ENABLE_THEORA_DECODER ) &&
+        }else if((CONFIG_VP3_DECODER || CONFIG_VP5_DECODER || CONFIG_VP6_DECODER || CONFIG_THEORA_DECODER ) &&
                 avctx->idct_algo==FF_IDCT_VP3){
             c->idct_put= ff_vp3_idct_put_c;
             c->idct_add= ff_vp3_idct_add_c;
@@ -4175,6 +4350,9 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
             c->idct_add= ff_faanidct_add;
             c->idct    = ff_faanidct;
             c->idct_permutation_type= FF_NO_IDCT_PERM;
+        }else if(CONFIG_EATGQ_DECODER && avctx->idct_algo==FF_IDCT_EA) {
+            c->idct_put= ff_ea_idct_put_c;
+            c->idct_permutation_type= FF_NO_IDCT_PERM;
         }else{ //accurate/default
             c->idct_put= ff_simple_idct_put;
             c->idct_add= ff_simple_idct_add;
@@ -4183,11 +4361,15 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
         }
     }
 
-    if (ENABLE_H264_DECODER) {
+    if (CONFIG_H264_DECODER) {
         c->h264_idct_add= ff_h264_idct_add_c;
         c->h264_idct8_add= ff_h264_idct8_add_c;
         c->h264_idct_dc_add= ff_h264_idct_dc_add_c;
         c->h264_idct8_dc_add= ff_h264_idct8_dc_add_c;
+        c->h264_idct_add16     = ff_h264_idct_add16_c;
+        c->h264_idct8_add4     = ff_h264_idct8_add4_c;
+        c->h264_idct_add8      = ff_h264_idct_add8_c;
+        c->h264_idct_add16intra= ff_h264_idct_add16intra_c;
     }
 
     c->get_pixels = get_pixels_c;
@@ -4200,6 +4382,7 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->sum_abs_dctelem = sum_abs_dctelem_c;
     c->gmc1 = gmc1_c;
     c->gmc = ff_gmc_c;
+    c->clear_block = clear_block_c;
     c->clear_blocks = clear_blocks_c;
     c->pix_sum = pix_sum_c;
     c->pix_norm1 = pix_norm1_c;
@@ -4328,17 +4511,24 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
 
     c->draw_edges = draw_edges_c;
 
-#ifdef CONFIG_CAVS_DECODER
+#if CONFIG_CAVS_DECODER
     ff_cavsdsp_init(c,avctx);
 #endif
-#if defined(CONFIG_VC1_DECODER) || defined(CONFIG_WMV3_DECODER)
+#if CONFIG_VC1_DECODER || CONFIG_WMV3_DECODER
     ff_vc1dsp_init(c,avctx);
 #endif
-#if defined(CONFIG_WMV2_DECODER) || defined(CONFIG_VC1_DECODER) || defined(CONFIG_WMV3_DECODER)
+#if CONFIG_WMV2_DECODER || CONFIG_VC1_DECODER || CONFIG_WMV3_DECODER
     ff_intrax8dsp_init(c,avctx);
 #endif
-#if defined(CONFIG_H264_ENCODER)
-    ff_h264dspenc_init(c,avctx);
+#if CONFIG_RV30_DECODER
+    ff_rv30dsp_init(c,avctx);
+#endif
+#if CONFIG_RV40_DECODER
+    ff_rv40dsp_init(c,avctx);
+    c->put_rv40_qpel_pixels_tab[0][15] = put_rv40_qpel16_mc33_c;
+    c->avg_rv40_qpel_pixels_tab[0][15] = avg_rv40_qpel16_mc33_c;
+    c->put_rv40_qpel_pixels_tab[1][15] = put_rv40_qpel8_mc33_c;
+    c->avg_rv40_qpel_pixels_tab[1][15] = avg_rv40_qpel8_mc33_c;
 #endif
 
     c->put_mspel_pixels_tab[0]= put_mspel8_mc00_c;
@@ -4356,9 +4546,10 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
 
     SET_CMP_FUNC(hadamard8_diff)
     c->hadamard8_diff[4]= hadamard8_intra16_c;
+    c->hadamard8_diff[5]= hadamard8_intra8x8_c;
     SET_CMP_FUNC(dct_sad)
     SET_CMP_FUNC(dct_max)
-#ifdef CONFIG_GPL
+#if CONFIG_GPL
     SET_CMP_FUNC(dct264_sad)
 #endif
     c->sad[0]= pix_abs16_c;
@@ -4371,11 +4562,13 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     SET_CMP_FUNC(bit)
     c->vsad[0]= vsad16_c;
     c->vsad[4]= vsad_intra16_c;
+    c->vsad[5]= vsad_intra8_c;
     c->vsse[0]= vsse16_c;
     c->vsse[4]= vsse_intra16_c;
+    c->vsse[5]= vsse_intra8_c;
     c->nsse[0]= nsse16_c;
     c->nsse[1]= nsse8_c;
-#ifdef CONFIG_SNOW_ENCODER
+#if CONFIG_SNOW_ENCODER
     c->w53[0]= w53_16_c;
     c->w53[1]= w53_8_c;
     c->w97[0]= w97_16_c;
@@ -4387,23 +4580,34 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->add_bytes= add_bytes_c;
     c->add_bytes_l2= add_bytes_l2_c;
     c->diff_bytes= diff_bytes_c;
+    c->add_hfyu_median_prediction= add_hfyu_median_prediction_c;
     c->sub_hfyu_median_prediction= sub_hfyu_median_prediction_c;
     c->bswap_buf= bswap_buf;
-#ifdef CONFIG_PNG_DECODER
+#if CONFIG_PNG_DECODER
     c->add_png_paeth_prediction= ff_add_png_paeth_prediction;
 #endif
 
     c->h264_v_loop_filter_luma= h264_v_loop_filter_luma_c;
     c->h264_h_loop_filter_luma= h264_h_loop_filter_luma_c;
+    c->h264_v_loop_filter_luma_intra= h264_v_loop_filter_luma_intra_c;
+    c->h264_h_loop_filter_luma_intra= h264_h_loop_filter_luma_intra_c;
     c->h264_v_loop_filter_chroma= h264_v_loop_filter_chroma_c;
     c->h264_h_loop_filter_chroma= h264_h_loop_filter_chroma_c;
     c->h264_v_loop_filter_chroma_intra= h264_v_loop_filter_chroma_intra_c;
     c->h264_h_loop_filter_chroma_intra= h264_h_loop_filter_chroma_intra_c;
     c->h264_loop_filter_strength= NULL;
 
-    if (ENABLE_ANY_H263) {
+    if (CONFIG_ANY_H263) {
         c->h263_h_loop_filter= h263_h_loop_filter_c;
         c->h263_v_loop_filter= h263_v_loop_filter_c;
+    }
+
+    if (CONFIG_VP3_DECODER || CONFIG_THEORA_DECODER) {
+        c->vp3_h_loop_filter= ff_vp3_h_loop_filter_c;
+        c->vp3_v_loop_filter= ff_vp3_v_loop_filter_c;
+    }
+    if (CONFIG_VP6_DECODER) {
+        c->vp6_filter_diag4= ff_vp6_filter_diag4_c;
     }
 
     c->h261_loop_filter= h261_loop_filter_c;
@@ -4411,22 +4615,31 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     c->try_8x8basis= try_8x8basis_c;
     c->add_8x8basis= add_8x8basis_c;
 
-#ifdef CONFIG_SNOW_DECODER
+#if CONFIG_SNOW_DECODER
     c->vertical_compose97i = ff_snow_vertical_compose97i;
     c->horizontal_compose97i = ff_snow_horizontal_compose97i;
     c->inner_add_yblock = ff_snow_inner_add_yblock;
 #endif
 
-#ifdef CONFIG_VORBIS_DECODER
+#if CONFIG_VORBIS_DECODER
     c->vorbis_inverse_coupling = vorbis_inverse_coupling;
 #endif
-#ifdef CONFIG_FLAC_ENCODER
+#if CONFIG_AC3_DECODER
+    c->ac3_downmix = ff_ac3_downmix_c;
+#endif
+#if CONFIG_FLAC_ENCODER
     c->flac_compute_autocorr = ff_flac_compute_autocorr;
 #endif
     c->vector_fmul = vector_fmul_c;
     c->vector_fmul_reverse = vector_fmul_reverse_c;
     c->vector_fmul_add_add = ff_vector_fmul_add_add_c;
+    c->vector_fmul_window = ff_vector_fmul_window_c;
+    c->int32_to_float_fmul_scalar = int32_to_float_fmul_scalar_c;
     c->float_to_int16 = ff_float_to_int16_c;
+    c->float_to_int16_interleave = ff_float_to_int16_interleave_c;
+    c->add_int16 = add_int16_c;
+    c->sub_int16 = sub_int16_c;
+    c->scalarproduct_int16 = scalarproduct_int16_c;
 
     c->shrink[0]= ff_img_copy_plane;
     c->shrink[1]= ff_shrink22;
@@ -4438,15 +4651,15 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     memset(c->put_2tap_qpel_pixels_tab, 0, sizeof(c->put_2tap_qpel_pixels_tab));
     memset(c->avg_2tap_qpel_pixels_tab, 0, sizeof(c->avg_2tap_qpel_pixels_tab));
 
-    if (ENABLE_MMX)      dsputil_init_mmx   (c, avctx);
-    if (ENABLE_ARMV4L)   dsputil_init_armv4l(c, avctx);
-    if (ENABLE_MLIB)     dsputil_init_mlib  (c, avctx);
-    if (ENABLE_VIS)      dsputil_init_vis   (c, avctx);
-    if (ENABLE_ALPHA)    dsputil_init_alpha (c, avctx);
-    if (ENABLE_POWERPC)  dsputil_init_ppc   (c, avctx);
-    if (ENABLE_MMI)      dsputil_init_mmi   (c, avctx);
-    if (ENABLE_SH4)      dsputil_init_sh4   (c, avctx);
-    if (ENABLE_BFIN)     dsputil_init_bfin  (c, avctx);
+    if (HAVE_MMX)        dsputil_init_mmx   (c, avctx);
+    if (ARCH_ARM)        dsputil_init_arm   (c, avctx);
+    if (CONFIG_MLIB)     dsputil_init_mlib  (c, avctx);
+    if (HAVE_VIS)        dsputil_init_vis   (c, avctx);
+    if (ARCH_ALPHA)      dsputil_init_alpha (c, avctx);
+    if (ARCH_PPC)        dsputil_init_ppc   (c, avctx);
+    if (HAVE_MMI)        dsputil_init_mmi   (c, avctx);
+    if (ARCH_SH4)        dsputil_init_sh4   (c, avctx);
+    if (ARCH_BFIN)       dsputil_init_bfin  (c, avctx);
 
     for(i=0; i<64; i++){
         if(!c->put_2tap_qpel_pixels_tab[0][i])
@@ -4475,6 +4688,10 @@ void dsputil_init(DSPContext* c, AVCodecContext *avctx)
     case FF_PARTTRANS_IDCT_PERM:
         for(i=0; i<64; i++)
             c->idct_permutation[i]= (i&0x24) | ((i&3)<<3) | ((i>>3)&3);
+        break;
+    case FF_SSE2_IDCT_PERM:
+        for(i=0; i<64; i++)
+            c->idct_permutation[i]= (i&0x38) | idct_sse2_row_perm[i&7];
         break;
     default:
         av_log(avctx, AV_LOG_ERROR, "Internal error, IDCT permutation not set\n");

@@ -1,6 +1,6 @@
 /*
  * RTP H264 Protocol (RFC3984)
- * Copyright (c) 2006 Ryan Martell.
+ * Copyright (c) 2006 Ryan Martell
  *
  * This file is part of FFmpeg.
  *
@@ -20,7 +20,7 @@
  */
 
 /**
-* @file rtp_h264.c
+* @file libavformat/rtp_h264.c
  * @brief H.264 / RTP Code (RFC3984)
  * @author Ryan Martell <rdm4@martellventures.com>
  *
@@ -36,23 +36,23 @@
  *
  */
 
+#include "libavutil/base64.h"
+#include "libavutil/avstring.h"
+#include "libavcodec/bitstream.h"
 #include "avformat.h"
 #include "mpegts.h"
-#include "bitstream.h"
 
 #include <unistd.h>
 #include "network.h"
 #include <assert.h>
 
-#include "rtp_internal.h"
+#include "rtpdec.h"
 #include "rtp_h264.h"
-#include "base64.h"
-#include "avstring.h"
 
 /**
     RTP/H264 specific private data.
 */
-typedef struct h264_rtp_extra_data {
+struct PayloadContext {
     unsigned long cookie;       ///< sanity check, to make sure we get the pointer we're expecting.
 
     //sdp setup parameters
@@ -63,14 +63,14 @@ typedef struct h264_rtp_extra_data {
 #ifdef DEBUG
     int packet_types_received[32];
 #endif
-} h264_rtp_extra_data;
+};
 
 #define MAGIC_COOKIE (0xdeadbeef)       ///< Cookie for the extradata; to verify we are what we think we are, and that we haven't been freed.
 #define DEAD_COOKIE (0xdeaddead)        ///< Cookie for the extradata; once it is freed.
 
 /* ---------------- private code */
 static void sdp_parse_fmtp_config_h264(AVStream * stream,
-                                       h264_rtp_extra_data * h264_data,
+                                       PayloadContext * h264_data,
                                        char *attr, char *value)
 {
     AVCodecContext *codec = stream->codec;
@@ -159,22 +159,23 @@ static void sdp_parse_fmtp_config_h264(AVStream * stream,
 }
 
 // return 0 on packet, no more left, 1 on packet, 1 on partial packet...
-static int h264_handle_packet(RTPDemuxContext * s,
+static int h264_handle_packet(AVFormatContext *ctx,
+                              PayloadContext *data,
+                              AVStream *st,
                               AVPacket * pkt,
                               uint32_t * timestamp,
                               const uint8_t * buf,
                               int len, int flags)
 {
-#ifdef DEBUG
-    h264_rtp_extra_data *data = s->dynamic_protocol_context;
-#endif
     uint8_t nal = buf[0];
     uint8_t type = (nal & 0x1f);
     int result= 0;
     uint8_t start_sequence[]= {0, 0, 1};
 
+#ifdef DEBUG
     assert(data);
     assert(data->cookie == MAGIC_COOKIE);
+#endif
     assert(buf);
 
     if (type >= 1 && type <= 23)
@@ -313,10 +314,10 @@ static int h264_handle_packet(RTPDemuxContext * s,
 }
 
 /* ---------------- public code */
-static void *h264_new_extradata(void)
+static PayloadContext *h264_new_extradata(void)
 {
-    h264_rtp_extra_data *data =
-        av_mallocz(sizeof(h264_rtp_extra_data) +
+    PayloadContext *data =
+        av_mallocz(sizeof(PayloadContext) +
                    FF_INPUT_BUFFER_PADDING_SIZE);
 
     if (data) {
@@ -326,9 +327,8 @@ static void *h264_new_extradata(void)
     return data;
 }
 
-static void h264_free_extradata(void *d)
+static void h264_free_extradata(PayloadContext *data)
 {
-    h264_rtp_extra_data *data = (h264_rtp_extra_data *) d;
 #ifdef DEBUG
     int ii;
 
@@ -349,11 +349,11 @@ static void h264_free_extradata(void *d)
     av_free(data);
 }
 
-static int parse_h264_sdp_line(AVStream * stream, void *data,
-                               const char *line)
+static int parse_h264_sdp_line(AVFormatContext *s, int st_index,
+                               PayloadContext *h264_data, const char *line)
 {
+    AVStream *stream = s->streams[st_index];
     AVCodecContext *codec = stream->codec;
-    h264_rtp_extra_data *h264_data = (h264_rtp_extra_data *) data;
     const char *p = line;
 
     assert(h264_data->cookie == MAGIC_COOKIE);

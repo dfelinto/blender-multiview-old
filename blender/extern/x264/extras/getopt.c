@@ -18,7 +18,7 @@
 
    You should have received a copy of the GNU Lesser General Public
    License along with the GNU C Library; if not, write to the Free
-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+   Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02111-1307 USA.  */
 
 /* This tells Alpha OSF/1 not to define a getopt prototype in <stdio.h>.
@@ -988,6 +988,11 @@ getopt (argc, argv, optstring)
 
 int
 getopt_long (argc, argv, optstring, long_options, opt_index)
+     int argc;
+     char *const *argv;
+     const char *optstring;
+     const struct option *long_options;
+     int *opt_index;
 {
   return _getopt_internal (argc, argv, optstring, long_options, opt_index, 0);
 }

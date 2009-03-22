@@ -1,6 +1,6 @@
 /*
  * THP Demuxer
- * Copyright (c) 2007 Marco Gerards.
+ * Copyright (c) 2007 Marco Gerards
  *
  * This file is part of FFmpeg.
  *
@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-
+#include "libavutil/intreadwrite.h"
 #include "avformat.h"
 
 typedef struct ThpDemuxContext {
@@ -189,7 +189,7 @@ static int thp_read_packet(AVFormatContext *s,
 
 AVInputFormat thp_demuxer = {
     "thp",
-    "THP",
+    NULL_IF_CONFIG_SMALL("THP"),
     sizeof(ThpDemuxContext),
     thp_probe,
     thp_read_header,

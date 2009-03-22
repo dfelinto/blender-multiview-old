@@ -19,14 +19,15 @@
  */
 
 /**
- * @file postprocess_internal.h
+ * @file libpostproc/postprocess_internal.h
  * internal api header.
  */
 
-#ifndef FFMPEG_POSTPROCESS_INTERNAL_H
-#define FFMPEG_POSTPROCESS_INTERNAL_H
+#ifndef POSTPROC_POSTPROCESS_INTERNAL_H
+#define POSTPROC_POSTPROCESS_INTERNAL_H
 
-#include "avutil.h"
+#include <string.h>
+#include "libavutil/avutil.h"
 #include "postprocess.h"
 
 #define V_DEBLOCK       0x01
@@ -174,4 +175,4 @@ static inline void linecpy(void *dest, const void *src, int lines, int stride) {
     }
 }
 
-#endif /* FFMPEG_POSTPROCESS_INTERNAL_H */
+#endif /* POSTPROC_POSTPROCESS_INTERNAL_H */

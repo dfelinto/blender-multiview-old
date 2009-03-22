@@ -1,6 +1,6 @@
 /*
  * ISO Media common code
- * copyright (c) 2001 Fabrice Bellard.
+ * copyright (c) 2001 Fabrice Bellard
  * copyright (c) 2002 Francois Revol <revol@free.fr>
  * copyright (c) 2006 Baptiste Coudurier <baptiste.coudurier@free.fr>
  *
@@ -21,8 +21,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef FFMPEG_ISOM_H
-#define FFMPEG_ISOM_H
+#ifndef AVFORMAT_ISOM_H
+#define AVFORMAT_ISOM_H
 
 #include "riff.h"
 
@@ -33,11 +33,11 @@ extern const AVCodecTag codec_movaudio_tags[];
 extern const AVCodecTag ff_codec_movsubtitle_tags[];
 
 int ff_mov_iso639_to_lang(const char *lang, int mp4);
-int ff_mov_lang_to_iso639(int code, char *to);
+int ff_mov_lang_to_iso639(unsigned code, char *to);
 
 typedef struct {
     int count;
     int duration;
-} MOV_stts_t;
+} MOVStts;
 
-#endif /* FFMPEG_ISOM_H */
+#endif /* AVFORMAT_ISOM_H */

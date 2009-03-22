@@ -1,6 +1,6 @@
 /*
  * RTP H264 Protocol (RFC3984)
- * Copyright (c) 2006 Ryan Martell.
+ * Copyright (c) 2006 Ryan Martell
  *
  * This file is part of FFmpeg.
  *
@@ -19,12 +19,12 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#ifndef FFMPEG_RTP_H264_H
-#define FFMPEG_RTP_H264_H
+#ifndef AVFORMAT_RTP_H264_H
+#define AVFORMAT_RTP_H264_H
 
-#include "rtp_internal.h"
+#include "rtpdec.h"
 
 extern RTPDynamicProtocolHandler ff_h264_dynamic_handler;
 void ff_rtp_send_h264(AVFormatContext *s1, const uint8_t *buf1, int size);
 
-#endif /* FFMPEG_RTP_H264_H */
+#endif /* AVFORMAT_RTP_H264_H */

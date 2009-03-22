@@ -18,11 +18,13 @@
  * License along with FFmpeg; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
+
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
 #include "truespeech_data.h"
 /**
- * @file truespeech.c
+ * @file libavcodec/truespeech.c
  * TrueSpeech decoder.
  */
 
@@ -54,6 +56,7 @@ static av_cold int truespeech_decode_init(AVCodecContext * avctx)
 {
 //    TSContext *c = avctx->priv_data;
 
+    avctx->sample_fmt = SAMPLE_FMT_S16;
     return 0;
 }
 
@@ -380,4 +383,5 @@ AVCodec truespeech_decoder = {
     NULL,
     NULL,
     truespeech_decode_frame,
+    .long_name = NULL_IF_CONFIG_SMALL("DSP Group TrueSpeech"),
 };

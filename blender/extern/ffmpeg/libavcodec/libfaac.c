@@ -20,7 +20,7 @@
  */
 
 /**
- * @file libfaac.c
+ * @file libavcodec/libfaac.c
  * Interface to libfaac for aac encoding.
  */
 
@@ -38,8 +38,10 @@ static av_cold int Faac_encode_init(AVCodecContext *avctx)
     unsigned long samples_input, max_bytes_output;
 
     /* number of channels */
-    if (avctx->channels < 1 || avctx->channels > 6)
+    if (avctx->channels < 1 || avctx->channels > 6) {
+        av_log(avctx, AV_LOG_ERROR, "encoding %d channel(s) is not allowed\n", avctx->channels);
         return -1;
+    }
 
     s->faac_handle = faacEncOpen(avctx->sample_rate,
                                  avctx->channels,
@@ -150,5 +152,7 @@ AVCodec libfaac_encoder = {
     sizeof(FaacAudioContext),
     Faac_encode_init,
     Faac_encode_frame,
-    Faac_encode_close
+    Faac_encode_close,
+    .sample_fmts = (enum SampleFormat[]){SAMPLE_FMT_S16,SAMPLE_FMT_NONE},
+    .long_name = NULL_IF_CONFIG_SMALL("libfaac AAC (Advanced Audio Codec)"),
 };

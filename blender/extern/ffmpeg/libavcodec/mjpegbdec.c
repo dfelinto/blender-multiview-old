@@ -20,7 +20,7 @@
  */
 
 /**
- * @file mjpegbdec.c
+ * @file libavcodec/mjpegbdec.c
  * Apple MJPEG-B decoder.
  */
 
@@ -123,7 +123,7 @@ read_header:
     *data_size = sizeof(AVFrame);
 
     if(!s->lossless){
-        picture->quality= FFMAX(FFMAX(s->qscale[0], s->qscale[1]), s->qscale[2]);
+        picture->quality= FFMAX3(s->qscale[0], s->qscale[1], s->qscale[2]);
         picture->qstride= 0;
         picture->qscale_table= s->qscale_table;
         memset(picture->qscale_table, picture->quality, (s->width+15)/16);
@@ -145,5 +145,6 @@ AVCodec mjpegb_decoder = {
     ff_mjpeg_decode_end,
     mjpegb_decode_frame,
     CODEC_CAP_DR1,
-    NULL
+    NULL,
+    .long_name = NULL_IF_CONFIG_SMALL("Apple MJPEG-B"),
 };

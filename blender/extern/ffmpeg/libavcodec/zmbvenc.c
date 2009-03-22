@@ -20,13 +20,14 @@
  */
 
 /**
- * @file zmbvenc.c
+ * @file libavcodec/zmbvenc.c
  * Zip Motion Blocks Video encoder
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "libavutil/intreadwrite.h"
 #include "avcodec.h"
 
 #include <zlib.h>
@@ -54,6 +55,8 @@ typedef struct ZmbvEncContext {
     z_stream zstream;
 } ZmbvEncContext;
 
+static int score_tab[256];
+
 /** Block comparing function
  * XXX should be optimized and moved to DSPContext
  * TODO handle out of edge ME
@@ -62,13 +65,18 @@ static inline int block_cmp(uint8_t *src, int stride, uint8_t *src2, int stride2
 {
     int sum = 0;
     int i, j;
+    uint8_t histogram[256]={0};
 
     for(j = 0; j < bh; j++){
         for(i = 0; i < bw; i++)
-            sum += src[i] ^ src2[i];
+            histogram[src[i] ^ src2[i]]++;
         src += stride;
         src2 += stride2;
     }
+
+    for(i=1; i<256; i++)
+        sum+= score_tab[histogram[i]];
+
     return sum;
 }
 
@@ -235,7 +243,11 @@ static av_cold int encode_init(AVCodecContext *avctx)
 {
     ZmbvEncContext * const c = avctx->priv_data;
     int zret; // Zlib return code
+    int i;
     int lvl = 9;
+
+    for(i=1; i<256; i++)
+        score_tab[i]= -i * log(i/(double)(ZMBV_BLOCK*ZMBV_BLOCK)) * (256/M_LN2);
 
     c->avctx = avctx;
 
@@ -289,6 +301,8 @@ static av_cold int encode_init(AVCodecContext *avctx)
         return -1;
     }
 
+    avctx->coded_frame = (AVFrame*)&c->pic;
+
     return 0;
 }
 
@@ -318,5 +332,6 @@ AVCodec zmbv_encoder = {
     encode_init,
     encode_frame,
     encode_end,
-    .pix_fmts = (enum PixelFormat[]){PIX_FMT_PAL8, -1},
+    .pix_fmts = (enum PixelFormat[]){PIX_FMT_PAL8, PIX_FMT_NONE},
+    .long_name = NULL_IF_CONFIG_SMALL("Zip Motion Blocks Video"),
 };
