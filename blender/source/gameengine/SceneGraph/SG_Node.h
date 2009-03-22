@@ -175,8 +175,7 @@ public:
 
 		void		
 	UpdateWorldData(
-		double time,
-		bool parentUpdated=false
+		double time
 	);
 
 	/**

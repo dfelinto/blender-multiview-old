@@ -4,7 +4,6 @@
 	Version="9,00"
 	Name="BL_src"
 	ProjectGUID="{FB88301F-F725-401B-ACD7-D2ABBF333B71}"
-	RootNamespace="BL_src"
 	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
@@ -174,6 +173,10 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
+				RelativePath="..\..\..\source\blender\src\autoarmature.c"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\source\blender\src\B.blend.c"
 				>
 			</File>
@@ -331,18 +334,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\source\blender\src\editarmature.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\source\blender\src\editarmature_generate.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\source\blender\src\editarmature_retarget.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\source\blender\src\editarmature_sketch.c"
 				>
 			</File>
 			<File
@@ -875,10 +866,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\source\blender\include\BDR_sketch.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\source\blender\include\BDR_unwrapper.h"
 				>
 			</File>
@@ -1003,10 +990,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\source\blender\include\BIF_generate.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\source\blender\include\BIF_gl.h"
 				>
 			</File>
@@ -1067,10 +1050,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\source\blender\include\BIF_poselib.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\source\blender\include\BIF_poseobject.h"
 				>
 			</File>
@@ -1091,10 +1070,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\source\blender\include\BIF_retarget.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\source\blender\include\BIF_retopo.h"
 				>
 			</File>
@@ -1104,10 +1079,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\source\blender\include\BIF_screen.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\source\blender\include\BIF_sketch.h"
 				>
 			</File>
 			<File
@@ -1136,10 +1107,6 @@
 			</File>
 			<File
 				RelativePath="..\..\..\source\blender\include\BIF_usiblender.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\source\blender\include\BIF_verse.h"
 				>
 			</File>
 			<File

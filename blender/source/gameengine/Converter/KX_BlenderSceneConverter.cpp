@@ -270,7 +270,6 @@ void KX_BlenderSceneConverter::ConvertScene(const STR_String& scenename,
 	// hook for registration function during conversion.
 	m_currentScene = destinationscene;
 	destinationscene->SetSceneConverter(this);
-	SG_SetActiveStage(SG_STAGE_CONVERTER);
 
 	if (blenderscene)
 	{
@@ -807,7 +806,7 @@ void	KX_BlenderSceneConverter::resetNoneDynamicObjectToIpo(){
 					gameobj->NodeSetLocalPosition(pos);
 					gameobj->NodeSetLocalOrientation(MT_Matrix3x3(eulxyz));
 					gameobj->NodeSetLocalScale(scale);
-					gameobj->NodeUpdateGS(0);
+					gameobj->NodeUpdateGS(0,true);
 				}
 			}
 		}

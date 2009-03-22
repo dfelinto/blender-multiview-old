@@ -402,7 +402,7 @@ bool KX_TrackToActuator::Update(double curtime, bool frame)
 			// set the models tranformation properties
 			curobj->NodeSetLocalOrientation(mat);
 			curobj->NodeSetLocalPosition(localpos);
-			//curobj->UpdateTransform();
+			curobj->UpdateTransform();
 		}
 		else
 		{

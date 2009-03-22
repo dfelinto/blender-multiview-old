@@ -70,7 +70,7 @@ void	KX_MotionState::getWorldOrientation(float& quatIma0,float& quatIma1,float& 
 void	KX_MotionState::setWorldPosition(float posX,float posY,float posZ)
 {
 	m_node->SetLocalPosition(MT_Point3(posX,posY,posZ));
-	//m_node->SetWorldPosition(MT_Point3(posX,posY,posZ));
+	m_node->SetWorldPosition(MT_Point3(posX,posY,posZ));
 }
 
 void	KX_MotionState::setWorldOrientation(float quatIma0,float quatIma1,float quatIma2,float quatReal)
@@ -82,15 +82,13 @@ void	KX_MotionState::setWorldOrientation(float quatIma0,float quatIma1,float qua
 	orn[3] = quatReal;
 
 	m_node->SetLocalOrientation(orn);
-	//m_node->SetWorldOrientation(orn);
+	m_node->SetWorldOrientation(orn);
 
 }
 
 void	KX_MotionState::calculateWorldTransformations()
 {
-	//Not needed, will be done in KX_Scene::UpdateParents() after the physics simulation
-	//bool parentUpdated = false;
-	//m_node->ComputeWorldTransforms(NULL, parentUpdated);
+	m_node->ComputeWorldTransforms(NULL);
 }
 
  

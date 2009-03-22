@@ -100,9 +100,8 @@ CValue* KX_RadarSensor::GetReplica()
 	//>m_sumoObj = new SM_Object(DT_NewCone(m_coneradius, m_coneheight),NULL,NULL,NULL);
 	//replica->m_sumoObj->setMargin(m_Margin);
 	//replica->m_sumoObj->setClientObject(replica->m_client_info);
-	//Wrong: see KX_TouchSensor
-	//bool parentUpdated = false;
-	//((KX_GameObject*)replica->GetParent())->GetSGNode()->ComputeWorldTransforms(NULL,parentUpdated);
+	
+	((KX_GameObject*)replica->GetParent())->GetSGNode()->ComputeWorldTransforms(NULL);
 	replica->SynchronizeTransform();
 	
 	return replica;

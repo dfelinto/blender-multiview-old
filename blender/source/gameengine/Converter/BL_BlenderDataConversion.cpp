@@ -1954,7 +1954,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 			gameobj->NodeSetLocalPosition(pos);
 			gameobj->NodeSetLocalOrientation(MT_Matrix3x3(eulxyz));
 			gameobj->NodeSetLocalScale(scale);
-			gameobj->NodeUpdateGS(0);
+			gameobj->NodeUpdateGS(0,true);
 			
 			BL_ConvertIpos(blenderobject,gameobj,converter);
 			BL_ConvertMaterialIpos(blenderobject, gameobj, converter);
@@ -2037,7 +2037,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 				objectlist->Add(gameobj->AddRef());
 				//tf.Add(gameobj->GetSGNode());
 				
-				gameobj->NodeUpdateGS(0);
+				gameobj->NodeUpdateGS(0,true);
 				gameobj->AddMeshUser();
 		
 			}
@@ -2148,7 +2148,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 							gameobj->NodeSetLocalPosition(pos);
 							gameobj->NodeSetLocalOrientation(MT_Matrix3x3(eulxyz));
 							gameobj->NodeSetLocalScale(scale);
-							gameobj->NodeUpdateGS(0);
+							gameobj->NodeUpdateGS(0,true);
 							
 							BL_ConvertIpos(blenderobject,gameobj,converter);
 							BL_ConvertMaterialIpos(blenderobject,gameobj, converter);	
@@ -2226,7 +2226,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 								objectlist->Add(gameobj->AddRef());
 								//tf.Add(gameobj->GetSGNode());
 								
-								gameobj->NodeUpdateGS(0);
+								gameobj->NodeUpdateGS(0,true);
 								gameobj->AddMeshUser();
 							}
 							else
@@ -2377,7 +2377,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 		if (gameobj->GetSGNode()->GetSGParent() == 0)
 		{
 			parentlist->Add(gameobj->AddRef());
-			gameobj->NodeUpdateGS(0);
+			gameobj->NodeUpdateGS(0,true);
 		}
 	}
 	

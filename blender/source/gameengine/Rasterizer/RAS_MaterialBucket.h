@@ -156,7 +156,6 @@ public:
 	bool Join(RAS_MeshSlot *target, MT_Scalar distance);
 	bool Equals(RAS_MeshSlot *target);
 	bool IsCulled();
-	void SetCulled(bool culled) { m_bCulled = culled; }
 };
 
 /* Used by RAS_MeshObject, to point to it's slots in a bucket */

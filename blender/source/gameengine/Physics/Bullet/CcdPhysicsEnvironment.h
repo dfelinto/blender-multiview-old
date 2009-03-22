@@ -40,7 +40,6 @@ class btDispatcher;
 class WrapperVehicle;
 class btPersistentManifold;
 class btBroadphaseInterface;
-struct btDbvtBroadphase;
 class btOverlappingPairCache;
 class btIDebugDraw;
 class PHY_IVehicle;
@@ -59,9 +58,7 @@ protected:
 	btIDebugDraw*	m_debugDrawer;
 	
 	class btDefaultCollisionConfiguration* m_collisionConfiguration;
-	// use explicit class to allow culling
-	struct btDbvtBroadphase*			m_broadphase;
-    //class btBroadphaseInterface*			m_broadphase;
+	class btBroadphaseInterface*			m_broadphase;
 
 	//solver iterations
 	int	m_numIterations;
@@ -170,7 +167,6 @@ protected:
 		btTypedConstraint*	getConstraintById(int constraintId);
 
 		virtual PHY_IPhysicsController* rayTest(PHY_IRayCastFilterCallback &filterCallback, float fromX,float fromY,float fromZ, float toX,float toY,float toZ);
-		virtual bool cullingTest(PHY_CullingCallback callback, void* userData, PHY__Vector4* planes, int nplanes);
 
 
 		//Methods for gamelogic collision/physics callbacks

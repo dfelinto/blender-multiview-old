@@ -55,8 +55,7 @@ SG_Spatial(
 	m_parent_relation (NULL),
 	
 	m_bbox(MT_Point3(-1.0, -1.0, -1.0), MT_Point3(1.0, 1.0, 1.0)),
-	m_radius(1.0),
-	m_modified(true)
+	m_radius(1.0)
 {
 }
 
@@ -102,7 +101,6 @@ SetParentRelation(
 ){
 	delete (m_parent_relation);
 	m_parent_relation = relation;
-	m_modified = true;
 }
 
 
@@ -116,8 +114,7 @@ SetParentRelation(
 SG_Spatial::
 UpdateSpatialData(
 	const SG_Spatial *parent,
-	double time,
-	bool& parentUpdated
+	double time
 ){
 
     bool bComputesWorldTransform = false;
@@ -138,14 +135,14 @@ UpdateSpatialData(
 	// our world coordinates.
 
 	if (!bComputesWorldTransform)
-		bComputesWorldTransform = ComputeWorldTransforms(parent, parentUpdated);
+		bComputesWorldTransform = ComputeWorldTransforms(parent);
 
 	return bComputesWorldTransform;
 }
 
-bool	SG_Spatial::ComputeWorldTransforms(const SG_Spatial *parent, bool& parentUpdated)
+bool	SG_Spatial::ComputeWorldTransforms(const SG_Spatial *parent)
 {
-	return m_parent_relation->UpdateChildCoordinates(this,parent,parentUpdated);
+	return m_parent_relation->UpdateChildCoordinates(this,parent);
 }
 
 /**
@@ -169,7 +166,6 @@ RelativeTranslate(
 			m_localPosition += trans;
 		}
 	}
-	m_modified = true;
 }	
 	
 	void 
@@ -178,7 +174,6 @@ SetLocalPosition(
 	const MT_Point3& trans
 ){
 	m_localPosition = trans;
-	m_modified = true;
 }
 
 	void				
@@ -199,7 +194,6 @@ RelativeScale(
 	const MT_Vector3& scale
 ){
 	m_localScaling = m_localScaling * scale;
-	m_modified = true;
 }
 
 	void 
@@ -208,7 +202,6 @@ SetLocalScale(
 	const MT_Vector3& scale
 ){
 	m_localScaling = scale;
-	m_modified = true;
 }
 
 
@@ -236,7 +229,6 @@ RelativeRotate(
 		rot 
 	:
 	(GetWorldOrientation().inverse() * rot * GetWorldOrientation()));
-	m_modified = true;
 }
 
 	void 
@@ -244,7 +236,6 @@ SG_Spatial::
 SetLocalOrientation(const MT_Matrix3x3& rot)
 {
 	m_localRotation = rot;
-	m_modified = true;
 }
 
 

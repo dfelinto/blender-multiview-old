@@ -49,8 +49,6 @@
 #include "KX_IPhysicsController.h" /* for suspend/resume */
 #include "DNA_object_types.h"
 #include "SCA_LogicManager.h" /* for ConvertPythonToGameObject to search object names */
-//#include "KX_ObjectLink.h"
-//#include "KX_IOctree.h"
 #define KX_OB_DYNAMIC 1
 
 
@@ -99,23 +97,7 @@ protected:
 	SG_Node*							m_pSGNode;
 
 	MT_CmMatrix4x4						m_OpenGL_4x4Matrix;
-
-friend class KX_ObjectList;
-friend class KX_OctreeRoot;
-	// these members are automatically handled by the octree, don't touch them
-	//KX_ObjectLink						m_objectLinks[KX_OCTREE_OBJLINKS];
-	//int									m_linkCount;
-
-	//inline void DecLink() {
-	//	m_linkCount--;
-	//}
-	//inline void IncLink() {
-	//	m_linkCount++;
-	//}
-	//inline KX_ObjectLink& GetLink(int i) {
-	//	return m_objectLinks[i];
-	//}
-
+	
 public:
 	bool								m_isDeformable;
 
@@ -385,7 +367,8 @@ public:
 
 		void						
 	NodeUpdateGS(
-		double time
+		double time,
+		bool bInitiator
 	);
 
 	const 

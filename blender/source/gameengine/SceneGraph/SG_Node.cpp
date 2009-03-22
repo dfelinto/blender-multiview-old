@@ -219,19 +219,18 @@ void SG_Node::RemoveChild(SG_Node* child)
 
 
 
-void SG_Node::UpdateWorldData(double time, bool parentUpdated)
+void SG_Node::UpdateWorldData(double time)
 {
 	//if (!GetSGParent())
 	//	return;
 
-	if (UpdateSpatialData(GetSGParent(),time,parentUpdated))
-		// to update the 
+	if (UpdateSpatialData(GetSGParent(),time))
 		ActivateUpdateTransformCallback();
 
 	// update children's worlddata
 	for (NodeList::iterator it = m_children.begin();it!=m_children.end();++it)
 	{
-		(*it)->UpdateWorldData(time, parentUpdated);
+		(*it)->UpdateWorldData(time);
 	}
 }
 

@@ -82,8 +82,6 @@
 #include "BL_ShapeDeformer.h"
 #include "BL_DeformableGameObject.h"
 
-//#include "KX_OctreeRoot.h"
-
 // to get USE_BULLET!
 #include "KX_ConvertPhysicsObject.h"
 
@@ -139,7 +137,6 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 	m_activity_culling = false;
 	m_suspend = false;
 	m_isclearingZbuffer = true;
-	//m_octree = new KX_OctreeRoot(1.0f);
 	m_tempObjectList = new CListValue();
 	m_objectlist = new CListValue();
 	m_parentlist = new CListValue();
@@ -205,9 +202,6 @@ KX_Scene::~KX_Scene()
 	// It's still there but we remove all properties here otherwise some
 	// reference might be hanging and causing late release of objects
 	RemoveAllDebugProperties();
-
-	//if (m_octree)
-	//	delete m_octree;
 
 	while (GetRootParentList()->GetCount() > 0) 
 	{
@@ -799,24 +793,6 @@ SCA_IObject* KX_Scene::AddReplicaObject(class CValue* originalobject,
 			replica->GetSGNode()->AddChild(childreplicanode);
 	}
 
-	// At this stage all the objects in the hierarchy have been duplicated,
-	// we can update the scenegraph, we need it for the duplication of logic
-	MT_Point3 newpos = ((KX_GameObject*) parentobject)->NodeGetWorldPosition();
-	replica->NodeSetLocalPosition(newpos);
-
-	MT_Matrix3x3 newori = ((KX_GameObject*) parentobject)->NodeGetWorldOrientation();
-	replica->NodeSetLocalOrientation(newori);
-	
-	// get the rootnode's scale
-	MT_Vector3 newscale = parentobj->GetSGNode()->GetRootSGParent()->GetLocalScale();
-
-	// set the replica's relative scale with the rootnode's scale
-	replica->NodeSetRelativeScale(newscale);
-
-	replica->GetSGNode()->UpdateWorldData(0);
-	replica->GetSGNode()->SetBBox(originalobj->GetSGNode()->BBox());
-	replica->GetSGNode()->SetRadius(originalobj->GetSGNode()->Radius());
-
 	// now replicate logic
 	vector<KX_GameObject*>::iterator git;
 	for (git = m_logicHierarchicalGameObjects.begin();!(git==m_logicHierarchicalGameObjects.end());++git)
@@ -839,6 +815,21 @@ SCA_IObject* KX_Scene::AddReplicaObject(class CValue* originalobject,
 		ReplicateLogic((*git));
 	}
 	
+	MT_Point3 newpos = ((KX_GameObject*) parentobject)->NodeGetWorldPosition();
+	replica->NodeSetLocalPosition(newpos);
+
+	MT_Matrix3x3 newori = ((KX_GameObject*) parentobject)->NodeGetWorldOrientation();
+	replica->NodeSetLocalOrientation(newori);
+	
+	// get the rootnode's scale
+	MT_Vector3 newscale = parentobj->GetSGNode()->GetRootSGParent()->GetLocalScale();
+
+	// set the replica's relative scale with the rootnode's scale
+	replica->NodeSetRelativeScale(newscale);
+
+	replica->GetSGNode()->UpdateWorldData(0);
+	replica->GetSGNode()->SetBBox(originalobj->GetSGNode()->BBox());
+	replica->GetSGNode()->SetRadius(originalobj->GetSGNode()->Radius());
 	// check if there are objects with dupligroup in the hierarchy
 	vector<KX_GameObject*> duplilist;
 	for (git = m_logicHierarchicalGameObjects.begin();!(git==m_logicHierarchicalGameObjects.end());++git)
@@ -1308,55 +1299,14 @@ void KX_Scene::MarkVisible(RAS_IRasterizer* rasty, KX_GameObject* gameobj,KX_Cam
 	}
 }
 
-void KX_Scene::PhysicsCullingCallback(KX_ClientObjectInfo* objectInfo, void* cullingInfo)
-{
-	KX_GameObject* gameobj = objectInfo->m_gameobject;
-	if (   objectInfo->m_type > KX_ClientObjectInfo::ACTOR	//skip the non-object physic controllers
-		|| !gameobj					// some sanity check
-		|| !gameobj->GetSGNode()	//
-		|| !gameobj->GetVisible()	// this is the real check: invisible object can be in the physics engine
-		|| (((CullingInfo*)cullingInfo)->m_layer && !(gameobj->GetLayer() & ((CullingInfo*)cullingInfo)->m_layer)))
-		// object is not visible, nothing to do, the object was culled already in 
-		return;
-
-#if 0
-	// this code seems totally useless because SchedulePolygons doesn't do anything
-	int nummeshes = gameobj->GetMeshCount();
-	
-	for (int m=0;m<nummeshes;m++)
-	{
-		// this adds the vertices to the display list
-		(gameobj->GetMesh(m))->SchedulePolygons(cullingInfo->m_rasty->GetDrawingMode());
-	}
-#endif
-	// make object visible
-	gameobj->SetCulled(false);
-	gameobj->UpdateBuckets(false);
-}
-
 void KX_Scene::CalculateVisibleMeshes(RAS_IRasterizer* rasty,KX_Camera* cam, int layer)
 {
 // FIXME: When tree is operational
 #if 1
-	// test culling through Bullet
-	CullingInfo info(this,rasty,layer);
-	PHY__Vector4 planes[5];
-	// get the clip planes
-	MT_Vector4* cplanes = cam->GetNormalizedClipPlanes();
-	// and convert
-	planes[0].setValue(cplanes[0].getValue());
-	planes[1].setValue(cplanes[1].getValue());
-	planes[2].setValue(cplanes[2].getValue());
-	planes[3].setValue(cplanes[3].getValue());
-	planes[4].setValue(cplanes[5].getValue());
-	if (!m_physicsEnvironment->cullingTest(PhysicsCullingCallback,&info,planes,5))
+	// do this incrementally in the future
+	for (int i = 0; i < m_objectlist->GetCount(); i++)
 	{
-		// the physics engine couldn't help us, do it the hard way
-		// do this incrementally in the future
-		for (int i = 0; i < m_objectlist->GetCount(); i++)
-		{
-			MarkVisible(rasty, static_cast<KX_GameObject*>(m_objectlist->GetValue(i)), cam, layer);
-		}
+		MarkVisible(rasty, static_cast<KX_GameObject*>(m_objectlist->GetValue(i)), cam, layer);
 	}
 #else
 	if (cam->GetFrustumCulling())
@@ -1444,7 +1394,7 @@ void KX_Scene::UpdateParents(double curtime)
 	for (int i=0; i<GetRootParentList()->GetCount(); i++)
 	{
 		KX_GameObject* parentobj = (KX_GameObject*)GetRootParentList()->GetValue(i);
-		parentobj->NodeUpdateGS(curtime);
+		parentobj->NodeUpdateGS(curtime,true);
 	}
 }
 
@@ -1597,7 +1547,6 @@ PyMethodDef KX_Scene::Methods[] = {
 	KX_PYMETHODTABLE(KX_Scene, getObjectList),
 	KX_PYMETHODTABLE(KX_Scene, getName),
 	KX_PYMETHODTABLE(KX_Scene, addObject),
-	KX_PYMETHODTABLE(KX_Scene, updateObject),
 	
 	{NULL,NULL} //Sentinel
 };
@@ -1695,22 +1644,4 @@ KX_PYMETHODDEF_DOC(KX_Scene, addObject,
 	SCA_IObject* replica = AddReplicaObject((SCA_IObject*)ob, other, time);
 	replica->AddRef();
 	return replica;
-}
-
-KX_PYMETHODDEF_DOC(KX_Scene, updateObject,
-"updateObject(object)\n")
-{
-	PyObject *pyob;
-	KX_GameObject *ob;
-
-	if (!PyArg_ParseTuple(args, "O", &pyob))
-		return NULL;
-
-	if (!ConvertPythonToGameObject(pyob, &ob, false))
-		return NULL;
-
-	//if (m_octree)
-	//	m_octree->InsertObject(ob);
-
-	Py_RETURN_NONE;
 }

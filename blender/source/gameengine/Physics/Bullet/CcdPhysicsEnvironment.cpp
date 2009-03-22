@@ -593,10 +593,10 @@ bool	CcdPhysicsEnvironment::proceedDeltaTime(double curTime,float timeStep)
 		(*it)->SynchronizeMotionStates(timeStep);
 	}
 
-	//for (it=m_controllers.begin(); it!=m_controllers.end(); it++)
-	//{
-	//	(*it)->SynchronizeMotionStates(timeStep);
-	//}
+	for (it=m_controllers.begin(); it!=m_controllers.end(); it++)
+	{
+		(*it)->SynchronizeMotionStates(timeStep);
+	}
 
 	for (i=0;i<m_wrapperVehicles.size();i++)
 	{
@@ -1146,59 +1146,6 @@ PHY_IPhysicsController* CcdPhysicsEnvironment::rayTest(PHY_IRayCastFilterCallbac
 	return result.m_controller;
 }
 
-struct	DbvtCullingCallback : btDbvt::ICollide
-{
-	PHY_CullingCallback m_clientCallback;
-	void* m_userData;
-	bool m_bulletClient;
-
-	DbvtCullingCallback(PHY_CullingCallback clientCallback, void* userData, bool bulletClient)
-	{
-		m_clientCallback = clientCallback;
-		m_userData = userData;
-		m_bulletClient = bulletClient;
-	}
-
-	void Process(const btDbvtNode* node,btScalar depth)
-	{
-		Process(node);
-	}
-	void Process(const btDbvtNode* leaf)
-	{	
-		btBroadphaseProxy*	proxy=(btBroadphaseProxy*)leaf->data;
-		KX_ClientObjectInfo* info;
-		if (m_bulletClient)
-		{
-			// the client object is a bullet collision object
-			btCollisionObject* object = (btCollisionObject*)proxy->m_clientObject;
-			CcdPhysicsController* phyCtrl = static_cast<CcdPhysicsController*>(object->getUserPointer());
-			info = (KX_ClientObjectInfo*)phyCtrl->getNewClientInfo();
-		}
-		else
-		{
-			// the client object is directly the client info
-			info = (KX_ClientObjectInfo*)proxy->m_clientObject;
-		}
-		(*m_clientCallback)(info, m_userData);
-	}
-};
-
-bool CcdPhysicsEnvironment::cullingTest(PHY_CullingCallback callback, void* userData, PHY__Vector4 *planes, int nplanes)
-{
-	DbvtCullingCallback dispatcher(callback, userData, true);
-	btVector3 planes_n[5];
-	btScalar planes_o[5];
-	if (nplanes > 5)
-		nplanes = 5;
-	for (int i=0; i<nplanes; i++)
-	{
-		planes_n[i].setValue(planes[i][0], planes[i][1], planes[i][2]);
-		planes_o[i] = planes[i][3];
-	}
-	btDbvt::collideKDOP(m_broadphase->m_sets[1].m_root,planes_n,planes_o,nplanes,dispatcher);
-	btDbvt::collideKDOP(m_broadphase->m_sets[0].m_root,planes_n,planes_o,nplanes,dispatcher);		
-	return true;
-}
 
 
 int	CcdPhysicsEnvironment::getNumContactPoints()
