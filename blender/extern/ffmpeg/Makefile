@@ -35,7 +35,7 @@ include nan_subdirs.mk
 ALLDIRS = libavcodec libavformat libavutil libswscale libavdevice
 
 config::
-	./configure --disable-shared --enable-liba52bin --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-pthreads 
+	./configure --disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-pthreads --disable-yasm
 all::
 	@for i in $(ALLDIRS); do \
 	    echo "====> $(MAKE) $@ in $(SOURCEDIR)/$$i" ;\
