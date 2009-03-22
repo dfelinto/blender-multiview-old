@@ -57,6 +57,7 @@ enum KX_ExitRequestMode
 	KX_EXIT_REQUEST_MAX
 };
 
+
 /**
  * KX_KetsjiEngine is the core game engine class.
  */

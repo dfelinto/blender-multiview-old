@@ -46,7 +46,6 @@
 #include "SND_Scene.h"
 #include "RAS_FramingManager.h"
 #include "RAS_Rect.h"
-
 #include "PyObjectPlus.h"
 
 /**
@@ -85,6 +84,9 @@ class RAS_IRenderTools;
 class SCA_JoystickManager;
 class btCollisionShape;
 class KX_BlenderSceneConverter;
+class KX_OctreeRoot;
+struct KX_ClientObjectInfo;
+
 /**
  * The KX_Scene holds all data for an independent scene. It relates
  * KX_Objects to the specific objects in the modules.
@@ -93,6 +95,7 @@ class KX_Scene : public PyObjectPlus, public SCA_IScene
 {
 	Py_Header;
 protected:
+	//KX_OctreeRoot*		m_octree;
 	RAS_BucketManager*	m_bucketmanager;
 	CListValue*			m_tempObjectList;
 
@@ -269,6 +272,16 @@ protected:
 	void MarkVisible(SG_Tree *node, RAS_IRasterizer* rasty, KX_Camera*cam,int layer=0);
 	void MarkSubTreeVisible(SG_Tree *node, RAS_IRasterizer* rasty, bool visible, KX_Camera*cam,int layer=0);
 	void MarkVisible(RAS_IRasterizer* rasty, KX_GameObject* gameobj, KX_Camera*cam, int layer=0);
+	struct CullingInfo
+	{
+		KX_Scene* m_self;
+		RAS_IRasterizer* m_rasty;
+		int m_layer;
+		CullingInfo(KX_Scene* self, RAS_IRasterizer* rasty, int layer) :
+			m_self(self), m_rasty(rasty), m_layer(layer)
+			{}
+	};
+	static void PhysicsCullingCallback(KX_ClientObjectInfo* objectInfo, void* cullingInfo);
 
 	double				m_suspendedtime;
 	double				m_suspendeddelta;
@@ -551,6 +564,7 @@ public:
 	KX_PYMETHOD_DOC_NOARGS(KX_Scene, getObjectList);
 	KX_PYMETHOD_DOC_NOARGS(KX_Scene, getName);
 	KX_PYMETHOD_DOC(KX_Scene, addObject);
+	KX_PYMETHOD_DOC(KX_Scene, updateObject);
 /*	
 	KX_PYMETHOD_DOC(KX_Scene, getActiveCamera);
 	KX_PYMETHOD_DOC(KX_Scene, getActiveCamera);

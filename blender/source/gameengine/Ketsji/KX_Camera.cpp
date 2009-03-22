@@ -54,6 +54,7 @@ KX_Camera::KX_Camera(void* sgReplicationInfo,
 	// setting a name would be nice...
 	m_name = "cam";
 	m_projection_matrix.setIdentity();
+	m_projection_matrix1.setIdentity();
 	m_modelview_matrix.setIdentity();
 	CValue* val = new CIntValue(1);
 	SetProperty("camera",val);
@@ -138,7 +139,10 @@ void KX_Camera::SetProjectionMatrix(const MT_Matrix4x4 & mat)
 	m_set_frustum_center = false;
 }
 
-
+void KX_Camera::SetProjectionMatrix1(const MT_Matrix4x4 & mat)
+{
+	m_projection_matrix1 = mat;
+}
 
 /**
 * Sets the modelview matrix that is used by the rasterizer.
@@ -158,6 +162,11 @@ void KX_Camera::SetModelviewMatrix(const MT_Matrix4x4 & mat)
 const MT_Matrix4x4& KX_Camera::GetProjectionMatrix() const
 {
 	return m_projection_matrix;
+}
+
+const MT_Matrix4x4& KX_Camera::GetProjectionMatrix1() const
+{
+	return m_projection_matrix1;
 }
 
 

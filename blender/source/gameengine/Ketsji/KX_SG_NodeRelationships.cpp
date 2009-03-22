@@ -51,12 +51,19 @@ New(
 KX_NormalParentRelation::
 UpdateChildCoordinates(
 	SG_Spatial * child,
-	const SG_Spatial * parent
+	const SG_Spatial * parent,
+	bool& parentUpdated	
 ){
 	MT_assert(child != NULL);
 
+	if (!parentUpdated && !child->IsModified())
+		return false;
+
+	parentUpdated = true;
+
 	if (parent==NULL) { /* Simple case */
 		child->SetWorldFromLocalTransform();
+		child->SetModified(false);
 		return false;
 	}
 	else {
@@ -68,6 +75,7 @@ UpdateChildCoordinates(
 		child->SetWorldScale(p_world_scale * child->GetLocalScale());
 		child->SetWorldOrientation(p_world_rotation * child->GetLocalOrientation());
 		child->SetWorldPosition(p_world_pos + p_world_scale * (p_world_rotation * child->GetLocalPosition()));
+		child->SetModified(false);
 		return true;
 	}
 }
@@ -112,10 +120,15 @@ New(
 KX_VertexParentRelation::
 UpdateChildCoordinates(
 	SG_Spatial * child,
-	const SG_Spatial * parent
+	const SG_Spatial * parent,
+	bool& parentUpdated	
 ){
 
 	MT_assert(child != NULL);
+
+	if (!parentUpdated && !child->IsModified())
+		return false;
+
 	child->SetWorldScale(child->GetLocalScale());
 	
 	if (parent)
@@ -124,6 +137,7 @@ UpdateChildCoordinates(
 		child->SetWorldPosition(child->GetLocalPosition());
 	
 	child->SetWorldOrientation(child->GetLocalOrientation());
+	child->SetModified(false);
 	return parent != NULL;
 }
 
@@ -172,9 +186,13 @@ New(
 KX_SlowParentRelation::
 UpdateChildCoordinates(
 	SG_Spatial * child,
-	const SG_Spatial * parent
+	const SG_Spatial * parent,
+	bool& parentUpdated	
 ){
 	MT_assert(child != NULL);
+
+	// the child will move even if the parent is not
+	parentUpdated = true;
 
 	const MT_Vector3 & child_scale = child->GetLocalScale();
 	const MT_Point3 & child_pos = child->GetLocalPosition();
@@ -252,6 +270,7 @@ UpdateChildCoordinates(
 	child->SetWorldScale(child_w_scale);
 	child->SetWorldPosition(child_w_pos);
 	child->SetWorldOrientation(child_w_rotation);
+	child->SetModified(false);
 	
 	return parent != NULL;
 }

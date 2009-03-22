@@ -96,6 +96,12 @@ KX_GameObject::KX_GameObject(
 	m_ignore_activity_culling = false;
 	m_pClient_info = new KX_ClientObjectInfo(this, KX_ClientObjectInfo::ACTOR);
 	m_pSGNode = new SG_Node(this,sgReplicationInfo,callbacks);
+	//memset(m_objectLinks, 0, sizeof(m_objectLinks));
+	//for (int i=0; i<KX_OCTREE_OBJLINKS; i++)
+	//{
+	//	m_objectLinks[i].m_object = this;
+	//}
+	//m_linkCount = 0;
 
 	// define the relationship between this node and it's parent.
 	
@@ -129,6 +135,13 @@ KX_GameObject::~KX_GameObject()
 		}
 		m_pSGNode->SetSGClientObject(NULL);
 	}
+	//for(int i=0; i<KX_OCTREE_OBJLINKS; i++)
+	//{
+	//	if (m_objectLinks[i].m_octree != NULL)
+	//	{
+	//		m_objectLinks[i].m_octree->RemoveObject(&m_objectLinks[i]);
+	//	}
+	//}
 }
 
 
@@ -246,7 +259,7 @@ void KX_GameObject::SetParent(KX_Scene *scene, KX_GameObject* obj)
 		NodeSetLocalScale(scale1);
 		NodeSetLocalPosition(MT_Point3(newpos[0],newpos[1],newpos[2]));
 		NodeSetLocalOrientation(invori*NodeGetWorldOrientation());
-		NodeUpdateGS(0.f,true);
+		NodeUpdateGS(0.f);
 		// object will now be a child, it must be removed from the parent list
 		CListValue* rootlist = scene->GetRootParentList();
 		if (rootlist->RemoveValue(this))
@@ -283,7 +296,7 @@ void KX_GameObject::RemoveParent(KX_Scene *scene)
 
 		// Remove us from our parent
 		GetSGNode()->DisconnectFromParent();
-		NodeUpdateGS(0.f,true);
+		NodeUpdateGS(0.f);
 		// the object is now a root object, add it to the parentlist
 		CListValue* rootlist = scene->GetRootParentList();
 		if (!rootlist->SearchValue(this))
@@ -829,6 +842,7 @@ void KX_GameObject::NodeSetLocalPosition(const MT_Point3& trans)
 	}
 
 	GetSGNode()->SetLocalPosition(trans);
+
 }
 
 
@@ -908,7 +922,7 @@ void KX_GameObject::NodeSetWorldPosition(const MT_Point3& trans)
 }
 
 
-void KX_GameObject::NodeUpdateGS(double time,bool bInitiator)
+void KX_GameObject::NodeUpdateGS(double time)
 {
 	if (GetSGNode())
 		GetSGNode()->UpdateWorldData(time);
@@ -945,11 +959,12 @@ const MT_Vector3& KX_GameObject::NodeGetWorldScaling() const
 
 const MT_Point3& KX_GameObject::NodeGetWorldPosition() const
 {
+	static MT_Point3 defaultWorldPosition(0.0, 0.0, 0.0);
 	// check on valid node in case a python controller holds a reference to a deleted object
 	if (GetSGNode())
 		return GetSGNode()->GetWorldPosition();
 	else
-		return MT_Point3(0.0, 0.0, 0.0);
+		return defaultWorldPosition;
 }
 
 /* Suspend/ resume: for the dynamic behaviour, there is a simple
@@ -1216,7 +1231,7 @@ int KX_GameObject::_setattr(const char *attr, PyObject *value)	// _setattr metho
 				if (PyMatTo(value, rot))
 				{
 					NodeSetLocalOrientation(rot);
-					NodeUpdateGS(0.f,true);
+					NodeUpdateGS(0.f);
 					return 0;
 				}
 				return 1;
@@ -1229,7 +1244,7 @@ int KX_GameObject::_setattr(const char *attr, PyObject *value)	// _setattr metho
 				{
 					rot.setRotation(qrot);
 					NodeSetLocalOrientation(rot);
-					NodeUpdateGS(0.f,true);
+					NodeUpdateGS(0.f);
 					return 0;
 				}
 				return 1;
@@ -1242,7 +1257,7 @@ int KX_GameObject::_setattr(const char *attr, PyObject *value)	// _setattr metho
 				{
 					rot.setEuler(erot);
 					NodeSetLocalOrientation(rot);
-					NodeUpdateGS(0.f,true);
+					NodeUpdateGS(0.f);
 					return 0;
 				}
 				return 1;
@@ -1257,7 +1272,7 @@ int KX_GameObject::_setattr(const char *attr, PyObject *value)	// _setattr metho
 			if (PyVecTo(value, pos))
 			{
 				NodeSetLocalPosition(pos);
-				NodeUpdateGS(0.f,true);
+				NodeUpdateGS(0.f);
 				return 0;
 			}
 			return 1;
@@ -1269,7 +1284,7 @@ int KX_GameObject::_setattr(const char *attr, PyObject *value)	// _setattr metho
 			if (PyVecTo(value, scale))
 			{
 				NodeSetLocalScale(scale);
-				NodeUpdateGS(0.f,true);
+				NodeUpdateGS(0.f);
 				return 0;
 			}
 			return 1;
@@ -1684,7 +1699,7 @@ PyObject* KX_GameObject::PySetOrientation(PyObject* self, PyObject* value)
 	if (PyObject_IsMT_Matrix(value, 3) && PyMatTo(value, matrix))
 	{
 		NodeSetLocalOrientation(matrix);
-		NodeUpdateGS(0.f,true);
+		NodeUpdateGS(0.f);
 		Py_RETURN_NONE;
 	}
 
@@ -1693,7 +1708,7 @@ PyObject* KX_GameObject::PySetOrientation(PyObject* self, PyObject* value)
 	{
 		matrix.setRotation(quat);
 		NodeSetLocalOrientation(matrix);
-		NodeUpdateGS(0.f,true);
+		NodeUpdateGS(0.f);
 		Py_RETURN_NONE;
 	}
 	return NULL;
@@ -1714,7 +1729,7 @@ PyObject* KX_GameObject::PyAlignAxisToVect(PyObject* self, PyObject* args)
 			if (fac> 1.0) fac= 1.0;
 			
 			AlignAxisToVect(vect,axis,fac);
-			NodeUpdateGS(0.f,true);
+			NodeUpdateGS(0.f);
 			Py_RETURN_NONE;
 		}
 	}
@@ -1737,7 +1752,7 @@ PyObject* KX_GameObject::PySetPosition(PyObject* self, PyObject* value)
 	if (PyVecTo(value, pos))
 	{
 		NodeSetLocalPosition(pos);
-		NodeUpdateGS(0.f,true);
+		NodeUpdateGS(0.f);
 		Py_RETURN_NONE;
 	}
 
@@ -1750,7 +1765,7 @@ PyObject* KX_GameObject::PySetWorldPosition(PyObject* self, PyObject* value)
 	if (PyVecTo(value, pos))
 	{
 		NodeSetWorldPosition(pos);
-		NodeUpdateGS(0.f,true);
+		NodeUpdateGS(0.f);
 		Py_RETURN_NONE;
 	}
 

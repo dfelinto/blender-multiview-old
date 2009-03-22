@@ -465,12 +465,15 @@ else
 
 				
 				m_logger->StartLog(tc_network, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_NETWORK);
 				scene->GetNetworkScene()->proceed(m_frameTime);
 	
-				m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
-				scene->UpdateParents(m_frameTime);
+				//m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
+				//SG_SetActiveStage(SG_STAGE_NETWORK_UPDATE);
+				//scene->UpdateParents(m_frameTime);
 				
 				m_logger->StartLog(tc_physics, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_PHYSICS1);
 				// set Python hooks for each scene
 				PHY_SetActiveEnvironment(scene->GetPhysicsEnvironment());
 				KX_SetActiveScene(scene);
@@ -479,31 +482,37 @@ else
 				
 				// Update scenegraph after physics step. This maps physics calculations
 				// into node positions.		
-				m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
-				scene->UpdateParents(m_frameTime);
+				//m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
+				//SG_SetActiveStage(SG_STAGE_PHYSICS1_UPDATE);
+				//scene->UpdateParents(m_frameTime);
 				
 				// Process sensors, and controllers
 				m_logger->StartLog(tc_logic, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_CONTROLLER);
 				scene->LogicBeginFrame(m_frameTime);
 	
 				// Scenegraph needs to be updated again, because Logic Controllers 
 				// can affect the local matrices.
 				m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_CONTROLLER_UPDATE);
 				scene->UpdateParents(m_frameTime);
 	
 				// Process actuators
 	
 				// Do some cleanup work for this logic frame
 				m_logger->StartLog(tc_logic, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_ACTUATOR);
 				scene->LogicUpdateFrame(m_frameTime, true);
 				
 				scene->LogicEndFrame();
 	
 				// Actuators can affect the scenegraph
 				m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_ACTUATOR_UPDATE);
 				scene->UpdateParents(m_frameTime);
 				
 				m_logger->StartLog(tc_physics, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_PHYSICS2);
 				scene->GetPhysicsEnvironment()->beginFrame();
 		
 				// Perform physics calculations on the scene. This can involve 
@@ -511,6 +520,7 @@ else
 				scene->GetPhysicsEnvironment()->proceedDeltaTime(m_frameTime,1.0/m_ticrate);//m_deltatimerealDeltaTime);
 
 				m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_PHYSICS2_UPDATE);
 				scene->UpdateParents(m_frameTime);
 			
 			
@@ -574,6 +584,7 @@ else
 				KX_SetActiveScene(scene);
 				
 				m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_PHYSICS1);
 				scene->UpdateParents(m_clockTime);
 
 				// Perform physics calculations on the scene. This can involve 
@@ -583,6 +594,7 @@ else
 				// Update scenegraph after physics step. This maps physics calculations
 				// into node positions.		
 				m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_PHYSICS2);
 				scene->UpdateParents(m_clockTime);
 				
 				// Do some cleanup work for this logic frame
@@ -591,6 +603,7 @@ else
 
 				// Actuators can affect the scenegraph
 				m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
+				SG_SetActiveStage(SG_STAGE_ACTUATOR);
 				scene->UpdateParents(m_clockTime);
 				 
  				scene->setSuspendedTime(0.0);
@@ -622,6 +635,7 @@ void KX_KetsjiEngine::Render()
 	const RAS_FrameSettings &framesettings = firstscene->GetFramingType();
 
 	m_logger->StartLog(tc_rasterizer, m_kxsystem->GetTimeInSeconds(), true);
+	SG_SetActiveStage(SG_STAGE_RENDER);
 
 	// hiding mouse cursor each frame
 	// (came back when going out of focus and then back in again)
@@ -1045,7 +1059,7 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 		m_rasterizer->SetProjectionMatrix(projmat);
 	} else if (cam->hasValidProjectionMatrix() && !cam->GetViewport() )
 	{
-		m_rasterizer->SetProjectionMatrix(cam->GetProjectionMatrix());
+		m_rasterizer->SetProjectionMatrix(cam->GetProjectionMatrix1());
 	} else
 	{
 		RAS_FrameFrustum frustum;
@@ -1088,6 +1102,12 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 
 		cam->SetProjectionMatrix(projmat);
 		
+		// cheat on the actual matrix so that we can 
+		projmat = m_rasterizer->GetFrustumMatrix(
+			left, right, bottom, top, nearfrust, ((orthographic)?ortho:1.0)*100.0, focallength);
+
+		cam->SetProjectionMatrix1(projmat);
+
 		// Otherwise the projection matrix for each eye will be the same...
 		if (m_rasterizer->Stereo())
 			cam->InvalidateProjectionMatrix();
@@ -1102,7 +1122,8 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 		cam->GetCameraLocation(), cam->GetCameraOrientation());
 	cam->SetModelviewMatrix(viewmat);
 
-	scene->UpdateMeshTransformations();
+	//redundant, already done in 
+	//scene->UpdateMeshTransformations();
 
 	// The following actually reschedules all vertices to be
 	// redrawn. There is a cache between the actual rescheduling
@@ -1166,7 +1187,9 @@ void KX_KetsjiEngine::AddScene(KX_Scene* scene)
 void KX_KetsjiEngine::PostProcessScene(KX_Scene* scene)
 {
 	bool override_camera = (m_overrideCam && (scene->GetName() == m_overrideSceneName));
-	
+
+	SG_SetActiveStage(SG_STAGE_SCENE);
+
 		// if there is no activecamera, or the camera is being
 		// overridden we need to construct a temporarily camera
 	if (!scene->GetActiveCamera() || override_camera)
@@ -1186,11 +1209,11 @@ void KX_KetsjiEngine::PostProcessScene(KX_Scene* scene)
 			
 			activecam->NodeSetLocalPosition(camtrans.getOrigin());
 			activecam->NodeSetLocalOrientation(camtrans.getBasis());
-			activecam->NodeUpdateGS(0,true);
+			activecam->NodeUpdateGS(0);
 		} else {
 			activecam->NodeSetLocalPosition(MT_Point3(0.0, 0.0, 0.0));
 			activecam->NodeSetLocalOrientation(MT_Vector3(0.0, 0.0, 0.0));
-			activecam->NodeUpdateGS(0,true);
+			activecam->NodeUpdateGS(0);
 		}
 
 		scene->AddCamera(activecam);
