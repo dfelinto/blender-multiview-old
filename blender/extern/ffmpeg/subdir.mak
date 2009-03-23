@@ -33,7 +33,7 @@
 SRC_DIR = $(SRC_PATH)/lib$(NAME)
 DIR = $(OCGDIR)/extern/ffmpeg/lib$(NAME)
 VPATH = $(SRC_DIR)
-EXTRADIRS = alpha armv4l i386 liba52 mlib ppc ps2 sh4 sparc bfin
+EXTRADIRS = alpha armv4l i386 liba52 mlib ppc ps2 sh4 sparc bfin x86 arm
 
 CFLAGS   += $(CFLAGS-yes)
 OBJS     += $(OBJS-yes)
