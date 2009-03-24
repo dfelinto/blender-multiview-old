@@ -70,7 +70,7 @@ KXH_create_devices(
 	
 	// setup audio
   	SND_DeviceManager::Subscribe();
-	SND_DeviceManager::SetDeviceType(snd_e_dummydevice); // <- plug in fmod later on
+	SND_DeviceManager::SetDeviceType(snd_e_dummydevice);
 	k->audiodevice = SND_DeviceManager::Instance();
 
 	/* Apart from the sizes, we don't need to do anything here. Proper

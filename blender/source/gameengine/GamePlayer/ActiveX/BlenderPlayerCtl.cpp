@@ -444,7 +444,6 @@ bool CBlenderPlayerCtrl::initEngine(void)
 						if (m_networkdevice)
 						{
 							// get an audiodevice
-							//SND_DeviceManager::SetDeviceType(snd_e_fmoddevice);
 							SND_DeviceManager::Subscribe();
 							m_audiodevice = SND_DeviceManager::Instance();
 							if (m_audiodevice)

@@ -10,7 +10,6 @@ export HMAKE="$NANBLENDERHOME/source/tools/hmake/hmake"
 export NAN_PYTHON=/soft/python-2.2.2b1/SunOS5.8
 export NAN_PYTHON_VERSION=2.2
 export NAN_OPENAL=/usr/local
-export NAN_FMOD=/usr/local
 export NAN_JPEG=/usr/local
 export NAN_PNG=/usr/local
 export NAN_SDL=/usr/local

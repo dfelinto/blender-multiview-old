@@ -16,11 +16,9 @@ python:      http://www.python.org
 libjpeg:     http://www.ijg.org/
 libpng:      http://www.libpng.org/pub/png/
 zlib:        http://www.gzip.org/zlib/
-ode:         http://opende.sourceforge.net/
 openal:      http://www.openal.org/home/		(for linux/windows)
-    sdl:     http://www.libsdl.org/index.php (for openal)
-    smpeg:   http://www.lokigames.com/development/smpeg.php3 (for openal)
-fmod: http://www.fmod.org/
+             http://kcat.strangesoft.net/openal.html
+sdl:         http://www.libsdl.org
 
 mozilla: http://www.mozilla.org/
 nspr:  ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases
@@ -28,7 +26,7 @@ nspr:  ftp://ftp.mozilla.org/pub/mozilla.org/nspr/releases
 
 glut:    http://www.opengl.org/developers/documentation/glut.html
 
-If you do not have OpenGL you will also need mesa:
+If you do not have OpenGL headers and libraries you will also need mesa:
 mesa:    http://www.mesa3d.org
 
 If you want to compile with QuickTime enabled, download the SDK for your OS:
@@ -63,7 +61,7 @@ _____________________________
       ADDED FTGL NOTE:
 _____________________________
 
-ftgl now has been patched so much, that it's included in CVS/lib/
+ftgl now has been patched so much, that it's included in SVN/lib/
 The sources for the patched ftgl will be made available soon...
 
 
@@ -72,8 +70,8 @@ The sources for the patched ftgl will be made available soon...
 *********************************************************************
 *********************************************************************
 
-There are two build systems for unixy platforms, the old NaN Makefiles 
-and the brand new SCons-based system.
+There are three build systems for unixy platforms, the old NaN Makefiles 
+and the brand new SCons-based system and CMake.
 
 The NaN system is best understood, if you want to use the configure system,
 please help improve it. SCons has been added as a new build system for
@@ -89,8 +87,8 @@ build system.
 
 
 First of all, make sure 
-1) you have the full source tree available, either via CVS or as source download. 
-2) you have the libs dir (CVSROOT/lib/ or bf-blender/lib/ ) checkout as well
+1) you have the full source tree available, either via SVN or as source download. 
+2) you have the libs dir (SVNROOT/lib/ or bf-blender/lib/ ) checkout as well
 
 Read about that here;
 http://www.blender3d.org/cms/Building_Blender.117.0.html
@@ -129,13 +127,13 @@ You can run 'guessconfig' here: bf-blender/source/tools/guess/guessconfig
 
 NOTE 2:
 That same 'guessconfig' name is used to read from bf-blender/lib/
-Since that directory comes from cvs, easiest is to create a symlink to that dir with the
+Since that directory comes from svn, easiest is to create a symlink to that dir with the
 correct name.
 
 
 
 
-----------------------Basic SCon TIPS-----------------------------------
+----------------------Basic SCons TIPS----------------------------------
 
 More documentation on the scons system is available at
 blender/doc/blender-scons.txt and blender/doc/blender-scons-dev.txt.  Where
@@ -146,16 +144,16 @@ version 2.4.x) and SCons (http://www.scons.org) installed. After you're
 sure these work properly you are ready to build with SCons.
 
 Systems supported at the moment are:
-* Linux (Michel_)
+* Linux (Ken )
 * Windows (jesterKing)
 * Irix (Hos)
 * Cygwin (Michel_)
 * MacOS (sgefant)
 
 All except Linux build with this system against the precompiled libraries,
-so be sure to get them from CVS, ie. for Windows:
+so be sure to get them from SVN, ie. for Windows:
 
-cvs -z3 -d:pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender co lib/windows
+svn co https://svn.blender.org/svnroot/bf-blender/trunk/lib/windows
 
 Be sure to do this at the same level your blender directory is at
 (ie. /home/username/build/blender and /home/username/build/lib/OS).
@@ -205,10 +203,10 @@ If you are using Method 1 with cygwin you need to set FREE_WINDOWS
 to true you can do this with: export FREE_WINDOWS=true
 
 EXTERNAL LIBARIES
-All external libraries that Blender depends on are found in CVS in 
-precompiled form. If you did not already do so, check out lib/windows from CVS using
+All external libraries that Blender depends on are found in SVN in 
+precompiled form. If you did not already do so, check out lib/windows from SVN using
  
-cvs -z3 -d:pserver:anonymous@cvs.blender.org:/cvsroot/bf-blender co lib/windows
+svn co https://svn.blender.org/svnroot/bf-blender/trunk/lib/windows
 
 [NOTE: Make sure you are in the directory where the blender directory resides,
 NOT in the blender directory itself! lib/windows must be in the same dir as
@@ -305,7 +303,6 @@ You can use the package installer fink (http://fink.sourceforge.net/) for some
 of the external libraries:
 1. jpeg    (fink install libjpeg)
 2. png     (fink install libpng3)
-3. cvs	   (fixes some bugs in the shipped cvs: fink install cvs)
 4. python23 ((adds the static lib for python) fink install python23)
 	You will probably want to select python-nox when
 	it asks you. (Also read python note below)
@@ -318,8 +315,8 @@ by default, so for 10.2 you have to open source/nan_definitions.mk and comment o
 	export PY_FRAMEWORK	= 1    
 
 Step 3:
-The rest of the external libraries are present in CVS in binary format so you
-don't have to download them. Precompiled libraries are found in CVS in 
+The rest of the external libraries are present in SVN in binary format so you
+don't have to download them. Precompiled libraries are found in SVN in 
 directory:
 $NANBLENDERHOME/lib/darwin-6.1-powerpc
 If you are not running on a darwing kernel 6.1 (which is likely if you auto-
@@ -362,7 +359,7 @@ dont move these libs from their install location or you will break other libs (l
             sudo ln -s /System/Library/Frameworks/OpenGL.framework/Versions/A/Headers /usr/include/GL
 * build the unix version, not the mac one
 * use ./configure then make and make install
-* the CVS version of freetype-config has the path on my computer, adjust it to yours if you want to rebuild fgtl
+* the SVN version of freetype-config has the path on my computer, adjust it to yours if you want to rebuild fgtl
 
 FGTL
 * freetype must be already installed and working
