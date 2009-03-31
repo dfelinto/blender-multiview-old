@@ -39,13 +39,13 @@ class App:
 		self.clear=Button(frame2,text="Clear",command=self.clearit)
 		self.clear.grid(row=0, column=0, pady=20)
 		
-		self.doit=Button(frame2, text="Do It", command=self.doit)
+		self.doit=Button(frame2, text="Print", command=self.doit)
 		self.doit.grid(row=0, column=1, pady=20)
 		
 		#self.doitlab=Label(frame2, text="(Output to stdout)");
 		#self.doitlab.grid(row=1, column=1);
 		
-		self.parse=Button(frame2, text="Parse it", command=self.parsetext);
+		self.parse=Button(frame2, text="Parse", command=self.parsetext);
 		self.parse.grid(row=0, column=2, pady=20)
 		
 		self.large=0
