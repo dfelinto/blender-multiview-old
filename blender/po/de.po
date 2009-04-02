@@ -1986,8 +1986,8 @@ msgstr "Bestimmt den Auslauf-Radius des Pinsel"
 #: C:\blender\source\blender\src\drawimage.c:1016
 #, c-format
 msgid "Repeating paint on %% of brush diameter"
-#msgstr "Abstand %% : wiederholt das Malen mit dem Pinsel erst wieder in einem Abstand, der dem Prozentsatz des Durchmessers des Pinsel entspricht, d.h der Strich wird ggf. nicht kontinuierlich, sondern in einzelnen Farbpunkten aufgetragen"
 msgstr "Malt sequenziell, erst im Abstand %% des Pinsel-Radius"
+#msgstr "Abstand %% : wiederholt das Malen mit dem Pinsel erst wieder in einem Abstand, der dem Prozentsatz des Durchmessers des Pinsel entspricht, d.h der Strich wird ggf. nicht kontinuierlich, sondern in einzelnen Farbpunkten aufgetragen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5325
 msgid "Render face with texture"
