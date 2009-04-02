@@ -2,20 +2,20 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Blender2German\n"
 "POT-Creation-Date: \n"
-"PO-Revision-Date: \n"
+"PO-Revision-Date: 2009.03.16\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=utf-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Poedit-Language: German\n"
 "X-Poedit-Country: GERMANY\n"
 
 # Copyright (C) 2003;2008;2009 Free Software Foundation, Inc.
 # snts &lt;snutlix@hotmail.com&gt;, 2003.
-# ;blenderx@mymail.ch 2008 (Imported strings from sourcecode)
-#  lobsterbake@web.de" 2009(Translation of Tooltipps)
-#
+# blenderx@mymail.ch 2008 (Imported strings from sourcecode)
+# lobsterbake@web.de" 2009(Translation of Tooltipps)
+# http://blendpolis.de/f/viewtopic.php?t=22125
 #
 #
 #: C:\blender\source\blender\src\butspace.c:481
@@ -36,15 +36,15 @@ msgstr "Clipping Optionen"
 
 #: C:\blender\source\blender\src\butspace.c:496
 msgid "Delete points"
-msgstr "Punkte loeschen"
+msgstr "Punkte löschen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:829
 msgid "Treats all set-smoothed faces with angles less than Degr: as 'smooth' during render"
-msgstr "FlLÃ¶chen unter einem bestimmten Winkel werden automatisch geglLÃ¶ttet gerendert"
+msgstr "Alle durch \"set-smooth\" gewählten Flächen unter einem bestimmten Winkel werden automatisch geglättet (nur beim Rendern sichtbar)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:830
 msgid "Defines maximum angle between face normals that 'Auto Smooth' will operate on"
-msgstr "Definiert maximalen Winkel zwischen Flaechennormalen für automatische Glaettung"
+msgstr "Definiert den maximalen Winkel zwischen Flächennormalen, ab dem die \"auto-smooth\" Funktion arbeitet (automatisches Glätten)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:836
 #: C:\blender\source\blender\src\buttons_editing.c:2983
@@ -54,28 +54,27 @@ msgstr "Aktiviert 'Remake Topologie' Werkzeug"
 
 #: C:\blender\source\blender\src\buttons_editing.c:839
 msgid "Draw intersecting lines in the 3d view, ENTER creates quad or tri faces, wrapped onto other objects in the 3d view."
-msgstr "Zeichnet ueberschneidende Linien in der 3D Ansicht - RETURN erstellt Vier- oder Dreieckflaechen ausgerichtet auf andere Objekte in der 3D Ansicht"
+msgstr "Zeigt sich überschneidende Linien in der 3D Ansicht - ENTER erstellt Vier- oder Dreieckflächen ausgerichtet an andere Objekte in der 3D Ansicht"
 
 #: C:\blender\source\blender\src\buttons_editing.c:841
 #: C:\blender\source\blender\src\buttons_editing.c:2986
-#, fuzzy
 msgid "Apply the re-topology tool to all selected vertices"
-msgstr "Wendet 'Remake Topologie' Werkzeug auf alle markierten Eckpunkte an"
+msgstr "Wendet 'Re-Topologie' Werkzeug auf alle markierten Vertices (Eckpunkte) an"
 
 #: C:\blender\source\blender\src\buttons_editing.c:848
 #: C:\blender\source\blender\src\buttons_editing.c:3030
 msgid "Shifts object data to be centered about object's origin"
-msgstr "Verschiebt das Zentrum von Objektdaten zum Objektursprung"
+msgstr "Verschiebt Objektdaten zum Objektursprung"
 
 #: C:\blender\source\blender\src\buttons_editing.c:849
 #: C:\blender\source\blender\src\buttons_editing.c:3031
 msgid "Shifts object's origin to center of object data"
-msgstr "Verschiebt Objektursprung zum Zentrum von Objektdaten"
+msgstr "Verschiebt Objektursprung zum Zentrum der Objektdaten"
 
 #: C:\blender\source\blender\src\buttons_editing.c:850
 #: C:\blender\source\blender\src\buttons_editing.c:3032
 msgid "Shifts object's origin to cursor location"
-msgstr "Verschiebt Objektursprung zur Cursor-Position (Objektdaten werden nicht verschoben)"
+msgstr "Verschiebt Objektursprung zur Cursor-Position (Geometrie wird nicht verschoben)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:854
 msgid "Render/display the mesh as double or single sided"
@@ -83,7 +82,7 @@ msgstr "Rendert/Zeigt das Mesh doppel- oder einseitig"
 
 #: C:\blender\source\blender\src\buttons_editing.c:855
 msgid "Disables flipping of vertexnormals during render"
-msgstr "Verhindert automatische Ausrichtung der Flaechen zur Kamera beim Rendern"
+msgstr "Deaktiviert das Umpolen der Vertexnormalen, bzw. die automatische Ausrichtung der Flächen, zur Kamera beim Rendern"
 
 #: C:\blender\source\blender\src\buttons_editing.c:858
 msgid "Derive texture coordinates from another mesh."
@@ -91,15 +90,15 @@ msgstr "Ableiten der Texturkoordinaten von einem anderen Mesh-Objekt"
 
 #: C:\blender\source\blender\src\buttons_editing.c:864
 msgid "Creates Sticky coordinates from the current camera view background picture"
-msgstr "Erstellt Texturkoordinaten (Sticky coordinates) für ein Mesh aus der momentanen Kamerasicht sog. \"Camera Mapping\""
+msgstr "Erstellt Texturkoordinaten (Sticky coordinates ~ klebrige Koordinaten) für ein Mesh aus der momentanen Kamerasicht sog. \"Camera Mapping\""
 
 #: C:\blender\source\blender\src\buttons_editing.c:866
 msgid "Deletes Sticky texture coordinates"
-msgstr "Loescht die Koordinaten (Sticky Coordinates) die beim Camera Mapping festgelegt wurden wieder"
+msgstr "Löscht die Koordinaten (Sticky Coordinates) die beim Camera Mapping festgelegt wurden wieder"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1530
 msgid "Collapse/Expand Modifier"
-msgstr "Modifikator oeffnen/schließen"
+msgstr "Modifikator verbergen/aufklappen schließen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1537
 #: C:\blender\source\blender\src\buttons_editing.c:1543
@@ -124,7 +123,7 @@ msgstr "Aktiviert Modifikator im Bearbeitungsmodus (nur wenn Anzeige eingeschalt
 
 #: C:\blender\source\blender\src\buttons_editing.c:1571
 msgid "Apply modifier to editing cage during Editmode"
-msgstr "Cage Edit:der Modifier wird auf das zugrundeliegende (Steuer-)Mesh im Edit Modus angewandt"
+msgstr "Wendet den Modifier an, um den Cage während des Editmode zu bearbeiten"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1578
 #: C:\blender\source\blender\src\buttons_object.c:580
@@ -138,20 +137,20 @@ msgstr "Bewegt den Modifikator im Stapel nach unten"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1586
 msgid "Delete modifier"
-msgstr "Modifikator loeschen"
+msgstr "Modifikator löschen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1659
 msgid "Apply the current modifier and remove from the stack"
-msgstr "Wendet den Modifikator permanent an und loescht ihn vom Stapel"
+msgstr "Wendet den Modifikator permanent an und löscht ihn aus dem Stapel"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1662
 msgid "Duplicate the current modifier at the same position in the stack"
-msgstr "Dupliziert den aktuellen Modifikator und fuegt ihn an die gleiche Position im Stapel ein"
+msgstr "Dupliziert den aktuellen Modifikator"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1674
 #: C:\blender\source\blender\src\buttons_editing.c:5448
 msgid "Selects type of subdivision algorithm."
-msgstr "Waehlt den Unterteilungs-Algorithmus aus"
+msgstr "Wählt den Unterteilungs (subdivison) Algorithmus aus"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1675
 msgid "Number subdivisions to perform"
@@ -163,15 +162,15 @@ msgstr "Anzahl an Unterteilungen beim Rendern"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1685
 msgid "Skip drawing/rendering of interior subdivided edges"
-msgstr "Laesst das Anzeigen/Render von innen unterteiltem Flaechen aus"
+msgstr "Ignoriere die intern unterteilte Kanten beim Anzeigen/Rendern\""
 
 #: C:\blender\source\blender\src\buttons_editing.c:1686
 msgid "Use subsurf to subdivide UVs"
-msgstr "Subsurf benutzen um die UVs zu unterteilen"
+msgstr "Benutze subsurf (SubdivisedSurfaces) für Unterteilung der UVs"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1689
 msgid "Lattice object to deform with"
-msgstr "Name des Lattice mit dem dieses Objekt verformt wird"
+msgstr "Name des Lattice(Verformer), die das Objekt verformen soll"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1690
 #: C:\blender\source\blender\src\buttons_editing.c:1695
@@ -190,7 +189,7 @@ msgstr "Der Name der Kurve, die das Objekt verformen soll."
 #: C:\blender\source\blender\src\buttons_editing.c:1702
 #: C:\blender\source\blender\src\buttons_editing.c:1703
 msgid "The axis that the curve deforms along"
-msgstr "Achse an der das Objekt entlang"
+msgstr "Entlang welcher Achse die Kurve-Deformation wirken soll "
 
 #: C:\blender\source\blender\src\buttons_editing.c:1706
 msgid "Specify the start frame of the effect"
@@ -202,7 +201,7 @@ msgstr "Anzahl der Frames die der Build Effekt dauern soll"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1708
 msgid "Randomize the faces or edges during build."
-msgstr "Randmoziert (Random~Zufall) die Reihenfolge nach der die einzelnen Face bzw. Vertics gebaut werden"
+msgstr "Benutze zufällige Reihenfolge der Faces/Vertics bei derer Erstellung"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1709
 msgid "Specify the seed for random if used."
@@ -210,7 +209,7 @@ msgstr "Definiert Zufallstreuungs-Wert, wenn Zufall verwendet wird"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1712
 msgid "Distance from axis within which mirrored vertices are merged"
-msgstr "Vertics und ihr zugehoeriges Spiegelbild werden miteinander verschmolzen, wenn sie sich in dem hier , in BE, festgelegten Bereich von der Mittelachse aus befinden"
+msgstr "Mindestabstand von der Mittelachse, ab dem gespiegelte Vertices verschmelzen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1713
 msgid "Enable X axis mirror"
@@ -230,27 +229,27 @@ msgstr "Verhindert das Verschieben von Eckpunkten durch die Spiegelebene"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1721
 msgid "Mirror the U texture coordinate around the 0.5 point"
-msgstr "Spiegelt die U Textur-Koordinaten um den 0.5 Punkt; UV-Koordinaten des gespiegelten Meshes, man kann damit beiden Seiten unterschiedliche UV-Texturen verpassen"
+msgstr "Spiegelt die U-Textur-Koordinate um den 0.5 Punkt; bewirkt unterschiedliche UV-Texturen für beide Seiten"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1727
 msgid "Mirror the V texture coordinate around the 0.5 point"
-msgstr "Spiegelt die V Textur-Koordinaten um den 0.5 Punkt; UV-Koordinaten des gespiegelten Meshes, man kann damit beiden Seiten unterschiedliche UV-Texturen verpassen"
+msgstr "Spiegelt die V-Textur-Koordinate um den 0.5 Punkt; bewirkt unterschiedliche UV-Texturen für beide Seiten"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1735
 msgid "Split edges with high angle between faces"
-msgstr "Teilt Kanten mit großen Winkeln zwischen den Flaechen"
+msgstr "Teilt Kanten mit großen Winkeln zwischen den Flächen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1740
 msgid "Angle above which to split edges"
-msgstr "Winkel ab dem Kanten geteilt werden"
+msgstr "Winkel ab dem Kanten aufgeteilt werden"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1746
 msgid "Split edges that are marked as sharp"
-msgstr "Teilt Kanten die als scharf markiert sind"
+msgstr "Aufteilung der Kanten die als scharf markiert sind"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1752
 msgid "Name of vertex group to displace (displace whole mesh if blank)"
-msgstr "Der \"Displace\"-Effekt wirkt sich nur auf die angegebene Vertex-Gruppe aus ( Wenn sie das Feld auslassen, wirkt der Effekt auf das ganze Mesh )"
+msgstr "Der \"Displace\"-Effekt wirkt sich nur auf die angegebene Vertex-Gruppe aus (sonst auf das ganze Mesh)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1758
 msgid "Texture to use as displacement input"
@@ -262,7 +261,7 @@ msgstr "Materialwert, der keine Verschiebung bewirkt"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1766
 msgid "Strength of displacement"
-msgstr "Staerke der Verschiebung"
+msgstr "Stärke der Verschiebung"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1773
 msgid "Displace direction"
@@ -276,16 +275,16 @@ msgstr "Textur-Koordinaten mit denen der Displacement-Input gesteurt wird"
 #: C:\blender\source\blender\src\buttons_editing.c:1813
 #: C:\blender\source\blender\src\buttons_editing.c:1931
 msgid "Set the UV layer to use"
-msgstr "Waehlen sie die UV-Texturebene, die vom Modifier benutzt wird ( Angabe notwendig )"
+msgstr "Wählen sie die UV-Texturebene, die vom Modifier benutzt wird ( Angabe notwendig )"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1801
 #: C:\blender\source\blender\src\buttons_editing.c:1941
 msgid "Object to get texture coordinates from"
-msgstr "Objekt von dem die Textur Koordinaten kommen"
+msgstr "Objekt von dem die Textur-Koordinaten kommen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1820
 msgid "Horizontal Aspect Ratio"
-msgstr "Horizontales Bildseitenverhaeltnis"
+msgstr "Horizontales Bildseitenverhältnis"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1825
 msgid "Vertical Aspect Ratio"
@@ -293,11 +292,11 @@ msgstr "Vertikales Bildseitenverhältnis"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1829
 msgid "Number of objects to use as projectors"
-msgstr "Anzahl der Ob Felder erhoehen"
+msgstr "Anzahl der Objekte die als Projektor benutzt werden erhöhen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1834
 msgid "Object to use as projector"
-msgstr "Das Objekt, welches als Projektor benützt wird. Projektion entlang dessen negativen z-Achse ( mehrer Obj. können als Prjktr. benutzt werden )"
+msgstr "Das Objekt, welches als Projektor benützt wird. Proj.Richtung: seine negative z-Achse. Mehrere Objekte können benutzt werden."
 
 #: C:\blender\source\blender\src\buttons_editing.c:1839
 msgid "Image to project (only faces with this image will be altered"
@@ -309,7 +308,7 @@ msgstr "Überschreibt  die Angaben im Image-Feld -> alle Flächen werden vom Mod
 
 #: C:\blender\source\blender\src\buttons_editing.c:1850
 msgid "Defines the percentage of triangles to reduce to"
-msgstr "Prozent um die, Anzahl der Triangel, veringert werden -> Vertex-/Flächen-Anzahl eines Mesh wird reduziert"
+msgstr "Prozent um die die Vertex-/Flächen-Anzahl eines Mesh reduziert wird"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1852
 msgid "Displays the current number of faces in the decimated mesh"
@@ -325,15 +324,15 @@ msgstr "Aktiviert Glättung in der Y-Achse"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1858
 msgid "Enable Z axis smoothing"
-msgstr "Aktiviert Glaeung in der Z-Achse"
+msgstr "Aktiviert Glättung in der Z-Achse"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1860
 msgid "Define the amount of smoothing, from 0.0 to 1.0 (lower / higher values can deform the mesh)"
-msgstr "Definiert die Staerke der Glaettung von 0.0 bis 1.0 (kleinere/hoere Werte können das Mesh deformieren)"
+msgstr "Definiert die Stärke der Glättung von 0.0 bis 1.0 (kleinere/höre Werte können das Mesh deformieren)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1861
 msgid "Number of smoothing iterations"
-msgstr "Anzahl der Glaettungsschritte"
+msgstr "Anzahl der Glättungsschritte"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1862
 #: C:\blender\source\blender\src\buttons_editing.c:1878
@@ -342,7 +341,7 @@ msgstr "Vertex Gruppe mit der bestimmt wird welche Vertics beinflusst werden"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1867
 msgid "Projection type to apply"
-msgstr "Projektions Tyb der gesetzt wird"
+msgstr "Projektions Typ der gesetzt wird"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1868
 msgid "Enable (local) X axis deformation"
@@ -362,7 +361,7 @@ msgstr "Definiert die Stärke der Deformation"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1874
 msgid "Only deform vertices within this distance from the center of the effect (leave as 0 for infinite)"
-msgstr "Verforme nur Vertics die im Zwischen Raum vom Mittelpunkt des Effekts aus (belassen sie die Einstellung bei 0 für unbegrenz)"
+msgstr "Effektradius. Verformt werden nur Vertices innerhalb des Effektradius ( für unbegrenzten Effektradius)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1875
 msgid "Size of projection shape (leave as 0 for auto)"
@@ -370,7 +369,7 @@ msgstr "Groeße der Projektions Form ( 0 für auto )"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1876
 msgid "Use radius as size of projection shape (0 = auto)"
-msgstr "Radius wird als Format der Projektions Format benutzt (0=auto)"
+msgstr "Benutze Radius als Massstab für die Projektions Form (0 = auto)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1880
 msgid "Control object: if available, its location determines the center of the effect"
@@ -454,7 +453,7 @@ msgstr "Gewschwindigkeit der Schwingung in BE pro Frame"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1946
 msgid "Specify the amplitude of the wave"
-msgstr "Amplitude (~Hoehe) der Schwingung in BE"
+msgstr "Amplitude (~Höhe) der Schwingung in BE"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1947
 msgid "Specify the width of the wave"
@@ -470,11 +469,11 @@ msgstr "Armature Objekt das verformt werden soll"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1953
 msgid "Vertex Group name to control overall armature influence"
-msgstr "Name Vertex Gruppe um den Einflluss auf die  ganze Armature"
+msgstr "Name der Vertex-Gruppe um den Gesamteinflluss der Armature zu kontrollieren"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1955
 msgid "Enable VertexGroups defining deform"
-msgstr "Rechtsbuendig  (vom Objekt Zentrum)"
+msgstr "Rechtsbündig  (vom Objekt Zentrum)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1956
 msgid "Enable Bone Envelopes defining deform"
@@ -502,11 +501,11 @@ msgstr "Setzt den Mittelpunkt des hooks (dt.hakens) an die Position des Mauszeig
 
 #: C:\blender\source\blender\src\buttons_editing.c:1974
 msgid "Selects effected vertices on mesh"
-msgstr "Wählen sie die zu beinflussenden Vertics des mesh aus"
+msgstr "Wählen sie die zu beinflussenden Vertics des Mesh aus"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1976
 msgid "Reassigns selected vertices to hook"
-msgstr "Die ausgewählten Vertics werdem dem Haken (Hook) neu zugewiesen, die alte Zuweisung wird gelöscht"
+msgstr "Die ausgewählten Vertics werdem dem Hook(Haken) neu zugewiesen, die alte Zuweisung wird gelöscht"
 
 #: C:\blender\source\blender\src\buttons_editing.c:1983
 msgid "Boolean operation to perform"
@@ -526,7 +525,7 @@ msgstr "Anzahl der Duplikate, die erzeugt werden sollen (min. 2)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2013
 msgid "Length to fit array within"
-msgstr ""
+msgstr "Zielausdehnung der Array"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2019
 msgid "Curve object to fit array length to"
@@ -534,23 +533,23 @@ msgstr "Kurvenobjekt, an das die Arraylänge angepasst werden soll"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2031
 msgid "Constant offset between duplicates (local coordinates)"
-msgstr "Konstanter Abstand zwischen den Duplikaten ( Lokalkoordinaten )"
+msgstr "Konstanter Abstand zwischen den Duplikaten (Lokalkoordinaten"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2037
 #: C:\blender\source\blender\src\buttons_editing.c:2043
 #: C:\blender\source\blender\src\buttons_editing.c:2049
 msgid "Constant component for duplicate offsets (local coordinates)"
-msgstr ""
+msgstr "Konstante für duplizierte Offests (Lokalkoordinaten)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2058
 msgid "Offset between duplicates relative to object width (local coordinates)"
-msgstr "Abstand zu den Dupliakten ist relativ zu der Breite des Objekts (Lokal Koordinaten)"
+msgstr "Abstand zu den Dupliakten ist relativ zu der Breite des Objekts (Lokalkoordinaten)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2064
 #: C:\blender\source\blender\src\buttons_editing.c:2070
 #: C:\blender\source\blender\src\buttons_editing.c:2076
 msgid "Component for duplicate offsets relative to object width (local coordinates)"
-msgstr ""
+msgstr "Konstante für duplizierte Offests ist relativ zu der Breite des Objekts (Lokalkoordinaten)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2089
 msgid "Merge vertices in adjacent duplicates"
@@ -562,7 +561,7 @@ msgstr "Verbindet die Vertices des ersten Duplikats mit den Vertices des letzten
 
 #: C:\blender\source\blender\src\buttons_editing.c:2100
 msgid "Limit below which to merge vertices"
-msgstr "Grenzwert bis dem die Vertics miteinnander verschmolzen werden"
+msgstr "Grenzwert für das Verschmelzen der Vertics"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2108
 msgid "Add an object transformation to the total offset"
@@ -609,7 +608,7 @@ msgstr "Vorheriger Shape Key"
 #: C:\blender\source\blender\src\drawnode.c:521
 #: C:\blender\source\blender\src\headerbuttons.c:289
 msgid "Browses existing choices or adds NEW"
-msgstr "Durchsuchen sie bereits vorhandenes oder fügen sie neues hinzu"
+msgstr "Aus der Liste Wählen oder neues hinzufügen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2244
 msgid "Next Shape Key"
@@ -629,7 +628,7 @@ msgstr "Mindestmaß für den Schieberegler "
 
 #: C:\blender\source\blender\src\buttons_editing.c:2254
 msgid "Maximum for slider"
-msgstr "Hoechstmaß für den Schieberegler"
+msgstr "Höchstmaß für den Schieberegler"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2258
 msgid "Vertex Weight Group name, to blend with Basis Shape"
@@ -641,11 +640,11 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_editing.c:2635
 msgid "Load Unicode Text file"
-msgstr "Laedt eine Unicode Text Datei "
+msgstr "Lädt eine Unicode Text Datei "
 
 #: C:\blender\source\blender\src\buttons_editing.c:2638
 msgid "Select Unicode Table"
-msgstr "Waehlt eine Unicode Tabelle"
+msgstr "Wählt eine Unicode Tabelle"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2639
 msgid "UT"
@@ -653,7 +652,7 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_editing.c:2642
 msgid "Select character"
-msgstr "Waehlt einen Unicode-Block"
+msgstr "Wählt einen Unicode-Block"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2645
 msgid "Scroll character table up"
@@ -685,7 +684,7 @@ msgstr "Fügt einen Absatz \"Lorem Ipsum\" am Cursor ein (nur Edit-Mode)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2701
 msgid "Left align the text from the object center"
-msgstr "Linksbuendig: richtet den Text vom Objekt Mittelpunkt nach Links aus"
+msgstr "Linksbündig: richtet den Text vom Objekt Mittelpunkt nach Links aus"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2702
 msgid "Middle align the text from the object center"
@@ -709,7 +708,7 @@ msgstr "Schaltet zwischen Groß- und Kleinschreibung hin- und her (nur im Edit-M
 
 #: C:\blender\source\blender\src\buttons_editing.c:2708
 msgid "Don't fill polygons while editing"
-msgstr "Schaltet das fuellen von Polygone waehrend des Editieren ab"
+msgstr "Schaltet das füllen von Polygone während des Editieren ab"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2710
 msgid "Apply a deforming curve to the text"
@@ -721,7 +720,7 @@ msgstr "Ersetzt Buchstaben durch ein beliebiges Objekt, z.B \"MeinFont\", ein Ob
 
 #: C:\blender\source\blender\src\buttons_editing.c:2714
 msgid "Size of the text"
-msgstr "SchriftgrÃ¤ße"
+msgstr "Schriftgröße"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2715
 msgid "Distance between text lines"
@@ -745,7 +744,7 @@ msgstr "Vertikale Verschiebung (vom Objekt Zentrum)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2720
 msgid "Italic angle of the characters"
-msgstr "Schraegstellung:Stellen sie die Staerke des Kursiv/die staerke der Neigung ein"
+msgstr "Schrägstellung:Stellen sie die Stärke des Kursiv/die stärke der Neigung ein"
 
 #: C:\blender\source\blender\src\buttons_editing.c:2721
 msgid "Vertical position from object center"
@@ -878,7 +877,7 @@ msgstr "Lässt das der Kurve untergeordnete Objekt entlang der Kurve rotieren"
 
 #: C:\blender\source\blender\src\buttons_editing.c:3056
 msgid "Option for curve-deform: makes deformed child to stretch along entire path"
-msgstr "Option zu Kurven Verformung: lässt ver"
+msgstr ""
 
 #: C:\blender\source\blender\src\buttons_editing.c:3057
 msgid "Children will use TimeOffs value as path distance offset"
@@ -1105,7 +1104,7 @@ msgstr "Aktiviert Lineare interpolation ( zwei gegebene Datenpunkte f0 und f1 we
 #: C:\blender\source\blender\src\buttons_editing.c:3392
 #: C:\blender\source\blender\src\buttons_editing.c:3397
 msgid "Set Cardinal interpolation"
-msgstr "Allgemeine Interpolation (def. Interpolation: Findung einer kontinuierliche Funktion zu diskreten Daten (z. B. Messwerten)) "
+msgstr "Allgemeine (Kardinale) Interpolation (def. Interpolation: Findung einer kontinuierliche Funktion zu diskreten Daten (z. B. Messwerten)) "
 
 #: C:\blender\source\blender\src\buttons_editing.c:3388
 #: C:\blender\source\blender\src\buttons_editing.c:3393
@@ -1163,7 +1162,7 @@ msgstr "Knochen werden als Kasten dargestellt, die Unterteilung (subdivision) un
 
 #: C:\blender\source\blender\src\buttons_editing.c:3659
 msgid "Draw bones as extruded spheres, showing deformation influence volume"
-msgstr "dt. Einflussbereich; Knochen werden als extrudierte Sphären dargestellt, im Edit-/Posemode wird der Einflussbereich angzeigt (Sphäre: veralg. der Oberfl. einer Kugel, auf mehere Dimensionen) "
+msgstr "dt. Einflussbereich; Knochen werden als extrudierte Kugeln dargestellt, im Edit-/Posemode wird der Einflussbereich angzeigt"
 
 #: C:\blender\source\blender\src\buttons_editing.c:3661
 msgid "Draw bone axes"
@@ -1403,7 +1402,7 @@ msgstr "Wählt das Schnittmuster aus, nachdem Subdivide arbeitet"
 
 #: C:\blender\source\blender\src\buttons_editing.c:4354
 msgid "Use vertex coordinate as texture coordinate"
-msgstr "Verschiebt die Koordinaten der Vertices nach eine SW-Textur beinflusst"
+msgstr "Verschiebt die Koordinaten der Vertices von eine SW-Textur beinflusst"
 
 #: C:\blender\source\blender\src\buttons_editing.c:4355
 msgid "Randomizes selected vertex sequence data"
@@ -1419,7 +1418,7 @@ msgstr "Unterteilt die markierten Flächen zufällig"
 
 #: C:\blender\source\blender\src\buttons_editing.c:4360
 msgid "Moves selected vertices outwards into a spherical shape"
-msgstr "Verschiebt die markierten Eckpunkte zu einer Kugelform"
+msgstr "Verschiebt die markierten Vertices so, dass einer runde Form ensteht"
 
 #: C:\blender\source\blender\src\buttons_editing.c:4361
 msgid "Flattens angles of selected faces"
@@ -1793,13 +1792,13 @@ msgstr "Textur entgegen dem Uhrzeigersinn drehen (linksherum)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:4833
 msgid "Locks the texture sizes together"
-msgstr ""
+msgstr "Koppelt fest die Textureskalierungen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:4835
 #: C:\blender\source\blender\src\buttons_editing.c:4838
 #: C:\blender\source\blender\src\buttons_editing.c:4841
 msgid "Scaling factor for texture"
-msgstr ""
+msgstr "Skalierungsfaktor für die Textur"
 
 #: C:\blender\source\blender\src\buttons_editing.c:4847
 msgid "Adds a new texture"
@@ -1856,11 +1855,11 @@ msgstr "Nur über hellere Bereiche malen"
 #: C:\blender\source\blender\src\buttons_editing.c:5186
 #: C:\blender\source\blender\src\buttons_editing.c:5246
 msgid "Keep applying paint effect while holding mouse"
-msgstr ""
+msgstr "Wende das Maleffekt an, solange Maus gedrückt."
 
 #: C:\blender\source\blender\src\buttons_editing.c:5189
 msgid "Paint on all faces inside brush (otherwise only on face under mouse cursor)"
-msgstr ""
+msgstr "Bemale alle Flächen innerhalb Effekt-Radius, sonst nur die unter Maus"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5190
 msgid "Use distances to vertices (instead of all vertices of face)"
@@ -1877,19 +1876,19 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_editing.c:5196
 msgid "Only paint on vertices in the selected vertex group."
-msgstr ""
+msgstr "Bemale nur Vetrexe innerhalb selectierten Vertex-Gruppen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5197
 msgid "Mirrored Paint, applying on mirrored Weight Group name"
-msgstr ""
+msgstr "Gespiegeltes Malen, wirkt auf beide Weight-Groups gleichzeitig"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5198
 msgid "Displays the active object's wireframe in shaded drawing modes"
-msgstr ""
+msgstr "Zeige Objektnetz in shaded drawing modes (Schattiertmodus)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5199
 msgid "Removes reference to this deform group from all vertices"
-msgstr ""
+msgstr "Entferne die Deform-Group-Reference von allen Vertices"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5219
 msgid "The amount of red used for painting"
@@ -1910,32 +1909,32 @@ msgstr "Fügt die Vertex Farbe hinzu"
 #: C:\blender\source\blender\src\buttons_editing.c:5240
 #: C:\blender\source\blender\src\buttons_editing.c:5353
 msgid "Set Vertex color of selection to current (Shift+K)"
-msgstr ""
+msgstr "Färbt die Auswahl mit der aktiven Vertex Farbe ein (shift+K)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5243
 msgid "Paint on all faces inside brush"
-msgstr ""
+msgstr "Malt auf die ganze Fläche innerhalb des Pinsels, nicht nur auf den Vertex (Eckpunkt)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5244
 msgid "Use distances to vertices (instead of paint entire faces)"
-msgstr ""
+msgstr "Benutzt die Entfernung zwischen den Vertices (Eckpunkten) (anstatt auf die ganze Fläche zu malen) d.h Vertices werden als Indikatoren für die Erkennung von Flächen benutzt "
 
 #: C:\blender\source\blender\src\buttons_editing.c:5249
 msgid "Apply Mul and Gamma to vertex colors"
-msgstr ""
+msgstr "Ordne die Mul und Gamma den Vertex-Farben zu"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5250
 msgid "Set the number to multiply vertex colors with"
-msgstr ""
+msgstr "Bestimmt die Zahl mit der die Vertex Farbe multipliziert wird, also der Multiplikationswert für die Überblendeinstellungen (vgl."
 
 #: C:\blender\source\blender\src\buttons_editing.c:5251
 msgid "Change the clarity of the vertex colors"
-msgstr ""
+msgstr "Kontraststärke: ändert den Unterschied in der Deutlichkeit zwischen den Vertex Farben"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5263
 #: C:\blender\source\blender\src\drawimage.c:982
 msgid "Draw brush"
-msgstr "Zeichen Pinsel"
+msgstr "Stift Pinsel"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5264
 #: C:\blender\source\blender\src\drawimage.c:983
@@ -1945,22 +1944,22 @@ msgstr "Weicher Pinsel"
 #: C:\blender\source\blender\src\buttons_editing.c:5265
 #: C:\blender\source\blender\src\drawimage.c:984
 msgid "Smear brush"
-msgstr "Verschmieren Pinsel"
+msgstr "Verschmieren"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5279
 #: C:\blender\source\blender\src\drawimage.c:997
 msgid "Blending method for applying brushes"
-msgstr ""
+msgstr "Überblendungs Art für den angewandten Pinsel"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5281
 #: C:\blender\source\blender\src\drawimage.c:999
 msgid "Enables torus wrapping"
-msgstr ""
+msgstr "Aktviert das Torus (Ringflächen)  wrapping dh. sie können über den Rand der Textur hinausmalen, was nicht mehr passt wird am anderen Ende der Textur aufgemalt. Eben wie eine Ringfläche. Gut für nahtlose Texturen geeignet."
 
 #: C:\blender\source\blender\src\buttons_editing.c:5284
 #: C:\blender\source\blender\src\drawimage.c:1002
 msgid "Keep applying paint effect while holding mouse (spray)"
-msgstr ""
+msgstr "Behält den angewandten Mal Effekt, während sie die Maustaste gedrückt halten, bei (spray)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5285
 #: C:\blender\source\blender\src\drawimage.c:1003
@@ -1976,30 +1975,31 @@ msgstr "Anzahl an Anstrichen pro Sekunde für den Airbrush"
 #: C:\blender\source\blender\src\drawimage.c:1015
 #: C:\blender\source\blender\src\drawimage.c:1017
 msgid "Enables pressure sensitivity for tablets"
-msgstr ""
+msgstr "Schaltet ein die Druckempfindlichkeit für Grafik Tabletts"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5296
 #: C:\blender\source\blender\src\drawimage.c:1014
 msgid "The fall off radius of the brush"
-msgstr ""
+msgstr "Bestimmt den Auslauf-Radius des Pinsel"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5298
 #: C:\blender\source\blender\src\drawimage.c:1016
 #, c-format
 msgid "Repeating paint on %% of brush diameter"
-msgstr ""
+#msgstr "Abstand %% : wiederholt das Malen mit dem Pinsel erst wieder in einem Abstand, der dem Prozentsatz des Durchmessers des Pinsel entspricht, d.h der Strich wird ggf. nicht kontinuierlich, sondern in einzelnen Farbpunkten aufgetragen"
+msgstr "Malt sequenziell, erst im Abstand %% des Pinsel-Radius"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5325
 msgid "Render face with texture"
-msgstr ""
+msgstr "Rendert(berechnet) die Fläche mit einer Textur"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5326
 msgid "Use tilemode for face"
-msgstr ""
+msgstr "Benutzt den Kachel Modus für die Flächen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5327
 msgid "Use light for face"
-msgstr ""
+msgstr "Benutzt Licht für die Flächen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5328
 msgid "Make face invisible"
@@ -2007,19 +2007,19 @@ msgstr "Macht Flächen unsichtbar"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5329
 msgid "Use face for collision detection"
-msgstr ""
+msgstr "Aktiviere die Kollisiondetektion für die Fläche"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5332
 msgid "Blend vertex colors across face when vertices are shared"
-msgstr ""
+msgstr "Mische die Farben für gemeinsame Vertices"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5333
 msgid "Render face twosided"
-msgstr ""
+msgstr "Rendert(berechnet) die Flächen beidseitig"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5334
 msgid "Use ObColor instead of vertex colors"
-msgstr ""
+msgstr "Benutzt die ObColor(Objektfarbe) anstelle der VertColor(Vertexfarbe)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5338
 msgid "Screen aligned billboard"
@@ -2031,7 +2031,7 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_editing.c:5340
 msgid "Face is used for shadow"
-msgstr ""
+msgstr "Fläche wirft Schatten"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5341
 msgid "Enable bitmap text on face"
@@ -2039,39 +2039,39 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_editing.c:5345
 msgid "Render color of textured face as color"
-msgstr ""
+msgstr "Rendere die Farbe der texturierten Fläche"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5346
 msgid "Render face transparent and add color of face"
-msgstr ""
+msgstr "Rendere die Fläche transparent mit der Farbe"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5347
 msgid "Render polygon transparent, depending on alpha channel of the texture"
-msgstr ""
+msgstr "Rendere die Fläche transparent abhängig vom Alpha-Wert(Transparenz der Textur)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5356
 msgid "Copy the drawmode from active face to selected faces"
-msgstr ""
+msgstr "Übertrage den Drawmodus von aktiver auf selektierte Flächen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5357
 msgid "Copy UV information and textures from active face to selected faces"
-msgstr ""
+msgstr "Übertrage die UV und Textur von aktiver auf selektierte Flächen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5358
 msgid "Copy vertex colors from active face to selected faces"
-msgstr ""
+msgstr "Übertrage die vertex colors von aktiver auf selektierte Flächen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5385
 msgid "Displays edges of visible faces"
-msgstr ""
+msgstr "Zeige Kanten der sichtbaren Flächen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5386
 msgid "Displays edges of hidden faces"
-msgstr ""
+msgstr "Zeige Kanten der unsichtbaren Flächen"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5392
 msgid "Unwrap method"
-msgstr ""
+msgstr "Abwicklungs Verfahren (unwrap)"
 
 #: C:\blender\source\blender\src\buttons_editing.c:5393
 msgid "Fill holes to prevent internal overlaps"
@@ -2331,7 +2331,7 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_logic.c:1538
 msgid "Toggles between ADD and SET linV"
-msgstr ""
+msgstr "Schaltet zwischen ADD and SET linV"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1564
 msgid "Action playback type"
@@ -2343,7 +2343,7 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_logic.c:1569
 msgid "Use this property to define the Action position"
-msgstr ""
+msgstr "Benutze diese property(Eigenschaft) um die Position der Action zu definieren"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1573
 #: C:\blender\source\blender\src\buttons_logic.c:1619
@@ -2361,7 +2361,7 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_logic.c:1579
 msgid "Number of frames of motion blending"
-msgstr ""
+msgstr "Anzahl der Frames für motion blending(Bewegungs-vermischen)"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1580
 msgid "Execution priority - lower numbers will override actions with higher numbers"
@@ -2377,11 +2377,11 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_logic.c:1613
 msgid "Use this property to define the Ipo position"
-msgstr ""
+msgstr "Benutze diese property(Eigenschaft) um die Position des IPO zu definieren"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1628
 msgid "Convert Ipo to force"
-msgstr ""
+msgstr "Konvertiere IPO in force(Kraft)"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1635
 msgid "Let the force-ipo act in local coordinates."
@@ -2421,11 +2421,11 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_logic.c:1751
 msgid "Camera tries to get behind the X axis"
-msgstr ""
+msgstr "Kamera guckt Richtung X-Achse"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1752
 msgid "Camera tries to get behind the Y axis"
-msgstr ""
+msgstr "Kamera guckt Richtung Y-Achse"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1770
 msgid "Add this Object (cant be on an visible layer)"
@@ -2433,23 +2433,23 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_logic.c:1771
 msgid "Duration the new Object lives"
-msgstr ""
+msgstr "Wie lange soll das Objekt leben?"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1776
 msgid "Velocity upon creation."
-msgstr ""
+msgstr "Velocity(Geschwindigkeit) beim Entstehen"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1779
 msgid "Velocity upon creation, x component."
-msgstr ""
+msgstr "Velocity(Geschwindigkeit) beim Entstehen, X-Richtung"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1782
 msgid "Velocity upon creation, y component."
-msgstr ""
+msgstr "Velocity(Geschwindigkeit) beim Entstehen, Y-Richtung"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1785
 msgid "Velocity upon creation, z component."
-msgstr ""
+msgstr "Velocity(Geschwindigkeit) beim Entstehen, Z-Richtung"
 
 #: C:\blender\source\blender\src\buttons_logic.c:1788
 msgid "Apply the transformation locally"
@@ -2607,7 +2607,7 @@ msgstr ""
 #: C:\blender\source\blender\src\buttons_logic.c:2384
 #: C:\blender\source\blender\src\buttons_logic.c:2463
 msgid "Objects that are evaluated by the engine "
-msgstr "Objekte die von der Engine berechnet werden"
+msgstr "Objekte, die von der Engine berechnet werden"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2350
 #: C:\blender\source\blender\src\buttons_logic.c:2391
@@ -2623,7 +2623,7 @@ msgstr ""
 #: C:\blender\source\blender\src\buttons_logic.c:2360
 #: C:\blender\source\blender\src\buttons_logic.c:2406
 msgid "Use face normal to rotate Object"
-msgstr ""
+msgstr "Benutze Flächennormale für die Objektdrehung"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2365
 #: C:\blender\source\blender\src\buttons_logic.c:2409
@@ -2639,13 +2639,13 @@ msgstr ""
 #: C:\blender\source\blender\src\buttons_logic.c:2419
 #: C:\blender\source\blender\src\buttons_logic.c:2489
 msgid "General movement damping"
-msgstr ""
+msgstr "Allgemeine Bewegungsdämpfung"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2374
 #: C:\blender\source\blender\src\buttons_logic.c:2422
 #: C:\blender\source\blender\src\buttons_logic.c:2492
 msgid "General rotation damping"
-msgstr ""
+msgstr "Allgemeine Rotationsdämpfung"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2388
 #: C:\blender\source\blender\src\buttons_logic.c:2467
@@ -2716,16 +2716,16 @@ msgstr ""
 #: C:\blender\source\blender\src\buttons_logic.c:2681
 #: C:\blender\source\blender\src\buttons_logic.c:2752
 msgid "Show active Object"
-msgstr ""
+msgstr "Zeige aktives Objekt"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2613
 #: C:\blender\source\blender\src\buttons_logic.c:2753
 msgid "Show linked Objects to Controller"
-msgstr ""
+msgstr "Zeige verlinkte Objekte"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2627
 msgid "Object name, click to show/hide sensors"
-msgstr ""
+msgstr "Objektname, klicke um Sensore zu zeigen/verstecken"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2629
 msgid "Add a new Sensor"
@@ -2761,11 +2761,11 @@ msgstr "Einen neuen Regler (Controller) einfügen"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2708
 msgid "Delete Controller"
-msgstr " Regler (Controller)  löschen"
+msgstr "Regler(Controller) löschen"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2709
 msgid "Controller settings"
-msgstr " Einstellungen für den Regler (Controller) "
+msgstr " Einstellungen für den Regler (Controller)"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2713
 #: C:\blender\source\blender\src\buttons_logic.c:2724
@@ -2783,25 +2783,25 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_logic.c:2767
 msgid "Add a new Actuator"
-msgstr "Einen neuen Auslöser (Actuator) einfügen"
+msgstr "Einen neuen Auslöser(Actuator) einfügen"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2776
 msgid "Delete Actuator"
-msgstr "Auslöser (Actuator) löschen"
+msgstr "Auslöser(Actuator) löschen"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2777
 msgid "Actuator settings"
-msgstr "Auslöser (Actuator) Einstellungen"
+msgstr "Auslöser(Actuator) Einstellungen"
 
 #: C:\blender\source\blender\src\buttons_logic.c:2781
 #: C:\blender\source\blender\src\buttons_logic.c:2792
 msgid "Actuator type"
-msgstr "Tyb des Auslöser (Actuator) "
+msgstr "Tyb des Auslöser(Actuator) "
 
 #: C:\blender\source\blender\src\buttons_logic.c:2782
 #: C:\blender\source\blender\src\buttons_logic.c:2794
 msgid "Actuator name"
-msgstr "Name des Auslöser (Actuator)"
+msgstr "Name des Auslöser(Actuator)"
 
 #: C:\blender\source\blender\src\buttons_object.c:576
 msgid "Collapse/Expand Constraint"
@@ -2809,11 +2809,11 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_object.c:605
 msgid "Constraint name"
-msgstr "Name der Zwangsbedingung (constraint)"
+msgstr "Name der constraint(Zwangsbedingung)"
 
 #: C:\blender\source\blender\src\buttons_object.c:628
 msgid "Delete constraint"
-msgstr " Zwangsbedingung (constraint) löschen"
+msgstr "constraint(Zwangsbedingung) löschen"
 
 #: C:\blender\source\blender\src\buttons_object.c:651
 #: C:\blender\source\blender\src\buttons_object.c:690
@@ -2827,7 +2827,7 @@ msgstr " Zwangsbedingung (constraint) löschen"
 #: C:\blender\source\blender\src\buttons_object.c:1007
 #: C:\blender\source\blender\src\buttons_object.c:1289
 msgid "Target Object"
-msgstr "Objekt das von der Zwangsbedingung (constraint) direkt  beinflusst wird"
+msgstr "Objekt das von der constraint(Zwangsbedingung) direkt  beinflusst wird"
 
 #: C:\blender\source\blender\src\buttons_object.c:654
 #: C:\blender\source\blender\src\buttons_object.c:693
@@ -4197,15 +4197,15 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_scene.c:295
 msgid "Sets the maximum volume for the overall sound"
-msgstr ""
+msgstr "Bestimmt die Höhe der Gesamtlautstärke"
 
 #: C:\blender\source\blender\src\buttons_scene.c:302
 msgid "Use this for scaling the doppler effect"
-msgstr ""
+msgstr "Schiebregler um den Doppler-Effekt zu bestimmen"
 
 #: C:\blender\source\blender\src\buttons_scene.c:306
 msgid "Sets the propagation speed of sound"
-msgstr ""
+msgstr "Bestimmt die Phasengeschwindigkeit (Ausbreitungsgeschwindigkeit) des Klang"
 
 #: C:\blender\source\blender\src\buttons_scene.c:332
 msgid "Mix at 44.1 kHz"
@@ -4217,90 +4217,90 @@ msgstr "Bei 48 kHz mischen"
 
 #: C:\blender\source\blender\src\buttons_scene.c:334
 msgid "Recalculate samples"
-msgstr ""
+msgstr "Berechnet die Samplerate für alle geladenen Audio-Dateien neu  (non-destructive)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:337
 #: C:\blender\source\blender\src\buttons_scene.c:1955
 msgid "Use sample clock for syncing animation to audio"
-msgstr ""
+msgstr "Verwendet die Sample-clock um die anmation mit dem audio zu synchronisieren"
 
 #: C:\blender\source\blender\src\buttons_scene.c:338
 msgid "Scrub when changing frames"
-msgstr ""
+msgstr "Klangauschnitte wenn sie Frames weiterschalten"
 
 #: C:\blender\source\blender\src\buttons_scene.c:345
 msgid "Set the audio master gain/attenuation in dB"
-msgstr ""
+msgstr "Bestimmt den Soundzuwachs/-abnahme in dB"
 
 #: C:\blender\source\blender\src\buttons_scene.c:348
 msgid "Mute audio from sequencer"
-msgstr ""
+msgstr "schaltet audio aus dem Seqencer auf still "
 
 #: C:\blender\source\blender\src\buttons_scene.c:351
 msgid "Create WAV file from sequenced audio (output goes to render output dir)"
-msgstr ""
+msgstr "Erzeugt eine WAV-Datei aller Dateien aus dem Audio-Sequenz /Abfolge Editor (der output wird in dem gleichen Verzeichnis, wie der Render Output gespeichert)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:393
 msgid "Make another copy (duplicate) of the current sound"
-msgstr ""
+msgstr "Dupliziert den ausgewählten Sound"
 
 #: C:\blender\source\blender\src\buttons_scene.c:417
 msgid "Select another loaded sample"
-msgstr ""
+msgstr "Wählt ein anderes geladenes Sample"
 
 #: C:\blender\source\blender\src\buttons_scene.c:420
 msgid "The sample file used by this Sound"
-msgstr ""
+msgstr "Die Sample-Datei (Probestück), das von diesem Sound benutzt wird"
 
 #: C:\blender\source\blender\src\buttons_scene.c:426
 msgid "Pack/Unpack this sample"
-msgstr ""
+msgstr "Packt/Entpackt dieses Sample"
 
 #: C:\blender\source\blender\src\buttons_scene.c:429
 msgid "Load a different sample file"
-msgstr ""
+msgstr "Lädt ein anderes Sample"
 
 #: C:\blender\source\blender\src\buttons_scene.c:431
 msgid "Playback sample using settings below"
-msgstr ""
+msgstr "Gibt das Sample mit den unten angegebenen Einstellungen wieder (ESC zum abrechen)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:435
 msgid "Game engine only: Set the volume of this sound"
-msgstr ""
+msgstr "Nur für Game-Engine; Bestimmt das Volumen des Sounds"
 
 #: C:\blender\source\blender\src\buttons_scene.c:438
 msgid "Game engine only: Set the pitch of this sound"
-msgstr ""
+msgstr "Nur für Game-Engine; Bestimmt die Tonhöhe (pitch) des Sounds"
 
 #: C:\blender\source\blender\src\buttons_scene.c:443
 msgid "Game engine only: Toggle between looping on/off"
-msgstr ""
+msgstr "Nur für Game-Engine; Schaltet die Endlosschleife (looping) an/aus"
 
 #: C:\blender\source\blender\src\buttons_scene.c:447
 msgid "Game engine only: Toggle between A->B and A->B->A looping"
-msgstr ""
+msgstr "Nur für Game-Engine; Schaltet zwischen A->B und A->B->A Endlosschleife (looping) hin und her"
 
 #: C:\blender\source\blender\src\buttons_scene.c:457
 msgid "Game engine only: Turns 3D sound on"
-msgstr ""
+msgstr "Nur für Game-Engine; Schaltet den 3D Sound an"
 
 #: C:\blender\source\blender\src\buttons_scene.c:461
 msgid "Game engine only: Sets the surround scaling factor for this sound"
-msgstr ""
+msgstr "Nur für Game-Engine;  Bestimmt den Faktor den der Sorround für diesen Sound erreichen soll"
 
 #: C:\blender\source\blender\src\buttons_scene.c:859
 msgid "Sets edge intensity for Toon shading"
-msgstr ""
+msgstr "Bestimmt die Stärke der Kanten für das Toon Shading (Cartoonstyle-Rendering)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:866
 #: C:\blender\source\blender\src\buttons_scene.c:868
 #: C:\blender\source\blender\src\buttons_scene.c:870
 msgid "Color for edges in toon shading mode."
-msgstr ""
+msgstr "Farbe der Kanten im Toon shading Modus"
 
 #: C:\blender\source\blender\src\buttons_scene.c:893
 msgid "Stretch or squeeze the viewport to fill the display window"
-msgstr ""
+msgstr "Streck/Verkürzt den Viewport (~Darstellungsfeld) um das Anzeige Fenster zu füllen"
 
 #: C:\blender\source\blender\src\buttons_scene.c:894
 msgid "Show the entire viewport in the display window, viewing more horizontally or vertically"
@@ -4324,47 +4324,47 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_scene.c:913
 msgid "Starts player in a new fullscreen display"
-msgstr ""
+msgstr "Player startet in einem Vollbild-Fenster"
 
 #: C:\blender\source\blender\src\buttons_scene.c:915
 msgid "Displays current X screen/window resolution. Click to change."
-msgstr ""
+msgstr "Zeigt die momentane X screen/Fenster Auflösung. Klicken sie zum ändern"
 
 #: C:\blender\source\blender\src\buttons_scene.c:916
 msgid "Displays current Y screen/window resolution. Click to change."
-msgstr ""
+msgstr "Zeigt die momentane Y screen/Fenster Auflösung. Klicken sie zum ändern"
 
 #: C:\blender\source\blender\src\buttons_scene.c:917
 msgid "Displays clock frequency of fullscreen display. Click to change."
-msgstr ""
+msgstr "Zeigt die Taktrate des des Vollbild Fensters. Klicken sie zum ändern"
 
 #: C:\blender\source\blender\src\buttons_scene.c:918
 msgid "Displays bit depth of full screen display. Click to change."
-msgstr ""
+msgstr "Zeigt die Bit-depth (Farbtiefe) des Vollbild Fensters. Klicken sie um zu ändern"
 
 #: C:\blender\source\blender\src\buttons_scene.c:933
 msgid "Disables stereo"
-msgstr ""
+msgstr "Schaltet Stereo ab"
 
 #: C:\blender\source\blender\src\buttons_scene.c:934
 msgid "Enables hardware pageflip stereo method"
-msgstr ""
+msgstr "Schaltet auf die Hardware \"PageFlip\" Stereo-Methode ( eig. Quad buffered Stereo)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:935
 msgid "Enables syncdoubling stereo method"
-msgstr ""
+msgstr "Schaltet auf die \"syncdoubling\" Stereo-Methode "
 
 #: C:\blender\source\blender\src\buttons_scene.c:936
 msgid "Enables anaglyph (Red-Blue) stereo method"
-msgstr ""
+msgstr "Schaltet auf die \"Anaglyphenbild (Rot-Blau)\" Stereo-Methode "
 
 #: C:\blender\source\blender\src\buttons_scene.c:937
 msgid "Enables side by side left and right images"
-msgstr ""
+msgstr "Ermöglicht das jeweils auf der Linken und Rechten Seite Bilder nebeneinander liegen"
 
 #: C:\blender\source\blender\src\buttons_scene.c:938
 msgid "Enables interlaced vertical strips for autostereo display"
-msgstr ""
+msgstr "Schaltet auf  ineinanderverschachtelte senkrechte Streifen für die Autostereo Anzeige "
 
 #: C:\blender\source\blender\src\buttons_scene.c:1158
 msgid "Open Fileselect to get Pics dir/name"
@@ -4392,346 +4392,346 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_scene.c:1172
 msgid "Scene to link as a Set"
-msgstr ""
+msgstr "Szene die sie als Set für diese Szene verlinken möchten"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1177
 msgid "Name of the Set"
-msgstr ""
+msgstr "Name des Set"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1179
 msgid "Remove Set link"
-msgstr ""
+msgstr "Löscht die Verbindung des Set"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1184
 msgid "Enable/Disable use of Backbuf image"
-msgstr ""
+msgstr "Lässt die Nutzung von Backbuf Bilder zu oder blockiert sie"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1185
 msgid "Amount of threads for render"
-msgstr ""
+msgstr "Anzahl der Threads die für das Rendern benutzt wird"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1191
 msgid "Render window placement on screen"
-msgstr ""
+msgstr "Bestimmt an welcher Stelle des Bildschirms das Render Fenster erscheinen soll"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1194
 msgid "Save the tiles for all RenderLayers and used SceneNodes to files, to save memory"
-msgstr ""
+msgstr "Spart Arbeitspeicher -> sehr große Bilder möglich. Diese Option erzeugt ein temporäres EXR-Bild, das alle Passes enthält. Mit R kann dieses Bild im Compositor neu eingelesen werden."
 
 #: C:\blender\source\blender\src\buttons_scene.c:1197
 msgid "Sets render output display"
-msgstr ""
+msgstr "Bestimmt die in welcher Art Fenster der Render-Output angezeigt wird"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1199
 msgid "Adds extensions to the output when rendering animations"
-msgstr ""
+msgstr "Hängt eine Dateiendung an den Output, damit ihr Betriebsystem die Datei erkennen kann"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1202
 msgid "The amount of dithering noise present in the output image (0.0 = no dithering)"
-msgstr ""
+msgstr "Der Wert an Dithering Verzerrung für das augegebene Bild  (0.0 = kein Dithering)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1206
 msgid "Enable Toon Edge-enhance"
-msgstr ""
+msgstr "Schaltet den Toon Laplacefilter ein (Kanten Verstärkung)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1207
 msgid "Display Edge settings"
-msgstr ""
+msgstr "Zeigt die Einstellungen für die Toon-Konturen an"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1211
 msgid "Disables Textures for render"
-msgstr ""
+msgstr "Blockiert die Texturen beim Rendern"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1212
 msgid "Frees all Images used by Textures after each render"
-msgstr ""
+msgstr "Enfernt alle Bilder die von den Texturen benutzt werden aus dem Speicher nachdem sie gerendert wurden (spart RAM)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1230
 msgid "Start the bake render for selected Objects"
-msgstr ""
+msgstr "Beginnt mit dem Baken für ausgewählte Objekte"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1234
 #: C:\blender\source\blender\src\buttons_scene.c:1272
 msgid "Enables Oversampling (Anti-aliasing)"
-msgstr ""
+msgstr "Schaltet die Überabtastung/Oversampling (Anti-aliasing) ein"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1235
 #: C:\blender\source\blender\src\buttons_scene.c:1273
 msgid "Sets oversample level to 5"
-msgstr ""
+msgstr "Setzt das Level der Überabtastung/Oversampling auf 5"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1236
 msgid "Sets oversample level to 8"
-msgstr ""
+msgstr "Setzt das Level der Überabtastung/Oversampling auf 8"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1237
 #: C:\blender\source\blender\src\buttons_scene.c:1275
 msgid "Sets oversample level to 11"
-msgstr ""
+msgstr "Setzt das Level der Überabtastung/Oversampling auf 11"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1238
 #: C:\blender\source\blender\src\buttons_scene.c:1276
 msgid "Sets oversample level to 16"
-msgstr ""
+msgstr "Setzt das Level der Überabtastung/Oversampling auf 16"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1247
 msgid "Clear Images before baking"
-msgstr ""
+msgstr "Löscht die Bilder vor dem Baken -> Texturen werden schwarz"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1249
 msgid "Amount of pixels to extend the baked result with, as post process filter"
-msgstr ""
+msgstr "Nachbearbeitungs Filter (post process filter): die Menge an Pixeln um die das gebakte Ergebnis vergrößert wird <-> keine schwarzen Rändr. auf dem Msh."
 
 #: C:\blender\source\blender\src\buttons_scene.c:1261
 msgid "Start the rendering"
-msgstr ""
+msgstr "Beginnt mit dem Rendern"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1265
 #: C:\blender\source\blender\src\buttons_scene.c:1268
 msgid "Choose rendering engine"
-msgstr ""
+msgstr "Wählen sie die Render-Engine aus"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1274
 msgid "Sets oversample level to 8 (Recommended)"
-msgstr ""
+msgstr "Setzt das Level der Überabtastung/Oversampling auf 8 (empfohlen)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1280
 msgid "Enables Motion Blur calculation"
-msgstr ""
+msgstr "Aktviert die Motion Blur Berechnung"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1281
 msgid "Sets motion blur factor"
-msgstr ""
+msgstr "Bestimmt den MOtion Blur Faktor"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1285
 msgid "Sets the number of horizontal parts to render image in (For panorama sets number of camera slices)"
-msgstr ""
+msgstr "Bestimmt die Anzahl an horizontalen Teilen aus denen das Bild gerender wird  (Für panorama stellen sie die Anzahl an Kamera Drehungen ein)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1286
 msgid "Sets the number of vertical parts to render image in"
-msgstr ""
+msgstr "Bestimmt die Anzahl an vertikalen Teilen aus denen das Bild gerender wird -> mit Xpart enstehen die einzelene Kacheln"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1290
 msgid "Fill background with sky"
-msgstr ""
+msgstr "Füllt den Hintergrund mit \"Himmel\" (Welthintergund)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1291
 msgid "Multiply alpha in advance"
-msgstr ""
+msgstr "Vervielfacht Alpha im Voraus -> der Hintergrund wird  durchsichtig; verschiedene Abstufungen in der Transparenz"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1292
 msgid "Alpha and color values remain unchanged"
-msgstr ""
+msgstr "Alpha und Farb Werte verbleiben unverändert (nur absolute Werte:\"transparent\" und \"nicht-transparent\": wenn RGBA nicht aktviert ist, werden Alpha Werte zu schwarz)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1296
 msgid "Octree resolution for ray tracing"
-msgstr ""
+msgstr "Octree  Auflösung für RayTracing"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1299
 msgid "Enable shadow calculation"
-msgstr ""
+msgstr "Schatten werden gerendert"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1300
 msgid "Enable environment map rendering"
-msgstr ""
+msgstr "Environment Maps werden gerendert"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1301
 msgid "Enable panorama rendering (output width is multiplied by Xparts)"
-msgstr ""
+msgstr "Panorama wird gerendert (Output Breite wird mit Xparts multipliziert)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1302
 msgid "Enable ray tracing"
-msgstr ""
+msgstr "Raytracing wird gerendert"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1303
 msgid "Enable radiosity rendering"
-msgstr ""
+msgstr "Radiosity wird gerendert"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1307
 msgid "Set render size to defined size"
-msgstr ""
+msgstr "Setzt die Größe des gerenderten Bilds auf die angegebene Größe"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1308
 msgid "Set render size to 3/4 of defined size"
-msgstr ""
+msgstr "Setzt die Größe des gerenderten Bilds auf 3/4 der angegebenen Größe"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1309
 msgid "Set render size to 1/2 of defined size"
-msgstr ""
+msgstr "Setzt die Größe des gerenderten Bilds auf 1/2 der angegebenen Größe"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1310
 msgid "Set render size to 1/4 of defined size"
-msgstr ""
+msgstr "Setzt die Größe des gerenderten Bilds auf 1/4 der angegebenen Größe"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1314
 msgid "Enables field rendering"
-msgstr ""
+msgstr "Rendert Halbbilder (z.B in Video-, Fernsehtechnik/Stereoskopie; erst werden die geraden Zeilen [even field] gerendert, dann die ungeraden [odd field])"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1315
 msgid "Enables Odd field first rendering (Default: Even field)"
-msgstr ""
+msgstr "Gibt an das die ungerade Zeile zuerst gerendert wird (Default: Gerade Zeilen)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1316
 msgid "Disables time difference in field calculations"
-msgstr ""
+msgstr "Schaltet die Zeitunterschiede von 0.5s bei der Field Berechnung ab"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1319
 msgid "Set sampling filter for antialiasing"
-msgstr ""
+msgstr "Bestimmt den Abtastungs Filter (sampling filter) für Antialiasing ( inoffzielle Empf. sind Mitch oder CatRom )"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1320
 msgid "Sets the filter size"
-msgstr ""
+msgstr "Bestimmr das Ausmaß des Filters"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1322
 msgid "Render a small cut-out of the image"
-msgstr ""
+msgstr "Rendert nur einen kleinen Ausschnitt des Bildes (größe bestimmbar mit shift+B)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1336
 msgid "Start rendering a sequence"
-msgstr ""
+msgstr "Beginnt eine Render Abfolge"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1340
 msgid "Enables sequence output rendering (Default: 3D rendering)"
-msgstr ""
+msgstr "Schaltet auf Sequence Output Render, die Kamera wird ignoriert, nur Daten aus \"dem Sequence-Editor\" (Default: 3D Render)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1341
 msgid "Uses compositing nodes for output rendering"
-msgstr ""
+msgstr "Compositing Nodes werden auf den Output angewand"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1345
 msgid "Play animation of rendered images/avi (searches Pics: field)"
-msgstr ""
+msgstr "Spielt die Animation von gerenderten Bildern/AVI ab (searches Pics: field)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1346
 msgid "General testing/debug button"
-msgstr ""
+msgstr "Haupt Test/Debug Knopf"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1349
 #: C:\blender\source\blender\src\header_time.c:479
 msgid "The start frame of the animation"
-msgstr ""
+msgstr "Anfangs Frame/Bild der Animation"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1350
 msgid "The end  frame of the animation"
-msgstr ""
+msgstr "Letzter Frame/Bild der Animation"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1435
 msgid "output file format"
-msgstr ""
+msgstr "Datei-Format des Output"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1439
 msgid "Video bitrate(kb/s)"
-msgstr ""
+msgstr "Video Bitrate (kb/s)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1442
 msgid "Rate control: min rate(kb/s)"
-msgstr ""
+msgstr "Frequenzeinstellungen: min. Frequenz (kb/s)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1445
 msgid "Rate control: max rate(kb/s)"
-msgstr ""
+msgstr "Frequenzeinstellungen: max. Frequenz (kb/s)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1450
 msgid "Mux rate (bits/s(!))"
-msgstr ""
+msgstr "Mux Frequenz (bits/s (!))"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1455
 msgid "Output file format preset selection"
-msgstr ""
+msgstr "verschiedene voreingestellte Output Formate"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1458
 msgid "Distance between key frames"
-msgstr ""
+msgstr "Abstand zwischen Schlüsselbildern/Keyframes"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1462
 msgid "Rate control: buffer size (kb)"
-msgstr ""
+msgstr "Frequenzeinstellungen: Speicher Größe (kb)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1466
 msgid "Mux packet size (byte)"
-msgstr ""
+msgstr "Größe des Mux Datenpaket (byte)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1472
 msgid "Autosplit output at 2GB boundary."
-msgstr ""
+msgstr "Teilt den Output automatisch auf, wenn die Grenze von 2GB erreicht ist "
 
 #: C:\blender\source\blender\src\buttons_scene.c:1481
 #: C:\blender\source\blender\src\buttons_scene.c:1507
 msgid "FFMpeg codec to use"
-msgstr ""
+msgstr "Zu verwendender FFMpeg Codec"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1501
 msgid "Interleave audio with the output video"
-msgstr ""
+msgstr "verschachtelt Audio mit dem ausgegebenen Video"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1511
 msgid "Audio bitrate(kb/s)"
-msgstr ""
+msgstr "Audio Bitrate (kb/s)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1526
 msgid "Display game framing settings"
-msgstr ""
+msgstr "Zeigt die Einstellungen für das Game Framing"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1534
 msgid "The image width in pixels"
-msgstr ""
+msgstr "Breite des Bildes in Pixeln"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1535
 msgid "The image height in scanlines"
-msgstr ""
+msgstr "Höhe des Bildes in Scanlinien"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1536
 msgid "The horizontal aspect ratio"
-msgstr ""
+msgstr "Horizontales Aspektverhältnis"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1537
 msgid "The vertical aspect ratio"
-msgstr ""
+msgstr "Vertikales Aspekte Verhältnis"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1544
 msgid "Maximum size per frame to save in an SGI movie"
-msgstr ""
+msgstr "Maximale Größe pro Frame, die in einem SGI Film gespeichert wird"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1545
 msgid "Attempt to save SGI movies using Cosmo hardware"
-msgstr ""
+msgstr "Versucht den SGI Film unter Verwendung von Cosmo Hardware zu speichern"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1548
 msgid "Images are saved in this file format"
-msgstr ""
+msgstr "Bilder werden in diesem Dateiformat gespeichert"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1549
 msgid "When Border render, the resulting image gets cropped"
-msgstr ""
+msgstr "Wenn Border Render aktviert ist, wird auch nur der von ihnen ausgewählte Ausschnitt im Fenster dargestellt, ansonsten würde der Rest mit Schwarz gefüllt werden"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1569
 msgid "Set codec settings for Quicktime"
-msgstr ""
+msgstr "Bestimmen sie die Codec-Einstellungen für Quicktime"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1581
 msgid "Set codec settings for AVI"
-msgstr ""
+msgstr "Bestimmen sie die Codec-Einstellungen für AVI"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1590
 msgid "Use 16 bits float 'Half' type"
-msgstr ""
+msgstr "Nutzt 16 Bit Buffer \"Halb\" Tyb"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1591
 msgid "Save the zbuffer as 32 bits unsigned int"
-msgstr ""
+msgstr "Speichert den zBuffer als eine 32 bits Integer ohne Vorzeichen (unsigned int)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1593
 msgid "When animation render, save JPG preview images in same directory"
-msgstr ""
+msgstr "Wenn eine Animation gerendert wird, wird das JPEG Vorschau Bild im gleichen Verzeichnis gespeichert"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1596
 msgid "Set codec settings for OpenEXR"
-msgstr ""
+msgstr "Bestimmen sie die Codec-Einstellungen für OpenEXR"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1602
 msgid "Quality setting for JPEG images, AVI Jpeg and SGI movies"
-msgstr ""
+msgstr "Qualitätseinstellungen für JPEG Bilder, AVI Jpeg und SGI Filme"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1604
 #: C:\blender\source\blender\src\buttons_scene.c:1954
@@ -4740,59 +4740,59 @@ msgstr "Frames pro Sekunde"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1608
 msgid "Images are saved with BW (grayscale) data"
-msgstr ""
+msgstr "Bilder werden mit BW (graustufen) Werten gespeichert "
 
 #: C:\blender\source\blender\src\buttons_scene.c:1609
 msgid "Images are saved with RGB (color) data"
-msgstr ""
+msgstr "Bilder werden mit RGB (Farb) Werten gespeichert"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1610
 msgid "Images are saved with RGB and Alpha data (if supported)"
-msgstr ""
+msgstr "Bilder werden gespeichert mit RGB und Alpha Werten (wenn dies unterstützt wird)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1613
 msgid "Size preset: Image size - 720x576, Aspect ratio - 54x51, 25 fps"
-msgstr ""
+msgstr "Voreingestelltes Format: Bildbgröße - 720x576, Bildseitenverhältnis - 54x51, 25 fps"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1614
 msgid "Size preset: Image size - 720x480, Aspect ratio - 10x11, 30 fps"
-msgstr ""
+msgstr "Voreingestelltes Format: Bildbgröße - 720x480, Bildseitenverhältnis - 10x11, 30 fps"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1615
 msgid "Same as PAL, with render settings (OSA, Shadows, Fields)"
-msgstr ""
+msgstr "Genauso wie PAL, mit Render Einstellungen (OSA, Shadows, Fields)"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1616
 msgid "Size preset: Image size - 640x512, Render size 50%"
-msgstr ""
+msgstr "Voreingestelltes Format: Bildbgröße - 640x512, Render Größe 50%"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1617
 msgid "Size preset: Image size - 640x480, Aspect ratio - 100x100"
-msgstr ""
+msgstr "Voreingestelltes Format: Bildbgröße - 640x480, Bildseitenverhältnis - 100x100"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1618
 msgid "Size preset: Image size - 720x576, Aspect ratio - 64x45"
-msgstr ""
+msgstr "Voreingestelltes Format: Bildbgröße - 720x576, Bildseitenverhältnis - 64x45"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1619
 msgid "Standard panorama settings"
-msgstr ""
+msgstr "Standard Einstellungen für Panorama"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1620
 msgid "Size preset: Image size - 1280x1024, Aspect ratio - 1x1"
-msgstr ""
+msgstr "Voreingestelltes Format: Bildbgröße - 1280x1024, Bildseitenverhältnis - 1x1"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1621
 msgid "Size preset: Image size - 1920x1080, Aspect ratio - 1x1"
-msgstr ""
+msgstr "Voreingestelltes Format: Bildbgröße - 1920x1080, Bildseitenverhältnis - 1x1"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1639
 msgid "Global Illumination Method"
-msgstr ""
+msgstr "Methode der Globalen Illumination"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1642
 msgid "Global Illumination Quality"
-msgstr ""
+msgstr "Qualität der Globalen Illumination"
 
 #: C:\blender\source\blender\src\buttons_scene.c:1645
 msgid "arealight, material emit and background intensity scaling, 1 is normal"
@@ -5640,116 +5640,116 @@ msgstr ""
 #: C:\blender\source\blender\src\buttons_shading.c:1435
 #: C:\blender\source\blender\src\buttons_shading.c:1474
 msgid "Adds a new color position to the colorband"
-msgstr ""
+msgstr "Függt eine neue Farbe zu dem Farbverlauf  hinzu"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1437
 msgid "Displays the active color from the colorband"
-msgstr ""
+msgstr "Klicken sie sich durch die verschiedenen Farben auf dem Farbverlauf"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1438
 #: C:\blender\source\blender\src\buttons_shading.c:1476
 msgid "Deletes the active position"
-msgstr ""
+msgstr "Löscht die aktive Position (Farbe) auf dem Farbband"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1440
 #: C:\blender\source\blender\src\buttons_shading.c:1478
 msgid "Sets interpolation type 'Ease' (quadratic) "
-msgstr ""
+msgstr "Setzt die Art der Interpolation auf \"Einfach\"  (quadratisch)"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1441
 #: C:\blender\source\blender\src\buttons_shading.c:1479
 msgid "Sets interpolation type Cardinal"
-msgstr ""
+msgstr "Setzt die Art der Interpolation auf \"Kardinal\"  "
 
 #: C:\blender\source\blender\src\buttons_shading.c:1442
 #: C:\blender\source\blender\src\buttons_shading.c:1480
 msgid "Sets interpolation type Linear"
-msgstr ""
+msgstr "Setzt die Art der Interpolation auf \"Linear\"  "
 
 #: C:\blender\source\blender\src\buttons_shading.c:1443
 #: C:\blender\source\blender\src\buttons_shading.c:1481
 msgid "Sets interpolation type B-Spline"
-msgstr ""
+msgstr "Setzt die Art der Interpolation auf \"B-spline\"  "
 
 #: C:\blender\source\blender\src\buttons_shading.c:1450
 msgid "Sets the position of the active color"
-msgstr ""
+msgstr "Setzt die Position der aktiven Farbe"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1453
 msgid "Sets the alpha value for this position"
-msgstr ""
+msgstr "Bestimmt den Alpha Wert für diese Position"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1456
 msgid "Sets the red value for the active color"
-msgstr ""
+msgstr "Bestimmt den Rotwert für die aktive Farbe"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1457
 msgid "Sets the green value for the active color"
-msgstr ""
+msgstr "Bestimmt den Grünwert für die aktive Farbe"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1458
 msgid "Sets the blue value for the active color"
-msgstr ""
+msgstr "Bestimmt den Blauwert für die aktive Farbe"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1499
 msgid "Toggles colorband operations"
-msgstr ""
+msgstr "Schaltet die Optionen für das Farbverlauf ein/aus"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1508
 msgid "Changes the red value of the texture"
-msgstr ""
+msgstr "Verändert den Rotwert für diese Textur"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1509
 msgid "Changes the green value of the texture"
-msgstr ""
+msgstr "Verändert den Grünwert für diese Textur"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1510
 msgid "Changes the blue value of the texture"
-msgstr ""
+msgstr "Verändert den Blauwert für diese Textur"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1514
 msgid "Changes the brightness of the color or intensity of a texture"
-msgstr ""
+msgstr "Ändert die Helligkeit der Farbe oder die Intensität einer Textur"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1515
 msgid "Changes the contrast of the color or intensity of a texture"
-msgstr ""
+msgstr "Ändert den Kontrast einer Farbe oder die  Intensität einer Textur"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1584
 msgid "Click to select texture channel"
-msgstr ""
+msgstr "Klicken sie um den Textur Kanal auszuwählen"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1620
 msgid "Select texture type"
-msgstr ""
+msgstr "Wählt den Textur Tyb"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1642
 msgid "Displays the textures of the active material"
-msgstr ""
+msgstr "Zeigt die verschiedenen Texturen des aktiven Materials an"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1643
 msgid "Displays the textures of the world block"
-msgstr ""
+msgstr "Zeigt die verschiedenen Texturen für die  \"Welt\" an an"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1644
 msgid "Displays the textures of the selected lamp"
-msgstr ""
+msgstr "Zeigt die verschiedenen Texturen der ausgewählten Lampe an"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1645
 msgid "Displays the textures of the selected brush"
-msgstr ""
+msgstr "Zeigt die verschiedenen Texturen des ausgewählten Pinsel (brush) an"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1649
 msgid "Show alpha in preview"
-msgstr ""
+msgstr "Alpha Kanal wird in der Vorschau gezeigt"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1651
 msgid "Sets all values to defaults"
-msgstr ""
+msgstr "Auf Standardeinstellungen zurücksetzten"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1786
 msgid "Starts the radiosity simulation"
-msgstr ""
+msgstr "Startet die Radiosity Simulation"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1789
 msgid "Sets the number of times the environment is tested to detect pathes"
@@ -5797,7 +5797,7 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_shading.c:1825
 msgid "Releases all memory used by Radiosity"
-msgstr ""
+msgstr "Gesamter Arbeitsspeicher wird von Radiosty benutzt"
 
 #: C:\blender\source\blender\src\buttons_shading.c:1829
 msgid "Converts meshes to Mesh objects with vertex colors, changing input-meshes"
@@ -6779,7 +6779,7 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_shading.c:3412
 msgid "Gives halo a texture"
-msgstr ""
+msgstr "Halos benutzen eine Textur"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3413
 msgid "Uses the vertex normal to specify the dimension of the halo"
@@ -6823,19 +6823,19 @@ msgstr ""
 
 #: C:\blender\source\blender\src\buttons_shading.c:3437
 msgid "Blending factor"
-msgstr ""
+msgstr "Deckkraft"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3442
 msgid "Creates a specular shader"
-msgstr ""
+msgstr "Erzeugt einen Specular Shader (Spiegelnden Shader)"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3445
 msgid "Sets the degree of specularity"
-msgstr ""
+msgstr "Bestimmt den Grad der Spiegelung"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3447
 msgid "Sets the hardness of the specularity"
-msgstr ""
+msgstr "Bestimmt die Härte der Spiegelung"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3450
 msgid "Sets the material's Index of Refraction"
@@ -6911,7 +6911,7 @@ msgstr "Zeigt die Ramp Buttons für die Glanzlichtfarbe des Materials"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3504
 msgid "Toggles colorband ramp operations"
-msgstr "Schaltet Colorband (Farbband) für die Ramp Funktionen ein/aus"
+msgstr "Schaltet Colorband (Farbverlauf) für die Ramp Funktionen ein/aus"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3525
 msgid "Input for Ramp"
@@ -6923,7 +6923,7 @@ msgstr "Überblendungs Methode (vgl. Ebenenmodi) für Ramp (benutzt den Alpha Ka
 
 #: C:\blender\source\blender\src\buttons_shading.c:3527
 msgid "Blending factor (also uses alpha in Colorband)"
-msgstr "Deckkraft für die Überblendung vgl.  Ebenenmodi (benutzt auch Alpha im Farbband)"
+msgstr "Deckkraft für die Überblendung vgl.  Ebenenmodi (benutzt auch Alpha im Farbverlauf)"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3544
 msgid "Uses direction of strands as normal for tangent-shading"
@@ -7031,11 +7031,11 @@ msgstr "Alpha "
 
 #: C:\blender\source\blender\src\buttons_shading.c:3634
 msgid "Creates color using red, green and blue"
-msgstr "Farben werden durch das Rot/Grünn/Blau Farbschema erzeugt"
+msgstr "Farben werden durch das Rot/Grünn/Blau Farbschema erzeugt <-> RGB"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3635
 msgid "Creates color using hue, saturation and value"
-msgstr "Farben werden durch das Farbton (hue)/Farbsättigung(Saturation) /Hellwert(value)  Farbschema erzeugt"
+msgstr "Farben werden durch das Farbton (hue)/Farbsättigung(Saturation) /Hellwert(value)  Farbschema erzeugt <-> HSV"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3636
 msgid "Adjusts parameters for dynamics options"
@@ -7072,7 +7072,7 @@ msgstr "Alle OSA Samples werden für das shading und das Textur antialiasing ger
 
 #: C:\blender\source\blender\src\buttons_shading.c:3762
 msgid "Renders only the edges of faces as a wireframe"
-msgstr "Rendert nur die Kanten der Flächen als ein Drahtmodell (wireframe)"
+msgstr "Rendert nur die Kanten der Flächen, daraus ensteht ein Drahtmodell (wireframe)"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3763
 msgid "Display strand settings for static particles"
@@ -7080,7 +7080,7 @@ msgstr "Zeigt die \"Strand\" Einstellungen für statische Partikel"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3764
 msgid "Renders material's faces with inverted Z Buffer"
-msgstr "Rendert die Flächen des Materials mit inevertiertem Z-Buffer"
+msgstr "Rendert die Flächen des Materials mit invertiertem Z-Buffer"
 
 #: C:\blender\source\blender\src\buttons_shading.c:3766
 msgid "Enables radiosity rendering for material"
@@ -7679,12 +7679,12 @@ msgstr ""
 #: C:\blender\source\blender\src\drawseq.c:1110
 #: C:\blender\source\blender\src\drawseq.c:1124
 msgid "Reverse frame order"
-msgstr ""
+msgstr "Umgekehrte Folge der Frames"
 
 #: C:\blender\source\blender\src\drawseq.c:1097
 #: C:\blender\source\blender\src\drawseq.c:1125
 msgid "Only display every nth frame"
-msgstr ""
+msgstr "Zeige nur jede n-te Frame"
 
 #: C:\blender\source\blender\src\drawseq.c:1126
 msgid "On MPEG-seeking preseek this many frames"
@@ -7794,15 +7794,15 @@ msgstr ""
 #: C:\blender\source\blender\src\drawview.c:1668
 #: C:\blender\source\blender\src\drawview.c:1672
 msgid "Displays local values"
-msgstr ""
+msgstr "Zeige lokale Werte"
 
 #: C:\blender\source\blender\src\drawview.c:1690
 msgid "Weight value"
-msgstr ""
+msgstr "Gewicht(Weight)"
 
 #: C:\blender\source\blender\src\drawview.c:1691
 msgid "Current Vertex Group"
-msgstr ""
+msgstr "Aktuelle Vertex Group"
 
 #: C:\blender\source\blender\src\drawview.c:1706
 msgid "Weight is used for SoftBody Goal"
@@ -7830,7 +7830,7 @@ msgstr ""
 #: C:\blender\source\blender\src\drawview.c:2308
 #: C:\blender\source\blender\src\drawview.c:2310
 msgid "Protects this value from being Transformed"
-msgstr ""
+msgstr "Schütze das Wert vor Veränderung"
 
 #: C:\blender\source\blender\src\drawview.c:1959
 msgid "Size of the active metaball"
@@ -7855,7 +7855,7 @@ msgstr ""
 #: C:\blender\source\blender\src\drawview.c:2335
 #: C:\blender\source\blender\src\drawview.c:2336
 msgid "Manipulate bounding box size"
-msgstr ""
+msgstr "Ändere Größe des bounding box"
 
 #: C:\blender\source\blender\src\drawview.c:2372
 #: C:\blender\source\blender\src\drawview.c:2377
@@ -8011,7 +8011,7 @@ msgstr ""
 #: C:\blender\source\blender\src\header_time.c:409
 #: C:\blender\source\blender\src\header_view3d.c:5032
 msgid "Displays Current Window Type. Click for menu of available types."
-msgstr ""
+msgstr "Zeige aktuellen Fenstertyp. Klick für Auswahl"
 
 #: C:\blender\source\blender\src\header_action.c:1212
 #: C:\blender\source\blender\src\header_buttonswin.c:636
@@ -8022,7 +8022,7 @@ msgstr ""
 #: C:\blender\source\blender\src\header_sound.c:348
 #: C:\blender\source\blender\src\header_time.c:420
 msgid "Show pulldown menus"
-msgstr ""
+msgstr "Zeige Pulldown-Menüs"
 
 #: C:\blender\source\blender\src\header_action.c:1219
 #: C:\blender\source\blender\src\header_buttonswin.c:643
@@ -8033,7 +8033,7 @@ msgstr ""
 #: C:\blender\source\blender\src\header_sound.c:355
 #: C:\blender\source\blender\src\header_time.c:427
 msgid "Hide pulldown menus"
-msgstr ""
+msgstr "Verstecke Pulldown-Menüs"
 
 #: C:\blender\source\blender\src\header_action.c:1266
 msgid "Create an action with the constraint effects converted into Ipo keys"
@@ -8121,13 +8121,13 @@ msgstr ""
 #: C:\blender\source\blender\src\header_script.c:262
 #: C:\blender\source\blender\src\header_text.c:693
 msgid "Returns to multiple views window (CTRL+Up arrow)"
-msgstr ""
+msgstr "Zurück zur multiplen Fenster (CTRL+Pfeil nach oben)"
 
 #: C:\blender\source\blender\src\header_filesel.c:113
 #: C:\blender\source\blender\src\header_script.c:265
 #: C:\blender\source\blender\src\header_text.c:694
 msgid "Makes current window full screen (CTRL+Down arrow)"
-msgstr ""
+msgstr "Schalte aktuelles Fenster groß (CTRL+Pfeil nach unten)"
 
 #: C:\blender\source\blender\src\header_filesel.c:118
 msgid "Sorts files alphabetically"
@@ -8241,7 +8241,7 @@ msgstr ""
 #: C:\blender\source\blender\src\header_text.c:661
 #: C:\blender\source\blender\src\header_view3d.c:5039
 msgid "Enables display of pulldown menus"
-msgstr ""
+msgstr "Freischalte Pulldown-menüs"
 
 #: C:\blender\source\blender\src\header_info.c:2029
 #: C:\blender\source\blender\src\header_ipo.c:1186
@@ -8250,7 +8250,7 @@ msgstr ""
 #: C:\blender\source\blender\src\header_text.c:665
 #: C:\blender\source\blender\src\header_view3d.c:5043
 msgid "Hides pulldown menus"
-msgstr ""
+msgstr "Sperre Pulldown-menüs"
 
 #: C:\blender\source\blender\src\header_info.c:2070
 msgid "Indicates this is a Packed file. See File menu."
@@ -8478,11 +8478,11 @@ msgstr ""
 
 #: C:\blender\source\blender\src\header_time.c:466
 msgid "The start frame of the animation preview"
-msgstr ""
+msgstr "Anfangsframe für die  Animationsvoeschau"
 
 #: C:\blender\source\blender\src\header_time.c:473
 msgid "The end frame of the animation preview"
-msgstr ""
+msgstr "Letzter Frame für die  Animationsvoeschau"
 
 #: C:\blender\source\blender\src\header_time.c:486
 msgid "The end frame of the animation"
@@ -8502,23 +8502,23 @@ msgstr ""
 
 #: C:\blender\source\blender\src\header_time.c:511
 msgid "Play Timeline "
-msgstr ""
+msgstr "Spielt die Zeitleiste (Timeline) ab"
 
 #: C:\blender\source\blender\src\header_time.c:515
 msgid "Skip to next keyframe (Ctrl PageUp)"
-msgstr ""
+msgstr "springt zum nächsten Schlüsselbild /Keyframe (STRG+Bildhoch)"
 
 #: C:\blender\source\blender\src\header_time.c:518
 msgid "Skip to End frame (Shift UpArrow)"
-msgstr ""
+msgstr "springt zum letzten Schlüsselbild /Keyframe (shift+upArrow)"
 
 #: C:\blender\source\blender\src\header_time.c:522
 msgid "Automatically insert keyframes in Object and Action Ipo curves"
-msgstr ""
+msgstr "Fügt automatisch Schlüsselbilder/Keyframes in die Objekt und Action Ipo Kurve ein"
 
 #: C:\blender\source\blender\src\header_time.c:527
 msgid "Play back and sync with audio from Sequence Editor"
-msgstr ""
+msgstr "Wiedergabe und synchronisation mit dem Audio aus dem Sequence Editor"
 
 #: C:\blender\source\blender\src\header_view3d.c:533
 msgid "None of the texts in the Text Editor is a 3D View space handler"
@@ -9633,6 +9633,7 @@ msgstr "Bild-Zoom"
 msgid "Center"
 msgstr "Mitte"
 
+#, fuzzy
 msgid "Home"
 msgstr "HOME"
 
