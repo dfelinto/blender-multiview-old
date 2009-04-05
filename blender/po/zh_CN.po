@@ -4,6 +4,10 @@
 # Copyright (C) 2005-     http://www.blendercn.org
 # Li Jun <blender@eyou.com>, 2003.
 # Liu Songhe <jack@linux.net.cn>, 2005.
+# This .po file is released under a dual license:
+# 1 Under Blender's GNU GPL license
+# 2 For other cases, this po can be used free of charge, so long as to it states 
+# in the help/document that "the original file is released and copyrighted by www.blendercn.org".
 # BlenderCN translation team, 2005:
 #	Li Jun <blender@eyou.com>
 #	moketao <mkt909@hotmail.com>
@@ -15,16 +19,6 @@
 #   上列成员，特别是DeathBlood <deathblood@sohu.com>
 # special thanks: snail, Marshadow
 #
-# 说明
-# 1. 汉化是义务的，不会因此得到任何酬劳
-# 2. 汉化文件版权（po、mo文件）归属:www.blendercn.org。任何个人和其他组织不得将其用于商业目的；关于版权所有者，不得误导他人
-# 3. 您可以在blender各种衍生版中自由使用po和mo文件、进行其他语言的i18n。 禁止在此基础上向官方提供简体中文的翻译文件，如果您想帮助汉化，请参观我们网站（www.blendercn.org）的论坛并留言，或者与 牡蛎 联系
-# 4. 未经许可，任何人/组织不得把po/mo文件直接或间接的用于非blender软件中，比如不得用于任何形式的电子词典、汉化软件汉化包——不管你的词典、汉化软件、汉化软件包是否free的。请联系 牡蛎 咨询授权许可方式。所有获得许可的单位/个人，将在我们网站（www.blendercn.org）的论坛登出
-# 5. 署名：首先要注意，没有blender的最终用户会看到署名 小组（team）署名是www.blendercn.org汉化组
-# 项目负责人、第一翻译者：我，嗯，就是牡蛎
-# 其他翻译者，按领取的任务先后顺序排列；如果不愿意署名，当然也可以
-# 6. 翻译可以借助所有工具软件，但是请尽可能把提交的翻译整理成“中国话”，而不是“汉字串”。换句话说，不需要使用者把汉字翻译成英文，然后才能理解翻译的意思。如果某人的任务当中经常出现大量晦涩的翻译，将暂停他的任务要求整改，如果仍然达不到要求，取消其汉化组成员资格，并不在署名中提到他
-# 7. 所有的部分翻译完成后，由 牡蛎 汇总，提供mo文件下载，并向www.blender.org提供文件以便包含在新的Blender中
 msgid ""
 msgstr ""
 "Project-Id-Version: Blender 2.37a\n"
