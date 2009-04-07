@@ -672,6 +672,7 @@ bool CBlenderPlayerCtrl::startEngine(void)
 			initGameKeys();			
 			initPythonConstraintBinding();
 			initMathutils();
+			initBGL();
 			
 			m_sceneconverter->ConvertScene(
 				startscenename,

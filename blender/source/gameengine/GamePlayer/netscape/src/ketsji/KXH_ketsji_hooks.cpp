@@ -571,6 +571,7 @@ initialize_gameengine(ketsji_engine_data* k, struct BlendFileData * active_file)
 		initGameKeys();
 		initPythonConstraintBinding();
 		initMathutils();
+		initBGL();
 		
 		KXH_log_entry("APH_initialize_gameengine:: will enter kx engine");
 		
