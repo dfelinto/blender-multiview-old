@@ -1,7 +1,5 @@
 include nan_definitions.mk
 
-PYTHONDLL=python$(subst .,,$(NAN_PYTHON_VERSION)).dll
-
 all: ${NAN_GETTEXT}/lib/freegettext.a  ${NAN_ICONV}/lib/freeiconv.a \
 		${NAN_PYTHON}/lib/freepy.a
 
@@ -24,15 +22,6 @@ ${NAN_ICONV}/lib/freeiconv.a: iconv.def ${NAN_ICONV}/lib/iconv.dll
 	ranlib ${NAN_ICONV}/lib/freeiconv.a
 	rm ./iconv.dll
 
-${NAN_PYTHON}/lib/freepy.a: python.def ${NAN_PYTHON}/lib/$(PYTHONDLL)
-	cp ${NAN_PYTHON}/lib/$(PYTHONDLL) .
-	sed s/PYTHON22\.DLL/$(PYTHONDLL)/ python.def > $(PYTHONDLL).def
-	dlltool.exe -v --output-lib ${NAN_PYTHON}/lib/freepy.a \
-		--input-def $(PYTHONDLL).def \
-		--dllname $(PYTHONDLL)
-	ranlib ${NAN_PYTHON}/lib/freepy.a
-	rm ./$(PYTHONDLL)
-
 clean:
-	$(RM) ${NAN_PYTHON}/lib/freepy.a ${NAN_GETTEXT}/lib/freegettext.a \
+	$(RM) ${NAN_GETTEXT}/lib/freegettext.a \
 		${NAN_ICONV}/lib/freeiconv.a
