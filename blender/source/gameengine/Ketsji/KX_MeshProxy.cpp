@@ -316,5 +316,5 @@ PyObject * KX_MeshProxy::pyattr_get_numMaterials(void * selfv, const KX_PYATTRIB
 
 PyObject * KX_MeshProxy::pyattr_get_numPolygons(void * selfv, const KX_PYATTRIBUTE_DEF * attrdef) {
 	KX_MeshProxy * self = static_cast<KX_MeshProxy *> (selfv);
-	return PyInt_FromLong(self->m_meshobj->NumPolygons();
+	return PyInt_FromLong(self->m_meshobj->NumPolygons());
 }
