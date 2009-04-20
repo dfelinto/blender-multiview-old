@@ -199,7 +199,7 @@ PyObject *PyObjectPlus::py_getattro(PyObject* attr)
 	}
 }
 
-PyObject* PyObjectPlus::py_getattro_dict() {
+PyObject* CValue::py_getattro_dict() {
 	return py_getattr_dict(NULL, Type.tp_dict);
 }
 
@@ -240,14 +240,14 @@ PyObject *PyObjectPlus::py_get_attrdef(void *self, const PyAttributeDef *attrdef
 				{
 					bool *val = reinterpret_cast<bool*>(ptr);
 					ptr += sizeof(bool);
-					PyList_SetItem(resultlist,i,PyInt_FromLong(*val));
+					PyList_SET_ITEM(resultlist,i,PyInt_FromLong(*val));
 					break;
 				}
 			case KX_PYATTRIBUTE_TYPE_SHORT:
 				{
 					short int *val = reinterpret_cast<short int*>(ptr);
 					ptr += sizeof(short int);
-					PyList_SetItem(resultlist,i,PyInt_FromLong(*val));
+					PyList_SET_ITEM(resultlist,i,PyInt_FromLong(*val));
 					break;
 				}
 			case KX_PYATTRIBUTE_TYPE_ENUM:
@@ -262,14 +262,14 @@ PyObject *PyObjectPlus::py_get_attrdef(void *self, const PyAttributeDef *attrdef
 				{
 					int *val = reinterpret_cast<int*>(ptr);
 					ptr += sizeof(int);
-					PyList_SetItem(resultlist,i,PyInt_FromLong(*val));
+					PyList_SET_ITEM(resultlist,i,PyInt_FromLong(*val));
 					break;
 				}
 			case KX_PYATTRIBUTE_TYPE_FLOAT:
 				{
 					float *val = reinterpret_cast<float*>(ptr);
 					ptr += sizeof(float);
-					PyList_SetItem(resultlist,i,PyFloat_FromDouble(*val));
+					PyList_SET_ITEM(resultlist,i,PyFloat_FromDouble(*val));
 					break;
 				}
 			default:
