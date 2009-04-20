@@ -661,8 +661,8 @@ bool CBlenderPlayerCtrl::startEngine(void)
 				startscenename,
 				m_gamedata->curscene);
 			
-			PyObject* m_dictionaryobject = initGamePlayerPythonScripting("Ketsji", psl_Highest, m_gamedata->main);
-			//PyObject* m_dictionaryobject = initGamePlayerPythonScripting("Ketsji", psl_Lowest, m_gamedata->main);
+			PyObject* m_dictionaryobject = initGamePlayerPythonScripting("Ketsji", psl_Highest, m_gamedata->main, 0, NULL);
+			//PyObject* m_dictionaryobject = initGamePlayerPythonScripting("Ketsji", psl_Lowest, m_gamedata->main, 0, NULL);
 
 			///python scripting doesn't work
 			m_ketsjiengine->SetPythonDictionary(m_dictionaryobject);
