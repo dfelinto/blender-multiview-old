@@ -199,7 +199,7 @@ PyObject *PyObjectPlus::py_getattro(PyObject* attr)
 	}
 }
 
-PyObject* CValue::py_getattro_dict() {
+PyObject* PyObjectPlus::py_getattro_dict() {
 	return py_getattr_dict(NULL, Type.tp_dict);
 }
 
