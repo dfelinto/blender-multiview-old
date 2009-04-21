@@ -1,5 +1,8 @@
 include $(SUBDIR)../config.mak
 
+$(OCGDIR)/extern/ffmpeg/libavcodec/x86/%.o: $(SUBDIR)x86/%.asm
+	$(YASM) $(YASMFLAGS) -I $(<D)/ -o $@ $<
+
 NAME = avcodec
 FFLIBS = avutil
 
