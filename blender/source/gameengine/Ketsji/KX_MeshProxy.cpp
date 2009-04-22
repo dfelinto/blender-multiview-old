@@ -266,10 +266,11 @@ PyObject* KX_MeshProxy::PyGetPolygon(PyObject* args, PyObject* kwds)
 KX_PYMETHODDEF_DOC(KX_MeshProxy, reinstancePhysicsMesh,
 "Reinstance the physics mesh.")
 {
+#if 0
 	//this needs to be reviewed, it is dependend on Sumo/Solid. Who is using this ?
 	if(KX_ReInstanceShapeFromMesh(m_meshobj))
 		Py_RETURN_TRUE;
-	
+#endif
 	Py_RETURN_FALSE;
 }
 
