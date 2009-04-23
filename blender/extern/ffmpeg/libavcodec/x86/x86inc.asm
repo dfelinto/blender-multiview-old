@@ -399,7 +399,11 @@ DECLARE_REG 6, ebp, ebp, bp, null, [esp + stack_offset + 28]
 ; This is needed for ELF, otherwise the GNU linker assumes the stack is
 ; executable by default.
 %ifidn __OUTPUT_FORMAT__,elf
-SECTION .note.GNU-stack noalloc noexec nowrite progbits
+	%ifdef __NASM_MAJOR__
+		section .note.GNU-stack noalloc noexec nowrite progbits
+	%else
+		section ".note.GNU-stack" noalloc noexec nowrite progbits
+	%endif
 %endif
 
 %assign FENC_STRIDE 16
