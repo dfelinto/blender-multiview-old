@@ -836,7 +836,7 @@ static PyObject* gPyMakeScreenshot(PyObject*, PyObject* args)
 	Py_RETURN_NONE;
 }
 
-static PyObject* gPyEnableMotionBlur(PyObject*)
+static PyObject* gPyEnableMotionBlur(PyObject*, PyObject* args)
 {
 	float motionblurvalue;
 	if (!PyArg_ParseTuple(args,"f:enableMotionBlur",&motionblurvalue))
@@ -852,7 +852,7 @@ static PyObject* gPyEnableMotionBlur(PyObject*)
 	Py_RETURN_NONE;
 }
 
-static PyObject* gPyDisableMotionBlur(PyObject*, PyObject* args)
+static PyObject* gPyDisableMotionBlur(PyObject*)
 {
 	if (!gp_Rasterizer) {
 		PyErr_SetString(PyExc_RuntimeError, "Rasterizer.disableMotionBlur(), Rasterizer not available");
