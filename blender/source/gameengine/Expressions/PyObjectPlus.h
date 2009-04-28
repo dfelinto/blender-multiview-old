@@ -458,6 +458,14 @@ public:
 	 */
 	virtual void ProcessReplica();
 	
+	
+	static bool			m_ignore_deprecation_warnings;
+	
+	/** enable/disable display of deprecation warnings */
+	static void			SetDeprecationWarnings(bool ignoreDeprecationWarnings);
+ 	/** Shows a deprecation warning */
+	static void			ShowDeprecationWarning(const char* method,const char* prop);
+	
 };
 
 PyObject *py_getattr_dict(PyObject *pydict, PyObject *tp_dict);
