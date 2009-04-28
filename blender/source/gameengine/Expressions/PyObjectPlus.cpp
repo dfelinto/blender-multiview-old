@@ -119,7 +119,7 @@ PyAttributeDef PyObjectPlus::Attributes[] = {
 
 PyObject* PyObjectPlus::pyattr_get_invalid(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {	
-	Py_RETURN_TRUE;
+	Py_RETURN_FALSE;
 }
 
 /*------------------------------
@@ -138,7 +138,7 @@ PyObject *PyObjectPlus::py_base_getattro(PyObject * self, PyObject *attr)
 	PyObjectPlus *self_plus= BGE_PROXY_REF(self);
 	if(self_plus==NULL) {
 		if(!strcmp("invalid", PyString_AsString(attr))) {
-			Py_RETURN_FALSE;
+			Py_RETURN_TRUE;
 		}
 		PyErr_SetString(PyExc_SystemError, BGE_PROXY_ERROR_MSG);
 		return NULL;

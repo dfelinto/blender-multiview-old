@@ -446,7 +446,7 @@ public:
 	KX_PYMETHOD_O(PyObjectPlus,isA);
 	
 	/* Kindof dumb, always returns True, the false case is checked for, before this function gets accessed */
-	static PyObject*	pyattr_get_is_valid(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	static PyObject*	pyattr_get_invalid(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	
 	static PyObject *GetProxy_Ext(PyObjectPlus *self, PyTypeObject *tp);
 	static PyObject *NewProxy_Ext(PyObjectPlus *self, PyTypeObject *tp, bool py_owns);
