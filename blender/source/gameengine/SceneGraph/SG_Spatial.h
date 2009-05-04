@@ -195,7 +195,7 @@ public:
 		return m_worldScaling;
 	}
 
-	void SG_Spatial::SetWorldFromLocalTransform()
+	void SetWorldFromLocalTransform()
 	{
 		m_worldPosition= m_localPosition;
 		m_worldScaling= m_localScaling;

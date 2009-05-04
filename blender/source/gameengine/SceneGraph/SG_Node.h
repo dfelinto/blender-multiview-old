@@ -85,7 +85,7 @@ public:
 	 * @return a reference to the list of children of this node.
 	 */
 	
-	NodeList& SG_Node::GetSGChildren()
+	NodeList& GetSGChildren()
 	{
 		return this->m_children;
 	}
@@ -104,7 +104,7 @@ public:
 	 * Clear the list of children associated with this node
 	 */
 
-	void SG_Node::ClearSGChildren()
+	void ClearSGChildren()
 	{
 		m_children.clear();
 	}
