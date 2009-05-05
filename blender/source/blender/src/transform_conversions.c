@@ -120,13 +120,13 @@
 
 #include "BSE_view.h"
 #include "BSE_drawipo.h"
+#include "BSE_drawnla.h"		// nla_filter()
 #include "BSE_edit.h"
 #include "BSE_editipo.h"
 #include "BSE_editipo_types.h"
 #include "BSE_editaction_types.h"
 
 #include "BDR_drawaction.h"		// list of keyframes in action
-#include "BDR_drawnla.h"		// nla_filter()
 #include "BDR_editobject.h"		// reset_slowparents()
 #include "BDR_gpencil.h"
 #include "BDR_unwrapper.h"
