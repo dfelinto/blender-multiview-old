@@ -1821,6 +1821,7 @@ class DaeControllerInstance(DaeInstance):
 	def SaveToXml(self, daeDocument):
 		node = super(DaeControllerInstance,self).SaveToXml(daeDocument)
 		for skeleton in self.skeletons:
+			skeleton = AdjustName(skeleton)
 #org			AppendTextChild(node, DaeSyntax.SKELETON, "#"+skeleton)
 			if not skeleton.startswith('#'): skeleton = "#"+skeleton
 			AppendTextChild(node, DaeSyntax.SKELETON, skeleton)

@@ -315,3 +315,10 @@ def PrintTransforms(matrix, name):
 	print name,"loc:   ", newMat.translationPart()
 	print name,"euler: ", newMat.toEuler()
 	print name,"scale: ", newMat.scalePart()
+	
+def AdjustName(adjustedName):
+	'''Adjust every name to fit to collada.py's StripString renaming (. -> _) and making 
+	sure the name starts with a letter.'''
+	if len(adjustedName) > 0 and not adjustedName[0].isalpha():
+		adjustedName = "i"+adjustedName
+	return adjustedName.replace('.', '_')
