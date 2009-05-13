@@ -24,6 +24,14 @@
 # --------------------------------------------------------------------------
 
 # History
+# 2009.05.11 by jan:
+# - Perfected the id renaming to fulfill at 100.0% the COLLADA standard for allowed UTF-8 
+#	chars. The new renaming method is also much faster then the old one (benchmarked with
+#	Python 2.5).
+# - Fixed the skeleton/joint controller!
+#	(Corrected the referencing of the 
+#	"<skin><source><technique_common>,<accessor source="...">"
+#	attribute. It pointed to its <source> node, and not the array in <source>.) 
 # 2009.04.16 by jan:
 # - Added the possibility to export models with modifiers (mirrors, transformers, etc.).
 # - Added helpful messages for users in case something goes wrong, so they know how and
@@ -1007,7 +1015,7 @@ class Controller(object):
 		jointSourceArray.id = self.document.CreateID(jointSource.id, "-array")
 		jointSource.techniqueCommon.accessor = jointAccessor = collada.DaeAccessor()
 		jointAccessor.AddParam("JOINT",collada.DaeSyntax.IDREF)
-		jointAccessor.source = jointSource.id
+		jointAccessor.source = jointSourceArray.id
 		daeSkin.sources.append(jointSource)
 		# And the input for the joints
 		jointInput = collada.DaeInput()
@@ -1028,7 +1036,7 @@ class Controller(object):
 		weightSourceArray.id = self.document.CreateID(weightSource.id, "-array")
 		weightSource.techniqueCommon.accessor = weightAccessor = collada.DaeAccessor()
 		weightAccessor.AddParam("WEIGHT","float")
-		weightAccessor.source = weightSource.id
+		weightAccessor.source = weightSourceArray.id
 		daeSkin.sources.append(weightSource)
 		# And the input for the weights
 		weightInput = collada.DaeInput()
@@ -1048,7 +1056,7 @@ class Controller(object):
 		poseSource.techniqueCommon.accessor = poseAccessor = collada.DaeAccessor()
 		poseAccessor.AddParam("","float4x4")
 		poseAccessor.stride = 16
-		poseAccessor.source = poseSource.id
+		poseAccessor.source = poseSourceArray.id
 		daeSkin.sources.append(poseSource)
 		# Add the input for the poses
 		poseInput = collada.DaeInput()

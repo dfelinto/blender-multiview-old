@@ -3485,8 +3485,16 @@ def IsVersionOk(version, curVersion):
 	return True
 
 def StripString(text):
+	'''
+	Ensures the id names are valid COLLADA ids.
+	Dots (.) are evaluated as member accessors in COLLADA.
+	Therefore the renaming from "." to "_" is very important.	
+	See "COLLADA Specification, Schema Concepts 3-3, COLLADA
+	Target Adressing".
+	See also cutily.py, translateMap variable docu.
+	'''
 	if text != None:
-		return text.replace(' ','_').replace('.','_')
+		return MakeIDXMLConform(text)
 	else:
 		return text;
 

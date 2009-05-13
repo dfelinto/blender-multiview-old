@@ -27,6 +27,51 @@ import sys
 import os
 import Blender
 from Blender.Mathutils import *
+import string
+
+'''
+Translation map.
+Used to translate every COLLADA id to a valid id, no matter what "wrong" letters may be
+included. Look at the IDREF XSD declaration for more.
+Follows strictly the COLLADA XSD declaration which explicitly allows non-english chars,
+like special chars (e.g. micro sign), umlauts and so on.
+The COLLADA spec also allows additional chars for member access ('.'), these
+must obviously be removed too, otherwise they would be heavily misinterpreted.
+''' 
+translateMap = "" + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(45) + chr(95) + chr(95) + \
+	chr(48) + chr(49) + chr(50) + chr(51) + chr(52) + chr(53) + chr(54) + chr(55) + \
+	chr(56) + chr(57) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(65) + chr(66) + chr(67) + chr(68) + chr(69) + chr(70) + chr(71) + \
+	chr(72) + chr(73) + chr(74) + chr(75) + chr(76) + chr(77) + chr(78) + chr(79) + \
+	chr(80) + chr(81) + chr(82) + chr(83) + chr(84) + chr(85) + chr(86) + chr(87) + \
+	chr(88) + chr(89) + chr(90) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(97) + chr(98) + chr(99) + chr(100) + chr(101) + chr(102) + chr(103) + \
+	chr(104) + chr(105) + chr(106) + chr(107) + chr(108) + chr(109) + chr(110) + chr(111) + \
+	chr(112) + chr(113) + chr(114) + chr(115) + chr(116) + chr(117) + chr(118) + chr(119) + \
+	chr(120) + chr(121) + chr(122) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(183) + \
+	chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + chr(95) + \
+	chr(192) + chr(193) + chr(194) + chr(195) + chr(196) + chr(197) + chr(198) + chr(199) + \
+	chr(200) + chr(201) + chr(202) + chr(203) + chr(204) + chr(205) + chr(206) + chr(207) + \
+	chr(208) + chr(209) + chr(210) + chr(211) + chr(212) + chr(213) + chr(214) + chr(95) + \
+	chr(216) + chr(217) + chr(218) + chr(219) + chr(220) + chr(221) + chr(222) + chr(223) + \
+	chr(224) + chr(225) + chr(226) + chr(227) + chr(228) + chr(229) + chr(230) + chr(231) + \
+	chr(232) + chr(233) + chr(234) + chr(235) + chr(236) + chr(237) + chr(238) + chr(239) + \
+	chr(240) + chr(241) + chr(242) + chr(243) + chr(244) + chr(245) + chr(246) + chr(95) + \
+	chr(248) + chr(249) + chr(250) + chr(251) + chr(252) + chr(253) + chr(254) + chr(255)
+
 
 #---Classes---
 
@@ -316,9 +361,21 @@ def PrintTransforms(matrix, name):
 	print name,"euler: ", newMat.toEuler()
 	print name,"scale: ", newMat.scalePart()
 	
+def MakeIDXMLConform(id):
+	'''
+	Make the name/id COLLADA XML/XSD conform.
+	See StripString and translateMap docu for more information.
+	'''
+	if (len(id) > 0 and id[0] == '#'):
+		return '#' + string.translate(id[1:], translateMap)
+	else:
+		return string.translate(id, translateMap)
+		
 def AdjustName(adjustedName):
-	'''Adjust every name to fit to collada.py's StripString renaming (. -> _) and making 
-	sure the name starts with a letter.'''
+	'''
+	Make the name/id COLLADA XML/XSD conform.
+	See StripString and translateMap docu for more information.
+	'''
 	if len(adjustedName) > 0 and not adjustedName[0].isalpha():
 		adjustedName = "i"+adjustedName
-	return adjustedName.replace('.', '_')
+	return MakeIDXMLConform(adjustedName)
