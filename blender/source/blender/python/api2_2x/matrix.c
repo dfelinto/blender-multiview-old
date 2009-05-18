@@ -92,7 +92,7 @@ PyObject *Matrix_toEuler(MatrixObject * self, PyObject *args)
 	
 	if(eul_compat) {
 		for(x = 0; x < 3; x++) {
-			eul_compatf[x] = eul_compat->eul[x] *= ((float)Py_PI / 180);
+			eul_compatf[x] = eul_compat->eul[x] * ((float)Py_PI / 180);
 		}
 	}
 	
