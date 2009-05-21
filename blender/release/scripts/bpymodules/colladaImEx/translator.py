@@ -5,6 +5,7 @@
 #
 # Copyright (C) 2006: Illusoft - colladablender@illusoft.com
 #    - 2008.08: multiple bugfixes by migius (AKA Remigiusz Fiedler)
+#    - 2009.05: bugfixes by jan (AKA Jan Diederich)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,6 +25,9 @@
 # --------------------------------------------------------------------------
 
 # History
+# 2009.05.17 by jan:
+# - More information for the user if an error happened (wrong/missing parenting).
+# - Added a progress bar for export (bar for import already exists). 
 # 2009.05.11 by jan:
 # - Perfected the id renaming to fulfill at 100.0% the COLLADA standard for allowed UTF-8 
 #	chars. The new renaming method is also much faster then the old one (benchmarked with
@@ -315,7 +319,7 @@ class DocumentTranslator(object):
 		#TODO: for what is this good? (migius)
 		if 0:	animations = AnimationInfo.CreateAnimations(self.animationsLibrary, self.fps, self.axiss)
 
-		# Read the COLLADA stucture and build the scene in Blender.
+		# Read the COLLADA structure and build the scene in Blender.
 		Blender.Window.DrawProgressBar(0.4, 'Translate Collada 2 Blender')
 		self.sceneGraph.LoadFromCollada(self.colladaDocument.visualScenesLibrary.items, self.colladaDocument.scene)
 
@@ -355,6 +359,7 @@ class DocumentTranslator(object):
 		self.ids = []
 		self.isImport = False
 		Blender.Window.EditMode(0)
+		Blender.Window.DrawProgressBar(0.0, 'Starting Export')
 
 		# Create a new Collada document
 		self.colladaDocument = collada.DaeDocument(debugMode)
@@ -397,7 +402,11 @@ class DocumentTranslator(object):
 		del temp_mesh
 		#------------ [end] Copied from export OBJ ------------------------
 		
-		# Loop throug all scenes
+		# Loop through all scenes
+		sceneCount = len(Blender.Scene.Get())
+		self.progressStep = self.progressField / sceneCount
+		Blender.Window.DrawProgressBar(0.1, \
+							'Exporting ' + str(sceneCount) + ' scene(s)')
 		for bScene in Blender.Scene.Get():
 			if not exportCurrentScene or self.currentBScene == bScene:
 				self.fps = bScene.getRenderingContext().framesPerSec()
@@ -426,20 +435,35 @@ class DocumentTranslator(object):
 				#self.colladaDocument.visualScenesLibrary.AddItem(sceneGraph.ObjectToDae(bScene))
 				#daeScene = collada.DaeScene()
 				#daeScene.AddInstance()
+				
+			self.ProgressExport()
 
 
 		self.colladaDocument.scene = daeScene
+		
+		Blender.Window.DrawProgressBar(0.98, 'Saving file to disk...')
 
 		self.colladaDocument.SaveDocumentToFile(fileName)
+		
+		Blender.Window.DrawProgressBar(1.0, 'Export finished.')
 
 	def Progress(self):
 		self.progressPartCount = 0.0
 		self.progressCount += self.progressStep
 		Blender.Window.DrawProgressBar(self.progressCount, 'Creating Blender Nodes...')
-
+		
 	def ProgressPart(self, val, text):
 		self.progressPartCount += val
 		Blender.Window.DrawProgressBar(self.progressCount+self.progressPartCount*self.progressStep,text)
+		
+	def ProgressExport(self):
+		self.progressPartCount = 0.0
+		self.progressCount += self.progressStep
+		Blender.Window.DrawProgressBar(self.progressCount, 'Exporting Blender Scenes...')
+
+	def ProgressPartExport(self, val, text):
+		self.progressPartCount += val
+		Blender.Window.DrawProgressBar(self.progressCount+self.progressPartCount, text)
 
 class SceneGraph(object):
 
@@ -552,15 +576,20 @@ class SceneGraph(object):
 		else: 
 			# Now loop trough all nodes in this scene and create a list with 
 			# root nodes and children.
-			for node in bScene.objects:
-				pNode = node.parent
-				if pNode is None:
-					self.rootNodes.append(node)
-				else:
-					try:
-						self.childNodes[pNode.name].append(node)
-					except:
-						self.childNodes[pNode.name] = [node]
+			sceneObjects = bScene.objects 
+			if len(sceneObjects) > 0:
+				progressStep = self.document.progressStep / len(sceneObjects) 
+				for node in sceneObjects:
+					pNode = node.parent
+					if pNode is None:
+						self.rootNodes.append(node)
+					else:
+						try:
+							self.childNodes[pNode.name].append(node)
+						except:
+							self.childNodes[pNode.name] = [node]
+							
+					self.document.ProgressPartExport(progressStep, "Saving node(s)...")
 
 		# Create a new Physics Model.
 		daePhysicsModel = collada.DaePhysicsModel()
@@ -1000,6 +1029,8 @@ class Controller(object):
 		daeSkin.bindShapeMatrix = Matrix(bMeshObject.matrix).transpose()##bMeshObject.getMatrix('localspace').transpose()
 
 		bArmatureObject = bModifier[Blender.Modifier.Settings.OBJECT]
+		if (bArmatureObject is None):
+			HandleError(ERROR_MESH_ARMATURE_PARENT, meshName)
 		bArmature = bArmatureObject.data
 
 		# Create the joints elements
@@ -2118,7 +2149,10 @@ class SceneNode(object):
 					daeController = controller.SaveToDae(bModifier, bNode, meshID)
 
 					#Get the root bone
-					bArmature = bModifier[Blender.Modifier.Settings.OBJECT].getData()
+					bArmatureObject = bModifier[Blender.Modifier.Settings.OBJECT]
+					if (bArmatureObject is None):
+						HandleError(ERROR_MESH_ARMATURE_PARENT, meshID)
+					bArmature = bArmatureObject.getData()
 					rootBones = []
 					for boneName in bArmature.bones.keys():
 						bone = bArmature.bones[boneName]

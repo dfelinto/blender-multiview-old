@@ -379,3 +379,26 @@ def AdjustName(adjustedName):
 	if len(adjustedName) > 0 and not adjustedName[0].isalpha():
 		adjustedName = "i"+adjustedName
 	return MakeIDXMLConform(adjustedName)
+
+'''
+List of error IDs and common strings.
+'''
+# Expects 1 argument: The mesh name.
+# Means that the armature modifier for a mesh couldn't be found,
+# probably the parenting is wrong.   
+ERROR_MESH_ARMATURE_PARENT = 1
+
+MSG_ERROR_FATAL = "Fatal error. Exit script."
+
+def HandleError(failureId, *args):
+	'''
+	Prints the error message belonging to the given Id.
+	May raise an exception if it's a fatal error.
+	'''
+	if (failureId == ERROR_MESH_ARMATURE_PARENT):
+		print("Can't read armature modifier for mesh %s.\n" \
+				"Most likely your armature isn't correctly parenting the mesh.\n" \
+				% args[0])
+		raise MSG_ERROR_FATAL
+	else:
+		print("Wrong failure id: %i" % failureId)
