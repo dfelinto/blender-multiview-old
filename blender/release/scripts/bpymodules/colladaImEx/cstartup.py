@@ -523,6 +523,11 @@ def Gui():
 
 	LoadDefaultVals()
 
+def CalcElapsedTime(startTime):
+	'''
+	Calc elapsed time between now and start time.
+	'''	
+	return Blender.sys.time() - startTime	
 
 def Event(evt, val):
 	pass
@@ -674,20 +679,20 @@ def ButtonEvent(evt):
 										lookAt, usePhysics, exportCurrentScene, \
 										exportRelativePaths, useUV, sampleAnimation, \
 										onlyMainScene, applyModifiers)
-			# Redraw al 3D windows.
+			
+			cutils.Debug.Debug('Time to process and save data: %.1f' \
+							% CalcElapsedTime(startTime), 'FEEDBACK')
+			
+			# Redraw all 3D windows.
 			Blender.Window.RedrawAll()
-
-			# calculate the elapsed time
-			endTime = Blender.sys.time()
-			elapsedTime = endTime - startTime
+			
 			Blender.Draw.PupMenu(importExportText + " Successful %t")
-		except:
-			endTime = Blender.sys.time()
-			elapsedTime = endTime - startTime
+		except:						
 			Blender.Draw.PupMenu(importExportText + "ing failed%t | Check the console for more info")
 			raise # throw the exception
 
-		cutils.Debug.Debug('FINISHED - time elapsed: %.1f'%(elapsedTime),'FEEDBACK')
+		cutils.Debug.Debug('FINISHED - time elapsed: %.1f' % CalcElapsedTime(startTime), \
+						'FEEDBACK')
 
 		# Hide the wait cursor in blender
 		Blender.Window.WaitCursor(0)
