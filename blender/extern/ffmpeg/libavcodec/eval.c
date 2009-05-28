@@ -36,7 +36,8 @@
 #include <string.h>
 #include <math.h>
 
-#ifndef NAN
+#if !defined(NAN) || defined(__sun__)
+  #undef NAN
   #define NAN 0.0/0.0
 #endif
 
