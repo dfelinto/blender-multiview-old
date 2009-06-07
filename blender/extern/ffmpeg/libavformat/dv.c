@@ -380,9 +380,12 @@ static int64_t dv_frame_offset(AVFormatContext *s, DVDemuxContext *c,
 
 void dv_offset_reset(DVDemuxContext *c, int64_t frame_offset)
 {
+    // FIXME: sys may be wrong if last dv_read_packet() failed (buffer is junk)
+    const DVprofile* sys = dv_codec_profile(c->vst->codec);
+
     c->frames= frame_offset;
     if (c->ach)
-        c->abytes= av_rescale_q(c->frames, c->sys->time_base,
+        c->abytes= av_rescale_q(c->frames, sys->time_base,
                                 (AVRational){8, c->ast[0]->codec->bit_rate});
     c->audio_pkt[0].size = c->audio_pkt[1].size = 0;
     c->audio_pkt[2].size = c->audio_pkt[3].size = 0;
@@ -460,8 +463,19 @@ static int dv_read_seek(AVFormatContext *s, int stream_index,
     RawDVContext *r   = s->priv_data;
     DVDemuxContext *c = r->dv_demux;
     int64_t offset    = dv_frame_offset(s, c, timestamp, flags);
+    // FIXME: sys may be wrong if last dv_read_packet() failed (buffer is junk)
+    const DVprofile* sys = dv_codec_profile(c->vst->codec);
 
-    dv_offset_reset(c, offset / c->sys->frame_size);
+    if (!c->sys) {
+        av_log(s, AV_LOG_ERROR, 
+	       "dv_read_seek: c->sys == NULL, "
+	       "frame_size=%d, offset=%lld, "
+	       "restoring c->sys using c->vst->codec.\n", 
+	       sys->frame_size, offset);
+	c->sys = sys;
+    }
+
+    dv_offset_reset(c, offset / sys->frame_size);
 
     offset = url_fseek(s->pb, offset, SEEK_SET);
     return (offset < 0) ? offset : 0;
