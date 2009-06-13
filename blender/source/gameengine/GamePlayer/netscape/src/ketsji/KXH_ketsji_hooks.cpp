@@ -521,8 +521,7 @@ initialize_gameengine(ketsji_engine_data* k, struct BlendFileData * active_file)
 	if (k->kx_engine)
 	{	
 		k->converter = new
-			KX_BlenderSceneConverter(active_file->main, 0,
-						 k->kx_engine);
+			KX_BlenderSceneConverter(active_file->main, k->kx_engine);
 		
 		PyObject* dictionaryobject 
 			= initGamePlayerPythonScripting("Ketsji", 

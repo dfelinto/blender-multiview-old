@@ -649,7 +649,7 @@ bool CBlenderPlayerCtrl::startEngine(void)
 		updateEngineInfoDisplay();
 		
 		// create a scene converter, create and convert the starting scene
-		m_sceneconverter = new KX_BlenderSceneConverter(m_gamedata->main, 0, m_ketsjiengine);
+		m_sceneconverter = new KX_BlenderSceneConverter(m_gamedata->main, m_ketsjiengine);
 		if (m_sceneconverter)
 		{
 			m_ketsjiengine->SetSceneConverter(m_sceneconverter);
