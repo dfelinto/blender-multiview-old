@@ -130,8 +130,10 @@ def create_materials(filepath, material_libs, unique_materials, unique_material_
 			try:
 				# first time using this image. We need to load it first
 				image.glLoad()
-			else:
+			except:
 				# probably the image is crashed
+				pass
+			else:
 				has_data = image.has_data
 		
 		# Adds textures for materials (rendering)
