@@ -125,6 +125,14 @@ def create_materials(filepath, material_libs, unique_materials, unique_material_
 		image= obj_image_load(imagepath, DIR, IMAGE_SEARCH)
 		has_data = image.has_data
 		texture.image = image
+
+		if not has_data:
+			try:
+				# first time using this image. We need to load it first
+				image.glLoad()
+			else:
+				# probably the image is crashed
+				has_data = image.has_data
 		
 		# Adds textures for materials (rendering)
 		if type == 'Kd':
