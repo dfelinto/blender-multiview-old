@@ -3248,6 +3248,9 @@ def writeLibrary( colladaElement ):
                 Window.DrawProgressBar( progress, "Exporting geometry %.0f %%..." % ( progress * 100.0 ) )
                 meshMaterials = rawMesh.getMaterials( -1 )
                 for material in meshMaterials:
+                    if material==None:
+                        continue
+
                     key = material.getName( )
                     materials[ key ] = material
                     

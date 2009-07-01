@@ -3065,7 +3065,7 @@ class MeshNode(object):
 		for k, daePolygons in daePolygonsDict.iteritems():
 			if k != -1:
 				if not useUV and not mesh.materials is None and len(mesh.materials) > 0 and k >= 0:
-					daePolygons.material = mesh.materials[k].name
+					daePolygons.material = getattr(mesh.materials[k], 'name', "")
 				elif mesh.faceUV and (useUV or mesh.materials is None or len(mesh.materials) == 0):
 					daePolygons.material = uvTextures[k]
 			offsetCount = 0
