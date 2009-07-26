@@ -3791,6 +3791,11 @@ class KX_SCA_ReplaceMeshActuator(SCA_IActuator):
 	@ivar mesh: L{KX_MeshProxy} or the name of the mesh that will replace the current one
 	            Set to None to disable actuator
 	@type mesh: L{KX_MeshProxy} or None if no mesh is set
+	
+	@ivar useDisplayMesh: when true the displayed mesh is replaced.
+	@type useDisplayMesh: boolean
+	@ivar usePhysicsMesh: when true the physics mesh is replaced.
+	@type usePhysicsMesh: boolean
 	"""
 	def setMesh(name):
 		"""
