@@ -1642,10 +1642,14 @@ class KX_GameObject(SCA_IObject):
 		Delete this object, can be used inpace of the EndObject Actuator.
 		The actual removal of the object from the scene is delayed.
 		"""	
-	def replaceMesh(mesh):
+	def replaceMesh(mesh, useDisplayMesh=True, usePhysicsMesh=False):
 		"""
 		Replace the mesh of this object with a new mesh. This works the same was as the actuator.
 		@type mesh: L{KX_MeshProxy} or mesh name
+		@type useDisplayMesh: bool
+		@param useDisplayMesh: when enabled the display mesh will be replaced (optional argument).
+		@type usePhysicsMesh: bool
+		@param usePhysicsMesh: when enabled the physics mesh will be replaced (optional argument).
 		"""	
 	def getVisible():
 		"""
