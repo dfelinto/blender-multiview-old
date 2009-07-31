@@ -676,7 +676,6 @@ bool CBlenderPlayerCtrl::startEngine(void)
 				startscenename,
 				startscene,
 				m_dictionaryobject,
-				m_keyboard,
 				m_rendertools,
 				m_canvas);
 			m_ketsjiengine->AddScene(startscene);

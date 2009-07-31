@@ -579,7 +579,6 @@ initialize_gameengine(ketsji_engine_data* k, struct BlendFileData * active_file)
 			startSceneName->Ptr(), 
 			startscene,
 			dictionaryobject,
-			k->keyboarddevice,
 			k->rendertools,
 			k->canvas_device);
 
