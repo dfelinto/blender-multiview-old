@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: encoder.h,v 1.28 2004/03/22 22:36:23 edgomez Exp $
+ * $Id: encoder.h,v 1.32 2006/07/10 08:09:59 syskin Exp $
  *
  ****************************************************************************/
 
@@ -34,6 +34,9 @@
 /*****************************************************************************
  * Constants
  ****************************************************************************/
+
+/* lambda base exponential. 1<<LAMBDA_EXP is the neutral lambda */
+#define LAMBDA_EXP		6
 
 /*****************************************************************************
  * Types
@@ -76,11 +79,6 @@ typedef struct
 	int par_width;
 	int par_height;
 
-#ifdef _SMP
-	int num_threads;
-#endif
-
-
 	int iMaxKeyInterval;
 	int max_bframes;
 
@@ -98,6 +96,7 @@ typedef struct
 	int64_t m_stamp;
 
 	uint16_t *mpeg_quant_matrices;
+	uint32_t last_quant_initialized_intra; /* needed for mpeg matrices initialization */
 } MBParam;
 
 
@@ -110,6 +109,7 @@ typedef struct
 	int mblks;
 	int ublks;
 	int gblks;
+	int iMVBits;
 } Statistics;
 
 
@@ -156,6 +156,8 @@ typedef struct
 } FRAMEINFO;
 
 
+#include "motion/motion_smp.h"
+
 typedef struct
 {
 	MBParam mbParam;
@@ -174,6 +176,10 @@ typedef struct
     /* dquant */
 
     int * temp_dquants;
+
+    /* lambda */
+
+    float * temp_lambda;
 
 	/* images */
 
@@ -209,6 +215,10 @@ typedef struct
     /* closed_gop fixup temporary storage */
 	int closed_bframenum; /* == -1 if there is no fixup intended */
     QUEUEINFO closed_qframe;	/* qFrame, only valid when >= 0 */
+
+	/* multithreaded stuff */
+	int num_threads;			/* number of additional threads */
+	SMPmotionData * motionData;	/* data structures used to pass all thread-specific data */
 
 	int m_framenum; /* debug frame num counter; unlike iFrameNum, does not reset at ivop */
 

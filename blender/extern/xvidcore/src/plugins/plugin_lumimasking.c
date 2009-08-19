@@ -20,13 +20,14 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: plugin_lumimasking.c,v 1.3 2004/04/02 22:20:31 suxen_drol Exp $
+ * $Id: plugin_lumimasking.c,v 1.6 2006/05/06 04:37:15 syskin Exp $
  *
  ****************************************************************************/
 
 #include <stdlib.h>
 
 #include "../xvid.h"
+#include "../global.h"
 #include "../portab.h"
 #include "../utils/emms.h"
 
@@ -227,7 +228,7 @@ lumi_plg_frame(lumi_data_t *handle, xvid_plg_data_t *data)
 											 data->dquant,
 											 data->mb_width*data->mb_height,
 											 data->quant,
-											 data->quant + data->quant/2);
+											 MAX(2,data->quant + data->quant/2));
 
 	 /* Plugin job finished */
 	 return(0);

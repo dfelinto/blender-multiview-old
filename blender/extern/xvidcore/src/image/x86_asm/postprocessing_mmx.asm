@@ -19,39 +19,17 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: postprocessing_mmx.asm,v 1.4 2004/08/29 10:02:38 edgomez Exp $
+; * $Id: postprocessing_mmx.asm,v 1.9.2.2 2009/05/28 15:04:35 Isibaar Exp $
 ; *
 ; *************************************************************************/
 
-BITS 32
-
-%macro cglobal 1
-	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
-	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
-	%endif
-%endmacro
+%include "nasm.inc"
 
 ;===========================================================================
 ; read only data
 ;===========================================================================
 
-%ifdef FORMAT_COFF
-SECTION .rodata
-%else
-SECTION .rodata align=16
-%endif
+DATA
 
 mmx_0x80:
 	times 8 db 0x80
@@ -68,7 +46,7 @@ mmx_offset:
 ; Code
 ;=============================================================================
 
-SECTION .text
+TEXT
 
 cglobal image_brightness_mmx
 
@@ -77,28 +55,39 @@ cglobal image_brightness_mmx
 ;// image_brightness_mmx
 ;//////////////////////////////////////////////////////////////////////
 
-align 16
+align SECTION_ALIGN
 image_brightness_mmx:
-
-	push esi
-	push edi
 
 	movq mm6, [mmx_0x80]
 
-	mov eax, [esp+8+20] ; offset
-	movq mm7, [mmx_offset + (eax + 128)*8]   ; being lazy
+%ifdef ARCH_IS_X86_64
+        XVID_MOVSXD _EAX, prm5d
+        lea TMP0, [mmx_offset]
+	movq mm7, [TMP0 + (_EAX + 128)*8]   ; being lazy
+%else
+        mov eax, prm5d ; offset
+        movq mm7, [mmx_offset + (_EAX + 128)*8]   ; being lazy
+%endif
 
-	mov edx, [esp+8+4]  ; Dst
-	mov ecx, [esp+8+8]  ; stride
-	mov esi, [esp+8+12] ; width
-	mov edi, [esp+8+16] ; height
+	mov TMP1, prm1  ; Dst
+	mov TMP0, prm2  ; stride
 
-.yloop
-	xor	eax, eax
+	push _ESI
+	push _EDI
+%ifdef ARCH_IS_X86_64
+        mov _ESI, prm3
+	mov _EDI, prm4
+%else
+	mov _ESI, [_ESP+8+12] ; width
+	mov _EDI, [_ESP+8+16] ; height
+%endif
 
-.xloop
-	movq mm0, [edx + eax]
-	movq mm1, [edx + eax + 8]	; mm0 = [dst]
+.yloop:
+	xor	_EAX, _EAX
+
+.xloop:
+	movq mm0, [TMP1 + _EAX]
+	movq mm1, [TMP1 + _EAX + 8]	; mm0 = [dst]
 
 	paddb mm0, mm6				; unsigned -> signed domain
 	paddb mm1, mm6
@@ -107,20 +96,25 @@ image_brightness_mmx:
 	psubb mm0, mm6
 	psubb mm1, mm6				; signed -> unsigned domain
 
-	movq [edx + eax], mm0
-	movq [edx + eax + 8], mm1	; [dst] = mm0
+	movq [TMP1 + _EAX], mm0
+	movq [TMP1 + _EAX + 8], mm1	; [dst] = mm0
 
-	add	eax,16
-	cmp	eax,esi	
+	add	_EAX,16
+	cmp	_EAX,_ESI	
 	jl .xloop
 
-	add edx, ecx				; dst += stride
-	sub edi, 1
+	add TMP1, TMP0				; dst += stride
+	sub _EDI, 1
 	jg .yloop
 
-	pop edi
-	pop esi
+	pop _EDI
+	pop _ESI
 
 	ret
-.endfunc
+ENDFUNC
 ;//////////////////////////////////////////////////////////////////////
+
+%ifidn __OUTPUT_FORMAT__,elf
+section ".note.GNU-stack" noalloc noexec nowrite progbits
+%endif
+

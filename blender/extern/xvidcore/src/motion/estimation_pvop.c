@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: estimation_pvop.c,v 1.17 2005/03/31 22:14:20 Isibaar Exp $
+ * $Id: estimation_pvop.c,v 1.22 2006/04/19 15:42:19 syskin Exp $
  *
  ****************************************************************************/
 
@@ -39,6 +39,8 @@
 #include "motion.h"
 #include "sad.h"
 #include "motion_inlines.h"
+#include "motion_smp.h"
+
 
 static const int xvid_me_lambda_vec8[32] =
 	{     0    ,(int)(1.0 * NEIGH_TEND_8X8 + 0.5),
@@ -294,7 +296,7 @@ ModeDecision_SAD(SearchData * const Data,
 
 	/* final skip decision, a.k.a. "the vector you found, really that good?" */
 	if (skip_possible && (skip_sad < (int)iQuant * MAX_SAD00_FOR_SKIP))
-		if ( (100*skip_sad)/(pMB->sad16+1) > FINAL_SKIP_THRESH)
+		if ( (100*skip_sad)/(pMB->sad16+1) < FINAL_SKIP_THRESH)
 			if (Data->chroma || xvid_me_SkipDecisionP(pCurrent, pRef, x, y, Data->iEdgedWidth/2, iQuant)) {
 				mode = MODE_NOT_CODED;
 				sad = 0;
@@ -705,6 +707,106 @@ SearchP(const IMAGE * const pRef,
 	} else Data->iMinSAD[1] = 4096*256;
 }
 
+static int
+InitialSkipDecisionP(int sad00,
+					 const MBParam * pParam,
+					 const FRAMEINFO * current,
+					 MACROBLOCK * pMB,
+					 const MACROBLOCK * prevMB,
+					 int x, int y,
+					 const SearchData * Data,
+					 const IMAGE * const pGMC,
+					 const IMAGE * const pCurrent,
+					 const IMAGE * const pRef,
+					 const uint32_t MotionFlags)
+{
+	const unsigned int iEdgedWidth = pParam->edged_width;
+
+	int skip_thresh = INITIAL_SKIP_THRESH * \
+		(current->vop_flags & XVID_VOP_MODEDECISION_RD ? 2:1);
+	int stat_thresh = 0;
+
+	/* initial skip decision */
+	if (current->coding_type != S_VOP)	{ /* no fast SKIP for S(GMC)-VOPs */
+		if (pMB->dquant == 0 && sad00 < pMB->quant * skip_thresh)
+			if (Data->chroma || xvid_me_SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant)) {
+				ZeroMacroblockP(pMB, sad00);
+				pMB->mode = MODE_NOT_CODED;
+				return 1;
+			}
+	}
+
+	if(MotionFlags & XVID_ME_DETECT_STATIC_MOTION) {
+		VECTOR *cmpMV;
+		VECTOR staticMV = { 0, 0 };
+		const MACROBLOCK * pMBs = current->mbs;
+
+		if (current->coding_type == S_VOP) 
+			cmpMV = &pMB->amv;
+		else
+			cmpMV = &staticMV;
+
+		if(x > 0 && y > 0 && x < pParam->mb_width) {
+			if(MVequal((&pMBs[(x-1) + y * pParam->mb_width])->mvs[0], *cmpMV) &&
+			   MVequal((&pMBs[x + (y-1) * pParam->mb_width])->mvs[0], *cmpMV) &&
+			   MVequal((&pMBs[(x+1) + (y-1) * pParam->mb_width])->mvs[0], *cmpMV) &&
+			   MVequal(prevMB->mvs[0], *cmpMV)) {
+				stat_thresh = MAX((&pMBs[(x-1) + y * pParam->mb_width])->sad16,
+							  MAX((&pMBs[x + (y-1) * pParam->mb_width])->sad16,
+							  MAX((&pMBs[(x+1) + (y-1) * pParam->mb_width])->sad16,
+							  prevMB->sad16)));
+			} else {
+				stat_thresh = MIN((&pMBs[(x-1) + y * pParam->mb_width])->sad16,
+							  MIN((&pMBs[x + (y-1) * pParam->mb_width])->sad16,
+							  MIN((&pMBs[(x+1) + (y-1) * pParam->mb_width])->sad16,
+							  prevMB->sad16)));
+			}
+		}
+	}
+
+	 /* favorize (0,0) or global vector for cartoons */
+	if (current->vop_flags & XVID_VOP_CARTOON) {
+		if (current->coding_type == S_VOP) {
+			int32_t iSAD = sad16(pCurrent->y + (x + y * iEdgedWidth) * 16,
+			pGMC->y + 16*y*iEdgedWidth + 16*x, iEdgedWidth, 65536);
+
+			if (Data->chroma) {
+				iSAD += sad8(pCurrent->u + x*8 + y*(iEdgedWidth/2)*8, pGMC->u + 8*y*(iEdgedWidth/2) + 8*x, iEdgedWidth/2);
+				iSAD += sad8(pCurrent->v + (x + y*(iEdgedWidth/2))*8, pGMC->v + 8*y*(iEdgedWidth/2) + 8*x, iEdgedWidth/2);
+			}
+
+			if (iSAD <= stat_thresh) {		/* mode decision GMC */
+				pMB->mode = MODE_INTER;
+				pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = iSAD;
+				pMB->mcsel = 1;
+				if (Data->qpel) {
+					pMB->qmvs[0] = pMB->qmvs[1] = pMB->qmvs[2] = pMB->qmvs[3] = pMB->amv;
+					pMB->mvs[0].x = pMB->mvs[1].x = pMB->mvs[2].x = pMB->mvs[3].x = pMB->amv.x/2;
+					pMB->mvs[0].y = pMB->mvs[1].y = pMB->mvs[2].y = pMB->mvs[3].y = pMB->amv.y/2;
+				} else
+					pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
+				
+				return 1;
+			}
+		}
+		else if (sad00 < stat_thresh) {
+			VECTOR predMV;
+			if (Data->qpel)
+				predMV = get_qpmv2(current->mbs, pParam->mb_width, 0, x, y, 0);
+			else
+				predMV = get_pmv2(current->mbs, pParam->mb_width, 0, x, y, 0);
+
+			ZeroMacroblockP(pMB, sad00);
+			pMB->cbp = 0x3f;
+			pMB->pmvs[0].x = - predMV.x;
+			pMB->pmvs[0].y = - predMV.y;
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
 static __inline uint32_t
 MakeGoodMotionFlags(const uint32_t MotionFlags, const uint32_t VopFlags, const uint32_t VolFlags)
 {
@@ -784,14 +886,14 @@ motionStatsPVOP(int * const MVmax, int * const mvCount, int * const mvSum,
 	}
 }
 
-bool
+void
 MotionEstimation(MBParam * const pParam,
 				 FRAMEINFO * const current,
 				 FRAMEINFO * const reference,
 				 const IMAGE * const pRefH,
 				 const IMAGE * const pRefV,
 				 const IMAGE * const pRefHV,
-				const IMAGE * const pGMC,
+				 const IMAGE * const pGMC,
 				 const uint32_t iLimit)
 {
 	MACROBLOCK *const pMBs = current->mbs;
@@ -806,9 +908,10 @@ MotionEstimation(MBParam * const pParam,
 	int MVmax = 0, mvSum = 0, mvCount = 0;
 
 	uint32_t x, y;
-	int32_t sad00;
+	int sad00;
 	int skip_thresh = INITIAL_SKIP_THRESH * \
 		(current->vop_flags & XVID_VOP_MODEDECISION_RD ? 2:1);
+	int block = 0;
 
 	/* some pre-initialized thingies for SearchP */
 	DECLARE_ALIGNED_MATRIX(dct_space, 3, 64, int16_t, CACHE_LINE);
@@ -828,14 +931,16 @@ MotionEstimation(MBParam * const pParam,
 
 	for (y = 0; y < mb_height; y++)	{
 		for (x = 0; x < mb_width; x++)	{
-			MACROBLOCK *pMB = &pMBs[x + y * pParam->mb_width];
-			MACROBLOCK *prevMB = &reference->mbs[x + y * pParam->mb_width];
+			MACROBLOCK *pMB = &pMBs[block];
+			MACROBLOCK *prevMB = &reference->mbs[block];
+			int skip;
+			block++;
 
 			pMB->sad16 =
 				sad16v(pCurrent->y + (x + y * iEdgedWidth) * 16,
 							pRef->y + (x + y * iEdgedWidth) * 16,
 							pParam->edged_width, pMB->sad8);
-			
+
 			sad00 = 4*MAX(MAX(pMB->sad8[0], pMB->sad8[1]), MAX(pMB->sad8[2], pMB->sad8[3]));
 
 			if (Data.chroma) {
@@ -847,82 +952,9 @@ MotionEstimation(MBParam * const pParam,
 				sad00 += Data.chromaSAD;
 			}
 
-			/* initial skip decision */
-			if (current->coding_type != S_VOP)	{ /* no fast SKIP for S(GMC)-VOPs */
-				if (pMB->dquant == 0 && sad00 < pMB->quant * skip_thresh)
-					if (Data.chroma || xvid_me_SkipDecisionP(pCurrent, pRef, x, y, iEdgedWidth/2, pMB->quant)) {
-						ZeroMacroblockP(pMB, sad00);
-						pMB->mode = MODE_NOT_CODED;
-						continue;
-					}
-			}
-
-			if(MotionFlags & XVID_ME_DETECT_STATIC_MOTION) {
-				VECTOR *cmpMV;
-				VECTOR staticMV = { 0, 0 };
-				
-				if (current->coding_type == S_VOP) 
-					cmpMV = &pMB->amv;
-				else
-					cmpMV = &staticMV;
-
-				if(x > 0 && y > 0 && x < pParam->mb_width) {
-					if(MVequal((&pMBs[(x-1) + y * pParam->mb_width])->mvs[0], *cmpMV) &&
-					   MVequal((&pMBs[x + (y-1) * pParam->mb_width])->mvs[0], *cmpMV) &&
-				       MVequal((&pMBs[(x+1) + (y-1) * pParam->mb_width])->mvs[0], *cmpMV) &&
-				       MVequal(prevMB->mvs[0], *cmpMV)) {
-						stat_thresh = MAX((&pMBs[(x-1) + y * pParam->mb_width])->sad16,
-								 	  MAX((&pMBs[x + (y-1) * pParam->mb_width])->sad16,
-									  MAX((&pMBs[(x+1) + (y-1) * pParam->mb_width])->sad16,
-									  prevMB->sad16)));
-					} else {
-						stat_thresh = MIN((&pMBs[(x-1) + y * pParam->mb_width])->sad16,
-								 	  MIN((&pMBs[x + (y-1) * pParam->mb_width])->sad16,
-									  MIN((&pMBs[(x+1) + (y-1) * pParam->mb_width])->sad16,
-									  prevMB->sad16)));
-					}
-				}
-			}
-
-			 /* favorize (0,0) or global vector for cartoons */
-			if (current->vop_flags & XVID_VOP_CARTOON) {
-				if (current->coding_type == S_VOP) {
-					int32_t iSAD = sad16(pCurrent->y + (x + y * iEdgedWidth) * 16,
-					pGMC->y + 16*y*iEdgedWidth + 16*x, iEdgedWidth, 65536);
-
-					if (Data.chroma) {
-						iSAD += sad8(pCurrent->u + x*8 + y*(iEdgedWidth/2)*8, pGMC->u + 8*y*(iEdgedWidth/2) + 8*x, iEdgedWidth/2);
-						iSAD += sad8(pCurrent->v + (x + y*(iEdgedWidth/2))*8, pGMC->v + 8*y*(iEdgedWidth/2) + 8*x, iEdgedWidth/2);
-					}
-
-					if (iSAD <= stat_thresh) {		/* mode decision GMC */
-						pMB->mode = MODE_INTER;
-						pMB->sad16 = pMB->sad8[0] = pMB->sad8[1] = pMB->sad8[2] = pMB->sad8[3] = iSAD;
-						pMB->mcsel = 1;
-						if (Data.qpel) {
-							pMB->qmvs[0] = pMB->qmvs[1] = pMB->qmvs[2] = pMB->qmvs[3] = pMB->amv;
-							pMB->mvs[0].x = pMB->mvs[1].x = pMB->mvs[2].x = pMB->mvs[3].x = pMB->amv.x/2;
-							pMB->mvs[0].y = pMB->mvs[1].y = pMB->mvs[2].y = pMB->mvs[3].y = pMB->amv.y/2;
-						} else
-							pMB->mvs[0] = pMB->mvs[1] = pMB->mvs[2] = pMB->mvs[3] = pMB->amv;
-						
-						continue;
-					}
-				}
-				else if (sad00 < stat_thresh) {
-					VECTOR predMV;
-					if (current->vol_flags & XVID_VOL_QUARTERPEL)
-						predMV = get_qpmv2(current->mbs, mb_width, 0, x, y, 0);
-					else
-						predMV = get_pmv2(current->mbs, mb_width, 0, x, y, 0);
-
-					ZeroMacroblockP(pMB, sad00);
-					pMB->cbp = 0x3f;
-					pMB->pmvs[0].x = - predMV.x;
-					pMB->pmvs[0].y = - predMV.y;
-					continue;
-				}
-			}
+			skip = InitialSkipDecisionP(sad00, pParam, current, pMB, prevMB, x, y, &Data, pGMC, 
+										pCurrent, pRef, MotionFlags);
+			if (skip) continue;
 
 			SearchP(pRef, pRefH->y, pRefV->y, pRefHV->y, pCurrent, x,
 					y, MotionFlags, current->vop_flags,
@@ -950,6 +982,159 @@ MotionEstimation(MBParam * const pParam,
 	current->fcode = getMinFcode(MVmax);
 	current->sStat.iMvSum = mvSum;
 	current->sStat.iMvCount = mvCount;
-
-	return 0;
 }
+
+void
+MotionEstimateSMP(SMPmotionData * h)
+{
+	const MBParam * const pParam = h->pParam;
+	const FRAMEINFO * const current = h->current;
+	const FRAMEINFO * const reference = h->reference;
+	const IMAGE * const pRefH = h->pRefH;
+	const IMAGE * const pRefV = h->pRefV;
+	const IMAGE * const pRefHV = h->pRefHV;
+	const IMAGE * const pGMC = h->pGMC;
+	uint32_t MotionFlags = MakeGoodMotionFlags(current->motion_flags,
+												current->vop_flags,
+												current->vol_flags);
+
+	MACROBLOCK *const pMBs = current->mbs;
+	const IMAGE *const pCurrent = &current->image;
+	const IMAGE *const pRef = &reference->image;
+
+	const uint32_t mb_width = pParam->mb_width;
+	const uint32_t mb_height = pParam->mb_height;
+	const uint32_t iEdgedWidth = pParam->edged_width;
+	int stat_thresh = 0;
+	int MVmax = 0, mvSum = 0, mvCount = 0;
+	int y_step = h->y_step;
+	int start_y = h->start_y;
+
+	uint32_t x, y;
+	int sad00;
+	int skip_thresh = INITIAL_SKIP_THRESH * \
+		(current->vop_flags & XVID_VOP_MODEDECISION_RD ? 2:1);
+	int block = start_y*mb_width;
+	int * complete_count_self = h->complete_count_self;
+	const volatile int * complete_count_above = h->complete_count_above;
+	int max_mbs;
+	int current_mb = 0;
+
+	/* some pre-initialized thingies for SearchP */
+	DECLARE_ALIGNED_MATRIX(dct_space, 3, 64, int16_t, CACHE_LINE);
+	SearchData Data;
+	memset(&Data, 0, sizeof(SearchData));
+	Data.iEdgedWidth = iEdgedWidth;
+	Data.iFcode = current->fcode;
+	Data.rounding = pParam->m_rounding_type;
+	Data.qpel = (current->vol_flags & XVID_VOL_QUARTERPEL ? 1:0);
+	Data.chroma = MotionFlags & XVID_ME_CHROMA_PVOP;
+	Data.dctSpace = dct_space;
+	Data.quant_type = !(pParam->vol_flags & XVID_VOL_MPEGQUANT);
+	Data.mpeg_quant_matrices = pParam->mpeg_quant_matrices;
+
+	/* todo: sort out temp memory space */
+	Data.RefQ = h->RefQ;
+	if (sadInit) (*sadInit) ();
+
+	max_mbs = 0;
+
+	for (y = start_y; y < mb_height; y += y_step)	{
+		if (y == 0) max_mbs = mb_width; /* we can process all blocks of the first row */
+
+		for (x = 0; x < mb_width; x++)	{
+			
+			MACROBLOCK *pMB, *prevMB;
+			int skip;
+
+			if (current_mb >= max_mbs) {
+				/* we ME-ed all macroblocks we safely could. grab next portion */
+				int above_count = *complete_count_above; /* sync point */
+				if (above_count == mb_width) {
+					/* full line above is ready */
+					above_count = mb_width+1;
+					if (y < mb_height-y_step) {
+						/* this is not last line, grab a portion of MBs from the next line too */
+						above_count += MAX(0, complete_count_above[1] - 1);
+					}
+				}
+
+				max_mbs = current_mb + above_count - x - 1;
+				
+				if (current_mb >= max_mbs) {
+					/* current workload is zero */
+					x--;
+					sched_yield();
+					continue;
+				}
+			}
+
+
+			pMB = &pMBs[block];
+			prevMB = &reference->mbs[block];
+
+			pMB->sad16 =
+				sad16v(pCurrent->y + (x + y * iEdgedWidth) * 16,
+							pRef->y + (x + y * iEdgedWidth) * 16,
+							pParam->edged_width, pMB->sad8);
+
+			sad00 = 4*MAX(MAX(pMB->sad8[0], pMB->sad8[1]), MAX(pMB->sad8[2], pMB->sad8[3]));
+
+			if (Data.chroma) {
+				Data.chromaSAD = sad8(pCurrent->u + x*8 + y*(iEdgedWidth/2)*8,
+									pRef->u + x*8 + y*(iEdgedWidth/2)*8, iEdgedWidth/2)
+								+ sad8(pCurrent->v + (x + y*(iEdgedWidth/2))*8,
+									pRef->v + (x + y*(iEdgedWidth/2))*8, iEdgedWidth/2);
+				pMB->sad16 += Data.chromaSAD;
+				sad00 += Data.chromaSAD;
+			}
+
+			skip = InitialSkipDecisionP(sad00, pParam, current, pMB, prevMB, x, y, &Data, pGMC, 
+										pCurrent, pRef, MotionFlags);
+
+			if (skip) {
+				current_mb++;
+				block++;
+				*complete_count_self = x+1;
+				continue;
+			}
+
+			SearchP(pRef, pRefH->y, pRefV->y, pRefHV->y, pCurrent, x,
+					y, MotionFlags, current->vop_flags,
+					&Data, pParam, pMBs, reference->mbs, pMB);
+
+			if (current->vop_flags & XVID_VOP_MODEDECISION_RD)
+				xvid_me_ModeDecision_RD(&Data, pMB, pMBs, x, y, pParam,
+								MotionFlags, current->vop_flags, current->vol_flags,
+								pCurrent, pRef, pGMC, current->coding_type);
+
+			else if (current->vop_flags & XVID_VOP_FAST_MODEDECISION_RD)
+				xvid_me_ModeDecision_Fast(&Data, pMB, pMBs, x, y, pParam,
+								MotionFlags, current->vop_flags, current->vol_flags,
+								pCurrent, pRef, pGMC, current->coding_type);
+			else
+				ModeDecision_SAD(&Data, pMB, pMBs, x, y, pParam,
+								MotionFlags, current->vop_flags, current->vol_flags,
+								pCurrent, pRef, pGMC, current->coding_type, sad00);
+
+			*complete_count_self = x+1;
+
+			current_mb++;
+			block++;
+
+			motionStatsPVOP(&MVmax, &mvCount, &mvSum, pMB, Data.qpel);
+			
+		}
+		block += (y_step-1)*pParam->mb_width;
+		complete_count_self++;
+		complete_count_above++;
+	}
+
+	h->minfcode = getMinFcode(MVmax);
+
+	h->MVmax = MVmax;
+	h->mvSum = mvSum;
+	h->mvCount = mvCount;
+}
+
+

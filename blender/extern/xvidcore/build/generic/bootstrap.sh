@@ -7,7 +7,7 @@
 # This file builds the configure script and copies all needed files
 # provided by automake/libtoolize
 #
-# $Id$
+# $Id: bootstrap.sh,v 1.7 2005/05/23 09:29:43 Skal Exp $
 
 
 ##############################################################################

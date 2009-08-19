@@ -22,35 +22,13 @@
 ; *
 ; *************************************************************************/
 
-BITS 32
-
-%macro cglobal 1
-	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
-	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
-	%endif
-%endmacro
+%include "nasm.inc"
 
 ;===========================================================================
 ; read only data
 ;===========================================================================
 
-%ifdef FORMAT_COFF
-SECTION .rodata
-%else
-SECTION .rodata align=16
-%endif
+DATA
 
 xmm_0x80:
 	times 16 db 0x80
@@ -59,7 +37,7 @@ xmm_0x80:
 ; Code
 ;=============================================================================
 
-SECTION .text
+TEXT
 
 cglobal image_brightness_sse2
 
@@ -86,34 +64,44 @@ cglobal image_brightness_sse2
   mov [%1 + 15], %2
 %endmacro
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 image_brightness_sse2:
+  PUSH_XMM6_XMM7
+%ifdef ARCH_IS_X86_64
+  XVID_MOVSXD _EAX, prm5d
+%else
+  mov eax, prm5   ; brightness offset value	
+%endif
+  mov TMP1, prm1  ; Dst
+  mov TMP0, prm2  ; stride
 
-  push esi
-  push edi    ; 8 bytes offset for push
-  sub esp, 32 ; 32 bytes for local data (16bytes will be used, 16bytes more to align correctly mod 16)
+  push _ESI
+  push _EDI    ; 8 bytes offset for push
+  sub _ESP, 32 ; 32 bytes for local data (16bytes will be used, 16bytes more to align correctly mod 16)
 
   movdqa xmm6, [xmm_0x80]
 
   ; Create a offset...offset vector
-  mov eax, [esp+8+32+20] ; brightness offset value	
-  mov edx, esp           ; edx will be esp aligned mod 16
-  add edx, 15            ; edx = esp + 15
-  and edx, ~15           ; edx = (esp + 15)&(~15)
-  CREATE_OFFSET_VECTOR edx, al
-  movdqa xmm7, [edx]
+  mov _ESI, _ESP          ; TMP1 will be esp aligned mod 16
+  add _ESI, 15            ; TMP1 = esp + 15
+  and _ESI, ~15           ; TMP1 = (esp + 15)&(~15)
+  CREATE_OFFSET_VECTOR _ESI, al
+  movdqa xmm7, [_ESI]
 
-  mov edx, [esp+8+32+4]  ; Dst
-  mov ecx, [esp+8+32+8]  ; stride
-  mov esi, [esp+8+32+12] ; width
-  mov edi, [esp+8+32+16] ; height
+%ifdef ARCH_IS_X86_64
+  mov _ESI, prm3
+  mov _EDI, prm4
+%else
+  mov _ESI, [_ESP+8+32+12] ; width
+  mov _EDI, [_ESP+8+32+16] ; height
+%endif
 
-.yloop
-  xor eax, eax
+.yloop:
+  xor _EAX, _EAX
 
-.xloop
-  movdqa xmm0, [edx + eax]
-  movdqa xmm1, [edx + eax + 16] ; xmm0 = [dst]
+.xloop:
+  movdqa xmm0, [TMP1 + _EAX]
+  movdqa xmm1, [TMP1 + _EAX + 16] ; xmm0 = [dst]
 
   paddb xmm0, xmm6              ; unsigned -> signed domain
   paddb xmm1, xmm6
@@ -122,21 +110,27 @@ image_brightness_sse2:
   psubb xmm0, xmm6
   psubb xmm1, xmm6              ; signed -> unsigned domain
 
-  movdqa [edx + eax], xmm0
-  movdqa [edx + eax + 16], xmm1 ; [dst] = xmm0
+  movdqa [TMP1 + _EAX], xmm0
+  movdqa [TMP1 + _EAX + 16], xmm1 ; [dst] = xmm0
 
-  add eax,32
-  cmp eax,esi	
+  add _EAX,32
+  cmp _EAX,_ESI
   jl .xloop
 
-  add edx, ecx                  ; dst += stride
-  sub edi, 1
+  add TMP1, TMP0                  ; dst += stride
+  sub _EDI, 1
   jg .yloop
 
-  add esp, 32
-  pop edi
-  pop esi
+  add _ESP, 32
+  pop _EDI
+  pop _ESI
 
+  POP_XMM6_XMM7
   ret
-.endfunc
+ENDFUNC
 ;//////////////////////////////////////////////////////////////////////
+
+%ifidn __OUTPUT_FORMAT__,elf
+section ".note.GNU-stack" noalloc noexec nowrite progbits
+%endif
+

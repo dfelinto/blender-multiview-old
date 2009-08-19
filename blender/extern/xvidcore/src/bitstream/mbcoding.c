@@ -19,7 +19,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbcoding.c,v 1.52 2005/09/13 12:12:15 suxen_drol Exp $
+ * $Id: mbcoding.c,v 1.57 2008/11/26 01:04:34 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -35,6 +35,13 @@
 #include "mbcoding.h"
 
 #include "../utils/mbfunctions.h"
+
+#ifdef _DEBUG
+# include "../motion/estimation.h"
+# include "../motion/motion_inlines.h"
+# include <assert.h>
+#endif
+
 
 #define LEVELOFFSET 32
 
@@ -572,12 +579,27 @@ CodeBlockInter(const FRAMEINFO * const frame,
 #endif
 		}
 	}
+
+	bits = BitstreamPos(bs);
+
 	/* code motion vector(s) if motion is local  */
 	if (!pMB->mcsel)
 		for (i = 0; i < (pMB->mode == MODE_INTER4V ? 4 : 1); i++) {
 			CodeVector(bs, pMB->pmvs[i].x, frame->fcode);
 			CodeVector(bs, pMB->pmvs[i].y, frame->fcode);
+
+#ifdef _DEBUG
+			if (i == 0) /* for simplicity */ {
+				int coded_length = BitstreamPos(bs) - bits;
+				int estimated_length = d_mv_bits(pMB->pmvs[i].x, pMB->pmvs[i].y, zeroMV, frame->fcode, 0);
+				assert(estimated_length == coded_length);
+				d_mv_bits(pMB->pmvs[i].x, pMB->pmvs[i].y, zeroMV, frame->fcode, 0);
+			}
+#endif
 		}
+
+	bits = BitstreamPos(bs) - bits;
+	pStat->iMVBits += bits;
 
 	bits = BitstreamPos(bs);
 
@@ -746,6 +768,7 @@ MBCodingBVOP(const FRAMEINFO * const frame,
 		}
 	}
 
+	bits = BitstreamPos(bs);
 
 	switch (mb->mode) {
 		case MODE_INTERPOLATE:
@@ -762,6 +785,7 @@ MBCodingBVOP(const FRAMEINFO * const frame,
 			CodeVector(bs, mb->pmvs[3].y, 1);	/* prediction is always (0,0) */
 		default: break;
 	}
+	pStat->iMVBits += BitstreamPos(bs) - bits;
 
 	bits = BitstreamPos(bs);
 	for (i = 0; i < 6; i++) {
@@ -1051,7 +1075,7 @@ get_coeff(Bitstream * bs,
 	return (level << 20) >> 20;
 
   error:
-	*run = VLC_ERROR;
+	*run = 64;
 	return 0;
 }
 
@@ -1063,22 +1087,15 @@ get_intra_block(Bitstream * bs,
 {
 
 	const uint16_t *scan = scan_tables[direction];
-	int level, run, last;
+	int level, run, last = 0;
 
 	do {
 		level = get_coeff(bs, &run, &last, 1, 0);
-		if (run == -1) {
-			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run");
+		coeff += run;
+		if (coeff & ~63) {
+			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run or index");
 			break;
 		}
-		coeff += run;
-		
-#ifdef _DEBUG
-		if(coeff>=64) {
-		  DPRINTF(XVID_DEBUG_ERROR,"error: overflow in coefficient index\n");
-		  return;
-		}
-#endif
 
 		block[scan[coeff]] = level;
 
@@ -1110,23 +1127,16 @@ get_inter_block_h263(
 	int p;
 	int level;
 	int run;
-	int last;
+	int last = 0;
 
 	p = 0;
 	do {
 		level = get_coeff(bs, &run, &last, 0, 0);
-		if (run == -1) {
-			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run");
+		p += run;
+		if (p & ~63) {
+			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run or index");
 			break;
 		}
-		p += run;
-
-#ifdef _DEBUG
-		if(p>=64)	{
-		  DPRINTF(XVID_DEBUG_ERROR,"error: overflow in coefficient index\n");
-		  return;
-		}
-#endif
 
 		if (level < 0) {
 			level = level*quant_m_2 - quant_add;
@@ -1152,23 +1162,16 @@ get_inter_block_mpeg(
 	int p;
 	int level;
 	int run;
-	int last;
+	int last = 0;
 
 	p = 0;
 	do {
 		level = get_coeff(bs, &run, &last, 0, 0);
-		if (run == -1) {
-			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run");
+		p += run;
+		if (p & ~63) {
+			DPRINTF(XVID_DEBUG_ERROR,"fatal: invalid run or index");
 			break;
 		}
-		p += run;
-
-#ifdef _DEBUG
-		if(p>=64)	{
-		  DPRINTF(XVID_DEBUG_ERROR,"error: overflow in coefficient index\n");
-		  return;
-		}
-#endif
 
 		if (level < 0) {
 			level = ((2 * -level + 1) * matrix[scan[p]] * quant) >> 4;

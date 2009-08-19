@@ -20,7 +20,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: decoder.c,v 1.75.2.1 2005/12/30 14:26:46 Isibaar Exp $
+ * $Id: decoder.c,v 1.80.2.1 2009/05/28 15:52:34 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -195,13 +195,17 @@ decoder_create(xvid_dec_create_t * create)
   dec->low_delay = 0;
   dec->packed_mode = 0;
   dec->time_inc_resolution = 1; /* until VOL header says otherwise */
+  dec->ver_id = 1;
 
   dec->bs_version = 0xffff; /* Initialize to very high value -> assume bugfree stream */
 
   dec->fixed_dimensions = (dec->width > 0 && dec->height > 0);
 
-  if (dec->fixed_dimensions)
-    return decoder_resize(dec);
+  if (dec->fixed_dimensions) {
+    int ret = decoder_resize(dec);
+    if (ret == XVID_ERR_MEMORY) create->handle = NULL;
+    return ret;
+  }
   else
     return 0;
 }
@@ -747,7 +751,7 @@ decoder_iframe(DECODER * dec,
         bound = read_video_packet_header(bs, dec, 0,
               &quant, NULL, NULL, &intra_dc_threshold);
         x = bound % mb_width;
-        y = bound / mb_width;
+        y = MIN((bound / mb_width), (mb_height-1));
       }
       mb = &dec->mbs[y * dec->mb_width + x];
 
@@ -974,7 +978,7 @@ decoder_pframe(DECODER * dec,
         bound = read_video_packet_header(bs, dec, fcode - 1,
           &quant, &fcode, NULL, &intra_dc_threshold);
         x = bound % mb_width;
-        y = bound / mb_width;
+        y = MIN((bound / mb_width), (mb_height-1));
       }
       mb = &dec->mbs[y * dec->mb_width + x];
 
@@ -1334,6 +1338,13 @@ get_mbtype(Bitstream * bs)
   return -1;
 }
 
+static int __inline get_resync_len_b(const int fcode_backward,
+                                     const int fcode_forward) {
+  int resync_len = ((fcode_forward>fcode_backward) ? fcode_forward : fcode_backward) - 1;
+  if (resync_len < 1) resync_len = 1;
+  return resync_len;
+}
+
 static void
 decoder_bframe(DECODER * dec,
         Bitstream * bs,
@@ -1345,6 +1356,7 @@ decoder_bframe(DECODER * dec,
   VECTOR mv;
   const VECTOR zeromv = {0,0};
   int i;
+  int resync_len;
 
   if (!dec->is_edged[0]) {
     start_timer();
@@ -1362,22 +1374,24 @@ decoder_bframe(DECODER * dec,
     stop_edges_timer();
   }
 
+  resync_len = get_resync_len_b(fcode_backward, fcode_forward);
   for (y = 0; y < dec->mb_height; y++) {
     /* Initialize Pred Motion Vector */
     dec->p_fmv = dec->p_bmv = zeromv;
     for (x = 0; x < dec->mb_width; x++) {
       MACROBLOCK *mb = &dec->mbs[y * dec->mb_width + x];
       MACROBLOCK *last_mb = &dec->last_mbs[y * dec->mb_width + x];
-      const int fcode_max = (fcode_forward>fcode_backward) ? fcode_forward : fcode_backward;
       int intra_dc_threshold; /* fake variable */
 
-      if (check_resync_marker(bs, fcode_max  - 1)) {
-        int bound = read_video_packet_header(bs, dec, fcode_max - 1, &quant,
+      if (check_resync_marker(bs, resync_len)) {
+        int bound = read_video_packet_header(bs, dec, resync_len, &quant,
                            &fcode_forward, &fcode_backward, &intra_dc_threshold);
         x = bound % dec->mb_width;
-        y = bound / dec->mb_width;
+        y = MIN((bound / dec->mb_width), (dec->mb_height-1));
         /* reset predicted macroblocks */
         dec->p_fmv = dec->p_bmv = zeromv;
+        /* update resync len with new fcodes */
+        resync_len = get_resync_len_b(fcode_backward, fcode_forward);
       }
 
       mv =
@@ -1617,7 +1631,7 @@ repeat:
   if (coding_type == -2 || coding_type == -3) { /* vol and/or resize */
 
     if (coding_type == -3)
-      decoder_resize(dec);
+      if (decoder_resize(dec)) return XVID_ERR_MEMORY;
 
     if(stats) {
       stats->type = XVID_TYPE_VOL;

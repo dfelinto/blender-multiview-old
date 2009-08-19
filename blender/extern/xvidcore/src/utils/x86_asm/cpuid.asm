@@ -3,7 +3,7 @@
 ; *  XVID MPEG-4 VIDEO CODEC
 ; *  - CPUID check processors capabilities -
 ; *
-; *  Copyright (C) 2001 Michael Militzer <isibaar@xvid.org>
+; *  Copyright (C) 2001-2008 Michael Militzer <michael@xvid.org>
 ; *
 ; *  This program is free software ; you can redistribute it and/or modify
 ; *  it under the terms of the GNU General Public License as published by
@@ -19,29 +19,11 @@
 ; *  along with this program ; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: cpuid.asm,v 1.9 2004/08/29 10:02:38 edgomez Exp $
+; * $Id: cpuid.asm,v 1.15.2.2 2009/05/28 08:42:37 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
-BITS 32
-
-%macro cglobal 1
-	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
-	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
-	%endif
-%endmacro
+%include "nasm.inc"
 
 ;=============================================================================
 ; Constants
@@ -51,6 +33,8 @@ BITS 32
 %define CPUID_MMX               0x00800000
 %define CPUID_SSE               0x02000000
 %define CPUID_SSE2              0x04000000
+%define CPUID_SSE3              0x00000001
+%define CPUID_SSE41             0x00080000
 
 %define EXT_CPUID_3DNOW         0x80000000
 %define EXT_CPUID_AMD_3DNOWEXT  0x40000000
@@ -61,6 +45,8 @@ BITS 32
 %define XVID_CPU_MMXEXT   (1<< 1)
 %define XVID_CPU_SSE      (1<< 2)
 %define XVID_CPU_SSE2     (1<< 3)
+%define XVID_CPU_SSE3     (1<< 8)
+%define XVID_CPU_SSE41    (1<< 9)
 %define XVID_CPU_3DNOW    (1<< 4)
 %define XVID_CPU_3DNOWEXT (1<< 5)
 %define XVID_CPU_TSC      (1<< 6)
@@ -69,12 +55,9 @@ BITS 32
 ; Read only data
 ;=============================================================================
 
-ALIGN 32
-%ifdef FORMAT_COFF
-SECTION .rodata
-%else
-SECTION .rodata align=16
-%endif
+ALIGN SECTION_ALIGN
+
+DATA
 
 vendorAMD:
 		db "AuthenticAMD"
@@ -83,56 +66,63 @@ vendorAMD:
 ; Macros
 ;=============================================================================
 
-%macro  CHECK_FEATURE         3
-  mov ecx, %1
-  and ecx, edx
-  neg ecx
-  sbb ecx, ecx
-  and ecx, %2
-  or %3, ecx
+%macro  CHECK_FEATURE         4
+  mov eax, %1
+  and eax, %4
+  neg eax 
+  sbb eax, eax 
+  and eax, %2
+  or %3, eax 
 %endmacro
 
 ;=============================================================================
 ; Code
 ;=============================================================================
 
-SECTION .text
+%ifdef ARCH_IS_X86_64
+%define XVID_PUSHFD pushfq
+%define XVID_POPFD  popfq
+%else
+%define XVID_PUSHFD pushfd
+%define XVID_POPFD  popfd
+%endif
+
+TEXT
 
 ; int check_cpu_feature(void)
 
 cglobal check_cpu_features
 check_cpu_features:
 
-  push ebx
-  push esi
-  push edi
-  push ebp
+  push _EBX
+  push _ESI
+  push _EDI
+  push _EBP
 
-  sub esp, 12             ; Stack space for vendor name
+  sub _ESP, 12             ; Stack space for vendor name
   
-  xor ebp, ebp
+  xor ebp, ebp 
 
 	; CPUID command ?
-  pushfd
-  pop eax
-  mov ecx, eax
+  XVID_PUSHFD 
+  pop _EAX
+  mov ecx, eax 
   xor eax, 0x200000
-  push eax
-  popfd
-  pushfd
-  pop eax
-  cmp eax, ecx
+  push _EAX
+  XVID_POPFD 
+  XVID_PUSHFD 
+  pop _EAX
+  cmp eax, ecx 
 
   jz near .cpu_quit		; no CPUID command -> exit
 
-
 	; get vendor string, used later
-  xor eax, eax
+  xor eax, eax 
   cpuid
-  mov [esp], ebx       ; vendor string
-  mov [esp+4], edx
-  mov [esp+8], ecx
-  test eax, eax
+  mov [_ESP], ebx        ; vendor string
+  mov [_ESP+4], edx
+  mov [_ESP+8], ecx
+  test eax, eax 
 
   jz near .cpu_quit
 
@@ -140,16 +130,22 @@ check_cpu_features:
   cpuid
 
  ; RDTSC command ?
-  CHECK_FEATURE CPUID_TSC, XVID_CPU_TSC, ebp
+  CHECK_FEATURE CPUID_TSC, XVID_CPU_TSC, ebp, edx 
 
   ; MMX support ?
-  CHECK_FEATURE CPUID_MMX, XVID_CPU_MMX, ebp
+  CHECK_FEATURE CPUID_MMX, XVID_CPU_MMX, ebp, edx 
 
   ; SSE support ?
-  CHECK_FEATURE CPUID_SSE, (XVID_CPU_MMXEXT|XVID_CPU_SSE), ebp
+  CHECK_FEATURE CPUID_SSE, (XVID_CPU_MMXEXT|XVID_CPU_SSE), ebp, edx 
 
   ; SSE2 support?
-  CHECK_FEATURE CPUID_SSE2, XVID_CPU_SSE2, ebp
+  CHECK_FEATURE CPUID_SSE2, XVID_CPU_SSE2, ebp, edx 
+
+  ; SSE3 support?
+  CHECK_FEATURE CPUID_SSE3, XVID_CPU_SSE3, ebp, ecx 
+
+  ; SSE41 support?
+  CHECK_FEATURE CPUID_SSE41, XVID_CPU_SSE41, ebp, ecx 
 
   ; extended functions?
   mov eax, 0x80000000
@@ -161,68 +157,90 @@ check_cpu_features:
   cpuid
 
  ; AMD cpu ?
-  lea esi, [vendorAMD]
-  lea edi, [esp]
+  lea _ESI, [vendorAMD]
+  lea _EDI, [_ESP]
   mov ecx, 12
   cld
   repe cmpsb
   jnz .cpu_quit
 
   ; 3DNow! support ?
-  CHECK_FEATURE EXT_CPUID_3DNOW, XVID_CPU_3DNOW, ebp
+  CHECK_FEATURE EXT_CPUID_3DNOW, XVID_CPU_3DNOW, ebp, edx 
 
   ; 3DNOW extended ?
-  CHECK_FEATURE EXT_CPUID_AMD_3DNOWEXT, XVID_CPU_3DNOWEXT, ebp
+  CHECK_FEATURE EXT_CPUID_AMD_3DNOWEXT, XVID_CPU_3DNOWEXT, ebp, edx 
 
   ; extended MMX ?
-  CHECK_FEATURE EXT_CPUID_AMD_MMXEXT, XVID_CPU_MMXEXT, ebp
+  CHECK_FEATURE EXT_CPUID_AMD_MMXEXT, XVID_CPU_MMXEXT, ebp, edx 
 
 .cpu_quit:
 
-  mov eax, ebp
+  mov eax, ebp 
 
-  add esp, 12
+  add _ESP, 12
 
-  pop ebp
-  pop edi
-  pop esi
-  pop ebx
+  pop _EBP
+  pop _EDI
+  pop _ESI
+  pop _EBX
 
   ret
-.endfunc
+ENDFUNC
 
 ; sse/sse2 operating support detection routines
 ; these will trigger an invalid instruction signal if not supported.
-ALIGN 16
+ALIGN SECTION_ALIGN
 cglobal sse_os_trigger
 sse_os_trigger:
   xorps xmm0, xmm0
   ret
-.endfunc
+ENDFUNC
 
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 cglobal sse2_os_trigger
 sse2_os_trigger:
   xorpd xmm0, xmm0
   ret
-.endfunc
+ENDFUNC
 
 
 ; enter/exit mmx state
-ALIGN 16
+ALIGN SECTION_ALIGN
 cglobal emms_mmx
 emms_mmx:
   emms
   ret
-.endfunc
+ENDFUNC
 
 ; faster enter/exit mmx state
-ALIGN 16
+ALIGN SECTION_ALIGN
 cglobal emms_3dn
 emms_3dn:
   femms
   ret
-.endfunc
+ENDFUNC
 
+%ifdef ARCH_IS_X86_64
+%ifdef WINDOWS
+cglobal prime_xmm
+prime_xmm:
+  movdqa xmm6, [prm1]
+  movdqa xmm7, [prm1+16]
+  ret
+ENDFUNC
+
+cglobal get_xmm
+get_xmm:
+  movdqa [prm1], xmm6
+  movdqa [prm1+16], xmm7
+  ret
+ENDFUNC
+%endif
+%endif
+
+
+%ifidn __OUTPUT_FORMAT__,elf
+section ".note.GNU-stack" noalloc noexec nowrite progbits
+%endif
 

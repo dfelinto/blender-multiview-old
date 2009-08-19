@@ -19,29 +19,11 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: fdct_mmx_skal.asm,v 1.6 2004/08/29 10:02:38 edgomez Exp $
+; * $Id: fdct_mmx_skal.asm,v 1.10.2.1 2009/05/28 08:42:37 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
-BITS 32
-
-%macro cglobal 1
-	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
-	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
-	%endif
-%endmacro
+%include "nasm.inc"
 
 ;;; Define this if you want an unrolled version of the code
 %define UNROLLED_LOOP
@@ -113,13 +95,9 @@ BITS 32
 ; Read only data
 ;=============================================================================
 
-%ifdef FORMAT_COFF
-SECTION .rodata
-%else
-SECTION .rodata align=16
-%endif
+DATA
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 tan1:
 	dw  0x32ec,0x32ec,0x32ec,0x32ec    ; tan( pi/16)
 tan2:
@@ -129,7 +107,7 @@ tan3:
 sqrt2:
 	dw  0x5a82,0x5a82,0x5a82,0x5a82    ; 0.5/sqrt(2)
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 fdct_table:
 ;fTab1:
   dw 0x4000, 0x4000, 0x58c5, 0x4b42
@@ -211,7 +189,7 @@ fdct_table:
   dw 0x300b, 0x8c04, 0x187e, 0xba41
   dw 0x73fc, 0xcff5, 0x6862, 0x84df
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 fdct_rounding_1:
   dw 6, 8, 8, 8
   dw 10, 8, 8, 8
@@ -222,7 +200,7 @@ fdct_rounding_1:
   dw 8, 8, 8, 8
   dw 8, 8, 8, 8
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 fdct_rounding_2:
   dw 6, 8, 8, 8
   dw 8, 8, 8, 8
@@ -233,7 +211,7 @@ fdct_rounding_2:
   dw 8, 8, 8, 8
   dw 8, 8, 8, 8
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 MMX_One:
   dw 1, 1, 1, 1
 
@@ -378,9 +356,9 @@ MMX_One:
   paddd mm2, mm3               ;  [ out0 | out1 ]
   pmaddwd mm7, mm1             ;  [a0.M10+a1.M11 | b0.M26+b1.M27]
   psrad mm2, 16
-  pmaddwd mm0, qword [%3 + 48] ;  [a0.M12+a1.M13 | b0.M28+b1.M29]
+  pmaddwd mm0, [%3 + 48] ;  [a0.M12+a1.M13 | b0.M28+b1.M29]
   paddd mm4, mm5               ;  [ out2 | out3 ]
-  pmaddwd mm1, qword [%3 + 56] ;  [a0.M14+a1.M15 | b0.M30+b1.M31]
+  pmaddwd mm1, [%3 + 56] ;  [a0.M14+a1.M15 | b0.M30+b1.M31]
   psrad mm4, 16
 
   paddd mm6, mm7               ;  [ out4 | out5 ]
@@ -436,9 +414,9 @@ MMX_One:
   paddd mm2, mm3               ;  [ out0 | out1 ]
   pmaddwd mm7, mm1             ;  [a0.M10+a1.M11 | b0.M26+b1.M27]
   psrad mm2, 16
-  pmaddwd mm0, qword [%3 + 48] ;  [a0.M12+a1.M13 | b0.M28+b1.M29]
+  pmaddwd mm0, [%3 + 48] ;  [a0.M12+a1.M13 | b0.M28+b1.M29]
   paddd mm4, mm5               ;  [ out2 | out3 ]
-  pmaddwd mm1, qword [%3 + 56] ;  [a0.M14+a1.M15 | b0.M30+b1.M31]
+  pmaddwd mm1, [%3 + 56] ;  [a0.M14+a1.M15 | b0.M30+b1.M31]
   psrad mm4, 16
 
   paddd mm6, mm7               ;  [ out4 | out5 ]
@@ -464,53 +442,51 @@ MMX_One:
 ;-----------------------------------------------------------------------------
 
 %macro MAKE_FDCT_FUNC 2
-ALIGN 16
+ALIGN SECTION_ALIGN
 cglobal %1
 %1:
-%ifdef UNROLLED_LOOP
-  mov ecx, [esp + 4]
-%else
-  push ebx
-  push edi
-  mov ecx, [esp + 8 + 4]
+  mov TMP0, prm1
+%ifndef UNROLLED_LOOP
+  push _EBX
+  push _EDI
 %endif
 
-  fLLM_PASS ecx+0, ecx+0, 3
-  fLLM_PASS ecx+8, ecx+8, 3
+  fLLM_PASS TMP0+0, TMP0+0, 3
+  fLLM_PASS TMP0+8, TMP0+8, 3
 
 %ifdef UNROLLED_LOOP
 %assign i 0
 %rep 8
-  %2 ecx+i*16, ecx+i*16, fdct_table+i*64, fdct_rounding_1+i*8, fdct_rounding_2+i*8
+  %2 TMP0+i*16, TMP0+i*16, fdct_table+i*64, fdct_rounding_1+i*8, fdct_rounding_2+i*8
 	%assign i i+1
 %endrep
 %else
-  mov eax, 8
-  mov edx, fdct_table
-  mov ebx, fdct_rounding_1
-  mov edi, fdct_rounding_2
+  mov _EAX, 8
+  mov TMP1, fdct_table
+  mov _EBX, fdct_rounding_1
+  mov _EDI, fdct_rounding_2
 .loop
-  %2 ecx, ecx, edx, ebx, edi
-  add ecx, 2*8
-  add edx, 2*32
-  add ebx, 2*4
-  add edi, 2*4
-  dec eax
+  %2 TMP0, TMP0, TMP1, _EBX, _EDI
+  add TMP0, 2*8
+  add TMP1, 2*32
+  add _EBX, 2*4
+  add _EDI, 2*4
+  dec _EAX
   jne .loop
 
-  pop edi
-  pop ebx
+  pop _EDI
+  pop _EBX
 %endif
 
   ret
-.endfunc
+ENDFUNC
 %endmacro
 
 ;=============================================================================
 ; Code
 ;=============================================================================
 
-SECTION .text
+TEXT
 
 ;-----------------------------------------------------------------------------
 ; void fdct_mmx_skal(int16_t block[64]];
@@ -523,3 +499,8 @@ MAKE_FDCT_FUNC fdct_mmx_skal, fMTX_MULT_MMX
 ;-----------------------------------------------------------------------------
 
 MAKE_FDCT_FUNC fdct_xmm_skal, fMTX_MULT_XMM
+
+%ifidn __OUTPUT_FORMAT__,elf
+section ".note.GNU-stack" noalloc noexec nowrite progbits
+%endif
+

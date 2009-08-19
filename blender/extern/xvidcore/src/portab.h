@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: portab.h,v 1.54 2005/01/05 23:02:15 edgomez Exp $
+ * $Id: portab.h,v 1.58.2.1 2008/11/30 16:38:31 Isibaar Exp $
  *
  ****************************************************************************/
 
@@ -75,6 +75,7 @@ extern unsigned int xvid_debug;
 #    define CACHE_LINE 64
 #    define ptr_t uint32_t
 #    define intptr_t int32_t
+#    define _INTPTR_T_DEFINED
 #    if defined(_MSC_VER) && _MSC_VER >= 1300 && !defined(__INTEL_COMPILER)
 #        include <stdarg.h>
 #    else
@@ -84,6 +85,7 @@ extern unsigned int xvid_debug;
 #    define CACHE_LINE  64
 #    define ptr_t uint64_t
 #    define intptr_t int64_t
+#    define _INTPTR_T_DEFINED
 #    if defined (_MSC_VER) && _MSC_VER >= 1300 && !defined(__INTEL_COMPILER)
 #        include <stdarg.h>
 #    else
@@ -130,7 +132,7 @@ static __inline void DPRINTF(int level, char *fmt, ...)
 		va_start(args, fmt);
 		vsprintf(buf, fmt, args);
 		va_end(args);
-		OutputDebugString(buf);
+		OutputDebugStringA(buf);
 		fprintf(stderr, "%s", buf);
 	}
 }
@@ -151,7 +153,7 @@ type * name = (type *) (((int32_t) name##_storage+(alignment - 1)) & ~((int32_t)
 /*----------------------------------------------------------------------------
   | msvc x86 specific macros/functions
  *---------------------------------------------------------------------------*/
-#    if defined(ARCH_IS_IA32) || defined(ARCH_IS_X86_64)
+#    if defined(ARCH_IS_IA32)
 #        define BSWAP(a) __asm mov eax,a __asm bswap eax __asm mov a, eax
 
 static __inline int64_t read_counter(void)
@@ -166,6 +168,14 @@ static __inline int64_t read_counter(void)
 	ts = ((uint64_t) ts2 << 32) | ((uint64_t) ts1);
 	return ts;
 }
+
+#    elif defined(ARCH_IS_X86_64)
+
+#    include <intrin.h>
+
+#    define BSWAP(a) ((a) = _byteswap_ulong(a))
+
+static __inline int64_t read_counter(void) { return __rdtsc(); }
 
 /*----------------------------------------------------------------------------
   | msvc GENERIC (plain C only) - Probably alpha or some embedded device
@@ -291,8 +301,8 @@ static __inline int64_t read_counter(void)
  *---------------------------------------------------------------------------*/
 #    elif defined(ARCH_IS_IA64)
 #        define BSWAP(a)  __asm__ __volatile__ \
-	("mux1 %1 = %0, @rev" ";;" \
-	 "shr.u %1 = %1, 32" : "=r" (a) : "r" (a));
+	("mux1 %0 = %1, @rev" ";;" \
+	 "shr.u %0 = %0, 32" : "=r" (a) : "r" (a));
 
 static __inline int64_t read_counter(void)
 {
@@ -358,7 +368,7 @@ type * name = (type *) (((int32_t) name##_storage+(alignment - 1)) & ~((int32_t)
 /*----------------------------------------------------------------------------
   | watcom ia32 specific macros/functions
  *---------------------------------------------------------------------------*/
-#    if defined(ARCH_IS_IA32)
+#    if defined(ARCH_IS_IA32) || defined(ARCH_IS_X86_64)
 
 #        define BSWAP(a)  __asm mov eax,a __asm bswap eax __asm mov a, eax
 

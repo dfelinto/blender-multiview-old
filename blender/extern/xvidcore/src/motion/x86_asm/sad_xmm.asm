@@ -4,7 +4,7 @@
 ; *  - K7 optimized SAD operators -
 ; *
 ; *  Copyright(C) 2001 Peter Ross <pross@xvid.org>
-; *               2001 Michael Militzer <isibaar@xvid.org>
+; *               2001-2008 Michael Militzer <michael@xvid.org>
 ; *               2002 Pascal Massimino <skal@planet-d.net>
 ; *
 ; *  This program is free software; you can redistribute it and/or modify it
@@ -21,41 +21,19 @@
 ; *  along with this program; if not, write to the Free Software
 ; *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 ; *
-; * $Id: sad_xmm.asm,v 1.10 2004/08/29 10:02:38 edgomez Exp $
+; * $Id: sad_xmm.asm,v 1.13.2.1 2009/05/28 08:42:37 Isibaar Exp $
 ; *
 ; ***************************************************************************/
 
-BITS 32
-
-%macro cglobal 1
-	%ifdef PREFIX
-		%ifdef MARK_FUNCS
-			global _%1:function %1.endfunc-%1
-			%define %1 _%1:function %1.endfunc-%1
-		%else
-			global _%1
-			%define %1 _%1
-		%endif
-	%else
-		%ifdef MARK_FUNCS
-			global %1:function %1.endfunc-%1
-		%else
-			global %1
-		%endif
-	%endif
-%endmacro
+%include "nasm.inc"
 
 ;=============================================================================
 ; Read only data
 ;=============================================================================
 
-%ifdef FORMAT_COFF
-SECTION .rodata
-%else
-SECTION .rodata align=16
-%endif
+DATA
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 mmx_one: times 4 dw 1
 
 ;=============================================================================
@@ -63,75 +41,75 @@ mmx_one: times 4 dw 1
 ;=============================================================================
 
 %macro SAD_16x16_SSE 0
-  movq mm0, [eax]
-  psadbw mm0, [edx]
-  movq mm1, [eax+8]
-  add eax, ecx
-  psadbw mm1, [edx+8]
+  movq mm0, [_EAX]
+  psadbw mm0, [TMP1]
+  movq mm1, [_EAX+8]
+  add _EAX, TMP0
+  psadbw mm1, [TMP1+8]
   paddusw mm5, mm0
-  add edx, ecx
+  add TMP1, TMP0
   paddusw mm6, mm1
 %endmacro
 
 %macro SAD_8x8_SSE 0
-  movq mm0, [eax]
-  movq mm1, [eax+ecx]
-  psadbw mm0, [edx]
-  psadbw mm1, [edx+ecx]
-  add eax, ebx
-  add edx, ebx
+  movq mm0, [_EAX]
+  movq mm1, [_EAX+TMP0]
+  psadbw mm0, [TMP1]
+  psadbw mm1, [TMP1+TMP0]
+  add _EAX, _EBX
+  add TMP1, _EBX
 	paddusw	mm5, mm0
 	paddusw	mm6, mm1
 %endmacro
 
 %macro SADBI_16x16_SSE 0
-  movq mm0, [eax]
-  movq mm1, [eax+8]
-  movq mm2, [edx]
-  movq mm3, [edx+8]
-  pavgb mm2, [ebx]
-  add edx, ecx
-  pavgb mm3, [ebx+8]
-  add ebx, ecx
+  movq mm0, [_EAX]
+  movq mm1, [_EAX+8]
+  movq mm2, [TMP1]
+  movq mm3, [TMP1+8]
+  pavgb mm2, [_EBX]
+  add TMP1, TMP0
+  pavgb mm3, [_EBX+8]
+  add _EBX, TMP0
   psadbw mm0, mm2
-  add eax, ecx
+  add _EAX, TMP0
   psadbw mm1, mm3
   paddusw mm5, mm0
   paddusw mm6, mm1
 %endmacro
 
 %macro SADBI_8x8_XMM 0
-  movq mm0, [eax]
-  movq mm1, [eax+ecx]
-  movq mm2, [edx]
-  movq mm3, [edx+ecx]
-  pavgb mm2, [ebx]
-  lea edx, [edx+2*ecx]
-  pavgb mm3, [ebx+ecx]
-  lea ebx, [ebx+2*ecx]
+  movq mm0, [_EAX]
+  movq mm1, [_EAX+TMP0]
+  movq mm2, [TMP1]
+  movq mm3, [TMP1+TMP0]
+  pavgb mm2, [_EBX]
+  lea TMP1, [TMP1+2*TMP0]
+  pavgb mm3, [_EBX+TMP0]
+  lea _EBX, [_EBX+2*TMP0]
   psadbw mm0, mm2
-  lea eax, [eax+2*ecx]
+  lea _EAX, [_EAX+2*TMP0]
   psadbw mm1, mm3
   paddusw mm5, mm0
   paddusw mm6, mm1
 %endmacro
 
 %macro MEAN_16x16_SSE 0
-  movq mm0, [eax]
-  movq mm1, [eax+8]
+  movq mm0, [_EAX]
+  movq mm1, [_EAX+8]
   psadbw mm0, mm7
   psadbw mm1, mm7
-  add eax, ecx
+  add _EAX, TMP0
   paddw mm5, mm0
   paddw mm6, mm1
 %endmacro
 
 %macro ABS_16x16_SSE 0
-  movq mm0, [eax]
-  movq mm1, [eax+8]
+  movq mm0, [_EAX]
+  movq mm1, [_EAX+8]
   psadbw mm0, mm4
   psadbw mm1, mm4
-  lea eax, [eax+ecx]
+  lea _EAX, [_EAX+TMP0]
   paddw mm5, mm0
   paddw mm6, mm1
 %endmacro
@@ -140,7 +118,7 @@ mmx_one: times 4 dw 1
 ; Code
 ;=============================================================================
 
-SECTION .text
+TEXT
 
 cglobal sad16_xmm
 cglobal sad8_xmm
@@ -158,12 +136,12 @@ cglobal sad16v_xmm
 ;
 ;-----------------------------------------------------------------------------
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 sad16_xmm:
 
-  mov eax, [esp+ 4] ; Src1
-  mov edx, [esp+ 8] ; Src2
-  mov ecx, [esp+12] ; Stride
+  mov _EAX, prm1 ; Src1
+  mov TMP1, prm2 ; Src2
+  mov TMP0, prm3 ; Stride
 
   pxor mm5, mm5 ; accum1
   pxor mm6, mm6 ; accum2
@@ -189,7 +167,7 @@ sad16_xmm:
   paddusw mm6,mm5
   movd eax, mm6
   ret
-.endfunc
+ENDFUNC
 
 
 ;-----------------------------------------------------------------------------
@@ -200,14 +178,14 @@ sad16_xmm:
 ;
 ;-----------------------------------------------------------------------------
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 sad8_xmm:
 
-  mov eax, [esp+ 4] ; Src1
-  mov edx, [esp+ 8] ; Src2
-  mov ecx, [esp+12] ; Stride
-  push ebx
-  lea ebx, [ecx+ecx]
+  mov _EAX, prm1 ; Src1
+  mov TMP1, prm2 ; Src2
+  mov TMP0, prm3 ; Stride
+  push _EBX
+  lea _EBX, [TMP0+TMP0]
 
   pxor mm5, mm5 ; accum1
   pxor mm6, mm6 ; accum2
@@ -216,12 +194,12 @@ sad8_xmm:
   SAD_8x8_SSE
   SAD_8x8_SSE
 
-  movq mm0, [eax]
-  movq mm1, [eax+ecx]
-  psadbw mm0, [edx]
-  psadbw mm1, [edx+ecx]
+  movq mm0, [_EAX]
+  movq mm1, [_EAX+TMP0]
+  psadbw mm0, [TMP1]
+  psadbw mm1, [TMP1+TMP0]
 
-  pop ebx
+  pop _EBX
 
   paddusw mm5,mm0
   paddusw mm6,mm1
@@ -230,7 +208,7 @@ sad8_xmm:
   movd eax, mm6
 
   ret
-.endfunc
+ENDFUNC
 
 
 ;-----------------------------------------------------------------------------
@@ -242,14 +220,18 @@ sad8_xmm:
 ;
 ;-----------------------------------------------------------------------------
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 sad16bi_xmm:
-  push ebx
-  mov eax, [esp+4+ 4] ; Src
-  mov edx, [esp+4+ 8] ; Ref1
-  mov ebx, [esp+4+12] ; Ref2
-  mov ecx, [esp+4+16] ; Stride
+  mov _EAX, prm1 ; Src
+  mov TMP1, prm2 ; Ref1
+  mov TMP0, prm4 ; Stride
 
+  push _EBX
+%ifdef ARCH_IS_X86_64
+  mov _EBX, prm3
+%else
+  mov _EBX, [_ESP+4+12] ; Ref2
+%endif
   pxor mm5, mm5 ; accum1
   pxor mm6, mm6 ; accum2
 
@@ -273,9 +255,9 @@ sad16bi_xmm:
 
   paddusw mm6,mm5
   movd eax, mm6
-  pop ebx
+  pop _EBX
   ret
-.endfunc
+ENDFUNC
 
 ;-----------------------------------------------------------------------------
 ;
@@ -286,17 +268,22 @@ sad16bi_xmm:
 ;
 ;-----------------------------------------------------------------------------
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 sad8bi_xmm:
-  push ebx
-  mov eax, [esp+4+ 4] ; Src
-  mov edx, [esp+4+ 8] ; Ref1
-  mov ebx, [esp+4+12] ; Ref2
-  mov ecx, [esp+4+16] ; Stride
+  mov _EAX, prm1 ; Src
+  mov TMP1, prm2 ; Ref1
+  mov TMP0, prm4 ; Stride
+
+  push _EBX
+%ifdef ARCH_IS_X86_64
+  mov _EBX, prm3
+%else
+  mov _EBX, [_ESP+4+12] ; Ref2
+%endif
 
   pxor mm5, mm5 ; accum1
   pxor mm6, mm6 ; accum2
-.Loop
+.Loop:
   SADBI_8x8_XMM
   SADBI_8x8_XMM
   SADBI_8x8_XMM
@@ -304,9 +291,9 @@ sad8bi_xmm:
 
   paddusw mm6,mm5
   movd eax, mm6
-  pop ebx
+  pop _EBX
   ret
-.endfunc
+ENDFUNC
 
 
 ;-----------------------------------------------------------------------------
@@ -316,11 +303,11 @@ sad8bi_xmm:
 ;
 ;-----------------------------------------------------------------------------
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 dev16_xmm:
 
-  mov eax, [esp+ 4] ; Src
-  mov ecx, [esp+ 8] ; Stride
+  mov _EAX, prm1 ; Src
+  mov TMP0, prm2 ; Stride
 
   pxor mm7, mm7 ; zero
   pxor mm5, mm5 ; mean accums
@@ -356,7 +343,7 @@ dev16_xmm:
 
 	; mm4 contains the mean
 
-  mov eax, [esp+ 4] ; Src
+  mov _EAX, prm1 ; Src
 
 
   pxor mm5, mm5 ; sums
@@ -387,7 +374,7 @@ dev16_xmm:
 
   movd eax, mm6
   ret
-.endfunc
+ENDFUNC
 
 ;-----------------------------------------------------------------------------
 ;int sad16v_xmm(const uint8_t * const cur,
@@ -396,13 +383,18 @@ dev16_xmm:
 ;               int* sad8);
 ;-----------------------------------------------------------------------------
 
-ALIGN 16
+ALIGN SECTION_ALIGN
 sad16v_xmm:
-  push ebx
-  mov eax, [esp+4+ 4] ; Src1
-  mov edx, [esp+4+ 8] ; Src2
-  mov ecx, [esp+4+12] ; Stride
-  mov ebx, [esp+4+16] ; sad ptr
+  mov _EAX, prm1 ; Src1
+  mov TMP1, prm2 ; Src2
+  mov TMP0, prm3 ; Stride
+
+  push _EBX
+%ifdef ARCH_IS_X86_64
+  mov _EBX, prm4
+%else
+  mov _EBX, [_ESP+4+16] ; sad ptr
+%endif
 
   pxor mm5, mm5 ; accum1
   pxor mm6, mm6 ; accum2
@@ -419,8 +411,8 @@ sad16v_xmm:
 
   paddusw mm7, mm5
   paddusw mm7, mm6
-  movd [ebx], mm5
-  movd [ebx+4], mm6
+  movd [_EBX], mm5
+  movd [_EBX+4], mm6
 
   pxor mm5, mm5 ; accum1
   pxor mm6, mm6 ; accum2
@@ -436,11 +428,16 @@ sad16v_xmm:
 
   paddusw mm7, mm5
   paddusw mm7, mm6
-  movd [ebx+8], mm5
-  movd [ebx+12], mm6
+  movd [_EBX+8], mm5
+  movd [_EBX+12], mm6
 
   movd eax, mm7
-  pop ebx
+  pop _EBX
   ret
-.endfunc
+ENDFUNC
+
+
+%ifidn __OUTPUT_FORMAT__,elf
+section ".note.GNU-stack" noalloc noexec nowrite progbits
+%endif
 

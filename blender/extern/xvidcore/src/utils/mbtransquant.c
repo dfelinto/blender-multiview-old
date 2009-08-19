@@ -21,7 +21,7 @@
  *  along with this program ; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  *
- * $Id: mbtransquant.c,v 1.29 2005/11/22 10:23:01 suxen_drol Exp $
+ * $Id: mbtransquant.c,v 1.32 2006/07/10 08:09:59 syskin Exp $
  *
  ****************************************************************************/
 
@@ -122,27 +122,30 @@ MBQuantIntra(const MBParam * pParam,
 			 int16_t qcoeff[6 * 64],
 			 int16_t data[6*64])
 {
-	int mpeg;
 	int scaler_lum, scaler_chr;
+	quant_intraFuncPtr quant;
 
-	quant_intraFuncPtr const quant[2] =
-		{
-			quant_h263_intra,
-			quant_mpeg_intra
-		};
+	/* check if quant matrices need to be re-initialized with new quant */
+	if (pParam->vol_flags & XVID_VOL_MPEGQUANT) {
+		if (pParam->last_quant_initialized_intra != pMB->quant) {
+			init_intra_matrix(pParam->mpeg_quant_matrices, pMB->quant);
+		}
+		quant = quant_mpeg_intra;
+	} else {
+		quant = quant_h263_intra;
+	}
 
-	mpeg = !!(pParam->vol_flags & XVID_VOL_MPEGQUANT);
 	scaler_lum = get_dc_scaler(pMB->quant, 1);
 	scaler_chr = get_dc_scaler(pMB->quant, 0);
 
 	/* Quantize the block */
 	start_timer();
-	quant[mpeg](&data[0 * 64], &qcoeff[0 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
-	quant[mpeg](&data[1 * 64], &qcoeff[1 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
-	quant[mpeg](&data[2 * 64], &qcoeff[2 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
-	quant[mpeg](&data[3 * 64], &qcoeff[3 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
-	quant[mpeg](&data[4 * 64], &qcoeff[4 * 64], pMB->quant, scaler_chr, pParam->mpeg_quant_matrices);
-	quant[mpeg](&data[5 * 64], &qcoeff[5 * 64], pMB->quant, scaler_chr, pParam->mpeg_quant_matrices);
+	quant(&data[0 * 64], &qcoeff[0 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
+	quant(&data[1 * 64], &qcoeff[1 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
+	quant(&data[2 * 64], &qcoeff[2 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
+	quant(&data[3 * 64], &qcoeff[3 * 64], pMB->quant, scaler_lum, pParam->mpeg_quant_matrices);
+	quant(&data[4 * 64], &qcoeff[4 * 64], pMB->quant, scaler_chr, pParam->mpeg_quant_matrices);
+	quant(&data[5 * 64], &qcoeff[5 * 64], pMB->quant, scaler_chr, pParam->mpeg_quant_matrices);
 	stop_quant_timer();
 }
 
@@ -183,7 +186,8 @@ dct_quantize_trellis_c(int16_t *const Out,
 					   const uint16_t * const Zigzag,
 					   const uint16_t * const QuantMatrix,
 					   int Non_Zero,
-					   int Sum);
+					   int Sum,
+					   int Lambda_Mod);
 
 /* Quantize all blocks -- Inter mode */
 static __inline uint8_t
@@ -235,7 +239,8 @@ MBQuantInter(const MBParam * pParam,
 										 pMB->quant, &scan_tables[0][0],
 										 matrix,
 										 63,
-										 sum);
+										 sum,
+										 pMB->lambda[i]);
 		}
 		stop_quant_timer();
 
@@ -756,6 +761,8 @@ Find_Last(const int16_t *C, const uint16_t *Zigzag, int i)
 	return -1;
 }
 
+#define TRELLIS_MIN_EFFORT	3
+
 /* this routine has been strippen of all debug code */
 static int
 dct_quantize_trellis_c(int16_t *const Out,
@@ -764,7 +771,8 @@ dct_quantize_trellis_c(int16_t *const Out,
 					   const uint16_t * const Zigzag,
 					   const uint16_t * const QuantMatrix,
 					   int Non_Zero,
-					   int Sum)
+					   int Sum,
+					   int Lambda_Mod)
 {
 
 	/* Note: We should search last non-zero coeffs on *real* DCT input coeffs
@@ -779,7 +787,7 @@ dct_quantize_trellis_c(int16_t *const Out,
 	uint32_t * const Run_Costs = Run_Costs0 + 1;
 
 	/* it's 1/lambda, actually */
-	const int Lambda = Trellis_Lambda_Tabs[Q-1];
+	const int Lambda = (Lambda_Mod*Trellis_Lambda_Tabs[Q-1])>>LAMBDA_EXP;
 
 	int Run_Start = -1;
 	uint32_t Min_Cost = 2<<TL_SHIFT;
@@ -793,8 +801,8 @@ dct_quantize_trellis_c(int16_t *const Out,
 	Run_Costs[-1] = 2<<TL_SHIFT;
 
 	Non_Zero = Find_Last(Out, Zigzag, Non_Zero);
-	if (Non_Zero<0)
-		return 0; /* Sum is zero if there are only zero coeffs */
+	if (Non_Zero < TRELLIS_MIN_EFFORT) 
+		Non_Zero = TRELLIS_MIN_EFFORT;
 
 	for(i=0; i<=Non_Zero; i++) {
 		const int q = ((Q*QuantMatrix[Zigzag[i]])>>4);

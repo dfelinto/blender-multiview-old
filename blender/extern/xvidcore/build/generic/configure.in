@@ -1,6 +1,6 @@
 dnl ==========================================================================
 dnl
-dnl Autoconf script for XviD
+dnl Autoconf script for Xvid
 dnl
 dnl Copyright(C) 2003-2004 Edouard Gomez <ed.gomez@free.fr>
 dnl
@@ -8,15 +8,17 @@ dnl ==========================================================================
 
 AC_PREREQ([2.50])
 
-AC_INIT([XviD], [1.1.0], [xvid-devel@xvid.org])
+AC_INIT([Xvid], [1.2.2], [xvid-devel@xvid.org])
 AC_CONFIG_SRCDIR(configure.in)
 
 dnl Do not forget to increase that when needed.
 API_MAJOR="4"
-API_MINOR="1"
+API_MINOR="2"
 
-dnl NASM version requirement
-minimum_nasm_patch_version=34
+dnl NASM/YASM version requirement
+minimum_yasm_minor_version=8
+minimum_nasm_minor_version=0
+minimum_nasm_major_version=2
 nasm_prog="nasm"
 yasm_prog="yasm"
 
@@ -25,7 +27,6 @@ our_cflags_defaults="-Wall"
 our_cflags_defaults="$our_cflags_defaults -O2"
 our_cflags_defaults="$our_cflags_defaults -fstrength-reduce"
 our_cflags_defaults="$our_cflags_defaults -finline-functions"
-our_cflags_defaults="$our_cflags_defaults -freduce-all-givs"
 our_cflags_defaults="$our_cflags_defaults -ffast-math"
 our_cflags_defaults="$our_cflags_defaults -fomit-frame-pointer"
 
@@ -199,7 +200,7 @@ case "$ac_cv_sizeof_int_p" in
 	BUS="64BIT"
 	;;
      *)
-	AC_MSG_ERROR([XviD supports only 32/64 bit architectures])
+	AC_MSG_ERROR([Xvid supports only 32/64 bit architectures])
 	;;
 esac
 
@@ -292,7 +293,7 @@ case "$target_os" in
 	if test x"$macosx_module" = x"no"; then
 	   AC_MSG_RESULT([dylib options])
 	   SHARED_LIB="libxvidcore.\$(API_MAJOR).\$(SHARED_EXTENSION)"
-	   SPECIFIC_LDFLAGS="-dynamiclib -flat_namespace -compatibility_version \$(API_MAJOR) -current_version \$(API_MAJOR).\$(API_MINOR) -install_name \$(libdir)/\$(SHARED_LIB)"
+	   SPECIFIC_LDFLAGS="-Wl,-read_only_relocs,suppress -dynamiclib -flat_namespace -compatibility_version \$(API_MAJOR) -current_version \$(API_MAJOR).\$(API_MINOR) -install_name \$(libdir)/\$(SHARED_LIB)"
 	else 
 	   AC_MSG_RESULT([module options])
  	   PRE_SHARED_LIB="libxvidcore.\$(SHARED_EXTENSION)-temp.o"
@@ -341,8 +342,6 @@ if test "$ARCHITECTURE" = "IA32" -o "$ARCHITECTURE" = "X86_64" ; then
 
    dnl
    dnl Checking for nasm compatible programs
-   dnl yasm is preferred over nasm, because... i can use it
-   dnl to profile assembly code ;-)
    dnl
 
    found_nasm_comp_prog="no"
@@ -351,30 +350,50 @@ if test "$ARCHITECTURE" = "IA32" -o "$ARCHITECTURE" = "X86_64" ; then
    dnl Check for yasm first
    AC_CHECK_PROG([ac_yasm], [$yasm_prog], [yes], [no], , [yes])
    if test "$ac_yasm" = "yes" ; then
-     found_nasm_comp_prog="yes"
-     chosen_asm_prog="$yasm_prog"
+       dnl
+       dnl Checking yasm version
+       dnl
+       AC_MSG_CHECKING([for yasm version])
+       yasm_minor=`$yasm_prog --version | cut -d '.' -f 2 | cut -d ' ' -f 1`
+       if test -z $yasm_minor ; then
+          yasm_minor=-1
+       fi
+       AC_MSG_RESULT([$yasm_minor])
+
+       dnl Actually, yasm >= 0.7.99.2161 should be ok
+       dnl But I'm too lazy to check also the patch version...
+       if test "$yasm_minor" -lt "$minimum_yasm_minor_version" ; then
+         AC_MSG_WARN([yasm version is too old])
+       else
+         found_nasm_comp_prog="yes"
+         chosen_asm_prog="$yasm_prog"
+       fi
    fi
 
-   dnl if yasm hasn't been found, then check for nasm (not buggy version)
-   if test "$found_nasm_comp_prog" = "no" -a "$ARCHITECTURE" != "X86_64" ; then
+   dnl Check for nasm (not buggy version)
+   if test "$found_nasm_comp_prog" = "no" ; then
        AC_CHECK_PROG([ac_nasm], [$nasm_prog], [yes], [no], , [yes])
        if test "$ac_nasm" = "yes" ; then
            dnl
-           dnl Checking nasm patch version
+           dnl Checking nasm version
            dnl
-           AC_MSG_CHECKING([for nasm patch version])
-           nasm_patch=`$nasm_prog -r | cut -d '.' -f 3 | cut -d ' ' -f 1`
-           if test -z $nasm_patch ; then
-              nasm_patch=-1
+           AC_MSG_CHECKING([for nasm version])
+           nasm_minor=`$nasm_prog -v | cut -d '.' -f 2 | cut -d ' ' -f 1`
+           nasm_major=`$nasm_prog -v | cut -d '.' -f 1 | cut -d ' ' -f 3`
+           if test -z $nasm_minor ; then
+              nasm_minor=-1
            fi
-           AC_MSG_RESULT([$nasm_patch])
+           if test -z $nasm_major ; then
+              nasm_major=-1
+           fi
+           AC_MSG_RESULT([$nasm_major])
 
-
-           if test "$nasm_patch" -lt "$minimum_nasm_patch_version" ; then
-               AC_MSG_WARN([nasm patch version is too old])
+           dnl need nasm 2.x for SSE3/4 and X86_64
+           if test "$nasm_major" -lt "$minimum_nasm_major_version" ; then
+             AC_MSG_WARN([nasm version is too old])
            else
-               found_nasm_comp_prog="yes"
-		       chosen_asm_prog="$nasm_prog"
+             found_nasm_comp_prog="yes"
+	       chosen_asm_prog="$nasm_prog"
            fi
        fi
    fi
@@ -386,25 +405,41 @@ if test "$ARCHITECTURE" = "IA32" -o "$ARCHITECTURE" = "X86_64" ; then
        AC_MSG_CHECKING([for asm object format])
        case "$target_os" in
            *bsd*|linux*|beos|irix*|solaris*)
-               AC_MSG_RESULT([elf])
-               NASM_FORMAT="elf"
+               if test "$ARCHITECTURE" = "X86_64" ; then
+                   AC_MSG_RESULT([elf64])
+                   NASM_FORMAT="elf64"
+               else
+                   AC_MSG_RESULT([elf])
+                   NASM_FORMAT="elf"
+               fi
 	       MARK_FUNCS="-DMARK_FUNCS"
 	           PREFIX=""
                ;;
            [[cC]][[yY]][[gG]][[wW]][[iI]][[nN]]*|mingw32*|mks*)
-               AC_MSG_RESULT([win32])
-               NASM_FORMAT="win32"
-	       PREFIX="-DPREFIX"
+               if test "$ARCHITECTURE" = "X86_64" ; then
+                   AC_MSG_RESULT([win64])
+                   NASM_FORMAT="win64"
+               else
+                   AC_MSG_RESULT([win32])
+                   NASM_FORMAT="win32"
+               fi
+	       PREFIX="-DWINDOWS"
 	       MARK_FUNCS=""
+               ;;
+           *darwin*)
+               AC_MSG_RESULT([macho])
+               NASM_FORMAT="macho"
+               PREFIX="-DPREFIX"
+               MARK_FUNCS=""
                ;;
        esac
 
        AS="$chosen_asm_prog"
        ASSEMBLY_EXTENSION="asm"
-       AFLAGS="-I\$(<D)/ -f $NASM_FORMAT $PREFIX $MARK_FUNCS"
+       AFLAGS="-I\$(<D)/ -I../../src/ -f $NASM_FORMAT $PREFIX $MARK_FUNCS"
        ASSEMBLY_SOURCES="SRC_${ARCHITECTURE}"
        if test "$ARCHITECTURE" = "X86_64" ; then
-               AFLAGS=${AFLAGS}" -m amd64"
+               AFLAGS=${AFLAGS}" -DARCH_IS_X86_64"
        fi
    else 
        AC_MSG_WARN([no correct assembler was found - Compiling generic sources only])
@@ -420,7 +455,7 @@ dnl intrinsic altivec functions and types as they are supported by both Apple
 dnl and GNU gcc with very slight changes to code which can be sumed up by:
 dnl
 dnl Apple:
-dnl  - compile with the option -faltivec
+dnl  - compile with the option -arch ppc -faltivec
 dnl  - define vectors with parentheses vec = (0,0,0,0)
 dnl GNU
 dnl  - compile with -maltivec -mabi=altivec
@@ -445,7 +480,7 @@ cat > conftest.c << EOF
 #include <altivec.h>
 int main() { return(0); }
 EOF
-   if $CC -faltivec -c conftest.c 2>/dev/null 1>/dev/null || \
+   if $CC -arch ppc -faltivec -c conftest.c 2>/dev/null 1>/dev/null || \
       $CC -maltivec -mabi=altivec -c conftest.c 2>/dev/null 1>/dev/null ; then
         AC_MSG_RESULT(yes)
         SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS -DHAVE_ALTIVEC_H"
@@ -469,9 +504,9 @@ int main()
   return(0);
 }
 EOF
-   if $CC $TEMP_ALTIVEC -faltivec -c conftest.c 2>/dev/null 1>/dev/null ; then
+   if $CC $TEMP_ALTIVEC -arch ppc -faltivec -c conftest.c 2>/dev/null 1>/dev/null ; then
         AC_MSG_RESULT([yes (Apple)])
-        SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS -faltivec -DHAVE_ALTIVEC_PARENTHESES_DECL $TEMP_ALTIVEC"
+        SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS -arch ppc -faltivec -DHAVE_ALTIVEC_PARENTHESES_DECL $TEMP_ALTIVEC"
 	PPC_ALTIVEC_SOURCES="SRC_PPC_ALTIVEC"
    else
 cat > conftest.c << EOF
@@ -545,6 +580,26 @@ AC_CHECK_HEADERS(
 
 dnl ==========================================================================
 dnl
+dnl Check for pthread
+dnl
+dnl ==========================================================================
+
+AC_CHECK_HEADER(
+	pthread.h,
+	AC_CHECK_LIB(
+		pthread,
+		pthread_create,
+		AC_CHECK_LIB(
+			pthread,
+			pthread_join,
+			SPECIFIC_CFLAGS="$SPECIFIC_CFLAGS -DHAVE_PTHREAD"
+			SPECIFIC_LDFLAGS="$SPECIFIC_LDFLAGS -lpthread",
+			AC_MSG_WARN(Pthread not supported. No SMP support)),
+		AC_MSG_WARN(Pthread not supported. No SMP support)),
+	AC_MSG_WARN(Pthread not supported. No SMP support))
+
+dnl ==========================================================================
+dnl 
 dnl Now we can set CFLAGS if needed
 dnl
 dnl ==========================================================================
