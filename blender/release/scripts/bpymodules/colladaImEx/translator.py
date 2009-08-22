@@ -6,6 +6,7 @@
 # Copyright (C) 2006: Illusoft - colladablender@illusoft.com
 #    - 2008.08: multiple bugfixes by migius (AKA Remigiusz Fiedler)
 #    - 2009.05: bugfixes by jan (AKA Jan Diederich)
+#    - 2009.08: bugfixed by nico (AKA Nicolai Wojke, Labor Bilderkennen Uni-Koblenz)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,6 +26,14 @@
 # --------------------------------------------------------------------------
 
 # History
+# 2009.08.22 by nico:
+# - Fixed a bug where visual scene nodes containing instances of nodes in the nodes library, 
+#   which themselves instantiate geometry in the geometry library, where not imported
+#   correctly (only the node instantiation was created, not the geometry)
+# - Fixed a bug where nodes in the nodes library that have children instantiating other
+#   nodes in the nodes library where not resolved properly. Added a post-library-creation
+#   phase where DaeInstance object references are updated after the entire library is created
+# - Changed nodes library syntax from 'library_NODES' to 'library_nodes'
 # 2009.05.17 by jan:
 # - More information for the user if an error happened (wrong/missing parenting).
 # - Added a progress bar for export (bar for import already exists). 
@@ -2030,9 +2039,21 @@ class SceneNode(object):
 
 		childlist = []
 		for daeChild in daeNode.nodes:
-			childSceneNode = SceneNode(self.document,self)
-			object = childSceneNode.ObjectFromDae(daeChild)
-			if object: childlist.append(object)
+			try:
+				childSceneNode = SceneNode(self.document,self)
+				object = childSceneNode.ObjectFromDae(daeChild)
+				if object: childlist.append(object)
+			except NameError:
+				if debprn: print "a child of node " + daeNode.id + " has no id ? ?"
+		for iDaeChild in daeNode.iNodes:
+			try:
+				childSceneNode = SceneNode(self.document,self)
+				object = childSceneNode.ObjectFromDae(iDaeChild.object)
+				if object:
+					newObject.makeParent([object], noninverse , 1)
+					childlist.append(object)
+			except NoneType:
+				if debprn: print "a child instance of node " + daeNode.id + " has no id ? ?"
 
 		if newObject:
 			if not self.isJoint and not self.armature:

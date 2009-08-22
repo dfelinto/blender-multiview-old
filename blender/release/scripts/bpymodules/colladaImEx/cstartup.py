@@ -36,7 +36,7 @@ except NameError:
 	print "Error! Could not find Blender modules!"
 	_ERROR = True
 
-__version__ = '0.3.161'
+__version__ = '0.3.162'
 
 # Show the wait cursor in blender
 Blender.Window.WaitCursor(1)
