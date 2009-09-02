@@ -6,7 +6,7 @@
 # Copyright (C) 2006: Illusoft - colladablender@illusoft.com
 #    - 2008.08: multiple bugfixes by migius (AKA Remigiusz Fiedler)
 #    - 2009.05: bugfixes by jan (AKA Jan Diederich)
-#    - 2009.08: bugfixed by nico (AKA Nicolai Wojke, Labor Bilderkennen Uni-Koblenz)
+#    - 2009.08: bugfixes by dynabyte (AKA Dmitri Sviridov, cast3d.org)
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,14 +26,26 @@
 # --------------------------------------------------------------------------
 
 # History
-# 2009.08.22 by nico:
-# - Fixed a bug where visual scene nodes containing instances of nodes in the nodes library, 
-#   which themselves instantiate geometry in the geometry library, where not imported
-#   correctly (only the node instantiation was created, not the geometry)
-# - Fixed a bug where nodes in the nodes library that have children instantiating other
-#   nodes in the nodes library where not resolved properly. Added a post-library-creation
-#   phase where DaeInstance object references are updated after the entire library is created
-# - Changed nodes library syntax from 'library_NODES' to 'library_nodes'
+# 2009.08.11 by dynabyte ( cast3d@gmail.com, www.cast3d.org):
+# - Fixed skeleton/bone and animation. (export only). Brief change log:
+#       - Fuction Controller.SaveToDae :
+#               INV_BIND_MATRIX composition as = (bArmatureObject.matrixWorld * Bone.matrix['ARMATURESPACE']).invert() 
+#       -  Fuction ArmatrureNode.SaveToDae :
+#               - mutliple root bones handling added
+#               - return argument as list
+#       -  Fuction ArmatrureNode.BoneToDae :
+#               - local bone matrix composition as = Bone.matrix['ARMATURESPACE'] * parent_bone.matrix["ARMATURESPACE"].invert()
+#               - bone's action IPOs compiled in to list 
+#               - removed redundant function arguments
+#       -  Fuction Animation.SaveToDae : - new impementation
+#               - removed unused getEulerAnimation() function
+#               - function takes IPOs list as input argument
+#               - new function getLocalPoseMatrix added
+#       -  Fuction SceneNode.SaveSceneToDae : 
+#               - Added creation of Armature node as parent of Skeleton
+#               - Controler transforms cleaned up
+#               - Node animation handling fixedS
+#
 # 2009.05.17 by jan:
 # - More information for the user if an error happened (wrong/missing parenting).
 # - Added a progress bar for export (bar for import already exists). 
@@ -73,9 +85,10 @@ from helperObjects import *
 
 import BPyMesh
 import BPyObject
+import bpy
 
 debprn = 0 #--- print debug "print 'deb: ..."
-dmitri = 0 #switch for testing patch from Dmitri
+dmitri = 1 #switch for testing patch from Dmitri
 
 class Translator(object):
 	isImporter = False
@@ -1033,7 +1046,7 @@ class Controller(object):
 		daeSkin.source = meshName
 
 		# Set the bindshapematrix
-		daeSkin.bindShapeMatrix = Matrix(bMeshObject.matrix).transpose()##bMeshObject.getMatrix('localspace').transpose()
+		daeSkin.bindShapeMatrix = Matrix(bMeshObject.matrix).transpose()
 
 		bArmatureObject = bModifier[Blender.Modifier.Settings.OBJECT]
 		if (bArmatureObject is None):
@@ -1107,6 +1120,7 @@ class Controller(object):
 
 		# Get all vertextGroups
 		vGroups = dict()
+		#print "Bone Mesh=", meshName, "vGroups= ", bMesh.getVertGroupNames()
 		for vertexGroupName in bMesh.getVertGroupNames():
 			vwsdict = vGroups[vertexGroupName] = dict()
 			try:
@@ -1132,23 +1146,15 @@ class Controller(object):
 
 ##				print
 ##				PrintTransforms(Matrix(bArmature.bones[vertexGroupName].matrix['ARMATURESPACE']).transpose().invert(), vertexGroupName)
-				if 0:
-					bindMatrix = Matrix(bArmature.bones[vertexGroupName].matrix['ARMATURESPACE']).transpose()
-					bindMatrix = Matrix(bMeshObject.matrix).transpose() * bindMatrix
-				elif dmitri:	#by dmitri: Use ARAMATURE matrix for a global position/orientation
-					bindMatrix = Matrix(bArmature.bones[vertexGroupName].matrix["ARMATURESPACE"]).resize4x4().transpose()
-					bindMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose() * bindMatrix
-				else:
-					headPos = bArmature.bones[vertexGroupName].head["ARMATURESPACE"]
-					bindMatrix = Matrix([1,0,0,headPos.x], [0,1,0,headPos.y], [0,0,1,headPos.z],[0,0,0,1])
-					bindMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose() * bindMatrix
-
+				#by dmitri(dynabyte): Use ARAMATURE matrix for a global position/orientation
+                                bindMatrix = Matrix(bArmature.bones[vertexGroupName].matrix["ARMATURESPACE"]).resize4x4().transpose()
+                                bindMatrix = Matrix(bArmatureObject.matrixWorld).transpose() * bindMatrix
 				invBindMatrix = Matrix(bindMatrix).invert()
+				#print "Bone =", vertexGroupName, "Final invBindMatrix= " , invBindMatrix.toEuler(), invBindMatrix.translationPart()
 				poseSourceArray.data.extend(MatrixToList(invBindMatrix))
 				poseAccessor.count += 1
 				for vert in verts:
 					weightAccessor.count += 1
-
 
 		vertJointCount = dict()
 		weightIndex = 0
@@ -1299,193 +1305,99 @@ class Animation(object):
 			if t[2] == ta[0]:
 				return [t[0],ta]
 		return None
-
-	def GetEulerAnimations(self, ipo, targetDaeNode, joint=None, bPose=None, bParentMatrix=None, bArmatureObject=None):
-		curves = ipo.getCurves()
-		if not curves is None:
-			quatXList = dict()
-			quatYList = dict()
-			quatZList = dict()
-			quatWList = dict()
-
-			#collect quats
-			quatKey = dict()
-			for cur in curves:
-				curName = cur.getName()
-				if curName.startswith("Quat"):
-					quatKey[curName] = []
-					curNameIndex = curName[-1]
-					if curNameIndex == 'X':
-						for point in cur.bezierPoints:
-							quatXList[point.pt[0]] = point.pt[1]
-					elif curNameIndex == 'Y':
-						for point in cur.bezierPoints:
-							quatYList[point.pt[0]] = point.pt[1]
-					elif curNameIndex == 'Z':
-						for point in cur.bezierPoints:
-							quatZList[point.pt[0]] = point.pt[1]
-					elif curNameIndex == 'W':
-						for point in cur.bezierPoints:
-							quatWList[point.pt[0]] = point.pt[1]
-
-			quats = dict()
-			eulers = dict()
-
-			xKeyList = quatXList.keys()
-			yKeyList = quatYList.keys()
-			zKeyList = quatZList.keys()
-			wKeyList = quatWList.keys()
-
-			#Assumption: All the keys are the same!!
-			for xKey in xKeyList:
-				if not quats.has_key(xKey):
-					quats[xKey] = Quaternion()
-
-			#assign value
-			for key in xKeyList:
-				quats[key].x = quatXList[key]
-			for key in yKeyList:
-				quats[key].y = quatYList[key]
-			for key in zKeyList:
-				quats[key].z = quatZList[key]
-			for key in wKeyList:
-				quats[key].w = quatWList[key]
-
-			for key in quats:
-				euler = quats[key].toEuler()
-
-				if joint is not None:
-					if dmitri:
-						bindMatrix = Matrix(joint.matrix["ARMATURESPACE"]).resize4x4().transpose()
-					else:
-						headPos = joint.head["ARMATURESPACE"]
-						bindMatrix = Matrix([1,0,0,headPos.x], [0,1,0,headPos.y], [0,0,1,headPos.z],[0,0,0,1])
-					armMatrix = Matrix(bindMatrix)
-					if not joint.hasParent():
-						armMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose().invert()
-						armMatrix *= bindMatrix
-
-					if 1: #migius
-						swap = euler.y
-						euler.y = - euler.z
-						euler.z = swap
-
-					else:
-						poseMatrix = Matrix(bParentMatrix).invert() * armMatrix
-						poseMatrix.transpose()
-
-						poseEuler = poseMatrix.toEuler()
-						euler.x += poseEuler.x
-						euler.y += poseEuler.y
-						euler.z += poseEuler.z
-					#if debprn: print 'deb: getEuler: ', joint.name , poseEuler, euler
-
-				eulers[key] = euler
-
-			# this nodes list of euler angles:
-			return eulers
-		return None
-
-	def SaveToDae(self, ipo, targetDaeNode, joint=None, bPose=None, bParentMatrix=None, bArmatureObject=None):
+	
+        def getLocalPoseMatrix(self, node, bArmatureObject=None):
+                if  type(node) == Blender.Types.BoneType:
+                        pose = bArmatureObject.getPose()
+                        pose_bone = pose.bones[node.name]
+                         
+                        if node.hasParent():
+                                parent_bone = node.parent
+                                pose_bone_pose = pose.bones[parent_bone.name]
+                                if not (pose_bone_pose is None):
+                                        return pose_bone.poseMatrix.copy()  *  pose_bone_pose.poseMatrix.invert()                                                        
+                        else:
+                                return pose_bone.poseMatrix.copy() 
+                else:
+                        parent = node.getParent()
+                        if parent is None:
+                               return  node.matrixWorld.copy()
+                        else:
+                               return  node.matrixWorld.copy()  *  parent.matrixWorld.copy().invert()
+                return None
+        
+	def SaveToDae(self, ipos, targetDaeNode, joint, bPose=None, bArmatureObject=None):
 		global sampleAnimation
-		animations = None
-		curves = ipo.getCurves()
-		if not curves is None:
-			animations = dict()
+		frame_orig = Blender.Get('curframe')
+         				
+                # animations for these object types		
+		animations = dict()
+		
+		for ipo, startFrame in ipos:
+			#print "Ipo=", ipo
+			curves = ipo.getCurves()
+			if not curves is None:
+				for curve in curves:
+					cName = curve.getName()
+					interpolation = curve.getInterpolation()
+					#interpolation = curve.interpolation
+					if debprn: print 'deb: interpolation=', interpolation #--------
 
-			for curve in curves:
-				cName = curve.getName()
-				interpolation = curve.getInterpolation()
-				#interpolation = curve.interpolation
-				if debprn: print 'deb: interpolation=', interpolation #--------
-				if cName.startswith("Loc") or cName.startswith("Rot") or cName.startswith("Scale"):
-					if cName.startswith("Loc"):
-						n = collada.DaeSyntax.TRANSLATE
-					elif cName.startswith("Scale"):
-						n = collada.DaeSyntax.SCALE
-					else:
-						n = collada.DaeSyntax.ROTATE+cName[-1]
-					ani = animations.setdefault(n,{})
+                                        # Get all the framenumbers for the current curve.
+                                        frames = [bp.pt[0] for bp in curve.bezierPoints]
+                                        if sampleAnimation: ## if the users wants to sample the animation each frame..
+                                                # .. generate a sequence of frames, starting at the first(smallest) framenumber of the current curve
+                                                #  and ending at the last(largest)framenumber.
+                                                frames = range(min(frames), max(frames)+1)
+                                                ##print cName, frames
+                                                # Now get the values for each frame
+                                        for frameNumber in frames:
+                                                i = frameNumber+startFrame
+                                                Blender.Set('curframe', int(i))
+                                                
+                                                # calculate the value at the current frame.
+                                                timeVal = i # float(curve[float(frameNumber)])
+                                                #print cName, frameNumber, timeVal
+                                                #anit[cName[-1]] = timeVal
+                                                
+                                                poseMatrix = self.getLocalPoseMatrix(joint, bArmatureObject)
+                                                
+                                                aniT = animations.setdefault(str(collada.DaeSyntax.TRANSLATE),{})                                                
+                                                nodePosition = poseMatrix.translationPart()
+                                                anitPos = aniT.setdefault(timeVal,{'X':None, 'Y':None, 'Z':None, 'interpolation':interpolation})
+                                                anitPos['X'] = nodePosition.x
+                                                anitPos['Y'] = nodePosition.y
+                                                anitPos['Z'] = nodePosition.z
 
-					# Get all the framenumbers for the current curve.
-					frames = [bp.pt[0] for bp in curve.bezierPoints]
-					if sampleAnimation: ## if the users wants to sample the animation each frame..
-						# .. generate a sequence of frames, starting at the first(smallest) framenumber of the current curve
-						#  and ending at the last(largest)framenumber.
-						frames = range(min(frames), max(frames)+1)
-					##print cName, frames
-					# Now get the values for each frame
-					for frameNumber in frames:
-						anit = ani.setdefault(float(frameNumber),{'X':None, 'Y':None, 'Z':None, 'interpolation':interpolation})
-						# calculate the value at the current frame.
-						timeVal = float(curve[float(frameNumber)])
-						##print cName, frameNumber, timeVal
-						anit[cName[-1]] = timeVal
+                                                nodeScale = poseMatrix.scalePart()
+                                                aniS = animations.setdefault(str(collada.DaeSyntax.SCALE),{})                                                
+                                                anitScale = aniS.setdefault(timeVal,{'X':None, 'Y':None, 'Z':None, 'interpolation':interpolation})
+                                                anitScale['X'] = nodeScale.x
+                                                anitScale['Y'] = nodeScale.y
+                                                anitScale['Z'] = nodeScale.z
+                                                
+                                                euler = poseMatrix.toEuler()
+                                                aniX = animations.setdefault(str(collada.DaeSyntax.ROTATE) + 'X',{})
+                                                aniY = animations.setdefault(str(collada.DaeSyntax.ROTATE) + 'Y',{})
+                                                aniZ = animations.setdefault(str(collada.DaeSyntax.ROTATE) + 'Z',{})
 
-						if not joint is None:
-							if dmitri:
-								bindMatrix = Matrix(joint.matrix["ARMATURESPACE"]).resize4x4().transpose()
-							else:
-								headPos = joint.head["ARMATURESPACE"]
-								bindMatrix = Matrix([1,0,0,headPos.x], [0,1,0,headPos.y], [0,0,1,headPos.z],[0,0,0,1])
-							armMatrix = bindMatrix
-							if ( not joint.hasParent() ):
-								armMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose()
-								armMatrix *= bindMatrix
+                                                anitx = aniX.setdefault(timeVal,{'X':0, 'Y':0, 'Z':0, 'interpolation':interpolation})
+                                                anitx['X'] = euler.x
+                                                anitx['Y'] = euler.y
+                                                anitx['Z'] = euler.z
 
-							poseMatrix = Matrix(bParentMatrix).invert() * armMatrix
+                                                anity = aniY.setdefault(timeVal,{'X':0, 'Y':0, 'Z':0, 'interpolation':interpolation})
+                                                anity['X'] = euler.x
+                                                anity['Y'] = euler.y
+                                                anity['Z'] = euler.z
 
-							if cName.startswith("Loc"):
-								poseMatrix.transpose()
-								jointPosition = poseMatrix.translationPart()
+                                                anitz = aniZ.setdefault(timeVal,{'X':0, 'Y':0, 'Z':0, 'interpolation':interpolation})
+                                                anitz['X'] = euler.x
+                                                anitz['Y'] = euler.y
+                                                anitz['Z'] = euler.z
 
-								if cName[-1] == 'X':
-									anit['X'] += jointPosition.x
-								if cName[-1] == 'Y':
-									anit['Y'] += jointPosition.y
-								if cName[-1] == 'Z':
-									anit['Z'] += jointPosition.z
-							if cName.startswith("Scale"):
-								poseMatrix.transpose()
-								jointPosition = poseMatrix.scalePart()
-								if cName[-1] == 'X':
-									anit['X'] *= jointPosition.x
-								if cName[-1] == 'Y':
-									anit['Y'] *= jointPosition.y
-								if cName[-1] == 'Z':
-									anit['Z'] *= jointPosition.z
-
-						if cName.startswith("Rot"):
-							anit[cName[-1]] = anit[cName[-1]]*10 # Multiply the angle times 10 (Blender uses angle/10)
-				else:
-					pass
-
-		eulers = self.GetEulerAnimations(ipo, targetDaeNode, joint, bPose, bParentMatrix, bArmatureObject)
-		eulerKeys = eulers.keys()
-
-
-		for key in eulerKeys:
-			euler = eulers[key]
-
-			aniX = animations.setdefault(str(collada.DaeSyntax.ROTATE) + 'X',{})
-			aniY = animations.setdefault(str(collada.DaeSyntax.ROTATE) + 'Y',{})
-			aniZ = animations.setdefault(str(collada.DaeSyntax.ROTATE) + 'Z',{})
-
-			anitx = aniX.setdefault(key,{'X':0, 'Y':0, 'Z':0, 'interpolation':interpolation})
-			anitx['X'] = euler.x
-			anitx['Y'] = euler.y
-			anitx['Z'] = euler.z
-
-			anity = aniY.setdefault(key,{'X':0, 'Y':0, 'Z':0, 'interpolation':interpolation})
-			anity['X'] = euler.x
-			anity['Y'] = euler.y
-			anity['Z'] = euler.z
-
-			anitz = aniZ.setdefault(key,{'X':0, 'Y':0, 'Z':0, 'interpolation':interpolation})
-			anitz['X'] = euler.x
-			anitz['Y'] = euler.y
-			anitz['Z'] = euler.z
-
+		Blender.Set('curframe', frame_orig)
+		
 		# add animations to collada
 		for name, animation in animations.iteritems():
 			daeAnimation = collada.DaeAnimation()
@@ -1594,7 +1506,7 @@ class Animation(object):
 
 				self.document.colladaDocument.animationsLibrary.AddItem(daeAnimation)
 
-	def CreateSourceOutput(self, daeAnimation, count, type):
+        def CreateSourceOutput(self, daeAnimation, count, type):
 		daeSourceOutput = collada.DaeSource()
 		daeSourceOutput.id = self.document.CreateID(daeAnimation.id,'-output')
 		if type == "xyz" or "angle":
@@ -1636,7 +1548,6 @@ class Animation(object):
 			accessorInterpolation.AddParam('ANGLE','Name')
 
 		return [daeSourceOutput, outputArray, daeSourceInterpolation, interpolationArray]
-
 
 class SceneNode(object):
 
@@ -2039,21 +1950,9 @@ class SceneNode(object):
 
 		childlist = []
 		for daeChild in daeNode.nodes:
-			try:
-				childSceneNode = SceneNode(self.document,self)
-				object = childSceneNode.ObjectFromDae(daeChild)
-				if object: childlist.append(object)
-			except NameError:
-				if debprn: print "a child of node " + daeNode.id + " has no id ? ?"
-		for iDaeChild in daeNode.iNodes:
-			try:
-				childSceneNode = SceneNode(self.document,self)
-				object = childSceneNode.ObjectFromDae(iDaeChild.object)
-				if object:
-					newObject.makeParent([object], noninverse , 1)
-					childlist.append(object)
-			except NoneType:
-				if debprn: print "a child instance of node " + daeNode.id + " has no id ? ?"
+			childSceneNode = SceneNode(self.document,self)
+			object = childSceneNode.ObjectFromDae(daeChild)
+			if object: childlist.append(object)
 
 		if newObject:
 			if not self.isJoint and not self.armature:
@@ -2122,6 +2021,7 @@ class SceneNode(object):
 		type = bNode.getType()
 		instance  = None
 		meshID = None
+                #print " Scene Node =", bNode.name, type, bNode.ipo, bNode.action
 		if type == 'Mesh':
 			instance = collada.DaeGeometryInstance()
 			daeGeometry = self.document.colladaDocument.geometriesLibrary.FindObject(bNode.getData(True))
@@ -2157,7 +2057,6 @@ class SceneNode(object):
 			instance.object = daeGeometry
 			instance.bindMaterials = bindMaterials
 
-
 			instanceController = None
 			# Check if this mesh is skinned to an amarture.
 			isSkinned = False
@@ -2182,18 +2081,7 @@ class SceneNode(object):
 					instanceController = collada.DaeControllerInstance()
 					instanceController.object = daeController
 					daeNode.transforms = []
-					loc = [0,0,0]
-					daeNode.transforms.append([collada.DaeSyntax.TRANSLATE, loc])
-
-					rotxVec = [1,0,0,0]
-					rotyVec = [0,1,0,0]
-					rotzVec = [0,0,1,0]
-					daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotzVec])
-					daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotyVec])
-					daeNode.transforms.append([collada.DaeSyntax.ROTATE, rotxVec])
-
-					scale = [1,1,1]
-					daeNode.transforms.append([collada.DaeSyntax.SCALE, scale])
+					
 					#use the rootBone's name for consistancy with vert groups
 					instanceController.skeletons.append(rootBones[0].name)
 					instanceController.bindMaterials = bindMaterials
@@ -2220,17 +2108,39 @@ class SceneNode(object):
 			instance.object = daeLight
 			daeNode.iLights.append(instance)
 		elif type == 'Armature':
-			daeNode.type = collada.DaeSyntax.TYPE_JOINT
 			armatureNode = ArmatureNode(self.document)
 			daeArmature = armatureNode.SaveToDae(bNode.getData(),bNode, bNode.getPose())
-			daeNode = daeArmature[0]
+			if len(daeArmature) > 1 :
+				for nn in daeArmature:
+                                        #print " Amr root node=", nn.name
+					daeNode.nodes.append(nn);
+			else:
+				daeNode.nodes.append(daeArmature[0])
 
 		# Check if the object has an IPO curve. if so, export animation.
-		if not (bNode.ipo is None):
-			ipo = bNode.ipo
-			animation = Animation(self.document)
-			animation.SaveToDae(ipo, daeNode)
+                ipos = list()
+                armob = BPyObject.getObjectArmature(bNode)
+                if (type != 'Armature') and (armob is None):
+                        if  not (bNode.action is None):
+                                ipList = bNode.action.getAllChannelIpos() 
+                                frameNumbers = bNode.action.getFrameNumbers()
+                                #print "ipList=", ipList
+                                #print "Frames=", frameNumbers
+                                if not (frameNumbers is None) and len(frameNumbers) > 0:
+                                        startFrame = min(frameNumbers)
+                                        for  cnl, ip in ipList.iteritems():
+                                                #print "channel ipo", ip				
+                                                #print "startFrame=", startFrame
+                                                ipos.append(tuple([ip, startFrame]))				
 
+                        if not (bNode.ipo is None):
+                                ipo = bNode.ipo
+                                ipos.append(tuple([ipo, 0]))
+                                
+			if len(ipos) > 0:
+				animation = Animation(self.document)
+				animation.SaveToDae(ipos, daeNode, bNode)		
+		
 		# Export layer information.
 		daeNode.layer = ['L'+str(layer) for layer in bNode.layers]
 
@@ -2485,10 +2395,18 @@ class ArmatureNode(object):
 			if not bone.hasParent():
 				rootBones.append(bone)
 
+		#if len(rootBones) > 1:
+		print( #"Please use only a single root for proper export.\n" \
+				"Nr. of root bones: %i.\n" \
+				"List of root bones:" % len(rootBones))
+		for rootBone in rootBones:
+			print("\t%s" % rootBone.__str__())
+			
 		# Only take the first root and ignore it.
-		if len(rootBones) > 0 and not rootBones[0].children is None:
-			daeNodes.append(self.BoneToDae(rootBones[0], bPose,Matrix(), bArmatureObject))
-
+		if len(rootBones) > 0 and not rootBones[0].children is None:                        
+#			daeNodes.append(self.BoneToDae(rootBones[0], bPose,Matrix(), bArmatureObject))
+ 			for bn in rootBones:
+				daeNodes.append(self.BoneToDae(bn, bPose, bArmatureObject))
 			##for childBone in rootBones[0].children:
 ##				print PrintTransforms(Matrix(bPose.bones[rootBones[0].name].poseMatrix).transpose(),rootBones[0].name)
 			##	poseMatrix = Matrix(bPose.bones[rootBones[0].name].poseMatrix).transpose()
@@ -2499,52 +2417,66 @@ class ArmatureNode(object):
 			##	print Matrix(bArmatureObject.matrix).transpose().invert()
 				##daeNodes.append(self.BoneToDae(rootBones[0], bPose, Matrix(bArmatureObject.matrix).transpose().invert(),poseMatrixRotInv, bArmatureObject))
 
-		if len(rootBones) > 1:
-			print("Please use only a single root for proper export.\n" \
-				"Nr. of root bones: %i.\n" \
-				"List of root bones:" % len(rootBones))
-			for rootBone in rootBones:
-				print("\t%s" % rootBone.__str__())
 
 		return daeNodes
 
-	def BoneToDae(self, bBone, bPose, parentMatrix, bArmatureObject, bParentBind=None):
+	def BoneToDae(self, bBone, bPose, bArmatureObject):
+    	        #print "bBone.name", bBone.name
 		daeNode = collada.DaeNode()
 		daeNode.id = daeNode.name = daeNode.sid = self.document.CreateID(bBone.name, '-Joint')
 		daeNode.type = collada.DaeSyntax.TYPE_JOINT
 
-		# Get the transformations
-		if dmitri:
-			bindMatrix = Matrix(bBone.matrix["ARMATURESPACE"]).resize4x4().transpose()
-		else:
-			headPos = bBone.head["ARMATURESPACE"]
-			bindMatrix = Matrix([1,0,0,headPos.x], [0,1,0,headPos.y], [0,0,1,headPos.z],[0,0,0,1])
+  		# Get the transformations
+  		# by dmitri (dynabyte)
+                bindMatrix = Matrix(bBone.matrix["ARMATURESPACE"]).resize4x4()                 
+                if bBone.hasParent():
+                        parent_bone = bBone.parent
+                        parentMatrix = Matrix(parent_bone.matrix["ARMATURESPACE"]).resize4x4()
+                        bindMatrix = bindMatrix * parentMatrix.invert()
+                        
 		armMatrix = bindMatrix
+		#print "Final armMatrix", armMatrix.toEuler(), armMatrix.translationPart(), armMatrix.scalePart()
 
-		if ( not bBone.hasParent() ):
-			armMatrix = Matrix(bArmatureObject.getMatrix('localspace')).transpose()
-			armMatrix *= bindMatrix
+		# get all action ipos
+		strips = bArmatureObject.actionStrips 
+		allActions = list() # Blender.Armature.NLA.GetActions() 
+		for strip in strips:
+                        action = strip.action
+			if not (action is None):
+				allActions.append(tuple([action, strip.stripStart]))
+		
+   		#print "allActions", allActions
+   		
+                action =  bArmatureObject.action		
+		if action and (action not in allActions):
+                        startFrame = min(action.getFrameNumbers())
+                        allActions.append(tuple([action, startFrame]))
 
-		try :
-			armAction = bArmatureObject.getAction()
-			ipList = armAction.getAllChannelIpos()
+		#print "action", action
+		
+                ipos = list()
+		for action, startFrame in allActions:
+			try :
+				#armAction = bArmatureObject.getAction()
+				#ipList = armAction.getAllChannelIpos()
+				ipList = action.getAllChannelIpos() #armAction.getAllChannelIpos()
+				ip_bone_channel = ipList[bBone.name]
+				if not (ip_bone_channel is None):
+					ip_bone_name = ip_bone_channel.getName()
+					ipo = Blender.Ipo.Get(ip_bone_name)
 
-			ip_bone_channel = ipList[bBone.name]
-			ip_bone_name = ip_bone_channel.getName()
-			ipo = Blender.Ipo.Get(ip_bone_name)
+					if not (ipo is None):
+						ipos.append(tuple([ipo, startFrame]))
+			except:
+				pass
 
-			if not (ipo is None):
-				animation = Animation(self.document)
-				if bParentBind is None:
-					animation.SaveToDae(ipo, daeNode, bBone, bPose, parentMatrix, bArmatureObject)
-				else:
-					animation.SaveToDae(ipo, daeNode, bBone, bPose, bParentBind, bArmatureObject)
-		except:
-			pass
+		#print "IPOs", ipos
+		if len(ipos) > 0 :
+			animation = Animation(self.document)
+			animation.SaveToDae(ipos, daeNode, bBone, bPose, bArmatureObject)
 
-		mat = Matrix(parentMatrix).invert() * armMatrix
+		mat = armMatrix
 		boneMatrix = Matrix(bindMatrix)
-		mat.transpose()
 		#PrintTransforms(mat, "ARMATURESPACE: " + bBone.name)
 
 		if bakeMatrices :
@@ -2570,13 +2502,10 @@ class ArmatureNode(object):
 			scale = mat.scalePart()
 			daeNode.transforms.append([collada.DaeSyntax.SCALE, scale])
 
-
 		if not bBone.children is None:
 			for childBone in bBone.children:
-				daeNode.nodes.append(self.BoneToDae(childBone, bPose, boneMatrix, bArmatureObject, boneMatrix))
+				daeNode.nodes.append(self.BoneToDae(childBone, bPose, bArmatureObject))
 		return daeNode
-
-
 
 class MeshNode(object):
 	def __init__(self,document):
@@ -3059,9 +2988,11 @@ class MeshNode(object):
 		materialName = ''
 
 		for k, daeTriangles in daeTrianglesDict.iteritems():
-			##print k
+			#print mesh.name, k
+                        
 			if k != -1:
 				if not useUV and not mesh.materials is None and len(mesh.materials) > 0 and k >= 0:
+			                print "Mesh materials", mesh.name, mesh.materials[k].name
 					daeTriangles.material = mesh.materials[k].name
 				elif mesh.faceUV and (useUV or mesh.materials is None or len(mesh.materials) == 0):
 					daeTriangles.material = uvTextures[k]
@@ -3086,7 +3017,7 @@ class MeshNode(object):
 		for k, daePolygons in daePolygonsDict.iteritems():
 			if k != -1:
 				if not useUV and not mesh.materials is None and len(mesh.materials) > 0 and k >= 0:
-					daePolygons.material = getattr(mesh.materials[k], 'name', "")
+					daePolygons.material = mesh.materials[k].name
 				elif mesh.faceUV and (useUV or mesh.materials is None or len(mesh.materials) == 0):
 					daePolygons.material = uvTextures[k]
 			offsetCount = 0
