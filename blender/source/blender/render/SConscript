@@ -1,0 +1,26 @@
+#!/usr/bin/python
+Import ('env')
+
+cflags=''
+sources = env.Glob('intern/source/*.c')
+
+incs = 'intern/include #/intern/guardedalloc ../blenlib ../makesdna ../makesrna'
+incs += ' extern/include ../blenkernel ../radiosity/extern/include ../imbuf'
+incs += ' ../include ../blenloader ../../../intern/smoke/extern'
+
+defs = []
+
+if env['WITH_BF_QUICKTIME']:
+    defs.append('WITH_QUICKTIME')
+    incs += ' ../quicktime ' + env['BF_QUICKTIME_INC']
+
+if env['WITH_BF_FFMPEG']:
+    defs.append('WITH_FFMPEG')
+
+if env['WITH_BF_OPENEXR']:
+    defs.append('WITH_OPENEXR')
+
+if env['OURPLATFORM']=='linux2':
+    cflags='-pthread'
+
+env.BlenderLib ( libname = 'bf_render', sources = sources, includes = Split(incs), defines=defs, libtype='core', priority=145, compileflags=cflags )

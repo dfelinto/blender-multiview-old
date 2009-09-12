@@ -1,0 +1,28 @@
+In this directory, I collect patches to FFMPEG, to make it
+work / faster with blender.
+
+Currently: 
+- MMX acceleration for the YUV -> BGRA32 transformation.
+- Bugfix for swscale, that screwed up RGB -> RGB32 with RAW AVIs
+
+Additionally:
+- To make ffmpeg work with scons, you have to disable the libx264 library
+  test! (or you have to install libx264 seperately, your choice)
+  same goes for XVid and libmp3lame
+
+  change
+
+  enabled libx264    && require x264 x264.h x264_encoder_open -lx264
+  enabled libxvid    && require Xvid xvid.h xvid_global -lxvidcore
+  enabled libmp3lame && require LAME lame/lame.h lame_init -lmp3lame -lm
+
+  into
+
+  # enabled libx264    && require x264 x264.h x264_encoder_open -lx264
+  # enabled libxvid    && require Xvid xvid.h xvid_global -lxvidcore
+  # enabled libmp3lame && require LAME lame/lame.h lame_init -lmp3lame -lm
+
+  within configure
+
+
+-- Peter 

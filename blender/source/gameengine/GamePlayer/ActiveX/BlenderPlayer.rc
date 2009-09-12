@@ -1,0 +1,206 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "1 TYPELIB ""BlenderPlayer.tlb""\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 2,42,4,0
+ PRODUCTVERSION 2,42,4,0
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "NaN Technologies BV"
+            VALUE "FileDescription", "Blender 3D Plug-in ActiveX Control"
+            VALUE "FileVersion", "2, 42, 4, 0"
+            VALUE "InternalName", "Blender3DPlugin"
+            VALUE "LegalCopyright", "Copyright (C) 2001"
+            VALUE "OriginalFilename", "Blender3DPlugin.OCX"
+            VALUE "ProductName", "Blender 3D Plug-in ActiveX Control"
+            VALUE "ProductVersion", "2, 42, 4, 0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_ABOUTDLL            ICON                    "BlenderPlayer.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_BLENDERPLAYER       BITMAP                  "BlenderPlayerCtl.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUTBOX_BLENDERPLAYER DIALOGEX 34, 22, 260, 55
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About Blender 3D Plugin Active X Control"
+FONT 8, "MS Sans Serif", 0, 0, 0x0
+BEGIN
+    LTEXT           "Blender 3D Plug-in Active X Control",IDC_STATIC,40,10,170,8
+    LTEXT           "Copyright (C) 2001-2006, NaN Technologies BV",IDC_STATIC,40,20,170,8
+    DEFPUSHBUTTON   "OK",IDOK,221,7,32,14,WS_GROUP
+    ICON            IDI_ABOUTDLL,IDC_STATIC,7,7,20,20
+    CONTROL         "http://www.blender.nl",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,39,33,170,8
+END
+
+IDD_PROPPAGE_BLENDERPLAYER DIALOG  0, 0, 250, 110
+STYLE DS_SETFONT | WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    EDITTEXT        IDC_EDIT_BLENDER_URL,5,15,225,12,ES_AUTOHSCROLL
+    LTEXT           "URL of main Blender file:",IDC_STATIC,5,5,80,8
+    LTEXT           "URL of loading animation:",IDC_STATIC,5,35,85,8
+    EDITTEXT        IDC_EDIT_LOADING_URL,5,45,225,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_FRAME_RATE,76,64,25,12,ES_AUTOHSCROLL
+    LTEXT           "Maximum frame rate:",IDC_STATIC,5,65,67,10
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ABOUTBOX_BLENDERPLAYER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 253
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 48
+    END
+
+    IDD_PROPPAGE_BLENDERPLAYER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 99
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// BLEND
+//
+
+IDR_LOAD                BLEND                   "..\\common\\load.blend"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// RAW
+//
+
+IDR_LOGO_BLENDER        RAW                     "..\\common\\logo_blender.raw"
+IDR_LOGO_BLENDER3D      RAW                     "..\\common\\logo_blender3d.raw"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_BLENDERPLAYER       "Blender 3D Plug-in Active X Control"
+    IDS_BLENDERPLAYER_PPG   "Blender 3D Plug-in Property Page"
+END
+
+STRINGTABLE 
+BEGIN
+    IDS_BLENDERPLAYER_PPG_CAPTION "General"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+1 TYPELIB "BlenderPlayer.tlb"
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

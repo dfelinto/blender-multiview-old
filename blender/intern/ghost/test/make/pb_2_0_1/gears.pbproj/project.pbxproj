@@ -1,0 +1,1507 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 38;
+	objects = {
+		01B794CE00BBFB827F000001 = {
+			isa = PBXFrameworkReference;
+			name = Carbon.framework;
+			path = /System/Library/Frameworks/Carbon.framework;
+			refType = 0;
+		};
+//010
+//011
+//012
+//013
+//014
+//100
+//101
+//102
+//103
+//104
+		1024673900C3AECE7F000001 = {
+			isa = PBXFrameworkReference;
+			name = AGL.framework;
+			path = /System/Library/Frameworks/AGL.framework;
+			refType = 0;
+		};
+//100
+//101
+//102
+//103
+//104
+//190
+//191
+//192
+//193
+//194
+		19C28FACFE9D520D11CA2CBB = {
+			children = (
+				FA2346D103BE608C03FEC31B,
+				FA2346F803BE646E03FEC31B,
+				FA23470703BE64F203FEC31B,
+				FA42708303BE6A3D03FEC31B,
+			);
+			isa = PBXGroup;
+			name = Products;
+			refType = 4;
+		};
+//190
+//191
+//192
+//193
+//194
+//290
+//291
+//292
+//293
+//294
+		29B97313FDCFA39411CA2CEA = {
+			buildStyles = (
+				4A9504CCFFE6A4B311CA0CBA,
+				4A9504CDFFE6A4B311CA0CBA,
+			);
+			isa = PBXProject;
+			mainGroup = 29B97314FDCFA39411CA2CEA;
+			projectDirPath = "";
+			targets = (
+				FA2346D003BE608C03FEC31B,
+				FA2346F703BE646E03FEC31B,
+				FA23470603BE64F203FEC31B,
+				FA42708203BE6A3D03FEC31B,
+			);
+		};
+		29B97314FDCFA39411CA2CEA = {
+			children = (
+				FA2345F003BE606E03FEC31B,
+				FA2345F103BE606E03FEC31B,
+				FA2345F203BE606E03FEC31B,
+				FA2345F303BE606E03FEC31B,
+				FA2345F403BE606E03FEC31B,
+				FA2345F503BE606E03FEC31B,
+				FA2345F603BE606E03FEC31B,
+				FA2345F703BE606E03FEC31B,
+				FA2345F803BE606E03FEC31B,
+				FA23462A03BE606E03FEC31B,
+				FA23462B03BE606E03FEC31B,
+				29B97323FDCFA39411CA2CEA,
+				19C28FACFE9D520D11CA2CBB,
+			);
+			isa = PBXGroup;
+			name = ghost_test;
+			path = "";
+			refType = 4;
+		};
+		29B97323FDCFA39411CA2CEA = {
+			children = (
+				FA13DD7D0161DAD203D58DC5,
+				1024673900C3AECE7F000001,
+				01B794CE00BBFB827F000001,
+				FA2346EC03BE635B03FEC31B,
+			);
+			isa = PBXGroup;
+			name = Frameworks;
+			path = "";
+			refType = 4;
+		};
+//290
+//291
+//292
+//293
+//294
+//4A0
+//4A1
+//4A2
+//4A3
+//4A4
+		4A9504CCFFE6A4B311CA0CBA = {
+			buildRules = (
+			);
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				OPTIMIZATION_CFLAGS = "-O0";
+			};
+			isa = PBXBuildStyle;
+			name = Development;
+		};
+		4A9504CDFFE6A4B311CA0CBA = {
+			buildRules = (
+			);
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			isa = PBXBuildStyle;
+			name = Deployment;
+		};
+//4A0
+//4A1
+//4A2
+//4A3
+//4A4
+//FA0
+//FA1
+//FA2
+//FA3
+//FA4
+		FA0F475E03E08D9503A80005 = {
+			isa = PBXFileReference;
+			path = GHOST_SystemCarbon.cpp;
+			refType = 4;
+		};
+		FA0F475F03E08D9503A80005 = {
+			fileRef = FA0F475E03E08D9503A80005;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA13DD7D0161DAD203D58DC5 = {
+			isa = PBXFrameworkReference;
+			name = OpenGL.framework;
+			path = /System/Library/Frameworks/OpenGL.framework;
+			refType = 0;
+		};
+		FA2345F003BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = "GHOST_C-api.h";
+			path = "../../../GHOST_C-api.h";
+			refType = 4;
+		};
+		FA2345F103BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = GHOST_IEvent.h;
+			path = ../../../GHOST_IEvent.h;
+			refType = 4;
+		};
+		FA2345F203BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = GHOST_IEventConsumer.h;
+			path = ../../../GHOST_IEventConsumer.h;
+			refType = 4;
+		};
+		FA2345F303BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = GHOST_ISystem.h;
+			path = ../../../GHOST_ISystem.h;
+			refType = 4;
+		};
+		FA2345F403BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = GHOST_ITimerTask.h;
+			path = ../../../GHOST_ITimerTask.h;
+			refType = 4;
+		};
+		FA2345F503BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = GHOST_IWindow.h;
+			path = ../../../GHOST_IWindow.h;
+			refType = 4;
+		};
+		FA2345F603BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = GHOST_Rect.h;
+			path = ../../../GHOST_Rect.h;
+			refType = 4;
+		};
+		FA2345F703BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = GHOST_Types.h;
+			path = ../../../GHOST_Types.h;
+			refType = 4;
+		};
+		FA2345F803BE606E03FEC31B = {
+			children = (
+				FA2345FA03BE606E03FEC31B,
+				FA2345FB03BE606E03FEC31B,
+				FA2345FC03BE606E03FEC31B,
+				FA2345FD03BE606E03FEC31B,
+				FA2345FE03BE606E03FEC31B,
+				FA2345FF03BE606E03FEC31B,
+				FA23460003BE606E03FEC31B,
+				FA23460103BE606E03FEC31B,
+				FA23460203BE606E03FEC31B,
+				FA23460303BE606E03FEC31B,
+				FA23460403BE606E03FEC31B,
+				FA23460503BE606E03FEC31B,
+				FA23460603BE606E03FEC31B,
+				FA23460703BE606E03FEC31B,
+				FA23460803BE606E03FEC31B,
+				FA23460903BE606E03FEC31B,
+				FA23460A03BE606E03FEC31B,
+				FA23460B03BE606E03FEC31B,
+				FA23460C03BE606E03FEC31B,
+				FA23460D03BE606E03FEC31B,
+				FA23460E03BE606E03FEC31B,
+				FA23460F03BE606E03FEC31B,
+				FA956ECE03E086FD03A80005,
+				FA23461003BE606E03FEC31B,
+				FA23461103BE606E03FEC31B,
+				FA23461203BE606E03FEC31B,
+				FA23461303BE606E03FEC31B,
+				FA23461403BE606E03FEC31B,
+				FA23461503BE606E03FEC31B,
+				FA0F475E03E08D9503A80005,
+				FA23461703BE606E03FEC31B,
+				FA23461803BE606E03FEC31B,
+				FA23461903BE606E03FEC31B,
+				FA23461A03BE606E03FEC31B,
+				FA23461B03BE606E03FEC31B,
+				FA23461C03BE606E03FEC31B,
+				FA23461D03BE606E03FEC31B,
+				FA23461E03BE606E03FEC31B,
+				FA23461F03BE606E03FEC31B,
+				FA23462003BE606E03FEC31B,
+				FA23462103BE606E03FEC31B,
+				FA23462203BE606E03FEC31B,
+				FA23462303BE606E03FEC31B,
+				FA23462403BE606E03FEC31B,
+				FA23462503BE606E03FEC31B,
+				FA23462603BE606E03FEC31B,
+				FA23462703BE606E03FEC31B,
+				FA23462803BE606E03FEC31B,
+				FA23462903BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			name = intern;
+			path = ../../../intern;
+			refType = 4;
+		};
+		FA2345FA03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_Buttons.cpp;
+			refType = 4;
+		};
+		FA2345FB03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_Buttons.h;
+			refType = 4;
+		};
+		FA2345FC03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = "GHOST_C-api.cpp";
+			refType = 4;
+		};
+		FA2345FD03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_CallbackEventConsumer.cpp;
+			refType = 4;
+		};
+		FA2345FE03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_CallbackEventConsumer.h;
+			refType = 4;
+		};
+		FA2345FF03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_Debug.h;
+			refType = 4;
+		};
+		FA23460003BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_DisplayManager.cpp;
+			refType = 4;
+		};
+		FA23460103BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_DisplayManager.h;
+			refType = 4;
+		};
+		FA23460203BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_DisplayManagerCarbon.cpp;
+			refType = 4;
+		};
+		FA23460303BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_DisplayManagerCarbon.h;
+			refType = 4;
+		};
+		FA23460403BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_DisplayManagerWin32.cpp;
+			refType = 4;
+		};
+		FA23460503BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_DisplayManagerWin32.h;
+			refType = 4;
+		};
+		FA23460603BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_DisplayManagerX11.cpp;
+			refType = 4;
+		};
+		FA23460703BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_DisplayManagerX11.h;
+			refType = 4;
+		};
+		FA23460803BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_Event.h;
+			refType = 4;
+		};
+		FA23460903BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_EventButton.h;
+			refType = 4;
+		};
+		FA23460A03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_EventCursor.h;
+			refType = 4;
+		};
+		FA23460B03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_EventKey.h;
+			refType = 4;
+		};
+		FA23460C03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_EventManager.cpp;
+			refType = 4;
+		};
+		FA23460D03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_EventManager.h;
+			refType = 4;
+		};
+		FA23460E03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_EventPrinter.cpp;
+			refType = 4;
+		};
+		FA23460F03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_EventPrinter.h;
+			refType = 4;
+		};
+		FA23461003BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_ISystem.cpp;
+			refType = 4;
+		};
+		FA23461103BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_ModifierKeys.cpp;
+			refType = 4;
+		};
+		FA23461203BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_ModifierKeys.h;
+			refType = 4;
+		};
+		FA23461303BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_Rect.cpp;
+			refType = 4;
+		};
+		FA23461403BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_System.cpp;
+			refType = 4;
+		};
+		FA23461503BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_System.h;
+			refType = 4;
+		};
+		FA23461703BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_SystemCarbon.h;
+			refType = 4;
+		};
+		FA23461803BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_SystemWin32.cpp;
+			refType = 4;
+		};
+		FA23461903BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_SystemWin32.h;
+			refType = 4;
+		};
+		FA23461A03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_SystemX11.cpp;
+			refType = 4;
+		};
+		FA23461B03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_SystemX11.h;
+			refType = 4;
+		};
+		FA23461C03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_TimerManager.cpp;
+			refType = 4;
+		};
+		FA23461D03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_TimerManager.h;
+			refType = 4;
+		};
+		FA23461E03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_TimerTask.h;
+			refType = 4;
+		};
+		FA23461F03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_Window.cpp;
+			refType = 4;
+		};
+		FA23462003BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_Window.h;
+			refType = 4;
+		};
+		FA23462103BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_WindowCarbon.cpp;
+			refType = 4;
+		};
+		FA23462203BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_WindowCarbon.h;
+			refType = 4;
+		};
+		FA23462303BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_WindowManager.cpp;
+			refType = 4;
+		};
+		FA23462403BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_WindowManager.h;
+			refType = 4;
+		};
+		FA23462503BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_WindowWin32.cpp;
+			refType = 4;
+		};
+		FA23462603BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_WindowWin32.h;
+			refType = 4;
+		};
+		FA23462703BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_WindowX11.cpp;
+			refType = 4;
+		};
+		FA23462803BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GHOST_WindowX11.h;
+			refType = 4;
+		};
+		FA23462903BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = Makefile;
+			refType = 4;
+		};
+		FA23462A03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = Makefile;
+			path = ../../../Makefile;
+			refType = 4;
+		};
+		FA23462B03BE606E03FEC31B = {
+			children = (
+				FA23462C03BE606E03FEC31B,
+				FA23465A03BE606E03FEC31B,
+				FA23465B03BE606E03FEC31B,
+				FA23463803BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			name = test;
+			path = ../..;
+			refType = 4;
+		};
+		FA23462C03BE606E03FEC31B = {
+			children = (
+				FA23462D03BE606E03FEC31B,
+				FA23462E03BE606E03FEC31B,
+				FA23462F03BE606E03FEC31B,
+				FA23463003BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			name = gears;
+			path = /Users/maarten/dev/blender_new/blender/intern/ghost/test/gears;
+			refType = 0;
+		};
+		FA23462D03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = "GHOST_C-Test.c";
+			path = "/Users/maarten/dev/blender_new/blender/intern/ghost/test/gears/GHOST_C-Test.c";
+			refType = 0;
+		};
+		FA23462E03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = GHOST_Test.cpp;
+			path = /Users/maarten/dev/blender_new/blender/intern/ghost/test/gears/GHOST_Test.cpp;
+			refType = 0;
+		};
+		FA23462F03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = Makefile;
+			path = /Users/maarten/dev/blender_new/blender/intern/ghost/test/gears/Makefile;
+			refType = 0;
+		};
+		FA23463003BE606E03FEC31B = {
+			children = (
+				FA23463103BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			name = resources;
+			path = /Users/maarten/dev/blender_new/blender/intern/ghost/test/gears/resources;
+			refType = 0;
+		};
+		FA23463103BE606E03FEC31B = {
+			children = (
+				FA23463203BE606E03FEC31B,
+				FA23463403BE606E03FEC31B,
+				FA23463603BE606E03FEC31B,
+				FA23463703BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = osx;
+			refType = 4;
+		};
+		FA23463203BE606E03FEC31B = {
+			children = (
+				FA23463303BE606E03FEC31B,
+			);
+			isa = PBXVariantGroup;
+			name = InfoPlist.strings;
+			path = "";
+			refType = 4;
+		};
+		FA23463303BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = English;
+			path = English.lproj/InfoPlist.strings;
+			refType = 4;
+		};
+		FA23463403BE606E03FEC31B = {
+			children = (
+				FA23463503BE606E03FEC31B,
+			);
+			isa = PBXVariantGroup;
+			name = MainMenu.nib;
+			path = "";
+			refType = 4;
+		};
+		FA23463503BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = English;
+			path = English.lproj/MainMenu.nib;
+			refType = 4;
+		};
+		FA23463603BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = Info.plist;
+			refType = 4;
+		};
+		FA23463703BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = PkgInfo;
+			refType = 4;
+		};
+		FA23463803BE606E03FEC31B = {
+			children = (
+				FA23463903BE606E03FEC31B,
+				FA23463D03BE606E03FEC31B,
+				FA23464403BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			name = make;
+			path = /Users/maarten/dev/blender_new/blender/intern/ghost/test/make;
+			refType = 0;
+		};
+		FA23463903BE606E03FEC31B = {
+			children = (
+				FA23463A03BE606E03FEC31B,
+				FA23463B03BE606E03FEC31B,
+				FA23463C03BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = msvc_6_0;
+			refType = 4;
+		};
+		FA23463A03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = gears.dsp;
+			refType = 4;
+		};
+		FA23463B03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = gears_C.dsp;
+			refType = 4;
+		};
+		FA23463C03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = ghost_test.dsw;
+			refType = 4;
+		};
+		FA23463D03BE606E03FEC31B = {
+			children = (
+				FA23463E03BE606E03FEC31B,
+				FA23464003BE606E03FEC31B,
+				FA23464203BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = pb;
+			refType = 4;
+		};
+		FA23463E03BE606E03FEC31B = {
+			children = (
+				FA23463F03BE606E03FEC31B,
+			);
+			isa = PBXVariantGroup;
+			name = InfoPlist.strings;
+			path = "";
+			refType = 4;
+		};
+		FA23463F03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = English;
+			path = English.lproj/InfoPlist.strings;
+			refType = 4;
+		};
+		FA23464003BE606E03FEC31B = {
+			children = (
+				FA23464103BE606E03FEC31B,
+			);
+			isa = PBXVariantGroup;
+			name = MainMenu.nib;
+			path = "";
+			refType = 4;
+		};
+		FA23464103BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = English;
+			path = English.lproj/MainMenu.nib;
+			refType = 4;
+		};
+		FA23464203BE606E03FEC31B = {
+			children = (
+				FA23464303BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = gears.pbproj;
+			refType = 4;
+		};
+		FA23464303BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = project.pbxproj;
+			refType = 4;
+		};
+		FA23464403BE606E03FEC31B = {
+			children = (
+				FA23464503BE606E03FEC31B,
+				FA23465303BE606E03FEC31B,
+				FA23465503BE606E03FEC31B,
+				FA23465703BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = pb_2_0_1;
+			refType = 4;
+		};
+		FA23464503BE606E03FEC31B = {
+			children = (
+				FA23464603BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = build;
+			refType = 4;
+		};
+		FA23464603BE606E03FEC31B = {
+			children = (
+				FA23464703BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = gears.build;
+			refType = 4;
+		};
+		FA23464703BE606E03FEC31B = {
+			children = (
+				FA23464803BE606E03FEC31B,
+				FA23464903BE606E03FEC31B,
+				FA23464A03BE606E03FEC31B,
+				FA23464B03BE606E03FEC31B,
+				FA23464C03BE606E03FEC31B,
+				FA23464D03BE606E03FEC31B,
+				FA23464E03BE606E03FEC31B,
+				FA23464F03BE606E03FEC31B,
+				FA23465203BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = gears.pbxindex;
+			refType = 4;
+		};
+		FA23464803BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = categories.pbxbtree;
+			refType = 4;
+		};
+		FA23464903BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = decls.pbxbtree;
+			refType = 4;
+		};
+		FA23464A03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = files.pbxbtree;
+			refType = 4;
+		};
+		FA23464B03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = imports.pbxbtree;
+			refType = 4;
+		};
+		FA23464C03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = pbxindex.header;
+			refType = 4;
+		};
+		FA23464D03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = protocols.pbxbtree;
+			refType = 4;
+		};
+		FA23464E03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = refs.pbxbtree;
+			refType = 4;
+		};
+		FA23464F03BE606E03FEC31B = {
+			children = (
+				FA23465003BE606E03FEC31B,
+				FA23465103BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = strings.pbxstrings;
+			refType = 4;
+		};
+		FA23465003BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = control;
+			refType = 4;
+		};
+		FA23465103BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = strings;
+			refType = 4;
+		};
+		FA23465203BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = subclasses.pbxbtree;
+			refType = 4;
+		};
+		FA23465303BE606E03FEC31B = {
+			children = (
+				FA23465403BE606E03FEC31B,
+			);
+			isa = PBXVariantGroup;
+			name = InfoPlist.strings;
+			path = "";
+			refType = 4;
+		};
+		FA23465403BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = English;
+			path = English.lproj/InfoPlist.strings;
+			refType = 4;
+		};
+		FA23465503BE606E03FEC31B = {
+			children = (
+				FA23465603BE606E03FEC31B,
+			);
+			isa = PBXVariantGroup;
+			name = MainMenu.nib;
+			path = "";
+			refType = 4;
+		};
+		FA23465603BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = English;
+			path = English.lproj/MainMenu.nib;
+			refType = 4;
+		};
+		FA23465703BE606E03FEC31B = {
+			children = (
+				FA23465803BE606E03FEC31B,
+				FA23465903BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			path = gears.pbproj;
+			refType = 4;
+		};
+		FA23465803BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = maarten.pbxuser;
+			refType = 4;
+		};
+		FA23465903BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = project.pbxproj;
+			refType = 4;
+		};
+		FA23465A03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			name = Makefile;
+			path = /Users/maarten/dev/blender_new/blender/intern/ghost/test/Makefile;
+			refType = 0;
+		};
+		FA23465B03BE606E03FEC31B = {
+			children = (
+				FA23465C03BE606E03FEC31B,
+				FA23465D03BE606E03FEC31B,
+				FA23465E03BE606E03FEC31B,
+				FA23465F03BE606E03FEC31B,
+				FA23466003BE606E03FEC31B,
+				FA23466103BE606E03FEC31B,
+				FA23466203BE606E03FEC31B,
+				FA23466303BE606E03FEC31B,
+				FA23466403BE606E03FEC31B,
+				FA23466503BE606E03FEC31B,
+				FA23466603BE606E03FEC31B,
+				FA23466703BE606E03FEC31B,
+				FA23466803BE606E03FEC31B,
+			);
+			isa = PBXGroup;
+			name = multitest;
+			path = /Users/maarten/dev/blender_new/blender/intern/ghost/test/multitest;
+			refType = 0;
+		};
+		FA23465C03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = Basic.c;
+			refType = 4;
+		};
+		FA23465D03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = Basic.h;
+			refType = 4;
+		};
+		FA23465E03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = EventToBuf.c;
+			refType = 4;
+		};
+		FA23465F03BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = EventToBuf.h;
+			refType = 4;
+		};
+		FA23466003BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = GL.h;
+			refType = 4;
+		};
+		FA23466103BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = Makefile;
+			refType = 4;
+		};
+		FA23466203BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = MultiTest.c;
+			refType = 4;
+		};
+		FA23466303BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = ScrollBar.c;
+			refType = 4;
+		};
+		FA23466403BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = ScrollBar.h;
+			refType = 4;
+		};
+		FA23466503BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = Util.c;
+			refType = 4;
+		};
+		FA23466603BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = Util.h;
+			refType = 4;
+		};
+		FA23466703BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = WindowData.c;
+			refType = 4;
+		};
+		FA23466803BE606E03FEC31B = {
+			isa = PBXFileReference;
+			path = WindowData.h;
+			refType = 4;
+		};
+		FA2346CC03BE608C03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2346CD03BE608C03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+				FA2346D203BE60A503FEC31B,
+				FA2346D403BE60B103FEC31B,
+				FA2346D503BE60B403FEC31B,
+				FA2346D603BE60B603FEC31B,
+				FA2346D703BE60BA03FEC31B,
+				FA2346D803BE60BB03FEC31B,
+				FA2346D903BE60BD03FEC31B,
+				FA2346DA03BE60BE03FEC31B,
+				FA2346DB03BE60C003FEC31B,
+				FA2346DC03BE60C103FEC31B,
+				FA2346DE03BE60C903FEC31B,
+				FA2346DF03BE60CA03FEC31B,
+				FA2346E003BE60CC03FEC31B,
+				FA2346E103BE60CE03FEC31B,
+				FA2346E203BE626C03FEC31B,
+				FA0F475F03E08D9503A80005,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2346CE03BE608C03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2346CF03BE608C03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2346D003BE608C03FEC31B = {
+			buildPhases = (
+				FA2346CC03BE608C03FEC31B,
+				FA2346CD03BE608C03FEC31B,
+				FA2346CE03BE608C03FEC31B,
+				FA2346CF03BE608C03FEC31B,
+			);
+			buildSettings = {
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				HEADER_SEARCH_PATHS = "../../.. ../../../../../lib/darwin-6.1-powerpc/string/include";
+				LIBRARY_STYLE = STATIC;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "-lstdc++";
+				OTHER_LIBTOOL_FLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = libghost.a;
+				REZ_EXECUTABLE = YES;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+			};
+			dependencies = (
+			);
+			isa = PBXLibraryTarget;
+			name = ghost;
+			productInstallPath = /usr/local/lib;
+			productName = ghost;
+			productReference = FA2346D103BE608C03FEC31B;
+			shouldUseHeadermap = 0;
+		};
+		FA2346D103BE608C03FEC31B = {
+			isa = PBXLibraryReference;
+			path = libghost.a;
+			refType = 3;
+		};
+		FA2346D203BE60A503FEC31B = {
+			fileRef = FA2345FA03BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346D403BE60B103FEC31B = {
+			fileRef = FA2345FD03BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346D503BE60B403FEC31B = {
+			fileRef = FA23460003BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346D603BE60B603FEC31B = {
+			fileRef = FA23460203BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346D703BE60BA03FEC31B = {
+			fileRef = FA23460C03BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346D803BE60BB03FEC31B = {
+			fileRef = FA23460E03BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346D903BE60BD03FEC31B = {
+			fileRef = FA23461003BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346DA03BE60BE03FEC31B = {
+			fileRef = FA23461103BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346DB03BE60C003FEC31B = {
+			fileRef = FA23461303BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346DC03BE60C103FEC31B = {
+			fileRef = FA23461403BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346DE03BE60C903FEC31B = {
+			fileRef = FA23461C03BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346DF03BE60CA03FEC31B = {
+			fileRef = FA23461F03BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346E003BE60CC03FEC31B = {
+			fileRef = FA23462103BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346E103BE60CE03FEC31B = {
+			fileRef = FA23462303BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346E203BE626C03FEC31B = {
+			fileRef = FA2345FC03BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346EC03BE635B03FEC31B = {
+			isa = PBXFileReference;
+			name = libstring.a;
+			path = "../../../../../lib/darwin-6.1-powerpc/string/lib/libstring.a";
+			refType = 2;
+		};
+		FA2346F203BE646E03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2346F303BE646E03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2346F403BE646E03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+				FA23470003BE64A003FEC31B,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2346F503BE646E03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+				FA2346FB03BE647C03FEC31B,
+				FA2346FC03BE647D03FEC31B,
+				FA2346FD03BE647E03FEC31B,
+				FA2346FE03BE647F03FEC31B,
+				FA2346FF03BE648203FEC31B,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2346F603BE646E03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA2346F703BE646E03FEC31B = {
+			buildPhases = (
+				FA2346F203BE646E03FEC31B,
+				FA2346F303BE646E03FEC31B,
+				FA2346F403BE646E03FEC31B,
+				FA2346F503BE646E03FEC31B,
+				FA2346F603BE646E03FEC31B,
+			);
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = "/Users/maarten/dev/blender_new/blender/lib/darwin-6.1-powerpc/string/lib";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = " -lstdc++";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = gears_c;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = app;
+			};
+			dependencies = (
+				FA2346FA03BE647203FEC31B,
+			);
+			isa = PBXApplicationTarget;
+			name = gears_c;
+			productInstallPath = "$(USER_APPS_DIR)";
+			productName = gears_c;
+			productReference = FA2346F803BE646E03FEC31B;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string></string>
+	<key>CFBundleGetInfoString</key>
+	<string></string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string></string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string></string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		FA2346F803BE646E03FEC31B = {
+			isa = PBXApplicationReference;
+			path = gears_c.app;
+			refType = 3;
+		};
+		FA2346FA03BE647203FEC31B = {
+			isa = PBXTargetDependency;
+			target = FA2346D003BE608C03FEC31B;
+		};
+		FA2346FB03BE647C03FEC31B = {
+			fileRef = FA13DD7D0161DAD203D58DC5;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346FC03BE647D03FEC31B = {
+			fileRef = 1024673900C3AECE7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346FD03BE647E03FEC31B = {
+			fileRef = 01B794CE00BBFB827F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346FE03BE647F03FEC31B = {
+			fileRef = FA2346EC03BE635B03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA2346FF03BE648203FEC31B = {
+			fileRef = FA2346D103BE608C03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA23470003BE64A003FEC31B = {
+			fileRef = FA23462D03BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA23470103BE64F203FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA23470203BE64F203FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA23470303BE64F203FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+				FA42708503BE6B6303FEC31B,
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA23470403BE64F203FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+				FA23470903BE650603FEC31B,
+				FA23470A03BE650603FEC31B,
+				FA23470B03BE650703FEC31B,
+				FA23470C03BE650903FEC31B,
+				FA23470D03BE650B03FEC31B,
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA23470503BE64F203FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA23470603BE64F203FEC31B = {
+			buildPhases = (
+				FA23470103BE64F203FEC31B,
+				FA23470203BE64F203FEC31B,
+				FA23470303BE64F203FEC31B,
+				FA23470403BE64F203FEC31B,
+				FA23470503BE64F203FEC31B,
+			);
+			buildSettings = {
+				HEADER_SEARCH_PATHS = "../../../../../lib/darwin-6.1-powerpc/string/include";
+				LIBRARY_SEARCH_PATHS = "../../../../../lib/darwin-6.1-powerpc/string/lib";
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = " -lstdc++";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = "gears_c++";
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = app;
+			};
+			dependencies = (
+				FA23471A03BE665903FEC31B,
+			);
+			isa = PBXApplicationTarget;
+			name = "gears_c++";
+			productInstallPath = "$(USER_APPS_DIR)";
+			productName = "gears_c++";
+			productReference = FA23470703BE64F203FEC31B;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleGetInfoString</key>
+	<string></string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string></string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string></string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		FA23470703BE64F203FEC31B = {
+			isa = PBXApplicationReference;
+			path = "gears_c++.app";
+			refType = 3;
+		};
+		FA23470903BE650603FEC31B = {
+			fileRef = FA13DD7D0161DAD203D58DC5;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA23470A03BE650603FEC31B = {
+			fileRef = 1024673900C3AECE7F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA23470B03BE650703FEC31B = {
+			fileRef = 01B794CE00BBFB827F000001;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA23470C03BE650903FEC31B = {
+			fileRef = FA2346EC03BE635B03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA23470D03BE650B03FEC31B = {
+			fileRef = FA2346D103BE608C03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA23471A03BE665903FEC31B = {
+			isa = PBXTargetDependency;
+			target = FA2346D003BE608C03FEC31B;
+		};
+		FA42707D03BE6A3D03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXHeadersBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA42707E03BE6A3D03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXResourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA42707F03BE6A3D03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA42708003BE6A3D03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA42708103BE6A3D03FEC31B = {
+			buildActionMask = 2147483647;
+			files = (
+			);
+			isa = PBXRezBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FA42708203BE6A3D03FEC31B = {
+			buildPhases = (
+				FA42707D03BE6A3D03FEC31B,
+				FA42707E03BE6A3D03FEC31B,
+				FA42707F03BE6A3D03FEC31B,
+				FA42708003BE6A3D03FEC31B,
+				FA42708103BE6A3D03FEC31B,
+			);
+			buildSettings = {
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				OTHER_REZFLAGS = "";
+				PRODUCT_NAME = test;
+				SECTORDER_FLAGS = "";
+				WARNING_CFLAGS = "-Wmost -Wno-four-char-constants -Wno-unknown-pragmas";
+				WRAPPER_EXTENSION = app;
+			};
+			dependencies = (
+			);
+			isa = PBXApplicationTarget;
+			name = test;
+			productInstallPath = "$(USER_APPS_DIR)";
+			productName = test;
+			productReference = FA42708303BE6A3D03FEC31B;
+			productSettingsXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
+<plist version=\"1.0\">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string></string>
+	<key>CFBundleGetInfoString</key>
+	<string></string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string></string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string></string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string></string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>0.0.1d1</string>
+</dict>
+</plist>
+";
+			shouldUseHeadermap = 0;
+		};
+		FA42708303BE6A3D03FEC31B = {
+			isa = PBXApplicationReference;
+			path = test.app;
+			refType = 3;
+		};
+		FA42708503BE6B6303FEC31B = {
+			fileRef = FA23462E03BE606E03FEC31B;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		FA956ECE03E086FD03A80005 = {
+			isa = PBXFileReference;
+			path = GHOST_EventWheel.h;
+			refType = 4;
+		};
+	};
+	rootObject = 29B97313FDCFA39411CA2CEA;
+}

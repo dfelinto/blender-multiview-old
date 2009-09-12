@@ -1,0 +1,249 @@
+========================================================================
+Blender 3D plug-in for the Netscape Plugin API
+
+Creation date : 18-Jan-2002
+Author        : Njin-Zu Chen (nzc@blender.nl)
+Version       : $Id$
+========================================================================
+
+Thank you for downloading this beta-test of the Blender3D
+plug-in. This beta test currently only contains Linux, FreeBSD and
+Irix plug-ins. The MS Windows version will be released at a later
+stage. Please read the instructions before installing the plug-in. If
+you encounter problems, we would like to hear about it. You can send
+reports to the above email address. Enjoy!
+
+ps. If you want a Solaris version, please mail me about it. We
+    haven't put it up because I've not come around to testing
+    it. So be warned that it will be experimental :/
+
+========================================================================
+
+Contents:
+
+1. Supported platforms
+2. Installation instructions
+3. Javascript support
+4. Known issues
+5. Filing a bug report
+
+========================================================================
+
+1. Supported platforms
+
+The Blender 3D plug-in runs on Netscape 6.0 or higher, and Mozilla.
+Netscape 4.xx, Opera and Konqueror are not supported.
+
+This beta test concerns the builds for Linux, FreeBSD and Irix. The
+Windows Internet Explorer plug-in is a separate download on our
+website (www.blender3d.com).
+
+Our build platforms are 
+  - Linux glibc 2.1.2, 
+  - FreeBSD 4.2,
+  - Irix 6.5
+
+The tar.gz contains the following files:
+
+README                - this document
+npBlender3DPlugin.so  - the plug-in itself
+Blender3DPlugin.class - Java class file for binding Javascript through JRI
+
+(only in the Linux tar.gz)
+Blender3DPlugin.so    - an XPCOM component for XPConnecting to the plugin
+Blender3DPlugin.xpt   - an XPCOM typefile for identifying the component
+
+========================================================================
+
+2. Installation instructions
+
+Copy the plugin to one of your browsers plugin directories. It may be
+safer to use a user's home. 
+
+The default path for user plug-ins is likely to be ~/.mozilla/plugins
+or ~/.netscape/plugins. For most browsers the plugin search path is
+customizable. The following paths may be of use:
+
+NPX_PLUGIN_PATH
+NS600_PLUGIN_PATH
+MOZILLA_PLUGIN_PATH
+
+so you will need something like
+
+setenv MOZILLA_PLUGIN_PATH ~/.mozilla/plugins
+
+> Copy npBlender3DPlugin.so to the directory you want to use for  <
+> plug-ins.                                                       <
+
+Do something like:
+
+cp npBlender3DPlugin ~/.mozilla/plugins
+
+You should restart your browser so it can register the plugin. To find
+out whether the plugin is seen by the browser, check the about:plugins
+page (just type this into the address field, or use the menu
+Help/about Plugins). You should see an entry about the Blender plugin
+here. If you do not, your browser does not search the correct
+path. Check whether you set the paths correctly, and whether the
+plugin is located in one of those paths.
+
+Hints: start the browser from a shell prompt, so you can see error
+messages emitted by the browser. Note that the LD_LIBRARY_PATH Mozilla
+mentions on startup is not related to the plugin path!
+
+========================================================================
+
+3. Javascript support
+
+The old way of connecting Javascript to plug-ins is through the
+Netscape Java Runtime Interface (JRI). Starting with Mozilla 0.9.2 and
+Netscape 6.1, this is replaced by XPConnect. Check which Javascript
+support you need!
+
+Using JRI: 
+
+You need to set your classpath to include the path to
+Blender3DPlugin.class. Depending on your browsers default
+installation, you may need to add this. You will need to do something
+like:
+
+mkdir ~/.mozilla/java
+mkdir ~/.mozilla/java/classes
+cp Blender3DPlugin.class ~/.mozilla/java/classes
+setenv CLASSPATH ~/.mozilla/java/classes
+
+This should allow the Javascript bindings to be run through JRI. Check
+the Javascript console if there are problems.
+
+Using XPConnect (only Linux): 
+
+You need to add a Blender3DPlugin component to the XPCOM
+registry. This is currently under development. The component and its
+typefile have been included. Install the component and the typefile in
+your component directory (check Mozilla docs on how to do that). If
+you don't know the location of the registry, you can find it by doing
+
+locate xpt
+
+and then check for other Mozilla components. Update the registry if
+needed, by running
+
+regxpcom
+
+which should be included in your distribution. You may need to set the
+LD_LIBRARY_PATH to get the tool to run. To check whether the component
+was properly added, try
+
+regExport | grep Blender
+
+The Blender plugin should show up, with contract 
+
+@blender3d.com/plugin;1
+
+and contract ID 
+
+a8aa327a-b50e-4d44-bed4-29284166aa28
+
+The browser is responsible for querying a plugin for the interface
+needed for the plugin, whose ID is
+
+31c3cc88-f787-47d1-b5ea-ed1b5c18b103
+
+If the browser does not query the plugin for a scripting interface,
+Javascript will not work.
+
+========================================================================
+
+4. Known issues
+
+Hint: this beta build produces some diagnostics in /tmp/plugin_log. If
+you run into problems, it may be worth to check this file.
+
+- Problems starting the browser:
+
+  - After copying the plugin, the browser may fail to start. This can
+    be caused by improper library setup. You can check this by trying
+    'ldd npBlender3DPlugin.so'. If this also fails, there is indeed a
+    library problem. By deleting npBlender3DPlugin.so from the plugin
+    directory, your browser will be able to start again.
+
+  - After installing/upgrading accelerated OpenGL drivers, you need to
+    carefully reload all display drivers, and make sure the library
+    links are correct. Check the documentation from X and the drivers
+    to see how this should be done. X should not be running when you
+    do this!
+    Hint: if you have the OpenGL gears program, you can check whether
+    accelerated X is correctly working. If the libraries are not
+    correctly installed and properly initialized, the browser can
+    crash on accessing the plugin.
+
+  - If you delete the plugin .so from your browser directory, the
+    browser will behave as before again. The plugin does not modify
+    your setup.
+
+- Browser cannot load the plugin: if you get error messages when
+  starting the browser (start it from a shell prompt!) about failure 
+  in loading the plugin, your libraries may be incompatible with this
+  build. These errors look like this:
+
+ERROR: undefined symbol: native_Blender3DPlugin_SendMessage
+ Cant load plugin ~/.netscape/plugins/npTestPlugin.so. Ignored.
+
+  Upgrading the browser may help in those cases.
+
+- Problems loading pages:
+
+  - Some older X11 implementations do not support threading. You will
+    need to upgrade your X11 to use the plugin. If there is a
+    threading error, the browser will shut down. Should a deadlock
+    occur, the browser can be closed with 'kill -HUP <pid>'. Browsers
+    that do not support threaded plugins will also run into problems
+    (eg. Opera).
+
+  - OpenGL: your X windows needs to support OpenGL extensions. If it
+    does not, you should get a corresponding error message.
+
+  - Audio: the unix plugin currently has no audio support. This will
+    be added in a later release.
+
+- Problems running the plugin:
+
+  - If you have NVidia drivers: some dynamic loaders try to open the
+    pthreads library multiple times for threaded gl applications. Use 
+
+    setenv __GL_SINGLE_THREADED 
+
+    or 
+
+    export __GL_SINGLE_THREADED 
+
+    to solve this. See also the driver Readme from NVidia.
+
+  - Resizing: aggressive resizing of the windows (such as alt-right
+    mouse in KDE) can cause X drawing errors. In such cases the
+    browser application will terminate!
+
+  - Resizing: sometimes the textures are not correctly drawn after a
+    window resize.
+
+========================================================================
+
+5. Filing a bug report
+
+If you run into a bug that is not a known issue, we would like to hear
+about it! The following information is helpful to us:
+
+- Which Linux/FreeBSD/Irix are you running? (kernel, distro, glibc
+  version)
+
+- What hardware config do you use? 
+
+- What problem did you run into?
+
+- What library configuration do you use? This can be a bit tricky,
+  since Netscape and Mozilla use scripts to start up the
+  browser. Doing 'ps aux |grep mozilla' should give you a clue which
+  binary is actually used. Do 'ldd mozilla-bin' or something
+  equivalent should give a list of all libraries the binary uses.
+
+========================================================================

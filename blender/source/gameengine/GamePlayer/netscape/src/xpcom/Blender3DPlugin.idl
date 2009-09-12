@@ -1,0 +1,40 @@
+/**
+ * $Id$
+ * Copyright (C) 2001 NaN Technologies B.V.
+ * Interface definition for connecting through Javascript by means 
+ * of the XPCOM interface.
+ */
+#include "nsISupports.idl"
+
+/** scriptable: Make this interface available for marshalling in
+ * scripting languages, uid: the unique id of this interface. */
+[scriptable, uuid(31c3cc88-f787-47d1-b5ea-ed1b5c18b103)]
+
+/** Peer class for a native plugin. The peer is created by the plugin,
+ * so a peer will always have a destination for the calls here . */
+interface Blender3DPlugin : nsISupports 
+{
+
+	/** Load a new Blender file in this plugin from the mentioned
+	 * location. 
+	 * @param url (in) The url of the new .blend resource.
+	 */
+	void 
+	blenderURL(
+		in string url
+		);
+
+	/** Send a message to the running gameengine, if applicable.
+	 * @param to (in) The recipient of the message
+	 * @param from (in) The sender of the message
+	 * @param subject (in) The subject of the message
+	 * @param body (in) The body of the message
+	 */
+	void 
+	SendMessage(
+		in string to, 
+		in string from,
+		in string subject,
+		in string body
+		);
+};

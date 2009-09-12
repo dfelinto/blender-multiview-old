@@ -1,0 +1,648 @@
+#"Last-Translator: Nathan Letwory<jesterking@letwory.net>\n"
+#"PO-Revision-Date: 2003-04-18 18:30+0300\n"
+#"Language-Team: Finnish\n"
+#"Content-Type: text/plain; charset=UTF-8\n"
+#"Content-Transfer-Encoding: 8bit\n"
+#"X-Generator: KBabel 0.9.6\n"
+
+# Copyright (C) 2003 Free Software Foundation, Inc.
+# snts &lt;snutlix@hotmail.com&gt;, 2003.
+#
+###########################################################
+###
+###  Render Window
+###
+###########################################################
+msgid "Start the rendering"
+msgstr "Aloita renderöinti"
+
+msgid "Display edge settings"
+msgstr "Näytä reunan asetukset"
+
+msgid "Enable shadow calculation"
+msgstr "Laske varjot"
+
+msgid "Start rendering a sequence"
+msgstr "Aloita renderöinti"
+
+###########################################################
+###
+###  ToolBox (Popup Menu)
+###
+###########################################################
+msgid "ADD"
+msgstr "LISÄÄ"
+
+msgid "FILE"
+msgstr "TIEDOSTO"
+
+msgid "EDIT"
+msgstr "MUOKKAA"
+
+msgid "OBJECT"
+msgstr "OBJEKTI"
+
+msgid "MESH"
+msgstr ""
+
+msgid "CURVE"
+msgstr "KÄYRÄ"
+
+msgid "KEY"
+msgstr ""
+
+msgid "VIEW"
+msgstr "NÄKYMÄ"
+
+msgid "RENDER"
+msgstr "RENDERÖI"
+
+msgid "SEQUENCE"
+msgstr "SEKVENSSI"
+
+###########################################################
+###
+###  General Messages
+###
+###########################################################
+msgid "QUIT BLENDER"
+msgstr "LOPETA BLENDER"
+
+msgid "Not allowed"
+msgstr "Ei sallittu"
+
+msgid "ERASE ALL"
+msgstr "POISTA KAIKKI"
+
+###########################################################
+###
+###  General Terms
+###
+###########################################################
+msgid "File"
+msgstr "Tiedosto"
+
+msgid "Edit"
+msgstr "Muokkaa"
+
+###########################################################
+###
+###  FileSelect Commands
+###
+###########################################################
+msgid "LOAD FILE"
+msgstr "AVAA TIEDOSTO"
+
+msgid "SAVE FILE"
+msgstr "TALLENNA TIEDOSTO"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD
+###
+###########################################################
+msgid "Mesh"
+msgstr ""
+
+msgid "Curve"
+msgstr "Käyrä"
+
+msgid "Surface"
+msgstr "Pinta"
+
+msgid "Text"
+msgstr "Teksti"
+
+msgid "MetaBall"
+msgstr "Metapallo"
+
+msgid "Empty"
+msgstr "Tyhjä"
+
+msgid "Camera"
+msgstr "Kamera"
+
+msgid "Lamp"
+msgstr "Lamppu"
+
+msgid "Armature"
+msgstr "Luuranko"
+
+msgid "Lattice"
+msgstr ""
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Mesh
+###
+###########################################################
+msgid "&gt;Plane"
+msgstr "&gt;Taso"
+
+msgid "&gt;Cube"
+msgstr "&gt;Kuutio"
+
+msgid "&gt;UVsphere"
+msgstr "&gt;UV pallo"
+
+msgid "&gt;Icosphere"
+msgstr "&gt;Ico pallo"
+
+msgid "&gt;Cylinder"
+msgstr "&gt;Sylinteri"
+
+msgid "&gt;Tube"
+msgstr "&gt;Putki"
+
+msgid "&gt;Cone"
+msgstr "&gt;Kartio"
+
+msgid "&gt;Grid"
+msgstr "&gt;Ruudukko"
+
+msgid "&gt;Monkey"
+msgstr "&gt;Apina"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Curve
+###
+###########################################################
+msgid "&gt;Bezier Curve"
+msgstr "&gt;Bezier käyrä"
+
+msgid "&gt;Bezier Circle"
+msgstr "&gt;Bezier ympyrä"
+
+msgid "&gt;Nurbs Curve"
+msgstr "&gt;Nurbs käyrä"
+
+msgid "&gt;Nurbs Circle"
+msgstr "&gt;Nurbs ympyrä"
+
+msgid "&gt;Path"
+msgstr "&gt;Polku"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; ADD &gt;&gt; Surface
+###
+###########################################################
+msgid "&gt;Curve"
+msgstr "&gt;käyrä"
+
+msgid "&gt;Circle"
+msgstr "&gt;ympyrä"
+
+msgid "&gt;Surface"
+msgstr "&gt;Pinta"
+
+msgid "&gt;Sphere"
+msgstr "&gt;Pallo"
+
+msgid "&gt;Donut"
+msgstr "&gt;Donitsi"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; FILE
+###
+###########################################################
+msgid "New"
+msgstr "Uusi"
+
+msgid "Open"
+msgstr "Avaa"
+
+msgid "Reopen Last"
+msgstr "Avaa uudelleen"
+
+msgid "Append"
+msgstr "Lisää"
+
+msgid "Save As"
+msgstr "Tallenna nimellä"
+
+msgid "Save"
+msgstr "Tallenna"
+
+msgid "Save Image"
+msgstr "Tallenna kuva"
+
+msgid "Save VRML"
+msgstr "Tallenna VRML"
+
+msgid "Save DXF"
+msgstr "Tallenna DXF"
+
+msgid "Save VideoScape"
+msgstr "Tallenna VideoScape"
+
+msgid "Save UserPrefs"
+msgstr "Tallenna asetukset"
+
+msgid "Quit"
+msgstr "Lopeta"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Edit
+###
+###########################################################
+#, fuzzy
+msgid "(De)Select All"
+msgstr "(Älä )Valitse kaikki"
+
+msgid "Select Linked"
+msgstr "Valitse linkattu"
+
+msgid "Hide Selected"
+msgstr "Piilota valitut"
+
+msgid "Border Select"
+msgstr "Rajattu valinta"
+
+msgid "Duplicate"
+msgstr "Kahdenna"
+
+msgid "Delete"
+msgstr "Poista"
+
+msgid "Edit Mode"
+msgstr "Muokkaus-tila"
+
+msgid "Grabber"
+msgstr "Tartunta-elin :)"
+
+msgid "Rotate"
+msgstr "Kierrä"
+
+msgid "Scale"
+msgstr "Skaalaa"
+
+msgid "Shrink/Fatten"
+msgstr "Pienennä/Suurenna"
+
+msgid "Shear"
+msgstr ""
+
+#, fuzzy
+msgid "Warp/Bend"
+msgstr "Warppaa/Taivuta"
+
+msgid "Snap Menu"
+msgstr "Napsahdus valikko"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (1)
+###
+###########################################################
+msgid "Clear Size"
+msgstr "Tyhjennä koko"
+
+msgid "Clear Rotation"
+msgstr "Tyhjennä kierto"
+
+msgid "Clear Location"
+msgstr "Tyhjennä sijainti"
+
+#, fuzzy
+msgid "Clear Origin"
+msgstr "Tyhjennä keskusta"
+
+msgid "Make Parent"
+msgstr "Aseta isännäksi"
+
+msgid "Clear Parent"
+msgstr "Tyhjennä isännäksi"
+
+msgid "Make Track"
+msgstr "Aseta seuranta"
+
+msgid "Clear Track"
+msgstr "Poista seuranta"
+
+msgid "Image Displist"
+msgstr ""
+
+msgid "Image Aspect"
+msgstr ""
+
+msgid "Vect Paint"
+msgstr ""
+
+###########################################################
+###
+###  ToolBox &gt;&gt; OBJECT (2)
+###
+###########################################################
+msgid "Move To Layer"
+msgstr "Siirrä tasolle"
+
+msgid "Delete All"
+msgstr "Poista kaikki"
+
+msgid "Apply Size/Rot"
+msgstr "Suorita koko/rotaatio"
+
+msgid "Apply Deform"
+msgstr "Suorita muodonmuutos"
+
+msgid "Join"
+msgstr "Yhdistä"
+
+#msgid "Make Local"
+#msgstr "Muuta paikalliseksi"
+#msgid "Select Linked"
+#msgstr "Valitse linkityt"
+#msgid "Make Links"
+#msgstr "Muodosta linkit"
+#msgid "Copy Menu"
+#msgstr "Kopiointivalikko"
+#msgid "Convert Menu"
+#msgstr "Konvertointivalikko"
+msgid "Boolean Op"
+msgstr ""
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Mesh
+###
+###########################################################
+msgid "Deselect Linked"
+msgstr ""
+
+msgid "Extrude"
+msgstr ""
+
+msgid "Delete Menu"
+msgstr "Poisto valikko"
+
+msgid "Make edge/face"
+msgstr "Tee reuna/pinta"
+
+msgid "Fill"
+msgstr "Täytä"
+
+msgid "Split"
+msgstr "Halkaise"
+
+msgid "Undo/reload"
+msgstr "Kumoa/lataa uudelleen"
+
+msgid "Calc Normals"
+msgstr "Laske normaalit"
+
+msgid "Separete"
+msgstr "Erota"
+
+msgid "Write Videosc"
+msgstr "Kirjoita videoscape"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Curve
+###
+###########################################################
+msgid "Make Segment"
+msgstr "Luo segmentti"
+
+msgid "Cyclic"
+msgstr ""
+
+msgid "Select Row"
+msgstr "Valitse rivi"
+
+msgid "Calc Handle"
+msgstr "Laske kahva"
+
+msgid "Auto Handle"
+msgstr "Automaattinen kahva"
+
+msgid "Vect Handle"
+msgstr "Vektorikahva"
+
+msgid "Specials"
+msgstr "Erikoisuudet"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; Key
+###
+###########################################################
+msgid "Insert"
+msgstr "Lisää"
+
+msgid "Show"
+msgstr "Näytä"
+
+msgid "Next"
+msgstr "Seuraava"
+
+msgid "Prev"
+msgstr "Edellinen"
+
+msgid "Show+Sel"
+msgstr "Näytä+Valitse"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; RENDER
+###
+###########################################################
+msgid "Render Window"
+msgstr "Renderöinti-ikkuna"
+
+msgid "Render"
+msgstr "Renderöi"
+
+msgid "Set Border"
+msgstr "Aseta reunus"
+
+msgid "Image Zoom"
+msgstr "Kuvan zoomaus"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; VIEW
+###
+###########################################################
+msgid "Centre"
+msgstr "Keskitä"
+
+msgid "Home"
+msgstr "Koti"
+
+msgid "Z-Buffer"
+msgstr "Z-puskuri"
+
+###########################################################
+###
+###  ToolBox &gt;&gt; SEQUENCE
+###
+###########################################################
+msgid "Add Strip"
+msgstr "Lisää strippi"
+
+msgid "Change Str"
+msgstr "Muuta strippi"
+
+msgid "Delete Str"
+msgstr "Poista strippi"
+
+msgid "Make Meta"
+msgstr "Luo meta"
+
+msgid "Str Params"
+msgstr ""
+
+###########################################################
+###
+###  Menu bar
+###
+###########################################################
+msgid "Add"
+msgstr "Uusi"
+
+msgid "View"
+msgstr "Näkymä"
+
+msgid "Game"
+msgstr "Peli"
+
+msgid "Tools"
+msgstr "Työkalut"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add
+###
+###########################################################
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Mesh
+###
+###########################################################
+msgid "Plane"
+msgstr "Taso"
+
+msgid "Cube"
+msgstr "Kuutio"
+
+msgid "Circle"
+msgstr "Ympyrä"
+
+msgid "UVsphere"
+msgstr "UVpallo"
+
+msgid "IcoSphere"
+msgstr "IcoPallo"
+
+msgid "Cylinder"
+msgstr "Sylinteri"
+
+msgid "Tube"
+msgstr "Putki"
+
+msgid "Cone"
+msgstr "Kartio"
+
+msgid "Grid"
+msgstr "Ruudukko"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Curve
+###
+###########################################################
+msgid "Bezier Curve"
+msgstr "Bezier-käyrä"
+
+msgid "Bezier Circle"
+msgstr "Bezier-ympyrä"
+
+msgid "NURBS Curve"
+msgstr "NURBS käyrä"
+
+msgid "NURBS Circle"
+msgstr "NURBS ympyrä"
+
+msgid "Path"
+msgstr "Polku"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Add &gt;&gt; Surface
+###
+###########################################################
+msgid "NURBS Surface"
+msgstr "NURBS pinta"
+
+msgid "NURBS Tube"
+msgstr "NURBS putki"
+
+msgid "NURBS Sphere"
+msgstr "NURBS pallo"
+
+msgid "NURBS Donut"
+msgstr "NURBS donitsi"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; View
+###
+###########################################################
+msgid "Front"
+msgstr "Edestä"
+
+msgid "Right"
+msgstr "Sivusta"
+
+msgid "Top"
+msgstr "Ylhäältä"
+
+msgid "Zoom In"
+msgstr "Zoomaa sisään"
+
+msgid "Zoom Out"
+msgstr "Zoomaa ulos"
+
+msgid "Center"
+msgstr "Keskitä"
+
+msgid "View All"
+msgstr "Näytä kaikki"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Game
+###
+###########################################################
+msgid "Start Game"
+msgstr "Aloita peli"
+
+msgid "Enable All Frame"
+msgstr ""
+
+msgid "Show framerate and profile"
+msgstr "Näytä kuvanopeus ja profiili "
+
+msgid "Autostart"
+msgstr "Käynnistä automaattisesti"
+
+###########################################################
+###
+###  Menu bar &gt;&gt; Tools
+###
+###########################################################
+msgid "Pack Data"
+msgstr "Pakkaa tieto"
+
+msgid "Unpack Data to current dir"
+msgstr "Avaa tieto nykyiseen hakemistoon"
+
+#, fuzzy
+msgid "Advanced Unpack"
+msgstr "Edistyksellinen avaus"
+

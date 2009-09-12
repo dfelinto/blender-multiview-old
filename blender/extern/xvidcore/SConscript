@@ -1,0 +1,137 @@
+#!/usr/bin/python
+
+Import('env')
+
+root = "extern/xvidcore"
+buildroot = root + "/build/generic"
+src_vars = ["GENERIC_SOURCES", "ASSEMBLY_SOURCES", "DCT_IA64_SOURCES",
+            "PPC_ALTIVEC_SOURCES"]
+cflag_vars = ["ARCHITECTURE", "BUS", "ENDIANNESS", "FEATURES",
+              "SPECIFIC_CFLAGS", "CFLAGS"]
+
+import sys
+import os
+import re
+import shutil
+
+from sets import Set
+
+xvidcore_env = env.Copy();
+xvidcore_env.Replace(CCFLAGS = '')
+xvidcore_env.Replace(BF_DEBUG_FLAGS = '')
+
+makevardef = re.compile('^([a-zA-Z0-9_-]+)[ \t]*(\+?)=(.*)')
+makevarsubst = re.compile('\$\(([^\)]*)\)')
+makeifeq = re.compile('if(n?)eq \(([^,]*),([^\)]*)\)')
+
+def makeparseblock(fp, variables):
+    pendingline = ''
+    while 1:
+        line = fp.readline()
+        if pendingline:
+            line = pendingline + line
+            pendingline = ''
+        if not line:
+            return
+        if line.endswith('\\\n'):
+            pendingline = line[:-2]
+            continue 
+
+        i = line.find('#')
+        if i >= 0:
+            line = line[:i]
+
+        iter = makevarsubst.finditer(line[:])
+        for obj in iter:
+            (name) = obj.group(1)
+            s = ""
+            if name in variables:
+                s = variables[name]
+            if name == '<D':
+                s = '${SOURCE.dir}'
+            line = line.replace('$(' + name + ')', s)
+
+        matchobj = makevardef.match(line)
+        if matchobj:
+            (name, op, value) = matchobj.group(1, 2, 3)
+
+            value = value.rstrip()
+
+            if op == '+' and name in variables:
+                 variables[name] += value
+            else:
+                 variables[name] = value
+            continue
+        matchobj = makeifeq.match(line)
+        if matchobj:
+            (op, name1, name2) = matchobj.group(1, 2, 3)
+            if (op == '' and name1 == name2) or (op == 'n' and name1 != name2):
+                makeparseblock(fp, variables)
+            else:
+                tempvars = {}
+                makeparseblock(fp, tempvars)
+            continue
+        line = line.strip()
+        if line == 'endif':
+            return
+                
+def getmakevars(filenames):
+    variables = { }
+    for filename in filenames:
+       fp = open(filename)
+       print "Processing makefile: " + filename
+       try:
+             makeparseblock(fp, variables)
+       finally:
+             fp.close()
+
+    return variables
+
+print "Configuring libxvidcore..."
+
+if not os.path.isfile(buildroot + "/platform.inc"):
+    os.chdir(buildroot);
+    code = -1
+    if xvidcore_env['BF_XVIDCORE_CONFIG'] != '':
+        code = os.system("sh -c './configure %s'"%xvidcore_env['BF_XVIDCORE_CONFIG'])
+    if code != 0:
+        os.system("sh -c './configure'")
+  
+    os.chdir("../../../..");
+else:
+    print "(skipped, build/generic/platform.inc already exists)"
+    
+vars = getmakevars([buildroot + '/sources.inc', buildroot + '/platform.inc'])
+
+srcs = ""
+asflags = ""
+
+for a in src_vars:
+    if a in vars:
+        srcs += " " + vars[a]
+
+sources = ""
+
+for a in list(Set(srcs.split())):
+    sources += " src/" + a;
+
+defs = ""
+cflags = ""
+    
+for a in cflag_vars:
+    if a in vars:
+        cflags += " " + vars[a]
+
+asflags = ""
+
+if "AFLAGS" in vars:
+    asflags += vars['AFLAGS']
+
+xvidcore_env['AS'] = vars['AS']
+xvidcore_env['ASFLAGS'] = asflags
+xvidcore_env.BlenderLib (libname="extern_xvidcore", sources=Split(sources),
+                         includes=["."],
+                         defines=Split(defs),
+                         libtype=['core', 'intern'],
+                         priority = [10, 10],
+                         compileflags = Split(cflags))

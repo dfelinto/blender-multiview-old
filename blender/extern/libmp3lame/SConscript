@@ -1,0 +1,94 @@
+#!/usr/bin/python
+
+Import('env')
+
+root = "extern/libmp3lame"
+
+import sys
+import os
+import re
+import shutil
+
+from sets import Set
+
+makevardef = re.compile('^([a-zA-Z0-9_-]+)[ \t]*(\+?)=(.*)')
+makevarsubst = re.compile('\$\(([^\)]+)\)')
+makeifeq = re.compile('if() ([a-zA-Z0-9_-]*)()')
+
+def makeparseblock(fp, variables):
+    pendingline = ''
+    while 1:
+        line = fp.readline()
+        if pendingline:
+            line = pendingline + line
+            pendingline = ''
+        if not line:
+            return
+        if line.endswith('\\\n'):
+            pendingline = line[:-2]
+            continue 
+
+        i = line.find('#')
+        if i >= 0:
+            line = line[:i]
+
+        iter = makevarsubst.finditer(line[:])
+        for obj in iter:
+            (name) = obj.group(1)
+            s = ""
+            if name in variables:
+                s = variables[name]
+            line = line.replace('$(' + name + ')', s)
+
+        matchobj = makevardef.match(line)
+        if matchobj:
+            (name, op, value) = matchobj.group(1, 2, 3)
+
+            value = value.rstrip()
+
+            if op == '+' and name in variables:
+                 variables[name] += value
+            else:
+                 variables[name] = value
+            continue
+        matchobj = makeifeq.match(line)
+        if matchobj:
+            (op, name1, name2) = matchobj.group(1, 2, 3)
+            if (op == '' and name1 == name2) or (op == 'n' and name1 != name2):
+                makeparseblock(fp, variables)
+            else:
+                tempvars = {}
+                makeparseblock(fp, tempvars)
+            continue
+        line = line.strip()
+        if line == 'endif':
+            return
+                
+def getmakevars(filenames):
+    variables = { }
+    for filename in filenames:
+       fp = open(filename)
+       print "Processing makefile: " + filename
+       try:
+             makeparseblock(fp, variables)
+       finally:
+             fp.close()
+
+    return variables
+
+print "Configuring libmp3lame..."
+
+vars = getmakevars([root + '/Makefile.am'])
+srcs = ""
+if "libmp3lame_la_SOURCES" in vars:
+    srcs += vars['libmp3lame_la_SOURCES']
+
+sources = list(Set(srcs.split()))
+
+env.BlenderLib (libname="extern_libmp3lame", sources=sources,
+                includes=[".", "${SOURCE.dir}"],
+                defines=["HAVE_INTTYPES_H", "STDC_HEADERS",
+                         "ieee754_float32_t=float", "BRHIST"],
+                libtype=['core', 'intern'],
+                priority = [10, 10],
+                compileflags = [])

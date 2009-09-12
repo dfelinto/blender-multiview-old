@@ -1,0 +1,152 @@
+#!/usr/bin/python
+
+Import('env')
+
+root = "extern/x264"
+
+import sys
+import os
+import re
+import shutil
+
+from sets import Set
+
+x264_env = env.Copy();
+x264_env.Replace(CCFLAGS = '')
+x264_env.Replace(BF_DEBUG_FLAGS = '')
+
+makevardef = re.compile('^([a-zA-Z0-9_-]+)[ \t]*(\+?)=(.*)')
+makevarsubst = re.compile('\$\(([^\)]+)\)')
+makeifeq = re.compile('if(n?)eq \(([^,]*),([^\)]*)\)')
+
+def makeparseblock(fp, variables):
+    pendingline = ''
+    while 1:
+        line = fp.readline()
+        if pendingline:
+            line = pendingline + line
+            pendingline = ''
+        if not line:
+            return
+        if line.endswith('\\\n'):
+            pendingline = line[:-2]
+            continue 
+
+        i = line.find('#')
+        if i >= 0:
+            line = line[:i]
+
+        while makevarsubst.search(line):
+            iter = makevarsubst.finditer(line[:])
+            for obj in iter:
+                (name) = obj.group(1)
+                s = ""
+                i = name.find(':')
+                if i >= 0:
+                    subst = name[i+1:].split("=")
+                    nname = name[:i]
+                    if nname in variables:
+                        s = variables[nname]
+                    sl = list(Set(s.split()))
+                    fin = ""
+                    for x in sl:
+                        s_from = subst[0][:]
+                        s_to = subst[1][:]
+                        s_from = s_from.replace("%", x)
+                        s_to = s_to.replace("%", x)
+                        fin += x.replace(s_from, s_to) + " "
+                    s = fin
+                else:
+                    if name in variables:
+                        s = variables[name]
+                line = line.replace('$(' + name + ')', s)
+
+        matchobj = makevardef.match(line)
+        if matchobj:
+            (name, op, value) = matchobj.group(1, 2, 3)
+
+            value = value.rstrip()
+
+            if op == '+' and name in variables:
+                 variables[name] += value
+            else:
+                 variables[name] = value
+            continue
+        matchobj = makeifeq.match(line)
+        if matchobj:
+            (op, name1, name2) = matchobj.group(1, 2, 3)
+            if (op == '' and name1 == name2) or (op == 'n' and name1 != name2):
+                makeparseblock(fp, variables)
+            else:
+                tempvars = {}
+                makeparseblock(fp, tempvars)
+            continue
+        line = line.strip()
+        if line == 'endif':
+            return
+                
+def getmakevars(filenames):
+    variables = { }
+    for filename in filenames:
+       fp = open(filename)
+       print "Processing makefile: " + filename
+       try:
+             makeparseblock(fp, variables)
+       finally:
+             fp.close()
+
+    return variables
+
+print "Configuring libx264..."
+
+if not os.path.isfile(root + "/config.mak"):
+    os.chdir(root);
+    code = -1
+    if x264_env['BF_X264_CONFIG'] != '':
+        code = os.system("sh -c './configure %s'"%x264_env['BF_X264_CONFIG'])
+    if code != 0:
+        os.system("sh -c './configure'")
+    os.chdir("../..");
+else:
+    print "(skipped, config.mak already exists)"
+    
+vars = getmakevars([root + '/config.mak', root + '/Makefile'])
+srcs = ""
+if "SRCS" in vars:
+    srcs += vars['SRCS']
+
+asm_srcs = ""
+if "ASMSRC" in vars:
+    asm_srcs += vars["ASMSRC"]
+
+srcs += " "
+srcs += asm_srcs
+  
+sources = list(Set(srcs.split()))
+
+defs = ""
+
+if x264_env['BF_FFMPEG_EXTRA'] != '':
+    cflags = x264_env['BF_FFMPEG_EXTRA']
+else :
+    cflags = ""
+    
+if "CFLAGS" in vars:
+    cflags += " " + vars["CFLAGS"]
+
+if "ALTIVECFLAGS" in vars:
+    cflags += " " + vars["ALTIVECFLAGS"]
+
+asflags = ""
+
+for a in vars['ASFLAGS'].split():
+    asflags += " " + a.replace('-I', '-I' + root + '/')
+
+x264_env['AS'] = vars['AS']
+x264_env['ASFLAGS'] = asflags
+x264_env.BlenderLib (libname="extern_x264", sources=sources,
+                     includes=["."],
+                     defines=Split(defs),
+                     libtype=['core', 'intern'],
+                     priority = [10, 10],
+                     compileflags = Split(cflags))

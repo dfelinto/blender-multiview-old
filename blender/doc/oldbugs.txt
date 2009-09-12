@@ -1,0 +1,236 @@
+------Blender release log / bug list--------
+
+Version: $Id$
+
+Use this file to register bugs or to check the status of bugs.
+This file consists of a number of sections:
+
+- a section for the next release
+- current
+
+Each section is subdivided into subsections:
+
+- new features
+- critical bugs (crashes etc.)
+- general bugs (unwanted behaviour)
+- hardware problems
+- bugs that aren't really bugs and are postponed and should be kept in mind for new features
+
+Each line in a subsection discribes a bug or new feature and
+starts with a single character indicating the status of the bug.
+Here's an overview:
+
+- bug is new and not assigned
+X an uppercase letter, bug is assigned to TEGHJNFCMSZ
+(Ton, Erwin, Gino, Hans, Jan, Nijn-Zu, Frank, janCo, Maarten, Strubi, Zr)
+
+Remarks can be added on a new line starting with two spaces.
+
+Whenever a bug has been fixed, the engineer removes the line(s) from the
+current section up to the next release section.
+
+Example files will be located in server:/home/develop/bugs . The naming
+convention for these files is: YYMMDD-NN-short-discription.blend . When
+more files are needed to reproduce the bug they start with the same
+YYMMDD-NN numbers or they are stored in a subdirectory. Whenever a bug
+is fixed, please move the file(s) to the bugs/fixed subdirectory.
+
+Readme's and general remarks will be stored in a text window in the 
+example file. Information needed for the release log, can be stored in
+this file.
+================================================================================
+-------- Release 2.20 -----------------
+
+--- known problems
+
+
+--- enhancement requests
+
+
+--- new features
+
+
+--- critical bugs
+
+
+--- gameengine bugs
+
+
+--- minor bugs
+
+
+================================================================================
+-------- Current ----------
+
+IMPORTANT!!! check plugins for windows and linux before distribution.
+
+--- franks notes
+
+- http://www.blender.nl/discussion/read.php?f=11&i=794&t=793
+
+--- enhancement requests
+
+S (freid@blender.nl) UV unwrapping enhancements (spherical, cyl, generic)
+  * distortion reduction / remapping, no overlapping of UV faces
+  * quick map option for saved environment maps
+  * zooming < 1.0, snap menu, cursor, NKEY support
+M * (for later:) generic unwrapping and shape detection in order to be able to paint on a mesh in the 3D window (Clone Tool, copy from ImgWindow)
+- (carsten@blender.nl) Support for MS Windows and Xwindows clipboard 
+- (carsten@blender.nl) Local Axis (PAD *) enhancement: toggling like LocalView, that view (NUM 1, 3, 7) can be used in LocalAxis mode, too.
+- (jedovaty@yahoo.com) make render size buttons (PAL, etc) user configurable
+
+T (PaulM) redesign view buttons interface
+T (calli) info window can't be scrolled or zoomed
+T (WP) use spacebar menu, add circle, and cancel action: blender is in edit mode with an empty object
+- (mikko.alfthan@zoo-gate.fi) intersect option is unstable and sometimes crashes blender
+- plugins don't work on BeOS 
+- play back of audio in the audio window 
+T (mrnutty@mrnutty.com) game buttons aren't centered correctly vertically when selecting objects
+- (LayBack) add editing option in oops window
+- (LayBack) add visualizing TX ObData in oops windows
+- (freid@pleum.com) a color picker for selecting colors from any window
+- (ritchie@ruddco.com) make scaling along one axis possible in proportional editing tool (http://www.blender.nl/discussion/read.php?f=11&i=489&t=489)
+- (frank@blender.nl) remove need to write .B.blend and .Bfont
+- (skywriter@mrnutty.com) make mmap() in imbuf fall through to malloc / read
+- (eweaver@udel.edu) remove all references to sizes in pixels: shadow softness, star size, edge render, texture filtersize 
+- (frank@blender.nl) Merge Lamp buttons and Material buttons (both F5 button, same icon)
+- (mein@cs.umn.edu) when blender is started with 'blender foo.blend' typing // gets expanded to foo.blend/
+- (mein@cs.umn.edu, jedovaty@yahoo.com) don't replace //foo.jpg to full name in fileselect
+- (frank@blender.nl) use // for network path's and replace current // implementation with ./
+- by default enable Ztransp in new materials. Possibly make an optimization for alpha = 255.
+- autosmooth by default (set smooth as well)
+- Bumpmap calculation regards matrix of the obj. (which should independent from that): (010216-01-bumpmapping-rotation.blend)
+- (strubi@blender.nl) Detect orientation of 3D path (010214-01-path-orientation-flip.blend)
+S cyclic UV mapping still not correct with beveled curves
+- (bradipo@xmission.com) setting C:\Blender\ as output directory for images on a unix system gives undesired results
+
+
+--- minor bugs
+
+E realtime lighting incorrect on mirrored objects 
+- packed animations aren't rendered correctly. The animated texture code relies on filenames and file pointers and should be rewritten to handle texture files in memory 
+J export of UV coordinates in VRML is not 100% correct (triangles). 
+F (gnaf) (glut related!) 000815-01-render-3dwindow.blend produces incorrect first image on IRIX machines
+J (PaulM) the image window (SHIFT-F10) doesn't allow zoom factors < 1.0 . This causes problems with images larger than the screen
+- (joeri) 000817-01-erase-latice-displaylist.blend objects are not drawn correctly after lattice has been removed
+- (carsten@blender.nl) The time in the x-axis of the sound-ed isn't refreshed when you change Frs/sec from the DisplayWindows. (In seq-ed this works)
+- (rdudfield@hotmail.com) blender should ignore button events which occur during drawing a menu (see: <http://www.blender.nl/discussion/read.php?f=11&i=299&t=234> for details)
+J (webmaster@meloware.com) menu buffer overflow from within python (000830-01-python-menu-overflow.blend)
+J (nombo@yahoo.com) toggle buttons in python toggle twice (000830-02-python-toggle-button.blend)
+- (nico@cardamon.de) blender crashes when changing desktops in 'Reflection Virtual Desktop' and js pager virtual desktop
+- (frank@blender.nl) renaming metaballs doesn't update displaylists (000905-02-convert-metaball.blend)
+- (carsten@blender.nl) blender enters subloops and doesn't handle screendump (CTRL-F3) key (000919-01-no-screendump.blend)
+- (blenderman@free.fr) spot halo lighting in potato mode isn't recalculated for non-textured objects (000919-03-spot-lighting.blend)
+- (LayBack) blender on Irix somtimes locks up because of windows path (000919-04-unix-windows-lock-up.blend)
+S (wp@blender.nl) performing border select in image window corrupts selection buffer (000920-01-border-and-faceselect.blend)
+- (onk@gmx.de) offset between parent and child is not corrected when centre new is used (000926-01-centre-new.blend)
+- (frank@blender.nl) blender on FreeBSD 4.0 uses 100 % CPU when idle
+- (edewey@nasisystems.com) reflections are rendered incorrectly (001017-02-reflection-texture.blend)
+- (yann@algonet.se / fat180f@trinet.se) rotation of a slow parent modifies scaling of child (001002-01-slow-parent.blend)
+- (rwenzlaff@soylent-green.com) environment maps aren't always rendered when needed (001018-01-environment-map-active-layer.blend)
+- (famrom@idecnet.com) blender ignores ^C on unix systems ### this is a feature, as we would want to interrupt endless python loops..
+- (onk@gmx.de) objects with drawtype Solid and TexFace dont get drawn in potato mode (001027-02-solid-texface-potato.blend)
+- (frank@blender.nl) adding a texture while camera is selected adds unused texture
+- (jheffner@earthlink.net) solid shading changes after doing a face select (001116-01-shaded-view-faceselect.blend)
+S (gdvries@wxs.nl) blender crashes while trying to display error message during fileread (001128-01-missing-lib-crash.blend)
+- (gdvries@wxs.nl) appending data calls all_local(). Existing linked data is localized as well <http://www.blender.nl/discussion/read.php?f=11&i=901&t=901> point # 2
+- (peter@toneby.com) blender crashes with paticle system when keys: is set to 1 (001128-02-particle-keys-crash.blend)
+- (twessels@cs.sun.ac.za) blender crashes when trying to add an object when the 3D cursor is at an invalid location (001213-02-missing-3d-cursor.blend)
+- (beatabix@yahoo.co.uk) Eint > 200 produces undesired results (001228-01-edge-rendering.blend)
+- (vaidotas@splius.lt) blender crashes when trying to decode an avi (001228-03-avi-thumbnail.blend)
+- (TomKojak@compuserve.de) wave effect gets undone by lattice (001228-04-wave-lattice.blend)
+- (coockie@blender.nl) Irix 6.2 blender is broken
+- (janco@blender.nl) in the game engine only 64 sounds can be played. After that all new sounds are ignored
+- (walton@emc.com) slow parent systems don't produce consistent results (010119-01-inconsistent-slow-parent.blend)
+- (criesca@hotmail.com) when saving curves while in editmode blender returns with wrong displaylist (010119-02-curve-displaylist.blend)
+- (carsten@blender.nl) Alt-Gr not recognized under Windows german kbd
+S (strubi@blender.nl) Problems with german (and other) Xkb mappings -- some special chars do not appear in the TextWindow
+- (carsten@blender.nl) Particles do not render correctly cross platform (system dependent random calls)
+- (theeth@yahoo.com) extruded curve whose control vertices share the same coordinate display incorrectly (010228-01-extruded-curve-display.blend)
+- (anrkngl@hotmail.com) edge rendering combined with panorama shows nasty lines at the parts boundary (010228-02-panorama-edge.blenda)
+- (strubi@blender.nl) vertex colours are messed up when separating ([p]) UV-textured meshes (010305-02-separate-mesh-vertcol-messup.blend)
+- Modifier keys in windows can cause hangs in the event queue (when constantly pressed)
+- (frank@blender.nl) sound pitch settings are ignored on linux
+- () sound pitch settings are of by one octave on windows
+- () settings in game menu should be written in the user defaults file
+- () noaudio and nomipmap settings changes in game menu are not handled by Blender
+- () disk full isn't handled properly by the avi writing routines
+- (stephan@nerd.dk) pipe symbols ('|') in names (objects, meshes, screens, etc.) cause blender to generate and handle menus incorrectly
+- (stephan@nerd.dk) 'Display Objects based on layer' is disabled when 'Display Scene data' is selected in the oops window. This is not clear to the user
+- () on windows system \tmp\.cutbuffer support was broken
+- (stephan@nerd.dk) Using J-key on Linux with DispView enabled doesn't swap images immediately unless cursor is located in the buttons subwindow
+- (grete.karlsen@c2i.net) when calculating motionblur Time curves are ignored (010330-01-motionblur-timecurves.blend)
+- (randall@blender.nl) when copying an object it's logic bricks are copied as well, but the reference count of sounds and objects pointed to by the logic bricks aren't increased
+- (dunkelelf@crosswinds.net) redrawing when menus or toolbox are closed can be terribly slow on some graphics cards. Remove optimizations entirely ?
+- (willem@blender.nl) blender doesn't do realtime lighting when there's no camera in the scene
+
+
+--- unified renderer
+
+N (w.a.van.keulen@st.hanze.nl) mist isn't rendered correctly in the unified renderer (010123-01-mist-unified-renderer.blend)
+N (jedovaty@yahoo.com) S-Meshes aren't rendered correctly in editmode (010109-01-smesh-editmode-render.blend)
+- (skywriter@mrnutty.com) antialiasing / sampling can be wrong with some objects in the unified renderer (010307-01-unified-antialiasing.blend)
+- (frank@blender.nl) antialiasing calculations are wrong when overflow's occur (010307-02-unified-antialiasing-bright-lamp.blend)
+- ZBuffer access (through plugins, or IRIZ output) doesn't work YET
+- Rendering a simple quad shows a nasty diagonal line under certain conditions (010320-01-render-diagonalline.blend)
+- (matt.hilliard@powersurfr.com) the unified renderer doesn't output alpha in Targa RGBA images
+
+--- gameengine
+
+E (carsten@blender.nl) track-to doesn't take object rotations into account (000829-02-track-to.blend)
+T (game) "Fh" system doesn't allow rotations of sector/props other than Z-rotations 
+T (game) Delta Ipo's don't work 
+- (yamyam@yo.rim.or.jp) added objects are sometimes added at the wrong location (000921-02-added-objects-wrong-location.blend)
+- (?) adding an object during game play for every frame produces undesired effects (001017-01-add-object.blend)
+- (Evilmatt) some of the constraints in the constraint actuator are missing
+- (Evilmatt) it's not possible to add an interval property sensor
+- (armaganyavuz@hotmail.com) rotations aren't handled correctly in hierarchies (010109-02-parent-drot.blend)
+- (matt.hilliard@powersurfr.com) ray sensor only works on the Y-axis
+E (onk@gmx.de) alpha textured realtime objects aren't drawn in correct order (001019-03-drawing-order.blend)
+- (yamyam@yo.rim.or.jp) erasing objects with properties can crash blender in play mode (000921-01-erased-objects-crash.blend)
+- (RAYMONDSYRES@cs.com) complex hierarchies aren't handled correctly in the gameengine (010502-01-complex-hierarchies-in-gameengine.blend)
+
+
+--- hardware problems
+
+- realtime textures (potato mode) on BeOS 4.5 are drawn incorrect
+S (predrag.kurtovic@st.hinet.hr) redraw quirks on windows with TNT2 card (000906-01-frame-counter-windows.blend) ### solution: upgrade to the latest Xfree86 release and NVIDIA drivers. 
+S (predrag.kurtovic@st.hinet.hr) blender -W under windows with TNT2 card doesn't open render window  ### see prev
+S NVIDIA GL still does not support XOR drawmode properly (border select)
+
+
+--- real easy bugs (Ton don't fix these !)
+
+- (armaganyavuz@hotmail.com) tooltip 'frequency of pulse in 1/50 secs' should read 'period of pulse in 1/50 secs'
+- (willem@blender.nl) writing avi's sometimes crashes when border and crop are selected (001208-01-avi-crop.blend)
+- (jedovaty@yahoo.com) border rendering and changing render resolution can crash blender (010305-01-border-changeresol-crash.blend)
+
+
+--- unknown cause
+
+- (keisari_@hotmail.com) a corrupted blender file (010119-03-corrupt-file.blend)
+
+--- unconfirmed
+
+- problems with playing sound on NT 
+- Blender needs msvcrt.dll to run, on Windows 95 this dll is missing 
+- obscure crashes on Windows systems. Blender 2.00 crashes. Blender 1.8 is stable 
+  Try running blender with the -noaudio option. Please report results to bugs@blender.nl
+- (evilzr@yahoo.com) redraws are not correct (raising and lowering windows) on sgi-6.2-elan
+- (breijp@loras.edu) raw AVI's with x-size == (n*8) + 6 or x-size == (n*8) + 7 don't play back correctly on Windows 2000  
+- (fat180f@tninet.se) blender crashes while displaying old rendered image (001221-03-no-camera-crash.blend)
+
+--- no real bugs -- postponed/ things that should go hand in hand with feature fixes / new features
+
+- (rwenzlaff@soylent-green.com) clipping in texture combined with sizing in material doesn't produce correct results (001018-01-environment-map-active-layer.blend)  
+- (strubi@blender.nl) mirroring in objectmode does not produce correct results when object has rotation <> 0.0 (calc rotation from view matrix)
+- (mein@cs.umn.edu) particles combined with IKA's or lattices don't produce correct results in all situations (001213-01-particle-lattice.blend)
+- () plugins don't work on several OS-es  ### plugin API redesign using python and low level toolkit (compatible to old plugin system)
+- () importing DXF can sometimes corrupt a blender file ### reimplement DXF import within generic
+fileimporter
+- (shizukesa@mindspring.com) complex hierarchies are drawn incorrectly (000901-02-ika-pivot-point.blend) ### this is not a bug, it's due to the ika parenting
+N (drumlin@linux.com.pl) halos get rendered incorrectly when Xparts / Yparts are used (001024-01-halo-parts.blend)
+- (bart@blender.nl) old python scripts can crash blender at exit (010110-01-vertex-paint-python.blend)
+- (content@blender.nl) Undo function for UV editor (generic Undo ringbuffer ?)
+
+-------- End of file -----------

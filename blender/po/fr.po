@@ -1,0 +1,4780 @@
+# French UI Translation
+# eon <eon.2008@free.fr>, 2008
+#"Last-Translator: eon <eon.2008@free.fr>\n"
+#"PO-Revision-Date: 2008-09-29 01:00+0100\n"
+#"Content-Type: text/plain; charset=UTF-8\n"
+#"Content-Transfer-Encoding: 8bit\n"
+#"Language-Team: eon (eon@jabber.fr) , serialsiner , kaal / project page : http://wiki.blender.org/index.php/Interface/fr"
+#"X-Generator: Gedit 2.22.0\n"
+
+# Copyright (C) 2005 Free Software Foundation, Inc.
+#
+
+###########################################################
+###
+###  Summary of this file by section (WIP)
+###
+###########################################################
+###
+###  General Messages  
+###  Window Type  
+###  FileSelect Commands
+###  Menu bar
+###  Menu bar  FILE
+###  Menu bar  ANIM
+###  Menu bar  GAME
+###  Menu bar  RENDER
+###  Menu bar  HELP
+###  Menu bar  View
+###  Menu bar  Select  
+###  Menubar  Object
+###  Menubar  Mode
+###  Menubar  Draw type
+###  Menubar  Pivot
+###  Menubar  Transform Manipulator
+###  Menubar  Snap
+###  Menubar Edit Mode  
+###  Menubar MESH
+###  Menubar Sculpt
+###  SPACE MENU:  ADD
+###  SPACE MENU:  OBJECT
+###  SPACE MENU:  EDIT
+###  SPACE MENU:  TRANSFORM
+###  SPACE MENU:  VIEW
+###  SPACE MENU:  SELEC
+###  SPACE MENU:  SURFACE
+###  SPACE MENU: RENDER
+###  ToolBox  BUTTONS
+###  ToolBox  ACTOR
+###  ToolBox  SHADING (F5) 
+###  ToolBox  OBJECT (F7)
+###  ToolBox  EDITING (F9)
+###  Editing Armature (F9) 
+###  ToolBox  RENDER (F10)  
+###  SECTION TEXT EDITOR
+###  SECTION TIMELINE
+###  SECTION  SEQUENCE
+###  SECTION  UV/IMAGE EDITOR
+###  SECTION  IPO CURVE EDITOR
+###  SECTION  OUTLINER 
+###  SECTION  NODE EDITOR 
+###  WINDOW  PREFERENCE 
+###  Tooltip du panneau "Background Image"
+###  Menu extrusion
+###  Menu Booléen (W hotkey in object mode)
+###  Menu Separate
+###  Menu Loop/Cut (K hotkey in edit mode)
+###  Menu Cut Type (SHIFT-K hotkey in edit mode)
+###  Menu Specials (W hotkey in edit mode)
+###  Menu Select grouped (SHIFT-G hotkey in object mode)
+###  Menu groups (CTRL-G hotkey in object mode)
+###  Menu Spécial d'Edition (CTRL-E)
+###  Menubar Spécial Draw Mode (D)   
+###  Texte (Objet texte)
+###  Courbe Bezier (mode edition)
+###  Metaballs (mode edition)
+###  Armatures (édition)
+###  Header
+###  Menu Make Parent (CTRL-P en mode edition) 
+###  Menu Clear Parent (ALT-P en mode edition) 
+###  Menu Make Links (CTRL-L)
+###  Menu Make Faces (F)  
+###  Menu Unwrap (U)  
+###
+###########################################################
+
+###########################################################
+###
+###  General Messages 
+###
+###########################################################
+
+msgid "User"
+msgstr "Utilisateur"
+
+msgid "Split Area"
+msgstr "Diviser la Zone"
+
+msgid "Join Areas"
+msgstr "Fusionner les Zones"
+
+msgid "No Header"
+msgstr "Enlever Barre d'outils"
+
+msgid "Add Header"
+msgstr "Ajouter Barre d'outils"
+
+msgid "Not allowed"
+msgstr "Non Autorisé"
+
+msgid "Erase selected Object(s)"
+msgstr "Effacer les objets sélectionnés"
+
+msgid "Individual Faces "
+msgstr "Faces Individuelles"
+
+msgid "Erase All"
+msgstr "Réinitialiser"
+
+msgid "Erase all"
+msgstr "Réinitialiser"
+
+msgid "Error "
+msgstr "Erreur"
+
+msgid "Error"
+msgstr "Erreur"
+
+msgid "Cannot perform in EditMode"
+msgstr "Action impossible en mode édition"
+
+msgid "Panel Alignment"
+msgstr "Alignement des panneaux"
+
+msgid "Free "
+msgstr "Libre "
+
+msgid "Indicates this is a Packed file. See File menu."
+msgstr "Indique si c'est un projet emballé. Voir le menu 'Fichier'"
+
+#CTRL-Z
+msgid "No undo available"
+msgstr "Pas de retour en arrière possible"
+
+#CTRL-A
+msgid "Apply scale and rotation"
+msgstr "Appliquer échelle et rotation"
+
+#ALT-R
+msgid "Clear rotation"
+msgstr "Réinitialiser la Rotation"
+
+#ALT-G
+msgid "Clear location"
+msgstr "Réinitialiser la Position"
+
+#ALT-G
+msgid "Clear scale"
+msgstr "Réinitialiser l'Echelle"
+
+#ALT-O
+msgid "Clear origin"
+msgstr "Réinitialiser le Centre"
+
+msgid "Convert Curve to"
+msgstr "Convertir la Courbe en"
+
+#CTRL-Y
+msgid "No redo available"
+msgstr "Pas d'action à refaire"
+
+msgid "No more steps to do"
+msgstr "Plus d'action à refaire"
+
+msgid "No faces or vertex selected."
+msgstr "Aucune face ou sommets sélectionnés"
+
+###########################################################
+###
+###  Window Type  
+###
+###########################################################
+
+msgid "Window type:"
+msgstr "Type de Fenêtre:"
+
+#Tip
+msgid "Displays Current Window Type. Click for menu of available types."
+msgstr "Affiche le type de la fenêtre courante. Cliquer pour afficher les différents types de fenêtres diponibles."
+
+msgid "Scripts Window "
+msgstr "Scripts"
+
+msgid "File Browser "
+msgstr "Navigateur de Fichier"
+
+msgid "Image Browser "
+msgstr "Navigateur d'Images"
+
+msgid "Buttons Window "
+msgstr "Boutons"
+
+msgid "User Preferences "
+msgstr "Préférences Utilisateur"
+
+msgid "Outliner "
+msgstr "Arbre Hiérarchique"
+
+msgid "Audio Window "
+msgstr "Audio"
+
+msgid "Text Editor "
+msgstr "Editeur de Texte"
+
+msgid "Timeline "
+msgstr "Ligne du Temps"
+
+msgid "Video Sequence Editor "
+msgstr "Montage Video"
+
+msgid "UV/Image Editor "
+msgstr "Editeur UV/Image"
+
+msgid "NLA Editor "
+msgstr "Editeur NLA"
+
+msgid "Action Editor "
+msgstr "Editeur Action"
+
+msgid "Ipo Curve Editor "
+msgstr "Editeur Courbes IPO"
+
+msgid "3D View "
+msgstr "Vue 3D"
+
+msgid "Node Editor "
+msgstr "Noeuds"
+
+###########################################################
+###
+### FileSelect Commands
+###
+###########################################################
+
+msgid "Open"
+msgstr "Ouvrir"
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Save As"
+msgstr "Enregis. Sous"
+
+msgid "Save A"
+msgstr "Enregistrer"
+
+msgid "Relative Paths"
+msgstr "Chemin Relatif"
+
+msgid "Save over"
+msgstr "Ecraser?"
+
+msgid "Load Library"
+msgstr "Importer"
+
+msgid "SELECT DATABLOCK"
+msgstr "Sélectionner"
+
+
+#Tooltips
+msgid "Sorts files alphabetically"
+msgstr "Trie les fichiers par ordre alphabétique"
+
+msgid "Sorts files by extension"
+msgstr "Trie les fichiers par leur extension"
+
+msgid "Sorts files by time"
+msgstr "Trie les fichiers par date"
+
+msgid "Sorts files by size"
+msgstr "Trie les fichiers suivant leur taille"
+
+msgid "Hides dot files"
+msgstr "Masque les fichiers précés d'un ."
+
+###########################################################
+###
+###  Menu bar
+###
+###########################################################
+
+msgid "File"
+msgstr "Fichier"
+
+msgid "Edit"
+msgstr "Edition"
+
+msgid "Timeline"
+msgstr "Animation"
+
+msgid "Add"
+msgstr "Ajouter"
+
+msgid "View"
+msgstr "Vue"
+
+msgid "Game"
+msgstr "Jeu"
+
+msgid "Render"
+msgstr "Rendu"
+
+msgid "Select"
+msgstr "Sélection"
+
+msgid "Object"
+msgstr "Objet"
+
+msgid "Help"
+msgstr "Aide"
+
+###########################################################
+###
+###  Menu bar  FILE
+###
+###########################################################
+
+msgid "New"
+msgstr "Nouveau"
+
+msgid "Open..."
+msgstr "Ouvrir"
+
+msgid "Open Recent"
+msgstr "Ouvrir un Projet Récent"
+
+msgid "Recover Last Session"
+msgstr "Ouvrir Sauvegarde de Secours"
+
+msgid "Compress File"
+msgstr "Compresser le .blend"
+
+msgid "Save As..."
+msgstr "Enregistrer Sous"
+
+msgid "Save"
+msgstr "Enregistrer"
+
+msgid "Save Rendered Image..."
+msgstr "Sauver le Rendu"
+
+msgid "Screenshot Subwindow"
+msgstr "Capture de Fenêtre"
+
+msgid "Screenshot All"
+msgstr "Capture de l'Interface"
+
+msgid "Save Runtime..."
+msgstr "Sauver le Jeu en exécutable"
+
+msgid "Append or Link"
+msgstr "Importer/Lier depuis un .blend"
+
+msgid "Append or Link (Image Browser)" 
+msgstr "Importer/Lier depuis un .blend (Vignettes)"
+
+#file select panel
+msgid "Append" 
+msgstr "Copier"
+
+msgid "Active Layer" 
+msgstr "Calque Actif"
+
+msgid "Import"
+msgstr "Importer"
+
+msgid "Export"
+msgstr "Exporter"
+
+msgid "Save Default Settings"
+msgstr "Enregistrer -> Scène de Démarrage"
+
+msgid "Load Factory Settings"
+msgstr "Charger la Scène de Démarrage par Défaut"
+
+msgid "External Data"
+msgstr "Données Externes"
+
+msgid "Pack into .blend file"
+msgstr "Empaqueter dans le fichier .blend"
+
+msgid "Unpack into Files..."
+msgstr "Déballer"
+
+msgid "Make all Paths Relative"
+msgstr "Chemins Relatifs"
+
+msgid "Make all Paths Absolute"
+msgstr "Chemins Absolus"
+
+msgid "Report Missing Files..."
+msgstr "Lister Fichiers Manquants"
+
+msgid "Find Missing Files..."
+msgstr "Chercher Fichiers Manquants"
+
+msgid "Quit Blender"
+msgstr "Quitter sans sauvegarder"
+
+msgid "Connect to localhost"
+msgstr "Connexion à la machine locale"
+
+msgid "Connect ..."
+msgstr "Connexion ..."
+
+###########################################################
+###
+###  Menu bar  ANIM
+###
+###########################################################
+
+msgid "Show Keyframes"
+msgstr "Afficher les Images Clés"
+
+msgid "Show and Select Keyframes"
+msgstr "Affich. et Sélect. les Images Clés"
+
+msgid "Select Next Keyframe"
+msgstr "Sélect. Image Clé Suivante"
+
+msgid "Select Previous Keyframe"
+msgstr "Sélect. Image Clé Précédente"
+
+msgid "Next Keyframe"
+msgstr "Aller à l'Image Clé Suivante"
+
+msgid "Previous Keyframe"
+msgstr "Aller à l'Image Clé Précédente"
+
+msgid "Previous Frame"
+msgstr "Reculer d'une Image"
+
+msgid "Next Frame"
+msgstr "Avancer d'une Image"
+
+msgid "Forward 10 Frames"
+msgstr "Avancer de 10 Images"
+
+msgid "Back 10 Frames"
+msgstr "Reculer de 10 Images"
+
+msgid "End Frame"
+msgstr "Aller à la Dernière Image"
+
+msgid "Start Frame"
+msgstr "Aller à la Première Image"
+
+
+###########################################################
+###
+###  Menu bar  GAME
+###
+###########################################################
+
+msgid "Start Game"
+msgstr "Lancer le Jeu"
+
+msgid "Enable All Frames"
+msgstr "Afficher Toutes les Images"
+
+msgid "Show Framerate and Profile"
+msgstr "Afficher les Statistiques"
+
+msgid "Show Physics Visualization"
+msgstr "Afficher la Physique des Objets"
+
+msgid "Use Blender Materials"
+msgstr "Utiliser les Matériaux de Blender"
+
+msgid "Show Debug Properties"
+msgstr "Afficher les Infos de Debugage"
+
+msgid "Record Game Physics to IPO"
+msgstr "Enregistrer la Physique du Jeu en IPO"
+
+msgid "Autostart"
+msgstr "Lancement Automatique"
+
+msgid "Blender GLSL Materials"
+msgstr "Matériaux GLSL"
+
+msgid "GLSL Material Settings"
+msgstr "Paramètres GLSL"
+
+msgid "Enable Lights"
+msgstr "Activer Lumières"
+
+msgid "Enable Shadows"
+msgstr "Activer Ombres"
+
+msgid "Enable Shaders"
+msgstr "Activer Ombrage Matériaux"
+
+msgid "Enable Ramps"
+msgstr "Activer Dégradés"
+
+msgid "Enable Nodes"
+msgstr "Activer Noeuds"
+
+msgid "Enable Extra Textures"
+msgstr "Activer Textures"
+
+###########################################################
+###
+###  Menu bar  RENDER
+###
+###########################################################
+
+msgid "Render Current Frame"
+msgstr "Rendu Image Fixe"
+
+msgid "Render Animation"
+msgstr "Rendu de l'Animation"
+
+msgid "Show Render Buffer"
+msgstr "Afficher le dernier rendu"
+
+msgid "Play Back Rendered Animation"
+msgstr "Jouer la dernière Animation"
+
+msgid "Set Render Border"
+msgstr "Rendu Partiel"
+
+msgid "Render Settings"
+msgstr "Paramètres du Rendu"
+
+msgid "Bake Render Meshes"
+msgstr "Rendu vers Textures UV"
+
+msgid "Bake Selected Meshes "
+msgstr "Type de Rendu"
+
+msgid "Full Render"
+msgstr "Tout"
+
+msgid "Ambient Occlusion"
+msgstr "Occlusion Ambiante"
+
+msgid "Normals "
+msgstr "Normales"
+
+msgid "Texture Only"
+msgstr "Textures"
+
+msgid "Displacement"
+msgstr "Déplacement"
+
+msgid "No Images found to bake to"
+msgstr "Aucune Image UV trouvée"
+
+###########################################################
+###
+###  Menu bar  HELP
+###
+###########################################################
+
+msgid "Getting Started"
+msgstr "Premiers Pas (En)"
+
+msgid "HotKey and MouseAction Reference"
+msgstr "Liste des Raccourcis Clavier (En)"
+
+msgid "Manual"
+msgstr "Manuel (En)"
+
+msgid "Blender/Python Scripting API"
+msgstr "Documentation sur les Scripts Python (En)"
+
+msgid "Release Notes"
+msgstr "Notes de Version (En)"
+
+msgid "ID Property Browser"
+msgstr "Edition des Propriétés ID (En)"
+
+msgid "Scripts Help Browser"
+msgstr "Liste des Scripts Python (En)"
+
+msgid "Tutorials"
+msgstr "Tutoriels (En)"
+
+msgid "About Blender..."
+msgstr "A propos de Blender"
+
+msgid "Websites"
+msgstr "Sites Web (En)"
+
+msgid "A french speaking users community"
+msgstr "Zoo-Blender : Communauté française"
+
+msgid "System"
+msgstr "Système"
+
+###########################################################
+###
+###  Menu bar  View
+###
+###########################################################
+
+msgid "Play Back Animation"
+msgstr "Jouer l'Animation"
+
+msgid "Maximize Window"
+msgstr "Fenêtre Plein Ecran"
+
+msgid "Tile Window"
+msgstr "Redimensionner Fenêtre"
+
+msgid "View All"
+msgstr "Voir tous les objets"
+
+msgid "View Selected"
+msgstr "Zoom sur Sélection"
+
+msgid "Align View"
+msgstr "Aligner la vue sur..."
+
+msgid "Center View to Cursor"
+msgstr "Sur le Curseur"
+
+msgid "Align View to Selected"
+msgstr "Sur Sélection  (Axes local)"
+
+msgid "Align Active Camera to View"
+msgstr "Aligner la Caméra sur la Vue"
+
+msgid "View Navigation"
+msgstr "Mouvements de Vue"
+
+msgid "Orbit Left"
+msgstr "Pivoter Gauche"
+
+msgid "Orbit Right"
+msgstr "Pivoter Droite"
+
+msgid "Orbit Up"
+msgstr "Pivoter Haut"
+
+msgid "Orbit Down"
+msgstr "Pivoter Bas"
+
+msgid "Pan Left"
+msgstr "Déplacer Gauche"
+
+msgid "Pan Right"
+msgstr "Déplacer Droite"
+
+msgid "Pan Up"
+msgstr "Déplacer Haut"
+
+msgid "Pan Down"
+msgstr "Déplacer Bas"
+
+msgid "Side"
+msgstr "Vue de Coté"
+
+msgid "Front"
+msgstr "Vue de Face"
+
+msgid "Right"
+msgstr "Vue de Droite"
+
+msgid "Top"
+msgstr "Vue de Dessus"
+
+msgid "Cameras"
+msgstr "Caméras"
+
+msgid "Set Active Object as Active Camera"
+msgstr "Objet sélect. comme Caméra Active"
+
+msgid "Zoom In"
+msgstr "Zoom avant"
+
+msgid "Zoom Out"
+msgstr "Zoom arrière"
+
+msgid "Reset Zoom"
+msgstr "Zoom par Défaut"
+
+msgid "Global View"
+msgstr "Vue Entière"
+
+msgid "Local View"
+msgstr "Vue Sélection Isolée"
+
+msgid "Show All Layers"
+msgstr "Voir Tous les Calques"
+
+msgid "Show Previous Layers"
+msgstr "Voir les Calques Précédents"
+
+msgid "Orthographic"
+msgstr "Orthogonale"
+
+msgid "Grease Pencil..."
+msgstr "Crayon..."
+
+msgid "Grease Pencil"
+msgstr "Crayon"
+
+msgid "Use Grease Pencil"
+msgstr "Activer Crayon"
+
+msgid "Add New Layer"
+msgstr "Nouveau Calque"
+
+msgid "Draw Mode"
+msgstr "Dessiner"
+
+msgid "Sketch in 3D"
+msgstr "3D"
+
+msgid "Convert to..."
+msgstr "Convertir Tracé"
+
+msgid "Del Last Stroke"
+msgstr "Annuler"
+
+msgid "Grease Pencil Convert "
+msgstr "Conversion du Tracé"
+
+msgid "Active Layer To Path"
+msgstr "Calque Actif en Chemin"
+
+msgid "Active Layer to Bezier"
+msgstr "Calque Actif en Courbe de Bézier"
+
+msgid "Active Layer to Armature"
+msgstr "Calque Actif en Armature"
+
+msgid "Background Image..."
+msgstr "Image d'Arrière Plan"
+
+msgid "View Properties..."
+msgstr "Paramètres de la Vue"
+
+msgid "Use Background Image"
+msgstr "Afficher Image"
+
+msgid "View Properties"
+msgstr "Paramètres de la Vue"
+
+msgid "Grid:"
+msgstr "Grille:"
+
+msgid "3D Display:"
+msgstr "Vue 3D:"
+
+msgid "3D Cursor:"
+msgstr "Curseur 3D:"
+
+msgid "View Camera:"
+msgstr "Vue Caméra:"
+
+msgid "Grid Floor"
+msgstr "Grille"
+
+msgid "X Axis"
+msgstr "Axe X"
+
+msgid "Y Axis"
+msgstr "Axe Y"
+
+msgid "Z Axis"
+msgstr "Axe Z"
+
+msgid "Outline Selected"
+msgstr "Surligner Sélection"
+
+msgid "Relationship Lines"
+msgstr "Liens de Parenté"
+
+msgid "All Object Centers"
+msgstr "Tous les Centres"
+
+msgid "Set Clipping Border"
+msgstr "Coupe 3D"
+
+msgid "Clear Clipping Border"
+msgstr "Désactiver Coupe 3D"
+
+msgid "Render Preview..."
+msgstr "Rendu Interactif"
+
+msgid "Transform Orientations..."
+msgstr "Axes de Transformation..."
+
+#window
+msgid "Transform Orientations"
+msgstr "Axes de Transformation"
+
+msgid "Zoom Within Border..."
+msgstr "Zoom par Cadre..."
+
+###########################################################
+###
+###  Menu bar  Select  
+###
+###########################################################
+
+msgid "Random..."
+msgstr "Au hasard..."
+
+msgid "Border Select"
+msgstr "Par Cadre"
+
+msgid "Select/Deselect All"
+msgstr "(Dé)Sélectionner Tout"
+
+msgid "Select All by Layer"
+msgstr "Par Calque"
+
+msgid "Select All by Type"
+msgstr "Par Type"
+
+msgid "Linked"
+msgstr "Par Affinités"
+
+msgid "Random"
+msgstr "Aléatoire"
+
+msgid "Grouped"
+msgstr "Par Parenté"
+
+msgid "Material"
+msgstr "Matériau"
+
+msgid "ObData"
+msgstr "Données"
+
+msgid "Children"
+msgstr "Enfants"
+
+msgid "Immediate Children"
+msgstr "1er Enfant"
+
+msgid "Linked Vertices"
+msgstr "Sommets liés"
+
+msgid "Similar to Selection..."
+msgstr "Similaire à la Sélection..."
+
+msgid "Select Similar Vertices "
+msgstr "Sélectionne les Sommets Similaires"
+
+msgid "Select Similar Edges "
+msgstr "Sélectionne les Arêtes Similaires"
+
+msgid "Select Similar Faces "
+msgstr "Sélectionne les Faces Similaires"
+
+# messagebox
+msgid "No active face, or active face has no UV texture"
+msgstr "Pas de face active, ou la face active n'a pas de coordonnées de texture UV"
+
+###########################################################
+###
+###  Menubar  Object
+###
+###########################################################
+
+msgid "Show/Hide Objects"
+msgstr "Aff./Cacher Objets"
+
+msgid "Move to Layer..."
+msgstr "Changer de Calque"
+
+msgid "Apply Scale/Rotation"
+msgstr "Appliquer Echelle/Rotation"
+
+msgid "Apply Deformation"
+msgstr "Appliquer Déformations"
+
+msgid "Convert Object Type..."
+msgstr "Convertir Objet en..."
+
+msgid "Join Objects"
+msgstr "Fusionner"
+
+msgid "Join selected meshes"
+msgstr "Fusionner les maillages"
+
+msgid "Track"
+msgstr "Contraindre"
+
+msgid "Make Track..."
+msgstr "Créer Contrainte"
+
+msgid "Clear Track..."
+msgstr "Enlever Contrainte"
+
+msgid "Group"
+msgstr "Groupe"
+
+msgid "Add to Existing Group"
+msgstr "Ajouter à un Groupe Existant"
+
+msgid "Add to New Group"
+msgstr "Ajouter à un Nouveau Groupe"
+
+msgid "Remove from All Groups"
+msgstr "Dégrouper"
+
+msgid "Parent"
+msgstr "Parenté"
+
+msgid "Make Parent..."
+msgstr "Créer Parenté"
+
+msgid "Clear Parent..."
+msgstr "Supprimer Parenté"
+
+msgid "Boolean Operation..."
+msgstr "Opération Booléenne"
+
+msgid "Duplicate Linked"
+msgstr "Copie Liée"
+
+msgid "Insert Keyframe"
+msgstr "Insérer une Image Clé"
+
+msgid "Delete Keyframe"
+msgstr "Supprimer une Image Clé"
+
+msgid "Duplicate"
+msgstr "Copie"
+
+msgid "Delete"
+msgstr "Supprimer"
+
+msgid "Copy Attributes"
+msgstr "Copier les Propriétés"
+
+msgid "Object Constraints"
+msgstr "Contraintes"
+
+msgid "Location"
+msgstr "Position"
+
+msgid "Size"
+msgstr "Echelle"
+
+msgid "Make Local"
+msgstr "Dé-Lier d'un fichier ext."
+
+msgid "Selected Objects and Data"
+msgstr "Objets et Données Sélectionnés"
+
+msgid "Make Single User"
+msgstr "Dé-Lier"
+
+msgid "Selected Objects"
+msgstr "Objets Sélectionnés"
+
+msgid "Make Links"
+msgstr "Lier"
+
+msgid "Materials"
+msgstr "Matériaux"
+
+msgid "To Scene..."
+msgstr "Vers Scène..."
+
+msgid "Mesh Data"
+msgstr "Données"
+
+msgid "Object & ObData"
+msgstr "Objet & Données"
+
+msgid "Materials+Tex"
+msgstr "Matériaux + Texture"
+
+msgid "Snap"
+msgstr "Accrochage"
+
+msgid "Transform Snap"
+msgstr "Accrochage Grille"
+
+msgid "Snap "
+msgstr "Accrochage"
+
+msgid "Snap Closest"
+msgstr "Accrochage au plus Proche"
+
+msgid "Snap Center"
+msgstr "Accrochage au Centre"
+
+msgid "Selection -> Grid"
+msgstr "Sélection -> Grille"
+
+msgid "Selection -> Cursor"
+msgstr "Sélection -> Curseur"
+
+msgid "Cursor -> Selection"
+msgstr "Curseur -> Sélection"
+
+msgid "Cursor -> Grid"
+msgstr "Curseur -> Grille"
+
+msgid "Selection -> Center"
+msgstr "Sélection -> Centre"
+
+msgid "Cursor-> Selection"
+msgstr "Curseur -> Sélection"
+
+msgid "Cursor-> Grid"
+msgstr "Curseur -> Grille"
+
+msgid "Selection-> Center"
+msgstr "Sélection -> Centre"
+
+msgid "Mirror"
+msgstr "Miroir"
+
+msgid "Interactive Mirror"
+msgstr "Miroir Interactif"
+
+msgid "Transform"
+msgstr "Transformer"
+
+msgid "Transform Properties"
+msgstr "Coordonnées"
+
+msgid "Link Scale"
+msgstr "Proportionnel"
+
+# Tooltip
+msgid "Parent Object"
+msgstr "Nom de l'objet parent"
+
+# Tooltip
+msgid "Protects this value from being Transformed"
+msgstr "Bloquer la valeur"
+
+msgid "Grab/Move"
+msgstr "Déplacer"
+
+msgid "Grab/Move on Axis"
+msgstr "Déplacer sur un Axe"
+
+msgid "Rotate on Axis"
+msgstr "Pivoter sur un Axe"
+
+msgid "Scale on Axis"
+msgstr "Mettre à l'échelle sur un Axe"
+
+msgid "Rotate"
+msgstr "Pivoter"
+
+msgid "Scale"
+msgstr "Changer l'Echelle"
+
+msgid "Clear Rotation"
+msgstr "Réinitialiser la Rotation"
+
+msgid "Clear Location"
+msgstr "Réinitialiser la Position"
+
+msgid "Clear Scale"
+msgstr "Réinitialiser l'Echelle"
+
+msgid "Clear Origin"
+msgstr "Réinitialiser le Centre"
+
+msgid "Clear/Apply"
+msgstr "Effacer/Appliquer..."
+
+msgid "Add Constraint..."
+msgstr "Ajouter Contrainte"
+
+msgid "Clear Constraints"
+msgstr "Enlever Contraintes"
+
+###########################################################
+###
+###  Menubar  Mode  
+###
+###########################################################
+
+msgid "Mode: "
+msgstr "Modes:"
+
+msgid "Edit Mode "
+msgstr "Édition"
+
+msgid "Object Mode "
+msgstr "Objet"
+
+msgid "Sculpt Mode "
+msgstr "Scultpure"
+
+msgid "Texture Paint "
+msgstr "Peinture sur Texture"
+
+msgid "Vertex Paint "
+msgstr "Peinture sur Sommets"
+
+###########################################################
+###
+###  Menubar  Draw type
+###
+###########################################################
+
+# Tooltip
+msgid "Viewport Shading (Hotkeys: Z, Shift Z, Ctrl Z, Alt Z"
+msgstr "Ombrage de la vue (Z, Shift Z, Ctrl Z et Alt Z)."
+
+msgid "Draw type: "
+msgstr "Ombrage de la vue:"
+
+msgid "Bounding Box "
+msgstr "Limites"
+
+msgid "Wireframe "
+msgstr "Fil de Fer"
+
+msgid "Solid "
+msgstr "Solide"
+
+msgid "Shaded "
+msgstr "Ombrée"
+
+msgid "Textured "
+msgstr "Texturé"
+
+###########################################################
+###
+###  Menubar  Pivot
+###
+###########################################################
+
+# Tooltip
+msgid "Rotation/Scaling Pivot (Hotkeys: Comma, Period) "
+msgstr "Mode du pivot pour la rotation et le redimensionnement des objets (Raccourcis : virgule, point virgule)."
+
+msgid "Active Object "
+msgstr "Objet Sélectionné"
+
+msgid "Individual Centers "
+msgstr "Centres Individuels"
+
+msgid "3D Cursor "
+msgstr "Curseur 3D"
+
+msgid "Median Point "
+msgstr "Baricentre"
+
+msgid "Bounding Box Center "
+msgstr "Centre de la Boite Englobante"
+
+###########################################################
+###
+###  Menubar  Transform Manipulator
+###
+###########################################################
+
+msgid "Use 3d transform manipulator (Ctrl Space)"
+msgstr "Affiche le repère de transformation (Ctrl Espace)"
+
+msgid "Orientation"
+msgstr "Axes:"
+
+msgid "Toggles Layer visibility (Num, Shift Num)"
+msgstr "Calques à afficher, Shift-clic pour en afficher plusieurs (Num, Shift Num)"
+
+###########################################################
+###
+###  Menubar  Snap
+###
+###########################################################
+
+msgid "Vertex"
+msgstr "Sommet"
+
+msgid "Closest"
+msgstr "Proche"
+
+#tips
+msgid "Snap while Ctrl is held during transform (Shift Tab)"
+msgstr "Accrochage aux Sommets en maintenant Ctrl appuyé (Shift Tab)"
+
+msgid "Use Snap or Grid (Shift Tab)"
+msgstr "Accrochage à la Grille en maintenant Ctrl appuyé (Shift Tab)"
+
+###########################################################
+###
+###  Menubar Edit Mode
+###
+###########################################################
+
+# Tooltip
+msgid "Proportional Edit Falloff (Hotkey: O) "
+msgstr "Sélection Proportionelle Adoucie (O)"
+
+msgid "Proportional "
+msgstr "Sélection Proportionelle:"
+
+msgid "Connected "
+msgstr "Active suivant Connexion"
+
+msgid "On "
+msgstr "Active"
+
+msgid "Off "
+msgstr "Inactive"
+
+# Tooltip
+msgid "Vertex select mode"
+msgstr "Mode sélection par Sommets"
+
+msgid "Edge select mode"
+msgstr "Mode sélection par Arêtes"
+
+msgid "Face select mode"
+msgstr "Mode sélection par Faces"
+
+msgid "Limit selection to visible (clipped with depth buffer)"
+msgstr "Vue Faces Opaques"
+
+###########################################################
+###
+###  Menubar MESH
+###
+###########################################################
+
+msgid "Undo History"
+msgstr "Historique Action"
+
+msgid "Undo Editing"
+msgstr "Annuler Action"
+
+msgid "Redo Editing"
+msgstr "Refaire Action"
+
+msgid "Undo All Changes"
+msgstr "Annuler Toutes les Actions"
+
+msgid "Transform Properties..."
+msgstr "Coordonnées"
+
+msgid "Show/Hide Vertices"
+msgstr "Montrer/Cacher Sommets"
+
+msgid "Hide Deselected"
+msgstr "Cacher Déselect"
+
+msgid "Proportional Falloff"
+msgstr "Déclin Sel. Proportionnelle"
+
+msgid "Linear"
+msgstr "Linéaire"
+
+msgid "Constant"
+msgstr "Constante"
+
+msgid "UV Unwrap"
+msgstr "Dépliage UV"
+
+msgid "Proportional Editing"
+msgstr "Edition Proportionnelle"
+
+msgid "Flip Triangle Edges"
+msgstr "Modifier Triangulation"
+
+###########################################################
+###
+###  Menubar Sculpt
+###
+###########################################################
+
+msgid "X Symmetry"
+msgstr "Symétrie en X"
+
+msgid "Y Symmetry"
+msgstr "Symétrie en Y"
+
+msgid "Z Symmetry"
+msgstr "Symétrie en Z"
+
+msgid "Strengthen Brush"
+msgstr "Dureté de la Brosse"
+
+msgid "Scale Brush"
+msgstr "Taille de la Brosse"
+
+msgid "Sculpt Properties"
+msgstr "Paramètres de Scultpure"
+
+###########################################################
+###
+###  SPACE MENU:  ADD
+###
+###########################################################
+
+msgid "Mesh"
+msgstr "Maillage"
+
+msgid "Curve"
+msgstr "Courbe"
+
+msgid "Circle"
+msgstr "Cercle"
+
+msgid "Surface"
+msgstr "Surface NURBS"
+
+msgid "Text"
+msgstr "Texte"
+
+msgid "Camera"
+msgstr "Caméra"
+
+msgid "Lamp"
+msgstr "Lampe"
+
+msgid "Sun"
+msgstr "Soleil"
+
+msgid "Area"
+msgstr "Surfacique"
+
+msgid "Hemi"
+msgstr "Environnement"
+
+msgid "Plane"
+msgstr "Plan"
+
+msgid "Cube"
+msgstr "Cube"
+
+msgid "UVsphere"
+msgstr "Sphère UV"
+
+msgid "Icosphere"
+msgstr "Icosphère"
+
+msgid "Cylinder"
+msgstr "Cylindre"
+
+msgid "Tube"
+msgstr "Tube"
+
+msgid "Cone"
+msgstr "Cône"
+
+msgid "Box"
+msgstr "Boite"
+
+msgid "Polyheder"
+msgstr "Polyhèdre"
+
+msgid "Grid"
+msgstr "Grille"
+
+msgid "Empty mesh"
+msgstr "Maillage vide"
+
+msgid "Torus"
+msgstr "Anneau"
+
+msgid "Monkey"
+msgstr "Singe"
+
+msgid "Armature"
+msgstr "Armature"
+
+msgid "Sphere"
+msgstr "Sphère"
+
+msgid "MetaBall"
+msgstr "Metaball"
+
+msgid "Empty"
+msgstr "Objet Vide"
+
+msgid "Bezier Curve"
+msgstr "Courbe BEZIER"
+
+msgid "Bezier Circle"
+msgstr "Cercle BEZIER"
+
+msgid "NURBS Curve"
+msgstr "Courbe NURBS"
+
+msgid "NURBS Circle"
+msgstr "Cercle NURBS"
+
+msgid "NURBS Surface"
+msgstr "Surface NURBS"
+
+msgid "NURBS Tube"
+msgstr "Tube NURBS"
+
+msgid "NURBS Sphere"
+msgstr "Sphère NURBS"
+
+msgid "NURBS Donut"
+msgstr "Tore NURBS"
+
+msgid "Path"
+msgstr "Chemin"
+
+msgid "Meta Ellipsoid"
+msgstr "Meta Ellipsoïde"
+
+msgid "Meta Ball"
+msgstr "Meta Boule"
+
+msgid "Meta Plane"
+msgstr "Meta Plan"
+
+###########################################################
+###
+###  SPACE MENU:  OBJECT
+###
+###########################################################
+
+msgid "Join Objects..."
+msgstr "Fusionner"
+
+msgid "Make Links..."
+msgstr "Lier"
+
+msgid "Make Single User..."
+msgstr "Dé-Lier"
+
+msgid "Boolean Operation"
+msgstr "Opération Booléenne"
+
+msgid "Copy Attributes..."
+msgstr "Copier les Propriétés"
+
+###########################################################
+###
+###  SPACE MENU:  EDIT
+###
+###########################################################
+
+msgid "Enter Editmode"
+msgstr "Mode Edition"
+
+msgid "Exit Editmode"
+msgstr "Quitter Mode Edition"
+
+msgid "Undo"
+msgstr "Annuler Action"
+
+msgid "Redo"
+msgstr "Refaire Action"
+
+msgid "Delete..."
+msgstr "Supprimer..."
+
+msgid "Erase"
+msgstr "Effacer"
+
+msgid "Vertices"
+msgstr "Sommets"
+
+msgid "Edges"
+msgstr "Arêtes"
+
+msgid "Normals"
+msgstr "Normales"
+
+msgid "All"
+msgstr "Tout"
+
+msgid "Edges & Faces"
+msgstr "Arêtes et Faces"
+
+msgid "Only Faces"
+msgstr "Faces Seulement"
+
+msgid "Only Edges"
+msgstr "Arêtes Seulement"
+
+msgid "Only Vertices"
+msgstr "Points Seulement"
+
+msgid "Merge..."
+msgstr "Fusionner..."
+
+msgid "Separate"
+msgstr "Séparer en Nouvel Objet"
+
+msgid "Separate "
+msgstr "Séparer en Nouvel Objet"
+
+msgid "Split"
+msgstr "Séparer les Sommets"
+
+msgid "Recalculate Outside"
+msgstr "Recalculer à l'Extérieur"
+
+msgid "Recalculate Inside"
+msgstr "Recalculer à l'Intérieur"
+
+msgid "Make Edge/Face"
+msgstr "Créer Arête/Face"
+
+msgid "Fill"
+msgstr "Remplir"
+
+msgid "Beautify Fill"
+msgstr "Arranger Faces"
+
+msgid "Convert to Triangles"
+msgstr "Convertir en Triangles"
+
+msgid "Convert to Quads"
+msgstr "Convertir en Quads"
+
+#menu Mesh
+msgid "Convert Quads to Triangles"
+msgstr "Convertir les Quads en Triangles"
+
+msgid "Convert Triangles to Quads"
+msgstr "Convertir les Triangles en Quads"
+
+msgid "Extrude"
+msgstr "Extruder"
+
+msgid "Remove Doubles"
+msgstr "Fusionner Points Doubles"
+
+msgid "Flip"
+msgstr "Retourner"
+
+msgid "Control Points"
+msgstr "Points de Contrôle"
+
+msgid "Automatic"
+msgstr "Automatique"
+
+msgid "Make Segment"
+msgstr "Créer Segment"
+
+msgid "Toggle Cyclic"
+msgstr "Cyclique O/N"
+
+msgid "Toggle Free/Aligned"
+msgstr "Poignées Libres/Alignées"
+
+msgid "Reload Original"
+msgstr "Annuler Tout"
+
+msgid "Reload original data"
+msgstr "Revenir au tracé initial?"
+
+msgid "Collapse"
+msgstr "Fusionner"
+
+msgid "Bevel"
+msgstr "Chanfrein"
+
+msgid "Loop Subdivide"
+msgstr "Coupe Circulaire"
+
+msgid "Loop Subdivide..."
+msgstr "Coupe Circulaire..."
+
+msgid "Knife Subdivide..."
+msgstr "Coupe au Couteau..."
+
+msgid "Mark Seam"
+msgstr "Marquer Couture UV"
+
+msgid "Clear Seam"
+msgstr "Effacer Couture UV"
+
+msgid "Slide Edge"
+msgstr "Déplacer l'arête"
+
+# Dialog Box
+msgid "Erase "
+msgstr "Effacer"
+
+msgid "Incorrect number of vertices to make edge/face"
+msgstr "Nombre de sommets incorrect pour créer l'arête/face"
+
+msgid "At Center"
+msgstr "Au Centre"
+
+msgid "At Cursor"
+msgstr "Au Curseur"
+
+# Specials menu
+msgid "Merge"
+msgstr "Fusionner"
+
+# Alt m
+msgid "Merge "
+msgstr "Fusionner"
+
+msgid "At First "
+msgstr "Au Premier"
+
+msgid "At Last"
+msgstr "Au Dernier"
+
+msgid "Flip Normals "
+msgstr "Inverser Normales"
+
+msgid "Smooth "
+msgstr "Adoucir"
+
+msgid "Set Smooth "
+msgstr "Rendu Lissé"
+
+msgid "Set Solid "
+msgstr "Rendu Solide"
+
+###########################################################
+###
+###  SPACE MENU:  TRANSFORM
+###
+###########################################################
+
+msgid "Proportional Edit"
+msgstr "Edition Proportionnelle"
+
+msgid "Scale on Axi"
+msgstr "Mettre à l'échelle sur un Axe"
+
+msgid "Properties"
+msgstr "Transformations (Paramètres)"
+
+msgid "Make Duplicates Real"
+msgstr "Solidifier les objets dupliqués"
+
+msgid "Make dupli objects real"
+msgstr "Solidifier les objets dupliqués"
+
+msgid "ObData to Center"
+msgstr "Maillage au Centre"
+
+###########################################################
+###
+###  SPACE MENU:  VIEW
+###
+###########################################################
+
+msgid "Camera Fly Mode"
+msgstr "Caméra Volante"
+
+msgid "Local/Global View"
+msgstr "Axe Local/Global"
+
+msgid "Viewport Shading"
+msgstr "Aspect Visuel"
+
+msgid "Bounding Box"
+msgstr "Limites"
+
+msgid "Wireframe"
+msgstr "Fil de Fer"
+
+msgid "Solid"
+msgstr "Solide"
+
+msgid "Shaded"
+msgstr "Ombrée"
+
+msgid "Textured"
+msgstr "Texturé"
+
+###########################################################
+###
+###  SPACE MENU:  SELEC
+###
+###########################################################
+
+msgid "Inverse"
+msgstr "Sélection Inverse"
+
+msgid "Less"
+msgstr "Moins"
+
+msgid "More"
+msgstr "Plus"
+
+msgid "(De)select All"
+msgstr "(Dé)Sélectionner Tout"
+
+###########################################################
+###
+###  SPACE MENU:  SURFACE
+###
+###########################################################
+
+msgid "Show/Hide Control Points"
+msgstr "Montrer/Cacher Points"
+
+msgid "Show Hidden"
+msgstr "Afficher Tout"
+
+msgid "Hide Selected"
+msgstr "Cacher Sélection"
+
+###########################################################
+###
+###  SPACE MENU: RENDER
+###
+###########################################################
+
+msgid "Set Border"
+msgstr "Rendu Partiel"
+
+###########################################################
+###
+###  ToolBox  BUTTONS
+###
+###########################################################
+
+msgid "Panels"
+msgstr "Panneaux"
+
+msgid "Logic"
+msgstr "Logique"
+
+msgid "Editing"
+msgstr "Edition"
+
+msgid "Shading"
+msgstr "Ombrage"
+
+# Cause Blender crash when click on radio panel
+#msgid "Radiosity"
+#msgstr "Radiosité"
+
+msgid "Align"
+msgstr "Aligner"
+
+msgid "Free"
+msgstr "Libre"
+
+# Tooltips
+msgid "Logic (F4) "
+msgstr "Logique (F4)"
+
+msgid "Shading (F5) "
+msgstr "Ombrage (F5)"
+
+msgid "Object (F7) "
+msgstr "Objet (F7)"
+
+msgid "Editing (F9) "
+msgstr "Edition (F9)"
+
+msgid "Scene (F10) "
+msgstr "Scène (F10)"
+
+msgid "Lamp buttons"
+msgstr "Lampes"
+
+msgid "Material buttons"
+msgstr "Matériaux"
+
+msgid "Texture buttons(F6)"
+msgstr "Texture (F6)"
+
+msgid "Radiosity buttons"
+msgstr "Radiosité"
+
+msgid "World buttons"
+msgstr "Monde"
+
+###########################################################
+###
+###  ToolBox  ACTOR
+###
+###########################################################
+
+msgid "Add Property"
+msgstr "Ajouter Propriété"
+
+msgid "Actor"
+msgstr "Acteur"
+
+msgid "Ghost"
+msgstr "Fantôme"
+
+msgid "Sensors"
+msgstr "Sens"
+
+msgid "Dynamic"
+msgstr "Physique"
+
+msgid "Rigid Body"
+msgstr "Rigide"
+
+msgid "Controllers"
+msgstr "Contrôles"
+
+msgid "Actuators"
+msgstr "Actions"
+
+msgid "Show all selected Objects"
+msgstr "Affiche tous les Objets sélectionnés"
+
+msgid "Show active Object"
+msgstr "Affiche l'Objet actif"
+
+msgid "Link"
+msgstr "Lier"
+
+msgid "Show Objects"
+msgstr "Affiche les Objets"
+
+msgid "Hide Objects"
+msgstr "Cache les Objets"
+
+msgid "Show Sensors"
+msgstr "Affiche les Sens"
+
+msgid "Hide Sensors"
+msgstr "Cache les Sens"
+
+msgid "Sensor type"
+msgstr "Type de Sens"
+
+msgid "Sensor name"
+msgstr "Nom du Sens"
+
+msgid "Sensor settings"
+msgstr "Paramètre du Sens"
+
+msgid "Add a new Sensor"
+msgstr "Ajouter un nouveau Sens"
+
+msgid "Add a new Controller"
+msgstr "Ajouter un nouveau Contrôle"
+
+msgid "Add a new Actuator"
+msgstr "Ajouter une nouvelle Action"
+
+msgid "Active Object name"
+msgstr "Nom de l'Objet Actif"
+
+msgid "Delete Controller"
+msgstr "Supprimer un contrôle"
+
+msgid "Controller settings"
+msgstr "Paramètres du contrôle"
+
+msgid "Controller type"
+msgstr "Type de contrôle"
+
+msgid "Controller name"
+msgstr "Nom du contrôle"
+
+msgid "AND "
+msgstr "ET"
+
+msgid "OR "
+msgstr "OU"
+
+msgid "Motion "
+msgstr "Mouvement"
+
+msgid "Property "
+msgstr "Propriété"
+
+msgid "Sound "
+msgstr "Son"
+
+msgid "Camera "
+msgstr "Caméra"
+
+msgid "Visibility "
+msgstr "Visibilité"
+
+msgid "Scene "
+msgstr "Scène"
+
+msgid "Restart "
+msgstr "Redémarrer"
+
+###########################################################
+###
+###  ToolBox  SHADING (F5)  
+###
+###########################################################
+
+msgid "Link to Object"
+msgstr "Lien à l'Objet"
+
+msgid "Render Pipeline"
+msgstr "Pipeline de Rendu"
+
+msgid "OnlyCast"
+msgstr "Invisible"
+
+msgid "Preview"
+msgstr "Aperçu"
+
+msgid "Shadow and Spot"
+msgstr "Ombre et Spot"
+
+msgid "Sky/Atmosphere"
+msgstr "Ciel / Atmosphère"
+
+msgid "Atmosphere"
+msgstr "Atmosphère"
+
+msgid "Hem"
+msgstr "Envir"
+
+msgid "Real"
+msgstr "Réel"
+
+msgid "Blend"
+msgstr "Fondu"
+
+msgid "Paper"
+msgstr "Papier"
+
+msgid "Physics "
+msgstr "Moteur Physique"
+
+msgid "DataBrowse "
+msgstr "Parcourir"
+
+msgid "Mist / Stars / Physics"
+msgstr "Brouillard / Physique"
+
+#Tip
+msgid "Physics Engine"
+msgstr "Moteur Physique"
+
+msgid "Amb Occ"
+msgstr "Occlusion"
+
+msgid "Mist"
+msgstr "Brouillard"
+
+msgid "Stars"
+msgstr "Etoiles"
+
+msgid "Gather Method"
+msgstr "Méthode de Calcul"
+
+msgid "Raytrace "
+msgstr "Lancer de Rayons"
+
+msgid "Approximate "
+msgstr "Approximatif"
+
+msgid "Sub"
+msgstr "Soustraire"
+
+msgid "Both"
+msgstr "Les deux"
+
+msgid "Plain"
+msgstr "Blanc"
+
+msgid "Sky Color"
+msgstr "Couleur du Ciel"
+
+msgid "Sky Texture"
+msgstr "Texture du Ciel"
+
+msgid "Ramps"
+msgstr "Dégradés"
+
+msgid "Show Col Ramp"
+msgstr "Aff. Dégradé Couleur"
+
+msgid "Show Spec Ramp"
+msgstr "Aff. Dégradé Spéculaire"
+
+msgid "Colorband"
+msgstr "Dégradé"
+
+msgid "SSS"
+msgstr "Translucidité SSS"
+
+msgid "Subsurface Scattering"
+msgstr "Activer"
+
+msgid "Enables diffuse subsurface scattering"
+msgstr "Active la translucidité du matériau en utilisant la méthode 'SSS' (SubSurface Scattering)."
+
+msgid "Custom "
+msgstr "Personnalisé"
+
+msgid "Apple "
+msgstr "Pomme"
+
+msgid "Cream "
+msgstr "Crême"
+
+msgid "Whole Milk "
+msgstr "Lait Entier"
+
+msgid "Skim Milk "
+msgstr "Lait écrémé"
+
+msgid "Skin 1 "
+msgstr "Peau 1"
+
+msgid "Skin 2 "
+msgstr "Peau 2"
+
+msgid "Chicken "
+msgstr "Poulet"
+
+msgid "Potato "
+msgstr "Pomme de Terre"
+
+msgid "Ray Shadow"
+msgstr "Ombres Ray"
+
+msgid "Mirror Transp"
+msgstr "Réflex / Transp"
+
+msgid "Ray Mirror"
+msgstr "Réflexion Ray"
+
+msgid "Ray Transp"
+msgstr "Transparence Ray"
+
+msgid "OnlyShadow"
+msgstr "Ombre Seule"
+
+msgid "Add New"
+msgstr "Ajouter Nouveau"
+
+msgid "Wire"
+msgstr "Fil de Fer"
+
+msgid "Shadeless"
+msgstr "Neutre"
+
+msgid "Traceable"
+msgstr "Rayons"
+
+msgid "TraShado"
+msgstr "Ombres α"
+
+msgid "OnlyShad"
+msgstr "Omb.Seul."
+
+msgid "Layer"
+msgstr "Calque"
+
+msgid "Flat"
+msgstr "Plat"
+
+msgid "Orco"
+msgstr "Local"
+
+msgid "Win"
+msgstr "Fen"
+
+msgid "Full Osa"
+msgstr "OSA Forcé"
+
+msgid "No Mist"
+msgstr "Sans Brouillard"
+
+msgid "World"
+msgstr "Monde"
+
+msgid "Clear"
+msgstr "Effacer"
+
+msgid "None"
+msgstr "Aucune"
+
+msgid "None "
+msgstr "Aucune"
+
+msgid "Colors"
+msgstr "Couleurs"
+
+msgid "Map Input"
+msgstr "Position"
+
+msgid "Map To"
+msgstr "Canaux"
+
+msgid "Texture Type"
+msgstr "Type de Texture"
+
+msgid "Default Vars"
+msgstr "Réinitialiser"
+
+msgid "Texture and Input"
+msgstr "Texture et Position"
+
+msgid "Load Image"
+msgstr "Charger Image"
+
+msgid "Repeat"
+msgstr "Répeter"
+
+msgid "ADD NEW "
+msgstr "NOUVEAU"
+
+msgid "Star"
+msgstr "Etoile"
+
+msgid "Mix "
+msgstr "Melanger"
+
+msgid "Add "
+msgstr "Ajouter"
+
+msgid "Subtract "
+msgstr "Soustraire"
+
+msgid "Multiply "
+msgstr "Multiplier"
+
+msgid "Lighten "
+msgstr "Eclaircir"
+
+msgid "Darken "
+msgstr "Assombrir"
+
+msgid "Screen "
+msgstr "Ecran"
+
+msgid "Divide "
+msgstr "Diviser"
+
+msgid "Difference "
+msgstr "Différence"
+
+msgid "Overlay "
+msgstr "Par dessus"
+
+msgid "Texture Type "
+msgstr "Type de Texture"
+
+msgid "Clouds "
+msgstr "Nuages"
+
+msgid "Marble "
+msgstr "Marbre"
+
+msgid "Blend "
+msgstr "Fondu"
+
+msgid "Wood "
+msgstr "Bois"
+
+msgid "Strands"
+msgstr "Filaments"
+
+#Tooltips
+msgid "Preview type: Flat XY plane"
+msgstr "Aperçu: Plan XY"
+
+msgid "Preview type: Sphere"
+msgstr "Aperçu: Sphère"
+
+msgid "Preview type: Cube"
+msgstr "Aperçu: Cube"
+
+msgid "Preview type: Monkey"
+msgstr "Aperçu: Singe"
+
+msgid "Preview type: Hair strands"
+msgstr "Aperçu: Filaments"
+
+msgid "Preview type: Large sphere with sky"
+msgstr "Aperçu: Grand sphère avec ciel"
+
+msgid "Displays the textures of the active material"
+msgstr "Affiche les textures du matériau sélectionné"
+
+msgid "Displays the textures of the world block"
+msgstr "Affiche les textures du Monde"
+
+msgid "Displays the textures of the selected lamp"
+msgstr "Affiche les textures de la lampe sélectionnée"
+
+msgid "Renders material as a halo"
+msgstr "Rendre le matériau en tant qu'Halo"
+
+msgid "Enables Z-Buffering of transparent faces"
+msgstr "Active la transparence par Z-Buffer"
+
+msgid "Enables material for radiosity rendering"
+msgstr "Active ce matériau pour le calcul de la radiosité"
+
+msgid "Renders only the edges of faces as a wireframe"
+msgstr "Montre seulement les arêtes des faces en tant que lignes"
+
+msgid "Makes faces only cast shadows, not rendered"
+msgstr "Les faces sont invisibles mais projettent des ombres"
+
+msgid "Makes material to being detected by ray tracing"
+msgstr "Le matériau est détecté par le lancé de rayon"
+
+msgid "Makes material insensitive to light or shadow"
+msgstr "Le matériau est insensible à la lumière et aux ombres"
+
+msgid "Makes material receive shadows"
+msgstr "Le matériau reçoit les ombres portées"
+
+msgid "Receives transparent shadows based at material color and alpha"
+msgstr "Active la gestion de la transparence des ombres portées recues"
+
+msgid "Renders shadows on material as Alpha value"
+msgstr "Le matériau devient transparent mais affiche les ombres portées reçues en Alpha"
+
+###########################################################
+###
+###  ToolBox  OBJECT (F7)
+###
+###########################################################
+
+msgid "Name"
+msgstr "Nom"
+
+msgid "Axis"
+msgstr "Axes"
+
+msgid "Bounds"
+msgstr "Limites"
+
+msgid "Draw Extra"
+msgstr "Plus d'options"
+
+msgid "X-ray"
+msgstr "Rayons X"
+
+msgid "TexSpace"
+msgstr "ZoneTexture"
+
+msgid "TexSpac"
+msgstr "ZoneTex."
+
+msgid "Object and Links"
+msgstr "Objet et Liens"
+
+msgid "Add to Group"
+msgstr "Ajouter au Groupe"
+
+#Tooltip Bounds (les grands tooltip passent en 800 par 600).
+msgid "Only draw object with bounding box"
+msgstr "Dessine le volume d'un objet (Par défaut sa boite englobante, ou suivant le type de limites sélectionné)."
+
+msgid "Draw active object in wireframe"
+msgstr "Dessine l'objet en fil de fer."
+
+msgid "Adds the active object's wireframe over solid drawing"
+msgstr "Ajoute le rendu fil de fer par dessus le rendu solide."
+
+msgid "Displays the active object's texture space"
+msgstr "Affiche la zone de texture de l'objet actif."
+
+msgid "Makes the active object draw in front of others"
+msgstr "L'objet actif est affiché par dessus tout les autres."
+
+msgid "Draw active object in solid"
+msgstr "Dessine l'objet actif en mode solide."
+
+msgid "Draw active object shaded or textured"
+msgstr "Dessine l'objet actif avec ses textures ou son ombrage."
+
+msgid "Displays the active object's bounds"
+msgstr "Affiche les limites de l'objet actif, son volume en quelque sorte."
+
+msgid "Selects the boundary display type"
+msgstr "Permet de sélectionner la représentation des limites."
+
+msgid "Enables transparent materials for the active object (Mesh only)"
+msgstr "Affiche la transparence d'une matière d'un objet de type maillage dans le mode solide (dépend essentiellement du curseur Alpha)."
+
+msgid "Displays the active object's name"
+msgstr "Affiche le nom de l'objet sur son centre (son pivot)."
+
+msgid "Displays the active object's center and axis"
+msgstr "Affiche l'axe de l'objet sur son centre (son pivot)."
+#Tooltips fin
+
+msgid "Constraints"
+msgstr "Contraintes"
+
+msgid "Anim settings"
+msgstr "Paramètres d'Animation"
+
+#tips
+msgid "Make copy of object for every frame"
+msgstr "Effectue une copie de l'objet pour chaque frame"
+
+msgid "Specify the axis that points up"
+msgstr "Spécifie l'axe orienté vers le haut"
+
+msgid "Draw"
+msgstr "Dessiner"
+
+msgid "Layers"
+msgstr "Calques"
+
+msgid "Drawtype"
+msgstr "Apparence"
+
+msgid "Add Constraint"
+msgstr "Ajouter Contrainte"
+
+msgid "Add Constrain"
+msgstr "Ajouter"
+
+msgid "Links and Pipeline"
+msgstr "Liens et Pipeline"
+
+msgid "Nodes"
+msgstr "Noeuds"
+
+msgid "Copy Scale"
+msgstr "Copier l'Echelle"
+
+msgid "Copy Location"
+msgstr "Copier la Position"
+
+msgid "Copy Rotation"
+msgstr "Copier la Rotation"
+
+msgid "Target:"
+msgstr "Cible:"
+msgid "Delete constraint"
+msgstr "Supprime la contrainte"
+
+msgid "Constraint name"
+msgstr "Nom de la contrainte"
+
+msgid "Copy X component"
+msgstr "Copier la composante X"
+
+msgid "Copy Y component"
+msgstr "Copier la composante Y"
+
+msgid "Copy Z component"
+msgstr "Copier la composante Z"
+
+msgid "Amount of influence this constraint will have on the final solution"
+msgstr "Taux d'influence que va avoir cette contrainte sur la solution finale"
+
+msgid "Follow Path"
+msgstr "Suivre le chemin"
+
+#Tootips
+msgid "Add a new constraint"
+msgstr "Ajouter une nouvelle contrainte"
+
+msgid "Object center attracts or repels particles"
+msgstr "Le centre de l'objet attire ou repousse les particules"
+
+msgid "Wind"
+msgstr "Vent"
+
+msgid "NEW"
+msgstr "Nouveau"
+
+msgid "Kill"
+msgstr "Tuer"
+
+msgid "Cloth "
+msgstr "Tissu"
+
+msgid "Cloth"
+msgstr "Tissu"
+
+msgid "Advanced"
+msgstr "Avancé"
+
+msgid "Fluid"
+msgstr "Fluide"
+
+msgid "Particle System" 
+msgstr "Particules"
+
+msgid "Basic:" 
+msgstr "Basique:"
+
+msgid "Emit From:" 
+msgstr "Émission depuis:"
+
+msgid "Even" 
+msgstr "Réparti"
+
+msgid "Hair" 
+msgstr "Poil"
+
+msgid "Emitter" 
+msgstr "Émetteur"
+
+msgid "Physics" 
+msgstr "Physique"
+
+msgid "Newtonian" 
+msgstr "Newton"
+
+msgid "Initial velocity:" 
+msgstr "Vitesse initiale:"
+
+msgid "Visualization" 
+msgstr "Visualisation"
+
+msgid "Line " 
+msgstr "Ligne"
+
+msgid "Axis " 
+msgstr "Axes"
+
+msgid "Circle " 
+msgstr "Cercle"
+
+msgid "Cross " 
+msgstr "Croix"
+
+msgid "Path " 
+msgstr "Chemin"
+
+msgid "Draw:" 
+msgstr "Affichage:"
+
+msgid "Render:" 
+msgstr "Rendu:"
+
+msgid "Died" 
+msgstr "Mortes"
+
+msgid "Free Bake" 
+msgstr "Effacer"
+
+msgid "No simulation frames in disk cache." 
+msgstr "Aucune simulation précalculée"
+
+#tip
+msgid "Create a new Particle effect"
+msgstr "Crée un nouvel effet sur les Particules"
+
+msgid "Delete the effect"
+msgstr "Suppression de l'effet"
+
+msgid "Soft Body"
+msgstr "Corps Mou"
+
+msgid "Enable Soft Body"
+msgstr "Activer Corp Mou"
+
+msgid "Fluid Simulation"
+msgstr "Fluides"
+
+msgid "Enable"
+msgstr "Activer"
+
+msgid "Object not enabled for fluid simulation."
+msgstr "Simulation des fluides désactivée pour cet objet"
+
+msgid "Object is not a softbody."
+msgstr "L'Objet n'est pas un corps mou"
+
+###########################################################
+###
+###  ToolBox  EDITING (F9)
+###
+###########################################################
+
+msgid "Array"
+msgstr "Arrangement"
+
+msgid "Build"
+msgstr "Construction"
+
+msgid "Wave"
+msgstr "Vague"
+
+msgid "Decimate"
+msgstr "Reduction Poly"
+
+msgid "UVProject"
+msgstr "Projeter UV"
+
+msgid "Mirror U"
+msgstr "Miroir U"
+
+msgid "Mirror V"
+msgstr "Miroir V"
+
+msgid "Assign"
+msgstr "Assigner Matériau"
+
+msgid "Assig"
+msgstr "Ajouter"
+
+msgid "Remove"
+msgstr "Enlever"
+
+msgid "Set Smooth"
+msgstr "Lissé"
+
+msgid "Set Solid"
+msgstr "Solide"
+
+msgid "Auto Smooth"
+msgstr "Lissage Auto"
+
+msgid "Make"
+msgstr "Créer"
+
+msgid "Center"
+msgstr "Centre"
+
+msgid "Center New"
+msgstr "Maillage"
+
+msgid "Center Cursor"
+msgstr "Centre > Curseur"
+
+#tip
+msgid "Shifts object data to be centered about object's origin"
+msgstr "Décale les données de l'objet pour qu'elles soient centrées sur l'origine de l'objet"
+
+msgid "Double Sided"
+msgstr "Faces Doubles"
+
+#tip
+msgid "Render/display the mesh as double or single sided"
+msgstr "Bascule les faces de l'objet en mode simple ou double-face"
+
+msgid "Vertex Color"
+msgstr "Couleurs Sommets"
+
+msgid "SlowerDraw"
+msgstr "Affich Lent"
+
+#tip
+msgid "Displays the active object with all possible edges shown"
+msgstr "Affiche l'objet actif en montrant toutes les arêtes possibles"
+
+msgid "FasterDraw"
+msgstr "Affich Rapide"
+
+#tip
+msgid "Displays the active object faster by omitting some edges when drawing"
+msgstr "Affiche l'objet actif plus rapidement en omettant certaines arêtes"
+
+msgid "Link and Materials"
+msgstr "Liens et Matériaux"
+
+msgid "Modifiers"
+msgstr "Modificateurs"
+
+msgid "Curve and Surface"
+msgstr "Courbe et Surface"
+
+msgid "Deselect"
+msgstr "Désélection"
+
+msgid "Apply"
+msgstr "Appliquer"
+
+msgid "Copy"
+msgstr "Copier"
+
+msgid "Rem Doubles"
+msgstr "Supp Doubles"
+
+msgid "Flip Normals"
+msgstr "Inv Normales"
+
+msgid "Smooth"
+msgstr "Adoucir"
+
+msgid "Draw Normals"
+msgstr "Afficher Normales"
+
+msgid "Draw VNormals"
+msgstr "Afficher VNormales"
+
+msgid "Draw Edges"
+msgstr "Afficher Arêtes"
+
+#tooltip
+msgid "Displays edges of visible faces"
+msgstr "Affiche les arêtes des faces visibles"
+
+msgid "Draw Hidden Edges"
+msgstr "Afficher Arêtes Cachées"
+
+#tooltip
+msgid "Displays edges of hidden faces"
+msgstr "Affiche les arêtes des faces cachées"
+
+msgid "Draw Seams"
+msgstr "Afficher Coutures UV"
+
+msgid "Edge Length"
+msgstr "Afficher Longueurs"
+
+msgid "Edge Angles"
+msgstr "Afficher Angles"
+
+msgid "Face Area"
+msgstr "Afficher Surfaces"
+
+msgid " Tools"
+msgstr "Outils"
+
+msgid "Mesh Tools More"
+msgstr "Affichage"
+
+msgid "UV Calculation"
+msgstr "Dépliage UV"
+
+msgid "Add Modifier"
+msgstr "Ajouter Modificateur"
+
+msgid "Boolean"
+msgstr "Booléen"
+
+msgid "Noise"
+msgstr "Bruit"
+
+msgid "Short"
+msgstr "Court"
+
+msgid "Subdivide"
+msgstr "Subdiviser"
+
+msgid "To Sphere"
+msgstr "En Sphère"
+
+msgid "Spin"
+msgstr "Cercle"
+
+msgid "Vertex Groups"
+msgstr "Groupes de Sommets"
+
+msgid "Copy Group"
+msgstr "Dupliquer Groupe"
+
+msgid "Selec"
+msgstr "Sélec."
+
+msgid "Desel."
+msgstr "Désélec."
+
+msgid "Select Swap"
+msgstr "Inverser Sélec"
+
+msgid "Hide"
+msgstr "Cacher"
+
+msgid "Reveal"
+msgstr "Tout Montrer"
+
+msgid "AutoTexSpace"
+msgstr "Déform. Texture Auto"
+
+msgid "Keep Original"
+msgstr "Garder l'Original"
+
+msgid "Clockwise"
+msgstr "Sens Horaire"
+
+msgid "Screw"
+msgstr "Visser"
+
+msgid "Join Triangles"
+msgstr "Tirangles > Quads"
+
+msgid "Shapes"
+msgstr "Mémoire de Formes"
+
+msgid "Add Shape Key"
+msgstr "Ajouter une Clé de Forme"
+
+msgid "Add new Shape Key"
+msgstr "Ajouter une nouvelle Clé de Forme"
+
+msgid "Previous Shape Key"
+msgstr "Clé de Forme précédente"
+	 
+msgid "Next Shape Key"
+msgstr "Clé de Forme suivante"
+
+msgid "Makes Shape Keys relative"
+msgstr "Rend relatives les Clés de Forme"
+
+msgid "Deletes current Shape Key"
+msgstr "Supprime la Clé de Forme courante"
+
+msgid "Show:"
+msgstr "Afficher:"
+
+msgid "Limits"
+msgstr "Limites"
+
+msgid "Lens:"
+msgstr "Lentille:"
+
+msgid "Clipping:"
+msgstr "Champ de vision:"
+
+msgid "Vertex Group"
+msgstr "Groupes de Sommets"
+
+# Tooltips
+msgid "Adjusts active object's texture space automatically when transforming object"
+msgstr "Ajuste automatiquement l'espace de texture de l'objet lorsque celui-ci est transformé"
+
+msgid "Extrudes the selected vertices in a circle around the cursor in the indicated viewport"
+msgstr "Extrude les sommets sélectionnés en décrivant un cercle autour du curseur 3D"
+
+msgid "Add a new modifier"
+msgstr "Ajoute un nouveau Modificateur"
+
+msgid "Splits selected faces into halves or quarters"
+msgstr "Divise les faces sélectionnées en moitiés ou en quarts"
+
+msgid "In EditMode, sets 'smooth' rendering of selected faces"
+msgstr "Rend 'lisse' le rendu des faces sélectionnées"
+
+msgid "In EditMode, sets 'solid' rendering of selected faces"
+msgstr "Rend 'solide' le rendu des faces sélectionnées"
+
+msgid "Splits selected verts to separate sub-mesh."
+msgstr "Sépare les sommets sélectionnés en un sous-maillage autonome"
+
+msgid "Removes duplicates from selected vertices"
+msgstr "Fusionne les doublons parmi les sommets sélectionnés"
+
+msgid "Displays total number of material indices and the current index"
+msgstr "Indique le nombre total d'indices de matériaux puis l'indice actif"
+
+msgid "In EditMode, sets the active material index from selected faces"
+msgstr "Sélectionne l'indice de matériau actif à partir des faces sélectionnées"
+
+msgid "Adds a new Material index"
+msgstr "Ajoute un nouvel Indice de Matériau"
+
+msgid "Deletes this Material index"
+msgstr "Supprime cet Indice de Matériau"
+
+msgid "In EditMode, selects faces that have the active index"
+msgstr "Sélectionne les faces qui appartiennent à l'Indice de Matériau actif"
+
+msgid "Deselects everything with current indexnumber"
+msgstr "Désélectionne tout ce qui appartient à l'Indice de Matériau actif"
+
+msgid "In EditMode, assigns the active index to selected faces"
+msgstr "Assigne l'Indice de Matériau actif aux faces sélectionnées"
+
+msgid "Creates a new vertex group"
+msgstr "Crée un nouveau groupe de sommets"
+
+msgid "Assigns selected vertices to the current vertex group"
+msgstr "Assigne les sommets sélectionnés au groupe en cours"
+
+msgid "Removes the current vertex group"
+msgstr "Supprime le groupe de sommets en cours"
+
+msgid "Removes selected vertices from the current vertex group"
+msgstr "Soustrait les sommets sélectionnés du groupe en cours"
+
+msgid "Selects vertices belonging to the current vertex group"
+msgstr "Sélectionne les sommets appartenant au groupe en cours"
+
+msgid "Deselects vertices belonging to the current vertex group"
+msgstr "Désélectionne les sommets appartenant au groupe en cours"
+
+msgid "Displays current Datablock name. Click to change."
+msgstr "Indique le bloc de données en cours. Cliquer pour modifier"
+
+msgid "Browses existing choices or adds NEW"
+msgstr "Parcourt les choix existants ou en ajoute un Nouveau"
+
+msgid "Saves this datablock even if it has no users"
+msgstr "Sauvegarde ce bloc de données même s'il n'a pas d'utilisateur"
+
+msgid "Displays Active Object name. Click to change."
+msgstr "Indique le nom de l'objet actif. Cliquer pour modifier"
+
+msgid "Treats all set-smoothed faces with angles less than Degr: as 'smooth' during render"
+msgstr "Traite toutes les faces lissées qui ont un angle inférieur à 'Degr' comme lisses lors du rendu"
+
+msgid "Hides selected faces"
+msgstr "Cache les faces sélectionnées"
+
+msgid "Reveals selected faces"
+msgstr "Montre les faces cachées et les sélectionne"
+
+msgid "Defines maximum angle between face normals that 'Auto Smooth' will operate on"
+msgstr "Définit l'angle maximal entre les normales des faces sur lesquelles le 'Lissage Auto' va opérer"
+
+msgid "Toggles the direction of the selected face's normals"
+msgstr "Inverse la direction des normales des faces sélectionnées"
+
+msgid "Subdivides selected faces with a random factor"
+msgstr "Subdivise les faces sélectionnées avec un facteur de hasard"
+
+msgid "Selects type of Subsurf algorithm."
+msgstr "Sélectionne le type d'algorithme pour les Subdivisions de Surface"
+
+msgid "Flattens angles of selected faces"
+msgstr "Adoucit les angles des faces sélectionnées"
+
+msgid "Activates the screw tool"
+msgstr "Active l'outil tournevis"
+
+msgid "Specify the lens of the camera"
+msgstr "Ouverture de la caméra (mm)"
+
+msgid "Specify the startvalue of the the field of view"
+msgstr "Spécifie la valeur de départ du champ de vision"
+
+msgid "Specify the endvalue of the the field of view"
+msgstr "Spécifie la valeur de fin du champ de vision"
+
+msgid "Render orthogonally"
+msgstr "Projection orthogonale"
+
+msgid "Draw the field of view"
+msgstr "Dessine le champ de vision"
+
+msgid "Draw the active camera's name in camera view"
+msgstr "Affiche le nom de la caméra utilisée dans la vue caméra"
+
+msgid "Paint"
+msgstr "Peinture"
+
+msgid "Mul"
+msgstr "Multiplier"
+
+msgid "Lighter"
+msgstr "+ Clair"
+
+msgid "Darker"
+msgstr "+ Sombre"
+
+msgid "Add Multires"
+msgstr "Ajouter Multires"
+
+msgid "Sculpt"
+msgstr "Sculpture"
+
+msgid "Brush"
+msgstr "Brosse"
+
+msgid "Pinch"
+msgstr "Pincer"
+
+msgid "Inflate"
+msgstr "Grossir"
+
+msgid "Grab"
+msgstr "Déplacer"
+
+msgid "Flatten"
+msgstr "Aplatir"
+
+msgid "Shape"
+msgstr "Forme"
+
+msgid "Symmetry"
+msgstr "Symétrie"
+
+###########################################################
+###
+###  Editing Armature (F9)  
+###
+###########################################################
+
+msgid "Armature Bones"
+msgstr "Os"
+
+msgid "Selected Bones"
+msgstr "Os sélectionnés"
+
+msgid "Display Options"
+msgstr "Options d'Affichage"
+
+msgid "child of"
+msgstr "enfant de"
+
+#tips
+msgid "Draw bone names"
+msgstr "Affiche le nom des Os"
+
+msgid "Draw bone axis"
+msgstr "Affiche l'axe des Os"
+
+###########################################################
+###
+###  ToolBox  RENDER (F10)  
+###
+###########################################################
+
+# Panneau Output
+msgid "Edge"
+msgstr "Arête"
+
+msgid "Edge Settings"
+msgstr "Paramètres"
+
+msgid "Output"
+msgstr "Sortie"
+
+msgid "No Overwrite"
+msgstr "Ne Pas Écraser"
+
+msgid "Disable Tex"
+msgstr "Sans Textures"
+
+msgid "Render Display "
+msgstr "Affichage du Rendu"
+
+msgid "Render Window "
+msgstr "Fenêtre"
+
+msgid "Image Editor "
+msgstr "Editeur UV/Image"
+
+msgid "Full Screen "
+msgstr "Plein écran"
+
+# Panneau Render Layers
+msgid "Render Layers"
+msgstr "Couches"
+
+msgid "Scene:"
+msgstr "Scène:"
+
+msgid "Single"
+msgstr "Solo"
+
+#tip
+msgid "Only render this layer"
+msgstr "Active uniquement cette couche pour le rendu."
+
+msgid "Layer:"
+msgstr "Calques:"
+
+msgid "Combined"
+msgstr "RGB/A"
+
+# Panneau Render
+msgid "OSA"
+msgstr "Anticrénelage"
+
+msgid "Enables Oversampling (Anti-aliasing)"
+msgstr "Active l'Anticrénelage"
+
+msgid "RENDER"
+msgstr "Rendu Image Simple"
+
+msgid "Shadow"
+msgstr "Ombres"
+
+msgid "SS"
+msgstr "SSS"
+
+msgid "Sky"
+msgstr "Ciel"
+
+msgid "Fill background with sky"
+msgstr "Affiche le ciel en tant que fond de rendu"
+
+msgid "Border"
+msgstr "Rendu Partiel"
+
+msgid "Rendering Engine "
+msgstr "Moteur de Rendu"
+
+msgid "Blender Internal "
+msgstr "Blender Interne"
+
+msgid "Start the rendering"
+msgstr "Démarre le rendu"
+
+msgid "Start rendering a sequence"
+msgstr "Démarre le rendu de l'animation"
+
+# Panneau Anim
+msgid "Anim"
+msgstr "Animation"
+
+msgid "ANIM"
+msgstr "Rendu Animation"
+
+msgid "Do Sequence"
+msgstr "Activer Montage Vidéo"
+
+msgid "Do Composite"
+msgstr "Activer Rendu Composite"
+
+msgid "PLAY"
+msgstr "Lire"
+
+# Panneau Bake
+msgid "Bake"
+msgstr "Précalculer"
+
+msgid "BAKE"
+msgstr "Rendu vers Textures"
+
+# Panneau Format
+msgid "Size preset: Image size - 720x576, Aspect ratio - 54x51, 25 fps"
+msgstr "Configuration PAL : Image 720x576; Ratio 54x51; 25 ips."
+
+msgid "Size preset: Image size - 720x480, Aspect ratio - 10x11, 30 fps"
+msgstr "Configuration NTSC : Image 720x480; Ratio 10x11; 30 ips."
+
+msgid "Same as PAL, with render settings (OSA, Shadows, Fields)"
+msgstr "Pareil que PAL, avec les paramètres OSA, Ombre, Trames mais sans ips."
+
+msgid "Size preset: Image size - 640x512, Render size 50%"
+msgstr "Aperçu : Image 640x512, Rendu à 50%."
+
+msgid "Size preset: Image size - 640x480, Aspect ratio - 100x100"
+msgstr "Configuration PC : Image 640x480, Ratio 100x100."
+
+msgid "Size preset: Image size - 720x576, Aspect ratio - 64x45"
+msgstr "Configuration PAL 16:9 : Image 720x576, Ratio 64x45, 25 ips."
+
+msgid "Standard panorama settings"
+msgstr "Paramètres standard pour un panorama."
+
+msgid "Size preset: Image size - 1280x1024, Aspect ratio - 1x1"
+msgstr "Image 1280x1024, Ratio 1x1"
+
+msgid "Default"
+msgstr "Défaut"
+
+msgid "FULL"
+msgstr "GRAND"
+
+msgid "Save image as: "
+msgstr "Format du rendu:"
+
+msgid "Crop"
+msgstr "Coupe"
+
+msgid "BW"
+msgstr "N&B"
+
+msgid "Images are saved with BW (grayscale) data"
+msgstr "Les images sont enregistrées en niveau de gris."
+
+msgid "RGB"
+msgstr "RVB"
+
+msgid "Images are saved with RGB (color) data"
+msgstr "Les images sont enregistrées en RVB (couleurs)."
+
+msgid "RGBA"
+msgstr "RVBA"
+
+msgid "Images are saved with RGB and Alpha data (if supported)"
+msgstr "Les images sont enregistrées en RVB avec un canal Alpha (si le format le permet)."
+
+msgid "The image width in pixels"
+msgstr "Longueur de l'image en pixel."
+
+msgid "The image height in scanlines"
+msgstr "Hauteur de l'image en pixel."
+
+msgid "The horizontal aspect ratio"
+msgstr "Permet de définir la taille horizontale des pixels."
+
+msgid "The vertical aspect ratio"
+msgstr "Permet de définir la taille verticale des pixels."
+
+msgid "Images are saved in this file format"
+msgstr "Les images rendues sont enregistrées dans ce format."
+
+msgid "Quality setting for JPEG images, AVI Jpeg and SGI movies"
+msgstr "Paramétrage de la qualité des images JPEG, AVI Jpeg et des films SGI."
+
+msgid "Frames per second"
+msgstr "Nombre d'Images Par Secondes (ips)"
+
+# Panneau Game framing setting
+msgid "Game framing settings"
+msgstr "Options de jeu"
+
+msgid "Display game framing settings"
+msgstr "Accédez aux options d'affichage du moteur de jeu."
+
+msgid "No stereo"
+msgstr "Mono"
+
+msgid "Disables stereo"
+msgstr "Désactive le son stéréo"
+
+msgid "Enables hardware pageflip stereo method"
+msgstr "Active la méthode 'pageflip' pour synchroniser les canaux audios avec des tampons OpenGL."
+
+# Panneau Stamp
+msgid "Stamp"
+msgstr "Étiquette"
+
+msgid "Enable Stamp"
+msgstr "Réglages"
+
+msgid "Draw Stamp"
+msgstr "Activer Étiquette"
+
+msgid "Filename"
+msgstr "Nom de Fichier"
+
+msgid "Time"
+msgstr "Temps"
+
+# Panneau Animation
+msgid "Sync"
+msgstr "Synchronisation"
+
+#tooltip
+msgid "Use sample clock for syncing animation to audio"
+msgstr "Utilise une horloge pour respecter la vitesse d'animation"
+
+# Panneau Sound
+msgid "Sound"
+msgstr "Son"
+
+msgid "Sequencer"
+msgstr "Séquenceur"
+
+msgid "Audio sequencer settings"
+msgstr "Paramètres du séquenceur audio"
+
+
+###########################################################
+###
+###  SECTION TEXT EDITOR
+###
+###########################################################
+
+msgid "Run Python Script"
+msgstr "Exécuter le script"
+
+msgid "Paste"
+msgstr "Coller"
+
+msgid "Cut"
+msgstr "Couper"
+
+msgid "Jump..."
+msgstr "Aller à..."
+
+msgid "Find..."
+msgstr "Chercher..."
+
+msgid "Find Again"
+msgstr "Chercher encore"
+
+msgid "OPEN NEW "
+msgstr "OUVRIR"
+
+msgid "Reopen"
+msgstr "Ré-Ouvrir"
+
+###########################################################
+###
+###  SECTION NLA
+###
+###########################################################
+
+msgid "Auto-Snap Strips/Keyframes "
+msgstr "Accrochage"
+
+msgid "No Snap "
+msgstr "Aucun"
+
+msgid "Frame Step "
+msgstr "Images"
+
+msgid "Only Objects On Visible Layers"
+msgstr "Aff. seulement les Calques Visibles"
+
+msgid "Select/Deselect All Keys"
+msgstr "(Dé)Sélectionner Toutes les Clés"
+
+###########################################################
+###
+###  SECTION TIMELINE
+###
+###########################################################
+
+msgid "Jump To Prev Key"
+msgstr "Aller à la Clé Préc."
+
+msgid "Jump To Next Key"
+msgstr "Aller à la Clé Suiv."
+
+msgid "Jump To Prev Marker"
+msgstr "Aller au Repère Préc."
+
+msgid "Jump To Next Marker"
+msgstr "Aller au Repère Suiv."
+
+msgid "Frame"
+msgstr "Image"
+
+msgid "Add Marker"
+msgstr "Ajouter un Repère"
+
+msgid "Duplicate Marker"
+msgstr "Copier Repère"
+
+msgid "Delete Marker"
+msgstr "Supprimer Repère"
+
+msgid "Name Marker"
+msgstr "(Re)Nommer Repère"
+
+msgid "Grab/Move Marker"
+msgstr "Déplacer Repère"
+
+msgid "Playback"
+msgstr "Lecture"
+
+#T hotkey menu
+msgid "Time value"
+msgstr "Échelle de Temps"
+
+msgid "Frames "
+msgstr "Images"
+
+msgid "Seconds"
+msgstr "Secondes "
+
+###########################################################
+###
+###  SECTION  SEQUENCE
+###
+###########################################################
+
+msgid "Play Back Animation in 3D View"
+msgstr "Jouer l'Animation dans la Vue 3D"
+
+msgid "Show Frames"
+msgstr "Échelle: Images"
+
+msgid "Show Seconds"
+msgstr "Échelle: Secondes"
+
+msgid "Marker"
+msgstr "Repère"
+
+msgid "(Re)Name Marker"
+msgstr "(Re)Nommer Repère"
+
+msgid "Effect"
+msgstr "Effet"
+
+msgid "Movie"
+msgstr "Vidéo"
+
+msgid "Movie + Audio (HD)"
+msgstr "Vidéo + Audio (HD)"
+
+msgid "Scene"
+msgstr "Scène"
+
+msgid "Refresh"
+msgstr "Actualiser"
+
+msgid "Alpha Over"
+msgstr "Par-dessus (Alpha)"
+
+msgid "AlphaOver"
+msgstr "Par-dessus (Alpha)"
+
+msgid "Alpha Under"
+msgstr "Par-dessous (Alpha)"
+
+msgid "Multiply"
+msgstr "Multiplier"
+
+msgid "Glow"
+msgstr "Eblouissement"
+
+msgid "Wipe"
+msgstr "Fondu"
+
+msgid "Change Image..."
+msgstr "Remplacer Images..."
+
+msgid "Change images"
+msgstr "Remplacer les Images"
+
+msgid "Snap to Current Frame"
+msgstr "Déplacer au Curseur"
+
+msgid "Cut at Current Frame"
+msgstr "Couper au Curseur"
+
+msgid "Strip"
+msgstr "Bande"
+
+msgid "Strip Properties"
+msgstr "Paramètres de la Bande"
+
+msgid "Strip Properties..."
+msgstr "Paramètres de la Bande..."
+
+###########################################################
+###
+###  SECTION  UV/IMAGE EDITOR
+###
+###########################################################
+
+msgid "Draw Faces"
+msgstr "Afficher Faces"
+
+msgid "New..."
+msgstr "Nouveau..."
+
+msgid "Image Properties..."
+msgstr "Paramètres de l'Image..."
+
+msgid "Image Properties"
+msgstr "Paramètres de l'Image"
+
+msgid "Paint Tool..."
+msgstr "Outils de Peinture..."
+
+msgid "Image Paint"
+msgstr "Outils de Peinture..."
+
+msgid "Curves Tool..."
+msgstr "Courbes de Couleur..."
+
+msgid "Curves"
+msgstr "Courbes"
+
+msgid "Real-time Properties..."
+msgstr "Propriétés Temps Réel"
+
+msgid "Real-time Properties"
+msgstr "Propriétés Temps Réel"
+
+msgid "Update Automatically"
+msgstr "Mise à jour Automatique"
+
+msgid "Pack Image"
+msgstr "Empaqueter"
+
+msgid "Pack Image as PNG"
+msgstr "Empaqueter en PNG"
+
+msgid "Reload"
+msgstr "Recharger"
+
+msgid "Replace..."
+msgstr "Remplacer..."
+
+msgid "Texture Paint"
+msgstr "Mode Peinture"
+
+###########################################################
+###
+###  SECTION  IPO CURVE EDITOR
+###
+###########################################################
+
+msgid "Show Keys"
+msgstr "Afficher les Clés"
+
+msgid "Key"
+msgstr "Clé"
+
+msgid "Insert Keyframe..."
+msgstr "Insérer une Image Clé"
+
+msgid "Current Frame"
+msgstr "Image Courante"
+
+msgid "Join"
+msgstr "Fusionner"
+
+#marche pas?
+msgid "Interpolation Mode"
+msgstr "Interpolation"
+
+msgid "Extend Mode"
+msgstr "Extension"
+
+msgid "Cyclic"
+msgstr "Cyclique"
+
+msgid "Cyclic Extrapolation"
+msgstr "Extrapolation Cyclique"
+
+msgid "Object "
+msgstr "Objet"
+
+msgid "Material "
+msgstr "Matériau"
+
+msgid "World "
+msgstr "Monde"
+
+msgid "Shape "
+msgstr "Forme"
+
+msgid "Constraint "
+msgstr "Contrainte"
+
+msgid "Sequence "
+msgstr "Séquence"
+
+###########################################################
+###
+###  SECTION  OUTLINER  
+###
+###########################################################
+
+msgid "Show Outliner"
+msgstr "Afficher Liste"
+
+msgid "Show Oops Schematic"
+msgstr "Afficher Organigramme"
+
+msgid "Linked to Selected"
+msgstr "Liés à la Sélection"
+
+msgid "Search"
+msgstr "Chercher"
+
+msgid "Find"
+msgstr "Chercher..."
+
+msgid "Find (Case Sensitive)"
+msgstr "Chercher... (Casse respectée)"
+
+msgid "Find Complete"
+msgstr "Chercher un mot entier..."
+
+msgid "Find Complete (Case Sensitive)"
+msgstr "Chercher un mot entier... (Casse respectée)"
+
+msgid "Outliner Display"
+msgstr "Eléments affichés"
+
+msgid "Selected "
+msgstr "Sélection"
+
+msgid "Same Types "
+msgstr "Même Type"
+
+msgid "All Scenes "
+msgstr "Toutes Scènes"
+
+msgid "Visible Layers "
+msgstr "Calques Visibles"
+
+msgid "Current Scene "
+msgstr "Scène Active"
+
+msgid "Active "
+msgstr "Actif"
+
+msgid "Show Active"
+msgstr "Zoom sur Sélection"
+
+msgid "Show Hierarchy"
+msgstr "Réduire tout"
+
+msgid "Show/Hide All"
+msgstr "Développer tout"
+
+msgid "Collapse One Level"
+msgstr "Réduire"
+
+msgid "Expand One Level"
+msgstr "Développer"
+
+msgid "Show Restriction Columns"
+msgstr "Afficher Attributs"
+
+###########################################################
+###
+###  SECTION  NODE EDITOR  
+###
+###########################################################
+
+msgid "Input"
+msgstr "Entrée"
+
+msgid "Color"
+msgstr "Couleur"
+
+msgid "Geometry"
+msgstr "Géométrie"
+
+msgid "Camera Data"
+msgstr "Données Camera"
+
+msgid "Mix"
+msgstr "Mélanger"
+
+msgid "Vector"
+msgstr "Vecteur"
+
+msgid "Convertor"
+msgstr "Conversion"
+
+msgid "Filter"
+msgstr "Filtre"
+
+msgid "Separate RGB"
+msgstr "Séparer RVB"
+
+msgid "Combine RGB"
+msgstr "Combiner RVB"
+
+msgid "Invert"
+msgstr "Inverser"
+
+msgid "Blur"
+msgstr "Flou"
+
+msgid "Directional Blur"
+msgstr "Flou Directionnel"
+
+msgid "Bilateral Blur"
+msgstr "Flou Bilatéral"
+
+msgid "RGB Curves"
+msgstr "Courbes RVB"
+
+msgid "RGB to BW"
+msgstr "RVB -> N&B"
+
+msgid "Set Alpha"
+msgstr "Régler l'Alpha"
+
+msgid "ID Mask"
+msgstr "Masque par ID"
+
+msgid "ColorRamp"
+msgstr "Dégradé Couleur"
+
+msgid "Separate RGBA"
+msgstr "Séparer RVBA"
+
+msgid "Combine RGBA"
+msgstr "Combiner RVBA"
+
+msgid "Separate HSVA"
+msgstr "Séparer TSLA"
+
+msgid "Combine HSVA"
+msgstr "Combiner TSLA"
+
+msgid "Separate YUVA"
+msgstr "Séparer YUVA"
+
+msgid "Combine YUVA"
+msgstr "Combiner YUVA"
+
+msgid "Separate YCbCrA"
+msgstr "Séparer YCbCrA"
+
+msgid "Combine YCbCrA"
+msgstr "Combiner YCbCrA"
+
+msgid "Alpha Convert"
+msgstr "Conversion Alpha"
+
+msgid "Vector Blur"
+msgstr "Flou de Mouvement"
+
+msgid "Defocus"
+msgstr "Flou de Distance"
+
+msgid "Hue Saturation Value"
+msgstr "Teinte Saturation Luminance"
+
+msgid "Bright/Contrast"
+msgstr "Luminosité/Contraste"
+
+msgid "Distort"
+msgstr "Distortion"
+
+msgid "Translate"
+msgstr "Déplacer"
+
+msgid "Lens Distortion"
+msgstr "Effet de Lentille"
+
+msgid "File Output"
+msgstr "Fichier"
+
+msgid "Value"
+msgstr "Valeur"
+
+msgid "Viewer"
+msgstr "Aperçu"
+
+msgid "SplitViewer"
+msgstr "Aperçus Comparés"
+
+msgid "Hide/Unhide"
+msgstr "Cacher/Montrer"
+
+msgid "Node"
+msgstr "Noeud"
+
+msgid "LOAD NEW "
+msgstr "Ouvrir"
+
+msgid "Load New"
+msgstr "Ouvrir"
+
+msgid "Use Nodes"
+msgstr "Act. Noeuds"
+
+msgid "Make Group"
+msgstr "Grouper"
+
+msgid "Ungroup"
+msgstr "Dégrouper"
+
+msgid "Edit Group"
+msgstr "Editer le Groupe"
+
+msgid "Select Linked To"
+msgstr "Lien suivant"
+
+msgid "Select Linked From"
+msgstr "Lien précédent"
+
+msgid "Free Unused"
+msgstr "Nettoyer"
+
+msgid "Backdrop"
+msgstr "Prévisual."
+
+
+###########################################################
+###
+###  WINDOW  PREFERENCE  
+###
+###########################################################
+
+msgid "Auto Save Temp Files"
+msgstr "Sauv. auto dans fichier temp."
+
+msgid "Global Undo"
+msgstr "Historique Global"
+
+msgid "Plain Menus"
+msgstr "Colonne"
+
+msgid "Paste on MMB"
+msgstr "Coller par Clic Milieu"
+
+msgid "Open on Mouse Over"
+msgstr "Ouverture sous le Curseur"
+
+msgid "Global Pivot"
+msgstr "Pivot Global"
+
+msgid "Playback FPS"
+msgstr "Images/Sec"
+
+msgid "Add new objects:"
+msgstr "Ajout d'un nouvel objet:"
+
+msgid "Switch to Edit Mode"
+msgstr "Entrer en Mode Edition"
+
+msgid "Aligned to View"
+msgstr "Axes sur la Vue"
+
+msgid "Transform:"
+msgstr "Transformations:"
+
+msgid "Drag Immediately"
+msgstr "Déplacer en 1 clic"
+
+msgid "Grease Pencil:"
+msgstr "Crayon:"
+
+msgid "Auto Run Python Scripts"
+msgstr "Lancement Auto. Scripts Python"
+
+msgid "Enabled by Default"
+msgstr "Activé par défaut"
+
+msgid "Display:"
+msgstr "Affichage:"
+
+msgid "Tool Tips"
+msgstr "Bulles d'aide"
+
+#tip
+msgid "Display tooltips (help tags) over buttons"
+msgstr "Affiche les bulles d'aide au dessus des boutons"
+
+msgid "Object Info"
+msgstr "Info Objet"
+
+#tip
+msgid "Display active object name and frame number in the 3D View"
+msgstr "Affiche le nom de l'objet actif ainsi que le 42wlg66"
+
+msgid "View Name"
+msgstr "Nom de la Vue"
+
+msgid "Scal"
+msgstr "Echelle"
+
+msgid "Snap objects and sub-objects to grid units when moving"
+msgstr "Accroche les objets et ses sous-parties à la grille pendant le déplacement"
+
+msgid "Snap objects and sub-objects to grid units when rotating"
+msgstr "Accroche les objets et ses sous-parties à la grille pendant la rotation"
+
+msgid "Snap objects and sub-objects to grid units when scaling"
+msgstr "Accroche les objets et ses sous-parties à la grille pendant le changement d'échelle"
+
+msgid "View zoom:"
+msgstr "Mode de Zoom:"
+
+msgid "View rotation:"
+msgstr "Mode de Rotation:"
+
+msgid "Allow the view to tumble freely when orbiting with the Middle Mouse Button"
+msgstr "La vue tourne librement autour du sujet avec le Bouton du Milieu de la Souris enclenché"
+
+msgid "Select with:"
+msgstr "Sélection par:"
+
+msgid "Left Mouse"
+msgstr "Clic Gauche"
+
+msgid "Use the Left Mouse Button for selection"
+msgstr "Utilise le Bouton Gauche de la Souris pour sélectionner les objets"
+
+msgid "Right Mouse"
+msgstr "Clic Droit"
+
+msgid "Use the Right Mouse Button for selection"
+msgstr "Utilise le Bouton Droit de la Souris pour sélectionner les objets"
+
+msgid "Cursor with: Left Mouse"
+msgstr "Curseur par: Clic Gauche"
+
+msgid "Cursor with: Right Mouse"
+msgstr "Curseur par: Clic Droit"
+
+msgid "Middle Mouse Button:"
+msgstr "Bouton du Milieu:"
+
+msgid "Mouse Wheel:"
+msgstr "Molette de la Souris:"
+
+msgid "3D Transform Widget:"
+msgstr "Curseur 3D:"
+
+msgid "Snap to grid:"
+msgstr "Accr. grille:"
+
+msgid "Emulate 3 Button Mouse"
+msgstr "Emuler Souris à 3 boutons"
+
+msgid "Rotate View"
+msgstr "Rotation Vue"
+
+msgid "Default action for the Middle Mouse Button"
+msgstr "Action par défaut pour le Bouton du Milieu de la Souris"
+
+msgid "Pan View"
+msgstr "Déplacer Vue"
+
+msgid "Invert Zoom"
+msgstr "Zoom Inversé"
+
+msgid "Swap the Mouse Wheel zoom direction"
+msgstr "Inverse le sens du zoom lors de la rotation de la Molette de la Souris"
+
+msgid "View & Controls"
+msgstr "Vue & Commandes"
+
+msgid "Edit Methods"
+msgstr "Edition"
+
+msgid "Material linked to:"
+msgstr "Matériaux liés à:"
+
+msgid "Duplicate with object:"
+msgstr "Copier avec l'Objet:"
+
+msgid "Undo:"
+msgstr "Historique des actions:"
+
+msgid "Number of undo steps available (smaller values conserve memory)"
+msgstr "Nombre d'actions pouvant êtres annulées (augmente la consommation mémoire)"
+
+msgid "Global undo"
+msgstr "Historique Global"
+
+msgid "Language & Font"
+msgstr "Langue et Polices"
+
+msgid "Interface Font: Built-in"
+msgstr "Police de l'interface: Incluse dans Blender"
+
+msgid "Restore to default"
+msgstr "Restaurer réglages par défaut"
+
+msgid "Restores to using the default included antialised font"
+msgstr "Restaure les réglages par défaut: Police intégrée dans Blender"
+
+msgid "Current interface font size (points)"
+msgstr "Taille de la police de l'interface actuelle (en points)"
+
+msgid "International Fonts"
+msgstr "Traduction de l'Interface"
+
+msgid "Tooltips"
+msgstr "Bulles d'aide"
+
+msgid "Translate tooltips"
+msgstr "Traduire les bulles d'aide"
+
+msgid "Buttons"
+msgstr "Boutons"
+
+msgid "Translate button labels"
+msgstr "Traduire les boutons"
+
+msgid "Select interface language"
+msgstr "Sélectionne la langue de l'interface"
+
+msgid "Themes"
+msgstr "Thèmes"
+
+msgid "Background "
+msgstr "Arrière plan"
+
+msgid "Auto Save"
+msgstr "Sauvegarde Auto"
+
+msgid "System & OpenGL"
+msgstr "Système & OpenGL"
+
+msgid "System:"
+msgstr "Système:"
+
+msgid "Keyboard:"
+msgstr "Clavier:"
+
+msgid "Emulate Numpad"
+msgstr "Emuler Pavé Num"
+
+msgid "Causes the 1 to 0 keys to act as the numpad (useful for laptops)"
+msgstr "Les touches 1 à 0 du clavier ont les mêmes fonctions que celles du pavé numérique (utile pour les portables)"
+
+msgid "File Paths"
+msgstr "Chemins"
+
+msgid "Restore to Default"
+msgstr "Réinitialiser"
+
+msgid "Select Font"
+msgstr "Sélectionner Police"
+
+msgid "Copy Color"
+msgstr "Copier Couleur"
+
+msgid "Paste Color"
+msgstr "Coller Couleur"
+
+msgid "Solid OpenGL lights:"
+msgstr "Lumières en vue Ombrée"
+
+msgid "Audio mixing buffer:"
+msgstr "Mémoire de mixage audio"
+
+msgid "The default directory to search for loading fonts"
+msgstr "Le répertoire par défaut contenant les polices"
+
+msgid "Select the default font directory"
+msgstr "Sélectionner le répertoire par défaut contenant les polices"
+
+msgid "The default directory to search for textures"
+msgstr "Le répertoire par défaut des textures"
+
+msgid "Select the default texture location"
+msgstr "Sélectionnez l'emplacement du répertoire par défaut des textures"
+
+msgid "The default directory for rendering output"
+msgstr "Le répertoire par défaut d'enregistrement des rendus"
+
+msgid "Select the default render output location"
+msgstr "Sélectionnez l'emplacement du répertoire par défaut pour l'enregistrement des rendus"
+
+msgid "The default directory to search for Python scripts"
+msgstr "Le répertoire par défaut des scripts Python"
+
+msgid "Select the default Python script location"
+msgstr "Sélectionnez l'emplacement par défaut des scripts Python"
+msgid "The default directory to search for sounds"
+msgstr "L'emplacement par défaut des sons"
+
+msgid "Select the default sound location"
+msgstr "Sélectionnez l'emplacement par défaut des sons"
+
+msgid "The directory for storing temporary save files"
+msgstr "Le répertoire contenant les fichiers temporaires de sauvegarde"
+
+msgid "Select the default temporary save file location"
+msgstr "Sélectionnez l'emplacement par défaut pour les fichiers temporaires de sauvegarde"
+
+###########################################################
+###
+###  Tooltip du panneau "Background Image"
+###
+###########################################################
+
+msgid "Background Image"
+msgstr "Image d'Arrière plan"
+
+msgid "Open a new background image"
+msgstr "Ouvrir une nouvelle image d'arrière plan."
+
+msgid "Display an image in the background of the 3D View"
+msgstr "Permet d'afficher une image en arrière plan."
+
+msgid "Select a texture to use as an animated background image"
+msgstr "Permet d'utiliser une texture pour créer un arrière plan animé, par exemple."
+
+msgid "Set the size (width) of the background image"
+msgstr "Définie la taille globale de l'image d'arrière plan."
+
+msgid "Set the transparency of the background image"
+msgstr "Permet de rendre l'image d'arrière plan plus ou moins visible."
+
+msgid "Set the horizontal offset of the background image"
+msgstr "Position horizontale de l'image par rapport au centre."
+
+msgid "Set the vertical offset of the background image"
+msgstr "Position verticale de l'image par rapport au centre."
+
+msgid "The currently selected background image"
+msgstr "Nom de l'image actuellement sélectionnée comme arrière plan."
+
+msgid "Remove background image link"
+msgstr "Enlever cette image de l'arrière plan."
+
+msgid "Remove background texture link"
+msgstr "Enlever cette texture de l'arrière plan."
+
+#<--? Manque le code pour remplacer 0.500, si quelqu'un à une idée -->
+# msgid "Blend:0.500"
+# msgstr "Opacité : 0.500"
+
+###########################################################
+###
+###  Menu extrusion
+###
+###########################################################
+
+msgid "Extrude "
+msgstr "Extrusion"
+
+msgid "Region "
+msgstr "Par région"
+
+###########################################################
+###
+###  Menu Booléen (W hotkey in object mode)
+###
+###########################################################
+
+msgid "Boolean Tools"
+msgstr "Outils Booléens"
+
+msgid "Intersect"
+msgstr "Intersection"
+
+msgid "Difference"
+msgstr "Différence"
+
+msgid "Add Intersect Modifier"
+msgstr "Ajout. Mod. Intersection"
+
+msgid "Add Union Modifier"
+msgstr "Ajout. Mod. Union"
+
+msgid "Add Difference Modifier"
+msgstr "Ajout. Mod. Différence"
+
+###########################################################
+###
+###  Menu Separate
+###
+###########################################################
+
+msgid "Selected"
+msgstr "Sélection"
+
+msgid "All Loose Parts"
+msgstr "Parties non reliées"
+
+msgid "By Material"
+msgstr "Par Matériau"
+
+
+###########################################################
+###
+###  Menu Loop/Cut (K hotkey in edit mode)
+###
+###########################################################
+
+msgid "Loop/Cut Menu "
+msgstr "Menu Couper"
+
+msgid "Loop Cut (CTRL-R)"
+msgstr "Coupe Circulaire (CTRL-R)"
+
+msgid "Knife (Exact) "
+msgstr "Couteau (Ligne Exacte)"
+
+msgid "Knife (Midpoints)"
+msgstr "Couteau (Milieux)"
+
+msgid "Knife (Multicut)"
+msgstr "Couteau (Multi)"
+
+###########################################################
+###
+###  Menu Cut Type (SHIFT-K hotkey in edit mode)
+###
+###########################################################
+
+msgid "Cut Type "
+msgstr "Type de couteau"
+
+msgid "Exact Line"
+msgstr "Ligne Exacte"
+
+msgid "Midpoints"
+msgstr "Milieux"
+
+msgid "Multicut"
+msgstr "Multi (Parties égales)"
+
+#Error textbox
+msgid "No edges are selected to operate on"
+msgstr "Aucune arête sélectionnée !"
+
+###########################################################
+###
+###  Menu Specials (W hotkey in edit mode)
+###
+###########################################################
+
+msgid "Specials"
+msgstr "Actions spéciales"
+
+msgid "Subdivide Multi"
+msgstr "Subdiviser (Multi)"
+
+msgid "Subdivide Multi Fractal"
+msgstr "Subdiviser (Multi Fractal)"
+
+msgid "Subdivide Smooth"
+msgstr "Subdiviser (Adoucir)"
+
+msgid "Bevel "
+msgstr "Chanfrein"
+
+###########################################################
+###
+###  Menu Select grouped (SHIFT-G hotkey in object mode)
+###
+###########################################################
+
+msgid "Select Grouped"
+msgstr "Sélectionner par Groupe"
+
+msgid "Objects of Same Type"
+msgstr "Même Type"
+
+msgid "Objects on Shared Layers"
+msgstr "Même Calque"
+
+msgid "Objects in Same Group"
+msgstr "Même Groupe"
+
+
+###########################################################
+###
+###  Menu groups (CTRL-G hotkey in object mode)
+###
+###########################################################
+
+msgid "Groups "
+msgstr "Groupes"
+
+msgid "Add to Existing Group "
+msgstr "Ajouter à un Groupe Existant"
+
+msgid "Add to New Group "
+msgstr "Ajouter à un Nouveau Groupe"
+
+msgid "Remove from All Groups "
+msgstr "Dégrouper"
+
+###########################################################
+###
+###  Menu Spécial d'Edition (CTRL-E)
+###
+###########################################################
+
+msgid "Edge Specials"
+msgstr "Arêtes Spécial"
+
+msgid "Mark Seam "
+msgstr "Marquer coutures UV"
+
+msgid "Clear Seam "
+msgstr "Effacer coutures UV"
+
+msgid "Rotate Edge CW"
+msgstr "Tourner l'arête à droite"
+
+msgid "Rotate Edge CCW"
+msgstr "Tourner l'arête à gauche"
+
+msgid "Loopcut"
+msgstr "Coupe Circulaire"
+
+msgid "Edge Slide"
+msgstr "Déplacer l'arête"
+
+msgid "Edge Loop Select"
+msgstr "Select. d'arêtes par Boucle"
+
+###########################################################
+###
+###  Menubar Spécial Draw Mode (D)  
+###
+###########################################################
+
+msgid "Draw mode"
+msgstr "Ombrage de la vue:"
+
+msgid "BoundBox "
+msgstr "Bords"
+
+msgid "Wire "
+msgstr "Fil de Fer"
+
+msgid "OpenGL Solid "
+msgstr "Solide"
+
+msgid "Shaded Solid "
+msgstr "Ombrée"
+
+msgid "Textured Solid "
+msgstr "Texturé"
+
+
+###########################################################
+###
+###  Texte (Objet texte)
+###
+###########################################################
+
+msgid "Font"
+msgstr "Police"
+
+msgid "Left"
+msgstr "Gauche"
+
+msgid "Righ"
+msgstr "Droite"
+
+msgid "Justify"
+msgstr "Justifié"
+
+msgid "Load"
+msgstr "Charger"
+
+#tip
+msgid "Load a new font"
+msgstr "Charger une nouvelle police"
+
+msgid "SELECT FONT"
+msgstr "Charger"
+
+msgid "Insert"
+msgstr "Insérer"
+
+msgid "ToUpper"
+msgstr "Maj"
+
+msgid "Char"
+msgstr "Caractère"
+
+msgid "Unicode Table"
+msgstr "Tableau Unicode"
+
+#tips
+msgid "Change font for object"
+msgstr "Changer la police de l'objet"
+
+msgid "Pack/Unpack this font"
+msgstr "Emballer/Déballer cette police"
+
+msgid "Left align the text from the object center"
+msgstr "Aligner le texte à gauche par rapport au centre de l'objet"
+
+msgid "Middle align the text from the object center"
+msgstr "Aligner le texte au milieu par rapport au centre de l'objet"
+
+msgid "Right align the text from the object center"
+msgstr "Aligner le texte à droite par rapport au centre de l'objet"
+
+msgid "Toggle between upper and lower case in editmode"
+msgstr "Alterne entre majuscule et minuscule en mode édition"
+
+msgid "Size of the text"
+msgstr "Taille du texte"
+
+msgid "Distance between text lines"
+msgstr "Espacement entre les lignes de texte"
+
+msgid "Distance factor between words"
+msgstr "Espacement entre les mots"
+
+msgid "Spacing of individual characters"
+msgstr "Espacement entre les caractères"
+
+msgid "Italic angle of the characters"
+msgstr "Angle de l'italique des caractères"
+
+msgid "Horizontal position from object center"
+msgstr "Position horizontale par rapport au centre de l'objet"
+
+msgid "Vertical position from object center"
+msgstr "Position verticale par rapport au centre de l'objet"
+
+
+###########################################################
+###
+###  Courbe Bezier (mode edition)
+###
+###########################################################
+
+msgid "Curve Tools"
+msgstr "Outils pour Courbes"
+
+msgid "Curve Tools1"
+msgstr "Outils pour Courbes 2"
+
+msgid "Convert"
+msgstr "Convertir"
+
+msgid "Bezier"
+msgstr "Bézier"
+
+msgid "Make Knot"
+msgstr "Création des noeuds"
+
+msgid "Uniform U"
+msgstr "U uniforme"
+
+msgid "The amount of new points interpolated per control vertex pair"
+msgstr "Le nombre de points interpolés entre sommets"
+
+msgid "Subdivide selected"
+msgstr "Subdiviser la sélection"
+
+#tips
+msgid "Converts selected into regular Polygon vertices"
+msgstr "Convertir la sélection en sommets de polygone"
+
+msgid "Converts selected to Bezier triples"
+msgstr "Convertir la sélection en points de contrôles Bézier"
+
+msgid "Converts selected to Nurbs Points"
+msgstr "Convertir la sélection en points Nurbs"
+
+
+###########################################################
+###
+###  Metaballs (mode edition)
+###
+###########################################################
+
+msgid "MetaBall tools"
+msgstr "Outils pour MetBall"
+
+msgid "Update:"
+msgstr "Mise à jour:"
+
+msgid "Always"
+msgstr "Toujours"
+
+msgid "Fast"
+msgstr "Rapide"
+
+msgid "Never"
+msgstr "Jamais"
+
+msgid "Elipsoid"
+msgstr "Ellipsoïde"
+
+msgid "Ball"
+msgstr "Boule"
+
+#tips
+msgid "While editing, always updates"
+msgstr "Mise à jour continuelle, pendant l'édition"
+
+msgid "While editing, doesn't update"
+msgstr "Pas de mise à jour pendant l'édition"
+
+
+###########################################################
+###
+###  Armatures (édition)
+###
+###########################################################
+
+msgid "Draw Axes"
+msgstr "Afficher Axes"
+
+msgid "Draw Names"
+msgstr "Afficher Noms"
+
+###########################################################
+###
+###  Header
+###
+###########################################################
+
+msgid "Header "
+msgstr "Barre d'outils"
+
+msgid "Bottom "
+msgstr "Bas"
+
+msgid "No Header "
+msgstr "Sans Barre d'outils"
+
+
+###########################################################
+###
+###  Menu Make Parent (CTRL-P en mode edition)  
+###
+###########################################################
+
+msgid "Make Parent "
+msgstr "Créer Parenté"
+
+msgid "Make parent"
+msgstr "Créer Parenté"
+
+msgid "Normal Parent "
+msgstr "Parenté Classique"
+
+msgid "Follow Path "
+msgstr "Suivre le Chemin"
+
+
+###########################################################
+###
+###  Menu Clear Parent (ALT-P en mode edition)  
+###
+###########################################################
+
+msgid "Clear Parent "
+msgstr "Supprimer Parenté"
+
+msgid "Clear and Keep Transformation (Clear Track) "
+msgstr "Supprimer Parenté mais Garder les Transformations"
+
+###########################################################
+###
+###  Menu Make Links (CTRL-L)  
+###
+###########################################################
+
+msgid "Make Links "
+msgstr "Lier"
+
+
+###########################################################
+###
+###  Menu Make Faces (F)  
+###
+###########################################################
+
+msgid "Make Faces"
+msgstr "Assembler les Faces"
+
+msgid "Make FGon"
+msgstr "Assembler en FGon"
+
+msgid "Clear FGon"
+msgstr "Casser le FGon"
+
+msgid "No faces selected to make FGon"
+msgstr "Aucune sélection de faces à assembler en FGon"
+
+msgid "The selected vertices already form a face"
+msgstr "Les sommets sélectionnés forment déja une face"
+
+
+###########################################################
+###
+###  Menu Unwrap (U)  
+###
+###########################################################
+
+msgid "UV Calculation "
+msgstr "Méthode de calcul UV"
+
+msgid "Unwrap "
+msgstr "Déplier"
+
+msgid "Cube Projection "
+msgstr "Projection Cube"
+
+msgid "Cylinder from View "
+msgstr "Projection Cylindre"
+
+msgid "Sphere from View "
+msgstr "Projection Sphère"
+
+msgid "Projection From View "
+msgstr "Projection depuis la Vue"
+
+msgid "Projection From View (Bounds) "
+msgstr "Projection depuis la Vue (Limites)"
+
+msgid "Reset "
+msgstr "Réinitialiser"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################
+###
+###Rosetta contribution (not verified)
+###
+###########################################################
+
+msgid "blendfile"
+msgstr "fichier blend"
+
+msgid "Outside"
+msgstr "Extérieur"
+
+
+msgid "warning: cannot assign more than 16 materials to 1 mesh"
+msgstr "Attention : Impossible d'assigner plus de 16 matériaux à 1 maillage"
+
+msgid "Can't edit library data"
+msgstr "Impossible d'éditer les données de la bibliothèque"
+
+
+msgid "This will remove UV coordinates, vertexcolors, deform weights and edge data"
+msgstr "Cela supprimera les coordonnées UV, les couleurs des vertex, les poids de "
+"déformation et les données des arrêtes"
+
+
+msgid "Adds edges data to active Mesh object, enables creases/seams and faster "
+"wireframe draw"
+msgstr "Ajoute des données de cotés à l'objet Maillage actif, permettre les "
+"plis/coutures et un dessin en fil de fer plus rapide"
+
+
+
+msgid "Creates Sticky coordinates for the active object from the current camera "
+"view background picture"
+msgstr "Crée des coordonnées liées pour l'objet actif à partir de l'image de fond de "
+"la vue courante."
+
+
+msgid "Enter the name of a Meshblock"
+msgstr "Entrez le nom d'un bloc de Maillage"
+
+msgid "Relative Keys"
+msgstr "Touches relatives"
+
+
+
+msgid "Postscript name of the font"
+msgstr "Nom postscript de la police"
+
+msgid "Flush"
+msgstr "Rafraichir"
+
+msgid "Fill characters to maximum linewidth. (Multiple lines required)"
+msgstr "Remplir avec des caractères jusqu'à la longueur maximale de ligne. "
+"(plusieurs lignes nécessaires)"
+
+msgid "Apply a deforming curve to the text"
+msgstr "Appliquer une courbe de déformation au texte"
+
+msgid "Blender uses font from selfmade objects"
+msgstr "Blender utilise une police issue d'objets propres"
+
+
+msgid "Default resolution"
+msgstr "Résolution par défaut"
+
+msgid "Set"
+msgstr "Définir"
+
+msgid "Set resolution for interpolation"
+msgstr "Définir la résolution par interpolation"
+
+msgid "Allow Curve Object to be 3d, it doesn't fill then"
+msgstr "Pemettre à l'objet courbe d'être 3d, il ne se remplit pas jusqu'a"
+
+
+
+msgid "Only draw, and take into account, the outer vertices"
+msgstr "Dessiner seulement, et prendre en compte, les sommets extérieurs"
+
+msgid "Use relative keys (instead of absolute)"
+msgstr "Utiliser des clefs relatives (au lieu d'absolues)"
+
+msgid "Skinnable "
+msgstr "Habillable "
+
+msgid "Unskinnable "
+msgstr "Non habillable "
+
+msgid "Classification of armature element"
+msgstr "Classification de l'élément de l'armature"
+
+msgid "Auto Weight"
+msgstr "Poids automatique"
+
+msgid "Automatically assigns deformation groups"
+msgstr "Assigne de manière automatique les groupes de déformation"
+
+msgid "Opacity "
+msgstr "Opacité "
+
+msgid "The amount of pressure on the brush"
+msgstr "Quantité de pression sur la brosse"
+
+msgid "Size "
+msgstr "Taille "
+
+msgid "The size of the brush"
+msgstr "Taille de la brosse"
+
+msgid "The amount of red used for painting"
+msgstr "Quantité de rouge utilisée pour peindre"
+
+msgid "The amount of green used for painting"
+msgstr "Quantité de vert utilisée pour peindre"
+
+
+msgid "Mix the colours with an alpha factor"
+msgstr "Mélange les couleurs avec un facteur alpha"
+
+msgid "Soft"
+msgstr "Doux"
+
+msgid "Use a soft brush"
+msgstr "Utiliser une brosse douce"
+
+
+msgid "Move up"
+msgstr "Déplacement vers le haut"
+
+msgid "Move down "
+msgstr "Déplacement vers le bas "
+
+msgid "Move sensor"
+msgstr "Déplace la sonde"
+
+msgid "Only look for Objects with this property"
+msgstr "Rechercher seulement les objets avec cette propriété"
+
+msgid "Extra margin (distance) for larger sensitivity"
+msgstr "Marge supplémentaire (distance) pour une plus grande sensibilité"
+
+msgid "Reset"
+msgstr "Remise à zéro"
+
+msgid "Reset distance"
+msgstr "Distance par défaut"
+
+msgid "Depth of the radar cone"
+msgstr "Profondeur du cône du radar"
+
+msgid "All keys"
+msgstr "Toutes les clefs"
+
+msgid "test for min value"
+msgstr "test de la valeur minimale"
+
+msgid "test for max value"
+msgstr "test de la valeur maximale"
+
+msgid "test for value"
+msgstr "test de la valeur"
+
+msgid "Initial seed of the generator. (Choose 0 for not random)"
+msgstr "Graine initiale pour le générateur. (choisissez 0 pour non aléatoire)"
+
+msgid "Specify which button to use"
+msgstr "Spécifie quel bouton utiliser"
+
+msgid "Button pressed or released."
+msgstr "Bouton pressé ou relaché"
+
+msgid "Specify which axis to use"
+msgstr "Spécifie quel axe utiliser"
+
+msgid "Specify the precision of the axis"
+msgstr "Spécifie quelle est la précision de l'axe"
+
+msgid "The direction of the axis"
+msgstr "Direction de l'axe"
+
+msgid "Local transformation"
+msgstr "Transformation locale"
+
+msgid "Action name"
+msgstr "Nom de l'action"
+
+msgid "Prev"
+msgstr "Précédente"
+
+msgid "Copy from this Object"
+msgstr "Copie depuis cet Objet"
+
+msgid "Copy this property"
+msgstr "Copie cette propriété"
+
+msgid "change with this value"
+msgstr "Remplacer par cette valeur"
+
+msgid "Sets the volume of this sound"
+msgstr "Définit le volume de ce son"
+
+msgid "Add this Object"
+msgstr "Ajoute cet Objet"
+
+msgid "Load this file"
+msgstr "Charger ce fichier"
+
+msgid "Del"
+msgstr "Supp"
+
+msgid "True"
+msgstr "Vrai"
+
+msgid "False"
+msgstr "Faux"
+
+msgid "Print Debug info"
+msgstr "Affiche les informations de Débogage"
+
+msgid "Constraint type"
+msgstr "Type de contrainte"
+
+msgid "Keep X axis"
+msgstr "Conserver l'axe X"
+
+msgid "Keep Z axis"
+msgstr "Conserver l'axe Z"
+
+msgid "Switch objects rotation off"
+msgstr "Désactive la rotation des objets"
+
+msgid "No Speed"
+msgstr "Pas de vitesse"
+
+msgid "Automatic Time"
+msgstr "Temps automatique"
+
+
+msgid "Toolbox"
+msgstr "Boîte à outils"
+
+msgid "Display only files with extensions in the image select window"
+msgstr "Afficher seulement les fichiers avec extensions dans la fenêtre de sélection d'images"
+
+msgid "Insert gaps Sequencer"
+msgstr "Insérer le séquenceur d'espaces"
+
+msgid "Open File"
+msgstr "Ouvrir un fichier"
+
+msgid "Save File"
+msgstr "Enregistrer le fichier"
+
+msgid "Data Select"
+msgstr "Sélection des données"
+
+msgid "draw"
+msgstr "dessiner"
+
+msgid "draw+swap"
+msgstr "dessiner + échanger"
+
+msgid "Rotations in degrees!"
+msgstr "Rotations en degrés !"
+
+msgid "OK: Assign Values"
+msgstr "OK : assigner les valeurs"
+
+msgid "Replace image name"
+msgstr "Remplacer le nom de l'image"
+
+msgid "Transformation not possible while Rest Position is enabled"
+msgstr "Transformation non possible tant que la Position de Repos est activée"
+
+msgid "Clear vertex colors"
+msgstr "Nettoyer les couleurs des sommets"
+
+msgid "Full Frames (Uncompressed)"
+msgstr "Images complètes (non compressées)"

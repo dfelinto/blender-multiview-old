@@ -1,0 +1,12 @@
+# Example .tinderboxrc, copy to ~tinderbox if needed
+# Set these proper values for your tinderbox server
+
+$Tinderbox_server = 'tinderbox@xserve.blender.org';
+#$BuildDepend = 1;   # depend or clobber
+#$ReportStatus = 1;  # Send results to server or not
+#$BuildOnce = 0;     # Build once, don't send results to server
+$BuildAutotools = 1;# Build with the autotools
+$BuildSleep = 60;   # Minimum wait period from start of build to start
+                    # of next build in minutes (default 60)
+
+$BuildModule = 'blender';

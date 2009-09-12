@@ -1,0 +1,114 @@
+Index: yuv2rgb.c
+===================================================================
+--- yuv2rgb.c	(revision 12118)
++++ yuv2rgb.c	(working copy)
+@@ -619,6 +619,7 @@
+ #if defined(HAVE_MMX2) || defined(HAVE_MMX)
+     if (c->flags & SWS_CPU_CAPS_MMX2){
+         switch(c->dstFormat){
++	case PIX_FMT_BGR32:  return yuv420_bgr32_MMX2;
+         case PIX_FMT_RGB32:  return yuv420_rgb32_MMX2;
+         case PIX_FMT_BGR24:  return yuv420_rgb24_MMX2;
+         case PIX_FMT_BGR565: return yuv420_rgb16_MMX2;
+@@ -627,6 +628,7 @@
+     }
+     if (c->flags & SWS_CPU_CAPS_MMX){
+         switch(c->dstFormat){
++	case PIX_FMT_BGR32:  return yuv420_bgr32_MMX;
+         case PIX_FMT_RGB32:  return yuv420_rgb32_MMX;
+         case PIX_FMT_BGR24:  return yuv420_rgb24_MMX;
+         case PIX_FMT_BGR565: return yuv420_rgb16_MMX;
+Index: yuv2rgb_template.c
+===================================================================
+--- yuv2rgb_template.c	(revision 12118)
++++ yuv2rgb_template.c	(working copy)
+@@ -536,3 +536,89 @@
+     __asm__ __volatile__ (EMMS);
+     return srcSliceH;
+ }
++
++static inline int RENAME(yuv420_bgr32)(SwsContext *c, uint8_t* src[], int srcStride[], int srcSliceY,
++                                       int srcSliceH, uint8_t* dst[], int dstStride[]){
++    int y, h_size;
++
++    if(c->srcFormat == PIX_FMT_YUV422P){
++        srcStride[1] *= 2;
++        srcStride[2] *= 2;
++    }
++
++    h_size= (c->dstW+7)&~7;
++    if(h_size*4 > FFABS(dstStride[0])) h_size-=8;
++
++    __asm__ __volatile__ ("pxor %mm4, %mm4;" /* zero mm4 */ );
++
++    for (y= 0; y<srcSliceH; y++ ) {
++        uint8_t *_image = dst[0] + (y+srcSliceY)*dstStride[0];
++        uint8_t *_py = src[0] + y*srcStride[0];
++        uint8_t *_pu = src[1] + (y>>1)*srcStride[1];
++        uint8_t *_pv = src[2] + (y>>1)*srcStride[2];
++        long index= -h_size/2;
++
++        /* this mmx assembly code deals with SINGLE scan line at a time, it convert 8
++           pixels in each iteration */
++        __asm__ __volatile__ (
++        /* load data for start of next scan line */
++        "movd    (%2, %0), %%mm0;" /* Load 4 Cb 00 00 00 00 u3 u2 u1 u0 */
++        "movd    (%3, %0), %%mm1;" /* Load 4 Cr 00 00 00 00 v3 v2 v1 v0 */
++        "movq (%5, %0, 2), %%mm6;" /* Load 8  Y Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 */
++        //".balign 16     \n\t"
++        "1:             \n\t"
++YUV2RGB
++        /* convert RGB plane to RGB packed format,
++           mm0 ->  B, mm1 -> R, mm2 -> G, mm3 -> 0,
++           mm4 -> GB, mm5 -> AR pixel 4-7,
++           mm6 -> GB, mm7 -> AR pixel 0-3 */
++        "pxor      %%mm3, %%mm3;"   /* zero mm3 */
++
++        "movq      %%mm1, %%mm6;"   /* R7 R6 R5 R4 R3 R2 R1 R0 */
++        "movq      %%mm0, %%mm7;"   /* B7 B6 B5 B4 B3 B2 B1 B0 */
++
++        "movq      %%mm1, %%mm4;"   /* R7 R6 R5 R4 R3 R2 R1 R0 */
++        "movq      %%mm0, %%mm5;"   /* B7 B6 B5 B4 B3 B2 B1 B0 */
++
++        "punpcklbw %%mm2, %%mm6;"   /* G3 R3 G2 R2 G1 R1 G0 R0 */
++        "punpcklbw %%mm3, %%mm7;"   /* 00 B3 00 B2 00 B1 00 B0 */
++
++        "punpcklwd %%mm7, %%mm6;"   /* 00 B1 R1 G1 00 B0 R0 G0 */
++        MOVNTQ "   %%mm6, (%1);"    /* Store ABGR1 ABGR0 */
++
++        "movq      %%mm1, %%mm6;"   /* R7 R6 R5 R4 R3 R2 R1 R0 */
++        "punpcklbw %%mm2, %%mm6;"   /* G3 R3 G2 R2 G1 R1 G0 R0 */
++
++        "punpckhwd %%mm7, %%mm6;"   /* 00 B3 G3 R3 00 B2 R3 G2 */
++        MOVNTQ "   %%mm6, 8 (%1);"  /* Store ABGR3 ABGR2 */
++
++        "punpckhbw %%mm2, %%mm4;"   /* G7 R7 G6 R6 G5 R5 G4 R4 */
++        "punpckhbw %%mm3, %%mm5;"   /* 00 B7 00 B6 00 B5 00 B4 */
++
++        "punpcklwd %%mm5, %%mm4;"   /* 00 B5 R5 G5 00 B4 R4 G4 */
++        MOVNTQ "   %%mm4, 16 (%1);" /* Store ABGR5 ABGR4 */
++
++        "movq      %%mm1, %%mm4;"   /* R7 R6 R5 R4 R3 R2 R1 R0 */
++        "punpckhbw %%mm2, %%mm4;"   /* G7 R7 G6 R6 G5 R5 G4 R4 */
++
++        "punpckhwd %%mm5, %%mm4;"   /* 00 B7 G7 R7 00 B6 R6 G6 */
++        MOVNTQ "   %%mm4, 24 (%1);" /* Store ABGR7 ABGR6 */
++
++        "movd 4 (%2, %0), %%mm0;"   /* Load 4 Cb 00 00 00 00 u3 u2 u1 u0 */
++        "movd 4 (%3, %0), %%mm1;"   /* Load 4 Cr 00 00 00 00 v3 v2 v1 v0 */
++
++        "pxor         %%mm4, %%mm4;" /* zero mm4 */
++        "movq 8 (%5, %0, 2), %%mm6;" /* Load 8 Y Y7 Y6 Y5 Y4 Y3 Y2 Y1 Y0 */
++
++        "add $32, %1    \n\t"
++        "add  $4, %0    \n\t"
++        " js  1b        \n\t"
++
++        : "+r" (index), "+r" (_image)
++        : "r" (_pu - index), "r" (_pv - index), "r"(&c->redDither), "r" (_py - 2*index)
++        );
++    }
++
++    __asm__ __volatile__ (EMMS);
++    return srcSliceH;
++}
