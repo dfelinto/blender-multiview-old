@@ -206,7 +206,6 @@ static void region_draw_azone(ScrArea *sa, AZone *az)
 	glTranslatef(midx, midy, 0.); 
 	
 	/* outlined circle */
-	glEnable(GL_BLEND);
 	glEnable(GL_LINE_SMOOTH);
 
 	glColor4f(1.f, 1.f, 1.f, 0.8f);
@@ -220,7 +219,6 @@ static void region_draw_azone(ScrArea *sa, AZone *az)
 	gluDisk( qobj, 0.0,  4.25f, 16, 1); 
 	
 	glDisable(GL_LINE_SMOOTH);
-	glDisable(GL_BLEND);
 	
 	glPopMatrix();
 	gluDeleteQuadric(qobj);
