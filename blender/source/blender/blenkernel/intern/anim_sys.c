@@ -1547,8 +1547,8 @@ void BKE_animsys_evaluate_all_animation (Main *main, float ctime)
 		
 		/* do compositing nodes first (since these aren't included in main tree) */
 		if (scene->nodetree) {
-			AnimData *adt2= BKE_animdata_from_id(scene->nodetree);
-			BKE_animsys_evaluate_animdata(scene->nodetree, adt2, ctime, ADT_RECALC_ANIM);
+			AnimData *adt2= BKE_animdata_from_id((ID *)scene->nodetree);
+			BKE_animsys_evaluate_animdata((ID *)scene->nodetree, adt2, ctime, ADT_RECALC_ANIM);
 		}
 		
 		/* now execute scene animation data as per normal */
