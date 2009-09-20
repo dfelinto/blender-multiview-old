@@ -470,7 +470,7 @@ int file_hilight_set(SpaceFile *sfile, ARegion *ar, int mx, int my)
 	my -= ar->winrct.ymin;
 
 	if(BLI_in_rcti(&ar->v2d.mask, mx, my)) {
-		actfile = find_file_mouse(sfile, ar, mx , my, 0);
+		actfile = find_file_mouse(sfile, ar, mx , my);
 
 		if((actfile >= 0) && (actfile < numfiles))
 			params->active_file=actfile;
