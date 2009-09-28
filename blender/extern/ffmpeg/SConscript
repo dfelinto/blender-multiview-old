@@ -28,7 +28,7 @@ import shutil
 
 from sets import Set
 
-ff_env = env.Copy();
+ff_env = env.Clone()
 ff_env.Replace(CCFLAGS = '')
 ff_env.Replace(BF_DEBUG_FLAGS = '')
 

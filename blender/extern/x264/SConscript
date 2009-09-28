@@ -11,7 +11,7 @@ import shutil
 
 from sets import Set
 
-x264_env = env.Copy();
+x264_env = env.Clone()
 x264_env.Replace(CCFLAGS = '')
 x264_env.Replace(BF_DEBUG_FLAGS = '')
 

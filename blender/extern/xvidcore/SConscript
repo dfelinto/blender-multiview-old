@@ -16,7 +16,7 @@ import shutil
 
 from sets import Set
 
-xvidcore_env = env.Copy();
+xvidcore_env = env.Clone()
 xvidcore_env.Replace(CCFLAGS = '')
 xvidcore_env.Replace(BF_DEBUG_FLAGS = '')
 
