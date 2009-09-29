@@ -554,7 +554,7 @@ initialize_gameengine(ketsji_engine_data* k, struct BlendFileData * active_file)
 			k->kx_engine->SetRenderTools(k->rendertools);
  			k->kx_engine->SetAudioDevice(k->audiodevice);
 			k->kx_engine->SetSceneConverter(k->converter);
-			k->kx_engine->SetPythonDictionary(dictionaryobject);
+			k->kx_engine->SetPyNamespace(dictionaryobject);
 		} else {
 			// do some error trap;
 			std::cerr << "Blender3DPlugin:: could not initialize "
