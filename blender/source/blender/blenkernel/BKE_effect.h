@@ -41,6 +41,9 @@ struct ListBase;
 struct Particle;
 struct Group;
 struct RNG;
+struct ParticleSimulationData;
+struct ParticleData;
+struct ParticleKey;
 
 struct EffectorWeights *BKE_add_effector_weights(struct Group *group);
 struct PartDeflect *object_add_collision_fields(int type);

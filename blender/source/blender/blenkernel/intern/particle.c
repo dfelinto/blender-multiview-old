@@ -1960,11 +1960,11 @@ int do_guides(ListBase *effectors, ParticleKey *state, int index, float time)
 
 		if(pd->flag & PFIELD_GUIDE_PATH_ADD) {
 			if(where_on_path(eff->ob, data->strength * guidetime, guidevec, guidedir, NULL, &radius)==0)
-				return;
+				return 0;
 		}
 		else {
 			if(where_on_path(eff->ob, guidetime, guidevec, guidedir, NULL, &radius)==0)
-				return;
+				return 0;
 		}
 
 		Mat4MulVecfl(eff->ob->obmat, guidevec);

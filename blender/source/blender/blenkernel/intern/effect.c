@@ -819,7 +819,7 @@ void do_physical_effector(EffectorCache *eff, EffectorData *efd, EffectedPoint *
 	RNG *rng = pd->rng;
 	float force[3]={0,0,0};
 	float temp[3];
-	float noise = 0, fac;
+	float fac;
 	float strength = pd->f_strength;
 	float damp = pd->f_damp;
 	float noise_factor = pd->f_noise;
@@ -970,7 +970,7 @@ void pdDoEffectors(ListBase *effectors, ListBase *colliders, EffectorWeights *we
 */
 	EffectorCache *eff;
 	EffectorData efd;
-	int i=0, p=0, tot = 1;
+	int p=0, tot = 1;
 
 	/* Cycle through collected objects, get total of (1/(gravity_strength * dist^gravity_power)) */
 	/* Check for min distance here? (yes would be cool to add that, ton) */

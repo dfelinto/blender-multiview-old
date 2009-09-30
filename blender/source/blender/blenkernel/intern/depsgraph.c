@@ -559,7 +559,6 @@ static void build_dag_object(DagForest *dag, DagNode *scenenode, Scene *scene, O
 		for(; psys; psys=psys->next) {
 			BoidRule *rule = NULL;
 			BoidState *state = NULL;
-			ParticleSimulationData sim = {scene, ob, psys, NULL, NULL};
 			ParticleSettings *part= psys->part;
 			ListBase *effectors = NULL;
 			EffectorCache *eff;
