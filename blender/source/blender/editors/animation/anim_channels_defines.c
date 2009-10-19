@@ -2298,12 +2298,14 @@ static void achannel_setting_visible_widget_cb(bContext *C, void *ale_npoin, voi
 	
 	/* find the channel that got changed */
 	for (ale= anim_data.first; ale; ale= ale->next) {
-		/* compare data, type, and owner/id info */
+		/* compare data, and type as main way of identifying the channel */
 		if ((ale->data == ale_setting->data) && (ale->type == ale_setting->type)) {
-			//if (ale->id == ale_setting->id) {
+			/* we also have to check the ID, this is assigned to, since a block may have multiple users */
+			// TODO: is the owner-data more revealing?
+			if (ale->id == ale_setting->id) {
 				match= ale;
 				break;
-			//}
+			}
 		}
 	}
 	if (match == NULL) {
@@ -2567,11 +2569,10 @@ static void draw_setting_widget (bAnimContext *ac, bAnimListElem *ale, bAnimChan
 		}
 		
 		/* set call to send relevant notifiers and/or perform type-specific updates */
-		// TODO: for 'visible' toggles, use the 'N' version of this, storing a duplicate copy of the ale that this uses
 		if (but) {
 			/* 'visibility' toggles for Graph Editor need special flushing */
 			if (setting == ACHANNEL_SETTING_VISIBLE) 
-				uiButSetNFunc(but, achannel_setting_visible_widget_cb, MEM_dupallocN(ale), /*SET_INT_IN_POINTER(...)*/0);
+				uiButSetNFunc(but, achannel_setting_visible_widget_cb, MEM_dupallocN(ale), 0);
 			else
 				uiButSetFunc(but, achannel_setting_widget_cb, NULL, NULL);
 		}
