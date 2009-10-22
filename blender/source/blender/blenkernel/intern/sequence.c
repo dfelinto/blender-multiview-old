@@ -3466,7 +3466,6 @@ static int shuffle_seq_time_offset(ListBase * seqbasep, char dir)
 
 int shuffle_seq_time(ListBase * seqbasep)
 {
-	/* note: metastrinps untested */
 	/* note: seq->tmp is used to tag strips to move */
 
 	Sequence *seq;
@@ -3478,12 +3477,13 @@ int shuffle_seq_time(ListBase * seqbasep)
 	if(offset) {
 		for(seq= seqbasep->first; seq; seq= seq->next) {
 			if(seq->tmp) {
-				seq->start += offset;
+				seq_translate(seq, offset);
 				seq->flag &= ~SEQ_OVERLAP;
-				calc_sequence(seq);
 			}
 		}
 	}
+
+	return offset? 0:1;
 }
 
 
