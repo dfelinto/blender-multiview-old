@@ -67,12 +67,12 @@ class VIEW3D_PT_tools_meshedit(View3DPanel):
 		
 		col = layout.column(align=True)
 		col.itemL(text="Mesh:")
-		col.itemO("mesh.duplicate_move")
+		col.itemO("mesh.duplicate")
 		col.itemO("mesh.delete")
 		
 		col = layout.column(align=True)
 		col.itemL(text="Modeling:")
-		col.itemO("mesh.extrude_move")
+		col.itemO("mesh.extrude")
 		col.itemO("mesh.subdivide")
 		col.itemO("mesh.loopcut")
 		col.itemO("mesh.spin")
@@ -245,12 +245,12 @@ class VIEW3D_PT_tools_armatureedit(View3DPanel):
 		col = layout.column(align=True)
 		col.itemL(text="Bones:")
 		col.itemO("armature.bone_primitive_add", text="Add")
-		col.itemO("armature.duplicate_move", text="Duplicate")
+		col.itemO("armature.duplicate", text="Duplicate")
 		col.itemO("armature.delete", text="Delete")
 		
 		col = layout.column(align=True)
 		col.itemL(text="Modeling:")
-		col.itemO("armature.extrude_move")
+		col.itemO("armature.extrude")
 		
 		col = layout.column(align=True)
 		col.itemL(text="Grease Pencil:")
@@ -383,6 +383,18 @@ class VIEW3D_PT_tools_posemode_options(View3DPanel):
 		col = layout.column(align=True)
 		col.itemR(arm, "x_axis_mirror")
 		col.itemR(arm, "auto_ik")
+		
+class VIEW3D_PT_tools_armatureedit_options(View3DPanel):
+	__context__ = "armature_edit"
+	__label__ = "Armature Options"
+
+	def draw(self, context):
+		layout = self.layout
+		
+		arm = context.active_object.data
+
+		col = layout.column(align=True)
+		col.itemR(arm, "x_axis_mirror")
 
 # ********** default tools for paint modes ****************
 
@@ -830,6 +842,7 @@ bpy.types.register(VIEW3D_PT_tools_curveedit)
 bpy.types.register(VIEW3D_PT_tools_surfaceedit)
 bpy.types.register(VIEW3D_PT_tools_textedit)
 bpy.types.register(VIEW3D_PT_tools_armatureedit)
+bpy.types.register(VIEW3D_PT_tools_armatureedit_options)
 bpy.types.register(VIEW3D_PT_tools_mballedit)
 bpy.types.register(VIEW3D_PT_tools_latticeedit)
 bpy.types.register(VIEW3D_PT_tools_posemode)
