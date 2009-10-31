@@ -243,11 +243,11 @@ class EXPORT_OT_ply(bpy.types.Operator):
 	# to the class instance from the operator settings before calling.
 	
 	
-	path = StringProperty(attr="", name="File Path", description="File path used for exporting the PLY file", maxlen= 1024, default= "")
-	use_modifiers = BoolProperty(attr="", name="Apply Modifiers", description="Apply Modifiers to the exported mesh", default= True)
-	use_normals = BoolProperty(attr="", name="Export Normals", description="Export Normals for smooth and hard shaded faces", default= True)
-	use_uvs = BoolProperty(attr="", name="Export UVs", description="Exort the active UV layer", default= True)
-	use_colors = BoolProperty(attr="", name="Export Vertex Colors", description="Exort the active vertex color layer", default= True)
+	path = StringProperty(name="File Path", description="File path used for exporting the PLY file", maxlen= 1024, default= "")
+	use_modifiers = BoolProperty(name="Apply Modifiers", description="Apply Modifiers to the exported mesh", default= True)
+	use_normals = BoolProperty(name="Export Normals", description="Export Normals for smooth and hard shaded faces", default= True)
+	use_uvs = BoolProperty(name="Export UVs", description="Exort the active UV layer", default= True)
+	use_colors = BoolProperty(name="Export Vertex Colors", description="Exort the active vertex color layer", default= True)
 	
 	
 	def poll(self, context):

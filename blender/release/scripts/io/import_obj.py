@@ -1564,7 +1564,7 @@ class IMPORT_OT_obj(bpy.types.Operator):
 	# to the class instance from the operator settings before calling.
 	
 	
-	path = StringProperty(attr="", name="File Path", description="File path used for importing the OBJ file", maxlen= 1024, default= "")
+	path = StringProperty(name="File Path", description="File path used for importing the OBJ file", maxlen= 1024, default= "")
 
 	CREATE_SMOOTH_GROUPS = BoolProperty(name="Smooth Groups", description="Surround smooth groups by sharp edges", default= True)
 	CREATE_FGONS = BoolProperty(name="NGons as FGons", description="Import faces with more then 4 verts as fgons", default= True)

@@ -14,7 +14,7 @@ class ExportSomeData(bpy.types.Operator):
 	# to the class instance from the operator settings before calling.
 	
 	# TODO, add better example props
-	path = StringProperty(attr="", name="File Path", description="File path used for exporting the PLY file", maxlen= 1024, default= "")
+	path = StringProperty(name="File Path", description="File path used for exporting the PLY file", maxlen= 1024, default= "")
 	use_some_setting = BoolProperty(name="Apply Modifiers", description="Apply Modifiers to the exported mesh", default= True)
 	
 	def poll(self, context):

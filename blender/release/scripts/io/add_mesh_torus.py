@@ -55,7 +55,7 @@ class MESH_OT_primitive_torus_add(bpy.types.Operator):
 	bl_register = True
 	bl_undo = True
 	
-	major_radius = FloatProperty(attr="", name="Major Radius", description="Number of segments for the main ring of the torus", default= 1.0, min= 0.01, max= 100.0)
+	major_radius = FloatProperty(name="Major Radius", description="Number of segments for the main ring of the torus", default= 1.0, min= 0.01, max= 100.0)
 	minor_radius = FloatProperty(name="Minor Radius", description="Number of segments for the minor ring of the torus", default= 0.25, min= 0.01, max= 100.0)
 	major_segments = IntProperty(name="Major Segments", description="Number of segments for the main ring of the torus", default= 48, min= 3, max= 256)
 	minor_segments = IntProperty(name="Minor Segments", description="Number of segments for the minor ring of the torus", default= 16, min= 3, max= 256)

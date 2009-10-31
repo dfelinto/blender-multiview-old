@@ -1100,7 +1100,7 @@ class EXPORT_OT_autodesk_3ds(bpy.types.Operator):
 	# to the class instance from the operator settings before calling.
 
 	
-	# filename = bpy.props.StringProperty(attr="", name="File Name", description="File name used for exporting the 3DS file", maxlen= 1024, default= ""),
+	# filename = StringProperty(name="File Name", description="File name used for exporting the 3DS file", maxlen= 1024, default= ""),
 	path = StringProperty(name="File Path", description="File path used for exporting the 3DS file", maxlen= 1024, default= "")
 
 	
