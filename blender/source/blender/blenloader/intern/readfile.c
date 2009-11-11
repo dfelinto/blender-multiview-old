@@ -10051,6 +10051,20 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				ntree= ntree->id.next;
 			}
 		}
+		
+		{
+			/* init (+) icons in 3d views */
+			bScreen *screen;
+			for(screen= main->screen.first; screen; screen= screen->id.next) {
+				ScrArea *sa;
+				for(sa= screen->areabase.first; sa; sa= sa->next) {
+					if(sa && sa->spacetype==SPACE_VIEW3D) {
+						view3d_has_buttons_region(sa);
+						view3d_has_tools_region(sa);
+					}
+				}
+			}
+		}
 	}
 
 	/* WATCH IT!!!: pointers from libdata have not been converted yet here! */
