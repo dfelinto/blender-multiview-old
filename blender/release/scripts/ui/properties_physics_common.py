@@ -186,7 +186,7 @@ def basic_force_field_falloff_ui(self, context, field):
     #if col2:
     #    split = layout.split()
     #else:
-        split = layout.split(percentage=0.35)
+    split = layout.split(percentage=0.35)
 
     if not field or field.type == 'NONE':
         return
