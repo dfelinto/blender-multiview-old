@@ -299,7 +299,7 @@ class OBJECT_PT_properties(ObjectButtonsPanel):
 
     def draw(self, context):
         import rna_prop_ui
-        # reload(rna_prop_ui)
+        reload(rna_prop_ui)
         
         rna_prop_ui.draw(self.layout, context, "object")
 
