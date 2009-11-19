@@ -39,11 +39,13 @@ endif
 
 ifeq ($(OS),$(findstring $(OS), "freebsd solaris"))
     DIRS = src test
+    CPPFLAGS += -DXP_UNIX
 endif
 
 ifeq ($(OS),$(findstring $(OS), "linux"))
   ifeq ($(CPU),i386)
     DIRS = src test
+    CPPFLAGS += -DXP_UNIX
   endif
 endif
 
