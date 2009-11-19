@@ -550,6 +550,7 @@ def UnixPyBundle(target=None, source=None, env=None):
 		print 'Using existing python from:'
 		print '\t"%s"' %			py_target
 		print '\t(skipping copy)\n'
+		return
 		
 	
 	# Copied from source/creator/CMakeLists.txt, keep in sync.
