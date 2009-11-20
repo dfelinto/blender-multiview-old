@@ -91,6 +91,7 @@ EnumPropertyItem proportional_editing_items[] = {
 #include "ED_info.h"
 #include "ED_node.h"
 #include "ED_view3d.h"
+#include "ED_object.h"
 
 #include "RE_pipeline.h"
 
