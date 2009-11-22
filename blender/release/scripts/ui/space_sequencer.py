@@ -523,6 +523,7 @@ class SEQUENCER_PT_sound(SequencerButtonsPanel):
 
         layout.itemR(strip, "volume")
         
+
 class SEQUENCER_PT_scene(SequencerButtonsPanel):
     bl_label = "Scene"
 
