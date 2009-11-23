@@ -230,6 +230,8 @@ void wm_window_close(bContext *C, wmWindowManager *wm, wmWindow *win)
 	BLI_remlink(&wm->windows, win);
 	
 	wm_draw_window_clear(win);
+	WM_event_remove_handlers(C, &win->handlers);
+	WM_event_remove_handlers(C, &win->modalhandlers);
 	ED_screen_exit(C, win, win->screen);
 	wm_window_free(C, wm, win);
 	
