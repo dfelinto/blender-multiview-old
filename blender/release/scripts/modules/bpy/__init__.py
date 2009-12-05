@@ -31,17 +31,26 @@ from bpy import ops as _ops_module
 # fake operator module
 ops = _ops_module.ops_fake_module
 
+import time
+
 def load_scripts(reload_scripts=False):
     import os
     import sys
     import traceback
+    
+    
+    tt = time.time()
 
     def test_import(module_name):
         try:
-            return __import__(module_name)
+            t = time.time()
+            ret= __import__(module_name)
+            print("time %s %.4f" % (module_name, time.time() - t))
+            return ret
         except:
             traceback.print_exc()
             return None
+        
 
     for base_path in utils.script_paths():
         for path_subdir in ("ui", "op", "io"):
@@ -61,6 +70,8 @@ def load_scripts(reload_scripts=False):
                     if reload_scripts and mod:
                         print("Reloading:", mod)
                         reload(mod)
+    
+    print("Time %.4f" % (time.time() - tt))
 
 def _main():
 
@@ -70,7 +81,7 @@ def _main():
     import sys
     sys.stdin = None
 
-    if "-d" in sys.argv and False: # Enable this to measure startup speed
+    if "-d" in sys.argv: # Enable this to measure startup speed
         import cProfile
         cProfile.run('import bpy; bpy.load_scripts()', 'blender.prof')
 
