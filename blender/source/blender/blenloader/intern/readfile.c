@@ -10166,7 +10166,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		if (main->versionfile == 250) {
 			bScreen *screen;
 			for(screen= main->screen.first; screen; screen= screen->id.next) {
-				if (strcmp(screen->id.name+2, "temp")==0)
+				if (screen->full == SCREENTEMP)
 					free_libblock(&main->screen, screen);
 			}
 		}
