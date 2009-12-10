@@ -1303,7 +1303,7 @@ static int region_scale_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	sActionzoneData *sad= event->customdata;
 	AZone *az;
 	
-	if(event->type!=EVT_ACTIONZONE_AREA) {
+	if(event->type!=EVT_ACTIONZONE_REGION) {
 		BKE_report(op->reports, RPT_ERROR, "Can only scale region size from an action zone");	
 		return OPERATOR_CANCELLED;
 	}
