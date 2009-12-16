@@ -1,58 +1,42 @@
-#!BPY
-"""
-Name: 'Follow Active (quads)'
-Blender: 242
-Group: 'UVCalculation'
-Tooltip: 'Follow from active quads.'
-"""
-__author__ = "Campbell Barton"
-__url__ = ("blender", "blenderartists.org")
-__version__ = "1.0 2006/02/07"
-
-__bpydoc__ = """\
-This script sets the UV mapping and image of selected faces from adjacent unselected faces.
-
-for full docs see...
-http://mediawiki.blender.org/index.php/Scripts/Manual/UV_Calculate/Follow_active_quads
-"""
-
-# ***** BEGIN GPL LICENSE BLOCK *****
+# ##### BEGIN GPL LICENSE BLOCK #####
 #
-# Script copyright (C) Campbell J Barton
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
 #
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-#
-# ***** END GPL LICENCE BLOCK *****
-# --------------------------------------------------------------------------
+# ##### END GPL LICENSE BLOCK #####
 
+# <pep8 compliant>
 
-from Blender import *
+#for full docs see...
+# http://mediawiki.blender.org/index.php/Scripts/Manual/UV_Calculate/Follow_active_quads
+
 import bpy
-import BPyMesh
 
-def extend(EXTEND_MODE,ob):
-	if EXTEND_MODE == -1:
-		return
-	me = ob.getData(mesh=1)
+def extend(obj, operator, EXTEND_MODE):
+	me = obj.data
 	me_verts = me.verts
-		# Toggle Edit mode
-	is_editmode = Window.EditMode()
+	# script will fail without UVs
+	if not me.active_uv_texture:
+		me.add_uv_texture()
+	
+
+	# Toggle Edit mode
+	is_editmode = (obj.mode == 'EDIT')
 	if is_editmode:
-		Window.EditMode(0)
-	Window.WaitCursor(1)
-	t = sys.time()
+		bpy.ops.object.mode_set(mode='OBJECT')
+
+	#t = sys.time()
 	edge_average_lengths = {}
 	
 	OTHER_INDEX = 2,3,0,1
@@ -65,17 +49,22 @@ def extend(EXTEND_MODE,ob):
 		'''
 		
 		def face_edge_vs(vi):
-			# assunme a quad
+			# assume a quad
 			return [(vi[0], vi[1]), (vi[1], vi[2]), (vi[2], vi[3]), (vi[3], vi[0])]
-		
-		uvs_source = face_source.uv
-		uvs_target = face_target.uv
-		
-		vidx_source = [v.index for v in face_source] 
-		vidx_target = [v.index for v in face_target]
-		
+	
+		vidx_source = face_source.verts 
+		vidx_target = face_target.verts
+
+		faceUVsource = me.active_uv_texture.data[face_source.index]
+		uvs_source = [faceUVsource.uv1,faceUVsource.uv2,faceUVsource.uv3,faceUVsource.uv4] 
+
+		faceUVtarget = me.active_uv_texture.data[face_target.index]
+		uvs_target = [faceUVtarget.uv1,faceUVtarget.uv2,faceUVtarget.uv3,faceUVtarget.uv4] 
+
 		# vertex index is the key, uv is the value
+
 		uvs_vhash_source = dict( [ (vindex, uvs_source[i]) for i, vindex in enumerate(vidx_source)] )
+
 		uvs_vhash_target = dict( [ (vindex, uvs_target[i]) for i, vindex in enumerate(vidx_target)] )
 		
 		edge_idxs_source = face_edge_vs(vidx_source)
@@ -87,9 +76,9 @@ def extend(EXTEND_MODE,ob):
 		edge_key_swap = edge_key[1], edge_key[0]
 		
 		try:	source_matching_edge = edge_idxs_source.index(edge_key)
-		except:	source_matching_edge = edge_idxs_source.index(edge_key_swap)
+		except: source_matching_edge = edge_idxs_source.index(edge_key_swap)
 		try:	target_matching_edge = edge_idxs_target.index(edge_key)
-		except:	target_matching_edge = edge_idxs_target.index(edge_key_swap)
+		except: target_matching_edge = edge_idxs_target.index(edge_key_swap)
 		
 
 		
@@ -111,7 +100,7 @@ def extend(EXTEND_MODE,ob):
 
 		# Set the 2 UV's on the target face that are not touching
 		# for this we need to do basic expaning on the source faces UV's
-		if EXTEND_MODE == 2:
+		if EXTEND_MODE == 'LENGTH':
 			
 			try: # divide by zero is possible
 				'''
@@ -138,16 +127,17 @@ def extend(EXTEND_MODE,ob):
 			# same as above but with no factor
 			uvs_vhash_target[edgepair_outer_target[iB]][:] = uvs_vhash_source[edgepair_inner_source[0]] + (uvs_vhash_source[edgepair_inner_source[0]] - uvs_vhash_source[edgepair_outer_source[1]])
 			uvs_vhash_target[edgepair_outer_target[iA]][:] = uvs_vhash_source[edgepair_inner_source[1]] + (uvs_vhash_source[edgepair_inner_source[1]] - uvs_vhash_source[edgepair_outer_source[0]])
+
+
+	if me.active_uv_texture == None:
+		me.add_uv_texture
 	
-	if not me.faceUV:
-		me.faceUV= True
-	
-	face_act = 	me.activeFace
+	face_act =  me.faces.active
 	if face_act == -1:
-		Draw.PupMenu('ERROR: No active face')
+		operator.report({'ERROR'}, "No active face.")
 		return
 	
-	face_sel= [f for f in me.faces if len(f) == 4 and f.sel]
+	face_sel= [f for f in me.faces if len(f.verts) == 4 and f.selected]
 	
 	face_act_local_index = -1
 	for i, f in enumerate(face_sel):
@@ -156,12 +146,12 @@ def extend(EXTEND_MODE,ob):
 			break
 	
 	if face_act_local_index == -1:
-		Draw.PupMenu('ERROR: Active face not selected')
+		operator.report({'ERROR'}, "Active face not selected.")
 		return
 	
 	
 	
-	# Modes
+	# Modes 
 	# 0 unsearched
 	# 1:mapped, use search from this face. - removed!!
 	# 2:all siblings have been searched. dont search again.
@@ -174,12 +164,12 @@ def extend(EXTEND_MODE,ob):
 	for i, f in enumerate(face_sel):
 		for edkey in f.edge_keys:
 			try:	edge_faces[edkey].append(i)
-			except:	edge_faces[edkey] = [i]
+			except: edge_faces[edkey] = [i]
 	
-	SEAM = Mesh.EdgeFlags.SEAM
+	#SEAM = me.edges.seam
 	
-	if EXTEND_MODE == 2:
-		edge_loops = BPyMesh.getFaceLoopEdges(face_sel, [ed.key for ed in me.edges if ed.flag & SEAM] )
+	if EXTEND_MODE == 'LENGTH':
+		edge_loops = me.edge_loops(face_sel, [ed.key for ed in me.edges if ed.seam] )
 		me_verts = me.verts
 		for loop in edge_loops:
 			looplen = [0.0]
@@ -192,18 +182,18 @@ def extend(EXTEND_MODE,ob):
 	
 	# remove seams, so we dont map accross seams.
 	for ed in me.edges:
-		if ed.flag & SEAM:
+		if ed.seam:
 			# remove the edge pair if we can
 			try:	del edge_faces[ed.key]
-			except:	pass
+			except: pass
 	# Done finding seams
 	
 	
 	# face connectivity - faces around each face
 	# only store a list of indicies for each face.
-	face_faces = [[] for i in xrange(len(face_sel))]
+	face_faces = [[] for i in range(len(face_sel))]
 	
-	for edge_key, faces in edge_faces.iteritems():
+	for edge_key, faces in edge_faces.items():
 		if len(faces) == 2: # Only do edges with 2 face users for now
 			face_faces[faces[0]].append((faces[1], edge_key))
 			face_faces[faces[1]].append((faces[0], edge_key))
@@ -213,7 +203,7 @@ def extend(EXTEND_MODE,ob):
 	ok = True
 	while ok:
 		ok = False
-		for i in xrange(len(face_sel)):
+		for i in range(len(face_sel)):
 			if face_modes[i] == 1: # searchable
 				for f_sibling, edge_key in face_faces[i]:
 					if face_modes[f_sibling] == 0:
@@ -223,32 +213,49 @@ def extend(EXTEND_MODE,ob):
 						ok= True # keep searching
 				
 				face_modes[i] = 2 # dont search again
-	print  sys.time() - t
 	
 	if is_editmode:
-		Window.EditMode(1)
+		bpy.ops.object.mode_set(mode='EDIT')
 	else:
 		me.update()
 	
-	Window.RedrawAll()
-	Window.WaitCursor(0)
 
 
-def main():
-	sce = bpy.data.scenes.active
-	ob = sce.objects.active
-	
-	# print ob, ob.type
-	if ob == None or ob.type != 'Mesh':
-		Draw.PupMenu('ERROR: No mesh object.')
-		return
-	
+def main(context, operator):
+	obj = context.active_object
 
-	
-	# 0:normal extend, 1:edge length
-	EXTEND_MODE = Draw.PupMenu("Use Face Area%t|Loop Average%x2|None%x0")
-	extend(EXTEND_MODE,ob)
+	extend(obj, operator, operator.properties.mode)
+
+class FollowActiveQuads(bpy.types.Operator):
+	'''Follow UVs from active quads along continuous face loops.'''
+	bl_idname = "uv.follow_active_quads"
+	bl_label = "Follow Active Quads"
+
+	bl_register = True
+	bl_undo = True
+
+	mode = bpy.props.EnumProperty(items=(("EVEN", "Client", "Space all UVs evently"), ("LENGTH", "Length", "Average space UVs edge length of each loop.")),
+						name="Edge Length Mode",
+						description="Method to space UV edge loops",
+						default="LENGTH")
+
+	def poll(self, context):
+		obj = context.active_object
+		return (obj is not None and obj.type == 'MESH')
+
+	def execute(self, context):
+		main(context, self)
+		return ('FINISHED',)
+
+bpy.ops.add(FollowActiveQuads)
+
+# Add to a menu
+import dynamic_menu
+
+menu_func = (lambda self, context: self.layout.operator(FollowActiveQuads.bl_idname))
+
+menu_item = dynamic_menu.add(bpy.types.VIEW3D_MT_uv_map, menu_func)
 
 if __name__ == '__main__':
-	main()
+	bpy.ops.uv.follow_active_quads()
 
