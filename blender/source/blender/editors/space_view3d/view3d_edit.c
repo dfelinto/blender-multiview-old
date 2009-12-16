@@ -902,7 +902,7 @@ static void viewzoom_apply(ViewOpsData *vod, int x, int y)
 		float time_step= (float)(time - vod->timer_lastdraw);
 
 		// oldstyle zoom
-		zfac = 1.0f + (((float)(vod->origx - x + vod->origy - y)/1000.0) * (time_step * 10.0f));
+		zfac = 1.0f + (((float)(vod->origx - x + vod->origy - y)/20.0) * time_step);
 		vod->timer_lastdraw= time;
 	}
 	else if(U.viewzoom==USER_ZOOM_SCALE) {
