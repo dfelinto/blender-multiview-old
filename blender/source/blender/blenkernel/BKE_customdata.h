@@ -198,11 +198,11 @@ int CustomData_get_named_layer_index(const struct CustomData *data, int type, ch
 int CustomData_get_active_layer_index(const struct CustomData *data, int type);
 int CustomData_get_render_layer_index(const struct CustomData *data, int type);
 int CustomData_get_clone_layer_index(const struct CustomData *data, int type);
-int CustomData_get_mask_layer_index(const struct CustomData *data, int type);
+int CustomData_get_stencil_layer_index(const struct CustomData *data, int type);
 int CustomData_get_active_layer(const struct CustomData *data, int type);
 int CustomData_get_render_layer(const struct CustomData *data, int type);
 int CustomData_get_clone_layer(const struct CustomData *data, int type);
-int CustomData_get_mask_layer(const struct CustomData *data, int type);
+int CustomData_get_stencil_layer(const struct CustomData *data, int type);
 
 /* copies the data from source to the data element at index in the first
  * layer of type
@@ -237,7 +237,7 @@ void CustomData_set_layer_mask(struct CustomData *data, int type, int n);
 void CustomData_set_layer_active_index(struct CustomData *data, int type, int n);
 void CustomData_set_layer_render_index(struct CustomData *data, int type, int n);
 void CustomData_set_layer_clone_index(struct CustomData *data, int type, int n);
-void CustomData_set_layer_mask_index(struct CustomData *data, int type, int n);
+void CustomData_set_layer_stencil_index(struct CustomData *data, int type, int n);
 
 /* adds flag to the layer flags */
 void CustomData_set_layer_flag(struct CustomData *data, int type, int flag);

@@ -2864,8 +2864,8 @@ static void project_paint_begin(ProjPaintState *ps)
 	}
 	
 	if (ps->do_layer_mask) {
-		//int layer_num = CustomData_get_mask_layer(&ps->dm->faceData, CD_MTFACE);
-		int layer_num = CustomData_get_mask_layer(&((Mesh *)ps->ob->data)->fdata, CD_MTFACE);
+		//int layer_num = CustomData_get_stencil_layer(&ps->dm->faceData, CD_MTFACE);
+		int layer_num = CustomData_get_stencil_layer(&((Mesh *)ps->ob->data)->fdata, CD_MTFACE);
 		if (layer_num != -1)
 			ps->dm_mtface_mask = CustomData_get_layer_n(&ps->dm->faceData, CD_MTFACE, layer_num);
 		

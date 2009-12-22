@@ -87,7 +87,7 @@ static void delete_customdata_layer(bContext *C, Object *ob, CustomDataLayer *la
 	actlayerdata = data->layers[CustomData_get_active_layer_index(data, type)].data;
 	rndlayerdata = data->layers[CustomData_get_render_layer_index(data, type)].data;
 	clonelayerdata = data->layers[CustomData_get_clone_layer_index(data, type)].data;
-	masklayerdata = data->layers[CustomData_get_mask_layer_index(data, type)].data;
+	masklayerdata = data->layers[CustomData_get_stencil_layer_index(data, type)].data;
 	CustomData_set_layer_active(data, type, layer - &data->layers[index]);
 
 	if(me->edit_mesh) {
