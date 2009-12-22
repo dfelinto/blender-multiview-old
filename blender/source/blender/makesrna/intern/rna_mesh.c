@@ -439,7 +439,7 @@ static void rna_Mesh_uv_texture_stencil_index_set(PointerRNA *ptr, int value)
 	Mesh *me= (Mesh*)ptr->data;
 	CustomData *fdata= rna_mesh_fdata(me);
 
-	CustomData_set_layer_mask(fdata, CD_MTFACE, value);
+	CustomData_set_layer_stencil(fdata, CD_MTFACE, value);
 }
 
 static void rna_Mesh_active_uv_texture_index_range(PointerRNA *ptr, int *min, int *max)

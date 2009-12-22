@@ -1088,7 +1088,7 @@ void CustomData_set_layer_clone(CustomData *data, int type, int n)
 			data->layers[i].active_clone = n;
 }
 
-void CustomData_set_layer_mask(CustomData *data, int type, int n)
+void CustomData_set_layer_stencil(CustomData *data, int type, int n)
 {
 	int i;
 

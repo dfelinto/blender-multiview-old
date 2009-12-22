@@ -231,7 +231,7 @@ void *CustomData_set_layer_n(const struct CustomData *data, int type, int n, voi
 void CustomData_set_layer_active(struct CustomData *data, int type, int n);
 void CustomData_set_layer_render(struct CustomData *data, int type, int n);
 void CustomData_set_layer_clone(struct CustomData *data, int type, int n);
-void CustomData_set_layer_mask(struct CustomData *data, int type, int n);
+void CustomData_set_layer_stencil(struct CustomData *data, int type, int n);
 
 /* same as above but works with an index from CustomData_get_layer_index */
 void CustomData_set_layer_active_index(struct CustomData *data, int type, int n);
