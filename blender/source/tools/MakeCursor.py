@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-# <pep8 compliant>
-
 # Created by Robert Wenzlaff (Det. Thorn).
 # Oct. 30, 2003
 
