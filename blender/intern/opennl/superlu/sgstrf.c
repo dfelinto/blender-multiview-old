@@ -231,10 +231,7 @@ sgstrf (superlu_options_t *options, SuperMatrix *A,
     /* Allocate storage common to the factor routines */
     *info = sLUMemInit(fact, work, lwork, m, n, Astore->nnz,
                        panel_size, L, U, &Glu, &iwork, &swork);
-    if ( *info ) {
-	if ( *iwork) SUPERLU_FREE (iwork);
-	return;
-    }
+    if ( *info ) return;
     
     xsup    = Glu.xsup;
     supno   = Glu.supno;

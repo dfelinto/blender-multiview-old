@@ -177,10 +177,4 @@ ifeq ($(WITH_FFTW3),true)
     LLIBS += $(BF_FFTW3_LIBS)
 endif
 
-ifeq ($(WITH_OPENJPEG),true)
-    ifneq (x$(BF_OPENJPEG_LIBS), x)
-        LLIBS += $(BF_OPENJPEG_LIBS)
-    endif
-endif
-
 LLIBS += $(NAN_PYTHON_LIB)

@@ -439,6 +439,8 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
 	/* Transform perm_c into 0-based indexing. */
 	for (i = 0; i < n; ++i) --perm_c[i];
 
+	SUPERLU_FREE(b_colptr);
+	SUPERLU_FREE(b_rowind);
 	SUPERLU_FREE(invp);
 	SUPERLU_FREE(dhead);
 	SUPERLU_FREE(qsize);
@@ -451,6 +453,5 @@ get_perm_c(int ispec, SuperMatrix *A, int *perm_c)
     } else { /* Empty adjacency structure */
 	for (i = 0; i < n; ++i) perm_c[i] = i;
     }
-    SUPERLU_FREE(b_colptr);
-    SUPERLU_FREE(b_rowind);
+
 }

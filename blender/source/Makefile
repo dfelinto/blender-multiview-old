@@ -196,6 +196,8 @@ endif
 ifeq ($(WITH_OPENJPEG), true)
     ifndef BF_OPENJPEG_LIBS
         COMLIB += $(OCGDIR)/extern/openjpeg/$(DEBUG_DIR)libopenjpeg.a
+    else
+        COMLIB += $(BF_OPENJPEG_LIBS)
     endif
 endif
 
