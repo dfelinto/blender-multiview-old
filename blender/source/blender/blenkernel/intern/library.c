@@ -1280,7 +1280,7 @@ void all_local(Library *lib, int untagged_only)
 			 * (very nasty to discover all your links are lost after appending)  
 			 * */
 			if(id->flag & (LIB_EXTERN|LIB_INDIRECT|LIB_NEW) &&
-			  (untagged_only==0 || !(id->flag & LIB_APPEND_TAG)))
+			  (untagged_only==0 || !(id->flag & LIB_PRE_EXISTING)))
 			{
 				if(lib==NULL || id->lib==lib) {
 					id->flag &= ~(LIB_EXTERN|LIB_INDIRECT|LIB_NEW);
