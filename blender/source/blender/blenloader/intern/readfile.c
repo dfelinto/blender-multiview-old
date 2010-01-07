@@ -11591,8 +11591,8 @@ static void give_base_to_objects(Main *mainvar, Scene *sce, Library *lib, int is
 				if we are appending, but this object wasnt just added allong with a group,
 				then this is alredy used indirectly in the scene somewhere else and we didnt just append it.
 				
-				(ob->id.flag & LIB_APPEND_TAG)==0 means that this is a newly appended object - Campbell */
-			if (is_group_append==0 || (ob->id.flag & LIB_APPEND_TAG)==0) {
+				(ob->id.flag & LIB_PRE_EXISTING)==0 means that this is a newly appended object - Campbell */
+			if (is_group_append==0 || (ob->id.flag & LIB_PRE_EXISTING)==0) {
 				
 				int do_it= 0;
 				
