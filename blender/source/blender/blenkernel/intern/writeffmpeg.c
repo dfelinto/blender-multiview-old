@@ -75,7 +75,6 @@
 #endif
 
 extern void do_init_ffmpeg();
-static void makeffmpegstring(char* string, RenderData* rd);
 
 static int ffmpeg_type = 0;
 static int ffmpeg_codec = CODEC_ID_MPEG4;
