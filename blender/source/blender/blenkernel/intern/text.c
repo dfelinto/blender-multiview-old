@@ -186,7 +186,9 @@ Text *add_empty_text(char *name)
 	ta->id.us= 1;
 	
 	ta->name= NULL;
-		
+
+    init_undo_text(ta);
+
 	ta->nlines=1;
 	ta->flags= TXT_ISDIRTY | TXT_ISMEM;
 
