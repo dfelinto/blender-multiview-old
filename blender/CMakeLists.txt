@@ -82,7 +82,7 @@ OPTION(WITH_INSTALL       "Install accompanying scripts and language files neede
 OPTION(WITH_OPENCOLLADA		"Enable OpenCollada Support (http://www.opencollada.org/)"	ON)
 
 # Unix defaults to OpenMP On
-IF (UNIX)
+IF(UNIX AND NOT APPLE)
 	OPTION(WITH_OPENMP        "Enable OpenMP (has to be supported by the compiler)" ON)
 ELSE(UNIX)
 	OPTION(WITH_OPENMP        "Enable OpenMP (has to be supported by the compiler)" OFF)
