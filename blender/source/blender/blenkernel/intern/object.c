@@ -1521,7 +1521,7 @@ void object_make_proxy(Object *ob, Object *target, Object *gob)
 	copy_m4_m4(ob->parentinv, target->parentinv);
 	
 	/* copy animdata stuff - drivers only for now... */
-	object_proxy_copy_drivers(ob, target);
+	object_copy_proxy_drivers(ob, target);
 
 	/* skip constraints? */
 	// FIXME: this is considered by many as a bug
