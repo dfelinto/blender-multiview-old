@@ -6,14 +6,20 @@ Import('env')
 all_libs = ['libavformat', 'libavcodec', 'libswscale', 'libavutil', 'libavdevice']
 root = "extern/ffmpeg"
 
+#
+# TODO: Need to enable support of theora and vorbis for cross-compilation
+#
+
 if env['OURPLATFORM'] == 'win32-mingw':
     ffmpeg_switches = "--disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-pthreads --enable-libx264 --enable-libxvid --enable-libmp3lame"
+elif env['OURPLATFORM'] == 'linuxcross':
+    ffmpeg_switches = "--target-os=mingw32 --enable-memalign-hack --disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-libx264 --enable-libxvid --enable-libmp3lame")
 else:
     ffmpeg_switches = "--disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-memalign-hack --enable-libx264 --enable-libxvid --enable-libmp3lame --disable-bzlib --disable-outdevs --disable-demuxer=alsa"
     if env['OURPLATFORM'] == 'darwin':
         ffmpeg_switches += " --disable-mmx --disable-bzlib"
 
-if env['WITH_BF_OGG']:
+if env['WITH_BF_OGG'] and env['OURPLATFORM'] != 'linuxcross':
     ffmpeg_switches += " --enable-libtheora --enable-libvorbis"
 
 #--enable-libx264
@@ -149,9 +155,13 @@ for lib in all_libs:
         sources.append(s)
         
     if env['OURPLATFORM'] in ['win32-mingw', 'win32-vc', 'win64-vc' , 'darwin'] :
-    	defs = "HAVE_AV_CONFIG_H  _ISOC9X_SOURCE"
+        defs = "HAVE_AV_CONFIG_H  _ISOC9X_SOURCE"
     else :
-    	defs = "HAVE_AV_CONFIG_H _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _ISOC9X_SOURCE"
+        defs = "HAVE_AV_CONFIG_H _FILE_OFFSET_BITS=64 _LARGEFILE_SOURCE _ISOC9X_SOURCE"
+
+    # HACK. But couldn't compile without this
+    if env['OURPLATFORM'] == 'linuxcross':
+      defs += " _cdecl=''"
 
     if env['BF_FFMPEG_EXTRA']:
         cflags = env['BF_FFMPEG_EXTRA']

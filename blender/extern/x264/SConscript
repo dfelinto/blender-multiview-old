@@ -142,10 +142,15 @@ asflags = ""
 for a in vars['ASFLAGS'].split():
     asflags += " " + a.replace('-I', '-I' + root + '/')
 
+incs = ['.']
+
+if env['OURPLATFORM'] == 'linuxcross':
+    incs += [env['BF_PTHREADS_INC']]
+
 x264_env['AS'] = vars['AS']
 x264_env['ASFLAGS'] = asflags
 x264_env.BlenderLib (libname="extern_x264", sources=sources,
-                     includes=["."],
+                     includes=incs,
                      defines=Split(defs),
                      libtype=['core', 'intern'],
                      priority = [10, 10],
