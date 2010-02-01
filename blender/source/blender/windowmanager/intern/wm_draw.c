@@ -751,7 +751,7 @@ void wm_draw_region_clear(wmWindow *win, ARegion *ar)
 {
 	int drawmethod= wm_automatic_draw_method(win);
 
-	if(drawmethod == USER_DRAW_OVERLAP)
+	if(ELEM(drawmethod, USER_DRAW_OVERLAP, USER_DRAW_OVERLAP_FLIP))
 		wm_flush_regions_down(win->screen, &ar->winrct);
 
 	win->screen->do_draw= 1;
