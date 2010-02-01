@@ -13,7 +13,7 @@ root = "extern/ffmpeg"
 if env['OURPLATFORM'] == 'win32-mingw':
     ffmpeg_switches = "--disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-pthreads --enable-libx264 --enable-libxvid --enable-libmp3lame"
 elif env['OURPLATFORM'] == 'linuxcross':
-    ffmpeg_switches = "--target-os=mingw32 --enable-memalign-hack --disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-libx264 --enable-libxvid --enable-libmp3lame")
+    ffmpeg_switches = "--target-os=mingw32 --enable-memalign-hack --disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-libx264 --enable-libxvid --enable-libmp3lame"
 else:
     ffmpeg_switches = "--disable-shared --enable-gpl --enable-zlib --disable-vhook --disable-ffserver --disable-ffplay --enable-swscale --enable-memalign-hack --enable-libx264 --enable-libxvid --enable-libmp3lame --disable-bzlib --disable-outdevs --disable-demuxer=alsa"
     if env['OURPLATFORM'] == 'darwin':
