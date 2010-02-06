@@ -2093,7 +2093,6 @@ static void clear_mesh_caches(Object *ob)
 	freedisplist(&ob->disp);
 
 	if (ob->derivedFinal) {
-		printf("free derived final %s %p\n", ob->id.name, ob->derivedFinal);
 		ob->derivedFinal->needsFree = 1;
 		ob->derivedFinal->release(ob->derivedFinal);
 		ob->derivedFinal= NULL;
@@ -2130,8 +2129,6 @@ static void mesh_build_data(Scene *scene, Object *ob, CustomDataMask dataMask)
 	ob->derivedFinal->needsFree = 0;
 	ob->derivedDeform->needsFree = 0;
 	ob->lastDataMask = dataMask;
-
-	printf("build derived final %s %p\n", ob->id.name, ob->derivedFinal);
 }
 
 static void editmesh_build_data(Scene *scene, Object *obedit, EditMesh *em, CustomDataMask dataMask)
