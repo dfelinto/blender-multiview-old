@@ -25,6 +25,7 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 
 #include "AUD_NULLDevice.h"
 #include "AUD_I3DDevice.h"
