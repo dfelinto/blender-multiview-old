@@ -18,7 +18,6 @@
 #include "DNA_packedFile_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_userdef_types.h"
-#include "DNA_anim_types.h"
 
 #include "AUD_C-API.h"
 
