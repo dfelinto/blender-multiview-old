@@ -183,7 +183,7 @@ static void rna_def_cloth_sim_settings(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna = RNA_def_struct(brna, "ClothSettings", NULL);
-	RNA_def_struct_ui_text(srna, "Cloth Settings", "Cloth simulation settings for an object.");
+	RNA_def_struct_ui_text(srna, "Cloth Settings", "Cloth simulation settings for an object");
 	RNA_def_struct_sdna(srna, "ClothSimSettings");
 	RNA_def_struct_path_func(srna, "rna_ClothSettings_path");
 	
@@ -374,7 +374,7 @@ static void rna_def_cloth_collision_settings(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna = RNA_def_struct(brna, "ClothCollisionSettings", NULL);
-	RNA_def_struct_ui_text(srna, "Cloth Collision Settings", "Cloth simulation settings for self collision and collision with other objects.");
+	RNA_def_struct_ui_text(srna, "Cloth Collision Settings", "Cloth simulation settings for self collision and collision with other objects");
 	RNA_def_struct_sdna(srna, "ClothCollSettings");
 	RNA_def_struct_path_func(srna, "rna_ClothCollisionSettings_path");
 

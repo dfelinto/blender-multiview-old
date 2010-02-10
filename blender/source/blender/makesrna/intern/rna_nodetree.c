@@ -2009,7 +2009,7 @@ static void rna_def_shader_node(BlenderRNA *brna)
 	alloc_node_type_items(shader_node_type_items, Category_ShaderNode);
 
 	srna = RNA_def_struct(brna, "ShaderNode", "Node");
-	RNA_def_struct_ui_text(srna, "Shader Node", "Material shader node.");
+	RNA_def_struct_ui_text(srna, "Shader Node", "Material shader node");
 	RNA_def_struct_sdna(srna, "bNode");
 
 	prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
@@ -2147,7 +2147,7 @@ static void rna_def_node(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna = RNA_def_struct(brna, "Node", NULL);
-	RNA_def_struct_ui_text(srna, "Node", "Node in a node tree.");
+	RNA_def_struct_ui_text(srna, "Node", "Node in a node tree");
 	RNA_def_struct_sdna(srna, "bNode");
 	RNA_def_struct_ui_icon(srna, ICON_NODE);
 	RNA_def_struct_refine_func(srna, "rna_Node_refine");
@@ -2182,7 +2182,7 @@ static void rna_def_nodetree(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna = RNA_def_struct(brna, "NodeTree", "ID");
-	RNA_def_struct_ui_text(srna, "Node Tree", "Node tree consisting of linked nodes used for materials, textures and compositing.");
+	RNA_def_struct_ui_text(srna, "Node Tree", "Node tree consisting of linked nodes used for materials, textures and compositing");
 	RNA_def_struct_sdna(srna, "bNodeTree");
 	RNA_def_struct_ui_icon(srna, ICON_NODETREE);
 	

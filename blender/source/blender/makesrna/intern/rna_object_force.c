@@ -675,7 +675,7 @@ static void rna_def_pointcache(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "PointCache", NULL);
-	RNA_def_struct_ui_text(srna, "Point Cache", "Point cache for physics simulations.");
+	RNA_def_struct_ui_text(srna, "Point Cache", "Point cache for physics simulations");
 	RNA_def_struct_ui_icon(srna, ICON_PHYSICS);
 	
 	prop= RNA_def_property(srna, "start_frame", PROP_INT, PROP_TIME);
@@ -767,7 +767,7 @@ static void rna_def_collision(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "CollisionSettings", NULL);
 	RNA_def_struct_sdna(srna, "PartDeflect");
 	RNA_def_struct_path_func(srna, "rna_CollisionSettings_path");
-	RNA_def_struct_ui_text(srna, "Collision Settings", "Collision settings for object in physics simulation.");
+	RNA_def_struct_ui_text(srna, "Collision Settings", "Collision settings for object in physics simulation");
 	
 	prop= RNA_def_property(srna, "enabled", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "deflect", 1);
@@ -859,7 +859,7 @@ static void rna_def_effector_weight(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "EffectorWeights", NULL);
 	RNA_def_struct_sdna(srna, "EffectorWeights");
 	RNA_def_struct_path_func(srna, "rna_EffectorWeight_path");
-	RNA_def_struct_ui_text(srna, "Effector Weights", "Effector weights for physics simulation.");
+	RNA_def_struct_ui_text(srna, "Effector Weights", "Effector weights for physics simulation");
 	RNA_def_struct_ui_icon(srna, ICON_PHYSICS);
 
 	/* Flags */
@@ -1034,7 +1034,7 @@ static void rna_def_field(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "FieldSettings", NULL);
 	RNA_def_struct_sdna(srna, "PartDeflect");
 	RNA_def_struct_path_func(srna, "rna_FieldSettings_path");
-	RNA_def_struct_ui_text(srna, "Field Settings", "Field settings for an object in physics simulation.");
+	RNA_def_struct_ui_text(srna, "Field Settings", "Field settings for an object in physics simulation");
 	RNA_def_struct_ui_icon(srna, ICON_PHYSICS);
 	
 	/* Enums */
@@ -1323,7 +1323,7 @@ static void rna_def_game_softbody(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "GameSoftBodySettings", NULL);
 	RNA_def_struct_sdna(srna, "BulletSoftBody");
-	RNA_def_struct_ui_text(srna, "Game Soft Body Settings", "Soft body simulation settings for an object in the game engine.");
+	RNA_def_struct_ui_text(srna, "Game Soft Body Settings", "Soft body simulation settings for an object in the game engine");
 	
 	/* Floats */
 	
@@ -1401,7 +1401,7 @@ static void rna_def_softbody(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "SoftBodySettings", NULL);
 	RNA_def_struct_sdna(srna, "SoftBody");
 	RNA_def_struct_path_func(srna, "rna_SoftBodySettings_path");
-	RNA_def_struct_ui_text(srna, "Soft Body Settings", "Soft body simulation settings for an object.");
+	RNA_def_struct_ui_text(srna, "Soft Body Settings", "Soft body simulation settings for an object");
 	
 	/* General Settings */
 	

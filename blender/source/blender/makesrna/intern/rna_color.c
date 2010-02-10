@@ -126,7 +126,7 @@ static void rna_def_curvemappoint(BlenderRNA *brna)
     };
 
 	srna= RNA_def_struct(brna, "CurveMapPoint", NULL);
-	RNA_def_struct_ui_text(srna, "CurveMapPoint", "Point of a curve used for a curve mapping.");
+	RNA_def_struct_ui_text(srna, "CurveMapPoint", "Point of a curve used for a curve mapping");
 
 	/* not editable for now, need to have CurveMapping to do curvemapping_changed */
 
@@ -158,7 +158,7 @@ static void rna_def_curvemap(BlenderRNA *brna)
     };
 
 	srna= RNA_def_struct(brna, "CurveMap", NULL);
-	RNA_def_struct_ui_text(srna, "CurveMap", "Curve in a curve mapping.");
+	RNA_def_struct_ui_text(srna, "CurveMap", "Curve in a curve mapping");
 
 	/* not editable for now, need to have CurveMapping to do curvemapping_changed */
 
@@ -180,7 +180,7 @@ static void rna_def_curvemapping(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "CurveMapping", NULL);
-	RNA_def_struct_ui_text(srna, "CurveMapping", "Curve mapping to map color, vector and scalar values to other values using a user defined curve.");
+	RNA_def_struct_ui_text(srna, "CurveMapping", "Curve mapping to map color, vector and scalar values to other values using a user defined curve");
 	
 	prop= RNA_def_property(srna, "clip", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", CUMA_DO_CLIP);

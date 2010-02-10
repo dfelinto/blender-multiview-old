@@ -421,7 +421,7 @@ static void rna_def_boidstate(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna = RNA_def_struct(brna, "BoidState", NULL);
-	RNA_def_struct_ui_text(srna, "Boid State", "Boid state for boid physics.");
+	RNA_def_struct_ui_text(srna, "Boid State", "Boid state for boid physics");
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Name", "Boid state name.");
@@ -465,7 +465,7 @@ static void rna_def_boid_settings(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna = RNA_def_struct(brna, "BoidSettings", NULL);
-	RNA_def_struct_ui_text(srna, "Boid Settings", "Settings for boid physics.");
+	RNA_def_struct_ui_text(srna, "Boid Settings", "Settings for boid physics");
 
 	prop= RNA_def_property(srna, "landing_smoothness", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_range(prop, 0.0, 10.0);

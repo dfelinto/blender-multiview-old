@@ -109,7 +109,7 @@ static void rna_def_area(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna= RNA_def_struct(brna, "Area", NULL);
-	RNA_def_struct_ui_text(srna, "Area", "Area in a subdivided screen, containing an editor.");
+	RNA_def_struct_ui_text(srna, "Area", "Area in a subdivided screen, containing an editor");
 	RNA_def_struct_sdna(srna, "ScrArea");
 
 	prop= RNA_def_property(srna, "spaces", PROP_COLLECTION, PROP_NONE);
@@ -148,7 +148,7 @@ static void rna_def_region(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna= RNA_def_struct(brna, "Region", NULL);
-	RNA_def_struct_ui_text(srna, "Region", "Region in a subdivided screen area.");
+	RNA_def_struct_ui_text(srna, "Region", "Region in a subdivided screen area");
 	RNA_def_struct_sdna(srna, "ARegion");
 	
 	prop= RNA_def_property(srna, "id", PROP_INT, PROP_NONE);
@@ -180,7 +180,7 @@ static void rna_def_screen(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "Screen", "ID");
 	RNA_def_struct_sdna(srna, "Screen"); /* it is actually bScreen but for 2.5 the dna is patched! */
-	RNA_def_struct_ui_text(srna, "Screen", "Screen datablock, defining the layout of areas in a window.");
+	RNA_def_struct_ui_text(srna, "Screen", "Screen datablock, defining the layout of areas in a window");
 	RNA_def_struct_ui_icon(srna, ICON_SPLITSCREEN);
 	
 	prop= RNA_def_property(srna, "scene", PROP_POINTER, PROP_NONE);

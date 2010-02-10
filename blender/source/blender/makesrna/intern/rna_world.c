@@ -116,7 +116,7 @@ static void rna_def_world_mtex(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "WorldTextureSlot", "TextureSlot");
 	RNA_def_struct_sdna(srna, "MTex");
-	RNA_def_struct_ui_text(srna, "World Texture Slot", "Texture slot for textures in a World datablock.");
+	RNA_def_struct_ui_text(srna, "World Texture Slot", "Texture slot for textures in a World datablock");
 
 	/* map to */
 	prop= RNA_def_property(srna, "map_blend", PROP_BOOLEAN, PROP_NONE);
@@ -212,7 +212,7 @@ static void rna_def_lighting(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "WorldLighting", NULL);
 	RNA_def_struct_sdna(srna, "World");
 	RNA_def_struct_nested(brna, srna, "World");
-	RNA_def_struct_ui_text(srna, "Lighting", "Lighting for a World datablock.");
+	RNA_def_struct_ui_text(srna, "Lighting", "Lighting for a World datablock");
 
 	/* ambient occlusion */
 	prop= RNA_def_property(srna, "use_ambient_occlusion", PROP_BOOLEAN, PROP_NONE);
@@ -361,7 +361,7 @@ static void rna_def_world_mist(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "WorldMistSettings", NULL);
 	RNA_def_struct_sdna(srna, "World");
 	RNA_def_struct_nested(brna, srna, "World");
-	RNA_def_struct_ui_text(srna, "World Mist", "Mist settings for a World data-block.");
+	RNA_def_struct_ui_text(srna, "World Mist", "Mist settings for a World data-block");
 
 	prop= RNA_def_property(srna, "enabled", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "mode", WO_MIST);
@@ -409,7 +409,7 @@ static void rna_def_world_stars(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "WorldStarsSettings", NULL);
 	RNA_def_struct_sdna(srna, "World");
 	RNA_def_struct_nested(brna, srna, "World");
-	RNA_def_struct_ui_text(srna, "World Stars", "Stars setting for a World data-block.");
+	RNA_def_struct_ui_text(srna, "World Stars", "Stars setting for a World data-block");
 
 	prop= RNA_def_property(srna, "enabled", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "mode", WO_STARS);
@@ -465,7 +465,7 @@ void RNA_def_world(BlenderRNA *brna)
 */
 
 	srna= RNA_def_struct(brna, "World", "ID");
-	RNA_def_struct_ui_text(srna, "World", "World datablock describing the environment and ambient lighting of a scene.");
+	RNA_def_struct_ui_text(srna, "World", "World datablock describing the environment and ambient lighting of a scene");
 	RNA_def_struct_ui_icon(srna, ICON_WORLD_DATA);
 
 	rna_def_animdata_common(srna);

@@ -648,7 +648,7 @@ static void rna_def_particle_hair_key(BlenderRNA *brna)
 
 	srna = RNA_def_struct(brna, "ParticleHairKey", NULL);
 	RNA_def_struct_sdna(srna, "HairKey");
-	RNA_def_struct_ui_text(srna, "Particle Hair Key", "Particle key for hair particle system.");
+	RNA_def_struct_ui_text(srna, "Particle Hair Key", "Particle key for hair particle system");
 
 	prop= RNA_def_property(srna, "location", PROP_FLOAT, PROP_TRANSLATION);
 	RNA_def_property_float_sdna(prop, NULL, "co");
@@ -668,7 +668,7 @@ static void rna_def_particle_key(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna = RNA_def_struct(brna, "ParticleKey", NULL);
-	RNA_def_struct_ui_text(srna, "Particle Key", "Key location for a particle over time.");
+	RNA_def_struct_ui_text(srna, "Particle Key", "Key location for a particle over time");
 
 	prop= RNA_def_property(srna, "location", PROP_FLOAT, PROP_TRANSLATION);
 	RNA_def_property_float_sdna(prop, NULL, "co");
@@ -696,7 +696,7 @@ static void rna_def_child_particle(BlenderRNA *brna)
 	//PropertyRNA *prop;
 
 	srna = RNA_def_struct(brna, "ChildParticle", NULL);
-	RNA_def_struct_ui_text(srna, "Child Particle", "Child particle interpolated from simulated or edited particles.");
+	RNA_def_struct_ui_text(srna, "Child Particle", "Child particle interpolated from simulated or edited particles");
 
 //	int num, parent;	/* num is face index on the final derived mesh */
 
@@ -722,7 +722,7 @@ static void rna_def_particle(BlenderRNA *brna)
 
 	srna = RNA_def_struct(brna, "Particle", NULL);
 	RNA_def_struct_sdna(srna, "ParticleData");
-	RNA_def_struct_ui_text(srna, "Particle", "Particle in a particle system.");
+	RNA_def_struct_ui_text(srna, "Particle", "Particle in a particle system");
 
 	/* Particle State & Previous State */
 	prop= RNA_def_property(srna, "location", PROP_FLOAT, PROP_TRANSLATION);
@@ -824,7 +824,7 @@ static void rna_def_particle_dupliweight(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna = RNA_def_struct(brna, "ParticleDupliWeight", NULL);
-	RNA_def_struct_ui_text(srna, "Particle Dupliobject Weight", "Weight of a particle dupliobject in a group.");
+	RNA_def_struct_ui_text(srna, "Particle Dupliobject Weight", "Weight of a particle dupliobject in a group");
 	RNA_def_struct_sdna(srna, "ParticleDupliWeight");
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
@@ -958,7 +958,7 @@ static void rna_def_particle_settings(BlenderRNA *brna)
 	};
 
 	srna= RNA_def_struct(brna, "ParticleSettings", "ID");
-	RNA_def_struct_ui_text(srna, "Particle Settings", "Particle settings, reusable by multiple particle systems.");
+	RNA_def_struct_ui_text(srna, "Particle Settings", "Particle settings, reusable by multiple particle systems");
 	RNA_def_struct_ui_icon(srna, ICON_PARTICLE_DATA);
 
 	/* flag */
@@ -1847,7 +1847,7 @@ static void rna_def_particle_target(BlenderRNA *brna)
 
 
 	srna = RNA_def_struct(brna, "ParticleTarget", NULL);
-	RNA_def_struct_ui_text(srna, "Particle Target", "Target particle system.");
+	RNA_def_struct_ui_text(srna, "Particle Target", "Target particle system");
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_funcs(prop, "rna_ParticleTarget_name_get", "rna_ParticleTarget_name_length", NULL);
@@ -1897,7 +1897,7 @@ static void rna_def_particle_system(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "ParticleSystem", NULL);
-	RNA_def_struct_ui_text(srna, "Particle System", "Particle system in an object.");
+	RNA_def_struct_ui_text(srna, "Particle System", "Particle system in an object");
 	RNA_def_struct_ui_icon(srna, ICON_PARTICLE_DATA);
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);

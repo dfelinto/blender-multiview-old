@@ -175,7 +175,7 @@ static void rna_def_keyingset_path(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "KeyingSetPath", NULL);
 	RNA_def_struct_sdna(srna, "KS_Path");
-	RNA_def_struct_ui_text(srna, "Keying Set Path", "Path to a setting for use in a Keying Set.");
+	RNA_def_struct_ui_text(srna, "Keying Set Path", "Path to a setting for use in a Keying Set");
 	
 	/* ID */
 	prop= RNA_def_property(srna, "id", PROP_POINTER, PROP_NONE);
@@ -223,7 +223,7 @@ static void rna_def_keyingset(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna= RNA_def_struct(brna, "KeyingSet", NULL);
-	RNA_def_struct_ui_text(srna, "Keying Set", "Settings that should be keyframed together.");
+	RNA_def_struct_ui_text(srna, "Keying Set", "Settings that should be keyframed together");
 	
 	/* Name */
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
@@ -293,7 +293,7 @@ void rna_def_animdata(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna= RNA_def_struct(brna, "AnimData", NULL);
-	RNA_def_struct_ui_text(srna, "Animation Data", "Animation data for datablock.");
+	RNA_def_struct_ui_text(srna, "Animation Data", "Animation data for datablock");
 	
 	/* NLA */
 	prop= RNA_def_property(srna, "nla_tracks", PROP_COLLECTION, PROP_NONE);

@@ -280,7 +280,7 @@ static void rna_def_vertex_paint(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "VertexPaint", "Paint");
 	RNA_def_struct_sdna(srna, "VPaint");
-	RNA_def_struct_ui_text(srna, "Vertex Paint", "Properties of vertex and weight paint mode.");
+	RNA_def_struct_ui_text(srna, "Vertex Paint", "Properties of vertex and weight paint mode");
 	
 	prop= RNA_def_property(srna, "all_faces", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", VP_AREA);
@@ -302,7 +302,7 @@ static void rna_def_image_paint(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "ImagePaint", "Paint");
 	RNA_def_struct_sdna(srna, "ImagePaintSettings");
-	RNA_def_struct_ui_text(srna, "Image Paint", "Properties of image and texture painting mode.");
+	RNA_def_struct_ui_text(srna, "Image Paint", "Properties of image and texture painting mode");
 	
 	/* booleans */
 
@@ -386,7 +386,7 @@ static void rna_def_particle_edit(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "ParticleEdit", NULL);
 	RNA_def_struct_sdna(srna, "ParticleEditSettings");
-	RNA_def_struct_ui_text(srna, "Particle Edit", "Properties of particle editing mode.");
+	RNA_def_struct_ui_text(srna, "Particle Edit", "Properties of particle editing mode");
 
 	prop= RNA_def_property(srna, "tool", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "brushtype");
@@ -481,7 +481,7 @@ static void rna_def_particle_edit(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "ParticleBrush", NULL);
 	RNA_def_struct_sdna(srna, "ParticleBrushData");
-	RNA_def_struct_ui_text(srna, "Particle Brush", "Particle editing brush.");
+	RNA_def_struct_ui_text(srna, "Particle Brush", "Particle editing brush");
 
 	prop= RNA_def_property(srna, "size", PROP_INT, PROP_NONE);
 	RNA_def_property_range(prop, 1, INT_MAX);

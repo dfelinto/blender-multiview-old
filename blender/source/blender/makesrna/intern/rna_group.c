@@ -83,7 +83,7 @@ static void rna_def_group_objects(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_srna(cprop, "GroupObjects");
 	srna= RNA_def_struct(brna, "GroupObjects", NULL);
 	RNA_def_struct_sdna(srna, "Group");
-	RNA_def_struct_ui_text(srna, "Group Objects", "Collection of group objects.");
+	RNA_def_struct_ui_text(srna, "Group Objects", "Collection of group objects");
 
 	/* add object */
 	func= RNA_def_function(srna, "link", "rna_Group_objects_link");
@@ -109,7 +109,7 @@ void RNA_def_group(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "Group", "ID");
-	RNA_def_struct_ui_text(srna, "Group", "Group of Object datablocks.");
+	RNA_def_struct_ui_text(srna, "Group", "Group of Object datablocks");
 	RNA_def_struct_ui_icon(srna, ICON_GROUP);
 
 	prop= RNA_def_property(srna, "dupli_offset", PROP_FLOAT, PROP_TRANSLATION);

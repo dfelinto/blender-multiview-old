@@ -575,7 +575,7 @@ static void rna_def_space(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "Space", NULL);
 	RNA_def_struct_sdna(srna, "SpaceLink");
-	RNA_def_struct_ui_text(srna, "Space", "Space data for a screen area.");
+	RNA_def_struct_ui_text(srna, "Space", "Space data for a screen area");
 	RNA_def_struct_refine_func(srna, "rna_Space_refine");
 	
 	prop= RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
@@ -617,7 +617,7 @@ static void rna_def_space_image_uv(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "SpaceUVEditor", NULL);
 	RNA_def_struct_sdna(srna, "SpaceImage");
 	RNA_def_struct_nested(brna, srna, "SpaceImageEditor");
-	RNA_def_struct_ui_text(srna, "Space UV Editor", "UV editor data for the image editor space.");
+	RNA_def_struct_ui_text(srna, "Space UV Editor", "UV editor data for the image editor space");
 
 	/* selection */
 	prop= RNA_def_property(srna, "sticky_selection_mode", PROP_ENUM, PROP_NONE);
@@ -710,7 +710,7 @@ static void rna_def_space_outliner(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "SpaceOutliner", "Space");
 	RNA_def_struct_sdna(srna, "SpaceOops");
-	RNA_def_struct_ui_text(srna, "Space Outliner", "Outliner space data.");
+	RNA_def_struct_ui_text(srna, "Space Outliner", "Outliner space data");
 	
 	prop= RNA_def_property(srna, "display_mode", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "outlinevis");
@@ -751,7 +751,7 @@ static void rna_def_background_image(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "BackgroundImage", NULL);
 	RNA_def_struct_sdna(srna, "BGpic");
-	RNA_def_struct_ui_text(srna, "Background Image", "Image and settings for display in the 3d View background.");
+	RNA_def_struct_ui_text(srna, "Background Image", "Image and settings for display in the 3d View background");
 
 	prop= RNA_def_property(srna, "image", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "ima");
@@ -1109,7 +1109,7 @@ static void rna_def_space_image(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "SpaceImageEditor", "Space");
 	RNA_def_struct_sdna(srna, "SpaceImage");
-	RNA_def_struct_ui_text(srna, "Space Image Editor", "Image and UV editor space data.");
+	RNA_def_struct_ui_text(srna, "Space Image Editor", "Image and UV editor space data");
 
 	/* image */
 	prop= RNA_def_property(srna, "image", PROP_POINTER, PROP_NONE);
@@ -1221,7 +1221,7 @@ static void rna_def_space_sequencer(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "SpaceSequenceEditor", "Space");
 	RNA_def_struct_sdna(srna, "SpaceSeq");
-	RNA_def_struct_ui_text(srna, "Space Sequence Editor", "Sequence editor space data.");
+	RNA_def_struct_ui_text(srna, "Space Sequence Editor", "Sequence editor space data");
 	
 	/* view type, fairly important */
 	prop= RNA_def_property(srna, "view_type", PROP_ENUM, PROP_NONE);
@@ -1313,7 +1313,7 @@ static void rna_def_space_text(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "SpaceTextEditor", "Space");
 	RNA_def_struct_sdna(srna, "SpaceText");
-	RNA_def_struct_ui_text(srna, "Space Text Editor", "Text editor space data.");
+	RNA_def_struct_ui_text(srna, "Space Text Editor", "Text editor space data");
 
 	/* text */
 	prop= RNA_def_property(srna, "text", PROP_POINTER, PROP_NONE);
@@ -1399,7 +1399,7 @@ static void rna_def_space_dopesheet(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "SpaceDopeSheetEditor", "Space");
 	RNA_def_struct_sdna(srna, "SpaceAction");
-	RNA_def_struct_ui_text(srna, "Space DopeSheet Editor", "DopeSheet space data.");
+	RNA_def_struct_ui_text(srna, "Space DopeSheet Editor", "DopeSheet space data");
 
 	/* data */
 	prop= RNA_def_property(srna, "action", PROP_POINTER, PROP_NONE);
@@ -1479,7 +1479,7 @@ static void rna_def_space_graph(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "SpaceGraphEditor", "Space");
 	RNA_def_struct_sdna(srna, "SpaceIpo");
-	RNA_def_struct_ui_text(srna, "Space Graph Editor", "Graph Editor space data.");
+	RNA_def_struct_ui_text(srna, "Space Graph Editor", "Graph Editor space data");
 	
 	/* mode */
 	prop= RNA_def_property(srna, "mode", PROP_ENUM, PROP_NONE);
@@ -1577,7 +1577,7 @@ static void rna_def_space_nla(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "SpaceNLA", "Space");
 	RNA_def_struct_sdna(srna, "SpaceNla");
-	RNA_def_struct_ui_text(srna, "Space Nla Editor", "NLA editor space data.");
+	RNA_def_struct_ui_text(srna, "Space Nla Editor", "NLA editor space data");
 	
 	/* display */
 	prop= RNA_def_property(srna, "show_seconds", PROP_BOOLEAN, PROP_NONE);
@@ -1623,7 +1623,7 @@ static void rna_def_space_time(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "SpaceTimeline", "Space");
 	RNA_def_struct_sdna(srna, "SpaceTime");
-	RNA_def_struct_ui_text(srna, "Space Timeline Editor", "Timeline editor space data.");
+	RNA_def_struct_ui_text(srna, "Space Timeline Editor", "Timeline editor space data");
 	
 	/* Define Anim Playback Areas */
 	prop= RNA_def_property(srna, "play_top_left", PROP_BOOLEAN, PROP_NONE);
@@ -1679,7 +1679,7 @@ static void rna_def_console_line(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna = RNA_def_struct(brna, "ConsoleLine", NULL);
-	RNA_def_struct_ui_text(srna, "Console Input", "Input line for the interactive console.");
+	RNA_def_struct_ui_text(srna, "Console Input", "Input line for the interactive console");
 	// XXX using non-inited "prop", uh? RNA_def_property_update(prop, NC_SPACE|ND_SPACE_CONSOLE, NULL);
 	
 	prop= RNA_def_property(srna, "line", PROP_STRING, PROP_NONE);
@@ -1705,7 +1705,7 @@ static void rna_def_space_console(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "SpaceConsole", "Space");
 	RNA_def_struct_sdna(srna, "SpaceConsole");
-	RNA_def_struct_ui_text(srna, "Space Console", "Interactive python console.");
+	RNA_def_struct_ui_text(srna, "Space Console", "Interactive python console");
 	
 	/* display */
 	prop= RNA_def_property(srna, "font_size", PROP_INT, PROP_NONE); /* copied from text editor */
@@ -1794,7 +1794,7 @@ static void rna_def_fileselect_params(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "FileSelectParams", NULL);
-	RNA_def_struct_ui_text(srna, "File Select Parameters", "File Select Parameters.");
+	RNA_def_struct_ui_text(srna, "File Select Parameters", "File Select Parameters");
 
 	prop= RNA_def_property(srna, "title", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "title");
@@ -1891,7 +1891,7 @@ static void rna_def_space_filebrowser(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "SpaceFileBrowser", "Space");
 	RNA_def_struct_sdna(srna, "SpaceFile");
-	RNA_def_struct_ui_text(srna, "Space File Browser", "File browser space data.");
+	RNA_def_struct_ui_text(srna, "Space File Browser", "File browser space data");
 
 	prop= RNA_def_property(srna, "params", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "params");
@@ -1904,7 +1904,7 @@ static void rna_def_space_info(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "SpaceInfo", "Space");
 	RNA_def_struct_sdna(srna, "SpaceInfo");
-	RNA_def_struct_ui_text(srna, "Space Info", "Info space data.");
+	RNA_def_struct_ui_text(srna, "Space Info", "Info space data");
 }
 
 static void rna_def_space_userpref(BlenderRNA *brna)
@@ -1913,7 +1913,7 @@ static void rna_def_space_userpref(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "SpaceUserPreferences", "Space");
 	RNA_def_struct_sdna(srna, "SpaceUserPref");
-	RNA_def_struct_ui_text(srna, "Space User Preferences", "User preferences space data.");
+	RNA_def_struct_ui_text(srna, "Space User Preferences", "User preferences space data");
 }
 
 static void rna_def_space_node(BlenderRNA *brna)
@@ -1935,7 +1935,7 @@ static void rna_def_space_node(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "SpaceNodeEditor", "Space");
 	RNA_def_struct_sdna(srna, "SpaceNode");
-	RNA_def_struct_ui_text(srna, "Space Node Editor", "Node editor space data.");
+	RNA_def_struct_ui_text(srna, "Space Node Editor", "Node editor space data");
 
 	prop= RNA_def_property(srna, "tree_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "treetype");
@@ -1974,7 +1974,7 @@ static void rna_def_space_logic(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "SpaceLogicEditor", "Space");
 	RNA_def_struct_sdna(srna, "SpaceLogic");
-	RNA_def_struct_ui_text(srna, "Space Logic Editor", "Logic editor space data.");
+	RNA_def_struct_ui_text(srna, "Space Logic Editor", "Logic editor space data");
 }
 
 void RNA_def_space(BlenderRNA *brna)

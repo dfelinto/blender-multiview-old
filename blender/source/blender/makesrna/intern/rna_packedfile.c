@@ -47,7 +47,7 @@ void RNA_def_packedfile(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "PackedFile", NULL);
-	RNA_def_struct_ui_text(srna, "Packed File", "External file packed into the .blend file.");
+	RNA_def_struct_ui_text(srna, "Packed File", "External file packed into the .blend file");
 
 	prop= RNA_def_property(srna, "size", PROP_INT, PROP_NONE);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);

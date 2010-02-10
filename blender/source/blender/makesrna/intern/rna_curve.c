@@ -325,7 +325,7 @@ static void rna_def_bpoint(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "SplinePoint", NULL);
 	RNA_def_struct_sdna(srna, "BPoint");
-	RNA_def_struct_ui_text(srna, "SplinePoint", "Spline point without handles.");
+	RNA_def_struct_ui_text(srna, "SplinePoint", "Spline point without handles");
 
 	/* Boolean values */
 	prop= RNA_def_property(srna, "selected", PROP_BOOLEAN, PROP_NONE);
@@ -378,7 +378,7 @@ static void rna_def_beztriple(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "BezierSplinePoint", NULL);
 	RNA_def_struct_sdna(srna, "BezTriple");
-	RNA_def_struct_ui_text(srna, "Bezier Curve Point", "Bezier curve point with two handles.");
+	RNA_def_struct_ui_text(srna, "Bezier Curve Point", "Bezier curve point with two handles");
 
 	/* Boolean values */
 	prop= RNA_def_property(srna, "selected_handle1", PROP_BOOLEAN, PROP_NONE);
@@ -636,7 +636,7 @@ static void rna_def_textbox(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna= RNA_def_struct(brna, "TextBox", NULL);
-	RNA_def_struct_ui_text(srna, "Text Box", "Text bounding box for layout.");
+	RNA_def_struct_ui_text(srna, "Text Box", "Text bounding box for layout");
 	
 	/* number values */
 	prop= RNA_def_property(srna, "x", PROP_FLOAT, PROP_NONE);
@@ -671,7 +671,7 @@ static void rna_def_charinfo(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "TextCharacterFormat", NULL);
 	RNA_def_struct_sdna(srna, "CharInfo");
-	RNA_def_struct_ui_text(srna, "Text Character Format", "Text character formatting settings.");
+	RNA_def_struct_ui_text(srna, "Text Character Format", "Text character formatting settings");
 	
 	/* flags */
 	prop= RNA_def_property(srna, "style", PROP_BOOLEAN, PROP_NONE);
@@ -706,7 +706,7 @@ static void rna_def_surface(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "SurfaceCurve", "Curve");
 	RNA_def_struct_sdna(srna, "Curve");
-	RNA_def_struct_ui_text(srna, "Surface Curve", "Curve datablock used for storing surfaces.");
+	RNA_def_struct_ui_text(srna, "Surface Curve", "Curve datablock used for storing surfaces");
 	RNA_def_struct_ui_icon(srna, ICON_SURFACE_DATA);
 
 	rna_def_nurbs(brna, srna);
@@ -718,7 +718,7 @@ static void rna_def_text(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "TextCurve", "Curve");
 	RNA_def_struct_sdna(srna, "Curve");
-	RNA_def_struct_ui_text(srna, "Text Curve", "Curve datablock used for storing text.");
+	RNA_def_struct_ui_text(srna, "Text Curve", "Curve datablock used for storing text");
 	RNA_def_struct_ui_icon(srna, ICON_FONT_DATA);
 
 	rna_def_font(brna, srna);
@@ -742,7 +742,7 @@ static void rna_def_curve(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 			
 	srna= RNA_def_struct(brna, "Curve", "ID");
-	RNA_def_struct_ui_text(srna, "Curve", "Curve datablock storing curves, splines and NURBS.");
+	RNA_def_struct_ui_text(srna, "Curve", "Curve datablock storing curves, splines and NURBS");
 	RNA_def_struct_ui_icon(srna, ICON_CURVE_DATA);
 	RNA_def_struct_refine_func(srna, "rna_Curve_refine");
 	
@@ -904,7 +904,7 @@ static void rna_def_curve_nurb(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "Spline", NULL);
     RNA_def_struct_sdna(srna, "Nurb");
-	RNA_def_struct_ui_text(srna, "Spline", "Element of a curve, either Nurbs, Bezier or Polyline or a character with text objects.");
+	RNA_def_struct_ui_text(srna, "Spline", "Element of a curve, either Nurbs, Bezier or Polyline or a character with text objects");
 
 	prop= RNA_def_property(srna, "points", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "bp", NULL);

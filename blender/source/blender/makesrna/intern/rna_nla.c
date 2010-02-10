@@ -293,7 +293,7 @@ static void rna_def_nlastrip(BlenderRNA *brna)
 	
 	/* struct definition */
 	srna= RNA_def_struct(brna, "NlaStrip", NULL);
-	RNA_def_struct_ui_text(srna, "NLA Strip", "A container referencing an existing Action.");
+	RNA_def_struct_ui_text(srna, "NLA Strip", "A container referencing an existing Action");
 	RNA_def_struct_path_func(srna, "rna_NlaStrip_path");
 	RNA_def_struct_ui_icon(srna, ICON_NLA); // XXX
 	
@@ -440,7 +440,7 @@ static void rna_def_nlatrack(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna= RNA_def_struct(brna, "NlaTrack", NULL);
-	RNA_def_struct_ui_text(srna, "NLA Track", "A animation layer containing Actions referenced as NLA strips.");
+	RNA_def_struct_ui_text(srna, "NLA Track", "A animation layer containing Actions referenced as NLA strips");
 	RNA_def_struct_ui_icon(srna, ICON_NLA);
 	
 	/* strips collection */

@@ -67,7 +67,7 @@ static void rna_def_brush_texture_slot(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "BrushTextureSlot", "TextureSlot");
 	RNA_def_struct_sdna(srna, "MTex");
-	RNA_def_struct_ui_text(srna, "Brush Texture Slot", "Texture slot for textures in a Brush datablock.");
+	RNA_def_struct_ui_text(srna, "Brush Texture Slot", "Texture slot for textures in a Brush datablock");
 
 	prop= RNA_def_property(srna, "angle", PROP_FLOAT, PROP_ANGLE);
 	RNA_def_property_float_sdna(prop, NULL, "rot");
@@ -132,7 +132,7 @@ static void rna_def_brush(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 		
 	srna= RNA_def_struct(brna, "Brush", "ID");
-	RNA_def_struct_ui_text(srna, "Brush", "Brush datablock for storing brush settings for painting and sculpting.");
+	RNA_def_struct_ui_text(srna, "Brush", "Brush datablock for storing brush settings for painting and sculpting");
 	RNA_def_struct_ui_icon(srna, ICON_BRUSH_DATA);
 	
 	/* enums */

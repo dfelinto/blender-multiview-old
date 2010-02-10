@@ -860,7 +860,7 @@ static void rna_def_operator(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "Operator", NULL);
-	RNA_def_struct_ui_text(srna, "Operator", "Storage of an operator being executed, or registered after execution.");
+	RNA_def_struct_ui_text(srna, "Operator", "Storage of an operator being executed, or registered after execution");
 	RNA_def_struct_sdna(srna, "wmOperator");
 	RNA_def_struct_refine_func(srna, "rna_Operator_refine");
 #ifndef DISABLE_PYTHON
@@ -909,7 +909,7 @@ static void rna_def_operator(BlenderRNA *brna)
 	RNA_api_operator(srna);
 
 	srna= RNA_def_struct(brna, "OperatorProperties", NULL);
-	RNA_def_struct_ui_text(srna, "Operator Properties", "Input properties of an Operator.");
+	RNA_def_struct_ui_text(srna, "Operator Properties", "Input properties of an Operator");
 	RNA_def_struct_refine_func(srna, "rna_OperatorProperties_refine");
 	RNA_def_struct_idproperties_func(srna, "rna_OperatorProperties_idproperties");
 }
@@ -920,7 +920,7 @@ static void rna_def_macro_operator(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "Macro", NULL);
-	RNA_def_struct_ui_text(srna, "Macro Operator", "Storage of a macro operator being executed, or registered after execution.");
+	RNA_def_struct_ui_text(srna, "Macro Operator", "Storage of a macro operator being executed, or registered after execution");
 	RNA_def_struct_sdna(srna, "wmOperator");
 	RNA_def_struct_refine_func(srna, "rna_MacroOperator_refine");
 #ifndef DISABLE_PYTHON
@@ -972,7 +972,7 @@ static void rna_def_operator_type_macro(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "OperatorTypeMacro", NULL);
-	RNA_def_struct_ui_text(srna, "OperatorTypeMacro", "Storage of a sub operator in a macro after it has been added.");
+	RNA_def_struct_ui_text(srna, "OperatorTypeMacro", "Storage of a sub operator in a macro after it has been added");
 	RNA_def_struct_sdna(srna, "wmOperatorTypeMacro");
 
 //	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
@@ -994,7 +994,7 @@ static void rna_def_operator_utils(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "OperatorMousePath", "IDPropertyGroup");
-	RNA_def_struct_ui_text(srna, "Operator Mouse Path", "Mouse path values for operators that record such paths.");
+	RNA_def_struct_ui_text(srna, "Operator Mouse Path", "Mouse path values for operators that record such paths");
 
 	prop= RNA_def_property(srna, "loc", PROP_FLOAT, PROP_XYZ);
 	RNA_def_property_flag(prop, PROP_IDPROPERTY);
@@ -1104,7 +1104,7 @@ static void rna_def_window(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "Window", NULL);
-	RNA_def_struct_ui_text(srna, "Window", "Open window.");
+	RNA_def_struct_ui_text(srna, "Window", "Open window");
 	RNA_def_struct_sdna(srna, "wmWindow");
 
 	prop= RNA_def_property(srna, "screen", PROP_POINTER, PROP_NONE);
@@ -1123,7 +1123,7 @@ static void rna_def_windowmanager(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "WindowManager", "ID");
-	RNA_def_struct_ui_text(srna, "Window Manager", "Window manager datablock defining open windows and other user interface data.");
+	RNA_def_struct_ui_text(srna, "Window Manager", "Window manager datablock defining open windows and other user interface data");
 	RNA_def_struct_clear_flag(srna, STRUCT_ID_REFCOUNT);
 	RNA_def_struct_sdna(srna, "wmWindowManager");
 
@@ -1171,7 +1171,7 @@ static void rna_def_keyconfig(BlenderRNA *brna)
 	/* KeyConfig */
 	srna= RNA_def_struct(brna, "KeyConfig", NULL);
 	RNA_def_struct_sdna(srna, "wmKeyConfig");
-	RNA_def_struct_ui_text(srna, "Key Configuration", "Input configuration, including keymaps.");
+	RNA_def_struct_ui_text(srna, "Key Configuration", "Input configuration, including keymaps");
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "idname");
@@ -1196,7 +1196,7 @@ static void rna_def_keyconfig(BlenderRNA *brna)
 	/* KeyMap */
 	srna= RNA_def_struct(brna, "KeyMap", NULL);
 	RNA_def_struct_sdna(srna, "wmKeyMap");
-	RNA_def_struct_ui_text(srna, "Key Map", "Input configuration, including keymaps.");
+	RNA_def_struct_ui_text(srna, "Key Map", "Input configuration, including keymaps");
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "idname");
@@ -1245,7 +1245,7 @@ static void rna_def_keyconfig(BlenderRNA *brna)
 	/* KeyMapItem */
 	srna= RNA_def_struct(brna, "KeyMapItem", NULL);
 	RNA_def_struct_sdna(srna, "wmKeyMapItem");
-	RNA_def_struct_ui_text(srna, "Key Map Item", "Item in a Key Map.");
+	RNA_def_struct_ui_text(srna, "Key Map Item", "Item in a Key Map");
 
 	prop= RNA_def_property(srna, "idname", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "idname");

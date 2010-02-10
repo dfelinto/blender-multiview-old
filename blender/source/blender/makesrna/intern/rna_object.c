@@ -1018,7 +1018,7 @@ static void rna_def_vertex_group(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "VertexGroup", NULL);
 	RNA_def_struct_sdna(srna, "bDeformGroup");
-	RNA_def_struct_ui_text(srna, "Vertex Group", "Group of vertices, used for armature deform and other purposes.");
+	RNA_def_struct_ui_text(srna, "Vertex Group", "Group of vertices, used for armature deform and other purposes");
 	RNA_def_struct_ui_icon(srna, ICON_GROUP_VERTEX);
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
@@ -1047,7 +1047,7 @@ static void rna_def_material_slot(BlenderRNA *brna)
 	 * get/set for the properties. */
 
 	srna= RNA_def_struct(brna, "MaterialSlot", NULL);
-	RNA_def_struct_ui_text(srna, "Material Slot", "Material slot in an object.");
+	RNA_def_struct_ui_text(srna, "Material Slot", "Material slot in an object");
 	RNA_def_struct_ui_icon(srna, ICON_MATERIAL_DATA);
 
 	prop= RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
@@ -1088,7 +1088,7 @@ static void rna_def_object_game_settings(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "GameObjectSettings", NULL);
 	RNA_def_struct_sdna(srna, "Object");
 	RNA_def_struct_nested(brna, srna, "Object");
-	RNA_def_struct_ui_text(srna, "Game Object Settings", "Game engine related settings for the object.");
+	RNA_def_struct_ui_text(srna, "Game Object Settings", "Game engine related settings for the object");
 	RNA_def_struct_ui_icon(srna, ICON_GAME);
 
 	/* logic */
@@ -1280,7 +1280,7 @@ static void rna_def_object_constraints(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_srna(cprop, "ObjectConstraints");
 	srna= RNA_def_struct(brna, "ObjectConstraints", NULL);
 	RNA_def_struct_sdna(srna, "Object");
-	RNA_def_struct_ui_text(srna, "Object Constraints", "Collection of object constraints.");
+	RNA_def_struct_ui_text(srna, "Object Constraints", "Collection of object constraints");
 
 
 	/* Collection active property */
@@ -1324,7 +1324,7 @@ static void rna_def_object_modifiers(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_srna(cprop, "ObjectModifiers");
 	srna= RNA_def_struct(brna, "ObjectModifiers", NULL);
 	RNA_def_struct_sdna(srna, "Object");
-	RNA_def_struct_ui_text(srna, "Object Modifiers", "Collection of object modifiers.");
+	RNA_def_struct_ui_text(srna, "Object Modifiers", "Collection of object modifiers");
 
 #if 0
 	prop= RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
@@ -1447,7 +1447,7 @@ static void rna_def_object(BlenderRNA *brna)
 	int boundbox_dimsize[]= {8, 3};
 
 	srna= RNA_def_struct(brna, "Object", "ID");
-	RNA_def_struct_ui_text(srna, "Object", "Object datablock defining an object in a scene..");
+	RNA_def_struct_ui_text(srna, "Object", "Object datablock defining an object in a scene.");
 	RNA_def_struct_clear_flag(srna, STRUCT_ID_REFCOUNT);
 	RNA_def_struct_ui_icon(srna, ICON_OBJECT_DATA);
 
@@ -1997,7 +1997,7 @@ static void rna_def_dupli_object(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "DupliObject", NULL);
 	RNA_def_struct_sdna(srna, "DupliObject");
-	RNA_def_struct_ui_text(srna, "Dupli Object", "Dupli Object data."); 
+	RNA_def_struct_ui_text(srna, "Dupli Object", "Dupli Object data"); 
 	/* RNA_def_struct_ui_icon(srna, ICON_OBJECT_DATA); */
 
 	prop= RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
@@ -2027,7 +2027,7 @@ static void rna_def_base(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "ObjectBase", NULL);
 	RNA_def_struct_sdna(srna, "Base");
-	RNA_def_struct_ui_text(srna, "Object Base", "An objects instance in a scene.");
+	RNA_def_struct_ui_text(srna, "Object Base", "An objects instance in a scene");
 	RNA_def_struct_ui_icon(srna, ICON_OBJECT_DATA);
 
 	prop= RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);

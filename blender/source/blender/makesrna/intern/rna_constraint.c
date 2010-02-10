@@ -336,7 +336,7 @@ static void rna_def_constrainttarget(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "ConstraintTarget", NULL);
-	RNA_def_struct_ui_text(srna, "Constraint Target", "Target object for multi-target constraints.");
+	RNA_def_struct_ui_text(srna, "Constraint Target", "Target object for multi-target constraints");
 	RNA_def_struct_sdna(srna, "bConstraintTarget");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -359,7 +359,7 @@ static void rna_def_constraint_childof(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "ChildOfConstraint", "Constraint"); 
-	RNA_def_struct_ui_text(srna, "Child Of Constraint", "Creates constraint-based parent-child relationship."); 
+	RNA_def_struct_ui_text(srna, "Child Of Constraint", "Creates constraint-based parent-child relationship"); 
 	RNA_def_struct_sdna_from(srna, "bChildOfConstraint", "data"); 
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -425,7 +425,7 @@ static void rna_def_constraint_python(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "PythonConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Python Constraint", "Uses Python script for constraint evaluation.");
+	RNA_def_struct_ui_text(srna, "Python Constraint", "Uses Python script for constraint evaluation");
 	RNA_def_struct_sdna_from(srna, "bPythonConstraint", "data");
 
 	prop= RNA_def_property(srna, "targets", PROP_COLLECTION, PROP_NONE);
@@ -460,7 +460,7 @@ static void rna_def_constraint_kinematic(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "KinematicConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Kinematic Constraint", "Inverse Kinematics.");
+	RNA_def_struct_ui_text(srna, "Kinematic Constraint", "Inverse Kinematics");
 	RNA_def_struct_sdna_from(srna, "bKinematicConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -614,7 +614,7 @@ static void rna_def_constraint_track_to(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "TrackToConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Track To Constraint", "Aims the constrained object toward the target.");
+	RNA_def_struct_ui_text(srna, "Track To Constraint", "Aims the constrained object toward the target");
 
 	prop= RNA_def_property(srna, "head_tail", PROP_FLOAT, PROP_FACTOR);
 	RNA_def_property_float_sdna(prop, "bConstraint", "headtail");
@@ -658,7 +658,7 @@ static void rna_def_constraint_locate_like(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "CopyLocationConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Copy Location Constraint", "Copies the location of the target.");
+	RNA_def_struct_ui_text(srna, "Copy Location Constraint", "Copies the location of the target");
 
 	prop= RNA_def_property(srna, "head_tail", PROP_FLOAT, PROP_FACTOR);
 	RNA_def_property_float_sdna(prop, "bConstraint", "headtail");
@@ -721,7 +721,7 @@ static void rna_def_constraint_rotate_like(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "CopyRotationConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Copy Rotation Constraint", "Copies the rotation of the target.");
+	RNA_def_struct_ui_text(srna, "Copy Rotation Constraint", "Copies the rotation of the target");
 	RNA_def_struct_sdna_from(srna, "bRotateLikeConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -777,7 +777,7 @@ static void rna_def_constraint_size_like(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "CopyScaleConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Copy Scale Constraint", "Copies the scale of the target.");
+	RNA_def_struct_ui_text(srna, "Copy Scale Constraint", "Copies the scale of the target");
 	RNA_def_struct_sdna_from(srna, "bSizeLikeConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -819,7 +819,7 @@ static void rna_def_constraint_transform_like(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "CopyTransformsConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Copy Transforms Constraint", "Copies all the transforms of the target.");
+	RNA_def_struct_ui_text(srna, "Copy Transforms Constraint", "Copies all the transforms of the target");
 	RNA_def_struct_sdna_from(srna, "bTransLikeConstraint", "data");
 	
 	prop= RNA_def_property(srna, "head_tail", PROP_FLOAT, PROP_FACTOR);
@@ -854,7 +854,7 @@ static void rna_def_constraint_minmax(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "FloorConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Floor Constraint", "Uses the target object for location limitation.");
+	RNA_def_struct_ui_text(srna, "Floor Constraint", "Uses the target object for location limitation");
 	RNA_def_struct_sdna_from(srna, "bMinMaxConstraint","data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -908,7 +908,7 @@ static void rna_def_constraint_action(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "ActionConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Action Constraint", "Map an action to the transform axes of a bone.");
+	RNA_def_struct_ui_text(srna, "Action Constraint", "Map an action to the transform axes of a bone");
 	RNA_def_struct_sdna_from(srna, "bActionConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -982,7 +982,7 @@ static void rna_def_constraint_locked_track(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "LockedTrackConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Locked Track Constraint", "Points toward the target along the track axis, while locking the other axis.");
+	RNA_def_struct_ui_text(srna, "Locked Track Constraint", "Points toward the target along the track axis, while locking the other axis");
 	RNA_def_struct_sdna_from(srna, "bLockTrackConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -1030,7 +1030,7 @@ static void rna_def_constraint_follow_path(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "FollowPathConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Follow Path Constraint", "Locks motion to the target path.");
+	RNA_def_struct_ui_text(srna, "Follow Path Constraint", "Locks motion to the target path");
 	RNA_def_struct_sdna_from(srna, "bFollowPathConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -1096,7 +1096,7 @@ static void rna_def_constraint_stretch_to(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "StretchToConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Stretch To Constraint", "Stretches to meet the target object.");
+	RNA_def_struct_ui_text(srna, "Stretch To Constraint", "Stretches to meet the target object");
 
 	prop= RNA_def_property(srna, "head_tail", PROP_FLOAT, PROP_FACTOR);
 	RNA_def_property_float_sdna(prop, "bConstraint", "headtail");
@@ -1153,7 +1153,7 @@ static void rna_def_constraint_rigid_body_joint(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "RigidBodyJointConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Rigid Body Joint Constraint", "For use with the Game Engine.");
+	RNA_def_struct_ui_text(srna, "Rigid Body Joint Constraint", "For use with the Game Engine");
 	RNA_def_struct_sdna_from(srna, "bRigidBodyJointConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -1237,7 +1237,7 @@ static void rna_def_constraint_clamp_to(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "ClampToConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Clamp To Constraint", "Constrains an object's location to the nearest point along the target path.");
+	RNA_def_struct_ui_text(srna, "Clamp To Constraint", "Constrains an object's location to the nearest point along the target path");
 	RNA_def_struct_sdna_from(srna, "bClampToConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -1276,7 +1276,7 @@ static void rna_def_constraint_transform(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "TransformConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Transformation Constraint", "Maps transformations of the target to the object.");
+	RNA_def_struct_ui_text(srna, "Transformation Constraint", "Maps transformations of the target to the object");
 	RNA_def_struct_sdna_from(srna, "bTransformConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -1404,7 +1404,7 @@ static void rna_def_constraint_location_limit(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "LimitLocationConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Limit Location Constraint", "Limits the location of the constrained object.");
+	RNA_def_struct_ui_text(srna, "Limit Location Constraint", "Limits the location of the constrained object");
 	RNA_def_struct_sdna_from(srna, "bLocLimitConstraint", "data");
 
 	prop= RNA_def_property(srna, "use_minimum_x", PROP_BOOLEAN, PROP_NONE);
@@ -1485,7 +1485,7 @@ static void rna_def_constraint_rotation_limit(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "LimitRotationConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Limit Rotation Constraint", "Limits the rotation of the constrained object.");
+	RNA_def_struct_ui_text(srna, "Limit Rotation Constraint", "Limits the rotation of the constrained object");
 	RNA_def_struct_sdna_from(srna, "bRotLimitConstraint", "data");
 
 	prop= RNA_def_property(srna, "use_limit_x", PROP_BOOLEAN, PROP_NONE);
@@ -1551,7 +1551,7 @@ static void rna_def_constraint_size_limit(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "LimitScaleConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Limit Size Constraint", "Limits the scaling of the constrained object.");
+	RNA_def_struct_ui_text(srna, "Limit Size Constraint", "Limits the scaling of the constrained object");
 	RNA_def_struct_sdna_from(srna, "bSizeLimitConstraint", "data");
 
 	prop= RNA_def_property(srna, "use_minimum_x", PROP_BOOLEAN, PROP_NONE);
@@ -1632,7 +1632,7 @@ static void rna_def_constraint_distance_limit(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "LimitDistanceConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Limit Distance Constraint", "Limits the distance from target object.");
+	RNA_def_struct_ui_text(srna, "Limit Distance Constraint", "Limits the distance from target object");
 	RNA_def_struct_sdna_from(srna, "bDistLimitConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -1671,7 +1671,7 @@ static void rna_def_constraint_shrinkwrap(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 	
 	srna= RNA_def_struct(brna, "ShrinkwrapConstraint", "Constraint"); 
-	RNA_def_struct_ui_text(srna, "Shrinkwrap Constraint", "Creates constraint-based shrinkwrap relationship."); 
+	RNA_def_struct_ui_text(srna, "Shrinkwrap Constraint", "Creates constraint-based shrinkwrap relationship"); 
 	RNA_def_struct_sdna_from(srna, "bShrinkwrapConstraint", "data");
 	
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -1723,7 +1723,7 @@ static void rna_def_constraint_damped_track(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "DampedTrackConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Damped Track Constraint", "Points toward target by taking the shortest rotation path.");
+	RNA_def_struct_ui_text(srna, "Damped Track Constraint", "Points toward target by taking the shortest rotation path");
 	RNA_def_struct_sdna_from(srna, "bDampTrackConstraint", "data");
 
 	prop= RNA_def_property(srna, "target", PROP_POINTER, PROP_NONE);
@@ -1756,7 +1756,7 @@ static void rna_def_constraint_spline_ik(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "SplineIKConstraint", "Constraint");
-	RNA_def_struct_ui_text(srna, "Spline IK Constraint", "Align 'n' bones along a curve.");
+	RNA_def_struct_ui_text(srna, "Spline IK Constraint", "Align 'n' bones along a curve");
 	RNA_def_struct_sdna_from(srna, "bSplineIKConstraint", "data");
 	
 	/* target chain */
@@ -1818,7 +1818,7 @@ void RNA_def_constraint(BlenderRNA *brna)
 	
 	/* data */
 	srna= RNA_def_struct(brna, "Constraint", NULL );
-	RNA_def_struct_ui_text(srna, "Constraint", "Constraint modifying the transformation of objects and bones.");
+	RNA_def_struct_ui_text(srna, "Constraint", "Constraint modifying the transformation of objects and bones");
 	RNA_def_struct_refine_func(srna, "rna_ConstraintType_refine");
 	RNA_def_struct_path_func(srna, "rna_Constraint_path");
 	RNA_def_struct_sdna(srna, "bConstraint");

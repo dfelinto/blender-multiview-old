@@ -502,7 +502,7 @@ static void rna_def_bone(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna= RNA_def_struct(brna, "Bone", NULL);
-	RNA_def_struct_ui_text(srna, "Bone", "Bone in an Armature datablock.");
+	RNA_def_struct_ui_text(srna, "Bone", "Bone in an Armature datablock");
 	RNA_def_struct_ui_icon(srna, ICON_BONE_DATA);
 	RNA_def_struct_path_func(srna, "rna_Bone_path");
 	RNA_def_struct_idproperties_func(srna, "rna_Bone_idproperties");
@@ -574,7 +574,7 @@ static void rna_def_edit_bone(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "EditBone", NULL);
 	RNA_def_struct_sdna(srna, "EditBone");
 	RNA_def_struct_idproperties_func(srna, "rna_EditBone_idproperties");
-	RNA_def_struct_ui_text(srna, "Edit Bone", "Editmode bone in an Armature datablock.");
+	RNA_def_struct_ui_text(srna, "Edit Bone", "Editmode bone in an Armature datablock");
 	RNA_def_struct_ui_icon(srna, ICON_BONE_DATA);
 	
 	RNA_define_verify_sdna(0); // not in sdna
@@ -657,7 +657,7 @@ static void rna_def_armature_bones(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_srna(cprop, "ArmatureBones");
 	srna= RNA_def_struct(brna, "ArmatureBones", NULL);
 	RNA_def_struct_sdna(srna, "bArmature");
-	RNA_def_struct_ui_text(srna, "Armature Bones", "Collection of armature bones.");
+	RNA_def_struct_ui_text(srna, "Armature Bones", "Collection of armature bones");
 
 
 	prop= RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
@@ -683,7 +683,7 @@ static void rna_def_armature_edit_bones(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_srna(cprop, "ArmatureEditBones");
 	srna= RNA_def_struct(brna, "ArmatureEditBones", NULL);
 	RNA_def_struct_sdna(srna, "bArmature");
-	RNA_def_struct_ui_text(srna, "Armature EditBones", "Collection of armature edit bones.");
+	RNA_def_struct_ui_text(srna, "Armature EditBones", "Collection of armature edit bones");
 
 	prop= RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
 	RNA_def_property_struct_type(prop, "EditBone");
@@ -738,7 +738,7 @@ static void rna_def_armature(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 	
 	srna= RNA_def_struct(brna, "Armature", "ID");
-	RNA_def_struct_ui_text(srna, "Armature", "Armature datablock containing a hierarchy of bones, usually used for rigging characters.");
+	RNA_def_struct_ui_text(srna, "Armature", "Armature datablock containing a hierarchy of bones, usually used for rigging characters");
 	RNA_def_struct_ui_icon(srna, ICON_ARMATURE_DATA);
 	RNA_def_struct_sdna(srna, "bArmature");
 	

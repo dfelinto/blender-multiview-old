@@ -123,7 +123,7 @@ static void rna_def_smoke_domain_settings(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna = RNA_def_struct(brna, "SmokeDomainSettings", NULL);
-	RNA_def_struct_ui_text(srna, "Domain Settings", "Smoke domain settings.");
+	RNA_def_struct_ui_text(srna, "Domain Settings", "Smoke domain settings");
 	RNA_def_struct_sdna(srna, "SmokeDomainSettings");
 	RNA_def_struct_path_func(srna, "rna_SmokeDomainSettings_path");
 
@@ -257,7 +257,7 @@ static void rna_def_smoke_flow_settings(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna = RNA_def_struct(brna, "SmokeFlowSettings", NULL);
-	RNA_def_struct_ui_text(srna, "Flow Settings", "Smoke flow settings.");
+	RNA_def_struct_ui_text(srna, "Flow Settings", "Smoke flow settings");
 	RNA_def_struct_sdna(srna, "SmokeFlowSettings");
 	RNA_def_struct_path_func(srna, "rna_SmokeFlowSettings_path");
 
@@ -293,7 +293,7 @@ static void rna_def_smoke_coll_settings(BlenderRNA *brna)
 	StructRNA *srna;
 
 	srna = RNA_def_struct(brna, "SmokeCollSettings", NULL);
-	RNA_def_struct_ui_text(srna, "Collision Settings", "Smoke collision settings.");
+	RNA_def_struct_ui_text(srna, "Collision Settings", "Smoke collision settings");
 	RNA_def_struct_sdna(srna, "SmokeCollSettings");
 	RNA_def_struct_path_func(srna, "rna_SmokeCollSettings_path");
 }

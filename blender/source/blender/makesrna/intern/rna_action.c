@@ -64,7 +64,7 @@ static void rna_def_dopesheet(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "DopeSheet", NULL);
 	RNA_def_struct_sdna(srna, "bDopeSheet");
-	RNA_def_struct_ui_text(srna, "DopeSheet", "Settings for filtering the channels shown in Animation Editors.");
+	RNA_def_struct_ui_text(srna, "DopeSheet", "Settings for filtering the channels shown in Animation Editors");
 	
 	/* Source of DopeSheet data */
 	prop= RNA_def_property(srna, "source", PROP_POINTER, PROP_NONE);
@@ -192,7 +192,7 @@ static void rna_def_action_group(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "ActionGroup", NULL);
 	RNA_def_struct_sdna(srna, "bActionGroup");
-	RNA_def_struct_ui_text(srna, "Action Group", "Groups of F-Curves.");
+	RNA_def_struct_ui_text(srna, "Action Group", "Groups of F-Curves");
 	
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Name", "");
@@ -240,7 +240,7 @@ static void rna_def_action(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "Action", "ID");
 	RNA_def_struct_sdna(srna, "bAction");
-	RNA_def_struct_ui_text(srna, "Action", "A collection of F-Curves for animation.");
+	RNA_def_struct_ui_text(srna, "Action", "A collection of F-Curves for animation");
 	RNA_def_struct_ui_icon(srna, ICON_ACTION);
 
 	prop= RNA_def_property(srna, "fcurves", PROP_COLLECTION, PROP_NONE);

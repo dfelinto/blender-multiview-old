@@ -167,7 +167,7 @@ static void rna_def_latticepoint(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "LatticePoint", NULL);
 	RNA_def_struct_sdna(srna, "BPoint");
-	RNA_def_struct_ui_text(srna, "LatticePoint", "Point in the lattice grid.");
+	RNA_def_struct_ui_text(srna, "LatticePoint", "Point in the lattice grid");
 
 	prop= RNA_def_property(srna, "co", PROP_FLOAT, PROP_TRANSLATION);
 	RNA_def_property_array(prop, 3);
@@ -199,7 +199,7 @@ static void rna_def_lattice(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "Lattice", "ID");
-	RNA_def_struct_ui_text(srna, "Lattice", "Lattice datablock defining a grid for deforming other objects.");
+	RNA_def_struct_ui_text(srna, "Lattice", "Lattice datablock defining a grid for deforming other objects");
 	RNA_def_struct_ui_icon(srna, ICON_LATTICE_DATA);
 
 	prop= RNA_def_property(srna, "points_u", PROP_INT, PROP_NONE);

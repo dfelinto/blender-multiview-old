@@ -44,7 +44,7 @@ static void rna_def_timeline_marker(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "TimelineMarker", NULL);
 	RNA_def_struct_sdna(srna, "TimeMarker");
-	RNA_def_struct_ui_text(srna, "Marker", "Marker for noting points in the timeline.");
+	RNA_def_struct_ui_text(srna, "Marker", "Marker for noting points in the timeline");
 
 	/* String values */
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);

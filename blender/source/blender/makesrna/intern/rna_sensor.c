@@ -98,7 +98,7 @@ static void rna_def_sensor(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "Sensor", NULL);
-	RNA_def_struct_ui_text(srna, "Sensor", "Game engine logic brick to detect events.");
+	RNA_def_struct_ui_text(srna, "Sensor", "Game engine logic brick to detect events");
 	RNA_def_struct_sdna(srna, "bSensor");
 	RNA_def_struct_refine_func(srna, "rna_Sensor_refine");
 
@@ -136,7 +136,7 @@ static void rna_def_always_sensor(BlenderRNA *brna)
 {
 	StructRNA *srna;
 	srna= RNA_def_struct(brna, "AlwaysSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Always Sensor", "Sensor to generate continuous pulses.");
+	RNA_def_struct_ui_text(srna, "Always Sensor", "Sensor to generate continuous pulses");
 }
 
 static void rna_def_near_sensor(BlenderRNA *brna)
@@ -145,7 +145,7 @@ static void rna_def_near_sensor(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "NearSensor", "Sensor");
-	RNA_def_struct_ui_text(srna , "Near Sensor", "Sensor to detect nearby objects.");
+	RNA_def_struct_ui_text(srna , "Near Sensor", "Sensor to detect nearby objects");
 	RNA_def_struct_sdna_from(srna, "bNearSensor", "data");
 
 	prop= RNA_def_property(srna, "property", PROP_STRING, PROP_NONE);
@@ -180,7 +180,7 @@ static void rna_def_mouse_sensor(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "MouseSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Mouse Sensor", "Sensor to detect mouse events.");
+	RNA_def_struct_ui_text(srna, "Mouse Sensor", "Sensor to detect mouse events");
 	RNA_def_struct_sdna_from(srna, "bMouseSensor", "data");
 
 	prop= RNA_def_property(srna, "mouse_event", PROP_ENUM, PROP_NONE);
@@ -195,7 +195,7 @@ static void rna_def_touch_sensor(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "TouchSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Touch Sensor", "Sensor to detect objects colliding with the current object.");
+	RNA_def_struct_ui_text(srna, "Touch Sensor", "Sensor to detect objects colliding with the current object");
 	RNA_def_struct_sdna_from(srna, "bTouchSensor", "data");
 
 	prop= RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
@@ -211,7 +211,7 @@ static void rna_def_keyboard_sensor(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "KeyboardSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Keyboard Sensor", "Sensor to detect keyboard events.");
+	RNA_def_struct_ui_text(srna, "Keyboard Sensor", "Sensor to detect keyboard events");
 	RNA_def_struct_sdna_from(srna, "bKeyboardSensor", "data");
 
 	prop= RNA_def_property(srna, "key", PROP_INT, PROP_NONE);
@@ -257,7 +257,7 @@ static void rna_def_property_sensor(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "PropertySensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Property Sensor", "Sensor to detect values and changes in values of properties.");
+	RNA_def_struct_ui_text(srna, "Property Sensor", "Sensor to detect values and changes in values of properties");
 	RNA_def_struct_sdna_from(srna, "bPropertySensor", "data");
 
 	prop= RNA_def_property(srna, "evaluation_type", PROP_ENUM, PROP_NONE);
@@ -295,7 +295,7 @@ static void rna_def_armature_sensor(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "ArmatureSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Armature Sensor", "Sensor to detect values and changes in values of IK solver.");
+	RNA_def_struct_ui_text(srna, "Armature Sensor", "Sensor to detect values and changes in values of IK solver");
 	RNA_def_struct_sdna_from(srna, "bArmatureSensor", "data");
 
 	prop= RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
@@ -322,7 +322,7 @@ static void rna_def_actuator_sensor(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "ActuatorSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Actuator Sensor", "Sensor to detect state modifications of actuators.");
+	RNA_def_struct_ui_text(srna, "Actuator Sensor", "Sensor to detect state modifications of actuators");
 	RNA_def_struct_sdna_from(srna, "bActuatorSensor", "data");
 
 	// XXX if eventually have Logics using RNA 100%, we could use the actuator datablock isntead of its name
@@ -337,7 +337,7 @@ static void rna_def_delay_sensor(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "DelaySensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Delay Sensor", "Sensor to send delayed events.");
+	RNA_def_struct_ui_text(srna, "Delay Sensor", "Sensor to send delayed events");
 	RNA_def_struct_sdna_from(srna, "bDelaySensor", "data");
 
 	prop= RNA_def_property(srna, "delay", PROP_INT, PROP_NONE);
@@ -363,7 +363,7 @@ static void rna_def_collision_sensor(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "CollisionSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Collision Sensor", "Sensor to detect objects colliding with the current object, with more settings than the Touch sensor.");
+	RNA_def_struct_ui_text(srna, "Collision Sensor", "Sensor to detect objects colliding with the current object, with more settings than the Touch sensor");
 	RNA_def_struct_sdna_from(srna, "bCollisionSensor", "data");
 
 	prop= RNA_def_property(srna, "property", PROP_STRING, PROP_NONE);
@@ -401,7 +401,7 @@ static void rna_def_radar_sensor(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "RadarSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Radar Sensor", "Sensor to detect objects in a cone shaped radar emanating from the current object.");
+	RNA_def_struct_ui_text(srna, "Radar Sensor", "Sensor to detect objects in a cone shaped radar emanating from the current object");
 	RNA_def_struct_sdna_from(srna, "bRadarSensor", "data");
 
 	prop= RNA_def_property(srna, "property", PROP_STRING, PROP_NONE);
@@ -428,7 +428,7 @@ static void rna_def_random_sensor(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "RandomSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Random Sensor", "Sensor to send random events.");
+	RNA_def_struct_ui_text(srna, "Random Sensor", "Sensor to send random events");
 	RNA_def_struct_sdna_from(srna, "bRandomSensor", "data");
 
 	prop= RNA_def_property(srna, "seed", PROP_INT, PROP_NONE);
@@ -454,7 +454,7 @@ static void rna_def_ray_sensor(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "RaySensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Ray Sensor", "Sensor to detect intersections with a ray emanating from the current object.");
+	RNA_def_struct_ui_text(srna, "Ray Sensor", "Sensor to detect intersections with a ray emanating from the current object");
 	RNA_def_struct_sdna_from(srna, "bRaySensor", "data");
 
 	prop= RNA_def_property(srna, "property", PROP_STRING, PROP_NONE);
@@ -498,7 +498,7 @@ static void rna_def_message_sensor(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "MessageSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Message Sensor", "Sensor to detect incoming messages.");
+	RNA_def_struct_ui_text(srna, "Message Sensor", "Sensor to detect incoming messages");
 	RNA_def_struct_sdna_from(srna, "bMessageSensor", "data");
 
 	prop= RNA_def_property(srna, "subject", PROP_STRING, PROP_NONE);
@@ -524,7 +524,7 @@ static void rna_def_joystick_sensor(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "JoystickSensor", "Sensor");
-	RNA_def_struct_ui_text(srna, "Joystick Sensor", "Sensor to detect joystick events.");
+	RNA_def_struct_ui_text(srna, "Joystick Sensor", "Sensor to detect joystick events");
 	RNA_def_struct_sdna_from(srna, "bJoystickSensor", "data");
 	
 	prop= RNA_def_property(srna, "joystick_index", PROP_INT, PROP_NONE);

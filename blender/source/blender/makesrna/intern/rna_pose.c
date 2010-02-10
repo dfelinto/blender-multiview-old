@@ -566,7 +566,7 @@ static void rna_def_bone_group(BlenderRNA *brna)
 	/* struct */
 	srna= RNA_def_struct(brna, "BoneGroup", NULL);
 	RNA_def_struct_sdna(srna, "bActionGroup");
-	RNA_def_struct_ui_text(srna, "Bone Group", "Groups of Pose Channels (Bones).");
+	RNA_def_struct_ui_text(srna, "Bone Group", "Groups of Pose Channels (Bones)");
 	RNA_def_struct_ui_icon(srna, ICON_GROUP_BONE);
 	
 	/* name */
@@ -615,7 +615,7 @@ static void rna_def_pose_channel_constraints(BlenderRNA *brna, PropertyRNA *cpro
 	RNA_def_property_srna(cprop, "PoseBoneConstraints");
 	srna= RNA_def_struct(brna, "PoseBoneConstraints", NULL);
 	RNA_def_struct_sdna(srna, "bPoseChannel");
-	RNA_def_struct_ui_text(srna, "PoseBone Constraints", "Collection of pose bone constraints.");
+	RNA_def_struct_ui_text(srna, "PoseBone Constraints", "Collection of pose bone constraints");
 
 	/* Collection active property */
 	prop= RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
@@ -669,7 +669,7 @@ static void rna_def_pose_channel(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "PoseBone", NULL);
 	RNA_def_struct_sdna(srna, "bPoseChannel");
-	RNA_def_struct_ui_text(srna, "Pose Bone", "Channel defining pose data for a bone in a Pose.");
+	RNA_def_struct_ui_text(srna, "Pose Bone", "Channel defining pose data for a bone in a Pose");
 	RNA_def_struct_path_func(srna, "rna_PoseBone_path");
 	RNA_def_struct_idproperties_func(srna, "rna_PoseBone_idproperties");
 	
@@ -1035,7 +1035,7 @@ static void rna_def_pose_itasc(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "Itasc", "IKParam");
 	RNA_def_struct_sdna(srna, "bItasc");
-	RNA_def_struct_ui_text(srna, "bItasc", "Parameters for the iTaSC IK solver.");
+	RNA_def_struct_ui_text(srna, "bItasc", "Parameters for the iTaSC IK solver");
 
 	prop= RNA_def_property(srna, "precision", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "precision");
@@ -1122,7 +1122,7 @@ static void rna_def_pose_ikparam(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "IKParam", NULL);
 	RNA_def_struct_sdna(srna, "bIKParam");
-	RNA_def_struct_ui_text(srna, "IKParam", "Base type for IK solver parameters.");
+	RNA_def_struct_ui_text(srna, "IKParam", "Base type for IK solver parameters");
 	RNA_def_struct_refine_func(srna, "rna_IKParam_refine");
 
 	prop= RNA_def_property(srna, "ik_solver", PROP_ENUM, PROP_NONE);
@@ -1140,7 +1140,7 @@ static void rna_def_pose(BlenderRNA *brna)
 	/* struct definition */
 	srna= RNA_def_struct(brna, "Pose", NULL);
 	RNA_def_struct_sdna(srna, "bPose");
-	RNA_def_struct_ui_text(srna, "Pose", "A collection of pose channels, including settings for animating bones.");
+	RNA_def_struct_ui_text(srna, "Pose", "A collection of pose channels, including settings for animating bones");
 
 	/* pose channels */
 	prop= RNA_def_property(srna, "bones", PROP_COLLECTION, PROP_NONE);

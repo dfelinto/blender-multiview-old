@@ -77,7 +77,7 @@ static void rna_def_gpencil_stroke_point(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "GPencilStrokePoint", NULL);
 	RNA_def_struct_sdna(srna, "bGPDspoint");
-	RNA_def_struct_ui_text(srna, "Grease Pencil Stroke Point", "Data point for freehand stroke curve.");
+	RNA_def_struct_ui_text(srna, "Grease Pencil Stroke Point", "Data point for freehand stroke curve");
 	
 	prop= RNA_def_property(srna, "co", PROP_FLOAT, PROP_XYZ);
 	RNA_def_property_float_sdna(prop, NULL, "x");
@@ -99,7 +99,7 @@ static void rna_def_gpencil_stroke(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "GPencilStroke", NULL);
 	RNA_def_struct_sdna(srna, "bGPDstroke");
-	RNA_def_struct_ui_text(srna, "Grease Pencil Stroke", "Freehand curve defining part of a sketch.");
+	RNA_def_struct_ui_text(srna, "Grease Pencil Stroke", "Freehand curve defining part of a sketch");
 	
 	/* Points */
 	prop= RNA_def_property(srna, "points", PROP_COLLECTION, PROP_NONE);
@@ -247,7 +247,7 @@ static void rna_def_gpencil_data(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "GreasePencil", "ID");
 	RNA_def_struct_sdna(srna, "bGPdata");
-	RNA_def_struct_ui_text(srna, "Grease Pencil", "Freehand annotation sketchbook.");
+	RNA_def_struct_ui_text(srna, "Grease Pencil", "Freehand annotation sketchbook");
 	RNA_def_struct_ui_icon(srna, ICON_GREASEPENCIL);
 	
 	/* Layers */

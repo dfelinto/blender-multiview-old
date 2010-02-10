@@ -101,7 +101,7 @@ static void rna_def_animviz_motionpath_vert(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "MotionPathVert", NULL);
 	RNA_def_struct_sdna(srna, "bMotionPathVert");
-	RNA_def_struct_ui_text(srna, "Motion Path Cache Point", "Cached location on path.");
+	RNA_def_struct_ui_text(srna, "Motion Path Cache Point", "Cached location on path");
 	
 	prop= RNA_def_property(srna, "co", PROP_FLOAT, PROP_XYZ);
 	RNA_def_property_array(prop, 3);
@@ -119,7 +119,7 @@ static void rna_def_animviz_motion_path(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "MotionPath", NULL);
 	RNA_def_struct_sdna(srna, "bMotionPath");
-	RNA_def_struct_ui_text(srna, "Motion Path", "Cache of the worldspace positions of an element over a frame range.");
+	RNA_def_struct_ui_text(srna, "Motion Path", "Cache of the worldspace positions of an element over a frame range");
 	
 	/* Collections */
 	prop= RNA_def_property(srna, "points", PROP_COLLECTION, PROP_NONE);
@@ -169,7 +169,7 @@ static void rna_def_animviz_ghosts(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "AnimVizOnionSkinning", NULL);
 	RNA_def_struct_sdna(srna, "bAnimVizSettings");
 	RNA_def_struct_nested(brna, srna, "AnimViz");
-	RNA_def_struct_ui_text(srna, "Onion Skinning Settings", "Onion Skinning settings for animation visualisation.");
+	RNA_def_struct_ui_text(srna, "Onion Skinning Settings", "Onion Skinning settings for animation visualisation");
 
 	/* Enums */
 	prop= RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
@@ -234,7 +234,7 @@ static void rna_def_animviz_paths(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "AnimVizMotionPaths", NULL);
 	RNA_def_struct_sdna(srna, "bAnimVizSettings");
 	RNA_def_struct_nested(brna, srna, "AnimViz");
-	RNA_def_struct_ui_text(srna, "Motion Path Settings", "Motion Path settings for animation visualisation.");
+	RNA_def_struct_ui_text(srna, "Motion Path Settings", "Motion Path settings for animation visualisation");
 	
 	/* Enums */
 	prop= RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
@@ -318,7 +318,7 @@ static void rna_def_animviz(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "AnimViz", NULL);
 	RNA_def_struct_sdna(srna, "bAnimVizSettings");
-	RNA_def_struct_ui_text(srna, "Animation Visualisation", "Settings for the visualisation of motion.");
+	RNA_def_struct_ui_text(srna, "Animation Visualisation", "Settings for the visualisation of motion");
 	
 	/* onion-skinning settings (nested struct) */
 	prop= RNA_def_property(srna, "onion_skinning", PROP_POINTER, PROP_NONE);

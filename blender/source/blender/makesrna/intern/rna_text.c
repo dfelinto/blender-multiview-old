@@ -117,7 +117,7 @@ static void rna_def_text_line(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna = RNA_def_struct(brna, "TextLine", NULL);
-	RNA_def_struct_ui_text(srna, "Text Line", "Line of text in a Text datablock.");
+	RNA_def_struct_ui_text(srna, "Text Line", "Line of text in a Text datablock");
 	
 	prop= RNA_def_property(srna, "line", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_funcs(prop, "rna_TextLine_line_get", "rna_TextLine_line_length", "rna_TextLine_line_set");
@@ -131,7 +131,7 @@ static void rna_def_text_marker(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna = RNA_def_struct(brna, "TextMarker", NULL);
-	RNA_def_struct_ui_text(srna, "Text Marker", "Marker highlighting a portion of text in a Text datablock.");
+	RNA_def_struct_ui_text(srna, "Text Marker", "Marker highlighting a portion of text in a Text datablock");
 
 	prop= RNA_def_property(srna, "line", PROP_INT, PROP_UNSIGNED);
 	RNA_def_property_int_sdna(prop, NULL, "lineno");
@@ -171,7 +171,7 @@ static void rna_def_text(BlenderRNA *brna)
 	PropertyRNA *prop;
 	
 	srna = RNA_def_struct(brna, "Text", "ID");
-	RNA_def_struct_ui_text(srna, "Text", "Text datablock referencing an external or packed text file.");
+	RNA_def_struct_ui_text(srna, "Text", "Text datablock referencing an external or packed text file");
 	RNA_def_struct_ui_icon(srna, ICON_TEXT);
 	RNA_def_struct_clear_flag(srna, STRUCT_ID_REFCOUNT);
 	

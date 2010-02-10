@@ -470,7 +470,7 @@ static void rna_def_color_ramp_element(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "ColorRampElement", NULL);
 	RNA_def_struct_sdna(srna, "CBData");
 	RNA_def_struct_path_func(srna, "rna_ColorRampElement_path");
-	RNA_def_struct_ui_text(srna, "Color Ramp Element", "Element defining a color at a position in the color ramp.");
+	RNA_def_struct_ui_text(srna, "Color Ramp Element", "Element defining a color at a position in the color ramp");
 
 	prop= RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR);
 	RNA_def_property_float_sdna(prop, NULL, "r");
@@ -501,7 +501,7 @@ static void rna_def_color_ramp(BlenderRNA *brna)
 	srna= RNA_def_struct(brna, "ColorRamp", NULL);
 	RNA_def_struct_sdna(srna, "ColorBand");
 	RNA_def_struct_path_func(srna, "rna_ColorRamp_path");
-	RNA_def_struct_ui_text(srna, "Color Ramp", "Color ramp mapping a scalar value to a color.");
+	RNA_def_struct_ui_text(srna, "Color Ramp", "Color ramp mapping a scalar value to a color");
 
 	prop= RNA_def_property(srna, "elements", PROP_COLLECTION, PROP_COLOR);
 	RNA_def_property_collection_sdna(prop, NULL, "data", "tot");
@@ -590,7 +590,7 @@ static void rna_def_mtex(BlenderRNA *brna)
 		
 	srna= RNA_def_struct(brna, "TextureSlot", NULL);
 	RNA_def_struct_sdna(srna, "MTex");
-	RNA_def_struct_ui_text(srna, "Texture Slot", "Texture slot defining the mapping and influence of a texture.");
+	RNA_def_struct_ui_text(srna, "Texture Slot", "Texture slot defining the mapping and influence of a texture");
 	RNA_def_struct_path_func(srna, "rna_TextureSlot_path");
 	RNA_def_struct_ui_icon(srna, ICON_TEXTURE_DATA);
 
@@ -714,7 +714,7 @@ static void rna_def_environment_map(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "EnvironmentMap", NULL);
 	RNA_def_struct_sdna(srna, "EnvMap");
-	RNA_def_struct_ui_text(srna, "EnvironmentMap", "Environment map created by the renderer and cached for subsequent renders.");
+	RNA_def_struct_ui_text(srna, "EnvironmentMap", "Environment map created by the renderer and cached for subsequent renders");
 
 	rna_def_environment_map_common(srna);
 
@@ -789,7 +789,7 @@ static void rna_def_texture_clouds(BlenderRNA *brna)
 	{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "CloudsTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Clouds Texture", "Procedural noise texture.");
+	RNA_def_struct_ui_text(srna, "Clouds Texture", "Procedural noise texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	prop= RNA_def_property(srna, "noise_size", PROP_FLOAT, PROP_NONE);
@@ -850,7 +850,7 @@ static void rna_def_texture_wood(BlenderRNA *brna)
 	{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "WoodTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Wood Texture", "Procedural noise texture.");
+	RNA_def_struct_ui_text(srna, "Wood Texture", "Procedural noise texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	prop= RNA_def_property(srna, "noise_size", PROP_FLOAT, PROP_NONE);
@@ -917,7 +917,7 @@ static void rna_def_texture_marble(BlenderRNA *brna)
 	{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "MarbleTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Marble Texture", "Procedural noise texture.");
+	RNA_def_struct_ui_text(srna, "Marble Texture", "Procedural noise texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	prop= RNA_def_property(srna, "noise_size", PROP_FLOAT, PROP_NONE);
@@ -979,7 +979,7 @@ static void rna_def_texture_magic(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "MagicTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Magic Texture", "Procedural noise texture.");
+	RNA_def_struct_ui_text(srna, "Magic Texture", "Procedural noise texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	prop= RNA_def_property(srna, "turbulence", PROP_FLOAT, PROP_NONE);
@@ -1018,7 +1018,7 @@ static void rna_def_texture_blend(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "BlendTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Blend Texture", "Procedural color blending texture.");
+	RNA_def_struct_ui_text(srna, "Blend Texture", "Procedural color blending texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	prop= RNA_def_property(srna, "progression", PROP_ENUM, PROP_NONE);
@@ -1047,7 +1047,7 @@ static void rna_def_texture_stucci(BlenderRNA *brna)
 	{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "StucciTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Stucci Texture", "Procedural noise texture.");
+	RNA_def_struct_ui_text(srna, "Stucci Texture", "Procedural noise texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	prop= RNA_def_property(srna, "turbulence", PROP_FLOAT, PROP_NONE);
@@ -1088,7 +1088,7 @@ static void rna_def_texture_noise(BlenderRNA *brna)
 	StructRNA *srna;
 
 	srna= RNA_def_struct(brna, "NoiseTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Noise Texture", "Procedural noise texture.");
+	RNA_def_struct_ui_text(srna, "Noise Texture", "Procedural noise texture");
 	RNA_def_struct_sdna(srna, "Tex");
 }
 
@@ -1295,7 +1295,7 @@ static void rna_def_texture_plugin(BlenderRNA *brna)
 	StructRNA *srna;
 
 	srna= RNA_def_struct(brna, "PluginTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Plugin", "External plugin texture.");
+	RNA_def_struct_ui_text(srna, "Plugin", "External plugin texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	/* XXX: todo */
@@ -1307,7 +1307,7 @@ static void rna_def_texture_environment_map(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "EnvironmentMapTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Environment Map", "Environment map texture.");
+	RNA_def_struct_ui_text(srna, "Environment Map", "Environment map texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	rna_def_environment_map_common(srna);
@@ -1340,7 +1340,7 @@ static void rna_def_texture_musgrave(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "MusgraveTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Musgrave", "Procedural musgrave texture.");
+	RNA_def_struct_ui_text(srna, "Musgrave", "Procedural musgrave texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	prop= RNA_def_property(srna, "musgrave_type", PROP_ENUM, PROP_NONE);
@@ -1429,7 +1429,7 @@ static void rna_def_texture_voronoi(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}};
 
 	srna= RNA_def_struct(brna, "VoronoiTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Voronoi", "Procedural voronoi texture.");
+	RNA_def_struct_ui_text(srna, "Voronoi", "Procedural voronoi texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	prop= RNA_def_property(srna, "weight_1", PROP_FLOAT, PROP_NONE);
@@ -1500,7 +1500,7 @@ static void rna_def_texture_distorted_noise(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna= RNA_def_struct(brna, "DistortedNoiseTexture", "Texture");
-	RNA_def_struct_ui_text(srna, "Distorted Noise", "Procedural distorted noise texture.");
+	RNA_def_struct_ui_text(srna, "Distorted Noise", "Procedural distorted noise texture");
 	RNA_def_struct_sdna(srna, "Tex");
 
 	prop= RNA_def_property(srna, "distortion", PROP_FLOAT, PROP_NONE);
@@ -1582,7 +1582,7 @@ static void rna_def_texture_pointdensity(BlenderRNA *brna)
 	
 	srna= RNA_def_struct(brna, "PointDensity", NULL);
 	RNA_def_struct_sdna(srna, "PointDensity");
-	RNA_def_struct_ui_text(srna, "PointDensity", "Point density settings.");
+	RNA_def_struct_ui_text(srna, "PointDensity", "Point density settings");
 	
 	prop= RNA_def_property(srna, "point_source", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "source");
@@ -1734,7 +1734,7 @@ static void rna_def_texture_voxeldata(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "VoxelData", NULL);
 	RNA_def_struct_sdna(srna, "VoxelData");
-	RNA_def_struct_ui_text(srna, "VoxelData", "Voxel data settings.");
+	RNA_def_struct_ui_text(srna, "VoxelData", "Voxel data settings");
 	
 	prop= RNA_def_property(srna, "interpolation", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "interp_type");
@@ -1824,7 +1824,7 @@ static void rna_def_texture(BlenderRNA *brna)
 
 	srna= RNA_def_struct(brna, "Texture", "ID");
 	RNA_def_struct_sdna(srna, "Tex");
-	RNA_def_struct_ui_text(srna, "Texture", "Texture datablock used by materials, lamps, worlds and brushes.");
+	RNA_def_struct_ui_text(srna, "Texture", "Texture datablock used by materials, lamps, worlds and brushes");
 	RNA_def_struct_ui_icon(srna, ICON_TEXTURE_DATA);
 	RNA_def_struct_refine_func(srna, "rna_Texture_refine");
 
