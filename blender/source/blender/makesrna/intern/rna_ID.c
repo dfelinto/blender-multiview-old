@@ -301,7 +301,7 @@ static void rna_def_ID_properties(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_EXPORT|PROP_IDPROPERTY);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Name", "Unique name used in the code and scripting.");
+	RNA_def_property_ui_text(prop, "Name", "Unique name used in the code and scripting");
 	RNA_def_struct_name_property(srna, prop);
 #endif
 
@@ -322,7 +322,7 @@ static void rna_def_ID_properties(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_EXPORT|PROP_IDPROPERTY);
 	//RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Name", "Unique name used in the code and scripting.");
+	RNA_def_property_ui_text(prop, "Name", "Unique name used in the code and scripting");
 	RNA_def_struct_name_property(srna, prop);
 }
 
@@ -339,7 +339,7 @@ static void rna_def_ID(BlenderRNA *brna)
 	RNA_def_struct_idproperties_func(srna, "rna_ID_idproperties");
 
 	prop= RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
-	RNA_def_property_ui_text(prop, "Name", "Unique datablock ID name.");
+	RNA_def_property_ui_text(prop, "Name", "Unique datablock ID name");
 	RNA_def_property_string_funcs(prop, "rna_ID_name_get", "rna_ID_name_length", "rna_ID_name_set");
 	RNA_def_property_string_maxlength(prop, sizeof(((ID*)NULL)->name)-2);
 	RNA_def_property_editable_func(prop, "rna_ID_name_editable");
@@ -349,7 +349,7 @@ static void rna_def_ID(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "users", PROP_INT, PROP_UNSIGNED);
 	RNA_def_property_int_sdna(prop, NULL, "us");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Users", "Number of times this datablock is referenced.");
+	RNA_def_property_ui_text(prop, "Users", "Number of times this datablock is referenced");
 
 	prop= RNA_def_property(srna, "fake_user", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", LIB_FAKEUSER);
@@ -359,12 +359,12 @@ static void rna_def_ID(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "tag", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", LIB_DOIT);
 	RNA_def_property_flag(prop, PROP_LIB_EXCEPTION);
-	RNA_def_property_ui_text(prop, "Tag", "Tools can use this to tag data, (initial state is undefined).");
+	RNA_def_property_ui_text(prop, "Tag", "Tools can use this to tag data, (initial state is undefined)");
 
 	prop= RNA_def_property(srna, "library", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "lib");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Library", "Library file the datablock is linked from.");
+	RNA_def_property_ui_text(prop, "Library", "Library file the datablock is linked from");
 
 	/* functions */
 	func= RNA_def_function(srna, "copy", "rna_ID_copy");
@@ -394,7 +394,7 @@ static void rna_def_library(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "filename", PROP_STRING, PROP_FILEPATH);
 	RNA_def_property_string_sdna(prop, NULL, "name");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Filename", "Path to the library .blend file.");
+	RNA_def_property_ui_text(prop, "Filename", "Path to the library .blend file");
 }
 void RNA_def_ID(BlenderRNA *brna)
 {

@@ -184,7 +184,7 @@ static void rna_def_latticepoint(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "groups", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_funcs(prop, "rna_LatticePoint_groups_begin", "rna_iterator_array_next", "rna_iterator_array_end", "rna_iterator_array_get", 0, 0, 0);
 	RNA_def_property_struct_type(prop, "VertexGroupElement");
-	RNA_def_property_ui_text(prop, "Groups", "Weights for the vertex groups this point is member of.");
+	RNA_def_property_ui_text(prop, "Groups", "Weights for the vertex groups this point is member of");
 }
 
 static void rna_def_lattice(BlenderRNA *brna)
@@ -206,21 +206,21 @@ static void rna_def_lattice(BlenderRNA *brna)
 	RNA_def_property_int_sdna(prop, NULL, "pntsu");
 	RNA_def_property_int_funcs(prop, NULL, "rna_Lattice_points_u_set", NULL);
 	RNA_def_property_range(prop, 1, 64);
-	RNA_def_property_ui_text(prop, "U", "Points in U direction.");
+	RNA_def_property_ui_text(prop, "U", "Points in U direction");
 	RNA_def_property_update(prop, 0, "rna_Lattice_update_size");
 
 	prop= RNA_def_property(srna, "points_v", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "pntsv");
 	RNA_def_property_int_funcs(prop, NULL, "rna_Lattice_points_v_set", NULL);
 	RNA_def_property_range(prop, 1, 64);
-	RNA_def_property_ui_text(prop, "V", "Points in V direction.");
+	RNA_def_property_ui_text(prop, "V", "Points in V direction");
 	RNA_def_property_update(prop, 0, "rna_Lattice_update_size");
 
 	prop= RNA_def_property(srna, "points_w", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "pntsw");
 	RNA_def_property_int_funcs(prop, NULL, "rna_Lattice_points_w_set", NULL);
 	RNA_def_property_range(prop, 1, 64);
-	RNA_def_property_ui_text(prop, "W", "Points in W direction.");
+	RNA_def_property_ui_text(prop, "W", "Points in W direction");
 	RNA_def_property_update(prop, 0, "rna_Lattice_update_size");
 
 	prop= RNA_def_property(srna, "interpolation_type_u", PROP_ENUM, PROP_NONE);
@@ -244,7 +244,7 @@ static void rna_def_lattice(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "outside", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", LT_OUTSIDE);
 	RNA_def_property_boolean_funcs(prop, NULL, "rna_Lattice_outside_set");
-	RNA_def_property_ui_text(prop, "Outside", "Only draw, and take into account, the outer vertices.");
+	RNA_def_property_ui_text(prop, "Outside", "Only draw, and take into account, the outer vertices");
 	RNA_def_property_update(prop, 0, "rna_Lattice_update_data");
 
 	prop= RNA_def_property(srna, "shape_keys", PROP_POINTER, PROP_NONE);
@@ -254,7 +254,7 @@ static void rna_def_lattice(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "points", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_struct_type(prop, "LatticePoint");
 	RNA_def_property_collection_funcs(prop, "rna_Lattice_points_begin", "rna_iterator_array_next", "rna_iterator_array_end", "rna_iterator_array_get", 0, 0, 0);
-	RNA_def_property_ui_text(prop, "Points", "Points of the lattice.");
+	RNA_def_property_ui_text(prop, "Points", "Points of the lattice");
 }
 
 void RNA_def_lattice(BlenderRNA *brna)

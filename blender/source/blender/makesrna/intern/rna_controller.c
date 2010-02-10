@@ -110,7 +110,7 @@ void RNA_def_controller(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "text", PROP_POINTER, PROP_NONE);
 	RNA_def_property_struct_type(prop, "Text");
 	RNA_def_property_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Text", "Text datablock with the python script.");
+	RNA_def_property_ui_text(prop, "Text", "Text datablock with the python script");
 
 	prop= RNA_def_property(srna, "module", PROP_STRING, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Module", "Module name and function to run e.g. \"someModule.main\". Internal texts and external python files can be used");
@@ -118,7 +118,7 @@ void RNA_def_controller(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "debug", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", CONT_PY_DEBUG);
-	RNA_def_property_ui_text(prop, "D", "Continuously reload the module from disk for editing external modules without restarting.");
+	RNA_def_property_ui_text(prop, "D", "Continuously reload the module from disk for editing external modules without restarting");
 
 	/* Other Controllers */
 	srna= RNA_def_struct(brna, "AndController", "Controller");

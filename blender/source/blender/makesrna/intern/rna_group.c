@@ -114,19 +114,19 @@ void RNA_def_group(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "dupli_offset", PROP_FLOAT, PROP_TRANSLATION);
 	RNA_def_property_float_sdna(prop, NULL, "dupli_ofs");
-	RNA_def_property_ui_text(prop, "Dupli Offset", "Offset from the origin to use when instancing as DupliGroup.");
+	RNA_def_property_ui_text(prop, "Dupli Offset", "Offset from the origin to use when instancing as DupliGroup");
 	RNA_def_property_ui_range(prop, -10000.0, 10000.0, 10, 4);
 
 	prop= RNA_def_property(srna, "layer", PROP_BOOLEAN, PROP_LAYER);
 	RNA_def_property_boolean_sdna(prop, NULL, "layer", 1);
 	RNA_def_property_array(prop, 20);
-	RNA_def_property_ui_text(prop, "Dupli Layers", "Layers visible when this groups is instanced as a dupli.");
+	RNA_def_property_ui_text(prop, "Dupli Layers", "Layers visible when this groups is instanced as a dupli");
 
 
 	prop= RNA_def_property(srna, "objects", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "gobject", NULL);
 	RNA_def_property_struct_type(prop, "Object");
-	RNA_def_property_ui_text(prop, "Objects", "A collection of this groups objects.");
+	RNA_def_property_ui_text(prop, "Objects", "A collection of this groups objects");
 	RNA_def_property_collection_funcs(prop, 0, 0, 0, "rna_Group_objects_get", 0, 0, 0);
 
 	rna_def_group_objects(brna, prop);

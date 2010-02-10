@@ -51,7 +51,7 @@ void RNA_def_packedfile(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "size", PROP_INT, PROP_NONE);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Size", "Size of packed file in bytes.");
+	RNA_def_property_ui_text(prop, "Size", "Size of packed file in bytes");
 
 }
 

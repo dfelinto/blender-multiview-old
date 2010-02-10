@@ -316,7 +316,7 @@ static void rna_def_ipo_actuator(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "play_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "type");
 	RNA_def_property_enum_items(prop, prop_type_items);
-	RNA_def_property_ui_text(prop, "Ipo Type", "Specify the way you want to play the animation.");
+	RNA_def_property_ui_text(prop, "Ipo Type", "Specify the way you want to play the animation");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 	
 	prop= RNA_def_property(srna, "start_frame", PROP_INT, PROP_NONE);
@@ -350,7 +350,7 @@ static void rna_def_ipo_actuator(BlenderRNA *brna)
 	
 	prop= RNA_def_property(srna, "local", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", ACT_IPOLOCAL);
-	RNA_def_property_ui_text(prop, "L", "Let the ipo acts in local coordinates, used in Force and Add mode.");
+	RNA_def_property_ui_text(prop, "L", "Let the ipo acts in local coordinates, used in Force and Add mode");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 
 	prop= RNA_def_property(srna, "child", PROP_BOOLEAN, PROP_NONE);
@@ -408,7 +408,7 @@ static void rna_def_camera_actuator(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "axis", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "axis");
 	RNA_def_property_enum_items(prop, prop_axis_items);
-	RNA_def_property_ui_text(prop, "Axis", "Specify the axy the Camera will try to get behind.");
+	RNA_def_property_ui_text(prop, "Axis", "Specify the axy the Camera will try to get behind");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 }
 
@@ -487,19 +487,19 @@ static void rna_def_sound_actuator(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "cone_outer_gain_3d", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "sound3D.cone_outer_gain");
 	RNA_def_property_ui_range(prop, 0.0, 1.0, 0.1, 0.01);
-	RNA_def_property_ui_text(prop, "Cone Outer Gain", "The gain outside the outer cone. The gain in the outer cone will be interpolated between this value and the normal gain in the inner cone.");
+	RNA_def_property_ui_text(prop, "Cone Outer Gain", "The gain outside the outer cone. The gain in the outer cone will be interpolated between this value and the normal gain in the inner cone");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 
 	prop= RNA_def_property(srna, "cone_outer_angle_3d", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "sound3D.cone_outer_angle");
 	RNA_def_property_ui_range(prop, 0.0, 360.0, 1.0, 0.01);
-	RNA_def_property_ui_text(prop, "Cone Outer Angle", "The angle of the outer cone.");
+	RNA_def_property_ui_text(prop, "Cone Outer Angle", "The angle of the outer cone");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 
 	prop= RNA_def_property(srna, "cone_inner_angle_3d", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "sound3D.cone_inner_angle");
 	RNA_def_property_ui_range(prop, 0.0, 360.0, 1.0, 0.01);
-	RNA_def_property_ui_text(prop, "Cone Inner Angle", "The angle of the inner cone.");
+	RNA_def_property_ui_text(prop, "Cone Inner Angle", "The angle of the inner cone");
 	RNA_def_property_update(prop, NC_LOGIC, NULL);
 	
 	/* booleans */

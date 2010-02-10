@@ -389,7 +389,7 @@ static void rna_def_keyblock(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "frame", PROP_FLOAT, PROP_TIME);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_float_sdna(prop, NULL, "pos");
-	RNA_def_property_ui_text(prop, "Frame", "Frame for absolute keys.");
+	RNA_def_property_ui_text(prop, "Frame", "Frame for absolute keys");
 	RNA_def_property_update(prop, 0, "rna_Key_update_data");
 	
 	/* for now, this is editable directly, as users can set this even if they're not animating them (to test results) */
@@ -397,43 +397,43 @@ static void rna_def_keyblock(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "curval");
 	RNA_def_property_float_funcs(prop, NULL, "rna_ShapeKey_value_set", "rna_ShapeKey_value_range");
 	RNA_def_property_ui_range(prop, -10.0f, 10.0f, 10, 3);
-	RNA_def_property_ui_text(prop, "Value", "Value of shape key at the current frame.");
+	RNA_def_property_ui_text(prop, "Value", "Value of shape key at the current frame");
 	RNA_def_property_update(prop, 0, "rna_Key_update_data");
 
 	prop= RNA_def_property(srna, "interpolation", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "type");
 	RNA_def_property_enum_items(prop, prop_keyblock_type_items);
-	RNA_def_property_ui_text(prop, "Interpolation", "Interpolation type.");
+	RNA_def_property_ui_text(prop, "Interpolation", "Interpolation type");
 	RNA_def_property_update(prop, 0, "rna_Key_update_data");
 
 	prop= RNA_def_property(srna, "vertex_group", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "vgroup");
-	RNA_def_property_ui_text(prop, "Vertex Group", "Vertex weight group, to blend with basis shape.");
+	RNA_def_property_ui_text(prop, "Vertex Group", "Vertex weight group, to blend with basis shape");
 	RNA_def_property_update(prop, 0, "rna_Key_update_data");
 
 	prop= RNA_def_property(srna, "relative_key", PROP_POINTER, PROP_NONE);
 	RNA_def_property_struct_type(prop, "ShapeKey");
 	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_pointer_funcs(prop, "rna_ShapeKey_relative_key_get", "rna_ShapeKey_relative_key_set", NULL);
-	RNA_def_property_ui_text(prop, "Relative Key", "Shape used as a relative key.");
+	RNA_def_property_ui_text(prop, "Relative Key", "Shape used as a relative key");
 	RNA_def_property_update(prop, 0, "rna_Key_update_data");
 
 	prop= RNA_def_property(srna, "mute", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", KEYBLOCK_MUTE);
-	RNA_def_property_ui_text(prop, "Mute", "Mute this shape key.");
+	RNA_def_property_ui_text(prop, "Mute", "Mute this shape key");
 	RNA_def_property_ui_icon(prop, ICON_MUTE_IPO_OFF, 1);
 	RNA_def_property_update(prop, 0, "rna_Key_update_data");
 
 	prop= RNA_def_property(srna, "slider_min", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "slidermin");
 	RNA_def_property_range(prop, -10.0f, 10.0f);
-	RNA_def_property_ui_text(prop, "Slider Min", "Minimum for slider.");
+	RNA_def_property_ui_text(prop, "Slider Min", "Minimum for slider");
 
 	prop= RNA_def_property(srna, "slider_max", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "slidermax");
 	RNA_def_property_range(prop, -10.0f, 10.0f);
 	RNA_def_property_float_default(prop, 1.0f);
-	RNA_def_property_ui_text(prop, "Slider Max", "Maximum for slider.");
+	RNA_def_property_ui_text(prop, "Slider Max", "Maximum for slider");
 
 	prop= RNA_def_property(srna, "data", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "data", "totelem");
@@ -460,24 +460,24 @@ static void rna_def_key(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "keys", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "block", NULL);
 	RNA_def_property_struct_type(prop, "ShapeKey");
-	RNA_def_property_ui_text(prop, "Keys", "Shape keys.");
+	RNA_def_property_ui_text(prop, "Keys", "Shape keys");
 
 	rna_def_animdata_common(srna);
 
 	prop= RNA_def_property(srna, "user", PROP_POINTER, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_NEVER_NULL);
 	RNA_def_property_pointer_sdna(prop, NULL, "from");
-	RNA_def_property_ui_text(prop, "User", "Datablock using these shape keys.");
+	RNA_def_property_ui_text(prop, "User", "Datablock using these shape keys");
 
 	prop= RNA_def_property(srna, "relative", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "type", KEY_RELATIVE);
-	RNA_def_property_ui_text(prop, "Relative", "Makes shape keys relative.");
+	RNA_def_property_ui_text(prop, "Relative", "Makes shape keys relative");
 	RNA_def_property_update(prop, 0, "rna_Key_update_data");
 
 	prop= RNA_def_property(srna, "slurph", PROP_INT, PROP_UNSIGNED);
 	RNA_def_property_int_sdna(prop, NULL, "slurph");
 	RNA_def_property_range(prop, -500, 500);
-	RNA_def_property_ui_text(prop, "Slurph", "Creates a delay in amount of frames in applying keypositions, first vertex goes first.");
+	RNA_def_property_ui_text(prop, "Slurph", "Creates a delay in amount of frames in applying keypositions, first vertex goes first");
 	RNA_def_property_update(prop, 0, "rna_Key_update_data");
 }
 
