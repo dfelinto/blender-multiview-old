@@ -15,7 +15,7 @@ rem GNU General Public License for more details.
 rem
 rem You should have received a copy of the GNU General Public License
 rem along with this program; if not, write to the Free Software Foundation,
-rem Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+rem Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 rem
 rem The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
 rem All rights reserved.
