@@ -430,7 +430,7 @@ void object_test_constraints (Object *owner)
 	if (owner->type==OB_ARMATURE && owner->pose) {
 		bPoseChannel *pchan;
 
-		for (pchan= list->first; pchan; pchan= pchan->next)
+		for (pchan= owner->pose->chanbase.first; pchan; pchan= pchan->next)
 			if(pchan->constraints.first)
 				test_constraints(owner, pchan);
 	}
