@@ -259,7 +259,7 @@ NlaTrack *add_nlatrack (AnimData *adt, NlaTrack *prev)
 	
 	/* must have unique name, but we need to seed this */
 	strcpy(nlt->name, "NlaTrack");
-	BLI_uniquename(&adt->nla_tracks, nlt, "NlaTrack", '.', offsetof(NlaTrack, name), nlt->name);
+	BLI_uniquename(&adt->nla_tracks, nlt, "NlaTrack", '.', offsetof(NlaTrack, name), sizeof(nlt->name));
 	
 	/* return the new track */
 	return nlt;
