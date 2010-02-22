@@ -26,6 +26,6 @@ if env['USE_QTKIT']:
 
 if env['OURPLATFORM'] == 'darwin':
     if env['WITH_BF_OPENMP']:
-       env.Append(CFLAGS=['-DARALLEL=1'])
+       env.Append(CFLAGS=['-DPARALLEL=1'])
 
 env.BlenderLib ( 'bf_editors_render', sources, Split(incs), [], libtype=['core'], priority=[45])
