@@ -355,9 +355,10 @@ static void modifier_vgroup_cache(ModifierData *md, float (*vertexCos)[3])
 {
 	while((md=md->next) && md->type==eModifierType_Armature) {
 		ArmatureModifierData *amd = (ArmatureModifierData*) md;
-		if(amd->multi)
-			if(amd->prevCos==NULL)
-				amd->prevCos= MEM_dupallocN(vertexCos);
+		if(amd->multi && amd->prevCos==NULL)
+			amd->prevCos= MEM_dupallocN(vertexCos);
+		else
+			break;
 	}
 	/* lattice/mesh modifier too */
 }
