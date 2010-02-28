@@ -23,7 +23,7 @@
  */
 
 #include <Python.h>
-#include "BLF.h"
+#include "blf.h"
 
 #include "../../blenfont/BLF_api.h"
 
