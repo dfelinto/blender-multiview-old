@@ -1095,7 +1095,7 @@ static struct PyMethodDef BGL_methods[] = {
 
 static struct PyModuleDef BGL_module_def = {
 	PyModuleDef_HEAD_INIT,
-	"BGL",  /* m_name */
+	"bgl",  /* m_name */
 	0,  /* m_doc */
 	0,  /* m_size */
 	BGL_methods,  /* m_methods */
