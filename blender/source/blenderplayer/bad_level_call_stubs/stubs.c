@@ -325,8 +325,8 @@ int CSG_PerformBooleanOperation(
 	CSG_VertexIteratorDescriptor	obBVertices)
 	{ return 0;}
 
-extern const char * build_date;
-extern const char * build_time;
-extern const char * build_rev;
-extern const char * build_platform;
-extern const char * build_type;
+const char * build_date= "";
+const char * build_time= "";
+const char * build_rev= "";
+const char * build_platform= "";
+const char * build_type= "";
