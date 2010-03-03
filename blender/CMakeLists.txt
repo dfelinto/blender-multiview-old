@@ -61,7 +61,7 @@ OPTION(WITH_PLAYER        "Build Player" OFF)
 OPTION(WITH_GAMEENGINE    "Enable Game Engine" ON)
 OPTION(WITH_BULLET        "Enable Bullet (Physics Engine)" ON)
 OPTION(WITH_INTERNATIONAL "Enable I18N   (International fonts and text)" ON)
-OPTION(WITH_ELBEEM        "Enable Elbeem (Fluid Simulation)" ON)
+OPTION(WITH_ELBEEM        "Enable Elbeem (Fluid Simulation)" OFF)
 OPTION(WITH_QUICKTIME     "Enable Quicktime Support" OFF)
 OPTION(WITH_OPENEXR       "Enable OpenEXR Support (http://www.openexr.com)" ON)
 OPTION(WITH_DDS           "Enable DDS Support" ON)
@@ -117,7 +117,7 @@ INCLUDE(CMake/macros.cmake)
 
 IF(UNIX AND NOT APPLE)
 
-
+	SET(CMAKE_EDIT_COMMAND "/use/bin/cmake -i")
 	IF(WITH_OPENAL)
 		FIND_PACKAGE(OpenAL)
 		IF(OPENAL_FOUND)
@@ -261,7 +261,7 @@ IF(WIN32)
 	# this file is included anyway when building under Windows with cl.exe
 	#  INCLUDE(${CMAKE_ROOT}/Modules/Platform/Windows-cl.cmake)
   
-	SET(LIBDIR ${CMAKE_SOURCE_DIR}/../../../lib/windows)
+  SET(LIBDIR ${CMAKE_SOURCE_DIR}/../../lib/windows)
 
 	# Setup 64bit and 64bit windows systems
 	IF(CMAKE_CL_64)

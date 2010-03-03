@@ -2246,6 +2246,7 @@ static void SCREEN_OT_region_flip(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec= region_flip_exec;
+	ot->modal= 
 	
 	ot->poll= ED_operator_areaactive;
 	ot->flag= 0;
