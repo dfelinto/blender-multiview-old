@@ -261,7 +261,7 @@ IF(WIN32)
 	# this file is included anyway when building under Windows with cl.exe
 	#  INCLUDE(${CMAKE_ROOT}/Modules/Platform/Windows-cl.cmake)
   
-	SET(LIBDIR ${CMAKE_SOURCE_DIR}/../lib/windows)
+	SET(LIBDIR ${CMAKE_SOURCE_DIR}/../../../lib/windows)
 
 	# Setup 64bit and 64bit windows systems
 	IF(CMAKE_CL_64)
