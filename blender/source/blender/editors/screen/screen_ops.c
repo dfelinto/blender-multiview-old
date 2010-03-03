@@ -2251,52 +2251,6 @@ static void SCREEN_OT_region_flip(wmOperatorType *ot)
 	ot->poll= ED_operator_areaactive;
 	ot->flag= 0;
 }
-/* ************** header pan to left + mouse over editor changes operator ***************************** */
-// This is a hacky, or a workaround if you prefer
-// I like being able to quickly switch Editors (ALT+MOUSEWHEEL)
-// Since the editor switcher is not always visible (and it should IMHO) this operator helps you with that :)
-
-static int header_focus_exec(bContext *C, wmOperator *op)
-{
-	int i;
-	int bounds[4] = {0,20,0,0};
-	ARegion *ar= CTX_wm_region(C);
-
-	/* find the header region 
-	 *	- try context first, but upon failing, search all regions in area...
-	 */
-	if((ar == NULL) || (ar->regiontype != RGN_TYPE_HEADER)) {
-		ScrArea *sa= CTX_wm_area(C);
-		
-		/* loop over all regions until a matching one is found */
-		for (ar= sa->regionbase.first; ar; ar= ar->next) {
-			if(ar->regiontype == RGN_TYPE_HEADER)
-				break;
-		}
-		
-		/* don't do anything if no region */
-		if(ar == NULL)
-			return OPERATOR_CANCELLED;
-	}
-	for (i =0; i <40; i++){
-		WM_operator_name_call(C, "VIEW2D_OT_scroll_left", WM_OP_INVOKE_DEFAULT, NULL);
-	}
-	
-	return OPERATOR_FINISHED;
-}
-
-static void SCREEN_OT_header_focus(wmOperatorType *ot)
-{
-	/* identifiers */
-	ot->name= "Header Focus";
-	ot->idname= "SCREEN_OT_header_focus";
-	
-	/* api callbacks */
-	ot->exec= header_focus_exec;
-	
-	ot->poll= ED_operator_areaactive;
-	ot->flag= 0;
-}
 
 /* ************** header flip operator ***************************** */
 
@@ -2372,7 +2326,7 @@ static int header_toolbox_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		uiItemO(layout, "Flip to Bottom", 0, "SCREEN_OT_header_flip");	
 	else
 		uiItemO(layout, "Flip to Top", 0, "SCREEN_OT_header_flip");
-	uiItemO(layout, "Focus on Editor Type", 0, "SCREEN_OT_header_focus");	
+	
 	uiItemS(layout);
 	
 	/* file browser should be fullscreen all the time, but other regions can be maximised/restored... */
@@ -4043,7 +3997,6 @@ void ED_operatortypes_screen(void)
 	WM_operatortype_append(SCREEN_OT_region_flip);
 	WM_operatortype_append(SCREEN_OT_header_flip);
 	WM_operatortype_append(SCREEN_OT_header_toolbox);
-	WM_operatortype_append(SCREEN_OT_header_focus);
 	WM_operatortype_append(SCREEN_OT_screen_set);
 	WM_operatortype_append(SCREEN_OT_screen_full_area);
 	WM_operatortype_append(SCREEN_OT_back_to_previous);
@@ -4128,7 +4081,6 @@ void ED_keymap_screen(wmKeyConfig *keyconf)
 	keymap= WM_keymap_find(keyconf, "Header", 0, 0);
 	
 	WM_keymap_add_item(keymap, "SCREEN_OT_header_toolbox", RIGHTMOUSE, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "SCREEN_OT_header_focus", MIDDLEMOUSE, KM_PRESS, KM_ALT, 0);
 	
 	/* Screen General ------------------------------------------------ */
 	keymap= WM_keymap_find(keyconf, "Screen", 0, 0);
