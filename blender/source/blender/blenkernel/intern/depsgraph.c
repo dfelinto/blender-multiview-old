@@ -1944,7 +1944,7 @@ void DAG_scene_flush_update(Scene *sce, unsigned int lay, int time)
 
 		for(m= sce->markers.first; m; m= m->next) {
 			if(m->camera) {
-				node= dag_get_node(sce->theDag, sce->camera);
+				node= dag_get_node(sce->theDag, m->camera);
 				node->scelay= lay;
 			}
 		}
