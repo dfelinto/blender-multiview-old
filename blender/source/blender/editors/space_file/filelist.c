@@ -86,7 +86,7 @@
 
 #include "UI_interface.h"
 
-#include "WM_API.h"
+#include "WM_api.h"
 #include "WM_types.h"
 
 #include "filelist.h"
