@@ -249,7 +249,7 @@ ID *rna_ID_copy(ID *id)
 void rna_ID_user_clear(ID *id)
 {
 	id->us= 0; /* dont save */
-	id->flag &= LIB_FAKEUSER;
+	id->flag &= ~LIB_FAKEUSER;
 }
 
 #else
