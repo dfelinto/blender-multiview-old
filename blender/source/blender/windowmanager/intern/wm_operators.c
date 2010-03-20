@@ -1015,6 +1015,11 @@ int WM_operator_props_popup(bContext *C, wmOperator *op, wmEvent *event)
 int WM_operator_props_dialog_popup(bContext *C, wmOperator *op, int width, int height)
 {
 	struct { wmOperator *op; int width; int height; } data;
+	
+	data.op= op;
+	data.width= width;
+	data.height= height;
+
 	/* op is not executed until popup OK but is clicked */
 	uiPupBlock(C, wm_block_create_dialog, &data);
 
