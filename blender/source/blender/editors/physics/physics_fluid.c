@@ -82,10 +82,18 @@
 /* enable/disable overall compilation */
 #ifndef DISABLE_ELBEEM
 
+#include "WM_api.h"
+
+#include "DNA_scene_types.h"
+#include "DNA_ipo_types.h"
+#include "DNA_mesh_types.h"
+
+#include "PIL_time.h"
+
 /* XXX */
 /* from header info.c */
 static int start_progress_bar(void) {return 0;};
-static void end_progress_bar(wmWindow *win) {WM_cursor_restore(win);};
+static void end_progress_bar(struct wmWindow *win) {WM_cursor_restore(win);};
 static void waitcursor(int val) {};
 static int progress_bar(wmWindow *win, float done, char *busy_info) { WM_timecursor(win,done*100); return 0;}
 static int pupmenu() {return 0;}
