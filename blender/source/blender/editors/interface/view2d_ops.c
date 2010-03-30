@@ -72,6 +72,7 @@ static int view2d_poll(bContext *C)
 typedef struct v2dViewPanData {
 	bScreen *sc;			/* screen where view pan was initiated */
 	ScrArea *sa;			/* area where view pan was initiated */
+	ARegion *ar;			/* region where view pan was initiated */
 	View2D *v2d;			/* view2d we're operating in */
 	
 	float facx, facy;		/* amount to move view relative to zoom */
@@ -108,6 +109,7 @@ static int view_pan_init(bContext *C, wmOperator *op)
 	vpd->sc= CTX_wm_screen(C);
 	vpd->sa= CTX_wm_area(C);
 	vpd->v2d= v2d;
+	vpd->ar = ar;
 	
 	/* calculate translation factor - based on size of view */
 	winx= (float)(ar->winrct.xmax - ar->winrct.xmin + 1);
@@ -143,7 +145,8 @@ static void view_pan_apply(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 	
 	/* request updates to be done... */
-	ED_area_tag_redraw(vpd->sa);
+	ED_region_tag_redraw(vpd->ar);
+	
 	UI_view2d_sync(vpd->sc, vpd->sa, v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 	
@@ -630,7 +633,7 @@ static void view_zoomstep_apply(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 
 	/* request updates to be done... */
-	ED_area_tag_redraw(CTX_wm_area(C));
+	ED_region_tag_redraw(vpd->ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 }
@@ -820,7 +823,7 @@ static void view_zoomdrag_apply(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 	
 	/* request updates to be done... */
-	ED_area_tag_redraw(CTX_wm_area(C));
+	ED_region_tag_redraw(vpd->ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 }
@@ -1089,7 +1092,7 @@ static int view_borderzoom_exec(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 	
 	/* request updates to be done... */
-	ED_area_tag_redraw(CTX_wm_area(C));
+	ED_region_tag_redraw(vpd->ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 	
@@ -1332,7 +1335,7 @@ static void scroller_activate_apply(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 	
 	/* request updates to be done... */
-	ED_area_tag_redraw(CTX_wm_area(C));
+	ED_region_tag_redraw(vpd->ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 }
@@ -1522,7 +1525,7 @@ static int reset_exec(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 	
 	/* request updates to be done... */
-	ED_area_tag_redraw(CTX_wm_area(C));
+	ED_region_tag_redraw(vpd->ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 	
