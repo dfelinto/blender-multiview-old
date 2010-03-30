@@ -506,6 +506,7 @@ void VIEW2D_OT_scroll_up(wmOperatorType *ot)
 /* temp customdata for operator */
 typedef struct v2dViewZoomData {
 	View2D *v2d;			/* view2d we're operating in */
+	ARegion *ar;
 	
 	int lastx, lasty;		/* previous x/y values of mouse in window */
 	float dx, dy;			/* running tally of previous delta values (for obtaining final zoom) */
@@ -535,6 +536,7 @@ static int view_zoomdrag_init(bContext *C, wmOperator *op)
 	
 	/* set pointers to owners */
 	vzd->v2d= v2d;
+	vzd->ar = ar;
 	
 	return 1;
 }
@@ -633,7 +635,7 @@ static void view_zoomstep_apply(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 
 	/* request updates to be done... */
-	ED_region_tag_redraw(vpd->ar);
+	ED_region_tag_redraw(vzd->ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 }
@@ -823,7 +825,7 @@ static void view_zoomdrag_apply(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 	
 	/* request updates to be done... */
-	ED_region_tag_redraw(vpd->ar);
+	ED_region_tag_redraw(vzd->ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 }
@@ -1092,7 +1094,7 @@ static int view_borderzoom_exec(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 	
 	/* request updates to be done... */
-	ED_region_tag_redraw(vpd->ar);
+	ED_region_tag_redraw(ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 	
@@ -1136,6 +1138,7 @@ void VIEW2D_OT_zoom_border(wmOperatorType *ot)
 /* customdata for scroller-invoke data */
 typedef struct v2dScrollerMove {
 	View2D *v2d;			/* View2D data that this operation affects */
+	ARegion *ar;			/* region that the scroller is in */
 	
 	short scroller;			/* scroller that mouse is in ('h' or 'v') */
 	short zone;				/* -1 is min zoomer, 0 is bar, 1 is max zoomer */ // XXX find some way to provide visual feedback of this (active colour?)
@@ -1227,6 +1230,7 @@ static void scroller_activate_init(bContext *C, wmOperator *op, wmEvent *event, 
 	
 	/* set general data */
 	vsm->v2d= v2d;
+	vsm->ar= ar;
 	vsm->scroller= in_scroller;
 	
 	/* store mouse-coordinates, and convert mouse/screen coordinates to region coordinates */
@@ -1335,7 +1339,7 @@ static void scroller_activate_apply(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 	
 	/* request updates to be done... */
-	ED_region_tag_redraw(vpd->ar);
+	ED_region_tag_redraw(vsm->ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 }
@@ -1525,7 +1529,7 @@ static int reset_exec(bContext *C, wmOperator *op)
 	UI_view2d_curRect_validate(v2d);
 	
 	/* request updates to be done... */
-	ED_region_tag_redraw(vpd->ar);
+	ED_region_tag_redraw(ar);
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
 	WM_event_add_mousemove(C);
 	
