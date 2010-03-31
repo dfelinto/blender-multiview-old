@@ -104,6 +104,10 @@ int multitex_nodes(struct Tex *tex, float *texvec, float *dxt, float *dyt, int o
 struct RenderResult *RE_GetResult(struct Render *re){return (struct RenderResult *) NULL;}
 struct Render *RE_GetRender(const char *name){return (struct Render *) NULL;}
 
+/* fcurves */
+void delete_fcurve_key(struct FCurve *fcu, int index, short do_recalc){}
+int insert_vert_fcurve(struct FCurve *fcu, float x, float y, short flag){return 0;}
+
 /* blenkernel */
 char* btempdir(){return (char *) NULL;}
 void RE_FreeRenderResult(struct RenderResult *res){}
