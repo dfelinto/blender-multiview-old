@@ -995,10 +995,7 @@ void scene_update_for_newframe(Scene *sce, unsigned int lay)
 
 	/* sets first, we allow per definition current scene to have dependencies on sets */
 	for(sce_iter= sce->set; sce_iter; sce_iter= sce_iter->set) {
-		int cfra= sce_iter->r.cfra;
-		sce_iter->r.cfra= sce->r.cfra;
 		scene_update_newframe(sce_iter, sce->r.cfra, lay);
-		sce_iter->r.cfra= cfra;
     }
 
 	scene_update_newframe(sce, sce->r.cfra, lay);
