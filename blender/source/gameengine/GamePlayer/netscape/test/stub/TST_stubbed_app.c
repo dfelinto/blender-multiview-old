@@ -35,10 +35,6 @@
 
 #include "NZC_application_hooks.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 /* ----------------------------------------------------------------- */
 /* Initialization and stuff                                          */
 /* ----------------------------------------------------------------- */

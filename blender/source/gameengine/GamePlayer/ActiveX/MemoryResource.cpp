@@ -28,10 +28,6 @@
 
 #include "MemoryResource.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 MemoryResource::MemoryResource()
 	: m_data(0), m_dataSize(0)
 {

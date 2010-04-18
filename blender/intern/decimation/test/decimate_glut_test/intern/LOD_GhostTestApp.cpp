@@ -26,10 +26,6 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #define TRUE 1
 #define FALSE 0
 

@@ -28,10 +28,6 @@
  * MSWindows event handling for the browser plugin
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef _WIN32
 
 #include "GPC_MouseDevice.h"

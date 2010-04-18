@@ -44,10 +44,6 @@
 #include <stdio.h>
 #include "npapi.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 /* Native hooks: */
 #include "npapi.h"
 

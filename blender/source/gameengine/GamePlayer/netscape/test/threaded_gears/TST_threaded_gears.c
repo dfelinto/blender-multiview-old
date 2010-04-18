@@ -70,9 +70,6 @@
  *
  *
  * updated .c files to include:
- * #ifdef HAVE_CONFIG_H
- * #include <config.h>
- * #endif
  *
  * Just need to finish cpp files now :)
  *
@@ -183,10 +180,6 @@
 #include "NZC_application_callback.h"
 #include "prthread.h"
 #include "prlock.h"
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
 
 #ifndef M_PI
 #define M_PI 3.14159265

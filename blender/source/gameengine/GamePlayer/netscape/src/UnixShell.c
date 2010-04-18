@@ -41,10 +41,6 @@
 #include <stdio.h>
 #include "npapi.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 /* Javascript through JRI: */
 #include "netscape_plugin_Plugin.h"
 #define IMPLEMENT_Blender3DPlugin

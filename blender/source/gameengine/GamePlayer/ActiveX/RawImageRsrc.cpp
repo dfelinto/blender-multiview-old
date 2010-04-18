@@ -28,10 +28,6 @@
 
 #include "RawImageRsrc.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 RawImageRsrc::RawImageRsrc()
 	: m_width(0), m_height(0)
 {

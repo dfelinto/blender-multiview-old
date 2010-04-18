@@ -31,10 +31,6 @@
 
 #include <stdio.h>
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #include "netscape_plugin_Plugin.h"
 #define IMPLEMENT_Blender3DPlugin
 #include "Blender3DPlugin.h"

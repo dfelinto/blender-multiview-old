@@ -29,10 +29,6 @@
  * where app = Ketjsi.
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef _WIN32
 
 #include "SCA_IInputDevice.h"

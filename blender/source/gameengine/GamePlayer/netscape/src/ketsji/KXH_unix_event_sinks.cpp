@@ -28,10 +28,6 @@
  * X11 event handling for the browser plugin
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #if !defined(_WIN32) && !defined(__APPLE__)
 
 #include "GPC_MouseDevice.h"

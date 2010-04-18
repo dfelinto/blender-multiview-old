@@ -32,10 +32,6 @@
 #include "stdafx.h"
 #include "BlenderPlayer.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #undef THIS_FILE

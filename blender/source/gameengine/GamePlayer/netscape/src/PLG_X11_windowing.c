@@ -28,10 +28,6 @@
  * X11 windowing for the browser plugin
  */
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 #if !defined(_WIN32) && !defined(__APPLE__)
 
 #include "PLG_X11_windowing.h"

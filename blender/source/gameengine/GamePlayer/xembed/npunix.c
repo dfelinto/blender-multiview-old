@@ -22,10 +22,6 @@
 #include "npapi.h"
 #include "npupp.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 /*
  * Define PLUGIN_TRACE to have the wrapper functions print
  * messages to stderr whenever they are called.

@@ -32,10 +32,6 @@
 #include "Blender3DPlugin.h"
 #include "_Blender3DPlugin_implementation_.h"
 
-#ifdef HAVE_CONFIG_H
-#include <config.h>
-#endif
-
 /** Set the peer reference*/
 void
 XPH_set_peer(
