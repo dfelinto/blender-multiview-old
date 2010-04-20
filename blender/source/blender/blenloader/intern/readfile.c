@@ -12217,7 +12217,7 @@ static void read_libraries(FileData *basefd, ListBase *mainlist)
 							fd= blo_openblenderfile(mainptr->curlib->filename, basefd->reports);
 
 							if(fd) {
-								print("found: '%s', party on macuno!\n");
+								printf("found: '%s', party on macuno!\n");
 							}
 						}
 					}
