@@ -921,7 +921,7 @@ msgstr "保存为可执行文件（无需动态连接库）"
 msgid "Save Dynamic Runtime"
 msgstr "保存为可执行文件（需要动态连接库）"
 
-#~ msgid "Creates a dynamic runtime executable with the current project (requieres extenal python20.dll)"
+#~ msgid "Creates a dynamic runtime executable with the current project (requieres extenal python31.dll)"
 #~ msgstr "从当前项目创建可执行文件（需要python20.dll）"
 
 #~ msgid "Runtime options"
