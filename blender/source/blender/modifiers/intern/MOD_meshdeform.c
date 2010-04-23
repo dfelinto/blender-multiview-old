@@ -352,6 +352,68 @@ static void deformVertsEM(
 		dm->release(dm);
 }
 
+#define MESHDEFORM_MIN_INFLUENCE 0.00001
+
+void modifier_mdef_compact_influences(ModifierData *md)
+{
+	MeshDeformModifierData *mmd= (MeshDeformModifierData*)md;
+	float weight, *weights, totweight;
+	int totinfluence, totvert, totcagevert, a, b;
+
+	weights= mmd->bindweights;
+	if(!weights)
+		return;
+	
+	totvert= mmd->totvert;
+	totcagevert= mmd->totcagevert;
+
+	/* count number of influences above threshold */
+	for(b=0; b<totvert; b++) {
+		for(a=0; a<totcagevert; a++) {
+			weight= weights[a + b*totcagevert];
+
+			if(weight > MESHDEFORM_MIN_INFLUENCE)
+				mmd->totinfluence++;
+		}
+	}
+
+	/* allocate bind influences */
+	mmd->bindinfluences= MEM_callocN(sizeof(MDefInfluence)*mmd->totinfluence, "MDefBindInfluence");
+	mmd->bindoffsets= MEM_callocN(sizeof(int)*(totvert+1), "MDefBindOffset");
+
+	/* write influences */
+	totinfluence= 0;
+
+	for(b=0; b<totvert; b++) {
+		mmd->bindoffsets[b]= totinfluence;
+		totweight= 0.0f;
+
+		/* sum total weight */
+		for(a=0; a<totcagevert; a++) {
+			weight= weights[a + b*totcagevert];
+
+			if(weight > MESHDEFORM_MIN_INFLUENCE)
+				totweight += weight;
+		}
+
+		/* assign weights normalized */
+		for(a=0; a<totcagevert; a++) {
+			weight= weights[a + b*totcagevert];
+
+			if(weight > MESHDEFORM_MIN_INFLUENCE) {
+				mmd->bindinfluences[totinfluence].weight= weight/totweight;
+				mmd->bindinfluences[totinfluence].vertex= a;
+				totinfluence++;
+			}
+		}
+	}
+
+	mmd->bindoffsets[b]= totinfluence;
+	
+	/* free */
+	MEM_freeN(mmd->bindweights);
+	mmd->bindweights= NULL;
+}
 
 ModifierTypeInfo modifierType_MeshDeform = {
 	/* name */              "MeshDeform",
