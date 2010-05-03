@@ -111,7 +111,7 @@ ULONG __stdcall GHOST_DropTargetWin32::Release(void)
 HRESULT __stdcall GHOST_DropTargetWin32::DragEnter(IDataObject * pDataObject, DWORD grfKeyState, POINTL pt, DWORD * pdwEffect)
 {
 	// we don't know yet if we accept the drop.
-	m_window->setAcceptDragOperation(false);
+	m_window->setAcceptDragOperation(true);
 	*pdwEffect = DROPEFFECT_NONE;
 	
 	m_draggedObjectType = getGhostType(pDataObject);
