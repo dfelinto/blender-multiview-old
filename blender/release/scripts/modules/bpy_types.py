@@ -52,7 +52,14 @@ class Object(bpy_types.ID):
         """The groups this object is in"""
         import bpy
         name = self.name
-        return [group for group in bpy.data.groups if name in group.objects]
+        return tuple(group for group in bpy.data.groups if name in group.objects)
+
+    @property
+    def scene_users(self):
+        """The scenes this object is in"""
+        import bpy
+        name = self.name
+        return tuple(scene for scene in bpy.data.scenes if name in scene.objects)
 
     @property
     def scene_users(self):
