@@ -157,7 +157,7 @@ static void rna_def_sensor(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-//	RNA_def_property_enum_items(prop, sensor_type_items);
+	RNA_def_property_enum_items(prop, sensor_type_items);
 	RNA_def_property_enum_funcs(prop, NULL, "rna_Sensor_type_set", "rna_Sensor_type_itemf");
 	RNA_def_property_ui_text(prop, "Type", "");
 
