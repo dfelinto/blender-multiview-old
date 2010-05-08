@@ -487,36 +487,6 @@ void autocomplete_directory(struct bContext *C, char *str, void *arg_v)
 		}
 	}
 }
-#if 0
-void autocomplete_directory(struct bContext *C, char *str, void *arg_v)
-{
-		char tmp[FILE_MAX];
-	SpaceFile *sfile= CTX_wm_space_file(C);
-
-	/* search if str matches the beginning of name */
-	if(str[0] && sfile->files) {
-		AutoComplete *autocpl= autocomplete_begin(str, FILE_MAX);
-		int nentries = filelist_numfiles(sfile->files);
-		int i;
-
-		for(i= 0; i<nentries; ++i) {
-			struct direntry* file = filelist_file(sfile->files, i);
-			const char* dir = filelist_dir(sfile->files);
-			if (file && S_ISDIR(file->type))	{
-				// BLI_make_file_string(G.sce, tmp, dir, file->relname);
-				BLI_join_dirfile(tmp, dir, file->relname);
-				autocomplete_do_name(autocpl,tmp);
-			}
-		}
-		autocomplete_end(autocpl, str);
-		if (BLI_exists(str)) {
-			BLI_add_slash(str);
-		} else {
-			BLI_strncpy(sfile->params->dir, str, sizeof(sfile->params->dir));
-		}
-	}
-}
-#endif
 
 void autocomplete_file(struct bContext *C, char *str, void *arg_v)
 {
