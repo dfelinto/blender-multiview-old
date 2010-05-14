@@ -398,13 +398,23 @@ pre {
 }
 
 dl.function>dt {
-    text-indent:-30px;
-    padding-left: 30px;
+    text-indent:-130px;
+    padding-left: 130px;
 }
 
-dl.function>dt em:before, dl.function>dt em+big:before {
+dl.function>dt em {
+    color: #999;
+}
+
+dl.function>dt em:before {
     content: " ";
     display: block;
+}
+
+dl.function > dd > p:before {
+    content:"Description: ";
+    font-weight:bold;
+    margin-right:15px;
 }
 
 dt:target, .highlight {
@@ -426,5 +436,13 @@ tt {
 }
 
 table.indextable tr.cap {
-background-color: transparent;
+    background-color: transparent;
+}
+
+col.field-name {
+    width:100px;
+}
+
+td.field-body ul.first {
+    color: #999;
 }
