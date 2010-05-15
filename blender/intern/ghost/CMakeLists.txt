@@ -71,7 +71,7 @@ ELSEIF(WIN32)
 	SET(INC ${INC} ${WINTAB_INC})
 
 	SET(SRC ${SRC}
-		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_DisplayManagerX11.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_DisplayManagerWin32.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_SystemWin32.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_WindowWin32.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/intern/GHOST_DropTargetWin32.cpp
