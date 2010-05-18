@@ -110,7 +110,7 @@ static int bpy_pydriver_create_dict(void)
 void BPY_pydriver_update(void)
 {
 	PyGILState_STATE gilstate;
-	int use_gil= (PyThreadState_Get()==NULL);
+	int use_gil= 1; // (PyThreadState_Get()==NULL);
 
 	if(use_gil)
 		gilstate = PyGILState_Ensure();
@@ -178,7 +178,7 @@ float BPY_pydriver_eval (ChannelDriver *driver)
 		return 0.0f;
 	}
 
-	use_gil= (PyThreadState_Get()==NULL);
+	use_gil= 1; //(PyThreadState_Get()==NULL);
 
 	if(use_gil)
 		gilstate = PyGILState_Ensure();
