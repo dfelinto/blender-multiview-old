@@ -61,7 +61,7 @@ static PyStructSequence_Desc app_info_desc = {
 	"bpy.app",     /* name */
 	"This module contains application values that remain unchanged during runtime.",    /* doc */
 	app_info_fields,    /* fields */
-	10
+	(sizeof(app_info_fields)/sizeof(PyStructSequence_Field)) - 1
 };
 
 static PyObject *make_app_info(void)
