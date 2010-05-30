@@ -1,5 +1,5 @@
---- /home/sashka/Sphinx-0.6.5-py2.6.egg_FILES/sphinx/writers/html.py	2010-01-02 00:43:38.000000000 +0200
-+++ /home/sashka/egg/lib/python2.6/site-packages/Sphinx-0.6.5-py2.6.egg/sphinx/writers/html.py	2010-05-27 02:24:33.203418028 +0300
+--- Sphinx-0.6.5-py2.6.egg_FILES/sphinx/writers/html.py	2010-01-02 00:43:38.000000000 +0200
++++ Sphinx-0.6.5-py2.6.egg_FILES/sphinx/writers/html.py	2010-05-27 02:24:33.203418028 +0300
 @@ -16,6 +16,7 @@
  from docutils import nodes
  from docutils.writers.html4css1 import Writer, HTMLTranslator as BaseTranslator
