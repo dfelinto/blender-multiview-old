@@ -353,6 +353,10 @@ a.headerlink {
     text-decoration: none;
 }
 
+h1:hover > a.headerlink {
+    display:none;
+}
+
 a.headerlink:hover {
     background-color: {{ theme_headlinkcolor }};
     color: white;
@@ -407,8 +411,8 @@ pre {
 }
 
 dl.function>dt, dl.method>dt {
-    text-indent:-142px;
-    padding-left: 142px;
+    text-indent:-118px;
+    padding-left: 118px;
 }
 
 dl.function>dt em, dl.method>dt em {
@@ -420,7 +424,7 @@ dl.function>dd em, dl.method>dd em {
     font-weight:bold;
 }
 
-dl.function table.field-list td.field-body {
+dl.function table.field-list td.field-body, dl.method table.field-list td.field-body {
     color: #728c96;
 }
 
@@ -431,6 +435,14 @@ dl.function>dt em:before, dl.method>dt em:before {
 
 dl.function>dd>p,dl.method>dd>p,dl.attribute>dd>p {
     color: #999;
+}
+
+dl.data>dt {
+    color:#08C659;
+}
+
+dl.data>dd>p {
+    color:#069643;
 }
 
 dl.class>dt {
@@ -450,7 +462,7 @@ dl.function>dd>p:first-child,dl.method>dd>p:first-child,dl.attribute>dd>p:first-
 }
 
 dl.function>dd>p, dl.method>dd>p, dl.attribute>dd>p {
-    margin: 0 0 3px 112px;
+    margin: 0 0 3px 102px;
 }
 
 dl.function>dd>p:first-child:before, dl.method>dd>p:first-child:before, dl.attribute>dd>p:first-child:before {
@@ -458,17 +470,34 @@ dl.function>dd>p:first-child:before, dl.method>dd>p:first-child:before, dl.attri
     color:#555;
     font-weight:bold;
     font-style:normal;
-    width:95px;
+    width:90px;
     display:inline-block;
-    margin-left:-112px;
+    margin-left:-102px;
     text-align:right;
-    padding-right:17px;
+    padding-right:12px;
 }
 
 dt:target, .highlight {
     color: #444;
     background: #333;
 }
+
+.highlight {
+    background: #E2C788;
+}
+
+h1 .highlight {
+    color:inherit;
+    background:inherit;
+}
+
+dd {
+    margin: 3px 0 10px 15px;
+}
+
+.field-body tt.literal {
+    font-weight: normal;
+} 
 
 tt {
     background-color: #444;
@@ -489,12 +518,12 @@ table.indextable tr.cap {
 }
 
 col.field-name  {
-    width:100px;
+    width:90px;
 }
 
 table.field-list th {
     color:#555;
-    padding-right:5px;
+    padding:0;
     text-align:right;
 }
 
