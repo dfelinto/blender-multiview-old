@@ -412,7 +412,16 @@ dl.function>dt, dl.method>dt {
 }
 
 dl.function>dt em, dl.method>dt em {
-    color: #999;
+    color: #97b9cf;
+}
+
+dl.function>dd em, dl.method>dd em {
+    color: #97b9cf;
+    font-weight:bold;
+}
+
+dl.function table.field-list td.field-body {
+    color: #728c96;
 }
 
 dl.function>dt em:before, dl.method>dt em:before {
@@ -420,29 +429,45 @@ dl.function>dt em:before, dl.method>dt em:before {
     display: block;
 }
 
-dl.function>dd>p,dl.method>dd>p,dl.attribute>dd>p,dl.class>dd>p:first-child {
+dl.function>dd>p,dl.method>dd>p,dl.attribute>dd>p {
     color: #999;
 }
 
-dl.function>dd>p, dl.method>dd>p, dl.attribute>dd>p {
-    margin-left: 112px;
+dl.class>dt {
+    color: #82a3c7;
 }
 
-dl.function>dd>p:first-child, dl.method>dd>p:first-child, dl.attribute>dd>p:first-child {
-    text-indent: -112px;
+dl.class>dd>p {
+    color: #637b96;
+}
+
+dl.function>dt,dl.method>dt,dl.attribute>dt {
+    color: #fcb100;
+}
+
+dl.function>dd>p:first-child,dl.method>dd>p:first-child,dl.attribute>dd>p:first-child {
+    color: #cb8f00;
+}
+
+dl.function>dd>p, dl.method>dd>p, dl.attribute>dd>p {
+    margin: 0 0 3px 112px;
 }
 
 dl.function>dd>p:first-child:before, dl.method>dd>p:first-child:before, dl.attribute>dd>p:first-child:before {
     content:"Description:";
-    color:white;
+    color:#555;
     font-weight:bold;
-    width:112px;
+    font-style:normal;
+    width:95px;
     display:inline-block;
-    float:left;
+    margin-left:-112px;
+    text-align:right;
+    padding-right:17px;
 }
 
 dt:target, .highlight {
     color: #444;
+    background: #333;
 }
 
 tt {
@@ -468,7 +493,9 @@ col.field-name  {
 }
 
 table.field-list th {
-    color:white;
+    color:#555;
+    padding-right:5px;
+    text-align:right;
 }
 
 table.field-list td.field-body {
