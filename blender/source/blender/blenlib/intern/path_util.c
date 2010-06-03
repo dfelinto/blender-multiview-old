@@ -852,9 +852,6 @@ static int gethome_path_local(char *targetpath, char *folder_name)
 	if(test_data_path(targetpath, BLI_getwdN(cwd), "release", folder_name))
 		return 1;
 
-	if(test_data_path(targetpath, bprogdir, "release", folder_name))
-		return 1;
-
 	/* try ./.blender/folder_name */
 	if(test_data_path(targetpath, bprogdir, ".blender", folder_name))
 		return 1;
