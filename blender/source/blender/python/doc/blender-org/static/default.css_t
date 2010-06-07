@@ -402,6 +402,88 @@ p.admonition-title:after {
     content: ":";
 }
 
+dl div.admonition {
+    border:medium none;
+    margin:0;
+    padding:2px 5px 2px 0;
+}
+
+dl.class > dd > div.warning p.admonition-title,
+dl.class > dd > div.note p.admonition-title {
+    display:none;
+}
+
+dl.class > dd > div.admonition.warning p,
+dl.class > dd > div.admonition.note p {
+    margin:0;
+}
+
+dl.class > dd > div.admonition.warning,
+dl.class > dd > div.admonition.note {
+    margin-bottom:12px;
+}
+
+dl div.admonition.note p.admonition-title, dl div.admonition.warning p.admonition-title {
+    color:inherit;
+}
+
+dl div.admonition.warning p {
+    font-weight:bold;
+    line-height:150%;
+}
+
+dl div.admonition.warning p * {
+    font-weight:normal;
+}
+
+dl div.admonition p.admonition-title {
+    color:#555555;
+    display:block;
+    float:left;
+    margin:0;
+    padding-right:12px;
+    text-align:right;
+    width:90px;
+}
+
+dl div.admonition p.admonition-title+p, dl div.admonition p {
+    display:block;
+    margin:0 0 0 102px;
+}
+
+dl div.note {
+    background:none;
+    color:#E8E481;
+}
+
+dl div.warning {
+    background:none;
+    color:#FC3030;
+}
+
+dl div.seealso {
+    background:none;
+}
+
+dl div.admonition.seealso p+p {
+    color:#222;
+}
+
+dl div.seealso a {
+    margin-left:-1.3ex;
+}
+
+div.admonition.warning pre {
+    background: #0F0704;
+    color: #fc3030;
+}
+
+div.admonition pre {
+    margin: 6px 0;
+    overflow: visible;
+    white-space: pre-wrap;
+}
+
 pre {
     padding: 10px;
     background-color: #000;
@@ -424,7 +506,7 @@ dl.function>dd em, dl.method>dd em {
     font-weight:bold;
 }
 
-dl.function table.field-list td.field-body, dl.method table.field-list td.field-body {
+dl.function table.field-list tr:first-child td.field-body, dl.method table.field-list tr:first-child td.field-body {
     color: #728c96;
 }
 
@@ -433,7 +515,8 @@ dl.function>dt em:before, dl.method>dt em:before {
     display: block;
 }
 
-dl.function>dd>p,dl.method>dd>p,dl.attribute>dd>p {
+dl.function>dd>p,dl.method>dd>p,dl.attribute>dd>p,
+dl[class]>dd>ol,dl[class]>dd>ul {
     color: #999;
 }
 
@@ -449,7 +532,7 @@ dl.class>dt {
     color: #82a3c7;
 }
 
-dl.class>dd>p {
+dl.class>dd>p,dl.class>dd>ol,dl.class>dd>ul {
     color: #637b96;
 }
 
@@ -457,7 +540,9 @@ dl.function>dt,dl.method>dt,dl.attribute>dt {
     color: #fcb100;
 }
 
-dl.function>dd>p:first-child,dl.method>dd>p:first-child,dl.attribute>dd>p:first-child {
+dl.function>dd>p,dl.method>dd>p,dl.attribute>dd>p,
+dl.function>dd>p+ol,dl.method>dd>p+ol,dl.attribute>dd>p+ol,
+dl.function>dd>p+ul,dl.method>dd>p+ul,dl.attribute>dd>p+ul {
     color: #cb8f00;
 }
 
@@ -491,6 +576,10 @@ h1 .highlight {
     background:inherit;
 }
 
+dl {
+    margin-bottom: 25px;
+}
+
 dd {
     margin: 3px 0 10px 15px;
 }
@@ -513,12 +602,25 @@ tt {
     background: #444;
 }
 
+dl .warning tt {
+    background:#0F0704;
+    display:block;
+}
+
+dl .note tt {
+    background:#2C2A1B;
+}
+
 table.indextable tr.cap {
     background-color: transparent;
 }
 
 col.field-name  {
     width:90px;
+}
+
+dd table {
+    margin-bottom: 0;
 }
 
 table.field-list th {
@@ -535,5 +637,18 @@ table.field-list td.field-body {
 table.field-list td.field-body ul.first {
     padding-left:0;
     list-style:none;
+    margin-left:0;
 }
 
+dl.function>dd>ol, dl.method>dd>ol, dl.attribute>dd>ol,
+dl.function>dd>ul, dl.method>dd>ul, dl.attribute>dd>ul,
+dl.function>dd>div[class|="highlight"], dl.method>dd>div[class|="highlight"],
+dl.attribute>dd>div[class|="highlight"] {
+    margin-left:102px;
+}
+
+dl.function>dd>ol, dl.method>dd>ol, dl.attribute>dd>ol,
+dl.function>dd>ul, dl.method>dd>ul, dl.attribute>dd>ul,
+dl.class>dd>ol, dl.class>dd>ul {
+    padding-left:20px;
+}
