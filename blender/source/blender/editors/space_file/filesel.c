@@ -134,9 +134,15 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 				BLI_split_dirfile(name, sfile->params->dir, sfile->params->file);
 			}
 		}
+		else {
+			if (RNA_struct_find_property(op->ptr, "directory") && RNA_property_is_set(op->ptr, "directory")) {
+				RNA_string_get(op->ptr, "directory", params->dir);
+				sfile->params->file[0]= '\0';
+			}
 
-		if (RNA_struct_find_property(op->ptr, "directory") && RNA_property_is_set(op->ptr, "directory")) {
-			RNA_string_get(op->ptr, "directory", params->dir);
+			if (RNA_struct_find_property(op->ptr, "filename") && RNA_property_is_set(op->ptr, "filename")) {
+				RNA_string_get(op->ptr, "filename", params->file);
+			}
 		}
 
 		if(params->dir[0]) {
