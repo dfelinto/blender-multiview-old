@@ -55,39 +55,39 @@ const char* BLI_osx_getBasePath(basePathesTypes pathType)
 	pool = [[NSAutoreleasePool alloc] init];
 	
 	switch (pathType) {
-					/* Standard pathes */
-				case BasePath_Temporary:
-					strcpy(tempPath, [NSTemporaryDirectory() cStringUsingEncoding:NSASCIIStringEncoding]);
-					[pool drain];
-					return tempPath;
-					break;
-					
-					/* Blender specific pathes */
-				case BasePath_BlenderShared:
-					paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSLocalDomainMask, YES);
-					if ([paths count] > 0)
-							basePath = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"Blender"];
-					else { //Error
-							basePath = @"";
-						}
-					break;
-				case BasePath_BlenderUser:
-					paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
-					if ([paths count] > 0)
-							basePath = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"Blender"];
-					else { //Error
-							basePath = @"";
-						}
-					break;
-				case BasePath_ApplicationBundle:
-					basePath = [[NSBundle mainBundle] bundlePath];
-					break;
-		
-				default:
-					tempPath[0] = 0;
-					[pool drain];
-					return tempPath;
-		}
+			/* Standard pathes */
+		case BasePath_Temporary:
+			strcpy(tempPath, [NSTemporaryDirectory() cStringUsingEncoding:NSASCIIStringEncoding]);
+			[pool drain];
+			return tempPath;
+			break;
+			
+			/* Blender specific pathes */
+		case BasePath_BlenderShared:
+			paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSLocalDomainMask, YES);
+			if ([paths count] > 0)
+				basePath = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"Blender"];
+			else { //Error
+				basePath = @"";
+			}
+			break;
+		case BasePath_BlenderUser:
+			paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory, NSUserDomainMask, YES);
+			if ([paths count] > 0)
+				basePath = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"Blender"];
+			else { //Error
+				basePath = @"";
+			}
+			break;
+		case BasePath_ApplicationBundle:
+			basePath = [[NSBundle mainBundle] bundlePath];
+			break;
+
+		default:
+			tempPath[0] = 0;
+			[pool drain];
+			return tempPath;
+	}
 		
 	strcpy(tempPath, [basePath cStringUsingEncoding:NSASCIIStringEncoding]);
 	
