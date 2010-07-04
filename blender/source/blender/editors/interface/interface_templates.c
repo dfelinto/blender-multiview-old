@@ -1050,6 +1050,8 @@ static uiLayout *draw_constraint(uiLayout *layout, Object *ob, bConstraint *con,
 		show_upbut= ((prev_proxylock == 0) && (con->prev));
 		show_downbut= (con->next) ? 1 : 0;
 		
+		uiLayoutSetOperatorContext(subrow, WM_OP_INVOKE_DEFAULT);
+		
 		if (compact) {
 			/* Draw "Delete" Button in first row, before splitting */
 			uiBlockSetEmboss(block, UI_EMBOSSN);
@@ -1059,8 +1061,6 @@ static uiLayout *draw_constraint(uiLayout *layout, Object *ob, bConstraint *con,
 			subrow = uiLayoutRow(col2, 0);
 		}
 		
-		uiLayoutSetOperatorContext(subrow, WM_OP_INVOKE_DEFAULT);
-
 		if (show_upbut || show_downbut) {
 			uiBlockBeginAlign(block);
 				uiBlockSetEmboss(block, UI_EMBOSS);
