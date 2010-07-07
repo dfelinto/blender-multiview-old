@@ -85,7 +85,7 @@
 #define PLUGIN_TRACE 0
 
 #if PLUGIN_TRACE
-#define PLUGINDEBUGSTR(msg)		::DebugStr(msg)
+#define PLUGINDEBUGSTR(msg)		fprintf(stderr, msg)
 #else
 #define PLUGINDEBUGSTR
 #endif
@@ -293,7 +293,7 @@ NPError Private_Initialize(void)
 {
 	NPError err;
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pInitialize;g;");
+	PLUGINDEBUGSTR("Initialize;g;");
 	err = NPP_Initialize();
 	ExitCodeResource();
 	return err;
@@ -302,7 +302,7 @@ NPError Private_Initialize(void)
 void Private_Shutdown(void)
 {
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pShutdown;g;");
+	PLUGINDEBUGSTR("Shutdown;g;");
 	NPP_Shutdown();
 	ExitCodeResource();
 }
@@ -312,7 +312,7 @@ NPError	Private_New(NPMIMEType pluginType, NPP instance, uint16 mode, int16 argc
 {
 	EnterCodeResource();
 	NPError ret = NPP_New(pluginType, instance, mode, argc, argn, argv, saved);
-	PLUGINDEBUGSTR("\pNew;g;");
+	PLUGINDEBUGSTR("New;g;");
 	ExitCodeResource();
 	return ret;	
 }
@@ -321,7 +321,7 @@ NPError Private_Destroy(NPP instance, NPSavedData** save)
 {
 	NPError err;
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pDestroy;g;");
+	PLUGINDEBUGSTR("Destroy;g;");
 	err = NPP_Destroy(instance, save);
 	ExitCodeResource();
 	return err;
@@ -331,7 +331,7 @@ NPError Private_SetWindow(NPP instance, NPWindow* window)
 {
 	NPError err;
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pSetWindow;g;");
+	PLUGINDEBUGSTR("SetWindow;g;");
 	err = NPP_SetWindow(instance, window);
 	ExitCodeResource();
 	return err;
@@ -341,7 +341,7 @@ NPError Private_NewStream(NPP instance, NPMIMEType type, NPStream* stream, NPBoo
 {
 	NPError err;
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pNewStream;g;");
+	PLUGINDEBUGSTR("NewStream;g;");
 	err = NPP_NewStream(instance, type, stream, seekable, stype);
 	ExitCodeResource();
 	return err;
@@ -351,7 +351,7 @@ int32 Private_WriteReady(NPP instance, NPStream* stream)
 {
 	int32 result;
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pWriteReady;g;");
+	PLUGINDEBUGSTR("WriteReady;g;");
 	result = NPP_WriteReady(instance, stream);
 	ExitCodeResource();
 	return result;
@@ -361,7 +361,7 @@ int32 Private_Write(NPP instance, NPStream* stream, int32 offset, int32 len, voi
 {
 	int32 result;
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pWrite;g;");
+	PLUGINDEBUGSTR("Write;g;");
 	result = NPP_Write(instance, stream, offset, len, buffer);
 	ExitCodeResource();
 	return result;
@@ -370,7 +370,7 @@ int32 Private_Write(NPP instance, NPStream* stream, int32 offset, int32 len, voi
 void Private_StreamAsFile(NPP instance, NPStream* stream, const char* fname)
 {
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pStreamAsFile;g;");
+	PLUGINDEBUGSTR("StreamAsFile;g;");
 	NPP_StreamAsFile(instance, stream, fname);
 	ExitCodeResource();
 }
@@ -380,7 +380,7 @@ NPError Private_DestroyStream(NPP instance, NPStream* stream, NPError reason)
 {
 	NPError err;
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pDestroyStream;g;");
+	PLUGINDEBUGSTR("DestroyStream;g;");
 	err = NPP_DestroyStream(instance, stream, reason);
 	ExitCodeResource();
 	return err;
@@ -390,7 +390,7 @@ int16 Private_HandleEvent(NPP instance, void* event)
 {
 	int16 result;
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pHandleEvent;g;");
+	PLUGINDEBUGSTR("HandleEvent;g;");
 	result = NPP_HandleEvent(instance, event);
 	ExitCodeResource();
 	return result;
@@ -399,7 +399,7 @@ int16 Private_HandleEvent(NPP instance, void* event)
 void Private_Print(NPP instance, NPPrint* platformPrint)
 {
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pPrint;g;");
+	PLUGINDEBUGSTR("Print;g;");
 	NPP_Print(instance, platformPrint);
 	ExitCodeResource();
 }
@@ -407,7 +407,7 @@ void Private_Print(NPP instance, NPPrint* platformPrint)
 void Private_URLNotify(NPP instance, const char* url, NPReason reason, void* notifyData)
 {
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pURLNotify;g;");
+	PLUGINDEBUGSTR("URLNotify;g;");
 	NPP_URLNotify(instance, url, reason, notifyData);
 	ExitCodeResource();
 }
@@ -416,7 +416,7 @@ void Private_URLNotify(NPP instance, const char* url, NPReason reason, void* not
 jref Private_GetJavaClass(void)
 {
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pGetJavaClass;g;");
+	PLUGINDEBUGSTR("GetJavaClass;g;");
 
     jref clazz = NPP_GetJavaClass();
     ExitCodeResource();
@@ -469,7 +469,7 @@ void SetUpQD(void)
 		
 		result = GetProcessInformation(&PSN, &infoRec);
 		if (result != noErr)
-			PLUGINDEBUGSTR("\pFailed in GetProcessInformation");
+			PLUGINDEBUGSTR("Failed in GetProcessInformation");
 		}
 	else
 		//
@@ -500,7 +500,7 @@ void SetUpQD(void)
 		SymClass symClass;
 		result = FindSymbol(connID, "\pqd", (Ptr*)&gQDPtr, &symClass);
 		if (result != noErr)
-			PLUGINDEBUGSTR("\pFailed in FindSymbol qd");
+			PLUGINDEBUGSTR("Failed in FindSymbol qd");
 	}
 	else
 	{
@@ -525,7 +525,7 @@ RoutineDescriptor mainRD = BUILD_ROUTINE_DESCRIPTOR(uppNPP_MainEntryProcInfo, ma
 NPError main(NPNetscapeFuncs* nsTable, NPPluginFuncs* pluginFuncs, NPP_ShutdownUPP* unloadUpp)
 {
 	EnterCodeResource();
-	PLUGINDEBUGSTR("\pmain");
+	PLUGINDEBUGSTR("main");
 
 	NPError err = NPERR_NO_ERROR;
 	
