@@ -4062,6 +4062,7 @@ Sequence *alloc_sequence(ListBase *lb, int cfra, int machine)
 	seq->flag= SELECT;
 	seq->start= cfra;
 	seq->machine= machine;
+	seq->sat= 1.0;
 	seq->mul= 1.0;
 	seq->blend_opacity = 100.0;
 	seq->volume = 1.0f;
