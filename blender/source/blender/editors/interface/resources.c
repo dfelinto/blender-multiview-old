@@ -1533,5 +1533,5 @@ void init_userdef_do_versions(void)
 		U.sculpt_paint_unified_size = 35;
 
 	if (G.main->versionfile < 253 || (G.main->versionfile == 253 && G.main->subversionfile < 1))
-		U.sculpt_paint_settings = !SCULPT_PAINT_USE_UNIFIED_SIZE;
+		U.sculpt_paint_settings &= ~SCULPT_PAINT_USE_UNIFIED_SIZE;
 }
