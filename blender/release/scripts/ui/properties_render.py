@@ -19,6 +19,7 @@
 # <pep8 compliant>
 import bpy
 
+
 class RENDER_MT_presets(bpy.types.Menu):
     bl_label = "Render Presets"
     preset_subdir = "render"
@@ -547,49 +548,48 @@ class RENDER_PT_dimensions(RenderButtonsPanel, bpy.types.Panel):
         sub.prop(rd, "fps_base", text="/")
 
 
-import bpyml_ui
-from bpyml_ui.locals import *
-
-class RENDER_PT_stamp(RenderButtonsPanel, bpyml_ui.BPyML_BaseUI, bpy.types.Panel):
+class RENDER_PT_stamp(RenderButtonsPanel, bpy.types.Panel):
     bl_label = "Stamp"
     bl_default_closed = True
     COMPAT_ENGINES = {'BLENDER_RENDER'}
 
-    draw_header_data = \
-    ui() [
-        prop(data="context.scene.render", property="render_stamp", text="")
-    ]
+    def draw_header(self, context):
+        rd = context.scene.render
 
-    draw_data = \
-    ui() [
-        split() [
-            column() [
-                prop(data="context.scene.render", property="stamp_time", text="Time"),
-                prop(data="context.scene.render", property="stamp_date", text="Date"),
-                prop(data="context.scene.render", property="stamp_render_time", text="RenderTime"),
-                prop(data="context.scene.render", property="stamp_frame", text="Frame"),
-                prop(data="context.scene.render", property="stamp_scene", text="Scene"),
-                prop(data="context.scene.render", property="stamp_camera", text="Camera"),
-                prop(data="context.scene.render", property="stamp_filename", text="Filename"),
-                prop(data="context.scene.render", property="stamp_marker", text="Marker"),
-                prop(data="context.scene.render", property="stamp_sequencer_strip", text="Seq. Strip")
-            ],
-            column() [
-                active(expr="context.scene.render.render_stamp"),
-                prop(data="context.scene.render", property="stamp_foreground", slider=True),
-                prop(data="context.scene.render", property="stamp_background", slider=True),
-                separator(),
-                prop(data="context.scene.render", property="stamp_font_size", text="Font Size")
-            ]
-        ],
-        split(percentage="0.2") [
-            prop(data="context.scene.render", property="stamp_note", text="Note"),
-            row() [
-                active(expr="context.scene.render.stamp_note"),
-                prop(data="context.scene.render", property="stamp_note_text", text="")
-            ]
-        ]
-    ]
+        self.layout.prop(rd, "render_stamp", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        rd = context.scene.render
+
+        layout.active = rd.render_stamp
+
+        split = layout.split()
+
+        col = split.column()
+        col.prop(rd, "stamp_time", text="Time")
+        col.prop(rd, "stamp_date", text="Date")
+        col.prop(rd, "stamp_render_time", text="RenderTime")
+        col.prop(rd, "stamp_frame", text="Frame")
+        col.prop(rd, "stamp_scene", text="Scene")
+        col.prop(rd, "stamp_camera", text="Camera")
+        col.prop(rd, "stamp_filename", text="Filename")
+        col.prop(rd, "stamp_marker", text="Marker")
+        col.prop(rd, "stamp_sequencer_strip", text="Seq. Strip")
+
+        col = split.column()
+        col.active = rd.render_stamp
+        col.prop(rd, "stamp_foreground", slider=True)
+        col.prop(rd, "stamp_background", slider=True)
+        col.separator()
+        col.prop(rd, "stamp_font_size", text="Font Size")
+
+        row = layout.split(percentage=0.2)
+        row.prop(rd, "stamp_note", text="Note")
+        sub = row.row()
+        sub.active = rd.stamp_note
+        sub.prop(rd, "stamp_note_text", text="")
 
 
 class RENDER_PT_bake(RenderButtonsPanel, bpy.types.Panel):
