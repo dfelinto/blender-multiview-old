@@ -1101,22 +1101,25 @@ static void draw_cursor(SpaceText *st, ARegion *ar)
 		}
 	}
 
+	if(st->line_hlight) {
+		/* TODO, dont draw if hidden */
+		int x1= st->showlinenrs ? TXT_OFFSET + TEXTXLOC : TXT_OFFSET;
+		int x2= x1 + ar->winx;
+		y= ar->winy-2 - vsell*st->lheight;
+
+		glColor4ub(255, 255, 255, 32);
+		
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glEnable(GL_BLEND);
+		glRecti(x1, y, x2, y-st->lheight+1);
+		glDisable(GL_BLEND);
+	}
+	
 	if(!hidden) {
 		/* Draw the cursor itself (we draw the sel. cursor as this is the leading edge) */
 		x= st->showlinenrs ? TXT_OFFSET + TEXTXLOC : TXT_OFFSET;
 		x += vselc*st->cwidth;
 		y= ar->winy-2 - vsell*st->lheight;
-		
-		if(st->line_hlight) {
-			int x1= st->showlinenrs ? TXT_OFFSET + TEXTXLOC : TXT_OFFSET;
-			int x2= x1 + ar->winx;
-			glColor4ub(255, 255, 255, 32);
-			
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-			glEnable(GL_BLEND);
-			glRecti(x1, y, x2, y-st->lheight+1);
-			glDisable(GL_BLEND);
-		}
 		
 		if(st->overwrite) {
 			char ch= text->sell->line[text->selc];
