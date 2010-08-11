@@ -1107,6 +1107,17 @@ static void draw_cursor(SpaceText *st, ARegion *ar)
 		x += vselc*st->cwidth;
 		y= ar->winy-2 - vsell*st->lheight;
 		
+		if(st->line_hlight) {
+			int x1= st->showlinenrs ? TXT_OFFSET + TEXTXLOC : TXT_OFFSET;
+			int x2= x1 + ar->winx;
+			glColor4ub(255, 255, 255, 32);
+			
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_BLEND);
+			glRecti(x1, y, x2, y-st->lheight+1);
+			glDisable(GL_BLEND);
+		}
+		
 		if(st->overwrite) {
 			char ch= text->sell->line[text->selc];
 			if(!ch) ch= ' ';
@@ -1288,7 +1299,7 @@ void draw_text_main(SpaceText *st, ARegion *ar)
 	}
 	y= ar->winy-st->lheight;
 	winx= ar->winx - TXT_SCROLL_WIDTH;
-
+	
 	/* draw cursor */
 	draw_cursor(st, ar);
 
