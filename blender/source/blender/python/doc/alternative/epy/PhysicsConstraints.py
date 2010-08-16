@@ -1,4 +1,4 @@
-# $Id: PhysicsConstraints.py 28296 2010-04-20 08:23:22Z dfelinto $
+# $Id$
 """
 Documentation for the PhysicsConstraints module.
 """

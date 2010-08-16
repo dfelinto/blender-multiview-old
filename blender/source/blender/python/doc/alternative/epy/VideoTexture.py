@@ -1,4 +1,4 @@
-# $Id: VideoTexture.py 30566 2010-07-21 07:24:52Z nexyon $
+# $Id$
 """
 The VideoTexture module allows you to manipulate textures during the game.
 
