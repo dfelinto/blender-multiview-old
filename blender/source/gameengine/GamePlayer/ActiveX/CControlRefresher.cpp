@@ -69,7 +69,7 @@ void CControlRefresher::Stop(void)
 		// Let the thread know to nicely commit suicide.
 		m_ack = false;
 		m_exit = true;
-		// Boost the thread’s priority so it can finish whatever it has to do before it dies.
+		// Boost the thread's priority so it can finish whatever it has to do before it dies.
 		//::SetThreadPriority(m_hThread, THREAD_PRIORITY_TIME_CRITICAL);
 		// Wait until the thread has in fact died.
 		while (!m_ack) Sleep(10);
