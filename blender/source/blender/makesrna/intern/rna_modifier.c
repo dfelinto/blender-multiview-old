@@ -1426,7 +1426,7 @@ static void rna_def_modifier_smooth(BlenderRNA *brna)
 	prop= RNA_def_property(srna, "factor", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "fac");
 	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-	RNA_def_property_ui_range(prop, -10, 10, 0.5, 3);
+	RNA_def_property_ui_range(prop, -10, 10, 1, 3);
 	RNA_def_property_ui_text(prop, "Factor", "");
 	RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
@@ -2052,7 +2052,7 @@ static void rna_def_modifier_simpledeform(BlenderRNA *brna)
 
 	prop= RNA_def_property(srna, "factor", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-	RNA_def_property_ui_range(prop, -10, 10, 0.5, 2);
+	RNA_def_property_ui_range(prop, -10, 10, 1, 3);
 	RNA_def_property_ui_text(prop, "Factor", "");
 	RNA_def_property_update(prop, 0, "rna_Modifier_update");
 
