@@ -224,8 +224,8 @@ void RNA_api_macro(StructRNA *srna)
 
 void RNA_api_keyconfig(StructRNA *srna)
 {
-	FunctionRNA *func;
-	PropertyRNA *parm;
+	// FunctionRNA *func;
+	// PropertyRNA *parm;
 }
 
 void RNA_api_keymap(StructRNA *srna)
@@ -237,10 +237,6 @@ void RNA_api_keymap(StructRNA *srna)
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 	parm= RNA_def_pointer(func, "keymap", "KeyMap", "Key Map", "Active key map.");
 	RNA_def_function_return(func, parm);
-
-	func= RNA_def_function(srna, "remove_item", "WM_keymap_remove_item");
-	parm= RNA_def_pointer(func, "item", "KeyMapItem", "Item", "");
-	RNA_def_property_flag(parm, PROP_REQUIRED);
 
 	func= RNA_def_function(srna, "item_from_id", "WM_keymap_item_find_id");
 	parm= RNA_def_property(func, "id", PROP_INT, PROP_NONE);
