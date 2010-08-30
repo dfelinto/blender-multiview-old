@@ -995,9 +995,13 @@ class USERPREF_PT_addons(bpy.types.Panel):
                         split.label(text='Author:')
                         split.label(text=info["author"])
                     if info["version"]:
+                        if type(info["version"]) == tuple:
+                            version = '.'.join([str(x) for x in info["version"]])
+                        else:
+                            version = info["version"]
                         split = colsub.row().split(percentage=0.15)
                         split.label(text='Version:')
-                        split.label(text=info["version"])
+                        split.label(text=version)
                     if info["warning"]:
                         split = colsub.row().split(percentage=0.15)
                         split.label(text="Warning:")
