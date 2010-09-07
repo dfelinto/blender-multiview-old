@@ -45,6 +45,7 @@ Example:
 import ctypes
 import struct
 
+
 def _api():
 
     def is_ctypes_subclass(other, main_class):
@@ -54,7 +55,6 @@ def _api():
             other = getattr(other, "_type_", None)
         return False
 
-
     def is_ctypes_initialized(other):
         _other = other
         while other:
@@ -63,7 +63,6 @@ def _api():
             other = getattr(other, "_type_", None)
         print(_other, "NOT INIT")
         return False
-
 
     def is_ctypes_base(other):
         while type(getattr(other, "_type_", "")) != str:
@@ -85,7 +84,7 @@ def _api():
         sdna_len_pt = ctypes.c_void_p.from_address(ctypes.addressof(sdna_len_pt))
         sdna_len = ctypes.c_int.from_address(sdna_len_pt.value)
 
-        blend_sdna = ctypes.string_at(sdna_str_pt, sdna_len) # 58064
+        blend_sdna = ctypes.string_at(sdna_str_pt, sdna_len)
         
         ofs = 0
         assert(blend_sdna[ofs:ofs + 8] == b'SDNANAME')
@@ -95,7 +94,7 @@ def _api():
         ofs += 4
         
         blend_sdna_names = blend_sdna[ofs:].split(b'\0', sdna_names_len)
-        blend_sdna_remainder = blend_sdna_names.pop(-1) # last item is not a name.
+        blend_sdna_remainder = blend_sdna_names.pop(-1)  # last item is not a name.
         ofs = len(blend_sdna) - len(blend_sdna_remainder)
         ofs = (ofs + 3) & ~3
 
@@ -123,10 +122,9 @@ def _api():
         
         sdna_structs_len = struct.unpack("i", blend_sdna[ofs:ofs + 4])[0]
         ofs += 4
-        
-        
+
         blend_sdna_structs = []
-        
+
         for i in range(sdna_structs_len):
             struct_type, struct_tot = struct.unpack("hh", blend_sdna[ofs:ofs + 4])
             ofs += 4
@@ -167,7 +165,7 @@ def _api():
 
                 # * First parse the pointer *
                 pointer_count = 0
-                while name_string[0] == 42: # '*'
+                while name_string[0] == 42:  # '*'
                     pointer_count += 1
                     name_string = name_string[1:]
                 
@@ -232,8 +230,6 @@ def _api():
                 ret = type_cast_link.from_address(ctypes.addressof(self.first))
             except:
                 ret = type_cast_link.from_address(self.first)
-                
-                
 
             while ret is not None:
                 return_value = type_cast.from_address(ctypes.addressof(ret))
@@ -257,7 +253,6 @@ def _api():
         
         MixIn.CAST = CAST
 
-
     blend_sdna_names, blend_sdna_types, blend_sdna_typelens, blend_sdna_structs = blend_parse_dna()
     struct_dict = create_dna_structs(blend_sdna_names, blend_sdna_types, blend_sdna_typelens, blend_sdna_structs)
 
@@ -272,8 +267,7 @@ def _api():
         print("} %s;" % sruct_name)
     '''
     
-    decorate_api(struct_dict) # not essential but useful
-        
+    decorate_api(struct_dict)  # not essential but useful
     
     # manually wrap Main
     Main = type("Main", (ctypes.Structure, ), {})
