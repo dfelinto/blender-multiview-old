@@ -492,6 +492,8 @@ Mesh *get_mesh(Object *ob)
 void set_mesh(Object *ob, Mesh *me)
 {
 	Mesh *old=0;
+
+	multires_force_update(ob);
 	
 	if(ob==0) return;
 	
@@ -504,6 +506,8 @@ void set_mesh(Object *ob, Mesh *me)
 	}
 	
 	test_object_materials((ID *)me);
+
+	test_object_modifiers(ob, me);
 }
 
 /* ************** make edges in a Mesh, for outside of editmode */
