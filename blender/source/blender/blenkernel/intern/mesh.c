@@ -51,6 +51,8 @@
 #include "BKE_displist.h"
 #include "BKE_library.h"
 #include "BKE_material.h"
+#include "BKE_modifier.h"
+#include "BKE_multires.h"
 #include "BKE_key.h"
 /* these 2 are only used by conversion functions */
 #include "BKE_curve.h"
@@ -507,7 +509,7 @@ void set_mesh(Object *ob, Mesh *me)
 	
 	test_object_materials((ID *)me);
 
-	test_object_modifiers(ob, me);
+	test_object_modifiers(ob);
 }
 
 /* ************** make edges in a Mesh, for outside of editmode */
