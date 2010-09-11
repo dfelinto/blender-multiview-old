@@ -219,22 +219,17 @@ def write_png(fw, mesh_source, image_width, image_height, face_iter):
     animpath = scene.render.frame_path(1)
     os.rename(animpath, os.path.abspath(filepath))
     
-    return
-    
     # cleanup
     bpy.data.scenes.remove(scene)
     bpy.data.objects.remove(obj_cam)
     bpy.data.objects.remove(obj_solid)
     bpy.data.objects.remove(obj_wire)
 
-    cam.user_clear() # XXX, fixed in svn.
     bpy.data.cameras.remove(cam)
     bpy.data.meshes.remove(mesh)
     
-    material_wire.user_clear() # XXX, fixed in svn.
     bpy.data.materials.remove(material_wire)
     for mat_solid in material_solids:
-        mat_solid.user_clear() # XXX, fixed in svn.
         bpy.data.materials.remove(mat_solid)
 
 
