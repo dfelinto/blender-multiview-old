@@ -137,6 +137,12 @@ static void init_bake_internal(BakeRender *bkr, bContext *C)
 {
 	Scene *scene= CTX_data_scene(C);
 
+	/* flush multires changes (for sculpt) */
+	multires_force_render_update(CTX_data_active_object(C));
+
+	/* get editmode results */
+	ED_object_exit_editmode(C, 0);  /* 0 = does not exit editmode */
+
 	bkr->sa= biggest_image_area(CTX_wm_screen(C)); /* can be NULL */
 	bkr->main= CTX_data_main(C);
 	bkr->scene= scene;
