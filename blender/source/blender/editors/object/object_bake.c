@@ -48,6 +48,7 @@
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_main.h"
+#include "BKE_multires.h"
 #include "BKE_report.h"
 
 #include "RE_pipeline.h"
@@ -63,6 +64,7 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
+#include "ED_object.h"
 
 /* ****************** render BAKING ********************** */
 
