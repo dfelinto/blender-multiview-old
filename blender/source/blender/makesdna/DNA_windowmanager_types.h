@@ -83,6 +83,8 @@ enum ReportListFlags {
 	RPT_STORE = 2,
 	RPT_FREE = 4,
 };
+#
+#
 typedef struct Report {
 	struct Report *next, *prev;
 	short type; /* ReportType */
@@ -91,6 +93,8 @@ typedef struct Report {
 	char *typestr;
 	char *message;
 } Report;
+#
+#
 typedef struct ReportList {
 	ListBase list;
 	int printlevel; /* ReportType */
@@ -100,6 +104,8 @@ typedef struct ReportList {
 } ReportList;
 
 /* timer customdata to control reports display */
+#
+#
 typedef struct ReportTimerInfo {
 	float col[3];
 	float greyscale;
@@ -187,8 +193,6 @@ typedef struct wmWindow {
 /* should be somthing like DNA_EXCLUDE 
  * but the preprocessor first removes all comments, spaces etc */
 
-#
-#
 typedef struct wmOperatorTypeMacro {
 	struct wmOperatorTypeMacro *next, *prev;
 
