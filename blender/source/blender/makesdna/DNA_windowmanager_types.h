@@ -93,8 +93,8 @@ typedef struct Report {
 	char *typestr;
 	char *message;
 } Report;
-#
-#
+
+/* saved in the wm, dont remove */
 typedef struct ReportList {
 	ListBase list;
 	int printlevel; /* ReportType */
@@ -193,6 +193,8 @@ typedef struct wmWindow {
 /* should be somthing like DNA_EXCLUDE 
  * but the preprocessor first removes all comments, spaces etc */
 
+#
+#
 typedef struct wmOperatorTypeMacro {
 	struct wmOperatorTypeMacro *next, *prev;
 
