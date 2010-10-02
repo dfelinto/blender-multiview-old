@@ -141,8 +141,8 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 			rctf viewplane;
 			float clipsta, clipend;
 	
-			is_ortho= get_view3d_viewplane(v3d, rv3d, ar->winx, ar->winy, &viewplane, &clipsta, &clipend, NULL);
-			if(is_ortho) orthographic_m4(winmat, viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, clipsta, clipend);
+			is_ortho= get_view3d_viewplane(v3d, rv3d, sizex, sizey, &viewplane, &clipsta, &clipend, NULL);
+			if(is_ortho) orthographic_m4(winmat, viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, -clipend, clipend);
 			else  perspective_m4(winmat, viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, clipsta, clipend);
 		}
 
@@ -153,15 +153,18 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 		else {
 			/* simple accumulation, less hassle then FSAA FBO's */
 #			define SAMPLES 5 /* fixed, easy to have more but for now this is ok */
-
+			const float jit_ofs[SAMPLES][2] = {{0, 0}, {1,1}, {-1,-1}, {-1,1}, {1,-1}};
 			float winmat_jitter[4][4];
-			float *accum_buffer= MEM_callocN(sizex * sizey * sizeof(float) * 4, "accum1");
-			float *accum_tmp= MEM_callocN(sizex * sizey * sizeof(float) * 4, "accum2");
+			float *accum_buffer= MEM_mallocN(sizex * sizey * sizeof(float) * 4, "accum1");
+			float *accum_tmp= MEM_mallocN(sizex * sizey * sizeof(float) * 4, "accum2");
 			int j, i;
-			float jiy[SAMPLES][2] = {{1,1}, {-1,-1}, {-1,1}, {1,-1}, {0, 0}};
 			float *from, *to;
 			float pixelsize[2];
-			
+
+			/* first sample buffer, also initializes 'rv3d->persmat' */
+			ED_view3d_draw_offscreen(scene, v3d, ar, sizex, sizey, NULL, winmat);
+			glReadPixels(0, 0, sizex, sizey, GL_RGBA, GL_FLOAT, accum_buffer);
+
 			if(is_ortho) {
 				pixelsize[0]= 0.5f / sizex;
 				pixelsize[1]= 0.5f / sizey;
@@ -177,16 +180,17 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 				pixelsize[1]= 0.5 * len2 * winmat[1][1];
 			}
 
-			for(j=0; j < SAMPLES; j++) {
+			/* skip the first sample */
+			for(j=1; j < SAMPLES; j++) {
 				copy_m4_m4(winmat_jitter, winmat);
 
 				if(is_ortho) {
-					winmat_jitter[3][0] += jiy[j][0] * pixelsize[0];
-					winmat_jitter[3][1] += jiy[j][1] * pixelsize[1];
+					winmat_jitter[3][0] += jit_ofs[j][0] * pixelsize[0];
+					winmat_jitter[3][1] += jit_ofs[j][1] * pixelsize[1];
 				}
 				else {
-					winmat_jitter[2][0] += jiy[j][0] * pixelsize[0];
-					winmat_jitter[2][1] += jiy[j][1] * pixelsize[1];
+					winmat_jitter[2][0] += jit_ofs[j][0] * pixelsize[0];
+					winmat_jitter[2][1] += jit_ofs[j][1] * pixelsize[1];
 				}
 
 				ED_view3d_draw_offscreen(scene, v3d, ar, sizex, sizey, NULL, winmat_jitter);
