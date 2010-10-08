@@ -1539,7 +1539,7 @@ void quat_apply_track(float quat[4], short axis, short upflag)
 	                              {0.70710676908493, 0.0, 0.0, 0.70710676908493},  /* pos-z90 */ 
 	                              {0.70710676908493, 0.0, 0.70710676908493, 0.0}, /* neg-y90 */ 
 	                              {0.5, -0.5, -0.5, 0.5}, /* Quaternion((1,0,0), radians(-90)) * Quaternion((0,1,0), radians(-90)) */ 
-	                              {1.0, 0.0, 0.0, 0.0}}; /* no rotation */
+	                              {-3.0908619663705394e-08, 0.70710676908493, 0.70710676908493, 3.0908619663705394e-08}}; /* no rotation */
 
 	mul_qt_qtqt(quat, quat, quat_track[axis]);
 
@@ -1581,8 +1581,8 @@ void vec_apply_track(float vec[3], short axis)
 		break;
 	case 3: /* neg-x */
 		/* vec[0]=  0.0; */
-		vec[1]= -tvec[1];
-		vec[2]= -tvec[2];
+		vec[1]=  tvec[2];
+		vec[2]= -tvec[1];
 		break;
 	case 4: /* neg-y */
 		vec[0]= -tvec[2];
