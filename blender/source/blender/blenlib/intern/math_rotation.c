@@ -1575,8 +1575,8 @@ void vec_apply_track(float vec[3], short axis)
 		/* vec[2]= tvec[2]; */ 
 		break;
 	case 2: /* pos-z */
-		vec[0]=  tvec[1];
-		vec[1]= -tvec[0];
+		/* vec[0]= tvec[0]; */
+		/* vec[1]= tvec[1]; */
 		// vec[2]=  0.0; */
 		break;
 	case 3: /* neg-x */
