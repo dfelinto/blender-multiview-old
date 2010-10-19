@@ -594,7 +594,7 @@ static void draw_view_axis(RegionView3D *rv3d)
 	dy = vec[1] * k;
 
 	glColor3ub(220, 0, 0);
-	glBegin(GL_LINE);
+	glBegin(GL_LINES);
 	glVertex2f(start, start + ydisp);
 	glVertex2f(start + dx, start + dy + ydisp);
 	glEnd();
@@ -611,7 +611,7 @@ static void draw_view_axis(RegionView3D *rv3d)
 	dy = vec[1] * k;
 
 	glColor3ub(0, 220, 0);
-	glBegin(GL_LINE);
+	glBegin(GL_LINES);
 	glVertex2f(start, start + ydisp);
 	glVertex2f(start + dx, start + dy + ydisp);
 	glEnd();
@@ -628,7 +628,7 @@ static void draw_view_axis(RegionView3D *rv3d)
 	dy = vec[1] * k;
 
 	glColor3ub(30, 30, 220);
-	glBegin(GL_LINE);
+	glBegin(GL_LINES);
 	glVertex2f(start, start + ydisp);
 	glVertex2f(start + dx, start + dy + ydisp);
 	glEnd();
