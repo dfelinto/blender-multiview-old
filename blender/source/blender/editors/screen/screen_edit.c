@@ -1044,7 +1044,7 @@ void ED_screen_refresh(wmWindowManager *wm, wmWindow *win)
 		winrct.xmin= 0;
 		winrct.xmax= win->sizex-1;
 		winrct.ymin= 0;
-		winrct.ymin= win->sizey-1;
+		winrct.ymax= win->sizey-1;
 		
 		screen_test_scale(win->screen, win->sizex, win->sizey);
 		
