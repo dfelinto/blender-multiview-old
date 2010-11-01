@@ -197,7 +197,7 @@ GlyphBLF *blf_glyph_add(FontBLF *font, FT_UInt index, unsigned int c)
 	FT_BBox bbox;
 	unsigned int key;
 
-	sharp = 0; /* TODO make the value be configurable somehow */
+	sharp = 1; /* TODO make the value be configurable somehow */
 
 	g= blf_glyph_search(font->glyph_cache, c);
 	if (g)
@@ -218,10 +218,10 @@ GlyphBLF *blf_glyph_add(FontBLF *font, FT_UInt index, unsigned int c)
 
 		/* Convert result from 1 bit per pixel to 8 bit per pixel */
 		/* Accum errors for later, fine if not interested beyond "ok vs any error" */
-		err += FT_Bitmap_New(&tempbitmap);
+		FT_Bitmap_New(&tempbitmap);
 		err += FT_Bitmap_Convert(global_ft_lib, &slot->bitmap, &tempbitmap, 1); /* Does Blender use Pitch 1 always? It works so far */
 		err += FT_Bitmap_Copy(global_ft_lib, &tempbitmap, &slot->bitmap);
-		err += FT_Bitmap_Done(global_ft_lib, &tempbitmap);
+		FT_Bitmap_Done(global_ft_lib, &tempbitmap);
 	} else {
 		err = FT_Render_Glyph(slot, FT_RENDER_MODE_NORMAL);
 	}
