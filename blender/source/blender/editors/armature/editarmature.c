@@ -1359,7 +1359,7 @@ static EditBone *editbone_get_child(bArmature *arm, EditBone *pabone, short use_
 	for (curbone= arm->edbo->first; curbone; curbone= curbone->next) {
 		if (curbone->parent == pabone) {
 			if (use_visibility) {
-				if ((arm->layer & curbone->layer) && !(pabone->flag & BONE_HIDDEN_A))
+				if ((arm->layer & curbone->layer) && !(pabone->flag & BONE_HIDDEN_A)) {
 					chbone = curbone;
 				}
 			}
