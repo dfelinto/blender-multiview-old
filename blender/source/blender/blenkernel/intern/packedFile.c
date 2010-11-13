@@ -467,7 +467,7 @@ int unpackVFont(ReportList *reports, VFont *vfont, int how)
 	return (ret_value);
 }
 
-int unpackSound(ReportList *reports, bSound *sound, int how)
+int unpackSound(Main *bmain, ReportList *reports, bSound *sound, int how)
 {
 	char localname[FILE_MAXDIR + FILE_MAX], fi[FILE_MAX];
 	char *newname;
@@ -536,6 +536,6 @@ void unpackAll(Main *bmain, ReportList *reports, int how)
 
 	for(sound=bmain->sound.first; sound; sound=sound->id.next)
 		if(sound->packedfile)
-			unpackSound(reports, sound, how);
+			unpackSound(bmain, reports, sound, how);
 }
 
