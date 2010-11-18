@@ -2011,14 +2011,17 @@ static void list_item_row(bContext *C, uiLayout *layout, PointerRNA *ptr, Pointe
 		uiItemL(sub, name, icon);
 		
 		ma= give_current_material(ob, index+1);
-		manode= give_node_material(ma);
-		if(manode) {
-			char str[MAX_ID_NAME + 12];
-			sprintf(str, "Node %s", manode->id.name+2);
-			uiItemL(sub, str, ui_id_icon_get(C, &manode->id, 1));
+		if(ma) {
+			manode= give_node_material(ma);
+			if(manode) {
+				char str[MAX_ID_NAME + 12];
+				sprintf(str, "Node %s", manode->id.name+2);
+				uiItemL(sub, str, ui_id_icon_get(C, &manode->id, 1));
+			}
+			else if(ma->use_nodes) {
+				uiItemL(sub, "Node <none>", 0);
+			}
 		}
-		else if(ma->use_nodes)
-			uiItemL(sub, "Node <none>", 0);
 	}
 	else if(itemptr->type == &RNA_ShapeKey) {
 		ob= (Object*)activeptr->data;
