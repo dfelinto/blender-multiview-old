@@ -298,7 +298,7 @@ static void cache_voxeldata(struct Render *re, Tex *tex)
 			return;
 		case TEX_VD_BLENDERVOXEL:
 			BLI_path_abs(path, G.main->name);
-			if (!BLI_exists(path)) { printf("invalid voxel path %s \n", path); return; }
+			if (!BLI_exists(path)) return;
 			fp = fopen(path,"rb");
 			if (!fp) return;
 			
@@ -310,7 +310,7 @@ static void cache_voxeldata(struct Render *re, Tex *tex)
 			return;
 		case TEX_VD_RAW_8BIT:
 			BLI_path_abs(path, G.main->name);
-			if (!BLI_exists(path)) { printf("invalid voxel path %s \n", path); return; }
+			if (!BLI_exists(path)) return;
 			fp = fopen(path,"rb");
 			if (!fp) return;
 			
