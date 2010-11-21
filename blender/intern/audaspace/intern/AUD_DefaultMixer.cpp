@@ -24,7 +24,9 @@
  */
 
 #include "AUD_DefaultMixer.h"
+#ifdef WITH_SAMPLERATE
 #include "AUD_SRCResampleReader.h"
+#endif
 #include "AUD_ChannelMapperReader.h"
 #include "AUD_ChannelMapperFactory.h"
 
