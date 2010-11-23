@@ -279,6 +279,7 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc, floa
 }
 
 /* for object add primitive operators */
+/* do not call undo push in this function (users of this function have to) */
 Object *ED_object_add_type(bContext *C, int type, float *loc, float *rot, int enter_editmode, unsigned int layer)
 {
 	Main *bmain= CTX_data_main(C);
@@ -383,7 +384,7 @@ static Object *effector_add_type(bContext *C, wmOperator *op, int type)
 		((Curve*)ob->data)->flag |= CU_PATH|CU_3D;
 		ED_object_enter_editmode(C, 0);
 		ED_object_new_primitive_matrix(C, ob, loc, rot, mat);
-		BLI_addtail(curve_get_editcurve(ob), add_nurbs_primitive(C, mat, CU_NURBS|CU_PRIM_PATH, 1));
+		BLI_addtail(curve_get_editcurve(ob), add_nurbs_primitive(C, mat, CU_NURBS|CU_PRIM_PATH));
 
 		if(!enter_editmode)
 			ED_object_exit_editmode(C, EM_FREEDATA);
