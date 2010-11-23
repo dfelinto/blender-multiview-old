@@ -5727,7 +5727,7 @@ static char *get_surf_defname(int type)
 }
 
 
-Nurb *add_nurbs_primitive(bContext *C, float mat[4][4], int type)
+Nurb *add_nurbs_primitive(bContext *C, float mat[4][4], int type, int newob)
 {
 	static int xzproj= 0;	/* this function calls itself... */
 	Object *obedit= CTX_data_edit_object(C);
@@ -5970,14 +5970,14 @@ Nurb *add_nurbs_primitive(bContext *C, float mat[4][4], int type)
 		if( cutype==CU_NURBS ) {
 			Curve *cu= (Curve*)obedit->data;
 			
-			nu= add_nurbs_primitive(C, mat, CU_NURBS|CU_PRIM_CIRCLE);  /* circle */
+			nu= add_nurbs_primitive(C, mat, CU_NURBS|CU_PRIM_CIRCLE, 0);  /* circle */
 			nu->resolu= cu->resolu;
 			nu->flag= CU_SMOOTH;
 			BLI_addtail(editnurb, nu); /* temporal for extrude and translate */
 			vec[0]=vec[1]= 0.0;
 			vec[2]= -grid;
 			
-			if((U.flag & USER_ADD_VIEWALIGNED) == 0) {
+			if(newob && (U.flag & USER_ADD_VIEWALIGNED) == 0) {
 				/* pass */
 			}
 			else {
@@ -6030,7 +6030,7 @@ Nurb *add_nurbs_primitive(bContext *C, float mat[4][4], int type)
 
 			BLI_addtail(editnurb, nu); /* temporal for spin */
 
-			if((U.flag & USER_ADD_VIEWALIGNED) == 0)	spin_nurb(umat, obedit, tmp_vec, tmp_cent);
+			if(newob && (U.flag & USER_ADD_VIEWALIGNED) == 0)	spin_nurb(umat, obedit, tmp_vec, tmp_cent);
 			else if ((U.flag & USER_ADD_VIEWALIGNED))			spin_nurb(rv3d->viewmat, obedit, rv3d->viewinv[2], mat[3]);
 			else												spin_nurb(umat, obedit, tmp_vec, mat[3]);
 
@@ -6051,7 +6051,7 @@ Nurb *add_nurbs_primitive(bContext *C, float mat[4][4], int type)
 			float tmp_vec[3] = {0.f, 0.f, 1.f};
 			
 			xzproj= 1;
-			nu= add_nurbs_primitive(C, mat, CU_NURBS|CU_PRIM_CIRCLE);  /* circle */
+			nu= add_nurbs_primitive(C, mat, CU_NURBS|CU_PRIM_CIRCLE, 0);  /* circle */
 			xzproj= 0;
 			nu->resolu= cu->resolu;
 			nu->resolv= cu->resolv;
@@ -6059,7 +6059,7 @@ Nurb *add_nurbs_primitive(bContext *C, float mat[4][4], int type)
 			BLI_addtail(editnurb, nu); /* temporal for spin */
 
 			/* same as above */
-			if((U.flag & USER_ADD_VIEWALIGNED) == 0)	spin_nurb(umat, obedit, tmp_vec, tmp_cent);
+			if(newob && (U.flag & USER_ADD_VIEWALIGNED) == 0)	spin_nurb(umat, obedit, tmp_vec, tmp_cent);
 			else if ((U.flag & USER_ADD_VIEWALIGNED))			spin_nurb(rv3d->viewmat, obedit, rv3d->viewinv[2], mat[3]);
 			else												spin_nurb(umat, obedit, tmp_vec, mat[3]);
 
@@ -6141,7 +6141,7 @@ static int curvesurf_prim_add(bContext *C, wmOperator *op, int type, int isSurf)
 	
 	ED_object_new_primitive_matrix(C, obedit, loc, rot, mat);
 
-	nu= add_nurbs_primitive(C, mat, type);
+	nu= add_nurbs_primitive(C, mat, type, newob);
 	editnurb= curve_get_editcurve(obedit);
 	BLI_addtail(editnurb, nu);
 
