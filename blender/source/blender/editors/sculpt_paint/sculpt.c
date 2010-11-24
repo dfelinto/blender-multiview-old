@@ -517,8 +517,10 @@ float calc_overlap(StrokeCache *cache, const char symm, const char axis, const f
 	flip_coord(mirror, cache->true_location, symm);
 
 	unit_m4(mat);
-	rotate_m4(mat, axis, angle);
 
+	if(axis != 0) {
+		rotate_m4(mat, axis, angle);
+	}
 	mul_m4_v3(mat, mirror);
 
 	//distsq = len_squared_v3v3(mirror, cache->traced_location);
