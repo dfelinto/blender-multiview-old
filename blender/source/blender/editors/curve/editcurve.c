@@ -534,18 +534,12 @@ static void keyIndex_switchDirection(EditNurb *editnurb, Nurb *nu)
 			index1= getCVKeyIndex(editnurb, bezt1);
 			index2= getCVKeyIndex(editnurb, bezt2);
 
-			if(index1) {
-				index1->switched= !index1->switched;
-				//index1->pt_index= index1->orig_nu->pntsu - (index1->pt_index + 1);
-			}
+			if(index1) index1->switched= !index1->switched;
 
 			if (bezt1 != bezt2) {
 				keyIndex_swap(editnurb, bezt1, bezt2);
 
-				if(index2) {
-					index2->switched= !index2->switched;
-					//index2->pt_index= index2->orig_nu->pntsu - (index2->pt_index + 1);
-				}
+				if(index2) index2->switched= !index2->switched;
 			}
 
 			bezt1++;
@@ -563,16 +557,10 @@ static void keyIndex_switchDirection(EditNurb *editnurb, Nurb *nu)
 				index1= getCVKeyIndex(editnurb, bp1);
 				index2= getCVKeyIndex(editnurb, bp2);
 
-				if(index1) {
-					index1->switched= !index1->switched;
-					index1->pt_index= index1->orig_nu->pntsu - (index1->pt_index + 1);
-				}
+				if(index1) index1->switched= !index1->switched;
 
 				if (bp1 != bp2) {
-					if(index2) {
-						index2->switched= !index2->switched;
-						index2->pt_index= index2->orig_nu->pntsu - (index2->pt_index + 1);
-					}
+					if(index2) index2->switched= !index2->switched;
 
 					keyIndex_swap(editnurb, bp1, bp2);
 				}
@@ -595,16 +583,10 @@ static void keyIndex_switchDirection(EditNurb *editnurb, Nurb *nu)
 					index1= getCVKeyIndex(editnurb, bp1);
 					index2= getCVKeyIndex(editnurb, bp2);
 
-					if(index1) {
-						index1->switched= !index1->switched;
-						index1->pt_index= index1->orig_nu->pntsu*index1->orig_nu->pntsv - (index1->pt_index + 1);
-					}
+					if(index1) index1->switched= !index1->switched;
 
 					if (bp1 != bp2) {
-						if(index2) {
-							index2->switched= !index2->switched;
-							index2->pt_index= index2->orig_nu->pntsu*index2->orig_nu->pntsv - (index2->pt_index + 1);
-						}
+						if(index2) index2->switched= !index2->switched;
 
 						keyIndex_swap(editnurb, bp1, bp2);
 					}
