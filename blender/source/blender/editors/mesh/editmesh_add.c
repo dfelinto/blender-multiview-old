@@ -237,7 +237,7 @@ static int dupli_extrude_cursor(bContext *C, wmOperator *op, wmEvent *event)
 		
 		recalc_editnormals(vc.em);
 	}
-	else if(em->selectmode & SCE_SELECT_VERTEX) {
+	else if(vc.em->selectmode & SCE_SELECT_VERTEX) {
 
 		float mat[3][3],imat[3][3];
 		float *curs= give_cursor(vc.scene, vc.v3d);
