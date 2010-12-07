@@ -821,7 +821,7 @@ void macro_wrapper(wmOperatorType *ot, void *userdata);
 static char _operator_idname[OP_MAX_TYPENAME];
 static char _operator_name[OP_MAX_TYPENAME];
 static char _operator_descr[1024];
-static StructRNA *rna_Operator_register(const bContext *C, ReportList *reports, void *data, const char *identifier, StructValidateFunc validate, StructCallbackFunc call, StructFreeFunc free)
+static StructRNA *rna_Operator_register(bContext *C, ReportList *reports, void *data, const char *identifier, StructValidateFunc validate, StructCallbackFunc call, StructFreeFunc free)
 {
 	wmOperatorType dummyot = {0};
 	wmOperator dummyop= {0};
