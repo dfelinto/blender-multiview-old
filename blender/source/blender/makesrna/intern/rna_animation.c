@@ -80,7 +80,7 @@ static int RKS_POLL_rna_internal(KeyingSetInfo *ksi, bContext *C)
 		RNA_parameter_set_lookup(&list, "context", &C);
 		
 		/* execute the function */
-		ksi->ext.call(&ptr, func, &list);
+		ksi->ext.call(C, &ptr, func, &list);
 		
 		/* read the result */
 		RNA_parameter_get_lookup(&list, "ok", &ret);
@@ -107,7 +107,7 @@ static void RKS_ITER_rna_internal(KeyingSetInfo *ksi, bContext *C, KeyingSet *ks
 		RNA_parameter_set_lookup(&list, "ks", &ks);
 		
 		/* execute the function */
-		ksi->ext.call(&ptr, func, &list);
+		ksi->ext.call(C, &ptr, func, &list);
 	RNA_parameter_list_free(&list);
 }
 
@@ -129,7 +129,7 @@ static void RKS_GEN_rna_internal(KeyingSetInfo *ksi, bContext *C, KeyingSet *ks,
 		RNA_parameter_set_lookup(&list, "data", data);
 		
 		/* execute the function */
-		ksi->ext.call(&ptr, func, &list);
+		ksi->ext.call(C, &ptr, func, &list);
 	RNA_parameter_list_free(&list);
 }
 

@@ -91,7 +91,7 @@ static void engine_render(RenderEngine *engine, struct Scene *scene)
 
 	RNA_parameter_list_create(&list, &ptr, func);
 	RNA_parameter_set_lookup(&list, "scene", &scene);
-	engine->type->ext.call(&ptr, func, &list);
+	engine->type->ext.call(NULL, &ptr, func, &list);
 
 	RNA_parameter_list_free(&list);
 }
