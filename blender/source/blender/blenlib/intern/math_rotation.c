@@ -183,11 +183,12 @@ static void quat_to_mat3_no_error(float m[][3], const float q[4])
 
 void quat_to_mat3(float m[][3], const float q[4])
 {
-	/* throw an error if the quat isn't normalized */
+#ifdef DEBUG
 	float f;
 	if(!((f=dot_qtqt(q, q))==0.0 || (fabs(f-1.0) < QUAT_EPSILON))) {
-		fprintf(stderr, "Warning! quat_to_mat3() called with non-normalized quat *** report a bug ***\n");
+		fprintf(stderr, "Warning! quat_to_mat3() called with non-normalized: size %.8f *** report a bug ***\n", f);
 	}
+#endif
 
 	quat_to_mat3_no_error(m, q);
 }
@@ -196,10 +197,11 @@ void quat_to_mat4(float m[][4], const float q[4])
 {
 	double q0, q1, q2, q3, qda,qdb,qdc,qaa,qab,qac,qbb,qbc,qcc;
 
-	/* throw an error if the quat isn't normalized */
+#ifdef DEBUG
 	if(!((q0=dot_qtqt(q, q))==0.0 || (fabs(q0-1.0) < QUAT_EPSILON))) {
-		fprintf(stderr, "Warning! quat_to_mat4() called with non-normalized quat *** report a bug ***\n");
+		fprintf(stderr, "Warning! quat_to_mat4() called with non-normalized: size %.8f *** report a bug ***\n", (float)q0);
 	}
+#endif
 
 	q0= M_SQRT2 * q[0];
 	q1= M_SQRT2 * q[1];
@@ -649,9 +651,11 @@ void quat_to_axis_angle(float axis[3], float *angle, const float q[4])
 {
 	float ha, si;
 
+#ifdef DEBUG
 	if(!((ha=dot_qtqt(q, q))==0.0 || (fabs(ha-1.0) < QUAT_EPSILON))) {
-		fprintf(stderr, "Warning! quat_to_mat3() called with non-normalized quat *** report a bug ***\n");
+		fprintf(stderr, "Warning! quat_to_axis_angle() called with non-normalized: size %.8f *** report a bug ***\n", ha);
 	}
+#endif
 
 	/* calculate angle/2, and sin(angle/2) */
 	ha= (float)acos(q[0]);
