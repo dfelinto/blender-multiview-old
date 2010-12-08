@@ -32,7 +32,7 @@
 /******************************** Quaternions ********************************/
 
 /* used to test is a quat is not normalized */
-#define QUAT_EPSILON 0.00001
+#define QUAT_EPSILON 0.0001
 
 void unit_qt(float *q)
 {
@@ -148,7 +148,7 @@ void mul_fac_qt_fl(float *q, const float fac)
 }
 
 /* skip error check, currently only needed by mat3_to_quat_is_ok */
-static void quat_to_mat3_no_assert(float m[][3], const float q[4])
+static void quat_to_mat3_no_error(float m[][3], const float q[4])
 {
 	double q0, q1, q2, q3, qda,qdb,qdc,qaa,qab,qac,qbb,qbc,qcc;
 
@@ -185,9 +185,11 @@ void quat_to_mat3(float m[][3], const float q[4])
 {
 	/* throw an error if the quat isn't normalized */
 	float f;
-	assert((f=dot_qtqt(q, q))==0.0 || (fabs(f-1.0) < QUAT_EPSILON));
+	if(!((f=dot_qtqt(q, q))==0.0 || (fabs(f-1.0) < QUAT_EPSILON))) {
+		fprintf(stderr, "Warning! quat_to_mat3() called with non-normalized quat *** report a bug ***\n");
+	}
 
-	quat_to_mat3_no_assert(m, q);
+	quat_to_mat3_no_error(m, q);
 }
 
 void quat_to_mat4(float m[][4], const float q[4])
@@ -195,7 +197,9 @@ void quat_to_mat4(float m[][4], const float q[4])
 	double q0, q1, q2, q3, qda,qdb,qdc,qaa,qab,qac,qbb,qbc,qcc;
 
 	/* throw an error if the quat isn't normalized */
-	assert((q0=dot_qtqt(q, q))==0.0 || (fabs(q0-1.0) < QUAT_EPSILON));
+	if(!((q0=dot_qtqt(q, q))==0.0 || (fabs(q0-1.0) < QUAT_EPSILON))) {
+		fprintf(stderr, "Warning! quat_to_mat4() called with non-normalized quat *** report a bug ***\n");
+	}
 
 	q0= M_SQRT2 * q[0];
 	q1= M_SQRT2 * q[1];
@@ -317,7 +321,7 @@ void mat3_to_quat_is_ok(float q[4], float wmat[3][3])
 	q1[3]= -nor[2]*si;
 
 	/* rotate back x-axis from mat, using inverse q1 */
-	quat_to_mat3_no_assert( matr,q1);
+	quat_to_mat3_no_error( matr,q1);
 	invert_m3_m3(matn, matr);
 	mul_m3_v3(matn, mat[0]);
 	
@@ -645,8 +649,9 @@ void quat_to_axis_angle(float axis[3], float *angle, const float q[4])
 {
 	float ha, si;
 
-	/* throw an error if the quat isn't normalized */
-	assert((ha=dot_qtqt(q, q))==0.0 || (fabs(ha-1.0) < QUAT_EPSILON));
+	if(!((ha=dot_qtqt(q, q))==0.0 || (fabs(ha-1.0) < QUAT_EPSILON))) {
+		fprintf(stderr, "Warning! quat_to_mat3() called with non-normalized quat *** report a bug ***\n");
+	}
 
 	/* calculate angle/2, and sin(angle/2) */
 	ha= (float)acos(q[0]);
