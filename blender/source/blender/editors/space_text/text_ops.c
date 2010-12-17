@@ -1589,11 +1589,10 @@ static void wrap_move_eol(SpaceText *st, ARegion *ar, short sel)
 
 	max= wrap_width(st, ar);
 
-	start= chars= 0;
+	start= chars= endj= 0;
 	end= max;
 	chop= loop= 1;
 	*charp= 0;
-	endj= max-1;
 
 	for(i=0, j=0; loop; j++) {
 		/* Mimic replacement of tabs */
@@ -1606,14 +1605,14 @@ static void wrap_move_eol(SpaceText *st, ARegion *ar, short sel)
 
 		while(chars--) {
 			if(i-start>=max) {
+				if(chop) endj= j-1;
+
 				if(endj>=oldc) {
 					if(ch=='\0') *charp= (*linep)->len;
 					else *charp= endj;
 					loop= 0;
 					break;
 				}
-
-				if(chop) endj= j-1;
 
 				start= end;
 				end += max;
