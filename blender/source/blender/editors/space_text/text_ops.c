@@ -1541,6 +1541,7 @@ static void wrap_move_bol(SpaceText *st, ARegion *ar, short sel)
 				*charp= endj;
 
 				if(j>=oldc) {
+					if(ch=='\0') *charp= start;
 					loop= 0;
 					break;
 				}
@@ -1549,10 +1550,11 @@ static void wrap_move_bol(SpaceText *st, ARegion *ar, short sel)
 
 				start= end;
 				end += max;
-				chop= 0;
+				chop= 1;
 			}
 			else if(ch==' ' || ch=='-' || ch=='\0') {
 				if(j>=oldc) {
+					*charp= start;
 					loop= 0;
 					break;
 				}
@@ -1587,10 +1589,11 @@ static void wrap_move_eol(SpaceText *st, ARegion *ar, short sel)
 
 	max= wrap_width(st, ar);
 
-	start= chars= endj= 0;
+	start= chars= 0;
 	end= max;
 	chop= loop= 1;
 	*charp= 0;
+	endj= max-1;
 
 	for(i=0, j=0; loop; j++) {
 		/* Mimic replacement of tabs */
@@ -1604,16 +1607,17 @@ static void wrap_move_eol(SpaceText *st, ARegion *ar, short sel)
 		while(chars--) {
 			if(i-start>=max) {
 				if(endj>=oldc) {
-					*charp= endj;
+					if(ch=='\0') *charp= (*linep)->len;
+					else *charp= endj;
 					loop= 0;
 					break;
 				}
 
-				if(chop) endj= j;
+				if(chop) endj= j-1;
 
 				start= end;
 				end += max;
-				chop= 0;
+				chop= 1;
 			} else if(ch=='\0') {
 				*charp= (*linep)->len;
 				loop= 0;
