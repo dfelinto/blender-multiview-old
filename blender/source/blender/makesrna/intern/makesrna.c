@@ -53,7 +53,7 @@
 static int file_older(const char *file1, const char *file2)
 {
 	struct stat st1, st2;
-	printf("comparing '%s' - '%s'\n", file1, file2);
+
 	if(stat(file1, &st1)) return 0;
 	if(stat(file2, &st2)) return 0;
 
