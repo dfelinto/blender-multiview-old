@@ -924,7 +924,7 @@ class x3d_class:
         return s
 
     def computeDirection(self, mtx):
-        return (mathutils.Vector((0, -1, 0)) * (MATWORLD * mtx).rotation_part())[:]
+        return (mathutils.Vector((0.0, 0.0, -1.0)) * (MATWORLD * mtx).rotation_part())[:]
 
     # swap Y and Z to handle axis difference between Blender and VRML
     #------------------------------------------------------------------------
