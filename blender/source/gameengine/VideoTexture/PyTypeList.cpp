@@ -28,6 +28,12 @@ http://www.gnu.org/copyleft/lesser.txt.
 
 #include <PyObjectPlus.h>
 
+/// destructor
+PyTypeList::~PyTypeList()
+{
+	for (PyTypeListType::iterator it = m_list->begin(); it != m_list->end(); ++it)
+		delete *it;
+}
 
 /// check, if type is in list
 bool PyTypeList::in (PyTypeObject * type)
