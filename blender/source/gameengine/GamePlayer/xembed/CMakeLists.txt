@@ -1,3 +1,4 @@
+# -*- mode: cmake; indent-tabs-mode: t; -*-
 # $Id$
 # ***** BEGIN GPL/BL DUAL LICENSE BLOCK *****
 #
@@ -53,7 +54,7 @@ set(SRC
 	UnixShell.c 
 )
 
-include_directories(${INC})
+blender_include_dirs(${INC})
 add_library(blender_plugin SHARED ${SRC} )
 
 
