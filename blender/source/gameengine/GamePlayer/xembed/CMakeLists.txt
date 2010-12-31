@@ -54,7 +54,7 @@ set(SRC
 	UnixShell.c 
 )
 
-blender_include_dirs(${INC})
+blender_include_dirs("${INC}")
 add_library(blender_plugin SHARED ${SRC} )
 
 
