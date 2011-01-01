@@ -68,13 +68,13 @@ def _api():
         while type(getattr(other, "_type_", "")) != str:
             other = other._type_
         return other
-    
+
     class MixIn:
         pass
-    
+
     blend_cdll = ctypes.CDLL("")
     blend_lib = ctypes.LibraryLoader("")
-    
+
     def blend_parse_dna():
         # from dna.c
         sdna_str_pt = blend_cdll.DNAstr
@@ -85,14 +85,14 @@ def _api():
         sdna_len = ctypes.c_int.from_address(sdna_len_pt.value)
 
         blend_sdna = ctypes.string_at(sdna_str_pt, sdna_len)
-        
+
         ofs = 0
         assert(blend_sdna[ofs:ofs + 8] == b'SDNANAME')
         ofs += 8
 
         sdna_names_len = struct.unpack("i", blend_sdna[ofs:ofs + 4])[0]
         ofs += 4
-        
+
         blend_sdna_names = blend_sdna[ofs:].split(b'\0', sdna_names_len)
         blend_sdna_remainder = blend_sdna_names.pop(-1)  # last item is not a name.
         ofs = len(blend_sdna) - len(blend_sdna_remainder)
@@ -103,7 +103,7 @@ def _api():
 
         sdna_types_len = struct.unpack("i", blend_sdna[ofs:ofs + 4])[0]
         ofs += 4
-        
+
         blend_sdna_types = blend_sdna[ofs:].split(b'\0', sdna_types_len)
         blend_sdna_remainder = blend_sdna_types.pop(-1)
         ofs = len(blend_sdna) - len(blend_sdna_remainder)
@@ -119,7 +119,7 @@ def _api():
         # array of pointers to short arrays
         assert(blend_sdna[ofs:ofs + 4] == b'STRC')
         ofs += 4
-        
+
         sdna_structs_len = struct.unpack("i", blend_sdna[ofs:ofs + 4])[0]
         ofs += 4
 
@@ -129,29 +129,29 @@ def _api():
             struct_type, struct_tot = struct.unpack("hh", blend_sdna[ofs:ofs + 4])
             ofs += 4
             struct_type_name_pairs = struct.unpack("%dh" % struct_tot * 2, blend_sdna[ofs:ofs + (struct_tot * 4)])
-        
+
             # convert into pairs, easier to understand (type, name)
             struct_type_name_pairs = [(struct_type_name_pairs[j], struct_type_name_pairs[j + 1]) for j in range(0, struct_tot * 2, 2)]
 
             blend_sdna_structs.append((struct_type, struct_type_name_pairs))
             ofs += struct_tot * 4
             # ofs = (ofs + 1) & ~1
-        
+
         return blend_sdna_names, blend_sdna_types, blend_sdna_typelens, blend_sdna_structs
 
     def create_dna_structs(blend_sdna_names, blend_sdna_types, blend_sdna_typelens, blend_sdna_structs):
-        
+
         # create all subclasses of ctypes.Structure
         ctypes_structs = {name: type(name.decode(), (ctypes.Structure, MixIn), {}) for name in blend_sdna_types}
         ctypes_basic = {b"float": ctypes.c_float, b"double": ctypes.c_double, b"int": ctypes.c_int, b"short": ctypes.c_short, b"char": ctypes.c_char, b"void": ctypes.c_void_p}
         ctypes_fields = {}
-        
+
         # collect fields
         for struct_id, struct_type_name_pairs in blend_sdna_structs:
             struct_name = blend_sdna_types[struct_id]
             ctype_struct = ctypes_structs[struct_name]
             fields = []
-            
+
             for stype, sname in struct_type_name_pairs:
                 name_string = blend_sdna_names[sname]
                 type_string = blend_sdna_types[stype]
@@ -168,20 +168,20 @@ def _api():
                 while name_string[0] == 42:  # '*'
                     pointer_count += 1
                     name_string = name_string[1:]
-                
+
                 # alredy a pointer
                 if type_py is ctypes.c_void_p:
                     pointer_count -= 1
                 elif type_py is ctypes.c_char and pointer_count == 1:
                     type_py = ctypes.c_char_p
                     pointer_count = 0
-                
+
                 if pointer_count < 0:
                     Exception("error parsing pointer")
 
                 for i in range(pointer_count):
                     type_py = ctypes.POINTER(type_py)
-                
+
                 # * Now parse the array [] *
                 if b'[' in name_string:
                     name_string = name_string.replace(b'[', b' ')
@@ -194,7 +194,7 @@ def _api():
                 fields.append((name_string.decode(), type_py))
 
             ctypes_fields[struct_name] = fields
-        
+
         # apply fields all in one go!
         for struct_id, struct_type_name_pairs in blend_sdna_structs:
             struct_name = blend_sdna_types[struct_id]
@@ -216,11 +216,11 @@ def _api():
         return ctypes_structs
 
     def decorate_api(struct_dict):
-        
+
         # * Decotate the api *
-        
+
         # listbase iter
-        
+
         type_cast_lb = struct_dict[b'ListBase']
         type_cast_link = struct_dict[b'Link']
 
@@ -246,11 +246,11 @@ def _api():
                 yield return_value
 
         struct_dict[b'ListBase'].ITER = list_base_iter
-        
+
         def CAST(self, to):
             type_cast = struct_dict[to.encode('ASCII')]
             return type_cast.from_address(ctypes.addressof(self))
-        
+
         MixIn.CAST = CAST
 
     blend_sdna_names, blend_sdna_types, blend_sdna_typelens, blend_sdna_structs = blend_parse_dna()
@@ -266,9 +266,9 @@ def _api():
             print("    %s %s;" % (blend_sdna_types[stype].decode(), blend_sdna_names[sname].decode()))
         print("} %s;" % sruct_name)
     '''
-    
+
     decorate_api(struct_dict)  # not essential but useful
-    
+
     # manually wrap Main
     Main = type("Main", (ctypes.Structure, ), {})
     _lb = struct_dict[b"ListBase"]
@@ -316,7 +316,7 @@ def _api():
     # main is the first pointer in Global.
     main_address = ctypes.POINTER(ctypes.c_void_p).from_address(ctypes.addressof(blend_cdll.G)).contents.value
     main = Main.from_address(main_address)
-    
+
     return main, struct_dict
 
 main, _struct_dict = _api()
