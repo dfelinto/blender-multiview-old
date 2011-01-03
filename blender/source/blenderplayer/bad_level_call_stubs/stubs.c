@@ -247,6 +247,8 @@ void uiLayoutSetEnabled(struct uiLayout *layout, int enabled){}
 void uiLayoutSetAlignment(struct uiLayout *layout, int alignment){}
 void uiLayoutSetScaleX(struct uiLayout *layout, float scale){}
 void uiLayoutSetScaleY(struct uiLayout *layout, float scale){}
+void uiLayoutSetRedAlert(struct uiLayout *layout, int redalert){}
+int uiLayoutGetRedAlert(struct uiLayout *layout) {return 0;}
 void ED_base_object_free_and_unlink(struct Scene *scene, struct Base *base){}
 void ED_mesh_calc_normals(struct Mesh *me){}
 void ED_mesh_geometry_add(struct Mesh *mesh, struct ReportList *reports, int verts, int edges, int faces){}
@@ -377,10 +379,6 @@ short delete_keyframe(struct ID *id, struct bAction *act, const char group[], co
 char *WM_operator_pystring(struct bContext *C, struct wmOperatorType *ot, struct PointerRNA *opptr, int all_args){return (char *)NULL;}
 struct wmKeyMapItem *WM_modalkeymap_add_item(struct wmKeyMap *km, int type, int val, int modifier, int keymodifier, int value){return (struct wmKeyMapItem *)NULL;}
 struct wmKeyMap *WM_modalkeymap_add(struct wmKeyConfig *keyconf, char *idname, EnumPropertyItem *items){return (struct wmKeyMap *) NULL;}
-
-/* RNA Collada dependency */
-int collada_export(struct Scene *sce, const char *filepath){return 0;}
-
 
 /* intern/decimation */
 int LOD_FreeDecimationData(struct LOD_Decimation_Info *info){return 0;}
