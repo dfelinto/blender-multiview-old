@@ -211,6 +211,8 @@ bNode *editnode_get_active(bNodeTree *ntree)
 
 void snode_notify(bContext *C, SpaceNode *snode)
 {
+	WM_event_add_notifier(C, NC_NODE|NA_EDITED, NULL);
+
 	if(snode->treetype==NTREE_SHADER)
 		WM_event_add_notifier(C, NC_MATERIAL|ND_NODES, snode->id);
 	else if(snode->treetype==NTREE_COMPOSIT)
