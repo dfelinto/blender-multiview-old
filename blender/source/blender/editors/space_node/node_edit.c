@@ -1464,7 +1464,7 @@ bNode *node_add_node(SpaceNode *snode, Scene *scene, int type, float locx, float
 	/* generics */
 	if(node) {
 		node->locx= locx;
-		node->locy= locy + 60.0f;		// arbitrary.. so its visible
+		node->locy= locy + 60.0f;		// arbitrary.. so its visible, (0,0) is top of node
 		node->flag |= SELECT;
 		
 		gnode= node_tree_get_editgroup(snode->nodetree);
@@ -1514,6 +1514,12 @@ static int node_duplicate_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 
 	ntreeCopyTree(snode->edittree, 1);	/* 1 == internally selected nodes */
+	
+	/* to ensure redraws or rerenders happen */
+	for(node= snode->edittree->nodes.first; node; node= node->next)
+		if(node->flag & SELECT)
+			if(node->id)
+				ED_node_changed_update(node->id, node);
 	
 	ntreeSolveOrder(snode->edittree);
 	node_tree_verify_groups(snode->nodetree);
