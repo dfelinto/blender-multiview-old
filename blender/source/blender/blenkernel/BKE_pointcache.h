@@ -100,7 +100,7 @@ typedef struct PTCacheData {
 	struct BoidData boids;
 } PTCacheData;
 
-char *ptcache_datastruct[] = {
+static char *ptcache_datastruct[] = {
 	"", // BPHYS_DATA_INDEX
 	"", // BPHYS_DATA_LOCATION
 	"", // BPHYS_DATA_VELOCITY
@@ -111,12 +111,12 @@ char *ptcache_datastruct[] = {
 	"BoidData" // case BPHYS_DATA_BOIDS:
 };
 
-char *ptcache_extra_datastruct[] = {
+static char *ptcache_extra_datastruct[] = {
 	"",
 	"ParticleSpring"
 };
 
-int ptcache_extra_datasize[] = {
+static int ptcache_extra_datasize[] = {
 	0,
 	sizeof(ParticleSpring)
 };
