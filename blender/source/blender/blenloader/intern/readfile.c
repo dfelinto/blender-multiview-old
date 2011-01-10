@@ -10213,7 +10213,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				else if(ob->pd->flag & PFIELD_SURFACE)
 					ob->pd->shape = PFIELD_SHAPE_SURFACE;
 
-				pd->flag |= PFIELD_DO_LOCATION;
+				ob->pd->flag |= PFIELD_DO_LOCATION;
 			}
 		}
 	}
