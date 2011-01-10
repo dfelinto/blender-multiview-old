@@ -969,7 +969,6 @@ void action_to_keylist(AnimData *adt, bAction *act, DLRBT_Tree *keys, DLRBT_Tree
 void gpl_to_keylist(bDopeSheet *UNUSED(ads), bGPDlayer *gpl, DLRBT_Tree *keys)
 {
 	bGPDframe *gpf;
-	ActKeyColumn *ak;
 	
 	if (gpl && keys) {
 		/* although the frames should already be in an ordered list, they are not suitable for displaying yet */

@@ -2475,7 +2475,7 @@ static bAnimChannelType ACF_GPD =
 	acf_generic_group_offset,		/* offset */
 	
 	acf_generic_idblock_name,		/* name */
-	NULL,							/* icon */
+	acf_gpd_icon,					/* icon */
 	
 	acf_gpd_setting_valid,			/* has setting */
 	acf_gpd_setting_flag,			/* flag for setting */
@@ -2496,8 +2496,6 @@ static void acf_gpl_name(bAnimListElem *ale, char *name)
 /* check if some setting exists for this channel */
 static short acf_gpl_setting_valid(bAnimContext *ac, bAnimListElem *ale, int setting)
 {
-	bGPDlayer *gpl = (bGPDlayer *)ale->data;
-	
 	switch (setting) {
 		/* unsupported */
 		case ACHANNEL_SETTING_EXPAND: /* gpencil layers are more like F-Curves than groups */
