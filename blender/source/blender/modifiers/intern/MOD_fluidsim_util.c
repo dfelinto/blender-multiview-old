@@ -235,7 +235,7 @@ DerivedMesh *fluidsim_read_obj(char *filename)
 	mv = CDDM_get_verts(dm);
 
 	for(i=0; i<numverts; i++, mv++)
-		gotBytes = (gzread(gzf, mv->co, sizeof(float) * 3) == sizeof(float) * 3);
+		gotBytes = gzread(gzf, mv->co, sizeof(float) * 3);
 
 	// should be the same as numverts
 	gotBytes = gzread(gzf, &wri, sizeof(wri));
@@ -257,7 +257,7 @@ DerivedMesh *fluidsim_read_obj(char *filename)
 	}
 
 	// read normals from file (but don't save them yet)
-	for(i=0, no_s= normals; i<numverts; i++, no_s += 3)
+	for(i=numverts, no_s= normals; i>0; i--, no_s += 3)
 	{
 		gotBytes = gzread(gzf, no, sizeof(float) * 3);
 		normal_float_to_short_v3(no_s, no);
@@ -277,11 +277,11 @@ DerivedMesh *fluidsim_read_obj(char *filename)
 
 	// read triangles from file
 	mf = CDDM_get_faces(dm);
-	for(i=0; i<numfaces; i++, mf++)
+	for(i=numfaces; i>0; i--, mf++)
 	{
 		int face[3];
 
-		gotBytes = (gzread(gzf, face, sizeof(int) * 3) == sizeof(int) * 3);
+		gotBytes = gzread(gzf, face, sizeof(int) * 3);
 
 		// check if 3rd vertex has index 0 (not allowed in blender)
 		if(face[2])
