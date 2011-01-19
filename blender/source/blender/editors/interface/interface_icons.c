@@ -1001,7 +1001,7 @@ static void icon_draw_size(float x, float y, int icon_id, float aspect, float al
 	}
 }
 
-void ui_id_icon_render(bContext *C, ID *id, int big)
+static void ui_id_icon_render(bContext *C, ID *id, int big)
 {
 	PreviewImage *pi = BKE_previewimg_get(id); 
 	
@@ -1019,7 +1019,7 @@ void ui_id_icon_render(bContext *C, ID *id, int big)
 	}
 }
 
-void ui_id_brush_render(bContext *C, ID *id)
+static void ui_id_brush_render(bContext *C, ID *id)
 {
 	PreviewImage *pi = BKE_previewimg_get(id); 
 	int i;
