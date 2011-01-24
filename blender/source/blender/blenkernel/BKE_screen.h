@@ -48,7 +48,6 @@ struct wmWindowManager;
 struct wmKeyConfig;
 struct uiLayout;
 struct uiMenuItem;
-struct View3D;
 
 #include "RNA_types.h"
 
