@@ -732,11 +732,13 @@ static int file_is_blend_backup(const char *str)
 	
 	if(a==0 || b>=a);
 	else {
+		char *loc;
+		
 		if(a > b+1)
 			b++;
 		
 		/* allow .blend1 .blend2 .blend32 */
-		char *loc= BLI_strcasestr(str+a-b, ".blend");
+		loc= BLI_strcasestr(str+a-b, ".blend");
 		
 		if(loc)
 			retval= 1;
