@@ -21,6 +21,8 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
+# <pep8 compliant>
+
 # This script dumps rna into xml.
 # useful for finding bugs in RNA api.
 
@@ -34,8 +36,8 @@ invalid_classes = (bpy.types.Operator,
                bpy.types.KeyingSet,
                bpy.types.Header)
 
-def build_property_typemap():
 
+def build_property_typemap():
 
     property_typemap = {}
 
@@ -57,13 +59,14 @@ def build_property_typemap():
 def print_ln(data):
     print(data, end="")
 
+
 def rna2xml(fw=print_ln, ident_val="  "):
     from xml.sax.saxutils import quoteattr
     property_typemap = build_property_typemap()
 
     def rna2xml_node(ident, value, parent):
         ident_next = ident + ident_val
-        
+
         # divide into attrs and nodes.
         node_attrs = []
         nodes_items = []
@@ -73,10 +76,10 @@ def rna2xml(fw=print_ln, ident_val="  "):
 
         if issubclass(value_type, invalid_classes):
             return
-        
+
         if value == parent:
             return
-        
+
         value_type_name = value_type.__name__
         for prop in property_typemap[value_type_name]:
 
@@ -116,7 +119,7 @@ def rna2xml(fw=print_ln, ident_val="  "):
                                 return str(s)
                             else:
                                 return " ".join([str_recursive(si) for si in s])
-                        
+
                         node_attrs.append("%s=\"%s\"" % (prop, " ".join(str_recursive(v) for v in subvalue_rna)))
                     else:
                         nodes_lists.append((prop, subvalue_ls, subvalue_type))
@@ -138,11 +141,9 @@ def rna2xml(fw=print_ln, ident_val="  "):
 
         fw("%s</%s>\n" % (ident, value_type_name))
 
-
-
     fw("<root>\n")
     for attr in dir(bpy.data):
-        
+
         # exceptions
         if attr.startswith("_"):
             continue
@@ -154,14 +155,15 @@ def rna2xml(fw=print_ln, ident_val="  "):
             ls = value[:]
         except:
             ls = None
-        
+
         if type(ls) == list:
             fw("%s<%s>\n" % (ident_val, attr))
-            for blend_id in ls:            
+            for blend_id in ls:
                 rna2xml_node(ident_val + ident_val, blend_id, None)
             fw("%s</%s>\n" % (ident_val, attr))
 
     fw("</root>\n")
+
 
 def main():
     filename = bpy.data.filepath.rstrip(".blend") + ".xml"
