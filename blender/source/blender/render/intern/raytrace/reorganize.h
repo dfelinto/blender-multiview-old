@@ -26,11 +26,14 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#include <stdio.h>
-#include <algorithm>
+
+#include <float.h>
 #include <math.h>
-#include <vector>
+#include <stdio.h>
+
+#include <algorithm>
 #include <queue>
+#include <vector>
 
 #include "BKE_global.h"
 
