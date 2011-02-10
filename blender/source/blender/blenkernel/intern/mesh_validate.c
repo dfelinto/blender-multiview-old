@@ -250,11 +250,11 @@ int BKE_mesh_validate_arrays(Mesh *me, MVert *UNUSED(mverts), int totvert, MEdge
 		/* on a valid mesh, code below will never run */
 		if(memcmp(sf->v, sf_prev->v, sizeof(sf_prev->v)) == 0) {
 			/* slow, could be smarter here */
-			mf= mfaces + sf->index;
-			mf_prev= mfaces + sf_prev->index;
-
 			EdgeUUID eu[4];
 			EdgeUUID eu_prev[4];
+
+			mf= mfaces + sf->index;
+			mf_prev= mfaces + sf_prev->index;
 
 			if(mf->v4) {
 				edge_store_from_mface_quad(eu, mf);
