@@ -89,6 +89,7 @@
 
 #include "BLI_listbase.h"
 #include "BLI_linklist.h"
+#include "BLI_storage.h"
 #include "BLI_storage_types.h"
 #include "BLI_string.h"
 
@@ -105,16 +106,13 @@ static struct ListBase *dirbase = &dirbase_;
 
 char *BLI_getwdN(char *dir, const int maxncpy)
 {
-	if (dir) {
-		const char *pwd= getenv("PWD");
-		if (pwd){
-			BLI_strncpy(dir, pwd, maxncpy);
-			return(dir);
-		}
-
-		return getcwd(dir, maxncpy);
+	const char *pwd= getenv("PWD");
+	if (pwd){
+		BLI_strncpy(dir, pwd, maxncpy);
+		return dir;
 	}
-	return(0);
+
+	return getcwd(dir, maxncpy);
 }
 
 
@@ -475,7 +473,7 @@ int BLI_is_dir(const char *file) {
 	return S_ISDIR(BLI_exist(file));
 }
 
-LinkNode *BLI_read_file_as_lines(char *name)
+LinkNode *BLI_read_file_as_lines(const char *name)
 {
 	FILE *fp= fopen(name, "r");
 	LinkNode *lines= NULL;

@@ -752,7 +752,7 @@ int BLI_path_cwd(char *path)
 #endif
 	
 	if (wasrelative==1) {
-		char cwd[FILE_MAXDIR + FILE_MAXFILE];
+		char cwd[FILE_MAXDIR + FILE_MAXFILE]= "";
 		BLI_getwdN(cwd, sizeof(cwd)); /* incase the full path to the blend isnt used */
 		
 		if (cwd[0] == '\0') {
