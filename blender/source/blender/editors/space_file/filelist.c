@@ -839,7 +839,7 @@ static void filelist_read_dir(struct FileList* filelist)
 	filelist->fidx = 0;
 	filelist->filelist = 0;
 
-	BLI_getwdN(wdir);	 
+	BLI_getwdN(wdir, sizeof(wdir));	 
 
 	BLI_cleanup_dir(G.main->name, filelist->dir);
 	filelist->numfiles = BLI_getdir(filelist->dir, &(filelist->filelist));

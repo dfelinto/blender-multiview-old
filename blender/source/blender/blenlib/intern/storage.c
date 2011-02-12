@@ -103,18 +103,16 @@ static struct ListBase dirbase_={
 static struct ListBase *dirbase = &dirbase_;
 
 
-char *BLI_getwdN(char *dir)
+char *BLI_getwdN(char *dir, const int maxncpy)
 {
-	char *pwd;
-
 	if (dir) {
-		pwd = getenv("PWD");
+		const char *pwd= getenv("PWD");
 		if (pwd){
-			strcpy(dir, pwd);
+			BLI_strncpy(dir, pwd, maxncpy);
 			return(dir);
 		}
-		/* 160 is FILE_MAXDIR in filesel.c */
-		return( getcwd(dir, 160) );
+
+		return getcwd(dir, maxncpy);
 	}
 	return(0);
 }
