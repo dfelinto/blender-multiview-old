@@ -193,7 +193,7 @@ class Operator(BaseFakeUI):
     pass
 
 
-class IDPropertyGroup():
+class PropertyGroup():
     pass
 
 
@@ -205,7 +205,7 @@ def fake_main():
     bpy.types.Panel = Panel
     bpy.types.Header = Header
     bpy.types.Menu = Menu
-    bpy.types.IDPropertyGroup = IDPropertyGroup
+    bpy.types.PropertyGroup = PropertyGroup
     bpy.types.Operator = Operator
 
     bpy.types.Armature = type("Armature", (), {})
