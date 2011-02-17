@@ -5474,12 +5474,12 @@ static int bpy_class_call(bContext *C, PointerRNA *ptr, FunctionRNA *func, Param
 		            Py_DECREF(py_srna);
 		            py_srna= NULL;
 					/* err set below */
-		        }
-				else {
-					py_class_instance= py_srna;
 				}
 				Py_DECREF(args);
 			}
+
+			py_class_instance= py_srna;
+
 #else
 			/* 'almost' all the time calling the class isnt needed.
 			 * We could just do...
