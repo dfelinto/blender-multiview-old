@@ -346,8 +346,8 @@ class MATERIAL_PT_shading(MaterialButtonsPanel, bpy.types.Panel):
             sub.prop(mat, "use_cubic")
 
 
-class MATERIAL_PT_transp_(MaterialButtonsPanel, bpy.types.Panel):
-    bl_label = "Transpa_rency"
+class MATERIAL_PT_transp(MaterialButtonsPanel, bpy.types.Panel):
+    bl_label = "Transparency"
     # bl_options = {'DEFAULT_CLOSED'}
     COMPAT_ENGINES = {'BLENDER_RENDER'}
 
