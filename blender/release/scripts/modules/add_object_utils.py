@@ -89,6 +89,7 @@ def object_data_add(context, obdata, operator=None):
         if not (obj_act and obj_act.mode == 'EDIT' and obj_act.type == obj_new.type):
             _obdata = bpy.data.meshes.new(obdata.name)
             obj_act = bpy.data.objects.new(_obdata.name, _obdata)
+            obj_act.matrix_world = obj_new.matrix_world
             scene.objects.link(obj_act)
             scene.objects.active = obj_act
             bpy.ops.object.mode_set(mode='EDIT')
