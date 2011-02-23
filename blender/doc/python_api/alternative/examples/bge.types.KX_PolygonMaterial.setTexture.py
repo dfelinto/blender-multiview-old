@@ -1,1 +1,0 @@
-mat.setTexture(mat.tface) 

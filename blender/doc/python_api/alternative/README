@@ -1,5 +1,0 @@
-Run blender in this directory starting the run.py script:
-
-	pathtoblender/blender -b -P run.py
-
-This will create a folder named sphinx-in with rst files in it and calls sphinx-build to create sphinx-out.
