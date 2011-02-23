@@ -2287,7 +2287,7 @@ static void particle_fluidsim(ParticleSystem *psys, int own_psys, ParticleData *
 	/* pressure and near pressure */
 	for(n=own_psys?1:0; n<neighbours; n++) {
 		/* disregard particles at the exact same location */
-		if(ptn->dist < FLT_EPSILON)
+		if(ptn[n].dist < FLT_EPSILON)
 			continue;
 
 		sub_v3_v3(ptn[n].co, pa->prev_state.co);
@@ -2310,7 +2310,7 @@ static void particle_fluidsim(ParticleSystem *psys, int own_psys, ParticleData *
 	/* main calculations */
 	for(n=own_psys?1:0; n<neighbours; n++) {
 		/* disregard particles at the exact same location */
-		if(ptn->dist < FLT_EPSILON)
+		if(ptn[n].dist < FLT_EPSILON)
 			continue;
 
 		npa = psys->particles + ptn[n].index;
