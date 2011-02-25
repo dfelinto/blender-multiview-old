@@ -7,7 +7,7 @@ cflags=''
 incs = '. ../makesdna ../blenkernel #/intern/guardedalloc #/intern/ghost ../editors/include ../gpu ../blenloader'
 incs += ' ' + env['BF_FREETYPE_INC']
 incs += ' ' + env['BF_ZLIB_INC']
-defs = ''
+defs = []
 
 if env['WITH_BF_BINRELOC']:
     cflags='-pthread'
