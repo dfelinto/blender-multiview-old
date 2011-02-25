@@ -1,4 +1,4 @@
-/**
+/*
  * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,6 +25,11 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+
+/** \file decimation/intern/future/LOD_NdQSDecimator.cpp
+ *  \ingroup decimation
+ */
+
 
 #include "LOD_NdQSDecimator.h"
 
