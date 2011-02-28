@@ -42,9 +42,6 @@ def build_property_typemap():
     property_typemap = {}
 
     for attr in dir(bpy.types):
-        if attr.startswith("_") or attr in ("register", "unregister"):
-            continue
-
         cls = getattr(bpy.types, attr)
         if issubclass(cls, invalid_classes):
             continue
@@ -77,6 +74,7 @@ def rna2xml(fw=print_ln, ident_val="  "):
         if issubclass(value_type, invalid_classes):
             return
 
+        # XXX, fixme, pointcache has eternal nested pointer to its self.
         if value == parent:
             return
 
