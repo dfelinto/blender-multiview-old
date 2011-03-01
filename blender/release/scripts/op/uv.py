@@ -89,12 +89,15 @@ def write_eps(fw, mesh, image_width, image_height, opacity, face_iter):
 
         for i, mat in enumerate(mesh.materials if mesh.materials else [None]):
             fw("/DRAW_%d {" % i)
-            if opacity > 0.0:
-                fw("gsave\n")
-                fw("%.3g %.3g %.3g setrgbcolor\n" % tuple((1.0 - ((1.0 - c) * opacity)) for c in mat.diffuse_color))
-                fw("fill\n")
-                fw("grestore\n")
-                fw("0 setgray\n")
+            fw("gsave\n")
+            if mat:
+                color = tuple((1.0 - ((1.0 - c) * opacity)) for c in mat.diffuse_color)
+            else:
+                color = 1.0, 1.0, 1.0
+            fw("%.3g %.3g %.3g setrgbcolor\n" % color)
+            fw("fill\n")
+            fw("grestore\n")
+            fw("0 setgray\n")
             fw("} def\n")
 
         # fill
