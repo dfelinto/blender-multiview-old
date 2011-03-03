@@ -900,6 +900,7 @@ static long pyrna_prop_hash(BPy_PropertyRNA *self)
 	return x;
 }
 
+#ifdef USE_PYRNA_STRUCT_REFERENCE
 static int pyrna_struct_traverse(BPy_StructRNA *self, visitproc visit, void *arg)
 {
 	Py_VISIT(self->reference);
@@ -911,6 +912,7 @@ static int pyrna_struct_clear(BPy_StructRNA *self)
 	Py_CLEAR(self->reference);
 	return 0;
 }
+#endif /* !USE_PYRNA_STRUCT_REFERENCE */
 
 /* use our own dealloc so we can free a property if we use one */
 static void pyrna_struct_dealloc(BPy_StructRNA *self)
@@ -927,16 +929,18 @@ static void pyrna_struct_dealloc(BPy_StructRNA *self)
 	}
 #endif
 
+#ifdef USE_PYRNA_STRUCT_REFERENCE
 	if(self->reference) {
 		PyObject_GC_UnTrack(self);
 		pyrna_struct_clear(self);
 	}
+#endif /* !USE_PYRNA_STRUCT_REFERENCE */
 
 	/* Note, for subclassed PyObjects we cant just call PyObject_DEL() directly or it will crash */
 	Py_TYPE(self)->tp_free(self);
 }
 
-/* internal use only */
+#ifdef USE_PYRNA_STRUCT_REFERENCE
 static void pyrna_struct_reference_set(BPy_StructRNA *self, PyObject *reference)
 {
 	if(self->reference) {
@@ -951,6 +955,7 @@ static void pyrna_struct_reference_set(BPy_StructRNA *self, PyObject *reference)
 //		PyObject_GC_Track(self);  /* INITIALIZED TRACKED? */
 	}
 }
+#endif /* !USE_PYRNA_STRUCT_REFERENCE */
 
 /* use our own dealloc so we can free a property if we use one */
 static void pyrna_prop_dealloc(BPy_PropertyRNA *self)
@@ -4350,10 +4355,17 @@ PyTypeObject pyrna_struct_Type = {
 	NULL,						/*  char *tp_doc;  Documentation string */
   /*** Assigned meaning in release 2.0 ***/
 	/* call function for all accessible objects */
+#ifdef USE_PYRNA_STRUCT_REFERENCE
 	(traverseproc) pyrna_struct_traverse,                       /* traverseproc tp_traverse; */
 
 	/* delete references to contained objects */
 	(inquiry )pyrna_struct_clear,                       /* inquiry tp_clear; */
+#else
+	NULL,                       /* traverseproc tp_traverse; */
+
+/* delete references to contained objects */
+	NULL,                       /* inquiry tp_clear; */
+#endif /* !USE_PYRNA_STRUCT_REFERENCE */
 
   /***  Assigned meaning in release 2.1 ***/
   /*** rich comparisons ***/
@@ -4850,6 +4862,7 @@ static PyObject *pyrna_prop_collection_iter_next(BPy_PropertyCollectionIterRNA *
 	else {
 		BPy_StructRNA *pyrna= (BPy_StructRNA *)pyrna_struct_CreatePyObject(&self->iter.ptr);
 
+#ifdef USE_PYRNA_STRUCT_REFERENCE
 		if(pyrna) { /* unlikely but may fail */
 			if((PyObject *)pyrna != Py_None) {
 				/* hold a reference to the iterator since it may have
@@ -4858,6 +4871,7 @@ static PyObject *pyrna_prop_collection_iter_next(BPy_PropertyCollectionIterRNA *
 				pyrna_struct_reference_set(pyrna, (PyObject *)self);
 			}
 		}
+#endif /* !USE_PYRNA_STRUCT_REFERENCE */
 
 		RNA_property_collection_next(&self->iter);
 
@@ -5105,7 +5119,10 @@ PyObject *pyrna_struct_CreatePyObject(PointerRNA *ptr)
 
 	pyrna->ptr= *ptr;
 	pyrna->freeptr= FALSE;
+
+#ifdef USE_PYRNA_STRUCT_REFERENCE
 	pyrna->reference= NULL;
+#endif
 
 	// PyC_ObSpit("NewStructRNA: ", (PyObject *)pyrna);
 
