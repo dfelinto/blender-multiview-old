@@ -90,6 +90,9 @@ typedef struct {
 	PyObject *in_weakreflist;
 #endif
 	PointerRNA ptr;
+	/* generic PyObject we hold a reference to, example use:
+	 * hold onto the collection iterator to prevent it from freeing allocated data we may use */
+	PyObject *reference;
 	int freeptr; /* needed in some cases if ptr.data is created on the fly, free when deallocing */
 } BPy_StructRNA;
 
