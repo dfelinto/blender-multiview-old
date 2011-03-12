@@ -72,7 +72,7 @@ short BPy_reports_to_error(ReportList *reports, PyObject *exception, const short
 		MEM_freeN(report_str);
 	}
 
-	return (report_str != NULL) ? 0 : -1;
+	return (report_str == NULL) ? 0 : -1;
 }
 
 
