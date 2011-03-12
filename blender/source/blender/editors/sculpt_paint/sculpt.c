@@ -2396,9 +2396,9 @@ static void do_brush_action(Sculpt *sd, Object *ob, Brush *brush)
 }
 
 /* flush displacement from deformed PBVH vertex to original mesh */
-static void sculpt_flush_pbvhvert_deform(SculptSession *ss, PBVHVertexIter *vd)
+static void sculpt_flush_pbvhvert_deform(Object *ob, PBVHVertexIter *vd)
 {
-	Object *ob= ob;
+	SculptSession *ss = ob->sculpt;
 	Mesh *me= ob->data;
 	float disp[3], newco[3];
 	int index= vd->vert_indices[vd->i];
@@ -2455,7 +2455,7 @@ static void sculpt_combine_proxies(Sculpt *sd, Object *ob)
 				sculpt_clip(sd, ss, vd.co, val);
 
 				if(ss->modifiers_active)
-					sculpt_flush_pbvhvert_deform(ss, &vd);
+					sculpt_flush_pbvhvert_deform(ob, &vd);
 			}
 			BLI_pbvh_vertex_iter_end;
 
@@ -2509,7 +2509,7 @@ static void sculpt_flush_stroke_deform(Sculpt *sd, Object *ob)
 				PBVHVertexIter vd;
 
 				BLI_pbvh_vertex_iter_begin(ss->pbvh, nodes[n], vd, PBVH_ITER_UNIQUE) {
-					sculpt_flush_pbvhvert_deform(ss, &vd);
+					sculpt_flush_pbvhvert_deform(ob, &vd);
 				}
 				BLI_pbvh_vertex_iter_end;
 			}
@@ -2675,8 +2675,6 @@ void sculpt_update_mesh_elements(Scene *scene, Object *ob, int need_fmap)
 	DerivedMesh *dm = mesh_get_derived_final(scene, ob, CD_MASK_BAREMESH);
 	SculptSession *ss = ob->sculpt;
 	MultiresModifierData *mmd= sculpt_multires_active(scene, ob);
-
-	ob= ob;
 
 	ss->modifiers_active= sculpt_modifiers_active(scene, ob);
 
