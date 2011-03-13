@@ -1,0 +1,8 @@
+Blender 2.5x Series Release ToDo list:
+
+Please check on all points before a release:
+* Version bump (source/blender/blenkernel/BKE_blender.h)
+* Update of splash.png (release/datafiles) and splash.png.c (source/blender/editors/datafiles)
+
+* Update of readme.html (release/text)
+* New Link to correct Release Log page in the operator (release/scripts/ui/space_info.py)
