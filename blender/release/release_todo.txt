@@ -5,4 +5,4 @@ Please check on all points before a release:
 * Update of splash.png (release/datafiles) and splash.png.c (source/blender/editors/datafiles)
 
 * Update of readme.html (release/text)
-* New Link to correct Release Log page in the operator (release/scripts/ui/space_info.py)
+* New Link to correct Release Log page in the operator (release/scripts/startup/bl_ui/space_info.py)
