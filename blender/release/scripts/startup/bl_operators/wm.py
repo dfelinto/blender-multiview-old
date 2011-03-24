@@ -772,7 +772,9 @@ class WM_OT_properties_edit(bpy.types.Operator):
 
         # otherwise existing buttons which reference freed
         # memory may crash blender [#26510]
-        context.area.tag_redraw()
+        # context.area.tag_redraw()
+        for area in context.screen.areas:
+            area.tag_redraw()
 
         return {'FINISHED'}
 
