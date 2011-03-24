@@ -1217,7 +1217,7 @@ int ui_is_but_rna_valid(uiBut *but)
 		return TRUE;
 	}
 	else {
-		printf("property removed %s: %p :: %d\n", but->drawstr, but->rnaprop, (but->flag & UI_INVALID) ? 1 : 0);
+		printf("property removed %s: %p\n", but->drawstr, but->rnaprop);
 		return FALSE;
 	}
 }
