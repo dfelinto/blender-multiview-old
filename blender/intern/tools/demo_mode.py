@@ -21,10 +21,11 @@
 # WIP, this needs a timer to run before python:
 # C code, WM_event_add_timer(CTX_wm_manager(C), CTX_wm_window(C), 0x0110, 0.1f);
 #
-# parse options
-# Play for 8 seconds then quick, switch screens every 4 sec.
-# ./blender.bin /l/OGLRenderBug.blend  --python /c/bin/2.56/scripts/templates/demo_mode.py -- --animate=8 --screen_switch=4
-# ./blender.bin /l/OGLRenderBug.blend  --python /c/bin/2.56/scripts/templates/demo_mode.py -- --render 3
+# play for 8 seconds then quick, switch screens every 4 sec.
+# ./blender.bin demo.blend --python demo_mode.py -- --animate=8 --screen_switch=4
+#
+# render and pause for 3 seconds.
+# ./blender.bin demo.blend --python demo_mode.py -- --render 3
 
 
 import bpy
@@ -33,7 +34,6 @@ import time
 import tempfile
 import os
 
-_mode = [0]
 
 global_config = {
     "animate": 0,  # seconds
@@ -69,10 +69,17 @@ def demo_mode_update():
     time_delta = time_current - global_config["_last_switch"]
     time_total = time_current - global_config["_init_time"]
 
-    # quit if we're over time
+    # check for exit
     if global_config["animate"] and time_total > global_config["animate"]:
         sys.exit(0)
 
+    if global_config["render"] and os.path.exists(global_config["_render_out"]):
+        # sleep and quit
+        os.remove(global_config["_render_out"])
+        time.sleep(global_config["render"])
+        sys.exit(0)
+
+    # run update funcs
     if global_config["_reset_anim"]:
         global_config["_reset_anim"] = False
         f = bpy.context.scene.frame_current
@@ -92,13 +99,6 @@ def demo_mode_update():
 
             if global_config["animate"]:
                 global_config["_reset_anim"] = True
-
-    if global_config["render"]:
-        if os.path.exists(global_config["_render_out"]):
-            # sleep and quit
-            os.remove(global_config["_render_out"])
-            time.sleep(global_config["render"])
-            sys.exit(0)
 
 
 # -----------------------------------------------------------------------------
@@ -158,21 +158,16 @@ def main():
         argv = argv[argv.index("--") + 1:]  # get all args after "--"
 
     # When --help or no args are given, print this help
-    usage_text = "Run blender in background mode with this script:"
-    usage_text += "  blender --background --python " + __file__ + " -- [options]"
+    usage_text = "Run blender in with this script:"
+    usage_text += "  blender BLENDFILE --python " + __file__ + " -- [options]"
 
     parser = argparse.ArgumentParser(description=usage_text)
 
     # Example background utility, add some text and renders or saves it (with options)
     # Possible types are: string, int, long, choice, float and complex.
-    parser.add_argument("-a", "--animate", dest="animate", help="Play animations on load", type=int)
-    parser.add_argument("-r", "--render", dest="render", help="Render on load", type=int)
-    parser.add_argument("-s", "--screen_switch", dest="screen_switch", help="Switch screen every N seconds", type=int)
-
-    '''
-    parser.add_argument("-s", "--save", dest="save_path", help="Save the generated file to the specified path", metavar='FILE')
-    parser.add_argument("-r", "--render", dest="render_path", help="Render an image to the specified path", metavar='FILE')
-    '''
+    parser.add_argument("-a", "--animate", dest="animate", help="Play animations on load", type=int, metavar="SECONDS")
+    parser.add_argument("-r", "--render", dest="render", help="Render on load", type=int, metavar="SECONDS")
+    parser.add_argument("-s", "--screen_switch", dest="screen_switch", help="Switch screen every N seconds", type=int, metavar="SECONDS")
 
     options = parser.parse_args(argv)  # In this example we wont use the args
 
