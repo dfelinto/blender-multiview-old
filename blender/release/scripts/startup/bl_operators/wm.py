@@ -619,11 +619,12 @@ class WM_OT_doc_view(bpy.types.Operator):
             else:
 
                 # detect if this is a inherited member and use that name instead
-                class_parent = getattr(bpy.types, class_name).bl_rna.base
-                while class_parent and class_prop in class_parent.properties:
-                    class_name = class_parent.identifier
-                    class_parent = class_parent.base
-                # done!
+                rna_parent = getattr(bpy.types, class_name).bl_rna
+                rna_prop = rna_parent.properties[class_prop]
+                rna_parent = rna_parent.base
+                while rna_parent and rna_prop == rna_parent.properties.get(class_prop):
+                    class_name = rna_parent.identifier
+                    rna_parent = rna_parent.base
 
                 # It so happens that epydoc nests these, not sphinx
                 # class_name_full = self._nested_class_string(class_name)
