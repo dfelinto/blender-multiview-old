@@ -82,9 +82,7 @@ def demo_mode_update():
     # run update funcs
     if global_config["_reset_anim"]:
         global_config["_reset_anim"] = False
-        f = bpy.context.scene.frame_current
-        bpy.ops.screen.animation_cancel()
-        bpy.context.scene.frame_set(f)
+        bpy.ops.screen.animation_cancel(restore_frame=False)
         bpy.ops.screen.animation_play()
 
     if global_config["screen_switch"]:
