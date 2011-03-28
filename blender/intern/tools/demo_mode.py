@@ -29,8 +29,6 @@ config = [
 # ---
 '''
 
-
-
 import bpy
 import sys
 import time
@@ -216,6 +214,10 @@ class DemoMode(bpy.types.Operator):
 
     def modal(self, context, event):
         print("DemoMode.modal")
+        if not self.__class__.enabled:
+            self.cleanup(disable=True)
+            return {'CANCELLED'}
+
         if event.type == 'ESC':
             self.cleanup(disable=True)
             # disable here and not in cleanup because this is a user level disable.
@@ -234,9 +236,15 @@ class DemoMode(bpy.types.Operator):
 
     def execute(self, context):
         print("func:DemoMode.execute")
-        self.__class__.enabled = True
-        context.window_manager.modal_handler_add(self)
-        return {'RUNNING_MODAL'}
+        # toggle
+        if self.__class__.enabled and self.__class__.first_run == False:
+            # this actually cancells the previous running instance
+            self.__class__.enabled = False
+            return {'CANCELLED'}
+        else:
+            self.__class__.enabled = True
+            context.window_manager.modal_handler_add(self)
+            return {'RUNNING_MODAL'}
 
     def cancel(self, context):
         print("func:DemoMode.cancel")
@@ -246,13 +254,10 @@ class DemoMode(bpy.types.Operator):
 
 
 def menu_func(self, context):
-    print("func:menu_func - DemoMode.enabled:", DemoMode.enabled, "bpy.app.driver_namespace:", DemoKeepAlive.secret_attr not in bpy.app.driver_namespace, 'global_state["timer"]:', global_state["timer"])
-    if not DemoMode.enabled:
-        pass
-    if 1:
-        layout = self.layout
-        layout.operator_context = 'EXEC_DEFAULT'
-        layout.operator("wm.demo_mode", icon='PLAY')
+    # print("func:menu_func - DemoMode.enabled:", DemoMode.enabled, "bpy.app.driver_namespace:", DemoKeepAlive.secret_attr not in bpy.app.driver_namespace, 'global_state["timer"]:', global_state["timer"])
+    layout = self.layout
+    layout.operator_context = 'EXEC_DEFAULT'
+    layout.operator("wm.demo_mode", icon='PLAY' if not DemoMode.enabled else 'PAUSE')
 
 
 def register():
@@ -310,6 +315,8 @@ def load_config(cfg_name="demo.py"):
     print("found %d files" % len(global_config_files))
 
     global_state["basedir"] = basedir
+
+
 
 
 if __name__ == "__main__":
