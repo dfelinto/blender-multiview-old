@@ -18,14 +18,17 @@
 
 # <pep8 compliant>
 
-# WIP, this needs a timer to run before python:
-# C code, WM_event_add_timer(CTX_wm_manager(C), CTX_wm_window(C), 0x0110, 0.1f);
-#
-# play for 8 seconds then quick, switch screens every 4 sec.
-# ./blender.bin demo.blend --python intern/tools/demo_mode.py -- --animate=8 --screen_switch=4
-#
-# render and pause for 3 seconds.
-# ./blender.bin demo.blend --python intern/tools/demo_mode.py -- --render 3
+'''
+looks for demo.py textblock:
+# --- example
+config = [
+    dict(file="./demo.blend", animate=1, screen_switch=1),
+    dict(file="./demo_2.blend", render=1),
+    dict(file="./demo_2.blend", animate=1, screen_switch=1),
+    ]
+# ---
+'''
+
 
 
 import bpy
@@ -34,10 +37,8 @@ import time
 import tempfile
 import os
 
-from collections import OrderedDict
-
 # populate from script
-global_config_files = OrderedDict()
+global_config_files = []
 
 global_config = {
     "animate": 0,  # seconds
@@ -60,61 +61,48 @@ global_state = {
     "render_time": "",  # time render was finished.
     "timer": None,
     "basedir": "",  # demo.py is stored here
+    "demo_index": 0,
 }
 
 
-def lookup_config():
-    # match the config up with the open file
-    found = False
-    basename = os.path.basename(bpy.data.filepath)
-    for i, filepath in enumerate(global_config_files):
-        if basename == os.path.basename(filepath):
-            return (i, filepath)
-    return -1, None
-
-
 def demo_mode_next_file():
-    ls = list(global_config_files.keys())
-    index, filepath = lookup_config()
-    if index == -1:
-        # file not in demo loaded
-        filepath_next = ls[0]
-    else:
-        index += 1
-        filepath_next = ls[0] if index >= len(ls) else ls[index]
+    global_state["demo_index"] += 1
 
-    bpy.ops.wm.open_mainfile(filepath=filepath_next)
+    if global_state["demo_index"] >= len(global_config_files):
+        global_state["demo_index"] = 0
+
+    print("func:demo_mode_next_file", global_state["demo_index"])
+    filepath = global_config_files[global_state["demo_index"]]["file"]
+    bpy.ops.wm.open_mainfile(filepath=filepath)
 
 
 def demo_mode_timer_add():
     global_state["timer"] = bpy.context.window_manager.event_timer_add(0.8, bpy.context.window)
+
 
 def demo_mode_timer_remove():
     if global_state["timer"]:
         bpy.context.window_manager.event_timer_remove(global_state["timer"])
         global_state["timer"] = None
 
+
 def demo_mode_load_file():
     """ Take care, this can only do limited functions since its running
         before the file is fully loaded.
         Some operators will crash like playing an animation.
     """
+    print("func:demo_mode_load_file")
     DemoMode.first_run = True
     bpy.ops.wm.demo_mode('EXEC_DEFAULT')
 
 
 def demo_mode_init():
-    print("INIT")
+    print("func:demo_mode_init")
     DemoKeepAlive.ensure()
 
     if 1:
-        index, filepath = lookup_config()
         global_config.clear()
-        if index == -1:
-            print("  using fallback config")
-            global_config.update(global_config_fallback)
-        else:
-            global_config.update(global_config_files[filepath])
+        global_config.update(global_config_files[global_state["demo_index"]])
 
     print(global_config)
 
@@ -187,12 +175,6 @@ def demo_mode_update():
                     return
 
 
-def demo_mode_exit():
-    # bpy.context.window_manager.event_timer_remove(global_state["timer"])
-    # global_state["timer"] = None
-    pass
-
-
 # -----------------------------------------------------------------------------
 # modal operator
 
@@ -220,19 +202,24 @@ class DemoMode(bpy.types.Operator):
     bl_idname = "wm.demo_mode"
     bl_label = "Demo"
 
-    enabled = True
+    enabled = False
 
     first_run = True
 
-    def cleanup(self):
-        DemoKeepAlive.remove()
+    def cleanup(self, disable=False):
         demo_mode_timer_remove()
         self.__class__.first_run = True
-        
+
+        if disable:
+            self.__class__.enabled = False
+            DemoKeepAlive.remove()
 
     def modal(self, context, event):
-        if event.type in ('RIGHTMOUSE', 'ESC'):
-            self.cleanup()
+        print("DemoMode.modal")
+        if event.type == 'ESC':
+            self.cleanup(disable=True)
+            # disable here and not in cleanup because this is a user level disable.
+            # which should stay disabled until explicitly enabled again.
             return {'CANCELLED'}
 
         # print(event.type)
@@ -246,17 +233,20 @@ class DemoMode(bpy.types.Operator):
         return {'PASS_THROUGH'}
 
     def execute(self, context):
+        print("func:DemoMode.execute")
         self.__class__.enabled = True
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
-    def __del__(self):
+    def cancel(self, context):
+        print("func:DemoMode.cancel")
+        # disable here means no running on file-load.
         self.cleanup()
-        demo_mode_exit()
+        return None
 
 
 def menu_func(self, context):
-    print("DemoMode.enabled:", DemoMode.enabled, "bpy.app.driver_namespace: keep alive ", DemoKeepAlive.secret_attr not in bpy.app.driver_namespace, 'global_state["timer"]:', global_state["timer"])
+    print("func:menu_func - DemoMode.enabled:", DemoMode.enabled, "bpy.app.driver_namespace:", DemoKeepAlive.secret_attr not in bpy.app.driver_namespace, 'global_state["timer"]:', global_state["timer"])
     if not DemoMode.enabled:
         pass
     if 1:
@@ -295,27 +285,27 @@ def load_config(cfg_name="demo.py"):
 
     demo_file.close()
 
-    global_config_files.clear()
+    global_config_files[:] = []
 
-    for filepath, filecfg in namespace["config"].items():
+    for filecfg in namespace["config"]:
 
         # defaults
         filecfg["render"] = filecfg.get("render", 0)
         filecfg["animate"] = filecfg.get("animate", 0)
         filecfg["screen_switch"] = filecfg.get("screen_switch", 0)
 
-        if not os.path.exists(filepath):
-            filepath_test = os.path.join(basedir, filepath)
+        if not os.path.exists(filecfg["file"]):
+            filepath_test = os.path.join(basedir, filecfg["file"])
             if not os.path.exists(filepath_test):
                 print("Cant find %r or %r, skipping!")
                 continue
-            filepath = os.path.normpath(filepath_test)
+            filecfg["file"] = os.path.normpath(filepath_test)
 
         # sanitize
-        filepath = os.path.abspath(filepath)
-        filepath = os.path.normpath(filepath)
-        print("  Adding:", filepath)
-        global_config_files[filepath] = filecfg
+        filecfg["file"] = os.path.abspath(filecfg["file"])
+        filecfg["file"] = os.path.normpath(filecfg["file"])
+        print("  Adding:", filecfg["file"])
+        global_config_files.append(filecfg)
 
     print("found %d files" % len(global_config_files))
 
@@ -328,5 +318,3 @@ if __name__ == "__main__":
 
     # starts the operator
     demo_mode_load_file()
-
-    # DemoKeepAlive.ensure()
