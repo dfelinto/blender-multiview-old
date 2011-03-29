@@ -19,12 +19,16 @@
 # <pep8 compliant>
 
 '''
-looks for demo.py textblock:
+Even though this is in a package this can run as a stand alone scripts.
+
+# --- example usage
+blender --python release/scripts/addons/system_demo_mode/demo_mode.py
+
+looks for demo.py textblock or file in the same path as the blend:
 # --- example
 config = [
-    dict(file="./demo.blend", animate=1, screen_switch=1),
-    dict(file="./demo_2.blend", render=1),
-    dict(file="./demo_2.blend", animate=1, screen_switch=1),
+    dict(anim_cycles=1.0, anim_render=False, anim_screen_switch=0.0, anim_time_max=10.0, anim_time_min=4.0, mode='AUTO', display_render=4.0, file='/l/19534_simplest_mesh_2.blend'),
+    dict(anim_cycles=1.0, anim_render=False, anim_screen_switch=0.0, anim_time_max=10.0, anim_time_min=4.0, mode='AUTO', display_render=4.0, file='/l/252_pivotConstraint_01.blend'),
     ]
 # ---
 '''
@@ -38,23 +42,32 @@ import os
 # populate from script
 global_config_files = []
 
-global_config = {
-    "animate": 0,  # seconds
-    "render": 0,
-    "screen_switch": 0,
-}
+
+global_config = dict(anim_cycles=1.0,
+                     anim_render=False,
+                     anim_screen_switch=0.0,
+                     anim_time_max=60.0,
+                     anim_time_min=4.0,
+                     mode='AUTO',
+                     display_render=4.0)
 
 # switch to the next file in 2 sec.
-global_config_fallback = {
-    "animate": 2,  # seconds
-    "render": 0,
-    "screen_switch": 0,
-}
+global_config_fallback = dict(anim_cycles=1.0,
+                              anim_render=False,
+                              anim_screen_switch=0.0,
+                              anim_time_max=60.0,
+                              anim_time_min=4.0,
+                              mode='AUTO',
+                              display_render=4.0)
+
+
 
 global_state = {
     "init_time": 0.0,
     "last_switch": 0.0,
     "reset_anim": False,
+    "anim_cycles": 0.0,  # count how many times we played the anim
+    "last_frame": 0,
     "render_out": "",
     "render_time": "",  # time render was finished.
     "timer": None,
@@ -62,6 +75,22 @@ global_state = {
     "demo_index": 0,
 }
 
+def demo_mode_auto_select():
+    
+    play_area = 0
+    render_area = 0
+    
+    for area in bpy.context.window.screen.areas:
+        size = area.width * area.height
+        if area.type in {'VIEW_3D', 'GRAPH_EDITOR', 'DOPESHEET_EDITOR', 'NLA_EDITOR', 'TIMELINE'}:
+            play_area += size
+        elif area.type in {'IMAGE_EDITOR', 'SEQUENCE_EDITOR', 'NODE_EDITOR'}:
+            render_area += size
+
+    mode = 'PLAY' if play_area >= render_area else 'RENDER'
+    print(mode, play_area, render_area)
+    return 'PLAY'
+    
 
 def demo_mode_next_file():
     global_state["demo_index"] += 1
@@ -106,14 +135,18 @@ def demo_mode_init():
 
     demo_mode_timer_add()
 
-    if global_config["animate"]:
+    if global_config["mode"] == 'AUTO':
+        global_config["mode"] = demo_mode_auto_select()
+
+    if global_config["mode"] == 'PLAY':
         bpy.ops.screen.animation_play()
 
-    elif global_config["render"]:
+    elif global_config["mode"] == 'RENDER':
         print("  render")
         global_state["render_out"] = tempfile.mkstemp()[1]
 
         bpy.context.scene.render.filepath = global_state["render_out"]
+        bpy.context.scene.render.file_format = 'PNG'  # animation will fail!
         bpy.context.scene.render.use_file_extension = False
         bpy.context.scene.render.use_placeholder = False
         if os.path.exists(global_state["render_out"]):
@@ -121,6 +154,8 @@ def demo_mode_init():
             os.remove(global_state["render_out"])
 
         bpy.ops.render.render('INVOKE_DEFAULT', write_still=True)
+    else:
+        raise Exception("Unsupported mode %r" % global_config["mode"])
 
     global_state["init_time"] = global_state["last_switch"] = time.time()
     global_state["render_time"] = -1.0
@@ -133,9 +168,9 @@ def demo_mode_update():
 
     # --------------------------------------------------------------------------
     # ANIMATE MODE
-    if global_config["animate"]:
+    if global_config["mode"] == 'PLAY':
         # check for exit
-        if time_total > global_config["animate"]:
+        if time_total > global_config["anim_time_max"]:
             demo_mode_next_file()
             return
 
@@ -145,9 +180,9 @@ def demo_mode_update():
             bpy.ops.screen.animation_cancel(restore_frame=False)
             bpy.ops.screen.animation_play()
 
-        if global_config["screen_switch"]:
+        if global_config["anim_screen_switch"]:
             # print(time_delta, 1)
-            if time_delta > global_config["screen_switch"]:
+            if time_delta > global_config["anim_screen_switch"]:
 
                 screen = bpy.context.window.screen
                 index = bpy.data.screens.keys().index(screen.name)
@@ -156,22 +191,24 @@ def demo_mode_update():
 
                 global_state["last_switch"] = time_current
 
-                if global_config["animate"]:
+                #if global_config["mode"] == 'PLAY':
+                if 1:
                     global_state["reset_anim"] = True
 
     # --------------------------------------------------------------------------
     # RENDER MODE
-    elif global_config["render"]:
+    elif global_config["mode"] == 'RENDER':
         if os.path.exists(global_state["render_out"]):
             # wait until the time has passed
             if global_state["render_time"] == -1.0:
                 global_state["render_time"] = time.time()
             else:
-                if time.time() - global_state["render_time"] > global_config["render"]:
+                if time.time() - global_state["render_time"] > global_config["display_render"]:
                     os.remove(global_state["render_out"])
                     demo_mode_next_file()
                     return
-
+    else:
+        raise Exception("Unsupported mode %r" % global_config["mode"])
 
 # -----------------------------------------------------------------------------
 # modal operator
@@ -213,7 +250,7 @@ class DemoMode(bpy.types.Operator):
             DemoKeepAlive.remove()
 
     def modal(self, context, event):
-        print("DemoMode.modal")
+        # print("DemoMode.modal")
         if not self.__class__.enabled:
             self.cleanup(disable=True)
             return {'CANCELLED'}
@@ -295,9 +332,9 @@ def load_config(cfg_name="demo.py"):
     for filecfg in namespace["config"]:
 
         # defaults
-        filecfg["render"] = filecfg.get("render", 0)
-        filecfg["animate"] = filecfg.get("animate", 0)
-        filecfg["screen_switch"] = filecfg.get("screen_switch", 0)
+        #filecfg["display_render"] = filecfg.get("display_render", 0)
+        #filecfg["animate"] = filecfg.get("animate", 0)
+        #filecfg["screen_switch"] = filecfg.get("screen_switch", 0)
 
         if not os.path.exists(filecfg["file"]):
             filepath_test = os.path.join(basedir, filecfg["file"])
@@ -309,7 +346,7 @@ def load_config(cfg_name="demo.py"):
         # sanitize
         filecfg["file"] = os.path.abspath(filecfg["file"])
         filecfg["file"] = os.path.normpath(filecfg["file"])
-        print("  Adding:", filecfg["file"])
+        print("  Adding: %r" % filecfg["file"])
         global_config_files.append(filecfg)
 
     print("found %d files" % len(global_config_files))
@@ -317,8 +354,7 @@ def load_config(cfg_name="demo.py"):
     global_state["basedir"] = basedir
 
 
-
-
+# support direct execution
 if __name__ == "__main__":
     load_config()
     register()
