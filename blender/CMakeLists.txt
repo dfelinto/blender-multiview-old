@@ -1032,9 +1032,13 @@ if(WITH_BUILTIN_GLEW)
 	set(GLEW_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/extern/glew/include")
 else()
 	find_package(GLEW)
+
 	if(NOT GLEW_FOUND)
 		message(FATAL_ERROR "GLEW is required to build blender, install it or use WITH_BUILTIN_GLEW")
 	endif()
+
+	mark_as_advanced(GLEW_LIBRARY)
+	mark_as_advanced(GLEW_INCLUDE_PATH)
 endif()
 
 #-----------------------------------------------------------------------------
