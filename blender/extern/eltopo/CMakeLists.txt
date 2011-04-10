@@ -20,23 +20,106 @@
 #
 # The Original Code is: all of this file.
 #
-# Contributor(s): Jacques Beaurai, Erwin Coumans
+# Contributor(s): Jacques Beaurai
 #
 # ***** END GPL LICENSE BLOCK *****
 
-SET(INC . common common/newsparse eltopo3d common/tunicate common/meshes)
-
-FILE(GLOB SRC
-	common/*.cpp
-	common/newsparse/*.cpp
-	common/tunicate/*.cpp
-	common/sparse/*.cpp
-	eltopo3d/*.cpp
-	./*.cpp
+set(INC
+	.
+	common
+	common/newsparse
+	common/tunicate
+	common/meshes
+	eltopo3d
 )
 
-ADD_DEFINITIONS(-DNOGUI)
-ADD_DEFINITIONS(-DUSE_FORTRAN_BLAS)
+set(SRC
+	eltopo-capi.cpp
+	common/bfstream.cpp
+	common/ccd_wrapper.cpp
+	common/clamped_spline.cpp
+	common/collisionqueries.cpp
+	common/cubic_ccd_wrapper.cpp
+	common/fe_ccd_wrapper.cpp
+	common/fileio.cpp
+	common/gluvi.cpp
+	common/levelset.cpp
+	common/makelevelset2.cpp
+	common/makelevelset3.cpp
+	common/marching_triangles.cpp
+	common/newsparse/dense_matrix.cpp
+	common/newsparse/krylov_solvers.cpp
+	common/newsparse/sparse_matrix.cpp
+	common/predicates.cpp
+	common/sos_ccd_wrapper.cpp
+	common/sparse/incomplete_qr.cpp
+	common/tunicate/expansion.cpp
+	common/tunicate/intersection.cpp
+	common/tunicate/neg.cpp
+	common/tunicate/orientation.cpp
+	common/tunicate/sos_intersection.cpp
+	common/tunicate/sos_orientation.cpp
+	common/wallclocktime.cpp
+	eltopo3d/accelerationgrid.cpp
+	eltopo3d/broadphasegrid.cpp
+	eltopo3d/dynamicsurface.cpp
+	eltopo3d/eltopo.cpp
+	eltopo3d/nondestructivetrimesh.cpp
+	eltopo3d/subdivisionscheme.cpp
+	eltopo3d/surftrack.cpp
+
+	eltopo-capi.h
+	common/array1.h
+	common/array2.h
+	common/array3.h
+	common/array3_utils.h
+	common/bfstream.h
+	common/blas_wrapper.h
+	common/ccd_wrapper.h
+	common/clamped_spline.h
+	common/collisionqueries.h
+	common/fileio.h
+	common/gluvi.h
+	common/grid3.h
+	common/hashtable.h
+	common/lapack_wrapper.h
+	common/levelset.h
+	common/makelevelset2.h
+	common/makelevelset3.h
+	common/marching_triangles.h
+	common/mat.h
+	common/matlapack.h
+	common/newsparse/dense_matrix.h
+	common/newsparse/krylov_solvers.h
+	common/newsparse/linear_operator.h
+	common/newsparse/sparse_matrix.h
+	common/openglutils.h
+	common/predicates.h
+	common/sparse/cgsolver.h
+	common/sparse/crsolver.h
+	common/sparse/incomplete_qr.h
+	common/sparse/sparseilu.h
+	common/sparse/sparsematrix.h
+	common/sparse/sparsemilu.h
+	common/tunicate/expansion.h
+	common/tunicate/neg.h
+	common/tunicate/tunicate.h
+	common/util.h
+	common/vec.h
+	common/vector_math.h
+	common/wallclocktime.h
+	eltopo3d/accelerationgrid.h
+	eltopo3d/broadphase.h
+	eltopo3d/broadphasegrid.h
+	eltopo3d/dynamicsurface.h
+	eltopo3d/eltopo.h
+	eltopo3d/nondestructivetrimesh.h
+	eltopo3d/options.h
+	eltopo3d/subdivisionscheme.h
+	eltopo3d/surftrack.h
+)
+
+add_definitions(-DNOGUI)
+add_definitions(-DUSE_FORTRAN_BLAS)
 
 blender_add_lib(extern_eltopo "${SRC}" "${INC}")
-
