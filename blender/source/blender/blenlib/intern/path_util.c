@@ -880,11 +880,16 @@ static int get_path_local(char *targetpath, const char *folder_name, const char 
 #ifdef PATH_DEBUG2
 	printf("get_path_local...\n");
 #endif
-	
-	if (subfolder_name) {
-		BLI_join_dirfile(relfolder, sizeof(relfolder), folder_name, subfolder_name);
-	} else {
-		BLI_strncpy(relfolder, folder_name, sizeof(relfolder));
+
+	if(folder_name) {
+		if (subfolder_name) {
+			BLI_join_dirfile(relfolder, sizeof(relfolder), folder_name, subfolder_name);
+		} else {
+			BLI_strncpy(relfolder, folder_name, sizeof(relfolder));
+		}
+	}
+	else {
+		relfolder[0]= '\0';
 	}
 	
 	/* use argv[0] (bprogname) to get the path to the executable */
