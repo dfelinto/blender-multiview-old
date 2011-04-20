@@ -1545,7 +1545,7 @@ static int wm_handlers_do(bContext *C, wmEvent *event, ListBase *handlers)
 		*/   
 		
 		if(handler->flag & WM_HANDLER_DO_FREE) {
-			if (BLI_findindex(handlers, handler) > 0) {
+			if (BLI_findindex(handlers, handler) >= 0) {
 				BLI_remlink(handlers, handler);
 				wm_event_free_handler(handler);
 			}
