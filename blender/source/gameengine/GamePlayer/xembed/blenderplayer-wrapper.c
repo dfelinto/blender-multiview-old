@@ -80,7 +80,7 @@ void sigterm_handler(int signum) {
 
 */
 int  main(int argc, char *argv[]) {
-  
+
 	uid_t privid = geteuid();
 	uid_t caller_id = getuid();
 

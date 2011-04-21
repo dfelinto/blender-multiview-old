@@ -353,7 +353,7 @@ NPP_WriteReady(
 	BlenderPluginInstance* This = NULL;
 	int acceptable = 0;
 	
- 	log_entry("NPP_WriteReady"); 
+	log_entry("NPP_WriteReady");
 
 	if (instance == NULL)	
 		return NPERR_INVALID_INSTANCE_ERROR;
@@ -386,7 +386,7 @@ NPP_Write(
 	BlenderPluginInstance* This = NULL;
 	int accepted = 0;
 	
- 	log_entry("NPP_Write"); 
+	log_entry("NPP_Write");
 
 	if (instance == NULL)	
 		return NPERR_INVALID_INSTANCE_ERROR;
@@ -539,7 +539,7 @@ log_entry(char* msg)
 #ifdef NZC_GENERATE_LOG 
 	FILE* fp = fopen("/tmp/plugin_log","a");
 	if (!fp) return;
-  	fprintf(fp, "--> Unixshell:: %s\n", 
+	fprintf(fp, "--> Unixshell:: %s\n",
 		msg); 
 	fflush(fp);
 	fclose (fp);
