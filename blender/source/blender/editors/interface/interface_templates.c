@@ -677,7 +677,7 @@ static int modifier_can_delete(ModifierData *md)
 static int modifier_is_simulation(ModifierData *md)
 {
 	// Physic Tab
-	if(ELEM5(md->type, eModifierType_Cloth, eModifierType_Collision, eModifierType_Fluidsim, eModifierType_Smoke, eModifierType_Softbody, eModifierType_Surface)) {
+	if(ELEM6(md->type, eModifierType_Cloth, eModifierType_Collision, eModifierType_Fluidsim, eModifierType_Smoke, eModifierType_Softbody, eModifierType_Surface)) {
 		return 1;
 	}
 	// Particle Tab
