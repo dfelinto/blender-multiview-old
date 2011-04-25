@@ -1134,7 +1134,7 @@ void ED_area_exit(bContext *C, ScrArea *sa)
 
 	if (sa->spacetype == SPACE_FILE) {
 		SpaceLink *sl= sa->spacedata.first;
-		if(sl->spacetype == SPACE_FILE) {
+		if(sl && sl->spacetype == SPACE_FILE) {
 			ED_fileselect_exit(C, (SpaceFile *)sl);
 		}
 	}
