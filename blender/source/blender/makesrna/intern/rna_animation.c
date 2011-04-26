@@ -55,6 +55,7 @@ EnumPropertyItem keyingset_path_grouping_items[] = {
 #ifdef RNA_RUNTIME
 
 #include "BKE_animsys.h"
+#include "BKE_fcurve.h"
 #include "BKE_nla.h"
 
 #include "WM_api.h"
