@@ -1192,8 +1192,8 @@ static PyObject *pyrna_enum_to_py(PointerRNA *ptr, PropertyRNA *prop, int val)
 			/*
 			PyErr_Format(PyExc_AttributeError,
 			             "RNA Error: Current value \"%d\" matches no enum", val);
-			*/
 			ret= NULL;
+			*/
 		}
 	}
 
