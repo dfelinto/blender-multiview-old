@@ -352,7 +352,7 @@ static void rna_def_brush(BlenderRNA *brna)
 	static EnumPropertyItem texture_angle_source_items[] = {
 		{0, "USER", 0, "User", "Rotate the brush texture by given angle"},
 		{BRUSH_RAKE, "RAKE", 0, "Rake", "Rotate the brush texture to match the stroke direction"},
-		{BRUSH_RANDOM_ROTATION, "RANDOM", 0, "Random", ""},
+		{BRUSH_RANDOM_ROTATION, "RANDOM", 0, "Random", "Rotate the brush texture at random"},
 		{0, NULL, 0, NULL, NULL}};
 
 	static EnumPropertyItem texture_angle_source_no_random_items[] = {
