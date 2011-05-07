@@ -44,7 +44,7 @@ if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 		set(CPACK_PACKAGE_RELOCATABLE "false")
 		set(CPACK_RPM_PACKAGE_LICENSE "GPLv2")
 		set(CPACK_RPM_PACKAGE_GROUP "Amusements/Graphics")
-		set(CPACK_RPM_USER_BINARY_SPECFILE "${CMAKE_SOURCE_DIR}/build_files/package_spec/blender.spec.in")
+		set(CPACK_RPM_USER_BINARY_SPECFILE "${CMAKE_SOURCE_DIR}/build_files/package_spec/rpm/blender.spec.in")
 	endif()
 endif()
 
