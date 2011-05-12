@@ -18,7 +18,6 @@
 
 # <pep8 compliant>
 
-import bpy
 
 def region_2d_to_vector_3d(region, rv3d, coord):
     """
@@ -47,8 +46,8 @@ def region_2d_to_vector_3d(region, rv3d, coord):
 
 def region_2d_to_location_3d(region, rv3d, coord, depth_location):
     """
-    Return a direction vector from the viewport at the spesific 2d region
-    coordinate.
+    Return a 3d location from the region relative 2d coords, aligned with
+    *depth_location*.
 
     :arg region: region of the 3D viewport, typically bpy.context.region.
     :type region: :class:`Region`
