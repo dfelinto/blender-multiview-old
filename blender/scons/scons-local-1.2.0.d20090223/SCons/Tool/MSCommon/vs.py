@@ -232,7 +232,7 @@ SupportedVSList = [
                  batch_file_dir_env_relpath=r'..\..\VC',
                  executable_path=r'..\Common7\IDE\VCExpress.exe',
                  default_dirname='Microsoft Visual Studio 9',
-                 supported_arch=['x86'],
+                 supported_arch=['x86', 'amd64'],
     ),
 
     # Visual Studio 2005
