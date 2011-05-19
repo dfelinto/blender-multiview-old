@@ -642,8 +642,8 @@ int isect_ray_tri_threshold_v3(const float p1[3], const float d[3], const float 
 
 int isect_line_plane_v3(float out[3], const float l1[3], const float l2[3], const float plane_co[3], const float plane_no[3], const short no_flip)
 {
-	float l_vec[3]; /* line vector */
-	float p_no[3];
+	float l_vec[3]; /* l1 -> l2 normalized vector */
+	float p_no[3]; /* 'plane_no' normalized */
 	float dot;
 
 	sub_v3_v3v3(l_vec, l2, l1);
@@ -651,15 +651,16 @@ int isect_line_plane_v3(float out[3], const float l1[3], const float l2[3], cons
 	normalize_v3(l_vec);
 	normalize_v3_v3(p_no, plane_no);
 
-	/* for pradictable flipping */
 	dot= dot_v3v3(l_vec, p_no);
 	if(dot == 0.0f) {
 		return 0;
 	}
 	else {
-		float l1_plane[3]; /* line point aligne with the plane */
-		float dist;
+		float l1_plane[3]; /* line point aligned with the plane */
+		float dist; /* 'plane_no' aligned distance to the 'plane_co' */
 
+		/* for pradictable flipping since the plane is only used to
+		 * define a direction, ignore its flipping and aligned with 'l_vec' */
 		if(dot < 0.0f) {
 			dot= -dot;
 			negate_v3(p_no);
@@ -668,6 +669,8 @@ int isect_line_plane_v3(float out[3], const float l1[3], const float l2[3], cons
 		add_v3_v3v3(l1_plane, l1, p_no);
 
 		dist = lambda_cp_line(plane_co, l1, l1_plane);
+
+		/* treat line like a ray, when 'no_flip' is set */
 		if(no_flip && dist < 0.0f) {
 			dist= -dist;
 		}

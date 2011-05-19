@@ -97,7 +97,7 @@ int isect_ray_plane_v3(float p1[3], float d[3], float v0[3],
 					   float v1[3], float v2[3], float *lambda, int clip);
 
 /**
- * Definition of a callback routine that receives events.
+ * Intersect line/plane, optionally treat line as directional (like a ray) with the no_flip argument.
  * @param out The intersection point.
  * @param l1 The first point of the line.
  * @param l2 The second point of the line.
