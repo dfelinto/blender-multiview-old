@@ -56,9 +56,6 @@ PROPERTY_MAPPING = {
     "world": 'WORLD',
 }
 
-# toolbar, todo
-PROPERTY_SKIP = {"imagepaint"}
-
 # format: % (new, blank, out)
 magick_command = 'convert "%s" "%s" \( -clone 0 -clone 1 -compose difference -composite -threshold 0 \) -delete 1 -alpha off -compose copy_opacity -composite -trim "%s" '
 
@@ -100,7 +97,7 @@ def main():
     # get the properties space
     space_props = None
     for sa in bpy.context.screen.areas:
-        space = sa.active_space
+        space = sa.spaces.active
         if space.type == 'PROPERTIES':
             space_props = space
             break
