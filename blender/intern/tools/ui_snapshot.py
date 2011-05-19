@@ -1,4 +1,4 @@
-# $Id: bpy_introspect_ui.py 34890 2011-02-16 02:51:56Z campbellbarton $
+# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
