@@ -143,8 +143,9 @@ def main():
         # if bl_context in PROPERTY_SKIP:
         #     continue
 
-        if bl_context != "material":
-            continue
+        ## TESTING ONLY
+        #if bl_context != "material":
+        #    continue
 
         prop_context = PROPERTY_MAPPING[bl_context]
         if not prop_context:
