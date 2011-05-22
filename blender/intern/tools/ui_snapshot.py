@@ -28,15 +28,15 @@ REMOVE_CMP_IMAGES = True
 TEMP_DIR = "/tmp"
 
 PROPERTY_MAPPING = {
-    "armature_edit": '',
-    "bone": '',
+    "armature_edit": 'DATA',
+    "bone": 'BONE',
     "bone_constraint": '',
     "constraint": '',
     "curve_edit": '',
     "data": '',
     "imagepaint": '',
-    "lattice_edit": '',
-    "material": '',
+    "lattice_edit": 'DATA',
+    "material": 'MATERIAL',
     "mball_edit": '',
     "mesh_edit": '',
     "modifier": '',
@@ -45,7 +45,7 @@ PROPERTY_MAPPING = {
     "particle": '',
     "particlemode": '',
     "physics": '',
-    "posemode": '',
+    "posemode": '',  # toolbar
     "render": 'RENDER',
     "scene": 'SCENE',
     "surface_edit": '',
@@ -61,6 +61,19 @@ magick_command = 'convert "%s" "%s" \( -clone 0 -clone 1 -compose difference -co
 
 import bpy
 
+
+def clear_startup_blend():
+    import bpy
+    if bpy.ops.object.mode_set.poll():
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+    import bpy
+
+    for scene in bpy.data.scenes:
+        for obj in scene.objects:
+            scene.objects.unlink(obj)
+
+
 def force_redraw():
     bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
@@ -71,8 +84,28 @@ def screenshot(path):
     force_redraw()
     bpy.ops.screen.screenshot(filepath=path)
 
+def context_setup(bl_context, class_name):    
+    if bl_context == "object":
+        bpy.ops.object.add(type='EMPTY')
+    elif bl_context == "bone":
+        bpy.ops.object.armature_add()
+        bpy.ops.object.mode_set(mode='EDIT')
+    elif bl_context == "armature_edit":
+        bpy.ops.object.armature_add()
+        bpy.ops.object.mode_set(mode='EDIT')
+    elif bl_context == "posemode":
+        bpy.ops.object.armature_add()
+        bpy.ops.object.mode_set(mode='POSE')
+    elif bl_context == "lattice_edit":
+        bpy.ops.object.add(type='LATTICE')
+        bpy.ops.object.mode_set(mode='EDIT')
+    elif bl_context == "material":
+        bpy.ops.object.add(type='MESH')
+        bpy.context.object.data.materials.append(bpy.data.materials.new("Material"))
+        bpy.ops.object.mode_set(mode='EDIT')
+    
 
-def main():    
+def main():
     panel_subclasses = []
 
     for cls_name in dir(bpy.types):
@@ -107,7 +140,10 @@ def main():
     for bl_context in sorted(button_contexts):
         print(list(sorted(button_contexts)))
         # TODO
-        if bl_context in PROPERTY_SKIP:
+        # if bl_context in PROPERTY_SKIP:
+        #     continue
+
+        if bl_context != "material":
             continue
 
         prop_context = PROPERTY_MAPPING[bl_context]
@@ -121,6 +157,10 @@ def main():
             if cls.bl_space_type == 'PROPERTIES':
                 if cls.bl_region_type == 'WINDOW':
                     if cls.bl_context == bl_context:
+                        
+                        clear_startup_blend()
+                        context_setup(bl_context, cls.__name__)
+                        
                         file_base = os.path.join(TEMP_DIR, "%s_%s" % (bl_context, "_" + cls.__name__.replace(".", "_")))
                         file_old = file_base + "_old.png"
                         file_new = file_base + "_new.png"
