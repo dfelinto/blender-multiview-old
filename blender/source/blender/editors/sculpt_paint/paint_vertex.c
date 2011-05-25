@@ -869,7 +869,7 @@ static int weight_sample_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	view3d_set_viewcontext(C, &vc);
 	me= get_mesh(vc.obact);
 
-	if (me && me->dvert && vc.ar->regiontype==RGN_TYPE_WINDOW) {
+	if (me && me->dvert && vc.v3d && vc.rv3d) {
 		int index;
 
 		view3d_operator_needs_opengl(C);
@@ -953,7 +953,7 @@ static EnumPropertyItem *weight_paint_sample_enum_itemf(bContext *C, PointerRNA 
 			view3d_set_viewcontext(C, &vc);
 			me= get_mesh(vc.obact);
 
-			if (me && me->dvert && vc.ar->regiontype==RGN_TYPE_WINDOW) {
+			if (me && me->dvert && vc.v3d && vc.rv3d) {
 				int index;
 
 				view3d_operator_needs_opengl(C);
@@ -1022,6 +1022,7 @@ static int weight_sample_group_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
+/* TODO, we could make this a menu into OBJECT_OT_vertex_group_set_active rather then its own operator */
 void PAINT_OT_weight_sample_group(wmOperatorType *ot)
 {
 	PropertyRNA *prop= NULL;
