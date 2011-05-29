@@ -357,7 +357,7 @@ bool SCA_PythonController::Import()
 	
 	m_function_argc = 0; /* rare cases this could be a function that isnt defined in python, assume zero args */
 	if (PyFunction_Check(m_function)) {
-		m_function_argc ((PyCodeObject *)PyFunction_GET_CODE(m_function))->co_argcount;
+		m_function_argc= ((PyCodeObject *)PyFunction_GET_CODE(m_function))->co_argcount;
 	}
 	
 	if(m_function_argc > 1) {
