@@ -3,35 +3,25 @@
 
 # Nicer makefiles with -I/1/foo/ instead of -I/1/2/3/../../foo/
 # use it instead of include_directories()
-
-macro(file_list_abs
-	files)
-
-	set(files_abs "")
-
-	foreach(fp ${files})
-		get_filename_component(abs_fp ${fp} ABSOLUTE)
-		list(APPEND files_abs "${abs_fp}")
-		message(STATUS "${abs_fp}")
-	endforeach()
-
-	set(${files} "${files_abs}")
-endmacro()
-
-
 macro(blender_include_dirs
 	includes)
-	file_list_abs(includes)
-	include_directories(${includes})
-endmacro()
 
+	foreach(inc ${ARGV})
+		get_filename_component(abs_inc ${inc} ABSOLUTE)
+		list(APPEND all_incs ${abs_inc})
+	endforeach()
+	include_directories(${all_incs})
+endmacro()
 
 macro(blender_include_dirs_sys
 	includes)
-	file_list_abs(includes)
-	include_directories(SYSTEM ${includes})
-endmacro()
 
+	foreach(inc ${ARGV})
+		get_filename_component(abs_inc ${inc} ABSOLUTE)
+		list(APPEND all_incs ${abs_inc})
+	endforeach()
+	include_directories(SYSTEM ${all_incs})
+endmacro()
 
 macro(blender_source_group
 	sources)
