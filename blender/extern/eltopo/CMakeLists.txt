@@ -33,6 +33,10 @@ set(INC
 	eltopo3d
 )
 
+set(INC_SYS
+
+)
+
 set(SRC
 	eltopo-capi.cpp
 	common/bfstream.cpp
@@ -122,4 +126,4 @@ set(SRC
 add_definitions(-DNOGUI)
 add_definitions(-DUSE_FORTRAN_BLAS)
 
-blender_add_lib(extern_eltopo "${SRC}" "${INC}")
+blender_add_lib(extern_eltopo "${SRC}" "${INC}" "${INC_SYS}")
