@@ -5040,7 +5040,7 @@ static void brush_drawcursor(bContext *C, int x, int y, void *UNUSED(customdata)
 		if(use_zoom)
 			glScalef(zoomx, zoomy, 1.0f);
 
-		glColor4f(brush->add_col[0], brush->add_col[1], brush->add_col[2], 0.5);
+		glColor4f(brush->add_col[0], brush->add_col[1], brush->add_col[2], alpha);
 		glEnable( GL_LINE_SMOOTH );
 		glEnable(GL_BLEND);
 		glutil_draw_lined_arc(0, (float)(M_PI*2.0), size, 40);
