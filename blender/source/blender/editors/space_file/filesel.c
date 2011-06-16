@@ -162,6 +162,9 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 		if(is_dir==TRUE && is_filename==FALSE) {
 			params->flag |= FILE_DIRSEL_ONLY;
 		}
+		else {
+			params->flag &= ~FILE_DIRSEL_ONLY;
+		}
 
 		params->filter = 0;
 		if(RNA_struct_find_property(op->ptr, "filter_blender"))
@@ -224,10 +227,12 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 			params->display= FILE_SHORTDISPLAY;
 		}
 
-	} else {
+	}
+	else {
 		/* default values, if no operator */
 		params->type = FILE_UNIX;
 		params->flag |= FILE_HIDE_DOT;
+		params->flag &= ~FILE_DIRSEL_ONLY;
 		params->display = FILE_SHORTDISPLAY;
 		params->filter = 0;
 		params->filter_glob[0] = '\0';
