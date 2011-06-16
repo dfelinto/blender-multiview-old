@@ -191,12 +191,13 @@ static int file_browse_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		return OPERATOR_CANCELLED;
 	}
 	else {
+		const char *path_prop= RNA_struct_find_property(op->ptr, "directory") ? "directory" : "filepath";
 		fbo= MEM_callocN(sizeof(FileBrowseOp), "FileBrowseOp");
 		fbo->ptr= ptr;
 		fbo->prop= prop;
 		op->customdata= fbo;
 
-		RNA_string_set(op->ptr, "filepath", str);
+		RNA_string_set(op->ptr, path_prop, str);
 		MEM_freeN(str);
 
 		if(RNA_struct_find_property(op->ptr, "relative_path")) {
@@ -227,3 +228,19 @@ void BUTTONS_OT_file_browse(wmOperatorType *ot)
 	WM_operator_properties_filesel(ot, 0, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_FILEPATH|WM_FILESEL_RELPATH);
 }
 
+/* second operator, only difference from BUTTONS_OT_file_browse is WM_FILESEL_DIRECTORY */
+void BUTTONS_OT_directory_browse(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name= "Accept";
+	ot->description="Open a directory browser, Hold Shift to open the file, Alt to browse containing directory";
+	ot->idname= "BUTTONS_OT_directory_browse";
+
+	/* api callbacks */
+	ot->invoke= file_browse_invoke;
+	ot->exec= file_browse_exec;
+	ot->cancel= file_browse_cancel;
+
+	/* properties */
+	WM_operator_properties_filesel(ot, 0, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_DIRECTORY|WM_FILESEL_RELPATH);
+}
