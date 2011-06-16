@@ -104,11 +104,12 @@ static int file_browse_exec(bContext *C, wmOperator *op)
 	FileBrowseOp *fbo= op->customdata;
 	ID *id;
 	char *base, *str, path[FILE_MAX];
+	const char *path_prop= RNA_struct_find_property(op->ptr, "directory") ? "directory" : "filepath";
 	
-	if (RNA_property_is_set(op->ptr, "filepath")==0 || fbo==NULL)
+	if (RNA_property_is_set(op->ptr, path_prop)==0 || fbo==NULL)
 		return OPERATOR_CANCELLED;
 	
-	str= RNA_string_get_alloc(op->ptr, "filepath", NULL, 0);
+	str= RNA_string_get_alloc(op->ptr, path_prop, NULL, 0);
 
 	/* add slash for directories, important for some properties */
 	if(RNA_property_subtype(fbo->prop) == PROP_DIRPATH) {
