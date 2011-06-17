@@ -111,7 +111,6 @@ const char *imb_ext_movie[] = {
 	".movie",
 	".mp4",
 	".m4v",
-	".m4a",
 	".m2v",
 	".m2t",
 	".mts",
@@ -145,6 +144,7 @@ const char *imb_ext_audio[] = {
 	".eac3",
 	".aif",
 	".aiff",
+	".m4a",
 	NULL};
 
 static int IMB_ispic_name(const char *name)
