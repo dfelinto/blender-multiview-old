@@ -32,7 +32,7 @@ class FBlender(FApplication):
         Implements FApplication.GetPrettyName()
         
         """
-        return "Blender 2.57"
+        return "Blender 2.58"
     
     def GetSettingsForOperation(self, operation):
         """GetSettingsForOperation(operation) -> list_of_FSettingEntry
