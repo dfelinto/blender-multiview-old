@@ -470,6 +470,7 @@ class WM_OT_context_collection_boolean_set(bpy.types.Operator):
     '''Set boolean values for a collection of items'''
     bl_idname = "wm.context_collection_boolean_set"
     bl_label = "Context Collection Boolean Set"
+    bl_options = {'UNDO', 'REGISTER', 'INTERNAL'}
 
     data_path_iter = data_path_iter
     data_path_item = data_path_item

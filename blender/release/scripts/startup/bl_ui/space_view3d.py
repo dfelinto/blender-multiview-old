@@ -1252,7 +1252,7 @@ class VIEW3D_MT_pose(bpy.types.Menu):
         layout.separator()
 
         layout.menu("VIEW3D_MT_pose_showhide")
-        layout.operator_menu_enum("pose.flags_set", 'mode', text="Bone Settings")
+        layout.menu("VIEW3D_MT_bone_options_toggle", text="Bone Settings")
 
 
 class VIEW3D_MT_pose_transform(bpy.types.Menu):
@@ -2010,7 +2010,7 @@ class VIEW3D_MT_edit_armature(bpy.types.Menu):
 
         layout.separator()
 
-        layout.operator_menu_enum("armature.flags_set", "mode", text="Bone Settings")
+        layout.menu("VIEW3D_MT_bone_options_toggle", text="Bone Settings")
 
 
 class VIEW3D_MT_armature_specials(bpy.types.Menu):
