@@ -109,6 +109,9 @@ option(WITH_PLAYER        "Build Player" OFF)
 option(WITH_AUDASPACE    "Build with blenders audio library" ON)
 mark_as_advanced(WITH_AUDASPACE)
 
+option(WITH_SDL_GHOST    "Enable SDL for sound and joystick support" OFF)
+mark_as_advanced(WITH_SDL_GHOST)
+
 option(WITH_HEADLESS      "Build without graphical support (renderfarm, server mode only)" OFF)
 mark_as_advanced(WITH_HEADLESS)
 
@@ -207,6 +210,10 @@ endif()
 
 if(NOT WITH_AUDASPACE AND (WITH_OPENAL OR WITH_SDL OR WITH_JACK))
 	message(FATAL_ERROR "WITH_OPENAL/WITH_SDL/WITH_JACK/WITH_CODEC_FFMPEG require WITH_AUDASPACE")
+endif()
+
+if(NOT WITH_SDL AND WITH_SDL_GHOST)
+	message(FATAL_ERROR "WITH_SDL_GHOST requires WITH_SDL to be ON")
 endif()
 
 if(NOT WITH_IMAGE_OPENJPEG AND WITH_IMAGE_REDCODE)
