@@ -31,7 +31,9 @@
 
 #include "GHOST_DisplayManager.h"
 
-#include "SDL.h"
+extern "C" {
+	#include "SDL.h"
+}
 
 class GHOST_SystemSDL;
 

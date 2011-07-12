@@ -36,8 +36,9 @@
 #include "GHOST_WindowSDL.h"
 #include "GHOST_Event.h"
 
-#include "SDL.h"
-#include "SDL_mouse.h"
+extern "C" {
+	#include "SDL.h"
+}
 
 class GHOST_WindowSDL;
 

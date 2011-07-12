@@ -33,7 +33,9 @@
 #include "GHOST_SystemSDL.h"
 #include <map>
 
-#include "SDL.h"
+extern "C" {
+	#include "SDL.h"
+}
 
 class STR_String;
 
@@ -109,8 +111,10 @@ protected:
 	GHOST_TSuccess setClientHeight(GHOST_TUns32 height);
 	GHOST_TSuccess setClientSize(GHOST_TUns32 width, GHOST_TUns32 height);
 
+	/* TODO */
 	void screenToClient( GHOST_TInt32 inX, GHOST_TInt32 inY, GHOST_TInt32& outX, GHOST_TInt32& outY ) const { outX = inX; outY = inY; }
 	void clientToScreen( GHOST_TInt32 inX, GHOST_TInt32 inY, GHOST_TInt32& outX, GHOST_TInt32& outY ) const { outX = inX; outY = inY; }
+
 	GHOST_TSuccess swapBuffers();
 	GHOST_TSuccess activateDrawingContext();
 	GHOST_TSuccess setState(GHOST_TWindowState state);
