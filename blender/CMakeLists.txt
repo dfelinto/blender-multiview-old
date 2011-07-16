@@ -1220,7 +1220,7 @@ endif()
 # with _any_ library but since we used a fixed python version this tends to
 # be most problematic.
 if(WITH_PYTHON)
-	if(NOT EXISTS "${PYTHON_INCLUDE_DIR}/Pythond.h")
+	if(NOT EXISTS "${PYTHON_INCLUDE_DIR}/Python.h")
 		message(FATAL_ERROR "Missing: \"${PYTHON_INCLUDE_DIR}/Python.h\",\n"
 							"Set the cache entry 'PYTHON_INCLUDE_DIR' to point "
 							"to a valid python include path. Containing "
