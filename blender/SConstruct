@@ -366,13 +366,16 @@ if not quickie and do_clean:
 # with _any_ library but since we used a fixed python version this tends to
 # be most problematic.
 if env['WITH_BF_PYTHON']:
-	if not os.path.exists(os.path.join(env.subst('${BF_PYTHON_INC}'), "Python.h")):
+	py_h = os.path.join(Dir(env.subst('${BF_PYTHON_INC}')).abspath, "Python.h")
+
+	if not os.path.exists(py_h):
 		print("\nMissing: \"" + env.subst('${BF_PYTHON_INC}') + os.sep + "Python.h\",\n"
 			  "  Set 'BF_PYTHON_INC' to point "
 			  "to a valid python include path.\n  Containing "
 			  "Python.h for python version \"" + env.subst('${BF_PYTHON_VERSION}') + "\"")
 
 		Exit()
+	del py_h
 
 
 if not os.path.isdir ( B.root_build_dir):
