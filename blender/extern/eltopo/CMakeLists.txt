@@ -27,10 +27,10 @@
 set(INC
 	.
 	common
+	eltopo3d
+	common/meshes
 	common/newsparse
 	common/tunicate
-	common/meshes
-	eltopo3d
 )
 
 set(INC_SYS
@@ -51,18 +51,8 @@ set(SRC
 	common/makelevelset2.cpp
 	common/makelevelset3.cpp
 	common/marching_triangles.cpp
-	common/newsparse/dense_matrix.cpp
-	common/newsparse/krylov_solvers.cpp
-	common/newsparse/sparse_matrix.cpp
 	common/predicates.cpp
 	common/sos_ccd_wrapper.cpp
-	common/sparse/incomplete_qr.cpp
-	common/tunicate/expansion.cpp
-	common/tunicate/intersection.cpp
-	common/tunicate/neg.cpp
-	common/tunicate/orientation.cpp
-	common/tunicate/sos_intersection.cpp
-	common/tunicate/sos_orientation.cpp
 	common/wallclocktime.cpp
 	eltopo3d/accelerationgrid.cpp
 	eltopo3d/broadphasegrid.cpp
@@ -71,6 +61,16 @@ set(SRC
 	eltopo3d/nondestructivetrimesh.cpp
 	eltopo3d/subdivisionscheme.cpp
 	eltopo3d/surftrack.cpp
+	common/newsparse/dense_matrix.cpp
+	common/newsparse/krylov_solvers.cpp
+	common/newsparse/sparse_matrix.cpp
+	common/sparse/incomplete_qr.cpp
+	common/tunicate/expansion.cpp
+	common/tunicate/intersection.cpp
+	common/tunicate/neg.cpp
+	common/tunicate/orientation.cpp
+	common/tunicate/sos_intersection.cpp
+	common/tunicate/sos_orientation.cpp
 
 	eltopo-capi.h
 	common/array1.h
@@ -93,21 +93,8 @@ set(SRC
 	common/marching_triangles.h
 	common/mat.h
 	common/matlapack.h
-	common/newsparse/dense_matrix.h
-	common/newsparse/krylov_solvers.h
-	common/newsparse/linear_operator.h
-	common/newsparse/sparse_matrix.h
 	common/openglutils.h
 	common/predicates.h
-	common/sparse/cgsolver.h
-	common/sparse/crsolver.h
-	common/sparse/incomplete_qr.h
-	common/sparse/sparseilu.h
-	common/sparse/sparsematrix.h
-	common/sparse/sparsemilu.h
-	common/tunicate/expansion.h
-	common/tunicate/neg.h
-	common/tunicate/tunicate.h
 	common/util.h
 	common/vec.h
 	common/vector_math.h
@@ -121,6 +108,19 @@ set(SRC
 	eltopo3d/options.h
 	eltopo3d/subdivisionscheme.h
 	eltopo3d/surftrack.h
+	common/newsparse/dense_matrix.h
+	common/newsparse/krylov_solvers.h
+	common/newsparse/linear_operator.h
+	common/newsparse/sparse_matrix.h
+	common/sparse/cgsolver.h
+	common/sparse/crsolver.h
+	common/sparse/incomplete_qr.h
+	common/sparse/sparseilu.h
+	common/sparse/sparsematrix.h
+	common/sparse/sparsemilu.h
+	common/tunicate/expansion.h
+	common/tunicate/neg.h
+	common/tunicate/tunicate.h
 	)
 
 add_definitions(-DNOGUI)
