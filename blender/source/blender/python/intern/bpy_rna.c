@@ -3266,7 +3266,7 @@ static PyObject *pyrna_prop_dir(BPy_PropertyRNA *self)
 		pyrna_dir_members_py(ret, (PyObject *)self);
 	}
 
-	if(RNA_property_type(prop) == PROP_COLLECTION) {
+	if(RNA_property_type(self->prop) == PROP_COLLECTION) {
 		if(RNA_property_collection_type_get(&self->ptr, self->prop, &r_ptr)) {
 			pyrna_dir_members_rna(ret, &r_ptr);
 		}
