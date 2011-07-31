@@ -32,10 +32,6 @@ set(INC
 	../blenlib
 	../blenloader
 	../makesdna
-	../editors/include # needed in SkinDM for GL stuff
-	../gpu # needed in SkinDM for GL stuff
-	../blenkernel
-	../blenkernel/intern
 	../render/extern/include
 	../../../intern/elbeem/extern
 	../../../intern/guardedalloc
@@ -74,7 +70,6 @@ set(SRC
 	intern/MOD_shapekey.c
 	intern/MOD_shrinkwrap.c
 	intern/MOD_simpledeform.c
-	intern/MOD_skin.c
 	intern/MOD_smoke.c
 	intern/MOD_smooth.c
 	intern/MOD_softbody.c
