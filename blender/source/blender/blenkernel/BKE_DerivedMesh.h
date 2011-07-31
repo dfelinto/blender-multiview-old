@@ -83,7 +83,8 @@ typedef struct DMGridAdjacency {
 typedef enum DerivedMeshType {
 	DM_TYPE_CDDM,
 	DM_TYPE_EDITMESH,
-	DM_TYPE_CCGDM
+	DM_TYPE_CCGDM,
+	DM_TYPE_SKIN,
 } DerivedMeshType;
 
 typedef struct DerivedMesh DerivedMesh;

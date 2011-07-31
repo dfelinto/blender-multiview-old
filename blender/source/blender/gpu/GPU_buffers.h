@@ -163,6 +163,7 @@ void GPU_buffer_unbind(void);
 int GPU_buffer_legacy( struct DerivedMesh *dm );
 
 /* Buffers for non-DerivedMesh drawing */
+void GPU_draw_smooth_sphere(void);
 void *GPU_build_mesh_buffers(struct GHash *map, struct MVert *mvert,
 			struct MFace *mface, int *face_indices,
 			int totface, int *vert_indices, int uniq_verts,

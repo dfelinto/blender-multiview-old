@@ -32,6 +32,10 @@ set(INC
 	../blenlib
 	../blenloader
 	../makesdna
+	../editors/include # needed in SkinDM for GL stuff
+	../gpu # needed in SkinDM for GL stuff
+	../blenkernel
+	../blenkernel/intern
 	../render/extern/include
 	../../../intern/elbeem/extern
 	../../../intern/guardedalloc
