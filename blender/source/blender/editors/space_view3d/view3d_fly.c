@@ -1138,7 +1138,7 @@ static int fly_modal(bContext *C, wmOperator *op, wmEvent *event)
 			WM_event_add_notifier(C, NC_OBJECT|ND_TRANSFORM, fly_object);
 		}
 
-		// puts("redraw!"); // too frequent, commented with NDOF_FLY_DRAW_TOOMUCH for now
+		puts("redraw!"); // too frequent, commented with NDOF_FLY_DRAW_TOOMUCH for now
 		ED_region_tag_redraw(CTX_wm_region(C));
 	}
 
