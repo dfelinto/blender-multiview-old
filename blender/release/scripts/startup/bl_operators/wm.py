@@ -20,8 +20,12 @@
 
 import bpy
 from bpy.types import Menu, Operator
-from bpy.props import StringProperty, BoolProperty, IntProperty, \
-                      FloatProperty, EnumProperty
+from bpy.props import (StringProperty,
+                       BoolProperty,
+                       IntProperty,
+                       FloatProperty,
+                       EnumProperty,
+                       )
 
 from rna_prop_ui import rna_idprop_ui_prop_get, rna_idprop_ui_prop_clear
 
@@ -187,7 +191,8 @@ class WM_OT_context_scale_int(Operator):
             else:
                 add = "-1"
                 func = "min"
-            exec("context.%s = %s(round(context.%s * value), context.%s + %s)" % (data_path, func, data_path, data_path, add))
+            exec("context.%s = %s(round(context.%s * value), context.%s + %s)" %
+                 (data_path, func, data_path, data_path, add))
         else:
             exec("context.%s *= value" % self.data_path)
 
@@ -290,12 +295,12 @@ class WM_OT_context_toggle_enum(Operator):
 
     data_path = rna_path_prop
     value_1 = StringProperty(
-            name="Value", \
+            name="Value",
             description="Toggle enum",
             maxlen=1024,
             )
     value_2 = StringProperty(
-            name="Value", \
+            name="Value",
             description="Toggle enum",
             maxlen=1024,
             )
@@ -305,10 +310,11 @@ class WM_OT_context_toggle_enum(Operator):
         if context_path_validate(context, self.data_path) is Ellipsis:
             return {'PASS_THROUGH'}
 
-        exec("context.%s = ['%s', '%s'][context.%s!='%s']" % \
-            (self.data_path, self.value_1,\
-             self.value_2, self.data_path,
-             self.value_2))
+        exec("context.%s = ['%s', '%s'][context.%s!='%s']" %
+             (self.data_path, self.value_1,
+              self.value_2, self.data_path,
+              self.value_2,
+              ))
 
         return {'FINISHED'}
 
@@ -728,9 +734,11 @@ class WM_OT_doc_view(Operator):
 
     doc_id = doc_id
     if bpy.app.version_cycle == "release":
-        _prefix = "http://www.blender.org/documentation/blender_python_api_%s%s_release" % ("_".join(str(v) for v in bpy.app.version[:2]), bpy.app.version_char)
+        _prefix = ("http://www.blender.org/documentation/blender_python_api_%s%s_release" %
+                   ("_".join(str(v) for v in bpy.app.version[:2]), bpy.app.version_char))
     else:
-        _prefix = "http://www.blender.org/documentation/blender_python_api_%s" % "_".join(str(v) for v in bpy.app.version)
+        _prefix = ("http://www.blender.org/documentation/blender_python_api_%s" %
+                   "_".join(str(v) for v in bpy.app.version))
 
     def _nested_class_string(self, class_string):
         ls = []
@@ -748,8 +756,8 @@ class WM_OT_doc_view(Operator):
             class_name, class_prop = id_split
 
             if hasattr(bpy.types, class_name.upper() + '_OT_' + class_prop):
-                url = '%s/bpy.ops.%s.html#bpy.ops.%s.%s' % \
-                        (self._prefix, class_name, class_name, class_prop)
+                url = ("%s/bpy.ops.%s.html#bpy.ops.%s.%s" %
+                       (self._prefix, class_name, class_name, class_prop))
             else:
 
                 # detect if this is a inherited member and use that name instead
@@ -762,8 +770,8 @@ class WM_OT_doc_view(Operator):
 
                 # It so happens that epydoc nests these, not sphinx
                 # class_name_full = self._nested_class_string(class_name)
-                url = '%s/bpy.types.%s.html#bpy.types.%s.%s' % \
-                        (self._prefix, class_name, class_name, class_prop)
+                url = ("%s/bpy.types.%s.html#bpy.types.%s.%s" %
+                       (self._prefix, class_name, class_name, class_prop))
 
         else:
             return {'PASS_THROUGH'}
