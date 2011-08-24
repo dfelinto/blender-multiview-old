@@ -451,7 +451,7 @@ if(UNIX AND NOT APPLE)
 
 	if(WITH_OPENCOLLADA)
 		find_package(OpenCOLLADA)
-		if(OPENCOLLADA_FOUND))
+		if(OPENCOLLADA_FOUND)
 			set(PCRE /usr CACHE PATH "PCRE Directory")
 			mark_as_advanced(PCRE)
 			set(PCRE_LIBPATH ${PCRE}/lib)
