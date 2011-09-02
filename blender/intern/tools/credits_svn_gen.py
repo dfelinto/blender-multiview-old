@@ -218,7 +218,6 @@ author_name_mapping = {
     "zuster": "Daniel Dunbar",
 
     # TODO, find remaining names
-
     "cmccad": "",
     "eeshlo": "",
     "frank": "",
@@ -409,7 +408,7 @@ def main():
 
     # write out the wiki page
     # sort by name
-    file = open("/credits.html", 'w')
+    file = open("credits.html", 'w')
 
     file.write("<h3>Individual Contributors</h3>\n\n")
 
