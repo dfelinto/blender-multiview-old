@@ -48,6 +48,7 @@ in blender.org's typo3.
 # -----------------------------------------------------------------------------
 # Generic Class and parsing code, could be useful for all sorts of cases
 
+
 class SvnCommit(object):
     """Just data store really"""
     __slots__ = ("revision",
@@ -301,7 +302,7 @@ def patch_numbers_from_log(msg):
         if      (w[0].isdigit() or
                 (len(w) > 2 and w[0] == "[" and w[1] == "#") or
                 (len(w) > 1 and w[0] == "#")):
-            
+
             try:
                 num = int(w.strip("[]#"))
             except ValueError:
@@ -365,32 +366,32 @@ def is_credit_commit_valid(commit):
     for action, path in commit.paths:
         if is_path_valid(path):
             tot_valid += 1
-    
+
     if tot_valid == 0:
         return False
-    
+
     # couldnt prove invalid, must be valid
     return True
 
 
 def main():
     patch_map = build_patch_name_map(tracker_csv)
-    
+
     commits = parse_commits(svn_log)
 
     credits = {key: Credit() for key in author_name_mapping}
-    S = set()
+
     for commit in commits:
         if is_credit_commit_valid(commit):
             patch_id, patch_author = patch_find_author(commit, patch_map)
-            
+
             if patch_author is None:
                 # will error out if we miss adding new devs
                 credit = credits[commit.author]
             else:
                 # so we dont use again
                 del patch_map[patch_id]
-                
+
                 unix_name = author_name_mapping_reverse.get(patch_author)
                 if unix_name is None:  # not someone who contributed before
                     author_name_mapping_reverse[patch_author] = patch_author

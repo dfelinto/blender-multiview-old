@@ -257,7 +257,7 @@ def _api():
         struct_dict[b'ListBase'].ITER = list_base_iter
 
         def CAST(self, to):
-            if type(type_name) == str:
+            if type(to) == str:
                 type_cast = struct_dict[to.encode('ASCII')]
             else:
                 type_cast = to
