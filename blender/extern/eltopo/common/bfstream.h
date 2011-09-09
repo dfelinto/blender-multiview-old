@@ -6,7 +6,16 @@
 #include <cstdlib>
 #include <fstream>
 
+// __BIG_ENDIAN__ or __LITTLE_ENDIAN__ should be defined before the compiler gets here
+// true in gcc 4.2 but may not be guarenteed between compilers/versions ??
+
+// list taken from source/blender/blenkernel/BKE_utildefines.h
+#if defined(__sgi) || defined (__sparc) || defined (__sparc__) || defined (__PPC__) || defined (__ppc__) || defined (__hppa__) || defined (__BIG_ENDIAN__)
+#define __BIG_ENDIAN__
+#else
 #define __LITTLE_ENDIAN__
+#endif
+
 #ifdef __BIG_ENDIAN__
 #ifdef __LITTLE_ENDIAN__
 #error Cannot be both big and little endian
