@@ -88,7 +88,6 @@ class SvnCommit(object):
 
 
 def parse_commits(filepath):
-    import xml.dom.minidom
     from xml.dom.minidom import parse
 
     svn_xml = parse(filepath)
