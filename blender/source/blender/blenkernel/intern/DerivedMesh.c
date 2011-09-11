@@ -656,9 +656,9 @@ static void emDM_drawMappedFaces(DerivedMesh *dm, int (*setDrawOptions)(void *us
 
 	if (emdm->vertexCos) {
 		/* add direct access */
-		const float (*vertexCos)[3]= emdm->vertexCos;
-		const float (*vertexNos)[3]= emdm->vertexNos;
-		const float (*faceNos)[3]=   emdm->faceNos;
+		float (*vertexCos)[3]= emdm->vertexCos;
+		float (*vertexNos)[3]= emdm->vertexNos;
+		float (*faceNos)[3]=   emdm->faceNos;
 		EditVert *eve;
 
 		for (i=0,eve=emdm->em->verts.first; eve; eve= eve->next)
