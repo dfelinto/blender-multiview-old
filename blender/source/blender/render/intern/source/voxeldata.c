@@ -318,7 +318,7 @@ static void cache_voxeldata(struct Render *re, Tex *tex)
 	char path[sizeof(vd->source_path)];
 	
 	/* only re-cache if dataset needs updating */
-	if ((vd == NULL) || (vd->flag & TEX_VD_STILL) || (vd->cachedframe == re->r.cfra))
+	if ((vd->flag & TEX_VD_STILL) || (vd->cachedframe == re->r.cfra))
 		if (vd->ok) return;
 	
 	/* clear out old cache, ready for new */
