@@ -1,10 +1,11 @@
 # French UI Translation
-# mont29 <montagne29 at/chez wanadoo dot/point fr>, 2011
+# mont29 <montagne29 /at|chez\ wanadoo /dot|point\ fr>, 2011
+# zeauro <zeauron /at|chez\ gmail /dot|point\ com>, 2011
 # "Last-Translator: mont29 <montagne29 at/chez wanadoo dot/point fr>\n"
 # "PO-Revision-Date: 2011-09-16 00:00\n"
 # "Content-Type: text/plain; charset=UTF-8\n"
 # "Content-Transfer-Encoding: 8bit\n"
-# "Language-Team: mont29 / project page : http://wiki.blender.org/index.php/Interface/fr"
+# "Language-Team: mont29, zeauro / project page : http://wiki.blender.org/index.php/Interface/fr"
 # "X-Generator: Gedit 2.30.4\n"
 # Copyright (C) 2005 Free Software Foundation, Inc.
 #
@@ -19450,7 +19451,7 @@ msgstr "Méta-balle"
 
 #: source/blender/makesrna/intern/rna_ID.c:67
 msgid "NodeTree"
-msgstr "Système de nœud"
+msgstr "Arbre de nœud"
 
 #: source/blender/makesrna/intern/rna_ID.c:77
 msgid "Window Manager"
@@ -20333,108 +20334,90 @@ msgstr "Calque UV"
 msgid "UV layer to use for mapping with UV texture coordinates"
 msgstr "Claque UV à utiliser pour le placage, avec les coordonnées de texture UV"
 
-# #############################################################################
-# ######### MARKER
-# #############################################################################
-
-
-
 #: source/blender/makesrna/intern/rna_material.c:452
-#, fuzzy
 msgid "From Dupli"
-msgstr "Copie"
+msgstr "D’après dupli"
 
 #: source/blender/makesrna/intern/rna_material.c:452
 msgid ""
 "Dupli's instanced from verts, faces or particles, inherit texture coordinate "
 "from their parent"
 msgstr ""
+"Les “duplis” instanciés depuis des vertices, faces ou particules héritent leurs coordonnées de texture de leur parent"
 
 #: source/blender/makesrna/intern/rna_material.c:457
-#, fuzzy
 msgid "From Original"
-msgstr "Annuler Tout"
+msgstr "D’après original"
 
 #: source/blender/makesrna/intern/rna_material.c:457
 msgid ""
 "Dupli's derive their object coordinates from the original objects "
 "transformation"
 msgstr ""
+"Les “duplis” dérivent leurs coordonnées d’objet des transformations de l’objet original"
 
 #: source/blender/makesrna/intern/rna_material.c:462
 #: source/blender/makesrna/intern/rna_material.c:755
 msgid "Diffuse Color"
-msgstr ""
+msgstr "Couleur diffuse"
 
 #: source/blender/makesrna/intern/rna_material.c:462
-#, fuzzy
 msgid "Causes the texture to affect basic color of the material"
-msgstr "Affiche les textures du matériau sélectionné"
+msgstr "La texture affecte la couleur de base du matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:467
-#, fuzzy
 msgid "Causes the texture to affect the rendered normal"
-msgstr "Affiche les textures de la lampe sélectionnée"
+msgstr "La texture affecte les normales rendues"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:472
 #: source/blender/makesrna/intern/rna_material.c:761
-#, fuzzy
 msgid "Specular Color"
-msgstr "Actions spéciales"
+msgstr "Couleur spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:472
-#, fuzzy
 msgid "Causes the texture to affect the specularity color"
-msgstr "Affiche les textures de la lampe sélectionnée"
+msgstr "La texture affecte la couleur spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:477
 msgid "Causes the texture to affect the mirror color"
-msgstr ""
+msgstr "La texture affecte la couleur de réflexion"
 
 #: source/blender/makesrna/intern/rna_material.c:482
 msgid ""
 "Causes the texture to affect the value of the materials diffuse reflectivity"
-msgstr ""
+msgstr "La texture affecte la valeur de la réflexivité diffuse des matériaux"
 
 #: source/blender/makesrna/intern/rna_material.c:487
 msgid "Causes the texture to affect the value of specular reflectivity"
-msgstr ""
+msgstr "La texture affecte la valeur de la réflexivité spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:492
 msgid "Causes the texture to affect the value of ambient"
-msgstr ""
+msgstr "La texture affecte la valeur d’ambiance"
 
 #: source/blender/makesrna/intern/rna_material.c:497
 msgid "Causes the texture to affect the hardness value"
-msgstr ""
+msgstr "La texture affecte la valeur de dureté"
 
 #: source/blender/makesrna/intern/rna_material.c:502
-#, fuzzy
 msgid "Ray-Mirror"
-msgstr "Réflexion Ray"
+msgstr "Réflexion Raytracée"
 
 #: source/blender/makesrna/intern/rna_material.c:502
 msgid "Causes the texture to affect the ray-mirror value"
-msgstr ""
+msgstr "La texture affecte la valeur de réflexion raytracée"
 
 #: source/blender/makesrna/intern/rna_material.c:507
 msgid "Causes the texture to affect the alpha value"
-msgstr ""
+msgstr "La texture affecte la valeur d’alpha"
 
 #: source/blender/makesrna/intern/rna_material.c:512
-#, fuzzy
 msgid "Causes the texture to affect the emit value"
-msgstr "Affiche les textures de la lampe sélectionnée"
+msgstr "La texture affecte la valeur d’émission"
 
 #: source/blender/makesrna/intern/rna_material.c:517
-#, fuzzy
 msgid "Causes the texture to affect the translucency value"
-msgstr "Affiche les textures de la lampe sélectionnée"
+msgstr "La texture affecte la valeur de translucidité"
 
 #: source/blender/makesrna/intern/rna_material.c:522
 #: source/blender/makesrna/intern/rna_scene.c:2052
@@ -20443,519 +20426,472 @@ msgstr "Déplacement"
 
 #: source/blender/makesrna/intern/rna_material.c:522
 msgid "Let the texture displace the surface"
-msgstr ""
+msgstr "Laisser la texture déplacer la surface"
 
 #: source/blender/makesrna/intern/rna_material.c:527
 msgid "Let the texture warp texture coordinates of next channels"
-msgstr ""
+msgstr "Laisser la texture déformer les coordonnées de texture des canaux suivants"
 
 #: source/blender/makesrna/intern/rna_material.c:533
 msgid "X Mapping"
-msgstr ""
+msgstr "Placage X"
 
 #: source/blender/makesrna/intern/rna_material.c:539
 msgid "Y Mapping"
-msgstr ""
+msgstr "Placage Y"
 
 #: source/blender/makesrna/intern/rna_material.c:545
 msgid "Z Mapping"
-msgstr ""
+msgstr "Placage Z"
 
 #: source/blender/makesrna/intern/rna_material.c:556
 #, fuzzy
 msgid "Normal Map Space"
-msgstr "Normales"
+msgstr "Espace de carte de normales"
 
 #: source/blender/makesrna/intern/rna_material.c:556
+#, fuzzy
 msgid "Sets space of normal map image"
-msgstr ""
+msgstr "Définir l’espace de l’image de carte de normales"
 
 #: source/blender/makesrna/intern/rna_material.c:562
-#, fuzzy
 msgid "Normal Factor"
-msgstr "Zoom arrière"
+msgstr "Facteur de normales"
 
 #: source/blender/makesrna/intern/rna_material.c:562
 msgid "Amount texture affects normal values"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte les valeurs des normales"
 
 #: source/blender/makesrna/intern/rna_material.c:568
-#, fuzzy
 msgid "Displacement Factor"
-msgstr "Déplacement"
+msgstr "Facteur de déplacement"
 
 #: source/blender/makesrna/intern/rna_material.c:568
 msgid "Amount texture displaces the surface"
-msgstr ""
+msgstr "Intensité avec laquelle la texture déplace la surface"
 
 #: source/blender/makesrna/intern/rna_material.c:574
-#, fuzzy
 msgid "Warp Factor"
-msgstr "Acteur"
+msgstr "Facteur de déformation"
 
 #: source/blender/makesrna/intern/rna_material.c:574
 msgid "Amount texture affects texture coordinates of next channels"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte les coordonnées de texture des canaux suivants"
 
 #: source/blender/makesrna/intern/rna_material.c:580
-#, fuzzy
 msgid "Specular Color Factor"
-msgstr "Aller à l'Image Clé Précédente"
+msgstr "Facteur de couleur spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:580
 msgid "Amount texture affects specular color"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la couleur spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:586
-#, fuzzy
 msgid "Diffuse Color Factor"
-msgstr "Acteur"
+msgstr "Facteur de couleur diffuse"
 
 #: source/blender/makesrna/intern/rna_material.c:586
 msgid "Amount texture affects diffuse color"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la couleur diffuse"
 
 #: source/blender/makesrna/intern/rna_material.c:592
-#, fuzzy
 msgid "Mirror Factor"
-msgstr "Réflex / Transp"
+msgstr "Facteur de réflexion"
 
 #: source/blender/makesrna/intern/rna_material.c:592
 msgid "Amount texture affects mirror color"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la couleur de réflexion"
 
 #: source/blender/makesrna/intern/rna_material.c:598
-#, fuzzy
 msgid "Alpha Factor"
-msgstr "Acteur"
+msgstr "Facteur d’alpha"
 
 #: source/blender/makesrna/intern/rna_material.c:598
 msgid "Amount texture affects alpha"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte l’alpha"
 
 #: source/blender/makesrna/intern/rna_material.c:604
-#, fuzzy
 msgid "Diffuse Factor"
-msgstr "Acteur"
+msgstr "Facteur de diffusion"
 
 #: source/blender/makesrna/intern/rna_material.c:604
 msgid "Amount texture affects diffuse reflectivity"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la réflexivité diffuse"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:610
-#, fuzzy
 msgid "Specular Factor"
-msgstr "Actions spéciales"
+msgstr "Facteur de spécularité"
 
 #: source/blender/makesrna/intern/rna_material.c:610
 msgid "Amount texture affects specular reflectivity"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la réflexivité spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:616
-#, fuzzy
 msgid "Emit Factor"
-msgstr "Acteur"
+msgstr "Facteur d’émission"
 
 #: source/blender/makesrna/intern/rna_material.c:616
 #: source/blender/makesrna/intern/rna_material.c:706
 msgid "Amount texture affects emission"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte l’émission"
 
 #: source/blender/makesrna/intern/rna_material.c:622
 msgid "Hardness Factor"
-msgstr ""
+msgstr "Facteur de dureté"
 
 #: source/blender/makesrna/intern/rna_material.c:622
 msgid "Amount texture affects hardness"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la dureté"
 
 #: source/blender/makesrna/intern/rna_material.c:628
-#, fuzzy
 msgid "Ray Mirror Factor"
-msgstr "Réflexion Ray"
+msgstr "Facteur de réflexion raytracée"
 
 #: source/blender/makesrna/intern/rna_material.c:628
 msgid "Amount texture affects ray mirror"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la réflexion raytracée"
 
 #: source/blender/makesrna/intern/rna_material.c:634
-#, fuzzy
 msgid "Translucency Factor"
-msgstr "Déplacer"
+msgstr "Facteur de translucidité"
 
 #: source/blender/makesrna/intern/rna_material.c:634
 msgid "Amount texture affects translucency"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la translucidité"
 
 #: source/blender/makesrna/intern/rna_material.c:640
-#, fuzzy
 msgid "Ambient Factor"
-msgstr "Occlusion Ambiante"
+msgstr "Facteur d’ambiance"
 
 #: source/blender/makesrna/intern/rna_material.c:640
 msgid "Amount texture affects ambient"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte l’ambiance"
 
 #: source/blender/makesrna/intern/rna_material.c:646
 msgid "Causes the texture to affect the color of emission"
-msgstr ""
+msgstr "La texture affecte la couleur de l’émission"
 
 #: source/blender/makesrna/intern/rna_material.c:651
 msgid "Causes the texture to affect the color of scattered light"
-msgstr ""
+msgstr "La texture affecte la couleur de la lumière dispersée"
 
 #: source/blender/makesrna/intern/rna_material.c:656
+#, fuzzy
 msgid ""
 "Causes the texture to affect the result color after other light has been "
 "scattered/absorbed"
 msgstr ""
+"La texture affecte la couleur résultante après que la lumière a été dispersée/absorbée"
 
 #: source/blender/makesrna/intern/rna_material.c:661
 msgid "Causes the texture to affect the volume's density"
-msgstr ""
+msgstr "La texture affecte la densité du volume"
 
 #: source/blender/makesrna/intern/rna_material.c:666
 msgid "Causes the texture to affect the volume's emission"
-msgstr ""
+msgstr "La texture affecte l’émission du volume"
 
 #: source/blender/makesrna/intern/rna_material.c:671
 msgid "Causes the texture to affect the volume's scattering"
-msgstr ""
+msgstr "La texture affecte la dispersion du volume"
 
 #: source/blender/makesrna/intern/rna_material.c:676
-#, fuzzy
 msgid "Causes the texture to affect the reflected light's brightness"
-msgstr "Affiche les textures de la lampe sélectionnée"
+msgstr "La texture affecte la luminosité de la lumière réfléchie"
 
 #: source/blender/makesrna/intern/rna_material.c:682
 msgid "Emission Color Factor"
-msgstr ""
+msgstr "Facteur de couleur d’émission"
 
 #: source/blender/makesrna/intern/rna_material.c:682
 msgid "Amount texture affects emission color"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la couleur d’émission"
 
 #: source/blender/makesrna/intern/rna_material.c:688
-#, fuzzy
 msgid "Reflection Color Factor"
-msgstr "Sélection -> Curseur"
+msgstr "Facteur de couleur de réflexion"
 
 #: source/blender/makesrna/intern/rna_material.c:688
 msgid "Amount texture affects color of out-scattered light"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la couleur de la lumière dispersée à l’extérieur"
 
 #: source/blender/makesrna/intern/rna_material.c:694
 msgid "Transmission Color Factor"
-msgstr ""
+msgstr "Facteur de couleur de transmission"
 
 #: source/blender/makesrna/intern/rna_material.c:694
 msgid ""
 "Amount texture affects result color after light has been scattered/absorbed"
 msgstr ""
+"Intensité avec laquelle la texture affecte la couleur résultante après que la lumière a été dispersée/absorbée"
 
 #: source/blender/makesrna/intern/rna_material.c:700
-#, fuzzy
 msgid "Density Factor"
-msgstr "Acteur"
+msgstr "Facteur de densité"
 
 #: source/blender/makesrna/intern/rna_material.c:700
 msgid "Amount texture affects density"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la densité"
 
 #: source/blender/makesrna/intern/rna_material.c:706
 msgid "Emission Factor"
-msgstr ""
+msgstr "Facteur d’émission"
 
 #: source/blender/makesrna/intern/rna_material.c:712
 msgid "Scattering Factor"
-msgstr ""
+msgstr "Facteur de dispersion"
 
 #: source/blender/makesrna/intern/rna_material.c:712
 msgid "Amount texture affects scattering"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la dispersion"
 
 #: source/blender/makesrna/intern/rna_material.c:718
-#, fuzzy
 msgid "Reflection Factor"
-msgstr "Sélection des données"
+msgstr "Facteur de réflexion"
 
 #: source/blender/makesrna/intern/rna_material.c:718
 msgid "Amount texture affects brightness of out-scattered light"
-msgstr ""
+msgstr "Intensité avec laquelle la texture affecte la luminosité de la lumière dispersée à l’extérieur"
 
 #: source/blender/makesrna/intern/rna_material.c:725
 #: source/blender/makesrna/intern/rna_material.c:919
 #: source/blender/makesrna/intern/rna_material.c:1392
 #: source/blender/makesrna/intern/rna_scene.c:1450
-#, fuzzy
 msgid "Enabled"
-msgstr "Activer"
+msgstr "Activé"
 
 #: source/blender/makesrna/intern/rna_material.c:725
-#, fuzzy
 msgid "Enable this material texture slot"
-msgstr "Activer Textures"
+msgstr "Activer cet emplacement de texture de matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:731
-#, fuzzy
 msgid "Bump Method"
-msgstr "Edition"
+msgstr "Méthode de bosselage"
 
 #: source/blender/makesrna/intern/rna_material.c:731
 msgid "Method to use for bump mapping"
-msgstr ""
+msgstr "Méthode à utiliser pour le placage de bosselage"
 
 #: source/blender/makesrna/intern/rna_material.c:737
-#, fuzzy
 msgid "Bump Space"
-msgstr "Image d'Arrière Plan"
+msgstr "Espace de bosselage"
 
 #: source/blender/makesrna/intern/rna_material.c:737
 msgid "Space to apply bump mapping in"
-msgstr ""
+msgstr "Espace dans lequel appliquer le placage de bosselage"
 
 #: source/blender/makesrna/intern/rna_material.c:746
-#, fuzzy
 msgid "Shader"
-msgstr "Ombrée"
+msgstr "Shader"
 
 #: source/blender/makesrna/intern/rna_material.c:749
 msgid "Result"
-msgstr ""
+msgstr "Résultat"
 
 #: source/blender/makesrna/intern/rna_material.c:755
-#, fuzzy
 msgid "Diffuse color of the material"
-msgstr "Direction de l'axe"
+msgstr "Couleur diffuse du matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:761
-#, fuzzy
 msgid "Specular color of the material"
-msgstr "Ouverture de la caméra (mm)"
+msgstr "Couleur spéculaire du matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:767
-#, fuzzy
 msgid "Mirror Color"
-msgstr "Réflex / Transp"
+msgstr "Couleur de réflexion"
 
 #: source/blender/makesrna/intern/rna_material.c:767
-#, fuzzy
 msgid "Mirror color of the material"
-msgstr "Direction de l'axe"
+msgstr "Couleur de réflexion du matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:772
-#, fuzzy
 msgid "Alpha transparency of the material"
-msgstr "Permet de rendre l'image d'arrière plan plus ou moins visible."
+msgstr "Transparence alpha du matériau"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:778
-#, fuzzy
 msgid "Specular Alpha"
-msgstr "Actions spéciales"
+msgstr "Alpha spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:778
 msgid "Alpha transparency for specular areas"
-msgstr ""
+msgstr "Transparence alpha des zones spéculaires"
 
 #: source/blender/makesrna/intern/rna_material.c:785
 msgid "Use Diffuse Ramp"
-msgstr ""
+msgstr "Utiliser dégradé diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:785
-#, fuzzy
 msgid "Toggle diffuse ramp operations"
-msgstr "Sélection"
+msgstr "(Dés)activer les opérations de dégradé diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:791
 msgid "Diffuse Ramp"
-msgstr ""
+msgstr "Dégradé diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:791
 msgid "Color ramp used to affect diffuse shading"
-msgstr ""
+msgstr "Dégradé de couleur utilisé pour affecter l’ombrage diffus"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:797
-#, fuzzy
 msgid "Use Specular Ramp"
-msgstr "Actions spéciales"
+msgstr "Utiliser dégradé spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:797
-#, fuzzy
 msgid "Toggle specular ramp operations"
-msgstr "Sélection"
+msgstr "(Dés)activer les opérations de dégradé spéculaire"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:803
-#, fuzzy
 msgid "Specular Ramp"
-msgstr "Actions spéciales"
+msgstr "Dégradé spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:803
 msgid "Color ramp used to affect specular shading"
-msgstr ""
+msgstr "Dégradé spéculaire utilisé pour affecter l’ombrage spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:809
 #: source/blender/makesrna/intern/rna_material.c:815
 msgid "Diffuse Ramp Blend"
-msgstr ""
+msgstr "Mélange du dégradé diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:809
 msgid "Blending method of the ramp and the diffuse color"
-msgstr ""
+msgstr "Méthode de mélange du dégradé avec la couleur diffuse"
 
 #: source/blender/makesrna/intern/rna_material.c:815
 msgid "Blending method of the ramp and the specular color"
-msgstr ""
+msgstr "Méthode de mélange du dégradé avec la couleur spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:821
 msgid "Diffuse Ramp Input"
-msgstr ""
+msgstr "Entrée du dégradé diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:821
 #: source/blender/makesrna/intern/rna_material.c:827
+#, fuzzy
 msgid "Determines how the ramp maps on the surface"
-msgstr ""
+msgstr "Détermine comment le dégradé se plaque sur la surface"
 
 #: source/blender/makesrna/intern/rna_material.c:827
 msgid "Specular Ramp Input"
-msgstr ""
+msgstr "Entrée du dégradé spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:833
 msgid "Diffuse Ramp Factor"
-msgstr ""
+msgstr "Facteur de dégradé diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:833
 #: source/blender/makesrna/intern/rna_material.c:839
+#, fuzzy
 msgid "Blending factor (also uses alpha in Colorband)"
-msgstr ""
+msgstr "Facteur de mélange (utilise aussi l’alpha du dégradé)"
 
 #: source/blender/makesrna/intern/rna_material.c:839
 msgid "Specular Ramp Factor"
-msgstr ""
+msgstr "Facteur de dégradé spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:848
 msgid "Lambert"
-msgstr ""
+msgstr "Lambert"
 
 #: source/blender/makesrna/intern/rna_material.c:848
 msgid "Use a Lambertian shader"
-msgstr ""
+msgstr "Utiliser un shader Lambertien"
 
 #: source/blender/makesrna/intern/rna_material.c:849
 msgid "Oren-Nayar"
-msgstr ""
+msgstr "Oren-Nayar"
 
 #: source/blender/makesrna/intern/rna_material.c:849
 msgid "Use an Oren-Nayar shader"
-msgstr ""
+msgstr "Utiliser un shader Oren-Nayar"
 
 #: source/blender/makesrna/intern/rna_material.c:850
 #: source/blender/makesrna/intern/rna_material.c:1404
+#, fuzzy
 msgid "Toon"
-msgstr ""
+msgstr "Dessin"
 
 #: source/blender/makesrna/intern/rna_material.c:850
 #: source/blender/makesrna/intern/rna_material.c:1404
 #, fuzzy
 msgid "Use a toon shader"
-msgstr "Utiliser une brosse douce"
+msgstr "Utiliser un shader de dessin"
 
 #: source/blender/makesrna/intern/rna_material.c:851
 msgid "Minnaert"
-msgstr ""
+msgstr "Minnaert"
 
 #: source/blender/makesrna/intern/rna_material.c:851
 msgid "Use a Minnaert shader"
-msgstr ""
+msgstr "Utiliser un shader Minnaert"
 
 #: source/blender/makesrna/intern/rna_material.c:852
 msgid "Use a Fresnel shader"
-msgstr ""
+msgstr "Utiliser un shader Fresnel"
 
 #: source/blender/makesrna/intern/rna_material.c:858
-#, fuzzy
 msgid "Diffuse Shader Model"
-msgstr "Affichage:"
+msgstr "Modèle de shader diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:864
 msgid "Diffuse Intensity"
-msgstr ""
+msgstr "Intensité diffuse"
 
 #: source/blender/makesrna/intern/rna_material.c:864
-#, fuzzy
 msgid "Amount of diffuse reflection"
-msgstr "Utilise le Bouton Gauche de la Souris pour sélectionner les objets"
+msgstr "Intensité de la réflexion diffuse"
 
 #: source/blender/makesrna/intern/rna_material.c:869
-#, fuzzy
 msgid "Roughness"
-msgstr "Adoucir"
+msgstr "Rugosité"
 
 #: source/blender/makesrna/intern/rna_material.c:869
 msgid "Oren-Nayar Roughness"
-msgstr ""
+msgstr "Rugosité d’Oren-Nayar"
 
 #: source/blender/makesrna/intern/rna_material.c:875
+#, fuzzy
 msgid "Diffuse Toon Size"
-msgstr ""
+msgstr "Taille de dessin diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:875
+#, fuzzy
 msgid "Size of diffuse toon area"
-msgstr ""
+msgstr "Taille de la zonne de dessin diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:881
+#, fuzzy
 msgid "Diffuse Toon Smooth"
-msgstr ""
+msgstr "Adoucissement de dessin diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:881
+#, fuzzy
 msgid "Smoothness of diffuse toon area"
-msgstr ""
+msgstr "Douceur des zones de dessin diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:887
-#, fuzzy
 msgid "Diffuse Fresnel"
-msgstr "Différence"
+msgstr "Fresnel diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:887
 msgid "Power of Fresnel"
-msgstr ""
+msgstr "Puissance du Fresnel"
 
 #: source/blender/makesrna/intern/rna_material.c:893
-#, fuzzy
 msgid "Diffuse Fresnel Factor"
-msgstr "Différence"
+msgstr "Facteur du Fresnel diffus"
 
 #: source/blender/makesrna/intern/rna_material.c:893
 msgid "Blending factor of Fresnel"
-msgstr ""
+msgstr "Facteur de mélange du Fresnel"
 
 #: source/blender/makesrna/intern/rna_material.c:898
-#, fuzzy
 msgid "Darkness"
-msgstr "+ Sombre"
+msgstr "Obscurité"
 
 #: source/blender/makesrna/intern/rna_material.c:898
 msgid "Minnaert darkness"
-msgstr ""
+msgstr "Obscurité du Minnaert"
 
 #: source/blender/makesrna/intern/rna_material.c:908
 #: source/blender/makesrna/intern/rna_material.c:1730
@@ -20965,78 +20901,76 @@ msgid "Sky"
 msgstr "Ciel"
 
 #: source/blender/makesrna/intern/rna_material.c:915
-#, fuzzy
 msgid "Material Raytrace Mirror"
-msgstr "Miroir Interactif"
+msgstr "Réflexion raytracée de matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:915
 msgid "Raytraced reflection settings for a Material datablock"
-msgstr ""
+msgstr "Réglages de réflexion raytracée pour un bloc de données matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:919
 msgid "Enable raytraced reflections"
-msgstr ""
+msgstr "Activer les réflexions raytracées"
 
 #: source/blender/makesrna/intern/rna_material.c:925
-#, fuzzy
 msgid "Reflectivity"
-msgstr "Sélection des données"
+msgstr "Réflexivité"
 
 #: source/blender/makesrna/intern/rna_material.c:925
 msgid "Sets the amount mirror reflection for raytrace"
-msgstr ""
+msgstr "Intensité de la réflexion miroir pour le raytracing"
 
 #: source/blender/makesrna/intern/rna_material.c:931
 msgid "Power of Fresnel for mirror reflection"
-msgstr ""
+msgstr "Puissance du Fresnel pour la réflexion miroir"
 
 #: source/blender/makesrna/intern/rna_material.c:937
 #: source/blender/makesrna/intern/rna_material.c:1008
-#, fuzzy
 msgid "Fresnel Factor"
-msgstr "Acteur"
+msgstr "Facteur de Fresnel"
 
 #: source/blender/makesrna/intern/rna_material.c:937
 #: source/blender/makesrna/intern/rna_material.c:1008
 msgid "Blending factor for Fresnel"
-msgstr ""
+msgstr "Facteur de mélange pour le Fresnel"
 
 #: source/blender/makesrna/intern/rna_material.c:943
 #: source/blender/makesrna/intern/rna_material.c:1014
 msgid "Gloss Amount"
-msgstr ""
+msgstr "Intensité de brillance"
 
 #: source/blender/makesrna/intern/rna_material.c:943
 msgid ""
 "The shininess of the reflection. Values < 1.0 give diffuse, blurry "
 "reflections"
 msgstr ""
+"La brillance de la réflexion (des valeurs inférieures à 1.0 donnent des réflexions diffuses, floues)"
 
 #: source/blender/makesrna/intern/rna_material.c:949
 msgid "Gloss Anisotropy"
-msgstr ""
+msgstr "Anisotropie de brillance"
 
 #: source/blender/makesrna/intern/rna_material.c:949
 msgid ""
 "The shape of the reflection, from 0.0 (circular) to 1.0 (fully stretched "
 "along the tangent"
 msgstr ""
+"La forme de la réflexion, depuis 0.0 (circulaire) à 1.0 (complètement étirée le long de la tangente"
 
 #: source/blender/makesrna/intern/rna_material.c:955
 #: source/blender/makesrna/intern/rna_material.c:1020
 msgid "Gloss Samples"
-msgstr ""
+msgstr "Échantillons de brillance"
 
 #: source/blender/makesrna/intern/rna_material.c:955
+#, fuzzy
 msgid "Number of cone samples averaged for blurry reflections"
-msgstr ""
+msgstr "Nombre moyen d’échantillons coniques pour les réflexions floues"
 
-# Alt m
 #: source/blender/makesrna/intern/rna_material.c:961
 #: source/blender/makesrna/intern/rna_material.c:1026
-#, fuzzy
 msgid "Gloss Threshold"
-msgstr "Fusionner"
+msgstr "Limite de brillance"
 
 #: source/blender/makesrna/intern/rna_material.c:961
 #: source/blender/makesrna/intern/rna_material.c:1026
@@ -21044,1351 +20978,1264 @@ msgid ""
 "Threshold for adaptive sampling. If a sample contributes less than this "
 "amount (as a percentage), sampling is stopped"
 msgstr ""
+"Limite pour l’échantillonnage adpatatif (si un échantillon contribue à moins que cette quantité [comme pourcentage], l’échantillonnage est stoppé"
 
 #: source/blender/makesrna/intern/rna_material.c:967
+#, fuzzy
 msgid "Maximum allowed number of light inter-reflections"
-msgstr ""
+msgstr "Nombre maximum autorisé d’inter-réflexions de la lumière"
 
 #: source/blender/makesrna/intern/rna_material.c:973
-#, fuzzy
 msgid "Maximum Distance"
-msgstr "Affichage:"
+msgstr "Distance maximum"
 
 #: source/blender/makesrna/intern/rna_material.c:973
 msgid ""
 "Maximum distance of reflected rays. Reflections further than this range fade "
 "to sky color or material color"
 msgstr ""
+"Distance (longueur) maximale des rayons réfléchis (les réflexions plus éloignées se fondent dans la couleur du ciel ou du matériau)"
 
 #: source/blender/makesrna/intern/rna_material.c:979
-#, fuzzy
 msgid "Fade-out Color"
-msgstr "Objet"
+msgstr "Couleur de “fondu au loin”"
 
 #: source/blender/makesrna/intern/rna_material.c:979
 msgid ""
 "The color that rays with no intersection within the Max Distance take. "
 "Material color can be best for indoor scenes, sky color for outdoor"
 msgstr ""
+"La couleur que prennent les rayons dépourvus d’intersection avant la Distance maximum (la couleur du matériau peu être préférable pour les scènes d’intérieur, et la couleur du ciel pour celles d’extérieur)"
 
 #: source/blender/makesrna/intern/rna_material.c:991
 msgid "Material Raytrace Transparency"
-msgstr ""
+msgstr "Transparence raytracée de matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:991
 msgid "Raytraced refraction settings for a Material datablock"
-msgstr ""
+msgstr "Réglages de réfraction raytracée pour un bloc de données matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:996
 msgid "Sets angular index of refraction for raytraced refraction"
-msgstr ""
+msgstr "Indice de réfraction angulaire pour la réfraction raytracée"
 
 #: source/blender/makesrna/intern/rna_material.c:1002
 msgid "Power of Fresnel for transparency (Ray or ZTransp)"
-msgstr ""
+msgstr "Puissance du Fresnel pour la transparence (ray et ztransp)"
 
 #: source/blender/makesrna/intern/rna_material.c:1014
 msgid ""
 "The clarity of the refraction. Values < 1.0 give diffuse, blurry refractions"
 msgstr ""
+"La clarté de la réfraction (les valeurs inférieures à 1.0 donnent des réfractions diffuses, floues)"
 
 #: source/blender/makesrna/intern/rna_material.c:1020
+#, fuzzy
 msgid "Number of cone samples averaged for blurry refractions"
-msgstr ""
+msgstr "Nombre moyen d’échantillons coniques pour les réfractions floues"
 
 #: source/blender/makesrna/intern/rna_material.c:1032
+#, fuzzy
 msgid "Maximum allowed number of light inter-refractions"
-msgstr ""
+msgstr "Nombre maximum autorisé d’inter-réfractions de la lumière"
 
 #: source/blender/makesrna/intern/rna_material.c:1038
 msgid ""
 "Amount to blend in the material's diffuse color in raytraced transparency "
 "(simulating absorption)"
 msgstr ""
+"Quantité de couleur diffuse su matériau à incorporer dans la transparence raytracée (simule l’absorption)"
 
 #: source/blender/makesrna/intern/rna_material.c:1044
 msgid ""
 "Maximum depth for light to travel through the transparent material before "
 "becoming fully filtered (0.0 is disabled)"
 msgstr ""
+"Profondeur maximale à laquelle la lumière peut se propager dans le matériau transparent avant de devenir entièrement filtrée (0.0 pour désactiver)"
 
 #: source/blender/makesrna/intern/rna_material.c:1050
+#, fuzzy
 msgid "Falloff power for transmissivity filter effect (1.0 is linear)"
-msgstr ""
+msgstr "Puissance d ’atténuation pour l’effet de filtre de transmissivité (1.0 pour du linéaire)"
 
 #: source/blender/makesrna/intern/rna_material.c:1060
 #: source/blender/makesrna/intern/rna_material.c:1705
 msgid "Shadeless"
-msgstr "Neutre"
+msgstr "Sans ombrage"
 
 #: source/blender/makesrna/intern/rna_material.c:1060
 msgid "Do not calculate lighting and shadows"
-msgstr ""
+msgstr "Ne pas calculer éclairage ni ombres"
 
 #: source/blender/makesrna/intern/rna_material.c:1061
 #, fuzzy
 msgid "Shadowed"
-msgstr "Ombres"
+msgstr "Ombres portées"
 
 #: source/blender/makesrna/intern/rna_material.c:1062
 #: source/blender/makesrna/intern/rna_material.c:1317
 #: source/blender/makesrna/intern/rna_userdef.c:441
 msgid "Shaded"
-msgstr "Ombrée"
+msgstr "Ombré"
 
 #: source/blender/makesrna/intern/rna_material.c:1063
-#, fuzzy
 msgid "Multiple Scattering"
-msgstr "Activer"
+msgstr "Dispersion multiple"
 
 #: source/blender/makesrna/intern/rna_material.c:1064
 msgid "Shaded + Multiple Scattering"
-msgstr ""
+msgstr "Ombré + dispersion multiple"
 
 #: source/blender/makesrna/intern/rna_material.c:1068
-#, fuzzy
 msgid "Randomized"
-msgstr "Aléatoire"
+msgstr "Rendu aléatoire"
 
 #: source/blender/makesrna/intern/rna_material.c:1076
-#, fuzzy
 msgid "Material Volume"
-msgstr "Matériau"
+msgstr "Volume de matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1076
 msgid "Volume rendering settings for a Material datablock"
-msgstr ""
+msgstr "Réglages de rendu de volume pour un bloc de données matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1081
 #, fuzzy
 msgid "Step Calculation"
-msgstr "Dépliage UV"
+msgstr "Calcul des pas"
 
 #: source/blender/makesrna/intern/rna_material.c:1081
+#, fuzzy
 msgid "Method of calculating the steps through the volume"
-msgstr ""
+msgstr "Méthode de calcul des pas à travers le volume"
 
 #: source/blender/makesrna/intern/rna_material.c:1088
 #, fuzzy
 msgid "Step Size"
-msgstr "Limites"
+msgstr "Taille des pas"
 
 #: source/blender/makesrna/intern/rna_material.c:1088
+#, fuzzy
 msgid "Distance between subsequent volume depth samples"
-msgstr ""
+msgstr "Distance entre échantillons subséquents de profondeur du volume"
 
 #: source/blender/makesrna/intern/rna_material.c:1094
-#, fuzzy
 msgid "Lighting Mode"
-msgstr "Peinture sur Sommets"
+msgstr "Mode d’éclairage"
 
 #: source/blender/makesrna/intern/rna_material.c:1094
 msgid "Method of shading, attenuating, and scattering light through the volume"
-msgstr ""
+msgstr "Méthode d’ombrage, atténuation et dispersion de la lumière à travers le volume"
 
 #: source/blender/makesrna/intern/rna_material.c:1099
-#, fuzzy
 msgid "External Shadows"
-msgstr "Activer Ombres"
+msgstr "Ombres externes"
 
 #: source/blender/makesrna/intern/rna_material.c:1099
 msgid "Receive shadows from sources outside the volume (temporary)"
-msgstr ""
+msgstr "Recevoir des ombres de sources extérieures au volume (temporaire)"
 
 #: source/blender/makesrna/intern/rna_material.c:1104
-#, fuzzy
 msgid "Light Cache"
-msgstr "Zoom sur Sélection"
+msgstr "Cache de lumière"
 
 #: source/blender/makesrna/intern/rna_material.c:1104
 msgid ""
 "Pre-calculate the shading information into a voxel grid, speeds up shading "
 "at slightly less accuracy"
 msgstr ""
+"Pré-calculer les information d’ombrage dans une grille de voxels, accélère l’ombrage au prix d’une légère perte de précision"
 
 #: source/blender/makesrna/intern/rna_material.c:1110
 msgid ""
 "Resolution of the voxel grid, low resolutions are faster, high resolutions "
 "use more memory"
 msgstr ""
+"Résolution de la grille de voxels, les basses résolutions sont plus rapides, les hautes résolutions utilisent plus de mémoire"
 
 #: source/blender/makesrna/intern/rna_material.c:1116
-#, fuzzy
 msgid "Diffusion"
-msgstr "Position"
+msgstr "Diffusion"
 
 #: source/blender/makesrna/intern/rna_material.c:1116
 msgid "Diffusion factor, the strength of the blurring effect"
-msgstr ""
+msgstr "Facteur de diffusion, l’intensité de l’effet de flou"
 
 #: source/blender/makesrna/intern/rna_material.c:1123
 msgid "Proportional distance over which the light is diffused"
-msgstr ""
+msgstr "Distance proportionnelle au-delà de laquelle la lumière est diffusée"
 
 #: source/blender/makesrna/intern/rna_material.c:1129
 msgid "Multiplier for multiple scattered light energy"
-msgstr ""
+msgstr "Multiplicateur pour l’énergie de la lumière multi-dispersée"
 
 #: source/blender/makesrna/intern/rna_material.c:1135
+#, fuzzy
 msgid "Depth Cutoff"
-msgstr ""
+msgstr "Coupure de profondeur"
 
 #: source/blender/makesrna/intern/rna_material.c:1135
 msgid ""
 "Stop ray marching early if transmission drops below this luminance - higher "
 "values give speedups in dense volumes at the expense of accuracy"
 msgstr ""
+"Arrêter la progression du rayon rapidement si la transmission tombe sous cette luminance – de plus hautes valeurs accélèrent les choses dans les volumes denses, au prix d’une perte de précision"
 
 #: source/blender/makesrna/intern/rna_material.c:1141
 msgid "The base density of the volume"
-msgstr ""
+msgstr "La densité de base du volume"
 
 #: source/blender/makesrna/intern/rna_material.c:1148
 msgid "Density Scale"
-msgstr ""
+msgstr "Échelle de densité"
 
 #: source/blender/makesrna/intern/rna_material.c:1148
 msgid "Multiplier for the material's density"
-msgstr ""
+msgstr "Multiplicateur pour la densité du matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1155
 msgid ""
 "Amount of light that gets scattered out by the volume - the more out-"
 "scattering, the shallower the light will penetrate "
 msgstr ""
+"Quantité de lumière dispersée vers l’extérieur par le volume — plus il y a de dispersion extérieure, moins la lumière pénètre"
 
 #: source/blender/makesrna/intern/rna_material.c:1161
+#, fuzzy
 msgid ""
 "Result color of the volume, after other light has been scattered/absorbed"
 msgstr ""
+"Couleur résultante du volume, après que la lumière a été dispersée/absorbée"
 
 #: source/blender/makesrna/intern/rna_material.c:1167
 msgid ""
 "Color of light scattered out of the volume (does not affect transmission)"
 msgstr ""
+"Couleur de la lumière dispersée vers l’extérieur du volume (n’affecte pas la transmission)"
 
 #: source/blender/makesrna/intern/rna_material.c:1174
 msgid ""
 "Multiplier to make out-scattered light brighter or darker (non-physically "
 "correct)"
 msgstr ""
+"Multiplicateur pour rendre la lumière dispersée vers l’extérieur plus lumineuse ou sombre (physiquement incorrect)"
 
 #: source/blender/makesrna/intern/rna_material.c:1180
 msgid "Color of emitted light"
-msgstr ""
+msgstr "Couleur de la lumière émise"
 
 #: source/blender/makesrna/intern/rna_material.c:1187
 msgid "Amount of light that gets emitted by the volume"
-msgstr ""
+msgstr "Quantité de lumière émise par le volume"
+
+#: source/blender/makesrna/intern/rna_material.c:1193
+msgid "Asymmetry"
+msgstr "Asymétrie"
 
 #: source/blender/makesrna/intern/rna_material.c:1193
 #, fuzzy
-msgid "Asymmetry"
-msgstr "Symétrie"
-
-#: source/blender/makesrna/intern/rna_material.c:1193
 msgid ""
 "Back scattering (-1.0) to Forward scattering (1.0) and the range in between"
 msgstr ""
+"De la dispersion arrière (-1.0) à la dispersion vers l’avant (1.0), et toute valeur intermédiaire"
 
 #: source/blender/makesrna/intern/rna_material.c:1206
-#, fuzzy
 msgid "Material Halo"
-msgstr "Matériau"
+msgstr "Halo de matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1206
 msgid "Halo particle effect settings for a Material datablock"
-msgstr ""
+msgstr "Réglages de l’effet de particule halo pour un bloc de données matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1211
-#, fuzzy
 msgid "Sets the dimension of the halo"
-msgstr "Spécifie quelle est la précision de l'axe"
+msgstr "Dimension du halo"
 
 #: source/blender/makesrna/intern/rna_material.c:1217
-#, fuzzy
 msgid "Sets the hardness of the halo"
-msgstr "Définit le volume de ce son"
+msgstr "Dureté du halo"
 
 #: source/blender/makesrna/intern/rna_material.c:1223
-#, fuzzy
 msgid "Sets the strength of the add effect"
-msgstr "Définie la taille globale de l'image d'arrière plan."
+msgstr "Force de l’effet d’addition"
 
 #: source/blender/makesrna/intern/rna_material.c:1229
 msgid "Sets the number of rings rendered over the halo"
-msgstr ""
+msgstr "Nombre d’anneaux rendus par-dessus le halo"
 
 #: source/blender/makesrna/intern/rna_material.c:1235
 msgid "Sets the number of star shaped lines rendered over the halo"
-msgstr ""
+msgstr "Nombre de lignes en forme d’étoile rendues par-dessus le halo"
 
 #: source/blender/makesrna/intern/rna_material.c:1241
-#, fuzzy
 msgid "Star Tips"
-msgstr "Etoiles"
+msgstr "Pointes d’étoile"
 
 #: source/blender/makesrna/intern/rna_material.c:1241
 msgid "Sets the number of points on the star shaped halo"
-msgstr ""
+msgstr "Nombre de pointes dans le halo en forme d’étoile"
 
 #: source/blender/makesrna/intern/rna_material.c:1247
 msgid "Randomizes ring dimension and line location"
-msgstr ""
+msgstr "Rendre aléatoire les dimensions des anneaux et positions de lignes"
 
 #: source/blender/makesrna/intern/rna_material.c:1252
-#, fuzzy
 msgid "Renders halo as a lens flare"
-msgstr "Rendre le matériau en tant qu'Halo"
+msgstr "Rendre le halo comme un artefact d’objectif (“lens flare”)"
+
+#: source/blender/makesrna/intern/rna_material.c:1258
+msgid "Flare Size"
+msgstr "Taille d’artefact"
 
 #: source/blender/makesrna/intern/rna_material.c:1258
 #, fuzzy
-msgid "Flare Size"
-msgstr "Extruder"
-
-#: source/blender/makesrna/intern/rna_material.c:1258
 msgid "Sets the factor by which the flare is larger than the halo"
-msgstr ""
+msgstr "Facteur par lequel la taille de l’artefact est multipliée, par rapport au halo"
 
 #: source/blender/makesrna/intern/rna_material.c:1264
 msgid "Flare Subsize"
-msgstr ""
+msgstr "Sous-taille d’artefact"
 
 #: source/blender/makesrna/intern/rna_material.c:1264
 msgid "Sets the dimension of the sub-flares, dots and circles"
-msgstr ""
+msgstr "Dimension des sous-artefacts, points et cercles"
 
 #: source/blender/makesrna/intern/rna_material.c:1270
+#, fuzzy
 msgid "Flare Boost"
-msgstr ""
+msgstr "Boost d’artefact"
 
 #: source/blender/makesrna/intern/rna_material.c:1270
 msgid "Gives the flare extra strength"
-msgstr ""
+msgstr "Donner à l’artefact une force supplémentaire"
 
 #: source/blender/makesrna/intern/rna_material.c:1276
-#, fuzzy
 msgid "Flare Seed"
-msgstr "Mode sélection par Faces"
+msgstr "Graine d’artefact"
 
 #: source/blender/makesrna/intern/rna_material.c:1276
 msgid "Specifies an offset in the flare seed table"
-msgstr ""
+msgstr "Décalage dans le tableau des graines aléatoires d’artefact"
 
 #: source/blender/makesrna/intern/rna_material.c:1282
 msgid "Flares Sub"
-msgstr ""
+msgstr "Sous-artefacts"
 
 #: source/blender/makesrna/intern/rna_material.c:1282
-#, fuzzy
 msgid "Sets the number of sub-flares"
-msgstr "Définit le volume de ce son"
+msgstr "Nombre de sous-artefacts"
 
 #: source/blender/makesrna/intern/rna_material.c:1287
-#, fuzzy
 msgid "Renders rings over halo"
-msgstr "Rendre le matériau en tant qu'Halo"
+msgstr "Rendre des anneaux par-dessus le halo"
 
 #: source/blender/makesrna/intern/rna_material.c:1292
-#, fuzzy
 msgid "Renders star shaped lines over halo"
-msgstr "Rendre le matériau en tant qu'Halo"
+msgstr "Rendre des lignes en forme d’étoile par-dessus le halo"
 
 #: source/blender/makesrna/intern/rna_material.c:1297
-#, fuzzy
 msgid "Star"
-msgstr "Etoile"
+msgstr "Étoile"
 
 #: source/blender/makesrna/intern/rna_material.c:1297
-#, fuzzy
 msgid "Renders halo as a star"
-msgstr "Rendre le matériau en tant qu'Halo"
+msgstr "Rendre le halo comme une étoile"
 
 #: source/blender/makesrna/intern/rna_material.c:1302
 msgid "Gives halo a texture"
-msgstr ""
+msgstr "Donner au halo une texture"
 
-# ##########################################################
-# ##
-# ##  Menubar  Snap
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:1307
-#, fuzzy
 msgid "Vertex Normal"
-msgstr "Sommet"
+msgstr "Normales des vertices"
 
 #: source/blender/makesrna/intern/rna_material.c:1307
 msgid "Uses the vertex normal to specify the dimension of the halo"
-msgstr ""
+msgstr "Utiliser les normales des vertices pour spécifier la dimension du halo"
 
 #: source/blender/makesrna/intern/rna_material.c:1312
-#, fuzzy
 msgid "Extreme Alpha"
-msgstr "Régler l'Alpha"
+msgstr "Alpha extrême"
 
 #: source/blender/makesrna/intern/rna_material.c:1312
 msgid "Uses extreme alpha"
-msgstr ""
+msgstr "Utiliser l’alpha extrême"
 
 #: source/blender/makesrna/intern/rna_material.c:1317
 msgid "Lets halo receive light and shadows from external objects"
-msgstr ""
+msgstr "Laisser les halos recevoir lumière et ombres depuis des objets externes"
 
 #: source/blender/makesrna/intern/rna_material.c:1322
 msgid "Softens the edges of halos at intersections with other geometry"
-msgstr ""
+msgstr "Adoucir les bords des halos à l’intersection avec d’autre géométries"
 
 #: source/blender/makesrna/intern/rna_material.c:1334
-#, fuzzy
 msgid "Material Subsurface Scattering"
-msgstr "Activer"
+msgstr "Dispersion sub-surfacique (SSS) de matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1334
 msgid "Diffuse subsurface scattering settings for a Material datablock"
-msgstr ""
+msgstr "Réglages de la dispersion sub-surfacique diffuse pour un bloc de données matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1340
 msgid "Mean red/green/blue scattering path length"
-msgstr ""
+msgstr "Longueur moyenne du chemin de dispersion rouge/vert/bleu"
 
 #: source/blender/makesrna/intern/rna_material.c:1345
 msgid "Scattering color"
-msgstr ""
+msgstr "Couleur de dispersion"
 
 #: source/blender/makesrna/intern/rna_material.c:1351
 #: source/blender/makesrna/intern/rna_world.c:342
 msgid "Error Tolerance"
-msgstr ""
+msgstr "Tolérance d’erreur"
 
 #: source/blender/makesrna/intern/rna_material.c:1351
 msgid "Error tolerance (low values are slower and higher quality)"
-msgstr ""
+msgstr "Tolérance d’erreur (les valeurs basses sont plus lentes mais de meilleures qualité)"
 
 #: source/blender/makesrna/intern/rna_material.c:1357
-#, fuzzy
 msgid "Object scale factor"
-msgstr "Même Groupe"
+msgstr "Facteur de taille d’objet"
 
 #: source/blender/makesrna/intern/rna_material.c:1363
 msgid "Index of refraction (higher values are denser)"
-msgstr ""
+msgstr "Indice de réfraction (les valeurs plus élevées sont plus denses)"
 
 #: source/blender/makesrna/intern/rna_material.c:1369
-#, fuzzy
 msgid "Color Factor"
-msgstr "Acteur"
+msgstr "Facteur de couleur"
 
 #: source/blender/makesrna/intern/rna_material.c:1369
 msgid "Blend factor for SSS colors"
-msgstr ""
+msgstr "Facteur de mélange des couleurs SSS"
 
 #: source/blender/makesrna/intern/rna_material.c:1375
-#, fuzzy
 msgid "Texture Factor"
-msgstr "Vecteur"
+msgstr "Facteur de texture"
 
 #: source/blender/makesrna/intern/rna_material.c:1375
-#, fuzzy
 msgid "Texture scatting blend factor"
-msgstr "Mode Peinture"
+msgstr "Facteur de mélange de la dispersion de texture"
 
 #: source/blender/makesrna/intern/rna_material.c:1381
 msgid "Front scattering weight"
-msgstr ""
+msgstr "Poids de dispersion avant"
 
 #: source/blender/makesrna/intern/rna_material.c:1387
 msgid "Back scattering weight"
-msgstr ""
+msgstr "Poids de dispersion arrière"
 
 #: source/blender/makesrna/intern/rna_material.c:1392
-#, fuzzy
 msgid "Enable diffuse subsurface scatting effects in a material"
-msgstr ""
-"Active la translucidité du matériau en utilisant la méthode "
-"'SSS' (SubSurface Scattering)."
+msgstr "Activer l’effet de dispersion sub-surfacique (SSS) dans un matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1401
 msgid "CookTorr"
-msgstr ""
+msgstr "CookTorr"
 
 #: source/blender/makesrna/intern/rna_material.c:1401
 msgid "Use a Cook-Torrance shader"
-msgstr ""
+msgstr "Utiliser un shader CookTorrance"
 
 #: source/blender/makesrna/intern/rna_material.c:1402
 msgid "Phong"
-msgstr ""
+msgstr "Phong"
 
 #: source/blender/makesrna/intern/rna_material.c:1402
 msgid "Use a Phong shader"
-msgstr ""
+msgstr "Utiliser un shader Phong"
 
 #: source/blender/makesrna/intern/rna_material.c:1403
 msgid "Blinn"
-msgstr ""
+msgstr "Blinn"
 
 #: source/blender/makesrna/intern/rna_material.c:1403
 msgid "Use a Blinn shader"
-msgstr ""
+msgstr "Utiliser un shader Blinn"
 
 #: source/blender/makesrna/intern/rna_material.c:1405
 msgid "WardIso"
-msgstr ""
+msgstr "WardIso"
 
 #: source/blender/makesrna/intern/rna_material.c:1405
 msgid "Use a Ward anisotropic shader"
-msgstr ""
+msgstr "Utiliser un shader Ward anisotropic"
 
 #: source/blender/makesrna/intern/rna_material.c:1411
-#, fuzzy
 msgid "Specular Shader Model"
-msgstr "Scultpure"
+msgstr "Modèle de shader spéculaire"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:1417
 #: source/blender/makesrna/intern/rna_scene.c:2057
-#, fuzzy
 msgid "Specular Intensity"
-msgstr "Actions spéciales"
+msgstr "Intensité spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:1417
 msgid "How intense (bright) the specular reflection is"
-msgstr ""
+msgstr "Intensité (luminosité) de la réflexion spéculaire"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:1428
-#, fuzzy
 msgid "Specular Hardness"
-msgstr "Actions spéciales"
+msgstr "Dureté spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:1428
 msgid "How hard (sharp) the specular reflection is"
-msgstr ""
+msgstr "Dureté de la réflexion spéculaire"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:1434
-#, fuzzy
 msgid "Specular IOR"
-msgstr "Actions spéciales"
+msgstr "IOR spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:1434
 msgid "Specular index of refraction"
-msgstr ""
+msgstr "Indice de réfraction spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:1440
 #, fuzzy
 msgid "Specular Toon Size"
-msgstr "Scultpure"
+msgstr "Taille de dessin spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:1440
+#, fuzzy
 msgid "Size of specular toon area"
-msgstr ""
+msgstr "Taille de la zone de dessin spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:1446
 #, fuzzy
 msgid "Specular Toon Smooth"
-msgstr "Scultpure"
+msgstr "Douceur de dessin spéculaire"
 
 #: source/blender/makesrna/intern/rna_material.c:1446
+#, fuzzy
 msgid "Smoothness of specular toon area"
-msgstr ""
+msgstr "Douceur de la zone de dessin spéculaire"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
+#: source/blender/makesrna/intern/rna_material.c:1452
+msgid "Specular Slope"
+msgstr "Pente spéculaire"
+
 #: source/blender/makesrna/intern/rna_material.c:1452
 #, fuzzy
-msgid "Specular Slope"
-msgstr "Actions spéciales"
-
-#: source/blender/makesrna/intern/rna_material.c:1452
 msgid "The standard deviation of surface slope"
-msgstr ""
+msgstr "La déviation standard de la pente de la surface"
 
 #: source/blender/makesrna/intern/rna_material.c:1464
-#, fuzzy
 msgid "Material Strand"
-msgstr "Matériau"
+msgstr "Matériau fibre"
 
 #: source/blender/makesrna/intern/rna_material.c:1464
 msgid "Strand settings for a Material datablock"
-msgstr ""
+msgstr "Réglages de fibre pour un bloc de données matériau"
 
-# tips
 #: source/blender/makesrna/intern/rna_material.c:1468
 #: source/blender/makesrna/intern/rna_material.c:1791
-#, fuzzy
 msgid "Tangent Shading"
-msgstr "Changer la police de l'objet"
+msgstr "Ombrage tangent"
 
 #: source/blender/makesrna/intern/rna_material.c:1468
 msgid "Uses direction of strands as normal for tangent-shading"
-msgstr ""
+msgstr "Utiliser la direction des fibres comme normale pour l’ombrage tangent"
 
 #: source/blender/makesrna/intern/rna_material.c:1475
 #, fuzzy
 msgid "Surface Diffuse"
-msgstr "Surface NURBS"
+msgstr "Surface diffuse"
 
 #: source/blender/makesrna/intern/rna_material.c:1475
+#, fuzzy
 msgid "Make diffuse shading more similar to shading the surface"
-msgstr ""
+msgstr "Rendre l’ombrage diffus plus similaire à l’ombrage de la surface"
 
 #: source/blender/makesrna/intern/rna_material.c:1481
-#, fuzzy
 msgid "Blend Distance"
-msgstr "Affichage:"
+msgstr "Mélanger distance"
 
 #: source/blender/makesrna/intern/rna_material.c:1481
 msgid "Worldspace distance over which to blend in the surface normal"
-msgstr ""
+msgstr "Distance dans l’espace du monde au-delà de laquelle mélanger à la normale de la surface"
 
 #: source/blender/makesrna/intern/rna_material.c:1486
-#, fuzzy
 msgid "Blender Units"
-msgstr "Blender Interne"
+msgstr "Unités blender"
 
 #: source/blender/makesrna/intern/rna_material.c:1486
 msgid "Use Blender units for widths instead of pixels"
-msgstr ""
+msgstr "Utiliser les unités blenber pour l’épaisseur, au lieu des pixels"
 
 #: source/blender/makesrna/intern/rna_material.c:1493
-#, fuzzy
 msgid "Root Size"
-msgstr "Limites"
+msgstr "Taille de base"
 
 #: source/blender/makesrna/intern/rna_material.c:1493
 msgid "Start size of strands in pixels or Blender units"
-msgstr ""
+msgstr "Taille initiale des fibres, en pixels ou unités blender"
 
 #: source/blender/makesrna/intern/rna_material.c:1500
-#, fuzzy
 msgid "Tip Size"
-msgstr "Limites"
+msgstr "Taille d’extrémité"
 
 #: source/blender/makesrna/intern/rna_material.c:1500
 msgid "End size of strands in pixels or Blender units"
-msgstr ""
+msgstr "Taille finale des fibres, en pixels ou unités blender"
 
 #: source/blender/makesrna/intern/rna_material.c:1506
-#, fuzzy
 msgid "Minimum Size"
-msgstr "Limites"
+msgstr "Taille minimum"
 
 #: source/blender/makesrna/intern/rna_material.c:1506
 msgid "Minimum size of strands in pixels"
-msgstr ""
+msgstr "Taille minimum des fibres, en pixels"
 
 #: source/blender/makesrna/intern/rna_material.c:1512
 msgid "Positive values make strands rounder, negative makes strands spiky"
-msgstr ""
+msgstr "Les valeurs positives rendent les fibres plus rondes, les négatives les rendent pointues"
 
 #: source/blender/makesrna/intern/rna_material.c:1518
-#, fuzzy
 msgid "Width Fade"
-msgstr "Limites"
+msgstr "Fondu en largeur"
 
 #: source/blender/makesrna/intern/rna_material.c:1518
 msgid "Transparency along the width of the strand"
-msgstr ""
+msgstr "Transparence le long de la largeur des fibres"
 
 #: source/blender/makesrna/intern/rna_material.c:1523
 msgid "Name of UV layer to override"
-msgstr ""
+msgstr "Nom du calque UV à écraser"
 
 #: source/blender/makesrna/intern/rna_material.c:1535
-#, fuzzy
 msgid "Material Physics"
-msgstr "Matériau"
+msgstr "Physiques de matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1535
 msgid "Physics settings for a Material datablock"
-msgstr ""
+msgstr "Réglages physiques pour un bloc de données de matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1540
-#, fuzzy
 msgid "Friction"
-msgstr "Nom de l'action"
+msgstr "Friction"
 
 #: source/blender/makesrna/intern/rna_material.c:1540
 msgid "Coulomb friction coefficient, when inside the physics distance area"
-msgstr ""
+msgstr "Coefficient de firction de Coulomb, quand à l’intérieur de la zone (distance) d’influence physique"
 
 #: source/blender/makesrna/intern/rna_material.c:1545
 msgid "Elasticity"
-msgstr ""
+msgstr "Élasticité"
 
 #: source/blender/makesrna/intern/rna_material.c:1545
 msgid "Elasticity of collisions"
-msgstr ""
+msgstr "Élasticité des collisions"
 
 #: source/blender/makesrna/intern/rna_material.c:1550
-#, fuzzy
 msgid "Align to Normal"
-msgstr "Inverser Normales"
+msgstr "Aligner avec normales"
 
 #: source/blender/makesrna/intern/rna_material.c:1550
 msgid ""
 "Align dynamic game objects along the surface normal, when inside the physics "
 "distance area"
 msgstr ""
+"Aligner les objets de jeu dynamiques avec la normale de la surface, quand à l’intérieur de la zone d’influence physique"
 
 #: source/blender/makesrna/intern/rna_material.c:1556
 msgid "Upward spring force, when inside the physics distance area"
-msgstr ""
+msgstr "Force de ressort vers le haut, quand à l’intérieur de la zone d’influence physique"
 
 #: source/blender/makesrna/intern/rna_material.c:1561
 msgid "Distance of the physics area"
-msgstr ""
+msgstr "Distance de la zone d’influence des physiques"
 
 #: source/blender/makesrna/intern/rna_material.c:1566
 msgid "Damping of the spring force, when inside the physics distance area"
-msgstr ""
+msgstr "Amortissement de la force de ressort, quand à l’intérieur de la zone d’influence physique"
 
 #: source/blender/makesrna/intern/rna_material.c:1575
 msgid "Render object as a surface"
-msgstr ""
+msgstr "Rendre ’objet comme une surface"
 
 #: source/blender/makesrna/intern/rna_material.c:1576
-#, fuzzy
 msgid "Render the edges of faces as wires (not supported in ray tracing)"
-msgstr "Montre seulement les arêtes des faces en tant que lignes"
+msgstr "Rendre les arêtes des faces en fil de fer (non-supporté par le raytracing)"
 
 #: source/blender/makesrna/intern/rna_material.c:1577
 #: source/blender/makesrna/intern/rna_material.c:1811
 #: source/blender/makesrna/intern/rna_scene.c:2508
 #: source/blender/makesrna/intern/rna_scene.c:3499
 msgid "Volume"
-msgstr ""
+msgstr "Volume"
 
 #: source/blender/makesrna/intern/rna_material.c:1577
 msgid "Render object as a volume"
-msgstr ""
+msgstr "Rendre l’objet comme un volume"
 
 #: source/blender/makesrna/intern/rna_material.c:1578
 #, fuzzy
 msgid "Render object as halo particles"
-msgstr "Sélection -> Grille"
+msgstr "Rendre l’objet comme des particules de halo"
 
 #: source/blender/makesrna/intern/rna_material.c:1581
 #: source/blender/makesrna/intern/rna_modifier.c:66
-#, fuzzy
 msgid "Mask"
-msgstr "Masque par ID"
+msgstr "Masquer"
 
 #: source/blender/makesrna/intern/rna_material.c:1581
-#, fuzzy
 msgid "Mask the background"
-msgstr "Ouvrir une nouvelle image d'arrière plan."
+msgstr "Masquer l’arrière-plan"
 
 #: source/blender/makesrna/intern/rna_material.c:1582
-#, fuzzy
 msgid "Z Transparency"
-msgstr "Déplacer"
+msgstr "Transparence Z"
 
 #: source/blender/makesrna/intern/rna_material.c:1582
-#, fuzzy
 msgid "Use alpha buffer for transparent faces"
-msgstr "Active la transparence par Z-Buffer"
+msgstr "Utiliser le tampon alpha pour les faces transparentes"
 
 #: source/blender/makesrna/intern/rna_material.c:1583
 #: source/blender/makesrna/intern/rna_world.c:233
-#, fuzzy
 msgid "Raytrace"
-msgstr "Lancer de Rayons"
+msgstr "Raytracer"
 
 #: source/blender/makesrna/intern/rna_material.c:1583
 msgid "Use raytracing for transparent refraction rendering"
-msgstr ""
+msgstr "Utiliser le raytracing (lancer de rayons) pour un rendu des réfractions transparentes"
 
-# Tooltips
 #: source/blender/makesrna/intern/rna_material.c:1588
 msgid "Preview type: Flat XY plane"
-msgstr "Aperçu: Plan XY"
+msgstr "Aperçu : Plan XY plat"
 
 #: source/blender/makesrna/intern/rna_material.c:1589
 msgid "Preview type: Sphere"
-msgstr "Aperçu: Sphère"
+msgstr "Aperçu : Sphère"
 
 #: source/blender/makesrna/intern/rna_material.c:1590
 msgid "Preview type: Cube"
-msgstr "Aperçu: Cube"
+msgstr "Aperçu : Cube"
 
 #: source/blender/makesrna/intern/rna_material.c:1591
 msgid "Preview type: Monkey"
-msgstr "Aperçu: Singe"
+msgstr "Aperçu : Singe"
 
 #: source/blender/makesrna/intern/rna_material.c:1592
 msgid "Preview type: Hair strands"
-msgstr "Aperçu: Filaments"
+msgstr "Aperçu : Fibres (cheveux)"
 
 #: source/blender/makesrna/intern/rna_material.c:1593
 msgid "Preview type: Large sphere with sky"
-msgstr "Aperçu: Grand sphère avec ciel"
+msgstr "Aperçu : Grand sphère avec ciel"
 
 #: source/blender/makesrna/intern/rna_material.c:1597
-#, fuzzy
 msgid "Shadow and Distance"
-msgstr "Affichage:"
+msgstr "Ombres et distance"
 
 #: source/blender/makesrna/intern/rna_material.c:1597
 msgid "Old shadow only method"
-msgstr ""
+msgstr "Ancienne méthode d’ombres uniquement"
 
 #: source/blender/makesrna/intern/rna_material.c:1598
-#, fuzzy
 msgid "Shadow Only"
-msgstr "Ombres"
+msgstr "Ombres uniquement"
 
 #: source/blender/makesrna/intern/rna_material.c:1598
 msgid "Improved shadow only method"
-msgstr ""
+msgstr "Méthode améliorée d’ombre uniquement"
 
 #: source/blender/makesrna/intern/rna_material.c:1599
 msgid "Shadow and Shading"
-msgstr ""
+msgstr "Ombres et ombrage"
 
 #: source/blender/makesrna/intern/rna_material.c:1599
 msgid ""
 "Improved shadow only method which also renders lightless areas as shadows"
 msgstr ""
+"Méthode améliorée d’ombre seulement, qui rend également les zones non-éclairées comme ombres"
 
 #: source/blender/makesrna/intern/rna_material.c:1603
 msgid ""
 "Material datablock to defined the appearance of geometric objects for "
 "rendering"
 msgstr ""
+"Bloc de données de matériau pour définir l’apparence des objets “géométriques” au rendu"
 
 #: source/blender/makesrna/intern/rna_material.c:1609
 msgid "Material type defining how the object is rendered"
-msgstr ""
+msgstr "Type de matériau, définit comment l’objet est rendu"
 
 #: source/blender/makesrna/intern/rna_material.c:1615
-#, fuzzy
 msgid "Render material as transparent"
-msgstr "Rendre le matériau en tant qu'Halo"
+msgstr "Rendre le matériau comme transparent"
 
 #: source/blender/makesrna/intern/rna_material.c:1621
 msgid "Transparency Method"
-msgstr ""
+msgstr "Méthode de transparence"
 
 #: source/blender/makesrna/intern/rna_material.c:1621
 msgid "Method to use for rendering transparency"
-msgstr ""
+msgstr "Méthode à utiliser pour rendre la transparence"
 
 #: source/blender/makesrna/intern/rna_material.c:1628
-#, fuzzy
 msgid "Preview render type"
-msgstr "Aperçu: Cube"
+msgstr "Type d’aperçu"
 
 #: source/blender/makesrna/intern/rna_material.c:1628
-#, fuzzy
 msgid "Type of preview render"
-msgstr "Dessine le champ de vision"
+msgstr "Type de rendu de prévisualisation"
 
 #: source/blender/makesrna/intern/rna_material.c:1634
 msgid "Amount of global ambient color the material receives"
-msgstr ""
+msgstr "Quantité de couleur ambiante globale reçue par le matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1640
 msgid "Amount of light to emit"
-msgstr ""
+msgstr "Quantité de lumière à émettre"
 
 #: source/blender/makesrna/intern/rna_material.c:1645
 msgid "Amount of diffuse shading on the back side"
-msgstr ""
+msgstr "Intensité d’ombrage diffus sur la face arrière"
 
-# marche pas?
 #: source/blender/makesrna/intern/rna_material.c:1650
-#, fuzzy
 msgid "Cubic Interpolation"
-msgstr "Interpolation"
+msgstr "Interpolation cubique"
 
 #: source/blender/makesrna/intern/rna_material.c:1650
 msgid "Use cubic interpolation for diffuse values, for smoother transitions"
-msgstr ""
+msgstr "Utiliser l’interpolation cubique pour les valeurs diffuses, pour des transitions plus douces"
 
 #: source/blender/makesrna/intern/rna_material.c:1655
 msgid "Modulate the result with a per-object color"
-msgstr ""
+msgstr "Moduler le résultat avec une couleur spécifique à l’objet"
 
 #: source/blender/makesrna/intern/rna_material.c:1661
-#, fuzzy
 msgid "Shadow Ray Bias"
-msgstr "Ombres"
+msgstr "Biais d’ombres raytracées"
 
 #: source/blender/makesrna/intern/rna_material.c:1661
 msgid ""
 "Shadow raytracing bias to prevent terminator problems on shadow boundary"
 msgstr ""
+"Biais dans le raytracing des ombres, pour prévenir les problèmes de terminateurs aux bords de l’ombre"
 
 #: source/blender/makesrna/intern/rna_material.c:1666
 #, fuzzy
 msgid "Shadow Buffer Bias"
-msgstr "Afficher le dernier rendu"
+msgstr "Biais du tampon d’ombres"
 
 #: source/blender/makesrna/intern/rna_material.c:1666
+#, fuzzy
 msgid "Factor to multiply shadow buffer bias with (0 is ignore.)"
-msgstr ""
+msgstr "Facteur avec lequel multiplier le biais du tampon d’ombres (0 pour ignorer)"
 
 #: source/blender/makesrna/intern/rna_material.c:1671
 msgid "Shadow Casting Alpha"
-msgstr ""
+msgstr "Projection d’ombres alpha"
 
 #: source/blender/makesrna/intern/rna_material.c:1671
+#, fuzzy
 msgid "Shadow casting alpha, in use for Irregular and Deep shadow buffer"
-msgstr ""
+msgstr "Projection d’ombres alpha, utilisé par les tampons d’ombres Irrégulier et Profond"
 
 #: source/blender/makesrna/intern/rna_material.c:1678
-#, fuzzy
 msgid "Light Group"
-msgstr "Editer le Groupe"
+msgstr "Groupe d’éclairage"
 
 #: source/blender/makesrna/intern/rna_material.c:1678
 msgid "Limit lighting to lamps in this Group"
-msgstr ""
+msgstr "Limiter l’éclairage aux lampes de ce groupe"
 
 #: source/blender/makesrna/intern/rna_material.c:1683
 #: source/blender/makesrna/intern/rna_object.c:2088
-#, fuzzy
 msgid "Pass Index"
-msgstr "Affichage du Rendu"
+msgstr "Indice de passe"
 
 #: source/blender/makesrna/intern/rna_material.c:1683
 msgid "Index # for the IndexMA render pass"
-msgstr ""
+msgstr "Numéro d’indice pour la passe de rendu IndiceMA"
 
 #: source/blender/makesrna/intern/rna_material.c:1690
 msgid "Light Group Exclusive"
-msgstr ""
+msgstr "Groupe d’éclairage exclusif"
 
 #: source/blender/makesrna/intern/rna_material.c:1690
 msgid ""
 "Material uses the light group exclusively - these lamps are excluded from "
 "other scene lighting"
 msgstr ""
+"La matériau utilise ce groupe d’éclairage en exclusivité – ces lampes sont exclues des autres éclairages de la scène"
 
 #: source/blender/makesrna/intern/rna_material.c:1695
-#, fuzzy
 msgid "Traceable"
-msgstr "Contraindre"
+msgstr "Traçable"
 
 #: source/blender/makesrna/intern/rna_material.c:1695
 msgid ""
 "Include this material and geometry that uses it in ray tracing calculations"
 msgstr ""
+"Inclure ce matériau et les géométries qui l’utilisent dans les calculs du raytracing"
 
 #: source/blender/makesrna/intern/rna_material.c:1700
-#, fuzzy
 msgid "Allows this material to receive shadows"
-msgstr "Le matériau reçoit les ombres portées"
+msgstr "Permettre à ce matériau de recevoir des ombres (portées)"
 
 #: source/blender/makesrna/intern/rna_material.c:1705
-#, fuzzy
 msgid "Makes this material insensitive to light or shadow"
-msgstr "Le matériau est insensible à la lumière et aux ombres"
+msgstr "Rendre ce matériau insensible à la lumière et aux ombres"
 
-# ##########################################################
-# ##
-# ##  Menubar  Snap
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_material.c:1710
-#, fuzzy
 msgid "Vertex Color Light"
-msgstr "Sommet"
+msgstr "Lumière de couleur de vertices"
 
 #: source/blender/makesrna/intern/rna_material.c:1710
 msgid "Add vertex colors as additional lighting"
-msgstr ""
+msgstr "Ajouter les couleurs de vertices comme lumière supplémentaire"
+
+#: source/blender/makesrna/intern/rna_material.c:1715
+msgid "Vertex Color Paint"
+msgstr "Peinture de couleur de vertices"
 
 #: source/blender/makesrna/intern/rna_material.c:1715
 #, fuzzy
-msgid "Vertex Color Paint"
-msgstr "Peinture sur Sommets"
-
-#: source/blender/makesrna/intern/rna_material.c:1715
 msgid ""
 "Replaces object base color with vertex colors (multiplies with 'texture "
 "face' face assigned textures)"
 msgstr ""
+"Remplacer la couleur de base de l’objet par les couleurs de vertices (sont multipliées avec les textures assignées aux faces “face texture”)"
 
 #: source/blender/makesrna/intern/rna_material.c:1720
-#, fuzzy
 msgid "Invert Z Depth"
-msgstr "Inverse le sens du zoom lors de la rotation de la Molette de la Souris"
+msgstr "Inverser profondeur Z"
 
 #: source/blender/makesrna/intern/rna_material.c:1720
 msgid "Renders material's faces with an inverted Z buffer (scanline only)"
-msgstr ""
+msgstr "Rendre les faces du matériau avec un tampon Z inversé (moteur “scanline” uniquement)"
 
 #: source/blender/makesrna/intern/rna_material.c:1725
-#, fuzzy
 msgid "Z Offset"
-msgstr "Images"
+msgstr "Décalage Z"
 
 #: source/blender/makesrna/intern/rna_material.c:1725
 msgid "Gives faces an artificial offset in the Z buffer for Z transparency"
-msgstr ""
+msgstr "Donner aux faces un décalage artificiel dans le tampon Z pour la transparence Z"
 
 #: source/blender/makesrna/intern/rna_material.c:1730
 msgid ""
 "Renders this material with zero alpha, with sky background in place "
 "(scanline only)"
 msgstr ""
+"Rendre ce matériau avec un alpha nul, et le ciel de fond à la place (moteur “scanline” uniquement)"
 
 #: source/blender/makesrna/intern/rna_material.c:1735
-#, fuzzy
 msgid "Only Shadow"
-msgstr "Ombre Seule"
+msgstr "Ombres seulement"
 
 #: source/blender/makesrna/intern/rna_material.c:1735
 msgid ""
 "Renders shadows as the material's alpha value, making materials transparent "
 "except for shadowed areas"
 msgstr ""
+"Rendre les ombres comme valeur alpha du matériau, rendant le matériau transparent sauf dans les zones d’ombres"
 
 #: source/blender/makesrna/intern/rna_material.c:1741
-#, fuzzy
 msgid "Shadow Type"
-msgstr "Ombres"
+msgstr "Type d’ombres"
 
 #: source/blender/makesrna/intern/rna_material.c:1741
 msgid "How to draw shadows"
-msgstr ""
+msgstr "Comment dessiner les ombres"
 
 #: source/blender/makesrna/intern/rna_material.c:1746
-#, fuzzy
 msgid "Face Textures"
-msgstr "Texturé"
+msgstr "Textures de face"
 
-# tip
 #: source/blender/makesrna/intern/rna_material.c:1746
-#, fuzzy
 msgid ""
 "Replaces the object's base color with color from face assigned image textures"
-msgstr "Affiche l'objet actif en montrant toutes les arêtes possibles"
+msgstr "Remplacer la couleur de base de l’objet par celle des textures image assignées aux faces"
 
 #: source/blender/makesrna/intern/rna_material.c:1751
-#, fuzzy
 msgid "Face Textures Alpha"
-msgstr "Type de Texture"
+msgstr "Alpha des textures de face"
 
-# tip
 #: source/blender/makesrna/intern/rna_material.c:1751
-#, fuzzy
 msgid ""
 "Replaces the object's base alpha value with alpha from face assigned image "
 "textures"
-msgstr "Affiche l'objet actif en montrant toutes les arêtes possibles"
+msgstr "Remplacer la valeur alpha de base de l’objet par celle des textures image assignées aux faces"
 
 #: source/blender/makesrna/intern/rna_material.c:1756
 msgid "Cast Shadows Only"
-msgstr ""
+msgstr "Projeter des ombres seulement"
 
 #: source/blender/makesrna/intern/rna_material.c:1756
-#, fuzzy
 msgid ""
 "Makes objects with this material appear invisible, only casting shadows (not "
 "rendered)"
-msgstr "Les faces sont invisibles mais projettent des ombres"
+msgstr "Rendre les objets avec ce matériau invisibles (non-rendus), ne projetant que des ombres"
 
 #: source/blender/makesrna/intern/rna_material.c:1761
-#, fuzzy
 msgid "Use Mist"
-msgstr "Limites"
+msgstr "Utiliser brouillard"
 
 #: source/blender/makesrna/intern/rna_material.c:1761
 msgid "Use mist with this material (in world settings)"
-msgstr ""
+msgstr "Utiliser le brouillard avec ce matériau (dans les réglages du monde)"
 
 #: source/blender/makesrna/intern/rna_material.c:1766
 msgid "Receive Transparent Shadows"
-msgstr ""
+msgstr "Recevoir ombres transparentes"
 
 #: source/blender/makesrna/intern/rna_material.c:1766
 msgid ""
 "Allow this object to receive transparent shadows cast through other objects"
 msgstr ""
+"Permettre à cet objet de recevoir des ombres transparentes projetées à travers d’autres objets"
+
+#: source/blender/makesrna/intern/rna_material.c:1771
+msgid "Ray Shadow Bias"
+msgstr "Biais d’ombres raytracées"
 
 #: source/blender/makesrna/intern/rna_material.c:1771
 #, fuzzy
-msgid "Ray Shadow Bias"
-msgstr "Ombres Ray"
-
-#: source/blender/makesrna/intern/rna_material.c:1771
 msgid ""
 "Prevents raytraced shadow errors on surfaces with smooth shaded normals "
 "(terminator problem)"
 msgstr ""
+"Prévenir les erreurs d’ombres raytracées sur les surfaces avec des normales d’ombrage doux (problème du terminateur)"
 
 #: source/blender/makesrna/intern/rna_material.c:1776
 msgid "Full Oversampling"
-msgstr ""
+msgstr "Sur-échantillonnage complet"
 
 #: source/blender/makesrna/intern/rna_material.c:1776
 msgid ""
 "Force this material to render full shading/textures for all anti-aliasing "
 "samples"
 msgstr ""
+"Forcer ce matériau à rendre complètement l’ombrage/les textures pour chaque échantillon (passe) d’anti-aliasing"
 
 #: source/blender/makesrna/intern/rna_material.c:1781
 #, fuzzy
 msgid "Cast Buffer Shadows"
-msgstr "Mémoire de mixage audio"
+msgstr "Projeter ombres tampon"
 
 #: source/blender/makesrna/intern/rna_material.c:1781
+#, fuzzy
 msgid "Allow this material to cast shadows from shadow buffer lamps"
-msgstr ""
+msgstr "Permettre à ce matériau de projeter des ombres depuis les lampes “ombres tampon”"
 
 #: source/blender/makesrna/intern/rna_material.c:1786
-#, fuzzy
 msgid "Cast Approximate"
-msgstr "Approximatif"
+msgstr "Projeter en approximatif"
 
 #: source/blender/makesrna/intern/rna_material.c:1786
 msgid ""
 "Allow this material to cast shadows when using approximate ambient occlusion."
 msgstr ""
+"Permettre à ce matériau de projeter des ombres quand l’occlusion ambiante approximative est utilisée"
 
 #: source/blender/makesrna/intern/rna_material.c:1791
 msgid ""
 "Use the material's tangent vector instead of the normal for shading - for "
 "anisotropic shading effects"
 msgstr ""
+"Utiliser le vecteur tangent du matériau au lieu de la normale, pour l’ombrage – pour des effets d’ombrage anisotropiques"
 
 #: source/blender/makesrna/intern/rna_material.c:1799
-#, fuzzy
 msgid "Raytrace Mirror"
-msgstr "Réflexion Ray"
+msgstr "Réflexion raytracée"
 
 #: source/blender/makesrna/intern/rna_material.c:1799
 msgid "Raytraced reflection settings for the material"
-msgstr ""
+msgstr "Réglages de réflexion raytracée pour le matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1805
-#, fuzzy
 msgid "Raytrace Transparency"
-msgstr "Lancer de Rayons"
+msgstr "Transparence raytracée"
 
 #: source/blender/makesrna/intern/rna_material.c:1805
 msgid "Raytraced transparency settings for the material"
-msgstr ""
+msgstr "Réglages de transparence raytracée pour le matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1811
 msgid "Volume settings for the material"
-msgstr ""
+msgstr "Réglages de volume pour le matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1817
 msgid "Halo settings for the material"
-msgstr ""
+msgstr "Réglages de halo pour le matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1823
 msgid "Subsurface scattering settings for the material"
-msgstr ""
+msgstr "Réglages de dispersion sub-surfacique (SSS) pour le matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1829
-#, fuzzy
 msgid "Strand settings for the material"
-msgstr "Démarre le rendu de l'animation"
+msgstr "Réglages de fibre pour le matériau"
 
-# Panneau Game framing setting
 #: source/blender/makesrna/intern/rna_material.c:1835
-#, fuzzy
 msgid "Game physics settings"
-msgstr "Options de jeu"
+msgstr "Réglages de physiques de jeu pour le matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1840
 #: source/blender/makesrna/intern/rna_scene.c:3389
 #: source/blender/makesrna/intern/rna_space.c:2467
 #: source/blender/makesrna/intern/rna_texture.c:1802
-#, fuzzy
 msgid "Node Tree"
-msgstr "Noeud"
+msgstr "Arbre de nœuds"
 
 #: source/blender/makesrna/intern/rna_material.c:1840
 msgid "Node tree for node based materials"
-msgstr ""
+msgstr "Arbre de nœuds pour les matériaux basés sur les nœuds"
 
 #: source/blender/makesrna/intern/rna_material.c:1845
 #: source/blender/makesrna/intern/rna_scene.c:3394
 #: source/blender/makesrna/intern/rna_texture.c:1797
 msgid "Use Nodes"
-msgstr "Act. Noeuds"
+msgstr "Utiliser nœuds"
 
 #: source/blender/makesrna/intern/rna_material.c:1845
 msgid "Use shader nodes to render the material"
-msgstr ""
+msgstr "Utiliser les nœuds d’ombrage pour rendre le matériau"
 
 #: source/blender/makesrna/intern/rna_material.c:1852
-#, fuzzy
 msgid "Active node material"
-msgstr "Calque Actif"
+msgstr "Matériau nodal actif"
 
 #: source/blender/makesrna/intern/rna_material.c:1865
-#, fuzzy
 msgid "Use Textures"
-msgstr "Texturé"
+msgstr "Utiliser textures"
 
 #: source/blender/makesrna/intern/rna_material.c:1865
-#, fuzzy
 msgid "Enable/Disable each texture"
-msgstr "Activer Textures"
+msgstr "(Dés)activer chaque texture"
 
 #: source/blender/makesrna/intern/rna_material.c:1896
-#, fuzzy
 msgid "Texture Slots"
-msgstr "Texturé"
+msgstr "Emplacements de texture"
 
 #: source/blender/makesrna/intern/rna_material.c:1896
-#, fuzzy
 msgid "Collection of texture slots"
-msgstr "Direction de l'axe"
+msgstr "Collection d’emplacements de texture"
 
 #: source/blender/makesrna/intern/rna_material.c:1901
 #: source/blender/makesrna/intern/rna_material.c:1908
+#, fuzzy
 msgid "The newly initialized mtex."
-msgstr ""
+msgstr "Le nouvellement initialisé mtex"
 
 #: source/blender/makesrna/intern/rna_material.c:1906
 msgid "Slot index to initialize."
-msgstr ""
+msgstr "Indice de l’emplacement à initialiser"
 
 #: source/blender/makesrna/intern/rna_material.c:1913
 msgid "Slot index to clear."
-msgstr ""
+msgstr "Indice de l’emplacement à effacer"
 
 #: source/blender/makesrna/intern/rna_material.c:1927
 msgid "Texture slots defining the mapping and influence of textures"
-msgstr ""
+msgstr "Emplacements de texture, définissent le placage et l’influence des textures"
 
 #: source/blender/makesrna/intern/rna_material.c:1936
-#, fuzzy
 msgid "Active Texture"
-msgstr "Copier avec l'Objet:"
+msgstr "Texture active"
 
 #: source/blender/makesrna/intern/rna_material.c:1936
 msgid "Active texture slot being displayed"
-msgstr ""
+msgstr "Emplacement de texture actif affiché"
 
 #: source/blender/makesrna/intern/rna_material.c:1942
-#, fuzzy
 msgid "Active Texture Index"
-msgstr "Calque Actif"
+msgstr "Indice de texture active"
 
 #: source/blender/makesrna/intern/rna_material.c:1942
 msgid "Index of active texture slot"
-msgstr ""
+msgstr "Indice de l’emplacement de texture actif"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1845
+#, fuzzy
 msgid "Mesh datablock defining geometric surfaces"
-msgstr ""
+msgstr "Bloc de données mesh, définit des surfaces géométriques"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1851
-#, fuzzy
 msgid "Vertices of the mesh"
-msgstr "Groupes de Sommets"
+msgstr "Vertices du mesh"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1857
-#, fuzzy
 msgid "Edges of the mesh"
-msgstr "Taille du texte"
+msgstr "Arêtes du mesh"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1863
-#, fuzzy
 msgid "Faces of the mesh"
-msgstr "Taille du texte"
+msgstr "Faces du mesh"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1869
 #, fuzzy
 msgid "Sticky texture coordinates"
-msgstr "Texturé"
+msgstr "Coordonnées de texture collantes"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1875
-#, fuzzy
 msgid "Texture Mesh"
-msgstr "Texturé"
+msgstr "Mesh de texture"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1875
 msgid "Use another mesh for texture indices (vertex indices must be aligned)"
-msgstr ""
+msgstr "Utiliser un autre mesh pour les indices de texture (les indices de vertices doivent être alignés)"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1882
-#, fuzzy
 msgid "UV Textures"
-msgstr "Texture UV"
+msgstr "Textures UV"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1889
-#, fuzzy
 msgid "Clone UV Texture"
-msgstr "Pas de texture UV"
+msgstr "Cloner texture UV"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1889
 msgid "UV texture to be used as cloning source"
-msgstr ""
+msgstr "Texture UV à utiliser comme source de clonage"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1893
-#, fuzzy
 msgid "Clone UV Texture Index"
-msgstr "Calque Actif"
+msgstr "Cloner indice de texture UV"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1893
-#, fuzzy
 msgid "Clone UV texture index"
-msgstr "Pas de texture UV"
+msgstr "Cloner l’indice de texture UV"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1899
-#, fuzzy
 msgid "Mask UV Texture"
-msgstr "Texture UV"
+msgstr "Texture UV de masque"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1899
 msgid "UV texture to mask the painted area"
-msgstr ""
+msgstr "Texture UV pour masquer la zone peinte"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1903
-#, fuzzy
 msgid "Mask UV Texture Index"
-msgstr "Calque Actif"
+msgstr "Indice de texture UV de masque"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1903
 msgid "Mask UV texture index"
-msgstr ""
+msgstr "Indice de la texture UV de masque"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1918
-#, fuzzy
 msgid "Float Property Layers"
-msgstr "Nom de la propriété"
+msgstr "Calques de propriétés flottantes"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1924
-#, fuzzy
 msgid "Int Property Layers"
-msgstr "Nom de la propriété"
+msgstr "Calques de propriétés entières"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1930
-#, fuzzy
 msgid "String Property Layers"
-msgstr "Solo"
+msgstr "Calques de propriétés chaînes de caractères"
 
 #: source/blender/makesrna/intern/rna_mesh.c:1934
-#, fuzzy
 msgid "Auto Smooth"
-msgstr "Adoucir"
+msgstr "Adoucissement auto"
+
+# #############################################################################
+# ######### MARKER
+# #############################################################################
+
+
 
 #: source/blender/makesrna/intern/rna_mesh.c:1934
 msgid ""
@@ -29247,7 +29094,7 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_userdef.c:2264
 msgid "Keyframe insertion only when keyframe needed"
-msgstr ""
+msgstr "Insertion seulement lorsque les clés nécessaires"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2268
 #, fuzzy
@@ -29256,17 +29103,19 @@ msgstr "Visualisation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2268
 msgid "Use Visual keying automatically for constrained objects"
-msgstr ""
+msgstr "Utilise automatiquement les clés visuelles pour les objets contraints"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2272
 msgid "New F-Curve Colors - XYZ to RGB"
-msgstr ""
+msgstr "Nouvelles Couleurs des F-Curves - XYZ vers RVB"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2272
 msgid ""
 "Color for newly added transformation F-Curves (Location, Rotation, Scale) "
 "and also Color is based on the transform axis"
 msgstr ""
+"Couleur pour les F-Curves de transformation (Position, Rotation, Echelle) nouvellement créées,"
+"aussi basée sur l'axe de transformation" 
 
 # marche pas?
 #: source/blender/makesrna/intern/rna_userdef.c:2277
@@ -29279,6 +29128,8 @@ msgid ""
 "Interpolation mode used for first keyframe on newly added F-Curves. "
 "Subsequent keyframes take interpolation from preceeding keyframe"
 msgstr ""
+"Mode d'interpolation utilisé pour la première clé des F-curves nouvellement ajoutées"
+"Les clés suivantes prennent l'interpolation de cette précédente clé."
 
 #: source/blender/makesrna/intern/rna_userdef.c:2282
 #, fuzzy
@@ -29292,11 +29143,11 @@ msgstr "Adoucit les angles des faces sélectionnées"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2287
 msgid "Allow Negative Frames"
-msgstr ""
+msgstr "Permet les frames négatives"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2287
 msgid "Current frame number can be manually set to a negative value"
-msgstr ""
+msgstr "Nombre de la frame courante peut être manuellement mis à une valeur négative"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2293
 #, fuzzy
@@ -29305,15 +29156,15 @@ msgstr "Conversion du Tracé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2293
 msgid "Pixels moved by mouse per axis when drawing stroke"
-msgstr ""
+msgstr "Pixels parcouru par la souris le long d'un axe lors du tracé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2298
 msgid "Grease Pencil Euclidean Distance"
-msgstr ""
+msgstr "Crayon gras Distance Euclidienne"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2298
 msgid "Distance moved by mouse when drawing stroke (in pixels) to include"
-msgstr ""
+msgstr "Distance parcourue par la souris (en pixels) à inclure dans le tracé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2302
 #, fuzzy
@@ -29332,7 +29183,7 @@ msgstr "Conversion du Tracé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2306
 msgid "Simplify the final stroke"
-msgstr ""
+msgstr "Simplifier l'ultime tracé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2311
 #, fuzzy
@@ -29341,19 +29192,19 @@ msgstr "Conversion du Tracé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2311
 msgid "Radius of eraser 'brush'"
-msgstr ""
+msgstr "Rayon de la gomme"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2318
 msgid "Sculpt/Paint Overlay Color"
-msgstr ""
+msgstr "Couleur du pointeur Sculpt/Paint"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2318
 msgid "Color of texture overlay"
-msgstr ""
+msgstr "Couleur de la visualisation de la texture "
 
 #: source/blender/makesrna/intern/rna_userdef.c:2323
 msgid "Causes mesh data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des maillages dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2327
 #, fuzzy
@@ -29362,11 +29213,11 @@ msgstr "Copier Repère"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2327
 msgid "Causes surface data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des surfaces dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2331
 msgid "Causes curve data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des courbes dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2335
 #, fuzzy
@@ -29375,7 +29226,7 @@ msgstr "Copier avec l'Objet:"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2335
 msgid "Causes text data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des textes dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2339
 #, fuzzy
@@ -29384,7 +29235,7 @@ msgstr "Copier Repère"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2339
 msgid "Causes metaball data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des metaball dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2343
 #, fuzzy
@@ -29393,7 +29244,7 @@ msgstr "Copier Repère"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2343
 msgid "Causes armature data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des armatures dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2347
 #, fuzzy
@@ -29402,7 +29253,7 @@ msgstr "Copier Repère"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2347
 msgid "Causes lamp data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des lampes dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2351
 #, fuzzy
@@ -29411,7 +29262,7 @@ msgstr "Copier Repère"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2351
 msgid "Causes material data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des matériaux dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2355
 #, fuzzy
@@ -29420,7 +29271,7 @@ msgstr "Copier avec l'Objet:"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2355
 msgid "Causes texture data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des textures dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2360
 #, fuzzy
@@ -29429,7 +29280,7 @@ msgstr "Copie Liée"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2360
 msgid "Causes F-curve data to be duplicated with the object"
-msgstr ""
+msgstr "Implique les données des F-curve dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2364
 #, fuzzy
@@ -29438,7 +29289,7 @@ msgstr "Copie Liée"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2364
 msgid "Causes actions to be duplicated with the object"
-msgstr ""
+msgstr "Implique les actions dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2368
 #, fuzzy
@@ -29447,51 +29298,51 @@ msgstr "Copier Repère"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2368
 msgid "Causes particle systems to be duplicated with the object"
-msgstr ""
+msgstr "Implique les systèmes de particules dans la duplication de l'objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2396
 msgid "Set audio mixing buffer size to 256 samples"
-msgstr ""
+msgstr "Met le cache de mixage audio à 256 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2397
 msgid "Set audio mixing buffer size to 512 samples"
-msgstr ""
+msgstr "Met le cache de mixage audio à 512 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2398
 msgid "Set audio mixing buffer size to 1024 samples"
-msgstr ""
+msgstr "Met le cache de mixage audio à 32768 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2399
 msgid "Set audio mixing buffer size to 2048 samples"
-msgstr ""
+msgstr "Met le cache de mixage audio à 2048 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2400
 msgid "Set audio mixing buffer size to 4096 samples"
-msgstr ""
+msgstr "Met le cache de mixage audio à 4096 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2401
 msgid "Set audio mixing buffer size to 8192 samples"
-msgstr ""
+msgstr "Met le cache de mixage audio à 8192 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2402
 msgid "Set audio mixing buffer size to 16384 samples"
-msgstr ""
+msgstr "Met le cache de mixage audio à 16384 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2403
 msgid "Set audio mixing buffer size to 32768 samples"
-msgstr ""
+msgstr "Met le cache de mixage audio à 32768 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2407
 msgid "Null device - there will be no audio output"
-msgstr ""
+msgstr "Périphérique nul - il n'y a pas de sortie audio"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2409
 msgid "SDL device - simple direct media layer, recommended for sequencer usage"
-msgstr ""
+msgstr "Périphérique SDL - couche de media simple direct,recommendé pour l'usage du séquenceur "
 
 #: source/blender/makesrna/intern/rna_userdef.c:2412
 msgid "OpenAL device - supports 3D audio, recommended for game engine usage"
-msgstr ""
+msgstr "Périphérique OpenAL - supporte audio 3D, recommendé pour l'usage de moteur de jeu"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2415
 msgid "Jack"
@@ -29499,79 +29350,79 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_userdef.c:2415
 msgid "Jack device - open source pro audio, recommended for pro audio users"
-msgstr ""
+msgstr "Périphérique Jack - audio pro open source, recommendé pour un usage pro"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2425
 msgid "Set audio sampling rate to 44100 samples per second"
-msgstr ""
+msgstr "Met le taux d'échantillonnage audio à 44100 échantillons par seconde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2426
 msgid "Set audio sampling rate to 48000 samples per second"
-msgstr ""
+msgstr "Met le taux d'échantillonnage audio à 48000 échantillons par seconde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2428
 msgid "Set audio sampling rate to 96000 samples per second"
-msgstr ""
+msgstr "Met le taux d'échantillonnage audio à 96000 échantillons par seconde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2429
 msgid "Set audio sampling rate to 192000 samples per second"
-msgstr ""
+msgstr "Met le taux d'échantillonnage audio à 19200 échantillons par seconde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2433
 msgid "8-bit Unsigned"
-msgstr ""
+msgstr "8-bits non signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2433
 msgid "Set audio sample format to 8 bit unsigned integer"
-msgstr ""
+msgstr "Passe le format de l'échantillon audio en 8 bits non signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2434
 msgid "16-bit Signed"
-msgstr ""
+msgstr "16-bits signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2434
 msgid "Set audio sample format to 16 bit signed integer"
-msgstr ""
+msgstr "Passe le format de l'échantillon audio à un signet 16 bits"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2435
 msgid "24-bit Signed"
-msgstr ""
+msgstr "24-bits signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2435
 msgid "Set audio sample format to 24 bit signed integer"
-msgstr ""
+msgstr "Passe le format de l'échantillon audio à un signet 24 bits"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2436
 msgid "32-bit Signed"
-msgstr ""
+msgstr "32-bits signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2436
 msgid "Set audio sample format to 32 bit signed integer"
-msgstr ""
+msgstr "Passe le format de l'échantillon audio à un signet 32 bits"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2437
 msgid "32-bit Float"
-msgstr ""
+msgstr "Valeur 32 bits"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2437
 msgid "Set audio sample format to 32 bit float"
-msgstr ""
+msgstr "Passe le format de l'échantillon audio à une valeur 32 bits"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2438
 msgid "64-bit Float"
-msgstr ""
+msgstr "Valeur 64-bits"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2438
 msgid "Set audio sample format to 64 bit float"
-msgstr ""
+msgstr "Passe le format de l'échantillon audio à une valeur 64 bits"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2442
 msgid "Set audio channels to mono"
-msgstr ""
+msgstr "Met les canaux audio en mono"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2443
 msgid "Set audio channels to stereo"
-msgstr ""
+msgstr "Met les canaux audio en stéréo"
 
 # ##########################################################
 # ##
@@ -29585,7 +29436,7 @@ msgstr "Panneaux"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2444
 msgid "Set audio channels to 4 channels"
-msgstr ""
+msgstr "Met les canaux audio à 4 canaux"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2445
 msgid "5.1 Surround"
@@ -29593,7 +29444,7 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_userdef.c:2445
 msgid "Set audio channels to 5.1 surround sound"
-msgstr ""
+msgstr "Met les canaux audio au son surround 5.1"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2446
 msgid "7.1 Surround"
@@ -29601,11 +29452,11 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_userdef.c:2446
 msgid "Set audio channels to 7.1 surround sound"
-msgstr ""
+msgstr "Met les canaux audio au son surround 7.1"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2450
 msgid "Automatically set based on graphics card and driver"
-msgstr ""
+msgstr "Automatiquement géré par le pilote et la carte graphique"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2451
 #, fuzzy
@@ -29615,6 +29466,8 @@ msgstr "Mémoire de mixage audio"
 #: source/blender/makesrna/intern/rna_userdef.c:2451
 msgid "Use a third buffer for minimal redraws at the cost of more memory"
 msgstr ""
+"utilise un troisième cache pour un minimum de rafraîchissements"
+" au coup de plus mémoire utilisée"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2452
 #, fuzzy
@@ -29623,7 +29476,7 @@ msgstr "Par dessus"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2452
 msgid "Redraw all overlapping regions, minimal memory usage but more redraws"
-msgstr ""
+msgstr "Rafraîchit toutes les régions superposées, usage minimal de la mémoire"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2453
 #, fuzzy
@@ -29635,6 +29488,8 @@ msgid ""
 "Redraw all overlapping regions, minimal memory usage but more redraws (for "
 "graphics drivers that do flipping)"
 msgstr ""
+"Rafraîchit toutes les régions superposées, usage minimal de la mémoire"
+"mais plus de rafraîchissements (pour les pilotes grqphiques qui gère l'inversement)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2454
 #, fuzzy
@@ -29646,34 +29501,36 @@ msgid ""
 "Do a full redraw each time, slow, only use for reference or when all else "
 "fails"
 msgstr ""
+"Faire un rafraîchissement complet à chaque fois, lent,"
+" à utiliser pour référence ou quand tout le reste échoue"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2458
 msgid "A circular Hue/Saturation color wheel, with Value slider"
-msgstr ""
+msgstr "Un disque de couleur Teinte/Saturation, avec une glissière Valeur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2459
 msgid "Square (SV + H)"
-msgstr ""
+msgstr "Carré (SV + T)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2459
 msgid "A square showing Saturation/Value, with Hue slider"
-msgstr ""
+msgstr "Un carré montrant Saturation/Valeur, avec une glissière Teinte"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2460
 msgid "Square (HS + V)"
-msgstr ""
+msgstr "Carré (TS + V)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2460
 msgid "A square showing Hue/Saturation, with Value slider"
-msgstr ""
+msgstr "Un carré montrant Teinte/Saturation, avec une glissière Valeur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2461
 msgid "Square (HV + S)"
-msgstr ""
+msgstr "Carré (TV + S)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2461
 msgid "A square showing Hue/Value, with Saturation slider"
-msgstr ""
+msgstr "Un carré montrant Teinte/Valeur, avec une glissière Saturation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2468
 #, fuzzy
@@ -29682,39 +29539,39 @@ msgstr "Fondu par défaut"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2469
 msgid "English (English)"
-msgstr ""
+msgstr "Anglais (English)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2470
 msgid "Japanese (日本語)"
-msgstr ""
+msgstr "Japonais (日本語)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2471
 msgid "Dutch (Nederlandse taal)"
-msgstr ""
+msgstr "Néerlandais (Nederlandse taal)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2472
 msgid "Italian (Italiano)"
-msgstr ""
+msgstr "Italien (Italiano)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2473
 msgid "German (Deutsch)"
-msgstr ""
+msgstr "Allemand (Deutsch)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2474
 msgid "Finnish (Suomi)"
-msgstr ""
+msgstr "Finnois (Suomi)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2475
 msgid "Swedish (Svenska)"
-msgstr ""
+msgstr "Suédois (Svenska)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2476
 msgid "French (Française)"
-msgstr ""
+msgstr "Français (Française)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2477
 msgid "Spanish (Español)"
-msgstr ""
+msgstr "Espagnol (Español)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2478
 msgid "Catalan (Català)"
@@ -29722,59 +29579,59 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_userdef.c:2479
 msgid "Czech (Český)"
-msgstr ""
+msgstr "Tchèque (Český)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2480
 msgid "Brazilian Portuguese (Português do Brasil)"
-msgstr ""
+msgstr "Portugais Brésilien (Português do Brasil)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2481
 msgid "Simplified Chinese (简体中文)"
-msgstr ""
+msgstr "Chinois simplifié (简体中文)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2482
 msgid "Traditional Chinese (繁體中文)"
-msgstr ""
+msgstr "Chinois traditionnel (繁體中文)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2483
 msgid "Russian (Русский)"
-msgstr ""
+msgstr "Russe (Русский)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2484
 msgid "Croatian (Hrvatski)"
-msgstr ""
+msgstr "Croate (Hrvatski)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2485
 msgid "Serbian (Српском језику)"
-msgstr ""
+msgstr "Serbe (Српском језику)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2486
 msgid "Ukrainian (Український)"
-msgstr ""
+msgstr "Ukrainien (Український)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2487
 msgid "Polish (Polski)"
-msgstr ""
+msgstr "Polonais (Polski)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2488
 msgid "Romanian (Român)"
-msgstr ""
+msgstr "Roumain (Român)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2489
 msgid "Arabic (العربية)"
-msgstr ""
+msgstr "Arabe (العربية)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2490
 msgid "Bulgarian (Български)"
-msgstr ""
+msgstr "Bulgare (Български)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2491
 msgid "Greek (Ελληνικά)"
-msgstr ""
+msgstr "Grec (Ελληνικά)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2492
 msgid "Korean (한국 언어)"
-msgstr ""
+msgstr "Coréen (한국 언어)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2504
 msgid "International Fonts"
@@ -29787,16 +29644,16 @@ msgstr "Traduction de l'Interface"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2510
 msgid "Font size and resolution for display"
-msgstr ""
+msgstr "taille de la police et résolution de l'affichage"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2516
 msgid "Maximum number of lines to store for the console buffer"
-msgstr ""
+msgstr "Nombre maximum de lignes pour l'historique de la console"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2521
 msgid ""
 "Name that will be used in exported files when format supports such feature"
-msgstr ""
+msgstr "Nom automatique utilisé pour l'export si le format le permet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2527
 #, fuzzy
@@ -29834,7 +29691,7 @@ msgstr "Texturé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2547
 msgid "Use textures for drawing international fonts"
-msgstr ""
+msgstr "Utilise les textures pour l'affichage des polices internationales"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2555
 #, fuzzy
@@ -29843,24 +29700,25 @@ msgstr "Lumières en vue Ombrée"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2555
 msgid "Lights user to display objects in solid draw mode"
-msgstr ""
+msgstr "Lumières pour afficher les objets en mode d'affichage solide"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2559
 msgid "Use Weight Color Range"
-msgstr ""
+msgstr "Utilise le gradient de couleur du poids"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2559
 msgid ""
 "Enable color range used for weight visualization in weight painting mode"
 msgstr ""
+"Enclenche le gradient de couleur utilisé pour la visualisation du poids en mode peinture de poids"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2566
 msgid "Weight Color Range"
-msgstr ""
+msgstr "Gradient de couleur du poids"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2566
 msgid "Color range used for weight visualization in weight painting mode"
-msgstr ""
+msgstr "Gradient de couleur utilisé pour la visualisation du poids en mode peinture de poids"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2572
 #, fuzzy
@@ -29869,7 +29727,7 @@ msgstr "Même Type"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2572
 msgid "Different styles of displaying the color picker widget"
-msgstr ""
+msgstr "Différents styles d'affichage du sélecteur de couleur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2576
 #, fuzzy
@@ -29880,6 +29738,8 @@ msgstr "Afficher Toutes les Images"
 msgid ""
 "Enables automatic saving of preview images in the .blend file (Windows only)"
 msgstr ""
+"Enclenche la sauvegarde automatique des prévisualisations dans le .blend"
+"(Windows seulement)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2580
 msgid "Auto Run Python Scripts"
@@ -29890,15 +29750,19 @@ msgid ""
 "Allow any .blend file to run scripts automatically (unsafe with blend files "
 "from an untrusted source)"
 msgstr ""
+"Permet à n'importe quel .blend de lancer automatiquement les scripts"
+"( choix peu sûr avec les .blend de source non fiable)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2585
 msgid "Tabs as Spaces"
-msgstr ""
+msgstr "Tabulations comme Espaces"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2585
 msgid ""
 "Automatically converts all new tabs into spaces for new and loaded text files"
 msgstr ""
+"Convertit automatiquement toutes les nouveaux alinéas en espaces"
+" pour les nouveaux fichiers textes chargés" 
 
 #: source/blender/makesrna/intern/rna_userdef.c:2590
 #, fuzzy
@@ -29907,7 +29771,7 @@ msgstr "Image Courante"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2590
 msgid "Number of frames to render ahead during playback"
-msgstr ""
+msgstr "Nombre de frames à rendre pendant la lecture"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2595
 #, fuzzy
@@ -29916,7 +29780,7 @@ msgstr "Limites"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2595
 msgid "Memory cache limit in sequencer (megabytes)"
-msgstr ""
+msgstr "Limite du cache mémoire dans le séquenceur (megabytes)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2601
 #, fuzzy
@@ -29934,7 +29798,7 @@ msgstr "Par-dessus (Alpha)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2606
 msgid "Clip alpha below this threshold in the 3D textured view"
-msgstr ""
+msgstr "Contraint l'alpha sous ce seuil dans le vue 3D texturée"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2611
 msgid "Mipmaps"
@@ -29945,6 +29809,8 @@ msgid ""
 "Scale textures for the 3D View (looks nicer but uses more memory and slows "
 "image reloading)"
 msgstr ""
+"Mise à l'échelle des textures pour la vue 3D (rend mieux"
+"mais utilise plus de mémoire et ralentit le chargement des images)" 
 
 #: source/blender/makesrna/intern/rna_userdef.c:2616
 msgid "VBOs"
@@ -29962,7 +29828,7 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_userdef.c:2620
 msgid "Use anti-aliasing for the 3D view (may impact redraw performance)"
-msgstr ""
+msgstr "utilise l'anti-aliasing pour la vue 3D (peut impacter la performance d'affichage)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2626
 #, fuzzy
@@ -29974,6 +29840,8 @@ msgid ""
 "The quality of the anisotropic filtering (values greater than 1.0 enable "
 "anisotropic filtering)"
 msgstr ""
+"La qualité du filtrage anisotropique (valeurs supérieures à 1 "
+"enclenche le filtrage anisotropique)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2632
 #, fuzzy
@@ -29982,7 +29850,7 @@ msgstr "Peinture sur Texture"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2632
 msgid "Limit the texture size to save graphics memory"
-msgstr ""
+msgstr "Limite la taille de la texture pour libérer de la mémoire pour l'affichage"
 
 # T hotkey menu
 #: source/blender/makesrna/intern/rna_userdef.c:2638
@@ -29995,6 +29863,8 @@ msgid ""
 "Time since last access of a GL texture in seconds after which it is freed. "
 "(Set to 0 to keep textures allocated.)"
 msgstr ""
+"Temps en secondes depuis le dernier accès à la GL texture libérée"
+"(Mettre à 0 pour garder les textures allouées)" 
 
 #: source/blender/makesrna/intern/rna_userdef.c:2643
 #, fuzzy
@@ -30003,15 +29873,15 @@ msgstr "Sélection -> Centre"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2643
 msgid "Number of seconds between each run of the GL texture garbage collector"
-msgstr ""
+msgstr "Nombre de secondes entre chaque purge de l'historique de la GL texture"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2648
 msgid "Window Draw Method"
-msgstr ""
+msgstr "Méthode d'affichage de la fenêtre"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2648
 msgid "Drawing method used by the window manager"
-msgstr ""
+msgstr "Méthode d'affichage utilisé par le gestionnaire de fenêtre"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2654
 #, fuzzy
@@ -30020,19 +29890,19 @@ msgstr "Mémoire de mixage audio"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2654
 msgid "Sets the number of samples used by the audio mixing buffer"
-msgstr ""
+msgstr "Paramètre le nombre d'échantillons utilisés par le cache de mixage audio"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2660
 msgid "Audio Device"
-msgstr ""
+msgstr "Périphérique audio"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2660
 msgid "Sets the audio output device"
-msgstr ""
+msgstr "Paramètre le périphérique de sortie audio"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2666
 msgid "Audio Sample Rate"
-msgstr ""
+msgstr "Taux d'échantillonnage audio"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2666
 #, fuzzy
@@ -30041,15 +29911,15 @@ msgstr "Permet de sélectionner la représentation des limites."
 
 #: source/blender/makesrna/intern/rna_userdef.c:2672
 msgid "Audio Sample Format"
-msgstr ""
+msgstr "Format d'échantillonnage audio"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2672
 msgid "Sets the audio sample format"
-msgstr ""
+msgstr "Paramètre le format d'échantillonnage audio "
 
 #: source/blender/makesrna/intern/rna_userdef.c:2684
 msgid "Frame rate for the screencast to be played back"
-msgstr ""
+msgstr "Fréquence de la lecteur de la capture vidéo"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2689
 #, fuzzy
@@ -30058,15 +29928,15 @@ msgstr "Animation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2689
 msgid "Time in milliseconds between each frame recorded for screencast"
-msgstr ""
+msgstr "Temps en milisecondes entre chaque frame enregistré par la capture vidéo"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2693
 msgid "Text Anti-aliasing"
-msgstr ""
+msgstr "Anti-aliasing du texte"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2693
 msgid "Draw user interface text anti-aliased"
-msgstr ""
+msgstr "Affiche un texte anti-aliasé dans l'interface"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2699
 msgid "Verse Master"
@@ -30078,11 +29948,11 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_userdef.c:2703
 msgid "Verse Username"
-msgstr ""
+msgstr "Nom d'utilisateur Verse"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2703
 msgid "The Verse user name"
-msgstr ""
+msgstr "Nom d'utilisateur Verse"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2713
 #, fuzzy
@@ -30101,11 +29971,11 @@ msgstr "Rayons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2718
 msgid "Use turntable style rotation in the viewport"
-msgstr ""
+msgstr "Utiliser le style de rotation de la vue <<table tournante>>"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2719
 msgid "Use trackball style rotation in the viewport"
-msgstr ""
+msgstr "Utiliser le style de rotation de la vue <<boule>>"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2723
 msgid "Continue"
@@ -30113,7 +29983,7 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_userdef.c:2723
 msgid "Old style zoom, continues while moving mouse up or down"
-msgstr ""
+msgstr "Ancien style de zoom, continue pendant un mouvement haut ou bas de la souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2724
 msgid "Dolly"
@@ -30122,20 +29992,21 @@ msgstr ""
 #: source/blender/makesrna/intern/rna_userdef.c:2724
 #: source/blender/makesrna/intern/rna_userdef.c:2729
 msgid "Zooms in and out based on vertical mouse movement"
-msgstr ""
+msgstr "Zoom avant ou arrière basé sur le mouvement vertical de la souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2725
 msgid ""
 "Zooms in and out like scaling the view, mouse movements relative to center"
 msgstr ""
+"Zoom avant ou arrière comme pour l'échelle de la vue, mouvement de la souris relatifs au centre"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2730
 msgid "Zooms in and out based on horizontal mouse movement"
-msgstr ""
+msgstr "Zoom avant ou arrière basé sur le mouvement horizontal de la souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2736
 msgid "Settings for input devices"
-msgstr ""
+msgstr "Paramètres pour périphériques"
 
 # ##########################################################
 # ##
@@ -30160,7 +30031,7 @@ msgstr "Zoom arrière"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2747
 msgid "Which style to use for viewport scaling"
-msgstr ""
+msgstr "Style à utiliser pour la mise à l'échelle de la vue 3D"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2752
 #, fuzzy
@@ -30169,7 +30040,7 @@ msgstr "Axe Z"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2752
 msgid "Axis of mouse movement to zoom in or out on"
-msgstr ""
+msgstr "Axe du mouvement de la souris pour zoom avant ou arrière"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2756
 #, fuzzy
@@ -30178,29 +30049,31 @@ msgstr "Inverse le sens du zoom lors de la rotation de la Molette de la Souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2756
 msgid "Invert the axis of mouse movement for zooming"
-msgstr ""
+msgstr "Inverse l'axe du mouvement de la souris pour zoomer"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2761
 msgid "Rotation style in the viewport"
-msgstr ""
+msgstr "Style de rotation dans la vue 3D"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2765
 msgid "Continuous Grab"
-msgstr ""
+msgstr "Tirage continu"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2765
 msgid ""
 "Allow moving the mouse outside the view on some manipulations (transform, ui "
 "control drag)"
 msgstr ""
+"permet de déplacer la souris en dehors de la vue pour certaines manipulations"
+" (transformation, déplacement de l'UI de contrôle)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2771
 msgid "Drag Threshold"
-msgstr ""
+msgstr "Seuil de déplacement"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2771
 msgid "Amount of pixels you have to drag before dragging UI items happens"
-msgstr ""
+msgstr "Taux de pixels à survoler pour déplacer des éléments de l'interface"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2777
 #, fuzzy
@@ -30209,7 +30082,7 @@ msgstr "Densité"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2777
 msgid "Overall sensitivity of the 3D Mouse"
-msgstr ""
+msgstr "Globale sensibilité de la souris 3D"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2781
 msgid "Zoom = Up/Down"
@@ -30226,7 +30099,7 @@ msgstr "Zoom Inversé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2785
 msgid "Zoom using opposite direction"
-msgstr ""
+msgstr "Zoom utilisant la direction opposée"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2790
 #, fuzzy
@@ -30245,7 +30118,7 @@ msgstr "Inverser"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2796
 msgid "Toggle between moving the viewpoint or moving the scene being viewed"
-msgstr ""
+msgstr "Bascule entre le mouvement du point de vue et le mouvement de la scène vue"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2802
 #, fuzzy
@@ -30254,7 +30127,7 @@ msgstr "Verrouiller rotation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2802
 msgid "Keep horizon level while flying with 3D Mouse"
-msgstr ""
+msgstr "Garder le niveau de l'horizon lors d'un vol avec une souris 3D"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2806
 #, fuzzy
@@ -30272,7 +30145,7 @@ msgstr "Faces Doubles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2812
 msgid "The time (in ms) for a double click"
-msgstr ""
+msgstr "Temps (en millisecondes) pour un double clic"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2816
 msgid "Emulate 3 Button Mouse"
@@ -30283,6 +30156,8 @@ msgid ""
 "Emulates Middle Mouse with Alt+Left Mouse (doesn't work with Left Mouse "
 "Select option)"
 msgstr ""
+"Emule le bouton du milieu de la souris avec Alt+clic gauche"
+"(ne fonctionne pas avec l'option Select pour le clic gauche)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2820
 msgid "Emulate Numpad"
@@ -30301,7 +30176,7 @@ msgstr "Bouton du Milieu:"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2825
 msgid "In text window, paste with middle mouse button instead of panning"
-msgstr ""
+msgstr "Dans la fenêtre texte, coller avec le bouton du milieu au lieu de translater la vue"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2829
 #, fuzzy
@@ -30315,19 +30190,19 @@ msgstr "Inverse le sens du zoom lors de la rotation de la Molette de la Souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2834
 msgid "Wheel Scroll Lines"
-msgstr ""
+msgstr "Décalage de lignes à la molette"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2834
 msgid "The number of lines scrolled at a time with the mouse wheel"
-msgstr ""
+msgstr "Nombre de lignes défilant à chaque impulsion de la molette de la souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2838
 msgid "Key Config"
-msgstr ""
+msgstr "Configuration des touches"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2838
 msgid "The name of the active key configuration"
-msgstr ""
+msgstr "Nom de la configuration des touches active"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2848
 msgid "Blender command line animation playback - path to Blender 2.4"
@@ -30356,15 +30231,15 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_userdef.c:2853
 msgid "Custom animation player executable path"
-msgstr ""
+msgstr "Chemin du lecteur d'animation préféré (éxécutable)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2863
 msgid "Hide Dot Files/Datablocks"
-msgstr ""
+msgstr "Masque les fichiers/blocs de données"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2863
 msgid "Hide files/datablocks that start with a dot(.*)"
-msgstr ""
+msgstr "Masque les fichiers/blocs de données commençant par un point (.*)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2867
 #, fuzzy
@@ -30384,15 +30259,15 @@ msgstr "Cacher Sélection"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2871
 msgid "Hide recent locations in the file selector"
-msgstr ""
+msgstr "Masque les destinations récentes dans le sélecteur de fichier"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2875
 msgid "Show Thumbnails"
-msgstr ""
+msgstr "Montre les miniatures"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2875
 msgid "Open in thumbnail view for images and movies"
-msgstr ""
+msgstr "Ouvre en affichant les miniatures pour les images et vidéos"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2879
 #, fuzzy
@@ -30422,7 +30297,7 @@ msgstr "Charger"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2887
 msgid "Load user interface setup when loading .blend files"
-msgstr ""
+msgstr "Charge l'interface utilisateur lors du chargement du .blend"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2891
 #, fuzzy
@@ -30487,6 +30362,8 @@ msgid ""
 "Alternate script path, matching the default layout with subdirs: startup, "
 "addons & modules (requires restart)"
 msgstr ""
+"Chemin alternatif pour scripts, respectant l'arborescence par défaut "
+"avec sous-dossiers : startup, addons & modules (nécessite un redémarrage)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2916
 #, fuzzy
@@ -30508,7 +30385,7 @@ msgstr "Le répertoire contenant les fichiers temporaires de sauvegarde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2925
 msgid "Path to an image editor"
-msgstr ""
+msgstr "Chemin vers l'éditeur d'image préféré"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2929
 #, fuzzy
@@ -30517,7 +30394,7 @@ msgstr "Rendu de l'Animation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2929
 msgid "Path to a custom animation/frame sequence player"
-msgstr ""
+msgstr "Chemin vers le lecteur d'animation/de séquence d'images préféré"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2934
 #, fuzzy
@@ -30526,7 +30403,7 @@ msgstr "Rendu de l'Animation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2934
 msgid "Preset configs for external animation players"
-msgstr ""
+msgstr "Pré-configuration pour lecteurs d'animation externes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2942
 #, fuzzy
@@ -30538,6 +30415,8 @@ msgid ""
 "The number of old versions to maintain in the current directory, when "
 "manually saving"
 msgstr ""
+"Nombre de précédentes versions à maintenir dans le dossier actuel,"
+"lors d'une sauvegarde manuelle"
 
 # ##########################################################
 # ##
@@ -30551,7 +30430,7 @@ msgstr "Sauv. auto dans fichier temp."
 
 #: source/blender/makesrna/intern/rna_userdef.c:2946
 msgid "Automatic saving of temporary files in temp directory, uses process ID"
-msgstr ""
+msgstr "Sauvegarde automatique des fichiers temporaires, utilise l'ID du processus"
 
 # ##########################################################
 # ##
@@ -30565,7 +30444,7 @@ msgstr "Sauv. auto dans fichier temp."
 
 #: source/blender/makesrna/intern/rna_userdef.c:2952
 msgid "The time (in minutes) to wait between automatic temporary saves"
-msgstr ""
+msgstr "Temps (en minutes) entre les sauvegardes automatiques temporaires"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2957
 #, fuzzy
@@ -30574,7 +30453,7 @@ msgstr "Ouvrir un Projet Récent"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2957
 msgid "Maximum number of recently opened files to remember"
-msgstr ""
+msgstr "Nombre maximum de fichier récemment ouverts à retenir"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2961
 #, fuzzy
@@ -30583,7 +30462,7 @@ msgstr "Format du rendu:"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2961
 msgid "Enables automatic saving of preview images in the .blend file"
-msgstr ""
+msgstr "Active la sauvegarde automatique des prévisualisation dans le .blend "
 
 #: source/blender/makesrna/intern/rna_userdef.c:2995
 msgid "Editing"
@@ -30600,7 +30479,7 @@ msgstr "Activer Noeuds"
 #: source/blender/makesrna/intern/rna_wm.c:346
 #: source/blender/makesrna/intern/rna_wm.c:1698
 msgid "Any"
-msgstr ""
+msgstr "N'importe lequel"
 
 #: source/blender/makesrna/intern/rna_wm.c:49
 #: source/blender/makesrna/intern/rna_wm.c:70
@@ -30617,7 +30496,7 @@ msgstr "Notes de Version (En)"
 #: source/blender/makesrna/intern/rna_wm.c:51
 #: source/blender/makesrna/intern/rna_wm.c:72
 msgid "Click"
-msgstr ""
+msgstr "Clic"
 
 #: source/blender/makesrna/intern/rna_wm.c:52
 #: source/blender/makesrna/intern/rna_wm.c:73
@@ -30627,44 +30506,44 @@ msgstr "Faces Doubles"
 
 #: source/blender/makesrna/intern/rna_wm.c:57
 msgid "North"
-msgstr ""
+msgstr "Nord"
 
 #: source/blender/makesrna/intern/rna_wm.c:58
 msgid "North-East"
-msgstr ""
+msgstr "Nord-Est"
 
 #: source/blender/makesrna/intern/rna_wm.c:59
 msgid "East"
-msgstr ""
+msgstr "Est"
 
 #: source/blender/makesrna/intern/rna_wm.c:60
 msgid "South-East"
-msgstr ""
+msgstr "Sud-Est"
 
 #: source/blender/makesrna/intern/rna_wm.c:61
 msgid "South"
-msgstr ""
+msgstr "Sud"
 
 #: source/blender/makesrna/intern/rna_wm.c:62
 msgid "South-West"
-msgstr ""
+msgstr "Sud-Ouest"
 
 #: source/blender/makesrna/intern/rna_wm.c:63
 msgid "West"
-msgstr ""
+msgstr "Ouest"
 
 #: source/blender/makesrna/intern/rna_wm.c:64
 msgid "North-West"
-msgstr ""
+msgstr "Nord-Ouest"
 
 #: source/blender/makesrna/intern/rna_wm.c:69
 msgid "Nothing"
-msgstr ""
+msgstr "Rien"
 
 #: source/blender/makesrna/intern/rna_wm.c:78
 #: source/blender/makesrna/intern/rna_wm.c:86
 msgid "Middle"
-msgstr ""
+msgstr "Milieu"
 
 #: source/blender/makesrna/intern/rna_wm.c:88
 #, fuzzy
@@ -30679,22 +30558,22 @@ msgstr "Boutons"
 #: source/blender/makesrna/intern/rna_wm.c:94
 #: source/blender/makesrna/intern/rna_wm.c:165
 msgid "Mouse/Trackpad Pan"
-msgstr ""
+msgstr "Souris Translater"
 
 #: source/blender/makesrna/intern/rna_wm.c:95
 #: source/blender/makesrna/intern/rna_wm.c:166
 msgid "Mouse/Trackpad Zoom"
-msgstr ""
+msgstr "Souris Zoom"
 
 #: source/blender/makesrna/intern/rna_wm.c:96
 #: source/blender/makesrna/intern/rna_wm.c:167
 msgid "Mouse/Trackpad Rotate"
-msgstr ""
+msgstr "Souris Tourner"
 
 #: source/blender/makesrna/intern/rna_wm.c:98
 #: source/blender/makesrna/intern/rna_wm.c:169
 msgid "Wheel Up"
-msgstr ""
+msgstr "Molette Haut"
 
 #: source/blender/makesrna/intern/rna_wm.c:99
 #: source/blender/makesrna/intern/rna_wm.c:170
@@ -30711,7 +30590,7 @@ msgstr "Zoom Inversé"
 #: source/blender/makesrna/intern/rna_wm.c:101
 #: source/blender/makesrna/intern/rna_wm.c:172
 msgid "Wheel Out"
-msgstr ""
+msgstr "Molette extérieur"
 
 #: source/blender/makesrna/intern/rna_wm.c:105
 #: source/blender/makesrna/intern/rna_wm.c:297
@@ -30773,7 +30652,7 @@ msgstr "Extension"
 
 #: source/blender/makesrna/intern/rna_wm.c:164
 msgid "Inbetween Move"
-msgstr ""
+msgstr "Déplacer entre-deux"
 
 #: source/blender/makesrna/intern/rna_wm.c:174
 #, fuzzy
@@ -30782,7 +30661,7 @@ msgstr "Déplacer Gauche"
 
 #: source/blender/makesrna/intern/rna_wm.c:175
 msgid "Tweak Middle"
-msgstr ""
+msgstr "Déplacer Milieu"
 
 #: source/blender/makesrna/intern/rna_wm.c:176
 #, fuzzy
@@ -30846,7 +30725,7 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_wm.c:229
 msgid "Return"
-msgstr ""
+msgstr "Entrée"
 
 #: source/blender/makesrna/intern/rna_wm.c:230
 #, fuzzy
@@ -30870,7 +30749,7 @@ msgstr "Clic Gauche"
 
 #: source/blender/makesrna/intern/rna_wm.c:246
 msgid "Down Arrow"
-msgstr ""
+msgstr "Flèche Bas"
 
 #: source/blender/makesrna/intern/rna_wm.c:247
 #, fuzzy
@@ -30879,7 +30758,7 @@ msgstr "Clic Droit"
 
 #: source/blender/makesrna/intern/rna_wm.c:248
 msgid "Up Arrow"
-msgstr ""
+msgstr "Flèche Haut"
 
 #: source/blender/makesrna/intern/rna_wm.c:249
 msgid "Numpad 2"
@@ -31043,7 +30922,7 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_wm.c:327
 msgid "Minus"
-msgstr ""
+msgstr "Moins"
 
 #: source/blender/makesrna/intern/rna_wm.c:329
 #, fuzzy
@@ -31107,11 +30986,11 @@ msgstr "Secondes "
 
 #: source/blender/makesrna/intern/rna_wm.c:353
 msgid "Register"
-msgstr ""
+msgstr "Enregister"
 
 #: source/blender/makesrna/intern/rna_wm.c:355
 msgid "Blocking"
-msgstr ""
+msgstr "Bloquer"
 
 #: source/blender/makesrna/intern/rna_wm.c:356
 msgid "Macro"
@@ -31119,7 +30998,7 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_wm.c:357
 msgid "Grab Pointer"
-msgstr ""
+msgstr "Prendre pour pointeur"
 
 #: source/blender/makesrna/intern/rna_wm.c:359
 #, fuzzy
@@ -31128,7 +31007,7 @@ msgstr "Intersection"
 
 #: source/blender/makesrna/intern/rna_wm.c:363
 msgid "Running Modal"
-msgstr ""
+msgstr "Effectué en modal"
 
 #: source/blender/makesrna/intern/rna_wm.c:364
 #, fuzzy
@@ -31137,7 +31016,7 @@ msgstr "Annuler"
 
 #: source/blender/makesrna/intern/rna_wm.c:365
 msgid "Finished"
-msgstr ""
+msgstr "Terminé"
 
 #: source/blender/makesrna/intern/rna_wm.c:366
 msgid "Pass Through"
@@ -31189,12 +31068,12 @@ msgstr "Texture et Position"
 
 #: source/blender/makesrna/intern/rna_wm.c:1576
 msgid "Key Configuration"
-msgstr ""
+msgstr "Configuration"
 
 #: source/blender/makesrna/intern/rna_wm.c:1576
 #: source/blender/makesrna/intern/rna_wm.c:1598
 msgid "Input configuration, including keymaps"
-msgstr ""
+msgstr "Configuration des périphériques, inluant les raccourcis"
 
 #: source/blender/makesrna/intern/rna_wm.c:1580
 #, fuzzy
@@ -31203,7 +31082,7 @@ msgstr "Taille du texte"
 
 #: source/blender/makesrna/intern/rna_wm.c:1585
 msgid "Key maps configured as part of this configuration"
-msgstr ""
+msgstr "Touches faisant partie de cette configuration"
 
 #: source/blender/makesrna/intern/rna_wm.c:1591
 #: source/blender/makesrna/intern/rna_wm.c:1626
@@ -31214,7 +31093,7 @@ msgstr "Préférences Utilisateur"
 
 #: source/blender/makesrna/intern/rna_wm.c:1591
 msgid "Indicates that a keyconfig was defined by the user"
-msgstr ""
+msgstr "Indique la configuration définie par l'utilisateur"
 
 #: source/blender/makesrna/intern/rna_wm.c:1598
 #, fuzzy
@@ -31233,7 +31112,7 @@ msgstr "Même Type"
 
 #: source/blender/makesrna/intern/rna_wm.c:1610
 msgid "Optional space type keymap is associated with"
-msgstr ""
+msgstr "Type optionnel d'espace auquel la touche est associé"
 
 #: source/blender/makesrna/intern/rna_wm.c:1616
 #, fuzzy
@@ -31242,7 +31121,7 @@ msgstr "Par région"
 
 #: source/blender/makesrna/intern/rna_wm.c:1616
 msgid "Optional region type keymap is associated with"
-msgstr ""
+msgstr "Type optionnel de région auquel le touche est associé"
 
 #: source/blender/makesrna/intern/rna_wm.c:1621
 msgid "Items"
@@ -31250,28 +31129,29 @@ msgstr ""
 
 #: source/blender/makesrna/intern/rna_wm.c:1621
 msgid "Items in the keymap, linking an operator to an input event"
-msgstr ""
+msgstr "Items du raccourci, lié un opérateur au périphérique"
 
 #: source/blender/makesrna/intern/rna_wm.c:1626
 msgid "Keymap is defined by the user"
-msgstr ""
+msgstr "La touche est définie par l'utilisateur"
 
 #: source/blender/makesrna/intern/rna_wm.c:1631
 msgid "Modal Keymap"
-msgstr ""
+msgstr "Touche modal"
 
 #: source/blender/makesrna/intern/rna_wm.c:1631
 msgid ""
 "Indicates that a keymap is used for translate modal events for an operator"
 msgstr ""
+"Indique la touche utilisée pour traduire les évements modaux de l'opérateur"
 
 #: source/blender/makesrna/intern/rna_wm.c:1635
 msgid "Items Expanded"
-msgstr ""
+msgstr "Items explicités"
 
 #: source/blender/makesrna/intern/rna_wm.c:1635
 msgid "Expanded in the user interface"
-msgstr ""
+msgstr "Explicité dans l'interface utilisateur"
 
 #: source/blender/makesrna/intern/rna_wm.c:1640
 #, fuzzy
@@ -31280,7 +31160,7 @@ msgstr "Enfants"
 
 #: source/blender/makesrna/intern/rna_wm.c:1640
 msgid "Children expanded in the user interface"
-msgstr ""
+msgstr "Enfants explicités dans l'interface utilisateur"
 
 #: source/blender/makesrna/intern/rna_wm.c:1649
 #, fuzzy
@@ -31299,15 +31179,15 @@ msgstr "Modificateurs"
 
 #: source/blender/makesrna/intern/rna_wm.c:1653
 msgid "Identifier of operator to call on input event"
-msgstr ""
+msgstr "Identificateur de l'opérateur appelé par le périphérique"
 
 #: source/blender/makesrna/intern/rna_wm.c:1660
 msgid "Name of operator to call on input event"
-msgstr ""
+msgstr "Nom de l'opérateur appelé par le périphérique"
 
 #: source/blender/makesrna/intern/rna_wm.c:1666
 msgid "Properties to set when the operator is called"
-msgstr ""
+msgstr "Propriétés définissant l'appel de l'opérateur"
 
 #: source/blender/makesrna/intern/rna_wm.c:1673
 #, fuzzy
@@ -31316,11 +31196,11 @@ msgstr "Canaux"
 
 #: source/blender/makesrna/intern/rna_wm.c:1673
 msgid "Type of event mapping"
-msgstr ""
+msgstr "Type de plaquage de l'évènement"
 
 #: source/blender/makesrna/intern/rna_wm.c:1680
 msgid "Type of event"
-msgstr ""
+msgstr "Type d'évènement"
 
 #: source/blender/makesrna/intern/rna_wm.c:1693
 #, fuzzy
@@ -31329,11 +31209,11 @@ msgstr "Taille du texte"
 
 #: source/blender/makesrna/intern/rna_wm.c:1698
 msgid "Any modifier keys pressed"
-msgstr ""
+msgstr "N'importe quel modificateur pressé"
 
 #: source/blender/makesrna/intern/rna_wm.c:1705
 msgid "Shift key pressed"
-msgstr ""
+msgstr "Touche Maj pressée"
 
 #: source/blender/makesrna/intern/rna_wm.c:1712
 #, fuzzy
@@ -31347,7 +31227,7 @@ msgstr "Toutes les clefs"
 
 #: source/blender/makesrna/intern/rna_wm.c:1726
 msgid "Operating system key pressed"
-msgstr ""
+msgstr "Touche du système d'exploitation pressée"
 
 #: source/blender/makesrna/intern/rna_wm.c:1732
 #, fuzzy
@@ -31356,15 +31236,15 @@ msgstr "Modificateurs"
 
 #: source/blender/makesrna/intern/rna_wm.c:1732
 msgid "Regular key pressed as a modifier"
-msgstr ""
+msgstr "Touche régulière préssée en tant que modificateur"
 
 #: source/blender/makesrna/intern/rna_wm.c:1737
 msgid "Show key map event and property details in the user interface"
-msgstr ""
+msgstr "Montre le raccourci-clavier et les détails de la propriété dans l'interface utilisateur"
 
 #: source/blender/makesrna/intern/rna_wm.c:1744
 msgid "The value this event translates to in a modal keymap"
-msgstr ""
+msgstr "La valeur de cet évènement est traduit dans le raccourci modal"
 
 #: source/blender/makesrna/intern/rna_wm.c:1749
 #, fuzzy
@@ -31378,23 +31258,25 @@ msgstr "Modifiées"
 
 #: source/blender/makesrna/intern/rna_wm.c:1756
 msgid "Is this keymap item modified by the user"
-msgstr ""
+msgstr "Cet élément de configuration, a-t-il été modifié par l'utilisateur ?"
 
 #: source/blender/makesrna/intern/rna_wm.c:1760
 msgid "Is this keymap item user defined (doesn't just replace a builtin item)"
-msgstr ""
+msgstr "" 
+"Cet élément de configuration, est-il défini par l'utilisateur ?" 
+"(ne pas remplacer une configuration d'usine)"
 
 #: source/blender/makesrna/intern/rna_world.c:216
 msgid "Multiply direct lighting with ambient occlusion, darkening the result"
-msgstr ""
+msgstr "Multiple l'éclairage direct avec l'occlusion ambiante, assombrissant le resultat"
 
 #: source/blender/makesrna/intern/rna_world.c:217
 msgid "Add light and shadow"
-msgstr ""
+msgstr "Ajoute lumière et ombre"
 
 #: source/blender/makesrna/intern/rna_world.c:221
 msgid "Plain diffuse energy (white.)"
-msgstr ""
+msgstr "Energie diffuse entière (blanche.)"
 
 #: source/blender/makesrna/intern/rna_world.c:222
 #, fuzzy
@@ -31403,7 +31285,7 @@ msgstr "Couleur"
 
 #: source/blender/makesrna/intern/rna_world.c:222
 msgid "Use horizon and zenith color for diffuse energy"
-msgstr ""
+msgstr "utilise les couleurs de l'horizon et du zénith pour l'énergie diffuse"
 
 #: source/blender/makesrna/intern/rna_world.c:223
 #, fuzzy
@@ -31412,7 +31294,7 @@ msgstr "Texture"
 
 #: source/blender/makesrna/intern/rna_world.c:223
 msgid "Does full Sky texture render for diffuse energy"
-msgstr ""
+msgstr "rend avec une énergie diffuse provenant de toute la texture"
 
 #: source/blender/makesrna/intern/rna_world.c:227
 #, fuzzy
@@ -31421,7 +31303,7 @@ msgstr "Cible de contrainte"
 
 #: source/blender/makesrna/intern/rna_world.c:227
 msgid "Fastest and gives the most noise"
-msgstr ""
+msgstr "Le plus rapide mais donne le plus de bruit"
 
 #: source/blender/makesrna/intern/rna_world.c:228
 #, fuzzy
@@ -31430,7 +31312,7 @@ msgstr "Actif"
 
 #: source/blender/makesrna/intern/rna_world.c:228
 msgid "Fast in high-contrast areas"
-msgstr ""
+msgstr "Rapide dans les zones de fort contraste"
 
 #: source/blender/makesrna/intern/rna_world.c:229
 #, fuzzy
@@ -31444,7 +31326,7 @@ msgstr "Qualité"
 
 #: source/blender/makesrna/intern/rna_world.c:233
 msgid "Accurate, but slow when noise-free results are required"
-msgstr ""
+msgstr "Précis, mais lent lorsque des résultats non bruités sont attendus"
 
 #: source/blender/makesrna/intern/rna_world.c:234
 #, fuzzy
@@ -31453,11 +31335,11 @@ msgstr "Approximatif"
 
 #: source/blender/makesrna/intern/rna_world.c:234
 msgid "Inaccurate, but faster and without noise"
-msgstr ""
+msgstr "Imprécis, mais rapide et sans bruit"
 
 #: source/blender/makesrna/intern/rna_world.c:240
 msgid "Lighting for a World datablock"
-msgstr ""
+msgstr "Eclairage du monde"
 
 #: source/blender/makesrna/intern/rna_world.c:245
 #, fuzzy
@@ -31468,6 +31350,7 @@ msgstr "Occlusion ambiante"
 msgid ""
 "Use Ambient Occlusion to add shadowing based on distance between objects"
 msgstr ""
+"Utilise l'occlusion ambiante pour ajouter de l'ombrage selon la distance entre les objets"
 
 #: source/blender/makesrna/intern/rna_world.c:252
 #, fuzzy
@@ -31481,7 +31364,7 @@ msgstr "Extension"
 
 #: source/blender/makesrna/intern/rna_world.c:258
 msgid "Defines how AO mixes with material shading"
-msgstr ""
+msgstr "définit comment l'OA se mélange à l'ombrage du matériau"
 
 #: source/blender/makesrna/intern/rna_world.c:264
 #, fuzzy
@@ -31490,7 +31373,7 @@ msgstr "Éclairage environnemental"
 
 #: source/blender/makesrna/intern/rna_world.c:264
 msgid "Add light coming from the environment"
-msgstr ""
+msgstr "ajoutes la lumière venant de l'environnement"
 
 #: source/blender/makesrna/intern/rna_world.c:270
 #: source/blender/makesrna/intern/rna_world.c:276
@@ -31500,11 +31383,11 @@ msgstr "Carte d’environnement"
 
 #: source/blender/makesrna/intern/rna_world.c:270
 msgid "Defines the strength of environment light"
-msgstr ""
+msgstr "définit la force de la lumière d'environnement"
 
 #: source/blender/makesrna/intern/rna_world.c:276
 msgid "Defines where the color of the environment light comes from"
-msgstr ""
+msgstr "Définit d'où vient la couleur de la lumière d'environnement"
 
 #: source/blender/makesrna/intern/rna_world.c:282
 #, fuzzy
@@ -31513,7 +31396,7 @@ msgstr "Éclairage indirect"
 
 #: source/blender/makesrna/intern/rna_world.c:282
 msgid "Add indirect light bouncing of surrounding objects"
-msgstr ""
+msgstr "Ajoute des rebonds de lumière indirecte aux objets environnants "
 
 #: source/blender/makesrna/intern/rna_world.c:289
 #, fuzzy
@@ -31522,11 +31405,11 @@ msgstr "Acteur"
 
 #: source/blender/makesrna/intern/rna_world.c:289
 msgid "Factor for how much surrounding objects contribute to light"
-msgstr ""
+msgstr "Facteur de contribution des objets environnants à l'éclairage"
 
 #: source/blender/makesrna/intern/rna_world.c:295
 msgid "Number of indirect diffuse light bounces"
-msgstr ""
+msgstr "Nombre de rebonds de la lumière indirecte diffuse"
 
 #: source/blender/makesrna/intern/rna_world.c:302
 #, fuzzy
@@ -31540,29 +31423,33 @@ msgstr "Passes :"
 
 #: source/blender/makesrna/intern/rna_world.c:308
 msgid "Number of preprocessing passes to reduce overocclusion"
-msgstr ""
+msgstr "Nombre de passes de précalcul pour réduire la surocclusion"
 
 #: source/blender/makesrna/intern/rna_world.c:313
 msgid "Length of rays, defines how far away other faces give occlusion effect"
-msgstr ""
+msgstr "Longueur des rayons, définit à quelle distance les faces lontaines produisent un effet d'occlusion"
 
 #: source/blender/makesrna/intern/rna_world.c:318
 msgid ""
 "Attenuation falloff strength, the higher, the less influence distant objects "
 "have"
 msgstr ""
+"Intensité de la restriction de l'atténuation, plus elle est élevée,"
+" moins il y a d'influence sur les objets lointains"
 
 #: source/blender/makesrna/intern/rna_world.c:324
 msgid ""
 "Bias (in radians) to prevent smoothed faces from showing banding (for "
 "Raytrace Constant Jittered)"
-msgstr ""
+msgstr "Biais (en radians) pour prévenir les faces lissées d'une effet de bandes"
+"(pour les ombres raytracées pour une dispersion constante)"
 
 #: source/blender/makesrna/intern/rna_world.c:330
 msgid ""
 "Samples below this threshold will be considered fully shadowed/unshadowed "
 "and skipped (for Raytrace Adaptive QMC)"
-msgstr ""
+msgstr """Echantillons sous ce seuil seront considérés comme entièrement ombrés ou non"
+"et ignorés (pour les ombres raytracées adaptatives QMC)"
 
 #: source/blender/makesrna/intern/rna_world.c:336
 #, fuzzy
@@ -31575,10 +31462,13 @@ msgid ""
 "values result in more aggressive sample reduction. Requires Vec pass enabled "
 "(for Raytrace Adaptive QMC)"
 msgstr ""
+"utilise la passe Speed Vector pour réduire les samples d'OA des pixels d'un mouvement rapide."
+"les valeurs élevées produisent une importante réduction de l'échantillonage."
+"Nécessite une passe Vec coché ( pour les ombres raytracées adaptatives QMC)"
 
 #: source/blender/makesrna/intern/rna_world.c:342
 msgid "Low values are slower and higher quality"
-msgstr ""
+msgstr "Les valeurs faibles donnent un rendu plus lent et de meilleure qualité"
 
 #: source/blender/makesrna/intern/rna_world.c:349
 #, fuzzy
@@ -31587,11 +31477,11 @@ msgstr "Flou Directionnel"
 
 #: source/blender/makesrna/intern/rna_world.c:349
 msgid "Ad-hoc correction for over-occlusion due to the approximation"
-msgstr ""
+msgstr "Correction ad-hoc de la sur-occlusion due à l'appoximation"
 
 #: source/blender/makesrna/intern/rna_world.c:354
 msgid "Distance will be used to attenuate shadows"
-msgstr ""
+msgstr "Distance utilisée pour atténuer les ombres"
 
 #: source/blender/makesrna/intern/rna_world.c:359
 #, fuzzy
@@ -31603,12 +31493,16 @@ msgid ""
 "Cache AO results in pixels and interpolate over neighbouring pixels for "
 "speedup"
 msgstr ""
+"Le cache d'OA donne un résultat en pixels permettant d'accélérer"
+"l'interpolation des pixels voisins"
 
 #: source/blender/makesrna/intern/rna_world.c:365
 msgid ""
 "Amount of ray samples. Higher values give smoother results and longer "
 "rendering times"
 msgstr ""
+"Montant d'échantillons de rayons. Les valeurs élevées donnent " 
+"des résultats plus lisses et des temps de rendu plus long"
 
 #: source/blender/makesrna/intern/rna_world.c:371
 #, fuzzy
@@ -31617,12 +31511,13 @@ msgstr "Edition"
 
 #: source/blender/makesrna/intern/rna_world.c:371
 msgid "Method for generating shadow samples (for Raytrace)"
-msgstr ""
+msgstr "Méthode générant des échantillons d'ombre raytracée"
 
 #: source/blender/makesrna/intern/rna_world.c:493
 msgid ""
 "World datablock describing the environment and ambient lighting of a scene"
 msgstr ""
+"Bloc de données Monde décrivant l'environnement et l'éclairage ambiant de la scène"
 
 #: source/blender/makesrna/intern/rna_world.c:504
 #, fuzzy
@@ -31656,11 +31551,11 @@ msgstr "Direction de l'axe"
 
 #: source/blender/makesrna/intern/rna_world.c:526
 msgid "Amount of exponential color correction for light"
-msgstr ""
+msgstr "Montant de correction colorimétrique pour la lumière"
 
 #: source/blender/makesrna/intern/rna_world.c:532
 msgid "The color range that will be mapped to 0-1"
-msgstr ""
+msgstr "L'interval colorimétrique sera compris entre 0 et 1"
 
 #: source/blender/makesrna/intern/rna_world.c:538
 #, fuzzy
@@ -31669,11 +31564,11 @@ msgstr "Mélange"
 
 #: source/blender/makesrna/intern/rna_world.c:538
 msgid "Render background with natural progression from horizon to zenith"
-msgstr ""
+msgstr "Rend l'arrière-plan avec un dégradé naturel de l'horizon au zénith"
 
 #: source/blender/makesrna/intern/rna_world.c:543
 msgid "Paper Sky"
-msgstr ""
+msgstr "Papier peint"
 
 #: source/blender/makesrna/intern/rna_world.c:543
 #, fuzzy
@@ -31682,11 +31577,11 @@ msgstr "Aplatir les angles des points sélectionnés."
 
 #: source/blender/makesrna/intern/rna_world.c:548
 msgid "Real Sky"
-msgstr ""
+msgstr "Fond réaliste"
 
 #: source/blender/makesrna/intern/rna_world.c:548
 msgid "Render background with a real horizon, relative to the camera angle"
-msgstr ""
+msgstr "Rend l'arrière plan avec une horizon réaliste, relative à l'angle de la caméra"
 
 #: source/blender/makesrna/intern/rna_world.c:556
 #, fuzzy
@@ -31706,7 +31601,7 @@ msgstr "Charger la Scène de Démarrage par Défaut"
 #: source/blender/windowmanager/intern/wm_files.c:434
 #, c-format
 msgid "Can't read file: \"%s\", %s."
-msgstr ""
+msgstr "Ne peut pas lire le fichier: \"%s\", %s."
 
 #: source/blender/windowmanager/intern/wm_files.c:434
 #, fuzzy
@@ -31716,17 +31611,17 @@ msgstr "Taille du texte"
 #: source/blender/windowmanager/intern/wm_files.c:437
 #, c-format
 msgid "File format is not supported in file: \"%s\"."
-msgstr ""
+msgstr "Format non supporté du fichier: \"%s\"."
 
 #: source/blender/windowmanager/intern/wm_files.c:440
 #, c-format
 msgid "File path invalid: \"%s\"."
-msgstr ""
+msgstr "Chemin de fichier non valide: \"%s\"."
 
 #: source/blender/windowmanager/intern/wm_files.c:443
 #, c-format
 msgid "Unknown error loading: \"%s\"."
-msgstr ""
+msgstr "erreur de chargement inconnue: \"%s\"."
 
 #: source/blender/windowmanager/intern/wm_operators.c:147
 #, fuzzy
@@ -31738,7 +31633,7 @@ msgstr "Afficher Noms"
 #: source/blender/windowmanager/intern/wm_operators.c:357
 #: source/blender/windowmanager/intern/wm_operators.c:382
 msgid "(undocumented operator)"
-msgstr ""
+msgstr "(opérateur non décrit)"
 
 #: source/blender/windowmanager/intern/wm_operators.c:779
 msgid "OK?"
@@ -31761,7 +31656,7 @@ msgstr "Refaire Action"
 
 #: source/blender/windowmanager/intern/wm_operators.c:824
 msgid "Check and warn on overwriting existing files"
-msgstr ""
+msgstr "Prévenir la réécriture de fichiers existants"
 
 #: source/blender/windowmanager/intern/wm_operators.c:828
 #, fuzzy
@@ -31770,7 +31665,7 @@ msgstr "Empaqueter dans le fichier .blend"
 
 #: source/blender/windowmanager/intern/wm_operators.c:830
 msgid "Filter image files"
-msgstr ""
+msgstr "Filtre pour fichiers image"
 
 #: source/blender/windowmanager/intern/wm_operators.c:832
 #, fuzzy
@@ -31779,7 +31674,7 @@ msgstr "Masque les fichiers précés d'un ."
 
 #: source/blender/windowmanager/intern/wm_operators.c:834
 msgid "Filter python files"
-msgstr ""
+msgstr "Filtre pour fichiers python"
 
 #: source/blender/windowmanager/intern/wm_operators.c:836
 #, fuzzy
@@ -31803,7 +31698,7 @@ msgstr "Masque les fichiers précés d'un ."
 
 #: source/blender/windowmanager/intern/wm_operators.c:844
 msgid "Filter COLLADA files"
-msgstr ""
+msgstr "Filtre pour fichiers COLLADA"
 
 #: source/blender/windowmanager/intern/wm_operators.c:850
 #, fuzzy
@@ -31815,6 +31710,8 @@ msgid ""
 "The setting for the file browser mode to load a .blend file, a library or a "
 "special file"
 msgstr ""
+"Critère du navigateur pour charger un fichier .blend,"
+" une bibliothèque ou un fichier spécial"
 
 #: source/blender/windowmanager/intern/wm_operators.c:855
 #, fuzzy
@@ -31823,7 +31720,7 @@ msgstr "Chemin Relatif"
 
 #: source/blender/windowmanager/intern/wm_operators.c:855
 msgid "Select the file relative to the blend file"
-msgstr ""
+msgstr "Sélectionner le fichier relatif au .blend"
 
 #: source/blender/windowmanager/intern/wm_operators.c:860
 #, fuzzy
@@ -31857,7 +31754,7 @@ msgstr "Sélection -> Centre"
 
 #: source/blender/windowmanager/intern/wm_operators.c:879
 msgid "Extend selection instead of deselecting everything first"
-msgstr ""
+msgstr "Etendre la slection au lieu de tout désélectionner"
 
 #: source/blender/windowmanager/intern/wm_operators.c:884
 #, fuzzy
@@ -31866,7 +31763,7 @@ msgstr "Etoile"
 
 #: source/blender/windowmanager/intern/wm_operators.c:885
 msgid "X End"
-msgstr ""
+msgstr "X Fin"
 
 #: source/blender/windowmanager/intern/wm_operators.c:886
 #, fuzzy
@@ -31875,11 +31772,11 @@ msgstr "Etoile"
 
 #: source/blender/windowmanager/intern/wm_operators.c:887
 msgid "Y End"
-msgstr ""
+msgstr "Y Fin"
 
 #: source/blender/windowmanager/intern/wm_operators.c:890
 msgid "Mouse cursor style to use during the modal operator"
-msgstr ""
+msgstr "Style du pointeur de la souris utilisé par un opérateur modal"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1021
 msgid "OK"
@@ -31892,7 +31789,7 @@ msgstr "Valeur"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1147
 msgid "Open a popup to set the debug level"
-msgstr ""
+msgstr "Ouvre un message pour le niveau de debug"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1153
 #, fuzzy
@@ -31911,7 +31808,7 @@ msgstr "Plein écran"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1309
 msgid "Opens a blocking popup region with release info"
-msgstr ""
+msgstr "Ouvre le message d'accueil avec les informations de version"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1421
 #, fuzzy
@@ -31935,7 +31832,7 @@ msgstr "Copie Liée"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1470
 msgid "Duplicate the current Blender window"
-msgstr ""
+msgstr "Dupliquer la fenêtre Blender active"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1478
 #, fuzzy
@@ -31944,15 +31841,15 @@ msgstr "Enregistrer -> Scène de Démarrage"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1480
 msgid "Make the current file the default .blend file"
-msgstr ""
+msgstr "Faire du fichier en cours le .blend par défaut"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1489
 msgid "Reload Start-Up File"
-msgstr ""
+msgstr "Recharge le fichier de démarrage"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1491
 msgid "Open the default file (doesn't save the current file)"
-msgstr ""
+msgstr "Ouvre le fichier par défaut (ne sauvegarde pas le fichier en cours)"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1500
 msgid "Load Factory Settings"
@@ -31960,7 +31857,7 @@ msgstr "Charger la Scène de Démarrage par Défaut"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1502
 msgid "Load default file and user preferences"
-msgstr ""
+msgstr "charge le fichier et les préférences de l'utilisateurs par défaut"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1583
 #, fuzzy
@@ -31974,29 +31871,31 @@ msgstr "Sauver le Rendu"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1593
 msgid "Load user interface setup in the .blend file"
-msgstr ""
+msgstr "Charge l'interface utilisateur définie dans le fichier"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1594
 msgid "Trusted Source"
-msgstr ""
+msgstr "Fichier fiable"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1594
 msgid ""
 "Allow blend file execute scripts automatically, default available from "
 "system preferences"
 msgstr ""
+"Autoriser le .blend à éxécuter les scripts automatiquement,"
+"par défaut défini dans les préférences système"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1750
 msgid "Link/Append from Library"
-msgstr ""
+msgstr "Lier/Importer"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1752
 msgid "Link or Append from a Library .blend file"
-msgstr ""
+msgstr "Lier ou importer d'un autre fichier .blend"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1762
 msgid "Link the objects or datablocks rather than appending"
-msgstr ""
+msgstr "Lie les objets et blocs de données au lieu de les importer"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1763
 #, fuzzy
@@ -32009,7 +31908,7 @@ msgstr "Calque Actif"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1764
 msgid "Put the linked objects on the active layer"
-msgstr ""
+msgstr "Mettre les objets liés sur le calque actif"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1765
 #, fuzzy
@@ -32018,7 +31917,7 @@ msgstr "Groupes de Sommets"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1765
 msgid "Create instances for each group as a DupliGroup"
-msgstr ""
+msgstr "Créer des instances pour chaque groupe en tant que DupliGroup"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1790
 msgid "Recover Last Session"
@@ -32026,7 +31925,7 @@ msgstr "Ouvrir Sauvegarde de Secours"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1792
 msgid "Open the last closed file (\"quit.blend\")"
-msgstr ""
+msgstr "Ouvre la sauvegarde effectuée à la fermeture (\"quit.blend\")"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1833
 #, fuzzy
@@ -32035,12 +31934,12 @@ msgstr "Sauvegarde Auto"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1835
 msgid "Open an automatically saved file to recover it"
-msgstr ""
+msgstr "Ouvre un fichier automatiquement sauvegardé"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1852
 #: source/blender/windowmanager/intern/wm_operators.c:1854
 msgid "untitled.blend"
-msgstr ""
+msgstr "sans_titre.blend"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1939
 #, fuzzy
@@ -32067,12 +31966,12 @@ msgstr "Empaqueter dans le fichier .blend"
 #: source/blender/windowmanager/intern/wm_operators.c:1950
 #: source/blender/windowmanager/intern/wm_operators.c:2009
 msgid "Remap Relative"
-msgstr ""
+msgstr "Actualiser les relations relatives"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1950
 #: source/blender/windowmanager/intern/wm_operators.c:2009
 msgid "Remap relative paths when saving in a different directory"
-msgstr ""
+msgstr "Actualiser les chemins relatifs lors d'un enregistrement dans un autre répertoire"
 
 #: source/blender/windowmanager/intern/wm_operators.c:1951
 #, fuzzy
@@ -32082,7 +31981,7 @@ msgstr "Enregistrer Sous"
 #: source/blender/windowmanager/intern/wm_operators.c:1951
 msgid ""
 "Save a copy of the actual working state but does not make saved file active."
-msgstr ""
+msgstr "Enregistre une copie de travail à l'état actuel mais ne sauvegarde pas le fichier actif "
 
 #: source/blender/windowmanager/intern/wm_operators.c:1998
 #, fuzzy
@@ -32091,7 +31990,7 @@ msgstr "Sauver le Rendu"
 
 #: source/blender/windowmanager/intern/wm_operators.c:2000
 msgid "Save the current Blender file"
-msgstr ""
+msgstr "Sauvegarde le fichier blender en cours"
 
 #: source/blender/windowmanager/intern/wm_operators.c:2054
 #, fuzzy
@@ -32120,7 +32019,7 @@ msgstr "Poignées Libres/Alignées"
 
 #: source/blender/windowmanager/intern/wm_operators.c:2103
 msgid "Toggle the current window fullscreen"
-msgstr ""
+msgstr "Bascule la fenêtre active en plein écran"
 
 #: source/blender/windowmanager/intern/wm_operators.c:2120
 #: source/blender/windowmanager/intern/wm_operators.c:2122
@@ -32130,7 +32029,7 @@ msgstr "Quitter sans sauvegarder"
 #: source/blender/windowmanager/intern/wm_operators.c:2141
 #: source/blender/windowmanager/intern/wm_operators.c:2143
 msgid "Toggle System Console"
-msgstr ""
+msgstr "Bascule de la console système"
 
 #: source/blender/windowmanager/intern/wm_operators.c:2426
 #, fuzzy
@@ -32139,7 +32038,7 @@ msgstr "Cercle"
 
 #: source/blender/windowmanager/intern/wm_operators.c:2428
 msgid "Enter rotate mode with a circular gesture"
-msgstr ""
+msgstr "Entrer dans le mode rotation avec un geste circulaire"
 
 #: source/blender/windowmanager/intern/wm_operators.c:2671
 #, fuzzy
@@ -32158,15 +32057,15 @@ msgstr "Diviser la Zone"
 
 #: source/blender/windowmanager/intern/wm_operators.c:2787
 msgid "Draw a straight line as you move the pointer"
-msgstr ""
+msgstr "Affiche une ligne droite lorsque vous bougez le pointeur"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3256
 msgid "Radial Control"
-msgstr ""
+msgstr "Contrôle radial"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3266
 msgid "Path of property to be set by the radial control."
-msgstr ""
+msgstr "Chemin de la propriété de contrôle radial"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3267
 #, fuzzy
@@ -32175,7 +32074,7 @@ msgstr "Copier la Rotation"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3267
 msgid "Path of property used to rotate the texture display."
-msgstr ""
+msgstr "Chemin pour le contrôle de la propriété de rotation de l'affichage de texture"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3268
 #, fuzzy
@@ -32184,7 +32083,7 @@ msgstr "Suivre le chemin"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3268
 msgid "Path of property used to set the color of the control."
-msgstr ""
+msgstr "Chemin pour le contrôle de la propriété de colorisation"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3269
 #, fuzzy
@@ -32193,7 +32092,7 @@ msgstr "Suivre le chemin"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3269
 msgid "Path of property used to set the fill color of the control."
-msgstr ""
+msgstr "Chemin pour le contrôle de la propriété de remplissage de couleur"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3270
 #, fuzzy
@@ -32202,7 +32101,7 @@ msgstr "Zoom arrière"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3270
 msgid "Path of property used to set the zoom level for the control."
-msgstr ""
+msgstr "Chemin pour le contrôle de la propriété de focalisation"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3271
 #, fuzzy
@@ -32211,7 +32110,7 @@ msgstr "Outils de Peinture..."
 
 #: source/blender/windowmanager/intern/wm_operators.c:3271
 msgid "Path of ID that is used to generate an image for the control."
-msgstr ""
+msgstr "Chemin pour le contrôle de l'index utilisé pour générer une image"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3291
 #, fuzzy
@@ -32220,11 +32119,11 @@ msgstr "Dessiner"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3292
 msgid "Draw Region + Swap"
-msgstr ""
+msgstr "Afficher région + bascule"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3292
 msgid "Draw Region and Swap"
-msgstr ""
+msgstr "Afficher la région et la bascule"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3293
 #, fuzzy
@@ -32233,7 +32132,7 @@ msgstr "Vent"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3294
 msgid "Draw Window + Swap"
-msgstr ""
+msgstr "Afficher fenêtre + bascule"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3294
 #, fuzzy
@@ -32272,11 +32171,11 @@ msgstr "Rendu"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3398
 msgid "Simple redraw timer to test the speed of updating the interface"
-msgstr ""
+msgstr "Simple chronométrage de réaffichage pour tester le raraîchissement de l'interface"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3405
 msgid "Number of times to redraw"
-msgstr ""
+msgstr "Nombres de réaffichages"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3419
 #, fuzzy
@@ -32285,7 +32184,7 @@ msgstr "Limites"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3421
 msgid "Print memory statistics to the console"
-msgstr ""
+msgstr "Afficher les données mémoire dans la console"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3536
 #: source/blender/windowmanager/intern/wm_operators.c:3613
@@ -32302,7 +32201,7 @@ msgstr "Nom de l'action"
 #: source/blender/windowmanager/intern/wm_operators.c:3614
 #: source/blender/windowmanager/intern/wm_operators.c:3669
 msgid "Begin"
-msgstr ""
+msgstr "Commencement"
 
 #: source/blender/windowmanager/intern/wm_operators.c:3677
 #, fuzzy
