@@ -26796,68 +26796,59 @@ msgstr "Décaler horizontalement l’image par rapport au centre de la vue"
 msgid "Display zoom level"
 msgstr "Niveau de zoom de l’affichage"
 
-# #############################################################################
-# ######### MARKER
-# #############################################################################
-
-
-
 #: source/blender/makesrna/intern/rna_space.c:1783
-#, fuzzy
 msgid "Space Text Editor"
-msgstr "Editeur de Texte"
+msgstr "Espace de l’éditeur de texte"
 
 #: source/blender/makesrna/intern/rna_space.c:1783
-#, fuzzy
 msgid "Text editor space data"
-msgstr "Editeur de Texte"
+msgstr "Données de l’espace de l’éditeur de texte"
 
 #: source/blender/makesrna/intern/rna_space.c:1788
 msgid "Text displayed and edited in this space"
-msgstr "Texte édité et affiché dans cet espace"
+msgstr "Texte affiché et édité dans cet espace"
 
 #: source/blender/makesrna/intern/rna_space.c:1796
+#, fuzzy
 msgid "Word Wrap"
-msgstr "Condenser"
+msgstr "Replier aux mots"
 
 #: source/blender/makesrna/intern/rna_space.c:1796
+#, fuzzy
 msgid "Wrap words if there is not enough horizontal space"
-msgstr "Plier les lignes du texte dépassant les limites de l'espace horizontal"
+msgstr "Replier aux mots les lignes de texte dépassant les limites de l’espace horizontal"
 
 #: source/blender/makesrna/intern/rna_space.c:1802
-#, fuzzy
 msgid "Line Numbers"
-msgstr "Image"
+msgstr "Numéro de ligne"
 
 #: source/blender/makesrna/intern/rna_space.c:1802
 msgid "Show line numbers next to the text"
-msgstr "Montre les numéros de ligne à côté du texte"
+msgstr "Montrer les numéros de ligne à côté du texte"
 
 #: source/blender/makesrna/intern/rna_space.c:1808
 msgid "Syntax Highlight"
-msgstr "Syntaxe Surbrillance"
+msgstr "Mise en valeur de la syntaxe"
 
 #: source/blender/makesrna/intern/rna_space.c:1808
 msgid "Syntax highlight for scripting"
-msgstr "Surbrillance de la syntaxe pour scripter"
+msgstr "Mise en valeur de la syntaxe pour scripter"
 
 #: source/blender/makesrna/intern/rna_space.c:1814
-#, fuzzy
 msgid "Highlight Line"
-msgstr "Diviser la Zone"
+msgstr "Surligner ligne"
 
 #: source/blender/makesrna/intern/rna_space.c:1814
-#, fuzzy
 msgid "Highlight the current line"
-msgstr "Sélectionnez l'emplacement du répertoire par défaut des textures"
+msgstr "Surligner la ligne courante"
 
 #: source/blender/makesrna/intern/rna_space.c:1820
 msgid "Tab Width"
-msgstr "Largeur Alinea"
+msgstr "Largeur tabulation"
 
 #: source/blender/makesrna/intern/rna_space.c:1820
 msgid "Number of spaces to display tabs with"
-msgstr "Nombre d'espaces correspondant à une tabulation"
+msgstr "Nombre d’espaces correspondant à une tabulation"
 
 #: source/blender/makesrna/intern/rna_space.c:1826
 #: source/blender/makesrna/intern/rna_space.c:2205
@@ -26865,101 +26856,88 @@ msgid "Font size to use for displaying the text"
 msgstr "Taille de la police à utiliser pour afficher le texte"
 
 #: source/blender/makesrna/intern/rna_space.c:1831
-#, fuzzy
 msgid "Show Margin"
-msgstr "Options d'Affichage"
+msgstr "Montrer marge"
 
 #: source/blender/makesrna/intern/rna_space.c:1831
-#, fuzzy
 msgid "Show right margin"
-msgstr "Charger ce fichier"
+msgstr "Montrer la marge de droite"
 
 #: source/blender/makesrna/intern/rna_space.c:1837
 msgid "Margin Column"
-msgstr "Marge"
+msgstr "Colonne de marge"
 
 #: source/blender/makesrna/intern/rna_space.c:1837
 msgid "Column number to show right margin at"
-msgstr "Colonne des numéros à montrer dans la marge de droite"
+msgstr "Numéro de colonne où montrer la marge de droite"
 
 #: source/blender/makesrna/intern/rna_space.c:1843
 msgid "Overwrite characters when typing rather than inserting them"
-msgstr "Ré-écrit les caractères au lieu d'en insérer"
+msgstr "Écrase les caractères lors de la frappe, au lieu de les insérer"
 
 #: source/blender/makesrna/intern/rna_space.c:1848
-#, fuzzy
 msgid "Live Edit"
-msgstr "Editeur NLA"
+msgstr "Édition en live"
 
 #: source/blender/makesrna/intern/rna_space.c:1848
-#, fuzzy
 msgid "Run python while editing"
-msgstr "Charger ce fichier"
+msgstr "Exécuter Python pendant l’édition"
 
 #: source/blender/makesrna/intern/rna_space.c:1854
-#, fuzzy
 msgid "Find All"
-msgstr "Chercher encore"
+msgstr "Chercher tout"
 
 #: source/blender/makesrna/intern/rna_space.c:1854
-#, fuzzy
 msgid "Search in all text datablocks, instead of only the active one"
-msgstr "Sélectionne les sommets appartenant au groupe en cours"
+msgstr "Chercher dans tous les blocs de données texte, au lieu d’en rester à l’actif"
 
 #: source/blender/makesrna/intern/rna_space.c:1859
-#, fuzzy
 msgid "Find Wrap"
-msgstr "Chercher encore"
+msgstr "Chercher en boucle"
 
 #: source/blender/makesrna/intern/rna_space.c:1859
 msgid "Search again from the start of the file when reaching the end"
-msgstr "Reprend la recherche du début du fichier lorsque la fin est atteinte"
+msgstr "Reprendre la recherche au début du fichier lorsque la fin en est atteinte"
 
 #: source/blender/makesrna/intern/rna_space.c:1864
 msgid "Match case"
-msgstr "Correspondance"
+msgstr "Correspondance à la casse"
 
 #: source/blender/makesrna/intern/rna_space.c:1864
 msgid "Search string is sensitive to uppercase and lowercase letters"
-msgstr "La ligne de recherche est sensible aux majuscules et minuscules"
+msgstr "Le texte de recherche est sensible aux majuscules et minuscules"
 
 #: source/blender/makesrna/intern/rna_space.c:1869
-#, fuzzy
 msgid "Find Text"
-msgstr "Texte"
+msgstr "Texte de recherche"
 
 #: source/blender/makesrna/intern/rna_space.c:1869
 msgid "Text to search for with the find tool"
-msgstr "Texte à retrouver par le biais de l'outil de recherche"
+msgstr "Texte à rechercher par l’outil de recherche"
 
 #: source/blender/makesrna/intern/rna_space.c:1874
-#, fuzzy
 msgid "Replace Text"
-msgstr "Remplacer..."
+msgstr "Texte de remplacement"
 
 #: source/blender/makesrna/intern/rna_space.c:1874
 msgid "Text to replace selected text with using the replace tool"
-msgstr "Texte remplaçant le texte sélectionné par l'outil de substitution"
+msgstr "Texte devant remplacer le texte sélectionné par l’outil de substitution"
 
 #: source/blender/makesrna/intern/rna_space.c:1886
-#, fuzzy
 msgid "Action Editor"
-msgstr "Editeur Action"
+msgstr "Éditeur d’action"
 
 #: source/blender/makesrna/intern/rna_space.c:1887
-#, fuzzy
 msgid "ShapeKey Editor"
-msgstr "Editeur de Texte"
+msgstr "Éditeur de clés de forme"
 
 #: source/blender/makesrna/intern/rna_space.c:1894
-#, fuzzy
 msgid "Space DopeSheet Editor"
-msgstr "Editeur de Texte"
+msgstr "Espace de l’éditeur de DopeSheet"
 
 #: source/blender/makesrna/intern/rna_space.c:1894
-#, fuzzy
 msgid "DopeSheet space data"
-msgstr "Editeur de Texte"
+msgstr "Données de l’espace de DopeSheet"
 
 #: source/blender/makesrna/intern/rna_space.c:1900
 msgid "Action displayed and edited in this space"
@@ -26974,49 +26952,44 @@ msgstr "Contexte d'édition affiché"
 #: source/blender/makesrna/intern/rna_space.c:1997
 #: source/blender/makesrna/intern/rna_space.c:2092
 msgid "Show timing in seconds not frames"
-msgstr "Montre le chronomètrage en secondes et non en frames"
+msgstr "Montrer le timing en secondes, et non en images"
 
 #: source/blender/makesrna/intern/rna_space.c:1924
 #: source/blender/makesrna/intern/rna_space.c:2007
-#, fuzzy
 msgid "Show Sliders"
-msgstr "Voir Tous les Calques"
+msgstr "Montrer curseurs"
 
 #: source/blender/makesrna/intern/rna_space.c:1924
 #: source/blender/makesrna/intern/rna_space.c:2007
 msgid "Show sliders beside F-Curve channels"
-msgstr "Montre les glissières à côté des canaux des F-curves"
+msgstr "Montrer les curseurs à côté des canaux des F-Curves"
 
 #: source/blender/makesrna/intern/rna_space.c:1929
-#, fuzzy
 msgid "Show Pose Markers"
-msgstr "Voir Tous les Calques"
+msgstr "Montrer marqueurs de pose"
 
 #: source/blender/makesrna/intern/rna_space.c:1929
 msgid ""
 "Show markers belonging to the active action instead of Scene markers (Action "
 "and Shape Key Editors only)"
 msgstr ""
-"Montrer les marqueurs appartenant à l'action active au lieu"
-" des marqueurs de la scène (les éditeurs d'action et de formes-clés seulement)"
+"Montrer les marqueurs appartenant à l’action active, au lieu des marqueurs de la scène (éditeurs d’action et de clés de forme uniquement)"
 
 #: source/blender/makesrna/intern/rna_space.c:1935
 #: source/blender/makesrna/intern/rna_space.c:2033
-#, fuzzy
 msgid "AutoMerge Keyframes"
-msgstr "Insérer une Image Clé"
+msgstr "Auto-fusionner images clé"
 
 #: source/blender/makesrna/intern/rna_space.c:1935
 #: source/blender/makesrna/intern/rna_space.c:2033
 msgid "Automatically merge nearby keyframes"
-msgstr "Automatiquement fusionner avec les clés voisines"
+msgstr "Fusionner automatiquement les images clé voisines"
 
 #: source/blender/makesrna/intern/rna_space.c:1940
 #: source/blender/makesrna/intern/rna_space.c:2038
 #: source/blender/makesrna/intern/rna_space.c:2108
-#, fuzzy
 msgid "Realtime Updates"
-msgstr "Propriétés Temps Réel"
+msgstr "Rafraîchissement en temps réel"
 
 #: source/blender/makesrna/intern/rna_space.c:1940
 #: source/blender/makesrna/intern/rna_space.c:2038
@@ -27024,241 +26997,211 @@ msgid ""
 "When transforming keyframes, changes to the animation data are flushed to "
 "other views"
 msgstr ""
-"Lors des transformations des clés, les changements de l'animation sont propagés"
-"aux autres vues"
+"Lors des transformations des images clé, les changements des données d’animation sont propagés aux autres vues"
 
 #: source/blender/makesrna/intern/rna_space.c:1945
-#, fuzzy
 msgid "Sync Markers"
-msgstr "Repère"
+msgstr "Synchroniser marqueurs"
 
 #: source/blender/makesrna/intern/rna_space.c:1945
 msgid "Sync Markers with keyframe edits"
-msgstr "Synchronise les marqueurs avec l'édition des clés"
+msgstr "Synchroniser les marqueurs avec les éditions des images clé"
 
 #: source/blender/makesrna/intern/rna_space.c:1951
 #: source/blender/makesrna/intern/rna_space.c:2062
 #: source/blender/makesrna/intern/rna_space.c:2115
-#, fuzzy
 msgid "Settings for filtering animation data"
-msgstr "Démarre le rendu de l'animation"
+msgstr "Réglages pour filtrer les données d’animation"
 
 #: source/blender/makesrna/intern/rna_space.c:1957
 #: source/blender/makesrna/intern/rna_space.c:2068
 #: source/blender/makesrna/intern/rna_space.c:2121
 #, fuzzy
 msgid "Auto Snap"
-msgstr "Sauvegarde Auto"
+msgstr "Collage auto"
 
 #: source/blender/makesrna/intern/rna_space.c:1957
 #: source/blender/makesrna/intern/rna_space.c:2068
 #: source/blender/makesrna/intern/rna_space.c:2121
+#, fuzzy
 msgid "Automatic time snapping settings for transformations"
-msgstr "Paramètres de l'accrochage automatique du temps pour les transformations"
+msgstr "Réglages du collage automatique au temps pour les transformations"
 
 #: source/blender/makesrna/intern/rna_space.c:1967
-#, fuzzy
 msgid "F-Curve Editor"
-msgstr "Editeur Courbes IPO"
+msgstr "Éditeur de F-Curves"
 
 #: source/blender/makesrna/intern/rna_space.c:1967
 msgid "Edit animation/keyframes displayed as 2D curves"
-msgstr "Edite l'animation/les clés affichées en tant que courbes 2D"
+msgstr "Édite les animation/images clé affichées en tant que courbes 2D"
 
 #: source/blender/makesrna/intern/rna_space.c:1968
 msgid "Drivers"
-msgstr "Pilotes"
+msgstr "Contrôleurs"
 
 #: source/blender/makesrna/intern/rna_space.c:1968
-#, fuzzy
 msgid "Edit drivers"
-msgstr "Édition"
+msgstr "Éditer les contrôleurs"
 
 #: source/blender/makesrna/intern/rna_space.c:1975
-#, fuzzy
 msgid "Individual Centers"
-msgstr "Faces Individuelles"
+msgstr "Centres individuels"
 
 #: source/blender/makesrna/intern/rna_space.c:1983
-#, fuzzy
 msgid "Space Graph Editor"
-msgstr "Editeur UV/Image"
+msgstr "Espace de l’éditeur de graphe"
 
 #: source/blender/makesrna/intern/rna_space.c:1983
-#, fuzzy
 msgid "Graph Editor space data"
-msgstr "Editeur UV/Image"
+msgstr "Données de l’espace de l’éditeur de graphe"
 
 #: source/blender/makesrna/intern/rna_space.c:2012
-#, fuzzy
 msgid "Show Handles"
-msgstr "Proportionnel"
+msgstr "Montrer poignées"
 
 #: source/blender/makesrna/intern/rna_space.c:2012
-#, fuzzy
 msgid "Show handles of Bezier control points"
-msgstr "Adoucit les angles des faces sélectionnées"
+msgstr "Montrer les poignées des points de contrôle de Bézier"
 
 #: source/blender/makesrna/intern/rna_space.c:2017
-#, fuzzy
 msgid "Only Selected Curve Keyframes"
-msgstr "Affich. et Sélect. les Images Clés"
+msgstr "Images clé des F-Curves sélectionnées uniquement"
 
 #: source/blender/makesrna/intern/rna_space.c:2017
 msgid "Only keyframes of selected F-Curves are visible and editable"
-msgstr "Seulement les clés des F-curves sélectionnées sont visibles et éditables"
+msgstr "Seulement les images clé des F-Curves sélectionnées sont visibles et éditables"
 
 #: source/blender/makesrna/intern/rna_space.c:2022
-#, fuzzy
 msgid "Only Selected Keyframes Handles"
-msgstr "Affich. et Sélect. les Images Clés"
+msgstr "Poignées de images clé sélectionnées uniquement"
 
 #: source/blender/makesrna/intern/rna_space.c:2022
-#, fuzzy
 msgid "Only show and edit handles of selected keyframes"
-msgstr "Adoucit les angles des faces sélectionnées"
+msgstr "Ne montrer et éditer que les poignées des images clé sélectionnées"
 
 #: source/blender/makesrna/intern/rna_space.c:2027
-#, fuzzy
 msgid "Use High Quality Drawing"
-msgstr "Haute qualité"
+msgstr "Utiliser dessin de haute qualité"
 
 #: source/blender/makesrna/intern/rna_space.c:2027
 msgid ""
 "Draw F-Curves using Anti-Aliasing and other fancy effects. Disable for "
 "better performance"
 msgstr ""
-"Affiche les F-curves avec anti-aliasing et autres goodies."
-" Désactiver pour une meilleure performance"
+"Dessiner les F-Curves avec antialiasing et autres effets amusants (désactiver pour de meilleures performances)"
 
 #: source/blender/makesrna/intern/rna_space.c:2044
-#, fuzzy
 msgid "Show Cursor"
-msgstr "Curseur 3D"
+msgstr "Montrer curseur"
 
 #: source/blender/makesrna/intern/rna_space.c:2044
-#, fuzzy
 msgid "Show 2D cursor"
-msgstr "Curseur 3D"
+msgstr "Montrer le curseur 2D"
 
 #: source/blender/makesrna/intern/rna_space.c:2049
 #, fuzzy
 msgid "Cursor Y-Value"
-msgstr "Transformations (Paramètres)"
+msgstr "Y/valeur du curseur"
 
 #: source/blender/makesrna/intern/rna_space.c:2049
+#, fuzzy
 msgid "Graph Editor 2D-Value cursor - Y-Value component"
-msgstr "Editeur de Graphes Valeur-2D du curseur - Composante Y"
+msgstr "Curseur 2D/valeur de l’éditeur de graphe – composante Y/valeur"
 
 #: source/blender/makesrna/intern/rna_space.c:2075
-#, fuzzy
 msgid "Has Ghost Curves"
-msgstr "Contraintes"
+msgstr "A des courbes fantômes"
 
 #: source/blender/makesrna/intern/rna_space.c:2075
 msgid "Graph Editor instance has some ghost curves stored"
-msgstr "L'instance de l'éditeur de graphes stocke des courbes fantômes"
+msgstr "L’instance de l’éditeur de graphe a des courbes fantômes stockées"
 
 #: source/blender/makesrna/intern/rna_space.c:2086
-#, fuzzy
 msgid "Space Nla Editor"
-msgstr "Montage Video"
+msgstr "Espace de l’éditeur NLA"
 
 #: source/blender/makesrna/intern/rna_space.c:2086
 msgid "NLA editor space data"
-msgstr "Données de l'espace de l'éditeur NLA"
+msgstr "Données de l’espace de l’éditeur NLA"
 
 #: source/blender/makesrna/intern/rna_space.c:2102
-#, fuzzy
 msgid "Show Control Curves"
-msgstr "Texture du Ciel"
+msgstr "Montrer F-Curves de contrôle"
 
 #: source/blender/makesrna/intern/rna_space.c:2102
 msgid "Show influence curves on strips"
-msgstr "Montre l'influence des courbes sur les bandes"
+msgstr "Montrer les F-Curves d’influence sur les bandes"
 
 #: source/blender/makesrna/intern/rna_space.c:2108
 msgid ""
 "When transforming strips, changes to the animation data are flushed to other "
 "views"
 msgstr ""
-"Lors des transformations des bandes, les changements de l'animation sont propagés"
-"aux autres vues"
+"Lors des transformations des bandes, les changements des données d’animation sont propagés aux autres vues"
 
 #: source/blender/makesrna/intern/rna_space.c:2132
-#, fuzzy
 msgid "Space Timeline Editor"
-msgstr "Montage Video"
+msgstr "Espace de l’éditeur de timeline"
 
 #: source/blender/makesrna/intern/rna_space.c:2132
 msgid "Timeline editor space data"
-msgstr "Données de l'espace de l'éditeur Timeline"
+msgstr "Données de l’espace de l’éditeur de timeline"
 
 #: source/blender/makesrna/intern/rna_space.c:2137
 msgid "Show keyframes for active Object and/or its selected bones only"
-msgstr "Montre les clés uniquement de l'objet actif et/ou de ses os sélectionnés"
+msgstr "Ne montrer que les images clé de l’objet actif et/ou de ses os sélectionnés"
 
 #: source/blender/makesrna/intern/rna_space.c:2148
-#, fuzzy
 msgid "Show Cache"
-msgstr "Zoom sur Sélection"
+msgstr "Montrer cache"
 
 #: source/blender/makesrna/intern/rna_space.c:2148
 msgid "Show the status of cached frames in the timeline"
-msgstr "Montre le statut des frames présentes dans le cache dans la timeline"
+msgstr "Montrer le statut des images en cache dans la timeline"
 
 #: source/blender/makesrna/intern/rna_space.c:2153
-#, fuzzy
 msgid "Softbody"
-msgstr "Corps Mou"
+msgstr "Corps souple"
 
 #: source/blender/makesrna/intern/rna_space.c:2153
-#, fuzzy
 msgid "Show the active object's softbody point cache"
-msgstr "Affiche la zone de texture de l'objet actif."
+msgstr "Montrer le cache de points de corps souple de l’objet actif"
 
 #: source/blender/makesrna/intern/rna_space.c:2158
-#, fuzzy
 msgid "Show the active object's particle point cache"
-msgstr "Affiche la zone de texture de l'objet actif."
+msgstr "Montrer le cache de points de particules de l’objet actif"
 
 #: source/blender/makesrna/intern/rna_space.c:2163
-#, fuzzy
 msgid "Show the active object's cloth point cache"
-msgstr "Affiche la zone de texture de l'objet actif."
+msgstr "Montrer le cache de points de tissu de l’objet actif"
 
 #: source/blender/makesrna/intern/rna_space.c:2168
-#, fuzzy
 msgid "Show the active object's smoke cache"
-msgstr "Affiche la zone de texture de l'objet actif."
+msgstr "Montrer le cache de fumée de l’objet actif"
 
 #: source/blender/makesrna/intern/rna_space.c:2178
-#, fuzzy
 msgid "Console Input"
-msgstr "Position"
+msgstr "Entrée de console"
 
 #: source/blender/makesrna/intern/rna_space.c:2178
 msgid "Input line for the interactive console"
-msgstr "Ligne d'entrée pour la console interactive"
+msgstr "Ligne d’entrée pour la console interactive"
 
 #: source/blender/makesrna/intern/rna_space.c:2183
-#, fuzzy
 msgid "Text in the line"
-msgstr "Sélection des données"
+msgstr "Texte dans la ligne"
 
 #: source/blender/makesrna/intern/rna_space.c:2199
-#, fuzzy
 msgid "Space Console"
-msgstr "Même Type"
+msgstr "Espace de console"
 
 #: source/blender/makesrna/intern/rna_space.c:2199
-#, fuzzy
 msgid "Interactive python console"
-msgstr "Traduction de l'Interface"
+msgstr "Console Python interactive"
 
 #: source/blender/makesrna/intern/rna_space.c:2218
 msgid "Prompt"
-msgstr "Terminal"
+msgstr "Invite de commandes"
 
 #: source/blender/makesrna/intern/rna_space.c:2218
 msgid "Command line prompt"
@@ -27266,38 +27209,31 @@ msgstr "Invite de commandes"
 
 #: source/blender/makesrna/intern/rna_space.c:2221
 msgid "Command line prompt language"
-msgstr "Language de l'invite de commandes "
+msgstr "Langage de l’invite de commandes"
 
-# ##########################################################
-# ##
-# ##  Menubar MESH
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_space.c:2226
-#, fuzzy
 msgid "Command history"
-msgstr "Historique Action"
+msgstr "Historique de commandes"
 
 #: source/blender/makesrna/intern/rna_space.c:2231
 msgid "Command output"
-msgstr "Sortie de la commande"
+msgstr "Sortie de commande"
 
 #: source/blender/makesrna/intern/rna_space.c:2240
-#, fuzzy
 msgid "Short List"
-msgstr "Court"
+msgstr "Liste brève"
 
 #: source/blender/makesrna/intern/rna_space.c:2240
 msgid "Display files as short list"
-msgstr "Affiche les fichiers en une liste brève"
+msgstr "Afficher les fichiers en une liste brève"
 
 #: source/blender/makesrna/intern/rna_space.c:2241
 msgid "Long List"
-msgstr "Liste longue"
+msgstr "Liste détaillée"
 
 #: source/blender/makesrna/intern/rna_space.c:2241
 msgid "Display files as a detailed list"
-msgstr "Affiche les fichiers en une liste détaillée"
+msgstr "Afficher les fichiers en une liste détaillée"
 
 #: source/blender/makesrna/intern/rna_space.c:2242
 msgid "Thumbnails"
@@ -27305,345 +27241,276 @@ msgstr "Miniatures"
 
 #: source/blender/makesrna/intern/rna_space.c:2242
 msgid "Display files as thumbnails"
-msgstr "Affiche les fichiers en tant que miniatures"
+msgstr "Afficher les fichiers en tant que miniatures"
 
-# Tooltips
 #: source/blender/makesrna/intern/rna_space.c:2246
-#, fuzzy
 msgid "Sort alphabetically"
-msgstr "Trie les fichiers par ordre alphabétique"
+msgstr "Trier alphabétiquement"
 
-# Tooltips
 #: source/blender/makesrna/intern/rna_space.c:2246
-#, fuzzy
 msgid "Sort the file list alphabetically"
-msgstr "Trie les fichiers par ordre alphabétique"
+msgstr "Trier la liste des fichiers par ordre alphabétique"
 
 #: source/blender/makesrna/intern/rna_space.c:2247
-#, fuzzy
 msgid "Sort by extension"
-msgstr "Trie les fichiers par leur extension"
+msgstr "Trier par extension"
 
 #: source/blender/makesrna/intern/rna_space.c:2247
-#, fuzzy
 msgid "Sort the file list by extension"
-msgstr "Trie les fichiers par leur extension"
+msgstr "Trier la liste des fichiers par leur extension"
 
 #: source/blender/makesrna/intern/rna_space.c:2248
-#, fuzzy
 msgid "Sort by time"
-msgstr "Trie les fichiers par date"
+msgstr "Trier par date"
 
 #: source/blender/makesrna/intern/rna_space.c:2248
-#, fuzzy
 msgid "Sort files by modification time"
-msgstr "Trie les fichiers par date"
+msgstr "Trier la liste des fichiers par date"
 
 #: source/blender/makesrna/intern/rna_space.c:2249
-#, fuzzy
 msgid "Sort by size"
-msgstr "Trie les fichiers suivant leur taille"
+msgstr "Trier par taille"
 
 #: source/blender/makesrna/intern/rna_space.c:2249
-#, fuzzy
 msgid "Sort files by size"
-msgstr "Trie les fichiers suivant leur taille"
+msgstr "Trier la liste des fichiers par leur taille"
 
-# ##########################################################
-# ##
-# ##  Menu Separate
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_space.c:2253
-#, fuzzy
 msgid "File Select Parameters"
-msgstr "Sélection"
+msgstr "Réglage de sélection de fichiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2257
 msgid "Title"
 msgstr "Titre"
 
 #: source/blender/makesrna/intern/rna_space.c:2257
-#, fuzzy
 msgid "Title for the file browser"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Titre pour le navigateur de fichiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2262
-#, fuzzy
 msgid "Directory displayed in the file browser"
-msgstr "Direction de l'axe"
+msgstr "Dossier affiché dans le navigateur de fichiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2267
 msgid "Active file in the file browser"
-msgstr "Fichier actif dans le navigateur"
+msgstr "Fichier actif dans le navigateur de fichiers"
 
-# tooltip
 #: source/blender/makesrna/intern/rna_space.c:2273
-#, fuzzy
 msgid "Display mode for the file list"
-msgstr "Affiche les arêtes des faces cachées"
+msgstr "Afficher les modes dans la liste des fichiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2278
-#, fuzzy
 msgid "Filter Files"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Filtrer fichiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2278
-#, fuzzy
 msgid "Enable filtering of files"
-msgstr "Taille du texte"
+msgstr "Activer le filtrage des fichiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2283
-#, fuzzy
 msgid "Show hidden dot files"
-msgstr "Afficher Tout"
+msgstr "Montrer fichiers cachés (par un point)"
 
 #: source/blender/makesrna/intern/rna_space.c:2289
 msgid "Sort"
-msgstr "Ordonner"
+msgstr "Trier"
 
-# Panneau Render Layers
 #: source/blender/makesrna/intern/rna_space.c:2294
-#, fuzzy
 msgid "Filter Images"
-msgstr "Couches"
+msgstr "Filtre images"
 
 #: source/blender/makesrna/intern/rna_space.c:2294
-#, fuzzy
 msgid "Show image files"
-msgstr "Charger ce fichier"
+msgstr "Montrer les fichiers image"
 
 #: source/blender/makesrna/intern/rna_space.c:2300
-#, fuzzy
 msgid "Filter Blender"
-msgstr "Filtre"
+msgstr "Filtre Blender"
 
 #: source/blender/makesrna/intern/rna_space.c:2300
-#, fuzzy
 msgid "Show .blend files"
-msgstr "Empaqueter dans le fichier .blend"
+msgstr "Montrer les fichiers .blend"
 
 #: source/blender/makesrna/intern/rna_space.c:2306
-#, fuzzy
 msgid "Filter Movies"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Filtre vidéos"
 
 #: source/blender/makesrna/intern/rna_space.c:2306
-#, fuzzy
 msgid "Show movie files"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Montrer les fichiers vidéo"
 
 #: source/blender/makesrna/intern/rna_space.c:2312
-#, fuzzy
 msgid "Filter Script"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Filtre script"
 
 #: source/blender/makesrna/intern/rna_space.c:2312
-#, fuzzy
 msgid "Show script files"
-msgstr "Chercher Fichiers Manquants"
+msgstr "Montrer les fichiers de script"
 
 #: source/blender/makesrna/intern/rna_space.c:2318
-#, fuzzy
 msgid "Filter Fonts"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Filtre polices"
 
 #: source/blender/makesrna/intern/rna_space.c:2318
-#, fuzzy
 msgid "Show font files"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Montrer les fichiers de police de caractères"
 
 #: source/blender/makesrna/intern/rna_space.c:2324
-#, fuzzy
 msgid "Filter Sound"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Filtre son"
 
 #: source/blender/makesrna/intern/rna_space.c:2324
-#, fuzzy
 msgid "Show sound files"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Montrer les fichiers de son"
 
 #: source/blender/makesrna/intern/rna_space.c:2330
-#, fuzzy
 msgid "Filter Text"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Filtre texte"
 
 #: source/blender/makesrna/intern/rna_space.c:2330
-#, fuzzy
 msgid "Show text files"
-msgstr "Masque les fichiers précés d'un ."
+msgstr "Montrer les fichiers texte"
 
 #: source/blender/makesrna/intern/rna_space.c:2336
-#, fuzzy
 msgid "Filter Folder"
-msgstr "Filtre"
+msgstr "Filtre dossiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2336
-#, fuzzy
 msgid "Show folders"
-msgstr "Voir Tous les Calques"
+msgstr "Montrer les dossiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2342
 msgid "Extension Filter"
-msgstr "Filtre d'extension"
+msgstr "Filtre d’extension"
 
 #: source/blender/makesrna/intern/rna_space.c:2354
-#, fuzzy
 msgid "Space File Browser"
-msgstr "Navigateur de Fichier"
+msgstr "Espace de navigateur de fichiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2354
-#, fuzzy
 msgid "File browser space data"
-msgstr "Navigateur de Fichier"
+msgstr "Données de l’espace de navigateur de fichiers"
 
-# ##########################################################
-# ##
-# ##  Menu Separate
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_space.c:2358
-#, fuzzy
 msgid "Filebrowser Parameter"
-msgstr "Sélection"
+msgstr "Réglages du navigateur de fichiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2358
-#, fuzzy
 msgid "Parameters and Settings for the Filebrowser"
-msgstr "Direction de l'axe"
+msgstr "Paramètres et réglages pour le navigateur de fichiers"
 
 #: source/blender/makesrna/intern/rna_space.c:2372
-#, fuzzy
 msgid "Space Info"
-msgstr "Système"
+msgstr "Espace d’infos"
 
 #: source/blender/makesrna/intern/rna_space.c:2372
 msgid "Info space data"
-msgstr "Données de l'espace Info"
+msgstr "Données de l’espace d’infos"
 
 #: source/blender/makesrna/intern/rna_space.c:2377
-#, fuzzy
 msgid "Show Debug"
-msgstr "Valeur"
+msgstr "Montrer debug"
 
 #: source/blender/makesrna/intern/rna_space.c:2377
-#, fuzzy
 msgid "Display debug reporting info"
-msgstr "Objet"
+msgstr "Afficher les infos des rapports de débugage"
 
 #: source/blender/makesrna/intern/rna_space.c:2382
-#, fuzzy
 msgid "Show Info"
-msgstr "Voir Tous les Calques"
+msgstr "Montrer infos"
 
 #: source/blender/makesrna/intern/rna_space.c:2382
-#, fuzzy
 msgid "Display general information"
-msgstr "Jouer la dernière Animation"
+msgstr "Afficher des informations générales"
 
 #: source/blender/makesrna/intern/rna_space.c:2387
-#, fuzzy
 msgid "Show Operator"
-msgstr "Nom de l'action"
+msgstr "Montrer opérateurs"
 
-# tip
 #: source/blender/makesrna/intern/rna_space.c:2387
-#, fuzzy
 msgid "Display the operator log"
-msgstr "Affiche l'objet actif en montrant toutes les arêtes possibles"
+msgstr "Afficher le log des opérateurs"
 
 #: source/blender/makesrna/intern/rna_space.c:2392
-#, fuzzy
 msgid "Show Warn"
-msgstr "Zoom sur Sélection"
+msgstr "Montrer avertissements"
 
 #: source/blender/makesrna/intern/rna_space.c:2392
-#, fuzzy
 msgid "Display warnings"
-msgstr "Traduire les bulles d'aide"
+msgstr "Afficher les avertissements"
 
 #: source/blender/makesrna/intern/rna_space.c:2397
-#, fuzzy
 msgid "Show Error"
-msgstr "Erreur"
+msgstr "Montrer erreurs"
 
 #: source/blender/makesrna/intern/rna_space.c:2397
-#, fuzzy
 msgid "Display error text"
-msgstr "Affichage:"
+msgstr "Afficher les textes d’erreur"
 
 #: source/blender/makesrna/intern/rna_space.c:2408
-#, fuzzy
 msgid "Space User Preferences"
-msgstr "Préférences Utilisateur"
+msgstr "Espace des préférences utilisateur"
 
 #: source/blender/makesrna/intern/rna_space.c:2408
-#, fuzzy
 msgid "User preferences space data"
-msgstr "Préférences Utilisateur"
+msgstr "Données de l’espace des préférences utilisateur"
 
 #: source/blender/makesrna/intern/rna_space.c:2412
+#, fuzzy
 msgid "Search term for filtering in the UI"
-msgstr "Mot de recherche pour filtrer l'IU"
+msgstr "Terme de recherche pour filtrer dans l’UI"
 
 #: source/blender/makesrna/intern/rna_space.c:2422
-#, fuzzy
 msgid "Material nodes"
-msgstr "Matériau"
+msgstr "Nœuds de matériau"
 
 #: source/blender/makesrna/intern/rna_space.c:2423
-#, fuzzy
 msgid "Texture nodes"
-msgstr "Texturé"
+msgstr "Nœuds de texture"
 
 #: source/blender/makesrna/intern/rna_space.c:2424
-#, fuzzy
 msgid "Compositing nodes"
-msgstr "Activer Rendu Composite"
+msgstr "Nœuds de compositing"
 
 #: source/blender/makesrna/intern/rna_space.c:2428
 msgid "Edit texture nodes from Object"
-msgstr "Edite les noeuds de texture provenant de l'objet"
+msgstr "Éditer les nœuds de texture de l’objet"
 
 #: source/blender/makesrna/intern/rna_space.c:2429
 msgid "Edit texture nodes from World"
-msgstr "Edite les noeuds de texture provenant de le Monde"
+msgstr "Éditer les nœuds de texture du monde"
 
 #: source/blender/makesrna/intern/rna_space.c:2430
 msgid "Edit texture nodes from Brush"
-msgstr "Edite les noeuds de texture provenant de le pinceau"
+msgstr "Éditer les nœuds de texture du pinceau"
 
 #: source/blender/makesrna/intern/rna_space.c:2441
-#, fuzzy
 msgid "Space Node Editor"
-msgstr "Noeuds"
+msgstr "Espace de l’éditeur de nœuds"
 
 #: source/blender/makesrna/intern/rna_space.c:2441
-#, fuzzy
 msgid "Node editor space data"
-msgstr "Noeuds"
+msgstr "Données de l’espace de l’éditeur de nœuds"
 
 #: source/blender/makesrna/intern/rna_space.c:2446
-#, fuzzy
 msgid "Tree Type"
-msgstr "Même Type"
+msgstr "Type d’arbre"
 
 #: source/blender/makesrna/intern/rna_space.c:2446
 msgid "Node tree type to display and edit"
-msgstr "Type d'arborescence à afficher et éditer"
+msgstr "Type d’arbre de nœuds à afficher et éditer"
 
 #: source/blender/makesrna/intern/rna_space.c:2452
-#, fuzzy
 msgid "Texture Type"
-msgstr "Textures"
+msgstr "Type de texture"
 
 #: source/blender/makesrna/intern/rna_space.c:2452
 msgid "Type of data to take texture from"
-msgstr "Type de données d'où provient la texture"
+msgstr "Type de données d’où récupérer la texture"
 
 #: source/blender/makesrna/intern/rna_space.c:2457
 msgid "Datablock whose nodes are being edited"
-msgstr "Données dont les noeuds sont édités"
+msgstr "Blocs de données dont les nœuds sont édités"
 
 #: source/blender/makesrna/intern/rna_space.c:2462
 msgid "ID From"
@@ -27651,835 +27518,740 @@ msgstr "ID venant de"
 
 #: source/blender/makesrna/intern/rna_space.c:2462
 msgid "Datablock from which the edited datablock is linked"
-msgstr "Données auxquelles les données éditées sont liées"
+msgstr "Blocs de données depuis lesquelles le bloc de données édité est lié"
 
 #: source/blender/makesrna/intern/rna_space.c:2467
 msgid "Node tree being displayed and edited"
-msgstr "Arborescence affichable et étidable"
+msgstr "Arbre de nœuds affiché et édité"
 
 #: source/blender/makesrna/intern/rna_space.c:2471
 msgid "Use active Viewer Node output as backdrop for compositing nodes"
-msgstr "Utiliser le noeud de sortie Spectateur en tant qu'arrière-plan pour les noeuds de composition" 
+msgstr "Utiliser la sortie du nœud de visualisation actif comme fond pour les nœuds de compositing"
 
 #: source/blender/makesrna/intern/rna_space.c:2476
-#, fuzzy
 msgid "Auto Render"
-msgstr "Tout"
+msgstr "Auto-rendre"
 
 #: source/blender/makesrna/intern/rna_space.c:2476
 msgid "Re-render and composite changed layer on 3D edits"
-msgstr "Re-rendre et compositer le calque modifié par des changements 3D"
+msgstr "Re-rendre et compositer les calques modifiés lors des éditions 3D"
 
 #: source/blender/makesrna/intern/rna_space.c:2484
-#, fuzzy
 msgid "Backdrop Zoom"
-msgstr "Rendu Partiel"
+msgstr "Zoom du fond"
 
 #: source/blender/makesrna/intern/rna_space.c:2484
 msgid "Backdrop zoom factor"
-msgstr "Arrière-plan facteur de zoom"
+msgstr "Facteur de zoom du fond"
 
 #: source/blender/makesrna/intern/rna_space.c:2489
 msgid "Backdrop X"
-msgstr "Arrière-plan X"
+msgstr "Fond X"
 
 #: source/blender/makesrna/intern/rna_space.c:2489
 msgid "Backdrop X offset"
-msgstr "Arrière-plan décalage X"
+msgstr "Décalage X du fond"
 
 #: source/blender/makesrna/intern/rna_space.c:2494
 msgid "Backdrop Y"
-msgstr "Arrière-plan Y"
+msgstr "Fond Y"
 
 #: source/blender/makesrna/intern/rna_space.c:2494
 msgid "Backdrop Y offset"
-msgstr "Arrière-plan décalage Y"
+msgstr "Décalage Y du fond"
 
 #: source/blender/makesrna/intern/rna_space.c:2511
-#, fuzzy
 msgid "Space Logic Editor"
-msgstr "Editeur NLA"
+msgstr "Espace de l’éditeur de logique"
 
 #: source/blender/makesrna/intern/rna_space.c:2511
-#, fuzzy
 msgid "Logic editor space data"
-msgstr "Editeur NLA"
+msgstr "Données de l’espace de l’éditeur de logique"
 
 #: source/blender/makesrna/intern/rna_space.c:2516
 #: source/blender/makesrna/intern/rna_space.c:2537
 #: source/blender/makesrna/intern/rna_space.c:2553
-#, fuzzy
 msgid "Show Selected Object"
-msgstr "Affiche tous les Objets sélectionnés"
+msgstr "Montrer objet sélectionné"
 
 #: source/blender/makesrna/intern/rna_space.c:2516
-#, fuzzy
 msgid "Show sensors of all selected objects"
-msgstr "Objets Sélectionnés"
+msgstr "Montrer les senseurs de tous les objets sélectionnés"
 
 #: source/blender/makesrna/intern/rna_space.c:2521
 #: source/blender/makesrna/intern/rna_space.c:2542
 #: source/blender/makesrna/intern/rna_space.c:2558
-#, fuzzy
 msgid "Show Active Object"
-msgstr "Zoom sur Sélection"
+msgstr "Montrer objet actif"
 
 #: source/blender/makesrna/intern/rna_space.c:2521
-#, fuzzy
 msgid "Show sensors of active object"
-msgstr "Affiche l'Objet actif"
+msgstr "Montrer les senseurs de l’objet actif"
 
 #: source/blender/makesrna/intern/rna_space.c:2526
 #: source/blender/makesrna/intern/rna_space.c:2547
-#, fuzzy
 msgid "Show Linked to Controller"
-msgstr "Supprimer un contrôle"
+msgstr "Montrer liés au contrôleur"
 
 #: source/blender/makesrna/intern/rna_space.c:2526
-#, fuzzy
 msgid "Show linked objects to the controller"
-msgstr "Ajouter à un Nouveau Groupe"
+msgstr "Montrer les objets liés au contrôleur"
 
 #: source/blender/makesrna/intern/rna_space.c:2531
 #: source/blender/makesrna/intern/rna_space.c:2568
-#, fuzzy
 msgid "Show Active States"
-msgstr "Zoom sur Sélection"
+msgstr "Montrer états actifs"
 
 #: source/blender/makesrna/intern/rna_space.c:2531
 msgid "Show only sensors connected to active states"
-msgstr "Montre seuleument les capteurs sensoriels connectés aux statuts actifs"
+msgstr "Ne montrer que les senseurs connectés à des états actifs"
 
 #: source/blender/makesrna/intern/rna_space.c:2537
-#, fuzzy
 msgid "Show controllers of all selected objects"
-msgstr "Objets Sélectionnés"
+msgstr "Montrer les contrôleurs de tous les objets sélectionnés"
 
 #: source/blender/makesrna/intern/rna_space.c:2542
-#, fuzzy
 msgid "Show controllers of active object"
-msgstr "Convertir la sélection en points de contrôles Bézier"
+msgstr "Montrer les contrôleurs de l’objet actif"
 
 #: source/blender/makesrna/intern/rna_space.c:2547
 msgid "Show linked objects to sensor/actuator"
-msgstr "Montre les objets liés à l'actualisateur/capteur sensoriel"
+msgstr "Montrer les objets liés à l’actuateur/senseur"
 
 #: source/blender/makesrna/intern/rna_space.c:2553
-#, fuzzy
 msgid "Show actuators of all selected objects"
-msgstr "Copier avec l'Objet:"
+msgstr "Montrer les actuateurs de tous les objets sélectionnés"
 
 #: source/blender/makesrna/intern/rna_space.c:2558
-#, fuzzy
 msgid "Show actuators of active object"
-msgstr "Affiche les limites de l'objet actif, son volume en quelque sorte."
+msgstr "Montrer les actuateurs de l’objet actif"
 
 #: source/blender/makesrna/intern/rna_space.c:2563
 msgid "Show Linked to Actuator"
-msgstr "Montre ce qui est lié à l'actualisateur"
+msgstr "Montrer lié à actuateur"
 
 #: source/blender/makesrna/intern/rna_space.c:2563
 msgid "Show linked objects to the actuator"
-msgstr "Montre les objets liés à l'actualisateur"
+msgstr "Montrer les objets liés à l’actuateur"
 
 #: source/blender/makesrna/intern/rna_space.c:2568
 msgid "Show only actuators connected to active states"
-msgstr "Montre seulement actualisateurs connectés aux états actifs"
+msgstr "Ne montrer que les actuateurs connectés à des états actifs"
 
 #: source/blender/makesrna/intern/rna_texture.c:61
 msgid "Procedural - Creates a ramp texture"
-msgstr "Procédurale - crée une texture de dégradé"
+msgstr "Procédurale – créer une texture de dégradé"
 
 #: source/blender/makesrna/intern/rna_texture.c:62
 msgid "Procedural - Creates a cloud-like fractal noise texture"
-msgstr "Procédurale - crée une texture avec bruit fractale imitant un nuage"
+msgstr "Procédurale – créer une texture avec bruit fractal de type nuage"
 
 #: source/blender/makesrna/intern/rna_texture.c:63
 msgid "Procedural - Noise texture distorted by two noise algorithms"
-msgstr "Procédurale - Texture bruit distordue par deux algorithmes de bruit"
+msgstr "Procédurale – Texture de bruit distordue par deux algorithmes de bruit"
 
 #: source/blender/makesrna/intern/rna_texture.c:64
 msgid "Creates a render of the environment mapped to a texture"
-msgstr "Crée un rendu de l'environnement plaqué comme texture"
+msgstr "Créer un rendu de l’environnement plaqué sur une texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:65
-#, fuzzy
 msgid "Image or Movie"
-msgstr "Projection Sphère"
+msgstr "Image ou vidéo"
 
 #: source/blender/makesrna/intern/rna_texture.c:65
 msgid "Allows for images or movies to be used as textures"
-msgstr "permet d'utiliser les images ou vidéos en tant que textures"
+msgstr "Permettre d’utiliser des images ou vidéos comme textures"
 
 #: source/blender/makesrna/intern/rna_texture.c:66
 msgid "Procedural - Color texture based on trigonometric functions"
-msgstr "Procédurale - texture colorée basée des fonctions trigonométriques"
+msgstr "Procédurale – texture couleur basée sur des fonctions trigonométriques"
 
 #: source/blender/makesrna/intern/rna_texture.c:67
 msgid "Procedural - Marble-like noise texture with wave generated bands"
-msgstr "Procédurale - texture de bandes ondulées avec un bruit imitant le marbre"
+msgstr "Procédurale – texture de bandes ondulées bruitée imitant le marbre"
 
 #: source/blender/makesrna/intern/rna_texture.c:68
 msgid "Procedural - Highly flexible fractal noise texture"
-msgstr "Procédurale - texture avec un bruit fractale hautement flexible"
+msgstr "Procédurale – texture avec un bruit fractal hautement flexible"
 
 #: source/blender/makesrna/intern/rna_texture.c:69
 msgid ""
 "Procedural - Random noise, gives a different result every time, for every "
 "frame, for every pixel"
 msgstr ""
-"Procédurale - bruit aléatoire, donne un résultat différent à chaque fois,"
-" pour chaque frame et chaque pixel"
+"Procédurale – bruit aléatoire, donne un résultat différent à chaque fois,"
+" pour chaque image, pour chaque pixel"
 
 #: source/blender/makesrna/intern/rna_texture.c:72
 msgid "Procedural - Creates a fractal noise texture"
-msgstr "Procédurale - crée une texture avec un bruit fractale"
+msgstr "Procédurale – créer une texture avec un bruit fractal"
 
 #: source/blender/makesrna/intern/rna_texture.c:73
 msgid "Procedural - Creates cell-like patterns based on Worley noise"
-msgstr "Procédurale - crée un modèle imitant des cellules, basé sur un bruit Worley"
+msgstr "Procédurale – créer des motifs de type cellule, basé sur un bruit de Worley"
 
 #: source/blender/makesrna/intern/rna_texture.c:74
 msgid "Creates a 3d texture based on volumetric data"
-msgstr "Crée une texture 3D basée sur des données volumétriques"
+msgstr "Créer une texture 3D basée sur des données volumétriques"
 
 #: source/blender/makesrna/intern/rna_texture.c:75
 msgid "Procedural - Wave generated bands or rings, with optional noise"
-msgstr "Procédurale - bandes et anneaux ondulés, avec un bruit optionnel"
+msgstr "Procédurale – bandes et anneaux ondulés, avec un bruit optionnel"
 
 #: source/blender/makesrna/intern/rna_texture.c:475
-#, fuzzy
 msgid "Texture Slot"
-msgstr "Texturé"
+msgstr "Emplacement de texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:475
 msgid "Texture slot defining the mapping and influence of a texture"
-msgstr "Slot de texture définissant le placage et l'influence de la texture"
+msgstr "Emplacement de texture définissant le placage et l’influence d’une texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:483
 msgid "Texture datablock used by this texture slot"
-msgstr "Données de la texture utilisée par ce slot de texture"
+msgstr "Bloc de données texture utilisé par cet emplacement de texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:488
-#, fuzzy
 msgid "Texture slot name"
-msgstr "Texturé"
+msgstr "Nom de l’emplacement de texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:497
 msgid "Fine tunes texture mapping X, Y and Z locations"
-msgstr "localisations fines du placage de la texture en X,Y et Z"
+msgstr "Réglage fin des positions X, Y et Z du placage de la texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:503
 msgid "Sets scaling for the texture's X, Y and Z sizes"
-msgstr "Mettre à l'échelle pour les dimensions X,Y et Z de la texture"
+msgstr "Définir l’échelle pour les dimensions X, Y et Z de la texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:509
 msgid ""
 "The default color for textures that don't return RGB or when RGB to "
 "intensity is enabled"
 msgstr ""
-"la couleur par défaut des textures qui ne renvoient pas de valeurs RVB "
-"ou lorsque RVB vers Intensité est enclenchée"
+"Couleur par défaut des textures qui ne renvoient pas de valeurs RVB, "
+"ou lorsque RVB vers intensité est activé"
 
 #: source/blender/makesrna/intern/rna_texture.c:515
-#, fuzzy
 msgid "Blend Type"
-msgstr "Nom de Fichier"
+msgstr "Type de mélange"
 
 #: source/blender/makesrna/intern/rna_texture.c:515
 msgid "The mode used to apply the texture"
-msgstr "Le mode utilisé pour appliquer la texture"
+msgstr "Mode utilisé pour appliquer la texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:520
 msgid "Stencil"
-msgstr ""
+msgstr "Masque"
 
 #: source/blender/makesrna/intern/rna_texture.c:520
 msgid "Use this texture as a blending value on the next texture"
-msgstr "Utilise cette texture comme une valeur de mélange pour la texture suivante"
+msgstr "Utiliser cette texture comme une valeur de mélange pour la texture suivante"
 
 #: source/blender/makesrna/intern/rna_texture.c:525
 msgid "Inverts the values of the texture to reverse its effect"
-msgstr "Inverse les valeurs de la texture pour inverser son effet"
+msgstr "Inverser les valeurs de la texture, pour inverser son effet"
 
 #: source/blender/makesrna/intern/rna_texture.c:530
-#, fuzzy
 msgid "RGB to Intensity"
-msgstr "Intensité"
+msgstr "RGB vers intensité"
 
 #: source/blender/makesrna/intern/rna_texture.c:530
 msgid "Converts texture RGB values to intensity (gray) values"
-msgstr "Convertit les valeurs RVB de la texture en valeurs d'intensité (niveau de gris)"
+msgstr "Convertir les valeurs RVB de la texture en valeurs d’intensité (niveaux de gris)"
+
+#: source/blender/makesrna/intern/rna_texture.c:536
+msgid "Default Value"
+msgstr "Valeur par défaut"
 
 #: source/blender/makesrna/intern/rna_texture.c:536
 #, fuzzy
-msgid "Default Value"
-msgstr "Fondu par défaut"
-
-#: source/blender/makesrna/intern/rna_texture.c:536
 msgid "Value to use for Ref, Spec, Amb, Emit, Alpha, RayMir, TransLu and Hard"
-msgstr "Valeur à utiliser pour Ref, Spec, Amb, Emit, Alpha, RayMir, TransLu and Hard"
+msgstr "Valeur à utiliser pour Réflexion, Speculaire, Ambiante, Émission, Alpha, Réflexion ray, Translucidité et Dureté"
 
 #: source/blender/makesrna/intern/rna_texture.c:543
-#, fuzzy
 msgid "Output Node"
-msgstr "Sortie"
+msgstr "Nœud de sortie"
 
 #: source/blender/makesrna/intern/rna_texture.c:543
 msgid "Which output node to use, for node-based textures"
-msgstr "Noeud sortie à utiliser, pour les textures nodales"
+msgstr "Nœud de sortie à utiliser, pour les textures nodales"
 
 #: source/blender/makesrna/intern/rna_texture.c:1728
 msgid "Texture datablock used by materials, lamps, worlds and brushes"
-msgstr "Données de texture utilisée par les matériaux, lampes, mondes, pinceaux"
+msgstr "Bloc de données texture utilisé par les matériaux, lampes, mondes et brosses"
 
-# ##########################################################
-# ##
-# ##  Menu Specials (W hotkey in edit mode)
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_texture.c:1743
-#, fuzzy
 msgid "Use Color Ramp"
-msgstr "Actions spéciales"
+msgstr "Utiliser dégradé de couleur"
 
 #: source/blender/makesrna/intern/rna_texture.c:1743
-#, fuzzy
 msgid "Toggle color ramp operations"
-msgstr "Sélection"
+msgstr "(Dés)activer les opérations de dégradé de couleur"
 
 #: source/blender/makesrna/intern/rna_texture.c:1749
-#, fuzzy
 msgid "Color Ramp"
-msgstr "Suivre le chemin"
+msgstr "Dégradé de couleur"
 
 #: source/blender/makesrna/intern/rna_texture.c:1755
-#, fuzzy
 msgid "Adjusts the brightness of the texture"
-msgstr "Taille de la brosse"
+msgstr "Ajuster le luminosité de la texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:1760
-#, fuzzy
 msgid "Contrast"
-msgstr "Contexte"
+msgstr "Contraste"
 
 #: source/blender/makesrna/intern/rna_texture.c:1760
 msgid "Adjusts the contrast of the texture"
-msgstr "Ajustes le contraste de la texture"
+msgstr "Ajuster le contraste de la texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:1765
 msgid "Adjusts the saturation of colors in the texture"
-msgstr "Ajustes la saturation des couleurs de la texture"
+msgstr "Ajuster la saturation des couleurs de la texture"
 
 #: source/blender/makesrna/intern/rna_texture.c:1772
-#, fuzzy
 msgid "Factor Red"
-msgstr "Facteur"
+msgstr "Facteur rouge"
 
 #: source/blender/makesrna/intern/rna_texture.c:1778
-#, fuzzy
 msgid "Factor Green"
-msgstr "Facteur"
+msgstr "Facteur vert"
 
 #: source/blender/makesrna/intern/rna_texture.c:1784
-#, fuzzy
 msgid "Factor Blue"
-msgstr "Facteur"
+msgstr "Facteur bleu"
 
 #: source/blender/makesrna/intern/rna_texture.c:1790
-#, fuzzy
 msgid "Show Alpha"
-msgstr "Régler l'Alpha"
+msgstr "Montrer alpha"
 
 #: source/blender/makesrna/intern/rna_texture.c:1790
-#, fuzzy
 msgid "Show Alpha in Preview Render"
-msgstr "Prévis./rendu scène"
+msgstr "Montrer l’alpha dans l’aperçu"
 
 #: source/blender/makesrna/intern/rna_texture.c:1797
-#, fuzzy
 msgid "Make this a node-based texture"
-msgstr "Activer Textures"
+msgstr "Rendre cette texture nodale"
 
 #: source/blender/makesrna/intern/rna_texture.c:1802
 msgid "Node tree for node-based textures"
-msgstr "Arborescence pour textures nodales"
+msgstr "Arbre de nœuds pour les textures nodales"
 
 #: source/blender/makesrna/intern/rna_userdef.c:407
 msgid "Theme Widget Color Set"
-msgstr "Thème Set de Couleur Widget"
+msgstr "Ensemble de couleur de widgets du thème"
 
 #: source/blender/makesrna/intern/rna_userdef.c:407
 msgid "Theme settings for widget color sets"
-msgstr "Thème pour sets de couleur du widget"
+msgstr "Réglages du thème pour les ensembles de couleurs de widgets"
 
 #: source/blender/makesrna/intern/rna_userdef.c:421
-#, fuzzy
 msgid "Inner Selected"
-msgstr "Cacher Sélection"
+msgstr "Interne sélectionné"
 
 #: source/blender/makesrna/intern/rna_userdef.c:436
-#, fuzzy
 msgid "Text Selected"
-msgstr "Cacher Sélection"
+msgstr "Texte sélectionné"
 
 #: source/blender/makesrna/intern/rna_userdef.c:446
 #, fuzzy
 msgid "Shade Top"
-msgstr "Lissé"
+msgstr "Ombrage supérieur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:451
 #, fuzzy
 msgid "Shade Down"
-msgstr "Ombres"
+msgstr "Ombrage inférieur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:462
 msgid "Theme Widget State Color"
-msgstr "Thème Couleur Etat du Widget"
+msgstr "Couleur d’état des widgets du thème"
 
 #: source/blender/makesrna/intern/rna_userdef.c:462
 msgid "Theme settings for widget state colors"
-msgstr "Thème couleur pour indiquer l'état du widget"
+msgstr "Réglages du thème pour les couleurs d’état des widgets"
 
 #: source/blender/makesrna/intern/rna_userdef.c:466
-#, fuzzy
 msgid "Animated"
-msgstr "Rendu de l'Animation"
+msgstr "Animé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:471
-#, fuzzy
 msgid "Animated Selected"
-msgstr "Cacher Sélection"
+msgstr "Animé sélectionné"
 
-# ##########################################################
-# ##
-# ##  Menu bar  ANIM
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_userdef.c:476
-#, fuzzy
 msgid "Keyframe"
-msgstr "Afficher les Images Clés"
+msgstr "Image clé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:481
-#, fuzzy
 msgid "Keyframe Selected"
-msgstr "Cacher Sélection"
+msgstr "Image clé sélectionné"
 
 #: source/blender/makesrna/intern/rna_userdef.c:486
 msgid "Driven"
-msgstr "Piloté"
+msgstr "Contrôlé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:491
-#, fuzzy
 msgid "Driven Selected"
-msgstr "Cacher Sélection"
+msgstr "Contrôlé sélectionné"
 
 #: source/blender/makesrna/intern/rna_userdef.c:632
-#, fuzzy
 msgid "Icon File"
-msgstr "Ouvrir un fichier"
+msgstr "Fichier d’icônes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1744
-#, fuzzy
 msgid "Theme Bone Color Set"
-msgstr "Suivre le chemin"
+msgstr "Ensemble de couleurs d’os du thème"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1744
 msgid "Theme settings for bone color sets"
-msgstr "Thème pour les sets d'os colorés"
+msgstr "Réglages du thème pour les ensembles de couleurs des os"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1749
-#, fuzzy
 msgid "Color used for the surface of bones"
-msgstr "Objets Sélectionnés"
+msgstr "Couleur utilisée pour la surface des os"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1755
-#, fuzzy
 msgid "Color used for selected bones"
-msgstr "Copier avec l'Objet:"
+msgstr "Couleur utilisée pour les os sélectionnés"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1760
-#, fuzzy
 msgid "Color used for active bones"
-msgstr "Copier avec l'Objet:"
+msgstr "Couleur utilisée pour les os actifs"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1765
-#, fuzzy
 msgid "Colored Constraints"
-msgstr "Enlever Contraintes"
+msgstr "Contraintes colorées"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1765
 msgid "Allow the use of colors indicating constraints/keyed status"
-msgstr "Autorise les couleurs pour indiquer un état animé ou contraint"
+msgstr "Permettre d’utiliser des couleurs pour indiquer un état animé/contraint"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1775
 #: source/blender/makesrna/intern/rna_userdef.c:1812
-#, fuzzy
 msgid "User Interface"
-msgstr "Miroir Interactif"
+msgstr "Interface utilisateur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1776
 #: source/blender/makesrna/intern/rna_userdef.c:1914
-#, fuzzy
 msgid "Bone Color Sets"
-msgstr "Suivre le chemin"
+msgstr "Ensemble de couleurs d’os"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1782
-#, fuzzy
 msgid "UV/Image Editor"
-msgstr "Editeur UV/Image"
+msgstr "Éditeur UV/Image"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1783
-#, fuzzy
 msgid "Video Sequence Editor"
-msgstr "Montage Video"
+msgstr "Éditeur de séquences vidéo"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1800
-#, fuzzy
 msgid "Name of the theme"
-msgstr "Taille du texte"
+msgstr "Nom du thème"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1806
-#, fuzzy
 msgid "Active Theme Area"
-msgstr "Calque Actif"
+msgstr "Zone du thème actif"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1995
 msgid "Minimal Info"
-msgstr "Info Minimale"
+msgstr "Infos minimales"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1995
 msgid ""
 "Most compact representation. Uses '+' as separator for sub-second frame "
 "numbers, with left and right truncation of the timecode as necessary"
 msgstr ""
-"représentation la plus compacte."
-" utilise <+> en tant que séparateurpour l'intervalle de la seconde,"
-" avec un troncature du timecode à gauche ou à droite si nécessaire" 
+"Représentation la plus compacte, utilise “+” comme séparateur pour les numéros d’images intra-seconde, avec un troncature du timecode à gauche et à droite si nécessaire" 
 
 #: source/blender/makesrna/intern/rna_userdef.c:1996
 msgid "SMPTE (Full)"
-msgstr "SMPTE (Entier)"
+msgstr "SMPTE (complet)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1996
 msgid "Full SMPTE timecode. Format is HH:MM:SS:FF"
-msgstr "timecode SMPTE en entier. le format est HH:MM:SS:FF"
+msgstr "Timecode SMPTE complet (format : HH:MM:SS:FF)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1997
 msgid "SMPTE (Compact)"
-msgstr ""
+msgstr "SMPTE (compact)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1997
 msgid ""
 "SMPTE timecode showing minutes, seconds, and frames only. Hours are also "
 "shown if necessary, but not by default"
 msgstr ""
-"timecode SMPTE montrant les minutes, secondes et frames seulement."
-"Les heures si nécessaire mais pas par défaut"
+"Timecode SMPTE montrant les minutes, secondes et images seulement – les heures sont aussi montrées si nécessaire, mais pas par défaut"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1998
 msgid "Compact with Milliseconds"
-msgstr "Compact avec Millisecondes"
+msgstr "Compact avec millisecondes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1998
 msgid ""
 "Similar to SMPTE (Compact), except that instead of frames, milliseconds are "
 "shown instead"
 msgstr ""
-"similaire à SMPTE (Compact), à l'exception des frames,"
-" à la place il y a des milisecondes"
+"Similaire à SMPTE (compact), si ce n’est que les images sont remplacées par des millisecondes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1999
-#, fuzzy
 msgid "Only Seconds"
-msgstr "Secondes "
+msgstr "Secondes seulement"
 
 #: source/blender/makesrna/intern/rna_userdef.c:1999
 msgid "Direct conversion of frame numbers to seconds"
-msgstr "Conversion directe du nombre de frames en secondes"
+msgstr "Conversion directe du numéro d’image en secondes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2015
 msgid "Tooltips"
-msgstr "Bulles d'aide"
+msgstr "Infobulles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2015
-#, fuzzy
 msgid "Display tooltips"
-msgstr "Traduire les bulles d'aide"
+msgstr "Afficher les infobulles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2019
 msgid "Show Python Tooltips"
-msgstr "Montrer Astuces Python"
+msgstr "Montrer infobulles Python"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2019
 msgid "Show Python references in tooltips"
-msgstr "Montre les références python dans les astuces"
+msgstr "Montrer les références python dans les infobulles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2023
-#, fuzzy
 msgid "Display Object Info"
-msgstr "Objet"
+msgstr "Afficher infos objet"
 
-# tip
 #: source/blender/makesrna/intern/rna_userdef.c:2023
-#, fuzzy
 msgid "Display objects name and frame number in 3D view"
-msgstr "Affiche le nom de l'objet actif ainsi que le 42wlg66"
+msgstr "Afficher les noms d’objets et numéro d’image dans la vue 3D"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2028
-#, fuzzy
 msgid "Global Scene"
-msgstr "Toutes Scènes"
+msgstr "Scène globale"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2028
 msgid "Forces the current Scene to be displayed in all Screens"
-msgstr "Force la scène courante à s'afficher dans tous les écrans"
+msgstr "Forcer la scène courante à être affichée dans toutes les dispositions d’écran"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2033
-#, fuzzy
 msgid "Large Cursors"
-msgstr "Au Curseur"
+msgstr "Grands curseurs"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2033
 msgid "Use large mouse cursors when available"
-msgstr "Utilise les curseurs élargis quand ils sont accessibles "
+msgstr "Utiliser les grands curseurs de souris si disponibles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2038
-#, fuzzy
 msgid "Show View Name"
-msgstr "Nom de Fichier"
+msgstr "Montrer nom de vue"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2038
 msgid "Show the name of the view's direction in each 3D View"
-msgstr "Montre le nom de la direction de la vue dans chaque vue 3D"
+msgstr "Montrer le nom de la direction de la vue dans chaque vue 3D"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2043
-#, fuzzy
 msgid "Show Splash"
-msgstr "Aff. Dégradé Spéculaire"
+msgstr "Afficher écran d’accueil"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2043
 msgid "Display splash screen on startup"
-msgstr "Affichage de l'écran d'accueil au démarrage"
+msgstr "Afficher l’écran d’accueil au démarrage"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2047
-#, fuzzy
 msgid "Show Playback FPS"
-msgstr "Images/Sec"
+msgstr "Afficher FPS à la lecture"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2047
 msgid ""
 "Show the frames per second screen refresh rate, while animation is played "
 "back"
 msgstr ""
-"Montre les frames au taux de rafraîchissement de l'écran,"
-" pendant la lecture de l'animation"
+"Montrer le taux de rafraîchissement de l’écran, en images par seconde, pendant la lecture de l’animation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2053
-#, fuzzy
 msgid "Open On Mouse Over"
-msgstr "Ouverture sous le Curseur"
+msgstr "Ouvrir au survol de la souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2053
 msgid ""
 "Open menu buttons and pulldowns automatically when the mouse is hovering"
 msgstr ""
-"Ouvre automatiquement les menus et listes déroulantes au passage de la souris"
+"Ouvrir automatiquement les menus et listes déroulantes au passage de la souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2058
 msgid "Top Level Menu Open Delay"
-msgstr "Délai Menu Principal"
+msgstr "Délai d’ouverture des menus supérieurs"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2058
 msgid "Time delay in 1/10 seconds before automatically opening top level menus"
-msgstr "Temps en dixième de secondes avant ouverture automatique des menus de haut niveau"
+msgstr "Temps, en dixièmes de secondes, avant ouverture automatique des menus de niveau supérieur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2063
 msgid "Sub Level Menu Open Delay"
-msgstr "Délai Menu Subalterne"
+msgstr "Délai d’ouverture des sous-menus"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2063
 msgid "Time delay in 1/10 seconds before automatically opening sub level menus"
-msgstr "Temps en dixième de secondes avant ouverture automatique des menus de bas niveau"
+msgstr "Temps, en dixièmes de secondes, avant ouverture automatique des sous-menus"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2069
 msgid "Hold LMB Open Toolbox Delay"
-msgstr "Délai Clic Gauche Boîte à Outils"
+msgstr "Délai maintien du clic gauche pour ouvrir boîte à outils"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2069
 msgid ""
 "Time in 1/10 seconds to hold the Left Mouse Button before opening the toolbox"
 msgstr ""
-"Temps en dixième de secondes pour ouvrir la boîtes à outils"
-" avec un clic gauche maintenu"
+"Temps, en dixièmes de secondes, à maintenir le bouton gauche de la souris pour ouvrir la boîte à outils"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2074
 msgid "Hold RMB Open Toolbox Delay"
-msgstr "Délai Clic Droit Boîte à Outils"
+msgstr "Délai maintien clic droit pour ouvrir boîte à outils"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2074
 msgid ""
 "Time in 1/10 seconds to hold the Right Mouse Button before opening the "
 "toolbox"
 msgstr ""
-"Temps en dixième de secondes pour ouvrir la boîtes à outils"
-" avec un clic droit maintenu"
+"Temps, en dixièmes de secondes, à maintenir le bouton droit de la souris pour ouvrir la boîtes à outils"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2078
 msgid "Toolbox Column Layout"
-msgstr "Colonne Outils"
+msgstr "Disposition en colonnes de la boîte à outils"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2078
 msgid "Use a column layout for toolbox"
-msgstr "Utilise une colonne pour la boîte à outils"
+msgstr "Utiliser une disposition en colonnes pour la boîte à outils"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2082
 msgid "Contents Follow Opening Direction"
-msgstr "Contenu suit la direction d'ouverture"
+msgstr "Contenu suit la direction d’ouverture"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2082
 msgid ""
 "Otherwise menus, etc will always be top to bottom, left to right, no matter "
 "opening direction"
 msgstr ""
-"Autrement pour les menus, le défilement sera toujours du haut vers le bas,"
-" de gauche à droite, peu importe la direction de l'ouverture"
+"Autrement les menus et autres seront toujours du haut vers le bas,"
+" de gauche à droite, quelle que soit la direction de l’ouverture"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2086
 msgid "Global Pivot"
-msgstr "Pivot Global"
+msgstr "Pivot global"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2086
 msgid "Lock the same rotation/scaling pivot in all 3D Views"
-msgstr "Force le même pivot de rotation/mise à l'échelle dans toutes les vues 3D"
+msgstr "Force le même pivot de rotation/redimensionnement dans toutes les vues 3D"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2090
-#, fuzzy
 msgid "Auto Depth"
-msgstr "Lissage Auto"
+msgstr "Profondeur auto"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2090
 msgid ""
 "Use the depth under the mouse to improve view pan/rotate/zoom functionality"
 msgstr ""
-"Utilise la profondeur sous la souris pour améliorer translation/rotation/zoom"
+"Utiliser la profondeur sous la souris pour améliorer translation/rotation/zoom de la vue"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2094
-#, fuzzy
 msgid "Camera Parent Lock"
-msgstr "Parenté Classique"
+msgstr "Verrouiller parent de la caméra"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2094
 msgid ""
 "When the camera is locked to the view and in fly mode, transform the parent "
 "rather than the camera"
 msgstr ""
-"Quand la caméra est verrouillé sur la vue en mode vol,"
-" transforme le parent plutôt que la caméra"
+"Quand la caméra est verrouillée sur la vue et en mode vol, transformer le parent plutôt que la caméra"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2099
 msgid "Zoom To Mouse Position"
-msgstr "Zoom à la souris"
+msgstr "Zoomer sur la position de la souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2099
 msgid ""
 "Zoom in towards the mouse pointer's position in the 3D view, rather than the "
 "2D window center"
 msgstr ""
-"Zoome à la position du pointeur de la souris dans la vue 3D,"
-" à la place du centre de la vue"
+"Zoomer sur la position du pointeur de la souris dans la vue 3D, à la place du centre de la vue"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2104
 msgid "Auto Perspective"
-msgstr ""
+msgstr "Perspective auto"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2104
 msgid ""
 "Automatically switch between orthographic and perspective when changing from "
 "top/front/side views"
 msgstr ""
-"automatiquement basculer entre en vue perspective et vue orthographique"
-" lors d'un changement à partir des vues de Dessus/Face/Côté"
+"Basculer automatiquement entre vue orthographique et vue en perspective lors d’un changement à partir des vues de dessus/face/côté"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2108
-#, fuzzy
 msgid "Rotate Around Selection"
-msgstr "Sélection des données"
+msgstr "Tourner autour de la sélection"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2108
 msgid "Use selection as the pivot point"
-msgstr "Utilise la sélection en tant que point de pivot"
+msgstr "Utiliser la sélection en tant que point pivot"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2113
-#, fuzzy
 msgid "Show Mini Axis"
-msgstr "Options d'Affichage"
+msgstr "Montrer mini-axes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2113
 msgid "Show a small rotating 3D axis in the bottom left corner of the 3D View"
-msgstr "Montre un petit repère d'axes 3D tournant dans le coin à gauche en bas de la vue 3D"
+msgstr "Montrer un petit repère d’axes 3D tournant dans le coin inférieur gauche de la vue 3D"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2119
 msgid "Mini Axis Size"
-msgstr "Taille Axes Mini"
+msgstr "Taille mini axes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2119
 msgid "The axis icon's size"
-msgstr "Taille de l'icône des axes"
+msgstr "Taille de l’icône des axes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2125
-#, fuzzy
 msgid "Mini Axis Brightness"
-msgstr "Luminosité/Contraste"
+msgstr "Luminosité mini axes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2125
-#, fuzzy
 msgid "The brightness of the icon"
-msgstr "Taille de la brosse"
+msgstr "Luminosité de l’icône"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2131
 msgid "The time to animate the view in milliseconds, zero to disable"
-msgstr "Le temps pour animer la vue en miliseconds, zéro pour désactiver"
+msgstr "Temps pour animer la vue, en millisecondes, zéro pour désactiver"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2136
-#, fuzzy
 msgid "Rotation Angle"
-msgstr "Copier la Rotation"
+msgstr "Angle de rotation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2136
 msgid "The rotation step for numerical pad keys (2 4 6 8)"
-msgstr "Cran de rotation pour les touches (2 4 6 8) du pavé numérique"
+msgstr "Angle de rotation pour les touches (2 4 6 8) du pavé numérique"
 
-# ##########################################################
-# ##
-# ##  Menubar  Transform Manipulator
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_userdef.c:2141
-#, fuzzy
 msgid "Use 3D transform manipulator"
-msgstr "Affiche le repère de transformation (Ctrl Espace)"
+msgstr "Utiliser manipulateur 3D"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2148
 msgid "Manipulator Size"
-msgstr "Taille Manipulateur"
+msgstr "Taille du manipulateur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2148
 msgid "Diameter of widget, in 10 pixel units"
-msgstr "Diamètre du widget, 1 unité = 10 pixels"
+msgstr "Diamètre du manipulateur, en 10 pixels d’unité"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2155
 msgid "Manipulator Handle Size"
-msgstr "Taille Poignée du manipulateur"
+msgstr "Taille poignées du manipulateur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2155
 msgid "Size of widget handles as percentage of widget radius"
-msgstr "Taille des poignées exprimée en pourcentage du rayon du widget"
+msgstr "Taille des poignées du manipulateur, en pourcentage du rayon du widget"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2162
 msgid "Manipulator Hotspot"
-msgstr "Zone Sensible du Manipulateur"
+msgstr "Zone sensible du manipulateur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2162
 msgid "Pixel distance around the handles to accept mouse clicks"
@@ -28487,11 +28259,11 @@ msgstr "Zone en pixels autour des poignées acceptant les clics de souris"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2167
 msgid "Object Origin Size"
-msgstr "Taille Origine Objet"
+msgstr "Taille de l’origine des objets"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2167
 msgid "Diameter in Pixels for Object/Lamp origin display"
-msgstr "Diamètre en Pixels pour l'affichage de l'origine des objets"
+msgstr "Diamètre en pixels pour l’affichage de l’origine des objets/lampes"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2174
 msgid "2D View Minimum Grid Spacing"
@@ -28503,412 +28275,390 @@ msgstr "Nombre minimum de pixels entre chaque ligne de la grille dans les vues 2
 
 #: source/blender/makesrna/intern/rna_userdef.c:2182
 msgid "TimeCode Style"
-msgstr "Style d'affichage du temps"
+msgstr "Style de timecode"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2182
 msgid ""
 "Format of Time Codes displayed when not displaying timing in terms of frames"
-msgstr "Format d'affichage du temps lorsque celui n'est pas exprimé en frames"
+msgstr "Format des timecodes affichés lorsque le temps n’est pas exprimé en images"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2197
 msgid "ObData"
-msgstr "Données"
+msgstr "Données d’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2197
 #: source/blender/makesrna/intern/rna_userdef.c:2198
 #: source/blender/makesrna/intern/rna_userdef.c:2216
 msgid ""
 "Toggle whether the material is linked to object data or the object block"
-msgstr "Bascule le lien du matériau entre les données de l'objet et l'objet"
+msgstr "Alterner entre matériau lié aux données de l’objet, ou au bloc objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2202
 msgid "Align newly added objects to the world coordinates"
-msgstr "aligne les objets nouvellement créés sur les coordonnées du monde"
+msgstr "Aligner les objets nouvellement créés sur le système de coordonnées du monde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2203
 msgid "Align newly added objects facing the active 3D View direction"
-msgstr "aligne les objets nouvellement créés face à la vue 3D active"
+msgstr "Aligner les objets nouvellement créés face à la vue 3D active"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2209
 msgid "Edit Methods"
-msgstr "Edition"
+msgstr "Méthode d’édition"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2209
 msgid "Settings for interacting with Blender data"
-msgstr ""
+msgstr "Réglages pour l’interaction avec le données de Blender"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2216
-#, fuzzy
 msgid "Material Link To"
-msgstr "Matériaux liés à:"
+msgstr "Matériau lié à"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2221
-#, fuzzy
 msgid "Align Object To"
-msgstr "Cache les Objets"
+msgstr "Aligner objet sur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2221
 msgid ""
 "When adding objects from a 3D View menu, either align them to that view's "
 "direction or the world coordinates"
 msgstr ""
+"Quand on ajoute des objets depuis un menu d’une vue 3D, les aligner soit avec cette vue, soit avec le monde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2225
-#, fuzzy
 msgid "Enter Edit Mode"
-msgstr "Quitter Mode Edition"
+msgstr "Passer en mode Edit"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2225
 msgid "Enter Edit Mode automatically after adding a new object"
-msgstr ""
+msgstr "Passer en mode Edit automatiquement après avoir ajouté un nouvel objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2229
-#, fuzzy
 msgid "Release confirms"
-msgstr "Notes de Version (En)"
+msgstr "Valider par relâchement"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2229
 msgid "Moving things with a mouse drag confirms when releasing the button"
-msgstr ""
+msgstr "Quand on déplace des choses par cliquer-tirer de souris, relâcher le bouton valide l’action"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2235
 msgid "Undo Steps"
-msgstr ""
+msgstr "Étapes d’annulations"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2235
 msgid "Number of undo steps available (smaller values conserve memory)"
 msgstr ""
-"Nombre d'actions pouvant êtres annulées (augmente la consommation mémoire)"
+"Nombre d’actions pouvant êtres annulées (De petites valeurs préservent la mémoire)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2240
 msgid "Undo Memory Size"
-msgstr ""
+msgstr "Taille de mémoire d’annulation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2240
 msgid "Maximum memory usage in megabytes (0 means unlimited)"
-msgstr ""
+msgstr "Usage mémoire maximum, en mégaoctets (0 signifie illimité)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2244
 msgid "Global Undo"
-msgstr "Historique Global"
+msgstr "Historique global"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2244
 msgid ""
 "Global undo works by keeping a full copy of the file itself in memory, so "
 "takes extra memory"
 msgstr ""
+"L’historique global fonctionne en gardant une copie complète du fichier lui-même en mémoire, et consomme donc plus de RAM"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2249
-#, fuzzy
 msgid "Auto Keying Enable"
-msgstr "Aller à l'Image Clé Suivante"
+msgstr "Automation activée"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2249
 msgid ""
 "Automatic keyframe insertion for Objects and Bones (default setting used for "
 "new Scenes)"
 msgstr ""
+"Activer l’automation (insertion automatique d’images clé) pour les objets et os (réglage par défaut utilisé pour les nouvelles scènes)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2255
-#, fuzzy
 msgid "Auto Keying Mode"
-msgstr "Aller à l'Image Clé Suivante"
+msgstr "Mode d’automation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2255
 msgid ""
 "Mode of automatic keyframe insertion for Objects and Bones (default setting "
 "used for new Scenes)"
 msgstr ""
+"Mode de l’automation pour les objets et os (réglage par défaut utilisé pour les nouvelles scènes"
 
-# tip
 #: source/blender/makesrna/intern/rna_userdef.c:2259
-#, fuzzy
 msgid "Auto Keyframe Insert Available"
-msgstr "Active uniquement cette couche pour le rendu."
+msgstr "Automation insérer disponibles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2259
 msgid "Automatic keyframe insertion in available curves"
-msgstr ""
+msgstr "Insérer des images clé dans les F-Curves disponibles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2264
 msgid "Keyframe Insert Needed"
-msgstr ""
+msgstr "Automation insérer nécessaires"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2264
 msgid "Keyframe insertion only when keyframe needed"
-msgstr "Insertion seulement lorsque les clés nécessaires"
+msgstr "N’insérer que les images clés nécessaires"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2268
 #, fuzzy
 msgid "Visual Keying"
-msgstr "Visualisation"
+msgstr "Images clé visuelles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2268
+#, fuzzy
 msgid "Use Visual keying automatically for constrained objects"
-msgstr "Utilise automatiquement les clés visuelles pour les objets contraints"
+msgstr "Utiliser automatiquement les images clé visuelles pour les objets contraints"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2272
 msgid "New F-Curve Colors - XYZ to RGB"
-msgstr "Nouvelles Couleurs des F-Curves - XYZ vers RVB"
+msgstr "Nouvelles couleurs des F-Curves – XYZ vers RVB"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2272
 msgid ""
 "Color for newly added transformation F-Curves (Location, Rotation, Scale) "
 "and also Color is based on the transform axis"
 msgstr ""
-"Couleur pour les F-Curves de transformation (Position, Rotation, Echelle) nouvellement créées,"
-"aussi basée sur l'axe de transformation" 
+"Couleur pour les F-Curves de transformation (Position, Rotation, Taille) nouvellement créées,"
+"aussi basée sur l’axe de transformation" 
 
-# marche pas?
 #: source/blender/makesrna/intern/rna_userdef.c:2277
-#, fuzzy
 msgid "New Interpolation Type"
-msgstr "Interpolation"
+msgstr "Type d’interpolation pour nouvelles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2277
 msgid ""
 "Interpolation mode used for first keyframe on newly added F-Curves. "
 "Subsequent keyframes take interpolation from preceeding keyframe"
 msgstr ""
-"Mode d'interpolation utilisé pour la première clé des F-curves nouvellement ajoutées"
-"Les clés suivantes prennent l'interpolation de cette précédente clé."
+"Mode d’interpolation utilisé pour la première image clé des F-curves nouvellement créées (les images clé suivantes utilisent l’interpolation de l’image clé précédente)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2282
-#, fuzzy
 msgid "New Handles Type"
-msgstr "Proportionnel"
+msgstr "Type de poignées pour nouvelles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2282
-#, fuzzy
 msgid "Handle type for handles of new keyframes"
-msgstr "Adoucit les angles des faces sélectionnées"
+msgstr "Le type de poignées pour les nouvelles images clé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2287
 msgid "Allow Negative Frames"
-msgstr "Permet les frames négatives"
+msgstr "Permettre images négatives"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2287
 msgid "Current frame number can be manually set to a negative value"
-msgstr "Nombre de la frame courante peut être manuellement mis à une valeur négative"
+msgstr "Le numéro de l’image courante peut être manuellement défini à une valeur négative"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2293
-#, fuzzy
 msgid "Grease Pencil Manhattan Distance"
-msgstr "Conversion du Tracé"
+msgstr "Distance Manhattan pour le crayon gras"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2293
 msgid "Pixels moved by mouse per axis when drawing stroke"
-msgstr "Pixels parcouru par la souris le long d'un axe lors du tracé"
+msgstr "Pixels parcourus par la souris le long d’un axe lors du tracé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2298
 msgid "Grease Pencil Euclidean Distance"
-msgstr "Crayon gras Distance Euclidienne"
+msgstr "Distance euclidienne pour crayon gras"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2298
+#, fuzzy
 msgid "Distance moved by mouse when drawing stroke (in pixels) to include"
 msgstr "Distance parcourue par la souris (en pixels) à inclure dans le tracé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2302
-#, fuzzy
 msgid "Grease Pencil Smooth Stroke"
-msgstr "Conversion du Tracé"
+msgstr "Adoucir trait pour crayon gras"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2302
-#, fuzzy
 msgid "Smooth the final stroke"
-msgstr "Miroir Interactif"
+msgstr "Adoucir le trait/tracé final"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2306
-#, fuzzy
 msgid "Grease Pencil Simplify Stroke"
-msgstr "Conversion du Tracé"
+msgstr "Simplifier trait pour crayon gras"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2306
 msgid "Simplify the final stroke"
-msgstr "Simplifier l'ultime tracé"
+msgstr "Simplifier le trait/tracé final"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2311
-#, fuzzy
 msgid "Grease Pencil Eraser Radius"
-msgstr "Conversion du Tracé"
+msgstr "Rayon de la gomme pour crayon gras"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2311
 msgid "Radius of eraser 'brush'"
-msgstr "Rayon de la gomme"
+msgstr "Rayon de la “brosse” gomme"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2318
 msgid "Sculpt/Paint Overlay Color"
-msgstr "Couleur du pointeur Sculpt/Paint"
+msgstr "Couleur de la brosse Sculpt/Paint"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2318
 msgid "Color of texture overlay"
-msgstr "Couleur de la visualisation de la texture "
+msgstr "Couleur de la superposition de la texture"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2323
 msgid "Causes mesh data to be duplicated with the object"
-msgstr "Implique les données des maillages dans la duplication de l'objet"
+msgstr "Fait que les données de mesh seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2327
-#, fuzzy
 msgid "Duplicate Surface"
-msgstr "Copier Repère"
+msgstr "Dupliquer surface"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2327
 msgid "Causes surface data to be duplicated with the object"
-msgstr "Implique les données des surfaces dans la duplication de l'objet"
+msgstr "Fait que les données de surface seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2331
 msgid "Causes curve data to be duplicated with the object"
-msgstr "Implique les données des courbes dans la duplication de l'objet"
+msgstr "Fait que les données de courbe seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2335
-#, fuzzy
 msgid "Duplicate Text"
-msgstr "Copier avec l'Objet:"
+msgstr "Dupliquer texte"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2335
 msgid "Causes text data to be duplicated with the object"
-msgstr "Implique les données des textes dans la duplication de l'objet"
+msgstr "Fait que les données de texte seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2339
-#, fuzzy
 msgid "Duplicate Metaball"
-msgstr "Copier Repère"
+msgstr "Dupliquer métaballe"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2339
 msgid "Causes metaball data to be duplicated with the object"
-msgstr "Implique les données des metaball dans la duplication de l'objet"
+msgstr "Fait que les données de métaballe seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2343
-#, fuzzy
 msgid "Duplicate Armature"
-msgstr "Copier Repère"
+msgstr "Dupliquer armature"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2343
 msgid "Causes armature data to be duplicated with the object"
-msgstr "Implique les données des armatures dans la duplication de l'objet"
+msgstr "Fait que les données d’armature seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2347
-#, fuzzy
 msgid "Duplicate Lamp"
-msgstr "Copier Repère"
+msgstr "Dupliquer lampe"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2347
 msgid "Causes lamp data to be duplicated with the object"
-msgstr "Implique les données des lampes dans la duplication de l'objet"
+msgstr "Fait que les données de lampe seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2351
-#, fuzzy
 msgid "Duplicate Material"
-msgstr "Copier Repère"
+msgstr "Dupliquer matériau"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2351
 msgid "Causes material data to be duplicated with the object"
-msgstr "Implique les données des matériaux dans la duplication de l'objet"
+msgstr "Fait que les données de matériau seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2355
-#, fuzzy
 msgid "Duplicate Texture"
-msgstr "Copier avec l'Objet:"
+msgstr "Dupliquer texture"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2355
 msgid "Causes texture data to be duplicated with the object"
-msgstr "Implique les données des textures dans la duplication de l'objet"
+msgstr "Fait que les données de texture seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2360
-#, fuzzy
 msgid "Duplicate F-Curve"
-msgstr "Copie Liée"
+msgstr "Dupliquer F-Curve"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2360
 msgid "Causes F-curve data to be duplicated with the object"
-msgstr "Implique les données des F-curve dans la duplication de l'objet"
+msgstr "Fait que les données de F-Curve seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2364
-#, fuzzy
 msgid "Duplicate Action"
-msgstr "Copie Liée"
+msgstr "Dupliquer action"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2364
 msgid "Causes actions to be duplicated with the object"
-msgstr "Implique les actions dans la duplication de l'objet"
+msgstr "Fait que les actions seront dupliquées avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2368
-#, fuzzy
 msgid "Duplicate Particle"
-msgstr "Copier Repère"
+msgstr "Dupliquer particules"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2368
 msgid "Causes particle systems to be duplicated with the object"
-msgstr "Implique les systèmes de particules dans la duplication de l'objet"
+msgstr "Fait que les systèmes de particules seront dupliqués avec l’objet"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2396
 msgid "Set audio mixing buffer size to 256 samples"
-msgstr "Met le cache de mixage audio à 256 échantillons"
+msgstr "Définir le tampon de mixage audio à 256 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2397
 msgid "Set audio mixing buffer size to 512 samples"
-msgstr "Met le cache de mixage audio à 512 échantillons"
+msgstr "Définir le tampon de mixage audio à 512 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2398
 msgid "Set audio mixing buffer size to 1024 samples"
-msgstr "Met le cache de mixage audio à 32768 échantillons"
+msgstr "Définir le tampon de mixage audio à 1024 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2399
 msgid "Set audio mixing buffer size to 2048 samples"
-msgstr "Met le cache de mixage audio à 2048 échantillons"
+msgstr "Définir le tampon de mixage audio à 2048 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2400
 msgid "Set audio mixing buffer size to 4096 samples"
-msgstr "Met le cache de mixage audio à 4096 échantillons"
+msgstr "Définir le tampon de mixage audio à 4096 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2401
 msgid "Set audio mixing buffer size to 8192 samples"
-msgstr "Met le cache de mixage audio à 8192 échantillons"
+msgstr "Définir le tampon de mixage audio à 8192 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2402
 msgid "Set audio mixing buffer size to 16384 samples"
-msgstr "Met le cache de mixage audio à 16384 échantillons"
+msgstr "Définir le tampon de mixage audio à 16384 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2403
 msgid "Set audio mixing buffer size to 32768 samples"
-msgstr "Met le cache de mixage audio à 32768 échantillons"
+msgstr "Définir le tampon de mixage audio à 32768 échantillons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2407
 msgid "Null device - there will be no audio output"
-msgstr "Périphérique nul - il n'y a pas de sortie audio"
+msgstr "Périphérique nul – il n’y aura pas de sortie audio"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2409
 msgid "SDL device - simple direct media layer, recommended for sequencer usage"
-msgstr "Périphérique SDL - couche de media simple direct,recommendé pour l'usage du séquenceur "
+msgstr "Périphérique SDL – couche simple de média direct, recommandé pour l’utilisation du séquenceur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2412
 msgid "OpenAL device - supports 3D audio, recommended for game engine usage"
-msgstr "Périphérique OpenAL - supporte audio 3D, recommendé pour l'usage de moteur de jeu"
+msgstr "Périphérique OpenAL – supporte l’audio 3D, recommandé pour l’utilisation de moteur de jeu"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2415
 msgid "Jack"
-msgstr ""
+msgstr "Jack"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2415
 msgid "Jack device - open source pro audio, recommended for pro audio users"
-msgstr "Périphérique Jack - audio pro open source, recommendé pour un usage pro"
+msgstr "Périphérique Jack – audio pro open source, recommandé pour les utilisateurs audio pros"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2425
 msgid "Set audio sampling rate to 44100 samples per second"
-msgstr "Met le taux d'échantillonnage audio à 44100 échantillons par seconde"
+msgstr "Définir le taux d’échantillonnage audio à 44100 échantillons par seconde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2426
 msgid "Set audio sampling rate to 48000 samples per second"
-msgstr "Met le taux d'échantillonnage audio à 48000 échantillons par seconde"
+msgstr "Définir le taux d’échantillonnage audio à 48000 échantillons par seconde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2428
 msgid "Set audio sampling rate to 96000 samples per second"
-msgstr "Met le taux d'échantillonnage audio à 96000 échantillons par seconde"
+msgstr "Définir le taux d’échantillonnage audio à 96000 échantillons par seconde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2429
 msgid "Set audio sampling rate to 192000 samples per second"
-msgstr "Met le taux d'échantillonnage audio à 19200 échantillons par seconde"
+msgstr "Définir le taux d’échantillonnage audio à 192000 échantillons par seconde"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2433
 msgid "8-bit Unsigned"
@@ -28916,7 +28666,7 @@ msgstr "8-bits non signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2433
 msgid "Set audio sample format to 8 bit unsigned integer"
-msgstr "Passe le format de l'échantillon audio en 8 bits non signé"
+msgstr "Définir le format d’échantillon audio comme entier 8 bits non signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2434
 msgid "16-bit Signed"
@@ -28924,7 +28674,7 @@ msgstr "16-bits signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2434
 msgid "Set audio sample format to 16 bit signed integer"
-msgstr "Passe le format de l'échantillon audio à un signet 16 bits"
+msgstr "Définir le format d’échantillon audio comme entier 16 bits signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2435
 msgid "24-bit Signed"
@@ -28932,7 +28682,7 @@ msgstr "24-bits signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2435
 msgid "Set audio sample format to 24 bit signed integer"
-msgstr "Passe le format de l'échantillon audio à un signet 24 bits"
+msgstr "Définir le format d’échantillon audio comme entier 24 bits signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2436
 msgid "32-bit Signed"
@@ -28940,115 +28690,105 @@ msgstr "32-bits signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2436
 msgid "Set audio sample format to 32 bit signed integer"
-msgstr "Passe le format de l'échantillon audio à un signet 32 bits"
+msgstr "Définir le format d’échantillon audio comme entier 32 bits signé"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2437
 msgid "32-bit Float"
-msgstr "Valeur 32 bits"
+msgstr "32-bits flottant"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2437
 msgid "Set audio sample format to 32 bit float"
-msgstr "Passe le format de l'échantillon audio à une valeur 32 bits"
+msgstr "Définir le format d’échantillon audio comme flottant 32 bits"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2438
 msgid "64-bit Float"
-msgstr "Valeur 64-bits"
+msgstr "64-bits flottant"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2438
 msgid "Set audio sample format to 64 bit float"
-msgstr "Passe le format de l'échantillon audio à une valeur 64 bits"
+msgstr "Définir le format d’échantillon audio comme flottant 64 bits"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2442
 msgid "Set audio channels to mono"
-msgstr "Met les canaux audio en mono"
+msgstr "Définir les canaux audio en mono"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2443
 msgid "Set audio channels to stereo"
-msgstr "Met les canaux audio en stéréo"
+msgstr "Définir les canaux audio en stéréo"
 
-# ##########################################################
-# ##
-# ##  ToolBox  BUTTONS
-# ##
-# ##########################################################
 #: source/blender/makesrna/intern/rna_userdef.c:2444
-#, fuzzy
 msgid "4 Channels"
-msgstr "Panneaux"
+msgstr "4 canaux"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2444
 msgid "Set audio channels to 4 channels"
-msgstr "Met les canaux audio à 4 canaux"
+msgstr "Définir les canaux audio à 4 canaux"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2445
 msgid "5.1 Surround"
-msgstr ""
+msgstr "5.1 surround"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2445
 msgid "Set audio channels to 5.1 surround sound"
-msgstr "Met les canaux audio au son surround 5.1"
+msgstr "Définir les canaux audio au son surround 5.1"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2446
 msgid "7.1 Surround"
-msgstr ""
+msgstr "7.1 surround"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2446
 msgid "Set audio channels to 7.1 surround sound"
-msgstr "Met les canaux audio au son surround 7.1"
+msgstr "Définir les canaux audio au son surround 7.1"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2450
 msgid "Automatically set based on graphics card and driver"
-msgstr "Automatiquement géré par le pilote et la carte graphique"
+msgstr "Défini automatiquement selon la carte graphique et le pilote"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2451
-#, fuzzy
 msgid "Triple Buffer"
-msgstr "Mémoire de mixage audio"
+msgstr "Triple Buffer"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2451
 msgid "Use a third buffer for minimal redraws at the cost of more memory"
 msgstr ""
-"utilise un troisième cache pour un minimum de rafraîchissements"
-" au coup de plus mémoire utilisée"
+"Utiliser un troisième tampon pour un minimum d’opérations de dessin, au prix d’une plus grosse utilisation mémoire"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2452
-#, fuzzy
 msgid "Overlap"
-msgstr "Par dessus"
+msgstr "Overlap"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2452
+#, fuzzy
 msgid "Redraw all overlapping regions, minimal memory usage but more redraws"
-msgstr "Rafraîchit toutes les régions superposées, usage minimal de la mémoire"
+msgstr "Rafraîchir toutes les régions superposées, usage minimal de la mémoire mais plus d’opérations de dessin"
+
+#: source/blender/makesrna/intern/rna_userdef.c:2453
+msgid "Overlap Flip"
+msgstr "Overlap Flip"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2453
 #, fuzzy
-msgid "Overlap Flip"
-msgstr "Par dessus"
-
-#: source/blender/makesrna/intern/rna_userdef.c:2453
 msgid ""
 "Redraw all overlapping regions, minimal memory usage but more redraws (for "
 "graphics drivers that do flipping)"
 msgstr ""
-"Rafraîchit toutes les régions superposées, usage minimal de la mémoire"
-"mais plus de rafraîchissements (pour les pilotes grqphiques qui gère l'inversement)"
+"Rafraîchir toutes les régions superposées, usage minimal de la mémoire mais plus d’opérations de dessin (pour les pilotes graphiques qui gèrent le “flipping”)"
+
+#: source/blender/makesrna/intern/rna_userdef.c:2454
+msgid "Full"
+msgstr "Full"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2454
 #, fuzzy
-msgid "Full"
-msgstr "OSA Forcé"
-
-#: source/blender/makesrna/intern/rna_userdef.c:2454
 msgid ""
 "Do a full redraw each time, slow, only use for reference or when all else "
 "fails"
 msgstr ""
-"Faire un rafraîchissement complet à chaque fois, lent,"
-" à utiliser pour référence ou quand tout le reste échoue"
+"Faire un rafraîchissement complet à chaque fois, lent, à n’utiliser que pour référence ou quand tout le reste échoue"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2458
 msgid "A circular Hue/Saturation color wheel, with Value slider"
-msgstr "Un disque de couleur Teinte/Saturation, avec une glissière Valeur"
+msgstr "Un roue de couleur Teinte/Saturation, avec un curseur Valeur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2459
 msgid "Square (SV + H)"
@@ -29056,7 +28796,7 @@ msgstr "Carré (SV + T)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2459
 msgid "A square showing Saturation/Value, with Hue slider"
-msgstr "Un carré montrant Saturation/Valeur, avec une glissière Teinte"
+msgstr "Un carré montrant les Saturation/Valeur, avec un curseur Teinte"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2460
 msgid "Square (HS + V)"
@@ -29064,7 +28804,7 @@ msgstr "Carré (TS + V)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2460
 msgid "A square showing Hue/Saturation, with Value slider"
-msgstr "Un carré montrant Teinte/Saturation, avec une glissière Valeur"
+msgstr "Un carré montrant les Teinte/Saturation, avec un curseur Valeur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2461
 msgid "Square (HV + S)"
@@ -29072,12 +28812,11 @@ msgstr "Carré (TV + S)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2461
 msgid "A square showing Hue/Value, with Saturation slider"
-msgstr "Un carré montrant Teinte/Valeur, avec une glissière Saturation"
+msgstr "Un carré montrant les Teinte/Valeur, avec un curseur Saturation"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2468
-#, fuzzy
 msgid "Default (Default)"
-msgstr "Fondu par défaut"
+msgstr "Par défaut (Par défaut)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2469
 msgid "English (English)"
@@ -29109,7 +28848,7 @@ msgstr "Suédois (Svenska)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2476
 msgid "French (Française)"
-msgstr "Français (Française)"
+msgstr "Français (Français)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2477
 msgid "Spanish (Español)"
@@ -29117,7 +28856,7 @@ msgstr "Espagnol (Español)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2478
 msgid "Catalan (Català)"
-msgstr ""
+msgstr "Catalan (Català)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2479
 msgid "Czech (Český)"
@@ -29125,7 +28864,7 @@ msgstr "Tchèque (Český)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2480
 msgid "Brazilian Portuguese (Português do Brasil)"
-msgstr "Portugais Brésilien (Português do Brasil)"
+msgstr "Portugais brésilien (Português do Brasil)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2481
 msgid "Simplified Chinese (简体中文)"
@@ -29177,115 +28916,114 @@ msgstr "Coréen (한국 언어)"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2504
 msgid "International Fonts"
-msgstr "Traduction de l'Interface"
+msgstr "Traduction de l’interface"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2504
-#, fuzzy
 msgid "Use international fonts"
-msgstr "Traduction de l'Interface"
+msgstr "Utiliser la traduction de l’interface"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2510
 msgid "Font size and resolution for display"
-msgstr "taille de la police et résolution de l'affichage"
+msgstr "Taille de la police et résolution pour l’affichage"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2516
 msgid "Maximum number of lines to store for the console buffer"
-msgstr "Nombre maximum de lignes pour l'historique de la console"
+msgstr "Nombre maximum de lignes à conserver dans le tampon de la console"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2521
 msgid ""
 "Name that will be used in exported files when format supports such feature"
-msgstr "Nom automatique utilisé pour l'export si le format le permet"
+msgstr ""
+"Nom qui sera utilisé dans les fichiers exportés quand le format supporte une telle fonctionnalité"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2527
-#, fuzzy
 msgid "Language use for translation"
-msgstr "Langue et Polices"
+msgstr "Langue utilisée pour la traduction"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2532
-#, fuzzy
 msgid "Translate Tooltips"
-msgstr "Effacer les objets sélectionnés"
+msgstr "Traduire infobulles"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2537
-#, fuzzy
 msgid "Translate Buttons"
-msgstr "Traduire les boutons"
+msgstr "Traduire boutons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2537
 msgid "Translate button labels"
-msgstr "Traduire les boutons"
+msgstr "Traduire les libellés des boutons"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2542
-#, fuzzy
 msgid "Translate Toolbox"
-msgstr "Déplacer"
+msgstr "Traduire boîte à outils"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2542
 #, fuzzy
 msgid "Translate toolbox menu"
-msgstr "Traduire les boutons"
+msgstr "Traduire le menu des boîte à outils"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2547
 #, fuzzy
 msgid "Textured Fonts"
-msgstr "Texturé"
+msgstr "Polices texturées"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2547
+#, fuzzy
 msgid "Use textures for drawing international fonts"
-msgstr "Utilise les textures pour l'affichage des polices internationales"
+msgstr "Utiliser des textures pour l’affichage des polices internationales"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2555
-#, fuzzy
 msgid "Solid Lights"
-msgstr "Lumières en vue Ombrée"
+msgstr "Lumières en vue Solide"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2555
 msgid "Lights user to display objects in solid draw mode"
-msgstr "Lumières pour afficher les objets en mode d'affichage solide"
+msgstr "Lumières de l’utilisateur pour afficher les objets en mode d’affichage solide"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2559
 msgid "Use Weight Color Range"
-msgstr "Utilise le gradient de couleur du poids"
+msgstr "Utiliser gradient de couleur de poids"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2559
 msgid ""
 "Enable color range used for weight visualization in weight painting mode"
 msgstr ""
-"Enclenche le gradient de couleur utilisé pour la visualisation du poids en mode peinture de poids"
+"Activer le gradient de couleur utilisé pour la visualisation des poids en mode peinture de poids"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2566
 msgid "Weight Color Range"
-msgstr "Gradient de couleur du poids"
+msgstr "Gradient de couleur de poids"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2566
 msgid "Color range used for weight visualization in weight painting mode"
-msgstr "Gradient de couleur utilisé pour la visualisation du poids en mode peinture de poids"
+msgstr "Gradient de couleur utilisé pour la visualisation des poids en mode peinture de poids"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2572
-#, fuzzy
 msgid "Color Picker Type"
-msgstr "Même Type"
+msgstr "Type de pipette"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2572
 msgid "Different styles of displaying the color picker widget"
-msgstr "Différents styles d'affichage du sélecteur de couleur"
+msgstr "Différents styles d’affichage de la pipette de couleur"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2576
-#, fuzzy
 msgid "Enable All Codecs"
-msgstr "Afficher Toutes les Images"
+msgstr "Activer tous les codecs"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2576
 msgid ""
 "Enables automatic saving of preview images in the .blend file (Windows only)"
 msgstr ""
-"Enclenche la sauvegarde automatique des prévisualisations dans le .blend"
-"(Windows seulement)"
+"Permettre à l’utilisateur de choisir n’importe quel codec (Windows uniquement, peut générer de l’instabilité)"
+
+# #############################################################################
+# ######### MARKER
+# #############################################################################
+
+
 
 #: source/blender/makesrna/intern/rna_userdef.c:2580
 msgid "Auto Run Python Scripts"
-msgstr "Lancement Auto. Scripts Python"
+msgstr "Lancement auto scripts Python"
 
 #: source/blender/makesrna/intern/rna_userdef.c:2580
 msgid ""
