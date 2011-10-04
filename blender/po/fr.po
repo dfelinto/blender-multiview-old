@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-10-03 09:55+0200\n"
+"POT-Creation-Date: 2011-10-04 09:45+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Bastien Montagne <montagne29@wanadoo.fr>\n"
 "Language-Team: \n"
@@ -4016,69 +4016,60 @@ msgid "Amount of friction during particle collision"
 msgstr "Taux de friction pendant la collision des particules"
 
 #: bpy.types.CollisionSettings.thickness_inner
-#, fuzzy
 msgid "Inner Thickness"
-msgstr "Épaisseur"
+msgstr "Épaisseur interne"
 
 #: bpy.types.CollisionSettings.thickness_inner
 msgid "Inner face thickness"
-msgstr ""
+msgstr "Épaisseur interne des faces"
 
 #: bpy.types.CollisionSettings.use_particle_kill
-#, fuzzy
 msgid "Kill Particles"
-msgstr "Particules enfants"
+msgstr "Tuer particules"
 
 #: bpy.types.CollisionSettings.use_particle_kill
-#, fuzzy
 msgid "Kill collided particles"
-msgstr "Particules enfants"
+msgstr "Tuer les particules qui ont heurté un objet collisionneur"
 
 #: bpy.types.CollisionSettings.thickness_outer
-#, fuzzy
 msgid "Outer Thickness"
-msgstr "Épaisseur"
+msgstr "Épaisseur externe"
 
 #: bpy.types.CollisionSettings.thickness_outer
 msgid "Outer face thickness"
-msgstr "Epaisseur externe de la face"
+msgstr "Épaisseur externe des faces"
 
 #: bpy.types.CollisionSettings.permeability
 msgid "Permeability"
-msgstr ""
+msgstr "Perméabilité"
 
 #: bpy.types.CollisionSettings.permeability
 msgid "Chance that the particle will pass through the mesh"
-msgstr ""
+msgstr "Probabilité que la particule passe à travers le mesh"
 
 #: bpy.types.CollisionSettings.damping_random
-#, fuzzy
 msgid "Random Damping"
-msgstr "Amortissement"
+msgstr "Amortissement aléatoire"
 
 #: bpy.types.CollisionSettings.damping_random
 msgid "Random variation of damping"
-msgstr ""
+msgstr "Variation aléatoire de l’amortissement"
 
 #: bpy.types.CollisionSettings.friction_random
-#, fuzzy
 msgid "Random Friction"
-msgstr "Position aléatoire"
+msgstr "Friction aléatoire"
 
 #: bpy.types.CollisionSettings.friction_random
-#, fuzzy
 msgid "Random variation of friction"
-msgstr "Orientation de transformation"
+msgstr "Variation aléatoire de la friction"
 
 #: bpy.types.CollisionSettings.stickness
-#, fuzzy
 msgid "Stickness"
-msgstr "Épaisseur"
+msgstr "Adhérence"
 
 #: bpy.types.CollisionSettings.stickness
-#, fuzzy
 msgid "Amount of stickness to surface collision"
-msgstr "Quantité de vertices dans la face"
+msgstr "Quantité d’adhérence à la surface de collision"
 
 #: bpy.types.ColorRamp bpy.types.PointDensity.color_ramp
 msgid "Color Ramp"
@@ -4086,12 +4077,11 @@ msgstr "Dégradé de couleur"
 
 #: bpy.types.ColorRamp
 msgid "Color ramp mapping a scalar value to a color"
-msgstr ""
+msgstr "Dégradé convertissant une valeur scalaire en couleur"
 
 #: bpy.types.ColorRamp.elements
-#, fuzzy
 msgid "Elements"
-msgstr "Segments"
+msgstr "Éléments"
 
 #: bpy.types.ColorRamp.interpolation bpy.types.Keyframe.interpolation
 #: bpy.types.ShapeKey.interpolation bpy.types.VoxelData.interpolation
@@ -4102,17 +4092,15 @@ msgstr "Interpolation"
 #: bpy.types.ColorRamp.interpolation, 'EASE'
 #: bpy.types.Spline.radius_interpolation, bpy.types.Spline.tilt_interpolation,
 #: bpy.types.Spline.type, 'NURBS'
-#, fuzzy
 msgid "Ease"
-msgstr "Fondu entrée"
+msgstr "Fondu"
 
 #: bpy.types.ColorRamp.interpolation, 'CARDINAL'
 #: bpy.types.ShapeKey.interpolation, 'KEY_CARDINAL'
 #: bpy.types.Spline.radius_interpolation, bpy.types.Spline.tilt_interpolation,
 #: bpy.types.Spline.type,
-#, fuzzy
 msgid "Cardinal"
-msgstr "Original"
+msgstr "Cardinal"
 
 #: bpy.types.ColorRamp.interpolation, 'LINEAR' bpy.types.FCurve.extrapolation,
 #: bpy.types.Keyframe.interpolation, bpy.types.ShapeKey.interpolation,
@@ -4142,9 +4130,8 @@ msgid "Linear"
 msgstr "Linéaire"
 
 #: bpy.types.ColorRamp.interpolation, 'B_SPLINE'
-#, fuzzy
 msgid "B-Spline"
-msgstr "IK spline"
+msgstr "B-spline"
 
 #: bpy.types.ColorRamp.interpolation, 'CONSTANT'
 #: bpy.types.FCurve.extrapolation, bpy.types.Keyframe.interpolation,
@@ -4170,18 +4157,16 @@ msgid "Constant"
 msgstr "Constante"
 
 #: bpy.types.ColorRampElement
-#, fuzzy
 msgid "Color Ramp Element"
-msgstr "Dégradé de couleur"
+msgstr "Élément de dégradé de couleur"
 
 #: bpy.types.ColorRampElement
 msgid "Element defining a color at a position in the color ramp"
-msgstr ""
+msgstr "Élément définissant une couleur à une position donnée dans le dégradé"
 
 #: bpy.types.ColorRampElement.color
-#, fuzzy
 msgid "Set color of selected color stop"
-msgstr "Réinitialiser la taille des bandes sélectionnées"
+msgstr "Définir la couleur du stop couleur sélectionné"
 
 #: bpy.types.ColorRampElement.position
 #: release/scripts/startup/bl_ui/properties_data_curve.py:321
@@ -4190,29 +4175,24 @@ msgid "Position"
 msgstr "Position"
 
 #: bpy.types.ColorRampElement.position
-#, fuzzy
 msgid "Set position of selected color stop"
-msgstr "Définir l’interpolation entre stops couleur"
+msgstr "Définir la position du stop couleur sélectionné"
 
 #: bpy.types.ColorRampElements
-#, fuzzy
 msgid "Color Ramp Elements"
-msgstr "Dégradé de couleur"
+msgstr "Éléments du dégradé de couleur"
 
 #: bpy.types.ColorRampElements
-#, fuzzy
 msgid "Collection of Color Ramp Elements"
-msgstr "Sélection -> Grille"
+msgstr "Collection d’éléments de dégradé de couleur"
 
 #: bpy.types.CompositorNodes
-#, fuzzy
 msgid "Compositor Nodes"
 msgstr "Nœuds de compositing"
 
 #: bpy.types.CompositorNodes
-#, fuzzy
 msgid "Collection of Compositor Nodes"
-msgstr "Collection de groupes d’actions"
+msgstr "Collection de nœuds de compositing"
 
 #: bpy.types.ConsoleLine
 msgid "Console Input"
@@ -4235,19 +4215,16 @@ msgid "Text in the line"
 msgstr "Texte dans la ligne"
 
 #: bpy.types.ConsoleLine.current_character
-#, fuzzy
 msgid "current_character"
-msgstr "Caractère suivant"
+msgstr "current_character"
 
 #: bpy.types.Constraint
-#, fuzzy
 msgid "Constraint modifying the transformation of objects and bones"
-msgstr "Contraintes affectant les transformations de l’objet"
+msgstr "Contrainte affectant les transformations d’objets et d’os"
 
 #: bpy.types.Constraint.name
-#, fuzzy
 msgid "Constraint name"
-msgstr "Cible de contrainte"
+msgstr "Nom de la contrainte"
 
 #: bpy.types.Constraint.active bpy.types.FModifier.active
 #: bpy.types.KeyMapItem.active bpy.types.MeshColorLayer.active
@@ -4274,9 +4251,8 @@ msgid "Active"
 msgstr "Actif"
 
 #: bpy.types.Constraint.active
-#, fuzzy
 msgid "Constraint is the one being edited "
-msgstr "Déplier le mesh de l’objet édité"
+msgstr "La contrainte est celle éditée"
 
 #: bpy.types.Constraint.mute bpy.types.ToolSettings.proportional_edit,
 #: 'DISABLED' bpy.types.ANIM_OT_channels_editable_toggle.mode, 'DISABLE'
@@ -4300,13 +4276,12 @@ msgid "Disable"
 msgstr "Désactiver"
 
 #: bpy.types.Constraint.mute
-#, fuzzy
 msgid "Enable/Disable Constraint"
-msgstr "Supprimer contrainte"
+msgstr "(Dés)activer contrainte"
 
 #: bpy.types.Constraint.show_expanded
 msgid "Constraint's panel is expanded in UI"
-msgstr ""
+msgstr "Le panneau de contrainte est développé dans l’UI"
 
 #: bpy.types.Constraint.influence bpy.types.FModifier.influence
 #: bpy.types.NlaStrip.influence
@@ -4318,18 +4293,16 @@ msgid "Amount of influence constraint will have on the final solution"
 msgstr "Taux d'influence de la contrainte sur la solution finale"
 
 #: bpy.types.Constraint.error_location
-#, fuzzy
 msgid "Lin error"
-msgstr "Miroir"
+msgstr "Erreur linéaire"
 
 #: bpy.types.Constraint.error_location
 msgid "Amount of residual error in Blender space unit for constraints that work on position"
 msgstr "Montant de l'erreur résiduelle en unités Blender pour les contraintes influant sur la position"
 
 #: bpy.types.Constraint.owner_space
-#, fuzzy
 msgid "Owner Space"
-msgstr "Espace de texture"
+msgstr "Espace propriétaire"
 
 #: bpy.types.Constraint.owner_space
 msgid "Space that owner is evaluated in"
@@ -4338,67 +4311,59 @@ msgstr "L’espace dans lequel le propriétaire est évalué"
 #: bpy.types.Constraint.owner_space, 'WORLD'
 #: bpy.types.Constraint.target_space, bpy.types.DriverTarget.transform_space,
 #: 'WORLD_SPACE'
-#, fuzzy
 msgid "World Space"
-msgstr "Espace des normales"
+msgstr "Espace du monde"
 
 #: bpy.types.Constraint.owner_space, 'WORLD'
-#, fuzzy
 msgid "The constraint is applied relative to the world coordinate system"
-msgstr "Aligner les objets nouvellement créés sur le système de coordonnées du monde"
+msgstr "La contrainte est appliquée relativement au système de coordonnées du monde"
 
 #: bpy.types.Constraint.owner_space, 'POSE' bpy.types.Constraint.target_space,
-#, fuzzy
 msgid "Pose Space"
-msgstr "Nom pose"
+msgstr "Espace de pose"
 
 #: bpy.types.Constraint.owner_space, 'POSE'
 msgid "The constraint is applied in Pose Space, the object transformation is ignored"
-msgstr ""
+msgstr "La contrainte est appliquée en espace de pose, les transformations de l’objet sont ignorées"
 
 #: bpy.types.Constraint.owner_space, 'LOCAL_WITH_PARENT'
 #: bpy.types.Constraint.target_space,
-#, fuzzy
 msgid "Local With Parent"
-msgstr "Avec cibles"
+msgstr "Local avec parent"
 
 #: bpy.types.Constraint.owner_space, 'LOCAL_WITH_PARENT'
 msgid "The constraint is applied relative to the local coordinate system of the object, with the parent transformation added"
-msgstr ""
+msgstr "La contrainte est appliquée relativement au système de coordonnées local de l’objet, avec les transformation du parent comprises"
 
 #: bpy.types.Constraint.owner_space, 'LOCAL'
 #: bpy.types.Constraint.target_space, bpy.types.DriverTarget.transform_space,
 #: 'LOCAL_SPACE'
-#, fuzzy
 msgid "Local Space"
-msgstr "Espace des normales"
+msgstr "Espace local"
 
 #: bpy.types.Constraint.owner_space, 'LOCAL'
 msgid "The constraint is applied relative to the local coordinate sytem of the object"
-msgstr ""
+msgstr "La contrainte est appliquée relativement au système de coordonnées local de l’objet"
 
 #: bpy.types.Constraint.is_proxy_local
-#, fuzzy
 msgid "Proxy Local"
-msgstr "X local"
+msgstr "Local proxy"
 
 #: bpy.types.Constraint.is_proxy_local
 msgid "Constraint was added in this proxy instance (i.e. did not belong to source Armature)"
 msgstr "La contrainte est ajoutée dans l'instance de proxy (n'appartient pas à la source Armature)"
 
 #: bpy.types.Constraint.error_rotation
-#, fuzzy
 msgid "Rot error"
-msgstr "Réflexion Ray"
+msgstr "Erreur de rotation"
 
 #: bpy.types.Constraint.error_rotation
 msgid "Amount of residual error in radiant for constraints that work on orientation"
 msgstr "Taux d'erreur résiduelle en radians pour les contraintes qui fonctionnent sur l'orientation"
 
 #: bpy.types.Constraint.target_space
-#, fuzzy
 msgid "Target Space"
-msgstr "Intervalle cible :"
+msgstr "Espace cible"
 
 #: bpy.types.Constraint.target_space
 msgid "Space that target is evaluated in"
@@ -4406,7 +4371,7 @@ msgstr "Espace dans lequel la cible est évaluée"
 
 #: bpy.types.Constraint.target_space, 'WORLD'
 msgid "The transformation of the target is evaluated relative to the world coordinate system"
-msgstr ""
+msgstr "La transformation de la cible est évaluée relativement au système de coordonnées du monde"
 
 #: bpy.types.Constraint.target_space, 'POSE'
 msgid "The transformation of the target is only evaluated in the Pose Space, the target armature object transformation is ignored"
@@ -4505,7 +4470,6 @@ msgstr "Transformation"
 #: bpy.types.OBJECT_OT_constraint_add_with_targets.type,
 #: bpy.types.POSE_OT_constraint_add.type,
 #: bpy.types.POSE_OT_constraint_add_with_targets.type,
-#, fuzzy
 msgid "Clamp To"
 msgstr "Tronquer à"
 
@@ -4514,7 +4478,6 @@ msgstr "Tronquer à"
 #: bpy.types.OBJECT_OT_constraint_add_with_targets.type,
 #: bpy.types.POSE_OT_constraint_add.type,
 #: bpy.types.POSE_OT_constraint_add_with_targets.type,
-#, fuzzy
 msgid "Damped Track"
 msgstr "Suivi amorti"
 
@@ -4523,7 +4486,6 @@ msgstr "Suivi amorti"
 #: bpy.types.OBJECT_OT_constraint_add_with_targets.type,
 #: bpy.types.POSE_OT_constraint_add.type,
 #: bpy.types.POSE_OT_constraint_add_with_targets.type,
-#, fuzzy
 msgid "Tracking by taking the shortest path"
 msgstr "Suivi (tracking) en prenant le chemin le plus court"
 
@@ -4540,7 +4502,6 @@ msgstr "Cinématique inverse"
 #: bpy.types.OBJECT_OT_constraint_add_with_targets.type,
 #: bpy.types.POSE_OT_constraint_add.type,
 #: bpy.types.POSE_OT_constraint_add_with_targets.type,
-#, fuzzy
 msgid "Locked Track"
 msgstr "Suivi verrouillé"
 
@@ -4549,7 +4510,6 @@ msgstr "Suivi verrouillé"
 #: bpy.types.OBJECT_OT_constraint_add_with_targets.type,
 #: bpy.types.POSE_OT_constraint_add.type,
 #: bpy.types.POSE_OT_constraint_add_with_targets.type,
-#, fuzzy
 msgid "Tracking along a single axis"
 msgstr "Suivi (tracking) le long d’un seul axe"
 
@@ -4558,7 +4518,6 @@ msgstr "Suivi (tracking) le long d’un seul axe"
 #: bpy.types.OBJECT_OT_constraint_add_with_targets.type,
 #: bpy.types.POSE_OT_constraint_add.type,
 #: bpy.types.POSE_OT_constraint_add_with_targets.type,
-#, fuzzy
 msgid "Spline IK"
 msgstr "IK spline"
 
@@ -4575,7 +4534,6 @@ msgstr "Étirer vers"
 #: bpy.types.OBJECT_OT_constraint_add_with_targets.type,
 #: bpy.types.POSE_OT_constraint_add.type,
 #: bpy.types.POSE_OT_constraint_add_with_targets.type,
-#, fuzzy
 msgid "Track To"
 msgstr "Suivi de"
 
@@ -4584,9 +4542,8 @@ msgstr "Suivi de"
 #: bpy.types.OBJECT_OT_constraint_add_with_targets.type,
 #: bpy.types.POSE_OT_constraint_add.type,
 #: bpy.types.POSE_OT_constraint_add_with_targets.type,
-#, fuzzy
 msgid "Legacy tracking constraint prone to twisting artifacts"
-msgstr "Contrainte de suivi (tracking) obsolète, sujette à des artefacts torsion"
+msgstr "Contrainte de suivi (tracking) obsolète, sujette à des artefacts de torsion"
 
 #: bpy.types.Constraint.type, 'CHILD_OF'
 #: bpy.types.OBJECT_OT_constraint_add.type,
@@ -4649,11 +4606,11 @@ msgstr "Contracter/déformer"
 #: bpy.types.Constraint.is_valid bpy.types.FCurve.is_valid
 #: bpy.types.ParticleTarget.is_valid
 msgid "Valid"
-msgstr ""
+msgstr "Valide"
 
 #: bpy.types.Constraint.is_valid
 msgid "Constraint has valid settings and can be evaluated"
-msgstr ""
+msgstr "La contrainte a des réglages valides et peut être évaluée"
 
 #: bpy.types.ConstraintTarget
 #: release/scripts/startup/bl_ui/space_view3d.py:450
@@ -4661,14 +4618,12 @@ msgid "Constraint Target"
 msgstr "Cible de contrainte"
 
 #: bpy.types.ConstraintTarget
-#, fuzzy
 msgid "Target object for multi-target constraints"
-msgstr "Le propriétaire de cette contrainte"
+msgstr "Objet cible, pour les contraintes multi-cibles"
 
 #: bpy.types.ConstraintTarget.subtarget
-#, fuzzy
 msgid "Sub-Target"
-msgstr "Cible"
+msgstr "Sous-cible"
 
 #: bpy.types.ConstraintTarget.target bpy.types.IMPORT_ANIM_OT_bvh.target
 #: bpy.types.OBJECT_OT_convert.target
@@ -4691,63 +4646,55 @@ msgid "Target"
 msgstr "Cible"
 
 #: bpy.types.ConstraintTarget.target bpy.types.ParticleTarget.object
-#, fuzzy
 msgid "Target Object"
-msgstr "Objet parent"
+msgstr "Objet cible"
 
 #: bpy.types.Context
 msgid "Current windowmanager and data context"
-msgstr ""
+msgstr "Gestionnaire de fenêtre et contexte de données courants"
 
 #: bpy.types.Context.area
-#, fuzzy
 msgid "area"
-msgstr "Joindre area"
+msgstr "area"
 
 #: bpy.types.Context.blend_data
 msgid "blend_data"
-msgstr ""
+msgstr "blend_data"
 
 #: bpy.types.Context.mode bpy.types.BRUSH_OT_active_index_set.mode
 msgid "mode"
 msgstr "mode"
 
 #: bpy.types.Context.mode, 'EDIT_MESH'
-#, fuzzy
 msgid "Mesh Edit"
-msgstr "Éditer brosse"
+msgstr "Éditer mesh"
 
 #: bpy.types.Context.mode, 'EDIT_CURVE'
-#, fuzzy
 msgid "Curve Edit"
-msgstr "Éditeur de F-Curves"
+msgstr "Éditer courbe"
 
 #: bpy.types.Context.mode, 'EDIT_SURFACE'
-#, fuzzy
 msgid "Surface Edit"
-msgstr "Surface"
+msgstr "Éditer surface"
 
 #: bpy.types.Context.mode, 'EDIT_TEXT'
 #, fuzzy
 msgid "Edit Edit"
-msgstr "Édition suivant"
+msgstr "Éditer edit"
 
 #: bpy.types.Context.mode, 'EDIT_ARMATURE'
-#, fuzzy
 msgid "Armature Edit"
-msgstr "Armature"
+msgstr "Éditer armature"
 
 #: bpy.types.Context.mode, 'EDIT_METABALL'
-#, fuzzy
 msgid "Metaball Edit"
-msgstr "Métaballe"
+msgstr "Éditer métaballe"
 
 #: bpy.types.Context.mode, 'EDIT_LATTICE'
 msgid "Lattice Edit"
 msgstr "Édition de lattice"
 
 #: bpy.types.Context.mode, 'POSE'
-#, fuzzy
 msgid "Pose "
 msgstr "Pose"
 
@@ -4768,76 +4715,65 @@ msgid "Particle"
 msgstr "Particules"
 
 #: bpy.types.Context.region
-#, fuzzy
 msgid "region"
-msgstr "Région"
+msgstr "region"
 
 #: bpy.types.Context.region_data
-#, fuzzy
 msgid "region_data"
-msgstr "Données de la région de vue 3D"
+msgstr "region_data"
 
 #: bpy.types.Context.scene
-#, fuzzy
 msgid "scene"
-msgstr "Scène"
+msgstr "scene"
 
 #: bpy.types.Context.screen
-#, fuzzy
 msgid "screen"
-msgstr "Écran"
+msgstr "screen"
 
 #: bpy.types.Context.space_data
-#, fuzzy
 msgid "space_data"
-msgstr "Données de l’espace d’infos"
+msgstr "space_data"
 
 #: bpy.types.Context.tool_settings
-#, fuzzy
 msgid "tool_settings"
-msgstr "Réglages d’outil"
+msgstr "tool_settings"
 
 #: bpy.types.Context.user_preferences
-#, fuzzy
 msgid "user_preferences"
-msgstr "Préférences utilisateur"
+msgstr "user_preferences"
 
 #: bpy.types.Context.window
-#, fuzzy
 msgid "window"
-msgstr "Fenêtre"
+msgstr "window"
 
 #: bpy.types.Context.window_manager
-#, fuzzy
 msgid "window_manager"
-msgstr "Gestionnaire de fenêtre"
+msgstr "window_manager"
 
 #: bpy.types.Controller
 msgid "Game engine logic brick to process events, connecting sensors to actuators"
-msgstr ""
+msgstr "Brique logique du moteur de jeu pour traiter les événements, connecte les senseurs aux actuateurs"
 
 #: bpy.types.Controller.states
 msgid "Set Controller state index (1 to 30)"
 msgstr "Régler l'index d'état du contrôleur (de 1 à 30)"
 
 #: bpy.types.Controller.show_expanded
-#, fuzzy
 msgid "Set controller expanded in the user interface"
-msgstr "Montrer les déroulées dans l’interface utilisateur"
+msgstr "Définir le contrôleur comme déployé dans l’interface"
 
 #: bpy.types.Controller.use_priority
 msgid "Priority"
-msgstr ""
+msgstr "Priorité"
 
 #: bpy.types.Controller.use_priority
 msgid "Mark controller for execution before all non-marked controllers (good for startup scripts)"
-msgstr ""
+msgstr "Marquer le contrôleur pour une exécution avant tous les contrôleurs non-marqués (utile pour les scripts de lancement)"
 
 #: bpy.types.Controller.type, 'LOGIC_AND'
 #: bpy.types.LOGIC_OT_controller_add.type,
-#, fuzzy
 msgid "And"
-msgstr "Fin"
+msgstr "Et"
 
 #: bpy.types.Controller.type, 'LOGIC_AND'
 #: bpy.types.LOGIC_OT_controller_add.type,
@@ -4847,36 +4783,32 @@ msgstr "ET logique"
 #: bpy.types.Controller.type, 'LOGIC_OR'
 #: bpy.types.LOGIC_OT_controller_add.type,
 msgid "Or"
-msgstr ""
+msgstr "Ou"
 
 #: bpy.types.Controller.type, 'LOGIC_OR'
 #: bpy.types.LOGIC_OT_controller_add.type,
-#, fuzzy
 msgid "Logic Or"
-msgstr "Éditeur de logique"
+msgstr "Ou logique"
 
 #: bpy.types.Controller.type, 'LOGIC_NAND'
 #: bpy.types.LOGIC_OT_controller_add.type,
 msgid "Nand"
-msgstr ""
+msgstr "Non Et"
 
 #: bpy.types.Controller.type, 'LOGIC_NAND'
 #: bpy.types.LOGIC_OT_controller_add.type,
-#, fuzzy
 msgid "Logic Nand"
-msgstr "Éditeur de logique"
+msgstr "Non Et logique"
 
 #: bpy.types.Controller.type, 'LOGIC_NOR'
 #: bpy.types.LOGIC_OT_controller_add.type,
-#, fuzzy
 msgid "Nor"
-msgstr "Nord"
+msgstr "Non Ou"
 
 #: bpy.types.Controller.type, 'LOGIC_NOR'
 #: bpy.types.LOGIC_OT_controller_add.type,
-#, fuzzy
 msgid "Logic Nor"
-msgstr "Éditeur de logique"
+msgstr "Non Ou logique"
 
 #: bpy.types.Controller.type, 'LOGIC_XOR'
 #: bpy.types.LOGIC_OT_controller_add.type,
@@ -4885,26 +4817,23 @@ msgstr "Xor (OU exclusif)"
 
 #: bpy.types.Controller.type, 'LOGIC_XOR'
 #: bpy.types.LOGIC_OT_controller_add.type,
-#, fuzzy
 msgid "Logic Xor"
-msgstr "Éditeur de logique"
+msgstr "Ou exclusif logique"
 
 #: bpy.types.Controller.type, 'LOGIC_XNOR'
 #: bpy.types.LOGIC_OT_controller_add.type,
 msgid "Xnor"
-msgstr ""
+msgstr "Non Ou exclusif"
 
 #: bpy.types.Controller.type, 'LOGIC_XNOR'
 #: bpy.types.LOGIC_OT_controller_add.type,
-#, fuzzy
 msgid "Logic Xnor"
-msgstr "Éditeur de logique"
+msgstr "Non Ou exclusif logique"
 
 #: bpy.types.Controller.type, 'EXPRESSION' bpy.types.Driver.expression
 #: bpy.types.LOGIC_OT_controller_add.type,
-#, fuzzy
 msgid "Expression"
-msgstr "Compression"
+msgstr "Expression"
 
 #: bpy.types.Controller.type, 'PYTHON' bpy.types.LOGIC_OT_controller_add.type,
 msgid "Python"
@@ -4912,11 +4841,11 @@ msgstr "Python"
 
 #: bpy.types.CurveMap
 msgid "Curve in a curve mapping"
-msgstr ""
+msgstr "Courbe dans une conversion par courbe"
 
 #: bpy.types.CurveMap.extend
 msgid "Extrapolate the curve or extend it horizontally"
-msgstr ""
+msgstr "Extrapoler la courbe ou l’étendre horizontalement"
 
 #: bpy.types.CurveMap.extend, 'HORIZONTAL'
 #: bpy.types.UserPreferencesInput.view_zoom_axis,
@@ -4925,15 +4854,13 @@ msgid "Horizontal"
 msgstr "Horizontal"
 
 #: bpy.types.CurveMap.extend, 'EXTRAPOLATED'
-#, fuzzy
 msgid "Extrapolated"
-msgstr "Extrapoler"
+msgstr "Extrapolée"
 
 #: bpy.types.CurveMap.points bpy.types.Spline.points
 #: bpy.types.ThemeFontStyle.points
-#, fuzzy
 msgid "Points"
-msgstr "Point"
+msgstr "Points"
 
 #: bpy.types.CurveMapPoint
 msgid "Point of a curve used for a curve mapping"
@@ -4947,7 +4874,7 @@ msgstr "Type de poignée"
 
 #: bpy.types.CurveMapPoint.handle_type
 msgid "Curve interpolation at this point: Bezier or vector"
-msgstr ""
+msgstr "Interpolation de la courbe à ce point : Bézier ou vecteur"
 
 #: bpy.types.CurveMapPoint.location bpy.types.FieldSettings.apply_to_location
 #: bpy.types.LatticePoint.co bpy.types.MeshSticky.co bpy.types.MeshVertex.co
@@ -5005,27 +4932,24 @@ msgid "Location"
 msgstr "Position"
 
 #: bpy.types.CurveMapPoint.location
-#, fuzzy
 msgid "X/Y coordinates of the curve point"
-msgstr "Utiliser les coordonnées UV comme coordonnées de texture"
+msgstr "Coordonnées XY du point de la courbe"
 
 #: bpy.types.CurveMapPoint.select
-#, fuzzy
 msgid "Selection state of the curve point"
-msgstr "Utiliser la sélection en tant que point pivot"
+msgstr "État de sélection du point de la courbe"
 
 #: bpy.types.CurveMapping
 msgid "Curve mapping to map color, vector and scalar values to other values using a user defined curve"
-msgstr ""
+msgstr "Conversion par courbe pour convertir des valeurs couleur, vecteur et scalaire vers d’autres valeurs, avec une courbe définie par l’utilisateur"
 
 #: bpy.types.CurveMapping.black_level
-#, fuzzy
 msgid "Black Level"
-msgstr "Niveau"
+msgstr "Niveau de noir"
 
 #: bpy.types.CurveMapping.black_level
 msgid "For RGB curves, the color that black is mapped to"
-msgstr ""
+msgstr "Pour les courbe RGB, la couleur vers laquelle est converti le noir"
 
 #: bpy.types.CurveMapping.use_clip bpy.types.RegionView3D.use_box_clip
 #: bpy.types.VoxelData.extension, 'CLIP'
@@ -5034,67 +4958,57 @@ msgstr "Tronquer"
 
 #: bpy.types.CurveMapping.use_clip
 msgid "Force the curve view to fit a defined boundary"
-msgstr ""
+msgstr "Forcer la vue de courbe à se conformer à des limites définies"
 
 #: bpy.types.CurveMapping.clip_max_x
-#, fuzzy
 msgid "Clip Max X"
-msgstr "Max X "
+msgstr "Max X troncature"
 
 #: bpy.types.CurveMapping.clip_max_y
-#, fuzzy
 msgid "Clip Max Y"
-msgstr "Max Y "
+msgstr "Max Y troncature"
 
 #: bpy.types.CurveMapping.clip_min_x
-#, fuzzy
 msgid "Clip Min X"
-msgstr "Fin troncature"
+msgstr "Min X troncature"
 
 #: bpy.types.CurveMapping.clip_min_y
-#, fuzzy
 msgid "Clip Min Y"
-msgstr "Fin troncature"
+msgstr "Min Y troncature"
 
 #: bpy.types.CurveMapping.white_level
-#, fuzzy
 msgid "White Level"
-msgstr "Niveau"
+msgstr "Niveau de blanc"
 
 #: bpy.types.CurveMapping.white_level
 msgid "For RGB curves, the color that white is mapped to"
-msgstr ""
+msgstr "Pour les courbes RGB, la couleur vers laquelle est converti le blanc"
 
 #: bpy.types.CurveSplines
-#, fuzzy
 msgid "Curve Splines"
-msgstr "Spline active"
+msgstr "Splines de courbe"
 
 #: bpy.types.CurveSplines
-#, fuzzy
 msgid "Collection of curve splines"
-msgstr "Collection d’emplacements de texture"
+msgstr "Collection de splines de courbe"
 
 #: bpy.types.CurveSplines.active
 msgid "Active Spline"
 msgstr "Spline active"
 
 #: bpy.types.CurveSplines.active
-#, fuzzy
 msgid "Active curve spline"
-msgstr "Spline active"
+msgstr "Spline de courbe active"
 
 #: bpy.types.DopeSheet
 msgid "Settings for filtering the channels shown in Animation Editors"
 msgstr "Réglages de filtrage des canaux montrés dans les éditeurs d’animation"
 
 #: bpy.types.DopeSheet.show_expanded_summary
-#, fuzzy
 msgid "Collapse Summary"
 msgstr "Refermer résumé"
 
 #: bpy.types.DopeSheet.show_expanded_summary
-#, fuzzy
 msgid "Collapse summary when shown, so all other channels get hidden (DopeSheet Editors Only)"
 msgstr "Refermer le résumé quand il est montré, de façon que tous les autres canaux soient cachés (éditeur DopeSheet uniquement)"
 
@@ -5203,21 +5117,18 @@ msgid "Include visualization of ShapeKey related Animation data"
 msgstr "Inclure la visualisation des données d’animation relatives aux clés de forme"
 
 #: bpy.types.DopeSheet.show_speakers
-#, fuzzy
 msgid "Display Speaker"
-msgstr "Afficher clés de forme"
+msgstr "Afficher haut-parleurs"
 
 #: bpy.types.DopeSheet.show_speakers
-#, fuzzy
 msgid "Include visualization of Speaker related Animation data"
-msgstr "Inclure la visualisation des données d’animation relatives à la scène"
+msgstr "Inclure la visualisation des données d’animation relatives aux haut-parleurs"
 
 #: bpy.types.DopeSheet.show_summary
 msgid "Display Summary"
 msgstr "Afficher résumé"
 
 #: bpy.types.DopeSheet.show_summary
-#, fuzzy
 msgid "Display an additional 'summary' line (DopeSheet Editors only)"
 msgstr "Afficher une ligne de “résumé” supplémentaire (éditeur DopeSheet uniquement)"
 
@@ -5250,7 +5161,6 @@ msgid "F-Curve Name Filter"
 msgstr "Filtre de nom de F-Curve"
 
 #: bpy.types.DopeSheet.filter_fcurve_name
-#, fuzzy
 msgid "F-Curve live filtering string"
 msgstr "Chaîne de filtrage interactif de F-Curve"
 
@@ -5267,9 +5177,8 @@ msgid "Include Missing NLA"
 msgstr "Inclure NLA manquant"
 
 #: bpy.types.DopeSheet.show_missing_nla
-#, fuzzy
 msgid "Include Animation Data blocks with no NLA data (NLA Editor only)"
-msgstr "Inclure les blocs de données d’animation dépourvus de données NLA (éditeur NLE uniquement)"
+msgstr "Inclure les blocs de données animation dépourvus de données NLA (éditeur NLA uniquement)"
 
 #: bpy.types.DopeSheet.show_only_matching_fcurves
 msgid "Only Matching F-Curves"
@@ -5296,9 +5205,8 @@ msgid "Only include channels relating to selected objects and data"
 msgstr "N’inclure que les canaux relatifs aux objets et données sélectionnés"
 
 #: bpy.types.DopeSheet.show_datablock_filters
-#, fuzzy
 msgid "Show Datablock Filters"
-msgstr "Blocs de données"
+msgstr "Montrer filtres de blocs de données"
 
 #: bpy.types.DopeSheet.show_datablock_filters
 msgid "Show options for whether channels related to certain types of data are included"
@@ -5318,80 +5226,69 @@ msgid "Driver for the value of a setting based on an external value"
 msgstr "Contrôleur pour la valeur d’un réglage basées sur une autre valeur externe"
 
 #: bpy.types.Driver.expression
-#, fuzzy
 msgid "Expression to use for Scripted Expression"
-msgstr "Moteur à utiliser pour le rendu"
+msgstr "Expression à utiliser pour Expression scriptée"
 
 #: bpy.types.Driver.is_valid bpy.types.FModifier.type, 'NULL'
 #: bpy.types.GRAPH_OT_fmodifier_add.type, bpy.types.NLA_OT_fmodifier_add.type,
-#, fuzzy
 msgid "Invalid"
-msgstr "Position"
+msgstr "Invalide"
 
 #: bpy.types.Driver.is_valid
 msgid "Driver could not be evaluated in past, so should be skipped"
-msgstr ""
+msgstr "Le contrôleur n’a pu être évalué précédemment, et devrait donc être ignoré"
 
 #: bpy.types.Driver.show_debug_info
-#, fuzzy
 msgid "Show Debug Info"
-msgstr "Montrer debug"
+msgstr "Montrer info de debugage"
 
 #: bpy.types.Driver.show_debug_info
 msgid "Show intermediate values for the driver calculations to allow debugging of drivers"
-msgstr ""
+msgstr "Montrer les valeurs intermédiaires des calculs du contrôleur, pour permettre le débuggage des contrôleurs"
 
 #: bpy.types.Driver.type
-#, fuzzy
 msgid "Driver type"
-msgstr "Contrôleurs"
+msgstr "Type de contrôleur"
 
 #: bpy.types.Driver.type, 'AVERAGE'
-#, fuzzy
 msgid "Averaged Value"
-msgstr "Échelle moyenne des Îles"
+msgstr "Valeur moyenne"
 
 #: bpy.types.Driver.type, 'SUM'
-#, fuzzy
 msgid "Sum Values"
-msgstr "Valeurs"
+msgstr "Additionner valeurs"
 
 #: bpy.types.Driver.type, 'SCRIPTED'
 msgid "Scripted Expression"
-msgstr ""
+msgstr "Expression scriptée"
 
 #: bpy.types.Driver.type, 'MIN' bpy.types.FModifierEnvelopeControlPoint.min
-#, fuzzy
 msgid "Minimum Value"
-msgstr "Taille minimum"
+msgstr "Valeur minimum"
 
 #: bpy.types.Driver.type, 'MAX' bpy.types.FModifierEnvelopeControlPoint.max
-#, fuzzy
 msgid "Maximum Value"
-msgstr "Maximum"
+msgstr "Valeur maximum"
 
 #: bpy.types.Driver.variables
-#, fuzzy
 msgid "Variables"
-msgstr "Désactiver"
+msgstr "Variables"
 
 #: bpy.types.Driver.variables
 msgid "Properties acting as inputs for this driver"
-msgstr ""
+msgstr "Propriétés servant d’entrées pour le contrôleur"
 
 #: bpy.types.DriverTarget
-#, fuzzy
 msgid "Driver Target"
-msgstr "Tableau de cible :"
+msgstr "Cible du contrôleur"
 
 #: bpy.types.DriverTarget
 msgid "Source of input values for driver variables"
-msgstr ""
+msgstr "Source de valeurs d’entrée pour les variables du contrôleur"
 
 #: bpy.types.DriverTarget.bone_target
-#, fuzzy
 msgid "Bone Name"
-msgstr "Nom pose"
+msgstr "Nom d’os"
 
 #: bpy.types.DriverTarget.bone_target
 msgid "Name of PoseBone to use as target"
@@ -5408,16 +5305,15 @@ msgstr "Chemin ARN (depuis le bloc ID) pour la propriété utilisée"
 
 #: bpy.types.DriverTarget.id bpy.types.SpaceNodeEditor.id
 msgid "ID"
-msgstr ""
+msgstr "ID"
 
 #: bpy.types.DriverTarget.id
 msgid "ID-block that the specific property used can be found from (id_type property must be set first)"
-msgstr ""
+msgstr "Bloc-ID dans lequel la propriété utilisée peut être trouvée (la propriété id_type doit être définie au préalable)"
 
 #: bpy.types.DriverTarget.id_type bpy.types.KeyingSetPath.id_type
-#, fuzzy
 msgid "ID Type"
-msgstr "Type de dôme"
+msgstr "Type d’ID"
 
 #: bpy.types.DriverTarget.id_type bpy.types.KeyingSetPath.id_type
 msgid "Type of ID-block that can be used"
@@ -5521,9 +5417,8 @@ msgstr "Gestionnaire de fenêtre"
 
 #: bpy.types.DriverTarget.transform_space
 #: bpy.types.DriverTarget.transform_space, 'TRANSFORM_SPACE'
-#, fuzzy
 msgid "Transform Space"
-msgstr "Transformer marqueurs"
+msgstr "Espace de transformation"
 
 #: bpy.types.DriverTarget.transform_space
 msgid "Space in which transforms are used"
@@ -5531,11 +5426,11 @@ msgstr "Espace dans lequel les transformation sont effectuées"
 
 #: bpy.types.DriverTarget.transform_space, 'WORLD_SPACE'
 msgid "Transforms include effects of parenting/restpose and constraints"
-msgstr ""
+msgstr "Les transformations incluent les effets des apparentement, pose de repos et contraintes"
 
 #: bpy.types.DriverTarget.transform_space, 'TRANSFORM_SPACE'
 msgid "Transforms don't include parenting/restpose or constraints"
-msgstr ""
+msgstr "Les transformations n’incluent pas les apparentement, pose de repos et contraintes"
 
 #: bpy.types.DriverTarget.transform_space, 'LOCAL_SPACE'
 msgid "Transforms include effects of constraints but not parenting/restpose"
@@ -5543,96 +5438,83 @@ msgstr "Les transformations incluent les effets des contraintes mais pas la pare
 
 #: bpy.types.DriverTarget.transform_type bpy.types.DriverVariable.type
 msgid "Driver variable type"
-msgstr ""
+msgstr "Type de variable de contrôleur"
 
 #: bpy.types.DriverTarget.transform_type, 'LOC_X'
-#, fuzzy
 msgid "X Location"
-msgstr "Position"
+msgstr "Position X"
 
 #: bpy.types.DriverTarget.transform_type, 'LOC_Y'
-#, fuzzy
 msgid "Y Location"
-msgstr "Position"
+msgstr "Position Y"
 
 #: bpy.types.DriverTarget.transform_type, 'LOC_Z'
 msgid "Z Location"
 msgstr "Position Z"
 
 #: bpy.types.DriverTarget.transform_type, 'ROT_X'
-#, fuzzy
 msgid "X Rotation"
-msgstr "Rotation"
+msgstr "Rotation X"
 
 #: bpy.types.DriverTarget.transform_type, 'ROT_Y'
-#, fuzzy
 msgid "Y Rotation"
-msgstr "Rotation"
+msgstr "Rotation Y"
 
 #: bpy.types.DriverTarget.transform_type, 'ROT_Z'
-#, fuzzy
 msgid "Z Rotation"
-msgstr "Rotation"
+msgstr "Rotation Z"
 
 #: bpy.types.DriverTarget.transform_type, 'SCALE_X'
-#, fuzzy
 msgid "X Scale"
-msgstr "Taille/échelle"
+msgstr "Taille/échelle X"
 
 #: bpy.types.DriverTarget.transform_type, 'SCALE_Y'
-#, fuzzy
 msgid "Y Scale"
-msgstr "Taille/échelle"
+msgstr "Taille/échelle Y"
 
 #: bpy.types.DriverTarget.transform_type, 'SCALE_Z'
-#, fuzzy
 msgid "Z Scale"
-msgstr "Taille/échelle"
+msgstr "Taille/échelle Z"
 
 #: bpy.types.DriverVariable
 msgid "Driver Variable"
-msgstr ""
+msgstr "Variable de contrôleur"
 
 #: bpy.types.DriverVariable
 msgid "Variable from some source/target for driver relationship"
 msgstr "Variable d’une source/cible pour la relation de contrôleur"
 
 #: bpy.types.DriverVariable.name
-msgid "Name to use in scripted expressions/functions. (No spaces or dots are allowed. Also, must not start with a symbol or digit)"
-msgstr ""
+msgid "Name to use in scripted expressions/functions (no spaces or dots are allowed, and must start with a letter)"
+msgstr "Nom à utiliser dans les expressions/fonctions scriptées (ni espaces ni points ne sont autorisés, et doit commencer par une lettre)"
 
 #: bpy.types.DriverVariable.targets bpy.types.ParticleSystem.targets
-#, fuzzy
 msgid "Targets"
-msgstr "Cible"
+msgstr "Cibles"
 
 #: bpy.types.DriverVariable.targets
 msgid "Sources of input data for evaluating this variable"
-msgstr ""
+msgstr "Sources de données d’entrée pour évaluer cette variable"
 
 #: bpy.types.DriverVariable.type, 'SINGLE_PROP'
-#, fuzzy
 msgid "Single Property"
-msgstr "Éditer propriété"
+msgstr "Propriété unique"
 
 #: bpy.types.DriverVariable.type, 'SINGLE_PROP'
 msgid "Use the value from some RNA property (Default)"
-msgstr ""
+msgstr "Utiliser la valeur d’une propriété RNA (par défaut)"
 
 #: bpy.types.DriverVariable.type, 'TRANSFORMS'
-#, fuzzy
 msgid "Transform Channel"
-msgstr "Différence de transformation"
+msgstr "Canal de transformation"
 
 #: bpy.types.DriverVariable.type, 'TRANSFORMS'
-#, fuzzy
 msgid "Final transformation value of object or bone"
-msgstr "Aligner les axes de transformation avec les axes de l’espace du monde"
+msgstr "Valeur de transformation finale de l’objet ou de l’os"
 
 #: bpy.types.DriverVariable.type, 'ROTATION_DIFF'
-#, fuzzy
 msgid "Rotational Difference"
-msgstr "Différence"
+msgstr "Différence de rotation"
 
 #: bpy.types.DriverVariable.type, 'ROTATION_DIFF'
 msgid "Use the angle between two bones"
@@ -5662,104 +5544,88 @@ msgid "Distance"
 msgstr "Distance"
 
 #: bpy.types.DriverVariable.type, 'LOC_DIFF'
-#, fuzzy
 msgid "Distance between two bones or objects"
-msgstr "Espacement entre images clé"
+msgstr "Distance entre deux os ou objets"
 
 #: bpy.types.DupliObject
-#, fuzzy
 msgid "Object Duplicate"
-msgstr "Objet duplis"
+msgstr "Copie d’objet"
 
 #: bpy.types.DupliObject
-#, fuzzy
 msgid "An object duplicate"
-msgstr "Objet duplis"
+msgstr "Une copie d’objet"
 
 #: bpy.types.DupliObject.object
-#, fuzzy
 msgid "Object being duplicated"
-msgstr "Objet duplis"
+msgstr "Objet dupliqué"
 
 #: bpy.types.DupliObject.matrix
 msgid "Object Duplicate Matrix"
 msgstr "Matrice de duplication d’objet"
 
 #: bpy.types.DupliObject.matrix
-#, fuzzy
 msgid "Object duplicate transformation matrix"
-msgstr "Matrice de transformation relative au parent"
+msgstr "Matrice de transformation de la copie de l’objet"
 
 #: bpy.types.DupliObject.matrix_original
-#, fuzzy
 msgid "Object Matrix"
-msgstr "Données objet"
+msgstr "Matrice de l’objet"
 
 #: bpy.types.DupliObject.matrix_original
 msgid "The original matrix of this object before it was duplicated"
-msgstr ""
+msgstr "La matrice originale de cet objet, avant qu’il ne soit dupliqué"
 
 #: bpy.types.EditBone
-#, fuzzy
 msgid "Edit Bone"
-msgstr "Mode Edit"
+msgstr "Os Edit"
 
 #: bpy.types.EditBone
 msgid "Editmode bone in an Armature datablock"
-msgstr ""
+msgstr "Os en mode Edit, dans un bloc de données armature"
 
 #: bpy.types.EditBone.matrix
-#, fuzzy
 msgid "Editbone Matrix"
-msgstr "Matrice de vue"
+msgstr "Matrice d’os Edit"
 
 #: bpy.types.EditBone.matrix
 msgid "Read-only matrix calculated from the roll (armature space)"
 msgstr "Lire seulement la matrice calculée sur le roulis (espace armature)"
 
 #: bpy.types.EditBone.head
-#, fuzzy
 msgid "Location of head end of the bone"
-msgstr "Position de l’objet"
+msgstr "Position de l’extrémité tête de l’os"
 
 #: bpy.types.EditBone.select_head
-#, fuzzy
 msgid "Head Select"
-msgstr "Cacher Sélection"
+msgstr "Sélectionner tête"
 
 #: bpy.types.EditBone.hide
-#, fuzzy
 msgid "Bone is not visible when in Edit Mode"
-msgstr "Marquer les os sélectionnés comme invisibles en mode Edit"
+msgstr "L’os est invisible en mode Edit"
 
 #: bpy.types.EditBone.lock
 msgid "Bone is not able to be transformed when in Edit Mode"
 msgstr "L'os ne peut pas être transformé en mode Edit"
 
 #: bpy.types.EditBone.parent
-#, fuzzy
 msgid "Parent edit bone (in same Armature)"
-msgstr "Isoler les os sélectionnés dans une armature séparée"
+msgstr "Os Edit parent (dans la même armature)"
 
 #: bpy.types.EditBone.roll bpy.types.FieldSettings.guide_kink_type, 'ROLL'
-#, fuzzy
 msgid "Roll"
-msgstr "Roulis :"
+msgstr "Roulis"
 
 #: bpy.types.EditBone.roll
-#, fuzzy
 msgid "Bone rotation around head-tail axis"
-msgstr "Rotation maximale autour de chaque axe"
+msgstr "Rotation de l’os autour de l’axe tête-queue"
 
 #: bpy.types.EditBone.select_tail
-#, fuzzy
 msgid "Tail Select"
-msgstr "Cacher Sélection"
+msgstr "Sélectionner queue"
 
 #: bpy.types.EffectorWeights
-#, fuzzy
 msgid "Effector weights for physics simulation"
-msgstr "Réglages pour la simulation de corps souple"
+msgstr "Poids de l’effecteur pour les simulations physiques"
 
 #: bpy.types.EffectorWeights.all bpy.types.GameObjectSettings.use_all_states
 #: bpy.types.ANIM_OT_channels_collapse.all
@@ -5784,7 +5650,7 @@ msgstr "Tout"
 
 #: bpy.types.EffectorWeights.all
 msgid "All effector's weight"
-msgstr ""
+msgstr "Tout le poids de l’effecteur"
 
 #: bpy.types.EffectorWeights.boid bpy.types.FieldSettings.type, 'BOID'
 #: bpy.types.OBJECT_OT_effector_add.type,
@@ -5819,20 +5685,17 @@ msgid "Drag"
 msgstr "Traction"
 
 #: bpy.types.EffectorWeights.drag
-#, fuzzy
 msgid "Drag effector weight"
-msgstr "Dessiner poids de biseau"
+msgstr "Poids de l’effecteur Attraction"
 
 #: bpy.types.EffectorWeights.group
 #: bpy.types.SmokeDomainSettings.effector_group
-#, fuzzy
 msgid "Effector Group"
-msgstr "Bande d’effet"
+msgstr "Groupe d’effecteurs"
 
 #: bpy.types.EffectorWeights.group
-#, fuzzy
 msgid "Limit effectors to this Group"
-msgstr "Limiter l’éclairage aux lampes de ce groupe"
+msgstr "Limiter l’effecteur à ce groupe"
 
 #: bpy.types.EffectorWeights.force bpy.types.FieldSettings.type, 'FORCE'
 #: bpy.types.MaterialPhysics.fh_force bpy.types.OBJECT_OT_effector_add.type,
@@ -5845,9 +5708,8 @@ msgid "Force effector weight"
 msgstr "Poids de l’effecteur de force"
 
 #: bpy.types.EffectorWeights.gravity
-#, fuzzy
 msgid "Global gravity weight"
-msgstr "Gravité globale"
+msgstr "Poids de la gravité globale"
 
 #: bpy.types.EffectorWeights.harmonic bpy.types.FieldSettings.type, 'HARMONIC'
 #: bpy.types.OBJECT_OT_effector_add.type,
@@ -5856,7 +5718,7 @@ msgstr "Harmonique"
 
 #: bpy.types.EffectorWeights.harmonic
 msgid "Harmonic effector weight"
-msgstr ""
+msgstr "Poids de l’effecteur Harmonique"
 
 #: bpy.types.EffectorWeights.lennardjones bpy.types.FieldSettings.type,
 #: 'LENNARDJ' bpy.types.OBJECT_OT_effector_add.type,
@@ -5864,9 +5726,8 @@ msgid "Lennard-Jones"
 msgstr "Lennard-Jones"
 
 #: bpy.types.EffectorWeights.lennardjones
-#, fuzzy
 msgid "Lennard-Jones effector weight"
-msgstr "Lennard-Jones"
+msgstr "Poids de l’effecteur Lennard-Jones"
 
 #: bpy.types.EffectorWeights.magnetic bpy.types.FieldSettings.type, 'MAGNET'
 #: bpy.types.OBJECT_OT_effector_add.type,
@@ -5875,7 +5736,7 @@ msgstr "Magnétique"
 
 #: bpy.types.EffectorWeights.magnetic
 msgid "Magnetic effector weight"
-msgstr ""
+msgstr "Poids de l’effecteur Magnétique"
 
 #: bpy.types.EffectorWeights.texture
 msgid "Texture effector weight"
@@ -5889,7 +5750,7 @@ msgstr "Turbulence"
 
 #: bpy.types.EffectorWeights.turbulence
 msgid "Turbulence effector weight"
-msgstr ""
+msgstr "Poids de l’effecteur Turbulence"
 
 #: bpy.types.EffectorWeights.apply_to_hair_growing
 msgid "Use For Growing Hair"
@@ -5897,7 +5758,7 @@ msgstr "Utiliser pour allonger les cheveux"
 
 #: bpy.types.EffectorWeights.apply_to_hair_growing
 msgid "Use force fields when growing hair"
-msgstr ""
+msgstr "Utiliser les champs de force pour les cheveux"
 
 #: bpy.types.EffectorWeights.vortex bpy.types.FieldSettings.type, 'VORTEX'
 #: bpy.types.OBJECT_OT_effector_add.type,
@@ -5905,9 +5766,8 @@ msgid "Vortex"
 msgstr "Vortex"
 
 #: bpy.types.EffectorWeights.vortex
-#, fuzzy
 msgid "Vortex effector weight"
-msgstr "Lumière de couleur de vertices"
+msgstr "Poids de l’effecteur Vortex"
 
 #: bpy.types.EffectorWeights.wind bpy.types.FieldSettings.type, 'WIND'
 #: bpy.types.OBJECT_OT_effector_add.type,
@@ -5916,11 +5776,11 @@ msgstr "Vent"
 
 #: bpy.types.EffectorWeights.wind
 msgid "Wind effector weight"
-msgstr ""
+msgstr "Poids de l’effecteur Vent"
 
 #: bpy.types.EnumPropertyItem
 msgid "Enum Item Definition"
-msgstr ""
+msgstr "Définition d’un élément d’enum"
 
 #: bpy.types.EnumPropertyItem
 msgid "Definition of a choice in an RNA enum property"
@@ -5928,32 +5788,29 @@ msgstr "Définition d'un choix dans la propriété enum ARN"
 
 #: bpy.types.EnumPropertyItem.name bpy.types.Property.name
 #: bpy.types.Struct.name
-#, fuzzy
 msgid "Human readable name"
-msgstr "Nom du bloc de données image"
+msgstr "Nom lisible pour un être humain"
 
 #: bpy.types.EnumPropertyItem.description bpy.types.Function.description
 #: bpy.types.Property.description bpy.types.Struct.description
-#, fuzzy
 msgid "Description"
-msgstr "Description :"
+msgstr "Description"
 
 #: bpy.types.EnumPropertyItem.description
 msgid "Description of the item's purpose"
-msgstr ""
+msgstr "Description du but de l’élément"
 
 #: bpy.types.EnumPropertyItem.identifier bpy.types.Function.identifier
 #: bpy.types.KeyMapItem.idname bpy.types.Property.identifier
 #: bpy.types.Struct.identifier
-#, fuzzy
 msgid "Identifier"
-msgstr "Modificateurs"
+msgstr "Identifiant"
 
 #: bpy.types.EnumPropertyItem.identifier bpy.types.Function.identifier
 #: bpy.types.Property.identifier bpy.types.PropertyGroup.name
 #: bpy.types.Struct.identifier
 msgid "Unique name used in the code and scripting"
-msgstr ""
+msgstr "Nom unique utilisé dans le code et le scripting"
 
 #: bpy.types.EnumPropertyItem.value bpy.types.Event.value
 #: bpy.types.KeyMapItem.value bpy.types.LampSkySettings.sky_blend_type,
@@ -5984,20 +5841,18 @@ msgstr "Carte d'environnement créée par le moteur de rendu et stockée pour le
 
 #: bpy.types.EnvironmentMap.clip_end bpy.types.SpaceView3D.clip_end
 #: release/scripts/startup/bl_ui/space_view3d.py:846
-#, fuzzy
 msgid "Clip End"
-msgstr "Fin troncature"
+msgstr "Troncature fin"
 
 #: bpy.types.EnvironmentMap.clip_end
 msgid "Objects further than this are not visible to map"
-msgstr ""
+msgstr "Les objets plus éloignés sont invisibles à la carte"
 
 #: bpy.types.EnvironmentMap.clip_start bpy.types.SpaceView3D.clip_start
 #: release/scripts/startup/bl_ui/properties_data_lamp.py:297
 #: release/scripts/startup/bl_ui/space_view3d.py:841
-#, fuzzy
 msgid "Clip Start"
-msgstr "Début troncature"
+msgstr "Troncature début"
 
 #: bpy.types.EnvironmentMap.clip_start
 msgid "Objects nearer than this are not visible to map"
@@ -6017,14 +5872,12 @@ msgid "Depth"
 msgstr "Profondeur"
 
 #: bpy.types.EnvironmentMap.depth
-#, fuzzy
 msgid "Number of times a map will be rendered recursively (mirror effects)"
 msgstr "Nombre de fois qu’une carte sera rendue récursivement (effets de miroir)"
 
 #: bpy.types.EnvironmentMap.layers_ignore
-#, fuzzy
 msgid "Ignore Layers"
-msgstr "Calques de rendu"
+msgstr "Ignorer calques"
 
 #: bpy.types.EnvironmentMap.layers_ignore
 msgid "Hide objects on these layers when generating the Environment Map"
@@ -6041,9 +5894,8 @@ msgid "Cube"
 msgstr "Cube"
 
 #: bpy.types.EnvironmentMap.mapping, 'CUBE'
-#, fuzzy
 msgid "Use environment map with six cube sides"
-msgstr "Calculer les cartes d’environnement pendant le rendu"
+msgstr "Utiliser une carte d’environnement avec les six côtés d’un cube"
 
 #: bpy.types.EnvironmentMap.mapping, 'PLANE' bpy.types.FieldSettings.shape,
 #: bpy.types.MetaElement.type, bpy.types.OBJECT_OT_metaball_add.type,
@@ -6053,7 +5905,7 @@ msgstr "Plan"
 
 #: bpy.types.EnvironmentMap.mapping, 'PLANE'
 msgid "Only one side is rendered, with Z axis pointing in direction of image"
-msgstr ""
+msgstr "Seul un côté est rendu, avec l’axe Z pointant dans la direction de l’image"
 
 #: bpy.types.EnvironmentMap.resolution
 #: bpy.types.MaterialVolume.cache_resolution bpy.types.VoxelData.resolution
@@ -6069,7 +5921,7 @@ msgstr "Résolution"
 
 #: bpy.types.EnvironmentMap.resolution
 msgid "Pixel resolution of the rendered environment map"
-msgstr ""
+msgstr "Résolution, en pixels, de la carte d’environnement rendue"
 
 #: bpy.types.EnvironmentMap.source, 'STATIC'
 #: bpy.types.GameObjectSettings.physics_type,
@@ -6079,8 +5931,8 @@ msgstr "Statique"
 
 #: bpy.types.EnvironmentMap.source, 'STATIC'
 #, fuzzy
-msgid "Calculates environment map only once"
-msgstr "Calculer les cartes d’environnement pendant le rendu"
+msgid "Calculate environment map only once"
+msgstr "Calculer la carte d’environnement une seule fois"
 
 #: bpy.types.EnvironmentMap.source, 'ANIMATED'
 #: bpy.types.ThemeWidgetStateColors.inner_anim
@@ -6089,36 +5941,33 @@ msgstr "Animé"
 
 #: bpy.types.EnvironmentMap.source, 'ANIMATED'
 #, fuzzy
-msgid "Calculates environment map at each rendering"
-msgstr "Calculer les cartes d’environnement pendant le rendu"
+msgid "Calculate environment map at each rendering"
+msgstr "Calculer les cartes d’environnement à chaque rendu"
 
 #: bpy.types.EnvironmentMap.source, 'IMAGE_FILE'
-#, fuzzy
 msgid "Image File"
-msgstr "Épinglage d’image"
+msgstr "Fichier image"
 
 #: bpy.types.EnvironmentMap.source, 'IMAGE_FILE'
 #, fuzzy
-msgid "Loads a saved environment map image from disk"
-msgstr "Se débarrasser de la carte d’environnement et l’effacer de la mémoire"
+msgid "Load a saved environment map image from disk"
+msgstr "Charger une image de carte d’environnement enregistrée sur le disque"
 
 #: bpy.types.EnvironmentMap.is_valid
-#, fuzzy
 msgid "Validity"
-msgstr "Solidifier"
+msgstr "Validité"
 
 #: bpy.types.EnvironmentMap.is_valid
 msgid "True if this map is ready for use, False if it needs rendering"
 msgstr "Vrai si cette carte est prête, Faux si elle a besoin d'être rendue"
 
 #: bpy.types.EnvironmentMap.viewpoint_object
-#, fuzzy
 msgid "Viewpoint Object"
-msgstr "Objet parent"
+msgstr "Objet point de vue"
 
 #: bpy.types.EnvironmentMap.viewpoint_object
 msgid "Object to use as the environment map's viewpoint location"
-msgstr ""
+msgstr "Objet à utiliser comme position du point de vue de la carte d’environnement"
 
 #: bpy.types.EnvironmentMap.zoom bpy.types.SpaceImageEditor.zoom
 #: bpy.types.SpaceSequenceEditor.zoom
@@ -6128,22 +5977,20 @@ msgid "Zoom"
 msgstr "Zoom"
 
 #: bpy.types.Event
-#, fuzzy
 msgid "Window Manager Event"
-msgstr "Gestionnaire de fenêtre"
+msgstr "Événement du gestionnaire de fenêtre"
 
 #: bpy.types.Event.ascii
 msgid "ASCII"
-msgstr ""
+msgstr "ASCII"
 
 #: bpy.types.Event.ascii
 msgid "Single ASCII character for this event"
-msgstr ""
+msgstr "Caractère ASCII unique pour cet événement"
 
 #: bpy.types.Event.alt bpy.types.KeyMapItem.alt
-#, fuzzy
 msgid "Alt"
-msgstr "À"
+msgstr "Alt"
 
 #: bpy.types.Event.alt
 msgid "True when the Alt/Option key is held"
@@ -6151,13 +5998,12 @@ msgstr "Vrai quand la touche Alt/Option est maintenue"
 
 #: bpy.types.Event.ctrl bpy.types.KeyMapItem.ctrl
 #: bpy.types.FONT_OT_line_break.ctrl
-#, fuzzy
 msgid "Ctrl"
-msgstr "Gauche"
+msgstr "Ctrl"
 
 #: bpy.types.Event.ctrl
 msgid "True when the Ctrl key is held"
-msgstr ""
+msgstr "Vrai quand la touche Ctrl est pressée"
 
 #: bpy.types.Event.mouse_prev_x
 #, fuzzy
@@ -6196,11 +6042,6 @@ msgstr "Zoomer sur la position de la souris"
 msgid "The region relative horizontal location of the mouse"
 msgstr ""
 
-# ##########################################################
-# ##
-# ##  SECTION  IPO CURVE EDITOR
-# ##
-# ##########################################################
 #: bpy.types.Event.oskey bpy.types.Event.type, 'OSKEY'
 #: bpy.types.KeyMapItem.key_modifier, bpy.types.KeyMapItem.oskey
 #: bpy.types.KeyMapItem.type,
@@ -11640,6 +11481,25 @@ msgstr "Arêtes & faces"
 msgid "Face in a Mesh datablock"
 msgstr "Ouvrir un nouveau bloc de données de texte"
 
+#: bpy.types.MeshFace.area
+#, fuzzy
+msgid "Face area"
+msgstr "Surface des faces"
+
+#: bpy.types.MeshFace.area
+#, fuzzy
+msgid "Read only area of the face"
+msgstr "Lire seulement l'aire de la face"
+
+#: bpy.types.MeshFace.normal
+#, fuzzy
+msgid "Face normal"
+msgstr "Normale de face"
+
+#: bpy.types.MeshFace.normal
+msgid "Local space unit length normal vector for this face"
+msgstr ""
+
 #: bpy.types.MeshFace.material_index
 #: bpy.types.RenderLayer.use_pass_material_index bpy.types.RenderPass.type,
 #: 'MATERIAL_INDEX' bpy.types.SceneRenderLayer.use_pass_material_index
@@ -11680,23 +11540,6 @@ msgstr "Adoucir"
 #: bpy.types.MeshFace.vertices_raw
 msgid "Fixed size vertex indices array"
 msgstr "Tableau d’indices de vertices à taille constante"
-
-#: bpy.types.MeshFace.area
-#, fuzzy
-msgid "face area"
-msgstr "Surface des faces"
-
-#: bpy.types.MeshFace.area
-msgid "read only area of the face"
-msgstr "Lire seulement l'aire de la face"
-
-#: bpy.types.MeshFace.normal
-msgid "face normal"
-msgstr "Normale de face"
-
-#: bpy.types.MeshFace.normal
-msgid "local space unit length normal vector for this face"
-msgstr ""
 
 #: bpy.types.MeshFaces
 #, fuzzy
@@ -15111,7 +14954,7 @@ msgstr "Type de rafraîchissement à effectuer"
 #: bpy.types.Property.unit, 'AREA' bpy.types.SpaceUVEditor.draw_stretch_type,
 #: bpy.types.MESH_OT_select_similar.type, bpy.types.OBJECT_OT_lamp_add.type,
 msgid "Area"
-msgstr "Aire"
+msgstr "Zone/Aire"
 
 #: bpy.types.Property.unit, 'ACCELERATION'
 #, fuzzy
@@ -47400,15 +47243,3 @@ msgstr "Normaliser"
 msgid "Multi-Paint"
 msgstr "Multi-coupes"
 
-#~ msgid "Rest Shade Key"
-#~ msgstr "Clé de forme au repos"
-
-#~ msgid "High Quality Normals"
-#~ msgstr "Normales haute qualité"
-
-#, fuzzy
-#~ msgid "Add-Ons"
-#~ msgstr "Activer Noeuds"
-
-#~ msgid "Transform Markers"
-#~ msgstr "Transformer marqueurs"
