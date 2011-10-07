@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-10-06 12:04+0200\n"
+"POT-Creation-Date: 2011-10-07 10:26+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Bastien Montagne <montagne29@wanadoo.fr>\n"
 "Language-Team: \n"
@@ -292,8 +292,8 @@ msgstr "Interpolation %t|Douce %x1|Cardinale %x3|Linéaire %x0|B-Spline %x2|Cons
 msgid "Set interpolation between color stops"
 msgstr "Définir l’interpolation entre stops couleur"
 
+# Traduction incertaine
 #: source/blender/editors/interface/interface_templates.c:1349
-#, fuzzy
 msgid "Flip the color ramp"
 msgstr "Inverser dégradé"
 
@@ -606,23 +606,23 @@ msgstr "Mode Particules"
 msgid "Mode"
 msgstr "Mode"
 
-#: source/blender/editors/space_view3d/view3d_header.c:541
+#: source/blender/editors/space_view3d/view3d_header.c:546
 msgid "Translate manipulator mode"
 msgstr "Mode de manipulateur déplacement"
 
-#: source/blender/editors/space_view3d/view3d_header.c:543
+#: source/blender/editors/space_view3d/view3d_header.c:548
 msgid "Rotate manipulator mode"
 msgstr "Mode de manipulateur rotation"
 
-#: source/blender/editors/space_view3d/view3d_header.c:545
+#: source/blender/editors/space_view3d/view3d_header.c:550
 msgid "Scale manipulator mode"
 msgstr "Mode de manipulateur redimensionnement"
 
-#: source/blender/editors/space_view3d/view3d_header.c:553
+#: source/blender/editors/space_view3d/view3d_header.c:558
 msgid "Orientation"
 msgstr "Orientation"
 
-#: source/blender/editors/space_view3d/view3d_header.c:554
+#: source/blender/editors/space_view3d/view3d_header.c:559
 msgid "Transform Orientation"
 msgstr "Orientation de transformation"
 
@@ -630,13 +630,13 @@ msgstr "Orientation de transformation"
 msgid "Operator"
 msgstr "Opérateur"
 
+# Traduction incertaine
 #: source/blender/editors/transform/transform_orientations.c:413
-#, fuzzy
 msgid "%t|Global%x0|Local%x1|Gimbal%x4|Normal%x2|View%x3"
 msgstr "%t|Global%x0|Local%x1|Gimbal%x4|Normale%x2|Vue%x3"
 
+# Traduction incertaine
 #: source/blender/editors/transform/transform_orientations.c:424
-#, fuzzy
 msgid "UserTransSpace from matrix"
 msgstr "Espace de translation utilisateur d’après matrice"
 
@@ -764,8 +764,8 @@ msgstr "Chemin de fichier non valide: \"%s\"."
 msgid "Unknown error loading: \"%s\"."
 msgstr "erreur de chargement inconnue: \"%s\"."
 
+# Traduction incertaine
 #: source/blender/windowmanager/intern/wm_operators.c:155
-#, fuzzy
 msgid "Dummy Name"
 msgstr "Nom stupide"
 
@@ -907,8 +907,8 @@ msgstr "Dessiner fenêtre"
 msgid "Draw Window + Swap"
 msgstr "Afficher fenêtre + bascule"
 
+# Traduction incertaine
 #: source/blender/windowmanager/intern/wm_operators.c:3316
-#, fuzzy
 msgid "Draw Window and Swap"
 msgstr "Dessiner fenêtre et intervertir"
 
@@ -990,7 +990,6 @@ msgstr "Groupes de F-Curves"
 #: bpy.types.EnumPropertyItem.name bpy.types.GameProperty.name
 #: bpy.types.ID.name bpy.types.KeyConfig.name bpy.types.KeyMap.name
 #: bpy.types.KeyMapItem.name bpy.types.KeyingSet.name
-#: bpy.types.KeyingSetInfo.bl_label bpy.types.Macro.name
 #: bpy.types.MaterialSlot.name bpy.types.MeshColorLayer.name
 #: bpy.types.MeshFloatPropertyLayer.name bpy.types.MeshIntPropertyLayer.name
 #: bpy.types.MeshStringPropertyLayer.name bpy.types.MeshTextureFaceLayer.name
@@ -1391,8 +1390,8 @@ msgstr "Le résultat pondéré de la bande est multiplié avec les résultats ac
 msgid "Action Extrapolation"
 msgstr "Extrapolation d’action"
 
+# Traduction incertaine
 #: bpy.types.AnimData.action_extrapolation
-#, fuzzy
 msgid "Action to take for gaps past the Active Action's range (when evaluating with NLA)"
 msgstr "Chose à faire pour les trous après l’intervalle de l’action active (quand évaluée avec le NLA)"
 
@@ -1475,8 +1474,8 @@ msgstr "Chemins de mouvement"
 msgid "Motion Path settings for visualisation"
 msgstr "Réglages des chemins de mouvement, pour la visualisation"
 
+# Traduction incertaine
 #: bpy.types.AnimViz.onion_skin_frames
-#, fuzzy
 msgid "Onion Skinning"
 msgstr "Peau d’oignon"
 
@@ -1559,9 +1558,9 @@ msgstr "Frame finale"
 msgid "End frame of range of paths to display/calculate (not for 'Around Current Frame' Onion-skinning method)"
 msgstr "Frame finale de l’intervalle des chemins à afficher/calculer (pas pour la méthode “peau d’oignon” “Autour de la frame courante”)"
 
+# Traduction incertaine
 #: bpy.types.AnimVizMotionPaths.frame_step
 #: bpy.types.AnimVizOnionSkinning.frame_step bpy.types.NLA_OT_bake.step
-#, fuzzy
 msgid "Frame Step"
 msgstr "Étape (pas) de frame"
 
@@ -1638,8 +1637,8 @@ msgstr "Frame de début"
 msgid "Starting frame of range of paths to display/calculate (not for 'Around Current Frame' Onion-skinning method)"
 msgstr "Frame de départ de l’intervalle des chemins à afficher/calculer (pas pour la méthode “peau d’oignon” “Autour de la frame courante”)"
 
+# Traduction incertaine
 #: bpy.types.AnimVizOnionSkinning
-#, fuzzy
 msgid "Onion Skinning Settings"
 msgstr "Réglages de “peau d’oignon”"
 
@@ -1727,8 +1726,8 @@ msgstr "Hauteur de la zone"
 msgid "Regions"
 msgstr "Régions"
 
+# Traduction incertaine
 #: bpy.types.Area.regions
-#, fuzzy
 msgid "Regions this area is subdivided in"
 msgstr "Régions en lesquelles cette zone est subdivisée"
 
@@ -1744,8 +1743,8 @@ msgstr "Montrer les menus dans l’en-tête"
 msgid "Spaces"
 msgstr "Espaces"
 
+# Traduction incertaine
 #: bpy.types.Area.spaces
-#, fuzzy
 msgid "Spaces contained in this area, the first being the active space (NOTE: Useful for example to restore a previously used 3D view space in a certain area to get the old view orientation)"
 msgstr "Espaces contenus dans cette zone, le premier étant l’espace actif (NOTE : utile par exemple pour restaurer un espace de vue 3D précédemment utilisé dans une zone donnée, pour retrouver l’ancienne orientation de la vue)"
 
@@ -1780,13 +1779,13 @@ msgstr "Outliner"
 
 #: bpy.types.Area.type, 'PROPERTIES' bpy.types.GameObjectSettings.properties
 #: bpy.types.KeyMap.space_type, bpy.types.KeyMapItem.properties
-#: bpy.types.Macro.properties bpy.types.Space.type,
-#: bpy.types.Struct.properties bpy.types.Theme.theme_area,
-#: bpy.types.Theme.properties bpy.types.GRAPH_OT_properties
-#: bpy.types.IMAGE_OT_properties bpy.types.LOGIC_OT_properties
-#: bpy.types.NLA_OT_properties bpy.types.NODE_OT_properties
-#: bpy.types.OBJECT_OT_select_grouped.type, bpy.types.SEQUENCER_OT_properties
-#: bpy.types.TEXT_OT_properties bpy.types.VIEW3D_OT_properties
+#: bpy.types.Space.type, bpy.types.Struct.properties
+#: bpy.types.Theme.theme_area, bpy.types.Theme.properties
+#: bpy.types.GRAPH_OT_properties bpy.types.IMAGE_OT_properties
+#: bpy.types.LOGIC_OT_properties bpy.types.NLA_OT_properties
+#: bpy.types.NODE_OT_properties bpy.types.OBJECT_OT_select_grouped.type,
+#: bpy.types.SEQUENCER_OT_properties bpy.types.TEXT_OT_properties
+#: bpy.types.VIEW3D_OT_properties
 msgid "Properties"
 msgstr "Propriétés"
 
@@ -2034,8 +2033,8 @@ msgstr "Opacité de l’image, pour mélanger l’image avec la couleur de fond"
 msgid "Show Expanded"
 msgstr "Montrer déroulé"
 
+# Traduction incertaine
 #: bpy.types.BackgroundImage.show_expanded
-#, fuzzy
 msgid "Show the expanded in the user interface"
 msgstr "Montrer les déployés dans l’interface utilisateur"
 
@@ -2108,13 +2107,13 @@ msgstr "Point de courbe de Bézier"
 msgid "Bezier curve point with two handles"
 msgstr "Point de courbe de Bézier avec deux poignées"
 
+# Traduction incertaine
 #: bpy.types.BezierSplinePoint.radius bpy.types.SplinePoint.radius
-#, fuzzy
 msgid "Bevel Radius"
 msgstr "Rayon de “biseautage”"
 
+# Traduction incertaine
 #: bpy.types.BezierSplinePoint.radius bpy.types.SplinePoint.radius
-#, fuzzy
 msgid "Radius for bevelling"
 msgstr "Rayon de “biseautage”"
 
@@ -2356,8 +2355,8 @@ msgstr "Suivre un boïd ou objet assigné"
 msgid "Average Speed"
 msgstr "Vitesse moyenne"
 
+# Traduction incertaine
 #: bpy.types.BoidRule.type, 'AVERAGE_SPEED' bpy.types.BOID_OT_rule_add.type,
-#, fuzzy
 msgid "Maintain speed, flight level or wander"
 msgstr "Maintenir la vitesse, hauteur de vol ou vagabonder"
 
@@ -5634,8 +5633,8 @@ msgstr "Flux"
 msgid "Convert effector force into air flow velocity"
 msgstr "Convertir la force effectrice en une vitesse de flux d’air"
 
+# Traduction incertaine
 #: bpy.types.FieldSettings.guide_free
-#, fuzzy
 msgid "Guide-free time from particle life's end"
 msgstr "Temps libre de guide, d’après la fin de la vie des particules"
 
@@ -6452,8 +6451,8 @@ msgstr "Épaisseur"
 msgid "Thickness of strokes (in pixels)"
 msgstr "Épaisseur des traits (en pixels)"
 
+# Traduction incertaine
 #: bpy.types.GPencilLayer.use_onion_skinning
-#, fuzzy
 msgid "Use Onion Skinning"
 msgstr "Utiliser “peau d’oignon”"
 
@@ -6560,8 +6559,8 @@ msgstr "Cylindre"
 msgid "Convex Hull"
 msgstr "Coque convexe"
 
+# Traduction incertaine
 #: bpy.types.GameObjectSettings.collision_bounds_type, 'TRIANGLE_MESH'
-#, fuzzy
 msgid "Triangle Mesh"
 msgstr "Mesh triangulé"
 
@@ -7020,7 +7019,7 @@ msgstr "Raideur linéaire"
 
 #: bpy.types.GameSoftBodySettings.linear_stiffness
 msgid "Linear stiffness of the soft body links"
-msgstr ""
+msgstr "Raideur linéaire des liens de corps souple"
 
 #: bpy.types.GameSoftBodySettings.collision_margin
 #: bpy.types.RenderSettings.bake_margin
@@ -7035,40 +7034,38 @@ msgid "Collision margin for soft body. Small value makes the algorithm unstable"
 msgstr "Marge de collision pour corps souple. Une petite valeur rend l'algorithm instable"
 
 #: bpy.types.GameSoftBodySettings.location_iterations
-#, fuzzy
 msgid "Position Iterations"
-msgstr "Itérations d’adoucissement"
+msgstr "Itérations de position"
 
 #: bpy.types.GameSoftBodySettings.location_iterations
 msgid "Position solver iterations"
 msgstr "Itérations du résolveur de position"
 
 #: bpy.types.GameSoftBodySettings.use_cluster_rigid_to_softbody
-#, fuzzy
 msgid "Rigid to Soft Body"
-msgstr "Corps rigide"
+msgstr "Rigide vers corps souple"
 
 #: bpy.types.GameSoftBodySettings.use_cluster_rigid_to_softbody
 msgid "Enable cluster collision between soft and rigid body"
 msgstr "Activer la collision “cluster” entre corps souples et rigides"
 
 #: bpy.types.GameSoftBodySettings.use_shape_match
-#, fuzzy
 msgid "Shape Match"
-msgstr "Forme"
+msgstr "Correspondance de forme"
 
+# Traduction incertaine
 #: bpy.types.GameSoftBodySettings.use_shape_match
 msgid "Enable soft body shape matching goal"
-msgstr ""
+msgstr "Activer la correspondance de la forme du corps souple avec son but"
 
 #: bpy.types.GameSoftBodySettings.use_cluster_soft_to_softbody
-#, fuzzy
 msgid "Soft to Soft Body"
-msgstr "Corps souple"
+msgstr "Souple vers corps souple"
 
+# Traduction incertaine
 #: bpy.types.GameSoftBodySettings.use_cluster_soft_to_softbody
 msgid "Enable cluster collision between soft and soft body"
-msgstr ""
+msgstr "Activer le regroupement des collisions entre corps souples"
 
 #: bpy.types.GameSoftBodySettings.shape_threshold
 #: bpy.types.WorldLighting.threshold bpy.types.ACTION_OT_clean.threshold
@@ -7085,35 +7082,34 @@ msgid "Threshold"
 msgstr "Limite"
 
 #: bpy.types.GameSoftBodySettings.shape_threshold
-#, fuzzy
 msgid "Shape matching threshold"
-msgstr "Limite de carré"
+msgstr "Limite de correspondance de forme"
 
 #: bpy.types.GameSoftBodySettings.weld_threshold
-#, fuzzy
 msgid "Welding"
-msgstr "Souder"
+msgstr "Soudure"
 
+# Traduction incertaine
 #: bpy.types.GameSoftBodySettings.weld_threshold
 msgid "Welding threshold: distance between nearby vertices to be considered equal => set to 0.0 to disable welding test and speed up scene loading (ok if the mesh has no duplicates)"
-msgstr ""
+msgstr "Limite de soudure : distance à laquelle deux vertices voisins sont considérés comme identiques → définir à 0.0 pour désactiver les tests de soudure  et accélérer le chargement de la scène (parfait si le mesh n’a pas de copies)"
 
+# Traduction incertaine
 #: bpy.types.Histogram
-#, fuzzy
 msgid "Statistical view of the levels of color in an image"
 msgstr "Graphiques pour une vue statistique d’une image"
 
 #: bpy.types.Histogram.mode
 msgid "Channels to display when drawing the histogram"
-msgstr ""
+msgstr "Canaux à afficher dans l’histogramme"
 
 #: bpy.types.Histogram.mode, 'LUMA' bpy.types.Scopes.waveform_mode,
 msgid "Luma"
-msgstr ""
+msgstr "Luma"
 
 #: bpy.types.Histogram.mode, 'RGB' bpy.types.Scopes.waveform_mode,
 msgid "Red Green Blue"
-msgstr ""
+msgstr "Rouge Vert Bleu"
 
 #: bpy.types.Histogram.mode, 'R' bpy.types.IMAGE_OT_invert.invert_r
 msgid "Red"
@@ -7140,7 +7136,6 @@ msgid "Fake User"
 msgstr "Simuler utilisateur"
 
 #: bpy.types.ID.use_fake_user
-#, fuzzy
 msgid "Save this datablock even if it has no users"
 msgstr "Sauvegarder ce bloc de données même s’il n’a pas d’utilisateur"
 
@@ -7153,7 +7148,6 @@ msgid "Tag"
 msgstr "Tag"
 
 #: bpy.types.ID.tag
-#, fuzzy
 msgid "Tools can use this to tag data (initial state is undefined)"
 msgstr "Les outils peuvent utiliser cela pour taguer des données (l’état initial est indéfini)"
 
@@ -7167,28 +7161,27 @@ msgstr "Nombre de références sur ce bloc de données"
 
 #: bpy.types.IKParam
 msgid "Base type for IK solver parameters"
-msgstr ""
+msgstr "Type de base pour les paramètres du solveur IK"
 
 #: bpy.types.IKParam.ik_solver bpy.types.Pose.ik_solver
 msgid "IK Solver"
-msgstr ""
+msgstr "Solveur IK"
 
 #: bpy.types.IKParam.ik_solver
 msgid "IK solver for which these parameters are defined, 0 for Legacy, 1 for iTaSC"
-msgstr ""
+msgstr "Solveur IK pour lequel ces paramètres sont définis, 0 pour l’ancien, 1 pour iTaSC"
 
 #: bpy.types.IKParam.ik_solver, 'LEGACY' bpy.types.Pose.ik_solver,
 msgid "Legacy"
-msgstr ""
+msgstr "Ancien"
 
 #: bpy.types.IKParam.ik_solver, 'LEGACY' bpy.types.Pose.ik_solver,
-#, fuzzy
 msgid "Original IK solver"
-msgstr "Original"
+msgstr "Solveur IK original"
 
 #: bpy.types.IKParam.ik_solver, 'ITASC' bpy.types.Pose.ik_solver,
 msgid "iTaSC"
-msgstr ""
+msgstr "iTaSC"
 
 #: bpy.types.IKParam.ik_solver, 'ITASC' bpy.types.Pose.ik_solver,
 msgid "Multi constraint, stateful IK solver"
@@ -7196,7 +7189,7 @@ msgstr "Contrainte multiple, résolveur IK établi"
 
 #: bpy.types.ImageUser
 msgid "Parameters defining how an Image datablock is used by another datablock"
-msgstr ""
+msgstr "Paramètres définissant comment un bloc de données image est utilisé par un autre bloc de données"
 
 #: bpy.types.ImageUser.use_auto_refresh
 msgid "Auto Refresh"
@@ -7204,17 +7197,15 @@ msgstr "Auto-actualiser"
 
 #: bpy.types.ImageUser.use_auto_refresh
 msgid "Always refresh image on frame changes"
-msgstr ""
+msgstr "Toujours rafraîchir l’image aux changements de frame"
 
 #: bpy.types.ImageUser.use_cyclic
-#, fuzzy
 msgid "Cyclic"
-msgstr "Cyclique :"
+msgstr "Cyclique"
 
 #: bpy.types.ImageUser.use_cyclic
-#, fuzzy
 msgid "Cycle the images in the movie"
-msgstr "Inclure le temps de rendu dans les méta-données de l’image"
+msgstr "Lire en boucle les images de la vidéo"
 
 #: bpy.types.ImageUser.fields_per_frame
 msgid "Fields per Frame"
@@ -7225,9 +7216,8 @@ msgid "The number of fields per rendered frame (2 fields is 1 image)"
 msgstr "Le nombre de trames par frame rendue (2 trames pour 1 image)"
 
 #: bpy.types.ImageUser.frame_duration
-#, fuzzy
 msgid "Sets the number of images of a movie to use"
-msgstr "Nombre d’anneaux rendus par-dessus le halo"
+msgstr "Nombre d’images de la vidéo à utiliser"
 
 #: bpy.types.ImageUser.multilayer_layer
 #: bpy.types.ARMATURE_OT_armature_layers.layers
@@ -7271,7 +7261,7 @@ msgstr "Calque"
 
 #: bpy.types.ImageUser.multilayer_layer
 msgid "Layer in multilayer image"
-msgstr ""
+msgstr "Calque dans une image multi-calques"
 
 #: bpy.types.ImageUser.frame_offset bpy.types.TextureSlot.offset
 #: bpy.types.ACTION_OT_paste.offset bpy.types.GRAPH_OT_paste.offset
@@ -7287,9 +7277,8 @@ msgid "Offset"
 msgstr "Décalage"
 
 #: bpy.types.ImageUser.frame_offset
-#, fuzzy
 msgid "Offsets the number of the frame to use in the animation"
-msgstr "Nombre d’échantillons utilisés par le tampon de mixage audio"
+msgstr "Décaler le numéro de la frame à utiliser dans l’animation"
 
 #: bpy.types.ImageUser.multilayer_pass
 #: bpy.types.OBJECT_OT_select_grouped.type, 'PASS'
@@ -7298,7 +7287,7 @@ msgstr "Passe"
 
 #: bpy.types.ImageUser.multilayer_pass
 msgid "Pass in multilayer image"
-msgstr ""
+msgstr "Passe dans une image multi-calques"
 
 #: bpy.types.ImageUser.frame_start
 msgid "Sets the global starting frame of the movie/sequence, assuming first picture has a #1"
@@ -7313,14 +7302,13 @@ msgid "Input configuration, including keymaps"
 msgstr "Configuration des périphériques, inluant les raccourcis"
 
 #: bpy.types.KeyConfig.name
-#, fuzzy
 msgid "Name of the key configuration"
-msgstr "Taille du texte"
+msgstr "Nom de la configuration clavier"
 
+# Traduction incertaine
 #: bpy.types.KeyConfig.keymaps bpy.types.SpaceOutliner.display_mode, 'KEYMAPS'
-#, fuzzy
 msgid "Key Maps"
-msgstr "Raccourcis clavier"
+msgstr "Ensembles de raccourcis"
 
 #: bpy.types.KeyConfig.keymaps
 msgid "Key maps configured as part of this configuration"
@@ -7330,20 +7318,19 @@ msgstr "Touches faisant partie de cette configuration"
 msgid "Indicates that a keyconfig was defined by the user"
 msgstr "Indique la configuration définie par l'utilisateur"
 
+# Traduction incertaine
 #: bpy.types.KeyMap
-#, fuzzy
 msgid "Key Map"
-msgstr "Type de Sens"
+msgstr "Ensemble de raccourcis"
 
+# Traduction incertaine
 #: bpy.types.KeyMap.name
-#, fuzzy
 msgid "Name of the key map"
-msgstr "Taille du texte"
+msgstr "Nom de l’ensemble de raccourcis"
 
 #: bpy.types.KeyMap.show_expanded_children
-#, fuzzy
 msgid "Children Expanded"
-msgstr "Enfants"
+msgstr "Enfants déployés"
 
 #: bpy.types.KeyMap.show_expanded_children
 msgid "Children expanded in the user interface"
@@ -7351,7 +7338,7 @@ msgstr "Enfants explicités dans l'interface utilisateur"
 
 #: bpy.types.KeyMap.keymap_items
 msgid "Items"
-msgstr ""
+msgstr "Éléments"
 
 #: bpy.types.KeyMap.keymap_items
 msgid "Items in the keymap, linking an operator to an input event"
@@ -7374,9 +7361,8 @@ msgid "Indicates that a keymap is used for translate modal events for an operato
 msgstr "Indique la touche utilisée pour traduire les évements modaux de l'opérateur"
 
 #: bpy.types.KeyMap.region_type bpy.types.Region.type
-#, fuzzy
 msgid "Region Type"
-msgstr "Par région"
+msgstr "Type de région"
 
 #: bpy.types.KeyMap.region_type
 msgid "Optional region type keymap is associated with"
@@ -7402,18 +7388,16 @@ msgstr "En-tête"
 
 #: bpy.types.KeyMap.region_type, 'TEMPORARY' bpy.types.Region.type,
 #: bpy.types.TextMarker.is_temporary
-#, fuzzy
 msgid "Temporary"
-msgstr "Vecteur"
+msgstr "Temporaire"
 
 #: bpy.types.KeyMap.region_type, 'UI' bpy.types.Region.type,
 msgid "UI"
-msgstr ""
+msgstr "UI"
 
 #: bpy.types.KeyMap.region_type, 'TOOL_PROPS' bpy.types.Region.type,
-#, fuzzy
 msgid "Tool Properties"
-msgstr "Pas de propriétés"
+msgstr "Propriétés des outils"
 
 #: bpy.types.KeyMap.region_type, 'PREVIEW' bpy.types.Region.type,
 #: bpy.types.RenderSettings.exr_preview
@@ -7423,9 +7407,8 @@ msgid "Preview"
 msgstr "Prévisualisation"
 
 #: bpy.types.KeyMap.space_type
-#, fuzzy
 msgid "Space Type"
-msgstr "Même Type"
+msgstr "Type d’espace"
 
 #: bpy.types.KeyMap.space_type
 msgid "Optional space type keymap is associated with"
@@ -7435,33 +7418,31 @@ msgstr "Type optionnel d'espace auquel la touche est associé"
 msgid "Keymap is defined by the user"
 msgstr "La touche est définie par l'utilisateur"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem
-#, fuzzy
 msgid "Key Map Item"
-msgstr "Ajouter une nouvelle Clé de Forme"
+msgstr "Élément d’un ensemble de raccourcis"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem
-#, fuzzy
 msgid "Item in a Key Map"
-msgstr "Type de Sens"
+msgstr "Élément dans un ensemble raccourcis"
 
 #: bpy.types.KeyMapItem.name
 msgid "Name of operator to call on input event"
 msgstr "Nom de l'opérateur appelé par le périphérique"
 
 #: bpy.types.KeyMapItem.active
-#, fuzzy
 msgid "Activate or deactivate item"
-msgstr "Actif"
+msgstr "(Dés)activer un élément"
 
 #: bpy.types.KeyMapItem.alt
 msgid "Alt"
 msgstr "Alt"
 
 #: bpy.types.KeyMapItem.alt
-#, fuzzy
 msgid "Alt key pressed"
-msgstr "Toutes les clefs"
+msgstr "Touche alt pressée"
 
 #: bpy.types.KeyMapItem.any bpy.types.KeyMapItem.value, 'ANY'
 msgid "Any"
@@ -7476,9 +7457,8 @@ msgid "Ctrl"
 msgstr "Ctrl"
 
 #: bpy.types.KeyMapItem.ctrl
-#, fuzzy
 msgid "Control key pressed"
-msgstr "Contrôles"
+msgstr "Touche ctrl (contrôle) pressée"
 
 #: bpy.types.KeyMapItem.show_expanded
 msgid "Show key map event and property details in the user interface"
@@ -7489,9 +7469,8 @@ msgid "Identifier of operator to call on input event"
 msgstr "Identificateur de l'opérateur appelé par le périphérique"
 
 #: bpy.types.KeyMapItem.key_modifier
-#, fuzzy
 msgid "Key Modifier"
-msgstr "Modificateurs"
+msgstr "Modificateur de touche"
 
 #: bpy.types.KeyMapItem.key_modifier
 msgid "Regular key pressed as a modifier"
@@ -7502,9 +7481,8 @@ msgid "Left Mouse"
 msgstr "Clic Gauche"
 
 #: bpy.types.KeyMapItem.key_modifier, 'MIDDLEMOUSE' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Middle Mouse"
-msgstr "Bouton du Milieu:"
+msgstr "Bouton du milieu de la souris"
 
 #: bpy.types.KeyMapItem.key_modifier, 'RIGHTMOUSE' bpy.types.KeyMapItem.type,
 msgid "Right Mouse"
@@ -7512,20 +7490,18 @@ msgstr "Clic Droit"
 
 #: bpy.types.KeyMapItem.key_modifier, 'BUTTON4MOUSE'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button4 Mouse"
-msgstr "Boutons"
+msgstr "Bouton 4 de la souris"
 
 #: bpy.types.KeyMapItem.key_modifier, 'BUTTON5MOUSE'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button5 Mouse"
-msgstr "Boutons"
+msgstr "Bouton 5 de la souris"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'ACTIONMOUSE' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Action Mouse"
-msgstr "Nom de l'action"
+msgstr "Action de la souris"
 
 #: bpy.types.KeyMapItem.key_modifier, 'SELECTMOUSE' bpy.types.KeyMapItem.type,
 #: bpy.types.UserPreferencesInput.select_mouse
@@ -7533,9 +7509,8 @@ msgid "Select Mouse"
 msgstr "Sélection souris"
 
 #: bpy.types.KeyMapItem.key_modifier, 'MOUSEMOVE' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Mouse Move"
-msgstr "Extension"
+msgstr "Déplacement de la souris"
 
 #: bpy.types.KeyMapItem.key_modifier, 'INBETWEEN_MOUSEMOVE'
 #: bpy.types.KeyMapItem.type,
@@ -7562,44 +7537,43 @@ msgstr "Molette Haut"
 
 #: bpy.types.KeyMapItem.key_modifier, 'WHEELDOWNMOUSE'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Wheel Down"
-msgstr "Ombres"
+msgstr "Molette vers le bas"
 
+# Wheel In
 #: bpy.types.KeyMapItem.key_modifier, 'WHEELINMOUSE'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Wheel In"
-msgstr "Zoom Inversé"
+msgstr "Molette in"
 
 #: bpy.types.KeyMapItem.key_modifier, 'WHEELOUTMOUSE'
 #: bpy.types.KeyMapItem.type,
 msgid "Wheel Out"
 msgstr "Molette extérieur"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'EVT_TWEAK_L' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Tweak Left"
-msgstr "Déplacer Gauche"
+msgstr "Ajustement gauche"
 
 #: bpy.types.KeyMapItem.key_modifier, 'EVT_TWEAK_M' bpy.types.KeyMapItem.type,
 msgid "Tweak Middle"
 msgstr "Déplacer Milieu"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'EVT_TWEAK_R' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Tweak Right"
-msgstr "Déplacer Droite"
+msgstr "Ajustement droite"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'EVT_TWEAK_A' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Tweak Action"
-msgstr "Nom de l'action"
+msgstr "Action d’ajustement"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'EVT_TWEAK_S' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Tweak Select"
-msgstr "Cacher Sélection"
+msgstr "Ajustement sélection"
 
 #: bpy.types.KeyMapItem.key_modifier, 'A' bpy.types.KeyMapItem.type,
 msgid "A"
@@ -7609,84 +7583,82 @@ msgstr "A"
 #: bpy.types.RenderSettings.cineon_black
 #: release/scripts/startup/bl_ui/properties_texture.py:192
 msgid "B"
-msgstr ""
+msgstr "B"
 
 #: bpy.types.KeyMapItem.key_modifier, 'C' bpy.types.KeyMapItem.type,
 msgid "C"
-msgstr ""
+msgstr "C"
 
 #: bpy.types.KeyMapItem.key_modifier, 'D' bpy.types.KeyMapItem.type,
 msgid "D"
-msgstr ""
+msgstr "D"
 
 #: bpy.types.KeyMapItem.key_modifier, 'E' bpy.types.KeyMapItem.type,
 msgid "E"
-msgstr ""
+msgstr "E"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F' bpy.types.KeyMapItem.type,
 msgid "F"
-msgstr ""
+msgstr "F"
 
 #: bpy.types.KeyMapItem.key_modifier, 'G' bpy.types.KeyMapItem.type,
 #: bpy.types.RenderSettings.cineon_gamma
 #: release/scripts/startup/bl_ui/properties_texture.py:191
 msgid "G"
-msgstr ""
+msgstr "G"
 
 #: bpy.types.KeyMapItem.key_modifier, 'H' bpy.types.KeyMapItem.type,
 msgid "H"
-msgstr ""
+msgstr "H"
 
 #: bpy.types.KeyMapItem.key_modifier, 'I' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "I"
-msgstr "Entrée"
+msgstr "I"
 
 #: bpy.types.KeyMapItem.key_modifier, 'J' bpy.types.KeyMapItem.type,
 msgid "J"
-msgstr ""
+msgstr "J"
 
 #: bpy.types.KeyMapItem.key_modifier, 'K' bpy.types.KeyMapItem.type,
 msgid "K"
-msgstr ""
+msgstr "K"
 
 #: bpy.types.KeyMapItem.key_modifier, 'L' bpy.types.KeyMapItem.type,
 msgid "L"
-msgstr ""
+msgstr "L"
 
 #: bpy.types.KeyMapItem.key_modifier, 'M' bpy.types.KeyMapItem.type,
 msgid "M"
-msgstr ""
+msgstr "M"
 
 #: bpy.types.KeyMapItem.key_modifier, 'N' bpy.types.KeyMapItem.type,
 msgid "N"
-msgstr ""
+msgstr "N"
 
 #: bpy.types.KeyMapItem.key_modifier, 'O' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "O"
-msgstr "On"
+msgstr "O"
 
 #: bpy.types.KeyMapItem.key_modifier, 'P' bpy.types.KeyMapItem.type,
 msgid "P"
-msgstr ""
+msgstr "P"
 
 #: bpy.types.KeyMapItem.key_modifier, 'Q' bpy.types.KeyMapItem.type,
 msgid "Q"
-msgstr ""
+msgstr "Q"
 
 #: bpy.types.KeyMapItem.key_modifier, 'R' bpy.types.KeyMapItem.type,
 #: release/scripts/startup/bl_ui/properties_texture.py:190
 msgid "R"
-msgstr ""
+msgstr "R"
 
 #: bpy.types.KeyMapItem.key_modifier, 'S' bpy.types.KeyMapItem.type,
 msgid "S"
-msgstr ""
+msgstr "S"
 
 #: bpy.types.KeyMapItem.key_modifier, 'T' bpy.types.KeyMapItem.type,
 msgid "T"
-msgstr ""
+msgstr "T"
 
 #: bpy.types.KeyMapItem.key_modifier, 'U' bpy.types.KeyMapItem.type,
 #: release/scripts/startup/bl_ui/properties_data_curve.py:221
@@ -7696,9 +7668,8 @@ msgstr ""
 #: release/scripts/startup/bl_ui/properties_data_curve.py:240
 #: release/scripts/startup/bl_ui/properties_data_curve.py:243
 #: release/scripts/startup/bl_ui/properties_data_modifier.py:372
-#, fuzzy
 msgid "U"
-msgstr "Haut"
+msgstr "U"
 
 #: bpy.types.KeyMapItem.key_modifier, 'V' bpy.types.KeyMapItem.type,
 #: bpy.types.SoftBodySettings.use_auto_step
@@ -7720,78 +7691,70 @@ msgstr "W"
 
 #: bpy.types.KeyMapItem.key_modifier, 'ZERO' bpy.types.KeyMapItem.type,
 msgid "0"
-msgstr ""
+msgstr "0"
 
 #: bpy.types.KeyMapItem.key_modifier, 'LEFT_CTRL' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Left Ctrl"
-msgstr "Gauche"
+msgstr "Ctrl gauche"
 
 #: bpy.types.KeyMapItem.key_modifier, 'LEFT_ALT' bpy.types.KeyMapItem.type,
 msgid "Left Alt"
 msgstr "Alt gauche"
 
 #: bpy.types.KeyMapItem.key_modifier, 'LEFT_SHIFT' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Left Shift"
-msgstr "Vue de Droite"
+msgstr "Shift (Maj) gauche"
 
 #: bpy.types.KeyMapItem.key_modifier, 'RIGHT_ALT' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Right Alt"
-msgstr "Droite"
+msgstr "Alt droite"
 
 #: bpy.types.KeyMapItem.key_modifier, 'RIGHT_CTRL' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Right Ctrl"
-msgstr "Droite"
+msgstr "Ctrl droite"
 
 #: bpy.types.KeyMapItem.key_modifier, 'RIGHT_SHIFT' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Right Shift"
-msgstr "Droite"
+msgstr "Shift (Maj) droite"
 
 #: bpy.types.KeyMapItem.key_modifier, 'OSKEY' bpy.types.KeyMapItem.oskey
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "OS Key"
-msgstr "Afficher les Clés"
+msgstr "Touche OS"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'GRLESS' bpy.types.KeyMapItem.type,
 msgid "Grless"
-msgstr ""
+msgstr "Alt Gr"
 
 #: bpy.types.KeyMapItem.key_modifier, 'ESC' bpy.types.KeyMapItem.type,
 msgid "Esc"
-msgstr ""
+msgstr "Esc (Échap)"
 
 #: bpy.types.KeyMapItem.key_modifier, 'TAB' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Tab"
-msgstr "Tag"
+msgstr "Tab"
 
 #: bpy.types.KeyMapItem.key_modifier, 'RET' bpy.types.KeyMapItem.type,
 msgid "Return"
 msgstr "Entrée"
 
 #: bpy.types.KeyMapItem.key_modifier, 'SPACE' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Spacebar"
-msgstr "ZoneTexture"
+msgstr "Barre d’espace"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'LINE_FEED' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Line Feed"
-msgstr "Ligne"
+msgstr "Line feed"
 
 #: bpy.types.KeyMapItem.key_modifier, 'BACK_SPACE' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Back Space"
-msgstr "Image d'Arrière Plan"
+msgstr "Retour arrière"
 
 #: bpy.types.KeyMapItem.key_modifier, 'SEMI_COLON' bpy.types.KeyMapItem.type,
 msgid ";"
-msgstr ""
+msgstr ";"
 
 #: bpy.types.KeyMapItem.key_modifier, 'COMMA' bpy.types.KeyMapItem.type,
 msgid ","
@@ -7799,40 +7762,38 @@ msgstr ","
 
 #: bpy.types.KeyMapItem.key_modifier, 'QUOTE' bpy.types.KeyMapItem.type,
 msgid "\""
-msgstr ""
+msgstr "\""
 
 #: bpy.types.KeyMapItem.key_modifier, 'ACCENT_GRAVE'
 #: bpy.types.KeyMapItem.type,
 msgid "`"
-msgstr ""
+msgstr "`"
 
 #: bpy.types.KeyMapItem.key_modifier, 'EQUAL' bpy.types.KeyMapItem.type,
 msgid "="
-msgstr ""
+msgstr "="
 
 #: bpy.types.KeyMapItem.key_modifier, 'LEFT_BRACKET'
 #: bpy.types.KeyMapItem.type,
 msgid "["
-msgstr ""
+msgstr "["
 
 #: bpy.types.KeyMapItem.key_modifier, 'RIGHT_BRACKET'
 #: bpy.types.KeyMapItem.type,
 msgid "]"
-msgstr ""
+msgstr "]"
 
 #: bpy.types.KeyMapItem.key_modifier, 'LEFT_ARROW' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Left Arrow"
-msgstr "Clic Gauche"
+msgstr "Flèche gauche"
 
 #: bpy.types.KeyMapItem.key_modifier, 'DOWN_ARROW' bpy.types.KeyMapItem.type,
 msgid "Down Arrow"
 msgstr "Flèche Bas"
 
 #: bpy.types.KeyMapItem.key_modifier, 'RIGHT_ARROW' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Right Arrow"
-msgstr "Clic Droit"
+msgstr "Flèche droite"
 
 #: bpy.types.KeyMapItem.key_modifier, 'UP_ARROW' bpy.types.KeyMapItem.type,
 msgid "Up Arrow"
@@ -7840,7 +7801,7 @@ msgstr "Flèche Haut"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_2' bpy.types.KeyMapItem.type,
 msgid "Numpad 2"
-msgstr ""
+msgstr "Pavé num 2"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_4' bpy.types.KeyMapItem.type,
 msgid "Numpad 4"
@@ -7848,104 +7809,104 @@ msgstr "Pavé numérique 4"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_6' bpy.types.KeyMapItem.type,
 msgid "Numpad 6"
-msgstr ""
+msgstr "Pavé num 6"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_8' bpy.types.KeyMapItem.type,
 msgid "Numpad 8"
-msgstr ""
+msgstr "Pavé num 8"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_1' bpy.types.KeyMapItem.type,
 msgid "Numpad 1"
-msgstr ""
+msgstr "Pavé num 1"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_3' bpy.types.KeyMapItem.type,
 msgid "Numpad 3"
-msgstr ""
+msgstr "Pavé num 3"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_5' bpy.types.KeyMapItem.type,
 msgid "Numpad 5"
-msgstr ""
+msgstr "Pavé num 5"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_7' bpy.types.KeyMapItem.type,
 msgid "Numpad 7"
-msgstr ""
+msgstr "Pavé num 7"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_9' bpy.types.KeyMapItem.type,
 msgid "Numpad 9"
-msgstr ""
+msgstr "Pavé num 9"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_PERIOD'
 #: bpy.types.KeyMapItem.type,
 msgid "Numpad ."
-msgstr ""
+msgstr "Pavé num ."
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_SLASH'
 #: bpy.types.KeyMapItem.type,
 msgid "Numpad /"
-msgstr ""
+msgstr "Pavé num /"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_ASTERIX'
 #: bpy.types.KeyMapItem.type,
 msgid "Numpad *"
-msgstr ""
+msgstr "Pavé num *"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_0' bpy.types.KeyMapItem.type,
 msgid "Numpad 0"
-msgstr ""
+msgstr "Pavé num 0"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_MINUS'
 #: bpy.types.KeyMapItem.type,
 msgid "Numpad -"
-msgstr ""
+msgstr "Pavé num -"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_ENTER'
 #: bpy.types.KeyMapItem.type,
 msgid "Numpad Enter"
-msgstr ""
+msgstr "Pavé num Entrée"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NUMPAD_PLUS' bpy.types.KeyMapItem.type,
 msgid "Numpad +"
-msgstr ""
+msgstr "Pavé num +"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F1' bpy.types.KeyMapItem.type,
 msgid "F1"
-msgstr ""
+msgstr "F1"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F2' bpy.types.KeyMapItem.type,
 msgid "F2"
-msgstr ""
+msgstr "F2"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F3' bpy.types.KeyMapItem.type,
 msgid "F3"
-msgstr ""
+msgstr "F3"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F4' bpy.types.KeyMapItem.type,
 msgid "F4"
-msgstr ""
+msgstr "F4"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F5' bpy.types.KeyMapItem.type,
 msgid "F5"
-msgstr ""
+msgstr "F5"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F6' bpy.types.KeyMapItem.type,
 msgid "F6"
-msgstr ""
+msgstr "F6"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F7' bpy.types.KeyMapItem.type,
 msgid "F7"
-msgstr ""
+msgstr "F7"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F8' bpy.types.KeyMapItem.type,
 msgid "F8"
-msgstr ""
+msgstr "F8"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F9' bpy.types.KeyMapItem.type,
 msgid "F9"
-msgstr ""
+msgstr "F9"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F10' bpy.types.KeyMapItem.type,
 msgid "F10"
-msgstr ""
+msgstr "F10"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F11' bpy.types.KeyMapItem.type,
 msgid "F11"
@@ -7953,11 +7914,11 @@ msgstr "F11"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F12' bpy.types.KeyMapItem.type,
 msgid "F12"
-msgstr ""
+msgstr "F12"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F13' bpy.types.KeyMapItem.type,
 msgid "F13"
-msgstr ""
+msgstr "F13"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F14' bpy.types.KeyMapItem.type,
 msgid "F14"
@@ -7965,11 +7926,11 @@ msgstr "F14"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F15' bpy.types.KeyMapItem.type,
 msgid "F15"
-msgstr ""
+msgstr "F15"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F16' bpy.types.KeyMapItem.type,
 msgid "F16"
-msgstr ""
+msgstr "F16"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F17' bpy.types.KeyMapItem.type,
 msgid "F17"
@@ -7977,15 +7938,15 @@ msgstr "F17"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F18' bpy.types.KeyMapItem.type,
 msgid "F18"
-msgstr ""
+msgstr "F18"
 
 #: bpy.types.KeyMapItem.key_modifier, 'F19' bpy.types.KeyMapItem.type,
 msgid "F19"
-msgstr ""
+msgstr "F19"
 
 #: bpy.types.KeyMapItem.key_modifier, 'PAUSE' bpy.types.KeyMapItem.type,
 msgid "Pause"
-msgstr ""
+msgstr "Pause"
 
 #: bpy.types.KeyMapItem.key_modifier, 'INSERT' bpy.types.KeyMapItem.type,
 #: bpy.types.CONSOLE_OT_insert bpy.types.TEXT_OT_insert
@@ -7993,19 +7954,18 @@ msgstr ""
 msgid "Insert"
 msgstr "Insérer"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'HOME' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Home"
-msgstr "Origine"
+msgstr "Home (origine ?)"
 
 #: bpy.types.KeyMapItem.key_modifier, 'PAGE_UP' bpy.types.KeyMapItem.type,
 msgid "Page Up"
-msgstr ""
+msgstr "Page haut"
 
 #: bpy.types.KeyMapItem.key_modifier, 'PAGE_DOWN' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Page Down"
-msgstr "Déplacer Bas"
+msgstr "Page bas"
 
 #: bpy.types.KeyMapItem.key_modifier, 'END' bpy.types.KeyMapItem.type,
 #: bpy.types.PointCache.frame_end bpy.types.TextMarker.character_index_end
@@ -8030,24 +7990,20 @@ msgid "End"
 msgstr "Fin"
 
 #: bpy.types.KeyMapItem.key_modifier, 'MEDIA_PLAY' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Media Play/Pause"
-msgstr "Meta Plan"
+msgstr "Média lecture/pause"
 
 #: bpy.types.KeyMapItem.key_modifier, 'MEDIA_STOP' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Media Stop"
-msgstr "Stop média"
+msgstr "Média stop"
 
 #: bpy.types.KeyMapItem.key_modifier, 'MEDIA_FIRST' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Media First"
-msgstr "Baricentre"
+msgstr "Média premier"
 
 #: bpy.types.KeyMapItem.key_modifier, 'MEDIA_LAST' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Media Last"
-msgstr "Répeter"
+msgstr "Média dernier"
 
 #: bpy.types.KeyMapItem.key_modifier, 'WINDOW_DEACTIVATE'
 #: bpy.types.KeyMapItem.type,
@@ -8055,77 +8011,73 @@ msgid "Window Deactivate"
 msgstr "Désactiver fenêtre"
 
 #: bpy.types.KeyMapItem.key_modifier, 'TIMER0' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Timer 0"
-msgstr "Temps"
+msgstr "Timer 0"
 
 #: bpy.types.KeyMapItem.key_modifier, 'TIMER1' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Timer 1"
-msgstr "Temps"
+msgstr "Timer 1"
 
 #: bpy.types.KeyMapItem.key_modifier, 'TIMER2' bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Timer 2"
-msgstr "Temps"
+msgstr "Timer 2"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_MENU'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Menu"
-msgstr "Menu :"
+msgstr "Menu"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_FIT'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Fit"
-msgstr "Au Premier"
+msgstr "Remplir"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_ISO1'
 #: bpy.types.KeyMapItem.type,
 msgid "ISO 1"
-msgstr ""
+msgstr "ISO 1"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_ISO2'
 #: bpy.types.KeyMapItem.type,
 msgid "ISO 2"
-msgstr ""
+msgstr "ISO 2"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_ROLL_CW'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Roll CW"
-msgstr "Roulis :"
+msgstr "Roulis CW"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_ROLL_CCW'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Roll CCW"
-msgstr "Roulis :"
+msgstr "Roulis CCW"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_SPIN_CW'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Spin CW"
-msgstr "Faire tourner"
+msgstr "Lacet CW"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_SPIN_CCW'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Spin CCW"
-msgstr "Faire tourner"
+msgstr "Lacet CCW"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_TILT_CW'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Tilt CW"
-msgstr "Incliner"
+msgstr "Tangage CW"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_TILT_CCW'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Tilt CCW"
-msgstr "Incliner"
+msgstr "Tangage CCW"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_ROTATE'
 #: bpy.types.KeyMapItem.type, bpy.types.BRUSH_OT_sculpt_tool_set.tool,
@@ -8138,19 +8090,18 @@ msgstr "Pivoter"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_PANZOOM'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Pan/Zoom"
-msgstr "Zoom"
+msgstr "Pan/zoom"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_DOMINANT'
 #: bpy.types.KeyMapItem.type,
 msgid "Dominant"
-msgstr ""
+msgstr "Dominant"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_PLUS'
 #: bpy.types.KeyMapItem.type,
 msgid "Plus"
-msgstr ""
+msgstr "Plus"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_MINUS'
 #: bpy.types.KeyMapItem.type,
@@ -8159,77 +8110,66 @@ msgstr "Moins"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_1'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 1"
-msgstr "Boutons"
+msgstr "Bouton 1"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_2'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 2"
-msgstr "Boutons"
+msgstr "Bouton 2"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_3'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 3"
-msgstr "Boutons"
+msgstr "Bouton 3"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_4'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 4"
-msgstr "Boutons"
+msgstr "Bouton 4"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_5'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 5"
-msgstr "Boutons"
+msgstr "Bouton 5"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_6'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 6"
-msgstr "Boutons"
+msgstr "Bouton 6"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_7'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 7"
-msgstr "Boutons"
+msgstr "Bouton 7"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_8'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 8"
-msgstr "Boutons"
+msgstr "Bouton 8"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_9'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 9"
-msgstr "Boutons"
+msgstr "Bouton 9"
 
 #: bpy.types.KeyMapItem.key_modifier, 'NDOF_BUTTON_10'
 #: bpy.types.KeyMapItem.type,
-#, fuzzy
 msgid "Button 10"
-msgstr "Boutons"
+msgstr "Bouton 10"
 
+# Traduction incertaine
 #: bpy.types.KeyMapItem.map_type
-#, fuzzy
 msgid "Map Type"
-msgstr "Canaux"
+msgstr "Type de raccourcis"
 
 #: bpy.types.KeyMapItem.map_type
 msgid "Type of event mapping"
 msgstr "Type de plaquage de l'évènement"
 
 #: bpy.types.KeyMapItem.map_type, 'KEYBOARD' bpy.types.Sensor.type,
-#, fuzzy
 msgid "Keyboard"
-msgstr "Clavier:"
+msgstr "Clavier"
 
 #: bpy.types.KeyMapItem.map_type, 'TWEAK'
 #: bpy.types.NODE_OT_select_border.tweak
@@ -8242,12 +8182,11 @@ msgstr "Souris"
 
 #: bpy.types.KeyMapItem.map_type, 'NDOF'
 msgid "NDOF"
-msgstr ""
+msgstr "NDOF"
 
 #: bpy.types.KeyMapItem.map_type, 'TEXTINPUT'
-#, fuzzy
 msgid "Text Input"
-msgstr "Texture et Position"
+msgstr "Entrée texte"
 
 #: bpy.types.KeyMapItem.oskey
 msgid "Operating system key pressed"
@@ -8266,9 +8205,8 @@ msgid "The value this event translates to in a modal keymap"
 msgstr "La valeur de cet évènement est traduit dans le raccourci modal"
 
 #: bpy.types.KeyMapItem.shift
-#, fuzzy
 msgid "Shift"
-msgstr "Décalage :"
+msgstr "Shift (Maj)"
 
 #: bpy.types.KeyMapItem.shift
 msgid "Shift key pressed"
@@ -8283,23 +8221,20 @@ msgid "Is this keymap item user defined (doesn't just replace a builtin item)"
 msgstr "Cet élément de configuration, est-il défini par l'utilisateur ?(ne pas remplacer une configuration d'usine)"
 
 #: bpy.types.KeyMapItem.is_user_modified
-#, fuzzy
 msgid "User Modified"
-msgstr "Modifiées"
+msgstr "Modifié par l’utilisateur"
 
 #: bpy.types.KeyMapItem.is_user_modified
 msgid "Is this keymap item modified by the user"
 msgstr "Cet élément de configuration, a-t-il été modifié par l'utilisateur ?"
 
 #: bpy.types.KeyMapItem.value, 'PRESS'
-#, fuzzy
 msgid "Press"
-msgstr "Remise à zéro"
+msgstr "Pression"
 
 #: bpy.types.KeyMapItem.value, 'RELEASE'
-#, fuzzy
 msgid "Release"
-msgstr "Notes de Version (En)"
+msgstr "Relâcher"
 
 #: bpy.types.KeyMapItem.value, 'CLICK'
 msgid "Click"
@@ -8310,32 +8245,28 @@ msgid "Double Click"
 msgstr "Double clic"
 
 #: bpy.types.KeyMapItem.id
-#, fuzzy
 msgid "id"
-msgstr "Cacher"
+msgstr "id"
 
 #: bpy.types.KeyMapItem.id
-#, fuzzy
 msgid "ID of the item"
-msgstr "Taille du texte"
+msgstr "ID de l’élément"
 
 #: bpy.types.Keyframe
 msgid "Bezier curve point with two handles defining a Keyframe on an F-Curve"
 msgstr "Point de courbe de Bézier avec deux poignées, définissant une image clé sur un F-Curve"
 
 #: bpy.types.Keyframe.select_left_handle
-#, fuzzy
 msgid "Left handle selection status"
-msgstr "État de sélection de l’objet"
+msgstr "État de sélection de la poignée gauche"
 
 #: bpy.types.Keyframe.select_right_handle
 msgid "Right handle selection status"
 msgstr "État de sélection de la poignée droite"
 
 #: bpy.types.Keyframe.interpolation
-#, fuzzy
 msgid "Interpolation method to use for segment of the curve from this Keyframe until the next Keyframe"
-msgstr "Définir le mode d’interpolation pour les segments de F-curves débutant par les images clé sélectionnées"
+msgstr "Méthode d’interpolation à utiliser pour le segment de la F-Curve débutant à cette image clé et jusqu’à la suivante"
 
 #: bpy.types.Keyframe.interpolation, 'BEZIER' bpy.types.Spline.type,
 #: bpy.types.UserPreferencesEdit.keyframe_new_interpolation_type,
@@ -8352,14 +8283,12 @@ msgid "Left Handle"
 msgstr "Poignée gauche"
 
 #: bpy.types.Keyframe.handle_left
-#, fuzzy
 msgid "Coordinates of the left handle (before the control point)"
-msgstr "Définir le type de poignée pour les points de contrôle sélectionnés"
+msgstr "Coordonnées de la poignée gauche (avant le point de contrôle)"
 
 #: bpy.types.Keyframe.handle_left_type
-#, fuzzy
 msgid "Left Handle Type"
-msgstr "Définir type de poignée"
+msgstr "Type de la poignée gauche"
 
 #: bpy.types.Keyframe.handle_left_type, 'AUTO'
 #: bpy.types.Keyframe.handle_right_type,
@@ -8393,19 +8322,16 @@ msgid "Right Handle"
 msgstr "Poignée droite"
 
 #: bpy.types.Keyframe.handle_right
-#, fuzzy
 msgid "Coordinates of the right handle (after the control point)"
-msgstr "Définir le type de poignée pour les points de contrôle sélectionnés"
+msgstr "Coordonnées de la poignée droite (après le point de contrôle)"
 
 #: bpy.types.Keyframe.handle_right_type
-#, fuzzy
 msgid "Right Handle Type"
-msgstr "Poignée droite"
+msgstr "Type de la poignée droite"
 
 #: bpy.types.Keyframe.type
-#, fuzzy
 msgid "The type of keyframe (for visual purposes only"
-msgstr "Définir le type d’image clé pour les images clé sélectionnées"
+msgstr "Type d’image clé (visuellement parlant uniquement)"
 
 #: bpy.types.Keyframe.type, 'KEYFRAME' bpy.types.ThemeSequenceEditor.keyframe
 #: bpy.types.ThemeWidgetStateColors.inner_key
@@ -8413,21 +8339,19 @@ msgstr "Définir le type d’image clé pour les images clé sélectionnées"
 msgid "Keyframe"
 msgstr "Image clé"
 
+# Traduction incertaine
 #: bpy.types.Keyframe.type, 'BREAKDOWN'
 #: bpy.types.ACTION_OT_keyframe_type.type,
-#, fuzzy
 msgid "Breakdown"
-msgstr "Pose de rupture"
+msgstr "Rupture"
 
 #: bpy.types.Keyframe.type, 'EXTREME' bpy.types.ACTION_OT_keyframe_type.type,
-#, fuzzy
 msgid "Extreme"
-msgstr "Extruder"
+msgstr "Extrême"
 
 #: bpy.types.Keyframe.type, 'JITTER' bpy.types.ACTION_OT_keyframe_type.type,
-#, fuzzy
 msgid "Jitter"
-msgstr "Motif"
+msgstr "Bruité"
 
 #: bpy.types.KeyingSet bpy.types.ANIM_OT_keyframe_delete.type
 #: bpy.types.ANIM_OT_keyframe_insert.type
@@ -8435,156 +8359,131 @@ msgstr "Motif"
 #: bpy.types.OBJECT_OT_select_grouped.type, 'KEYINGSET'
 #: bpy.types.PAINT_OT_weight_sample_group.group
 #: bpy.types.POSE_OT_select_grouped.type,
-#, fuzzy
 msgid "Keying Set"
 msgstr "Ensemble de clés"
 
+# Traduction incertaine
 #: bpy.types.KeyingSet
 msgid "Settings that should be keyframed together"
-msgstr ""
+msgstr "Réglages qui devraient être animés par images clé ensemble"
 
 #: bpy.types.KeyingSet.is_path_absolute
 #: bpy.types.EXPORT_SCENE_OT_fbx.path_mode, 'ABSOLUTE'
 #: bpy.types.EXPORT_SCENE_OT_obj.path_mode,
 #: bpy.types.EXPORT_SCENE_OT_x3d.path_mode,
 msgid "Absolute"
-msgstr ""
+msgstr "Absolu"
 
 #: bpy.types.KeyingSet.is_path_absolute
 msgid "Keying Set defines specific paths/settings to be keyframed (i.e. is not reliant on context info)"
 msgstr "L’ensemble de clé définit des chemins/réglages spécifiques à animer par images clé (c-à-d non-lié au contexte courant)"
 
-#: bpy.types.KeyingSet.bl_options bpy.types.KeyingSetInfo.bl_options
-#: bpy.types.KeyingSetPath.bl_options bpy.types.Macro.bl_options
+#: bpy.types.KeyingSet.bl_options bpy.types.KeyingSetPath.bl_options
 msgid "Options"
 msgstr "Options"
 
-#: bpy.types.KeyingSet.bl_options bpy.types.KeyingSetInfo.bl_options
-#: bpy.types.KeyingSetPath.bl_options
-#, fuzzy
+#: bpy.types.KeyingSet.bl_options bpy.types.KeyingSetPath.bl_options
 msgid "Keying set options"
-msgstr "Ensembles de clés"
+msgstr "Options de l’ensemble de clés"
 
 #: bpy.types.KeyingSet.bl_options, 'INSERTKEY_NEEDED'
-#: bpy.types.KeyingSetInfo.bl_options, bpy.types.KeyingSetPath.bl_options,
-#, fuzzy
+#: bpy.types.KeyingSetPath.bl_options,
 msgid "Insert Keyframes - Only Needed"
-msgstr "Insérer images clé"
+msgstr "Insérer images clé – seulement les nécessaires"
 
 #: bpy.types.KeyingSet.bl_options, 'INSERTKEY_NEEDED'
-#: bpy.types.KeyingSetInfo.bl_options, bpy.types.KeyingSetPath.bl_options,
+#: bpy.types.KeyingSetPath.bl_options,
 msgid "Only insert keyframes where they're needed in the relevant F-Curves"
 msgstr "N’insérer des images clé que là où elles sont nécessaires dans les F-Curves idoines"
 
 #: bpy.types.KeyingSet.bl_options, 'INSERTKEY_VISUAL'
-#: bpy.types.KeyingSetInfo.bl_options, bpy.types.KeyingSetPath.bl_options,
-#, fuzzy
+#: bpy.types.KeyingSetPath.bl_options,
 msgid "Insert Keyframes - Visual"
-msgstr "Insérer images clé"
+msgstr "Insérer images clé – visuel"
 
 #: bpy.types.KeyingSet.bl_options, 'INSERTKEY_VISUAL'
-#: bpy.types.KeyingSetInfo.bl_options, bpy.types.KeyingSetPath.bl_options,
+#: bpy.types.KeyingSetPath.bl_options,
 msgid "Insert keyframes based on 'visual transforms'"
-msgstr ""
+msgstr "Insérer images clé d’après “transformations visuelles”"
 
 #: bpy.types.KeyingSet.bl_options, 'INSERTKEY_XYZ_TO_RGB'
-#: bpy.types.KeyingSetInfo.bl_options, bpy.types.KeyingSetPath.bl_options,
-#, fuzzy
+#: bpy.types.KeyingSetPath.bl_options,
 msgid "F-Curve Colors - XYZ to RGB"
-msgstr "Nouvelles couleurs des F-Curves – XYZ vers RVB"
+msgstr "Couleurs de la F-Curve – XYZ vers RVB"
 
 #: bpy.types.KeyingSet.bl_options, 'INSERTKEY_XYZ_TO_RGB'
-#: bpy.types.KeyingSetInfo.bl_options, bpy.types.KeyingSetPath.bl_options,
+#: bpy.types.KeyingSetPath.bl_options,
 #: bpy.types.UserPreferencesEdit.use_insertkey_xyz_to_rgb
 msgid "Color for newly added transformation F-Curves (Location, Rotation, Scale) and also Color is based on the transform axis"
 msgstr "Couleur pour les F-Curves de transformation (Position, Rotation, Taille) nouvellement créées,aussi basée sur l’axe de transformation"
 
 #: bpy.types.KeyingSet.paths
-#, fuzzy
 msgid "Paths"
-msgstr "Chemins :"
+msgstr "Chemins"
 
+# Traduction incertaine
 #: bpy.types.KeyingSet.paths
 msgid "Keying Set Paths to define settings that get keyframed together"
-msgstr ""
+msgstr "Chemins d’ensemble de clé pour définir les réglages qui sont animés par images clé ensemble"
 
 #: bpy.types.KeyingSet.type_info
-#, fuzzy
 msgid "Type Info"
-msgstr "Espace d’infos"
+msgstr "Infos de type"
 
+# Traduction incertaine
 #: bpy.types.KeyingSet.type_info
 msgid "Callback function defines for built-in Keying Sets"
-msgstr ""
-
-#: bpy.types.KeyingSetInfo
-#, fuzzy
-msgid "Keying Set Info"
-msgstr "Ensemble de clés"
-
-#: bpy.types.KeyingSetInfo
-msgid "Callback function defines for builtin Keying Sets"
-msgstr "Le rappel de fonction définit les Keying Sets pré-définis"
-
-#: bpy.types.KeyingSetInfo.bl_idname bpy.types.Macro.bl_idname
-msgid "bl_idname"
-msgstr ""
+msgstr "Fonction de “callback” définie pour les ensembles de clé internes"
 
 #: bpy.types.KeyingSetPath
-#, fuzzy
 msgid "Keying Set Path"
-msgstr "Ensemble de clés"
+msgstr "Chemin de l’ensemble de clés"
 
 #: bpy.types.KeyingSetPath
 msgid "Path to a setting for use in a Keying Set"
 msgstr "Chemin pour un paramètre à utiliser dans un Keying Set"
 
+# Traduction incertaine
 #: bpy.types.KeyingSetPath.data_path
-#, fuzzy
 msgid "Path to property setting"
-msgstr "Chemin de la propriété de contrôle radial"
+msgstr "Chemin vers le réglage de propriété"
 
 #: bpy.types.KeyingSetPath.use_entire_array
 msgid "Entire Array"
-msgstr ""
+msgstr "Tableau complet"
 
 #: bpy.types.KeyingSetPath.use_entire_array
 msgid "When an 'array/vector' type is chosen (Location, Rotation, Color, etc.), entire array is to be used"
 msgstr "Quand un type d'ensemble/vecteur est choisi (Position, Rotation, Couleur, etc.), l'ensemble entier sera utilisé"
 
 #: bpy.types.KeyingSetPath.group
-#, fuzzy
 msgid "Group Name"
-msgstr "Groupés"
+msgstr "Nome du groupe"
 
+# Traduction incertaine
 #: bpy.types.KeyingSetPath.group
 msgid "Name of Action Group to assign setting(s) for this path to"
-msgstr ""
+msgstr "Nom du groupe d’action auquel assigner des réglages pour ce chemin"
 
 #: bpy.types.KeyingSetPath.group_method
-#, fuzzy
 msgid "Grouping Method"
-msgstr "Méthode de bosselage"
+msgstr "Méthode de regroupement"
 
 #: bpy.types.KeyingSetPath.group_method
-#, fuzzy
 msgid "Method used to define which Group-name to use"
-msgstr "Méthode utilisée pour déterminer quand arrêter de propager la pose aux images clé"
+msgstr "Méthode utilisée pour déterminer quel nom de groupe utiliser"
 
 #: bpy.types.KeyingSetPath.group_method, 'NAMED'
-#, fuzzy
 msgid "Named Group"
-msgstr "Groupes de fumée"
+msgstr "Groupe nommé"
 
 #: bpy.types.KeyingSetPath.group_method, 'KEYINGSET'
-#, fuzzy
 msgid "Keying Set Name"
-msgstr "Numéro de ensemble de clés"
+msgstr "Nom de l’ensemble de clés"
 
 #: bpy.types.KeyingSetPath.id
-#, fuzzy
 msgid "ID-Block"
-msgstr "Bloquer"
+msgstr "Bloc-ID"
 
 #: bpy.types.KeyingSetPath.id
 msgid "ID-Block that keyframes for Keying Set should be added to (for Absolute Keying Sets only)"
@@ -8592,88 +8491,78 @@ msgstr "Bloc ID auquel les frames clés pour les Keying Set doivent être ajout�
 
 #: bpy.types.KeyingSetPath.array_index
 msgid "Index to the specific setting if applicable"
-msgstr ""
+msgstr "Indice du réglage proprement dit, si applicable"
 
 #: bpy.types.LampSkySettings
-#, fuzzy
 msgid "Lamp Sky Settings"
-msgstr "Copier réglages"
+msgstr "Réglages du ciel de lampe"
 
 #: bpy.types.LampSkySettings
 msgid "Sky related settings for a sun lamp"
 msgstr "paramètres relatifs au Ciel pour une lampe Soleil"
 
 #: bpy.types.LampSkySettings.use_atmosphere
-#, fuzzy
 msgid "Atmosphere"
-msgstr "Vers sphère"
+msgstr "Atmosphère"
 
 #: bpy.types.LampSkySettings.use_atmosphere
 msgid "Apply sun effect on atmosphere"
 msgstr "Appliquer l'effet du soleil sur l'atmosphère"
 
 #: bpy.types.LampSkySettings.atmosphere_distance_factor
-#, fuzzy
 msgid "Atmosphere Distance Factor"
-msgstr "Facteur de Fresnel"
+msgstr "Facteur de distance de l’atmosphère"
 
 #: bpy.types.LampSkySettings.atmosphere_distance_factor
 msgid "Multiplier to convert blender units to physical distance"
 msgstr "Multiplicateur pour convertir les unités Blender en distances physiques"
 
 #: bpy.types.LampSkySettings.atmosphere_extinction
-#, fuzzy
 msgid "Atmosphere Extinction"
-msgstr "Extinction"
+msgstr "Extinction de l’atmosphère"
 
+# Traduction incertaine
 #: bpy.types.LampSkySettings.atmosphere_extinction
-#, fuzzy
 msgid "Extinction scattering contribution factor"
-msgstr "Facteur de mélange de la dispersion de texture"
+msgstr "Facteur de contribution de la dispersion de l’extinction"
 
 #: bpy.types.LampSkySettings.atmosphere_inscattering
 msgid "Atmosphere Inscatter"
-msgstr ""
+msgstr "Dispersion interne de l’atmosphère"
 
+# Traduction incertaine
 #: bpy.types.LampSkySettings.atmosphere_inscattering
-#, fuzzy
 msgid "Scatter contribution factor"
-msgstr "Facteur de dispersion"
+msgstr "Facteur de contribution de la dispersion"
 
 #: bpy.types.LampSkySettings.atmosphere_turbidity
-#, fuzzy
 msgid "Atmosphere Turbidity"
-msgstr "Turbidité"
+msgstr "Turbidité de l’atmosphère"
 
 #: bpy.types.LampSkySettings.atmosphere_turbidity
-#, fuzzy
 msgid "Sky turbidity"
-msgstr "Turbidité"
+msgstr "Turbidité du ciel"
 
 #: bpy.types.LampSkySettings.backscattered_light
-#, fuzzy
 msgid "Backscattered Light"
-msgstr "Poids de dispersion arrière"
+msgstr "Lumière de dispersion arrière"
 
 #: bpy.types.LampSkySettings.backscattered_light
-#, fuzzy
 msgid "Backscattered light"
-msgstr "Poids de dispersion arrière"
+msgstr "Lumière de dispersion arrière"
 
 #: bpy.types.LampSkySettings.horizon_brightness
-#, fuzzy
 msgid "Horizon Brightness"
-msgstr "Luminosité"
+msgstr "Luminosité de l’horizon"
 
 #: bpy.types.LampSkySettings.horizon_brightness
-#, fuzzy
 msgid "Horizon brightness"
-msgstr "Luminosité"
+msgstr "Luminosité de l’horizon"
 
+# Traduction incertaine
 #: bpy.types.LampSkySettings.spread
-#, fuzzy
 msgid "Horizon Spread"
-msgstr "Horizon :"
+msgstr "Étalage de l’horizon"
 
 #: bpy.types.LampSkySettings.use_sky bpy.types.MaterialRaytraceMirror.fade_to,
 #: 'FADE_TO_SKY' bpy.types.RenderLayer.use_sky
@@ -8684,26 +8573,23 @@ msgstr "Ciel"
 
 #: bpy.types.LampSkySettings.use_sky
 msgid "Apply sun effect on sky"
-msgstr ""
+msgstr "Appliquer l’effet de soleil au ciel"
 
 #: bpy.types.LampSkySettings.sky_blend
-#, fuzzy
 msgid "Sky Blend"
-msgstr "Atténuation spot"
+msgstr "Mélange du ciel"
 
 #: bpy.types.LampSkySettings.sky_blend
-#, fuzzy
 msgid "Blend factor with sky"
-msgstr "Facteur de mélange"
+msgstr "Facteur de mélange avec le ciel"
 
 #: bpy.types.LampSkySettings.sky_blend_type
-#, fuzzy
 msgid "Sky Blend Mode"
-msgstr "Extension"
+msgstr "Mode de mélange du ciel"
 
 #: bpy.types.LampSkySettings.sky_blend_type
 msgid "Blend mode for combining sun sky with world sky"
-msgstr ""
+msgstr "Mode de mélange pour combiner le ciel du soleil au ciel du monde"
 
 #: bpy.types.LampSkySettings.sky_blend_type, 'MIX'
 #: bpy.types.TextureSlot.blend_type, bpy.types.ACTION_OT_paste.merge,
@@ -8739,8 +8625,8 @@ msgstr "Éclaircir"
 msgid "Overlay"
 msgstr "Par dessus"
 
+# Traduction incertaine
 #: bpy.types.LampSkySettings.sky_blend_type, 'DODGE'
-#, fuzzy
 msgid "Dodge"
 msgstr "Escamoter"
 
@@ -8770,73 +8656,65 @@ msgid "Linear Light"
 msgstr "Lumière linéaire"
 
 #: bpy.types.LampSkySettings.sky_color_space
-#, fuzzy
 msgid "Sky Color Space"
-msgstr "Espace de couleur :"
+msgstr "Espace de couleur du ciel"
 
 #: bpy.types.LampSkySettings.sky_color_space
 msgid "Color space to use for internal XYZ->RGB color conversion"
-msgstr ""
+msgstr "Espace de couleur à utiliser pour la conversion interne XYZ → RGB"
 
 #: bpy.types.LampSkySettings.sky_color_space, 'SMPTE'
 msgid "SMPTE"
-msgstr ""
+msgstr "SMPTE"
 
 #: bpy.types.LampSkySettings.sky_color_space, 'REC709'
 msgid "REC709"
-msgstr ""
+msgstr "REC709"
 
 #: bpy.types.LampSkySettings.sky_color_space, 'CIE'
 msgid "CIE"
-msgstr ""
+msgstr "CIE"
 
 #: bpy.types.LampSkySettings.sky_exposure
-#, fuzzy
 msgid "Sky Exposure"
-msgstr "Exposition"
+msgstr "Exposition du ciel"
 
+# Traduction incertaine
 #: bpy.types.LampSkySettings.sky_exposure
-#, fuzzy
 msgid "Strength of sky shading exponential exposure correction"
-msgstr "Montant de correction colorimétrique pour la lumière"
+msgstr "Intensité de la correction exponentielle de l’exposition de l’ombrage du ciel"
 
 #: bpy.types.LampSkySettings.sun_brightness
-#, fuzzy
 msgid "Sun Brightness"
-msgstr "Luminosité"
+msgstr "Luminosité du soleil"
 
 #: bpy.types.LampSkySettings.sun_brightness
-#, fuzzy
 msgid "Sun brightness"
-msgstr "Luminosité"
+msgstr "Luminosité du soleil"
 
 #: bpy.types.LampSkySettings.sun_intensity
-#, fuzzy
 msgid "Sun Intensity"
-msgstr "Intensité"
+msgstr "Intensité du soleil"
 
 #: bpy.types.LampSkySettings.sun_intensity
-#, fuzzy
 msgid "Sun intensity"
-msgstr "Intensité"
+msgstr "Intensité du soleil"
 
 #: bpy.types.LampSkySettings.sun_size
 msgid "Sun Size"
 msgstr "Taille du soleil"
 
 #: bpy.types.LampSkySettings.sun_size
-#, fuzzy
 msgid "Sun size"
-msgstr "Sous-taille"
+msgstr "Taille du soleil"
 
 #: bpy.types.LatticePoint
 msgid "Point in the lattice grid"
-msgstr ""
+msgstr "Point dans la grille du lattice"
 
 #: bpy.types.LatticePoint.co_deform
-#, fuzzy
 msgid "Deformed Location"
-msgstr "Position partagée"
+msgstr "Position déformée"
 
 #: bpy.types.LatticePoint.groups bpy.types.MeshVertex.groups
 #: bpy.types.SpaceOutliner.display_mode, 'GROUPS'
@@ -8845,102 +8723,18 @@ msgstr "Groupes"
 
 #: bpy.types.LatticePoint.groups
 msgid "Weights for the vertex groups this point is member of"
-msgstr ""
-
-#: bpy.types.Macro
-#, fuzzy
-msgid "Macro Operator"
-msgstr "Montrer opérateurs"
-
-#: bpy.types.Macro
-msgid "Storage of a macro operator being executed, or registered after execution"
-msgstr ""
-
-#: bpy.types.Macro.bl_options
-msgid "Options for this operator type"
-msgstr ""
-
-#: bpy.types.Macro.bl_options, 'REGISTER'
-msgid "Register"
-msgstr "Enregister"
-
-#: bpy.types.Macro.bl_options, 'REGISTER'
-msgid "Display in the info window and support the redo toolbar panel"
-msgstr ""
-
-#: bpy.types.Macro.bl_options, 'UNDO' bpy.types.ED_OT_undo
-msgid "Undo"
-msgstr "Défaire"
-
-#: bpy.types.Macro.bl_options, 'UNDO'
-msgid "Push an undo event (needed for operator redo)"
-msgstr "Pousser un évènement annuler (nécessaire pour un opérateur refaire)"
-
-#: bpy.types.Macro.bl_options, 'BLOCKING'
-msgid "Blocking"
-msgstr "Bloquer"
-
-#: bpy.types.Macro.bl_options, 'BLOCKING'
-msgid "Block anything else from using the cursor"
-msgstr ""
-
-#: bpy.types.Macro.bl_options, 'MACRO'
-msgid "Macro"
-msgstr ""
-
-#: bpy.types.Macro.bl_options, 'MACRO'
-msgid "Use to check if an operator is a macro"
-msgstr ""
-
-#: bpy.types.Macro.bl_options, 'GRAB_POINTER'
-msgid "Grab Pointer"
-msgstr "Prendre pour pointeur"
-
-#: bpy.types.Macro.bl_options, 'GRAB_POINTER'
-msgid "Use so the operator grabs the mouse focus, enables wrapping when continuous grab is enabled"
-msgstr ""
-
-#: bpy.types.Macro.bl_options, 'PRESET' bpy.types.RenderSettings.jpeg2k_preset
-#: bpy.types.BRUSH_OT_curve_preset
-#: release/scripts/startup/bl_ui/space_userpref.py:148
-msgid "Preset"
-msgstr "Pré-réglage"
-
-#: bpy.types.Macro.bl_options, 'PRESET'
-msgid "Display a preset button with the operators settings"
-msgstr "Afficher un bouton preset avec les paramètres des opérateurs"
-
-#: bpy.types.Macro.bl_options, 'INTERNAL'
-#, fuzzy
-msgid "Internal"
-msgstr "Intersection"
-
-#: bpy.types.Macro.bl_options, 'INTERNAL'
-#, fuzzy
-msgid "Removes the operator from search results"
-msgstr "Enlever les objets sélectionnés de tous les groupes"
-
-#: bpy.types.Macro.bl_description
-#, fuzzy
-msgid "bl_description"
-msgstr "Description :"
-
-#: bpy.types.Macro.bl_label
-msgid "bl_label"
-msgstr ""
+msgstr "Poids pour les groupes de vertices dont ce point est membre"
 
 #: bpy.types.MaterialGameSettings
-#, fuzzy
 msgid "Material Game Settings"
-msgstr "Nom du matériau à assigner"
+msgstr "Réglages de matériau du jeu"
 
 #: bpy.types.MaterialGameSettings
-#, fuzzy
 msgid "Game Engine settings for a Material datablock"
-msgstr "Réglages de fibre pour un bloc de données matériau"
+msgstr "Réglages du moteur de jeu pour un bloc de données matériau"
 
+# Traduction incertaine
 #: bpy.types.MaterialGameSettings.use_backface_culling
-#, fuzzy
 msgid "Backface Culling"
 msgstr "Culling des faces arrières"
 
@@ -8950,62 +8744,58 @@ msgstr "Cacher l’arrière des faces dans le moteur de jeu"
 
 #: bpy.types.MaterialGameSettings.alpha_blend bpy.types.Sequence.blend_type
 #: bpy.types.WorldLighting.ao_blend_type
-#, fuzzy
 msgid "Blend Mode"
-msgstr "Extension"
+msgstr "Mode de mélange"
 
 #: bpy.types.MaterialGameSettings.alpha_blend
-#, fuzzy
 msgid "Blend Mode for Transparent Faces"
-msgstr "Utiliser le tampon alpha pour les faces transparentes"
+msgstr "Mode de mélange pour les faces transparentes"
 
 #: bpy.types.MaterialGameSettings.alpha_blend, 'OPAQUE'
 msgid "Opaque"
-msgstr ""
+msgstr "Opaque"
 
 #: bpy.types.MaterialGameSettings.alpha_blend, 'OPAQUE'
 msgid "Render color of textured face as color"
 msgstr "Rendre la couleur des faces texturées en tant que couleur"
 
+# Traduction incertaine
 #: bpy.types.MaterialGameSettings.alpha_blend, 'ADD'
 msgid "Render face transparent and add color of face"
-msgstr ""
+msgstr "Rendre la face transparente et ajouter la couleur de la face"
 
 #: bpy.types.MaterialGameSettings.alpha_blend, 'CLIP'
-#, fuzzy
 msgid "Alpha Clip"
-msgstr "Alpha"
+msgstr "Limitation alpha"
 
+# Traduction incertaine
 #: bpy.types.MaterialGameSettings.alpha_blend, 'CLIP'
 msgid "Use the image alpha values clipped with no blending (binary alpha)"
-msgstr ""
+msgstr "Utiliser les valeurs alpha de l’image limitée, sans aucun mélange (alpha binaire)"
 
 #: bpy.types.MaterialGameSettings.alpha_blend, 'ALPHA'
-#, fuzzy
 msgid "Alpha Blend"
-msgstr "Alpha en-dessous"
+msgstr "Alpha mélangé"
 
 #: bpy.types.MaterialGameSettings.alpha_blend, 'ALPHA'
 msgid "Render polygon transparent, depending on alpha channel of the texture"
 msgstr "Rendre les polygones transparents, suivant le canal alpha de la texture"
 
 #: bpy.types.MaterialGameSettings.alpha_blend, 'ALPHA_SORT'
-#, fuzzy
 msgid "Alpha Sort"
-msgstr "Facteur d’alpha"
+msgstr "Alpha trié"
 
 #: bpy.types.MaterialGameSettings.alpha_blend, 'ALPHA_SORT'
 msgid "Sort faces for correct alpha drawing (slow, use Alpha Clip instead when possible)"
-msgstr ""
+msgstr "Trier les faces pour un affichage correct de l’alpha (lent, utilisez plutôt Limitation alpha si possible)"
 
 #: bpy.types.MaterialGameSettings.face_orientation
-#, fuzzy
 msgid "Face Orientations"
-msgstr "Créer orientation"
+msgstr "Orientations des faces"
 
 #: bpy.types.MaterialGameSettings.face_orientation
 msgid "Especial face orientation options"
-msgstr ""
+msgstr "Options particulières d’orientation de face"
 
 #: bpy.types.MaterialGameSettings.face_orientation, 'NORMAL'
 #: bpy.types.MeshVertex.normal bpy.types.RenderLayer.use_pass_normal
@@ -9041,9 +8831,8 @@ msgid "Normal"
 msgstr "Normale"
 
 #: bpy.types.MaterialGameSettings.face_orientation, 'NORMAL'
-#, fuzzy
 msgid "No tranformation"
-msgstr "Transformation"
+msgstr "Pas de transformation"
 
 #: bpy.types.MaterialGameSettings.face_orientation, 'HALO'
 #: bpy.types.RenderLayer.use_halo bpy.types.SceneRenderLayer.use_halo
@@ -9052,11 +8841,12 @@ msgstr "Halo"
 
 #: bpy.types.MaterialGameSettings.face_orientation, 'HALO'
 msgid "Screen aligned billboard"
-msgstr ""
+msgstr "“Billboard” aligné avec l’écran"
 
+# Traduction incertaine
 #: bpy.types.MaterialGameSettings.face_orientation, 'BILLBOARD'
 msgid "Billboard"
-msgstr ""
+msgstr "Billboard"
 
 #: bpy.types.MaterialGameSettings.face_orientation, 'BILLBOARD'
 msgid "Billboard with Z-axis constraint"
@@ -9071,7 +8861,7 @@ msgstr "Ombre"
 
 #: bpy.types.MaterialGameSettings.face_orientation, 'SHADOW'
 msgid "Faces are used for shadow"
-msgstr ""
+msgstr "Les faces sont utilisée pour les ombres"
 
 #: bpy.types.MaterialGameSettings.invisible
 #: release/scripts/startup/bl_ui/properties_game.py:57
@@ -9083,16 +8873,16 @@ msgstr "Invisible"
 
 #: bpy.types.MaterialGameSettings.invisible
 msgid "Make face invisible"
-msgstr ""
+msgstr "Rendre face invisible"
 
 #: bpy.types.MaterialGameSettings.physics
 msgid "Use physics properties of materials "
 msgstr "Utiliser les propriétés des matériaux"
 
+# Traduction incertaine : texte ou “tex” pour texture ?
 #: bpy.types.MaterialGameSettings.text
-#, fuzzy
 msgid "Use material as text in Game Engine "
-msgstr "Options seulement supportées dans le moteur de jeu"
+msgstr "Utiliser le matériau comme texte dans le moteur de jeu (???)"
 
 #: bpy.types.MaterialHalo
 msgid "Material Halo"
@@ -9103,7 +8893,6 @@ msgid "Halo particle effect settings for a Material datablock"
 msgstr "Réglages de l’effet de particule halo pour un bloc de données matériau"
 
 #: bpy.types.MaterialHalo.add
-#, fuzzy
 msgid "Strength of the add effect"
 msgstr "Force de l’effet d’addition"
 
@@ -9111,28 +8900,25 @@ msgstr "Force de l’effet d’addition"
 msgid "Extreme Alpha"
 msgstr "Alpha extrême"
 
+# Traduction incertaine
 #: bpy.types.MaterialHalo.use_extreme_alpha
-#, fuzzy
 msgid "Use extreme alpha"
 msgstr "Utiliser l’alpha extrême"
 
+# Traduction incertaine
 #: bpy.types.MaterialHalo.use_flare_mode
-#, fuzzy
 msgid "Flare"
-msgstr "Flare"
+msgstr "Artefact d’objectif"
 
 #: bpy.types.MaterialHalo.use_flare_mode
-#, fuzzy
 msgid "Render halo as a lens flare"
 msgstr "Rendre le halo comme un artefact d’objectif (“lens flare”)"
 
 #: bpy.types.MaterialHalo.flare_boost
-#, fuzzy
 msgid "Flare Boost"
 msgstr "Boost d’artefact"
 
 #: bpy.types.MaterialHalo.flare_boost
-#, fuzzy
 msgid "Give the flare extra strength"
 msgstr "Donner à l’artefact une force supplémentaire"
 
@@ -9141,7 +8927,6 @@ msgid "Flare Seed"
 msgstr "Graine d’artefact"
 
 #: bpy.types.MaterialHalo.flare_seed
-#, fuzzy
 msgid "Offset in the flare seed table"
 msgstr "Décalage dans le tableau des graines aléatoires d’artefact"
 
@@ -9150,7 +8935,6 @@ msgid "Flare Size"
 msgstr "Taille d’artefact"
 
 #: bpy.types.MaterialHalo.flare_size
-#, fuzzy
 msgid "Factor by which the flare is larger than the halo"
 msgstr "Facteur par lequel la taille de l’artefact est multipliée, par rapport au halo"
 
@@ -9167,7 +8951,6 @@ msgid "Flares Sub"
 msgstr "Sous-artefacts"
 
 #: bpy.types.MaterialHalo.flare_subflare_count
-#, fuzzy
 msgid "Number of sub-flares"
 msgstr "Nombre de sous-artefacts"
 
@@ -9178,7 +8961,6 @@ msgid "Hardness"
 msgstr "Dureté"
 
 #: bpy.types.MaterialHalo.hardness
-#, fuzzy
 msgid "Hardness of the halo"
 msgstr "Dureté du halo"
 
@@ -9187,7 +8969,6 @@ msgid "Line Number"
 msgstr "Numéro de ligne"
 
 #: bpy.types.MaterialHalo.line_count
-#, fuzzy
 msgid "Number of star shaped lines rendered over the halo"
 msgstr "Nombre de lignes en forme d’étoile rendues par-dessus le halo"
 
@@ -9198,7 +8979,6 @@ msgid "Lines"
 msgstr "Lignes"
 
 #: bpy.types.MaterialHalo.use_lines
-#, fuzzy
 msgid "Render star shaped lines over halo"
 msgstr "Rendre des lignes en forme d’étoile par-dessus le halo"
 
@@ -9208,17 +8988,14 @@ msgid "Rings"
 msgstr "Anneaux"
 
 #: bpy.types.MaterialHalo.ring_count
-#, fuzzy
 msgid "Number of rings rendered over the halo"
 msgstr "Nombre d’anneaux rendus par-dessus le halo"
 
 #: bpy.types.MaterialHalo.use_ring
-#, fuzzy
 msgid "Render rings over halo"
 msgstr "Rendre des anneaux par-dessus le halo"
 
 #: bpy.types.MaterialHalo.seed
-#, fuzzy
 msgid "Randomize ring dimension and line location"
 msgstr "Rendre aléatoire les dimensions des anneaux et positions de lignes"
 
@@ -9228,7 +9005,6 @@ msgid "Shaded"
 msgstr "Ombré"
 
 #: bpy.types.MaterialHalo.use_shaded
-#, fuzzy
 msgid "Let halo receive light and shadows from external objects"
 msgstr "Laisser les halos recevoir lumière et ombres depuis des objets externes"
 
@@ -14964,6 +14740,11 @@ msgstr "Placeholders"
 #: bpy.types.RenderSettings.use_placeholder
 msgid "Create empty placeholder files while rendering frames (similar to Unix 'touch')"
 msgstr "Créer des fichiers “placeholders” vides pendant le rendu des images (similaire au “touch” Unix)"
+
+#: bpy.types.RenderSettings.jpeg2k_preset bpy.types.BRUSH_OT_curve_preset
+#: release/scripts/startup/bl_ui/space_userpref.py:148
+msgid "Preset"
+msgstr "Pré-réglage"
 
 #: bpy.types.RenderSettings.jpeg2k_preset
 #, fuzzy
@@ -20707,15 +20488,6 @@ msgstr "Métrique"
 msgid "Imperial"
 msgstr "Impérial"
 
-#: bpy.types.UnknownType
-#, fuzzy
-msgid "Unknown Type"
-msgstr "Par région"
-
-#: bpy.types.UnknownType
-msgid "Stub RNA type used for pointers to unknown or internal data"
-msgstr ""
-
 #: bpy.types.UserPreferences
 #, fuzzy
 msgid "Global user preferences"
@@ -24450,7 +24222,8 @@ msgid "3D region in this space, in case of quad view the camera region"
 msgstr "Région 3D dans cet espace, la région caméra dans le cas d’une vue quad"
 
 #: bpy.types.SpaceView3D.use_pivot_point_align
-msgid "Manipulate object centers only"
+#, fuzzy
+msgid "Manipulate center points (object and pose mode only)"
 msgstr "Ne manipuler que les centres d’objet"
 
 #: bpy.types.SpaceView3D.show_all_objects_origin
@@ -28463,6 +28236,10 @@ msgid "Redo previous action"
 msgstr "Refaire la dernière action"
 
 #: bpy.types.ED_OT_undo
+msgid "Undo"
+msgstr "Défaire"
+
+#: bpy.types.ED_OT_undo
 #, fuzzy
 msgid "Undo previous action"
 msgstr "Refaire la dernière action"
@@ -30249,7 +30026,7 @@ msgstr "Projeter un rendu édité depuis la caméra active sur l’objet"
 
 #: bpy.types.IMAGE_OT_project_edit
 msgid "Edit a snapshot of the viewport in an external image editor"
-msgstr ""
+msgstr "Editer une capture de la vue 3D dans un autre logiciel de traitement d'images"
 
 #: bpy.types.IMAGE_OT_record_composite
 msgid "Record Composite"
@@ -30421,7 +30198,7 @@ msgstr "Facteur de zoom, 1.0  pour 1:1, au-dessus pour zoomer, au-dessous pour p
 
 #: bpy.types.IMPORT_ANIM_OT_bvh
 msgid "Load a BVH motion capture file"
-msgstr ""
+msgstr "Charger un fichier de capture de mouvements BVH"
 
 #: bpy.types.IMPORT_ANIM_OT_bvh.filepath
 #: bpy.types.IMPORT_CURVE_OT_svg.filepath
@@ -30435,7 +30212,7 @@ msgstr "Chemin où écrire fichier"
 
 #: bpy.types.IMPORT_ANIM_OT_bvh.target
 msgid "Import target type"
-msgstr ""
+msgstr "Importer type de cible"
 
 #: bpy.types.IMPORT_ANIM_OT_bvh.frame_start
 msgid "Starting frame for the animation"
@@ -30492,7 +30269,7 @@ msgstr "Ajouter contrainte"
 
 #: bpy.types.IMPORT_SCENE_OT_autodesk_3ds.constrain_size
 msgid "Scale the model by 10 until it reacehs the size constraint. Zero Disables"
-msgstr ""
+msgstr "Redimensionner le modèle d'un facteur 10 jusqu'à ce qu'il soit compris dans la contrainte de taille. Désactiver à 0"
 
 #: bpy.types.IMPORT_SCENE_OT_autodesk_3ds.use_image_search
 #: bpy.types.IMPORT_SCENE_OT_obj.use_image_search
@@ -30511,7 +30288,7 @@ msgstr "Appliquer transformation visuelle"
 
 #: bpy.types.IMPORT_SCENE_OT_autodesk_3ds.use_apply_transform
 msgid "Workaround for object transformations importing incorrectly"
-msgstr ""
+msgstr "Contournement pour les transformations d'objet incorrectement importées"
 
 #: bpy.types.IMPORT_SCENE_OT_obj
 #, fuzzy
@@ -30524,11 +30301,11 @@ msgstr ""
 
 #: bpy.types.IMPORT_SCENE_OT_obj.use_ngons
 msgid "Import faces with more then 4 verts as fgons"
-msgstr ""
+msgstr "Importer les faces à plus de 4 côtés en tant que fgons"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.use_edges
 msgid "Import lines and faces with 2 verts as edge"
-msgstr ""
+msgstr "Importer lignes et faces avec 2 vertices en tant qu'edges"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.use_smooth_groups
 #, fuzzy
@@ -30537,15 +30314,15 @@ msgstr "Adoucir clés"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.use_smooth_groups
 msgid "Surround smooth groups by sharp edges"
-msgstr ""
+msgstr "Délimiter les smooth groups par des arêtes dures"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.use_split_objects
 msgid "Import OBJ Objects into Blender Objects"
-msgstr ""
+msgstr "Importer des objets OBJ en tant qu'objets blender séparés"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.use_split_groups
 msgid "Import OBJ Groups into Blender Objects"
-msgstr ""
+msgstr "Importer des groupes OBJ en tant qu'objets blender séparés"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.use_groups_as_vgroups
 #, fuzzy
@@ -30559,7 +30336,7 @@ msgstr "Enlever de tous les groupes de vertices"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.use_image_search
 msgid "Search subdirs for any assosiated images (Warning, may be slow)"
-msgstr ""
+msgstr "Chercher les sous-dossiers pour chaque image associée (Attention, peut être lent)"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.split_mode
 #: bpy.types.IMPORT_SCENE_OT_obj.split_mode, 'ON' bpy.types.MESH_OT_split
@@ -30569,7 +30346,7 @@ msgstr "Division"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.split_mode, 'ON'
 msgid "Split geometry, omits unused verts"
-msgstr ""
+msgstr "Scinder la géométrie, omettre les vertices inutilisés"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.split_mode, 'OFF'
 msgid "Keep Vert Order"
@@ -30586,7 +30363,7 @@ msgstr "Réinitialiser taille"
 
 #: bpy.types.IMPORT_SCENE_OT_obj.global_clamp_size
 msgid "Clamp the size to this maximum (Zero to Disable)"
-msgstr ""
+msgstr "Limiter la taille à ce maximum (Désactivé à Zéro)"
 
 #: bpy.types.IMPORT_SCENE_OT_x3d
 msgid "Import and X3D or VRML file"
@@ -30717,7 +30494,7 @@ msgstr "Nom du groupe à sélectionner"
 #: bpy.types.LOGIC_OT_actuator_move.object
 #: bpy.types.LOGIC_OT_actuator_remove.object
 msgid "Name of the object the actuator belongs to"
-msgstr ""
+msgstr "Nom de l'objet auquel appartient l'actionneur"
 
 #: bpy.types.LOGIC_OT_actuator_move.direction
 #: bpy.types.LOGIC_OT_controller_move.direction
@@ -30880,7 +30657,7 @@ msgstr "Sélectionner emplacement de matériau"
 
 #: bpy.types.LOGIC_OT_texface_convert
 msgid "Convert old texface settings into material. It may create new materials if needed"
-msgstr ""
+msgstr "Convertir les anciens paramêtre texface dans le matériau. Ca peut créer des nouveaux matériaux si nécessaire"
 
 #: bpy.types.MARKER_OT_add
 msgid "Add Time Marker"
@@ -31068,11 +30845,11 @@ msgstr "Pourcentage de méta-éléments à sélectionner aléatoirement"
 
 #: bpy.types.MESH_OT_assign_navpolygon
 msgid "Assign polygon index"
-msgstr ""
+msgstr "Assigner index de polygone"
 
 #: bpy.types.MESH_OT_assign_navpolygon
 msgid "Assign polygon index to face by active face"
-msgstr ""
+msgstr "Assigner index de polygone aux faces selon la face active"
 
 #: bpy.types.MESH_OT_assign_new_navpolygon
 msgid "Assign new polygon index"
@@ -31145,13 +30922,13 @@ msgstr "Direction dans laquelle faire tourner les arêtes"
 #: bpy.types.MESH_OT_edge_rotate.direction,
 #: bpy.types.MESH_OT_uvs_rotate.direction,
 msgid "Clockwise"
-msgstr ""
+msgstr "Sens horaire"
 
 #: bpy.types.MESH_OT_colors_rotate.direction, 'CCW'
 #: bpy.types.MESH_OT_edge_rotate.direction,
 #: bpy.types.MESH_OT_uvs_rotate.direction,
 msgid "Counter Clockwise"
-msgstr "Sens inverse des aiguilles d'une montre"
+msgstr "Sens anti-horaire"
 
 #: bpy.types.MESH_OT_create_navmesh
 #, fuzzy
@@ -31198,7 +30975,7 @@ msgstr "Boucle d’arêtes"
 
 #: bpy.types.MESH_OT_delete_edgeloop
 msgid "Delete an edge loop by merging the faces on each side to a single face loop"
-msgstr ""
+msgstr "Détruire une boucle d'arêtes en fusionnant les faces adjacentes en une seule boucle de faces"
 
 #: bpy.types.MESH_OT_drop_named_image
 msgid "Assign Image to UV Texture"
@@ -31397,7 +31174,7 @@ msgstr "Axe positif"
 
 #: bpy.types.MESH_OT_faces_select_interior
 msgid "Select faces where all edges have more then 2 face users"
-msgstr ""
+msgstr "Sélectionner les faces dont toutes les arêtes partipent à plus de 2 faces"
 
 #: bpy.types.MESH_OT_faces_select_linked_flat
 msgid "Select Linked Flat Faces"
@@ -31694,7 +31471,7 @@ msgstr "Facteur rouge"
 
 #: bpy.types.MESH_OT_primitive_torus_add.major_radius
 msgid "Radius from the origin to the center of the cross sections"
-msgstr ""
+msgstr "Rayon de l'origine au centre de sections croisées"
 
 #: bpy.types.MESH_OT_primitive_torus_add.minor_radius
 #, fuzzy
@@ -31733,7 +31510,7 @@ msgstr "Vue aux pôles"
 
 #: bpy.types.MESH_OT_primitive_torus_add.use_abso
 msgid "Use the Int / Ext controls for torus dimensions"
-msgstr ""
+msgstr "Utiliser les contrôles Int / Ext pour les dimensions du tore"
 
 #: bpy.types.MESH_OT_primitive_torus_add.abso_major_rad
 #, fuzzy
@@ -31742,7 +31519,7 @@ msgstr "Interaction :"
 
 #: bpy.types.MESH_OT_primitive_torus_add.abso_major_rad
 msgid "Total Exterior Radius of the torus"
-msgstr ""
+msgstr "Rayon extérieur total du tore"
 
 #: bpy.types.MESH_OT_primitive_torus_add.abso_minor_rad
 #, fuzzy
@@ -32636,7 +32413,7 @@ msgstr "Supprimer scène"
 
 #: bpy.types.NODE_OT_delete_reconnect
 msgid "Delete nodes; will reconnect nodes as if deletion was muted"
-msgstr ""
+msgstr "Supprimer noeuds sélectionnés, reconnnectera les noeuds pour une suppression discrète"
 
 #: bpy.types.NODE_OT_duplicate
 #: bpy.types.NODE_OT_duplicate_move.NODE_OT_duplicate
@@ -33013,7 +32790,7 @@ msgstr "Aligner sur axe"
 
 #: bpy.types.OBJECT_OT_anim_transforms_to_deltas
 msgid "Convert object animation for normal transforms to delta transforms"
-msgstr ""
+msgstr "Convertir l'animation de objet des transformations normales aux delta transformations"
 
 #: bpy.types.OBJECT_OT_armature_add
 msgid "Add Armature"
@@ -44947,3 +44724,43 @@ msgstr "Normaliser"
 msgid "Multi-Paint"
 msgstr "Multi-coupes"
 
+#~ msgid "Keying Set Info"
+#~ msgstr "Infos de l’ensemble de clés"
+
+#~ msgid "Callback function defines for builtin Keying Sets"
+#~ msgstr "Le rappel de fonction définit les Keying Sets pré-définis"
+
+#~ msgid "bl_idname"
+#~ msgstr "bl_idname"
+
+#~ msgid "Macro Operator"
+#~ msgstr "Opérateurs macro"
+
+#~ msgid "Register"
+#~ msgstr "Enregister"
+
+#~ msgid "Push an undo event (needed for operator redo)"
+#~ msgstr "Pousser un évènement annuler (nécessaire pour un opérateur refaire)"
+
+#~ msgid "Blocking"
+#~ msgstr "Bloquer"
+
+#~ msgid "Grab Pointer"
+#~ msgstr "Prendre pour pointeur"
+
+#~ msgid "Display a preset button with the operators settings"
+#~ msgstr "Afficher un bouton preset avec les paramètres des opérateurs"
+
+#~ msgid "Internal"
+#~ msgstr "Interne"
+
+#~ msgid "Removes the operator from search results"
+#~ msgstr "Enlever l’opérateur des résultats de la recherche"
+
+#, fuzzy
+#~ msgid "bl_description"
+#~ msgstr "Description :"
+
+#, fuzzy
+#~ msgid "Unknown Type"
+#~ msgstr "Par région"
