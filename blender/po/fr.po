@@ -153,7 +153,7 @@ msgstr "Parcourir action à lier"
 
 #: source/blender/editors/interface/interface_templates.c:328
 msgid "Browse Node Tree to be linked"
-msgstr "Parcourir arbre de nœuds à lier"
+msgstr "Parcourir arborescence de nœuds à lier"
 
 #: source/blender/editors/interface/interface_templates.c:329
 msgid "Browse Brush to be linked"
@@ -4632,7 +4632,7 @@ msgstr "Mesh"
 
 #: bpy.types.DriverTarget.id_type, 'NODETREE' bpy.types.KeyingSetPath.id_type,
 msgid "NodeTree"
-msgstr "Arbre de nœud"
+msgstr "Arborescence de nœuds"
 
 #: bpy.types.DriverTarget.id_type, 'PARTICLE' bpy.types.FluidSettings.type,
 #: bpy.types.KeyingSetPath.id_type, bpy.types.SpaceProperties.context,
@@ -9009,7 +9009,6 @@ msgid "Let halo receive light and shadows from external objects"
 msgstr "Laisser les halos recevoir lumière et ombres depuis des objets externes"
 
 #: bpy.types.MaterialHalo.size
-#, fuzzy
 msgid "Dimension of the halo"
 msgstr "Dimension du halo"
 
@@ -9020,16 +9019,14 @@ msgid "Soft"
 msgstr "Doux"
 
 #: bpy.types.MaterialHalo.use_soft
-#, fuzzy
 msgid "Soften the edges of halos at intersections with other geometry"
-msgstr "Adoucir les bords des halos à l’intersection avec d’autre géométries"
+msgstr "Adoucir les bords des halos à l’intersection avec d’autres géométries"
 
 #: bpy.types.MaterialHalo.use_star
 msgid "Star"
 msgstr "Étoile"
 
 #: bpy.types.MaterialHalo.use_star
-#, fuzzy
 msgid "Render halo as a star"
 msgstr "Rendre le halo comme une étoile"
 
@@ -9038,12 +9035,10 @@ msgid "Star Tips"
 msgstr "Pointes d’étoile"
 
 #: bpy.types.MaterialHalo.star_tip_count
-#, fuzzy
 msgid "Number of points on the star shaped halo"
 msgstr "Nombre de pointes dans le halo en forme d’étoile"
 
 #: bpy.types.MaterialHalo.use_texture
-#, fuzzy
 msgid "Give halo a texture"
 msgstr "Donner au halo une texture"
 
@@ -9053,9 +9048,8 @@ msgid "Vertex Normal"
 msgstr "Normales des vertices"
 
 #: bpy.types.MaterialHalo.use_vertex_normal
-#, fuzzy
 msgid "Use the vertex normal to specify the dimension of the halo"
-msgstr "Utiliser les normales des vertices pour spécifier la dimension du halo"
+msgstr "Utiliser la normale du vertex pour spécifier la dimension du halo"
 
 #: bpy.types.MaterialPhysics
 msgid "Material Physics"
@@ -9105,8 +9099,8 @@ msgstr "Réflexion raytracée de matériau"
 msgid "Raytraced reflection settings for a Material datablock"
 msgstr "Réglages de réflexion raytracée pour un bloc de données matériau"
 
+# Traduction incertaine
 #: bpy.types.MaterialRaytraceMirror.depth
-#, fuzzy
 msgid "Maximum allowed number of light inter-reflections"
 msgstr "Nombre maximum autorisé d’inter-réflexions de la lumière"
 
@@ -9119,7 +9113,6 @@ msgid "Fade-out Color"
 msgstr "Couleur de “fondu au loin”"
 
 #: bpy.types.MaterialRaytraceMirror.fade_to
-#, fuzzy
 msgid "The color that rays with no intersection within the Max Distance take (material color can be best for indoor scenes, sky color for outdoor)"
 msgstr "La couleur que prennent les rayons dépourvus d’intersection avant la Distance maximum (la couleur du matériau peu être préférable pour les scènes d’intérieur, et la couleur du ciel pour celles d’extérieur)"
 
@@ -9149,7 +9142,6 @@ msgid "Gloss Amount"
 msgstr "Intensité de brillance"
 
 #: bpy.types.MaterialRaytraceMirror.gloss_factor
-#, fuzzy
 msgid "The shininess of the reflection (values < 1.0 give diffuse, blurry reflections)"
 msgstr "La brillance de la réflexion (des valeurs inférieures à 1.0 donnent des réflexions diffuses, floues)"
 
@@ -9166,8 +9158,8 @@ msgstr "La forme de la réflexion, depuis 0.0 (circulaire) à 1.0 (complètement
 msgid "Gloss Samples"
 msgstr "Échantillons de brillance"
 
+# Traduction incertaine
 #: bpy.types.MaterialRaytraceMirror.gloss_samples
-#, fuzzy
 msgid "Number of cone samples averaged for blurry reflections"
 msgstr "Nombre moyen d’échantillons coniques pour les réflexions floues"
 
@@ -9177,12 +9169,10 @@ msgid "Gloss Threshold"
 msgstr "Limite de brillance"
 
 #: bpy.types.MaterialRaytraceMirror.gloss_threshold
-#, fuzzy
 msgid "Threshold for adaptive sampling (if a sample contributes less than this amount [as a percentage], sampling is stopped)"
-msgstr "Limite pour l’échantillonnage adpatatif (si un échantillon contribue à moins que cette quantité [comme pourcentage], l’échantillonnage est stoppé"
+msgstr "Limite pour l’échantillonnage adaptatif (si un échantillon contribue à moins que cette quantité [comme pourcentage], l’échantillonnage est stoppé)"
 
 #: bpy.types.MaterialRaytraceMirror.distance
-#, fuzzy
 msgid "Maximum distance of reflected rays (reflections further than this range fade to sky color or material color)"
 msgstr "Distance (longueur) maximale des rayons réfléchis (les réflexions plus éloignées se fondent dans la couleur du ciel ou du matériau)"
 
@@ -9191,7 +9181,6 @@ msgid "Reflectivity"
 msgstr "Réflexivité"
 
 #: bpy.types.MaterialRaytraceMirror.reflect_factor
-#, fuzzy
 msgid "Amount of mirror reflection for raytrace"
 msgstr "Intensité de la réflexion miroir pour le raytracing"
 
@@ -9203,8 +9192,8 @@ msgstr "Transparence raytracée de matériau"
 msgid "Raytraced refraction settings for a Material datablock"
 msgstr "Réglages de réfraction raytracée pour un bloc de données matériau"
 
+# Traduction incertaine
 #: bpy.types.MaterialRaytraceTransparency.depth
-#, fuzzy
 msgid "Maximum allowed number of light inter-refractions"
 msgstr "Nombre maximum autorisé d’inter-réfractions de la lumière"
 
@@ -9224,8 +9213,8 @@ msgstr "Puissance du Fresnel pour la transparence (ray et ztransp)"
 msgid "The clarity of the refraction. Values < 1.0 give diffuse, blurry refractions"
 msgstr "La clarté de la réfraction (les valeurs inférieures à 1.0 donnent des réfractions diffuses, floues)"
 
+# Traduction incertaine
 #: bpy.types.MaterialRaytraceTransparency.gloss_samples
-#, fuzzy
 msgid "Number of cone samples averaged for blurry refractions"
 msgstr "Nombre moyen d’échantillons coniques pour les réfractions floues"
 
@@ -9233,16 +9222,16 @@ msgstr "Nombre moyen d’échantillons coniques pour les réfractions floues"
 msgid "Threshold for adaptive sampling. If a sample contributes less than this amount (as a percentage), sampling is stopped"
 msgstr "Limite pour l’échantillonnage adpatatif (si un échantillon contribue à moins que cette quantité [comme pourcentage], l’échantillonnage est stoppé"
 
+# Traduction incertaine
 # Ou Réfraction ?
 #: bpy.types.MaterialRaytraceTransparency.ior
 #: bpy.types.MaterialSubsurfaceScattering.ior
 #: release/scripts/startup/bl_ui/properties_material.py:297
-#, fuzzy
 msgid "IOR"
 msgstr "IOR"
 
+# Traduction incertaine
 #: bpy.types.MaterialRaytraceTransparency.ior
-#, fuzzy
 msgid "Angular index of refraction for raytraced refraction"
 msgstr "Indice de réfraction angulaire pour la réfraction raytracée"
 
@@ -9333,12 +9322,11 @@ msgid "Start size of strands in pixels or Blender units"
 msgstr "Taille initiale des fibres, en pixels ou unités blender"
 
 #: bpy.types.MaterialStrand.shape
-#, fuzzy
 msgid "Positive values make strands rounder, negative ones make strands spiky"
 msgstr "Les valeurs positives rendent les fibres plus rondes, les négatives les rendent pointues"
 
+# Traduction incertaine
 #: bpy.types.MaterialStrand.use_surface_diffuse
-#, fuzzy
 msgid "Surface Diffuse"
 msgstr "Surface diffuse"
 
@@ -9471,8 +9459,8 @@ msgstr "Facteur de taille d’objet"
 msgid "Texture Factor"
 msgstr "Facteur de texture"
 
+# Traduction incertaine
 #: bpy.types.MaterialSubsurfaceScattering.texture_factor
-#, fuzzy
 msgid "Texture scattering blend factor"
 msgstr "Facteur de mélange de la dispersion de texture"
 
@@ -9488,8 +9476,8 @@ msgstr "Réglages de rendu de volume pour un bloc de données matériau"
 msgid "Asymmetry"
 msgstr "Asymétrie"
 
+# Traduction incertaine
 #: bpy.types.MaterialVolume.asymmetry
-#, fuzzy
 msgid "Back scattering (-1.0) to Forward scattering (1.0) and the range in between"
 msgstr "De la dispersion arrière (-1.0) à la dispersion vers l’avant (1.0), et toute valeur intermédiaire"
 
@@ -9511,8 +9499,8 @@ msgstr "Échelle de densité"
 msgid "Multiplier for the material's density"
 msgstr "Multiplicateur pour la densité du matériau"
 
+# Traduction incertaine
 #: bpy.types.MaterialVolume.depth_threshold
-#, fuzzy
 msgid "Depth Cutoff"
 msgstr "Coupure de profondeur"
 
@@ -9591,8 +9579,8 @@ msgstr "Sans ombrage"
 msgid "Do not calculate lighting and shadows"
 msgstr "Ne pas calculer éclairage ni ombres"
 
+# Traduction incertaine
 #: bpy.types.MaterialVolume.light_method, 'SHADOWED'
-#, fuzzy
 msgid "Shadowed"
 msgstr "Ombres portées"
 
@@ -9631,13 +9619,11 @@ msgid "Scattering"
 msgstr "Dispersion"
 
 #: bpy.types.MaterialVolume.scattering
-#, fuzzy
 msgid "Amount of light that gets scattered out by the volume - the more out-scattering, the shallower the light will penetrate"
 msgstr "Quantité de lumière dispersée vers l’extérieur par le volume — plus il y a de dispersion extérieure, moins la lumière pénètre"
 
 #: bpy.types.MaterialVolume.ms_spread
 #: release/scripts/startup/bl_ui/properties_data_lamp.py:163
-#, fuzzy
 msgid "Spread"
 msgstr "Propagation"
 
@@ -9645,27 +9631,25 @@ msgstr "Propagation"
 msgid "Proportional distance over which the light is diffused"
 msgstr "Distance proportionnelle au-delà de laquelle la lumière est diffusée"
 
+# Traduction incertaine
 #: bpy.types.MaterialVolume.step_method
-#, fuzzy
 msgid "Step Calculation"
-msgstr "Calcul des pas"
+msgstr "Calcul des étapes/pas"
 
 #: bpy.types.MaterialVolume.step_method
-#, fuzzy
 msgid "Method of calculating the steps through the volume"
-msgstr "Méthode de calcul des pas à travers le volume"
+msgstr "Méthode de calcul des étapes/pas à travers le volume"
 
 #: bpy.types.MaterialVolume.step_method, 'RANDOMIZED'
 msgid "Randomized"
 msgstr "Rendu aléatoire"
 
 #: bpy.types.MaterialVolume.step_size
-#, fuzzy
 msgid "Step Size"
-msgstr "Taille des pas"
+msgstr "Taille des étapes/pas"
 
+# Traduction incertaine
 #: bpy.types.MaterialVolume.step_size
-#, fuzzy
 msgid "Distance between subsequent volume depth samples"
 msgstr "Distance entre échantillons subséquents de profondeur du volume"
 
@@ -9674,90 +9658,74 @@ msgid "Transmission Color"
 msgstr "Couleur de transmission"
 
 #: bpy.types.MaterialVolume.transmission_color
-#, fuzzy
 msgid "Result color of the volume, after other light has been scattered/absorbed"
 msgstr "Couleur résultante du volume, après que la lumière a été dispersée/absorbée"
 
 #: bpy.types.MeshColor
-#, fuzzy
 msgid "Mesh Vertex Color"
-msgstr "Définir couleurs de vertices"
+msgstr "Couleur de vertex de mesh"
 
 #: bpy.types.MeshColor
 msgid "Vertex colors for a face in a Mesh"
-msgstr ""
+msgstr "Couleurs de vertices pour une face dans un mesh"
 
 #: bpy.types.MeshColor.color1
-#, fuzzy
 msgid "Color 1"
-msgstr "Couleur"
+msgstr "Couleur 1"
 
 #: bpy.types.MeshColor.color2
-#, fuzzy
 msgid "Color 2"
-msgstr "Couleur"
+msgstr "Couleur 2"
 
 #: bpy.types.MeshColor.color3
-#, fuzzy
 msgid "Color 3"
-msgstr "Couleur"
+msgstr "Couleur 3"
 
 #: bpy.types.MeshColor.color4
-#, fuzzy
 msgid "Color 4"
-msgstr "Couleur"
+msgstr "Couleur 4"
 
 #: bpy.types.MeshColorLayer
-#, fuzzy
 msgid "Mesh Vertex Color Layer"
-msgstr "Ajouter un calque de couleur de vertices"
+msgstr "Calque de couleurs de vertices de mesh"
 
 #: bpy.types.MeshColorLayer
-#, fuzzy
 msgid "Layer of vertex colors in a Mesh datablock"
-msgstr "Emplacement de texture pour les textures dans un bloc de données de matériau"
+msgstr "Calque de couleurs de vertices dans un bloc de données mesh"
 
 #: bpy.types.MeshColorLayer.name
-#, fuzzy
 msgid "Name of Vertex color layer"
-msgstr "Enlever un calque de couleur de vertices"
+msgstr "Nom du calque de couleurs de vertices"
 
 #: bpy.types.MeshColorLayer.active bpy.types.MeshTextureFaceLayer.active
-#, fuzzy
 msgid "Sets the layer as active for display and editing"
-msgstr "Type des données actives à afficher et éditer"
+msgstr "Définir le calque comme actif pour l’affichage et l’édition"
 
 #: bpy.types.MeshColorLayer.active_render
 #: bpy.types.MeshTextureFaceLayer.active_render
-#, fuzzy
 msgid "Active Render"
-msgstr "Os actif"
+msgstr "Actif au rendu"
 
 #: bpy.types.MeshColorLayer.active_render
 #: bpy.types.MeshTextureFaceLayer.active_render
-#, fuzzy
 msgid "Sets the layer as active for rendering"
-msgstr "Moteur à utiliser pour le rendu"
+msgstr "Définir le calque comme actif au rendu"
 
 #: bpy.types.MeshEdge
-#, fuzzy
 msgid "Mesh Edge"
-msgstr "Arête"
+msgstr "Arête de mesh"
 
 #: bpy.types.MeshEdge
-#, fuzzy
 msgid "Edge in a Mesh datablock"
-msgstr "Ouvrir un nouveau bloc de données de texte"
+msgstr "Arête dans un bloc de données mesh"
 
 #: bpy.types.MeshEdge.bevel_weight bpy.types.MeshVertex.bevel_weight
-#, fuzzy
 msgid "Bevel Weight"
 msgstr "Poids de biseau"
 
 #: bpy.types.MeshEdge.bevel_weight
-#, fuzzy
 msgid "Weight used by the Bevel modifier"
-msgstr "Afficher les poids créés pour le modificateur Biseau (Bevel)"
+msgstr "Poids utilisé par le modificateur Biseau (Bevel)"
 
 #: bpy.types.MeshEdge.crease bpy.types.BRUSH_OT_sculpt_tool_set.tool, 'CREASE'
 #: bpy.types.CURVE_OT_duplicate.mode, bpy.types.CURVE_OT_extrude.mode,
@@ -9772,15 +9740,15 @@ msgstr "Plis"
 
 #: bpy.types.MeshEdge.crease
 msgid "Weight used by the Subsurf modifier for creasing"
-msgstr ""
+msgstr "Poids utilisé par le modificateur Subdivision de Surface (Subsurf) pour le contrôle des plis"
 
 #: bpy.types.MeshEdge.is_fgon
 msgid "Fgon"
-msgstr ""
+msgstr "Fgone"
 
 #: bpy.types.MeshEdge.is_fgon
 msgid "Fgon edge"
-msgstr ""
+msgstr "Arête de fgone"
 
 #: bpy.types.MeshEdge.index bpy.types.MeshFace.index
 #: bpy.types.MeshVertex.index bpy.types.VertexGroup.index
@@ -9804,10 +9772,10 @@ msgstr "Numéro d’indice du vertex"
 msgid "Loose"
 msgstr "Isolé"
 
+# Traduction incertaine
 #: bpy.types.MeshEdge.is_loose
-#, fuzzy
 msgid "Loose edge"
-msgstr "Loose Verts/Edges"
+msgstr "Loose edge"
 
 #: bpy.types.MeshEdge.use_seam bpy.types.MESH_OT_select_similar.type, 'SEAM'
 msgid "Seam"
@@ -9815,8 +9783,9 @@ msgstr "Couture"
 
 #: bpy.types.MeshEdge.use_seam
 msgid "Seam edge for UV unwrapping"
-msgstr ""
+msgstr "Arête de couture pour le dépliage UV"
 
+# Traduction incertaine
 #: bpy.types.MeshEdge.use_edge_sharp
 #: bpy.types.ToolSettings.proportional_edit_falloff, 'SHARP'
 #: bpy.types.BRUSH_OT_curve_preset.shape,
@@ -9833,14 +9802,12 @@ msgstr ""
 #: bpy.types.TRANSFORM_OT_translate.proportional_edit_falloff,
 #: bpy.types.TRANSFORM_OT_warp.proportional_edit_falloff,
 #: release/scripts/startup/bl_ui/space_view3d.py:2188
-#, fuzzy
 msgid "Sharp"
-msgstr "Dureté"
+msgstr "Dure"
 
 #: bpy.types.MeshEdge.use_edge_sharp
-#, fuzzy
 msgid "Sharp edge for the EdgeSplit modifier"
-msgstr "Afficher les arêtes dures, utilisé par le modificateur Division d’arêtes (EdgeSplit)"
+msgstr "Arête dure, pour le modificateur Division d’arêtes (EdgeSplit)"
 
 #: bpy.types.MeshEdge.vertices bpy.types.MeshFace.vertices
 #: bpy.types.MeshFace.vertices_raw bpy.types.MESH_OT_delete.type, 'VERT'
@@ -9852,38 +9819,32 @@ msgid "Vertices"
 msgstr "Vertices"
 
 #: bpy.types.MeshEdge.vertices bpy.types.MeshFace.vertices
-#, fuzzy
 msgid "Vertex indices"
-msgstr "Randomiser vertex"
+msgstr "Indices de vertices"
 
 #: bpy.types.MeshFace
-#, fuzzy
 msgid "Mesh Face"
-msgstr "Arêtes & faces"
+msgstr "Face de mesh"
 
 #: bpy.types.MeshFace
-#, fuzzy
 msgid "Face in a Mesh datablock"
-msgstr "Ouvrir un nouveau bloc de données de texte"
+msgstr "Face dans un bloc de données mesh"
 
 #: bpy.types.MeshFace.area
-#, fuzzy
 msgid "Face area"
-msgstr "Surface des faces"
+msgstr "Surface de face"
 
 #: bpy.types.MeshFace.area
-#, fuzzy
 msgid "Read only area of the face"
-msgstr "Lire seulement l'aire de la face"
+msgstr "Surface de la face (en lecture seule)"
 
 #: bpy.types.MeshFace.normal
-#, fuzzy
 msgid "Face normal"
 msgstr "Normale de face"
 
 #: bpy.types.MeshFace.normal
 msgid "Local space unit length normal vector for this face"
-msgstr ""
+msgstr "Longueur (en unité de l’espace local) du vecteur normal de cette face"
 
 #: bpy.types.MeshFace.material_index
 #: bpy.types.RenderLayer.use_pass_material_index bpy.types.RenderPass.type,
@@ -9927,79 +9888,72 @@ msgid "Fixed size vertex indices array"
 msgstr "Tableau d’indices de vertices à taille constante"
 
 #: bpy.types.MeshFloatProperty
-#, fuzzy
 msgid "Mesh Float Property"
-msgstr "Calques de propriétés flottantes"
+msgstr "Propriété flottante de mesh"
 
 #: bpy.types.MeshFloatProperty
 msgid "User defined floating point number value in a float properties layer"
-msgstr ""
+msgstr "Valeur en nombre à virgule flottante définie par l’utilisateur, dans un calque de propriétés flottantes"
 
 #: bpy.types.MeshFloatPropertyLayer
-#, fuzzy
 msgid "Mesh Float Property Layer"
-msgstr "Calques de propriétés flottantes"
+msgstr "Calque de propriété flottante de mesh"
 
 #: bpy.types.MeshFloatPropertyLayer
 msgid "User defined layer of floating pointer number values"
-msgstr ""
+msgstr "Calque défini par l’utilisateur de valeurs en nombre à virgule flottante"
 
 #: bpy.types.MeshIntProperty
-#, fuzzy
 msgid "Mesh Int Property"
-msgstr "Calques de propriétés entières"
+msgstr "Propriété entière de mesh"
 
 #: bpy.types.MeshIntProperty
 msgid "User defined integer number value in an integer properties layer"
-msgstr ""
+msgstr "Valeur en nombre entier définie par l’utilisateur, dans un calque de propriétés entières"
 
 #: bpy.types.MeshIntPropertyLayer
-#, fuzzy
 msgid "Mesh Int Property Layer"
-msgstr "Calques de propriétés entières"
+msgstr "Calque de propriété entière de mesh"
 
 #: bpy.types.MeshIntPropertyLayer
 msgid "User defined layer of integer number values"
-msgstr ""
+msgstr "Calque défini par l’utilisateur de valeurs en nombre entier"
 
+# Traduction incertaine
 #: bpy.types.MeshSticky
-#, fuzzy
 msgid "Mesh Vertex Sticky Texture Coordinate"
-msgstr "Coordonnées de texture collantes"
+msgstr "Coordonnées de texture collantes de vertex de mesh"
 
 #: bpy.types.MeshSticky
-#, fuzzy
 msgid "Stricky texture coordinate"
 msgstr "Coordonnées de texture collantes"
 
+# Traduction incertaine
 #: bpy.types.MeshSticky.co
-#, fuzzy
 msgid "Sticky texture coordinate location"
-msgstr "Coordonnées de texture collantes"
+msgstr "Position des coordonnées de texture collantes"
 
 #: bpy.types.MeshStringProperty
-#, fuzzy
 msgid "Mesh String Property"
-msgstr "Calques de propriétés chaînes de caractères"
+msgstr "Propriété chaîne de caractères de mesh"
 
 #: bpy.types.MeshStringProperty
 msgid "User defined string text value in a string properties layer"
 msgstr "Valeur d'une expression définie par l'utilisateur dans le calque des propriétés de l'expression"
 
 #: bpy.types.MeshStringPropertyLayer
-#, fuzzy
 msgid "Mesh String Property Layer"
-msgstr "Calques de propriétés chaînes de caractères"
+msgstr "Calque de propriété chaîne de caractères de mesh"
 
+# Traduction incertaine
 #: bpy.types.MeshStringPropertyLayer
-#, fuzzy
 msgid "User defined layer of string text values"
 msgstr "Calque de valeurs textuelles défini par l’utilisateur"
 
+# Traduction incertaine
 #: bpy.types.MeshTextureFace
-#, fuzzy
 msgid "Mesh Texture Face"
-msgstr "Texturer face"
+msgstr "Face de texture de mesh"
 
 #: bpy.types.MeshTextureFace
 msgid "UV mapping, texturing and game engine data for a face"
@@ -10008,96 +9962,86 @@ msgstr "carotgraphie UV, texturage et moteur de jeu pour une face"
 #: bpy.types.MeshTextureFace.uv bpy.types.MeshTextureFace.uv_raw
 #: bpy.types.RenderLayer.use_pass_uv bpy.types.RenderPass.type, 'UV'
 #: bpy.types.SceneRenderLayer.use_pass_uv
-#, fuzzy
 msgid "UV"
-msgstr "UVs"
+msgstr "UV"
 
 #: bpy.types.MeshTextureFace.uv_raw
 msgid "Fixed size UV coordinates array"
-msgstr ""
+msgstr "Tableau de coordonnées UV à taille fixe"
 
 #: bpy.types.MeshTextureFace.uv1
 msgid "UV 1"
-msgstr ""
+msgstr "UV 1"
 
 #: bpy.types.MeshTextureFace.uv2
 msgid "UV 2"
-msgstr ""
+msgstr "UV 2"
 
 #: bpy.types.MeshTextureFace.uv3
 msgid "UV 3"
-msgstr ""
+msgstr "UV 3"
 
 #: bpy.types.MeshTextureFace.uv4
 msgid "UV 4"
-msgstr ""
+msgstr "UV 4"
 
 #: bpy.types.MeshTextureFace.pin_uv
-#, fuzzy
 msgid "UV Pinned"
-msgstr "Épinglés"
+msgstr "UV épinglé"
 
 #: bpy.types.MeshTextureFace.select_uv
-#, fuzzy
 msgid "UV Selected"
-msgstr "Sélectionné"
+msgstr "UV sélectionné"
 
+# Traduction incertaine
 #: bpy.types.MeshTextureFaceLayer
-#, fuzzy
 msgid "Mesh Texture Face Layer"
-msgstr "Texturer face"
+msgstr "Calque de face de texture de mesh"
 
+# Traduction incertaine
 #: bpy.types.MeshTextureFaceLayer
-#, fuzzy
 msgid "Layer of texture faces in a Mesh datablock"
-msgstr "Emplacement de texture pour les textures dans un bloc de données de matériau"
+msgstr "Calque de faces de texture  dans un bloc de données mesh"
 
 #: bpy.types.MeshTextureFaceLayer.name
-#, fuzzy
 msgid "Name of UV unwrapping layer"
-msgstr "Dessiner les coutures de dépliage UV"
+msgstr "Nom du calque de dépliage UV"
 
 #: bpy.types.MeshTextureFaceLayer.active_clone
-#, fuzzy
 msgid "Active Clone"
-msgstr "Os actif"
+msgstr "Clone actif"
 
 #: bpy.types.MeshTextureFaceLayer.active_clone
-#, fuzzy
 msgid "Sets the layer as active for cloning"
-msgstr "Définir le type de la courbe active"
+msgstr "Définir le calque comme actif pour le clonage"
 
 #: bpy.types.MeshVertex
-#, fuzzy
 msgid "Mesh Vertex"
-msgstr "Vertex"
+msgstr "Vertex de mesh"
 
 #: bpy.types.MeshVertex
-#, fuzzy
 msgid "Vertex in a Mesh datablock"
-msgstr "Créer un nouveau bloc de données de texte"
+msgstr "Vertex dans un bloc de données mesh"
 
 #: bpy.types.MeshVertex.bevel_weight
 msgid "Weight used by the Bevel modifier 'Only Vertices' option"
-msgstr ""
+msgstr "Poids utilisé par l’option “Vertices seulement” (“Only Vertices”) du modificateur Biseau (Bevel)"
 
 #: bpy.types.MeshVertex.groups
 msgid "Weights for the vertex groups this vertex is member of"
 msgstr "Poids pour les groupes de vertices auxquels appartient ce vertx"
 
 #: bpy.types.MetaElement
-#, fuzzy
 msgid "Meta Element"
-msgstr "Élément actif"
+msgstr "Méta-élément"
 
 #: bpy.types.MetaElement
 msgid "Blobby element in a MetaBall datablock"
 msgstr "Elément bulleux dans un bloc de données Metaball"
 
 #: bpy.types.MetaElement.hide
-#, fuzzy
 msgid "Hide element"
-msgstr "Cacher sélectionnés"
+msgstr "Cacher élément"
 
 #: bpy.types.MetaElement.use_negative
 #: bpy.types.MESH_OT_faces_mirror_uv.direction, 'NEGATIVE'
@@ -10108,12 +10052,11 @@ msgstr "Négatif"
 
 #: bpy.types.MetaElement.use_negative
 msgid "Set metaball as negative one"
-msgstr ""
+msgstr "Définir la métaballe comme négative"
 
 #: bpy.types.MetaElement.rotation
-#, fuzzy
 msgid "Normalized quaternion rotation"
-msgstr "Rotation en quaternions"
+msgstr "Rotation en quaternions normalisée"
 
 #: bpy.types.MetaElement.size_x
 #: release/scripts/startup/bl_ui/properties_data_lamp.py:328
@@ -10131,9 +10074,8 @@ msgid "Size Y"
 msgstr "Taille Y"
 
 #: bpy.types.MetaElement.size_z
-#, fuzzy
 msgid "Size Z"
-msgstr "Taille X"
+msgstr "Taille Z"
 
 #: bpy.types.MetaElement.stiffness bpy.types.SPHFluidSettings.stiffness
 #: release/scripts/startup/bl_ui/properties_data_bone.py:244
@@ -10145,18 +10087,17 @@ msgstr "Taille X"
 #: release/scripts/startup/bl_ui/properties_physics_cloth.py:97
 #: release/scripts/startup/bl_ui/properties_physics_softbody.py:124
 #: release/scripts/startup/bl_ui/properties_physics_softbody.py:211
-#, fuzzy
 msgid "Stiffness"
 msgstr "Raideur"
 
+# Traduction incertaine
 #: bpy.types.MetaElement.stiffness
 msgid "Stiffness defines how much of the element to fill"
-msgstr ""
+msgstr "La raideur définit à quel niveau remplir l’élément"
 
 #: bpy.types.MetaElement.type
-#, fuzzy
 msgid "Metaball types"
-msgstr "Métaballe"
+msgstr "Types de métaballe"
 
 #: bpy.types.MetaElement.type, 'BALL' bpy.types.OBJECT_OT_metaball_add.type,
 msgid "Ball"
@@ -10168,33 +10109,30 @@ msgid "Ellipsoid"
 msgstr "Ellipsoïde"
 
 #: bpy.types.Modifier
-#, fuzzy
 msgid "Modifier affecting the geometry data of an object"
-msgstr "Modificateurs affectant les données de géométrie de l’objet"
+msgstr "Modificateur affectant les données de géométrie d’un objet"
 
 #: bpy.types.Modifier.name
-#, fuzzy
 msgid "Modifier name"
-msgstr "état du modificateurs"
+msgstr "Nom du modificateur"
 
+# Tarduction incertaine
 #: bpy.types.Modifier.use_apply_on_spline
-#, fuzzy
 msgid "Apply on spline"
-msgstr "Appliquer base"
+msgstr "Appliquer sur courbe"
 
+# Traduction incertaine
 #: bpy.types.Modifier.use_apply_on_spline
 msgid "Apply this and all preceding deformation modifiers on splines' points rather than on filled curve/surface"
-msgstr ""
+msgstr "Appliquer ce modificateur et tous ceux de déformation précédents aux points de la courbe, plutôt qu’à la courbe/surface pleine (calculée)"
 
 #: bpy.types.Modifier.show_in_editmode
-#, fuzzy
 msgid "Editmode"
 msgstr "Mode Edit"
 
 #: bpy.types.Modifier.show_in_editmode
-#, fuzzy
 msgid "Use modifier while in the edit mode"
-msgstr "Déplacer un modificateur vers le bas de la pile"
+msgstr "Utiliser le modificateur aussi en mode Edit"
 
 #: bpy.types.Modifier.show_expanded
 msgid "Set modifier expanded in the user interface"
@@ -10206,24 +10144,22 @@ msgstr "Sur cage"
 
 #: bpy.types.Modifier.show_on_cage
 msgid "Enable direct editing of modifier control cage"
-msgstr ""
+msgstr "Activer l’édition directe de la cage de contrôle du modificateur"
 
+# Tarduction incertaine
 #: bpy.types.Modifier.show_viewport
-#, fuzzy
 msgid "Realtime"
-msgstr "Temps de relâche"
+msgstr "Temps réel"
 
 #: bpy.types.Modifier.show_viewport
 msgid "Realtime display of a modifier"
-msgstr ""
+msgstr "Affichage temps réel du modificateur"
 
 #: bpy.types.Modifier.show_render
-#, fuzzy
 msgid "Use modifier during rendering"
-msgstr "Garder les objets fumée visibles au rendu"
+msgstr "Utiliser le modificateur pendant le rendu"
 
 #: bpy.types.Modifier.type, 'ARRAY' bpy.types.OBJECT_OT_modifier_add.type,
-#, fuzzy
 msgid "Array"
 msgstr "Tableau"
 
@@ -10234,7 +10170,6 @@ msgstr "Tableau"
 #: bpy.types.OBJECT_OT_duplicate.mode, bpy.types.OBJECT_OT_modifier_add.type,
 #: bpy.types.SEQUENCER_OT_duplicate.mode,
 #: bpy.types.TRANSFORM_OT_transform.mode,
-#, fuzzy
 msgid "Bevel"
 msgstr "Biseau"
 
@@ -10295,20 +10230,18 @@ msgstr "UV-projeter"
 
 #: bpy.types.Modifier.type, 'VERTEX_WEIGHT_EDIT'
 #: bpy.types.OBJECT_OT_modifier_add.type,
-#, fuzzy
 msgid "Vertex Weight Edit"
-msgstr "Définir poids"
+msgstr "Édition des poids de vertices"
 
 #: bpy.types.Modifier.type, 'VERTEX_WEIGHT_MIX'
 #: bpy.types.OBJECT_OT_modifier_add.type,
-#, fuzzy
 msgid "Vertex Weight Mix"
-msgstr "Définir poids"
+msgstr "Mélange des poids de vertices"
 
 #: bpy.types.Modifier.type, 'VERTEX_WEIGHT_PROXIMITY'
 #: bpy.types.OBJECT_OT_modifier_add.type,
 msgid "Vertex Weight Proximity"
-msgstr ""
+msgstr "Poids de vertices d’après proximité"
 
 #: bpy.types.Modifier.type, 'CAST' bpy.types.OBJECT_OT_modifier_add.type,
 msgid "Cast"
@@ -10385,28 +10318,25 @@ msgid "Smoke"
 msgstr "Fumée"
 
 #: bpy.types.MotionPath bpy.types.PoseBone.motion_path
-#, fuzzy
 msgid "Motion Path"
-msgstr "Chemins de mouvement"
+msgstr "Chemin de mouvement"
 
 #: bpy.types.MotionPath
 msgid "Cache of the worldspace positions of an element over a frame range"
 msgstr "Un élément pour le cache de l'espace du monde après une rangée"
 
 #: bpy.types.MotionPath.is_modified
-#, fuzzy
 msgid "Edit Path"
-msgstr "Ajouter chemin"
+msgstr "Éditer chemin"
 
 #: bpy.types.MotionPath.is_modified
-#, fuzzy
 msgid "Path is being edited"
-msgstr "Blocs de données dont les nœuds sont édités"
+msgstr "Le chemin est édité"
 
+# Tarduction incertaine
 #: bpy.types.MotionPath.frame_end
-#, fuzzy
 msgid "End frame of the stored range"
-msgstr "Image de fin pour la bande de couleur"
+msgstr "Frame finale de l’intervalle enregistré"
 
 #: bpy.types.MotionPath.length bpy.types.ParticleEdit.tool, 'LENGTH'
 #: bpy.types.Sequence.frame_final_duration bpy.types.Sequence.frame_duration
@@ -10422,112 +10352,105 @@ msgid "Length"
 msgstr "Longueur"
 
 #: bpy.types.MotionPath.length
-#, fuzzy
 msgid "Number of frames cached"
-msgstr "Nombres de réaffichages"
+msgstr "Nombre de frames en cache"
 
 #: bpy.types.MotionPath.points
-#, fuzzy
 msgid "Motion Path Points"
-msgstr "Chemins de mouvement"
+msgstr "Points du chemin de mouvement"
 
 #: bpy.types.MotionPath.points
 msgid "Cached positions per frame"
-msgstr ""
+msgstr "Positions en cache, par frame"
 
+# Tarduction incertaine
 #: bpy.types.MotionPath.frame_start
-#, fuzzy
 msgid "Starting frame of the stored range"
-msgstr "Image de début de la bande de séquence"
+msgstr "Frame initiale de l’intervalle enregistré"
 
 #: bpy.types.MotionPath.use_bone_head
-#, fuzzy
 msgid "Use Bone Heads"
-msgstr "Utiliser nœuds"
+msgstr "Utiliser têtes d’os"
 
 #: bpy.types.MotionPath.use_bone_head
 msgid "For PoseBone paths, use the bone head location when calculating this path"
 msgstr "Pour les trajets des PoseBone, utiliser la position de la tête de l'os lors du calcul du trajet"
 
+# Traduction incertaine
 #: bpy.types.MotionPathVert
-#, fuzzy
 msgid "Motion Path Cache Point"
-msgstr "Chemins de mouvement"
+msgstr "Point de cache du chemin de mouvement"
 
+# Traduction incertaine
 #: bpy.types.MotionPathVert
 msgid "Cached location on path"
-msgstr ""
+msgstr "Position du cache sur le chemin"
 
 #: bpy.types.MotionPathVert.select
-#, fuzzy
 msgid "Path point is selected for editing"
-msgstr "Le côté qui demeure sélectionné après la coupe"
+msgstr "Le point du chemin est sélectionné pour édition"
 
 #: bpy.types.NlaStrip
-#, fuzzy
 msgid "NLA Strip"
-msgstr "Bande"
+msgstr "Bande NLA"
 
 #: bpy.types.NlaStrip
 msgid "A container referencing an existing Action"
-msgstr ""
+msgstr "Un conteneur référençant une action existante"
 
+# Traduction incertaine
 #: bpy.types.NlaStrip.action
-#, fuzzy
 msgid "Action referenced by this strip"
-msgstr "Quitter le mode ajustage pour l’action référencée par la bande active"
+msgstr "Action référencée par cette bande"
 
 #: bpy.types.NlaStrip.action_frame_end
 msgid "Action End Frame"
 msgstr "Frame de fin de l’action"
 
 #: bpy.types.NlaStrip.action_frame_start
-#, fuzzy
 msgid "Action Start Frame"
-msgstr "Définir image de début"
+msgstr "Frame initiale de l’action"
 
 #: bpy.types.NlaStrip.active
 msgid "NLA Strip is active"
-msgstr ""
+msgstr "La bande NLA est active"
 
 #: bpy.types.NlaStrip.use_animated_influence
-#, fuzzy
 msgid "Animated Influence"
-msgstr "Animé sélectionné"
+msgstr "Influence animée"
 
 #: bpy.types.NlaStrip.use_animated_influence
 msgid "Influence setting is controlled by an F-Curve rather than automatically determined"
-msgstr ""
+msgstr "Le réglage d’influence est contrôlé par une F-Curve, plutôt que déterminé automatiquement"
 
 #: bpy.types.NlaStrip.use_animated_time
-#, fuzzy
 msgid "Animated Strip Time"
-msgstr "Animé sélectionné"
+msgstr "Temps de bande animé"
 
 #: bpy.types.NlaStrip.use_animated_time
 msgid "Strip time is controlled by an F-Curve rather than automatically determined"
-msgstr ""
+msgstr "Le temps de la bande est contrôlé par une F-Curve, plutôt que déterminé automatiquement"
 
 #: bpy.types.NlaStrip.use_auto_blend
 msgid "Auto Blend In/Out"
-msgstr ""
+msgstr "Mélange/fondu auto en entrée/sortie"
 
 #: bpy.types.NlaStrip.use_auto_blend
 msgid "Number of frames for Blending In/Out is automatically determined from overlapping strips"
-msgstr ""
+msgstr "Le nombre de frames pour le fondu en ouverture/fermeture est déterminé automatiquement d’après le recouvrement des bandes"
 
 #: bpy.types.NlaStrip.blend_in
 msgid "Number of frames at start of strip to fade in influence"
-msgstr ""
+msgstr "Nombre de frames au début de la bande pour le fondu en ouverture de l’influence"
 
+# Traduction incertaine
 #: bpy.types.NlaStrip.blend_type
-#, fuzzy
 msgid "Blending"
-msgstr "Mélange :"
+msgstr "Mélange"
 
 #: bpy.types.NlaStrip.blend_type
 msgid "Method used for combining strip's result with accumulated result"
-msgstr ""
+msgstr "Méthode pour combiner les résultats de la bande avec ceux déjà accumulés"
 
 #: bpy.types.NlaStrip.use_animated_time_cyclic
 msgid "Cyclic Strip Time"
@@ -10547,26 +10470,24 @@ msgstr "F-Curves"
 
 #: bpy.types.NlaStrip.fcurves
 msgid "F-Curves for controlling the strip's influence and timing"
-msgstr ""
+msgstr "F-Curves pour contrôler les influence et timing de la bande"
 
+# Traduction incertaine
 #: bpy.types.NlaStrip.influence
-#, fuzzy
 msgid "Amount the strip contributes to the current result"
-msgstr "Colle la pose copiée dans la pose courante"
+msgstr "Niveau auquel contribue la bande au résultat courant"
 
 #: bpy.types.NlaStrip.modifiers
-#, fuzzy
 msgid "Modifiers affecting all the F-Curves in the referenced Action"
-msgstr "Modificateurs affectant les données de géométrie de l’objet"
+msgstr "Modificateurs affectant toutes les F-Curves de l’action référencée"
 
 #: bpy.types.NlaStrip.mute
 msgid "NLA Strip is not evaluated"
-msgstr ""
+msgstr "La bande NLA n’est pas évaluée"
 
 #: bpy.types.NlaStrip.strips bpy.types.NlaTrack.strips
-#, fuzzy
 msgid "NLA Strips"
-msgstr "Verrouiller bandes"
+msgstr "Bandes NLA"
 
 #: bpy.types.NlaStrip.strips
 msgid "NLA Strips that this strip acts as a container for (if it is of type Meta)"
@@ -10582,56 +10503,48 @@ msgid "Number of times to repeat the action range"
 msgstr "Nombres de répétitions de l’intervalle de l’action"
 
 #: bpy.types.NlaStrip.use_reverse
-#, fuzzy
 msgid "Reversed"
-msgstr "Inverser"
+msgstr "Inversé"
 
 #: bpy.types.NlaStrip.use_reverse
 msgid "NLA Strip is played back in reverse order (only when timing is automatically determined)"
-msgstr ""
+msgstr "La bande NLA est lue à l’envers (uniquement quand le timing est déterminé automatiquement)"
 
 #: bpy.types.NlaStrip.scale
-#, fuzzy
 msgid "Scaling factor for action"
-msgstr "Facteur de redimensionnement de l’image d’arrière-plan"
+msgstr "Facteur de redimensionnement de l’action"
 
 #: bpy.types.NlaStrip.select
-#, fuzzy
 msgid "NLA Strip is selected"
-msgstr "Groupe d’actions est sélectionné"
+msgstr "La bande NLA est sélectionnée"
 
 #: bpy.types.NlaStrip.strip_time
-#, fuzzy
 msgid "Strip Time"
-msgstr "Étiquette temps"
+msgstr "Temps de bande"
 
 #: bpy.types.NlaStrip.strip_time
 msgid "Frame of referenced Action to evaluate"
-msgstr ""
+msgstr "Frame de l’action référencée à évaluer"
 
 #: bpy.types.NlaStrip.type
-#, fuzzy
 msgid "Type of NLA Strip"
-msgstr "Type d'évènement"
+msgstr "Type de bande NLA"
 
 #: bpy.types.NlaStrip.type, 'CLIP'
-#, fuzzy
 msgid "Action Clip"
-msgstr "Action"
+msgstr "Clip action"
 
 #: bpy.types.NlaStrip.type, 'CLIP'
 msgid "NLA Strip references some Action"
 msgstr "La bande NLA référence une action"
 
 #: bpy.types.NlaStrip.type, 'TRANSITION'
-#, fuzzy
 msgid "Transition"
-msgstr "Translation"
+msgstr "Transition"
 
 #: bpy.types.NlaStrip.type, 'TRANSITION'
-#, fuzzy
 msgid "NLA Strip 'transitions' between adjacent strips"
-msgstr "Ajouter une bande de transition entre deux bandes adjacentes sélectionnées"
+msgstr "Les “transitions” de bande NLA entre bandes adjacentes"
 
 #: bpy.types.NlaStrip.type, 'META' bpy.types.Sequence.type,
 #: bpy.types.OBJECT_OT_add.type, bpy.types.OBJECT_OT_select_by_type.type,
@@ -10640,227 +10553,197 @@ msgstr "Méta"
 
 #: bpy.types.NlaStrip.type, 'META'
 msgid "NLA Strip acts as a container for adjacent strips"
-msgstr ""
+msgstr "La bande NLA se comporte comme un conteneur pour des bandes adjacentes"
 
 #: bpy.types.NlaStrip.type, 'SOUND'
-#, fuzzy
 msgid "Sound Clip"
-msgstr "Son"
+msgstr "Clip son"
 
 #: bpy.types.NlaStrip.type, 'SOUND'
 msgid "NLA Strip representing a sound event for speakers"
-msgstr ""
+msgstr "Bande NLA représentant un événement de son pour des haut-parleurs"
 
 #: bpy.types.NlaTrack
-#, fuzzy
 msgid "NLA Track"
-msgstr "Traquer"
+msgstr "Piste NLA"
 
 #: bpy.types.NlaTrack
 msgid "A animation layer containing Actions referenced as NLA strips"
 msgstr "Le calque d'animation contenant les actions référencées en tant que bande NLA"
 
 #: bpy.types.NlaTrack.active
-#, fuzzy
 msgid "NLA Track is active"
-msgstr "Verrouiller actif"
+msgstr "La piste NLA est active"
 
 #: bpy.types.NlaTrack.lock
-#, fuzzy
 msgid "NLA Track is locked"
-msgstr "Groupe d’actions est verrouillé"
+msgstr "La piste NLA est verrouillée"
 
 #: bpy.types.NlaTrack.mute
-#, fuzzy
 msgid "NLA Track is not evaluated"
-msgstr "Ajouter piste au-dessus de celle sélectionnée"
+msgstr "La piste NLA n’est pas évaluée"
 
 #: bpy.types.NlaTrack.strips
-#, fuzzy
 msgid "NLA Strips on this NLA-track"
-msgstr "Bandes à gauche"
+msgstr "Les bandes NLA sur cette piste NLA"
 
 #: bpy.types.NlaTrack.select
-#, fuzzy
 msgid "NLA Track is selected"
-msgstr "Ajouter piste au-dessus de celle sélectionnée"
+msgstr "La piste NLA est sélectionnée"
 
 #: bpy.types.NlaTrack.is_solo
 msgid "Solo"
-msgstr ""
+msgstr "Solo"
 
 #: bpy.types.NlaTrack.is_solo
 msgid "NLA Track is evaluated itself (i.e. active Action and all other NLA Tracks in the same AnimData block are disabled)"
-msgstr ""
+msgstr "La piste NLA est évaluée pour elle-même (c-à-d que l’action active et toutes les autres pistes NLA du même bloc de données animation sont désactivées)"
 
 #: bpy.types.Node
-#, fuzzy
 msgid "Node in a node tree"
-msgstr "Arbre de nœuds de compositing"
+msgstr "Nœuds dans une arborescence de nœuds"
 
 #: bpy.types.Node.name
 msgid "Unique node identifier"
 msgstr "Identifiant de nœud unique"
 
 #: bpy.types.Node.inputs bpy.types.UserPreferences.inputs
-#, fuzzy
 msgid "Inputs"
-msgstr "Entrée"
+msgstr "Entrées"
 
 #: bpy.types.Node.label
 msgid "Label"
-msgstr ""
+msgstr "Label"
 
 #: bpy.types.Node.label
 msgid "Optional custom node label"
-msgstr ""
+msgstr "Label de nœud optionnel personnalisé"
 
 #: bpy.types.Node.outputs
-#, fuzzy
 msgid "Outputs"
-msgstr "Sortie"
+msgstr "Sorties"
 
 #: bpy.types.Node.parent
 msgid "Parent this node is attached to"
 msgstr "Parent auquel le noeud est attaché"
 
 #: bpy.types.NodeLink
-#, fuzzy
 msgid "Link between nodes in a node tree"
-msgstr "Activer l’arbre de nœud de compositing"
+msgstr "Lien entre nœuds dans une arborescence de nœuds"
 
 #: bpy.types.NodeLink.from_node
-#, fuzzy
 msgid "From node"
-msgstr "D’après enveloppes"
+msgstr "Depuis nœud"
 
 #: bpy.types.NodeLink.from_socket
-#, fuzzy
 msgid "From socket"
-msgstr "Nom de la prise de groupe"
+msgstr "Depuis prise"
 
 #: bpy.types.NodeLink.to_node
 msgid "To node"
 msgstr "Vers nœud"
 
 #: bpy.types.NodeLink.to_socket
-#, fuzzy
 msgid "To socket"
-msgstr "Nom de la prise de groupe"
+msgstr "Vers prise"
 
 #: bpy.types.NodeSocket
-#, fuzzy
 msgid "Node Socket"
-msgstr "Enlever prise de groupe"
+msgstr "Prise de nœud"
 
 #: bpy.types.NodeSocket
 msgid "Input or output socket of a node"
-msgstr ""
+msgstr "Prise d’entrée ou de sortie d’un nœud"
 
 #: bpy.types.NodeSocket.name
-#, fuzzy
 msgid "Socket name"
-msgstr "Type de prise"
+msgstr "Nom de prise"
 
 #: bpy.types.NodeSocket.type
-#, fuzzy
 msgid "Node Socket type"
-msgstr "Type de prise"
+msgstr "Type de prise de nœud"
 
 #: bpy.types.NodeSocket.type, 'RGBA' bpy.types.RenderSettings.color_mode,
 #: bpy.types.IMAGE_OT_save_as.color_mode,
 #: bpy.types.NODE_OT_group_socket_add.type,
 msgid "RGBA"
-msgstr ""
+msgstr "RGBA"
 
 #: bpy.types.ObjectBase
-#, fuzzy
 msgid "Object Base"
-msgstr "Objets"
+msgstr "Base d’objet"
 
 #: bpy.types.ObjectBase
 msgid "An object instance in a scene"
 msgstr "Une instance d’objet dans une scène"
 
 #: bpy.types.ObjectBase.layers
-#, fuzzy
 msgid "Layers the object base is on"
-msgstr "Calques sur lesquels se trouve l’objet"
+msgstr "Calques sur lesquels se trouve la base d’objet"
 
 #: bpy.types.ObjectBase.object
-#, fuzzy
 msgid "Object this base links to"
-msgstr "Naviguer objet à lier"
+msgstr "Objet auquel est liée cette base"
 
 #: bpy.types.ObjectBase.select
-#, fuzzy
 msgid "Object base selection state"
-msgstr "État de sélection de l’objet"
+msgstr "État de sélection de la base d’objet"
 
 #: bpy.types.OperatorProperties
-#, fuzzy
 msgid "Operator Properties"
-msgstr "Pré-réglages d’opérateur"
+msgstr "Propriétés d’opérateur"
 
 #: bpy.types.OperatorProperties
 msgid "Input properties of an Operator"
 msgstr "Propriétés du périphérique d'entrée de l'opérateur"
 
 #: bpy.types.PackedFile
-#, fuzzy
 msgid "Packed File"
-msgstr "Coller fichier"
+msgstr "Fichier empaqueté"
 
 #: bpy.types.PackedFile
-#, fuzzy
 msgid "External file packed into the .blend file"
-msgstr "Enregistrer sur le disque une image empaquetée dans le fichier .blend"
+msgstr "Fichier externe empaqueté dans le fichier .blend"
 
 #: bpy.types.PackedFile.size
 msgid "Size of packed file in bytes"
 msgstr "Taille du fichier empaqueté en bytes"
 
 #: bpy.types.Paint.brush
-#, fuzzy
 msgid "Active Brush"
-msgstr "Os actif"
+msgstr "Brosse active"
 
 #: bpy.types.Paint.show_low_resolution
-#, fuzzy
 msgid "Fast Navigate"
-msgstr "Navigation vol"
+msgstr "Navigation rapide"
 
 #: bpy.types.Paint.show_low_resolution
 msgid "For multires, show low resolution while navigating the view"
-msgstr ""
+msgstr "Pour la multi-résolution, afficher la résolution basse lorsque que vous naviguez dans la vue"
 
 #: bpy.types.Paint.show_brush
-#, fuzzy
 msgid "Show Brush"
-msgstr "Afficher images"
+msgstr "Montrer brosse"
 
 #: bpy.types.Paint.show_brush_on_surface
-#, fuzzy
 msgid "Show Brush On Surface"
-msgstr "Subdivision de surface"
+msgstr "Montrer la brosse sur la surface"
 
 #: bpy.types.Particle
-#, fuzzy
 msgid "Particle in a particle system"
-msgstr "Ajouter un système de particules"
+msgstr "Particule dans un système de particules"
 
 #: bpy.types.Particle.alive_state
-#, fuzzy
 msgid "Alive State"
-msgstr "Montrer états actifs"
+msgstr "État vivant"
 
 #: bpy.types.Particle.alive_state, 'DEAD'
 msgid "Dead"
-msgstr ""
+msgstr "Morte"
 
 #: bpy.types.Particle.alive_state, 'UNBORN'
 msgid "Unborn"
-msgstr ""
+msgstr "Non-née"
 
 #: bpy.types.Particle.alive_state, 'ALIVE'
 msgid "Alive"
@@ -10871,28 +10754,24 @@ msgid "Dying"
 msgstr "Mourante"
 
 #: bpy.types.Particle.angular_velocity bpy.types.ParticleKey.angular_velocity
-#, fuzzy
 msgid "Angular Velocity"
-msgstr "Vélocité angulaire :"
+msgstr "Vitesse angulaire"
 
 #: bpy.types.Particle.birth_time
-#, fuzzy
 msgid "Birth Time"
-msgstr "Étiquette temps"
+msgstr "Temps (date) de naissance"
 
 #: bpy.types.Particle.die_time
-#, fuzzy
 msgid "Die Time"
-msgstr "Temps lié"
+msgstr "Temps (date) de mort"
 
 #: bpy.types.Particle.is_exist
 msgid "Exists"
-msgstr ""
+msgstr "Existe"
 
 #: bpy.types.Particle.hair_keys bpy.types.ParticleEdit.is_hair
-#, fuzzy
 msgid "Hair"
-msgstr "Cheveux :"
+msgstr "Cheveux"
 
 #: bpy.types.Particle.particle_keys
 msgid "Keyed States"
@@ -10903,115 +10782,101 @@ msgid "Lifetime"
 msgstr "Durée de vie"
 
 #: bpy.types.Particle.location
-#, fuzzy
 msgid "Particle Location"
-msgstr "Friction des particules :"
+msgstr "Position de la particule"
 
 #: bpy.types.Particle.velocity bpy.types.PointDensity.color_source,
 #: 'PARTICLE_VELOCITY' bpy.types.PointDensity.falloff,
 #: bpy.types.PointDensity.turbulence_influence,
-#, fuzzy
 msgid "Particle Velocity"
-msgstr "Édition de particules"
+msgstr "Vitesse de la particule"
 
 #: bpy.types.Particle.prev_angular_velocity
-#, fuzzy
 msgid "Previous Angular Velocity"
-msgstr "Vélocité angulaire :"
+msgstr "Vitesse angulaire précédente"
 
 #: bpy.types.Particle.prev_location
-#, fuzzy
 msgid "Previous Particle Location"
-msgstr "Précédent ou sélection"
+msgstr "Position précédente de la particule"
 
 #: bpy.types.Particle.prev_velocity
-#, fuzzy
 msgid "Previous Particle Velocity"
-msgstr "Précédent ou sélection"
+msgstr "Vitesse précédente de la particule"
 
 #: bpy.types.Particle.prev_rotation
-#, fuzzy
 msgid "Previous Rotation"
-msgstr "Précédent ou sélection"
+msgstr "Rotation précédente"
 
 #: bpy.types.Particle.is_visible
 msgid "Visible"
 msgstr "Visible"
 
 #: bpy.types.ParticleBrush
-#, fuzzy
 msgid "Particle Brush"
-msgstr "Particules"
+msgstr "Brosse de particules"
 
 #: bpy.types.ParticleBrush
-#, fuzzy
 msgid "Particle editing brush"
-msgstr "Nouveaux réglages de particules"
+msgstr "Brosse d’édition des particules"
 
 #: bpy.types.ParticleBrush.count bpy.types.ParticleDupliWeight.count
-#, fuzzy
 msgid "Count"
-msgstr "Quantité"
+msgstr "Nombre"
 
 #: bpy.types.ParticleBrush.count
-#, fuzzy
 msgid "Particle count"
-msgstr "Friction des particules :"
+msgstr "Nombre de particules"
 
 #: bpy.types.ParticleBrush.length_mode
-#, fuzzy
 msgid "Length Mode"
-msgstr "Longueur"
+msgstr "Mode de longueur"
 
+# Traduction incertaine
 #: bpy.types.ParticleBrush.length_mode, 'GROW'
 msgid "Grow"
-msgstr ""
+msgstr "Grossir"
 
 #: bpy.types.ParticleBrush.length_mode, 'GROW'
-#, fuzzy
 msgid "Make hairs longer"
-msgstr "Créer liens vers scène"
+msgstr "Rendre les cheveux plus long"
 
 #: bpy.types.ParticleBrush.length_mode, 'SHRINK'
-#, fuzzy
 msgid "Shrink"
-msgstr "Contracter/déformer"
+msgstr "Réduire"
 
 #: bpy.types.ParticleBrush.length_mode, 'SHRINK'
 msgid "Make hairs shorter"
-msgstr ""
+msgstr "Rendre les cheveux plus courts"
 
 #: bpy.types.ParticleBrush.puff_mode
-#, fuzzy
 msgid "Puff Mode"
-msgstr "Mode Pose"
+msgstr "Mode bouffant"
 
 #: bpy.types.ParticleBrush.puff_mode, 'ADD'
 msgid "Make hairs more puffy"
 msgstr "Hérisser les cheveux"
 
+# Traduction incertaine
 #: bpy.types.ParticleBrush.puff_mode, 'SUB'
-#, fuzzy
 msgid "Sub"
-msgstr "Soleil"
+msgstr "Sub"
 
 #: bpy.types.ParticleBrush.puff_mode, 'SUB'
 msgid "Make hairs less puffy"
-msgstr ""
+msgstr "Rendre les cheveux moins bouffants"
 
 #: bpy.types.ParticleBrush.use_puff_volume
-#, fuzzy
 msgid "Puff Volume"
-msgstr "Volume"
+msgstr "Volume de bouffant"
 
+# Traduction incertaine
 #: bpy.types.ParticleBrush.use_puff_volume
 msgid "Apply puff to unselected end-points, (helps maintain hair volume when puffing root)"
-msgstr ""
+msgstr "Appliquer le bouffant aux points finaux non-sélectionnés (aide à maintenir le volume des cheveux quand on fait bouffer les racines)"
 
 #: bpy.types.ParticleBrush.size
-#, fuzzy
 msgid "Radius of the brush in pixels"
-msgstr "Rayon de la sphère ou du cylindre"
+msgstr "Rayon de la brosse, en pixels"
 
 #: bpy.types.ParticleBrush.steps bpy.types.ParticleEdit.draw_step
 #: bpy.types.MESH_OT_extrude_repeat.steps bpy.types.MESH_OT_screw.steps
@@ -11024,33 +10889,32 @@ msgid "Steps"
 msgstr "Étapes"
 
 #: bpy.types.ParticleBrush.steps
-#, fuzzy
 msgid "Brush steps"
-msgstr "Enlever brosse"
+msgstr "Étapes/pas de la brosse"
 
 #: bpy.types.ParticleBrush.strength
-#, fuzzy
 msgid "Brush strength"
-msgstr "Enlever brosse"
+msgstr "Force de la brosse"
 
+# Traduction incertaine
 #: bpy.types.ParticleDupliWeight
-#, fuzzy
 msgid "Particle Dupliobject Weight"
-msgstr "Enlever objet dupliqué de particules"
+msgstr "Poids d’objet dupliqué de particule"
 
+# Traduction incertaine
 #: bpy.types.ParticleDupliWeight
-#, fuzzy
 msgid "Weight of a particle dupliobject in a group"
-msgstr "Enlever objet dupliqué de particules"
+msgstr "Poids d’un objet dupliqué de particule dans un groupe"
 
+# Traduction incertaine
 #: bpy.types.ParticleDupliWeight.name
-#, fuzzy
 msgid "Particle dupliobject name"
-msgstr "Enlever objet dupliqué de particules"
+msgstr "Nom de l’objet dupliqué de particule"
 
+# Traduction incertaine
 #: bpy.types.ParticleDupliWeight.count
 msgid "The number of times this object is repeated with respect to other objects"
-msgstr ""
+msgstr "Le nombre de fois que cet objet est répété, par rapport aux autres objets"
 
 #: bpy.types.ParticleEdit bpy.types.ToolSettings.particle_edit
 #: bpy.types.OBJECT_OT_mode_set.mode, 'PARTICLE_EDIT'
@@ -11058,65 +10922,60 @@ msgid "Particle Edit"
 msgstr "Édition de particules"
 
 #: bpy.types.ParticleEdit
-#, fuzzy
 msgid "Properties of particle editing mode"
-msgstr "Données de l’espace des propriétés"
+msgstr "Propriétés du mode d’édition des particules"
 
 #: bpy.types.ParticleEdit.use_auto_velocity
-#, fuzzy
 msgid "Auto Velocity"
-msgstr "Vélocité"
+msgstr "Vitesse auto"
 
 #: bpy.types.ParticleEdit.use_auto_velocity
 msgid "Calculate point velocities automatically"
-msgstr ""
+msgstr "Calculer les vitesses de point automatiquement"
 
+# Traduction incertaine
+# Ou Émetteur de déviation ?
 #: bpy.types.ParticleEdit.use_emitter_deflect
-#, fuzzy
 msgid "Deflect Emitter"
-msgstr "Motif de sélection"
+msgstr "Dévier émetteur"
 
 #: bpy.types.ParticleEdit.use_emitter_deflect
 msgid "Keep paths from intersecting the emitter"
 msgstr "Eloigner les chemins d'une intersection avec l'émetteur"
 
 #: bpy.types.ParticleEdit.show_particles
-#, fuzzy
 msgid "Draw Particles"
-msgstr "Particules du domaine"
+msgstr "Afficher particules"
 
 #: bpy.types.ParticleEdit.show_particles
-#, fuzzy
 msgid "Draw actual particles"
-msgstr "Rendre l’objet comme des particules de halo"
+msgstr "Afficher les vraies particules"
 
 #: bpy.types.ParticleEdit.is_editable bpy.types.ParticleSystem.is_editable
-#, fuzzy
 msgid "Editable"
-msgstr "Activer"
+msgstr "Éditable"
 
 #: bpy.types.ParticleEdit.is_editable
 msgid "A valid edit mode exists"
 msgstr "Un mode d'édition valide existe"
 
 #: bpy.types.ParticleEdit.emitter_distance
-#, fuzzy
 msgid "Emitter Distance"
-msgstr "Limiter distance"
+msgstr "Distance à l’émetteur"
 
+# Traduction incertaine
 #: bpy.types.ParticleEdit.emitter_distance
-#, fuzzy
 msgid "Distance to keep particles away from the emitter"
-msgstr "Déconnecter tous les systèmes de cheveux du mesh émetteur"
+msgstr "Distance à l‘émetteur à conserver pour les particules"
 
 #: bpy.types.ParticleEdit.use_fade_time
-#, fuzzy
 msgid "Fade Time"
-msgstr "Fondre vers :"
+msgstr "Temps de fondu"
 
+# Traduction incertaine
 #: bpy.types.ParticleEdit.use_fade_time
 msgid "Fade paths and keys further away from current frame"
-msgstr ""
+msgstr "Fondre les chemins et clés encore plus loin de la frame courante"
 
 #: bpy.types.ParticleEdit.fade_frames
 msgid "How many frames to fade"
@@ -11127,37 +10986,32 @@ msgid "Editing hair"
 msgstr "Édition des cheveux"
 
 #: bpy.types.ParticleEdit.use_default_interpolate
-#, fuzzy
 msgid "Interpolate"
-msgstr "Interpolation"
+msgstr "Interpoler"
 
 #: bpy.types.ParticleEdit.use_default_interpolate
-#, fuzzy
 msgid "Interpolate new particles from the existing ones"
-msgstr "Créer la nouvelle clé de forme à partir du mélange de clés courant"
+msgstr "Interpoler les nouvelles particules d’après les existantes"
 
 #: bpy.types.ParticleEdit.use_preserve_length
-#, fuzzy
 msgid "Keep Lengths"
-msgstr "Longueur au repos"
+msgstr "Conserver longueur"
 
 #: bpy.types.ParticleEdit.use_preserve_length
 msgid "Keep path lengths constant"
-msgstr ""
+msgstr "Conserver les longueur des chemins constantes"
 
 #: bpy.types.ParticleEdit.use_preserve_root
-#, fuzzy
 msgid "Keep Root"
-msgstr "Sélectionner racines"
+msgstr "Conserver racine"
 
 #: bpy.types.ParticleEdit.use_preserve_root
 msgid "Keep root keys unmodified"
-msgstr ""
+msgstr "Conserver les clés racines non-modifiées"
 
 #: bpy.types.ParticleEdit.default_key_count
-#, fuzzy
 msgid "Keys"
-msgstr "Clés :"
+msgstr "Clés"
 
 #: bpy.types.ParticleEdit.default_key_count
 msgid "How many keys to make new particles with"
@@ -11173,7 +11027,7 @@ msgstr "Mode de sélection"
 
 #: bpy.types.ParticleEdit.select_mode
 msgid "Particle select and display mode"
-msgstr ""
+msgstr "Mode de sélection et d’affichage des particules"
 
 #: bpy.types.ParticleEdit.select_mode, 'PATH' bpy.types.SequenceProxy.filepath
 #: bpy.types.GPENCIL_OT_convert.type,
@@ -20910,7 +20764,7 @@ msgstr "Ligne de commande pour la lecture d’animation Blender – chemin vers
 
 #: bpy.types.UserPreferencesFilePaths.animation_player_preset, 'DJV'
 msgid "Djv"
-msgstr ""
+msgstr "Djv"
 
 #: bpy.types.UserPreferencesFilePaths.animation_player_preset, 'DJV'
 msgid "Open source frame player: http://djv.sourceforge.net"
@@ -21478,7 +21332,7 @@ msgstr "Périphérique nul – il n’y aura pas de sortie audio"
 
 #: bpy.types.UserPreferencesSystem.audio_device, 'SDL'
 msgid "SDL"
-msgstr ""
+msgstr "SDL"
 
 #: bpy.types.UserPreferencesSystem.audio_device, 'SDL'
 msgid "SDL device - simple direct media layer, recommended for sequencer usage"
@@ -21513,7 +21367,7 @@ msgstr "Définir le tampon de mixage audio à 512 échantillons"
 #: bpy.types.UserPreferencesSystem.audio_mixing_buffer, 'SAMPLES_1024'
 #: bpy.types.UserPreferencesSystem.gl_texture_limit, 'CLAMP_1024'
 msgid "1024"
-msgstr ""
+msgstr "1024"
 
 #: bpy.types.UserPreferencesSystem.audio_mixing_buffer, 'SAMPLES_1024'
 msgid "Set audio mixing buffer size to 1024 samples"
@@ -21522,7 +21376,7 @@ msgstr "Définir le tampon de mixage audio à 1024 échantillons"
 #: bpy.types.UserPreferencesSystem.audio_mixing_buffer, 'SAMPLES_2048'
 #: bpy.types.UserPreferencesSystem.gl_texture_limit, 'CLAMP_2048'
 msgid "2048"
-msgstr ""
+msgstr "2048"
 
 #: bpy.types.UserPreferencesSystem.audio_mixing_buffer, 'SAMPLES_2048'
 msgid "Set audio mixing buffer size to 2048 samples"
@@ -21531,7 +21385,7 @@ msgstr "Définir le tampon de mixage audio à 2048 échantillons"
 #: bpy.types.UserPreferencesSystem.audio_mixing_buffer, 'SAMPLES_4096'
 #: bpy.types.UserPreferencesSystem.gl_texture_limit, 'CLAMP_4096'
 msgid "4096"
-msgstr ""
+msgstr "4096"
 
 #: bpy.types.UserPreferencesSystem.audio_mixing_buffer, 'SAMPLES_4096'
 msgid "Set audio mixing buffer size to 4096 samples"
@@ -21617,7 +21471,7 @@ msgstr "Taux d’échantillonnage audio"
 
 #: bpy.types.UserPreferencesSystem.audio_sample_rate, 'RATE_44100'
 msgid "44.1 kHz"
-msgstr ""
+msgstr "44.1 kHz"
 
 #: bpy.types.UserPreferencesSystem.audio_sample_rate, 'RATE_44100'
 msgid "Set audio sampling rate to 44100 samples per second"
@@ -21625,7 +21479,7 @@ msgstr "Définir le taux d’échantillonnage audio à 44100 échantillons par s
 
 #: bpy.types.UserPreferencesSystem.audio_sample_rate, 'RATE_48000'
 msgid "48 kHz"
-msgstr ""
+msgstr "48 kHz"
 
 #: bpy.types.UserPreferencesSystem.audio_sample_rate, 'RATE_48000'
 msgid "Set audio sampling rate to 48000 samples per second"
@@ -21633,7 +21487,7 @@ msgstr "Définir le taux d’échantillonnage audio à 48000 échantillons par s
 
 #: bpy.types.UserPreferencesSystem.audio_sample_rate, 'RATE_96000'
 msgid "96 kHz"
-msgstr ""
+msgstr "96 kHz"
 
 #: bpy.types.UserPreferencesSystem.audio_sample_rate, 'RATE_96000'
 msgid "Set audio sampling rate to 96000 samples per second"
@@ -21728,7 +21582,7 @@ msgstr "Activer tous les codecs"
 
 #: bpy.types.UserPreferencesSystem.use_preview_images
 msgid "Allow user to choose any codec (Windows only, might generate instability)"
-msgstr ""
+msgstr "Permettre à l’utilisateur de choisir n’importe quel codec (Windows uniquement, peut générer de l’instabilité)"
 
 #: bpy.types.UserPreferencesSystem.screencast_fps
 #, fuzzy
@@ -21770,71 +21624,71 @@ msgstr "Langue utilisée pour la traduction"
 
 #: bpy.types.UserPreferencesSystem.language, 'ENGLISH'
 msgid "en_US"
-msgstr ""
+msgstr "en_US"
 
 #: bpy.types.UserPreferencesSystem.language, 'JAPANESE'
 msgid "ja_JP"
-msgstr ""
+msgstr "ja_JP"
 
 #: bpy.types.UserPreferencesSystem.language, 'DUTCH'
 msgid "nl_NL"
-msgstr ""
+msgstr "nl_NL"
 
 #: bpy.types.UserPreferencesSystem.language, 'ITALIAN'
 msgid "it_IT"
-msgstr ""
+msgstr "it_IT"
 
 #: bpy.types.UserPreferencesSystem.language, 'GERMAN'
 msgid "de_DE"
-msgstr ""
+msgstr "de_DE"
 
 #: bpy.types.UserPreferencesSystem.language, 'FINNISH'
 msgid "fi_FI"
-msgstr ""
+msgstr "fi_FI"
 
 #: bpy.types.UserPreferencesSystem.language, 'SWEDISH'
 msgid "sv_SE"
-msgstr ""
+msgstr "sv_SE"
 
 #: bpy.types.UserPreferencesSystem.language, 'FRENCH'
 msgid "fr_FR"
-msgstr ""
+msgstr "fr_FR"
 
 #: bpy.types.UserPreferencesSystem.language, 'SPANISH'
 msgid "es_ES"
-msgstr ""
+msgstr "es_ES"
 
 #: bpy.types.UserPreferencesSystem.language, 'CATALAN'
 msgid "ca_AD"
-msgstr ""
+msgstr "ca_AD"
 
 #: bpy.types.UserPreferencesSystem.language, 'CZECH'
 msgid "cs_CZ"
-msgstr ""
+msgstr "cs_CZ"
 
 #: bpy.types.UserPreferencesSystem.language, 'BRAZILIAN_PORTUGUESE'
 msgid "pt_BR"
-msgstr ""
+msgstr "pt_BR"
 
 #: bpy.types.UserPreferencesSystem.language, 'SIMPLIFIED_CHINESE'
 msgid "zh_CN"
-msgstr ""
+msgstr "zh_CN"
 
 #: bpy.types.UserPreferencesSystem.language, 'TRADITIONAL_CHINESE'
 msgid "zh_TW"
-msgstr ""
+msgstr "zh_TW"
 
 #: bpy.types.UserPreferencesSystem.language, 'RUSSIAN'
 msgid "ru_RU"
-msgstr ""
+msgstr "ru_RU"
 
 #: bpy.types.UserPreferencesSystem.language, 'CROATIAN'
 msgid "hr_HR"
-msgstr ""
+msgstr "hr_HR"
 
 #: bpy.types.UserPreferencesSystem.language, 'SERBIAN'
 msgid "sr_RS"
-msgstr ""
+msgstr "sr_RS"
 
 #: bpy.types.UserPreferencesSystem.language, 'UKRAINIAN'
 msgid "uk_UA"
@@ -21842,27 +21696,27 @@ msgstr "uk_UA"
 
 #: bpy.types.UserPreferencesSystem.language, 'POLISH'
 msgid "pl_PL"
-msgstr ""
+msgstr "pl_PL"
 
 #: bpy.types.UserPreferencesSystem.language, 'ROMANIAN'
 msgid "ro_RO"
-msgstr ""
+msgstr "ro_RO"
 
 #: bpy.types.UserPreferencesSystem.language, 'ARABIC'
 msgid "ar_EG"
-msgstr ""
+msgstr "ar_EG"
 
 #: bpy.types.UserPreferencesSystem.language, 'BULGARIAN'
 msgid "bg_BG"
-msgstr ""
+msgstr "bg_BG"
 
 #: bpy.types.UserPreferencesSystem.language, 'GREEK'
 msgid "el_GR"
-msgstr ""
+msgstr "el_GR"
 
 #: bpy.types.UserPreferencesSystem.language, 'KOREAN'
 msgid "ko_KR"
-msgstr ""
+msgstr "ko_KR"
 
 #: bpy.types.UserPreferencesSystem.memory_cache_limit
 msgid "Memory Cache Limit"
@@ -23654,11 +23508,11 @@ msgstr "Blocs de données depuis lesquelles le bloc de données édité est lié
 
 #: bpy.types.SpaceNodeEditor.node_tree
 msgid "Node Tree"
-msgstr "Arbre de nœuds"
+msgstr "Arborescence de nœuds"
 
 #: bpy.types.SpaceNodeEditor.node_tree
 msgid "Node tree being displayed and edited"
-msgstr "Arbre de nœuds affiché et édité"
+msgstr "Arborescence de nœuds affichée et éditée"
 
 #: bpy.types.SpaceNodeEditor.texture_type
 msgid "Texture Type"
