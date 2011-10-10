@@ -7354,7 +7354,7 @@ msgstr "Touche modal"
 
 #: bpy.types.KeyMap.is_modal
 msgid "Indicates that a keymap is used for translate modal events for an operator"
-msgstr "Indique la touche utilisée pour traduire les évements modaux de l'opérateur"
+msgstr "Indique la touche utilisée pour traduire les événements modaux de l‘opérateur"
 
 #: bpy.types.KeyMap.region_type bpy.types.Region.type
 msgid "Region Type"
@@ -13403,15 +13403,15 @@ msgstr "Réglages de codec pour l’OpenEXR"
 
 #: bpy.types.RenderSettings.exr_codec, 'PXR24'
 msgid "Pxr24 (lossy)"
-msgstr ""
+msgstr "Pxr24 (destructif)"
 
 #: bpy.types.RenderSettings.exr_codec, 'ZIP'
 msgid "ZIP (lossless)"
-msgstr ""
+msgstr "ZIP (non-destructif)"
 
 #: bpy.types.RenderSettings.exr_codec, 'PIZ'
 msgid "PIZ (lossless)"
-msgstr ""
+msgstr "PIZ (non-destructif)"
 
 #: bpy.types.RenderSettings.exr_codec, 'RLE'
 msgid "RLE (lossless)"
@@ -13424,16 +13424,16 @@ msgstr "Codec FFMpeg à utiliser"
 #: bpy.types.RenderSettings.ffmpeg_codec, 'MPEG1'
 #: bpy.types.RenderSettings.ffmpeg_format,
 msgid "MPEG-1"
-msgstr ""
+msgstr "MPEG-1"
 
 #: bpy.types.RenderSettings.ffmpeg_codec, 'MPEG2'
 #: bpy.types.RenderSettings.ffmpeg_format,
 msgid "MPEG-2"
-msgstr ""
+msgstr "MPEG-2"
 
 #: bpy.types.RenderSettings.ffmpeg_codec, 'MPEG4'
 msgid "MPEG-4(divx)"
-msgstr ""
+msgstr "MPEG-4 (divx)"
 
 #: bpy.types.RenderSettings.ffmpeg_codec, 'HUFFYUV'
 msgid "HuffYUV"
@@ -13441,59 +13441,55 @@ msgstr "HuffYUV"
 
 #: bpy.types.RenderSettings.ffmpeg_codec, 'DV'
 #: bpy.types.RenderSettings.ffmpeg_format,
-#, fuzzy
 msgid "DV"
-msgstr "DVar"
+msgstr "DV"
 
 #: bpy.types.RenderSettings.ffmpeg_codec, 'H264'
 #: bpy.types.RenderSettings.file_format,
 #: bpy.types.RenderSettings.ffmpeg_format,
 msgid "H.264"
-msgstr ""
+msgstr "H.264"
 
 #: bpy.types.RenderSettings.ffmpeg_codec, 'THEORA'
 msgid "Theora"
-msgstr ""
+msgstr "Theora"
 
 #: bpy.types.RenderSettings.ffmpeg_codec, 'FLASH'
 msgid "Flash Video"
-msgstr ""
+msgstr "Flash vidéo"
 
 #: bpy.types.RenderSettings.ffmpeg_codec, 'FFV1'
-#, fuzzy
 msgid "FFmpeg video codec #1"
-msgstr "Codec FFMpeg audio à utiliser"
+msgstr "Codec vidéo FFmpeg #1"
 
 #: bpy.types.RenderSettings.use_color_management
 #: release/scripts/startup/bl_ui/properties_game.py:354
 msgid "Color Management"
 msgstr "Gestion des couleurs"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.use_color_management
-#, fuzzy
 msgid "Use linear workflow - gamma corrected imaging pipeline"
 msgstr "Utiliser le processus linéaire – pipeline d’image corrigé en gamma"
 
 #: bpy.types.RenderSettings.color_mode
-#, fuzzy
 msgid "Choose BW for saving greyscale images, RGB for saving red, green and blue channels, and RGBA for saving red, green, blue and alpha channels"
 msgstr "Choisissez BW (N&B) pour enregistrer des images en niveaux de gris, RGB pour enregistrer les canaux rouge, vert et bleu, et RGBA pour enregistrer les canaux rouge, vert, bleu et alpha"
 
 #: bpy.types.RenderSettings.color_mode, 'BW'
 #: bpy.types.IMAGE_OT_save_as.color_mode,
-#, fuzzy
 msgid "BW"
-msgstr "B"
+msgstr "BW"
 
 #: bpy.types.RenderSettings.color_mode, 'BW'
 #: bpy.types.IMAGE_OT_save_as.color_mode,
 msgid "Images get saved in 8 bits grayscale (only PNG, JPEG, TGA, TIF)"
-msgstr ""
+msgstr "Les images sont enregistrées en niveau de gris 8 bits (PNG, JPEG, TGA et TIF uniquement)"
 
 #: bpy.types.RenderSettings.color_mode, 'RGB'
 #: bpy.types.IMAGE_OT_save_as.color_mode,
 msgid "Images are saved with RGB (color) data"
-msgstr ""
+msgstr "Les images sont enregistrées en couleurs (données RGB)"
 
 #: bpy.types.RenderSettings.color_mode, 'RGBA'
 #: bpy.types.IMAGE_OT_save_as.color_mode,
@@ -13514,8 +13510,8 @@ msgstr "Faire passer le résultat du rendu dans le pipeline de compositing, si l
 msgid "Crop to Border"
 msgstr "Découper aux bords"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.use_crop_to_border
-#, fuzzy
 msgid "Crop the rendered frame to the defined border size"
 msgstr "Découper l’image rendue aux dimensions définies"
 
@@ -13576,17 +13572,16 @@ msgid "Images are rendered without forcing UI changes, optionally showing result
 msgstr "Les images sont rendues sans changements d’UI, ne montrant donc pas forcément le rendu"
 
 #: bpy.types.RenderSettings.bake_distance
-#, fuzzy
 msgid "Maximum distance from active object to other object (in blender units)"
 msgstr "Distance maximale entre objet actif et un autre objet (en unités blender)"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.dither_intensity
-#, fuzzy
 msgid "Dither Intensity"
 msgstr "Intensité du dithering"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.dither_intensity
-#, fuzzy
 msgid "Amount of dithering noise added to the rendered image to break up banding"
 msgstr "Quantité de bruit de dithering ajouté à l’image rendue pour casser le tramage"
 
@@ -13623,12 +13618,10 @@ msgid "Use the Blender internal rendering engine for rendering"
 msgstr "Utiliser le moteur de rendu interne de Blender pour le rendu"
 
 #: bpy.types.RenderSettings.use_envmaps
-#, fuzzy
 msgid "Environment Maps"
 msgstr "Cartes d’environnement"
 
 #: bpy.types.RenderSettings.use_envmaps
-#, fuzzy
 msgid "Calculate environment maps while rendering"
 msgstr "Calculer les cartes d’environnement pendant le rendu"
 
@@ -13648,12 +13641,10 @@ msgid "FPS"
 msgstr "FPS"
 
 #: bpy.types.RenderSettings.fps
-#, fuzzy
 msgid "Framerate, expressed in frames per second"
 msgstr "Framerate, exprimé en images par seconde"
 
 #: bpy.types.RenderSettings.fps_base
-#, fuzzy
 msgid "FPS Base"
 msgstr "Base de FPS"
 
@@ -13666,7 +13657,6 @@ msgid "Field Order"
 msgstr "Ordre des trames"
 
 #: bpy.types.RenderSettings.field_order
-#, fuzzy
 msgid "Order of video fields (select which lines get rendered first, to create smooth motion for TV output)"
 msgstr "Ordre des trames vidéo (sélectionnez quelles lignes sont rendues en premier, pour créer des mouvements lisses pour les sorties TV)"
 
@@ -13688,7 +13678,6 @@ msgstr "Trame inférieure d’abord"
 
 #: bpy.types.RenderSettings.use_fields
 #: release/scripts/startup/bl_ui/properties_render.py:388
-#, fuzzy
 msgid "Fields"
 msgstr "Entrelacement"
 
@@ -13722,32 +13711,29 @@ msgstr "Format de fichier dans lequel enregistrer l’image"
 
 #: bpy.types.RenderSettings.file_format, 'BMP'
 #: bpy.types.IMAGE_OT_save_as.file_format,
-#, fuzzy
 msgid "BMP"
-msgstr "MP2"
+msgstr "BMP"
 
 #: bpy.types.RenderSettings.file_format, 'BMP'
-#, fuzzy
 msgid "Output image in bitmap format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format bitmap"
 
 #: bpy.types.RenderSettings.file_format, 'DDS'
 msgid "DDS"
-msgstr ""
+msgstr "DDS"
 
 #: bpy.types.RenderSettings.file_format, 'DDS'
-#, fuzzy
 msgid "Output image in DDS format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format DDS"
 
 #: bpy.types.RenderSettings.file_format, 'IRIS'
 #: bpy.types.IMAGE_OT_save_as.file_format,
 msgid "Iris"
-msgstr ""
+msgstr "Iris"
 
 #: bpy.types.RenderSettings.file_format, 'IRIS'
 msgid "Output image in (old!) SGI IRIS format"
-msgstr ""
+msgstr "Enregistrer les images dans le (vieux !) format SGI IRIS"
 
 #: bpy.types.RenderSettings.file_format, 'PNG'
 #: bpy.types.IMAGE_OT_save_as.file_format,
@@ -13755,27 +13741,24 @@ msgid "PNG"
 msgstr "PNG"
 
 #: bpy.types.RenderSettings.file_format, 'PNG'
-#, fuzzy
 msgid "Output image in PNG format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format PNG"
 
 #: bpy.types.RenderSettings.file_format, 'JPEG'
 msgid "JPEG"
-msgstr ""
+msgstr "JPEG"
 
 #: bpy.types.RenderSettings.file_format, 'JPEG'
-#, fuzzy
 msgid "Output image in JPEG format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format JPEG"
 
 #: bpy.types.RenderSettings.file_format, 'JPEG2000'
 msgid "JPEG 2000"
-msgstr ""
+msgstr "JPEG 2000"
 
 #: bpy.types.RenderSettings.file_format, 'JPEG2000'
-#, fuzzy
 msgid "Output image in JPEG 2000 format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format JPEG 2000"
 
 #: bpy.types.RenderSettings.file_format, 'TARGA'
 #: bpy.types.IMAGE_OT_save_as.file_format,
@@ -13783,9 +13766,8 @@ msgid "Targa"
 msgstr "Targa"
 
 #: bpy.types.RenderSettings.file_format, 'TARGA'
-#, fuzzy
 msgid "Output image in Targa format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format Targa"
 
 #: bpy.types.RenderSettings.file_format, 'TARGA_RAW'
 #: bpy.types.IMAGE_OT_save_as.file_format, 'TARGA RAW'
@@ -13802,9 +13784,8 @@ msgid "Cineon"
 msgstr "Cineon"
 
 #: bpy.types.RenderSettings.file_format, 'CINEON'
-#, fuzzy
 msgid "Output image in Cineon format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format Cineon"
 
 #: bpy.types.RenderSettings.file_format, 'DPX'
 #: bpy.types.IMAGE_OT_save_as.file_format,
@@ -13812,9 +13793,8 @@ msgid "DPX"
 msgstr "DPX"
 
 #: bpy.types.RenderSettings.file_format, 'DPX'
-#, fuzzy
 msgid "Output image in DPX format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format DPX"
 
 #: bpy.types.RenderSettings.file_format, 'MULTILAYER'
 #: bpy.types.IMAGE_OT_save_as.file_format,
@@ -13823,102 +13803,93 @@ msgstr "Multicalque"
 
 #: bpy.types.RenderSettings.file_format, 'MULTILAYER'
 msgid "Output image in multilayer OpenEXR format"
-msgstr ""
+msgstr "Enregistrer les images dans le format OpenEXR"
 
 #: bpy.types.RenderSettings.file_format, 'OPEN_EXR'
 #: bpy.types.IMAGE_OT_save_as.file_format, 'OPENEXR'
-#, fuzzy
 msgid "OpenEXR"
-msgstr "Ouvrir"
+msgstr "OpenEXR"
 
 #: bpy.types.RenderSettings.file_format, 'OPEN_EXR'
-#, fuzzy
 msgid "Output image in OpenEXR format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format OpenEXR"
 
 #: bpy.types.RenderSettings.file_format, 'HDR'
 msgid "Radiance HDR"
 msgstr "Radiance HDR"
 
 #: bpy.types.RenderSettings.file_format, 'HDR'
-#, fuzzy
 msgid "Output image in Radiance HDR format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format Radiance HDR"
 
 #: bpy.types.RenderSettings.file_format, 'TIFF'
 msgid "TIFF"
-msgstr ""
+msgstr "TIFF"
 
 #: bpy.types.RenderSettings.file_format, 'TIFF'
-#, fuzzy
 msgid "Output image in TIFF format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer l’image au format TIFF"
 
 #: bpy.types.RenderSettings.file_format, 'AVI_JPEG'
 msgid "AVI JPEG"
-msgstr ""
+msgstr "AVI JPEG"
 
 #: bpy.types.RenderSettings.file_format, 'AVI_JPEG'
-#, fuzzy
 msgid "Output video in AVI JPEG format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer la vidéo au format AVI JPEG"
 
 #: bpy.types.RenderSettings.file_format, 'AVI_RAW'
 msgid "AVI Raw"
 msgstr "AVI brut (raw)"
 
 #: bpy.types.RenderSettings.file_format, 'AVI_RAW'
-#, fuzzy
 msgid "Output video in AVI Raw format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer la vidéo au format AVI Raw (brut)"
 
 #: bpy.types.RenderSettings.file_format, 'FRAMESERVER'
 msgid "Frame Server"
 msgstr "Serveur de frames"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.file_format, 'FRAMESERVER'
 msgid "Output image to a frameserver"
-msgstr ""
+msgstr "Sortir les images vers le serveur de frames"
 
 #: bpy.types.RenderSettings.file_format, 'H264'
-#, fuzzy
 msgid "Output video in H.264 format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer la vidéo au format H.264"
 
 #: bpy.types.RenderSettings.file_format, 'FFMPEG'
 msgid "MPEG"
-msgstr ""
+msgstr "MPEG"
 
 #: bpy.types.RenderSettings.file_format, 'FFMPEG'
-#, fuzzy
 msgid "Output video in MPEG format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer la vidéo au format MPEG"
 
 #: bpy.types.RenderSettings.file_format, 'THEORA'
 msgid "Ogg Theora"
-msgstr ""
+msgstr "Ogg Theora"
 
 #: bpy.types.RenderSettings.file_format, 'THEORA'
-#, fuzzy
 msgid "Output video in Ogg format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer la vidéo au format Ogg"
 
 #: bpy.types.RenderSettings.file_format, 'XVID'
 #: bpy.types.RenderSettings.ffmpeg_format,
 msgid "Xvid"
-msgstr ""
+msgstr "Xvid"
 
 #: bpy.types.RenderSettings.file_format, 'XVID'
-#, fuzzy
 msgid "Output video in Xvid format"
-msgstr "Format du fichier de sortie"
+msgstr "Enregistrer la vidéo au format Xvid"
 
 #: bpy.types.RenderSettings.filter_size
 msgid "Filter Size"
 msgstr "Taille du filtre"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.filter_size
-#, fuzzy
 msgid "Pixel width over which the reconstruction filter combines samples"
 msgstr "Nombre de pixels sur lesquels se base le filtre de reconstruction pour combiner les échantillons"
 
@@ -13943,59 +13914,56 @@ msgstr "Format du fichier de sortie"
 
 #: bpy.types.RenderSettings.ffmpeg_format, 'MPEG4'
 msgid "MPEG-4"
-msgstr ""
+msgstr "MPEG-4"
 
 #: bpy.types.RenderSettings.ffmpeg_format, 'AVI'
-#, fuzzy
 msgid "AVI"
-msgstr "AVI brut (raw)"
+msgstr "AVI"
 
 #: bpy.types.RenderSettings.ffmpeg_format, 'QUICKTIME'
-#, fuzzy
 msgid "Quicktime"
-msgstr "Temps d’attaque"
+msgstr "Quicktime"
 
 #: bpy.types.RenderSettings.ffmpeg_format, 'OGG'
 msgid "Ogg"
-msgstr ""
+msgstr "Ogg"
 
 #: bpy.types.RenderSettings.ffmpeg_format, 'MKV'
 #: bpy.types.SOUND_OT_mixdown.container, 'MATROSKA'
 msgid "Matroska"
-msgstr ""
+msgstr "Matroska"
 
 #: bpy.types.RenderSettings.ffmpeg_format, 'FLASH'
 msgid "Flash"
-msgstr ""
+msgstr "Flash"
 
 #: bpy.types.RenderSettings.ffmpeg_format, 'WAV'
-#, fuzzy
 msgid "Wav"
-msgstr "Vague"
+msgstr "Wav"
 
 #: bpy.types.RenderSettings.ffmpeg_format, 'MP3'
 msgid "Mp3"
-msgstr ""
+msgstr "Mp3"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.frame_map_new
-#, fuzzy
 msgid "Frame Map New"
 msgstr "Frame conversion nouvelle"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.frame_map_new
-#, fuzzy
 msgid "How many frames the Map Old will last"
-msgstr "Combien d’images durera Image conversion départ"
+msgstr "Combien de frames durera Frame conversion ancienne"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.frame_map_old
-#, fuzzy
 msgid "Frame Map Old"
-msgstr "Image conversion départ"
+msgstr "Frame conversion ancienne"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.frame_map_old
-#, fuzzy
 msgid "Old mapping value in frames"
-msgstr "Valeur de départ de la conversion, en images"
+msgstr "Valeur de départ de la conversion, en frames"
 
 #: bpy.types.RenderSettings.use_free_image_textures
 msgid "Free Image Textures"
@@ -14019,9 +13987,8 @@ msgid "Full Sample"
 msgstr "Échantillonnage complet"
 
 #: bpy.types.RenderSettings.use_full_sample
-#, fuzzy
 msgid "Save for every anti-aliasing sample the entire RenderLayer results (this solves anti-aliasing issues with compositing)"
-msgstr "Enregistrer pour chaque échantillon d’anti-aliasing, l’ensemble des résultats des calques de rendu (cela résout les problèmes d’anti-aliasing au compositing)"
+msgstr "Enregistrer, pour chaque échantillon d’anti-aliasing, l’ensemble des résultats des calques de rendu (cela résout les problèmes d’anti-aliasing au compositing)"
 
 #: bpy.types.RenderSettings.cineon_gamma
 msgid "Log conversion gamma"
@@ -14059,8 +14026,8 @@ msgstr "Mesh basse résolution"
 msgid "Calculate heights against unsubdivided low resolution mesh"
 msgstr "Calculer les hauteurs d’après le mesh non-subdivisé, basse résolution"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.bake_margin
-#, fuzzy
 msgid "Amount of pixels to extend the baked result with, as post process filter"
 msgstr "Nombre de pixels avec lesquels étendre le résultat pré-calculé, comme filtre de post-processing"
 
@@ -14069,7 +14036,6 @@ msgid "Max Rate"
 msgstr "Débit max"
 
 #: bpy.types.RenderSettings.ffmpeg_maxrate
-#, fuzzy
 msgid "Rate control: max rate (kb/s)"
 msgstr "Contrôle du débit : débit maximum (kb/s)"
 
@@ -14078,7 +14044,6 @@ msgid "Min Rate"
 msgstr "Débit min"
 
 #: bpy.types.RenderSettings.ffmpeg_minrate
-#, fuzzy
 msgid "Rate control: min rate (kb/s)"
 msgstr "Contrôle du débit : débit minimum (kb/s)"
 
@@ -14165,7 +14130,6 @@ msgid "Normalized"
 msgstr "Normalisées"
 
 #: bpy.types.RenderSettings.use_bake_normalize
-#, fuzzy
 msgid "With displacement normalize to the distance, with ambient occlusion normalize without using material settings"
 msgstr "Avec le déplacement normaliser à la distance, avec l’occlusion ambiante normaliser sans utiliser les réglages de matériau"
 
@@ -14174,7 +14138,6 @@ msgid "Octree Resolution"
 msgstr "Résolution de l’octree"
 
 #: bpy.types.RenderSettings.octree_resolution
-#, fuzzy
 msgid "Resolution of raytrace accelerator, use higher resolutions for larger scenes"
 msgstr "Résolution de l’accélérateur de raytracing, utilisez de plus hautes résolutions pour de plus grandes scènes"
 
@@ -14291,8 +14254,8 @@ msgstr "Mitchell-Netravali"
 msgid "Use a Mitchell-Netravali filter for anti-aliasing"
 msgstr "Utiliser un filtre de Mitchell-Netravali pour l’anti-aliasing"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.use_placeholder
-#, fuzzy
 msgid "Placeholders"
 msgstr "Placeholders"
 
@@ -14306,7 +14269,6 @@ msgid "Preset"
 msgstr "Pré-réglage"
 
 #: bpy.types.RenderSettings.jpeg2k_preset
-#, fuzzy
 msgid "Use a DCI Standard preset for saving jpeg2000"
 msgstr "Utiliser un pré-réglage du standard DCI pour enregistrer en jpeg2000"
 
@@ -14377,7 +14339,6 @@ msgid "Split quads predictably (1,2,3) (1,3,0)"
 msgstr "Diviser les quadrangles de façon prédictive (1,2,3) (1,3,0)"
 
 #: bpy.types.RenderSettings.file_quality
-#, fuzzy
 msgid "Quality of JPEG images, AVI Jpeg and SGI movies, compression for PNG's"
 msgstr "Qualité des images JPEG, vidéos AVI Jpeg et SGI, compression pour les PNG"
 
@@ -14411,26 +14372,24 @@ msgstr "Utiliser l’ancienne structure Octree"
 
 #: bpy.types.RenderSettings.raytrace_method, 'BLIBVH'
 msgid "BLI BVH"
-msgstr ""
+msgstr "BLI BVH"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.raytrace_method, 'BLIBVH'
-#, fuzzy
 msgid "Use BLI K-Dop BVH.c"
 msgstr "Utiliser BLI K-Dop BVH.c"
 
 #: bpy.types.RenderSettings.raytrace_method, 'VBVH'
-#, fuzzy
 msgid "vBVH"
-msgstr "Utiliser vBVH"
+msgstr "vBVH"
 
 #: bpy.types.RenderSettings.raytrace_method, 'VBVH'
 msgid "Use vBVH"
 msgstr "Utiliser vBVH"
 
 #: bpy.types.RenderSettings.raytrace_method, 'SIMD_SVBVH'
-#, fuzzy
 msgid "SIMD SVBVH"
-msgstr "Utiliser SIMD SVBVH"
+msgstr "SIMD SVBVH"
 
 #: bpy.types.RenderSettings.raytrace_method, 'SIMD_SVBVH'
 msgid "Use SIMD SVBVH"
@@ -14493,7 +14452,6 @@ msgid "Samplerate"
 msgstr "Échantillonnage"
 
 #: bpy.types.RenderSettings.ffmpeg_audio_mixrate
-#, fuzzy
 msgid "Audio samplerate(samples/s)"
 msgstr "Échantillonnage audio (échantillons/s)"
 
@@ -14604,9 +14562,8 @@ msgid "Simplify AO and SSS"
 msgstr "Simplifier AO et SSS"
 
 #: bpy.types.RenderSettings.simplify_ao_sss
-#, fuzzy
 msgid "Global approximate AO and SSS quality factor"
-msgstr "Facteur approximatif de qualité d’AO et SSS global"
+msgstr "Facteur global de qualité d’AO et SSS approximatif"
 
 #: bpy.types.RenderSettings.simplify_child_particles
 msgid "Simplify Child Particles"
@@ -14677,9 +14634,8 @@ msgid "Stamp Filename"
 msgstr "Étiquette nom de fichier"
 
 #: bpy.types.RenderSettings.use_stamp_filename
-#, fuzzy
 msgid "Include the .blend filename in image metadata"
-msgstr "Inclure le numéro d’image dans les méta-données de l’image"
+msgstr "Inclure le nom de fichier du .blend dans les méta-données de l’image"
 
 #: bpy.types.RenderSettings.use_stamp_frame
 msgid "Stamp Frame"
@@ -14694,7 +14650,6 @@ msgid "Stamp Lens"
 msgstr "Étiquette focale"
 
 #: bpy.types.RenderSettings.use_stamp_lens
-#, fuzzy
 msgid "Include the active camera's lens in image metadata"
 msgstr "Inclure la focale de la caméra active dans les méta-données de l’image"
 
@@ -14727,9 +14682,8 @@ msgid "Stamp Render Time"
 msgstr "Étiquette temps de rendu"
 
 #: bpy.types.RenderSettings.use_stamp_render_time
-#, fuzzy
 msgid "Include the render time in image metadata"
-msgstr "Inclure la date courante dans le méta-données de l’image"
+msgstr "Inclure le temps de rendu dans le méta-données de l’image"
 
 #: bpy.types.RenderSettings.use_stamp_scene
 msgid "Stamp Scene"
@@ -14816,8 +14770,8 @@ msgstr "Le moteur de rendu actuel est un moteur de jeu"
 msgid "Use Instances"
 msgstr "Utiliser instances"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.use_instances
-#, fuzzy
 msgid "Instance support leads to effective memory reduction when using duplicates"
 msgstr "Le support des instances permet de réduire fortement les besoins en mémoire, quand des copies sont utilisées"
 
@@ -14826,7 +14780,6 @@ msgid "Use Local Coords"
 msgstr "Utiliser coordonnées locales"
 
 #: bpy.types.RenderSettings.use_local_coords
-#, fuzzy
 msgid "Vertex coordinates are stored localy on each primitive (increases memory usage, but may have impact on speed)"
 msgstr "Les coordonnées des vertices sont stockées localement dans chaque primitive (augmente les besoins en mémoire mais peut avoir un impact sur la vitesse)"
 
@@ -14848,14 +14801,14 @@ msgstr "Point blanc de référence pour la conversion log"
 
 #: bpy.types.RenderSettings.jpeg2k_ycc
 msgid "YCC"
-msgstr ""
+msgstr "YCC"
 
 #: bpy.types.RenderSettings.jpeg2k_ycc
 msgid "Save luminance-chrominance-chrominance channels instead of RGB colors"
 msgstr "Enregistrer les canaux luminance-chrominance-chrominance au lieu des couleurs RGB"
 
+# Traduction incertaine
 #: bpy.types.RenderSettings.exr_zbuf
-#, fuzzy
 msgid "Zbuf"
 msgstr "Tampon Z"
 
@@ -14864,151 +14817,142 @@ msgid "Save the z-depth per pixel (32 bit unsigned int z-buffer)"
 msgstr "Enregistrer la profondeur Z par pixel (tampon Z d’entiers 32 bits non-signés)"
 
 #: bpy.types.SPHFluidSettings
-#, fuzzy
 msgid "SPH Fluid Settings"
-msgstr "Réglages de champ"
+msgstr "Réglages de fluide SPH"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings
-#, fuzzy
 msgid "Settings for particle fluids physics"
-msgstr "Réglages des périphériques d’entrée"
+msgstr "Réglages des physiques de fluides des particules"
 
-# Should be Buoyancy…
 #: bpy.types.SPHFluidSettings.buoyancy
-#, fuzzy
 msgid "Buoyancy"
 msgstr "Flottabilité"
 
 #: bpy.types.SPHFluidSettings.buoyancy
 msgid "Artificial buoyancy force in negative gravity direction based on pressure differences inside the fluid"
-msgstr ""
+msgstr "Force de flottabilité artificielle dans la direction opposée à la gravité, basée sur les différences de pression au sein du fluide"
 
 #: bpy.types.SPHFluidSettings.yield_ratio
-#, fuzzy
 msgid "Elastic Limit"
-msgstr "Élasticité"
+msgstr "Limite d’élasticité"
 
 #: bpy.types.SPHFluidSettings.yield_ratio
 msgid "How much the spring has to be stretched/compressed in order to change it's rest length"
 msgstr "De combien l'élasticité doit être accentuée/réduite pour changer la longueur de repos"
 
 #: bpy.types.SPHFluidSettings.factor_density
-#, fuzzy
 msgid "Factor Density"
-msgstr "Facteur vert"
+msgstr "Facteur densité"
 
 #: bpy.types.SPHFluidSettings.factor_density
 msgid "Density is calculated as a factor of default density (depends on particle size)"
 msgstr "La densité est calculée comme un facteur de densité par défaut (dépend de la taille des particules)"
 
 #: bpy.types.SPHFluidSettings.factor_radius
-#, fuzzy
 msgid "Factor Radius"
-msgstr "Facteur rouge"
+msgstr "Facteur rayon"
 
 #: bpy.types.SPHFluidSettings.factor_radius
 msgid "Interaction radius is a factor of 4 * particle size"
 msgstr "Rayon d'interaction est un facteur de 4 fois la taille de la particule"
 
 #: bpy.types.SPHFluidSettings.factor_repulsion
-#, fuzzy
 msgid "Factor Repulsion"
-msgstr "Facteur rouge"
+msgstr "Facteur répulsion"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings.factor_repulsion
 msgid "Repulsion is a factor of stiffness"
-msgstr ""
+msgstr "La répulsion est un facteur de raideur"
 
 #: bpy.types.SPHFluidSettings.factor_rest_length
-#, fuzzy
 msgid "Factor Rest Length"
-msgstr "Longueur au repos"
+msgstr "Facteur longueur au repos"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings.factor_rest_length
 msgid "Spring rest length is a factor of 2 * particle size"
-msgstr ""
+msgstr "La longueur au repos de ressort est un facteur de 2 × taille de particule"
 
 #: bpy.types.SPHFluidSettings.factor_stiff_viscosity
 msgid "Factor Stiff Viscosity"
-msgstr ""
+msgstr "Facteur viscosité de raideur"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings.factor_stiff_viscosity
 msgid "Stiff viscosity is a factor of normal viscosity"
-msgstr ""
+msgstr "La viscosité de raideur est un facteur de viscosité normale"
 
 #: bpy.types.SPHFluidSettings.use_initial_rest_length
 msgid "Initial Rest Length"
 msgstr "Longueur au repos initiale"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings.use_initial_rest_length
 msgid "Use the initial length as spring rest length instead of 2 * particle size"
-msgstr ""
+msgstr "Utiliser la longueur initiale comme longueur au repos de ressort, au lieu de 2 × taille de particule"
 
 #: bpy.types.SPHFluidSettings.fluid_radius
-#, fuzzy
 msgid "Interaction Radius"
-msgstr "Interaction :"
+msgstr "Rayon d’interaction"
 
 #: bpy.types.SPHFluidSettings.fluid_radius
-#, fuzzy
 msgid "Fluid interaction radius"
-msgstr "Interaction du fluide :"
+msgstr "Rayon d’interaction du fluide"
 
 #: bpy.types.SPHFluidSettings.plasticity
-#, fuzzy
 msgid "Plasticity"
-msgstr "Élasticité"
+msgstr "Plasticité"
 
 #: bpy.types.SPHFluidSettings.plasticity
 msgid "How much the spring rest length can change after the elastic limit is crossed"
-msgstr ""
+msgstr "De combien la longueur au repos de ressort peut changer, après que la limite élastique a été franchie"
 
 #: bpy.types.SPHFluidSettings.repulsion
-#, fuzzy
 msgid "Repulsion Factor"
-msgstr "Facteur de réflexion"
+msgstr "Facteur de répulsion"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings.repulsion
 msgid "How strongly the fluid tries to keep from clustering (factor of stiffness)"
-msgstr ""
+msgstr "Avec quelle force le fluide essaye de ne pas se rassembler (facteur de raideur)"
 
 #: bpy.types.SPHFluidSettings.rest_density
-#, fuzzy
 msgid "Rest Density"
-msgstr "Densité"
+msgstr "Densité au repos"
 
 #: bpy.types.SPHFluidSettings.rest_density
-#, fuzzy
 msgid "Fluid rest density"
-msgstr "Propriétés du fluide :"
+msgstr "Densité du fluide au repos"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings.rest_length
 msgid "Spring rest length (factor of particle radius)"
-msgstr ""
+msgstr "Longueur au repos de ressort (facteur de rayon de particule)"
 
 #: bpy.types.SPHFluidSettings.spring_force
-#, fuzzy
 msgid "Spring Force"
-msgstr "Ressort"
+msgstr "Force de ressort"
 
 #: bpy.types.SPHFluidSettings.spring_force
-#, fuzzy
 msgid "Spring force"
-msgstr "Ressort"
+msgstr "Force de ressort"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings.spring_frames
-#, fuzzy
 msgid "Spring Frames"
-msgstr "Afficher images"
+msgstr "Frames de ressort"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings.spring_frames
 msgid "Create springs for this number of frames since particles birth (0 is always)"
-msgstr ""
+msgstr "Créer des ressort pour ce nombre de frames depuis la naissance des particules (0 pour toujours)"
 
+# Traduction incertaine
 #: bpy.types.SPHFluidSettings.stiff_viscosity
-#, fuzzy
 msgid "Stiff viscosity"
-msgstr "Viscosité"
+msgstr "Viscosité de raideur"
 
 #: bpy.types.SPHFluidSettings.stiff_viscosity
 msgid "Creates viscosity for expanding fluid)"
@@ -15016,7 +14960,7 @@ msgstr "Créer de la viscosité pour dilater le fluid"
 
 #: bpy.types.SPHFluidSettings.stiffness
 msgid "How incompressible the fluid is"
-msgstr ""
+msgstr "À quel point le fluide est incompressible"
 
 #: bpy.types.SPHFluidSettings.use_viscoelastic_springs
 msgid "Viscoelastic Springs"
@@ -15032,27 +14976,26 @@ msgid "Viscosity"
 msgstr "Viscosité"
 
 #: bpy.types.SPHFluidSettings.linear_viscosity
-#, fuzzy
 msgid "Linear viscosity"
-msgstr "Physique linéaire"
+msgstr "Viscosité linéaire"
 
 #: bpy.types.SceneGameData
 msgid "Game Data"
 msgstr "Données jeu"
 
 #: bpy.types.SceneGameData
-#, fuzzy
 msgid "Game data for a Scene datablock"
-msgstr "Réglages de rendu pour un bloc de données scène"
+msgstr "Données de jeu pour un bloc de données scène"
 
+# Traduction incertaine
 #: bpy.types.SceneGameData.use_activity_culling
-#, fuzzy
 msgid "Activity Culling"
-msgstr "Spline active"
+msgstr "Culling d’activité"
 
+# Traduction incertaine
 #: bpy.types.SceneGameData.use_activity_culling
 msgid "Activity culling is enabled"
-msgstr ""
+msgstr "Le “culling” d’activité est activé"
 
 #: bpy.types.SceneGameData.dome_angle
 #: bpy.types.SpaceUVEditor.draw_stretch_type, 'ANGLE'
@@ -15070,14 +15013,12 @@ msgid "Field of View of the Dome - it only works in mode Fisheye and Truncated"
 msgstr ""
 
 #: bpy.types.SceneGameData.use_auto_start
-#, fuzzy
 msgid "Auto Start"
-msgstr "Début troncature auto"
+msgstr "Démarrage auto"
 
 #: bpy.types.SceneGameData.use_auto_start
-#, fuzzy
 msgid "Automatically start game at load time"
-msgstr "Défini automatiquement selon la carte graphique et le pilote"
+msgstr "Démarrer automatiquement le jeu au moment du chargement"
 
 #: bpy.types.SceneGameData.depth
 msgid "Bits"
@@ -21500,9 +21441,8 @@ msgid "Use textures for drawing international fonts"
 msgstr "Utiliser des textures pour l’affichage des polices internationales"
 
 #: bpy.types.UserPreferencesSystem.use_translate_interface
-#, fuzzy
 msgid "Translate Interface"
-msgstr "Interface utilisateur"
+msgstr "Traduire interface"
 
 #: bpy.types.UserPreferencesSystem.use_translate_tooltips
 msgid "Translate Tooltips"
@@ -23945,7 +23885,7 @@ msgstr "Utiliser le manipulateur pour les transformations de redimensionnement"
 
 #: bpy.types.SpaceView3D.use_manipulator_translate
 msgid "Manipulator Translate"
-msgstr "Manipulateur de translation"
+msgstr "Manipulateur de déplacement"
 
 #: bpy.types.SpaceView3D.use_manipulator_translate
 msgid "Use the manipulator for movement transformations"
@@ -25729,7 +25669,6 @@ msgstr "Créer de copies des os sélectionnés dans la même armature"
 #: bpy.types.OBJECT_OT_duplicate_move_linked.TRANSFORM_OT_translate
 #: bpy.types.TRANSFORM_OT_translate
 #: bpy.types.VIEW3D_OT_enable_manipulator.translate
-#, fuzzy
 msgid "Translate"
 msgstr "Déplacer"
 
@@ -25747,7 +25686,7 @@ msgstr "Déplacer"
 #: bpy.types.OBJECT_OT_duplicate_move_linked.TRANSFORM_OT_translate
 #: bpy.types.TRANSFORM_OT_translate
 msgid "Translate selected items"
-msgstr "Déplacer éléments sélectionnés"
+msgstr "Déplacer les éléments sélectionnés"
 
 #: bpy.types.ARMATURE_OT_extrude
 #: bpy.types.ARMATURE_OT_extrude_forked.ARMATURE_OT_extrude
@@ -25759,9 +25698,8 @@ msgstr "Déplacer éléments sélectionnés"
 #: bpy.types.MESH_OT_extrude_region_move.MESH_OT_extrude
 #: bpy.types.MESH_OT_extrude_vertices_move.MESH_OT_extrude
 #: bpy.types.VIEW3D_MT_edit_mesh_extrude
-#, fuzzy
 msgid "Extrude"
-msgstr "Taille d’extrusion"
+msgstr "Extruder"
 
 #: bpy.types.ARMATURE_OT_extrude
 #: bpy.types.ARMATURE_OT_extrude_forked.ARMATURE_OT_extrude
@@ -43112,9 +43050,8 @@ msgid "Supported Level"
 msgstr "Niveau supporté"
 
 #: release/scripts/startup/bl_ui/space_userpref.py:485
-#, fuzzy
 msgid "Translate:"
-msgstr "Déplacer"
+msgstr "Déplacer :"
 
 #: release/scripts/startup/bl_ui/space_userpref.py:550
 msgid "Regular:"
