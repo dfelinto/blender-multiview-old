@@ -13,7 +13,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-10-11 13:25+0800\n"
+"POT-Creation-Date: 2011-10-11 14:24+0800\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Bastien Montagne <montagne29@wanadoo.fr>\n"
 "Language-Team: \n"
@@ -751,21 +751,25 @@ msgstr "Polonais (Polski)"
 msgid "Romanian (Român)"
 msgstr "Roumain (Român)"
 
-#: source/blender/makesrna/intern/rna_userdef.c:2535
-msgid "Arabic (العربية)"
-msgstr "Arabe (العربية)"
-
 #: source/blender/makesrna/intern/rna_userdef.c:2536
+msgid "Arabic (ﺔﻴﺑﺮﻌﻟﺍ)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2537
 msgid "Bulgarian (Български)"
 msgstr "Bulgare (Български)"
 
-#: source/blender/makesrna/intern/rna_userdef.c:2537
+#: source/blender/makesrna/intern/rna_userdef.c:2538
 msgid "Greek (Ελληνικά)"
 msgstr "Grec (Ελληνικά)"
 
-#: source/blender/makesrna/intern/rna_userdef.c:2538
+#: source/blender/makesrna/intern/rna_userdef.c:2539
 msgid "Korean (한국 언어)"
 msgstr "Coréen (한국 언어)"
+
+#: source/blender/makesrna/intern/rna_userdef.c:2542
+msgid "Persian (ﺱﺭﺎﻓ)"
+msgstr ""
 
 #: source/blender/windowmanager/intern/wm_files.c:440
 #, c-format
@@ -22088,6 +22092,10 @@ msgstr "pl_PL"
 #: bpy.types.UserPreferencesSystem.language, 'ROMANIAN'
 msgid "ro_RO"
 msgstr "ro_RO"
+
+#: bpy.types.UserPreferencesSystem.language, 'ARABIC'
+msgid "Arabic (العربية)"
+msgstr "Arabe (العربية)"
 
 #: bpy.types.UserPreferencesSystem.language, 'ARABIC'
 msgid "ar_EG"

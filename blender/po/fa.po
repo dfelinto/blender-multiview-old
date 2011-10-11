@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-10-10 22:42-0700\n"
+"POT-Creation-Date: 2011-10-11 14:24+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -497,6 +497,10 @@ msgstr ""
 
 #: source/blender/editors/space_info/space_info.c:283
 msgid "No Recent Files"
+msgstr ""
+
+#: source/blender/editors/space_info/space_info.c:293
+msgid "Open Recent..."
 msgstr ""
 
 #: source/blender/editors/space_nla/nla_buttons.c:452
@@ -2672,8 +2676,7 @@ msgstr ""
 msgid "Rule Fuzziness"
 msgstr ""
 
-#: bpy.types.BoidState.volume bpy.types.RenderSettings.ffmpeg_audio_volume
-#: bpy.types.ToolSettings.snap_element, 'VOLUME'
+#: bpy.types.BoidState.volume bpy.types.ToolSettings.snap_element, 'VOLUME'
 #: bpy.types.TRANSFORM_OT_snap_type.type,
 msgid "Volume"
 msgstr ""
@@ -3117,7 +3120,7 @@ msgid "Friction force if a collision happened (higher = less movement)"
 msgstr ""
 
 #: bpy.types.ClothCollisionSettings.distance_min
-#: bpy.types.FieldSettings.guide_minimum bpy.types.FieldSettings.distance_min
+#: bpy.types.FieldSettings.distance_min bpy.types.FieldSettings.guide_minimum
 #: bpy.types.WorldStarsSettings.distance_min
 msgid "Minimum Distance"
 msgstr ""
@@ -5866,12 +5869,12 @@ msgstr ""
 msgid "Maximum radial distance for the field to work"
 msgstr ""
 
-#: bpy.types.FieldSettings.guide_minimum
-msgid "The distance from which particles are affected fully"
-msgstr ""
-
 #: bpy.types.FieldSettings.distance_min
 msgid "Minimum distance for the field's fall-off"
+msgstr ""
+
+#: bpy.types.FieldSettings.guide_minimum
+msgid "The distance from which particles are affected fully"
 msgstr ""
 
 #: bpy.types.FieldSettings.radial_min
@@ -5953,14 +5956,10 @@ msgstr ""
 msgid "Seed of the noise"
 msgstr ""
 
-#: bpy.types.FieldSettings.guide_clump_shape bpy.types.FieldSettings.shape
+#: bpy.types.FieldSettings.shape bpy.types.FieldSettings.guide_clump_shape
 #: bpy.types.FieldSettings.guide_kink_shape bpy.types.MaterialStrand.shape
 #: bpy.types.MESH_OT_blend_from_shape.shape
 msgid "Shape"
-msgstr ""
-
-#: bpy.types.FieldSettings.guide_clump_shape
-msgid "Shape of clumping"
 msgstr ""
 
 #: bpy.types.FieldSettings.shape
@@ -5977,6 +5976,10 @@ msgstr ""
 
 #: bpy.types.FieldSettings.shape, 'POINTS'
 msgid "Every Point"
+msgstr ""
+
+#: bpy.types.FieldSettings.guide_clump_shape
+msgid "Shape of clumping"
 msgstr ""
 
 #: bpy.types.FieldSettings.guide_kink_shape
@@ -6020,8 +6023,7 @@ msgstr ""
 
 #: bpy.types.FieldSettings.type, 'NONE' bpy.types.FluidSettings.type,
 #: bpy.types.KeyingSetPath.group_method, bpy.types.ParticleEdit.tool,
-#: bpy.types.RenderSettings.ffmpeg_audio_codec,
-#: bpy.types.RenderSettings.ffmpeg_codec, bpy.types.RenderSettings.exr_codec,
+#: bpy.types.RenderSettings.exr_codec,
 #: bpy.types.SceneGameData.obstacle_simulation,
 #: bpy.types.SceneGameData.physics_engine, bpy.types.SceneGameData.stereo,
 #: bpy.types.ToolSettings.etch_roll_mode, bpy.types.UnitSettings.system,
@@ -6782,13 +6784,13 @@ msgstr ""
 msgid "Disable simulation of linear motion along the Z axis"
 msgstr ""
 
-#: bpy.types.GameObjectSettings.use_activity_culling
 #: bpy.types.GameObjectSettings.lock_rotation_z
+#: bpy.types.GameObjectSettings.use_activity_culling
 msgid "Lock Z Rotation Axis"
 msgstr ""
 
-#: bpy.types.GameObjectSettings.use_activity_culling
 #: bpy.types.GameObjectSettings.lock_rotation_z
+#: bpy.types.GameObjectSettings.use_activity_culling
 msgid "Disable simulation of angular  motion along the Z axis"
 msgstr ""
 
@@ -9055,17 +9057,17 @@ msgstr ""
 msgid "Render star shaped lines over halo"
 msgstr ""
 
-#: bpy.types.MaterialHalo.use_ring bpy.types.MaterialHalo.ring_count
+#: bpy.types.MaterialHalo.ring_count bpy.types.MaterialHalo.use_ring
 #: bpy.types.MESH_OT_primitive_uv_sphere_add.ring_count
 msgid "Rings"
 msgstr ""
 
-#: bpy.types.MaterialHalo.use_ring
-msgid "Render rings over halo"
-msgstr ""
-
 #: bpy.types.MaterialHalo.ring_count
 msgid "Number of rings rendered over the halo"
+msgstr ""
+
+#: bpy.types.MaterialHalo.use_ring
+msgid "Render rings over halo"
 msgstr ""
 
 #: bpy.types.MaterialHalo.seed
@@ -9898,8 +9900,8 @@ msgstr ""
 msgid "Sharp edge for the EdgeSplit modifier"
 msgstr ""
 
-#: bpy.types.MeshEdge.vertices bpy.types.MeshFace.vertices_raw
-#: bpy.types.MeshFace.vertices bpy.types.MESH_OT_delete.type, 'VERT'
+#: bpy.types.MeshEdge.vertices bpy.types.MeshFace.vertices
+#: bpy.types.MeshFace.vertices_raw bpy.types.MESH_OT_delete.type, 'VERT'
 #: bpy.types.MESH_OT_primitive_circle_add.vertices
 #: bpy.types.MESH_OT_primitive_cone_add.vertices
 #: bpy.types.MESH_OT_primitive_cylinder_add.vertices
@@ -10044,7 +10046,7 @@ msgstr ""
 msgid "UV mapping, texturing and game engine data for a face"
 msgstr ""
 
-#: bpy.types.MeshTextureFace.uv_raw bpy.types.MeshTextureFace.uv
+#: bpy.types.MeshTextureFace.uv bpy.types.MeshTextureFace.uv_raw
 #: bpy.types.RenderLayer.use_pass_uv bpy.types.RenderPass.type, 'UV'
 #: bpy.types.SceneRenderLayer.use_pass_uv
 msgid "UV"
@@ -10419,7 +10421,7 @@ msgid "End frame of the stored range"
 msgstr ""
 
 #: bpy.types.MotionPath.length bpy.types.ParticleEdit.tool, 'LENGTH'
-#: bpy.types.Sequence.frame_duration bpy.types.Sequence.frame_final_duration
+#: bpy.types.Sequence.frame_final_duration bpy.types.Sequence.frame_duration
 #: bpy.types.ToolSettings.etch_length_limit
 #: bpy.types.ToolSettings.etch_convert_mode,
 #: bpy.types.MESH_OT_select_similar.type, bpy.types.OBJECT_OT_quick_fur.length
@@ -13120,17 +13122,17 @@ msgstr ""
 msgid "Transparent RGB and alpha pixels are unmodified"
 msgstr ""
 
-#: bpy.types.RenderSettings.use_bake_antialiasing
 #: bpy.types.RenderSettings.use_antialiasing
-msgid "Anti-Aliasing"
-msgstr ""
-
 #: bpy.types.RenderSettings.use_bake_antialiasing
-msgid "Enables Anti-aliasing"
+msgid "Anti-Aliasing"
 msgstr ""
 
 #: bpy.types.RenderSettings.use_antialiasing
 msgid "Render and combine multiple samples per pixel to prevent jagged edges"
+msgstr ""
+
+#: bpy.types.RenderSettings.use_bake_antialiasing
+msgid "Enables Anti-aliasing"
 msgstr ""
 
 #: bpy.types.RenderSettings.bake_aa_mode
@@ -13205,60 +13207,6 @@ msgstr ""
 #: bpy.types.RenderSettings.ffmpeg_audio_channels, 'SURROUND71'
 #: bpy.types.UserPreferencesSystem.audio_channels,
 msgid "Set audio channels to 7.1 surround sound"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_codec
-#: bpy.types.SOUND_OT_mixdown.codec
-#: release/scripts/startup/bl_ui/properties_render.py:593
-#: release/scripts/startup/bl_ui/properties_render.py:524
-msgid "Audio Codec"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_codec
-msgid "FFMpeg audio codec to use"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_codec, 'MP2'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "MP2"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_codec, 'MP3'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "MP3"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_codec, 'AC3'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "AC3"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_codec, 'AAC'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "AAC"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_codec, 'VORBIS'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "Vorbis"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_codec, 'FLAC'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "FLAC"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_codec, 'PCM'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "PCM"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_autosplit
-msgid "Autosplit Output"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_autosplit
-msgid "Autosplit output at 2GB boundary"
 msgstr ""
 
 #: bpy.types.RenderSettings.cineon_black
@@ -13388,20 +13336,6 @@ msgstr ""
 msgid "Bias towards faces further away from the object (in blender units)"
 msgstr ""
 
-#: bpy.types.RenderSettings.ffmpeg_video_bitrate
-#: bpy.types.RenderSettings.ffmpeg_audio_bitrate
-#: bpy.types.SOUND_OT_mixdown.bitrate
-msgid "Bitrate"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_video_bitrate
-msgid "Video bitrate (kb/s)"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_bitrate
-msgid "Audio bitrate (kb/s)"
-msgstr ""
-
 #: bpy.types.RenderSettings.use_border
 #: release/scripts/startup/bl_ui/properties_render.py:206
 msgid "Border"
@@ -13445,14 +13379,6 @@ msgstr ""
 msgid "Minimum Y value for the render border"
 msgstr ""
 
-#: bpy.types.RenderSettings.ffmpeg_buffersize
-msgid "Buffersize"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_buffersize
-msgid "Rate control: buffer size (kb)"
-msgstr ""
-
 #: bpy.types.RenderSettings.use_bake_clear bpy.types.CONSOLE_OT_clear
 #: bpy.types.FONT_OT_style_set.clear bpy.types.MESH_OT_mark_seam.clear
 #: bpy.types.MESH_OT_mark_sharp.clear bpy.types.UV_OT_pin.clear
@@ -13468,55 +13394,9 @@ msgstr ""
 msgid "Clear Images before baking"
 msgstr ""
 
-#: bpy.types.RenderSettings.ffmpeg_codec bpy.types.RenderSettings.exr_codec
-#: bpy.types.SOUND_OT_mixdown.codec
+#: bpy.types.RenderSettings.exr_codec bpy.types.SOUND_OT_mixdown.codec
 #: release/scripts/startup/bl_ui/properties_render.py:478
 msgid "Codec"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec
-msgid "FFMpeg codec to use"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec, 'MPEG1'
-#: bpy.types.RenderSettings.ffmpeg_format,
-msgid "MPEG-1"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec, 'MPEG2'
-#: bpy.types.RenderSettings.ffmpeg_format,
-msgid "MPEG-2"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec, 'MPEG4'
-msgid "MPEG-4(divx)"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec, 'HUFFYUV'
-msgid "HuffYUV"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec, 'DV'
-#: bpy.types.RenderSettings.ffmpeg_format,
-msgid "DV"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec, 'H264'
-#: bpy.types.RenderSettings.file_format,
-#: bpy.types.RenderSettings.ffmpeg_format,
-msgid "H.264"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec, 'THEORA'
-msgid "Theora"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec, 'FLASH'
-msgid "Flash Video"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_codec, 'FFV1'
-msgid "FFmpeg video codec #1"
 msgstr ""
 
 #: bpy.types.RenderSettings.exr_codec
@@ -13937,35 +13817,6 @@ msgstr ""
 msgid "Output image to a frameserver"
 msgstr ""
 
-#: bpy.types.RenderSettings.file_format, 'H264'
-msgid "Output video in H.264 format"
-msgstr ""
-
-#: bpy.types.RenderSettings.file_format, 'FFMPEG'
-msgid "MPEG"
-msgstr ""
-
-#: bpy.types.RenderSettings.file_format, 'FFMPEG'
-msgid "Output video in MPEG format"
-msgstr ""
-
-#: bpy.types.RenderSettings.file_format, 'THEORA'
-msgid "Ogg Theora"
-msgstr ""
-
-#: bpy.types.RenderSettings.file_format, 'THEORA'
-msgid "Output video in Ogg format"
-msgstr ""
-
-#: bpy.types.RenderSettings.file_format, 'XVID'
-#: bpy.types.RenderSettings.ffmpeg_format,
-msgid "Xvid"
-msgstr ""
-
-#: bpy.types.RenderSettings.file_format, 'XVID'
-msgid "Output video in Xvid format"
-msgstr ""
-
 #: bpy.types.RenderSettings.filter_size
 msgid "Filter Size"
 msgstr ""
@@ -13982,48 +13833,6 @@ msgstr ""
 
 #: bpy.types.RenderSettings.stamp_font_size
 msgid "Size of the font used when rendering stamp text"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format bpy.types.SOUND_OT_mixdown.format
-#: bpy.types.UV_OT_export_layout.mode bpy.types.TEXT_MT_format
-msgid "Format"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format
-msgid "Output file format"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format, 'MPEG4'
-msgid "MPEG-4"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format, 'AVI'
-msgid "AVI"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format, 'QUICKTIME'
-msgid "Quicktime"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format, 'OGG'
-msgid "Ogg"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format, 'MKV'
-#: bpy.types.SOUND_OT_mixdown.container, 'MATROSKA'
-msgid "Matroska"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format, 'FLASH'
-msgid "Flash"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format, 'WAV'
-msgid "Wav"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_format, 'MP3'
-msgid "Mp3"
 msgstr ""
 
 #: bpy.types.RenderSettings.frame_map_new
@@ -14075,14 +13884,6 @@ msgstr ""
 msgid "Log conversion gamma"
 msgstr ""
 
-#: bpy.types.RenderSettings.ffmpeg_gopsize
-msgid "GOP Size"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_gopsize
-msgid "Distance between key frames"
-msgstr ""
-
 #: bpy.types.RenderSettings.use_exr_half
 msgid "Half"
 msgstr ""
@@ -14110,22 +13911,6 @@ msgstr ""
 #: bpy.types.RenderSettings.bake_margin
 msgid ""
 "Amount of pixels to extend the baked result with, as post process filter"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_maxrate
-msgid "Max Rate"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_maxrate
-msgid "Rate control: max rate (kb/s)"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_minrate
-msgid "Min Rate"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_minrate
-msgid "Rate control: min rate (kb/s)"
 msgstr ""
 
 #: bpy.types.RenderSettings.use_motion_blur
@@ -14158,22 +13943,6 @@ msgstr ""
 
 #: bpy.types.RenderSettings.has_multiple_engines
 msgid "More than one rendering engine is available"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_packetsize
-msgid "Mux Packet Size"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_packetsize
-msgid "Mux packet size (byte)"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_muxrate
-msgid "Mux Rate"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_muxrate
-msgid "Mux rate (bits/s(!))"
 msgstr ""
 
 #: bpy.types.RenderSettings.bake_normal_space
@@ -14225,7 +13994,7 @@ msgid ""
 "Resolution of raytrace accelerator, use higher resolutions for larger scenes"
 msgstr ""
 
-#: bpy.types.RenderSettings.filepath bpy.types.WM_OT_save_as_runtime.filepath
+#: bpy.types.RenderSettings.filepath
 msgid "Output Path"
 msgstr ""
 
@@ -14571,8 +14340,8 @@ msgid ""
 "pipeline, if sequencer strips exist"
 msgstr ""
 
-#: bpy.types.RenderSettings.use_sequencer_gl_render
 #: bpy.types.RenderSettings.use_sequencer_gl_preview
+#: bpy.types.RenderSettings.use_sequencer_gl_render
 msgid "Sequencer OpenGL"
 msgstr ""
 
@@ -14883,10 +14652,6 @@ msgstr ""
 
 #: bpy.types.RenderSettings.use_simplify
 msgid "Enable simplification of scene for quicker preview renders"
-msgstr ""
-
-#: bpy.types.RenderSettings.ffmpeg_audio_volume
-msgid "Audio volume"
 msgstr ""
 
 #: bpy.types.RenderSettings.cineon_white
@@ -15955,7 +15720,7 @@ msgstr ""
 msgid "Left Handle Selected"
 msgstr ""
 
-#: bpy.types.Sequence.frame_duration bpy.types.Sequence.frame_final_duration
+#: bpy.types.Sequence.frame_final_duration bpy.types.Sequence.frame_duration
 msgid "The length of the contents of this strip before the handles are applied"
 msgstr ""
 
@@ -16157,7 +15922,7 @@ msgstr ""
 msgid "Overlay Lock"
 msgstr ""
 
-#: bpy.types.SequenceEditor.sequences_all bpy.types.SequenceEditor.sequences
+#: bpy.types.SequenceEditor.sequences bpy.types.SequenceEditor.sequences_all
 msgid "Sequences"
 msgstr ""
 
@@ -16673,21 +16438,21 @@ msgstr ""
 msgid "Edges receive a lift force when passing through surrounding media"
 msgstr ""
 
-#: bpy.types.SoftBodySettings.ball_damp bpy.types.SoftBodySettings.ball_stiff
-#: bpy.types.SoftBodySettings.ball_size
+#: bpy.types.SoftBodySettings.ball_size bpy.types.SoftBodySettings.ball_stiff
+#: bpy.types.SoftBodySettings.ball_damp
 msgid "Ball Size"
 msgstr ""
 
-#: bpy.types.SoftBodySettings.ball_damp
-msgid "Blending to inelastic collision"
+#: bpy.types.SoftBodySettings.ball_size
+msgid "Absolute ball size or factor if not manual adjusted"
 msgstr ""
 
 #: bpy.types.SoftBodySettings.ball_stiff
 msgid "Ball inflating pressure"
 msgstr ""
 
-#: bpy.types.SoftBodySettings.ball_size
-msgid "Absolute ball size or factor if not manual adjusted"
+#: bpy.types.SoftBodySettings.ball_damp
+msgid "Blending to inelastic collision"
 msgstr ""
 
 #: bpy.types.SoftBodySettings.bend
@@ -20922,6 +20687,10 @@ msgid "ro_RO"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'ARABIC'
+msgid "Arabic (العربية)"
+msgstr ""
+
+#: bpy.types.UserPreferencesSystem.language, 'ARABIC'
 msgid "ar_EG"
 msgstr ""
 
@@ -20935,10 +20704,6 @@ msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'KOREAN'
 msgid "ko_KR"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'PERSIAN'
-msgid "fa_PE"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.memory_cache_limit
@@ -21735,9 +21500,13 @@ msgstr ""
 msgid "Length of rays, defines how far away other faces give occlusion effect"
 msgstr ""
 
-#: bpy.types.WorldLighting.environment_color
 #: bpy.types.WorldLighting.environment_energy
+#: bpy.types.WorldLighting.environment_color
 msgid "Environment Color"
+msgstr ""
+
+#: bpy.types.WorldLighting.environment_energy
+msgid "Defines the strength of environment light"
 msgstr ""
 
 #: bpy.types.WorldLighting.environment_color
@@ -21762,10 +21531,6 @@ msgstr ""
 
 #: bpy.types.WorldLighting.environment_color, 'SKY_TEXTURE'
 msgid "Does full Sky texture render for diffuse energy"
-msgstr ""
-
-#: bpy.types.WorldLighting.environment_energy
-msgid "Defines the strength of environment light"
 msgstr ""
 
 #: bpy.types.WorldLighting.error_threshold
@@ -22549,17 +22314,17 @@ msgstr ""
 msgid "Show actuators of active object"
 msgstr ""
 
-#: bpy.types.SpaceLogicEditor.show_actuators_active_states
 #: bpy.types.SpaceLogicEditor.show_sensors_active_states
-msgid "Show Active States"
-msgstr ""
-
 #: bpy.types.SpaceLogicEditor.show_actuators_active_states
-msgid "Show only actuators connected to active states"
+msgid "Show Active States"
 msgstr ""
 
 #: bpy.types.SpaceLogicEditor.show_sensors_active_states
 msgid "Show only sensors connected to active states"
+msgstr ""
+
+#: bpy.types.SpaceLogicEditor.show_actuators_active_states
+msgid "Show only actuators connected to active states"
 msgstr ""
 
 #: bpy.types.SpaceLogicEditor.show_actuators_linked_controller
@@ -22570,23 +22335,27 @@ msgstr ""
 msgid "Show linked objects to the actuator"
 msgstr ""
 
-#: bpy.types.SpaceLogicEditor.show_controllers_linked_controller
 #: bpy.types.SpaceLogicEditor.show_sensors_linked_controller
-msgid "Show Linked to Controller"
-msgstr ""
-
 #: bpy.types.SpaceLogicEditor.show_controllers_linked_controller
-msgid "Show linked objects to sensor/actuator"
+msgid "Show Linked to Controller"
 msgstr ""
 
 #: bpy.types.SpaceLogicEditor.show_sensors_linked_controller
 msgid "Show linked objects to the controller"
 msgstr ""
 
+#: bpy.types.SpaceLogicEditor.show_controllers_linked_controller
+msgid "Show linked objects to sensor/actuator"
+msgstr ""
+
+#: bpy.types.SpaceLogicEditor.show_sensors_selected_objects
 #: bpy.types.SpaceLogicEditor.show_controllers_selected_objects
 #: bpy.types.SpaceLogicEditor.show_actuators_selected_objects
-#: bpy.types.SpaceLogicEditor.show_sensors_selected_objects
 msgid "Show Selected Object"
+msgstr ""
+
+#: bpy.types.SpaceLogicEditor.show_sensors_selected_objects
+msgid "Show sensors of all selected objects"
 msgstr ""
 
 #: bpy.types.SpaceLogicEditor.show_controllers_selected_objects
@@ -22595,10 +22364,6 @@ msgstr ""
 
 #: bpy.types.SpaceLogicEditor.show_actuators_selected_objects
 msgid "Show actuators of all selected objects"
-msgstr ""
-
-#: bpy.types.SpaceLogicEditor.show_sensors_selected_objects
-msgid "Show sensors of all selected objects"
 msgstr ""
 
 #: bpy.types.SpaceNLA
@@ -24011,10 +23776,6 @@ msgstr ""
 
 #: bpy.types.WM_OT_properties_remove
 msgid "Remove Property"
-msgstr ""
-
-#: bpy.types.WM_OT_save_as_runtime
-msgid "Save As Game Engine Runtime"
 msgstr ""
 
 #: bpy.types.WM_OT_sysinfo
@@ -35189,15 +34950,6 @@ msgstr ""
 msgid "File format"
 msgstr ""
 
-#: bpy.types.SOUND_OT_mixdown.container, 'AC3'
-msgid "ac3"
-msgstr ""
-
-#: bpy.types.SOUND_OT_mixdown.container, 'AC3'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "Dolby Digital ATRAC 3"
-msgstr ""
-
 #: bpy.types.SOUND_OT_mixdown.container, 'FLAC'
 msgid "flac"
 msgstr ""
@@ -35205,28 +34957,6 @@ msgstr ""
 #: bpy.types.SOUND_OT_mixdown.container, 'FLAC'
 #: bpy.types.SOUND_OT_mixdown.codec,
 msgid "Free Lossless Audio Codec"
-msgstr ""
-
-#: bpy.types.SOUND_OT_mixdown.container, 'MATROSKA'
-msgid "mkv"
-msgstr ""
-
-#: bpy.types.SOUND_OT_mixdown.container, 'MP2'
-msgid "mp2"
-msgstr ""
-
-#: bpy.types.SOUND_OT_mixdown.container, 'MP2'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "MPEG-1 Audio Layer II"
-msgstr ""
-
-#: bpy.types.SOUND_OT_mixdown.container, 'MP3'
-msgid "mp3"
-msgstr ""
-
-#: bpy.types.SOUND_OT_mixdown.container, 'MP3'
-#: bpy.types.SOUND_OT_mixdown.codec,
-msgid "MPEG-2 Audio Layer III"
 msgstr ""
 
 #: bpy.types.SOUND_OT_mixdown.container, 'OGG'
@@ -35245,8 +34975,18 @@ msgstr ""
 msgid "Waveform Audio File Format"
 msgstr ""
 
-#: bpy.types.SOUND_OT_mixdown.codec, 'AAC'
-msgid "Advanced Audio Coding"
+#: bpy.types.SOUND_OT_mixdown.codec
+#: release/scripts/startup/bl_ui/properties_render.py:593
+#: release/scripts/startup/bl_ui/properties_render.py:524
+msgid "Audio Codec"
+msgstr ""
+
+#: bpy.types.SOUND_OT_mixdown.codec, 'FLAC'
+msgid "FLAC"
+msgstr ""
+
+#: bpy.types.SOUND_OT_mixdown.codec, 'PCM'
+msgid "PCM"
 msgstr ""
 
 #: bpy.types.SOUND_OT_mixdown.codec, 'PCM'
@@ -35254,7 +34994,16 @@ msgid "Pulse Code Modulation (RAW)"
 msgstr ""
 
 #: bpy.types.SOUND_OT_mixdown.codec, 'VORBIS'
+msgid "Vorbis"
+msgstr ""
+
+#: bpy.types.SOUND_OT_mixdown.codec, 'VORBIS'
 msgid "Xiph.Org Vorbis Codec"
+msgstr ""
+
+#: bpy.types.SOUND_OT_mixdown.format bpy.types.UV_OT_export_layout.mode
+#: bpy.types.TEXT_MT_format
+msgid "Format"
 msgstr ""
 
 #: bpy.types.SOUND_OT_mixdown.format
@@ -35307,6 +35056,10 @@ msgstr ""
 
 #: bpy.types.SOUND_OT_mixdown.format, 'F64'
 msgid "64 bit floating point"
+msgstr ""
+
+#: bpy.types.SOUND_OT_mixdown.bitrate
+msgid "Bitrate"
 msgstr ""
 
 #: bpy.types.SOUND_OT_mixdown.bitrate
@@ -37612,35 +37365,6 @@ msgstr ""
 #: bpy.types.WM_OT_save_as_mainfile.copy
 msgid ""
 "Save a copy of the actual working state but does not make saved file active"
-msgstr ""
-
-#: bpy.types.WM_OT_save_as_runtime.player_path
-msgid "Player Path"
-msgstr ""
-
-#: bpy.types.WM_OT_save_as_runtime.player_path
-msgid "The path to the player to use"
-msgstr ""
-
-#: bpy.types.WM_OT_save_as_runtime.filepath
-msgid "Where to save the runtime"
-msgstr ""
-
-#: bpy.types.WM_OT_save_as_runtime.copy_python
-msgid "Copy Python"
-msgstr ""
-
-#: bpy.types.WM_OT_save_as_runtime.copy_python
-msgid "Copy bundle Python with the runtime"
-msgstr ""
-
-#: bpy.types.WM_OT_save_as_runtime.overwrite_lib
-msgid "Overwrite 'lib' folder"
-msgstr ""
-
-#: bpy.types.WM_OT_save_as_runtime.overwrite_lib
-msgid ""
-"Overwrites the lib folder (if one exists) with the bundled Python lib folder"
 msgstr ""
 
 #: bpy.types.WM_OT_save_homefile

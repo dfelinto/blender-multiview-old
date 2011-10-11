@@ -19,7 +19,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Blender GSoC2011 Garlic JP Ahoy4\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-10-11 13:25+0800\n"
+"POT-Creation-Date: 2011-10-11 14:24+0800\n"
 "PO-Revision-Date: 2011-09-25 23:35+0900\n"
 "Last-Translator: shizu <shizu@futuregadget.com>\n"
 "Language-Team: Japanese Translation Team (https://sites.google.com/site/"
@@ -759,21 +759,25 @@ msgstr "ポーランド語 (Polski)"
 msgid "Romanian (Român)"
 msgstr "ルーマニア語 (Român)"
 
-#: source/blender/makesrna/intern/rna_userdef.c:2535
-msgid "Arabic (العربية)"
-msgstr "アラビア語 (العربية)"
-
 #: source/blender/makesrna/intern/rna_userdef.c:2536
+msgid "Arabic (ﺔﻴﺑﺮﻌﻟﺍ)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2537
 msgid "Bulgarian (Български)"
 msgstr "ブルガリア語 (Български)"
 
-#: source/blender/makesrna/intern/rna_userdef.c:2537
+#: source/blender/makesrna/intern/rna_userdef.c:2538
 msgid "Greek (Ελληνικά)"
 msgstr "ギリシャ語 (Ελληνικά)"
 
-#: source/blender/makesrna/intern/rna_userdef.c:2538
+#: source/blender/makesrna/intern/rna_userdef.c:2539
 msgid "Korean (한국 언어)"
 msgstr "韓国語 (한국 언어)"
+
+#: source/blender/makesrna/intern/rna_userdef.c:2542
+msgid "Persian (ﺱﺭﺎﻓ)"
+msgstr ""
 
 #: source/blender/windowmanager/intern/wm_files.c:440
 #, c-format
@@ -22391,6 +22395,10 @@ msgstr ""
 #: bpy.types.UserPreferencesSystem.language, 'ROMANIAN'
 msgid "ro_RO"
 msgstr ""
+
+#: bpy.types.UserPreferencesSystem.language, 'ARABIC'
+msgid "Arabic (العربية)"
+msgstr "アラビア語 (العربية)"
 
 #: bpy.types.UserPreferencesSystem.language, 'ARABIC'
 msgid "ar_EG"
