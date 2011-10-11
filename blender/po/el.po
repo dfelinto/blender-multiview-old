@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2011-10-11 13:56+0800\n"
+"POT-Creation-Date: 2011-10-11 14:15+0800\n"
 "PO-Revision-Date: 2008-03-23 12:20+0200\n"
 "Last-Translator: Kostas Karvouniaris <neogen556@yahoo.gr>\n"
 "Language-Team: \n"
@@ -717,6 +717,108 @@ msgstr ""
 
 #: source/blender/editors/transform/transform_orientations.c:424
 msgid "UserTransSpace from matrix"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2514
+#, fuzzy
+msgid "Default (Default)"
+msgstr "Προεπιλεγμένες Μεταβλητές"
+
+#: source/blender/makesrna/intern/rna_userdef.c:2515
+msgid "English (English)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2516
+msgid "Japanese (日本語)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2517
+msgid "Dutch (Nederlandse taal)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2518
+msgid "Italian (Italiano)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2519
+msgid "German (Deutsch)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2520
+msgid "Finnish (Suomi)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2521
+msgid "Swedish (Svenska)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2522
+msgid "French (Française)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2523
+msgid "Spanish (Español)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2524
+msgid "Catalan (Català)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2525
+msgid "Czech (Český)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2526
+msgid "Brazilian Portuguese (Português do Brasil)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2527
+#, fuzzy
+msgid "Simplified Chinese (简体中文)"
+msgstr "Επιλογή Γραμμής"
+
+#: source/blender/makesrna/intern/rna_userdef.c:2528
+msgid "Traditional Chinese (繁體中文)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2529
+msgid "Russian (Русский)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2530
+msgid "Croatian (Hrvatski)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2531
+msgid "Serbian (Српском језику)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2532
+msgid "Ukrainian (Український)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2533
+msgid "Polish (Polski)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2534
+msgid "Romanian (Român)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2535
+msgid "Arabic (العربية)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2536
+msgid "Bulgarian (Български)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2537
+msgid "Greek (Ελληνικά)"
+msgstr ""
+
+#: source/blender/makesrna/intern/rna_userdef.c:2538
+msgid "Korean (한국 언어)"
 msgstr ""
 
 #: source/blender/windowmanager/intern/wm_files.c:440
@@ -23032,21 +23134,8 @@ msgstr "Γλώσσα & Γραμματοσειρά"
 msgid "Language used for translation"
 msgstr "Γλώσσα & Γραμματοσειρά"
 
-#: bpy.types.UserPreferencesSystem.language, 'DEFAULT'
-#, fuzzy
-msgid "Default (Default)"
-msgstr "Προεπιλεγμένες Μεταβλητές"
-
-#: bpy.types.UserPreferencesSystem.language, 'ENGLISH'
-msgid "English (English)"
-msgstr ""
-
 #: bpy.types.UserPreferencesSystem.language, 'ENGLISH'
 msgid "en_US"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'JAPANESE'
-msgid "Japanese (日本語)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'JAPANESE'
@@ -23054,15 +23143,7 @@ msgid "ja_JP"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'DUTCH'
-msgid "Dutch (Nederlandse taal)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'DUTCH'
 msgid "nl_NL"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'ITALIAN'
-msgid "Italian (Italiano)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'ITALIAN'
@@ -23070,15 +23151,7 @@ msgid "it_IT"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'GERMAN'
-msgid "German (Deutsch)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'GERMAN'
 msgid "de_DE"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'FINNISH'
-msgid "Finnish (Suomi)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'FINNISH'
@@ -23086,15 +23159,7 @@ msgid "fi_FI"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'SWEDISH'
-msgid "Swedish (Svenska)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'SWEDISH'
 msgid "sv_SE"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'FRENCH'
-msgid "French (Française)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'FRENCH'
@@ -23102,15 +23167,7 @@ msgid "fr_FR"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'SPANISH'
-msgid "Spanish (Español)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'SPANISH'
 msgid "es_ES"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'CATALAN'
-msgid "Catalan (Català)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'CATALAN'
@@ -23118,15 +23175,7 @@ msgid "ca_AD"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'CZECH'
-msgid "Czech (Český)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'CZECH'
 msgid "cs_CZ"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'BRAZILIAN_PORTUGUESE'
-msgid "Brazilian Portuguese (Português do Brasil)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'BRAZILIAN_PORTUGUESE'
@@ -23134,16 +23183,7 @@ msgid "pt_BR"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'SIMPLIFIED_CHINESE'
-#, fuzzy
-msgid "Simplified Chinese (简体中文)"
-msgstr "Επιλογή Γραμμής"
-
-#: bpy.types.UserPreferencesSystem.language, 'SIMPLIFIED_CHINESE'
 msgid "zh_CN"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'TRADITIONAL_CHINESE'
-msgid "Traditional Chinese (繁體中文)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'TRADITIONAL_CHINESE'
@@ -23151,15 +23191,7 @@ msgid "zh_TW"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'RUSSIAN'
-msgid "Russian (Русский)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'RUSSIAN'
 msgid "ru_RU"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'CROATIAN'
-msgid "Croatian (Hrvatski)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'CROATIAN'
@@ -23167,15 +23199,7 @@ msgid "hr_HR"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'SERBIAN'
-msgid "Serbian (Српском језику)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'SERBIAN'
 msgid "sr_RS"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'UKRAINIAN'
-msgid "Ukrainian (Український)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'UKRAINIAN'
@@ -23183,15 +23207,7 @@ msgid "uk_UA"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'POLISH'
-msgid "Polish (Polski)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'POLISH'
 msgid "pl_PL"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'ROMANIAN'
-msgid "Romanian (Român)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'ROMANIAN'
@@ -23199,15 +23215,7 @@ msgid "ro_RO"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'ARABIC'
-msgid "Arabic (العربية)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'ARABIC'
 msgid "ar_EG"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'BULGARIAN'
-msgid "Bulgarian (Български)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'BULGARIAN'
@@ -23215,15 +23223,7 @@ msgid "bg_BG"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'GREEK'
-msgid "Greek (Ελληνικά)"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'GREEK'
 msgid "el_GR"
-msgstr ""
-
-#: bpy.types.UserPreferencesSystem.language, 'KOREAN'
-msgid "Korean (한국 언어)"
 msgstr ""
 
 #: bpy.types.UserPreferencesSystem.language, 'KOREAN'
