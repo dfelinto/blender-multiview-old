@@ -110,7 +110,7 @@ def parse_commits(filepath):
 
 #svn_log = "/dsk/data/src/blender/svn_log_verbose.xml"
 svn_log = "/dsk/data/src/blender/svn_log_verbose.xml"
-tracker_csv = "/l/tracker_report-2011-09-02.csv"
+tracker_csv = "/l/tracker_report-2011-10-17.csv"
 
 # TODO, there are for sure more companies then are currently listed.
 # 1 liners for in wiki syntax
@@ -166,6 +166,7 @@ author_name_mapping = {
     "dougal2": "Doug Hammond",
     "eeshlo": "Alfredo de Greef",
     "elubie": "Andrea Weikert",
+    "ender79": "Andrew Wiggin",  # an alias, not real name.
     "erwin": "Erwin Coumans",
     "frank": "Frank van Beek",
     "genscher": "Daniel Genrich",
@@ -216,6 +217,7 @@ author_name_mapping = {
     "mindrones": "Luca Bonavita",
     "mmikkelsen": "Morten Mikkelsen",
     "moguri": "Mitchell Stokes",
+    "mont29": "Bastien Montagne",
     "n_t": "Nils Thuerey",
     "nazgul": "Sergey Sharybin",
     "nexyon": "Joerg Mueller",
@@ -239,9 +241,13 @@ author_name_mapping = {
     "ton": "Ton Roosendaal",
     "vekoon": "Elia Sarti",
     "xat": "Xavier Thomas",
+    "xiaoxiangquan": "Xiao Xiangquan",
     "zaghaghi": "Hamed Zaghaghi",
     "zanqdo": "Daniel Salazar",
+    "z0r": "Alex Fraser",
     "zuster": "Daniel Dunbar",
+    "jason_hays22": "Jason Hays",
+    "miikah": "Miika Hamalainen",
 
     # TODO, find remaining names
     "nlin": "",
@@ -268,7 +274,7 @@ def build_patch_name_map(filepath):
     """
     patches = {}
     import csv
-    tracker = csv.reader(open(filepath, 'r'), delimiter=';', quotechar='|')
+    tracker = csv.reader(open(filepath, 'r', encoding='utf-8'), delimiter=';', quotechar='|')
     for i, row in enumerate(tracker):
         if i == 0:
             id_index = row.index("artifact_id")
@@ -320,11 +326,13 @@ def patch_find_author(commit, patch_map):
         if p in patch_map:
             patch = patch_map[p]
 
-            print(author_name_mapping[commit.author],
-                  "committing patch for",
+            '''
+            print("%r committing patch for %r %d" % (
+                  author_name_mapping[commit.author],
                   patch["author"],
                   commit.revision,
-                  )
+                  ))
+            '''
 
             return p, patch["author"]
 
@@ -409,7 +417,7 @@ def main():
 
     # write out the wiki page
     # sort by name
-    file = open("credits.html", 'w')
+    file = open("credits.html", 'w', encoding="utf-8")
 
     file.write("<h3>Individual Contributors</h3>\n\n")
 
