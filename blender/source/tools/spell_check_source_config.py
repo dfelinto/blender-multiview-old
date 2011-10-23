@@ -128,4 +128,3 @@ dict_ignore = {
     "jahka",
     "campbell",
 }
-
