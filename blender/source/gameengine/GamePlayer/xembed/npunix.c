@@ -1,5 +1,4 @@
 /*
- * $Id$
  * npunix.c
  *
  * Netscape Client Plugin API
