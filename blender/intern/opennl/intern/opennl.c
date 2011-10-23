@@ -2,7 +2,7 @@
  *  \ingroup opennlintern
  */
 /*
- *  $Id$
+ *  $Id: opennl.c 35142 2011-02-25 10:24:29Z jesterking $
  *
  *  OpenNL: Numerical Library
  *  Copyright (C) 2004 Bruno Levy
