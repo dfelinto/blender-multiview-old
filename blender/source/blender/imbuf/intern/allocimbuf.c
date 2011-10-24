@@ -467,7 +467,7 @@ static MEM_CacheLimiterC **get_imbuf_cache_limiter(void)
 	static MEM_CacheLimiterC *c = NULL;
 
 	if(!c)
-		c = new_MEM_CacheLimiter(imbuf_cache_destructor);
+		c = new_MEM_CacheLimiter(imbuf_cache_destructor, NULL);
 
 	return &c;
 }
