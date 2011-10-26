@@ -756,9 +756,7 @@ void make_local_camera(Camera *cam)
 	
 	if(cam->id.lib==NULL) return;
 	if(cam->id.us==1) {
-		cam->id.lib= NULL;
-		cam->id.flag= LIB_LOCAL;
-		new_id(&bmain->camera, (ID *)cam, NULL);
+		id_clear_lib_data(&bmain->camera, (ID *)cam);
 		return;
 	}
 	
@@ -770,9 +768,7 @@ void make_local_camera(Camera *cam)
 	}
 	
 	if(local && lib==0) {
-		cam->id.lib= NULL;
-		cam->id.flag= LIB_LOCAL;
-		new_id(&bmain->camera, (ID *)cam, NULL);
+		id_clear_lib_data(&bmain->camera, (ID *)cam);
 	}
 	else if(local && lib) {
 		Camera *camn= copy_camera(cam);
@@ -921,9 +917,7 @@ void make_local_lamp(Lamp *la)
 	
 	if(la->id.lib==NULL) return;
 	if(la->id.us==1) {
-		la->id.lib= NULL;
-		la->id.flag= LIB_LOCAL;
-		new_id(&bmain->lamp, (ID *)la, NULL);
+		id_clear_lib_data(&bmain->lamp, (ID *)la);
 		return;
 	}
 	
@@ -937,9 +931,7 @@ void make_local_lamp(Lamp *la)
 	}
 	
 	if(local && lib==0) {
-		la->id.lib= NULL;
-		la->id.flag= LIB_LOCAL;
-		new_id(&bmain->lamp, (ID *)la, NULL);
+		id_clear_lib_data(&bmain->lamp, (ID *)la);
 	}
 	else if(local && lib) {
 		lan= copy_lamp(la);
@@ -1468,9 +1460,8 @@ void make_local_object(Object *ob)
 	ob->proxy= ob->proxy_from= NULL;
 	
 	if(ob->id.us==1) {
-		ob->id.lib= NULL;
-		ob->id.flag= LIB_LOCAL;
-		new_id(&bmain->object, (ID *)ob, NULL);
+		id_clear_lib_data(&bmain->object, (ID *)ob);
+		extern_local_object(ob);
 	}
 	else {
 		for(sce= bmain->scene.first; sce && ELEM(0, lib, local); sce= sce->id.next) {
@@ -1481,9 +1472,8 @@ void make_local_object(Object *ob)
 		}
 
 		if(local && lib==0) {
-			ob->id.lib= NULL;
-			ob->id.flag= LIB_LOCAL;
-			new_id(&bmain->object, (ID *)ob, NULL);
+			id_clear_lib_data(&bmain->object, (ID *)ob);
+			extern_local_object(ob);
 		}
 		else if(local && lib) {
 			Object *obn= copy_object(ob);
@@ -1506,8 +1496,6 @@ void make_local_object(Object *ob)
 			}
 		}
 	}
-	
-	extern_local_object(ob);
 }
 
 /*
