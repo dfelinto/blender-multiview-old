@@ -46,7 +46,7 @@ set(SRC
 )
 
 if(WITH_MOD_FLUID)
-	add_definitions(-DWITH_BF_FLUID)
+	add_definitions(-DWITH_MOD_FLUID)
 endif()
 
 if(WITH_OPENMP)
