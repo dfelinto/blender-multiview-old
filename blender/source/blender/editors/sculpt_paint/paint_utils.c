@@ -366,6 +366,7 @@ static int face_select_all_exec(bContext *C, wmOperator *op)
 {
 	Object *ob= CTX_data_active_object(C);
 	paintface_deselect_all_visible(ob, RNA_enum_get(op->ptr, "action"), TRUE);
+	paintface_flush_flags(ob);
 	ED_region_tag_redraw(CTX_wm_region(C));
 	return OPERATOR_FINISHED;
 }
