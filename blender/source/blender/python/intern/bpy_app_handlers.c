@@ -130,7 +130,7 @@ static PyObject *bpy_app_handlers_permanent_tag(PyObject *UNUSED(self), PyObject
 	}
 }
 
-static PyMethodDef meth_bpy_app_handlers_permanent_tag= {"permanent_tag", (PyCFunction)bpy_app_handlers_permanent_tag, METH_O, bpy_app_handlers_permanent_tag_doc};
+static PyMethodDef meth_bpy_app_handlers_permanent_tag= {"permanent_tag", (PyCFunction)bpy_app_handlers_permanent_tag, METH_VARARGS, bpy_app_handlers_permanent_tag_doc};
 
 
 
