@@ -60,6 +60,7 @@ static void node_composit_exec_rotate(void *UNUSED(data), bNode *node, bNodeStac
 
 		rad= in[1]->vec[0]; /*(M_PI*in[1]->vec[0])/180.0f;*/ /* Angle values are now always in radians. */
 
+
 		s= sin(rad);
 		c= cos(rad);
 		centx= cbuf->x/2;
