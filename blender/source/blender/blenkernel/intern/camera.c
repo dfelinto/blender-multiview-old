@@ -456,7 +456,7 @@ static void camera_to_frame_view_cb(const float co[3], void *user_data)
 	unsigned int i;
 
 	for (i= 0; i < 4; i++) {
-		float nd= -dist_to_plane_v3(co, data->frame_tx[i], data->normal_tx[i]);
+		float nd= dist_to_plane_v3(co, data->frame_tx[i], data->normal_tx[i]);
 		if (nd < data->dist_vals[i]) {
 			data->dist_vals[i]= nd;
 		}

@@ -244,7 +244,7 @@ float dist_to_plane_normalized_v3(const float p[3], const float plane_co[3], con
 
 	add_v3_v3v3(plane_co_other, plane_co, plane_no_unit);
 
-	return -line_point_factor_v3(p, plane_co, plane_co_other);
+	return line_point_factor_v3(p, plane_co, plane_co_other);
 }
 
 float dist_to_plane_v3(const float p[3], const float plane_co[3], const float plane_no[3])
@@ -255,7 +255,7 @@ float dist_to_plane_v3(const float p[3], const float plane_co[3], const float pl
 	normalize_v3_v3(plane_no_unit, plane_no);
 	add_v3_v3v3(plane_co_other, plane_co, plane_no_unit);
 
-	return -line_point_factor_v3(p, plane_co, plane_co_other);
+	return line_point_factor_v3(p, plane_co, plane_co_other);
 }
 
 /* distance v1 to line-piece v2-v3 in 3D */
