@@ -258,6 +258,7 @@ empty = []
 for key, value in author_name_mapping.items():
     if not value:
         empty.append(key)
+e = None
 for e in empty:
     author_name_mapping[e] = e.title()
 del empty, e
