@@ -106,7 +106,7 @@ def create_qtc_project_main():
         qtc_cfg = os.path.join(PROJECT_DIR, "%s.config" % FILE_NAME)
         f = open(qtc_cfg, 'w')
         f.write("// ADD PREDEFINED MACROS HERE!\n")
-        defines_final = [("#define %s %s" % (item[0], quote_define(item[0]))) for item in defines]
+        defines_final = [("#define %s %s" % (item[0], quote_define(item[1]))) for item in defines]
         if sys.platform != "win32":
             defines_final += cmake_compiler_defines()
         f.write("\n".join(defines_final))
