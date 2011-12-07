@@ -501,28 +501,36 @@ static int snap_sel_to_grid(bContext *C, wmOperator *UNUSED(op))
 				bPoseChannel *pchan;
 				bArmature *arm= ob->data;
 				
+				invert_m4_m4(ob->imat, ob->obmat);
+				
 				for (pchan= ob->pose->chanbase.first; pchan; pchan= pchan->next) {
 					if(pchan->bone->flag & BONE_SELECTED) {
 						if(pchan->bone->layer & arm->layer) {
 							if((pchan->bone->flag & BONE_CONNECTED)==0) { 
-								float vecN[3], nLoc[3]; 
+								float nLoc[3]; 
+								float inv_restmat[4][4];
 								
 								/* get nearest grid point to snap to */
 								copy_v3_v3(nLoc, pchan->pose_mat[3]);
+								/* We must operate in world space! */
+								mul_m4_v3(ob->obmat, nLoc);
 								vec[0]= gridf * (float)(floor(0.5f+ nLoc[0]/gridf));
 								vec[1]= gridf * (float)(floor(0.5f+ nLoc[1]/gridf));
 								vec[2]= gridf * (float)(floor(0.5f+ nLoc[2]/gridf));
+								/* Back in object space... */
+								mul_m4_v3(ob->imat, vec);
 								
-								/* get bone-space location of grid point */
-								armature_loc_pose_to_bone(pchan, vec, vecN);
+								/* get location of cursor in *rest* bone-space */
+								invert_m4_m4(inv_restmat, pchan->bone->arm_mat);
+								mul_m4_v3(inv_restmat, vec);
 								
 								/* adjust location */
 								if ((pchan->protectflag & OB_LOCK_LOCX)==0)	
-									pchan->loc[0]= vecN[0];
+									pchan->loc[0]= vec[0];
 								if ((pchan->protectflag & OB_LOCK_LOCY)==0)	
-									pchan->loc[0]= vecN[1];
+									pchan->loc[1]= vec[1];
 								if ((pchan->protectflag & OB_LOCK_LOCZ)==0)	
-									pchan->loc[0]= vecN[2];
+									pchan->loc[2]= vec[2];
 
 								/* auto-keyframing */
 								ED_autokeyframe_pchan(C, scene, ob, pchan, ks);
@@ -630,31 +638,28 @@ static int snap_sel_to_curs(bContext *C, wmOperator *UNUSED(op))
 			if(ob->mode & OB_MODE_POSE) {
 				bPoseChannel *pchan;
 				bArmature *arm= ob->data;
-				float cursp[3];
 				
 				invert_m4_m4(ob->imat, ob->obmat);
-				copy_v3_v3(cursp, curs);
-				mul_m4_v3(ob->imat, cursp);
+				copy_v3_v3(vec, curs);
+				mul_m4_v3(ob->imat, vec);
 				
 				for (pchan = ob->pose->chanbase.first; pchan; pchan=pchan->next) {
 					if(pchan->bone->flag & BONE_SELECTED) {
 						if(pchan->bone->layer & arm->layer) {
 							if((pchan->bone->flag & BONE_CONNECTED)==0) { 
-								float curspn[3];
 								float inv_restmat[4][4];
 								
 								/* get location of cursor in *rest* bone-space */
-								copy_v3_v3(curspn, cursp);
 								invert_m4_m4(inv_restmat, pchan->bone->arm_mat);
-								mul_m4_v3(inv_restmat, curspn);
+								mul_m4_v3(inv_restmat, vec);
 								
 								/* copy new position */
 								if ((pchan->protectflag & OB_LOCK_LOCX)==0)
-									pchan->loc[0]= curspn[0];
+									pchan->loc[0]= vec[0];
 								if ((pchan->protectflag & OB_LOCK_LOCY)==0)
-									pchan->loc[1]= curspn[1];
+									pchan->loc[1]= vec[1];
 								if ((pchan->protectflag & OB_LOCK_LOCZ)==0)
-									pchan->loc[2]= curspn[2];
+									pchan->loc[2]= vec[2];
 
 								/* auto-keyframing */
 								ED_autokeyframe_pchan(C, scene, ob, pchan, ks);
