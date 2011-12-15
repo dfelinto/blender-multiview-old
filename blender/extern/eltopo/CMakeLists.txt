@@ -45,7 +45,6 @@ set(SRC
 	common/cubic_ccd_wrapper.cpp
 	common/fe_ccd_wrapper.cpp
 	common/fileio.cpp
-	common/gluvi.cpp
 	common/levelset.cpp
 	common/makelevelset2.cpp
 	common/makelevelset3.cpp
@@ -82,7 +81,6 @@ set(SRC
 	common/clamped_spline.h
 	common/collisionqueries.h
 	common/fileio.h
-	common/gluvi.h
 	common/grid3.h
 	common/hashtable.h
 	common/lapack_wrapper.h
@@ -122,7 +120,7 @@ set(SRC
 	common/tunicate/tunicate.h
 	)
 
-add_definitions(-DNOGUI)
+add_definitions(-DNO_GUI)
 add_definitions(-DUSE_FORTRAN_BLAS)
 
 blender_add_lib(extern_eltopo "${SRC}" "${INC}" "${INC_SYS}")

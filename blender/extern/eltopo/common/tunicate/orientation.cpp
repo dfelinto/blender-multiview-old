@@ -1,7 +1,16 @@
 // Released into the public domain by Robert Bridson, 2009.
 
 #include <cassert>
+#if defined(_WIN32) && !defined(FREE_WINDOWS)
+#include <float.h>
+#pragma fenv_access (on)
+#define FE_UPWARD _RC_UP
+#define FE_DOWNWARD _RC_DOWN
+#define FE_TONEAREST _RC_NEAR
+#define fesetround(r) (_controlfp(r, _MCW_RC))
+#else
 #include <fenv.h>
+#endif
 #include <cmath>
 #include <limits>
 #include "tunicate.h"

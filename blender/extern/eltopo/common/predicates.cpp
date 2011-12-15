@@ -1,6 +1,11 @@
 #include <cfloat>
 #include "predicates.h"
 
+#if defined(_WIN32) && !defined(FREE_WINDOWS)
+#define random() rand() // not sure if this define is valid
+#define _Ios_Fmtflags ios::fmtflags
+#endif
+
 static void print_hex( double d )
 {
    std::_Ios_Fmtflags originalFlags = std::cout.flags();
