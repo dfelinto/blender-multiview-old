@@ -77,8 +77,8 @@ void sigterm_handler(int signum) {
 	argv[2] should be an window handle id
 
 */
-int  main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
 	uid_t privid = geteuid();
 	uid_t caller_id = getuid();
 
