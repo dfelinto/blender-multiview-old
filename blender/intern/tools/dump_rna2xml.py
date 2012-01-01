@@ -32,6 +32,7 @@ import os
 import bpy
 import rna_xml
 
+
 def main():
     filename = os.path.splitext(bpy.data.filepath)[0] + ".xml"
 
@@ -47,7 +48,6 @@ def main():
         rna_xml.rna2xml(file.write,
                         root_rna=bpy.context.user_preferences.themes[0],
                         method='ATTR')
-        
 
         file.close()
 
