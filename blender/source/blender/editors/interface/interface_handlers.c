@@ -1243,7 +1243,7 @@ static void ui_but_copy_paste(bContext *C, uiBut *but, uiHandleButtonData *data,
 /* return 1 if char ch is special character, otherwise return 0 */
 static uiButtonDelimType test_special_char(const char ch)
 {
-	if ((ch >= 'a' && ch <= 'z') || (ch >= 'a' && ch <= 'z')) {
+	if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
 		return BUTTON_DELIM_ALPHA;
 	}
 
