@@ -177,11 +177,14 @@ void BPY_context_set(bContext *C)
 
 /* defined in AUD_C-API.cpp */
 extern PyObject *AUD_initPython(void);
+
+#ifdef WITH_CYCLES
 /* defined in cycles module */
 static PyObject *CCL_initPython(void)
 {
 	return (PyObject*)CCL_python_module_init();
 }
+#endif
 
 static struct _inittab bpy_internal_modules[] = {
 	{(char *)"mathutils", PyInit_mathutils},
