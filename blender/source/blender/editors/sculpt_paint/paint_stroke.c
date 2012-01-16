@@ -510,7 +510,7 @@ static void paint_draw_alpha_overlay(Sculpt *sd, Brush *brush,
 /* Special actions taken when paint cursor goes over mesh */
 /* TODO: sculpt only for now */
 static void paint_cursor_on_hit(Sculpt *sd, Brush *brush, ViewContext *vc,
-								const float location[3], float *visual_strength)
+								const float location[3])
 {
 	float unprojected_radius, projected_radius;
 
@@ -617,10 +617,10 @@ static void paint_draw_cursor(bContext *C, int x, int y, void *UNUSED(unused))
 		/* only do if brush is over the mesh */
 		if(hit) {
 			/* scale the alpha by pen pressure */
-			if(sd->draw_pressure && brush_use_alpha_pressure(vc->scene, brush))
-				(*visual_strength) *= sd->pressure_value;
+			if(sd->draw_pressure && brush_use_alpha_pressure(vc.scene, brush))
+				visual_strength *= sd->pressure_value;
 
-			paint_cursor_on_hit(sd, brush, &vc, location, &visual_strength);
+			paint_cursor_on_hit(sd, brush, &vc, location);
 		}
 
 		/* don't show effect of strength past the soft limit */
