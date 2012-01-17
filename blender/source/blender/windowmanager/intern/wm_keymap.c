@@ -1213,14 +1213,7 @@ wmKeyMap *WM_keymap_guess_opname(const bContext *C, const char *opname)
 		km = WM_keymap_find_all(C, "Pose", 0, 0);
 	}
 	else if (strstr(opname, "SCULPT_OT")) {
-		switch(CTX_data_mode_enum(C)) {
-			case OB_MODE_SCULPT:
-				km = WM_keymap_find_all(C, "Sculpt", 0, 0);
-				break;
-			case OB_MODE_EDIT:
-				km = WM_keymap_find_all(C, "UV Sculpt", 0, 0);
-				break;
-		}
+		km = WM_keymap_find_all(C, "Sculpt", 0, 0);
 	}
 	else if (strstr(opname, "MBALL_OT")) {
 		km = WM_keymap_find_all(C, "Metaball", 0, 0);

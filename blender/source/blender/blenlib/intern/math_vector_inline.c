@@ -429,11 +429,6 @@ MINLINE void star_m3_v3(float rmat[][3], float a[3])
 
 /*********************************** Length **********************************/
 
-MINLINE float len_squared_v2(const float v[2])
-{
-	return v[0]*v[0] + v[1]*v[1];
-}
-
 MINLINE float len_v2(const float v[2])
 {
 	return (float)sqrtf(v[0]*v[0] + v[1]*v[1]);
@@ -453,7 +448,7 @@ MINLINE float len_v3(const float a[3])
 	return sqrtf(dot_v3v3(a, a));
 }
 
-MINLINE float len_squared_v2v2(const float a[2], const float b[2])
+MINLINE float len_squared_v2v2(const float a[3], const float b[3])
 {
 	float d[2];
 

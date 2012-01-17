@@ -50,7 +50,6 @@
 #include "BLI_memarena.h"
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
-#include "BLI_editVert.h"
 
 #include "PIL_time.h"
 
@@ -81,8 +80,6 @@
 #include "BKE_paint.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
-#include "BKE_global.h"
-#include "BKE_deform.h"
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h"
@@ -94,7 +91,6 @@
 #include "ED_sculpt.h"
 #include "ED_uvedit.h"
 #include "ED_view3d.h"
-#include "ED_mesh.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -104,7 +100,6 @@
 #include "RNA_enum_types.h"
 
 #include "GPU_draw.h"
-#include "GPU_extensions.h"
 
 #include "paint_intern.h"
 
@@ -3747,13 +3742,15 @@ static void do_projectpaint_smear(ProjPaintState *ps, ProjPixel *projPixel, floa
 
 static void do_projectpaint_smear_f(ProjPaintState *ps, ProjPixel *projPixel, float alpha, float mask, MemArena *smearArena, LinkNode **smearPixels_f, float co[2])
 {
-	float rgba[4];
+	unsigned char rgba_ub[4];
+	unsigned char rgba_smear[4];
 	
-	if (project_paint_PickColor(ps, co, rgba, NULL, 1)==0)
+	if (project_paint_PickColor(ps, co, NULL, rgba_ub, 1)==0)
 		return;
 	
+	IMAPAINT_FLOAT_RGBA_TO_CHAR(rgba_smear, projPixel->pixel.f_pt);
 	/* (ProjPixelClone *)projPixel)->clonepx.uint = IMB_blend_color(*((unsigned int *)rgba_smear), *((unsigned int *)rgba_ub), (int)(alpha*mask*255), ps->blend); */
-	blend_color_mix_float(((ProjPixelClone *)projPixel)->clonepx.f, projPixel->pixel.f_pt, rgba, alpha*mask); 
+	blend_color_mix(((ProjPixelClone *)projPixel)->clonepx.ch, rgba_smear, (rgba_ub), (int)(alpha*mask*255)); 
 	BLI_linklist_prepend_arena(smearPixels_f, (void *)projPixel, smearArena);
 }
 
@@ -3785,8 +3782,8 @@ static void do_projectpaint_draw_f(ProjPaintState *ps, ProjPixel *projPixel, flo
 {
 	if (ps->is_texbrush) {
 		/* rgba already holds a texture result here from higher level function */
+		float rgba_br[3];
 		if(use_color_correction){
-			float rgba_br[3];
 			srgb_to_linearrgb_v3_v3(rgba_br, ps->brush->rgb);
 			mul_v3_v3(rgba, rgba_br);
 		}
@@ -4002,7 +3999,7 @@ static void *do_projectpaint_thread(void *ph_v)
 		
 		for (node= smearPixels_f; node; node= node->next) {
 			projPixel = node->link;
-			copy_v4_v4(projPixel->pixel.f_pt, ((ProjPixelClone *)projPixel)->clonepx.f);
+			IMAPAINT_CHAR_RGBA_TO_FLOAT(projPixel->pixel.f_pt,  ((ProjPixelClone *)projPixel)->clonepx.ch);
 		}
 		
 		BLI_memarena_free(smearArena);
@@ -4170,8 +4167,7 @@ static void imapaint_image_update(SpaceImage *sima, Image *image, ImBuf *ibuf, s
 	if(texpaint || (sima && sima->lock)) {
 		int w = imapaintpartial.x2 - imapaintpartial.x1;
 		int h = imapaintpartial.y2 - imapaintpartial.y1;
-		/* Testing with partial update in uv editor too */
-		GPU_paint_update_image(image, imapaintpartial.x1, imapaintpartial.y1, w, h, 0);//!texpaint);
+		GPU_paint_update_image(image, imapaintpartial.x1, imapaintpartial.y1, w, h, !texpaint);
 	}
 }
 
@@ -4610,16 +4606,6 @@ static Brush *image_paint_brush(bContext *C)
 	return paint_brush(&settings->imapaint.paint);
 }
 
-static Brush *uv_sculpt_brush(bContext *C)
-{
-	Scene *scene= CTX_data_scene(C);
-	ToolSettings *settings= scene->toolsettings;
-
-	if(!settings->uvsculpt)
-		return NULL;
-	return paint_brush(&settings->uvsculpt->paint);
-}
-
 static int image_paint_poll(bContext *C)
 {
 	Object *obact = CTX_data_active_object(C);
@@ -4639,30 +4625,6 @@ static int image_paint_poll(bContext *C)
 			if((sima->flag & SI_DRAWTOOL) && ar->regiontype==RGN_TYPE_WINDOW)
 				return 1;
 		}
-	}
-
-	return 0;
-}
-
-static int uv_sculpt_brush_poll(bContext *C)
-{
-	EditMesh *em;
-	int ret;
-	Object *obedit = CTX_data_edit_object(C);
-	SpaceImage *sima= CTX_wm_space_image(C);
-	ToolSettings *toolsettings = CTX_data_scene(C)->toolsettings;
-
-	if(!uv_sculpt_brush(C) || !obedit || obedit->type != OB_MESH)
-		return 0;
-
-	em = BKE_mesh_get_editmesh(obedit->data);
-	ret = EM_texFaceCheck(em);
-	BKE_mesh_end_editmesh(obedit->data, em);
-
-	if(ret && sima) {
-		ARegion *ar= CTX_wm_region(C);
-		if((toolsettings->use_uv_sculpt) && ar->regiontype==RGN_TYPE_WINDOW)
-			return 1;
 	}
 
 	return 0;
@@ -5124,7 +5086,7 @@ void PAINT_OT_image_paint(wmOperatorType *ot)
 	RNA_def_collection_runtime(ot->srna, "stroke", &RNA_OperatorStrokeElement, "Stroke", "");
 }
 
-int get_imapaint_zoom(bContext *C, float *zoomx, float *zoomy)
+static int get_imapaint_zoom(bContext *C, float *zoomx, float *zoomy)
 {
 	RegionView3D *rv3d= CTX_wm_region_view3d(C);
 
@@ -5150,26 +5112,15 @@ static void brush_drawcursor(bContext *C, int x, int y, void *UNUSED(customdata)
 #define PX_SIZE_FADE_MIN 4.0f
 
 	Scene *scene= CTX_data_scene(C);
-	//Brush *brush= image_paint_brush(C);
+	Brush *brush= image_paint_brush(C);
 	Paint *paint= paint_get_active(scene);
-	Brush *brush= paint_brush(paint);
 
 	if(paint && brush && paint->flags & PAINT_SHOW_BRUSH) {
-		ToolSettings *ts;
 		float zoomx, zoomy;
 		const float size= (float)brush_size(scene, brush);
 		const short use_zoom= get_imapaint_zoom(C, &zoomx, &zoomy);
-		float pixel_size;
+		const float pixel_size= MAX2(size * zoomx, size * zoomy);
 		float alpha= 0.5f;
-
-		ts = CTX_data_scene(C)->toolsettings;
-
-		if(use_zoom && !ts->use_uv_sculpt){
-			pixel_size = MAX2(size * zoomx, size * zoomy);
-		}
-		else {
-			pixel_size = size;
-		}
 
 		/* fade out the brush (cheap trick to work around brush interfearing with sampling [#])*/
 		if(pixel_size < PX_SIZE_FADE_MIN) {
@@ -5183,8 +5134,7 @@ static void brush_drawcursor(bContext *C, int x, int y, void *UNUSED(customdata)
 
 		glTranslatef((float)x, (float)y, 0.0f);
 
-		/* No need to scale for uv sculpting, on the contrary it might be useful to keep unscaled */
-		if(use_zoom && !ts->use_uv_sculpt)
+		if(use_zoom)
 			glScalef(zoomx, zoomy, 1.0f);
 
 		glColor4f(brush->add_col[0], brush->add_col[1], brush->add_col[2], alpha);
@@ -5228,27 +5178,6 @@ void ED_space_image_paint_update(wmWindowManager *wm, ToolSettings *settings)
 	}
 }
 
-
-void ED_space_image_uv_sculpt_update(wmWindowManager *wm, ToolSettings *settings)
-{
-	if(settings->use_uv_sculpt) {
-		if(!settings->uvsculpt) {
-			settings->uvsculpt = MEM_callocN(sizeof(*settings->uvsculpt), "UV Smooth paint");
-			settings->uv_sculpt_tool = UV_SCULPT_TOOL_GRAB;
-			settings->uv_sculpt_settings = UV_SCULPT_LOCK_BORDERS | UV_SCULPT_ALL_ISLANDS;
-			settings->uv_relax_method = UV_SCULPT_TOOL_RELAX_LAPLACIAN;
-		}
-
-		paint_init(&settings->uvsculpt->paint, PAINT_CURSOR_SCULPT);
-
-		WM_paint_cursor_activate(wm, uv_sculpt_brush_poll,
-			brush_drawcursor, NULL);
-	}
-	else {
-		if(settings->uvsculpt)
-			settings->uvsculpt->paint.flags &= ~PAINT_SHOW_BRUSH;
-	}
-}
 /************************ grab clone operator ************************/
 
 typedef struct GrabClone {
@@ -5568,11 +5497,6 @@ static int texture_paint_poll(bContext *C)
 int image_texture_paint_poll(bContext *C)
 {
 	return (texture_paint_poll(C) || image_paint_poll(C));
-}
-
-int uv_sculpt_poll(bContext *C)
-{
-	return uv_sculpt_brush_poll(C);
 }
 
 int facemask_paint_poll(bContext *C)
