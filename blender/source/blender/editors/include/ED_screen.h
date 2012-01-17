@@ -169,6 +169,7 @@ int		ED_operator_editlattice(struct bContext *C);
 int		ED_operator_editmball(struct bContext *C);
 int		ED_operator_uvedit(struct bContext *C);
 int		ED_operator_uvmap(struct bContext *C);
+int		ED_operator_uv_seam_tag_check_active(struct bContext *C);
 int		ED_operator_posemode(struct bContext *C);
 
 
