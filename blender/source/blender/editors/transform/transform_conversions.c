@@ -5694,7 +5694,7 @@ static void cancelTransTracking(TransInfo *t)
 					if((marker->flag & MARKER_DISABLED) || (prev_marker->flag & MARKER_DISABLED))
 						continue;
 
-					if(marker->flag & (MARKER_GRAPH_SEL_X|MARKER_GRAPH_SEL_X)) {
+					if(marker->flag & (MARKER_GRAPH_SEL_X|MARKER_GRAPH_SEL_Y)) {
 						marker->flag = tdt->flag;
 					}
 				}
