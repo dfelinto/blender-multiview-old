@@ -226,9 +226,9 @@ class CyclesCameraSettings(bpy.types.PropertyGroup):
     @classmethod
     def register(cls):
         bpy.types.Camera.cycles = PointerProperty(
-                type=cls,
                 name="Cycles Camera Settings",
                 description="Cycles camera settings",
+                type=cls,
                 )
 
         cls.aperture_size = FloatProperty(
@@ -259,8 +259,10 @@ class CyclesCameraSettings(bpy.types.PropertyGroup):
 class CyclesMaterialSettings(bpy.types.PropertyGroup):
     @classmethod
     def register(cls):
-        bpy.types.Material.cycles = PointerProperty(type=cls, name="Cycles Material Settings",
+        bpy.types.Material.cycles = PointerProperty(
+                name="Cycles Material Settings",
                 description="Cycles material settings",
+                type=cls,
                 )
         cls.sample_as_light = BoolProperty(
                 name="Sample as Lamp",
@@ -281,8 +283,10 @@ class CyclesMaterialSettings(bpy.types.PropertyGroup):
 class CyclesLampSettings(bpy.types.PropertyGroup):
     @classmethod
     def register(cls):
-        bpy.types.Lamp.cycles = PointerProperty(type=cls, name="Cycles Lamp Settings",
+        bpy.types.Lamp.cycles = PointerProperty(
+                name="Cycles Lamp Settings",
                 description="Cycles lamp settings",
+                type=cls,
                 )
         cls.cast_shadow = BoolProperty(
                 name="Cast Shadow",
@@ -298,8 +302,10 @@ class CyclesLampSettings(bpy.types.PropertyGroup):
 class CyclesWorldSettings(bpy.types.PropertyGroup):
     @classmethod
     def register(cls):
-        bpy.types.World.cycles = PointerProperty(type=cls, name="Cycles World Settings",
+        bpy.types.World.cycles = PointerProperty(
+                name="Cycles World Settings",
                 description="Cycles world settings",
+                type=cls,
                 )
         cls.sample_as_light = BoolProperty(
                 name="Sample as Lamp",
@@ -321,8 +327,10 @@ class CyclesWorldSettings(bpy.types.PropertyGroup):
 class CyclesVisibilitySettings(bpy.types.PropertyGroup):
     @classmethod
     def register(cls):
-        bpy.types.Object.cycles_visibility = PointerProperty(type=cls, name="Cycles Visibility Settings",
+        bpy.types.Object.cycles_visibility = PointerProperty(
+                name="Cycles Visibility Settings",
                 description="Cycles visibility settings",
+                type=cls,
                 )
 
         cls.camera = BoolProperty(
@@ -359,14 +367,20 @@ class CyclesVisibilitySettings(bpy.types.PropertyGroup):
 class CyclesMeshSettings(bpy.types.PropertyGroup):
     @classmethod
     def register(cls):
-        bpy.types.Mesh.cycles = PointerProperty(type=cls, name="Cycles Mesh Settings",
+        bpy.types.Mesh.cycles = PointerProperty(
+                name="Cycles Mesh Settings",
                 description="Cycles mesh settings",
+                type=cls,
                 )
-        bpy.types.Curve.cycles = PointerProperty(type=cls, name="Cycles Mesh Settings",
+        bpy.types.Curve.cycles = PointerProperty(
+                name="Cycles Mesh Settings",
                 description="Cycles mesh settings",
+                type=cls,
                 )
-        bpy.types.MetaBall.cycles = PointerProperty(type=cls, name="Cycles Mesh Settings",
+        bpy.types.MetaBall.cycles = PointerProperty(
+                name="Cycles Mesh Settings",
                 description="Cycles mesh settings",
+                type=cls,
                 )
 
         cls.displacement_method = EnumProperty(
