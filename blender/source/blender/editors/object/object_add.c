@@ -1790,13 +1790,13 @@ static Base *object_add_duplicate_internal(Main *bmain, Scene *scene, Base *base
 		/* check if obdata is copied */
 		if(didit) {
 			Key *key = ob_get_key(obn);
+			bActuator *act;
 			
 			if(dupflag & USER_DUP_ACT) {
 				BKE_copy_animdata_id_action((ID *)obn->data);
 				if(key) BKE_copy_animdata_id_action((ID*)key);
 				
 				/* Update the duplicated action in the action actuators */
-				bActuator *act;
 				for (act= obn->actuators.first; act; act= act->next) {
 					if(act->type == ACT_ACTION) {
 						bActionActuator* actact = (bActionActuator*) act->data;
