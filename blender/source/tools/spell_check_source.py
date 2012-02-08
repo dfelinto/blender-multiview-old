@@ -21,7 +21,7 @@
 """
 Script for checking source code spelling.
 
-   python3 spell_check_source.py some_soure_file.py
+   python3 source/tools/spell_check_source.py some_soure_file.py
 
 
 Currently only python source is checked.
@@ -41,6 +41,7 @@ def words_from_text(text):
     text = text.strip("#'\"")
     text = text.replace("/", " ")
     text = text.replace("-", " ")
+    text = text.replace(",", " ")
     words = text.split()
 
     # filter words
@@ -63,7 +64,7 @@ def words_from_text(text):
         # check for prefix/suffix which render this not a real word
         # example '--debug', '\n'
         # TODO, add more
-        if w[0] in "%-+\\":
+        if w[0] in "%-+\\@":
             return False
 
         # check for code in comments
@@ -114,7 +115,7 @@ def extract_py_comments(filepath):
     import token
     import tokenize
 
-    source = open(filepath)
+    source = open(filepath, encoding='utf-8')
 
     comments = []
 
@@ -134,7 +135,7 @@ def extract_py_comments(filepath):
 
 def spell_check_py_comments(filepath):
 
-    comment_list = extract_py_comments(sys.argv[1])
+    comment_list = extract_py_comments(filepath)
 
     for comment in comment_list:
         for w in comment.parse():
@@ -153,4 +154,6 @@ def spell_check_py_comments(filepath):
 import sys
 
 if __name__ == "__main__":
-    spell_check_py_comments(sys.argv[1])
+    for filepath in sys.argv[1:]:
+        print("\nChececking: %r" % filepath)
+        spell_check_py_comments(filepath)
