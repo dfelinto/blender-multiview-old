@@ -16,7 +16,7 @@ def FindPython():
             break
 
     # Determine whether python is in /usr/lib or /usr/lib64
-    lib32 = os.path.join(python, "lib64", "python" + version, "sysconfig.py")
+    lib32 = os.path.join(python, "lib", "python" + version, "sysconfig.py")
     lib64 = os.path.join(python, "lib64", "python" + version, "sysconfig.py")
     if os.path.exists(lib32):
         libpath = "${BF_PYTHON}/lib"
