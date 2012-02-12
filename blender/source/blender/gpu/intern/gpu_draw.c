@@ -473,7 +473,7 @@ int GPU_verify_image(Image *ima, ImageUser *iuser, int tftile, int compare, int 
 		}
 
 		/* TODO unneeded when float images are correctly treated as linear always */
-		if(ibuf->profile == IB_PROFILE_LINEAR_RGB && (iuser->scene->r.color_mgt_flag & R_COLOR_MANAGEMENT))
+		if(ibuf->profile == IB_PROFILE_LINEAR_RGB)
 			do_color_management = TRUE;
 
 		if(ibuf->rect==NULL)
