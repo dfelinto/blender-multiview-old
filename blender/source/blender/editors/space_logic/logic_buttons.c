@@ -127,31 +127,6 @@ void LOGIC_OT_properties(wmOperatorType *ot)
 	ot->flag= 0;
 }
 
-static int logic_view_all_exec(bContext *C, wmOperator *UNUSED(op))
-{
-	ScrArea *sa= CTX_wm_area(C);
-	ARegion *ar= logic_has_buttons_region(sa);
-	SpaceLogic *slog = CTX_wm_space_image(C);
-
-
-	ED_region_tag_redraw(CTX_wm_region(C));
-
-	return OPERATOR_FINISHED;
-}
-
-void LOGIC_OT_view_all(wmOperatorType *ot)
-{
-	ot->name= "View All";
-	ot->idname= "LOGIC_OT_view_all";
-	
-	ot->exec= logic_view_all_exec;;
-	ot->poll= ED_operator_logic_active;
-	
-	/* flags */
-	ot->flag= 0;
-}
-
-
 /* Remove Logic Bricks Connections */
 /* ********************** Cut Link operator ***************** */
 
