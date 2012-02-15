@@ -131,7 +131,7 @@ static SpaceLink *logic_new(const bContext *UNUSED(C))
 	
 	ar->v2d.min[0]= 1.0f;
 	ar->v2d.min[1]= 1.0f;
-	
+
 	ar->v2d.max[0]= 32000.0f;
 	ar->v2d.max[1]= 32000.0f;
 	
@@ -174,6 +174,7 @@ static void logic_operatortypes(void)
 {
 	WM_operatortype_append(LOGIC_OT_properties);
 	WM_operatortype_append(LOGIC_OT_links_cut);
+	WM_operatortype_append(LOGIC_OT_view_all);
 }
 
 static void logic_keymap(struct wmKeyConfig *keyconf)
@@ -182,6 +183,7 @@ static void logic_keymap(struct wmKeyConfig *keyconf)
 	
 	WM_keymap_add_item(keymap, "LOGIC_OT_properties", NKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "LOGIC_OT_links_cut", LEFTMOUSE, KM_PRESS, KM_CTRL, 0);
+	WM_keymap_add_item(keymap, "LOGIC_OT_view_all", HOMEKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_menu(keymap, "LOGIC_MT_logicbricks_add", AKEY, KM_PRESS, KM_SHIFT, 0);
 }
 
