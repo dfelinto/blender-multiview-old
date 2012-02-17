@@ -30,8 +30,8 @@
  */
 
 
-#ifndef NAN_INCLUDED_ExternVColorEditor_h
-#define NAN_INCLUDED_ExternVColorEditor_h
+#ifndef __LOD_EXTERNVCOLOREDITOR_H__
+#define __LOD_EXTERNVCOLOREDITOR_H__
 
 #include "common/NonCopyable.h"
 #include "LOD_ManMesh2.h"
