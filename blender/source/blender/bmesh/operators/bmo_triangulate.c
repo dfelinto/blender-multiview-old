@@ -185,7 +185,7 @@ void bmesh_triangle_fill_exec(BMesh *bm, BMOperator *op)
 		v1 = BLI_smallhash_lookup(&hash, (uintptr_t)e->v1);
 		v2 = BLI_smallhash_lookup(&hash, (uintptr_t)e->v2);
 		eed = BLI_addfilledge(v1, v2);
-		eed->tmp.p = e;
+		/* eed->tmp.p = e; */ /* UNUSED */
 	}
 	
 	BLI_edgefill(0);

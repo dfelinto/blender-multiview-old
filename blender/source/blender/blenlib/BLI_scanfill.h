@@ -67,24 +67,8 @@ typedef struct ScanFillEdge
 {
 	struct ScanFillEdge *next, *prev;
 	struct ScanFillVert *v1, *v2;
-	union {
-		/* some lean storage for temporary usage
-		 * in editmesh routines
-		 */
-		struct ScanFillVert *v;
-		struct ScanFillEdge *e;
-		struct ScanFillFace *f;
-		void            *p;
-		intptr_t         l;
-		float			fp;
-	} tmp;
-	short f1, f2;	/* short, f1 is (ab)used in subdiv */
-	unsigned char f, h, dir, seam, sharp;
-	float crease;
-	float bweight;
-	short fast; 		/* only 0 or 1, for editmesh_fastmalloc */
-	short fgoni;		/* index for fgon, for search */
-	void *data;			/*custom edge data*/
+	short poly_nr;
+	unsigned char f;
 } ScanFillEdge;
 
 typedef struct ScanFillFace

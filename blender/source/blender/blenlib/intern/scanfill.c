@@ -281,7 +281,7 @@ static void mergepolysSimp(PolyFill *pf1, PolyFill *pf2)	/* add pf2 to pf1 */
 	}
 	eed= filledgebase.first;
 	while(eed) {
-		if(eed->f1== pf2->nr) eed->f1= pf1->nr;
+		if (eed->poly_nr == pf2->nr) eed->poly_nr = pf1->nr;
 		eed= eed->next;
 	}
 
@@ -434,7 +434,7 @@ static void testvertexnearedge(void)
 			}
 			eed= filledgebase.first;
 			while(eed) {
-				if(eve!=eed->v1 && eve!=eed->v2 && eve->poly_nr==eed->f1) {
+				if (eve != eed->v1 && eve != eed->v2 && eve->poly_nr == eed->poly_nr) {
 					if(compare_v3v3(eve->co,eed->v1->co, COMPLIMIT)) {
 						ed1->v2= eed->v1;
 						eed->v1->h++;
@@ -459,8 +459,8 @@ static void testvertexnearedge(void)
 								ed1= BLI_addfilledge(eed->v1, eve);
 								
 								/* printf("fill: vertex near edge %x\n",eve); */
-								ed1->f= ed1->h= 0;
-								ed1->f1= eed->f1;
+								ed1->f= 0;
+								ed1->poly_nr = eed->poly_nr;
 								eed->v1= eve;
 								eve->h= 3;
 								break;
@@ -496,7 +496,7 @@ static void splitlist(ListBase *tempve, ListBase *temped, short nr)
 	eed= temped->first;
 	while(eed) {
 		nexted= eed->next;
-		if(eed->f1==nr) {
+		if(eed->poly_nr==nr) {
 			BLI_remlink(temped,eed);
 			BLI_addtail(&filledgebase,eed);
 		}
@@ -835,7 +835,7 @@ int BLI_edgefill(short mat_nr)
 	/* including resetting of flags */
 	eed= filledgebase.first;
 	while(eed) {
-		eed->f1= eed->h= 0;
+		eed->poly_nr= 0;
 		eed->v1->f= 1;
 		eed->v2->f= 1;
 
@@ -908,17 +908,17 @@ int BLI_edgefill(short mat_nr)
 				while(eed) {
 					if (eed->v1->poly_nr == 0 && eed->v2->poly_nr == poly) {
 						eed->v1->poly_nr = poly;
-						eed->f1= poly;
+						eed->poly_nr= poly;
 						ok= 1;
 					}
 					else if (eed->v2->poly_nr == 0 && eed->v1->poly_nr == poly) {
 						eed->v2->poly_nr = poly;
-						eed->f1= poly;
+						eed->poly_nr= poly;
 						ok= 1;
 					}
-					else if (eed->f1 == 0) {
+					else if (eed->poly_nr == 0) {
 						if (eed->v1->poly_nr == poly && eed->v2->poly_nr == poly) {
-							eed->f1= poly;
+							eed->poly_nr= poly;
 							ok= 1;
 						}
 					}
@@ -999,7 +999,7 @@ int BLI_edgefill(short mat_nr)
 	}
 	eed= filledgebase.first;
 	while(eed) {
-		pflist[eed->f1-1].edges++;
+		pflist[eed->poly_nr-1].edges++;
 		eed= eed->next;
 	}
 
