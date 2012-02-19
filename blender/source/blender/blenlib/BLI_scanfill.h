@@ -42,17 +42,62 @@ extern struct ListBase fillvertbase;
 extern struct ListBase filledgebase;
 extern struct ListBase fillfacebase;
 
-struct EditVert;
+struct ScanFillVert;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* scanfill.c: used in displist only... */
-struct EditVert *BLI_addfillvert(float *vec);
-struct EditEdge *BLI_addfilledge(struct EditVert *v1, struct EditVert *v2);
+/* note; changing this also might affect the undo copy in editmesh.c */
+typedef struct ScanFillVert
+{
+	struct ScanFillVert *next, *prev;
+	union {
+		struct ScanFillVert *v;
+		void            *p;
+		intptr_t         l;
+	} tmp;
+	float co[3]; /*vertex location */
+	int keyindex; /* original index #, for restoring  key information */
+	short poly_nr;
+	unsigned char f, h;
+} ScanFillVert;
 
-/* Optionally set EditEdge f to this to mark original boundary edges.
+typedef struct ScanFillEdge
+{
+	struct ScanFillEdge *next, *prev;
+	struct ScanFillVert *v1, *v2;
+	union {
+		/* some lean storage for temporary usage
+		 * in editmesh routines
+		 */
+		struct ScanFillVert *v;
+		struct ScanFillEdge *e;
+		struct ScanFillFace *f;
+		void            *p;
+		intptr_t         l;
+		float			fp;
+	} tmp;
+	short f1, f2;	/* short, f1 is (ab)used in subdiv */
+	unsigned char f, h, dir, seam, sharp;
+	float crease;
+	float bweight;
+	short fast; 		/* only 0 or 1, for editmesh_fastmalloc */
+	short fgoni;		/* index for fgon, for search */
+	void *data;			/*custom edge data*/
+} ScanFillEdge;
+
+typedef struct ScanFillFace
+{
+	struct ScanFillFace *next, *prev;
+	struct ScanFillVert *v1, *v2, *v3;
+} ScanFillFace;
+
+/* scanfill.c: used in displist only... */
+struct ScanFillVert *BLI_addfillvert(const float vec[3]);
+struct ScanFillEdge *BLI_addfilledge(struct ScanFillVert *v1, struct ScanFillVert *v2);
+
+/* Optionally set ScanFillEdge f to this to mark original boundary edges.
   Only needed if there are internal diagonal edges pased to BLI_edgefill. */
 #define FILLBOUNDARY 1
 
