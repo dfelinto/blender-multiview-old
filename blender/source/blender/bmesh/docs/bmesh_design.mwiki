@@ -24,7 +24,7 @@ Faces in BMesh are stored as a circular linked list of loops. Loops store per-fa
 
 === The Loop  ===
 
-Loops define the boundary loop of a face. Each loop logically corrusponds to an edge, which is defined by the loop and succeeding loop's vertices. 
+Loops define the boundary loop of a face. Each loop logically corresponds to an edge, which is defined by the loop and succeeding loop's vertices. 
 
 Loops store several handy pointers: 
 
@@ -68,7 +68,7 @@ Most topological queries should go through these two APIs; there are additional 
 
 === Operators  ===
 
-Operators are an integrat part of BMesh. Unlike normal blender operators, BMesh operators ("bmops") can be nested (e.g. call other operators).  Each operator has a number of input/output "slots" which are used to pass data into/out of the operator (and allows for chaining operators together).  These slots are identified by name, using strings.
+Operators are an integral part of BMesh. Unlike normal blender operators, BMesh operators ("bmops") can be nested (e.g. call other operators).  Each operator has a number of input/output "slots" which are used to pass data into/out of the operator (and allows for chaining operators together).  These slots are identified by name, using strings.
 
 ==== Tool Flags  ====
 
