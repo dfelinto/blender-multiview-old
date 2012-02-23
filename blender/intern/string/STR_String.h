@@ -95,8 +95,8 @@ public:
 	{
 		for (int i1 = 0, i2 = Len - 1; i1 < i2; i1++, i2--) {
 			std::swap(pData[i1], pData[i2]);
-			return *this;
 		}
+		return *this;
 	}
 
 	// Properties
