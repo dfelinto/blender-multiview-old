@@ -475,7 +475,8 @@ NPP_Print(NPP instance, NPPrint* printInfo )
 
 
 void
-execute_blenderplayer(BlenderPluginInstance* instance){
+execute_blenderplayer(BlenderPluginInstance* instance)
+{
 
 	char file_name[] = "/tmp/blender.XXXXXX";
 	int fd = mkstemp(file_name);
