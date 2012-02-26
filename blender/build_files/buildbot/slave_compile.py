@@ -65,7 +65,7 @@ else:
         build_dir = os.path.join('..', 'build', builder)
         install_dir = os.path.join('..', 'install', builder)
 
-        common_options = ['BF_INSTALLDIR=' + install_dir]
+        common_options = ['BF_INSTALLDIR=' + install_dir] + scons_options
 
         # Clean install directory so we'll be sure there's no
         if os.path.isdir(install_dir):
