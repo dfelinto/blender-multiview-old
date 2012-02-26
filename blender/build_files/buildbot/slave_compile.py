@@ -55,7 +55,7 @@ else:
     # scons
     os.chdir(blender_dir)
     scons_cmd = ['python', 'scons/scons.py']
-    scons_options = []
+    scons_options = ['BF_FANCY=False']
 
     if builder.find('linux') != -1:
         import shutil
