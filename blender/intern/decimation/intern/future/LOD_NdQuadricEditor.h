@@ -97,7 +97,7 @@ public :
 		const LOD_Edge & e,
 		TNT::Vector<MT_Scalar> &result,
 		const LOD_ExternVColorEditor & color_editor
-	) const ;
+	) const;
 
 	~LOD_NdQuadricEditor(
 	 ){

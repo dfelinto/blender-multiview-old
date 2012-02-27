@@ -65,7 +65,7 @@ public :
 		MT_Vector3
 	IndexColor(
 		const LOD_VertexInd &v
-	) const ;
+	) const;
 
 	// Set the color for vertex v
 

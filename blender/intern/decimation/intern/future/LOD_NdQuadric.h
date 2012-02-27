@@ -148,7 +148,7 @@ public :
 		bool 
 	Optimize(
 		TNT::Vector<MT_Scalar> & vec
-	) const ;
+	) const;
 
 	
 };
