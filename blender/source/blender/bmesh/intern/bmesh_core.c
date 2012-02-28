@@ -52,7 +52,7 @@ static int bm_edge_splice(BMesh *bm, BMEdge *e, BMEdge *etarget);
 
 #endif
 
-BMVert *BM_vert_create(BMesh *bm, const float co[3], const struct BMVert *example)
+BMVert *BM_vert_create(BMesh *bm, const float co[3], const BMVert *example)
 {
 	BMVert *v = BLI_mempool_calloc(bm->vpool);
 
@@ -621,7 +621,7 @@ void BM_vert_kill(BMesh *bm, BMVert *v)
 		
 		e = v->e;
 		while (v->e) {
-			nexte = bm_disk_edge_next(e, v);
+			nexte = bmesh_disk_edge_next(e, v);
 			BM_edge_kill(bm, e);
 			e = nexte;
 		}
@@ -817,7 +817,7 @@ static int UNUSED_FUNCTION(count_flagged_disk)(BMVert *v, int flag)
 
 	do {
 		i += BM_ELEM_API_FLAG_TEST(e, flag) ? 1 : 0;
-		e = bm_disk_edge_next(e, v);
+		e = bmesh_disk_edge_next(e, v);
 	} while (e != v->e);
 
 	return i;
@@ -847,7 +847,7 @@ static int disk_is_flagged(BMVert *v, int flag)
 			l = l->radial_next;
 		} while (l != e->l);
 
-		e = bm_disk_edge_next(e, v);
+		e = bmesh_disk_edge_next(e, v);
 	} while (e != v->e);
 
 	return TRUE;
@@ -1429,7 +1429,7 @@ BMEdge *bmesh_jekv(BMesh *bm, BMEdge *ke, BMVert *kv, const short check_edge_dou
 	len = bmesh_disk_count(kv);
 	
 	if (len == 2) {
-		oe = bm_disk_edge_next(ke, kv);
+		oe = bmesh_disk_edge_next(ke, kv);
 		tv = bmesh_edge_other_vert_get(ke, kv);
 		ov = bmesh_edge_other_vert_get(oe, kv);
 		halt = bmesh_verts_in_edge(kv, tv, oe); /* check for double edge */
@@ -1946,7 +1946,7 @@ static BMVert *bm_urmv_loop(BMesh *bm, BMLoop *sl)
 	 * will leave the original sv on some *other* fan (not the
 	 * one-face fan that holds the unglue face). */
 	while (sv->e == sl->e || sv->e == sl->prev->e) {
-		sv->e = bm_disk_edge_next(sv->e, sv);
+		sv->e = bmesh_disk_edge_next(sv->e, sv);
 	}
 
 	/* Split all fans connected to the vert, duplicating it for
