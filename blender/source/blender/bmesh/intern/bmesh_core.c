@@ -236,6 +236,40 @@ BMFace *BM_face_copy(BMesh *bm, BMFace *f, const short copyverts, const short co
 	return f2;
 }
 
+/**
+ * only create the face, since this calloc's the length is initialized to 0,
+ * leave adding loops to the caller.
+ */
+BM_INLINE BMFace *bm_face_create__internal(BMesh *bm)
+{
+	BMFace *f;
+
+	f = BLI_mempool_calloc(bm->fpool);
+
+#ifdef USE_DEBUG_INDEX_MEMCHECK
+	DEBUG_MEMCHECK_INDEX_INVALIDATE(f)
+#else
+	BM_elem_index_set(f, -1); /* set_ok_invalid */
+#endif
+
+	bm->elem_index_dirty |= BM_FACE; /* may add to middle of the pool */
+
+	bm->totface++;
+
+	f->head.htype = BM_FACE;
+
+	/* allocate flag */
+	f->oflags = BLI_mempool_calloc(bm->toolflagpool);
+
+	CustomData_bmesh_set_default(&bm->pdata, &f->head.data);
+
+#ifdef USE_BMESH_HOLES
+	f->totbounds = 0;
+#endif
+
+	return f;
+}
+
 BMFace *BM_face_create(BMesh *bm, BMVert **verts, BMEdge **edges, const int len, int nodouble)
 {
 	BMFace *f = NULL;
@@ -257,20 +291,8 @@ BMFace *BM_face_create(BMesh *bm, BMVert **verts, BMEdge **edges, const int len,
 			BLI_assert(f == NULL);
 		}
 	}
-	
-	f = BLI_mempool_calloc(bm->fpool);
 
-#ifdef USE_DEBUG_INDEX_MEMCHECK
-	DEBUG_MEMCHECK_INDEX_INVALIDATE(f)
-#else
-	BM_elem_index_set(f, -1); /* set_ok_invalid */
-#endif
-
-	bm->elem_index_dirty |= BM_FACE; /* may add to middle of the pool */
-
-	bm->totface++;
-
-	f->head.htype = BM_FACE;
+	f = bm_face_create__internal(bm);
 
 	startl = lastl = bm_face_boundary_add(bm, f, verts[0], edges[0]);
 	
@@ -287,19 +309,10 @@ BMFace *BM_face_create(BMesh *bm, BMVert **verts, BMEdge **edges, const int len,
 		lastl = l;
 	}
 	
-	/* allocate flag */
-	f->oflags = BLI_mempool_calloc(bm->toolflagpool);
-
-	CustomData_bmesh_set_default(&bm->pdata, &f->head.data);
-	
 	startl->prev = lastl;
 	lastl->next = startl;
 	
 	f->len = len;
-
-#ifdef USE_BMESH_HOLES
-	f->totbounds = 0;
-#endif
 	
 	BM_CHECK_ELEMENT(bm, f);
 
@@ -1034,39 +1047,19 @@ error:
 
 /* BMESH_TODO - this is only used once, investigate sharing code with BM_face_create
  */
-static BMFace *bm_face_create__internal(BMesh *bm, BMFace *UNUSED(example))
+static BMFace *bm_face_create__sfme(BMesh *bm, BMFace *UNUSED(example))
 {
 	BMFace *f;
 #ifdef USE_BMESH_HOLES
 	BMLoopList *lst;
 #endif
 
-	f = BLI_mempool_calloc(bm->fpool);
+	f = bm_face_create__internal(bm);
+
 #ifdef USE_BMESH_HOLES
 	lst = BLI_mempool_calloc(bm->looplistpool);
-#endif
-
-	f->head.htype = BM_FACE;
-#ifdef USE_BMESH_HOLES
 	BLI_addtail(&f->loops, lst);
 #endif
-
-#ifdef USE_DEBUG_INDEX_MEMCHECK
-	DEBUG_MEMCHECK_INDEX_INVALIDATE(f)
-#else
-	BM_elem_index_set(f, -1); /* set_ok_invalid */
-#endif
-
-	bm->elem_index_dirty |= BM_FACE; /* may add to middle of the pool */
-
-	bm->totface++;
-
-	/* allocate flag */
-	f->oflags = BLI_mempool_calloc(bm->toolflagpool);
-
-	CustomData_bmesh_set_default(&bm->pdata, &f->head.data);
-
-	f->len = 0;
 
 #ifdef USE_BMESH_HOLES
 	f->totbounds = 1;
@@ -1144,7 +1137,7 @@ BMFace *bmesh_sfme(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2,
 	/* allocate new edge between v1 and v2 */
 	e = BM_edge_create(bm, v1, v2, example, FALSE);
 
-	f2 = bm_face_create__internal(bm, f);
+	f2 = bm_face_create__sfme(bm, f);
 	f1loop = bm_loop_create(bm, v2, e, f, v2loop);
 	f2loop = bm_loop_create(bm, v1, e, f2, v1loop);
 
