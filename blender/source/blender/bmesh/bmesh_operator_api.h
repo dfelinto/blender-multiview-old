@@ -312,7 +312,7 @@ void BMO_slot_buffer_hflag_disable(BMesh *bm, BMOperator *op, const char *slotna
  * flag, into a slot.  note: ignores hidden elements (e.g. elements with
  * header flag BM_ELEM_HIDDEN set).*/
 void BMO_slot_buffer_from_hflag(BMesh *bm, BMOperator *op, const char *slotname,
-                         const char hflag, const char htype);
+                                const char hflag, const char htype);
 
 /* counts number of elements inside a slot array. */
 int BMO_slot_buffer_count(BMesh *bm, BMOperator *op, const char *slotname);
