@@ -1508,7 +1508,7 @@ BMEdge *bmesh_jekv(BMesh *bm, BMEdge *ke, BMVert *kv, const short check_edge_dou
 			BMESH_ASSERT(edok != FALSE);
 
 			/* Validate loop cycle of all faces attached to o */
-			for (i = 0, l = oe->l; i < radlen; i++, l = l->radial_next) {
+			for (i = 0, l = oe->l; i < radlen; i++, l = l) {
 				BMESH_ASSERT(l->e == oe);
 				edok = bmesh_verts_in_edge(l->v, l->next->v, oe);
 				BMESH_ASSERT(edok != FALSE);
