@@ -27,6 +27,9 @@ Script for checking source code spelling.
 Currently only python source is checked.
 """
 
+ONLY_ONCE = True
+_only_once_ids = set()
+
 import enchant
 dict_spelling = enchant.Dict("en_US")
 
@@ -133,17 +136,103 @@ def extract_py_comments(filepath):
     return comments
 
 
-def spell_check_py_comments(filepath):
+def extract_c_comments(filepath):
+    """
+    Extracts comments like this:
 
-    comment_list = extract_py_comments(filepath)
+        /*
+         * This is a multiline comment, notice the '*'s are aligned.
+         */
+    """
+    i = 0
+    text = open(filepath, encoding='utf-8').read()
+
+    BEGIN = "/*"
+    END = "*/"
+    TABSIZE = 4
+    SINGLE_LINE = False
+    SKIP_COMMENTS = (
+        "BEGIN GPL LICENSE BLOCK",
+        )
+    
+    comments = []
+    
+    while i >= 0:
+        i = text.find(BEGIN, i)
+        if i != -1:
+            i_next = text.find(END, i)
+            if i_next != -1:
+
+                # not essential but seek ack to find beginning of line
+                while i > 0 and text[i - 1] in {"\t", " "}:
+                    i -= 1
+
+                block = text[i:i_next + len(END)]
+                
+                ok = True
+
+                if not (SINGLE_LINE or ("\n" in block)):
+                    ok = False
+
+                if ok:
+                    for c in SKIP_COMMENTS:
+                        if c in block:
+                            ok = False
+                            break
+
+                if ok:
+                    # expand tabs
+                    block = "\n".join([l.expandtabs(TABSIZE) for l in block.split("\n")])
+
+                    # now validate that the block is aligned
+                    align_vals = tuple(sorted(set([l.find("*") for l in block.split("\n")])))
+                    is_aligned = len(align_vals) == 1
+
+                    if is_aligned:
+                        align = align_vals[0] + 1
+                        block = "\n".join([l[align:] for l in block.split("\n")])[:-len(END)]
+
+                        # now strip block and get text
+                        # print(block)
+
+                        # ugh - not nice or fast
+                        slineno = 1 + text.count("\n", 0, i)
+
+                        comments.append(Comment(filepath, block, slineno, 'COMMENT'))
+                    else:
+                        pass
+
+            i = i_next
+        else:
+            pass
+
+    return comments
+
+
+def spell_check_comments(filepath):
+
+    if filepath.endswith(".py"):
+        comment_list = extract_py_comments(filepath)
+    else:
+        comment_list = extract_c_comments(filepath)
 
     for comment in comment_list:
         for w in comment.parse():
+            #if len(w) < 15:
+            #    continue
+
             w_lower = w.lower()
             if w_lower in dict_custom or w_lower in dict_ignore:
                 continue
 
             if not dict_spelling.check(w):
+
+                if ONLY_ONCE:
+                    if w_lower in _only_once_ids:
+                        continue
+                    else:
+                        _only_once_ids.add(w_lower)
+
                 print("%s:%d: %s, suggest (%s)" %
                       (comment.file,
                        comment.line,
@@ -151,9 +240,38 @@ def spell_check_py_comments(filepath):
                        " ".join(dict_spelling.suggest(w)),
                        ))
 
+
+def spell_check_comments_recursive(dirpath):
+    from os.path import join, splitext
+
+    def source_list(path, filename_check=None):
+        for dirpath, dirnames, filenames in os.walk(path):
+
+            # skip '.svn'
+            if dirpath.startswith("."):
+                continue
+
+            for filename in filenames:
+                filepath = join(dirpath, filename)
+                if filename_check is None or filename_check(filepath):
+                    yield filepath
+
+    def is_source(filename):
+        ext = splitext(filename)[1]
+        return (ext in {".c", ".inl", ".cpp", ".cxx", ".hpp", ".hxx", ".h"})
+
+    for filepath in source_list(dirpath, is_source):
+        spell_check_comments(filepath)
+
+
 import sys
+import os
 
 if __name__ == "__main__":
     for filepath in sys.argv[1:]:
-        print("\nChececking: %r" % filepath)
-        spell_check_py_comments(filepath)
+        if os.path.isdir(filepath):
+            # recursive search
+            spell_check_comments_recursive(filepath)
+        else:
+            # single file
+            spell_check_comments(filepath)
