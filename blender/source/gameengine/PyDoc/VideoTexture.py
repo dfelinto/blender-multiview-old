@@ -71,9 +71,9 @@ def imageToArray(image,mode):
 	"""
 	Returns a BGL.buffer corresponding to the current image stored in a texture source object
 
-	@param image: Image source object.
+	\param image: Image source object.
 	@type image: object of type L{VideoFFmpeg}, L{ImageFFmpeg}, L{ImageBuff}, L{ImageMix}, L{ImageRender}, L{ImageMirror} or L{ImageViewport}
-	@param mode: optional argument representing the pixel format. 
+	\param mode: optional argument representing the pixel format. 
 	             You can use the characters R, G, B for the 3 color channels, A for the alpha channel, 
 	             0 to force a fixed 0 color channel and 1 to force a fixed 255 color channel.
 	             Example: "BGR" will return 3 bytes per pixel with the Blue, Green and Red channels in that order. \
@@ -100,9 +100,9 @@ def materialID(object,name):
 	
 	Ex: VideoTexture.materialID(obj, 'IMvideo.png')
 	
-	@param object: the game object that uses the texture you want to make dynamic
+	\param object: the game object that uses the texture you want to make dynamic
 	@type object: game object
-	@param name: name of the texture/material you want to make dynamic. 
+	\param name: name of the texture/material you want to make dynamic. 
 	@type name: string
 	@rtype: integer
 	"""
@@ -112,7 +112,7 @@ def setLogFile(filename):
 	of the messages on the Python console. Only the runtime errors specific to the VideoTexture module
 	are written in that file, ordinary runtime time errors are not written. 
 
-	@param filename: name of error log file
+	\param filename: name of error log file
 	@type filename: string
 	@rtype: integer
 	"""

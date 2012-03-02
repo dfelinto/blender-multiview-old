@@ -98,43 +98,43 @@ def createConstraint(obj_PhysicsID, root_PhysicsID, constraintType, pointPos_x, 
 		obj_PhysicsID, root_PhysicsID, constraintType
 	
 	@type obj_PhysicsID: integer
-	@param obj_PhysicsID: The physic ID of the first object to constraint.
+	\param obj_PhysicsID: The physic ID of the first object to constraint.
 
 	@type root_PhysicsID: integer
-	@param root_PhysicsID: The physic ID of the second object to constraint.
+	\param root_PhysicsID: The physic ID of the second object to constraint.
 
 	@type constraintType: integer
-	@param constraintType: The type of constraint.
+	\param constraintType: The type of constraint.
 
 	@type pointPos_x: float
-	@param pointPos_x: The X position of the point constraint.
+	\param pointPos_x: The X position of the point constraint.
 
 	@type pointPos_y: float
-	@param pointPos_y: The Y position of the point constraint.
+	\param pointPos_y: The Y position of the point constraint.
 
 	@type pointPos_z: float
-	@param pointPos_z: The Z position of the point constraint.
+	\param pointPos_z: The Z position of the point constraint.
 
 	@type edgePos_x: float
-	@param edgePos_x: The X value of the center of the edge constraint.
+	\param edgePos_x: The X value of the center of the edge constraint.
 
 	@type edgePos_y: float
-	@param edgePos_y: The Y value of the center of the edge constraint.
+	\param edgePos_y: The Y value of the center of the edge constraint.
 
 	@type edgePos_z: float
-	@param edgePos_z: The Z value of the center of the edge constraint.
+	\param edgePos_z: The Z value of the center of the edge constraint.
 
 	@type edgeAngle_x: float
-	@param edgeAngle_x: The X value of the edge's orientation vector.
+	\param edgeAngle_x: The X value of the edge's orientation vector.
 
 	@type edgeAngle_y: float
-	@param edgeAngle_y: The Y value of the edge's orientation vector.
+	\param edgeAngle_y: The Y value of the edge's orientation vector.
 
 	@type edgeAngle_z: float
-	@param edgeAngle_z: The Z value of the edge's orientation vector.
+	\param edgeAngle_z: The Z value of the edge's orientation vector.
 
 	@rtype: integer
-	@return: The created constraint ID
+	\return: The created constraint ID
 	"""
 	
 
@@ -142,10 +142,10 @@ def getAppliedImpulse(constraint_ID):
 	"""
 	Returns the applied impulse.
 	
-	@param constraint_ID: The constraint ID that was saved on the creation of the constraint.
+	\param constraint_ID: The constraint ID that was saved on the creation of the constraint.
 	@type constraint_ID: integer
 	@rtype: float
-	@return: Measure the stress on a constraint.
+	\return: Measure the stress on a constraint.
 	"""
 
 
@@ -153,7 +153,7 @@ def getVehicleConstraint(constraint_ID):
 	"""
 	Returns the vehicle constraint ID.
 	
-	@param constraint_ID: The constraint ID that was saved on the creation of the constraint.
+	\param constraint_ID: The constraint ID that was saved on the creation of the constraint.
 	@type constraint_ID: integer
 	@rtype: integer
 	"""
@@ -164,7 +164,7 @@ def removeConstraint(constraint_ID):
 	
 	It does not remove vehicle constraints.
 	
-	@param constraint_ID: The constraint ID that was saved on the creation of the constraint.
+	\param constraint_ID: The constraint ID that was saved on the creation of the constraint.
 	@type constraint_ID: integer
 	"""
 def setDeactivationLinearTreshold(linearTreshold):
@@ -174,7 +174,7 @@ def setDeactivationLinearTreshold(linearTreshold):
 	
 	This affects every object in the scene, except for game objects that have 'No sleeping' turned on.
 	
-	@param linearTreshold: The linear velocity.
+	\param linearTreshold: The linear velocity.
 	@type linearTreshold: float
 	"""
 def setDeactivationAngularTreshold(angularTreshold):
@@ -184,7 +184,7 @@ def setDeactivationAngularTreshold(angularTreshold):
 	
 	This affects every object in the scene, except for game objects that have 'No sleeping' turned on.
 	
-	@param angularTreshold: The angular velocity.
+	\param angularTreshold: The angular velocity.
 	@type angularTreshold: float
 	"""
 def setDeactivationTime(time):
@@ -197,7 +197,7 @@ def setDeactivationTime(time):
 	This function is directly related with the 2 above functions.
 	
 	
-	@param time: The time in seconds.
+	\param time: The time in seconds.
 	@type time: float
 	"""
 def setGravity(gx, gy, gz):
@@ -208,11 +208,11 @@ def setGravity(gx, gy, gz):
 	
 	This affects every object in the scene that has physics enabled.
 	
-	@param gx: The force of gravity on world x axis.
+	\param gx: The force of gravity on world x axis.
 	@type gx: float
-	@param gy: The force of gravity on world y axis.
+	\param gy: The force of gravity on world y axis.
 	@type gy: float
-	@param gz: The force of gravity on world z axis.
+	\param gz: The force of gravity on world z axis.
 	@type gz: float
 	"""
 def setLinearAirDamping(damping):
@@ -220,7 +220,7 @@ def setLinearAirDamping(damping):
 	
 	Sets the linear air resistance for all objects in the scene.
 	
-	@param damping: The linear air resistance.
+	\param damping: The linear air resistance.
 	@type damping: float
 	"""
 def setNumIterations(numIter):
@@ -229,7 +229,7 @@ def setNumIterations(numIter):
 	
 	Increasing the number of iterations improves the constraint solver at the cost of performances & the speed of the game engine.
 	
-	@param numIter: The number of timesubsteps. (Input 0 to suspend simulation numSubStep)
+	\param numIter: The number of timesubsteps. (Input 0 to suspend simulation numSubStep)
 	@type numIter: integer
 	"""
 def setNumTimeSubSteps(numSubStep):
@@ -238,7 +238,7 @@ def setNumTimeSubSteps(numSubStep):
 	
 	Increase the number of time substeps to improves the quality of the entire physics simulation at the cost of the performance & the speed of the game engine.
 	
-	@param numSubStep: The number of timesubsteps. (Input 0 to suspend simulation numSubStep)
+	\param numSubStep: The number of timesubsteps. (Input 0 to suspend simulation numSubStep)
 	@type numSubStep: integer
 	"""
 #def setDebugMode():
@@ -246,7 +246,7 @@ def setNumTimeSubSteps(numSubStep):
 #	
 #	
 #	
-#	@param numIter: 
+#	\param numIter: 
 #	@type numIter: 
 #	"""
 #def setCcdMode():

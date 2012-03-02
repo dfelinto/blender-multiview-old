@@ -92,14 +92,14 @@ Introduction:
 @author: The Blender Python Team
 @requires: Blender 2.49 or newer.
 @version: 2.49
-@see: U{www.blender.org<http://www.blender.org>}: documentation and forum
-@see: U{blenderartists.org<http://blenderartists.org>}: user forum
-@see: U{projects.blender.org<http://projects.blender.org>}
-@see: U{www.python.org<http://www.python.org>}
-@see: U{www.python.org/doc<http://www.python.org/doc>}
-@see: U{Blending into Python<en.wikibooks.org/wiki/Blender_3D:_Blending_Into_Python>}: User contributed documentation, featuring a blender/python cookbook with many examples.
+\see: U{www.blender.org<http://www.blender.org>}: documentation and forum
+\see: U{blenderartists.org<http://blenderartists.org>}: user forum
+\see: U{projects.blender.org<http://projects.blender.org>}
+\see: U{www.python.org<http://www.python.org>}
+\see: U{www.python.org/doc<http://www.python.org/doc>}
+\see: U{Blending into Python<en.wikibooks.org/wiki/Blender_3D:_Blending_Into_Python>}: User contributed documentation, featuring a blender/python cookbook with many examples.
 
-@note: the official version of this reference guide is only updated for each
+\note: the official version of this reference guide is only updated for each
 	new Blender release.  But you can build the current SVN
 	version yourself: install epydoc, grab all files in the
 	source/gameengine/PyDoc/ folder of Blender's SVN and use the

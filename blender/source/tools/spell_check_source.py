@@ -151,10 +151,31 @@ def extract_c_comments(filepath):
     END = "*/"
     TABSIZE = 4
     SINGLE_LINE = False
+    STRIP_DOXY = True
+    STRIP_DOXY_DIRECTIVES = (
+        "\section",
+        "\subsection",
+        "\subsubsection",
+        "\ingroup",
+        "\param",
+        "\page",
+        )
     SKIP_COMMENTS = (
         "BEGIN GPL LICENSE BLOCK",
         )
-    
+
+
+    def strip_doxy_comments(block_split):
+        
+        for i, l in enumerate(block_split):
+            for directive in STRIP_DOXY_DIRECTIVES:
+                if directive in l:
+                    l_split = l.split()
+                    value = l_split[l_split.index(directive) + 1]
+                    # print("remove:", value)
+                    l = l.replace(value, " ")
+            block_split[i] = l
+
     comments = []
     
     while i >= 0:
@@ -182,15 +203,19 @@ def extract_c_comments(filepath):
 
                 if ok:
                     # expand tabs
-                    block = "\n".join([l.expandtabs(TABSIZE) for l in block.split("\n")])
+                    block_split = [l.expandtabs(TABSIZE) for l in block.split("\n")]
 
                     # now validate that the block is aligned
-                    align_vals = tuple(sorted(set([l.find("*") for l in block.split("\n")])))
+                    align_vals = tuple(sorted(set([l.find("*") for l in block_split])))
                     is_aligned = len(align_vals) == 1
 
                     if is_aligned:
+                        
+                        if STRIP_DOXY:
+                            strip_doxy_comments(block_split)
+                        
                         align = align_vals[0] + 1
-                        block = "\n".join([l[align:] for l in block.split("\n")])[:-len(END)]
+                        block = "\n".join([l[align:] for l in block_split])[:-len(END)]
 
                         # now strip block and get text
                         # print(block)
