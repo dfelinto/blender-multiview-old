@@ -44,6 +44,7 @@ dict_custom = {
 
     # accepted abbreviations
     "config",
+    "recalc",
     "addon", "addons",
     "subdir",
     "struct", "structs",
@@ -76,6 +77,7 @@ dict_custom = {
     "xml",
 
     # general computer graphics terms
+    "radiosity",
     "specular",
     "nurbs",
     "compositing",
@@ -123,6 +125,9 @@ dict_ignore = {
     "node-trees",
 
     # acronyms
+    "nan",
+    "utf",
+    "rgb",
     "gzip",
     "ppc",
     "gpl",
@@ -143,6 +148,7 @@ dict_ignore = {
 
     # slang
     "hrmf",
+    "automagically",
 
     # names
     "jahka",
