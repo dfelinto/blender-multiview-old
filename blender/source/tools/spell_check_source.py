@@ -163,7 +163,7 @@ def extract_c_comments(filepath):
     SKIP_COMMENTS = (
         "BEGIN GPL LICENSE BLOCK",
         )
-
+    PRINT_NON_ALIGNED = False
 
     def strip_doxy_comments(block_split):
         
@@ -225,7 +225,8 @@ def extract_c_comments(filepath):
 
                         comments.append(Comment(filepath, block, slineno, 'COMMENT'))
                     else:
-                        pass
+                        if PRINT_NON_ALIGNED:
+                            print(filepath + ":" + str(1 + text.count("\n", 0, i)) + ":")
 
             i = i_next
         else:
