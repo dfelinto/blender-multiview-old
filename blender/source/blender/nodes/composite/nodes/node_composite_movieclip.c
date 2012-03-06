@@ -44,14 +44,16 @@ static bNodeSocketTemplate cmp_node_movieclip_out[]= {
 
 static CompBuf *node_composit_get_movieclip(RenderData *rd, MovieClip *clip, MovieClipUser *user)
 {
-	ImBuf *ibuf;
+	ImBuf *orig_ibuf, *ibuf;
 	CompBuf *stackbuf;
 	int type;
 
 	float *rect;
 	int alloc= FALSE;
 
-	ibuf= BKE_movieclip_get_ibuf(clip, user);
+	orig_ibuf= BKE_movieclip_get_ibuf(clip, user);
+	ibuf= IMB_dupImBuf(ibuf);
+	IMB_freeImBuf(orig_ibuf);
 
 	if(ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL)) {
 		IMB_freeImBuf(ibuf);
