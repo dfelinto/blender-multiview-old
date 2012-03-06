@@ -52,13 +52,14 @@ static CompBuf *node_composit_get_movieclip(RenderData *rd, MovieClip *clip, Mov
 	int alloc= FALSE;
 
 	orig_ibuf= BKE_movieclip_get_ibuf(clip, user);
-	ibuf= IMB_dupImBuf(ibuf);
-	IMB_freeImBuf(orig_ibuf);
 
-	if(ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL)) {
-		IMB_freeImBuf(ibuf);
+	if(orig_ibuf==NULL || (orig_ibuf->rect==NULL && orig_ibuf->rect_float==NULL)) {
+		IMB_freeImBuf(orig_ibuf);
 		return NULL;
 	}
+
+	ibuf= IMB_dupImBuf(orig_ibuf);
+	IMB_freeImBuf(orig_ibuf);
 
 	if (ibuf->rect_float == NULL || ibuf->userflags&IB_RECT_INVALID) {
 		IMB_float_from_rect(ibuf);
