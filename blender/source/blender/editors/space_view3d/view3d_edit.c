@@ -1478,8 +1478,7 @@ static void viewzoom_apply(ViewOpsData *vod, int x, int y, const short viewzoom,
 		delta = (x - vod->origx + y - vod->origy) / 10.0f;
 		vod->rv3d->camzoom = vod->camzoom0 - delta;
 
-		if (vod->rv3d->camzoom > RV3D_CAMZOOM_MAX)
-			vod->rv3d->camzoom = RV3D_CAMZOOM_MAX;
+		CLAMP(vod->rv3d->camzoom, RV3D_CAMZOOM_MIN, RV3D_CAMZOOM_MAX);
 	}
 	if (viewzoom==USER_ZOOM_CONT) {
 		double time= PIL_check_seconds_timer();
