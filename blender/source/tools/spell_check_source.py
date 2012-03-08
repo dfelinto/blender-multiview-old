@@ -166,7 +166,7 @@ def extract_c_comments(filepath):
     PRINT_NON_ALIGNED = False
 
     def strip_doxy_comments(block_split):
-        
+
         for i, l in enumerate(block_split):
             for directive in STRIP_DOXY_DIRECTIVES:
                 if directive in l:
@@ -177,7 +177,7 @@ def extract_c_comments(filepath):
             block_split[i] = l
 
     comments = []
-    
+
     while i >= 0:
         i = text.find(BEGIN, i)
         if i != -1:
@@ -189,7 +189,7 @@ def extract_c_comments(filepath):
                     i -= 1
 
                 block = text[i:i_next + len(END)]
-                
+
                 ok = True
 
                 if not (SINGLE_LINE or ("\n" in block)):
@@ -210,10 +210,10 @@ def extract_c_comments(filepath):
                     is_aligned = len(align_vals) == 1
 
                     if is_aligned:
-                        
+
                         if STRIP_DOXY:
                             strip_doxy_comments(block_split)
-                        
+
                         align = align_vals[0] + 1
                         block = "\n".join([l[align:] for l in block_split])[:-len(END)]
 
