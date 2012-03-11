@@ -76,7 +76,7 @@ execute_blenderplayer(BlenderPluginInstance*);
 /* NPP_GetMIMEDescription() and NPP_GetValue() are called to determine
  * the mime types supported by this plugin. */
 char*
-NPP_GetMIMEDescription( void )
+NPP_GetMIMEDescription(void)
 {
 	log_entry("NPP_GetMIMEDescription");
 	return("application/x-blender-plugin:blend:Blender 3D web plugin");
