@@ -269,7 +269,7 @@ def ngon_tessellate(from_data, indices, fix_loops=True):
        polylines are delt with correctly.
     '''
 
-    from mathutils.geometry import tesselate_polygon
+    from mathutils.geometry import tessellate_polygon
     from mathutils import Vector
     vector_to_tuple = Vector.to_tuple
 
@@ -303,7 +303,7 @@ def ngon_tessellate(from_data, indices, fix_loops=True):
             if verts[i][1] == verts[i - 1][0]:
                 verts.pop(i - 1)
 
-        fill = tesselate_polygon([verts])
+        fill = tessellate_polygon([verts])
 
     else:
         '''
@@ -411,7 +411,7 @@ def ngon_tessellate(from_data, indices, fix_loops=True):
                     vert_map[i + ii] = vert[2]
                 ii += len(verts)
 
-        fill = tesselate_polygon([[v[0] for v in loop] for loop in loop_list])
+        fill = tessellate_polygon([[v[0] for v in loop] for loop in loop_list])
         #draw_loops(loop_list)
         #raise 'done loop'
         # map to original indices
