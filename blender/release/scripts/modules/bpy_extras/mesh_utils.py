@@ -24,7 +24,7 @@ __all__ = (
     "edge_face_count",
     "edge_loops_from_faces",
     "edge_loops_from_edges",
-    "ngon_tesselate",
+    "ngon_tessellate",
     "face_random_points",
     )
 
@@ -256,7 +256,7 @@ def edge_loops_from_edges(mesh, edges=None):
     return line_polys
 
 
-def ngon_tesselate(from_data, indices, fix_loops=True):
+def ngon_tessellate(from_data, indices, fix_loops=True):
     '''
     Takes a polyline of indices (fgon) and returns a list of face
     indicie lists. Designed to be used for importers that need indices for an
