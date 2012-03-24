@@ -469,7 +469,7 @@ NPP_Print(NPP instance, NPPrint* printInfo )
 {
 	
 	log_entry("NPP_Print");
-	if(printInfo == NULL)
+	if (printInfo == NULL)
 		return;
 	if (instance != NULL) {
 		if (printInfo->mode == NP_FULL) {
