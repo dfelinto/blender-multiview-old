@@ -37,6 +37,11 @@
 #include "DNA_modifier_types.h"
 #include "DNA_ID.h"
 
+#include "BLI_listbase.h"
+#include "BLI_utildefines.h"
+#include "BLI_math_vector.h"
+#include "BLI_linklist.h"
+
 #include "BKE_library.h"
 #include "BKE_depsgraph.h"
 #include "BKE_context.h"
@@ -48,11 +53,6 @@
 #include "BKE_cdderivedmesh.h"
 #include "BKE_report.h"
 #include "BKE_tessmesh.h"
-
-#include "BLI_listbase.h"
-#include "BLI_utildefines.h"
-#include "BLI_math_vector.h"
-#include "BLI_linklist.h"
 
 #include "ED_object.h"
 #include "ED_mesh.h"
