@@ -171,7 +171,8 @@ int main(int argc, char *argv[])
 		perror("Cannot fork!\n");
 		exit(EXIT_FAILURE);
 	
-	} else { // parent
+	}
+	else { // parent
 		int status;
 		fprintf(stderr, "Waiting for xauth....\n");
 		wait(&status);
@@ -209,7 +210,8 @@ int main(int argc, char *argv[])
 	
 		const char* blenderplayer = "/usr/bin/blenderplayer";
 		execl(blenderplayer, "blenderplayer", "-i", window_id, file_name, (char*)NULL);
-	} else {
+	}
+	else {
 		/** Still running with higher privileges */
 		int status;
 		fprintf(stderr, "Waiting for blenderplayer....\n");

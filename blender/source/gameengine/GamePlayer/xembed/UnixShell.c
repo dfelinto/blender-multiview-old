@@ -194,8 +194,10 @@ NPP_New(
 					NPN_Status(instance, "Cannot read animation file");
 					This->blend_file = NULL;
 					return NPERR_NO_ERROR;
-				} else
-					log_entry("Animation loaded"); 
+				}
+				else {
+					log_entry("Animation loaded");
+				}
 			}
 		} 		
 		i++;
@@ -203,8 +205,10 @@ NPP_New(
 		
 	if (This != NULL) {
 		return NPERR_NO_ERROR;
-	} else
+	}
+	else {
 		return NPERR_OUT_OF_MEMORY_ERROR;
+	}
 }
 
 
@@ -278,7 +282,8 @@ NPP_SetWindow( NPP instance,NPWindow* window )
 
 		printf("ID window 0x%x %d\n", window->window, window->window);
 		return NPERR_NO_ERROR;
-	} else {
+	}
+	else {
 		return NPERR_INVALID_INSTANCE_ERROR;
 	}
 }
@@ -403,7 +408,8 @@ NPP_Write(
 			log_entry("NPP_Write: main_file_stream loaded"); 
 			execute_blenderplayer(This);
 		}
-	} else {
+	}
+	else {
 		/* the stream ref wasn't set yet..*/
 		log_entry("NPP_Write: not main stream"); 
 		log_entry(stream->url);
@@ -440,7 +446,8 @@ NPP_DestroyStream(
 			}
 		}
 		return NPERR_NO_ERROR;
-	} else {
+	}
+	else {
 		return NPERR_INVALID_INSTANCE_ERROR;
 	}
 
@@ -510,13 +517,14 @@ execute_blenderplayer(BlenderPluginInstance* instance)
 		execlp(executable, executable, "-i", window_id, file_name, (char*)NULL);
 #endif
 	
-	} else if (instance->pID < 0) {           // failed to fork
+	}
+	else if (instance->pID < 0) {           // failed to fork
 		printf("Failed to fork!!!\n");					
 	}
 
 	/*XEvent e;
 	int started = 0;
-	while(!started) {
+	while (!started) {
 		XNextEvent(This->display, &e);
 		printf("Event type %d\n", e.type);					
 		if (e.type == MapNotify) {
