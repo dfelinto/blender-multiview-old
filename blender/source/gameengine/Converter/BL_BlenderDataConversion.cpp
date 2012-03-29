@@ -1918,6 +1918,7 @@ static KX_GameObject *gameobject_from_blenderobject(
 								KX_BlenderSceneConverter *converter) 
 {
 	KX_GameObject *gameobj = NULL;
+	Scene *blenderscene = kxscene->GetBlenderScene();
 	
 	switch(ob->type)
 	{
@@ -1926,8 +1927,11 @@ static KX_GameObject *gameobject_from_blenderobject(
 		KX_LightObject* gamelight= gamelight_from_blamp(ob, static_cast<Lamp*>(ob->data), ob->lay, kxscene, rendertools, converter);
 		gameobj = gamelight;
 		
-		gamelight->AddRef();
-		kxscene->GetLightList()->Add(gamelight);
+		if(blenderscene->lay & ob->lay)
+		{
+			gamelight->AddRef();
+			kxscene->GetLightList()->Add(gamelight);
+		}
 
 		break;
 	}
