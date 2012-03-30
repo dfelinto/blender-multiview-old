@@ -1214,7 +1214,7 @@ static PyObject *Vector_copy(VectorObject *self)
 }
 static PyObject *Vector_deepcopy(VectorObject *self, PyObject *args)
 {
-	if (mathutils_deepcopy_args_check(args))
+	if (!mathutils_deepcopy_args_check(args))
 		return NULL;
 	return Vector_copy(self);
 }

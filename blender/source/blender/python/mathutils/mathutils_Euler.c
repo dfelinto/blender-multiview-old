@@ -301,7 +301,7 @@ static PyObject *Euler_copy(EulerObject *self)
 }
 static PyObject *Euler_deepcopy(EulerObject *self, PyObject *args)
 {
-	if (mathutils_deepcopy_args_check(args))
+	if (!mathutils_deepcopy_args_check(args))
 		return NULL;
 	return Euler_copy(self);
 }

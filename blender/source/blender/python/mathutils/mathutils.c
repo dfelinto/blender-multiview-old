@@ -286,7 +286,7 @@ PyObject *mathutils_dynstr_to_py(struct DynStr *ds)
 int mathutils_deepcopy_args_check(PyObject *args)
 {
 	PyObject *dummy_pydict;
-	return PyArg_ParseTuple(args, "|O!:__deepcopy__", &PyDict_Type, &dummy_pydict) == 0;
+	return PyArg_ParseTuple(args, "|O!:__deepcopy__", &PyDict_Type, &dummy_pydict) != 0;
 }
 
 /* Mathutils Callbacks */

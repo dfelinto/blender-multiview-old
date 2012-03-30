@@ -481,7 +481,7 @@ static PyObject *Quaternion_copy(QuaternionObject *self)
 }
 static PyObject *Quaternion_deepcopy(QuaternionObject *self, PyObject *args)
 {
-	if (mathutils_deepcopy_args_check(args))
+	if (!mathutils_deepcopy_args_check(args))
 		return NULL;
 	return Quaternion_copy(self);
 }

@@ -109,7 +109,7 @@ static PyObject *Color_copy(ColorObject *self)
 }
 static PyObject *Color_deepcopy(ColorObject *self, PyObject *args)
 {
-	if (mathutils_deepcopy_args_check(args))
+	if (!mathutils_deepcopy_args_check(args))
 		return NULL;
 	return Color_copy(self);
 }

@@ -1522,7 +1522,7 @@ static PyObject *Matrix_copy(MatrixObject *self)
 }
 static PyObject *Matrix_deepcopy(MatrixObject *self, PyObject *args)
 {
-	if (mathutils_deepcopy_args_check(args))
+	if (!mathutils_deepcopy_args_check(args))
 		return NULL;
 	return Matrix_copy(self);
 }
