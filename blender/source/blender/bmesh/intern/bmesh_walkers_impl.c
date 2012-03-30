@@ -645,6 +645,10 @@ static int bmw_FaceLoopWalker_include_face(BMWalker *walker, BMLoop *l)
 		return FALSE;
 	}
 
+	if (!bmw_mask_check_face(walker, l->f)) {
+		return FALSE;
+	}
+
 	/* the face must not have been already visite */
 	if (BLI_ghash_haskey(walker->visithash, l->f) && BLI_ghash_haskey(walker->secvisithash, l->e)) {
 		return FALSE;
