@@ -759,14 +759,14 @@ static int rna_float_layer_check(CollectionPropertyIterator *iter, void *data)
 	return (layer->type != CD_PROP_FLT);
 }
 
-static void rna_Mesh_float_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void rna_Mesh_polygon_float_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
 	CustomData *pdata = rna_mesh_pdata(ptr);
 	rna_iterator_array_begin(iter, (void*)pdata->layers, sizeof(CustomDataLayer), pdata->totlayer, 0,
 	                         rna_float_layer_check);
 }
 
-static int rna_Mesh_float_layers_length(PointerRNA *ptr)
+static int rna_Mesh_polygon_float_layers_length(PointerRNA *ptr)
 {
 	return CustomData_number_of_layers(rna_mesh_pdata(ptr), CD_PROP_FLT);
 }
@@ -790,14 +790,14 @@ static int rna_MeshIntPropertyLayer_data_length(PointerRNA *ptr)
 	return me->totface;
 }
 
-static void rna_Mesh_int_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void rna_Mesh_polygon_int_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
 	CustomData *pdata = rna_mesh_pdata(ptr);
 	rna_iterator_array_begin(iter, (void*)pdata->layers, sizeof(CustomDataLayer), pdata->totlayer, 0,
 	                         rna_int_layer_check);
 }
 
-static int rna_Mesh_int_layers_length(PointerRNA *ptr)
+static int rna_Mesh_polygon_int_layers_length(PointerRNA *ptr)
 {
 	return CustomData_number_of_layers(rna_mesh_pdata(ptr), CD_PROP_INT);
 }
@@ -821,14 +821,14 @@ static int rna_MeshStringPropertyLayer_data_length(PointerRNA *ptr)
 	return me->totface;
 }
 
-static void rna_Mesh_string_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+static void rna_Mesh_polygon_string_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
 	CustomData *pdata = rna_mesh_pdata(ptr);
 	rna_iterator_array_begin(iter, (void*)pdata->layers, sizeof(CustomDataLayer), pdata->totlayer, 0,
 	                         rna_string_layer_check);
 }
 
-static int rna_Mesh_string_layers_length(PointerRNA *ptr)
+static int rna_Mesh_polygon_string_layers_length(PointerRNA *ptr)
 {
 	return CustomData_number_of_layers(rna_mesh_pdata(ptr), CD_PROP_STR);
 }
@@ -2619,26 +2619,26 @@ static void rna_def_mesh(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Vertex Colors", "All vertex colors");
 	rna_def_loop_colors(brna, prop);
 
-	prop = RNA_def_property(srna, "layers_float", PROP_COLLECTION, PROP_NONE);
+	prop = RNA_def_property(srna, "polygon_layers_float", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "pdata.layers", "pdata.totlayer");
-	RNA_def_property_collection_funcs(prop, "rna_Mesh_float_layers_begin", NULL, NULL, NULL,
-	                                  "rna_Mesh_float_layers_length", NULL, NULL, NULL);
+	RNA_def_property_collection_funcs(prop, "rna_Mesh_polygon_float_layers_begin", NULL, NULL, NULL,
+	                                  "rna_Mesh_polygon_float_layers_length", NULL, NULL, NULL);
 	RNA_def_property_struct_type(prop, "MeshFloatPropertyLayer");
 	RNA_def_property_ui_text(prop, "Float Property Layers", "");
 	rna_def_float_layers(brna, prop);
 
-	prop = RNA_def_property(srna, "layers_int", PROP_COLLECTION, PROP_NONE);
+	prop = RNA_def_property(srna, "polygon_layers_int", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "pdata.layers", "pdata.totlayer");
-	RNA_def_property_collection_funcs(prop, "rna_Mesh_int_layers_begin", NULL, NULL, NULL,
-	                                  "rna_Mesh_int_layers_length", NULL, NULL, NULL);
+	RNA_def_property_collection_funcs(prop, "rna_Mesh_polygon_int_layers_begin", NULL, NULL, NULL,
+	                                  "rna_Mesh_polygon_int_layers_length", NULL, NULL, NULL);
 	RNA_def_property_struct_type(prop, "MeshIntPropertyLayer");
 	RNA_def_property_ui_text(prop, "Int Property Layers", "");
 	rna_def_int_layers(brna, prop);
 
-	prop = RNA_def_property(srna, "layers_string", PROP_COLLECTION, PROP_NONE);
+	prop = RNA_def_property(srna, "polygon_layers_string", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "pdata.layers", "pdata.totlayer");
-	RNA_def_property_collection_funcs(prop, "rna_Mesh_string_layers_begin", NULL, NULL, NULL,
-	                                  "rna_Mesh_string_layers_length", NULL, NULL, NULL);
+	RNA_def_property_collection_funcs(prop, "rna_Mesh_polygon_string_layers_begin", NULL, NULL, NULL,
+	                                  "rna_Mesh_polygon_string_layers_length", NULL, NULL, NULL);
 	RNA_def_property_struct_type(prop, "MeshStringPropertyLayer");
 	RNA_def_property_ui_text(prop, "String Property Layers", "");
 	rna_def_string_layers(brna, prop);
