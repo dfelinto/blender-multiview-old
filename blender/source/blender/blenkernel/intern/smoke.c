@@ -276,8 +276,15 @@ static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene,
 
 		smd->time = scene->r.cfra;
 
-		// update particle lifetime to be one frame
-		// smd->flow->psys->part->lifetime = scene->r.efra + 1;
+		if (smd->flow->psys && smd->flow->psys->part)
+		{
+			// update particle lifetime to be one frame
+			smd->flow->psys->part->lifetime = 1; // scene->r.efra + 1;
+
+			// use "unborn" flag as standard setting
+			smd->flow->psys->part->flag |= PART_UNBORN;
+		}
+
 /*
 		if (!smd->flow->bvh)
 		{
