@@ -19,16 +19,17 @@
 # <pep8 compliant>
 
 # this script updates XML themes once new settings are added
-# 
+#
 #  ./blender.bin --background --python source/tools/update_themes.py
 
 import bpy
 import os
 
+
 def update(filepath):
     import rna_xml
     context = bpy.context
-    
+
     print("Updating theme: %r" % filepath)
     preset_xml_map = (("user_preferences.themes[0]", "Theme"), )
     rna_xml.xml_file_run(context,
@@ -38,6 +39,7 @@ def update(filepath):
     rna_xml.xml_file_write(context,
                            filepath,
                            preset_xml_map)
+
 
 def main():
     for path in bpy.utils.preset_paths("interface_theme"):
