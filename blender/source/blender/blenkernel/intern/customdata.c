@@ -2156,13 +2156,18 @@ void CustomData_bmesh_init_pool(CustomData *data, int totelem, const char htype)
 }
 
 void CustomData_bmesh_merge(CustomData *source, CustomData *dest, 
-                            int mask, int alloctype, BMesh *bm, const char htype)
+                            CustomDataMask mask, int alloctype, BMesh *bm, const char htype)
 {
 	BMHeader *h;
 	BMIter iter;
-	CustomData destold = *dest;
+	CustomData destold;
 	void *tmp;
 	int t;
+
+	/* copy old layer description so that old data can be copied into
+	   the new allocation */
+	destold = *dest;
+	destold.layers = MEM_dupallocN(destold.layers);
 	
 	CustomData_merge(source, dest, mask, alloctype, 0);
 	dest->pool = NULL;
