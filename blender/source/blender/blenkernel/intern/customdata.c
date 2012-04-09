@@ -2167,7 +2167,7 @@ void CustomData_bmesh_merge(CustomData *source, CustomData *dest,
 	/* copy old layer description so that old data can be copied into
 	   the new allocation */
 	destold = *dest;
-	destold.layers = MEM_dupallocN(destold.layers);
+	if (destold.layers) destold.layers = MEM_dupallocN(destold.layers);
 	
 	CustomData_merge(source, dest, mask, alloctype, 0);
 	dest->pool = NULL;
@@ -2213,6 +2213,7 @@ void CustomData_bmesh_merge(CustomData *source, CustomData *dest,
 	}
 
 	if (destold.pool) BLI_mempool_destroy(destold.pool);
+	if (destold.layers) MEM_freeN(destold.layers);
 }
 
 void CustomData_bmesh_free_block(CustomData *data, void **block)
