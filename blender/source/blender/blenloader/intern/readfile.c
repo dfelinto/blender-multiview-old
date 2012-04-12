@@ -9263,20 +9263,18 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		
 		for (key= main->key.first; key; key= key->id.next) {
 			KeyBlock *kb;
-			int index= 1;
+			int index = 1;
 
-			if (kb==NULL) {
-				for (kb= key->block.first; kb; kb= kb->next) {
-					if (kb==key->refkey) {
-						if (kb->name[0]==0)
-							strcpy(kb->name, "Basis");
+			for (kb= key->block.first; kb; kb= kb->next) {
+				if (kb==key->refkey) {
+					if (kb->name[0]==0)
+						strcpy(kb->name, "Basis");
+				}
+				else {
+					if (kb->name[0]==0) {
+						BLI_snprintf(kb->name, sizeof(kb->name), "Key %d", index);
 					}
-					else {
-						if (kb->name[0]==0) {
-							BLI_snprintf(kb->name, sizeof(kb->name), "Key %d", index);
-						}
-						index++;
-					}
+					index++;
 				}
 			}
 		}
