@@ -6612,31 +6612,6 @@ static void ntree_version_242(bNodeTree *ntree)
 	
 }
 
-
-/* somehow, probably importing via python, keyblock adrcodes are not in order */
-static void sort_shape_fix(Main *main)
-{
-	Key *key;
-	KeyBlock *kb;
-	int sorted= 0;
-	
-	while (sorted==0) {
-		sorted= 1;
-		for (key= main->key.first; key; key= key->id.next) {
-			for (kb= key->block.first; kb; kb= kb->next) {
-				if (kb->next && kb->adrcode>kb->next->adrcode) {
-					KeyBlock *next= kb->next;
-					BLI_remlink(&key->block, kb);
-					BLI_insertlink(&key->block, next, kb);
-					kb= next;
-					sorted= 0;
-				}
-			}
-		}
-		if (sorted==0) printf("warning, shape keys were sorted incorrect, fixed it!\n");
-	}
-}
-
 static void customdata_version_242(Mesh *me)
 {
 	CustomDataLayer *layer;
@@ -9289,11 +9264,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		for (key= main->key.first; key; key= key->id.next) {
 			KeyBlock *kb;
 			int index= 1;
-			
-			/* trick to find out if we already introduced adrcode */
-			for (kb= key->block.first; kb; kb= kb->next)
-				if (kb->adrcode) break;
-			
+
 			if (kb==NULL) {
 				for (kb= key->block.first; kb; kb= kb->next) {
 					if (kb==key->refkey) {
@@ -9304,7 +9275,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 						if (kb->name[0]==0) {
 							BLI_snprintf(kb->name, sizeof(kb->name), "Key %d", index);
 						}
-						kb->adrcode= index++;
+						index++;
 					}
 				}
 			}
@@ -9660,10 +9631,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		for (group= main->group.first; group; group= group->id.next)
 			if (group->layer==0)
 				group->layer= (1<<20)-1;
-		
-		/* History fix (python?), shape key adrcode numbers have to be sorted */
-		sort_shape_fix(main);
-				
+
 		/* now, subversion control! */
 		if (main->subversionfile < 3) {
 			Image *ima;
