@@ -95,6 +95,12 @@ static double  bpy_timer_run_tot;   /* accumulate python runs */
 /* use for updating while a python script runs - in case of file load */
 void bpy_context_update(bContext *C)
 {
+	/* don't do this from a non-main (e.g. render) thread, it can cause a race
+	   condition on C->data.recursion. ideal solution would be to disable
+	   context entirely from non-main threads, but that's more complicated */
+	if(!BLI_thread_is_main())
+		return;
+
 	BPy_SetContext(C);
 	bpy_import_main_set(CTX_data_main(C));
 	BPY_modules_update(C); /* can give really bad results if this isn't here */
