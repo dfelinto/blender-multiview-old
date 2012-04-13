@@ -57,6 +57,7 @@
 #include "BLI_string.h"
 #include "BLI_string_utf8.h"
 #include "BLI_utildefines.h"
+#include "BLI_threads.h"
 
 #include "BKE_context.h"
 #include "BKE_text.h"
