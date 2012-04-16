@@ -863,11 +863,12 @@ int BLI_edgefill(ScanFillContext *sf_ctx, const short do_quad_tri_speedup)
 		v_prev = eve->co;
 
 		for (eve = sf_ctx->fillvertbase.first; eve; eve = eve->next) {
-			if (!compare_v3v3(v_prev, eve->co, COMPLIMIT)) {
+			if (LIKELY(!compare_v3v3(v_prev, eve->co, COMPLIMIT))) {
 				n[0] += (v_prev[1] - eve->co[1]) * (v_prev[2] + eve->co[2]);
 				n[1] += (v_prev[2] - eve->co[2]) * (v_prev[0] + eve->co[0]);
 				n[2] += (v_prev[0] - eve->co[0]) * (v_prev[1] + eve->co[1]);
 			}
+			v_prev = eve->co;
 		}
 
 		if (UNLIKELY(normalize_v3(n) == 0.0f)) {
