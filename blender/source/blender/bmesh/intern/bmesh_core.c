@@ -1625,7 +1625,7 @@ BMFace *bmesh_jfke(BMesh *bm, BMFace *f1, BMFace *f2, BMEdge *e)
 	}
 
 	/* validate that edge is 2-manifold edge */
-	if (BM_edge_is_manifold(e)) {
+	if (!BM_edge_is_manifold(e)) {
 		return NULL;
 	}
 
