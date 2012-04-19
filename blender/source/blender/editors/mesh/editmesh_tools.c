@@ -3657,7 +3657,6 @@ static void xsortvert_flag(bContext *C, int flag)
 	em_setup_viewcontext(C, &vc);
 	em = vc.em;
 
-	/* As we are going to manipulate verts heavily, use an array. */
 	totvert = em->bm->totvert;
 
 	sortblock = MEM_callocN(sizeof(xvertsort) * totvert, "xsort sorted");
