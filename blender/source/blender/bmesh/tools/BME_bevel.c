@@ -792,22 +792,25 @@ static float BME_bevel_get_angle_vert(BMVert *v)
 	float n[3];
 	float n_tmp[3];
 	float angle_diff = 0.0f;
+	float tot_angle = 0.0f;
 
 
 	BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
+		const float angle = BM_loop_calc_face_angle(l);
+		tot_angle += angle;
 		BM_loop_calc_face_normal(l, n_tmp);
-		madd_v3_v3fl(n, n_tmp, BM_loop_calc_face_angle(l));
+		madd_v3_v3fl(n, n_tmp, angle);
 	}
 	normalize_v3(n);
 
 	BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
 		/* could cache from before */
 		BM_loop_calc_face_normal(l, n_tmp);
-		angle_diff += angle_normalized_v3v3(n, n_tmp) * (BM_loop_calc_face_angle(l));
+		angle_diff += angle_normalized_v3v3(n, n_tmp) * BM_loop_calc_face_angle(l);
 	}
 
 	/* return cosf(angle_diff + 0.001f); */ /* compare with dot product */
-	return angle_diff * 0.5f;
+	return (angle_diff / tot_angle) * (M_PI / 2);
 }
 
 static void BME_bevel_add_vweight(BME_TransData_Head *td, BMesh *bm, BMVert *v, float weight, float factor, int options)
