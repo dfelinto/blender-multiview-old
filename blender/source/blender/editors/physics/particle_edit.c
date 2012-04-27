@@ -1635,8 +1635,8 @@ int PE_lasso_select(bContext *C, int mcords[][2], short moves, short extend, sho
 				copy_v3_v3(co, key->co);
 				mul_m4_v3(mat, co);
 				project_int(ar, co, vertco);
-				if ((vertco[0] != IS_CLIPPED) &&
-				    BLI_lasso_is_point_inside(mcords,moves,vertco[0],vertco[1]) && key_test_depth(&data, co))
+				if (BLI_lasso_is_point_inside(mcords,moves,vertco[0],vertco[1], IS_CLIPPED) &&
+				    key_test_depth(&data, co))
 				{
 					if (select && !(key->flag & PEK_SELECT)) {
 						key->flag |= PEK_SELECT;
@@ -1655,8 +1655,8 @@ int PE_lasso_select(bContext *C, int mcords[][2], short moves, short extend, sho
 			copy_v3_v3(co, key->co);
 			mul_m4_v3(mat, co);
 			project_int(ar, co,vertco);
-			if ((vertco[0] != IS_CLIPPED) &&
-			    BLI_lasso_is_point_inside(mcords,moves,vertco[0],vertco[1]) && key_test_depth(&data, co))
+			if (BLI_lasso_is_point_inside(mcords,moves,vertco[0],vertco[1], IS_CLIPPED) &&
+			    key_test_depth(&data, co))
 			{
 				if (select && !(key->flag & PEK_SELECT)) {
 					key->flag |= PEK_SELECT;
