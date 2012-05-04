@@ -1,0 +1,15 @@
+GLvoid
+GLboolean
+GLbyte
+GLubyte
+GLshort
+GLushort
+GLint
+GLuint
+GLsizei
+GLenum
+GLbitfield
+GLfloat
+GLclampf
+GLdouble
+GLclampd
