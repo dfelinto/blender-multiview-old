@@ -1,0 +1,20 @@
+                AGL_ACCELERATED
+                AGL_BUFFER_RECT
+                AGL_DEPTH_SIZE
+                AGL_DOUBLEBUFFER
+                AGL_FULLSCREEN
+                AGL_NONE
+                AGL_RGBA
+
+                aglChoosePixelFormat
+                aglCreateContext
+                aglDestroyContext
+                aglDestroyPixelFormat
+                aglEnable
+                aglSetCurrentContext
+                aglSetDrawable
+                aglSetFullScreen
+                aglSetInteger
+                aglSwapBuffers
+                aglUpdateContext
+

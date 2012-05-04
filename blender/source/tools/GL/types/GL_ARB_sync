@@ -1,0 +1,5 @@
+passthru: #ifndef GL_ARB_sync
+passthru: typedef int64_t GLint64;
+passthru: typedef uint64_t GLuint64;
+passthru: typedef struct __GLsync *GLsync;
+passthru: #endif

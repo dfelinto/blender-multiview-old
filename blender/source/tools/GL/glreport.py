@@ -60,7 +60,8 @@ def isNotGLUserFile(filename):
 def isDummy(filename):
     return filename == ".dummy"
 
-glToken = re.compile("(?:(?:gl|glu|glut|glew|glx|wgl)[A-Z][a-zA-Z0-9]*)|(?:(?:GL_|GLU_|GLUT_|GLEW_|GLX_|WGL_)[A-Z0-9_]*[A-Z0-9])")
+#glToken = re.compile(r'\b(?:(?:(?:gl|glu|glut|glew|glX|wgl|agl)[A-Z][a-zA-Z0-9]*)|(?:(?:GL_|GLU_|GLUT_|GLEW_|GLX_|WGL_|AGL_)[A-Z0-9_]*[A-Z0-9])|(?:(?:GL_|GLU_|GLUT_|GLEW_|GLX_|WGL_|AGL_)[A-Z0-9]+_[a-z0-9_]*[a-z0-9])|(?:GL[a-z]+))\b')
+glToken = re.compile(r'\b(?:(?:(?:gl|glu|glut|glew|glX|wgl|agl)[A-Z][a-zA-Z0-9]*)|(?:(?:GL_|GLU_|GLUT_|GLEW_|GLX_|WGL_|AGL_)[A-Z0-9_]*[A-Z0-9])|(?:(?:GL_|GLU_|GLUT_|GLEW_|GLX_|WGL_|AGL_)[A-Z0-9]+_[a-z0-9_]*[a-z0-9]))\b')
 
 report = {}
 
@@ -84,32 +85,32 @@ def addReportEntry(filename):
         
         tokens = set(matches)
         
-        
         extensions = set()
-        
-        core = "OpenGL 1.1, GLU, GLUT, GLEW, or Unknown"
 
+        unknownTokens = set()
+        
         for token in tokens:
             summaryTokens.add(token)
 
             if token in database:
-                extensions.add(database[token])
-                summaryExtensions.add(database[token])
+                extensions.update(database[token])
+                summaryExtensions.update(database[token])
             else:
-                extensions.add(core)
+                unknownTokens.add(token)
         
         extensionsTokens = {}
 
         for token in tokens:
             for extension in extensions:
-                if extension == core or (token in database and extension == database[token]):
+                if token in database and extension in database[token]:
                     if not extension in extensionsTokens:
-                        extensionsTokens[extension] = []
-
-                    extensionsTokens[extension].append(token)
+                        extensionsTokens[extension] = set()
                     
+                    extensionsTokens[extension].add(token)
 
-        report[filename] = (extensionsTokens, extensions, tokens)
+        report[filename] = (extensionsTokens, extensions, tokens, unknownTokens)
+
+
 
 database = {}
 
@@ -127,14 +128,32 @@ def addDatabaseEntries(filename):
         basename = os.path.basename(filename)
         
         for token in tokens:
-            database[token] = basename
+            if not token in database:
+                database[token] = set()
+
+            database[token].add(basename)
 
 
             
 listFiles("./core", printDirectory, addDatabaseEntries, isSvn, isDummy)
 listFiles("./extensions", printDirectory, addDatabaseEntries, isSvn, isDummy)
+listFiles("./es", printDirectory, addDatabaseEntries, isSvn, isDummy)
+listFiles("./platform", printDirectory, addDatabaseEntries, isSvn, isDummy)
+listFiles("./classic", printDirectory, addDatabaseEntries, isSvn, isDummy)
+#listFiles("./types", printDirectory, addDatabaseEntries, isSvn, isDummy)
 
-listFiles("../../..", printDirectory, addReportEntry, isSvn, isNotGLUserFile)
+# insert a couple of symbols by hand
+# The GL[A-Z]+ style symbol would conflict too easily with legit tokens
+database["GLDEBUGPROCAMD"] = "GL_AMD_debug_output"
+database["GLDEBUGPROCARB"] = "GL_ARB_debug_output"
+
+# OpenCL interop
+database["cl_context"] = "GL_ARB_cl_event"
+database["cl_event"] = "GL_ARB_cl_event"
+
+prefix = "../../../"
+
+listFiles(prefix, printDirectory, addReportEntry, isSvn, isNotGLUserFile)
 
 out = open("./report.txt", "w")
 
@@ -145,7 +164,7 @@ reportList = report.keys()
 reportList.sort()
 
 for filename in reportList:
-    out.write("\t\t" + filename + "\n")
+    out.write("\t\t" + filename[len(prefix):]  + "\n")
     
 out.write("\n")
 
@@ -172,7 +191,7 @@ summaryTokensList.sort()
 
 for token in summaryTokensList:
     if token in database:
-        out.write("\t\t" + token + " (" + database[token] + ")\n")
+        out.write("\t\t" + token + " (" + ",".join(database[token]) + ")\n")
     else:
         out.write("\t\t" + token + "\n")
 
@@ -183,25 +202,39 @@ out.write("\n")
 for filename in reportList:
     entry = report[filename]
 
-    out.write(filename + ":\n")
+    out.write(filename[len(prefix):] + ":\n")
     
     extensionsTokens = entry[0]
     extensions = entry[1]
     tokens = entry[2]
+    unknownTokens = entry[3]
 
     extensionsTokensList = extensionsTokens.keys()
     extensionsTokensList.sort()
     
     for extension in extensionsTokensList:
-        extensionTokens = extensionsTokens[extension]
-        
         out.write("\t" + extension + "\n")
 
-        extensionTokens.sort()
+        extensionTokens = extensionsTokens[extension]
 
-        for extensionToken in extensionTokens:
+        extensionTokensList = []
+
+        for x in extensionTokens:
+            extensionTokensList.append(x)
+
+        extensionTokensList.sort()
+
+        for extensionToken in extensionTokensList:
             out.write("\t\t" + extensionToken + "\n")
             
+        out.write("\n")
+
+    if unknownTokens:
+        out.write("\tUnrecognized Tokens\n")
+
+        for unknownToken in unknownTokens:
+            out.write("\t\t" + unknownToken + "\n")
+
         out.write("\n")
         
 out.close()

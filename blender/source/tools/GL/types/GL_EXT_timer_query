@@ -1,0 +1,3 @@
+GL_EXT_timer_query
+passthru: typedef int64_t GLint64EXT;
+passthru: typedef uint64_t GLuint64EXT;
