@@ -2767,14 +2767,14 @@ static void mesh_calc_ngon_normal(MPoly *mpoly, MLoop *loopstart,
                                   MVert *mvert, float normal[3])
 {
 	const int nverts = mpoly->totloop;
-	MLoop const *l_prev = loopstart + (nverts - 1);
-	MLoop const *l_curr = loopstart;
+	float const *v_prev = mvert[loopstart[nverts - 1].v].co;
+	float const *v_curr = mvert[loopstart->v].co;
 	float n[3] = {0.0f};
 	int i;
 
 	/* Newell's Method */
-	for (i = 0; i < nverts; l_prev = l_curr, l_curr++, i++) {
-		add_newell_cross_v3_v3v3(n, mvert[l_prev->v].co, mvert[l_curr->v].co);
+	for (i = 0; i < nverts; v_prev = v_curr, v_curr = mvert[loopstart[++i].v].co) {
+		add_newell_cross_v3_v3v3(n, v_prev, v_curr);
 	}
 
 	if (UNLIKELY(normalize_v3_v3(normal, n) == 0.0f)) {
@@ -2814,14 +2814,14 @@ static void mesh_calc_ngon_normal_coords(MPoly *mpoly, MLoop *loopstart,
                                          const float (*vertex_coords)[3], float normal[3])
 {
 	const int nverts = mpoly->totloop;
-	MLoop const *l_prev = loopstart + (nverts - 1);
-	MLoop const *l_curr = loopstart;
+	float const *v_prev = vertex_coords[loopstart[nverts - 1].v];
+	float const *v_curr = vertex_coords[loopstart->v];
 	float n[3] = {0.0f};
 	int i;
 
 	/* Newell's Method */
-	for (i = 0; i < nverts; l_prev = l_curr, l_curr++, i++) {
-		add_newell_cross_v3_v3v3(n, vertex_coords[l_prev->v], vertex_coords[l_curr->v]);
+	for (i = 0; i < nverts; v_prev = v_curr, v_curr = vertex_coords[loopstart[++i].v]) {
+		add_newell_cross_v3_v3v3(n, v_prev, v_curr);
 	}
 
 	if (UNLIKELY(normalize_v3_v3(normal, n) == 0.0f)) {
