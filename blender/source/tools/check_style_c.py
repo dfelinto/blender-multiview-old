@@ -36,7 +36,8 @@ python3.2 source/tools/check_source_c.py source/
 # - spaces around brackets with function call: func(args)
 # - braces with function definitions
 # - braces with typedefs
-# - line length - in a not-too-annoying way (allow for long arrays in struct definitions, PyMethodDef for eg)
+# - line length - in a not-too-annoying way
+#   (allow for long arrays in struct definitions, PyMethodDef for eg)
 
 from pygments import highlight, lex
 from pygments.lexers import CLexer
@@ -45,6 +46,9 @@ from pygments.formatters import RawTokenFormatter
 from pygments.token import Token
 
 PRINT_QTC_TASKFORMAT = False
+
+TAB_SIZE = 4
+LIN_SIZE = 120
 
 global filepath
 tokens = []
@@ -152,6 +156,15 @@ def extract_statement_if(index_kw):
     return (i_start, i_end)
 
 
+def extract_operator(index_op):
+    op_text = ""
+    i = 0
+    while tokens[index_op + i].type == Token.Operator:
+        op_text += tokens[index_op + i].text
+        i += 1
+    return op_text, index_op + (i - 1)
+
+
 def warning(message, index_kw_start, index_kw_end):
     if PRINT_QTC_TASKFORMAT:
         print("%s\t%d\t%s\t%s" % (filepath, tokens[index_kw_start].line, "comment", message))
@@ -250,6 +263,80 @@ def blender_check_comma(index_kw):
         warning("comma space before it 'sometext ,", index_kw, i_next)
 
 
+def _is_ws_pad(index_start, index_end):
+    return (tokens[index_start - 1].text.isspace() and
+            tokens[index_end + 1].text.isspace())
+
+
+def blender_check_operator(index_start, index_end, op_text):
+    if op_text == "->":
+        # allow compiler to handle
+        return
+
+    if len(op_text) == 1:
+        if op_text in {"+", "-"}:
+            # detect (-a) vs (a - b)
+            if     (not tokens[index_start - 1].text.isspace() and
+                    tokens[index_start - 1].text not in {"[", "(", "{"}):
+                warning("no space before operator '%s'" % op_text, index_start, index_end)
+            if     (not tokens[index_end + 1].text.isspace() and
+                    tokens[index_end + 1].text not in {"]", ")", "}"}):
+                # TODO, needs work to be useful
+                # warning("no space after operator '%s'" % op_text, index_start, index_end)
+                pass
+
+        elif op_text in {"/", "%", "^", "|", "=", "<", ">"}:
+            if not _is_ws_pad(index_start, index_end):
+                warning("no space around operator '%s'" % op_text, index_start, index_end)
+        elif op_text == "&":
+            pass  # TODO, check if this is a pointer reference or not
+        elif op_text == "*":
+            pass  # TODO, check if this is a pointer reference or not
+    elif len(op_text) == 2:
+        # todo, remove operator check from `if`
+        if op_text in {"+=", "-=", "*=", "/=", "&=", "|=", "^=",
+                  "&&", "||",
+                  "==", "!=", "<=", ">=",
+                  "<<", ">>"}:
+            if not _is_ws_pad(index_start, index_end):
+                warning("no space around operator '%s'" % op_text, index_start, index_end)
+
+        elif op_text in {"++", "--"}:
+            pass  # TODO, figure out the side we are adding to!
+            '''
+            if     (tokens[index_start - 1].text.isspace() or
+                    tokens[index_end   + 1].text.isspace()):
+                warning("spaces surrounding operator '%s'" % op_text, index_start, index_end)
+            '''
+        elif op_text == "!!":
+            if tokens[index_end + 1].text.isspace():
+                warning("spaces after operator '%s'" % op_text, index_start, index_end)
+
+        elif op_text == "**":
+            pass  # handle below
+        else:
+            warning("unhadled operator A '%s'" % op_text, index_start, index_end)
+    else:
+        #warning("unhadled operator B '%s'" % op_text, index_start, index_end)
+        pass
+
+    if len(op_text) > 1:
+        if op_text[0] == "*" and op_text[-1] == "*":
+            if not tokens[index_start - 1].text.isspace():
+                warning("no space before poiter operator '%s'" % op_text, index_start, index_end)
+            if tokens[index_end + 1].text.isspace():
+                warning("space before poiter operator '%s'" % op_text, index_start, index_end)
+
+
+def blender_check_linelength(index_start, index_end, length):
+    if length > LIN_SIZE:
+        text = "".join([tokens[i].text for i in range(index_start, index_end + 1)])
+        for l in text.split("\n"):
+            l = l.expandtabs(TAB_SIZE)
+            if len(l) > LIN_SIZE:
+                warning("line length %d > %d" % (len(l), LIN_SIZE), index_start, index_end)
+
+
 def scan_source(fp):
     # print("scanning: %r" % fp)
 
@@ -267,6 +354,9 @@ def scan_source(fp):
         tokens.append(TokStore(ttype, text, line))
         line += text.count("\n")
 
+    col = 0  # track line length
+    index_line_start = 0
+
     for i, tok in enumerate(tokens):
         #print(tok.type, tok.text)
         if tok.type == Token.Keyword:
@@ -279,6 +369,22 @@ def scan_source(fp):
         elif tok.type == Token.Punctuation:
             if tok.text == ",":
                 blender_check_comma(i)
+        elif tok.type == Token.Operator:
+            # we check these in pairs, only want first
+            if tokens[i - 1].type != Token.Operator:
+                op, index_kw_end = extract_operator(i)
+                blender_check_operator(i, index_kw_end, op)
+
+        # ensure line length
+        if tok.type == Token.Text and tok.text == "\n":
+            # check line len
+            blender_check_linelength(index_line_start, i - 1, col)
+
+            col = 0
+            index_line_start = i + 1
+        else:
+            col += len(tok.text.expandtabs(TAB_SIZE))
+                
         #elif tok.type == Token.Name:
         #    print(tok.text)
 
@@ -325,7 +431,12 @@ def scan_source_recursive(dirpath):
 if __name__ == "__main__":
     import sys
     import os
-    # scan_source_recursive("/dsk/data/src/blender/blender/source/blender")
+
+    if 0:
+        SOURCE_DIR = os.path.normpath(os.path.abspath(os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))))
+        #scan_source_recursive(os.path.join(SOURCE_DIR, "source", "blender", "bmesh"))
+        scan_source_recursive(os.path.join(SOURCE_DIR, "source", "blender", "modifiers"))
+        sys.exit(0)
 
     for filepath in sys.argv[1:]:
         if os.path.isdir(filepath):
