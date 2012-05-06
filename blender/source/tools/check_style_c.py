@@ -323,9 +323,9 @@ def blender_check_operator(index_start, index_end, op_text):
     if len(op_text) > 1:
         if op_text[0] == "*" and op_text[-1] == "*":
             if not tokens[index_start - 1].text.isspace():
-                warning("no space before poiter operator '%s'" % op_text, index_start, index_end)
+                warning("no space before pointer operator '%s'" % op_text, index_start, index_end)
             if tokens[index_end + 1].text.isspace():
-                warning("space before poiter operator '%s'" % op_text, index_start, index_end)
+                warning("space before pointer operator '%s'" % op_text, index_start, index_end)
 
 
 def blender_check_linelength(index_start, index_end, length):
