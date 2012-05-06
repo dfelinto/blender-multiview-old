@@ -1,3 +1,0 @@
-passthru: #ifndef GL_NV_vdpau_interop
-passthru: typedef GLintptr GLvdpauSurfaceNV;
-passthru: #endif

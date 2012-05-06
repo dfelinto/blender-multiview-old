@@ -1,2 +1,0 @@
-typedef ptrdiff_t GLintptrARB;
-passthru: typedef ptrdiff_t GLsizeiptrARB;

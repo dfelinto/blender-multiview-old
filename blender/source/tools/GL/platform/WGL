@@ -1,8 +1,0 @@
-                wglCopyContext
-                wglCreateContext
-                wglDeleteContext
-                wglGetCurrentDC
-                wglGetProcAddress
-                wglMakeCurrent
-                wglShareLists
-
