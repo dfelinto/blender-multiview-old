@@ -297,7 +297,8 @@ def blender_check_operator(index_start, index_end, op_text):
         if op_text in {"+=", "-=", "*=", "/=", "&=", "|=", "^=",
                   "&&", "||",
                   "==", "!=", "<=", ">=",
-                  "<<", ">>"}:
+                  "<<", ">>",
+                  "%="}:
             if not _is_ws_pad(index_start, index_end):
                 warning("no space around operator '%s'" % op_text, index_start, index_end)
 
@@ -315,9 +316,9 @@ def blender_check_operator(index_start, index_end, op_text):
         elif op_text == "**":
             pass  # handle below
         else:
-            warning("unhadled operator A '%s'" % op_text, index_start, index_end)
+            warning("unhandled operator A '%s'" % op_text, index_start, index_end)
     else:
-        #warning("unhadled operator B '%s'" % op_text, index_start, index_end)
+        #warning("unhandled operator B '%s'" % op_text, index_start, index_end)
         pass
 
     if len(op_text) > 1:
