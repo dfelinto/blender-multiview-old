@@ -527,6 +527,11 @@ void bmo_dissolve_limit_exec(BMesh *bm, BMOperator *op)
 	BMEdge *e_iter;
 	BMEdge **earray;
 
+	int *vert_reverse_lookup;
+
+	BMEdge **einput_arr = (BMEdge **)einput->data.p;
+	BMVert **vinput_arr = (BMVert **)vinput->data.p;
+
 	/* --- first edges --- */
 
 	/* wire -> tag */
@@ -536,7 +541,7 @@ void bmo_dissolve_limit_exec(BMesh *bm, BMOperator *op)
 
 	/* go through and split edge */
 	for (i = 0, tot_found = 0; i < einput->len; i++) {
-		BMEdge *e = ((BMEdge **)einput->data.p)[i];
+		BMEdge *e = einput_arr[i];
 		const float angle = BM_edge_calc_face_angle(e);
 
 		if (angle < angle_limit) {
@@ -573,10 +578,51 @@ void bmo_dissolve_limit_exec(BMesh *bm, BMOperator *op)
 		}
 	}
 
+	/* prepare for cleanup */
+	BM_mesh_elem_index_ensure(bm, BM_VERT);
+	vert_reverse_lookup = MEM_callocN(sizeof(int) * bm->totvert, __func__);
+	fill_vn_i(vert_reverse_lookup, bm->totvert, -1);
+	for (i = 0, tot_found = 0; i < vinput->len; i++) {
+		BMVert *v = vinput_arr[i];
+		vert_reverse_lookup[BM_elem_index_get(v)] = i;
+	}
+
+	/* --- cleanup --- */
+	earray = MEM_mallocN(sizeof(BMEdge *) * bm->totedge, __func__);
+	BM_ITER_MESH_INDEX(e_iter, &iter, bm, BM_EDGES_OF_MESH, i) {
+		earray[i] = e_iter;
+	}
+	/* remove all edges/verts left behind from dissolving, NULL'ing the vertex array so we dont re-use */
+	for (i = bm->totedge - 1; i != -1; i--) {
+		e_iter = earray[i];
+
+		if (BM_edge_is_wire(e_iter) && (BM_elem_flag_test(e_iter, BM_ELEM_TAG) == FALSE)) {
+			/* edge has become wire */
+			int vidx_reverse;
+			BMVert *v1 = e_iter->v1;
+			BMVert *v2 = e_iter->v2;
+			BM_edge_kill(bm, e_iter);
+			if (v1->e == NULL) {
+				vidx_reverse = vert_reverse_lookup[BM_elem_index_get(v1)];
+				if (vidx_reverse != -1) vinput_arr[vidx_reverse] = NULL;
+				BM_vert_kill(bm, v1);
+			}
+			if (v2->e == NULL) {
+				vidx_reverse = vert_reverse_lookup[BM_elem_index_get(v2)];
+				if (vidx_reverse != -1) vinput_arr[vidx_reverse] = NULL;
+				BM_vert_kill(bm, v2);
+			}
+		}
+	}
+	MEM_freeN(vert_reverse_lookup);
+
+	MEM_freeN(earray);
+
+
 	/* --- second verts --- */
 	for (i = 0, tot_found = 0; i < vinput->len; i++) {
-		BMVert *v = ((BMVert **)vinput->data.p)[i];
-		const float angle = bm_vert_edge_face_angle(v);
+		BMVert *v = vinput_arr[i];
+		const float angle = v ? bm_vert_edge_face_angle(v) : angle_limit;
 
 		if (angle < angle_limit) {
 			weight_elems[i].ele = (BMHeader *)v;
@@ -609,25 +655,4 @@ void bmo_dissolve_limit_exec(BMesh *bm, BMOperator *op)
 	}
 
 	MEM_freeN(weight_elems);
-
-	/* --- cleanup --- */
-	earray = MEM_mallocN(sizeof(BMEdge *) * bm->totedge, __func__);
-	BM_ITER_MESH_INDEX(e_iter, &iter, bm, BM_EDGES_OF_MESH, i) {
-		earray[i] = e_iter;
-	}
-	/* remove all edges/verts left behind from dissolving */
-	for (i = bm->totedge - 1; i != -1; i--) {
-		e_iter = earray[i];
-
-		if (BM_edge_is_wire(e_iter) && (BM_elem_flag_test(e_iter, BM_ELEM_TAG) == FALSE)) {
-			/* edge has become wire */
-			BMVert *v1 = e_iter->v1;
-			BMVert *v2 = e_iter->v2;
-			BM_edge_kill(bm, e_iter);
-			if (v1->e == NULL) BM_vert_kill(bm, v1);
-			if (v2->e == NULL) BM_vert_kill(bm, v2);
-		}
-	}
-
-	MEM_freeN(earray);
 }
