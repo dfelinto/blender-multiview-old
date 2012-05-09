@@ -185,20 +185,6 @@ def blender_check_kw_if(index_kw_start, index_kw, index_kw_end):
     if not tk_item_is_ws(tokens[index_kw + 1]):
         warning("no white space between '%s('" % tokens[index_kw].text, index_kw_start, index_kw_end)
 
-    # check for: if (a
-    #                && b)
-    # note: prefer to keep operators at the end of the line
-    if tokens[index_kw].line != tokens[index_kw_end].line:
-        # need to loop over all tokens
-        for i in range(index_kw, index_kw_end):
-            # && or ||
-            if (tokens[i + 0].type == Token.Operator and tokens[i + 0].text in {"&", "|"} and
-                tokens[i + 1].type == Token.Operator and tokens[i + 1].text in {"&", "|"} and
-                tokens[i + 0].text == tokens[i + 1].text):
-
-                if tk_index_is_linestart(i):
-                    warning("if operator starts a new line '%s (\\n&& ...)\\n{'" % tokens[index_kw].text, index_kw_start, index_kw_end)
-
     # check for: ){
     index_next = tk_advance_ws_newline(index_kw_end, 1)
     if tokens[index_next].type == Token.Punctuation and tokens[index_next].text == "{":
@@ -297,10 +283,13 @@ def blender_check_operator(index_start, index_end, op_text):
     elif len(op_text) == 2:
         # todo, remove operator check from `if`
         if op_text in {"+=", "-=", "*=", "/=", "&=", "|=", "^=",
-                  "&&", "||",
-                  "==", "!=", "<=", ">=",
-                  "<<", ">>",
-                  "%="}:
+                       "&&", "||",
+                       "==", "!=", "<=", ">=",
+                       "<<", ">>",
+                       "%=",
+                       # not operators, pointer mix-ins
+                       ">*", "<*", "-*", "+*", "=*", "/*", "%*", "^*", "!*", "|*",
+                       }:
             if not _is_ws_pad(index_start, index_end):
                 warning("no space around operator '%s'" % op_text, index_start, index_end)
 
@@ -329,6 +318,35 @@ def blender_check_operator(index_start, index_end, op_text):
                 warning("no space before pointer operator '%s'" % op_text, index_start, index_end)
             if tokens[index_end + 1].text.isspace():
                 warning("space before pointer operator '%s'" % op_text, index_start, index_end)
+
+    # check if we are first in the line
+    if op_text[0] == "!":
+        # if (a &&
+        #     !b)
+        pass
+    elif op_text[0] == "*" and tokens[index_start + 1].text.isspace() == False:
+        pass  # *a = b
+    elif len(op_text) == 1 and op_text[0] == "-" and tokens[index_start + 1].text.isspace() == False:
+        pass  # -1
+    elif len(op_text) == 1 and op_text[0] == "&":
+        # if (a &&
+        #     &b)
+        pass
+    elif len(op_text) == 1 and op_text[0] == "~":
+        # C++
+        # ~ClassName
+        pass
+    elif len(op_text) == 1 and op_text[0] == "?":
+        # (a == b)
+        # ? c : d
+        pass
+    elif len(op_text) == 1 and op_text[0] == ":":
+        # a = b ? c
+        #      : d
+        pass
+    else:
+        if tk_index_is_linestart(index_start):
+            warning("operator starts a new line '%s'" % op_text, index_start, index_end)
 
 
 def blender_check_linelength(index_start, index_end, length):
