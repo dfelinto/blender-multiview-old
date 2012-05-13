@@ -306,6 +306,10 @@ def blender_check_operator(index_start, index_end, op_text):
 
         elif op_text == "**":
             pass  # handle below
+        elif op_text == "::":
+            pass  # C++, ignore for now
+        elif op_text == ":!*":
+            pass  # ignore for now
         else:
             warning("unhandled operator A '%s'" % op_text, index_start, index_end)
     else:
@@ -436,7 +440,7 @@ def scan_source_recursive(dirpath, args):
         ext = splitext(filename)[1]
         return (ext in {".c", ".inl", ".cpp", ".cxx", ".hpp", ".hxx", ".h"})
 
-    for filepath in source_list(dirpath, is_source):
+    for filepath in sorted(source_list(dirpath, is_source)):
         if "datafiles" in filepath:
             continue
         if     (filepath.endswith(".glsl.c") or
