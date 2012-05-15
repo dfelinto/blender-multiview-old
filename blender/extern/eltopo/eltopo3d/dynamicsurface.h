@@ -633,7 +633,10 @@ inline double DynamicSurface::get_average_edge_length() const
         if ( e[0] == e[1] )  { continue; }
         sum_lengths += mag( get_position(e[1]) - get_position(e[0]) ); 
     }
-    return sum_lengths / (double) m_mesh.m_edges.size();   
+
+	double len = sum_lengths / (double) m_mesh.m_edges.size();
+
+    return len;   
 }
 
 // --------------------------------------------------------
@@ -756,7 +759,7 @@ inline bool DynamicSurface::vertex_is_solid( size_t v ) const
 inline bool DynamicSurface::edge_is_solid( size_t e ) const
 {
     const Vec2st& edge = m_mesh.m_edges[e];
-    return ( vertex_is_solid(edge[0]) || vertex_is_solid(edge[1]) );
+    return ( vertex_is_solid(edge[0]) && vertex_is_solid(edge[1]) );
 }
 
 // --------------------------------------------------------
@@ -768,7 +771,7 @@ inline bool DynamicSurface::edge_is_solid( size_t e ) const
 inline bool DynamicSurface::triangle_is_solid( size_t t ) const
 {
     const Vec3st& tri = m_mesh.get_triangle(t);
-    return ( vertex_is_solid(tri[0]) || vertex_is_solid(tri[1]) || vertex_is_solid(tri[2]) );
+    return ( vertex_is_solid(tri[0]) && vertex_is_solid(tri[1]) && vertex_is_solid(tri[2]) );
 }
 
 
