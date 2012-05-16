@@ -4054,7 +4054,7 @@ static void freeSeqData(TransInfo *t)
 						}
 					}
 
-#if 1			/* this is truely bad - should _never_ be in a release :| */
+#if 1				/* (mango hack! - for Ian) this is truely bad - should _never_ be in a release :| */
 					if (CTX_wm_window(t->context)->eventstate->alt) {
 						int minframe = MAXFRAME;
 						td= t->data;
@@ -4075,7 +4075,7 @@ static void freeSeqData(TransInfo *t)
 							}
 						}
 
-						ofs = shuffle_seq_time(seqbasep, t->scene);
+						shuffle_seq_time(seqbasep, t->scene);
 
 						for (seq= seqbasep->first; seq; seq= seq->next) {
 							if (seq->machine >= MAXSEQ * 2) {
