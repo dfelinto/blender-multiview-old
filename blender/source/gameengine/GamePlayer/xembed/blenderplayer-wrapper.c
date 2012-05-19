@@ -167,10 +167,11 @@ int main(int argc, char *argv[])
 		perror("Error executing xauth!\n"); 
 		exit(EXIT_FAILURE);
 
-	} if (id_auth < 0 )  { //error
+	}
+
+	if (id_auth < 0 ) { // error
 		perror("Cannot fork!\n");
 		exit(EXIT_FAILURE);
-	
 	}
 	else { // parent
 		int status;

@@ -49,6 +49,6 @@ set(SRC
 )
 
 blender_include_dirs("${INC}")
-add_library(blender_plugin SHARED ${SRC} )
+add_library(blender_plugin SHARED ${SRC})
 
 
