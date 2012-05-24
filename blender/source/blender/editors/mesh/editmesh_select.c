@@ -1496,7 +1496,7 @@ int mouse_mesh(bContext *C, const int mval[2], short extend, short deselect, sho
 					BM_select_history_store(vc.em->bm, efa);
 					BM_face_select_set(vc.em->bm, efa, TRUE);
 				}
-				else if (extend) {
+				else if (toggle) {
 					BM_select_history_remove(vc.em->bm, efa);
 					BM_face_select_set(vc.em->bm, efa, FALSE);
 				}
