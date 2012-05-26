@@ -423,7 +423,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 		if (ofs_new != 0.0f) {
 			scalar_short = scalar_short_vgroup = ofs_new / 32767.0f;
-			mv = mvert + ((ofs_new >= ofs_orig) == do_flip ? numVerts : 0);
+			mv = mvert + (((ofs_new >= ofs_orig) == do_flip) ? numVerts : 0);
 			dv = dvert;
 			for (i = 0; i < numVerts; i++, mv++) {
 				if (dv) {
@@ -438,7 +438,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 		if (ofs_orig != 0.0f) {
 			scalar_short = scalar_short_vgroup = ofs_orig / 32767.0f;
-			mv = mvert + ((ofs_new >= ofs_orig) == do_flip ? 0 : numVerts); /* as above but swapped, intentional use 'ofs_new' */
+			mv = mvert + (((ofs_new >= ofs_orig) == do_flip) ? 0 : numVerts); /* as above but swapped, intentional use 'ofs_new' */
 			dv = dvert;
 			for (i = 0; i < numVerts; i++, mv++) {
 				if (dv) {
@@ -539,7 +539,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 		}
 
 		if (ofs_new) {
-			mv = mvert + ((ofs_new >= ofs_orig) ? 0 : numVerts);
+			mv = mvert + (((ofs_new >= ofs_orig) == do_flip) ? numVerts : 0);
 
 			for (i = 0; i < numVerts; i++, mv++) {
 				if (vert_accum[i]) { /* zero if unselected */
@@ -550,7 +550,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 		if (ofs_orig) {
 			/* same as above but swapped, intentional use of 'ofs_new' */
-			mv = mvert + ((ofs_new >= ofs_orig) ? numVerts : 0);
+			mv = mvert + (((ofs_new >= ofs_orig) == do_flip) ? 0 : numVerts);
 
 			for (i = 0; i < numVerts; i++, mv++) {
 				if (vert_accum[i]) { /* zero if unselected */
