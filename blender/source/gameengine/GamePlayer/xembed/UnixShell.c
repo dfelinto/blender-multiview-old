@@ -28,8 +28,6 @@
 
 #define MOZ_X11 1
 
-/* -*- Mode: C; tab-width: 8; c-set-style: bsd -*- */
-
 /* UnixShell.c was adapted from the template in the Netscape API. */
 
 /* System: */     
