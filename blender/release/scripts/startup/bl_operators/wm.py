@@ -801,19 +801,19 @@ class WM_OT_path_open(Operator):
 
 
 def _wm_doc_get_id(doc_id, do_url=True, url_prefix=""):
-    id_split = doc_id.split('.')
+    id_split = doc_id.split(".")
     url = rna = None
 
     if len(id_split) == 1:  # rna, class
         if do_url:
-            url = '%s/bpy.types.%s.html' % (url_prefix, id_split[0])
+            url = "%s/bpy.types.%s.html" % (url_prefix, id_split[0])
         else:
-            rna = 'bpy.types.%s' % id_split[0]
+            rna = "bpy.types.%s" % id_split[0]
 
     elif len(id_split) == 2:  # rna, class.prop
         class_name, class_prop = id_split
 
-        if hasattr(bpy.types, class_name.upper() + '_OT_' + class_prop):
+        if hasattr(bpy.types, class_name.upper() + "_OT_" + class_prop):
             if do_url:
                 url = ("%s/bpy.ops.%s.html#bpy.ops.%s.%s" % (url_prefix, class_name, class_name, class_prop))
             else:
@@ -845,11 +845,10 @@ class WM_OT_doc_view_manual(Operator):
 
     @staticmethod
     def _find_reference(rna_id, url_mapping):
-        import re
-        for key, value in sorted(url_mapping.items()):
-            match = re.match(key, rna_id)
-            if match:
-                return value
+        from re import match
+        for pattern, url_suffix in url_mapping:
+            if match(pattern, rna_id):
+                return url_suffix
         return None
 
     def execute(self, context):
@@ -858,7 +857,6 @@ class WM_OT_doc_view_manual(Operator):
             return {'PASS_THROUGH'}
 
         import rna_wiki_reference
-        # rna_ref = rna_wiki_reference.url_mapping.get(rna_id)
         rna_ref = self._find_reference(rna_id, rna_wiki_reference.url_manual_mapping)
 
         if rna_ref is None:
@@ -894,7 +892,6 @@ class WM_OT_doc_view(Operator):
                    "_".join(str(v) for v in bpy.app.version))
 
     def execute(self, context):
-        id_split = self.doc_id.split('.')
         url = _wm_doc_get_id(self.doc_id, do_url=True, url_prefix=self._prefix)
         if url is None:
             return {'PASS_THROUGH'}
