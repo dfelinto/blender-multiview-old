@@ -6292,7 +6292,8 @@ static void drawtexspace(Object *ob)
 }
 
 /* draws wire outline */
-static void drawObjectSelect(Scene *scene, View3D *v3d, ARegion *ar, Base *base)
+static void drawObjectSelect(Scene *scene, View3D *v3d, ARegion *ar, Base *base,
+                             const unsigned char ob_wire_col[4])
 {
 	RegionView3D *rv3d = ar->regiondata;
 	Object *ob = base->object;
@@ -6331,7 +6332,7 @@ static void drawObjectSelect(Scene *scene, View3D *v3d, ARegion *ar, Base *base)
 	}
 	else if (ob->type == OB_ARMATURE) {
 		if (!(ob->mode & OB_MODE_POSE && base == scene->basact))
-			draw_armature(scene, v3d, ar, base, OB_WIRE, FALSE, NULL, TRUE);
+			draw_armature(scene, v3d, ar, base, OB_WIRE, FALSE, ob_wire_col, TRUE);
 	}
 
 	glLineWidth(1.0);
@@ -6666,7 +6667,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, int flag)
 		if (dt > OB_WIRE && (ob->mode & OB_MODE_EDIT) == 0 && (flag & DRAW_SCENESET) == 0) {
 			if (!(ob->dtx & OB_DRAWWIRE) && (ob->flag & SELECT) && !(flag & DRAW_PICKING)) {
 				
-				drawObjectSelect(scene, v3d, ar, base);
+				drawObjectSelect(scene, v3d, ar, base, ob_wire_col);
 			}
 		}
 	}
