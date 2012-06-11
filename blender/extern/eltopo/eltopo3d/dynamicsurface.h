@@ -759,7 +759,7 @@ inline bool DynamicSurface::vertex_is_solid( size_t v ) const
 inline bool DynamicSurface::edge_is_solid( size_t e ) const
 {
     const Vec2st& edge = m_mesh.m_edges[e];
-    return ( vertex_is_solid(edge[0]) && vertex_is_solid(edge[1]) );
+    return ( vertex_is_solid(edge[0]) || vertex_is_solid(edge[1]) );
 }
 
 // --------------------------------------------------------
@@ -771,7 +771,7 @@ inline bool DynamicSurface::edge_is_solid( size_t e ) const
 inline bool DynamicSurface::triangle_is_solid( size_t t ) const
 {
     const Vec3st& tri = m_mesh.get_triangle(t);
-    return ( vertex_is_solid(tri[0]) && vertex_is_solid(tri[1]) && vertex_is_solid(tri[2]) );
+    return ( vertex_is_solid(tri[0]) || vertex_is_solid(tri[1]) || vertex_is_solid(tri[2]) );
 }
 
 
