@@ -5288,6 +5288,14 @@ static void lib_link_screen(FileData *fd, Main *main)
 						 */
 						sima->gpd = newlibadr_us(fd, sc->id.lib, sima->gpd);
 					}
+					else if (sl->spacetype == SPACE_SEQ) {
+						SpaceSeq *sseq = (SpaceSeq *)sl;
+						
+						/* NOTE: pre-2.5, this was local data not lib data, but now we need this as lib data
+						 * so fingers crossed this works fine!
+						 */
+						sseq->gpd = newlibadr_us(fd, sc->id.lib, sseq->gpd);
+					}
 					else if (sl->spacetype == SPACE_NLA) {
 						SpaceNla *snla= (SpaceNla *)sl;
 						bDopeSheet *ads= snla->ads;
@@ -5358,14 +5366,20 @@ static void lib_link_screen(FileData *fd, Main *main)
 					}
 					else if (sl->spacetype == SPACE_CLIP) {
 						SpaceClip *sclip = (SpaceClip *)sl;
-
+						
 						sclip->clip = newlibadr_us(fd, sc->id.lib, sclip->clip);
 						sclip->mask = newlibadr_us(fd, sc->id.lib, sclip->mask);
-
+						sclip->gpd = newlibadr_us(fd, sc->id.lib, sclip->gpd);
+						
 						sclip->scopes.track_search = NULL;
 						sclip->scopes.track_preview = NULL;
 						sclip->draw_context = NULL;
 						sclip->scopes.ok = 0;
+					}
+					else if (sl->spacetype == SPACE_LOGIC) {
+						SpaceLogic *slog = (SpaceLogic *)sl;
+						
+						slog->gpd = newlibadr_us(fd, sc->id.lib, slog->gpd);
 					}
 				}
 			}
@@ -5559,6 +5573,14 @@ void lib_link_screen_restore(Main *newmain, bScreen *curscreen, Scene *curscene)
 					 */
 					sima->gpd = restore_pointer_by_name(newmain, (ID *)sima->gpd, 1);
 				}
+				else if (sl->spacetype == SPACE_SEQ) {
+					SpaceSeq *sseq = (SpaceSeq *)sl;
+					
+					/* NOTE: pre-2.5, this was local data not lib data, but now we need this as lib data
+					 * so assume that here we're doing for undo only...
+					 */
+					sseq->gpd = restore_pointer_by_name(newmain, (ID *)sseq->gpd, 1);
+				}
 				else if (sl->spacetype == SPACE_NLA) {
 					SpaceNla *snla = (SpaceNla *)sl;
 					bDopeSheet *ads = snla->ads;
@@ -5628,6 +5650,13 @@ void lib_link_screen_restore(Main *newmain, bScreen *curscreen, Scene *curscene)
 					sclip->mask = restore_pointer_by_name(newmain, (ID *)sclip->mask, 1);
 					
 					sclip->scopes.ok = 0;
+					
+					sclip->gpd = restore_pointer_by_name(newmain, (ID *)sclip->gpd, 1);
+				}
+				else if (sl->spacetype == SPACE_LOGIC) {
+					SpaceLogic *slog = (SpaceLogic *)sl;
+					
+					slog->gpd = restore_pointer_by_name(newmain, (ID *)slog->gpd, 1);
 				}
 			}
 		}
