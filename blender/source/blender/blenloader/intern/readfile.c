@@ -5369,7 +5369,6 @@ static void lib_link_screen(FileData *fd, Main *main)
 						
 						sclip->clip = newlibadr_us(fd, sc->id.lib, sclip->clip);
 						sclip->mask = newlibadr_us(fd, sc->id.lib, sclip->mask);
-						sclip->gpd = newlibadr_us(fd, sc->id.lib, sclip->gpd);
 						
 						sclip->scopes.track_search = NULL;
 						sclip->scopes.track_preview = NULL;
@@ -5377,9 +5376,9 @@ static void lib_link_screen(FileData *fd, Main *main)
 						sclip->scopes.ok = 0;
 					}
 					else if (sl->spacetype == SPACE_LOGIC) {
-						SpaceLogic *slog = (SpaceLogic *)sl;
+						SpaceLogic *slogic = (SpaceLogic *)sl;
 						
-						slog->gpd = newlibadr_us(fd, sc->id.lib, slog->gpd);
+						slogic->gpd = newlibadr_us(fd, sc->id.lib, slogic->gpd);
 					}
 				}
 			}
@@ -5650,13 +5649,11 @@ void lib_link_screen_restore(Main *newmain, bScreen *curscreen, Scene *curscene)
 					sclip->mask = restore_pointer_by_name(newmain, (ID *)sclip->mask, 1);
 					
 					sclip->scopes.ok = 0;
-					
-					sclip->gpd = restore_pointer_by_name(newmain, (ID *)sclip->gpd, 1);
 				}
 				else if (sl->spacetype == SPACE_LOGIC) {
-					SpaceLogic *slog = (SpaceLogic *)sl;
+					SpaceLogic *slogic = (SpaceLogic *)sl;
 					
-					slog->gpd = restore_pointer_by_name(newmain, (ID *)slog->gpd, 1);
+					slogic->gpd = restore_pointer_by_name(newmain, (ID *)slogic->gpd, 1);
 				}
 			}
 		}
@@ -5898,7 +5895,8 @@ static void direct_link_screen(FileData *fd, bScreen *sc)
 			}
 			else if (sl->spacetype == SPACE_LOGIC) {
 				SpaceLogic *slogic = (SpaceLogic *)sl;
-					
+				
+				/* XXX: this is new stuff, which shouldn't be directly linking to gpd... */
 				if (slogic->gpd) {
 					slogic->gpd = newdataadr(fd, slogic->gpd);
 					direct_link_gpencil(fd, slogic->gpd);
