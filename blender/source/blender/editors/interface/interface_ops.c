@@ -150,7 +150,7 @@ static void eyedropper_color_set(bContext *C, Eyedropper *eye, const float col[4
 static void eyedropper_color_set_accum(bContext *C, Eyedropper *eye)
 {
 	float col[4];
-	mul_v3_v3fl(col, eye->accum_col, 1.0f / (float)eye->accum_tot);
+	mul_v4_v4fl(col, eye->accum_col, 1.0f / (float)eye->accum_tot);
 	eyedropper_color_set(C, eye, col);
 }
 
@@ -206,7 +206,6 @@ static int eyedropper_modal(bContext *C, wmOperator *op, wmEvent *event)
 				eyedropper_color_sample_accum(eye, event->x, event->y);
 				eyedropper_color_set_accum(C, eye);
 			}
-
 			break;
 	}
 	
