@@ -47,6 +47,9 @@ class ScaleAbsoluteOperation : public NodeOperation {
 	SocketReader *inputYOperation;
 	float centerX;
 	float centerY;
+
+	/* scene->r.size / 100.0f */ /* added after 2.63, this may be done differently/better */
+	float render_perc;
 public:
 	ScaleAbsoluteOperation();
 	bool determineDependingAreaOfInterest(rcti *input, ReadBufferOperation *readOperation, rcti *output);
@@ -54,6 +57,7 @@ public:
 
 	void initExecution();
 	void deinitExecution();
+	void setRenderPercentage(float render_perc) { this->render_perc = render_perc; }
 };
 
 class ScaleFixedSizeOperation : public NodeOperation {
