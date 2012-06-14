@@ -115,9 +115,13 @@ static void node_composit_exec_scale(void *data, bNode *node, bNodeStack **in, b
 		int a, x, y;
 		float *fp;
 
+#ifdef USE_SCENE_COMPO_SCALE
 		x = MAX2((int)in[1]->vec[0], 1) * (rd->size / 100.0f);
 		y = MAX2((int)in[2]->vec[0], 1) * (rd->size / 100.0f);
-
+#else
+		x = MAX2((int)in[1]->vec[0], 1);
+		y = MAX2((int)in[2]->vec[0], 1);
+#endif
 		stackbuf = alloc_compbuf(x, y, CB_RGBA, 1);
 		fp = stackbuf->rect;
 
