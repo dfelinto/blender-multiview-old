@@ -76,10 +76,8 @@ void FastGaussianBlurOperation::deinitExecution()
 		delete this->iirgaus;
 		this->iirgaus = NULL;
 	}
-	BlurBaseOperation::deinitMutex();	
+	BlurBaseOperation::deinitMutex();
 }
-
-#include "PIL_time.h"
 
 void *FastGaussianBlurOperation::initializeTileData(rcti *rect, MemoryBuffer **memoryBuffers)
 {
@@ -88,8 +86,6 @@ void *FastGaussianBlurOperation::initializeTileData(rcti *rect, MemoryBuffer **m
 		MemoryBuffer *newBuf = (MemoryBuffer *)this->inputProgram->initializeTileData(rect, memoryBuffers);
 		MemoryBuffer *copy = newBuf->duplicate();
 		updateSize(memoryBuffers);
-
-		TIMEIT_START(fast);
 
 		int c;
 		sx = data->sizex * this->size / 2.0f;
@@ -110,8 +106,6 @@ void *FastGaussianBlurOperation::initializeTileData(rcti *rect, MemoryBuffer **m
 			}
 		}
 		this->iirgaus = copy;
-
-		TIMEIT_END(fast);
 	}
 	unlockMutex();
 	return iirgaus;
