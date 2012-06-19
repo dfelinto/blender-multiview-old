@@ -421,7 +421,7 @@ def scan_source(fp, args):
             index_line_start = i + 1
         else:
             col += len(tok.text.expandtabs(TAB_SIZE))
-                
+
         #elif tok.type == Token.Name:
         #    print(tok.text)
 
