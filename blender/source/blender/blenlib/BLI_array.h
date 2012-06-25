@@ -187,5 +187,5 @@
 	        MEM_mallocN(sizeof(*(arr)) * (realsize), allocstr)                \
 	    )                                                                     \
 
-#define BLI_array_fixedstack_free(arr)                                        \
-	if (_##arr##_is_static) MEM_freeN(arr)                                    \
+#define BLI_array_fixedstack_free(arr)  \
+	if (_##arr##_is_static) MEM_freeN(arr)
