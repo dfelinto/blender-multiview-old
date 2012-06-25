@@ -56,6 +56,7 @@ private:
 
 #ifdef WITH_CXX_GUARDEDALLOC
 	MEM_CXX_CLASS_ALLOC_FUNCS("GE:BL_ScalarInterpolator")
+#endif
 };
 
 

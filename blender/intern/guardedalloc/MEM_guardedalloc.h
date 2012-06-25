@@ -178,6 +178,12 @@ public:                                                                       \
 	void operator delete(void *mem) {                                         \
 		MEM_freeN(mem);                                                       \
 	}                                                                         \
+	void *operator new[](size_t num_bytes) {                                  \
+		return MEM_mallocN(num_bytes, _id "[]");                              \
+	}                                                                         \
+	void operator delete[](void *mem) {                                       \
+		MEM_freeN(mem);                                                       \
+	}                                                                         \
 
 #endif
 
