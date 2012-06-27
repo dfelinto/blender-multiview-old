@@ -318,7 +318,8 @@ def blender_check_operator(index_start, index_end, op_text):
 
     if len(op_text) > 1:
         if op_text[0] == "*" and op_text[-1] == "*":
-            if not tokens[index_start - 1].text.isspace():
+            if ((not tokens[index_start - 1].text.isspace()) and
+                (not tokens[index_start - 1].type == Token.Punctuation)):
                 warning("no space before pointer operator '%s'" % op_text, index_start, index_end)
             if tokens[index_end + 1].text.isspace():
                 warning("space before pointer operator '%s'" % op_text, index_start, index_end)
