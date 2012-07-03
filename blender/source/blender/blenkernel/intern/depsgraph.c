@@ -348,8 +348,25 @@ static void dag_add_driver_relation(AnimData *adt, DagForest *dag, DagNode *node
 }
 
 /* XXX: forward def for material driver handling... */
-static void dag_add_material_driver_relations(DagForest *dag, DagNode *node, Material *ma);
+static void dag_add_material_nodetree_driver_relations(DagForest *dag, DagNode *node, bNodeTree *ntree);
 
+/* recursive handling for material drivers */
+static void dag_add_material_driver_relations(DagForest *dag, DagNode *node, Material *ma)
+{
+	/* material itself */
+	if (ma->adt) {
+		dag_add_driver_relation(ma->adt, dag, node, 1);
+	}
+	
+	/* textures */
+	// TODO...
+	//dag_add_texture_driver_relations(DagForest *dag, DagNode *node, ID *id);
+	
+	/* material's nodetree */
+	if (ma->nodetree) {
+		dag_add_material_nodetree_driver_relations(dag, node, ma->nodetree);
+	}
+}
 /* recursive handling for material nodetree drivers */
 static void dag_add_material_nodetree_driver_relations(DagForest *dag, DagNode *node, bNodeTree *ntree)
 {
@@ -371,19 +388,7 @@ static void dag_add_material_nodetree_driver_relations(DagForest *dag, DagNode *
 	}
 }
 
-/* recursive handling for material drivers */
-static void dag_add_material_driver_relations(DagForest *dag, DagNode *node, Material *ma)
-{
-	/* material itself */
-	if (ma->adt) {
-		dag_add_driver_relation(ma->adt, dag, node, 1);
-	}
-	
-	/* material's nodetree */
-	if (ma->nodetree) {
-		dag_add_material_nodetree_driver_relations(dag, node, ma->nodetree);
-	}
-}
+
 
 static void dag_add_collision_field_relation(DagForest *dag, Scene *scene, Object *ob, DagNode *node)
 {
