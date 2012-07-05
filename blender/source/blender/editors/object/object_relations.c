@@ -1749,7 +1749,7 @@ static int make_local_exec(bContext *C, wmOperator *op)
 	ID *id;
 	int a, b, mode = RNA_enum_get(op->ptr, "type");
 	
-	if (mode == 4) {
+	if (mode == MAKE_LOCAL_ALL) {
 		BKE_library_make_local(bmain, NULL, 0); /* NULL is all libs */
 		WM_event_add_notifier(C, NC_WINDOW, NULL);
 		return OPERATOR_FINISHED;
