@@ -310,7 +310,7 @@ NPP_NewStream(
 		return NPERR_INVALID_INSTANCE_ERROR;
 
 	printf("Loading main file %s (%s)\n", stream->url, type);
-	if ( strcmp(type,"text/html") == 0 ) // original HTML file 
+	if ( strcmp(type,"text/html") == 0 ) /* original HTML file */
 		return NPERR_NO_ERROR;
 	
 	This->stream_total = stream->end;
@@ -437,10 +437,10 @@ NPP_DestroyStream(
 
 	if (This) {
 		if (reason != NPRES_DONE) {
-			if (stream == This->main_file_stream) {				
-				// stream destroyed by NPP_Destroy
+			if (stream == This->main_file_stream) {
+				/* stream destroyed by NPP_Destroy */
 				NPN_Status(instance, "Cannot read animation file");
-				//main_file_failed(This->application);
+				/* main_file_failed(This->application); */
 			}
 		}
 		return NPERR_NO_ERROR;
