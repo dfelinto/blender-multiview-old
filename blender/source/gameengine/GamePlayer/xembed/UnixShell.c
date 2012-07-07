@@ -235,7 +235,7 @@ NPP_Destroy( NPP instance, NPSavedData** save )
 			unlink(This->temp_mail_file_name);
 		}
 
-		// sometimes FF doesn't delete it's own window...
+		/* sometimes FF doesn't delete it's own window... */
 		//printf("%s\n", NPN_UserAgent(instance));
 		/*if (This->display != NULL && This->window != 0)
 			XDestroyWindow(This->display, This->window);
