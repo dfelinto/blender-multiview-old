@@ -188,7 +188,7 @@ void ShaderGraph::connect(ShaderOutput *from, ShaderInput *to)
 		/* for closures we can't do automatic conversion */
 		if(from->type == SHADER_SOCKET_CLOSURE || to->type == SHADER_SOCKET_CLOSURE) {
 			fprintf(stderr, "ShaderGraph connect: can only connect closure to closure "
-			        "(ShaderNode:%s, ShaderOutput:%s , type:%d -> to ShaderNode:%s, ShaderOutput:%s, type:%d).\n",
+			        "(ShaderNode:%s, ShaderOutput:%s , type:%d -> to ShaderNode:%s, ShaderInput:%s, type:%d).\n",
 			        from->parent->name.c_str(), from->name, (int)from->type,
 			        to->parent->name.c_str(),   to->name,   (int)to->type);
 			return;
