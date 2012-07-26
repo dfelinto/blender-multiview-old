@@ -58,6 +58,7 @@ dict_custom = {
     "tooltip",
 
     # general computer terms
+    "contructor",
     "unicode",
     "jitter",
     "quantized",
