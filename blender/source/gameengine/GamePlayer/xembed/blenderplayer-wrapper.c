@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 
 		print_id();	
 	
-		int e = execlp ("xauth", "xauth", "-f", auth_file_name, "generate", display, ".", "trusted", (char*)NULL);
+		int e = execlp ("xauth", "xauth", "-f", auth_file_name, "generate", display, ".", "trusted", (char *)NULL);
 		perror("Error executing xauth!\n"); 
 		exit(EXIT_FAILURE);
 
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 		setenv("XAUTHORITY", auth_file_name, 1);
 	
 		const char* blenderplayer = "/usr/bin/blenderplayer";
-		execl(blenderplayer, "blenderplayer", "-i", window_id, file_name, (char*)NULL);
+		execl(blenderplayer, "blenderplayer", "-i", window_id, file_name, (char *)NULL);
 	}
 	else {
 		/** Still running with higher privileges */
