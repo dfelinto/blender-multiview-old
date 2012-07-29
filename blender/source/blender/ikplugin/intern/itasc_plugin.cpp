@@ -66,6 +66,7 @@ extern "C" {
 #include "DNA_scene_types.h"
 };
 
+#include "IK_solver.h"
 #include "itasc_plugin.h"
 
 // default parameters
