@@ -125,7 +125,6 @@ class Comment:
 
 def extract_py_comments(filepath):
 
-    import sys
     import token
     import tokenize
 

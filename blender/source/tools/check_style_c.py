@@ -39,7 +39,7 @@ python3.2 source/tools/check_source_c.py source/
 # - line length - in a not-too-annoying way
 #   (allow for long arrays in struct definitions, PyMethodDef for eg)
 
-from pygments import highlight, lex
+from pygments import lex  # highlight
 from pygments.lexers import CLexer
 from pygments.formatters import RawTokenFormatter
 
