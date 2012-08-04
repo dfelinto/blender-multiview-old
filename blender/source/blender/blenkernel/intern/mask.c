@@ -304,14 +304,7 @@ unsigned int BKE_mask_spline_resolution(MaskSpline *spline, int width, int heigh
 		}
 	}
 
-	if (resol > MASK_RESOL_MAX) {
-		resol = MASK_RESOL_MAX;
-	}
-	else if (resol == 0) {
-		return 1;
-	}
-
-	return resol;
+	return CLAMPIS(resol, 1, MASK_RESOL_MAX);
 }
 
 unsigned int BKE_mask_spline_feather_resolution(MaskSpline *spline, int width, int height)
@@ -353,36 +346,22 @@ unsigned int BKE_mask_spline_feather_resolution(MaskSpline *spline, int width, i
 
 	resol += max_jump / max_segment;
 
-	if (resol > MASK_RESOL_MAX) {
-		resol = MASK_RESOL_MAX;
-	}
-	else if (resol == 0) {
-		return 1;
-	}
-
-	return resol;
+	return CLAMPIS(resol, 1, MASK_RESOL_MAX);
 }
 
-int BKE_mask_spline_differentiate_calc_total(const MaskSpline *spline, const int resol)
+int BKE_mask_spline_differentiate_calc_total(const MaskSpline *spline, const unsigned int resol)
 {
-	int len;
-
-	/* count */
-	len = (spline->tot_point - 1) * resol;
-
 	if (spline->flag & MASK_SPLINE_CYCLIC) {
-		len += resol;
+		return spline->tot_point * resol;
 	}
 	else {
-		len++;
+		return ((spline->tot_point - 1) * resol) + 1;
 	}
-
-	return len;
 }
 
 float (*BKE_mask_spline_differentiate_with_resolution_ex(MaskSpline *spline,
                                                          int *tot_diff_point,
-                                                         const int resol
+                                                         const unsigned int resol
                                                          ))[2]
 {
 	MaskSplinePoint *points_array = BKE_mask_spline_point_array(spline);
@@ -443,7 +422,7 @@ float (*BKE_mask_spline_differentiate_with_resolution(MaskSpline *spline, int wi
                                                       int *tot_diff_point
                                                       ))[2]
 {
-	int resol = BKE_mask_spline_resolution(spline, width, height);
+	int unsigned resol = BKE_mask_spline_resolution(spline, width, height);
 
 	return BKE_mask_spline_differentiate_with_resolution_ex(spline, tot_diff_point, resol);
 }

@@ -67,13 +67,13 @@ struct MaskSpline *BKE_mask_spline_add(struct MaskLayer *masklay);
 unsigned int BKE_mask_spline_resolution(struct MaskSpline *spline, int width, int height);
 unsigned int BKE_mask_spline_feather_resolution(struct MaskSpline *spline, int width, int height);
 
-int BKE_mask_spline_differentiate_calc_total(const struct MaskSpline *spline, const int resol);
+int BKE_mask_spline_differentiate_calc_total(const struct MaskSpline *spline, const unsigned int resol);
 
 float (*BKE_mask_spline_differentiate(struct MaskSpline *spline, int *tot_diff_point))[2];
 float (*BKE_mask_spline_feather_differentiated_points(struct MaskSpline *spline, int *tot_feather_point))[2];
 
 float (*BKE_mask_spline_differentiate_with_resolution_ex(struct MaskSpline *spline, int *tot_diff_point,
-                                                         const int resol))[2];
+                                                         const unsigned int resol))[2];
 float (*BKE_mask_spline_differentiate_with_resolution(struct MaskSpline *spline, int width, int height, int *tot_diff_point))[2];
 float (*BKE_mask_spline_feather_differentiated_points_with_resolution_ex(struct MaskSpline *spline, int *tot_feather_point,
                                                                          const unsigned int resol, const int do_collapse))[2];
