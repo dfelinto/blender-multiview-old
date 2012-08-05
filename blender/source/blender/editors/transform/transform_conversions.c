@@ -5540,14 +5540,14 @@ static void NodeToTransData(TransData *td, TransData2D *td2d, bNode *node)
 	nodeToView(node, 0.0f, 0.0f, &locxy[0], &locxy[1]);
 	copy_v2_v2(td2d->loc, locxy);
 	td2d->loc[2] = 0.0f;
-	//td2d->loc2d = &node->locx; /* current location */
+	td2d->loc2d = td2d->loc; /* current location */
 
 	td->flag = 0;
 
 	td->loc = td2d->loc;
 	copy_v3_v3(td->iloc, td->loc);
 	/* use node center instead of origin (top-left corner) */
-	td->center[0] = locxy[0] - 0.5f * (node->totr.xmax - node->totr.xmin);
+	td->center[0] = locxy[0] + 0.5f * (node->totr.xmax - node->totr.xmin);
 	td->center[1] = locxy[1] - 0.5f * (node->totr.ymax - node->totr.ymin);	/* node height is used negative */
 	td->center[2] = 0.0f;
 
