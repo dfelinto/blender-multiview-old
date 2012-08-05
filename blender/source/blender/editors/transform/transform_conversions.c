@@ -5534,7 +5534,6 @@ static void createTransObject(bContext *C, TransInfo *t)
 
 /* transcribe given node into TransData2D for Transforming */
 static void NodeToTransData(TransData *td, TransData2D *td2d, bNode *node)
-// static void NodeToTransData(bContext *C, TransInfo *t, TransData2D *td, bNode *node)
 {
 	/* hold original location */
 	float locxy[2];
@@ -5544,10 +5543,6 @@ static void NodeToTransData(TransData *td, TransData2D *td2d, bNode *node)
 	//td2d->loc2d = &node->locx; /* current location */
 
 	td->flag = 0;
-	/* exclude nodes whose parent is also transformed */
-	if (node->parent && (node->parent->flag & NODE_TRANSFORM)) {
-		td->flag |= TD_SKIP;
-	}
 
 	td->loc = td2d->loc;
 	copy_v3_v3(td->iloc, td->loc);
@@ -5570,36 +5565,48 @@ static void NodeToTransData(TransData *td, TransData2D *td2d, bNode *node)
 	td->extra = node;
 }
 
-static void createTransNodeData(bContext *C, TransInfo *t)
+static int is_node_parent_select(bNode *node)
+{
+	while ((node = node->parent)) {
+		if (node->flag & NODE_TRANSFORM) {
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static void createTransNodeData(bContext *UNUSED(C), TransInfo *t)
 {
 	TransData *td;
 	TransData2D *td2d;
 	SpaceNode *snode = t->sa->spacedata.first;
 	bNode *node;
 
+	t->total = 0;
+
 	if (!snode->edittree) {
-		t->total = 0;
 		return;
 	}
 
 	/* set transform flags on nodes */
 	for (node = snode->edittree->nodes.first; node; node = node->next) {
-		if ((node->flag & NODE_SELECT) || (node->parent && (node->parent->flag & NODE_TRANSFORM)))
+		if (node->flag & NODE_SELECT && is_node_parent_select(node) == FALSE) {
 			node->flag |= NODE_TRANSFORM;
-		else
+			t->total++;
+		}
+		else {
 			node->flag &= ~NODE_TRANSFORM;
+		}
 	}
-
-	t->total = CTX_DATA_COUNT(C, selected_nodes);
 
 	td = t->data = MEM_callocN(t->total * sizeof(TransData), "TransNode TransData");
 	td2d = t->data2d = MEM_callocN(t->total * sizeof(TransData2D), "TransNode TransData2D");
 
-	CTX_DATA_BEGIN(C, bNode *, selnode, selected_nodes)
-	{
-		NodeToTransData(td++, td2d++, selnode);
+	for (node = snode->edittree->nodes.first; node; node = node->next) {
+		if (node->flag & NODE_TRANSFORM) {
+			NodeToTransData(td++, td2d++, node);
+		}
 	}
-	CTX_DATA_END
 }
 
 /* *** CLIP EDITOR *** */
