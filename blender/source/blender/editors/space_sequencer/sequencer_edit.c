@@ -170,7 +170,7 @@ static void proxy_endjob(void *pjv)
 		BKE_sequencer_proxy_rebuild_finish(link->data, pj->stop);
 	}
 
-	BKE_sequence_free_imbuf(pj->scene, &ed->seqbase, FALSE, FALSE);
+	BKE_sequencer_free_imbuf(pj->scene, &ed->seqbase, FALSE, FALSE);
 
 	WM_main_add_notifier(NC_SCENE | ND_SEQUENCER, pj->scene);
 }
@@ -1339,7 +1339,7 @@ static int sequencer_refresh_all_exec(bContext *C, wmOperator *UNUSED(op))
 	Scene *scene = CTX_data_scene(C);
 	Editing *ed = BKE_sequencer_editing_get(scene, FALSE);
 
-	BKE_sequence_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
+	BKE_sequencer_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
 
 	WM_event_add_notifier(C, NC_SCENE | ND_SEQUENCER, scene);
 
@@ -2885,7 +2885,7 @@ static int sequencer_change_effect_input_exec(bContext *C, wmOperator *op)
 	BKE_sequencer_update_changed_seq_and_deps(scene, seq, 0, 1);
 
 	/* important else we don't get the imbuf cache flushed */
-	BKE_sequence_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
+	BKE_sequencer_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
 
 	WM_event_add_notifier(C, NC_SCENE | ND_SEQUENCER, scene);
 
@@ -2945,7 +2945,7 @@ static int sequencer_change_effect_type_exec(bContext *C, wmOperator *op)
 	BKE_sequencer_update_changed_seq_and_deps(scene, seq, 0, 1);
 
 	/* important else we don't get the imbuf cache flushed */
-	BKE_sequence_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
+	BKE_sequencer_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
 
 	WM_event_add_notifier(C, NC_SCENE | ND_SEQUENCER, scene);
 
@@ -3018,7 +3018,7 @@ static int sequencer_change_path_exec(bContext *C, wmOperator *op)
 		BKE_sequence_calc(scene, seq);
 
 		/* important else we don't get the imbuf cache flushed */
-		BKE_sequence_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
+		BKE_sequencer_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
 	}
 	else {
 		/* lame, set rna filepath */

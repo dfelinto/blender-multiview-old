@@ -580,14 +580,14 @@ static void rna_Sequence_update(Main *UNUSED(bmain), Scene *scene, PointerRNA *U
 	Editing *ed = BKE_sequencer_editing_get(scene, FALSE);
 
 	if (ed)
-		BKE_sequence_free_imbuf(scene, &ed->seqbase, FALSE, TRUE);
+		BKE_sequencer_free_imbuf(scene, &ed->seqbase, FALSE, TRUE);
 }
 
 static void rna_Sequence_update_reopen_files(Main *UNUSED(bmain), Scene *scene, PointerRNA *ptr)
 {
 	Editing *ed = BKE_sequencer_editing_get(scene, FALSE);
 
-	BKE_sequence_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
+	BKE_sequencer_free_imbuf(scene, &ed->seqbase, FALSE, FALSE);
 
 	if (RNA_struct_is_a(ptr->type, &RNA_SoundSequence))
 		BKE_sequencer_update_sound_bounds(scene, ptr->data);

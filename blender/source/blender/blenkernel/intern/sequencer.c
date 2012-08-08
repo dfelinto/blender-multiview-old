@@ -2711,7 +2711,7 @@ static void free_anim_seq(Sequence *seq)
 	}
 }
 
-void BKE_sequence_free_imbuf(Scene *scene, ListBase *seqbase, int check_mem_usage, int keep_file_handles)
+void BKE_sequencer_free_imbuf(Scene *scene, ListBase *seqbase, int check_mem_usage, int keep_file_handles)
 {
 	Sequence *seq;
 
@@ -2750,7 +2750,7 @@ void BKE_sequence_free_imbuf(Scene *scene, ListBase *seqbase, int check_mem_usag
 			}
 		}
 		if (seq->type == SEQ_TYPE_META) {
-			BKE_sequence_free_imbuf(scene, &seq->seqbase, FALSE, keep_file_handles);
+			BKE_sequencer_free_imbuf(scene, &seq->seqbase, FALSE, keep_file_handles);
 		}
 		if (seq->type == SEQ_TYPE_SCENE) {
 			/* FIXME: recurs downwards, 
