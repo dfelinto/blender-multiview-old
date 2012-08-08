@@ -2274,8 +2274,6 @@ static ImBuf *seq_render_strip(SeqRenderData context, Sequence *seq, float cfra)
 			{
 				StripElem *s_elem = BKE_sequencer_give_stripelem(seq, cfra);
 
-				printf("Render image strip\n");
-
 				if (s_elem) {
 					BLI_join_dirfile(name, sizeof(name), seq->strip->dir, s_elem->name);
 					BLI_path_abs(name, G.main->name);
