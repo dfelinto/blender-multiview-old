@@ -7,7 +7,7 @@ import os
 defs = []
 
 
-eltopo_src = env.Glob("common/*.cpp") + env.Glob("eltopo3d/*.cpp") + env.Glob("common/newsparse/*.cpp") + env.Glob("common/sparse/*.cpp") + ["eltopo-capi.cpp"]
+eltopo_src = env.Glob("common/*.cpp") + env.Glob("eltopo3d/*.cpp") + env.Glob("common/newsparse/*.cpp") + env.Glob("common/tunicate/*.cpp") + env.Glob("common/sparse/*.cpp") + ["eltopo-capi.cpp"]
 eltopo_src.remove( "common" + os.sep + "gluvi.cpp" )
 eltopo_src.remove( "common" + os.sep + "openglutils.cpp" )
 
