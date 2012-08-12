@@ -1155,7 +1155,7 @@ static int cloth_build_springs ( ClothModifierData *clmd, DerivedMesh *dm )
 		if ( spring ) {
 			spring->ij = MIN2(medge[i].v1, medge[i].v2);
 			spring->kl = MAX2(medge[i].v2, medge[i].v1);
-			spring->restlen = len_v3v3(cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest) * 0.8;
+			spring->restlen = len_v3v3(cloth->verts[spring->kl].xrest, cloth->verts[spring->ij].xrest);
 			clmd->sim_parms->avg_spring_len += spring->restlen;
 			cloth->verts[spring->ij].avg_spring_len += spring->restlen;
 			cloth->verts[spring->kl].avg_spring_len += spring->restlen;
