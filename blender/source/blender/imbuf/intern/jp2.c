@@ -27,6 +27,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
+#include "BLI_fileops.h"
 
 #include "imbuf.h"
 
