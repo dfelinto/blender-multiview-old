@@ -539,7 +539,7 @@ void BMO_remove_tagged_verts(BMesh *bm, const short oflag)
 	}
 }
 
-/*************************************************************/
+/**
 /* you need to make remove tagged verts/edges/faces
  * api functions that take a filter callback.....
  * and this new filter type will be for opstack flags.
