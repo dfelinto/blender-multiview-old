@@ -542,7 +542,7 @@ static void rna_def_maskSpline(BlenderRNA *brna)
 
 	static EnumPropertyItem spline_offset_mode_items[] = {
 		{MASK_SPLINE_OFFSET_EVEN, "EVEN", 0, "Even", "Calculate even feather offset"},
-		{MASK_SPLINE_OFFSET_SMOOTH, "SMOOTH", 0, "Double Edge", "Calculate feather offset as a second curve"},
+		{MASK_SPLINE_OFFSET_SMOOTH, "SMOOTH", 0, "Smooth", "Calculate feather offset as a second curve"},
 		{0, NULL, 0, NULL, NULL}
 	};
 
