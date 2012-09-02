@@ -212,14 +212,14 @@ float noise_wave(string wave, float a)
 
 /* Turbulence */
 
-float noise_turbulence(point p, string basis, int octaves, int hard)
+float noise_turbulence(point p, string basis, float octaves, int hard)
 {
 	float fscale = 1.0;
 	float amp = 1.0;
 	float sum = 0.0;
 	int i, n;
 	
-	octaves = clamp(octaves, 0.0f, 16.0f);
+	octaves = clamp(octaves, 0.0, 16.0);
 	n = (int)octaves;
 
 	for (i = 0; i <= n; i++) {
@@ -233,20 +233,20 @@ float noise_turbulence(point p, string basis, int octaves, int hard)
 		fscale *= 2.0;
 	}
 	
-	float rmd = octaves - floor(octaves)
+	float rmd = octaves - floor(octaves);
 
-	if(rmd != 0.0f) {
+	if(rmd != 0.0) {
 		float t = noise_basis(fscale*p, basis);
 
 		if(hard)
-			t = fabsf(2.0f*t - 1.0f);
+			t = fabs(2.0*t - 1.0);
 
 		float sum2 = sum + t*amp;
 
 		sum *= ((float)(1 << n)/(float)((1 << (n+1)) - 1));
 		sum2 *= ((float)(1 << (n+1))/(float)((1 << (n+2)) - 1));
 
-		return (1.0f - rmd)*sum + rmd*sum2;
+		return (1.0 - rmd)*sum + rmd*sum2;
 	}
 	else {
 		sum *= ((float)(1 << n)/(float)((1 << (n+1)) - 1));
