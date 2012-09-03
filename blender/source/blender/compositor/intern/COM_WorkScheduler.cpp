@@ -374,6 +374,7 @@ void WorkScheduler::deinitialize()
 #ifdef COM_OPENCL_ENABLED
 	/* deinitialize OpenCL GPU's */
 	if (g_openclInitialized) {
+		Device *device;
 		while (g_gpudevices.size() > 0) {
 			device = g_gpudevices.back();
 			g_gpudevices.pop_back();
