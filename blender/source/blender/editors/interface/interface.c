@@ -33,7 +33,8 @@
 #include <math.h>
 #include <string.h>
 #include <ctype.h>
- 
+#include <stddef.h>  /* offsetof() */
+
 #include "MEM_guardedalloc.h"
 
 #include "DNA_scene_types.h"
@@ -3706,7 +3707,7 @@ void uiButSetFocusOnEnter(wmWindow *win, uiBut *but)
 	wm_event_add(win, &event);
 }
 
-void uiButGetStrInfo(bContext *C, uiBut *but, int nbr, ...)
+void uiButGetStrInfo(bContext *C, uiBut *but, const int nbr, ...)
 {
 	va_list args;
 

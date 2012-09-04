@@ -573,7 +573,7 @@ typedef void (*uiIDPoinFuncFP)(struct bContext *C, const char *str, struct ID **
 typedef void (*uiIDPoinFunc)(struct bContext *C, struct ID *id, int event);
 
 uiBut *uiDefIDPoinBut(uiBlock *block, uiIDPoinFuncFP func, short blocktype, int retval, const char *str,
-					  int x, int y, short width, short height, void *idpp, const char *tip);
+                      int x, int y, short width, short height, void *idpp, const char *tip);
 
 int uiIconFromID(struct ID *id);
 
