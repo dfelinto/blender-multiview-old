@@ -3707,7 +3707,7 @@ void uiButSetFocusOnEnter(wmWindow *win, uiBut *but)
 	wm_event_add(win, &event);
 }
 
-void uiButGetStrInfo(bContext *C, uiBut *but, const int nbr, ...)
+void uiButGetStrInfo(bContext *C, uiBut *but, int nbr, ...)
 {
 	va_list args;
 

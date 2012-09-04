@@ -527,7 +527,7 @@ enum {
 	BUT_GET_TIP,
 	BUT_GET_RNA_TIP,
 	BUT_GET_RNAENUM_TIP,
-	BUT_GET_OP_KEYMAP,
+	BUT_GET_OP_KEYMAP
 };
 
 typedef struct uiStringInfo {
@@ -538,7 +538,7 @@ typedef struct uiStringInfo {
 /* Note: Expects pointers to uiStringInfo structs as parameters.
  *       Will fill them with translated strings, when possible.
  *       Strings in uiStringInfo must be MEM_freeN'ed by caller. */
-void uiButGetStrInfo(struct bContext *C, uiBut *but, const int nbr, ...);
+void uiButGetStrInfo(struct bContext *C, uiBut *but, int nbr, ...);
 
 /* Edit i18n stuff. */
 /* Name of the main py op from i18n addon. */
@@ -624,7 +624,9 @@ void    uiButSetNFunc(uiBut *but,        uiButHandleNFunc func, void *argN, void
 
 void    uiButSetCompleteFunc(uiBut *but,        uiButCompleteFunc func, void *arg);
 
-void    uiBlockSetDrawExtraFunc(uiBlock *block, void (*func)(const struct bContext *C, void *, void *, void *, struct rcti *rect), void *arg1, void *arg2);
+void    uiBlockSetDrawExtraFunc(uiBlock *block,
+                                void (*func)(const struct bContext *C, void *, void *, void *, struct rcti *rect),
+                                void *arg1, void *arg2);
 
 void uiButSetFocusOnEnter(struct wmWindow *win, uiBut *but);
 
