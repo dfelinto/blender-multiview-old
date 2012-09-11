@@ -700,7 +700,7 @@ int where_on_path(Object *ob, float ctime, float vec[4], float dir[3], float qua
 /* ******************************************************************** */
 /* Dupli-Geometry */
 
-static DupliObject *new_dupli_object(ListBase *lb, Object *ob, float mat[][4], int lay, int index, int par_index, int type, int animated)
+static DupliObject *new_dupli_object(ListBase *lb, Object *ob, float mat[][4], int lay, int index, int par_index, int type, short animated)
 {
 	DupliObject *dob = MEM_callocN(sizeof(DupliObject), "dupliobject");
 	
@@ -779,7 +779,7 @@ static void group_duplilist(ListBase *lb, Scene *scene, Object *ob, int par_inde
 	}
 }
 
-static void frames_duplilist(ListBase *lb, Scene *scene, Object *ob, int par_index, int level, int animated)
+static void frames_duplilist(ListBase *lb, Scene *scene, Object *ob, int par_index, int level, short animated)
 {
 	extern int enable_cu_speed; /* object.c */
 	Object copyob;
@@ -851,8 +851,8 @@ static void frames_duplilist(ListBase *lb, Scene *scene, Object *ob, int par_ind
 typedef struct VertexDupliData {
 	ID *id; /* scene or group, for recursive loops */
 	int level;
-	int animated;
-	int update;
+	short animated;
+	short update;
 	ListBase *lb;
 	float pmat[4][4];
 	float obmat[4][4]; /* Only used for dupliverts inside dupligroups, where the ob->obmat is modified */
@@ -1570,7 +1570,7 @@ static Object *find_family_object(Object **obar, char *family, char ch)
 }
 
 
-static void font_duplilist(ListBase *lb, Scene *scene, Object *par, int par_index, int level, int animated)
+static void font_duplilist(ListBase *lb, Scene *scene, Object *par, int par_index, int level, short animated)
 {
 	Object *ob, *obar[256] = {NULL};
 	Curve *cu;
