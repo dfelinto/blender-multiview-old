@@ -44,8 +44,8 @@ typedef enum FSMenuCategory {
 } FSMenuCategory;
 
 typedef enum FSMenuInsert {
-	FS_INSERT_SORTED,
-	FS_INSERT_SAVE
+	FS_INSERT_SORTED = (1 << 0),
+	FS_INSERT_SAVE   = (1 << 1)
 } FSMenuInsert;
 
 struct FSMenu;
