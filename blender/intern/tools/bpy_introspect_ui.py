@@ -243,17 +243,34 @@ def fake_main():
     bpy.types.Scene.EnumProperty = NewAttr("bpy.types.Scene.EnumProperty", "EnumProperty")
     bpy.types.Scene.StringProperty = NewAttr("bpy.types.Scene.StringProperty", "StringProperty")
 
-    # Misc Subclasses
-    bpy.types.EffectSequence = type("EffectSequence", (), {})
-
-    # Operator Subclases
-    bpy.types.WM_OT_doc_view = type("WM_OT_doc_view", (), {"_prefix": ""})
-
     bpy.props = module_add("bpy.props")
     bpy.props.StringProperty = dict
     bpy.props.BoolProperty = dict
     bpy.props.IntProperty = dict
     bpy.props.EnumProperty = dict
+
+
+def fake_helper():
+
+    class PropertyPanel():
+        pass
+
+    rna_prop_ui = module_add("rna_prop_ui")
+    rna_prop_ui.PropertyPanel = PropertyPanel
+    rna_prop_ui.draw = NewAttr("rna_prop_ui.draw", "draw")
+
+    rigify = module_add("rigify")
+    rigify.get_submodule_types = lambda: []
+
+
+def fake_runtime():
+    """Only call this before `draw()` functions."""
+
+    # Misc Subclasses
+    bpy.types.EffectSequence = type("EffectSequence", (), {})
+
+    # Operator Subclases
+    bpy.types.WM_OT_doc_view = type("WM_OT_doc_view", (), {"_prefix": ""})
 
     bpy.data = module_add("bpy.data")
     bpy.data.scenes = ()
@@ -274,7 +291,7 @@ def fake_main():
     bpy.data.particles = ()
 
     bpy.data.file_is_saved = True
-
+    
     bpy.utils = module_add("bpy.utils")
     bpy.utils.smpte_from_frame = lambda f: ""
     bpy.utils.script_paths = lambda f: []
@@ -298,22 +315,10 @@ def fake_main():
     addon_utils.error_duplicates = ()
     addon_utils.error_encoding = ()
 
-
-def fake_helper():
-
-    class PropertyPanel():
-        pass
-
-    rna_prop_ui = module_add("rna_prop_ui")
-    rna_prop_ui.PropertyPanel = PropertyPanel
-    rna_prop_ui.draw = NewAttr("rna_prop_ui.draw", "draw")
-
-    rigify = module_add("rigify")
-    rigify.get_submodule_types = lambda: []
-
-
 fake_main()
 fake_helper()
+# fake_runtime()  # call after initial import so we can catch
+#                 # bad use of modules outside of draw() functions.
 
 import bpy
 
@@ -354,6 +359,9 @@ def main():
 
             for cls in classes:
                 setattr(bpy.types, cls.__name__, cls)
+
+
+    fake_runtime()
 
     # print("running...")
     print("<ui>")
