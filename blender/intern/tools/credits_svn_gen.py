@@ -208,6 +208,7 @@ author_name_mapping = {
     "kakbarnf": "Robin Allen",
     "kanttori": "Juha Mäki-Kanto",
     "kazanbas": "Arystanbek Dyussenov",
+    "keir": "Keir Mierle",
     "kester": "Kester Maddock",
     "khughes": "Ken Hughes",
     "kupoman": "Daniel Stokes",
