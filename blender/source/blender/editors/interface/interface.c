@@ -3869,25 +3869,16 @@ void uiButGetStrInfo(bContext *C, uiBut *but, int nbr, ...)
 			}
 		}
 		else if (ELEM3(type, BUT_GET_RNAENUM_IDENTIFIER, BUT_GET_RNAENUM_LABEL, BUT_GET_RNAENUM_TIP)) {
+			PointerRNA *ptr = NULL;
+			PropertyRNA *prop = NULL;
+			int value = 0;
+			
+			/* get the enum property... */
 			if (but->rnaprop && RNA_property_type(but->rnaprop) == PROP_ENUM) {
-				if (!item) {
-					int i;
-					int value = (but->type == ROW) ? (int)but->hardmax : (int)ui_get_but_val(but);
-					RNA_property_enum_items_gettexted(C, &but->rnapoin, but->rnaprop, &items, &totitems, &free_items);
-
-					for (i = 0, item = items; i < totitems; i++, item++) {
-						if (item->identifier[0] && item->value == value)
-							break;
-					}
-				}
-				if (item && item->identifier) {
-					if (type == BUT_GET_RNAENUM_IDENTIFIER)
-						tmp = BLI_strdup(item->identifier);
-					else if (type == BUT_GET_RNAENUM_LABEL)
-						tmp = BLI_strdup(item->name);
-					else if (item->description && item->description[0])
-						tmp = BLI_strdup(item->description);
-				}
+				/* enum property */
+				ptr = &but->rnapoin;
+				prop = but->rnaprop;
+				value = (but->type == ROW) ? (int)but->hardmax : (int)ui_get_but_val(but);
 			}
 			else if (but->optype) {
 				PointerRNA *opptr = uiButGetOperatorPtrRNA(but);
@@ -3900,24 +3891,31 @@ void uiButGetStrInfo(bContext *C, uiBut *but, int nbr, ...)
 				 */
 				if (ot->prop && RNA_property_type(ot->prop) == PROP_ENUM) {
 					if (RNA_struct_contains_property(opptr, ot->prop)) {
-						int value = RNA_property_enum_get(opptr, ot->prop);
-						int i;
-						
-						RNA_property_enum_items_gettexted(C, opptr, ot->prop, &items, &totitems, &free_items);
-						for (i = 0, item = items; i < totitems; i++, item++) {
-							if (item->identifier[0] && item->value == value)
-								break;
-						}
-						
-						if (item && item->identifier) {
-							if (type == BUT_GET_RNAENUM_IDENTIFIER)
-								tmp = BLI_strdup(item->identifier);
-							else if (type == BUT_GET_RNAENUM_LABEL)
-								tmp = BLI_strdup(item->name);
-							else if (item->description && item->description[0])
-								tmp = BLI_strdup(item->description);
-						}
+						ptr = opptr;
+						prop = ot->prop;
+						value = RNA_property_enum_get(opptr, ot->prop);
 					}
+				}
+			}
+			
+			/* get strings from matching enum item */
+			if (ptr && prop) {
+				if (!item) {
+					int i;
+					
+					RNA_property_enum_items_gettexted(C, ptr, prop, &items, &totitems, &free_items);
+					for (i = 0, item = items; i < totitems; i++, item++) {
+						if (item->identifier[0] && item->value == value)
+							break;
+					}
+				}
+				if (item && item->identifier) {
+					if (type == BUT_GET_RNAENUM_IDENTIFIER)
+						tmp = BLI_strdup(item->identifier);
+					else if (type == BUT_GET_RNAENUM_LABEL)
+						tmp = BLI_strdup(item->name);
+					else if (item->description && item->description[0])
+						tmp = BLI_strdup(item->description);
 				}
 			}
 		}
