@@ -3889,6 +3889,37 @@ void uiButGetStrInfo(bContext *C, uiBut *but, int nbr, ...)
 						tmp = BLI_strdup(item->description);
 				}
 			}
+			else if (but->optype) {
+				PointerRNA *opptr = uiButGetOperatorPtrRNA(but);
+				wmOperatorType *ot = but->optype;
+				
+				/* if the default property of the operator is enum and it is set, 
+				 * fetch the tooltip of the selected value so that "Snap" and "Mirror"
+				 * operator menus in the Anim Editors will show tooltips for the different
+				 * operations instead of the meaningless generic operator tooltip
+				 */
+				if (ot->prop && RNA_property_type(ot->prop) == PROP_ENUM) {
+					if (RNA_struct_contains_property(opptr, ot->prop)) {
+						int value = RNA_property_enum_get(opptr, ot->prop);
+						int i;
+						
+						RNA_property_enum_items_gettexted(C, opptr, ot->prop, &items, &totitems, &free_items);
+						for (i = 0, item = items; i < totitems; i++, item++) {
+							if (item->identifier[0] && item->value == value)
+								break;
+						}
+						
+						if (item && item->identifier) {
+							if (type == BUT_GET_RNAENUM_IDENTIFIER)
+								tmp = BLI_strdup(item->identifier);
+							else if (type == BUT_GET_RNAENUM_LABEL)
+								tmp = BLI_strdup(item->name);
+							else if (item->description && item->description[0])
+								tmp = BLI_strdup(item->description);
+						}
+					}
+				}
+			}
 		}
 		else if (type == BUT_GET_OP_KEYMAP) {
 			if (but->optype && !(but->block->flag & UI_BLOCK_LOOP)) {
