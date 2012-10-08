@@ -522,7 +522,6 @@ def main_credits(min_rev=0, min_rev_ext=0):
                                                       commit.author)
                 credit = credits.get(author)
                 if credit is None:
-                    
                     if commit.author not in alert_users:
                         print("warning: '%s' is not in "
                               "'author_name_mapping' !" % commit.author)
@@ -557,8 +556,7 @@ def main_credits(min_rev=0, min_rev_ext=0):
         filename = "credits.html"
     else:
         filename = "credits_release.html"
-    
-    
+
     file = open(filename, 'w', encoding="utf-8")
 
     file.write("<h3>Individual Contributors</h3>\n\n")
@@ -611,7 +609,6 @@ def main_credits(min_rev=0, min_rev_ext=0):
     del lines
 
     file.write("\n\n")
-
 
     # -------------------------------------------------------------------------
     # Companies, hard coded

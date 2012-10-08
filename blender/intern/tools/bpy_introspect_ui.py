@@ -291,7 +291,7 @@ def fake_runtime():
     bpy.data.particles = ()
 
     bpy.data.file_is_saved = True
-    
+
     bpy.utils = module_add("bpy.utils")
     bpy.utils.smpte_from_frame = lambda f: ""
     bpy.utils.script_paths = lambda f: []
@@ -359,7 +359,6 @@ def main():
 
             for cls in classes:
                 setattr(bpy.types, cls.__name__, cls)
-
 
     fake_runtime()
 

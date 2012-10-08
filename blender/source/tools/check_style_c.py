@@ -194,8 +194,8 @@ def blender_check_kw_if(index_kw_start, index_kw, index_kw_end):
         # check for: if ()
         #            {
         # note: if the if statement is multi-line we allow it
-        if ((tokens[index_kw].line == tokens[index_kw_end].line) and
-            (tokens[index_kw].line == tokens[index_next].line - 1)):
+        if     ((tokens[index_kw].line == tokens[index_kw_end].line) and
+                (tokens[index_kw].line == tokens[index_next].line - 1)):
 
             warning("if body brace on a new line '%s ()\\n{'" % tokens[index_kw].text, index_kw, index_kw_end)
     else:
@@ -219,10 +219,10 @@ def blender_check_kw_else(index_kw):
     #
     # check for this case since this is needed sometimes:
     # else     { a = 1; }
-    if ((tokens[index_kw].line == tokens[i_next].line) and
-        (tokens[index_kw + 1].type == Token.Text) and
-        (len(tokens[index_kw + 1].text) > 1) and
-        (tokens[index_kw + 1].text.isspace())):
+    if     ((tokens[index_kw].line == tokens[i_next].line) and
+            (tokens[index_kw + 1].type == Token.Text) and
+            (len(tokens[index_kw + 1].text) > 1) and
+            (tokens[index_kw + 1].text.isspace())):
 
         # check if the next data after { is on a newline
         i_next_next = tk_advance_ws_newline(i_next, 1)
@@ -318,8 +318,8 @@ def blender_check_operator(index_start, index_end, op_text):
 
     if len(op_text) > 1:
         if op_text[0] == "*" and op_text[-1] == "*":
-            if ((not tokens[index_start - 1].text.isspace()) and
-                (not tokens[index_start - 1].type == Token.Punctuation)):
+            if     ((not tokens[index_start - 1].text.isspace()) and
+                    (not tokens[index_start - 1].type == Token.Punctuation)):
                 warning("no space before pointer operator '%s'" % op_text, index_start, index_end)
             if tokens[index_end + 1].text.isspace():
                 warning("space before pointer operator '%s'" % op_text, index_start, index_end)
@@ -329,9 +329,9 @@ def blender_check_operator(index_start, index_end, op_text):
         # if (a &&
         #     !b)
         pass
-    elif op_text[0] == "*" and tokens[index_start + 1].text.isspace() == False:
+    elif op_text[0] == "*" and tokens[index_start + 1].text.isspace() is False:
         pass  # *a = b
-    elif len(op_text) == 1 and op_text[0] == "-" and tokens[index_start + 1].text.isspace() == False:
+    elif len(op_text) == 1 and op_text[0] == "-" and tokens[index_start + 1].text.isspace() is False:
         pass  # -1
     elif len(op_text) == 1 and op_text[0] == "&":
         # if (a &&
