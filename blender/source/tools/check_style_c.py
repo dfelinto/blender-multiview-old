@@ -49,6 +49,10 @@ import argparse
 
 PRINT_QTC_TASKFORMAT = False
 
+import os
+if "USE_QTC_TASK" in os.environ:
+    PRINT_QTC_TASKFORMAT = True
+
 TAB_SIZE = 4
 LIN_SIZE = 120
 
