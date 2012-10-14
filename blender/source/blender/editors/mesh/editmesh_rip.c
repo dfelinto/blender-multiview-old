@@ -63,9 +63,9 @@
  * point and would result in teh same distance.
  */
 #define INSET_DEFAULT 0.00001f
-static float edbm_rip_rip_edgedist(ARegion *ar, float mat[][4],
-                                   const float co1[3], const float co2[3], const float mvalf[2],
-                                   const float inset)
+static float edbm_rip_edgedist(ARegion *ar, float mat[][4],
+                               const float co1[3], const float co2[3], const float mvalf[2],
+                               const float inset)
 {
 	float vec1[2], vec2[2];
 
@@ -83,8 +83,8 @@ static float edbm_rip_rip_edgedist(ARegion *ar, float mat[][4],
 }
 
 #if 0
-static float edbm_rip_rip_linedist(ARegion *ar, float mat[][4],
-                                   const float co1[3], const float co2[3], const float mvalf[2])
+static float edbm_rip_linedist(ARegion *ar, float mat[][4],
+                               const float co1[3], const float co2[3], const float mvalf[2])
 {
 	float vec1[2], vec2[2];
 
@@ -591,7 +591,7 @@ static int edbm_rip_invoke__vert(bContext *C, wmOperator *op, wmEvent *event)
 			totboundary_edge += (is_boundary != 0 || BM_edge_is_wire(e));
 			if (!BM_elem_flag_test(e, BM_ELEM_HIDDEN)) {
 				if (is_boundary == FALSE && BM_edge_is_manifold(e)) {
-					d = edbm_rip_rip_edgedist(ar, projectMat, e->v1->co, e->v2->co, fmval, INSET_DEFAULT);
+					d = edbm_rip_edgedist(ar, projectMat, e->v1->co, e->v2->co, fmval, INSET_DEFAULT);
 					if (d < dist) {
 						dist = d;
 						e2 = e;
@@ -619,7 +619,7 @@ static int edbm_rip_invoke__vert(bContext *C, wmOperator *op, wmEvent *event)
 				float l_mid_co[3];
 				l = l_all[i1];
 				edbm_calc_loop_co(l, l_mid_co);
-				d = edbm_rip_rip_edgedist(ar, projectMat, l->v->co, l_mid_co, fmval, INSET_DEFAULT);
+				d = edbm_rip_edgedist(ar, projectMat, l->v->co, l_mid_co, fmval, INSET_DEFAULT);
 
 				if (d < dist) {
 					dist = d;
@@ -685,7 +685,7 @@ static int edbm_rip_invoke__vert(bContext *C, wmOperator *op, wmEvent *event)
 							float l_mid_co[3];
 							edbm_calc_loop_co(l, l_mid_co);
 
-							d = edbm_rip_rip_edgedist(ar, projectMat, v->co, l_mid_co, fmval, INSET_DEFAULT);
+							d = edbm_rip_edgedist(ar, projectMat, v->co, l_mid_co, fmval, INSET_DEFAULT);
 
 							if (d < dist) {
 								dist = d;
@@ -701,7 +701,7 @@ static int edbm_rip_invoke__vert(bContext *C, wmOperator *op, wmEvent *event)
 							float e_mid_co[3];
 							mid_v3_v3v3(e_mid_co, e->v1->co, e->v2->co);
 
-							d = edbm_rip_rip_edgedist(ar, projectMat, v->co, e_mid_co, fmval, INSET_DEFAULT);
+							d = edbm_rip_edgedist(ar, projectMat, v->co, e_mid_co, fmval, INSET_DEFAULT);
 
 							if (d < dist) {
 								dist = d;
@@ -824,7 +824,7 @@ static int edbm_rip_invoke__vert(bContext *C, wmOperator *op, wmEvent *event)
 					add_v3_v3v3(l_corner_co, l_prev_co, l_next_co);
 					add_v3_v3(l_corner_co, l->v->co);
 
-					d = edbm_rip_rip_edgedist(ar, projectMat, l->v->co, l_corner_co, fmval, INSET_DEFAULT);
+					d = edbm_rip_edgedist(ar, projectMat, l->v->co, l_corner_co, fmval, INSET_DEFAULT);
 					if (d < dist) {
 						v_best = v;
 						dist = d;
