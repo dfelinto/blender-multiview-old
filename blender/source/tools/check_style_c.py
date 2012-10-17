@@ -455,7 +455,7 @@ def scan_source_recursive(dirpath, args):
 
     def is_source(filename):
         ext = splitext(filename)[1]
-        return (ext in {".c", ".inl", ".cpp", ".cxx", ".hpp", ".hxx", ".h"})
+        return (ext in {".c", ".inl", ".cpp", ".cxx", ".hpp", ".hxx", ".h", ".osl"})
 
     for filepath in sorted(source_list(dirpath, is_source)):
         if "datafiles" in filepath:
