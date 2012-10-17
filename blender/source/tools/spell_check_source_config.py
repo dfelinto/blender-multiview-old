@@ -87,6 +87,7 @@ dict_custom = {
 
     # general computer graphics terms
     "radiosity",
+    "reflectance",
     "specular",
     "nurbs",
     "bicubic",
