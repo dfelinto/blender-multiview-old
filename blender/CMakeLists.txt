@@ -1885,7 +1885,6 @@ if(CMAKE_COMPILER_IS_GNUCC)
 	# gcc 4.2 gives annoying warnings on every file with this
 	if (${CMAKE_C_COMPILER_VERSION} VERSION_GREATER "4.2")
 		ADD_CHECK_CXX_COMPILER_FLAG(CXX_WARNINGS CXX_WARN_UNINITIALIZED -Wuninitialized)
-		message(FATAL_ERROR "sdsd")
 	endif()
 
 	# causes too many warnings
