@@ -141,7 +141,7 @@ endif()
 include_directories(${INC})
 include_directories(SYSTEM ${INC_SYS})
 
-add_library(cycles_kernel ${SRC} ${SRC_HEADERS} ${SRC_SVM_HEADERS} ${SRC_SVM_HEADERS})
+add_library(cycles_kernel ${SRC} ${SRC_HEADERS} ${SRC_CLOSURE_HEADERS} ${SRC_SVM_HEADERS})
 
 if(WITH_CYCLES_OPTIMIZED_KERNEL)
 	set_source_files_properties(kernel_optimized.cpp PROPERTIES COMPILE_FLAGS "${CYCLES_OPTIMIZED_KERNEL_FLAGS}")
