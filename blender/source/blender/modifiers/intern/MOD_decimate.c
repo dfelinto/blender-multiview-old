@@ -72,8 +72,10 @@ static void copyData(ModifierData *md, ModifierData *target)
 	DecimateModifierData *tdmd = (DecimateModifierData *) target;
 
 	tdmd->percent = dmd->percent;
+	tdmd->iter = dmd->iter;
 	BLI_strncpy(tdmd->defgrp_name, dmd->defgrp_name, sizeof(tdmd->defgrp_name));
 	tdmd->flag = dmd->flag;
+	tdmd->mode = dmd->mode;
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
