@@ -269,6 +269,9 @@ bool AUD_SoftwareDevice::AUD_SoftwareHandle::resume()
 
 bool AUD_SoftwareDevice::AUD_SoftwareHandle::stop()
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -302,6 +305,9 @@ bool AUD_SoftwareDevice::AUD_SoftwareHandle::getKeep()
 
 bool AUD_SoftwareDevice::AUD_SoftwareHandle::setKeep(bool keep)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -314,6 +320,9 @@ bool AUD_SoftwareDevice::AUD_SoftwareHandle::setKeep(bool keep)
 
 bool AUD_SoftwareDevice::AUD_SoftwareHandle::seek(float position)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -326,6 +335,9 @@ bool AUD_SoftwareDevice::AUD_SoftwareHandle::seek(float position)
 
 float AUD_SoftwareDevice::AUD_SoftwareHandle::getPosition()
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -393,6 +405,9 @@ bool AUD_SoftwareDevice::AUD_SoftwareHandle::setLoopCount(int count)
 
 bool AUD_SoftwareDevice::AUD_SoftwareHandle::setStopCallback(stopCallback callback, void* data)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)

@@ -166,6 +166,9 @@ bool AUD_OpenALDevice::AUD_OpenALHandle::resume()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::stop()
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -198,6 +201,9 @@ bool AUD_OpenALDevice::AUD_OpenALHandle::getKeep()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setKeep(bool keep)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -210,6 +216,9 @@ bool AUD_OpenALDevice::AUD_OpenALHandle::setKeep(bool keep)
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::seek(float position)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -268,6 +277,9 @@ bool AUD_OpenALDevice::AUD_OpenALHandle::seek(float position)
 
 float AUD_OpenALDevice::AUD_OpenALHandle::getPosition()
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -296,6 +308,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getVolume()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -308,6 +323,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getVolume()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setVolume(float volume)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -322,6 +340,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getPitch()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -334,6 +355,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getPitch()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setPitch(float pitch)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -361,6 +385,9 @@ bool AUD_OpenALDevice::AUD_OpenALHandle::setLoopCount(int count)
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setStopCallback(stopCallback callback, void* data)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -380,6 +407,9 @@ AUD_Vector3 AUD_OpenALDevice::AUD_OpenALHandle::getSourceLocation()
 {
 	AUD_Vector3 result = AUD_Vector3(0, 0, 0);
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -395,6 +425,9 @@ AUD_Vector3 AUD_OpenALDevice::AUD_OpenALHandle::getSourceLocation()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setSourceLocation(const AUD_Vector3& location)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -408,6 +441,9 @@ bool AUD_OpenALDevice::AUD_OpenALHandle::setSourceLocation(const AUD_Vector3& lo
 AUD_Vector3 AUD_OpenALDevice::AUD_OpenALHandle::getSourceVelocity()
 {
 	AUD_Vector3 result = AUD_Vector3(0, 0, 0);
+
+	if(!m_status)
+		return false;
 
 	AUD_MutexLock lock(*m_device);
 
@@ -424,6 +460,9 @@ AUD_Vector3 AUD_OpenALDevice::AUD_OpenALHandle::getSourceVelocity()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setSourceVelocity(const AUD_Vector3& velocity)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -449,6 +488,9 @@ bool AUD_OpenALDevice::AUD_OpenALHandle::setSourceOrientation(const AUD_Quaterni
 	direction[2] = 2 * (orientation.x() * orientation.x() +
 						orientation.y() * orientation.y()) - 1;
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -465,6 +507,9 @@ bool AUD_OpenALDevice::AUD_OpenALHandle::isRelative()
 {
 	int result;
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -477,6 +522,9 @@ bool AUD_OpenALDevice::AUD_OpenALHandle::isRelative()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setRelative(bool relative)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -491,6 +539,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getVolumeMaximum()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -503,6 +554,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getVolumeMaximum()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setVolumeMaximum(float volume)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -517,6 +571,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getVolumeMinimum()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -529,6 +586,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getVolumeMinimum()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setVolumeMinimum(float volume)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -543,6 +603,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getDistanceMaximum()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -555,6 +618,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getDistanceMaximum()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setDistanceMaximum(float distance)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -569,6 +635,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getDistanceReference()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -581,6 +650,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getDistanceReference()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setDistanceReference(float distance)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -595,6 +667,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getAttenuation()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -607,6 +682,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getAttenuation()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setAttenuation(float factor)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -621,6 +699,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getConeAngleOuter()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -633,6 +714,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getConeAngleOuter()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setConeAngleOuter(float angle)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -647,6 +731,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getConeAngleInner()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -659,6 +746,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getConeAngleInner()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setConeAngleInner(float angle)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -673,6 +763,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getConeVolumeOuter()
 {
 	float result = std::numeric_limits<float>::quiet_NaN();
 
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
@@ -685,6 +778,9 @@ float AUD_OpenALDevice::AUD_OpenALHandle::getConeVolumeOuter()
 
 bool AUD_OpenALDevice::AUD_OpenALHandle::setConeVolumeOuter(float volume)
 {
+	if(!m_status)
+		return false;
+
 	AUD_MutexLock lock(*m_device);
 
 	if(!m_status)
