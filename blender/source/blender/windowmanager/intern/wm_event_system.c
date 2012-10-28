@@ -1890,7 +1890,7 @@ static int wm_handlers_do(bContext *C, wmEvent *event, ListBase *handlers)
 			/* eventstate stores if previous event was a KM_PRESS, in case that 
 			   wasn't handled, the KM_RELEASE will become a KM_CLICK */
 			
-			if (event->val == KM_PRESS) {
+			if (win && event->val == KM_PRESS) {
 				win->eventstate->check_click = TRUE;
 			}
 			
@@ -1917,7 +1917,8 @@ static int wm_handlers_do(bContext *C, wmEvent *event, ListBase *handlers)
 		else {
 			wmWindow *win = CTX_wm_window(C);
 
-			win->eventstate->check_click = 0;
+			if(win)
+				win->eventstate->check_click = 0;
 		}
 	}
 	
