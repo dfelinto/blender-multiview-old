@@ -289,6 +289,13 @@ void DM_init(DerivedMesh *dm, DerivedMeshType type, int numVerts, int numEdges,
 	dm->needsFree = 1;
 	dm->auto_bump_scale = -1.0f;
 	dm->dirty = 0;
+
+	/* don't use CustomData_reset(...); because we dont want to touch customdata */
+	fill_vn_i(dm->vertData.typemap, CD_NUMTYPES, -1);
+	fill_vn_i(dm->edgeData.typemap, CD_NUMTYPES, -1);
+	fill_vn_i(dm->faceData.typemap, CD_NUMTYPES, -1);
+	fill_vn_i(dm->loopData.typemap, CD_NUMTYPES, -1);
+	fill_vn_i(dm->polyData.typemap, CD_NUMTYPES, -1);
 }
 
 void DM_from_template(DerivedMesh *dm, DerivedMesh *source, DerivedMeshType type,
