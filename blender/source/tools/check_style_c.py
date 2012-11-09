@@ -194,6 +194,12 @@ def warning(message, index_kw_start, index_kw_end):
     else:
         print("%s:%d: warning: %s" % (filepath, tokens[index_kw_start].line, message))
 
+def warning_lineonly(message, line):
+    if PRINT_QTC_TASKFORMAT:
+        print("%s\t%d\t%s\t%s" % (filepath, line, "comment", message))
+    else:
+        print("%s:%d: warning: %s" % (filepath, line, message))
+
     # print(tk_range_to_str(index_kw_start, index_kw_end))
 
 
@@ -395,6 +401,58 @@ def blender_check_linelength(index_start, index_end, length):
                 warning("line length %d > %d" % (len(l), LIN_SIZE), index_start, index_end)
 
 
+def quick_check_indentation(code):
+    """
+    Quick check for multiple tab indents.
+    """
+    t_prev = -1
+    m_comment_prev = False
+    ls_prev = ""
+    
+    for i, l in enumerate(code.split("\n")):
+        skip = False
+        
+        # skip blank lines
+        ls = l.strip()
+
+        # comment or pre-processor
+        if ls:
+            # #ifdef ... or ... // comment
+            if (ls[0] == "#" or ls[0:2] == "//"):
+                skip = True
+            # label:
+            elif (':' in ls and l[0] != '\t'):
+                skip = True
+            # /* comment */
+            #~ elif ls.startswith("/*") and ls.endswith("*/"):
+            #~     skip = True
+            # /* some comment...
+            elif ls.startswith("/*"):
+                skip = True
+            # line ending a comment: */
+            elif ls == "*/":
+                skip = True
+            # * middle of multi line comment block
+            elif ls.startswith("* "):
+                skip = True
+            # exclude muli-line defines
+            elif ls.endswith("\\") or ls.endswith("(void)0") or ls_prev.endswith("\\"):
+                skip = True
+
+        ls_prev = ls
+
+        if skip:
+            continue
+
+        if ls:
+            ls = l.lstrip("\t")
+            tabs = l[:len(l) - len(ls)]
+            t = len(tabs)
+            if (t > t_prev + 1) and (t_prev != -1):
+                warning_lineonly("indentation mis-match (indent of %d) '%s'" % (t - t_prev, tabs), i + 1)
+            t_prev = t
+
+
 def scan_source(fp, args):
     # print("scanning: %r" % fp)
 
@@ -407,6 +465,9 @@ def scan_source(fp, args):
 
     #print(highlight(code, CLexer(), RawTokenFormatter()).decode('utf-8'))
     code = open(filepath, 'r', encoding="utf-8").read()
+    
+    quick_check_indentation(code)
+    # return
 
     tokens[:] = []
     line = 1
