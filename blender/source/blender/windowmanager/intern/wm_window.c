@@ -373,7 +373,6 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 		
 		/* standard state vars for window */
 		glEnable(GL_SCISSOR_TEST);
-		glEnable(GL_MULTISAMPLE_ARB);
 		GPU_state_init();
 	}
 }
