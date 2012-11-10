@@ -31,7 +31,6 @@
 
 #include "RAS_VAOpenGLRasterizer.h"
 #include <stdlib.h>
-#  include <fenv.h>
 
 #include "GL/glew.h"
 #include "GPU_extensions.h"
@@ -221,9 +220,7 @@ void RAS_VAOpenGLRasterizer::IndexPrimitivesMulti(RAS_MeshSlot& ms)
 		}
 
 		// here the actual drawing takes places
-		fedisableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 		glDrawElements(drawmode, it.totindex, GL_UNSIGNED_SHORT, it.index);
-		feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 	}
 
 	if (!wireframe) {
