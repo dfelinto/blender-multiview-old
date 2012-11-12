@@ -66,7 +66,6 @@ from pygments.token import Token
 import argparse
 
 PRINT_QTC_TASKFORMAT = False
-
 if "USE_QTC_TASK" in os.environ:
     PRINT_QTC_TASKFORMAT = True
 

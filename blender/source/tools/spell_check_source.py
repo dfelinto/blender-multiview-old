@@ -27,6 +27,11 @@ Script for checking source code spelling.
 Currently only python source is checked.
 """
 
+import os
+PRINT_QTC_TASKFORMAT = False
+if "USE_QTC_TASK" in os.environ:
+    PRINT_QTC_TASKFORMAT = True
+
 ONLY_ONCE = True
 USE_COLOR = True
 _only_once_ids = set()
@@ -177,7 +182,6 @@ def extract_c_comments(filepath):
     # http://doc.qt.nokia.com/qtcreator-2.4/creator-task-lists.html#task-list-file-format
     # file\tline\ttype\tdescription
     # ... > foobar.tasks
-    PRINT_QTC_TASKFORMAT = True
 
     # reverse these to find blocks we won't parse
     PRINT_NON_ALIGNED = False
@@ -290,14 +294,23 @@ def spell_check_comments(filepath):
                     else:
                         _only_once_ids.add(w_lower)
 
-                print("%s:%d: %s%s%s, suggest (%s)" %
-                      (comment.file,
-                       comment.line,
-                       COLOR_WORD,
-                       w,
-                       COLOR_ENDC,
-                       " ".join(dict_spelling.suggest(w)),
-                       ))
+                if PRINT_QTC_TASKFORMAT:
+                    print("%s\t%d\t%s\t%s, suggest (%s)" %
+                          (comment.file,
+                           comment.line,
+                           "comment",
+                           w,
+                           " ".join(dict_spelling.suggest(w)),
+                           ))
+                else:
+                    print("%s:%d: %s%s%s, suggest (%s)" %
+                          (comment.file,
+                           comment.line,
+                           COLOR_WORD,
+                           w,
+                           COLOR_ENDC,
+                           " ".join(dict_spelling.suggest(w)),
+                           ))
 
 
 def spell_check_comments_recursive(dirpath):
