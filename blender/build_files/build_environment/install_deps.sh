@@ -17,8 +17,6 @@ HASVPX=false
 HASMP3LAME=false
 HASX264=false
 
-YUM="yum"
-
 ERROR() {
   echo "${@}"
 }
@@ -31,13 +29,9 @@ detect_distro() {
   if [ -f /etc/debian_version ]; then
     DISTRO="DEB"
   elif [ -f /etc/redhat-release ]; then
-    if which yum > /dev/null 2>&1; then
-      DISTRO="RPM"
-      YUM="yum"
-    elif which zypper > /dev/null 2>&1; then
-      DISTRO="RPM"
-      YUM="zypper"
-    fi
+    DISTRO="RPM"
+  elif [ -f /etc/SuSE-release ]; then
+    DISTRO="SUSE"
   fi
 }
 
@@ -381,7 +375,7 @@ install_DEB() {
 }
 
 check_package_RPM() {
-  r=`$YUM info $1 | grep -c 'Summary'`
+  r=`yum info $1 | grep -c 'Summary'`
 
   if [ $r -ge 1 ]; then
     return 0
@@ -391,7 +385,7 @@ check_package_RPM() {
 }
 
 check_package_version_RPM() {
-  v=`yum info $1 | grep Version | tail -n 1 | sed -r 's/.*:\s+(([0-9]+\.?)+)/\1/'`
+  v=`yum info $1 | grep Version | tail -n 1 | sed -r 's/.*:\s+(([0-9]+\.?)+).*/\1/'`
 
   # for now major and minor versions only (as if x.y, not x.y.z)
   r=`echo $v | grep -c $2`
@@ -406,44 +400,92 @@ check_package_version_RPM() {
 install_RPM() {
   INFO "Installing dependencies for RPM-based distributive"
 
-  sudo $YUM -y update
+  sudo yum -y update
 
-  sudo $YUM -y install gcc gcc-c++ cmake scons libpng-devel libtiff-devel \
+  sudo yum -y install gcc gcc-c++ cmake scons libpng-devel libtiff-devel \
     freetype-devel libX11-devel libXi-devel wget libsqlite3x-devel ncurses-devel \
     readline-devel openjpeg-devel openexr-devel openal-soft-devel \
     glew-devel yasm schroedinger-devel libtheora-devel libvorbis-devel SDL-devel \
     fftw-devel lame-libs jack-audio-connection-kit-devel x264-devel libspnav-devel \
     libjpeg-devel patch python-devel
 
-  check_package_version_RPM python-devel 3.3
+  check_package_version_RPM python-devel 3.3.
   if [ $? -eq 0 ]; then
-    sudo $YUM install -y python-devel
+    sudo yum install -y python-devel
   else
     compile_Python
   fi
 
   check_package_RPM boost-devel
   if [ $? -eq 0 ]; then
-    sudo $YUM install -y boost-devel
+    sudo yum install -y boost-devel
   else
     compile_Boost
   fi
 
   check_package_RPM OpenColorIO-devel
   if [ $? -eq 0 ]; then
-    sudo $YUM install -y OpenColorIO-devel
+    sudo yum install -y OpenColorIO-devel
   else
     compile_OCIO
   fi
 
   check_package_RPM OpenImageIO-devel
   if [ $? -eq 0 ]; then
-    sudo $YUM install -y OpenImageIO-devel
+    sudo yum install -y OpenImageIO-devel
   else
     compile_OIIO
   fi
 
   # Always for now, not sure which packages should be installed
+  compile_FFmpeg
+}
+
+check_package_SUSE() {
+  r=`zypper info $1 | grep -c 'Summary'`
+
+  if [ $r -ge 1 ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+check_package_version_SUSE() {
+  v=`zypper info $1 | grep Version | tail -n 1 | sed -r 's/.*:\s+(([0-9]+\.?)+).*/\1/'`
+
+  # for now major and minor versions only (as if x.y, not x.y.z)
+  r=`echo $v | grep -c $2`
+
+  if [ $r -ge 1 ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+install_SUSE() {
+  INFO "Installing dependencies for SuSE-based distributive"
+
+  sudo zypper --non-interactive update --auto-agree-with-licenses
+
+  sudo zypper --non-interactive install --auto-agree-with-licenses \
+    gcc gcc-c++ libSDL-devel openal-soft-devel libpng12-devel libjpeg62-devel \
+    libtiff-devel OpenEXR-devel
+
+  check_package_version_SUSE python3-devel 3.3.
+  if [ $? -eq 0 ]; then
+    sudo zypper --non-interactive install --auto-agree-with-licenses python3-devel
+  else
+    compile_Python
+  fi
+
+  # can not see boost_locale in repo, so let's build own boost
+  compile_Boost
+
+  # this libraries are also missing in the repo
+  compile_OCIO
+  compile_OIIO
   compile_FFmpeg
 }
 
@@ -495,6 +537,8 @@ elif [ "$DISTRO" = "DEB" ]; then
   install_DEB
 elif [ "$DISTRO" = "RPM" ]; then
   install_RPM
+elif [ "$DISTRO" = "SUSE" ]; then
+  install_SUSE
 fi
 
 print_info
