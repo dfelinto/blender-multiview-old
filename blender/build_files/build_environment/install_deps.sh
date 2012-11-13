@@ -16,6 +16,8 @@ HASXVID=false
 HASVPX=false
 HASMP3LAME=false
 HASX264=false
+HASOPENJPEG=false
+HASSCHRO=false
 
 ERROR() {
   echo "${@}"
@@ -241,11 +243,19 @@ compile_FFmpeg() {
       extra="$extra --enable-libx264"
     fi
 
+    if $HASOPENJPEG; then
+      extra="$extra --enable-libopenjpeg"
+    fi
+
+    if $HASSCHRO; then
+      extra="$extra --enable-libschroedinger"
+    fi
+
     ./configure --cc="gcc -Wl,--as-needed" --extra-ldflags="-pthread -static-libgcc" \
         --prefix=/opt/lib/ffmpeg-$FFMPEG_VERSION --enable-static --enable-avfilter --disable-vdpau \
-        --disable-bzlib --disable-libgsm --enable-libschroedinger --disable-libspeex --enable-libtheora \
+        --disable-bzlib --disable-libgsm --disable-libspeex --enable-libtheora \
         --enable-libvorbis --enable-pthreads --enable-zlib --enable-stripping --enable-runtime-cpudetect \
-        --disable-vaapi --enable-libopenjpeg --disable-libfaac --disable-nonfree --enable-gpl \
+        --disable-vaapi  --disable-libfaac --disable-nonfree --enable-gpl \
         --disable-postproc --disable-x11grab  --disable-librtmp  --disable-libopencore-amrnb \
         --disable-libopencore-amrwb --disable-libdc1394 --disable-version3  --disable-outdev=sdl \
         --disable-outdev=alsa --disable-indev=sdl --disable-indev=alsa --disable-indev=jack \
@@ -287,6 +297,9 @@ install_DEB() {
     libssl-dev liblzma-dev libreadline-dev libopenjpeg-dev libopenexr-dev libopenal-dev \
     libglew-dev yasm libschroedinger-dev libtheora-dev libvorbis-dev libsdl1.2-dev \
     libfftw3-dev libjack-dev python-dev patch
+
+  HASOPENJPEG=true
+  HASSCHRO=true
 
   check_package_DEB libxvidcore4-dev
   if [ $? -eq 0 ]; then
@@ -409,6 +422,9 @@ install_RPM() {
     fftw-devel lame-libs jack-audio-connection-kit-devel x264-devel libspnav-devel \
     libjpeg-devel patch python-devel
 
+  HASOPENJPEG=true
+  HASSCHRO=true
+
   check_package_version_RPM python-devel 3.3.
   if [ $? -eq 0 ]; then
     sudo yum install -y python-devel
@@ -471,7 +487,8 @@ install_SUSE() {
 
   sudo zypper --non-interactive install --auto-agree-with-licenses \
     gcc gcc-c++ libSDL-devel openal-soft-devel libpng12-devel libjpeg62-devel \
-    libtiff-devel OpenEXR-devel
+    libtiff-devel OpenEXR-devel yasm libtheora-devel libvorbis-devel cmake \
+    scons
 
   check_package_version_SUSE python3-devel 3.3.
   if [ $? -eq 0 ]; then
