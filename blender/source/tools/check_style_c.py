@@ -468,7 +468,7 @@ def scan_source(fp, args):
     quick_check_indentation(code)
     # return
 
-    tokens[:] = []
+    del tokens[:]
     line = 1
 
     for ttype, text in lex(code, CLexer()):
