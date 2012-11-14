@@ -36,6 +36,7 @@ INFO() {
 }
 
 # Return 1 if $1 >= $2, else 0.
+# $1 and $2 should be version numbers made of numbers only.
 version_ge() {
   if [ $(echo -e "$1\n$2" | sort --version-sort | head --lines=1) = "$1" ]; then
     return 0
@@ -45,10 +46,11 @@ version_ge() {
 }
 
 # Return 1 if $1 is into $2 (e.g. 3.3.2 is into 3.3, but not 3.3.0 or 3.3.5)
-# $1 must be at least as long as $2!
+# $1 and $2 should be version numbers made of numbers only.
+# $1 should be at least as long as $2!
 version_match() {
   backIFS=$IFS
-	IFS='.'
+  IFS='.'
 
   # Split both version numbers into their numeric elements.
   arr1=( $1 )
@@ -69,7 +71,7 @@ version_match() {
     done
   fi
 
-	IFS=$backIFS
+  IFS=$backIFS
   return $ret
 }
 
@@ -336,6 +338,7 @@ install_DEB() {
   INFO "Installing dependencies for DEB-based distributive"
 
   sudo apt-get update
+# XXX Why in hell? Let's let this stuff to the user's responsability!!!
 #  sudo apt-get -y upgrade
 
   sudo apt-get install -y cmake scons gcc g++ libjpeg-dev libpng-dev libtiff-dev \
@@ -377,7 +380,7 @@ install_DEB() {
   if [ $? -eq 0 ]; then
     sudo apt-get install -y libvpx-dev
     vpx_version=`deb_version libvpx-dev`
-    if [ ! -z "$vpx_version" ]; then
+    if  dpkg --compare-versions $vpx_version gt 0.9.7; then
       if version_ge $vpx_version 0.9.7; then
         HASVPX=true
       fi
@@ -509,7 +512,7 @@ install_RPM() {
     HASMP3LAME=true
   fi
 
-  check_package_version_match_RPM python-devel 3.3
+  check_package_version_match_RPM python3-devel 3.3
   if [ $? -eq 1 ]; then
     sudo yum install -y python-devel
   else
