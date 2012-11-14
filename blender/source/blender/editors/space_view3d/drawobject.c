@@ -3620,10 +3620,7 @@ static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *bas
 	}
 
 	if (drawCurveDerivedMesh(scene, v3d, rv3d, base, dt) == 0) {
-		if (v3d->flag2 & V3D_BACKFACE_CULLING)
-			glDisable(GL_CULL_FACE);
-
-		return 0;
+		goto quit;
 	}
 
 	switch (ob->type) {
@@ -3635,7 +3632,10 @@ static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *bas
 
 			if (solid) {
 				dl = lb->first;
-				if (dl == NULL) return 1;
+				if (dl == NULL) {
+					retval = 1;
+					goto quit;
+				}
 
 				if (dl->nors == NULL) BKE_displist_normals_add(lb);
 				index3_nors_incr = 0;
@@ -3681,7 +3681,10 @@ static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *bas
 
 			if (solid) {
 				dl = lb->first;
-				if (dl == NULL) return 1;
+				if (dl == NULL) {
+					retval = 1;
+					goto quit;
+				}
 
 				if (dl->nors == NULL) BKE_displist_normals_add(lb);
 
@@ -3705,7 +3708,10 @@ static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *bas
 			if (BKE_mball_is_basis(ob)) {
 				lb = &ob->disp;
 				if (lb->first == NULL) BKE_displist_make_mball(scene, ob);
-				if (lb->first == NULL) return 1;
+				if (lb->first == NULL) {
+					retval = 1;
+					goto quit;
+				}
 
 				if (solid) {
 
@@ -3728,6 +3734,7 @@ static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *bas
 			break;
 	}
 	
+quit:
 	if (v3d->flag2 & V3D_BACKFACE_CULLING)
 		glDisable(GL_CULL_FACE);
 
