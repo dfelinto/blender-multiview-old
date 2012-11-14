@@ -36,7 +36,6 @@ INFO() {
 }
 
 # Return 1 if $1 >= $2, else 0.
-# $1 and $2 should be version numbers made of numbers only.
 version_ge() {
   if [ $(echo -e "$1\n$2" | sort --version-sort | head --lines=1) = "$1" ]; then
     return 0
@@ -46,8 +45,7 @@ version_ge() {
 }
 
 # Return 1 if $1 is into $2 (e.g. 3.3.2 is into 3.3, but not 3.3.0 or 3.3.5)
-# $1 and $2 should be version numbers made of numbers only.
-# $1 should be at least as long as $2!
+# $1 must be at least as long as $2!
 version_match() {
   backIFS=$IFS
 	IFS='.'
@@ -338,7 +336,6 @@ install_DEB() {
   INFO "Installing dependencies for DEB-based distributive"
 
   sudo apt-get update
-# XXX Why in hell? Let's let this stuff to the user's responsability!!!
 #  sudo apt-get -y upgrade
 
   sudo apt-get install -y cmake scons gcc g++ libjpeg-dev libpng-dev libtiff-dev \
@@ -381,7 +378,7 @@ install_DEB() {
     sudo apt-get install -y libvpx-dev
     vpx_version=`deb_version libvpx-dev`
     if [ ! -z "$vpx_version" ]; then
-      if  dpkg --compare-versions $vpx_version gt 0.9.7; then
+      if version_ge $vpx_version 0.9.7; then
         HASVPX=true
       fi
     fi
@@ -512,7 +509,7 @@ install_RPM() {
     HASMP3LAME=true
   fi
 
-  check_package_version_match_RPM python3-devel 3.3
+  check_package_version_match_RPM python-devel 3.3
   if [ $? -eq 1 ]; then
     sudo yum install -y python-devel
   else
@@ -624,7 +621,7 @@ print_info_ffmpeglink_DEB() {
 }
 
 print_info_ffmpeglink_RPM() {
-  _packages="libtheora-devel"
+  _packages="libtheora-devel libvorbis-devel"
 
   if $HASXVID; then
     _packages="$_packages $XVIDDEV"
@@ -681,7 +678,7 @@ print_info() {
   if [ -d /opt/lib/ffmpeg ]; then
     INFO "  -D WITH_CODEC_FFMPEG=ON"
     INFO "  -D FFMPEG=/opt/lib/ffmpeg"
-    INFO "  -D FFMPEG_LIBRARIES='avformat;avcodec;avutil;avdevice;swscale;`print_info_ffmpeglink`'"
+    INFO "  -D FFMPEG_LIBRARIES='avformat;avcodec;avutil;avdevice;swscale;rt;`print_info_ffmpeglink`'"
   fi
 
   INFO ""
