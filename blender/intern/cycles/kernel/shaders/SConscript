@@ -37,6 +37,6 @@ if env['WITH_BF_CYCLES_OSL']:
             shaders.Depends(oso_file, [f] + dependencies)
 
             oso_files.append(oso_file)
-
+            commands.getoutput(shaders)
 
 Return('oso_files')
