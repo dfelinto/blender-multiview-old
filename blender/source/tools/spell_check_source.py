@@ -61,6 +61,7 @@ def words_from_text(text):
     text = text.replace("+", " ")
     text = text.replace("%", " ")
     text = text.replace(",", " ")
+    text = text.replace("|", " ")
     words = text.split()
 
     # filter words

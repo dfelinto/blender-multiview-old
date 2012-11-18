@@ -214,7 +214,7 @@ def blender_check_kw_if(index_kw_start, index_kw, index_kw_end):
     # check for: ){
     index_next = tk_advance_ws_newline(index_kw_end, 1)
     if tokens[index_next].type == Token.Punctuation and tokens[index_next].text == "{":
-        if not tk_item_is_ws(tokens[index_kw + 1]):
+        if not tk_item_is_ws(tokens[index_next - 1]):
             warning("no white space between trailing bracket '%s (){'" % tokens[index_kw].text, index_kw_start, index_kw_end)
 
         # check for: if ()
@@ -550,6 +550,9 @@ def scan_source_recursive(dirpath, args):
     for filepath in sorted(source_list(dirpath, is_source)):
         if is_ignore(filepath):
             continue
+        # for quick tests
+        #~ if not filepath.endswith("creator.c"):
+        #~     continue
 
         scan_source(filepath, args)
 
