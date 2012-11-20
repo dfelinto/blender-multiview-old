@@ -212,7 +212,7 @@ static DerivedMesh *doMirrorOnAxis(MirrorModifierData *mmd,
 	/* adjust mirrored edge vertex indices, also set visibility to true */
 	orig_me = CDDM_get_edges(result);
 	me = orig_me + maxEdges;
-	for (i = 0; i < maxEdges; i++, me++) {
+	for (i = 0; i < maxEdges; i++, me++, orig_me++) {
 		me->v1 += maxVerts;
 		me->v2 += maxVerts;
 		me->flag |= ME_EDGEDRAW | ME_EDGERENDER;
