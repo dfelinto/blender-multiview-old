@@ -515,13 +515,13 @@ compile_LLVM() {
       wget -c $LLVM_SOURCE -O "$_src.tar.gz"
       wget -c $LLVM_CLANG_SOURCE -O "$_src_clang.tar.gz"
 
-#      INFO "Unpacking LLVM-$LLVM_VERSION"
-#      tar -C $SRC --transform "s,([^/]*/?)llvm-[^/]*(.*),\1LLVM-$LLVM_VERSION\2,x" \
-#          -xf $_src.tar.gz
-#      INFO "Unpacking CLANG-$LLVM_VERSION to $_src/tools/clang"
-#      tar -C $_src/tools \
-#          --transform "s,([^/]*/?)clang-[^/]*(.*),\1clang\2,x" \
-#          -xf $_src_clang.tar.gz
+      INFO "Unpacking LLVM-$LLVM_VERSION"
+      tar -C $SRC --transform "s,([^/]*/?)llvm-[^/]*(.*),\1LLVM-$LLVM_VERSION\2,x" \
+          -xf $_src.tar.gz
+      INFO "Unpacking CLANG-$LLVM_VERSION to $_src/tools/clang"
+      tar -C $_src/tools \
+          --transform "s,([^/]*/?)clang-[^/]*(.*),\1clang\2,x" \
+          -xf $_src_clang.tar.gz
 
       cd $_src
 
@@ -581,7 +581,7 @@ EOF
 
 compile_OSL() {
   # To be changed each time we make edits that would modify the compiled result!
-  osl_magic=6
+  osl_magic=7
 
   _src=$SRC/OpenShadingLanguage-$OSL_VERSION
   _inst=$INST/osl-$OSL_VERSION
@@ -612,7 +612,7 @@ compile_OSL() {
 
     cd $_src
     # XXX For now, always update from latest repo...
-#    git checkout .
+    git checkout .
 
     # Always refresh the whole build!
     if [ -d build ]; then
