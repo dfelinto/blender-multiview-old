@@ -1,7 +1,7 @@
 
 /* on Linux we exclude LLVM symbols, they conflict with Mesa llvmpipe */
 
-blender {
+{
 global:
 	*;
 local:
