@@ -26,13 +26,14 @@
 //  Non-member function declarations
 // ---------------------------------------------------------
 
-/// Safely convert a size_t to an int
+/// Safely convert a value to an int
 ///
-int to_int( size_t a );
-
-/// Safely convert a ssize_t to an int
-///
-int to_int( ssize_t a );
+template <typename T>
+inline int to_int(T a)
+{
+	assert(a < INT_MAX);
+	return static_cast<int>(a);
+}
 
 
 // ---------------------------------------------------------
@@ -237,34 +238,6 @@ private:
     
 };
 
-
-// ---------------------------------------------------------
-//  Inline functions
-// ---------------------------------------------------------
-
-// ---------------------------------------------------------
-///
-/// Safely convert a size_t to an int
-///
-// ---------------------------------------------------------
-
-inline int to_int( size_t a )
-{
-    assert( a < INT_MAX );
-    return static_cast<int>(a);
-}
-
-// ---------------------------------------------------------
-///
-/// Safely convert a ssize_t to an int
-///
-// ---------------------------------------------------------
-
-inline int to_int( ssize_t a )
-{
-    assert( a < INT_MAX );
-    return static_cast<int>(a);
-}
 
 // ---------------------------------------------------------
 ///
