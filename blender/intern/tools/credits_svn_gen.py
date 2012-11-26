@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3
 
 # ##### BEGIN GPL LICENSE BLOCK #####
 #
@@ -51,7 +51,7 @@ Example execution commands:
 
    svn log https://svn.blender.org/svnroot/bf-blender/trunk/blender -v --xml > ~/svn_log_bfb.xml
    svn log https://svn.blender.org/svnroot/bf-extensions/trunk/py/scripts/addons -v --xml > ~/svn_log_ext.xml
-   python3.2 intern/tools/credits_svn_gen.py --svn_log_bfb=~/svn_log.xml --svn_log_ext=~/svn_log_ext.xml --tracker_csv=~/tracker_report-2012-10-03.csv
+   python3 intern/tools/credits_svn_gen.py --svn_log_bfb=~/svn_log.xml --svn_log_ext=~/svn_log_ext.xml --tracker_csv=~/tracker_report-2012-10-03.csv
 """
 
 # -----------------------------------------------------------------------------

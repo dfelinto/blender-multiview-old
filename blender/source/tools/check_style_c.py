@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3
 
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -25,7 +25,7 @@
 """
 This script runs outside of blender and scans source
 
-python3.2 source/tools/check_source_c.py source/
+python3 source/tools/check_source_c.py source/
 """
 
 import os

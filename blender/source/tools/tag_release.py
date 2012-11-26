@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3
 
 REV_BLENDER = 51016
 REV_EXTENSIONS = 3805
