@@ -64,6 +64,8 @@
 #include "DNA_sequence_types.h"
 #include "DNA_sound_types.h"
 #include "DNA_text_types.h"
+#include "DNA_material_types.h"
+#include "DNA_node_types.h"
 #include "DNA_texture_types.h"
 #include "DNA_vfont_types.h"
 #include "DNA_scene_types.h"
@@ -76,6 +78,7 @@
 #include "BKE_font.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
+#include "BKE_node.h"
 #include "BKE_report.h"
 #include "BKE_sequencer.h"
 #include "BKE_image.h" /* so we can check the image's type */
@@ -492,6 +495,35 @@ void BLI_bpath_traverse_id(Main *bmain, ID *id, BPathVisitor visit_cb, const int
 			}
 		}
 		break;
+		case ID_MA:
+		{
+			Material *ma = (Material *)id;
+			bNodeTree *ntree = ma->nodetree;
+			bNode *node;
+
+			for (node = ntree->nodes.first; node; node = node->next) {
+				if (node->type == SH_NODE_SCRIPT) {
+					NodeShaderScript *nss = (NodeShaderScript *)node->storage;
+					rewrite_path_fixed(nss->filepath, visit_cb, absbase, bpath_user_data);
+				}
+			}
+		}
+		break;
+		case ID_NT:
+		{
+			bNodeTree *ntree = (bNodeTree *)id;
+			bNode *node;
+
+			if (ntree->type == NTREE_SHADER) {
+				/* same as lines above */
+				for (node = ntree->nodes.first; node; node = node->next) {
+					if (node->type == SH_NODE_SCRIPT) {
+						NodeShaderScript *nss = (NodeShaderScript *)node->storage;
+						rewrite_path_fixed(nss->filepath, visit_cb, absbase, bpath_user_data);
+					}
+				}
+			}
+		}
 		case ID_TE:
 		{
 			Tex *tex = (Tex *)id;
