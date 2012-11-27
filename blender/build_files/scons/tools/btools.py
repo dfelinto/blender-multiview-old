@@ -394,7 +394,6 @@ def read_opts(env, cfg, args):
         (BoolVariable('WITH_BF_GAMEENGINE', 'Build with gameengine' , False)),
 
         (BoolVariable('WITH_BF_BULLET', 'Use Bullet if true', True)),
-        
         # (BoolVariable('WITH_BF_ELTOPO', 'Use Eltopo collision library if true', False)),  # this is now only available in a branch
         ('BF_LAPACK', 'LAPACK base path', ''),
         ('BF_LAPACK_LIB', 'LAPACK library', ''),
