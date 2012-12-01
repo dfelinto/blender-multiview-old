@@ -314,7 +314,7 @@ void ObjectManager::apply_static_transforms(Scene *scene, uint *object_flag, Pro
 #else
 	bool motion_blur = false;
 #endif
-	int i;
+	int i = 0;
 
 	foreach(Object *object, scene->objects) {
 		map<Mesh*, int>::iterator it = mesh_users.find(object->mesh);
