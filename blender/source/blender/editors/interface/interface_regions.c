@@ -46,6 +46,7 @@
 
 #include "BKE_context.h"
 #include "BKE_screen.h"
+#include "BKE_idcode.h"
 #include "BKE_global.h"
 
 #include "WM_api.h"
@@ -618,7 +619,8 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 		if (rna_prop.strinfo) {
 			/* Struct and prop */
 			BLI_snprintf(data->lines[data->totline], sizeof(data->lines[0]),
-			             TIP_("Python: %s.%s"), rna_struct.strinfo, rna_prop.strinfo);
+			             TIP_("Python: %s.%s"),
+			             rna_struct.strinfo, rna_prop.strinfo);
 		}
 		else {
 			/* Only struct (e.g. menus) */
@@ -627,6 +629,43 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 		}
 		data->color_id[data->totline] = UI_TIP_LC_PYTHON;
 		data->totline++;
+
+		if (but->rnapoin.id.data) {
+			/* this could get its own 'BUT_GET_...' type */
+			PointerRNA *ptr = &but->rnapoin;
+			PropertyRNA *prop = but->rnaprop;
+			ID *id = ptr->id.data;
+
+			char name_escape[(sizeof(id->name) - 2) * 2];
+			char *id_path;
+			char *data_path = NULL;
+
+			BLI_strescape(name_escape, id->name + 2, sizeof(name_escape));
+
+			/* never fails */
+			id_path = RNA_path_from_ID_python(id);
+
+			if (ptr->id.data && ptr->data && prop) {
+				data_path = RNA_path_from_ID_to_property(ptr, prop);
+			}
+
+			if (data_path) {
+				BLI_snprintf(data->lines[data->totline], sizeof(data->lines[0]),
+				             "%s.%s",  /* no need to translate */
+				             id_path, data_path);
+				MEM_freeN(data_path);
+			}
+			else if (prop) {
+				/* can't find the path. be explicit in our ignorance "..." */
+				BLI_snprintf(data->lines[data->totline], sizeof(data->lines[0]),
+				             "%s ... %s",  /* no need to translate */
+				             id_path, rna_prop.strinfo ? rna_prop.strinfo : RNA_property_identifier(prop));
+			}
+			MEM_freeN(id_path);
+
+			data->color_id[data->totline] = UI_TIP_LC_PYTHON;
+			data->totline++;
+		}
 	}
 #endif
 
