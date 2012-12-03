@@ -18,7 +18,7 @@
  * The Original Code is Copyright (C) 2008, Blender Foundation
  * This is a new part of Blender
  *
- * Contributor(s): Sergey Sharybin
+ * Contributor(s): Campbell Barton
  *
  * ***** END GPL LICENSE BLOCK *****
  */
