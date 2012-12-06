@@ -310,7 +310,7 @@ def _api():
     _lb = struct_dict[b"ListBase"]
     Main._fields_ = [("next", ctypes.POINTER(Main)),
                      ("prev", ctypes.POINTER(Main)),
-                     ("name", ctypes.c_char * 240),
+                     ("name", ctypes.c_char * 1024),
                      ("versionfile", ctypes.c_short),
                      ("subversionfile", ctypes.c_short),
                      ("minversionfile", ctypes.c_short),
@@ -345,6 +345,8 @@ def _api():
                      ("particle", _lb),
                      ("wm", _lb),
                      ("gpencil", _lb),
+                     ("movieclip", _lb),
+                     ("mask", _lb),
                      ]
     del _lb
 
