@@ -166,6 +166,8 @@ author_name_mapping = {
     "campbellbarton": "Campbell Barton",
     "cessen": "Nathan Vegdahl",
     "cmccad": "Casey Corn",
+    "cyborgmuppet": "Ove Murberg Henriksen",
+    "dail": "Justin Dailey",
     "damien78": "Damien Plisson",
     "damir": "Damir Prebeg",
     "desoto": "Chris Burt",
@@ -315,6 +317,7 @@ author_name_mapping = {
     "michaelw": "Michael Williamson",
     "muraj": "Cory Perry",
     "paulo_gomes": "Paulo Gomes",
+    "plasmasolutions": "Thomas Beck",
     "pontiac": "Martin Buerbaum",
     "seminumerical": "Morgan Mörtsell",
     "spudmn": "Aaron Keith",
@@ -350,6 +353,7 @@ alert_users = set()
 author_overrides_bfb = {
     "farny": (43567, 44698),
     "damir": (37043, 40311, 44550, 45295),
+    "plasmasolutions": (52074, ),
     }
 
 author_overrides_ext = {
