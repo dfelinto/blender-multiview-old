@@ -37,7 +37,7 @@ def module_add(name):
     return mod
 
 
-class AttributeBuilder(object):
+class AttributeBuilder:
     """__slots__ = (
         "_attr", "_attr_list", "_item_set", "_args",
         "active", "operator_context", "enabled", "index", "data"
@@ -294,7 +294,8 @@ def fake_runtime():
 
     bpy.utils = module_add("bpy.utils")
     bpy.utils.smpte_from_frame = lambda f: ""
-    bpy.utils.script_paths = lambda f: []
+    bpy.utils.script_paths = lambda f: ()
+    bpy.utils.user_resource = lambda a, b: ()
 
     bpy.app = module_add("bpy.app")
     bpy.app.debug = False

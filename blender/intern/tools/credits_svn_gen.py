@@ -58,7 +58,7 @@ Example execution commands:
 # Generic Class and parsing code, could be useful for all sorts of cases
 
 
-class SvnCommit(object):
+class SvnCommit:
     """Just data store really"""
     __slots__ = ("revision",
                  "author",
@@ -282,7 +282,7 @@ author_name_mapping = {
     
     # --------------------
     # Extension Developers
-    "aurel": "Aurel W",  # TODO, full name?
+    "aurel": "Aurel Wildfellner",
     "axon_d": "Dany Lebel",
     "bartekskorupa": "Bartek Skorupa",
     "bassamk": "Bassam Kurdali",
@@ -656,7 +656,7 @@ def main_credits(min_rev_bfb=0, min_rev_ext=0):
 
 def main():
     main_credits()
-    main_credits(min_rev_bfb=46461, min_rev_ext=3355)
+    main_credits(min_rev_bfb=51024, min_rev_ext=3808)
 
 if __name__ == "__main__":
     main()
