@@ -46,11 +46,6 @@ if(WIN32 AND NOT UNIX)
 	)
 endif()
 
-# only for debugging
-if(WITH_OPENMP)
-	add_definitions(-DPARALLEL=1)
-endif()
-
 blender_add_lib(bf_intern_guardedalloc "${SRC}" "${INC}" "${INC_SYS}")
 
 # Override C++ alloc, optional.

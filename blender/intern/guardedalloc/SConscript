@@ -12,9 +12,4 @@ if env['WITH_BF_CXX_GUARDEDALLOC']:
 
 incs = '.'
 
-if env['WITH_BF_OPENMP']:
-    if env['OURPLATFORM'] == 'linuxcross':
-        incs += ' ' + env['BF_OPENMP_INC']
-    defs.append('PARALLEL=1')
-
 env.BlenderLib ('bf_intern_guardedalloc', sources, Split(incs), defs, libtype=['intern','player'], priority = [5,150] )

@@ -113,7 +113,7 @@ typedef struct MemHead {
 /* for openmp threading asserts, saves time troubleshooting
  * we may need to extend this if blender code starts using MEM_
  * functions inside OpenMP correctly with omp_set_lock() */
-#if (PARALLEL == 1) && defined(DEBUG)
+#if defined(_OPENMP) && defined(DEBUG)
 #  include <assert.h>
 #  include <omp.h>
 #  define DEBUG_OMP_MALLOC
