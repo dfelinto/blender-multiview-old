@@ -354,6 +354,7 @@ author_overrides_bfb = {
     "farny": (43567, 44698),
     "damir": (37043, 40311, 44550, 45295),
     "plasmasolutions": (52074, ),
+    "lichtwerk": (51650, 51850, 51861),
     }
 
 author_overrides_ext = {
@@ -518,7 +519,7 @@ def main_credits(min_rev_bfb=0, min_rev_ext=0):
     credits = {key: Credit() for key in author_name_mapping}
 
     def commit_to_credit(commits, author_overrides):
-        print(len(commits))
+        # print(len(commits))
         author_overrides_reverse = {
             revision: author
             for author, revisions in author_overrides.items()
@@ -578,7 +579,7 @@ def main_credits(min_rev_bfb=0, min_rev_ext=0):
     # write out the wiki page
     # sort by name
     is_main_credits = (min_rev_bfb == 0 and min_rev_ext == 0)
-    print(min_rev_bfb, min_rev_ext)
+    # print(min_rev_bfb, min_rev_ext)
     if is_main_credits:
         filename = "credits.html"
     else:
