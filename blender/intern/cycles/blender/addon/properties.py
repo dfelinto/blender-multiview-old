@@ -37,8 +37,8 @@ enum_feature_set = (
     )
 
 enum_shading_systems = (
-    ('SVM', "SVM", "Restricted shading system compatible with GPU rendering"),
-    ('OSL', "OSL", "Open Shading Language shading system that only runs on the CPU"),
+    ('GPU_COMPATIBLE', "GPU Compatible", "Restricted shading system compatible with GPU rendering"),
+    ('OSL', "Open Shading Language", "Open Shading Language shading system that only runs on the CPU"),
     )
 
 enum_displacement_methods = (
@@ -93,7 +93,7 @@ class CyclesRenderSettings(bpy.types.PropertyGroup):
                 name="Shading System",
                 description="Shading system to use for rendering",
                 items=enum_shading_systems,
-                default='SVM',
+                default='GPU_COMPATIBLE',
                 )
 
         cls.progressive = BoolProperty(
