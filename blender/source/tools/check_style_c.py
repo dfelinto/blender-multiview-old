@@ -284,6 +284,17 @@ def blender_check_comma(index_kw):
         warning("comma space before it 'sometext ,", index_kw, i_next)
 
 
+def blender_check_period(index_kw):
+    # check we're now apart of ...
+    if (tokens[index_kw - 1].text == ".") or (tokens[index_kw + 1].text == "."):
+        return
+
+    # 'a.b'
+    if tokens[index_kw - 1].type == Token.Text and tokens[index_kw - 1].text.isspace():
+        warning("period space before it 'sometext .", index_kw, index_kw)
+    if tokens[index_kw + 1].type == Token.Text and tokens[index_kw + 1].text.isspace():
+        warning("period space after it '. sometext", index_kw, index_kw)
+
 def _is_ws_pad(index_start, index_end):
     return (tokens[index_start - 1].text.isspace() and
             tokens[index_end + 1].text.isspace())
@@ -492,6 +503,18 @@ def scan_source(fp, args):
         elif tok.type == Token.Punctuation:
             if tok.text == ",":
                 blender_check_comma(i)
+            elif tok.text == ".":
+                blender_check_period(i)
+            elif tok.text == "[":
+                # note, we're quite relaxed about this but
+                # disallow 'foo ['
+                if tokens[i - 1].text.isspace():
+                    if is_cpp and tokens[i + 1].text == "]":
+                        # c++ can do delete []
+                        pass
+                    else:
+                        warning("space before '[' %s" % filepath_base, i, i)
+
         elif tok.type == Token.Operator:
             # we check these in pairs, only want first
             if tokens[i - 1].type != Token.Operator:
