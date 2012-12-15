@@ -322,7 +322,7 @@ def blender_check_operator(index_start, index_end, op_text, is_cpp):
                        "<<", ">>",
                        "%=",
                        # not operators, pointer mix-ins
-                       ">*", "<*", "-*", "+*", "=*", "/*", "%*", "^*", "!*", "|*",
+                       ">*", "<*", "-*", "+*", "=*", "/*", "%*", "^*", "|*",
                        }:
             if not _is_ws_pad(index_start, index_end):
                 if not (is_cpp and ("<" in op_text or ">" in op_text)):
@@ -335,7 +335,9 @@ def blender_check_operator(index_start, index_end, op_text, is_cpp):
                     tokens[index_end   + 1].text.isspace()):
                 warning("spaces surrounding operator '%s'" % op_text, index_start, index_end)
             '''
-        elif op_text == "!!":
+        elif op_text in {"!!", "!*"}:
+            # operators we _dont_ want whitespace after (pointers mainly)
+            # we can assume these are pointers
             if tokens[index_end + 1].text.isspace():
                 warning("spaces after operator '%s'" % op_text, index_start, index_end)
 
