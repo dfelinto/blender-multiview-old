@@ -1570,9 +1570,9 @@ static PyObject *Matrix_normalize(MatrixObject *self)
 PyDoc_STRVAR(Matrix_normalized_doc,
 ".. method:: normalized()\n"
 "\n"
-"   Return a row normalized matrix\n"
+"   Return a column normalized matrix\n"
 "\n"
-"   :return: a row normalized matrix\n"
+"   :return: a column normalized matrix\n"
 "   :rtype: :class:`Matrix`\n"
 );
 static PyObject *Matrix_normalized(MatrixObject *self)
