@@ -562,11 +562,16 @@ char *WM_operator_pystring(bContext *C, wmOperatorType *ot, PointerRNA *opptr, i
 
 char *WM_prop_pystring_assign(bContext *C, PointerRNA *ptr, PropertyRNA *prop, int index)
 {
-	char *lhs = RNA_path_full_property_py(ptr, prop, index);
-	char *rhs = RNA_property_as_string(C, ptr, prop, index);
-	char *ret;
+	char *lhs, *rhs, *ret;
 
+	lhs = RNA_path_full_property_py(ptr, prop, index);
 	if (!lhs) {
+		return NULL;
+	}
+
+	rhs = RNA_property_as_string(C, ptr, prop, index);
+	if (!rhs) {
+		MEM_freeN(lhs);
 		return NULL;
 	}
 
