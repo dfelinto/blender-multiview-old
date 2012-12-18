@@ -560,38 +560,9 @@ char *WM_operator_pystring(bContext *C, wmOperatorType *ot, PointerRNA *opptr, i
 	return cstring;
 }
 
-char *WM_prop_pystring(PointerRNA *ptr, PropertyRNA *prop, int index)
-{
-	char *id_path;
-	char *data_path = NULL;
-
-	char *ret;
-
-	if (!ptr->id.data) {
-		return NULL;
-	}
-
-
-	/* never fails */
-	id_path = RNA_path_from_ID_python(ptr->id.data);
-
-	data_path = RNA_path_from_ID_to_property(ptr, prop);
-
-	if ((index == -1) || (RNA_property_array_check(prop) == FALSE)) {
-		ret = BLI_sprintfN("%s.%s",
-		                   id_path, data_path);
-	}
-	else {
-		ret = BLI_sprintfN("%s.%s[%d]",
-		                   id_path, data_path, index);
-	}
-
-	return ret;
-}
-
 char *WM_prop_pystring_assign(bContext *C, PointerRNA *ptr, PropertyRNA *prop, int index)
 {
-	char *lhs = WM_prop_pystring(ptr, prop, index);
+	char *lhs = RNA_path_full_property_py(ptr, prop, index);
 	char *rhs = RNA_property_as_string(C, ptr, prop, index);
 	char *ret;
 
