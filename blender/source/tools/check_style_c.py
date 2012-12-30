@@ -187,6 +187,80 @@ def extract_operator(index_op):
     return op_text, index_op + (i - 1)
 
 
+def extract_cast(index):
+    # to detect a cast is quite involved... sigh
+    # assert(tokens[index].text == "(")
+
+    # TODO, comment within cast, but thats rare
+    i_start = index
+    i_end = tk_match_backet(index)
+
+    # first check we are not '()'
+    if i_start + 1 == i_end:
+        return None
+        
+    # check we have punctuation before the cast
+    i = i_start - 1
+    while tokens[i].text.isspace():
+        i -= 1
+    i_prev_no_ws = i
+    if tokens[i].type in {Token.Keyword, Token.Name}:
+        # avoids  'foo(bar)test'
+        # but not ' = (bar)test'
+        return None
+
+    # validate types
+    tokens_cast = [tokens[i] for i in range(i_start + 1, i_end)]
+    for t in tokens_cast:
+        if t.type == Token.Keyword:
+            return None
+        elif t.type == Token.Operator and t.text != "*":
+            # prevent '(a + b)'
+            # note, we could have '(float(*)[1+2])' but this is unlikely
+            return None
+        elif t.type == Token.Punctuation and t.text not in '()[]':
+            # prevent '(a, b)'
+            return None
+    tokens_cast_strip = []
+    for t in tokens_cast:
+        if t.type == Token.Comment:
+            pass
+        elif t.type == Token.Text and t.text.isspace():
+            pass
+        else:
+            tokens_cast_strip.append(t)
+    # check token order and types
+    if not tokens_cast_strip:
+        return None
+    if tokens_cast_strip[0].type not in {Token.Name, Token.Type, Token.Keyword.Type}:
+        return None
+    t_prev = None
+    for t in tokens_cast_strip[1:]:
+        # prevent identifiers after the first: '(a b)'
+        if t.type in {Token.Keyword.Type, Token.Name, Token.Text}:
+            return None
+        # prevent: '(a * 4)'
+        # allow:   '(a (*)[4])'
+        if t_prev is not None and t_prev.text == "*" and t.type != Token.Punctuation:
+            return None
+        t_prev = t
+    del t_prev
+
+    # debug only
+    '''
+    string = "".join(tokens[i].text for i in range(i_start, i_end + 1))
+    #string = "".join(tokens[i].text for i in range(i_start + 1, i_end))
+    #types = [tokens[i].type for i in range(i_start + 1, i_end)]
+    types = [t.type for t in tokens_cast_strip]
+
+    print("STRING:", string)
+    print("TYPES: ", types)
+    print()
+    '''
+
+    return (i_start, i_end)
+
+
 def warning(message, index_kw_start, index_kw_end):
     if PRINT_QTC_TASKFORMAT:
         print("%s\t%d\t%s\t%s" % (filepath, tokens[index_kw_start].line, "comment", message))
@@ -271,6 +345,27 @@ def blender_check_kw_else(index_kw):
     if tokens[i_next].type == Token.Keyword and tokens[i_next].text == "if":
         if tokens[index_kw].line < tokens[i_next].line:
             warning("else if is split by a new line 'else\\nif'", index_kw, i_next)
+
+
+def blender_check_cast(index_kw_start, index_kw_end):
+    # detect: '( float...'
+    if tokens[index_kw_start + 1].text.isspace():
+        warning("cast has space after first bracket '( type...'", index_kw_start, index_kw_end)
+    # detect: '...float )'
+    if tokens[index_kw_end - 1].text.isspace():
+        warning("cast has space before last bracket '... )'", index_kw_start, index_kw_end)
+    # detect no space before operator: '(float*)'
+    
+    for i in range(index_kw_start + 1, index_kw_end):
+        if tokens[i].text == "*":
+            # allow: '(*)'
+            if tokens[i - 1].type == Token.Punctuation:
+                pass
+            elif tokens[i - 1].text.isspace():
+                pass
+            else:
+                warning("cast has no preceeding whitespace '(type*)'", index_kw_start, index_kw_end)
+
 
 def blender_check_comma(index_kw):
     i_next = tk_advance_ws_newline(index_kw, 1)
@@ -514,6 +609,12 @@ def scan_source(fp, args):
                         pass
                     else:
                         warning("space before '[' %s" % filepath_base, i, i)
+            elif tok.text == "(":
+                # check if this is a cast, eg:
+                #  (char), (char **), (float (*)[3])
+                item_range = extract_cast(i)
+                if item_range is not None:
+                    blender_check_cast(item_range[0], item_range[1])
 
         elif tok.type == Token.Operator:
             # we check these in pairs, only want first
