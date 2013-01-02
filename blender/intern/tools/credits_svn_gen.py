@@ -125,7 +125,7 @@ contrib_companies = [
     "<b>Unity Technologies</b> - FBX Exporter",
     "<b>BioSkill GmbH</b> - H3D compatibility for X3D Exporter, "
     "OBJ Nurbs Import/Export",
-    "<b>AutoCRC</b> - Improvements to fluid particles",
+    "<b>AutoCRC</b> - Improvements to fluid particles, vertex color baking",
 ]
 
 # ignore commits containing these messages
