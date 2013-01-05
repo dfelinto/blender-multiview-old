@@ -91,16 +91,18 @@ def tk_range_to_str(a, b):
 
 
 def tk_item_is_newline(tok):
-    return tok.type == Token.Text and tok.text == "\n"
+    return tok.type == Token.Text and tok.text.strip("\t ") == "\n"
 
 
 def tk_item_is_ws_newline(tok):
-    return (tok.type == Token.Text and tok.text.isspace()) or \
+    return (tok.text == "") or \
+           (tok.type == Token.Text and tok.text.isspace()) or \
            (tok.type in Token.Comment)
 
 
 def tk_item_is_ws(tok):
-    return (tok.type == Token.Text and tok.text != "\n" and tok.text.isspace()) or \
+    return (tok.text == "") or \
+           (tok.type == Token.Text and tok.text.strip("\t ") != "\n" and tok.text.isspace()) or \
            (tok.type in Token.Comment)
 
 
@@ -110,6 +112,11 @@ def tk_advance_ws(index, direction):
         index += direction
     return index
 
+def tk_advance_no_ws(index, direction):
+    index += direction
+    while tk_item_is_ws(tokens[index]) and index > 0:
+        index += direction
+    return index
 
 def tk_advance_ws_newline(index, direction):
     while tk_item_is_ws_newline(tokens[index + direction]) and index > 0:
@@ -223,7 +230,7 @@ def extract_cast(index):
             return None
     tokens_cast_strip = []
     for t in tokens_cast:
-        if t.type == Token.Comment:
+        if t.type in Token.Comment:
             pass
         elif t.type == Token.Text and t.text.isspace():
             pass
@@ -615,6 +622,67 @@ def scan_source(fp, args):
                 item_range = extract_cast(i)
                 if item_range is not None:
                     blender_check_cast(item_range[0], item_range[1])
+            elif tok.text == "{":
+                # check function declaraction is not:
+                #  'void myfunc() {'
+                # ... other uses are handled by checks for statements
+                # this check is rather simplistic but tends to work well enough.
+
+                i_prev = i - 1
+                while tokens[i_prev].text == "":
+                    i_prev -= 1
+
+                # ensure this isnt '{' in its own line
+                if tokens[i_prev].line == tok.line:
+
+                    # check we '}' isnt on same line...
+                    i_next = i + 1
+                    found = False
+                    while tokens[i_next].line == tok.line:
+                        if tokens[i_next].text == "}":
+                            found = True
+                            break
+                        i_next += 1
+                    del i_next
+
+                    if found is False:
+
+                        # First check this isnt an assignment
+                        i_prev = tk_advance_no_ws(i, -1)
+                        # avoid '= {'
+                        #if tokens(index_prev).text != "="
+                        # print(tokens[i_prev].text)
+                        # allow:
+                        # - 'func()[] {'
+                        # - 'func() {'
+
+                        if tokens[i_prev].text in {")", "]"}:
+                            i_prev = i - 1
+                            while tokens[i_prev].line == tokens[i].line:
+                                i_prev -= 1
+                            split = tokens[i_prev].text.rsplit("\n", 1)
+                            if len(split) > 1 and split[-1] != "":
+                                split_line = split[-1]
+                            else:
+                                split_line = tokens[i_prev + 1].text
+
+                            if split_line and split_line[0].isspace():
+                                pass
+                            else:
+                                # no whitespace!
+                                i_begin = i_prev + 1
+
+                                # skip blank
+                                if tokens[i_begin].text == "":
+                                    i_begin += 1
+                                # skip static
+                                if tokens[i_begin].text == "static":
+                                    i_begin += 1
+                                while tokens[i_begin].text.isspace():
+                                    i_begin += 1
+                                # now we are done skipping stuff
+
+                                warning("function's '{' must be on a newline '%s', '%s' %d %d" % (tokens[i_begin].text, tokens[i].text, i_begin, i), i_begin, i)
 
         elif tok.type == Token.Operator:
             # we check these in pairs, only want first
