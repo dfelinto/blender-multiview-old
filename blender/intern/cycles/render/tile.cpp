@@ -241,7 +241,6 @@ list<Tile>::iterator TileManager::next_simple_tile(int device, int tile_order)
 			Tile &cur_tile = *iter;
 			
 			int64_t distx = cordx;
-			int64_t disty = cordy;
 			
 			if (tile_order == TileManager::RIGHT_TO_LEFT)
 				distx = cordx - cur_tile.x;
