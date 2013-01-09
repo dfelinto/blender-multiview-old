@@ -434,7 +434,12 @@ def blender_check_operator(index_start, index_end, op_text, is_cpp):
         elif op_text == "&":
             pass  # TODO, check if this is a pointer reference or not
         elif op_text == "*":
-            pass  # TODO, check if this is a pointer reference or not
+           # This check could be improved, its a bit fuzzy
+            if     ((tokens[index_start - 1].type in Token.Number) or
+                    (tokens[index_start + 1].type in Token.Number)):
+                warning("no space around operator '%s'" % op_text, index_start, index_end)
+            elif not (tokens[index_start - 1].text.isspace() or tokens[index_start - 1].text in {"(", "[", "{"}):
+                warning("no space before operator '%s'" % op_text, index_start, index_end)
     elif len(op_text) == 2:
         # todo, remove operator check from `if`
         if op_text in {"+=", "-=", "*=", "/=", "&=", "|=", "^=",
@@ -651,6 +656,10 @@ def scan_source(fp, args):
     is_cpp = fp.endswith((".cpp", ".cxx"))
 
     filepath = fp
+    
+    #if "displist.c" not in filepath:
+    #    return
+    
     filepath_base = os.path.basename(filepath)
 
     #print(highlight(code, CLexer(), RawTokenFormatter()).decode('utf-8'))
@@ -663,8 +672,9 @@ def scan_source(fp, args):
     line = 1
 
     for ttype, text in lex(code, CLexer()):
-        tokens.append(TokStore(ttype, text, line))
-        line += text.count("\n")
+        if text:
+            tokens.append(TokStore(ttype, text, line))
+            line += text.count("\n")
 
     col = 0  # track line length
     index_line_start = 0
