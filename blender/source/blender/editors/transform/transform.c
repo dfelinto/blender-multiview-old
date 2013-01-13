@@ -4934,7 +4934,7 @@ static void calcNonProportionalEdgeSlide(TransInfo *t, EdgeSlideData *sld, const
 	}
 }
 
-static int createSlideVerts(TransInfo *t)
+static int createEdgeSlideVerts(TransInfo *t)
 {
 	BMEditMesh *em = BMEdit_FromObject(t->obedit);
 	BMesh *bm = em->bm;
@@ -5526,7 +5526,7 @@ void initEdgeSlide(TransInfo *t)
 	t->transform = EdgeSlide;
 	t->handleEvent = handleEventEdgeSlide;
 
-	if (!createSlideVerts(t)) {
+	if (!createEdgeSlideVerts(t)) {
 		t->state = TRANS_CANCEL;
 		return;
 	}
