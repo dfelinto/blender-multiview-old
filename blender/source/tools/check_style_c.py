@@ -112,11 +112,13 @@ def tk_advance_ws(index, direction):
         index += direction
     return index
 
+
 def tk_advance_no_ws(index, direction):
     index += direction
     while tk_item_is_ws(tokens[index]) and index > 0:
         index += direction
     return index
+
 
 def tk_advance_ws_newline(index, direction):
     while tk_item_is_ws_newline(tokens[index + direction]) and index > 0:
@@ -205,7 +207,7 @@ def extract_cast(index):
     # first check we are not '()'
     if i_start + 1 == i_end:
         return None
-        
+
     # check we have punctuation before the cast
     i = i_start - 1
     while tokens[i].text.isspace():
@@ -273,6 +275,7 @@ def warning(message, index_kw_start, index_kw_end):
         print("%s\t%d\t%s\t%s" % (filepath, tokens[index_kw_start].line, "comment", message))
     else:
         print("%s:%d: warning: %s" % (filepath, tokens[index_kw_start].line, message))
+
 
 def warning_lineonly(message, line):
     if PRINT_QTC_TASKFORMAT:
@@ -370,7 +373,7 @@ def blender_check_cast(index_kw_start, index_kw_end):
     if tokens[index_kw_end - 1].text.isspace():
         warning("cast has space before last bracket '... )'", index_kw_start, index_kw_end)
     # detect no space before operator: '(float*)'
-    
+
     for i in range(index_kw_start + 1, index_kw_end):
         if tokens[i].text == "*":
             # allow: '(*)'
@@ -404,6 +407,7 @@ def blender_check_period(index_kw):
         warning("period space before it 'sometext .", index_kw, index_kw)
     if tokens[index_kw + 1].type == Token.Text and tokens[index_kw + 1].text.isspace():
         warning("period space after it '. sometext", index_kw, index_kw)
+
 
 def _is_ws_pad(index_start, index_end):
     return (tokens[index_start - 1].text.isspace() and
@@ -533,7 +537,7 @@ def blender_check_function_definition(i):
     # based on some fuzzy rules
 
     # assert(tokens[index] == "{")
-    
+
     # check function declaraction is not:
     #  'void myfunc() {'
     # ... other uses are handled by checks for statements
@@ -603,10 +607,10 @@ def quick_check_indentation(code):
     t_prev = -1
     m_comment_prev = False
     ls_prev = ""
-    
+
     for i, l in enumerate(code.split("\n")):
         skip = False
-        
+
         # skip blank lines
         ls = l.strip()
 
@@ -656,15 +660,15 @@ def scan_source(fp, args):
     is_cpp = fp.endswith((".cpp", ".cxx"))
 
     filepath = fp
-    
+
     #if "displist.c" not in filepath:
     #    return
-    
+
     filepath_base = os.path.basename(filepath)
 
     #print(highlight(code, CLexer(), RawTokenFormatter()).decode('utf-8'))
     code = open(filepath, 'r', encoding="utf-8").read()
-    
+
     quick_check_indentation(code)
     # return
 
@@ -709,7 +713,7 @@ def scan_source(fp, args):
                 if item_range is not None:
                     blender_check_cast(item_range[0], item_range[1])
             elif tok.text == "{":
-                blender_check_function_definition(i);
+                blender_check_function_definition(i)
 
         elif tok.type == Token.Operator:
             # we check these in pairs, only want first
