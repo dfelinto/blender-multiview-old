@@ -313,6 +313,14 @@ def blender_check_kw_if(index_kw_start, index_kw, index_kw_end):
         if tokens[index_kw].line != tokens[index_kw_end].line:
             warning("multi-line if should use a brace '%s (\\n\\n) statement;'" % tokens[index_kw].text, index_kw, index_kw_end)
 
+    # check for: if () { ... };
+    #
+    # no need to have semicolon after brace.
+    if tokens[index_next].text == "{":
+        index_final = tk_match_backet(index_next)
+        index_final_step = tk_advance_no_ws(index_final, 1)
+        if tokens[index_final_step].text == ";":
+            warning("semi-colon after brace '%s () { ... };'" % tokens[index_kw].text, index_final_step, index_final_step)
 
 def blender_check_kw_else(index_kw):
     # for 'else if' use the if check.
