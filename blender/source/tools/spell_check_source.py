@@ -157,7 +157,7 @@ def extract_c_comments(filepath):
     Extracts comments like this:
 
         /*
-         * This is a multiline comment, notice the '*'s are aligned.
+         * This is a multi-line comment, notice the '*'s are aligned.
          */
     """
     i = 0
@@ -213,7 +213,7 @@ def extract_c_comments(filepath):
 
                 block = text[i:i_next + len(END)]
 
-                # add whitespace infront of the block (for alignment test)
+                # add whitespace in front of the block (for alignment test)
                 ws = []
                 j = i
                 while j > 0 and text[j - 1] != "\n":

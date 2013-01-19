@@ -40,7 +40,8 @@ dict_custom = {
     "enum", "enums",
     "int", "ints",
     "tuple", "tuples",
-    # python funcs
+    
+    # python functions
     "repr",
     "func",
 
@@ -69,6 +70,8 @@ dict_custom = {
     "metadata",
     "hashable",
     "stdin",
+    "stdout",
+    "stdin",
     "opengl",
     "boids",
     "keymap",
@@ -78,8 +81,20 @@ dict_custom = {
     "booleans",
     "intrinsics",
     "xml",
+    "XXX",
+    "segfault",
+    "wiki",
+    "foo",
+    "diff",
+    "diffs",
+    "sudo",
+    "http",
+    "url",
+    "usr",
+    "env",
+    "app",
 
-    # spesific computer terms/brands
+    # specific computer terms/brands
     "posix",
     "unix",
     "amiga",
@@ -87,6 +102,8 @@ dict_custom = {
     "mozilla",
     "irix",
     "kde",
+    "qtcreator",
+    "ack",
 
     # general computer graphics terms
     "colinear",
@@ -108,12 +125,18 @@ dict_custom = {
     "normals",
 
     # blender terms
+    "bmain",
+    "bmesh",
     "bpy",
+    "bge",
     "mathutils",
     "fcurve",
     "animviz",
     "animsys",
     "eekadoodle",
+    "editmode",
+    "obdata",
+    "doctree",
 
     # should have apostrophe but ignore for now
     # unless we want to get really picky!
@@ -147,6 +170,8 @@ dict_ignore = {
     "a-z",
     "id-block",
     "node-trees",
+    "pyflakes",
+    "pylint",
 
     # acronyms
     "nan",
@@ -162,6 +187,12 @@ dict_ignore = {
     "lhs",
     "ik",
     "smpte",
+    "svn",
+    "hg",
+    "rst",
+    "gl",
+    "py",
+    "xpm",
 
     # tags
     "fixme",
