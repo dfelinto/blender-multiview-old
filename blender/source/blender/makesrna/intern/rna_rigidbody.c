@@ -636,7 +636,7 @@ static void rna_def_rigidbody_object(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "enabled", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_negative_sdna(prop, NULL, "flag", RBO_FLAG_DISABLED);
 	RNA_def_property_boolean_funcs(prop, NULL, "rna_RigidBodyOb_disabled_set");
-	RNA_def_property_ui_text(prop, "Enabled", "Rigid Body actively participate to the simulation");
+	RNA_def_property_ui_text(prop, "Enabled", "Rigid Body actively participates to the simulation");
 	RNA_def_property_update(prop, NC_OBJECT | ND_POINTCACHE, "rna_RigidBodyOb_reset");
 	
 	prop = RNA_def_property(srna, "collision_shape", PROP_ENUM, PROP_NONE);
