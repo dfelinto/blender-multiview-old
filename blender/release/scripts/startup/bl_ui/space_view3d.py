@@ -2712,7 +2712,7 @@ class VIEW3D_PT_etch_a_ton(Panel):
 
         col.separator()
 
-        col.operator("sketch.convert", text="Convert")
+        col.operator("sketch.convert", text="Convert to Bones")
 
 
 class VIEW3D_PT_context_properties(Panel):
