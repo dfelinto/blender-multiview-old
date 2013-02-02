@@ -713,7 +713,7 @@ def scan_source(fp, args):
                         # c++ can do delete []
                         pass
                     else:
-                        warning("space before '[' %s" % filepath_base, i, i)
+                        warning("space before '['", i, i)
             elif tok.text == "(":
                 # check if this is a cast, eg:
                 #  (char), (char **), (float (*)[3])
@@ -721,6 +721,10 @@ def scan_source(fp, args):
                 if item_range is not None:
                     blender_check_cast(item_range[0], item_range[1])
             elif tok.text == "{":
+                # check previous character is either a '{' or whitespace.
+                if (tokens[i - 1].line == tok.line) and not (tokens[i - 1].text.isspace() or tokens[i - 1].text == "{"):
+                    warning("no space before '{'", i, i)
+
                 blender_check_function_definition(i)
 
         elif tok.type == Token.Operator:
