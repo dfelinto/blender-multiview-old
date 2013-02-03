@@ -546,7 +546,7 @@ def blender_check_function_definition(i):
 
     # assert(tokens[index] == "{")
 
-    # check function declaraction is not:
+    # check function declaration is not:
     #  'void myfunc() {'
     # ... other uses are handled by checks for statements
     # this check is rather simplistic but tends to work well enough.

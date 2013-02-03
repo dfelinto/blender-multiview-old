@@ -194,9 +194,7 @@ def extract_c_comments(filepath):
             for directive in STRIP_DOXY_DIRECTIVES:
                 if directive in l:
                     l_split = l.split()
-                    value = l_split[l_split.index(directive) + 1]
-                    # print("remove:", value)
-                    l = l.replace(value, " ")
+                    l_split[l_split.index(directive) + 1] = " "
             block_split[i] = l
 
     comments = []
