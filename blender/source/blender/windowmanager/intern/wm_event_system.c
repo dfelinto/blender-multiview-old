@@ -1891,7 +1891,7 @@ static int wm_handlers_do(bContext *C, wmEvent *event, ListBase *handlers)
 					event->val = KM_CLICK;
 					
 					if (G.debug & (G_DEBUG_HANDLERS)) {
-						printf("%s: handling CLICK for %d\n", __func__);
+						printf("%s: handling CLICK\n", __func__);
 					}
 
 					action |= wm_handlers_do_intern(C, event, handlers);
