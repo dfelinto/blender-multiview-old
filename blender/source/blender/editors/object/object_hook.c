@@ -386,15 +386,15 @@ static void select_editcurve_hook(Object *obedit, HookModifierData *hmd)
 	}
 }
 
-static void object_hook_from_context(bContext *C, PointerRNA *ptr,
+static void object_hook_from_context(bContext *C, PointerRNA *ptr, const int num,
                                      Object **r_ob, HookModifierData **r_hmd)
 {
 	Object *ob;
 	HookModifierData *hmd;
 
-	if (ptr.data) {  /* if modifier context is available, use that */
-		ob = ptr.id.data;
-		hmd = ptr.data;
+	if (ptr->data) {  /* if modifier context is available, use that */
+		ob = ptr->id.data;
+		hmd = ptr->data;
 	}
 	else {  /* use the provided property */
 		ob = CTX_data_edit_object(C);
@@ -689,7 +689,7 @@ static int object_hook_reset_exec(bContext *C, wmOperator *op)
 	Object *ob = NULL;
 	HookModifierData *hmd = NULL;
 
-	object_hook_from_context(C, ptr, &ob, &hmd);
+	object_hook_from_context(C, &ptr, num, &ob, &hmd);
 	if (hmd == NULL) {
 		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
@@ -750,7 +750,7 @@ static int object_hook_recenter_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 	float bmat[3][3], imat[3][3];
 	
-	object_hook_from_context(C, ptr, &ob, &hmd);
+	object_hook_from_context(C, &ptr, num, &ob, &hmd);
 	if (hmd == NULL) {
 		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
@@ -801,7 +801,7 @@ static int object_hook_assign_exec(bContext *C, wmOperator *op)
 	char name[MAX_NAME];
 	int *indexar, tot;
 	
-	object_hook_from_context(C, ptr, &ob, &hmd);
+	object_hook_from_context(C, &ptr, num, &ob, &hmd);
 	if (hmd == NULL) {
 		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
@@ -856,7 +856,7 @@ static int object_hook_select_exec(bContext *C, wmOperator *op)
 	Object *ob = NULL;
 	HookModifierData *hmd = NULL;
 	
-	object_hook_from_context(C, ptr, &ob, &hmd);
+	object_hook_from_context(C, &ptr, num, &ob, &hmd);
 	if (hmd == NULL) {
 		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
