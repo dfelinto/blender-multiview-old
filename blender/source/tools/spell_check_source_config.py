@@ -80,7 +80,6 @@ dict_custom = {
     "euler", "eulers",
     "booleans",
     "intrinsics",
-    "xml",
     "XXX",
     "segfault",
     "wiki",
@@ -93,6 +92,7 @@ dict_custom = {
     "usr",
     "env",
     "app",
+    "preprocessor",
 
     # specific computer terms/brands
     "posix",
@@ -108,7 +108,9 @@ dict_custom = {
     # general computer graphics terms
     "colinear",
     "coplanar",
+    "barycentric",
     "bezier",
+    "fresnel",
     "radiosity",
     "reflectance",
     "specular",
@@ -122,6 +124,8 @@ dict_custom = {
     "centroid",
     "emissive",
     "quaternions",
+    "lacunarity",
+    "musgrave",
     "normals",
 
     # blender terms
@@ -174,6 +178,8 @@ dict_ignore = {
     "pylint",
 
     # acronyms
+    "cpu",
+    "gpu",
     "nan",
     "utf",
     "rgb",
@@ -189,10 +195,13 @@ dict_ignore = {
     "smpte",
     "svn",
     "hg",
-    "rst",
     "gl",
-    "py",
+    
+    # extensions
     "xpm",
+    "xml",
+    "py",
+    "rst",
 
     # tags
     "fixme",
@@ -208,4 +217,5 @@ dict_ignore = {
     # names
     "jahka",
     "campbell",
+    "mikkelsen", "morten",
 }
