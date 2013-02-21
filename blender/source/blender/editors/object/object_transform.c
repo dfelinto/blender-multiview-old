@@ -244,8 +244,6 @@ static int object_clear_transform_generic_exec(bContext *C, wmOperator *op,
 	CTX_DATA_END;
 	
 	/* this is needed so children are also updated */
-	DAG_ids_flush_update(bmain, 0);
-
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 
 	return OPERATOR_FINISHED;
@@ -338,8 +336,6 @@ static int object_origin_clear_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 	CTX_DATA_END;
 
-	DAG_ids_flush_update(bmain, 0);
-	
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -991,7 +987,6 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 			DAG_id_tag_update(&tob->id, OB_RECALC_OB | OB_RECALC_DATA);
 
 	if (tot_change) {
-		DAG_ids_flush_update(bmain, 0);
 		WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	}
 

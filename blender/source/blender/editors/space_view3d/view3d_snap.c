@@ -623,8 +623,6 @@ static int snap_sel_to_grid(bContext *C, wmOperator *UNUSED(op))
 				DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 			}
 			else {
-				ob->recalc |= OB_RECALC_OB;
-				
 				vec[0] = -ob->obmat[3][0] + gridf * floorf(0.5f + ob->obmat[3][0] / gridf);
 				vec[1] = -ob->obmat[3][1] + gridf * floorf(0.5f + ob->obmat[3][1] / gridf);
 				vec[2] = -ob->obmat[3][2] + gridf * floorf(0.5f + ob->obmat[3][2] / gridf);
@@ -644,12 +642,13 @@ static int snap_sel_to_grid(bContext *C, wmOperator *UNUSED(op))
 				
 				/* auto-keyframing */
 				ED_autokeyframe_object(C, scene, ob, ks);
+
+				DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 			}
 		}
 		CTX_DATA_END;
 	}
 
-	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -748,8 +747,6 @@ static int snap_sel_to_curs(bContext *C, wmOperator *UNUSED(op))
 				DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 			}
 			else {
-				ob->recalc |= OB_RECALC_OB;
-				
 				vec[0] = -ob->obmat[3][0] + curs[0];
 				vec[1] = -ob->obmat[3][1] + curs[1];
 				vec[2] = -ob->obmat[3][2] + curs[2];
@@ -769,12 +766,13 @@ static int snap_sel_to_curs(bContext *C, wmOperator *UNUSED(op))
 
 				/* auto-keyframing */
 				ED_autokeyframe_object(C, scene, ob, ks);
+
+				DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 			}
 		}
 		CTX_DATA_END;
 	}
 
-	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	
 	return OPERATOR_FINISHED;

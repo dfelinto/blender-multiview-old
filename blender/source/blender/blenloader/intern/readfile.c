@@ -2754,7 +2754,7 @@ static void lib_link_pose(FileData *fd, Object *ob, bPose *pose)
 	}
 	
 	if (rebuild) {
-		ob->recalc = (OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
+		DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 		pose->flag |= POSE_RECALC;
 	}
 }
@@ -5115,7 +5115,6 @@ static void direct_link_scene(FileData *fd, Scene *sce)
 	RigidBodyWorld *rbw;
 	
 	sce->theDag = NULL;
-	sce->dagisvalid = 0;
 	sce->obedit = NULL;
 	sce->stats = NULL;
 	sce->fps_info = NULL;
@@ -10114,7 +10113,7 @@ static void give_base_to_groups(Main *mainvar, Scene *scene)
 			base = BKE_scene_base_add(scene, ob);
 			base->flag |= SELECT;
 			base->object->flag= base->flag;
-			ob->recalc |= OB_RECALC_OB|OB_RECALC_DATA|OB_RECALC_TIME;
+			DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 			scene->basact = base;
 			
 			/* assign the group */
