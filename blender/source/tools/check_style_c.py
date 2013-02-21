@@ -126,6 +126,14 @@ def tk_advance_ws_newline(index, direction):
     return index + direction
 
 
+def tk_advance_line_start(index):
+    """ Go the the first non-whitespace token of the line.
+    """
+    while tokens[index].line == tokens[index - 1].line and index > 0:
+        index -= 1
+    return tk_advance_no_ws(index, 1)
+
+
 def tk_match_backet(index):
     backet_start = tokens[index].text
     assert(tokens[index].type == Token.Punctuation)
@@ -173,13 +181,13 @@ def extract_statement_if(index_kw):
 
     # print(tokens[i_next])
 
+    # ignore preprocessor
+    i_linestart = tk_advance_line_start(index_kw)
+    if tokens[i_linestart].text.startswith("#"):
+        return None
+
     if tokens[i_next].type != Token.Punctuation or tokens[i_next].text != "(":
-        print("Error line: %d" % tokens[index_kw].line)
-        print("if (\n"
-              "   ^\n"
-              ""
-              "Character not found, insetad found:")
-        print(tk_range_to_str(i_start, i_next))
+        warning("no '(' after '%s'" % tokens[index_kw].text, i_start, i_next)
         return None
 
     i_end = tk_match_backet(i_next)
@@ -371,6 +379,11 @@ def blender_check_kw_else(index_kw):
     if tokens[i_prev].type == Token.Punctuation and tokens[i_prev].text == "}":
         if tokens[index_kw].line == tokens[i_prev].line:
             warning("else has no newline before the brace '} else'", i_prev, index_kw)
+
+
+def blender_check_kw_sizeof(index_kw):
+    if tokens[index_kw + 1].text != "(":
+        warning("expected '%s('" % tokens[index_kw].text, index_kw, index_kw + 1)
 
 
 def blender_check_cast(index_kw_start, index_kw_end):
@@ -700,6 +713,8 @@ def scan_source(fp, args):
                     blender_check_kw_if(item_range[0], i, item_range[1])
             elif tok.text == "else":
                 blender_check_kw_else(i)
+            elif tok.text == "sizeof":
+                blender_check_kw_sizeof(i)
         elif tok.type == Token.Punctuation:
             if tok.text == ",":
                 blender_check_comma(i)
