@@ -1824,7 +1824,6 @@ void OUTLINER_OT_scene_drop(wmOperatorType *ot)
 
 static int material_drop_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
-	Main *bmain = CTX_data_main(C);
 	Material *ma = NULL;
 	Object *ob = NULL;
 	SpaceOops *soops = CTX_wm_space_outliner(C);

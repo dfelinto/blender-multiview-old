@@ -213,7 +213,6 @@ static void object_clear_scale(Object *ob)
 static int object_clear_transform_generic_exec(bContext *C, wmOperator *op, 
                                                void (*clear_func)(Object *), const char default_ksName[])
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	KeyingSet *ks;
 	
@@ -316,7 +315,6 @@ void OBJECT_OT_scale_clear(wmOperatorType *ot)
 
 static int object_origin_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Main *bmain = CTX_data_main(C);
 	float *v1, *v3;
 	float mat[3][3];
 
