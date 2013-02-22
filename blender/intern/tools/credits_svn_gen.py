@@ -39,7 +39,8 @@ The first is the result of running this:
    svn log https://svn.blender.org/svnroot/bf-blender/trunk/blender -v --xml
 
 The csv file must be saved from the tracker, be sure to select all patches
-not just open ones.
+not just open ones. Go to the patch tracker URL and add append &func=downloadcsv
+to the URL.
 
 
 Running this script will create a file called 'credits.html',
@@ -162,6 +163,7 @@ author_name_mapping = {
     "bjornmose": "Jens Ole Wund",
     "blendix": "Brecht Van Lommel",
     "briggs": "Geoffrey Bantle",
+    "broadstu": "Stuart Broadfoot",
     "broken": "Matt Ebb",
     "campbellbarton": "Campbell Barton",
     "cessen": "Nathan Vegdahl",
@@ -218,6 +220,7 @@ author_name_mapping = {
     "kwk": "Konrad Kleine",
     "larstiq": "Wouter van Heyst",
     "letterrip": "Tom Musgrove",
+    "lfrisken": "Luke Frisken",
     "lmg": "M.G. Kishalmi",
     "lockal": "Sv. Lockal",
     "loczar": "Francis Laurence",  # not 100% sure on this.
@@ -289,6 +292,7 @@ author_name_mapping = {
     "bartekskorupa": "Bartek Skorupa",
     "bassamk": "Bassam Kurdali",
     "benjycook": "Benjy Cook",
+    "beta-tester": "Alexander Nussbaumer",
     "blendphys": "Clemens Barth",
     "codemanx": "Sebastian Nell",
     "conz": "Constantin Rahn",
@@ -659,7 +663,7 @@ def main_credits(min_rev_bfb=0, min_rev_ext=0):
 
 def main():
     main_credits()
-    main_credits(min_rev_bfb=51024, min_rev_ext=3808)
+    main_credits(min_rev_bfb=52851, min_rev_ext=4072)
 
 if __name__ == "__main__":
     main()
