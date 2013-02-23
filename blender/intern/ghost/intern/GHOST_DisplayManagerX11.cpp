@@ -135,6 +135,8 @@ getDisplaySetting(
 			setting.bpp = DefaultDepth(dpy, DefaultScreen(dpy));
 			setting.frequency = calculate_rate(vidmodes[index]);
 			XFree(vidmodes);
+
+			return GHOST_kSuccess;
 		}
 	}
 	else {
