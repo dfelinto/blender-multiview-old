@@ -31,7 +31,6 @@
 extern "C" {
 #endif
 
-struct libmv_RegionTracker;
 struct libmv_Tracks;
 struct libmv_Reconstruction;
 struct libmv_Features;

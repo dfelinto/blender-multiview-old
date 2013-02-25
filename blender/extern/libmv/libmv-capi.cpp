@@ -259,7 +259,7 @@ static void saveBytesImage(const char *prefix, unsigned char *data, int width, i
 	}
 
 	{
-		static int a= 0;
+		static int a = 0;
 		char buf[128];
 		snprintf(buf, sizeof(buf), "%s_%02d.png", prefix, ++a);
 		savePNGImage(row_pointers, width, height, 8, PNG_COLOR_TYPE_RGBA, buf);
