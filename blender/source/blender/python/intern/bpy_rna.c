@@ -4262,10 +4262,10 @@ static bool foreach_attr_type(BPy_PropertyRNA *self, const char *attr,
                               RawPropertyType *raw_type, int *attr_tot, bool *attr_signed)
 {
 	PropertyRNA *prop;
+	bool attr_ok = true;
 	*raw_type = PROP_RAW_UNSET;
 	*attr_tot = 0;
 	*attr_signed = false;
-	bool attr_found;
 
 	/* note: this is fail with zero length lists, so don't let this get caled in that case */
 	RNA_PROP_BEGIN (&self->ptr, itemptr, self->prop)
@@ -4275,16 +4275,15 @@ static bool foreach_attr_type(BPy_PropertyRNA *self, const char *attr,
 			*raw_type = RNA_property_raw_type(prop);
 			*attr_tot = RNA_property_array_length(&itemptr, prop);
 			*attr_signed = (RNA_property_subtype(prop) != PROP_UNSIGNED);
-			attr_found = true;
 		}
 		else {
-			attr_found = false;
+			attr_ok = false;
 		}
 		break;
 	}
 	RNA_PROP_END;
 
-	return attr_found;
+	return attr_ok;
 }
 
 /* pyrna_prop_collection_foreach_get/set both use this */
