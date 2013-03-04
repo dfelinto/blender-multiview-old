@@ -33,7 +33,7 @@ import os
 from check_style_c_config import IGNORE, IGNORE_DIR, SOURCE_DIR
 IGNORE = tuple([os.path.join(SOURCE_DIR, ig) for ig in IGNORE])
 IGNORE_DIR = tuple([os.path.join(SOURCE_DIR, ig) for ig in IGNORE_DIR])
-WARN_TEXT = True
+WARN_TEXT = False
 
 def is_ignore(f):
     for ig in IGNORE:
