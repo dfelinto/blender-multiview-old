@@ -1118,7 +1118,7 @@ static void calc_weightpaint_vert_color(
 }
 
 static DMWeightColorInfo dm_wcinfo;
-void vDM_ColorBand_store(ColorBand *coba, unsigned char* zero_color)
+void vDM_ColorBand_store(ColorBand *coba, char zero_color[4])
 {
 	dm_wcinfo.coba       = coba;
 	dm_wcinfo.zero_color = zero_color;
