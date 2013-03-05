@@ -200,7 +200,7 @@ option(WITH_MOD_BOOLEAN         "Enable Boolean Modifier" ON)
 option(WITH_MOD_REMESH          "Enable Remesh Modifier" ON)
 # option(WITH_MOD_CLOTH_ELTOPO    "Enable Experimental cloth solver" OFF)  # this is now only available in a branch
 # mark_as_advanced(WITH_MOD_CLOTH_ELTOPO)
-option(WITH_MOD_OCEANSIM        "Enable Ocean Modifier" OFF)
+option(WITH_MOD_OCEANSIM        "Enable Ocean Modifier" ON)
 
 # Image format support
 option(WITH_IMAGE_OPENEXR       "Enable OpenEXR Support (http://www.openexr.com)" ON)
@@ -214,9 +214,9 @@ option(WITH_IMAGE_FRAMESERVER   "Enable image FrameServer Support for rendering"
 
 # Audio/Video format support
 option(WITH_CODEC_AVI           "Enable Blenders own AVI file support (raw/jpeg)" ON)
-option(WITH_CODEC_FFMPEG        "Enable FFMPeg Support (http://ffmpeg.org)" OFF)
+option(WITH_CODEC_FFMPEG        "Enable FFMPeg Support (http://ffmpeg.org)" ON)
 
-option(WITH_CODEC_SNDFILE       "Enable libsndfile Support (http://www.mega-nerd.com/libsndfile)" OFF)
+option(WITH_CODEC_SNDFILE       "Enable libsndfile Support (http://www.mega-nerd.com/libsndfile)" ON)
 if(APPLE OR (WIN32 AND NOT UNIX))
 	option(WITH_CODEC_QUICKTIME     "Enable Quicktime Support" OFF)
 endif()
@@ -257,13 +257,13 @@ mark_as_advanced(PYTHON_NUMPY_PATH)
 option(WITH_CYCLES					"Enable cycles Render Engine" ON)
 option(WITH_CYCLES_TEST				"Build cycles test application" OFF)
 option(WITH_CYCLES_OSL				"Build Cycles with OSL support" OFF)
-option(WITH_CYCLES_CUDA_BINARIES	"Build cycles CUDA binaries" OFF)
+option(WITH_CYCLES_CUDA_BINARIES	"Build cycles CUDA binaries" ON)
 set(CYCLES_CUDA_BINARIES_ARCH sm_20 sm_21 sm_30 CACHE STRING "CUDA architectures to build binaries for")
 mark_as_advanced(CYCLES_CUDA_BINARIES_ARCH)
 unset(PLATFORM_DEFAULT)
 
 # LLVM
-option(WITH_LLVM					"Use LLVM" OFF)
+option(WITH_LLVM					"Use LLVM" ON)
 
 # disable for now, but plan to support on all platforms eventually
 option(WITH_MEM_JEMALLOC   "Enable malloc replacement (http://www.canonware.com/jemalloc)" OFF)
