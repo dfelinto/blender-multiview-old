@@ -367,7 +367,7 @@ bool paint_supports_dynamic_size(Brush *br)
 
 bool paint_supports_jitter(PaintMode mode)
 {
-	return ELEM(mode, PAINT_SCULPT, PAINT_TEXTURE_PROJECTIVE);
+	return ELEM3(mode, PAINT_SCULPT, PAINT_TEXTURE_PROJECTIVE, PAINT_TEXTURE_2D);
 }
 
 #define PAINT_STROKE_MODAL_CANCEL 1
