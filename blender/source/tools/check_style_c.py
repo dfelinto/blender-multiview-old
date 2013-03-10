@@ -528,6 +528,10 @@ def blender_check_operator(index_start, index_end, op_text, is_cpp):
         pass  # *a = b
     elif len(op_text) == 1 and op_text[0] == "-" and tokens[index_start + 1].text.isspace() is False:
         pass  # -1
+    elif len(op_text) == 2 and op_text == "++" and tokens[index_start + 1].text.isspace() is False:
+        pass  # ++a
+    elif len(op_text) == 2 and op_text == "--" and tokens[index_start + 1].text.isspace() is False:
+        pass  # --a
     elif len(op_text) == 1 and op_text[0] == "&":
         # if (a &&
         #     &b)
