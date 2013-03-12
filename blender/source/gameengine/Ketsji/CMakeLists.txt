@@ -111,6 +111,7 @@ set(SRC
 	KX_PythonInitTypes.cpp
 	KX_PythonMain.cpp
 	KX_PythonSeq.cpp
+	KX_PythonUniforms.cpp
 	KX_RadarSensor.cpp
 	KX_RayCast.cpp
 	KX_RayEventManager.cpp
@@ -195,6 +196,7 @@ set(SRC
 	KX_PythonInitTypes.h
 	KX_PythonMain.h
 	KX_PythonSeq.h
+	KX_PythonUniforms.h
 	KX_RadarSensor.h
 	KX_RayCast.h
 	KX_RayEventManager.h

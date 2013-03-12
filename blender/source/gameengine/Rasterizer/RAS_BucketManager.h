@@ -52,7 +52,7 @@ public:
 	virtual ~RAS_BucketManager();
 
 	void Renderbuckets(const MT_Transform & cameratrans,
-		RAS_IRasterizer* rasty, RAS_IRenderTools* rendertools);
+		RAS_IRasterizer* rasty, RAS_IRenderTools* rendertools, int layout);
 
 	RAS_MaterialBucket* FindBucket(RAS_IPolyMaterial *material, bool &bucketCreated);
 	void OptimizeBuckets(MT_Scalar distance);
@@ -79,9 +79,9 @@ private:
 	void OrderBuckets(const MT_Transform& cameratrans, BucketList& buckets, vector<sortedmeshslot>& slots, bool alpha);
 
 	void RenderSolidBuckets(const MT_Transform& cameratrans, 
-		RAS_IRasterizer* rasty, RAS_IRenderTools* rendertools);
+		RAS_IRasterizer* rasty, RAS_IRenderTools* rendertools, int layout);
 	void RenderAlphaBuckets(const MT_Transform& cameratrans, 
-		RAS_IRasterizer* rasty, RAS_IRenderTools* rendertools);
+		RAS_IRasterizer* rasty, RAS_IRenderTools* rendertools, int layout);
 
 
 #ifdef WITH_CXX_GUARDEDALLOC

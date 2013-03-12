@@ -42,6 +42,8 @@
 #include "RAS_IRasterizer.h"
 #include "RAS_Deformer.h"
 
+#include "BLI_listbase.h"
+
 #include <vector>
 #include <set>
 #include <list>
@@ -128,6 +130,8 @@ public:
 	// object color
 	bool					m_bObjectColor;
 	MT_Vector4				m_RGBAcolor;
+	ListBase*				m_uniforms;
+	
 	// display lists
 	KX_ListSlot*			m_DisplayList;
 	bool					m_bDisplayList;
@@ -222,7 +226,7 @@ public:
 	bool ActivateMaterial(const MT_Transform& cameratrans, RAS_IRasterizer* rasty,
 		RAS_IRenderTools *rendertools);
 	void RenderMeshSlot(const MT_Transform& cameratrans, RAS_IRasterizer* rasty,
-		RAS_IRenderTools* rendertools, RAS_MeshSlot &ms);
+		RAS_IRenderTools* rendertools, RAS_MeshSlot &ms, int layout);
 	
 	/* Mesh Slot Access */
 	list<RAS_MeshSlot>::iterator msBegin();

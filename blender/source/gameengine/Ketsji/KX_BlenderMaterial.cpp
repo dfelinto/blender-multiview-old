@@ -537,10 +537,12 @@ KX_BlenderMaterial::Activate(
 			return true;
 		}
 		else {
+			/*
 			if (mShader == mLastShader) {
 				mShader->SetProg(false);
 				mLastShader = NULL;
 			}
+			 */
 			mPass = 0;
 			return false;
 		}
@@ -580,10 +582,12 @@ bool KX_BlenderMaterial::UsesLighting(RAS_IRasterizer *rasty) const
 		return true;
 }
 
-void KX_BlenderMaterial::ActivateMeshSlot(const RAS_MeshSlot & ms, RAS_IRasterizer* rasty) const
+void KX_BlenderMaterial::ActivateMeshSlot(const RAS_MeshSlot & ms, RAS_IRasterizer* rasty, int layout) const
 {
 	if (mShader && GLEW_ARB_shader_objects) {
 		mShader->Update(ms, rasty);
+		mShader->UpdateLayout(layout);
+		mShader->UpdateCustom(ms);
 	}
 	else if (mBlenderShader && GLEW_ARB_shader_objects) {
 		int alphablend;

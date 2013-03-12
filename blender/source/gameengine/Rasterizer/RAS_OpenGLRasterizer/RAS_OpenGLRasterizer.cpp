@@ -786,6 +786,28 @@ void RAS_OpenGLRasterizer::SetProjectionMatrix(const MT_Matrix4x4 & mat)
 	m_camortho= (mat[3][3] != 0.0);
 }
 
+MT_Matrix4x4 RAS_OpenGLRasterizer::GetLayoutProjectionMatrix(
+	MT_Matrix4x4 projmat,
+	float near,
+	int layout,
+	int layouts
+) {
+	
+	MT_Matrix4x4 retmat = projmat;
+	
+	float side = near / retmat.getElement(0, 0);
+	float offset = 2.f * side / layouts;
+	
+	float left = -side + (layout * offset);
+	float right = left + offset;
+	
+	/* recalculate glFrustrum matrices */
+	projmat[0][0] = (2 * near) / (right - left);
+	projmat[0][2] = (right + left) / (right - left);
+	
+	return projmat;
+}
+
 MT_Matrix4x4 RAS_OpenGLRasterizer::GetFrustumMatrix(
 	float left,
 	float right,

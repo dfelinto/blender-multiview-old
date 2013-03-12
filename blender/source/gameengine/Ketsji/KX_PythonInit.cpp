@@ -127,6 +127,9 @@ extern "C" {
 #include "DNA_ID.h"
 #include "DNA_scene_types.h"
 
+/* for KX_PythonUniform type constants */
+#include "DNA_material_types.h"
+
 #include "PHY_IPhysicsEnvironment.h"
 #include "BKE_main.h"
 #include "BKE_global.h"
@@ -1791,6 +1794,17 @@ PyObject *initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
 	KX_MACRO_addTypesToDict(d, KX_ACTION_MODE_PLAY, BL_Action::ACT_MODE_PLAY);
 	KX_MACRO_addTypesToDict(d, KX_ACTION_MODE_LOOP, BL_Action::ACT_MODE_LOOP);
 	KX_MACRO_addTypesToDict(d, KX_ACTION_MODE_PING_PONG, BL_Action::ACT_MODE_PING_PONG);
+
+	/* KX_PythonUniform type */
+	KX_MACRO_addTypesToDict(d, MA_UNF_FLOAT, MA_UNF_FLOAT);
+	KX_MACRO_addTypesToDict(d, MA_UNF_VEC2, MA_UNF_VEC2);
+	KX_MACRO_addTypesToDict(d, MA_UNF_VEC3, MA_UNF_VEC3);
+	KX_MACRO_addTypesToDict(d, MA_UNF_VEC4, MA_UNF_VEC4);
+	KX_MACRO_addTypesToDict(d, MA_UNF_INT, MA_UNF_INT);
+	KX_MACRO_addTypesToDict(d, MA_UNF_IVEC2, MA_UNF_IVEC2);
+	KX_MACRO_addTypesToDict(d, MA_UNF_IVEC3, MA_UNF_IVEC3);
+	KX_MACRO_addTypesToDict(d, MA_UNF_IVEC4, MA_UNF_IVEC4);
+	KX_MACRO_addTypesToDict(d, MA_UNF_SAMPLER2D, MA_UNF_SAMPLER2D);
 
 	// Check for errors
 	if (PyErr_Occurred())

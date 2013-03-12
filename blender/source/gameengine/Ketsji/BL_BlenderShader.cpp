@@ -150,7 +150,8 @@ void BL_BlenderShader::Update(const RAS_MeshSlot & ms, RAS_IRasterizer* rasty )
 
 	float auto_bump_scale = ms.m_pDerivedMesh!=0 ? ms.m_pDerivedMesh->auto_bump_scale : 1.0f;
 	GPU_material_bind_uniforms(gpumat, obmat, obcol, auto_bump_scale);
-
+	GPU_material_bind_uniforms_layout(gpumat);
+	GPU_material_bind_custom_uniforms(gpumat, ms.m_uniforms);
 	mAlphaBlend = GPU_material_alpha_blend(gpumat, obcol);
 }
 

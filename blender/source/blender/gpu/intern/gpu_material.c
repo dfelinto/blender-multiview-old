@@ -340,6 +340,61 @@ void GPU_material_bind_uniforms(GPUMaterial *material, float obmat[4][4], float 
 	}
 }
 
+void GPU_material_bind_uniforms_layout(GPUMaterial *material)
+{
+	if(material->pass) {
+		GPUShader *shader = GPU_pass_shader(material->pass);
+		int loc;
+		float layout[1];
+
+		layout[0] = 2.0;
+
+		loc = GPU_shader_get_uniform(shader, "bge_layout");
+		if (loc != -1)
+			GPU_shader_uniform_vector(shader, loc, 1, 1, (float*)(&layout));
+//		GPU_shader_uniform_ivector(shader, loc, 1, 1, (int*)(&layout));
+	}
+}
+
+void GPU_material_bind_custom_uniforms(GPUMaterial *material, ListBase *uniforms)
+{
+	if(material->pass && (*uniforms).first) {
+		GPUShader *shader = GPU_pass_shader(material->pass);
+		CustomUniform *cu;
+		int loc;
+		
+		/* handle custom uniforms */
+		for(cu=(*uniforms).first; cu; cu=cu->next) {
+			loc = GPU_shader_get_uniform(shader, cu->name);
+			
+			// If the uniform wasn't found, go on to the next one
+			if (loc < 0)
+				continue;
+			
+			if(cu->type >= MA_UNF_FLOAT && cu->type <= MA_UNF_VEC4)
+			{
+				if (cu->size > 1)
+					GPU_shader_uniform_vector(shader, loc, cu->size, 1, (float*)(cu->data));
+				else
+					GPU_shader_uniform_vector(shader, loc, 1, 1, (float*)(&cu->data));
+			}
+			else if(cu->type == MA_UNF_INT)
+			{
+				/*
+				if (cu->size > 1)
+					GPU_shader_uniform_ivector(shader, loc, cu->size, 1, (int*)(cu->data));
+				else
+					GPU_shader_uniform_ivector(shader, loc, 1, 1, (int*)(&cu->data));
+				 */
+			}
+			else if(cu->type == MA_UNF_SAMPLER2D)
+			{
+			}
+		}
+	}
+}
+
+
 void GPU_material_unbind(GPUMaterial *material)
 {
 	if (material->pass) {

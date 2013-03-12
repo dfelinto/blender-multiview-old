@@ -52,6 +52,7 @@
 #include "KX_IPhysicsController.h" /* for suspend/resume */
 #include "DNA_object_types.h"
 #include "SCA_LogicManager.h" /* for ConvertPythonToGameObject to search object names */
+#include "KX_PythonUniforms.h"
 #define KX_OB_DYNAMIC 1
 
 //Forward declarations.
@@ -127,10 +128,19 @@ protected:
 	BL_ActionManager*					m_actionManager;
 
 	BL_ActionManager* GetActionManager();
+
+	ListBase uniforms; // for custom uniforms
+	UniformList m_uniforms;
+	
 	
 public:
 	bool								m_isDeformable;
 
+	UniformList& GetUniforms() { return m_uniforms; }
+	
+	KX_PYMETHOD_DOC_O(KX_GameObject, addUniform);
+	static PyObject* pyattr_get_uniforms(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	
 	/**
 	 * Helper function for modules that can't include KX_ClientObjectInfo.h
 	 */

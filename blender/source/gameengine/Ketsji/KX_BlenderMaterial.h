@@ -59,7 +59,8 @@ public:
 	virtual 
 	void ActivateMeshSlot(
 		const RAS_MeshSlot & ms, 
-		RAS_IRasterizer* rasty 
+		RAS_IRasterizer* rasty,
+		int layout
 	) const;
 	
 	void ActivateMat(

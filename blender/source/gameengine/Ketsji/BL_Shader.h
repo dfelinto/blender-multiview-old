@@ -197,6 +197,12 @@ public:
 
 	// Update predefined uniforms each render call
 	void Update(const class RAS_MeshSlot & ms, class RAS_IRasterizer* rasty);
+    
+    // Update OceanViz layout uniform
+    void UpdateLayout(int layout);
+	
+	// Update OceanViz (ge_harmony) custom uniforms
+	void UpdateCustom(const class RAS_MeshSlot & ms);
 
 	//// Set sampler units (copied)
 	//void InitializeSampler(int unit, BL_Texture* texture );
