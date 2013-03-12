@@ -201,6 +201,7 @@ private:
 	/** Settings that doesn't go away with Game Actuator */
 	GlobalSettings m_globalsettings;
 
+   	void					RenderLayoutFrame(KX_Scene* scene, KX_Camera* cam);
 	void					RenderFrame(KX_Scene* scene, KX_Camera* cam);
 	void					PostRenderScene(KX_Scene* scene);
 	void					RenderDebugProperties();

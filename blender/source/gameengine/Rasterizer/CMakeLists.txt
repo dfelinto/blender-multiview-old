@@ -31,6 +31,7 @@ set(INC
 	../../blender/makesdna
 	../../blender/blenlib
 	../../blender/blenkernel
+  ../../blender/blenlib
 	../../../intern/container
 	../../../intern/guardedalloc
 	../../../intern/moto/include

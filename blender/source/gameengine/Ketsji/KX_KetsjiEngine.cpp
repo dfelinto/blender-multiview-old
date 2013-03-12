@@ -884,6 +884,13 @@ void KX_KetsjiEngine::Render()
 
 		// shadow buffers
 		RenderShadowBuffers(scene);
+        
+		// oceanviz special layouts
+		if (scene->GetLayouts() > 1) {
+			RenderLayoutFrame(scene, cam);
+			PostRenderScene(scene);
+			continue;
+		}
 
 		// Avoid drawing the scene with the active camera twice when it's viewport is enabled
 		if (cam && !cam->GetViewport())
@@ -1187,7 +1194,7 @@ void KX_KetsjiEngine::RenderShadowBuffers(KX_Scene *scene)
 
 			/* render */
 			m_rasterizer->ClearDepthBuffer();
-			scene->RenderBuckets(camtrans, m_rasterizer, m_rendertools);
+			scene->RenderBuckets(camtrans, m_rasterizer, m_rendertools, 0);
 
 			/* unbind framebuffer object, restore drawmode, free camera */
 			light->UnbindShadowBuffer(m_rasterizer);
@@ -1195,6 +1202,89 @@ void KX_KetsjiEngine::RenderShadowBuffers(KX_Scene *scene)
 			cam->Release();
 		}
 	}
+}
+
+// update graphics
+void KX_KetsjiEngine::RenderLayoutFrame(KX_Scene* scene, KX_Camera* cam)
+{
+	RAS_Rect viewport, area;
+	
+	if (!cam)
+		return;
+	
+	GetSceneViewport(scene, cam, area, viewport);
+    
+	// store the computed viewport in the scene
+	scene->SetSceneViewport(viewport);
+    
+	// set the viewport for this frame and scene
+	m_canvas->SetViewPort(viewport.GetLeft(), viewport.GetBottom(),
+                          viewport.GetRight(), viewport.GetTop());
+	
+	// see KX_BlenderMaterial::Activate
+	//m_rasterizer->SetAmbient();
+	m_rasterizer->DisplayFog();
+  
+#ifdef WITH_PYTHON
+	// Run any pre-drawing python callbacks
+	scene->RunDrawingCallbacks(scene->GetPreDrawCB());
+#endif
+
+	MT_Matrix4x4 origprojmat;
+	origprojmat = cam->GetProjectionMatrix();
+	
+	/* split the viewport according to scene.layouts */
+	int layouts = scene->GetLayouts();
+	for (int layout=0; layout < layouts; layout++) {		
+		
+		/* Layout Viewport */
+		int viewoffset = int(viewport.GetWidth() / layouts);
+
+		m_canvas->SetViewPort(
+							  viewport.GetLeft() + layout * viewoffset,
+							  viewport.GetBottom(),
+							  viewport.GetRight() - (viewoffset * (layouts - 1 - layout)),
+							  viewport.GetTop());
+		
+		MT_Matrix4x4 projmat;
+		projmat = m_rasterizer->GetLayoutProjectionMatrix(
+													origprojmat, cam->GetCameraNear(),
+													layout, layouts);
+
+		cam->SetProjectionMatrix(projmat);
+		m_rasterizer->SetProjectionMatrix(cam->GetProjectionMatrix());
+		
+		MT_Transform camtrans(cam->GetWorldToCamera());
+		MT_Matrix4x4 viewmat(camtrans);
+	
+		m_rasterizer->SetViewMatrix(viewmat, cam->NodeGetWorldOrientation(), cam->NodeGetWorldPosition(), cam->GetCameraData()->m_perspective);
+		cam->SetModelviewMatrix(viewmat);
+    
+		m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
+		SG_SetActiveStage(SG_STAGE_CULLING);
+    
+		scene->CalculateVisibleMeshes(m_rasterizer,cam);
+    
+		m_logger->StartLog(tc_rasterizer, m_kxsystem->GetTimeInSeconds(), true);
+		SG_SetActiveStage(SG_STAGE_RENDER);
+    
+		scene->RenderBuckets(camtrans, m_rasterizer, m_rendertools, layout);
+	}
+	
+	if (scene->GetPhysicsEnvironment())
+		scene->GetPhysicsEnvironment()->debugDrawWorld();
+
+	// restore the original camera
+	cam->SetProjectionMatrix(origprojmat);
+	
+//	m_rasterizer->SetProjectionMatrix(cam->GetProjectionMatrix());
+	
+	// restore the viewport for this frame and scene
+	m_canvas->SetViewPort(viewport.GetLeft(), viewport.GetBottom(),
+                          viewport.GetRight(), viewport.GetTop());
+
+	//render all the font objects for this scene
+	RenderFonts(scene);
 }
 	
 // update graphics
@@ -1323,7 +1413,7 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 	scene->RunDrawingCallbacks(scene->GetPreDrawCB());
 #endif
 
-	scene->RenderBuckets(camtrans, m_rasterizer, m_rendertools);
+	scene->RenderBuckets(camtrans, m_rasterizer, m_rendertools, 0);
 
 	//render all the font objects for this scene
 	RenderFonts(scene);

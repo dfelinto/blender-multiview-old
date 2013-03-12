@@ -131,6 +131,8 @@ void GPU_materials_free(void);
 
 void GPU_material_bind(GPUMaterial *material, int oblay, int viewlay, double time, int mipmap, float viewmat[4][4], float viewinv[4][4]);
 void GPU_material_bind_uniforms(GPUMaterial *material, float obmat[4][4], float obcol[4], float autobumpscale);
+void GPU_material_bind_uniforms_layout(GPUMaterial *material);
+void GPU_material_bind_custom_uniforms(GPUMaterial *material, ListBase *uniforms);
 void GPU_material_unbind(GPUMaterial *material);
 int GPU_material_bound(GPUMaterial *material);
 

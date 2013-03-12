@@ -152,7 +152,8 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 	m_networkDeviceInterface(ndi),
 	m_active_camera(NULL),
 	m_ueberExecutionPriority(0),
-	m_blenderScene(scene)
+	m_blenderScene(scene),
+    m_layouts(1)
 {
 	m_suspendedtime = 0.0;
 	m_suspendeddelta = 0.0;
@@ -1638,9 +1639,10 @@ RAS_MaterialBucket* KX_Scene::FindBucket(class RAS_IPolyMaterial* polymat, bool 
 
 void KX_Scene::RenderBuckets(const MT_Transform & cameratransform,
                              class RAS_IRasterizer* rasty,
-                             class RAS_IRenderTools* rendertools)
+                             class RAS_IRenderTools* rendertools,
+                             int layout)
 {
-	m_bucketmanager->Renderbuckets(cameratransform,rasty,rendertools);
+	m_bucketmanager->Renderbuckets(cameratransform,rasty,rendertools, layout);
 	KX_BlenderMaterial::EndFrame();
 }
 
@@ -2218,6 +2220,33 @@ PyObject *KX_Scene::pyattr_get_cameras(void *self_v, const KX_PYATTRIBUTE_DEF *a
 	return clist->NewProxy(true);
 }
 
+PyObject *KX_Scene::pyattr_get_layouts(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+{
+    KX_Scene* self= static_cast<KX_Scene*>(self_v);
+    
+    int layouts;
+    layouts = self->m_layouts;
+
+    return PyLong_FromSsize_t(layouts);
+}
+
+int KX_Scene::pyattr_set_layouts(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value)
+{
+	KX_Scene* self= static_cast<KX_Scene*>(self_v);
+
+	int layouts = PyLong_AsLong(value);
+    
+    if (layouts > 0)
+        self->m_layouts = layouts;
+    else
+    {
+        PyErr_SetString(PyExc_RuntimeError, "Scene.layouts must be a positive number");
+        return PY_SET_ATTR_FAIL;
+    }
+    
+    return PY_SET_ATTR_SUCCESS;
+}
+
 PyObject *KX_Scene::pyattr_get_active_camera(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	KX_Scene* self = static_cast<KX_Scene*>(self_v);
@@ -2322,6 +2351,7 @@ PyAttributeDef KX_Scene::Attributes[] = {
 	KX_PYATTRIBUTE_RO_FUNCTION("cameras",			KX_Scene, pyattr_get_cameras),
 	KX_PYATTRIBUTE_RO_FUNCTION("lights",			KX_Scene, pyattr_get_lights),
 	KX_PYATTRIBUTE_RW_FUNCTION("active_camera",		KX_Scene, pyattr_get_active_camera, pyattr_set_active_camera),
+    KX_PYATTRIBUTE_RW_FUNCTION("layouts",           KX_Scene, pyattr_get_layouts , pyattr_set_layouts),
 	KX_PYATTRIBUTE_RW_FUNCTION("pre_draw",			KX_Scene, pyattr_get_drawing_callback_pre, pyattr_set_drawing_callback_pre),
 	KX_PYATTRIBUTE_RW_FUNCTION("post_draw",			KX_Scene, pyattr_get_drawing_callback_post, pyattr_set_drawing_callback_post),
 	KX_PYATTRIBUTE_RW_FUNCTION("gravity",			KX_Scene, pyattr_get_gravity, pyattr_set_gravity),

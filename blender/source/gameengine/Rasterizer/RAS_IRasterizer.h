@@ -321,6 +321,22 @@ public:
 	/**
 	 */
 	virtual double	GetTime()=0;
+	
+	/**
+	 * Generates a projection matrix for the Oceanviz layout system.
+	 * \param projmat a 4x4 matrix for the original camera
+	 * \param near the near clipping plane
+	 * \param layout oceanviz current scenario
+	 * \param layouts number of layouts
+	 * \return a 4x4 matrix representing the projection transform.
+	 */
+	virtual MT_Matrix4x4 GetLayoutProjectionMatrix(
+		MT_Matrix4x4 projmat,
+		float near,
+		int layout,
+		int layouts
+	)=0;
+	
 	/**
 	 * Generates a projection matrix from the specified frustum.
 	 * \param left the left clipping plane

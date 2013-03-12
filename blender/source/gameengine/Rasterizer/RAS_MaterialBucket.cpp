@@ -599,9 +599,9 @@ bool RAS_MaterialBucket::ActivateMaterial(const MT_Transform& cameratrans, RAS_I
 }
 
 void RAS_MaterialBucket::RenderMeshSlot(const MT_Transform& cameratrans, RAS_IRasterizer* rasty,
-	RAS_IRenderTools* rendertools, RAS_MeshSlot &ms)
+	RAS_IRenderTools* rendertools, RAS_MeshSlot &ms, int layout)
 {
-	m_material->ActivateMeshSlot(ms, rasty);
+	m_material->ActivateMeshSlot(ms, rasty, layout);
 
 	if (ms.m_pDeformer)
 	{

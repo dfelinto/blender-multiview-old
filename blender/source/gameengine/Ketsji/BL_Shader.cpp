@@ -18,6 +18,8 @@
 #include "RAS_MeshObject.h"
 #include "RAS_IRasterizer.h"
 
+#include "DNA_material_types.h"
+
 #define spit(x) std::cout << x << std::endl;
 
 #define SORT_UNIFORMS 1
@@ -455,6 +457,58 @@ void BL_Shader::SetProg(bool enable)
 	}
 }
 
+void BL_Shader::UpdateLayout(int layout)
+{
+    if (!Ok())
+		return;
+
+    /* uniform */
+	int loc = glGetUniformLocationARB(mShader, "bge_layout");
+	if (loc != -1) SetUniform(loc, layout);
+}
+
+void BL_Shader::UpdateCustom( const RAS_MeshSlot & ms )
+{
+	if (!Ok())
+		return;
+
+	if ( GLEW_ARB_fragment_shader &&
+		GLEW_ARB_vertex_shader &&
+		GLEW_ARB_shader_objects
+		)
+	{
+		ListBase *uniforms = ms.m_uniforms;
+		CustomUniform *cu;
+		int loc;
+				
+		/* handle custom uniforms */
+		for( cu=(CustomUniform *)(*uniforms).first; cu;cu=cu->next) {
+			loc = GetUniformLocation(cu->name);
+					
+			// If the uniform wasn't found, go on to the next one
+			if (loc == -1)
+				continue;
+					
+			if(cu->type >= MA_UNF_FLOAT && cu->type <= MA_UNF_VEC4)
+			{
+				if (cu->size > 1)
+					SetUniform(loc, (const float*)(cu->data), cu->size);
+				else
+					SetUniform(loc, (const float &)cu->data);
+			}
+			
+			
+			if(cu->type >= MA_UNF_INT && cu->type <= MA_UNF_IVEC4)
+			{
+				if (cu->size > 1)
+					SetUniform(loc, (const int*)(cu->data), cu->size);
+				else
+					SetUniform(loc, (const int&)cu->data);
+			}
+		}
+	}	
+}
+
 void BL_Shader::Update( const RAS_MeshSlot & ms, RAS_IRasterizer* rasty )
 {
 	if (!Ok() || !mPreDef.size()) 
@@ -567,7 +621,7 @@ void BL_Shader::Update( const RAS_MeshSlot & ms, RAS_IRasterizer* rasty )
 					break;
 			}
 		}
-	}
+    }
 }
 
 

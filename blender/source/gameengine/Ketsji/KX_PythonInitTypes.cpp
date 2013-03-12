@@ -59,6 +59,7 @@
 #include "KX_PolyProxy.h"
 #include "KX_PolygonMaterial.h"
 #include "KX_PythonSeq.h"
+#include "KX_PythonUniforms.h"
 #include "KX_SCA_AddObjectActuator.h"
 #include "KX_SCA_EndObjectActuator.h"
 #include "KX_SCA_ReplaceMeshActuator.h"
@@ -221,6 +222,7 @@ void initPyTypes(void)
 		PyType_Ready_Attr(dict, KX_Scene, init_getset);
 		PyType_Ready_Attr(dict, KX_NavMeshObject, init_getset);
 		PyType_Ready_Attr(dict, KX_SceneActuator, init_getset);
+		PyType_Ready_Attr(dict, KX_PythonUniform, init_getset);
 		PyType_Ready_Attr(dict, KX_SoundActuator, init_getset);
 		PyType_Ready_Attr(dict, KX_StateActuator, init_getset);
 		PyType_Ready_Attr(dict, KX_SteeringActuator, init_getset);

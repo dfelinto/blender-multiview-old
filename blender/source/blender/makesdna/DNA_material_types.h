@@ -74,6 +74,13 @@ typedef struct VolumeSettings {
 	float ms_spread;
 } VolumeSettings;
 
+typedef struct CustomUniform {
+	struct CustomUniform *next, *prev;
+	char name[64];
+	short type, size, pad[2];
+	void *data;
+} CustomUniform;
+
 /* Game Engine Options (old Texface mode, transp and flag) */
 typedef struct GameSettings {
 	int flag;
@@ -233,6 +240,18 @@ typedef struct Material {
 		 * otherwise anim-editors will not read correctly
 		 */
 #define MA_DS_SHOW_TEXS	4
+
+/* Uniform type */
+#define MA_UNF_FLOAT	1
+#define MA_UNF_VEC2		2
+#define MA_UNF_VEC3		3
+#define MA_UNF_VEC4		4
+#define MA_UNF_INT		5
+#define MA_UNF_IVEC2	6
+#define MA_UNF_IVEC3	7
+#define MA_UNF_IVEC4	8
+#define MA_UNF_MAT		9 /* Not yet implemented */
+#define MA_UNF_SAMPLER2D 10
 
 /* mode (is int) */
 #define MA_TRACEBLE		1

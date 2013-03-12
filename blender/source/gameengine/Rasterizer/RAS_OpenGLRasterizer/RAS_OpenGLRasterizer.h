@@ -222,6 +222,13 @@ public:
 	virtual void	SetCullFace(bool enable);
 	virtual void	SetLines(bool enable);
 
+	virtual MT_Matrix4x4 GetLayoutProjectionMatrix(
+							MT_Matrix4x4 projmat,
+							float near,
+							int layout,
+							int layouts
+						);
+    
 	virtual MT_Matrix4x4 GetFrustumMatrix(
 							float left,
 							float right,

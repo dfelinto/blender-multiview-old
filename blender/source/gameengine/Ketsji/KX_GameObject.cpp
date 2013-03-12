@@ -80,6 +80,7 @@ typedef unsigned long uint_ptr;
 #include "KX_SG_NodeRelationships.h"
 
 #include "BLI_math.h"
+#include "BLI_listbase.h"
 
 static MT_Point3 dummy_point= MT_Point3(0.0, 0.0, 0.0);
 static MT_Vector3 dummy_scaling = MT_Vector3(1.0, 1.0, 1.0);
@@ -124,6 +125,10 @@ KX_GameObject::KX_GameObject(
 	KX_NormalParentRelation * parent_relation = 
 		KX_NormalParentRelation::New();
 	m_pSGNode->SetParentRelation(parent_relation);
+	
+	// make sure the list is NULL
+	uniforms.first = NULL;
+	uniforms.last = NULL;
 };
 
 
@@ -185,6 +190,9 @@ KX_GameObject::~KX_GameObject()
 		Py_CLEAR(m_attr_dict);
 	}
 #endif // WITH_PYTHON
+	
+	//cleaning the uniform list
+	m_uniforms.clear();
 }
 
 KX_GameObject* KX_GameObject::GetClientObject(KX_ClientObjectInfo *info)
@@ -688,6 +696,7 @@ void KX_GameObject::UpdateBuckets( bool recursive )
 		{
 			ms = *mit;
 			ms->m_bObjectColor = m_bUseObjectColor;
+			ms->m_uniforms = &this->uniforms;
 			ms->m_RGBAcolor = m_objectColor;
 			ms->m_bVisible = m_bVisible;
 			ms->m_bCulled = m_bCulled || !m_bVisible;
@@ -1684,6 +1693,7 @@ PyMethodDef KX_GameObject::Methods[] = {
 	KX_PYMETHODTABLE_O(KX_GameObject, getDistanceTo),
 	KX_PYMETHODTABLE_O(KX_GameObject, getVectTo),
 	KX_PYMETHODTABLE(KX_GameObject, sendMessage),
+	KX_PYMETHODTABLE_O(KX_GameObject, addUniform),
 
 	KX_PYMETHODTABLE_KEYWORDS(KX_GameObject, playAction),
 	KX_PYMETHODTABLE(KX_GameObject, stopAction),
@@ -1734,6 +1744,7 @@ PyAttributeDef KX_GameObject::Attributes[] = {
 	KX_PYATTRIBUTE_RO_FUNCTION("childrenRecursive",	KX_GameObject, pyattr_get_children_recursive),
 	KX_PYATTRIBUTE_RO_FUNCTION("attrDict",	KX_GameObject, pyattr_get_attrDict),
 	KX_PYATTRIBUTE_RW_FUNCTION("color", KX_GameObject, pyattr_get_obcolor, pyattr_set_obcolor),
+	KX_PYATTRIBUTE_RO_FUNCTION("uniforms", KX_GameObject, pyattr_get_uniforms),
 	
 	/* experimental, don't rely on these yet */
 	KX_PYATTRIBUTE_RO_FUNCTION("sensors",		KX_GameObject, pyattr_get_sensors),
@@ -1741,6 +1752,26 @@ PyAttributeDef KX_GameObject::Attributes[] = {
 	KX_PYATTRIBUTE_RO_FUNCTION("actuators",		KX_GameObject, pyattr_get_actuators),
 	{NULL} //Sentinel
 };
+
+KX_PYMETHODDEF_DOC_O(KX_GameObject, addUniform,
+					 "addUniform(uniform) -- Adds the uniform to the shader's uniform list")
+{
+	if (!PyType_IsSubtype(&KX_PythonUniform::Type, Py_TYPE(value)))
+		return NULL;
+
+	KX_PythonUniform *uniform = static_cast<KX_PythonUniform*>BGE_PROXY_REF(value);
+
+	BLI_addhead(&(this->uniforms), uniform->GetCustomUniform());
+	m_uniforms.push_back(uniform);
+
+	Py_RETURN_NONE;
+}
+
+PyObject *KX_GameObject::pyattr_get_uniforms(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+{
+	KX_GameObject* self = static_cast<KX_GameObject*>(self_v);
+	return KX_PythonSeq_CreatePyObject(self->m_proxy, KX_PYGENSEQ_OB_TYPE_UNIFORMS);
+}
 
 PyObject *KX_GameObject::PyReplaceMesh(PyObject *args)
 {

@@ -150,7 +150,7 @@ public:
 	{ 
 		return false; 
 	}
-	virtual void ActivateMeshSlot(const class RAS_MeshSlot & ms, RAS_IRasterizer* rasty) const {}
+	virtual void ActivateMeshSlot(const class RAS_MeshSlot & ms, RAS_IRasterizer* rasty, int layout) const {}
 
 	virtual bool				Equals(const RAS_IPolyMaterial& lhs) const;
 	bool				Less(const RAS_IPolyMaterial& rhs) const;

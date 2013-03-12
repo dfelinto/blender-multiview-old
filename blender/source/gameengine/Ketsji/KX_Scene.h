@@ -295,6 +295,11 @@ protected:
 
 	KX_ObstacleSimulation* m_obstacleSimulation;
 
+	/**
+	  * This is the index oceanviz
+	  */
+	int m_layouts;
+
 public:
 	KX_Scene(class SCA_IInputDevice* keyboarddevice,
 		class SCA_IInputDevice* mousedevice,
@@ -310,7 +315,8 @@ public:
 	RAS_MaterialBucket*	FindBucket(RAS_IPolyMaterial* polymat, bool &bucketCreated);
 	void RenderBuckets(const MT_Transform& cameratransform,
 	                   RAS_IRasterizer* rasty,
-	                   RAS_IRenderTools* rendertools);
+	                   RAS_IRenderTools* rendertools,
+                       int layout);
 
 	/**
 	 * Update all transforms according to the scenegraph.
@@ -589,6 +595,8 @@ public:
 	void Render2DFilters(RAS_ICanvas* canvas);
 
 	KX_ObstacleSimulation* GetObstacleSimulation() { return m_obstacleSimulation; }
+    
+    int GetLayouts(){return this->m_layouts;}
 
 #ifdef WITH_PYTHON
 	/* --------------------------------------------------------------------- */
@@ -619,6 +627,8 @@ public:
 	static int			pyattr_set_drawing_callback_post(void *selv_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
 	static PyObject*	pyattr_get_gravity(void* self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static int			pyattr_set_gravity(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
+	static PyObject*	pyattr_get_layouts(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	static int			pyattr_set_layouts(void *selv_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
 
 	virtual PyObject *py_repr(void) { return PyUnicode_From_STR_String(GetName()); }
 	
