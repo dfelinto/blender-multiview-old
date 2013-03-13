@@ -35,11 +35,13 @@
  *    degenerate faces.
  */
 
+#include "DNA_listBase.h"
+
+#include "MEM_guardedalloc.h"
+
 #include "BLI_math.h"
 #include "BLI_array.h"
 #include "BLI_scanfill.h"
-
-#include "MEM_guardedalloc.h"
 
 #include "bmesh.h"
 
@@ -214,7 +216,6 @@ void BM_face_calc_tessellation(BMFace *f, BMLoop **r_loops, int (*_r_index)[3])
 				sf_vert_first = sf_vert;
 			}
 
-			/* fell in arrays passed */
 			r_loops[j] = l_iter;
 
 			/* mark order */
