@@ -1070,7 +1070,7 @@ static void knifetool_draw(const bContext *C, ARegion *UNUSED(ar), void *arg)
 
 	if (kcd->totlinehit > 0) {
 		const float vthresh4 = kcd->vthresh / 4.0f;
-		const float vthresh4_squared = vthresh4 * vthresh4;
+		const float vthresh4_sq = vthresh4 * vthresh4;
 
 		BMEdgeHit *lh;
 		int i;
@@ -1090,12 +1090,12 @@ static void knifetool_draw(const bContext *C, ARegion *UNUSED(ar), void *arg)
 			knife_project_v3(kcd, lh->kfe->v2->cageco, sv2);
 			knife_project_v3(kcd, lh->cagehit, lh->schit);
 
-			if (len_squared_v2v2(lh->schit, sv1) < vthresh4_squared) {
+			if (len_squared_v2v2(lh->schit, sv1) < vthresh4_sq) {
 				copy_v3_v3(lh->cagehit, lh->kfe->v1->cageco);
 				glVertex3fv(lh->cagehit);
 				lh->v = lh->kfe->v1;
 			}
-			else if (len_squared_v2v2(lh->schit, sv2) < vthresh4_squared) {
+			else if (len_squared_v2v2(lh->schit, sv2) < vthresh4_sq) {
 				copy_v3_v3(lh->cagehit, lh->kfe->v2->cageco);
 				glVertex3fv(lh->cagehit);
 				lh->v = lh->kfe->v2;
@@ -1187,7 +1187,7 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 	/* for comparing distances, error of intersection depends on triangle scale.
 	 * need to scale down before squaring for accurate comparison */
 	const float depsilon = (FLT_EPSILON / 2.0f) * len_v3_tri_side_max(v1, v2, v3);
-	const float depsilon_squared = depsilon * depsilon;
+	const float depsilon_sq = depsilon * depsilon;
 
 	copy_v3_v3(cos + 0, v1);
 	copy_v3_v3(cos + 3, v2);
@@ -1221,14 +1221,14 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 
 				interp_v3_v3v3(p, kfe->v1->cageco, kfe->v2->cageco, lambda);
 
-				if (kcd->curr.vert && len_squared_v3v3(kcd->curr.vert->cageco, p) < depsilon_squared) {
+				if (kcd->curr.vert && len_squared_v3v3(kcd->curr.vert->cageco, p) < depsilon_sq) {
 					continue;
 				}
-				if (kcd->prev.vert && len_squared_v3v3(kcd->prev.vert->cageco, p) < depsilon_squared) {
+				if (kcd->prev.vert && len_squared_v3v3(kcd->prev.vert->cageco, p) < depsilon_sq) {
 					continue;
 				}
-				if (len_squared_v3v3(kcd->prev.cage, p) < depsilon_squared ||
-				    len_squared_v3v3(kcd->curr.cage, p) < depsilon_squared)
+				if (len_squared_v3v3(kcd->prev.cage, p) < depsilon_sq ||
+				    len_squared_v3v3(kcd->curr.cage, p) < depsilon_sq)
 				{
 					continue;
 				}
@@ -1274,8 +1274,8 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 				if (!hitf && !BLI_smallhash_haskey(ehash, (intptr_t)kfe)) {
 					BMEdgeHit hit;
 	
-					if (len_squared_v3v3(p, kcd->curr.co) < depsilon_squared ||
-					    len_squared_v3v3(p, kcd->prev.co) < depsilon_squared)
+					if (len_squared_v3v3(p, kcd->curr.co) < depsilon_sq ||
+					    len_squared_v3v3(p, kcd->prev.co) < depsilon_sq)
 					{
 						continue;
 					}
@@ -1534,10 +1534,10 @@ static int knife_sample_screen_density(KnifeTool_OpData *kcd, const float radius
 	f = knife_find_closest_face(kcd, co, cageco, &is_space);
 
 	if (f && !is_space) {
-		const float radius_squared = radius * radius;
+		const float radius_sq = radius * radius;
 		ListBase *lst;
 		Ref *ref;
-		float dis_squared;
+		float dis_sq;
 		int c = 0;
 
 		knife_project_v3(kcd, cageco, sco);
@@ -1552,8 +1552,8 @@ static int knife_sample_screen_density(KnifeTool_OpData *kcd, const float radius
 
 				knife_project_v3(kcd, kfv->cageco, kfv->sco);
 
-				dis_squared = len_v2v2(kfv->sco, sco);
-				if (dis_squared < radius_squared) {
+				dis_sq = len_squared_v2v2(kfv->sco, sco);
+				if (dis_sq < radius_sq) {
 					if (kcd->vc.rv3d->rflag & RV3D_CLIPPING) {
 						if (ED_view3d_clipping_test(kcd->vc.rv3d, kfv->cageco, TRUE) == 0) {
 							c++;
@@ -1704,10 +1704,11 @@ static KnifeVert *knife_find_closest_vert(KnifeTool_OpData *kcd, float p[3], flo
 	kcd->curr.bmface = f;
 
 	if (f) {
+		const float maxdist_sq = maxdist * maxdist;
 		ListBase *lst;
 		Ref *ref;
 		KnifeVert *curv = NULL;
-		float dis, curdis = FLT_MAX;
+		float dis_sq, curdis_sq = FLT_MAX;
 
 		knife_project_v3(kcd, cageco, sco);
 
@@ -1721,17 +1722,17 @@ static KnifeVert *knife_find_closest_vert(KnifeTool_OpData *kcd, float p[3], flo
 
 				knife_project_v3(kcd, kfv->cageco, kfv->sco);
 
-				dis = len_v2v2(kfv->sco, sco);
-				if (dis < curdis && dis < maxdist) {
+				dis_sq = len_squared_v2v2(kfv->sco, sco);
+				if (dis_sq < curdis_sq && dis_sq < maxdist_sq) {
 					if (kcd->vc.rv3d->rflag & RV3D_CLIPPING) {
 						if (ED_view3d_clipping_test(kcd->vc.rv3d, kfv->cageco, TRUE) == 0) {
 							curv = kfv;
-							curdis = dis;
+							curdis_sq = dis_sq;
 						}
 					}
 					else {
 						curv = kfv;
-						curdis = dis;
+						curdis_sq = dis_sq;
 					}
 				}
 			}
