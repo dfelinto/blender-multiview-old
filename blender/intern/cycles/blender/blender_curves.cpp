@@ -383,7 +383,7 @@ static void set_resolution(Mesh *mesh, BL::Mesh *b_mesh, BL::Object *b_ob, BL::S
 {
 	BL::Object::modifiers_iterator b_mod;
 	for(b_ob->modifiers.begin(b_mod); b_mod != b_ob->modifiers.end(); ++b_mod) {
-		if ((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && (b_mod->show_viewport()) || (b_mod->show_render())) {
+		if ((b_mod->type() == b_mod->type_PARTICLE_SYSTEM) && ((b_mod->show_viewport()) || (b_mod->show_render()))) {
 			BL::ParticleSystemModifier psmd((const PointerRNA)b_mod->ptr);
 			BL::ParticleSystem b_psys((const PointerRNA)psmd.particle_system().ptr);
 			b_psys.set_resolution(*scene, *b_ob, (render)? 2: 1);
