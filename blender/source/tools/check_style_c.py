@@ -130,6 +130,13 @@ def tk_advance_line_start(index):
     return tk_advance_no_ws(index, 1)
 
 
+def tk_advance_line(index, direction):
+    line = tokens[index].line
+    while tokens[index + direction].line == line or tokens[index].text == "\n":
+        index += direction
+    return index
+
+
 def tk_match_backet(index):
     backet_start = tokens[index].text
     assert(tokens[index].type == Token.Punctuation)
@@ -364,10 +371,20 @@ def blender_check_kw_else(index_kw):
     # else
     # {
     # ... which is never OK
+    #
+    # ... except if you have
+    # else
+    # #preprocessor
+    # {
 
     if tokens[i_next].type == Token.Punctuation and tokens[i_next].text == "{":
         if tokens[index_kw].line < tokens[i_next].line:
-            warning("else body brace on a new line 'else\\n{'", index_kw, i_next)
+            # check for preproc
+            i_newline = tk_advance_line(index_kw, 1)
+            if tokens[i_newline].text.startswith("#"):
+                pass
+            else:
+                warning("else body brace on a new line 'else\\n{'", index_kw, i_next)
 
     # this check only tests for:
     # else
