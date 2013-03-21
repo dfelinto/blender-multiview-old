@@ -391,6 +391,7 @@ void rna_Object_dm_info(struct Object *ob, int type, char *result)
 		}
 	}
 }
+#endif /* NDEBUG */
 
 static int rna_Object_update_from_editmode(Object *ob)
 {
@@ -399,8 +400,6 @@ static int rna_Object_update_from_editmode(Object *ob)
 	}
 	return false;
 }
-#endif /* NDEBUG */
-
 #else /* RNA_RUNTIME */
 
 void RNA_api_object(StructRNA *srna)
