@@ -76,6 +76,8 @@ static EnumPropertyItem space_items[] = {
 #include "BKE_object.h"
 #include "BKE_report.h"
 
+#include "ED_object.h"
+
 #include "DNA_curve_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
