@@ -222,6 +222,7 @@ class CyclesRender_PT_performance(CyclesButtonsPanel, Panel):
         
 class CyclesRender_PT_opengl(CyclesButtonsPanel, Panel):
     bl_label = "OpenGL Render"
+    bl_options = {'DEFAULT_CLOSED'}
 
     def draw(self, context):
         layout = self.layout
