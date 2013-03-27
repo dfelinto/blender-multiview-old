@@ -149,7 +149,6 @@ def setup_staticlibs(lenv):
         libincs += Split(lenv['BF_SDL_LIBPATH'])
     if lenv['WITH_BF_JACK'] and not lenv['WITH_BF_JACK_DYNLOAD']:
         libincs += Split(lenv['BF_JACK_LIBPATH'])
-        statlibs += Split(lenv['BF_JACK_LIB_STATIC'])
     if lenv['WITH_BF_SNDFILE']:
         libincs += Split(lenv['BF_SNDFILE_LIBPATH'])
     if lenv['WITH_BF_OPENEXR']:
