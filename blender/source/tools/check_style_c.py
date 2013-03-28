@@ -35,6 +35,7 @@ IGNORE = tuple([os.path.join(SOURCE_DIR, ig) for ig in IGNORE])
 IGNORE_DIR = tuple([os.path.join(SOURCE_DIR, ig) for ig in IGNORE_DIR])
 WARN_TEXT = False
 
+
 def is_ignore(f):
     for ig in IGNORE:
         if f == ig:
@@ -341,6 +342,7 @@ def blender_check_kw_if(index_kw_start, index_kw, index_kw_end):
         index_final_step = tk_advance_no_ws(index_final, 1)
         if tokens[index_final_step].text == ";":
             warning("semi-colon after brace '%s () { ... };'" % tokens[index_kw].text, index_final_step, index_final_step)
+
 
 def blender_check_kw_else(index_kw):
     # for 'else if' use the if check.

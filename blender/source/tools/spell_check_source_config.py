@@ -40,7 +40,7 @@ dict_custom = {
     "enum", "enums",
     "int", "ints",
     "tuple", "tuples",
-    
+
     # python functions
     "repr",
     "func",
@@ -196,7 +196,7 @@ dict_ignore = {
     "svn",
     "hg",
     "gl",
-    
+
     # extensions
     "xpm",
     "xml",
