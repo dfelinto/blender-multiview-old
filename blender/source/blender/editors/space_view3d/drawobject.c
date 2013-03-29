@@ -2601,9 +2601,9 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 	unsigned char col[4] = {0, 0, 0, 255}; /* color of the text to draw */
 	float area; /* area of the face */
 	float grid = unit->system ? unit->scale_length : v3d->grid;
-	const int do_split = unit->flag & USER_UNIT_OPT_SPLIT;
-	const int do_global = v3d->flag & V3D_GLOBAL_STATS;
-	const int do_moving = G.moving;
+	const bool do_split = (unit->flag & USER_UNIT_OPT_SPLIT) != 0;
+	const bool do_global = (v3d->flag & V3D_GLOBAL_STATS) != 0;
+	const bool do_moving = G.moving;
 
 	BMIter iter;
 	int i;
@@ -2648,6 +2648,48 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 				}
 
 				view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
+			}
+		}
+	}
+
+	if (me->drawflag & ME_DRAWEXTRA_EDGEANG) {
+		const bool is_rad = (unit->system_rotation == USER_UNIT_ROT_RADIANS);
+		BMEdge *eed;
+
+		UI_GetThemeColor3ubv(TH_DRAWEXTRA_EDGEANG, col);
+
+		eed = BM_iter_new(&iter, em->bm, BM_EDGES_OF_MESH, NULL);
+		for (; eed; eed = BM_iter_step(&iter)) {
+			/* draw selected edges, or edges next to selected verts while draging */
+			if (BM_elem_flag_test(eed, BM_ELEM_SELECT) ||
+			    (do_moving && (BM_elem_flag_test(eed->v1, BM_ELEM_SELECT) ||
+			                   BM_elem_flag_test(eed->v2, BM_ELEM_SELECT))))
+			{
+				BMFace *f_a, *f_b;
+				if (BM_edge_face_pair(eed, &f_a, &f_b)) {
+					float angle;
+					copy_v3_v3(v1, eed->v1->co);
+					copy_v3_v3(v2, eed->v2->co);
+
+					mid_v3_v3v3(vmid, v1, v2);
+
+					if (do_global) {
+						float no_a[3];
+						float no_b[3];
+						copy_v3_v3(no_a, f_a->no);
+						copy_v3_v3(no_b, f_b->no);
+						mul_mat3_m4_v3(ob->obmat, no_a);
+						mul_mat3_m4_v3(ob->obmat, no_b);
+						angle = angle_normalized_v3v3(no_a, no_b);
+					}
+					else {
+						angle = angle_normalized_v3v3(f_a->no, f_b->no);
+					}
+
+					BLI_snprintf(numstr, sizeof(numstr), "%.3f", is_rad ? angle : RAD2DEGF(angle));
+
+					view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
+				}
 			}
 		}
 	}
@@ -2714,7 +2756,7 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 
 	if (me->drawflag & ME_DRAWEXTRA_FACEANG) {
 		BMFace *efa;
-		int is_rad = unit->system_rotation == USER_UNIT_ROT_RADIANS;
+		const bool is_rad = (unit->system_rotation == USER_UNIT_ROT_RADIANS);
 
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_FACEANG, col);
 
@@ -3002,7 +3044,10 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 			draw_dm_vert_normals(em, scene, ob, cageDM);
 		}
 
-		if ((me->drawflag & (ME_DRAWEXTRA_EDGELEN | ME_DRAWEXTRA_FACEAREA | ME_DRAWEXTRA_FACEANG)) &&
+		if ((me->drawflag & (ME_DRAWEXTRA_EDGELEN |
+		                     ME_DRAWEXTRA_FACEAREA |
+		                     ME_DRAWEXTRA_FACEANG |
+		                     ME_DRAWEXTRA_EDGEANG)) &&
 		    !(v3d->flag2 & V3D_RENDER_OVERRIDE))
 		{
 			draw_em_measure_stats(v3d, ob, em, &scene->unit);
