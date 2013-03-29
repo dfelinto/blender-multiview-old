@@ -2644,7 +2644,7 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 					               unit->system, B_UNIT_LENGTH, do_split, false);
 				}
 				else {
-					sprintf(numstr, conv_float, len_v3v3(v1, v2));
+					BLI_snprintf(numstr, sizeof(numstr), conv_float, len_v3v3(v1, v2));
 				}
 
 				view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
@@ -2657,6 +2657,8 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 		BMEdge *eed;
 
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_EDGEANG, col);
+
+		// invert_m4_m4(ob->imat, ob->obmat);  // this is already called
 
 		eed = BM_iter_new(&iter, em->bm, BM_EDGES_OF_MESH, NULL);
 		for (; eed; eed = BM_iter_step(&iter)) {
@@ -2678,9 +2680,9 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 						float no_b[3];
 						copy_v3_v3(no_a, f_a->no);
 						copy_v3_v3(no_b, f_b->no);
-						mul_mat3_m4_v3(ob->obmat, no_a);
-						mul_mat3_m4_v3(ob->obmat, no_b);
-						angle = angle_normalized_v3v3(no_a, no_b);
+						mul_mat3_m4_v3(ob->imat, no_a);
+						mul_mat3_m4_v3(ob->imat, no_b);
+						angle = angle_v3v3(no_a, no_b);
 					}
 					else {
 						angle = angle_normalized_v3v3(f_a->no, f_b->no);
@@ -2829,7 +2831,7 @@ static void draw_em_indices(BMEditMesh *em)
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_FACEANG, col);
 		BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
-				sprintf(numstr, "%d", i);
+				BLI_snprintf(numstr, sizeof(numstr), "%d", i);
 				view3d_cached_text_draw_add(v->co, numstr, 0, txt_flag, col);
 			}
 			i++;
@@ -2841,7 +2843,7 @@ static void draw_em_indices(BMEditMesh *em)
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_EDGELEN, col);
 		BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
 			if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
-				sprintf(numstr, "%d", i);
+				BLI_snprintf(numstr, sizeof(numstr), "%d", i);
 				mid_v3_v3v3(pos, e->v1->co, e->v2->co);
 				view3d_cached_text_draw_add(pos, numstr, 0, txt_flag, col);
 			}
@@ -2855,7 +2857,7 @@ static void draw_em_indices(BMEditMesh *em)
 		BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
 			if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
 				BM_face_calc_center_mean(f, pos);
-				sprintf(numstr, "%d", i);
+				BLI_snprintf(numstr, sizeof(numstr), "%d", i);
 				view3d_cached_text_draw_add(pos, numstr, 0, txt_flag, col);
 			}
 			i++;
@@ -3104,7 +3106,7 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 	eWireDrawMode draw_wire = OBDRAW_WIRE_OFF;
 	int /* totvert,*/ totedge, totface;
 	DerivedMesh *dm = mesh_get_derived_final(scene, ob, scene->customdata_mask);
-	const short is_obact = (ob == OBACT);
+	const bool is_obact = (ob == OBACT);
 	int draw_flags = (is_obact && paint_facesel_test(ob)) ? DRAW_FACE_SELECT : 0;
 
 	if (!dm)
@@ -4441,15 +4443,15 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 						if (part->draw & PART_DRAW_NUM) {
 							if (a < totpart && (part->draw & PART_DRAW_HEALTH) && (part->phystype == PART_PHYS_BOIDS)) {
-								sprintf(val_pos, "%d:%.2f", a, pa_health);
+								BLI_snprintf(val_pos, sizeof(numstr), "%d:%.2f", a, pa_health);
 							}
 							else {
-								sprintf(val_pos, "%d", a);
+								BLI_snprintf(val_pos, sizeof(numstr), "%d", a);
 							}
 						}
 						else {
 							if (a < totpart && (part->draw & PART_DRAW_HEALTH) && (part->phystype == PART_PHYS_BOIDS)) {
-								sprintf(val_pos, "%.2f", pa_health);
+								BLI_snprintf(val_pos, sizeof(numstr), "%.2f", pa_health);
 							}
 						}
 
@@ -6324,7 +6326,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	short dtx;
 	char  dt;
 	short zbufoff = 0;
-	const short is_obact = (ob == OBACT);
+	const bool is_obact = (ob == OBACT);
 
 	/* only once set now, will be removed too, should become a global standard */
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
