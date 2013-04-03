@@ -279,7 +279,13 @@ static void draw_movieclip_buffer(const bContext *C, SpaceClip *sc, ARegion *ar,
 			filter = GL_NEAREST;
 		}
 
+		/* set zoom */
+		glPixelZoom(zoomx, zoomy);
+
 		glaDrawImBuf_glsl_ctx(C, ibuf, x, y, GL_NEAREST);
+
+		/* reset zoom */
+		glPixelZoom(1.0f, 1.0f);
 
 		if (ibuf->planes == 32)
 			glDisable(GL_BLEND);
