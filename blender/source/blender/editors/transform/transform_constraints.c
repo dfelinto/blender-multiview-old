@@ -1001,20 +1001,20 @@ char constraintModeToChar(TransInfo *t)
 }
 
 
-int isLockConstraint(TransInfo *t)
+bool isLockConstraint(TransInfo *t)
 {
 	int mode = t->con.mode;
 
 	if ((mode & (CON_AXIS0 | CON_AXIS1)) == (CON_AXIS0 | CON_AXIS1))
-		return 1;
+		return true;
 
 	if ((mode & (CON_AXIS1 | CON_AXIS2)) == (CON_AXIS1 | CON_AXIS2))
-		return 1;
+		return true;
 
 	if ((mode & (CON_AXIS0 | CON_AXIS2)) == (CON_AXIS0 | CON_AXIS2))
-		return 1;
+		return true;
 
-	return 0;
+	return false;
 }
 
 /*
