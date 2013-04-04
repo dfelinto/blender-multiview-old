@@ -1236,6 +1236,8 @@ static void createTransMBallVerts(TransInfo *t)
 			copy_v3_v3(td->iloc, td->loc);
 			copy_v3_v3(td->center, td->loc);
 
+			quat_to_mat3(td->axismtx, ml->quat);
+
 			if (ml->flag & SELECT) td->flag = TD_SELECTED | TD_USEQUAT | TD_SINGLESIZE;
 			else td->flag = TD_USEQUAT;
 
@@ -1858,32 +1860,29 @@ static void editmesh_set_connectivity_distance(BMEditMesh *em, float mtx[3][3], 
 	MEM_freeN(tots);
 }
 
-/* loop-in-a-loop I know, but we need it! (ton) */
-static void get_face_center(float r_cent[3], BMVert *eve)
-
+static BMElem *bm_vert_single_select_face(BMVert *eve)
 {
-	BMFace *efa;
+	BMElem *ele;
 	BMIter iter;
 
-	BM_ITER_ELEM (efa, &iter, eve, BM_FACES_OF_VERT) {
-		if (BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
-			BM_face_calc_center_mean(efa, r_cent);
-			break;
+	BM_ITER_ELEM (ele, &iter, eve, BM_FACES_OF_VERT) {
+		if (BM_elem_flag_test(ele, BM_ELEM_SELECT)) {
+			return ele;
 		}
 	}
+	return NULL;
 }
-
-static void get_edge_center(float r_cent[3], BMVert *eve)
+static BMElem *bm_vert_single_select_edge(BMVert *eve)
 {
-	BMEdge *eed;
+	BMElem *ele;
 	BMIter iter;
 
-	BM_ITER_ELEM (eed, &iter, eve, BM_EDGES_OF_VERT) {
-		if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
-			mid_v3_v3v3(r_cent, eed->v1->co, eed->v2->co);
-			break;
+	BM_ITER_ELEM (ele, &iter, eve, BM_EDGES_OF_VERT) {
+		if (BM_elem_flag_test(ele, BM_ELEM_SELECT)) {
+			return ele;
 		}
 	}
+	return NULL;
 }
 
 /* way to overwrite what data is edited with transform */
@@ -1895,25 +1894,53 @@ static void VertsToTransData(TransInfo *t, TransData *td, TransDataExtension *tx
 	//	td->loc = key->co;
 	//else
 	td->loc = eve->co;
-
-	copy_v3_v3(td->center, td->loc);
-
-	if (t->around == V3D_LOCAL) {
-		if (em->selectmode & SCE_SELECT_FACE)
-			get_face_center(td->center, eve);
-		else if (em->selectmode & SCE_SELECT_EDGE)
-			get_edge_center(td->center, eve);
-	}
 	copy_v3_v3(td->iloc, td->loc);
 
-	// Setting normals
-	copy_v3_v3(td->axismtx[2], eve->no);
-	td->axismtx[0][0]        =
-	    td->axismtx[0][1]    =
-	    td->axismtx[0][2]    =
-	    td->axismtx[1][0]    =
-	    td->axismtx[1][1]    =
-	    td->axismtx[1][2]    = 0.0f;
+
+	if (t->around == V3D_LOCAL) {
+		BMElem *ele;
+		bool is_axismat_set = false;
+
+		if (em->selectmode & (SCE_SELECT_FACE | SCE_SELECT_EDGE) &&
+		    (ele = ((em->selectmode & SCE_SELECT_FACE) ?
+		            bm_vert_single_select_face(eve) :
+		            bm_vert_single_select_edge(eve))))
+		{
+			float normal[3], tangent[3];
+
+			BMEditSelection ese;
+			ese.next = ese.prev = NULL;
+			ese.ele = ele;
+			ese.htype = ele->head.htype;
+
+			BM_editselection_center(&ese, td->center);
+			BM_editselection_normal(&ese, normal);
+			BM_editselection_plane(&ese, tangent);
+
+			if (createSpaceNormalTangent(td->axismtx, normal, tangent)) {
+				is_axismat_set = true;
+			}
+		}
+
+		/* for verts or fallback when createSpaceNormalTangent fails */
+		if (is_axismat_set == false) {
+			axis_dominant_v3_to_m3(td->axismtx, eve->no);
+			invert_m3(td->axismtx);
+		}
+	}
+	else {
+		copy_v3_v3(td->center, td->loc);
+
+		/* Setting normals */
+		copy_v3_v3(td->axismtx[2], eve->no);
+		td->axismtx[0][0]        =
+		    td->axismtx[0][1]    =
+		    td->axismtx[0][2]    =
+		    td->axismtx[1][0]    =
+		    td->axismtx[1][1]    =
+		    td->axismtx[1][2]    = 0.0f;
+	}
+
 
 	td->ext = NULL;
 	td->val = NULL;
