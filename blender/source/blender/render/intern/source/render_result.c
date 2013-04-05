@@ -605,7 +605,31 @@ static void *ml_addlayer_cb(void *base, const char *str)
 	return rl;
 }
 
-static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float *rect, int totchan, const char *chan_id)
+/* utils - duplicated code - quick hack */
+static int strip_view(const char *name, const char *viewname)
+{
+	/**
+	 A -> A
+	 left.R -> R
+	 main.right.depth -> main.depth */
+	
+	if (viewname == NULL)
+		return 0;
+	
+	const char *end = name + strlen(name);
+	char *a = strstr(name, viewname);
+	char *b = a + strlen(viewname) + 1; /* +1 to skip '.' separator */
+	
+	if ((a == NULL) || (b == NULL) || (b < a) || (b > end))
+		return 0;
+	
+	memmove(a, b, strlen(b) + 1);
+	return 1;
+}
+
+/* end of quick hack */
+
+static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float *rect, int totchan, const char *chan_id, const char *viewname)
 {
 	RenderLayer *rl = lay;
 	RenderPass *rpass = MEM_callocN(sizeof(RenderPass), "loaded pass");
@@ -614,7 +638,14 @@ static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float 
 	BLI_addtail(&rl->passes, rpass);
 	rpass->channels = totchan;
 
-	rpass->passtype = passtype_from_name(str);
+	//MV the string to test should be stripped off from view name
+//	char tmpstr[sizeof(str) + 1];
+	char *tmpstr = MEM_callocN(strlen(str), "temp string");
+	strcpy(tmpstr, str);
+	
+	strip_view(tmpstr, viewname);
+	
+	rpass->passtype = passtype_from_name(tmpstr);
 	if (rpass->passtype == 0) printf("unknown pass %s\n", str);
 	rl->passflag |= rpass->passtype;
 	
@@ -624,6 +655,7 @@ static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float 
 		rpass->chan_id[a] = chan_id[a];
 	
 	rpass->rect = rect;
+	MEM_freeN(tmpstr);
 }
 
 static void *ml_addview_cb(void *base, const char *str)
