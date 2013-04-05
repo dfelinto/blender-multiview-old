@@ -421,23 +421,20 @@ static char *pass_view_menu(RenderResult *rr, RenderLayer *rl, short curview, sh
 	
 	if (rl) {
 		//MV ideal is to implement a function mimic channelsInView from ImfMultiView.h, in iteractor perhaps
+		//or even more ideal would be to have this 'ui name' stored somewhere
+		//it can be a char * pointer to the name, telling where to start looking for the channel
 
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next, nr++) {
-			if (curview == 0) {
-				a += sprintf(str + a, "|%s %%x%d", IFACE_(rpass->name), nr);
-			}
-			else if (is_from_view(rr, curview, rpass)) {
+			if (is_from_view(rr, curview, rpass)) {
 				RenderView *rv = BLI_findlink(&rr->multiView, curview);
 				char namebuf[sizeof(rpass->name)];
-				char *name;
 
 				/* strip out the viewname from the channel */
 				BLI_strncpy(namebuf, rpass->name, BLI_strlen_utf8(rpass->name) + 1);
-				name = &namebuf[0];
-				strip_view(name, &rv->name[0]);
+				strip_view(namebuf, &rv->name[0]);
 				
 				//strip of name
-				a += sprintf(str + a, "|%s %%x%d", IFACE_(rpass->name), nr);
+				a += sprintf(str + a, "|%s %%x%d", IFACE_(namebuf), nr);
 			}
 		}
 	}
@@ -586,7 +583,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 		if (rr->rectf || rr->rect32)
 			layer--;  /* fake compo/sequencer layer */
 		
-		if (BLI_countlist(&rr->multiView) > 0) {
+		if (BLI_countlist(&rr->multiView) > 0 && 0) {//brb
 			strp = view_menu(rr);
 			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu4, UI_UNIT_Y, &iuser->view, 0, 0, 0, 0, TIP_("Select View"));
 			uiButSetFunc(but, image_multi_cb, rr, iuser);

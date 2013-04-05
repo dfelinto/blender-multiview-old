@@ -578,6 +578,32 @@ void IMB_exr_add_view(void *handle, const char *name)
 	ExrHandle *data = (ExrHandle *)handle;
 	data->multiView.push_back(name);
 }
+	
+int imb_exr_get_multiView_id(StringVector *views, const char *name)
+{
+	int count = 0;
+	for (StringVector::const_iterator i = (*views).begin(); i != (*views).end(); ++i) {
+		if (strcmp(name, &(*i)[0])==0)
+			return count;
+		else
+			count ++;
+	}
+	return -1;
+}
+	
+ListBase imb_exr_passesInView(ListBase *passes, const char *view)
+{
+	ListBase vpasses;
+	ExrPass *pass;
+	
+	for (pass = (ExrPass *)passes->first; pass; pass = pass->next)
+	{
+		
+		BLI_addtail(&vpasses, pass);
+	}
+	
+	return vpasses;
+}
 
 /* adds flattened ExrChannels */
 /* xstride, ystride and rect can be done in set_channel too, for tile writing */
@@ -599,17 +625,27 @@ void IMB_exr_add_channel(void *handle, const char *layname, const char *passname
 		BLI_strncpy(echan->name, passname, EXR_TOT_MAXNAME - 1);
 	}
 
-#if 0 //mv
-	/* add view name only for the non-default views (for EXR backward compatibility)
-	   also if view > 0, it means the image is multiview */
-	if (view) {
-		std::string tmp = insertViewName(echan->name, IML_ext_multiView(handle), view);
-		BLI_strncpy(echan->name, &tmp[0], EXR_TOT_MAXNAME);
+	/* add view name only for the default views */
+	StringVector multiView = IML_ext_multiView(handle);
+	std::string view = viewFromChannelName(echan->name, multiView);
+	if (view[0] != '\0') {
+		int view_id = imb_exr_get_multiView_id(&multiView, &view[0]);
+		if (view_id == 0) {
+			/* if there is a period */
+			if (strstr(".", echan->name) != NULL) {
+				std::string tmp = insertViewName(echan->name, multiView, view_id);
+				BLI_strncpy(echan->name, &tmp[0], EXR_TOT_MAXNAME);
+			}
+			else {
+				char pass[EXR_PASS_MAXNAME + 1];
+				BLI_strncpy(pass, echan->name, EXR_PASS_MAXNAME);
+				BLI_snprintf(echan->name, sizeof(echan->name), "%s.%s", &view[0], pass);
+			}
+		}
 	}
-	
+
 	if (1)
 		printf("Add Channel: %s\n", echan->name);
-#endif
 	
 	echan->xstride = xstride;
 	echan->ystride = ystride;
@@ -856,9 +892,10 @@ void IMB_exr_read_channels(void *handle)
 
 void IMB_exr_multilayer_convert(void *handle, void *base,
 								void * (*addview)(void *base, const char *str),
-                                void * (*addlayer)(void *base, const char *str),
-                                void (*addpass)(void *base, void *lay, const char *str,
-                                                float *rect, int totchan, const char *chan_id))
+								void * (*addlayer)(void *base, const char *str),
+								void (*addpass)(void *base, void *lay, const char *str,
+												float *rect, int totchan,
+												const char *chan_id, const char *viewname))
 {
 	ExrHandle *data = (ExrHandle *)handle;
 	ExrLayer *lay;
@@ -878,7 +915,8 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 		void *laybase = addlayer(base, lay->name);
 		if (laybase) {
 			for (pass = (ExrPass *)lay->passes.first; pass; pass = pass->next) {
-				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id);
+				std::string viewname = viewFromChannelName(pass->name, IML_ext_multiView(handle));
+				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, &viewname[0]);
 				pass->rect = NULL;
 			}
 		}
@@ -1076,9 +1114,22 @@ static ExrHandle *imb_exr_begin_read_mem(InputFile *file, int width, int height)
 		IMB_exr_close(data);
 		return NULL;
 	}
+	
 
 	/* with some heuristics, try to merge the channels in buffers */
+	StringVector views = multiView(data->ifile->header());
 	for (lay = (ExrLayer *)data->layers.first; lay; lay = lay->next) {
+
+		for (StringVector::const_iterator i = views.begin(); i != views.end(); ++i) {
+
+			ListBase passes = imb_exr_passesInView(lay->passes, &(*i));
+			
+			imb_exr_heuristic(passes, );
+			
+			printf("OpenEXR-load: Found view %s\n", &(*i)[0]);
+		}
+		
+		/* need to show passes per layers */
 		for (pass = (ExrPass *)lay->passes.first; pass; pass = pass->next) {
 			if (pass->totchan) {
 				pass->rect = (float *)MEM_mapallocN(width * height * pass->totchan * sizeof(float), "pass rect");
