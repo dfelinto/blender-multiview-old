@@ -65,6 +65,11 @@ typedef struct Render Render;
  *   and how it's converted
  */
 
+typedef struct RenderView {
+	struct RenderView *next, *prev;
+	char name[16];		/* amount defined in openexr_multi.h */
+} RenderView;
+
 typedef struct RenderPass {
 	struct RenderPass *next, *prev;
 	int passtype, channels;
@@ -121,6 +126,9 @@ typedef struct RenderResult {
 	
 	/* the main buffers */
 	ListBase layers;
+	
+	/* multiView maps to a StringVector in OpenEXR */
+	ListBase multiView;
 	
 	/* allowing live updates: */
 	volatile rcti renrect;
