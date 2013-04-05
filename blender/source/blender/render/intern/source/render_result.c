@@ -626,6 +626,18 @@ static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float 
 	rpass->rect = rect;
 }
 
+static void *ml_addview_cb(void *base, const char *str)
+{
+	RenderResult *rr = base;
+	RenderView *rv;
+	
+	rv = MEM_callocN(sizeof(RenderView), "new render view");
+	BLI_addtail(&rr->multiView, rv);
+	
+	BLI_strncpy(rv->name, str, EXR_VIEW_MAXNAME);
+	return rv;
+}
+
 /* from imbuf, if a handle was returned we convert this to render result */
 RenderResult *render_result_new_from_exr(void *exrhandle, const char *colorspace, int predivide, int rectx, int recty)
 {
@@ -636,8 +648,10 @@ RenderResult *render_result_new_from_exr(void *exrhandle, const char *colorspace
 
 	rr->rectx = rectx;
 	rr->recty = recty;
+
+	for(int i=0; i < BLI_countlist(&rr->multiView);i++);
 	
-	IMB_exr_multilayer_convert(exrhandle, rr, ml_addlayer_cb, ml_addpass_cb);
+	IMB_exr_multilayer_convert(exrhandle, rr, ml_addview_cb, ml_addlayer_cb, ml_addpass_cb);
 
 	for (rl = rr->layers.first; rl; rl = rl->next) {
 		rl->rectx = rectx;
@@ -738,11 +752,15 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 {
 	RenderLayer *rl;
 	RenderPass *rpass;
+	RenderView *rview;
 	void *exrhandle = IMB_exr_get_handle();
 	int success;
 
 	BLI_make_existing_file(filename);
 	
+	for (rview = (RenderView *)rr->multiView.first; rview; rview=rview->next)
+		IMB_exr_add_view(exrhandle, rview->name);
+
 	/* composite result */
 	if (rr->rectf) {
 		IMB_exr_add_channel(exrhandle, "Composite", "Combined.R", 4, 4 * rr->rectx, rr->rectf);
