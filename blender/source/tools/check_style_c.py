@@ -353,7 +353,7 @@ def blender_check_kw_else(index_kw):
     if index_kw + 1 == i_next:
         warning("else has no space between following brace 'else{'", index_kw, i_next)
 
-    # check if there are more then 1 spaces after else, but nothing after the following brace
+    # check if there are more than 1 spaces after else, but nothing after the following brace
     # else     {
     #     ...
     #
