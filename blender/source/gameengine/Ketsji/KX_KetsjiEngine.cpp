@@ -1231,7 +1231,36 @@ void KX_KetsjiEngine::RenderLayoutFrame(KX_Scene* scene, KX_Camera* cam)
 #endif
 
 	MT_Matrix4x4 origprojmat;
-	origprojmat = cam->GetProjectionMatrix();
+	if (cam->hasValidProjectionMatrix()) {
+		origprojmat = cam->GetProjectionMatrix();
+	} else {
+		RAS_FrameFrustum frustum;
+		float nearfrust = cam->GetCameraNear();
+		float farfrust = cam->GetCameraFar();
+		float focallength = cam->GetFocalLength();
+		RAS_FramingManager::ComputeFrustum(
+			scene->GetFramingType(),
+			area,
+			viewport,
+			cam->GetLens(),
+			cam->GetSensorWidth(),
+			cam->GetSensorHeight(),
+			cam->GetSensorFit(),
+			nearfrust,
+			farfrust,
+			frustum
+		);
+
+		if (!cam->GetViewport()) {
+			frustum.x1 *= m_cameraZoom;
+			frustum.x2 *= m_cameraZoom;
+			frustum.y1 *= m_cameraZoom;
+			frustum.y2 *= m_cameraZoom;
+		}
+
+		origprojmat = m_rasterizer->GetFrustumMatrix(
+			frustum.x1, frustum.x2, frustum.y1, frustum.y2, frustum.camnear, frustum.camfar, focallength);
+	}
 	
 	/* split the viewport according to scene.layouts */
 	int layouts = scene->GetLayouts();
