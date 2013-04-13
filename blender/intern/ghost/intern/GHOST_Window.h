@@ -61,6 +61,8 @@ public:
 	 * virtual	GHOST_TSuccess setClientHeight(GHOST_TUns32 height) = 0;
 	 * virtual	GHOST_TSuccess setClientSize(GHOST_TUns32 width, GHOST_TUns32 height) = 0;
 	 * virtual	void screenToClient(GHOST_TInt32 inX, GHOST_TInt32 inY, GHOST_TInt32& outX, GHOST_TInt32& outY) const = 0;
+	 * virtual	GHOST_TSuccess setWindowSize(GHOST_TUns32 width, GHOST_TUns32 height) = 0;
+	 * virtual	GHOST_TSuccess resizeToParent(void) = 0;
 	 * virtual	void clientToScreen(GHOST_TInt32 inX, GHOST_TInt32 inY, GHOST_TInt32& outX, GHOST_TInt32& outY) const = 0;
 	 * virtual GHOST_TWindowState getState() const = 0;
 	 * virtual GHOST_TSuccess setState(GHOST_TWindowState state) = 0;
@@ -104,6 +106,8 @@ public:
 	 * virtual	GHOST_TSuccess setClientWidth(GHOST_TUns32 width) = 0;
 	 * virtual	GHOST_TSuccess setClientHeight(GHOST_TUns32 height) = 0;
 	 * virtual	GHOST_TSuccess setClientSize(GHOST_TUns32 width, GHOST_TUns32 height) = 0;
+	 * virtual	GHOST_TSuccess setWindowSize(GHOST_TUns32 width, GHOST_TUns32 height) = 0;
+	 * virtual	GHOST_TSuccess resizeToParent(void) = 0;
 	 * virtual	void screenToClient(GHOST_TInt32 inX, GHOST_TInt32 inY, GHOST_TInt32& outX, GHOST_TInt32& outY) const = 0;
 	 * virtual	void clientToScreen(GHOST_TInt32 inX, GHOST_TInt32 inY, GHOST_TInt32& outX, GHOST_TInt32& outY) const = 0;
 	 * virtual GHOST_TWindowState getState() const = 0;

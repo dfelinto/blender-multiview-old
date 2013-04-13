@@ -110,7 +110,12 @@ void GPG_Canvas::SwapBuffers()
 
 void GPG_Canvas::ResizeWindow(int width, int height)
 {
-	if (m_window->getState() == GHOST_kWindowStateFullScreen)
+	switch (m_window->getState())
+	{
+	case GHOST_kWindowStateEmbedded:
+		m_window->resizeToParent();
+		break;
+	case GHOST_kWindowStateFullScreen:
 	{
 		GHOST_ISystem* system = GHOST_ISystem::getSystem();
 		GHOST_DisplaySetting setting;
@@ -122,10 +127,11 @@ void GPG_Canvas::ResizeWindow(int width, int height)
 
 		system->updateFullScreen(setting, &m_window);
 	}
-
-	m_window->setClientSize(width, height);
-
-	Resize(width, height);
+	default:
+		m_window->setClientSize(width, height);
+		Resize(width, height);
+		break;
+	}
 }
 
 void GPG_Canvas::SetFullScreen(bool enable)
