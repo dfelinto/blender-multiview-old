@@ -137,6 +137,19 @@ public:
 	virtual GHOST_TSuccess setClientSize(GHOST_TUns32 width, GHOST_TUns32 height) = 0;
 
 	/**
+	 * Resizes window rectangle.
+	 *
+	 * \param width     The new width of the window area.
+	 * \param height    The new height of the window area.
+	 */
+	virtual GHOST_TSuccess setWindowSize(GHOST_TUns32 width, GHOST_TUns32 height) = 0;
+
+	/**
+	 * Resizes window rectangle from parent.
+	 */
+	virtual GHOST_TSuccess resizeToParent(void) = 0;
+
+	/**
 	 * Converts a point in screen coordinates to client rectangle coordinates
 	 * \param inX   The x-coordinate on the screen.
 	 * \param inY   The y-coordinate on the screen.

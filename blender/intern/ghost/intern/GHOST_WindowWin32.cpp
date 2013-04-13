@@ -549,15 +549,28 @@ GHOST_TSuccess GHOST_WindowWin32::setClientSize(GHOST_TUns32 width, GHOST_TUns32
 	return success;
 }
 
+GHOST_TSuccess GHOST_WindowWin32::setWindowSize(GHOST_TUns32 width, GHOST_TUns32 height)
+{
+	return ::SetWindowPos(m_hWnd , 0, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER) ?
+		          GHOST_kSuccess : GHOST_kFailure;
+}
+
+GHOST_TSuccess GHOST_WindowWin32::resizeToParent(void)
+{
+	int width, height;
+	RECT rect;
+
+	::GetWindowRect((HWND)m_parentWindowHwnd, &rect);
+	width = rect.right - rect.left;
+	height = rect.bottom - rect.top;
+
+	return setWindowSize(width, height);
+}
 
 GHOST_TWindowState GHOST_WindowWin32::getState() const
 {
 	GHOST_TWindowState state;
 
-	// XXX 27.04.2011
-	// we need to find a way to combine parented windows + resizing if we simply set the
-	// state as GHOST_kWindowStateEmbedded we will need to check for them somewhere else.
-	// It's also strange that in Windows is the only platform we need to make this separation.
 	if (m_parentWindowHwnd != 0) {
 		state = GHOST_kWindowStateEmbedded;
 		return state;

@@ -150,6 +150,20 @@ public:
 	virtual GHOST_TSuccess setClientSize(GHOST_TUns32 width, GHOST_TUns32 height);
 
 	/**
+	 * Resizes window rectangle.
+	 * \param width		The new width of the client area of the window.
+	 * \param height	The new height of the client area of the window.
+	 * (Embed window not supported in OSX - thus no need for this function at the moment)
+	 */
+	virtual GHOST_TSuccess setWindowSize(GHOST_TUns32 width, GHOST_TUns32 height){return GHOST_kFailure;}
+
+	/**
+	 * Set the window size to match the parent window size.
+	 * (Embed window not supported in OSX)
+	 */
+	virtual GHOST_TSuccess resizeToParent(void){return GHOST_kFailure;}
+
+	/**
 	 * Returns the state of the window (normal, minimized, maximized).
 	 * \return The state of the window.
 	 */
