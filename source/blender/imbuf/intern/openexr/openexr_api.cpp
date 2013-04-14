@@ -1101,8 +1101,10 @@ static ExrHandle *imb_exr_begin_read_mem(InputFile *file, int width, int height)
 	data->height = height;
 
 	const ChannelList &channels = data->ifile->header().channels();
-	
-	if (hasMultiView(data->ifile->header()))
+
+	const int is_multiView = hasMultiView(data->ifile->header());
+
+	if (is_multiView)
 		data->multiView = multiView(data->ifile->header());
 
 	for (ChannelList::ConstIterator i = channels.begin(); i != channels.end(); ++i)
@@ -1113,6 +1115,10 @@ static ExrHandle *imb_exr_begin_read_mem(InputFile *file, int width, int height)
 	for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next) {
 
 		int view = viewIdFromChannelName(echan->name, &data->multiView);
+		if (view == -1 && is_multiView) {
+			printf("Bad EXR file, channel with no view.\n");
+			view = 0;
+		}
 		
 		if (imb_exr_split_channel_name(echan, layname, passname, view, data->multiView) ) {
 			ExrLayer *lay = imb_exr_get_layer(&data->layers, layname);
