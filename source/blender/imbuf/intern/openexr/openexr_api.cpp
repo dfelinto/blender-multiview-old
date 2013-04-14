@@ -879,6 +879,9 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 	ExrHandle *data = (ExrHandle *)handle;
 	ExrLayer *lay;
 	ExrPass *pass;
+	int is_multiview;
+	StringVector views;
+	std::string viewname = "";
 
 	/* add views to RenderResult */
 	for (StringVector::const_iterator i = data->multiView.begin(); i != data->multiView.end(); ++i) {
@@ -890,11 +893,17 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 		return;
 	}
 
+	is_multiview = hasMultiView(data->ifile->header());
+	if (is_multiview)
+		views = IML_exr_multiView(handle);
+
 	for (lay = (ExrLayer *)data->layers.first; lay; lay = lay->next) {
 		void *laybase = addlayer(base, lay->name);
 		if (laybase) {
 			for (pass = (ExrPass *)lay->passes.first; pass; pass = pass->next) {
-				std::string viewname = viewFromChannelName(pass->name, IML_exr_multiView(handle));
+				if (is_multiview)
+					viewname = viewFromChannelName(pass->name, views);
+
 				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, &viewname[0]);
 				pass->rect = NULL;
 			}
@@ -1093,7 +1102,8 @@ static ExrHandle *imb_exr_begin_read_mem(InputFile *file, int width, int height)
 
 	const ChannelList &channels = data->ifile->header().channels();
 	
-	data->multiView = multiView(data->ifile->header());
+	if (hasMultiView(data->ifile->header()))
+		data->multiView = multiView(data->ifile->header());
 
 	for (ChannelList::ConstIterator i = channels.begin(); i != channels.end(); ++i)
 		IMB_exr_add_channel(data, NULL, i.name(), 0, 0, NULL);
