@@ -988,7 +988,6 @@ static int imb_exr_split_channel_name(ExrChannel *echan, char *layname, char *pa
 	const char *end = name + strlen(name);
 	const char *token;
 	char tokenbuf[EXR_TOT_MAXNAME];
-	int len;
 	
 	/* some multilayers have the combined buffer with names A B G R saved */
 	if (name[1] == '\0') {
