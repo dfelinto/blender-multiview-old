@@ -93,6 +93,7 @@ using namespace Imath;
 
 /* prototype */
 static struct ExrView *imb_exr_get_view(ListBase *lb, char *viewname);
+static struct ExrPass *imb_exr_get_pass(ListBase *lb, char *passname);
 
 /* Memory Input Stream */
 
@@ -562,7 +563,7 @@ int IMB_exr_is_multiView(void *handle)
 	return data->multiView.size() > 0;
 }
 
-static StringVector IML_ext_multiView(void *handle)
+static StringVector IML_exr_multiView(void *handle)
 {
 	ExrHandle *data = (ExrHandle *)handle;
 	return data->multiView;
@@ -570,13 +571,18 @@ static StringVector IML_ext_multiView(void *handle)
 
 void IMB_exr_write_multiViewHeader(Header *header, void *handle)
 {
-	addMultiView(*header, IML_ext_multiView(handle));
+	addMultiView(*header, IML_exr_multiView(handle));
 }
 	
 void IMB_exr_add_view(void *handle, const char *name)
 {
 	ExrHandle *data = (ExrHandle *)handle;
 	data->multiView.push_back(name);
+}
+	
+int imb_exr_passInView(ExrPass *pass, const char *view)
+{
+	return (strstr(pass->name, view) != NULL);
 }
 	
 int imb_exr_get_multiView_id(StringVector *views, const char *name)
@@ -591,18 +597,10 @@ int imb_exr_get_multiView_id(StringVector *views, const char *name)
 	return -1;
 }
 	
-ListBase imb_exr_passesInView(ListBase *passes, const char *view)
+int viewIdFromChannelName(const char *name, StringVector *views)
 {
-	ListBase vpasses;
-	ExrPass *pass;
-	
-	for (pass = (ExrPass *)passes->first; pass; pass = pass->next)
-	{
-		
-		BLI_addtail(&vpasses, pass);
-	}
-	
-	return vpasses;
+	std::string view = viewFromChannelName(name, *views);
+	return imb_exr_get_multiView_id(views, &view[0]);
 }
 
 /* adds flattened ExrChannels */
@@ -623,25 +621,6 @@ void IMB_exr_add_channel(void *handle, const char *layname, const char *passname
 	}
 	else {
 		BLI_strncpy(echan->name, passname, EXR_TOT_MAXNAME - 1);
-	}
-
-	/* add view name only for the default views */
-	StringVector multiView = IML_ext_multiView(handle);
-	std::string view = viewFromChannelName(echan->name, multiView);
-	if (view[0] != '\0') {
-		int view_id = imb_exr_get_multiView_id(&multiView, &view[0]);
-		if (view_id == 0) {
-			/* if there is a period */
-			if (strstr(".", echan->name) != NULL) {
-				std::string tmp = insertViewName(echan->name, multiView, view_id);
-				BLI_strncpy(echan->name, &tmp[0], EXR_TOT_MAXNAME);
-			}
-			else {
-				char pass[EXR_PASS_MAXNAME + 1];
-				BLI_strncpy(pass, echan->name, EXR_PASS_MAXNAME);
-				BLI_snprintf(echan->name, sizeof(echan->name), "%s.%s", &view[0], pass);
-			}
-		}
 	}
 
 	if (1)
@@ -915,7 +894,7 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 		void *laybase = addlayer(base, lay->name);
 		if (laybase) {
 			for (pass = (ExrPass *)lay->passes.first; pass; pass = pass->next) {
-				std::string viewname = viewFromChannelName(pass->name, IML_ext_multiView(handle));
+				std::string viewname = viewFromChannelName(pass->name, IML_exr_multiView(handle));
 				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, &viewname[0]);
 				pass->rect = NULL;
 			}
@@ -971,18 +950,17 @@ static int imb_exr_split_token(const char *str, const char *end, const char **to
 	return len;
 }
 
-#if 0
 static int imb_exr_strip_view(const char *name, const char *viewname)
 {
 	/**
 	 A -> A
 	 left.R -> R
-	 main.right.depth -> main.depth */
-
+	 main.right.depth -> main.depth
+	 main.depth.left.z -> main.depth.z */
 	if (viewname == NULL)
 		return 0;
 
-	const char *end = name + BLI_strlen_utf8(name);
+	const char *end = name + strlen(name);
 	char *a = strstr(name, viewname);
 	char *b = a + BLI_strlen_utf8(viewname) + 1; /* +1 to skip '.' separator */
 
@@ -990,25 +968,37 @@ static int imb_exr_strip_view(const char *name, const char *viewname)
 		return 0;
 
 	memmove(a, b, strlen(b) + 1);
-	return 1;
+	return (int)(a - name);
 }
-#endif
 	
-static int imb_exr_split_channel_name(ExrChannel *echan, char *layname, char *passname)
+static int imb_exr_split_channel_name(ExrChannel *echan, char *layname, char *passname, int view, StringVector &views)
 {
-	const char *name = echan->name;
-	int len = strlen(name);
-	const char *end = name + len;
+	char namebuf[EXR_TOT_MAXNAME];
+	char *name;
+
+	/* strip out the viewname from the channel */
+	BLI_strncpy(namebuf, echan->name, BLI_strlen_utf8(echan->name) + 1);
+	name = &namebuf[0];
+	
+	int needview = views.size() > 0;
+
+	const char *viewname = (needview?&views[view][0]:NULL);
+	int strip = imb_exr_strip_view(name, viewname);
+
+	const char *end = name + strlen(name);
 	const char *token;
 	char tokenbuf[EXR_TOT_MAXNAME];
+	int len;
 	
 	/* some multilayers have the combined buffer with names A B G R saved */
-	if (len == 1 || (len > 3 && name[len-2] == '.')) {
+	if (name[1] == '\0') {
 		echan->chan_id = name[0];
 		layname[0] = '\0';
 
-		BLI_strncpy(passname, name, len);
-		strcpy(passname + len-1, "Combined");
+		if (needview)
+			sprintf(passname, "%s.Combined", viewname);
+		else
+			strcpy(passname, "Combined");
 		return 1;
 	}
 
@@ -1032,7 +1022,19 @@ static int imb_exr_split_channel_name(ExrChannel *echan, char *layname, char *pa
 		printf("multilayer read: bad channel name: %s\n", name);
 		return 0;
 	}
-	BLI_strncpy(passname, token, len + 1);
+
+	/* add view */
+	if (needview) {
+		if (strip > 0) {
+			int llen = strip - (int)((end-len+1)-name) + 1;
+			sprintf(passname, "%.*s%s.%s", llen, token, viewname, token+llen);
+		}
+		else
+			sprintf(passname, "%s.%s", viewname, token);
+	}
+	else
+		BLI_strncpy(passname, token, len + 1);
+
 	end -= len + 1; /* +1 to skip '.' separator */
 
 	/* all preceding tokens combined as layer name */
@@ -1099,7 +1101,10 @@ static ExrHandle *imb_exr_begin_read_mem(InputFile *file, int width, int height)
 	/* now try to sort out how to assign memory to the channels */
 	/* first build hierarchical layer list */
 	for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next) {
-		if (imb_exr_split_channel_name(echan, layname, passname) ) {
+
+		int view = viewIdFromChannelName(echan->name, &data->multiView);
+		
+		if (imb_exr_split_channel_name(echan, layname, passname, view, data->multiView) ) {
 			ExrLayer *lay = imb_exr_get_layer(&data->layers, layname);
 			ExrPass *pass = imb_exr_get_pass(&lay->passes, passname);
 
@@ -1117,18 +1122,8 @@ static ExrHandle *imb_exr_begin_read_mem(InputFile *file, int width, int height)
 	
 
 	/* with some heuristics, try to merge the channels in buffers */
-	StringVector views = multiView(data->ifile->header());
 	for (lay = (ExrLayer *)data->layers.first; lay; lay = lay->next) {
 
-		for (StringVector::const_iterator i = views.begin(); i != views.end(); ++i) {
-
-			ListBase passes = imb_exr_passesInView(lay->passes, &(*i));
-			
-			imb_exr_heuristic(passes, );
-			
-			printf("OpenEXR-load: Found view %s\n", &(*i)[0]);
-		}
-		
 		/* need to show passes per layers */
 		for (pass = (ExrPass *)lay->passes.first; pass; pass = pass->next) {
 			if (pass->totchan) {
