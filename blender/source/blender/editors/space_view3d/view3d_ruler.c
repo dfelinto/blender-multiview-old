@@ -95,7 +95,8 @@ static bool ED_view3d_snap_ray(bContext *C, float r_co[3],
 {
 	float dist_px = 12;  /* snap dist */
 	float r_no_dummy[3];
-	bool ret = false;
+	float ray_dist = TRANSFORM_DIST_MAX_RAY;
+	bool ret;
 
 	Scene *scene = CTX_data_scene(C);
 	View3D *v3d = CTX_wm_view3d(C);
@@ -104,7 +105,7 @@ static bool ED_view3d_snap_ray(bContext *C, float r_co[3],
 
 	/* try snap edge, then face if it fails */
 	ret = snapObjectsRayEx(scene, NULL, v3d, ar, obedit, SCE_SNAP_MODE_FACE,
-	                       ray_start, ray_normal,
+	                       ray_start, ray_normal, &ray_dist,
 	                       NULL, &dist_px, r_co, r_no_dummy, SNAP_ALL);
 
 	return ret;

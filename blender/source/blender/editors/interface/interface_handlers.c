@@ -63,6 +63,7 @@
 #include "BKE_texture.h"
 #include "BKE_tracking.h"
 #include "BKE_unit.h"
+#include "BKE_paint.h"
 
 #include "ED_screen.h"
 #include "ED_util.h"
@@ -183,6 +184,9 @@ typedef struct uiHandleButtonData {
 	
 	/* search box (watch uiFreeActiveButtons) */
 	ARegion *searchbox;
+#ifdef USE_KEYNAV_LIMIT
+	struct uiKeyNavLock searchbox_keynav_state;
+#endif
 
 	/* post activate */
 	uiButtonActivateType posttype;
@@ -2132,7 +2136,7 @@ static void ui_do_but_textedit(bContext *C, uiBlock *block, uiBut *but, uiHandle
 		case MOUSEPAN:
 			if (data->searchbox) {
 #ifdef USE_KEYNAV_LIMIT
-				if ((event->type == MOUSEMOVE) && ui_mouse_motion_keynav_test(&block->handle->keynav_state, event)) {
+				if ((event->type == MOUSEMOVE) && ui_mouse_motion_keynav_test(&data->searchbox_keynav_state, event)) {
 					/* pass */
 				}
 				else {
@@ -2216,7 +2220,7 @@ static void ui_do_but_textedit(bContext *C, uiBlock *block, uiBut *but, uiHandle
 			case DOWNARROWKEY:
 				if (data->searchbox) {
 #ifdef USE_KEYNAV_LIMIT
-					ui_mouse_motion_keynav_init(&block->handle->keynav_state, event);
+					ui_mouse_motion_keynav_init(&data->searchbox_keynav_state, event);
 #endif
 					ui_searchbox_event(C, data->searchbox, but, event);
 					break;
@@ -2231,7 +2235,7 @@ static void ui_do_but_textedit(bContext *C, uiBlock *block, uiBut *but, uiHandle
 			case UPARROWKEY:
 				if (data->searchbox) {
 #ifdef USE_KEYNAV_LIMIT
-					ui_mouse_motion_keynav_init(&block->handle->keynav_state, event);
+					ui_mouse_motion_keynav_init(&data->searchbox_keynav_state, event);
 #endif
 					ui_searchbox_event(C, data->searchbox, but, event);
 					break;
@@ -4320,6 +4324,7 @@ static int ui_do_but_CURVE(bContext *C, uiBlock *block, uiBut *but, uiHandleButt
 {
 	int mx, my, a;
 	bool changed = false;
+	Scene *scene = CTX_data_scene(C);
 
 	mx = event->x;
 	my = event->y;
@@ -4448,6 +4453,7 @@ static int ui_do_but_CURVE(bContext *C, uiBlock *block, uiBut *but, uiHandleButt
 				}
 				else {
 					curvemapping_changed(cumap, true);  /* remove doubles */
+					BKE_paint_invalidate_cursor_overlay(scene, cumap);
 				}
 			}
 

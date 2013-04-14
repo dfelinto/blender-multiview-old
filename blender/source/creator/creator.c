@@ -1604,6 +1604,13 @@ int main(int argc, const char **argv)
 	/* OK we are ready for it */
 #ifndef WITH_PYTHON_MODULE
 	BLI_argsParse(ba, 4, load_file, C);
+	
+	if (G.background == 0) {
+		if (!G.file_loaded)
+			if (U.uiflag2 & USER_KEEP_SESSION)
+				WM_recover_last_session(C, NULL);
+	}
+
 #endif
 
 #ifndef WITH_PYTHON_MODULE

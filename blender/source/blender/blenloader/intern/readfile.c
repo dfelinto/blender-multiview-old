@@ -7365,7 +7365,6 @@ static void do_versions_nodetree_multi_file_output_format_2_62_1(Scene *sce, bNo
 			bNodeSocket *old_image = BLI_findlink(&node->inputs, 0);
 			bNodeSocket *old_z = BLI_findlink(&node->inputs, 1);
 			bNodeSocket *sock;
-			char basepath[FILE_MAXDIR];
 			char filename[FILE_MAXFILE];
 			
 			/* ugly, need to remove the old inputs list to avoid bad pointer checks when adding new sockets.
@@ -7377,6 +7376,8 @@ static void do_versions_nodetree_multi_file_output_format_2_62_1(Scene *sce, bNo
 			
 			/* looks like storage data can be messed up somehow, stupid check here */
 			if (old_data) {
+				char basepath[FILE_MAXDIR];
+
 				/* split off filename from the old path, to be used as socket sub-path */
 				BLI_split_dirfile(old_data->name, basepath, filename, sizeof(basepath), sizeof(filename));
 				
@@ -7384,7 +7385,6 @@ static void do_versions_nodetree_multi_file_output_format_2_62_1(Scene *sce, bNo
 				nimf->format = old_data->im_format;
 			}
 			else {
-				basepath[0] = '\0';
 				BLI_strncpy(filename, old_image->name, sizeof(filename));
 			}
 			
@@ -7748,7 +7748,7 @@ static void do_versions_nodetree_customnodes(bNodeTree *ntree, int UNUSED(is_gro
 
 /* initialize userdef with non-UI dependency stuff */
 /* other initializers (such as theme color defaults) go to resources.c */
-static void do_versions_userdef(FileData *fd, BlendFileData *bfd)
+static void do_versions_userdef(FileData *UNUSED(fd), BlendFileData *bfd)
 {
 	Main *bmain = bfd->main;
 	UserDef *user = bfd->user;
@@ -7764,14 +7764,8 @@ static void do_versions_userdef(FileData *fd, BlendFileData *bfd)
 			copy_v4_v4_char(btheme->tseq.grid, btheme->tseq.back);
 		}
 	}
-	
-	if (bmain->versionfile < 267) {
-	
-		if (!DNA_struct_elem_find(fd->filesdna, "UserDef", "short", "image_gpubuffer_limit"))
-			user->image_gpubuffer_limit = 20;
-		
-	}
 }
+
 static void do_versions(FileData *fd, Library *lib, Main *main)
 {
 	/* WATCH IT!!!: pointers from libdata have not been converted */

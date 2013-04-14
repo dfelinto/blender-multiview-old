@@ -74,7 +74,7 @@
 #include "BKE_scene.h"
 #include "BKE_colortools.h"
 
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h"
@@ -87,6 +87,8 @@
 #include "ED_uvedit.h"
 #include "ED_view3d.h"
 #include "ED_mesh.h"
+
+#include "GPU_extensions.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -4151,7 +4153,7 @@ static void project_state_init(bContext *C, Object *ob, ProjPaintState *ps, int 
 
 	/* brush */
 	ps->mode = mode;
-	ps->brush = paint_brush(&settings->imapaint.paint);
+	ps->brush = BKE_paint_brush(&settings->imapaint.paint);
 	if (ps->brush) {
 		Brush *brush = ps->brush;
 		ps->tool = brush->imagepaint_tool;
@@ -4411,7 +4413,7 @@ static int texture_paint_image_from_view_exec(bContext *C, wmOperator *op)
 
 	RNA_string_get(op->ptr, "filepath", filename);
 
-	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxsize);
+	maxsize = GPU_max_texture_size();
 
 	if (w > maxsize) w = maxsize;
 	if (h > maxsize) h = maxsize;

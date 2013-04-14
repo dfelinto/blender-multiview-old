@@ -74,7 +74,7 @@
 #include "BKE_scene.h"
 #include "BKE_colortools.h"
 
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h"
@@ -343,7 +343,7 @@ static Brush *image_paint_brush(bContext *C)
 	Scene *scene = CTX_data_scene(C);
 	ToolSettings *settings = scene->toolsettings;
 
-	return paint_brush(&settings->imapaint.paint);
+	return BKE_paint_brush(&settings->imapaint.paint);
 }
 
 static int image_paint_poll(bContext *C)
@@ -487,7 +487,7 @@ static void paint_stroke_update_step(bContext *C, struct PaintStroke *stroke, Po
 {
 	PaintOperation *pop = paint_stroke_mode_data(stroke);
 	Scene *scene = CTX_data_scene(C);
-	Brush *brush = paint_brush(&scene->toolsettings->imapaint.paint);
+	Brush *brush = BKE_paint_brush(&scene->toolsettings->imapaint.paint);
 
 	/* initial brush values. Maybe it should be considered moving these to stroke system */
 	float startsize = BKE_brush_size_get(scene, brush);
@@ -652,8 +652,8 @@ void brush_drawcursor_texpaint_uvsculpt(bContext *C, int x, int y, void *UNUSED(
 
 	Scene *scene = CTX_data_scene(C);
 	//Brush *brush = image_paint_brush(C);
-	Paint *paint = paint_get_active_from_context(C);
-	Brush *brush = paint_brush(paint);
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *brush = BKE_paint_brush(paint);
 
 	if (paint && brush && paint->flags & PAINT_SHOW_BRUSH) {
 		float zoomx, zoomy;
@@ -849,7 +849,6 @@ void PAINT_OT_grab_clone(wmOperatorType *ot)
 }
 
 /******************** sample color operator ********************/
-
 static int sample_color_exec(bContext *C, wmOperator *op)
 {
 	Brush *brush = image_paint_brush(C);
@@ -869,6 +868,8 @@ static int sample_color_invoke(bContext *C, wmOperator *op, const wmEvent *event
 	RNA_int_set_array(op->ptr, "location", event->mval);
 	sample_color_exec(C, op);
 
+	op->customdata = SET_INT_IN_POINTER(event->type);
+
 	WM_event_add_modal_handler(C, op);
 
 	return OPERATOR_RUNNING_MODAL;
@@ -876,9 +877,10 @@ static int sample_color_invoke(bContext *C, wmOperator *op, const wmEvent *event
 
 static int sample_color_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
+	if (event->type == (intptr_t)(op->customdata) && event->val == KM_RELEASE)
+		return OPERATOR_FINISHED;
+
 	switch (event->type) {
-		case SKEY: // XXX hardcoded
-			return OPERATOR_FINISHED;
 		case MOUSEMOVE:
 			RNA_int_set_array(op->ptr, "location", event->mval);
 			sample_color_exec(C, op);

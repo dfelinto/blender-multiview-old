@@ -59,7 +59,7 @@
 #include "BKE_depsgraph.h"
 #include "BKE_main.h"
 #include "BKE_mesh.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_report.h"
 
 #include "ED_mesh.h" /* XXX Bad level call */
@@ -2918,6 +2918,11 @@ static void rna_def_mesh(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_DRAW_VNORMALS);
 	RNA_def_property_ui_text(prop, "Draw Vertex Normals", "Display vertex normals as lines");
 	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
+
+	prop = RNA_def_property(srna, "show_weight", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_DRAWEIGHT);
+	RNA_def_property_ui_text(prop, "Show Weights", "Draw weights in editmode");
+	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");  /* needs to rebuild 'dm' */
 
 	prop = RNA_def_property(srna, "show_edge_crease", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_DRAWCREASES);

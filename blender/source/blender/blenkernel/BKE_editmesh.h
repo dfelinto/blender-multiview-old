@@ -20,8 +20,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef __BKE_TESSMESH_H__
-#define __BKE_TESSMESH_H__
+#ifndef __BKE_EDITMESH_H__
+#define __BKE_EDITMESH_H__
 
 #include "BKE_customdata.h"
 #include "bmesh.h"
@@ -60,6 +60,8 @@ typedef struct BMEditMesh {
 	/*derivedmesh stuff*/
 	struct DerivedMesh *derivedFinal, *derivedCage;
 	CustomDataMask lastDataMask;
+	unsigned char (*derivedVertColor)[4];
+	int derivedVertColorLen;
 
 	/* index tables, to map indices to elements via
 	 * EDBM_index_arrays_init and associated functions.  don't
@@ -89,4 +91,4 @@ BMEditMesh *BMEdit_FromObject(struct Object *ob);
 void BMEdit_Free(BMEditMesh *em);
 void BMEdit_UpdateLinkedCustomData(BMEditMesh *em);
 
-#endif /* __BKE_TESSMESH_H__ */
+#endif /* __BKE_EDITMESH_H__ */

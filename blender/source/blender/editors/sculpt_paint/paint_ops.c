@@ -63,8 +63,8 @@
 static int brush_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	/*int type = RNA_enum_get(op->ptr, "type");*/
-	Paint *paint = paint_get_active_from_context(C);
-	Brush *br = paint_brush(paint);
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *br = BKE_paint_brush(paint);
 	Main *bmain = CTX_data_main(C);
 
 	if (br)
@@ -72,7 +72,7 @@ static int brush_add_exec(bContext *C, wmOperator *UNUSED(op))
 	else
 		br = BKE_brush_add(bmain, "Brush");
 
-	paint_brush_set(paint, br);
+	BKE_paint_brush_set(paint, br);
 
 	return OPERATOR_FINISHED;
 }
@@ -95,8 +95,8 @@ static void BRUSH_OT_add(wmOperatorType *ot)
 static int brush_scale_size_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene = CTX_data_scene(C);
-	Paint  *paint =  paint_get_active_from_context(C);
-	Brush  *brush =  paint_brush(paint);
+	Paint  *paint =  BKE_paint_get_active_from_context(C);
+	Brush  *brush =  BKE_paint_brush(paint);
 	// Object *ob = CTX_data_active_object(C);
 	float scalar = RNA_float_get(op->ptr, "scalar");
 
@@ -177,8 +177,8 @@ static void PAINT_OT_vertex_color_set(wmOperatorType *ot)
 
 static int brush_reset_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Paint *paint = paint_get_active_from_context(C);
-	Brush *brush = paint_brush(paint);
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *brush = BKE_paint_brush(paint);
 	Object *ob = CTX_data_active_object(C);
 
 	if (!ob || !brush) return OPERATOR_CANCELLED;
@@ -268,7 +268,7 @@ static int brush_generic_tool_set(Main *bmain, Paint *paint, const int tool,
                                   const char *tool_name, int create_missing,
                                   int toggle)
 {
-	Brush *brush, *brush_orig = paint_brush(paint);
+	Brush *brush, *brush_orig = BKE_paint_brush(paint);
 
 	if (toggle)
 		brush = brush_tool_toggle(bmain, brush_orig, tool, tool_offset, ob_mode);
@@ -283,7 +283,8 @@ static int brush_generic_tool_set(Main *bmain, Paint *paint, const int tool,
 	}
 
 	if (brush) {
-		paint_brush_set(paint, brush);
+		BKE_paint_brush_set(paint, brush);
+		BKE_paint_invalidate_overlay_all();
 		WM_main_add_notifier(NC_BRUSH | NA_EDITED, brush);
 		return OPERATOR_FINISHED;
 	}
@@ -470,12 +471,13 @@ typedef struct {
 	StencilControlMode mode;
 	StencilConstraint constrain_mode;
 	Brush *br;
+	short event_type;
 } StencilControlData;
 
 static int stencil_control_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
-	Paint *paint = paint_get_active_from_context(C);
-	Brush *br = paint_brush(paint);
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *br = BKE_paint_brush(paint);
 	float mdiff[2];
 	float mvalf[2] = {event->mval[0], event->mval[1]};
 
@@ -490,6 +492,7 @@ static int stencil_control_invoke(bContext *C, wmOperator *op, const wmEvent *ev
 	scd->init_rot = br->mtex.rot;
 	scd->init_angle = atan2(mdiff[1], mdiff[0]);
 	scd->mode = RNA_enum_get(op->ptr, "mode");
+	scd->event_type = event->type;
 
 	op->customdata = scd;
 	WM_event_add_modal_handler(C, op);
@@ -554,17 +557,16 @@ static int stencil_control_modal(bContext *C, wmOperator *op, const wmEvent *eve
 {
 	StencilControlData *scd = op->customdata;
 
+	if (event->type == scd->event_type && event->val == KM_RELEASE) {
+		MEM_freeN(op->customdata);
+		WM_event_add_notifier(C, NC_WINDOW, NULL);
+		return OPERATOR_FINISHED;
+	}
+
 	switch (event->type) {
 		case MOUSEMOVE:
 			stencil_control_calculate(scd, event->mval);
 			break;
-		/* XXX hardcoded! */
-		case RIGHTMOUSE:
-			if (event->val == KM_RELEASE) {
-				MEM_freeN(op->customdata);
-				WM_event_add_notifier(C, NC_WINDOW, NULL);
-				return OPERATOR_FINISHED;
-			}
 		case ESCKEY:
 			if (event->val == KM_PRESS) {
 				stencil_control_cancel(C, op);
@@ -603,8 +605,8 @@ static int stencil_control_modal(bContext *C, wmOperator *op, const wmEvent *eve
 
 static int stencil_control_poll(bContext *C)
 {
-	Paint *paint = paint_get_active_from_context(C);
-	Brush *br = paint_brush(paint);
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *br = BKE_paint_brush(paint);
 
 	return (br && br->mtex.brush_map_mode == MTEX_MAP_MODE_STENCIL);
 }
@@ -637,8 +639,8 @@ static void BRUSH_OT_stencil_control(wmOperatorType *ot)
 
 static int stencil_fit_image_aspect_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Paint *paint = paint_get_active_from_context(C);
-	Brush *br = paint_brush(paint);
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *br = BKE_paint_brush(paint);
 	Tex *tex = (br)? br->mtex.tex : NULL;
 
 	if (tex && tex->type == TEX_IMAGE && tex->ima) {
