@@ -262,18 +262,14 @@ void BM_mesh_free(BMesh *bm)
 void BM_mesh_normals_update(BMesh *bm, const bool skip_hidden)
 {
 	BMVert *v;
-	BMFace *f;
-	BMLoop *l;
 	BMEdge *e;
-	BMIter verts;
-	BMIter faces;
-	BMIter loops;
-	BMIter edges;
+	BMFace *f;
+	BMIter iter;
 	int index;
 	float (*edgevec)[3];
 	
 	/* calculate all face normals */
-	BM_ITER_MESH (f, &faces, bm, BM_FACES_OF_MESH) {
+	BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
 		if (skip_hidden && BM_elem_flag_test(f, BM_ELEM_HIDDEN))
 			continue;
 #if 0   /* UNUSED */
@@ -285,7 +281,7 @@ void BM_mesh_normals_update(BMesh *bm, const bool skip_hidden)
 	}
 	
 	/* Zero out vertex normals */
-	BM_ITER_MESH (v, &verts, bm, BM_VERTS_OF_MESH) {
+	BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
 		if (skip_hidden && BM_elem_flag_test(v, BM_ELEM_HIDDEN))
 			continue;
 
@@ -295,9 +291,8 @@ void BM_mesh_normals_update(BMesh *bm, const bool skip_hidden)
 	/* compute normalized direction vectors for each edge. directions will be
 	 * used below for calculating the weights of the face normals on the vertex
 	 * normals */
-	index = 0;
-	edgevec = MEM_callocN(sizeof(float) * 3 * bm->totedge, "BM normal computation array");
-	BM_ITER_MESH (e, &edges, bm, BM_EDGES_OF_MESH) {
+	edgevec = MEM_mallocN(sizeof(*edgevec) * bm->totedge, __func__);
+	BM_ITER_MESH_INDEX (e, &iter, bm, BM_EDGES_OF_MESH, index) {
 		BM_elem_index_set(e, index); /* set_inline */
 
 		if (e->l) {
@@ -307,44 +302,44 @@ void BM_mesh_normals_update(BMesh *bm, const bool skip_hidden)
 		else {
 			/* the edge vector will not be needed when the edge has no radial */
 		}
-
-		index++;
 	}
 	bm->elem_index_dirty &= ~BM_EDGE;
 
 	/* add weighted face normals to vertices */
-	BM_ITER_MESH (f, &faces, bm, BM_FACES_OF_MESH) {
+	BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
+		BMLoop *l_first, *l_iter;
 
 		if (skip_hidden && BM_elem_flag_test(f, BM_ELEM_HIDDEN))
 			continue;
 
-		BM_ITER_ELEM (l, &loops, f, BM_LOOPS_OF_FACE) {
-			float *e1diff, *e2diff;
+		l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+		do {
+			const float *e1diff, *e2diff;
 			float dotprod;
 			float fac;
 
 			/* calculate the dot product of the two edges that
 			 * meet at the loop's vertex */
-			e1diff = edgevec[BM_elem_index_get(l->prev->e)];
-			e2diff = edgevec[BM_elem_index_get(l->e)];
+			e1diff = edgevec[BM_elem_index_get(l_iter->prev->e)];
+			e2diff = edgevec[BM_elem_index_get(l_iter->e)];
 			dotprod = dot_v3v3(e1diff, e2diff);
 
 			/* edge vectors are calculated from e->v1 to e->v2, so
 			 * adjust the dot product if one but not both loops
 			 * actually runs from from e->v2 to e->v1 */
-			if ((l->prev->e->v1 == l->prev->v) ^ (l->e->v1 == l->v)) {
+			if ((l_iter->prev->e->v1 == l_iter->prev->v) ^ (l_iter->e->v1 == l_iter->v)) {
 				dotprod = -dotprod;
 			}
 
 			fac = saacos(-dotprod);
 
 			/* accumulate weighted face normal into the vertex's normal */
-			madd_v3_v3fl(l->v->no, f->no, fac);
-		}
+			madd_v3_v3fl(l_iter->v->no, f->no, fac);
+		} while ((l_iter = l_iter->next) != l_first);
 	}
 	
 	/* normalize the accumulated vertex normals */
-	BM_ITER_MESH (v, &verts, bm, BM_VERTS_OF_MESH) {
+	BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
 		if (skip_hidden && BM_elem_flag_test(v, BM_ELEM_HIDDEN))
 			continue;
 
@@ -415,16 +410,16 @@ static void UNUSED_FUNCTION(bm_mdisps_space_set)(Object *ob, BMesh *bm, int from
  * the editing operations are done. These are called by the tools/operator
  * API for each time a tool is executed.
  */
-void bmesh_edit_begin(BMesh *UNUSED(bm), int UNUSED(type_flag))
+void bmesh_edit_begin(BMesh *UNUSED(bm), BMOpTypeFlag UNUSED(type_flag))
 {
-	/* Most operators seem to be using BMO_OP_FLAG_UNTAN_MULTIRES to change the MDisps to
+	/* Most operators seem to be using BMO_OPTYPE_FLAG_UNTAN_MULTIRES to change the MDisps to
 	 * absolute space during mesh edits. With this enabled, changes to the topology
 	 * (loop cuts, edge subdivides, etc) are not reflected in the higher levels of
 	 * the mesh at all, which doesn't seem right. Turning off completely for now,
 	 * until this is shown to be better for certain types of mesh edits. */
 #ifdef BMOP_UNTAN_MULTIRES_ENABLED
 	/* switch multires data out of tangent space */
-	if ((type_flag & BMO_OP_FLAG_UNTAN_MULTIRES) && CustomData_has_layer(&bm->ldata, CD_MDISPS)) {
+	if ((type_flag & BMO_OPTYPE_FLAG_UNTAN_MULTIRES) && CustomData_has_layer(&bm->ldata, CD_MDISPS)) {
 		bmesh_mdisps_space_set(bm, MULTIRES_SPACE_TANGENT, MULTIRES_SPACE_ABSOLUTE);
 
 		/* ensure correct normals, if possible */
@@ -437,12 +432,12 @@ void bmesh_edit_begin(BMesh *UNUSED(bm), int UNUSED(type_flag))
 /**
  * \brief BMesh End Edit
  */
-void bmesh_edit_end(BMesh *bm, int UNUSED(flag))
+void bmesh_edit_end(BMesh *bm, BMOpTypeFlag type_flag)
 {
-	/* BMO_OP_FLAG_UNTAN_MULTIRES disabled for now, see comment above in bmesh_edit_begin. */
+	/* BMO_OPTYPE_FLAG_UNTAN_MULTIRES disabled for now, see comment above in bmesh_edit_begin. */
 #ifdef BMOP_UNTAN_MULTIRES_ENABLED
 	/* switch multires data into tangent space */
-	if ((flag & BMO_OP_FLAG_UNTAN_MULTIRES) && CustomData_has_layer(&bm->ldata, CD_MDISPS)) {
+	if ((flag & BMO_OPTYPE_FLAG_UNTAN_MULTIRES) && CustomData_has_layer(&bm->ldata, CD_MDISPS)) {
 		/* set normals to their previous winding */
 		bmesh_rationalize_normals(bm, 1);
 		bmesh_mdisps_space_set(bm, MULTIRES_SPACE_ABSOLUTE, MULTIRES_SPACE_TANGENT);
@@ -453,8 +448,13 @@ void bmesh_edit_end(BMesh *bm, int UNUSED(flag))
 #endif
 
 	/* compute normals, clear temp flags and flush selections */
-	BM_mesh_normals_update(bm, true);
-	BM_mesh_select_mode_flush(bm);
+	if (type_flag & BMO_OPTYPE_FLAG_NORMALS_CALC) {
+		BM_mesh_normals_update(bm, true);
+	}
+
+	if (type_flag & BMO_OPTYPE_FLAG_SELECT_FLUSH) {
+		BM_mesh_select_mode_flush(bm);
+	}
 }
 
 void BM_mesh_elem_index_ensure(BMesh *bm, const char hflag)
@@ -609,11 +609,16 @@ void BM_mesh_elem_index_validate(BMesh *bm, const char *location, const char *fu
  */
 int BM_mesh_elem_count(BMesh *bm, const char htype)
 {
-	if (htype == BM_VERT) return bm->totvert;
-	else if (htype == BM_EDGE) return bm->totedge;
-	else if (htype == BM_FACE) return bm->totface;
-
-	return 0;
+	switch (htype) {
+		case BM_VERT: return bm->totvert;
+		case BM_EDGE: return bm->totedge;
+		case BM_FACE: return bm->totface;
+		default:
+		{
+			BLI_assert(0);
+			return 0;
+		}
+	}
 }
 
 /**
