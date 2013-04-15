@@ -65,12 +65,13 @@ void    IMB_exrtile_clear_channels(void *handle);
 void    IMB_exr_multilayer_convert(void *handle, void *base,
                                    void * (*addview)(void *base, const char *str),
                                    void * (*addlayer)(void *base, const char *str),
-                                   void (*addpass)(void *base, void *lay, const char *str, float *rect, int totchan, const char *chan_id, const char *name));
+                                   void (*addpass)(void *base, void *lay, const char *str, float *rect, int totchan, const char *chan_id, int view_id));
 
 void    IMB_exr_close(void *handle);
 
 void    IMB_exr_add_view(void *handle, const char *name);
-const char *IMB_exr_insertViewName(void *handle, const char *pass, int view_id);
+
+int IMB_exr_split_token(const char *str, const char *end, const char **token);
 
 #ifdef __cplusplus
 } // extern "C"

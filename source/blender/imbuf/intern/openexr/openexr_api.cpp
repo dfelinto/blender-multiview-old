@@ -599,14 +599,36 @@ int imb_exr_get_multiView_id(StringVector *views, const char *name)
 	}
 	return -1;
 }
-	
-int imb_exr_viewIdFromChannelName(const char *name, StringVector *views)
+
+
+/* loose method, I tried using EXR viewFromChannelName() but it failed for some cases */
+static const char *imb_exr_view_from_channel(const char *name, StringVector *views)
 {
-	std::string view = viewFromChannelName(name, *views);
-	if (view == "") return 0;
-	return imb_exr_get_multiView_id(views, &view[0]);
+	static char view[EXR_VIEW_MAXNAME];
+	char *a = NULL;
+	int len;
+	for (StringVector::const_iterator i = (*views).begin(); i != (*views).end(); ++i) {
+		a = strstr(name, &(*i)[0]);
+		if (a != NULL) {
+			len = strlen(&(*i)[0]);
+			break;
+		}
+	}
+
+	if (a == NULL) return NULL;
+	
+	BLI_strncpy(view, a, len+1);
+	return view;
 }
 
+int imb_exr_viewIdFromChannelName(const char *name, StringVector *views)
+{
+	const char *view = imb_exr_view_from_channel(name, views);
+	if (view == NULL) return 0;
+	return imb_exr_get_multiView_id(views, view);
+}
+
+#if 0
 const char *IMB_exr_insertViewName(void *handle, const char *pass, int view_id)
 {
 	StringVector views = IMB_exr_multiView(handle);
@@ -620,6 +642,7 @@ const char *IMB_exr_insertViewName(void *handle, const char *pass, int view_id)
 	
 	return name;
 }
+#endif
 	
 /* adds flattened ExrChannels */
 /* xstride, ystride and rect can be done in set_channel too, for tile writing */
@@ -889,7 +912,7 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 								void * (*addlayer)(void *base, const char *str),
 								void (*addpass)(void *base, void *lay, const char *str,
 												float *rect, int totchan,
-												const char *chan_id, const char *viewname))
+												const char *chan_id, int view_id))
 {
 	ExrHandle *data = (ExrHandle *)handle;
 	ExrLayer *lay;
@@ -897,6 +920,7 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 	int is_multiview;
 	StringVector views;
 	std::string viewname = "";
+	int view_id = 0;
 
 	/* add views to RenderResult */
 	for (StringVector::const_iterator i = data->multiView.begin(); i != data->multiView.end(); ++i) {
@@ -917,9 +941,9 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 		if (laybase) {
 			for (pass = (ExrPass *)lay->passes.first; pass; pass = pass->next) {
 				if (is_multiview)
-					viewname = viewFromChannelName(pass->name, views);
+					view_id = imb_exr_viewIdFromChannelName(pass->name, &views);
 
-				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, &viewname[0]);
+				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, view_id);
 				pass->rect = NULL;
 			}
 		}
@@ -954,7 +978,7 @@ void IMB_exr_close(void *handle)
 		BLI_freelistN(&lay->passes);
 	}
 	BLI_freelistN(&data->layers);
-
+	
 	BLI_remlink(&exrhandles, data);
 	MEM_freeN(data);
 }
@@ -962,7 +986,7 @@ void IMB_exr_close(void *handle)
 /* ********* */
 
 /* get a substring from the end of the name, separated by '.' */
-static int imb_exr_split_token(const char *str, const char *end, const char **token)
+int IMB_exr_split_token(const char *str, const char *end, const char **token)
 {
 	ptrdiff_t maxlen = end - str;
 	int len = 0;
@@ -1029,7 +1053,7 @@ static int imb_exr_split_channel_name(ExrChannel *echan, char *layname, char *pa
 	}
 
 	/* last token is single character channel identifier */
-	len = imb_exr_split_token(name, end, &token);
+	len = IMB_exr_split_token(name, end, &token);
 	if (len == 0) {
 		printf("multilayer read: bad channel name: %s\n", name);
 		return 0;
@@ -1044,7 +1068,7 @@ static int imb_exr_split_channel_name(ExrChannel *echan, char *layname, char *pa
 	end -= len + 1; /* +1 to skip '.' separator */
 
 	/* second token is pass name */
-	len = imb_exr_split_token(name, end, &token);
+	len = IMB_exr_split_token(name, end, &token);
 	if (len == 0) {
 		printf("multilayer read: bad channel name: %s\n", name);
 		return 0;
@@ -1129,7 +1153,7 @@ static ExrHandle *imb_exr_begin_read_mem(InputFile *file, int width, int height)
 		int view = imb_exr_viewIdFromChannelName(echan->name, &data->multiView);
 
 		if (imb_exr_split_channel_name(echan, layname, passname, view, data->multiView) ) {
-			printf("\nlayname: %s\npassname: %s\n", layname, passname);
+			// printf("\nlayname: %s\npassname: %s\n", layname, passname);
 			ExrLayer *lay = imb_exr_get_layer(&data->layers, layname);
 			ExrPass *pass = imb_exr_get_pass(&lay->passes, passname);
 
