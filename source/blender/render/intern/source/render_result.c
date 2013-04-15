@@ -285,88 +285,88 @@ static const char *get_pass_name(int passtype, int channel)
 static int passtype_from_name(const char *str)
 {
 	
-	if (strcmp(str, "Combined") == 0)
+	if (strstr(str, "Combined") == str)
 		return SCE_PASS_COMBINED;
 
-	if (strcmp(str, "Depth") == 0)
+	if (strstr(str, "Depth") == str)
 		return SCE_PASS_Z;
 
-	if (strcmp(str, "Vector") == 0)
+	if (strstr(str, "Vector") == str)
 		return SCE_PASS_VECTOR;
 
-	if (strcmp(str, "Normal") == 0)
+	if (strstr(str, "Normal") == str)
 		return SCE_PASS_NORMAL;
 
-	if (strcmp(str, "UV") == 0)
+	if (strstr(str, "UV") == str)
 		return SCE_PASS_UV;
 
-	if (strcmp(str, "Color") == 0)
+	if (strstr(str, "Color") == str)
 		return SCE_PASS_RGBA;
 
-	if (strcmp(str, "Emit") == 0)
+	if (strstr(str, "Emit") == str)
 		return SCE_PASS_EMIT;
 
-	if (strcmp(str, "Diffuse") == 0)
+	if (strstr(str, "Diffuse") == str)
 		return SCE_PASS_DIFFUSE;
 
-	if (strcmp(str, "Spec") == 0)
+	if (strstr(str, "Spec") == str)
 		return SCE_PASS_SPEC;
 
-	if (strcmp(str, "Shadow") == 0)
+	if (strstr(str, "Shadow") == str)
 		return SCE_PASS_SHADOW;
 	
-	if (strcmp(str, "AO") == 0)
+	if (strstr(str, "AO") == str)
 		return SCE_PASS_AO;
 
-	if (strcmp(str, "Env") == 0)
+	if (strstr(str, "Env") == str)
 		return SCE_PASS_ENVIRONMENT;
 
-	if (strcmp(str, "Indirect") == 0)
+	if (strstr(str, "Indirect") == str)
 		return SCE_PASS_INDIRECT;
 
-	if (strcmp(str, "Reflect") == 0)
+	if (strstr(str, "Reflect") == str)
 		return SCE_PASS_REFLECT;
 
-	if (strcmp(str, "Refract") == 0)
+	if (strstr(str, "Refract") == str)
 		return SCE_PASS_REFRACT;
 
-	if (strcmp(str, "IndexOB") == 0)
+	if (strstr(str, "IndexOB") == str)
 		return SCE_PASS_INDEXOB;
 
-	if (strcmp(str, "IndexMA") == 0)
+	if (strstr(str, "IndexMA") == str)
 		return SCE_PASS_INDEXMA;
 
-	if (strcmp(str, "Mist") == 0)
+	if (strstr(str, "Mist") == str)
 		return SCE_PASS_MIST;
 	
-	if (strcmp(str, "RayHits") == 0)
+	if (strstr(str, "RayHits") == str)
 		return SCE_PASS_RAYHITS;
 
-	if (strcmp(str, "DiffDir") == 0)
+	if (strstr(str, "DiffDir") == str)
 		return SCE_PASS_DIFFUSE_DIRECT;
 
-	if (strcmp(str, "DiffInd") == 0)
+	if (strstr(str, "DiffInd") == str)
 		return SCE_PASS_DIFFUSE_INDIRECT;
 
-	if (strcmp(str, "DiffCol") == 0)
+	if (strstr(str, "DiffCol") == str)
 		return SCE_PASS_DIFFUSE_COLOR;
 
-	if (strcmp(str, "GlossDir") == 0)
+	if (strstr(str, "GlossDir") == str)
 		return SCE_PASS_GLOSSY_DIRECT;
 
-	if (strcmp(str, "GlossInd") == 0)
+	if (strstr(str, "GlossInd") == str)
 		return SCE_PASS_GLOSSY_INDIRECT;
 
-	if (strcmp(str, "GlossCol") == 0)
+	if (strstr(str, "GlossCol") == str)
 		return SCE_PASS_GLOSSY_COLOR;
 
-	if (strcmp(str, "TransDir") == 0)
+	if (strstr(str, "TransDir") == str)
 		return SCE_PASS_TRANSM_DIRECT;
 
-	if (strcmp(str, "TransInd") == 0)
+	if (strstr(str, "TransInd") == str)
 		return SCE_PASS_TRANSM_INDIRECT;
 
-	if (strcmp(str, "TransCol") == 0)
+	if (strstr(str, "TransCol") == str)
 		return SCE_PASS_TRANSM_COLOR;
 
 	return 0;
@@ -607,7 +607,31 @@ static void *ml_addlayer_cb(void *base, const char *str)
 	return rl;
 }
 
-static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float *rect, int totchan, const char *chan_id)
+/* utils - duplicated code - quick hack */
+static int strip_view(const char *name, const char *viewname)
+{
+	/**
+	 A -> A
+	 left.R -> R
+	 main.right.depth -> main.depth */
+	
+	if (viewname == NULL)
+		return 0;
+	
+	const char *end = name + strlen(name);
+	char *a = strstr(name, viewname);
+	char *b = a + strlen(viewname) + 1; /* +1 to skip '.' separator */
+	
+	if ((a == NULL) || (b == NULL) || (b < a) || (b > end))
+		return 0;
+	
+	memmove(a, b, strlen(b) + 1);
+	return 1;
+}
+
+/* end of quick hack */
+
+static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float *rect, int totchan, const char *chan_id, const char *viewname)
 {
 	RenderLayer *rl = lay;
 	RenderPass *rpass = MEM_callocN(sizeof(RenderPass), "loaded pass");
@@ -616,7 +640,14 @@ static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float 
 	BLI_addtail(&rl->passes, rpass);
 	rpass->channels = totchan;
 
-	rpass->passtype = passtype_from_name(str);
+	//MV the string to test should be stripped off from view name
+//	char tmpstr[sizeof(str) + 1];
+	char *tmpstr = MEM_callocN(strlen(str), "temp string");
+	strcpy(tmpstr, str);
+	
+	strip_view(tmpstr, viewname);
+	
+	rpass->passtype = passtype_from_name(tmpstr);
 	if (rpass->passtype == 0) printf("unknown pass %s\n", str);
 	rl->passflag |= rpass->passtype;
 	
@@ -626,6 +657,19 @@ static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float 
 		rpass->chan_id[a] = chan_id[a];
 	
 	rpass->rect = rect;
+	MEM_freeN(tmpstr);
+}
+
+static void *ml_addview_cb(void *base, const char *str)
+{
+	RenderResult *rr = base;
+	RenderView *rv;
+	
+	rv = MEM_callocN(sizeof(RenderView), "new render view");
+	BLI_addtail(&rr->multiView, rv);
+	
+	BLI_strncpy(rv->name, str, EXR_VIEW_MAXNAME);
+	return rv;
 }
 
 /* from imbuf, if a handle was returned we convert this to render result */
@@ -639,7 +683,7 @@ RenderResult *render_result_new_from_exr(void *exrhandle, const char *colorspace
 	rr->rectx = rectx;
 	rr->recty = recty;
 	
-	IMB_exr_multilayer_convert(exrhandle, rr, ml_addlayer_cb, ml_addpass_cb);
+	IMB_exr_multilayer_convert(exrhandle, rr, ml_addview_cb, ml_addlayer_cb, ml_addpass_cb);
 
 	for (rl = rr->layers.first; rl; rl = rl->next) {
 		rl->rectx = rectx;
@@ -740,11 +784,16 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 {
 	RenderLayer *rl;
 	RenderPass *rpass;
+	RenderView *rview;
 	void *exrhandle = IMB_exr_get_handle();
 	int success;
+	int is_multiView = BLI_countlist(&rr->multiView);
 
 	BLI_make_existing_file(filename);
 	
+	for (rview = (RenderView *)rr->multiView.first; rview; rview=rview->next)
+		IMB_exr_add_view(exrhandle, rview->name);
+
 	/* composite result */
 	if (rr->rectf) {
 		IMB_exr_add_channel(exrhandle, "Composite", "Combined.R", 4, 4 * rr->rectx, rr->rectf);
@@ -769,6 +818,7 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			int a, xstride = rpass->channels;
 			for (a = 0; a < xstride; a++) {
+#if 1
 				if (rpass->passtype) {
 					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a),
 					                    xstride, xstride * rr->rectx, rpass->rect + a);
@@ -777,6 +827,22 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 					IMB_exr_add_channel(exrhandle, rl->name, make_pass_name(rpass, a),
 					                    xstride, xstride * rr->rectx, rpass->rect + a);
 				}
+#else
+				const char *name = NULL;
+				
+				if (rpass->passtype)
+					name = get_pass_name(rpass->passtype, a);
+				else
+					name = make_pass_name(rpass, a);
+
+				printf("Channel Raw Name: %s\n", name);
+				
+				if (is_multiView)
+					name = IMB_exr_insertViewName(exrhandle, name, rpass->view_id);
+
+				IMB_exr_add_channel(exrhandle, rl->name, name,
+									xstride, xstride * rr->rectx, rpass->rect + a);
+#endif
 			}
 		}
 	}
