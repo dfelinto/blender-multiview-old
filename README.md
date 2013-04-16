@@ -1,20 +1,24 @@
 OceanViz
-=======
+========
 
 clone from https://gitorious.org/blenderprojects/blender
 
 Introduction
 ------------
-This branch contains the changes we made to the [Blender](http://www.blender.org/) game engine for the OceanViz project.
-OceanViz is developed
+This branch contains the changes we made to the [Blender](http://www.blender.org/) game engine for the *OceanViz* project.
 
-In its current iteration, OceanViz is implemented as a plug-in for the
-[Ecopath with Ecosim (EwE)](http://www.ecopath.org/) desktop software, using the embedding capabilities
-of the Blenderplayer
+*OceanViz*, is an interactive underwater visualization made with the Blender Game Engine.
+The goal of this visualization was to accurately display the amount of marine life in the sea,
+based on a scientific modeling program called [Ecopath with Ecosim (EwE)](http://www.ecopath.org/).
 
-The OceanViz project was conceived by professor [Dr. Villy Christensen](http://www.fisheries.ubc.ca/faculty-staff/villy-christensen).
+![Alt text](http://dalaifelinto.com/ftp/EwEOceanVizPlugIn.jpg "OceanViz © UBC Fisheries Centre; EwE Plugin Jeroen Steenbeek and Dalai Felinto")
 
-The OceanViz development Blender team consists of [Dalai Felinto](http://www.dalaifelinto.com/),
+In its current iteration, *OceanViz* is implemented as a plug-in for the EwE desktop software,
+using the embedding capabilities of the Blenderplayer
+
+The *OceanViz* project was conceived by professor [Dr. Villy Christensen](http://www.fisheries.ubc.ca/faculty-staff/villy-christensen).
+
+The Blender team consists of [Dalai Felinto](http://www.dalaifelinto.com/),
 with past support from [Mike Pan](http://www.mikepan.com/) and a team lead by Stephen Danic
 from the MDM program at the Centre for Digital Media in Vancouver.
 
