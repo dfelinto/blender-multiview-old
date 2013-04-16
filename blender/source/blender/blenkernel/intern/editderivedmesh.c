@@ -1538,7 +1538,7 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
  * \note this function assumes this is a mesh object,
  * don't add NULL data check here. caller must do that
  */
-BMEditMesh *BMEdit_FromObject(Object *ob)
+BMEditMesh *BKE_editmesh_from_object(Object *ob)
 {
 	BLI_assert(ob->type == OB_MESH);
 	/* sanity check */
