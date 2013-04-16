@@ -29,14 +29,17 @@
  *  \ingroup bke
  */
 
-#include "BLI_math.h"
-
-#include "BKE_cdderivedmesh.h"
-
 #include "MEM_guardedalloc.h"
 
-#include "BKE_editmesh.h"
+#include "DNA_listBase.h"
+#include "DNA_object_types.h"
+#include "DNA_mesh_types.h"
+
+#include "BLI_math.h"
 #include "BLI_scanfill.h"
+
+#include "BKE_editmesh.h"
+#include "BKE_cdderivedmesh.h"
 
 
 BMEditMesh *BKE_editmesh_create(BMesh *bm, const bool do_tessellate)
@@ -76,6 +79,25 @@ BMEditMesh *BKE_editmesh_copy(BMEditMesh *em)
 
 	return em_copy;
 }
+
+/**
+ * \brief Return the BMEditMesh for a given object
+ *
+ * \note this function assumes this is a mesh object,
+ * don't add NULL data check here. caller must do that
+ */
+BMEditMesh *BKE_editmesh_from_object(Object *ob)
+{
+	BLI_assert(ob->type == OB_MESH);
+	/* sanity check */
+#ifndef NDEBUG
+	if (((Mesh *)ob->data)->edit_btmesh) {
+		BLI_assert(((Mesh *)ob->data)->edit_btmesh->ob == ob);
+	}
+#endif
+	return ((Mesh *)ob->data)->edit_btmesh;
+}
+
 
 static void editmesh_tessface_calc_intern(BMEditMesh *em)
 {
