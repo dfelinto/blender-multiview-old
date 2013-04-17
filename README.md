@@ -2,6 +2,8 @@ Multi View
 ==========
 clone from https://gitorious.org/blenderprojects/blender
 
+![Alt text](http://wiki.blender.org/uploads/0/0d/Dev-Stereoscopy-MirroredSample.png "OceanViz © UBC Fisheries Centre; EwE Plugin Jeroen Steenbeek and Dalai Felinto")
+
 This branch contains the code for the "stereoscopy support in Blender" journey.
 
 Links
