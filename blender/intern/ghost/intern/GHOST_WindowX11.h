@@ -95,6 +95,10 @@ public:
 	getValid(
 	    ) const;
 
+	bool
+	getValidParent(
+	    ) const;
+
 	void
 	setTitle(const STR_String& title);
 

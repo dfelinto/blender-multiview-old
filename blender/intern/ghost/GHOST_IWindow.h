@@ -73,6 +73,12 @@ public:
 	virtual bool getValid() const = 0;
 
 	/**
+	 * Returns indication as to whether the parent window is valid.
+	 * \return false if not running on embed mode.
+	 */
+	virtual bool getValidParent() const = 0;
+
+	/**
 	 * Returns the associated OS object/handle
 	 * \return The associated OS object/handle
 	 */

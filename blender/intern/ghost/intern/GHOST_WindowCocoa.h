@@ -97,7 +97,14 @@ public:
 	 * \return The validity of the window.
 	 */
 	virtual bool getValid() const;
-	
+
+	/**
+	 * NOT IMPLEMENTED IN OSX (embed mode not yet supported)
+	 * Returns indication as to whether the parent window is valid.
+	 * \return true if not running on embed mode.
+	 */
+	virtual bool getValidParent() const;
+
 	/**
 	 * Returns the associated NSWindow object
 	 * \return The associated NSWindow object

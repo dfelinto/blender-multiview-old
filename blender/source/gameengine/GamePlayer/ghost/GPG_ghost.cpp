@@ -344,6 +344,12 @@ static bool GPG_NextFrame(GHOST_ISystem* system, GPG_Application *app, int &exit
 		exitstring = app->getExitString();
 		*gs = *app->getGlobalSettings();
 	}
+#ifndef __APPLE__
+	if (app->getWindow()->getValidParent() == false) {
+		run = false;
+		exitstring = "Parent window no longer valid, terminating the game engine.";
+	}
+#endif
 	return run;
 }
 

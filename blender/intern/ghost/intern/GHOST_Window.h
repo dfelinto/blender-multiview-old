@@ -53,6 +53,7 @@ public:
 	 * \section Interface inherited from GHOST_IWindow left for derived class
 	 * implementation.
 	 * virtual	bool getValid() const = 0;
+	 * virtual  bool getValidParent() const = 0;
 	 * virtual void setTitle(const STR_String& title) = 0;
 	 * virtual void getTitle(STR_String& title) const = 0;
 	 * virtual	void getWindowBounds(GHOST_Rect& bounds) const = 0;
@@ -99,6 +100,7 @@ public:
 	 * \section Interface inherited from GHOST_IWindow left for derived class
 	 * implementation.
 	 * virtual	bool getValid() const = 0;
+	 * virtual  bool getValidParent() const = 0;
 	 * virtual void setTitle(const STR_String& title) = 0;
 	 * virtual void getTitle(STR_String& title) const = 0;
 	 * virtual	void getWindowBounds(GHOST_Rect& bounds) const = 0;

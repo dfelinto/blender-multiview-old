@@ -555,6 +555,14 @@ getValid() const
 	return m_valid_setup;
 }
 
+bool
+GHOST_WindowX11::
+getValidParent() const
+{
+	/* XXX need to be implemented, see WindowWin32::getValidParent */
+	return true;
+}
+
 void
 GHOST_WindowX11::
 setTitle(

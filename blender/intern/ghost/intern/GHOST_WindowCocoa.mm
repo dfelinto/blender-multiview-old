@@ -672,6 +672,12 @@ bool GHOST_WindowCocoa::getValid() const
 	return (m_window != 0);
 }
 
+bool GHOST_WindowCocoa::getValidParent() const
+{
+	/* XXX embed is not supported in OSX yet, */
+	return true;
+}
+
 void* GHOST_WindowCocoa::getOSWindow() const
 {
 	return (void*)m_window;

@@ -438,6 +438,13 @@ bool GHOST_WindowWin32::getValid() const
 	return m_hWnd != 0;
 }
 
+bool GHOST_WindowWin32::getValidParent() const
+{
+	if (m_parentWindowHwnd == 0)
+		return true;
+	return (::IsWindow((HWND) m_parentWindowHwnd));
+}
+
 HWND GHOST_WindowWin32::getHWND() const
 {
 	return m_hWnd;
