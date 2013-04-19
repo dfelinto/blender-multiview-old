@@ -32,3 +32,4 @@ Features
  1. Custom GLSL Uniforms per Object
  2. Multi-Panel system
  3. Resize of embed window following parent
+ 4. Exit game if parent window is no longer exists
