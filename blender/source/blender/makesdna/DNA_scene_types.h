@@ -192,6 +192,15 @@ typedef struct SceneRenderLayer {
 	struct FreestyleConfig freestyleConfig;
 } SceneRenderLayer;
 
+/* View - MultiView */
+typedef struct SceneRenderView {
+	struct SceneRenderView *next, *prev;
+
+	char name[64];	/* MAX_NAME */
+
+	struct Camera *camera;
+} SceneRenderView;
+
 /* srl->layflag */
 #define SCE_LAY_SOLID	1
 #define SCE_LAY_ZTRA	2
@@ -556,6 +565,11 @@ typedef struct RenderData {
 
 	/* render engine */
 	char engine[32];
+
+	/* MultiView */
+	ListBase views;
+	short actview;
+	short pad8[3];
 } RenderData;
 
 /* *************************************************************** */
@@ -1289,6 +1303,7 @@ typedef struct Scene {
 /* #define R_DEPRECATED		0x10000 */
 /* #define R_RECURS_PROTECTION	0x20000 */
 #define R_TEXNODE_PREVIEW	0x40000
+#define R_MULTIVIEW			0x80000
 
 /* r->stamp */
 #define R_STAMP_TIME 	0x0001

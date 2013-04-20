@@ -5025,6 +5025,7 @@ static void lib_link_scene(FileData *fd, Main *main)
 	Base *base, *next;
 	Sequence *seq;
 	SceneRenderLayer *srl;
+	SceneRenderView *srv;
 	TimeMarker *marker;
 	FreestyleModuleConfig *fmc;
 	FreestyleLineSet *fls;
@@ -5150,6 +5151,11 @@ static void lib_link_scene(FileData *fd, Main *main)
 					fls->group = newlibadr_us(fd, sce->id.lib, fls->group);
 				}
 			}
+
+			for (srv = sce->r.views.first; srv; srv = srv->next) {
+				srv->camera = newlibadr_us(fd, sce->id.lib, srv->camera);
+			}
+
 			/*Game Settings: Dome Warp Text*/
 			sce->gm.dome.warptext = newlibadr(fd, sce->id.lib, sce->gm.dome.warptext);
 			
@@ -5396,6 +5402,7 @@ static void direct_link_scene(FileData *fd, Scene *sce)
 	link_list(fd, &(sce->markers));
 	link_list(fd, &(sce->transform_spaces));
 	link_list(fd, &(sce->r.layers));
+	link_list(fd, &(sce->r.views));
 
 	for(srl = sce->r.layers.first; srl; srl = srl->next) {
 		link_list(fd, &(srl->freestyleConfig.modules));
@@ -9327,6 +9334,14 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				linestyle->rounds = 3;
 		}
 	}
+	{
+		Scene *scene;
+		if (!DNA_struct_elem_find(fd->filesdna, "RenderData", "ListBase", "views")) {
+			for (scene = main->scene.first; scene; scene = scene->id.next) {
+				BKE_scene_add_render_view(scene, "center");
+			}
+		}
+	}
 
 	/* WATCH IT!!!: pointers from libdata have not been converted yet here! */
 	/* WATCH IT 2!: Userdef struct init see do_versions_userdef() above! */
@@ -10320,6 +10335,7 @@ static void expand_scene(FileData *fd, Main *mainvar, Scene *sce)
 {
 	Base *base;
 	SceneRenderLayer *srl;
+	SceneRenderView *srv;
 	FreestyleModuleConfig *module;
 	FreestyleLineSet *lineset;
 	
@@ -10353,6 +10369,10 @@ static void expand_scene(FileData *fd, Main *mainvar, Scene *sce)
 		}
 	}
 	
+	for (srv = sce->r.views.first; srv; srv = srv->next) {
+		expand_doit(fd, mainvar, srv->camera);
+	}
+
 	if (sce->r.dometext)
 		expand_doit(fd, mainvar, sce->gm.dome.warptext);
 	

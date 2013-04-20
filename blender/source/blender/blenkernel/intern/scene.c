@@ -147,13 +147,15 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 	Base *base, *obase;
 	
 	if (type == SCE_COPY_EMPTY) {
-		ListBase lb;
+		ListBase rl, rv;
 		/* XXX. main should become an arg */
 		scen = BKE_scene_add(G.main, sce->id.name + 2);
 		
-		lb = scen->r.layers;
+		rl = scen->r.layers;
+		rv = scen->r.views;
 		scen->r = sce->r;
-		scen->r.layers = lb;
+		scen->r.layers = rl;
+		scen->r.views = rv;
 		scen->unit = sce->unit;
 		scen->physics_settings = sce->physics_settings;
 		scen->gm = sce->gm;
@@ -181,6 +183,7 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 		BLI_duplicatelist(&(scen->markers), &(sce->markers));
 		BLI_duplicatelist(&(scen->transform_spaces), &(sce->transform_spaces));
 		BLI_duplicatelist(&(scen->r.layers), &(sce->r.layers));
+		BLI_duplicatelist(&(scen->r.views), &(sce->r.views));
 		BKE_keyingsets_copy(&(scen->keyingsets), &(sce->keyingsets));
 
 		if (sce->nodetree) {
@@ -353,6 +356,7 @@ void BKE_scene_free(Scene *sce)
 	BLI_freelistN(&sce->markers);
 	BLI_freelistN(&sce->transform_spaces);
 	BLI_freelistN(&sce->r.layers);
+	BLI_freelistN(&sce->r.views);
 	
 	if (sce->toolsettings) {
 		if (sce->toolsettings->vpaint) {
@@ -565,6 +569,8 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 
 	/* note; in header_info.c the scene copy happens..., if you add more to renderdata it has to be checked there */
 	BKE_scene_add_render_layer(sce, NULL);
+
+	BKE_scene_add_render_view(sce, "center");
 	
 	/* game data */
 	sce->gm.stereoflag = STEREO_NOSTEREO;
@@ -1335,6 +1341,45 @@ int BKE_scene_remove_render_layer(Main *bmain, Scene *scene, SceneRenderLayer *s
 			}
 		}
 	}
+
+	return 1;
+}
+
+/* return default view */
+SceneRenderView *BKE_scene_add_render_view(Scene *sce, const char *name)
+{
+	SceneRenderView *srv;
+
+	if (!name)
+		name = DATA_("RenderView");
+
+	srv = MEM_callocN(sizeof(SceneRenderView), "new render view");
+	BLI_strncpy(srv->name, name, sizeof(srv->name));
+	BLI_uniquename(&sce->r.views, srv, DATA_("RenderView"), '.', offsetof(SceneRenderView, name), sizeof(srv->name));
+	BLI_addtail(&sce->r.views, srv);
+
+	return srv;
+}
+
+int BKE_scene_remove_render_view(Main *bmain, Scene *scene, SceneRenderView *srv)
+{
+	const int act = BLI_findindex(&scene->r.views, srv);
+	Scene *sce;
+
+	if (act == -1) {
+		return 0;
+	}
+	else if ( (scene->r.views.first == scene->r.views.last) &&
+	          (scene->r.views.first == srv))
+	{
+		/* ensure 1 view is kept */
+		return 0;
+	}
+
+	BLI_remlink(&scene->r.views, srv);
+	MEM_freeN(srv);
+
+	scene->r.actview = 0;
 
 	return 1;
 }
