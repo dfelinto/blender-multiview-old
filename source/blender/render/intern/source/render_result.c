@@ -746,11 +746,12 @@ RenderResult *render_result_new_from_exr(void *exrhandle, const char *colorspace
 	RenderLayer *rl;
 	RenderPass *rpass;
 	const char *to_colorspace = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_SCENE_LINEAR);
+	int i;
 
 	rr->rectx = rectx;
 	rr->recty = recty;
 
-	for(int i=0; i < BLI_countlist(&rr->multiView);i++);
+	for(i=0; i < BLI_countlist(&rr->multiView);i++);
 	
 	IMB_exr_multilayer_convert(exrhandle, rr, ml_addview_cb, ml_addlayer_cb, ml_addpass_cb);
 
