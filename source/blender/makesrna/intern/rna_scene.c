@@ -1059,6 +1059,69 @@ static void rna_RenderLayer_remove(ID *id, RenderData *UNUSED(rd), Main *bmain, 
 	WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
 }
 
+static int rna_RenderSettings_active_view_index_get(PointerRNA *ptr)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	return rd->actview;
+}
+
+static void rna_RenderSettings_active_view_index_set(PointerRNA *ptr, int value)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	rd->actview = value;
+}
+
+static void rna_RenderSettings_active_view_index_range(PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+
+	*min = 0;
+	*max = max_ii(0, BLI_countlist(&rd->views) - 1);
+}
+
+static PointerRNA rna_RenderSettings_active_view_get(PointerRNA *ptr)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	SceneRenderView *srv = BLI_findlink(&rd->views, rd->actview);
+	
+	return rna_pointer_inherit_refine(ptr, &RNA_SceneRenderView, srv);
+}
+
+static void rna_RenderSettings_active_view_set(PointerRNA *ptr, PointerRNA value)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	SceneRenderView *srv = (SceneRenderView *)value.data;
+	const int index = BLI_findindex(&rd->views, srv);
+	if (index != -1) rd->actview = index;
+}
+
+static SceneRenderView *rna_RenderView_new(ID *id, RenderData *UNUSED(rd), const char *name)
+{
+	Scene *scene = (Scene *)id;
+	SceneRenderView *srv = BKE_scene_add_render_view(scene, name);
+
+	WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	return srv;
+}
+
+static void rna_RenderView_remove(ID *id, RenderData *UNUSED(rd), Main *bmain, ReportList *reports,
+                                   PointerRNA *srv_ptr)
+{
+	SceneRenderView *srv = srv_ptr->data;
+	Scene *scene = (Scene *)id;
+
+	if (!BKE_scene_remove_render_view(bmain, scene, srv)) {
+		BKE_reportf(reports, RPT_ERROR, "Render view '%s' could not be removed from scene '%s'",
+		            srv->name, scene->id.name + 2);
+		return;
+	}
+
+	RNA_POINTER_INVALIDATE(srv_ptr);
+
+	WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+}
+
 static void rna_RenderSettings_engine_set(PointerRNA *ptr, int value)
 {
 	RenderData *rd = (RenderData *)ptr->data;
@@ -1138,6 +1201,20 @@ static char *rna_SceneRenderLayer_path(PointerRNA *ptr)
 {
 	SceneRenderLayer *srl = (SceneRenderLayer *)ptr->data;
 	return BLI_sprintfN("render.layers[\"%s\"]", srl->name);
+}
+
+static void rna_SceneRenderView_name_set(PointerRNA *ptr, const char *value)
+{
+	Scene *scene = (Scene *)ptr->id.data;
+	SceneRenderView *rv = (SceneRenderView *)ptr->data;
+	BLI_strncpy_utf8(rv->name, value, sizeof(rv->name));
+	BLI_uniquename(&scene->r.views, rv, DATA_("RenderView"), '.', offsetof(SceneRenderView, name), sizeof(rv->name));
+}
+
+static char *rna_SceneRenderView_path(PointerRNA *ptr)
+{
+	SceneRenderView *srv = (SceneRenderView *)ptr->data;
+	return BLI_sprintfN("render.views[\"%s\"]", srv->name);
 }
 
 static int rna_RenderSettings_multiple_engines_get(PointerRNA *UNUSED(ptr))
@@ -3374,6 +3451,76 @@ static void rna_def_render_layers(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 }
 
+/* Render Views - MultiView */
+static void rna_def_scene_render_view(BlenderRNA *brna)
+{
+	StructRNA *srna;
+	PropertyRNA *prop;
+
+	srna = RNA_def_struct(brna, "SceneRenderView", NULL);
+	RNA_def_struct_ui_text(srna, "Scene Render View", "Render view");
+	RNA_def_struct_ui_icon(srna, ICON_CAMERA_DATA);
+	RNA_def_struct_path_func(srna, "rna_SceneRenderView_path");
+
+	prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
+	RNA_def_property_string_funcs(prop, NULL, NULL, "rna_SceneRenderView_name_set");
+	RNA_def_property_ui_text(prop, "Name", "Render view name");
+	RNA_def_struct_name_property(srna, prop);
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	prop = RNA_def_property(srna, "camera", PROP_POINTER, PROP_NONE);
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Camera_object_poll");
+	RNA_def_property_ui_text(prop, "Camera", "Camera to use for render. Leave empty to use active one");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+	//XXX and shoulf update 3d view as well
+}
+
+static void rna_def_render_views(BlenderRNA *brna, PropertyRNA *cprop)
+{
+	StructRNA *srna;
+	PropertyRNA *prop;
+
+	FunctionRNA *func;
+	PropertyRNA *parm;
+
+	RNA_def_property_srna(cprop, "RenderViews");
+	srna = RNA_def_struct(brna, "RenderViews", NULL);
+	RNA_def_struct_sdna(srna, "RenderData");
+	RNA_def_struct_ui_text(srna, "Render Views", "Collection of render views");
+
+	prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
+	RNA_def_property_int_sdna(prop, NULL, "actview");
+	RNA_def_property_int_funcs(prop, "rna_RenderSettings_active_view_index_get",
+	                           "rna_RenderSettings_active_view_index_set",
+	                           "rna_RenderSettings_active_view_index_range");
+	RNA_def_property_ui_text(prop, "Active View Index", "Active index in render view array");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
+	RNA_def_property_struct_type(prop, "SceneRenderView");
+	RNA_def_property_pointer_funcs(prop, "rna_RenderSettings_active_view_get",
+	                               "rna_RenderSettings_active_view_set", NULL, NULL);
+	RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
+	RNA_def_property_ui_text(prop, "Active Render View", "Active Render View");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	func = RNA_def_function(srna, "new", "rna_RenderView_new");
+	RNA_def_function_ui_description(func, "Add a render view to scene");
+	RNA_def_function_flag(func, FUNC_USE_SELF_ID);
+	parm = RNA_def_string(func, "name", "RenderView", 0, "", "New name for the marker (not unique)");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm = RNA_def_pointer(func, "result", "SceneRenderView", "", "Newly created render view");
+	RNA_def_function_return(func, parm);
+
+	func = RNA_def_function(srna, "remove", "rna_RenderView_remove");
+	RNA_def_function_ui_description(func, "Remove a render view");
+	RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS | FUNC_USE_SELF_ID);
+	parm = RNA_def_pointer(func, "view", "SceneRenderView", "", "Render view to remove");
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
+	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
+}
+
 /* use for render output and image save operator,
  * note: there are some cases where the members act differently when this is
  * used from a scene, video formats can only be selected for render output
@@ -4568,6 +4715,18 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 	RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
+	/* MultiView (stereoscopy et al) */
+	prop = RNA_def_property(srna, "use_multiview", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "scemode", R_MULTIVIEW);
+	RNA_def_property_ui_text(prop, "Multi View", "Render more than one view");
+	RNA_def_property_update(prop, NC_SCENE, NULL);
+
+	prop = RNA_def_property(srna, "views", PROP_COLLECTION, PROP_NONE);
+	RNA_def_property_collection_sdna(prop, NULL, "views", NULL);
+	RNA_def_property_struct_type(prop, "SceneRenderView");
+	RNA_def_property_ui_text(prop, "Render Views", "");
+	rna_def_render_views(brna, prop);
+
 	/* engine */
 	prop = RNA_def_property(srna, "engine", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, engine_items);
@@ -5220,6 +5379,7 @@ void RNA_def_scene(BlenderRNA *brna)
 	/* *** Animated *** */
 	rna_def_scene_render_data(brna);
 	rna_def_scene_render_layer(brna);
+	rna_def_scene_render_view(brna);
 	
 	/* Scene API */
 	RNA_api_scene(srna);
