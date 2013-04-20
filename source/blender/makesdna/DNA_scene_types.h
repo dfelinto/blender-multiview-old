@@ -198,7 +198,7 @@ typedef struct SceneRenderView {
 
 	char name[64];	/* MAX_NAME */
 
-	struct Camera *camera;
+	struct Object *camera;
 } SceneRenderView;
 
 /* srl->layflag */
