@@ -82,9 +82,9 @@ void render_result_free(RenderResult *res)
 		MEM_freeN(rl);
 	}
 	
-	while (res->multiView.first) {
-		RenderView *rv = res->multiView.first;
-		BLI_remlink(&res->multiView, rv);
+	while (res->views.first) {
+		RenderView *rv = res->views.first;
+		BLI_remlink(&res->views, rv);
 		MEM_freeN(rv);
 	}
 
@@ -733,7 +733,7 @@ static void *ml_addview_cb(void *base, const char *str)
 	RenderView *rv;
 	
 	rv = MEM_callocN(sizeof(RenderView), "new render view");
-	BLI_addtail(&rr->multiView, rv);
+	BLI_addtail(&rr->views, rv);
 	
 	BLI_strncpy(rv->name, str, EXR_VIEW_MAXNAME);
 	return rv;
@@ -751,7 +751,7 @@ RenderResult *render_result_new_from_exr(void *exrhandle, const char *colorspace
 	rr->rectx = rectx;
 	rr->recty = recty;
 
-	for(i=0; i < BLI_countlist(&rr->multiView);i++);
+	for(i=0; i < BLI_countlist(&rr->views);i++);
 	
 	IMB_exr_multilayer_convert(exrhandle, rr, ml_addview_cb, ml_addlayer_cb, ml_addpass_cb);
 
@@ -857,12 +857,12 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 	RenderView *rview;
 	void *exrhandle = IMB_exr_get_handle();
 	int success;
-	int is_multiView = BLI_countlist(&rr->multiView) > 1;
+	int is_multiView = BLI_countlist(&rr->views) > 1;
 	const char *viewname=NULL;
 
 	BLI_make_existing_file(filename);
 	
-	for (rview = (RenderView *)rr->multiView.first; rview; rview=rview->next)
+	for (rview = (RenderView *)rr->views.first; rview; rview=rview->next)
 		IMB_exr_add_view(exrhandle, rview->name);
 
 	/* composite result */
@@ -890,7 +890,7 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 			int a, xstride = rpass->channels;
 			for (a = 0; a < xstride; a++) {
 				printf("view_id: %d\n", rpass->view_id);
-				viewname = get_view_name(&rr->multiView, rpass->view_id);
+				viewname = get_view_name(&rr->views, rpass->view_id);
 
 				if (rpass->passtype) {
 					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, viewname),
@@ -1012,7 +1012,7 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart)
 		/* passes are allocated in sync */
 		for (rpassp = rlp->passes.first; rpassp; rpassp = rpassp->next) {
 			int a, xstride = rpassp->channels;
-			const char *viewname = get_view_name(&rr->multiView, rpassp->view_id);
+			const char *viewname = get_view_name(&rr->views, rpassp->view_id);
 
 			for (a = 0; a < xstride; a++) {
 				IMB_exr_set_channel(rl->exrhandle, rlp->name, get_pass_name(rpassp->passtype, a, viewname),
@@ -1184,7 +1184,7 @@ int render_result_exr_file_read_path(RenderResult *rr, RenderLayer *rl_single, c
 		/* passes are allocated in sync */
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			int a, xstride = rpass->channels;
-			const char *viewname = get_view_name(&rr->multiView, rpass->view_id);
+			const char *viewname = get_view_name(&rr->views, rpass->view_id);
 			for (a = 0; a < xstride; a++)
 				IMB_exr_set_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, viewname),
 				                    xstride, xstride * rectx, rpass->rect + a);
