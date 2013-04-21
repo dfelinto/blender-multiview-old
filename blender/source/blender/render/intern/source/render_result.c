@@ -473,9 +473,10 @@ static int passtype_from_name(const char *str)
 
 /********************************** New **************************************/
 
-static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channels, int passtype)
+static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channels, int passtype, int view_id)
 {
-	const char *typestr = get_pass_name(passtype, 0, "");//MV all 3 calls here
+	const char *viewname = get_view_name(&rr->views, view_id);
+	const char *typestr = get_pass_name(passtype, 0, viewname);
 	RenderPass *rpass = MEM_callocN(sizeof(RenderPass), typestr);
 	int rectsize = rr->rectx * rr->recty * channels;
 	
@@ -484,12 +485,13 @@ static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channel
 	rpass->channels = channels;
 	rpass->rectx = rl->rectx;
 	rpass->recty = rl->recty;
-	BLI_strncpy(rpass->name, get_pass_name(rpass->passtype, -1, ""), sizeof(rpass->name));
+	rpass->view_id = view_id;
+	BLI_strncpy(rpass->name, get_pass_name(rpass->passtype, -1, viewname), sizeof(rpass->name));
 	
 	if (rl->exrhandle) {
 		int a;
 		for (a = 0; a < channels; a++)
-			IMB_exr_add_channel(rl->exrhandle, rl->name, get_pass_name(passtype, a, ""), 0, 0, NULL);
+			IMB_exr_add_channel(rl->exrhandle, rl->name, get_pass_name(passtype, a, viewname), 0, 0, NULL);
 	}
 	else {
 		float *rect;
@@ -519,8 +521,10 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 {
 	RenderResult *rr;
 	RenderLayer *rl;
+	RenderView *rv;
 	SceneRenderLayer *srl;
-	int rectx, recty, nr;
+	SceneRenderView *srv;
+	int rectx, recty, nr, view;
 	
 	rectx = BLI_rcti_size_x(partrct);
 	recty = BLI_rcti_size_y(partrct);
@@ -543,6 +547,31 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 	
 	if (savebuffers) {
 		rr->do_exr_tile = TRUE;
+	}
+
+	/* check renderdata for amount of views */
+	for (nr = 0, srv = re->r.views.first; srv; srv = srv->next, nr++) {
+
+		if ((re->r.scemode & R_SINGLE_VIEW) && nr != re->r.actview)
+			continue;
+
+		if (srv->viewflag & SCE_VIEW_DISABLE)
+			continue;
+
+		rv = MEM_callocN(sizeof(RenderView), "new render view");
+		BLI_addtail(&rr->views, rv);
+
+		BLI_strncpy(rv->name, srv->name, sizeof(rv->name));
+
+		rv->camera = (srv->camera)?srv->camera:RE_GetCamera(re);
+	}
+
+	/* we always need at least one view */
+	if (BLI_countlist(&rr->views) == 0) {
+		rv = MEM_callocN(sizeof(RenderView), "new render view");
+		BLI_addtail(&rr->views, rv);
+
+		rv->camera = RE_GetCamera(re);
 	}
 
 	/* check renderdata for amount of layers */
@@ -583,61 +612,62 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		else
 			rl->rectf = MEM_mapallocN(rectx * recty * sizeof(float) * 4, "Combined rgba");
 		
-		if (srl->passflag  & SCE_PASS_Z)
-			render_layer_add_pass(rr, rl, 1, SCE_PASS_Z);
-		if (srl->passflag  & SCE_PASS_VECTOR)
-			render_layer_add_pass(rr, rl, 4, SCE_PASS_VECTOR);
-		if (srl->passflag  & SCE_PASS_NORMAL)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_NORMAL);
-		if (srl->passflag  & SCE_PASS_UV) 
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_UV);
-		if (srl->passflag  & SCE_PASS_RGBA)
-			render_layer_add_pass(rr, rl, 4, SCE_PASS_RGBA);
-		if (srl->passflag  & SCE_PASS_EMIT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_EMIT);
-		if (srl->passflag  & SCE_PASS_DIFFUSE)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_DIFFUSE);
-		if (srl->passflag  & SCE_PASS_SPEC)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_SPEC);
-		if (srl->passflag  & SCE_PASS_AO)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_AO);
-		if (srl->passflag  & SCE_PASS_ENVIRONMENT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_ENVIRONMENT);
-		if (srl->passflag  & SCE_PASS_INDIRECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_INDIRECT);
-		if (srl->passflag  & SCE_PASS_SHADOW)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_SHADOW);
-		if (srl->passflag  & SCE_PASS_REFLECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_REFLECT);
-		if (srl->passflag  & SCE_PASS_REFRACT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_REFRACT);
-		if (srl->passflag  & SCE_PASS_INDEXOB)
-			render_layer_add_pass(rr, rl, 1, SCE_PASS_INDEXOB);
-		if (srl->passflag  & SCE_PASS_INDEXMA)
-			render_layer_add_pass(rr, rl, 1, SCE_PASS_INDEXMA);
-		if (srl->passflag  & SCE_PASS_MIST)
-			render_layer_add_pass(rr, rl, 1, SCE_PASS_MIST);
-		if (rl->passflag & SCE_PASS_RAYHITS)
-			render_layer_add_pass(rr, rl, 4, SCE_PASS_RAYHITS);
-		if (srl->passflag  & SCE_PASS_DIFFUSE_DIRECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_DIFFUSE_DIRECT);
-		if (srl->passflag  & SCE_PASS_DIFFUSE_INDIRECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_DIFFUSE_INDIRECT);
-		if (srl->passflag  & SCE_PASS_DIFFUSE_COLOR)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_DIFFUSE_COLOR);
-		if (srl->passflag  & SCE_PASS_GLOSSY_DIRECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_GLOSSY_DIRECT);
-		if (srl->passflag  & SCE_PASS_GLOSSY_INDIRECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_GLOSSY_INDIRECT);
-		if (srl->passflag  & SCE_PASS_GLOSSY_COLOR)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_GLOSSY_COLOR);
-		if (srl->passflag  & SCE_PASS_TRANSM_DIRECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_TRANSM_DIRECT);
-		if (srl->passflag  & SCE_PASS_TRANSM_INDIRECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_TRANSM_INDIRECT);
-		if (srl->passflag  & SCE_PASS_TRANSM_COLOR)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_TRANSM_COLOR);
-		
+		for (rv= (RenderView *)(&rr->views)->first, view=0; rv; rv=rv->next, view++) {
+			if (srl->passflag  & SCE_PASS_Z)
+				render_layer_add_pass(rr, rl, 1, SCE_PASS_Z, view);
+			if (srl->passflag  & SCE_PASS_VECTOR)
+				render_layer_add_pass(rr, rl, 4, SCE_PASS_VECTOR, view);
+			if (srl->passflag  & SCE_PASS_NORMAL)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_NORMAL, view);
+			if (srl->passflag  & SCE_PASS_UV)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_UV, view);
+			if (srl->passflag  & SCE_PASS_RGBA)
+				render_layer_add_pass(rr, rl, 4, SCE_PASS_RGBA, view);
+			if (srl->passflag  & SCE_PASS_EMIT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_EMIT, view);
+			if (srl->passflag  & SCE_PASS_DIFFUSE)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_DIFFUSE, view);
+			if (srl->passflag  & SCE_PASS_SPEC)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_SPEC, view);
+			if (srl->passflag  & SCE_PASS_AO)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_AO, view);
+			if (srl->passflag  & SCE_PASS_ENVIRONMENT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_ENVIRONMENT, view);
+			if (srl->passflag  & SCE_PASS_INDIRECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_INDIRECT, view);
+			if (srl->passflag  & SCE_PASS_SHADOW)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_SHADOW, view);
+			if (srl->passflag  & SCE_PASS_REFLECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_REFLECT, view);
+			if (srl->passflag  & SCE_PASS_REFRACT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_REFRACT, view);
+			if (srl->passflag  & SCE_PASS_INDEXOB)
+				render_layer_add_pass(rr, rl, 1, SCE_PASS_INDEXOB, view);
+			if (srl->passflag  & SCE_PASS_INDEXMA)
+				render_layer_add_pass(rr, rl, 1, SCE_PASS_INDEXMA, view);
+			if (srl->passflag  & SCE_PASS_MIST)
+				render_layer_add_pass(rr, rl, 1, SCE_PASS_MIST, view);
+			if (rl->passflag & SCE_PASS_RAYHITS)
+				render_layer_add_pass(rr, rl, 4, SCE_PASS_RAYHITS, view);
+			if (srl->passflag  & SCE_PASS_DIFFUSE_DIRECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_DIFFUSE_DIRECT, view);
+			if (srl->passflag  & SCE_PASS_DIFFUSE_INDIRECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_DIFFUSE_INDIRECT, view);
+			if (srl->passflag  & SCE_PASS_DIFFUSE_COLOR)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_DIFFUSE_COLOR, view);
+			if (srl->passflag  & SCE_PASS_GLOSSY_DIRECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_GLOSSY_DIRECT, view);
+			if (srl->passflag  & SCE_PASS_GLOSSY_INDIRECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_GLOSSY_INDIRECT, view);
+			if (srl->passflag  & SCE_PASS_GLOSSY_COLOR)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_GLOSSY_COLOR, view);
+			if (srl->passflag  & SCE_PASS_TRANSM_DIRECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_TRANSM_DIRECT, view);
+			if (srl->passflag  & SCE_PASS_TRANSM_INDIRECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_TRANSM_INDIRECT, view);
+			if (srl->passflag  & SCE_PASS_TRANSM_COLOR)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_TRANSM_COLOR, view);
+		}
 	}
 	/* sss, previewrender and envmap don't do layers, so we make a default one */
 	if (rr->layers.first == NULL && !(layername && layername[0])) {
