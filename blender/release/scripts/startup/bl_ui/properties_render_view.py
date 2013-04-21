@@ -38,11 +38,11 @@ class RENDERVIEW_UL_renderviews(UIList):
         # assert(isinstance(item, bpy.types.SceneRenderView)
         view = item
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.label(view.name, icon_value=icon)
+            layout.label(view.name, icon_value=icon + (not view.use))
             layout.prop(view, "use", text="", index=index)
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
-            layout.label("", icon_value=icon)
+            layout.label("", icon_value=icon + (not view.use))
 
 
 class RENDERVIEW_PT_views(RenderViewButtonsPanel, Panel):
