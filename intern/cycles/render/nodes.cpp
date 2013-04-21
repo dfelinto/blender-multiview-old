@@ -249,6 +249,7 @@ void ImageTextureNode::compile(OSLCompiler& compiler)
 		compiler.parameter("color_space", "sRGB");
 	compiler.parameter("projection", projection);
 	compiler.parameter("projection_blend", projection_blend);
+	compiler.parameter("is_float", is_float);
 	compiler.add(this, "node_image_texture");
 }
 
@@ -368,6 +369,7 @@ void EnvironmentTextureNode::compile(OSLCompiler& compiler)
 		compiler.parameter("color_space", "Linear");
 	else
 		compiler.parameter("color_space", "sRGB");
+	compiler.parameter("is_float", is_float);
 	compiler.add(this, "node_environment_texture");
 }
 
@@ -2281,6 +2283,8 @@ HairInfoNode::HairInfoNode()
 	add_output("Intercept", SHADER_SOCKET_FLOAT);
 	add_output("Thickness", SHADER_SOCKET_FLOAT);
 	add_output("Tangent Normal", SHADER_SOCKET_NORMAL);
+	/*output for minimum hair width transparency - deactivated*/
+	/*add_output("Fade", SHADER_SOCKET_FLOAT);*/
 }
 
 void HairInfoNode::attributes(AttributeRequestSet *attributes)
@@ -2321,6 +2325,12 @@ void HairInfoNode::compile(SVMCompiler& compiler)
 		compiler.stack_assign(out);
 		compiler.add_node(NODE_HAIR_INFO, NODE_INFO_CURVE_TANGENT_NORMAL, out->stack_offset);
 	}
+
+	/*out = output("Fade");
+	if(!out->links.empty()) {
+		compiler.stack_assign(out);
+		compiler.add_node(NODE_HAIR_INFO, NODE_INFO_CURVE_FADE, out->stack_offset);
+	}*/
 
 }
 

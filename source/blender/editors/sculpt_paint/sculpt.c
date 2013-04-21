@@ -118,6 +118,17 @@ float *ED_sculpt_get_last_stroke(struct Object *ob)
 	return (ob && ob->sculpt && ob->sculpt->last_stroke_valid) ? ob->sculpt->last_stroke : NULL;
 }
 
+void ED_sculpt_get_average_stroke(Object *ob, float stroke[3])
+{
+	if (ob->sculpt->last_stroke_valid) {
+		float fac = 1.0f / ob->sculpt->average_stroke_counter;
+		mul_v3_v3fl(stroke, ob->sculpt->average_stroke_accum, fac);
+	}
+	else {
+		copy_v3_v3(stroke, ob->obmat[3]);
+	}
+}
+
 int ED_sculpt_minmax(bContext *C, float min[3], float max[3])
 {
 	Object *ob = CTX_data_active_object(C);
@@ -286,7 +297,12 @@ typedef struct StrokeCache {
 	int original;
 	float anchored_location[3];
 
-	float vertex_rotation;
+	float vertex_rotation; /* amount to rotate the vertices when using rotate brush */
+	float previous_vertex_rotation; /* previous rotation, used to detect if we rotate more than
+	                                 * PI radians */
+	short num_vertex_turns; /* records number of full 2*PI turns */
+	float initial_mouse_dir[2]; /* used to calculate initial angle */
+	bool init_dir_set; /* detect if we have initialized the initial mouse direction */
 
 	char saved_active_brush_name[MAX_ID_NAME];
 	char saved_mask_brush_tool;
@@ -1133,9 +1149,7 @@ static void calc_sculpt_normal(Sculpt *sd, Object *ob,
 
 	switch (brush->sculpt_plane) {
 		case SCULPT_DISP_DIR_VIEW:
-			ED_view3d_global_to_vector(ss->cache->vc->rv3d,
-			                           ss->cache->vc->rv3d->twmat[3],
-			                           an);
+			copy_v3_v3(an, ss->cache->true_view_normal);
 			break;
 
 		case SCULPT_DISP_DIR_X:
@@ -2085,18 +2099,8 @@ static void do_rotate_brush(Sculpt *sd, Object *ob, PBVHNode **nodes, int totnod
 	Brush *brush = BKE_paint_brush(&sd->paint);
 	float bstrength = ss->cache->bstrength;
 	int n;
-	float m[4][4], rot[4][4], lmat[4][4], ilmat[4][4];
 	static const int flip[8] = { 1, -1, -1, 1, -1, 1, 1, -1 };
 	float angle = ss->cache->vertex_rotation * flip[ss->cache->mirror_symmetry_pass];
-
-	unit_m4(m);
-	unit_m4(lmat);
-
-	copy_v3_v3(lmat[3], ss->cache->location);
-	invert_m4_m4(ilmat, lmat);
-	axis_angle_to_mat4(rot, ss->cache->sculpt_normal_symm, angle);
-
-	mul_serie_m4(m, lmat, rot, ilmat, NULL, NULL, NULL, NULL, NULL);
 
 	#pragma omp parallel for schedule(guided) if (sd->flags & SCULPT_USE_OPENMP)
 	for (n = 0; n < totnode; n++) {
@@ -2116,6 +2120,7 @@ static void do_rotate_brush(Sculpt *sd, Object *ob, PBVHNode **nodes, int totnod
 			sculpt_orig_vert_data_update(&orig_data, &vd);
 
 			if (sculpt_brush_test(&test, orig_data.co)) {
+				float vec[3], rot[3][3];
 				const float fade = bstrength * tex_strength(ss, brush,
 				                                            orig_data.co,
 				                                            test.dist,
@@ -2123,9 +2128,11 @@ static void do_rotate_brush(Sculpt *sd, Object *ob, PBVHNode **nodes, int totnod
 				                                            orig_data.no,
 				                                            NULL, vd.mask ? *vd.mask : 0.0f);
 
-				mul_v3_m4v3(proxy[vd.i], m, orig_data.co);
+				sub_v3_v3v3(vec, orig_data.co, ss->cache->location);
+				axis_angle_normalized_to_mat3(rot, ss->cache->sculpt_normal_symm, angle * fade);
+				mul_v3_m3v3(proxy[vd.i], rot, vec);
+				add_v3_v3(proxy[vd.i], ss->cache->location);
 				sub_v3_v3(proxy[vd.i], orig_data.co);
-				mul_v3_fl(proxy[vd.i], fade);
 
 				if (vd.mvert)
 					vd.mvert->flag |= ME_VERT_PBVH_UPDATE;
@@ -2412,7 +2419,7 @@ static void calc_sculpt_plane(Sculpt *sd, Object *ob, PBVHNode **nodes, int totn
 	{
 		switch (brush->sculpt_plane) {
 			case SCULPT_DISP_DIR_VIEW:
-				ED_view3d_global_to_vector(ss->cache->vc->rv3d, ss->cache->vc->rv3d->twmat[3], an);
+				copy_v3_v3(an, ss->cache->true_view_normal);
 				break;
 
 			case SCULPT_DISP_DIR_X:
@@ -3019,6 +3026,8 @@ static void do_brush_action(Sculpt *sd, Object *ob, Brush *brush)
 
 	/* Only act if some verts are inside the brush area */
 	if (totnode) {
+		float location[3];
+
 		#pragma omp parallel for schedule(guided) if (sd->flags & SCULPT_USE_OPENMP)
 		for (n = 0; n < totnode; n++) {
 			sculpt_undo_push_node(ob, nodes[n],
@@ -3103,6 +3112,13 @@ static void do_brush_action(Sculpt *sd, Object *ob, Brush *brush)
 		}
 
 		MEM_freeN(nodes);
+
+		/* update average stroke position */
+		copy_v3_v3(location, ss->cache->true_location);
+		mul_m4_v3(ob->obmat, location);
+
+		add_v3_v3(ob->sculpt->average_stroke_accum, location);
+		ob->sculpt->average_stroke_counter++;
 	}
 }
 
@@ -3785,6 +3801,9 @@ static void sculpt_update_cache_invariants(bContext *C, Sculpt *sd, SculptSessio
 	cache->first_time = 1;
 
 	cache->vertex_rotation = 0;
+	cache->num_vertex_turns = 0;
+	cache->previous_vertex_rotation = 0;
+	cache->init_dir_set = false;
 
 	sculpt_omp_start(sd, ss);
 }
@@ -3869,7 +3888,6 @@ static void sculpt_update_brush_delta(UnifiedPaintSettings *ups, Object *ob, Bru
 
 /* Initialize the stroke cache variants from operator properties */
 static void sculpt_update_cache_variants(bContext *C, Sculpt *sd, Object *ob,
-                                         struct PaintStroke *stroke,
                                          PointerRNA *ptr)
 {
 	Scene *scene = CTX_data_scene(C);
@@ -3936,7 +3954,7 @@ static void sculpt_update_cache_variants(bContext *C, Sculpt *sd, Object *ob,
 			}
 		}
 
-		cache->radius = paint_calc_object_space_radius(paint_stroke_view_context(stroke),
+		cache->radius = paint_calc_object_space_radius(cache->vc,
 		                                               cache->true_location,
 		                                               ups->pixel_radius);
 		cache->radius_squared = cache->radius * cache->radius;
@@ -3947,10 +3965,46 @@ static void sculpt_update_cache_variants(bContext *C, Sculpt *sd, Object *ob,
 	sculpt_update_brush_delta(ups, ob, brush);
 
 	if (brush->sculpt_tool == SCULPT_TOOL_ROTATE) {
+		#define PIXEL_INPUT_THRESHHOLD 5
+
 		const float dx = cache->mouse[0] - cache->initial_mouse[0];
 		const float dy = cache->mouse[1] - cache->initial_mouse[1];
 
-		cache->vertex_rotation = -atan2f(dx, dy) * cache->bstrength;
+		/* only update when we have enough precision, by having the mouse adequately away from center
+		 * may be better to convert to radial representation but square works for small values too*/
+		if (fabsf(dx) > PIXEL_INPUT_THRESHHOLD && fabsf(dy) > PIXEL_INPUT_THRESHHOLD) {
+			float mouse_angle;
+			float dir[2] = {dx, dy};
+			float cosval, sinval;
+			normalize_v2(dir);
+
+			if (!cache->init_dir_set) {
+				copy_v2_v2(cache->initial_mouse_dir, dir);
+				cache->init_dir_set = true;
+			}
+
+			/* calculate mouse angle between initial and final mouse position */
+			cosval = dot_v2v2(dir, cache->initial_mouse_dir);
+			sinval = cross_v2v2(dir, cache->initial_mouse_dir);
+
+			/* clamp to avoid nans in acos */
+			CLAMP(cosval, -1.0f, 1.0f);
+			mouse_angle = (sinval > 0) ? acosf(cosval) : -acosf(cosval);
+
+			/* change of sign, we passed the 180 degree threshold. This means we need to add a turn.
+			 * to distinguish between transition from 0 to -1 and -PI to +PI, use comparison with PI/2 */
+			if (mouse_angle * cache->previous_vertex_rotation < 0 && fabs(cache->previous_vertex_rotation) > M_PI_2) {
+				if (cache->previous_vertex_rotation < 0)
+					cache->num_vertex_turns--;
+				else
+					cache->num_vertex_turns++;
+			}
+			cache->previous_vertex_rotation = mouse_angle;
+
+			cache->vertex_rotation = -(mouse_angle + 2.0f * (float)M_PI * cache->num_vertex_turns) * cache->bstrength;
+
+		#undef PIXEL_INPUT_THRESHHOLD
+		}
 
 		ups->draw_anchored = 1;
 		copy_v2_v2(ups->anchored_initial_mouse, cache->initial_mouse);
@@ -4109,6 +4163,9 @@ static int sculpt_brush_stroke_init(bContext *C, wmOperator *op)
 	is_smooth = sculpt_any_smooth_mode(brush, NULL, mode);
 	sculpt_update_mesh_elements(scene, sd, ob, is_smooth, need_mask);
 
+	zero_v3(ob->sculpt->average_stroke_accum);
+	ob->sculpt->average_stroke_counter = 0;
+
 	return 1;
 }
 
@@ -4212,7 +4269,7 @@ static int sculpt_stroke_test_start(bContext *C, struct wmOperator *op,
 		return 0;
 }
 
-static void sculpt_stroke_update_step(bContext *C, struct PaintStroke *stroke, PointerRNA *itemptr)
+static void sculpt_stroke_update_step(bContext *C, struct PaintStroke *UNUSED(stroke), PointerRNA *itemptr)
 {
 	UnifiedPaintSettings *ups = &CTX_data_tool_settings(C)->unified_paint_settings;
 	Sculpt *sd = CTX_data_tool_settings(C)->sculpt;
@@ -4221,7 +4278,7 @@ static void sculpt_stroke_update_step(bContext *C, struct PaintStroke *stroke, P
 	const Brush *brush = BKE_paint_brush(&sd->paint);
 	
 	sculpt_stroke_modifiers_check(C, ob);
-	sculpt_update_cache_variants(C, sd, ob, stroke, itemptr);
+	sculpt_update_cache_variants(C, sd, ob, itemptr);
 	sculpt_restore_mesh(sd, ob);
 
 	BKE_pbvh_bmesh_detail_size_set(ss->pbvh,

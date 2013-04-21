@@ -323,7 +323,7 @@ class VIEW3D_MT_uv_map(Menu):
 
         layout.separator()
 
-        layout.operator_context = 'EXEC_REGION_WIN'
+        layout.operator_context = 'INVOKE_REGION_WIN'
         layout.operator("uv.project_from_view").scale_to_bounds = False
         layout.operator("uv.project_from_view", text="Project from View (Bounds)").scale_to_bounds = True
 
@@ -2605,6 +2605,52 @@ class VIEW3D_PT_view3d_meshdisplay(Panel):
         col.prop(mesh, "show_extra_face_angle", text="Angle")
         if bpy.app.debug:
             layout.prop(mesh, "show_extra_indices")
+
+
+class VIEW3D_PT_view3d_meshstatvis(Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_label = "Mesh Analysis"
+
+    @classmethod
+    def poll(cls, context):
+        # The active object check is needed because of local-mode
+        return (context.active_object and (context.mode == 'EDIT_MESH'))
+
+    def draw_header(self, context):
+        mesh = context.active_object.data
+
+        self.layout.prop(mesh, "show_statvis", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        mesh = context.active_object.data
+        statvis = context.tool_settings.statvis
+        layout.active = mesh.show_statvis
+
+        layout.prop(statvis, "type")
+        statvis_type = statvis.type
+        if statvis_type == 'OVERHANG':
+            row = layout.row(align=True)
+            row.prop(statvis, "overhang_min", text="")
+            row.prop(statvis, "overhang_max", text="")
+            layout.prop(statvis, "overhang_axis", expand=True)
+        elif statvis_type == 'THICKNESS':
+            row = layout.row(align=True)
+            row.prop(statvis, "thickness_min", text="")
+            row.prop(statvis, "thickness_max", text="")
+            layout.prop(statvis, "thickness_samples")
+        elif statvis_type == 'INTERSECT':
+            pass
+        elif statvis_type == 'DISTORT':
+            row = layout.row(align=True)
+            row.prop(statvis, "distort_min", text="")
+            row.prop(statvis, "distort_max", text="")
+        elif statvis_type == 'SHARP':
+            row = layout.row(align=True)
+            row.prop(statvis, "sharp_min", text="")
+            row.prop(statvis, "sharp_max", text="")
 
 
 class VIEW3D_PT_view3d_curvedisplay(Panel):

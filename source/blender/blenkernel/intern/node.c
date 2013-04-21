@@ -796,8 +796,11 @@ bNode *nodeAddStaticNode(const struct bContext *C, bNodeTree *ntree, int type)
 	const char *idname = NULL;
 	
 	NODE_TYPES_BEGIN(ntype)
-		if (ntype->type == type) {
-			idname = DATA_(ntype->idname);
+		/* do an extra poll here, because some int types are used
+		 * for multiple node types, this helps find the desired type
+		 */
+		if (ntype->type == type && (!ntype->poll || ntype->poll(ntype, ntree))) {
+			idname = ntype->idname;
 			break;
 		}
 	NODE_TYPES_END
@@ -2882,7 +2885,8 @@ void ntreeUpdateTree(bNodeTree *ntree)
 		ntreeInterfaceTypeUpdate(ntree);
 	
 	/* XXX hack, should be done by depsgraph!! */
-	ntreeVerifyNodes(G.main, &ntree->id);
+	if (G.main)
+		ntreeVerifyNodes(G.main, &ntree->id);
 	
 	if (ntree->update & (NTREE_UPDATE_LINKS | NTREE_UPDATE_NODES)) {
 		/* node updates can change sockets or links, repeat link pointer update afterward */

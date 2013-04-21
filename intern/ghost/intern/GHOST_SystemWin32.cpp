@@ -982,13 +982,14 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 					if (wParam == SC_KEYMENU) 
 					{
 						eventHandled = true;
-					} else
-					if((wParam&0xfff0)==SC_SIZE)
+					}// else
+						/* XXX Disable for now due to area resizing issue. bug# 34990 */
+					/*if((wParam&0xfff0)==SC_SIZE)
 					{
 						window->registerMouseClickEvent(0);
 						window->m_wsh.startSizing(wParam);
 						eventHandled = true;
-					}
+					}*/
 					break;
 				////////////////////////////////////////////////////////////////////////
 				// Tablet events, processed

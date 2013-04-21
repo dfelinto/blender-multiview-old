@@ -57,12 +57,15 @@ const char PAINT_CURSOR_VERTEX_PAINT[3] = {255, 255, 255};
 const char PAINT_CURSOR_WEIGHT_PAINT[3] = {200, 200, 255};
 const char PAINT_CURSOR_TEXTURE_PAINT[3] = {255, 255, 255};
 
-static int overlay_flags = 0;
+static OverlayControlFlags overlay_flags = 0;
 
 void BKE_paint_invalidate_overlay_tex (Scene *scene, const Tex *tex)
 {
 	Paint *p = BKE_paint_get_active(scene);
 	Brush *br = p->brush;
+
+	if (!br)
+		return;
 
 	if (br->mtex.tex == tex)
 		overlay_flags |= PAINT_INVALID_OVERLAY_TEXTURE_PRIMARY;
@@ -75,7 +78,7 @@ void BKE_paint_invalidate_cursor_overlay (Scene *scene, CurveMapping *curve)
 	Paint *p = BKE_paint_get_active(scene);
 	Brush *br = p->brush;
 
-	if (br->curve == curve)
+	if (br && br->curve == curve)
 		overlay_flags |= PAINT_INVALID_OVERLAY_CURVE;
 }
 
@@ -86,10 +89,24 @@ void BKE_paint_invalidate_overlay_all(void)
 	                  PAINT_INVALID_OVERLAY_CURVE);
 }
 
-int BKE_paint_get_overlay_flags(void)
+OverlayControlFlags BKE_paint_get_overlay_flags(void)
 {
 	return overlay_flags;
 }
+
+void BKE_paint_set_overlay_override(bool flag)
+{
+	if (flag)
+		overlay_flags |= PAINT_OVERLAY_OVERRIDE;
+	else
+		overlay_flags &= ~PAINT_OVERLAY_OVERRIDE;
+}
+
+bool BKE_paint_get_overlay_override(void)
+{
+	return ((overlay_flags & PAINT_OVERLAY_OVERRIDE) != 0 );
+}
+
 
 void BKE_paint_reset_overlay_invalid(void)
 {

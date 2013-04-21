@@ -286,7 +286,7 @@ static void createTransTexspace(TransInfo *t)
 
 static void createTransEdge(TransInfo *t)
 {
-	BMEditMesh *em = BMEdit_FromObject(t->obedit);
+	BMEditMesh *em = BKE_editmesh_from_object(t->obedit);
 	TransData *td = NULL;
 	BMEdge *eed;
 	BMIter iter;
@@ -1968,7 +1968,7 @@ static void createTransEditVerts(TransInfo *t)
 	ToolSettings *ts = t->scene->toolsettings;
 	TransData *tob = NULL;
 	TransDataExtension *tx = NULL;
-	BMEditMesh *em = BMEdit_FromObject(t->obedit);
+	BMEditMesh *em = BKE_editmesh_from_object(t->obedit);
 	BMesh *bm = em->bm;
 	BMVert *eve;
 	BMIter iter;
@@ -2408,12 +2408,12 @@ static void createTransUVs(bContext *C, TransInfo *t)
 	TransData2D *td2d = NULL;
 	MTexPoly *tf;
 	MLoopUV *luv;
-	BMEditMesh *em = BMEdit_FromObject(t->obedit);
+	BMEditMesh *em = BKE_editmesh_from_object(t->obedit);
 	BMFace *efa;
 	BMLoop *l;
 	BMIter iter, liter;
-	UvElementMap *elementmap;
-	char *island_enabled;
+	UvElementMap *elementmap = NULL;
+	char *island_enabled = NULL;
 	int count = 0, countsel = 0, count_rejected = 0;
 	int propmode = t->flag & T_PROP_EDIT;
 	int propconnected = t->flag & T_PROP_CONNECTED;
@@ -2424,10 +2424,10 @@ static void createTransUVs(bContext *C, TransInfo *t)
 	if (propconnected) {
 		/* create element map with island information */
 		if (ts->uv_flag & UV_SYNC_SELECTION) {
-			elementmap = EDBM_uv_element_map_create (em, FALSE, TRUE);
+			elementmap = EDBM_uv_element_map_create(em, false, true);
 		}
 		else {
-			elementmap = EDBM_uv_element_map_create (em, TRUE, TRUE);
+			elementmap = EDBM_uv_element_map_create(em, true, true);
 		}
 		island_enabled = MEM_callocN(sizeof(*island_enabled) * elementmap->totalIslands, "TransIslandData(UV Editing)");
 	}
@@ -5472,7 +5472,7 @@ void special_aftertrans_update(bContext *C, TransInfo *t)
 	}
 	else if (t->obedit) {
 		if (t->obedit->type == OB_MESH) {
-			BMEditMesh *em = BMEdit_FromObject(t->obedit);
+			BMEditMesh *em = BKE_editmesh_from_object(t->obedit);
 			/* table needs to be created for each edit command, since vertices can move etc */
 			mesh_octree_table(t->obedit, em, NULL, 'e');
 		}
@@ -5535,7 +5535,7 @@ void special_aftertrans_update(bContext *C, TransInfo *t)
 	else { /* Objects */
 		int i, recalcObPaths = 0;
 
-		BLI_assert(t->flag & T_OBJECT);
+		BLI_assert(t->flag & (T_OBJECT | T_TEXTURE));
 
 		for (i = 0; i < t->total; i++) {
 			TransData *td = t->data + i;

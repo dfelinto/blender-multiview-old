@@ -140,7 +140,7 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 		em = me->edit_btmesh;
 
 		EDBM_mesh_normals_update(em);
-		BMEdit_RecalcTessellation(em);
+		BKE_editmesh_tessface_calc(em);
 
 		/* derivedMesh might be needed for solving parenting,
 		 * so re-create it here */
@@ -344,7 +344,7 @@ static int make_proxy_exec(bContext *C, wmOperator *op)
 		char name[MAX_ID_NAME + 4];
 		
 		/* Add new object for the proxy */
-		newob = BKE_object_add(scene, OB_EMPTY);
+		newob = BKE_object_add(bmain, scene, OB_EMPTY);
 
 		BLI_snprintf(name, sizeof(name), "%s_proxy", ((ID *)(gob ? gob : ob))->name + 2);
 
@@ -1459,7 +1459,7 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 						ob_dst->data = id;
 
 						/* if amount of material indices changed: */
-						test_object_materials(ob_dst->data);
+						test_object_materials(bmain, ob_dst->data);
 
 						DAG_id_tag_update(&ob_dst->id, OB_RECALC_DATA);
 						break;

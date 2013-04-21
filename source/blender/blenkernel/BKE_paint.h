@@ -68,15 +68,21 @@ typedef enum PaintMode {
 } PaintMode;
 
 /* overlay invalidation */
-#define PAINT_INVALID_OVERLAY_TEXTURE_PRIMARY 1
-#define PAINT_INVALID_OVERLAY_TEXTURE_SECONDARY 2
-#define PAINT_INVALID_OVERLAY_CURVE 4
+typedef enum OverlayControlFlags {
+	PAINT_INVALID_OVERLAY_TEXTURE_PRIMARY = 1,
+	PAINT_INVALID_OVERLAY_TEXTURE_SECONDARY = (1 << 2),
+	PAINT_INVALID_OVERLAY_CURVE = (1 << 2),
+	PAINT_OVERLAY_OVERRIDE = (1 << 3)
+} OverlayControlFlags;
 
-void BKE_paint_invalidate_overlay_tex (struct Scene *scene, const struct Tex *tex);
-void BKE_paint_invalidate_cursor_overlay (struct Scene *scene, struct CurveMapping *curve);
+void BKE_paint_invalidate_overlay_tex(struct Scene *scene, const struct Tex *tex);
+void BKE_paint_invalidate_cursor_overlay(struct Scene *scene, struct CurveMapping *curve);
 void BKE_paint_invalidate_overlay_all(void);
-int BKE_paint_get_overlay_flags (void);
-void BKE_paint_reset_overlay_invalid (void);
+OverlayControlFlags BKE_paint_get_overlay_flags(void);
+void BKE_paint_reset_overlay_invalid(void);
+void BKE_paint_set_overlay_override(bool flag);
+bool BKE_paint_get_overlay_override(void);
+
 
 void BKE_paint_init(struct Paint *p, const char col[3]);
 void BKE_paint_free(struct Paint *p);
@@ -152,6 +158,9 @@ typedef struct SculptSession {
 	/* last paint/sculpt stroke location */
 	int last_stroke_valid;
 	float last_stroke[3];
+
+	float average_stroke_accum[3];
+	int average_stroke_counter;
 } SculptSession;
 
 void free_sculptsession(struct Object *ob);

@@ -1503,6 +1503,28 @@ static char *rna_UnifiedPaintSettings_path(PointerRNA *ptr)
 	return BLI_strdup("tool_settings.unified_paint_settings");
 }
 
+/* generic function to recalc geometry */
+static void rna_EditMesh_update(Main *UNUSED(bmain), Scene *scene, PointerRNA *UNUSED(ptr))
+{
+	Mesh *me = NULL;
+
+	if (scene->basact) {
+		me = BKE_mesh_from_object(scene->basact->object);
+		if (me && me->edit_btmesh == NULL)
+			me = NULL;
+	}
+
+	if (me) {
+		DAG_id_tag_update(&me->id, OB_RECALC_DATA);
+		WM_main_add_notifier(NC_GEOM | ND_DATA, me);
+	}
+}
+
+static char *rna_MeshStatVis_path(PointerRNA *ptr)
+{
+	return BLI_strdup("tool_settings.statvis");
+}
+
 /* note: without this, when Multi-Paint is activated/deactivated, the colors
  * will not change right away when multiple bones are selected, this function
  * is not for general use and only for the few cases where changing scene
@@ -1977,6 +1999,12 @@ static void rna_def_tool_settings(BlenderRNA  *brna)
 	RNA_def_property_flag(prop, PROP_NEVER_NULL);
 	RNA_def_property_struct_type(prop, "UnifiedPaintSettings");
 	RNA_def_property_ui_text(prop, "Unified Paint Settings", NULL);
+
+	/* Mesh Statistics */
+	prop = RNA_def_property(srna, "statvis", PROP_POINTER, PROP_NONE);
+	RNA_def_property_flag(prop, PROP_NEVER_NULL);
+	RNA_def_property_struct_type(prop, "MeshStatVis");
+	RNA_def_property_ui_text(prop, "Mesh Statistics Visualization", NULL);
 }
 
 static void rna_def_unified_paint_settings(BlenderRNA  *brna)
@@ -2047,6 +2075,111 @@ static void rna_def_unified_paint_settings(BlenderRNA  *brna)
 	RNA_def_property_ui_text(prop, "Use Blender Units",
 	                         "When locked brush stays same size relative to object; "
 	                         "when unlocked brush size is given in pixels");
+}
+
+static void rna_def_statvis(BlenderRNA  *brna)
+{
+	StructRNA *srna;
+	PropertyRNA *prop;
+
+	static EnumPropertyItem stat_type[] = {
+		{SCE_STATVIS_OVERHANG,  "OVERHANG",  0, "Overhang",  ""},
+		{SCE_STATVIS_THICKNESS, "THICKNESS", 0, "Thickness", ""},
+		{SCE_STATVIS_INTERSECT, "INTERSECT", 0, "Intersect", ""},
+		{SCE_STATVIS_DISTORT,   "DISTORT",   0, "Distort", ""},
+	    {SCE_STATVIS_SHARP, "SHARP", 0, "Sharp", ""},
+		{0, NULL, 0, NULL, NULL}};
+
+	srna = RNA_def_struct(brna, "MeshStatVis", NULL);
+	RNA_def_struct_path_func(srna, "rna_MeshStatVis_path");
+	RNA_def_struct_ui_text(srna, "Mesh Visualize Statistics", "");
+
+	prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_items(prop, stat_type);
+	RNA_def_property_ui_text(prop, "Type", "XXX");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+
+	/* overhang */
+	prop = RNA_def_property(srna, "overhang_min", PROP_FLOAT, PROP_ANGLE);
+	RNA_def_property_float_sdna(prop, NULL, "overhang_min");
+	RNA_def_property_float_default(prop, 0.5f);
+	RNA_def_property_range(prop, 0.0f, DEG2RADF(180.0f));
+	RNA_def_property_ui_range(prop, 0.0f, DEG2RADF(180.0f), 0.001, 3);
+	RNA_def_property_ui_text(prop, "Overhang Min", "Minimum angle to display");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+	prop = RNA_def_property(srna, "overhang_max", PROP_FLOAT, PROP_ANGLE);
+	RNA_def_property_float_sdna(prop, NULL, "overhang_max");
+	RNA_def_property_float_default(prop, 0.5f);
+	RNA_def_property_range(prop, 0.0f, DEG2RADF(180.0f));
+	RNA_def_property_ui_range(prop, 0.0f, DEG2RADF(180.0f), 0.001, 3);
+	RNA_def_property_ui_text(prop, "Overhang Max", "Maximum angle to display");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+	prop = RNA_def_property(srna, "overhang_axis", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_sdna(prop, NULL, "overhang_axis");
+	RNA_def_property_enum_items(prop, object_axis_items);
+	RNA_def_property_ui_text(prop, "Axis", "");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+
+	/* thickness */
+	prop = RNA_def_property(srna, "thickness_min", PROP_FLOAT, PROP_DISTANCE);
+	RNA_def_property_float_sdna(prop, NULL, "thickness_min");
+	RNA_def_property_float_default(prop, 0.5f);
+	RNA_def_property_range(prop, 0.0f, 1000.0);
+	RNA_def_property_ui_range(prop, 0.0f, 100.0, 0.001, 3);
+	RNA_def_property_ui_text(prop, "Thickness Min", "Minimum for measuring thickness");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+	prop = RNA_def_property(srna, "thickness_max", PROP_FLOAT, PROP_DISTANCE);
+	RNA_def_property_float_sdna(prop, NULL, "thickness_max");
+	RNA_def_property_float_default(prop, 0.5f);
+	RNA_def_property_range(prop, 0.0f, 1000.0);
+	RNA_def_property_ui_range(prop, 0.0f, 100.0, 0.001, 3);
+	RNA_def_property_ui_text(prop, "Thickness Max", "Maximum for measuring thickness");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+	prop = RNA_def_property(srna, "thickness_samples", PROP_INT, PROP_UNSIGNED);
+	RNA_def_property_int_sdna(prop, NULL, "thickness_samples");
+	RNA_def_property_range(prop, 1, 32);
+	RNA_def_property_ui_text(prop, "Samples", "Number of samples to test per face");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+	/* distort */
+	prop = RNA_def_property(srna, "distort_min", PROP_FLOAT, PROP_ANGLE);
+	RNA_def_property_float_sdna(prop, NULL, "distort_min");
+	RNA_def_property_float_default(prop, 0.5f);
+	RNA_def_property_range(prop, 0.0f, DEG2RADF(180.0f));
+	RNA_def_property_ui_range(prop, 0.0f, DEG2RADF(180.0f), 0.001, 3);
+	RNA_def_property_ui_text(prop, "Distort Min", "Minimum angle to display");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+	prop = RNA_def_property(srna, "distort_max", PROP_FLOAT, PROP_ANGLE);
+	RNA_def_property_float_sdna(prop, NULL, "distort_max");
+	RNA_def_property_float_default(prop, 0.5f);
+	RNA_def_property_range(prop, 0.0f, DEG2RADF(180.0f));
+	RNA_def_property_ui_range(prop, 0.0f, DEG2RADF(180.0f), 0.001, 3);
+	RNA_def_property_ui_text(prop, "Distort Max", "Maximum angle to display");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+	/* sharp */
+	prop = RNA_def_property(srna, "sharp_min", PROP_FLOAT, PROP_ANGLE);
+	RNA_def_property_float_sdna(prop, NULL, "sharp_min");
+	RNA_def_property_float_default(prop, 0.5f);
+	RNA_def_property_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f));
+	RNA_def_property_ui_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f), 0.001, 3);
+	RNA_def_property_ui_text(prop, "Distort Min", "Minimum angle to display");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
+
+	prop = RNA_def_property(srna, "sharp_max", PROP_FLOAT, PROP_ANGLE);
+	RNA_def_property_float_sdna(prop, NULL, "sharp_max");
+	RNA_def_property_float_default(prop, 0.5f);
+	RNA_def_property_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f));
+	RNA_def_property_ui_range(prop, -DEG2RADF(180.0f), DEG2RADF(180.0f), 0.001, 3);
+	RNA_def_property_ui_text(prop, "Distort Max", "Maximum angle to display");
+	RNA_def_property_update(prop, 0, "rna_EditMesh_update");
 }
 
 static void rna_def_unit_settings(BlenderRNA  *brna)
@@ -5377,6 +5510,7 @@ void RNA_def_scene(BlenderRNA *brna)
 	RNA_define_animate_sdna(false);
 	rna_def_tool_settings(brna);
 	rna_def_unified_paint_settings(brna);
+	rna_def_statvis(brna);
 	rna_def_unit_settings(brna);
 	rna_def_scene_image_format_data(brna);
 	rna_def_scene_game_data(brna);

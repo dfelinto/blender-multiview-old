@@ -84,6 +84,8 @@ set(SRC
 	intern/displist.c
 	intern/dynamicpaint.c
 	intern/editderivedmesh.c
+	intern/editmesh.c
+	intern/editmesh_bvh.c
 	intern/effect.c
 	intern/fcurve.c
 	intern/fluidsim.c
@@ -237,6 +239,7 @@ set(SRC
 	BKE_subsurf.h
 	BKE_suggestions.h
 	BKE_editmesh.h
+	BKE_editmesh_bvh.h
 	BKE_text.h
 	BKE_texture.h
 	BKE_tracking.h

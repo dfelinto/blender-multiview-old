@@ -256,12 +256,8 @@ static bool check_alpha_pass(Base *base)
 }
 
 /***/
-static unsigned int colortab[24] = {
-	0x0,      0xFF88FF, 0xFFBBFF,
-	0x403000, 0xFFFF88, 0xFFFFBB,
-	0x104040, 0x66CCCC, 0x77CCCC,
-	0x104010, 0x55BB55, 0x66FF66,
-	0xFFFFFF
+static const unsigned int colortab[] = {
+	0x0, 0x403000, 0xFFFF88
 };
 
 
@@ -3262,6 +3258,9 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 			GPU_disable_material();
 
 			glFrontFace(GL_CCW);
+
+			if (draw_flags & DRAW_FACE_SELECT)
+				draw_mesh_face_select(rv3d, me, dm);
 		}
 		else {
 			draw_mesh_textured(scene, v3d, rv3d, ob, dm, draw_flags);
@@ -6301,8 +6300,7 @@ static void draw_rigid_body_pivot(bRigidBodyJointConstraint *data, const short d
 	setlinestyle(0);
 }
 
-static void draw_object_wire_color(Scene *scene, Base *base, unsigned char r_ob_wire_col[4],
-                                   const int warning_recursive)
+static void draw_object_wire_color(Scene *scene, Base *base, unsigned char r_ob_wire_col[4])
 {
 	Object *ob = base->object;
 	int colindex = 0;
@@ -6323,15 +6321,7 @@ static void draw_object_wire_color(Scene *scene, Base *base, unsigned char r_ob_
 	else {
 		/* Sets the 'colindex' */
 		if (ob->id.lib) {
-			colindex = (base->flag & (SELECT + BA_WAS_SEL)) ? 4 : 3;
-		}
-		else if (warning_recursive == 1) {
-			if (base->flag & (SELECT + BA_WAS_SEL)) {
-				colindex = (scene->basact == base) ? 8 : 7;
-			}
-			else {
-				colindex = 6;
-			}
+			colindex = (base->flag & (SELECT + BA_WAS_SEL)) ? 2 : 1;
 		}
 		/* Sets the 'theme_id' or fallback to wire */
 		else {
@@ -6410,7 +6400,6 @@ static void draw_object_matcap_check(Scene *scene, View3D *v3d, Object *ob)
  */
 void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short dflag)
 {
-	static int warning_recursive = 0;
 	ModifierData *md = NULL;
 	Object *ob = base->object;
 	Curve *cu;
@@ -6489,7 +6478,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 
 		ED_view3d_project_base(ar, base);
 
-		draw_object_wire_color(scene, base, _ob_wire_col, warning_recursive);
+		draw_object_wire_color(scene, base, _ob_wire_col);
 		ob_wire_col = _ob_wire_col;
 
 		glColor3ubv(ob_wire_col);
@@ -6773,10 +6762,8 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	}
 
 	/* code for new particle system */
-	if ((warning_recursive == 0) &&
-	    (ob->particlesystem.first) &&
-	    (ob != scene->obedit)
-	    )
+	if ((ob->particlesystem.first) &&
+	    (ob != scene->obedit))
 	{
 		ParticleSystem *psys;
 
@@ -6807,8 +6794,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	}
 
 	/* draw edit particles last so that they can draw over child particles */
-	if ((warning_recursive == 0) &&
-	    (dflag & DRAW_PICKING) == 0 &&
+	if ((dflag & DRAW_PICKING) == 0 &&
 	    (!scene->obedit))
 	{
 
@@ -6947,9 +6933,8 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 			}
 		}
 
-		if (ob->gameflag & OB_BOUNDS) {
+		if ((ob->gameflag & OB_BOUNDS) && (ob->mode == OB_MODE_OBJECT)) {
 			if (ob->boundtype != ob->collision_boundtype || (dtx & OB_DRAWBOUNDOX) == 0) {
-
 				setlinestyle(2);
 				draw_bounding_volume(scene, ob, ob->collision_boundtype);
 				setlinestyle(0);
@@ -6966,6 +6951,10 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 				draw_bounding_volume(scene, ob, ob->boundtype);
 			}
 			if (dtx & OB_TEXSPACE) {
+				if ((dflag & DRAW_CONSTCOLOR) == 0) {
+					/* prevent random colors being used */
+					glColor3ubv(ob_wire_col);
+				}
 				drawtexspace(ob);
 			}
 			if (dtx & OB_DRAWNAME) {
@@ -6985,7 +6974,9 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 		}
 	}
 
-	if (dt <= OB_SOLID && (v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) {
+	if ((dt <= OB_SOLID) &&
+	    ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0))
+	{
 		if (((ob->gameflag & OB_DYNAMIC) &&
 		     !ELEM(ob->collision_boundtype, OB_BOUND_TRIANGLE_MESH, OB_BOUND_CONVEX_HULL)) ||
 
@@ -6995,6 +6986,11 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 			float imat[4][4], vec[3] = {0.0f, 0.0f, 0.0f};
 
 			invert_m4_m4(imat, rv3d->viewmatob);
+
+			if ((dflag & DRAW_CONSTCOLOR) == 0) {
+				/* prevent random colors being used */
+				glColor3ubv(ob_wire_col);
+			}
 
 			setlinestyle(2);
 			drawcircball(GL_LINE_LOOP, vec, ob->inertia, imat);
@@ -7014,8 +7010,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 		glDisable(GL_DEPTH_TEST);
 	}
 
-	if ((warning_recursive) ||
-	    (base->flag & OB_FROMDUPLI) ||
+	if ((base->flag & OB_FROMDUPLI) ||
 	    (v3d->flag2 & V3D_RENDER_OVERRIDE))
 	{
 		return;
@@ -7055,11 +7050,12 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	/* not for sets, duplicators or picking */
 	if (dflag == 0 && (v3d->flag & V3D_HIDE_HELPLINES) == 0 && (v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) {
 		ListBase *list;
-		RigidBodyCon *rbc = ob ? ob->rigidbody_constraint : NULL;
+		RigidBodyCon *rbc = ob->rigidbody_constraint;
 		
 		/* draw hook center and offset line */
-		if (ob != scene->obedit) draw_hooks(ob);
-		
+		if (ob != scene->obedit)
+			draw_hooks(ob);
+
 		/* help lines and so */
 		if (ob != scene->obedit && ob->parent && (ob->parent->lay & v3d->lay)) {
 			setlinestyle(3);
