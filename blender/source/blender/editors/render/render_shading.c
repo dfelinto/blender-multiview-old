@@ -584,6 +584,61 @@ void SCENE_OT_render_layer_remove(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
+/********************** render view operators *********************/
+
+static int render_view_add_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	Scene *scene = CTX_data_scene(C);
+
+	BKE_scene_add_render_view(scene, NULL);
+	scene->r.actview = BLI_countlist(&scene->r.views) - 1;
+
+	WM_event_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, scene);
+
+	return OPERATOR_FINISHED;
+}
+
+void SCENE_OT_render_view_add(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Add Render View";
+	ot->idname = "SCENE_OT_render_view_add";
+	ot->description = "Add a render view";
+
+	/* api callbacks */
+	ot->exec = render_view_add_exec;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+static int render_view_remove_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	Scene *scene = CTX_data_scene(C);
+	SceneRenderView *rv = BLI_findlink(&scene->r.views, scene->r.actlay);
+
+	if (!BKE_scene_remove_render_view(CTX_data_main(C), scene, rv))
+		return OPERATOR_CANCELLED;
+
+	WM_event_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, scene);
+
+	return OPERATOR_FINISHED;
+}
+
+void SCENE_OT_render_view_remove(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Remove Render View";
+	ot->idname = "SCENE_OT_render_view_remove";
+	ot->description = "Remove the selected render view";
+
+	/* api callbacks */
+	ot->exec = render_layer_remove_exec;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
 #ifdef WITH_FREESTYLE
 
 static int freestyle_active_module_poll(bContext *C)
