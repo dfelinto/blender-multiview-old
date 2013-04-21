@@ -3459,7 +3459,7 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 
 	srna = RNA_def_struct(brna, "SceneRenderView", NULL);
 	RNA_def_struct_ui_text(srna, "Scene Render View", "Render view");
-	RNA_def_struct_ui_icon(srna, ICON_CAMERA_DATA);
+	RNA_def_struct_ui_icon(srna, ICON_RESTRICT_RENDER_OFF);
 	RNA_def_struct_path_func(srna, "rna_SceneRenderView_path");
 
 	prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
