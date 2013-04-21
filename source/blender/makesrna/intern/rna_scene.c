@@ -4715,17 +4715,18 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 	RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-	/* MultiView (stereoscopy et al) */
-	prop = RNA_def_property(srna, "use_multiview", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "scemode", R_MULTIVIEW);
-	RNA_def_property_ui_text(prop, "Multi View", "Render more than one view");
-	RNA_def_property_update(prop, NC_SCENE, NULL);
-
+	/* views (stereoscopy et al) */
 	prop = RNA_def_property(srna, "views", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "views", NULL);
 	RNA_def_property_struct_type(prop, "SceneRenderView");
 	RNA_def_property_ui_text(prop, "Render Views", "");
 	rna_def_render_views(brna, prop);
+
+	prop = RNA_def_property(srna, "use_single_view", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "scemode", R_SINGLE_VIEW);
+	RNA_def_property_ui_text(prop, "Single View", "Only render the active view");
+	RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
 	/* engine */
 	prop = RNA_def_property(srna, "engine", PROP_ENUM, PROP_NONE);
