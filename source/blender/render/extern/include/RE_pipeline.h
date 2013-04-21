@@ -68,6 +68,7 @@ typedef struct Render Render;
 typedef struct RenderView {
 	struct RenderView *next, *prev;
 	char name[64];		/* amount defined in openexr_multi.h */
+	struct Object *camera;
 } RenderView;
 
 typedef struct RenderPass {
