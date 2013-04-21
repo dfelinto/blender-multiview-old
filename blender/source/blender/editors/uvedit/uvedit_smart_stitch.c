@@ -1310,13 +1310,13 @@ static int stitch_process_data(StitchState *state, Scene *scene, int final)
 		if (state->mode == STITCH_VERT) {
 			UvElement *element = state->selection_stack[i];
 
-			stitch_propagate_uv_final_position (element, i, preview_position, final_position, state, final, scene);
+			stitch_propagate_uv_final_position(element, i, preview_position, final_position, state, final, scene);
 		}
 		else {
 			UvEdge *edge = state->selection_stack[i];
 
-			stitch_propagate_uv_final_position (state->uvs[edge->uv1], edge->uv1, preview_position, final_position, state, final, scene);
-			stitch_propagate_uv_final_position (state->uvs[edge->uv2], edge->uv2, preview_position, final_position, state, final, scene);
+			stitch_propagate_uv_final_position(state->uvs[edge->uv1], edge->uv1, preview_position, final_position, state, final, scene);
+			stitch_propagate_uv_final_position(state->uvs[edge->uv2], edge->uv2, preview_position, final_position, state, final, scene);
 
 			edge->flag &= (STITCH_SELECTED | STITCH_BOUNDARY);
 		}
@@ -1611,7 +1611,7 @@ static int stitch_init(bContext *C, wmOperator *op)
 	/* initialize state */
 	state->use_limit = RNA_boolean_get(op->ptr, "use_limit");
 	state->limit_dist = RNA_float_get(op->ptr, "limit");
-	state->em = em = BMEdit_FromObject(obedit);
+	state->em = em = BKE_editmesh_from_object(obedit);
 	state->snap_islands = RNA_boolean_get(op->ptr, "snap_islands");
 	state->static_island = RNA_int_get(op->ptr, "static_island");
 	state->midpoints = RNA_boolean_get(op->ptr, "midpoint_snap");

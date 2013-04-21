@@ -694,12 +694,12 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		rl->lay = (1 << 20) - 1;
 		rl->layflag = 0x7FFF;    /* solid ztra halo strand */
 		rl->passflag = SCE_PASS_COMBINED;
-		BKE_freestyle_config_init(&srl->freestyleConfig);
 		
 		re->r.actlay = 0;
 	}
 	
 	/* border render; calculate offset for use in compositor. compo is centralized coords */
+	/* XXX obsolete? I now use it for drawing border render offset (ton) */
 	rr->xof = re->disprect.xmin + BLI_rcti_cent_x(&re->disprect) - (re->winx / 2);
 	rr->yof = re->disprect.ymin + BLI_rcti_cent_y(&re->disprect) - (re->winy / 2);
 	

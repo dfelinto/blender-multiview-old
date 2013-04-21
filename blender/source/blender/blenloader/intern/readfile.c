@@ -2361,6 +2361,21 @@ static void lib_link_nodetree(FileData *fd, Main *main)
 	}
 }
 
+/* get node tree stored locally in other IDs */
+static bNodeTree *nodetree_from_id(ID *id)
+{
+	if (!id)
+		return NULL;
+	switch (GS(id->name)) {
+		case ID_SCE: return ((Scene *)id)->nodetree;
+		case ID_MA: return ((Material *)id)->nodetree;
+		case ID_WO: return ((World *)id)->nodetree;
+		case ID_LA: return ((Lamp *)id)->nodetree;
+		case ID_TE: return ((Tex *)id)->nodetree;
+	}
+	return NULL;
+}
+
 /* updates group node socket identifier so that
  * external links to/from the group node are preserved.
  */
@@ -2559,8 +2574,7 @@ static void lib_verify_nodetree(Main *main, int UNUSED(open))
 	{
 		FOREACH_NODETREE(main, ntree, id) {
 			/* make an update call for the tree */
-			if (ntree->update)
-				ntreeUpdateTree(ntree);
+			ntreeUpdateTree(ntree);
 		} FOREACH_NODETREE_END
 	}
 }
@@ -5668,9 +5682,25 @@ static void lib_link_screen(FileData *fd, Main *main)
 					else if (sl->spacetype == SPACE_NODE) {
 						SpaceNode *snode = (SpaceNode *)sl;
 						bNodeTreePath *path, *path_next;
+						bNodeTree *ntree;
 						
-						for (path=snode->treepath.first; path; path=path->next) {
-							path->nodetree = newlibadr(fd, sc->id.lib, path->nodetree);
+						/* node tree can be stored locally in id too, link this first */
+						snode->id = newlibadr(fd, sc->id.lib, snode->id);
+						snode->from = newlibadr(fd, sc->id.lib, snode->from);
+						
+						ntree = nodetree_from_id(snode->id);
+						if (ntree)
+							snode->nodetree = ntree;
+						else
+							snode->nodetree = newlibadr(fd, sc->id.lib, snode->nodetree);
+						
+						for (path = snode->treepath.first; path; path = path->next) {
+							if (path == snode->treepath.first) {
+								/* first nodetree in path is same as snode->nodetree */
+								path->nodetree = snode->nodetree;
+							}
+							else
+								path->nodetree = newlibadr(fd, sc->id.lib, path->nodetree);
 							
 							if (!path->nodetree)
 								break;
@@ -5684,7 +5714,6 @@ static void lib_link_screen(FileData *fd, Main *main)
 							MEM_freeN(path);
 						}
 						
-						snode->nodetree = newlibadr(fd, sc->id.lib, snode->nodetree);
 						/* edittree is just the last in the path,
 						 * set this directly since the path may have been shortened above */
 						if (snode->treepath.last) {
@@ -5693,8 +5722,6 @@ static void lib_link_screen(FileData *fd, Main *main)
 						}
 						else
 							snode->edittree = NULL;
-						snode->id = newlibadr(fd, sc->id.lib, snode->id);
-						snode->from = newlibadr(fd, sc->id.lib, snode->from);
 					}
 					else if (sl->spacetype == SPACE_CLIP) {
 						SpaceClip *sclip = (SpaceClip *)sl;
@@ -5743,32 +5770,16 @@ static bool restore_pointer(ID *id, ID *newid, int user)
 static void *restore_pointer_by_name(Main *mainp, ID *id, int user)
 {
 	if (id) {
-		/* node trees can be stored locally in other IDs, needs special handling ... */
-		if (GS(id->name) == ID_NT) {
-			ID *idn = NULL;
+		ListBase *lb = which_libbase(mainp, GS(id->name));
+		if (lb) {	// there's still risk of checking corrupt mem (freed Ids in oops)
+			ID *idn = lb->first;
 			
-			FOREACH_NODETREE(mainp, ntree, owner_id) {
-				if (restore_pointer(id, &ntree->id, user)) {
-					idn = &ntree->id;
+			for (; idn; idn = idn->next) {
+				if (restore_pointer(id, idn, user))
 					break;
-				}
 			}
-			FOREACH_NODETREE_END
 			
 			return idn;
-		}
-		else {
-			ListBase *lb = which_libbase(mainp, GS(id->name));
-			if (lb) {	// there's still risk of checking corrupt mem (freed Ids in oops)
-				ID *idn = lb->first;
-				
-				for (; idn; idn = idn->next) {
-					if (restore_pointer(id, idn, user))
-						break;
-				}
-				
-				return idn;
-			}
 		}
 	}
 	return NULL;
@@ -6000,9 +6011,25 @@ void blo_lib_link_screen_restore(Main *newmain, bScreen *curscreen, Scene *cursc
 				else if (sl->spacetype == SPACE_NODE) {
 					SpaceNode *snode= (SpaceNode *)sl;
 					bNodeTreePath *path, *path_next;
+					bNodeTree *ntree;
 					
-					for (path=snode->treepath.first; path; path=path->next) {
-						path->nodetree= restore_pointer_by_name(newmain, (ID*)path->nodetree, 0);
+					/* node tree can be stored locally in id too, link this first */
+					snode->id = restore_pointer_by_name(newmain, snode->id, 1);
+					snode->from = restore_pointer_by_name(newmain, snode->from, 0);
+					
+					ntree = nodetree_from_id(snode->id);
+					if (ntree)
+						snode->nodetree = ntree;
+					else
+						snode->nodetree = restore_pointer_by_name(newmain, (ID*)snode->nodetree, 0);
+					
+					for (path = snode->treepath.first; path; path = path->next) {
+						if (path == snode->treepath.first) {
+							/* first nodetree in path is same as snode->nodetree */
+							path->nodetree = snode->nodetree;
+						}
+						else
+							path->nodetree= restore_pointer_by_name(newmain, (ID*)path->nodetree, 0);
 						
 						if (!path->nodetree)
 							break;
@@ -6016,7 +6043,6 @@ void blo_lib_link_screen_restore(Main *newmain, bScreen *curscreen, Scene *cursc
 						MEM_freeN(path);
 					}
 					
-					snode->nodetree = restore_pointer_by_name(newmain, (ID*)snode->nodetree, 0);
 					/* edittree is just the last in the path,
 					 * set this directly since the path may have been shortened above */
 					if (snode->treepath.last) {
@@ -6025,8 +6051,6 @@ void blo_lib_link_screen_restore(Main *newmain, bScreen *curscreen, Scene *cursc
 					}
 					else
 						snode->edittree = NULL;
-					snode->id = restore_pointer_by_name(newmain, snode->id, 1);
-					snode->from = restore_pointer_by_name(newmain, snode->from, 0);
 				}
 				else if (sl->spacetype == SPACE_CLIP) {
 					SpaceClip *sclip = (SpaceClip *)sl;
@@ -6217,9 +6241,9 @@ static void direct_link_screen(FileData *fd, bScreen *sc)
 				v3d->properties_storage = NULL;
 				v3d->defmaterial = NULL;
 				
-				/* render can be quite heavy, set to wire on load */
+				/* render can be quite heavy, set to solid on load */
 				if (v3d->drawtype == OB_RENDER)
-					v3d->drawtype = OB_WIRE;
+					v3d->drawtype = OB_SOLID;
 				
 				blo_do_versions_view3d_split_250(v3d, &sl->regionbase);
 			}
@@ -9274,6 +9298,18 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		}
 	}
 
+	if (!MAIN_VERSION_ATLEAST(main, 266, 6)) {
+		Brush *brush;
+		#define BRUSH_TEXTURE_OVERLAY (1 << 21)
+
+		for (brush = main->brush.first; brush; brush = brush->id.next) {
+			brush->overlay_flags = 0;
+			if (brush->flag & BRUSH_TEXTURE_OVERLAY)
+				brush->overlay_flags |= (BRUSH_OVERLAY_PRIMARY | BRUSH_OVERLAY_CURSOR);
+		}
+		#undef BRUSH_TEXTURE_OVERLAY
+	}
+
 	if (main->versionfile < 267) {
 		//if(!DNA_struct_elem_find(fd->filesdna, "Brush", "int", "stencil_pos")) {
 		Brush *brush;
@@ -9316,6 +9352,26 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 					srl->freestyleConfig.flags |= FREESTYLE_CULLING;
 				}
 			}
+
+			/* not freestyle */
+			{
+				MeshStatVis *statvis = &sce->toolsettings->statvis;
+				if (statvis->thickness_samples == 0) {
+					statvis->overhang_axis = OB_NEGZ;
+					statvis->overhang_min = 0;
+					statvis->overhang_max = DEG2RADF(45.0f);
+
+					statvis->thickness_max = 0.1f;
+					statvis->thickness_samples = 1;
+
+					statvis->distort_min = DEG2RADF(5.0f);
+					statvis->distort_max = DEG2RADF(45.0f);
+
+					statvis->sharp_min = DEG2RADF(90.0f);
+					statvis->sharp_max = DEG2RADF(180.0f);
+				}
+			}
+
 		}
 		for(linestyle = main->linestyle.first; linestyle; linestyle = linestyle->id.next) {
 #if 1

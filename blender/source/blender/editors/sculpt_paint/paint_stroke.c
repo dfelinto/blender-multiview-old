@@ -411,7 +411,7 @@ PaintStroke *paint_stroke_new(bContext *C,
 {
 	PaintStroke *stroke = MEM_callocN(sizeof(PaintStroke), "PaintStroke");
 
-	stroke->brush = BKE_paint_brush(BKE_paint_get_active_from_context(C));
+	Brush *br = stroke->brush = BKE_paint_brush(BKE_paint_get_active_from_context(C));
 	view3d_set_viewcontext(C, &stroke->vc);
 	if (stroke->vc.v3d)
 		view3d_get_transformation(stroke->vc.ar, stroke->vc.rv3d, stroke->vc.obact, &stroke->mats);
@@ -422,11 +422,15 @@ PaintStroke *paint_stroke_new(bContext *C,
 	stroke->done = done;
 	stroke->event_type = event_type; /* for modal, return event */
 	
+	if (br->overlay_flags & BRUSH_OVERLAY_OVERRIDE_ON_STROKE)
+		BKE_paint_set_overlay_override(true);
+
 	return stroke;
 }
 
 void paint_stroke_data_free(struct wmOperator *op)
 {
+	BKE_paint_set_overlay_override(false);
 	MEM_freeN(op->customdata);
 	op->customdata = NULL;
 }
@@ -457,6 +461,15 @@ bool paint_space_stroke_enabled(Brush *br, PaintMode mode)
 	return (br->flag & BRUSH_SPACE) && paint_supports_dynamic_size(br, mode);
 }
 
+static bool sculpt_is_grab_tool(Brush *br)
+{
+	return ELEM4(br->sculpt_tool,
+	             SCULPT_TOOL_GRAB,
+	             SCULPT_TOOL_THUMB,
+	             SCULPT_TOOL_ROTATE,
+	             SCULPT_TOOL_SNAKE_HOOK);
+}
+
 /* return true if the brush size can change during paint (normally used for pressure) */
 bool paint_supports_dynamic_size(Brush *br, PaintMode mode)
 {
@@ -465,14 +478,8 @@ bool paint_supports_dynamic_size(Brush *br, PaintMode mode)
 
 	switch (mode) {
 		case PAINT_SCULPT:
-			if (ELEM4(br->sculpt_tool,
-			          SCULPT_TOOL_GRAB,
-			          SCULPT_TOOL_THUMB,
-			          SCULPT_TOOL_ROTATE,
-			          SCULPT_TOOL_SNAKE_HOOK))
-			{
+			if (sculpt_is_grab_tool(br))
 				return false;
-			}
 		default:
 			;
 	}
@@ -490,14 +497,8 @@ bool paint_supports_smooth_stroke(Brush *br, PaintMode mode)
 
 	switch (mode) {
 		case PAINT_SCULPT:
-			if (ELEM4(br->sculpt_tool,
-			          SCULPT_TOOL_GRAB,
-			          SCULPT_TOOL_THUMB,
-			          SCULPT_TOOL_ROTATE,
-			          SCULPT_TOOL_SNAKE_HOOK))
-			{
+			if (sculpt_is_grab_tool(br))
 				return false;
-			}
 		default:
 			;
 	}
@@ -512,7 +513,7 @@ bool paint_supports_dynamic_tex_coords(Brush *br, PaintMode mode)
 
 	switch (mode) {
 		case PAINT_SCULPT:
-			if (ELEM4(br->sculpt_tool, SCULPT_TOOL_GRAB, SCULPT_TOOL_THUMB, SCULPT_TOOL_ROTATE, SCULPT_TOOL_SNAKE_HOOK))
+			if (sculpt_is_grab_tool(br))
 				return false;
 		default:
 			;

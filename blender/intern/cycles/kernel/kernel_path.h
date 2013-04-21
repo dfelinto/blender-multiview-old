@@ -28,13 +28,13 @@
 #include "kernel_curve.h"
 #include "kernel_primitive.h"
 #include "kernel_projection.h"
+#include "kernel_random.h"
 #include "kernel_bvh.h"
 #include "kernel_accumulate.h"
 #include "kernel_camera.h"
 #include "kernel_shader.h"
 #include "kernel_light.h"
 #include "kernel_emission.h"
-#include "kernel_random.h"
 #include "kernel_passes.h"
 
 #ifdef __SUBSURFACE__
@@ -249,7 +249,26 @@ __device float4 kernel_path_progressive(KernelGlobals *kg, RNG *rng, int sample,
 		/* intersect scene */
 		Intersection isect;
 		uint visibility = path_state_ray_visibility(kg, &state);
+
+#ifdef __HAIR__
+		float difl = 0.0f, extmax = 0.0f;
+		uint lcg_state = 0;
+
+		if(kernel_data.bvh.have_curves) {
+			if((kernel_data.cam.resolution == 1) && (state.flag & PATH_RAY_CAMERA)) {	
+				float3 pixdiff = ray.dD.dx + ray.dD.dy;
+				/*pixdiff = pixdiff - dot(pixdiff, ray.D)*ray.D;*/
+				difl = kernel_data.curve_kernel_data.minimum_width * len(pixdiff) * 0.5f;
+			}
+
+			extmax = kernel_data.curve_kernel_data.maximum_width;
+			lcg_state = lcg_init(*rng + rng_offset + sample*0x51633e2d);
+		}
+
+		bool hit = scene_intersect(kg, &ray, visibility, &isect, &lcg_state, difl, extmax);
+#else
 		bool hit = scene_intersect(kg, &ray, visibility, &isect);
+#endif
 
 #ifdef __LAMP_MIS__
 		if(kernel_data.integrator.use_lamp_mis && !(state.flag & PATH_RAY_CAMERA)) {
@@ -362,7 +381,7 @@ __device float4 kernel_path_progressive(KernelGlobals *kg, RNG *rng, int sample,
 
 			/* do bssrdf scatter step if we picked a bssrdf closure */
 			if(sc) {
-				uint lcg_state = lcg_init(rbsdf);
+				uint lcg_state = lcg_init(*rng + rng_offset + sample*0x68bc21eb);
 				subsurface_scatter_step(kg, &sd, state.flag, sc, &lcg_state, false);
 			}
 		}
@@ -586,7 +605,7 @@ __device void kernel_path_indirect(KernelGlobals *kg, RNG *rng, int sample, Ray 
 
 			/* do bssrdf scatter step if we picked a bssrdf closure */
 			if(sc) {
-				uint lcg_state = lcg_init(rbsdf);
+				uint lcg_state = lcg_init(*rng + rng_offset + sample*0x68bc21eb);
 				subsurface_scatter_step(kg, &sd, state.flag, sc, &lcg_state, false);
 			}
 		}
@@ -907,7 +926,25 @@ __device float4 kernel_path_non_progressive(KernelGlobals *kg, RNG *rng, int sam
 		Intersection isect;
 		uint visibility = path_state_ray_visibility(kg, &state);
 
+#ifdef __HAIR__
+		float difl = 0.0f, extmax = 0.0f;
+		uint lcg_state = 0;
+
+		if(kernel_data.bvh.have_curves) {
+			if((kernel_data.cam.resolution == 1) && (state.flag & PATH_RAY_CAMERA)) {	
+				float3 pixdiff = ray.dD.dx + ray.dD.dy;
+				/*pixdiff = pixdiff - dot(pixdiff, ray.D)*ray.D;*/
+				difl = kernel_data.curve_kernel_data.minimum_width * len(pixdiff) * 0.5f;
+			}
+
+			extmax = kernel_data.curve_kernel_data.maximum_width;
+			lcg_state = lcg_init(*rng + rng_offset + sample*0x51633e2d);
+		}
+
+		if(!scene_intersect(kg, &ray, visibility, &isect, &lcg_state, difl, extmax)) {
+#else
 		if(!scene_intersect(kg, &ray, visibility, &isect)) {
+#endif
 			/* eval background shader if nothing hit */
 			if(kernel_data.background.transparent) {
 				L_transparent += average(throughput);
@@ -988,7 +1025,7 @@ __device float4 kernel_path_non_progressive(KernelGlobals *kg, RNG *rng, int sam
 					continue;
 
 				/* set up random number generator */
-				uint lcg_state = lcg_init(rbsdf);
+				uint lcg_state = lcg_init(*rng + rng_offset + sample*0x68bc21eb);
 				int num_samples = kernel_data.integrator.subsurface_samples;
 				float num_samples_inv = 1.0f/num_samples;
 

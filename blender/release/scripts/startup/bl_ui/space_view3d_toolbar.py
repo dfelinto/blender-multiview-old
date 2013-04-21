@@ -664,6 +664,7 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
                 for md in ob.modifiers:
                     if md.type == 'MULTIRES':
                         do_persistent = False
+                        break
 
                 if do_persistent:
                     col.prop(brush, "use_persistent")
@@ -766,13 +767,14 @@ class VIEW3D_PT_tools_brush_texture(Panel, View3DPaintPanel):
 
         row = col.row()
         if tex_slot.map_mode != 'STENCIL':
-            if brush.use_texture_overlay:
-                row.prop(brush, "use_texture_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
+            if brush.use_primary_overlay:
+                row.prop(brush, "use_primary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
             else:
-                row.prop(brush, "use_texture_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
+                row.prop(brush, "use_primary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
         
         sub = row.row()
         sub.prop(brush, "texture_overlay_alpha", text="Alpha")
+        sub.prop(brush, "cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
 
 
 class VIEW3D_PT_tools_mask_texture(View3DPanel, Panel):
@@ -796,6 +798,21 @@ class VIEW3D_PT_tools_mask_texture(View3DPanel, Panel):
         col.template_ID_preview(brush, "mask_texture", new="texture.new", rows=3, cols=8)
 
         brush_mask_texture_settings(col, brush)
+ 
+        col = layout.column(align=True)
+        col.active = brush.brush_capabilities.has_overlay
+        col.label(text="Overlay:")
+
+        row = col.row()
+        if tex_slot_alpha.map_mode != 'STENCIL':
+            if brush.use_secondary_overlay:
+                row.prop(brush, "use_secondary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
+            else:
+                row.prop(brush, "use_secondary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
+        
+        sub = row.row()
+        sub.prop(brush, "texture_overlay_alpha", text="Alpha")
+        sub.prop(brush, "cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
 
 
 class VIEW3D_PT_tools_brush_stroke(Panel, View3DPaintPanel):

@@ -362,9 +362,14 @@ void BlenderSession::render()
 		/* update scene */
 		sync->sync_data(b_v3d, b_engine.camera_override(), b_rlay_name.c_str());
 
-		/* update session */
+		/* update number of samples per layer */
 		int samples = sync->get_layer_samples();
-		session->reset(buffer_params, (samples == 0)? session_params.samples: samples);
+		bool bound_samples = sync->get_layer_bound_samples();
+
+		if(samples != 0 && (!bound_samples || (samples < session_params.samples)))
+			session->reset(buffer_params, samples);
+		else
+			session->reset(buffer_params, session_params.samples);
 
 		/* render */
 		session->start();
@@ -691,6 +696,14 @@ bool BlenderSession::builtin_image_pixels(const string &builtin_name, void *buil
 						cp[3] = 255;
 				}
 			}
+		}
+
+		/* premultiply, byte images are always straight for blender */
+		unsigned char *cp = pixels;
+		for(int i = 0; i < width * height; i++, cp += channels) {
+			cp[0] = (cp[0] * cp[3]) >> 8;
+			cp[1] = (cp[1] * cp[3]) >> 8;
+			cp[2] = (cp[2] * cp[3]) >> 8;
 		}
 
 		return true;

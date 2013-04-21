@@ -524,6 +524,17 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	sce->toolsettings->skgen_subdivisions[1] = SKGEN_SUB_LENGTH;
 	sce->toolsettings->skgen_subdivisions[2] = SKGEN_SUB_ANGLE;
 
+	sce->toolsettings->statvis.overhang_axis = OB_NEGZ;
+	sce->toolsettings->statvis.overhang_min = 0;
+	sce->toolsettings->statvis.overhang_max = DEG2RADF(45.0f);
+	sce->toolsettings->statvis.thickness_max = 0.1f;
+	sce->toolsettings->statvis.thickness_samples = 1;
+	sce->toolsettings->statvis.distort_min = DEG2RADF(5.0f);
+	sce->toolsettings->statvis.distort_max = DEG2RADF(45.0f);
+
+	sce->toolsettings->statvis.sharp_min = DEG2RADF(90.0f);
+	sce->toolsettings->statvis.sharp_max = DEG2RADF(180.0f);
+
 	sce->toolsettings->proportional_size = 1.0f;
 
 	sce->physics_settings.gravity[0] = 0.0f;
