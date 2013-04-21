@@ -3474,6 +3474,12 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Camera", "Camera to use for render. Leave empty to use active one");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 	//XXX and shoulf update 3d view as well
+
+	prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_negative_sdna(prop, NULL, "viewflag", SCE_VIEW_DISABLE);
+	RNA_def_property_ui_text(prop, "Enabled", "Disable or enable the render view");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
 }
 
 static void rna_def_render_views(BlenderRNA *brna, PropertyRNA *cprop)

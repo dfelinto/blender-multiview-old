@@ -192,15 +192,6 @@ typedef struct SceneRenderLayer {
 	struct FreestyleConfig freestyleConfig;
 } SceneRenderLayer;
 
-/* View - MultiView */
-typedef struct SceneRenderView {
-	struct SceneRenderView *next, *prev;
-
-	char name[64];	/* MAX_NAME */
-
-	struct Object *camera;
-} SceneRenderView;
-
 /* srl->layflag */
 #define SCE_LAY_SOLID	1
 #define SCE_LAY_ZTRA	2
@@ -248,6 +239,21 @@ typedef struct SceneRenderView {
 #define SCE_PASS_TRANSM_COLOR		(1<<27)
 
 /* note, srl->passflag is treestore element 'nr' in outliner, short still... */
+
+/* View - MultiView */
+typedef struct SceneRenderView {
+	struct SceneRenderView *next, *prev;
+
+	char name[64];	/* MAX_NAME */
+
+    int viewflag;
+    int pad[3];
+
+	struct Object *camera;
+} SceneRenderView;
+
+/* srv->viewflag */
+#define SCE_VIEW_DISABLE	(1<<0)
 
 /* *************************************************************** */
 
