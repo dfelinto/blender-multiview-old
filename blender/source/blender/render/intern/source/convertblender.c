@@ -5200,7 +5200,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 }
 
 /* used to be 'rotate scene' */
-void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int lay, int use_camera_view)
+void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int lay, int use_camera_view, unsigned int view)
 {
 	Scene *sce;
 	Object *camera;
@@ -5212,7 +5212,7 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 	re->lay= lay;
 	
 	/* scene needs to be set to get camera */
-	camera= RE_GetCamera(re);
+	camera = RE_GetViewCamera(re, view);
 	
 	/* per second, per object, stats print this */
 	re->i.infostr= "Preparing Scene data";
@@ -5772,7 +5772,7 @@ static void free_dbase_object_vectors(ListBase *lb)
 	BLI_freelistN(lb);
 }
 
-void RE_Database_FromScene_Vectors(Render *re, Main *bmain, Scene *sce, unsigned int lay)
+void RE_Database_FromScene_Vectors(Render *re, Main *bmain, Scene *sce, unsigned int lay, unsigned int view)
 {
 	ObjectInstanceRen *obi, *oldobi;
 	StrandSurface *mesh;
@@ -5814,7 +5814,7 @@ void RE_Database_FromScene_Vectors(Render *re, Main *bmain, Scene *sce, unsigned
 	re->strandsurface= strandsurface;
 	
 	if (!re->test_break(re->tbh))
-		RE_Database_FromScene(re, bmain, sce, lay, 1);
+		RE_Database_FromScene(re, bmain, sce, lay, 1, view);
 	
 	if (!re->test_break(re->tbh)) {
 		int vectorlay= get_vector_renderlayers(re->scene);
