@@ -1206,18 +1206,19 @@ void BKE_mesh_from_metaball(ListBase *lb, Mesh *me)
  * Specialized function to use when we _know_ existing edges don't overlap with poly edges.
  */
 static void make_edges_mdata_extend(MEdge **r_alledge, int *r_totedge,
-                                    const MPoly *mpoly, const MLoop *mloop,
+                                    const MPoly *mpoly, MLoop *mloop,
                                     const int totpoly)
 {
 	int totedge = *r_totedge;
 	int totedge_new;
 	EdgeHash *eh;
+	const MPoly *mp;
 	int i;
 
 	eh = BLI_edgehash_new();
 
-	for (i = 0; i < totpoly; i++, mpoly++) {
-		BKE_mesh_poly_edgehash_insert(eh, mpoly, mloop + mpoly->loopstart);
+	for (i = 0, mp = mpoly; i < totpoly; i++, mp++) {
+		BKE_mesh_poly_edgehash_insert(eh, mp, mloop + mp->loopstart);
 	}
 
 	totedge_new = BLI_edgehash_size(eh);
@@ -1235,6 +1236,7 @@ static void make_edges_mdata_extend(MEdge **r_alledge, int *r_totedge,
 	if (totedge_new) {
 		EdgeHashIterator *ehi;
 		MEdge *medge;
+		unsigned int e_index = totedge;
 
 		*r_alledge = medge = (*r_alledge ? MEM_reallocN(*r_alledge, sizeof(MEdge) * (totedge + totedge_new)) :
 		                                   MEM_callocN(sizeof(MEdge) * totedge_new, __func__));
@@ -1245,9 +1247,10 @@ static void make_edges_mdata_extend(MEdge **r_alledge, int *r_totedge,
 		/* --- */
 		for (ehi = BLI_edgehashIterator_new(eh);
 		     BLI_edgehashIterator_isDone(ehi) == FALSE;
-		     BLI_edgehashIterator_step(ehi), ++medge)
+		     BLI_edgehashIterator_step(ehi), ++medge, e_index++)
 		{
 			BLI_edgehashIterator_getKey(ehi, &medge->v1, &medge->v2);
+			BLI_edgehashIterator_setValue(ehi, SET_UINT_IN_POINTER(e_index));
 
 			medge->crease = medge->bweight = 0;
 			medge->flag = ME_EDGEDRAW | ME_EDGERENDER;
@@ -1255,6 +1258,18 @@ static void make_edges_mdata_extend(MEdge **r_alledge, int *r_totedge,
 		BLI_edgehashIterator_free(ehi);
 
 		*r_totedge = totedge;
+
+
+		for (i = 0, mp = mpoly; i < totpoly; i++, mp++) {
+			MLoop *l = &mloop[mp->loopstart];
+			MLoop *l_prev = (l + (mp->totloop - 1));
+			int j;
+			for (j = 0; j < mp->totloop; j++, l++) {
+				/* lookup hashed edge index */
+				l_prev->e = GET_UINT_FROM_POINTER(BLI_edgehash_lookup(eh, l_prev->v, l->v));
+				l_prev = l;
+			}
+		}
 	}
 
 	BLI_edgehash_free(eh, NULL);
