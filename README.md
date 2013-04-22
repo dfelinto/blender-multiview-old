@@ -2,9 +2,15 @@ Multi View
 ==========
 clone from https://gitorious.org/blenderprojects/blender
 
-![Alt text](http://wiki.blender.org/uploads/0/0d/Dev-Stereoscopy-MirroredSample.png "OceanViz © UBC Fisheries Centre; EwE Plugin Jeroen Steenbeek and Dalai Felinto")
+![Alt text](http://wiki.blender.org/uploads/0/0d/Dev-Stereoscopy-MirroredSample.png "BMW model by Mike Pan")
 
 This branch contains the code for the "stereoscopy support in Blender" journey.
+
+Development
+-----------
+Current Panel:
+
+<img src="http://dalaifelinto.com/ftp/multiview/multiview_panel.jpg" alt="" width="235.5px" height="247.5px"/>
 
 Links
 -----
