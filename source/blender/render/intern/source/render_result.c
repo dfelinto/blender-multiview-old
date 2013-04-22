@@ -599,19 +599,33 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		rl->mat_override = srl->mat_override;
 		rl->rectx = rectx;
 		rl->recty = recty;
-		
-		if (rr->do_exr_tile) {
-			rl->exrhandle = IMB_exr_get_handle();
 
-			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.R", 0, 0, NULL);
-			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.G", 0, 0, NULL);
-			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.B", 0, 0, NULL);
-			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.A", 0, 0, NULL);
+#if 0
+		//for view, do combined
+		for (rv=rr->views.first;rv;rv=rv->next)
+		{
+			if (rr->do_exr_tile) {
+				rl->exrhandle = IMB_exr_get_handle();
+
+				IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.R", 0, 0, NULL);
+				IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.G", 0, 0, NULL);
+				IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.B", 0, 0, NULL);
+				IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.A", 0, 0, NULL);
+			}
+			else
+				rl->rectf = MEM_mapallocN(rectx * recty * sizeof(float) * 4, "Combined rgba");
 		}
+#endif
+
+		if (rr->do_exr_tile)
+			rl->exrhandle = IMB_exr_get_handle();
 		else
 			rl->rectf = MEM_mapallocN(rectx * recty * sizeof(float) * 4, "Combined rgba");
 
 		for (rv= (RenderView *)(&rr->views)->first, view=0; rv; rv=rv->next, view++) {
+
+			render_layer_add_pass(rr, rl, 4, SCE_PASS_COMBINED, view);
+
 			if (srl->passflag  & SCE_PASS_Z)
 				render_layer_add_pass(rr, rl, 1, SCE_PASS_Z, view);
 			if (srl->passflag  & SCE_PASS_VECTOR)
@@ -679,14 +693,19 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		/* duplicate code... */
 		if (rr->do_exr_tile) {
 			rl->exrhandle = IMB_exr_get_handle();
-
+#if 0
 			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.R", 0, 0, NULL);
 			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.G", 0, 0, NULL);
 			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.B", 0, 0, NULL);
 			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.A", 0, 0, NULL);
+#endif
 		}
 		else {
 			rl->rectf = MEM_mapallocN(rectx * recty * sizeof(float) * 4, "Combined rgba");
+		}
+
+		for (rv= (RenderView *)(&rr->views)->first, view=0; rv; rv=rv->next, view++) {
+			render_layer_add_pass(rr, rl, 4, SCE_PASS_COMBINED, view);
 		}
 		
 		/* note, this has to be in sync with scene.c */
@@ -847,9 +866,11 @@ void render_result_merge(RenderResult *rr, RenderResult *rrpart)
 	for (rl = rr->layers.first; rl; rl = rl->next) {
 		rlp = RE_GetRenderLayer(rrpart, rl->name);
 		if (rlp) {
+#if 0 //MV
 			/* combined */
 			if (rl->rectf && rlp->rectf)
 				do_merge_tile(rr, rrpart, rl->rectf, rlp->rectf, 4);
+#endif
 
 			/* passes are allocated in sync */
 			for (rpass = rl->passes.first, rpassp = rlp->passes.first;
@@ -860,7 +881,11 @@ void render_result_merge(RenderResult *rr, RenderResult *rrpart)
 				if (rpass->view_id != rr->actview)
 					continue;
 
-				do_merge_tile(rr, rrpart, rpass->rect, rpassp->rect, rpass->channels);
+				if (rpass->passtype & SCE_PASS_COMBINED) {
+					do_merge_tile(rr, rrpart, rpass->rect, rlp->rectf, rpass->channels);
+				}
+				else
+					do_merge_tile(rr, rrpart, rpass->rect, rpassp->rect, rpass->channels);
 			}
 		}
 	}
@@ -898,6 +923,7 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 	for (rview = (RenderView *)rr->views.first; rview; rview=rview->next)
 		IMB_exr_add_view(exrhandle, rview->name);
 
+#if 0//MVC
 	/* composite result */
 	if (rr->rectf) {
 		IMB_exr_add_channel(exrhandle, "Composite", "Combined.R", 4, 4 * rr->rectx, rr->rectf);
@@ -905,10 +931,12 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 		IMB_exr_add_channel(exrhandle, "Composite", "Combined.B", 4, 4 * rr->rectx, rr->rectf + 2);
 		IMB_exr_add_channel(exrhandle, "Composite", "Combined.A", 4, 4 * rr->rectx, rr->rectf + 3);
 	}
+#endif
 	
 	/* add layers/passes and assign channels */
 	for (rl = rr->layers.first; rl; rl = rl->next) {
 		
+#if 0//MV
 		/* combined */
 		if (rl->rectf) {
 			int a, xstride = 4;
@@ -917,12 +945,12 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 				                    xstride, xstride * rr->rectx, rl->rectf + a);
 			}
 		}
+#endif
 		
 		/* passes are allocated in sync */
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			int a, xstride = rpass->channels;
 			for (a = 0; a < xstride; a++) {
-				printf("view_id: %d\n", rpass->view_id);
 				viewname = get_view_name(&rr->views, rpass->view_id);
 
 				if (rpass->passtype) {
@@ -1033,6 +1061,8 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart)
 			offs = 0;
 		}
 		
+#if 0
+		// if rectf and no views
 		/* combined */
 		if (rlp->rectf) {
 			int a, xstride = 4;
@@ -1041,6 +1071,7 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart)
 				                    xstride, xstride * rrpart->rectx, rlp->rectf + a + xstride * offs);
 			}
 		}
+#endif
 		
 		/* passes are allocated in sync */
 		for (rpassp = rlp->passes.first; rpassp; rpassp = rpassp->next) {
