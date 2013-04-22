@@ -573,18 +573,32 @@ static void add_filt_passes(RenderLayer *rl, int curmask, int rectx, int offset,
 }
 
 /* non-osa version */
-static void add_passes(RenderLayer *rl, int offset, ShadeInput *shi, ShadeResult *shr)
+static void add_passes(RenderResult *rr, RenderLayer *rl, int offset, ShadeInput *shi, ShadeResult *shr)
 {
+	Render *re= &R;
 	RenderPass *rpass;
 	float *fp;
-	
+	Object *camera;
+	float mat[4][4];
+
 	fp= rl->rectf + 4*offset;
 	copy_v4_v4(fp, shr->combined);
 	
 	for (rpass= rl->passes.first; rpass; rpass= rpass->next) {
 		float *col= NULL, uvcol[3];
 		int a, pixsize= 3;
+
+		camera = RE_GetViewCamera(rr, rpass->view_id);
+		RE_SetCamera(re, camera);
+
+		normalize_m4_m4(mat, camera->obmat);
+		invert_m4(mat);
+		RE_SetView(re, mat);
 		
+		// MV this was supposed to work, but I think it's too late for
+		// this transformations. I will try Cycles now, later I come back for that.
+		// update: the code is only stopping here when OSA is off
+
 		switch (rpass->passtype) {
 			case SCE_PASS_Z:
 				fp= rpass->rect + offset;
@@ -872,7 +886,7 @@ static void shadeDA_tile(RenderPart *pa, RenderLayer *rl)
 							for (a=0; a<R.osa; a++) {
 								int mask= 1<<a;
 								if (smask & mask)
-									add_passes(ssamp.rlpp[a], od, &ssamp.shi[samp], &ssamp.shr[samp]);
+									add_passes(rr, ssamp.rlpp[a], od, &ssamp.shi[samp], &ssamp.shr[samp]);
 							}
 						}
 					}
@@ -1388,7 +1402,7 @@ void zbufshade_tile(RenderPart *pa)
 							ps.z= *rz;
 							if (shade_samples(&ssamp, &ps, x, y)) {
 								/* combined and passes */
-								add_passes(rl, offs, ssamp.shi, ssamp.shr);
+								add_passes(rr, rl, offs, ssamp.shi, ssamp.shr);
 							}
 						}
 					}

@@ -197,6 +197,7 @@ float *RE_RenderLayerGetPass(struct RenderLayer *rl, int passtype);
 void RE_InitState(struct Render *re, struct Render *source, struct RenderData *rd, struct SceneRenderLayer *srl, int winx, int winy, rcti *disprect);
 
 /* set up the viewplane/perspective matrix, three choices */
+struct Object *RE_GetViewCamera(struct RenderResult *rr, int view);
 struct Object *RE_GetCamera(struct Render *re); /* return camera override if set */
 void RE_SetCamera(struct Render *re, struct Object *camera);
 void RE_SetEnvmapCamera(struct Render *re, struct Object *cam_ob, float viewscale, float clipsta, float clipend);
