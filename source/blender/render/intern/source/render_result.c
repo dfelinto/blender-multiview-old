@@ -551,7 +551,6 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 
 	/* check renderdata for amount of views */
 	for (nr = 0, srv = re->r.views.first; srv; srv = srv->next, nr++) {
-
 		if ((re->r.scemode & R_SINGLE_VIEW) && nr != re->r.actview)
 			continue;
 
@@ -611,7 +610,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		}
 		else
 			rl->rectf = MEM_mapallocN(rectx * recty * sizeof(float) * 4, "Combined rgba");
-		
+
 		for (rv= (RenderView *)(&rr->views)->first, view=0; rv; rv=rv->next, view++) {
 			if (srl->passflag  & SCE_PASS_Z)
 				render_layer_add_pass(rr, rl, 1, SCE_PASS_Z, view);
@@ -857,6 +856,10 @@ void render_result_merge(RenderResult *rr, RenderResult *rrpart)
 			     rpass && rpassp;
 			     rpass = rpass->next, rpassp = rpassp->next)
 			{
+
+				if (rpass->view_id != rr->actview)
+					continue;
+
 				do_merge_tile(rr, rrpart, rpass->rect, rpassp->rect, rpass->channels);
 			}
 		}

@@ -407,7 +407,7 @@ void RE_FreeRender(Render *re)
 	
 	/* main dbase can already be invalid now, some database-free code checks it */
 	re->main = NULL;
-	
+
 	RE_Database_Free(re);	/* view render can still have full database */
 	free_sample_tables(re);
 	
@@ -910,16 +910,8 @@ static void *do_render_thread(void *thread_v)
 	return NULL;
 }
 
-static void threaded_tile_processor(Render *re)
+static void main_render_result_new(Render *re)
 {
-	RenderThread thread[BLENDER_MAX_THREADS];
-	ThreadQueue *workqueue, *donequeue;
-	ListBase threads;
-	RenderPart *pa;
-	rctf viewplane = re->viewplane;
-	double lastdraw, elapsed, redrawtime = 1.0f;
-	int totpart = 0, minx = 0, slice = 0, a, wait;
-	
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
 	/* first step; free the entire render result, make new, and/or prepare exr buffer saving */
@@ -936,6 +928,17 @@ static void threaded_tile_processor(Render *re)
 	}
 
 	BLI_rw_mutex_unlock(&re->resultmutex);
+}
+
+static void threaded_tile_processor(Render *re)
+{
+	RenderThread thread[BLENDER_MAX_THREADS];
+	ThreadQueue *workqueue, *donequeue;
+	ListBase threads;
+	RenderPart *pa;
+	rctf viewplane = re->viewplane;
+	double lastdraw, elapsed, redrawtime = 1.0f;
+	int totpart = 0, minx = 0, slice = 0, a, wait;
 	
 	if (re->result == NULL)
 		return;
@@ -1091,6 +1094,8 @@ static void do_render_3d(Render *re)
 {
 	float cfra;
 	int cfra_backup;
+	RenderView *rv;
+	int view;
 
 	/* try external */
 	if (RE_engine_render(re, 0))
@@ -1109,34 +1114,44 @@ static void do_render_3d(Render *re)
 	/* lock drawing in UI during data phase */
 	if (re->draw_lock)
 		re->draw_lock(re->dlh, 1);
-	
-	/* make render verts/faces/halos/lamps */
-	if (render_scene_needs_vector(re))
-		RE_Database_FromScene_Vectors(re, re->main, re->scene, re->lay);
-	else
-		RE_Database_FromScene(re, re->main, re->scene, re->lay, 1);
-	
-	/* clear UI drawing locks */
-	if (re->draw_lock)
-		re->draw_lock(re->dlh, 0);
-	
-	threaded_tile_processor(re);
-	
-#ifdef WITH_FREESTYLE
-	/* Freestyle */
-	if (re->r.mode & R_EDGE_FRS)
-		if (!re->test_break(re->tbh))
-			add_freestyle(re);
-#endif
-	
-	/* do left-over 3d post effects (flares) */
-	if (re->flag & R_HALO)
-		if (!re->test_break(re->tbh))
-			add_halo_flare(re);
+
+	/* init main render result */
+	main_render_result_new(re);
+
+	/* we need a new database for each view */
+	for (view = 0, rv = re->result->views.first; rv; rv = rv->next, view++) {
+
+		re->r.actview = view;
+		re->result->actview = view;
+
+		/* make render verts/faces/halos/lamps */
+		if (render_scene_needs_vector(re))
+			RE_Database_FromScene_Vectors(re, re->main, re->scene, re->lay, view);
+		else
+			RE_Database_FromScene(re, re->main, re->scene, re->lay, 1, view);
 		
-	/* free all render verts etc */
-	RE_Database_Free(re);
-	
+		/* clear UI drawing locks */
+		if (re->draw_lock)
+			re->draw_lock(re->dlh, 0);
+
+		threaded_tile_processor(re);
+
+	#ifdef WITH_FREESTYLE
+		/* Freestyle */
+		if (re->r.mode & R_EDGE_FRS)
+			if (!re->test_break(re->tbh))
+				add_freestyle(re);
+	#endif
+
+		/* do left-over 3d post effects (flares) */
+		if (re->flag & R_HALO)
+			if (!re->test_break(re->tbh))
+				add_halo_flare(re);
+			
+		/* free all render verts etc */
+		RE_Database_Free(re);
+	}
+
 	re->scene->r.cfra = cfra_backup;
 	re->scene->r.subframe = 0.f;
 }

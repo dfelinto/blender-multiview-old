@@ -147,7 +147,10 @@ typedef struct RenderResult {
 
 	/* render info text */
 	char *text;
-	
+
+	/* MultiView */
+	int actview;
+
 } RenderResult;
 
 
@@ -197,7 +200,7 @@ float *RE_RenderLayerGetPass(struct RenderLayer *rl, int passtype);
 void RE_InitState(struct Render *re, struct Render *source, struct RenderData *rd, struct SceneRenderLayer *srl, int winx, int winy, rcti *disprect);
 
 /* set up the viewplane/perspective matrix, three choices */
-struct Object *RE_GetViewCamera(struct RenderResult *rr, int view);
+struct Object *RE_GetViewCamera(struct Render *re, int view);
 struct Object *RE_GetCamera(struct Render *re); /* return camera override if set */
 void RE_SetCamera(struct Render *re, struct Object *camera);
 void RE_SetEnvmapCamera(struct Render *re, struct Object *cam_ob, float viewscale, float clipsta, float clipend);
@@ -213,7 +216,7 @@ void RE_GetView(struct Render *re, float mat[4][4]);
 void RE_GetViewPlane(struct Render *re, rctf *viewplane, rcti *disprect);
 
 /* make or free the dbase */
-void RE_Database_FromScene(struct Render *re, struct Main *bmain, struct Scene *scene, unsigned int lay, int use_camera_view);
+void RE_Database_FromScene(struct Render *re, struct Main *bmain, struct Scene *scene, unsigned int lay, int use_camera_view, unsigned int view);
 void RE_Database_Free(struct Render *re);
 
 /* project dbase again, when viewplane/perspective changed */
