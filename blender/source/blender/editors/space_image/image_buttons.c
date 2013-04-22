@@ -346,11 +346,13 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 	strcpy(str, IFACE_("Pass %t"));
 	a = strlen(str);
 	
+#if 1
 	/* rendered results don't have a Combined pass */
 	if (rl == NULL || rl->rectf) {
-		a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
+		//a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
 		nr = 1;
 	}
+#endif
 	
 	if (rl)
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next, nr++)
@@ -363,7 +365,7 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 }
 
 /* util functions, to move elsewhere */
-
+#if 0
 static int is_from_view(RenderResult *rr, short curview, RenderPass *rpass)
 {
 	RenderView *rv = BLI_findlink(&rr->views, curview);
@@ -414,10 +416,12 @@ static char *pass_view_menu(RenderResult *rr, RenderLayer *rl, short curview, sh
 	/* list only passes from this view */
 	
 	/* rendered results don't have a Combined pass */
+	/*
 	if (rl == NULL || rl->rectf) {
 		a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
 		nr = 1;
 	}
+	 */
 	
 	if (rl) {
 		//MV ideal is to implement a function mimic channelsInView from ImfMultiView.h, in iteractor perhaps
@@ -465,6 +469,7 @@ static char *view_menu(RenderResult *rr)
 	}
 	return str;
 }
+#endif
 
 /* 5 layer button callbacks... */
 static void image_multi_cb(bContext *C, void *rr_v, void *iuser_v) 
@@ -571,7 +576,6 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	}
 
 	if (rr) {
-		//MV - to investigate, it may need to be || (BLI_countlist(&rr->layers) == 2 && (rr->rectf || rr->rect32))
 		if (BLI_countlist(&rr->layers) > 1) {
 			strp = layer_menu(rr, &iuser->layer);
 			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu2, UI_UNIT_Y, &iuser->layer, 0, 0, 0, 0, TIP_("Select Layer"));
@@ -584,6 +588,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 			layer--;  /* fake compo/sequencer layer */
 		
 		if (BLI_countlist(&rr->views) > 0 && 0) {//brb
+#if 0
 			strp = view_menu(rr);
 			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu4, UI_UNIT_Y, &iuser->view, 0, 0, 0, 0, TIP_("Select View"));
 			uiButSetFunc(but, image_multi_cb, rr, iuser);
@@ -593,7 +598,8 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 			strp = pass_view_menu(rr, rl, iuser->view, &iuser->pass);
 			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu3, UI_UNIT_Y, &iuser->pass, 0, 0, 0, 0, TIP_("Select Pass"));
 			uiButSetFunc(but, image_multi_cb, rr, iuser);
-			MEM_freeN(strp);			
+			MEM_freeN(strp);
+#endif
 		}
 		else {
 			rl = BLI_findlink(&rr->layers, layer); /* return NULL is meant to be */
