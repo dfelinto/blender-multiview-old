@@ -880,7 +880,7 @@ static void render_view3d_startjob(void *customdata, short *stop, short *do_upda
 		
 		RE_SetView(re, rp->rv3d->viewmat);
 		
-		RE_Database_FromScene(re, rp->bmain, rp->scene, lay, 0, 0);		// 0= dont use camera view
+		RE_Database_FromScene(re, rp->bmain, rp->scene, lay, 0);		// 0= dont use camera view
 //		printf("dbase update\n");
 	}
 	else {

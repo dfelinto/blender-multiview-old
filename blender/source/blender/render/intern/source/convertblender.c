@@ -217,7 +217,7 @@ void RE_make_stars(Render *re, Scene *scenev3d, void (*initfunc)(void),
 	 * y = -z | +z
 	 */
 
-	camera= re ? RE_GetCamera(re) : scene->camera;
+	camera= re ? RE_GetViewCamera(re) : scene->camera;
 
 	if (camera==NULL || camera->type != OB_CAMERA)
 		return;
@@ -1648,7 +1648,7 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 		bb.align = part->bb_align;
 		bb.anim = part->bb_anim;
 		bb.lock = part->draw & PART_DRAW_BB_LOCK;
-		bb.ob = (part->bb_ob ? part->bb_ob : RE_GetCamera(re));
+		bb.ob = (part->bb_ob ? part->bb_ob : RE_GetViewCamera(re));
 		bb.split_offset = part->bb_split_offset;
 		bb.totnum = totpart+totchild;
 		bb.uv_split = part->bb_uv_split;
@@ -5200,7 +5200,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 }
 
 /* used to be 'rotate scene' */
-void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int lay, int use_camera_view, unsigned int view)
+void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int lay, int use_camera_view)
 {
 	Scene *sce;
 	Object *camera;
@@ -5212,7 +5212,7 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 	re->lay= lay;
 	
 	/* scene needs to be set to get camera */
-	camera = RE_GetViewCamera(re, view);
+	camera = RE_GetViewCamera(re);
 	
 	/* per second, per object, stats print this */
 	re->i.infostr= "Preparing Scene data";
@@ -5389,7 +5389,7 @@ void RE_DataBase_GetView(Render *re, float mat[4][4])
 
 static void database_fromscene_vectors(Render *re, Scene *scene, unsigned int lay, int timeoffset)
 {
-	Object *camera= RE_GetCamera(re);
+	Object *camera= RE_GetViewCamera(re);
 	float mat[4][4];
 	
 	re->scene= scene;
@@ -5772,7 +5772,7 @@ static void free_dbase_object_vectors(ListBase *lb)
 	BLI_freelistN(lb);
 }
 
-void RE_Database_FromScene_Vectors(Render *re, Main *bmain, Scene *sce, unsigned int lay, unsigned int view)
+void RE_Database_FromScene_Vectors(Render *re, Main *bmain, Scene *sce, unsigned int lay)
 {
 	ObjectInstanceRen *obi, *oldobi;
 	StrandSurface *mesh;
@@ -5814,7 +5814,7 @@ void RE_Database_FromScene_Vectors(Render *re, Main *bmain, Scene *sce, unsigned
 	re->strandsurface= strandsurface;
 	
 	if (!re->test_break(re->tbh))
-		RE_Database_FromScene(re, bmain, sce, lay, 1, view);
+		RE_Database_FromScene(re, bmain, sce, lay, 1);
 	
 	if (!re->test_break(re->tbh)) {
 		int vectorlay= get_vector_renderlayers(re->scene);

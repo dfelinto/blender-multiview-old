@@ -1067,6 +1067,8 @@ static void free_all_freestyle_renders(void);
 /* currently only called by preview renders and envmap */
 void RE_TileProcessor(Render *re)
 {
+
+	main_render_result_new(re);
 	threaded_tile_processor(re);
 	
 	re->i.lastframetime = PIL_check_seconds_timer() - re->i.starttime;
@@ -1126,9 +1128,9 @@ static void do_render_3d(Render *re)
 
 		/* make render verts/faces/halos/lamps */
 		if (render_scene_needs_vector(re))
-			RE_Database_FromScene_Vectors(re, re->main, re->scene, re->lay, view);
+			RE_Database_FromScene_Vectors(re, re->main, re->scene, re->lay);
 		else
-			RE_Database_FromScene(re, re->main, re->scene, re->lay, 1, view);
+			RE_Database_FromScene(re, re->main, re->scene, re->lay, 1);
 		
 		/* clear UI drawing locks */
 		if (re->draw_lock)
@@ -1944,10 +1946,22 @@ static void do_render_composite_fields_blur_3d(Render *re)
 static void renderresult_stampinfo(Render *re)
 {
 	RenderResult rres;
+	RenderLayer *rl;
+	RenderPass *rpass;
 
 	/* this is the basic trick to get the displayed float or char rect from render result */
 	RE_AcquireResultImage(re, &rres);
 	BKE_stamp_buf(re->scene, RE_GetCamera(re), (unsigned char *)rres.rect32, rres.rectf, rres.rectx, rres.recty, 4);
+
+	for (rl = rres.layers.first; rl; rl = rl->next) {
+		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
+			if (rpass->passtype & SCE_PASS_COMBINED) {
+				re->r.actview = rpass->view_id;
+				BKE_stamp_buf(re->scene, RE_GetViewCamera(re), (unsigned char *)rres.rect32, rpass->rect, rres.rectx, rres.recty, 4);
+			}
+		}
+	}
+
 	RE_ReleaseResultImage(re);
 }
 
