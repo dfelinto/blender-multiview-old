@@ -615,7 +615,7 @@ void SCENE_OT_render_view_add(wmOperatorType *ot)
 static int render_view_remove_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene = CTX_data_scene(C);
-	SceneRenderView *rv = BLI_findlink(&scene->r.views, scene->r.actlay);
+	SceneRenderView *rv = BLI_findlink(&scene->r.views, scene->r.actview);
 
 	if (!BKE_scene_remove_render_view(CTX_data_main(C), scene, rv))
 		return OPERATOR_CANCELLED;
@@ -633,7 +633,7 @@ void SCENE_OT_render_view_remove(wmOperatorType *ot)
 	ot->description = "Remove the selected render view";
 
 	/* api callbacks */
-	ot->exec = render_layer_remove_exec;
+	ot->exec = render_view_remove_exec;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
