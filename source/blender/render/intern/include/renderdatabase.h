@@ -148,7 +148,7 @@ void RE_set_customdata_names(struct ObjectRen *obr, struct CustomData *data);
 
 /* convertblender.c */
 void init_render_world(Render *re);
-void RE_Database_FromScene_Vectors(Render *re, struct Main *bmain, struct Scene *sce, unsigned int lay, unsigned int view);
+void RE_Database_FromScene_Vectors(Render *re, struct Main *bmain, struct Scene *sce, unsigned int lay);
 
 
 #endif /* __RENDERDATABASE_H__ */
