@@ -41,8 +41,19 @@ Roadmap
 
 How to build it
 ---------------
- 1. $git clone https://github.com/dfelinto/blender.git --single-branch -b multiview
- 2. $git svn clone https://svn.blender.org/svnroot/bf-extensions/trunk/py/scripts/addons addons
- 3. $git svn clone https://svn.blender.org/svnroot/bf-extensions/contrib/py/scripts/addons addons_contrib
- 4. $rsync -rv --exclude=.git addons blender/release/scripts/
- 5. $rsync -rv --exclude=.git addons_contrib blender/release/scripts/
+Roughly guide, basically you need to manually copy the addons and addons_contrib folders inside the checkout blender code.
+
+For tips in building Blender for your system refer to to Blender Wiki.
+
+Following instructions are for OSX. Don't use them literally, try to make sense of them first.
+
+ 1. $git clone https://github.com/dfelinto/blender.git --single-branch -b multiview blender
+ 2. $svn checkout https://svn.blender.org/svnroot/bf-extensions/trunk/py/scripts/addons addons
+ 3. $svn checkout https://svn.blender.org/svnroot/bf-extensions/contrib/py/scripts/addons addons_contrib
+ 4. $rsync -rv --exclude=.svn addons blender/release/scripts/
+ 5. $rsync -rv --exclude=.svn addons_contrib blender/release/scripts/
+ 6. $ln -s ~/blender/lib lib; #HARDCODED folder to match my system, good luck
+ 7. mkdir release
+ 8. cd release
+ 9. ccmake ../blender
+ 10. make -j7 install
