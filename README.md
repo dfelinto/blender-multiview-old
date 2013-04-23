@@ -12,6 +12,16 @@ Current Panel:
 
 <img src="http://dalaifelinto.com/ftp/multiview/multiview_panel.jpg" alt="" width="235.5px" height="247.5px"/>
 
+Current status:
+* Multiview is rendering fine and antialias is working too.
+* My next target is Cycles, before I tackle Composite
+
+The rules for testing are:
+* No FSA
+* No Compo
+* No External Engine
+* (for saving) EXR MultiLayer
+
 Links
 -----
 **Original proposal:** http://wiki.blender.org/index.php/User:Dfelinto/Stereoscopy
