@@ -38,3 +38,11 @@ Roadmap
  6. See multiview in UV/image editor as stereo
  7. Viewport preview
  8. ?
+
+How to build it
+---------------
+ 1. $git clone https://github.com/dfelinto/blender.git --single-branch -b multiview
+ 2. $git svn clone https://svn.blender.org/svnroot/bf-extensions/trunk/py/scripts/addons addons
+ 3. $git svn clone https://svn.blender.org/svnroot/bf-extensions/contrib/py/scripts/addons addons_contrib
+ 4. $rsync -rv --exclude=.git addons blender/release/scripts/
+ 5. $rsync -rv --exclude=.git addons_contrib blender/release/scripts/
