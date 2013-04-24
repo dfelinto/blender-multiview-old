@@ -369,9 +369,9 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 static int is_from_view(RenderResult *rr, short curview, RenderPass *rpass)
 {
 	RenderView *rv = BLI_findlink(&rr->views, curview);
-	
+
 	if (rv == NULL) return false;
-	
+
 	if(strstr(rpass->name, rv->name) != NULL)
 		return true;
 
@@ -385,17 +385,17 @@ static int strip_view(const char *name, const char *viewname)
 	 A -> A
 	 left.R -> R
 	 main.right.depth -> main.depth */
-	
+
 	if (viewname == NULL)
 		return 0;
-	
+
 	const char *end = name + BLI_strlen_utf8(name);
 	char *a = strstr(name, viewname);
 	char *b = a + BLI_strlen_utf8(viewname) + 1; /* +1 to skip '.' separator */
-	
+
 	if ((a == NULL) || (b == NULL) || (b < a) || (b > end))
 		return 0;
-	
+
 	memmove(a, b, strlen(b) + 1);
 	return 1;
 }
@@ -408,13 +408,13 @@ static char *pass_view_menu(RenderResult *rr, RenderLayer *rl, short curview, sh
 	int len = 64 + 32 * (rl ? BLI_countlist(&rl->passes) : 1);
 	short a, nr = 0;
 	char *str = MEM_callocN(len, "menu passes");
-	
+
 	strcpy(str, IFACE_("Pass %t"));
 	a = strlen(str);
-	
+
 	/* remove view from name */
 	/* list only passes from this view */
-	
+
 	/* rendered results don't have a Combined pass */
 	/*
 	if (rl == NULL || rl->rectf) {
@@ -422,7 +422,7 @@ static char *pass_view_menu(RenderResult *rr, RenderLayer *rl, short curview, sh
 		nr = 1;
 	}
 	 */
-	
+
 	if (rl) {
 		//MV ideal is to implement a function mimic channelsInView from ImfMultiView.h, in iteractor perhaps
 		//or even more ideal would be to have this 'ui name' stored somewhere
@@ -436,16 +436,16 @@ static char *pass_view_menu(RenderResult *rr, RenderLayer *rl, short curview, sh
 				/* strip out the viewname from the channel */
 				BLI_strncpy(namebuf, rpass->name, BLI_strlen_utf8(rpass->name) + 1);
 				strip_view(namebuf, &rv->name[0]);
-				
+
 				//strip of name
 				a += sprintf(str + a, "|%s %%x%d", IFACE_(namebuf), nr);
 			}
 		}
 	}
-	
+
 	if (*curpass >= nr)
 		*curpass = 0;
-	
+
 	return str;
 }
 
@@ -461,7 +461,7 @@ static char *view_menu(RenderResult *rr)
 
 		strcpy(str, IFACE_("View %t"));
 		a = strlen(str);
-		
+
 		for (rv = (RenderView *)rr->views.first; rv; rv = rv->next, nr++) {
 			a += sprintf(str + a, "|%s %%x%d", rv->name, nr);
 		}

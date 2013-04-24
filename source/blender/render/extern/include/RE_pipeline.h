@@ -131,7 +131,7 @@ typedef struct RenderResult {
 	
 	/* multiView maps to a StringVector in OpenEXR */
 	ListBase views;
-	
+
 	/* allowing live updates: */
 	volatile rcti renrect;
 	volatile RenderLayer *renlay;
@@ -147,7 +147,7 @@ typedef struct RenderResult {
 
 	/* render info text */
 	char *text;
-
+	
 	/* MultiView */
 	int actview;
 

@@ -1084,7 +1084,7 @@ static PointerRNA rna_RenderSettings_active_view_get(PointerRNA *ptr)
 {
 	RenderData *rd = (RenderData *)ptr->data;
 	SceneRenderView *srv = BLI_findlink(&rd->views, rd->actview);
-	
+
 	return rna_pointer_inherit_refine(ptr, &RNA_SceneRenderView, srv);
 }
 
