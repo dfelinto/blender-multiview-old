@@ -582,6 +582,7 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	BKE_scene_add_render_layer(sce, NULL);
 
 	BKE_scene_add_render_view(sce, "center");
+	((SceneRenderView *)sce->r.views.first)->viewflag |= SCE_VIEW_DISABLE;
 	
 	/* game data */
 	sce->gm.stereoflag = STEREO_NOSTEREO;
@@ -1375,7 +1376,6 @@ SceneRenderView *BKE_scene_add_render_view(Scene *sce, const char *name)
 int BKE_scene_remove_render_view(Main *bmain, Scene *scene, SceneRenderView *srv)
 {
 	const int act = BLI_findindex(&scene->r.views, srv);
-	Scene *sce;
 
 	if (act == -1) {
 		return 0;
