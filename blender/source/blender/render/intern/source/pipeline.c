@@ -721,9 +721,9 @@ static void *do_part_thread(void *pa_v)
 	if (R.test_break(R.tbh) == 0) {
 		
 		if (!R.sss_points && (R.r.scemode & R_FULL_SAMPLE))
-			pa->result = render_result_new_full_sample(&R, &pa->fullresult, &pa->disprect, pa->crop, RR_USE_MEM);
+			pa->result = render_result_new_full_sample(&R, &pa->fullresult, &pa->disprect, pa->crop, RR_USE_MEM, R.result->actview);
 		else
-			pa->result = render_result_new(&R, &pa->disprect, pa->crop, RR_USE_MEM, RR_ALL_LAYERS);
+			pa->result = render_result_new(&R, &pa->disprect, pa->crop, RR_USE_MEM, RR_ALL_LAYERS, R.result->actview);
 
 		if (R.sss_points)
 			zbufshade_sss_tile(pa);
@@ -919,18 +919,18 @@ static void main_render_result_new(Render *re)
 		render_result_free(re->result);
 
 		if (re->sss_points && render_display_draw_enabled(re))
-			re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS);
+			re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
 		else if (re->r.scemode & R_FULL_SAMPLE)
-			re->result = render_result_new_full_sample(re, &re->fullresult, &re->disprect, 0, RR_USE_EXR);
+			re->result = render_result_new_full_sample(re, &re->fullresult, &re->disprect, 0, RR_USE_EXR, -1);
 		else
 			re->result = render_result_new(re, &re->disprect, 0,
-				(re->r.scemode & R_EXR_TILE_FILE) ? RR_USE_EXR : RR_USE_MEM, RR_ALL_LAYERS);
+				(re->r.scemode & R_EXR_TILE_FILE) ? RR_USE_EXR : RR_USE_MEM, RR_ALL_LAYERS, -1);
 	}
 
 	BLI_rw_mutex_unlock(&re->resultmutex);
 }
 
-static void threaded_tile_processor(Render *re)
+static void threaded_tile_processor(Render *re, int view)
 {
 	RenderThread thread[BLENDER_MAX_THREADS];
 	ThreadQueue *workqueue, *donequeue;
@@ -1067,9 +1067,8 @@ static void free_all_freestyle_renders(void);
 /* currently only called by preview renders and envmap */
 void RE_TileProcessor(Render *re)
 {
-
 	main_render_result_new(re);
-	threaded_tile_processor(re);
+	threaded_tile_processor(re, -1); //MV envmap could use multiview too, not implemented though
 	
 	re->i.lastframetime = PIL_check_seconds_timer() - re->i.starttime;
 	re->stats_draw(re->sdh, &re->i);
@@ -1123,7 +1122,6 @@ static void do_render_3d(Render *re)
 	/* we need a new database for each view */
 	for (view = 0, rv = re->result->views.first; rv; rv = rv->next, view++) {
 
-		re->r.actview = view;
 		re->result->actview = view;
 
 		/* make render verts/faces/halos/lamps */
@@ -1136,7 +1134,7 @@ static void do_render_3d(Render *re)
 		if (re->draw_lock)
 			re->draw_lock(re->dlh, 0);
 
-		threaded_tile_processor(re);
+		threaded_tile_processor(re, view);
 
 	#ifdef WITH_FREESTYLE
 		/* Freestyle */
@@ -1251,7 +1249,7 @@ static void do_render_blur_3d(Render *re)
 	int blur = re->r.mblur_samples;
 	
 	/* create accumulation render result */
-	rres = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS);
+	rres = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
 	
 	/* do the blur steps */
 	while (blur--) {
@@ -1380,7 +1378,7 @@ static void do_render_fields_3d(Render *re)
 	re->disprect.ymax *= 2;
 
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS);
+	re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
 
 	if (rr2) {
 		if (re->r.mode & R_ODDFIELD)
@@ -1443,7 +1441,7 @@ static void do_render_fields_blur_3d(Render *re)
 				re->rectx = re->winx;
 				re->recty = re->winy;
 				
-				rres = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS);
+				rres = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
 				
 				render_result_merge(rres, re->result);
 				render_result_free(re->result);
@@ -1876,7 +1874,7 @@ static void do_render_composite_fields_blur_3d(Render *re)
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 		
 		render_result_free(re->result);
-		re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS);
+		re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
 
 		BLI_rw_mutex_unlock(&re->resultmutex);
 		

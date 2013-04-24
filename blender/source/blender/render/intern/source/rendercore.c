@@ -462,7 +462,7 @@ static void lamphalo_tile(RenderPart *pa, RenderLayer *rl)
 /* ********************* MAINLOOPS ******************** */
 
 /* osa version */
-static void add_filt_passes(RenderLayer *rl, int curmask, int rectx, int offset, ShadeInput *shi, ShadeResult *shr, int view)
+static void add_filt_passes(RenderLayer *rl, int curmask, int rectx, int offset, ShadeInput *shi, ShadeResult *shr)
 {
 	RenderPass *rpass;
 
@@ -472,9 +472,6 @@ static void add_filt_passes(RenderLayer *rl, int curmask, int rectx, int offset,
 	for (rpass= rl->passes.first; rpass; rpass= rpass->next) {
 		float *fp, *col= NULL;
 		int pixsize= 3;
-		
-		if (rpass->view_id != view)
-			continue;
 
 		switch (rpass->passtype) {
 			case SCE_PASS_Z:
@@ -576,7 +573,7 @@ static void add_filt_passes(RenderLayer *rl, int curmask, int rectx, int offset,
 }
 
 /* non-osa version */
-static void add_passes(RenderLayer *rl, int offset, ShadeInput *shi, ShadeResult *shr, int view)
+static void add_passes(RenderLayer *rl, int offset, ShadeInput *shi, ShadeResult *shr)
 {
 	RenderPass *rpass;
 	float *fp;
@@ -587,9 +584,6 @@ static void add_passes(RenderLayer *rl, int offset, ShadeInput *shi, ShadeResult
 	for (rpass= rl->passes.first; rpass; rpass= rpass->next) {
 		float *col= NULL, uvcol[3];
 		int a, pixsize= 3;
-
-		if (rpass->view_id != view)
-			continue;
 
 		switch (rpass->passtype) {
 			case SCE_PASS_Z:
@@ -878,13 +872,13 @@ static void shadeDA_tile(RenderPart *pa, RenderLayer *rl)
 							for (a=0; a<R.osa; a++) {
 								int mask= 1<<a;
 								if (smask & mask)
-									add_passes(ssamp.rlpp[a], od, &ssamp.shi[samp], &ssamp.shr[samp], R.r.actview);
+									add_passes(ssamp.rlpp[a], od, &ssamp.shi[samp], &ssamp.shr[samp]);
 							}
 						}
 					}
 					else {
 						for (samp=0; samp<ssamp.tot; samp++)
-							add_filt_passes(rl, ssamp.shi[samp].mask, pa->rectx, od, &ssamp.shi[samp], &ssamp.shr[samp], R.r.actview);
+							add_filt_passes(rl, ssamp.shi[samp].mask, pa->rectx, od, &ssamp.shi[samp], &ssamp.shr[samp]);
 					}
 				}
 			}
@@ -1394,7 +1388,7 @@ void zbufshade_tile(RenderPart *pa)
 							ps.z= *rz;
 							if (shade_samples(&ssamp, &ps, x, y)) {
 								/* combined and passes */
-								add_passes(rl, offs, ssamp.shi, ssamp.shr, R.r.actview);
+								add_passes(rl, offs, ssamp.shi, ssamp.shr);
 							}
 						}
 					}

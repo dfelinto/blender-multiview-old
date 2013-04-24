@@ -53,9 +53,9 @@ struct ColorManagedViewSettings;
 /* New */
 
 struct RenderResult *render_result_new(struct Render *re,
-	struct rcti *partrct, int crop, int savebuffers, const char *layername);
+	struct rcti *partrct, int crop, int savebuffers, const char *layername, int view);
 struct RenderResult *render_result_new_full_sample(struct Render *re,
-	struct ListBase *lb, struct rcti *partrct, int crop, int savebuffers);
+	struct ListBase *lb, struct rcti *partrct, int crop, int savebuffers, int view);
 
 struct RenderResult *render_result_new_from_exr(void *exrhandle, const char *colorspace, int predivide, int rectx, int recty);
 

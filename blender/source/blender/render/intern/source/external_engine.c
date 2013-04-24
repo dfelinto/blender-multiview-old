@@ -218,7 +218,7 @@ RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, 
 	disprect.ymin = y;
 	disprect.ymax = y + h;
 
-	result = render_result_new(re, &disprect, 0, RR_USE_MEM, layername);
+	result = render_result_new(re, &disprect, 0, RR_USE_MEM, layername, -1);
 
 	/* todo: make this thread safe */
 
@@ -429,7 +429,7 @@ int RE_engine_render(Render *re, int do_all)
 			render_result_free(re->result);
 
 		savebuffers = (re->r.scemode & R_EXR_TILE_FILE) ? RR_USE_EXR : RR_USE_MEM;
-		re->result = render_result_new(re, &re->disprect, 0, savebuffers, RR_ALL_LAYERS);
+		re->result = render_result_new(re, &re->disprect, 0, savebuffers, RR_ALL_LAYERS, -1);
 	}
 	BLI_rw_mutex_unlock(&re->resultmutex);
 
