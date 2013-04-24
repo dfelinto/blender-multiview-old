@@ -327,7 +327,6 @@ void BlenderSession::render()
 		b_rlay_name = b_iter->name();
 
 		for(r.views.begin(b_iterv), b_rview_id=0; b_iterv != r.views.end(); ++b_iterv, b_rview_id++) {
-
 			/* temporary render result to find needed passes */
 			BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str(), -1);
 			BL::RenderResult::layers_iterator b_single_rlay;
@@ -342,8 +341,8 @@ void BlenderSession::render()
 			/* set the current view */
 			render_result_multiview_set(b_engine, b_rr, b_rview_id);
 
-			BL::Object ob = b_engine.multiview_camera();
-			sync->sync_data(b_v3d, ob, b_rlay_name.c_str());
+			BL::Object camera = b_engine.multiview_camera();
+			sync->sync_data(b_v3d, camera, b_rlay_name.c_str());
 
 			BL::RenderLayer b_rlay = *b_single_rlay;
 
@@ -376,8 +375,8 @@ void BlenderSession::render()
 			scene->integrator->tag_update(scene);
 
 			/* update scene */
-			BL::Object camera = b_engine.multiview_camera();
 			sync->sync_data(b_v3d, camera, b_rlay_name.c_str());
+			sync->sync_camera(b_render, camera, width, height);
 
 			/* update number of samples per layer */
 			int samples = sync->get_layer_samples();
