@@ -392,8 +392,6 @@ static void rna_def_render_engine(BlenderRNA *brna)
 	func = RNA_def_function(srna, "result_multiview_set", "RE_engine_multiview_set");
 	prop = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
 	RNA_def_property_flag(prop, PROP_REQUIRED);
-	prop = RNA_def_pointer(func, "scene", "Scene", "Scene", "");
-	RNA_def_property_flag(prop, PROP_REQUIRED);
 	prop = RNA_def_int(func, "view", 0, 0, INT_MAX, "View",
 	                   "index of the list of available views (not including disabled ones)", 0, INT_MAX);
 	RNA_def_property_flag(prop, PROP_REQUIRED);

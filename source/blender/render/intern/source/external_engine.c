@@ -356,7 +356,7 @@ void RE_engine_report(RenderEngine *engine, int type, const char *msg)
 		BKE_report(engine->reports, type, msg);
 }
 
-void RE_engine_multiview_set(RenderEngine *engine, RenderResult *result, Scene *scene, int view)
+void RE_engine_multiview_set(RenderEngine *engine, RenderResult *result, int view)
 {
 	Render *re = engine->re;
 	Object *camera = RE_GetViewCamera(re);
