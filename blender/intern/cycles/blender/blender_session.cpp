@@ -246,9 +246,9 @@ static void end_render_result(BL::RenderEngine b_engine, BL::RenderResult b_rr, 
 	b_engine.end_result(b_rr, (int)cancel);
 }
 
-static void render_result_multiview_set(BL::RenderEngine b_engine, BL::RenderResult b_rr, BL::Scene b_sc, int view)
+static void render_result_multiview_set(BL::RenderEngine b_engine, BL::RenderResult b_rr, int view)
 {
-	b_engine.result_multiview_set(b_rr, b_sc, view);
+	b_engine.result_multiview_set(b_rr, view);
 }
 
 void BlenderSession::do_write_update_render_tile(RenderTile& rtile, bool do_update_only)
@@ -340,7 +340,7 @@ void BlenderSession::render()
 			}
 
 			/* set the current view */
-			render_result_multiview_set(b_engine, b_rr, b_scene, b_rview_id);
+			render_result_multiview_set(b_engine, b_rr, b_rview_id);
 
 			BL::Object ob = b_engine.multiview_camera();
 			sync->sync_data(b_v3d, ob, b_rlay_name.c_str());
