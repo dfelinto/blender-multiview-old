@@ -789,10 +789,10 @@ static void *ml_addview_cb(void *base, const char *str)
 {
 	RenderResult *rr = base;
 	RenderView *rv;
-	
+
 	rv = MEM_callocN(sizeof(RenderView), "new render view");
 	BLI_addtail(&rr->views, rv);
-	
+
 	BLI_strncpy(rv->name, str, EXR_VIEW_MAXNAME);
 	return rv;
 }

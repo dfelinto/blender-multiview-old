@@ -513,7 +513,7 @@ typedef struct ExrHandle {
 	int tilex, tiley;
 	int width, height;
 	int mipmap;
-	
+
 	StringVector multiView;
 
 	ListBase channels;  /* flattened out, ExrChannel */
@@ -582,12 +582,12 @@ void IMB_exr_add_view(void *handle, const char *name)
 	ExrHandle *data = (ExrHandle *)handle;
 	data->multiView.push_back(name);
 }
-	
+
 int imb_exr_passInView(ExrPass *pass, const char *view)
 {
 	return (strstr(pass->name, view) != NULL);
 }
-	
+
 int imb_exr_get_multiView_id(StringVector *views, const char *name)
 {
 	int count = 0;
@@ -616,7 +616,7 @@ static const char *imb_exr_view_from_channel(const char *name, StringVector *vie
 	}
 
 	if (a == NULL) return NULL;
-	
+
 	BLI_strncpy(view, a, len+1);
 	return view;
 }
@@ -639,11 +639,11 @@ const char *IMB_exr_insertViewName(void *handle, const char *pass, int view_id)
 	len = strlen(name);
 	name[len] = '.';
 	BLI_strncpy(name+len, &views[view_id][0], EXR_PASS_MAXNAME-len);
-	
+
 	return name;
 }
 #endif
-	
+
 /* adds flattened ExrChannels */
 /* xstride, ystride and rect can be done in set_channel too, for tile writing */
 void IMB_exr_add_channel(void *handle, const char *layname, const char *passname, int xstride, int ystride, float *rect)
@@ -926,12 +926,12 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 	for (StringVector::const_iterator i = data->multiView.begin(); i != data->multiView.end(); ++i) {
 		addview(base, &(*i)[0]);
 	}
-	
+
 	if (data->layers.first == NULL) {
 		printf("cannot convert multilayer, no layers in handle\n");
 		return;
 	}
-	
+
 	is_multiview = hasMultiView(data->ifile->header());
 	if (is_multiview)
 		views = IMB_exr_multiView(handle);
@@ -978,7 +978,7 @@ void IMB_exr_close(void *handle)
 		BLI_freelistN(&lay->passes);
 	}
 	BLI_freelistN(&data->layers);
-	
+
 	BLI_remlink(&exrhandles, data);
 	MEM_freeN(data);
 }
@@ -1018,37 +1018,37 @@ static int imb_exr_strip_view(const char *name, const char *viewname)
 	memmove(a, b, strlen(b) + 1);
 	return (int)(a - name);
 }
-	
+
 static int imb_exr_split_channel_name(ExrChannel *echan, char *layname, char *passname, int view, StringVector &views)
 {
 	char namebuf[EXR_TOT_MAXNAME];
 	char *name;
-	
+
 	/* strip out the viewname from the channel */
 	BLI_strncpy(namebuf, echan->name, BLI_strlen_utf8(echan->name) + 1);
 	name = &namebuf[0];
-	
+
 	int needview = views.size() > 0;
-	
+
 	const char *viewname = (needview?&views[view][0]:NULL);
 	int strip = imb_exr_strip_view(name, viewname);
-	
+
 	const char *end = name + strlen(name);
 	const char *token;
 	char tokenbuf[EXR_TOT_MAXNAME];
 	int len;
-	
+
 	/* some multilayers have the combined buffer with names A B G R saved */
 	if (name[1] == 0) {
 		echan->chan_id = name[0];
 		echan->view_id = view;
 		layname[0] = '\0';
-		
+
 		if (needview)
 			sprintf(passname, "Combined.%s", viewname);
 		else
 			strcpy(passname, "Combined");
-		
+
 		return 1;
 	}
 
@@ -1244,7 +1244,7 @@ static void exr_print_filecontents(InputFile *file)
 			printf("OpenEXR-load: Found view %s\n", &(*i)[0]);
 		}
 	}
-	
+
 	const ChannelList &channels = file->header().channels();
 
 	for (ChannelList::ConstIterator i = channels.begin(); i != channels.end(); ++i) {
@@ -1335,7 +1335,7 @@ struct ImBuf *imb_load_openexr(unsigned char *mem, size_t size, int flags, char 
 		//printf("OpenEXR-load: image data window %d %d %d %d\n",
 		//	   dw.min.x, dw.min.y, dw.max.x, dw.max.y);
 
-		if (1) // debug
+		if (0) // debug
 			exr_print_filecontents(file);
 
 		is_multi = exr_is_multilayer(file);

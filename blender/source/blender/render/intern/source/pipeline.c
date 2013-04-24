@@ -1147,7 +1147,7 @@ static void do_render_3d(Render *re)
 		if (re->flag & R_HALO)
 			if (!re->test_break(re->tbh))
 				add_halo_flare(re);
-			
+
 		/* free all render verts etc */
 		RE_Database_Free(re);
 	}
