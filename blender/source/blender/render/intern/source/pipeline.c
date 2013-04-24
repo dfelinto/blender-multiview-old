@@ -1960,7 +1960,7 @@ static void renderresult_stampinfo(Render *re)
 	for (rl = rres.layers.first; rl; rl = rl->next) {
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			if (rpass->passtype & SCE_PASS_COMBINED) {
-				re->r.actview = rpass->view_id;
+				re->result->actview = rpass->view_id;
 				BKE_stamp_buf(re->scene, RE_GetViewCamera(re), (unsigned char *)rres.rect32, rpass->rect, rres.rectx, rres.recty, 4);
 			}
 		}
