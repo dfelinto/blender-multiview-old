@@ -341,9 +341,6 @@ void BlenderSession::render()
 			/* set the current view */
 			render_result_multiview_set(b_engine, b_rr, b_rview_id);
 
-			BL::Object camera = b_engine.multiview_camera();
-			sync->sync_data(b_v3d, camera, b_rlay_name.c_str());
-
 			BL::RenderLayer b_rlay = *b_single_rlay;
 
 			/* add passes */
@@ -375,6 +372,7 @@ void BlenderSession::render()
 			scene->integrator->tag_update(scene);
 
 			/* update scene */
+			BL::Object camera = b_engine.multiview_camera();
 			sync->sync_data(b_v3d, camera, b_rlay_name.c_str());
 			sync->sync_camera(b_render, camera, width, height);
 
@@ -429,12 +427,6 @@ void BlenderSession::do_write_update_render_result(BL::RenderResult b_rr, BL::Re
 
 		for(b_rlay.passes.begin(b_iter); b_iter != b_rlay.passes.end(); ++b_iter) {
 			BL::RenderPass b_pass(*b_iter);
-
-			//MV investigating a bug
-			//it seems something is really strange on here
-			//printf("view_id %d:%d view\n", b_pass.view_id(), b_rview_id);
-			if (b_pass.view_id() != b_rview_id)
-				continue;
 
 			/* find matching pass type */
 			PassType pass_type = get_pass_type(b_pass);
