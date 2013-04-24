@@ -129,7 +129,7 @@ static void rna_Mesh_update_data(Main *bmain, Scene *scene, PointerRNA *ptr)
 	}
 }
 
-static void rna_Mesh_update_statvis(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Mesh_update_data_edit_color(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	Mesh *me = rna_mesh(ptr);
 	rna_Mesh_update_data(bmain, scene, ptr);
@@ -562,7 +562,10 @@ DEFINE_CUSTOMDATA_LAYER_COLLECTION_ACTIVEITEM(uv_layer, ldata, CD_MLOOPUV, rende
 
 static char *rna_MeshUVLoopLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("uv_layers[\"%s\"]", ((CustomDataLayer *)ptr->data)->name);
+	CustomDataLayer *cdl = ptr->data;
+	char name_esc[sizeof(cdl->name) * 2];
+	BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+	return BLI_sprintfN("uv_layers[\"%s\"]", name_esc);
 }
 
 static void rna_MeshUVLoopLayer_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
@@ -879,7 +882,10 @@ DEFINE_CUSTOMDATA_LAYER_COLLECTION(skin_vertice, vdata, CD_MVERT_SKIN);
 
 static char *rna_MeshSkinVertexLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("skin_vertices[\"%s\"]", ((CustomDataLayer *)ptr->data)->name);
+	CustomDataLayer *cdl = ptr->data;
+	char name_esc[sizeof(cdl->name) * 2];
+	BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+	return BLI_sprintfN("skin_vertices[\"%s\"]", name_esc);
 }
 
 static char *rna_VertCustomData_data_path(PointerRNA *ptr, char *collection, int type);
@@ -1101,12 +1107,18 @@ static char *rna_MeshVertex_path(PointerRNA *ptr)
 
 static char *rna_MeshTextureFaceLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("tessface_uv_textures[\"%s\"]", ((CustomDataLayer *)ptr->data)->name);
+	CustomDataLayer *cdl = ptr->data;
+	char name_esc[sizeof(cdl->name) * 2];
+	BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+	return BLI_sprintfN("tessface_uv_textures[\"%s\"]", name_esc);
 }
 
 static char *rna_MeshTexturePolyLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("uv_textures[\"%s\"]", ((CustomDataLayer *)ptr->data)->name);
+	CustomDataLayer *cdl = ptr->data;
+	char name_esc[sizeof(cdl->name) * 2];
+	BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+	return BLI_sprintfN("uv_textures[\"%s\"]", name_esc);
 }
 
 static char *rna_VertCustomData_data_path(PointerRNA *ptr, char *collection, int type)
@@ -1119,8 +1131,11 @@ static char *rna_VertCustomData_data_path(PointerRNA *ptr, char *collection, int
 	for (cdl = vdata->layers, a = 0; a < vdata->totlayer; cdl++, a++) {
 		if (cdl->type == type) {
 			b = ((char *)ptr->data - ((char *)cdl->data)) / CustomData_sizeof(type);
-			if (b >= 0 && b < totvert)
-				return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, cdl->name, b);
+			if (b >= 0 && b < totvert) {
+				char name_esc[sizeof(cdl->name) * 2];
+				BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+				return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, name_esc, b);
+			}
 		}
 	}
 
@@ -1137,8 +1152,11 @@ static char *rna_PolyCustomData_data_path(PointerRNA *ptr, char *collection, int
 	for (cdl = pdata->layers, a = 0; a < pdata->totlayer; cdl++, a++) {
 		if (cdl->type == type) {
 			b = ((char *)ptr->data - ((char *)cdl->data)) / CustomData_sizeof(type);
-			if (b >= 0 && b < totpoly)
-				return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, cdl->name, b);
+			if (b >= 0 && b < totpoly) {
+				char name_esc[sizeof(cdl->name) * 2];
+				BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+				return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, name_esc, b);
+			}
 		}
 	}
 
@@ -1155,8 +1173,11 @@ static char *rna_LoopCustomData_data_path(PointerRNA *ptr, char *collection, int
 	for (cdl = ldata->layers, a = 0; a < ldata->totlayer; cdl++, a++) {
 		if (cdl->type == type) {
 			b = ((char *)ptr->data - ((char *)cdl->data)) / CustomData_sizeof(type);
-			if (b >= 0 && b < totloop)
-				return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, cdl->name, b);
+			if (b >= 0 && b < totloop) {
+				char name_esc[sizeof(cdl->name) * 2];
+				BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+				return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, name_esc, b);
+			}
 		}
 	}
 
@@ -1173,8 +1194,11 @@ static char *rna_FaceCustomData_data_path(PointerRNA *ptr, char *collection, int
 	for (cdl = fdata->layers, a = 0; a < fdata->totlayer; cdl++, a++) {
 		if (cdl->type == type) {
 			b = ((char *)ptr->data - ((char *)cdl->data)) / CustomData_sizeof(type);
-			if (b >= 0 && b < totloop)
-				return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, cdl->name, b);
+			if (b >= 0 && b < totloop) {
+				char name_esc[sizeof(cdl->name) * 2];
+				BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+				return BLI_sprintfN("%s[\"%s\"].data[%d]", collection, name_esc, b);
+			}
 		}
 	}
 
@@ -1198,12 +1222,18 @@ static char *rna_MeshTexturePoly_path(PointerRNA *ptr)
 
 static char *rna_MeshColorLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("tessface_vertex_colors[\"%s\"]", ((CustomDataLayer *)ptr->data)->name);
+	CustomDataLayer *cdl = ptr->data;
+	char name_esc[sizeof(cdl->name) * 2];
+	BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+	return BLI_sprintfN("tessface_vertex_colors[\"%s\"]", name_esc);
 }
 
 static char *rna_MeshLoopColorLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("vertex_colors[\"%s\"]", ((CustomDataLayer *)ptr->data)->name);
+	CustomDataLayer *cdl = ptr->data;
+	char name_esc[sizeof(cdl->name) * 2];
+	BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+	return BLI_sprintfN("vertex_colors[\"%s\"]", name_esc);
 }
 
 static char *rna_MeshColor_path(PointerRNA *ptr)
@@ -1213,7 +1243,10 @@ static char *rna_MeshColor_path(PointerRNA *ptr)
 
 static char *rna_MeshIntPropertyLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("int_layers[\"%s\"]", ((CustomDataLayer *)ptr->data)->name);
+	CustomDataLayer *cdl = ptr->data;
+	char name_esc[sizeof(cdl->name) * 2];
+	BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+	return BLI_sprintfN("int_layers[\"%s\"]", name_esc);
 }
 
 static char *rna_MeshIntProperty_path(PointerRNA *ptr)
@@ -1223,7 +1256,10 @@ static char *rna_MeshIntProperty_path(PointerRNA *ptr)
 
 static char *rna_MeshFloatPropertyLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("float_layers[\"%s\"]", ((CustomDataLayer *)ptr->data)->name);
+	CustomDataLayer *cdl = ptr->data;
+	char name_esc[sizeof(cdl->name) * 2];
+	BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+	return BLI_sprintfN("float_layers[\"%s\"]", name_esc);
 }
 
 static char *rna_MeshFloatProperty_path(PointerRNA *ptr)
@@ -1233,7 +1269,10 @@ static char *rna_MeshFloatProperty_path(PointerRNA *ptr)
 
 static char *rna_MeshStringPropertyLayer_path(PointerRNA *ptr)
 {
-	return BLI_sprintfN("string_layers[\"%s\"]", ((CustomDataLayer *)ptr->data)->name);
+	CustomDataLayer *cdl = ptr->data;
+	char name_esc[sizeof(cdl->name) * 2];
+	BLI_strescape(name_esc, cdl->name, sizeof(name_esc));
+	return BLI_sprintfN("string_layers[\"%s\"]", name_esc);
 }
 
 static char *rna_MeshStringProperty_path(PointerRNA *ptr)
@@ -2931,7 +2970,7 @@ static void rna_def_mesh(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "show_weight", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_DRAWEIGHT);
 	RNA_def_property_ui_text(prop, "Show Weights", "Draw weights in editmode");
-	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");  /* needs to rebuild 'dm' */
+	RNA_def_property_update(prop, 0, "rna_Mesh_update_data_edit_color");  /* needs to rebuild 'dm' */
 
 	prop = RNA_def_property(srna, "show_edge_crease", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_DRAWCREASES);
@@ -2966,7 +3005,7 @@ static void rna_def_mesh(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "show_statvis", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_DRAW_STATVIS);
 	RNA_def_property_ui_text(prop, "Stat Vis", "Display statistical information about the mesh");
-	RNA_def_property_update(prop, 0, "rna_Mesh_update_statvis");
+	RNA_def_property_update(prop, 0, "rna_Mesh_update_data_edit_color");
 
 	prop = RNA_def_property(srna, "show_extra_edge_length", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "drawflag", ME_DRAWEXTRA_EDGELEN);

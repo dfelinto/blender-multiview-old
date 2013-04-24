@@ -1071,8 +1071,10 @@ static StructRNA *rna_Node_refine(struct PointerRNA *ptr)
 static char *rna_Node_path(PointerRNA *ptr)
 {
 	bNode *node = (bNode *)ptr->data;
+	char name_esc[sizeof(node->name) * 2];
 
-	return BLI_sprintfN("nodes[\"%s\"]", node->name);
+	BLI_strescape(name_esc, node->name, sizeof(name_esc));
+	return BLI_sprintfN("nodes[\"%s\"]", name_esc);
 }
 
 static int rna_Node_poll(bNodeType *ntype, bNodeTree *ntree)
@@ -1335,6 +1337,14 @@ static bNodeType *rna_Node_register_base(Main *bmain, ReportList *reports, Struc
 	/* node buttons are only drawn if the options flag is set */
 	if (nt->uifunc || nt->uifuncbut)
 		nt->flag |= NODE_OPTIONS;
+	
+	/* sanitize size values in case not all have been registered */
+	if (nt->maxwidth < nt->minwidth)
+		nt->maxwidth = nt->minwidth;
+	if (nt->maxheight < nt->minheight)
+		nt->maxheight = nt->minheight;
+	CLAMP(nt->width, nt->minwidth, nt->maxwidth);
+	CLAMP(nt->height, nt->minheight, nt->maxheight);
 	
 	return nt;
 }
@@ -1810,16 +1820,19 @@ static char *rna_NodeSocket_path(PointerRNA *ptr)
 	bNodeSocket *sock = (bNodeSocket *)ptr->data;
 	bNode *node;
 	int socketindex;
+	char name_esc[sizeof(node->name) * 2];
 	
 	if (!nodeFindNode(ntree, sock, &node, &socketindex))
 		return NULL;
 	
-	if (sock->in_out == SOCK_IN)
-		return BLI_sprintfN("nodes[\"%s\"].inputs[%d]", node->name, socketindex);
-	else
-		return BLI_sprintfN("nodes[\"%s\"].outputs[%d]", node->name, socketindex);
-	
-	return NULL;
+	BLI_strescape(name_esc, node->name, sizeof(name_esc));
+
+	if (sock->in_out == SOCK_IN) {
+		return BLI_sprintfN("nodes[\"%s\"].inputs[%d]", name_esc, socketindex);
+	}
+	else {
+		return BLI_sprintfN("nodes[\"%s\"].outputs[%d]", name_esc, socketindex);
+	}
 }
 
 static IDProperty *rna_NodeSocket_idprops(PointerRNA *ptr, bool create)
@@ -6486,6 +6499,31 @@ static void rna_def_node(BlenderRNA *brna)
 	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
 	RNA_def_property_ui_text(prop, "Static Type", "Node type (deprecated, use with care)");
 
+	/* type-based size properties */
+	prop = RNA_def_property(srna, "bl_width_default", PROP_FLOAT, PROP_UNSIGNED);
+	RNA_def_property_float_sdna(prop, NULL, "typeinfo->width");
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+
+	prop = RNA_def_property(srna, "bl_width_min", PROP_FLOAT, PROP_UNSIGNED);
+	RNA_def_property_float_sdna(prop, NULL, "typeinfo->minwidth");
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+
+	prop = RNA_def_property(srna, "bl_width_max", PROP_FLOAT, PROP_UNSIGNED);
+	RNA_def_property_float_sdna(prop, NULL, "typeinfo->maxwidth");
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+
+	prop = RNA_def_property(srna, "bl_height_default", PROP_FLOAT, PROP_UNSIGNED);
+	RNA_def_property_float_sdna(prop, NULL, "typeinfo->height");
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+
+	prop = RNA_def_property(srna, "bl_height_min", PROP_FLOAT, PROP_UNSIGNED);
+	RNA_def_property_float_sdna(prop, NULL, "typeinfo->minheight");
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+
+	prop = RNA_def_property(srna, "bl_height_max", PROP_FLOAT, PROP_UNSIGNED);
+	RNA_def_property_float_sdna(prop, NULL, "typeinfo->minheight");
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+
 	/* poll */
 	func = RNA_def_function(srna, "poll", NULL);
 	RNA_def_function_ui_description(func, "If non-null output is returned, the node type can be added to the tree");
@@ -6878,7 +6916,7 @@ static void rna_def_composite_nodetree(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", NTREE_COM_GROUPNODE_BUFFER);
 	RNA_def_property_ui_text(prop, "Buffer Groups", "Enable buffering of group nodes");
 
-	prop = RNA_def_property(srna, "two_pass", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_two_pass", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", NTREE_TWO_PASS);
 	RNA_def_property_ui_text(prop, "Two Pass", "Use two pass execution during editing: first calculate fast nodes, "
 	                                           "second pass calculate all nodes");

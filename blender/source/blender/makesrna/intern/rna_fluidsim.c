@@ -197,8 +197,10 @@ static char *rna_FluidSettings_path(PointerRNA *ptr)
 {
 	FluidsimSettings *fss = (FluidsimSettings *)ptr->data;
 	ModifierData *md = (ModifierData *)fss->fmd;
+	char name_esc[sizeof(md->name) * 2];
 
-	return BLI_sprintfN("modifiers[\"%s\"].settings", md->name);
+	BLI_strescape(name_esc, md->name, sizeof(name_esc));
+	return BLI_sprintfN("modifiers[\"%s\"].settings", name_esc);
 }
 
 static void rna_FluidMeshVertex_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
@@ -416,7 +418,7 @@ static void rna_def_fluidsim_domain(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Generate Speed Vectors", "Generate speed vectors for vector blur");
 
 	/* no collision object surface */
-	prop = RNA_def_property(srna, "surface_noobs", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_surface_noobs", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "typeFlags", OB_FSSG_NOOBS);
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Remove air bubbles",

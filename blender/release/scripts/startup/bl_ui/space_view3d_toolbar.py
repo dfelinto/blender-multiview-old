@@ -670,6 +670,19 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
                     col.prop(brush, "use_persistent")
                     col.operator("sculpt.set_persistent_base")
 
+            col = layout.column(align=True)
+            col.label(text="Overlay:")
+
+            row = col.row()
+            if brush.use_cursor_overlay:
+                row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
+            else:
+                row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
+        
+            sub = row.row()
+            sub.prop(brush, "cursor_overlay_alpha", text="Alpha")
+            sub.prop(brush, "use_cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
+
         # Texture Paint Mode #
 
         elif context.image_paint_object and brush:
@@ -692,6 +705,20 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
             col = layout.column()
             col.active = (brush.blend not in {'ERASE_ALPHA', 'ADD_ALPHA'})
             col.prop(brush, "use_alpha")
+
+            col = layout.column(align=True)
+            col.label(text="Overlay:")
+
+            row = col.row()            
+            if brush.use_cursor_overlay:
+                row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
+            else:
+                row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
+        
+            sub = row.row()
+            sub.prop(brush, "cursor_overlay_alpha", text="Alpha")
+            sub.prop(brush, "use_cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
+
 
         # Weight Paint Mode #
         elif context.weight_paint_object and brush:
@@ -736,6 +763,19 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
 
             col.prop(brush, "vertex_tool", text="Blend")
 
+            col = layout.column(align=True)
+            col.label(text="Overlay:")
+
+            row = col.row()
+            if brush.use_cursor_overlay:
+                row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
+            else:
+                row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
+        
+            sub = row.row()
+            sub.prop(brush, "cursor_overlay_alpha", text="Alpha")
+            sub.prop(brush, "use_cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
+
 
 class VIEW3D_PT_tools_brush_texture(Panel, View3DPaintPanel):
     bl_label = "Texture"
@@ -774,7 +814,7 @@ class VIEW3D_PT_tools_brush_texture(Panel, View3DPaintPanel):
         
         sub = row.row()
         sub.prop(brush, "texture_overlay_alpha", text="Alpha")
-        sub.prop(brush, "cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
+        sub.prop(brush, "use_primary_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
 
 
 class VIEW3D_PT_tools_mask_texture(View3DPanel, Panel):
@@ -811,8 +851,8 @@ class VIEW3D_PT_tools_mask_texture(View3DPanel, Panel):
                 row.prop(brush, "use_secondary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
         
         sub = row.row()
-        sub.prop(brush, "texture_overlay_alpha", text="Alpha")
-        sub.prop(brush, "cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
+        sub.prop(brush, "mask_overlay_alpha", text="Alpha")
+        sub.prop(brush, "use_secondary_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
 
 
 class VIEW3D_PT_tools_brush_stroke(Panel, View3DPaintPanel):

@@ -4102,7 +4102,7 @@ int sculpt_stroke_get_location(bContext *C, float out[3], const float mouse[2])
 	sculpt_stroke_modifiers_check(C, ob);
 
 	/* TODO: what if the segment is totally clipped? (return == 0) */
-	ED_view3d_win_to_segment_clip(vc.ar, vc.v3d, mouse, ray_start, ray_end);
+	ED_view3d_win_to_segment(vc.ar, vc.v3d, mouse, ray_start, ray_end, true);
 
 	invert_m4_m4(obimat, ob->obmat);
 	mul_m4_v3(obimat, ray_start);
@@ -4566,10 +4566,10 @@ void sculpt_dynamic_topology_enable(bContext *C)
 	ss->bm = BM_mesh_create(&bm_mesh_allocsize_default);
 
 	BM_mesh_bm_from_me(ss->bm, me, TRUE, ob->shapenr);
-	BM_mesh_normals_update(ss->bm, false);
+	BM_mesh_normals_update(ss->bm);
 	sculpt_dynamic_topology_triangulate(ss->bm);
 	BM_data_layer_add(ss->bm, &ss->bm->vdata, CD_PAINT_MASK);
-	BM_mesh_normals_update(ss->bm, TRUE);
+	BM_mesh_normals_update(ss->bm);
 
 	/* Enable dynamic topology */
 	me->flag |= ME_SCULPT_DYNAMIC_TOPOLOGY;

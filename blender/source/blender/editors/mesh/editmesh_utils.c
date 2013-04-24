@@ -115,7 +115,7 @@ void EDBM_mesh_ensure_valid_dm_hack(Scene *scene, BMEditMesh *em)
 
 void EDBM_mesh_normals_update(BMEditMesh *em)
 {
-	BM_mesh_normals_update(em->bm, true);
+	BM_mesh_normals_update(em->bm);
 }
 
 void EDBM_mesh_clear(BMEditMesh *em)
@@ -648,7 +648,7 @@ static void undoMesh_to_editbtMesh(void *umv, void *em_v, void *UNUSED(obdata))
 	BM_mesh_bm_from_me(bm, &um->me, false, ob->shapenr);
 
 	/* face normals need recalculation since we are not calling through an operator */
-	BM_mesh_normals_update(bm, true);
+	BM_mesh_normals_update(bm);
 
 	em_tmp = BKE_editmesh_create(bm, true);
 	*em = *em_tmp;
@@ -1418,7 +1418,7 @@ bool BMBVH_EdgeVisible(struct BMBVHTree *tree, BMEdge *e, ARegion *ar, View3D *v
 	const float mval_f[2] = {ar->winx / 2.0f,
 	                         ar->winy / 2.0f};
 
-	ED_view3d_win_to_segment(ar, v3d, mval_f, origin, end);
+	ED_view3d_win_to_segment(ar, v3d, mval_f, origin, end, false);
 
 	invert_m4_m4(invmat, obedit->obmat);
 	mul_m4_v3(invmat, origin);
