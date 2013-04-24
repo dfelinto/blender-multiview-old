@@ -472,7 +472,7 @@ static void add_filt_passes(RenderLayer *rl, int curmask, int rectx, int offset,
 	for (rpass= rl->passes.first; rpass; rpass= rpass->next) {
 		float *fp, *col= NULL;
 		int pixsize= 3;
-
+		
 		switch (rpass->passtype) {
 			case SCE_PASS_Z:
 				fp= rpass->rect + offset;
@@ -577,14 +577,14 @@ static void add_passes(RenderLayer *rl, int offset, ShadeInput *shi, ShadeResult
 {
 	RenderPass *rpass;
 	float *fp;
-
+	
 	fp= rl->rectf + 4*offset;
 	copy_v4_v4(fp, shr->combined);
 	
 	for (rpass= rl->passes.first; rpass; rpass= rpass->next) {
 		float *col= NULL, uvcol[3];
 		int a, pixsize= 3;
-
+		
 		switch (rpass->passtype) {
 			case SCE_PASS_Z:
 				fp= rpass->rect + offset;
