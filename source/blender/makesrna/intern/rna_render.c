@@ -27,6 +27,7 @@
 #include <stdlib.h>
 
 #include "DNA_scene_types.h"
+#include "DNA_object_types.h"
 
 #include "BLI_utildefines.h"
 #include "BLI_path_util.h"
@@ -240,6 +241,19 @@ static PointerRNA rna_RenderEngine_render_get(PointerRNA *ptr)
 	}
 }
 
+static PointerRNA rna_RenderEngine_view_camera_get(PointerRNA *ptr)
+{
+	RenderEngine *engine = (RenderEngine *)ptr->data;
+
+	if (engine->re) {
+		Object *cam = RE_GetViewCamera(engine->re);
+		return rna_pointer_inherit_refine(ptr, &RNA_Object, cam);
+	}
+	else {
+		return rna_pointer_inherit_refine(ptr, &RNA_Object, NULL);
+	}
+}
+
 static void rna_RenderResult_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
 	RenderResult *rr = (RenderResult *)ptr->data;
@@ -375,6 +389,15 @@ static void rna_def_render_engine(BlenderRNA *brna)
 	prop = RNA_def_boolean(func, "do_break", 0, "Break", "");
 	RNA_def_function_return(func, prop);
 
+	func = RNA_def_function(srna, "result_multiview_set", "RE_engine_multiview_set");
+	prop = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
+	RNA_def_property_flag(prop, PROP_REQUIRED);
+	prop = RNA_def_pointer(func, "scene", "Scene", "Scene", "");
+	RNA_def_property_flag(prop, PROP_REQUIRED);
+	prop = RNA_def_int(func, "view", 0, 0, INT_MAX, "View",
+	                   "index of the list of available views (not including disabled ones)", 0, INT_MAX);
+	RNA_def_property_flag(prop, PROP_REQUIRED);
+
 	func = RNA_def_function(srna, "update_stats", "RE_engine_update_stats");
 	prop = RNA_def_string(func, "stats", "", 0, "Stats", "");
 	RNA_def_property_flag(prop, PROP_REQUIRED);
@@ -406,6 +429,10 @@ static void rna_def_render_engine(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "camera_override", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "camera_override");
+	RNA_def_property_struct_type(prop, "Object");
+
+	prop = RNA_def_property(srna, "multiview_camera", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_funcs(prop, "rna_RenderEngine_view_camera_get", NULL, NULL, NULL);
 	RNA_def_property_struct_type(prop, "Object");
 
 	prop = RNA_def_property(srna, "tile_x", PROP_INT, PROP_UNSIGNED);
@@ -593,6 +620,10 @@ static void rna_def_render_pass(BlenderRNA *brna)
 	RNA_def_property_multi_array(prop, 2, NULL);
 	RNA_def_property_dynamic_array_funcs(prop, "rna_RenderPass_rect_get_length");
 	RNA_def_property_float_funcs(prop, "rna_RenderPass_rect_get", "rna_RenderPass_rect_set", NULL);
+
+	prop = RNA_def_property(srna, "view_id", PROP_INT, PROP_NONE);
+	RNA_def_property_int_sdna(prop, NULL, "view_id");
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 
 	RNA_define_verify_sdna(1);
 }
