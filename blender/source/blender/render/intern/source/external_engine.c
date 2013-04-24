@@ -195,7 +195,7 @@ static RenderPart *get_part_from_result(Render *re, RenderResult *result)
 	return NULL;
 }
 
-RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h, const char *layername)
+RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h, const char *layername, int view)
 {
 	Render *re = engine->re;
 	RenderResult *result;
@@ -218,7 +218,7 @@ RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, 
 	disprect.ymin = y;
 	disprect.ymax = y + h;
 
-	result = render_result_new(re, &disprect, 0, RR_USE_MEM, layername, -1);
+	result = render_result_new(re, &disprect, 0, RR_USE_MEM, layername, view);
 
 	/* todo: make this thread safe */
 

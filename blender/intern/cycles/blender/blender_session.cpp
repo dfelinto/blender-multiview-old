@@ -236,9 +236,9 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 	return PASS_NONE;
 }
 
-static BL::RenderResult begin_render_result(BL::RenderEngine b_engine, int x, int y, int w, int h, const char *layername)
+static BL::RenderResult begin_render_result(BL::RenderEngine b_engine, int x, int y, int w, int h, const char *layername, int view)
 {
-	return b_engine.begin_result(x, y, w, h, layername);
+	return b_engine.begin_result(x, y, w, h, layername, view);
 }
 
 static void end_render_result(BL::RenderEngine b_engine, BL::RenderResult b_rr, bool cancel = false)
@@ -260,7 +260,7 @@ void BlenderSession::do_write_update_render_tile(RenderTile& rtile, bool do_upda
 	int h = params.height;
 
 	/* get render result */
-	BL::RenderResult b_rr = begin_render_result(b_engine, x, y, w, h, b_rlay_name.c_str());
+	BL::RenderResult b_rr = begin_render_result(b_engine, x, y, w, h, b_rlay_name.c_str(), b_rview_id);
 
 	/* can happen if the intersected rectangle gives 0 width or height */
 	if (b_rr.ptr.data == NULL) {
@@ -329,7 +329,7 @@ void BlenderSession::render()
 		for(r.views.begin(b_iterv), b_rview_id=0; b_iterv != r.views.end(); ++b_iterv, b_rview_id++) {
 
 			/* temporary render result to find needed passes */
-			BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str());
+			BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str(), -1);
 			BL::RenderResult::layers_iterator b_single_rlay;
 			b_rr.layers.begin(b_single_rlay);
 
