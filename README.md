@@ -14,13 +14,17 @@ Current Panel:
 
 Current status:
 * Multiview is rendering fine and antialias is working too.
-* My next target is Cycles, before I tackle Composite
+* Cycles is working as well
+* My next target is Composite
 
 The rules for testing are:
-* No FSA
 * No Compo
-* No External Engine
+* No FSA
 * (for saving) EXR MultiLayer
+
+Known bugs:
+* When rendering only one view, the 'view' name shouldn't be saved in EXR file
+* UV/Image Editor has the "Combined" pass even when it shouldn't (I hacked it away, but not nicely)
 
 Links
 -----
