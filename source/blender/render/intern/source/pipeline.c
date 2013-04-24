@@ -407,7 +407,7 @@ void RE_FreeRender(Render *re)
 	
 	/* main dbase can already be invalid now, some database-free code checks it */
 	re->main = NULL;
-
+	
 	RE_Database_Free(re);	/* view render can still have full database */
 	free_sample_tables(re);
 	
@@ -930,7 +930,7 @@ static void main_render_result_new(Render *re)
 	BLI_rw_mutex_unlock(&re->resultmutex);
 }
 
-static void threaded_tile_processor(Render *re, int view)
+static void threaded_tile_processor(Render *re)
 {
 	RenderThread thread[BLENDER_MAX_THREADS];
 	ThreadQueue *workqueue, *donequeue;
@@ -1068,7 +1068,7 @@ static void free_all_freestyle_renders(void);
 void RE_TileProcessor(Render *re)
 {
 	main_render_result_new(re);
-	threaded_tile_processor(re, -1); //MV envmap could use multiview too, not implemented though
+	threaded_tile_processor(re); //MV envmap could use multiview too, not implemented though
 	
 	re->i.lastframetime = PIL_check_seconds_timer() - re->i.starttime;
 	re->stats_draw(re->sdh, &re->i);
@@ -1134,7 +1134,7 @@ static void do_render_3d(Render *re)
 		if (re->draw_lock)
 			re->draw_lock(re->dlh, 0);
 
-		threaded_tile_processor(re, view);
+		threaded_tile_processor(re);
 
 	#ifdef WITH_FREESTYLE
 		/* Freestyle */

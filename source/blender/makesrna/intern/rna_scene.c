@@ -1112,7 +1112,7 @@ static void rna_RenderView_remove(ID *id, RenderData *UNUSED(rd), Main *bmain, R
 	SceneRenderView *srv = srv_ptr->data;
 	Scene *scene = (Scene *)id;
 
-	if (!BKE_scene_remove_render_view(bmain, scene, srv)) {
+	if (!BKE_scene_remove_render_view(scene, srv)) {
 		BKE_reportf(reports, RPT_ERROR, "Render view '%s' could not be removed from scene '%s'",
 		            srv->name, scene->id.name + 2);
 		return;

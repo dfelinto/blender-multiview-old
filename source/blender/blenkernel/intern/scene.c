@@ -1373,7 +1373,7 @@ SceneRenderView *BKE_scene_add_render_view(Scene *sce, const char *name)
 	return srv;
 }
 
-int BKE_scene_remove_render_view(Main *bmain, Scene *scene, SceneRenderView *srv)
+int BKE_scene_remove_render_view(Scene *scene, SceneRenderView *srv)
 {
 	const int act = BLI_findindex(&scene->r.views, srv);
 
