@@ -122,7 +122,7 @@ struct RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, 
 void RE_engine_update_result(RenderEngine *engine, struct RenderResult *result);
 void RE_engine_end_result(RenderEngine *engine, struct RenderResult *result, int cancel);
 
-void RE_engine_multiview_set(RenderEngine *engine, struct RenderResult *rr, int view);
+void RE_engine_actview_set(RenderEngine *engine, int view);
 
 int RE_engine_test_break(RenderEngine *engine);
 void RE_engine_update_stats(RenderEngine *engine, const char *stats, const char *info);

@@ -246,9 +246,9 @@ static void end_render_result(BL::RenderEngine b_engine, BL::RenderResult b_rr, 
 	b_engine.end_result(b_rr, (int)cancel);
 }
 
-static void render_result_multiview_set(BL::RenderEngine b_engine, BL::RenderResult b_rr, int view)
+static void render_result_actview_set(BL::RenderEngine b_engine, int view)
 {
-	b_engine.result_multiview_set(b_rr, view);
+	b_engine.result_actview_set(view);
 }
 
 void BlenderSession::do_write_update_render_tile(RenderTile& rtile, bool do_update_only)
@@ -339,7 +339,7 @@ void BlenderSession::render()
 			}
 
 			/* set the current view */
-			render_result_multiview_set(b_engine, b_rr, b_rview_id);
+			render_result_actview_set(b_engine, b_rview_id);
 
 			BL::RenderLayer b_rlay = *b_single_rlay;
 

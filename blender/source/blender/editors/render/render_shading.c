@@ -617,7 +617,7 @@ static int render_view_remove_exec(bContext *C, wmOperator *UNUSED(op))
 	Scene *scene = CTX_data_scene(C);
 	SceneRenderView *rv = BLI_findlink(&scene->r.views, scene->r.actview);
 
-	if (!BKE_scene_remove_render_view(CTX_data_main(C), scene, rv))
+	if (!BKE_scene_remove_render_view(scene, rv))
 		return OPERATOR_CANCELLED;
 
 	WM_event_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, scene);
