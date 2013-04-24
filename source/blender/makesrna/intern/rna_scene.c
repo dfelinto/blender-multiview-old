@@ -42,6 +42,7 @@
 
 #include "BKE_freestyle.h"
 #include "BKE_editmesh.h"
+#include "BKE_paint.h"
 
 #include "RNA_define.h"
 #include "RNA_enum_types.h"
@@ -1200,7 +1201,10 @@ static void rna_SceneRenderLayer_name_set(PointerRNA *ptr, const char *value)
 static char *rna_SceneRenderLayer_path(PointerRNA *ptr)
 {
 	SceneRenderLayer *srl = (SceneRenderLayer *)ptr->data;
-	return BLI_sprintfN("render.layers[\"%s\"]", srl->name);
+	char name_esc[sizeof(srl->name) * 2];
+
+	BLI_strescape(name_esc, srl->name, sizeof(name_esc));
+	return BLI_sprintfN("render.layers[\"%s\"]", name_esc);
 }
 
 static void rna_SceneRenderView_name_set(PointerRNA *ptr, const char *value)
@@ -1496,6 +1500,12 @@ static void rna_UnifiedPaintSettings_unprojected_radius_set(PointerRNA *ptr, flo
 	/* scale brush size so it stays consistent with unprojected_radius */
 	BKE_brush_scale_size(&ups->size, value, ups->unprojected_radius);
 	ups->unprojected_radius = value;
+}
+
+static void rna_UnifiedPaintSettings_radius_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+{
+	/* changing the unified size should invalidate */
+	BKE_paint_invalidate_overlay_all();
 }
 
 static char *rna_UnifiedPaintSettings_path(PointerRNA *ptr)
@@ -2039,12 +2049,14 @@ static void rna_def_unified_paint_settings(BlenderRNA  *brna)
 	RNA_def_property_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS * 10);
 	RNA_def_property_ui_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS, 1, -1);
 	RNA_def_property_ui_text(prop, "Radius", "Radius of the brush in pixels");
+	RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_radius_update");
 
 	prop = RNA_def_property(srna, "unprojected_radius", PROP_FLOAT, PROP_DISTANCE);
 	RNA_def_property_float_funcs(prop, NULL, "rna_UnifiedPaintSettings_unprojected_radius_set", NULL);
 	RNA_def_property_range(prop, 0.001, FLT_MAX);
 	RNA_def_property_ui_range(prop, 0.001, 1, 0, -1);
 	RNA_def_property_ui_text(prop, "Unprojected Radius", "Radius of brush in Blender units");
+	RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_radius_update");
 
 	prop = RNA_def_property(srna, "strength", PROP_FLOAT, PROP_FACTOR);
 	RNA_def_property_float_sdna(prop, NULL, "alpha");
@@ -3432,7 +3444,7 @@ static void rna_def_scene_game_data(BlenderRNA *brna)
 	RNA_def_property_boolean_funcs(prop, "rna_GameSettings_auto_start_get", "rna_GameSettings_auto_start_set");
 	RNA_def_property_ui_text(prop, "Auto Start", "Automatically start game at load time");
 
-	prop = RNA_def_property(srna, "restrict_animation_updates", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_restrict_animation_updates", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", GAME_RESTRICT_ANIM_UPDATES);
 	RNA_def_property_ui_text(prop, "Restrict Animation Updates",
 	                         "Restrict the number of animation updates to the animation FPS (this is "

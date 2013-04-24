@@ -1394,7 +1394,7 @@ static bool snapDerivedMesh(short snap_mode, ARegion *ar, Object *ob, DerivedMes
 					bvhtree_from_mesh_faces(&treeData, dm, 0.0f, 4, 6);
 
 					hit.index = -1;
-					hit.dist = *r_depth * (*r_depth == FLT_MAX ? 1.0f : local_scale);
+					hit.dist = *r_depth * (*r_depth == TRANSFORM_DIST_MAX_RAY ? 1.0f : local_scale);
 
 					if (treeData.tree && BLI_bvhtree_ray_cast(treeData.tree, ray_start_local, ray_normal_local, 0.0f, &hit, treeData.raycast_callback, &treeData) != -1) {
 						if (hit.dist / local_scale <= *r_depth) {
@@ -1529,8 +1529,7 @@ static bool snapObject(Scene *scene, short snap_mode, ARegion *ar, Object *ob, i
 		
 		if (editobject) {
 			em = BKE_editmesh_from_object(ob);
-			/* dm = editbmesh_get_derived_cage(scene, ob, em, CD_MASK_BAREMESH); */
-			dm = editbmesh_get_derived_base(ob, em); /* limitation, em & dm MUST have the same number of faces */
+			dm = editbmesh_get_derived_cage(scene, ob, em, CD_MASK_BAREMESH);
 		}
 		else {
 			em = NULL;
@@ -1606,7 +1605,9 @@ static bool snapObjects(Scene *scene, short snap_mode, Base *base_act, View3D *v
 	float ray_start[3], ray_normal[3];
 	float ray_dist = TRANSFORM_DIST_MAX_RAY;
 
-	ED_view3d_win_to_ray(ar, v3d, mval, ray_start, ray_normal);
+	if (ED_view3d_win_to_ray(ar, v3d, mval, ray_start, ray_normal, true) == false) {
+		return false;
+	}
 
 	return snapObjectsRay(scene, snap_mode, base_act, v3d, ar, obedit,
 	                      ray_start, ray_normal, &ray_dist,
@@ -1811,7 +1812,9 @@ static bool peelObjects(Scene *scene, View3D *v3d, ARegion *ar, Object *obedit,
 	bool retval = false;
 	float ray_start[3], ray_normal[3];
 	
-	ED_view3d_win_to_ray(ar, v3d, mval, ray_start, ray_normal);
+	if (ED_view3d_win_to_ray(ar, v3d, mval, ray_start, ray_normal, true) == false) {
+		return false;
+	}
 
 	for (base = scene->base.first; base != NULL; base = base->next) {
 		if (BASE_SELECTABLE(v3d, base)) {

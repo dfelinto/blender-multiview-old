@@ -99,24 +99,30 @@ static char *rna_SmokeDomainSettings_path(PointerRNA *ptr)
 {
 	SmokeDomainSettings *settings = (SmokeDomainSettings *)ptr->data;
 	ModifierData *md = (ModifierData *)settings->smd;
+	char name_esc[sizeof(md->name) * 2];
 
-	return BLI_sprintfN("modifiers[\"%s\"].domain_settings", md->name);
+	BLI_strescape(name_esc, md->name, sizeof(name_esc));
+	return BLI_sprintfN("modifiers[\"%s\"].domain_settings", name_esc);
 }
 
 static char *rna_SmokeFlowSettings_path(PointerRNA *ptr)
 {
 	SmokeFlowSettings *settings = (SmokeFlowSettings *)ptr->data;
 	ModifierData *md = (ModifierData *)settings->smd;
+	char name_esc[sizeof(md->name) * 2];
 
-	return BLI_sprintfN("modifiers[\"%s\"].flow_settings", md->name);
+	BLI_strescape(name_esc, md->name, sizeof(name_esc));
+	return BLI_sprintfN("modifiers[\"%s\"].flow_settings", name_esc);
 }
 
 static char *rna_SmokeCollSettings_path(PointerRNA *ptr)
 {
 	SmokeCollSettings *settings = (SmokeCollSettings *)ptr->data;
 	ModifierData *md = (ModifierData *)settings->smd;
+	char name_esc[sizeof(md->name) * 2];
 
-	return BLI_sprintfN("modifiers[\"%s\"].coll_settings", md->name);
+	BLI_strescape(name_esc, md->name, sizeof(name_esc));
+	return BLI_sprintfN("modifiers[\"%s\"].coll_settings", name_esc);
 }
 
 static int rna_SmokeModifier_density_get_length(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
@@ -324,7 +330,7 @@ static void rna_def_smoke_domain_settings(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Effector Weights", "");
 
-	prop = RNA_def_property(srna, "smooth_emitter", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_smooth_emitter", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_SMOKE_HIGH_SMOOTH);
 	RNA_def_property_ui_text(prop, "Smooth Emitter", "Smooth emitted smoke to avoid blockiness");
 	RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Smoke_resetCache");
@@ -508,7 +514,7 @@ static void rna_def_smoke_flow_settings(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Absolute Density", "Only allow given density value in emitter area");
 	RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Smoke_reset");
 
-	prop = RNA_def_property(srna, "initial_velocity", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_initial_velocity", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flags", MOD_SMOKE_FLOW_INITVELOCITY);
 	RNA_def_property_ui_text(prop, "Initial Velocity", "Smoke has some initial velocity when it is emitted");
 	RNA_def_property_update(prop, NC_OBJECT | ND_MODIFIER, "rna_Smoke_reset");

@@ -1963,18 +1963,17 @@ int isect_point_tri_prism_v3(const float p[3], const float v1[3], const float v2
 	return 1;
 }
 
-int clip_line_plane(float p1[3], float p2[3], const float plane[4])
+bool clip_segment_v3_plane(float p1[3], float p2[3], const float plane[4])
 {
-	float dp[3], n[3], div, t, pc[3];
+	float dp[3], div, t, pc[3];
 
-	copy_v3_v3(n, plane);
 	sub_v3_v3v3(dp, p2, p1);
-	div = dot_v3v3(dp, n);
+	div = dot_v3v3(dp, plane);
 
 	if (div == 0.0f) /* parallel */
 		return 1;
 
-	t = -(dot_v3v3(p1, n) + plane[3]) / div;
+	t = -(dot_v3v3(p1, plane) + plane[3]) / div;
 
 	if (div > 0.0f) {
 		/* behind plane, completely clipped */
@@ -2010,6 +2009,63 @@ int clip_line_plane(float p1[3], float p2[3], const float plane[4])
 
 		return 1;
 	}
+}
+
+bool clip_segment_v3_plane_n(float r_p1[3], float r_p2[3], float plane_array[][4], const int plane_tot)
+{
+	/* intersect from both directions */
+	float p1[3], p2[3], dp[3], dp_orig[3];
+	int i;
+	copy_v3_v3(p1, r_p1);
+	copy_v3_v3(p2, r_p2);
+
+	sub_v3_v3v3(dp, p2, p1);
+	copy_v3_v3(dp_orig, dp);
+
+	for (i = 0; i < plane_tot; i++) {
+		const float *plane = plane_array[i];
+		const float div = dot_v3v3(dp, plane);
+
+		if (div != 0.0f) {
+			const float t = -(dot_v3v3(p1, plane) + plane[3]) / div;
+			if (div > 0.0f) {
+				/* clip a */
+				if (t >= 1.0f) {
+					return false;
+				}
+
+				/* intersect plane */
+				if (t > 0.0f) {
+					madd_v3_v3v3fl(p1, p1, dp, t);
+					/* recalc direction and test for flipping */
+					sub_v3_v3v3(dp, p2, p1);
+					if (dot_v3v3(dp, dp_orig) < 0.0f) {
+						return false;
+					}
+				}
+			}
+			else if (div < 0.0f) {
+				/* clip b */
+				if (t <= 0.0f) {
+					return false;
+				}
+
+				/* intersect plane */
+				if (t < 1.0f) {
+					madd_v3_v3v3fl(p2, p1, dp, t);
+					/* recalc direction and test for flipping */
+					sub_v3_v3v3(dp, p2, p1);
+					if (dot_v3v3(dp, dp_orig) < 0.0f) {
+						return false;
+					}
+				}
+			}
+		}
+	}
+
+	copy_v3_v3(r_p1, p1);
+	copy_v3_v3(r_p2, p2);
+	return true;
 }
 
 void plot_line_v2v2i(const int p1[2], const int p2[2], bool (*callback)(int, int, void *), void *userData)
@@ -3135,18 +3191,6 @@ void tangent_from_uv(float uv1[2], float uv2[2], float uv3[3], float co1[3], flo
  * )
  */
 
-/* can't believe there is none in math utils */
-static float _det_m3(float m2[3][3])
-{
-	float det = 0.f;
-	if (m2) {
-		det = (m2[0][0] * (m2[1][1] * m2[2][2] - m2[1][2] * m2[2][1]) -
-		       m2[1][0] * (m2[0][1] * m2[2][2] - m2[0][2] * m2[2][1]) +
-		       m2[2][0] * (m2[0][1] * m2[1][2] - m2[0][2] * m2[1][1]));
-	}
-	return det;
-}
-
 void vcloud_estimate_transform(int list_size, float (*pos)[3], float *weight, float (*rpos)[3], float *rweight,
                                float lloc[3], float rloc[3], float lrot[3][3], float lscale[3][3])
 {
@@ -3246,14 +3290,14 @@ void vcloud_estimate_transform(int list_size, float (*pos)[3], float *weight, fl
 			/* this is pretty much Polardecompose 'inline' the algo based on Higham's thesis */
 			/* without the far case ... but seems to work here pretty neat                   */
 			odet = 0.f;
-			ndet = _det_m3(q);
+			ndet = determinant_m3_array(q);
 			while ((odet - ndet) * (odet - ndet) > eps && i < imax) {
 				invert_m3_m3(qi, q);
 				transpose_m3(qi);
 				add_m3_m3m3(q, q, qi);
 				mul_m3_fl(q, 0.5f);
 				odet = ndet;
-				ndet = _det_m3(q);
+				ndet = determinant_m3_array(q);
 				i++;
 			}
 

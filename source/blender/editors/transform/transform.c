@@ -908,12 +908,7 @@ int transformEvent(TransInfo *t, const wmEvent *event)
 			case TFM_MODAL_TRANSLATE:
 				/* only switch when... */
 				if (ELEM5(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL, TFM_EDGE_SLIDE, TFM_VERT_SLIDE)) {
-					if (t->mode == TFM_EDGE_SLIDE) {
-						freeEdgeSlideVerts(t);
-					}
-					else if (t->mode == TFM_VERT_SLIDE) {
-						freeVertSlideVerts(t);
-					}
+					resetTransModal(t);
 					resetTransRestrictions(t);
 					restoreTransObjects(t);
 					initTranslation(t);
@@ -928,6 +923,7 @@ int transformEvent(TransInfo *t, const wmEvent *event)
 				else {
 					if (t->obedit && t->obedit->type == OB_MESH) {
 						if ((t->mode == TFM_TRANSLATION) && (t->spacetype == SPACE_VIEW3D)) {
+							resetTransModal(t);
 							resetTransRestrictions(t);
 							restoreTransObjects(t);
 
@@ -963,8 +959,8 @@ int transformEvent(TransInfo *t, const wmEvent *event)
 			case TFM_MODAL_ROTATE:
 				/* only switch when... */
 				if (!(t->options & CTX_TEXTURE) && !(t->options & (CTX_MOVIECLIP | CTX_MASK))) {
-					if (ELEM4(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL, TFM_TRANSLATION) ) {
-						
+					if (ELEM6(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL, TFM_TRANSLATION, TFM_EDGE_SLIDE, TFM_VERT_SLIDE)) {
+						resetTransModal(t);
 						resetTransRestrictions(t);
 						
 						if (t->mode == TFM_ROTATION) {
@@ -982,7 +978,8 @@ int transformEvent(TransInfo *t, const wmEvent *event)
 				break;
 			case TFM_MODAL_RESIZE:
 				/* only switch when... */
-				if (ELEM3(t->mode, TFM_ROTATION, TFM_TRANSLATION, TFM_TRACKBALL) ) {
+				if (ELEM5(t->mode, TFM_ROTATION, TFM_TRANSLATION, TFM_TRACKBALL, TFM_EDGE_SLIDE, TFM_VERT_SLIDE)) {
+					resetTransModal(t);
 					resetTransRestrictions(t);
 					restoreTransObjects(t);
 					initResize(t);
@@ -1227,6 +1224,7 @@ int transformEvent(TransInfo *t, const wmEvent *event)
 			case GKEY:
 				/* only switch when... */
 				if (ELEM3(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL) ) {
+					resetTransModal(t);
 					resetTransRestrictions(t);
 					restoreTransObjects(t);
 					initTranslation(t);
@@ -1237,6 +1235,7 @@ int transformEvent(TransInfo *t, const wmEvent *event)
 			case SKEY:
 				/* only switch when... */
 				if (ELEM3(t->mode, TFM_ROTATION, TFM_TRANSLATION, TFM_TRACKBALL) ) {
+					resetTransModal(t);
 					resetTransRestrictions(t);
 					restoreTransObjects(t);
 					initResize(t);
@@ -1248,7 +1247,7 @@ int transformEvent(TransInfo *t, const wmEvent *event)
 				/* only switch when... */
 				if (!(t->options & CTX_TEXTURE)) {
 					if (ELEM4(t->mode, TFM_ROTATION, TFM_RESIZE, TFM_TRACKBALL, TFM_TRANSLATION) ) {
-
+						resetTransModal(t);
 						resetTransRestrictions(t);
 
 						if (t->mode == TFM_ROTATION) {
@@ -1941,17 +1940,20 @@ int initTransform(bContext *C, TransInfo *t, wmOperator *op, const wmEvent *even
 		return 0;
 	}
 
-	/* Stupid code to have Ctrl-Click on manipulator work ok */
 	if (event) {
-		/* do this only for translation/rotation/resize due to only this
+		/* keymap for shortcut header prints */
+		t->keymap = WM_keymap_active(CTX_wm_manager(C), op->type->modalkeymap);
+
+		/* Stupid code to have Ctrl-Click on manipulator work ok
+		 *
+		 * do this only for translation/rotation/resize due to only this
 		 * moded are available from manipulator and doing such check could
 		 * lead to keymap conflicts for other modes (see #31584)
 		 */
 		if (ELEM3(mode, TFM_TRANSLATION, TFM_ROTATION, TFM_RESIZE)) {
-			wmKeyMap *keymap = WM_keymap_active(CTX_wm_manager(C), op->type->modalkeymap);
 			wmKeyMapItem *kmi;
 
-			for (kmi = keymap->items.first; kmi; kmi = kmi->next) {
+			for (kmi = t->keymap->items.first; kmi; kmi = kmi->next) {
 				if (kmi->propvalue == TFM_MODAL_SNAP_INV_ON && kmi->val == KM_PRESS) {
 					if ((ELEM(kmi->type, LEFTCTRLKEY, RIGHTCTRLKEY) &&   event->ctrl)  ||
 					    (ELEM(kmi->type, LEFTSHIFTKEY, RIGHTSHIFTKEY) && event->shift) ||
@@ -1964,10 +1966,7 @@ int initTransform(bContext *C, TransInfo *t, wmOperator *op, const wmEvent *even
 				}
 			}
 		}
-
 	}
-
-	t->keymap = WM_keymap_active(CTX_wm_manager(C), op->type->modalkeymap);
 
 	initSnapping(t, op); // Initialize snapping data AFTER mode flags
 
@@ -4134,7 +4133,7 @@ int ShrinkFatten(TransInfo *t, const int UNUSED(mval[2]))
 	}
 	ofs += BLI_snprintf(str + ofs, MAX_INFO_LEN - ofs, ", (");
 
-	{
+	if (t->keymap) {
 		wmKeyMapItem *kmi = WM_modalkeymap_find_propvalue(t->keymap, TFM_MODAL_RESIZE);
 		if (kmi) {
 			ofs += WM_keymap_item_to_string(kmi, str + ofs, MAX_INFO_LEN - ofs);
@@ -6004,7 +6003,7 @@ static int doEdgeSlide(TransInfo *t, float perc)
 			if (sv->edge_len > FLT_EPSILON) {
 				const float fac = min_ff(sv->edge_len, curr_length_perc) / sv->edge_len;
 
-				add_v3_v3v3(co_a, sv->dir_b, sv->dir_a);
+				add_v3_v3v3(co_a, sv->v_co_orig, sv->dir_a);
 				add_v3_v3v3(co_b, sv->v_co_orig, sv->dir_b);
 
 				if (sld->flipped_vtx) {
@@ -6428,7 +6427,7 @@ static void drawVertSlide(const struct bContext *C, TransInfo *t)
 			TransDataVertSlideVert *sv;
 			const float ctrl_size = UI_GetThemeValuef(TH_FACEDOT_SIZE) + 1.5f;
 			const float line_size = UI_GetThemeValuef(TH_OUTLINE_WIDTH) + 0.5f;
-			const int alpha_shade = -30;
+			const int alpha_shade = -160;
 			const bool is_clamp = !(t->flag & T_ALT_TRANSFORM);
 			int i;
 
@@ -6900,7 +6899,7 @@ static void headerSeqSlide(TransInfo *t, float val[2], char *str)
 
 	ofs += BLI_snprintf(str + ofs, MAX_INFO_LEN - ofs, IFACE_("Sequence Slide: %s%s, ("), &tvec[0], t->con.text);
 
-	{
+	if (t->keymap) {
 		wmKeyMapItem *kmi = WM_modalkeymap_find_propvalue(t->keymap, TFM_MODAL_TRANSLATE);
 		if (kmi) {
 			ofs += WM_keymap_item_to_string(kmi, str + ofs, MAX_INFO_LEN - ofs);
@@ -6910,7 +6909,7 @@ static void headerSeqSlide(TransInfo *t, float val[2], char *str)
 	                    (t->flag & T_ALT_TRANSFORM) ? IFACE_("ON") : IFACE_("OFF"));
 }
 
-static void applySeqSlide(TransInfo *t, float val[2])
+static void applySeqSlide(TransInfo *t, const float val[2])
 {
 	TransData *td = t->data;
 	int i;

@@ -976,7 +976,7 @@ static int edbm_normals_make_consistent_exec(bContext *C, wmOperator *op)
 	
 	/* doflip has to do with bmesh_rationalize_normals, it's an internal
 	 * thing */
-	if (!EDBM_op_callf(em, op, "recalc_face_normals faces=%hf use_flip=%b", BM_ELEM_SELECT, true))
+	if (!EDBM_op_callf(em, op, "recalc_face_normals faces=%hf use_face_tag=%b", BM_ELEM_SELECT, true))
 		return OPERATOR_CANCELLED;
 
 	if (RNA_boolean_get(op->ptr, "inside"))
@@ -2292,7 +2292,7 @@ static int mesh_separate_tagged(Main *bmain, Scene *scene, Base *base_old, BMesh
 	 * since de-selecting all skips selection flushing logic */
 	BM_mesh_elem_hflag_disable_all(bm_old, BM_VERT | BM_EDGE | BM_FACE, BM_ELEM_SELECT, false);
 
-	BM_mesh_normals_update(bm_new, false);
+	BM_mesh_normals_update(bm_new);
 
 	BM_mesh_bm_to_me(bm_new, base_new->object->data, false);
 

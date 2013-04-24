@@ -111,6 +111,9 @@ typedef struct Brush {
 
 	float stencil_pos[2];
 	float stencil_dimension[2];
+
+	float mask_stencil_pos[2];
+	float mask_stencil_dimension[2];
 } Brush;
 
 /* Brush.flag */
@@ -155,8 +158,14 @@ typedef enum OverlayFlags {
 	BRUSH_OVERLAY_CURSOR = (1),
 	BRUSH_OVERLAY_PRIMARY = (1 << 1),
 	BRUSH_OVERLAY_SECONDARY = (1 << 2),
-	BRUSH_OVERLAY_OVERRIDE_ON_STROKE = (1 << 3)
+	BRUSH_OVERLAY_CURSOR_OVERRIDE_ON_STROKE = (1 << 3),
+	BRUSH_OVERLAY_PRIMARY_OVERRIDE_ON_STROKE = (1 << 4),
+	BRUSH_OVERLAY_SECONDARY_OVERRIDE_ON_STROKE = (1 << 5)
 } OverlayFlags;
+
+#define BRUSH_OVERLAY_OVERRIDE_MASK (BRUSH_OVERLAY_CURSOR_OVERRIDE_ON_STROKE | \
+									 BRUSH_OVERLAY_PRIMARY_OVERRIDE_ON_STROKE | \
+									 BRUSH_OVERLAY_SECONDARY_OVERRIDE_ON_STROKE)
 
 /* Brush.sculpt_tool */
 typedef enum BrushSculptTool {
