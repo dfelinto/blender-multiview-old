@@ -373,6 +373,9 @@ static void rna_def_render_engine(BlenderRNA *brna)
 	prop = RNA_def_int(func, "h", 0, 0, INT_MAX, "Height", "", 0, INT_MAX);
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 	RNA_def_string(func, "layer", "", 0, "Layer", "Single layer to get render result for");  /* NULL ok here */
+	prop = RNA_def_int(func, "view", 0, 0, INT_MAX, "View",
+	                   "index of the list of available views (not including disabled ones). -1 for all views", 0, INT_MAX);
+	RNA_def_property_flag(prop, PROP_REQUIRED);
 	prop = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
 	RNA_def_function_return(func, prop);
 

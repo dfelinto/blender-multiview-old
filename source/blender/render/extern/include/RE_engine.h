@@ -118,7 +118,7 @@ void RE_engine_free(RenderEngine *engine);
 void RE_layer_load_from_file(struct RenderLayer *layer, struct ReportList *reports, const char *filename, int x, int y);
 void RE_result_load_from_file(struct RenderResult *result, struct ReportList *reports, const char *filename);
 
-struct RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h, const char *layername);
+struct RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h, const char *layername, int view);
 void RE_engine_update_result(RenderEngine *engine, struct RenderResult *result);
 void RE_engine_end_result(RenderEngine *engine, struct RenderResult *result, int cancel);
 
