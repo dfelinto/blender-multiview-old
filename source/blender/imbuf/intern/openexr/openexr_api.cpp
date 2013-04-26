@@ -821,17 +821,23 @@ void IMB_exrtile_clear_channels(void *handle)
 	BLI_freelistN(&data->channels);
 }
 
-void IMB_exrtile_write_channels(void *handle, int partx, int party, int level)
+void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, int view)
 {
 	ExrHandle *data = (ExrHandle *)handle;
 	FrameBuffer frameBuffer;
 	ExrChannel *echan;
 
 	for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next) {
+
+		if (view != imb_exr_viewIdFromChannelName(echan->name, &data->multiView))
+			continue;
+
 		float *rect = echan->rect - echan->xstride * partx - echan->ystride * party;
 
 		frameBuffer.insert(echan->name, Slice(Imf::FLOAT,  (char *)rect,
 		                                      echan->xstride * sizeof(float), echan->ystride * sizeof(float)));
+
+		printf("frameBuffer.insert(\"%s\", xstride: %d, ystride: %d\n)", echan->name, echan->xstride, echan->ystride);
 	}
 
 	data->tofile->setFrameBuffer(frameBuffer);

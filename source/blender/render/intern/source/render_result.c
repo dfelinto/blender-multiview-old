@@ -600,26 +600,6 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		rl->rectx = rectx;
 		rl->recty = recty;
 
-#if 0
-		//for view, do combined
-		for (nr = 0, rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++)
-		{
-			if (view != -1 && view != nr)
-				continue;
-
-			if (rr->do_exr_tile) {
-				rl->exrhandle = IMB_exr_get_handle();
-
-				IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.R", 0, 0, NULL);
-				IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.G", 0, 0, NULL);
-				IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.B", 0, 0, NULL);
-				IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.A", 0, 0, NULL);
-			}
-			else
-				rl->rectf = MEM_mapallocN(rectx * recty * sizeof(float) * 4, "Combined rgba");
-		}
-#endif
-
 		if (rr->do_exr_tile)
 			rl->exrhandle = IMB_exr_get_handle();
 		else
@@ -629,6 +609,9 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 
 			if (view != -1 && view != nr)
 				continue;
+
+			if (rr->do_exr_tile)
+				IMB_exr_add_view(rl->exrhandle, rv->name);
 
 			render_layer_add_pass(rr, rl, 4, SCE_PASS_COMBINED, nr);
 
@@ -710,6 +693,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 			rl->rectf = MEM_mapallocN(rectx * recty * sizeof(float) * 4, "Combined rgba");
 		}
 
+#if 0
 		for (nr = 0, rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
 
 			if (view != -1 && view != nr)
@@ -717,6 +701,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 
 			render_layer_add_pass(rr, rl, 4, SCE_PASS_COMBINED, nr);
 		}
+#endif
 		
 		/* note, this has to be in sync with scene.c */
 		rl->lay = (1 << 20) - 1;
@@ -1056,7 +1041,9 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart)
 {
 	RenderLayer *rlp, *rl;
 	RenderPass *rpassp;
+	RenderView *rv;
 	int offs, partx, party;
+	int nr;
 	
 	BLI_lock_thread(LOCK_IMAGE);
 	
@@ -1075,19 +1062,27 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart)
 		else {
 			offs = 0;
 		}
-		
+
 #if 0
-		// if rectf and no views
 		/* combined */
 		if (rlp->rectf) {
-			int a, xstride = 4;
-			for (a = 0; a < xstride; a++) {
-				IMB_exr_set_channel(rl->exrhandle, rlp->name, get_pass_name(SCE_PASS_COMBINED, a, ""),
-				                    xstride, xstride * rrpart->rectx, rlp->rectf + a + xstride * offs);
+			for (nr = 0, rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
+
+				if (rr->actview != nr)
+					continue;
+
+				const char *viewname = get_view_name(&rr->views, nr);
+				int a, xstride = 4;
+				for (a = 0; a < xstride; a++) {
+					IMB_exr_set_channel(rl->exrhandle, rlp->name, get_pass_name(SCE_PASS_COMBINED, a, viewname),
+										xstride, xstride * rrpart->rectx, rlp->rectf + a + xstride * offs);
+				}
+				break;
+
 			}
 		}
 #endif
-		
+
 		/* passes are allocated in sync */
 		for (rpassp = rlp->passes.first; rpassp; rpassp = rpassp->next) {
 			int a, xstride = rpassp->channels;
@@ -1113,7 +1108,7 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart)
 			continue;
 		}
 
-		IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0);
+		IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, rr->actview);
 	}
 
 	BLI_unlock_thread(LOCK_IMAGE);
@@ -1133,7 +1128,7 @@ static void save_empty_result_tiles(Render *re)
 				if (pa->status != PART_STATUS_READY) {
 					int party = pa->disprect.ymin - re->disprect.ymin + pa->crop;
 					int partx = pa->disprect.xmin - re->disprect.xmin + pa->crop;
-					IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0);
+					IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, rr->actview);
 				}
 			}
 		}
