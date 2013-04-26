@@ -26,6 +26,23 @@ Known bugs:
 * When rendering only one view, the 'view' name shouldn't be saved in EXR file
 * UV/Image Editor has the "Combined" pass even when it shouldn't (I hacked it away, but not nicely)
 
+Current ~~headache~~issues
+--------------------------
+Blender saves temporary EXRs when "Save Buffers" or OSA is active.
+This is designed to help Blender to save memory.
+
+That means at some point Blender tries to render the same tile more than once (once per view) and this
+produces an error. Basically, according to Blender's design, you need the tile fully filled before
+writing it to disk.
+
+I'm trying to envision a solution.
+* A way of solving it would be to use multiparts (OpenEXR 2.0).
+* Another solution is to have one file per view per OSA/Layer.
+* Yet another solution is to have one temporary file per view, and use it as the current exr->handle
+and merge it in the real rl->handle when the render of the layer is over.
+* And finally I could try to make things work as they are by offsetting the memory address to store the
+passes in the exr file (no idea if it would work)
+
 Links
 -----
 **Original proposal:** http://wiki.blender.org/index.php/User:Dfelinto/Stereoscopy
@@ -45,7 +62,7 @@ Roadmap
 
 How to build it
 ---------------
-Roughly guide, basically you need to manually copy the addons and addons_contrib folders inside the checkout blender code.
+Rough guide, basically you need to manually copy the addons and addons_contrib folders inside the checkout blender code.
 
 For tips in building Blender for your system refer to to Blender Wiki.
 
