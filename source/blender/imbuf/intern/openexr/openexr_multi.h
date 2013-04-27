@@ -41,7 +41,7 @@
 #define EXR_PASS_MAXNAME    64
 #define EXR_VIEW_MAXNAME    64
 #define EXR_TOT_MAXNAME     64
-#define EXR_PASS_MAXCHAN    8
+#define EXR_PASS_MAXCHAN    24
 
 
 #ifdef __cplusplus
@@ -49,18 +49,20 @@ extern "C" {
 #endif
 
 void *IMB_exr_get_handle(void);
-void    IMB_exr_add_channel(void *handle, const char *layname, const char *passname, int xstride, int ystride, float *rect);
+void    IMB_exr_add_channel(void *handle, const char *layname, const char *passname, const char *view, int xstride, int ystride, float *rect);
 
 int     IMB_exr_begin_read(void *handle, const char *filename, int *width, int *height);
 int     IMB_exr_begin_write(void *handle, const char *filename, int width, int height, int compress);
 void    IMB_exrtile_begin_write(void *handle, const char *filename, int mipmap, int width, int height, int tilex, int tiley);
+int     IMB_exrmultipart_begin_write(void *handle, const char *filename, int width, int height, int compress);
 
 void    IMB_exr_set_channel(void *handle, const char *layname, const char *passname, int xstride, int ystride, float *rect);
 
 void    IMB_exr_read_channels(void *handle);
 void    IMB_exr_write_channels(void *handle);
 void    IMB_exrtile_write_channels(void *handle, int partx, int party, int level, int view);
-void    IMB_exrtile_clear_channels(void *handle);
+void    IMB_exrmultipart_write_channels(void *handle);
+void    IMB_exr_clear_channels(void *handle);
 
 void    IMB_exr_multilayer_convert(void *handle, void *base,
                                    void * (*addview)(void *base, const char *str),

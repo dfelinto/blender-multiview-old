@@ -78,10 +78,11 @@ private:
 	
 	char m_path[FILE_MAX];
 	char m_exr_codec;
+	int m_exr_multipart;
 	LayerList m_layers;
 	
 public:
-	OutputOpenExrMultiLayerOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec);
+	OutputOpenExrMultiLayerOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int multipart);
 	
 	void add_layer(const char *name, DataType datatype);
 	

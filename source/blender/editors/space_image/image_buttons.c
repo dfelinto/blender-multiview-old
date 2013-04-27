@@ -349,7 +349,7 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 #if 1
 	/* rendered results don't have a Combined pass */
 	if (rl == NULL || rl->rectf) {
-		//a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
+		a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
 		nr = 1;
 	}
 #endif
@@ -943,6 +943,12 @@ void uiTemplateImageSettings(uiLayout *layout, PointerRNA *imfptr, int color_man
 		show_preview = TRUE;
 		uiItemR(row, imfptr, "use_preview", 0, NULL, ICON_NONE);
 	}
+
+	if (ELEM(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
+		row = uiLayoutRow(col, FALSE);
+		uiItemR(row, imfptr, "use_multipart", 0, NULL, ICON_NONE);
+	}
+
 
 	if (imf->imtype == R_IMF_IMTYPE_JP2) {
 		uiItemR(col, imfptr, "jpeg2k_codec", 0, NULL, ICON_NONE);

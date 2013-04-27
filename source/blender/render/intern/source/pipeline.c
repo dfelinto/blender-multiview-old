@@ -1120,7 +1120,8 @@ static void do_render_3d(Render *re)
 	main_render_result_new(re);
 
 	/* we need a new database for each view */
-	for (view = 0, rv = re->result->views.first; rv; rv = rv->next, view++) {
+	int numviews = BLI_countlist(&re->result->views);
+	for (view = 0; view < numviews; view++) {
 
 		re->result->actview = view;
 
@@ -2489,7 +2490,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 		
 		if (re->r.im_format.imtype == R_IMF_IMTYPE_MULTILAYER) {
 			if (re->result) {
-				RE_WriteRenderResult(re->reports, re->result, name, scene->r.im_format.exr_codec);
+				RE_WriteRenderResult(re->reports, re->result, name, scene->r.im_format.exr_codec, (scene->r.im_format.flag & R_IMF_FLAG_MULTIPART));
 				printf("Saved: %s", name);
 			}
 		}

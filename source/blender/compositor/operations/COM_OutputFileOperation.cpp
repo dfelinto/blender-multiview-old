@@ -166,13 +166,14 @@ OutputOpenExrLayer::OutputOpenExrLayer(const char *name_, DataType datatype_)
 }
 
 OutputOpenExrMultiLayerOperation::OutputOpenExrMultiLayerOperation(
-        const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec)
+        const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int exr_multipart)
 {
 	this->m_rd = rd;
 	this->m_tree = tree;
 	
 	BLI_strncpy(this->m_path, path, sizeof(this->m_path));
 	this->m_exr_codec = exr_codec;
+	this->m_exr_multipart = exr_multipart;
 }
 
 void OutputOpenExrMultiLayerOperation::add_layer(const char *name, DataType datatype)
@@ -200,6 +201,8 @@ void OutputOpenExrMultiLayerOperation::deinitExecution()
 {
 	unsigned int width = this->getWidth();
 	unsigned int height = this->getHeight();
+	bool success = false;
+
 	if (width != 0 && height != 0) {
 		Main *bmain = G.main; /* TODO, have this passed along */
 		char filename[FILE_MAX];
@@ -216,29 +219,30 @@ void OutputOpenExrMultiLayerOperation::deinitExecution()
 			
 			float *buf = this->m_layers[i].outputBuffer;
 			
+			//MV need view
 			/* create channels */
 			switch (this->m_layers[i].datatype) {
 				case COM_DT_VALUE:
 					strcpy(channelname_ext, ".V");
-					IMB_exr_add_channel(exrhandle, 0, channelname, 1, width, buf);
+					IMB_exr_add_channel(exrhandle, 0, channelname, "", 1, width, buf);
 					break;
 				case COM_DT_VECTOR:
 					strcpy(channelname_ext, ".X");
-					IMB_exr_add_channel(exrhandle, 0, channelname, 3, 3 * width, buf);
+					IMB_exr_add_channel(exrhandle, 0, channelname, "", 3, 3 * width, buf);
 					strcpy(channelname_ext, ".Y");
-					IMB_exr_add_channel(exrhandle, 0, channelname, 3, 3 * width, buf + 1);
+					IMB_exr_add_channel(exrhandle, 0, channelname, "", 3, 3 * width, buf + 1);
 					strcpy(channelname_ext, ".Z");
-					IMB_exr_add_channel(exrhandle, 0, channelname, 3, 3 * width, buf + 2);
+					IMB_exr_add_channel(exrhandle, 0, channelname, "", 3, 3 * width, buf + 2);
 					break;
 				case COM_DT_COLOR:
 					strcpy(channelname_ext, ".R");
-					IMB_exr_add_channel(exrhandle, 0, channelname, 4, 4 * width, buf);
+					IMB_exr_add_channel(exrhandle, 0, channelname, "", 4, 4 * width, buf);
 					strcpy(channelname_ext, ".G");
-					IMB_exr_add_channel(exrhandle, 0, channelname, 4, 4 * width, buf + 1);
+					IMB_exr_add_channel(exrhandle, 0, channelname, "", 4, 4 * width, buf + 1);
 					strcpy(channelname_ext, ".B");
-					IMB_exr_add_channel(exrhandle, 0, channelname, 4, 4 * width, buf + 2);
+					IMB_exr_add_channel(exrhandle, 0, channelname, "", 4, 4 * width, buf + 2);
 					strcpy(channelname_ext, ".A");
-					IMB_exr_add_channel(exrhandle, 0, channelname, 4, 4 * width, buf + 3);
+					IMB_exr_add_channel(exrhandle, 0, channelname, "", 4, 4 * width, buf + 3);
 					break;
 				default:
 					break;
@@ -247,10 +251,19 @@ void OutputOpenExrMultiLayerOperation::deinitExecution()
 		}
 		
 		/* when the filename has no permissions, this can fail */
-		if (IMB_exr_begin_write(exrhandle, filename, width, height, this->m_exr_codec)) {
-			IMB_exr_write_channels(exrhandle);
+		if(this->m_exr_multipart) {
+			if (IMB_exrmultipart_begin_write(exrhandle, filename, width, height, this->m_exr_codec)) {
+				IMB_exrmultipart_write_channels(exrhandle);
+				success = true;
+			}
+		} else {
+			if (IMB_exr_begin_write(exrhandle, filename, width, height, this->m_exr_codec)) {
+				IMB_exr_write_channels(exrhandle);
+				success = true;
+			}
 		}
-		else {
+
+		if (success == false) {
 			/* TODO, get the error from openexr's exception */
 			/* XXX nice way to do report? */
 			printf("Error Writing Render Result, see console\n");

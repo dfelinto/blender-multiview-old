@@ -53,7 +53,8 @@ void OutputFileNode::convertToOperations(ExecutionSystem *graph, CompositorConte
 	if (storage->format.imtype == R_IMF_IMTYPE_MULTILAYER) {
 		/* single output operation for the multilayer file */
 		OutputOpenExrMultiLayerOperation *outputOperation = new OutputOpenExrMultiLayerOperation(
-		        context->getRenderData(), context->getbNodeTree(), storage->base_path, storage->format.exr_codec);
+		        context->getRenderData(), context->getbNodeTree(), storage->base_path, storage->format.exr_codec, true);
+		//MV to decide what to do here, probably only to expose the option in the UI may be enough
 		
 		int num_inputs = getNumberOfInputSockets();
 		bool hasConnections = false;
