@@ -75,10 +75,11 @@ typedef struct RenderPass {
 	struct RenderPass *next, *prev;
 	int passtype, channels;
 	char name[64];		/* amount defined in openexr_multi.h */
-	char chan_id[8];	/* amount defined in openexr_multi.h */
+	char chan_id[24];	/* amount defined in openexr_multi.h */
 	float *rect;
 	int rectx, recty;
-	int view_id;
+	char view[64];		/* amount defined in openexr_multi.h */
+	int view_id;	/* MV I don't think we need that */
 } RenderPass;
 
 /* a renderlayer is a full image, but with all passes and samples */
@@ -247,7 +248,7 @@ void RE_SetReports(struct Render *re, struct ReportList *reports);
 void RE_PreviewRender(struct Render *re, struct Main *bmain, struct Scene *scene);
 
 int RE_ReadRenderResult(struct Scene *scene, struct Scene *scenode);
-int RE_WriteRenderResult(struct ReportList *reports, RenderResult *rr, const char *filename, int compress);
+int RE_WriteRenderResult(struct ReportList *reports, RenderResult *rr, const char *filename, int compress, int multipart);
 struct RenderResult *RE_MultilayerConvert(void *exrhandle, const char *colorspace, int predivide, int rectx, int recty);
 
 extern const float default_envmap_layout[];

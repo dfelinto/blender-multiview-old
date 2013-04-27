@@ -117,9 +117,9 @@ void render_result_free_list(ListBase *lb, RenderResult *rr)
 
 /********************************* Names *************************************/
 
-static const char *insert_view_name(const char* passname, const char* viewname)
+static const char *insert_view_name(const char* passname, const char* view)
 {
-	if (viewname == NULL || viewname[0] == '\0')
+	if (view == NULL || view[0] == '\0')
 		return passname;
 
 	static char retstr[EXR_PASS_MAXNAME];
@@ -129,9 +129,9 @@ static const char *insert_view_name(const char* passname, const char* viewname)
 	int len = IMB_exr_split_token(passname, end, &token);
 
 	if (len == 0)
-		sprintf(retstr, "%s.%s", passname, viewname);
+		sprintf(retstr, "%s.%s", passname, view);
 	else
-		sprintf(retstr, "%.*s%s.%s", (int)(end-passname) - len, passname, viewname, token);
+		sprintf(retstr, "%.*s%s.%s", (int)(end-passname) - len, passname, view, token);
 
 	return retstr;
 }
@@ -475,8 +475,8 @@ static int passtype_from_name(const char *str)
 
 static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channels, int passtype, int view_id)
 {
-	const char *viewname = get_view_name(&rr->views, view_id);
-	const char *typestr = get_pass_name(passtype, 0, viewname);
+	const char *view = get_view_name(&rr->views, view_id);
+	const char *typestr = get_pass_name(passtype, 0, view);
 	RenderPass *rpass = MEM_callocN(sizeof(RenderPass), typestr);
 	int rectsize = rr->rectx * rr->recty * channels;
 	
@@ -486,12 +486,13 @@ static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channel
 	rpass->rectx = rl->rectx;
 	rpass->recty = rl->recty;
 	rpass->view_id = view_id;
-	BLI_strncpy(rpass->name, get_pass_name(rpass->passtype, -1, viewname), sizeof(rpass->name));
+	BLI_strncpy(rpass->name, get_pass_name(rpass->passtype, -1, view), sizeof(rpass->name));
+	BLI_strncpy(rpass->view, view, sizeof(view));
 	
 	if (rl->exrhandle) {
 		int a;
 		for (a = 0; a < channels; a++)
-			IMB_exr_add_channel(rl->exrhandle, rl->name, get_pass_name(passtype, a, viewname), 0, 0, NULL);
+			IMB_exr_add_channel(rl->exrhandle, rl->name, get_pass_name(passtype, a, ""), view, 0, 0, NULL);
 	}
 	else {
 		float *rect;
@@ -609,6 +610,8 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 
 			if (view != -1 && view != nr)
 				continue;
+
+			//printf("render_result_new: view: %d, nr: %d\n", view, nr);
 
 			if (rr->do_exr_tile)
 				IMB_exr_add_view(rl->exrhandle, rv->name);
@@ -908,15 +911,14 @@ static char *make_pass_name(RenderPass *rpass, int chan)
 
 /* filename already made absolute */
 /* called from within UI, saves both rendered result as a file-read result */
-int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *filename, int compress)
+int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *filename, int compress, int multipart)
 {
 	RenderLayer *rl;
 	RenderPass *rpass;
 	RenderView *rview;
 	void *exrhandle = IMB_exr_get_handle();
-	int success;
-	int is_multiView = BLI_countlist(&rr->views) > 1;
-	const char *viewname=NULL;
+	int success = 0;
+	const char *view = NULL;
 
 	BLI_make_existing_file(filename);
 	
@@ -951,14 +953,14 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			int a, xstride = rpass->channels;
 			for (a = 0; a < xstride; a++) {
-				viewname = get_view_name(&rr->views, rpass->view_id);
+				view = get_view_name(&rr->views, rpass->view_id);
 
 				if (rpass->passtype) {
-					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, viewname),
+					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, ""), rpass->view,
 					                    xstride, xstride * rr->rectx, rpass->rect + a);
 				}
 				else {
-					IMB_exr_add_channel(exrhandle, rl->name, make_pass_name(rpass, a),
+					IMB_exr_add_channel(exrhandle, rl->name, make_pass_name(rpass, a), rpass->view,
 					                    xstride, xstride * rr->rectx, rpass->rect + a);
 				}
 			}
@@ -966,11 +968,19 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 	}
 
 	/* when the filename has no permissions, this can fail */
-	if (IMB_exr_begin_write(exrhandle, filename, rr->rectx, rr->recty, compress)) {
-		IMB_exr_write_channels(exrhandle);
-		success = TRUE;
+	if (multipart) {
+		if (IMB_exrmultipart_begin_write(exrhandle, filename, rr->rectx, rr->recty, compress)) {
+			IMB_exrmultipart_write_channels(exrhandle);
+			success = TRUE;
+		}
+	} else {
+		if (IMB_exr_begin_write(exrhandle, filename, rr->rectx, rr->recty, compress)) {
+			IMB_exr_write_channels(exrhandle);
+			success = TRUE;
+		}
 	}
-	else {
+
+	if (success == FALSE) {
 		/* TODO, get the error from openexr's exception */
 		BKE_report(reports, RPT_ERROR, "Error writing render result (see console)");
 		success = FALSE;
@@ -1122,7 +1132,7 @@ static void save_empty_result_tiles(Render *re)
 	
 	for (rr = re->result; rr; rr = rr->next) {
 		for (rl = rr->layers.first; rl; rl = rl->next) {
-			IMB_exrtile_clear_channels(rl->exrhandle);
+			IMB_exr_clear_channels(rl->exrhandle);
 		
 			for (pa = re->parts.first; pa; pa = pa->next) {
 				if (pa->status != PART_STATUS_READY) {
@@ -1247,6 +1257,7 @@ int render_result_exr_file_read_path(RenderResult *rr, RenderLayer *rl_single, c
 		if (rl_single && rl_single != rl)
 			continue;
 
+#if 0 //MV
 		/* combined */
 		if (rl->rectf) {
 			int a, xstride = 4;
@@ -1254,6 +1265,7 @@ int render_result_exr_file_read_path(RenderResult *rr, RenderLayer *rl_single, c
 				IMB_exr_set_channel(exrhandle, rl->name, get_pass_name(SCE_PASS_COMBINED, a, ""),
 				                    xstride, xstride * rectx, rl->rectf + a);
 		}
+#endif
 		
 		/* passes are allocated in sync */
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
