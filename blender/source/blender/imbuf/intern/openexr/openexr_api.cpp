@@ -561,7 +561,7 @@ void *IMB_exr_get_handle(void)
 int IMB_exr_is_multiView(void *handle)
 {
 	ExrHandle *data = (ExrHandle *)handle;
-	return data->multiView.size() > 0;
+	return data->multiView.size() > 1;
 }
 
 static StringVector IMB_exr_multiView(void *handle)
@@ -837,7 +837,7 @@ void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, i
 		frameBuffer.insert(echan->name, Slice(Imf::FLOAT,  (char *)rect,
 		                                      echan->xstride * sizeof(float), echan->ystride * sizeof(float)));
 
-		printf("frameBuffer.insert(\"%s\", xstride: %d, ystride: %d\n)", echan->name, echan->xstride, echan->ystride);
+		printf("frameBuffer.insert(\"%s\", xstride: %d, ystride: %d)\n", echan->name, echan->xstride, echan->ystride);
 	}
 
 	data->tofile->setFrameBuffer(frameBuffer);
