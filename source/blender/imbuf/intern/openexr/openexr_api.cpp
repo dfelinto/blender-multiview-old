@@ -1094,7 +1094,8 @@ void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, i
 
 	for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next) {
 
-		//MV CLEANUP: this may not be needed
+		/* eventually we can make the parts' channels to include
+		   only the current view TODO */
 		if (view != echan->view_id)
 			continue;
 
@@ -1520,7 +1521,7 @@ static ExrHandle *imb_exr_begin_read_mem(MultiPartInputFile *file, int width, in
 						}
 						for (a = 0; a < pass->totchan; a++) {
 							echan = pass->chan[a];
-							echan->rect = pass->rect + lookup[(unsigned int)echan->chan_id] + echan->view_id * (pass->totchan % 3 == 0?3:4);
+							echan->rect = pass->rect + lookup[(unsigned int)echan->chan_id];
 							echan->xstride = pass->totchan;
 							echan->ystride = width * pass->totchan;
 							pass->chan_id[(unsigned int)lookup[(unsigned int)echan->chan_id]] = echan->chan_id;
