@@ -14,34 +14,23 @@ Current Panel:
 
 Current status:
 * Multiview is rendering fine and antialias is working too.
+* Support for MultiPart images (read and write) working fine (OpenEXR 2.0)
 * Cycles is working as well
 * My next target is Composite
 
 The rules for testing are:
 * No Compo
-* No FSA
-* (for saving) EXR MultiLayer
+* ~~No FSA~~
+* (for saving) EXR MultiLayer (multipart working)
 
 Known bugs:
-* When rendering only one view, the 'view' name shouldn't be saved in EXR file
+* When rendering only one view, the 'view' name shouldn't be saved in EXR file (it's probably fixed now, I'll investigate later
 * UV/Image Editor has the "Combined" pass even when it shouldn't (I hacked it away, but not nicely)
 
 Current ~~headache~~issues
 --------------------------
-Blender saves temporary EXRs when "Save Buffers" or OSA is active.
-This is designed to help Blender to save memory.
-
-That means at some point Blender tries to render the same tile more than once (once per view) and this
-produces an error. Basically, according to Blender's design, you need the tile fully filled before
-writing it to disk.
-
-I'm trying to envision a solution.
-* A way of solving it would be to use multiparts (OpenEXR 2.0).
-* Another solution is to have one file per view per OSA/Layer.
-* Yet another solution is to have one temporary file per view, and use it as the current exr->handle
-and merge it in the real rl->handle when the render of the layer is over.
-* And finally I could try to make things work as they are by offsetting the memory address to store the
-passes in the exr file (no idea if it would work)
+None at the moment. OpenEXR 2.0 was hard to implement, but it's all working now.
+Composite will be "fun" ;)
 
 Links
 -----
@@ -54,7 +43,7 @@ Roadmap
  1. ~~Read multiview exr~~
  2. ~~See multiview in UV/image editor as mono~~
  3. ~~Write multiview exr~~
- 4. Render in multiview
+ 4. ~~Render in multiview~~
  5. Compo in multiview
  6. See multiview in UV/image editor as stereo
  7. Viewport preview
@@ -62,6 +51,9 @@ Roadmap
 
 How to build it
 ---------------
+UPDATE: you know need OpenEXR 2.0 to use this branch.
+(so you need to recompile openexr and openimageio and possibly openshadinglanguage)
+
 Rough guide, basically you need to manually copy the addons and addons_contrib folders inside the checkout blender code.
 
 For tips in building Blender for your system refer to to Blender Wiki.
