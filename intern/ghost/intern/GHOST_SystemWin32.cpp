@@ -607,7 +607,17 @@ GHOST_TKey GHOST_SystemWin32::convertKey(GHOST_IWindow *window, short vKey, shor
 			case VK_GR_LESS:        key = GHOST_kKeyGrLess;         break;
 
 			case VK_SHIFT:
-				key = (scanCode == 0x36) ? GHOST_kKeyRightShift : GHOST_kKeyLeftShift;
+					/* Check single shift presses */
+					if (scanCode == 0x36) {
+						key = GHOST_kKeyRightShift;
+					} else if (scanCode == 0x2a) {
+						key = GHOST_kKeyLeftShift;
+					} else {
+						/* Must be a combination SHIFT (Left or Right) + a Key 
+						 * Ignore this as the next message will contain
+						 * the desired "Key" */
+						key = GHOST_kKeyUnknown;
+					}
 				break;
 			case VK_CONTROL:
 				key = (extend) ? GHOST_kKeyRightControl : GHOST_kKeyLeftControl;
@@ -894,7 +904,7 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 	GHOST_ASSERT(system, "GHOST_SystemWin32::s_wndProc(): system not initialized");
 
 	if (hwnd) {
-		GHOST_WindowWin32 *window = (GHOST_WindowWin32 *)::GetWindowLong(hwnd, GWL_USERDATA);
+		GHOST_WindowWin32 *window = (GHOST_WindowWin32 *)::GetWindowLongPtr(hwnd, GWL_USERDATA);
 		if (window) {
 			switch (msg) {
 				// we need to check if new key layout has AltGr

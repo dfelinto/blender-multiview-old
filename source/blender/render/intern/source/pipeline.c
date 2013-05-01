@@ -463,6 +463,8 @@ void RE_FreePersistentData(void)
 /* disprect is optional, if NULL it assumes full window render */
 void RE_InitState(Render *re, Render *source, RenderData *rd, SceneRenderLayer *srl, int winx, int winy, rcti *disprect)
 {
+	bool had_freestyle = (re->r.mode & R_EDGE_FRS);
+
 	re->ok = TRUE;   /* maybe flag */
 	
 	re->i.starttime = PIL_check_seconds_timer();
@@ -570,9 +572,22 @@ void RE_InitState(Render *re, Render *source, RenderData *rd, SceneRenderLayer *
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
 	if (re->r.scemode & R_PREVIEWBUTS) {
-		/* always fresh, freestyle layers need it */
-		render_result_free(re->result);
-		re->result = NULL;
+		if (had_freestyle || (re->r.mode & R_EDGE_FRS)) {
+			/* freestyle manipulates render layers so always have to free */
+			render_result_free(re->result);
+			re->result = NULL;
+		}
+		else if (re->result) {
+			if (re->result->rectx == re->rectx && re->result->recty == re->recty) {
+				/* keep render result, this avoids flickering black tiles
+				 * when the preview changes */
+			}
+			else {
+				/* free because resolution changed */
+				render_result_free(re->result);
+				re->result = NULL;
+			}
+		}
 	}
 	else {
 		
@@ -1683,14 +1698,16 @@ static void composite_freestyle_renders(Render *re, int sample)
 static void free_all_freestyle_renders(void)
 {
 	Render *re1, *freestyle_render;
+	Scene *freestyle_scene;
 	LinkData *link;
 
 	for (re1= RenderGlobal.renderlist.first; re1; re1= re1->next) {
 		for (link = (LinkData *)re1->freestyle_renders.first; link; link = link->next) {
 			if (link->data) {
 				freestyle_render = (Render *)link->data;
-				BKE_scene_unlink(&re1->freestyle_bmain, freestyle_render->scene, NULL);
+				freestyle_scene = freestyle_render->scene;
 				RE_FreeRender(freestyle_render);
+				BKE_scene_unlink(&re1->freestyle_bmain, freestyle_scene, NULL);
 			}
 		}
 		BLI_freelistN(&re1->freestyle_renders);

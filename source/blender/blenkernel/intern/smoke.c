@@ -50,6 +50,7 @@
 #include "BLI_edgehash.h"
 #include "BLI_kdtree.h"
 #include "BLI_kdopbvh.h"
+#include "BLI_threads.h"
 #include "BLI_utildefines.h"
 #include "BLI_voxel.h"
 
@@ -365,6 +366,9 @@ static void smokeModifier_freeDomain(SmokeModifierData *smd)
 		if (smd->domain->fluid)
 			smoke_free(smd->domain->fluid);
 
+		if (smd->domain->fluid_mutex)
+			BLI_rw_mutex_free(smd->domain->fluid_mutex);
+
 		if (smd->domain->wt)
 			smoke_turbulence_free(smd->domain->wt);
 
@@ -424,7 +428,7 @@ void smokeModifier_reset_turbulence(struct SmokeModifierData *smd)
 	}
 }
 
-void smokeModifier_reset(struct SmokeModifierData *smd)
+static void smokeModifier_reset_ex(struct SmokeModifierData *smd, bool need_lock)
 {
 	if (smd)
 	{
@@ -436,8 +440,14 @@ void smokeModifier_reset(struct SmokeModifierData *smd)
 
 			if (smd->domain->fluid)
 			{
+				if (need_lock)
+					BLI_rw_mutex_lock(smd->domain->fluid_mutex, THREAD_LOCK_WRITE);
+
 				smoke_free(smd->domain->fluid);
 				smd->domain->fluid = NULL;
+
+				if (need_lock)
+					BLI_rw_mutex_unlock(smd->domain->fluid_mutex);
 			}
 
 			smokeModifier_reset_turbulence(smd);
@@ -463,6 +473,11 @@ void smokeModifier_reset(struct SmokeModifierData *smd)
 			}
 		}
 	}
+}
+
+void smokeModifier_reset(struct SmokeModifierData *smd)
+{
+	smokeModifier_reset_ex(smd, true);
 }
 
 void smokeModifier_free(SmokeModifierData *smd)
@@ -497,6 +512,7 @@ void smokeModifier_createType(struct SmokeModifierData *smd)
 			smd->domain->ptcaches[1].first = smd->domain->ptcaches[1].last = NULL;
 			/* set some standard values */
 			smd->domain->fluid = NULL;
+			smd->domain->fluid_mutex = BLI_rw_mutex_alloc();
 			smd->domain->wt = NULL;
 			smd->domain->eff_group = NULL;
 			smd->domain->fluid_group = NULL;
@@ -2185,7 +2201,7 @@ static void smokeModifier_process(SmokeModifierData *smd, Scene *scene, Object *
 		else if (scene->r.cfra < smd->time)
 		{
 			smd->time = scene->r.cfra;
-			smokeModifier_reset(smd);
+			smokeModifier_reset_ex(smd, false);
 		}
 	}
 	else if (smd->type & MOD_SMOKE_TYPE_COLL)
@@ -2205,7 +2221,7 @@ static void smokeModifier_process(SmokeModifierData *smd, Scene *scene, Object *
 		smd->time = scene->r.cfra;
 		if (scene->r.cfra < smd->time)
 		{
-			smokeModifier_reset(smd);
+			smokeModifier_reset_ex(smd, false);
 		}
 	}
 	else if (smd->type & MOD_SMOKE_TYPE_DOMAIN)
@@ -2227,7 +2243,7 @@ static void smokeModifier_process(SmokeModifierData *smd, Scene *scene, Object *
 		if (!smd->domain->fluid || framenr == startframe)
 		{
 			BKE_ptcache_id_reset(scene, &pid, PTCACHE_RESET_OUTDATED);
-			smokeModifier_reset(smd);
+			smokeModifier_reset_ex(smd, false);
 			BKE_ptcache_validate(cache, framenr);
 			cache->flag &= ~PTCACHE_REDO_NEEDED;
 		}
@@ -2316,7 +2332,14 @@ static void smokeModifier_process(SmokeModifierData *smd, Scene *scene, Object *
 
 struct DerivedMesh *smokeModifier_do(SmokeModifierData *smd, Scene *scene, Object *ob, DerivedMesh *dm)
 {
+	/* lock so preview render does not read smoke data while it gets modified */
+	if ((smd->type & MOD_SMOKE_TYPE_DOMAIN) && smd->domain)
+		BLI_rw_mutex_lock(smd->domain->fluid_mutex, THREAD_LOCK_WRITE);
+
 	smokeModifier_process(smd, scene, ob, dm);
+
+	if ((smd->type & MOD_SMOKE_TYPE_DOMAIN) && smd->domain)
+		BLI_rw_mutex_unlock(smd->domain->fluid_mutex);
 
 	/* return generated geometry for adaptive domain */
 	if (smd->type & MOD_SMOKE_TYPE_DOMAIN && smd->domain &&

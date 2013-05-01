@@ -171,56 +171,56 @@ kmi = km.keymap_items.new('wm.context_toggle_enum', 'Z', 'PRESS', alt=True)
 kmi.properties.data_path = 'space_data.viewport_shade'
 kmi.properties.value_1 = 'SOLID'
 kmi.properties.value_2 = 'TEXTURED'
-kmi = km.keymap_items.new('view3d.select', 'SELECTMOUSE', 'RELEASE')
+kmi = km.keymap_items.new('view3d.select_or_deselect_all', 'SELECTMOUSE', 'CLICK')
 kmi.properties.extend = False
 kmi.properties.deselect = False
 kmi.properties.toggle = False
 kmi.properties.center = False
 kmi.properties.enumerate = False
 kmi.properties.object = False
-kmi = km.keymap_items.new('view3d.select', 'SELECTMOUSE', 'RELEASE', ctrl=True)
+kmi = km.keymap_items.new('view3d.select_or_deselect_all', 'SELECTMOUSE', 'CLICK', ctrl=True)
 kmi.properties.extend = False
 kmi.properties.deselect = False
 kmi.properties.toggle = True
 kmi.properties.center = False
 kmi.properties.enumerate = False
 kmi.properties.object = False
-kmi = km.keymap_items.new('view3d.select', 'SELECTMOUSE', 'PRESS', shift=True)
+kmi = km.keymap_items.new('view3d.select_or_deselect_all', 'SELECTMOUSE', 'CLICK', shift=True)
 kmi.properties.extend = False
 kmi.properties.deselect = False
 kmi.properties.toggle = False
 kmi.properties.center = True
 kmi.properties.enumerate = False
 kmi.properties.object = True
-kmi = km.keymap_items.new('view3d.select', 'SELECTMOUSE', 'RELEASE', alt=True)
+kmi = km.keymap_items.new('view3d.select_or_deselect_all', 'SELECTMOUSE', 'CLICK', alt=True)
 kmi.properties.extend = False
 kmi.properties.deselect = False
 kmi.properties.toggle = False
 kmi.properties.center = False
 kmi.properties.enumerate = True
 kmi.properties.object = False
-kmi = km.keymap_items.new('view3d.select', 'SELECTMOUSE', 'RELEASE', shift=True, ctrl=True)
+kmi = km.keymap_items.new('view3d.select_or_deselect_all', 'SELECTMOUSE', 'CLICK', shift=True, ctrl=True)
 kmi.properties.extend = True
 kmi.properties.deselect = False
 kmi.properties.toggle = True
 kmi.properties.center = True
 kmi.properties.enumerate = False
 kmi.properties.object = False
-kmi = km.keymap_items.new('view3d.select', 'SELECTMOUSE', 'RELEASE', ctrl=True, alt=True)
+kmi = km.keymap_items.new('view3d.select_or_deselect_all', 'SELECTMOUSE', 'CLICK', ctrl=True, alt=True)
 kmi.properties.extend = False
 kmi.properties.deselect = False
 kmi.properties.toggle = False
 kmi.properties.center = True
 kmi.properties.enumerate = True
 kmi.properties.object = False
-kmi = km.keymap_items.new('view3d.select', 'SELECTMOUSE', 'RELEASE', shift=True, alt=True)
+kmi = km.keymap_items.new('view3d.select_or_deselect_all', 'SELECTMOUSE', 'CLICK', shift=True, alt=True)
 kmi.properties.extend = False
 kmi.properties.deselect = False
 kmi.properties.toggle = True
 kmi.properties.center = False
 kmi.properties.enumerate = True
 kmi.properties.object = False
-kmi = km.keymap_items.new('view3d.select', 'SELECTMOUSE', 'RELEASE', shift=True, ctrl=True, alt=True)
+kmi = km.keymap_items.new('view3d.select_or_deselect_all', 'SELECTMOUSE', 'CLICK', shift=True, ctrl=True, alt=True)
 kmi.properties.extend = False
 kmi.properties.deselect = False
 kmi.properties.toggle = True
@@ -312,7 +312,9 @@ kmi = km.keymap_items.new('view3d.toolshelf', 'D', 'PRESS')
 km = kc.keymaps.new('Weight Paint Vertex Selection', space_type='EMPTY', region_type='WINDOW', modal=False)
 
 kmi = km.keymap_items.new('paint.vert_select_all', 'A', 'PRESS')
-kmi = km.keymap_items.new('paint.vert_select_inverse', 'I', 'PRESS', ctrl=True)
+kmi.properties.action = 'SELECT'
+kmi = km.keymap_items.new('paint.vert_select_all', 'I', 'PRESS', ctrl=True)
+kmi.properties.action = 'INVERT'
 kmi = km.keymap_items.new('view3d.select_border', 'B', 'PRESS')
 kmi = km.keymap_items.new('view3d.select_lasso', 'EVT_TWEAK_A', 'ANY', ctrl=True)
 kmi.properties.deselect = False
@@ -343,8 +345,6 @@ kmi = km.keymap_items.new('pose.paste', 'V', 'PRESS', ctrl=True)
 kmi.properties.flipped = False
 kmi = km.keymap_items.new('pose.paste', 'V', 'PRESS', shift=True, ctrl=True)
 kmi.properties.flipped = True
-kmi = km.keymap_items.new('pose.select_all', 'LEFTMOUSE', 'CLICK')
-kmi.properties.action = 'TOGGLE'
 kmi = km.keymap_items.new('pose.select_all', 'I', 'PRESS', ctrl=True)
 kmi.properties.action = 'INVERT'
 kmi = km.keymap_items.new('pose.select_parent', 'P', 'PRESS', shift=True)
@@ -401,8 +401,6 @@ kmi.properties.data_path = 'tool_settings.proportional_edit_falloff'
 kmi = km.keymap_items.new('wm.context_toggle', 'O', 'PRESS')
 kmi.properties.data_path = 'tool_settings.use_proportional_edit_objects'
 kmi = km.keymap_items.new('view3d.game_start', 'P', 'PRESS')
-kmi = km.keymap_items.new('object.select_all', 'LEFTMOUSE', 'CLICK')
-kmi.properties.action = 'DESELECT'
 kmi = km.keymap_items.new('object.select_all', 'I', 'PRESS', ctrl=True)
 kmi.properties.action = 'INVERT'
 kmi = km.keymap_items.new('object.select_linked', 'L', 'PRESS', shift=True)
@@ -493,9 +491,11 @@ kmi.properties.level = 5
 km = kc.keymaps.new('Image Paint', space_type='EMPTY', region_type='WINDOW', modal=False)
 
 kmi = km.keymap_items.new('paint.image_paint', 'LEFTMOUSE', 'PRESS')
+kmi.properties.mode = 'NORMAL'
 kmi = km.keymap_items.new('paint.grab_clone', 'RIGHTMOUSE', 'PRESS')
 kmi = km.keymap_items.new('paint.sample_color', 'RIGHTMOUSE', 'PRESS')
-kmi = km.keymap_items.new('paint.clone_cursor_set', 'LEFTMOUSE', 'PRESS', ctrl=True)
+kmi = km.keymap_items.new('paint.image_paint', 'LEFTMOUSE', 'PRESS', ctrl=True)
+kmi.properties.mode = 'INVERT'
 kmi = km.keymap_items.new('brush.active_index_set', 'ONE', 'PRESS')
 kmi.properties.mode = 'image_paint'
 kmi.properties.index = 0
@@ -1017,8 +1017,6 @@ kmi.properties.extend = False
 kmi.properties.deselect = False
 kmi.properties.toggle = True
 kmi = km.keymap_items.new('mesh.select_shortest_path', 'SELECTMOUSE', 'PRESS', ctrl=True)
-kmi = km.keymap_items.new('mesh.select_all', 'LEFTMOUSE', 'CLICK')
-kmi.properties.action = 'DESELECT'
 kmi = km.keymap_items.new('mesh.select_all', 'I', 'PRESS', ctrl=True)
 kmi.properties.action = 'INVERT'
 kmi = km.keymap_items.new('mesh.select_more', 'NUMPAD_PLUS', 'PRESS', ctrl=True)
@@ -1134,8 +1132,6 @@ kmi = km.keymap_items.new('wm.call_menu', 'A', 'PRESS', shift=True)
 kmi.properties.name = 'INFO_MT_edit_curve_add'
 kmi = km.keymap_items.new('curve.handle_type_set', 'V', 'PRESS')
 kmi = km.keymap_items.new('curve.vertex_add', 'LEFTMOUSE', 'CLICK', ctrl=True)
-kmi = km.keymap_items.new('curve.select_all', 'LEFTMOUSE', 'CLICK')
-kmi.properties.action = 'TOGGLE'
 kmi = km.keymap_items.new('curve.select_all', 'I', 'PRESS', ctrl=True)
 kmi.properties.action = 'INVERT'
 kmi = km.keymap_items.new('curve.select_row', 'R', 'PRESS', shift=True)
@@ -1203,8 +1199,6 @@ kmi = km.keymap_items.new('armature.switch_direction', 'F', 'PRESS', alt=True)
 kmi = km.keymap_items.new('armature.bone_primitive_add', 'A', 'PRESS', shift=True)
 kmi = km.keymap_items.new('armature.parent_set', 'P', 'PRESS', ctrl=True)
 kmi = km.keymap_items.new('armature.parent_clear', 'P', 'PRESS', alt=True)
-kmi = km.keymap_items.new('armature.select_all', 'LEFTMOUSE', 'CLICK')
-kmi.properties.action = 'TOGGLE'
 kmi = km.keymap_items.new('armature.select_all', 'I', 'PRESS', ctrl=True)
 kmi.properties.action = 'INVERT'
 kmi = km.keymap_items.new('armature.select_hierarchy', 'LEFT_BRACKET', 'PRESS')
@@ -1258,8 +1252,6 @@ kmi.properties.unselected = True
 kmi = km.keymap_items.new('mball.delete_metaelems', 'X', 'PRESS')
 kmi = km.keymap_items.new('mball.delete_metaelems', 'DEL', 'PRESS')
 kmi = km.keymap_items.new('mball.duplicate_metaelems', 'D', 'PRESS', shift=True)
-kmi = km.keymap_items.new('mball.select_all', 'LEFTMOUSE', 'CLICK')
-kmi.properties.action = 'TOGGLE'
 kmi = km.keymap_items.new('mball.select_all', 'I', 'PRESS', ctrl=True)
 kmi.properties.action = 'INVERT'
 kmi = km.keymap_items.new('wm.context_cycle_enum', 'O', 'PRESS', shift=True)
@@ -1276,8 +1268,6 @@ kmi.properties.value_2 = 'CONNECTED'
 # Map Lattice
 km = kc.keymaps.new('Lattice', space_type='EMPTY', region_type='WINDOW', modal=False)
 
-kmi = km.keymap_items.new('lattice.select_all', 'LEFTMOUSE', 'CLICK')
-kmi.properties.action = 'TOGGLE'
 kmi = km.keymap_items.new('lattice.select_all', 'I', 'PRESS', ctrl=True)
 kmi.properties.action = 'INVERT'
 kmi = km.keymap_items.new('object.vertex_parent_set', 'P', 'PRESS', ctrl=True)
