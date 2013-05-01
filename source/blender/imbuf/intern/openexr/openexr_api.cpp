@@ -845,7 +845,7 @@ void IMB_exrtile_begin_write(void *handle, const char *filename, int mipmap, int
 	header.compression() = RLE_COMPRESSION;
 	header.setType(TILEDIMAGE);
 
-	header.insert("BlenderMultiChannel", StringAttribute("Blender V2.66"));
+	header.insert("BlenderMultiChannel", StringAttribute("Blender V2.43"));
 
 	int numparts = data->multiView.size();
 
@@ -1106,8 +1106,13 @@ void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, i
 			   );
 
 		float *rect = echan->rect - echan->xstride * partx - echan->ystride * party;
-		frameBuffer.insert(echan->m->internal_name, Slice(Imf::FLOAT,  (char *)rect,
-		                                      echan->xstride * sizeof(float), echan->ystride * sizeof(float)));
+		frameBuffer.insert(echan->m->internal_name,
+		                   Slice(Imf::FLOAT,
+		                         (char *)rect,
+		                         echan->xstride * sizeof(float),
+		                         echan->ystride * sizeof(float)
+		                        )
+		                  );
 	}
 
 	TiledOutputPart out (*data->mpofile, view);
@@ -1231,20 +1236,20 @@ void IMB_exr_read_channels(void *handle)
 		if (echan->rect) {
 			if (flip)
 				frameBuffers[echan->m->part_number].insert(echan->m->internal_name,
-														   Slice(Imf::FLOAT,
-																 (char *)echan->rect,
-																 echan->xstride * sizeof(float),
-																 echan->ystride * sizeof(float)
-																 )
-														   );
+					                                       Slice(Imf::FLOAT,
+					                                             (char *)echan->rect,
+					                                             echan->xstride * sizeof(float),
+					                                             echan->ystride * sizeof(float)
+					                                            )
+					                                      );
 			else
 				frameBuffers[echan->m->part_number].insert(echan->m->internal_name,
-														   Slice(Imf::FLOAT,
-																 (char *)(echan->rect + echan->xstride * (data->height - 1) * data->width),
-																 echan->xstride * sizeof(float),
-																 -echan->ystride * sizeof(float)
-																 )
-														   );
+					                                       Slice(Imf::FLOAT,
+					                                             (char *)(echan->rect + echan->xstride * (data->height - 1) * data->width),
+					                                             echan->xstride * sizeof(float),
+					                                             -echan->ystride * sizeof(float)
+					                                            )
+					                                      );
 		}
 		else
 			printf("warning, channel with no rect set %s\n", &(echan->m->internal_name)[0]);
