@@ -721,9 +721,9 @@ static void *do_part_thread(void *pa_v)
 	if (R.test_break(R.tbh) == 0) {
 		
 		if (!R.sss_points && (R.r.scemode & R_FULL_SAMPLE))
-			pa->result = render_result_new_full_sample(&R, &pa->fullresult, &pa->disprect, pa->crop, RR_USE_MEM, R.result->actview);
+			pa->result = render_result_new_full_sample(&R, &pa->fullresult, &pa->disprect, pa->crop, RR_USE_MEM, R.actview);
 		else
-			pa->result = render_result_new(&R, &pa->disprect, pa->crop, RR_USE_MEM, RR_ALL_LAYERS, R.result->actview);
+			pa->result = render_result_new(&R, &pa->disprect, pa->crop, RR_USE_MEM, RR_ALL_LAYERS, R.actview);
 
 		if (R.sss_points)
 			zbufshade_sss_tile(pa);
@@ -738,7 +738,7 @@ static void *do_part_thread(void *pa_v)
 		
 		/* merge too on break! */
 		if (R.result->do_exr_tile) {
-			render_result_exr_file_merge(R.result, pa->result);
+			render_result_exr_file_merge(R.result, pa->result, R.actview);
 		}
 		else if (render_display_draw_enabled(&R)) {
 			/* on break, don't merge in result for preview renders, looks nicer */
@@ -910,6 +910,15 @@ static void *do_render_thread(void *thread_v)
 	return NULL;
 }
 
+static void main_render_result_end(Render *re)
+{
+	if (re->result->do_exr_tile) {
+		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+		render_result_exr_file_end(re);
+		BLI_rw_mutex_unlock(&re->resultmutex);
+	}
+}
+
 static void main_render_result_new(Render *re)
 {
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
@@ -928,6 +937,9 @@ static void main_render_result_new(Render *re)
 	}
 
 	BLI_rw_mutex_unlock(&re->resultmutex);
+
+	if (re->result->do_exr_tile)
+		render_result_exr_file_begin(re);
 }
 
 static void threaded_tile_processor(Render *re)
@@ -944,11 +956,7 @@ static void threaded_tile_processor(Render *re)
 		return;
 
 	/* warning; no return here without closing exr file */
-	
 	RE_parts_init(re, TRUE);
-
-	if (re->result->do_exr_tile)
-		render_result_exr_file_begin(re);
 	
 	/* assuming no new data gets added to dbase... */
 	R = *re;
@@ -1046,12 +1054,6 @@ static void threaded_tile_processor(Render *re)
 	BLI_thread_queue_free(donequeue);
 	BLI_thread_queue_free(workqueue);
 	
-	if (re->result->do_exr_tile) {
-		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-		render_result_exr_file_end(re);
-		BLI_rw_mutex_unlock(&re->resultmutex);
-	}
-	
 	/* unset threadsafety */
 	g_break = 0;
 	
@@ -1123,7 +1125,8 @@ static void do_render_3d(Render *re)
 	int numviews = BLI_countlist(&re->result->views);
 	for (view = 0; view < numviews; view++) {
 
-		re->result->actview = view;
+		printf("do_render_3d: view/numviews : %d/%d\n", view + 1, numviews);
+		re->actview = view;
 
 		/* make render verts/faces/halos/lamps */
 		if (render_scene_needs_vector(re))
@@ -1152,6 +1155,8 @@ static void do_render_3d(Render *re)
 		/* free all render verts etc */
 		RE_Database_Free(re);
 	}
+
+	main_render_result_end(re);
 
 	re->scene->r.cfra = cfra_backup;
 	re->scene->r.subframe = 0.f;
@@ -1961,7 +1966,7 @@ static void renderresult_stampinfo(Render *re)
 	for (rl = rres.layers.first; rl; rl = rl->next) {
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			if (rpass->passtype & SCE_PASS_COMBINED) {
-				re->result->actview = rpass->view_id;
+				re->actview = rpass->view_id;
 				BKE_stamp_buf(re->scene, RE_GetViewCamera(re), (unsigned char *)rres.rect32, rpass->rect, rres.rectx, rres.recty, 4);
 			}
 		}

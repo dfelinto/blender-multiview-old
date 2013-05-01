@@ -150,7 +150,7 @@ typedef struct RenderResult {
 	char *text;
 	
 	/* MultiView */
-	int actview;
+	//int actview;
 
 } RenderResult;
 

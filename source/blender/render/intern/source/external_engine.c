@@ -269,7 +269,7 @@ void RE_engine_end_result(RenderEngine *engine, RenderResult *result, int cancel
 			pa->status = PART_STATUS_READY;
 
 		if (re->result->do_exr_tile)
-			render_result_exr_file_merge(re->result, result);
+			render_result_exr_file_merge(re->result, result, re->actview);
 		else if (!(re->test_break(re->tbh) && (re->r.scemode & R_PREVIEWBUTS)))
 			render_result_merge(re->result, result);
 
@@ -359,9 +359,7 @@ void RE_engine_report(RenderEngine *engine, int type, const char *msg)
 void RE_engine_actview_set(RenderEngine *engine, int view)
 {
 	Render *re = engine->re;
-
-	if (re->result)
-		re->result->actview = view;
+	re->actview = view;
 }
 
 void RE_engine_get_current_tiles(Render *re, int *total_tiles_r, rcti **tiles_r)

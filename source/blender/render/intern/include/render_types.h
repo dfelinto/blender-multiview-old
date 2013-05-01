@@ -271,6 +271,8 @@ struct Render
 	struct ReportList *reports;
 
 	struct ImagePool *pool;
+
+	int actview;
 };
 
 /* ------------------------------------------------------------------------- */
