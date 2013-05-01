@@ -107,6 +107,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
+#include "BLI_threads.h"
 
 #include "BLF_translation.h"
 
@@ -4595,6 +4596,7 @@ static void direct_link_modifiers(FileData *fd, ListBase *lb)
 				smd->domain->smd = smd;
 				
 				smd->domain->fluid = NULL;
+				smd->domain->fluid_mutex = BLI_rw_mutex_alloc();
 				smd->domain->wt = NULL;
 				smd->domain->shadow = NULL;
 				smd->domain->tex = NULL;
@@ -9407,6 +9409,41 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				BKE_scene_add_render_view(scene, "center");
 				((SceneRenderView *)scene->r.views.first)->viewflag |= SCE_VIEW_DISABLE;
 			}
+		}
+	}
+
+	{
+		/* Initialize the active_viewer_key for compositing */
+		bScreen *screen;
+		Scene *scene;
+		bNodeInstanceKey active_viewer_key = {0};
+		/* simply pick the first node space and use that for the active viewer key */
+		for (screen = main->screen.first; screen; screen = screen->id.next) {
+			ScrArea *sa;
+			for (sa = screen->areabase.first; sa; sa = sa->next) {
+				SpaceLink *sl;
+				for (sl = sa->spacedata.first; sl; sl= sl->next) {
+					if (sl->spacetype == SPACE_NODE) {
+						SpaceNode *snode = (SpaceNode *)sl;
+						bNodeTreePath *path = snode->treepath.last;
+						if (!path)
+							continue;
+						
+						active_viewer_key = path->parent_key;
+						break;
+					}
+				}
+				if (active_viewer_key.value != 0)
+					break;
+			}
+			if (active_viewer_key.value != 0)
+				break;
+		}
+		
+		for (scene = main->scene.first; scene; scene = scene->id.next) {
+			/* NB: scene->nodetree is a local ID block, has been direct_link'ed */
+			if (scene->nodetree)
+				scene->nodetree->active_viewer_key = active_viewer_key;
 		}
 	}
 

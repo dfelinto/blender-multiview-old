@@ -75,10 +75,13 @@ extern void ui_dropshadow(const rctf *rct, float radius, float aspect, float alp
 void ED_node_tree_update(const bContext *C)
 {
 	SpaceNode *snode = CTX_wm_space_node(C);
-	snode_set_context(C);
-	
-	if (snode->nodetree && snode->nodetree->id.us == 0)
-		snode->nodetree->id.us = 1;
+	if (snode) {
+		snode_set_context(C);
+
+		if (snode->nodetree && snode->nodetree->id.us == 0) {
+			snode->nodetree->id.us = 1;
+		}
+	}
 }
 
 /* id is supposed to contain a node tree */
@@ -1194,7 +1197,7 @@ static void draw_tree_path(SpaceNode *snode)
 	ED_node_tree_path_get_fixedbuf(snode, info, sizeof(info));
 	
 	UI_ThemeColor(TH_TEXT_HI);
-	BLF_draw_default(30, 30, 0.0f, info, sizeof(info));
+	BLF_draw_default(1.5f * UI_UNIT_X, 1.5f * UI_UNIT_Y, 0.0f, info, sizeof(info));
 }
 
 static void snode_setup_v2d(SpaceNode *snode, ARegion *ar, float center[2])

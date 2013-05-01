@@ -154,10 +154,14 @@ static int vertex_color_set_exec(bContext *C, wmOperator *UNUSED(op))
 	Scene *scene = CTX_data_scene(C);
 	Object *obact = CTX_data_active_object(C);
 	unsigned int paintcol = vpaint_get_current_col(scene->toolsettings->vpaint);
-	vpaint_fill(obact, paintcol);
-	
-	ED_region_tag_redraw(CTX_wm_region(C)); // XXX - should redraw all 3D views
-	return OPERATOR_FINISHED;
+
+	if (ED_vpaint_fill(obact, paintcol)) {
+		ED_region_tag_redraw(CTX_wm_region(C)); // XXX - should redraw all 3D views
+		return OPERATOR_FINISHED;
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
 }
 
 static void PAINT_OT_vertex_color_set(wmOperatorType *ot)
@@ -171,6 +175,33 @@ static void PAINT_OT_vertex_color_set(wmOperatorType *ot)
 	ot->exec = vertex_color_set_exec;
 	ot->poll = vertex_paint_mode_poll;
 	
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
+static int vertex_color_smooth_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	Object *obact = CTX_data_active_object(C);
+	if (ED_vpaint_smooth(obact)) {
+		ED_region_tag_redraw(CTX_wm_region(C)); // XXX - should redraw all 3D views
+		return OPERATOR_FINISHED;
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
+}
+
+static void PAINT_OT_vertex_color_smooth(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Smooth Vertex Colors";
+	ot->idname = "PAINT_OT_vertex_color_smooth";
+	ot->description = "Smooth colors across vertices";
+
+	/* api callbacks */
+	ot->exec = vertex_color_smooth_exec;
+	ot->poll = vertex_paint_mode_poll;
+
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
@@ -776,7 +807,7 @@ static void BRUSH_OT_stencil_fit_image_aspect(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Image Aspect";
-	ot->description = "Adjust the stencil size to fit image aspect ratio";
+	ot->description = "When using an image texture, adjust the stencil size to fit the image aspect ratio";
 	ot->idname = "BRUSH_OT_stencil_fit_image_aspect";
 
 	/* api callbacks */
@@ -789,6 +820,45 @@ static void BRUSH_OT_stencil_fit_image_aspect(wmOperatorType *ot)
 	RNA_def_boolean(ot->srna, "use_repeat", 1, "Use Repeat", "Use repeat mapping values");
 	RNA_def_boolean(ot->srna, "use_scale", 1, "Use Scale", "Use texture scale values");
 	RNA_def_boolean(ot->srna, "mask", 0, "Modify Mask Stencil", "Modify either the primary or mask stencil");
+}
+
+
+static int stencil_reset_transform(bContext *C, wmOperator *UNUSED(op))
+{
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *br = BKE_paint_brush(paint);
+
+	if (!br)
+		return OPERATOR_CANCELLED;
+
+	br->stencil_pos[0] = 256;
+	br->stencil_pos[1] = 256;
+
+	br->stencil_dimension[0] = 256;
+	br->stencil_dimension[1] = 256;
+
+	br->mtex.rot = 0;
+	br->mask_mtex.rot = 0;
+
+	WM_event_add_notifier(C, NC_WINDOW, NULL);
+
+	return OPERATOR_FINISHED;
+}
+
+
+static void BRUSH_OT_stencil_reset_transform(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Reset Transform";
+	ot->description = "Reset the stencil transformation to the default";
+	ot->idname = "BRUSH_OT_stencil_reset_transform";
+
+	/* api callbacks */
+	ot->exec = stencil_reset_transform;
+	ot->poll = stencil_control_poll;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
 
@@ -825,6 +895,7 @@ void ED_operatortypes_paint(void)
 	WM_operatortype_append(BRUSH_OT_reset);
 	WM_operatortype_append(BRUSH_OT_stencil_control);
 	WM_operatortype_append(BRUSH_OT_stencil_fit_image_aspect);
+	WM_operatortype_append(BRUSH_OT_stencil_reset_transform);
 
 	/* note, particle uses a different system, can be added with existing operators in wm.py */
 	WM_operatortype_append(PAINT_OT_brush_select);
@@ -858,6 +929,7 @@ void ED_operatortypes_paint(void)
 	WM_operatortype_append(PAINT_OT_vertex_paint_toggle);
 	WM_operatortype_append(PAINT_OT_vertex_paint);
 	WM_operatortype_append(PAINT_OT_vertex_color_set);
+	WM_operatortype_append(PAINT_OT_vertex_color_smooth);
 
 	/* face-select */
 	WM_operatortype_append(PAINT_OT_face_select_linked);

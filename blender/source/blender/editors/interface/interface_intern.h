@@ -386,6 +386,8 @@ extern void ui_set_but_vectorf(uiBut *but, const float vec[3]);
 
 extern void ui_hsvcircle_vals_from_pos(float *val_rad, float *val_dist, const rcti *rect,
                                        const float mx, const float my);
+extern void ui_hsvcircle_pos_from_vals(struct uiBut *but, const rcti *rect, float *hsv, float *xpos, float *ypos);
+extern void ui_hsvcube_pos_from_vals(struct uiBut *but, const rcti *rect, float *hsv, float *xp, float *yp);
 
 extern void ui_get_but_string_ex(uiBut *but, char *str, const size_t maxlen, const int float_precision);
 extern void ui_get_but_string(uiBut *but, char *str, const size_t maxlen);
@@ -541,7 +543,7 @@ void ui_widget_color_init(struct ThemeUI *tui);
 void ui_draw_menu_item(struct uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state);
 void ui_draw_preview_item(struct uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state);
 
-extern unsigned char checker_stipple_sml[32 * 32 / 8];
+extern const unsigned char checker_stipple_sml[32 * 32 / 8];
 /* used for transp checkers */
 #define UI_TRANSP_DARK 100
 #define UI_TRANSP_LIGHT 160

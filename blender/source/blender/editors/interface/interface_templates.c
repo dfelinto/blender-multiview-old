@@ -304,8 +304,9 @@ static void template_id_cb(bContext *C, void *arg_litem, void *arg_event)
 
 				/* make copy */
 				if (do_scene_obj) {
+					Main *bmain = CTX_data_main(C);
 					Scene *scene = CTX_data_scene(C);
-					ED_object_single_user(scene, (struct Object *)id);
+					ED_object_single_user(bmain, scene, (struct Object *)id);
 					WM_event_add_notifier(C, NC_SCENE | ND_OB_ACTIVE, scene);
 				}
 				else {
@@ -1892,32 +1893,45 @@ static uiBlock *curvemap_clipping_func(bContext *C, ARegion *ar, void *cumap_v)
 	return block;
 }
 
+/* only for curvemap_tools_dofunc */
+enum {
+	UICURVE_FUNC_RESET_NEG,
+	UICURVE_FUNC_RESET_POS,
+	UICURVE_FUNC_RESET_VIEW,
+	UICURVE_FUNC_HANDLE_VECTOR,
+	UICURVE_FUNC_HANDLE_AUTO,
+	UICURVE_FUNC_EXTEND_HOZ,
+	UICURVE_FUNC_EXTEND_EXP,
+};
+
 static void curvemap_tools_dofunc(bContext *C, void *cumap_v, int event)
 {
 	CurveMapping *cumap = cumap_v;
 	CurveMap *cuma = cumap->cm + cumap->cur;
 
 	switch (event) {
-		case 0: /* reset */
-			curvemap_reset(cuma, &cumap->clipr, cumap->preset, CURVEMAP_SLOPE_POSITIVE);
+		case UICURVE_FUNC_RESET_NEG:
+		case UICURVE_FUNC_RESET_POS: /* reset */
+			curvemap_reset(cuma, &cumap->clipr, cumap->preset,
+			               (event == -1) ? CURVEMAP_SLOPE_NEGATIVE : CURVEMAP_SLOPE_POSITIVE);
 			curvemapping_changed(cumap, FALSE);
 			break;
-		case 1:
+		case UICURVE_FUNC_RESET_VIEW:
 			cumap->curr = cumap->clipr;
 			break;
-		case 2: /* set vector */
+		case UICURVE_FUNC_HANDLE_VECTOR: /* set vector */
 			curvemap_sethandle(cuma, 1);
 			curvemapping_changed(cumap, FALSE);
 			break;
-		case 3: /* set auto */
+		case UICURVE_FUNC_HANDLE_AUTO: /* set auto */
 			curvemap_sethandle(cuma, 0);
 			curvemapping_changed(cumap, FALSE);
 			break;
-		case 4: /* extend horiz */
+		case UICURVE_FUNC_EXTEND_HOZ: /* extend horiz */
 			cuma->flag &= ~CUMA_EXTEND_EXTRAPOLATE;
 			curvemapping_changed(cumap, FALSE);
 			break;
-		case 5: /* extend extrapolate */
+		case UICURVE_FUNC_EXTEND_EXP: /* extend extrapolate */
 			cuma->flag |= CUMA_EXTEND_EXTRAPOLATE;
 			curvemapping_changed(cumap, FALSE);
 			break;
@@ -1934,17 +1948,17 @@ static uiBlock *curvemap_tools_func(bContext *C, ARegion *ar, void *cumap_v)
 	uiBlockSetButmFunc(block, curvemap_tools_dofunc, cumap_v);
 
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Reset View"),          0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 1, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_RESET_VIEW, "");
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Vector Handle"),       0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 2, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_HANDLE_VECTOR, "");
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Auto Handle"),         0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 3, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_HANDLE_AUTO, "");
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Extend Horizontal"),   0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 4, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_EXTEND_HOZ, "");
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Extend Extrapolated"), 0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 5, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_EXTEND_EXP, "");
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Reset Curve"),         0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_RESET_POS, "");
 
 	uiBlockSetDirection(block, UI_RIGHT);
 	uiTextBoundsBlock(block, 50);
@@ -1962,13 +1976,13 @@ static uiBlock *curvemap_brush_tools_func(bContext *C, ARegion *ar, void *cumap_
 	uiBlockSetButmFunc(block, curvemap_tools_dofunc, cumap_v);
 
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Reset View"),    0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 1, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_RESET_VIEW, "");
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Vector Handle"), 0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 2, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_HANDLE_VECTOR, "");
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Auto Handle"),   0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 3, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_HANDLE_AUTO, "");
 	uiDefIconTextBut(block, BUTM, 1, ICON_BLANK1, IFACE_("Reset Curve"),   0, yco -= UI_UNIT_Y,
-	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
+	                 menuwidth, UI_UNIT_Y, NULL, 0.0, 0.0, 0, UICURVE_FUNC_RESET_NEG, "");
 
 	uiBlockSetDirection(block, UI_RIGHT);
 	uiTextBoundsBlock(block, 50);
@@ -2876,15 +2890,15 @@ void uiTemplateRunningJobs(uiLayout *layout, bContext *C)
 		uiDefIconBut(block, BUT, handle_event, ICON_PANEL_CLOSE, 0, UI_UNIT_Y * 0.1, UI_UNIT_X * 0.8, UI_UNIT_Y * 0.8,
 		             NULL, 0.0f, 0.0f, 0, 0, TIP_("Stop this job"));
 		uiDefBut(block, PROGRESSBAR, 0, WM_jobs_name(wm, owner), 
-		         UI_UNIT_X, 0, 100, UI_UNIT_Y, NULL, 0.0f, 0.0f, WM_jobs_progress(wm, owner), 0, TIP_("Progress"));
+		         UI_UNIT_X, 0, UI_UNIT_X * 5.0f, UI_UNIT_Y, NULL, 0.0f, 0.0f, WM_jobs_progress(wm, owner), 0, TIP_("Progress"));
 		
 		uiLayoutRow(layout, FALSE);
 	}
 	if (WM_jobs_test(wm, screen, WM_JOB_TYPE_SCREENCAST))
-		uiDefIconTextBut(block, BUT, B_STOPCAST, ICON_CANCEL, IFACE_("Capture"), 0, 0, 85, UI_UNIT_Y,
+		uiDefIconTextBut(block, BUT, B_STOPCAST, ICON_CANCEL, IFACE_("Capture"), 0, 0, UI_UNIT_X * 4.25f, UI_UNIT_Y,
 		                 NULL, 0.0f, 0.0f, 0, 0, TIP_("Stop screencast"));
 	if (screen->animtimer)
-		uiDefIconTextBut(block, BUT, B_STOPANIM, ICON_CANCEL, IFACE_("Anim Player"), 0, 0, 100, UI_UNIT_Y,
+		uiDefIconTextBut(block, BUT, B_STOPANIM, ICON_CANCEL, IFACE_("Anim Player"), 0, 0, UI_UNIT_X * 5.0f, UI_UNIT_Y,
 		                 NULL, 0.0f, 0.0f, 0, 0, TIP_("Stop animation playback"));
 }
 
