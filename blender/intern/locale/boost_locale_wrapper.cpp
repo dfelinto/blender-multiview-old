@@ -79,6 +79,7 @@ void bl_locale_set(const char *locale)
 	}
 	catch(std::exception const &e) {
 		std::cout << "bl_locale_set(" << locale << "): " << e.what() << " \n";
+		return;
 	}
 
 	/* Generate the locale string (useful to know which locale we are actually using in case of "default" one). */
