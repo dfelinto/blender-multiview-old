@@ -552,7 +552,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 
 	/* check renderdata for amount of views */
 	for (nr = 0, srv = re->r.views.first; srv; srv = srv->next, nr++) {
-		if ((re->r.scemode & R_SINGLE_VIEW) && nr != re->r.actview)
+		if ((re->r.scemode & R_SINGLE_VIEW) && nr != re->actview)
 			continue;
 
 		if (srv->viewflag & SCE_VIEW_DISABLE)
@@ -676,6 +676,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 	}
 	/* sss, previewrender and envmap don't do layers, so we make a default one */
 	if (rr->layers.first == NULL && !(layername && layername[0])) {
+		printf("XXXXXX\nXXXXXX\nXXXXXX\nXXXXX\n\n NO PANIC, I just haven't got to code this yet\n\nXXXX\n");
 		rl = MEM_callocN(sizeof(RenderLayer), "new render layer");
 		BLI_addtail(&rr->layers, rl);
 		
@@ -881,11 +882,11 @@ void render_result_merge(RenderResult *rr, RenderResult *rrpart)
 				//if (rpass->view_id != rr->actview)
 				//	continue;
 
-				if (rpass->passtype & SCE_PASS_COMBINED) {
-					do_merge_tile(rr, rrpart, rpass->rect, rlp->rectf, rpass->channels);
-				}
-				else
-					do_merge_tile(rr, rrpart, rpass->rect, rpassp->rect, rpass->channels);
+				//if (rpass->passtype & SCE_PASS_COMBINED) {
+				//	do_merge_tile(rr, rrpart, rpass->rect, rlp->rectf, rpass->channels);
+				//}
+				//else
+				do_merge_tile(rr, rrpart, rpass->rect, rpassp->rect, rpass->channels);
 
 				/* manually get next render pass */
 				rpassp = rpassp->next;
@@ -1047,13 +1048,15 @@ void render_result_single_layer_end(Render *re)
 
 /************************* EXR Tile File Rendering ***************************/
 
-static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart)
+static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int view)
 {
 	RenderLayer *rlp, *rl;
 	RenderPass *rpassp;
 	RenderView *rv;
 	int offs, partx, party;
 	int nr;
+
+	printf("save_render_result_tile: view_id = %d\n", view);
 	
 	BLI_lock_thread(LOCK_IMAGE);
 	
@@ -1118,7 +1121,7 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart)
 			continue;
 		}
 
-		IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, rr->actview);
+		IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, view);
 	}
 
 	BLI_unlock_thread(LOCK_IMAGE);
@@ -1138,7 +1141,7 @@ static void save_empty_result_tiles(Render *re)
 				if (pa->status != PART_STATUS_READY) {
 					int party = pa->disprect.ymin - re->disprect.ymin + pa->crop;
 					int partx = pa->disprect.xmin - re->disprect.xmin + pa->crop;
-					IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, rr->actview);
+					IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, re->actview);
 				}
 			}
 		}
@@ -1185,10 +1188,10 @@ void render_result_exr_file_end(Render *re)
 }
 
 /* save part into exr file */
-void render_result_exr_file_merge(RenderResult *rr, RenderResult *rrpart)
+void render_result_exr_file_merge(RenderResult *rr, RenderResult *rrpart, int view)
 {
 	for (; rr && rrpart; rr = rr->next, rrpart = rrpart->next)
-		save_render_result_tile(rr, rrpart);
+		save_render_result_tile(rr, rrpart, view);
 }
 
 /* path to temporary exr file */
@@ -1282,6 +1285,7 @@ int render_result_exr_file_read_path(RenderResult *rr, RenderLayer *rl_single, c
 	IMB_exr_read_channels(exrhandle);
 	IMB_exr_close(exrhandle);
 
+	printf("\nrender_result_exr_file_read_path\n");
 	return 1;
 }
 
