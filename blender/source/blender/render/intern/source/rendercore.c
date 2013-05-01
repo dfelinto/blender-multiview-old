@@ -466,14 +466,20 @@ static void add_filt_passes(RenderLayer *rl, int curmask, int rectx, int offset,
 {
 	RenderPass *rpass;
 
+#if 0
 	/* combined rgb */
 	add_filt_fmask(curmask, shr->combined, rl->rectf + 4*offset, rectx);
-	
+#endif
+
 	for (rpass= rl->passes.first; rpass; rpass= rpass->next) {
 		float *fp, *col= NULL;
 		int pixsize= 3;
 		
 		switch (rpass->passtype) {
+			case SCE_PASS_COMBINED:
+				col= shr->combined;
+				pixsize= 4;
+				break;
 			case SCE_PASS_Z:
 				fp= rpass->rect + offset;
 				*fp= shr->z;
