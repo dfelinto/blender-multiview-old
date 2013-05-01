@@ -775,12 +775,10 @@ int IMB_exr_begin_write(void *handle, const char *filename, int width, int heigh
 	ExrHandle *data = (ExrHandle *)handle;
 	Header header(width, height);
 	ExrChannel *echan;
+	int i;
 
 	data->width = width;
 	data->height = height;
-
-	for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next)
-		header.channels().insert(echan->name, Channel(Imf::FLOAT));
 
 	openexr_header_compression(&header, compress);
 	// openexr_header_metadata(&header, ibuf); // no imbuf. cant write
@@ -790,6 +788,24 @@ int IMB_exr_begin_write(void *handle, const char *filename, int width, int heigh
 
 	if (IMB_exr_is_multiView(handle))
 		addMultiView(header, data->multiView);
+
+	printf("\nIMB_exr_begin_write()\n");
+
+	std::vector< MultiViewChannelName > channels;
+	for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next) {
+		header.channels().insert(echan->name, Channel(Imf::FLOAT));
+		channels.push_back(*echan->m);
+	}
+
+	/* this set the part number to be used in IMB_exr_write_channels() */
+	data->parts = SplitChannels(channels.begin(), channels.end(), false, (data->multiView.size()>0?data->multiView[0]:""));
+
+	for (i=0, echan = (ExrChannel *)data->channels.first; echan; echan = echan->next, i++) {
+		echan->m->name = channels[i].name;
+		echan->m->view = channels[i].view;
+		echan->m->part_number = channels[i].part_number;
+		echan->m->internal_name = channels[i].internal_name;
+	}
 
 	/* avoid crash/abort when we don't have permission to write here */
 	/* manually create ofstream, so we can handle utf-8 filepaths on windows */
@@ -932,6 +948,7 @@ int IMB_exrmultipart_begin_write(void *handle, const char *filename, int width, 
 	try {
 		data->ofile_stream = new OFileStream(filename);
 		data->mpofile = new MultiPartOutputFile(*(data->ofile_stream), &headers[0], headers.size());
+		printf("exr: success creating file: \"%s\"\n", filename);
 	}
 	catch (const std::exception &exc) {
 		std::cerr << exc.what() << std::endl;
@@ -1041,7 +1058,6 @@ void IMB_exr_write_channels(void *handle)
 		for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next) {
 			/* last scanline, stride negative */
 			float *rect = echan->rect + echan->xstride * (data->height - 1) * data->width;
-
 			frameBuffer.insert(echan->m->internal_name,
 							   Slice(Imf::FLOAT,
 									 (char *)rect,
@@ -1119,7 +1135,7 @@ void IMB_exrmultipart_write_channels(void *handle)
 	if (data->channels.first == NULL)
 		return;
 
-	printf("\n<IMB_exrmultipart_write_channels()>\n");
+	printf("\nIMB_exrmultipart_write_channels()\n");
 
 	for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next) {
 		/* last scanline, stride negative */
@@ -1141,12 +1157,11 @@ void IMB_exrmultipart_write_channels(void *handle)
 
 	try {
 		for (i=0; i < data->parts; i++)
-			outputParts[i].writePixels();
+			outputParts[i].writePixels(data->height);
 	}
 	catch (const std::exception &exc) {
 		std::cerr << "OpenEXR-write Multi Part: ERROR: " << exc.what() << std::endl;
 	}
-	printf("</IMB_exrmultipart_write_channels()>\n");
 }
 
 void IMB_exr_multilayer_convert(void *handle, void *base,
