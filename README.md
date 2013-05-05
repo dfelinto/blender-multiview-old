@@ -16,21 +16,30 @@ Current status:
 * Multiview is rendering fine and antialias is working too.
 * Support for MultiPart images (read and write) working fine (OpenEXR 2.0)
 * Cycles is working as well
-* My next target is Composite
+* Composite is work in progress
 
 The rules for testing are:
-* No Compo
-* ~~No FSA~~
+* Composite with Output node (and file format as exr multilayer)
 * (for saving) EXR MultiLayer (multipart working)
 
 Known bugs:
 * When rendering only one view, the 'view' name shouldn't be saved in EXR file (it's probably fixed now, I'll investigate later
 * UV/Image Editor has the "Combined" pass even when it shouldn't (I hacked it away, but not nicely)
 
-Current ~~headache~~issues
+Compositor elements not yet tackled:
+* FSA
+* Viewer Node
+* Image Node (right now it shows each view as a socket)
+* SingleLayer exr file
+* Non-exr files (more a design/UI thing)
+* Global option to composite/render only one view
+* Image Node: to map image views to scene views
+* View Filter Node: to run a nodebranch when view =="left" ...
+
+
+Current issues
 --------------------------
-None at the moment. OpenEXR 2.0 was hard to implement, but it's all working now.
-Composite will be "fun" ;)
+None at the moment. Need to decide (design-wise) how to handle files output.
 
 Links
 -----
