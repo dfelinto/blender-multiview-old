@@ -3954,7 +3954,7 @@ static void reset_sky_speedvectors(RenderPart *pa, RenderLayer *rl, float *rectf
 	float *fp, *col;
 	int a;
 	
-	fp= RE_RenderLayerGetPass(rl, SCE_PASS_VECTOR);
+	fp= RE_RenderLayerGetPass(rl, SCE_PASS_VECTOR, R.actview);
 	if (fp==NULL) return;
 	col= rectf+3;
 	

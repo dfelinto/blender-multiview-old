@@ -192,14 +192,20 @@ void RE_FreeRenderResult(RenderResult *res)
 	render_result_free(res);
 }
 
-float *RE_RenderLayerGetPass(RenderLayer *rl, int passtype)
+float *RE_RenderLayerGetPass(RenderLayer *rl, int passtype, int view_id)
 {
 	RenderPass *rpass;
-	
-	for (rpass = rl->passes.first; rpass; rpass = rpass->next)
-		if (rpass->passtype == passtype)
-			return rpass->rect;
-	return NULL;
+	float *rect=NULL;
+
+	for (rpass = rl->passes.last; rpass; rpass = rpass->prev)
+		if (rpass->passtype == passtype) {
+			rect = rpass->rect;
+
+			if (rpass->view_id == view_id)
+				break;
+		}
+
+	return rect;
 }
 
 RenderLayer *RE_GetRenderLayer(RenderResult *rr, const char *name)
@@ -323,7 +329,7 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 				if (rr->rectf == NULL)
 					rr->rectf = rl->rectf;
 				if (rr->rectz == NULL)
-					rr->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z);
+					rr->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, re->actview);
 			}
 
 			rr->have_combined = (re->result->rectf != NULL);
@@ -1112,8 +1118,7 @@ static void do_render_3d(Render *re)
 {
 	float cfra;
 	int cfra_backup;
-	RenderView *rv;
-	int view;
+	int view, numviews;
 
 	/* try external */
 	if (RE_engine_render(re, 0))
@@ -1137,7 +1142,7 @@ static void do_render_3d(Render *re)
 	main_render_result_new(re);
 
 	/* we need a new database for each view */
-	int numviews = BLI_countlist(&re->result->views);
+	numviews = BLI_countlist(&re->result->views);
 	for (view = 0; view < numviews; view++) {
 
 		printf("do_render_3d: view/numviews : %d/%d\n", view + 1, numviews);
@@ -1770,8 +1775,9 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 		if (ntree) {
 			ntreeCompositTagRender(re->scene);
 			ntreeCompositTagAnimated(ntree);
-			
-			ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings);
+
+			//MV XXX to handle FSA later
+			ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, 0);
 		}
 		
 		/* ensure we get either composited result or the active layer */
@@ -1888,6 +1894,7 @@ static void do_render_composite_fields_blur_3d(Render *re)
 {
 	bNodeTree *ntree = re->scene->nodetree;
 	int update_newframe = 0;
+	int view, numviews;
 	
 	/* INIT seeding, compositor can use random texture */
 	BLI_srandom(re->r.cfra);
@@ -1895,7 +1902,11 @@ static void do_render_composite_fields_blur_3d(Render *re)
 	if (composite_needs_render(re->scene, 1)) {
 		/* save memory... free all cached images */
 		ntreeFreeCache(ntree);
-		
+
+		/* render the frames
+		 * it could be optimized to render only the needed view
+		 * but what if a scene has a different number of views
+		 * than the main scene? */
 		do_render_fields_blur_3d(re);
 	}
 	else {
@@ -1948,7 +1959,12 @@ static void do_render_composite_fields_blur_3d(Render *re)
 				if (re->r.scemode & R_FULL_SAMPLE)
 					do_merge_fullsample(re, ntree);
 				else {
-					ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings);
+
+					//MV trying to get things to work first, later I get FSA right
+					numviews = BLI_countlist(&re->result->views);
+					for (view = 0; view < numviews; view++) {
+						ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, view);
+					}
 				}
 				
 				ntree->stats_draw = NULL;

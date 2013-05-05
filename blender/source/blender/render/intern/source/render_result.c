@@ -970,8 +970,8 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 
 	/* when the filename has no permissions, this can fail */
 	if (multipart) {
-		if (IMB_exrmultipart_begin_write(exrhandle, filename, rr->rectx, rr->recty, compress)) {
-			IMB_exrmultipart_write_channels(exrhandle);
+		if (IMB_exrmultipart_begin_write(exrhandle, filename, rr->rectx, rr->recty, compress, false)) {
+			IMB_exrmultipart_write_channels(exrhandle, -1);
 			success = TRUE;
 		}
 	} else {

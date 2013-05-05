@@ -29,6 +29,7 @@ extern "C" {
 	#include "RE_pipeline.h"
 	#include "RE_shader_ext.h"
 	#include "RE_render_ext.h"
+	#include "render_types.h"
 }
 
 RenderLayersBaseProg::RenderLayersBaseProg(int renderpass, int elementsize) : NodeOperation()
@@ -56,11 +57,7 @@ void RenderLayersBaseProg::initExecution()
 
 			RenderLayer *rl = RE_GetRenderLayer(rr, srl->name);
 			if (rl && rl->rectf) {
-				this->m_inputBuffer = RE_RenderLayerGetPass(rl, this->m_renderpass);
-
-				if (this->m_inputBuffer == NULL || this->m_renderpass == SCE_PASS_COMBINED) {
-					this->m_inputBuffer = rl->rectf;
-				}
+				this->m_inputBuffer = RE_RenderLayerGetPass(rl, this->m_renderpass, getViewId());
 			}
 		}
 	}
