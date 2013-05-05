@@ -153,7 +153,7 @@ static CustomData *rna_cd_from_layer(PointerRNA *ptr, CustomDataLayer *cdl)
 	CustomData *cd;
 
 	/* rely on negative values wrapping */
-#define TEST_CDL(cmd) if ((void)(cd = cmd(me)), (unsigned int)(cdl - cd->layers) < (unsigned int)cd->totlayer) return cd
+#define TEST_CDL(cmd) if ((void)(cd = cmd(me)), ARRAY_HAS_ITEM(cdl, cd->layers, cd->totlayer)) return cd
 
 	TEST_CDL(rna_mesh_vdata_helper);
 	TEST_CDL(rna_mesh_edata_helper);
@@ -589,6 +589,23 @@ static void rna_MeshVertex_groups_begin(CollectionPropertyIterator *iter, Pointe
 	}
 	else
 		rna_iterator_array_begin(iter, NULL, 0, 0, 0, NULL);
+}
+
+static void rna_MeshVertex_undeformed_co_get(PointerRNA *ptr, float values[3])
+{
+	Mesh *me = rna_mesh(ptr);
+	MVert *mvert = (MVert *)ptr->data;
+	float (*orco)[3] =  CustomData_get_layer(&me->vdata, CD_ORCO);
+
+	if (orco) {
+		/* orco is normalized to 0..1, we do inverse to match mvert->co */
+		float loc[3], size[3];
+
+		BKE_mesh_texspace_get(me->texcomesh ? me->texcomesh : me, loc, NULL, size);
+		madd_v3_v3v3v3(values, loc, orco[(mvert - me->mvert)], size);
+	}
+	else
+		copy_v3_v3(values, mvert->co);
 }
 
 static int rna_CustomDataLayer_active_get(PointerRNA *ptr, CustomData *data, int type, int render)
@@ -1638,6 +1655,12 @@ static void rna_def_mvert(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_int_funcs(prop, "rna_MeshVertex_index_get", NULL, NULL);
 	RNA_def_property_ui_text(prop, "Index", "Index number of the vertex");
+
+	prop = RNA_def_property(srna, "undeformed_co", PROP_FLOAT, PROP_TRANSLATION);
+	RNA_def_property_array(prop, 3);
+	RNA_def_property_ui_text(prop, "Undeformed Location", "For meshes with modifiers applied, the coordinate of the vertex with no deforming modifiers applied, as used for generated texture coordinates. ");
+	RNA_def_property_float_funcs(prop, "rna_MeshVertex_undeformed_co_get", NULL, NULL);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 }
 
 static void rna_def_medge(BlenderRNA *brna)

@@ -470,7 +470,7 @@ void DM_update_tessface_data(DerivedMesh *dm)
 	dm->dirty &= ~DM_DIRTY_TESS_CDLAYERS;
 }
 
-void DM_to_mesh(DerivedMesh *dm, Mesh *me, Object *ob)
+void DM_to_mesh(DerivedMesh *dm, Mesh *me, Object *ob, CustomDataMask mask)
 {
 	/* dm might depend on me, so we need to do everything with a local copy */
 	Mesh tmp = *me;
@@ -489,10 +489,10 @@ void DM_to_mesh(DerivedMesh *dm, Mesh *me, Object *ob)
 	totpoly = tmp.totpoly = dm->getNumPolys(dm);
 	tmp.totface = 0;
 
-	CustomData_copy(&dm->vertData, &tmp.vdata, CD_MASK_MESH, CD_DUPLICATE, totvert);
-	CustomData_copy(&dm->edgeData, &tmp.edata, CD_MASK_MESH, CD_DUPLICATE, totedge);
-	CustomData_copy(&dm->loopData, &tmp.ldata, CD_MASK_MESH, CD_DUPLICATE, totloop);
-	CustomData_copy(&dm->polyData, &tmp.pdata, CD_MASK_MESH, CD_DUPLICATE, totpoly);
+	CustomData_copy(&dm->vertData, &tmp.vdata, mask, CD_DUPLICATE, totvert);
+	CustomData_copy(&dm->edgeData, &tmp.edata, mask, CD_DUPLICATE, totedge);
+	CustomData_copy(&dm->loopData, &tmp.ldata, mask, CD_DUPLICATE, totloop);
+	CustomData_copy(&dm->polyData, &tmp.pdata, mask, CD_DUPLICATE, totpoly);
 	tmp.cd_flag = dm->cd_flag;
 
 	if (CustomData_has_layer(&dm->vertData, CD_SHAPEKEY)) {
@@ -1239,37 +1239,28 @@ void DM_update_weight_mcol(Object *ob, DerivedMesh *dm, int const draw_flag,
 		/* editmesh draw function checks spesifically for this */
 	}
 	else {
+		const int dm_totpoly = dm->getNumPolys(dm);
+		const int dm_totloop = dm->getNumLoops(dm);
 		unsigned char(*wtcol_l)[4] = CustomData_get_layer(dm->getLoopDataLayout(dm), CD_PREVIEW_MLOOPCOL);
 		MLoop *mloop = dm->getLoopArray(dm), *ml;
 		MPoly *mp = dm->getPolyArray(dm);
-		int totloop;
+		int l_index;
 		int j;
 
 		/* now add to loops, so the data can be passed through the modifier stack */
 		/* If no CD_PREVIEW_MLOOPCOL existed yet, we have to add a new one! */
 		if (!wtcol_l) {
-			BLI_array_declare(wtcol_l);
-			totloop = 0;
-			for (i = 0; i < dm->numPolyData; i++, mp++) {
-				ml = mloop + mp->loopstart;
-
-				BLI_array_grow_items(wtcol_l, mp->totloop);
-				for (j = 0; j < mp->totloop; j++, ml++, totloop++) {
-					copy_v4_v4_char((char *)&wtcol_l[totloop],
-					                (char *)&wtcol_v[ml->v]);
-				}
-			}
-			CustomData_add_layer(&dm->loopData, CD_PREVIEW_MLOOPCOL, CD_ASSIGN, wtcol_l, totloop);
+			wtcol_l = MEM_mallocN(sizeof(*wtcol_l) * dm_totloop, __func__);
+			CustomData_add_layer(&dm->loopData, CD_PREVIEW_MLOOPCOL, CD_ASSIGN, wtcol_l, dm_totloop);
 		}
-		else {
-			totloop = 0;
-			for (i = 0; i < dm->numPolyData; i++, mp++) {
-				ml = mloop + mp->loopstart;
 
-				for (j = 0; j < mp->totloop; j++, ml++, totloop++) {
-					copy_v4_v4_char((char *)&wtcol_l[totloop],
-					                (char *)&wtcol_v[ml->v]);
-				}
+		l_index = 0;
+		for (i = 0; i < dm_totpoly; i++, mp++) {
+			ml = mloop + mp->loopstart;
+
+			for (j = 0; j < mp->totloop; j++, ml++, l_index++) {
+				copy_v4_v4_char((char *)&wtcol_l[l_index],
+				                (char *)&wtcol_v[ml->v]);
 			}
 		}
 		MEM_freeN(wtcol_v);
@@ -1701,7 +1692,7 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 				DM_set_only_copy(orcodm, nextmask | CD_MASK_ORIGINDEX |
 				                 (mti->requiredDataMask ?
 				                  mti->requiredDataMask(ob, md) : 0));
-				ndm = mti->applyModifier(md, ob, orcodm, app_flags & ~MOD_APPLY_USECACHE);
+				ndm = mti->applyModifier(md, ob, orcodm, (app_flags & ~MOD_APPLY_USECACHE) | MOD_APPLY_ORCO);
 
 				if (ndm) {
 					/* if the modifier returned a new dm, release the old one */
@@ -1717,7 +1708,7 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 
 				nextmask &= ~CD_MASK_CLOTH_ORCO;
 				DM_set_only_copy(clothorcodm, nextmask | CD_MASK_ORIGINDEX);
-				ndm = mti->applyModifier(md, ob, clothorcodm, app_flags & ~MOD_APPLY_USECACHE);
+				ndm = mti->applyModifier(md, ob, clothorcodm, (app_flags & ~MOD_APPLY_USECACHE) | MOD_APPLY_ORCO);
 
 				if (ndm) {
 					/* if the modifier returned a new dm, release the old one */
@@ -2040,9 +2031,9 @@ static void editbmesh_calc_modifiers(Scene *scene, Object *ob, BMEditMesh *em, D
 				DM_set_only_copy(orcodm, mask | CD_MASK_ORIGINDEX);
 
 				if (mti->applyModifierEM)
-					ndm = mti->applyModifierEM(md, ob, em, orcodm);
+					ndm = mti->applyModifierEM(md, ob, em, orcodm, MOD_APPLY_ORCO);
 				else
-					ndm = mti->applyModifier(md, ob, orcodm, 0);
+					ndm = mti->applyModifier(md, ob, orcodm, MOD_APPLY_ORCO);
 
 				if (ndm) {
 					/* if the modifier returned a new dm, release the old one */
@@ -2064,9 +2055,9 @@ static void editbmesh_calc_modifiers(Scene *scene, Object *ob, BMEditMesh *em, D
 			}
 			
 			if (mti->applyModifierEM)
-				ndm = mti->applyModifierEM(md, ob, em, dm);
+				ndm = mti->applyModifierEM(md, ob, em, dm, MOD_APPLY_USECACHE);
 			else
-				ndm = mti->applyModifier(md, ob, dm, 0);
+				ndm = mti->applyModifier(md, ob, dm, MOD_APPLY_USECACHE);
 
 			if (ndm) {
 				if (dm && dm != ndm)
@@ -2258,9 +2249,38 @@ static void editbmesh_build_data(Scene *scene, Object *obedit, BMEditMesh *em, C
 	em->derivedCage->needsFree = 0;
 }
 
+static CustomDataMask object_get_datamask(Scene *scene, Object *ob)
+{
+	Object *actob = scene->basact ? scene->basact->object : NULL;
+	CustomDataMask mask = ob->customdata_mask;
+
+	if (ob == actob) {
+		/* check if we need tfaces & mcols due to face select or texture paint */
+		if (paint_facesel_test(ob) || (ob->mode & OB_MODE_TEXTURE_PAINT)) {
+			mask |= CD_MASK_MTFACE | CD_MASK_MCOL;
+		}
+
+		/* check if we need mcols due to vertex paint or weightpaint */
+		if (ob->mode & OB_MODE_VERTEX_PAINT) {
+			mask |= CD_MASK_MCOL;
+		}
+
+		if (ob->mode & OB_MODE_WEIGHT_PAINT) {
+			mask |= CD_MASK_PREVIEW_MCOL;
+		}
+
+		if (ob->mode & OB_MODE_EDIT)
+			mask |= CD_MASK_MVERT_SKIN;
+	}
+
+	return mask;
+}
+
 void makeDerivedMesh(Scene *scene, Object *ob, BMEditMesh *em,
                      CustomDataMask dataMask, int build_shapekey_layers)
 {
+	dataMask |= object_get_datamask(scene, ob);
+
 	if (em) {
 		editbmesh_build_data(scene, ob, em, dataMask);
 	}
@@ -2276,6 +2296,8 @@ DerivedMesh *mesh_get_derived_final(Scene *scene, Object *ob, CustomDataMask dat
 	/* if there's no derived mesh or the last data mask used doesn't include
 	 * the data we need, rebuild the derived mesh
 	 */
+	dataMask |= object_get_datamask(scene, ob);
+
 	if (!ob->derivedFinal || (dataMask & ob->lastDataMask) != dataMask)
 		mesh_build_data(scene, ob, dataMask, 0);
 
@@ -2287,6 +2309,8 @@ DerivedMesh *mesh_get_derived_deform(Scene *scene, Object *ob, CustomDataMask da
 	/* if there's no derived mesh or the last data mask used doesn't include
 	 * the data we need, rebuild the derived mesh
 	 */
+	dataMask |= object_get_datamask(scene, ob);
+
 	if (!ob->derivedDeform || (dataMask & ob->lastDataMask) != dataMask)
 		mesh_build_data(scene, ob, dataMask, 0);
 
@@ -2377,6 +2401,8 @@ DerivedMesh *editbmesh_get_derived_cage_and_final(Scene *scene, Object *obedit, 
 	/* if there's no derived mesh or the last data mask used doesn't include
 	 * the data we need, rebuild the derived mesh
 	 */
+	dataMask |= object_get_datamask(scene, obedit);
+
 	if (!em->derivedCage ||
 	    (em->lastDataMask & dataMask) != dataMask)
 	{
@@ -2392,6 +2418,8 @@ DerivedMesh *editbmesh_get_derived_cage(Scene *scene, Object *obedit, BMEditMesh
 	/* if there's no derived mesh or the last data mask used doesn't include
 	 * the data we need, rebuild the derived mesh
 	 */
+	dataMask |= object_get_datamask(scene, obedit);
+
 	if (!em->derivedCage ||
 	    (em->lastDataMask & dataMask) != dataMask)
 	{
