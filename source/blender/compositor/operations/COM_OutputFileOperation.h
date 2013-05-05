@@ -47,6 +47,8 @@ private:
 
 	const ColorManagedViewSettings *m_viewSettings;
 	const ColorManagedDisplaySettings *m_displaySettings;
+
+	int m_actview;
 public:
 	OutputSingleLayerOperation(const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path,
 	                           const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings);
@@ -78,12 +80,14 @@ private:
 	
 	char m_path[FILE_MAX];
 	char m_exr_codec;
-	int m_exr_multipart;
 	LayerList m_layers;
-	
+
+	int m_actview;
+
 public:
-	OutputOpenExrMultiLayerOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int multipart);
-	
+	OutputOpenExrMultiLayerOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int actview);
+
+	void *get_handle(const char *filename);
 	void add_layer(const char *name, DataType datatype);
 	
 	void executeRegion(rcti *rect, unsigned int tileNumber);

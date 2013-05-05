@@ -777,7 +777,7 @@ static void atm_tile(RenderPart *pa, RenderLayer *rl)
 			int sample;
 			
 			for (sample=0; sample<totsample; sample++) {
-				float *zrect= RE_RenderLayerGetPass(rlpp[sample], SCE_PASS_Z) + od;
+				float *zrect= RE_RenderLayerGetPass(rlpp[sample], SCE_PASS_Z, R.actview) + od;
 				float *rgbrect = rlpp[sample]->rectf + 4*od;
 				float rgb[3] = {0};
 				int done = FALSE;
@@ -1095,7 +1095,7 @@ static void reset_sky_speed(RenderPart *pa, RenderLayer *rl)
 	totsample= get_sample_layers(pa, rl, rlpp);
 
 	for (sample= 0; sample<totsample; sample++) {
-		fp= RE_RenderLayerGetPass(rlpp[sample], SCE_PASS_VECTOR);
+		fp= RE_RenderLayerGetPass(rlpp[sample], SCE_PASS_VECTOR, R.actview);
 		if (fp==NULL) break;
 
 		for (a= 4*pa->rectx*pa->recty - 1; a>=0; a--)

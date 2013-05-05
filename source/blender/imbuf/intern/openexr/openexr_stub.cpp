@@ -34,6 +34,7 @@
 
 
 void   *IMB_exr_get_handle          (void) {return NULL;}
+void   *IMB_exr_get_handle_name     (const char *name) {(void)name; return NULL;}
 void    IMB_exr_add_channel         (void *handle, const char *layname, const char *channame, int xstride, int ystride, float *rect) {  (void)handle; (void)layname; (void)channame; (void)xstride; (void)ystride; (void)rect; }
 
 int     IMB_exr_begin_read          (void *handle, const char *filename, int *width, int *height) { (void)handle; (void)filename; (void)width; (void)height; return 0;}
@@ -57,3 +58,6 @@ void    IMB_exr_multilayer_convert  (void *handle, void *base,
 }
 
 void    IMB_exr_close               (void *handle) { (void)handle; }
+
+void    IMB_exr_get_multiView_name(void *handle, int view_id, char *view) {(void)handle; (void)view_id; (void)view;}
+int     IMB_exr_get_multiView_count(void *handle){(void)handle; return 0;}

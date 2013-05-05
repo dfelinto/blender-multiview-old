@@ -82,6 +82,9 @@ void ImageNode::convertToOperations(ExecutionSystem *graph, CompositorContext *c
 		ImBuf *ibuf = BKE_image_acquire_ibuf(image, imageuser, NULL);
 		if (image->rr) {
 			RenderLayer *rl = (RenderLayer *)BLI_findlink(&image->rr->layers, imageuser->layer);
+			int views = BLI_countlist(&image->rr->views);
+			int view_id = (context->getViewId() < views? context->getViewId():0);
+
 			if (rl) {
 				OutputSocket *socket;
 				int index;
@@ -97,7 +100,7 @@ void ImageNode::convertToOperations(ExecutionSystem *graph, CompositorContext *c
 						int passindex = storage->pass_index;
 						
 						RenderPass *rpass = (RenderPass *)BLI_findlink(&rl->passes, passindex);
-						if (rpass) {
+						if (rpass && rpass->view_id == view_id) {
 							imageuser->pass = passindex;
 							switch (rpass->channels) {
 								case 1:

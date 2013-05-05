@@ -195,7 +195,7 @@ void RE_SwapResult(struct Render *re, struct RenderResult **rr);
 struct RenderStats *RE_GetStats(struct Render *re);
 void RE_ResultGet32(struct Render *re, unsigned int *rect);
 struct RenderLayer *RE_GetRenderLayer(struct RenderResult *rr, const char *name);
-float *RE_RenderLayerGetPass(struct RenderLayer *rl, int passtype);
+float *RE_RenderLayerGetPass(struct RenderLayer *rl, int passtype, int view_id);
 
 /* obligatory initialize call, disprect is optional */
 void RE_InitState(struct Render *re, struct Render *source, struct RenderData *rd, struct SceneRenderLayer *srl, int winx, int winy, rcti *disprect);
