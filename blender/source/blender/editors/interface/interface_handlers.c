@@ -2034,7 +2034,10 @@ static void ui_textedit_begin(bContext *C, uiBut *but, uiHandleButtonData *data)
 		data->searchbox = ui_searchbox_create(C, data->region, but);
 		ui_searchbox_update(C, data->searchbox, but, true); /* true = reset */
 	}
-	
+
+	/* reset alert flag (avoid confusion, will refresh on exit) */
+	but->flag &= ~UI_BUT_REDALERT;
+
 	ui_check_but(but);
 	
 	WM_cursor_modal(CTX_wm_window(C), BC_TEXTEDITCURSOR);
@@ -2053,8 +2056,13 @@ static void ui_textedit_end(bContext *C, uiBut *but, uiHandleButtonData *data)
 		}
 		
 		if (data->searchbox) {
-			if (data->cancel == false)
-				ui_searchbox_apply(but, data->searchbox);
+			if (data->cancel == false) {
+				if ((ui_searchbox_apply(but, data->searchbox) == false) &&
+				    (ui_searchbox_find_index(data->searchbox, but->editstr) == -1))
+				{
+					data->cancel = true;
+				}
+			}
 
 			ui_searchbox_free(C, data->searchbox);
 			data->searchbox = NULL;
@@ -2541,7 +2549,8 @@ static int ui_do_but_BUT(bContext *C, uiBut *but, uiHandleButtonData *data, cons
 			return WM_UI_HANDLER_BREAK;
 		}
 		else if (event->type == LEFTMOUSE && but->block->handle) {
-			if (!(but->flag & UI_SELECT))
+			/* regular buttons will be 'UI_SELECT', menu items 'UI_ACTIVE' */
+			if (!(but->flag & (UI_SELECT | UI_ACTIVE)))
 				data->cancel = true;
 			button_activate_state(C, but, BUTTON_STATE_EXIT);
 			return WM_UI_HANDLER_BREAK;
@@ -7331,7 +7340,7 @@ static int ui_handle_menu_event(bContext *C, const wmEvent *event, uiPopupBlockH
 	if ((event->type == TIMER) ||
 	    (/*inside &&*/ (!menu->menuretval || (menu->menuretval & UI_RETURN_UPDATE)) && retval == WM_UI_HANDLER_CONTINUE))
 	{
-		ui_handle_menu_button(C, event, menu);
+		retval = ui_handle_menu_button(C, event, menu);
 	}
 
 	/* if we set a menu return value, ensure we continue passing this on to

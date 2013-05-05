@@ -304,9 +304,6 @@ static int object_modifier_remove(Main *bmain, Object *ob, ModifierData *md,
 
 		*sort_depsgraph = 1;
 	}
-	else if (md->type == eModifierType_Smoke) {
-		ob->dt = OB_TEXTURE;
-	}
 	else if (md->type == eModifierType_Multires) {
 		/* Delete MDisps layer if not used by another multires modifier */
 		if (object_modifier_safe_to_delete(bmain, ob, md, eModifierType_Multires))
@@ -619,7 +616,7 @@ static int modifier_apply_obdata(ReportList *reports, Scene *scene, Object *ob, 
 				return 0;
 			}
 
-			DM_to_mesh(dm, me, ob);
+			DM_to_mesh(dm, me, ob, CD_MASK_MESH);
 
 			dm->release(dm);
 

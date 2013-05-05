@@ -280,6 +280,8 @@ __device float4 kernel_path_progressive(KernelGlobals *kg, RNG *rng, int sample,
 			light_ray.D = ray.D;
 			light_ray.t = ray_t;
 			light_ray.time = ray.time;
+			light_ray.dD = ray.dD;
+			light_ray.dP = ray.dP;
 
 			/* intersect with lamp */
 			float light_t = path_rng(kg, rng, sample, rng_offset + PRNG_LIGHT);
@@ -412,6 +414,8 @@ __device float4 kernel_path_progressive(KernelGlobals *kg, RNG *rng, int sample,
 #ifdef __OBJECT_MOTION__
 				light_ray.time = sd.time;
 #endif
+				light_ray.dP = sd.dP;
+				light_ray.dD = differential3_zero();
 
 				if(!shadow_blocked(kg, &state, &light_ray, &ao_shadow))
 					path_radiance_accum_ao(&L, throughput, ao_bsdf, ao_shadow, state.bounce);
@@ -536,6 +540,8 @@ __device void kernel_path_indirect(KernelGlobals *kg, RNG *rng, int sample, Ray 
 			light_ray.D = ray.D;
 			light_ray.t = ray_t;
 			light_ray.time = ray.time;
+			light_ray.dD = ray.dD;
+			light_ray.dP = ray.dP;
 
 			/* intersect with lamp */
 			float light_t = path_rng(kg, rng, sample, rng_offset + PRNG_LIGHT);
@@ -636,6 +642,8 @@ __device void kernel_path_indirect(KernelGlobals *kg, RNG *rng, int sample, Ray 
 #ifdef __OBJECT_MOTION__
 				light_ray.time = sd.time;
 #endif
+				light_ray.dP = sd.dP;
+				light_ray.dD = differential3_zero();
 
 				if(!shadow_blocked(kg, &state, &light_ray, &ao_shadow))
 					path_radiance_accum_ao(L, throughput, ao_bsdf, ao_shadow, state.bounce);
@@ -753,6 +761,8 @@ __device_noinline void kernel_path_non_progressive_lighting(KernelGlobals *kg, R
 #ifdef __OBJECT_MOTION__
 				light_ray.time = sd->time;
 #endif
+				light_ray.dP = sd->dP;
+				light_ray.dD = differential3_zero();
 
 				if(!shadow_blocked(kg, &state, &light_ray, &ao_shadow))
 					path_radiance_accum_ao(L, throughput*num_samples_inv, ao_bsdf, ao_shadow, state.bounce);
