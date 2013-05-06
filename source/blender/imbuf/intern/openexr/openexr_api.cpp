@@ -1192,7 +1192,7 @@ void IMB_exrmultipart_write_channels(void *handle, int view_id)
 
 		/* last scanline, stride negative */
 		float *rect = echan->rect + echan->xstride * (data->height - 1) * data->width;
-		frameBuffers[view_id].insert(echan->m->internal_name,
+		frameBuffers[part].insert(echan->m->internal_name,
 												   Slice(Imf::FLOAT,
 														 (char *)rect,
 														 echan->xstride * sizeof(float),
