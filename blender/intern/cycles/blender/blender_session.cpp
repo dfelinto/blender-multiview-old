@@ -446,10 +446,6 @@ void BlenderSession::do_write_update_render_result(BL::RenderResult b_rr, BL::Re
 		}
 	}
 
-	/* copy combined pass */
-	if(buffers->get_pass_rect(PASS_COMBINED, exposure, rtile.sample, 4, &pixels[0]))
-		b_rlay.rect(&pixels[0]);
-
 	/* tag result as updated */
 	b_engine.update_result(b_rr);
 }

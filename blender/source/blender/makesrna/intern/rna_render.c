@@ -279,13 +279,25 @@ static int rna_RenderLayer_rect_get_length(PointerRNA *ptr, int length[RNA_MAX_A
 static void rna_RenderLayer_rect_get(PointerRNA *ptr, float *values)
 {
 	RenderLayer *rl = (RenderLayer *)ptr->data;
-	memcpy(values, rl->rectf, sizeof(float) * rl->rectx * rl->recty * 4);
+
+	/* Sergey's suggestion:
+	 * so either check on ptr.id and see if it'll help you figuring Render out
+	 * or iterate via all Render and see which one contains given RenderLayer
+	 */
+
+	//MV 0 = actview
+	float *rect = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, 0);
+	memcpy(values, rect, sizeof(float) * rl->rectx * rl->recty * 4);
 }
 
 void rna_RenderLayer_rect_set(PointerRNA *ptr, const float *values)
 {
 	RenderLayer *rl = (RenderLayer *)ptr->data;
-	memcpy(rl->rectf, values, sizeof(float) * rl->rectx * rl->recty * 4);
+
+	//MV 0 = actview
+	float *rect = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, 0);
+
+	memcpy(rect, values, sizeof(float) * rl->rectx * rl->recty * 4);
 }
 
 static int rna_RenderPass_rect_get_length(PointerRNA *ptr, int length[RNA_MAX_ARRAY_DIMENSION])
@@ -547,11 +559,13 @@ static void rna_def_render_layer(BlenderRNA *brna)
 	                                  "rna_iterator_listbase_end", "rna_iterator_listbase_get",
 	                                  NULL, NULL, NULL, NULL);
 
+#if 0 //MV store actview in RL or pass as argument
 	prop = RNA_def_property(srna, "rect", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_DYNAMIC);
 	RNA_def_property_multi_array(prop, 2, NULL);
 	RNA_def_property_dynamic_array_funcs(prop, "rna_RenderLayer_rect_get_length");
 	RNA_def_property_float_funcs(prop, "rna_RenderLayer_rect_get", "rna_RenderLayer_rect_set", NULL);
+#endif
 
 	RNA_define_verify_sdna(1);
 }

@@ -66,8 +66,7 @@ void render_result_free(RenderResult *res)
 
 	while (res->layers.first) {
 		RenderLayer *rl = res->layers.first;
-		
-		if (rl->rectf) MEM_freeN(rl->rectf);
+
 		/* acolrect and scolrect are optionally allocated in shade_tile, only free here since it can be used for drawing */
 		if (rl->acolrect) MEM_freeN(rl->acolrect);
 		if (rl->scolrect) MEM_freeN(rl->scolrect);
@@ -525,7 +524,8 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 	RenderView *rv;
 	SceneRenderLayer *srl;
 	SceneRenderView *srv;
-	int rectx, recty, nr;
+	int rectx, recty;
+	int nr, i;
 	
 	rectx = BLI_rcti_size_x(partrct);
 	recty = BLI_rcti_size_y(partrct);
@@ -603,19 +603,16 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 
 		if (rr->do_exr_tile)
 			rl->exrhandle = IMB_exr_get_handle();
-		else
-			rl->rectf = MEM_mapallocN(rectx * recty * sizeof(float) * 4, "Combined rgba");
 
 		for (nr = 0, rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
 
 			if (view != -1 && view != nr)
 				continue;
 
-			//printf("render_result_new: view: %d, nr: %d\n", view, nr);
-
 			if (rr->do_exr_tile)
 				IMB_exr_add_view(rl->exrhandle, rv->name);
 
+			/* a renderlayer should always have a Combined pass*/
 			render_layer_add_pass(rr, rl, 4, SCE_PASS_COMBINED, nr);
 
 			if (srl->passflag  & SCE_PASS_Z)
@@ -676,7 +673,6 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 	}
 	/* sss, previewrender and envmap don't do layers, so we make a default one */
 	if (rr->layers.first == NULL && !(layername && layername[0])) {
-		printf("XXXXXX\nXXXXXX\nXXXXXX\nXXXXX\n\n NO PANIC, I just haven't got to code this yet\n\nXXXX\n");
 		rl = MEM_callocN(sizeof(RenderLayer), "new render layer");
 		BLI_addtail(&rr->layers, rl);
 		
@@ -684,29 +680,25 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		rl->recty = recty;
 
 		/* duplicate code... */
-		if (rr->do_exr_tile) {
+		if (rr->do_exr_tile)
 			rl->exrhandle = IMB_exr_get_handle();
-#if 0
-			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.R", 0, 0, NULL);
-			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.G", 0, 0, NULL);
-			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.B", 0, 0, NULL);
-			IMB_exr_add_channel(rl->exrhandle, rl->name, "Combined.A", 0, 0, NULL);
-#endif
-		}
-		else {
-			rl->rectf = MEM_mapallocN(rectx * recty * sizeof(float) * 4, "Combined rgba");
-		}
 
-#if 0
 		for (nr = 0, rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
 
 			if (view != -1 && view != nr)
 				continue;
 
-			render_layer_add_pass(rr, rl, 4, SCE_PASS_COMBINED, nr);
+			if (rr->do_exr_tile) {
+				IMB_exr_add_view(rl->exrhandle, rv->name);
+
+				for (i=0; i < 4; i++)
+					IMB_exr_add_channel(rl->exrhandle, rl->name, get_pass_name(SCE_PASS_COMBINED, 1, ""), rv->name, 0, 0, NULL);
+			}
+			else {
+				render_layer_add_pass(rr, rl, 4, SCE_PASS_COMBINED, nr);
+			}
 		}
-#endif
-		
+
 		/* note, this has to be in sync with scene.c */
 		rl->lay = (1 << 20) - 1;
 		rl->layflag = 0x7FFF;    /* solid ztra halo strand */
@@ -865,27 +857,15 @@ void render_result_merge(RenderResult *rr, RenderResult *rrpart)
 	for (rl = rr->layers.first; rl; rl = rl->next) {
 		rlp = RE_GetRenderLayer(rrpart, rl->name);
 		if (rlp) {
-#if 0 //MV
-			/* combined */
-			if (rl->rectf && rlp->rectf)
-				do_merge_tile(rr, rrpart, rl->rectf, rlp->rectf, 4);
-#endif
-
 			/* passes are allocated in sync */
 			for (rpass = rl->passes.first, rpassp = rlp->passes.first;
 			     rpass && rpassp;
 			     rpass = rpass->next)
 			{
+				/* renderresult have all passes, renderpart only the active view's passes */
 				if (strcmp(rpassp->name, rpass->name) != 0)
 					continue;
 
-				//if (rpass->view_id != rr->actview)
-				//	continue;
-
-				//if (rpass->passtype & SCE_PASS_COMBINED) {
-				//	do_merge_tile(rr, rrpart, rpass->rect, rlp->rectf, rpass->channels);
-				//}
-				//else
 				do_merge_tile(rr, rrpart, rpass->rect, rpassp->rect, rpass->channels);
 
 				/* manually get next render pass */
@@ -926,30 +906,9 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 	for (rview = (RenderView *)rr->views.first; rview; rview=rview->next)
 		IMB_exr_add_view(exrhandle, rview->name);
 
-#if 0//MVC
-	/* composite result */
-	if (rr->rectf) {
-		IMB_exr_add_channel(exrhandle, "Composite", "Combined.R", 4, 4 * rr->rectx, rr->rectf);
-		IMB_exr_add_channel(exrhandle, "Composite", "Combined.G", 4, 4 * rr->rectx, rr->rectf + 1);
-		IMB_exr_add_channel(exrhandle, "Composite", "Combined.B", 4, 4 * rr->rectx, rr->rectf + 2);
-		IMB_exr_add_channel(exrhandle, "Composite", "Combined.A", 4, 4 * rr->rectx, rr->rectf + 3);
-	}
-#endif
-	
 	/* add layers/passes and assign channels */
 	for (rl = rr->layers.first; rl; rl = rl->next) {
-		
-#if 0//MV
-		/* combined */
-		if (rl->rectf) {
-			int a, xstride = 4;
-			for (a = 0; a < xstride; a++) {
-				IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(SCE_PASS_COMBINED, a, ""),
-				                    xstride, xstride * rr->rectx, rl->rectf + a);
-			}
-		}
-#endif
-		
+
 		/* passes are allocated in sync */
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			int a, xstride = rpass->channels;
@@ -1048,15 +1007,13 @@ void render_result_single_layer_end(Render *re)
 
 /************************* EXR Tile File Rendering ***************************/
 
-static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int view)
+static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int view_id)
 {
 	RenderLayer *rlp, *rl;
 	RenderPass *rpassp;
-	RenderView *rv;
 	int offs, partx, party;
-	int nr;
 
-	printf("save_render_result_tile: view_id = %d\n", view);
+	printf("save_render_result_tile: view_id = %d\n", view_id);
 	
 	BLI_lock_thread(LOCK_IMAGE);
 	
@@ -1075,26 +1032,6 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int 
 		else {
 			offs = 0;
 		}
-
-#if 0
-		/* combined */
-		if (rlp->rectf) {
-			for (nr = 0, rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
-
-				if (rr->actview != nr)
-					continue;
-
-				const char *viewname = get_view_name(&rr->views, nr);
-				int a, xstride = 4;
-				for (a = 0; a < xstride; a++) {
-					IMB_exr_set_channel(rl->exrhandle, rlp->name, get_pass_name(SCE_PASS_COMBINED, a, viewname),
-										xstride, xstride * rrpart->rectx, rlp->rectf + a + xstride * offs);
-				}
-				break;
-
-			}
-		}
-#endif
 
 		/* passes are allocated in sync */
 		for (rpassp = rlp->passes.first; rpassp; rpassp = rpassp->next) {
@@ -1121,7 +1058,7 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int 
 			continue;
 		}
 
-		IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, view);
+		IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, view_id);
 	}
 
 	BLI_unlock_thread(LOCK_IMAGE);
@@ -1259,16 +1196,6 @@ int render_result_exr_file_read_path(RenderResult *rr, RenderLayer *rl_single, c
 	for (rl = rr->layers.first; rl; rl = rl->next) {
 		if (rl_single && rl_single != rl)
 			continue;
-
-#if 0 //MV
-		/* combined */
-		if (rl->rectf) {
-			int a, xstride = 4;
-			for (a = 0; a < xstride; a++)
-				IMB_exr_set_channel(exrhandle, rl->name, get_pass_name(SCE_PASS_COMBINED, a, ""),
-				                    xstride, xstride * rectx, rl->rectf + a);
-		}
-#endif
 		
 		/* passes are allocated in sync */
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
@@ -1285,7 +1212,6 @@ int render_result_exr_file_read_path(RenderResult *rr, RenderLayer *rl_single, c
 	IMB_exr_read_channels(exrhandle);
 	IMB_exr_close(exrhandle);
 
-	printf("\nrender_result_exr_file_read_path\n");
 	return 1;
 }
 

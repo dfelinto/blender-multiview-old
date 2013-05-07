@@ -46,6 +46,7 @@ struct ReportList;
 struct Scene;
 struct SceneRenderLayer;
 struct EnvMap;
+struct RenderResult;
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 /* this include is what is exposed of render to outside world */
@@ -84,7 +85,7 @@ typedef struct RenderPass {
 
 /* a renderlayer is a full image, but with all passes and samples */
 /* size of the rects is defined in RenderResult */
-/* after render, the Combined pass is in rectf, for renderlayers read from files it is a real pass */
+/* after render, the Combined pass is in combined, for renderlayers read from files it is a real pass */
 typedef struct RenderLayer {
 	struct RenderLayer *next, *prev;
 	
@@ -96,7 +97,6 @@ typedef struct RenderLayer {
 	struct Material *mat_override;
 	struct Group *light_override;
 
-	float *rectf;		/* 4 float, standard rgba buffer (read not above!) */
 	float *acolrect;	/* 4 float, optional transparent buffer, needs storage for display updates */
 	float *scolrect;	/* 4 float, optional strand buffer, needs storage for display updates */
 	int rectx, recty;
@@ -117,6 +117,9 @@ typedef struct RenderResult {
 	
 	/* optional, 32 bits version of picture, used for ogl render and image curves */
 	int *rect32;
+
+	//MV next: remove rectf and rectz and put them in RenderView
+
 	/* if this exists, a copy of one of layers, or result of composited layers */
 	float *rectf;
 	/* if this exists, a copy of one of layers, or result of composited layers */
