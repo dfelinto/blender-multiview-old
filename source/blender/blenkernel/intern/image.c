@@ -2767,16 +2767,11 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 			RenderPass *rpass;
 
 			/* there's no combined pass, is in renderlayer itself */
-			if (pass == 0) {
-				rectf = rl->rectf;
-			}
-			else {
-				rpass = BLI_findlink(&rl->passes, pass - 1);
-				if (rpass) {
-					channels = rpass->channels;
-					rectf = rpass->rect;
-					dither = 0.0f; /* don't dither passes */
-				}
+			rpass = BLI_findlink(&rl->passes, pass - 1);
+			if (rpass) {
+				channels = rpass->channels;
+				rectf = rpass->rect;
+				dither = 0.0f; /* don't dither passes */
 			}
 
 			for (rpass = rl->passes.first; rpass; rpass = rpass->next)

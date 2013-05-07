@@ -348,7 +348,7 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 	
 #if 1
 	/* rendered results don't have a Combined pass */
-	if (rl == NULL || rl->rectf) {
+	if (rl == NULL || 1) {
 		a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
 		nr = 1;
 	}

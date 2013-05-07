@@ -146,10 +146,14 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 			return;
 		}
 		else {
-			if (rr->renlay == NULL || rr->renlay->rectf == NULL) return;
-			rectf = rr->renlay->rectf;
+			if (rr->renlay == NULL) return;
+#if 0//MV not sure what to do here - my immediate problem is that R is not defined here
+	//		rectf = rr->renlay->rectf;
+			rectf = RE_RenderLayerGetPass(rr->renlay, SCE_PASS_COMBINED, R.actview);
+#endif
 		}
 	}
+
 	if (rectf == NULL) return;
 
 	if (ibuf->rect == NULL)

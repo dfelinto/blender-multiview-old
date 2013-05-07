@@ -327,7 +327,7 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 
 			if (rl) {
 				if (rr->rectf == NULL)
-					rr->rectf = rl->rectf;
+					rr->rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
 				if (rr->rectz == NULL)
 					rr->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, re->actview);
 			}
@@ -1250,19 +1250,13 @@ static void merge_renderresult_blur(RenderResult *rr, RenderResult *brr, float b
 	
 	rl1 = brr->layers.first;
 	for (rl = rr->layers.first; rl && rl1; rl = rl->next, rl1 = rl1->next) {
-		
-		/* combined */
-		if (rl->rectf && rl1->rectf) {
-			if (key_alpha)
-				addblur_rect_key(rr, rl->rectf, rl1->rectf, blurfac);
-			else
-				addblur_rect(rr, rl->rectf, rl1->rectf, blurfac, 4);
-		}
-		
 		/* passes are allocated in sync */
 		rpass1 = rl1->passes.first;
 		for (rpass = rl->passes.first; rpass && rpass1; rpass = rpass->next, rpass1 = rpass1->next) {
-			addblur_rect(rr, rpass->rect, rpass1->rect, blurfac, rpass->channels);
+			if ((rpass->passtype & SCE_PASS_COMBINED) && key_alpha)
+				addblur_rect_key(rr, rpass->rect, rpass1->rect, blurfac);
+			else
+				addblur_rect(rr, rpass->rect, rpass1->rect, blurfac, rpass->channels);
 		}
 	}
 }
@@ -1332,10 +1326,6 @@ static void merge_renderresult_fields(RenderResult *rr, RenderResult *rr1, Rende
 	rl2 = rr2->layers.first;
 	for (rl = rr->layers.first; rl && rl1 && rl2; rl = rl->next, rl1 = rl1->next, rl2 = rl2->next) {
 		
-		/* combined */
-		if (rl->rectf && rl1->rectf && rl2->rectf)
-			interleave_rect(rr, rl->rectf, rl1->rectf, rl2->rectf, 4);
-		
 		/* passes are allocated in sync */
 		rpass1 = rl1->passes.first;
 		rpass2 = rl2->passes.first;
@@ -1343,7 +1333,7 @@ static void merge_renderresult_fields(RenderResult *rr, RenderResult *rr1, Rende
 		     rpass && rpass1 && rpass2;
 		     rpass = rpass->next, rpass1 = rpass1->next, rpass2 = rpass2->next)
 		{
-			//MV
+			//MV - it may work, I haven't tried though
 			interleave_rect(rr, rpass->rect, rpass1->rect, rpass2->rect, rpass->channels);
 		}
 	}
@@ -2828,6 +2818,7 @@ void RE_layer_load_from_file(RenderLayer *layer, ReportList *reports, const char
 	/* OCIO_TODO: assume layer was saved in defaule color space */
 	ImBuf *ibuf = IMB_loadiffname(filename, IB_rect, NULL);
 
+#if 0 //MV - not sure who is using this, I'll address later
 	if (ibuf && (ibuf->rect || ibuf->rect_float)) {
 		if (ibuf->x == layer->rectx && ibuf->y == layer->recty) {
 			if (ibuf->rect_float == NULL)
@@ -2863,6 +2854,7 @@ void RE_layer_load_from_file(RenderLayer *layer, ReportList *reports, const char
 	else {
 		BKE_reportf(reports, RPT_ERROR, "RE_result_rect_from_file: failed to load '%s'", filename);
 	}
+#endif
 }
 
 void RE_result_load_from_file(RenderResult *result, ReportList *reports, const char *filename)
