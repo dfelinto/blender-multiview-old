@@ -9410,15 +9410,6 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				linestyle->rounds = 3;
 		}
 	}
-	{
-		Scene *scene;
-		if (!DNA_struct_elem_find(fd->filesdna, "RenderData", "ListBase", "views")) {
-			for (scene = main->scene.first; scene; scene = scene->id.next) {
-				BKE_scene_add_render_view(scene, "center");
-				((SceneRenderView *)scene->r.views.first)->viewflag |= SCE_VIEW_DISABLE;
-			}
-		}
-	}
 
 	if (main->versionfile < 267) {
 		/* Initialize the active_viewer_key for compositing */
@@ -9452,6 +9443,15 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			/* NB: scene->nodetree is a local ID block, has been direct_link'ed */
 			if (scene->nodetree)
 				scene->nodetree->active_viewer_key = active_viewer_key;
+		}
+	}
+	{
+		Scene *scene;
+		if (!DNA_struct_elem_find(fd->filesdna, "RenderData", "ListBase", "views")) {
+			for (scene = main->scene.first; scene; scene = scene->id.next) {
+				BKE_scene_add_render_view(scene, "center");
+				((SceneRenderView *)scene->r.views.first)->viewflag |= SCE_VIEW_DISABLE;
+			}
 		}
 	}
 
