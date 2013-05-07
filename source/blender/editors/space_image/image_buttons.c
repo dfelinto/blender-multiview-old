@@ -346,14 +346,12 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 	strcpy(str, IFACE_("Pass %t"));
 	a = strlen(str);
 	
-#if 1
 	/* rendered results don't have a Combined pass */
-	if (rl == NULL || 1) {
+	if (rl == NULL) {
 		a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
 		nr = 1;
 	}
-#endif
-	
+
 	if (rl)
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next, nr++)
 			a += sprintf(str + a, "|%s %%x%d", IFACE_(rpass->name), nr);
@@ -363,113 +361,6 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 	
 	return str;
 }
-
-/* util functions, to move elsewhere */
-#if 0
-static int is_from_view(RenderResult *rr, short curview, RenderPass *rpass)
-{
-	RenderView *rv = BLI_findlink(&rr->views, curview);
-
-	if (rv == NULL) return false;
-
-	if(strstr(rpass->name, rv->name) != NULL)
-		return true;
-
-	return false;
-}
-
-
-static int strip_view(const char *name, const char *viewname)
-{
-	/**
-	 A -> A
-	 left.R -> R
-	 main.right.depth -> main.depth */
-
-	if (viewname == NULL)
-		return 0;
-
-	const char *end = name + BLI_strlen_utf8(name);
-	char *a = strstr(name, viewname);
-	char *b = a + BLI_strlen_utf8(viewname) + 1; /* +1 to skip '.' separator */
-
-	if ((a == NULL) || (b == NULL) || (b < a) || (b > end))
-		return 0;
-
-	memmove(a, b, strlen(b) + 1);
-	return 1;
-}
-
-/* special pass menu to show only passes for the current view */
-
-static char *pass_view_menu(RenderResult *rr, RenderLayer *rl, short curview, short *curpass)
-{
-	RenderPass *rpass;
-	int len = 64 + 32 * (rl ? BLI_countlist(&rl->passes) : 1);
-	short a, nr = 0;
-	char *str = MEM_callocN(len, "menu passes");
-
-	strcpy(str, IFACE_("Pass %t"));
-	a = strlen(str);
-
-	/* remove view from name */
-	/* list only passes from this view */
-
-	/* rendered results don't have a Combined pass */
-	/*
-	if (rl == NULL || rl->rectf) {
-		a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
-		nr = 1;
-	}
-	 */
-
-	if (rl) {
-		//MV ideal is to implement a function mimic channelsInView from ImfMultiView.h, in iteractor perhaps
-		//or even more ideal would be to have this 'ui name' stored somewhere
-		//it can be a char * pointer to the name, telling where to start looking for the channel
-
-		for (rpass = rl->passes.first; rpass; rpass = rpass->next, nr++) {
-			if (is_from_view(rr, curview, rpass)) {
-				RenderView *rv = BLI_findlink(&rr->views, curview);
-				char namebuf[sizeof(rpass->name)];
-
-				/* strip out the viewname from the channel */
-				BLI_strncpy(namebuf, rpass->name, BLI_strlen_utf8(rpass->name) + 1);
-				strip_view(namebuf, &rv->name[0]);
-
-				//strip of name
-				a += sprintf(str + a, "|%s %%x%d", IFACE_(namebuf), nr);
-			}
-		}
-	}
-
-	if (*curpass >= nr)
-		*curpass = 0;
-
-	return str;
-}
-
-static char *view_menu(RenderResult *rr)
-{
-	int views = BLI_countlist(&rr->views);
-	int len = 64 + RE_MAXNAME * views;
-	char *str = MEM_callocN(len, "menu views");
-
-	if (views > 0) {
-		short a, nr = 0;
-		RenderView *rv;
-
-		strcpy(str, IFACE_("View %t"));
-		a = strlen(str);
-
-		for (rv = (RenderView *)rr->views.first; rv; rv = rv->next, nr++) {
-			a += sprintf(str + a, "|%s %%x%d", rv->name, nr);
-		}
-		return str;
-	}
-	return str;
-}
-#endif
 
 /* 5 layer button callbacks... */
 static void image_multi_cb(bContext *C, void *rr_v, void *iuser_v) 
@@ -556,7 +447,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	uiBlock *block = uiLayoutGetBlock(layout);
 	uiBut *but;
 	RenderLayer *rl = NULL;
-	int wmenu1, wmenu2, wmenu3, wmenu4, layer, view;
+	int wmenu1, wmenu2, wmenu3, layer;
 	char *strp;
 
 	uiLayoutRow(layout, TRUE);
@@ -565,7 +456,6 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	wmenu1 = (2 * w) / 5;
 	wmenu2 = (3 * w) / 5;
 	wmenu3 = (3 * w) / 6;
-	wmenu4 = (3 * w) / 5;
 	
 	/* menu buts */
 	if (render_slot) {
@@ -576,38 +466,20 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	}
 
 	if (rr) {
-		if (BLI_countlist(&rr->layers) > 1) {
-			strp = layer_menu(rr, &iuser->layer);
-			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu2, UI_UNIT_Y, &iuser->layer, 0, 0, 0, 0, TIP_("Select Layer"));
-			uiButSetFunc(but, image_multi_cb, rr, iuser);
-			MEM_freeN(strp);
-		}
+		strp = layer_menu(rr, &iuser->layer);
+		but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu2, UI_UNIT_Y, &iuser->layer, 0, 0, 0, 0, TIP_("Select Layer"));
+		uiButSetFunc(but, image_multi_cb, rr, iuser);
+		MEM_freeN(strp);
 
 		layer = iuser->layer;
 		if (rr->rectf || rr->rect32)
 			layer--;  /* fake compo/sequencer layer */
 		
-		if (BLI_countlist(&rr->views) > 0 && 0) {//brb
-#if 0
-			strp = view_menu(rr);
-			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu4, UI_UNIT_Y, &iuser->view, 0, 0, 0, 0, TIP_("Select View"));
-			uiButSetFunc(but, image_multi_cb, rr, iuser);
-			MEM_freeN(strp);
-
-			rl = BLI_findlink(&rr->layers, layer); /* return NULL is meant to be */
-			strp = pass_view_menu(rr, rl, iuser->view, &iuser->pass);
-			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu3, UI_UNIT_Y, &iuser->pass, 0, 0, 0, 0, TIP_("Select Pass"));
-			uiButSetFunc(but, image_multi_cb, rr, iuser);
-			MEM_freeN(strp);
-#endif
-		}
-		else {
-			rl = BLI_findlink(&rr->layers, layer); /* return NULL is meant to be */
-			strp = pass_menu(rl, &iuser->pass);
-			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu3, UI_UNIT_Y, &iuser->pass, 0, 0, 0, 0, TIP_("Select Pass"));
-			uiButSetFunc(but, image_multi_cb, rr, iuser);
-			MEM_freeN(strp);
-		}
+		rl = BLI_findlink(&rr->layers, layer); /* return NULL is meant to be */
+		strp = pass_menu(rl, &iuser->pass);
+		but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu3, UI_UNIT_Y, &iuser->pass, 0, 0, 0, 0, TIP_("Select Pass"));
+		uiButSetFunc(but, image_multi_cb, rr, iuser);
+		MEM_freeN(strp);
 	}
 }
 
