@@ -89,7 +89,7 @@
 static int render_break(void *rjv);
 
 /* called inside thread! */
-void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volatile rcti *renrect)
+void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volatile rcti *renrect, int view_id)
 {
 	float *rectf = NULL;
 	int ymin, ymax, xmin, xmax;
@@ -147,10 +147,7 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 		}
 		else {
 			if (rr->renlay == NULL) return;
-#if 0//MV not sure what to do here - my immediate problem is that R is not defined here
-	//		rectf = rr->renlay->rectf;
-			rectf = RE_RenderLayerGetPass(rr->renlay, SCE_PASS_COMBINED, R.actview);
-#endif
+			rectf = RE_RenderLayerGetPass(rr->renlay, SCE_PASS_COMBINED, view_id);
 		}
 	}
 
@@ -376,7 +373,7 @@ static void render_progress_update(void *rjv, float progress)
 	}
 }
 
-static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrect)
+static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrect, int view_id)
 {
 	RenderJob *rj = rjv;
 	Image *ima = rj->image;
@@ -389,7 +386,7 @@ static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrec
 
 	ibuf = BKE_image_acquire_ibuf(ima, &rj->iuser, &lock);
 	if (ibuf) {
-		image_buffer_rect_update(rj->scene, rr, ibuf, renrect);
+		image_buffer_rect_update(rj->scene, rr, ibuf, renrect, view_id);
 
 		/* make jobs timer to send notifier */
 		*(rj->do_update) = TRUE;

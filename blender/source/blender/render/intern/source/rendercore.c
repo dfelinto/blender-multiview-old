@@ -1998,7 +1998,7 @@ void add_halo_flare(Render *re)
 		if (rl->layflag & SCE_LAY_HALO)
 			break;
 
-	float * rect= RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, R.actview);
+	float * rect= RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
 
 	if (rl==NULL || rect)
 		return;
@@ -2020,7 +2020,7 @@ void add_halo_flare(Render *re)
 	if (do_draw) {
 		/* weak... the display callback wants an active renderlayer pointer... */
 		rr->renlay= rl;
-		re->display_draw(re->ddh, rr, NULL);
+		re->display_draw(re->ddh, rr, NULL, re->actview);
 	}
 	
 	R.r.mode= mode;

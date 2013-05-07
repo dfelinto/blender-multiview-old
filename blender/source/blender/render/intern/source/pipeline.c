@@ -680,7 +680,7 @@ void RE_display_clear_cb(Render *re, void *handle, void (*f)(void *handle, Rende
 	re->display_clear = f;
 	re->dch = handle;
 }
-void RE_display_draw_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr, volatile rcti *rect))
+void RE_display_draw_cb(Render *re, void *handle, void (*f)(void *handle, RenderResult *rr, volatile rcti *rect, int view_id))
 {
 	re->display_draw = f;
 	re->ddh = handle;
@@ -1021,7 +1021,7 @@ static void threaded_tile_processor(Render *re)
 			if ((pa=BLI_thread_queue_pop_timeout(donequeue, wait))) {
 				if (pa->result) {
 					if (render_display_draw_enabled(re))
-						re->display_draw(re->ddh, pa->result, NULL);
+						re->display_draw(re->ddh, pa->result, NULL, re->actview);
 					print_part_stats(re, pa);
 					
 					render_result_free_list(&pa->fullresult, pa->result);
@@ -1047,7 +1047,7 @@ static void threaded_tile_processor(Render *re)
 				if (render_display_draw_enabled(re))
 					for (pa = re->parts.first; pa; pa = pa->next)
 						if ((pa->status == PART_STATUS_IN_PROGRESS) && pa->nr && pa->result)
-							re->display_draw(re->ddh, pa->result, &pa->result->renrect);
+							re->display_draw(re->ddh, pa->result, &pa->result->renrect, re->actview);
 				
 				lastdraw = PIL_check_seconds_timer();
 			}
@@ -1296,7 +1296,7 @@ static void do_render_blur_3d(Render *re)
 	
 	/* weak... the display callback wants an active renderlayer pointer... */
 	re->result->renlay = render_get_active_layer(re, re->result);
-	re->display_draw(re->ddh, re->result, NULL);
+	re->display_draw(re->ddh, re->result, NULL, re->actview);
 }
 
 
@@ -1414,7 +1414,7 @@ static void do_render_fields_3d(Render *re)
 
 	BLI_rw_mutex_unlock(&re->resultmutex);
 
-	re->display_draw(re->ddh, re->result, NULL);
+	re->display_draw(re->ddh, re->result, NULL, re->actview);
 }
 
 /* main render routine, no compositing */
@@ -1469,7 +1469,7 @@ static void do_render_fields_blur_3d(Render *re)
 				BLI_rw_mutex_unlock(&re->resultmutex);
 		
 				re->display_init(re->dih, re->result);
-				re->display_draw(re->ddh, re->result, NULL);
+				re->display_draw(re->ddh, re->result, NULL, re->actview);
 			}
 			else {
 				/* set offset (again) for use in compositor, disprect was manipulated. */
@@ -1797,7 +1797,7 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 		if (sample != re->osa - 1) {
 			/* weak... the display callback wants an active renderlayer pointer... */
 			re->result->renlay = render_get_active_layer(re, re->result);
-			re->display_draw(re->ddh, re->result, NULL);
+			re->display_draw(re->ddh, re->result, NULL, re->actview);
 		}
 		
 		if (re->test_break(re->tbh))
@@ -1973,7 +1973,7 @@ static void do_render_composite_fields_blur_3d(Render *re)
 
 	/* weak... the display callback wants an active renderlayer pointer... */
 	re->result->renlay = render_get_active_layer(re, re->result);
-	re->display_draw(re->ddh, re->result, NULL);
+	re->display_draw(re->ddh, re->result, NULL, re->actview);
 }
 
 static void renderresult_stampinfo(Render *re)
@@ -2091,7 +2091,7 @@ static void do_render_seq(Render *re)
 		re->progress(re->prh, 1.0f);
 
 	/* would mark display buffers as invalid */
-	re->display_draw(re->ddh, re->result, NULL);
+	re->display_draw(re->ddh, re->result, NULL, re->actview);
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -2115,7 +2115,7 @@ static void do_render_all_options(Render *re)
 			do_render_seq(re);
 		
 		re->stats_draw(re->sdh, &re->i);
-		re->display_draw(re->ddh, re->result, NULL);
+		re->display_draw(re->ddh, re->result, NULL, re->actview);
 	}
 	else {
 		re->pool = BKE_image_pool_new();
@@ -2133,7 +2133,7 @@ static void do_render_all_options(Render *re)
 	/* stamp image info here */
 	if ((re->r.stamp & R_STAMP_ALL) && (re->r.stamp & R_STAMP_DRAW)) {
 		renderresult_stampinfo(re);
-		re->display_draw(re->ddh, re->result, NULL);
+		re->display_draw(re->ddh, re->result, NULL, re->actview);
 	}
 }
 
