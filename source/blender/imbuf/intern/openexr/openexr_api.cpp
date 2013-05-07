@@ -931,7 +931,7 @@ int IMB_exrmultipart_begin_write(void *handle, const char *filename, int width, 
 	data->height = height;
 
 	openexr_header_compression(&header, compress);
-	header.insert("BlenderMultiPart", StringAttribute("Blender V2.66"));
+	header.insert("BlenderMultiPart", StringAttribute("Blender V2.67"));
 	header.setType(SCANLINEIMAGE);
 
 	printf("\nIMB_exrmultipart_begin_write()\n");
