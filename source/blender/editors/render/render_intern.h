@@ -90,7 +90,7 @@ void render_view3d(struct RenderEngine *engine, const struct bContext *C);
 void render_view3d_draw(struct RenderEngine *engine, const struct bContext *C);
 
 /* render_opengl.c uses this */
-void image_buffer_rect_update(struct Scene *scene, struct RenderResult *rr, struct ImBuf *ibuf, volatile struct rcti *renrect);
+void image_buffer_rect_update(struct Scene *scene, struct RenderResult *rr, struct ImBuf *ibuf, volatile struct rcti *renrect, int view_id);
 
 /* render_view.c */
 void render_view_open(struct bContext *C, int mx, int my);
