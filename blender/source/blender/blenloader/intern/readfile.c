@@ -2579,7 +2579,7 @@ static void lib_verify_nodetree(Main *main, int UNUSED(open))
 	{
 		FOREACH_NODETREE(main, ntree, id) {
 			/* make an update call for the tree */
-			ntreeUpdateTree(ntree);
+			ntreeUpdateTree(main, ntree);
 		} FOREACH_NODETREE_END
 	}
 }
@@ -6148,11 +6148,12 @@ void blo_do_versions_view3d_split_250(View3D *v3d, ListBase *regions)
 		v3d->twtype = V3D_MANIP_TRANSLATE;
 }
 
-static void direct_link_screen(FileData *fd, bScreen *sc)
+static bool direct_link_screen(FileData *fd, bScreen *sc)
 {
 	ScrArea *sa;
 	ScrVert *sv;
 	ScrEdge *se;
+	bool wrong_id = false;
 	
 	link_list(fd, &(sc->vertbase));
 	link_list(fd, &(sc->edgebase));
@@ -6174,8 +6175,9 @@ static void direct_link_screen(FileData *fd, bScreen *sc)
 		}
 		
 		if (se->v1 == NULL) {
-			printf("error reading screen... file corrupt\n");
-			se->v1 = se->v2;
+			printf("Error reading Screen %s... removing it.\n", sc->id.name+2);
+			BLI_remlink(&sc->edgebase, se);
+			wrong_id = true;
 		}
 	}
 	
@@ -6409,6 +6411,8 @@ static void direct_link_screen(FileData *fd, bScreen *sc)
 		sa->v3 = newdataadr(fd, sa->v3);
 		sa->v4 = newdataadr(fd, sa->v4);
 	}
+	
+	return wrong_id;
 }
 
 /* ********** READ LIBRARY *************** */
@@ -6629,7 +6633,6 @@ static void direct_link_movieclip(FileData *fd, MovieClip *clip)
 	clip->tracking.stats = NULL;
 
 	clip->tracking.stabilization.ok = 0;
-	clip->tracking.stabilization.scaleibuf = NULL;
 	clip->tracking.stabilization.rot_track = newdataadr(fd, clip->tracking.stabilization.rot_track);
 
 	clip->tracking.dopesheet.ok = 0;
@@ -7016,6 +7019,7 @@ static BHead *read_libblock(FileData *fd, Main *main, BHead *bhead, int flag, ID
 	ID *id;
 	ListBase *lb;
 	const char *allocname;
+	bool wrong_id = false;
 	
 	/* read libblock */
 	id = read_struct(fd, bhead, "lib block");
@@ -7063,7 +7067,7 @@ static BHead *read_libblock(FileData *fd, Main *main, BHead *bhead, int flag, ID
 			direct_link_windowmanager(fd, (wmWindowManager *)id);
 			break;
 		case ID_SCR:
-			direct_link_screen(fd, (bScreen *)id);
+			wrong_id = direct_link_screen(fd, (bScreen *)id);
 			break;
 		case ID_SCE:
 			direct_link_scene(fd, (Scene *)id);
@@ -7159,6 +7163,10 @@ static BHead *read_libblock(FileData *fd, Main *main, BHead *bhead, int flag, ID
 	
 	oldnewmap_free_unused(fd->datamap);
 	oldnewmap_clear(fd->datamap);
+	
+	if (wrong_id) {
+		BKE_libblock_free(lb, id);
+	}
 	
 	return (bhead);
 }
@@ -9338,7 +9346,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 	}
 	
 	/* default values in Freestyle settings */
-	{
+	if (main->versionfile < 267) {
 		Scene *sce;
 		SceneRenderLayer *srl;
 		FreestyleLineStyle *linestyle;
@@ -9396,7 +9404,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		}
 	}
 
-	{
+	if (main->versionfile < 267) {
 		/* Initialize the active_viewer_key for compositing */
 		bScreen *screen;
 		Scene *scene;
