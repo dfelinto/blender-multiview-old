@@ -2767,7 +2767,8 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 			RenderPass *rpass;
 
 			/* there's no combined pass, is in renderlayer itself */
-			rpass = BLI_findlink(&rl->passes, pass - 1);
+			/* now it does, no need to do pass - 1 */
+			rpass = BLI_findlink(&rl->passes, pass);
 			if (rpass) {
 				channels = rpass->channels;
 				rectf = rpass->rect;
