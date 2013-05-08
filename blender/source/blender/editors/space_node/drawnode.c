@@ -1012,6 +1012,24 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 
 /* ****************** BUTTON CALLBACKS FOR COMPOSITE NODES ***************** */
 
+static void node_buts_image_views(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr,
+                                 PointerRNA *imaptr)
+{
+	uiLayout *col;
+
+	if (!imaptr->data)
+		return;
+
+	col = uiLayoutColumn(layout, FALSE);
+
+	if (RNA_boolean_get(ptr, "has_views")) {
+		if(RNA_enum_get(ptr, "view") == 0)
+			uiItemR(col, ptr, "view", 0, NULL, ICON_RENDERVIEWS);
+		else
+			uiItemR(col, ptr, "view", 0, NULL, ICON_SCENE);
+	}
+}
+
 static void node_composit_buts_image(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
 	bNode *node = ptr->data;
@@ -1025,6 +1043,8 @@ static void node_composit_buts_image(uiLayout *layout, bContext *C, PointerRNA *
 	RNA_pointer_create((ID *)ptr->id.data, &RNA_ImageUser, node->storage, &iuserptr);
 	
 	node_buts_image_user(layout, C, ptr, &imaptr, &iuserptr);
+
+	node_buts_image_views(layout, C, ptr, &imaptr);
 }
 
 static void node_composit_buts_image_details(uiLayout *layout, bContext *C, PointerRNA *ptr)
