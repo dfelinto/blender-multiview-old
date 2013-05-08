@@ -79,6 +79,8 @@ typedef struct RenderPass {
 	char chan_id[24];	/* amount defined in openexr_multi.h */
 	float *rect;
 	int rectx, recty;
+
+	char internal_name[64]; /* pass name without view */
 	char view[64];		/* amount defined in openexr_multi.h */
 	int view_id;	/* MV I don't think we need that */
 } RenderPass;

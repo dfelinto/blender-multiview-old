@@ -485,8 +485,10 @@ static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channel
 	rpass->rectx = rl->rectx;
 	rpass->recty = rl->recty;
 	rpass->view_id = view_id;
+
 	BLI_strncpy(rpass->name, get_pass_name(rpass->passtype, -1, view), sizeof(rpass->name));
-	BLI_strncpy(rpass->view, view, sizeof(view));
+	BLI_strncpy(rpass->internal_name, get_pass_name(rpass->passtype, -1, ""), sizeof(rpass->internal_name));
+	BLI_strncpy(rpass->view, view, sizeof(rpass->view));
 	
 	if (rl->exrhandle) {
 		int a;
@@ -745,7 +747,7 @@ static void *ml_addlayer_cb(void *base, const char *str)
 	return rl;
 }
 
-static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float *rect, int totchan, const char *chan_id, int view_id)
+static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float *rect, int totchan, const char *chan_id, const char *view, int view_id)
 {
 	RenderLayer *rl = lay;
 	RenderPass *rpass = MEM_callocN(sizeof(RenderPass), "loaded pass");
@@ -757,13 +759,19 @@ static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float 
 	if (rpass->passtype == 0) printf("unknown pass %s\n", str);
 	rl->passflag |= rpass->passtype;
 	
-	BLI_strncpy(rpass->name, str, EXR_PASS_MAXNAME);
 	/* channel id chars */
 	for (a = 0; a < totchan; a++)
 		rpass->chan_id[a] = chan_id[a];
 
 	rpass->rect = rect;
+	if (view[0] != '\0')
+		BLI_snprintf(rpass->name, sizeof(rpass->name), "%s.%s", str, view);
+	else
+		BLI_strncpy(rpass->name,  str, sizeof(rpass->name));
+
 	rpass->view_id = view_id;
+	BLI_strncpy(rpass->view, view, sizeof(rpass->view));
+	BLI_strncpy(rpass->internal_name, str, sizeof(rpass->internal_name));
 }
 
 static void *ml_addview_cb(void *base, const char *str)
