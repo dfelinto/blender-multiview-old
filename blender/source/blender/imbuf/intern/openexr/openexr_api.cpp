@@ -1243,15 +1243,11 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 		return;
 	}
 
-	is_multiview = hasMultiView(data->ifile->header(0));
-	if (is_multiview)
-		views = IMB_exr_multiView(handle);
-
 	for (lay = (ExrLayer *)data->layers.first; lay; lay = lay->next) {
 		void *laybase = addlayer(base, lay->name);
 		if (laybase) {
 			for (pass = (ExrPass *)lay->passes.first; pass; pass = pass->next) {
-				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, view_id);
+				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, pass->chan[0].view_id);
 				pass->rect = NULL;
 			}
 		}
@@ -1711,7 +1707,7 @@ struct ImBuf *imb_load_openexr(unsigned char *mem, size_t size, int flags, char 
 			exr_print_filecontents(file);
 
 		is_multilayer = exr_is_multilayer(file);
-		is_multipart = file->parts();
+		is_multipart = file->parts() > 1;
 
 		/* do not make an ibuf when */
 		if (is_multilayer && !(flags & IB_test) && !(flags & IB_multilayer)) {
