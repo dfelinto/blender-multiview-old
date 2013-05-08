@@ -637,7 +637,7 @@ int imb_exr_get_multiView_id(StringVector *views, const char *name)
 	}
 
 	/* no views or wrong name */
-	return 0;
+	return -1;
 }
 
 static StringVector imb_exr_get_views(MultiPartInputFile *file)
@@ -792,7 +792,7 @@ void IMB_exr_add_channel(void *handle, const char *layname, const char *passname
 	echan->rect = rect;
 
 	/* quick look up */
-	echan->view_id = imb_exr_get_multiView_id(&data->multiView, &(echan->m->view)[0]);
+	echan->view_id = fmax(0, imb_exr_get_multiView_id(&data->multiView, &(echan->m->view)[0]));
 
 	printf("added channel %s\n", echan->name);
 	BLI_addtail(&data->channels, echan);
