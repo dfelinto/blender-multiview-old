@@ -1247,7 +1247,7 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 		void *laybase = addlayer(base, lay->name);
 		if (laybase) {
 			for (pass = (ExrPass *)lay->passes.first; pass; pass = pass->next) {
-				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, pass->chan[0].view_id);
+				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, pass->chan[0]->view_id);
 				pass->rect = NULL;
 			}
 		}
