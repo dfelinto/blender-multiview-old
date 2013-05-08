@@ -2752,7 +2752,7 @@ static void operator_search_cb(const bContext *C, void *UNUSED(arg), const char 
 {
 	GHashIterator *iter = WM_operatortype_iter();
 
-	for (; BLI_ghashIterator_notDone(iter); BLI_ghashIterator_step(iter)) {
+	for (; !BLI_ghashIterator_done(iter); BLI_ghashIterator_step(iter)) {
 		wmOperatorType *ot = BLI_ghashIterator_getValue(iter);
 
 		if ((ot->flag & OPTYPE_INTERNAL) && (G.debug & G_DEBUG_WM) == 0)
@@ -3115,6 +3115,7 @@ void uiTemplateComponentMenu(uiLayout *layout, PointerRNA *ptr, const char *prop
 {
 	ComponentMenuArgs *args = MEM_callocN(sizeof(ComponentMenuArgs), "component menu template args");
 	uiBlock *block;
+	uiBut *but;
 	
 	args->ptr = *ptr;
 	BLI_strncpy(args->propname, propname, sizeof(args->propname));
@@ -3122,7 +3123,11 @@ void uiTemplateComponentMenu(uiLayout *layout, PointerRNA *ptr, const char *prop
 	block = uiLayoutGetBlock(layout);
 	uiBlockBeginAlign(block);
 
-	uiDefBlockButN(block, component_menu, args, name, 0, 0, UI_UNIT_X * 6, UI_UNIT_Y, "");
+	but = uiDefBlockButN(block, component_menu, args, name, 0, 0, UI_UNIT_X * 6, UI_UNIT_Y, "");
+	/* set rna directly, uiDefBlockButN doesn't do this */
+	but->rnapoin = *ptr;
+	but->rnaprop = RNA_struct_find_property(ptr, propname);
+	but->rnaindex = 0;
 	
 	uiBlockEndAlign(block);
 }

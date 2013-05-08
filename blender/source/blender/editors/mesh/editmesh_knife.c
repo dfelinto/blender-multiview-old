@@ -91,7 +91,7 @@ typedef struct KnifeVert {
 	ListBase edges;
 	ListBase faces;
 
-	float co[3], cageco[3], sco[3]; /* sco is screen coordinates for cageco */
+	float co[3], cageco[3], sco[2]; /* sco is screen coordinates for cageco */
 	bool is_face, in_space;
 	bool draw;
 } KnifeVert;
@@ -114,7 +114,7 @@ typedef struct BMEdgeHit {
 	KnifeEdge *kfe;
 	float hit[3], cagehit[3];
 	float realhit[3]; /* used in midpoint mode */
-	float schit[3];
+	float schit[2];
 	float l; /* lambda along cut line */
 	float perc; /* lambda along hit line */
 	KnifeVert *v; /* set if snapped to a vert */
@@ -244,9 +244,9 @@ BLI_INLINE int round_ftoi(float x)
 }
 #endif
 
-static void knife_project_v3(const KnifeTool_OpData *kcd, const float co[3], float sco[3])
+static void knife_project_v2(const KnifeTool_OpData *kcd, const float co[3], float sco[2])
 {
-	ED_view3d_project_float_v3_m4(kcd->ar, co, sco, (float (*)[4])kcd->projmat);
+	ED_view3d_project_float_v2_m4(kcd->ar, co, sco, (float (*)[4])kcd->projmat);
 }
 
 static void knife_pos_data_clear(KnifePosData *kpd)
@@ -336,7 +336,7 @@ static KnifeVert *new_knife_vert(KnifeTool_OpData *kcd, const float co[3], const
 	copy_v3_v3(kfv->co, co);
 	copy_v3_v3(kfv->cageco, cageco);
 
-	knife_project_v3(kcd, kfv->co, kfv->sco);
+	knife_project_v2(kcd, kfv->co, kfv->sco);
 
 	return kfv;
 }
@@ -1084,11 +1084,11 @@ static void knifetool_draw(const bContext *C, ARegion *UNUSED(ar), void *arg)
 		glBegin(GL_POINTS);
 		lh = kcd->linehits;
 		for (i = 0; i < kcd->totlinehit; i++, lh++) {
-			float sv1[3], sv2[3];
+			float sv1[2], sv2[2];
 
-			knife_project_v3(kcd, lh->kfe->v1->cageco, sv1);
-			knife_project_v3(kcd, lh->kfe->v2->cageco, sv2);
-			knife_project_v3(kcd, lh->cagehit, lh->schit);
+			knife_project_v2(kcd, lh->kfe->v1->cageco, sv1);
+			knife_project_v2(kcd, lh->kfe->v2->cageco, sv2);
+			knife_project_v2(kcd, lh->cagehit, lh->schit);
 
 			if (len_squared_v2v2(lh->schit, sv1) < vthresh4_sq) {
 				copy_v3_v3(lh->cagehit, lh->kfe->v1->cageco);
@@ -1217,7 +1217,7 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 			}
 
 			if (isect_line_tri_v3(kfe->v1->cageco, kfe->v2->cageco, v1, v2, v3, &lambda, NULL)) {
-				float p[3], no[3], view[3], sp[3];
+				float p[3], no[3], view[3], sp[2];
 
 				interp_v3_v3v3(p, kfe->v1->cageco, kfe->v2->cageco, lambda);
 
@@ -1238,7 +1238,7 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 					continue;
 				}
 
-				knife_project_v3(kcd, p, sp);
+				knife_project_v2(kcd, p, sp);
 				ED_view3d_unproject(mats, view, sp[0], sp[1], 0.0f);
 				mul_m4_v3(kcd->ob->imat, view);
 
@@ -1312,7 +1312,7 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 					else {
 						copy_v3_v3(hit.hit, p);
 					}
-					knife_project_v3(kcd, hit.cagehit, hit.schit);
+					knife_project_v2(kcd, hit.cagehit, hit.schit);
 
 					BLI_array_append(edges, hit);
 					BLI_smallhash_insert(ehash, (intptr_t)kfe, NULL);
@@ -1371,7 +1371,7 @@ static void knife_find_line_hits(KnifeTool_OpData *kcd)
 	bglMats mats;
 	BMEdgeHit *e1, *e2;
 	SmallHash hash, *ehash = &hash;
-	float v1[3], v2[3], v3[3], v4[4], s1[3], s2[3];
+	float v1[3], v2[3], v3[3], v4[4], s1[2], s2[2];
 	int i, c1, c2;
 
 	knife_bgl_get_mats(kcd, &mats);
@@ -1386,8 +1386,8 @@ static void knife_find_line_hits(KnifeTool_OpData *kcd)
 	copy_v3_v3(v2, kcd->curr.cage);
 
 	/* project screen line's 3d coordinates back into 2d */
-	knife_project_v3(kcd, v1, s1);
-	knife_project_v3(kcd, v2, s2);
+	knife_project_v2(kcd, v1, s1);
+	knife_project_v2(kcd, v2, s2);
 
 	if (len_squared_v2v2(s1, s2) < 1)
 		return;
@@ -1527,7 +1527,7 @@ static int knife_sample_screen_density(KnifeTool_OpData *kcd, const float radius
 {
 	BMFace *f;
 	bool is_space;
-	float co[3], cageco[3], sco[3];
+	float co[3], cageco[3], sco[2];
 
 	BLI_assert(kcd->is_interactive == true);
 
@@ -1540,7 +1540,7 @@ static int knife_sample_screen_density(KnifeTool_OpData *kcd, const float radius
 		float dis_sq;
 		int c = 0;
 
-		knife_project_v3(kcd, cageco, sco);
+		knife_project_v2(kcd, cageco, sco);
 
 		lst = knife_get_face_kedges(kcd, f);
 		for (ref = lst->first; ref; ref = ref->next) {
@@ -1550,7 +1550,7 @@ static int knife_sample_screen_density(KnifeTool_OpData *kcd, const float radius
 			for (i = 0; i < 2; i++) {
 				KnifeVert *kfv = i ? kfe->v2 : kfe->v1;
 
-				knife_project_v3(kcd, kfv->cageco, kfv->sco);
+				knife_project_v2(kcd, kfv->cageco, kfv->sco);
 
 				dis_sq = len_squared_v2v2(kfv->sco, sco);
 				if (dis_sq < radius_sq) {
@@ -1595,7 +1595,8 @@ static float knife_snap_size(KnifeTool_OpData *kcd, float maxsize)
 static KnifeEdge *knife_find_closest_edge(KnifeTool_OpData *kcd, float p[3], float cagep[3], BMFace **fptr, bool *is_space)
 {
 	BMFace *f;
-	float co[3], cageco[3], sco[3], maxdist = knife_snap_size(kcd, kcd->ethresh);
+	float co[3], cageco[3], sco[2];
+	float maxdist = knife_snap_size(kcd, kcd->ethresh);
 
 	if (kcd->ignore_vert_snapping)
 		maxdist *= 0.5f;
@@ -1610,12 +1611,13 @@ static KnifeEdge *knife_find_closest_edge(KnifeTool_OpData *kcd, float p[3], flo
 	kcd->curr.bmface = f;
 
 	if (f) {
+		const float maxdist_sq = maxdist * maxdist;
 		KnifeEdge *cure = NULL;
 		ListBase *lst;
 		Ref *ref;
-		float dis, curdis = FLT_MAX;
+		float dis_sq, curdis_sq = FLT_MAX;
 
-		knife_project_v3(kcd, cageco, sco);
+		knife_project_v2(kcd, cageco, sco);
 
 		/* look through all edges associated with this face */
 		lst = knife_get_face_kedges(kcd, f);
@@ -1623,11 +1625,11 @@ static KnifeEdge *knife_find_closest_edge(KnifeTool_OpData *kcd, float p[3], flo
 			KnifeEdge *kfe = ref->ref;
 
 			/* project edge vertices into screen space */
-			knife_project_v3(kcd, kfe->v1->cageco, kfe->v1->sco);
-			knife_project_v3(kcd, kfe->v2->cageco, kfe->v2->sco);
+			knife_project_v2(kcd, kfe->v1->cageco, kfe->v1->sco);
+			knife_project_v2(kcd, kfe->v2->cageco, kfe->v2->sco);
 
-			dis = dist_to_line_segment_v2(sco, kfe->v1->sco, kfe->v2->sco);
-			if (dis < curdis && dis < maxdist) {
+			dis_sq = dist_squared_to_line_segment_v2(sco, kfe->v1->sco, kfe->v2->sco);
+			if (dis_sq < curdis_sq && dis_sq < maxdist_sq) {
 				if (kcd->vc.rv3d->rflag & RV3D_CLIPPING) {
 					float lambda = line_point_factor_v2(sco, kfe->v1->sco, kfe->v2->sco);
 					float vec[3];
@@ -1636,12 +1638,12 @@ static KnifeEdge *knife_find_closest_edge(KnifeTool_OpData *kcd, float p[3], flo
 
 					if (ED_view3d_clipping_test(kcd->vc.rv3d, vec, true) == 0) {
 						cure = kfe;
-						curdis = dis;
+						curdis_sq = dis_sq;
 					}
 				}
 				else {
 					cure = kfe;
-					curdis = dis;
+					curdis_sq = dis_sq;
 				}
 			}
 		}
@@ -1691,7 +1693,7 @@ static KnifeVert *knife_find_closest_vert(KnifeTool_OpData *kcd, float p[3], flo
                                           bool *is_space)
 {
 	BMFace *f;
-	float co[3], cageco[3], sco[3], maxdist = knife_snap_size(kcd, kcd->vthresh);
+	float co[3], cageco[3], sco[2], maxdist = knife_snap_size(kcd, kcd->vthresh);
 
 	if (kcd->ignore_vert_snapping)
 		maxdist *= 0.5f;
@@ -1710,7 +1712,7 @@ static KnifeVert *knife_find_closest_vert(KnifeTool_OpData *kcd, float p[3], flo
 		KnifeVert *curv = NULL;
 		float dis_sq, curdis_sq = FLT_MAX;
 
-		knife_project_v3(kcd, cageco, sco);
+		knife_project_v2(kcd, cageco, sco);
 
 		lst = knife_get_face_kedges(kcd, f);
 		for (ref = lst->first; ref; ref = ref->next) {
@@ -1720,7 +1722,7 @@ static KnifeVert *knife_find_closest_vert(KnifeTool_OpData *kcd, float p[3], flo
 			for (i = 0; i < 2; i++) {
 				KnifeVert *kfv = i ? kfe->v2 : kfe->v1;
 
-				knife_project_v3(kcd, kfv->cageco, kfv->sco);
+				knife_project_v2(kcd, kfv->cageco, kfv->sco);
 
 				dis_sq = len_squared_v2v2(kfv->sco, sco);
 				if (dis_sq < curdis_sq && dis_sq < maxdist_sq) {
@@ -2215,8 +2217,9 @@ static void knifenet_fill_faces(KnifeTool_OpData *kcd)
 /* sort list of kverts by fraction along edge e */
 static void sort_by_frac_along(ListBase *lst, BMEdge *e)
 {
+	/* note, since we know the point is along the edge, sort from distance to v1co */
 	const float *v1co = e->v1->co;
-	const float *v2co = e->v2->co;
+//	const float *v2co = e->v2->co;
 	Ref *cur = NULL, *prev = NULL, *next = NULL;
 
 	if (lst->first == lst->last)
@@ -2224,7 +2227,11 @@ static void sort_by_frac_along(ListBase *lst, BMEdge *e)
 
 	for (cur = ((Ref *)lst->first)->next; cur; cur = next) {
 		KnifeVert *vcur = cur->ref;
+#if 0
 		const float vcur_fac = line_point_factor_v3(vcur->co, v1co, v2co);
+#else
+		const float vcur_fac = len_squared_v3v3(v1co, vcur->co);
+#endif
 
 		next = cur->next;
 		prev = cur->prev;
@@ -2233,8 +2240,13 @@ static void sort_by_frac_along(ListBase *lst, BMEdge *e)
 
 		while (prev) {
 			KnifeVert *vprev = prev->ref;
+#if 0
 			if (line_point_factor_v3(vprev->co, v1co, v2co) <= vcur_fac)
 				break;
+#else
+			if (len_squared_v3v3(v1co, vprev->co) <= vcur_fac)
+				break;
+#endif
 			prev = prev->prev;
 		}
 
