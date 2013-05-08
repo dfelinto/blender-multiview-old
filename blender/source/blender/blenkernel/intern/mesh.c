@@ -118,8 +118,9 @@ static const char *cmpcode_to_str(int code)
 
 /* thresh is threshold for comparing vertices, uvs, vertex colors,
  * weights, etc.*/
-static int customdata_compare(CustomData *c1, CustomData *c2, Mesh *m1, Mesh *m2, float thresh)
+static int customdata_compare(CustomData *c1, CustomData *c2, Mesh *m1, Mesh *m2, const float thresh)
 {
+	const float thresh_sq = thresh * thresh;
 	CustomDataLayer *l1, *l2;
 	int i, i1 = 0, i2 = 0, tot, j;
 	
@@ -225,7 +226,7 @@ static int customdata_compare(CustomData *c1, CustomData *c2, Mesh *m1, Mesh *m2
 			int ltot = m1->totloop;
 		
 			for (j = 0; j < ltot; j++, lp1++, lp2++) {
-				if (len_v2v2(lp1->uv, lp2->uv) > thresh)
+				if (len_squared_v2v2(lp1->uv, lp2->uv) > thresh_sq)
 					return MESHCMP_LOOPUVMISMATCH;
 			}
 		}
@@ -1301,8 +1302,8 @@ int BKE_mesh_nurbs_displist_to_mdata(Object *ob, ListBase *dispbase,
                                      MLoopUV **alluv,
                                      int *_totloop, int *_totpoly)
 {
+	Curve *cu = ob->data;
 	DispList *dl;
-	Curve *cu;
 	MVert *mvert;
 	MPoly *mpoly;
 	MLoop *mloop;
@@ -1311,13 +1312,8 @@ int BKE_mesh_nurbs_displist_to_mdata(Object *ob, ListBase *dispbase,
 	float *data;
 	int a, b, ofs, vertcount, startvert, totvert = 0, totedge = 0, totloop = 0, totvlak = 0;
 	int p1, p2, p3, p4, *index;
-	int conv_polys = 0;
-
-	cu = ob->data;
-
-
-	conv_polys |= cu->flag & CU_3D;      /* 2d polys are filled with DL_INDEX3 displists */
-	conv_polys |= ob->type == OB_SURF;   /* surf polys are never filled */
+	const bool conv_polys = ((cu->flag & CU_3D) ||    /* 2d polys are filled with DL_INDEX3 displists */
+	                         (ob->type == OB_SURF));  /* surf polys are never filled */
 
 	/* count */
 	dl = dispbase->first;
@@ -3466,26 +3462,52 @@ void BKE_mesh_tessface_clear(Mesh *mesh)
 }
 
 #if 0 /* slow version of the function below */
-void BKE_mesh_poly_calc_angles(MVert *mvert, MLoop *mloop,
-                                 MPoly *mp, float angles[])
+void BKE_mesh_calc_poly_angles(MPoly *mpoly, MLoop *loopstart,
+                               MVert *mvarray, float angles[])
 {
 	MLoop *ml;
+	MLoop *mloop = &loopstart[-mpoly->loopstart];
 
 	int j;
-	for (j = 0, ml = mloop + mp->loopstart; j < mp->totloop; j++, ml++) {
-		MLoop *ml_prev = ME_POLY_LOOP_PREV(mloop, mp, j);
-		MLoop *ml_next = ME_POLY_LOOP_NEXT(mloop, mp, j);
+	for (j = 0, ml = loopstart; j < mpoly->totloop; j++, ml++) {
+		MLoop *ml_prev = ME_POLY_LOOP_PREV(mloop, mpoly, j);
+		MLoop *ml_next = ME_POLY_LOOP_NEXT(mloop, mpoly, j);
 
 		float e1[3], e2[3];
 
-		sub_v3_v3v3(e1, mvert[ml_next->v].co, mvert[ml->v].co);
-		sub_v3_v3v3(e2, mvert[ml_prev->v].co, mvert[ml->v].co);
+		sub_v3_v3v3(e1, mvarray[ml_next->v].co, mvarray[ml->v].co);
+		sub_v3_v3v3(e2, mvarray[ml_prev->v].co, mvarray[ml->v].co);
 
 		angles[j] = (float)M_PI - angle_v3v3(e1, e2);
 	}
 }
 
 #else /* equivalent the function above but avoid multiple subtractions + normalize */
+
+void BKE_mesh_calc_poly_angles(MPoly *mpoly, MLoop *loopstart,
+                               MVert *mvarray, float angles[])
+{
+	float nor_prev[3];
+	float nor_next[3];
+
+	int i_this = mpoly->totloop - 1;
+	int i_next = 0;
+
+	sub_v3_v3v3(nor_prev, mvarray[loopstart[i_this - 1].v].co, mvarray[loopstart[i_this].v].co);
+	normalize_v3(nor_prev);
+
+	while (i_next < mpoly->totloop) {
+		sub_v3_v3v3(nor_next, mvarray[loopstart[i_this].v].co, mvarray[loopstart[i_next].v].co);
+		normalize_v3(nor_next);
+		angles[i_this] = angle_normalized_v3v3(nor_prev, nor_next);
+
+		/* step */
+		copy_v3_v3(nor_prev, nor_next);
+		i_this = i_next;
+		i_next++;
+	}
+}
+#endif
 
 void BKE_mesh_poly_edgehash_insert(EdgeHash *ehash, const MPoly *mp, const MLoop *mloop)
 {
@@ -3504,33 +3526,6 @@ void BKE_mesh_poly_edgehash_insert(EdgeHash *ehash, const MPoly *mp, const MLoop
 		ml_next++;
 	}
 }
-
-void BKE_mesh_poly_calc_angles(MVert *mvert, MLoop *mloop,
-                                 MPoly *mp, float angles[])
-{
-	MLoop *ml = mloop + mp->loopstart;
-	float nor_prev[3];
-	float nor_next[3];
-
-	int i_this = mp->totloop - 1;
-	int i_next = 0;
-
-	sub_v3_v3v3(nor_prev, mvert[ml[i_this - 1].v].co, mvert[ml[i_this].v].co);
-	normalize_v3(nor_prev);
-
-	while (i_next < mp->totloop) {
-		sub_v3_v3v3(nor_next, mvert[ml[i_this].v].co, mvert[ml[i_next].v].co);
-		normalize_v3(nor_next);
-		angles[i_this] = angle_normalized_v3v3(nor_prev, nor_next);
-
-		/* step */
-		copy_v3_v3(nor_prev, nor_next);
-		i_this = i_next;
-		i_next++;
-	}
-}
-#endif
-
 
 void BKE_mesh_do_versions_cd_flag_init(Mesh *mesh)
 {

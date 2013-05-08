@@ -496,7 +496,7 @@ static int project_paint_PickFace(const ProjPaintState *ps, const float pt[2], f
 }
 
 /* Converts a uv coord into a pixel location wrapping if the uv is outside 0-1 range */
-static void uvco_to_wrapped_pxco(float uv[2], int ibuf_x, int ibuf_y, float *x, float *y)
+static void uvco_to_wrapped_pxco(const float uv[2], int ibuf_x, int ibuf_y, float *x, float *y)
 {
 	/* use */
 	*x = (float)fmodf(uv[0], 1.0f);
@@ -3047,12 +3047,8 @@ static void project_paint_begin(ProjPaintState *ps)
 	 * threads is being able to fill in multiple buckets at once.
 	 * Only use threads for bigger brushes. */
 
-	if (ps->scene->r.mode & R_FIXED_THREADS) {
-		ps->thread_tot = ps->scene->r.threads;
-	}
-	else {
-		ps->thread_tot = BLI_system_thread_count();
-	}
+	ps->thread_tot = BKE_scene_num_threads(ps->scene);
+
 	for (a = 0; a < ps->thread_tot; a++) {
 		ps->arena_mt[a] = BLI_memarena_new(1 << 16, "project paint arena");
 	}
