@@ -427,7 +427,7 @@ static void acf_summary_backdrop(bAnimContext *ac, bAnimListElem *ale, float ymi
 static void acf_summary_name(bAnimListElem *UNUSED(ale), char *name)
 {
 	if (name)
-		BLI_strncpy(name, IFACE_("DopeSheet Summary"), ANIM_CHAN_NAME_SIZE);
+		BLI_strncpy(name, IFACE_("Dope Sheet Summary"), ANIM_CHAN_NAME_SIZE);
 }
 
 // FIXME: this is really a temp icon I think
@@ -464,13 +464,13 @@ static void *acf_summary_setting_ptr(bAnimListElem *ale, int setting, short *typ
 	bAnimContext *ac = (bAnimContext *)ale->data;
 	
 	/* if data is valid, return pointer to active dopesheet's relevant flag 
-	 *	- this is restricted to DopeSheet/Action Editor only
+	 *	- this is restricted to Dope Sheet/Action Editor only
 	 */
 	if ((ac->sl) && (ac->spacetype == SPACE_ACTION) && (setting == ACHANNEL_SETTING_EXPAND)) {
 		SpaceAction *saction = (SpaceAction *)ac->sl;
 		bDopeSheet *ads = &saction->ads;
 		
-		/* return pointer to DopeSheet's flag */
+		/* return pointer to Dope Sheet's flag */
 		return GET_ACF_FLAG_PTR(ads->flag, type);
 	}
 	else {
@@ -480,7 +480,7 @@ static void *acf_summary_setting_ptr(bAnimListElem *ale, int setting, short *typ
 	}
 }
 
-/* all animation summary (DopeSheet only) type define */
+/* all animation summary (Dope Sheet only) type define */
 static bAnimChannelType ACF_SUMMARY = 
 {
 	"Summary",                          /* type name */
@@ -843,7 +843,7 @@ static int acf_group_setting_flag(bAnimContext *ac, int setting, short *neg)
 			 */
 			return (ac->spacetype == SPACE_IPO) ? 
 			       AGRP_EXPANDED_G :        /* Graph Editor case */
-			       AGRP_EXPANDED;           /* DopeSheet and elsewhere */
+			       AGRP_EXPANDED;           /* Dope Sheet and elsewhere */
 		}
 			
 		case ACHANNEL_SETTING_MUTE: /* muted */
@@ -2346,9 +2346,9 @@ static bAnimChannelType ACF_DSSPK =
 	acf_dsspk_setting_ptr                   /* pointer for setting */
 };
 
-/* ShapeKey Entry  ------------------------------------------- */
+/* Shape Key Entry  ------------------------------------------- */
 
-/* name for ShapeKey */
+/* name for Shape Key */
 static void acf_shapekey_name(bAnimListElem *ale, char *name)
 {
 	KeyBlock *kb = (KeyBlock *)ale->data;
@@ -2363,7 +2363,7 @@ static void acf_shapekey_name(bAnimListElem *ale, char *name)
 	}
 }
 
-/* name property for ShapeKey entries */
+/* name property for Shape Key entries */
 static short acf_shapekey_nameprop(bAnimListElem *ale, PointerRNA *ptr, PropertyRNA **prop)
 {
 	KeyBlock *kb = (KeyBlock *)ale->data;
@@ -2817,7 +2817,7 @@ static void ANIM_init_channel_typeinfo_data(void)
 		animchannelTypeInfo[type++] = &ACF_DSLAM;        /* Lamp Channel */
 		animchannelTypeInfo[type++] = &ACF_DSCAM;        /* Camera Channel */
 		animchannelTypeInfo[type++] = &ACF_DSCUR;        /* Curve Channel */
-		animchannelTypeInfo[type++] = &ACF_DSSKEY;       /* ShapeKey Channel */
+		animchannelTypeInfo[type++] = &ACF_DSSKEY;       /* Shape Key Channel */
 		animchannelTypeInfo[type++] = &ACF_DSWOR;        /* World Channel */
 		animchannelTypeInfo[type++] = &ACF_DSNTREE;      /* NodeTree Channel */
 		animchannelTypeInfo[type++] = &ACF_DSPART;       /* Particle Channel */
@@ -2829,7 +2829,7 @@ static void ANIM_init_channel_typeinfo_data(void)
 		animchannelTypeInfo[type++] = &ACF_DSSPK;        /* Speaker Channel */
 		animchannelTypeInfo[type++] = &ACF_DSLINESTYLE;  /* LineStyle Channel */
 		
-		animchannelTypeInfo[type++] = &ACF_SHAPEKEY;     /* ShapeKey */
+		animchannelTypeInfo[type++] = &ACF_SHAPEKEY;     /* Shape Key */
 		
 		animchannelTypeInfo[type++] = &ACF_GPD;          /* Grease Pencil Datablock */
 		animchannelTypeInfo[type++] = &ACF_GPL;          /* Grease Pencil Layer */

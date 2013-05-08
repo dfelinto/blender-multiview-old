@@ -1053,7 +1053,6 @@ void UI_ThemeColorShade(int colorid, int offset)
 	CLAMP(g, 0, 255);
 	b = offset + (int) cp[2];
 	CLAMP(b, 0, 255);
-	//glColor3ub(r, g, b);
 	glColor4ub(r, g, b, cp[3]);
 }
 void UI_ThemeColorShadeAlpha(int colorid, int coloffset, int alphaoffset)
@@ -1610,10 +1609,10 @@ void init_userdef_do_versions(void)
 				btheme->tima.facedot_size = 2;
 			}
 			
-			/* DopeSheet - (Object) Channel color */
+			/* Dope Sheet - (Object) Channel color */
 			rgba_char_args_set(btheme->tact.ds_channel,     82, 96, 110, 255);
 			rgba_char_args_set(btheme->tact.ds_subchannel,  124, 137, 150, 255);
-			/* DopeSheet - Group Channel color (saner version) */
+			/* Dope Sheet - Group Channel color (saner version) */
 			rgba_char_args_set(btheme->tact.group, 79, 101, 73, 255);
 			rgba_char_args_set(btheme->tact.group_active, 135, 177, 125, 255);
 			
@@ -1960,7 +1959,7 @@ void init_userdef_do_versions(void)
 		bTheme *btheme;
 		
 		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
-			/* DopeSheet Summary */
+			/* Dope Sheet Summary */
 			rgba_char_args_set(btheme->tact.anim_active,    204, 112, 26, 102); 
 			
 			/* NLA Colors */

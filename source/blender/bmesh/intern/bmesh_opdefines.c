@@ -842,6 +842,7 @@ static BMOpDefine bmo_dissolve_verts_def = {
 	"dissolve_verts",
 	/* slots_in */
 	{{"verts", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT}},
+	 {"use_face_split", BMO_OP_SLOT_BOOL},
 	 {{'\0'}},
 	},
 	{{{'\0'}}},  /* no output */
@@ -969,6 +970,7 @@ static BMOpDefine bmo_subdivide_edges_def = {
 	/* slots_in */
 	{{"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}},
 	 {"smooth", BMO_OP_SLOT_FLT},
+	 {"smooth_falloff", BMO_OP_SLOT_INT}, /* SUBD_FALLOFF_ROOT and friends */
 	 {"fractal", BMO_OP_SLOT_FLT},
 	 {"along_normal", BMO_OP_SLOT_FLT},
 	 {"cuts", BMO_OP_SLOT_INT},
@@ -1450,6 +1452,7 @@ static BMOpDefine bmo_beautify_fill_def = {
 	/* slots_in */
 	{{"faces", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}}, /* input faces */
 	 {"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* edges that can be flipped */
+	 {"use_restrict_tag", BMO_OP_SLOT_BOOL}, /* restrict edge rotation to mixed tagged vertices */
 	 {{'\0'}},
 	},
 	/* slots_out */

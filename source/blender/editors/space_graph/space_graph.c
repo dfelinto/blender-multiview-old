@@ -39,7 +39,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -104,7 +103,7 @@ static SpaceLink *graph_new(const bContext *C)
 	
 	sipo->autosnap = SACTSNAP_FRAME;
 	
-	/* allocate DopeSheet data for Graph Editor */
+	/* allocate Dope Sheet data for Graph Editor */
 	sipo->ads = MEM_callocN(sizeof(bDopeSheet), "GraphEdit DopeSheet");
 	sipo->ads->source = (ID *)scene;
 	
