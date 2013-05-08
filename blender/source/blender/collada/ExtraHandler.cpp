@@ -68,7 +68,7 @@ bool ExtraHandler::parseElement(
         const COLLADAFW::UniqueId& uniqueId)
 {
 	/* implement for backwards compatibility, new version added object parameter */
-	parseElement(profileName, elementHash, uniqueId, NULL);
+	return parseElement(profileName, elementHash, uniqueId, NULL);
 }
 
 bool ExtraHandler::parseElement(
