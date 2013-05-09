@@ -531,10 +531,12 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	}
 
 	if (rr) {
-		strp = layer_menu(rr, &iuser->layer);
-		but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu2, UI_UNIT_Y, &iuser->layer, 0, 0, 0, 0, TIP_("Select Layer"));
-		uiButSetFunc(but, image_multi_cb, rr, iuser);
-		MEM_freeN(strp);
+		if (RE_layers_have_name(rr)) {
+			strp = layer_menu(rr, &iuser->layer);
+			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu2, UI_UNIT_Y, &iuser->layer, 0, 0, 0, 0, TIP_("Select Layer"));
+			uiButSetFunc(but, image_multi_cb, rr, iuser);
+			MEM_freeN(strp);
+		}
 
 		layer = iuser->layer;
 		if (rr->rectf || rr->rect32)

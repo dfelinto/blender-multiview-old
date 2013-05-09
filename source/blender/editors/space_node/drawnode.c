@@ -686,7 +686,8 @@ static void node_buts_image_user(uiLayout *layout, bContext *C, PointerRNA *ptr,
 
 	col = uiLayoutColumn(layout, FALSE);
 
-	if (RNA_enum_get(imaptr, "type") == IMA_TYPE_MULTILAYER)
+	if (RNA_enum_get(imaptr, "type") == IMA_TYPE_MULTILAYER &&
+		RNA_boolean_get(ptr, "has_layers"))
 		uiItemR(col, ptr, "layer", 0, NULL, ICON_NONE);
 }
 

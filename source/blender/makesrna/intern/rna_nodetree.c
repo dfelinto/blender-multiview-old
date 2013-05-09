@@ -2541,6 +2541,16 @@ static EnumPropertyItem *rna_Node_image_layer_itemf(bContext *UNUSED(C), Pointer
 	return item;
 }
 
+static int rna_Node_image_has_layers_get(PointerRNA *ptr)
+{
+	bNode *node = (bNode *)ptr->data;
+	Image *ima = (Image *)node->id;
+
+	if (!ima || !(ima->rr)) return NULL;
+
+	return RE_layers_have_name(ima->rr);
+}
+
 static int rna_Node_image_has_views_get(PointerRNA *ptr)
 {
 	bNode *node = (bNode *)ptr->data;
@@ -3929,6 +3939,11 @@ static void def_node_image_user(StructRNA *srna)
 	RNA_def_property_flag(prop, PROP_ENUM_NO_TRANSLATE);
 	RNA_def_property_ui_text(prop, "Layer", "");
 	RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_image_layer_update");
+
+	prop = RNA_def_property(srna, "has_layers", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_funcs(prop, "rna_Node_image_has_layers_get", NULL);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_ui_text(prop, "Has Layers", "True if this image has any named layer");
 
 	prop = RNA_def_property(srna, "view", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "view");
