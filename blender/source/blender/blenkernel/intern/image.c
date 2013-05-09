@@ -2307,55 +2307,6 @@ void BKE_image_signal(Image *ima, ImageUser *iuser, int signal)
 /* if layer or pass changes, we need an index for the imbufs list */
 /* note it is called for rendered results, but it doesnt use the index! */
 /* and because rendered results use fake layer/passes, don't correct for wrong indices here */
-RenderPass *BKE_image_multiview_index(RenderResult *rr, ImageUser *iuser)
-{
-	RenderLayer *rl;
-	RenderPass *rpass = NULL;
-	int passtype;
-	int view_id = iuser->view;
-
-	if (rr == NULL)
-		return NULL;
-
-	if (iuser) {
-		short index = 0, rl_index = 0, rp_index;
-
-		for (rl = rr->layers.first; rl; rl = rl->next, rl_index++) {
-			rp_index = 0;
-			passtype = 0;
-			for (rpass = rl->passes.first; rpass; rpass = rpass->next, index++, rp_index++) {
-				if (iuser->layer != rl_index)
-					continue;
-
-				if (iuser->pass_tmp == rp_index)
-					passtype = rpass->passtype;
-
-				if (rpass->passtype == passtype && rpass->view_id == view_id)
-					break;
-			}
-
-			if (rpass)
-				break;
-		}
-
-		if (rpass) {
-			iuser->multi_index = index;
-			iuser->pass = rp_index;
-		}
-		else {
-			iuser->multi_index = 0;
-			iuser->pass = iuser->pass_tmp;
-		}
-	}
-	if (rpass == NULL) {
-		rl = rr->layers.first;
-		if (rl)
-			rpass = rl->passes.first;
-	}
-
-	return rpass;
-}
-
 RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
 {
 	RenderLayer *rl;
@@ -2363,11 +2314,6 @@ RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
 
 	if (rr == NULL)
 		return NULL;
-
-	if (BLI_countlist(&rr->views) > 1)
-		return BKE_image_multiview_index(rr, iuser);
-	else
-		iuser->pass = iuser->pass_tmp;
 
 	if (iuser) {
 		short index = 0, rl_index = 0, rp_index;
