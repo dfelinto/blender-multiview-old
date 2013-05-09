@@ -17,6 +17,7 @@ Current status:
 * Support for MultiPart images (read and write) working fine (OpenEXR 2.0)
 * Cycles is working as well
 * Composite is work in progress
+* ImageNode is working really nicely
 
 The rules for testing are:
 * Composite with Output node (and file format as exr multilayer)
@@ -24,17 +25,18 @@ The rules for testing are:
 
 Known bugs:
 * When rendering only one view, the 'view' name shouldn't be saved in EXR file (it's probably fixed now, I'll investigate later
-* UV/Image Editor has the "Combined" pass even when it shouldn't (I hacked it away, but not nicely)
+* We have an empty Layer when opening EXR MultiPart files, not sure yet why (no big deal but the UI in the compositor or Image editor shows a blank enum)
+* Missing listeners - not everything is updating when they should if you change things after rendering
 
 Compositor elements not yet tackled:
+* ~~Image Node (right now it shows each view as a socket)~~
+* ~~Image Node: to map image views to scene views~~
 * FSA
 * Viewer Node
-* Image Node (right now it shows each view as a socket)
 * SingleLayer exr file
 * Non-exr files (more a design/UI thing)
 * Global option to composite/render only one view
-* Image Node: to map image views to scene views
-* View Filter Node: to run a nodebranch when view =="left" ...
+* View Filter Node: to run a nodebranch when view =="left" ... [need design]
 
 
 Current issues
