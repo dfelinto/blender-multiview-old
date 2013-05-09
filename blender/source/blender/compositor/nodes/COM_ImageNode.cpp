@@ -64,6 +64,58 @@ NodeOperation *ImageNode::doMultilayerCheck(ExecutionSystem *system, RenderLayer
 	return operation;
 }
 
+int ImageNode::getPassIndex(CompositorContext *context, ListBase *passes, ListBase *views, int passindex, int view_ui)
+{
+	if (BLI_countlist(views) < 2)
+		return passindex;
+
+	const RenderData *rd= context->getRenderData();
+	int actview = context->getViewId();
+
+	bool is_multiview = (view_ui == 0); /* if view selected == All (0) */
+	RenderView *rv;
+	SceneRenderView *srv;
+	const char *view = NULL;
+	int nr, view_id;
+
+	if (! is_multiview) {
+		rv = (RenderView *)BLI_findlink(views, view_ui - 1);
+		view = rv->name;
+	}
+	else {
+		/* heuristic to match image name with scene names */
+
+		/* I'm doing this loop here only to get the name of the current view
+		   we can store the view in context too, it would be cleaner
+		   and remember, view_id is a index for the active views only */
+		for (view_id=0, nr=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
+
+			if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
+				continue;
+
+			if (srv->viewflag & SCE_VIEW_DISABLE)
+				continue;
+
+			if (actview == view_id++)
+				view = srv->name;
+		}
+
+		/* this should never happen, but it doesn't hurt to be safe */
+		if (view == NULL)
+			return passindex;
+
+		/* check if the view name exists in the image */
+		if(! BLI_findstring(views, view, offsetof(RenderView, name)))
+			return passindex;
+	}
+
+	RenderPass *rpass = (RenderPass *)BLI_findlink(passes, passindex);
+	char passname[64];
+
+	sprintf(passname, "%s.%s", rpass->internal_name, view);
+	return BLI_findstringindex(passes, passname, offsetof(RenderPass, name));
+}
+
 void ImageNode::convertToOperations(ExecutionSystem *graph, CompositorContext *context)
 {
 	/// Image output
@@ -82,9 +134,6 @@ void ImageNode::convertToOperations(ExecutionSystem *graph, CompositorContext *c
 		ImBuf *ibuf = BKE_image_acquire_ibuf(image, imageuser, NULL);
 		if (image->rr) {
 			RenderLayer *rl = (RenderLayer *)BLI_findlink(&image->rr->layers, imageuser->layer);
-			int views = BLI_countlist(&image->rr->views);
-			int view_id = (context->getViewId() < views? context->getViewId():0);
-
 			if (rl) {
 				OutputSocket *socket;
 				int index;
@@ -97,10 +146,10 @@ void ImageNode::convertToOperations(ExecutionSystem *graph, CompositorContext *c
 					if (socket->isConnected() || index == 0) {
 						bNodeSocket *bnodeSocket = socket->getbNodeSocket();
 						NodeImageLayer *storage = (NodeImageLayer *)bnodeSocket->storage;
-						int passindex = storage->pass_index;
-						
+						int passindex = getPassIndex(context, &rl->passes, &image->rr->views, storage->pass_index, imageuser->view);
+
 						RenderPass *rpass = (RenderPass *)BLI_findlink(&rl->passes, passindex);
-						if (rpass && rpass->view_id == view_id) {
+						if (rpass) {
 							imageuser->pass = passindex;
 							switch (rpass->channels) {
 								case 1:
