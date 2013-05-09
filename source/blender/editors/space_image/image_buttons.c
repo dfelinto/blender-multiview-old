@@ -505,8 +505,8 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 			layer--;  /* fake compo/sequencer layer */
 		
 		rl = BLI_findlink(&rr->layers, layer); /* return NULL is meant to be */
-		strp = pass_menu(rl, &iuser->pass);
-		but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu3, UI_UNIT_Y, &iuser->pass, 0, 0, 0, 0, TIP_("Select Pass"));
+		strp = pass_menu(rl, &iuser->pass_tmp);
+		but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu3, UI_UNIT_Y, &iuser->pass_tmp, 0, 0, 0, 0, TIP_("Select Pass"));
 		uiButSetFunc(but, image_multi_cb, rr, iuser);
 		MEM_freeN(strp);
 

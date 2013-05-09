@@ -127,7 +127,7 @@ static const char *insert_view_name(const char* passname, const char* view)
 
 	int len = IMB_exr_split_token(passname, end, &token);
 
-	if (len == 0)
+	if (len == strlen(passname))
 		sprintf(retstr, "%s.%s", passname, view);
 	else
 		sprintf(retstr, "%.*s%s.%s", (int)(end-passname) - len, passname, view, token);

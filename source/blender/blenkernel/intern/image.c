@@ -2311,12 +2311,11 @@ RenderPass *BKE_image_multiview_index(RenderResult *rr, ImageUser *iuser)
 {
 	RenderLayer *rl;
 	RenderPass *rpass = NULL;
+	int passtype;
+	int view_id = iuser->view;
 
 	if (rr == NULL)
 		return NULL;
-
-	int passtype;
-	int view_id = iuser->view;
 
 	if (iuser) {
 		short index = 0, rl_index = 0, rp_index;
@@ -2328,10 +2327,10 @@ RenderPass *BKE_image_multiview_index(RenderResult *rr, ImageUser *iuser)
 				if (iuser->layer != rl_index)
 					continue;
 
-				if (iuser->pass == rp_index)
+				if (iuser->pass_tmp == rp_index)
 					passtype = rpass->passtype;
 
-				if (passtype == rpass->passtype && rpass->view_id == view_id)
+				if (rpass->passtype == passtype && rpass->view_id == view_id)
 					break;
 			}
 
@@ -2339,10 +2338,14 @@ RenderPass *BKE_image_multiview_index(RenderResult *rr, ImageUser *iuser)
 				break;
 		}
 
-		if (rpass)
+		if (rpass) {
 			iuser->multi_index = index;
-		else
+			iuser->pass = rp_index;
+		}
+		else {
 			iuser->multi_index = 0;
+			iuser->pass = iuser->pass_tmp;
+		}
 	}
 	if (rpass == NULL) {
 		rl = rr->layers.first;
@@ -2363,6 +2366,8 @@ RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
 
 	if (BLI_countlist(&rr->views) > 1)
 		return BKE_image_multiview_index(rr, iuser);
+	else
+		iuser->pass = iuser->pass_tmp;
 
 	if (iuser) {
 		short index = 0, rl_index = 0, rp_index;
