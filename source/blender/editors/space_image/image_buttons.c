@@ -390,10 +390,46 @@ static char *view_menu(RenderResult *rr, short *curpass)
 	return str;
 }
 
+/* return the real pass id */
+static int get_pass_id(RenderResult *rr, ImageUser *iuser)
+{
+	RenderLayer *rl;
+	RenderPass *rpass = NULL;
+	int passtype;
+	int view_id = iuser->view;
+
+	if (rr == NULL || iuser == NULL)
+		return 0;
+
+	if (BLI_countlist(&rr->views) < 2)
+		return iuser->pass_tmp;
+
+	short rl_index = 0, rp_index;
+
+	for (rl = rr->layers.first; rl; rl = rl->next, rl_index++) {
+		if (rl_index != iuser->layer)
+			continue;
+
+		rp_index = 0;
+		passtype = 0;
+		for (rpass = rl->passes.first; rpass; rpass = rpass->next, rp_index++) {
+			if (iuser->pass_tmp == rp_index)
+				passtype = rpass->passtype;
+
+			if (rpass->passtype == passtype && rpass->view_id == view_id)
+				return rp_index;
+		}
+	}
+
+	return iuser->pass_tmp;
+}
+
 /* 5 layer button callbacks... */
 static void image_multi_cb(bContext *C, void *rr_v, void *iuser_v) 
 {
 	ImageUser *iuser = iuser_v;
+
+	iuser->pass = get_pass_id(rr_v, iuser);
 
 	BKE_image_multilayer_index(rr_v, iuser); 
 	WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, NULL);
