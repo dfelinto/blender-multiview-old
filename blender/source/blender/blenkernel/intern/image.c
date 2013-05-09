@@ -2316,10 +2316,7 @@ RenderPass *BKE_image_multiview_index(RenderResult *rr, ImageUser *iuser)
 		return NULL;
 
 	int passtype;
-	int view_id = iuser->view - 1;
-
-	/* MV XXX that means we want to see 3D ... not to be tackled any soon: for now just show the first view */
-	if (iuser->view == 0) view_id = 0;
+	int view_id = iuser->view;
 
 	if (iuser) {
 		short index = 0, rl_index = 0, rp_index;
