@@ -2904,3 +2904,22 @@ int RE_WriteEnvmapResult(struct ReportList *reports, Scene *scene, EnvMap *env, 
 	}
 }
 
+/* used in the interface to decide whether to show layers */
+int RE_layers_have_name(struct RenderResult *rr)
+{
+	switch (BLI_countlist(&rr->layers))
+	{
+		case 0:
+			return FALSE;
+			break;
+		case 1:
+			return (((RenderLayer *)rr->layers.first)->name[0] != '\0');
+			break;
+		default:
+			return TRUE;
+			break;
+	}
+	return FALSE;
+}
+
+
