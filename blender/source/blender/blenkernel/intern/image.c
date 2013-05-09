@@ -2307,6 +2307,55 @@ void BKE_image_signal(Image *ima, ImageUser *iuser, int signal)
 /* if layer or pass changes, we need an index for the imbufs list */
 /* note it is called for rendered results, but it doesnt use the index! */
 /* and because rendered results use fake layer/passes, don't correct for wrong indices here */
+RenderPass *BKE_image_multiview_index(RenderResult *rr, ImageUser *iuser)
+{
+	RenderLayer *rl;
+	RenderPass *rpass = NULL;
+
+	if (rr == NULL)
+		return NULL;
+
+	int passtype;
+	int view_id = iuser->view - 1;
+
+	/* MV XXX that means we want to see 3D ... not to be tackled any soon: for now just show the first view */
+	if (iuser->view == 0) view_id = 0;
+
+	if (iuser) {
+		short index = 0, rl_index = 0, rp_index;
+
+		for (rl = rr->layers.first; rl; rl = rl->next, rl_index++) {
+			rp_index = 0;
+			passtype = 0;
+			for (rpass = rl->passes.first; rpass; rpass = rpass->next, index++, rp_index++) {
+				if (iuser->layer != rl_index)
+					continue;
+
+				if (iuser->pass == rp_index)
+					passtype = rpass->passtype;
+
+				if (passtype == rpass->passtype && rpass->view_id == view_id)
+					break;
+			}
+
+			if (rpass)
+				break;
+		}
+
+		if (rpass)
+			iuser->multi_index = index;
+		else
+			iuser->multi_index = 0;
+	}
+	if (rpass == NULL) {
+		rl = rr->layers.first;
+		if (rl)
+			rpass = rl->passes.first;
+	}
+
+	return rpass;
+}
+
 RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
 {
 	RenderLayer *rl;
@@ -2314,6 +2363,9 @@ RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
 
 	if (rr == NULL)
 		return NULL;
+
+	if (BLI_countlist(&rr->views) > 1)
+		return BKE_image_multiview_index(rr, iuser);
 
 	if (iuser) {
 		short index = 0, rl_index = 0, rp_index;
