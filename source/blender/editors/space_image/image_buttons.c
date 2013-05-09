@@ -380,10 +380,6 @@ static char *view_menu(RenderResult *rr, short *curpass)
 	strcpy(str, IFACE_("View %t"));
 	a = strlen(str);
 
-	/* option to show all views at once (3d) */
-	a += sprintf(str + a, "|%s %%x0", IFACE_("All"));
-	nr = 1;
-
 	if (rr)
 		for (rv = rr->views.first; rv; rv = rv->next, nr++)
 			a += sprintf(str + a, "|%s %%x%d", IFACE_(rv->name), nr);
