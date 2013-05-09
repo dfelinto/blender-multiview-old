@@ -190,9 +190,9 @@ void *OutputOpenExrMultiLayerOperation::get_handle(const char* filename)
 		exrhandle = IMB_exr_get_handle_name(filename);
 		if (this->m_actview > 0) return exrhandle;
 
-		/* MV I'm doing very similar in
+		/* MV are are doing very similar in
 		 * render_result.c::render_result_new
-		 * it should be an external shared function */
+		 * it could be an external shared function */
 
 		/* check renderdata for amount of views */
 		for (nr = 0, srv= (SceneRenderView *) this->m_rd->views.first; srv; srv = srv->next, nr++) {

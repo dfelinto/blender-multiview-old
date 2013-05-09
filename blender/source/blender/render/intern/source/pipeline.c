@@ -1142,7 +1142,6 @@ static void do_render_3d(Render *re)
 	numviews = BLI_countlist(&re->result->views);
 	for (view = 0; view < numviews; view++) {
 
-		printf("do_render_3d: view/numviews : %d/%d\n", view + 1, numviews);
 		re->actview = view;
 
 		/* make render verts/faces/halos/lamps */

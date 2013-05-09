@@ -85,8 +85,8 @@ int ImageNode::getPassIndex(CompositorContext *context, ListBase *passes, ListBa
 	else {
 		/* heuristic to match image name with scene names */
 
-		/* I'm doing this loop here only to get the name of the current view
-		   we can store the view in context too, it would be cleaner
+		/* MV I'm doing this loop here only to get the name of the current view.
+		   We can store the view in context too, it would be cleaner
 		   and remember, view_id is a index for the active views only */
 		for (view_id=0, nr=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
 
