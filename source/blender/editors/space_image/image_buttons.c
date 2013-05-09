@@ -351,13 +351,46 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 		nr = 1;
 	}
 
-	if (rl)
-		for (rpass = rl->passes.first; rpass; rpass = rpass->next, nr++)
-			a += sprintf(str + a, "|%s %%x%d", IFACE_(rpass->name), nr);
+	if (rl) {
+		int passflag = 0;
+		for (rpass = rl->passes.first; rpass; rpass = rpass->next, nr++) {
+
+			if (passflag & rpass->passtype)
+				continue;
+
+			passflag |= rpass->passtype;
+
+			a += sprintf(str + a, "|%s %%x%d", IFACE_(rpass->internal_name), nr);
+		}
+	}
 	
 	if (*curpass >= nr)
 		*curpass = 0;
 	
+	return str;
+}
+
+static char *view_menu(RenderResult *rr, short *curpass)
+{
+	RenderView *rv;
+	int len = 64 + 32 * (rr ? BLI_countlist(&rr->views) : 1);
+	short a, nr = 0;
+	char *str = MEM_callocN(len, "menu views");
+
+	strcpy(str, IFACE_("View %t"));
+	a = strlen(str);
+
+	/* option to show all views at once (3d) */
+	a += sprintf(str + a, "|%s %%x0", IFACE_("All"));
+	nr = 1;
+
+	if (rr)
+		for (rv = rr->views.first; rv; rv = rv->next, nr++)
+			a += sprintf(str + a, "|%s %%x%d", IFACE_(rv->name), nr);
+
+	if (*curpass >= nr)
+		*curpass = 0;
+
 	return str;
 }
 
@@ -446,7 +479,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	uiBlock *block = uiLayoutGetBlock(layout);
 	uiBut *but;
 	RenderLayer *rl = NULL;
-	int wmenu1, wmenu2, wmenu3, layer;
+	int wmenu1, wmenu2, wmenu3, wmenu4, layer;
 	char *strp;
 
 	uiLayoutRow(layout, TRUE);
@@ -455,6 +488,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	wmenu1 = (2 * w) / 5;
 	wmenu2 = (3 * w) / 5;
 	wmenu3 = (3 * w) / 6;
+	wmenu4 = (3 * w) / 6;
 	
 	/* menu buts */
 	if (render_slot) {
@@ -479,6 +513,13 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 		but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu3, UI_UNIT_Y, &iuser->pass, 0, 0, 0, 0, TIP_("Select Pass"));
 		uiButSetFunc(but, image_multi_cb, rr, iuser);
 		MEM_freeN(strp);
+
+		if (BLI_countlist(&rr->views) > 1) {
+			strp = view_menu(rr, &iuser->view);
+			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu4, UI_UNIT_Y, &iuser->view, 0, 0, 0, 0, TIP_("Select View"));
+			uiButSetFunc(but, image_multi_cb, rr, iuser);
+			MEM_freeN(strp);
+		}
 	}
 }
 
