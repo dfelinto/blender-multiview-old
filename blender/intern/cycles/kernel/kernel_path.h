@@ -1146,7 +1146,9 @@ __device void kernel_path_trace(KernelGlobals *kg,
 	/* accumulate result in output buffer */
 	kernel_write_pass_float4(buffer, sample, L);
 
+#ifndef __SOBOL__
 	path_rng_end(kg, rng_state, rng);
+#endif
 }
 
 CCL_NAMESPACE_END
