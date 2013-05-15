@@ -1992,13 +1992,14 @@ void add_halo_flare(Render *re)
 	RenderLayer *rl;
 	HaloRen *har;
 	int a, mode, do_draw = FALSE;
+	float *rect;
 	
 	/* for now, we get the first renderlayer in list with halos set */
 	for (rl= rr->layers.first; rl; rl= rl->next)
 		if (rl->layflag & SCE_LAY_HALO)
 			break;
 
-	float * rect= RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
+	rect = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
 
 	if (rl==NULL || rect)
 		return;
