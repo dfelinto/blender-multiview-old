@@ -125,14 +125,16 @@ void render_result_free_list(ListBase *lb, RenderResult *rr)
 
 static const char *insert_view_name(const char* passname, const char* view)
 {
+	static char retstr[EXR_PASS_MAXNAME];
+	const char *end;
+	const char *token;
+	int len;
+
 	if (view == NULL || view[0] == '\0')
 		return passname;
 
-	static char retstr[EXR_PASS_MAXNAME];
-	const char *end = passname + strlen(passname);
-	const char *token;
-
-	int len = IMB_exr_split_token(passname, end, &token);
+	end = passname + strlen(passname);
+	len = IMB_exr_split_token(passname, end, &token);
 
 	if (len == strlen(passname))
 		sprintf(retstr, "%s.%s", passname, view);
