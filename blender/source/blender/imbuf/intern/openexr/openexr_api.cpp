@@ -98,12 +98,15 @@ _CRTIMP void __cdecl _invalid_parameter_noinfo(void)
 using namespace Imf;
 using namespace Imath;
 
+extern "C"
+{
 /* prototype */
 static struct ExrPass *imb_exr_get_pass(ListBase *lb, char *passname);
 
 void exr_printf(const char *__restrict format, ...);
 
 static int imb_exr_strip_view(const char *name, const char *viewname);
+}
 
 /* Memory Input Stream */
 
