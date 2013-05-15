@@ -105,7 +105,7 @@ static struct ExrPass *imb_exr_get_pass(ListBase *lb, char *passname);
 
 void exr_printf(const char *__restrict format, ...);
 
-static int imb_exr_strip_view(const char *name, const char *viewname);
+static int imb_exr_strip_view(char *name, const char *viewname);
 }
 
 /* Memory Input Stream */
@@ -1375,7 +1375,7 @@ int IMB_exr_split_token(const char *str, const char *end, const char **token)
 	return len;
 }
 
-static int imb_exr_strip_view(const char *name, const char *viewname)
+static int imb_exr_strip_view(char *name, const char *viewname)
 {
 	/**
 	 A -> A
