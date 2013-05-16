@@ -63,6 +63,7 @@ struct wmDropBox;
 struct wmDrag;
 struct ImBuf;
 struct ImageFormatData;
+struct ARegion;
 
 typedef struct wmJob wmJob;
 
@@ -130,6 +131,7 @@ void		*WM_paint_cursor_activate(struct wmWindowManager *wm,
                                       void *customdata);
 
 void		WM_paint_cursor_end(struct wmWindowManager *wm, void *handle);
+void		WM_paint_cursor_tag_redraw(struct wmWindow *win, struct ARegion *ar);
 
 void		WM_cursor_warp		(struct wmWindow *win, int x, int y);
 float		WM_cursor_pressure	(const struct wmWindow *win);
@@ -241,6 +243,7 @@ void		WM_operator_properties_gesture_border(struct wmOperatorType *ot, bool exte
 void        WM_operator_properties_mouse_select(struct wmOperatorType *ot);
 void		WM_operator_properties_gesture_straightline(struct wmOperatorType *ot, bool cursor);
 void		WM_operator_properties_select_all(struct wmOperatorType *ot);
+void		WM_operator_properties_select_action(struct wmOperatorType *ot, int default_action);
 
 bool        WM_operator_check_ui_enabled(const struct bContext *C, const char *idname);
 wmOperator *WM_operator_last_redo(const struct bContext *C);

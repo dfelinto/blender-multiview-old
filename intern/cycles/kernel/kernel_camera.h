@@ -109,8 +109,7 @@ __device void camera_sample_orthographic(KernelGlobals *kg, float raster_x, floa
 		float2 lensuv = camera_sample_aperture(kg, lens_u, lens_v)*aperturesize;
 
 		/* compute point on plane of focus */
-		float ft = kernel_data.cam.focaldistance/ray->D.z;
-		float3 Pfocus = ray->D*ft;
+		float3 Pfocus = ray->D * kernel_data.cam.focaldistance;
 
 		/* update ray for effect of lens */
 		float3 lensuvw = make_float3(lensuv.x, lensuv.y, 0.0f);
@@ -188,7 +187,7 @@ __device void camera_sample_panorama(KernelGlobals *kg, float raster_x, float ra
 	}
 
 	/* indicates ray should not receive any light, outside of the lens */
-	if(len_squared(ray->D) == 0.0f) {
+	if(is_zero(ray->D)) {	
 		ray->t = 0.0f;
 		return;
 	}

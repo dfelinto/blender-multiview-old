@@ -541,6 +541,9 @@ char *WM_operator_pystring(bContext *C, wmOperatorType *ot, PointerRNA *opptr, i
 	char *cstring;
 	char *cstring_args;
 
+	/* arbitrary, but can get huge string with stroke painting otherwise */
+	int max_prop_length = 10;
+
 	/* only to get the orginal props for comparisons */
 	PointerRNA opptr_default;
 
@@ -554,7 +557,8 @@ char *WM_operator_pystring(bContext *C, wmOperatorType *ot, PointerRNA *opptr, i
 	WM_operator_py_idname(idname_py, ot->idname);
 	BLI_dynstr_appendf(dynstr, "bpy.ops.%s(", idname_py);
 
-	cstring_args = RNA_pointer_as_string_keywords(C, opptr, &opptr_default, FALSE, all_args);
+	cstring_args = RNA_pointer_as_string_keywords(C, opptr, &opptr_default, FALSE,
+	                                              all_args, max_prop_length);
 	BLI_dynstr_append(dynstr, cstring_args);
 	MEM_freeN(cstring_args);
 
@@ -737,7 +741,7 @@ char *WM_prop_pystring_assign(bContext *C, PointerRNA *ptr, PropertyRNA *prop, i
 		return NULL;
 	}
 
-	rhs = RNA_property_as_string(C, ptr, prop, index);
+	rhs = RNA_property_as_string(C, ptr, prop, index, INT_MAX);
 	if (!rhs) {
 		MEM_freeN(lhs);
 		return NULL;
@@ -1105,9 +1109,9 @@ void WM_operator_properties_filesel(wmOperatorType *ot, int filter, short type, 
 	RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
 }
 
-void WM_operator_properties_select_all(wmOperatorType *ot)
+void WM_operator_properties_select_action(wmOperatorType *ot, int default_action)
 {
-	static EnumPropertyItem select_all_actions[] = {
+	static EnumPropertyItem select_actions[] = {
 		{SEL_TOGGLE, "TOGGLE", 0, "Toggle", "Toggle selection for all elements"},
 		{SEL_SELECT, "SELECT", 0, "Select", "Select all elements"},
 		{SEL_DESELECT, "DESELECT", 0, "Deselect", "Deselect all elements"},
@@ -1115,7 +1119,12 @@ void WM_operator_properties_select_all(wmOperatorType *ot)
 		{0, NULL, 0, NULL, NULL}
 	};
 
-	RNA_def_enum(ot->srna, "action", select_all_actions, SEL_TOGGLE, "Action", "Selection action to execute");
+	RNA_def_enum(ot->srna, "action", select_actions, default_action, "Action", "Selection action to execute");
+}
+
+void WM_operator_properties_select_all(wmOperatorType *ot)
+{
+	WM_operator_properties_select_action(ot, SEL_TOGGLE);
 }
 
 void WM_operator_properties_border(wmOperatorType *ot)

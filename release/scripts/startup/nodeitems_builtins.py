@@ -78,7 +78,7 @@ def node_group_items(context):
         if contains_group(group, ntree):
             continue
 
-        yield NodeItem(node_tree_group_type[group.bl_idname], group.name, { "node_tree" : "bpy.data.node_groups['%s']" % group.name })
+        yield NodeItem(node_tree_group_type[group.bl_idname], group.name, { "node_tree" : "bpy.data.node_groups[%r]" % group.name })
 
 
 # All standard node categories currently used in nodes.
@@ -122,6 +122,7 @@ shader_node_categories = [
     ShaderOldNodeCategory("SH_GROUP", "Group", items=node_group_items),
     ShaderOldNodeCategory("SH_LAYOUT", "Layout", items=[
         NodeItem("NodeFrame"),
+        NodeItem("NodeReroute"),
         ]),
 
     # New Shader Nodes (Cycles)
@@ -205,6 +206,7 @@ shader_node_categories = [
     ShaderNewNodeCategory("SH_NEW_GROUP", "Group", items=node_group_items),
     ShaderNewNodeCategory("SH_NEW_LAYOUT", "Layout", items=[
         NodeItem("NodeFrame"),
+        NodeItem("NodeReroute"),
         ]),
     ]
 
@@ -310,6 +312,7 @@ compositor_node_categories = [
     CompositorNodeCategory("CMP_GROUP", "Group", items=node_group_items),
     CompositorNodeCategory("CMP_LAYOUT", "Layout", items = [
         NodeItem("NodeFrame"),
+        NodeItem("NodeReroute"),
         NodeItem("CompositorNodeSwitch"),
         ]),
     ]
@@ -365,6 +368,7 @@ texture_node_categories = [
     TextureNodeCategory("TEX_GROUP", "Group", items=node_group_items),
     TextureNodeCategory("TEX_LAYOUT", "Layout", items = [
         NodeItem("NodeFrame"),
+        NodeItem("NodeReroute"),
         ]),
     ]
 

@@ -30,8 +30,7 @@ __device int bssrdf_setup(ShaderClosure *sc)
 		return bsdf_diffuse_setup(sc);
 	}
 	else {
-		/* radius + IOR params */
-		sc->data0 = max(sc->data0, 0.0f);
+		/* IOR param */
 		sc->data1 = max(sc->data1, 1.0f);
 		sc->type = CLOSURE_BSSRDF_ID;
 
@@ -145,7 +144,7 @@ __device float bssrdf_original(const BSSRDFParams *ss, float r)
 	Rdr = ss->zr*(1.0f + ss->sigma_tr*sr)*expf(-ss->sigma_tr*sr)/(sr*sr*sr);
 	Rdv = ss->zv*(1.0f + ss->sigma_tr*sv)*expf(-ss->sigma_tr*sv)/(sv*sv*sv);
 
-	return ss->alpha_*(1.0f/(4.0f*(float)M_PI))*(Rdr + Rdv);
+	return ss->alpha_*(1.0f/M_4PI_F)*(Rdr + Rdv);
 }
 
 CCL_NAMESPACE_END
