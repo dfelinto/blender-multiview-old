@@ -317,7 +317,7 @@ static char *layer_menu(RenderResult *rr, short *UNUSED(curlay))
 	a = strlen(str);
 	
 	/* compo result */
-	if (rr->rectf) {
+	if (rr->rectf || RE_RenderViewGetRectf(rr, 0)) {
 		a += sprintf(str + a, "|%s %%x0", IFACE_("Composite"));
 		nr = 1;
 	}
@@ -397,6 +397,7 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 	RenderPass *rpass = NULL;
 	int passtype;
 	int view_id = iuser->view;
+	short rl_index = 0, rp_index;
 
 	if (rr == NULL || iuser == NULL)
 		return 0;
@@ -404,7 +405,8 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 	if (BLI_countlist(&rr->views) < 2)
 		return iuser->pass_tmp;
 
-	short rl_index = 0, rp_index;
+	if (RE_HasFakeLayer(rr))
+		rl_index ++; /* fake compo/sequencer layer */
 
 	for (rl = rr->layers.first; rl; rl = rl->next, rl_index++) {
 		if (rl_index != iuser->layer)
@@ -440,7 +442,7 @@ static void image_multi_inclay_cb(bContext *C, void *rr_v, void *iuser_v)
 	ImageUser *iuser = iuser_v;
 	int tot = BLI_countlist(&rr->layers);
 
-	if (rr->rectf || rr->rect32)
+	if (RE_HasFakeLayer(rr))
 		tot++;  /* fake compo/sequencer layer */
 
 	if (iuser->layer < tot - 1) {
@@ -468,7 +470,7 @@ static void image_multi_incpass_cb(bContext *C, void *rr_v, void *iuser_v)
 	if (rl) {
 		int tot = BLI_countlist(&rl->passes);
 
-		if (rr->rectf || rr->rect32)
+		if (RE_HasFakeLayer(rr))
 			tot++;  /* fake compo/sequencer layer */
 
 		if (iuser->pass < tot - 1) {
@@ -539,7 +541,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 		}
 
 		layer = iuser->layer;
-		if (rr->rectf || rr->rect32)
+		if (RE_HasFakeLayer(rr))
 			layer--;  /* fake compo/sequencer layer */
 		
 		rl = BLI_findlink(&rr->layers, layer); /* return NULL is meant to be */

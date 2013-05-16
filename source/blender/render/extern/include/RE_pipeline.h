@@ -70,6 +70,12 @@ typedef struct RenderView {
 	struct RenderView *next, *prev;
 	char name[64];		/* amount defined in openexr_multi.h */
 	struct Object *camera;
+
+	/* if this exists, a copy of one of layers, or result of composited layers */
+	float *rectf;
+	/* if this exists, a copy of one of layers, or result of composited layers */
+	float *rectz;
+
 } RenderView;
 
 typedef struct RenderPass {
@@ -204,6 +210,12 @@ void RE_AcquiredResultGet32(struct Render *re, struct RenderResult *result, unsi
 
 struct RenderLayer *RE_GetRenderLayer(struct RenderResult *rr, const char *name);
 float *RE_RenderLayerGetPass(struct RenderLayer *rl, int passtype, int view_id);
+float *RE_RenderViewGetRectf(struct RenderResult *rr, int view_id);
+float *RE_RenderViewGetRectz(struct RenderResult *rr, int view_id);
+void RE_RenderViewSetRectf(RenderResult *res, int view_id, float *rect);
+void RE_RenderViewSetRectz(RenderResult *res, int view_id, float *rect);
+int RE_GetActiveViewId(struct Render *re);
+int RE_HasFakeLayer(RenderResult *res);
 
 /* obligatory initialize call, disprect is optional */
 void RE_InitState(struct Render *re, struct Render *source, struct RenderData *rd, struct SceneRenderLayer *srl, int winx, int winy, rcti *disprect);

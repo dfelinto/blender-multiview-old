@@ -84,6 +84,13 @@ void render_result_free(RenderResult *res)
 	while (res->views.first) {
 		RenderView *rv = res->views.first;
 		BLI_remlink(&res->views, rv);
+
+		if (rv->rectf)
+			MEM_freeN(rv->rectf);
+
+		if (rv->rectz)
+			MEM_freeN(rv->rectz);
+
 		MEM_freeN(rv);
 	}
 

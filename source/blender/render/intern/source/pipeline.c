@@ -189,6 +189,63 @@ void RE_FreeRenderResult(RenderResult *res)
 	render_result_free(res);
 }
 
+int RE_GetActiveViewId(Render *re)
+{
+	return re->actview;
+}
+
+int RE_HasFakeLayer(RenderResult *res)
+{
+	if (res == NULL)
+		return 0;
+
+	return (res->rectf || res->rect32 || RE_RenderViewGetRectf(res, 0));
+}
+
+void RE_RenderViewSetRectf(RenderResult *res, int view_id, float *rect)
+{
+	RenderView *rv;
+	int nr=0;
+
+	for (nr=0, rv = res->views.first; rv; rv = rv->next, nr++)
+		if (nr == view_id)
+			rv->rectf = rect;
+}
+
+void RE_RenderViewSetRectz(RenderResult *res, int view_id, float *rect)
+{
+	RenderView *rv;
+	int nr=0;
+
+	for (nr=0, rv = res->views.first; rv; rv = rv->next, nr++)
+		if (nr == view_id)
+			rv->rectz = rect;
+}
+
+float *RE_RenderViewGetRectz(RenderResult *res, int view_id)
+{
+	RenderView *rv;
+	int nr=0;
+
+	for (nr=0, rv = res->views.first; rv; rv = rv->next, nr++)
+		if (nr == view_id)
+			return rv->rectz;
+
+	return NULL;
+}
+
+float *RE_RenderViewGetRectf(RenderResult *res, int view_id)
+{
+	RenderView *rv;
+	int nr=0;
+
+	for (nr=0, rv = res->views.first; rv; rv = rv->next, nr++)
+		if (nr == view_id)
+			return rv->rectf;
+
+	return NULL;
+}
+
 float *RE_RenderLayerGetPass(RenderLayer *rl, int passtype, int view_id)
 {
 	RenderPass *rpass;
@@ -331,7 +388,7 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 					rr->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, re->actview);
 			}
 
-			rr->have_combined = (re->result->rectf != NULL);
+			rr->have_combined = (RE_RenderViewGetRectf(re->result, 0) != NULL);
 			rr->layers = re->result->layers;
 			
 			rr->xof = re->disprect.xmin;

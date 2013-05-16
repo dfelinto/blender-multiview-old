@@ -36,7 +36,7 @@ extern "C" {
 #include "PIL_time.h"
 
 
-CompositorOperation::CompositorOperation() : NodeOperation()
+CompositorOperation::CompositorOperation(const int actview) : NodeOperation()
 {
 	this->addInputSocket(COM_DT_COLOR);
 	this->addInputSocket(COM_DT_VALUE);
@@ -51,6 +51,8 @@ CompositorOperation::CompositorOperation() : NodeOperation()
 
 	this->m_ignoreAlpha = false;
 	this->m_active = false;
+
+	this->m_actview = actview;
 
 	this->m_sceneName[0] = '\0';
 }
@@ -82,14 +84,18 @@ void CompositorOperation::deinitExecution()
 		RenderResult *rr = RE_AcquireResultWrite(re);
 
 		if (rr) {
-			if (rr->rectf != NULL) {
-				MEM_freeN(rr->rectf);
-			}
-			rr->rectf = this->m_outputBuffer;
-			if (rr->rectz != NULL) {
-				MEM_freeN(rr->rectz);
-			}
-			rr->rectz = this->m_depthBuffer;
+			float *rectf = RE_RenderViewGetRectf(rr, this->m_actview);
+			float *rectz = RE_RenderViewGetRectz(rr, this->m_actview);
+
+			if (rectf != NULL)
+				MEM_freeN(rectf);
+
+			RE_RenderViewSetRectf(rr, this->m_actview, this->m_outputBuffer);
+
+			if (rectz != NULL)
+				MEM_freeN(rectz);
+
+			RE_RenderViewSetRectz(rr, this->m_actview, this->m_depthBuffer);
 		}
 		else {
 			if (this->m_outputBuffer) {
