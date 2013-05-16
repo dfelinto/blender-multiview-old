@@ -40,8 +40,10 @@
 
 #include "BLF_translation.h"
 
+#include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_view3d_types.h"
+#include "DNA_userdef_types.h"
 
 #include "BKE_blender.h"
 #include "BKE_context.h"
@@ -52,6 +54,7 @@
 #include "BKE_main.h"
 #include "BKE_node.h"
 #include "BKE_multires.h"
+#include "BKE_paint.h"
 #include "BKE_report.h"
 #include "BKE_sequencer.h"
 #include "BKE_screen.h"
@@ -539,6 +542,7 @@ static int screen_render_invoke(bContext *C, wmOperator *op, const wmEvent *even
 	const short is_write_still = RNA_boolean_get(op->ptr, "write_still");
 	struct Object *camera_override = v3d ? V3D_CAMERA_LOCAL(v3d) : NULL;
 	const char *name;
+	Object *active_object = CTX_data_active_object(C);
 	
 	/* only one render job at a time */
 	if (WM_jobs_test(CTX_wm_manager(C), scene, WM_JOB_TYPE_RENDER))
@@ -572,7 +576,10 @@ static int screen_render_invoke(bContext *C, wmOperator *op, const wmEvent *even
 	WM_cursor_wait(1);
 
 	/* flush multires changes (for sculpt) */
-	multires_force_render_update(CTX_data_active_object(C));
+	multires_force_render_update(active_object);
+
+	/* flush changes from dynamic topology sculpt */
+	sculptsession_bm_to_me_for_render(active_object);
 
 	/* cleanup sequencer caches before starting user triggered render.
 	 * otherwise, invalidated cache entries can make their way into
@@ -847,7 +854,7 @@ static void render_view3d_startjob(void *customdata, short *stop, short *do_upda
 		rdata = rp->scene->r;
 		rdata.mode &= ~(R_OSA | R_MBLUR | R_BORDER | R_PANORAMA);
 		rdata.scemode &= ~(R_DOSEQ | R_DOCOMP | R_FREE_IMAGE);
-		rdata.scemode |= R_PREVIEWBUTS;
+		rdata.scemode |= R_VIEWPORT_PREVIEW;
 		
 		/* we do use layers, but only active */
 		rdata.scemode |= R_SINGLE_LAYER;
@@ -855,10 +862,10 @@ static void render_view3d_startjob(void *customdata, short *stop, short *do_upda
 		/* initalize always */
 		if (render_view3d_disprect(rp->scene, rp->ar, rp->v3d, rp->rv3d, &cliprct)) {
 			rdata.mode |= R_BORDER;
-			RE_InitState(re, NULL, &rdata, NULL, rp->sa->winx, rp->sa->winy, &cliprct);
+			RE_InitState(re, NULL, &rdata, NULL, rp->ar->winx, rp->ar->winy, &cliprct);
 		}
 		else
-			RE_InitState(re, NULL, &rdata, NULL, rp->sa->winx, rp->sa->winy, NULL);
+			RE_InitState(re, NULL, &rdata, NULL, rp->ar->winx, rp->ar->winy, NULL);
 	}
 
 	if (orth)
@@ -1009,7 +1016,6 @@ static int render_view3d_changed(RenderEngine *engine, const bContext *C)
 			engine->flag |= RE_ENGINE_DO_UPDATE;
 //		if (update)
 //			printf("changed ma %d res %d view %d\n", update & PR_UPDATE_MATERIAL, update & PR_UPDATE_RENDERSIZE, update & PR_UPDATE_VIEW);
-		
 	}
 	
 	return update;
@@ -1029,18 +1035,48 @@ void render_view3d_draw(RenderEngine *engine, const bContext *C)
 	RE_AcquireResultImage(re, &rres);
 	
 	if (rres.rectf) {
-		unsigned char *rect_byte = MEM_mallocN(rres.rectx * rres.recty * sizeof(int), "ed_preview_draw_rect");
-				
-		RE_ResultGet32(re, (unsigned int *)rect_byte);
-		
-		glEnable(GL_BLEND);
-		glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-		glaDrawPixelsTex(rres.xof, rres.yof, rres.rectx, rres.recty, GL_RGBA, GL_UNSIGNED_BYTE, GL_LINEAR, rect_byte);
-		glDisable(GL_BLEND);
-				
-		MEM_freeN(rect_byte);
+		Scene *scene = CTX_data_scene(C);
+		bool force_fallback = false;
+		bool need_fallback = true;
+		float dither = scene->r.dither_intensity;
+
+		/* Dithering is not supported on GLSL yet */
+		force_fallback |= dither != 0.0f;
+
+		/* If user decided not to use GLSL, fallback to glaDrawPixelsAuto */
+		force_fallback |= (U.image_draw_method != IMAGE_DRAW_METHOD_GLSL);
+
+		/* Try using GLSL display transform. */
+		if (force_fallback == false) {
+			if (IMB_colormanagement_setup_glsl_draw(NULL, &scene->display_settings, TRUE)) {
+				glEnable(GL_BLEND);
+				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+				glaDrawPixelsTex(rres.xof, rres.yof, rres.rectx, rres.recty, GL_RGBA, GL_FLOAT,
+				                 GL_LINEAR, rres.rectf);
+				glDisable(GL_BLEND);
+
+				IMB_colormanagement_finish_glsl_draw();
+				need_fallback = false;
+			}
+		}
+
+		/* If GLSL failed, use old-school CPU-based transform. */
+		if (need_fallback) {
+			unsigned char *display_buffer = MEM_mallocN(4 * rres.rectx * rres.recty * sizeof(char),
+			                                            "render_view3d_draw");
+
+			IMB_colormanagement_buffer_make_display_space(rres.rectf, display_buffer, rres.rectx, rres.recty,
+			                                              4, dither, NULL, &scene->display_settings);
+
+			glEnable(GL_BLEND);
+			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+			glaDrawPixelsAuto(rres.xof, rres.yof, rres.rectx, rres.recty, GL_RGBA, GL_UNSIGNED_BYTE,
+			                  GL_LINEAR, display_buffer);
+			glDisable(GL_BLEND);
+
+			MEM_freeN(display_buffer);
+		}
 	}
 
 	RE_ReleaseResultImage(re);
 }
-

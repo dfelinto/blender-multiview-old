@@ -935,7 +935,7 @@ static void rna_SpaceDopeSheetEditor_mode_update(Main *UNUSED(bmain), Scene *sce
 	SpaceAction *saction = (SpaceAction *)(ptr->data);
 	Object *obact = (scene->basact) ? scene->basact->object : NULL;
 	
-	/* special exceptions for Shape Key Editor mode */
+	/* special exceptions for ShapeKey Editor mode */
 	if (saction->mode == SACTCONT_SHAPEKEY) {
 		Key *key = BKE_key_from_object(obact);
 		
@@ -946,7 +946,7 @@ static void rna_SpaceDopeSheetEditor_mode_update(Main *UNUSED(bmain), Scene *sce
 			saction->action = NULL;
 		
 		/* 2)	enable 'show sliders' by default, since one of the main
-		 *		points of the Shape Key Editor is to provide a one-stop shop
+		 *		points of the ShapeKey Editor is to provide a one-stop shop
 		 *		for controlling the shapekeys, whose main control is the value
 		 */
 		saction->flag |= SACTION_SLIDERS;
@@ -1581,7 +1581,7 @@ static void rna_def_space_view3d(BlenderRNA *brna)
 	StructRNA *srna;
 	PropertyRNA *prop;
 	const int matrix_dimsize[] = {4, 4};
-		
+
 	static EnumPropertyItem pivot_items[] = {
 		{V3D_CENTER, "BOUNDING_BOX_CENTER", ICON_ROTATE, "Bounding Box Center",
 		             "Pivot around bounding box center of selected object(s)"},
@@ -1591,6 +1591,16 @@ static void rna_def_space_view3d(BlenderRNA *brna)
 		{V3D_CENTROID, "MEDIAN_POINT", ICON_ROTATECENTER, "Median Point",
 		               "Pivot around the median point of selected objects"},
 		{V3D_ACTIVE, "ACTIVE_ELEMENT", ICON_ROTACTIVE, "Active Element", "Pivot around active object"},
+		{0, NULL, 0, NULL, NULL}
+	};
+
+	static EnumPropertyItem manipulators_items[] = {
+		{V3D_MANIP_TRANSLATE, "TRANSLATE", ICON_MAN_TRANS, "Manipulator Translate",
+		                      "Use the manipulator for movement transformations"},
+		{V3D_MANIP_ROTATE, "ROTATE", ICON_MAN_ROT, "Manipulator Rotate",
+		                   "Use the manipulator for rotation transformations"},
+		{V3D_MANIP_SCALE, "SCALE", ICON_MAN_SCALE, "Manipulator Scale",
+		                  "Use the manipulator for scale transformations"},
 		{0, NULL, 0, NULL, NULL}
 	};
 
@@ -1866,23 +1876,12 @@ static void rna_def_space_view3d(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Manipulator", "Use a 3D manipulator widget for controlling transforms");
 	RNA_def_property_ui_icon(prop, ICON_MANIPUL, 0);
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
-	
-	prop = RNA_def_property(srna, "use_manipulator_translate", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "twtype", V3D_MANIP_TRANSLATE);
-	RNA_def_property_ui_text(prop, "Manipulator Translate", "Use the manipulator for movement transformations");
-	RNA_def_property_ui_icon(prop, ICON_MAN_TRANS, 0);
-	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
-	
-	prop = RNA_def_property(srna, "use_manipulator_rotate", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "twtype", V3D_MANIP_ROTATE);
-	RNA_def_property_ui_text(prop, "Manipulator Rotate", "Use the manipulator for rotation transformations");
-	RNA_def_property_ui_icon(prop, ICON_MAN_ROT, 0);
-	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
-	
-	prop = RNA_def_property(srna, "use_manipulator_scale", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "twtype", V3D_MANIP_SCALE);
-	RNA_def_property_ui_text(prop, "Manipulator Scale", "Use the manipulator for scale transformations");
-	RNA_def_property_ui_icon(prop, ICON_MAN_SCALE, 0);
+
+	prop = RNA_def_property(srna, "transform_manipulators", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_sdna(prop, NULL, "twtype");
+	RNA_def_property_enum_items(prop, manipulators_items);
+	RNA_def_property_flag(prop, PROP_ENUM_FLAG);
+	RNA_def_property_ui_text(prop, "Transform Manipulators", "Transformation manipulators");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
 	
 	prop = RNA_def_property(srna, "transform_orientation", PROP_ENUM, PROP_NONE);
@@ -2740,7 +2739,7 @@ static void rna_def_space_graph(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Pivot Point", "Pivot center for rotation/scaling");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_GRAPH, NULL);
 
-	/* Dope Sheet */
+	/* dopesheet */
 	prop = RNA_def_property(srna, "dopesheet", PROP_POINTER, PROP_NONE);
 	RNA_def_property_struct_type(prop, "DopeSheet");
 	RNA_def_property_pointer_sdna(prop, NULL, "ads");

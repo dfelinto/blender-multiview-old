@@ -971,7 +971,9 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tnode.syntaxv, 104, 106, 117, 255);  /* generator */
 	rgba_char_args_set(btheme->tnode.syntaxc, 105, 117, 110, 255);  /* group */
 	rgba_char_args_set(btheme->tnode.movie, 155, 155, 155, 160);  /* frame */
-	rgba_char_args_set(btheme->tnode.console_output, 190, 190, 80, 255);	/* group input/output */
+	rgba_char_args_set(btheme->tnode.syntaxs, 151, 116, 116, 255);  /* matte nodes */
+	rgba_char_args_set(btheme->tnode.syntaxd, 116, 151, 151, 255);  /* distort nodes */
+	rgba_char_args_set(btheme->tnode.console_output, 223, 202, 53, 255);  /* interface nodes */
 	btheme->tnode.noodle_curving = 5;
 
 	/* space logic */
@@ -1609,10 +1611,10 @@ void init_userdef_do_versions(void)
 				btheme->tima.facedot_size = 2;
 			}
 			
-			/* Dope Sheet - (Object) Channel color */
+			/* DopeSheet - (Object) Channel color */
 			rgba_char_args_set(btheme->tact.ds_channel,     82, 96, 110, 255);
 			rgba_char_args_set(btheme->tact.ds_subchannel,  124, 137, 150, 255);
-			/* Dope Sheet - Group Channel color (saner version) */
+			/* DopeSheet - Group Channel color (saner version) */
 			rgba_char_args_set(btheme->tact.group, 79, 101, 73, 255);
 			rgba_char_args_set(btheme->tact.group_active, 135, 177, 125, 255);
 			
@@ -1959,7 +1961,7 @@ void init_userdef_do_versions(void)
 		bTheme *btheme;
 		
 		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
-			/* Dope Sheet Summary */
+			/* DopeSheet Summary */
 			rgba_char_args_set(btheme->tact.anim_active,    204, 112, 26, 102); 
 			
 			/* NLA Colors */

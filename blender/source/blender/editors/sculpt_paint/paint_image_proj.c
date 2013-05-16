@@ -264,12 +264,14 @@ typedef struct ProjPaintState {
 	Image *reproject_image;
 	ImBuf *reproject_ibuf;
 
-
 	/* threads */
 	int thread_tot;
 	int bucketMin[2];
 	int bucketMax[2];
 	int context_bucket_x, context_bucket_y; /* must lock threads while accessing these */
+
+	/* redraw */
+	bool need_redraw;
 } ProjPaintState;
 
 typedef union pixelPointer {
@@ -3206,7 +3208,7 @@ static void project_paint_begin(ProjPaintState *ps)
 	BLI_linklist_free(image_LinkList, NULL);
 }
 
-static void paint_proj_begin_clone(ProjPaintState *ps, const int mouse[2])
+static void paint_proj_begin_clone(ProjPaintState *ps, const float mouse[2])
 {
 	/* setup clone offset */
 	if (ps->tool == PAINT_TOOL_CLONE) {
@@ -3669,7 +3671,7 @@ static void do_projectpaint_draw(ProjPaintState *ps, ProjPixel *projPixel, const
 	}
 
 	rgb_float_to_uchar(rgba_ub, rgb);
-	rgba_ub[3] = 255 * mask;
+	rgba_ub[3] = FTOCHAR(mask);
 
 	if (ps->do_masking) {
 		IMB_blend_color_byte(projPixel->pixel.ch_pt, projPixel->origColor.ch, rgba_ub, ps->blend);
@@ -4044,43 +4046,36 @@ static int project_paint_op(void *state, const float lastpos[2], const float pos
 }
 
 
-int paint_proj_stroke(bContext *C, void *pps, const int prevmval_i[2], const int mval_i[2])
+void paint_proj_stroke(bContext *C, void *pps, const float prev_pos[2], const float pos[2])
 {
 	ProjPaintState *ps = pps;
-	int a, redraw;
-	float pos[2], prev_pos[2];
-
-	pos[0] = (float)(mval_i[0]);
-	pos[1] = (float)(mval_i[1]);
-
-	prev_pos[0] = (float)(prevmval_i[0]);
-	prev_pos[1] = (float)(prevmval_i[1]);
+	int a;
 
 	/* clone gets special treatment here to avoid going through image initialization */
 	if (ps->tool == PAINT_TOOL_CLONE && ps->mode == BRUSH_STROKE_INVERT) {
 		Scene *scene = ps->scene;
 		View3D *v3d = ps->v3d;
 		float *cursor = give_cursor(scene, v3d);
+		int mval_i[2] = {(int)pos[0], (int)pos[1]};
 
 		view3d_operator_needs_opengl(C);
 
 		if (!ED_view3d_autodist(scene, ps->ar, v3d, mval_i, cursor, false))
-			return 0;
+			return;
 
 		ED_region_tag_redraw(ps->ar);
 
-		return 0;
+		return;
 	}
 
-	for (a = 0; a < ps->image_tot; a++)
-		partial_redraw_array_init(ps->projImages[a].partRedrawRect);
+	/* continue adding to existing partial redraw rects until redraw */
+	if (!ps->need_redraw) {
+		for (a = 0; a < ps->image_tot; a++)
+			partial_redraw_array_init(ps->projImages[a].partRedrawRect);
+	}
 
-	redraw = project_paint_op(ps, prev_pos, pos) ? 1 : 0;
-
-	if (project_image_refresh_tagged(ps))
-		return redraw;
-
-	return 0;
+	if (project_paint_op(ps, prev_pos, pos))
+		ps->need_redraw = true;
 }
 
 
@@ -4160,7 +4155,7 @@ static void project_state_init(bContext *C, Object *ob, ProjPaintState *ps, int 
 	return;
 }
 
-void *paint_proj_new_stroke(bContext *C, Object *ob, const int mouse[2], int mode)
+void *paint_proj_new_stroke(bContext *C, Object *ob, const float mouse[2], int mode)
 {
 	ProjPaintState *ps = MEM_callocN(sizeof(ProjPaintState), "ProjectionPaintState");
 	project_state_init(C, ob, ps, mode);
@@ -4199,6 +4194,28 @@ void *paint_proj_new_stroke(bContext *C, Object *ob, const int mouse[2], int mod
 	paint_proj_begin_clone(ps, mouse);
 
 	return ps;
+}
+
+void paint_proj_redraw(const bContext *C, void *pps, bool final)
+{
+	ProjPaintState *ps = pps;
+
+	if (ps->need_redraw) {
+		project_image_refresh_tagged(ps);
+
+		ps->need_redraw = false;
+	}
+	else if (!final) {
+		return;
+	}
+
+	if (final) {
+		/* compositor listener deals with updating */
+		WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, NULL);
+	}
+	else {
+		ED_region_tag_redraw(CTX_wm_region(C));
+	}
 }
 
 void paint_proj_stroke_done(void *pps)

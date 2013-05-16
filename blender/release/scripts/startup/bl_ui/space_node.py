@@ -77,8 +77,9 @@ class NODE_HT_header(Header):
                 layout.prop(snode_id, "use_nodes")
 
         elif snode.tree_type == 'CompositorNodeTree':
-            layout.prop(snode_id, "use_nodes")
-            layout.prop(snode_id.render, "use_free_unused_nodes", text="Free Unused")
+            if snode_id:
+                layout.prop(snode_id, "use_nodes")
+                layout.prop(snode_id.render, "use_free_unused_nodes", text="Free Unused")
             layout.prop(snode, "show_backdrop")
             if snode.show_backdrop:
                 row = layout.row(align=True)
@@ -116,7 +117,8 @@ class NODE_MT_add(bpy.types.Menu):
         layout = self.layout
 
         layout.operator_context = 'INVOKE_DEFAULT'
-        op = layout.operator("node.add_search", text="Search ...")
+        props = layout.operator("node.add_search", text="Search ...")
+        props.use_transform = True
 
         # actual node submenus are added by draw functions from node categories
 
