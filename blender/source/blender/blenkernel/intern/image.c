@@ -2707,6 +2707,7 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 	int channels, layer, pass;
 	ImBuf *ibuf;
 	int from_render = (ima->render_slot == ima->last_render_slot);
+	int actview;
 
 	if (!(iuser && iuser->scene))
 		return NULL;
@@ -2716,6 +2717,7 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 		return NULL;
 
 	re = RE_GetRender(iuser->scene->id.name);
+	actview = iuser->view;
 
 	channels = 4;
 	layer = (iuser) ? iuser->layer : 0;
@@ -2726,7 +2728,7 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 	}
 	else if (ima->renders[ima->render_slot]) {
 		rres = *(ima->renders[ima->render_slot]);
-		rres.have_combined = rres.rectf != NULL;
+		rres.have_combined = RE_RenderViewGetRectf(&rres, 0) != NULL;
 	}
 	else
 		memset(&rres, 0, sizeof(RenderResult));
@@ -2745,8 +2747,8 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 
 	/* this gives active layer, composite or sequence result */
 	rect = (unsigned int *)rres.rect32;
-	rectf = rres.rectf;
-	rectz = rres.rectz;
+	rectf = RE_RenderViewGetRectf(&rres, actview);
+	rectz = RE_RenderViewGetRectz(&rres, actview);
 	dither = iuser->scene->r.dither_intensity;
 
 	/* combined layer gets added as first layer */
