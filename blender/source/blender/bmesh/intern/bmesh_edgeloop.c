@@ -606,20 +606,16 @@ bool BM_edgeloop_overlap_check(struct BMEdgeLoopStore *el_store_a, struct BMEdge
 {
 	LinkData *node;
 
-	/* clear */
+	/* init */
 	for (node = el_store_a->verts.first; node; node = node->next) {
 		BM_elem_flag_disable((BMVert *)node->data, BM_ELEM_INTERNAL_TAG);
 	}
 	for (node = el_store_b->verts.first; node; node = node->next) {
-		BM_elem_flag_disable((BMVert *)node->data, BM_ELEM_INTERNAL_TAG);
-	}
-
-	/* enable 'a' */
-	for (node = el_store_a->verts.first; node; node = node->next) {
 		BM_elem_flag_enable((BMVert *)node->data, BM_ELEM_INTERNAL_TAG);
 	}
-	/* check 'b' */
-	for (node = el_store_b->verts.first; node; node = node->next) {
+
+	/* check 'a' */
+	for (node = el_store_a->verts.first; node; node = node->next) {
 		if (BM_elem_flag_test((BMVert *)node->data, BM_ELEM_INTERNAL_TAG)) {
 			return true;
 		}
