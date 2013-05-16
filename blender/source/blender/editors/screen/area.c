@@ -149,25 +149,6 @@ void ED_area_do_refresh(bContext *C, ScrArea *sa)
 	sa->do_refresh = FALSE;
 }
 
-/* based on screen region draw tags, set draw tags in azones, and future region tabs etc */
-/* only exported for WM */
-void ED_area_overdraw_flush(ScrArea *sa, ARegion *ar)
-{
-	AZone *az;
-	
-	for (az = sa->actionzones.first; az; az = az->next) {
-		int xs, ys;
-		
-		xs = (az->x1 + az->x2) / 2;
-		ys = (az->y1 + az->y2) / 2;
-
-		/* test if inside */
-		if (BLI_rcti_isect_pt(&ar->winrct, xs, ys)) {
-			az->do_draw = TRUE;
-		}
-	}
-}
-
 /**
  * \brief Corner widgets use for dragging and splitting the view.
  */
@@ -347,49 +328,50 @@ static void region_draw_azone_tria(AZone *az)
 	glDisable(GL_BLEND);
 }
 
-/* only exported for WM */
-void ED_area_overdraw(bContext *C)
+static void region_draw_azones(ScrArea *sa, ARegion *ar)
 {
-	wmWindow *win = CTX_wm_window(C);
-	bScreen *screen = CTX_wm_screen(C);
-	ScrArea *sa;
-	
-	/* Draw AZones, in screenspace */
-	wmSubWindowSet(win, screen->mainwin);
+	AZone *az;
+
+	if (!sa)
+		return;
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glPushMatrix();
+	glTranslatef(-ar->winrct.xmin, -ar->winrct.ymin, 0.0f);
 	
-	for (sa = screen->areabase.first; sa; sa = sa->next) {
-		AZone *az;
-		for (az = sa->actionzones.first; az; az = az->next) {
-			if (az->do_draw) {
-				if (az->type == AZONE_AREA) {
-					area_draw_azone(az->x1, az->y1, az->x2, az->y2);
-				}
-				else if (az->type == AZONE_REGION) {
-					
-					if (az->ar) {
-						/* only display tab or icons when the region is hidden */
-						if (az->ar->flag & (RGN_FLAG_HIDDEN | RGN_FLAG_TOO_SMALL)) {
-							if (G.debug_value == 3)
-								region_draw_azone_icon(az);
-							else if (G.debug_value == 2)
-								region_draw_azone_tria(az);
-							else if (G.debug_value == 1)
-								region_draw_azone_tab(az);
-							else
-								region_draw_azone_tab_plus(az);
-						}
+	for (az = sa->actionzones.first; az; az = az->next) {
+		/* test if action zone is over this region */
+		rcti azrct;
+		BLI_rcti_init(&azrct, az->x1, az->x2, az->y1, az->y2);
+
+		if (BLI_rcti_isect(&ar->drawrct, &azrct, NULL)) {
+			if (az->type == AZONE_AREA) {
+				area_draw_azone(az->x1, az->y1, az->x2, az->y2);
+			}
+			else if (az->type == AZONE_REGION) {
+				
+				if (az->ar) {
+					/* only display tab or icons when the region is hidden */
+					if (az->ar->flag & (RGN_FLAG_HIDDEN | RGN_FLAG_TOO_SMALL)) {
+						if (G.debug_value == 3)
+							region_draw_azone_icon(az);
+						else if (G.debug_value == 2)
+							region_draw_azone_tria(az);
+						else if (G.debug_value == 1)
+							region_draw_azone_tab(az);
+						else
+							region_draw_azone_tab_plus(az);
 					}
 				}
-				
-				az->do_draw = FALSE;
 			}
 		}
 	}
+
+	glPopMatrix();
+
 	glDisable(GL_BLEND);
-	
 }
 
 /* only exported for WM */
@@ -453,6 +435,17 @@ void ED_region_do_draw(bContext *C, ARegion *ar)
 	ED_region_pixelspace(ar);
 
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_PIXEL);
+
+	region_draw_azones(sa, ar);
+
+	/* for debugging unneeded area redraws and partial redraw */
+#if 0
+	glEnable(GL_BLEND);
+	glColor4f(drand48(), drand48(), drand48(), 0.1f);
+	glRectf(ar->drawrct.xmin - ar->winrct.xmin, ar->drawrct.ymin - ar->winrct.ymin,
+	        ar->drawrct.xmax - ar->winrct.xmin, ar->drawrct.ymax - ar->winrct.ymin);
+	glDisable(GL_BLEND);
+#endif
 
 	ar->do_draw = FALSE;
 	memset(&ar->drawrct, 0, sizeof(ar->drawrct));
@@ -580,8 +573,8 @@ static void area_azone_initialize(bScreen *screen, ScrArea *sa)
 	az = (AZone *)MEM_callocN(sizeof(AZone), "actionzone");
 	BLI_addtail(&(sa->actionzones), az);
 	az->type = AZONE_AREA;
-	az->x1 = sa->totrct.xmax + 1;
-	az->y1 = sa->totrct.ymax + 1;
+	az->x1 = sa->totrct.xmax;
+	az->y1 = sa->totrct.ymax;
 	az->x2 = sa->totrct.xmax - (AZONESPOT - 1);
 	az->y2 = sa->totrct.ymax - (AZONESPOT - 1);
 	BLI_rcti_init(&az->rect, az->x1, az->x2, az->y1, az->y2);

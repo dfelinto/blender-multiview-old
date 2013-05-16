@@ -871,7 +871,7 @@ static float *get_object_orco(Render *re, Object *ob)
 
 	if (!orco) {
 		if (ELEM(ob->type, OB_CURVE, OB_FONT)) {
-			orco = BKE_curve_make_orco(re->scene, ob);
+			orco = BKE_curve_make_orco(re->scene, ob, NULL);
 		}
 		else if (ob->type==OB_SURF) {
 			orco = BKE_curve_surf_make_orco(ob);
@@ -1539,7 +1539,7 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 	float random, simplify[2], pa_co[3];
 	const float cfra= BKE_scene_frame_get(re->scene);
 	int i, a, k, max_k=0, totpart, do_simplify = FALSE, do_surfacecache = FALSE, use_duplimat = FALSE;
-	int totchild=0;
+	int totchild=0, step_nbr;
 	int seed, path_nbr=0, orco1=0, num;
 	int totface;
 	char **uv_name=0;
@@ -1581,8 +1581,12 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 	if (part->type==PART_HAIR && !psys->childcache)
 		totchild= 0;
 
-	if (G.is_rendering == FALSE) {  /* preview render */
+	if (re->r.scemode & R_VIEWPORT_PREVIEW) { /* preview render */
 		totchild = (int)((float)totchild * (float)part->disp / 100.0f);
+		step_nbr = part->draw_step;
+	}
+	else {
+		step_nbr = part->ren_step;
 	}
 
 	psys->flag |= PSYS_DRAWING;
@@ -1668,7 +1672,7 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 
 /* 2.6 setup strand rendering */
 	if (part->ren_as == PART_DRAW_PATH && psys->pathcache) {
-		path_nbr=(int)pow(2.0, (double) part->ren_step);
+		path_nbr=(int)pow(2.0, (double) step_nbr);
 
 		if (path_nbr) {
 			if (!ELEM(ma->material_type, MA_TYPE_HALO, MA_TYPE_WIRE)) {
@@ -2700,7 +2704,7 @@ static void init_render_dm(DerivedMesh *dm, Render *re, ObjectRen *obr,
 			mface= dm->getTessFaceArray(dm);
 
 #ifdef WITH_FREESTYLE
-			if(ob->type == OB_MESH) {
+			if (ob->type == OB_MESH) {
 				Mesh *me= ob->data;
 				index_mf_to_mpoly= dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
 				index_mp_to_orig= dm->getPolyDataArray(dm, CD_ORIGINDEX);
@@ -3268,10 +3272,12 @@ static EdgeHash *make_freestyle_edge_mark_hash(Mesh *me, DerivedMesh *dm)
 	if (fed) {
 		edge_hash = BLI_edgehash_new();
 		if (!index) {
-			BLI_assert(me->totedge == totedge);
-			for (a = 0; a < me->totedge; a++) {
-				if (fed[a].flag & FREESTYLE_EDGE_MARK)
-					BLI_edgehash_insert(edge_hash, medge[a].v1, medge[a].v2, medge+a);
+			if (me->totedge == totedge) {
+				for (a = 0; a < me->totedge; a++) {
+					if (fed[a].flag & FREESTYLE_EDGE_MARK) {
+						BLI_edgehash_insert(edge_hash, medge[a].v1, medge[a].v2, medge + a);
+					}
+				}
 			}
 		}
 		else {
@@ -3379,7 +3385,10 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 	mask |= CD_MASK_ORIGINDEX | CD_MASK_FREESTYLE_EDGE | CD_MASK_FREESTYLE_FACE;
 #endif
 
-	dm= mesh_create_derived_render(re->scene, ob, mask);
+	if (re->r.scemode & R_VIEWPORT_PREVIEW)
+		dm= mesh_create_derived_view(re->scene, ob, mask);
+	else
+		dm= mesh_create_derived_render(re->scene, ob, mask);
 	if (dm==NULL) return;	/* in case duplicated object fails? */
 
 	if (mask & CD_MASK_ORCO) {
@@ -4110,7 +4119,7 @@ static void set_material_lightgroups(Render *re)
 	Material *ma;
 	
 	/* not for preview render */
-	if (re->scene->r.scemode & R_PREVIEWBUTS)
+	if (re->scene->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW))
 		return;
 	
 	for (group= re->main->group.first; group; group=group->id.next)
@@ -4686,7 +4695,10 @@ static void init_render_object_data(Render *re, ObjectRen *obr, int timeoffset)
 			/* the emitter mesh wasn't rendered so the modifier stack wasn't
 			 * evaluated with render settings */
 			DerivedMesh *dm;
-			dm = mesh_create_derived_render(re->scene, ob,	CD_MASK_BAREMESH|CD_MASK_MTFACE|CD_MASK_MCOL);
+			if (re->r.scemode & R_VIEWPORT_PREVIEW)
+				dm = mesh_create_derived_view(re->scene, ob, CD_MASK_BAREMESH|CD_MASK_MTFACE|CD_MASK_MCOL);
+			else
+				dm = mesh_create_derived_render(re->scene, ob,	CD_MASK_BAREMESH|CD_MASK_MTFACE|CD_MASK_MCOL);
 			dm->release(dm);
 		}
 
@@ -4729,7 +4741,8 @@ static void add_render_object(Render *re, Object *ob, Object *par, DupliObject *
 		show_emitter= 0;
 		for (psys=ob->particlesystem.first; psys; psys=psys->next) {
 			show_emitter += psys->part->draw & PART_DRAW_EMITTER;
-			psys_render_set(ob, psys, re->viewmat, re->winmat, re->winx, re->winy, timeoffset);
+			if (!(re->r.scemode & R_VIEWPORT_PREVIEW))
+				psys_render_set(ob, psys, re->viewmat, re->winmat, re->winx, re->winy, timeoffset);
 		}
 
 		/* if no psys has "show emitter" selected don't render emitter */
@@ -4773,7 +4786,8 @@ static void add_render_object(Render *re, Object *ob, Object *par, DupliObject *
 			if (dob)
 				psys->flag |= PSYS_USE_IMAT;
 			init_render_object_data(re, obr, timeoffset);
-			psys_render_restore(ob, psys);
+			if (!(re->r.scemode & R_VIEWPORT_PREVIEW))
+				psys_render_restore(ob, psys);
 			psys->flag &= ~PSYS_USE_IMAT;
 
 			/* only add instance for objects that have not been used for dupli */
@@ -4825,7 +4839,7 @@ void RE_Database_Free(Render *re)
 	
 	/* statistics for debugging render memory usage */
 	if ((G.debug & G_DEBUG) && (G.is_rendering)) {
-		if ((re->r.scemode & R_PREVIEWBUTS)==0) {
+		if ((re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW))==0) {
 			BKE_image_print_memlist();
 			MEM_printmemlist_stats();
 		}
@@ -4887,7 +4901,7 @@ void RE_Database_Free(Render *re)
 
 	if (re->scene)
 		if (re->scene->r.scemode & R_FREE_IMAGE)
-			if ((re->r.scemode & R_PREVIEWBUTS)==0)
+			if ((re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW))==0)
 				BKE_image_free_all_textures();
 
 	if (re->memArena) {
@@ -4954,6 +4968,9 @@ static void dupli_render_particle_set(Render *re, Object *ob, int timeoffset, in
 	GroupObject *go;
 	ParticleSystem *psys;
 	DerivedMesh *dm;
+
+	if (re->r.scemode & R_VIEWPORT_PREVIEW)
+		return;
 
 	if (level >= MAX_DUPLI_RECUR)
 		return;
@@ -5236,7 +5253,7 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 		lay &= 0xFF000000;
 	
 	/* applies changes fully */
-	if ((re->r.scemode & (R_NO_FRAME_UPDATE|R_PREVIEWBUTS))==0)
+	if ((re->r.scemode & (R_NO_FRAME_UPDATE|R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW))==0)
 		BKE_scene_update_for_newframe(re->main, re->scene, lay);
 	
 	/* if no camera, viewmat should have been set! */

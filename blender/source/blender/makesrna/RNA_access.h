@@ -857,6 +857,7 @@ PointerRNA RNA_property_pointer_get_default(PointerRNA *ptr, PropertyRNA *prop);
 
 void RNA_property_collection_begin(PointerRNA *ptr, PropertyRNA *prop, CollectionPropertyIterator *iter);
 void RNA_property_collection_next(CollectionPropertyIterator *iter);
+void RNA_property_collection_skip(CollectionPropertyIterator *iter, int num);
 void RNA_property_collection_end(CollectionPropertyIterator *iter);
 int RNA_property_collection_length(PointerRNA *ptr, PropertyRNA *prop);
 int RNA_property_collection_lookup_index(PointerRNA *ptr, PropertyRNA *prop, PointerRNA *t_ptr);
@@ -1030,15 +1031,18 @@ bool RNA_property_is_unlink(PropertyRNA *prop);
 void RNA_struct_property_unset(PointerRNA *ptr, const char *identifier);
 
 /* python compatible string representation of this property, (must be freed!) */
-char *RNA_property_as_string(struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int index);
+char *RNA_property_as_string(struct bContext *C, PointerRNA *ptr, PropertyRNA *prop, int index, int max_prop_length);
 char *RNA_pointer_as_string(struct bContext *C, PointerRNA *ptr, PropertyRNA *prop_ptr, PointerRNA *ptr_prop);
 char *RNA_pointer_as_string_keywords_ex(struct bContext *C, PointerRNA *ptr, PointerRNA *ptr_default,
                                         const short skip_optional_value, const short all_args,
+                                        const int max_prop_length,
                                         PropertyRNA *iterprop);
 char *RNA_pointer_as_string_keywords(struct bContext *C, PointerRNA *ptr, PointerRNA *ptr_default,
-                                     const short skip_optional_value, const short all_args);
+                                     const short skip_optional_value, const short all_args,
+                                     const int max_prop_length);
 char *RNA_function_as_string_keywords(struct bContext *C, FunctionRNA *func, PointerRNA *ptr_default,
-                                      const short as_function, const short all_args);
+                                      const short as_function, const short all_args,
+                                      const int max_prop_length);
 
 /* Function */
 

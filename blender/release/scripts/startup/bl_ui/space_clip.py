@@ -292,6 +292,14 @@ class CLIP_PT_tools_tracking(CLIP_PT_tracking_panel, Panel):
         props.backwards = False
         props.sequence = False
 
+        col = layout.column()
+        col.label(text="Refine:")
+        row = col.row(align=True)
+        props = row.operator("clip.refine_markers", text="Backwards")
+        props.backwards = True
+        props = row.operator("clip.refine_markers", text="Forwards")
+        props.backwards = False
+
         col = layout.column(align=True)
         props = col.operator("clip.clear_track_path", text="Clear After")
         props.action = 'REMAINED'
@@ -399,7 +407,9 @@ class CLIP_PT_tools_orientation(CLIP_PT_reconstruction_panel, Panel):
         layout.separator()
 
         col = layout.column()
-        col.operator("clip.set_scale")
+        row = col.row(align=True);
+        row.operator("clip.set_scale")
+        row.operator("clip.apply_solution_scale", text="Apply Scale")
         col.prop(settings, "distance")
 
 
@@ -903,6 +913,7 @@ class CLIP_PT_tools_clip(CLIP_PT_clip_view_panel, Panel):
         layout.operator("clip.set_viewport_background")
         layout.operator("clip.setup_tracking_scene")
         layout.operator("clip.prefetch")
+        layout.operator("clip.set_scene_frames")
 
 
 class CLIP_MT_view(Menu):

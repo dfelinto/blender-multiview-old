@@ -177,7 +177,7 @@ static void node_buts_mix_rgb(uiLayout *layout, bContext *UNUSED(C), PointerRNA 
 	col = uiLayoutColumn(layout, FALSE);
 	row = uiLayoutRow(col, TRUE);
 	uiItemR(row, ptr, "blend_type", 0, "", ICON_NONE);
-	if (ntree->type == NTREE_COMPOSIT)
+	if (ELEM(ntree->type, NTREE_COMPOSIT, NTREE_TEXTURE))
 		uiItemR(row, ptr, "use_alpha", 0, "", ICON_IMAGE_RGB_ALPHA);
 
 	uiItemR(col, ptr, "use_clamp", 0, NULL, ICON_NONE);
@@ -839,6 +839,11 @@ static void node_shader_buts_tex_coord(uiLayout *layout, bContext *UNUSED(C), Po
 	uiItemR(layout, ptr, "from_dupli", 0, NULL, 0);
 }
 
+static void node_shader_buts_bump(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "invert", 0, NULL, 0);
+}
+
 static void node_shader_buts_normal_map(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
 	uiItemR(layout, ptr, "space", 0, "", 0);
@@ -989,6 +994,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 			break;
 		case SH_NODE_TEX_COORD:
 			ntype->uifunc = node_shader_buts_tex_coord;
+			break;
+		case SH_NODE_BUMP:
+			ntype->uifunc = node_shader_buts_bump;
 			break;
 		case SH_NODE_NORMAL_MAP:
 			ntype->uifunc = node_shader_buts_normal_map;

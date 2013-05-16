@@ -2526,9 +2526,11 @@ static void lib_verify_nodetree(Main *main, int UNUSED(open))
 							link->fromsock = node_group_input_find_socket(input_node, link->fromsock->identifier);
 							++num_inputs;
 							
-							if (input_locx > link->tonode->locx - offsetx)
-								input_locx = link->tonode->locx - offsetx;
-							input_locy += link->tonode->locy;
+							if (link->tonode) {
+								if (input_locx > link->tonode->locx - offsetx)
+									input_locx = link->tonode->locx - offsetx;
+								input_locy += link->tonode->locy;
+							}
 						}
 						else
 							free_link = TRUE;
@@ -2540,9 +2542,11 @@ static void lib_verify_nodetree(Main *main, int UNUSED(open))
 							link->tosock = node_group_output_find_socket(output_node, link->tosock->identifier);
 							++num_outputs;
 							
-							if (output_locx < link->fromnode->locx + offsetx)
-								output_locx = link->fromnode->locx + offsetx;
-							output_locy += link->fromnode->locy;
+							if (link->fromnode) {
+								if (output_locx < link->fromnode->locx + offsetx)
+									output_locx = link->fromnode->locx + offsetx;
+								output_locy += link->fromnode->locy;
+							}
 						}
 						else
 							free_link = TRUE;
@@ -9436,6 +9440,28 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			/* NB: scene->nodetree is a local ID block, has been direct_link'ed */
 			if (scene->nodetree)
 				scene->nodetree->active_viewer_key = active_viewer_key;
+		}
+	}
+
+	if (MAIN_VERSION_OLDER(main, 267, 1))
+	{
+		Object *ob;
+
+		for (ob = main->object.first; ob; ob = ob->id.next) {
+			ModifierData *md;
+			for (md = ob->modifiers.first; md; md = md->next) {
+				if (md->type == eModifierType_Smoke) {
+					SmokeModifierData *smd = (SmokeModifierData *)md;
+					if ((smd->type & MOD_SMOKE_TYPE_DOMAIN) && smd->domain) {
+						if (smd->domain->flags & MOD_SMOKE_HIGH_SMOOTH) {
+							smd->domain->highres_sampling = SM_HRES_LINEAR;
+						}
+						else {
+							smd->domain->highres_sampling = SM_HRES_NEAREST;
+						}
+					}
+				}
+			}
 		}
 	}
 

@@ -1482,11 +1482,19 @@ static void draw_viewport_object_reconstruction(Scene *scene, Base *base, View3D
 	unsigned char col_unsel[4], col_sel[4];
 	int tracknr = *global_track_index;
 	ListBase *tracksbase = BKE_tracking_object_get_tracks(tracking, tracking_object);
+	float camera_size[3];
 
 	UI_GetThemeColor4ubv(TH_TEXT, col_unsel);
 	UI_GetThemeColor4ubv(TH_SELECT, col_sel);
 
 	BKE_tracking_get_camera_object_matrix(scene, base->object, mat);
+
+	/* we're compensating camera size for bundles size,
+	 * to make it so bundles are always displayed with the same size
+	 */
+	copy_v3_v3(camera_size, base->object->size);
+	if ((tracking_object->flag & TRACKING_OBJECT_CAMERA) == 0)
+		mul_v3_fl(camera_size, tracking_object->scale);
 
 	glPushMatrix();
 
@@ -1522,7 +1530,9 @@ static void draw_viewport_object_reconstruction(Scene *scene, Base *base, View3D
 
 		glPushMatrix();
 		glTranslatef(track->bundle_pos[0], track->bundle_pos[1], track->bundle_pos[2]);
-		glScalef(v3d->bundle_size / 0.05f, v3d->bundle_size / 0.05f, v3d->bundle_size / 0.05f);
+		glScalef(v3d->bundle_size / 0.05f / camera_size[0],
+		         v3d->bundle_size / 0.05f / camera_size[1],
+		         v3d->bundle_size / 0.05f / camera_size[2]);
 
 		if (v3d->drawtype == OB_WIRE) {
 			glDisable(GL_LIGHTING);
@@ -4775,11 +4785,10 @@ static void draw_ptcache_edit(Scene *scene, View3D *v3d, PTCacheEdit *edit)
 	UI_GetThemeColor3fv(TH_VERTEX, nosel_col);
 
 	/* draw paths */
-	if (timed) {
-		glEnable(GL_BLEND);
-		steps = (*edit->pathcache)->steps + 1;
-		pathcol = MEM_callocN(steps * 4 * sizeof(float), "particle path color data");
-	}
+	steps = (*edit->pathcache)->steps + 1;
+
+	glEnable(GL_BLEND);
+	pathcol = MEM_callocN(steps * 4 * sizeof(float), "particle path color data");
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
@@ -4794,11 +4803,19 @@ static void draw_ptcache_edit(Scene *scene, View3D *v3d, PTCacheEdit *edit)
 	}
 
 	cache = edit->pathcache;
-	for (i = 0; i < totpoint; i++) {
+	for (i = 0, point = edit->points; i < totpoint; i++, point++) {
 		path = cache[i];
 		glVertexPointer(3, GL_FLOAT, sizeof(ParticleCacheKey), path->co);
 
-		if (timed) {
+		if (point->flag & PEP_HIDE) {
+			for (k = 0, pcol = pathcol; k < steps; k++, pcol += 4) {
+				copy_v3_v3(pcol, path->col);
+				pcol[3] = 0.25f;
+			}
+
+			glColorPointer(4, GL_FLOAT, 4 * sizeof(float), pathcol);
+		}
+		else if (timed) {
 			for (k = 0, pcol = pathcol, pkey = path; k < steps; k++, pkey++, pcol += 4) {
 				copy_v3_v3(pcol, pkey->col);
 				pcol[3] = 1.0f - fabsf((float)(CFRA) -pkey->time) / (float)pset->fade_frames;
