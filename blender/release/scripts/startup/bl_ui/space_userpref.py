@@ -453,6 +453,12 @@ class USERPREF_PT_system(Panel):
             sub.active = system.compute_device_type != 'CPU'
             sub.prop(system, "compute_device", text="")
 
+        col.separator()
+        col.separator()
+
+        col.label(text="3-D Display:")
+        col.prop(system, "stereo_display", text="")
+
         # 2. Column
         column = split.column()
         colsplit = column.split(percentage=0.85)

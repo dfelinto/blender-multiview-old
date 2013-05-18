@@ -466,7 +466,7 @@ typedef struct UserDef {
 	float sculpt_paint_overlay_col[3];
 
 	short tweak_threshold;
-	short pad3;
+	short stereo_display; /* stereo method for the user display */
 
 	char author[80];	/* author name for file formats supporting it */
 
@@ -759,6 +759,16 @@ typedef enum eImageDrawMethod {
 	IMAGE_DRAW_METHOD_2DTEXTURE = 2,
 	IMAGE_DRAW_METHOD_DRAWPIXELS = 3,
 } eImageDrawMethod;
+
+typedef enum eStereoDisplayMode {
+	USER_STEREO_DISPLAY_NONE        = 0,
+	USER_STEREO_DISPLAY_SIDEBYSIDE  = 1,
+	USER_STEREO_DISPLAY_TOPBOTTOM   = 2,
+	USER_STEREO_DISPLAY_PAGEFLIP    = 3,
+	USER_STEREO_DISPLAY_ANAGLYPH    = 4,
+	USER_STEREO_DISPLAY_EPILEPSY    = 5,
+	USER_STEREO_DISPLAY_BLURAY      = 6,
+} eStereoDisplayMode;
 
 #ifdef __cplusplus
 }
