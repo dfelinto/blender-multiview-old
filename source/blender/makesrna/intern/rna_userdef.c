@@ -3381,6 +3381,16 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}
 	};
 
+	static EnumPropertyItem stereo_display_items[] = {
+		{USER_STEREO_DISPLAY_NONE, "NONE", 0, "None", ""},
+		{USER_STEREO_DISPLAY_SIDEBYSIDE, "SIDEBYSIDE", 0, "Side-by-Side", ""},
+		{USER_STEREO_DISPLAY_TOPBOTTOM, "TOPBOTTOM", 0, "Top-Bottom", ""},
+		{USER_STEREO_DISPLAY_PAGEFLIP, "PAGEFLIP", 0, "Page Flip", ""},
+		{USER_STEREO_DISPLAY_BLURAY, "BLURAY", 0, "Bluray", ""},
+		{USER_STEREO_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", ""},
+		{USER_STEREO_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Epilepsy", ""},
+	};
+
 	srna = RNA_def_struct(brna, "UserPreferencesSystem", NULL);
 	RNA_def_struct_sdna(srna, "UserDef");
 	RNA_def_struct_nested(brna, srna, "UserPreferences");
@@ -3631,6 +3641,13 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	                         "Draw tool/property regions over the main region, when using Triple Buffer");
 	RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
 	
+	/* Stereo - Multiview */
+	/* XXX MV RNA_def_property_update(prop, 0, "rna_userdef_stereo_update");  */
+	prop = RNA_def_property(srna, "stereo_display", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_items(prop, stereo_display_items);
+	RNA_def_property_ui_text(prop, "Stereo Display", "");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
+
 #ifdef WITH_CYCLES
 	prop = RNA_def_property(srna, "compute_device_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_ENUM_NO_CONTEXT);

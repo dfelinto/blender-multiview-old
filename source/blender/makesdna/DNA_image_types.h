@@ -52,7 +52,9 @@ typedef struct ImageUser {
 	int frames;					/* total amount of frames to use */
 	int offset, sfra;			/* offset within movie, start frame in global time */
 	char fie_ima, cycl;		/* fields/image in movie, cyclic flag */
-	char ok, pad;
+	char ok;
+
+	char eye;				/* multiview current eye - for UI */
 
 	short multi_index, view, layer, pass;	 /* listbase indices, for menu browsing or retrieve buffer */
 

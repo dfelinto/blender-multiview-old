@@ -380,6 +380,12 @@ static char *view_menu(RenderResult *rr, short *curpass)
 	strcpy(str, IFACE_("View %t"));
 	a = strlen(str);
 
+	if (U.stereo_display != USER_STEREO_DISPLAY_NONE) {
+		/* option to show all views at once (3d) */
+		a += sprintf(str + a, "|%s %%x0", IFACE_("3-D"));
+		nr = 1;
+	}
+
 	if (rr)
 		for (rv = rr->views.first; rv; rv = rv->next, nr++)
 			a += sprintf(str + a, "|%s %%x%d", IFACE_(rv->name), nr);
@@ -390,20 +396,39 @@ static char *view_menu(RenderResult *rr, short *curpass)
 	return str;
 }
 
+/* get the view for the current eye */
+static int get_view_from_renderesult(RenderResult *rr, ImageUser *iuser)
+{
+	RenderView *rv;
+	int nr;
+	const char *keys [] = {"left", "right"};
+
+	for (nr=0, rv = (RenderView *)rr->views.first; rv; rv++, nr++)
+		if (BLI_strncasecmp(rv->name, keys[iuser->eye], sizeof(rv->name)) == 0)
+			return nr;
+
+	return 0;
+}
+
 /* return the real pass id */
 static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 {
 	RenderLayer *rl;
 	RenderPass *rpass = NULL;
 	int passtype;
-	int view_id = iuser->view;
 	short rl_index = 0, rp_index;
+	int view_id = iuser->view;
 
 	if (rr == NULL || iuser == NULL)
 		return 0;
 
 	if (BLI_countlist(&rr->views) < 2)
 		return iuser->pass_tmp;
+
+	/* view == 0 .:. shows stereo */
+	if (U.stereo_display != USER_STEREO_DISPLAY_NONE)
+		if (view_id-- == 0)
+			view_id = get_view_from_renderesult(rr, iuser);
 
 	if (RE_HasFakeLayer(rr))
 		rl_index ++; /* fake compo/sequencer layer */
