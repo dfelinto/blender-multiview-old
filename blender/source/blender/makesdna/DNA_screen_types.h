@@ -180,7 +180,8 @@ typedef struct ARegion {
 	short do_draw_overlay;		/* private, cached notifier events */
 	short swap;					/* private, indicator to survive swap-exchange */
 	short overlap;				/* private, set for indicate drawing overlapped */
-	short pad[2];
+	short flagtmp;				/* temporary copy of flag settings */
+	short pad;
 	
 	struct ARegionType *type;	/* callbacks for this region type */
 	

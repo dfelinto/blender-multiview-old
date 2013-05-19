@@ -2224,14 +2224,21 @@ static int screen_stereo_full_area_exec(bContext *C, wmOperator *UNUSED(op))
 	/* go fullscreen */
 	if (sa == NULL) {
 		sa = CTX_wm_area(C);
+#if TRUE
 		if (sa == NULL || (sa->spacetype != SPACE_IMAGE))
+#else
+		if (sa == NULL || ELEM3(sa->spacetype,
+								SPACE_IMAGE,
+								SPACE_VIEW3D,
+								SPACE_SEQ) == FALSE)
+#endif
 			return OPERATOR_CANCELLED;
 
 #if 0
 		if (is_full)
 			sa->flag |= AREA_TEMP_WASFULLSCREEN;
 		else {
-			sa->flag ^= AREA_TEMP_WASFULLSCREEN;
+			sa->flag &= ~(AREA_TEMP_WASFULLSCREEN);
 			GHOST_SetWindowState(window->ghostwin, GHOST_kWindowStateFullScreen);
 		}
 #endif

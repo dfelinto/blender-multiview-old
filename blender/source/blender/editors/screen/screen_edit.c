@@ -1775,8 +1775,11 @@ ScrArea *ED_screen_stereo_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 			return NULL;
 		}
 
+		/* restore the old side panels/header visibility */
+		for (ar = sa->regionbase.first; ar; ar = ar->next)
+			ar->flag = ar->flagtmp;
+
 		area_copy_data(old, sa, 1); /*  1 = swap spacelist */
-		if (sa->flag & AREA_TEMP_INFO) sa->flag &= ~AREA_TEMP_INFO;
 		old->stereo = NULL;
 
 		/* animtimer back */
@@ -1804,20 +1807,26 @@ ScrArea *ED_screen_stereo_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 		sc->animtimer = oldscreen->animtimer;
 		oldscreen->animtimer = NULL;
 
-		/* XXX MV remove "header" and set defaults for new view (no header top, those things) */
-
-		/* returns the top small area */
-		newa = area_split(sc, (ScrArea *)sc->areabase.first, 'h', 0.99f, 1);
-		ED_area_newspace(C, newa, SPACE_INFO);
+		newa = (ScrArea *)sc->areabase.first;
+		ED_area_newspace(C, newa, sa->spacetype);
 
 		/* copy area */
-		newa = newa->prev;
 		area_copy_data(newa, sa, 1);  /* 1 = swap spacelist */
-		sa->flag |= AREA_TEMP_INFO;
+
+		/* temporarily hide the side panels/header */
+		for (ar = newa->regionbase.first; ar; ar = ar->next) {
+			ar->flagtmp = ar->flag;
+
+			if (ELEM4(ar->regiontype,
+					  RGN_TYPE_UI,
+					  RGN_TYPE_PREVIEW,
+					  RGN_TYPE_HEADER,
+					  RGN_TYPE_TOOLS))
+				ar->flag |= RGN_FLAG_HIDDEN;
+		}
 
 		sa->stereo = oldscreen;
 		newa->stereo = oldscreen;
-		newa->next->stereo = oldscreen;
 
 		ED_screen_set(C, sc);
 	}
