@@ -1420,7 +1420,7 @@ void ED_screen_delete(bContext *C, bScreen *sc)
 	int delete = 1;
 	
 	/* don't allow deleting temp fullscreens for now */
-	if (sc->full == SCREENFULL) {
+	if (sc->full == SCREENFULL || sc->full == SCREENFULLSTEREO) {
 		return;
 	}
 	
@@ -1731,6 +1731,93 @@ ScrArea *ED_screen_full_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 		sa->full = oldscreen;
 		newa->full = oldscreen;
 		newa->next->full = oldscreen; // XXX
+
+		ED_screen_set(C, sc);
+	}
+
+	/* XXX bad code: setscreen() ends with first area active. fullscreen render assumes this too */
+	CTX_wm_area_set(C, sc->areabase.first);
+
+	return sc->areabase.first;
+}
+
+/* this function toggles: if area is full then the parent will be restored */
+ScrArea *ED_screen_stereo_toggle(bContext *C, wmWindow *win, ScrArea *sa)
+{
+	bScreen *sc, *oldscreen;
+	ARegion *ar;
+
+	if (sa) {
+		/* ensure we don't have a button active anymore, can crash when
+		 * switching screens with tooltip open because region and tooltip
+		 * are no longer in the same screen */
+		for (ar = sa->regionbase.first; ar; ar = ar->next)
+			uiFreeBlocks(C, &ar->uiblocks);
+
+		/* prevent hanging header prints */
+		ED_area_headerprint(sa, NULL);
+	}
+
+	if (sa && sa->stereo) {
+		ScrArea *old;
+
+		sc = sa->stereo;       /* the old screen to restore */
+		oldscreen = win->screen; /* the one disappearing */
+
+		sc->full = SCREENNORMAL;
+
+		/* find old area */
+		for (old = sc->areabase.first; old; old = old->next)
+			if (old->stereo) break;
+		if (old == NULL) {
+			if (G.debug & G_DEBUG)
+				printf("%s: something wrong in areafullscreen\n", __func__);
+			return NULL;
+		}
+
+		area_copy_data(old, sa, 1); /*  1 = swap spacelist */
+		if (sa->flag & AREA_TEMP_INFO) sa->flag &= ~AREA_TEMP_INFO;
+		old->stereo = NULL;
+
+		/* animtimer back */
+		sc->animtimer = oldscreen->animtimer;
+		oldscreen->animtimer = NULL;
+
+		ED_screen_set(C, sc);
+
+		BKE_screen_free(oldscreen);
+		BKE_libblock_free(&CTX_data_main(C)->screen, oldscreen);
+
+	}
+	else {
+		ScrArea *newa;
+		char newname[MAX_ID_NAME - 2];
+
+		oldscreen = win->screen;
+
+		oldscreen->full = SCREENFULLSTEREO;
+		BLI_snprintf(newname, sizeof(newname), "%s-%s", oldscreen->id.name + 2, "stereo");
+		sc = ED_screen_add(win, oldscreen->scene, newname);
+		sc->full = SCREENFULLSTEREO;
+
+		/* timer */
+		sc->animtimer = oldscreen->animtimer;
+		oldscreen->animtimer = NULL;
+
+		/* XXX MV remove "header" and set defaults for new view (no header top, those things) */
+
+		/* returns the top small area */
+		newa = area_split(sc, (ScrArea *)sc->areabase.first, 'h', 0.99f, 1);
+		ED_area_newspace(C, newa, SPACE_INFO);
+
+		/* copy area */
+		newa = newa->prev;
+		area_copy_data(newa, sa, 1);  /* 1 = swap spacelist */
+		sa->flag |= AREA_TEMP_INFO;
+
+		sa->stereo = oldscreen;
+		newa->stereo = oldscreen;
+		newa->next->stereo = oldscreen;
 
 		ED_screen_set(C, sc);
 	}

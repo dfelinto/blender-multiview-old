@@ -155,6 +155,9 @@ typedef struct ScrArea {
 	ListBase handlers;		/* wmEventHandler */
 	
 	ListBase actionzones;	/* AZone */
+
+	bScreen *stereo;			/* if area==stereo, this is the parent */
+	void *pad2;
 } ScrArea;
 
 typedef struct ARegion {
@@ -204,6 +207,7 @@ typedef struct ARegion {
 #define AREA_TEMP_INFO			8
 #define AREA_FLAG_DRAWSPLIT_H	16
 #define AREA_FLAG_DRAWSPLIT_V	32
+#define AREA_TEMP_WASFULLSCREEN	64
 
 #define EDGEWIDTH	1
 #define AREAGRID	4
@@ -218,6 +222,7 @@ typedef struct ARegion {
 #define SCREENNORMAL	0
 #define SCREENFULL		1
 #define SCREENFULLTEMP	2
+#define SCREENFULLSTEREO 3
 
 
 /* Panel->snap - for snapping to screen edges */
