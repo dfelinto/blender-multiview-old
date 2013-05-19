@@ -1420,7 +1420,7 @@ void ED_screen_delete(bContext *C, bScreen *sc)
 	int delete = 1;
 	
 	/* don't allow deleting temp fullscreens for now */
-	if (sc->full == SCREENFULL || sc->full == SCREENFULLSTEREO) {
+	if (sc->full == SCREENFULL || sc->full == SCREENFULLCLEAN) {
 		return;
 	}
 	
@@ -1742,7 +1742,7 @@ ScrArea *ED_screen_full_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 }
 
 /* this function toggles: if area is full then the parent will be restored */
-ScrArea *ED_screen_stereo_toggle(bContext *C, wmWindow *win, ScrArea *sa)
+ScrArea *ED_screen_clean_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 {
 	bScreen *sc, *oldscreen;
 	ARegion *ar;
@@ -1758,17 +1758,17 @@ ScrArea *ED_screen_stereo_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 		ED_area_headerprint(sa, NULL);
 	}
 
-	if (sa && sa->stereo) {
+	if (sa && sa->fullclean) {
 		ScrArea *old;
 
-		sc = sa->stereo;       /* the old screen to restore */
+		sc = sa->fullclean;       /* the old screen to restore */
 		oldscreen = win->screen; /* the one disappearing */
 
 		sc->full = SCREENNORMAL;
 
 		/* find old area */
 		for (old = sc->areabase.first; old; old = old->next)
-			if (old->stereo) break;
+			if (old->fullclean) break;
 		if (old == NULL) {
 			if (G.debug & G_DEBUG)
 				printf("%s: something wrong in areafullscreen\n", __func__);
@@ -1780,7 +1780,7 @@ ScrArea *ED_screen_stereo_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 			ar->flag = ar->flagtmp;
 
 		area_copy_data(old, sa, 1); /*  1 = swap spacelist */
-		old->stereo = NULL;
+		old->fullclean = NULL;
 
 		/* animtimer back */
 		sc->animtimer = oldscreen->animtimer;
@@ -1798,10 +1798,10 @@ ScrArea *ED_screen_stereo_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 
 		oldscreen = win->screen;
 
-		oldscreen->full = SCREENFULLSTEREO;
+		oldscreen->full = SCREENFULLCLEAN;
 		BLI_snprintf(newname, sizeof(newname), "%s-%s", oldscreen->id.name + 2, "stereo");
 		sc = ED_screen_add(win, oldscreen->scene, newname);
-		sc->full = SCREENFULLSTEREO;
+		sc->full = SCREENFULLCLEAN;
 
 		/* timer */
 		sc->animtimer = oldscreen->animtimer;
@@ -1825,8 +1825,8 @@ ScrArea *ED_screen_stereo_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 				ar->flag |= RGN_FLAG_HIDDEN;
 		}
 
-		sa->stereo = oldscreen;
-		newa->stereo = oldscreen;
+		sa->fullclean = oldscreen;
+		newa->fullclean = oldscreen;
 
 		ED_screen_set(C, sc);
 	}

@@ -2205,20 +2205,15 @@ static void SCREEN_OT_screen_full_area(wmOperatorType *ot)
 }
 
 /* special fullscreen mode for stereo-enabled editors (Image Editor for now, but viewport and sequencer later) */
-static int screen_stereo_full_area_exec(bContext *C, wmOperator *UNUSED(op))
+static int screen_clean_full_area_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	bScreen *screen = CTX_wm_screen(C);
 	ScrArea *sa = NULL;
-#if 0
-	wmWindow *window = CTX_wm_window(C);
-
-	int is_full = (GHOST_GetWindowState(window->ghostwin) == GHOST_kWindowStateFullScreen);
-#endif
 
 	/* search current screen for 'fullscreen' areas */
 	/* prevents restoring info header, when mouse is over it */
 	for (sa = screen->areabase.first; sa; sa = sa->next) {
-		if (sa->stereo) break;
+		if (sa->fullclean) break;
 	}
 
 	/* go fullscreen */
@@ -2233,36 +2228,19 @@ static int screen_stereo_full_area_exec(bContext *C, wmOperator *UNUSED(op))
 								SPACE_SEQ) == FALSE)
 #endif
 			return OPERATOR_CANCELLED;
-
-#if 0
-		if (is_full)
-			sa->flag |= AREA_TEMP_WASFULLSCREEN;
-		else {
-			sa->flag &= ~(AREA_TEMP_WASFULLSCREEN);
-			GHOST_SetWindowState(window->ghostwin, GHOST_kWindowStateFullScreen);
-		}
-#endif
 	}
 
-	/* go normal screen */
-	else {
-#if 0
-		if (is_full && ((sa->flag & AREA_TEMP_WASFULL) == 0))
-			GHOST_SetWindowState(window->ghostwin, GHOST_kWindowStateNormal);
-#endif
-	}
-
-	ED_screen_stereo_toggle(C, CTX_wm_window(C), sa);
+	ED_screen_clean_toggle(C, CTX_wm_window(C), sa);
 	return OPERATOR_FINISHED;
 }
 
-static void SCREEN_OT_stereo_full_area(wmOperatorType *ot)
+static void SCREEN_OT_clean_full_area(wmOperatorType *ot)
 {
-	ot->name = "Toggle Stereo Full Screen";
-	ot->description = "Toggle image editor as fullscreen";
-	ot->idname = "SCREEN_OT_stereo_full_area";
+	ot->name = "Toggle Clean Full Screen";
+	ot->description = "Toggle editor as clean fullscreen";
+	ot->idname = "SCREEN_OT_clean_full_area";
 
-	ot->exec = screen_stereo_full_area_exec;
+	ot->exec = screen_clean_full_area_exec;
 	ot->poll = ED_operator_areaactive;
 	ot->flag = 0;
 }
@@ -3835,7 +3813,7 @@ void ED_operatortypes_screen(void)
 	WM_operatortype_append(SCREEN_OT_header_toolbox);
 	WM_operatortype_append(SCREEN_OT_screen_set);
 	WM_operatortype_append(SCREEN_OT_screen_full_area);
-	WM_operatortype_append(SCREEN_OT_stereo_full_area);
+	WM_operatortype_append(SCREEN_OT_clean_full_area);
 	WM_operatortype_append(SCREEN_OT_back_to_previous);
 	WM_operatortype_append(SCREEN_OT_spacedata_cleanup);
 	WM_operatortype_append(SCREEN_OT_screenshot);
@@ -3955,7 +3933,7 @@ void ED_keymap_screen(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "SCREEN_OT_screenshot", F3KEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "SCREEN_OT_screencast", F3KEY, KM_PRESS, KM_ALT, 0);
 
-	WM_keymap_add_item(keymap, "SCREEN_OT_stereo_full_area", DKEY, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "SCREEN_OT_clean_full_area", DKEY, KM_PRESS, 0, 0);
 
 	/* tests */
 	WM_keymap_add_item(keymap, "SCREEN_OT_region_quadview", QKEY, KM_PRESS, KM_CTRL | KM_ALT, 0);

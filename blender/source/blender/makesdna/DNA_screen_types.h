@@ -156,7 +156,7 @@ typedef struct ScrArea {
 	
 	ListBase actionzones;	/* AZone */
 
-	bScreen *stereo;			/* if area==stereo, this is the parent */
+	bScreen *fullclean;			/* if area==fullclean, this is the parent */
 	void *pad2;
 } ScrArea;
 
@@ -223,7 +223,7 @@ typedef struct ARegion {
 #define SCREENNORMAL	0
 #define SCREENFULL		1
 #define SCREENFULLTEMP	2
-#define SCREENFULLSTEREO 3
+#define SCREENFULLCLEAN 3
 
 
 /* Panel->snap - for snapping to screen edges */
