@@ -3389,6 +3389,15 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 		{USER_STEREO_DISPLAY_BLURAY, "BLURAY", 0, "Bluray", ""},
 		{USER_STEREO_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", ""},
 		{USER_STEREO_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Epilepsy", ""},
+		{0, NULL, 0, NULL, NULL}
+	};
+
+	static EnumPropertyItem anaglyph_type_items[] = {
+		{USER_ANAGLYPH_TYPE_RED_CYAN, "RED_CYAN", 0, "Red-Cyan", ""},
+		{USER_ANAGLYPH_TYPE_GREEN_MAGENTA, "GREEN_MAGENTA", 0, "Green-Magenta", ""},
+		{USER_ANAGLYPH_TYPE_MAGENTA_GREEN, "MAGENTA_GREEN", 0, "Magenta-Green", ""},
+		{USER_ANAGLYPH_TYPE_YELLOW_BLUE, "YELLOW_BLUE", 0, "Yellow-Blue", ""},
+		{0, NULL, 0, NULL, NULL}
 	};
 
 	srna = RNA_def_struct(brna, "UserPreferencesSystem", NULL);
@@ -3646,6 +3655,11 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "stereo_display", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, stereo_display_items);
 	RNA_def_property_ui_text(prop, "Stereo Display", "");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
+
+	prop = RNA_def_property(srna, "anaglyph_type", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_items(prop, anaglyph_type_items);
+	RNA_def_property_ui_text(prop, "Anaglyph Type", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
 
 #ifdef WITH_CYCLES
