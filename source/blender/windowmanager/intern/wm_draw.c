@@ -305,7 +305,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 				}
 			}
 		}
-		
+
 		wm_area_mark_invalid_backbuf(sa);
 		CTX_wm_area_set(C, NULL);
 	}
@@ -714,7 +714,6 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 			wm_triple_draw_textures(win, win->drawdata, 1.0f);
 		}
 		else {
-			/* we run it when we start OR when we turn stereo on */
 			win->drawdata = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
 
 			if (!wm_triple_gen_textures(win, win->drawdata)) {
