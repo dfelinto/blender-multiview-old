@@ -64,7 +64,8 @@
 #include "WM_api.h"
 #include "WM_types.h"
 #include "wm.h"
-#include "wm_draw.h"
+#include "wm_stereo.h"
+#include "wm_draw.h" /* wmDrawTriple */
 #include "wm_window.h"
 #include "wm_event_system.h"
 
@@ -73,6 +74,9 @@
 #define WIN_BACK_OK     1
 #define WIN_FRONT_OK    2
 #define WIN_BOTH_OK     3
+
+
+#if 0
 
 /* ******************* drawing, overlays *************** */
 
@@ -166,7 +170,6 @@ static void wm_method_draw_full(bContext *C, wmWindow *win)
 			if (ar->swinid) {
 				CTX_wm_region_set(C, ar);
 				ED_region_do_draw(C, ar);
-				ar->do_draw = FALSE;
 				wm_paintcursor_draw(C, ar);
 				CTX_wm_region_set(C, NULL);
 			}
@@ -183,7 +186,6 @@ static void wm_method_draw_full(bContext *C, wmWindow *win)
 		if (ar->swinid) {
 			CTX_wm_menu_set(C, ar);
 			ED_region_do_draw(C, ar);
-			ar->do_draw = FALSE;
 			CTX_wm_menu_set(C, NULL);
 		}
 	}
@@ -281,7 +283,6 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 				if (ar->do_draw) {
 					CTX_wm_region_set(C, ar);
 					ED_region_do_draw(C, ar);
-					ar->do_draw = FALSE;
 					wm_paintcursor_draw(C, ar);
 					CTX_wm_region_set(C, NULL);
 
@@ -292,7 +293,6 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 					if (ar->swap == WIN_FRONT_OK) {
 						CTX_wm_region_set(C, ar);
 						ED_region_do_draw(C, ar);
-						ar->do_draw = FALSE;
 						wm_paintcursor_draw(C, ar);
 						CTX_wm_region_set(C, NULL);
 
@@ -333,7 +333,6 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 		if (ar->swinid && ar->do_draw) {
 			CTX_wm_menu_set(C, ar);
 			ED_region_do_draw(C, ar);
-			ar->do_draw = FALSE;
 			CTX_wm_menu_set(C, NULL);
 		}
 	}
@@ -365,6 +364,15 @@ static void wm_method_draw_damage(bContext *C, wmWindow *win)
 /* - if non-power of two textures are supported, that is  */
 /*   used. if not, multiple smaller ones are used, with   */
 /*   worst case wasted space being 23.4% for 3x3 textures */
+
+#define MAX_N_TEX 3
+
+typedef struct wmDrawTriple {
+	GLuint bind[MAX_N_TEX * MAX_N_TEX];
+	int x[MAX_N_TEX], y[MAX_N_TEX];
+	int nx, ny;
+	GLenum target;
+} wmDrawTriple;
 
 static void split_width(int x, int n, int *splitx, int *nx)
 {
@@ -492,6 +500,7 @@ static int wm_triple_gen_textures(wmWindow *win, wmDrawTriple *triple)
 
 static void wm_triple_draw_textures(wmWindow *win, wmDrawTriple *triple, float alpha)
 {
+	return;
 	float halfx, halfy, ratiox, ratioy;
 	int x, y, sizex, sizey, offx, offy;
 
@@ -577,7 +586,7 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 	bScreen *screen = win->screen;
 	ScrArea *sa;
 	ARegion *ar;
-	int copytex = FALSE, paintcursor = TRUE;
+	int copytex = 0, paintcursor = 1;
 
 	if (win->drawdata) {
 		glClearColor(0, 0, 0, 0);
@@ -612,12 +621,11 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 		for (ar = sa->regionbase.first; ar; ar = ar->next) {
 			if (ar->swinid && ar->do_draw) {
 
-				if (ar->overlap == FALSE) {
+				if (ar->overlap == 0) {
 					CTX_wm_region_set(C, ar);
 					ED_region_do_draw(C, ar);
-					ar->do_draw = FALSE;
 					CTX_wm_region_set(C, NULL);
-					copytex = TRUE;
+					copytex = 1;
 				}
 			}
 		}
@@ -660,7 +668,6 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 			if (ar->swinid && ar->overlap) {
 				CTX_wm_region_set(C, ar);
 				ED_region_do_draw(C, ar);
-				ar->do_draw = FALSE;
 				CTX_wm_region_set(C, NULL);
 
 				wm_draw_region_blend(win, ar, triple);
@@ -678,10 +685,9 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 		if (ar->swinid) {
 			CTX_wm_menu_set(C, ar);
 			ED_region_do_draw(C, ar);
-			ar->do_draw = FALSE;
 			CTX_wm_menu_set(C, NULL);
 			/* when a menu is being drawn, don't do the paint cursors */
-			paintcursor = FALSE;
+			paintcursor = 0;
 		}
 	}
 
@@ -766,6 +772,8 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 					CTX_wm_region_set(C, NULL);
 					copytex = TRUE;
 				}
+//				if (sview == STEREO_LEFT_ID)
+//					ar->do_draw = FALSE;
 			}
 		}
 
@@ -854,7 +862,73 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 		wm_triple_copy_textures(win, triple);
 	}
 }
+#endif
 
+ void wm_method_draw_stereo(bContext *C, wmWindow *win)
+{
+	float halfx, halfy, ratiox, ratioy;
+	int x, y, sizex, sizey, offx, offy;
+	int view = 0;
+	float alpha = 1.0f;
+	wmDrawTriple *triple;
+
+	for (view=0; view < 2; view ++) {
+		if (view == 0) {
+			triple = win->drawdata;
+			glColorMask(TRUE, FALSE, FALSE, FALSE);
+		}
+		else {
+			triple = win->drawdatastereo;
+			glColorMask(FALSE, TRUE, TRUE, FALSE);
+		}
+
+		glEnable(triple->target);
+
+		for (y = 0, offy = 0; y < triple->ny; offy += triple->y[y], y++) {
+			for (x = 0, offx = 0; x < triple->nx; offx += triple->x[x], x++) {
+				sizex = (x == triple->nx - 1) ? WM_window_pixels_x(win) - offx : triple->x[x];
+				sizey = (y == triple->ny - 1) ? WM_window_pixels_y(win) - offy : triple->y[y];
+
+				/* wmOrtho for the screen has this same offset */
+				ratiox = sizex;
+				ratioy = sizey;
+				halfx = GLA_PIXEL_OFS;
+				halfy = GLA_PIXEL_OFS;
+
+				/* texture rectangle has unnormalized coordinates */
+				if (triple->target == GL_TEXTURE_2D) {
+					ratiox /= triple->x[x];
+					ratioy /= triple->y[y];
+					halfx /= triple->x[x];
+					halfy /= triple->y[y];
+				}
+
+				glBindTexture(triple->target, triple->bind[x + y * triple->nx]);
+
+				glColor4f(1.0f, 1.0f, 1.0f, alpha);
+				glBegin(GL_QUADS);
+				glTexCoord2f(halfx, halfy);
+				glVertex2f(offx, offy);
+
+				glTexCoord2f(ratiox + halfx, halfy);
+				glVertex2f(offx + sizex, offy);
+
+				glTexCoord2f(ratiox + halfx, ratioy + halfy);
+				glVertex2f(offx + sizex, offy + sizey);
+
+				glTexCoord2f(halfx, ratioy + halfy);
+				glVertex2f(offx, offy + sizey);
+				glEnd();
+			}
+		}
+
+		glBindTexture(triple->target, 0);
+		glDisable(triple->target);
+		glColorMask(TRUE, TRUE, TRUE, TRUE);
+	}
+}
+
+#if 0
 /****************** main update call **********************/
 
 /* quick test to prevent changing window drawable */
@@ -911,14 +985,12 @@ static int wm_automatic_draw_method(wmWindow *win)
 		if (GPU_type_matches(GPU_DEVICE_ATI, GPU_OS_UNIX, GPU_DRIVER_OPENSOURCE))
 			return USER_DRAW_OVERLAP;
 		/* also Intel drivers are slow */
-#if 0	/* 2.64 BCon3 period, let's try if intel now works... */
 		else if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_UNIX, GPU_DRIVER_ANY))
 			return USER_DRAW_OVERLAP;
 		else if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_WIN, GPU_DRIVER_ANY))
 			return USER_DRAW_OVERLAP_FLIP;
 		else if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_MAC, GPU_DRIVER_ANY))
 			return USER_DRAW_OVERLAP_FLIP;
-#endif
 		/* Windows software driver darkens color on each redraw */
 		else if (GPU_type_matches(GPU_DEVICE_SOFTWARE, GPU_OS_WIN, GPU_DRIVER_SOFTWARE))
 			return USER_DRAW_OVERLAP_FLIP;
@@ -967,18 +1039,6 @@ void wm_draw_update(bContext *C)
 	GPU_free_unused_buffers();
 	
 	for (win = wm->windows.first; win; win = win->next) {
-#ifdef WIN32
-		if (GPU_type_matches(GPU_DEVICE_INTEL, GPU_OS_ANY, GPU_DRIVER_ANY)) {
-			GHOST_TWindowState state = GHOST_GetWindowState(win->ghostwin);
-
-			if (state == GHOST_kWindowStateMinimized) {
-				/* do not update minimized windows, it gives issues on intel drivers (see [#33223])
-				 * anyway, it seems logical to skip update for invisible windows
-				 */
-				continue;
-			}
-		}
-#endif
 		if (win->drawmethod != U.wmdrawmethod) {
 			wm_draw_window_clear(win);
 			win->drawmethod = U.wmdrawmethod;
@@ -1005,15 +1065,11 @@ void wm_draw_update(bContext *C)
 			else if (drawmethod == USER_DRAW_OVERLAP_FLIP)
 				wm_method_draw_overlap_all(C, win, 1);
 			else // if (drawmethod == USER_DRAW_TRIPLE)
-			{
-				if (U.stereo_display == USER_STEREO_DISPLAY_NONE)
-					wm_method_draw_triple(C, win);
-				else {
-					wm_method_draw_triple_stereo(C, win, STEREO_RIGHT_ID);
-					wm_method_draw_triple_stereo(C, win, STEREO_LEFT_ID);
-					wm_method_draw_stereo(C, win);
-				}
-			}
+				wm_method_draw_triple(C, win);
+
+			wm_method_draw_triple_stereo(C, win, STEREO_RIGHT_ID);
+			wm_method_draw_triple_stereo(C, win, STEREO_LEFT_ID);
+			wm_method_draw_stereo(C, win);
 
 			win->screen->do_draw_gesture = FALSE;
 			win->screen->do_draw_paintcursor = FALSE;
@@ -1073,4 +1129,6 @@ void WM_redraw_windows(bContext *C)
 	CTX_wm_area_set(C, area_prev);
 	CTX_wm_region_set(C, ar_prev);
 }
+
+#endif
 

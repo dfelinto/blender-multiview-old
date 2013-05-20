@@ -208,8 +208,8 @@ void wm_window_free(bContext *C, wmWindowManager *wm, wmWindow *win)
 	wm_event_free_all(win);
 	wm_subwindows_free(win);
 	
-	if (win->drawdatamono)
-		MEM_freeN(win->drawdatamono);
+	if (win->drawdata)
+		MEM_freeN(win->drawdata);
 
 	if (win->drawdatastereo)
 		MEM_freeN(win->drawdatastereo);
@@ -263,7 +263,7 @@ wmWindow *wm_window_copy(bContext *C, wmWindow *winorig)
 	win->screen->do_draw = TRUE;
 
 	win->drawmethod = U.wmdrawmethod;
-	win->drawdatamono = NULL;
+	win->drawdata = NULL;
 	win->drawdatastereo = NULL;
 	
 	return win;
@@ -514,7 +514,7 @@ wmWindow *WM_window_open(bContext *C, rcti *rect)
 	win->sizey = BLI_rcti_size_y(rect);
 
 	win->drawmethod = U.wmdrawmethod;
-	win->drawdatamono = NULL;
+	win->drawdata = NULL;
 	win->drawdatastereo = NULL;
 	
 	WM_check(C);

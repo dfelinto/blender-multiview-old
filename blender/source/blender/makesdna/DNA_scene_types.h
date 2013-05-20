@@ -753,8 +753,12 @@ typedef struct GameData {
 /* Stereo Flags */
 #define STEREO_RIGHT_NAME "right"
 #define STEREO_LEFT_NAME "left"
-#define STEREO_RIGHT_ID 0
-#define STEREO_LEFT_ID 1
+
+typedef enum StereoViews {
+	STEREO_MONO_ID = -1,
+	STEREO_RIGHT_ID = 0,
+	STEREO_LEFT_ID = 1,
+} StereoViews;
 
 /* Markers */
 

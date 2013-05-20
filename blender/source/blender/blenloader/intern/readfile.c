@@ -5488,7 +5488,7 @@ static void direct_link_windowmanager(FileData *fd, wmWindowManager *wm)
 		win->subwindows.first = win->subwindows.last = NULL;
 		win->gesture.first = win->gesture.last = NULL;
 		
-		win->drawdatamono = NULL;
+		win->drawdata = NULL;
 		win->drawdatastereo = NULL;
 		win->drawmethod = -1;
 		win->drawfail = 0;
