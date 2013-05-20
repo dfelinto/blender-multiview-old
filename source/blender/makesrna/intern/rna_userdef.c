@@ -3389,6 +3389,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 		{USER_STEREO_DISPLAY_BLURAY, "BLURAY", 0, "Bluray", ""},
 		{USER_STEREO_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", ""},
 		{USER_STEREO_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Epilepsy", ""},
+		{0, NULL, 0, NULL, NULL}
 	};
 
 	srna = RNA_def_struct(brna, "UserPreferencesSystem", NULL);
