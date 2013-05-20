@@ -3809,8 +3809,10 @@ static int redraw_timer_exec(bContext *C, wmOperator *op)
 
 	for (a = 0; a < iter; a++) {
 		if (type == 0) {
-			if (ar)
+			if (ar) {
 				ED_region_do_draw(C, ar);
+				ar->do_draw = FALSE;
+			}
 		}
 		else if (type == 1) {
 			wmWindow *win = CTX_wm_window(C);
@@ -3835,6 +3837,7 @@ static int redraw_timer_exec(bContext *C, wmOperator *op)
 					if (ar_iter->swinid) {
 						CTX_wm_region_set(C, ar_iter);
 						ED_region_do_draw(C, ar_iter);
+						ar->do_draw = FALSE;
 					}
 				}
 			}
