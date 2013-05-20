@@ -1,7 +1,4 @@
 /*
- * envmap_ext.h
- *
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -18,37 +15,25 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: all of this file.
- *
- * Contributor(s): none yet.
+ * The Original Code is Copyright (C) 2013, Blender Foundation
  *
  * ***** END GPL LICENSE BLOCK *****
  */
 
-/** \file blender/render/intern/include/envmap.h
- *  \ingroup render
+/** \file ED_buttons.h
+ *  \ingroup editors
  */
 
+#ifndef __ED_BUTTONS_H__
+#define __ED_BUTTONS_H__
 
-#ifndef __ENVMAP_H__
-#define __ENVMAP_H__ 
+#include "BLI_utildefines.h"
 
-/**
- * Make environment maps for all objects in the scene that have an
- * environment map as texture. 
- * (initrender.c)
- */
+/* Used to check whether a given texture context is valid in current context. */
+bool ED_texture_context_check_world(const struct bContext *C);
+bool ED_texture_context_check_material(const struct bContext *C);
+bool ED_texture_context_check_lamp(const struct bContext *C);
+bool ED_texture_context_check_particles(const struct bContext *C);
+bool ED_texture_context_check_others(const struct bContext *C);
 
-struct Render;
-struct TexResult;
-struct ImagePool;
-
-void make_envmaps(struct Render *re);
-int envmaptex(struct Tex *tex, const float texvec[3], float dxt[3], float dyt[3], int osatex, struct TexResult *texres, struct ImagePool *pool);
-void env_rotate_scene(struct Render *re, float mat[4][4], int do_rotate);
-
-#endif /* __ENVMAP_H__ */
-
+#endif /*  __ED_BUTTONS_H__ */
