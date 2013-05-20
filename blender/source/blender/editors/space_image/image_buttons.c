@@ -403,8 +403,7 @@ static int get_view_from_renderesult(RenderResult *rr, ImageUser *iuser)
 	int nr;
 	const char *keys [] = {"left", "right"};
 
-	for (nr=0, rv = (RenderView *)rr->views.first; rv; rv++, nr++) {
-		if (rv->name == NULL) continue;
+	for (nr=0, rv = (RenderView *)rr->views.first; rv; rv=rv->next, nr++) {
 
 		if (strcmp(rv->name, keys[iuser->eye]) == 0)
 			return nr;
