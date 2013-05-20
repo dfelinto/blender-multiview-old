@@ -490,7 +490,7 @@ static int wm_triple_gen_textures(wmWindow *win, wmDrawTriple *triple)
 	return 1;
 }
 
-static void wm_triple_draw_textures(wmWindow *win, wmDrawTriple *triple, float alpha)
+void wm_triple_draw_textures(wmWindow *win, wmDrawTriple *triple, float alpha)
 {
 	float halfx, halfy, ratiox, ratioy;
 	int x, y, sizex, sizey, offx, offy;
