@@ -59,7 +59,10 @@ typedef struct ImageUser {
 	short multi_index, view, layer, pass;	 /* listbase indices, for menu browsing or retrieve buffer */
 
 	short flag;
-	short pass_tmp;
+	short pass_tmp;	/* for the UI */
+
+	short pass_left, pass_right;
+	short multi_index_left, multi_index_right;
 
 } ImageUser;
 

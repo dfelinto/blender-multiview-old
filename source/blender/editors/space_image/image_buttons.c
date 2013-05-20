@@ -397,15 +397,14 @@ static char *view_menu(RenderResult *rr, short *curpass)
 }
 
 /* get the view for the current eye */
-static int get_view_from_renderesult(RenderResult *rr, ImageUser *iuser)
+static int get_view_from_renderesult(RenderResult *rr, const char *viewname)
 {
 	RenderView *rv;
 	int nr;
-	const char *keys [] = {"left", "right"};
 
 	for (nr=0, rv = (RenderView *)rr->views.first; rv; rv=rv->next, nr++) {
 
-		if (strcmp(rv->name, keys[iuser->eye]) == 0)
+		if (strcmp(rv->name, viewname) == 0)
 			return nr;
 	}
 
@@ -421,16 +420,24 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 	short rl_index = 0, rp_index;
 	int view_id = iuser->view;
 
+	int view_left, view_right;
+	int is_stereo = FALSE;
+
 	if (rr == NULL || iuser == NULL)
 		return 0;
 
 	if (BLI_countlist(&rr->views) < 2)
 		return iuser->pass_tmp;
 
-	/* view == 0 .:. shows stereo */
+	/* view == 0 shows stereo */
 	if (U.stereo_display != USER_STEREO_DISPLAY_NONE)
-		if (view_id-- == 0)
-			view_id = get_view_from_renderesult(rr, iuser);
+		if(view_id-- == 0)
+			is_stereo = TRUE;
+
+	if (is_stereo) {
+		view_right = get_view_from_renderesult(rr, STEREO_RIGHT_NAME);
+		view_left = get_view_from_renderesult(rr, STEREO_LEFT_NAME);
+	}
 
 	if (RE_HasFakeLayer(rr))
 		rl_index ++; /* fake compo/sequencer layer */
@@ -445,9 +452,29 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 			if (iuser->pass_tmp == rp_index)
 				passtype = rpass->passtype;
 
-			if (rpass->passtype == passtype && rpass->view_id == view_id)
-				return rp_index;
+			if (rpass->passtype == passtype) {
+				if (is_stereo == FALSE) {
+					if (rpass->view_id == view_id)
+						return rp_index;
+				}
+				else {
+					if (rpass->view_id == view_right)
+						iuser->pass_right = rp_index;
+					else if (rpass->view_id == view_left)
+						iuser->pass_left = rp_index;
+				}
+			}
 		}
+	}
+
+	if (is_stereo == TRUE) {
+		iuser->pass = iuser->pass_right;
+		BKE_image_multilayer_index(rr, iuser);
+		iuser->multi_index_right = iuser->multi_index;
+
+		iuser->pass = iuser->pass_left;
+		BKE_image_multilayer_index(rr, iuser);
+		iuser->multi_index_left = iuser->multi_index;
 	}
 
 	return iuser->pass_tmp;
