@@ -774,8 +774,7 @@ typedef enum eStereoDisplayMode {
 typedef enum eAnaglyphType {
 	USER_ANAGLYPH_TYPE_RED_CYAN = 0,
 	USER_ANAGLYPH_TYPE_GREEN_MAGENTA = 1,
-	USER_ANAGLYPH_TYPE_MAGENTA_GREEN = 2,
-	USER_ANAGLYPH_TYPE_YELLOW_BLUE = 3,
+	USER_ANAGLYPH_TYPE_YELLOW_BLUE = 2,
 } eAnaglyphType;
 
 #ifdef __cplusplus
