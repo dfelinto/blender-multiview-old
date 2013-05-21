@@ -108,6 +108,38 @@ static void wm_method_draw_stereo_epilepsy(wmWindow *win)
 	wm_triple_draw_textures(win, triple, 1.0);
 }
 
+static GLuint hinterlace_mask[33];
+static int hinterlace_started = FALSE;
+
+static void wm_method_draw_stereo_interlace(wmWindow *win)
+{
+	int view = 0;
+	wmDrawTriple *triple;
+
+	if (hinterlace_started == FALSE)
+	{
+		int i;
+		for (i = 0; i < 32; i++)
+			hinterlace_mask[i] = (i&1)*0xFFFFFFFF;
+		hinterlace_mask[32] = 0;
+		hinterlace_started = TRUE;
+	}
+
+	for (view=0; view < 2; view ++) {
+		if (view == 0)
+			triple = win->drawdata;
+		else
+			triple = win->drawdatastereo;
+
+		glEnable(GL_POLYGON_STIPPLE);
+		glPolygonStipple((const GLubyte*) &hinterlace_mask[view]);
+
+		wm_triple_draw_textures(win, triple, 1.0);
+		glDisable(GL_POLYGON_STIPPLE);
+	}
+
+}
+
 static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 {
 	int view = 0;
@@ -266,17 +298,20 @@ void wm_method_draw_stereo(bContext *UNUSED(C), wmWindow *win)
 		case USER_STEREO_DISPLAY_ANAGLYPH:
 			wm_method_draw_stereo_anaglyph(win);
 			break;
+		case USER_STEREO_DISPLAY_EPILEPSY:
+			wm_method_draw_stereo_epilepsy(win);
+			break;
+		case USER_STEREO_DISPLAY_INTERLACE:
+			wm_method_draw_stereo_interlace(win);
+			break;
+		case USER_STEREO_DISPLAY_PAGEFLIP:
+			wm_method_draw_stereo_pageflip(win);
+			break;
 		case USER_STEREO_DISPLAY_SIDEBYSIDE:
 			wm_method_draw_stereo_sidebyside(win);
 			break;
 		case USER_STEREO_DISPLAY_TOPBOTTOM:
 			wm_method_draw_stereo_topbottom(win);
-			break;
-		case USER_STEREO_DISPLAY_EPILEPSY:
-			wm_method_draw_stereo_epilepsy(win);
-			break;
-		case USER_STEREO_DISPLAY_PAGEFLIP:
-			wm_method_draw_stereo_pageflip(win);
 			break;
 		default:
 			break;
