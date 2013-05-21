@@ -3396,7 +3396,6 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	static EnumPropertyItem anaglyph_type_items[] = {
 		{USER_ANAGLYPH_TYPE_RED_CYAN, "RED_CYAN", 0, "Red-Cyan", ""},
 		{USER_ANAGLYPH_TYPE_GREEN_MAGENTA, "GREEN_MAGENTA", 0, "Green-Magenta", ""},
-		{USER_ANAGLYPH_TYPE_MAGENTA_GREEN, "MAGENTA_GREEN", 0, "Magenta-Green", ""},
 		{USER_ANAGLYPH_TYPE_YELLOW_BLUE, "YELLOW_BLUE", 0, "Yellow-Blue", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
