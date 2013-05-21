@@ -761,6 +761,7 @@ typedef enum eImageDrawMethod {
 	IMAGE_DRAW_METHOD_DRAWPIXELS = 3,
 } eImageDrawMethod;
 
+/* UserDef.stereo_display */
 typedef enum eStereoDisplayMode {
 	USER_STEREO_DISPLAY_NONE        = 0,
 	USER_STEREO_DISPLAY_SIDEBYSIDE  = 1,
@@ -772,6 +773,7 @@ typedef enum eStereoDisplayMode {
 	USER_STEREO_DISPLAY_BLURAY      = 7,
 } eStereoDisplayMode;
 
+/* UserDef.anaglyph_type */
 typedef enum eAnaglyphType {
 	USER_ANAGLYPH_TYPE_RED_CYAN = 0,
 	USER_ANAGLYPH_TYPE_GREEN_MAGENTA = 1,
