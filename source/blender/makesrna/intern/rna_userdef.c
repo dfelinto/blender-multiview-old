@@ -3383,12 +3383,13 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 
 	static EnumPropertyItem stereo_display_items[] = {
 		{USER_STEREO_DISPLAY_NONE, "NONE", 0, "None", ""},
+		{USER_STEREO_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", ""},
+		{USER_STEREO_DISPLAY_BLURAY, "BLURAY", 0, "Bluray", ""},
+		{USER_STEREO_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Epilepsy", ""},
+		{USER_STEREO_DISPLAY_INTERLACE, "INTERLACE", 0, "Interlace", ""},
+		{USER_STEREO_DISPLAY_PAGEFLIP, "PAGEFLIP", 0, "Page Flip", ""},
 		{USER_STEREO_DISPLAY_SIDEBYSIDE, "SIDEBYSIDE", 0, "Side-by-Side", ""},
 		{USER_STEREO_DISPLAY_TOPBOTTOM, "TOPBOTTOM", 0, "Top-Bottom", ""},
-		{USER_STEREO_DISPLAY_PAGEFLIP, "PAGEFLIP", 0, "Page Flip", ""},
-		{USER_STEREO_DISPLAY_BLURAY, "BLURAY", 0, "Bluray", ""},
-		{USER_STEREO_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", ""},
-		{USER_STEREO_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Epilepsy", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
 
@@ -3653,6 +3654,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	/* Stereo - Multiview */
 	/* XXX MV RNA_def_property_update(prop, 0, "rna_userdef_stereo_update");  */
 	prop = RNA_def_property(srna, "stereo_display", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_sdna(prop, NULL, "stereo_display");
 	RNA_def_property_enum_items(prop, stereo_display_items);
 	RNA_def_property_ui_text(prop, "Stereo Display", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);

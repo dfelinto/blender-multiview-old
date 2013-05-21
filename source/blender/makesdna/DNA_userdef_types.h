@@ -768,7 +768,8 @@ typedef enum eStereoDisplayMode {
 	USER_STEREO_DISPLAY_PAGEFLIP    = 3,
 	USER_STEREO_DISPLAY_ANAGLYPH    = 4,
 	USER_STEREO_DISPLAY_EPILEPSY    = 5,
-	USER_STEREO_DISPLAY_BLURAY      = 6,
+	USER_STEREO_DISPLAY_INTERLACE   = 6,
+	USER_STEREO_DISPLAY_BLURAY      = 7,
 } eStereoDisplayMode;
 
 typedef enum eAnaglyphType {
