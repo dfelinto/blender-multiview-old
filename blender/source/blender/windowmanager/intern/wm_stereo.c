@@ -156,13 +156,13 @@ static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 		bit = view + 1;
 		switch(U.anaglyph_type) {
 			case USER_ANAGLYPH_TYPE_RED_CYAN:
-				glColorMask(2&bit, 1&bit, 1&bit, FALSE);
+				glColorMask(1&bit, 2&bit, 2&bit, FALSE);
 				break;
 			case USER_ANAGLYPH_TYPE_GREEN_MAGENTA:
-				glColorMask(1&bit, 2&bit, 1&bit, FALSE);
+				glColorMask(2&bit, 1&bit, 2&bit, FALSE);
 				break;
 			case USER_ANAGLYPH_TYPE_YELLOW_BLUE:
-				glColorMask(2&bit, 2&bit, 1&bit, FALSE);
+				glColorMask(1&bit, 1&bit, 2&bit, FALSE);
 				break;
 		}
 
