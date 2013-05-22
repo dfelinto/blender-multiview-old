@@ -3656,7 +3656,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	RNA_def_property_enum_sdna(prop, NULL, "stereo_display");
 	RNA_def_property_enum_items(prop, stereo_display_items);
 	RNA_def_property_ui_text(prop, "Stereo Display", "");
-	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
 
 	prop = RNA_def_property(srna, "anaglyph_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, anaglyph_type_items);

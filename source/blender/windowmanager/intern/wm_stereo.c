@@ -84,14 +84,16 @@ static void wm_method_draw_stereo_pageflip(wmWindow *win)
 	wmDrawTriple *triple;
 
 	for (view=0; view < 2; view ++) {
-		if (view == 0)
+		if (view == STEREO_LEFT_ID) {
 			triple = win->drawdata;
-		else
+			glDrawBuffer(GL_BACK_LEFT);
+		}
+		else {
 			triple = win->drawdatastereo;
+			glDrawBuffer(GL_BACK_RIGHT);
+		}
 
-		glDrawBuffer(view ==0 ? GL_BACK_LEFT : GL_BACK_RIGHT);
 		wm_triple_draw_textures(win, triple, 1.0);
-
 	}
 }
 
@@ -126,7 +128,7 @@ static void wm_method_draw_stereo_interlace(wmWindow *win)
 	}
 
 	for (view=0; view < 2; view ++) {
-		if (view == 0)
+		if (view == STEREO_LEFT_ID)
 			triple = win->drawdata;
 		else
 			triple = win->drawdatastereo;
@@ -146,7 +148,7 @@ static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 	wmDrawTriple *triple;
 
 	for (view=0; view < 2; view ++) {
-		if (view == 0) {
+		if (view == STEREO_LEFT_ID) {
 			triple = win->drawdata;
 			glColorMask(TRUE, FALSE, FALSE, FALSE);
 		}
@@ -171,7 +173,7 @@ static void wm_method_draw_stereo_sidebyside(wmWindow *win)
 	int soffx;
 
 	for (view=0; view < 2; view ++) {
-		if (view == 0) {
+		if (view == STEREO_LEFT_ID) {
 			triple = win->drawdata;
 			soffx = 0;
 		}
@@ -236,7 +238,7 @@ static void wm_method_draw_stereo_topbottom(wmWindow *win)
 	int soffy;
 
 	for (view=0; view < 2; view ++) {
-		if (view == 0) {
+		if (view == STEREO_LEFT_ID) {
 			triple = win->drawdata;
 			soffy = 0;
 		}
