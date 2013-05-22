@@ -144,17 +144,26 @@ static void wm_method_draw_stereo_interlace(wmWindow *win)
 
 static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 {
-	int view = 0;
+	int view, bit;
 	wmDrawTriple *triple;
 
-	for (view=0; view < 2; view ++) {
-		if (view == STEREO_LEFT_ID) {
+	for (view = 0; view < 2; view++) {
+		if (view == STEREO_LEFT_ID)
 			triple = win->drawdata;
-			glColorMask(TRUE, FALSE, FALSE, FALSE);
-		}
-		else {
+		else
 			triple = win->drawdatastereo;
-			glColorMask(FALSE, TRUE, TRUE, FALSE);
+
+		bit = view + 1;
+		switch(U.anaglyph_type) {
+			case USER_ANAGLYPH_TYPE_RED_CYAN:
+				glColorMask(2&bit, 1&bit, 1&bit, FALSE);
+				break;
+			case USER_ANAGLYPH_TYPE_GREEN_MAGENTA:
+				glColorMask(1&bit, 2&bit, 1&bit, FALSE);
+				break;
+			case USER_ANAGLYPH_TYPE_YELLOW_BLUE:
+				glColorMask(2&bit, 2&bit, 1&bit, FALSE);
+				break;
 		}
 
 		wm_triple_draw_textures(win, triple, 1.0);
