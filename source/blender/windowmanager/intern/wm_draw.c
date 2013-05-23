@@ -177,6 +177,7 @@ static void wm_method_draw_full(bContext *C, wmWindow *win)
 	}
 
 	ED_screen_draw(win);
+	win->screen->do_draw = FALSE;
 
 	/* draw overlapping regions */
 	for (ar = screen->regionbase.first; ar; ar = ar->next) {
@@ -313,6 +314,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 	/* after area regions so we can do area 'overlay' drawing */
 	if (screen->do_draw) {
 		ED_screen_draw(win);
+		win->screen->do_draw = FALSE;
 
 		if (exchange)
 			screen->swap = WIN_FRONT_OK;
@@ -320,6 +322,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 	else if (exchange) {
 		if (screen->swap == WIN_FRONT_OK) {
 			ED_screen_draw(win);
+			win->screen->do_draw = FALSE;
 			screen->swap = WIN_BOTH_OK;
 		}
 		else if (screen->swap == WIN_BACK_OK)
@@ -672,6 +675,7 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 
 	/* after area regions so we can do area 'overlay' drawing */
 	ED_screen_draw(win);
+	win->screen->do_draw = FALSE;
 
 	/* draw floating regions (menus) */
 	for (ar = screen->regionbase.first; ar; ar = ar->next) {
@@ -822,6 +826,8 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 
 	/* after area regions so we can do area 'overlay' drawing */
 	ED_screen_draw(win);
+	if (sview == STEREO_RIGHT_ID)
+		win->screen->do_draw = FALSE;
 
 	/* draw floating regions (menus) */
 	for (ar = screen->regionbase.first; ar; ar = ar->next) {
