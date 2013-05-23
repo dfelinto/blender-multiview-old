@@ -1059,8 +1059,6 @@ void ED_screen_draw(wmWindow *win)
 		
 		glDisable(GL_BLEND);
 	}
-	
-	win->screen->do_draw = FALSE;
 }
 
 /* helper call for below, dpi changes headers */
