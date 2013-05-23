@@ -766,6 +766,14 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 				if (ar->overlap == FALSE) {
 					CTX_wm_region_set(C, ar);
 					ED_region_do_draw(C, ar);
+					/**
+					 XXX Strange bug, if I uncomment this code
+					 the menus draw an alpha shadow multiple times. (dfelinto)
+					 */
+
+					//if (sview == STEREO_RIGHT_ID)
+					//	ar->do_draw = FALSE;
+
 					CTX_wm_region_set(C, NULL);
 					copytex = TRUE;
 				}
@@ -814,6 +822,8 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 			if (ar->swinid && ar->overlap) {
 				CTX_wm_region_set(C, ar);
 				ED_region_do_draw(C, ar);
+				if (sview == STEREO_RIGHT_ID)
+					ar->do_draw = FALSE;
 				CTX_wm_region_set(C, NULL);
 
 				wm_draw_region_blend(win, ar, triple);
@@ -834,6 +844,8 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 		if (ar->swinid) {
 			CTX_wm_menu_set(C, ar);
 			ED_region_do_draw(C, ar);
+			if (sview == STEREO_RIGHT_ID)
+				ar->do_draw = FALSE;
 			CTX_wm_menu_set(C, NULL);
 			/* when a menu is being drawn, don't do the paint cursors */
 			paintcursor = FALSE;
