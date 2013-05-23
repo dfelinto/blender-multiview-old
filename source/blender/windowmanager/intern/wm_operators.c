@@ -4007,6 +4007,28 @@ static void operatortype_ghash_free_cb(wmOperatorType *ot)
 }
 
 /* ******************************************************* */
+static int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
+{
+	wmWindow *win = CTX_wm_window(C);
+	win->flag ^= WM_STEREO;
+
+	if ((win->flag & WM_STEREO) && U.stereo_display == USER_STEREO_DISPLAY_NONE)
+		BKE_reportf(op->reports, RPT_WARNING, "No 3-D display mode set in User Preferences");
+
+	WM_event_add_notifier(C, NC_WINDOW, NULL);
+	return OPERATOR_FINISHED;
+}
+
+static void WM_OT_stereo_toggle(wmOperatorType *ot)
+{
+	ot->name = "Toggle 3-D Stereo";
+	ot->idname = "WM_OT_stereo_toggle";
+	ot->description = "Toggle 3-D stereo support for current window";
+
+	ot->exec = wm_stereo_toggle_exec;
+}
+
+/* ******************************************************* */
 /* called on initialize WM_exit() */
 void wm_operatortype_free(void)
 {
@@ -4043,6 +4065,7 @@ void wm_operatortype_init(void)
 	WM_operatortype_append(WM_OT_call_menu);
 	WM_operatortype_append(WM_OT_radial_control);
 	WM_operatortype_append(WM_OT_ndof_sensitivity_change);
+	WM_operatortype_append(WM_OT_stereo_toggle);
 #if defined(WIN32)
 	WM_operatortype_append(WM_OT_console_toggle);
 #endif
@@ -4336,6 +4359,8 @@ void wm_window_keymap(wmKeyConfig *keyconf)
 	kmi = WM_keymap_add_item(keymap, "WM_OT_ndof_sensitivity_change", NDOF_BUTTON_MINUS, KM_PRESS, KM_SHIFT, 0);
 	RNA_boolean_set(kmi->ptr, "decrease", TRUE);
 	RNA_boolean_set(kmi->ptr, "fast", TRUE);
+
+	WM_keymap_add_item(keymap, "WM_OT_stereo_toggle", DKEY, KM_PRESS, 0, 0);
 
 	gesture_circle_modal_keymap(keyconf);
 	gesture_border_modal_keymap(keyconf);

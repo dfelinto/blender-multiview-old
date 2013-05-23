@@ -2204,7 +2204,10 @@ static void SCREEN_OT_screen_full_area(wmOperatorType *ot)
 	
 }
 
-/* special fullscreen mode for stereo-enabled editors (Image Editor for now, but viewport and sequencer later) */
+/* special fullscreen mode. Initially intended for stereo-enabled editors
+   but useful for other editors as well */
+/* XXX no shortcut available for this
+   XXX we need a shortcut to toggle HEADER visiblity as well */
 static int screen_clean_full_area_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	bScreen *screen = CTX_wm_screen(C);
@@ -2219,14 +2222,7 @@ static int screen_clean_full_area_exec(bContext *C, wmOperator *UNUSED(op))
 	/* go fullscreen */
 	if (sa == NULL) {
 		sa = CTX_wm_area(C);
-#if TRUE
-		if (sa == NULL || (sa->spacetype != SPACE_IMAGE))
-#else
-		if (sa == NULL || ELEM3(sa->spacetype,
-								SPACE_IMAGE,
-								SPACE_VIEW3D,
-								SPACE_SEQ) == FALSE)
-#endif
+		if (sa == NULL)
 			return OPERATOR_CANCELLED;
 	}
 
@@ -3932,8 +3928,6 @@ void ED_keymap_screen(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "SCREEN_OT_screen_full_area", SPACEKEY, KM_PRESS, KM_SHIFT, 0);
 	WM_keymap_add_item(keymap, "SCREEN_OT_screenshot", F3KEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "SCREEN_OT_screencast", F3KEY, KM_PRESS, KM_ALT, 0);
-
-	WM_keymap_add_item(keymap, "SCREEN_OT_clean_full_area", DKEY, KM_PRESS, 0, 0);
 
 	/* tests */
 	WM_keymap_add_item(keymap, "SCREEN_OT_region_quadview", QKEY, KM_PRESS, KM_CTRL | KM_ALT, 0);
