@@ -180,7 +180,7 @@ typedef struct wmWindow {
 	short lastcursor;	/* previous cursor when setting modal one */
 	short modalcursor;	/* the current modal cursor */
 	short addmousemove;	/* internal: tag this for extra mousemove event, makes cursors/buttons active on UI switching */
-	short pad2;
+	short flag;
 
 	struct wmEvent *eventstate;	/* storage for event system */
 	
@@ -251,6 +251,9 @@ typedef struct wmKeyMapDiffItem {
 	wmKeyMapItem *remove_item;
 	wmKeyMapItem *add_item;
 } wmKeyMapDiffItem;
+
+/* wmWindow.flag */
+#define WM_STEREO			1
 
 /* wmKeyMapItem.flag */
 #define KMI_INACTIVE		1
