@@ -9454,8 +9454,10 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		Scene *scene;
 		if (!DNA_struct_elem_find(fd->filesdna, "RenderData", "ListBase", "views")) {
 			for (scene = main->scene.first; scene; scene = scene->id.next) {
-				BKE_scene_add_render_view(scene, "center");
+				BKE_scene_add_render_view(scene, STEREO_LEFT_NAME);
 				((SceneRenderView *)scene->r.views.first)->viewflag |= SCE_VIEW_DISABLE;
+				BKE_scene_add_render_view(scene, STEREO_RIGHT_NAME);
+				((SceneRenderView *)scene->r.views.last)->viewflag |= SCE_VIEW_DISABLE;
 			}
 		}
 	}

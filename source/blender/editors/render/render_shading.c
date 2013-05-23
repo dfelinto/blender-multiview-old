@@ -586,6 +586,14 @@ void SCENE_OT_render_layer_remove(wmOperatorType *ot)
 
 /********************** render view operators *********************/
 
+static int render_view_remove_poll(bContext *C)
+{
+	Scene *scene = CTX_data_scene(C);
+
+	/* don't allow user to remove "left" and "right" views */
+	return scene->r.actview > 1;
+}
+
 static int render_view_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene = CTX_data_scene(C);
@@ -634,6 +642,7 @@ void SCENE_OT_render_view_remove(wmOperatorType *ot)
 
 	/* api callbacks */
 	ot->exec = render_view_remove_exec;
+	ot->poll = render_view_remove_poll;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
