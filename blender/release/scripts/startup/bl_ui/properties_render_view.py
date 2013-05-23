@@ -65,8 +65,10 @@ class RENDERVIEW_PT_views(RenderViewButtonsPanel, Panel):
 
         row = layout.row()
         rv = rd.views.active
-        if rv:
+        if rv and rv.name not in ('left', 'right'):
             row.prop(rv, "name")
+        else:
+            row.label()
         row.prop(rd, "use_single_view", text="", icon_only=True)
 
 
