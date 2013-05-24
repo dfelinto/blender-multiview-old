@@ -22,7 +22,6 @@ Current status:
 
 The rules for testing are:
 * Build without Blenderplayer
-* Composite with Output node (and file format as exr multilayer)
 * (for saving) EXR MultiLayer (multipart working)
 
 How to save the render file?:
@@ -30,12 +29,10 @@ How to save the render file?:
 Set output type to exr multilayer, and render from command line, or save from the Image Editor (F3).
 The Multi part check box is optional and should affect whether the output is multipart (2.0) or multiview (1.7.1). Both support stereo.
 * For Composite:
-Set output file to exr multilayer, and add a FileOutput Node.
+Set output file to exr multilayer.
 
 Known bugs:
-* When saving a composed image (from the Image Editor) it's saving only the RenderResult, not the composed.
-* When rendering only one view, the 'view' name shouldn't be saved in EXR file (it's probably fixed now, I'll investigate later
-* ~~We have an empty Layer when opening EXR MultiPart files~~
+* (see the issues in the github tracker)
 * Missing listeners - not everything is updating when they should if you change things after rendering
 
 Compositor elements not yet tackled:
@@ -50,20 +47,6 @@ Compositor elements not yet tackled:
 
 What do I plan to work next?
 --------------------------------------
-The backend coding is very tiring and frustated some times.
-I'm considering to leave the Viewer Node issue aside and do more front-end/fun work.
-
-**Stereoscopy Display**:
-I want to allow the blender interface to draw in stereo. My initial idea is to add an option in the User Preferences to enable "Stereoscopy Display".
-On every UI draw loop Blender can check for all the current editors to see if there is any viewport/sequencer/image editor that requires stereo.
-
-If it does, we draw the interface twice. We need a global "actview".
-That means that even if your user preferences are set to Stereo3D Blender will only draw the interface twice if really needed.
-
-The options will be:
-* *Mode*: side-by-side, top-bottom, anaglyph, page-flip
-* *View Map*: auto, custom [left/right scene names]
-
 
 **Viewport Support**:
 We need a per viewport enable/disable option.
@@ -84,6 +67,8 @@ I didn't drop this idea, but there will be changes.
 We will have a new stereo camera with all the nice properties (editable in 3D!).
 Then you just assign this camera twice to two views in the Render View panel. The view panel can see the special camera and
 give a menu where you can set left or right.
+
+OR we will have addons for that ;)
 
 
 Current issues
@@ -111,7 +96,7 @@ Roadmap
  3. ~~Write multiview exr~~
  4. ~~Render in multiview~~
  5. Compo in multiview
- 6. See multiview in UV/image editor as stereo
+ 6. ~~See multiview in UV/image editor as stereo~~
  7. Viewport preview
  8. Sequencer
  9. ?
