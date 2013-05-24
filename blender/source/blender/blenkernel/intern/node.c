@@ -3204,8 +3204,11 @@ void node_type_size_preset(struct bNodeType *ntype, eNodeSizePreset size)
 		case NODE_SIZE_SMALL:
 			node_type_size(ntype, 100, 80, 320);
 			break;
+		case NODE_SIZE_MIDDLE:
+			node_type_size(ntype, 150, 120, 320);
+			break;
 		case NODE_SIZE_LARGE:
-			node_type_size(ntype, 140, 120, 500);
+			node_type_size(ntype, 240, 140, 320);
 			break;
 	}
 }
@@ -3394,6 +3397,7 @@ static void registerShaderNodes(void)
 	register_node_type_sh_brightcontrast();
 	register_node_type_sh_value();
 	register_node_type_sh_rgb();
+	register_node_type_sh_wireframe();
 	register_node_type_sh_mix_rgb();
 	register_node_type_sh_valtorgb();
 	register_node_type_sh_rgbtobw();
@@ -3431,6 +3435,7 @@ static void registerShaderNodes(void)
 	register_node_type_sh_bsdf_translucent();
 	register_node_type_sh_bsdf_transparent();
 	register_node_type_sh_bsdf_velvet();
+	register_node_type_sh_bsdf_toon();
 	register_node_type_sh_emission();
 	register_node_type_sh_holdout();
 	//register_node_type_sh_volume_transparent();

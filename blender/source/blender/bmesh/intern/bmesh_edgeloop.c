@@ -448,12 +448,29 @@ void BM_mesh_edgeloops_calc_order(BMesh *UNUSED(bm), ListBase *eloops, const boo
 /* -------------------------------------------------------------------- */
 /* BM_edgeloop_*** functions */
 
+/* return new edgeloops */
 BMEdgeLoopStore *BM_edgeloop_copy(BMEdgeLoopStore *el_store)
 {
 	BMEdgeLoopStore *el_store_copy = MEM_mallocN(sizeof(*el_store), __func__);
 	*el_store_copy = *el_store;
 	BLI_duplicatelist(&el_store_copy->verts, &el_store->verts);
 	return el_store_copy;
+}
+
+BMEdgeLoopStore *BM_edgeloop_from_verts(BMVert **v_arr, const int v_arr_tot, bool is_closed)
+{
+	BMEdgeLoopStore *el_store = MEM_callocN(sizeof(*el_store), __func__);
+	int i;
+	for (i = 0; i < v_arr_tot; i++) {
+		LinkData *node = MEM_callocN(sizeof(*node), __func__);
+		node->data = v_arr[i];
+		BLI_addtail(&el_store->verts, node);
+	}
+	el_store->len = v_arr_tot;
+	if (is_closed) {
+		el_store->flag |= BM_EDGELOOP_IS_CLOSED;
+	}
+	return el_store;
 }
 
 void BM_edgeloop_free(BMEdgeLoopStore *el_store)
@@ -487,8 +504,27 @@ const float *BM_edgeloop_center_get(struct BMEdgeLoopStore *el_store)
 	return el_store->co;
 }
 
-
+#define NODE_AS_V(n)  ((BMVert *)((LinkData *)n)->data)
 #define NODE_AS_CO(n) ((BMVert *)((LinkData *)n)->data)->co
+
+/**
+ * edges are assined to one vert -> the next.
+ */
+void BM_edgeloop_edges_get(struct BMEdgeLoopStore *el_store, BMEdge **e_arr)
+{
+	LinkData *node;
+	int i = 0;
+	for (node = el_store->verts.first; node && node->next; node = node->next) {
+		e_arr[i++] = BM_edge_exists(NODE_AS_V(node), NODE_AS_V(node->next));
+		BLI_assert(e_arr[i - 1] != NULL);
+	}
+
+	if (el_store->flag & BM_EDGELOOP_IS_CLOSED) {
+		e_arr[i] = BM_edge_exists(NODE_AS_V(el_store->verts.first), NODE_AS_V(el_store->verts.last));
+		BLI_assert(e_arr[i] != NULL);
+	}
+	BLI_assert(el_store->len == i + 1);
+}
 
 void BM_edgeloop_calc_center(BMesh *UNUSED(bm), BMEdgeLoopStore *el_store)
 {

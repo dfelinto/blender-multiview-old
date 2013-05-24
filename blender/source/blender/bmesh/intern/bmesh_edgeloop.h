@@ -46,12 +46,15 @@ void                BM_mesh_edgeloops_calc_order(BMesh *UNUSED(bm), ListBase *el
 
 /* single edgeloop */
 struct BMEdgeLoopStore *BM_edgeloop_copy(struct BMEdgeLoopStore *el_store);
+struct BMEdgeLoopStore *BM_edgeloop_from_verts(BMVert **v_arr, const int v_arr_tot, bool is_closed);
+
 void                BM_edgeloop_free(struct BMEdgeLoopStore *el_store);
 bool                BM_edgeloop_is_closed(struct BMEdgeLoopStore *el_store);
 int                 BM_edgeloop_length_get(struct BMEdgeLoopStore *el_store);
 struct ListBase    *BM_edgeloop_verts_get(struct BMEdgeLoopStore *el_store);
 const float        *BM_edgeloop_normal_get(struct BMEdgeLoopStore *el_store);
 const float        *BM_edgeloop_center_get(struct BMEdgeLoopStore *el_store);
+void                BM_edgeloop_edges_get(struct BMEdgeLoopStore *el_store, BMEdge **e_arr);
 void                BM_edgeloop_calc_center(BMesh *bm, struct BMEdgeLoopStore *el_store);
 void                BM_edgeloop_calc_normal(BMesh *bm, struct BMEdgeLoopStore *el_store);
 void                BM_edgeloop_flip(BMesh *bm, struct BMEdgeLoopStore *el_store);
@@ -59,7 +62,11 @@ void                BM_edgeloop_expand(BMesh *bm, struct BMEdgeLoopStore *el_sto
 
 bool                BM_edgeloop_overlap_check(struct BMEdgeLoopStore *el_store_a, struct BMEdgeLoopStore *el_store_b);
 
-#define BM_EDGELOOP_NEXT(el_store, elink) \
+#define BM_EDGELINK_NEXT(el_store, elink) \
 	(elink)->next ? elink->next : (BM_edgeloop_is_closed(el_store) ? BM_edgeloop_verts_get(el_store)->first : NULL)
+
+#define BM_EDGELOOP_NEXT(el_store) \
+	(CHECK_TYPE_INLINE(el_store, struct BMEdgeLoopStore), \
+	 (struct BMEdgeLoopStore *)((LinkData *)el_store)->next)
 
 #endif  /* __BMESH_EDGELOOP_H__ */

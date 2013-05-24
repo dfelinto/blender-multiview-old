@@ -58,6 +58,7 @@ set(SRC_OSL
 	node_subsurface_scattering.osl
 	node_tangent.osl
 	node_texture_coordinate.osl
+	node_toon_bsdf.osl
 	node_translucent_bsdf.osl
 	node_transparent_bsdf.osl
 	node_value.osl
@@ -67,6 +68,7 @@ set(SRC_OSL
 	node_voronoi_texture.osl
 	node_ward_bsdf.osl
 	node_wave_texture.osl
+	node_wireframe.osl
 )
 
 set(SRC_OSL_HEADERS
