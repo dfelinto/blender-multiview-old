@@ -2745,6 +2745,12 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 		*lock_r = re;
 	}
 
+	if (U.stereo_display != USER_STEREO_DISPLAY_NONE) {
+		/* view == 0 shows stereo */
+		if (actview-- == 0)
+			actview = iuser->eye;
+	}
+
 	/* this gives active layer, composite or sequence result */
 	rect = (unsigned int *)rres.rect32;
 	rectf = RE_RenderViewGetRectf(&rres, actview);
