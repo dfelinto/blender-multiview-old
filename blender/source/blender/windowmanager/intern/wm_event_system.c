@@ -247,6 +247,8 @@ void wm_event_do_notifiers(bContext *C)
 			if (note->window == win) {
 				if (note->category == NC_SCREEN) {
 					if (note->data == ND_SCREENBROWSE) {
+						/* do not free handlers here! [#35434] */
+
 						ED_screen_set(C, note->reference);  // XXX hrms, think this over!
 						if (G.debug & G_DEBUG_EVENTS)
 							printf("%s: screen set %p\n", __func__, note->reference);

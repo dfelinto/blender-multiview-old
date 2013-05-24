@@ -1640,6 +1640,15 @@ static void add_freestyle(Render *re)
 
 	actsrl = BLI_findlink(&re->r.layers, re->r.actlay);
 
+	/* We use the same window manager for freestyle bmain as
+	 * real bmain uses. This is needed because freestyle's
+	 * bmain could be used to tag scenes for update, which
+	 * implies call of ED_render_scene_update in some cases
+	 * and that function requires proper windoew manager
+	 * to present (sergey)
+	 */
+	re->freestyle_bmain.wm = re->main->wm;
+
 	FRS_init_stroke_rendering(re);
 
 	for (srl= (SceneRenderLayer *)re->r.layers.first; srl; srl= srl->next) {
@@ -2259,6 +2268,15 @@ int RE_is_rendering_allowed(Scene *scene, Object *camera_override, ReportList *r
 			BKE_report(reports, RPT_ERROR, "No ortho render possible for panorama");
 			return 0;
 		}
+
+#ifdef WITH_FREESTYLE
+		for (srl = scene->r.layers.first; srl; srl = srl->next) {
+			if (FRS_is_freestyle_enabled(srl)) {
+				BKE_report(reports, RPT_ERROR, "Panoramic camera not supported in Freestyle");
+				return 0;
+			}
+		}
+#endif
 	}
 
 	/* layer flag tests */
