@@ -3387,7 +3387,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 		{USER_STEREO_DISPLAY_BLURAY, "BLURAY", 0, "Bluray", ""},
 		{USER_STEREO_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Epilepsy", ""},
 		{USER_STEREO_DISPLAY_INTERLACE, "INTERLACE", 0, "Interlace", ""},
-		{USER_STEREO_DISPLAY_PAGEFLIP, "PAGEFLIP", 0, "Page Flip", ""},
+		{USER_STEREO_DISPLAY_PAGEFLIP, "TIMESEQUENTIAL", 0, "Time Sequential", "Renders alternate eyes (also known as pageflip). It requires Quadbuffer support in the graphic card"},
 		{USER_STEREO_DISPLAY_SIDEBYSIDE, "SIDEBYSIDE", 0, "Side-by-Side", ""},
 		{USER_STEREO_DISPLAY_TOPBOTTOM, "TOPBOTTOM", 0, "Top-Bottom", ""},
 		{0, NULL, 0, NULL, NULL}

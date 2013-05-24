@@ -107,6 +107,7 @@
 #include "wm_files.h"
 #include "wm_subwindow.h"
 #include "wm_window.h"
+#include "wm_stereo.h"
 
 static GHash *global_ops_hash = NULL;
 
@@ -4007,18 +4008,7 @@ static void operatortype_ghash_free_cb(wmOperatorType *ot)
 }
 
 /* ******************************************************* */
-static int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
-{
-	wmWindow *win = CTX_wm_window(C);
-	win->flag ^= WM_STEREO;
-
-	if ((win->flag & WM_STEREO) && U.stereo_display == USER_STEREO_DISPLAY_NONE)
-		BKE_reportf(op->reports, RPT_WARNING, "No 3-D display mode set in User Preferences");
-
-	WM_event_add_notifier(C, NC_WINDOW, NULL);
-	return OPERATOR_FINISHED;
-}
-
+/* toggle 3-D for current window, turning it fullscreen if needed */
 static void WM_OT_stereo_toggle(wmOperatorType *ot)
 {
 	ot->name = "Toggle 3-D Stereo";
@@ -4026,6 +4016,7 @@ static void WM_OT_stereo_toggle(wmOperatorType *ot)
 	ot->description = "Toggle 3-D stereo support for current window";
 
 	ot->exec = wm_stereo_toggle_exec;
+	ot->poll = WM_operator_winactive;
 }
 
 /* ******************************************************* */

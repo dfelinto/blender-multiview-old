@@ -35,7 +35,8 @@ struct wmWindow;
 struct ReportList;
 
 /* wm_stereo.c */
-void wm_method_draw_stereo(bContext *C, wmWindow *win);
+void	wm_method_draw_stereo(bContext *C, wmWindow *win);
+int		wm_stereo_toggle_exec(bContext *C, struct wmOperator *op);
 
 
 #endif /* __WM_STEREO_H__ */

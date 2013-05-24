@@ -253,6 +253,7 @@ wmWindow *wm_window_copy(bContext *C, wmWindow *winorig)
 	win->posy = winorig->posy;
 	win->sizex = winorig->sizex;
 	win->sizey = winorig->sizey;
+	win->flag = winorig->flag;
 	
 	/* duplicate assigns to window */
 	win->screen = ED_screen_duplicate(win, winorig->screen);
@@ -357,12 +358,16 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 	GHOST_WindowHandle ghostwin;
 	static int multisamples = -1;
 	int scr_w, scr_h, posy;
+	int stereo;
 	
 	/* force setting multisamples only once, it requires restart - and you cannot 
 	 * mix it, either all windows have it, or none (tested in OSX opengl) */
 	if (multisamples == -1)
 		multisamples = U.ogl_multisamples;
 	
+	/* a new window is created when pageflip mode is required for a window */
+	stereo = (win->flag & WM_STEREO) && U.stereo_display == USER_STEREO_DISPLAY_PAGEFLIP;
+
 	wm_get_screensize(&scr_w, &scr_h);
 	posy = (scr_h - win->posy - win->sizey);
 	
@@ -370,7 +375,7 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 	                              win->posx, posy, win->sizex, win->sizey,
 	                              (GHOST_TWindowState)win->windowstate,
 	                              GHOST_kDrawingContextTypeOpenGL,
-	                              0 /* no stereo */,
+	                              stereo,
 	                              multisamples /* AA */);
 	
 	if (ghostwin) {

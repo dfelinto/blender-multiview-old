@@ -50,6 +50,7 @@
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_screen.h"
+#include "BKE_report.h"
 
 #include "GHOST_C-api.h"
 
@@ -328,3 +329,60 @@ void wm_method_draw_stereo(bContext *UNUSED(C), wmWindow *win)
 			break;
 	}
 }
+
+int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
+{
+	wmWindowManager *wm = CTX_wm_manager(C);
+	wmWindow *win = CTX_wm_window(C);
+	GHOST_TWindowState state;
+	int need_fullscreen = ELEM4(U.stereo_display,
+								   USER_STEREO_DISPLAY_INTERLACE,
+								   USER_STEREO_DISPLAY_SIDEBYSIDE,
+								   USER_STEREO_DISPLAY_TOPBOTTOM,
+								   USER_STEREO_DISPLAY_PAGEFLIP);
+
+	if (G.background)
+		return OPERATOR_CANCELLED;
+
+	/* FullScreen or Normal */
+	state = GHOST_GetWindowState(win->ghostwin);
+
+	/* toggle per window stereo setting */
+	win->flag ^= WM_STEREO;
+
+	if ((win->flag & WM_STEREO) && U.stereo_display == USER_STEREO_DISPLAY_NONE)
+		BKE_reportf(op->reports, RPT_WARNING, "No 3-D display mode set in User Preferences");
+
+	/* pagelfip requires a new window to be created with the proper OS flags */
+	else if (U.stereo_display == USER_STEREO_DISPLAY_PAGEFLIP) {
+		if (wm_window_duplicate_exec(C, op) == OPERATOR_FINISHED) {
+			wm_window_close(C, wm, win);
+			win = (wmWindow *)wm->windows.last;
+		}
+		else {
+			BKE_reportf(op->reports, RPT_ERROR, "Fail to create a window compatible with time sequential (page-flip) display method");
+			return OPERATOR_CANCELLED;
+		}
+	}
+
+	/* some modes only make sense in fullscreen, try to restore previous
+	   fullscreen/windowed state after disabling stereo */
+	if (need_fullscreen) {
+		if ((win->flag & WM_STEREO)) {
+			if (state == GHOST_kWindowStateFullScreen)
+				win->flag |= WM_WASFULLSCREEN;
+			else {
+				win->flag &= ~WM_WASFULLSCREEN;
+				GHOST_SetWindowState(win->ghostwin, GHOST_kWindowStateFullScreen);
+			}
+		}
+		else {
+			if (state == GHOST_kWindowStateFullScreen && ((win->flag & WM_WASFULLSCREEN)==0))
+				GHOST_SetWindowState(win->ghostwin, GHOST_kWindowStateNormal);
+		}
+	}
+
+	WM_event_add_notifier(C, NC_WINDOW, NULL);
+	return OPERATOR_FINISHED;
+}
+
