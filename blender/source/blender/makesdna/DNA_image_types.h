@@ -71,6 +71,7 @@ typedef struct ImageUser {
 #define IMA_ANIM_REFRESHED	2
 /* #define IMA_DO_PREMUL	4 */
 #define IMA_NEED_FRAME_RECALC	8
+#define IMA_STEREO3D		16
 
 typedef struct Image {
 	ID id;

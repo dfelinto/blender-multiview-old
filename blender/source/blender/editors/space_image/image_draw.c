@@ -824,8 +824,8 @@ void draw_image_main(const bContext *C, ARegion *ar)
 	}
 
 	/* view == 0 shows stereo */
-	if (U.stereo_display != USER_STEREO_DISPLAY_NONE &&
-		sima->iuser.view == 0) {
+	if ((sima->iuser.flag & IMA_STEREO3D) &&
+		 sima->iuser.view == 0) {
 		if (sima->iuser.eye == STEREO_LEFT_ID) {
 			sima->iuser.pass = sima->iuser.pass_left;
 			sima->iuser.multi_index = sima->iuser.multi_index_left;

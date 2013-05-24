@@ -216,6 +216,7 @@ void RE_RenderViewSetRectf(RenderResult *res, int view_id, float *rect);
 void RE_RenderViewSetRectz(RenderResult *res, int view_id, float *rect);
 int RE_GetActiveViewId(struct Render *re);
 int RE_HasFakeLayer(RenderResult *res);
+int RE_HasStereo3D(RenderResult *res);
 
 /* obligatory initialize call, disprect is optional */
 void RE_InitState(struct Render *re, struct Render *source, struct RenderData *rd, struct SceneRenderLayer *srl, int winx, int winy, rcti *disprect);

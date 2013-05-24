@@ -370,7 +370,7 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 	return str;
 }
 
-static char *view_menu(RenderResult *rr, short *curpass)
+static char *view_menu(RenderResult *rr, ImageUser *iuser)
 {
 	RenderView *rv;
 	int len = 64 + 32 * (rr ? BLI_countlist(&rr->views) : 1);
@@ -380,18 +380,21 @@ static char *view_menu(RenderResult *rr, short *curpass)
 	strcpy(str, IFACE_("View %t"));
 	a = strlen(str);
 
-	if (U.stereo_display != USER_STEREO_DISPLAY_NONE) {
+	if (RE_HasStereo3D(rr)) {
 		/* option to show all views at once (3d) */
 		a += sprintf(str + a, "|%s %%x0", IFACE_("3-D"));
 		nr = 1;
+		iuser->flag |= IMA_STEREO3D;
 	}
+	else
+		iuser->flag &= ~IMA_STEREO3D;
 
 	if (rr)
 		for (rv = rr->views.first; rv; rv = rv->next, nr++)
 			a += sprintf(str + a, "|%s %%x%d", IFACE_(rv->name), nr);
 
-	if (*curpass >= nr)
-		*curpass = 0;
+	if (iuser->view >= nr)
+		iuser->view = 0;
 
 	return str;
 }
@@ -421,7 +424,7 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 	int view_id = iuser->view;
 
 	int view_left, view_right;
-	int is_stereo = FALSE;
+	int show_stereo3d = FALSE;
 
 	if (rr == NULL || iuser == NULL)
 		return 0;
@@ -430,11 +433,12 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 		return iuser->pass_tmp;
 
 	/* view == 0 shows stereo */
-	if (U.stereo_display != USER_STEREO_DISPLAY_NONE)
+	if ((iuser->flag & IMA_STEREO3D)) {
 		if(view_id-- == 0)
-			is_stereo = TRUE;
+			show_stereo3d = TRUE;
+	}
 
-	if (is_stereo) {
+	if (show_stereo3d) {
 		view_right = get_view_from_renderesult(rr, STEREO_RIGHT_NAME);
 		view_left = get_view_from_renderesult(rr, STEREO_LEFT_NAME);
 	}
@@ -453,7 +457,7 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 				passtype = rpass->passtype;
 
 			if (rpass->passtype == passtype) {
-				if (is_stereo == FALSE) {
+				if (show_stereo3d == FALSE) {
 					if (rpass->view_id == view_id)
 						return rp_index;
 				}
@@ -467,7 +471,7 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 		}
 	}
 
-	if (is_stereo == TRUE) {
+	if (show_stereo3d == TRUE) {
 		iuser->pass = iuser->pass_right;
 		BKE_image_multilayer_index(rr, iuser);
 		iuser->multi_index_right = iuser->multi_index;
@@ -605,11 +609,13 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 		MEM_freeN(strp);
 
 		if (BLI_countlist(&rr->views) > 1) {
-			strp = view_menu(rr, &iuser->view);
+			strp = view_menu(rr, iuser);
 			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu4, UI_UNIT_Y, &iuser->view, 0, 0, 0, 0, TIP_("Select View"));
 			uiButSetFunc(but, image_multi_cb, rr, iuser);
 			MEM_freeN(strp);
 		}
+		else
+			iuser->flag &= ~IMA_STEREO3D;
 	}
 }
 
