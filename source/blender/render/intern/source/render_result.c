@@ -917,18 +917,27 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 	void *exrhandle = IMB_exr_get_handle();
 	int success = 0;
 	const char *view = NULL;
+	int a, nr;
+	float *rect;
 
 	BLI_make_existing_file(filename);
 	
-	for (rview = (RenderView *)rr->views.first; rview; rview=rview->next)
+	for (nr=0, rview = (RenderView *)rr->views.first; rview; rview=rview->next, nr++) {
 		IMB_exr_add_view(exrhandle, rview->name);
+
+		rect = RE_RenderViewGetRectf(rr, nr);
+		if (rect) {
+			for (a=0; a < 4; a++)
+				IMB_exr_add_channel(exrhandle, "Composite", get_pass_name(SCE_PASS_COMBINED, a, ""), rview->name, 4, 4 * rr->rectx, rect + a);
+		}
+	}
 
 	/* add layers/passes and assign channels */
 	for (rl = rr->layers.first; rl; rl = rl->next) {
 
 		/* passes are allocated in sync */
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
-			int a, xstride = rpass->channels;
+			int xstride = rpass->channels;
 			for (a = 0; a < xstride; a++) {
 				view = get_view_name(&rr->views, rpass->view_id);
 
