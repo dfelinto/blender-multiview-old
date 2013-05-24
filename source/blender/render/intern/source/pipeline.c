@@ -197,9 +197,23 @@ int RE_GetActiveViewId(Render *re)
 int RE_HasFakeLayer(RenderResult *res)
 {
 	if (res == NULL)
-		return 0;
+		return FALSE;
 
 	return (res->rectf || res->rect32 || RE_RenderViewGetRectf(res, 0));
+}
+
+int RE_HasStereo3D(RenderResult *res)
+{
+	if (U.stereo_display == USER_STEREO_DISPLAY_NONE)
+		return FALSE;
+
+	if (! BLI_findstring(&res->views, STEREO_LEFT_NAME, offsetof(RenderView, name)))
+		return FALSE;
+
+	if (! BLI_findstring(&res->views, STEREO_RIGHT_NAME, offsetof(RenderView, name)))
+		return FALSE;
+
+	return TRUE;
 }
 
 void RE_RenderViewSetRectf(RenderResult *res, int view_id, float *rect)
