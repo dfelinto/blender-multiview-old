@@ -1750,7 +1750,7 @@ struct ImBuf *imb_load_openexr(unsigned char *mem, size_t size, int flags, char 
 			ibuf->ftype = OPENEXR;
 
 			if (!(flags & IB_test)) {
-				if (is_multilayer || is_multipart) { /* only enters with IB_multilayer flag set */
+				if ((!(flags & IB_thumbnail)) && (is_multilayer || is_multipart)) { /* only enters with IB_multilayer flag set */
 					/* constructs channels for reading, allocates memory in channels */
 					ExrHandle *handle = imb_exr_begin_read_mem(file, width, height);
 					if (handle) {
