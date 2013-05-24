@@ -939,14 +939,14 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			int xstride = rpass->channels;
 			for (a = 0; a < xstride; a++) {
-				view = get_view_name(&rr->views, rpass->view_id);
+				view = (nr > 2 ? get_view_name(&rr->views, rpass->view_id):"");
 
 				if (rpass->passtype) {
-					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, ""), rpass->view,
+					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, ""), view,
 					                    xstride, xstride * rr->rectx, rpass->rect + a);
 				}
 				else {
-					IMB_exr_add_channel(exrhandle, rl->name, make_pass_name(rpass, a), rpass->view,
+					IMB_exr_add_channel(exrhandle, rl->name, make_pass_name(rpass, a), view,
 					                    xstride, xstride * rr->rectx, rpass->rect + a);
 				}
 			}
