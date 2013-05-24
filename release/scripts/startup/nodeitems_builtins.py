@@ -117,8 +117,6 @@ shader_node_categories = [
         NodeItem("ShaderNodeSeparateRGB"),
         NodeItem("ShaderNodeCombineRGB"),
         ]),
-    ShaderOldNodeCategory("SH_SCRIPT", "Script", items=[
-        ]),
     ShaderOldNodeCategory("SH_GROUP", "Group", items=node_group_items),
     ShaderOldNodeCategory("SH_LAYOUT", "Layout", items=[
         NodeItem("NodeFrame"),
@@ -136,6 +134,7 @@ shader_node_categories = [
         NodeItem("ShaderNodeValue"),
         NodeItem("ShaderNodeTangent"),
         NodeItem("ShaderNodeNewGeometry"),
+        NodeItem("ShaderNodeWireframe"),
         NodeItem("ShaderNodeObjectInfo"),
         NodeItem("ShaderNodeHairInfo"),
         NodeItem("ShaderNodeParticleInfo"),
@@ -157,6 +156,7 @@ shader_node_categories = [
         NodeItem("ShaderNodeBsdfTranslucent"),
         NodeItem("ShaderNodeBsdfAnisotropic"),
         NodeItem("ShaderNodeBsdfVelvet"),
+        NodeItem("ShaderNodeBsdfToon"),
         NodeItem("ShaderNodeSubsurfaceScattering"),
         NodeItem("ShaderNodeEmission"),
         NodeItem("ShaderNodeBackground"),

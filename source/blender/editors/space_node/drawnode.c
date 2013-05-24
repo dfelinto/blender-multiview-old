@@ -760,6 +760,11 @@ static void node_shader_buts_attribute(uiLayout *layout, bContext *UNUSED(C), Po
 	uiItemR(layout, ptr, "attribute_name", 0, IFACE_("Name"), ICON_NONE);
 }
 
+static void node_shader_buts_wireframe(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "use_pixel_size", 0, NULL, 0);
+}
+
 static void node_shader_buts_tex_image(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
 	PointerRNA imaptr = RNA_pointer_get(ptr, "image");
@@ -890,6 +895,11 @@ static void node_shader_buts_glossy(uiLayout *layout, bContext *UNUSED(C), Point
 	uiItemR(layout, ptr, "distribution", 0, "", ICON_NONE);
 }
 
+static void node_shader_buts_toon(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "component", 0, "", ICON_NONE);
+}
+
 static void node_shader_buts_script(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
 	uiLayout *row;
@@ -966,6 +976,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 		case SH_NODE_ATTRIBUTE:
 			ntype->uifunc = node_shader_buts_attribute;
 			break;
+		case SH_NODE_WIREFRAME:
+			ntype->uifunc = node_shader_buts_wireframe;
+			break;
 		case SH_NODE_TEX_SKY:
 			ntype->uifunc = node_shader_buts_tex_sky;
 			break;
@@ -1009,6 +1022,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 		case SH_NODE_BSDF_GLASS:
 		case SH_NODE_BSDF_REFRACTION:
 			ntype->uifunc = node_shader_buts_glossy;
+			break;
+		case SH_NODE_BSDF_TOON:
+			ntype->uifunc = node_shader_buts_toon;
 			break;
 		case SH_NODE_SCRIPT:
 			ntype->uifunc = node_shader_buts_script;

@@ -154,7 +154,7 @@ struct SmokeModifierData;
 #else /* WITH_SMOKE */
 
 /* Stubs to use when smoke is disabled */
-struct WTURBULENCE *smoke_turbulence_init(int *UNUSED(res), int UNUSED(amplify), int UNUSED(noisetype), int UNUSED(use_fire), int UNUSED(use_colors)) { return NULL; }
+struct WTURBULENCE *smoke_turbulence_init(int *UNUSED(res), int UNUSED(amplify), int UNUSED(noisetype), const char *UNUSED(noisefile_path), int UNUSED(use_fire), int UNUSED(use_colors)) { return NULL; }
 //struct FLUID_3D *smoke_init(int *UNUSED(res), float *UNUSED(dx), float *UNUSED(dtdef), int UNUSED(use_heat), int UNUSED(use_fire), int UNUSED(use_colors)) { return NULL; }
 void smoke_free(struct FLUID_3D *UNUSED(fluid)) {}
 float *smoke_get_density(struct FLUID_3D *UNUSED(fluid)) { return NULL; }
@@ -204,7 +204,7 @@ void smoke_reallocate_highres_fluid(SmokeDomainSettings *sds, float dx, int res[
 		sds->wt = NULL;
 		return;
 	}
-	sds->wt = smoke_turbulence_init(res, sds->amplify + 1, sds->noise, use_fire, use_colors);
+	sds->wt = smoke_turbulence_init(res, sds->amplify + 1, sds->noise, BLI_temporary_dir(), use_fire, use_colors);
 	sds->res_wt[0] = res[0] * (sds->amplify + 1);
 	sds->res_wt[1] = res[1] * (sds->amplify + 1);
 	sds->res_wt[2] = res[2] * (sds->amplify + 1);
@@ -1789,19 +1789,12 @@ static void adjustDomainResolution(SmokeDomainSettings *sds, int new_shift[3], E
 						if (max[1] < y) max[1] = y;
 						if (max[2] < z) max[2] = z;
 					}
-					/* velocity bounds */
-					if (em->velocity) {
-						if (min_vel[0] > em->velocity[index * 3]) min_vel[0] = em->velocity[index * 3];
-						if (min_vel[1] > em->velocity[index * 3 + 1]) min_vel[1] = em->velocity[index * 3 + 1];
-						if (min_vel[2] > em->velocity[index * 3 + 2]) min_vel[2] = em->velocity[index * 3 + 2];
-						if (max_vel[0] < em->velocity[index * 3]) max_vel[0] = em->velocity[index * 3];
-						if (max_vel[1] < em->velocity[index * 3 + 1]) max_vel[1] = em->velocity[index * 3 + 1];
-						if (max_vel[2] < em->velocity[index * 3 + 2]) max_vel[2] = em->velocity[index * 3 + 2];
-					}
 				}
 	}
 
 	/* calculate new bounds based on these values */
+	mul_v3_fl(min_vel, 1.0f / sds->dx);
+	mul_v3_fl(max_vel, 1.0f / sds->dx);
 	clampBoundsInDomain(sds, min, max, min_vel, max_vel, sds->adapt_margin + 1, dt);
 
 	for (i = 0; i < 3; i++) {

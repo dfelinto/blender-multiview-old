@@ -365,6 +365,7 @@ void FLUID_3D::step(float dt, float gravity[3])
 	int zEnd=_zRes;
 #endif
 
+	wipeBoundariesSL(0, _zRes);
 
 #if PARALLEL==1
 	#pragma omp parallel
@@ -376,7 +377,6 @@ void FLUID_3D::step(float dt, float gravity[3])
 		int zEnd = (int)((float)(i+1)*partSize + 0.5f);
 #endif
 
-		wipeBoundariesSL(zBegin, zEnd);
 		addVorticity(zBegin, zEnd);
 		addBuoyancy(_heat, _density, gravity, zBegin, zEnd);
 		addForce(zBegin, zEnd);
@@ -879,7 +879,7 @@ void FLUID_3D::wipeBoundariesSL(int zBegin, int zEnd)
 	if (zEnd == _zRes)
 	{
 		index=0;
-		int indexx=0;
+		int index_top=0;
 		const int cellsslab = totalCells - slabSize;
 
 		for (y = 0; y < _yRes; y++)
@@ -887,19 +887,19 @@ void FLUID_3D::wipeBoundariesSL(int zBegin, int zEnd)
 			{
 
 				// back slab
-				indexx = index + cellsslab;
-				_xVelocity[indexx] = 0.0f;
-				_yVelocity[indexx] = 0.0f;
-				_zVelocity[indexx] = 0.0f;
-				_density[indexx] = 0.0f;
+				index_top = index + cellsslab;
+				_xVelocity[index_top] = 0.0f;
+				_yVelocity[index_top] = 0.0f;
+				_zVelocity[index_top] = 0.0f;
+				_density[index_top] = 0.0f;
 				if (_fuel) {
-					_fuel[index] = 0.0f;
-					_react[index] = 0.0f;
+					_fuel[index_top] = 0.0f;
+					_react[index_top] = 0.0f;
 				}
 				if (_color_r) {
-					_color_r[index] = 0.0f;
-					_color_g[index] = 0.0f;
-					_color_b[index] = 0.0f;
+					_color_r[index_top] = 0.0f;
+					_color_g[index_top] = 0.0f;
+					_color_b[index_top] = 0.0f;
 				}
 			}
 	}
@@ -991,58 +991,10 @@ void FLUID_3D::project()
 				_pressure[index] = 0.0f;
 			}
 
-
-	/*
-	{
-		float maxvalue = 0;
-		for(unsigned int i = 0; i < _xRes * _yRes * _zRes; i++)
-		{
-			if(_divergence[i] > maxvalue)
-				maxvalue = _divergence[i];
-
-		}
-		printf("Max divergence: %f\n", maxvalue);
-	}
-	*/
-
 	copyBorderAll(_pressure, 0, _zRes);
-
-	/*
-	{
-		float maxvalue = 0;
-		for(unsigned int i = 0; i < _xRes * _yRes * _zRes; i++)
-		{
-			if(_pressure[i] > maxvalue)
-				maxvalue = _pressure[i];
-		}
-		printf("Max pressure BEFORE: %f\n", maxvalue);
-	}
-	*/
 
 	// solve Poisson equation
 	solvePressurePre(_pressure, _divergence, _obstacles);
-
-	{
-		float maxvalue = 0;
-		for(unsigned int i = 0; i < _xRes * _yRes * _zRes; i++)
-		{
-			if(_pressure[i] > maxvalue)
-				maxvalue = _pressure[i];
-
-			/* HACK: Animated collision object sometimes result in a non converging solvePressurePre() */ 
-			if(_pressure[i] > _dx * _dt)
-				_pressure[i] = _dx * _dt;
-			else if(_pressure[i] < -_dx * _dt)
-				_pressure[i] = -_dx * _dt;
-
-			// if(_obstacle[i] && _pressure[i] != 0.0)
-			// 	printf("BAD PRESSURE i\n");
-
-			// if(_pressure[i]>1)
-			// 	printf("index: %d\n", i);
-		}
-		// printf("Max pressure: %f, dx: %f\n", maxvalue, _dx);
-	}
 
 	setObstaclePressure(_pressure, 0, _zRes);
 
