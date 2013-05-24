@@ -939,6 +939,8 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			int xstride = rpass->channels;
 			for (a = 0; a < xstride; a++) {
+
+				/* if rendered only one view, we treat as a a non-view render */
 				view = (nr > 2 ? get_view_name(&rr->views, rpass->view_id):"");
 
 				if (rpass->passtype) {
