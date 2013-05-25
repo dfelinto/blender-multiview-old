@@ -213,7 +213,9 @@ typedef struct View3D {
 	
 	/* drawflags, denoting state */
 	char zbuf, transp, xray;
-	char pad3[5];
+
+	char eye;				/* multiview current eye - for internal use */
+	char pad3[4];
 
 	void *properties_storage;		/* Nkey panel stores stuff here (runtime only!) */
 	struct Material *defmaterial;	/* used by matcap now */

@@ -754,10 +754,19 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 	for (sa = screen->areabase.first; sa; sa = sa->next) {
 		CTX_wm_area_set(C, sa);
 
-		if (sa->spacetype == SPACE_IMAGE)
-		{
-			SpaceImage *sima = sa->spacedata.first;
-			sima->iuser.eye = sview;
+		switch (sa->spacetype) {
+			case SPACE_IMAGE:
+			{
+				SpaceImage *sima = sa->spacedata.first;
+				sima->iuser.eye = sview;
+				break;
+			}
+			case SPACE_VIEW3D:
+			{
+				View3D *v3d = sa->spacedata.first;
+				v3d->eye = sview;
+				break;
+			}
 		}
 
 		for (ar = sa->regionbase.first; ar; ar = ar->next) {
