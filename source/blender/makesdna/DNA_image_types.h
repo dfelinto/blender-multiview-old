@@ -54,7 +54,7 @@ typedef struct ImageUser {
 	char fie_ima, cycl;		/* fields/image in movie, cyclic flag */
 	char ok;
 
-	char eye;				/* multiview current eye - for UI */
+	char eye;				/* multiview current eye - for internal use */
 
 	short multi_index, view, layer, pass;	 /* listbase indices, for menu browsing or retrieve buffer */
 
