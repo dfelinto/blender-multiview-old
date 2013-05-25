@@ -335,11 +335,10 @@ int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
 	wmWindowManager *wm = CTX_wm_manager(C);
 	wmWindow *win = CTX_wm_window(C);
 	GHOST_TWindowState state;
-	int need_fullscreen = ELEM4(U.stereo_display,
-								   USER_STEREO_DISPLAY_INTERLACE,
-								   USER_STEREO_DISPLAY_SIDEBYSIDE,
-								   USER_STEREO_DISPLAY_TOPBOTTOM,
-								   USER_STEREO_DISPLAY_PAGEFLIP);
+	int need_fullscreen = ELEM3(U.stereo_display,
+	                            USER_STEREO_DISPLAY_INTERLACE,
+	                            USER_STEREO_DISPLAY_SIDEBYSIDE,
+	                            USER_STEREO_DISPLAY_TOPBOTTOM);
 
 	if (G.background)
 		return OPERATOR_CANCELLED;
