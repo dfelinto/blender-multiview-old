@@ -391,6 +391,8 @@ int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
 		}
 	}
 
+	/* at least for testing this is really annoying, disabling for now. It could be a user preference option (force fullscreen) */
+#if 0
 	/* some modes only make sense in fullscreen, try to restore previous
 	   fullscreen/windowed state after disabling stereo */
 	if (need_fullscreen) {
@@ -407,6 +409,7 @@ int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
 				GHOST_SetWindowState(win->ghostwin, GHOST_kWindowStateNormal);
 		}
 	}
+#endif
 
 	WM_event_add_notifier(C, NC_WINDOW, NULL);
 	return OPERATOR_FINISHED;
