@@ -111,21 +111,42 @@ static void wm_method_draw_stereo_epilepsy(wmWindow *win)
 	wm_triple_draw_textures(win, triple, 1.0);
 }
 
-static GLuint hinterlace_mask[33];
-static int hinterlace_started = FALSE;
+static GLuint left_interlace_mask[32];
+static GLuint right_interlace_mask[32];
+static int interlace_prev_type = -1;
 
 static void wm_method_draw_stereo_interlace(wmWindow *win)
 {
 	int view = 0;
 	wmDrawTriple *triple;
 
-	if (hinterlace_started == FALSE)
-	{
+	if(interlace_prev_type != U.interlace_type) {
 		int i;
-		for (i = 0; i < 32; i++)
-			hinterlace_mask[i] = (i&1)*0xFFFFFFFF;
-		hinterlace_mask[32] = 0;
-		hinterlace_started = TRUE;
+		switch(U.interlace_type) {
+			case USER_INTERLACE_TYPE_ROW_INTERLEAVED:
+				for(i = 0; i < 32; i++) {
+					left_interlace_mask[i] = (i&1)*0xFFFFFFFF;
+					right_interlace_mask[i] = (i&0)*0xFFFFFFFF;
+				}
+				break;
+			case USER_INTERLACE_TYPE_COLUMN_INTERLEAVED:
+				for(i = 0; i < 32; i++) {
+					left_interlace_mask[i] = 0x55555555;
+					right_interlace_mask[i] = 0xAAAAAAAA;
+				}
+				break;
+			case USER_INTERLACE_TYPE_CHECKERBOARD_INTERLEAVED:
+				for(i = 0; i < 32; i += 2) {
+					left_interlace_mask[i] = 0x55555555;
+					right_interlace_mask[i] = 0xAAAAAAAA;
+				}
+				for(i = 1; i < 32; i += 2) {
+					left_interlace_mask[i] = 0xAAAAAAAA;
+					right_interlace_mask[i] = 0x55555555;
+				}
+				break;
+		}
+		interlace_prev_type = U.interlace_type;
 	}
 
 	for (view=0; view < 2; view ++) {
@@ -135,7 +156,7 @@ static void wm_method_draw_stereo_interlace(wmWindow *win)
 			triple = win->drawdatastereo;
 
 		glEnable(GL_POLYGON_STIPPLE);
-		glPolygonStipple((const GLubyte*) &hinterlace_mask[view]);
+		glPolygonStipple(view? right_interlace_mask : left_interlace_mask);
 
 		wm_triple_draw_textures(win, triple, 1.0);
 		glDisable(GL_POLYGON_STIPPLE);

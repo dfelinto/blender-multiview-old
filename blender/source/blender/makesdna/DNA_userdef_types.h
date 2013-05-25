@@ -468,6 +468,8 @@ typedef struct UserDef {
 	short tweak_threshold;
 	char stereo_display; /* stereo method for the user display */
 	char anaglyph_type; /* anaglyph scheme for the user display */
+	char interlace_type;  /* interlace type for the user display */
+	char pad3[3];
 
 	char author[80];	/* author name for file formats supporting it */
 
@@ -779,6 +781,13 @@ typedef enum eAnaglyphType {
 	USER_ANAGLYPH_TYPE_GREEN_MAGENTA = 1,
 	USER_ANAGLYPH_TYPE_YELLOW_BLUE = 2,
 } eAnaglyphType;
+
+/* UserDef.interlace_type */
+typedef enum eInterlaceType {
+	USER_INTERLACE_TYPE_ROW_INTERLEAVED = 0,
+	USER_INTERLACE_TYPE_COLUMN_INTERLEAVED = 1,
+	USER_INTERLACE_TYPE_CHECKERBOARD_INTERLEAVED = 2,
+} eInterlaceType;
 
 #ifdef __cplusplus
 }
