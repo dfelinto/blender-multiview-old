@@ -115,13 +115,11 @@ static GLuint left_interlace_mask[32];
 static GLuint right_interlace_mask[32];
 static int interlace_prev_type = -1;
 
-static void wm_method_draw_stereo_interlace(wmWindow *win)
+static void wm_interlace_create_masks(void)
 {
-	int view = 0;
-	wmDrawTriple *triple;
+	int i;
 
 	if(interlace_prev_type != U.interlace_type) {
-		int i;
 		switch(U.interlace_type) {
 			case USER_INTERLACE_TYPE_ROW_INTERLEAVED:
 				for(i = 0; i < 32; i++) {
@@ -136,6 +134,7 @@ static void wm_method_draw_stereo_interlace(wmWindow *win)
 				}
 				break;
 			case USER_INTERLACE_TYPE_CHECKERBOARD_INTERLEAVED:
+			default:
 				for(i = 0; i < 32; i += 2) {
 					left_interlace_mask[i] = 0x55555555;
 					right_interlace_mask[i] = 0xAAAAAAAA;
@@ -148,6 +147,14 @@ static void wm_method_draw_stereo_interlace(wmWindow *win)
 		}
 		interlace_prev_type = U.interlace_type;
 	}
+}
+
+static void wm_method_draw_stereo_interlace(wmWindow *win)
+{
+	int view = 0;
+	wmDrawTriple *triple;
+
+	wm_interlace_create_masks();
 
 	for (view=0; view < 2; view ++) {
 		if (view == STEREO_LEFT_ID)
@@ -161,7 +168,6 @@ static void wm_method_draw_stereo_interlace(wmWindow *win)
 		wm_triple_draw_textures(win, triple, 1.0);
 		glDisable(GL_POLYGON_STIPPLE);
 	}
-
 }
 
 static void wm_method_draw_stereo_anaglyph(wmWindow *win)
