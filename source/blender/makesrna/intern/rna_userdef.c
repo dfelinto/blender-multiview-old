@@ -3400,6 +3400,13 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}
 	};
 
+	static EnumPropertyItem interlace_type_items[] = {
+		{USER_INTERLACE_TYPE_ROW_INTERLEAVED, "ROW_INTERLEAVED", 0, "Row Interleaved", ""},
+		{USER_INTERLACE_TYPE_COLUMN_INTERLEAVED, "COLUMN_INTERLEAVED", 0, "Column Interleaved", ""},
+		{USER_INTERLACE_TYPE_CHECKERBOARD_INTERLEAVED, "CHECKERBOARD_INTERLEAVED", 0, "Checkerboard Interleaved", ""},
+		{0, NULL, 0, NULL, NULL}
+	};
+
 	srna = RNA_def_struct(brna, "UserPreferencesSystem", NULL);
 	RNA_def_struct_sdna(srna, "UserDef");
 	RNA_def_struct_nested(brna, srna, "UserPreferences");
@@ -3661,6 +3668,11 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "anaglyph_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, anaglyph_type_items);
 	RNA_def_property_ui_text(prop, "Anaglyph Type", "");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
+
+	prop = RNA_def_property(srna, "interlace_type", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_items(prop, interlace_type_items);
+	RNA_def_property_ui_text(prop, "Interlace Type", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
 
 #ifdef WITH_CYCLES
