@@ -469,7 +469,7 @@ typedef struct UserDef {
 	char stereo_display; /* stereo method for the user display */
 	char anaglyph_type; /* anaglyph scheme for the user display */
 	char interlace_type;  /* interlace type for the user display */
-	char pad3[3];
+	char pad3[7];
 
 	char author[80];	/* author name for file formats supporting it */
 
