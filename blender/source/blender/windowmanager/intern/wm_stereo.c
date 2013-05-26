@@ -86,11 +86,11 @@ static void wm_method_draw_stereo_pageflip(wmWindow *win)
 
 	for (view=0; view < 2; view ++) {
 		if (view == STEREO_LEFT_ID) {
-			triple = win->drawdata;
+			triple = win->drawdataall;
 			glDrawBuffer(GL_BACK_LEFT);
 		}
 		else {
-			triple = win->drawdatastereo;
+			triple = win->drawdatastereoall;
 			glDrawBuffer(GL_BACK_RIGHT);
 		}
 
@@ -104,9 +104,9 @@ static void wm_method_draw_stereo_epilepsy(wmWindow *win)
 	static int view = 0;
 
 	if (view++ %2)
-		triple = win->drawdata;
+		triple = win->drawdataall;
 	else
-		triple = win->drawdatastereo;
+		triple = win->drawdatastereoall;
 
 	wm_triple_draw_textures(win, triple, 1.0);
 }
@@ -158,9 +158,9 @@ static void wm_method_draw_stereo_interlace(wmWindow *win)
 
 	for (view=0; view < 2; view ++) {
 		if (view == STEREO_LEFT_ID)
-			triple = win->drawdata;
+			triple = win->drawdataall;
 		else
-			triple = win->drawdatastereo;
+			triple = win->drawdatastereoall;
 
 		glEnable(GL_POLYGON_STIPPLE);
 		glPolygonStipple(view? right_interlace_mask : left_interlace_mask);
@@ -177,9 +177,9 @@ static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 
 	for (view = 0; view < 2; view++) {
 		if (view == STEREO_LEFT_ID)
-			triple = win->drawdata;
+			triple = win->drawdataall;
 		else
-			triple = win->drawdatastereo;
+			triple = win->drawdatastereoall;
 
 		bit = view + 1;
 		switch(U.anaglyph_type) {
@@ -211,11 +211,11 @@ static void wm_method_draw_stereo_sidebyside(wmWindow *win)
 
 	for (view=0; view < 2; view ++) {
 		if (view == STEREO_LEFT_ID) {
-			triple = win->drawdata;
+			triple = win->drawdataall;
 			soffx = 0;
 		}
 		else {
-			triple = win->drawdatastereo;
+			triple = win->drawdatastereoall;
 			soffx = WM_window_pixels_x(win) * 0.5;
 		}
 
@@ -276,11 +276,11 @@ static void wm_method_draw_stereo_topbottom(wmWindow *win)
 
 	for (view=0; view < 2; view ++) {
 		if (view == STEREO_LEFT_ID) {
-			triple = win->drawdata;
+			triple = win->drawdataall;
 			soffy = 0;
 		}
 		else {
-			triple = win->drawdatastereo;
+			triple = win->drawdatastereoall;
 			soffy = WM_window_pixels_y(win) * 0.5;
 		}
 
