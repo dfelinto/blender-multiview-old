@@ -601,9 +601,17 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 	}
 
 	/* it means stereo was just turned off */
+	if (win->drawdataall) {
+		wm_draw_triple_free(win->drawdataall);
+		win->drawdataall = NULL;
+	}
 	if (win->drawdatastereo) {
 		wm_draw_triple_free(win->drawdatastereo);
 		win->drawdatastereo = NULL;
+	}
+	if (win->drawdatastereoall) {
+		wm_draw_triple_free(win->drawdatastereoall);
+		win->drawdatastereoall = NULL;
 	}
 
 	triple = win->drawdata;
@@ -703,6 +711,7 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	wmDrawTriple *triple;
+	wmDrawTriple *tripleall;
 	bScreen *screen = win->screen;
 	ScrArea *sa;
 	ARegion *ar;
@@ -726,7 +735,18 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 			}
 		}
 
+		if (!win->drawdataall) {
+			/* we run it when we start OR when we turn  on */
+			win->drawdataall = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+
+			if (!wm_triple_gen_textures(win, win->drawdataall)) {
+				wm_draw_triple_fail(C, win);
+				return;
+			}
+		}
+
 		triple = win->drawdata;
+		tripleall = win->drawdataall;
 	}
 	else { //STEREO_RIGHT_ID
 		if (win->drawdatastereo) {
@@ -746,7 +766,19 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 				return;
 			}
 		}
+
+		if (!win->drawdatastereoall) {
+			/* we run it when we start OR when we turn stereo on */
+			win->drawdatastereoall = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+
+			if (!wm_triple_gen_textures(win, win->drawdatastereoall)) {
+				wm_draw_triple_fail(C, win);
+				return;
+			}
+		}
+
 		triple = win->drawdatastereo;
+		tripleall = win->drawdatastereoall;
 	}
 
 
@@ -775,13 +807,9 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 				if (ar->overlap == FALSE) {
 					CTX_wm_region_set(C, ar);
 					ED_region_do_draw(C, ar);
-					/**
-					 XXX Strange bug, if I uncomment this code
-					 the menus draw an alpha shadow multiple times. (dfelinto)
-					 */
 
-					//if (sview == STEREO_RIGHT_ID)
-					//	ar->do_draw = FALSE;
+					if (sview == STEREO_RIGHT_ID)
+						ar->do_draw = FALSE;
 
 					CTX_wm_region_set(C, NULL);
 					copytex = TRUE;
@@ -797,8 +825,6 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 		wmSubWindowSet(win, screen->mainwin);
 
 		wm_triple_copy_textures(win, triple);
-
-		copytex = FALSE;
 	}
 
 	if (paintcursor && wm->paintcursors.first) {
@@ -814,8 +840,6 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 
 					CTX_wm_region_set(C, NULL);
 					CTX_wm_area_set(C, NULL);
-
-					copytex = TRUE;
 				}
 			}
 		}
@@ -836,7 +860,6 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 				CTX_wm_region_set(C, NULL);
 
 				wm_draw_region_blend(win, ar, triple);
-				copytex = TRUE;
 			}
 		}
 
@@ -858,27 +881,21 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 			CTX_wm_menu_set(C, NULL);
 			/* when a menu is being drawn, don't do the paint cursors */
 			paintcursor = FALSE;
-			copytex = TRUE;
 		}
 	}
 
 	/* always draw, not only when screen tagged */
-	if (win->gesture.first) {
+	if (win->gesture.first)
 		wm_gesture_draw(win);
-		copytex = TRUE;
-	}
 
 	/* needs pixel coords in screen */
 	if (wm->drags.first) {
 		wm_drags_draw(C, win, NULL);
-		copytex = TRUE;
 	}
 
-	if (copytex) {
-		wmSubWindowSet(win, screen->mainwin);
-
-		wm_triple_copy_textures(win, triple);
-	}
+	/* copy the ui + overlays */
+	wmSubWindowSet(win, screen->mainwin);
+	wm_triple_copy_textures(win, tripleall);
 }
 
 /****************** main update call **********************/
@@ -1064,8 +1081,14 @@ void wm_draw_window_clear(wmWindow *win)
 		wm_draw_triple_free(win->drawdata);
 		win->drawdata = NULL;
 
+		wm_draw_triple_free(win->drawdataall);
+		win->drawdataall = NULL;
+
 		wm_draw_triple_free(win->drawdatastereo);
 		win->drawdatastereo = NULL;
+
+		wm_draw_triple_free(win->drawdatastereoall);
+		win->drawdatastereoall = NULL;
 	}
 
 	/* clear screen swap flags */
