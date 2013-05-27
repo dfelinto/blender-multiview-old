@@ -9452,17 +9452,6 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				scene->nodetree->active_viewer_key = active_viewer_key;
 		}
 	}
-	{
-		Scene *scene;
-		if (!DNA_struct_elem_find(fd->filesdna, "RenderData", "ListBase", "views")) {
-			for (scene = main->scene.first; scene; scene = scene->id.next) {
-				BKE_scene_add_render_view(scene, STEREO_LEFT_NAME);
-				((SceneRenderView *)scene->r.views.first)->viewflag |= SCE_VIEW_DISABLE;
-				BKE_scene_add_render_view(scene, STEREO_RIGHT_NAME);
-				((SceneRenderView *)scene->r.views.last)->viewflag |= SCE_VIEW_DISABLE;
-			}
-		}
-	}
 
 	if (MAIN_VERSION_OLDER(main, 267, 1))
 	{
@@ -9505,6 +9494,23 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		}
 	}
 
+	{
+		Scene *scene;
+		SceneRenderView *srv;
+		if (!DNA_struct_elem_find(fd->filesdna, "RenderData", "ListBase", "views")) {
+			for (scene = main->scene.first; scene; scene = scene->id.next) {
+				BKE_scene_add_render_view(scene, STEREO_LEFT_NAME);
+				srv = (SceneRenderView *)scene->r.views.first;
+				srv->viewflag |= SCE_VIEW_DISABLE | SCE_VIEW_NAMEASLABEL;
+				BLI_strncpy(srv->label, "_L", sizeof(srv->label));
+
+				BKE_scene_add_render_view(scene, STEREO_RIGHT_NAME);
+				srv = (SceneRenderView *)scene->r.views.last;
+				srv->viewflag |= SCE_VIEW_DISABLE | SCE_VIEW_NAMEASLABEL;
+				BLI_strncpy(srv->label, "_R", sizeof(srv->label));
+			}
+		}
+	}
 	/* WATCH IT!!!: pointers from libdata have not been converted yet here! */
 	/* WATCH IT 2!: Userdef struct init see do_versions_userdef() above! */
 

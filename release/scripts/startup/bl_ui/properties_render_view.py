@@ -88,6 +88,13 @@ class RENDERVIEW_PT_view_options(RenderViewButtonsPanel, Panel):
         col = split.column()
         col.prop(rv, "camera")
 
+        col.separator()
+        col.prop(rv, "use_name_as_label")
+
+        sub = col.column()
+        sub.active = not rv.use_name_as_label
+        sub.prop(rv, "label")
+
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

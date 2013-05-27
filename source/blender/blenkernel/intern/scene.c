@@ -414,6 +414,7 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	ParticleEditSettings *pset;
 	int a;
 	const char *colorspace_name;
+	SceneRenderView *srv;
 
 	sce = BKE_libblock_alloc(&bmain->scene, ID_SCE, name);
 	sce->lay = sce->layact = 1;
@@ -591,10 +592,16 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	/* note; in header_info.c the scene copy happens..., if you add more to renderdata it has to be checked there */
 	BKE_scene_add_render_layer(sce, NULL);
 
+	/* multiview - stereo */
 	BKE_scene_add_render_view(sce, STEREO_LEFT_NAME);
-	((SceneRenderView *)sce->r.views.first)->viewflag |= SCE_VIEW_DISABLE;
+	srv = (SceneRenderView *)sce->r.views.first;
+	srv->viewflag |= SCE_VIEW_DISABLE | SCE_VIEW_NAMEASLABEL;
+	BLI_strncpy(srv->label, "_L", sizeof(srv->label));
+
 	BKE_scene_add_render_view(sce, STEREO_RIGHT_NAME);
-	((SceneRenderView *)sce->r.views.last)->viewflag |= SCE_VIEW_DISABLE;
+	srv = (SceneRenderView *)sce->r.views.last;
+	srv->viewflag |= SCE_VIEW_DISABLE | SCE_VIEW_NAMEASLABEL;
+	BLI_strncpy(srv->label, "_R", sizeof(srv->label));
 
 	/* game data */
 	sce->gm.stereoflag = STEREO_NOSTEREO;

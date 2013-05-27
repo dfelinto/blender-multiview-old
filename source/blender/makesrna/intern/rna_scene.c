@@ -3630,6 +3630,11 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	RNA_def_struct_name_property(srna, prop);
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
+	prop = RNA_def_property(srna, "label", PROP_STRING, PROP_NONE);
+	RNA_def_property_ui_text(prop, "Label", "Text used to save the individual view files.");
+	RNA_def_struct_name_property(srna, prop);
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
 	prop = RNA_def_property(srna, "camera", PROP_POINTER, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Camera_object_poll");
@@ -3640,6 +3645,11 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_negative_sdna(prop, NULL, "viewflag", SCE_VIEW_DISABLE);
 	RNA_def_property_ui_text(prop, "Enabled", "Disable or enable the render view");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	prop = RNA_def_property(srna, "use_name_as_label", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_negative_sdna(prop, NULL, "viewflag", SCE_VIEW_NAMEASLABEL);
+	RNA_def_property_ui_text(prop, "Name as Label", "Use the view name as label when saving individual view files (it replaces the special char % in the file string)");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
 }
