@@ -426,6 +426,8 @@ set(SRC
 	operations/COM_CompositorOperation.cpp
 	operations/COM_OutputFileOperation.h
 	operations/COM_OutputFileOperation.cpp
+	operations/COM_OutputFileMultiViewOperation.h
+	operations/COM_OutputFileMultiViewOperation.cpp
 	operations/COM_ViewerBaseOperation.h
 	operations/COM_ViewerBaseOperation.cpp
 	operations/COM_ViewerOperation.h
