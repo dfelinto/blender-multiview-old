@@ -415,6 +415,7 @@ static int get_view_from_renderesult(RenderResult *rr, const char *viewname)
 }
 
 /* return the real pass id */
+/* similar to get_multiview_pass_id in image_ops.c */
 static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 {
 	RenderLayer *rl;
@@ -446,27 +447,25 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 	if (RE_HasFakeLayer(rr))
 		rl_index ++; /* fake compo/sequencer layer */
 
-	for (rl = rr->layers.first; rl; rl = rl->next, rl_index++) {
-		if (rl_index != iuser->layer)
-			continue;
+	rl = BLI_findlink(&rr->layers, rl_index);
+	if (!rl) return iuser->pass_tmp;
 
-		rp_index = 0;
-		passtype = 0;
-		for (rpass = rl->passes.first; rpass; rpass = rpass->next, rp_index++) {
-			if (iuser->pass_tmp == rp_index)
-				passtype = rpass->passtype;
+	rp_index = 0;
+	passtype = 0;
+	for (rpass = rl->passes.first; rpass; rpass = rpass->next, rp_index++) {
+		if (iuser->pass_tmp == rp_index)
+			passtype = rpass->passtype;
 
-			if (rpass->passtype == passtype) {
-				if (show_stereo3d == FALSE) {
-					if (rpass->view_id == view_id)
-						return rp_index;
-				}
-				else {
-					if (rpass->view_id == view_right)
-						iuser->pass_right = rp_index;
-					else if (rpass->view_id == view_left)
-						iuser->pass_left = rp_index;
-				}
+		if (rpass->passtype == passtype) {
+			if (show_stereo3d == FALSE) {
+				if (rpass->view_id == view_id)
+					return rp_index;
+			}
+			else {
+				if (rpass->view_id == view_right)
+					iuser->pass_right = rp_index;
+				else if (rpass->view_id == view_left)
+					iuser->pass_left = rp_index;
 			}
 		}
 	}
@@ -955,6 +954,7 @@ void uiTemplateImageSettings(uiLayout *layout, PointerRNA *imfptr, int color_man
 	if (ELEM(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
 		row = uiLayoutRow(col, FALSE);
 		uiItemR(row, imfptr, "use_multiview", 0, NULL, ICON_NONE);
+		uiItemR(row, imfptr, "use_multipart", 0, NULL, ICON_NONE);
 	}
 
 

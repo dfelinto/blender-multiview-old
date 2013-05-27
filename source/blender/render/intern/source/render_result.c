@@ -907,22 +907,28 @@ static char *make_pass_name(RenderPass *rpass, int chan)
 	return name;
 }
 
-/* filename already made absolute */
 /* called from within UI, saves both rendered result as a file-read result */
-int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *filename, int compress, int multipart)
+/* if view is not "" saves single view */
+int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *filename, int compress, int multipart, const char *view)
 {
 	RenderLayer *rl;
 	RenderPass *rpass;
 	RenderView *rview;
 	void *exrhandle = IMB_exr_get_handle();
 	int success = 0;
-	const char *view = NULL;
 	int a, nr;
 	float *rect;
+	const char *chan_view = NULL;
 
 	BLI_make_existing_file(filename);
 	
 	for (nr=0, rview = (RenderView *)rr->views.first; rview; rview=rview->next, nr++) {
+
+		if (view[0] != '\0') {
+			if (strcmp (view, rview->name) != 0)
+				continue;
+		}
+
 		IMB_exr_add_view(exrhandle, rview->name);
 
 		rect = RE_RenderViewGetRectf(rr, nr);
@@ -938,17 +944,26 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 		/* passes are allocated in sync */
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			int xstride = rpass->channels;
+
+			if (view[0] != '\0') {
+				if (strcmp (view, rpass->view) != 0)
+					continue;
+				else
+					chan_view = "";
+			}
+			else {
+				/* if rendered only one view, we treat as a a non-view render */
+				chan_view = (nr > 1 ? get_view_name(&rr->views, rpass->view_id):"");
+			}
+
 			for (a = 0; a < xstride; a++) {
 
-				/* if rendered only one view, we treat as a a non-view render */
-				view = (nr > 2 ? get_view_name(&rr->views, rpass->view_id):"");
-
 				if (rpass->passtype) {
-					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, ""), view,
+					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, ""), chan_view,
 					                    xstride, xstride * rr->rectx, rpass->rect + a);
 				}
 				else {
-					IMB_exr_add_channel(exrhandle, rl->name, make_pass_name(rpass, a), view,
+					IMB_exr_add_channel(exrhandle, rl->name, make_pass_name(rpass, a), chan_view,
 					                    xstride, xstride * rr->rectx, rpass->rect + a);
 				}
 			}
