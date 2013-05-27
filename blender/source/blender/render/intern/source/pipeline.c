@@ -131,7 +131,7 @@ Render R;
 
 /* ********* alloc and free ******** */
 
-static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovieHandle *mh, const char *name_override);
+static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovieHandle *mh, const char *name_override, const char *view);
 
 static volatile int g_break = 0;
 static int thread_break(void *UNUSED(arg))
@@ -2542,11 +2542,35 @@ void RE_BlenderFrame(Render *re, Main *bmain, Scene *scene, SceneRenderLayer *sr
 			}
 			else {
 				char name[FILE_MAX];
-				//XXX MV need view
-				BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, "");
+				const int numviews = BLI_countlist(&re->result->views);
 
-				/* reports only used for Movie */
-				do_write_image_or_movie(re, bmain, scene, NULL, name);
+				if (numviews < 2 || (ELEM (scene->r.im_format.imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER) && (scene->r.im_format.flag & R_IMF_FLAG_MULTIVIEW))) {
+
+					BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, "");
+
+					/* reports only used for Movie */
+					do_write_image_or_movie(re, bmain, scene, NULL, name, "");
+
+				} else {
+					/* multiview, saving individual images */
+					SceneRenderView *srv;
+					RenderView *rv;
+					char view[FILE_MAX];
+
+					for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
+						srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
+
+						if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
+							BLI_strncpy(view, srv->name, sizeof(view));
+						else
+							BLI_strncpy(view, srv->label, sizeof(view));
+
+						BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, view);
+
+						/* reports only used for Movie */
+						do_write_image_or_movie(re, bmain, scene, NULL, name, view);
+					}
+				}
 			}
 		}
 
@@ -2570,7 +2594,7 @@ void RE_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene)
 }
 #endif
 
-static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovieHandle *mh, const char *name_override)
+static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovieHandle *mh, const char *name_override, const char *view)
 {
 	char name[FILE_MAX];
 	RenderResult rres;
@@ -2614,13 +2638,11 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 		if (name_override)
 			BLI_strncpy(name, name_override, sizeof(name));
 		else
-			//XXX MV need view
-			//this is the one called from compositor and background render
-			BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, "");
+			BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, view);
 		
 		if (re->r.im_format.imtype == R_IMF_IMTYPE_MULTILAYER) {
 			if (re->result) {
-				RE_WriteRenderResult(re->reports, re->result, name, scene->r.im_format.exr_codec, (scene->r.im_format.flag & R_IMF_FLAG_MULTIPART));
+				RE_WriteRenderResult(re->reports, re->result, name, scene->r.im_format.exr_codec, (scene->r.im_format.flag & R_IMF_FLAG_MULTIPART), view);
 				printf("Saved: %s", name);
 			}
 		}
@@ -2711,7 +2733,7 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 				totrendered++;
 
 				if (re->test_break(re->tbh) == 0) {
-					if (!do_write_image_or_movie(re, bmain, scene, mh, NULL))
+					if (!do_write_image_or_movie(re, bmain, scene, mh, NULL, ""))
 						G.is_break = TRUE;
 				}
 
@@ -2780,7 +2802,7 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 			
 			if (re->test_break(re->tbh) == 0) {
 				if (!G.is_break)
-					if (!do_write_image_or_movie(re, bmain, scene, mh, NULL))
+					if (!do_write_image_or_movie(re, bmain, scene, mh, NULL, ""))
 						G.is_break = TRUE;
 			}
 			else

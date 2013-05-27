@@ -56,7 +56,7 @@ void OutputFileNode::convertToOperations(ExecutionSystem *graph, CompositorConte
 
 		OutputOpenExrMultiLayerOperation *outputOperation;
 
-		if ((storage->format.flag & R_IMF_FLAG_MULTIPART)) {
+		if ((storage->format.flag & R_IMF_FLAG_MULTIVIEW)) {
 			outputOperation =
 			new OutputOpenExrMultiLayerMultiViewOperation(context->getRenderData(), context->getbNodeTree(), storage->base_path, storage->format.exr_codec, context->getViewId());
 		} else {
@@ -97,7 +97,7 @@ void OutputFileNode::convertToOperations(ExecutionSystem *graph, CompositorConte
 				OutputSingleLayerOperation *outputOperation;
 
 				if (storage->format.imtype == R_IMF_IMTYPE_OPENEXR &&
-				    (storage->format.flag & R_IMF_FLAG_MULTIPART)) {
+				    (storage->format.flag & R_IMF_FLAG_MULTIVIEW)) {
 					outputOperation = new OutputSingleLayerMultiViewOperation(
 							context->getRenderData(), context->getbNodeTree(), input->getDataType(), format, path,
 							context->getViewSettings(), context->getDisplaySettings(), context->getViewId());

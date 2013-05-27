@@ -1171,14 +1171,12 @@ void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, i
 	catch (const std::exception &exc) {
 		std::cerr << "OpenEXR-writeTile: ERROR: " << exc.what() << std::endl;
 	}
-	printf("\n");
 }
 
 /* called only when handle has all views */
 void IMB_exrmultipart_write_channels(void *handle, int view_id)
 {
 	ExrHandle *data = (ExrHandle *)handle;
-//	int numparts = data->parts;
 	int numparts = (view_id == -1? data->parts : view_id + 1);
 	std::vector <FrameBuffer> frameBuffers(numparts);
 	std::vector <OutputPart> outputParts;

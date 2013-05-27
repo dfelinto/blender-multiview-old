@@ -3794,10 +3794,14 @@ static void rna_def_scene_image_format_data(BlenderRNA *brna)
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
 	prop = RNA_def_property(srna, "use_multiview", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "flag", R_IMF_FLAG_MULTIPART);
-	RNA_def_property_ui_text(prop, "Multi View", "Save multiple views in the same image (MultiPart file - OpenEXR 2.0)");
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", R_IMF_FLAG_MULTIVIEW);
+	RNA_def_property_ui_text(prop, "Multi View", "Save multiple views in the same image (OpenEXR 1.7.1 and higher)");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
+	prop = RNA_def_property(srna, "use_multipart", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", R_IMF_FLAG_MULTIPART);
+	RNA_def_property_ui_text(prop, "Multi Part", "Save multiple parts in the same image (OpenEXR 2.0 and higher)");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
 #endif
 
