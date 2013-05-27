@@ -34,7 +34,7 @@
 
 /* Writes the image to a single-layer file. */
 class OutputSingleLayerOperation : public NodeOperation {
-private:
+protected:
 	const RenderData *m_rd;
 	const bNodeTree *m_tree;
 	
@@ -74,7 +74,7 @@ struct OutputOpenExrLayer {
 
 /* Writes inputs into OpenEXR multilayer channels. */
 class OutputOpenExrMultiLayerOperation : public NodeOperation {
-private:
+protected:
 	typedef std::vector<OutputOpenExrLayer> LayerList;
 	
 	const RenderData *m_rd;

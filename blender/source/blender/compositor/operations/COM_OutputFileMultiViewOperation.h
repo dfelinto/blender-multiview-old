@@ -53,14 +53,8 @@ private:
 public:
 	OutputSingleLayerMultiViewOperation(const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path,
 	                           const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings);
-	
-	void executeRegion(rcti *rect, unsigned int tileNumber);
-	bool isOutputOperation(bool rendering) const { return true; }
-	void initExecution();
-	void deinitExecution();
-	const CompositorPriority getRenderPriority() const { return COM_PRIORITY_LOW; }
 
-	bool isFileOutputOperation() { return true; }
+	void deinitExecution();
 };
 
 /* Writes inputs into OpenEXR multilayer channels. */
@@ -81,15 +75,7 @@ public:
 	OutputOpenExrMultiLayerMultiViewOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int actview);
 
 	void *get_handle(const char *filename);
-	void add_layer(const char *name, DataType datatype);
-	
-	void executeRegion(rcti *rect, unsigned int tileNumber);
-	bool isOutputOperation(bool rendering) const { return true; }
-	void initExecution();
 	void deinitExecution();
-	const CompositorPriority getRenderPriority() const { return COM_PRIORITY_LOW; }
-
-	bool isFileOutputOperation() { return true; }
 };
 
 #endif
