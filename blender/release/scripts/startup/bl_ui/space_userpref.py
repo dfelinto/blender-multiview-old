@@ -461,9 +461,15 @@ class USERPREF_PT_system(Panel):
 
         if system.stereo_display == 'ANAGLYPH':
             col.prop(system, "anaglyph_type", text="Type")
+            if system.anaglyph_type == 'GREEN_MAGENTA':
+                col.prop(system, "anaglyph_swap_left_right", text="Swap Left/Right")
 
         if system.stereo_display == 'INTERLACE':
             col.prop(system, "interlace_type", text="Type")
+            col.prop(system, "interlace_swap_left_right", text="Swap Left/Right")
+
+        if system.stereo_display == 'SIDEBYSIDE':
+            col.prop(system, "sidebyside_swap_left_right", text="Swap Left/Right")
 
         # 2. Column
         column = split.column()
