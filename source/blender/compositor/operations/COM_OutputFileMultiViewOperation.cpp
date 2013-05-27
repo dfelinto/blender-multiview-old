@@ -52,79 +52,11 @@ static int get_datatype_size(DataType datatype)
 	}
 }
 
-static float *init_buffer(unsigned int width, unsigned int height, DataType datatype)
-{
-	// When initializing the tree during initial load the width and height can be zero.
-	if (width != 0 && height != 0) {
-		int size = get_datatype_size(datatype);
-		return (float *)MEM_callocN(width * height * size * sizeof(float), "OutputFile buffer");
-	}
-	else
-		return NULL;
-}
-
-static void write_buffer_rect(rcti *rect, const bNodeTree *tree,
-                              SocketReader *reader, float *buffer, unsigned int width, DataType datatype)
-{
-	float color[4];
-	int i, size = get_datatype_size(datatype);
-
-	if (!buffer) return;
-	int x1 = rect->xmin;
-	int y1 = rect->ymin;
-	int x2 = rect->xmax;
-	int y2 = rect->ymax;
-	int offset = (y1 * width + x1) * size;
-	int x;
-	int y;
-	bool breaked = false;
-
-	for (y = y1; y < y2 && (!breaked); y++) {
-		for (x = x1; x < x2 && (!breaked); x++) {
-			reader->read(color, x, y, COM_PS_NEAREST);
-			
-			for (i = 0; i < size; ++i)
-				buffer[offset + i] = color[i];
-			offset += size;
-			
-			if (tree->test_break && tree->test_break(tree->tbh))
-				breaked = true;
-		}
-		offset += (width - (x2 - x1)) * size;
-	}
-}
-
-
 OutputSingleLayerMultiViewOperation::OutputSingleLayerMultiViewOperation(
         const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path,
         const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings):
         OutputSingleLayerOperation(rd, tree, datatype, format, path, viewSettings, displaySettings)
 {
-	this->m_rd = rd;
-	this->m_tree = tree;
-	
-	this->addInputSocket(datatype);
-	
-	this->m_outputBuffer = NULL;
-	this->m_datatype = datatype;
-	this->m_imageInput = NULL;
-	
-	this->m_format = format;
-	BLI_strncpy(this->m_path, path, sizeof(this->m_path));
-
-	this->m_viewSettings = viewSettings;
-	this->m_displaySettings = displaySettings;
-}
-
-void OutputSingleLayerMultiViewOperation::initExecution()
-{
-	this->m_imageInput = getInputSocketReader(0);
-	this->m_outputBuffer = init_buffer(this->getWidth(), this->getHeight(), this->m_datatype);
-}
-
-void OutputSingleLayerMultiViewOperation::executeRegion(rcti *rect, unsigned int tileNumber)
-{
-	write_buffer_rect(rect, this->m_tree, this->m_imageInput, this->m_outputBuffer, this->getWidth(), this->m_datatype);
 }
 
 void OutputSingleLayerMultiViewOperation::deinitExecution()
@@ -162,12 +94,6 @@ OutputOpenExrMultiLayerMultiViewOperation::OutputOpenExrMultiLayerMultiViewOpera
         const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int actview):
         OutputOpenExrMultiLayerOperation(rd, tree, path, exr_codec, actview)
 {
-	this->m_rd = rd;
-	this->m_tree = tree;
-	
-	BLI_strncpy(this->m_path, path, sizeof(this->m_path));
-	this->m_exr_codec = exr_codec;
-	this->m_actview = actview;
 }
 
 void *OutputOpenExrMultiLayerMultiViewOperation::get_handle(const char* filename)
@@ -250,27 +176,6 @@ void *OutputOpenExrMultiLayerMultiViewOperation::get_handle(const char* filename
 		}
 	}
 	return NULL;
-}
-
-void OutputOpenExrMultiLayerMultiViewOperation::add_layer(const char *name, DataType datatype)
-{
-	this->addInputSocket(datatype);
-	this->m_layers.push_back(OutputOpenExrLayer(name, datatype));
-}
-
-void OutputOpenExrMultiLayerMultiViewOperation::initExecution()
-{
-	for (unsigned int i = 0; i < this->m_layers.size(); ++i) {
-		this->m_layers[i].imageInput = getInputSocketReader(i);
-		this->m_layers[i].outputBuffer = init_buffer(this->getWidth(), this->getHeight(), this->m_layers[i].datatype);
-	}
-}
-
-void OutputOpenExrMultiLayerMultiViewOperation::executeRegion(rcti *rect, unsigned int tileNumber)
-{
-	for (unsigned int i = 0; i < this->m_layers.size(); ++i) {
-		write_buffer_rect(rect, this->m_tree, this->m_layers[i].imageInput, this->m_layers[i].outputBuffer, this->getWidth(), this->m_layers[i].datatype);
-	}
 }
 
 void OutputOpenExrMultiLayerMultiViewOperation::deinitExecution()
