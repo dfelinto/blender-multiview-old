@@ -51,7 +51,7 @@ protected:
 	int m_actview;
 public:
 	OutputSingleLayerOperation(const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path,
-	                           const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings);
+	                           const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings, int actview);
 	
 	void executeRegion(rcti *rect, unsigned int tileNumber);
 	bool isOutputOperation(bool rendering) const { return true; }

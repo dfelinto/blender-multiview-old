@@ -2044,7 +2044,7 @@ int BKE_imbuf_write_stamp(Scene *scene, struct Object *camera, ImBuf *ibuf, cons
 
 
 static void do_makepicstring(char *string, const char *base, const char *relbase, int frame, const char imtype,
-                             const ImageFormatData *im_format, const short use_ext, const short use_frames)
+                             const ImageFormatData *im_format, const short use_ext, const short use_frames, const char *view)
 {
 	if (string == NULL) return;
 	BLI_strncpy(string, base, FILE_MAX - 10);   /* weak assumption */
@@ -2053,18 +2053,21 @@ static void do_makepicstring(char *string, const char *base, const char *relbase
 	if (use_frames)
 		BLI_path_frame(string, frame, 4);
 
+	if (view && view[0] != '\0')
+		BLI_path_view(string, view);
+
 	if (use_ext)
 		do_add_image_extension(string, imtype, im_format);
 }
 
-void BKE_makepicstring(char *string, const char *base, const char *relbase, int frame, const ImageFormatData *im_format, const short use_ext, const short use_frames)
+void BKE_makepicstring(char *string, const char *base, const char *relbase, int frame, const ImageFormatData *im_format, const short use_ext, const short use_frames, const char *view)
 {
-	do_makepicstring(string, base, relbase, frame, im_format->imtype, im_format, use_ext, use_frames);
+	do_makepicstring(string, base, relbase, frame, im_format->imtype, im_format, use_ext, use_frames, view);
 }
 
-void BKE_makepicstring_from_type(char *string, const char *base, const char *relbase, int frame, const char imtype, const short use_ext, const short use_frames)
+void BKE_makepicstring_from_type(char *string, const char *base, const char *relbase, int frame, const char imtype, const short use_ext, const short use_frames, const char *view)
 {
-	do_makepicstring(string, base, relbase, frame, imtype, NULL, use_ext, use_frames);
+	do_makepicstring(string, base, relbase, frame, imtype, NULL, use_ext, use_frames, view);
 }
 
 /* used by sequencer too */

@@ -100,12 +100,12 @@ void OutputFileNode::convertToOperations(ExecutionSystem *graph, CompositorConte
 				    (storage->format.flag & R_IMF_FLAG_MULTIPART)) {
 					outputOperation = new OutputSingleLayerMultiViewOperation(
 							context->getRenderData(), context->getbNodeTree(), input->getDataType(), format, path,
-							context->getViewSettings(), context->getDisplaySettings());
+							context->getViewSettings(), context->getDisplaySettings(), context->getViewId());
 				}
 				else {
 					outputOperation = new OutputSingleLayerOperation(
 							context->getRenderData(), context->getbNodeTree(), input->getDataType(), format, path,
-							context->getViewSettings(), context->getDisplaySettings());
+							context->getViewSettings(), context->getDisplaySettings(), context->getViewId());
 				}
 
 				input->relinkConnections(outputOperation->getInputSocket(0));

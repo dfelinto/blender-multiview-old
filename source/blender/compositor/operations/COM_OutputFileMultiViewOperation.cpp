@@ -54,8 +54,8 @@ static int get_datatype_size(DataType datatype)
 
 OutputSingleLayerMultiViewOperation::OutputSingleLayerMultiViewOperation(
         const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path,
-        const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings):
-        OutputSingleLayerOperation(rd, tree, datatype, format, path, viewSettings, displaySettings)
+        const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings, int actview):
+        OutputSingleLayerOperation(rd, tree, datatype, format, path, viewSettings, displaySettings, actview)
 {
 }
 
@@ -77,7 +77,7 @@ void OutputSingleLayerMultiViewOperation::deinitExecution()
 		                                    this->m_format);
 
 		BKE_makepicstring(filename, this->m_path, bmain->name, this->m_rd->cfra, this->m_format,
-		                  (this->m_rd->scemode & R_EXTENSION), true);
+		                  (this->m_rd->scemode & R_EXTENSION), true, "");
 		
 		if (0 == BKE_imbuf_write(ibuf, filename, this->m_format))
 			printf("Cannot save Node File Output to %s\n", filename);
@@ -190,7 +190,7 @@ void OutputOpenExrMultiLayerMultiViewOperation::deinitExecution()
 		char filename[FILE_MAX];
 
 		BKE_makepicstring_from_type(filename, this->m_path, bmain->name, this->m_rd->cfra, R_IMF_IMTYPE_MULTILAYER,
-									(this->m_rd->scemode & R_EXTENSION), true);
+									(this->m_rd->scemode & R_EXTENSION), true, "");
 
 		exrhandle = this->get_handle(filename);
 

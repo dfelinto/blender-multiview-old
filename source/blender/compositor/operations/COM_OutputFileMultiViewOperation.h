@@ -36,23 +36,9 @@
 /* Writes the image to a single-layer file. */
 class OutputSingleLayerMultiViewOperation : public OutputSingleLayerOperation {
 private:
-	const RenderData *m_rd;
-	const bNodeTree *m_tree;
-	
-	ImageFormatData *m_format;
-	char m_path[FILE_MAX];
-	
-	float *m_outputBuffer;
-	DataType m_datatype;
-	SocketReader *m_imageInput;
-
-	const ColorManagedViewSettings *m_viewSettings;
-	const ColorManagedDisplaySettings *m_displaySettings;
-
-	int m_actview;
 public:
 	OutputSingleLayerMultiViewOperation(const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path,
-	                           const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings);
+	                           const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings, int actview);
 
 	void deinitExecution();
 };
@@ -60,17 +46,6 @@ public:
 /* Writes inputs into OpenEXR multilayer channels. */
 class OutputOpenExrMultiLayerMultiViewOperation : public OutputOpenExrMultiLayerOperation {
 private:
-	typedef std::vector<OutputOpenExrLayer> LayerList;
-	
-	const RenderData *m_rd;
-	const bNodeTree *m_tree;
-	
-	char m_path[FILE_MAX];
-	char m_exr_codec;
-	LayerList m_layers;
-
-	int m_actview;
-
 public:
 	OutputOpenExrMultiLayerMultiViewOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int actview);
 
