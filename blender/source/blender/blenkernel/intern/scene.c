@@ -595,12 +595,12 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	/* multiview - stereo */
 	BKE_scene_add_render_view(sce, STEREO_LEFT_NAME);
 	srv = (SceneRenderView *)sce->r.views.first;
-	srv->viewflag |= SCE_VIEW_DISABLE | SCE_VIEW_NAMEASLABEL;
+	srv->viewflag |= SCE_VIEW_DISABLE;
 	BLI_strncpy(srv->label, "_L", sizeof(srv->label));
 
 	BKE_scene_add_render_view(sce, STEREO_RIGHT_NAME);
 	srv = (SceneRenderView *)sce->r.views.last;
-	srv->viewflag |= SCE_VIEW_DISABLE | SCE_VIEW_NAMEASLABEL;
+	srv->viewflag |= SCE_VIEW_DISABLE;
 	BLI_strncpy(srv->label, "_R", sizeof(srv->label));
 
 	/* game data */
@@ -1392,6 +1392,8 @@ SceneRenderView *BKE_scene_add_render_view(Scene *sce, const char *name)
 	BLI_strncpy(srv->name, name, sizeof(srv->name));
 	BLI_uniquename(&sce->r.views, srv, DATA_("RenderView"), '.', offsetof(SceneRenderView, name), sizeof(srv->name));
 	BLI_addtail(&sce->r.views, srv);
+
+	srv->viewflag |= SCE_VIEW_NAMEASLABEL;
 
 	return srv;
 }

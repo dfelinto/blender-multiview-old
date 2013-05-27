@@ -9501,12 +9501,12 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			for (scene = main->scene.first; scene; scene = scene->id.next) {
 				BKE_scene_add_render_view(scene, STEREO_LEFT_NAME);
 				srv = (SceneRenderView *)scene->r.views.first;
-				srv->viewflag |= SCE_VIEW_DISABLE | SCE_VIEW_NAMEASLABEL;
+				srv->viewflag |= SCE_VIEW_DISABLE;
 				BLI_strncpy(srv->label, "_L", sizeof(srv->label));
 
 				BKE_scene_add_render_view(scene, STEREO_RIGHT_NAME);
 				srv = (SceneRenderView *)scene->r.views.last;
-				srv->viewflag |= SCE_VIEW_DISABLE | SCE_VIEW_NAMEASLABEL;
+				srv->viewflag |= SCE_VIEW_DISABLE;
 				BLI_strncpy(srv->label, "_R", sizeof(srv->label));
 			}
 		}

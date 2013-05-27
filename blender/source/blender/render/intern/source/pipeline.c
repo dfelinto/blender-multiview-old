@@ -2542,7 +2542,8 @@ void RE_BlenderFrame(Render *re, Main *bmain, Scene *scene, SceneRenderLayer *sr
 			}
 			else {
 				char name[FILE_MAX];
-				BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE);
+				//XXX MV need view
+				BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, "");
 
 				/* reports only used for Movie */
 				do_write_image_or_movie(re, bmain, scene, NULL, name);
@@ -2613,7 +2614,9 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 		if (name_override)
 			BLI_strncpy(name, name_override, sizeof(name));
 		else
-			BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE);
+			//XXX MV need view
+			//this is the one called from compositor and background render
+			BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, "");
 		
 		if (re->r.im_format.imtype == R_IMF_IMTYPE_MULTILAYER) {
 			if (re->result) {
@@ -2752,7 +2755,8 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 			/* Touch/NoOverwrite options are only valid for image's */
 			if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
 				if (scene->r.mode & (R_NO_OVERWRITE | R_TOUCH))
-					BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE);
+					//XXX MV need view
+					BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, "");
 
 				if (scene->r.mode & R_NO_OVERWRITE && BLI_exists(name)) {
 					printf("skipping existing frame \"%s\"\n", name);
