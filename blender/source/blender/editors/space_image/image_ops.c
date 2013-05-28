@@ -1471,12 +1471,14 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 			RenderView *rv;
 			int i, orig_multi_index = sima->iuser.multi_index;
 			short orig_pass = sima->iuser.pass;
+			short orig_view = sima->iuser.view;
 			unsigned char planes = ibuf->planes;
 
 			ED_space_image_release_buffer(sima, ibuf, lock);
 
 			for (i=0, rv = (RenderView *)rr->views.first; rv; rv = rv->next, i++) {
 				sima->iuser.pass = get_multiview_pass_id(rr, &sima->iuser, i);
+				sima->iuser.view = i;
 				BKE_image_multilayer_index(rr, &sima->iuser);
 
 				srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
@@ -1503,6 +1505,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 			}
 
 			sima->iuser.pass = orig_pass;
+			sima->iuser.view = orig_view;
 			sima->iuser.multi_index = orig_multi_index;
 		}
 		else {
