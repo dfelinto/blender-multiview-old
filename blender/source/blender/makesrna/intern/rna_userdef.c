@@ -3670,10 +3670,25 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Anaglyph Type", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
 
+	prop = RNA_def_property(srna, "anaglyph_swap_left_right", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", USER_ANAGLYPH_SWAP_LEFT_RIGHT);
+	RNA_def_property_ui_text(prop, "Swap Left/Right", "Swap left and right stereo channels");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
+
 	prop = RNA_def_property(srna, "interlace_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, interlace_type_items);
 	RNA_def_property_ui_text(prop, "Interlace Type", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
+
+	prop = RNA_def_property(srna, "interlace_swap_left_right", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", USER_INTERLACE_SWAP_LEFT_RIGHT);
+	RNA_def_property_ui_text(prop, "Swap Left/Right", "Swap left and right stereo channels");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
+
+	prop = RNA_def_property(srna, "sidebyside_swap_left_right", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", USER_SIDEBYSIDE_SWAP_LEFT_RIGHT);
+	RNA_def_property_ui_text(prop, "Swap Left/Right", "Swap left and right stereo channels (enable for cross-eyed stereo viewing)");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
 
 #ifdef WITH_CYCLES
 	prop = RNA_def_property(srna, "compute_device_type", PROP_ENUM, PROP_NONE);

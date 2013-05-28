@@ -466,10 +466,11 @@ typedef struct UserDef {
 	float sculpt_paint_overlay_col[3];
 
 	short tweak_threshold;
+	short stereo_flag;
 	char stereo_display; /* stereo method for the user display */
 	char anaglyph_type; /* anaglyph scheme for the user display */
 	char interlace_type;  /* interlace type for the user display */
-	char pad3[7];
+	char pad3[5];
 
 	char author[80];	/* author name for file formats supporting it */
 
@@ -774,6 +775,13 @@ typedef enum eStereoDisplayMode {
 	USER_STEREO_DISPLAY_INTERLACE   = 6,
 	USER_STEREO_DISPLAY_BLURAY      = 7,
 } eStereoDisplayMode;
+
+/* UserDef.stereo_flag */
+typedef enum eStereoFlag {
+	USER_ANAGLYPH_SWAP_LEFT_RIGHT	= (1 << 1),
+	USER_INTERLACE_SWAP_LEFT_RIGHT	= (1 << 2),
+	USER_SIDEBYSIDE_SWAP_LEFT_RIGHT	= (1 << 3),
+} eStereoFlag;
 
 /* UserDef.anaglyph_type */
 typedef enum eAnaglyphType {
