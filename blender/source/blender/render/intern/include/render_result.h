@@ -86,7 +86,7 @@ int render_result_exr_file_read_path(struct RenderResult *rr, struct RenderLayer
 
 /* Combined Pixel Rect */
 
-struct ImBuf *render_result_rect_to_ibuf(struct RenderResult *rr, struct RenderData *rd);
+struct ImBuf *render_result_rect_to_ibuf(struct RenderResult *rr, struct RenderData *rd, int view_id);
 void render_result_rect_from_ibuf(struct RenderResult *rr, struct RenderData *rd,
 	struct ImBuf *ibuf);
 
@@ -95,6 +95,8 @@ void render_result_rect_get_pixels(struct RenderResult *rr,
 	unsigned int *rect, int rectx, int recty,
 	const struct ColorManagedViewSettings *view_settings,
 	const struct ColorManagedDisplaySettings *display_settings);
+
+int render_result_get_view_id(struct Render *re, const char *view);
 
 #endif /* __RENDER_RESULT_H__ */
 

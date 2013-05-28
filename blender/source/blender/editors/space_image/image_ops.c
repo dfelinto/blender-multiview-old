@@ -1464,7 +1464,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 			BKE_image_release_renderresult(scene, ima);
 		}
 		else if (rr && BLI_countlist(&rr->views) > 1) {
-			/* multiview */
+			/* multiview - individual images */
 			char filepath[FILE_MAX];
 			char label[FILE_MAX];
 			SceneRenderView *srv;

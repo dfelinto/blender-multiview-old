@@ -85,11 +85,14 @@ void render_result_free(RenderResult *res)
 		RenderView *rv = res->views.first;
 		BLI_remlink(&res->views, rv);
 
+#if 0
+		/* this is producing a crash */
 		if (rv->rectf)
 			MEM_freeN(rv->rectf);
 
 		if (rv->rectz)
 			MEM_freeN(rv->rectz);
+#endif
 
 		MEM_freeN(rv);
 	}
@@ -152,6 +155,22 @@ static const char *get_view_name(ListBase *views, int view_id)
 		if (id == view_id) return rv->name;
 	}
 	return "";
+}
+
+int render_result_get_view_id(Render *re, const char *view)
+{
+	RenderView *rv;
+	int id = 0;
+
+	if (!re || !re->result)
+		return 0;
+
+	for (rv= (RenderView *)re->result->views.first; rv; rv=rv->next, id++) {
+		if (strcmp(rv->name, view)==0)
+			return id;
+	}
+
+	return 0;
 }
 
 /* NOTE: OpenEXR only supports 32 chars for layer+pass names
@@ -1260,14 +1279,14 @@ int render_result_exr_file_read_path(RenderResult *rr, RenderLayer *rl_single, c
 
 /*************************** Combined Pixel Rect *****************************/
 
-ImBuf *render_result_rect_to_ibuf(RenderResult *rr, RenderData *rd)
+ImBuf *render_result_rect_to_ibuf(RenderResult *rr, RenderData *rd, int view_id)
 {
 	ImBuf *ibuf = IMB_allocImBuf(rr->rectx, rr->recty, rd->im_format.planes, 0);
 	
 	/* if not exists, BKE_imbuf_write makes one */
 	ibuf->rect = (unsigned int *)rr->rect32;
-	ibuf->rect_float = rr->rectf;
-	ibuf->zbuf_float = rr->rectz;
+	ibuf->rect_float = RE_RenderViewGetRectf(rr, view_id);
+	ibuf->zbuf_float = RE_RenderViewGetRectz(rr, view_id);
 	
 	/* float factor for random dither, imbuf takes care of it */
 	ibuf->dither = rd->dither_intensity;

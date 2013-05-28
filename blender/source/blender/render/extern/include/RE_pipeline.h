@@ -215,6 +215,7 @@ float *RE_RenderViewGetRectz(struct RenderResult *rr, int view_id);
 void RE_RenderViewSetRectf(RenderResult *res, int view_id, float *rect);
 void RE_RenderViewSetRectz(RenderResult *res, int view_id, float *rect);
 int RE_GetActiveViewId(struct Render *re);
+int RE_write_individual_views(struct Render *re, struct RenderData *rd);
 int RE_HasFakeLayer(RenderResult *res);
 int RE_HasStereo3D(RenderResult *res);
 
@@ -258,6 +259,8 @@ void RE_TileProcessor(struct Render *re);
 /* only RE_NewRender() needed, main Blender render calls */
 void RE_BlenderFrame(struct Render *re, struct Main *bmain, struct Scene *scene, struct SceneRenderLayer *srl, struct Object *camera_override, unsigned int lay, int frame, const short write_still);
 void RE_BlenderAnim(struct Render *re, struct Main *bmain, struct Scene *scene, struct Object *camera_override, unsigned int lay, int sfra, int efra, int tfra);
+void RE_BlenderAnimViews(struct Render *re, struct Main *bmain, struct Scene *scene, struct Object *camera_override, unsigned int lay, int sfra, int efra, int tfra);
+
 #ifdef WITH_FREESTYLE
 void RE_RenderFreestyleStrokes(struct Render *re, struct Main *bmain, struct Scene *scene);
 #endif

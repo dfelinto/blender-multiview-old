@@ -286,6 +286,36 @@ RenderLayer *RE_GetRenderLayer(RenderResult *rr, const char *name)
 	}
 }
 
+/* returns whether or not we will save individual views */
+int RE_write_individual_views(Render *re, RenderData *rd)
+{
+	ImageFormatData *format = &rd->im_format;
+	SceneRenderView *srv;
+	int nr, totviews;
+
+	if(!re)
+		return FALSE;
+
+	if (ELEM(format->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER) &&
+		(format->flag & R_IMF_FLAG_MULTIVIEW))
+		return FALSE;
+
+	totviews = 0;
+	for (nr=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
+
+		if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
+			continue;
+
+		if (srv->viewflag & SCE_VIEW_DISABLE)
+			continue;
+
+		if (++totviews > 1)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 RenderResult *RE_MultilayerConvert(void *exrhandle, const char *colorspace, int predivide, int rectx, int recty)
 {
 	return render_result_new_from_exr(exrhandle, colorspace, predivide, rectx, recty);
@@ -378,6 +408,7 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 	memset(rr, 0, sizeof(RenderResult));
 
 	if (re) {
+		int id = re->actview;
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
 
 		if (re->result) {
@@ -385,21 +416,19 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 			
 			rr->rectx = re->result->rectx;
 			rr->recty = re->result->recty;
-			
-			rr->rectf = re->result->rectf;
-			rr->rectz = re->result->rectz;
-			rr->rect32 = re->result->rect32;
 
 			rr->views = re->result->views;
+			rr->rect32 = re->result->rect32;
 			
 			/* active layer */
 			rl = render_get_active_layer(re, re->result);
 
 			if (rl) {
-				if (rr->rectf == NULL)
-					rr->rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
-				if (rr->rectz == NULL)
-					rr->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, re->actview);
+				if (RE_RenderViewGetRectf(rr, id) == NULL)
+					RE_RenderViewSetRectf(rr, id, RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, id));
+
+				if (RE_RenderViewGetRectz(rr, id) == NULL)
+					RE_RenderViewSetRectz(rr, id, RE_RenderLayerGetPass(rl, SCE_PASS_Z, id));
 			}
 
 			rr->have_combined = (RE_RenderViewGetRectf(re->result, 0) != NULL);
@@ -2544,6 +2573,7 @@ void RE_BlenderFrame(Render *re, Main *bmain, Scene *scene, SceneRenderLayer *sr
 				char name[FILE_MAX];
 				const int numviews = BLI_countlist(&re->result->views);
 
+				/* mono render, or real exr multiview */
 				if (numviews < 2 || (ELEM (scene->r.im_format.imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER) && (scene->r.im_format.flag & R_IMF_FLAG_MULTIVIEW))) {
 
 					BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, "");
@@ -2555,20 +2585,20 @@ void RE_BlenderFrame(Render *re, Main *bmain, Scene *scene, SceneRenderLayer *sr
 					/* multiview, saving individual images */
 					SceneRenderView *srv;
 					RenderView *rv;
-					char view[FILE_MAX];
+					char label[FILE_MAX];
 
 					for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
 						srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
 
 						if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
-							BLI_strncpy(view, srv->name, sizeof(view));
+							BLI_strncpy(label, srv->name, sizeof(label));
 						else
-							BLI_strncpy(view, srv->label, sizeof(view));
+							BLI_strncpy(label, srv->label, sizeof(label));
 
-						BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, view);
+						BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, label);
 
 						/* reports only used for Movie */
-						do_write_image_or_movie(re, bmain, scene, NULL, name, view);
+						do_write_image_or_movie(re, bmain, scene, NULL, name, srv->name);
 					}
 				}
 			}
@@ -2600,14 +2630,16 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 	RenderResult rres;
 	Object *camera = RE_GetCamera(re);
 	double render_time;
-	int ok = 1;
-	
+	int ok = TRUE;
+	int view_id = render_result_get_view_id(re, view);
+
+	re->actview = view_id;
 	RE_AcquireResultImage(re, &rres);
 
 	/* write movie or image */
 	if (BKE_imtype_is_movie(scene->r.im_format.imtype)) {
 		int do_free = FALSE;
-		ImBuf *ibuf = render_result_rect_to_ibuf(&rres, &scene->r);
+		ImBuf *ibuf = render_result_rect_to_ibuf(&rres, &scene->r, view_id);
 
 		/* note; the way it gets 32 bits rects is weak... */
 		if (ibuf->rect == NULL) {
@@ -2638,7 +2670,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 		if (name_override)
 			BLI_strncpy(name, name_override, sizeof(name));
 		else
-			BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, view);
+			BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, "");
 		
 		if (re->r.im_format.imtype == R_IMF_IMTYPE_MULTILAYER) {
 			if (re->result) {
@@ -2647,7 +2679,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 			}
 		}
 		else {
-			ImBuf *ibuf = render_result_rect_to_ibuf(&rres, &scene->r);
+			ImBuf *ibuf = render_result_rect_to_ibuf(&rres, &scene->r, view_id);
 
 			IMB_colormanagement_imbuf_for_write(ibuf, TRUE, FALSE, &scene->view_settings,
 			                                    &scene->display_settings, &scene->r.im_format);
@@ -2706,11 +2738,11 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 	bMovieHandle *mh = BKE_movie_handle_get(scene->r.im_format.imtype);
 	int cfrao = scene->r.cfra;
 	int nfra, totrendered = 0, totskipped = 0;
-	
+
 	/* do not fully call for each frame, it initializes & pops output window */
 	if (!render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 0, 1))
 		return;
-	
+
 	/* ugly global still... is to prevent renderwin events and signal subsurfs etc to make full resol */
 	/* is also set by caller renderwin.c */
 	G.is_rendering = TRUE;
@@ -2751,7 +2783,7 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 	else {
 		for (nfra = sfra, scene->r.cfra = sfra; scene->r.cfra <= efra; scene->r.cfra++) {
 			char name[FILE_MAX];
-			
+
 			/* only border now, todo: camera lens. (ton) */
 			render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 1, 0);
 
@@ -2777,7 +2809,6 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 			/* Touch/NoOverwrite options are only valid for image's */
 			if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
 				if (scene->r.mode & (R_NO_OVERWRITE | R_TOUCH))
-					//XXX MV need view
 					BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, "");
 
 				if (scene->r.mode & R_NO_OVERWRITE && BLI_exists(name)) {
@@ -2796,10 +2827,10 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 			/* run callbacs before rendering, before the scene is updated */
 			BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_PRE);
 
-			
+
 			do_render_all_options(re);
 			totrendered++;
-			
+
 			if (re->test_break(re->tbh) == 0) {
 				if (!G.is_break)
 					if (!do_write_image_or_movie(re, bmain, scene, mh, NULL, ""))
@@ -2807,7 +2838,7 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 			}
 			else
 				G.is_break = TRUE;
-		
+
 			if (G.is_break == TRUE) {
 				/* remove touched file */
 				if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
@@ -2815,7 +2846,7 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 						BLI_delete(name, false, false);
 					}
 				}
-				
+
 				break;
 			}
 
@@ -2824,11 +2855,11 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 			}
 		}
 	}
-	
+
 	/* end movie */
 	if (BKE_imtype_is_movie(scene->r.im_format.imtype))
 		mh->end_movie();
-	
+
 	if (totskipped && totrendered == 0)
 		BKE_report(re->reports, RPT_INFO, "No frames rendered, skipped to not overwrite");
 
@@ -2837,10 +2868,190 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 	re->flag &= ~R_ANIMATION;
 
 	BLI_callback_exec(re->main, (ID *)scene, G.is_break ? BLI_CB_EVT_RENDER_CANCEL : BLI_CB_EVT_RENDER_COMPLETE);
-
+	
 	/* UGLY WARNING */
 	G.is_rendering = FALSE;
 }
+
+/************* multiview functions *****************/
+void RE_BlenderAnimViews(Render *re, Main *bmain, Scene *scene, Object *camera_override, unsigned int lay, int sfra, int efra, int tfra)
+{
+	bMovieHandle *mh = BKE_movie_handle_get(scene->r.im_format.imtype);
+	int cfrao = scene->r.cfra;
+	int nfra, totrendered = 0, totskipped = 0;
+
+	if(!render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 0, 1))
+		return;
+
+	/* ugly global still... is to prevent renderwin events and signal subsurfs etc to make full resol */
+	/* is also set by caller renderwin.c */
+	G.is_rendering = TRUE;
+
+	re->flag |= R_ANIMATION;
+
+	if (BKE_imtype_is_movie(scene->r.im_format.imtype))
+		if (!mh->start_movie(scene, &re->r, re->rectx, re->recty, re->reports))
+			G.is_break = TRUE;
+
+	if (mh->get_next_frame) {
+		while (!(G.is_break == 1)) {
+			int nf = mh->get_next_frame(&re->r, re->reports);
+			if (nf >= 0 && nf >= scene->r.sfra && nf <= scene->r.efra) {
+				scene->r.cfra = re->r.cfra = nf;
+
+				BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_PRE);
+
+				do_render_all_options(re);
+				totrendered++;
+
+				if (re->test_break(re->tbh) == 0) {
+					/* multiview, saving individual images */
+					SceneRenderView *srv;
+					RenderView *rv;
+					char name[FILE_MAX];
+					char label[FILE_MAX];
+
+					for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
+						srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
+
+						if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
+							BLI_strncpy(label, srv->name, sizeof(label));
+						else
+							BLI_strncpy(label, srv->label, sizeof(label));
+
+						BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, label);
+
+						/* reports only used for Movie */
+						if (!do_write_image_or_movie(re, bmain, scene, mh, name, srv->name)) {
+							G.is_break = TRUE;
+							break;
+						}
+					}
+				}
+
+				if (G.is_break == FALSE) {
+					BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_POST); /* keep after file save */
+				}
+			}
+			else {
+				if (re->test_break(re->tbh)) {
+					G.is_break = TRUE;
+				}
+			}
+		}
+	}
+	else {
+		for (nfra = sfra, scene->r.cfra = sfra; scene->r.cfra <= efra; scene->r.cfra++) {
+			char name[FILE_MAX];
+
+			/* only border now, todo: camera lens. (ton) */
+			render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 1, 0);
+
+			if (nfra != scene->r.cfra) {
+				/*
+				 * Skip this frame, but update for physics and particles system.
+				 * From convertblender.c:
+				 * in localview, lamps are using normal layers, objects only local bits.
+				 */
+				unsigned int updatelay;
+
+				if (re->lay & 0xFF000000)
+					updatelay = re->lay & 0xFF000000;
+				else
+					updatelay = re->lay;
+
+				BKE_scene_update_for_newframe(bmain, scene, updatelay);
+				continue;
+			}
+			else
+				nfra += tfra;
+
+			re->r.cfra = scene->r.cfra;     /* weak.... */
+
+			/* run callbacs before rendering, before the scene is updated */
+			BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_PRE);
+
+			do_render_all_options(re);
+			totrendered++;
+
+			if (re->test_break(re->tbh) == 0) {
+				if (!G.is_break) {
+					/* multiview, saving individual images */
+					SceneRenderView *srv;
+					RenderView *rv;
+					char label[FILE_MAX];
+
+					for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
+						srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
+
+						if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
+							BLI_strncpy(label, srv->name, sizeof(label));
+						else
+							BLI_strncpy(label, srv->label, sizeof(label));
+
+						BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, label);
+
+
+						/* Touch/NoOverwrite options are only valid for image's */
+						if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
+
+							if (scene->r.mode & R_NO_OVERWRITE && BLI_exists(name)) {
+								printf("skipping existing frame \"%s\"\n", name);
+								totskipped++;
+								continue;
+							}
+							if (scene->r.mode & R_TOUCH && !BLI_exists(name)) {
+								BLI_make_existing_file(name); /* makes the dir if its not there */
+								BLI_file_touch(name);
+							}
+						}
+
+						/* reports only used for Movie */
+						if (!do_write_image_or_movie(re, bmain, scene, mh, name, srv->name)) {
+							G.is_break = TRUE;
+							break;
+						}
+					}
+				}
+			}
+			else
+				G.is_break = TRUE;
+
+			if (G.is_break == TRUE) {
+				/* remove touched file */
+				if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
+					if (scene->r.mode & R_TOUCH && BLI_exists(name) && BLI_file_size(name) == 0) {
+						BLI_delete(name, false, false);
+					}
+				}
+
+				break;
+			}
+
+			if (G.is_break == FALSE) {
+				BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_POST); /* keep after file save */
+			}
+		}
+	}
+
+	/* end movie */
+	if (BKE_imtype_is_movie(scene->r.im_format.imtype))
+		mh->end_movie();
+
+	if (totskipped && totrendered == 0)
+		BKE_report(re->reports, RPT_INFO, "No frames rendered, skipped to not overwrite");
+
+	scene->r.cfra = cfrao;
+
+	re->flag &= ~R_ANIMATION;
+
+	BLI_callback_exec(re->main, (ID *)scene, G.is_break ? BLI_CB_EVT_RENDER_CANCEL : BLI_CB_EVT_RENDER_COMPLETE);
+	
+	/* UGLY WARNING */
+	G.is_rendering = FALSE;
+}
+
+/* **************************************** */
 
 void RE_PreviewRender(Render *re, Main *bmain, Scene *sce)
 {
