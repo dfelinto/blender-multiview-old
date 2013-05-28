@@ -1256,7 +1256,7 @@ static void calc_brush_local_mat(const Brush *brush, Object *ob,
 	/* Scale by brush radius */
 	normalize_m4(mat);
 	scale_m4_fl(scale, cache->radius);
-	mult_m4_m4m4(tmat, mat, scale);
+	mul_m4_m4m4(tmat, mat, scale);
 
 	/* Return inverse (for converting from modelspace coords to local
 	 * area coords) */
@@ -2729,7 +2729,7 @@ static void do_clay_strips_brush(Sculpt *sd, Object *ob, PBVHNode **nodes, int t
 
 	/* scale mat */
 	scale_m4_fl(scale, ss->cache->radius);
-	mult_m4_m4m4(tmat, mat, scale);
+	mul_m4_m4m4(tmat, mat, scale);
 	invert_m4_m4(mat, tmat);
 
 	#pragma omp parallel for schedule(guided) if (sd->flags & SCULPT_USE_OPENMP)
@@ -2942,9 +2942,7 @@ void sculpt_vertcos_to_key(Object *ob, KeyBlock *kb, float (*vertCos)[3])
 		for (a = 0; a < me->totvert; a++, mvert++)
 			copy_v3_v3(mvert->co, vertCos[a]);
 
-		BKE_mesh_calc_normals_mapping(me->mvert, me->totvert, me->mloop,
-		                              me->mpoly, me->totloop, me->totpoly,
-		                              NULL, NULL, 0, NULL, NULL);
+		BKE_mesh_calc_normals(me);
 	}
 
 	/* apply new coords on active key block */
@@ -3278,7 +3276,7 @@ static void sculpt_flush_stroke_deform(Sculpt *sd, Object *ob)
 		/* Modifiers could depend on mesh normals, so we should update them/
 		 * Note, then if sculpting happens on locked key, normals should be re-calculated
 		 * after applying coords from keyblock on base mesh */
-		BKE_mesh_calc_normals(me->mvert, me->totvert, me->mloop, me->mpoly, me->totloop, me->totpoly, NULL);
+		BKE_mesh_calc_normals(me);
 	}
 	else if (ss->kb) {
 		sculpt_update_keyblock(ob);
