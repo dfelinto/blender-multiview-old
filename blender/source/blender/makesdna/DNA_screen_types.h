@@ -199,7 +199,7 @@ typedef struct ARegion {
 /* swap */
 #define WIN_BACK_OK		1
 #define WIN_FRONT_OK	2
-#define WIN_EQUAL		3
+// #define WIN_EQUAL		3  // UNUSED
 
 /* area->flag */
 #define HEADER_NO_PULLDOWN		1
@@ -222,8 +222,7 @@ typedef struct ARegion {
 /* screen->full */
 #define SCREENNORMAL	0
 #define SCREENFULL		1
-#define SCREENFULLTEMP	2
-#define SCREENFULLCLEAN 3
+#define SCREENFULLCLEAN 2
 
 
 /* Panel->snap - for snapping to screen edges */

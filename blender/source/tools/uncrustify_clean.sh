@@ -19,7 +19,7 @@ do
  
 	diff "$fn" "$fn.NEW" -u --ignore-trailing-space --ignore-blank-lines > "$fn.DIFF"
  
-	patch -p0 < "$fn.DIFF" 1> /dev/null
+	patch "$fn" "$fn.DIFF" 1> /dev/null
  
 	rm "$fn.NEW"
 	rm "$fn.DIFF"

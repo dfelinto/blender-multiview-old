@@ -382,6 +382,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 	if (block) { /* buttons */
 		uiBut *but;
 		int yi = 200;
+		const float tilt_limit = DEG2RADF(21600.0f);
 		const int buth = 20 * UI_DPI_FAC;
 		const int but_margin = 2;
 		const char *c;
@@ -458,7 +459,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			uiDefButR(block, NUM, 0, IFACE_("Radius"), 0, yi -= buth + but_margin, 200, buth,
 			          &data_ptr, "radius", 0, 0.0, 100.0, 1, 3, NULL);
 			uiDefButR(block, NUM, 0, IFACE_("Tilt"), 0, yi -= buth + but_margin, 200, buth,
-			          &data_ptr, "tilt", 0, -FLT_MAX, FLT_MAX, 1, 3, NULL);
+			          &data_ptr, "tilt", 0, -tilt_limit, tilt_limit, 1, 3, NULL);
 		}
 		else if (totcurvedata > 1) {
 			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Weight:"),
@@ -469,7 +470,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			          &(tfp->ve_median[C_RADIUS]), 0.0, 100.0, 1, 3, TIP_("Radius of curve control points"));
 			but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Tilt:"),
 			                0, yi -= buth + but_margin, 200, buth,
-			                &(tfp->ve_median[C_TILT]), -FLT_MAX, FLT_MAX, 1, 3,
+			                &(tfp->ve_median[C_TILT]), -tilt_limit, tilt_limit, 1, 3,
 			                TIP_("Tilt of curve control points"));
 			uiButSetUnitType(but, PROP_UNIT_ROTATION);
 		}
@@ -774,25 +775,31 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 #define B_VGRP_PNL_EDIT_SINGLE 8 /* or greater */
 #define B_VGRP_PNL_COPY_SINGLE 16384 /* or greater */
 
-static void act_vert_def(Object *ob, BMVert **eve, MDeformVert **dvert)
+static void act_vert_def(Object *ob, BMVert **r_eve, MDeformVert **r_dvert)
 {
 	if (ob && ob->mode & OB_MODE_EDIT && ob->type == OB_MESH && ob->defbase.first) {
 		Mesh *me = ob->data;
 		BMEditMesh *em = me->edit_btmesh;
-		BMEditSelection *ese = (BMEditSelection *)em->bm->selected.last;
+		const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
 
-		if (ese && ese->htype == BM_VERT) {
-			*eve = (BMVert *)ese->ele;
-			*dvert = CustomData_bmesh_get(&em->bm->vdata, (*eve)->head.data, CD_MDEFORMVERT);
-			return;
+		if (cd_dvert_offset != -1) {
+			BMEditSelection *ese = (BMEditSelection *)em->bm->selected.last;
+
+			if (ese && ese->htype == BM_VERT) {
+				BMVert *eve = (BMVert *)ese->ele;
+				if (r_eve) *r_eve = eve;
+				*r_dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
+				return;
+			}
 		}
 	}
 
-	*eve = NULL;
-	*dvert = NULL;
+	if (r_eve) *r_eve = NULL;
+	*r_dvert = NULL;
 }
 
-static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int index)
+static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int index,
+                                   const int cd_dvert_offset)
 {
 	Mesh *me = ob->data;
 	BMEditMesh *em = me->edit_btmesh;
@@ -801,8 +808,8 @@ static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int inde
 	eve_mirr = editbmesh_get_x_mirror_vert(ob, em, eve, eve->co, index);
 
 	if (eve_mirr && eve_mirr != eve) {
-		MDeformVert *dvert_src = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
-		MDeformVert *dvert_dst = CustomData_bmesh_get(&em->bm->vdata, eve_mirr->head.data, CD_MDEFORMVERT);
+		MDeformVert *dvert_src = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
+		MDeformVert *dvert_dst = BM_ELEM_CD_GET_VOID_P(eve_mirr, cd_dvert_offset);
 		if (dvert_dst) {
 			if (def_nr == -1) {
 				/* all vgroups, add groups where neded  */
@@ -824,14 +831,17 @@ static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int inde
 
 static void vgroup_adjust_active(Object *ob, int def_nr)
 {
+	Mesh *me = ob->data;
+	BMEditMesh *em = me->edit_btmesh;
+	const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
 	BMVert *eve_act;
 	MDeformVert *dvert_act;
 
 	act_vert_def(ob, &eve_act, &dvert_act);
 
 	if (dvert_act) {
-		if (((Mesh *)ob->data)->editflag & ME_EDIT_MIRROR_X)
-			editvert_mirror_update(ob, eve_act, def_nr, -1);
+		if (me->editflag & ME_EDIT_MIRROR_X)
+			editvert_mirror_update(ob, eve_act, def_nr, -1, cd_dvert_offset);
 	}
 }
 
@@ -848,6 +858,8 @@ static void vgroup_copy_active_to_sel(Object *ob)
 	else {
 		Mesh *me = ob->data;
 		BMEditMesh *em = me->edit_btmesh;
+		const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
+
 		BMIter iter;
 		BMVert *eve;
 		MDeformVert *dvert;
@@ -855,12 +867,12 @@ static void vgroup_copy_active_to_sel(Object *ob)
 
 		BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(eve, BM_ELEM_SELECT) && eve != eve_act) {
-				dvert = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
+				dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
 				if (dvert) {
 					defvert_copy(dvert, dvert_act);
 
 					if (me->editflag & ME_EDIT_MIRROR_X)
-						editvert_mirror_update(ob, eve, -1, index);
+						editvert_mirror_update(ob, eve, -1, index, cd_dvert_offset);
 
 				}
 			}
@@ -883,6 +895,7 @@ static void vgroup_copy_active_to_sel_single(Object *ob, const int def_nr)
 	else {
 		Mesh *me = ob->data;
 		BMEditMesh *em = me->edit_btmesh;
+		const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
 		BMIter iter;
 		BMVert *eve;
 		MDeformVert *dv;
@@ -900,26 +913,30 @@ static void vgroup_copy_active_to_sel_single(Object *ob, const int def_nr)
 		eve = BM_iter_new(&iter, em->bm, BM_VERTS_OF_MESH, NULL);
 		for (index = 0; eve; eve = BM_iter_step(&iter), index++) {
 			if (BM_elem_flag_test(eve, BM_ELEM_SELECT) && eve != eve_act) {
-				dv = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
+				dv = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
 				dw = defvert_find_index(dv, def_nr);
 				if (dw) {
 					dw->weight = weight_act;
 
 					if (me->editflag & ME_EDIT_MIRROR_X) {
-						editvert_mirror_update(ob, eve, -1, index);
+						editvert_mirror_update(ob, eve, -1, index, cd_dvert_offset);
 					}
 				}
 			}
 		}
 
 		if (me->editflag & ME_EDIT_MIRROR_X) {
-			editvert_mirror_update(ob, eve_act, -1, -1);
+			editvert_mirror_update(ob, eve_act, -1, -1, cd_dvert_offset);
 		}
 	}
 }
 
 static void vgroup_normalize_active(Object *ob)
 {
+	Mesh *me = ob->data;
+	BMEditMesh *em = me->edit_btmesh;
+	const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
+
 	BMVert *eve_act;
 	MDeformVert *dvert_act;
 
@@ -930,8 +947,8 @@ static void vgroup_normalize_active(Object *ob)
 
 	defvert_normalize(dvert_act);
 
-	if (((Mesh *)ob->data)->editflag & ME_EDIT_MIRROR_X)
-		editvert_mirror_update(ob, eve_act, -1, -1);
+	if (me->editflag & ME_EDIT_MIRROR_X)
+		editvert_mirror_update(ob, eve_act, -1, -1, cd_dvert_offset);
 }
 
 static void do_view3d_vgroup_buttons(bContext *C, void *UNUSED(arg), int event)
@@ -967,10 +984,9 @@ static int view3d_panel_vgroup_poll(const bContext *C, PanelType *UNUSED(pt))
 {
 	Scene *scene = CTX_data_scene(C);
 	Object *ob = OBACT;
-	BMVert *eve_act;
 	MDeformVert *dvert_act;
 
-	act_vert_def(ob, &eve_act, &dvert_act);
+	act_vert_def(ob, NULL, &dvert_act);
 
 	return dvert_act ? dvert_act->totweight : 0;
 }
@@ -982,10 +998,9 @@ static void view3d_panel_vgroup(const bContext *C, Panel *pa)
 	Scene *scene = CTX_data_scene(C);
 	Object *ob = OBACT;
 
-	BMVert *eve;
 	MDeformVert *dv;
 
-	act_vert_def(ob, &eve, &dv);
+	act_vert_def(ob, NULL, &dv);
 
 	if (dv && dv->totweight) {
 		uiLayout *col;

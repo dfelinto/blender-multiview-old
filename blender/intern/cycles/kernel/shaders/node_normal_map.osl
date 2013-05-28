@@ -55,10 +55,26 @@ shader node_normal_map(
 			Normal = normal(0, 0, 0);
 		}
 	}
-	else if (space == "Object")
+	else if (space == "Object") {
 		Normal = normalize(transform("object", "world", vector(mcolor)));
-	else if (space == "World")
+	}
+	else if (space == "World") {
 		Normal = normalize(vector(mcolor));
+	}
+	else if (space == "Blender Object") {
+		/* strange blender convention */
+		mcolor[1] = -mcolor[1];
+		mcolor[2] = -mcolor[2];
+	
+		Normal = normalize(transform("object", "world", vector(mcolor)));
+	}
+	else if (space == "Blender World") {
+		/* strange blender convention */
+		mcolor[1] = -mcolor[1];
+		mcolor[2] = -mcolor[2];
+	
+		Normal = normalize(vector(mcolor));
+	}
 	
 	if (Strength != 1.0)
 		Normal = normalize(NormalIn + (Normal - NormalIn) * max(Strength, 0.0));
