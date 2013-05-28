@@ -291,7 +291,7 @@ int RE_write_individual_views(Render *re, RenderData *rd)
 {
 	ImageFormatData *format = &rd->im_format;
 	SceneRenderView *srv;
-	int nr, totviews;
+	int nr;
 
 	if(!re)
 		return FALSE;
@@ -300,7 +300,6 @@ int RE_write_individual_views(Render *re, RenderData *rd)
 		(format->flag & R_IMF_FLAG_MULTIVIEW))
 		return FALSE;
 
-	totviews = 0;
 	for (nr=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
 
 		if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
@@ -309,8 +308,7 @@ int RE_write_individual_views(Render *re, RenderData *rd)
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;
 
-		if (++totviews > 1)
-			return TRUE;
+		return TRUE;
 	}
 
 	return FALSE;
