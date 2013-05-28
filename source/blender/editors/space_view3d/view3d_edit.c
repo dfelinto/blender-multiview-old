@@ -145,9 +145,9 @@ bool ED_view3d_camera_lock_sync(View3D *v3d, RegionView3D *rv3d)
 			ED_view3d_to_m4(view_mat, rv3d->ofs, rv3d->viewquat, rv3d->dist);
 
 			invert_m4_m4(v3d->camera->imat, v3d->camera->obmat);
-			mult_m4_m4m4(diff_mat, view_mat, v3d->camera->imat);
+			mul_m4_m4m4(diff_mat, view_mat, v3d->camera->imat);
 
-			mult_m4_m4m4(parent_mat, diff_mat, root_parent->obmat);
+			mul_m4_m4m4(parent_mat, diff_mat, root_parent->obmat);
 
 			BKE_object_tfm_protected_backup(root_parent, &obtfm);
 			BKE_object_apply_mat4(root_parent, parent_mat, true, false);
@@ -682,7 +682,7 @@ static void viewrotate_apply(ViewOpsData *vod, int x, int y)
 {
 	RegionView3D *rv3d = vod->rv3d;
 
-	rv3d->view = RV3D_VIEW_USER; /* need to reset everytime because of view snapping */
+	rv3d->view = RV3D_VIEW_USER; /* need to reset every time because of view snapping */
 
 	if (U.flag & USER_TRACKBALL) {
 		float phi, si, q1[4], dvec[3], newvec[3];
@@ -3196,8 +3196,13 @@ static void axis_set_view(bContext *C, View3D *v3d, ARegion *ar,
 			align_active = false;
 		}
 		else {
+			const float z_flip_quat[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 			float obact_quat[4];
 			float twmat[3][3];
+
+			/* flip the input, the end result being that an object
+			 * with no rotation behaves as if 'align_active' is off */
+			mul_qt_qtqt(new_quat, new_quat, z_flip_quat);
 
 			/* same as transform manipulator when normal is set */
 			ED_getTransformOrientationMatrix(C, twmat, false);

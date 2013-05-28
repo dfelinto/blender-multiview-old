@@ -573,21 +573,15 @@ void interp_qt_qtqt(float result[4], const float quat1[4], const float quat2[4],
 {
 	float quat[4], omega, cosom, sinom, sc1, sc2;
 
-	cosom = quat1[0] * quat2[0] + quat1[1] * quat2[1] + quat1[2] * quat2[2] + quat1[3] * quat2[3];
+	cosom = dot_qtqt(quat1, quat2);
 
 	/* rotate around shortest angle */
 	if (cosom < 0.0f) {
 		cosom = -cosom;
-		quat[0] = -quat1[0];
-		quat[1] = -quat1[1];
-		quat[2] = -quat1[2];
-		quat[3] = -quat1[3];
+		negate_v4_v4(quat, quat1);
 	}
 	else {
-		quat[0] = quat1[0];
-		quat[1] = quat1[1];
-		quat[2] = quat1[2];
-		quat[3] = quat1[3];
+		copy_qt_qt(quat, quat1);
 	}
 
 	if ((1.0f - cosom) > 0.0001f) {
@@ -640,7 +634,7 @@ void tri_to_quat_ex(float quat[4], const float v1[3], const float v2[3], const f
 		n[0] = 1.0f;
 	}
 
-	angle = -0.5f * (float)saacos(vec[2]);
+	angle = -0.5f * saacos(vec[2]);
 	co = cosf(angle);
 	si = sinf(angle);
 	q1[0] = co;
@@ -1465,7 +1459,7 @@ void mat4_to_dquat(DualQuat *dq, float basemat[4][4], float mat[4][4])
 
 	/* split scaling and rotation, there is probably a faster way to do
 	 * this, it's done like this now to correctly get negative scaling */
-	mult_m4_m4m4(baseRS, mat, basemat);
+	mul_m4_m4m4(baseRS, mat, basemat);
 	mat4_to_size(scale, baseRS);
 
 	dscale[0] = scale[0] - 1.0f;
@@ -1485,10 +1479,10 @@ void mat4_to_dquat(DualQuat *dq, float basemat[4][4], float mat[4][4])
 		copy_v3_v3(baseR[3], baseRS[3]);
 
 		invert_m4_m4(baseinv, basemat);
-		mult_m4_m4m4(R, baseR, baseinv);
+		mul_m4_m4m4(R, baseR, baseinv);
 
 		invert_m4_m4(baseRinv, baseR);
-		mult_m4_m4m4(S, baseRinv, baseRS);
+		mul_m4_m4m4(S, baseRinv, baseRS);
 
 		/* set scaling part */
 		mul_serie_m4(dq->scale, basemat, S, baseinv, NULL, NULL, NULL, NULL, NULL);

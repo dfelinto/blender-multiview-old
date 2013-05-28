@@ -2189,7 +2189,7 @@ static void draw_dm_verts(BMEditMesh *em, DerivedMesh *dm, int sel, BMVert *eve_
 	/* For skin root drawing */
 	data.has_vskin = CustomData_has_layer(&em->bm->vdata, CD_MVERT_SKIN);
 	/* view-aligned matrix */
-	mult_m4_m4m4(data.imat, rv3d->viewmat, em->ob->obmat);
+	mul_m4_m4m4(data.imat, rv3d->viewmat, em->ob->obmat);
 	invert_m4(data.imat);
 
 	bglBegin(GL_POINTS);
@@ -2369,10 +2369,7 @@ static DMDrawOption draw_dm_faces_sel__setDrawOptions(void *userData, int index)
 	
 	if (!BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
 		if (efa == data->efa_act) {
-			if (BM_elem_flag_test(efa, BM_ELEM_SELECT))
-				glColor4ubv(data->cols[1]);
-			else
-				glColor4ubv(data->cols[2]);
+			glColor4ubv(data->cols[2]);
 			return DM_DRAW_OPTION_STIPPLE;
 		}
 		else {
@@ -2968,7 +2965,7 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 
 {
 	Mesh *me = ob->data;
-	BMFace *efa_act = BM_active_face_get(em->bm, false, false); /* annoying but active faces is stored differently */
+	BMFace *efa_act = BM_active_face_get(em->bm, false, true); /* annoying but active faces is stored differently */
 	BMEdge *eed_act = NULL;
 	BMVert *eve_act = NULL;
 	
@@ -4251,7 +4248,7 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 	if ((base->flag & OB_FROMDUPLI) && (ob->flag & OB_FROMGROUP)) {
 		float mat[4][4];
-		mult_m4_m4m4(mat, ob->obmat, psys->imat);
+		mul_m4_m4m4(mat, ob->obmat, psys->imat);
 		glMultMatrixf(mat);
 	}
 

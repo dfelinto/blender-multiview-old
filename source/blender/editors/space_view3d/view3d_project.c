@@ -410,7 +410,7 @@ void ED_view3d_win_to_3d(const ARegion *ar, const float depth_pt[3], const float
 		add_v3_v3v3(line_end, line_sta, mousevec);
 
 		if (isect_line_plane_v3(out, line_sta, line_end, depth_pt, rv3d->viewinv[2], true) == 0) {
-			/* highly unlikely to ever happen, mouse vec paralelle with view plane */
+			/* highly unlikely to ever happen, mouse vector parallel with view plane */
 			zero_v3(out);
 		}
 	}
@@ -546,8 +546,8 @@ void ED_view3d_ob_project_mat_get(const RegionView3D *rv3d, Object *ob, float pm
 {
 	float vmat[4][4];
 
-	mult_m4_m4m4(vmat, (float (*)[4])rv3d->viewmat, ob->obmat);
-	mult_m4_m4m4(pmat, (float (*)[4])rv3d->winmat, vmat);
+	mul_m4_m4m4(vmat, (float (*)[4])rv3d->viewmat, ob->obmat);
+	mul_m4_m4m4(pmat, (float (*)[4])rv3d->winmat, vmat);
 }
 
 /**
