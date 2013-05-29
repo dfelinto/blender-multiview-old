@@ -1660,6 +1660,53 @@ void NODE_OT_delete(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
+/* ****************** Switch View ******************* */
+
+static int node_switch_view_poll(bContext *C)
+{
+	SpaceNode *snode = CTX_wm_space_node(C);
+
+	if (snode && snode->edittree)
+		return TRUE;
+
+	return FALSE;
+}
+
+static int node_switch_view_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	SpaceNode *snode = CTX_wm_space_node(C);
+	bNode *node, *next;
+
+	for (node = snode->edittree->nodes.first; node; node = next) {
+		next = node->next;
+		if (node->flag & SELECT) {
+			node->update |= NODE_UPDATE;
+		}
+	}
+
+	ntreeUpdateTree(CTX_data_main(C), snode->edittree);
+
+	snode_notify(C, snode);
+	snode_dag_update(C, snode);
+
+	return OPERATOR_FINISHED;
+}
+
+void NODE_OT_switch_view_update(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Update Views";
+	ot->description = "Update views of selected node";
+	ot->idname = "NODE_OT_switch_view_update";
+
+	/* api callbacks */
+	ot->exec = node_switch_view_exec;
+	ot->poll = node_switch_view_poll;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+}
+
 /* ****************** Delete with reconnect ******************* */
 static int node_delete_reconnect_exec(bContext *C, wmOperator *UNUSED(op))
 {
