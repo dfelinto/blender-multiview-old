@@ -60,6 +60,8 @@
 #include "GPU_draw.h"
 #include "GPU_extensions.h"
 
+#include "PIL_time.h"
+
 #include "RE_engine.h"
 
 #include "WM_api.h"
@@ -101,9 +103,15 @@ static void wm_method_draw_stereo_pageflip(wmWindow *win)
 static void wm_method_draw_stereo_epilepsy(wmWindow *win)
 {
 	wmDrawTriple *triple;
-	static int view = 0;
+	static bool view = 0;
+	static double start = 0;
 
-	if (view++ %2)
+	if( (PIL_check_seconds_timer() - start) >= U.epilepsy_delay) {
+		start = PIL_check_seconds_timer();
+		view = !view;
+	}
+
+	if(view)
 		triple = win->drawdataall;
 	else
 		triple = win->drawdatastereoall;
