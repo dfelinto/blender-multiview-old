@@ -137,9 +137,8 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 	if (xmax < 1 || ymax < 1) return;
 
 	/* find current float rect for display, first case is after composite... still weak */
-	if (rr->rectf)
-		rectf = rr->rectf;
-	else {
+	rectf = RE_RenderViewGetRectf(rr, view_id);
+	if (rectf == NULL) {
 		if (rr->rect32) {
 			/* special case, currently only happens with sequencer rendering,
 			 * which updates the whole frame, so we can only mark display buffer

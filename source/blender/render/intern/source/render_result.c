@@ -64,6 +64,8 @@ void render_result_free(RenderResult *res)
 {
 	if (res == NULL) return;
 
+	//XXX this is a mess at the moment ...
+
 	while (res->layers.first) {
 		RenderLayer *rl = res->layers.first;
 
@@ -99,10 +101,10 @@ void render_result_free(RenderResult *res)
 
 	if (res->rect32)
 		MEM_freeN(res->rect32);
-	if (res->rectz)
-		MEM_freeN(res->rectz);
+//	if (res->rectz)
+//		MEM_freeN(res->rectz);
 	if (res->rectf)
-		MEM_freeN(res->rectf);
+//		MEM_freeN(res->rectf);
 	if (res->text)
 		MEM_freeN(res->text);
 	
