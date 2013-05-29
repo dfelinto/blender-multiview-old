@@ -153,6 +153,8 @@ protected:
 	
 	bNodeSocket *getEditorInputSocket(int editorNodeInputSocketIndex);
 	bNodeSocket *getEditorOutputSocket(int editorNodeOutputSocketIndex);
+
+	const char *RenderData_get_actview_name (const RenderData *rd, int actview);
 private:
 };
 

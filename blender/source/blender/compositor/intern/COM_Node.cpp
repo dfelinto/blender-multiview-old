@@ -215,3 +215,22 @@ OutputSocket *Node::findOutputSocketBybNodeSocket(bNodeSocket *socket)
 	}
 	return NULL;
 }
+
+const char *Node::RenderData_get_actview_name (const RenderData *rd, int actview) {
+	SceneRenderView *srv;
+	int view_id, nr;
+
+	for (view_id=0, nr=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
+
+		if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
+			continue;
+
+		if (srv->viewflag & SCE_VIEW_DISABLE)
+			continue;
+
+		if (actview == view_id++)
+			return srv->name;
+	}
+
+	return "";
+}
