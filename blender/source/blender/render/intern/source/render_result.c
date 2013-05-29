@@ -60,6 +60,7 @@
 
 /********************************** Free *************************************/
 
+#define SEGFAULT TRUE
 void render_result_free(RenderResult *res)
 {
 	if (res == NULL) return;
@@ -76,7 +77,9 @@ void render_result_free(RenderResult *res)
 		
 		while (rl->passes.first) {
 			RenderPass *rpass = rl->passes.first;
-			//if (rpass->rect) MEM_freeN(rpass->rect);
+#if SEGFAULT
+			if (rpass->rect) MEM_freeN(rpass->rect);
+#endif
 			BLI_remlink(&rl->passes, rpass);
 			MEM_freeN(rpass);
 		}
@@ -88,7 +91,7 @@ void render_result_free(RenderResult *res)
 		RenderView *rv = res->views.first;
 		BLI_remlink(&res->views, rv);
 
-#if 0
+#if SEGFAULT
 		/* this is producing a crash */
 		if (rv->rectf)
 			MEM_freeN(rv->rectf);
@@ -102,10 +105,12 @@ void render_result_free(RenderResult *res)
 
 	if (res->rect32)
 		MEM_freeN(res->rect32);
-//	if (res->rectz)
-//		MEM_freeN(res->rectz);
+#if SEGFAULT
+	if (res->rectz)
+		MEM_freeN(res->rectz);
 	if (res->rectf)
-//		MEM_freeN(res->rectf);
+		MEM_freeN(res->rectf);
+#endif
 	if (res->text)
 		MEM_freeN(res->text);
 	
