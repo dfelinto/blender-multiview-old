@@ -222,8 +222,12 @@ void RE_RenderViewSetRectf(RenderResult *res, int view_id, float *rect)
 	int nr=0;
 
 	for (nr=0, rv = res->views.first; rv; rv = rv->next, nr++)
-		if (nr == view_id)
+		if (nr == view_id) {
 			rv->rectf = rect;
+			return;
+		}
+
+	BLI_assert(0);
 }
 
 void RE_RenderViewSetRectz(RenderResult *res, int view_id, float *rect)
@@ -232,8 +236,12 @@ void RE_RenderViewSetRectz(RenderResult *res, int view_id, float *rect)
 	int nr=0;
 
 	for (nr=0, rv = res->views.first; rv; rv = rv->next, nr++)
-		if (nr == view_id)
+		if (nr == view_id) {
 			rv->rectz = rect;
+			return;
+		}
+
+	BLI_assert(0);
 }
 
 float *RE_RenderViewGetRectz(RenderResult *res, int view_id)
@@ -245,6 +253,7 @@ float *RE_RenderViewGetRectz(RenderResult *res, int view_id)
 		if (nr == view_id)
 			return rv->rectz;
 
+	BLI_assert(0);
 	return NULL;
 }
 
@@ -257,6 +266,7 @@ float *RE_RenderViewGetRectf(RenderResult *res, int view_id)
 		if (nr == view_id)
 			return rv->rectf;
 
+	BLI_assert(0);
 	return NULL;
 }
 
@@ -415,6 +425,7 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 			rr->rectx = re->result->rectx;
 			rr->recty = re->result->recty;
 
+			/* copy rectf and rectz together */
 			rr->views = re->result->views;
 			rr->rect32 = re->result->rect32;
 			
