@@ -226,8 +226,6 @@ void RE_RenderViewSetRectf(RenderResult *res, int view_id, float *rect)
 			rv->rectf = rect;
 			return;
 		}
-
-	BLI_assert(0);
 }
 
 void RE_RenderViewSetRectz(RenderResult *res, int view_id, float *rect)
@@ -240,8 +238,6 @@ void RE_RenderViewSetRectz(RenderResult *res, int view_id, float *rect)
 			rv->rectz = rect;
 			return;
 		}
-
-	BLI_assert(0);
 }
 
 float *RE_RenderViewGetRectz(RenderResult *res, int view_id)
@@ -253,7 +249,6 @@ float *RE_RenderViewGetRectz(RenderResult *res, int view_id)
 		if (nr == view_id)
 			return rv->rectz;
 
-	BLI_assert(0);
 	return NULL;
 }
 
@@ -266,7 +261,6 @@ float *RE_RenderViewGetRectf(RenderResult *res, int view_id)
 		if (nr == view_id)
 			return rv->rectf;
 
-	BLI_assert(0);
 	return NULL;
 }
 
@@ -433,8 +427,14 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 			rl = render_get_active_layer(re, re->result);
 
 			if (rl) {
-				if (RE_RenderViewGetRectf(rr, id) == NULL)
-					RE_RenderViewSetRectf(rr, id, RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, id));
+				if (RE_RenderViewGetRectf(rr, id) == NULL) {
+					float *rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, id);
+					if (rectf)
+						RE_RenderViewSetRectf(rr, id, MEM_dupallocN(rectf));
+
+					/* technically the next line should work, but it's segfaulting on render_result_free() */
+					//RE_RenderViewSetRectf(rr, id, RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, id));
+				}
 
 				if (RE_RenderViewGetRectz(rr, id) == NULL) {
 					float *rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, id);
