@@ -30,19 +30,101 @@
  *  \ingroup cmpnodes
  */
 
+#include "BKE_context.h"
 #include "../node_composite_util.h"
 
-/* **************** MIX RGB ******************** */
-static bNodeSocketTemplate cmp_node_switch_view_in[] = {
-	{	SOCK_RGBA, 1, N_("Left"),		0.8f, 0.8f, 0.8f, 1.0f, 0.0f, 1.0f},
-	{	SOCK_RGBA, 1, N_("Right"),			0.8f, 0.8f, 0.8f, 1.0f, 0.0f, 1.0f},
-	{	-1, 0, ""	}
-};
-
+/* **************** SWITCH VIEW ******************** */
 static bNodeSocketTemplate cmp_node_switch_view_out[] = {
 	{	SOCK_RGBA, 0, N_("Image"),			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
+
+static bNodeSocket *ntreeCompositSwitchViewAddSocket(bNodeTree *ntree, bNode *node, const char *name)
+{
+	bNodeSocket *sock = nodeAddStaticSocket(ntree, node, SOCK_IN, SOCK_RGBA, PROP_NONE, NULL, name);
+	return sock;
+}
+
+static void cmp_node_switch_view_update(bNodeTree *ntree, bNode *node)
+{
+	bNodeSocket *sock;
+	SceneRenderView *srv;
+	int has_views = FALSE;
+	Scene *scene = (Scene *)node->id;
+
+	/* remove the views that were removed */
+	for (sock = node->inputs.first; sock; sock = sock->next) {
+		if (scene == NULL) {
+			nodeRemoveSocket(ntree, node, sock);
+			continue;
+		}
+
+		srv = BLI_findstring(&scene->r.views, sock->name, offsetof(SceneRenderView, name));
+
+		if (srv == NULL || (srv->viewflag & SCE_VIEW_DISABLE))
+			nodeRemoveSocket(ntree, node, sock);
+		else
+			has_views = TRUE;
+	}
+
+	if (scene == NULL) {
+		if (!has_views) {
+			sock = ntreeCompositSwitchViewAddSocket(ntree, node, "No View");
+			sock->flag |= SOCK_HIDDEN;
+		}
+		return;
+	}
+
+	/* add the new views */
+	for (srv = (SceneRenderView *)scene->r.views.first; srv; srv = srv->next) {
+		sock = BLI_findstring(&node->inputs, srv->name, offsetof(bNodeSocket, name));
+
+		if (srv->viewflag & SCE_VIEW_DISABLE)
+			continue;
+
+		if (sock == NULL) {
+			ntreeCompositSwitchViewAddSocket(ntree, node, srv->name);
+			has_views = TRUE;
+		}
+	}
+
+	/* add one socket by default */
+	if (!has_views) {
+		sock = ntreeCompositSwitchViewAddSocket(ntree, node, "No View");
+		sock->flag |= SOCK_HIDDEN;
+
+	}
+}
+
+static void init_switch_view(const bContext *C, PointerRNA *ptr)
+{
+	Scene *scene = CTX_data_scene(C);
+	bNodeTree *ntree = ptr->id.data;
+	bNode *node = ptr->data;
+	SceneRenderView *srv;
+	int nr;
+	int has_views = FALSE;
+
+	/* store scene for updates */
+	node->id = (ID*) scene;
+
+	if (scene) {
+		RenderData *rd = &scene->r;
+
+		for (nr=0, srv=(SceneRenderView *)rd->views.first; srv; srv = srv->next, nr++) {
+
+			if (srv->viewflag & SCE_VIEW_DISABLE)
+				continue;
+
+			ntreeCompositSwitchViewAddSocket(ntree, node, srv->name);
+			has_views = TRUE;
+		}
+	}
+
+	/* add one socket by default */
+	if (!has_views)
+		ntreeCompositSwitchViewAddSocket(ntree, node, "No View");
+}
 
 /* custom1 = mix type */
 void register_node_type_cmp_switch_view(void)
@@ -50,8 +132,11 @@ void register_node_type_cmp_switch_view(void)
 	static bNodeType ntype;
 
 	cmp_node_type_base(&ntype, CMP_NODE_SWITCH_VIEW, "View Switch", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
-	node_type_socket_templates(&ntype, cmp_node_switch_view_in, cmp_node_switch_view_out);
-	node_type_size_preset(&ntype, NODE_SIZE_SMALL);
+	node_type_socket_templates(&ntype, NULL, cmp_node_switch_view_out);
+
+	ntype.initfunc_api = init_switch_view;
+
+	node_type_update(&ntype, cmp_node_switch_view_update, NULL);
+
 	nodeRegisterType(&ntype);
 }
-

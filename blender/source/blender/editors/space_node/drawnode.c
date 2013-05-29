@@ -1974,16 +1974,17 @@ static void node_composit_buts_switch(uiLayout *layout, bContext *UNUSED(C), Poi
 	uiItemR(layout, ptr, "check", 0, NULL, ICON_NONE);
 }
 
-static void node_composit_buts_switch_view(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+static void node_composit_buts_switch_view(uiLayout *layout, bContext *UNUSED(C), PointerRNA *UNUSED(ptr))
 {
-	uiItemR(layout, ptr, "check", 0, NULL, ICON_NONE);
-}
+	PointerRNA op_ptr;
+	wmOperatorType *ot = WM_operatortype_find("NODE_OT_switch_view_update", 1);
 
-#if 0
-static void node_composit_buts_switch_view_details(uiLayout *layout, bContext *C, PointerRNA *ptr)
-{
+	BLI_assert(ot != 0);
+
+	WM_operator_properties_create_ptr(&op_ptr, ot);
+
+	uiItemFullO_ptr(layout, ot, "Update Views", ICON_FILE_REFRESH, op_ptr.data, WM_OP_INVOKE_DEFAULT, 0);
 }
-#endif
 
 static void node_composit_buts_boxmask(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {

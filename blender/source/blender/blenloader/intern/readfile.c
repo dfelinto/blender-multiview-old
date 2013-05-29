@@ -240,6 +240,7 @@ typedef struct OldNewMap {
 static void *read_struct(FileData *fd, BHead *bh, const char *blockname);
 static void direct_link_modifiers(FileData *fd, ListBase *lb);
 static void convert_tface_mt(FileData *fd, Main *main);
+static void direct_link_scene(FileData *fd, Scene *sce);
 
 /* this function ensures that reports are printed,
  * in the case of libraray linking errors this is important!
