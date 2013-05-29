@@ -38,6 +38,7 @@
 #  include "AUD_C-API.h"
 #endif
 
+#include "BLI_utildefines.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_scene.h"
@@ -45,7 +46,7 @@
 
 #include "BLI_blenlib.h"
 
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"

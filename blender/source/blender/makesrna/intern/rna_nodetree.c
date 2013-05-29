@@ -1336,9 +1336,6 @@ static bNodeType *rna_Node_register_base(Main *bmain, ReportList *reports, Struc
 	nt->freefunc_api = (have_function[5]) ? rna_Node_free : NULL;
 	nt->uifunc = (have_function[6]) ? rna_Node_draw_buttons : NULL;
 	nt->uifuncbut = (have_function[7]) ? rna_Node_draw_buttons_ext : NULL;
-	/* node buttons are only drawn if the options flag is set */
-	if (nt->uifunc || nt->uifuncbut)
-		nt->flag |= NODE_OPTIONS;
 	
 	/* sanitize size values in case not all have been registered */
 	if (nt->maxwidth < nt->minwidth)
@@ -2328,6 +2325,11 @@ static void rna_NodeInternal_draw_buttons_ext(ID *id, bNode *node, struct bConte
 		PointerRNA ptr;
 		RNA_pointer_create(id, &RNA_Node, node, &ptr);
 		node->typeinfo->uifuncbut(layout, C, &ptr);
+	}
+	else if (node->typeinfo->uifunc) {
+		PointerRNA ptr;
+		RNA_pointer_create(id, &RNA_Node, node, &ptr);
+		node->typeinfo->uifunc(layout, C, &ptr);
 	}
 }
 
