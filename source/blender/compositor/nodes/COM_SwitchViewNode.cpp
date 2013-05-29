@@ -46,6 +46,8 @@ void SwitchViewNode::convertToOperations(ExecutionSystem *graph, CompositorConte
 			break;
 	}
 
+	if (!sock) nr --;
+
 	this->getInputSocket(nr)->relinkConnections(operation->getInputSocket(0), nr, graph);
 	this->getOutputSocket(0)->relinkConnections(operation->getOutputSocket());
 
