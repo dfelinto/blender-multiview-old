@@ -64,7 +64,8 @@ void render_result_free(RenderResult *res)
 {
 	if (res == NULL) return;
 
-	//XXX this is a mess at the moment ...
+	//XXX MV this is a mess at the moment ... lots of segfaults when compositing
+	//what I think is, not all rect are pointing to heap data (or the data is freed elsewhere <dfelinto>
 
 	while (res->layers.first) {
 		RenderLayer *rl = res->layers.first;
@@ -75,7 +76,7 @@ void render_result_free(RenderResult *res)
 		
 		while (rl->passes.first) {
 			RenderPass *rpass = rl->passes.first;
-			if (rpass->rect) MEM_freeN(rpass->rect);
+			//if (rpass->rect) MEM_freeN(rpass->rect);
 			BLI_remlink(&rl->passes, rpass);
 			MEM_freeN(rpass);
 		}
