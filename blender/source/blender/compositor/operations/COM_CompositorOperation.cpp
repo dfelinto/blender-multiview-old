@@ -82,27 +82,20 @@ void CompositorOperation::deinitExecution()
 	if (!isBreaked()) {
 		Render *re = RE_GetRender(this->m_sceneName);
 		RenderResult *rr = RE_AcquireResultWrite(re);
+		RenderView *rv = (RenderView *)BLI_findlink(&rr->views, this->m_actview);
 
-		if (rr) {
-			float *rectf = RE_RenderViewGetRectf(rr, this->m_actview);
-			float *rectz = RE_RenderViewGetRectz(rr, this->m_actview);
-
-			if (rectf != NULL)
-				MEM_freeN(rectf);
-
-			RE_RenderViewSetRectf(rr, this->m_actview, this->m_outputBuffer);
-
-			if (rectz != NULL)
-				MEM_freeN(rectz);
-
-			RE_RenderViewSetRectz(rr, this->m_actview, this->m_depthBuffer);
-		}
-		else {
+		if (rr && rv) {
 			if (this->m_outputBuffer) {
-				MEM_freeN(this->m_outputBuffer);
+				if (rv->rectf != NULL)
+					MEM_freeN(rv->rectf);
+				rv->rectf = (float *) MEM_dupallocN(this->m_outputBuffer);
 			}
+
 			if (this->m_depthBuffer) {
-				MEM_freeN(this->m_depthBuffer);
+				if (rv->rectz != NULL) {
+					MEM_freeN(rv->rectz);
+				}
+				rv->rectz = (float *) MEM_dupallocN(this->m_depthBuffer);
 			}
 		}
 
@@ -115,13 +108,12 @@ void CompositorOperation::deinitExecution()
 		BKE_image_signal(BKE_image_verify_viewer(IMA_TYPE_R_RESULT, "Render Result"), NULL, IMA_SIGNAL_FREE);
 		BLI_unlock_thread(LOCK_DRAW_IMAGE);
 	}
-	else {
-		if (this->m_outputBuffer) {
-			MEM_freeN(this->m_outputBuffer);
-		}
-		if (this->m_depthBuffer) {
-			MEM_freeN(this->m_depthBuffer);
-		}
+
+	if (this->m_outputBuffer) {
+		MEM_freeN(this->m_outputBuffer);
+	}
+	if (this->m_depthBuffer) {
+		MEM_freeN(this->m_depthBuffer);
 	}
 
 	this->m_outputBuffer = NULL;
