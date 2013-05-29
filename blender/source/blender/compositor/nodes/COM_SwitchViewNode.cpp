@@ -28,19 +28,25 @@ SwitchViewNode::SwitchViewNode(bNode *editorNode) : Node(editorNode)
 	/* pass */
 }
 
-
 void SwitchViewNode::convertToOperations(ExecutionSystem *graph, CompositorContext *context)
 {
 	SocketProxyOperation *operation = new SocketProxyOperation(COM_DT_COLOR);
-//	int switchFrame = this->getbNode()->custom1;
 	int actview = context->getViewId();
 
-	if (!actview) {
-		this->getInputSocket(0)->relinkConnections(operation->getInputSocket(0), 0, graph);
+	bNodeSocket *sock;
+	bNode *bnode = this->getbNode();
+
+	const RenderData *rd = context->getRenderData();
+	const char *view = this->RenderData_get_actview_name(rd, actview); /* name of active view */
+
+	/* get the internal index of the socket with a matching name */
+	int nr = 0;
+	for (sock = (bNodeSocket *)bnode->inputs.first; sock; sock = sock->next, nr++) {
+		if (strcmp(sock->name, view) == 0)
+			break;
 	}
-	else {
-		this->getInputSocket(1)->relinkConnections(operation->getInputSocket(0), 1, graph);
-	}
+
+	this->getInputSocket(nr)->relinkConnections(operation->getInputSocket(0), nr, graph);
 	this->getOutputSocket(0)->relinkConnections(operation->getOutputSocket());
 
 	graph->addOperation(operation);
