@@ -74,9 +74,7 @@ int ImageNode::getPassIndex(CompositorContext *context, ListBase *passes, ListBa
 
 	bool is_multiview = (view_ui == 0); /* if view selected == All (0) */
 	RenderView *rv;
-	SceneRenderView *srv;
 	const char *view = NULL;
-	int nr, view_id;
 
 	if (! is_multiview) {
 		rv = (RenderView *)BLI_findlink(views, view_ui - 1);
@@ -84,21 +82,7 @@ int ImageNode::getPassIndex(CompositorContext *context, ListBase *passes, ListBa
 	}
 	else {
 		/* heuristic to match image name with scene names */
-
-		/* MV I'm doing this loop here only to get the name of the current view.
-		   We can store the view in context too, it would be cleaner
-		   and remember, view_id is a index for the active views only */
-		for (view_id=0, nr=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
-
-			if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
-				continue;
-
-			if (srv->viewflag & SCE_VIEW_DISABLE)
-				continue;
-
-			if (actview == view_id++)
-				view = srv->name;
-		}
+		view = this->RenderData_get_actview_name(rd, actview);
 
 		/* this should never happen, but it doesn't hurt to be safe */
 		if (view == NULL)
