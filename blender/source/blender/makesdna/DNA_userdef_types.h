@@ -470,6 +470,7 @@ typedef struct UserDef {
 	char anaglyph_type; /* anaglyph scheme for the user display */
 	char interlace_type;  /* interlace type for the user display */
 	char pad3[7];
+	float epilepsy_delay; /* preferred delay in seconds for Dr. Epilepsy stereo method */
 
 	char author[80];	/* author name for file formats supporting it */
 
