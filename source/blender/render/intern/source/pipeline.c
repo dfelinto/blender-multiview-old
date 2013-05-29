@@ -436,11 +436,17 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 				if (RE_RenderViewGetRectf(rr, id) == NULL)
 					RE_RenderViewSetRectf(rr, id, RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, id));
 
-				if (RE_RenderViewGetRectz(rr, id) == NULL)
-					RE_RenderViewSetRectz(rr, id, RE_RenderLayerGetPass(rl, SCE_PASS_Z, id));
+				if (RE_RenderViewGetRectz(rr, id) == NULL) {
+					float *rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, id);
+					if (rectz)
+						RE_RenderViewSetRectz(rr, id, MEM_dupallocN(rectz));
+
+					/* technically the next line should work, but it's segfaulting on render_result_free() */
+					//RE_RenderViewSetRectz(rr, id, RE_RenderLayerGetPass(rl, SCE_PASS_Z, id));
+				}
 			}
 
-			rr->have_combined = (RE_RenderViewGetRectf(re->result, 0) != NULL);
+			rr->have_combined = (RE_RenderViewGetRectf(re->result, id) != NULL);
 			rr->layers = re->result->layers;
 			
 			rr->xof = re->disprect.xmin;
