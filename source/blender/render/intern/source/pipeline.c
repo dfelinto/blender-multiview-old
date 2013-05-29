@@ -333,6 +333,16 @@ RenderLayer *render_get_active_layer(Render *re, RenderResult *rr)
 		return rr->layers.first;
 }
 
+RenderView *render_get_active_view(Render *re, RenderResult *rr)
+{
+	RenderView *rv = BLI_findlink(&rr->views, re->actview);
+
+	if (rv)
+		return rv;
+	else
+		return rr->views.first;
+}
+
 static int render_scene_needs_vector(Render *re)
 {
 	SceneRenderLayer *srl;
@@ -410,45 +420,48 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 	memset(rr, 0, sizeof(RenderResult));
 
 	if (re) {
-		int id = re->actview;
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
 
 		if (re->result) {
 			RenderLayer *rl;
+			RenderView *rv;
 			
 			rr->rectx = re->result->rectx;
 			rr->recty = re->result->recty;
 
-			/* copy rectf and rectz together */
-			rr->views = re->result->views;
+			/* XXX MV rect32 will be moved to RenderView when I tackle the sequencer */
 			rr->rect32 = re->result->rect32;
 			
 			/* active layer */
 			rl = render_get_active_layer(re, re->result);
 
+			/* actview view */
+			rv = render_get_active_view(re, re->result);
+
 			if (rl) {
-				if (RE_RenderViewGetRectf(rr, id) == NULL) {
-					float *rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, id);
+				if (rv->rectf == NULL) {
+					float *rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
 					if (rectf)
-						RE_RenderViewSetRectf(rr, id, MEM_dupallocN(rectf));
+						rv->rectf = MEM_dupallocN(rectf);
 
 					/* technically the next line should work, but it's segfaulting on render_result_free() */
-					//RE_RenderViewSetRectf(rr, id, RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, id));
+					//rv->rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
 				}
 
-				if (RE_RenderViewGetRectz(rr, id) == NULL) {
-					float *rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, id);
+				if (rv->rectz == NULL) {
+					float *rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, re->actview);
 					if (rectz)
-						RE_RenderViewSetRectz(rr, id, MEM_dupallocN(rectz));
+						rv->rectz = MEM_dupallocN(rectz);
 
 					/* technically the next line should work, but it's segfaulting on render_result_free() */
-					//RE_RenderViewSetRectz(rr, id, RE_RenderLayerGetPass(rl, SCE_PASS_Z, id));
+					//rv->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, id);
 				}
 			}
 
-			rr->have_combined = (RE_RenderViewGetRectf(re->result, id) != NULL);
+			rr->have_combined = (rv->rectf != NULL);
 			rr->layers = re->result->layers;
-			
+			rr->views = re->result->views;
+
 			rr->xof = re->disprect.xmin;
 			rr->yof = re->disprect.ymin;
 		}

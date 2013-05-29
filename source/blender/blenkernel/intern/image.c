@@ -2720,11 +2720,11 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 		return NULL;
 
 	re = RE_GetRender(iuser->scene->id.name);
-	actview = iuser->view;
 
 	channels = 4;
 	layer = (iuser) ? iuser->layer : 0;
 	pass = (iuser) ? iuser->pass : 0;
+	actview = (iuser) ? iuser->view : 0;
 
 	if (from_render) {
 		RE_AcquireResultImage(re, &rres);

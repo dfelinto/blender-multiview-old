@@ -948,10 +948,9 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 
 		IMB_exr_add_view(exrhandle, rview->name);
 
-		rect = RE_RenderViewGetRectf(rr, nr);
-		if (rect) {
+		if (rview->rectf) {
 			for (a=0; a < 4; a++)
-				IMB_exr_add_channel(exrhandle, "Composite", get_pass_name(SCE_PASS_COMBINED, a, ""), rview->name, 4, 4 * rr->rectx, rect + a);
+				IMB_exr_add_channel(exrhandle, "Composite", get_pass_name(SCE_PASS_COMBINED, a, ""), rview->name, 4, 4 * rr->rectx, rview->rectf + a);
 		}
 	}
 
