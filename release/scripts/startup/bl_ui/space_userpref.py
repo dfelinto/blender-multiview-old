@@ -462,6 +462,9 @@ class USERPREF_PT_system(Panel):
         if system.stereo_display == 'ANAGLYPH':
             col.prop(system, "anaglyph_type", text="Type")
 
+        if system.stereo_display == 'EPILEPSY':
+            col.prop(system, "epilepsy_delay")
+
         if system.stereo_display == 'INTERLACE':
             col.prop(system, "interlace_type", text="Type")
 
