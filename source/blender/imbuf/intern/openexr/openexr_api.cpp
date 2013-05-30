@@ -748,7 +748,7 @@ void IMB_exr_add_channel(void *handle, const char *layname, const char *passname
 	ExrChannel *echan;
 
 	/* handle viewed channels separatedly */
-	if (view[0] == '\0')
+	if (view[0] != '\0' || TRUE)
 		return imb_exr_add_channel_multiview(handle, layname, passname, view, xstride, ystride, rect);
 
 	echan = (ExrChannel *)MEM_callocN(sizeof(ExrChannel), "exr tile channel");

@@ -42,61 +42,13 @@ extern "C" {
 	#include "IMB_imbuf_types.h"
 }
 
-static int get_datatype_size(DataType datatype)
-{
-	switch (datatype) {
-		case COM_DT_VALUE:  return 1;
-		case COM_DT_VECTOR: return 3;
-		case COM_DT_COLOR:  return 4;
-		default:            return 0;
-	}
-}
-
-OutputSingleLayerMultiViewOperation::OutputSingleLayerMultiViewOperation(
-        const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path,
-        const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings, int actview):
-        OutputSingleLayerOperation(rd, tree, datatype, format, path, viewSettings, displaySettings, actview)
-{
-}
-
-void OutputSingleLayerMultiViewOperation::deinitExecution()
-{
-	if (this->getWidth() * this->getHeight() != 0) {
-		
-		int size = get_datatype_size(this->m_datatype);
-		ImBuf *ibuf = IMB_allocImBuf(this->getWidth(), this->getHeight(), this->m_format->planes, 0);
-		Main *bmain = G.main; /* TODO, have this passed along */
-		char filename[FILE_MAX];
-		
-		ibuf->channels = size;
-		ibuf->rect_float = this->m_outputBuffer;
-		ibuf->mall |= IB_rectfloat; 
-		ibuf->dither = this->m_rd->dither_intensity;
-		
-		IMB_colormanagement_imbuf_for_write(ibuf, TRUE, FALSE, m_viewSettings, m_displaySettings,
-		                                    this->m_format);
-
-		BKE_makepicstring(filename, this->m_path, bmain->name, this->m_rd->cfra, this->m_format,
-		                  (this->m_rd->scemode & R_EXTENSION), true, "");
-		
-		if (0 == BKE_imbuf_write(ibuf, filename, this->m_format))
-			printf("Cannot save Node File Output to %s\n", filename);
-		else
-			printf("Saved: %s\n", filename);
-		
-		IMB_freeImBuf(ibuf);
-	}
-	this->m_outputBuffer = NULL;
-	this->m_imageInput = NULL;
-}
-
-OutputOpenExrMultiLayerMultiViewOperation::OutputOpenExrMultiLayerMultiViewOperation(
+OutputOpenExrMultiViewOperation::OutputOpenExrMultiViewOperation(
         const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int actview):
         OutputOpenExrMultiLayerOperation(rd, tree, path, exr_codec, actview)
 {
 }
 
-void *OutputOpenExrMultiLayerMultiViewOperation::get_handle(const char* filename)
+void *OutputOpenExrMultiViewOperation::get_handle(const char* filename)
 {
 	unsigned int width = this->getWidth();
 	unsigned int height = this->getHeight();
@@ -178,7 +130,7 @@ void *OutputOpenExrMultiLayerMultiViewOperation::get_handle(const char* filename
 	return NULL;
 }
 
-void OutputOpenExrMultiLayerMultiViewOperation::deinitExecution()
+void OutputOpenExrMultiViewOperation::deinitExecution()
 {
 	unsigned int width = this->getWidth();
 	unsigned int height = this->getHeight();
@@ -189,7 +141,7 @@ void OutputOpenExrMultiLayerMultiViewOperation::deinitExecution()
 		Main *bmain = G.main; /* TODO, have this passed along */
 		char filename[FILE_MAX];
 
-		BKE_makepicstring_from_type(filename, this->m_path, bmain->name, this->m_rd->cfra, R_IMF_IMTYPE_MULTILAYER,
+		BKE_makepicstring_from_type(filename, this->m_path, bmain->name, this->m_rd->cfra, R_IMF_IMTYPE_MULTIVIEW,
 									(this->m_rd->scemode & R_EXTENSION), true, "");
 
 		exrhandle = this->get_handle(filename);

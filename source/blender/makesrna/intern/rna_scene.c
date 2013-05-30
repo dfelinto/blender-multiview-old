@@ -194,13 +194,17 @@ EnumPropertyItem snap_uv_element_items[] = {
 #endif
 
 #ifdef WITH_OPENEXR
-#  define R_IMF_ENUM_EXR_MULTI  {R_IMF_IMTYPE_MULTILAYER, "OPEN_EXR_MULTILAYER", ICON_FILE_IMAGE, \
+#  define R_IMF_ENUM_EXR_MULTIVIEW {R_IMF_IMTYPE_MULTIVIEW, "OPEN_EXR_MULTIVIEW", ICON_RENDERVIEWS, \
+                                                          "OpenEXR MultiView", \
+                                                          "Output image in multiview OpenEXR format"},
+#  define R_IMF_ENUM_EXR_MULTILAYER  {R_IMF_IMTYPE_MULTILAYER, "OPEN_EXR_MULTILAYER", ICON_FILE_IMAGE, \
                                                           "OpenEXR MultiLayer", \
                                                           "Output image in multilayer OpenEXR format"},
 #  define R_IMF_ENUM_EXR        {R_IMF_IMTYPE_OPENEXR, "OPEN_EXR", ICON_FILE_IMAGE, "OpenEXR", \
                                                        "Output image in OpenEXR format"},
 #else
-#  define R_IMF_ENUM_EXR_MULTI
+#  define R_IMF_ENUM_EXR_MULTIVIEW
+#  define R_IMF_ENUM_EXR_MULTILAYER
 #  define R_IMF_ENUM_EXR
 #endif
 
@@ -230,7 +234,8 @@ EnumPropertyItem snap_uv_element_items[] = {
 	{0, "", 0, " ", NULL},                                                    \
 	R_IMF_ENUM_CINEON                                                         \
 	R_IMF_ENUM_DPX                                                            \
-	R_IMF_ENUM_EXR_MULTI                                                      \
+	R_IMF_ENUM_EXR_MULTIVIEW                                                  \
+	R_IMF_ENUM_EXR_MULTILAYER                                                 \
 	R_IMF_ENUM_EXR                                                            \
 	R_IMF_ENUM_HDR                                                            \
 	R_IMF_ENUM_TIFF                                                           \
@@ -835,7 +840,7 @@ static EnumPropertyItem *rna_ImageFormatSettings_color_depth_itemf(bContext *C, 
 	}
 	else {
 		const int depth_ok = BKE_imtype_valid_depths(imf->imtype);
-		const int is_float = ELEM3(imf->imtype, R_IMF_IMTYPE_RADHDR, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER);
+		const int is_float = ELEM4(imf->imtype, R_IMF_IMTYPE_RADHDR, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW);
 
 		EnumPropertyItem *item_8bit =  &image_color_depth_items[0];
 		EnumPropertyItem *item_10bit = &image_color_depth_items[1];
@@ -3792,12 +3797,6 @@ static void rna_def_scene_image_format_data(BlenderRNA *brna)
 	RNA_def_property_enum_items(prop, exr_codec_items);
 	RNA_def_property_ui_text(prop, "Codec", "Codec settings for OpenEXR");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
-	prop = RNA_def_property(srna, "use_multiview", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "flag", R_IMF_FLAG_MULTIVIEW);
-	RNA_def_property_ui_text(prop, "Multi View", "Save multiple views in the same image (OpenEXR 1.7.1 and higher)");
-	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
 #endif
 
 #ifdef WITH_OPENJPEG

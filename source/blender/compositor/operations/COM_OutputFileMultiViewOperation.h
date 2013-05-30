@@ -33,21 +33,11 @@
 
 #include "intern/openexr/openexr_multi.h"
 
-/* Writes the image to a single-layer file. */
-class OutputSingleLayerMultiViewOperation : public OutputSingleLayerOperation {
-private:
-public:
-	OutputSingleLayerMultiViewOperation(const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path,
-	                           const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings, int actview);
-
-	void deinitExecution();
-};
-
 /* Writes inputs into OpenEXR multilayer channels. */
-class OutputOpenExrMultiLayerMultiViewOperation : public OutputOpenExrMultiLayerOperation {
+class OutputOpenExrMultiViewOperation : public OutputOpenExrMultiLayerOperation {
 private:
 public:
-	OutputOpenExrMultiLayerMultiViewOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int actview);
+	OutputOpenExrMultiViewOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int actview);
 
 	void *get_handle(const char *filename);
 	void deinitExecution();
