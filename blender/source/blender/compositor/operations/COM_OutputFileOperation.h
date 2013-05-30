@@ -34,7 +34,7 @@
 
 /* Writes the image to a single-layer file. */
 class OutputSingleLayerOperation : public NodeOperation {
-protected:
+private:
 	const RenderData *m_rd;
 	const bNodeTree *m_tree;
 	
@@ -86,10 +86,10 @@ protected:
 
 	int m_actview;
 
+	
 public:
 	OutputOpenExrMultiLayerOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int actview);
-
-	void *get_handle(const char *filename);
+	
 	void add_layer(const char *name, DataType datatype);
 	
 	void executeRegion(rcti *rect, unsigned int tileNumber);

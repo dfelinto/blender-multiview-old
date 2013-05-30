@@ -1573,7 +1573,7 @@ static void node_draw_input_file_output(bContext *C, uiLayout *layout, PointerRN
 	
 	imfptr = RNA_pointer_get(node_ptr, "format");
 	imtype = RNA_enum_get(&imfptr, "file_format");
-	if (imtype == R_IMF_IMTYPE_MULTILAYER) {
+	if (ELEM(imtype, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW)) {
 		NodeImageMultiFileSocket *input = sock->storage;
 		RNA_pointer_create(&ntree->id, &RNA_NodeOutputFileSlotLayer, input, &inputptr);
 		
@@ -1603,7 +1603,7 @@ static void node_draw_input_file_output(bContext *C, uiLayout *layout, PointerRN
 static void node_composit_buts_file_output(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
 	PointerRNA imfptr = RNA_pointer_get(ptr, "format");
-	int multilayer = (RNA_enum_get(&imfptr, "file_format") == R_IMF_IMTYPE_MULTILAYER);
+	int multilayer = (ELEM(RNA_enum_get(&imfptr, "file_format"), R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW));
 	
 	if (multilayer)
 		uiItemL(layout, IFACE_("Path:"), ICON_NONE);
@@ -1617,7 +1617,7 @@ static void node_composit_buts_file_output_details(uiLayout *layout, bContext *C
 	PointerRNA active_input_ptr, op_ptr;
 	uiLayout *row, *col;
 	int active_index;
-	int multilayer = (RNA_enum_get(&imfptr, "file_format") == R_IMF_IMTYPE_MULTILAYER);
+	int multilayer = (ELEM(RNA_enum_get(&imfptr, "file_format"), R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW));
 	
 	node_composit_buts_file_output(layout, C, ptr);
 	uiTemplateImageSettings(layout, &imfptr, FALSE);

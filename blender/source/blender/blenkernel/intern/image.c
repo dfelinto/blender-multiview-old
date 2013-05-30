@@ -983,7 +983,7 @@ int BKE_imtype_to_ftype(const char imtype)
 	else if (imtype == R_IMF_IMTYPE_TIFF)
 		return TIF;
 #endif
-	else if (imtype == R_IMF_IMTYPE_OPENEXR || imtype == R_IMF_IMTYPE_MULTILAYER)
+	else if (ELEM3(imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW))
 		return OPENEXR;
 #ifdef WITH_CINEON
 	else if (imtype == R_IMF_IMTYPE_CINEON)
@@ -1062,7 +1062,7 @@ int BKE_imtype_supports_zbuf(const char imtype)
 {
 	switch (imtype) {
 		case R_IMF_IMTYPE_IRIZ:
-		case R_IMF_IMTYPE_OPENEXR: /* but not R_IMF_IMTYPE_MULTILAYER */
+		case R_IMF_IMTYPE_OPENEXR: /* but not R_IMF_IMTYPE_MULTILAYER or R_IMF_IMTYPE_MULTIVIEW */
 			return 1;
 	}
 	return 0;
@@ -1096,6 +1096,7 @@ int BKE_imtype_requires_linear_float(const char imtype)
 		case R_IMF_IMTYPE_RADHDR:
 		case R_IMF_IMTYPE_OPENEXR:
 		case R_IMF_IMTYPE_MULTILAYER:
+		case R_IMF_IMTYPE_MULTIVIEW:
 			return TRUE;
 	}
 	return 0;
@@ -1115,6 +1116,7 @@ char BKE_imtype_valid_channels(const char imtype)
 		case R_IMF_IMTYPE_TIFF:
 		case R_IMF_IMTYPE_OPENEXR:
 		case R_IMF_IMTYPE_MULTILAYER:
+		case R_IMF_IMTYPE_MULTIVIEW:
 		case R_IMF_IMTYPE_DDS:
 		case R_IMF_IMTYPE_JP2:
 		case R_IMF_IMTYPE_QUICKTIME:
@@ -1146,6 +1148,7 @@ char BKE_imtype_valid_depths(const char imtype)
 		case R_IMF_IMTYPE_OPENEXR:
 			return R_IMF_CHAN_DEPTH_16 | R_IMF_CHAN_DEPTH_32;
 		case R_IMF_IMTYPE_MULTILAYER:
+		case R_IMF_IMTYPE_MULTIVIEW:
 			return R_IMF_CHAN_DEPTH_32;
 		/* eeh, cineon does some strange 10bits per channel */
 		case R_IMF_IMTYPE_DPX:
@@ -1189,6 +1192,7 @@ char BKE_imtype_from_arg(const char *imtype_arg)
 #ifdef WITH_OPENEXR
 	else if (!strcmp(imtype_arg, "EXR")) return R_IMF_IMTYPE_OPENEXR;
 	else if (!strcmp(imtype_arg, "MULTILAYER")) return R_IMF_IMTYPE_MULTILAYER;
+	else if (!strcmp(imtype_arg, "MULTIVIEW")) return R_IMF_IMTYPE_MULTIVIEW;
 #endif
 	else if (!strcmp(imtype_arg, "MPEG")) return R_IMF_IMTYPE_FFMPEG;
 	else if (!strcmp(imtype_arg, "FRAMESERVER")) return R_IMF_IMTYPE_FRAMESERVER;
@@ -1249,7 +1253,7 @@ static int do_add_image_extension(char *string, const char imtype, const ImageFo
 	}
 #endif
 #ifdef WITH_OPENEXR
-	else if (ELEM(imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
+	else if (ELEM3(imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW)) {
 		if (!BLI_testextensie(string, ".exr"))
 			extension = ".exr";
 	}
@@ -1916,7 +1920,7 @@ int BKE_imbuf_write(ImBuf *ibuf, const char *name, ImageFormatData *imf)
 	}
 #endif
 #ifdef WITH_OPENEXR
-	else if (imtype == R_IMF_IMTYPE_OPENEXR || imtype == R_IMF_IMTYPE_MULTILAYER) {
+	else if (ELEM3(imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW)) {
 		ibuf->ftype = OPENEXR;
 		if (imf->depth == R_IMF_CHAN_DEPTH_16)
 			ibuf->ftype |= OPENEXR_HALF;

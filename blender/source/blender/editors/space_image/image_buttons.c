@@ -937,9 +937,8 @@ void uiTemplateImageSettings(uiLayout *layout, PointerRNA *imfptr, int color_man
 		uiItemR(col, imfptr, "compression", 0, NULL, ICON_NONE);
 	}
 
-	if (ELEM(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
+	if (ELEM3(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW)) {
 		uiItemR(col, imfptr, "exr_codec", 0, NULL, ICON_NONE);
-		uiItemR(row, imfptr, "use_multiview", 0, NULL, ICON_NONE);
 	}
 	
 	row = uiLayoutRow(col, FALSE);

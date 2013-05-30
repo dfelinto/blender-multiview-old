@@ -1422,13 +1422,19 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 		scene = CTX_data_scene(C);
 		rr = BKE_image_acquire_renderresult(scene, ima);
 
+		if (simopts->im_format.imtype == R_IMF_IMTYPE_MULTIVIEW) {
+			ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.quality, TRUE, "");
+
+			save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, simopts->filepath);
+			ED_space_image_release_buffer(sima, ibuf, lock);
+		}
 		if (simopts->im_format.imtype == R_IMF_IMTYPE_MULTILAYER) {
 			if (rr) {
 				int numviews = BLI_countlist(&rr->views);
 
 				/* monoview or multiview exr */
-				if (numviews < 2 || (simopts->im_format.flag & R_IMF_FLAG_MULTIVIEW)) {
-					ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.quality, (simopts->im_format.flag & R_IMF_FLAG_MULTIVIEW), "");
+				if (numviews < 2) {
+					ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.quality, FALSE, "");
 
 					save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, simopts->filepath);
 					ED_space_image_release_buffer(sima, ibuf, lock);

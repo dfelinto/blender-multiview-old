@@ -51,14 +51,14 @@ void OutputFileNode::convertToOperations(ExecutionSystem *graph, CompositorConte
 		return;
 	}
 	
-	if (storage->format.imtype == R_IMF_IMTYPE_MULTILAYER) {
+	if (ELEM(storage->format.imtype, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW)) {
 		/* single output operation for the multilayer file */
 
 		OutputOpenExrMultiLayerOperation *outputOperation;
 
-		if ((storage->format.flag & R_IMF_FLAG_MULTIVIEW)) {
+		if (storage->format.imtype == R_IMF_IMTYPE_MULTIVIEW) {
 			outputOperation =
-			new OutputOpenExrMultiLayerMultiViewOperation(context->getRenderData(), context->getbNodeTree(), storage->base_path, storage->format.exr_codec, context->getViewId());
+			new OutputOpenExrMultiViewOperation(context->getRenderData(), context->getbNodeTree(), storage->base_path, storage->format.exr_codec, context->getViewId());
 		} else {
 			outputOperation = new OutputOpenExrMultiLayerOperation(
 		        context->getRenderData(), context->getbNodeTree(), storage->base_path, storage->format.exr_codec, context->getViewId());
@@ -93,21 +93,10 @@ void OutputFileNode::convertToOperations(ExecutionSystem *graph, CompositorConte
 				
 				/* combine file path for the input */
 				BLI_join_dirfile(path, FILE_MAX, storage->base_path, sockdata->path);
-
-				OutputSingleLayerOperation *outputOperation;
-
-				if (storage->format.imtype == R_IMF_IMTYPE_OPENEXR &&
-				    (storage->format.flag & R_IMF_FLAG_MULTIVIEW)) {
-					outputOperation = new OutputSingleLayerMultiViewOperation(
-							context->getRenderData(), context->getbNodeTree(), input->getDataType(), format, path,
-							context->getViewSettings(), context->getDisplaySettings(), context->getViewId());
-				}
-				else {
-					outputOperation = new OutputSingleLayerOperation(
-							context->getRenderData(), context->getbNodeTree(), input->getDataType(), format, path,
-							context->getViewSettings(), context->getDisplaySettings(), context->getViewId());
-				}
-
+				
+				OutputSingleLayerOperation *outputOperation = new OutputSingleLayerOperation(
+				        context->getRenderData(), context->getbNodeTree(), input->getDataType(), format, path,
+				        context->getViewSettings(), context->getDisplaySettings(), context->getViewId());
 				input->relinkConnections(outputOperation->getInputSocket(0));
 				graph->addOperation(outputOperation);
 				if (!previewAdded) {
