@@ -6,59 +6,52 @@ clone from https://gitorious.org/blenderprojects/blender
 
 This branch contains the code for the "stereoscopy support in Blender" journey.
 
-Development
+Beta Builds
 -----------
-Current Panel:
+* [OSX](http://graphicall.org/1047) by [Francesco Siddi](http://twitter.com/fsiddi)
+* Windows - *looking for volunteer*
+* Linux - *looking for volunteer*
+
+Implemented Features
+-----------
+Render Views panel:
 
 <img src="http://dalaifelinto.com/ftp/multiview/multiview_panel.jpg" alt="" width="235.5px" height="247.5px"/>
 
-Current status:
+Switch View node:
+
+<img src="http://dalaifelinto.com/ftp/multiview/multiview_switchview.jpg" alt="" width="161.5px" height="161px"/>
+
+Image node (views options):
+
+<img src="http://dalaifelinto.com/ftp/multiview/multiview_imagenode.jpg" alt="" width="150px" height="262px"/>
+
+3-D display options (User Preferences > System):
+
+<img src="http://dalaifelinto.com/ftp/multiview/multiview_stereodisplay.jpg" alt="" width="225.5px" height="253.5px"/>
+
+3-D preview in Image Editor
+
+<img src="http://dalaifelinto.com/ftp/multiview/multiview_stereo_imageeditor.jpg"/>
+
+Current Status:
+---------------
 (see youtube recording: http://www.youtube.com/watch?v=X7I6G3uRPkw&hd=1 )
-* Multiview is rendering fine and antialias is working too.
-* Support for MultiPart images (read and write) working fine (OpenEXR 2.0)
-* Cycles is working as well
-* Composite is working with small issues (see below)
-* ImageNode is working really nicely btw
 
-The rules for testing are:
-* Build without Blenderplayer
-* (for saving) EXR MultiLayer (multipart working)
+**The instructions for testing are:**
 
-How to save the render file?:
-* For non-composite:
-Set output type to exr multilayer, and render from command line, or save from the Image Editor (F3).
-The Multi part check box is optional and should affect whether the output is multipart (2.0) or multiview (1.7.1). Both support stereo.
-* For Composite:
-Set output file to exr multilayer.
+https://github.com/dfelinto/blender/blob/multiview/HowToTestIt.txt
 
-Known bugs:
+**Known bugs:**
 * (see the issues in the github tracker)
 * Missing listeners - not everything is updating when they should if you change things after rendering
 
-Compositor elements not yet tackled:
-* ~~Image Node (right now it shows each view as a socket)~~
-* ~~Image Node: to map image views to scene views~~
+**Compositor elements not yet tackled:**
 * FSA
 * Viewer Node
-* SingleLayer exr file
-* Non-exr files (more a design/UI thing)
-* Global option to composite/render only one view
-* View Filter Node: to run a nodebranch when view =="left" ... [need design]
 
 What do I plan to work next?
 --------------------------------------
-
-**Viewport Support**:
-We need a per viewport enable/disable option.
-On top of that, we need option to choice the mode:
-* *Scene views*: to pick the left/right cameras from the scene views.
-* *Custom view*: to define a new eye separation and convergence distance
-* *Dynamic view*: to choose pivot point, cursor, an object or infinity as convergence depth zero point.
-
-*Scene view* is to explore the look you would get from your render,
-*Custom view* to help you determine a new good depth,
-*Dynamic view* to work in 3d (sculpting, posing, ...) without a direct relation with the render settings.
-I believe Custom view and Dynamic can be merged into the same option.
 
 **Built-in Stereo Camera**:
 If you read the original code proposal you should remember the original idea of having a builtin stereo-camera.
@@ -69,12 +62,14 @@ Then you just assign this camera twice to two views in the Render View panel. Th
 give a menu where you can set left or right.
 
 OR we will have addons for that ;)
+UPDATE: I'm testing an addon and I think it may work well with it. So no builtin stereo camera for now.
 
 
 Current issues
 --------------------------
-* Viewer Node showing only one view (waiting to hear back from JB on that).
-Need to decide (design-wise) how to handle files output.
+* Viewer Node showing only one view
+* FSA not implemented
+* Sequencer not implemented
 
 Links
 -----
@@ -95,9 +90,9 @@ Roadmap
  2. ~~See multiview in UV/image editor as mono~~
  3. ~~Write multiview exr~~
  4. ~~Render in multiview~~
- 5. Compo in multiview
+ 5. ~~Compo in multiview~~
  6. ~~See multiview in UV/image editor as stereo~~
- 7. Viewport preview
+ 7. ~~Viewport preview~~
  8. Sequencer
  9. ?
 
