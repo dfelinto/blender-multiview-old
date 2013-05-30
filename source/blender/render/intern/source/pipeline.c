@@ -2608,7 +2608,7 @@ void RE_BlenderFrame(Render *re, Main *bmain, Scene *scene, SceneRenderLayer *sr
 				const int numviews = BLI_countlist(&re->result->views);
 
 				/* mono render, or real exr multiview */
-				if (numviews < 2 || (ELEM (scene->r.im_format.imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER) && (scene->r.im_format.flag & R_IMF_FLAG_MULTIVIEW))) {
+				if (numviews < 2 || ((scene->r.im_format.imtype == R_IMF_IMTYPE_MULTILAYER) && (scene->r.im_format.flag & R_IMF_FLAG_MULTIVIEW))) {
 
 					BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, "");
 
@@ -2708,7 +2708,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 		
 		if (re->r.im_format.imtype == R_IMF_IMTYPE_MULTILAYER) {
 			if (re->result) {
-				RE_WriteRenderResult(re->reports, re->result, name, scene->r.im_format.exr_codec, (scene->r.im_format.flag & R_IMF_FLAG_MULTIPART), view);
+				RE_WriteRenderResult(re->reports, re->result, name, scene->r.im_format.exr_codec, (scene->r.im_format.flag & R_IMF_FLAG_MULTIVIEW), view);
 				printf("Saved: %s", name);
 			}
 		}

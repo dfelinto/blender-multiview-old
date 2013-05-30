@@ -939,6 +939,7 @@ void uiTemplateImageSettings(uiLayout *layout, PointerRNA *imfptr, int color_man
 
 	if (ELEM(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
 		uiItemR(col, imfptr, "exr_codec", 0, NULL, ICON_NONE);
+		uiItemR(row, imfptr, "use_multiview", 0, NULL, ICON_NONE);
 	}
 	
 	row = uiLayoutRow(col, FALSE);
@@ -950,13 +951,6 @@ void uiTemplateImageSettings(uiLayout *layout, PointerRNA *imfptr, int color_man
 		show_preview = TRUE;
 		uiItemR(row, imfptr, "use_preview", 0, NULL, ICON_NONE);
 	}
-
-	if (ELEM(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
-		row = uiLayoutRow(col, FALSE);
-		uiItemR(row, imfptr, "use_multiview", 0, NULL, ICON_NONE);
-		uiItemR(row, imfptr, "use_multipart", 0, NULL, ICON_NONE);
-	}
-
 
 	if (imf->imtype == R_IMF_IMTYPE_JP2) {
 		uiItemR(col, imfptr, "jpeg2k_codec", 0, NULL, ICON_NONE);

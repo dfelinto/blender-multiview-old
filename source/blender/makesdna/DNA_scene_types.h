@@ -337,7 +337,6 @@ typedef struct ImageFormatData {
 #define R_IMF_FLAG_ZBUF         (1<<0)   /* was R_OPENEXR_ZBUF */
 #define R_IMF_FLAG_PREVIEW_JPG  (1<<1)   /* was R_PREVIEW_JPG */
 #define R_IMF_FLAG_MULTIVIEW    (1<<3)   /* OPENEXR only */
-#define R_IMF_FLAG_MULTIPART    (1<<4)   /* OPENEXR only */
 
 /* return values from BKE_imtype_valid_depths, note this is depts per channel */
 #define R_IMF_CHAN_DEPTH_1  (1<<0) /* 1bits  (unused) */

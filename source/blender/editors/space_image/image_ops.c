@@ -1426,12 +1426,15 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 			if (rr) {
 				int numviews = BLI_countlist(&rr->views);
 
+				/* monoview or multiview exr */
 				if (numviews < 2 || (simopts->im_format.flag & R_IMF_FLAG_MULTIVIEW)) {
-					ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.quality, (simopts->im_format.flag & R_IMF_FLAG_MULTIPART), "");
+					ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.quality, (simopts->im_format.flag & R_IMF_FLAG_MULTIVIEW), "");
 
 					save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, simopts->filepath);
 					ED_space_image_release_buffer(sima, ibuf, lock);
 				}
+
+				/* multiview - individual images */
 				else {
 					char filepath[FILE_MAX];
 					SceneRenderView *srv;
@@ -1452,7 +1455,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 						BLI_strncpy(filepath, simopts->filepath, sizeof(filepath));
 						BLI_path_view(filepath, label);
 
-						ok = RE_WriteRenderResult(op->reports, rr, filepath, simopts->im_format.quality, (simopts->im_format.flag & R_IMF_FLAG_MULTIPART), view);
+						ok = RE_WriteRenderResult(op->reports, rr, filepath, simopts->im_format.quality, FALSE, view);
 						save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, filepath);
 					}
 					ED_space_image_release_buffer(sima, ibuf, lock);
@@ -1463,8 +1466,9 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 			}
 			BKE_image_release_renderresult(scene, ima);
 		}
+
+		/* multiview - individual images */
 		else if (rr && BLI_countlist(&rr->views) > 1) {
-			/* multiview - individual images */
 			char filepath[FILE_MAX];
 			char label[FILE_MAX];
 			SceneRenderView *srv;
@@ -1508,8 +1512,9 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 			sima->iuser.view = orig_view;
 			sima->iuser.multi_index = orig_multi_index;
 		}
+
+		/* mono view */
 		else {
-			/* single view */
 			colormanaged_ibuf = IMB_colormanagement_imbuf_for_write(ibuf, save_as_render, TRUE, &imf->view_settings, &imf->display_settings, imf);
 
 			ok = BKE_imbuf_write_as(colormanaged_ibuf, simopts->filepath, &simopts->im_format, save_copy);
