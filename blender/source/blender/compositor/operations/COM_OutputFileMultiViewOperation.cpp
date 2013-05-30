@@ -163,7 +163,7 @@ void *OutputOpenExrMultiLayerMultiViewOperation::get_handle(const char* filename
 		BLI_make_existing_file(filename);
 
 		/* prepare the file with all the channels */
-		if(IMB_exrmultipart_begin_write(exrhandle, filename, width, height, this->m_exr_codec, TRUE) == 0)
+		if(IMB_exrmultiview_begin_write(exrhandle, filename, width, height, this->m_exr_codec, TRUE) == 0)
 		{
 			/* TODO, get the error from openexr's exception */
 			/* XXX nice way to do report? */
@@ -234,7 +234,7 @@ void OutputOpenExrMultiLayerMultiViewOperation::deinitExecution()
 		}
 
 		/* the actual writing */
-		IMB_exrmultipart_write_channels(exrhandle, this->m_actview);
+		IMB_exrmultiview_write_channels(exrhandle, this->m_actview);
 
 		for (unsigned int i = 0; i < this->m_layers.size(); ++i) {
 			if (this->m_layers[i].outputBuffer) {

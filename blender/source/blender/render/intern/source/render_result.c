@@ -926,7 +926,7 @@ static char *make_pass_name(RenderPass *rpass, int chan)
 
 /* called from within UI, saves both rendered result as a file-read result */
 /* if view is not "" saves single view */
-int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *filename, int compress, int multipart, const char *view)
+int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *filename, int compress, int multiview, const char *view)
 {
 	RenderLayer *rl;
 	RenderPass *rpass;
@@ -987,9 +987,9 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 	}
 
 	/* when the filename has no permissions, this can fail */
-	if (multipart) {
-		if (IMB_exrmultipart_begin_write(exrhandle, filename, rr->rectx, rr->recty, compress, false)) {
-			IMB_exrmultipart_write_channels(exrhandle, -1);
+	if (multiview) {
+		if (IMB_exrmultiview_begin_write(exrhandle, filename, rr->rectx, rr->recty, compress, false)) {
+			IMB_exrmultiview_write_channels(exrhandle, -1);
 			success = TRUE;
 		}
 	} else {
