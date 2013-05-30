@@ -23,6 +23,12 @@ Testing Rendering
 * Render
 * Visualize the result in "3-D" as described in "Testing Image Editor"
 
+Saving Files
+============
+If you want to save all views in the same file, use EXR with the "MultiView" option.
+Otherwise the views will be saved individually replacing the char "%" in the filename with the view label
+e.g. //render/###%.jpg will create //render/001_L.jpg and //render/001_R.jpg
+
 You can get images samples from:
 https://github.com/openexr/openexr-images/tree/master/MultiView
 
