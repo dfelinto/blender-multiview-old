@@ -3676,7 +3676,8 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
 
 	prop = RNA_def_property(srna, "epilepsy_interval", PROP_FLOAT, PROP_TIME);
-	RNA_def_property_range(prop, 0.1f, 10.0f);
+	RNA_def_property_range(prop, 0.01f, 10.0f);
+	RNA_def_property_ui_range(prop, 0.05f, 1.0f, 1.0f, 2);
 	RNA_def_property_ui_text(prop, "Interval", "Preferred interval in seconds between switching left/right views");
 
 #ifdef WITH_CYCLES
