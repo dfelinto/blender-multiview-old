@@ -1862,6 +1862,8 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 {
 	float *rectf, filt[3][3];
 	int x, y, sample;
+	RenderView *rv;
+	int nr;
 	
 	/* interaction callbacks */
 	if (ntree) {
@@ -1875,9 +1877,6 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 	
 	/* filtmask needs it */
 	R = *re;
-	
-	/* we accumulate in here */
-	rectf = MEM_mapallocN(re->rectx * re->recty * sizeof(float) * 4, "fullsample rgba");
 	
 	for (sample = 0; sample < re->r.osa; sample++) {
 		Render *re1;
@@ -1913,54 +1912,67 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 			ntreeCompositTagRender(re->scene);
 			ntreeCompositTagAnimated(ntree);
 
-			//MV XXX to handle FSA later
 			ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, 0);
 		}
 		
 		/* ensure we get either composited result or the active layer */
 		RE_AcquireResultImage(re, &rres);
-		
-		/* accumulate with filter, and clip */
-		mask = (1 << sample);
-		mask_array(mask, filt);
 
+		nr=0;
+		for (rv=(RenderView *) rres.views.first; rv; rv=rv->next) {
+
+			/* we accumulate in here */
+			rectf = MEM_mapallocN(re->rectx * re->recty * sizeof(float) * 4, "fullsample rgba");
+
+			/* accumulate with filter, and clip */
+			mask = (1 << sample);
+			mask_array(mask, filt);
+
+			for (y = 0; y < re->recty; y++) {
+				float *rf = rectf + 4 * y * re->rectx;
+				float *col = RE_RenderViewGetRectf(&rres, nr) + 4 * y * re->rectx;
+
+				for (x = 0; x < re->rectx; x++, rf += 4, col += 4) {
+					/* clamping to 1.0 is needed for correct AA */
+					if (col[0] < 0.0f) col[0] = 0.0f; else if (col[0] > 1.0f) col[0] = 1.0f;
+					if (col[1] < 0.0f) col[1] = 0.0f; else if (col[1] > 1.0f) col[1] = 1.0f;
+					if (col[2] < 0.0f) col[2] = 0.0f; else if (col[2] > 1.0f) col[2] = 1.0f;
+
+					add_filt_fmask_coord(filt, col, rf, re->rectx, re->recty, x, y);
+				}
+			}
+
+			RE_ReleaseResultImage(re);
+
+			/* show stuff */
+			if (sample != re->osa - 1) {
+				/* weak... the display callback wants an active renderlayer pointer... */
+				re->result->renlay = render_get_active_layer(re, re->result);
+				re->display_draw(re->ddh, re->result, NULL, re->actview);
+			}
+
+			if (re->test_break(re->tbh))
+				break;
+		}
+
+		/* clamp alpha and RGB to 0..1 and 0..inf, can go outside due to filter */
 		for (y = 0; y < re->recty; y++) {
 			float *rf = rectf + 4 * y * re->rectx;
-			float *col = rres.rectf + 4 * y * re->rectx;
-				
-			for (x = 0; x < re->rectx; x++, rf += 4, col += 4) {
-				/* clamping to 1.0 is needed for correct AA */
-				if (col[0] < 0.0f) col[0] = 0.0f; else if (col[0] > 1.0f) col[0] = 1.0f;
-				if (col[1] < 0.0f) col[1] = 0.0f; else if (col[1] > 1.0f) col[1] = 1.0f;
-				if (col[2] < 0.0f) col[2] = 0.0f; else if (col[2] > 1.0f) col[2] = 1.0f;
-				
-				add_filt_fmask_coord(filt, col, rf, re->rectx, re->recty, x, y);
+
+			for (x = 0; x < re->rectx; x++, rf += 4) {
+				rf[0] = MAX2(rf[0], 0.0f);
+				rf[1] = MAX2(rf[1], 0.0f);
+				rf[2] = MAX2(rf[2], 0.0f);
+				CLAMP(rf[3], 0.0f, 1.0f);
 			}
 		}
-		
-		RE_ReleaseResultImage(re);
 
-		/* show stuff */
-		if (sample != re->osa - 1) {
-			/* weak... the display callback wants an active renderlayer pointer... */
-			re->result->renlay = render_get_active_layer(re, re->result);
-			re->display_draw(re->ddh, re->result, NULL, re->actview);
-		}
-		
-		if (re->test_break(re->tbh))
-			break;
-	}
+		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+		if (RE_RenderViewGetRectf(re->result, nr))
+			MEM_freeN(RE_RenderViewGetRectf(re->result, nr));
 
-	/* clamp alpha and RGB to 0..1 and 0..inf, can go outside due to filter */
-	for (y = 0; y < re->recty; y++) {
-		float *rf = rectf + 4 * y * re->rectx;
-			
-		for (x = 0; x < re->rectx; x++, rf += 4) {
-			rf[0] = MAX2(rf[0], 0.0f);
-			rf[1] = MAX2(rf[1], 0.0f);
-			rf[2] = MAX2(rf[2], 0.0f);
-			CLAMP(rf[3], 0.0f, 1.0f);
-		}
+		RE_RenderViewSetRectf(re->result, nr, rectf);
+		BLI_rw_mutex_unlock(&re->resultmutex);
 	}
 	
 	/* clear interaction callbacks */
@@ -1973,12 +1985,6 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 	
 	/* disable full sample print */
 	R.i.curfsa = 0;
-	
-	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	if (re->result->rectf)
-		MEM_freeN(re->result->rectf);
-	re->result->rectf = rectf;
-	BLI_rw_mutex_unlock(&re->resultmutex);
 }
 
 /* called externally, via compositor */
