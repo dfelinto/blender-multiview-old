@@ -720,7 +720,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 				IMB_exr_add_view(rl->exrhandle, rv->name);
 
 				for (i=0; i < 4; i++)
-					IMB_exr_add_channel(rl->exrhandle, rl->name, get_pass_name(SCE_PASS_COMBINED, 1, ""), rv->name, 0, 0, NULL);
+					IMB_exr_add_channel(rl->exrhandle, rl->name, get_pass_name(SCE_PASS_COMBINED, i, ""), rv->name, 0, 0, NULL);
 			}
 			else {
 				render_layer_add_pass(rr, rl, 4, SCE_PASS_COMBINED, nr);
