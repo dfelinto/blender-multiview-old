@@ -1918,7 +1918,7 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 		RE_AcquireResultImage(re, &rres);
 
 		nr=0;
-		for (rv=(RenderView *) rres.views.first; rv; rv=rv->next) {
+		for (rv=(RenderView *) rres.views.first; rv; rv=rv->next, nr++) {
 
 			/* we accumulate in here */
 			rectf = MEM_mapallocN(re->rectx * re->recty * sizeof(float) * 4, "fullsample rgba");
@@ -1947,22 +1947,25 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 			if (sample != re->osa - 1) {
 				/* weak... the display callback wants an active renderlayer pointer... */
 				re->result->renlay = render_get_active_layer(re, re->result);
-				re->display_draw(re->ddh, re->result, NULL, re->actview);
+				re->display_draw(re->ddh, re->result, NULL, nr);
 			}
 
-			if (re->test_break(re->tbh))
+			if (re->test_break(re->tbh)) {
+				/* forcing break of outside for loop */
+				sample = re->r.osa;
 				break;
-		}
+			}
 
-		/* clamp alpha and RGB to 0..1 and 0..inf, can go outside due to filter */
-		for (y = 0; y < re->recty; y++) {
-			float *rf = rectf + 4 * y * re->rectx;
+			/* clamp alpha and RGB to 0..1 and 0..inf, can go outside due to filter */
+			for (y = 0; y < re->recty; y++) {
+				float *rf = rectf + 4 * y * re->rectx;
 
-			for (x = 0; x < re->rectx; x++, rf += 4) {
-				rf[0] = MAX2(rf[0], 0.0f);
-				rf[1] = MAX2(rf[1], 0.0f);
-				rf[2] = MAX2(rf[2], 0.0f);
-				CLAMP(rf[3], 0.0f, 1.0f);
+				for (x = 0; x < re->rectx; x++, rf += 4) {
+					rf[0] = MAX2(rf[0], 0.0f);
+					rf[1] = MAX2(rf[1], 0.0f);
+					rf[2] = MAX2(rf[2], 0.0f);
+					CLAMP(rf[3], 0.0f, 1.0f);
+				}
 			}
 		}
 
