@@ -453,7 +453,7 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 						rv->rectz = MEM_dupallocN(rectz);
 
 					/* technically the next line should work, but it's segfaulting on render_result_free() */
-					//rv->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, id);
+					//rv->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, re->actview);
 				}
 			}
 

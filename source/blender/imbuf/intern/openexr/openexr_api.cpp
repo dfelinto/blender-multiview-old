@@ -723,7 +723,7 @@ static void imb_exr_add_channel_multiview(void *handle, const char *layname, con
 
 	echan->m->internal_name = echan->m->name;
 
-	echan->m->view.assign(view);
+	echan->m->view.assign(view ? view : "");
 
 	/* name has to be unique, thus it's a combination of layer, pass, view, and channel */
 	std::string raw_name = imb_exr_insert_view_name(&(echan->m->name)[0], &(echan->m->view)[0]);
@@ -1288,7 +1288,7 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 		void *laybase = addlayer(base, lay->name);
 		if (laybase) {
 			for (pass = (ExrPass *)lay->passes.first; pass; pass = pass->next) {
-				addpass(base, laybase, pass->name, pass->rect, pass->totchan, pass->chan_id, pass->view, pass->view_id);
+				addpass(base, laybase, pass->internal_name, pass->rect, pass->totchan, pass->chan_id, pass->view, pass->view_id);
 				pass->rect = NULL;
 			}
 		}
