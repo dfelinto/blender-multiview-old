@@ -2131,20 +2131,16 @@ static void do_render_composite_fields_blur_3d(Render *re)
 static void renderresult_stampinfo(Render *re)
 {
 	RenderResult rres;
-	RenderLayer *rl;
-	RenderPass *rpass;
+	RenderView *rv;
+	int nr;
 
 	/* this is the basic trick to get the displayed float or char rect from render result */
 	RE_AcquireResultImage(re, &rres);
-	BKE_stamp_buf(re->scene, RE_GetCamera(re), (unsigned char *)rres.rect32, rres.rectf, rres.rectx, rres.recty, 4);
 
-	for (rl = rres.layers.first; rl; rl = rl->next) {
-		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
-			if (rpass->passtype & SCE_PASS_COMBINED) {
-				re->actview = rpass->view_id;
-				BKE_stamp_buf(re->scene, RE_GetViewCamera(re), (unsigned char *)rres.rect32, rpass->rect, rres.rectx, rres.recty, 4);
-			}
-		}
+	nr = 0;
+	for (rv = (RenderView *)rres.views.first;rv;rv=rv->next, nr++) {
+		re->actview = nr;
+		BKE_stamp_buf(re->scene, RE_GetViewCamera(re), (unsigned char *)rres.rect32, rv->rectf, rres.rectx, rres.recty, 4);
 	}
 
 	RE_ReleaseResultImage(re);
