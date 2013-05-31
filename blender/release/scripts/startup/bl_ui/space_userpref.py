@@ -467,6 +467,7 @@ class USERPREF_PT_system(Panel):
 
         if system.stereo_display == 'INTERLACE':
             col.prop(system, "interlace_type", text="Type")
+            col.prop(system, "interlace_swap_left_right")
 
         # 2. Column
         column = split.column()
