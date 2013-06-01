@@ -1712,7 +1712,7 @@ static CDDerivedMesh *cdDM_create(const char *desc)
 	dm->getEdgeDataArray = DM_get_edge_data_layer;
 	dm->getTessFaceDataArray = DM_get_tessface_data_layer;
 
-	dm->calcNormals = CDDM_calc_normals_mapping;
+	dm->calcNormals = CDDM_calc_normals;
 	dm->recalcTessellation = CDDM_recalc_tessellation;
 
 	dm->getVertCos = cdDM_getVertCos;
@@ -1841,6 +1841,7 @@ DerivedMesh *CDDM_from_curve_displist(Object *ob, ListBase *dispbase)
 
 	dm = CDDM_new(totvert, totedge, 0, totloop, totpoly);
 	dm->deformedOnly = 1;
+	dm->dirty |= DM_DIRTY_NORMALS;
 
 	cddm = (CDDerivedMesh *)dm;
 
@@ -2197,6 +2198,8 @@ void CDDM_apply_vert_coords(DerivedMesh *dm, float (*vertCoords)[3])
 
 	for (i = 0; i < dm->numVertData; ++i, ++vert)
 		copy_v3_v3(vert->co, vertCoords[i]);
+
+	cddm->dm.dirty |= DM_DIRTY_NORMALS;
 }
 
 void CDDM_apply_vert_normals(DerivedMesh *dm, short (*vertNormals)[3])
@@ -2211,6 +2214,8 @@ void CDDM_apply_vert_normals(DerivedMesh *dm, short (*vertNormals)[3])
 
 	for (i = 0; i < dm->numVertData; ++i, ++vert)
 		copy_v3_v3_short(vert->no, vertNormals[i]);
+
+	cddm->dm.dirty &= ~DM_DIRTY_NORMALS;
 }
 
 void CDDM_calc_normals_mapping_ex(DerivedMesh *dm, const short only_face_normals)
@@ -2255,8 +2260,9 @@ void CDDM_calc_normals_mapping_ex(DerivedMesh *dm, const short only_face_normals
 
 	CustomData_add_layer(&dm->faceData, CD_NORMAL, CD_ASSIGN,
 	                     face_nors, dm->numTessFaceData);
-}
 
+	cddm->dm.dirty &= ~DM_DIRTY_NORMALS;
+}
 
 void CDDM_calc_normals_mapping(DerivedMesh *dm)
 {
@@ -2266,6 +2272,7 @@ void CDDM_calc_normals_mapping(DerivedMesh *dm)
 	CDDM_calc_normals_mapping_ex(dm, only_face_normals);
 }
 
+#if 0
 /* bmesh note: this matches what we have in trunk */
 void CDDM_calc_normals(DerivedMesh *dm)
 {
@@ -2285,7 +2292,26 @@ void CDDM_calc_normals(DerivedMesh *dm)
 
 	BKE_mesh_calc_normals_poly(cddm->mvert, dm->numVertData, CDDM_get_loops(dm), CDDM_get_polys(dm),
 	                               dm->numLoopData, dm->numPolyData, poly_nors);
+
+	cddm->dm.dirty &= ~DM_DIRTY_NORMALS;
 }
+#else
+
+/* poly normal layer is now only for final display */
+void CDDM_calc_normals(DerivedMesh *dm)
+{
+	CDDerivedMesh *cddm = (CDDerivedMesh *)dm;
+
+	/* we don't want to overwrite any referenced layers */
+	cddm->mvert = CustomData_duplicate_referenced_layer(&dm->vertData, CD_MVERT, dm->numVertData);
+
+	BKE_mesh_calc_normals_poly(cddm->mvert, dm->numVertData, CDDM_get_loops(dm), CDDM_get_polys(dm),
+	                           dm->numLoopData, dm->numPolyData, NULL);
+
+	cddm->dm.dirty &= ~DM_DIRTY_NORMALS;
+}
+
+#endif
 
 void CDDM_calc_normals_tessface(DerivedMesh *dm)
 {
@@ -2305,6 +2331,8 @@ void CDDM_calc_normals_tessface(DerivedMesh *dm)
 
 	BKE_mesh_calc_normals_tessface(cddm->mvert, dm->numVertData,
 	                               cddm->mface, dm->numTessFaceData, face_nors);
+
+	cddm->dm.dirty &= ~DM_DIRTY_NORMALS;
 }
 
 #if 1
