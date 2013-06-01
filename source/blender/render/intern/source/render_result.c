@@ -122,7 +122,7 @@ void render_result_free_list(ListBase *lb, RenderResult *rr)
 	}
 }
 
-/********************************* Names *************************************/
+/********************************* multiview *************************************/
 
 static const char *insert_view_name(const char* passname, const char* view)
 {
@@ -163,12 +163,58 @@ int render_result_get_view_id(Render *re, const char *view)
 	if (!re || !re->result)
 		return 0;
 
+	/* -1 = all views */
+	if (view[0] == '\0')
+		return -1;
+
 	for (rv= (RenderView *)re->result->views.first; rv; rv=rv->next, id++) {
 		if (strcmp(rv->name, view)==0)
 			return id;
 	}
 
 	return 0;
+}
+
+/* create a new views Listbase in rr without duplicating the memory pointers */
+void render_result_views_softcopy(RenderResult *dst, RenderResult *src)
+{
+	RenderView *rview;
+
+	if (dst == NULL || src == NULL)
+		return;
+
+	for (rview = (RenderView *)src->views.first; rview; rview = rview->next) {
+		RenderView *rv;
+
+		rv = MEM_callocN(sizeof(RenderView), "new render view");
+		BLI_addtail(&dst->views, rv);
+
+		BLI_strncpy(rv->name, rview->name, sizeof(rv->name));
+		rv->camera = rview->camera;
+		rv->rectf = rview->rectf;
+		rv->rectz = rview->rectz;
+	//	rv->rect32 = rview->rect32;
+	}
+}
+
+/* free the views created temporarily */
+void render_result_views_softdelete(RenderResult *rr)
+{
+	if (rr == NULL)
+		return;
+
+	while (rr->views.first) {
+		RenderView *rv = rr->views.first;
+		BLI_remlink(&rr->views, rv);
+
+		if (rv->rectf)
+			MEM_freeN(rv->rectf);
+
+		if (rv->rectz)
+			MEM_freeN(rv->rectz);
+
+		MEM_freeN(rv);
+	}
 }
 
 /* NOTE: OpenEXR only supports 32 chars for layer+pass names
@@ -934,7 +980,6 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 	void *exrhandle = IMB_exr_get_handle();
 	int success = 0;
 	int a, nr;
-	float *rect;
 	const char *chan_view = NULL;
 
 	BLI_make_existing_file(filename);
@@ -1071,8 +1116,6 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int 
 	RenderLayer *rlp, *rl;
 	RenderPass *rpassp;
 	int offs, partx, party;
-
-	printf("save_render_result_tile: view_id = %d\n", view_id);
 	
 	BLI_lock_thread(LOCK_IMAGE);
 	
@@ -1276,14 +1319,14 @@ int render_result_exr_file_read_path(RenderResult *rr, RenderLayer *rl_single, c
 
 /*************************** Combined Pixel Rect *****************************/
 
-ImBuf *render_result_rect_to_ibuf(RenderResult *rr, RenderData *rd, int view_id)
+ImBuf *render_result_rect_to_ibuf(RenderResult *rr, RenderData *rd)
 {
 	ImBuf *ibuf = IMB_allocImBuf(rr->rectx, rr->recty, rd->im_format.planes, 0);
 	
 	/* if not exists, BKE_imbuf_write makes one */
 	ibuf->rect = (unsigned int *)rr->rect32;
-	ibuf->rect_float = RE_RenderViewGetRectf(rr, view_id);
-	ibuf->zbuf_float = RE_RenderViewGetRectz(rr, view_id);
+	ibuf->rect_float = rr->rectf;
+	ibuf->zbuf_float = rr->rectz;
 	
 	/* float factor for random dither, imbuf takes care of it */
 	ibuf->dither = rd->dither_intensity;
