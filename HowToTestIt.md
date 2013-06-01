@@ -1,5 +1,7 @@
 Instructions
 ============
+
+* If 3-D viewing is not working, make sure to set: User Preferences > System > Windows Draw Method > *Triple Buffer*
 * To test the 3-D Display go to User Preferences > System and pick your 3-D Display type
 * To toggle stereo 3D support in a window press "D" (or WM_OT_stereo_toggle)
 * Supported areas: Viewport and Image Editor
