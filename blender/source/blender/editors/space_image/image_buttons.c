@@ -317,7 +317,7 @@ static char *layer_menu(RenderResult *rr, short *UNUSED(curlay))
 	a = strlen(str);
 	
 	/* compo result */
-	if (rr->rectf || RE_RenderViewGetRectf(rr, 0)) {
+	if (RE_RenderViewGetRectf(rr, 0)){
 		a += sprintf(str + a, "|%s %%x0", IFACE_("Composite"));
 		nr = 1;
 	}

@@ -1050,7 +1050,8 @@ void render_view3d_draw(RenderEngine *engine, const bContext *C)
 
 	if (re == NULL) return;
 	
-	RE_AcquireResultImage(re, &rres);
+	/* XXX MV to investigate when this is called */
+	RE_AcquireResultImage(re, &rres, 0);
 	
 	if (rres.rectf) {
 		Scene *scene = CTX_data_scene(C);

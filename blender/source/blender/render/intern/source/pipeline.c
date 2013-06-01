@@ -199,7 +199,7 @@ int RE_HasFakeLayer(RenderResult *res)
 	if (res == NULL)
 		return FALSE;
 
-	return (res->rectf || res->rect32 || RE_RenderViewGetRectf(res, 0));
+	return (res->rect32 || RE_RenderViewGetRectf(res, 0));
 }
 
 int RE_HasStereo3D(RenderResult *res)
@@ -332,16 +332,6 @@ RenderLayer *render_get_active_layer(Render *re, RenderResult *rr)
 		return rr->layers.first;
 }
 
-RenderView *render_get_active_view(Render *re, RenderResult *rr)
-{
-	RenderView *rv = BLI_findlink(&rr->views, re->actview);
-
-	if (rv)
-		return rv;
-	else
-		return rr->views.first;
-}
-
 static int render_scene_needs_vector(Render *re)
 {
 	SceneRenderLayer *srl;
@@ -413,9 +403,62 @@ Scene *RE_GetScene(Render *re)
 	return NULL;
 }
 
-/* fill provided result struct with what's currently active or done */
-void RE_AcquireResultImage(Render *re, RenderResult *rr)
+/* fill provided result struct with a COPY of thew views of what is done so far
+ * remember to free the RenderResult.views ListBase after using the renderresult */
+void RE_AcquireResultViews(Render *re, RenderResult *rr)
 {
+	memset(rr, 0, sizeof(RenderResult));
+
+	if (re) {
+		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_READ);
+
+		if (re->result) {
+			RenderLayer *rl;
+			RenderView *rv, *rview;
+			int nr;
+
+			rr->rectx = re->result->rectx;
+			rr->recty = re->result->recty;
+
+			/* creates a temporary duplication of views */
+			render_result_views_softcopy(rr, re->result);
+
+			rv = (RenderView *)rr->views.first;
+
+			rr->have_combined = (rv->rectf != NULL);
+			rr->rect32 = re->result->rect32;
+
+			/* active layer */
+			rl = render_get_active_layer(re, re->result);
+
+			if (rl) {
+				if (rv->rectf == NULL) {
+					nr = 0;
+					for (rview = (RenderView *)rr->views.first; rview; rview = rview->next, nr++)
+						rview->rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, nr);
+				}
+
+				if (rv->rectz == NULL) {
+					nr = 0;
+					for (rview = (RenderView *)rr->views.first; rview; rview = rview->next, nr++)
+						rview->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, nr);
+				}
+			}
+
+			rr->layers = re->result->layers;
+			rr->xof = re->disprect.xmin;
+			rr->yof = re->disprect.ymin;
+		}
+	}
+}
+
+/* fill provided result struct with what's currently active or done */
+void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
+{
+	/* deal with special case separatedly */
+	if (view_id == -1)
+		return RE_AcquireResultViews(re, rr);
+
 	memset(rr, 0, sizeof(RenderResult));
 
 	if (re) {
@@ -427,34 +470,24 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr)
 			
 			rr->rectx = re->result->rectx;
 			rr->recty = re->result->recty;
-
-			/* XXX MV rect32 will be moved to RenderView when I tackle the sequencer */
-			rr->rect32 = re->result->rect32;
 			
+			/* actview view */
+			rv = BLI_findlink(&re->result->views, view_id);
+			if (rv == NULL) rv = &re->result->views.first;
+
+			rr->rectf = rv->rectf;
+			rr->rectz = rv->rectz;
+			rr->rect32 = re->result->rect32;
+
 			/* active layer */
 			rl = render_get_active_layer(re, re->result);
 
-			/* actview view */
-			rv = render_get_active_view(re, re->result);
-
 			if (rl) {
-				if (rv->rectf == NULL) {
-					float *rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
-					if (rectf)
-						rv->rectf = MEM_dupallocN(rectf);
+				if (rv->rectf == NULL)
+					rr->rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, view_id);
 
-					/* technically the next line should work, but it's segfaulting on render_result_free() */
-					//rv->rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
-				}
-
-				if (rv->rectz == NULL) {
-					float *rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, re->actview);
-					if (rectz)
-						rv->rectz = MEM_dupallocN(rectz);
-
-					/* technically the next line should work, but it's segfaulting on render_result_free() */
-					//rv->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, re->actview);
-				}
+				if (rv->rectz == NULL)
+					rr->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, view_id);
 			}
 
 			rr->have_combined = (rv->rectf != NULL);
@@ -477,8 +510,9 @@ void RE_ReleaseResultImage(Render *re)
 void RE_ResultGet32(Render *re, unsigned int *rect)
 {
 	RenderResult rres;
-	
-	RE_AcquireResultImage(re, &rres);
+
+	/* XXX MV SEQ to deal with that once SEQ is tackled */
+	RE_AcquireResultImage(re, &rres, 0);
 	render_result_rect_get_pixels(&rres, rect, re->rectx, re->recty, &re->scene->view_settings, &re->scene->display_settings);
 	RE_ReleaseResultImage(re);
 }
@@ -1856,13 +1890,13 @@ static void free_all_freestyle_renders(void)
 }
 #endif
 
-/* reads all buffers, calls optional composite, merges in first result->rectf */
+/* reads all buffers, calls optional composite, merges in first result->views rectf */
 static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 {
-	float *rectf, filt[3][3];
-	int x, y, sample;
 	RenderView *rv;
 	int nr;
+	float *rectf, filt[3][3];
+	int x, y, sample;
 	
 	/* interaction callbacks */
 	if (ntree) {
@@ -1876,52 +1910,51 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 	
 	/* filtmask needs it */
 	R = *re;
-	
-	for (sample = 0; sample < re->r.osa; sample++) {
-		Render *re1;
-		RenderResult rres;
-		int mask;
+
+	nr = 0;
+	for (rv = (RenderView *)re->result->views.first; rv; rv = rv->next, nr++) {
+		/* we accumulate in here */
+		rectf = MEM_mapallocN(re->rectx * re->recty * sizeof(float) * 4, "fullsample rgba");
 		
-		/* enable full sample print */
-		R.i.curfsa = sample + 1;
-		
-		/* set all involved renders on the samplebuffers (first was done by render itself, but needs tagged) */
-		/* also function below assumes this */
+		for (sample = 0; sample < re->r.osa; sample++) {
+			Render *re1;
+			RenderResult rres;
+			int mask;
 			
-		tag_scenes_for_render(re);
-		for (re1 = RenderGlobal.renderlist.first; re1; re1 = re1->next) {
-			if (re1->scene->id.flag & LIB_DOIT) {
-				if (re1->r.scemode & R_FULL_SAMPLE) {
-					if (sample) {
-						BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-						render_result_exr_file_read(re1, sample);
+			/* enable full sample print */
+			R.i.curfsa = sample + 1;
+			
+			/* set all involved renders on the samplebuffers (first was done by render itself, but needs tagged) */
+			/* also function below assumes this */
+			
+			tag_scenes_for_render(re);
+			for (re1 = RenderGlobal.renderlist.first; re1; re1 = re1->next) {
+				if (re1->scene->id.flag & LIB_DOIT) {
+					if (re1->r.scemode & R_FULL_SAMPLE) {
+						if (sample) {
+							BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+							render_result_exr_file_read(re1, sample);
 #ifdef WITH_FREESTYLE
-						if (re1->r.mode & R_EDGE_FRS)
-							composite_freestyle_renders(re1, sample);
+							if (re1->r.mode & R_EDGE_FRS)
+								composite_freestyle_renders(re1, sample);
 #endif
-						BLI_rw_mutex_unlock(&re->resultmutex);
+							BLI_rw_mutex_unlock(&re->resultmutex);
+						}
+						ntreeCompositTagRender(re1->scene); /* ensure node gets exec to put buffers on stack */
 					}
-					ntreeCompositTagRender(re1->scene); /* ensure node gets exec to put buffers on stack */
 				}
 			}
-		}
-		
-		/* composite */
-		if (ntree) {
-			ntreeCompositTagRender(re->scene);
-			ntreeCompositTagAnimated(ntree);
-
-			ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, 0);
-		}
-		
-		/* ensure we get either composited result or the active layer */
-		RE_AcquireResultImage(re, &rres);
-
-		nr=0;
-		for (rv=(RenderView *) rres.views.first; rv; rv=rv->next, nr++) {
-
-			/* we accumulate in here */
-			rectf = MEM_mapallocN(re->rectx * re->recty * sizeof(float) * 4, "fullsample rgba");
+			
+			/* composite */
+			if (ntree) {
+				ntreeCompositTagRender(re->scene);
+				ntreeCompositTagAnimated(ntree);
+				
+				ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, nr);
+			}
+			
+			/* ensure we get either composited result or the active layer */
+			RE_AcquireResultImage(re, &rres, nr);
 
 			/* accumulate with filter, and clip */
 			mask = (1 << sample);
@@ -1929,18 +1962,18 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 
 			for (y = 0; y < re->recty; y++) {
 				float *rf = rectf + 4 * y * re->rectx;
-				float *col = RE_RenderViewGetRectf(&rres, nr) + 4 * y * re->rectx;
-
+				float *col = rres.rectf + 4 * y * re->rectx;
+				
 				for (x = 0; x < re->rectx; x++, rf += 4, col += 4) {
 					/* clamping to 1.0 is needed for correct AA */
 					if (col[0] < 0.0f) col[0] = 0.0f; else if (col[0] > 1.0f) col[0] = 1.0f;
 					if (col[1] < 0.0f) col[1] = 0.0f; else if (col[1] > 1.0f) col[1] = 1.0f;
 					if (col[2] < 0.0f) col[2] = 0.0f; else if (col[2] > 1.0f) col[2] = 1.0f;
-
+					
 					add_filt_fmask_coord(filt, col, rf, re->rectx, re->recty, x, y);
 				}
 			}
-
+			
 			RE_ReleaseResultImage(re);
 
 			/* show stuff */
@@ -1949,17 +1982,17 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 				re->result->renlay = render_get_active_layer(re, re->result);
 				re->display_draw(re->ddh, re->result, NULL, nr);
 			}
-
+			
 			if (re->test_break(re->tbh)) {
 				/* forcing break of outside for loop */
-				sample = re->r.osa;
+				rv = re->result->views.last;
 				break;
 			}
 
 			/* clamp alpha and RGB to 0..1 and 0..inf, can go outside due to filter */
 			for (y = 0; y < re->recty; y++) {
 				float *rf = rectf + 4 * y * re->rectx;
-
+				
 				for (x = 0; x < re->rectx; x++, rf += 4) {
 					rf[0] = MAX2(rf[0], 0.0f);
 					rf[1] = MAX2(rf[1], 0.0f);
@@ -1968,7 +2001,7 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 				}
 			}
 		}
-
+		
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 		if (RE_RenderViewGetRectf(re->result, nr))
 			MEM_freeN(RE_RenderViewGetRectf(re->result, nr));
@@ -2104,8 +2137,6 @@ static void do_render_composite_fields_blur_3d(Render *re)
 				if (re->r.scemode & R_FULL_SAMPLE)
 					do_merge_fullsample(re, ntree);
 				else {
-
-					//MV trying to get things to work first, later I get FSA right
 					numviews = BLI_countlist(&re->result->views);
 					for (view = 0; view < numviews; view++) {
 						ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, view);
@@ -2138,11 +2169,10 @@ static void renderresult_stampinfo(Render *re)
 	int nr;
 
 	/* this is the basic trick to get the displayed float or char rect from render result */
-	RE_AcquireResultImage(re, &rres);
-
 	nr = 0;
-	for (rv = (RenderView *)rres.views.first;rv;rv=rv->next, nr++) {
+	for (rv = (RenderView *)re->result->views.first;rv;rv=rv->next, nr++) {
 		re->actview = nr;
+		RE_AcquireResultImage(re, &rres, nr);
 		BKE_stamp_buf(re->scene, RE_GetViewCamera(re), (unsigned char *)rres.rect32, rv->rectf, rres.rectx, rres.recty, 4);
 	}
 
@@ -2663,15 +2693,15 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 	Object *camera = RE_GetCamera(re);
 	double render_time;
 	int ok = TRUE;
-	int view_id = render_result_get_view_id(re, view);
-
-	re->actview = view_id;
-	RE_AcquireResultImage(re, &rres);
+	int view_id;
+	
+	view_id = render_result_get_view_id(re, view);
+	RE_AcquireResultImage(re, &rres, view_id);
 
 	/* write movie or image */
 	if (BKE_imtype_is_movie(scene->r.im_format.imtype)) {
 		int do_free = FALSE;
-		ImBuf *ibuf = render_result_rect_to_ibuf(&rres, &scene->r, view_id);
+		ImBuf *ibuf = render_result_rect_to_ibuf(&rres, &scene->r);
 
 		/* note; the way it gets 32 bits rects is weak... */
 		if (ibuf->rect == NULL) {
@@ -2711,7 +2741,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 			}
 		}
 		else {
-			ImBuf *ibuf = render_result_rect_to_ibuf(&rres, &scene->r, view_id);
+			ImBuf *ibuf = render_result_rect_to_ibuf(&rres, &scene->r);
 
 			IMB_colormanagement_imbuf_for_write(ibuf, TRUE, FALSE, &scene->view_settings,
 			                                    &scene->display_settings, &scene->r.im_format);
@@ -2746,6 +2776,8 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 	}
 	
 	RE_ReleaseResultImage(re);
+	if (view_id == -1)
+		render_result_views_softdelete(&rres);
 
 	render_time = re->i.lastframetime;
 	re->i.lastframetime = PIL_check_seconds_timer() - re->i.starttime;

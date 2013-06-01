@@ -2730,12 +2730,19 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 	pass = (iuser) ? iuser->pass : 0;
 	actview = (iuser) ? iuser->view : 0;
 
+	if (iuser && (iuser->flag & IMA_STEREO3D)) {
+		/* view == 0 shows stereo */
+		if (actview-- == 0)
+			actview = iuser->eye;
+	}
+
 	if (from_render) {
-		RE_AcquireResultImage(re, &rres);
+		RE_AcquireResultImage(re, &rres, actview);
 	}
 	else if (ima->renders[ima->render_slot]) {
+		printf("case not handled yet\n");
 		rres = *(ima->renders[ima->render_slot]);
-		rres.have_combined = RE_RenderViewGetRectf(&rres, 0) != NULL;
+		rres.have_combined = RE_RenderViewGetRectf(&rres, actview) != NULL;
 	}
 	else
 		memset(&rres, 0, sizeof(RenderResult));
@@ -2752,16 +2759,10 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 		*lock_r = re;
 	}
 
-	if ((iuser->flag & IMA_STEREO3D)) {
-		/* view == 0 shows stereo */
-		if (actview-- == 0)
-			actview = iuser->eye;
-	}
-
 	/* this gives active layer, composite or sequence result */
 	rect = (unsigned int *)rres.rect32;
-	rectf = RE_RenderViewGetRectf(&rres, actview);
-	rectz = RE_RenderViewGetRectz(&rres, actview);
+	rectf = rres.rectf;
+	rectz = rres.rectz;
 	dither = iuser->scene->r.dither_intensity;
 
 	/* combined layer gets added as first layer */
@@ -2781,8 +2782,8 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 		if (rl) {
 			RenderPass *rpass;
 
-			/* there's no combined pass, is in renderlayer itself */
-			/* now it does, no need to do pass - 1 */
+			/* "there's no combined pass, is in renderlayer itself" */
+			/* -Now it does, no need to do pass - 1 (dfelinto) */
 			rpass = BLI_findlink(&rl->passes, pass);
 			if (rpass) {
 				channels = rpass->channels;

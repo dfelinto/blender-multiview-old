@@ -71,9 +71,9 @@ typedef struct RenderView {
 	char name[64];		/* amount defined in openexr_multi.h */
 	struct Object *camera;
 
-	/* if this exists, a copy of one of layers, or result of composited layers */
+	/* if this exists, result of composited layers */
 	float *rectf;
-	/* if this exists, a copy of one of layers, or result of composited layers */
+	/* if this exists, result of composited layers */
 	float *rectz;
 
 } RenderView;
@@ -126,11 +126,11 @@ typedef struct RenderResult {
 	/* optional, 32 bits version of picture, used for ogl render and image curves */
 	int *rect32;
 
-	//MV next: remove rectf and rectz and put them in RenderView
-
 	/* if this exists, a copy of one of layers, or result of composited layers */
+	/* it is used for temporary storage only */
 	float *rectf;
 	/* if this exists, a copy of one of layers, or result of composited layers */
+	/* it is used for temporary storage only */
 	float *rectz;
 	
 	/* coordinates within final image (after cropping) */
@@ -200,7 +200,8 @@ void RE_FreeRenderResult(struct RenderResult *rr);
 struct RenderResult *RE_AcquireResultRead(struct Render *re);
 struct RenderResult *RE_AcquireResultWrite(struct Render *re);
 void RE_ReleaseResult(struct Render *re);
-void RE_AcquireResultImage(struct Render *re, struct RenderResult *rr);
+void RE_AcquireResultImage(struct Render *re, struct RenderResult *rr, const int view_id);
+void RE_AcquireResultViews(struct Render *re, struct RenderResult *rr);
 void RE_ReleaseResultImage(struct Render *re);
 void RE_SwapResult(struct Render *re, struct RenderResult **rr);
 struct RenderStats *RE_GetStats(struct Render *re);
