@@ -3675,6 +3675,11 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Interlace Type", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
 
+	prop = RNA_def_property(srna, "interlace_swap_left_right", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", USER_INTERLACE_SWAP_LEFT_RIGHT);
+	RNA_def_property_ui_text(prop, "Swap Left/Right", "Swap left and right stereo channels");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
+
 	prop = RNA_def_property(srna, "epilepsy_interval", PROP_FLOAT, PROP_TIME);
 	RNA_def_property_range(prop, 0.01f, 10.0f);
 	RNA_def_property_ui_range(prop, 0.05f, 1.0f, 1.0f, 2);
