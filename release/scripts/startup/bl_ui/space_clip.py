@@ -211,7 +211,7 @@ class CLIP_PT_tools_marker(CLIP_PT_tracking_panel, Panel):
         settings = clip.tracking.settings
 
         col = layout.column(align=True)
-        props = col.operator("clip.add_marker_at_center", text="Add Marker")
+        props = col.operator("clip.add_marker_at_click", text="Add Marker")
         col.operator("clip.detect_features")
         col.operator("clip.delete_track")
 
@@ -333,9 +333,10 @@ class CLIP_PT_tools_solve(CLIP_PT_tracking_panel, Panel):
 
         col = layout.column()
         col.prop(settings, "use_tripod_solver")
+        col.prop(settings, "use_keyframe_selection")
 
         col = layout.column(align=True)
-        col.active = not settings.use_tripod_solver
+        col.active = not settings.use_tripod_solver and not settings.use_keyframe_selection
         col.prop(tracking_object, "keyframe_a")
         col.prop(tracking_object, "keyframe_b")
 
