@@ -106,7 +106,7 @@ static void wm_method_draw_stereo_epilepsy(wmWindow *win)
 	static bool view = 0;
 	static double start = 0;
 
-	if( (PIL_check_seconds_timer() - start) >= U.epilepsy_delay) {
+	if( (PIL_check_seconds_timer() - start) >= U.epilepsy_interval) {
 		start = PIL_check_seconds_timer();
 		view = !view;
 	}
