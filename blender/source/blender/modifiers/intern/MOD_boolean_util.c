@@ -362,9 +362,9 @@ static DerivedMesh *ConvertCSGDescriptorsToDerivedMesh(
 
 	/* create a new DerivedMesh */
 	result = CDDM_new(vertex_it->num_elements, 0, face_it->num_elements, 0, 0);
-	CustomData_merge(&dm1->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~(CD_MASK_NORMAL | CD_MASK_ORIGINDEX),
+	CustomData_merge(&dm1->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~CD_MASK_ORIGINDEX,
 	                 CD_DEFAULT, face_it->num_elements);
-	CustomData_merge(&dm2->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~(CD_MASK_NORMAL | CD_MASK_ORIGINDEX),
+	CustomData_merge(&dm2->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~CD_MASK_ORIGINDEX,
 	                 CD_DEFAULT, face_it->num_elements);
 
 	/* step through the vertex iterators: */
@@ -485,7 +485,7 @@ static DerivedMesh *ConvertCSGDescriptorsToDerivedMesh(
 	DM_ensure_tessface(result);
 #endif
 
-	CDDM_calc_normals(result);
+	result->dirty |= DM_DIRTY_NORMALS;
 
 	return result;
 }

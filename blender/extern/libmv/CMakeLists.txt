@@ -67,6 +67,7 @@ if(WITH_LIBMV)
 		libmv/simple_pipeline/detect.cc
 		libmv/simple_pipeline/initialize_reconstruction.cc
 		libmv/simple_pipeline/intersect.cc
+		libmv/simple_pipeline/keyframe_selection.cc
 		libmv/simple_pipeline/modal_solver.cc
 		libmv/simple_pipeline/pipeline.cc
 		libmv/simple_pipeline/reconstruction.cc
@@ -74,10 +75,8 @@ if(WITH_LIBMV)
 		libmv/simple_pipeline/resect.cc
 		libmv/simple_pipeline/tracks.cc
 		libmv/tracking/brute_region_tracker.cc
-		libmv/tracking/esm_region_tracker.cc
 		libmv/tracking/hybrid_region_tracker.cc
 		libmv/tracking/klt_region_tracker.cc
-		libmv/tracking/lmicklt_region_tracker.cc
 		libmv/tracking/pyramid_region_tracker.cc
 		libmv/tracking/retrack_region_tracker.cc
 		libmv/tracking/track_region.cc
@@ -125,6 +124,7 @@ if(WITH_LIBMV)
 		libmv/simple_pipeline/detect.h
 		libmv/simple_pipeline/initialize_reconstruction.h
 		libmv/simple_pipeline/intersect.h
+		libmv/simple_pipeline/keyframe_selection.h
 		libmv/simple_pipeline/modal_solver.h
 		libmv/simple_pipeline/pipeline.h
 		libmv/simple_pipeline/reconstruction.h
@@ -132,10 +132,8 @@ if(WITH_LIBMV)
 		libmv/simple_pipeline/resect.h
 		libmv/simple_pipeline/tracks.h
 		libmv/tracking/brute_region_tracker.h
-		libmv/tracking/esm_region_tracker.h
 		libmv/tracking/hybrid_region_tracker.h
 		libmv/tracking/klt_region_tracker.h
-		libmv/tracking/lmicklt_region_tracker.h
 		libmv/tracking/pyramid_region_tracker.h
 		libmv/tracking/region_tracker.h
 		libmv/tracking/retrack_region_tracker.h
