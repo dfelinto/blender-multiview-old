@@ -9,7 +9,7 @@ This branch contains the code for the "stereoscopy support in Blender" journey.
 Beta Builds
 -----------
 * [OSX](http://graphicall.org/1047) by [Francesco Siddi](http://twitter.com/fsiddi)
-* Windows - *looking for volunteer*
+* [Windows](http://builder.blender.org/download/) by [Blender Foundation](http://www.blender.org) / [BuildBot](http://buildbot.net)
 * Linux - *looking for volunteer*
 
 Implemented Features
