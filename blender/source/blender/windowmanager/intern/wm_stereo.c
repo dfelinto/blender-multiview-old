@@ -122,38 +122,51 @@ static void wm_method_draw_stereo_epilepsy(wmWindow *win)
 static GLuint left_interlace_mask[32];
 static GLuint right_interlace_mask[32];
 static int interlace_prev_type = -1;
+static char interlace_prev_swap_left_right = -1;
 
 static void wm_interlace_create_masks(void)
 {
-	int i;
-
-	if(interlace_prev_type != U.interlace_type) {
+	char swap = U.stereo_flag & USER_INTERLACE_SWAP_LEFT_RIGHT;
+	if( (interlace_prev_type != U.interlace_type) || (interlace_prev_swap_left_right != swap) ) {
+		char i;
+		GLuint pattern;
 		switch(U.interlace_type) {
 			case USER_INTERLACE_TYPE_ROW_INTERLEAVED:
-				for(i = 0; i < 32; i++) {
-					left_interlace_mask[i] = (i&1)*0xFFFFFFFF;
-					right_interlace_mask[i] = (i&0)*0xFFFFFFFF;
+				pattern = 0x00000000;
+				pattern = swap? ~pattern : pattern;
+				for(i = 0; i < 32; i += 2) {
+					left_interlace_mask[i] = pattern;
+					right_interlace_mask[i] = ~pattern;
+				}
+				for(i = 1; i < 32; i += 2) {
+					left_interlace_mask[i] = ~pattern;
+					right_interlace_mask[i] = pattern;
 				}
 				break;
 			case USER_INTERLACE_TYPE_COLUMN_INTERLEAVED:
+				pattern = 0x55555555;
+				pattern = swap? ~pattern : pattern;
 				for(i = 0; i < 32; i++) {
-					left_interlace_mask[i] = 0x55555555;
-					right_interlace_mask[i] = 0xAAAAAAAA;
+					left_interlace_mask[i] = pattern;
+					right_interlace_mask[i] = ~pattern;
 				}
 				break;
 			case USER_INTERLACE_TYPE_CHECKERBOARD_INTERLEAVED:
 			default:
+				pattern = 0x55555555;
+				pattern = swap? ~pattern : pattern;
 				for(i = 0; i < 32; i += 2) {
-					left_interlace_mask[i] = 0x55555555;
-					right_interlace_mask[i] = 0xAAAAAAAA;
+					left_interlace_mask[i] = pattern;
+					right_interlace_mask[i] = ~pattern;
 				}
 				for(i = 1; i < 32; i += 2) {
-					left_interlace_mask[i] = 0xAAAAAAAA;
-					right_interlace_mask[i] = 0x55555555;
+					left_interlace_mask[i] = ~pattern;
+					right_interlace_mask[i] = pattern;
 				}
 				break;
 		}
 		interlace_prev_type = U.interlace_type;
+		interlace_prev_swap_left_right = swap;
 	}
 }
 
