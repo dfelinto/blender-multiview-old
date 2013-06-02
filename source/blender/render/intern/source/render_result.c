@@ -757,7 +757,8 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		if (rr->do_exr_tile)
 			rl->exrhandle = IMB_exr_get_handle();
 
-		for (nr = 0, rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
+		nr = 0;
+		for (rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
 
 			if (view != -1 && view != nr)
 				continue;
@@ -989,13 +990,19 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 		if (view[0] != '\0') {
 			if (strcmp (view, rview->name) != 0)
 				continue;
+			else
+				chan_view = "";
+		}
+		else {
+			/* if rendered only one view, we treat as a a non-view render */
+			chan_view = rview->name;
 		}
 
 		IMB_exr_add_view(exrhandle, rview->name);
 
 		if (rview->rectf) {
 			for (a=0; a < 4; a++)
-				IMB_exr_add_channel(exrhandle, "Composite", get_pass_name(SCE_PASS_COMBINED, a, ""), rview->name, 4, 4 * rr->rectx, rview->rectf + a);
+				IMB_exr_add_channel(exrhandle, "Composite", get_pass_name(SCE_PASS_COMBINED, a, ""), chan_view, 4, 4 * rr->rectx, rview->rectf + a);
 		}
 	}
 
