@@ -466,12 +466,14 @@ typedef struct UserDef {
 	float sculpt_paint_overlay_col[3];
 
 	short tweak_threshold;
+
+	/* stereoscopy 3-D display */
 	short stereo_flag;
+	float epilepsy_interval; /* preferred interval in seconds for Dr. Epilepsy stereo method */
 	char stereo_display; /* stereo method for the user display */
 	char anaglyph_type; /* anaglyph scheme for the user display */
 	char interlace_type;  /* interlace type for the user display */
-	char pad3[5];
-	float epilepsy_interval; /* preferred interval in seconds for Dr. Epilepsy stereo method */
+	char pad3;
 
 	char author[80];	/* author name for file formats supporting it */
 
