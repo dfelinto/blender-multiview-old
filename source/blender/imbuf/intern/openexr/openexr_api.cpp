@@ -704,7 +704,7 @@ static void imb_exr_make_unique_names (std::vector<Header> & headers)
 /* adds flattened ExrChannels */
 /* xstride, ystride and rect can be done in set_channel too, for tile writing */
 /* passname does not include view */
-static void imb_exr_add_channel_multiview(void *handle, const char *layname, const char *passname, const char *view, int xstride, int ystride, float *rect)
+void IMB_exr_add_channel(void *handle, const char *layname, const char *passname, const char *view, int xstride, int ystride, float *rect)
 {
 	ExrHandle *data = (ExrHandle *)handle;
 	ExrChannel *echan;
@@ -737,38 +737,6 @@ static void imb_exr_add_channel_multiview(void *handle, const char *layname, con
 	echan->view_id = std::max(0, imb_exr_get_multiView_id(&data->multiView, &(echan->m->view)[0]));
 
 	exr_printf("added channel %s\n", echan->name);
-	BLI_addtail(&data->channels, echan);
-}
-
-/* adds flattened ExrChannels */
-/* xstride, ystride and rect can be done in set_channel too, for tile writing */
-void IMB_exr_add_channel(void *handle, const char *layname, const char *passname, const char *view, int xstride, int ystride, float *rect)
-{
-	ExrHandle *data = (ExrHandle *)handle;
-	ExrChannel *echan;
-
-	/* handle viewed channels separatedly */
-	if (view[0] != '\0' || TRUE)
-		return imb_exr_add_channel_multiview(handle, layname, passname, view, xstride, ystride, rect);
-
-	echan = (ExrChannel *)MEM_callocN(sizeof(ExrChannel), "exr tile channel");
-
-	if (layname) {
-		char lay[EXR_LAY_MAXNAME + 1], pass[EXR_PASS_MAXNAME + 1];
-		BLI_strncpy(lay, layname, EXR_LAY_MAXNAME);
-		BLI_strncpy(pass, passname, EXR_PASS_MAXNAME);
-
-		BLI_snprintf(echan->name, sizeof(echan->name), "%s.%s", lay, pass);
-	}
-	else {
-		BLI_strncpy(echan->name, passname, EXR_TOT_MAXNAME - 1);
-	}
-
-	echan->xstride = xstride;
-	echan->ystride = ystride;
-	echan->rect = rect;
-
-	// printf("added channel %s\n", echan->name);
 	BLI_addtail(&data->channels, echan);
 }
 
