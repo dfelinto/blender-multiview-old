@@ -123,7 +123,7 @@ void BM_mesh_decimate_dissolve_ex(BMesh *bm, const float angle_limit, const bool
 			}
 
 			if ((delimit & BMO_DELIM_SEAM) &&
-			    (BM_elem_flag_test(e, BMO_DELIM_SEAM)))
+			    (BM_elem_flag_test(e, BM_ELEM_SEAM)))
 			{
 				continue;
 			}
