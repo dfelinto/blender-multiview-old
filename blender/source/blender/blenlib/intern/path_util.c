@@ -773,10 +773,24 @@ static void ensure_view(char *path)
 	if (file == NULL)
 		file = path;
 
+	/* if there is no '%' try to add one before the '.' if any */
 	if (strrchr(file, '%') == NULL) {
 		int len = strlen(file);
-		file[len++] = '%';
-		file[len] = '\0';
+		char *period = strrchr(file, '.');
+
+		/* found a period */
+		if (period && period > file) {
+			char *p = file;
+			for (p=file+len+1; p > period; p--) {
+				*p = *(p-1);
+			}
+			*p = '%';
+		}
+		/* no period, just add it to the end*/
+		else {
+			file[len++] = '%';
+			file[len] = '\0';
+		}
 	}
 }
 
@@ -808,13 +822,13 @@ bool BLI_path_view(char *path, const char *view)
 	if (view && view[0] != '\0')
 		ensure_view(path);
 
-	strip_view_char(path);
-
 	if (stringview_chars(path, &ch_sta, &ch_end)) { /* warning, ch_end is the last # +1 */
 		char tmp[FILE_MAX];
 
 		sprintf(tmp, "%.*s%s%s", ch_sta, path, view, path + ch_end);
 		strcpy(path, tmp);
+
+		strip_view_char(path);
 		return true;
 	}
 	return false;
@@ -1951,6 +1965,22 @@ int BLI_rebase_path(char *abs, size_t abs_len,
 	}
 
 	return BLI_REBASE_OK;
+}
+
+
+/**
+ * Returns pointer to the rightmost period in string.
+ */
+const char *BLI_last_period(const char *string)
+{
+	const char * const lfslash = strrchr(string, '.');
+	const char * const lbslash = strrchr(string, '.');
+
+	if (!lfslash) return lbslash;
+	else if (!lbslash) return lfslash;
+
+	if ((intptr_t)lfslash < (intptr_t)lbslash) return lbslash;
+	else return lfslash;
 }
 
 /**
