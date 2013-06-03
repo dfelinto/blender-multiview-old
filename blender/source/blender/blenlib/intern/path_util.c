@@ -781,6 +781,23 @@ static void ensure_view(char *path)
 }
 
 /**
+ * Removes any  "%" character from path.
+ */
+static void strip_view_char(char *path)
+{
+	int i, j;
+
+	for (i = 0, j = 0; i < strlen(path); i++, j++) {
+		if (path[i] != '%')
+			path[j] = path[i];
+		else
+			j--;
+	}
+
+	path[j] = '\0';
+}
+
+/**
  * Replaces "%" character sequence in last slash-separated component of *path
  * with view name.
  */
@@ -790,6 +807,8 @@ bool BLI_path_view(char *path, const char *view)
 
 	if (view && view[0] != '\0')
 		ensure_view(path);
+
+	strip_view_char(path);
 
 	if (stringview_chars(path, &ch_sta, &ch_end)) { /* warning, ch_end is the last # +1 */
 		char tmp[FILE_MAX];

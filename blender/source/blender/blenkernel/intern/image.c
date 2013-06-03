@@ -2057,8 +2057,7 @@ static void do_makepicstring(char *string, const char *base, const char *relbase
 	if (use_frames)
 		BLI_path_frame(string, frame, 4);
 
-	if (view && view[0] != '\0')
-		BLI_path_view(string, view);
+	BLI_path_view(string, view);
 
 	if (use_ext)
 		do_add_image_extension(string, imtype, im_format);
