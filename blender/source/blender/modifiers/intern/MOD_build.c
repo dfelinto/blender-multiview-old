@@ -71,9 +71,9 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tbmd->seed = bmd->seed;
 }
 
-static int dependsOnTime(ModifierData *UNUSED(md))
+static bool dependsOnTime(ModifierData *UNUSED(md))
 {
-	return 1;
+	return true;
 }
 
 static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
@@ -295,6 +295,10 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
 	MEM_freeN(vertMap);
 	MEM_freeN(edgeMap);
 	MEM_freeN(faceMap);
+
+	if (dm->dirty & DM_DIRTY_NORMALS) {
+		result->dirty |= DM_DIRTY_NORMALS;
+	}
 
 	return result;
 }
