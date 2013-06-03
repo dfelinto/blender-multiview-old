@@ -1428,11 +1428,12 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 			save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, simopts->filepath);
 			ED_space_image_release_buffer(sima, ibuf, lock);
 		}
-		if (simopts->im_format.imtype == R_IMF_IMTYPE_MULTILAYER) {
+
+		else if (simopts->im_format.imtype == R_IMF_IMTYPE_MULTILAYER) {
 			if (rr) {
 				int numviews = BLI_countlist(&rr->views);
 
-				/* monoview or multiview exr */
+				/* monoview */
 				if (numviews < 2) {
 					ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.quality, FALSE, "");
 
