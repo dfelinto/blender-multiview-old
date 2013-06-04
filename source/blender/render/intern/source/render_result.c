@@ -206,13 +206,6 @@ void render_result_views_softdelete(RenderResult *rr)
 	while (rr->views.first) {
 		RenderView *rv = rr->views.first;
 		BLI_remlink(&rr->views, rv);
-
-		if (rv->rectf)
-			MEM_freeN(rv->rectf);
-
-		if (rv->rectz)
-			MEM_freeN(rv->rectz);
-
 		MEM_freeN(rv);
 	}
 }
