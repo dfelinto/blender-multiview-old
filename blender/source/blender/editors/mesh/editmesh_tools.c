@@ -2623,6 +2623,7 @@ static int edbm_separate_exec(bContext *C, wmOperator *op)
 	if (retval) {
 		/* delay depsgraph recalc until all objects are duplicated */
 		DAG_relations_tag_update(bmain);
+		WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, NULL);
 
 		return OPERATOR_FINISHED;
 	}
@@ -3056,6 +3057,7 @@ static int edbm_dissolve_limited_exec(bContext *C, wmOperator *op)
 	BMesh *bm = em->bm;
 	const float angle_limit = RNA_float_get(op->ptr, "angle_limit");
 	const bool use_dissolve_boundaries = RNA_boolean_get(op->ptr, "use_dissolve_boundaries");
+	const int delimit = RNA_enum_get(op->ptr, "delimit");
 
 	char dissolve_flag;
 
@@ -3091,8 +3093,8 @@ static int edbm_dissolve_limited_exec(bContext *C, wmOperator *op)
 	}
 
 	if (!EDBM_op_callf(em, op,
-	                   "dissolve_limit edges=%he verts=%hv angle_limit=%f use_dissolve_boundaries=%b",
-	                   dissolve_flag, dissolve_flag, angle_limit, use_dissolve_boundaries))
+	                   "dissolve_limit edges=%he verts=%hv angle_limit=%f use_dissolve_boundaries=%b delimit=%i",
+	                   dissolve_flag, dissolve_flag, angle_limit, use_dissolve_boundaries, delimit))
 	{
 		return OPERATOR_CANCELLED;
 	}
@@ -3123,6 +3125,8 @@ void MESH_OT_dissolve_limited(wmOperatorType *ot)
 	RNA_def_property_float_default(prop, DEG2RADF(5.0f));
 	RNA_def_boolean(ot->srna, "use_dissolve_boundaries", 0, "All Boundaries",
 	                "Dissolve all vertices inbetween face boundaries");
+	RNA_def_enum_flag(ot->srna, "delimit", mesh_delimit_mode_items, 0, "Delimit",
+	                  "Delimit dissolve operation");
 }
 
 static int edbm_split_exec(bContext *C, wmOperator *op)
