@@ -96,7 +96,6 @@ void render_result_free(RenderResult *res)
 
 	if (res->rect32)
 		MEM_freeN(res->rect32);
-	/* XXX MV keep the next two for sequencer, to be removed later */
 	if (res->rectz)
 		MEM_freeN(res->rectz);
 	if (res->rectf)
@@ -193,7 +192,7 @@ void render_result_views_softcopy(RenderResult *dst, RenderResult *src)
 		rv->camera = rview->camera;
 		rv->rectf = rview->rectf;
 		rv->rectz = rview->rectz;
-	//	rv->rect32 = rview->rect32;
+		rv->rect32 = rview->rect32;
 	}
 }
 

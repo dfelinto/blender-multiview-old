@@ -75,6 +75,8 @@ typedef struct RenderView {
 	float *rectf;
 	/* if this exists, result of composited layers */
 	float *rectz;
+	/* optional, 32 bits version of picture, used for sequencer, ogl render and image curves */
+	int *rect32;
 
 } RenderView;
 
@@ -124,6 +126,7 @@ typedef struct RenderResult {
 	short crop, sample_nr;
 	
 	/* optional, 32 bits version of picture, used for ogl render and image curves */
+	/* it is used for temporary storage only */
 	int *rect32;
 
 	/* if this exists, a copy of one of layers, or result of composited layers */
@@ -213,6 +216,7 @@ struct RenderLayer *RE_GetRenderLayer(struct RenderResult *rr, const char *name)
 float *RE_RenderLayerGetPass(struct RenderLayer *rl, int passtype, int view_id);
 float *RE_RenderViewGetRectf(struct RenderResult *rr, int view_id);
 float *RE_RenderViewGetRectz(struct RenderResult *rr, int view_id);
+int *RE_RenderViewGetRect32(struct RenderResult *rr, int view_id);
 void RE_RenderViewSetRectf(RenderResult *res, int view_id, float *rect);
 void RE_RenderViewSetRectz(RenderResult *res, int view_id, float *rect);
 int RE_GetActiveViewId(struct Render *re);
