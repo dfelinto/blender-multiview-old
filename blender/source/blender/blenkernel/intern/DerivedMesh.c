@@ -491,6 +491,8 @@ void DM_to_mesh(DerivedMesh *dm, Mesh *me, Object *ob, CustomDataMask mask)
 	CustomData_reset(&tmp.ldata);
 	CustomData_reset(&tmp.pdata);
 
+	DM_ensure_normals(dm);
+
 	totvert = tmp.totvert = dm->getNumVerts(dm);
 	totedge = tmp.totedge = dm->getNumEdges(dm);
 	totloop = tmp.totloop = dm->getNumLoops(dm);
@@ -1609,13 +1611,17 @@ static void mesh_calc_modifiers(Scene *scene, Object *ob, float (*inputVertexCos
 		{
 			int unsupported = 0;
 
+			if (md->type == eModifierType_Multires && ((MultiresModifierData *)md)->sculptlvl == 0) {
+				/* If multires is on level 0 skip it silently without warning message. */
+				continue;
+			}
+
 			if (sculpt_dyntopo && !useRenderParams)
 				unsupported = TRUE;
 
 			if (scene->toolsettings->sculpt->flags & SCULPT_ONLY_DEFORM)
 				unsupported |= mti->type != eModifierTypeType_OnlyDeform;
 
-			unsupported |= md->type == eModifierType_Multires && ((MultiresModifierData *)md)->sculptlvl == 0;
 			unsupported |= multires_applied;
 
 			if (unsupported) {

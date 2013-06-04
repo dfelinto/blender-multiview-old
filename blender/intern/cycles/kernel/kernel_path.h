@@ -222,7 +222,7 @@ __device_inline bool shadow_blocked(KernelGlobals *kg, PathState *state, Ray *ra
 
 				ray->P = ray_offset(sd.P, -sd.Ng);
 				if(ray->t != FLT_MAX)
-					ray->D = normalize_length(Pend - ray->P, &ray->t);
+					ray->D = normalize_len(Pend - ray->P, &ray->t);
 
 				bounce++;
 			}
@@ -266,7 +266,7 @@ __device float4 kernel_path_progressive(KernelGlobals *kg, RNG *rng, int sample,
 			if((kernel_data.cam.resolution == 1) && (state.flag & PATH_RAY_CAMERA)) {	
 				float3 pixdiff = ray.dD.dx + ray.dD.dy;
 				/*pixdiff = pixdiff - dot(pixdiff, ray.D)*ray.D;*/
-				difl = kernel_data.curve_kernel_data.minimum_width * length(pixdiff) * 0.5f;
+				difl = kernel_data.curve_kernel_data.minimum_width * len(pixdiff) * 0.5f;
 			}
 
 			extmax = kernel_data.curve_kernel_data.maximum_width;
@@ -326,19 +326,6 @@ __device float4 kernel_path_progressive(KernelGlobals *kg, RNG *rng, int sample,
 		float rbsdf = path_rng(kg, rng, sample, rng_offset + PRNG_BSDF);
 		shader_eval_surface(kg, &sd, rbsdf, state.flag, SHADER_CONTEXT_MAIN);
 
-		kernel_write_data_passes(kg, buffer, &L, &sd, sample, state.flag, throughput);
-
-		/* blurring of bsdf after bounces, for rays that have a small likelihood
-		 * of following this particular path (diffuse, rough glossy) */
-		if(kernel_data.integrator.filter_glossy != FLT_MAX) {
-			float blur_pdf = kernel_data.integrator.filter_glossy*min_ray_pdf;
-
-			if(blur_pdf < 1.0f) {
-				float blur_roughness = sqrtf(1.0f - blur_pdf)*0.5f;
-				shader_bsdf_blur(kg, &sd, blur_roughness);
-			}
-		}
-
 		/* holdout */
 #ifdef __HOLDOUT__
 		if((sd.flag & (SD_HOLDOUT|SD_HOLDOUT_MASK)) && (state.flag & PATH_RAY_CAMERA)) {
@@ -358,6 +345,20 @@ __device float4 kernel_path_progressive(KernelGlobals *kg, RNG *rng, int sample,
 				break;
 		}
 #endif
+
+		/* holdout mask objects do not write data passes */
+		kernel_write_data_passes(kg, buffer, &L, &sd, sample, state.flag, throughput);
+
+		/* blurring of bsdf after bounces, for rays that have a small likelihood
+		 * of following this particular path (diffuse, rough glossy) */
+		if(kernel_data.integrator.filter_glossy != FLT_MAX) {
+			float blur_pdf = kernel_data.integrator.filter_glossy*min_ray_pdf;
+
+			if(blur_pdf < 1.0f) {
+				float blur_roughness = sqrtf(1.0f - blur_pdf)*0.5f;
+				shader_bsdf_blur(kg, &sd, blur_roughness);
+			}
+		}
 
 #ifdef __EMISSION__
 		/* emission */
@@ -956,7 +957,7 @@ __device float4 kernel_path_non_progressive(KernelGlobals *kg, RNG *rng, int sam
 			if((kernel_data.cam.resolution == 1) && (state.flag & PATH_RAY_CAMERA)) {	
 				float3 pixdiff = ray.dD.dx + ray.dD.dy;
 				/*pixdiff = pixdiff - dot(pixdiff, ray.D)*ray.D;*/
-				difl = kernel_data.curve_kernel_data.minimum_width * length(pixdiff) * 0.5f;
+				difl = kernel_data.curve_kernel_data.minimum_width * len(pixdiff) * 0.5f;
 			}
 
 			extmax = kernel_data.curve_kernel_data.maximum_width;
@@ -993,8 +994,6 @@ __device float4 kernel_path_non_progressive(KernelGlobals *kg, RNG *rng, int sam
 		shader_eval_surface(kg, &sd, rbsdf, state.flag, SHADER_CONTEXT_MAIN);
 		shader_merge_closures(kg, &sd);
 
-		kernel_write_data_passes(kg, buffer, &L, &sd, sample, state.flag, throughput);
-
 		/* holdout */
 #ifdef __HOLDOUT__
 		if((sd.flag & (SD_HOLDOUT|SD_HOLDOUT_MASK))) {
@@ -1014,6 +1013,9 @@ __device float4 kernel_path_non_progressive(KernelGlobals *kg, RNG *rng, int sam
 				break;
 		}
 #endif
+
+		/* holdout mask objects do not write data passes */
+		kernel_write_data_passes(kg, buffer, &L, &sd, sample, state.flag, throughput);
 
 #ifdef __EMISSION__
 		/* emission */
