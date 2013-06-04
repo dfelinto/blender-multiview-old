@@ -782,6 +782,7 @@ typedef enum eStereoDisplayMode {
 /* UserDef.stereo_flag */
 typedef enum eStereoFlag {
 	USER_INTERLACE_SWAP_LEFT_RIGHT  = (1 << 0),
+	USER_SIDEBYSIDE_CROSS_EYED = (1 << 1),
 } eStereoFlag;
 
 /* UserDef.anaglyph_type */
