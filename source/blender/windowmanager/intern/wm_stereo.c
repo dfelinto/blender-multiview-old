@@ -300,11 +300,11 @@ static void wm_method_draw_stereo_topbottom(wmWindow *win)
 	for (view=0; view < 2; view ++) {
 		if (view == STEREO_LEFT_ID) {
 			triple = win->drawdataall;
-			soffy = 0;
+			soffy = WM_window_pixels_y(win) * 0.5;
 		}
 		else {
 			triple = win->drawdatastereoall;
-			soffy = WM_window_pixels_y(win) * 0.5;
+			soffy = 0;
 		}
 
 		glEnable(triple->target);
