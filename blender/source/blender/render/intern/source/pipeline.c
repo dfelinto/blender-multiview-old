@@ -199,7 +199,7 @@ int RE_HasFakeLayer(RenderResult *res)
 	if (res == NULL)
 		return FALSE;
 
-	return (res->rect32 || RE_RenderViewGetRectf(res, 0));
+	return (RE_RenderViewGetRect32(res, 0) || RE_RenderViewGetRectf(res, 0));
 }
 
 int RE_HasStereo3D(RenderResult *res)
@@ -260,6 +260,18 @@ float *RE_RenderViewGetRectf(RenderResult *res, int view_id)
 	for (nr=0, rv = res->views.first; rv; rv = rv->next, nr++)
 		if (nr == view_id)
 			return rv->rectf;
+
+	return NULL;
+}
+
+int *RE_RenderViewGetRect32(RenderResult *res, int view_id)
+{
+	RenderView *rv;
+	int nr=0;
+
+	for (nr=0, rv = res->views.first; rv; rv = rv->next, nr++)
+		if (nr == view_id)
+			return rv->rect32;
 
 	return NULL;
 }
@@ -426,7 +438,6 @@ void RE_AcquireResultViews(Render *re, RenderResult *rr)
 			rv = (RenderView *)rr->views.first;
 
 			rr->have_combined = (rv->rectf != NULL);
-			rr->rect32 = re->result->rect32;
 
 			/* active layer */
 			rl = render_get_active_layer(re, re->result);
@@ -477,7 +488,7 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
 
 			rr->rectf = rv->rectf;
 			rr->rectz = rv->rectz;
-			rr->rect32 = re->result->rect32;
+			rr->rect32 = rv->rect32;
 
 			/* active layer */
 			rl = render_get_active_layer(re, re->result);
@@ -2173,7 +2184,7 @@ static void renderresult_stampinfo(Render *re)
 	for (rv = (RenderView *)re->result->views.first;rv;rv=rv->next, nr++) {
 		re->actview = nr;
 		RE_AcquireResultImage(re, &rres, nr);
-		BKE_stamp_buf(re->scene, RE_GetViewCamera(re), (unsigned char *)rres.rect32, rv->rectf, rres.rectx, rres.recty, 4);
+		BKE_stamp_buf(re->scene, RE_GetViewCamera(re), (unsigned char *)rv->rect32, rv->rectf, rres.rectx, rres.recty, 4);
 	}
 
 	RE_ReleaseResultImage(re);

@@ -321,7 +321,7 @@ static char *layer_menu(RenderResult *rr, short *UNUSED(curlay))
 		a += sprintf(str + a, "|%s %%x0", IFACE_("Composite"));
 		nr = 1;
 	}
-	else if (rr->rect32) {
+	else if (RE_RenderViewGetRect32(rr, 0)) {
 		a += sprintf(str + a, "|%s %%x0", IFACE_("Sequence"));
 		nr = 1;
 	}
