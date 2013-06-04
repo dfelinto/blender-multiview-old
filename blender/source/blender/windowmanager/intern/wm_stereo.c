@@ -233,13 +233,17 @@ static void wm_method_draw_stereo_sidebyside(wmWindow *win)
 	int soffx;
 
 	for (view=0; view < 2; view ++) {
+		bool cross_eyed = U.stereo_flag & USER_SIDEBYSIDE_CROSS_EYED;
+		soffx = WM_window_pixels_x(win) * 0.5;
 		if (view == STEREO_LEFT_ID) {
 			triple = win->drawdataall;
-			soffx = 0;
+			if(!cross_eyed)
+				soffx = 0;
 		}
 		else {
 			triple = win->drawdatastereoall;
-			soffx = WM_window_pixels_x(win) * 0.5;
+			if(cross_eyed)
+				soffx = 0;
 		}
 
 		glEnable(triple->target);
