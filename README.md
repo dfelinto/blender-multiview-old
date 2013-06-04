@@ -36,18 +36,14 @@ Image node (views options):
 
 Current Status:
 ---------------
-(see youtube recording: http://www.youtube.com/watch?v=X7I6G3uRPkw&hd=1 )
-
-**The instructions for testing are:**
-
-https://github.com/dfelinto/blender/blob/multiview/HowToTestIt.txt
+* [Youtube recording](http://www.youtube.com/watch?v=X7I6G3uRPkw&hd=1)
+* **[Instructions for testing](https://github.com/dfelinto/blender/blob/multiview/HowToTestIt.md)**
 
 **Known bugs:**
 * (see the issues in the github tracker)
 * Missing listeners - not everything is updating when they should if you change things after rendering
 
 **Compositor elements not yet tackled:**
-* FSA
 * Viewer Node
 
 What do I plan to work next?
@@ -68,7 +64,6 @@ UPDATE: I'm testing an addon and I think it may work well with it. So no builtin
 Current issues
 --------------------------
 * Viewer Node showing only one view
-* FSA not implemented
 * Sequencer not implemented
 
 Links
@@ -101,6 +96,11 @@ How to build it
 UPDATE: you know need OpenEXR 2.0 to use this branch.
 (so you need to recompile openexr and openimageio and openshadinglanguage [or disable OSL])
 UPDATE2: Blender already has exr2.0 libs for OSX, windows following shortly, linux will be the last one.
+UPDATE3: Blender svn OpenEXR for windows are buggy, they will only work if you build a debug Blender.
+
+This code is mirrored (not often) into Blender svn branch system. If you have troubles building from git you can fallback to it:
+https://svn.blender.org/svnroot/bf-blender/branches/multiview/
+
 
 Rough guide, basically you need to manually copy the addons and addons_contrib folders inside the checkout blender code.
 
