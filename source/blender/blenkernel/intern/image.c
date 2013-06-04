@@ -2739,7 +2739,6 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 		RE_AcquireResultImage(re, &rres, actview);
 	}
 	else if (ima->renders[ima->render_slot]) {
-		printf("case not handled yet\n");
 		rres = *(ima->renders[ima->render_slot]);
 		rres.have_combined = RE_RenderViewGetRectf(&rres, actview) != NULL;
 	}
