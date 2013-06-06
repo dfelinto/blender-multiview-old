@@ -3407,6 +3407,12 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}
 	};
 
+	static EnumPropertyItem sidebyside_viewing_method_items[] = {
+		{0, "PARALLEL", 0, "Parallel", "Left eye should see left image and vice-versa"},
+		{USER_SIDEBYSIDE_CROSS_EYED, "CROSS_EYED", 0, "Cross-Eyed", "Right eye should see left image and vice-versa"},
+		{0, NULL, 0, NULL, NULL}
+	};
+
 	srna = RNA_def_struct(brna, "UserPreferencesSystem", NULL);
 	RNA_def_struct_sdna(srna, "UserDef");
 	RNA_def_struct_nested(brna, srna, "UserPreferences");
@@ -3684,6 +3690,12 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0.01f, 10.0f);
 	RNA_def_property_ui_range(prop, 0.05f, 1.0f, 1.0f, 2);
 	RNA_def_property_ui_text(prop, "Interval", "Preferred interval in seconds between switching left/right views");
+
+	prop = RNA_def_property(srna, "sidebyside_viewing_method", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_bitflag_sdna(prop, NULL, "stereo_flag");
+	RNA_def_property_enum_items(prop, sidebyside_viewing_method_items);
+	RNA_def_property_ui_text(prop, "Viewing Method", "");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
 
 #ifdef WITH_CYCLES
 	prop = RNA_def_property(srna, "compute_device_type", PROP_ENUM, PROP_NONE);
