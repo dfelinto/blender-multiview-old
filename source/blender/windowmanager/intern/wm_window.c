@@ -374,7 +374,7 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 		multisamples = U.ogl_multisamples;
 	
 	/* a new window is created when pageflip mode is required for a window */
-	stereo = (win->flag & WM_STEREO) && U.stereo_display == USER_STEREO_DISPLAY_PAGEFLIP;
+	stereo = (win->flag & WM_STEREO) && U.stereo_display == S3D_DISPLAY_PAGEFLIP;
 
 	wm_get_screensize(&scr_w, &scr_h);
 	posy = (scr_h - win->posy - win->sizey);

@@ -3382,34 +3382,28 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	};
 
 	static EnumPropertyItem stereo_display_items[] = {
-		{USER_STEREO_DISPLAY_NONE, "NONE", 0, "None", ""},
-		{USER_STEREO_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", ""},
-		{USER_STEREO_DISPLAY_BLURAY, "BLURAY", 0, "Bluray", ""},
-		{USER_STEREO_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Dr. Epilepsy", ""},
-		{USER_STEREO_DISPLAY_INTERLACE, "INTERLACE", 0, "Interlace", ""},
-		{USER_STEREO_DISPLAY_PAGEFLIP, "TIMESEQUENTIAL", 0, "Time Sequential", "Renders alternate eyes (also known as pageflip). It requires Quadbuffer support in the graphic card"},
-		{USER_STEREO_DISPLAY_SIDEBYSIDE, "SIDEBYSIDE", 0, "Side-by-Side", ""},
-		{USER_STEREO_DISPLAY_TOPBOTTOM, "TOPBOTTOM", 0, "Top-Bottom", ""},
+		{S3D_DISPLAY_NONE, "NONE", 0, "None", ""},
+		{S3D_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", ""},
+//		{S3D_DISPLAY_BLURAY, "BLURAY", 0, "Bluray", ""},
+		{S3D_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Dr. Epilepsy", ""},
+		{S3D_DISPLAY_INTERLACE, "INTERLACE", 0, "Interlace", ""},
+		{S3D_DISPLAY_PAGEFLIP, "TIMESEQUENTIAL", 0, "Time Sequential", "Renders alternate eyes (also known as pageflip). It requires Quadbuffer support in the graphic card"},
+		{S3D_DISPLAY_SIDEBYSIDE, "SIDEBYSIDE", 0, "Side-by-Side", ""},
+		{S3D_DISPLAY_TOPBOTTOM, "TOPBOTTOM", 0, "Top-Bottom", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
 
 	static EnumPropertyItem anaglyph_type_items[] = {
-		{USER_ANAGLYPH_TYPE_RED_CYAN, "RED_CYAN", 0, "Red-Cyan", ""},
-		{USER_ANAGLYPH_TYPE_GREEN_MAGENTA, "GREEN_MAGENTA", 0, "Green-Magenta", ""},
-		{USER_ANAGLYPH_TYPE_YELLOW_BLUE, "YELLOW_BLUE", 0, "Yellow-Blue", ""},
+		{S3D_ANAGLYPH_REDCYAN, "RED_CYAN", 0, "Red-Cyan", ""},
+		{S3D_ANAGLYPH_GREENMAGENTA, "GREEN_MAGENTA", 0, "Green-Magenta", ""},
+		{S3D_ANAGLYPH_YELLOWBLUE, "YELLOW_BLUE", 0, "Yellow-Blue", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
 
 	static EnumPropertyItem interlace_type_items[] = {
-		{USER_INTERLACE_TYPE_ROW_INTERLEAVED, "ROW_INTERLEAVED", 0, "Row Interleaved", ""},
-		{USER_INTERLACE_TYPE_COLUMN_INTERLEAVED, "COLUMN_INTERLEAVED", 0, "Column Interleaved", ""},
-		{USER_INTERLACE_TYPE_CHECKERBOARD_INTERLEAVED, "CHECKERBOARD_INTERLEAVED", 0, "Checkerboard Interleaved", ""},
-		{0, NULL, 0, NULL, NULL}
-	};
-
-	static EnumPropertyItem sidebyside_viewing_method_items[] = {
-		{0, "PARALLEL", 0, "Parallel", "Left eye should see left image and vice-versa"},
-		{USER_SIDEBYSIDE_CROSS_EYED, "CROSS_EYED", 0, "Cross-Eyed", "Right eye should see left image and vice-versa"},
+		{S3D_INTERLACE_ROW, "ROW_INTERLEAVED", 0, "Row Interleaved", ""},
+		{S3D_INTERLACE_COLUMN, "COLUMN_INTERLEAVED", 0, "Column Interleaved", ""},
+		{S3D_INTERLACE_CHECKERBOARD, "CHECKERBOARD_INTERLEAVED", 0, "Checkerboard Interleaved", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
 
@@ -3664,7 +3658,6 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	RNA_def_property_update(prop, 0, "rna_userdef_dpi_update");
 	
 	/* Stereo - Multiview */
-	/* XXX MV RNA_def_property_update(prop, 0, "rna_userdef_stereo_update");  */
 	prop = RNA_def_property(srna, "stereo_display", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "stereo_display");
 	RNA_def_property_enum_items(prop, stereo_display_items);
@@ -3681,20 +3674,19 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Interlace Type", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
 
-	prop = RNA_def_property(srna, "interlace_swap_left_right", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", USER_INTERLACE_SWAP_LEFT_RIGHT);
-	RNA_def_property_ui_text(prop, "Swap Left/Right", "Swap left and right stereo channels");
-	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
-
 	prop = RNA_def_property(srna, "epilepsy_interval", PROP_FLOAT, PROP_TIME);
 	RNA_def_property_range(prop, 0.01f, 10.0f);
 	RNA_def_property_ui_range(prop, 0.05f, 1.0f, 1.0f, 2);
 	RNA_def_property_ui_text(prop, "Interval", "Preferred interval in seconds between switching left/right views");
 
-	prop = RNA_def_property(srna, "sidebyside_viewing_method", PROP_ENUM, PROP_NONE);
-	RNA_def_property_enum_bitflag_sdna(prop, NULL, "stereo_flag");
-	RNA_def_property_enum_items(prop, sidebyside_viewing_method_items);
-	RNA_def_property_ui_text(prop, "Viewing Method", "");
+	prop = RNA_def_property(srna, "use_interlace_swap", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", S3D_INTERLACE_SWAP);
+	RNA_def_property_ui_text(prop, "Swap Left/Right", "Swap left and right stereo channels");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
+
+	prop = RNA_def_property(srna, "use_sidebyside_crosseyed", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", S3D_SIDEBYSIDE_CROSSEYED);
+	RNA_def_property_ui_text(prop, "Cross-Eyed", "Right eye should see left image and vice-versa");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
 
 #ifdef WITH_CYCLES

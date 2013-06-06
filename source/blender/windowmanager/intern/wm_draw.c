@@ -1049,7 +1049,7 @@ void wm_draw_update(bContext *C)
 				wm_method_draw_overlap_all(C, win, 1);
 			else // if (drawmethod == USER_DRAW_TRIPLE)
 			{
-				if (U.stereo_display == USER_STEREO_DISPLAY_NONE ||
+				if (U.stereo_display == S3D_DISPLAY_NONE ||
 					((win->flag & WM_STEREO)== FALSE))
 					wm_method_draw_triple(C, win);
 				else {
