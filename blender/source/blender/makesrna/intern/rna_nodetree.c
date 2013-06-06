@@ -2533,7 +2533,7 @@ static int rna_Node_image_has_layers_get(PointerRNA *ptr)
 	bNode *node = (bNode *)ptr->data;
 	Image *ima = (Image *)node->id;
 
-	if (!ima || !(ima->rr)) return NULL;
+	if (!ima || !(ima->rr)) return 0;
 
 	return RE_layers_have_name(ima->rr);
 }
@@ -2544,7 +2544,7 @@ static int rna_Node_image_has_views_get(PointerRNA *ptr)
 	Image *ima = (Image *)node->id;
 	int views;
 
-	if (!ima || !(ima->rr)) return NULL;
+	if (!ima || !(ima->rr)) return 0;
 
 	views = BLI_countlist(&ima->rr->views);
 	return views > 1;
