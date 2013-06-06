@@ -1564,7 +1564,7 @@ static void stitch_draw(const bContext *UNUSED(C), ARegion *UNUSED(ar), void *ar
 	glPointSize(1.0);
 }
 
-static UvEdge *uv_edge_get (BMLoop *l, StitchState *state)
+static UvEdge *uv_edge_get(BMLoop *l, StitchState *state)
 {
 	UvEdge tmp_edge;
 
@@ -1888,6 +1888,9 @@ static int stitch_init(bContext *C, wmOperator *op)
 			state->selection_stack = MEM_mallocN(sizeof(*state->selection_stack) * state->total_separate_edges, "uv_stitch_selection_stack");
 
 			BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
+				if (!(ts->uv_flag & UV_SYNC_SELECTION) && ((BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) || !BM_elem_flag_test(efa, BM_ELEM_SELECT)))
+					continue;
+
 				BM_ITER_ELEM_INDEX (l, &liter, efa, BM_LOOPS_OF_FACE, i) {
 					if (uvedit_edge_select_test(scene, l, cd_loop_uv_offset)) {
 						UvEdge *edge = uv_edge_get(l, state);
