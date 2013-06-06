@@ -165,7 +165,6 @@ static void draw_render_info(Scene *scene, Image *ima, ARegion *ar, float zoomx,
 void ED_image_draw_info(Scene *scene, ARegion *ar, int color_manage, int use_default_view, int channels, int x, int y,
                         const unsigned char cp[4], const float fp[4], const float linearcol[4], int *zp, float *zpf)
 {
-	//MV handle that properly
 	char str[256];
 	float dx = 6;
 	/* text colors */
@@ -247,7 +246,7 @@ void ED_image_draw_info(Scene *scene, ARegion *ar, int color_manage, int use_def
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 		
-		if (channels % 4 == 0) {
+		if (channels == 4) {
 			glColor3ub(255, 255, 255);
 			if (fp)
 				BLI_snprintf(str, sizeof(str), "  A:%-.4f", fp[3]);
@@ -264,7 +263,7 @@ void ED_image_draw_info(Scene *scene, ARegion *ar, int color_manage, int use_def
 			float rgba[4];
 
 			copy_v3_v3(rgba, linearcol);
-			if (channels % 3 == 0)
+			if (channels == 3)
 				rgba[3] = 1.0f;
 			else
 				rgba[3] = linearcol[3];
@@ -296,11 +295,11 @@ void ED_image_draw_info(Scene *scene, ARegion *ar, int color_manage, int use_def
 		}
 		col[3] = 1.0f;
 	}
-	else if (channels % 3 == 0) {
+	else if (channels == 3) {
 		copy_v3_v3(col, linearcol);
 		col[3] = 1.0f;
 	}
-	else if (channels % 4 == 0) {
+	else if (channels == 4) {
 		copy_v4_v4(col, linearcol);
 	}
 	else {
@@ -822,19 +821,6 @@ void draw_image_main(const bContext *C, ARegion *ar)
 		 * lock (sergey)
 		 */
 		BLI_lock_thread(LOCK_DRAW_IMAGE);
-	}
-
-	/* view == 0 shows stereo */
-	if ((sima->iuser.flag & IMA_STEREO3D) &&
-		 sima->iuser.view == 0) {
-		if (sima->iuser.eye == STEREO_LEFT_ID) {
-			sima->iuser.pass = sima->iuser.pass_left;
-			sima->iuser.multi_index = sima->iuser.multi_index_left;
-		}
-		else { //STEREO_RIGHT_ID
-			sima->iuser.pass = sima->iuser.pass_right;
-			sima->iuser.multi_index = sima->iuser.multi_index_right;
-		}
 	}
 
 	ibuf = ED_space_image_acquire_buffer(sima, &lock);
