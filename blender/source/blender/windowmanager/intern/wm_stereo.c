@@ -128,13 +128,13 @@ static void wm_interlace_create_masks(void)
 {
 	GLuint pattern;
 	char i;
-	char swap = U.stereo_flag & USER_INTERLACE_SWAP_LEFT_RIGHT;
+	bool swap = (U.stereo_flag & S3D_INTERLACE_SWAP);
 
 	if (interlace_prev_type == U.interlace_type && interlace_prev_swap == swap)
 		return;
 
 	switch(U.interlace_type) {
-		case USER_INTERLACE_TYPE_ROW_INTERLEAVED:
+		case S3D_INTERLACE_ROW:
 			pattern = 0x00000000;
 			pattern = swap? ~pattern : pattern;
 			for(i = 0; i < 32; i += 2) {
@@ -146,7 +146,7 @@ static void wm_interlace_create_masks(void)
 				right_interlace_mask[i] = pattern;
 			}
 			break;
-		case USER_INTERLACE_TYPE_COLUMN_INTERLEAVED:
+		case S3D_INTERLACE_COLUMN:
 			pattern = 0x55555555;
 			pattern = swap? ~pattern : pattern;
 			for(i = 0; i < 32; i++) {
@@ -154,7 +154,7 @@ static void wm_interlace_create_masks(void)
 				right_interlace_mask[i] = ~pattern;
 			}
 			break;
-		case USER_INTERLACE_TYPE_CHECKERBOARD_INTERLEAVED:
+		case S3D_INTERLACE_CHECKERBOARD:
 		default:
 			pattern = 0x55555555;
 			pattern = swap? ~pattern : pattern;
@@ -206,13 +206,13 @@ static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 
 		bit = view + 1;
 		switch(U.anaglyph_type) {
-			case USER_ANAGLYPH_TYPE_RED_CYAN:
+			case S3D_ANAGLYPH_REDCYAN:
 				glColorMask(1&bit, 2&bit, 2&bit, FALSE);
 				break;
-			case USER_ANAGLYPH_TYPE_GREEN_MAGENTA:
+			case S3D_ANAGLYPH_GREENMAGENTA:
 				glColorMask(2&bit, 1&bit, 2&bit, FALSE);
 				break;
-			case USER_ANAGLYPH_TYPE_YELLOW_BLUE:
+			case S3D_ANAGLYPH_YELLOWBLUE:
 				glColorMask(1&bit, 1&bit, 2&bit, FALSE);
 				break;
 		}
@@ -231,9 +231,9 @@ static void wm_method_draw_stereo_sidebyside(wmWindow *win)
 	wmDrawTriple *triple;
 	int view;
 	int soffx;
+	bool cross_eyed = (U.stereo_flag & S3D_SIDEBYSIDE_CROSSEYED);
 
 	for (view=0; view < 2; view ++) {
-		bool cross_eyed = U.stereo_flag & USER_SIDEBYSIDE_CROSS_EYED;
 		soffx = WM_window_pixels_x(win) * 0.5;
 		if (view == STEREO_LEFT_ID) {
 			triple = win->drawdataall;
@@ -361,22 +361,22 @@ void wm_method_draw_stereo(bContext *UNUSED(C), wmWindow *win)
 {
 	switch (U.stereo_display)
 	{
-		case USER_STEREO_DISPLAY_ANAGLYPH:
+		case S3D_DISPLAY_ANAGLYPH:
 			wm_method_draw_stereo_anaglyph(win);
 			break;
-		case USER_STEREO_DISPLAY_EPILEPSY:
+		case S3D_DISPLAY_EPILEPSY:
 			wm_method_draw_stereo_epilepsy(win);
 			break;
-		case USER_STEREO_DISPLAY_INTERLACE:
+		case S3D_DISPLAY_INTERLACE:
 			wm_method_draw_stereo_interlace(win);
 			break;
-		case USER_STEREO_DISPLAY_PAGEFLIP:
+		case S3D_DISPLAY_PAGEFLIP:
 			wm_method_draw_stereo_pageflip(win);
 			break;
-		case USER_STEREO_DISPLAY_SIDEBYSIDE:
+		case S3D_DISPLAY_SIDEBYSIDE:
 			wm_method_draw_stereo_sidebyside(win);
 			break;
-		case USER_STEREO_DISPLAY_TOPBOTTOM:
+		case S3D_DISPLAY_TOPBOTTOM:
 			wm_method_draw_stereo_topbottom(win);
 			break;
 		default:
@@ -390,9 +390,9 @@ int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
 	wmWindow *win = CTX_wm_window(C);
 	GHOST_TWindowState state;
 	int need_fullscreen = ELEM3(U.stereo_display,
-	                            USER_STEREO_DISPLAY_INTERLACE,
-	                            USER_STEREO_DISPLAY_SIDEBYSIDE,
-	                            USER_STEREO_DISPLAY_TOPBOTTOM);
+	                            S3D_DISPLAY_INTERLACE,
+	                            S3D_DISPLAY_SIDEBYSIDE,
+	                            S3D_DISPLAY_TOPBOTTOM);
 
 	if (G.background)
 		return OPERATOR_CANCELLED;
@@ -403,11 +403,11 @@ int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
 	/* toggle per window stereo setting */
 	win->flag ^= WM_STEREO;
 
-	if ((win->flag & WM_STEREO) && U.stereo_display == USER_STEREO_DISPLAY_NONE)
+	if ((win->flag & WM_STEREO) && U.stereo_display == S3D_DISPLAY_NONE)
 		BKE_reportf(op->reports, RPT_WARNING, "No 3-D display mode set in User Preferences");
 
 	/* pagelfip requires a new window to be created with the proper OS flags */
-	else if (U.stereo_display == USER_STEREO_DISPLAY_PAGEFLIP) {
+	else if (U.stereo_display == S3D_DISPLAY_PAGEFLIP) {
 		if (wm_window_duplicate_exec(C, op) == OPERATOR_FINISHED) {
 			wm_window_close(C, wm, win);
 			win = (wmWindow *)wm->windows.last;
