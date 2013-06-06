@@ -469,6 +469,10 @@ class USERPREF_PT_system(Panel):
             col.prop(system, "interlace_type", text="Type")
             col.prop(system, "interlace_swap_left_right")
 
+        if system.stereo_display == 'SIDEBYSIDE':
+            col.label(text="Viewing Method:")
+            col.row().prop(system, "sidebyside_viewing_method", expand=True)
+
         # 2. Column
         column = split.column()
         colsplit = column.split(percentage=0.85)
