@@ -2968,8 +2968,10 @@ static void lib_link_lamp(FileData *fd, Main *main)
 			
 			la->ipo = newlibadr_us(fd, la->id.lib, la->ipo); // XXX deprecated - old animation system
 			
-			if (la->nodetree)
+			if (la->nodetree) {
 				lib_link_ntree(fd, &la->id, la->nodetree);
+				la->nodetree->id.lib = la->id.lib;
+			}
 			
 			la->id.flag -= LIB_NEED_LINK;
 		}
@@ -3141,8 +3143,10 @@ static void lib_link_world(FileData *fd, Main *main)
 				}
 			}
 			
-			if (wrld->nodetree)
+			if (wrld->nodetree) {
 				lib_link_ntree(fd, &wrld->id, wrld->nodetree);
+				wrld->nodetree->id.lib = wrld->id.lib;
+			}
 			
 			wrld->id.flag -= LIB_NEED_LINK;
 		}
@@ -3430,8 +3434,10 @@ static void lib_link_texture(FileData *fd, Main *main)
 			if (tex->ot)
 				tex->ot->object = newlibadr(fd, tex->id.lib, tex->ot->object);
 			
-			if (tex->nodetree)
+			if (tex->nodetree) {
 				lib_link_ntree(fd, &tex->id, tex->nodetree);
+				tex->nodetree->id.lib = tex->id.lib;
+			}
 			
 			tex->id.flag -= LIB_NEED_LINK;
 		}
@@ -3512,8 +3518,10 @@ static void lib_link_material(FileData *fd, Main *main)
 				}
 			}
 			
-			if (ma->nodetree)
+			if (ma->nodetree) {
 				lib_link_ntree(fd, &ma->id, ma->nodetree);
+				ma->nodetree->id.lib = ma->id.lib;
+			}
 			
 			ma->id.flag -= LIB_NEED_LINK;
 		}
@@ -5162,6 +5170,7 @@ static void lib_link_scene(FileData *fd, Main *main)
 			
 			if (sce->nodetree) {
 				lib_link_ntree(fd, &sce->id, sce->nodetree);
+				sce->nodetree->id.lib = sce->id.lib;
 				composite_patch(sce->nodetree, sce);
 			}
 			
@@ -9352,10 +9361,10 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		}
 
 		/* TIP: to initialize new variables added, use the new function
-		   DNA_struct_elem_find(fd->filesdna, "structname", "typename", "varname")
-		   example: 
-				if (!DNA_struct_elem_find(fd->filesdna, "UserDef", "short", "image_gpubuffer_limit"))
-					user->image_gpubuffer_limit = 10;
+		 * DNA_struct_elem_find(fd->filesdna, "structname", "typename", "varname")
+		 * example:
+		 * if (!DNA_struct_elem_find(fd->filesdna, "UserDef", "short", "image_gpubuffer_limit"))
+		 *     user->image_gpubuffer_limit = 10;
 		 */
 		
 	}
