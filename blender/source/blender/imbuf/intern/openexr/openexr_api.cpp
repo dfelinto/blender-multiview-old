@@ -526,7 +526,7 @@ typedef struct ExrHandle {
 	int width, height;
 	int mipmap;
 
-	StringVector multiView;
+	StringVector *multiView;
 	int parts;
 
 	ListBase channels;  /* flattened out, ExrChannel */
@@ -588,22 +588,28 @@ void *IMB_exr_get_handle_name(const char *name)
 }
 
 /* multiview functions */
-static StringVector imb_exr_multiView(void *handle)
+} // extern "C"
+static StringVector *imb_exr_multiView(void *handle)
 {
 	ExrHandle *data = (ExrHandle *)handle;
 	return data->multiView;
 }
 
+
+
+extern "C"
+{
+
 void IMB_exr_add_view(void *handle, const char *name)
 {
 	ExrHandle *data = (ExrHandle *)handle;
-	data->multiView.push_back(name);
+	data->multiView->push_back(name);
 }
 
 void IMB_exr_get_multiView_name(void *handle, int view_id, char *view)
 {
-	StringVector views = imb_exr_multiView(handle);
-	std::string retstr ( view_id >= views.size() ? "" : &(views[view_id])[0] );
+	StringVector *views = imb_exr_multiView(handle);
+	std::string retstr ( view_id >= views->size() ? "" : &((*views)[view_id])[0] );
 
 	BLI_strncpy(view, &(retstr)[0], sizeof(view));
 }
@@ -611,14 +617,14 @@ void IMB_exr_get_multiView_name(void *handle, int view_id, char *view)
 int IMB_exr_get_multiView_count(void *handle)
 {
 	ExrHandle *data = (ExrHandle *) handle;
-	return data->multiView.size();
+	return data->multiView->size();
 }
 
-static int imb_exr_get_multiView_id(StringVector *views, const char *name)
+static int imb_exr_get_multiView_id(StringVector *views, const std::string name)
 {
 	int count = 0;
-	for (StringVector::const_iterator i = (*views).begin(); i != (*views).end(); ++i) {
-		if (strcmp(name, &(*i)[0])==0)
+	for (StringVector::const_iterator i = (*views).begin(); count < (*views).size(); ++i) {
+		if (name == *i)
 			return count;
 		else
 			count ++;
@@ -628,12 +634,13 @@ static int imb_exr_get_multiView_id(StringVector *views, const char *name)
 	return -1;
 }
 
-static StringVector imb_exr_get_views(MultiPartInputFile *file)
+static void imb_exr_get_views(MultiPartInputFile *file, StringVector *views)
 {
-	StringVector views;
 	if(file->parts() == 1) {
 		if(hasMultiView(file->header(0))) {
-			return multiView(file->header(0));
+			StringVector sv = multiView(file->header(0));
+			for (StringVector::const_iterator i = sv.begin(); i != sv.end(); ++i)
+				views->push_back(*i);
 		}
 	}
 
@@ -642,12 +649,10 @@ static StringVector imb_exr_get_views(MultiPartInputFile *file)
 		if(file->header(p).hasView())
 			view=file->header(p).view();
 
-		if (imb_exr_get_multiView_id(&views, &view[0]) == -1)
-			views.push_back(view);
+		if (imb_exr_get_multiView_id(views, view) == -1)
+			(*views).push_back(view);
 
 	}
-
-	return views;
 }
 
 static const char *imb_exr_insert_view_name(const char* passname, const char* view)
@@ -734,7 +739,7 @@ void IMB_exr_add_channel(void *handle, const char *layname, const char *passname
 	echan->rect = rect;
 
 	/* quick look up */
-	echan->view_id = std::max(0, imb_exr_get_multiView_id(&data->multiView, &(echan->m->view)[0]));
+	echan->view_id = std::max(0, imb_exr_get_multiView_id(data->multiView, echan->m->view));
 
 	exr_printf("added channel %s\n", echan->name);
 	BLI_addtail(&data->channels, echan);
@@ -799,15 +804,15 @@ void IMB_exrtile_begin_write(void *handle, const char *filename, int mipmap, int
 
 	header.insert("BlenderMultiChannel", StringAttribute("Blender V2.43"));
 
-	int numparts = data->multiView.size();
+	int numparts = data->multiView->size();
 
 	/* copy header from all parts of input to our header array
 	 * those temporary files have one part per view */
 	for (int i = 0; i < numparts; i++)
 	{
 		headers.push_back (header);
-		headers[headers.size()-1].setView(data->multiView[i]);
-		headers[headers.size()-1].setName(data->multiView[i]);
+		headers[headers.size()-1].setView((*(data->multiView))[i]);
+		headers[headers.size()-1].setName((*(data->multiView))[i]);
 	}
 
 	exr_printf("\nIMB_exrtile_begin_write\n");
@@ -920,7 +925,7 @@ int IMB_exrmultiview_begin_write(void *handle, const char *filename, int width, 
 
 	/* this set the part number to be used in IMB_exrmultiview_write_channels() */
 	data->parts = SplitChannels(channels.begin(), channels.end());
-	if (splitviews) data->parts = data->multiView.size();
+	if (splitviews) data->parts = data->multiView->size();
 
 	for (i=0, echan = (ExrChannel *)data->channels.first; echan; echan = echan->next, i++) {
 		echan->m->name = channels[i].name;
@@ -995,7 +1000,8 @@ int IMB_exr_begin_read(void *handle, const char *filename, int *width, int *heig
 			data->width = *width  = dw.max.x - dw.min.x + 1;
 			data->height = *height = dw.max.y - dw.min.y + 1;
 
-			data->multiView = imb_exr_get_views(data->ifile);
+			data->multiView = new StringVector();
+			imb_exr_get_views(data->ifile, data->multiView);
 
 			std::vector<MultiViewChannelName> channels;
 			GetChannelsInMultiPartFile(*data->ifile, channels);
@@ -1243,7 +1249,7 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 	ExrPass *pass;
 
 	/* add views to RenderResult */
-	for (StringVector::const_iterator i = data->multiView.begin(); i != data->multiView.end(); ++i) {
+	for (StringVector::const_iterator i = data->multiView->begin(); i != data->multiView->end(); ++i) {
 		addview(base, &(*i)[0]);
 	}
 
@@ -1411,7 +1417,8 @@ static ExrHandle *imb_exr_begin_read_mem(MultiPartInputFile *file, int width, in
 	std::vector<MultiViewChannelName> channels;
 	GetChannelsInMultiPartFile(*data->ifile, channels);
 
-	data->multiView = imb_exr_get_views(data->ifile);
+	data->multiView = new StringVector();
+	imb_exr_get_views(data->ifile, data->multiView);
 
 	for(size_t i = 0; i < channels.size(); i++) {
 		IMB_exr_add_channel(data, NULL, &(channels[i].name)[0], &(channels[i].view)[0], 0, 0, NULL);
