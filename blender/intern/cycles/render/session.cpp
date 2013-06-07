@@ -732,7 +732,7 @@ void Session::update_scene()
 	/* number of samples is needed by multi jittered sampling pattern */
 	Integrator *integrator = scene->integrator;
 
-	if(integrator->sampling_pattern = SAMPLING_PATTERN_CMJ) {
+	if(integrator->sampling_pattern == SAMPLING_PATTERN_CMJ) {
 		int aa_samples = tile_manager.num_samples;
 
 		if(aa_samples != integrator->aa_samples) {
