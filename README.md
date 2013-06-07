@@ -10,7 +10,7 @@ Beta Builds
 -----------
 * [OSX](http://graphicall.org/1047) by [Francesco Siddi](http://twitter.com/fsiddi)
 * [Windows](http://builder.blender.org/download/) by [Blender Foundation](http://www.blender.org) / [BuildBot](http://buildbot.net)
-* Linux - *looking for volunteer*
+* [Linux](http://graphicall.org/1048) by [Alexey Akishin](https://github.com/Alexey-Akishin)
 
 Implemented Features
 -----------
