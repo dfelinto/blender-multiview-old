@@ -14,6 +14,7 @@ Testing Image Editor
 
 Testing Viewport
 ================
+* Install the [multiview addon](https://github.com/dfelinto/multiview_addon) to help setting up your cameras
 * Create two cameras in your scene, corresponding to left and right
 * In the (new) Render Views panel enable the "left" and "right" views and set their cameras
 * Make sure you are in the camera mode (Numpad 0)
