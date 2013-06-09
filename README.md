@@ -2,15 +2,16 @@ Multi View
 ==========
 clone from https://gitorious.org/blenderprojects/blender
 
-![Alt text](http://wiki.blender.org/uploads/0/0d/Dev-Stereoscopy-MirroredSample.png "BMW model by Mike Pan")
+![BMW model by Mike Pan](http://wiki.blender.org/uploads/0/0d/Dev-Stereoscopy-MirroredSample.png "BMW model by Mike Pan")
 
 This branch contains the code for the "stereoscopy support in Blender" journey.
 
 Beta Builds
 -----------
 * [OSX](http://graphicall.org/1047) by [Francesco Siddi](http://twitter.com/fsiddi)
-* [Windows](http://builder.blender.org/download/) by [Blender Foundation](http://www.blender.org) / [BuildBot](http://buildbot.net)
-* Linux - *looking for volunteer*
+* [Linux](http://graphicall.org/1048) by [Alexey Akishin](https://github.com/Alexey-Akishin)
+* [Windows 1](http://graphicall.org/1045)
+* [Windows 2](http://builder.blender.org/download/) by [Blender Foundation](http://www.blender.org) / [BuildBot](http://buildbot.net)
 
 Implemented Features
 -----------
@@ -36,6 +37,7 @@ Image node (views options):
 
 Current Status:
 ---------------
+* See [Multiview Addon](https://github.com/dfelinto/multiview_addon) for the camera rig system
 * [Youtube recording](http://www.youtube.com/watch?v=X7I6G3uRPkw&hd=1)
 * **[Instructions for testing](https://github.com/dfelinto/blender/blob/multiview/HowToTestIt.md)**
 
