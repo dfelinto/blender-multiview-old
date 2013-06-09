@@ -4568,7 +4568,7 @@ static bool constraints_list_needinv(TransInfo *t, ListBase *list)
 				          CONSTRAINT_TYPE_FOLLOWPATH,
 				          CONSTRAINT_TYPE_CLAMPTO,
 				          CONSTRAINT_TYPE_OBJECTSOLVER,
-				          CONSTRAINT_TYPE_FOLLOWTRACK.
+				          CONSTRAINT_TYPE_FOLLOWTRACK,
 				          CONSTRAINT_TYPE_TRANSFORM))
 				{
 					return true;
