@@ -571,6 +571,8 @@ typedef struct ExrLayer {
 void *IMB_exr_get_handle(void)
 {
 	ExrHandle *data = (ExrHandle *)MEM_callocN(sizeof(ExrHandle), "exr handle");
+	data->multiView = new StringVector();
+
 	BLI_addtail(&exrhandles, data);
 	return data;
 }
@@ -1000,7 +1002,6 @@ int IMB_exr_begin_read(void *handle, const char *filename, int *width, int *heig
 			data->width = *width  = dw.max.x - dw.min.x + 1;
 			data->height = *height = dw.max.y - dw.min.y + 1;
 
-			data->multiView = new StringVector();
 			imb_exr_get_views(data->ifile, data->multiView);
 
 			std::vector<MultiViewChannelName> channels;
