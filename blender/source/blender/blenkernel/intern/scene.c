@@ -1199,7 +1199,7 @@ static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scen
 	sound_update_scene(scene);
 
 	/* update masking curves */
-	BKE_mask_update_scene(bmain, scene, FALSE);
+	BKE_mask_update_scene(bmain, scene);
 	
 }
 

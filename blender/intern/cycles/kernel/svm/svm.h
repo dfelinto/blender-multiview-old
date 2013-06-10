@@ -72,7 +72,7 @@ __device_inline float stack_load_float(float *stack, uint a)
 
 __device_inline float stack_load_float_default(float *stack, uint a, uint value)
 {
-	return (a == (uint)SVM_STACK_INVALID)? __int_as_float(value): stack_load_float(stack, a);
+	return (a == (uint)SVM_STACK_INVALID)? __uint_as_float(value): stack_load_float(stack, a);
 }
 
 __device_inline void stack_store_float(float *stack, uint a, float f)
@@ -118,7 +118,7 @@ __device_inline uint4 read_node(KernelGlobals *kg, int *offset)
 __device_inline float4 read_node_float(KernelGlobals *kg, int *offset)
 {
 	uint4 node = kernel_tex_fetch(__svm_nodes, *offset);
-	float4 f = make_float4(__int_as_float(node.x), __int_as_float(node.y), __int_as_float(node.z), __int_as_float(node.w));
+	float4 f = make_float4(__uint_as_float(node.x), __uint_as_float(node.y), __uint_as_float(node.z), __uint_as_float(node.w));
 	(*offset)++;
 	return f;
 }
@@ -126,7 +126,7 @@ __device_inline float4 read_node_float(KernelGlobals *kg, int *offset)
 __device_inline float4 fetch_node_float(KernelGlobals *kg, int offset)
 {
 	uint4 node = kernel_tex_fetch(__svm_nodes, offset);
-	return make_float4(__int_as_float(node.x), __int_as_float(node.y), __int_as_float(node.z), __int_as_float(node.w));
+	return make_float4(__uint_as_float(node.x), __uint_as_float(node.y), __uint_as_float(node.z), __uint_as_float(node.w));
 }
 
 __device_inline void decode_node_uchar4(uint i, uint *x, uint *y, uint *z, uint *w)
@@ -385,14 +385,14 @@ __device_noinline void svm_eval_nodes(KernelGlobals *kg, ShaderData *sd, ShaderT
 				svm_node_min_max(kg, sd, stack, node.y, node.z, &offset);
 				break;
 			case NODE_TEX_COORD:
-				svm_node_tex_coord(kg, sd, stack, node.y, node.z);
+				svm_node_tex_coord(kg, sd, path_flag, stack, node.y, node.z);
 				break;
 #ifdef __EXTRA_NODES__
 			case NODE_TEX_COORD_BUMP_DX:
-				svm_node_tex_coord_bump_dx(kg, sd, stack, node.y, node.z);
+				svm_node_tex_coord_bump_dx(kg, sd, path_flag, stack, node.y, node.z);
 				break;
 			case NODE_TEX_COORD_BUMP_DY:
-				svm_node_tex_coord_bump_dy(kg, sd, stack, node.y, node.z);
+				svm_node_tex_coord_bump_dy(kg, sd, path_flag, stack, node.y, node.z);
 				break;
 			case NODE_CLOSURE_SET_NORMAL:
 				svm_node_set_normal(kg, sd, stack, node.y, node.z );

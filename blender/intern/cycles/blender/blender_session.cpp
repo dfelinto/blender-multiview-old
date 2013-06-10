@@ -101,12 +101,12 @@ void BlenderSession::create_session()
 
 	/* create sync */
 	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress, session_params.device.type == DEVICE_CPU);
-	sync->sync_data(b_v3d, b_engine.camera_override());
 
-	if(b_rv3d)
+	/* for final render we will do sync per render layer */
+	if(b_v3d) {
+		sync->sync_data(b_v3d, b_engine.camera_override());
 		sync->sync_view(b_v3d, b_rv3d, width, height);
-	else
-		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
+	}
 
 	/* set buffer parameters */
 	BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, b_v3d, b_rv3d, scene->camera, width, height);
@@ -160,9 +160,11 @@ void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
 	/* sync object should be re-created */
 	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress, session_params.device.type == DEVICE_CPU);
 
-	BL::Object camera = b_engine.multiview_camera();
-	sync->sync_data(b_v3d, camera);
-	sync->sync_camera(b_render, camera, width, height);
+	if(b_rv3d) {
+		BL::Object camera = b_engine.multiview_camera();
+		sync->sync_data(b_v3d, camera);
+		sync->sync_camera(b_render, camera, width, height);
+	}
 
 	BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, PointerRNA_NULL, PointerRNA_NULL, scene->camera, width, height);
 	session->reset(buffer_params, session_params.samples);
@@ -189,6 +191,8 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 
 		case BL::RenderPass::type_Z:
 			return PASS_DEPTH;
+		case BL::RenderPass::type_MIST:
+			return PASS_MIST;
 		case BL::RenderPass::type_NORMAL:
 			return PASS_NORMAL;
 		case BL::RenderPass::type_OBJECT_INDEX:
@@ -235,7 +239,6 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 		case BL::RenderPass::type_REFRACTION:
 		case BL::RenderPass::type_SPECULAR:
 		case BL::RenderPass::type_REFLECTION:
-		case BL::RenderPass::type_MIST:
 			return PASS_NONE;
 	}
 	
@@ -377,10 +380,16 @@ void BlenderSession::render()
 			scene->film->tag_update(scene);
 			scene->integrator->tag_update(scene);
 
+<<<<<<< HEAD
 			/* update scene */
 			BL::Object camera = b_engine.multiview_camera();
 			sync->sync_data(b_v3d, camera, b_rlay_name.c_str());
 			sync->sync_camera(b_render, camera, width, height);
+=======
+		/* update scene */
+		sync->sync_data(b_v3d, b_engine.camera_override(), b_rlay_name.c_str());
+		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
+>>>>>>> master
 
 			/* update number of samples per layer */
 			int samples = sync->get_layer_samples();
@@ -462,6 +471,10 @@ void BlenderSession::update_render_result(BL::RenderResult b_rr, BL::RenderLayer
 
 void BlenderSession::synchronize()
 {
+	/* only used for viewport render */
+	if(!b_v3d)
+		return;
+
 	/* on session/scene parameter changes, we recreate session entirely */
 	SceneParams scene_params = BlenderSync::get_scene_params(b_scene, background);
 	SessionParams session_params = BlenderSync::get_session_params(b_engine, b_userpref, b_scene, background);

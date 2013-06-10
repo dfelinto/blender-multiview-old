@@ -1,16 +1,11 @@
 import bpy
-# XXX these don't work yet ...
-#from bpy_types import NodeTree, Node, NodeSocket
+from bpy_types import NodeTree, Node, NodeSocket
 
 # Implementation of custom nodes from Python
 
 
-# Shortcut for node type menu
-def add_nodetype(layout, type):
-    layout.operator("node.add_node", text=type.bl_label).type = type.bl_rna.identifier
-
 # Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
-class MyCustomTree(bpy.types.NodeTree):
+class MyCustomTree(NodeTree):
     # Description string
     '''A custom node tree type that will show up in the node editor header'''
     # Optional identifier string. If not explicitly defined, the python class name is used.
@@ -23,14 +18,9 @@ class MyCustomTree(bpy.types.NodeTree):
     #       Only one base tree class is needed in the editor for selecting the general category
     bl_icon = 'NODETREE'
 
-    def draw_add_menu(self, context, layout):
-        layout.label("Hello World!")
-        add_nodetype(layout, bpy.types.CustomNodeType)
-        add_nodetype(layout, bpy.types.MyCustomGroup)
-
 
 # Custom socket type
-class MyCustomSocket(bpy.types.NodeSocket):
+class MyCustomSocket(NodeSocket):
     # Description string
     '''Custom node socket type'''
     # Optional identifier string. If not explicitly defined, the python class name is used.
@@ -59,7 +49,7 @@ class MyCustomSocket(bpy.types.NodeSocket):
     def draw_color(self, context, node):
         return (1.0, 0.4, 0.216, 0.5)
 
-# Base class for all custom nodes in this tree type.
+# Mix-in class for all custom nodes in this tree type.
 # Defines a poll function to enable instantiation.
 class MyCustomTreeNode :
     @classmethod
@@ -67,7 +57,7 @@ class MyCustomTreeNode :
         return ntree.bl_idname == 'CustomTreeType'
 
 # Derived from the Node base type.
-class MyCustomNode(bpy.types.Node, MyCustomTreeNode):
+class MyCustomNode(Node, MyCustomTreeNode):
     # === Basics ===
     # Description string
     '''A custom node'''
@@ -120,44 +110,60 @@ class MyCustomNode(bpy.types.Node, MyCustomTreeNode):
         layout.prop(self, "myStringProperty")
 
 
-# A customized group-like node.
-class MyCustomGroup(bpy.types.NodeGroup, MyCustomTreeNode):
-    # === Basics ===
-    # Description string
-    '''A custom group node'''
-    # Label for nice name display
-    bl_label = 'Custom Group Node'
-    bl_group_tree_idname = 'CustomTreeType'
+### Node Categories ###
+# Node categories are a python system for automatically
+# extending the Add menu, toolbar panels and search operator.
+# For more examples see release/scripts/startup/nodeitems_builtins.py
 
-    orks = bpy.props.IntProperty(default=3)
-    dwarfs = bpy.props.IntProperty(default=12)
-    wizards = bpy.props.IntProperty(default=1)
+import nodeitems_utils
+from nodeitems_utils import NodeCategory, NodeItem
 
-    # Additional buttons displayed on the node.
-    def draw_buttons(self, context, layout):
-        col = layout.column(align=True)
-        col.prop(self, "orks")
-        col.prop(self, "dwarfs")
-        col.prop(self, "wizards")
+# our own base class with an appropriate poll function,
+# so the categories only show up in our own tree type
+class MyNodeCategory(NodeCategory):
+    @classmethod
+    def poll(cls, context):
+        return context.space_data.tree_type == 'CustomTreeType'
 
-        layout.label("The Node Tree:")
-        layout.prop(self, "node_tree", text="")
+# all categories in a list
+node_categories = [
+    # identifier, label, items list
+    MyNodeCategory("SOMENODES", "Some Nodes", items=[
+        # our basic node
+        NodeItem("CustomNodeType"),
+        ]),
+    MyNodeCategory("OTHERNODES", "Other Nodes", items=[
+        # the node item can have additional settings,
+        # which are applied to new nodes
+        # NB: settings values are stored as string expressions,
+        # for this reason they should be converted to strings using repr()
+        NodeItem("CustomNodeType", label="Node A", settings={
+            "myStringProperty" : repr("Lorem ipsum dolor sit amet"),
+            "myFloatProperty" : repr(1.0),
+            }),
+        NodeItem("CustomNodeType", label="Node B", settings={
+            "myStringProperty" : repr("consectetur adipisicing elit"),
+            "myFloatProperty" : repr(2.0),
+            }),
+        ]),
+    ]
 
 
 def register():
     bpy.utils.register_class(MyCustomTree)
     bpy.utils.register_class(MyCustomSocket)
     bpy.utils.register_class(MyCustomNode)
-    bpy.utils.register_class(MyCustomGroup)
+
+    nodeitems_utils.register_node_categories("CUSTOM_NODES", node_categories)
 
 
 def unregister():
+    nodeitems_utils.unregister_node_categories("CUSTOM_NODES")
+
     bpy.utils.unregister_class(MyCustomTree)
     bpy.utils.unregister_class(MyCustomSocket)
     bpy.utils.unregister_class(MyCustomNode)
-    bpy.utils.unregister_class(MyCustomGroup)
 
 
 if __name__ == "__main__":
     register()
-

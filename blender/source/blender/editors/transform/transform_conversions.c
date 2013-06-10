@@ -91,6 +91,7 @@
 #include "BKE_editmesh.h"
 #include "BKE_tracking.h"
 #include "BKE_mask.h"
+#include "BKE_lattice.h"
 
 #include "BIK_api.h"
 
@@ -1554,7 +1555,7 @@ static void createTransLatticeVerts(TransInfo *t)
 {
 	Lattice *latt = ((Lattice *)t->obedit->data)->editlatt->latt;
 	TransData *td = NULL;
-	BPoint *bp;
+	BPoint *bp, *actbp = BKE_lattice_active_point_get(latt);
 	float mtx[3][3], smtx[3][3];
 	int a;
 	int count = 0, countsel = 0;
@@ -1589,7 +1590,10 @@ static void createTransLatticeVerts(TransInfo *t)
 				copy_v3_v3(td->iloc, bp->vec);
 				td->loc = bp->vec;
 				copy_v3_v3(td->center, td->loc);
-				if (bp->f1 & SELECT) td->flag = TD_SELECTED;
+				if (bp->f1 & SELECT) {
+					td->flag = TD_SELECTED;
+					if (actbp && bp == actbp) td->flag |= TD_ACTIVE;
+				}
 				else td->flag = 0;
 				copy_m3_m3(td->smtx, smtx);
 				copy_m3_m3(td->mtx, mtx);
@@ -4563,16 +4567,17 @@ static bool constraints_list_needinv(TransInfo *t, ListBase *list)
 			if ((con->flag & CONSTRAINT_DISABLE) == 0 && (con->enforce != 0.0f)) {
 				/* (affirmative) returns for specific constraints here... */
 				/* constraints that require this regardless  */
-				if (ELEM5(con->type,
+				if (ELEM6(con->type,
 				          CONSTRAINT_TYPE_CHILDOF,
 				          CONSTRAINT_TYPE_FOLLOWPATH,
 				          CONSTRAINT_TYPE_CLAMPTO,
 				          CONSTRAINT_TYPE_OBJECTSOLVER,
-				          CONSTRAINT_TYPE_FOLLOWTRACK))
+				          CONSTRAINT_TYPE_FOLLOWTRACK,
+				          CONSTRAINT_TYPE_TRANSFORM))
 				{
 					return true;
 				}
-
+				
 				/* constraints that require this only under special conditions */
 				if (con->type == CONSTRAINT_TYPE_ROTLIKE) {
 					/* CopyRot constraint only does this when rotating, and offset is on */
