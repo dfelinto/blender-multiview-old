@@ -199,6 +199,9 @@ void BlenderSync::sync_integrator()
 	integrator->subsurface_samples = get_int(cscene, "subsurface_samples");
 	integrator->progressive = get_boolean(cscene, "progressive");
 
+	if(experimental)
+		integrator->sampling_pattern = (SamplingPattern)RNA_enum_get(&cscene, "sampling_pattern");
+
 	if(integrator->modified(previntegrator))
 		integrator->tag_update(scene);
 }
@@ -215,6 +218,25 @@ void BlenderSync::sync_film()
 	film->exposure = get_float(cscene, "film_exposure");
 	film->filter_type = (FilterType)RNA_enum_get(&cscene, "filter_type");
 	film->filter_width = (film->filter_type == FILTER_BOX)? 1.0f: get_float(cscene, "filter_width");
+
+	if(b_scene.world()) {
+		BL::WorldMistSettings b_mist = b_scene.world().mist_settings();
+
+		film->mist_start = b_mist.start();
+		film->mist_depth = b_mist.depth();
+
+		switch(b_mist.falloff()) {
+			case BL::WorldMistSettings::falloff_QUADRATIC:
+				film->mist_falloff = 2.0f;
+				break;
+			case BL::WorldMistSettings::falloff_LINEAR:
+				film->mist_falloff = 1.0f;
+				break;
+			case BL::WorldMistSettings::falloff_INVERSE_QUADRATIC:
+				film->mist_falloff = 0.5f;
+				break;
+		}
+	}
 
 	if(film->modified(prevfilm))
 		film->tag_update(scene);
@@ -363,7 +385,7 @@ SessionParams BlenderSync::get_session_params(BL::RenderEngine b_engine, BL::Use
 	params.background = background;
 
 	/* samples */
-	if(get_boolean(cscene, "progressive") == 0 && params.device.type == DEVICE_CPU){
+	if(get_boolean(cscene, "progressive") == 0 && params.device.type == DEVICE_CPU) {
 		if(background) {
 			params.samples = get_int(cscene, "aa_samples");
 		}

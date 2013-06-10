@@ -1298,7 +1298,7 @@ void view3d_buttons_register(ARegionType *art)
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype view3d panel vgroup");
 	strcpy(pt->idname, "VIEW3D_PT_vgroup");
-	strcpy(pt->label, N_("Vertex Groups"));  /* XXX C panels are not available through RNA (bpy.types)! */
+	strcpy(pt->label, N_("Vertex Weights"));  /* XXX C panels are not available through RNA (bpy.types)! */
 	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
 	pt->draw = view3d_panel_vgroup;
 	pt->poll = view3d_panel_vgroup_poll;

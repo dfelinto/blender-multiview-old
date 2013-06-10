@@ -257,6 +257,8 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->grid; break;
 				case TH_WIRE:
 					cp = ts->wire; break;
+				case TH_WIRE_EDIT:
+					cp = ts->wire_edit; break;
 				case TH_LAMP:
 					cp = ts->lamp; break;
 				case TH_SPEAKER:
@@ -736,6 +738,7 @@ void ui_theme_init_default(void)
 
 	rgba_char_args_set_fl(btheme->tv3d.grid,     0.251, 0.251, 0.251, 1.0);
 	rgba_char_args_set(btheme->tv3d.wire,       0x0, 0x0, 0x0, 255);
+	rgba_char_args_set(btheme->tv3d.wire_edit,  0x0, 0x0, 0x0, 255);
 	rgba_char_args_set(btheme->tv3d.lamp,       0, 0, 0, 40);
 	rgba_char_args_set(btheme->tv3d.speaker,    0, 0, 0, 255);
 	rgba_char_args_set(btheme->tv3d.camera,    0, 0, 0, 255);
@@ -999,6 +1002,13 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tclip.strip, 0x0c, 0x0a, 0x0a, 0x80);
 	rgba_char_args_set(btheme->tclip.strip_select, 0xff, 0x8c, 0x00, 0xff);
 	btheme->tclip.handle_vertex_size = 4;
+}
+
+void ui_style_init_default(void)
+{
+	BLI_freelistN(&U.uistyles);
+	/* gets automatically re-allocated */
+	uiStyleInit();
 }
 
 
@@ -2039,6 +2049,10 @@ void init_userdef_do_versions(void)
 			if (btheme->tv3d.freestyle_edge_mark[3] == 0) {
 				rgba_char_args_set(btheme->tv3d.freestyle_edge_mark, 0x7f, 0xff, 0x7f, 255);
 				rgba_char_args_set(btheme->tv3d.freestyle_face_mark, 0x7f, 0xff, 0x7f, 51);
+			}
+
+			if (btheme->tv3d.wire_edit[3] == 0) {
+				rgba_char_args_set(btheme->tv3d.wire_edit,  0x0, 0x0, 0x0, 255);
 			}
 		}
 	}
