@@ -141,6 +141,7 @@ __device_inline void path_radiance_init(PathRadiance *L, int use_light_pass)
 		L->background = make_float3(0.0f, 0.0f, 0.0f);
 		L->ao = make_float3(0.0f, 0.0f, 0.0f);
 		L->shadow = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
+		L->mist = 0.0f;
 	}
 	else
 		L->emission = make_float3(0.0f, 0.0f, 0.0f);
@@ -231,12 +232,9 @@ __device_inline void path_radiance_accum_light(PathRadiance *L, float3 throughpu
 			L->direct_transmission += throughput*bsdf_eval->transmission*shadow;
 
 			if(is_lamp) {
-				float3 sum = throughput*(bsdf_eval->diffuse + bsdf_eval->glossy + bsdf_eval->transmission);
-
 				L->shadow.x += shadow.x*shadow_fac;
 				L->shadow.y += shadow.y*shadow_fac;
 				L->shadow.z += shadow.z*shadow_fac;
-				L->shadow.w += average(sum);
 			}
 		}
 		else {

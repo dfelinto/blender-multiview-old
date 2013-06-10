@@ -57,6 +57,12 @@ public:
 	float filter_width;
 	size_t filter_table_offset;
 
+	float mist_start;
+	float mist_depth;
+	float mist_falloff;
+
+	bool use_light_visibility;
+
 	bool need_update;
 
 	Film();
