@@ -380,16 +380,10 @@ void BlenderSession::render()
 			scene->film->tag_update(scene);
 			scene->integrator->tag_update(scene);
 
-<<<<<<< HEAD
 			/* update scene */
 			BL::Object camera = b_engine.multiview_camera();
 			sync->sync_data(b_v3d, camera, b_rlay_name.c_str());
 			sync->sync_camera(b_render, camera, width, height);
-=======
-		/* update scene */
-		sync->sync_data(b_v3d, b_engine.camera_override(), b_rlay_name.c_str());
-		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
->>>>>>> master
 
 			/* update number of samples per layer */
 			int samples = sync->get_layer_samples();
