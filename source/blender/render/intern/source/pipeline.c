@@ -196,10 +196,13 @@ int RE_GetActiveViewId(Render *re)
 
 int RE_HasFakeLayer(RenderResult *res)
 {
+	RenderView *rv;
+
 	if (res == NULL)
 		return FALSE;
 
-	return (RE_RenderViewGetRect32(res, 0) || RE_RenderViewGetRectf(res, 0));
+	rv = BLI_findlink(res->views.first, 0);
+	return (rv->rect32 || rv->rectf);
 }
 
 int RE_HasStereo3D(RenderResult *res)
@@ -1905,9 +1908,9 @@ static void free_all_freestyle_renders(void)
 static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 {
 	RenderView *rv;
-	int nr;
 	float *rectf, filt[3][3];
 	int x, y, sample;
+	int actview, numviews;
 	
 	/* interaction callbacks */
 	if (ntree) {
@@ -1922,8 +1925,8 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 	/* filtmask needs it */
 	R = *re;
 
-	nr = 0;
-	for (rv = (RenderView *)re->result->views.first; rv; rv = rv->next, nr++) {
+	numviews = BLI_countlist(&re->result->views);
+	for (actview = 0; actview < numviews; actview++) {
 		/* we accumulate in here */
 		rectf = MEM_mapallocN(re->rectx * re->recty * sizeof(float) * 4, "fullsample rgba");
 		
@@ -1961,11 +1964,11 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 				ntreeCompositTagRender(re->scene);
 				ntreeCompositTagAnimated(ntree);
 				
-				ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, nr);
+				ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, actview);
 			}
 			
 			/* ensure we get either composited result or the active layer */
-			RE_AcquireResultImage(re, &rres, nr);
+			RE_AcquireResultImage(re, &rres, actview);
 
 			/* accumulate with filter, and clip */
 			mask = (1 << sample);
@@ -1991,12 +1994,12 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 			if (sample != re->osa - 1) {
 				/* weak... the display callback wants an active renderlayer pointer... */
 				re->result->renlay = render_get_active_layer(re, re->result);
-				re->display_draw(re->ddh, re->result, NULL, nr);
+				re->display_draw(re->ddh, re->result, NULL, actview);
 			}
 			
 			if (re->test_break(re->tbh)) {
 				/* forcing break of outside for loop */
-				rv = re->result->views.last;
+				actview = numviews;
 				break;
 			}
 
@@ -2014,10 +2017,10 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 		}
 		
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-		if (RE_RenderViewGetRectf(re->result, nr))
-			MEM_freeN(RE_RenderViewGetRectf(re->result, nr));
-
-		RE_RenderViewSetRectf(re->result, nr, rectf);
+		rv = BLI_findlink(&re->result->views, actview);
+		if (rv->rectf)
+			MEM_freeN(rv->rectf);
+		rv->rectf = rectf;
 		BLI_rw_mutex_unlock(&re->resultmutex);
 	}
 	
@@ -2170,7 +2173,7 @@ static void do_render_composite_fields_blur_3d(Render *re)
 
 	/* weak... the display callback wants an active renderlayer pointer... */
 	re->result->renlay = render_get_active_layer(re, re->result);
-	re->display_draw(re->ddh, re->result, NULL, re->actview);
+	re->display_draw(re->ddh, re->result, NULL, 0);
 }
 
 static void renderresult_stampinfo(Render *re)
