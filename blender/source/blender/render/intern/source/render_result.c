@@ -123,27 +123,6 @@ void render_result_free_list(ListBase *lb, RenderResult *rr)
 
 /********************************* multiview *************************************/
 
-static const char *insert_view_name(const char* passname, const char* view)
-{
-	static char retstr[EXR_PASS_MAXNAME];
-	const char *end;
-	const char *token;
-	int len;
-
-	if (view == NULL || view[0] == '\0')
-		return passname;
-
-	end = passname + strlen(passname);
-	len = IMB_exr_split_token(passname, end, &token);
-
-	if (len == strlen(passname))
-		sprintf(retstr, "%s.%s", passname, view);
-	else
-		sprintf(retstr, "%.*s%s.%s", (int)(end-passname) - len, passname, view, token);
-
-	return retstr;
-}
-
 static const char *get_view_name(ListBase *views, int view_id)
 {
 	RenderView *rv;
@@ -209,239 +188,172 @@ void render_result_views_softdelete(RenderResult *rr)
 	}
 }
 
-/* NOTE: OpenEXR only supports 32 chars for layer+pass names
- * In blender we now use max 10 chars for pass, max 20 for layer */
-static const char *get_pass_name(int passtype, int channel, const char *viewname)
+static const char *name_from_passtype(int passtype, int channel)
 {
-	static const char *retstr=NULL;
-	
-	switch (passtype) {
-	case SCE_PASS_COMBINED:
-	{
-		if (channel == -1) retstr = "Combined";
-		else if (channel == 0) retstr = "Combined.R";
-		else if (channel == 1) retstr = "Combined.G";
-		else if (channel == 2) retstr = "Combined.B";
-		else retstr = "Combined.A";
-		break;
+	if (passtype == SCE_PASS_COMBINED) {
+		if (channel == -1) return "Combined";
+		if (channel == 0) return "Combined.R";
+		if (channel == 1) return "Combined.G";
+		if (channel == 2) return "Combined.B";
+		return "Combined.A";
 	}
-	case SCE_PASS_Z:
-	{
-		if (channel == -1) retstr = "Depth";
-		else retstr = "Depth.Z";
-		break;
+	if (passtype == SCE_PASS_Z) {
+		if (channel == -1) return "Depth";
+		return "Depth.Z";
 	}
-	case SCE_PASS_VECTOR:
-	{
-		if (channel == -1) retstr = "Vector";
-		else if (channel == 0) retstr = "Vector.X";
-		else if (channel == 1) retstr = "Vector.Y";
-		else if (channel == 2) retstr = "Vector.Z";
-		else retstr = "Vector.W";
-		break;
+	if (passtype == SCE_PASS_VECTOR) {
+		if (channel == -1) return "Vector";
+		if (channel == 0) return "Vector.X";
+		if (channel == 1) return "Vector.Y";
+		if (channel == 2) return "Vector.Z";
+		return "Vector.W";
 	}
-	case SCE_PASS_NORMAL:
-	{
-		if (channel == -1) retstr = "Normal";
-		else if (channel == 0) retstr = "Normal.X";
-		else if (channel == 1) retstr = "Normal.Y";
-		else retstr = "Normal.Z";
-		break;
+	if (passtype == SCE_PASS_NORMAL) {
+		if (channel == -1) return "Normal";
+		if (channel == 0) return "Normal.X";
+		if (channel == 1) return "Normal.Y";
+		return "Normal.Z";
 	}
-	case SCE_PASS_UV:
-	{
-		if (channel == -1) retstr = "UV";
-		else if (channel == 0) retstr = "UV.U";
-		else if (channel == 1) retstr = "UV.V";
-		else retstr = "UV.A";
-		break;
+	if (passtype == SCE_PASS_UV) {
+		if (channel == -1) return "UV";
+		if (channel == 0) return "UV.U";
+		if (channel == 1) return "UV.V";
+		return "UV.A";
 	}
-	case SCE_PASS_RGBA:
-	{
-		if (channel == -1) retstr = "Color";
-		else if (channel == 0) retstr = "Color.R";
-		else if (channel == 1) retstr = "Color.G";
-		else if (channel == 2) retstr = "Color.B";
-		else retstr = "Color.A";
-		break;
+	if (passtype == SCE_PASS_RGBA) {
+		if (channel == -1) return "Color";
+		if (channel == 0) return "Color.R";
+		if (channel == 1) return "Color.G";
+		if (channel == 2) return "Color.B";
+		return "Color.A";
 	}
-	case SCE_PASS_EMIT:
-	{
-		if (channel == -1) retstr = "Emit";
-		else if (channel == 0) retstr = "Emit.R";
-		else if (channel == 1) retstr = "Emit.G";
-		else retstr = "Emit.B";
-		break;
+	if (passtype == SCE_PASS_EMIT) {
+		if (channel == -1) return "Emit";
+		if (channel == 0) return "Emit.R";
+		if (channel == 1) return "Emit.G";
+		return "Emit.B";
 	}
-	case SCE_PASS_DIFFUSE:
-	{
-		if (channel == -1) retstr = "Diffuse";
-		else if (channel == 0) retstr = "Diffuse.R";
-		else if (channel == 1) retstr = "Diffuse.G";
-		else retstr = "Diffuse.B";
-		break;
+	if (passtype == SCE_PASS_DIFFUSE) {
+		if (channel == -1) return "Diffuse";
+		if (channel == 0) return "Diffuse.R";
+		if (channel == 1) return "Diffuse.G";
+		return "Diffuse.B";
 	}
-	case SCE_PASS_SPEC:
-	{
-		if (channel == -1) retstr = "Spec";
-		else if (channel == 0) retstr = "Spec.R";
-		else if (channel == 1) retstr = "Spec.G";
-		else retstr = "Spec.B";
-		break;
+	if (passtype == SCE_PASS_SPEC) {
+		if (channel == -1) return "Spec";
+		if (channel == 0) return "Spec.R";
+		if (channel == 1) return "Spec.G";
+		return "Spec.B";
 	}
-	case SCE_PASS_SHADOW:
-	{
-		if (channel == -1) retstr = "Shadow";
-		else if (channel == 0) retstr = "Shadow.R";
-		else if (channel == 1) retstr = "Shadow.G";
-		else retstr = "Shadow.B";
-		break;
+	if (passtype == SCE_PASS_SHADOW) {
+		if (channel == -1) return "Shadow";
+		if (channel == 0) return "Shadow.R";
+		if (channel == 1) return "Shadow.G";
+		return "Shadow.B";
 	}
-	case SCE_PASS_AO:
-	{
-		if (channel == -1) retstr = "AO";
-		else if (channel == 0) retstr = "AO.R";
-		else if (channel == 1) retstr = "AO.G";
-		else retstr = "AO.B";
-		break;
+	if (passtype == SCE_PASS_AO) {
+		if (channel == -1) return "AO";
+		if (channel == 0) return "AO.R";
+		if (channel == 1) return "AO.G";
+		return "AO.B";
 	}
-	case SCE_PASS_ENVIRONMENT:
-	{
-		if (channel == -1) retstr = "Env";
-		else if (channel == 0) retstr = "Env.R";
-		else if (channel == 1) retstr = "Env.G";
-		else retstr = "Env.B";
-		break;
+	if (passtype == SCE_PASS_ENVIRONMENT) {
+		if (channel == -1) return "Env";
+		if (channel == 0) return "Env.R";
+		if (channel == 1) return "Env.G";
+		return "Env.B";
 	}
-	case SCE_PASS_INDIRECT:
-	{
-		if (channel == -1) retstr = "Indirect";
-		else if (channel == 0) retstr = "Indirect.R";
-		else if (channel == 1) retstr = "Indirect.G";
-		else retstr = "Indirect.B";
-		break;
+	if (passtype == SCE_PASS_INDIRECT) {
+		if (channel == -1) return "Indirect";
+		if (channel == 0) return "Indirect.R";
+		if (channel == 1) return "Indirect.G";
+		return "Indirect.B";
 	}
-	case SCE_PASS_REFLECT:
-	{
-		if (channel == -1) retstr = "Reflect";
-		else if (channel == 0) retstr = "Reflect.R";
-		else if (channel == 1) retstr = "Reflect.G";
-		else retstr = "Reflect.B";
-		break;
+	if (passtype == SCE_PASS_REFLECT) {
+		if (channel == -1) return "Reflect";
+		if (channel == 0) return "Reflect.R";
+		if (channel == 1) return "Reflect.G";
+		return "Reflect.B";
 	}
-	case SCE_PASS_REFRACT:
-	{
-		if (channel == -1) retstr = "Refract";
-		else if (channel == 0) retstr = "Refract.R";
-		else if (channel == 1) retstr = "Refract.G";
-		else retstr = "Refract.B";
-		break;
+	if (passtype == SCE_PASS_REFRACT) {
+		if (channel == -1) return "Refract";
+		if (channel == 0) return "Refract.R";
+		if (channel == 1) return "Refract.G";
+		return "Refract.B";
 	}
-	case SCE_PASS_INDEXOB:
-	{
-		if (channel == -1) retstr = "IndexOB";
-		else retstr = "IndexOB.X";
-		break;
+	if (passtype == SCE_PASS_INDEXOB) {
+		if (channel == -1) return "IndexOB";
+		return "IndexOB.X";
 	}
-	case SCE_PASS_INDEXMA:
-	{
-		if (channel == -1) retstr = "IndexMA";
-		else retstr = "IndexMA.X";
-		break;
+	if (passtype == SCE_PASS_INDEXMA) {
+		if (channel == -1) return "IndexMA";
+		return "IndexMA.X";
 	}
-	case SCE_PASS_MIST:
-	{
-		if (channel == -1) retstr = "Mist";
-		else retstr = "Mist.Z";
-		break;
+	if (passtype == SCE_PASS_MIST) {
+		if (channel == -1) return "Mist";
+		return "Mist.Z";
 	}
-	case SCE_PASS_RAYHITS:
-	{
-		if (channel == -1) retstr = "Rayhits";
-		else if (channel == 0) retstr = "Rayhits.R";
-		else if (channel == 1) retstr = "Rayhits.G";
-		else retstr = "Rayhits.B";
-		break;
+	if (passtype == SCE_PASS_RAYHITS) {
+		if (channel == -1) return "Rayhits";
+		if (channel == 0) return "Rayhits.R";
+		if (channel == 1) return "Rayhits.G";
+		return "Rayhits.B";
 	}
-	case SCE_PASS_DIFFUSE_DIRECT:
-	{
-		if (channel == -1) retstr = "DiffDir";
-		else if (channel == 0) retstr = "DiffDir.R";
-		else if (channel == 1) retstr = "DiffDir.G";
-		else retstr = "DiffDir.B";
-		break;
+	if (passtype == SCE_PASS_DIFFUSE_DIRECT) {
+		if (channel == -1) return "DiffDir";
+		if (channel == 0) return "DiffDir.R";
+		if (channel == 1) return "DiffDir.G";
+		return "DiffDir.B";
 	}
-	case SCE_PASS_DIFFUSE_INDIRECT:
-	{
-		if (channel == -1) retstr = "DiffInd";
-		else if (channel == 0) retstr = "DiffInd.R";
-		else if (channel == 1) retstr = "DiffInd.G";
-		else retstr = "DiffInd.B";
-		break;
+	if (passtype == SCE_PASS_DIFFUSE_INDIRECT) {
+		if (channel == -1) return "DiffInd";
+		if (channel == 0) return "DiffInd.R";
+		if (channel == 1) return "DiffInd.G";
+		return "DiffInd.B";
 	}
-	case SCE_PASS_DIFFUSE_COLOR:
-	{
-		if (channel == -1) retstr = "DiffCol";
-		else if (channel == 0) retstr = "DiffCol.R";
-		else if (channel == 1) retstr = "DiffCol.G";
-		else retstr = "DiffCol.B";
-		break;
+	if (passtype == SCE_PASS_DIFFUSE_COLOR) {
+		if (channel == -1) return "DiffCol";
+		if (channel == 0) return "DiffCol.R";
+		if (channel == 1) return "DiffCol.G";
+		return "DiffCol.B";
 	}
-	case SCE_PASS_GLOSSY_DIRECT:
-	{
-		if (channel == -1) retstr = "GlossDir";
-		else if (channel == 0) retstr = "GlossDir.R";
-		else if (channel == 1) retstr = "GlossDir.G";
-		else retstr = "GlossDir.B";
-		break;
+	if (passtype == SCE_PASS_GLOSSY_DIRECT) {
+		if (channel == -1) return "GlossDir";
+		if (channel == 0) return "GlossDir.R";
+		if (channel == 1) return "GlossDir.G";
+		return "GlossDir.B";
 	}
-	case SCE_PASS_GLOSSY_INDIRECT:
-	{
-		if (channel == -1) retstr = "GlossInd";
-		else if (channel == 0) retstr = "GlossInd.R";
-		else if (channel == 1) retstr = "GlossInd.G";
-		else retstr = "GlossInd.B";
-		break;
+	if (passtype == SCE_PASS_GLOSSY_INDIRECT) {
+		if (channel == -1) return "GlossInd";
+		if (channel == 0) return "GlossInd.R";
+		if (channel == 1) return "GlossInd.G";
+		return "GlossInd.B";
 	}
-	case SCE_PASS_GLOSSY_COLOR:
-	{
-		if (channel == -1) retstr = "GlossCol";
-		else if (channel == 0) retstr = "GlossCol.R";
-		else if (channel == 1) retstr = "GlossCol.G";
-		else retstr = "GlossCol.B";
-		break;
+	if (passtype == SCE_PASS_GLOSSY_COLOR) {
+		if (channel == -1) return "GlossCol";
+		if (channel == 0) return "GlossCol.R";
+		if (channel == 1) return "GlossCol.G";
+		return "GlossCol.B";
 	}
-	case SCE_PASS_TRANSM_DIRECT:
-	{
-		if (channel == -1) retstr = "TransDir";
-		else if (channel == 0) retstr = "TransDir.R";
-		else if (channel == 1) retstr = "TransDir.G";
-		else retstr = "TransDir.B";
-		break;
+	if (passtype == SCE_PASS_TRANSM_DIRECT) {
+		if (channel == -1) return "TransDir";
+		if (channel == 0) return "TransDir.R";
+		if (channel == 1) return "TransDir.G";
+		return "TransDir.B";
 	}
-	case SCE_PASS_TRANSM_INDIRECT:
-	{
-		if (channel == -1) retstr = "TransInd";
-		else if (channel == 0) retstr = "TransInd.R";
-		else if (channel == 1) retstr = "TransInd.G";
-		else retstr = "TransInd.B";
-		break;
+	if (passtype == SCE_PASS_TRANSM_INDIRECT) {
+		if (channel == -1) return "TransInd";
+		if (channel == 0) return "TransInd.R";
+		if (channel == 1) return "TransInd.G";
+		return "TransInd.B";
 	}
-	case SCE_PASS_TRANSM_COLOR:
-	{
-		if (channel == -1) retstr = "TransCol";
-		else if (channel == 0) retstr = "TransCol.R";
-		else if (channel == 1) retstr = "TransCol.G";
-		else retstr = "TransCol.B";
-		break;
+	if (passtype == SCE_PASS_TRANSM_COLOR) {
+		if (channel == -1) return "TransCol";
+		if (channel == 0) return "TransCol.R";
+		if (channel == 1) return "TransCol.G";
+		return "TransCol.B";
 	}
-	default:
-	{
-		retstr = "Unknown";
-	}
-	}
-
-	return insert_view_name(retstr, viewname);
+	return "Unknown";
 }
 
 static int passtype_from_name(const char *str)
@@ -534,12 +446,35 @@ static int passtype_from_name(const char *str)
 	return 0;
 }
 
+
+static void set_pass_name(char *passname, int passtype, int channel, const char *view)
+{
+	const char *end;
+	const char *token;
+	int len;
+
+	const char *passtype_name = name_from_passtype(passtype, channel);
+
+	if (view == NULL || view[0] == '\0') {
+		BLI_strncpy(passname, passtype_name, sizeof(passname));
+		return;
+	}
+
+	end = passtype_name + strlen(passtype_name);
+	len = IMB_exr_split_token(passtype_name, end, &token);
+
+	if (len == strlen(passtype_name))
+		sprintf(passname, "%s.%s", passtype_name, view);
+	else
+		sprintf(passname, "%.*s%s.%s", (int)(end-passtype_name) - len, passtype_name, view, token);
+}
+
 /********************************** New **************************************/
 
 static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channels, int passtype, int view_id)
 {
 	const char *view = get_view_name(&rr->views, view_id);
-	const char *typestr = get_pass_name(passtype, 0, view);
+	const char *typestr = name_from_passtype(passtype, -1);
 	RenderPass *rpass = MEM_callocN(sizeof(RenderPass), typestr);
 	int rectsize = rr->rectx * rr->recty * channels;
 	
@@ -550,14 +485,14 @@ static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channel
 	rpass->recty = rl->recty;
 	rpass->view_id = view_id;
 
-	BLI_strncpy(rpass->name, get_pass_name(rpass->passtype, -1, view), sizeof(rpass->name));
-	BLI_strncpy(rpass->internal_name, get_pass_name(rpass->passtype, -1, ""), sizeof(rpass->internal_name));
+	set_pass_name(rpass->name, rpass->passtype, -1, view);
+	BLI_strncpy(rpass->internal_name, typestr, sizeof(rpass->internal_name));
 	BLI_strncpy(rpass->view, view, sizeof(rpass->view));
 	
 	if (rl->exrhandle) {
 		int a;
 		for (a = 0; a < channels; a++)
-			IMB_exr_add_channel(rl->exrhandle, rl->name, get_pass_name(passtype, a, ""), view, 0, 0, NULL);
+			IMB_exr_add_channel(rl->exrhandle, rl->name, name_from_passtype(passtype, a), view, 0, 0, NULL);
 	}
 	else {
 		float *rect;
@@ -759,7 +694,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 				IMB_exr_add_view(rl->exrhandle, rv->name);
 
 				for (i=0; i < 4; i++)
-					IMB_exr_add_channel(rl->exrhandle, rl->name, get_pass_name(SCE_PASS_COMBINED, i, ""), rv->name, 0, 0, NULL);
+					IMB_exr_add_channel(rl->exrhandle, rl->name, name_from_passtype(SCE_PASS_COMBINED, i), rv->name, 0, 0, NULL);
 			}
 			else {
 				render_layer_add_pass(rr, rl, 4, SCE_PASS_COMBINED, nr);
@@ -994,7 +929,7 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 
 		if (rview->rectf) {
 			for (a=0; a < 4; a++)
-				IMB_exr_add_channel(exrhandle, "Composite", get_pass_name(SCE_PASS_COMBINED, a, ""), chan_view, 4, 4 * rr->rectx, rview->rectf + a);
+				IMB_exr_add_channel(exrhandle, "Composite", name_from_passtype(SCE_PASS_COMBINED, a), chan_view, 4, 4 * rr->rectx, rview->rectf + a);
 		}
 	}
 
@@ -1019,7 +954,7 @@ int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *file
 			for (a = 0; a < xstride; a++) {
 
 				if (rpass->passtype) {
-					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, ""), chan_view,
+					IMB_exr_add_channel(exrhandle, rl->name, name_from_passtype(rpass->passtype, a), chan_view,
 					                    xstride, xstride * rr->rectx, rpass->rect + a);
 				}
 				else {
@@ -1138,9 +1073,12 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int 
 		for (rpassp = rlp->passes.first; rpassp; rpassp = rpassp->next) {
 			int a, xstride = rpassp->channels;
 			const char *viewname = get_view_name(&rr->views, rpassp->view_id);
+			char passname[EXR_PASS_MAXNAME];
 
 			for (a = 0; a < xstride; a++) {
-				IMB_exr_set_channel(rl->exrhandle, rlp->name, get_pass_name(rpassp->passtype, a, viewname),
+				set_pass_name(passname, rpassp->passtype, a, viewname);
+
+				IMB_exr_set_channel(rl->exrhandle, rlp->name, passname,
 				                    xstride, xstride * rrpart->rectx, rpassp->rect + a + xstride * offs);
 			}
 		}
@@ -1302,11 +1240,15 @@ int render_result_exr_file_read_path(RenderResult *rr, RenderLayer *rl_single, c
 		for (rpass = rl->passes.first; rpass; rpass = rpass->next) {
 			int a, xstride = rpass->channels;
 			const char *viewname = get_view_name(&rr->views, rpass->view_id);
-			for (a = 0; a < xstride; a++)
-				IMB_exr_set_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a, viewname),
-				                    xstride, xstride * rectx, rpass->rect + a);
+			char passname[EXR_PASS_MAXNAME];
 
-			BLI_strncpy(rpass->name, get_pass_name(rpass->passtype, -1, viewname), sizeof(rpass->name));
+			for (a = 0; a < xstride; a++) {
+				set_pass_name(passname, rpass->passtype, a, viewname);
+				IMB_exr_set_channel(exrhandle, rl->name, passname,
+				                    xstride, xstride * rectx, rpass->rect + a);
+			}
+
+			set_pass_name(rpass->name, rpass->passtype, -1, viewname);
 		}
 	}
 
