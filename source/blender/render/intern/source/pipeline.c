@@ -1908,10 +1908,11 @@ static void free_all_freestyle_renders(void)
 /* reads all buffers, calls optional composite, merges in first result->views rectf */
 static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 {
+	ListBase *rectfs;
 	RenderView *rv;
 	float *rectf, filt[3][3];
 	int x, y, sample;
-	int actview, numviews;
+	int nr, numviews;
 	
 	/* interaction callbacks */
 	if (ntree) {
@@ -1926,50 +1927,58 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 	/* filtmask needs it */
 	R = *re;
 
+	rectfs = MEM_callocN(sizeof(ListBase), "fullsample accumulation buffers");
 	numviews = BLI_countlist(&re->result->views);
-	for (actview = 0; actview < numviews; actview++) {
+	for (nr=0; nr < numviews; nr++) {
 		/* we accumulate in here */
-		rectf = MEM_mapallocN(re->rectx * re->recty * sizeof(float) * 4, "fullsample rgba");
+		rv = MEM_callocN(sizeof(RenderView), "fullsample renderview");
+		rv->rectf = MEM_mapallocN(re->rectx * re->recty * sizeof(float) * 4, "fullsample rgba");
+		BLI_addtail(rectfs, rv);
+	}
 		
-		for (sample = 0; sample < re->r.osa; sample++) {
-			Render *re1;
-			RenderResult rres;
-			int mask;
-			
-			/* enable full sample print */
-			R.i.curfsa = sample + 1;
-			
-			/* set all involved renders on the samplebuffers (first was done by render itself, but needs tagged) */
-			/* also function below assumes this */
-			
-			tag_scenes_for_render(re);
-			for (re1 = RenderGlobal.renderlist.first; re1; re1 = re1->next) {
-				if (re1->scene->id.flag & LIB_DOIT) {
-					if (re1->r.scemode & R_FULL_SAMPLE) {
-						if (sample || actview) {
-							BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-							render_result_exr_file_read(re1, sample);
+	for (sample = 0; sample < re->r.osa; sample++) {
+		Render *re1;
+		RenderResult rres;
+		int mask;
+
+		/* enable full sample print */
+		R.i.curfsa = sample + 1;
+		
+		/* set all involved renders on the samplebuffers (first was done by render itself, but needs tagged) */
+		/* also function below assumes this */
+		
+		tag_scenes_for_render(re);
+		for (re1 = RenderGlobal.renderlist.first; re1; re1 = re1->next) {
+			if (re1->scene->id.flag & LIB_DOIT) {
+				if (re1->r.scemode & R_FULL_SAMPLE) {
+					if (sample) {
+						BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+						render_result_exr_file_read(re1, sample);
 #ifdef WITH_FREESTYLE
-							if (re1->r.mode & R_EDGE_FRS)
-								composite_freestyle_renders(re1, sample);
+						if (re1->r.mode & R_EDGE_FRS)
+							composite_freestyle_renders(re1, sample);
 #endif
-							BLI_rw_mutex_unlock(&re->resultmutex);
-						}
-						ntreeCompositTagRender(re1->scene); /* ensure node gets exec to put buffers on stack */
+						BLI_rw_mutex_unlock(&re->resultmutex);
 					}
+					ntreeCompositTagRender(re1->scene); /* ensure node gets exec to put buffers on stack */
 				}
 			}
-			
-			/* composite */
-			if (ntree) {
-				ntreeCompositTagRender(re->scene);
-				ntreeCompositTagAnimated(ntree);
-				
-				ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, actview);
-			}
-			
+		}
+		
+		/* composite */
+		if (ntree) {
+			ntreeCompositTagRender(re->scene);
+			ntreeCompositTagAnimated(ntree);
+
+			for (nr=0; nr < numviews; nr++)
+				ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, nr);
+		}
+
+		for (nr=0; nr < numviews; nr++) {
+			rectf = ((RenderView *)BLI_findlink(rectfs, nr))->rectf;
+
 			/* ensure we get either composited result or the active layer */
-			RE_AcquireResultImage(re, &rres, actview);
+			RE_AcquireResultImage(re, &rres, nr);
 
 			/* accumulate with filter, and clip */
 			mask = (1 << sample);
@@ -1995,35 +2004,50 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 			if (sample != re->osa - 1) {
 				/* weak... the display callback wants an active renderlayer pointer... */
 				re->result->renlay = render_get_active_layer(re, re->result);
-				re->display_draw(re->ddh, re->result, NULL, actview);
+				re->display_draw(re->ddh, re->result, NULL, nr);
 			}
 			
 			if (re->test_break(re->tbh)) {
 				/* forcing break of outside for loop */
-				actview = numviews;
+				sample = re->r.osa;
 				break;
 			}
+		}
+	}
 
-			/* clamp alpha and RGB to 0..1 and 0..inf, can go outside due to filter */
-			for (y = 0; y < re->recty; y++) {
-				float *rf = rectf + 4 * y * re->rectx;
-				
-				for (x = 0; x < re->rectx; x++, rf += 4) {
-					rf[0] = MAX2(rf[0], 0.0f);
-					rf[1] = MAX2(rf[1], 0.0f);
-					rf[2] = MAX2(rf[2], 0.0f);
-					CLAMP(rf[3], 0.0f, 1.0f);
-				}
+	for (nr=0; nr < numviews; nr++) {
+		rectf = ((RenderView *)BLI_findlink(rectfs, nr))->rectf;
+
+		/* clamp alpha and RGB to 0..1 and 0..inf, can go outside due to filter */
+		for (y = 0; y < re->recty; y++) {
+			float *rf = rectf + 4 * y * re->rectx;
+			
+			for (x = 0; x < re->rectx; x++, rf += 4) {
+				rf[0] = MAX2(rf[0], 0.0f);
+				rf[1] = MAX2(rf[1], 0.0f);
+				rf[2] = MAX2(rf[2], 0.0f);
+				CLAMP(rf[3], 0.0f, 1.0f);
 			}
 		}
-		
+
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-		rv = BLI_findlink(&re->result->views, actview);
+
+		rv = BLI_findlink(&re->result->views, nr);
 		if (rv->rectf)
 			MEM_freeN(rv->rectf);
+
 		rv->rectf = rectf;
+
 		BLI_rw_mutex_unlock(&re->resultmutex);
 	}
+
+	/* garbage collection */
+	while (rectfs->first) {
+		RenderView *rv = rectfs->first;
+		BLI_remlink(rectfs, rv);
+		MEM_freeN(rv);
+	}
+	MEM_freeN(rectfs);
 	
 	/* clear interaction callbacks */
 	if (ntree) {
@@ -2032,7 +2056,7 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 		ntree->progress = NULL;
 		ntree->tbh = ntree->sdh = ntree->prh = NULL;
 	}
-	
+
 	/* disable full sample print */
 	R.i.curfsa = 0;
 }
