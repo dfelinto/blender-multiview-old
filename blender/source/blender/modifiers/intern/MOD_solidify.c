@@ -58,6 +58,11 @@ typedef struct EdgeFaceRef {
 	int f2;
 } EdgeFaceRef;
 
+BLI_INLINE bool edgeref_is_init(const EdgeFaceRef *edge_ref)
+{
+	return (edge_ref->f1 != 0) && (edge_ref->f2 != 0);
+}
+
 static void dm_calc_normal(DerivedMesh *dm, float (*temp_nors)[3])
 {
 	int i, numVerts, numEdges, numFaces;
@@ -113,7 +118,7 @@ static void dm_calc_normal(DerivedMesh *dm, float (*temp_nors)[3])
 			for (j = 0; j < mp->totloop; j++, ml++) {
 				/* --- add edge ref to face --- */
 				edge_ref = &edge_ref_array[ml->e];
-				if ((edge_ref->f1 == 0) && (edge_ref->f2 == 0)) {
+				if (!edgeref_is_init(edge_ref)) {
 					edge_ref->f1 =  i;
 					edge_ref->f2 = -1;
 				}
@@ -127,7 +132,7 @@ static void dm_calc_normal(DerivedMesh *dm, float (*temp_nors)[3])
 		for (i = 0, ed = medge, edge_ref = edge_ref_array; i < numEdges; i++, ed++, edge_ref++) {
 			/* Get the edge vert indices, and edge value (the face indices that use it) */
 
-			if (edge_ref->f2 != -1) {
+			if (edgeref_is_init(edge_ref) && (edge_ref->f2 != -1)) {
 				/* We have 2 faces using this edge, calculate the edges normal
 				 * using the angle between the 2 faces as a weighting */
 #if 0
