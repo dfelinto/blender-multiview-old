@@ -1946,7 +1946,7 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 			for (re1 = RenderGlobal.renderlist.first; re1; re1 = re1->next) {
 				if (re1->scene->id.flag & LIB_DOIT) {
 					if (re1->r.scemode & R_FULL_SAMPLE) {
-						if (sample) {
+						if (sample || actview) {
 							BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 							render_result_exr_file_read(re1, sample);
 #ifdef WITH_FREESTYLE
