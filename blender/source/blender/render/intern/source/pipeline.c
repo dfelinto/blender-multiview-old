@@ -487,7 +487,8 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
 			
 			/* actview view */
 			rv = BLI_findlink(&re->result->views, view_id);
-			if (rv == NULL) rv = &re->result->views.first;
+			if (rv == NULL)
+				rv = (RenderView *)re->result->views.first;
 
 			rr->rectf = rv->rectf;
 			rr->rectz = rv->rectz;
