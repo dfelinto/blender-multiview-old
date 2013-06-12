@@ -201,7 +201,7 @@ int RE_HasFakeLayer(RenderResult *res)
 	if (res == NULL)
 		return FALSE;
 
-	rv = BLI_findlink(res->views.first, 0);
+	rv = (RenderView *)res->views.first;
 	return (rv->rect32 || rv->rectf);
 }
 
