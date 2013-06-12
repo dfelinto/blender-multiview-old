@@ -240,6 +240,23 @@ typedef struct SceneRenderLayer {
 
 /* note, srl->passflag is treestore element 'nr' in outliner, short still... */
 
+/* View - MultiView */
+typedef struct SceneRenderView {
+	struct SceneRenderView *next, *prev;
+
+	char name[64];	/* MAX_NAME */
+	char label[64];	/* MAX_NAME */
+
+	int viewflag;
+	int pad[3];
+
+	struct Object *camera;
+} SceneRenderView;
+
+/* srv->viewflag */
+#define SCE_VIEW_DISABLE		(1<<0)
+#define SCE_VIEW_NAMEASLABEL	(1<<1)
+
 /* *************************************************************** */
 
 /* Generic image format settings,
@@ -313,6 +330,7 @@ typedef struct ImageFormatData {
 #define R_IMF_IMTYPE_H264           31
 #define R_IMF_IMTYPE_XVID           32
 #define R_IMF_IMTYPE_THEORA         33
+#define R_IMF_IMTYPE_MULTIVIEW      34
 
 #define R_IMF_IMTYPE_INVALID        255
 
@@ -556,6 +574,11 @@ typedef struct RenderData {
 
 	/* render engine */
 	char engine[32];
+
+	/* MultiView */
+	ListBase views;
+	short actview;
+	short pad8[3];
 } RenderData;
 
 /* *************************************************************** */
@@ -728,6 +751,16 @@ typedef struct GameData {
 
 #define UV_SCULPT_TOOL_RELAX_LAPLACIAN	1
 #define UV_SCULPT_TOOL_RELAX_HC			2
+
+/* Stereo Flags */
+#define STEREO_RIGHT_NAME "right"
+#define STEREO_LEFT_NAME "left"
+
+typedef enum StereoViews {
+	STEREO_MONO_ID = -1,
+	STEREO_LEFT_ID = 0,
+	STEREO_RIGHT_ID = 1,
+} StereoViews;
 
 /* Markers */
 
@@ -1317,6 +1350,7 @@ typedef struct Scene {
 /* #define R_RECURS_PROTECTION	0x20000 */
 #define R_TEXNODE_PREVIEW	0x40000
 #define R_VIEWPORT_PREVIEW	0x80000
+#define R_SINGLE_VIEW		0x160000
 
 /* r->stamp */
 #define R_STAMP_TIME 	0x0001

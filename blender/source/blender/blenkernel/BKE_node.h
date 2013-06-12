@@ -891,6 +891,7 @@ void            ntreeGPUMaterialNodes(struct bNodeTree *ntree, struct GPUMateria
 #define CMP_NODE_PIXELATE       318
 
 #define CMP_NODE_MAP_RANGE	319
+#define CMP_NODE_SWITCH_VIEW    320
 
 /* channel toggles */
 #define CMP_CHAN_RGB		1
@@ -917,15 +918,21 @@ void            ntreeGPUMaterialNodes(struct bNodeTree *ntree, struct GPUMateria
 #define CMP_SCALE_RENDERSIZE_FRAME_ASPECT  (1 << 0)
 #define CMP_SCALE_RENDERSIZE_FRAME_CROP    (1 << 1)
 
+/* track position node, in custom1 */
+#define CMP_TRACKPOS_ABSOLUTE			0
+#define CMP_TRACKPOS_RELATIVE_START	1
+#define CMP_TRACKPOS_RELATIVE_FRAME	2
+#define CMP_TRACKPOS_ABSOLUTE_FRAME	3
 
 /* API */
 struct CompBuf;
 void ntreeCompositExecTree(struct bNodeTree *ntree, struct RenderData *rd, int rendering, int do_previews,
-                           const struct ColorManagedViewSettings *view_settings, const struct ColorManagedDisplaySettings *display_settings);
+                           const struct ColorManagedViewSettings *view_settings, const struct ColorManagedDisplaySettings *display_settings,
+						   int view_id);
 void ntreeCompositTagRender(struct Scene *sce);
 int ntreeCompositTagAnimated(struct bNodeTree *ntree);
 void ntreeCompositTagGenerators(struct bNodeTree *ntree);
-void ntreeCompositForceHidden(struct bNodeTree *ntree, struct Scene *scene);
+void ntreeCompositForceHidden(struct bNodeTree *ntree);
 void ntreeCompositClearTags(struct bNodeTree *ntree);
 
 struct bNodeSocket *ntreeCompositOutputFileAddSocket(struct bNodeTree *ntree, struct bNode *node,

@@ -156,6 +156,8 @@ static void buttons_main_area_draw(const bContext *C, ARegion *ar)
 		ED_region_panels(C, ar, vertical, "render", sbuts->mainb);
 	else if (sbuts->mainb == BCONTEXT_RENDER_LAYER)
 		ED_region_panels(C, ar, vertical, "render_layer", sbuts->mainb);
+	else if (sbuts->mainb == BCONTEXT_RENDER_VIEW)
+		ED_region_panels(C, ar, vertical, "render_view", sbuts->mainb);
 	else if (sbuts->mainb == BCONTEXT_WORLD)
 		ED_region_panels(C, ar, vertical, "world", sbuts->mainb);
 	else if (sbuts->mainb == BCONTEXT_OBJECT)
@@ -241,6 +243,7 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 				case ND_RENDER_OPTIONS:
 					buttons_area_redraw(sa, BCONTEXT_RENDER);
 					buttons_area_redraw(sa, BCONTEXT_RENDER_LAYER);
+					buttons_area_redraw(sa, BCONTEXT_RENDER_VIEW);
 					break;
 				case ND_FRAME:
 					/* any buttons area can have animated properties so redraw all */

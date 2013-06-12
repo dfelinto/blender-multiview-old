@@ -1244,6 +1244,8 @@ def get_panels():
         types.RENDER_PT_encoding,
         types.RENDER_PT_dimensions,
         types.RENDER_PT_stamp,
+        types.RENDERVIEW_PT_views,
+        types.RENDERVIEW_PT_view_options,
         types.SCENE_PT_scene,
         types.SCENE_PT_color_management,
         types.SCENE_PT_custom_props,

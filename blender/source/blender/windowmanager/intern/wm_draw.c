@@ -166,6 +166,7 @@ static void wm_method_draw_full(bContext *C, wmWindow *win)
 			if (ar->swinid) {
 				CTX_wm_region_set(C, ar);
 				ED_region_do_draw(C, ar);
+				ar->do_draw = FALSE;
 				wm_paintcursor_draw(C, ar);
 				CTX_wm_region_set(C, NULL);
 			}
@@ -176,12 +177,14 @@ static void wm_method_draw_full(bContext *C, wmWindow *win)
 	}
 
 	ED_screen_draw(win);
+	win->screen->do_draw = FALSE;
 
 	/* draw overlapping regions */
 	for (ar = screen->regionbase.first; ar; ar = ar->next) {
 		if (ar->swinid) {
 			CTX_wm_menu_set(C, ar);
 			ED_region_do_draw(C, ar);
+			ar->do_draw = FALSE;
 			CTX_wm_menu_set(C, NULL);
 		}
 	}
@@ -279,6 +282,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 				if (ar->do_draw) {
 					CTX_wm_region_set(C, ar);
 					ED_region_do_draw(C, ar);
+					ar->do_draw = FALSE;
 					wm_paintcursor_draw(C, ar);
 					CTX_wm_region_set(C, NULL);
 
@@ -289,6 +293,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 					if (ar->swap == WIN_FRONT_OK) {
 						CTX_wm_region_set(C, ar);
 						ED_region_do_draw(C, ar);
+						ar->do_draw = FALSE;
 						wm_paintcursor_draw(C, ar);
 						CTX_wm_region_set(C, NULL);
 
@@ -301,7 +306,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 				}
 			}
 		}
-		
+
 		wm_area_mark_invalid_backbuf(sa);
 		CTX_wm_area_set(C, NULL);
 	}
@@ -309,6 +314,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 	/* after area regions so we can do area 'overlay' drawing */
 	if (screen->do_draw) {
 		ED_screen_draw(win);
+		win->screen->do_draw = FALSE;
 
 		if (exchange)
 			screen->swap = WIN_FRONT_OK;
@@ -316,6 +322,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 	else if (exchange) {
 		if (screen->swap == WIN_FRONT_OK) {
 			ED_screen_draw(win);
+			win->screen->do_draw = FALSE;
 			screen->swap = WIN_BOTH_OK;
 		}
 		else if (screen->swap == WIN_BACK_OK)
@@ -329,6 +336,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 		if (ar->swinid && ar->do_draw) {
 			CTX_wm_menu_set(C, ar);
 			ED_region_do_draw(C, ar);
+			ar->do_draw = FALSE;
 			CTX_wm_menu_set(C, NULL);
 		}
 	}
@@ -360,15 +368,6 @@ static void wm_method_draw_damage(bContext *C, wmWindow *win)
 /* - if non-power of two textures are supported, that is  */
 /*   used. if not, multiple smaller ones are used, with   */
 /*   worst case wasted space being 23.4% for 3x3 textures */
-
-#define MAX_N_TEX 3
-
-typedef struct wmDrawTriple {
-	GLuint bind[MAX_N_TEX * MAX_N_TEX];
-	int x[MAX_N_TEX], y[MAX_N_TEX];
-	int nx, ny;
-	GLenum target;
-} wmDrawTriple;
 
 static void split_width(int x, int n, int *splitx, int *nx)
 {
@@ -406,16 +405,13 @@ static void split_width(int x, int n, int *splitx, int *nx)
 	}
 }
 
-static void wm_draw_triple_free(wmWindow *win)
+static void wm_draw_triple_free(wmDrawTriple *triple)
 {
-	if (win->drawdata) {
-		wmDrawTriple *triple = win->drawdata;
+	if (triple) {
 
 		glDeleteTextures(triple->nx * triple->ny, triple->bind);
 
 		MEM_freeN(triple);
-
-		win->drawdata = NULL;
 	}
 }
 
@@ -497,7 +493,7 @@ static int wm_triple_gen_textures(wmWindow *win, wmDrawTriple *triple)
 	return 1;
 }
 
-static void wm_triple_draw_textures(wmWindow *win, wmDrawTriple *triple, float alpha)
+void wm_triple_draw_textures(wmWindow *win, wmDrawTriple *triple, float alpha)
 {
 	float halfx, halfy, ratiox, ratioy;
 	int x, y, sizex, sizey, offx, offy;
@@ -563,7 +559,7 @@ static void wm_triple_copy_textures(wmWindow *win, wmDrawTriple *triple)
 	glBindTexture(triple->target, 0);
 }
 
-static void wm_draw_region_blend(wmWindow *win, ARegion *ar)
+static void wm_draw_region_blend(wmWindow *win, ARegion *ar, wmDrawTriple *triple)
 {
 	float fac = ED_region_blend_factor(ar);
 	
@@ -572,7 +568,7 @@ static void wm_draw_region_blend(wmWindow *win, ARegion *ar)
 		wmSubWindowScissorSet(win, win->screen->mainwin, &ar->winrct);
 
 		glEnable(GL_BLEND);
-		wm_triple_draw_textures(win, win->drawdata, 1.0f - fac);
+		wm_triple_draw_textures(win, triple, 1.0f - fac);
 		glDisable(GL_BLEND);
 	}
 }
@@ -584,7 +580,7 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 	bScreen *screen = win->screen;
 	ScrArea *sa;
 	ARegion *ar;
-	int copytex = 0, paintcursor = 1;
+	int copytex = FALSE, paintcursor = TRUE;
 
 	if (win->drawdata) {
 		glClearColor(0, 0, 0, 0);
@@ -595,12 +591,27 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 		wm_triple_draw_textures(win, win->drawdata, 1.0f);
 	}
 	else {
+		/* we run it when we start OR when we turn stereo on */
 		win->drawdata = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
 
 		if (!wm_triple_gen_textures(win, win->drawdata)) {
 			wm_draw_triple_fail(C, win);
 			return;
 		}
+	}
+
+	/* it means stereo was just turned off */
+	if (win->drawdataall) {
+		wm_draw_triple_free(win->drawdataall);
+		win->drawdataall = NULL;
+	}
+	if (win->drawdatastereo) {
+		wm_draw_triple_free(win->drawdatastereo);
+		win->drawdatastereo = NULL;
+	}
+	if (win->drawdatastereoall) {
+		wm_draw_triple_free(win->drawdatastereoall);
+		win->drawdatastereoall = NULL;
 	}
 
 	triple = win->drawdata;
@@ -611,16 +622,17 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 
 		for (ar = sa->regionbase.first; ar; ar = ar->next) {
 			if (ar->swinid && ar->do_draw) {
-				
-				if (ar->overlap == 0) {
+
+				if (ar->overlap == FALSE) {
 					CTX_wm_region_set(C, ar);
 					ED_region_do_draw(C, ar);
+					ar->do_draw = FALSE;
 					CTX_wm_region_set(C, NULL);
-					copytex = 1;
+					copytex = TRUE;
 				}
 			}
 		}
-		
+
 		wm_area_mark_invalid_backbuf(sa);
 		CTX_wm_area_set(C, NULL);
 	}
@@ -654,14 +666,15 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 	/* draw overlapping area regions (always like popups) */
 	for (sa = screen->areabase.first; sa; sa = sa->next) {
 		CTX_wm_area_set(C, sa);
-		
+
 		for (ar = sa->regionbase.first; ar; ar = ar->next) {
 			if (ar->swinid && ar->overlap) {
 				CTX_wm_region_set(C, ar);
 				ED_region_do_draw(C, ar);
+				ar->do_draw = FALSE;
 				CTX_wm_region_set(C, NULL);
-				
-				wm_draw_region_blend(win, ar);
+
+				wm_draw_region_blend(win, ar, triple);
 			}
 		}
 
@@ -670,28 +683,220 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 
 	/* after area regions so we can do area 'overlay' drawing */
 	ED_screen_draw(win);
+	win->screen->do_draw = FALSE;
 
 	/* draw floating regions (menus) */
 	for (ar = screen->regionbase.first; ar; ar = ar->next) {
 		if (ar->swinid) {
 			CTX_wm_menu_set(C, ar);
 			ED_region_do_draw(C, ar);
+			ar->do_draw = FALSE;
 			CTX_wm_menu_set(C, NULL);
 			/* when a menu is being drawn, don't do the paint cursors */
-			paintcursor = 0;
+			paintcursor = FALSE;
 		}
 	}
 
 	/* always draw, not only when screen tagged */
 	if (win->gesture.first)
 		wm_gesture_draw(win);
-	
+
 	/* needs pixel coords in screen */
 	if (wm->drags.first) {
 		wm_drags_draw(C, win, NULL);
 	}
 }
 
+static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews sview)
+{
+	wmWindowManager *wm = CTX_wm_manager(C);
+	wmDrawTriple *triple;
+	wmDrawTriple *tripleall;
+	bScreen *screen = win->screen;
+	ScrArea *sa;
+	ARegion *ar;
+	int copytex = FALSE, paintcursor = TRUE;
+
+	if (sview == STEREO_LEFT_ID) {
+		if (win->drawdata) {
+			glClearColor(0, 0, 0, 0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			wmSubWindowSet(win, screen->mainwin);
+
+			wm_triple_draw_textures(win, win->drawdata, 1.0f);
+		}
+		else {
+			win->drawdata = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+
+			if (!wm_triple_gen_textures(win, win->drawdata)) {
+				wm_draw_triple_fail(C, win);
+				return;
+			}
+		}
+
+		if (!win->drawdataall) {
+			/* we run it when we start OR when we turn  on */
+			win->drawdataall = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+
+			if (!wm_triple_gen_textures(win, win->drawdataall)) {
+				wm_draw_triple_fail(C, win);
+				return;
+			}
+		}
+
+		triple = win->drawdata;
+		tripleall = win->drawdataall;
+	}
+	else { //STEREO_RIGHT_ID
+		if (win->drawdatastereo) {
+			glClearColor(0, 0, 0, 0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			wmSubWindowSet(win, screen->mainwin);
+
+			wm_triple_draw_textures(win, win->drawdatastereo, 1.0f);
+		}
+		else {
+			/* we run it when we start OR when we turn stereo on */
+			win->drawdatastereo = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+
+			if (!wm_triple_gen_textures(win, win->drawdatastereo)) {
+				wm_draw_triple_fail(C, win);
+				return;
+			}
+		}
+
+		if (!win->drawdatastereoall) {
+			/* we run it when we start OR when we turn stereo on */
+			win->drawdatastereoall = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+
+			if (!wm_triple_gen_textures(win, win->drawdatastereoall)) {
+				wm_draw_triple_fail(C, win);
+				return;
+			}
+		}
+
+		triple = win->drawdatastereo;
+		tripleall = win->drawdatastereoall;
+	}
+
+
+	/* draw marked area regions */
+	for (sa = screen->areabase.first; sa; sa = sa->next) {
+		CTX_wm_area_set(C, sa);
+
+		switch (sa->spacetype) {
+			case SPACE_IMAGE:
+			{
+				SpaceImage *sima = sa->spacedata.first;
+				sima->iuser.eye = sview;
+				break;
+			}
+			case SPACE_VIEW3D:
+			{
+				View3D *v3d = sa->spacedata.first;
+				v3d->eye = sview;
+				break;
+			}
+		}
+
+		for (ar = sa->regionbase.first; ar; ar = ar->next) {
+			if (ar->swinid && ar->do_draw) {
+
+				if (ar->overlap == FALSE) {
+					CTX_wm_region_set(C, ar);
+					ED_region_do_draw(C, ar);
+
+					if (sview == STEREO_RIGHT_ID)
+						ar->do_draw = FALSE;
+
+					CTX_wm_region_set(C, NULL);
+					copytex = TRUE;
+				}
+			}
+		}
+
+		wm_area_mark_invalid_backbuf(sa);
+		CTX_wm_area_set(C, NULL);
+	}
+
+	if (copytex) {
+		wmSubWindowSet(win, screen->mainwin);
+
+		wm_triple_copy_textures(win, triple);
+	}
+
+	if (paintcursor && wm->paintcursors.first) {
+		for (sa = screen->areabase.first; sa; sa = sa->next) {
+			for (ar = sa->regionbase.first; ar; ar = ar->next) {
+				if (ar->swinid && ar->swinid == screen->subwinactive) {
+					CTX_wm_area_set(C, sa);
+					CTX_wm_region_set(C, ar);
+
+					/* make region ready for draw, scissor, pixelspace */
+					ED_region_set(C, ar);
+					wm_paintcursor_draw(C, ar);
+
+					CTX_wm_region_set(C, NULL);
+					CTX_wm_area_set(C, NULL);
+				}
+			}
+		}
+
+		wmSubWindowSet(win, screen->mainwin);
+	}
+
+	/* draw overlapping area regions (always like popups) */
+	for (sa = screen->areabase.first; sa; sa = sa->next) {
+		CTX_wm_area_set(C, sa);
+
+		for (ar = sa->regionbase.first; ar; ar = ar->next) {
+			if (ar->swinid && ar->overlap) {
+				CTX_wm_region_set(C, ar);
+				ED_region_do_draw(C, ar);
+				if (sview == STEREO_RIGHT_ID)
+					ar->do_draw = FALSE;
+				CTX_wm_region_set(C, NULL);
+
+				wm_draw_region_blend(win, ar, triple);
+			}
+		}
+
+		CTX_wm_area_set(C, NULL);
+	}
+
+	/* after area regions so we can do area 'overlay' drawing */
+	ED_screen_draw(win);
+	if (sview == STEREO_RIGHT_ID)
+		win->screen->do_draw = FALSE;
+
+	/* draw floating regions (menus) */
+	for (ar = screen->regionbase.first; ar; ar = ar->next) {
+		if (ar->swinid) {
+			CTX_wm_menu_set(C, ar);
+			ED_region_do_draw(C, ar);
+			if (sview == STEREO_RIGHT_ID)
+				ar->do_draw = FALSE;
+			CTX_wm_menu_set(C, NULL);
+			/* when a menu is being drawn, don't do the paint cursors */
+			paintcursor = FALSE;
+		}
+	}
+
+	/* always draw, not only when screen tagged */
+	if (win->gesture.first)
+		wm_gesture_draw(win);
+
+	/* needs pixel coords in screen */
+	if (wm->drags.first) {
+		wm_drags_draw(C, win, NULL);
+	}
+
+	/* copy the ui + overlays */
+	wmSubWindowSet(win, screen->mainwin);
+	wm_triple_copy_textures(win, tripleall);
+}
 
 /****************** main update call **********************/
 
@@ -843,7 +1048,16 @@ void wm_draw_update(bContext *C)
 			else if (drawmethod == USER_DRAW_OVERLAP_FLIP)
 				wm_method_draw_overlap_all(C, win, 1);
 			else // if (drawmethod == USER_DRAW_TRIPLE)
-				wm_method_draw_triple(C, win);
+			{
+				if (U.stereo_display == S3D_DISPLAY_NONE ||
+					((win->flag & WM_STEREO)== FALSE))
+					wm_method_draw_triple(C, win);
+				else {
+					wm_method_draw_triple_stereo(C, win, STEREO_LEFT_ID);
+					wm_method_draw_triple_stereo(C, win, STEREO_RIGHT_ID);
+					wm_method_draw_stereo(C, win);
+				}
+			}
 
 			win->screen->do_draw_gesture = FALSE;
 			win->screen->do_draw_paintcursor = FALSE;
@@ -863,8 +1077,19 @@ void wm_draw_window_clear(wmWindow *win)
 	ARegion *ar;
 	int drawmethod = wm_automatic_draw_method(win);
 
-	if (drawmethod == USER_DRAW_TRIPLE)
-		wm_draw_triple_free(win);
+	if (drawmethod == USER_DRAW_TRIPLE) {
+		wm_draw_triple_free(win->drawdata);
+		win->drawdata = NULL;
+
+		wm_draw_triple_free(win->drawdataall);
+		win->drawdataall = NULL;
+
+		wm_draw_triple_free(win->drawdatastereo);
+		win->drawdatastereo = NULL;
+
+		wm_draw_triple_free(win->drawdatastereoall);
+		win->drawdatastereoall = NULL;
+	}
 
 	/* clear screen swap flags */
 	if (screen) {

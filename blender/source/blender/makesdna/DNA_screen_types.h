@@ -155,6 +155,9 @@ typedef struct ScrArea {
 	ListBase handlers;		/* wmEventHandler */
 	
 	ListBase actionzones;	/* AZone */
+
+	bScreen *fullclean;			/* if area==fullclean, this is the parent */
+	void *pad2;
 } ScrArea;
 
 typedef struct ARegion {
@@ -177,7 +180,8 @@ typedef struct ARegion {
 	short do_draw_overlay;		/* private, cached notifier events */
 	short swap;					/* private, indicator to survive swap-exchange */
 	short overlap;				/* private, set for indicate drawing overlapped */
-	short pad[2];
+	short flagtmp;				/* temporary copy of flag settings */
+	short pad;
 	
 	struct ARegionType *type;	/* callbacks for this region type */
 	
@@ -204,6 +208,7 @@ typedef struct ARegion {
 #define AREA_TEMP_INFO			8
 #define AREA_FLAG_DRAWSPLIT_H	16
 #define AREA_FLAG_DRAWSPLIT_V	32
+#define AREA_TEMP_WASFULLSCREEN	64
 
 #define EDGEWIDTH	1
 #define AREAGRID	4
@@ -217,6 +222,7 @@ typedef struct ARegion {
 /* screen->full */
 #define SCREENNORMAL	0
 #define SCREENFULL		1
+#define SCREENFULLCLEAN 2
 
 
 /* Panel->snap - for snapping to screen edges */

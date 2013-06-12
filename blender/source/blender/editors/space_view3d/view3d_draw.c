@@ -3223,6 +3223,34 @@ static void view3d_main_area_clear(Scene *scene, View3D *v3d, ARegion *ar)
 	}
 }
 
+static int view3d_stereo(const bContext *C, Scene *scene)
+{
+	SceneRenderView *srv;
+	wmWindow *win = CTX_wm_window(C);
+	int has_left = FALSE, has_right = FALSE;
+
+	if ((win->flag & WM_STEREO) == 0)
+		return FALSE;
+
+	/* check renderdata for amount of views */
+	for (srv= (SceneRenderView *) scene->r.views.first; srv; srv = srv->next) {
+
+		if ((scene->r.scemode & R_SINGLE_VIEW))
+			continue;
+
+		if (srv->viewflag & SCE_VIEW_DISABLE)
+			continue;
+
+		if (BLI_strcasecmp(srv->name, STEREO_LEFT_NAME))
+			has_left = TRUE;
+
+		if (BLI_strcasecmp(srv->name, STEREO_RIGHT_NAME))
+			has_right = TRUE;
+	}
+
+	return has_left && has_right;
+}
+
 /* warning: this function has duplicate drawing in ED_view3d_draw_offscreen() */
 static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const char **grid_unit)
 {
@@ -3249,6 +3277,21 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 	view3d_main_area_clear(scene, v3d, ar);
 
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_PRE_VIEW);
+
+	/* change view */
+	if (view3d_stereo(C, scene)) {
+		SceneRenderView *srv;
+		Object *orig_cam = v3d->camera;
+
+		if (v3d->eye == STEREO_LEFT_ID)
+			srv = BLI_findstring(&scene->r.views, STEREO_LEFT_NAME, offsetof(SceneRenderView, name));
+		else
+			srv = BLI_findstring(&scene->r.views, STEREO_RIGHT_NAME, offsetof(SceneRenderView, name));
+
+		v3d->camera = srv->camera;
+		view3d_main_area_setup_view(scene, v3d, ar, NULL, NULL);
+		v3d->camera = orig_cam;
+	}
 
 	if (rv3d->rflag & RV3D_CLIPPING)
 		view3d_draw_clipping(rv3d);

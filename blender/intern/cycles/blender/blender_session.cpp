@@ -102,12 +102,16 @@ void BlenderSession::create_session()
 	/* create sync */
 	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress, session_params.device.type == DEVICE_CPU);
 
-	/* for final render we will do data sync per render layer */
 	if(b_v3d) {
+		/* full data sync */
 		sync->sync_data(b_v3d, b_engine.camera_override());
 		sync->sync_view(b_v3d, b_rv3d, width, height);
 	}
 	else {
+		/* for final render we will do full data sync per render layer, only
+		 * do some basic syncing here, no objects or materials for speed */
+		sync->sync_render_layers(b_v3d, NULL);
+		sync->sync_integrator();
 		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
 	}
 
@@ -164,8 +168,9 @@ void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
 	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress, session_params.device.type == DEVICE_CPU);
 
 	if(b_rv3d) {
-		sync->sync_data(b_v3d, b_engine.camera_override());
-		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
+		BL::Object camera = b_engine.multiview_camera();
+		sync->sync_data(b_v3d, camera);
+		sync->sync_camera(b_render, camera, width, height);
 	}
 
 	BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, PointerRNA_NULL, PointerRNA_NULL, scene->camera, width, height);
@@ -247,14 +252,19 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 	return PASS_NONE;
 }
 
-static BL::RenderResult begin_render_result(BL::RenderEngine b_engine, int x, int y, int w, int h, const char *layername)
+static BL::RenderResult begin_render_result(BL::RenderEngine b_engine, int x, int y, int w, int h, const char *layername, int view)
 {
-	return b_engine.begin_result(x, y, w, h, layername);
+	return b_engine.begin_result(x, y, w, h, layername, view);
 }
 
 static void end_render_result(BL::RenderEngine b_engine, BL::RenderResult b_rr, bool cancel = false)
 {
 	b_engine.end_result(b_rr, (int)cancel);
+}
+
+static void render_result_actview_set(BL::RenderEngine b_engine, int view)
+{
+	b_engine.result_actview_set(view);
 }
 
 void BlenderSession::do_write_update_render_tile(RenderTile& rtile, bool do_update_only)
@@ -266,7 +276,7 @@ void BlenderSession::do_write_update_render_tile(RenderTile& rtile, bool do_upda
 	int h = params.height;
 
 	/* get render result */
-	BL::RenderResult b_rr = begin_render_result(b_engine, x, y, w, h, b_rlay_name.c_str());
+	BL::RenderResult b_rr = begin_render_result(b_engine, x, y, w, h, b_rlay_name.c_str(), b_rview_id);
 
 	/* can happen if the intersected rectangle gives 0 width or height */
 	if (b_rr.ptr.data == NULL) {
@@ -327,70 +337,77 @@ void BlenderSession::render()
 	/* render each layer */
 	BL::RenderSettings r = b_scene.render();
 	BL::RenderSettings::layers_iterator b_iter;
+	BL::RenderSettings::views_iterator b_iterv;
 	
 	for(r.layers.begin(b_iter); b_iter != r.layers.end(); ++b_iter) {
 		b_rlay_name = b_iter->name();
 
-		/* temporary render result to find needed passes */
-		BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str());
-		BL::RenderResult::layers_iterator b_single_rlay;
-		b_rr.layers.begin(b_single_rlay);
+		for(r.views.begin(b_iterv), b_rview_id=0; b_iterv != r.views.end(); ++b_iterv, b_rview_id++) {
+			/* temporary render result to find needed passes */
+			BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str(), -1);
+			BL::RenderResult::layers_iterator b_single_rlay;
+			b_rr.layers.begin(b_single_rlay);
 
-		/* layer will be missing if it was disabled in the UI */
-		if(b_single_rlay == b_rr.layers.end()) {
-			end_render_result(b_engine, b_rr, true);
-			continue;
-		}
-
-		BL::RenderLayer b_rlay = *b_single_rlay;
-
-		/* add passes */
-		vector<Pass> passes;
-		Pass::add(PASS_COMBINED, passes);
-
-		if(session_params.device.advanced_shading) {
-
-			/* loop over passes */
-			BL::RenderLayer::passes_iterator b_pass_iter;
-
-			for(b_rlay.passes.begin(b_pass_iter); b_pass_iter != b_rlay.passes.end(); ++b_pass_iter) {
-				BL::RenderPass b_pass(*b_pass_iter);
-				PassType pass_type = get_pass_type(b_pass);
-
-				if(pass_type == PASS_MOTION && scene->integrator->motion_blur)
-					continue;
-				if(pass_type != PASS_NONE)
-					Pass::add(pass_type, passes);
+			/* layer will be missing if it was disabled in the UI */
+			if(b_single_rlay == b_rr.layers.end()) {
+				end_render_result(b_engine, b_rr, true);
+				continue;
 			}
+
+			/* set the current view */
+			render_result_actview_set(b_engine, b_rview_id);
+
+			BL::RenderLayer b_rlay = *b_single_rlay;
+
+			/* add passes */
+			vector<Pass> passes;
+			Pass::add(PASS_COMBINED, passes);
+
+			if(session_params.device.advanced_shading) {
+
+				/* loop over passes */
+				BL::RenderLayer::passes_iterator b_pass_iter;
+
+				for(b_rlay.passes.begin(b_pass_iter); b_pass_iter != b_rlay.passes.end(); ++b_pass_iter) {
+					BL::RenderPass b_pass(*b_pass_iter);
+					PassType pass_type = get_pass_type(b_pass);
+
+					if(pass_type == PASS_MOTION && scene->integrator->motion_blur)
+						continue;
+					if(pass_type != PASS_NONE)
+						Pass::add(pass_type, passes);
+				}
+			}
+
+			/* free result without merging */
+			end_render_result(b_engine, b_rr, true);
+
+			buffer_params.passes = passes;
+			scene->film->tag_passes_update(scene, passes);
+			scene->film->tag_update(scene);
+			scene->integrator->tag_update(scene);
+
+			/* update scene */
+			BL::Object camera = b_engine.multiview_camera();
+			sync->sync_camera(b_render, camera, width, height);
+			sync->sync_data(b_v3d, camera, b_rlay_name.c_str());
+
+			/* update number of samples per layer */
+			int samples = sync->get_layer_samples();
+			bool bound_samples = sync->get_layer_bound_samples();
+
+			if(samples != 0 && (!bound_samples || (samples < session_params.samples)))
+				session->reset(buffer_params, samples);
+			else
+				session->reset(buffer_params, session_params.samples);
+
+			/* render */
+			session->start();
+			session->wait();
+
+			if(session->progress.get_cancel())
+				break;
 		}
-
-		/* free result without merging */
-		end_render_result(b_engine, b_rr, true);
-
-		buffer_params.passes = passes;
-		scene->film->tag_passes_update(scene, passes);
-		scene->film->tag_update(scene);
-		scene->integrator->tag_update(scene);
-
-		/* update scene */
-		sync->sync_data(b_v3d, b_engine.camera_override(), b_rlay_name.c_str());
-		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
-
-		/* update number of samples per layer */
-		int samples = sync->get_layer_samples();
-		bool bound_samples = sync->get_layer_bound_samples();
-
-		if(samples != 0 && (!bound_samples || (samples < session_params.samples)))
-			session->reset(buffer_params, samples);
-		else
-			session->reset(buffer_params, session_params.samples);
-
-		/* render */
-		session->start();
-		session->wait();
-
-		if(session->progress.get_cancel())
-			break;
 	}
 
 	/* clear callback */
@@ -438,10 +455,6 @@ void BlenderSession::do_write_update_render_result(BL::RenderResult b_rr, BL::Re
 			b_pass.rect(&pixels[0]);
 		}
 	}
-
-	/* copy combined pass */
-	if(buffers->get_pass_rect(PASS_COMBINED, exposure, rtile.sample, 4, &pixels[0]))
-		b_rlay.rect(&pixels[0]);
 
 	/* tag result as updated */
 	b_engine.update_result(b_rr);
@@ -491,12 +504,13 @@ void BlenderSession::synchronize()
 	}
 
 	/* data and camera synchronize */
-	sync->sync_data(b_v3d, b_engine.camera_override());
+	BL::Object camera = b_engine.multiview_camera();
+	sync->sync_data(b_v3d, camera);
 
 	if(b_rv3d)
 		sync->sync_view(b_v3d, b_rv3d, width, height);
 	else
-		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
+		sync->sync_camera(b_render, camera, width, height);
 
 	/* unlock */
 	session->scene->mutex.unlock();

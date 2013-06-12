@@ -210,7 +210,16 @@ void wm_window_free(bContext *C, wmWindowManager *wm, wmWindow *win)
 	
 	if (win->drawdata)
 		MEM_freeN(win->drawdata);
-	
+
+	if (win->drawdataall)
+		MEM_freeN(win->drawdataall);
+
+	if (win->drawdatastereo)
+		MEM_freeN(win->drawdatastereo);
+
+	if (win->drawdatastereoall)
+		MEM_freeN(win->drawdatastereoall);
+
 	wm_ghostwindow_destroy(win);
 	
 	MEM_freeN(win);
@@ -250,6 +259,7 @@ wmWindow *wm_window_copy(bContext *C, wmWindow *winorig)
 	win->posy = winorig->posy;
 	win->sizex = winorig->sizex;
 	win->sizey = winorig->sizey;
+	win->flag = winorig->flag;
 	
 	/* duplicate assigns to window */
 	win->screen = ED_screen_duplicate(win, winorig->screen);
@@ -261,6 +271,9 @@ wmWindow *wm_window_copy(bContext *C, wmWindow *winorig)
 
 	win->drawmethod = U.wmdrawmethod;
 	win->drawdata = NULL;
+	win->drawdataall = NULL;
+	win->drawdatastereo = NULL;
+	win->drawdatastereoall = NULL;
 	
 	return win;
 }
@@ -353,12 +366,16 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 	GHOST_WindowHandle ghostwin;
 	static int multisamples = -1;
 	int scr_w, scr_h, posy;
+	int stereo;
 	
 	/* force setting multisamples only once, it requires restart - and you cannot 
 	 * mix it, either all windows have it, or none (tested in OSX opengl) */
 	if (multisamples == -1)
 		multisamples = U.ogl_multisamples;
 	
+	/* a new window is created when pageflip mode is required for a window */
+	stereo = (win->flag & WM_STEREO) && U.stereo_display == S3D_DISPLAY_PAGEFLIP;
+
 	wm_get_screensize(&scr_w, &scr_h);
 	posy = (scr_h - win->posy - win->sizey);
 	
@@ -366,7 +383,7 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 	                              win->posx, posy, win->sizex, win->sizey,
 	                              (GHOST_TWindowState)win->windowstate,
 	                              GHOST_kDrawingContextTypeOpenGL,
-	                              0 /* no stereo */,
+	                              stereo,
 	                              multisamples /* AA */);
 	
 	if (ghostwin) {
@@ -511,6 +528,9 @@ wmWindow *WM_window_open(bContext *C, rcti *rect)
 
 	win->drawmethod = U.wmdrawmethod;
 	win->drawdata = NULL;
+	win->drawdataall = NULL;
+	win->drawdatastereo = NULL;
+	win->drawdatastereoall = NULL;
 	
 	WM_check(C);
 	

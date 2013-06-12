@@ -76,6 +76,9 @@ void wm_autosave_delete(void);
 void wm_autosave_read(bContext *C, struct ReportList *reports);
 void wm_autosave_location(char *filepath);
 
+/* wm_stereo.c */
+void wm_method_draw_stereo(bContext *C, wmWindow *win);
+
 /* hack to store circle select size - campbell, must replace with nice operator memory */
 #define GESTURE_MEMORY
 

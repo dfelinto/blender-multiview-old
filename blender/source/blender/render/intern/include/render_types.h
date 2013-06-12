@@ -253,7 +253,7 @@ struct Render
 	void *dih;
 	void (*display_clear)(void *handle, RenderResult *rr);
 	void *dch;
-	void (*display_draw)(void *handle, RenderResult *rr, volatile rcti *rect);
+	void (*display_draw)(void *handle, RenderResult *rr, volatile rcti *rect, int view_id);
 	void *ddh;
 	
 	void (*stats_draw)(void *handle, RenderStats *ri);
@@ -271,6 +271,8 @@ struct Render
 	struct ReportList *reports;
 
 	struct ImagePool *pool;
+
+	int actview;
 };
 
 /* ------------------------------------------------------------------------- */

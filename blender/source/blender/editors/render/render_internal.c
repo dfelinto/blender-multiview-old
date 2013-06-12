@@ -92,7 +92,7 @@
 static int render_break(void *rjv);
 
 /* called inside thread! */
-void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volatile rcti *renrect)
+void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volatile rcti *renrect, int view_id)
 {
 	float *rectf = NULL;
 	int ymin, ymax, xmin, xmax;
@@ -137,10 +137,9 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 	if (xmax < 1 || ymax < 1) return;
 
 	/* find current float rect for display, first case is after composite... still weak */
-	if (rr->rectf)
-		rectf = rr->rectf;
-	else {
-		if (rr->rect32) {
+	rectf = RE_RenderViewGetRectf(rr, view_id);
+	if (rectf == NULL) {
+		if (RE_RenderViewGetRect32(rr, view_id)) {
 			/* special case, currently only happens with sequencer rendering,
 			 * which updates the whole frame, so we can only mark display buffer
 			 * as invalid here (sergey)
@@ -149,10 +148,11 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 			return;
 		}
 		else {
-			if (rr->renlay == NULL || rr->renlay->rectf == NULL) return;
-			rectf = rr->renlay->rectf;
+			if (rr->renlay == NULL) return;
+			rectf = RE_RenderLayerGetPass(rr->renlay, SCE_PASS_COMBINED, view_id);
 		}
 	}
+
 	if (rectf == NULL) return;
 
 	if (ibuf->rect == NULL)
@@ -241,10 +241,18 @@ static int screen_render_exec(bContext *C, wmOperator *op)
 
 	RE_SetReports(re, op->reports);
 
-	if (is_animation)
-		RE_BlenderAnim(re, mainp, scene, camera_override, lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
-	else
-		RE_BlenderFrame(re, mainp, scene, srl, camera_override, lay, scene->r.cfra, is_write_still);
+	if (RE_write_individual_views(re, &scene->r)) {
+		if (is_animation)
+			RE_BlenderAnimViews(re, mainp, scene, camera_override, lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
+		else
+			RE_BlenderFrame(re, mainp, scene, srl, camera_override, lay, scene->r.cfra, is_write_still);
+
+	} else {
+		if (is_animation)
+			RE_BlenderAnim(re, mainp, scene, camera_override, lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
+		else
+			RE_BlenderFrame(re, mainp, scene, srl, camera_override, lay, scene->r.cfra, is_write_still);
+	}
 
 	RE_SetReports(re, NULL);
 
@@ -371,7 +379,7 @@ static void render_progress_update(void *rjv, float progress)
 	}
 }
 
-static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrect)
+static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrect, int view_id)
 {
 	RenderJob *rj = rjv;
 	Image *ima = rj->image;
@@ -384,7 +392,7 @@ static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrec
 
 	ibuf = BKE_image_acquire_ibuf(ima, &rj->iuser, &lock);
 	if (ibuf) {
-		image_buffer_rect_update(rj->scene, rr, ibuf, renrect);
+		image_buffer_rect_update(rj->scene, rr, ibuf, renrect, view_id);
 
 		/* make jobs timer to send notifier */
 		*(rj->do_update) = TRUE;
@@ -402,10 +410,18 @@ static void render_startjob(void *rjv, short *stop, short *do_update, float *pro
 
 	RE_SetReports(rj->re, rj->reports);
 
-	if (rj->anim)
-		RE_BlenderAnim(rj->re, rj->main, rj->scene, rj->camera_override, rj->lay, rj->scene->r.sfra, rj->scene->r.efra, rj->scene->r.frame_step);
-	else
-		RE_BlenderFrame(rj->re, rj->main, rj->scene, rj->srl, rj->camera_override, rj->lay, rj->scene->r.cfra, rj->write_still);
+	if (RE_write_individual_views(rj->re, &rj->scene->r)) {
+		if (rj->anim)
+			RE_BlenderAnimViews(rj->re, rj->main, rj->scene, rj->camera_override, rj->lay, rj->scene->r.sfra, rj->scene->r.efra, rj->scene->r.frame_step);
+		else
+			RE_BlenderFrame(rj->re, rj->main, rj->scene, rj->srl, rj->camera_override, rj->lay, rj->scene->r.cfra, rj->write_still);
+
+	} else {
+		if (rj->anim)
+			RE_BlenderAnim(rj->re, rj->main, rj->scene, rj->camera_override, rj->lay, rj->scene->r.sfra, rj->scene->r.efra, rj->scene->r.frame_step);
+		else
+			RE_BlenderFrame(rj->re, rj->main, rj->scene, rj->srl, rj->camera_override, rj->lay, rj->scene->r.cfra, rj->write_still);
+	}
 
 	RE_SetReports(rj->re, NULL);
 }
@@ -1030,7 +1046,8 @@ void render_view3d_draw(RenderEngine *engine, const bContext *C)
 
 	if (re == NULL) return;
 	
-	RE_AcquireResultImage(re, &rres);
+	/* XXX MV to investigate when this is called */
+	RE_AcquireResultImage(re, &rres, 0);
 	
 	if (rres.rectf) {
 		Scene *scene = CTX_data_scene(C);

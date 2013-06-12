@@ -722,6 +722,118 @@ bool BLI_path_frame_range(char *path, int sta, int end, int digits)
 	return false;
 }
 
+/********************* multiview utils ********************/
+
+/**
+ * Looks for a sequence of "%" characters in the last slash-separated component of *path,
+ * returning the indexes of the first and one past the last character in the sequence in
+ * *char_start and *char_end respectively. Returns true if such a sequence was found.
+ */
+static bool stringview_chars(const char *path, int *char_start, int *char_end)
+{
+	int ch_sta, ch_end, i;
+	/* Insert current frame: file%%% -> file_L */
+	ch_sta = ch_end = 0;
+	for (i = 0; path[i] != '\0'; i++) {
+		if (path[i] == '\\' || path[i] == '/') {
+			ch_end = 0; /* this is a directory name, don't use any hashes we found */
+		}
+		else if (path[i] == '%') {
+			ch_sta = i;
+			ch_end = ch_sta + 1;
+			while (path[ch_end] == '%') {
+				ch_end++;
+			}
+			i = ch_end - 1; /* keep searching */
+
+			/* don't break, there may be a slash after this that invalidates the previous #'s */
+		}
+	}
+
+	if (ch_end) {
+		*char_start = ch_sta;
+		*char_end = ch_end;
+		return true;
+	}
+	else {
+		*char_start = -1;
+		*char_end = -1;
+		return false;
+	}
+}
+
+/**
+ * Ensure *path contains at least one "%" character in its last slash-separated
+ * component, appending one digits long if not.
+ */
+static void ensure_view(char *path)
+{
+	char *file = (char *)BLI_last_slash(path);
+
+	if (file == NULL)
+		file = path;
+
+	/* if there is no '%' try to add one before the '.' if any */
+	if (strrchr(file, '%') == NULL) {
+		int len = strlen(file);
+		char *period = strrchr(file, '.');
+
+		/* found a period */
+		if (period && period > file) {
+			char *p = file;
+			for (p=file+len+1; p > period; p--) {
+				*p = *(p-1);
+			}
+			*p = '%';
+		}
+		/* no period, just add it to the end*/
+		else {
+			file[len++] = '%';
+			file[len] = '\0';
+		}
+	}
+}
+
+/**
+ * Removes any  "%" character from path.
+ */
+static void strip_view_char(char *path)
+{
+	int i, j;
+
+	for (i = 0, j = 0; i < strlen(path); i++, j++) {
+		if (path[i] != '%')
+			path[j] = path[i];
+		else
+			j--;
+	}
+
+	path[j] = '\0';
+}
+
+/**
+ * Replaces "%" character sequence in last slash-separated component of *path
+ * with view name.
+ */
+bool BLI_path_view(char *path, const char *view)
+{
+	int ch_sta, ch_end;
+
+	if (view && view[0] != '\0')
+		ensure_view(path);
+
+	if (stringview_chars(path, &ch_sta, &ch_end)) { /* warning, ch_end is the last # +1 */
+		char tmp[FILE_MAX];
+
+		sprintf(tmp, "%.*s%s%s", ch_sta, path, view, path + ch_end);
+		strcpy(path, tmp);
+
+		strip_view_char(path);
+		return true;
+	}
+	return false;
+}
+
 /**
  * If path begins with "//", strips that and replaces it with basepath directory. Also converts
  * a drive-letter prefix to something more sensible if this is a non-drive-letter-based system.
@@ -1853,6 +1965,22 @@ int BLI_rebase_path(char *abs, size_t abs_len,
 	}
 
 	return BLI_REBASE_OK;
+}
+
+
+/**
+ * Returns pointer to the rightmost period in string.
+ */
+const char *BLI_last_period(const char *string)
+{
+	const char * const lfslash = strrchr(string, '.');
+	const char * const lbslash = strrchr(string, '.');
+
+	if (!lfslash) return lbslash;
+	else if (!lbslash) return lfslash;
+
+	if ((intptr_t)lfslash < (intptr_t)lbslash) return lbslash;
+	else return lfslash;
 }
 
 /**

@@ -466,7 +466,14 @@ typedef struct UserDef {
 	float sculpt_paint_overlay_col[3];
 
 	short tweak_threshold;
-	short pad3;
+
+	/* stereoscopy 3-D display */
+	short stereo_flag;
+	float epilepsy_interval; /* preferred interval in seconds for Dr. Epilepsy stereo method */
+	char stereo_display; /* stereo method for the user display */
+	char anaglyph_type; /* anaglyph scheme for the user display */
+	char interlace_type;  /* interlace type for the user display */
+	char pad3;
 
 	char author[80];	/* author name for file formats supporting it */
 
@@ -759,6 +766,38 @@ typedef enum eImageDrawMethod {
 	IMAGE_DRAW_METHOD_2DTEXTURE = 2,
 	IMAGE_DRAW_METHOD_DRAWPIXELS = 3,
 } eImageDrawMethod;
+
+/* UserDef.stereo_display */
+typedef enum eStereoDisplayMode {
+	S3D_DISPLAY_NONE        = 0,
+	S3D_DISPLAY_SIDEBYSIDE  = 1,
+	S3D_DISPLAY_TOPBOTTOM   = 2,
+	S3D_DISPLAY_PAGEFLIP    = 3,
+	S3D_DISPLAY_ANAGLYPH    = 4,
+	S3D_DISPLAY_EPILEPSY    = 5,
+	S3D_DISPLAY_INTERLACE   = 6,
+	S3D_DISPLAY_BLURAY      = 7,
+} eStereoDisplayMode;
+
+/* UserDef.stereo_flag */
+typedef enum eStereoFlag {
+	S3D_INTERLACE_SWAP        = (1 << 0),
+	S3D_SIDEBYSIDE_CROSSEYED  = (1 << 1),
+} eStereoFlag;
+
+/* UserDef.anaglyph_type */
+typedef enum eAnaglyphType {
+	S3D_ANAGLYPH_REDCYAN = 0,
+	S3D_ANAGLYPH_GREENMAGENTA = 1,
+	S3D_ANAGLYPH_YELLOWBLUE = 2,
+} eAnaglyphType;
+
+/* UserDef.interlace_type */
+typedef enum eInterlaceType {
+	S3D_INTERLACE_ROW = 0,
+	S3D_INTERLACE_COLUMN = 1,
+	S3D_INTERLACE_CHECKERBOARD = 2,
+} eInterlaceType;
 
 #ifdef __cplusplus
 }

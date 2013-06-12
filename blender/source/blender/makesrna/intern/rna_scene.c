@@ -194,13 +194,17 @@ EnumPropertyItem snap_uv_element_items[] = {
 #endif
 
 #ifdef WITH_OPENEXR
-#  define R_IMF_ENUM_EXR_MULTI  {R_IMF_IMTYPE_MULTILAYER, "OPEN_EXR_MULTILAYER", ICON_FILE_IMAGE, \
+#  define R_IMF_ENUM_EXR_MULTIVIEW {R_IMF_IMTYPE_MULTIVIEW, "OPEN_EXR_MULTIVIEW", ICON_RENDERVIEWS, \
+                                                          "OpenEXR MultiView", \
+                                                          "Output image in multiview OpenEXR format"},
+#  define R_IMF_ENUM_EXR_MULTILAYER  {R_IMF_IMTYPE_MULTILAYER, "OPEN_EXR_MULTILAYER", ICON_FILE_IMAGE, \
                                                           "OpenEXR MultiLayer", \
                                                           "Output image in multilayer OpenEXR format"},
 #  define R_IMF_ENUM_EXR        {R_IMF_IMTYPE_OPENEXR, "OPEN_EXR", ICON_FILE_IMAGE, "OpenEXR", \
                                                        "Output image in OpenEXR format"},
 #else
-#  define R_IMF_ENUM_EXR_MULTI
+#  define R_IMF_ENUM_EXR_MULTIVIEW
+#  define R_IMF_ENUM_EXR_MULTILAYER
 #  define R_IMF_ENUM_EXR
 #endif
 
@@ -230,7 +234,8 @@ EnumPropertyItem snap_uv_element_items[] = {
 	{0, "", 0, " ", NULL},                                                    \
 	R_IMF_ENUM_CINEON                                                         \
 	R_IMF_ENUM_DPX                                                            \
-	R_IMF_ENUM_EXR_MULTI                                                      \
+	R_IMF_ENUM_EXR_MULTIVIEW                                                  \
+	R_IMF_ENUM_EXR_MULTILAYER                                                 \
 	R_IMF_ENUM_EXR                                                            \
 	R_IMF_ENUM_HDR                                                            \
 	R_IMF_ENUM_TIFF                                                           \
@@ -835,7 +840,7 @@ static EnumPropertyItem *rna_ImageFormatSettings_color_depth_itemf(bContext *C, 
 	}
 	else {
 		const int depth_ok = BKE_imtype_valid_depths(imf->imtype);
-		const int is_float = ELEM3(imf->imtype, R_IMF_IMTYPE_RADHDR, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER);
+		const int is_float = ELEM4(imf->imtype, R_IMF_IMTYPE_RADHDR, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW);
 
 		EnumPropertyItem *item_8bit =  &image_color_depth_items[0];
 		EnumPropertyItem *item_10bit = &image_color_depth_items[1];
@@ -1070,6 +1075,69 @@ static void rna_RenderLayer_remove(ID *id, RenderData *UNUSED(rd), Main *bmain, 
 	WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
 }
 
+static int rna_RenderSettings_active_view_index_get(PointerRNA *ptr)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	return rd->actview;
+}
+
+static void rna_RenderSettings_active_view_index_set(PointerRNA *ptr, int value)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	rd->actview = value;
+}
+
+static void rna_RenderSettings_active_view_index_range(PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+
+	*min = 0;
+	*max = max_ii(0, BLI_countlist(&rd->views) - 1);
+}
+
+static PointerRNA rna_RenderSettings_active_view_get(PointerRNA *ptr)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	SceneRenderView *srv = BLI_findlink(&rd->views, rd->actview);
+
+	return rna_pointer_inherit_refine(ptr, &RNA_SceneRenderView, srv);
+}
+
+static void rna_RenderSettings_active_view_set(PointerRNA *ptr, PointerRNA value)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	SceneRenderView *srv = (SceneRenderView *)value.data;
+	const int index = BLI_findindex(&rd->views, srv);
+	if (index != -1) rd->actview = index;
+}
+
+static SceneRenderView *rna_RenderView_new(ID *id, RenderData *UNUSED(rd), const char *name)
+{
+	Scene *scene = (Scene *)id;
+	SceneRenderView *srv = BKE_scene_add_render_view(scene, name);
+
+	WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	return srv;
+}
+
+static void rna_RenderView_remove(ID *id, RenderData *UNUSED(rd), Main *bmain, ReportList *reports,
+                                   PointerRNA *srv_ptr)
+{
+	SceneRenderView *srv = srv_ptr->data;
+	Scene *scene = (Scene *)id;
+
+	if (!BKE_scene_remove_render_view(scene, srv)) {
+		BKE_reportf(reports, RPT_ERROR, "Render view '%s' could not be removed from scene '%s'",
+		            srv->name, scene->id.name + 2);
+		return;
+	}
+
+	RNA_POINTER_INVALIDATE(srv_ptr);
+
+	WM_main_add_notifier(NC_SCENE | ND_RENDER_OPTIONS, NULL);
+}
+
 static void rna_RenderSettings_engine_set(PointerRNA *ptr, int value)
 {
 	RenderData *rd = (RenderData *)ptr->data;
@@ -1161,6 +1229,20 @@ static char *rna_SceneRenderLayer_path(PointerRNA *ptr)
 	return BLI_sprintfN("render.layers[\"%s\"]", name_esc);
 }
 
+static void rna_SceneRenderView_name_set(PointerRNA *ptr, const char *value)
+{
+	Scene *scene = (Scene *)ptr->id.data;
+	SceneRenderView *rv = (SceneRenderView *)ptr->data;
+	BLI_strncpy_utf8(rv->name, value, sizeof(rv->name));
+	BLI_uniquename(&scene->r.views, rv, DATA_("RenderView"), '.', offsetof(SceneRenderView, name), sizeof(rv->name));
+}
+
+static char *rna_SceneRenderView_path(PointerRNA *ptr)
+{
+	SceneRenderView *srv = (SceneRenderView *)ptr->data;
+	return BLI_sprintfN("render.views[\"%s\"]", srv->name);
+}
+
 static int rna_RenderSettings_multiple_engines_get(PointerRNA *UNUSED(ptr))
 {
 	return (BLI_countlist(&R_engines) > 1);
@@ -1195,7 +1277,7 @@ static void rna_SceneRenderLayer_pass_update(Main *bmain, Scene *activescene, Po
 	Scene *scene = (Scene *)ptr->id.data;
 
 	if (scene->nodetree)
-		ntreeCompositForceHidden(scene->nodetree, scene);
+		ntreeCompositForceHidden(scene->nodetree);
 	
 	rna_Scene_glsl_update(bmain, activescene, ptr);
 }
@@ -3543,6 +3625,91 @@ static void rna_def_render_layers(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 }
 
+/* Render Views - MultiView */
+static void rna_def_scene_render_view(BlenderRNA *brna)
+{
+	StructRNA *srna;
+	PropertyRNA *prop;
+
+	srna = RNA_def_struct(brna, "SceneRenderView", NULL);
+	RNA_def_struct_ui_text(srna, "Scene Render View", "Render view");
+	RNA_def_struct_ui_icon(srna, ICON_RESTRICT_RENDER_OFF);
+	RNA_def_struct_path_func(srna, "rna_SceneRenderView_path");
+
+	prop = RNA_def_property(srna, "name", PROP_STRING, PROP_NONE);
+	RNA_def_property_string_funcs(prop, NULL, NULL, "rna_SceneRenderView_name_set");
+	RNA_def_property_ui_text(prop, "Name", "Render view name");
+	RNA_def_struct_name_property(srna, prop);
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	prop = RNA_def_property(srna, "label", PROP_STRING, PROP_NONE);
+	RNA_def_property_ui_text(prop, "Label", "Text used to save the individual view files");
+	RNA_def_struct_name_property(srna, prop);
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	prop = RNA_def_property(srna, "camera", PROP_POINTER, PROP_NONE);
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Camera_object_poll");
+	RNA_def_property_ui_text(prop, "Camera", "Camera to use for render. Leave empty to use active one");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_negative_sdna(prop, NULL, "viewflag", SCE_VIEW_DISABLE);
+	RNA_def_property_ui_text(prop, "Enabled", "Disable or enable the render view");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	prop = RNA_def_property(srna, "use_name_as_label", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "viewflag", SCE_VIEW_NAMEASLABEL);
+	RNA_def_property_ui_text(prop, "Name as Label", "Use the view name as label when saving individual view files (it replaces the special char % in the file string)");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+}
+
+static void rna_def_render_views(BlenderRNA *brna, PropertyRNA *cprop)
+{
+	StructRNA *srna;
+	PropertyRNA *prop;
+
+	FunctionRNA *func;
+	PropertyRNA *parm;
+
+	RNA_def_property_srna(cprop, "RenderViews");
+	srna = RNA_def_struct(brna, "RenderViews", NULL);
+	RNA_def_struct_sdna(srna, "RenderData");
+	RNA_def_struct_ui_text(srna, "Render Views", "Collection of render views");
+
+	prop = RNA_def_property(srna, "active_index", PROP_INT, PROP_UNSIGNED);
+	RNA_def_property_int_sdna(prop, NULL, "actview");
+	RNA_def_property_int_funcs(prop, "rna_RenderSettings_active_view_index_get",
+	                           "rna_RenderSettings_active_view_index_set",
+	                           "rna_RenderSettings_active_view_index_range");
+	RNA_def_property_ui_text(prop, "Active View Index", "Active index in render view array");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
+	RNA_def_property_struct_type(prop, "SceneRenderView");
+	RNA_def_property_pointer_funcs(prop, "rna_RenderSettings_active_view_get",
+	                               "rna_RenderSettings_active_view_set", NULL, NULL);
+	RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
+	RNA_def_property_ui_text(prop, "Active Render View", "Active Render View");
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	func = RNA_def_function(srna, "new", "rna_RenderView_new");
+	RNA_def_function_ui_description(func, "Add a render view to scene");
+	RNA_def_function_flag(func, FUNC_USE_SELF_ID);
+	parm = RNA_def_string(func, "name", "RenderView", 0, "", "New name for the marker (not unique)");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm = RNA_def_pointer(func, "result", "SceneRenderView", "", "Newly created render view");
+	RNA_def_function_return(func, parm);
+
+	func = RNA_def_function(srna, "remove", "rna_RenderView_remove");
+	RNA_def_function_ui_description(func, "Remove a render view");
+	RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS | FUNC_USE_SELF_ID);
+	parm = RNA_def_pointer(func, "view", "SceneRenderView", "", "Render view to remove");
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
+	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
+}
+
 /* use for render output and image save operator,
  * note: there are some cases where the members act differently when this is
  * used from a scene, video formats can only be selected for render output
@@ -3637,7 +3804,6 @@ static void rna_def_scene_image_format_data(BlenderRNA *brna)
 	RNA_def_property_enum_items(prop, exr_codec_items);
 	RNA_def_property_ui_text(prop, "Codec", "Codec settings for OpenEXR");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
 #endif
 
 #ifdef WITH_OPENJPEG
@@ -4738,6 +4904,19 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 	RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
+	/* views (stereoscopy et al) */
+	prop = RNA_def_property(srna, "views", PROP_COLLECTION, PROP_NONE);
+	RNA_def_property_collection_sdna(prop, NULL, "views", NULL);
+	RNA_def_property_struct_type(prop, "SceneRenderView");
+	RNA_def_property_ui_text(prop, "Render Views", "");
+	rna_def_render_views(brna, prop);
+
+	prop = RNA_def_property(srna, "use_single_view", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "scemode", R_SINGLE_VIEW);
+	RNA_def_property_ui_text(prop, "Single View", "Only render the active view");
+	RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);
+	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
 	/* engine */
 	prop = RNA_def_property(srna, "engine", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, engine_items);
@@ -5391,6 +5570,7 @@ void RNA_def_scene(BlenderRNA *brna)
 	/* *** Animated *** */
 	rna_def_scene_render_data(brna);
 	rna_def_scene_render_layer(brna);
+	rna_def_scene_render_view(brna);
 	
 	/* Scene API */
 	RNA_api_scene(srna);

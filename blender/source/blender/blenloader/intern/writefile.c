@@ -2165,6 +2165,7 @@ static void write_scenes(WriteData *wd, ListBase *scebase)
 	TimeMarker *marker;
 	TransformOrientation *ts;
 	SceneRenderLayer *srl;
+	SceneRenderView *srv;
 	ToolSettings *tos;
 	FreestyleModuleConfig *fmc;
 	FreestyleLineSet *fls;
@@ -2300,6 +2301,10 @@ static void write_scenes(WriteData *wd, ListBase *scebase)
 				writestruct(wd, DATA, "FreestyleLineSet", 1, fls);
 			}
 		}
+
+		/* writing MultiView to the blend file */
+		for (srv = sce->r.views.first; srv; srv = srv->next)
+			writestruct(wd, DATA, "SceneRenderView", 1, srv);
 		
 		if (sce->nodetree) {
 			writestruct(wd, DATA, "bNodeTree", 1, sce->nodetree);

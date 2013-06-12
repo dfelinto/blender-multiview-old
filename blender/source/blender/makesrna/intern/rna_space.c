@@ -2072,6 +2072,7 @@ static void rna_def_space_buttons(BlenderRNA *brna)
 		{BCONTEXT_SCENE, "SCENE", ICON_SCENE, "Scene", "Scene"},
 		{BCONTEXT_RENDER, "RENDER", ICON_SCENE_DATA, "Render", "Render"},
 		{BCONTEXT_RENDER_LAYER, "RENDER_LAYER", ICON_RENDERLAYERS, "Render Layers", "Render Layers"},
+		{BCONTEXT_RENDER_VIEW, "RENDER_VIEW", ICON_RENDERVIEWS, "Render Views", "Render Views"},
 		{BCONTEXT_WORLD, "WORLD", ICON_WORLD, "World", "World"},
 		{BCONTEXT_OBJECT, "OBJECT", ICON_OBJECT_DATA, "Object", "Object"},
 		{BCONTEXT_CONSTRAINT, "CONSTRAINT", ICON_CONSTRAINT, "Constraints", "Constraints"},

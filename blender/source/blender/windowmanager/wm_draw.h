@@ -32,6 +32,18 @@
 #ifndef __WM_DRAW_H__
 #define __WM_DRAW_H__
 
+#include <GL/glew.h>
+
+
+#define MAX_N_TEX 3
+
+typedef struct wmDrawTriple {
+	GLuint bind[MAX_N_TEX * MAX_N_TEX];
+	int x[MAX_N_TEX], y[MAX_N_TEX];
+	int nx, ny;
+	GLenum target;
+} wmDrawTriple;
+
 struct bContext;
 struct wmWindow;
 struct ARegion;
@@ -42,6 +54,8 @@ void		wm_draw_window_clear	(struct wmWindow *win);
 void		wm_draw_region_clear	(struct wmWindow *win, struct ARegion *ar);
 
 void		wm_tag_redraw_overlay	(struct wmWindow *win, struct ARegion *ar);
+
+void		wm_triple_draw_textures	(struct wmWindow *win, struct wmDrawTriple *triple, float alpha);
 
 #endif /* __WM_DRAW_H__ */
 

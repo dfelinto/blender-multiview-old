@@ -168,7 +168,8 @@ public:
 	 * @param rendering [true false]
 	 */
 	ExecutionSystem(RenderData *rd, bNodeTree *editingtree, bool rendering, bool fastcalculation,
-	                const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings);
+	                const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings,
+					int view_id);
 
 	/**
 	 * Destructor
