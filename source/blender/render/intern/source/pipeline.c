@@ -1926,27 +1926,30 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 	
 	/* filtmask needs it */
 	R = *re;
-
+	
+	/* temporary storage of the acccumulation buffers */
 	rectfs = MEM_callocN(sizeof(ListBase), "fullsample accumulation buffers");
+
 	numviews = BLI_countlist(&re->result->views);
 	for (nr=0; nr < numviews; nr++) {
-		/* we accumulate in here */
 		rv = MEM_callocN(sizeof(RenderView), "fullsample renderview");
+
+		/* we accumulate in here */
 		rv->rectf = MEM_mapallocN(re->rectx * re->recty * sizeof(float) * 4, "fullsample rgba");
 		BLI_addtail(rectfs, rv);
 	}
-		
+
 	for (sample = 0; sample < re->r.osa; sample++) {
 		Render *re1;
 		RenderResult rres;
 		int mask;
-
+		
 		/* enable full sample print */
 		R.i.curfsa = sample + 1;
 		
 		/* set all involved renders on the samplebuffers (first was done by render itself, but needs tagged) */
 		/* also function below assumes this */
-		
+			
 		tag_scenes_for_render(re);
 		for (re1 = RenderGlobal.renderlist.first; re1; re1 = re1->next) {
 			if (re1->scene->id.flag & LIB_DOIT) {
@@ -1969,7 +1972,7 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 		if (ntree) {
 			ntreeCompositTagRender(re->scene);
 			ntreeCompositTagAnimated(ntree);
-
+			
 			for (nr=0; nr < numviews; nr++)
 				ntreeCompositExecTree(ntree, &re->r, TRUE, G.background == 0, &re->scene->view_settings, &re->scene->display_settings, nr);
 		}
@@ -1997,7 +2000,7 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 					add_filt_fmask_coord(filt, col, rf, re->rectx, re->recty, x, y);
 				}
 			}
-			
+		
 			RE_ReleaseResultImage(re);
 
 			/* show stuff */
@@ -2030,24 +2033,14 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 			}
 		}
 
+		/* store the final result */
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-
 		rv = BLI_findlink(&re->result->views, nr);
 		if (rv->rectf)
 			MEM_freeN(rv->rectf);
-
 		rv->rectf = rectf;
-
 		BLI_rw_mutex_unlock(&re->resultmutex);
 	}
-
-	/* garbage collection */
-	while (rectfs->first) {
-		RenderView *rv = rectfs->first;
-		BLI_remlink(rectfs, rv);
-		MEM_freeN(rv);
-	}
-	MEM_freeN(rectfs);
 	
 	/* clear interaction callbacks */
 	if (ntree) {
@@ -2056,9 +2049,17 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 		ntree->progress = NULL;
 		ntree->tbh = ntree->sdh = ntree->prh = NULL;
 	}
-
+	
 	/* disable full sample print */
 	R.i.curfsa = 0;
+
+	/* garbage collection */
+	while (rectfs->first) {
+		RenderView *rv = rectfs->first;
+		BLI_remlink(rectfs, rv);
+		MEM_freeN(rv);
+	}
+	MEM_freeN(rectfs);
 }
 
 /* called externally, via compositor */
