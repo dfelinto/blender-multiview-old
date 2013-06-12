@@ -1269,7 +1269,7 @@ static void threaded_tile_processor(Render *re)
 }
 
 #ifdef WITH_FREESTYLE
-static void add_freestyle(Render *re);
+static void add_freestyle(Render *re, int render);
 static void free_all_freestyle_renders(void);
 #endif
 
@@ -1286,7 +1286,7 @@ void RE_TileProcessor(Render *re)
 	/* Freestyle */
 	if (re->r.mode & R_EDGE_FRS) {
 		if (!re->test_break(re->tbh)) {
-			add_freestyle(re);
+			add_freestyle(re, 1);
 	
 			free_all_freestyle_renders();
 			
@@ -1320,10 +1320,6 @@ static void do_render_3d(Render *re)
 	re->scene->r.cfra = floorf(cfra);
 	re->scene->r.subframe = cfra - floorf(cfra);
 
-	/* lock drawing in UI during data phase */
-	if (re->draw_lock)
-		re->draw_lock(re->dlh, 1);
-
 	/* init main render result */
 	main_render_result_new(re);
 
@@ -1333,25 +1329,29 @@ static void do_render_3d(Render *re)
 
 		re->actview = view;
 
+		/* lock drawing in UI during data phase */
+		if (re->draw_lock)
+			re->draw_lock(re->dlh, 1);
+
 		/* make render verts/faces/halos/lamps */
 		if (render_scene_needs_vector(re))
 			RE_Database_FromScene_Vectors(re, re->main, re->scene, re->lay);
 		else
 			RE_Database_FromScene(re, re->main, re->scene, re->lay, 1);
-		
+	
 		/* clear UI drawing locks */
 		if (re->draw_lock)
 			re->draw_lock(re->dlh, 0);
-
+	
 		threaded_tile_processor(re);
-
-	#ifdef WITH_FREESTYLE
+	
+#ifdef WITH_FREESTYLE
 		/* Freestyle */
 		if (re->r.mode & R_EDGE_FRS)
 			if (!re->test_break(re->tbh))
-				add_freestyle(re);
-	#endif
-
+				add_freestyle(re, 1);
+#endif
+	
 		/* do left-over 3d post effects (flares) */
 		if (re->flag & R_HALO)
 			if (!re->test_break(re->tbh))
@@ -1826,7 +1826,7 @@ static void render_composit_stats(void *UNUSED(arg), char *str)
 
 #ifdef WITH_FREESTYLE
 /* invokes Freestyle stroke rendering */
-static void add_freestyle(Render *re)
+static void add_freestyle(Render *re, int render)
 {
 	SceneRenderLayer *srl, *actsrl;
 	LinkData *link;
@@ -1852,7 +1852,7 @@ static void add_freestyle(Render *re)
 		if ((re->r.scemode & R_SINGLE_LAYER) && srl != actsrl)
 			continue;
 		if (FRS_is_freestyle_enabled(srl)) {
-			link->data = (void *)FRS_do_stroke_rendering(re, srl);
+			link->data = (void *)FRS_do_stroke_rendering(re, srl, render);
 		}
 	}
 
@@ -2055,6 +2055,11 @@ void RE_MergeFullSample(Render *re, Main *bmain, Scene *sce, bNodeTree *ntree)
 	for (scene = re->main->scene.first; scene; scene = scene->id.next)
 		scene->id.flag |= LIB_DOIT;
 	
+#ifdef WITH_FREESTYLE
+	for (scene = re->freestyle_bmain.scene.first; scene; scene = scene->id.next)
+		scene->id.flag &= ~LIB_DOIT;
+#endif
+
 	for (node = ntree->nodes.first; node; node = node->next) {
 		if (node->type == CMP_NODE_R_LAYERS) {
 			Scene *nodescene = (Scene *)node->id;
@@ -2078,7 +2083,16 @@ void RE_MergeFullSample(Render *re, Main *bmain, Scene *sce, bNodeTree *ntree)
 	re->display_init(re->dih, re->result);
 	re->display_clear(re->dch, re->result);
 	
+#ifdef WITH_FREESTYLE
+	if (re->r.mode & R_EDGE_FRS)
+		add_freestyle(re, 0);
+#endif
+
 	do_merge_fullsample(re, ntree);
+
+#ifdef WITH_FREESTYLE
+	free_all_freestyle_renders();
+#endif
 }
 
 /* returns fully composited render-result on given time step (in RenderData) */
@@ -2688,11 +2702,12 @@ void RE_BlenderFrame(Render *re, Main *bmain, Scene *scene, SceneRenderLayer *sr
 }
 
 #ifdef WITH_FREESTYLE
-void RE_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene)
+void RE_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene, int render)
 {
 	re->result_ok= 0;
 	if (render_initialize_from_main(re, bmain, scene, NULL, NULL, scene->lay, 0, 0)) {
-		do_render_fields_blur_3d(re);
+		if (render)
+			do_render_fields_blur_3d(re);
 	}
 	re->result_ok = 1;
 }
