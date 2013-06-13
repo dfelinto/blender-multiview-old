@@ -4030,12 +4030,12 @@ static void operatortype_ghash_free_cb(wmOperatorType *ot)
 }
 
 /* ******************************************************* */
-/* toggle 3-D for current window, turning it fullscreen if needed */
+/* toggle 3D for current window, turning it fullscreen if needed */
 static void WM_OT_stereo_toggle(wmOperatorType *ot)
 {
-	ot->name = "Toggle 3-D Stereo";
+	ot->name = "Toggle 3D Stereo";
 	ot->idname = "WM_OT_stereo_toggle";
-	ot->description = "Toggle 3-D stereo support for current window";
+	ot->description = "Toggle 3D stereo support for current window";
 
 	ot->exec = wm_stereo_toggle_exec;
 	ot->poll = WM_operator_winactive;
