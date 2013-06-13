@@ -916,8 +916,8 @@ bool ui_searchbox_apply(uiBut *but, ARegion *ar)
 	but->func_arg2 = NULL;
 	
 	if (data->active != -1) {
-		char *name = data->items.names[data->active];
-		char *name_sep = strchr(name, '|');
+		const char *name = data->items.names[data->active];
+		const char *name_sep = strchr(name, '|');
 
 		BLI_strncpy(but->editstr, name, name_sep ? (name_sep - name) : data->items.maxstrlen);
 		
@@ -1022,12 +1022,12 @@ void ui_searchbox_update(bContext *C, ARegion *ar, uiBut *but, const bool reset)
 		int a;
 		
 		for (a = 0; a < data->items.totitem; a++) {
-			char *cpoin = strchr(data->items.names[a], '|');
-			
-			if (cpoin) cpoin[0] = 0;
-			if (0 == strcmp(but->editstr, data->items.names[a]))
+			const char *name = data->items.names[a];
+			const char *name_sep = strchr(name, '|');
+			if (STREQLEN(but->editstr, name, name_sep ? (name_sep - name) : data->items.maxstrlen)) {
 				data->active = a;
-			if (cpoin) cpoin[0] = '|';
+				break;
+			}
 		}
 		if (data->items.totitem == 1 && but->editstr[0])
 			data->active = 0;
@@ -2090,7 +2090,7 @@ static void square_picker(uiBlock *block, PointerRNA *ptr, PropertyRNA *prop, in
 
 
 /* a HS circle, V slider, rgb/hsv/hex sliders */
-static void uiBlockPicker(uiBlock *block, float rgba[4], PointerRNA *ptr, PropertyRNA *prop, int show_picker)
+static void uiBlockPicker(uiBlock *block, float rgba[4], PointerRNA *ptr, PropertyRNA *prop, bool show_picker)
 {
 	static short colormode = 0;  /* temp? 0=rgb, 1=hsv, 2=hex */
 	uiBut *bt;
