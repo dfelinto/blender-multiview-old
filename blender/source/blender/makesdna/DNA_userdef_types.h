@@ -467,7 +467,7 @@ typedef struct UserDef {
 
 	short tweak_threshold;
 
-	/* stereoscopy 3-D display */
+	/* stereoscopy 3D display */
 	short stereo_flag;
 	float epilepsy_interval; /* preferred interval in seconds for Dr. Epilepsy stereo method */
 	char stereo_display; /* stereo method for the user display */
