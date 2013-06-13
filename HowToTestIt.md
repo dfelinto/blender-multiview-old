@@ -1,16 +1,16 @@
 Instructions
 ============
 
-* If 3-D viewing is not working, make sure to set: User Preferences > System > Windows Draw Method > *Triple Buffer*
-* To test the 3-D Display go to User Preferences > System and pick your 3-D Display type
+* If 3D viewing is not working, make sure to set: User Preferences > System > Windows Draw Method > *Triple Buffer*
+* To test the 3D Display go to User Preferences > System and pick your 3D Display type
 * To toggle stereo 3D support in a window press "D" (or WM_OT_stereo_toggle)
 * Supported areas: Viewport and Image Editor
 
 Testing Image Editor
 ====================
 * Open one of the sample images in the Image Editor
-* Turn 3-D on with "D"
-* Pick "3-D" in the view menu (in the header of Image Editor)
+* Turn 3D on with "D"
+* Pick "3D" in the view menu (in the header of Image Editor)
 
 Testing Viewport
 ================
@@ -18,13 +18,13 @@ Testing Viewport
 * Create two cameras in your scene, corresponding to left and right
 * In the (new) Render Views panel enable the "left" and "right" views and set their cameras
 * Make sure you are in the camera mode (Numpad 0)
-* Turn 3-D on with "D"
+* Turn 3D on with "D"
 
 Testing Rendering
 =================
 * Setup the scene as described in "Testing Viewport"
 * Render
-* Visualize the result in "3-D" as described in "Testing Image Editor"
+* Visualize the result in "3D" as described in "Testing Image Editor"
 
 Saving Files
 ============

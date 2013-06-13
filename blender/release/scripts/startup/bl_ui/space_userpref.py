@@ -403,7 +403,7 @@ class USERPREF_PT_system(Panel):
         col.separator()
         col.separator()
 
-        col.label(text="3-D Display:")
+        col.label(text="3D Display:")
         col.prop(system, "stereo_display", text="")
 
         if system.stereo_display == 'ANAGLYPH':

@@ -382,7 +382,7 @@ static char *view_menu(RenderResult *rr, ImageUser *iuser)
 
 	if (RE_HasStereo3D(rr)) {
 		/* option to show all views at once (3d) */
-		a += sprintf(str + a, "|%s %%x0", IFACE_("3-D"));
+		a += sprintf(str + a, "|%s %%x0", IFACE_("3D"));
 		nr = 1;
 		iuser->flag |= IMA_STEREO3D;
 	}
