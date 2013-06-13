@@ -646,14 +646,15 @@ static void imb_exr_get_views(MultiPartInputFile *file, StringVector *views)
 		}
 	}
 
-	for(int p=0;p<file->parts();p++) {
-		std::string view="";
-		if(file->header(p).hasView())
-			view=file->header(p).view();
+	else {
+		for(int p=0;p<file->parts();p++) {
+			std::string view="";
+			if(file->header(p).hasView())
+				view=file->header(p).view();
 
-		if (imb_exr_get_multiView_id(views, view) == -1)
-			(*views).push_back(view);
-
+			if (imb_exr_get_multiView_id(views, view) == -1)
+				(*views).push_back(view);
+		}
 	}
 }
 
