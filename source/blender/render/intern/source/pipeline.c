@@ -433,7 +433,7 @@ void RE_AcquireResultViews(Render *re, RenderResult *rr)
 			rr->recty = re->result->recty;
 
 			/* creates a temporary duplication of views */
-			render_result_views_softcopy(rr, re->result);
+			render_result_views_shallowcopy(rr, re->result);
 
 			rv = (RenderView *)rr->views.first;
 
@@ -2827,7 +2827,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 	
 	RE_ReleaseResultImage(re);
 	if (view_id == -1)
-		render_result_views_softdelete(&rres);
+		render_result_views_shallowdelete(&rres);
 
 	render_time = re->i.lastframetime;
 	re->i.lastframetime = PIL_check_seconds_timer() - re->i.starttime;
