@@ -469,10 +469,10 @@ typedef struct UserDef {
 
 	/* stereoscopy 3D display */
 	short stereo_flag;
-	float epilepsy_interval; /* preferred interval in seconds for Dr. Epilepsy stereo method */
+	float stereo_epilepsy_interval; /* preferred interval in seconds for Dr. Epilepsy stereo method */
 	char stereo_display; /* stereo method for the user display */
-	char anaglyph_type; /* anaglyph scheme for the user display */
-	char interlace_type;  /* interlace type for the user display */
+	char stereo_anaglyph_type; /* anaglyph scheme for the user display */
+	char stereo_interlace_type;  /* interlace type for the user display */
 	char pad3;
 
 	char author[80];	/* author name for file formats supporting it */
@@ -784,15 +784,15 @@ typedef enum eStereoFlag {
 	S3D_SIDEBYSIDE_CROSSEYED  = (1 << 1),
 } eStereoFlag;
 
-/* UserDef.anaglyph_type */
-typedef enum eAnaglyphType {
+/* UserDef.stereo_anaglyph_type */
+typedef enum eStereoAnaglyphType {
 	S3D_ANAGLYPH_REDCYAN = 0,
 	S3D_ANAGLYPH_GREENMAGENTA = 1,
 	S3D_ANAGLYPH_YELLOWBLUE = 2,
 } eAnaglyphType;
 
-/* UserDef.interlace_type */
-typedef enum eInterlaceType {
+/* UserDef.stereo_interlace_type */
+typedef enum eStereoInterlaceType {
 	S3D_INTERLACE_ROW = 0,
 	S3D_INTERLACE_COLUMN = 1,
 	S3D_INTERLACE_CHECKERBOARD = 2,
