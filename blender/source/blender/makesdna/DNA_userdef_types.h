@@ -769,14 +769,13 @@ typedef enum eImageDrawMethod {
 
 /* UserDef.stereo_display */
 typedef enum eStereoDisplayMode {
-	S3D_DISPLAY_NONE        = 0,
-	S3D_DISPLAY_SIDEBYSIDE  = 1,
-	S3D_DISPLAY_TOPBOTTOM   = 2,
-	S3D_DISPLAY_PAGEFLIP    = 3,
-	S3D_DISPLAY_ANAGLYPH    = 4,
-	S3D_DISPLAY_EPILEPSY    = 5,
-	S3D_DISPLAY_INTERLACE   = 6,
-	S3D_DISPLAY_BLURAY      = 7,
+	S3D_DISPLAY_ANAGLYPH    = 0,
+	/* S3D_DISPLAY_BLURAY      = 1, */
+	S3D_DISPLAY_EPILEPSY    = 2,
+	S3D_DISPLAY_INTERLACE   = 3,
+	S3D_DISPLAY_PAGEFLIP    = 4,
+	S3D_DISPLAY_SIDEBYSIDE  = 5,
+	S3D_DISPLAY_TOPBOTTOM   = 6,
 } eStereoDisplayMode;
 
 /* UserDef.stereo_flag */
