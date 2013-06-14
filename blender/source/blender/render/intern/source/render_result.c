@@ -154,7 +154,7 @@ int render_result_get_view_id(Render *re, const char *view)
 }
 
 /* create a new views Listbase in rr without duplicating the memory pointers */
-void render_result_views_softcopy(RenderResult *dst, RenderResult *src)
+void render_result_views_shallowcopy(RenderResult *dst, RenderResult *src)
 {
 	RenderView *rview;
 
@@ -176,7 +176,7 @@ void render_result_views_softcopy(RenderResult *dst, RenderResult *src)
 }
 
 /* free the views created temporarily */
-void render_result_views_softdelete(RenderResult *rr)
+void render_result_views_shallowdelete(RenderResult *rr)
 {
 	if (rr == NULL)
 		return;
