@@ -208,7 +208,6 @@ typedef struct ARegion {
 #define AREA_TEMP_INFO			8
 #define AREA_FLAG_DRAWSPLIT_H	16
 #define AREA_FLAG_DRAWSPLIT_V	32
-#define AREA_TEMP_WASFULLSCREEN	64
 
 #define EDGEWIDTH	1
 #define AREAGRID	4
