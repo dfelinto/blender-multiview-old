@@ -403,11 +403,8 @@ int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
 	/* toggle per window stereo setting */
 	win->flag ^= WM_STEREO;
 
-	if ((win->flag & WM_STEREO) && U.stereo_display == S3D_DISPLAY_NONE)
-		BKE_reportf(op->reports, RPT_WARNING, "No 3D display mode set in User Preferences");
-
 	/* pagelfip requires a new window to be created with the proper OS flags */
-	else if (U.stereo_display == S3D_DISPLAY_PAGEFLIP) {
+	if (U.stereo_display == S3D_DISPLAY_PAGEFLIP) {
 		if (wm_window_duplicate_exec(C, op) == OPERATOR_FINISHED) {
 			wm_window_close(C, wm, win);
 			win = (wmWindow *)wm->windows.last;
