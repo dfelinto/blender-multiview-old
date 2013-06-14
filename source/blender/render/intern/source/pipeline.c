@@ -207,9 +207,6 @@ int RE_HasFakeLayer(RenderResult *res)
 
 int RE_HasStereo3D(RenderResult *res)
 {
-	if (U.stereo_display == S3D_DISPLAY_NONE)
-		return FALSE;
-
 	if (! BLI_findstring(&res->views, STEREO_LEFT_NAME, offsetof(RenderView, name)))
 		return FALSE;
 
