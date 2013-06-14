@@ -3397,7 +3397,7 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 
 	static EnumPropertyItem stereo_display_items[] = {
 		{S3D_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", ""},
-/*		{S3D_DISPLAY_BLURAY, "BLURAY", 0, "Bluray", ""}, */
+/*		{S3D_DISPLAY_BLURAY, "BLURAY", 0, "Blu-ray", ""}, */
 		{S3D_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Dr. Epilepsy", ""},
 		{S3D_DISPLAY_INTERLACE, "INTERLACE", 0, "Interlace", ""},
 		{S3D_DISPLAY_PAGEFLIP, "TIMESEQUENTIAL", 0, "Time Sequential", "Renders alternate eyes (also known as pageflip). It requires Quadbuffer support in the graphic card"},

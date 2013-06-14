@@ -24,7 +24,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-/** \file blender/windowmanager/wm.h
+/** \file blender/windowmanager/wm_stereo.h
  *  \ingroup wm
  */
 

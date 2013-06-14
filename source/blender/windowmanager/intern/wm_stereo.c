@@ -24,7 +24,7 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-/** \file blender/windowmanager/intern/wm_draw.c
+/** \file blender/windowmanager/intern/wm_stereo.c
  *  \ingroup wm
  */
 

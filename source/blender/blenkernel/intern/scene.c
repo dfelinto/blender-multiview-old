@@ -1400,18 +1400,17 @@ SceneRenderView *BKE_scene_add_render_view(Scene *sce, const char *name)
 	return srv;
 }
 
-int BKE_scene_remove_render_view(Scene *scene, SceneRenderView *srv)
+bool BKE_scene_remove_render_view(Scene *scene, SceneRenderView *srv)
 {
 	const int act = BLI_findindex(&scene->r.views, srv);
 
 	if (act == -1) {
-		return 0;
+		return FALSE;
 	}
-	else if ( (scene->r.views.first == scene->r.views.last) &&
-	          (scene->r.views.first == srv))
+	else if (scene->r.views.first == scene->r.views.last)
 	{
 		/* ensure 1 view is kept */
-		return 0;
+		return FALSE;
 	}
 
 	BLI_remlink(&scene->r.views, srv);
@@ -1419,7 +1418,7 @@ int BKE_scene_remove_render_view(Scene *scene, SceneRenderView *srv)
 
 	scene->r.actview = 0;
 
-	return 1;
+	return TRUE;
 }
 
 /* render simplification */

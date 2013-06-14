@@ -3632,7 +3632,7 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	PropertyRNA *prop;
 
 	srna = RNA_def_struct(brna, "SceneRenderView", NULL);
-	RNA_def_struct_ui_text(srna, "Scene Render View", "Render view");
+	RNA_def_struct_ui_text(srna, "Scene Render View", "Render viewpoint for 3D stereo and multiview rendering");
 	RNA_def_struct_ui_icon(srna, ICON_RESTRICT_RENDER_OFF);
 	RNA_def_struct_path_func(srna, "rna_SceneRenderView_path");
 
@@ -3650,7 +3650,7 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "camera", PROP_POINTER, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Camera_object_poll");
-	RNA_def_property_ui_text(prop, "Camera", "Camera to use for render. Leave empty to use active one");
+	RNA_def_property_ui_text(prop, "Camera", "Camera to use for rendering this view, leave empty to use the scene camera");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
 	prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);

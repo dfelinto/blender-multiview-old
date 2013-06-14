@@ -34,9 +34,9 @@
 #include "BKE_main.h"
 
 #include "DNA_color_types.h"
+#include "MEM_guardedalloc.h"
 
 extern "C" {
-	#include "MEM_guardedalloc.h"
 	#include "IMB_imbuf.h"
 	#include "IMB_colormanagement.h"
 	#include "IMB_imbuf_types.h"
