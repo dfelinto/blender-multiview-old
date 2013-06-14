@@ -3406,14 +3406,14 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 		{0, NULL, 0, NULL, NULL}
 	};
 
-	static EnumPropertyItem anaglyph_type_items[] = {
+	static EnumPropertyItem stereo_anaglyph_type_items[] = {
 		{S3D_ANAGLYPH_REDCYAN, "RED_CYAN", 0, "Red-Cyan", ""},
 		{S3D_ANAGLYPH_GREENMAGENTA, "GREEN_MAGENTA", 0, "Green-Magenta", ""},
 		{S3D_ANAGLYPH_YELLOWBLUE, "YELLOW_BLUE", 0, "Yellow-Blue", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
 
-	static EnumPropertyItem interlace_type_items[] = {
+	static EnumPropertyItem stereo_interlace_type_items[] = {
 		{S3D_INTERLACE_ROW, "ROW_INTERLEAVED", 0, "Row Interleaved", ""},
 		{S3D_INTERLACE_COLUMN, "COLUMN_INTERLEAVED", 0, "Column Interleaved", ""},
 		{S3D_INTERLACE_CHECKERBOARD, "CHECKERBOARD_INTERLEAVED", 0, "Checkerboard Interleaved", ""},
@@ -3677,27 +3677,27 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Stereo Display", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
 
-	prop = RNA_def_property(srna, "anaglyph_type", PROP_ENUM, PROP_NONE);
-	RNA_def_property_enum_items(prop, anaglyph_type_items);
+	prop = RNA_def_property(srna, "stereo_anaglyph_type", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_items(prop, stereo_anaglyph_type_items);
 	RNA_def_property_ui_text(prop, "Anaglyph Type", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
 
-	prop = RNA_def_property(srna, "interlace_type", PROP_ENUM, PROP_NONE);
-	RNA_def_property_enum_items(prop, interlace_type_items);
+	prop = RNA_def_property(srna, "stereo_interlace_type", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_items(prop, stereo_interlace_type_items);
 	RNA_def_property_ui_text(prop, "Interlace Type", "");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
 
-	prop = RNA_def_property(srna, "epilepsy_interval", PROP_FLOAT, PROP_TIME);
+	prop = RNA_def_property(srna, "stereo_epilepsy_interval", PROP_FLOAT, PROP_TIME);
 	RNA_def_property_range(prop, 0.01f, 10.0f);
 	RNA_def_property_ui_range(prop, 0.05f, 1.0f, 1.0f, 2);
 	RNA_def_property_ui_text(prop, "Interval", "Preferred interval in seconds between switching left/right views");
 
-	prop = RNA_def_property(srna, "use_interlace_swap", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "stereo_use_interlace_swap", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", S3D_INTERLACE_SWAP);
 	RNA_def_property_ui_text(prop, "Swap Left/Right", "Swap left and right stereo channels");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
 
-	prop = RNA_def_property(srna, "use_sidebyside_crosseyed", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "stereo_use_sidebyside_crosseyed", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", S3D_SIDEBYSIDE_CROSSEYED);
 	RNA_def_property_ui_text(prop, "Cross-Eyed", "Right eye should see left image and vice-versa");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);

@@ -106,7 +106,7 @@ static void wm_method_draw_stereo_epilepsy(wmWindow *win)
 	static bool view = 0;
 	static double start = 0;
 
-	if( (PIL_check_seconds_timer() - start) >= U.epilepsy_interval) {
+	if( (PIL_check_seconds_timer() - start) >= U.stereo_epilepsy_interval) {
 		start = PIL_check_seconds_timer();
 		view = !view;
 	}
@@ -130,10 +130,10 @@ static void wm_interlace_create_masks(void)
 	char i;
 	bool swap = (U.stereo_flag & S3D_INTERLACE_SWAP);
 
-	if (interlace_prev_type == U.interlace_type && interlace_prev_swap == swap)
+	if (interlace_prev_type == U.stereo_interlace_type && interlace_prev_swap == swap)
 		return;
 
-	switch(U.interlace_type) {
+	switch(U.stereo_interlace_type) {
 		case S3D_INTERLACE_ROW:
 			pattern = 0x00000000;
 			pattern = swap? ~pattern : pattern;
@@ -168,7 +168,7 @@ static void wm_interlace_create_masks(void)
 			}
 			break;
 	}
-	interlace_prev_type = U.interlace_type;
+	interlace_prev_type = U.stereo_interlace_type;
 	interlace_prev_swap = swap;
 }
 
@@ -205,7 +205,7 @@ static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 			triple = win->drawdatastereoall;
 
 		bit = view + 1;
-		switch(U.anaglyph_type) {
+		switch(U.stereo_anaglyph_type) {
 			case S3D_ANAGLYPH_REDCYAN:
 				glColorMask(1&bit, 2&bit, 2&bit, FALSE);
 				break;
