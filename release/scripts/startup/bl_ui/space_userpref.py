@@ -407,17 +407,17 @@ class USERPREF_PT_system(Panel):
         col.prop(system, "stereo_display", text="")
 
         if system.stereo_display == 'ANAGLYPH':
-            col.prop(system, "anaglyph_type", text="Type")
+            col.prop(system, "stereo_anaglyph_type", text="Type")
 
         if system.stereo_display == 'EPILEPSY':
-            col.prop(system, "epilepsy_interval")
+            col.prop(system, "stereo_epilepsy_interval")
 
         if system.stereo_display == 'INTERLACE':
-            col.prop(system, "interlace_type", text="Type")
-            col.prop(system, "use_interlace_swap")
+            col.prop(system, "stereo_interlace_type", text="Type")
+            col.prop(system, "use_stereo_interlace_swap")
 
         if system.stereo_display == 'SIDEBYSIDE':
-            col.prop(system, "use_sidebyside_crosseyed")
+            col.prop(system, "use_stereo_sidebyside_crosseyed")
 
         # 2. Column
         column = split.column()
