@@ -345,7 +345,6 @@ static char *pass_menu(RenderLayer *rl, short *curpass)
 	strcpy(str, IFACE_("Pass %t"));
 	a = strlen(str);
 	
-	/* rendered results don't have a Combined pass */
 	if (rl == NULL) {
 		a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
 		nr = 1;

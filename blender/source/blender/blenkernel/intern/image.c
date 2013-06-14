@@ -2731,8 +2731,10 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 
 	if (iuser && (iuser->flag & IMA_STEREO3D)) {
 		/* view == 0 shows stereo */
-		if (actview-- == 0)
+		if (actview == 0)
 			actview = iuser->eye;
+		else
+			actview = actview - 1;
 	}
 
 	if (from_render) {

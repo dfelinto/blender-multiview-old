@@ -1967,22 +1967,6 @@ int BLI_rebase_path(char *abs, size_t abs_len,
 	return BLI_REBASE_OK;
 }
 
-
-/**
- * Returns pointer to the rightmost period in string.
- */
-const char *BLI_last_period(const char *string)
-{
-	const char * const lfslash = strrchr(string, '.');
-	const char * const lbslash = strrchr(string, '.');
-
-	if (!lfslash) return lbslash;
-	else if (!lbslash) return lfslash;
-
-	if ((intptr_t)lfslash < (intptr_t)lbslash) return lbslash;
-	else return lfslash;
-}
-
 /**
  * Returns pointer to the leftmost path separator in string. Not actually used anywhere.
  */

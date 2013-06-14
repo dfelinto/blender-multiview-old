@@ -90,9 +90,6 @@ private:
 	 */
 	int m_view_id;
 
-	/* @brief active view name  */
-	char m_view[64];
-
 public:
 	/**
 	 * @brief constructor initializes the context with default values.
