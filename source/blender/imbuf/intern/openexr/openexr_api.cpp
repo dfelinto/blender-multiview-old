@@ -526,7 +526,7 @@ typedef struct ExrHandle {
 	int width, height;
 	int mipmap;
 
-	StringVector *multiView;
+	StringVector *multiView; /* it needs to be a pointer due to Windows release builds of EXR2.0 segfault when opening EXR bug */
 	int parts;
 
 	ListBase channels;  /* flattened out, ExrChannel */
