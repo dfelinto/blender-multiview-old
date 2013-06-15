@@ -168,9 +168,8 @@ void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
 	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress, session_params.device.type == DEVICE_CPU);
 
 	if(b_rv3d) {
-		BL::Object camera = b_engine.multiview_camera();
-		sync->sync_data(b_v3d, camera);
-		sync->sync_camera(b_render, camera, width, height);
+		sync->sync_data(b_v3d, b_engine.camera_override());
+		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
 	}
 
 	BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, PointerRNA_NULL, PointerRNA_NULL, scene->camera, width, height);
@@ -262,11 +261,6 @@ static void end_render_result(BL::RenderEngine b_engine, BL::RenderResult b_rr, 
 	b_engine.end_result(b_rr, (int)cancel);
 }
 
-static void render_result_actview_set(BL::RenderEngine b_engine, int view)
-{
-	b_engine.result_actview_set(view);
-}
-
 void BlenderSession::do_write_update_render_tile(RenderTile& rtile, bool do_update_only)
 {
 	BufferParams& params = rtile.buffers->params;
@@ -355,7 +349,7 @@ void BlenderSession::render()
 			}
 
 			/* set the current view */
-			render_result_actview_set(b_engine, b_rview_id);
+			b_engine.result_actview_set(b_rview_id);
 
 			BL::RenderLayer b_rlay = *b_single_rlay;
 
@@ -388,9 +382,8 @@ void BlenderSession::render()
 			scene->integrator->tag_update(scene);
 
 			/* update scene */
-			BL::Object camera = b_engine.multiview_camera();
-			sync->sync_camera(b_render, camera, width, height);
-			sync->sync_data(b_v3d, camera, b_rlay_name.c_str());
+			sync->sync_camera(b_render, b_engine.camera_override(), width, height);
+			sync->sync_data(b_v3d, b_engine.camera_override(), b_rlay_name.c_str());
 
 			/* update number of samples per layer */
 			int samples = sync->get_layer_samples();
@@ -504,13 +497,12 @@ void BlenderSession::synchronize()
 	}
 
 	/* data and camera synchronize */
-	BL::Object camera = b_engine.multiview_camera();
-	sync->sync_data(b_v3d, camera);
+	sync->sync_data(b_v3d, b_engine.camera_override());
 
 	if(b_rv3d)
 		sync->sync_view(b_v3d, b_rv3d, width, height);
 	else
-		sync->sync_camera(b_render, camera, width, height);
+		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
 
 	/* unlock */
 	session->scene->mutex.unlock();
