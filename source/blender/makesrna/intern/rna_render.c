@@ -241,7 +241,7 @@ static PointerRNA rna_RenderEngine_render_get(PointerRNA *ptr)
 	}
 }
 
-static PointerRNA rna_RenderEngine_view_camera_get(PointerRNA *ptr)
+static PointerRNA rna_RenderEngine_camera_override_get(PointerRNA *ptr)
 {
 	RenderEngine *engine = (RenderEngine *)ptr->data;
 
@@ -250,7 +250,7 @@ static PointerRNA rna_RenderEngine_view_camera_get(PointerRNA *ptr)
 		return rna_pointer_inherit_refine(ptr, &RNA_Object, cam);
 	}
 	else {
-		return rna_pointer_inherit_refine(ptr, &RNA_Object, NULL);
+		return rna_pointer_inherit_refine(ptr, &RNA_Object, engine->camera_override);
 	}
 }
 
@@ -439,11 +439,7 @@ static void rna_def_render_engine(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", RE_ENGINE_PREVIEW);
 
 	prop = RNA_def_property(srna, "camera_override", PROP_POINTER, PROP_NONE);
-	RNA_def_property_pointer_sdna(prop, NULL, "camera_override");
-	RNA_def_property_struct_type(prop, "Object");
-
-	prop = RNA_def_property(srna, "multiview_camera", PROP_POINTER, PROP_NONE);
-	RNA_def_property_pointer_funcs(prop, "rna_RenderEngine_view_camera_get", NULL, NULL, NULL);
+	RNA_def_property_pointer_funcs(prop, "rna_RenderEngine_camera_override_get", NULL, NULL, NULL);
 	RNA_def_property_struct_type(prop, "Object");
 
 	prop = RNA_def_property(srna, "tile_x", PROP_INT, PROP_UNSIGNED);
