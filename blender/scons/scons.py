@@ -2,7 +2,7 @@
 #
 # SCons - a Software Constructor
 #
-# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009 The SCons Foundation
+# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013 The SCons Foundation
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -22,31 +22,20 @@
 # LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
 # OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#
 
-# -----------------------------------
-# quick patch to avoid user confusion
-if not hasattr(dict, "has_key"):
-    import sys
-    print("Python2.x needed, using %d.%d\nAborting!\n" % sys.version_info[:2])
-    sys.exit(1)
-# end patch - campbell
-# --------------------
+__revision__ = "src/script/scons.py  2013/03/03 09:48:35 garyo"
 
-__revision__ = "src/script/scons.py 4043 2009/02/23 09:06:45 scons"
+__version__ = "2.3.0"
 
-__version__ = "1.2.0.d20090223"
+__build__ = ""
 
-__build__ = "r4043"
+__buildsys__ = "reepicheep"
 
-__buildsys__ = "scons-dev"
+__date__ = "2013/03/03 09:48:35"
 
-__date__ = "2009/02/23 09:06:45"
-
-__developer__ = "scons"
+__developer__ = "garyo"
 
 import os
-import os.path
 import sys
 
 ##############################################################################
@@ -65,6 +54,14 @@ import sys
 # followed by generic) so we pick up the right version of the build
 # engine modules if they're in either directory.
 
+
+if sys.version_info >= (3,0,0):
+    msg = "scons: *** SCons version %s does not run under Python version %s.\n\
+Python 3 is not yet supported.\n"
+    sys.stderr.write(msg % (__version__, sys.version.split()[0]))
+    sys.exit(1)
+
+
 script_dir = sys.path[0]
 
 if script_dir in sys.path:
@@ -72,7 +69,7 @@ if script_dir in sys.path:
 
 libs = []
 
-if os.environ.has_key("SCONS_LIB_DIR"):
+if "SCONS_LIB_DIR" in os.environ:
     libs.append(os.environ["SCONS_LIB_DIR"])
 
 local_version = 'scons-local-' + __version__
@@ -85,7 +82,21 @@ libs.append(os.path.abspath(local))
 
 scons_version = 'scons-%s' % __version__
 
+# preferred order of scons lookup paths
 prefs = []
+
+try:
+    import pkg_resources
+except ImportError:
+    pass
+else:
+    # when running from an egg add the egg's directory
+    try:
+        d = pkg_resources.get_distribution('scons')
+    except pkg_resources.DistributionNotFound:
+        pass
+    else:
+        prefs.append(d.location)
 
 if sys.platform == 'win32':
     # sys.prefix is (likely) C:\Python*;
@@ -133,12 +144,11 @@ else:
         # check only /foo/lib/scons*.
         prefs.append(sys.prefix)
 
-    temp = map(lambda x: os.path.join(x, 'lib'), prefs)
-    temp.extend(map(lambda x: os.path.join(x,
+    temp = [os.path.join(x, 'lib') for x in prefs]
+    temp.extend([os.path.join(x,
                                            'lib',
                                            'python' + sys.version[:3],
-                                           'site-packages'),
-                           prefs))
+                                           'site-packages') for x in prefs])
     prefs = temp
 
     # Add the parent directory of the current python's library to the
@@ -158,8 +168,8 @@ else:
 
 # Look first for 'scons-__version__' in all of our preference libs,
 # then for 'scons'.
-libs.extend(map(lambda x: os.path.join(x, scons_version), prefs))
-libs.extend(map(lambda x: os.path.join(x, 'scons'), prefs))
+libs.extend([os.path.join(x, scons_version) for x in prefs])
+libs.extend([os.path.join(x, 'scons') for x in prefs])
 
 sys.path = libs + sys.path
 
@@ -168,7 +178,15 @@ sys.path = libs + sys.path
 ##############################################################################
 
 if __name__ == "__main__":
-    import SCons.Script
+    try:
+        import SCons.Script
+    except:
+        ROOT = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'engine')
+        if os.path.exists(ROOT):
+            sys.path += [ROOT]
+            print("SCons import failed. Trying to run from source directory")
+        import SCons.Script
+
     # this does all the work, and calls sys.exit
     # with the proper exit status when done.
     SCons.Script.main()
