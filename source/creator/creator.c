@@ -974,12 +974,7 @@ static int render_frame(int argc, const char **argv, void *data)
 			frame = CLAMPIS(frame, MINAFRAME, MAXFRAME);
 
 			RE_SetReports(re, &reports);
-
-			if (RE_write_individual_views(re, &scene->r))
-				RE_BlenderAnimViews(re, bmain, scene, NULL, scene->lay, frame, frame, scene->r.frame_step);
-			else
-				RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, frame, frame, scene->r.frame_step);
-
+			RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, frame, frame, scene->r.frame_step);
 			RE_SetReports(re, NULL);
 			return 1;
 		}
@@ -1004,12 +999,7 @@ static int render_animation(int UNUSED(argc), const char **UNUSED(argv), void *d
 		ReportList reports;
 		BKE_reports_init(&reports, RPT_PRINT);
 		RE_SetReports(re, &reports);
-
-		if (RE_write_individual_views(re, &scene->r))
-			RE_BlenderAnimViews(re, bmain, scene, NULL, scene->lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
-		else
-			RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
-
+		RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
 		RE_SetReports(re, NULL);
 	}
 	else {
