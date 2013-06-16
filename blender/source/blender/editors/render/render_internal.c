@@ -241,18 +241,10 @@ static int screen_render_exec(bContext *C, wmOperator *op)
 
 	RE_SetReports(re, op->reports);
 
-	if (RE_write_individual_views(re, &scene->r)) {
-		if (is_animation)
-			RE_BlenderAnimViews(re, mainp, scene, camera_override, lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
-		else
-			RE_BlenderFrame(re, mainp, scene, srl, camera_override, lay, scene->r.cfra, is_write_still);
-
-	} else {
-		if (is_animation)
-			RE_BlenderAnim(re, mainp, scene, camera_override, lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
-		else
-			RE_BlenderFrame(re, mainp, scene, srl, camera_override, lay, scene->r.cfra, is_write_still);
-	}
+	if (is_animation)
+		RE_BlenderAnim(re, mainp, scene, camera_override, lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
+	else
+		RE_BlenderFrame(re, mainp, scene, srl, camera_override, lay, scene->r.cfra, is_write_still);
 
 	RE_SetReports(re, NULL);
 
@@ -410,18 +402,10 @@ static void render_startjob(void *rjv, short *stop, short *do_update, float *pro
 
 	RE_SetReports(rj->re, rj->reports);
 
-	if (RE_write_individual_views(rj->re, &rj->scene->r)) {
-		if (rj->anim)
-			RE_BlenderAnimViews(rj->re, rj->main, rj->scene, rj->camera_override, rj->lay, rj->scene->r.sfra, rj->scene->r.efra, rj->scene->r.frame_step);
-		else
-			RE_BlenderFrame(rj->re, rj->main, rj->scene, rj->srl, rj->camera_override, rj->lay, rj->scene->r.cfra, rj->write_still);
-
-	} else {
-		if (rj->anim)
-			RE_BlenderAnim(rj->re, rj->main, rj->scene, rj->camera_override, rj->lay, rj->scene->r.sfra, rj->scene->r.efra, rj->scene->r.frame_step);
-		else
-			RE_BlenderFrame(rj->re, rj->main, rj->scene, rj->srl, rj->camera_override, rj->lay, rj->scene->r.cfra, rj->write_still);
-	}
+	if (rj->anim)
+		RE_BlenderAnim(rj->re, rj->main, rj->scene, rj->camera_override, rj->lay, rj->scene->r.sfra, rj->scene->r.efra, rj->scene->r.frame_step);
+	else
+		RE_BlenderFrame(rj->re, rj->main, rj->scene, rj->srl, rj->camera_override, rj->lay, rj->scene->r.cfra, rj->write_still);
 
 	RE_SetReports(rj->re, NULL);
 }

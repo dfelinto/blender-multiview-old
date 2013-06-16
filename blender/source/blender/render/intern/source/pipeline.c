@@ -303,17 +303,17 @@ RenderLayer *RE_GetRenderLayer(RenderResult *rr, const char *name)
 }
 
 /* returns whether or not we will save individual views */
-int RE_write_individual_views(Render *re, RenderData *rd)
+static bool dont_write_individual_views(Render *re, RenderData *rd)
 {
 	ImageFormatData *format = &rd->im_format;
 	SceneRenderView *srv;
 	int nr;
 
 	if(!re)
-		return FALSE;
+		return TRUE;
 
 	if (format->imtype == R_IMF_IMTYPE_MULTIVIEW)
-		return FALSE;
+		return TRUE;
 
 	for (nr=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
 
@@ -323,10 +323,10 @@ int RE_write_individual_views(Render *re, RenderData *rd)
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;
 
-		return TRUE;
+		return FALSE;
 	}
 
-	return FALSE;
+	return TRUE;
 }
 
 RenderResult *RE_MultilayerConvert(void *exrhandle, const char *colorspace, int predivide, int rectx, int recty)
@@ -2852,11 +2852,11 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 	bMovieHandle *mh = BKE_movie_handle_get(scene->r.im_format.imtype);
 	int cfrao = scene->r.cfra;
 	int nfra, totrendered = 0, totskipped = 0;
-
+	
 	/* do not fully call for each frame, it initializes & pops output window */
-	if (!render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 0, 1))
+	if(!render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 0, 1))
 		return;
-
+	
 	/* ugly global still... is to prevent renderwin events and signal subsurfs etc to make full resol */
 	/* is also set by caller renderwin.c */
 	G.is_rendering = TRUE;
@@ -2879,8 +2879,36 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 				totrendered++;
 
 				if (re->test_break(re->tbh) == 0) {
-					if (!do_write_image_or_movie(re, bmain, scene, mh, NULL, ""))
-						G.is_break = TRUE;
+
+					if (dont_write_individual_views(re, &scene->r)) {
+						/* singleview, or multiview saved in one file */
+						if (!do_write_image_or_movie(re, bmain, scene, mh, NULL, "")) {
+							G.is_break = TRUE;
+						}
+					} else {
+						/* multiview, saving individual images */
+						SceneRenderView *srv;
+						RenderView *rv;
+						char name[FILE_MAX];
+						char label[FILE_MAX];
+
+						for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
+							srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
+
+							if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
+								BLI_strncpy(label, srv->name, sizeof(label));
+							else
+								BLI_strncpy(label, srv->label, sizeof(label));
+
+							BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, label);
+
+							/* reports only used for Movie */
+							if (!do_write_image_or_movie(re, bmain, scene, mh, name, srv->name)) {
+								G.is_break = TRUE;
+								break;
+							}
+						}
+					}
 				}
 
 				if (G.is_break == FALSE) {
@@ -2897,7 +2925,7 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 	else {
 		for (nfra = sfra, scene->r.cfra = sfra; scene->r.cfra <= efra; scene->r.cfra++) {
 			char name[FILE_MAX];
-
+			
 			/* only border now, todo: camera lens. (ton) */
 			render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 1, 0);
 
@@ -2921,216 +2949,82 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 				nfra += tfra;
 
 			/* Touch/NoOverwrite options are only valid for image's */
-			if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
-				if (scene->r.mode & (R_NO_OVERWRITE | R_TOUCH))
-					BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, "");
-
-				if (scene->r.mode & R_NO_OVERWRITE && BLI_exists(name)) {
-					printf("skipping existing frame \"%s\"\n", name);
-					totskipped++;
-					continue;
-				}
-				if (scene->r.mode & R_TOUCH && !BLI_exists(name)) {
-					BLI_make_existing_file(name); /* makes the dir if its not there */
-					BLI_file_touch(name);
-				}
-			}
-
-			re->r.cfra = scene->r.cfra;     /* weak.... */
-
-			/* run callbacs before rendering, before the scene is updated */
-			BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_PRE);
-
-
-			do_render_all_options(re);
-			totrendered++;
-
-			if (re->test_break(re->tbh) == 0) {
-				if (!G.is_break)
-					if (!do_write_image_or_movie(re, bmain, scene, mh, NULL, ""))
-						G.is_break = TRUE;
-			}
-			else
-				G.is_break = TRUE;
-
-			if (G.is_break == TRUE) {
-				/* remove touched file */
+			if (dont_write_individual_views(re, &scene->r)) {
 				if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
-					if (scene->r.mode & R_TOUCH && BLI_exists(name) && BLI_file_size(name) == 0) {
-						BLI_delete(name, false, false);
-					}
-				}
-
-				break;
-			}
-
-			if (G.is_break == FALSE) {
-				BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_POST); /* keep after file save */
-			}
-		}
-	}
-
-	/* end movie */
-	if (BKE_imtype_is_movie(scene->r.im_format.imtype))
-		mh->end_movie();
-
-	if (totskipped && totrendered == 0)
-		BKE_report(re->reports, RPT_INFO, "No frames rendered, skipped to not overwrite");
-
-	scene->r.cfra = cfrao;
-
-	re->flag &= ~R_ANIMATION;
-
-	BLI_callback_exec(re->main, (ID *)scene, G.is_break ? BLI_CB_EVT_RENDER_CANCEL : BLI_CB_EVT_RENDER_COMPLETE);
+					if (scene->r.mode & (R_NO_OVERWRITE | R_TOUCH))
+						BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, "");
 	
-	/* UGLY WARNING */
-	G.is_rendering = FALSE;
-}
-
-/************* multiview functions *****************/
-void RE_BlenderAnimViews(Render *re, Main *bmain, Scene *scene, Object *camera_override, unsigned int lay, int sfra, int efra, int tfra)
-{
-	bMovieHandle *mh = BKE_movie_handle_get(scene->r.im_format.imtype);
-	int cfrao = scene->r.cfra;
-	int nfra, totrendered = 0, totskipped = 0;
-
-	if(!render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 0, 1))
-		return;
-
-	/* ugly global still... is to prevent renderwin events and signal subsurfs etc to make full resol */
-	/* is also set by caller renderwin.c */
-	G.is_rendering = TRUE;
-
-	re->flag |= R_ANIMATION;
-
-	if (BKE_imtype_is_movie(scene->r.im_format.imtype))
-		if (!mh->start_movie(scene, &re->r, re->rectx, re->recty, re->reports))
-			G.is_break = TRUE;
-
-	if (mh->get_next_frame) {
-		while (!(G.is_break == 1)) {
-			int nf = mh->get_next_frame(&re->r, re->reports);
-			if (nf >= 0 && nf >= scene->r.sfra && nf <= scene->r.efra) {
-				scene->r.cfra = re->r.cfra = nf;
-
-				BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_PRE);
-
-				do_render_all_options(re);
-				totrendered++;
-
-				if (re->test_break(re->tbh) == 0) {
-					/* multiview, saving individual images */
-					SceneRenderView *srv;
-					RenderView *rv;
-					char name[FILE_MAX];
-					char label[FILE_MAX];
-
-					for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
-						srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
-
-						if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
-							BLI_strncpy(label, srv->name, sizeof(label));
-						else
-							BLI_strncpy(label, srv->label, sizeof(label));
-
-						BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, label);
-
-						/* reports only used for Movie */
-						if (!do_write_image_or_movie(re, bmain, scene, mh, name, srv->name)) {
-							G.is_break = TRUE;
-							break;
-						}
+					if (scene->r.mode & R_NO_OVERWRITE && BLI_exists(name)) {
+						printf("skipping existing frame \"%s\"\n", name);
+						totskipped++;
+						continue;
+					}
+					if (scene->r.mode & R_TOUCH && !BLI_exists(name)) {
+						BLI_make_existing_file(name); /* makes the dir if its not there */
+						BLI_file_touch(name);
 					}
 				}
-
-				if (G.is_break == FALSE) {
-					BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_POST); /* keep after file save */
-				}
 			}
-			else {
-				if (re->test_break(re->tbh)) {
-					G.is_break = TRUE;
-				}
-			}
-		}
-	}
-	else {
-		for (nfra = sfra, scene->r.cfra = sfra; scene->r.cfra <= efra; scene->r.cfra++) {
-			char name[FILE_MAX];
-
-			/* only border now, todo: camera lens. (ton) */
-			render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 1, 0);
-
-			if (nfra != scene->r.cfra) {
-				/*
-				 * Skip this frame, but update for physics and particles system.
-				 * From convertblender.c:
-				 * in localview, lamps are using normal layers, objects only local bits.
-				 */
-				unsigned int updatelay;
-
-				if (re->lay & 0xFF000000)
-					updatelay = re->lay & 0xFF000000;
-				else
-					updatelay = re->lay;
-
-				BKE_scene_update_for_newframe(bmain, scene, updatelay);
-				continue;
-			}
-			else
-				nfra += tfra;
+			else ; /* handle later individually for each view images */
 
 			re->r.cfra = scene->r.cfra;     /* weak.... */
 
 			/* run callbacs before rendering, before the scene is updated */
 			BLI_callback_exec(re->main, (ID *)scene, BLI_CB_EVT_RENDER_PRE);
 
+			
 			do_render_all_options(re);
 			totrendered++;
-
+			
 			if (re->test_break(re->tbh) == 0) {
 				if (!G.is_break) {
-					/* multiview, saving individual images */
-					SceneRenderView *srv;
-					RenderView *rv;
-					char label[FILE_MAX];
 
-					for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
-						srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
-
-						if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
-							BLI_strncpy(label, srv->name, sizeof(label));
-						else
-							BLI_strncpy(label, srv->label, sizeof(label));
-
-						BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, label);
-
-
-						/* Touch/NoOverwrite options are only valid for image's */
-						if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
-
-							if (scene->r.mode & R_NO_OVERWRITE && BLI_exists(name)) {
-								printf("skipping existing frame \"%s\"\n", name);
-								totskipped++;
-								continue;
-							}
-							if (scene->r.mode & R_TOUCH && !BLI_exists(name)) {
-								BLI_make_existing_file(name); /* makes the dir if its not there */
-								BLI_file_touch(name);
-							}
-						}
-
-						/* reports only used for Movie */
-						if (!do_write_image_or_movie(re, bmain, scene, mh, name, srv->name)) {
+					if (dont_write_individual_views(re, &scene->r)) {
+						/* singleview, or multiview saved in one file */
+						if (!do_write_image_or_movie(re, bmain, scene, mh, NULL, "")) {
 							G.is_break = TRUE;
-							break;
+						}
+					} else {
+						/* multiview, saving individual images */
+						SceneRenderView *srv;
+						RenderView *rv;
+						char label[FILE_MAX];
+
+						for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
+							srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
+
+							if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
+								BLI_strncpy(label, srv->name, sizeof(label));
+							else
+								BLI_strncpy(label, srv->label, sizeof(label));
+
+							BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, label);
+
+							/* Touch/NoOverwrite options are only valid for image's */
+							if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
+								if (scene->r.mode & R_NO_OVERWRITE && BLI_exists(name)) {
+									printf("skipping existing frame \"%s\"\n", name);
+									totskipped++;
+									continue;
+								}
+								if (scene->r.mode & R_TOUCH && !BLI_exists(name)) {
+									BLI_make_existing_file(name); /* makes the dir if its not there */
+									BLI_file_touch(name);
+								}
+							}
+
+							/* reports only used for Movie */
+							if (!do_write_image_or_movie(re, bmain, scene, mh, name, srv->name)) {
+								G.is_break = TRUE;
+								break;
+							}
 						}
 					}
 				}
 			}
 			else
 				G.is_break = TRUE;
-
+		
 			if (G.is_break == TRUE) {
 				/* remove touched file */
 				if (BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
@@ -3138,7 +3032,7 @@ void RE_BlenderAnimViews(Render *re, Main *bmain, Scene *scene, Object *camera_o
 						BLI_delete(name, false, false);
 					}
 				}
-
+				
 				break;
 			}
 
@@ -3147,11 +3041,11 @@ void RE_BlenderAnimViews(Render *re, Main *bmain, Scene *scene, Object *camera_o
 			}
 		}
 	}
-
+	
 	/* end movie */
 	if (BKE_imtype_is_movie(scene->r.im_format.imtype))
 		mh->end_movie();
-
+	
 	if (totskipped && totrendered == 0)
 		BKE_report(re->reports, RPT_INFO, "No frames rendered, skipped to not overwrite");
 
@@ -3160,7 +3054,7 @@ void RE_BlenderAnimViews(Render *re, Main *bmain, Scene *scene, Object *camera_o
 	re->flag &= ~R_ANIMATION;
 
 	BLI_callback_exec(re->main, (ID *)scene, G.is_break ? BLI_CB_EVT_RENDER_CANCEL : BLI_CB_EVT_RENDER_COMPLETE);
-	
+
 	/* UGLY WARNING */
 	G.is_rendering = FALSE;
 }
