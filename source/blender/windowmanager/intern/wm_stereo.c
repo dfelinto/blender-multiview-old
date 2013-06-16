@@ -72,37 +72,26 @@
 #include "wm_window.h"
 #include "wm_event_system.h"
 
-/* swap */
-#if 0
-#define WIN_NONE_OK     0
-#define WIN_BACK_OK     1
-#define WIN_FRONT_OK    2
-#define WIN_BOTH_OK     3
-#endif
-
-/* XXX not tested */
 static void wm_method_draw_stereo_pageflip(wmWindow *win)
 {
-	int view = 0;
-	wmDrawTriple *triple;
+	wmDrawData *drawdata;
+	int view;
 
 	for (view=0; view < 2; view ++) {
-		if (view == STEREO_LEFT_ID) {
-			triple = win->drawdataall;
-			glDrawBuffer(GL_BACK_LEFT);
-		}
-		else {
-			triple = win->drawdatastereoall;
-			glDrawBuffer(GL_BACK_RIGHT);
-		}
+		drawdata = BLI_findlink(&win->drawdata, (view * 2) + 1);
 
-		wm_triple_draw_textures(win, triple, 1.0);
+		if (view == STEREO_LEFT_ID)
+			glDrawBuffer(GL_BACK_LEFT);
+		else //STEREO_RIGHT_ID
+			glDrawBuffer(GL_BACK_RIGHT);
+
+		wm_triple_draw_textures(win, drawdata->triple, 1.0);
 	}
 }
 
 static void wm_method_draw_stereo_epilepsy(wmWindow *win)
 {
-	wmDrawTriple *triple;
+	wmDrawData *drawdata;
 	static bool view = 0;
 	static double start = 0;
 
@@ -111,12 +100,9 @@ static void wm_method_draw_stereo_epilepsy(wmWindow *win)
 		view = !view;
 	}
 
-	if(view)
-		triple = win->drawdataall;
-	else
-		triple = win->drawdatastereoall;
+	drawdata = BLI_findlink(&win->drawdata, view * 2 + 1);
 
-	wm_triple_draw_textures(win, triple, 1.0);
+	wm_triple_draw_textures(win, drawdata->triple, 1.0);
 }
 
 static GLuint left_interlace_mask[32];
@@ -174,35 +160,29 @@ static void wm_interlace_create_masks(void)
 
 static void wm_method_draw_stereo_interlace(wmWindow *win)
 {
-	int view = 0;
-	wmDrawTriple *triple;
+	wmDrawData *drawdata;
+	int view;
 
 	wm_interlace_create_masks();
 
 	for (view=0; view < 2; view ++) {
-		if (view == STEREO_LEFT_ID)
-			triple = win->drawdataall;
-		else
-			triple = win->drawdatastereoall;
+		drawdata = BLI_findlink(&win->drawdata, (view * 2) + 1);
 
 		glEnable(GL_POLYGON_STIPPLE);
-		glPolygonStipple(view? right_interlace_mask : left_interlace_mask);
+		glPolygonStipple(view ? right_interlace_mask : left_interlace_mask);
 
-		wm_triple_draw_textures(win, triple, 1.0);
+		wm_triple_draw_textures(win, drawdata->triple, 1.0);
 		glDisable(GL_POLYGON_STIPPLE);
 	}
 }
 
 static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 {
+	wmDrawData *drawdata;
 	int view, bit;
-	wmDrawTriple *triple;
 
-	for (view = 0; view < 2; view++) {
-		if (view == STEREO_LEFT_ID)
-			triple = win->drawdataall;
-		else
-			triple = win->drawdatastereoall;
+	for (view=0; view < 2; view ++) {
+		drawdata = BLI_findlink(&win->drawdata, (view * 2) + 1);
 
 		bit = view + 1;
 		switch(U.stereo_anaglyph_type) {
@@ -217,7 +197,7 @@ static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 				break;
 		}
 
-		wm_triple_draw_textures(win, triple, 1.0);
+		wm_triple_draw_textures(win, drawdata->triple, 1.0);
 
 		glColorMask(TRUE, TRUE, TRUE, TRUE);
 	}
@@ -225,23 +205,25 @@ static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 
 static void wm_method_draw_stereo_sidebyside(wmWindow *win)
 {
+	wmDrawData *drawdata;
+	wmDrawTriple *triple;
 	float halfx, halfy, ratiox, ratioy;
 	int x, y, sizex, sizey, offx, offy;
 	float alpha = 1.0f;
-	wmDrawTriple *triple;
 	int view;
 	int soffx;
 	bool cross_eyed = (U.stereo_flag & S3D_SIDEBYSIDE_CROSSEYED);
 
 	for (view=0; view < 2; view ++) {
+		drawdata = BLI_findlink(&win->drawdata, (view * 2) + 1);
+		triple = drawdata->triple;
+
 		soffx = WM_window_pixels_x(win) * 0.5;
 		if (view == STEREO_LEFT_ID) {
-			triple = win->drawdataall;
 			if(!cross_eyed)
 				soffx = 0;
 		}
-		else {
-			triple = win->drawdatastereoall;
+		else { //RIGHT_LEFT_ID
 			if(cross_eyed)
 				soffx = 0;
 		}
@@ -294,20 +276,22 @@ static void wm_method_draw_stereo_sidebyside(wmWindow *win)
 
 static void wm_method_draw_stereo_topbottom(wmWindow *win)
 {
+	wmDrawData *drawdata;
+	wmDrawTriple *triple;
 	float halfx, halfy, ratiox, ratioy;
 	int x, y, sizex, sizey, offx, offy;
 	float alpha = 1.0f;
-	wmDrawTriple *triple;
 	int view;
 	int soffy;
 
 	for (view=0; view < 2; view ++) {
+		drawdata = BLI_findlink(&win->drawdata, (view * 2) + 1);
+		triple = drawdata->triple;
+
 		if (view == STEREO_LEFT_ID) {
-			triple = win->drawdataall;
 			soffy = WM_window_pixels_y(win) * 0.5;
 		}
-		else {
-			triple = win->drawdatastereoall;
+		else { //STEREO_RIGHT_ID
 			soffy = 0;
 		}
 

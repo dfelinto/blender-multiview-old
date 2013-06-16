@@ -189,10 +189,7 @@ typedef struct wmWindow {
 	struct wmGesture *tweak;	/* internal for wm_operators.c */
 	
 	int drawmethod, drawfail;	/* internal for wm_draw.c only */
-	void *drawdata;			/* internal for wm_draw.c only - right buffer */
-	void *drawdataall;		/* internal for wm_draw.c only - right buffer with overlay */
-	void *drawdatastereo;	/* internal for wm_draw.c only - left buffer */
-	void *drawdatastereoall;/* internal for wm_draw.c only - left buffer with overlay */
+	ListBase drawdata;			/* internal for wm_draw.c only */
 	
 	ListBase queue;				/* all events (ghost level events were handled) */
 	ListBase handlers;			/* window+screen handlers, handled last */

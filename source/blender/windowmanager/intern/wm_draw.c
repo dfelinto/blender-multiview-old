@@ -577,44 +577,44 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	wmDrawTriple *triple;
+	wmDrawData *dd, *drawdata = (wmDrawData *) win->drawdata.first;
 	bScreen *screen = win->screen;
 	ScrArea *sa;
 	ARegion *ar;
 	int copytex = FALSE, paintcursor = TRUE;
 
-	if (win->drawdata) {
+	if (drawdata && drawdata->triple) {
 		glClearColor(0, 0, 0, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		wmSubWindowSet(win, screen->mainwin);
 
-		wm_triple_draw_textures(win, win->drawdata, 1.0f);
+		wm_triple_draw_textures(win, drawdata->triple, 1.0f);
 	}
 	else {
 		/* we run it when we start OR when we turn stereo on */
-		win->drawdata = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+		if (drawdata == NULL) {
+			drawdata = MEM_callocN(sizeof(wmDrawData), "wmDrawData");
+			BLI_addhead(&win->drawdata, drawdata);
+		}
 
-		if (!wm_triple_gen_textures(win, win->drawdata)) {
+		drawdata->triple = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+
+		if (!wm_triple_gen_textures(win, drawdata->triple)) {
 			wm_draw_triple_fail(C, win);
 			return;
 		}
 	}
 
 	/* it means stereo was just turned off */
-	if (win->drawdataall) {
-		wm_draw_triple_free(win->drawdataall);
-		win->drawdataall = NULL;
-	}
-	if (win->drawdatastereo) {
-		wm_draw_triple_free(win->drawdatastereo);
-		win->drawdatastereo = NULL;
-	}
-	if (win->drawdatastereoall) {
-		wm_draw_triple_free(win->drawdatastereoall);
-		win->drawdatastereoall = NULL;
+	/* note: we are removing all drawdatas that are not the first */
+	for (dd = drawdata->next; dd; dd = dd->next) {
+		wm_draw_triple_free(dd->triple);
+		BLI_remlink(&win->drawdata, dd);
+		MEM_freeN(dd);
 	}
 
-	triple = win->drawdata;
+	triple = drawdata->triple;
 
 	/* draw marked area regions */
 	for (sa = screen->areabase.first; sa; sa = sa->next) {
@@ -707,80 +707,47 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 	}
 }
 
-static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews sview)
+static void wm_method_draw_triple_multiview(bContext *C, wmWindow *win, StereoViews sview)
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
-	wmDrawTriple *triple;
-	wmDrawTriple *tripleall;
+	wmDrawData *drawdata;
+	wmDrawTriple *triple_data, *triple_all;
 	bScreen *screen = win->screen;
 	ScrArea *sa;
 	ARegion *ar;
 	int copytex = FALSE, paintcursor = TRUE;
+	int id;
 
-	if (sview == STEREO_LEFT_ID) {
-		if (win->drawdata) {
+	/* we store the triple_data in sequence to triple_all */
+	for (id=0;id < 2;id++) {
+		drawdata = BLI_findlink(&win->drawdata, (sview * 2) + id);
+
+		if (drawdata && drawdata->triple) {
 			glClearColor(0, 0, 0, 0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 			wmSubWindowSet(win, screen->mainwin);
 
-			wm_triple_draw_textures(win, win->drawdata, 1.0f);
-		}
-		else {
-			win->drawdata = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
-
-			if (!wm_triple_gen_textures(win, win->drawdata)) {
-				wm_draw_triple_fail(C, win);
-				return;
-			}
-		}
-
-		if (!win->drawdataall) {
-			/* we run it when we start OR when we turn  on */
-			win->drawdataall = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
-
-			if (!wm_triple_gen_textures(win, win->drawdataall)) {
-				wm_draw_triple_fail(C, win);
-				return;
-			}
-		}
-
-		triple = win->drawdata;
-		tripleall = win->drawdataall;
-	}
-	else { //STEREO_RIGHT_ID
-		if (win->drawdatastereo) {
-			glClearColor(0, 0, 0, 0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			wmSubWindowSet(win, screen->mainwin);
-
-			wm_triple_draw_textures(win, win->drawdatastereo, 1.0f);
+			wm_triple_draw_textures(win, drawdata->triple, 1.0f);
 		}
 		else {
 			/* we run it when we start OR when we turn stereo on */
-			win->drawdatastereo = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+			if (drawdata == NULL) {
+				drawdata = MEM_callocN(sizeof(wmDrawData), "wmDrawData");
+				BLI_addtail(&win->drawdata, drawdata);
+			}
 
-			if (!wm_triple_gen_textures(win, win->drawdatastereo)) {
+			drawdata->triple = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
+
+			if (!wm_triple_gen_textures(win, drawdata->triple)) {
 				wm_draw_triple_fail(C, win);
 				return;
 			}
 		}
-
-		if (!win->drawdatastereoall) {
-			/* we run it when we start OR when we turn stereo on */
-			win->drawdatastereoall = MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
-
-			if (!wm_triple_gen_textures(win, win->drawdatastereoall)) {
-				wm_draw_triple_fail(C, win);
-				return;
-			}
-		}
-
-		triple = win->drawdatastereo;
-		tripleall = win->drawdatastereoall;
 	}
 
+	triple_data = ((wmDrawData *) BLI_findlink(&win->drawdata, sview * 2))->triple;
+	triple_all  = ((wmDrawData *) BLI_findlink(&win->drawdata, (sview * 2) + 1))->triple;
 
 	/* draw marked area regions */
 	for (sa = screen->areabase.first; sa; sa = sa->next) {
@@ -824,7 +791,7 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 	if (copytex) {
 		wmSubWindowSet(win, screen->mainwin);
 
-		wm_triple_copy_textures(win, triple);
+		wm_triple_copy_textures(win, triple_data);
 	}
 
 	if (paintcursor && wm->paintcursors.first) {
@@ -859,7 +826,7 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 					ar->do_draw = FALSE;
 				CTX_wm_region_set(C, NULL);
 
-				wm_draw_region_blend(win, ar, triple);
+				wm_draw_region_blend(win, ar, triple_data);
 			}
 		}
 
@@ -895,7 +862,7 @@ static void wm_method_draw_triple_stereo(bContext *C, wmWindow *win, StereoViews
 
 	/* copy the ui + overlays */
 	wmSubWindowSet(win, screen->mainwin);
-	wm_triple_copy_textures(win, tripleall);
+	wm_triple_copy_textures(win, triple_all);
 }
 
 /****************** main update call **********************/
@@ -1052,8 +1019,8 @@ void wm_draw_update(bContext *C)
 				if( (win->flag & WM_STEREO) == FALSE)
 					wm_method_draw_triple(C, win);
 				else {
-					wm_method_draw_triple_stereo(C, win, STEREO_LEFT_ID);
-					wm_method_draw_triple_stereo(C, win, STEREO_RIGHT_ID);
+					wm_method_draw_triple_multiview(C, win, STEREO_LEFT_ID);
+					wm_method_draw_triple_multiview(C, win, STEREO_RIGHT_ID);
 					wm_method_draw_stereo(C, win);
 				}
 			}
@@ -1069,26 +1036,23 @@ void wm_draw_update(bContext *C)
 	}
 }
 
+void wm_draw_data_free(wmWindow *win)
+{
+	wmDrawData *dd;
+
+	for (dd = (wmDrawData *)win->drawdata.first; dd; dd = dd->next) {
+		wm_draw_triple_free(dd->triple);
+	}
+	BLI_freelistN(&win->drawdata);
+}
+
 void wm_draw_window_clear(wmWindow *win)
 {
 	bScreen *screen = win->screen;
 	ScrArea *sa;
 	ARegion *ar;
-	int drawmethod = wm_automatic_draw_method(win);
 
-	if (drawmethod == USER_DRAW_TRIPLE) {
-		wm_draw_triple_free(win->drawdata);
-		win->drawdata = NULL;
-
-		wm_draw_triple_free(win->drawdataall);
-		win->drawdataall = NULL;
-
-		wm_draw_triple_free(win->drawdatastereo);
-		win->drawdatastereo = NULL;
-
-		wm_draw_triple_free(win->drawdatastereoall);
-		win->drawdatastereoall = NULL;
-	}
+	wm_draw_data_free(win);
 
 	/* clear screen swap flags */
 	if (screen) {
