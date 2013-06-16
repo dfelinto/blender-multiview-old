@@ -404,7 +404,7 @@ static void rna_def_render_engine(BlenderRNA *brna)
 	prop = RNA_def_boolean(func, "do_break", 0, "Break", "");
 	RNA_def_function_return(func, prop);
 
-	func = RNA_def_function(srna, "result_actview_set", "RE_engine_actview_set");
+	func = RNA_def_function(srna, "active_view_set", "RE_engine_actview_set");
 	prop = RNA_def_int(func, "view", 0, 0, INT_MAX, "View",
 	                   "view index from the list of available views (not including disabled views)", 0, INT_MAX);
 	RNA_def_property_flag(prop, PROP_REQUIRED);

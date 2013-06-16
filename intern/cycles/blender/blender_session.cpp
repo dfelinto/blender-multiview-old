@@ -349,7 +349,7 @@ void BlenderSession::render()
 			}
 
 			/* set the current view */
-			b_engine.result_actview_set(b_rview_id);
+			b_engine.active_view_set(b_rview_id);
 
 			BL::RenderLayer b_rlay = *b_single_rlay;
 
