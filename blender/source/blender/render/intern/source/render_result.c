@@ -886,7 +886,7 @@ void render_result_merge(RenderResult *rr, RenderResult *rrpart)
 /* for passes read from files, these have names stored */
 static char *make_pass_name(RenderPass *rpass, int chan)
 {
-	static char name[16];
+	static char name[EXR_PASS_MAXNAME];
 	int len;
 	
 	BLI_strncpy(name, rpass->name, EXR_PASS_MAXNAME);
