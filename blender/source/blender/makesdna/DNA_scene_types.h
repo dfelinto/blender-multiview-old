@@ -712,6 +712,7 @@ typedef struct GameData {
 /* GameData.playerflag */
 #define GAME_PLAYER_FULLSCREEN				(1 << 0)
 #define GAME_PLAYER_DESKTOP_RESOLUTION		(1 << 1)
+#define GAME_PLAYER_DESKTOP_SPAN            (1 << 2)
 
 /* GameData.matmode */
 #define GAME_MAT_TEXFACE	0

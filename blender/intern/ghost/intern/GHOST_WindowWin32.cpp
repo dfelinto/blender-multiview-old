@@ -240,10 +240,17 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 	}
 	else {
 		wchar_t *title_16 = alloc_utf16_from_8((char *)(const char *)title, 0);
-		m_hWnd = ::CreateWindowW(
+
+		int wintype = WS_POPUP;         // JKG
+        bool span = true;               // JKG
+        if( !span ) {
+            wintype |= WS_MAXIMIZE;     // JKG - does it hurt to leave off MAXIMIZE when span is not desired?
+        }
+
+        m_hWnd = ::CreateWindowW(
 		    s_windowClassName,          // pointer to registered class name
 		    title_16,                   // pointer to window name
-		    WS_POPUP | WS_MAXIMIZE,     // window style
+		    wintype,                    // window style
 		    left,                       // horizontal position of window
 		    top,                        // vertical position of window
 		    width,                      // window width
@@ -624,14 +631,21 @@ GHOST_TSuccess GHOST_WindowWin32::setState(GHOST_TWindowState state)
 			wp.showCmd = SW_SHOWMAXIMIZED;
 			SetWindowLongPtr(m_hWnd, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 			break;
-		case GHOST_kWindowStateFullScreen:
+        case GHOST_kWindowStateFullScreen: {
 			if (curstate != state && curstate != GHOST_kWindowStateMinimized)
 				m_normal_state = curstate;
-			wp.showCmd = SW_SHOWMAXIMIZED;
+
+            int wStyleChange = WS_POPUP;// JKG
+			wp.showCmd = SW_SHOWNORMAL; // JKG
+            bool span = true;           // JKG does SW_SHOWNORMAL and avoiding WS_MAXIMIZE hurt when span is not desired?
+            if( !span ) {
+                wp.showCmd = SW_SHOWMAXIMIZED;
+                wStyleChange |= WS_MAXIMIZE;
+            }
 			wp.ptMaxPosition.x = 0;
 			wp.ptMaxPosition.y = 0;
-			SetWindowLongPtr(m_hWnd, GWL_STYLE, WS_POPUP | WS_MAXIMIZE);
-			break;
+			SetWindowLongPtr(m_hWnd, GWL_STYLE, wStyleChange ); // JKG
+           } break;
 		case GHOST_kWindowStateEmbedded:
 			SetWindowLongPtr(m_hWnd, GWL_STYLE, WS_CHILD);
 			break;

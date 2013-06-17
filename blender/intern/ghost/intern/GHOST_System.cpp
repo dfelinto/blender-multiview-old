@@ -140,7 +140,7 @@ bool GHOST_System::validWindow(GHOST_IWindow *window)
 
 
 GHOST_TSuccess GHOST_System::beginFullScreen(const GHOST_DisplaySetting& setting, GHOST_IWindow **window,
-                                             const bool stereoVisual, const GHOST_TUns16 numOfAASamples)
+                                             const bool stereoVisual, const GHOST_TUns16 numOfAASamples, bool span)
 {
 	GHOST_TSuccess success = GHOST_kFailure;
 	GHOST_ASSERT(m_windowManager, "GHOST_System::beginFullScreen(): invalid window manager");
@@ -152,7 +152,7 @@ GHOST_TSuccess GHOST_System::beginFullScreen(const GHOST_DisplaySetting& setting
 			success = m_displayManager->setCurrentDisplaySetting(GHOST_DisplayManager::kMainDisplay, setting);
 			if (success == GHOST_kSuccess) {
 				//GHOST_PRINT("GHOST_System::beginFullScreen(): creating full-screen window\n");
-				success = createFullScreenWindow((GHOST_Window **)window, setting, stereoVisual, numOfAASamples);
+				success = createFullScreenWindow((GHOST_Window **)window, setting, stereoVisual, numOfAASamples, span);
 				if (success == GHOST_kSuccess) {
 					m_windowManager->beginFullScreen(*window, stereoVisual);
 				}
@@ -348,16 +348,27 @@ GHOST_TSuccess GHOST_System::exit()
 }
 
 GHOST_TSuccess GHOST_System::createFullScreenWindow(GHOST_Window **window, const GHOST_DisplaySetting &settings,
-                                                    const bool stereoVisual, const GHOST_TUns16 numOfAASamples)
+                                                    const bool stereoVisual, const GHOST_TUns16 numOfAASamples, bool span)
 {
+    GHOST_DisplaySetting span_settings = settings; // can we trust the copy constructor?
+    if( span )
+    {
+        GHOST_TUns32 sysWidth=0, sysHeight=0;
+        /*this->*/getAllDisplayDimensions(sysWidth, sysHeight);
+
+        // TODO: JKG - make sure this size can be supported by OS max size or GL max size for framebuffer / texture?
+        span_settings.xPixels = sysWidth;
+        span_settings.yPixels = sysHeight;
+    }
+
 	/* note: don't use getCurrentDisplaySetting() because on X11 we may
 	 * be zoomed in and the desktop may be bigger then the viewport. */
 	GHOST_ASSERT(m_displayManager, "GHOST_System::createFullScreenWindow(): invalid display manager");
 	//GHOST_PRINT("GHOST_System::createFullScreenWindow(): creating full-screen window\n");
 	*window = (GHOST_Window *)createWindow(
 	    STR_String(""),
-	    0, 0, settings.xPixels, settings.yPixels,
-	    GHOST_kWindowStateNormal,
+	    0, 0, span_settings.xPixels, span_settings.yPixels,
+	    GHOST_kWindowStateFullScreen, // helps calculate the correct window coordinates instead of using GHOST_kWindowStateNormal
 	    GHOST_kDrawingContextTypeOpenGL,
 	    stereoVisual,
 	    true,  /* exclusive */

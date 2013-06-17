@@ -309,6 +309,9 @@ class RENDER_PT_game_player(RenderButtonsPanel, Panel):
         col = row.column()
         col.prop(gs, "use_desktop")
         col.active = gs.show_fullscreen
+        col = row.column()
+        col.prop(gs, "span_desktop")
+        col.active = gs.show_fullscreen
 
         col = layout.column()
         col.label(text="Quality:")

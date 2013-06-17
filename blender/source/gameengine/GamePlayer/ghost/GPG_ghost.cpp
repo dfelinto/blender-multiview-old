@@ -939,7 +939,8 @@ int main(int argc, char** argv)
 #endif
 								{
 									app.startFullScreen(fullScreenWidth, fullScreenHeight, fullScreenBpp, fullScreenFrequency,
-									                    stereoWindow, stereomode, aasamples, (scene->gm.playerflag & GAME_PLAYER_DESKTOP_RESOLUTION));
+									                    stereoWindow, stereomode, aasamples, (scene->gm.playerflag & GAME_PLAYER_DESKTOP_RESOLUTION),
+                                                        (scene->gm.playerflag & GAME_PLAYER_DESKTOP_SPAN) ); // JKG
 								}
 							}
 							else

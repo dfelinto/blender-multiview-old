@@ -69,7 +69,7 @@ public:
 	bool startFullScreen(int width, int height,
 	                     int bpp, int frequency,
 	                     const bool stereoVisual, const int stereoMode,
-	                     const GHOST_TUns16 samples=0, bool useDesktop=false);
+	                     const GHOST_TUns16 samples=0, bool useDesktop=false, bool spanDesktop=false);
 	bool startEmbeddedWindow(STR_String& title, const GHOST_TEmbedderWindowID parent_window,
 	                         const bool stereoVisual, const int stereoMode, const GHOST_TUns16 samples=0);
 #ifdef WIN32
