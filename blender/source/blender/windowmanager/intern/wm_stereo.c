@@ -218,7 +218,7 @@ static void wm_method_draw_stereo_sidebyside(wmWindow *win)
 		drawdata = BLI_findlink(&win->drawdata, (view * 2) + 1);
 		triple = drawdata->triple;
 
-		soffx = WM_window_pixels_x(win) * 0.5;
+		soffx = WM_stereo_window_pixels_x(win) * 0.5;
 		if (view == STEREO_LEFT_ID) {
 			if(!cross_eyed)
 				soffx = 0;
@@ -232,11 +232,13 @@ static void wm_method_draw_stereo_sidebyside(wmWindow *win)
 
 		for (y = 0, offy = 0; y < triple->ny; offy += triple->y[y], y++) {
 			for (x = 0, offx = 0; x < triple->nx; offx += triple->x[x], x++) {
-				sizex = (x == triple->nx - 1) ? WM_window_pixels_x(win) - offx : triple->x[x];
+				sizex = (x == triple->nx - 1) ? WM_stereo_window_pixels_x(win) - offx : triple->x[x];
 				sizey = (y == triple->ny - 1) ? WM_window_pixels_y(win) - offy : triple->y[y];
 
 				/* wmOrtho for the screen has this same offset */
 				ratiox = sizex;
+				if(U.stereo_flag & S3D_SIDEBYSIDE_FULLWIDTH)
+					ratiox /= 2;
 				ratioy = sizey;
 				halfx = GLA_PIXEL_OFS;
 				halfy = GLA_PIXEL_OFS;
