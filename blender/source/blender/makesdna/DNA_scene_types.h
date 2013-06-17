@@ -914,6 +914,10 @@ typedef struct UnifiedPaintSettings {
 
 	/* position of mouse, used to sample the texture */
 	float tex_mouse[2];
+
+	/* position of mouse, used to sample the mask texture */
+	float mask_tex_mouse[2];
+
 	/* radius of brush, premultiplied with pressure.
 	 * In case of anchored brushes contains that radius */
 	float pixel_radius;
@@ -1296,7 +1300,7 @@ typedef struct Scene {
 #define R_BG_RENDER			0x0002
 		/* passepartout is camera option now, keep this for backward compatibility */
 #define R_PASSEPARTOUT		0x0004
-#define R_PREVIEWBUTS		0x0008
+#define R_BUTS_PREVIEW		0x0008
 #define R_EXTENSION			0x0010
 #define R_MATNODE_PREVIEW	0x0020
 #define R_DOCOMP			0x0040
@@ -1312,6 +1316,7 @@ typedef struct Scene {
 /* #define R_DEPRECATED		0x10000 */
 /* #define R_RECURS_PROTECTION	0x20000 */
 #define R_TEXNODE_PREVIEW	0x40000
+#define R_VIEWPORT_PREVIEW	0x80000
 
 /* r->stamp */
 #define R_STAMP_TIME 	0x0001

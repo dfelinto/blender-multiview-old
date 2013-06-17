@@ -91,6 +91,7 @@
 #include "BKE_editmesh.h"
 #include "BKE_tracking.h"
 #include "BKE_mask.h"
+#include "BKE_lattice.h"
 
 #include "BIK_api.h"
 
@@ -121,7 +122,7 @@
 #include "transform.h"
 #include "bmesh.h"
 
-#include "BLO_sys_types.h" // for intptr_t support
+#include "BLI_sys_types.h" // for intptr_t support
 
 
 /* local function prototype - for Object/Bone Constraints */
@@ -1554,7 +1555,7 @@ static void createTransLatticeVerts(TransInfo *t)
 {
 	Lattice *latt = ((Lattice *)t->obedit->data)->editlatt->latt;
 	TransData *td = NULL;
-	BPoint *bp;
+	BPoint *bp, *actbp = BKE_lattice_active_point_get(latt);
 	float mtx[3][3], smtx[3][3];
 	int a;
 	int count = 0, countsel = 0;
@@ -1589,7 +1590,10 @@ static void createTransLatticeVerts(TransInfo *t)
 				copy_v3_v3(td->iloc, bp->vec);
 				td->loc = bp->vec;
 				copy_v3_v3(td->center, td->loc);
-				if (bp->f1 & SELECT) td->flag = TD_SELECTED;
+				if (bp->f1 & SELECT) {
+					td->flag = TD_SELECTED;
+					if (actbp && bp == actbp) td->flag |= TD_ACTIVE;
+				}
 				else td->flag = 0;
 				copy_m3_m3(td->smtx, smtx);
 				copy_m3_m3(td->mtx, mtx);
@@ -1984,7 +1988,7 @@ static void createTransEditVerts(TransInfo *t)
 	int cd_vert_bweight_offset = -1;
 
 	if (t->flag & T_MIRROR) {
-		EDBM_verts_mirror_cache_begin(em, TRUE);
+		EDBM_verts_mirror_cache_begin(em, false, true);
 		mirror = 1;
 	}
 
@@ -2418,6 +2422,8 @@ static void createTransUVs(bContext *C, TransInfo *t)
 	int propmode = t->flag & T_PROP_EDIT;
 	int propconnected = t->flag & T_PROP_CONNECTED;
 
+	const int cd_loop_uv_offset = CustomData_get_offset(&em->bm->ldata, CD_MLOOPUV);
+
 	if (!ED_space_image_show_uvedit(sima, t->obedit)) return;
 
 	/* count */
@@ -2442,7 +2448,7 @@ static void createTransUVs(bContext *C, TransInfo *t)
 
 		BM_elem_flag_enable(efa, BM_ELEM_TAG);
 		BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
-			if (uvedit_uv_select_test(em, scene, l)) {
+			if (uvedit_uv_select_test(scene, l, cd_loop_uv_offset)) {
 				countsel++;
 
 				if (propconnected) {
@@ -2478,7 +2484,7 @@ static void createTransUVs(bContext *C, TransInfo *t)
 			continue;
 
 		BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
-			if (!propmode && !uvedit_uv_select_test(em, scene, l))
+			if (!propmode && !uvedit_uv_select_test(scene, l, cd_loop_uv_offset))
 				continue;
 
 			if (propconnected) {
@@ -2489,8 +2495,8 @@ static void createTransUVs(bContext *C, TransInfo *t)
 				}
 			}
 			
-			luv = CustomData_bmesh_get(&em->bm->ldata, l->head.data, CD_MLOOPUV);
-			UVsToTransData(sima, td++, td2d++, luv->uv, uvedit_uv_select_test(em, scene, l));
+			luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
+			UVsToTransData(sima, td++, td2d++, luv->uv, uvedit_uv_select_test(scene, l, cd_loop_uv_offset));
 		}
 	}
 
@@ -4561,16 +4567,17 @@ static bool constraints_list_needinv(TransInfo *t, ListBase *list)
 			if ((con->flag & CONSTRAINT_DISABLE) == 0 && (con->enforce != 0.0f)) {
 				/* (affirmative) returns for specific constraints here... */
 				/* constraints that require this regardless  */
-				if (ELEM5(con->type,
+				if (ELEM6(con->type,
 				          CONSTRAINT_TYPE_CHILDOF,
 				          CONSTRAINT_TYPE_FOLLOWPATH,
 				          CONSTRAINT_TYPE_CLAMPTO,
 				          CONSTRAINT_TYPE_OBJECTSOLVER,
-				          CONSTRAINT_TYPE_FOLLOWTRACK))
+				          CONSTRAINT_TYPE_FOLLOWTRACK,
+				          CONSTRAINT_TYPE_TRANSFORM))
 				{
 					return true;
 				}
-
+				
 				/* constraints that require this only under special conditions */
 				if (con->type == CONSTRAINT_TYPE_ROTLIKE) {
 					/* CopyRot constraint only does this when rotating, and offset is on */
@@ -5535,7 +5542,7 @@ void special_aftertrans_update(bContext *C, TransInfo *t)
 	else { /* Objects */
 		int i, recalcObPaths = 0;
 
-		BLI_assert(t->flag & T_OBJECT);
+		BLI_assert(t->flag & (T_OBJECT | T_TEXTURE));
 
 		for (i = 0; i < t->total; i++) {
 			TransData *td = t->data + i;

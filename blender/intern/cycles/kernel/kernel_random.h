@@ -16,6 +16,8 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include "kernel_jitter.h"
+
 CCL_NAMESPACE_BEGIN
 
 typedef uint RNG;
@@ -100,8 +102,16 @@ __device uint sobol_lookup(const uint m, const uint frame, const uint ex, const 
 	return index;
 }
 
-__device_inline float path_rng(KernelGlobals *kg, RNG *rng, int sample, int dimension)
+__device_inline float path_rng_1D(KernelGlobals *kg, RNG *rng, int sample, int num_samples, int dimension)
 {
+#ifdef __CMJ__
+	if(kernel_data.integrator.sampling_pattern == SAMPLING_PATTERN_CMJ) {
+		/* correlated multi-jittered */
+		int p = *rng + dimension;
+		return cmj_sample_1D(sample, num_samples, p);
+	}
+#endif
+
 #ifdef __SOBOL_FULL_SCREEN__
 	uint result = sobol_dimension(kg, *rng, dimension);
 	float r = (float)result * (1.0f/(float)0xFFFFFFFF);
@@ -123,7 +133,22 @@ __device_inline float path_rng(KernelGlobals *kg, RNG *rng, int sample, int dime
 #endif
 }
 
-__device_inline void path_rng_init(KernelGlobals *kg, __global uint *rng_state, int sample, RNG *rng, int x, int y, float *fx, float *fy)
+__device_inline void path_rng_2D(KernelGlobals *kg, RNG *rng, int sample, int num_samples, int dimension, float *fx, float *fy)
+{
+#ifdef __CMJ__
+	if(kernel_data.integrator.sampling_pattern == SAMPLING_PATTERN_CMJ) {
+		/* correlated multi-jittered */
+		int p = *rng + dimension;
+		cmj_sample_2D(sample, num_samples, p, fx, fy);
+	}
+#endif
+
+	/* sobol */
+	*fx = path_rng_1D(kg, rng, sample, num_samples, dimension);
+	*fy = path_rng_1D(kg, rng, sample, num_samples, dimension + 1);
+}
+
+__device_inline void path_rng_init(KernelGlobals *kg, __global uint *rng_state, int sample, int num_samples, RNG *rng, int x, int y, float *fx, float *fy)
 {
 #ifdef __SOBOL_FULL_SCREEN__
 	uint px, py;
@@ -153,8 +178,7 @@ __device_inline void path_rng_init(KernelGlobals *kg, __global uint *rng_state, 
 		*fy = 0.5f;
 	}
 	else {
-		*fx = path_rng(kg, rng, sample, PRNG_FILTER_U);
-		*fy = path_rng(kg, rng, sample, PRNG_FILTER_V);
+		path_rng_2D(kg, rng, sample, num_samples, PRNG_FILTER_U, fx, fy);
 	}
 #endif
 }
@@ -168,14 +192,24 @@ __device void path_rng_end(KernelGlobals *kg, __global uint *rng_state, RNG rng)
 
 /* Linear Congruential Generator */
 
-__device float path_rng(KernelGlobals *kg, RNG *rng, int sample, int dimension)
+__device float path_rng(KernelGlobals *kg, RNG& rng, int sample, int dimension)
 {
-	/* implicit mod 2^32 */
-	*rng = (1103515245*(*rng) + 12345);
-	return (float)*rng * (1.0f/(float)0xFFFFFFFF);
 }
 
-__device void path_rng_init(KernelGlobals *kg, __global uint *rng_state, int sample, RNG *rng, int x, int y, float *fx, float *fy)
+__device_inline float path_rng_1D(KernelGlobals *kg, RNG& rng, int sample, int num_samples, int dimension)
+{
+	/* implicit mod 2^32 */
+	rng = (1103515245*(rng) + 12345);
+	return (float)rng * (1.0f/(float)0xFFFFFFFF);
+}
+
+__device_inline void path_rng_2D(KernelGlobals *kg, RNG& rng, int sample, int num_samples, int dimension, float *fx, float *fy)
+{
+	*fx = path_rng_1D(kg, rng, sample, num_samples, dimension);
+	*fy = path_rng_1D(kg, rng, sample, num_samples, dimension + 1);
+}
+
+__device void path_rng_init(KernelGlobals *kg, __global uint *rng_state, int sample, int num_samples, RNG *rng, int x, int y, float *fx, float *fy)
 {
 	/* load state */
 	*rng = *rng_state;
@@ -187,8 +221,7 @@ __device void path_rng_init(KernelGlobals *kg, __global uint *rng_state, int sam
 		*fy = 0.5f;
 	}
 	else {
-		*fx = path_rng(kg, rng, sample, PRNG_FILTER_U);
-		*fy = path_rng(kg, rng, sample, PRNG_FILTER_V);
+		path_rng_2D(kg, rng, sample, num_samples, PRNG_FILTER_U, fx, fy);
 	}
 }
 

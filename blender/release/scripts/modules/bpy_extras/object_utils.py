@@ -22,6 +22,9 @@ __all__ = (
     "add_object_align_init",
     "object_data_add",
     "AddObjectHelper",
+    "object_add_grid_scale",
+    "object_add_grid_scale_apply_operator",
+    "object_image_guess",
     )
 
 
@@ -68,7 +71,14 @@ def add_object_align_init(context, operator):
         if properties.is_property_set("view_align"):
             view_align = view_align_force = operator.view_align
         else:
-            properties.view_align = view_align
+            if properties.is_property_set("rotation"):
+                # ugh, 'view_align' callback resets
+                value = properties.rotation[:]
+                properties.view_align = view_align
+                properties.rotation = value
+                del value
+            else:
+                properties.view_align = view_align
 
     if operator and (properties.is_property_set("rotation") and
                      not view_align_force):
@@ -201,6 +211,21 @@ def object_add_grid_scale(context):
         return space_data.grid_scale_unit
 
     return 1.0
+
+
+def object_add_grid_scale_apply_operator(operator, context):
+    """
+    Scale an operators distance values by the grid size.
+    """
+    grid_scale = object_add_grid_scale(context)
+
+    properties = operator.properties
+    properties_def = properties.bl_rna.properties
+    for prop_id in properties_def.keys():
+        if not properties.is_property_set(prop_id):
+            prop_def = properties_def[prop_id]
+            if prop_def.unit == 'LENGTH' and prop_def.subtype == 'DISTANCE':
+                setattr(operator, prop_id, getattr(operator, prop_id) * grid_scale)
 
 
 def object_image_guess(obj, bm=None):

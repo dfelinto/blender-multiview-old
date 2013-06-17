@@ -49,6 +49,7 @@ extern "C" {
 #include "BKE_linestyle.h"
 #include "BKE_main.h"
 #include "BKE_text.h"
+#include "BKE_context.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
@@ -579,11 +580,14 @@ void FRS_init_stroke_rendering(Render *re)
 	controller->ResetRenderCount();
 }
 
-Render *FRS_do_stroke_rendering(Render *re, SceneRenderLayer *srl)
+Render *FRS_do_stroke_rendering(Render *re, SceneRenderLayer *srl, int render)
 {
 	Main bmain = {0};
 	Render *freestyle_render = NULL;
 	Text *text, *next_text;
+
+	if (!render)
+		return controller->RenderStrokes(re, false);
 
 	RenderMonitor monitor(re);
 	controller->setRenderMonitor(&monitor);
@@ -618,7 +622,7 @@ Render *FRS_do_stroke_rendering(Render *re, SceneRenderLayer *srl)
 		re->i.infostr = NULL;
 		freestyle_scene = re->scene;
 		controller->DrawStrokes();
-		freestyle_render = controller->RenderStrokes(re);
+		freestyle_render = controller->RenderStrokes(re, true);
 		controller->CloseFile();
 		freestyle_scene = NULL;
 

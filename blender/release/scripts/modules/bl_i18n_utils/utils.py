@@ -68,9 +68,7 @@ def get_best_similar(data):
     for x in similar_pool:
         if min_len < len(x) < max_len:
             s.set_seq1(x)
-            # XXX quick_ratio() actually looks much slower (~400%) than ratio() itself!!!
-            #if s.real_quick_ratio() >= use_similar and s.quick_ratio() >= use_similar:
-            if s.real_quick_ratio() >= use_similar:
+            if s.real_quick_ratio() >= use_similar and s.quick_ratio() >= use_similar:
                 sratio = s.ratio()
                 if sratio >= use_similar:
                     tmp = x
@@ -465,7 +463,8 @@ class I18nMessages:
                     tmp[real_key] = msg
             done_keys.add(key)
             if '%' in msgid and msgstr and len(_format(msgid)) != len(_format(msgstr)):
-                ret.append("Error! msg's format entities are not matched in msgid and msgstr ({})".format(real_key))
+                if not msg.is_fuzzy:
+                    ret.append("Error! msg's format entities are not matched in msgid and msgstr ({})".format(real_key))
                 if fix:
                     msg.msgstr = ""
         for k in rem:

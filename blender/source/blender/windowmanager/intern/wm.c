@@ -28,11 +28,10 @@
  *  \ingroup wm
  */
 
-
 #include <string.h>
 #include <stddef.h>
 
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
 
 #include "DNA_windowmanager_types.h"
 
@@ -106,6 +105,22 @@ void WM_operator_free(wmOperator *op)
 	}
 	
 	MEM_freeN(op);
+}
+
+/**
+ * Use with extreme care!,
+ * properties, customdata etc - must be compatible.
+ *
+ * \param op  Operator to assign the type to.
+ * \param ot  OperatorType to assign.
+ */
+void WM_operator_type_set(wmOperator *op, wmOperatorType *ot)
+{
+	/* not supported for Python */
+	BLI_assert(op->py_instance == NULL);
+
+	op->type = ot;
+	op->ptr->type = ot->srna;
 }
 
 static void wm_reports_free(wmWindowManager *wm)
@@ -205,7 +220,7 @@ int WM_uilisttype_add(uiListType *ult)
 
 void WM_uilisttype_freelink(uiListType *ult)
 {
-	BLI_ghash_remove(uilisttypes_hash, ult->idname, NULL, (GHashValFreeFP)MEM_freeN);
+	BLI_ghash_remove(uilisttypes_hash, ult->idname, NULL, MEM_freeN);
 }
 
 /* called on initialize WM_init() */
@@ -218,7 +233,7 @@ void WM_uilisttype_free(void)
 {
 	GHashIterator *iter = BLI_ghashIterator_new(uilisttypes_hash);
 
-	for (; BLI_ghashIterator_notDone(iter); BLI_ghashIterator_step(iter)) {
+	for (; !BLI_ghashIterator_done(iter); BLI_ghashIterator_step(iter)) {
 		uiListType *ult = BLI_ghashIterator_getValue(iter);
 		if (ult->ext.free) {
 			ult->ext.free(ult->ext.data);
@@ -226,7 +241,7 @@ void WM_uilisttype_free(void)
 	}
 	BLI_ghashIterator_free(iter);
 
-	BLI_ghash_free(uilisttypes_hash, NULL, (GHashValFreeFP)MEM_freeN);
+	BLI_ghash_free(uilisttypes_hash, NULL, MEM_freeN);
 	uilisttypes_hash = NULL;
 }
 
@@ -258,7 +273,7 @@ int WM_menutype_add(MenuType *mt)
 
 void WM_menutype_freelink(MenuType *mt)
 {
-	BLI_ghash_remove(menutypes_hash, mt->idname, NULL, (GHashValFreeFP)MEM_freeN);
+	BLI_ghash_remove(menutypes_hash, mt->idname, NULL, MEM_freeN);
 }
 
 /* called on initialize WM_init() */
@@ -271,7 +286,7 @@ void WM_menutype_free(void)
 {
 	GHashIterator *iter = BLI_ghashIterator_new(menutypes_hash);
 
-	for (; BLI_ghashIterator_notDone(iter); BLI_ghashIterator_step(iter)) {
+	for (; !BLI_ghashIterator_done(iter); BLI_ghashIterator_step(iter)) {
 		MenuType *mt = BLI_ghashIterator_getValue(iter);
 		if (mt->ext.free) {
 			mt->ext.free(mt->ext.data);
@@ -279,7 +294,7 @@ void WM_menutype_free(void)
 	}
 	BLI_ghashIterator_free(iter);
 
-	BLI_ghash_free(menutypes_hash, NULL, (GHashValFreeFP)MEM_freeN);
+	BLI_ghash_free(menutypes_hash, NULL, MEM_freeN);
 	menutypes_hash = NULL;
 }
 

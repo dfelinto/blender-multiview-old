@@ -521,8 +521,8 @@ void RNA_identifier_sanitize(char *identifier, int property)
 		for (a = 0; kwlist_prop[a]; a++) {
 			if (strcmp(identifier, kwlist_prop[a]) == 0) {
 				/* this keyword is reserved by python.
-				* just replace the last character by '_' to keep it readable.
-				*/
+				 * just replace the last character by '_' to keep it readable.
+				 */
 				identifier[strlen(identifier) - 1] = '_';
 				break;
 			}
@@ -3015,6 +3015,7 @@ void RNA_def_function_return(FunctionRNA *func, PropertyRNA *ret)
 		return;
 	}
 
+	BLI_assert(func->c_ret == NULL);
 	func->c_ret = ret;
 
 	RNA_def_function_output(func, ret);

@@ -51,10 +51,10 @@ public:
 
 	Object *NewMesh() const;
 
-	Render *RenderScene(Render *re);
+	Render *RenderScene(Render *re, bool render);
 
 protected:
-	Main _freestyle_bmain;
+	Main *freestyle_bmain;
 	Scene *old_scene;
 	Scene *freestyle_scene;
 	Material *material;

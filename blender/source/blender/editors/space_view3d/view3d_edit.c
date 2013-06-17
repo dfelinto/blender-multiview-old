@@ -44,7 +44,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_camera.h"
@@ -86,6 +85,27 @@
 /* for ndof prints */
 // #define DEBUG_NDOF_MOTION
 
+static void view3d_offset_lock_report(ReportList *reports)
+{
+	BKE_report(reports, RPT_WARNING, "View offset is locked");
+}
+
+bool ED_view3d_offset_lock_check(struct View3D *v3d, struct RegionView3D *rv3d)
+{
+	return (rv3d->persp != RV3D_CAMOB) && (v3d->ob_centre_cursor || v3d->ob_centre);
+}
+
+#define VIEW3D_OP_OFS_LOCK_TEST(C, op) \
+	{ \
+		View3D *v3d_tmp = CTX_wm_view3d(C); \
+		RegionView3D *rv3d_tmp = CTX_wm_region_view3d(C); \
+		if (ED_view3d_offset_lock_check(v3d_tmp, rv3d_tmp)) { \
+			view3d_offset_lock_report((op)->reports); \
+			return OPERATOR_CANCELLED; \
+		} \
+	} (void)0
+
+
 /* ********************** view3d_edit: view manipulations ********************* */
 
 bool ED_view3d_camera_lock_check(View3D *v3d, RegionView3D *rv3d)
@@ -125,9 +145,9 @@ bool ED_view3d_camera_lock_sync(View3D *v3d, RegionView3D *rv3d)
 			ED_view3d_to_m4(view_mat, rv3d->ofs, rv3d->viewquat, rv3d->dist);
 
 			invert_m4_m4(v3d->camera->imat, v3d->camera->obmat);
-			mult_m4_m4m4(diff_mat, view_mat, v3d->camera->imat);
+			mul_m4_m4m4(diff_mat, view_mat, v3d->camera->imat);
 
-			mult_m4_m4m4(parent_mat, diff_mat, root_parent->obmat);
+			mul_m4_m4m4(parent_mat, diff_mat, root_parent->obmat);
 
 			BKE_object_tfm_protected_backup(root_parent, &obtfm);
 			BKE_object_apply_mat4(root_parent, parent_mat, true, false);
@@ -441,11 +461,18 @@ static void viewops_data_create(bContext *C, wmOperator *op, const wmEvent *even
 		Object *ob = OBACT;
 
 		if (ob && (ob->mode & OB_MODE_ALL_PAINT) && (BKE_object_pose_armature_get(ob) == NULL)) {
-			/* transformation is disabled for painting modes, which will make it
-			 * so previous offset is used. This is annoying when you open file
-			 * saved with active object in painting mode
+			/* in case of sculpting use last average stroke position as a rotation
+			 * center, in other cases it's not clear what rotation center shall be
+			 * so just rotate around object origin
 			 */
-			copy_v3_v3(lastofs, ob->obmat[3]);
+			if (ob->mode & OB_MODE_SCULPT) {
+				float stroke[3];
+				ED_sculpt_get_average_stroke(ob, stroke);
+				copy_v3_v3(lastofs, stroke);
+			}
+			else {
+				copy_v3_v3(lastofs, ob->obmat[3]);
+			}
 		}
 		else {
 			/* If there's no selection, lastofs is unmodified and last value since static */
@@ -655,7 +682,7 @@ static void viewrotate_apply(ViewOpsData *vod, int x, int y)
 {
 	RegionView3D *rv3d = vod->rv3d;
 
-	rv3d->view = RV3D_VIEW_USER; /* need to reset everytime because of view snapping */
+	rv3d->view = RV3D_VIEW_USER; /* need to reset every time because of view snapping */
 
 	if (U.flag & USER_TRACKBALL) {
 		float phi, si, q1[4], dvec[3], newvec[3];
@@ -1279,7 +1306,7 @@ void VIEW3D_OT_ndof_orbit_zoom(struct wmOperatorType *ot)
 /* -- "pan" navigation
  * -- zoom or dolly?
  */
-static int ndof_pan_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
+static int ndof_pan_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	if (event->type != NDOF_MOTION)
 		return OPERATOR_CANCELLED;
@@ -1287,6 +1314,8 @@ static int ndof_pan_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *e
 		View3D *v3d = CTX_wm_view3d(C);
 		RegionView3D *rv3d = CTX_wm_region_view3d(C);
 		wmNDOFMotionData *ndof = (wmNDOFMotionData *) event->customdata;
+
+		VIEW3D_OP_OFS_LOCK_TEST(C, op);
 
 		ED_view3d_camera_lock_init(v3d, rv3d);
 
@@ -1578,6 +1607,8 @@ static int viewmove_modal(bContext *C, wmOperator *op, const wmEvent *event)
 static int viewmove_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ViewOpsData *vod;
+
+	VIEW3D_OP_OFS_LOCK_TEST(C, op);
 
 	/* makes op->customdata */
 	viewops_data_create(C, op, event);
@@ -2156,6 +2187,8 @@ static int viewdolly_exec(bContext *C, wmOperator *op)
 static int viewdolly_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ViewOpsData *vod;
+
+	VIEW3D_OP_OFS_LOCK_TEST(C, op);
 
 	/* makes op->customdata */
 	viewops_data_create(C, op, event);
@@ -3163,8 +3196,13 @@ static void axis_set_view(bContext *C, View3D *v3d, ARegion *ar,
 			align_active = false;
 		}
 		else {
+			const float z_flip_quat[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 			float obact_quat[4];
 			float twmat[3][3];
+
+			/* flip the input, the end result being that an object
+			 * with no rotation behaves as if 'align_active' is off */
+			mul_qt_qtqt(new_quat, new_quat, z_flip_quat);
 
 			/* same as transform manipulator when normal is set */
 			ED_getTransformOrientationMatrix(C, twmat, false);
@@ -3475,6 +3513,8 @@ static int viewpan_exec(bContext *C, wmOperator *op)
 	float zfac;
 	int pandir;
 
+	VIEW3D_OP_OFS_LOCK_TEST(C, op);
+
 	pandir = RNA_enum_get(op->ptr, "type");
 
 	ED_view3d_camera_lock_init(v3d, rv3d);
@@ -3667,18 +3707,13 @@ void VIEW3D_OT_background_image_remove(wmOperatorType *ot)
 
 /* ********************* set clipping operator ****************** */
 
-static void calc_clipping_plane(float clip[6][4], BoundBox *clipbb)
+static void calc_clipping_plane(float clip[6][4], const BoundBox *clipbb)
 {
 	int val;
 
 	for (val = 0; val < 4; val++) {
-
 		normal_tri_v3(clip[val], clipbb->vec[val], clipbb->vec[val == 3 ? 0 : val + 1], clipbb->vec[val + 4]);
-
-		/* TODO - this is just '-dot_v3v3(clip[val], clipbb->vec[val])' isnt it? - sould replace */
-		clip[val][3] = -clip[val][0] * clipbb->vec[val][0] -
-		                clip[val][1] * clipbb->vec[val][1] -
-		                clip[val][2] * clipbb->vec[val][2];
+		clip[val][3] = -dot_v3v3(clip[val], clipbb->vec[val]);
 	}
 }
 

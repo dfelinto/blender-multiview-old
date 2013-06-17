@@ -42,17 +42,26 @@ static void node_shader_init_attribute(bNodeTree *UNUSED(ntree), bNode *node)
 	node->storage = attr;
 }
 
+static int node_shader_gpu_attribute(GPUMaterial *mat, bNode *node, bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
+{
+	NodeShaderAttribute *attr = node->storage;
+	GPUNodeLink *mtface = GPU_attribute(CD_MTFACE, attr->name);
+
+	return GPU_stack_link(mat, "node_attribute", in, out, mtface);
+}
+
 /* node type definition */
 void register_node_type_sh_attribute(void)
 {
 	static bNodeType ntype;
 
-	sh_node_type_base(&ntype, SH_NODE_ATTRIBUTE, "Attribute", NODE_CLASS_INPUT, NODE_OPTIONS);
+	sh_node_type_base(&ntype, SH_NODE_ATTRIBUTE, "Attribute", NODE_CLASS_INPUT, 0);
 	node_type_compatibility(&ntype, NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, NULL, sh_node_attribute_out);
-	node_type_size(&ntype, 150, 60, 200);
 	node_type_init(&ntype, node_shader_init_attribute);
 	node_type_storage(&ntype, "NodeShaderAttribute", node_free_standard_storage, node_copy_standard_storage);
+	node_type_gpu(&ntype, node_shader_gpu_attribute);
 
 	nodeRegisterType(&ntype);
 }
+

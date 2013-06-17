@@ -55,8 +55,7 @@ void GaussianAlphaXBlurOperation::initExecution()
 
 	if (this->m_sizeavailable) {
 		float rad = this->m_size * this->m_data->sizex;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_gausstab = BlurBaseOperation::make_gausstab(rad);
@@ -69,8 +68,7 @@ void GaussianAlphaXBlurOperation::updateGauss()
 	if (this->m_gausstab == NULL) {
 		updateSize();
 		float rad = this->m_size * this->m_data->sizex;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_gausstab = BlurBaseOperation::make_gausstab(rad);
@@ -79,8 +77,7 @@ void GaussianAlphaXBlurOperation::updateGauss()
 	if (this->m_distbuf_inv == NULL) {
 		updateSize();
 		float rad = this->m_size * this->m_data->sizex;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_distbuf_inv = BlurBaseOperation::make_dist_fac_inverse(rad, this->m_falloff);
@@ -102,13 +99,12 @@ void GaussianAlphaXBlurOperation::executePixel(float output[4], int x, int y, vo
 	int bufferstarty = inputBuffer->getRect()->ymin;
 
 	int miny = y;
-	// int maxy = y;  // UNUSED
 	int minx = x - this->m_rad;
 	int maxx = x + this->m_rad;  // UNUSED
 	miny = max(miny, inputBuffer->getRect()->ymin);
 	minx = max(minx, inputBuffer->getRect()->xmin);
-	// maxy = min(maxy, inputBuffer->getRect()->ymax);
-	maxx = min(maxx, inputBuffer->getRect()->xmax);
+    maxx = min(maxx, inputBuffer->getRect()->xmax -1);
+
 
 	/* *** this is the main part which is different to 'GaussianXBlurOperation'  *** */
 	int step = getStep();

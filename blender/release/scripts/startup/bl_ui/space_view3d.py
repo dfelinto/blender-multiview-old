@@ -323,7 +323,7 @@ class VIEW3D_MT_uv_map(Menu):
 
         layout.separator()
 
-        layout.operator_context = 'EXEC_REGION_WIN'
+        layout.operator_context = 'INVOKE_REGION_WIN'
         layout.operator("uv.project_from_view").scale_to_bounds = False
         layout.operator("uv.project_from_view", text="Project from View (Bounds)").scale_to_bounds = True
 
@@ -582,26 +582,36 @@ class VIEW3D_MT_select_edit_mesh(Menu):
 
         layout.separator()
 
+        # primitive
         layout.operator("mesh.select_all").action = 'TOGGLE'
         layout.operator("mesh.select_all", text="Inverse").action = 'INVERT'
 
         layout.separator()
 
-        layout.operator("mesh.select_ungrouped", text="Ungrouped Verts")
+        # numeric
         layout.operator("mesh.select_random", text="Random")
         layout.operator("mesh.select_nth")
-        layout.operator("mesh.edges_select_sharp", text="Sharp Edges")
-        layout.operator("mesh.faces_select_linked_flat", text="Linked Flat Faces")
-        layout.operator("mesh.select_interior_faces", text="Interior Faces")
-        layout.operator("mesh.select_axis", text="Side of Active")
 
         layout.separator()
 
-        layout.operator("mesh.select_face_by_sides")
+        # geometric
+        layout.operator("mesh.edges_select_sharp", text="Sharp Edges")
+        layout.operator("mesh.faces_select_linked_flat", text="Linked Flat Faces")
+
+        layout.separator()
+
+        # topology
+        layout.operator("mesh.select_loose", text="Loose Geometry")
         if context.scene.tool_settings.mesh_select_mode[2] is False:
             layout.operator("mesh.select_non_manifold", text="Non Manifold")
-        layout.operator("mesh.select_loose_verts", text="Loose Verts/Edges")
+        layout.operator("mesh.select_interior_faces", text="Interior Faces")
+        layout.operator("mesh.select_face_by_sides")
+
+        layout.separator()
+
+        # other ...
         layout.operator_menu_enum("mesh.select_similar", "type", text="Similar")
+        layout.operator("mesh.select_ungrouped", text="Ungrouped Verts")
 
         layout.separator()
 
@@ -611,9 +621,10 @@ class VIEW3D_MT_select_edit_mesh(Menu):
         layout.separator()
 
         layout.operator("mesh.select_mirror", text="Mirror")
+        layout.operator("mesh.select_axis", text="Side of Active")
 
         layout.operator("mesh.select_linked", text="Linked")
-        layout.operator("mesh.select_vertex_path", text="Vertex Path")
+        layout.operator("mesh.shortest_path_select", text="Shortest Path")
         layout.operator("mesh.loop_multi_select", text="Edge Loop").ring = False
         layout.operator("mesh.loop_multi_select", text="Edge Ring").ring = True
 
@@ -892,7 +903,9 @@ class VIEW3D_MT_object_specials(Menu):
     def draw(self, context):
         layout = self.layout
 
+        scene = context.scene
         obj = context.object
+
         if obj.type == 'CAMERA':
             layout.operator_context = 'INVOKE_REGION_WIN'
 
@@ -946,21 +959,51 @@ class VIEW3D_MT_object_specials(Menu):
             props.header_text = "Empty Draw Size: %.3f"
 
         if obj.type == 'LAMP':
+            lamp = obj.data
+
             layout.operator_context = 'INVOKE_REGION_WIN'
 
-            props = layout.operator("wm.context_modal_mouse", text="Energy")
-            props.data_path_iter = "selected_editable_objects"
-            props.data_path_item = "data.energy"
-            props.header_text = "Lamp Energy: %.3f"
+            if scene.render.use_shading_nodes:
+                try:
+                    value = lamp.node_tree.nodes["Emission"].inputs["Strength"].default_value
 
-            if obj.data.type in {'SPOT', 'AREA', 'POINT'}:
-                props = layout.operator("wm.context_modal_mouse", text="Falloff Distance")
+                    props = layout.operator("wm.context_modal_mouse", text="Strength")
+                    props.data_path_iter = "selected_editable_objects"
+                    props.data_path_item = "data.node_tree.nodes[\"Emission\"].inputs[\"Strength\"].default_value"
+                    props.header_text = "Lamp Strength: %.3f"
+                    props.input_scale = 0.1
+                except AttributeError:
+                    pass
+
+                if lamp.type == 'AREA' and lamp.shape == 'RECTANGLE':
+                    props = layout.operator("wm.context_modal_mouse", text="Size X")
+                    props.data_path_iter = "selected_editable_objects"
+                    props.data_path_item = "data.size"
+                    props.header_text = "Lamp Size X: %.3f"
+
+                    props = layout.operator("wm.context_modal_mouse", text="Size Y")
+                    props.data_path_iter = "selected_editable_objects"
+                    props.data_path_item = "data.size"
+                    props.header_text = "Lamp Size Y: %.3f"
+                elif lamp.type in  {'SPOT', 'AREA', 'POINT', 'SUN'}:
+                    props = layout.operator("wm.context_modal_mouse", text="Size")
+                    props.data_path_iter = "selected_editable_objects"
+                    props.data_path_item = "data.shadow_soft_size"
+                    props.header_text = "Lamp Size: %.3f"
+            else:
+                props = layout.operator("wm.context_modal_mouse", text="Energy")
                 props.data_path_iter = "selected_editable_objects"
-                props.data_path_item = "data.distance"
-                props.input_scale = 0.1
-                props.header_text = "Lamp Falloff Distance: %.1f"
+                props.data_path_item = "data.energy"
+                props.header_text = "Lamp Energy: %.3f"
 
-            if obj.data.type == 'SPOT':
+                if lamp.type in {'SPOT', 'AREA', 'POINT'}:
+                    props = layout.operator("wm.context_modal_mouse", text="Falloff Distance")
+                    props.data_path_iter = "selected_editable_objects"
+                    props.data_path_item = "data.distance"
+                    props.input_scale = 0.1
+                    props.header_text = "Lamp Falloff Distance: %.1f"
+
+            if lamp.type == 'SPOT':
                 layout.separator()
                 props = layout.operator("wm.context_modal_mouse", text="Spot Size")
                 props.data_path_iter = "selected_editable_objects"
@@ -974,17 +1017,18 @@ class VIEW3D_MT_object_specials(Menu):
                 props.input_scale = -0.01
                 props.header_text = "Spot Blend: %.2f"
 
-                props = layout.operator("wm.context_modal_mouse", text="Clip Start")
-                props.data_path_iter = "selected_editable_objects"
-                props.data_path_item = "data.shadow_buffer_clip_start"
-                props.input_scale = 0.05
-                props.header_text = "Clip Start: %.2f"
+                if not scene.render.use_shading_nodes:
+                    props = layout.operator("wm.context_modal_mouse", text="Clip Start")
+                    props.data_path_iter = "selected_editable_objects"
+                    props.data_path_item = "data.shadow_buffer_clip_start"
+                    props.input_scale = 0.05
+                    props.header_text = "Clip Start: %.2f"
 
-                props = layout.operator("wm.context_modal_mouse", text="Clip End")
-                props.data_path_iter = "selected_editable_objects"
-                props.data_path_item = "data.shadow_buffer_clip_end"
-                props.input_scale = 0.05
-                props.header_text = "Clip End: %.2f"
+                    props = layout.operator("wm.context_modal_mouse", text="Clip End")
+                    props.data_path_iter = "selected_editable_objects"
+                    props.data_path_item = "data.shadow_buffer_clip_end"
+                    props.input_scale = 0.05
+                    props.header_text = "Clip End: %.2f"
 
         layout.separator()
 
@@ -1231,6 +1275,7 @@ class VIEW3D_MT_paint_vertex(Menu):
         layout.separator()
 
         layout.operator("paint.vertex_color_set")
+        layout.operator("paint.vertex_color_smooth")
         layout.operator("paint.vertex_color_dirt")
 
 
@@ -1351,34 +1396,34 @@ class VIEW3D_MT_hide_mask(Menu):
     def draw(self, context):
         layout = self.layout
 
-        op = layout.operator("paint.hide_show", text="Show All")
-        op.action = 'SHOW'
-        op.area = 'ALL'
+        props = layout.operator("paint.hide_show", text="Show All")
+        props.action = 'SHOW'
+        props.area = 'ALL'
 
-        op = layout.operator("paint.hide_show", text="Hide Bounding Box")
-        op.action = 'HIDE'
-        op.area = 'INSIDE'
+        props = layout.operator("paint.hide_show", text="Hide Bounding Box")
+        props.action = 'HIDE'
+        props.area = 'INSIDE'
 
-        op = layout.operator("paint.hide_show", text="Show Bounding Box")
-        op.action = 'SHOW'
-        op.area = 'INSIDE'
+        props = layout.operator("paint.hide_show", text="Show Bounding Box")
+        props.action = 'SHOW'
+        props.area = 'INSIDE'
 
-        op = layout.operator("paint.hide_show", text="Hide Masked")
-        op.area = 'MASKED'
-        op.action = 'HIDE'
+        props = layout.operator("paint.hide_show", text="Hide Masked")
+        props.area = 'MASKED'
+        props.action = 'HIDE'
 
         layout.separator()
 
-        op = layout.operator("paint.mask_flood_fill", text="Invert Mask")
-        op.mode = 'INVERT'
+        props = layout.operator("paint.mask_flood_fill", text="Invert Mask")
+        props.mode = 'INVERT'
 
-        op = layout.operator("paint.mask_flood_fill", text="Fill Mask")
-        op.mode = 'VALUE'
-        op.value = 1
+        props = layout.operator("paint.mask_flood_fill", text="Fill Mask")
+        props.mode = 'VALUE'
+        props.value = 1
 
-        op = layout.operator("paint.mask_flood_fill", text="Clear Mask")
-        op.mode = 'VALUE'
-        op.value = 0
+        props = layout.operator("paint.mask_flood_fill", text="Clear Mask")
+        props.mode = 'VALUE'
+        props.value = 0
 
 
 # ********** Particle menu **********
@@ -1425,14 +1470,32 @@ class VIEW3D_MT_particle_specials(Menu):
         particle_edit = context.tool_settings.particle_edit
 
         layout.operator("particle.rekey")
+        layout.operator("particle.delete")
+        layout.operator("particle.remove_doubles")
 
-        layout.separator()
         if particle_edit.select_mode == 'POINT':
             layout.operator("particle.subdivide")
+
+        layout.operator("particle.weight_set")
+        layout.separator()
+
+        layout.operator("particle.mirror")
+
+        if particle_edit.select_mode == 'POINT':
+            layout.separator()
             layout.operator("particle.select_roots")
             layout.operator("particle.select_tips")
 
-        layout.operator("particle.remove_doubles")
+            layout.separator()
+
+            layout.operator("particle.select_more")
+            layout.operator("particle.select_less")
+
+            layout.separator()
+
+            layout.operator("particle.select_all").action = 'TOGGLE'
+            layout.operator("particle.select_linked")
+            layout.operator("particle.select_all", text="Inverse").action = 'INVERT'
 
 
 class VIEW3D_MT_particle_showhide(ShowHideMenu, Menu):
@@ -1734,9 +1797,8 @@ class VIEW3D_MT_edit_mesh(Menu):
 
         layout.separator()
         layout.operator("mesh.symmetrize")
-        layout.operator("view3d.edit_mesh_extrude_move_normal", text="Extrude Region")
-        layout.operator("view3d.edit_mesh_extrude_individual_move", text="Extrude Individual")
         layout.operator("mesh.duplicate_move")
+        layout.menu("VIEW3D_MT_edit_mesh_extrude")
         layout.menu("VIEW3D_MT_edit_mesh_delete")
 
         layout.separator()
@@ -1800,7 +1862,7 @@ class VIEW3D_MT_edit_mesh_specials(Menu):
 
         layout.operator("mesh.blend_from_shape")
         layout.operator("mesh.shape_propagate_to_all")
-        layout.operator("mesh.select_vertex_path")
+        layout.operator("mesh.shortest_path_select")
         layout.operator("mesh.sort_elements")
         layout.operator("mesh.symmetrize")
 
@@ -1873,8 +1935,6 @@ class VIEW3D_MT_edit_mesh_vertices(Menu):
         layout.operator("mesh.remove_doubles")
         layout.operator("mesh.sort_elements", text="Sort Vertices").elements = {'VERT'}
 
-        layout.operator("mesh.select_vertex_path")
-
         layout.operator("mesh.blend_from_shape")
 
         layout.operator("object.vertex_group_blend")
@@ -1927,7 +1987,7 @@ class VIEW3D_MT_edit_mesh_edges(Menu):
 
         layout.separator()
 
-        layout.operator("mesh.bevel")
+        layout.operator("mesh.bevel").vertex_only = False
         layout.operator("mesh.edge_split")
         layout.operator("mesh.bridge_edge_loops")
         layout.operator("mesh.sort_elements", text="Sort Edges").elements = {'EDGE'}
@@ -1954,9 +2014,10 @@ class VIEW3D_MT_edit_mesh_faces(Menu):
         layout.operator("mesh.flip_normals")
         layout.operator("mesh.edge_face_add")
         layout.operator("mesh.fill")
+        layout.operator("mesh.fill_grid")
         layout.operator("mesh.beautify_fill")
         layout.operator("mesh.inset")
-        layout.operator("mesh.bevel")
+        layout.operator("mesh.bevel").vertex_only = False
         layout.operator("mesh.solidify")
         layout.operator("mesh.wireframe")
         layout.operator("mesh.sort_elements", text="Sort Faces").elements = {'FACE'}
@@ -2014,7 +2075,14 @@ class VIEW3D_MT_edit_mesh_delete(Menu):
 
         layout.separator()
 
-        layout.operator("mesh.dissolve")
+        mesh_select_mode = context.tool_settings.mesh_select_mode[:]
+        if mesh_select_mode[2]:
+            layout.operator("mesh.dissolve_faces")
+        elif mesh_select_mode[1]:
+            layout.operator("mesh.dissolve_edges")
+        elif mesh_select_mode[0]:
+            layout.operator("mesh.dissolve_verts")
+
         layout.operator("mesh.dissolve_limited")
 
         layout.separator()
@@ -2392,6 +2460,7 @@ class VIEW3D_PT_view3d_properties(Panel):
 
         col = layout.column(align=True)
         col.prop(view, "use_render_border")
+        col.active = view.region_3d.view_perspective != 'CAMERA'
 
 
 class VIEW3D_PT_view3d_cursor(Panel):
@@ -2557,8 +2626,6 @@ class VIEW3D_PT_view3d_meshdisplay(Panel):
 
         mesh = context.active_object.data
 
-        layout.prop(mesh, "show_weight")
-
         split = layout.split()
 
         col = split.column()
@@ -2568,6 +2635,8 @@ class VIEW3D_PT_view3d_meshdisplay(Panel):
         col.prop(mesh, "show_edge_crease", text="Creases")
         if with_freestyle:
             col.prop(mesh, "show_edge_seams", text="Seams")
+
+        layout.prop(mesh, "show_weight")
 
         col = split.column()
         col.label()
@@ -2610,7 +2679,7 @@ class VIEW3D_PT_view3d_meshdisplay(Panel):
 class VIEW3D_PT_view3d_meshstatvis(Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_label = "Mesh Debug"
+    bl_label = "Mesh Analysis"
 
     @classmethod
     def poll(cls, context):

@@ -78,7 +78,7 @@ BF_TIFF_LIBPATH = '${BF_TIFF}/lib'
 WITH_BF_ZLIB = True
 BF_ZLIB = LIBDIR + '/zlib'
 BF_ZLIB_INC = '${BF_ZLIB}/include'
-BF_ZLIB_LIB = 'libz'
+BF_ZLIB_LIB = 'libz_st'
 BF_ZLIB_LIBPATH = '${BF_ZLIB}/lib'
 
 WITH_BF_INTERNATIONAL = True
@@ -158,7 +158,7 @@ WITH_BF_LLVM = True
 BF_LLVM = LIBDIR + '/llvm'
 BF_LLVM_LIB = 'LLVMBitReader LLVMJIT LLVMipo LLVMVectorize LLVMBitWriter LLVMX86CodeGen LLVMX86Desc LLVMX86Info LLVMX86AsmPrinter ' + \
     'LLVMX86Utils LLVMSelectionDAG LLVMCodeGen LLVMScalarOpts LLVMInstCombine LLVMTransformUtils LLVMipa LLVMAnalysis LLVMExecutionEngine ' + \
-    'LLVMTarget LLVMMC LLVMCore LLVMSupport'
+    'LLVMTarget LLVMMC LLVMCore LLVMObject LLVMRuntimeDyld LLVMSupport'
 BF_LLVM_LIBPATH = '${BF_LLVM}/lib'
 
 WITH_BF_OIIO = True

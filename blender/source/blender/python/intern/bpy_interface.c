@@ -259,12 +259,15 @@ void BPY_python_start(int argc, const char **argv)
 	 * Python doesn't expose a good way to set this. */
 	BLI_setenv("PYTHONIOENCODING", "utf-8:surrogateescape");
 
+	/* Update, Py3.3 resolves attempting to parse non-existing header */
+#if 0
 	/* Python 3.2 now looks for '2.xx/python/include/python3.2d/pyconfig.h' to
 	 * parse from the 'sysconfig' module which is used by 'site',
 	 * so for now disable site. alternatively we could copy the file. */
 	if (py_path_bundle) {
 		Py_NoSiteFlag = 1;
 	}
+#endif
 
 	Py_FrozenFlag = 1;
 
@@ -391,6 +394,17 @@ void BPY_python_end(void)
 
 #endif
 
+}
+
+void BPY_python_reset(bContext *C)
+{
+	/* unrelated security stuff */
+	G.f &= ~(G_SCRIPT_AUTOEXEC_FAIL | G_SCRIPT_AUTOEXEC_FAIL_QUIET);
+	G.autoexec_fail[0] = '\0';
+
+	BPY_driver_reset();
+	BPY_app_handlers_reset(false);
+	BPY_modules_load_user(C);
 }
 
 static void python_script_error_jump_text(struct Text *text)
@@ -715,7 +729,12 @@ void BPY_modules_load_user(bContext *C)
 	for (text = bmain->text.first; text; text = text->id.next) {
 		if (text->flags & TXT_ISSCRIPT && BLI_testextensie(text->id.name + 2, ".py")) {
 			if (!(G.f & G_SCRIPT_AUTOEXEC)) {
-				printf("scripts disabled for \"%s\", skipping '%s'\n", bmain->name, text->id.name + 2);
+				if (!(G.f & G_SCRIPT_AUTOEXEC_FAIL_QUIET)) {
+					G.f |= G_SCRIPT_AUTOEXEC_FAIL;
+					BLI_snprintf(G.autoexec_fail, sizeof(G.autoexec_fail), "Text '%s'", text->id.name + 2);
+
+					printf("scripts disabled for \"%s\", skipping '%s'\n", bmain->name, text->id.name + 2);
+				}
 			}
 			else {
 				PyObject *module = bpy_text_import(text);
@@ -758,7 +777,7 @@ int BPY_context_member_get(bContext *C, const char *member, bContextDataResult *
 		/* pass */
 	}
 	else if (item == Py_None) {
-		/* pass */
+		done = true;
 	}
 	else if (BPy_StructRNA_Check(item)) {
 		ptr = &(((BPy_StructRNA *)item)->ptr);

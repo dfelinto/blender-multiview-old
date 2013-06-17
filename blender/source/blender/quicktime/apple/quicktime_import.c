@@ -36,7 +36,7 @@
 
 #include "MEM_guardedalloc.h"
 #include "IMB_anim.h"
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
 #include "BKE_global.h"
 #include "BLI_dynstr.h"
 #include "BLI_path_util.h"
@@ -200,6 +200,8 @@ int anim_is_quicktime(const char *name)
 	    BLI_testextensie(name, ".png") ||
 	    BLI_testextensie(name, ".bmp") ||
 	    BLI_testextensie(name, ".jpg") ||
+	    BLI_testextensie(name, ".tif") ||
+	    BLI_testextensie(name, ".exr") ||
 	    BLI_testextensie(name, ".wav") ||
 	    BLI_testextensie(name, ".zip") ||
 	    BLI_testextensie(name, ".mp3"))

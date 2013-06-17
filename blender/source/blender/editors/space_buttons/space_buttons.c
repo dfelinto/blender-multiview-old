@@ -36,7 +36,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -347,8 +346,10 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 			break;
 		case NC_TEXTURE:
 		case NC_IMAGE:
-			ED_area_tag_redraw(sa);
-			sbuts->preview = 1;
+			if (wmn->action != NA_PAINTING) {
+				ED_area_tag_redraw(sa);
+				sbuts->preview = 1;
+			}
 			break;
 		case NC_SPACE:
 			if (wmn->data == ND_SPACE_PROPERTIES)

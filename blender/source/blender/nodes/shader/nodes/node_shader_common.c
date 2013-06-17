@@ -87,16 +87,17 @@ static void *group_initexec(bNodeExecContext *context, bNode *node, bNodeInstanc
 
 static void group_freeexec(bNode *UNUSED(node), void *nodedata)
 {
-	bNodeTreeExec*gexec = (bNodeTreeExec *)nodedata;
+	bNodeTreeExec *gexec = (bNodeTreeExec *)nodedata;
 	
-	ntreeShaderEndExecTree_internal(gexec);
+	if (gexec)
+		ntreeShaderEndExecTree_internal(gexec);
 }
 
 /* Copy inputs to the internal stack.
  */
 static void group_copy_inputs(bNode *gnode, bNodeStack **in, bNodeStack *gstack)
 {
-	bNodeTree *ngroup = (bNodeTree*)gnode->id;
+	bNodeTree *ngroup = (bNodeTree *)gnode->id;
 	bNode *node;
 	bNodeSocket *sock;
 	bNodeStack *ns;
@@ -117,7 +118,7 @@ static void group_copy_inputs(bNode *gnode, bNodeStack **in, bNodeStack *gstack)
  */
 static void group_move_outputs(bNode *gnode, bNodeStack **out, bNodeStack *gstack)
 {
-	bNodeTree *ngroup = (bNodeTree*)gnode->id;
+	bNodeTree *ngroup = (bNodeTree *)gnode->id;
 	bNode *node;
 	bNodeSocket *sock;
 	bNodeStack *ns;
@@ -130,7 +131,7 @@ static void group_move_outputs(bNode *gnode, bNodeStack **out, bNodeStack *gstac
 				if (ns)
 					move_stack(out[a], ns);
 			}
-			break;	/* only one active output node */
+			break;  /* only one active output node */
 		}
 	}
 }
@@ -148,7 +149,7 @@ static void group_execute(void *data, int thread, struct bNode *node, bNodeExecD
 	 */
 	{
 		bNode *inode;
-		for (inode=exec->nodetree->nodes.first; inode; inode=inode->next)
+		for (inode = exec->nodetree->nodes.first; inode; inode = inode->next)
 			inode->need_exec = 1;
 	}
 	
@@ -163,7 +164,7 @@ static void group_execute(void *data, int thread, struct bNode *node, bNodeExecD
 
 static void group_gpu_copy_inputs(bNode *gnode, GPUNodeStack *in, bNodeStack *gstack)
 {
-	bNodeTree *ngroup = (bNodeTree*)gnode->id;
+	bNodeTree *ngroup = (bNodeTree *)gnode->id;
 	bNode *node;
 	bNodeSocket *sock;
 	bNodeStack *ns;
@@ -186,7 +187,7 @@ static void group_gpu_copy_inputs(bNode *gnode, GPUNodeStack *in, bNodeStack *gs
  */
 static void group_gpu_move_outputs(bNode *gnode, GPUNodeStack *out, bNodeStack *gstack)
 {
-	bNodeTree *ngroup = (bNodeTree*)gnode->id;
+	bNodeTree *ngroup = (bNodeTree *)gnode->id;
 	bNode *node;
 	bNodeSocket *sock;
 	bNodeStack *ns;
@@ -201,7 +202,7 @@ static void group_gpu_move_outputs(bNode *gnode, GPUNodeStack *out, bNodeStack *
 					node_gpu_stack_from_data(&out[a], sock->type, ns);
 				}
 			}
-			break;	/* only one active output node */
+			break;  /* only one active output node */
 		}
 	}
 }
@@ -211,11 +212,11 @@ static int gpu_group_execute(GPUMaterial *mat, bNode *node, bNodeExecData *execd
 	bNodeTreeExec *exec = execdata->data;
 	
 	group_gpu_copy_inputs(node, in, exec->stack);
-	#if 0	/* XXX NODE_GROUP_EDIT is deprecated, depends on node space */
+#if 0   /* XXX NODE_GROUP_EDIT is deprecated, depends on node space */
 	ntreeExecGPUNodes(exec, mat, (node->flag & NODE_GROUP_EDIT));
-	#else
+#else
 	ntreeExecGPUNodes(exec, mat, 0);
-	#endif
+#endif
 	group_gpu_move_outputs(node, out, exec->stack);
 	
 	return 1;
@@ -228,7 +229,7 @@ void register_node_type_sh_group(void)
 	/* NB: cannot use sh_node_type_base for node group, because it would map the node type
 	 * to the shared NODE_GROUP integer type id.
 	 */
-	node_type_base_custom(&ntype, "ShaderNodeGroup", "Group", NODE_CLASS_GROUP, NODE_OPTIONS | NODE_CONST_OUTPUT);
+	node_type_base_custom(&ntype, "ShaderNodeGroup", "Group", NODE_CLASS_GROUP, NODE_CONST_OUTPUT);
 	ntype.type = NODE_GROUP;
 	ntype.poll = sh_node_poll_default;
 	ntype.poll_instance = node_group_poll_instance;
@@ -237,12 +238,11 @@ void register_node_type_sh_group(void)
 	BLI_assert(ntype.ext.srna != NULL);
 	RNA_struct_blender_type_set(ntype.ext.srna, &ntype);
 	
-	node_type_compatibility(&ntype, NODE_OLD_SHADING|NODE_NEW_SHADING);
+	node_type_compatibility(&ntype, NODE_OLD_SHADING | NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, NULL, NULL);
-	node_type_size(&ntype, 120, 60, 200);
+	node_type_size(&ntype, 120, 60, 400);
 	node_type_label(&ntype, node_group_label);
 	node_type_update(&ntype, NULL, node_group_verify);
-	strcpy(ntype.group_tree_idname, "ShaderNodeTree");
 	node_type_exec(&ntype, group_initexec, group_freeexec, group_execute);
 	node_type_gpu(&ntype, gpu_group_execute);
 	

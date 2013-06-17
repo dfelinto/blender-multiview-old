@@ -38,6 +38,7 @@
 #include "BLF_translation.h"
 
 #include "BKE_context.h"
+#include "BKE_global.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_scene.h"
@@ -85,7 +86,7 @@ static void node_link_item_apply(bNode *node, NodeLinkItem *item)
 {
 	if (node->type == NODE_GROUP) {
 		node->id = (ID *)item->ngroup;
-		ntreeUpdateTree(item->ngroup);
+		ntreeUpdateTree(G.main, item->ngroup);
 	}
 	else {
 		/* nothing to do for now */
@@ -166,7 +167,7 @@ static void node_socket_disconnect(Main *bmain, bNodeTree *ntree, bNode *node_to
 	sock_to->flag |= SOCK_COLLAPSED;
 
 	nodeUpdate(ntree, node_to);
-	ntreeUpdateTree(ntree);
+	ntreeUpdateTree(bmain, ntree);
 
 	ED_node_tag_update_nodetree(bmain, ntree);
 }
@@ -181,7 +182,7 @@ static void node_socket_remove(Main *bmain, bNodeTree *ntree, bNode *node_to, bN
 	sock_to->flag |= SOCK_COLLAPSED;
 
 	nodeUpdate(ntree, node_to);
-	ntreeUpdateTree(ntree);
+	ntreeUpdateTree(bmain, ntree);
 
 	ED_node_tag_update_nodetree(bmain, ntree);
 }
@@ -206,7 +207,7 @@ static void node_socket_add_replace(const bContext *C, bNodeTree *ntree, bNode *
 			break;
 
 	if (node_from)
-		if (!(node_from->inputs.first == NULL && !(node_from->typeinfo->flag & NODE_OPTIONS)))
+		if (node_from->inputs.first || node_from->typeinfo->uifunc || node_from->typeinfo->uifuncbut)
 			node_from = NULL;
 
 	if (node_prev && node_prev->type == type && node_link_item_compare(node_prev, item)) {
@@ -267,7 +268,7 @@ static void node_socket_add_replace(const bContext *C, bNodeTree *ntree, bNode *
 
 	nodeUpdate(ntree, node_from);
 	nodeUpdate(ntree, node_to);
-	ntreeUpdateTree(ntree);
+	ntreeUpdateTree(CTX_data_main(C), ntree);
 
 	ED_node_tag_update_nodetree(CTX_data_main(C), ntree);
 }
@@ -433,7 +434,8 @@ static void ui_node_menu_column(NodeLinkArg *arg, int nclass, const char *cname)
 		NodeLinkItem *items;
 		int totitems;
 		char name[UI_MAX_NAME_STR];
-		int i, j, num = 0;
+		const char *cur_node_name = NULL;
+		int i, num = 0;
 		
 		if (compatibility && !(ntype->compatibility & compatibility))
 			continue;
@@ -449,7 +451,6 @@ static void ui_node_menu_column(NodeLinkArg *arg, int nclass, const char *cname)
 			if (ui_compatible_sockets(items[i].socket_type, sock->type))
 				num++;
 		
-		j = 0;
 		for (i = 0; i < totitems; ++i) {
 			if (!ui_compatible_sockets(items[i].socket_type, sock->type))
 				continue;
@@ -466,14 +467,14 @@ static void ui_node_menu_column(NodeLinkArg *arg, int nclass, const char *cname)
 			}
 			
 			if (num > 1) {
-				if (j == 0) {
-					uiItemL(column, IFACE_(items[i].node_name), ICON_NODE);
+				if (!cur_node_name || !STREQ(cur_node_name, items[i].node_name)) {
+					cur_node_name = items[i].node_name;
+					uiItemL(column, IFACE_(cur_node_name), ICON_NODE);
 					but = block->buttons.last;
 					but->flag = UI_TEXT_LEFT;
 				}
 				
 				BLI_snprintf(name, UI_MAX_NAME_STR, "  %s", IFACE_(items[i].socket_name));
-				j++;
 			}
 			else
 				BLI_strncpy(name, IFACE_(items[i].node_name), UI_MAX_NAME_STR);

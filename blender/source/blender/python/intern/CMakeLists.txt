@@ -243,6 +243,4 @@ if(WITH_PLAYER)
 endif()
 
 
-
-
 blender_add_lib(bf_python "${SRC}" "${INC}" "${INC_SYS}")

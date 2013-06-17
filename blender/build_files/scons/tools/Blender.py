@@ -155,12 +155,12 @@ def setup_staticlibs(lenv):
         libincs += Split(lenv['BF_OPENEXR_LIBPATH'])
         if lenv['WITH_BF_STATICOPENEXR']:
             statlibs += Split(lenv['BF_OPENEXR_LIB_STATIC'])
+    if lenv['WITH_BF_ZLIB'] and lenv['WITH_BF_STATICZLIB']:
+        statlibs += Split(lenv['BF_ZLIB_LIB_STATIC'])
     if lenv['WITH_BF_TIFF']:
         libincs += Split(lenv['BF_TIFF_LIBPATH'])
         if lenv['WITH_BF_STATICTIFF']:
             statlibs += Split(lenv['BF_TIFF_LIB_STATIC'])
-    if lenv['WITH_BF_ZLIB'] and lenv['WITH_BF_STATICZLIB']:
-        statlibs += Split(lenv['BF_ZLIB_LIB_STATIC'])
     if lenv['WITH_BF_FFTW3']:
         libincs += Split(lenv['BF_FFTW3_LIBPATH'])
         if lenv['WITH_BF_STATICFFTW3']:
@@ -282,10 +282,10 @@ def setup_syslibs(lenv):
 
     if lenv['WITH_BF_OPENEXR'] and not lenv['WITH_BF_STATICOPENEXR']:
         syslibs += Split(lenv['BF_OPENEXR_LIB'])
-    if lenv['WITH_BF_TIFF'] and not lenv['WITH_BF_STATICTIFF']:
-        syslibs += Split(lenv['BF_TIFF_LIB'])
     if lenv['WITH_BF_ZLIB'] and not lenv['WITH_BF_STATICZLIB']:
         syslibs += Split(lenv['BF_ZLIB_LIB'])
+    if lenv['WITH_BF_TIFF'] and not lenv['WITH_BF_STATICTIFF']:
+        syslibs += Split(lenv['BF_TIFF_LIB'])
     if lenv['WITH_BF_FFMPEG'] and not lenv['WITH_BF_STATICFFMPEG']:
         syslibs += Split(lenv['BF_FFMPEG_LIB'])
         if lenv['WITH_BF_OGG']:
@@ -687,7 +687,7 @@ def AppIt(target=None, source=None, env=None):
         cmd = 'mkdir %s/%s.app/Contents/MacOS/lib'%(installdir, binary)
         commands.getoutput(cmd)
         instname = env['BF_CXX']
-        cmd = 'cp %s/lib/libgcc_s.1.dylib %s/%s.app/Contents/MacOS/lib/'%(instname, installdir, binary)
+        cmd = 'ditto --arch %s %s/lib/libgcc_s.1.dylib %s/%s.app/Contents/MacOS/lib/'%(osxarch, instname, installdir, binary)
         commands.getoutput(cmd)
         cmd = 'install_name_tool -id @executable_path/lib/libgcc_s.1.dylib %s/%s.app/Contents/MacOS/lib/libgcc_s.1.dylib'%(installdir, binary)
         commands.getoutput(cmd)
@@ -762,6 +762,14 @@ def UnixPyBundle(target=None, source=None, env=None):
             print '\t"%s"\n' % numpy_target
 
             run("cp -R '%s' '%s'" % (numpy_src, os.path.dirname(numpy_target)))
+            run("rm -rf '%s/distutils'" % numpy_target)
+            run("rm -rf '%s/oldnumeric'" % numpy_target)
+            run("rm -rf '%s/doc'" % numpy_target)
+            run("rm -rf '%s/tests'" % numpy_target)
+            run("rm -rf '%s/f2py'" % numpy_target)
+            run("find '%s' -type d -name 'include' -prune -exec rm -rf {} ';'" % numpy_target)
+            run("find '%s' -type d -name '*.h' -prune -exec rm -rf {} ';'" % numpy_target)
+            run("find '%s' -type d -name '*.a' -prune -exec rm -rf {} ';'" % numpy_target)
         else:
             print 'Failed to find numpy at %s, skipping copying' % numpy_src
 

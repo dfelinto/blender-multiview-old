@@ -401,6 +401,15 @@ static PyObject *bpy_bmvert_is_wire_get(BPy_BMVert *self)
 	return PyBool_FromLong(BM_vert_is_wire(self->v));
 }
 
+PyDoc_STRVAR(bpy_bmvert_is_boundary_doc,
+"True when this vertex connected to any boundary edges (read-only).\n\n:type: boolean"
+);
+static PyObject *bpy_bmvert_is_boundary_get(BPy_BMVert *self)
+{
+	BPY_BM_CHECK_OBJ(self);
+	return PyBool_FromLong(BM_vert_is_boundary(self->v));
+}
+
 
 /* Edge
  * ^^^^ */
@@ -450,47 +459,6 @@ static PyObject *bpy_bmedge_is_boundary_get(BPy_BMEdge *self)
 	BPY_BM_CHECK_OBJ(self);
 	return PyBool_FromLong(BM_edge_is_boundary(self->e));
 }
-
-#ifdef WITH_FREESTYLE
-PyDoc_STRVAR(bpy_bmedge_freestyle_edge_mark_doc,
-"Freestyle edge mark.\n\n:type: boolean"
-);
-static PyObject *bpy_bmedge_freestyle_edge_mark_get(BPy_BMEdge *self)
-{
-	FreestyleEdge *fed;
-
-	BPY_BM_CHECK_OBJ(self);
-	fed = CustomData_bmesh_get(&self->bm->edata, self->e->head.data, CD_FREESTYLE_EDGE);
-	return PyBool_FromLong(fed->flag & FREESTYLE_EDGE_MARK);
-}
-
-static int bpy_bmedge_freestyle_edge_mark_set(BPy_BMEdge *self, PyObject *value)
-{
-	int param;
-	FreestyleEdge *fed;
-
-	BPY_BM_CHECK_INT(self);
-
-	param = PyLong_AsLong(value);
-	if (param != false && param != true) {
-		PyErr_SetString(PyExc_TypeError,
-		                "expected a boolean type 0/1");
-		return -1;
-	}
-
-	if (!CustomData_has_layer(&self->bm->edata, CD_FREESTYLE_EDGE)) {
-		BM_data_layer_add(self->bm, &self->bm->edata, CD_FREESTYLE_EDGE);
-	}
-
-	fed = CustomData_bmesh_get(&self->bm->edata, self->e->head.data, CD_FREESTYLE_EDGE);
-	if (param)
-		fed->flag &= ~FREESTYLE_EDGE_MARK;
-	else
-		fed->flag |= FREESTYLE_EDGE_MARK;
-
-	return 0;
-}
-#endif
 
 
 /* Face
@@ -550,47 +518,6 @@ static int bpy_bmface_material_index_set(BPy_BMFace *self, PyObject *value)
 		return 0;
 	}
 }
-
-#ifdef WITH_FREESTYLE
-PyDoc_STRVAR(bpy_bmface_freestyle_face_mark_doc,
-"Freestyle face mark.\n\n:type: boolean"
-);
-static PyObject *bpy_bmface_freestyle_face_mark_get(BPy_BMFace *self)
-{
-	FreestyleFace *ffa;
-
-	BPY_BM_CHECK_OBJ(self);
-	ffa = CustomData_bmesh_get(&self->bm->pdata, self->f->head.data, CD_FREESTYLE_FACE);
-	return PyBool_FromLong(ffa->flag & FREESTYLE_FACE_MARK);
-}
-
-static int bpy_bmface_freestyle_face_mark_set(BPy_BMFace *self, PyObject *value)
-{
-	int param;
-	FreestyleFace *ffa;
-
-	BPY_BM_CHECK_INT(self);
-
-	param = PyLong_AsLong(value);
-	if (param != false && param != true) {
-		PyErr_SetString(PyExc_TypeError,
-		                "expected a boolean type 0/1");
-		return -1;
-	}
-
-	if (!CustomData_has_layer(&self->bm->pdata, CD_FREESTYLE_FACE)) {
-		BM_data_layer_add(self->bm, &self->bm->pdata, CD_FREESTYLE_FACE);
-	}
-
-	ffa = CustomData_bmesh_get(&self->bm->pdata, self->f->head.data, CD_FREESTYLE_FACE);
-	if (param)
-		ffa->flag &= ~FREESTYLE_FACE_MARK;
-	else
-		ffa->flag |= FREESTYLE_FACE_MARK;
-
-	return 0;
-}
-#endif
 
 
 /* Loop
@@ -674,8 +601,17 @@ static PyObject *bpy_bmloop_is_convex_get(BPy_BMLoop *self)
  * ^^^^^^^ */
 
 /* note: use for bmvert/edge/face/loop seq's use these, not bmelemseq directly */
-PyDoc_STRVAR(bpy_bmelemseq_layers_doc,
-"custom-data layers (read-only).\n\n:type: :class:`BMLayerAccess`"
+PyDoc_STRVAR(bpy_bmelemseq_layers_vert_doc,
+"custom-data layers (read-only).\n\n:type: :class:`BMLayerAccessVert`"
+);
+PyDoc_STRVAR(bpy_bmelemseq_layers_edge_doc,
+"custom-data layers (read-only).\n\n:type: :class:`BMLayerAccessEdge`"
+);
+PyDoc_STRVAR(bpy_bmelemseq_layers_face_doc,
+"custom-data layers (read-only).\n\n:type: :class:`BMLayerAccessFace`"
+);
+PyDoc_STRVAR(bpy_bmelemseq_layers_loop_doc,
+"custom-data layers (read-only).\n\n:type: :class:`BMLayerAccessLoop`"
 );
 static PyObject *bpy_bmelemseq_layers_get(BPy_BMElemSeq *self, void *htype)
 {
@@ -758,6 +694,7 @@ static PyGetSetDef bpy_bmvert_getseters[] = {
 	/* readonly checks */
 	{(char *)"is_manifold",  (getter)bpy_bmvert_is_manifold_get,  (setter)NULL, (char *)bpy_bmvert_is_manifold_doc, NULL},
 	{(char *)"is_wire",      (getter)bpy_bmvert_is_wire_get,      (setter)NULL, (char *)bpy_bmvert_is_wire_doc, NULL},
+	{(char *)"is_boundary",  (getter)bpy_bmvert_is_boundary_get,  (setter)NULL, (char *)bpy_bmvert_is_boundary_doc, NULL},
 	{(char *)"is_valid",     (getter)bpy_bm_is_valid_get,         (setter)NULL, (char *)bpy_bm_is_valid_doc, NULL},
 
 	{NULL, NULL, NULL, NULL, NULL} /* Sentinel */
@@ -772,10 +709,6 @@ static PyGetSetDef bpy_bmedge_getseters[] = {
 
 	{(char *)"smooth", (getter)bpy_bm_elem_hflag_get, (setter)bpy_bm_elem_hflag_set, (char *)bpy_bm_elem_smooth_doc, (void *)BM_ELEM_SMOOTH},
 	{(char *)"seam",   (getter)bpy_bm_elem_hflag_get, (setter)bpy_bm_elem_hflag_set, (char *)bpy_bm_elem_seam_doc, (void *)BM_ELEM_SEAM},
-
-#ifdef WITH_FREESTYLE
-	{(char *)"freestyle_edge_mark", (getter)bpy_bmedge_freestyle_edge_mark_get, (setter)bpy_bmedge_freestyle_edge_mark_set, (char *)bpy_bmedge_freestyle_edge_mark_doc, NULL},
-#endif
 
 	/* connectivity data */
 	{(char *)"verts", (getter)bpy_bmelemseq_elem_get, (setter)NULL, (char *)bpy_bmedge_verts_doc, (void *)BM_VERTS_OF_EDGE},
@@ -802,10 +735,6 @@ static PyGetSetDef bpy_bmface_getseters[] = {
 	{(char *)"index",  (getter)bpy_bm_elem_index_get, (setter)bpy_bm_elem_index_set, (char *)bpy_bm_elem_index_doc,  NULL},
 
 	{(char *)"smooth", (getter)bpy_bm_elem_hflag_get, (setter)bpy_bm_elem_hflag_set, (char *)bpy_bm_elem_smooth_doc, (void *)BM_ELEM_SMOOTH},
-
-#ifdef WITH_FREESTYLE
-	{(char *)"freestyle_face_mark", (getter)bpy_bmface_freestyle_face_mark_get, (setter)bpy_bmface_freestyle_face_mark_set, (char *)bpy_bmface_freestyle_face_mark_doc, NULL},
-#endif
 
 	{(char *)"normal", (getter)bpy_bmface_normal_get, (setter)bpy_bmface_normal_set, (char *)bpy_bmface_normal_doc, NULL},
 
@@ -849,21 +778,21 @@ static PyGetSetDef bpy_bmloop_getseters[] = {
 };
 
 static PyGetSetDef bpy_bmvertseq_getseters[] = {
-	{(char *)"layers",    (getter)bpy_bmelemseq_layers_get, (setter)NULL, (char *)bpy_bmelemseq_layers_doc, (void *)BM_VERT},
+	{(char *)"layers",    (getter)bpy_bmelemseq_layers_get, (setter)NULL, (char *)bpy_bmelemseq_layers_vert_doc, (void *)BM_VERT},
 	{NULL, NULL, NULL, NULL, NULL} /* Sentinel */
 };
 static PyGetSetDef bpy_bmedgeseq_getseters[] = {
-	{(char *)"layers",    (getter)bpy_bmelemseq_layers_get, (setter)NULL, (char *)bpy_bmelemseq_layers_doc, (void *)BM_EDGE},
+	{(char *)"layers",    (getter)bpy_bmelemseq_layers_get, (setter)NULL, (char *)bpy_bmelemseq_layers_edge_doc, (void *)BM_EDGE},
 	{NULL, NULL, NULL, NULL, NULL} /* Sentinel */
 };
 static PyGetSetDef bpy_bmfaceseq_getseters[] = {
-	{(char *)"layers",    (getter)bpy_bmelemseq_layers_get, (setter)NULL, (char *)bpy_bmelemseq_layers_doc, (void *)BM_FACE},
+	{(char *)"layers",    (getter)bpy_bmelemseq_layers_get, (setter)NULL, (char *)bpy_bmelemseq_layers_face_doc, (void *)BM_FACE},
 	/* face only */
 	{(char *)"active",    (getter)bpy_bmfaceseq_active_get, (setter)bpy_bmfaceseq_active_set, (char *)bpy_bmfaceseq_active_doc, NULL},
 	{NULL, NULL, NULL, NULL, NULL} /* Sentinel */
 };
 static PyGetSetDef bpy_bmloopseq_getseters[] = {
-	{(char *)"layers",    (getter)bpy_bmelemseq_layers_get, (setter)NULL, (char *)bpy_bmelemseq_layers_doc, (void *)BM_LOOP},
+	{(char *)"layers",    (getter)bpy_bmelemseq_layers_get, (setter)NULL, (char *)bpy_bmelemseq_layers_loop_doc, (void *)BM_LOOP},
 	{NULL, NULL, NULL, NULL, NULL} /* Sentinel */
 };
 
@@ -988,7 +917,7 @@ static PyObject *bpy_bmesh_to_mesh(BPy_BMesh *self, PyObject *args)
 }
 
 PyDoc_STRVAR(bpy_bmesh_from_object_doc,
-".. method:: from_object(object, scene, deform=True, render=False, cage=False)\n"
+".. method:: from_object(object, scene, deform=True, render=False, cage=False, face_normals=True)\n"
 "\n"
 "   Initialize this bmesh from existing object datablock (currently only meshes are supported).\n"
 "\n"
@@ -1000,6 +929,8 @@ PyDoc_STRVAR(bpy_bmesh_from_object_doc,
 "   :type render: boolean\n"
 "   :arg cage: Get the mesh as a deformed cage.\n"
 "   :type cage: boolean\n"
+"   :arg face_normals: Calculate face normals.\n"
+"   :type face_normals: boolean\n"
 );
 static PyObject *bpy_bmesh_from_object(BPy_BMesh *self, PyObject *args)
 {
@@ -1011,12 +942,13 @@ static PyObject *bpy_bmesh_from_object(BPy_BMesh *self, PyObject *args)
 	int use_deform = true;
 	int use_render = false;
 	int use_cage   = false;
+	int use_fnorm  = true;
 	DerivedMesh *dm;
 	const int mask = CD_MASK_BMESH;
 
 	BPY_BM_CHECK_OBJ(self);
 
-	if (!PyArg_ParseTuple(args, "OO|iii:from_object", &py_object, &py_scene, &use_render, &use_cage) ||
+	if (!PyArg_ParseTuple(args, "OO|iiii:from_object", &py_object, &py_scene, &use_render, &use_cage, &use_fnorm) ||
 	    !(ob    = PyC_RNA_AsPointer(py_object, "Object")) ||
 	    !(scene = PyC_RNA_AsPointer(py_scene,  "Scene")))
 	{
@@ -1082,7 +1014,7 @@ static PyObject *bpy_bmesh_from_object(BPy_BMesh *self, PyObject *args)
 
 	bm = self->bm;
 
-	DM_to_bmesh_ex(dm, bm);
+	DM_to_bmesh_ex(dm, bm, use_fnorm);
 
 	dm->release(dm);
 
@@ -1091,7 +1023,7 @@ static PyObject *bpy_bmesh_from_object(BPy_BMesh *self, PyObject *args)
 
 
 PyDoc_STRVAR(bpy_bmesh_from_mesh_doc,
-".. method:: from_mesh(mesh, use_shape_key=False, shape_key_index=0)\n"
+".. method:: from_mesh(mesh, face_normals=True, use_shape_key=False, shape_key_index=0)\n"
 "\n"
 "   Initialize this bmesh from existing mesh datablock.\n"
 "\n"
@@ -1104,15 +1036,16 @@ PyDoc_STRVAR(bpy_bmesh_from_mesh_doc,
 );
 static PyObject *bpy_bmesh_from_mesh(BPy_BMesh *self, PyObject *args, PyObject *kw)
 {
-	static const char *kwlist[] = {"mesh", "use_shape_key", "shape_key_index", NULL};
+	static const char *kwlist[] = {"mesh", "face_normals", "use_shape_key", "shape_key_index", NULL};
 	BMesh *bm;
 	PyObject *py_mesh;
 	Mesh *me;
+	int use_fnorm  = true;
 	int use_shape_key = false;
 	int shape_key_index = 0;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:from_mesh", (char **)kwlist,
-	                                 &py_mesh, &use_shape_key, &shape_key_index) ||
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|iii:from_mesh", (char **)kwlist,
+	                                 &py_mesh, &use_fnorm, &use_shape_key, &shape_key_index) ||
 	    !(me = PyC_RNA_AsPointer(py_mesh, "Mesh")))
 	{
 		return NULL;
@@ -1120,7 +1053,7 @@ static PyObject *bpy_bmesh_from_mesh(BPy_BMesh *self, PyObject *args, PyObject *
 
 	bm = self->bm;
 
-	BM_mesh_bm_from_me(bm, me, use_shape_key, shape_key_index + 1);
+	BM_mesh_bm_from_me(bm, me, use_fnorm, use_shape_key, shape_key_index + 1);
 
 	Py_RETURN_NONE;
 }
@@ -1170,25 +1103,15 @@ static PyObject *bpy_bmesh_select_flush(BPy_BMesh *self, PyObject *value)
 
 
 PyDoc_STRVAR(bpy_bmesh_normal_update_doc,
-".. method:: normal_update(skip_hidden=False)\n"
+".. method:: normal_update()\n"
 "\n"
 "   Update mesh normals.\n"
-"\n"
-"   :arg skip_hidden: When True hidden elements are ignored.\n"
-"   :type skip_hidden: boolean\n"
 );
-static PyObject *bpy_bmesh_normal_update(BPy_BMesh *self, PyObject *args)
+static PyObject *bpy_bmesh_normal_update(BPy_BMesh *self)
 {
-
-	int skip_hidden = false;
-
 	BPY_BM_CHECK_OBJ(self);
 
-	if (!PyArg_ParseTuple(args, "|i:normal_update", &skip_hidden)) {
-		return NULL;
-	}
-
-	BM_mesh_normals_update(self->bm, skip_hidden);
+	BM_mesh_normals_update(self->bm);
 
 	Py_RETURN_NONE;
 }
@@ -1252,7 +1175,7 @@ static PyObject *bpy_bmesh_transform(BPy_BMElem *self, PyObject *args, PyObject 
 		else {
 			char filter_flags_ch = (char)filter_flags;
 			BM_ITER_MESH (eve, &iter, self->bm, BM_VERTS_OF_MESH) {
-				if (eve->head.hflag & filter_flags_ch) {
+				if (BM_elem_flag_test(eve, filter_flags_ch)) {
 					mul_m4_v3((float (*)[4])mat_ptr, eve->co);
 				}
 			}
@@ -1260,6 +1183,35 @@ static PyObject *bpy_bmesh_transform(BPy_BMElem *self, PyObject *args, PyObject 
 	}
 
 	Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(bpy_bmesh_calc_volume_doc,
+".. method:: calc_volume(signed=False)\n"
+"\n"
+"   Calculate mesh volume based on face normals.\n"
+"\n"
+"   :arg signed: when signed is true, negative values may be returned.\n"
+"   :type signed: bool\n"
+"   :return: The volume of the mesh.\n"
+"   :rtype: float\n"
+);
+static PyObject *bpy_bmesh_calc_volume(BPy_BMElem *self, PyObject *args, PyObject *kw)
+{
+	static const char *kwlist[] = {"signed", NULL};
+	PyObject *is_signed = Py_False;
+
+	BPY_BM_CHECK_OBJ(self);
+
+	if (!PyArg_ParseTupleAndKeywords(args, kw,
+	                                 "|O!:calc_volume",
+	                                 (char **)kwlist,
+	                                 &PyBool_Type, &is_signed))
+	{
+		return NULL;
+	}
+	else {
+		return PyFloat_FromDouble(BM_mesh_calc_volume(self->bm, is_signed != Py_False));
+	}
 }
 
 
@@ -2036,10 +1988,8 @@ static PyObject *bpy_bmfaceseq_new(BPy_BMElemSeq *self, PyObject *args)
 	else {
 		BMesh *bm = self->bm;
 		Py_ssize_t vert_seq_len;
-		Py_ssize_t i, i_next;
 
 		BMVert **vert_array = NULL;
-		BMEdge **edge_array = NULL;
 
 		PyObject *ret = NULL;
 
@@ -2067,14 +2017,7 @@ static PyObject *bpy_bmfaceseq_new(BPy_BMElemSeq *self, PyObject *args)
 		/* Go ahead and make the face!
 		 * --------------------------- */
 
-		edge_array = (BMEdge **)PyMem_MALLOC(vert_seq_len * sizeof(BMEdge **));
-
-		/* ensure edges */
-		for (i = vert_seq_len - 1, i_next = 0; i_next < vert_seq_len; (i = i_next++)) {
-			edge_array[i] = BM_edge_create(bm, vert_array[i], vert_array[i_next], NULL, BM_CREATE_NO_DOUBLE);
-		}
-
-		f_new = BM_face_create(bm, vert_array, edge_array, vert_seq_len, 0);
+		f_new = BM_face_create_ngon_verts(bm, vert_array, vert_seq_len, 0, false, true);
 
 		if (UNLIKELY(f_new == NULL)) {
 			PyErr_SetString(PyExc_ValueError,
@@ -2091,7 +2034,6 @@ static PyObject *bpy_bmfaceseq_new(BPy_BMElemSeq *self, PyObject *args)
 		/* pass through */
 cleanup:
 		if (vert_array) PyMem_FREE(vert_array);
-		if (edge_array) PyMem_FREE(edge_array);
 		return ret;
 	}
 }
@@ -2543,8 +2485,11 @@ static struct PyMethodDef bpy_bmesh_methods[] = {
 	/* meshdata */
 	{"select_flush_mode", (PyCFunction)bpy_bmesh_select_flush_mode, METH_NOARGS, bpy_bmesh_select_flush_mode_doc},
 	{"select_flush", (PyCFunction)bpy_bmesh_select_flush, METH_O, bpy_bmesh_select_flush_doc},
-	{"normal_update", (PyCFunction)bpy_bmesh_normal_update, METH_VARARGS, bpy_bmesh_normal_update_doc},
+	{"normal_update", (PyCFunction)bpy_bmesh_normal_update, METH_NOARGS, bpy_bmesh_normal_update_doc},
 	{"transform", (PyCFunction)bpy_bmesh_transform, METH_VARARGS | METH_KEYWORDS, bpy_bmesh_transform_doc},
+
+	/* calculations */
+	{"calc_volume", (PyCFunction)bpy_bmesh_calc_volume, METH_VARARGS | METH_KEYWORDS, bpy_bmesh_calc_volume_doc},
 	{NULL, NULL, 0, NULL}
 };
 
@@ -2953,10 +2898,10 @@ static void bpy_bmesh_dealloc(BPy_BMesh *self)
 	if (bm) {
 		bm_dealloc_editmode_warn(self);
 
-		BM_data_layer_free(bm, &bm->vdata, CD_BM_ELEM_PYPTR);
-		BM_data_layer_free(bm, &bm->edata, CD_BM_ELEM_PYPTR);
-		BM_data_layer_free(bm, &bm->pdata, CD_BM_ELEM_PYPTR);
-		BM_data_layer_free(bm, &bm->ldata, CD_BM_ELEM_PYPTR);
+		if (CustomData_has_layer(&bm->vdata, CD_BM_ELEM_PYPTR)) BM_data_layer_free(bm, &bm->vdata, CD_BM_ELEM_PYPTR);
+		if (CustomData_has_layer(&bm->edata, CD_BM_ELEM_PYPTR)) BM_data_layer_free(bm, &bm->edata, CD_BM_ELEM_PYPTR);
+		if (CustomData_has_layer(&bm->pdata, CD_BM_ELEM_PYPTR)) BM_data_layer_free(bm, &bm->pdata, CD_BM_ELEM_PYPTR);
+		if (CustomData_has_layer(&bm->ldata, CD_BM_ELEM_PYPTR)) BM_data_layer_free(bm, &bm->ldata, CD_BM_ELEM_PYPTR);
 
 		bm->py_handle = NULL;
 
@@ -3380,10 +3325,13 @@ PyObject *BPy_BMesh_CreatePyObject(BMesh *bm, int flag)
 
 		bm->py_handle = self; /* point back */
 
+		/* avoid allocating layers when we don't have to */
+#if 0
 		BM_data_layer_add(bm, &bm->vdata, CD_BM_ELEM_PYPTR);
 		BM_data_layer_add(bm, &bm->edata, CD_BM_ELEM_PYPTR);
 		BM_data_layer_add(bm, &bm->pdata, CD_BM_ELEM_PYPTR);
 		BM_data_layer_add(bm, &bm->ldata, CD_BM_ELEM_PYPTR);
+#endif
 	}
 
 	return (PyObject *)self;

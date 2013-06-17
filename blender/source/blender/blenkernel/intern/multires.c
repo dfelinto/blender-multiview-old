@@ -373,11 +373,8 @@ void multires_mark_as_modified(Object *ob, MultiresModifiedFlags flags)
 void multires_force_update(Object *ob)
 {
 	if (ob) {
-		if (ob->derivedFinal) {
-			ob->derivedFinal->needsFree = 1;
-			ob->derivedFinal->release(ob->derivedFinal);
-			ob->derivedFinal = NULL;
-		}
+		BKE_object_free_derived_caches(ob);
+
 		if (ob->sculpt && ob->sculpt->pbvh) {
 			BKE_pbvh_free(ob->sculpt->pbvh);
 			ob->sculpt->pbvh = NULL;
@@ -859,6 +856,12 @@ void multiresModifier_base_apply(MultiresModifierData *mmd, Object *ob)
 
 	MEM_freeN(origco);
 	cddm->release(cddm);
+
+	/* Vertices were moved around, need to update normals after all the vertices are updated
+	 * Probably this is possible to do in the loop above, but this is rather tricky because
+	 * we don't know all needed vertices' coordinates there yet.
+	 */
+	BKE_mesh_calc_normals(me);
 
 	/* subdivide the mesh to highest level without displacements */
 	cddm = CDDM_from_mesh(me, NULL);

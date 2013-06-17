@@ -74,9 +74,8 @@ void register_node_type_tex_checker(void)
 {
 	static bNodeType ntype;
 	
-	tex_node_type_base(&ntype, TEX_NODE_CHECKER, "Checker", NODE_CLASS_PATTERN, NODE_PREVIEW|NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_CHECKER, "Checker", NODE_CLASS_PATTERN, NODE_PREVIEW);
 	node_type_socket_templates(&ntype, inputs, outputs);
-	node_type_size(&ntype, 100, 60, 150);
 	node_type_exec(&ntype, NULL, NULL, exec);
 	
 	nodeRegisterType(&ntype);

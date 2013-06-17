@@ -362,7 +362,7 @@ int BKE_text_reload(Text *text)
 	return 1;
 }
 
-Text *BKE_text_load(Main *bmain, const char *file, const char *relpath)
+Text *BKE_text_load_ex(Main *bmain, const char *file, const char *relpath, const bool is_internal)
 {
 	FILE *fp;
 	int i, llen, len;
@@ -392,8 +392,13 @@ Text *BKE_text_load(Main *bmain, const char *file, const char *relpath)
 	len = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
 
-	ta->name = MEM_mallocN(strlen(file) + 1, "text_name");
-	strcpy(ta->name, file);
+	if (is_internal == false) {
+		ta->name = MEM_mallocN(strlen(file) + 1, "text_name");
+		strcpy(ta->name, file);
+	}
+	else {
+		ta->flags |= TXT_ISMEM | TXT_ISDIRTY;
+	}
 
 	init_undo_text(ta);
 	
@@ -458,6 +463,11 @@ Text *BKE_text_load(Main *bmain, const char *file, const char *relpath)
 	MEM_freeN(buffer);
 
 	return ta;
+}
+
+Text *BKE_text_load(Main *bmain, const char *file, const char *relpath)
+{
+	return BKE_text_load_ex(bmain, file, relpath, false);
 }
 
 Text *BKE_text_copy(Text *ta)
@@ -778,6 +788,16 @@ static void txt_curs_cur(Text *text, TextLine ***linep, int **charp)
 static void txt_curs_sel(Text *text, TextLine ***linep, int **charp)
 {
 	*linep = &text->sell; *charp = &text->selc;
+}
+
+bool txt_cursor_is_line_start(Text *text)
+{
+	return (text->selc == 0);
+}
+
+bool txt_cursor_is_line_end(Text *text)
+{
+	return (text->selc == text->sell->len);
 }
 
 /*****************************/
@@ -1137,9 +1157,6 @@ static void txt_pop_last(Text *text)
 	
 	txt_pop_sel(text);
 }
-
-/* never used: CVS 1.19 */
-/*  static void txt_pop_selr (Text *text) */
 
 void txt_pop_sel(Text *text)
 {

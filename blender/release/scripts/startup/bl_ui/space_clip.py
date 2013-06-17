@@ -211,7 +211,7 @@ class CLIP_PT_tools_marker(CLIP_PT_tracking_panel, Panel):
         settings = clip.tracking.settings
 
         col = layout.column(align=True)
-        col.operator("clip.add_marker_move")
+        props = col.operator("clip.add_marker_at_click", text="Add Marker")
         col.operator("clip.detect_features")
         col.operator("clip.delete_track")
 
@@ -292,6 +292,14 @@ class CLIP_PT_tools_tracking(CLIP_PT_tracking_panel, Panel):
         props.backwards = False
         props.sequence = False
 
+        col = layout.column()
+        col.label(text="Refine:")
+        row = col.row(align=True)
+        props = row.operator("clip.refine_markers", text="Backwards")
+        props.backwards = True
+        props = row.operator("clip.refine_markers", text="Forwards")
+        props.backwards = False
+
         col = layout.column(align=True)
         props = col.operator("clip.clear_track_path", text="Clear After")
         props.action = 'REMAINED'
@@ -325,9 +333,10 @@ class CLIP_PT_tools_solve(CLIP_PT_tracking_panel, Panel):
 
         col = layout.column()
         col.prop(settings, "use_tripod_solver")
+        col.prop(settings, "use_keyframe_selection")
 
         col = layout.column(align=True)
-        col.active = not settings.use_tripod_solver
+        col.active = not settings.use_tripod_solver and not settings.use_keyframe_selection
         col.prop(tracking_object, "keyframe_a")
         col.prop(tracking_object, "keyframe_b")
 
@@ -399,7 +408,9 @@ class CLIP_PT_tools_orientation(CLIP_PT_reconstruction_panel, Panel):
         layout.separator()
 
         col = layout.column()
-        col.operator("clip.set_scale")
+        row = col.row(align=True);
+        row.operator("clip.set_scale")
+        row.operator("clip.apply_solution_scale", text="Apply Scale")
         col.prop(settings, "distance")
 
 
@@ -875,6 +886,22 @@ class CLIP_PT_footage(CLIP_PT_clip_view_panel, Panel):
         col.prop(clip, "frame_offset")
 
 
+class CLIP_PT_footage_info(CLIP_PT_clip_view_panel, Panel):
+    bl_space_type = 'CLIP_EDITOR'
+    bl_region_type = 'UI'
+    bl_label = "Footage Information"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        sc = context.space_data
+        clip = sc.clip
+
+        col = layout.column()
+        col.template_movieclip_information(sc, "clip", sc.clip_user)
+
+
 class CLIP_PT_tools_clip(CLIP_PT_clip_view_panel, Panel):
     bl_space_type = 'CLIP_EDITOR'
     bl_region_type = 'TOOLS'
@@ -887,6 +914,7 @@ class CLIP_PT_tools_clip(CLIP_PT_clip_view_panel, Panel):
         layout.operator("clip.set_viewport_background")
         layout.operator("clip.setup_tracking_scene")
         layout.operator("clip.prefetch")
+        layout.operator("clip.set_scene_frames")
 
 
 class CLIP_MT_view(Menu):

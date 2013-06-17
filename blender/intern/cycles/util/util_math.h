@@ -42,23 +42,35 @@ CCL_NAMESPACE_BEGIN
 
 /* Float Pi variations */
 
+/* Division */
 #ifndef M_PI_F
-#define M_PI_F		((float)3.14159265358979323846264338327950288)
+#define M_PI_F		((float)3.14159265358979323846264338327950288) 		/* pi */
 #endif
 #ifndef M_PI_2_F
-#define M_PI_2_F	((float)1.57079632679489661923132169163975144)
+#define M_PI_2_F	((float)1.57079632679489661923132169163975144) 		/* pi/2 */
 #endif
 #ifndef M_PI_4_F
-#define M_PI_4_F	((float)0.785398163397448309615660845819875721)
+#define M_PI_4_F	((float)0.785398163397448309615660845819875721) 	/* pi/4 */
 #endif
 #ifndef M_1_PI_F
-#define M_1_PI_F	((float)0.318309886183790671537767526745028724)
+#define M_1_PI_F	((float)0.318309886183790671537767526745028724) 	/* 1/pi */
 #endif
 #ifndef M_2_PI_F
-#define M_2_PI_F	((float)0.636619772367581343075535053490057448)
+#define M_2_PI_F	((float)0.636619772367581343075535053490057448) 	/* 2/pi */
 #endif
+
+/* Multiplication */
+#ifndef M_2PI_F
+#define M_2PI_F		((float)6.283185307179586476925286766559005768)		/* 2*pi */
+#endif
+#ifndef M_4PI_F
+#define M_4PI_F		((float)12.56637061435917295385057353311801153)		/* 4*pi */
+#endif
+
+/* Float sqrt variations */
+
 #ifndef M_SQRT2_F
-#define M_SQRT2_F	((float)1.41421356237309504880)
+#define M_SQRT2_F	((float)1.41421356237309504880) 					/* sqrt(2) */
 #endif
 
 
@@ -150,6 +162,25 @@ __device_inline float clamp(float a, float mn, float mx)
 }
 
 #endif
+
+__device_inline int float_to_int(float f)
+{
+#ifdef __KERNEL_SSE2__
+	return _mm_cvtt_ss2si(_mm_load_ss(&f));
+#else
+	return (int)f;
+#endif
+}
+
+__device_inline int floor_to_int(float f)
+{
+	return float_to_int(floorf(f));
+}
+
+__device_inline int ceil_to_int(float f)
+{
+	return float_to_int(ceilf(f));
+}
 
 __device_inline float signf(float f)
 {
@@ -978,23 +1009,23 @@ __device_inline void print_int4(const char *label, const int4& a)
 
 #ifndef __KERNEL_OPENCL__
 
-__device_inline unsigned int as_int(uint i)
+__device_inline int as_int(uint i)
 {
-	union { unsigned int ui; int i; } u;
+	union { uint ui; int i; } u;
 	u.ui = i;
 	return u.i;
 }
 
-__device_inline unsigned int as_uint(int i)
+__device_inline uint as_uint(int i)
 {
-	union { unsigned int ui; int i; } u;
+	union { uint ui; int i; } u;
 	u.i = i;
 	return u.ui;
 }
 
-__device_inline unsigned int as_uint(float f)
+__device_inline uint as_uint(float f)
 {
-	union { unsigned int i; float f; } u;
+	union { uint i; float f; } u;
 	u.f = f;
 	return u.i;
 }
@@ -1118,7 +1149,7 @@ __device float compatible_powf(float x, float y)
 {
 	/* GPU pow doesn't accept negative x, do manual checks here */
 	if(x < 0.0f) {
-		if(fmod(-y, 2.0f) == 0.0f)
+		if(fmodf(-y, 2.0f) == 0.0f)
 			return powf(-x, y);
 		else
 			return -powf(-x, y);
@@ -1152,6 +1183,11 @@ __device float safe_logf(float a, float b)
 __device float safe_divide(float a, float b)
 {
 	return (b != 0.0f)? a/b: 0.0f;
+}
+
+__device float safe_modulo(float a, float b)
+{
+	return (b != 0.0f)? fmodf(a, b): 0.0f;
 }
 
 /* Ray Intersection */

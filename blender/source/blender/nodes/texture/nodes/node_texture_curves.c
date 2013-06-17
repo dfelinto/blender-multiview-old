@@ -44,10 +44,10 @@ static bNodeSocketTemplate time_outputs[] = {
 static void time_colorfn(float *out, TexParams *p, bNode *node, bNodeStack **UNUSED(in), short UNUSED(thread))
 {
 	/* stack order output: fac */
-	float fac= 0.0f;
+	float fac = 0.0f;
 	
 	if (node->custom1 < node->custom2)
-		fac = (p->cfra - node->custom1)/(float)(node->custom2-node->custom1);
+		fac = (p->cfra - node->custom1) / (float)(node->custom2 - node->custom1);
 	
 	curvemapping_initialize(node->storage);
 	fac = curvemapping_evaluateF(node->storage, 0, fac);
@@ -62,18 +62,18 @@ static void time_exec(void *data, int UNUSED(thread), bNode *node, bNodeExecData
 
 static void time_init(bNodeTree *UNUSED(ntree), bNode *node)
 {
-	node->custom1= 1;
-	node->custom2= 250;
-	node->storage= curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
+	node->custom1 = 1;
+	node->custom2 = 250;
+	node->storage = curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
 }
 
 void register_node_type_tex_curve_time(void)
 {
 	static bNodeType ntype;
 	
-	tex_node_type_base(&ntype, TEX_NODE_CURVE_TIME, "Time", NODE_CLASS_INPUT, NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_CURVE_TIME, "Time", NODE_CLASS_INPUT, 0);
 	node_type_socket_templates(&ntype, NULL, time_outputs);
-	node_type_size(&ntype, 140, 100, 320);
+	node_type_size_preset(&ntype, NODE_SIZE_LARGE);
 	node_type_init(&ntype, time_init);
 	node_type_storage(&ntype, "CurveMapping", node_free_curves, node_copy_curves);
 	node_type_exec(&ntype, node_initexec_curves, NULL, time_exec);
@@ -89,7 +89,7 @@ static bNodeSocketTemplate rgb_inputs[] = {
 
 static bNodeSocketTemplate rgb_outputs[] = {
 	{	SOCK_RGBA, 0, N_("Color")},
-	{	-1, 0, ""	}
+	{	-1, 0, ""}
 };
 
 static void rgb_colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, short thread)
@@ -108,16 +108,16 @@ static void rgb_exec(void *data, int UNUSED(thread), bNode *node, bNodeExecData 
 
 static void rgb_init(bNodeTree *UNUSED(ntree), bNode *node)
 {
-	node->storage= curvemapping_add(4, 0.0f, 0.0f, 1.0f, 1.0f);
+	node->storage = curvemapping_add(4, 0.0f, 0.0f, 1.0f, 1.0f);
 }
 
 void register_node_type_tex_curve_rgb(void)
 {
 	static bNodeType ntype;
 	
-	tex_node_type_base(&ntype, TEX_NODE_CURVE_RGB, "RGB Curves", NODE_CLASS_OP_COLOR, NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_CURVE_RGB, "RGB Curves", NODE_CLASS_OP_COLOR, 0);
 	node_type_socket_templates(&ntype, rgb_inputs, rgb_outputs);
-	node_type_size(&ntype, 200, 140, 320);
+	node_type_size_preset(&ntype, NODE_SIZE_LARGE);
 	node_type_init(&ntype, rgb_init);
 	node_type_storage(&ntype, "CurveMapping", node_free_curves, node_copy_curves);
 	node_type_exec(&ntype, node_initexec_curves, NULL, rgb_exec);

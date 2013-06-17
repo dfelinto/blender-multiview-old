@@ -47,21 +47,20 @@ struct BMEdge;
 struct BMVert;
 
 /* visibility and selection */
-int uvedit_face_visible_nolocal(struct Scene *scene, struct BMFace *efa);
+bool uvedit_face_visible_nolocal(struct Scene *scene, struct BMFace *efa);
 
 /* geometric utilities */
 void  uv_poly_copy_aspect(float uv_orig[][2], float uv[][2], float aspx, float aspy, int len);
-void  uv_poly_center(struct BMEditMesh *em, struct BMFace *f, float r_cent[2]);
+void  uv_poly_center(struct BMFace *f, float r_cent[2], const int cd_loop_uv_offset);
 
 /* find nearest */
 
 typedef struct NearestHit {
 	struct BMFace *efa;
 	struct MTexPoly *tf;
-	struct BMLoop *l, *nextl;
+	struct BMLoop *l;
 	struct MLoopUV *luv, *luv_next;
-	int lindex; //index of loop within face
-	int vert1, vert2; //index in mesh of edge vertices
+	int lindex;  /* index of loop within face */
 } NearestHit;
 
 void uv_find_nearest_vert(struct Scene *scene, struct Image *ima, struct BMEditMesh *em,

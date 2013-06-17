@@ -146,13 +146,9 @@ void initglobals(void)
 	else
 		BLI_snprintf(versionstr, sizeof(versionstr), "v%d.%02d", BLENDER_VERSION / 100, BLENDER_VERSION % 100);
 
-#ifdef _WIN32   // FULLSCREEN
-	G.windowstate = G_WINDOWSTATE_USERDEF;
+#ifdef _WIN32
+	G.windowstate = 0;
 #endif
-
-	G.charstart = 0x0000;
-	G.charmin = 0x0000;
-	G.charmax = 0xffff;
 
 #ifndef WITH_PYTHON_SECURITY /* default */
 	G.f |= G_SCRIPT_AUTOEXEC;
@@ -794,25 +790,6 @@ const char *BKE_undo_get_name(int nr, int *active)
 		return uel->name;
 	}
 	return NULL;
-}
-
-char *BKE_undo_menu_string(void)
-{
-	UndoElem *uel;
-	DynStr *ds = BLI_dynstr_new();
-	char *menu;
-
-	BLI_dynstr_append(ds, "Global Undo History %t");
-	
-	for (uel = undobase.first; uel; uel = uel->next) {
-		BLI_dynstr_append(ds, "|");
-		BLI_dynstr_append(ds, uel->name);
-	}
-
-	menu = BLI_dynstr_get_cstring(ds);
-	BLI_dynstr_free(ds);
-
-	return menu;
 }
 
 /* saves .blend using undo buffer, returns 1 == success */

@@ -106,7 +106,7 @@ protected:
  *  (Moves the vertices to make the stroke smoother).
  *  Uses curvature flow to converge towards a curve of constant curvature. The diffusion method we use is anisotropic
  *  to prevent the diffusion accross corners.
- *  @see \htmlonly <a href=/smoothing/smoothing.html>smoothing/smoothing.html</a> endhtmlonly
+ *  @see \htmlonly <a href=/smoothing/smoothing.html>smoothing/smoothing.html</a> \endhtmlonly
  */
 class LIB_STROKE_EXPORT SmoothingShader : public StrokeShader
 {
@@ -154,7 +154,7 @@ class LIB_STROKE_EXPORT Smoother
 public:
 	Smoother(Stroke &ioStroke);
 
-	virtual ~Smoother() {}
+	virtual ~Smoother();
 
 	void smooth(int nbIterations, real iFactorPoint, real ifactorCurvature, real iFactorCurvatureDifference,
 	            real iAnisoPoint, real iAnisoNormal, real iAnisoCurvature, real icarricatureFactor);

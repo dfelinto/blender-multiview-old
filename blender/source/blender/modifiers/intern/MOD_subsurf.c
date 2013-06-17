@@ -81,7 +81,7 @@ static void freeData(ModifierData *md)
 	}
 }
 
-static int isDisabled(ModifierData *md, int useRenderParams)
+static bool isDisabled(ModifierData *md, int useRenderParams)
 {
 	SubsurfModifierData *smd = (SubsurfModifierData *) md;
 	int levels = (useRenderParams) ? smd->renderLevels : smd->levels;
@@ -120,7 +120,8 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 static DerivedMesh *applyModifierEM(ModifierData *md, Object *UNUSED(ob),
                                     struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
+                                    DerivedMesh *derivedData,
+                                    ModifierApplyFlag UNUSED(flag))
 {
 	SubsurfModifierData *smd = (SubsurfModifierData *) md;
 	DerivedMesh *result;

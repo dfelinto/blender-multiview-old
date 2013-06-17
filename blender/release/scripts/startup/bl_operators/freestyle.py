@@ -19,7 +19,7 @@
 import sys
 import bpy
 
-from bpy.props import (EnumProperty, StringProperty)
+from bpy.props import (BoolProperty, EnumProperty, StringProperty)
 
 
 class SCENE_OT_freestyle_fill_range_by_selection(bpy.types.Operator):
@@ -27,12 +27,18 @@ class SCENE_OT_freestyle_fill_range_by_selection(bpy.types.Operator):
     """(either a user-specified object or the active camera)"""
     bl_idname = "scene.freestyle_fill_range_by_selection"
     bl_label = "Fill Range by Selection"
+    bl_options = {'INTERNAL'}
 
     type = EnumProperty(name="Type", description="Type of the modifier to work on",
                         items=(("COLOR", "Color", "Color modifier type"),
                                ("ALPHA", "Alpha", "Alpha modifier type"),
                                ("THICKNESS", "Thickness", "Thickness modifier type")))
     name = StringProperty(name="Name", description="Name of the modifier to work on")
+
+    @classmethod
+    def poll(cls, context):
+        rl = context.scene.render.layers.active
+        return rl and rl.freestyle_settings.linesets.active
 
     def execute(self, context):
         rl = context.scene.render.layers.active
@@ -132,4 +138,34 @@ class SCENE_OT_freestyle_add_face_marks_to_keying_set(bpy.types.Operator):
                 path = 'polygons[%d].use_freestyle_face_mark' % i
                 ks.paths.add(mesh, path, index=0)
         bpy.ops.object.mode_set(mode=ob_mode, toggle=False)
+        return {'FINISHED'}
+
+
+class SCENE_OT_freestyle_module_open(bpy.types.Operator):
+    """Open a style module file"""
+    bl_idname = "scene.freestyle_module_open"
+    bl_label = "Open Style Module File"
+    bl_options = {'INTERNAL'}
+
+    filepath = StringProperty(subtype='FILE_PATH')
+
+    make_internal = BoolProperty(
+        name="Make internal",
+        description="Make module file internal after loading",
+        default=True)
+
+    @classmethod
+    def poll(cls, context):
+        rl = context.scene.render.layers.active
+        return rl and rl.freestyle_settings.mode == 'SCRIPT'
+
+    def invoke(self, context, event):
+        self.freestyle_module = context.freestyle_module
+        wm = context.window_manager
+        wm.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        text = bpy.data.texts.load(self.filepath, self.make_internal)
+        self.freestyle_module.script = text
         return {'FINISHED'}

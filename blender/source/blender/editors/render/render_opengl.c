@@ -191,7 +191,7 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 			rctf viewplane;
 			float clipsta, clipend;
 
-			int is_ortho = ED_view3d_viewplane_get(v3d, rv3d, sizex, sizey, &viewplane, &clipsta, &clipend);
+			int is_ortho = ED_view3d_viewplane_get(v3d, rv3d, sizex, sizey, &viewplane, &clipsta, &clipend, NULL);
 			if (is_ortho) orthographic_m4(winmat, viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, -clipend, clipend);
 			else perspective_m4(winmat, viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, clipsta, clipend);
 		}
@@ -407,8 +407,7 @@ static int screen_opengl_render_init(bContext *C, wmOperator *op)
 		oglrender->rv3d = oglrender->ar->regiondata;
 
 		/* MUST be cleared on exit */
-		oglrender->scene->customdata_mask_modal = (ED_view3d_datamask(oglrender->scene, oglrender->v3d) |
-		                                           ED_view3d_object_datamask(oglrender->scene));
+		oglrender->scene->customdata_mask_modal = ED_view3d_datamask(oglrender->scene, oglrender->v3d);
 
 		/* apply immediately in case we're rendering from a script,
 		 * running notifiers again will overwrite */
@@ -543,10 +542,6 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 		}
 	}
 
-	/* update animated image textures for gpu, etc,
-	 * call before BKE_scene_update_for_newframe so modifiers with textures don't lag 1 frame */
-	ED_image_update_frame(bmain, CFRA);
-
 	BKE_scene_update_for_newframe(bmain, scene, screen_opengl_layers(oglrender));
 
 	if (view_context) {
@@ -614,7 +609,7 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 		}
 
 		if (is_movie) {
-			ok = oglrender->mh->append_movie(&scene->r, SFRA, CFRA, (int *)ibuf_save->rect,
+			ok = oglrender->mh->append_movie(&scene->r, PSFRA, CFRA, (int *)ibuf_save->rect,
 			                                 oglrender->sizex, oglrender->sizey, oglrender->reports);
 			if (ok) {
 				printf("Append frame %d", scene->r.cfra);

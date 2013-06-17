@@ -119,7 +119,7 @@ static void pointdensity_cache_psys(Render *re, PointDensity *pd, Object *ob, Pa
 	/* init everything */
 	if (!psys || !ob || !pd) return;
 
-	mult_m4_m4m4(obview, ob->obmat, re->viewinv);
+	mul_m4_m4m4(obview, ob->obmat, re->viewinv);
 	
 	/* Just to create a valid rendering context for particles */
 	psys_render_set(ob, psys, re->viewmat, re->winmat, re->winx, re->winy, 0);
@@ -298,7 +298,7 @@ void make_pointdensities(Render *re)
 {
 	Tex *tex;
 	
-	if (re->scene->r.scemode & R_PREVIEWBUTS)
+	if (re->scene->r.scemode & R_BUTS_PREVIEW)
 		return;
 	
 	re->i.infostr = IFACE_("Caching Point Densities");
@@ -318,7 +318,7 @@ void free_pointdensities(Render *re)
 {
 	Tex *tex;
 	
-	if (re->scene->r.scemode & R_PREVIEWBUTS)
+	if (re->scene->r.scemode & R_BUTS_PREVIEW)
 		return;
 	
 	for (tex= re->main->tex.first; tex; tex= tex->id.next) {

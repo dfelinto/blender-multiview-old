@@ -273,7 +273,7 @@ static Scene *preview_prepare_scene(Scene *scene, ID *id, int id_type, ShaderPre
 	if (sce) {
 		
 		/* this flag tells render to not execute depsgraph or ipos etc */
-		sce->r.scemode |= R_PREVIEWBUTS;
+		sce->r.scemode |= R_BUTS_PREVIEW;
 		/* set world always back, is used now */
 		sce->world = pr_main->world.first;
 		/* now: exposure copy */
@@ -531,6 +531,7 @@ static int ed_preview_draw_rect(ScrArea *sa, int split, int first, rcti *rect, r
 	int offx = 0;
 	int newx = BLI_rcti_size_x(rect);
 	int newy = BLI_rcti_size_y(rect);
+	int ok = 0;
 
 	if (!split || first) sprintf(name, "Preview %p", (void *)sa);
 	else sprintf(name, "SecondPreview %p", (void *)sa);
@@ -549,7 +550,6 @@ static int ed_preview_draw_rect(ScrArea *sa, int split, int first, rcti *rect, r
 	/* test if something rendered ok */
 	re = RE_GetRender(name);
 	RE_AcquireResultImage(re, &rres);
-	RE_ReleaseResultImage(re);
 
 	if (rres.rectf) {
 		
@@ -563,22 +563,25 @@ static int ed_preview_draw_rect(ScrArea *sa, int split, int first, rcti *rect, r
 				float fx = rect->xmin + offx;
 				float fy = rect->ymin;
 				
-				RE_ResultGet32(re, (unsigned int *)rect_byte);
+				RE_AcquiredResultGet32(re, &rres, (unsigned int *)rect_byte);
 				glaDrawPixelsSafe(fx, fy, rres.rectx, rres.recty, rres.rectx, GL_RGBA, GL_UNSIGNED_BYTE, rect_byte);
 				
 				MEM_freeN(rect_byte);
 				
-				return 1;
+				ok = 1;
 			}
 		}
 	}
 
-	return 0;
+	RE_ReleaseResultImage(re);
+
+	return ok;
 }
 
 void ED_preview_draw(const bContext *C, void *idp, void *parentp, void *slotp, rcti *rect)
 {
 	if (idp) {
+		wmWindowManager *wm = CTX_wm_manager(C);
 		ScrArea *sa = CTX_wm_area(C);
 		ID *id = (ID *)idp;
 		ID *parent = (ID *)parentp;
@@ -604,13 +607,12 @@ void ED_preview_draw(const bContext *C, void *idp, void *parentp, void *slotp, r
 		if (ok)
 			*rect = newrect;
 
-		/* check for spacetype... */
-		if (sbuts->spacetype == SPACE_BUTS && sbuts->preview) {
+		/* start a new preview render job if signalled through sbuts->preview,
+		 * or if no render result was found and no preview render job is running */
+		if ((sbuts->spacetype == SPACE_BUTS && sbuts->preview) ||
+		    (!ok && !WM_jobs_test(wm, sa, WM_JOB_TYPE_RENDER_PREVIEW)))
+		{
 			sbuts->preview = 0;
-			ok = 0;
-		}
-	
-		if (ok == 0) {
 			ED_preview_shader_job(C, sa, id, parent, slot, newx, newy, PR_BUTS_RENDER);
 		}
 	}

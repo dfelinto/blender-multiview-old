@@ -115,18 +115,6 @@ RenderEngineType *RE_engines_find(const char *idname)
 	type = BLI_findstring(&R_engines, idname, offsetof(RenderEngineType, idname));
 	if (!type)
 		type = &internal_render_type;
-
-	/* XXX Hack to make this a debug-only option, remove section to make it available default */
-	if (type == &internal_render_type) {
-		static RenderEngineType rtype;
-		
-		if (type->view_update == NULL)
-			rtype = internal_render_type;
-		else if (G.debug_value != -1) {
-			type = &rtype;
-		}
-	}
-	/* XXX end hack */
 	
 	return type;
 }
@@ -270,7 +258,7 @@ void RE_engine_end_result(RenderEngine *engine, RenderResult *result, int cancel
 
 		if (re->result->do_exr_tile)
 			render_result_exr_file_merge(re->result, result);
-		else if (!(re->test_break(re->tbh) && (re->r.scemode & R_PREVIEWBUTS)))
+		else if (!(re->test_break(re->tbh) && (re->r.scemode & R_BUTS_PREVIEW)))
 			render_result_merge(re->result, result);
 
 		/* draw */
@@ -413,16 +401,43 @@ int RE_engine_render(Render *re, int do_all)
 	/* verify if we can render */
 	if (!type->render)
 		return 0;
-	if ((re->r.scemode & R_PREVIEWBUTS) && !(type->flag & RE_USE_PREVIEW))
+	if ((re->r.scemode & R_BUTS_PREVIEW) && !(type->flag & RE_USE_PREVIEW))
 		return 0;
 	if (do_all && !(type->flag & RE_USE_POSTPROCESS))
 		return 0;
 	if (!do_all && (type->flag & RE_USE_POSTPROCESS))
 		return 0;
 
+	/* update animation here so any render layer animation is applied before
+	 * creating the render result */
+	if ((re->r.scemode & (R_NO_FRAME_UPDATE | R_BUTS_PREVIEW)) == 0) {
+		unsigned int lay = re->lay;
+
+		/* don't update layers excluded on all render layers */
+		if (type->flag & RE_USE_EXCLUDE_LAYERS) {
+			SceneRenderLayer *srl;
+			unsigned int non_excluded_lay = 0;
+
+			if (re->r.scemode & R_SINGLE_LAYER) {
+				srl = BLI_findlink(&re->r.layers, re->r.actlay);
+				if (srl)
+					non_excluded_lay |= ~srl->lay_exclude;
+			}
+			else {
+				for (srl = re->r.layers.first; srl; srl = srl->next)
+					if (!(srl->layflag & SCE_LAY_DISABLE))
+						non_excluded_lay |= ~srl->lay_exclude;
+			}
+
+			lay &= non_excluded_lay;
+		}
+
+		BKE_scene_update_for_newframe(re->main, re->scene, lay);
+	}
+
 	/* create render result */
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	if (re->result == NULL || !(re->r.scemode & R_PREVIEWBUTS)) {
+	if (re->result == NULL || !(re->r.scemode & R_BUTS_PREVIEW)) {
 		int savebuffers;
 
 		if (re->result)
@@ -456,15 +471,12 @@ int RE_engine_render(Render *re, int do_all)
 
 	if (re->flag & R_ANIMATION)
 		engine->flag |= RE_ENGINE_ANIMATION;
-	if (re->r.scemode & R_PREVIEWBUTS)
+	if (re->r.scemode & R_BUTS_PREVIEW)
 		engine->flag |= RE_ENGINE_PREVIEW;
 	engine->camera_override = re->camera_override;
 
 	engine->resolution_x = re->winx;
 	engine->resolution_y = re->winy;
-
-	if ((re->r.scemode & (R_NO_FRAME_UPDATE | R_PREVIEWBUTS)) == 0)
-		BKE_scene_update_for_newframe(re->main, re->scene, re->lay);
 
 	RE_parts_init(re, FALSE);
 	engine->tile_x = re->partx;

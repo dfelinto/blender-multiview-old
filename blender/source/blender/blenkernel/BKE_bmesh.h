@@ -66,6 +66,8 @@
 	                                       * here because they are mixed - campbell */
 #define BME_BEVEL_DIST          (1 << 12) /* same as above */
 
+#define BME_BEVEL_OVERLAP_OK    (1 << 13)
+
 typedef struct BME_TransData {
 	struct BMesh *bm; /* the bmesh the vert belongs to */
 	struct BMVert *v;  /* pointer to the vert this tdata applies to */
@@ -87,16 +89,6 @@ typedef struct BME_TransData_Head {
 	struct MemArena *ma;    /* the memory "pool" we will be drawing individual elements from */
 	int len;
 } BME_TransData_Head;
-
-/* this is no longer used */
-typedef struct BME_Glob { /* stored in Global G for Transform() purposes */
-	struct BMesh *bm;
-	BME_TransData_Head *td;
-	struct TransInfo *Trans; /* a pointer to the global Trans struct */
-	int imval[2]; /* for restoring original mouse co when initTransform() is called multiple times */
-	int options;
-	int res;
-} BME_Glob;
 
 struct BME_TransData *BME_get_transdata(struct BME_TransData_Head *td, struct BMVert *v);
 void BME_free_transdata(struct BME_TransData_Head *td);

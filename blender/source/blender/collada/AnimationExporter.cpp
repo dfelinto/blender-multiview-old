@@ -199,12 +199,16 @@ void AnimationExporter::make_anim_frames_from_targets(Object *ob, std::vector<fl
 			 *	- ct->matrix members have not yet been calculated here! 
 			 */
 			cti->get_constraint_targets(con, &targets);
-			if (cti) {
-				for (ct = (bConstraintTarget *)targets.first; ct; ct = ct->next) {
-					obtar = ct->tar;
+
+			for (ct = (bConstraintTarget *)targets.first; ct; ct = ct->next) {
+				obtar = ct->tar;
+
+				if (obtar)
 					find_frames(obtar, frames);
-				}
 			}
+
+			if (cti->flush_constraint_targets)
+				cti->flush_constraint_targets(con, &targets, 1);
 		}
 	}
 }
@@ -954,7 +958,7 @@ std::string AnimationExporter::create_4x4_source(std::vector<float> &frames, Obj
 			// compute bone local mat
 			if (bone->parent) {
 				invert_m4_m4(ipar, parchan->pose_mat);
-				mult_m4_m4m4(mat, ipar, pchan->pose_mat);
+				mul_m4_m4m4(mat, ipar, pchan->pose_mat);
 			}
 			else
 				copy_m4_m4(mat, pchan->pose_mat);
@@ -968,13 +972,13 @@ std::string AnimationExporter::create_4x4_source(std::vector<float> &frames, Obj
 				temp[3][0] = temp[3][1] = temp[3][2] = 0.0f;
 				invert_m4(temp);
 
-				mult_m4_m4m4(mat, mat, temp);
+				mul_m4_m4m4(mat, mat, temp);
 
 				if (bone->parent) {
 					copy_m4_m4(temp, bone->parent->arm_mat);
 					temp[3][0] = temp[3][1] = temp[3][2] = 0.0f;
 
-					mult_m4_m4m4(mat, temp, mat);
+					mul_m4_m4m4(mat, temp, mat);
 				}
 			}
 
@@ -1493,7 +1497,7 @@ void AnimationExporter::sample_animation(float *v, std::vector<float> &frames, i
 		// compute bone local mat
 		if (bone->parent) {
 			invert_m4_m4(ipar, parchan->pose_mat);
-			mult_m4_m4m4(mat, ipar, pchan->pose_mat);
+			mul_m4_m4m4(mat, ipar, pchan->pose_mat);
 		}
 		else
 			copy_m4_m4(mat, pchan->pose_mat);
@@ -1546,9 +1550,15 @@ void AnimationExporter::calc_ob_mat_at_time(Object *ob, float ctime , float mat[
 			cti->get_constraint_targets(con, &targets);
 			for (ct = (bConstraintTarget *)targets.first; ct; ct = ct->next) {
 				obtar = ct->tar;
-				BKE_animsys_evaluate_animdata(scene, &obtar->id, obtar->adt, ctime, ADT_RECALC_ANIM);
-				BKE_object_where_is_calc_time(scene, obtar, ctime);
+
+				if (obtar) {
+					BKE_animsys_evaluate_animdata(scene, &obtar->id, obtar->adt, ctime, ADT_RECALC_ANIM);
+					BKE_object_where_is_calc_time(scene, obtar, ctime);
+				}
 			}
+
+			if (cti->flush_constraint_targets)
+				cti->flush_constraint_targets(con, &targets, 1);
 		}
 	}
 	BKE_object_where_is_calc_time(scene, ob, ctime);

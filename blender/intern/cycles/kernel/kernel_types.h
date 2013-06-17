@@ -51,11 +51,11 @@ CCL_NAMESPACE_BEGIN
 #define __KERNEL_SHADING__
 #define __KERNEL_ADV_SHADING__
 #define __NON_PROGRESSIVE__
-#define __HAIR__
 #ifdef WITH_OSL
 #define __OSL__
 #endif
 #define __SUBSURFACE__
+#define __CMJ__
 #endif
 
 #ifdef __KERNEL_CUDA__
@@ -67,27 +67,41 @@ CCL_NAMESPACE_BEGIN
 
 #ifdef __KERNEL_OPENCL__
 
+/* keep __KERNEL_ADV_SHADING__ in sync with opencl_kernel_use_advanced_shading! */
+
 #ifdef __KERNEL_OPENCL_NVIDIA__
 #define __KERNEL_SHADING__
-#define __MULTI_CLOSURE__
+#define __KERNEL_ADV_SHADING__
 #endif
 
 #ifdef __KERNEL_OPENCL_APPLE__
-//#define __SVM__
-//#define __EMISSION__
-//#define __IMAGE_TEXTURES__
-//#define __HOLDOUT__
-//#define __PROCEDURAL_TEXTURES__
-//#define __EXTRA_NODES__
+#define __KERNEL_SHADING__
+//#define __KERNEL_ADV_SHADING__
 #endif
 
 #ifdef __KERNEL_OPENCL_AMD__
 #define __SVM__
 #define __EMISSION__
 #define __IMAGE_TEXTURES__
-#define __HOLDOUT__
 #define __PROCEDURAL_TEXTURES__
 #define __EXTRA_NODES__
+#define __HOLDOUT__
+#define __NORMAL_MAP__
+//#define __BACKGROUND_MIS__
+//#define __LAMP_MIS__
+//#define __AO__
+//#define __ANISOTROPIC__
+//#define __CAMERA_MOTION__
+//#define __OBJECT_MOTION__
+//#define __HAIR__
+//#define __MULTI_CLOSURE__
+//#define __TRANSPARENT_SHADOWS__
+//#define __PASSES__
+#endif
+
+#ifdef __KERNEL_OPENCL_INTEL_CPU__
+#define __KERNEL_SHADING__
+#define __KERNEL_ADV_SHADING__
 #endif
 
 #endif
@@ -125,8 +139,14 @@ CCL_NAMESPACE_BEGIN
 #define __ANISOTROPIC__
 #define __CAMERA_MOTION__
 #define __OBJECT_MOTION__
+#define __HAIR__
 #endif
-//#define __SOBOL_FULL_SCREEN__
+
+/* Sanity check */
+
+#if defined(__KERNEL_OPENCL_NEED_ADVANCED_SHADING__) && !defined(__MULTI_CLOSURE__)
+#error "OpenCL: mismatch between advanced shading flags in device_opencl.cpp and kernel_types.h"
+#endif
 
 /* Shader Evaluation */
 
@@ -145,8 +165,10 @@ enum PathTraceDimension {
 	PRNG_LENS_V = 3,
 #ifdef __CAMERA_MOTION__
 	PRNG_TIME = 4,
-	PRNG_UNUSED = 5,
-	PRNG_BASE_NUM = 6,
+	PRNG_UNUSED_0 = 5,
+	PRNG_UNUSED_1 = 6,	/* for some reason (6, 7) is a bad sobol pattern */
+	PRNG_UNUSED_2 = 7,  /* with a low number of samples (< 64) */
+	PRNG_BASE_NUM = 8,
 #else
 	PRNG_BASE_NUM = 4,
 #endif
@@ -160,6 +182,11 @@ enum PathTraceDimension {
 	PRNG_LIGHT_F = 6,
 	PRNG_TERMINATE = 7,
 	PRNG_BOUNCE_NUM = 8
+};
+
+enum SamplingPattern {
+	SAMPLING_PATTERN_SOBOL = 0,
+	SAMPLING_PATTERN_CMJ = 1
 };
 
 /* these flags values correspond to raytypes in osl.cpp, so keep them in sync!
@@ -234,7 +261,8 @@ typedef enum PassType {
 	PASS_AO = 131072,
 	PASS_SHADOW = 262144,
 	PASS_MOTION = 524288,
-	PASS_MOTION_WEIGHT = 1048576
+	PASS_MOTION_WEIGHT = 1048576,
+	PASS_MIST = 2097152
 } PassType;
 
 #define PASS_ALL (~0)
@@ -271,6 +299,7 @@ typedef struct PathRadiance {
 	float3 path_transmission;
 
 	float4 shadow;
+	float mist;
 } PathRadiance;
 
 typedef struct BsdfEval {
@@ -297,8 +326,13 @@ typedef enum ShaderFlag {
 	SHADER_CAST_SHADOW = (1 << 30),
 	SHADER_AREA_LIGHT = (1 << 29),
 	SHADER_USE_MIS = (1 << 28),
+	SHADER_EXCLUDE_DIFFUSE = (1 << 27),
+	SHADER_EXCLUDE_GLOSSY = (1 << 26),
+	SHADER_EXCLUDE_TRANSMIT = (1 << 25),
+	SHADER_EXCLUDE_CAMERA = (1 << 24),
+	SHADER_EXCLUDE_ANY = (SHADER_EXCLUDE_DIFFUSE|SHADER_EXCLUDE_GLOSSY|SHADER_EXCLUDE_TRANSMIT|SHADER_EXCLUDE_CAMERA),
 
-	SHADER_MASK = ~(SHADER_SMOOTH_NORMAL|SHADER_CAST_SHADOW|SHADER_AREA_LIGHT|SHADER_USE_MIS)
+	SHADER_MASK = ~(SHADER_SMOOTH_NORMAL|SHADER_CAST_SHADOW|SHADER_AREA_LIGHT|SHADER_USE_MIS|SHADER_EXCLUDE_ANY)
 } ShaderFlag;
 
 /* Light Type */
@@ -469,6 +503,8 @@ enum ShaderDataFlag {
 	SD_TRANSFORM_APPLIED = 32768 		/* vertices have transform applied */
 };
 
+struct KernelGlobals;
+
 typedef struct ShaderData {
 	/* position */
 	float3 P;
@@ -535,6 +571,14 @@ typedef struct ShaderData {
 #else
 	/* Closure data, with a single sampled closure for low memory usage */
 	ShaderClosure closure;
+#endif
+
+	/* ray start position, only set for backgrounds */
+	float3 ray_P;
+	differential3 ray_dP;
+
+#ifdef __OSL__
+	struct KernelGlobals *osl_globals;
 #endif
 } ShaderData;
 
@@ -633,9 +677,13 @@ typedef struct KernelFilm {
 
 	int pass_shadow;
 	float pass_shadow_scale;
-
 	int filter_table_offset;
-	int filter_pad;
+	int pass_pad1;
+
+	int pass_mist;
+	float mist_start;
+	float mist_inv_depth;
+	float mist_falloff;
 } KernelFilm;
 
 typedef struct KernelBackground {
@@ -697,6 +745,7 @@ typedef struct KernelIntegrator {
 
 	/* non-progressive */
 	int progressive;
+	int aa_samples;
 	int diffuse_samples;
 	int glossy_samples;
 	int transmission_samples;
@@ -705,7 +754,11 @@ typedef struct KernelIntegrator {
 	int use_lamp_mis;
 	int subsurface_samples;
 
-	int pad1, pad2, pad3;
+	/* sampler */
+	int sampling_pattern;
+
+	/* padding */
+	int pad;
 } KernelIntegrator;
 
 typedef struct KernelBVH {
@@ -723,9 +776,9 @@ typedef enum CurveFlag {
 	/* runtime flags */
 	CURVE_KN_BACKFACING = 1,				/* backside of cylinder? */
 	CURVE_KN_ENCLOSEFILTER = 2,				/* don't consider strands surrounding start point? */
-	CURVE_KN_CURVEDATA = 4,				/* curve data available? */
-	CURVE_KN_INTERPOLATE = 8,				/* render as a curve? - not supported yet */
-	CURVE_KN_ACCURATE = 16,				/* use accurate intersections test? */
+	CURVE_KN_CURVEDATA = 4,					/* curve data available? */
+	CURVE_KN_INTERPOLATE = 8,				/* render as a curve? */
+	CURVE_KN_ACCURATE = 16,					/* use accurate intersections test? */
 	CURVE_KN_INTERSECTCORRECTION = 32,		/* correct for width after determing closest midpoint? */
 	CURVE_KN_POSTINTERSECTCORRECTION = 64,	/* correct for width after intersect? */
 	CURVE_KN_NORMALCORRECTION = 128,		/* correct tangent normal for slope? */

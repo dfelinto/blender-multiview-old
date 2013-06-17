@@ -178,18 +178,18 @@ void UI_view2d_scrollers_draw(const struct bContext *C, struct View2D *v2d, View
 void UI_view2d_scrollers_free(View2DScrollers *scrollers);
 
 /* list view tools */
-void UI_view2d_listview_cell_to_view(struct View2D *v2d, short columnwidth, short rowheight,
+void UI_view2d_listview_cell_to_view(struct View2D *v2d, float columnwidth, float rowheight,
                                      float startx, float starty, int column, int row,
                                      struct rctf *rect);
-void UI_view2d_listview_view_to_cell(struct View2D *v2d, short columnwidth, short rowheight,
+void UI_view2d_listview_view_to_cell(struct View2D *v2d, float columnwidth, float rowheight,
                                      float startx, float starty, float viewx, float viewy,
                                      int *column, int *row);
-void UI_view2d_listview_visible_cells(struct View2D *v2d, short columnwidth, short rowheight,
+void UI_view2d_listview_visible_cells(struct View2D *v2d, float columnwidth, float rowheight,
                                       float startx, float starty, int *column_min, int *column_max,
                                       int *row_min, int *row_max);
 
 /* coordinate conversion */
-void UI_view2d_region_to_view(struct View2D *v2d, int x, int y, float *viewx, float *viewy);
+void UI_view2d_region_to_view(struct View2D *v2d, float x, float y, float *viewx, float *viewy);
 void UI_view2d_view_to_region(struct View2D *v2d, float x, float y, int *regionx, int *regiony);
 void UI_view2d_to_region_no_clip(struct View2D *v2d, float x, float y, int *regionx, int *region_y);
 

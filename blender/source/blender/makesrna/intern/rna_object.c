@@ -51,21 +51,21 @@
 
 #include "rna_internal.h"
 
-#include "BLO_sys_types.h" /* needed for intptr_t used in ED_mesh.h */
+#include "BLI_sys_types.h" /* needed for intptr_t used in ED_mesh.h */
 #include "ED_mesh.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
 
 EnumPropertyItem object_mode_items[] = {
-	{OB_MODE_OBJECT, "OBJECT", ICON_OBJECT_DATAMODE, "Object", ""},
-	{OB_MODE_EDIT, "EDIT", ICON_EDITMODE_HLT, "Edit", ""},
-	{OB_MODE_SCULPT, "SCULPT", ICON_SCULPTMODE_HLT, "Sculpt", ""},
+	{OB_MODE_OBJECT, "OBJECT", ICON_OBJECT_DATAMODE, "Object Mode", ""},
+	{OB_MODE_EDIT, "EDIT", ICON_EDITMODE_HLT, "Edit Mode", ""},
+	{OB_MODE_SCULPT, "SCULPT", ICON_SCULPTMODE_HLT, "Sculpt Mode", ""},
 	{OB_MODE_VERTEX_PAINT, "VERTEX_PAINT", ICON_VPAINT_HLT, "Vertex Paint", ""},
 	{OB_MODE_WEIGHT_PAINT, "WEIGHT_PAINT", ICON_WPAINT_HLT, "Weight Paint", ""},
 	{OB_MODE_TEXTURE_PAINT, "TEXTURE_PAINT", ICON_TPAINT_HLT, "Texture Paint", ""},
 	{OB_MODE_PARTICLE_EDIT, "PARTICLE_EDIT", ICON_PARTICLEMODE, "Particle Edit", ""},
-	{OB_MODE_POSE, "POSE", ICON_POSE_HLT, "Pose", ""},
+	{OB_MODE_POSE, "POSE", ICON_POSE_HLT, "Pose Mode", ""},
 	{0, NULL, 0, NULL, NULL}
 };
 
@@ -220,7 +220,7 @@ static void rna_Object_matrix_local_get(PointerRNA *ptr, float values[16])
 	if (ob->parent) {
 		float invmat[4][4]; /* for inverse of parent's matrix */
 		invert_m4_m4(invmat, ob->parent->obmat);
-		mult_m4_m4m4((float(*)[4])values, invmat, ob->obmat);
+		mul_m4_m4m4((float(*)[4])values, invmat, ob->obmat);
 	}
 	else {
 		copy_m4_m4((float(*)[4])values, ob->obmat);
@@ -237,7 +237,7 @@ static void rna_Object_matrix_local_set(PointerRNA *ptr, const float values[16])
 	if (ob->parent) {
 		float invmat[4][4];
 		invert_m4_m4(invmat, ob->parentinv);
-		mult_m4_m4m4(ob->obmat, invmat, (float(*)[4])values);
+		mul_m4_m4m4(ob->obmat, invmat, (float(*)[4])values);
 	}
 	else {
 		copy_m4_m4(ob->obmat, (float(*)[4])values);
@@ -2385,7 +2385,7 @@ static void rna_def_object(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Empty Display Size", "Size of display for empties in the viewport");
 	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
-	prop = RNA_def_property(srna, "empty_image_offset", PROP_FLOAT, PROP_DISTANCE);
+	prop = RNA_def_property(srna, "empty_image_offset", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "ima_ofs");
 	RNA_def_property_ui_text(prop, "Origin Offset", "Origin offset distance");
 	RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 0.1f, 2);
@@ -2479,11 +2479,11 @@ static void rna_def_object(BlenderRNA *brna)
 	RNA_def_property_update(prop, NC_OBJECT | ND_TRANSFORM, "rna_Object_internal_update");
 	
 	/* depsgraph hack */
-	prop = RNA_def_property(srna, "extra_recalc_object", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_extra_recalc_object", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "depsflag", OB_DEPS_EXTRA_OB_RECALC);
 	RNA_def_property_ui_text(prop, "Extra Object Update", "Refresh this object again on frame changes, dependency graph hack");
 	
-	prop = RNA_def_property(srna, "extra_recalc_data", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_extra_recalc_data", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "depsflag", OB_DEPS_EXTRA_DATA_RECALC);
 	RNA_def_property_ui_text(prop, "Extra Data Update", "Refresh this object's data again on frame changes, dependency graph hack");
 	

@@ -60,11 +60,13 @@ enum PaintMode;
 typedef int (*StrokeGetLocation)(struct bContext *C, float location[3], const float mouse[2]);
 typedef int (*StrokeTestStart)(struct bContext *C, struct wmOperator *op, const float mouse[2]);
 typedef void (*StrokeUpdateStep)(struct bContext *C, struct PaintStroke *stroke, struct PointerRNA *itemptr);
+typedef void (*StrokeRedraw)(const struct bContext *C, struct PaintStroke *stroke, bool final);
 typedef void (*StrokeDone)(const struct bContext *C, struct PaintStroke *stroke);
 
 struct PaintStroke *paint_stroke_new(struct bContext *C,
                                      StrokeGetLocation get_location, StrokeTestStart test_start,
-                                     StrokeUpdateStep update_step, StrokeDone done, int event_type);
+                                     StrokeUpdateStep update_step, StrokeRedraw redraw,
+                                     StrokeDone done, int event_type);
 void paint_stroke_data_free(struct wmOperator *op);
 
 bool paint_space_stroke_enabled(struct Brush *br, enum PaintMode mode);
@@ -90,8 +92,10 @@ int weight_paint_mode_poll(struct bContext *C);
 int vertex_paint_poll(struct bContext *C);
 int vertex_paint_mode_poll(struct bContext *C);
 
-void vpaint_fill(struct Object *ob, unsigned int paintcol);
-void wpaint_fill(struct VPaint *wp, struct Object *ob, float paintweight);
+bool ED_vpaint_fill(struct Object *ob, unsigned int paintcol);
+bool ED_wpaint_fill(struct VPaint *wp, struct Object *ob, float paintweight);
+
+bool ED_vpaint_smooth(struct Object *ob);
 
 void PAINT_OT_weight_paint_toggle(struct wmOperatorType *ot);
 void PAINT_OT_weight_paint(struct wmOperatorType *ot);
@@ -121,10 +125,10 @@ typedef struct ImagePaintPartialRedraw {
 #define IMAPAINT_TILE_SIZE          (1 << IMAPAINT_TILE_BITS)
 #define IMAPAINT_TILE_NUMBER(size)  (((size) + IMAPAINT_TILE_SIZE - 1) >> IMAPAINT_TILE_BITS)
 
-#define IMAPAINT_CHAR_TO_FLOAT(c) ((c) / 255.0f)
-
 int image_texture_paint_poll(struct bContext *C);
+void *image_undo_find_tile(struct Image *ima, struct ImBuf *ibuf, int x_tile, int y_tile, unsigned short **mask);
 void *image_undo_push_tile(struct Image *ima, struct ImBuf *ibuf, struct ImBuf **tmpibuf, int x_tile, int y_tile);
+void image_undo_remove_masks(void);
 void image_undo_restore(struct bContext *C, struct ListBase *lb);
 void image_undo_free(struct ListBase *lb);
 void imapaint_image_update(struct SpaceImage *sima, struct Image *image, struct ImBuf *ibuf, short texpaint);
@@ -132,13 +136,15 @@ struct ImagePaintPartialRedraw *get_imapaintpartial(void);
 void set_imapaintpartial(struct ImagePaintPartialRedraw *ippr);
 void imapaint_clear_partial_redraw(void);
 void imapaint_dirty_region(struct Image *ima, struct ImBuf *ibuf, int x, int y, int w, int h);
+void imapaint_region_tiles(struct ImBuf *ibuf, int x, int y, int w, int h, int *tx, int *ty, int *tw, int *th);
 int get_imapaint_zoom(struct bContext *C, float *zoomx, float *zoomy);
 void *paint_2d_new_stroke(struct bContext *, struct wmOperator *);
-void paint_2d_redraw(const bContext *C, void *ps, int final);
+void paint_2d_redraw(const bContext *C, void *ps, bool final);
 void paint_2d_stroke_done(void *ps);
-int paint_2d_stroke(void *ps, const int prev_mval[2], const int mval[2], int eraser);
-void *paint_proj_new_stroke(struct bContext *C, struct Object *ob, const int mouse[2], int mode);
-int paint_proj_stroke(struct bContext *C, void *ps, const int prevmval_i[2], const int mval_i[2]);
+void paint_2d_stroke(void *ps, const float prev_mval[2], const float mval[2], int eraser);
+void *paint_proj_new_stroke(struct bContext *C, struct Object *ob, const float mouse[2], int mode);
+void paint_proj_stroke(struct bContext *C, void *ps, const float prevmval_i[2], const float mval_i[2]);
+void paint_proj_redraw(const bContext *C, void *pps, bool final);
 void paint_proj_stroke_done(void *ps);
 void paint_brush_init_tex(struct Brush *brush);
 void paint_brush_exit_tex(struct Brush *brush);
@@ -178,7 +184,6 @@ void paint_calc_redraw_planes(float planes[4][4],
                               struct Object *ob,
                               const struct rcti *screen_rect);
 
-void projectf(struct bglMats *mats, const float v[3], float p[2]);
 float paint_calc_object_space_radius(struct ViewContext *vc, const float center[3], float pixel_radius);
 float paint_get_tex_pixel(struct MTex *mtex, float u, float v, struct ImagePool *pool);
 void paint_get_tex_pixel_col(struct MTex *mtex, float u, float v, float rgba[4], struct ImagePool *pool);

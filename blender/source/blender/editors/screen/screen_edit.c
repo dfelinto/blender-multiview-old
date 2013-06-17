@@ -370,6 +370,10 @@ ScrArea *area_split(bScreen *sc, ScrArea *sa, char dir, float fac, int merge)
 	split = testsplitpoint(sa, dir, fac);
 	if (split == 0) return NULL;
 	
+	/* note regarding (fac > 0.5f) checks below.
+	 * notmally it shouldn't matter which is used since the copy should match the original
+	 * however with viewport rendering and python console this isn't the case. - campbell */
+
 	if (dir == 'h') {
 		/* new vertices */
 		sv1 = screen_addvert(sc, sa->v1->vec.x, split);
@@ -382,13 +386,24 @@ ScrArea *area_split(bScreen *sc, ScrArea *sa, char dir, float fac, int merge)
 		screen_addedge(sc, sv2, sa->v4);
 		screen_addedge(sc, sv1, sv2);
 		
-		/* new areas: top */
-		newa = screen_addarea(sc, sv1, sa->v2, sa->v3, sv2, sa->headertype, sa->spacetype);
+		if (fac > 0.5f) {
+			/* new areas: top */
+			newa = screen_addarea(sc, sv1, sa->v2, sa->v3, sv2, sa->headertype, sa->spacetype);
+
+			/* area below */
+			sa->v2 = sv1;
+			sa->v3 = sv2;
+		}
+		else {
+			/* new areas: bottom */
+			newa = screen_addarea(sc, sa->v1, sv1, sv2, sa->v4, sa->headertype, sa->spacetype);
+
+			/* area above */
+			sa->v1 = sv1;
+			sa->v4 = sv2;
+		}
+
 		area_copy_data(newa, sa, 0);
-		
-		/* area below */
-		sa->v2 = sv1;
-		sa->v3 = sv2;
 		
 	}
 	else {
@@ -403,13 +418,24 @@ ScrArea *area_split(bScreen *sc, ScrArea *sa, char dir, float fac, int merge)
 		screen_addedge(sc, sv2, sa->v3);
 		screen_addedge(sc, sv1, sv2);
 		
-		/* new areas: left */
-		newa = screen_addarea(sc, sa->v1, sa->v2, sv2, sv1, sa->headertype, sa->spacetype);
+		if (fac > 0.5f) {
+			/* new areas: right */
+			newa = screen_addarea(sc, sv1, sv2, sa->v3, sa->v4, sa->headertype, sa->spacetype);
+
+			/* area left */
+			sa->v3 = sv2;
+			sa->v4 = sv1;
+		}
+		else {
+			/* new areas: left */
+			newa = screen_addarea(sc, sa->v1, sa->v2, sv2, sv1, sa->headertype, sa->spacetype);
+
+			/* area right */
+			sa->v1 = sv1;
+			sa->v2 = sv2;
+		}
+
 		area_copy_data(newa, sa, 0);
-		
-		/* area right */
-		sa->v1 = sv1;
-		sa->v2 = sv2;
 	}
 	
 	/* remove double vertices en edges */
@@ -664,15 +690,15 @@ static void screen_test_scale(bScreen *sc, int winsizex, int winsizey)
 			 * need some way to store these as floats internally and re-apply from there. */
 			tempf = ((float)sv->vec.x) * facx;
 			sv->vec.x = (short)(tempf + 0.5f);
-			sv->vec.x += AREAGRID - 1;
-			sv->vec.x -=  (sv->vec.x % AREAGRID);
+			//sv->vec.x += AREAGRID - 1;
+			//sv->vec.x -=  (sv->vec.x % AREAGRID);
 
 			CLAMP(sv->vec.x, 0, winsizex);
 			
 			tempf = ((float)sv->vec.y) * facy;
 			sv->vec.y = (short)(tempf + 0.5f);
-			sv->vec.y += AREAGRID - 1;
-			sv->vec.y -=  (sv->vec.y % AREAGRID);
+			//sv->vec.y += AREAGRID - 1;
+			//sv->vec.y -=  (sv->vec.y % AREAGRID);
 
 			CLAMP(sv->vec.y, 0, winsizey);
 		}
@@ -1448,6 +1474,36 @@ void ED_screen_delete(bContext *C, bScreen *sc)
 		BKE_libblock_free(&bmain->screen, sc);
 }
 
+static void ed_screen_set_3dview_camera(Scene *scene, bScreen *sc, ScrArea *sa, View3D *v3d)
+{
+	/* fix any cameras that are used in the 3d view but not in the scene */
+	BKE_screen_view3d_sync(v3d, scene);
+
+	if (!v3d->camera || !BKE_scene_base_find(scene, v3d->camera)) {
+		v3d->camera = BKE_scene_camera_find(sc->scene);
+		// XXX if (sc == curscreen) handle_view3d_lock();
+		if (!v3d->camera) {
+			ARegion *ar;
+			ListBase *regionbase;
+			
+			/* regionbase is in different place depending if space is active */
+			if (v3d == sa->spacedata.first)
+				regionbase = &sa->regionbase;
+			else
+				regionbase = &v3d->regionbase;
+				
+			for (ar = regionbase->first; ar; ar = ar->next) {
+				if (ar->regiontype == RGN_TYPE_WINDOW) {
+					RegionView3D *rv3d = ar->regiondata;
+					if (rv3d->persp == RV3D_CAMOB) {
+						rv3d->persp = RV3D_PERSP;
+					}
+				}
+			}
+		}
+	}
+}
+
 /* only call outside of area/region loops */
 void ED_screen_set_scene(bContext *C, bScreen *screen, Scene *scene)
 {
@@ -1460,7 +1516,7 @@ void ED_screen_set_scene(bContext *C, bScreen *screen, Scene *scene)
 	if (ed_screen_used(CTX_wm_manager(C), screen))
 		ED_object_editmode_exit(C, EM_FREEDATA | EM_DO_UNDO);
 
-	for (sc = CTX_data_main(C)->screen.first; sc; sc = sc->id.next) {
+	for (sc = bmain->screen.first; sc; sc = sc->id.next) {
 		if ((U.flag & USER_SCENEGLOBAL) || sc == screen) {
 			
 			if (scene != sc->scene) {
@@ -1479,7 +1535,7 @@ void ED_screen_set_scene(bContext *C, bScreen *screen, Scene *scene)
 	//  copy_view3d_lock(0);	/* space.c */
 	
 	/* are there cameras in the views that are not in the scene? */
-	for (sc = CTX_data_main(C)->screen.first; sc; sc = sc->id.next) {
+	for (sc = bmain->screen.first; sc; sc = sc->id.next) {
 		if ((U.flag & USER_SCENEGLOBAL) || sc == screen) {
 			ScrArea *sa = sc->areabase.first;
 			while (sa) {
@@ -1487,24 +1543,8 @@ void ED_screen_set_scene(bContext *C, bScreen *screen, Scene *scene)
 				while (sl) {
 					if (sl->spacetype == SPACE_VIEW3D) {
 						View3D *v3d = (View3D *) sl;
+						ed_screen_set_3dview_camera(scene, sc, sa, v3d);
 
-						BKE_screen_view3d_sync(v3d, scene);
-
-						if (!v3d->camera || !BKE_scene_base_find(scene, v3d->camera)) {
-							v3d->camera = BKE_scene_camera_find(sc->scene);
-							// XXX if (sc == curscreen) handle_view3d_lock();
-							if (!v3d->camera) {
-								ARegion *ar;
-								for (ar = v3d->regionbase.first; ar; ar = ar->next) {
-									if (ar->regiontype == RGN_TYPE_WINDOW) {
-										RegionView3D *rv3d = ar->regiondata;
-
-										if (rv3d->persp == RV3D_CAMOB)
-											rv3d->persp = RV3D_PERSP;
-									}
-								}
-							}
-						}
 					}
 					sl = sl->next;
 				}
@@ -1866,10 +1906,6 @@ void ED_update_for_newframe(Main *bmain, Scene *scene, int UNUSED(mute))
 
 	//extern void audiostream_scrub(unsigned int frame);	/* seqaudio.c */
 	
-	/* update animated image textures for gpu, etc,
-	 * call before BKE_scene_update_for_newframe so modifiers with textures don't lag 1 frame */
-	ED_image_update_frame(bmain, scene->r.cfra);
-
 	ED_clip_update_frame(bmain, scene->r.cfra);
 
 	/* get layers from all windows */

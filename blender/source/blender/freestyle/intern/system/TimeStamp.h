@@ -30,6 +30,10 @@
 
 #include "FreestyleConfig.h"
 
+#ifdef WITH_CXX_GUARDEDALLOC
+#include "MEM_guardedalloc.h"
+#endif
+
 namespace Freestyle {
 
 class LIB_SYSTEM_EXPORT TimeStamp
@@ -37,9 +41,7 @@ class LIB_SYSTEM_EXPORT TimeStamp
 public:
 	static inline TimeStamp *instance()
 	{
-		if (_instance == NULL)
-			_instance = new TimeStamp;
-		return _instance;
+		return &_instance;
 	}
 
 	inline unsigned getTimeStamp() const
@@ -66,8 +68,13 @@ protected:
 	TimeStamp(const TimeStamp&) {}
 
 private:
-	static TimeStamp *_instance;
+	static TimeStamp _instance;
 	unsigned _time_stamp;
+
+#ifdef WITH_CXX_GUARDEDALLOC
+public:
+	MEM_CXX_CLASS_ALLOC_FUNCS("Freestyle:TimeStamp")
+#endif
 };
 
 } /* namespace Freestyle */

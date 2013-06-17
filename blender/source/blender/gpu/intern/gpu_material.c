@@ -290,15 +290,18 @@ void GPU_material_bind(GPUMaterial *material, int oblay, int viewlay, double tim
 			}
 
 			if (material->dynproperty & DYN_LAMP_IMAT) {
-				mult_m4_m4m4(lamp->dynimat, lamp->imat, viewinv);
+				mul_m4_m4m4(lamp->dynimat, lamp->imat, viewinv);
 			}
 
 			if (material->dynproperty & DYN_LAMP_PERSMAT) {
 				if (!GPU_lamp_has_shadow_buffer(lamp)) /* The lamp matrices are already updated if we're using shadow buffers */
 					GPU_lamp_update_buffer_mats(lamp);
-				mult_m4_m4m4(lamp->dynpersmat, lamp->persmat, viewinv);
+				mul_m4_m4m4(lamp->dynpersmat, lamp->persmat, viewinv);
 			}
 		}
+
+		/* note material must be bound before setting uniforms */
+		GPU_pass_bind(material->pass, time, mipmap);
 
 		/* handle per material built-ins */
 		if (material->builtins & GPU_VIEW_MATRIX) {
@@ -308,7 +311,6 @@ void GPU_material_bind(GPUMaterial *material, int oblay, int viewlay, double tim
 			GPU_shader_uniform_vector(shader, material->invviewmatloc, 16, 1, (float*)viewinv);
 		}
 
-		GPU_pass_bind(material->pass, time, mipmap);
 		GPU_pass_update_uniforms(material->pass);
 
 		material->bound = 1;
@@ -626,7 +628,7 @@ static void add_to_diffuse(GPUMaterial *mat, Material *ma, GPUShadeInput *shi, G
 		addcol = shi->rgb;
 
 	/* output to */
-	GPU_link(mat, "shade_madd_clamped", *diff, rgb, addcol, diff);
+	GPU_link(mat, "shade_madd", *diff, rgb, addcol, diff);
 }
 
 static void ramp_spec_result(GPUShadeInput *shi, GPUNodeLink **spec)
@@ -1937,7 +1939,7 @@ void GPU_lamp_update_buffer_mats(GPULamp *lamp)
 	normalize_v3(lamp->viewmat[2]);
 
 	/* makeshadowbuf */
-	mult_m4_m4m4(persmat, lamp->winmat, lamp->viewmat);
+	mul_m4_m4m4(persmat, lamp->winmat, lamp->viewmat);
 
 	/* opengl depth buffer is range 0.0..1.0 instead of -1.0..1.0 in blender */
 	unit_m4(rangemat);
@@ -1948,7 +1950,7 @@ void GPU_lamp_update_buffer_mats(GPULamp *lamp)
 	rangemat[3][1] = 0.5f;
 	rangemat[3][2] = 0.5f;
 
-	mult_m4_m4m4(lamp->persmat, rangemat, persmat);
+	mul_m4_m4m4(lamp->persmat, rangemat, persmat);
 }
 
 void GPU_lamp_shadow_buffer_bind(GPULamp *lamp, float viewmat[4][4], int *winsize, float winmat[4][4])

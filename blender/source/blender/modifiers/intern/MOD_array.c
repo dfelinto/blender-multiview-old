@@ -228,7 +228,7 @@ static void bm_merge_dm_transform(BMesh *bm, DerivedMesh *dm, float mat[4][4],
 	/* Add the DerivedMesh's elements to the BMesh. The pre-existing
 	 * elements were already tagged, so the new elements can be
 	 * identified by not having the BM_ELEM_TAG flag set. */
-	DM_to_bmesh_ex(dm, bm);
+	DM_to_bmesh_ex(dm, bm, false);
 
 	if (amd->flags & MOD_ARR_MERGE) {
 		/* if merging is enabled, find doubles */
@@ -330,7 +330,7 @@ static DerivedMesh *arrayModifier_doArray(ArrayModifierData *amd,
                                           int UNUSED(initFlags))
 {
 	DerivedMesh *result;
-	BMesh *bm = DM_to_bmesh(dm);
+	BMesh *bm = DM_to_bmesh(dm, false);
 	BMOperator first_dupe_op, dupe_op, old_dupe_op, weld_op;
 	BMVert **first_geom = NULL;
 	int i, j;
@@ -346,9 +346,9 @@ static DerivedMesh *arrayModifier_doArray(ArrayModifierData *amd,
 	BMOpSlot *slot_targetmap = NULL;  /* for weldop */
 
 	/* need to avoid infinite recursion here */
-	if (amd->start_cap && amd->start_cap != ob)
+	if (amd->start_cap && amd->start_cap != ob && amd->start_cap->type == OB_MESH)
 		start_cap = mesh_get_derived_final(scene, amd->start_cap, CD_MASK_MESH);
-	if (amd->end_cap && amd->end_cap != ob)
+	if (amd->end_cap && amd->end_cap != ob && amd->end_cap->type == OB_MESH)
 		end_cap = mesh_get_derived_final(scene, amd->end_cap, CD_MASK_MESH);
 
 	unit_m4(offset);
@@ -418,7 +418,7 @@ static DerivedMesh *arrayModifier_doArray(ArrayModifierData *amd,
 
 	for (j = 0; j < count - 1; j++) {
 		float tmp_mat[4][4];
-		mult_m4_m4m4(tmp_mat, offset, final_offset);
+		mul_m4_m4m4(tmp_mat, offset, final_offset);
 		copy_m4_m4(final_offset, tmp_mat);
 	}
 
@@ -539,7 +539,7 @@ static DerivedMesh *arrayModifier_doArray(ArrayModifierData *amd,
 
 		if (end_cap) {
 			float endoffset[4][4];
-			mult_m4_m4m4(endoffset, offset, final_offset);
+			mul_m4_m4m4(endoffset, offset, final_offset);
 			bm_merge_dm_transform(bm, end_cap, endoffset, amd,
 			                      &dupe_op, (count == 1) ? dupe_op.slots_in : dupe_op.slots_out,
 			                      (count == 1) ? "geom" : "geom.out", &weld_op);
@@ -563,13 +563,11 @@ static DerivedMesh *arrayModifier_doArray(ArrayModifierData *amd,
 
 	result = CDDM_from_bmesh(bm, FALSE);
 
-	if ((amd->offset_type & MOD_ARR_OFF_OBJ) && (amd->offset_ob)) {
+	if ((dm->dirty & DM_DIRTY_NORMALS) ||
+	    ((amd->offset_type & MOD_ARR_OFF_OBJ) && (amd->offset_ob)))
+	{
 		/* Update normals in case offset object has rotation. */
-		
-		/* BMESH_TODO: check if normal recalc needed under any other
-		 * conditions? */
-
-		CDDM_calc_normals(result);
+		result->dirty |= DM_DIRTY_NORMALS;
 	}
 
 	BM_mesh_free(bm);
@@ -591,17 +589,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 	result = arrayModifier_doArray(amd, md->scene, ob, dm, 0);
 
-	//if (result != dm)
-	//	CDDM_calc_normals_mapping(result);
-
 	return result;
-}
-
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *dm)
-{
-	return applyModifier(md, ob, dm, MOD_APPLY_USECACHE);
 }
 
 
@@ -622,7 +610,7 @@ ModifierTypeInfo modifierType_Array = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  NULL,
 	/* freeData */          NULL,

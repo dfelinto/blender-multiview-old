@@ -39,6 +39,15 @@ enum {
 	SUBD_STRAIGHT_CUT
 };
 
+/* aligned with PROP_SMOOTH and friends */
+enum {
+	SUBD_FALLOFF_SMOOTH = 0,
+	SUBD_FALLOFF_SPHERE,
+	SUBD_FALLOFF_ROOT,
+	SUBD_FALLOFF_SHARP,
+	SUBD_FALLOFF_LIN,
+};
+
 enum {
 	SUBDIV_SELECT_ORIG,
 	SUBDIV_SELECT_INNER,
@@ -50,6 +59,18 @@ enum {
 	SIM_CMP_EQ = 0,
 	SIM_CMP_GT,
 	SIM_CMP_LT
+};
+
+/* subdivide_edgering */
+enum {
+	/* just subdiv */
+	SUBD_RING_INTERP_LINEAR,
+
+	/* single bezier spline - curve follows bezier rotation */
+	SUBD_RING_INTERP_PATH,
+
+	/* beziers based on adjacent faces (fallback to tangent) */
+	SUBD_RING_INTERP_SURF,
 };
 
 /* similar face selection slot values */
@@ -89,12 +110,6 @@ enum {
 	SIMVERT_EDGE
 };
 
-/* vertex path selection values */
-enum {
-	VPATH_SELECT_EDGE_LENGTH = 0,
-	VPATH_SELECT_TOPOLOGICAL
-};
-
 /* Poke face center calculation */
 enum {
 	BMOP_POKE_MEAN_WEIGHTED = 0,
@@ -107,12 +122,13 @@ extern const int         bmo_opdefines_total;
 
 /*------specific operator helper functions-------*/
 void BM_mesh_esubdivide(BMesh *bm, const char edge_hflag,
-                        float smooth, float fractal, float along_normal,
-                        int numcuts,
-                        int seltype, int cornertype,
+                        const float smooth, const short smooth_falloff, const bool use_smooth_even,
+                        const float fractal, const float along_normal,
+                        const int numcuts,
+                        const int seltype, const int cornertype,
                         const short use_single_edge, const short use_grid_fill,
                         const short use_only_quads,
-                        int seed);
+                        const int seed);
 
 #include "intern/bmesh_operator_api_inline.h"
 

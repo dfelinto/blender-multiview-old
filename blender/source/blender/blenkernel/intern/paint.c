@@ -32,6 +32,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "MEM_guardedalloc.h"
+
 #include "DNA_object_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
@@ -45,9 +47,13 @@
 
 #include "BKE_brush.h"
 #include "BKE_context.h"
+#include "BKE_depsgraph.h"
 #include "BKE_global.h"
+#include "BKE_image.h"
 #include "BKE_library.h"
+#include "BKE_object.h"
 #include "BKE_paint.h"
+#include "BKE_pbvh.h"
 #include "BKE_subsurf.h"
 
 #include "bmesh.h"
@@ -59,7 +65,7 @@ const char PAINT_CURSOR_TEXTURE_PAINT[3] = {255, 255, 255};
 
 static OverlayControlFlags overlay_flags = 0;
 
-void BKE_paint_invalidate_overlay_tex (Scene *scene, const Tex *tex)
+void BKE_paint_invalidate_overlay_tex(Scene *scene, const Tex *tex)
 {
 	Paint *p = BKE_paint_get_active(scene);
 	Brush *br = p->brush;
@@ -73,7 +79,7 @@ void BKE_paint_invalidate_overlay_tex (Scene *scene, const Tex *tex)
 		overlay_flags |= PAINT_INVALID_OVERLAY_TEXTURE_SECONDARY;
 }
 
-void BKE_paint_invalidate_cursor_overlay (Scene *scene, CurveMapping *curve)
+void BKE_paint_invalidate_cursor_overlay(Scene *scene, CurveMapping *curve)
 {
 	Paint *p = BKE_paint_get_active(scene);
 	Brush *br = p->brush;
@@ -94,25 +100,24 @@ OverlayControlFlags BKE_paint_get_overlay_flags(void)
 	return overlay_flags;
 }
 
-void BKE_paint_set_overlay_override(bool flag)
+void BKE_paint_set_overlay_override(OverlayFlags flags)
 {
-	if (flag)
-		overlay_flags |= PAINT_OVERLAY_OVERRIDE;
-	else
-		overlay_flags &= ~PAINT_OVERLAY_OVERRIDE;
+	if (flags & BRUSH_OVERLAY_OVERRIDE_MASK) {
+		if (flags & BRUSH_OVERLAY_CURSOR_OVERRIDE_ON_STROKE)
+			overlay_flags |= PAINT_OVERLAY_OVERRIDE_CURSOR;
+		if (flags & BRUSH_OVERLAY_PRIMARY_OVERRIDE_ON_STROKE)
+			overlay_flags |= PAINT_OVERLAY_OVERRIDE_PRIMARY;
+		if (flags & BRUSH_OVERLAY_SECONDARY_OVERRIDE_ON_STROKE)
+			overlay_flags |= PAINT_OVERLAY_OVERRIDE_SECONDARY;
+	}
+	else {
+		overlay_flags &= ~(PAINT_OVERRIDE_MASK);
+	}
 }
 
-bool BKE_paint_get_overlay_override(void)
+void BKE_paint_reset_overlay_invalid(OverlayControlFlags flag)
 {
-	return ((overlay_flags & PAINT_OVERLAY_OVERRIDE) != 0 );
-}
-
-
-void BKE_paint_reset_overlay_invalid(void)
-{
-	overlay_flags &= ~(PAINT_INVALID_OVERLAY_TEXTURE_PRIMARY |
-	                   PAINT_INVALID_OVERLAY_TEXTURE_SECONDARY |
-	                   PAINT_INVALID_OVERLAY_CURVE);
+	overlay_flags &= ~(flag);
 }
 
 
@@ -375,5 +380,114 @@ void paint_calculate_rake_rotation(UnifiedPaintSettings *ups, const float mouse_
 
 		interp_v2_v2v2(ups->last_rake, ups->last_rake,
 		               mouse_pos, u);
+	}
+}
+
+void free_sculptsession_deformMats(SculptSession *ss)
+{
+	if (ss->orig_cos) MEM_freeN(ss->orig_cos);
+	if (ss->deform_cos) MEM_freeN(ss->deform_cos);
+	if (ss->deform_imats) MEM_freeN(ss->deform_imats);
+
+	ss->orig_cos = NULL;
+	ss->deform_cos = NULL;
+	ss->deform_imats = NULL;
+}
+
+/* Write out the sculpt dynamic-topology BMesh to the Mesh */
+static void sculptsession_bm_to_me_update_data_only(Object *ob, bool reorder)
+{
+	SculptSession *ss = ob->sculpt;
+
+	if (ss->bm) {
+		if (ob->data) {
+			BMIter iter;
+			BMFace *efa;
+			BM_ITER_MESH (efa, &iter, ss->bm, BM_FACES_OF_MESH) {
+				BM_elem_flag_set(efa, BM_ELEM_SMOOTH,
+				                 ss->bm_smooth_shading);
+			}
+			if (reorder)
+				BM_log_mesh_elems_reorder(ss->bm, ss->bm_log);
+			BM_mesh_bm_to_me(ss->bm, ob->data, FALSE);
+		}
+	}
+}
+
+void sculptsession_bm_to_me(Object *ob, int reorder)
+{
+	if (ob && ob->sculpt) {
+		sculptsession_bm_to_me_update_data_only(ob, reorder);
+
+		/* ensure the objects DerivedMesh mesh doesn't hold onto arrays now realloc'd in the mesh [#34473] */
+		DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
+	}
+}
+
+void sculptsession_bm_to_me_for_render(Object *object)
+{
+	if (object && object->sculpt) {
+		if (object->sculpt->bm) {
+			/* Ensure no points to old arrays are stored in DM
+			 *
+			 * Apparently, we could not use DAG_id_tag_update
+			 * here because this will lead to the while object
+			 * surface to disappear, so we'll release DM in place.
+			 */
+			BKE_object_free_derived_caches(object);
+
+			if (object->sculpt->pbvh) {
+				BKE_pbvh_free(object->sculpt->pbvh);
+				object->sculpt->pbvh = NULL;
+			}
+
+			sculptsession_bm_to_me_update_data_only(object, false);
+
+			/* In contrast with sculptsession_bm_to_me no need in
+			 * DAG tag update here - derived mesh was freed and
+			 * old pointers are nowhere stored.
+			 */
+		}
+	}
+}
+
+void free_sculptsession(Object *ob)
+{
+	if (ob && ob->sculpt) {
+		SculptSession *ss = ob->sculpt;
+		DerivedMesh *dm = ob->derivedFinal;
+
+		if (ss->bm) {
+			sculptsession_bm_to_me(ob, TRUE);
+			BM_mesh_free(ss->bm);
+		}
+
+		if (ss->pbvh)
+			BKE_pbvh_free(ss->pbvh);
+		if (ss->bm_log)
+			BM_log_free(ss->bm_log);
+
+		if (dm && dm->getPBVH)
+			dm->getPBVH(NULL, dm);  /* signal to clear */
+
+		if (ss->texcache)
+			MEM_freeN(ss->texcache);
+
+		if (ss->tex_pool)
+			BKE_image_pool_free(ss->tex_pool);
+
+		if (ss->layer_co)
+			MEM_freeN(ss->layer_co);
+
+		if (ss->orig_cos)
+			MEM_freeN(ss->orig_cos);
+		if (ss->deform_cos)
+			MEM_freeN(ss->deform_cos);
+		if (ss->deform_imats)
+			MEM_freeN(ss->deform_imats);
+
+		MEM_freeN(ss);
+
+		ob->sculpt = NULL;
 	}
 }

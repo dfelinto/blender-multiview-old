@@ -821,6 +821,25 @@ int BM_edge_is_boundary(BMEdge *e)
 }
 #endif
 
+bool BM_vert_is_boundary(BMVert *v)
+{
+	if (v->e) {
+		BMEdge *e_first, *e_iter;
+
+		e_first = e_iter = v->e;
+		do {
+			if (BM_edge_is_boundary(e_iter)) {
+				return true;
+			}
+		} while ((e_iter = bmesh_disk_edge_next(e_iter, v)) != e_first);
+
+		return false;
+	}
+	else {
+		return false;
+	}
+}
+
 /**
  * Returns the number of faces that are adjacent to both f1 and f2,
  * \note Could be sped up a bit by not using iterators and by tagging
@@ -959,6 +978,7 @@ bool BM_edge_share_vert_check(BMEdge *e1, BMEdge *e2)
  */
 BMVert *BM_edge_share_vert(BMEdge *e1, BMEdge *e2)
 {
+	BLI_assert(e1 != e2);
 	if (BM_vert_in_edge(e2, e1->v1)) {
 		return e1->v1;
 	}
@@ -1396,6 +1416,7 @@ BMEdge *BM_edge_exists(BMVert *v1, BMVert *v2)
 	BMEdge *e;
 
 	BLI_assert(v1 != v2);
+	BLI_assert(v1->head.htype == BM_VERT && v2->head.htype == BM_VERT);
 
 	BM_ITER_ELEM (e, &iter, v1, BM_EDGES_OF_VERT) {
 		if (e->v1 == v2 || e->v2 == v2)
@@ -1719,7 +1740,7 @@ static void bm_mesh_calc_volume_face(BMFace *f, float *r_vol)
 		*r_vol += (1.0f / 6.0f) * dot_v3v3(p1, cross);
 	}
 }
-float BM_mesh_calc_volume(BMesh *bm)
+float BM_mesh_calc_volume(BMesh *bm, bool is_signed)
 {
 	/* warning, calls own tessellation function, may be slow */
 	float vol = 0.0f;
@@ -1730,5 +1751,33 @@ float BM_mesh_calc_volume(BMesh *bm)
 		bm_mesh_calc_volume_face(f, &vol);
 	}
 
-	return fabsf(vol);
+	if (is_signed == false) {
+		vol = fabsf(vol);
+	}
+
+	return vol;
+}
+
+float bmesh_subd_falloff_calc(const int falloff, float val)
+{
+	switch (falloff) {
+		case SUBD_FALLOFF_SMOOTH:
+			val = 3.0f * val * val - 2.0f * val * val * val;
+			break;
+		case SUBD_FALLOFF_SPHERE:
+			val = sqrtf(2.0f * val - val * val);
+			break;
+		case SUBD_FALLOFF_ROOT:
+			val = sqrtf(val);
+			break;
+		case SUBD_FALLOFF_SHARP:
+			val = val * val;
+			break;
+		case SUBD_FALLOFF_LIN:
+			break;
+		default:
+			BLI_assert(0);
+	}
+
+	return val;
 }

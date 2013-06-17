@@ -243,6 +243,9 @@ static int wm_macro_exec(bContext *C, wmOperator *op)
 				break; /* operator didn't finish, end macro */
 			}
 		}
+		else {
+			printf("%s: '%s' cant exec macro\n", __func__, opm->type->idname);
+		}
 	}
 	
 	return wm_macro_end(op, retval);
@@ -538,6 +541,9 @@ char *WM_operator_pystring(bContext *C, wmOperatorType *ot, PointerRNA *opptr, i
 	char *cstring;
 	char *cstring_args;
 
+	/* arbitrary, but can get huge string with stroke painting otherwise */
+	int max_prop_length = 10;
+
 	/* only to get the orginal props for comparisons */
 	PointerRNA opptr_default;
 
@@ -551,7 +557,8 @@ char *WM_operator_pystring(bContext *C, wmOperatorType *ot, PointerRNA *opptr, i
 	WM_operator_py_idname(idname_py, ot->idname);
 	BLI_dynstr_appendf(dynstr, "bpy.ops.%s(", idname_py);
 
-	cstring_args = RNA_pointer_as_string_keywords(C, opptr, &opptr_default, FALSE, all_args);
+	cstring_args = RNA_pointer_as_string_keywords(C, opptr, &opptr_default, FALSE,
+	                                              all_args, max_prop_length);
 	BLI_dynstr_append(dynstr, cstring_args);
 	MEM_freeN(cstring_args);
 
@@ -641,7 +648,6 @@ static char *wm_prop_pystring_from_context(bContext *C, PointerRNA *ptr, Propert
 	char *ret = NULL;
 
 	if (ptr->id.data) {
-		ID *idptr = ptr->id.data;
 
 #define CTX_TEST_PTR_ID(C, member, idptr) \
 		{ \
@@ -664,7 +670,16 @@ static char *wm_prop_pystring_from_context(bContext *C, PointerRNA *ptr, Propert
 			} \
 		} (void)0
 
-		switch (GS(idptr->name)) {
+#define CTX_TEST_PTR_DATA_TYPE(C, member, rna_type, rna_ptr, dataptr_cmp) \
+		{ \
+			const char *ctx_member = member; \
+			if (RNA_struct_is_a((ptr)->type, &(rna_type)) && (ptr)->data == (dataptr_cmp)) { \
+				member_id = ctx_member; \
+				break; \
+			} \
+		} (void)0
+
+		switch (GS(((ID *)ptr->id.data)->name)) {
 			case ID_SCE:
 			{
 				CTX_TEST_PTR_ID(C, "scene", ptr->id.data);
@@ -700,6 +715,11 @@ static char *wm_prop_pystring_from_context(bContext *C, PointerRNA *ptr, Propert
 			case ID_SCR:
 			{
 				CTX_TEST_PTR_ID(C, "screen", ptr->id.data);
+
+				CTX_TEST_PTR_DATA_TYPE(C, "space_data", RNA_Space, ptr, CTX_wm_space_data(C));
+				CTX_TEST_PTR_DATA_TYPE(C, "area", RNA_Area, ptr, CTX_wm_area(C));
+				CTX_TEST_PTR_DATA_TYPE(C, "region", RNA_Region, ptr, CTX_wm_region(C));
+
 				break;
 			}
 		}
@@ -734,7 +754,7 @@ char *WM_prop_pystring_assign(bContext *C, PointerRNA *ptr, PropertyRNA *prop, i
 		return NULL;
 	}
 
-	rhs = RNA_property_as_string(C, ptr, prop, index);
+	rhs = RNA_property_as_string(C, ptr, prop, index, INT_MAX);
 	if (!rhs) {
 		MEM_freeN(lhs);
 		return NULL;
@@ -1102,9 +1122,9 @@ void WM_operator_properties_filesel(wmOperatorType *ot, int filter, short type, 
 	RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
 }
 
-void WM_operator_properties_select_all(wmOperatorType *ot)
+void WM_operator_properties_select_action(wmOperatorType *ot, int default_action)
 {
-	static EnumPropertyItem select_all_actions[] = {
+	static EnumPropertyItem select_actions[] = {
 		{SEL_TOGGLE, "TOGGLE", 0, "Toggle", "Toggle selection for all elements"},
 		{SEL_SELECT, "SELECT", 0, "Select", "Select all elements"},
 		{SEL_DESELECT, "DESELECT", 0, "Deselect", "Deselect all elements"},
@@ -1112,7 +1132,12 @@ void WM_operator_properties_select_all(wmOperatorType *ot)
 		{0, NULL, 0, NULL, NULL}
 	};
 
-	RNA_def_enum(ot->srna, "action", select_all_actions, SEL_TOGGLE, "Action", "Selection action to execute");
+	RNA_def_enum(ot->srna, "action", select_actions, default_action, "Action", "Selection action to execute");
+}
+
+void WM_operator_properties_select_all(wmOperatorType *ot)
+{
+	WM_operator_properties_select_action(ot, SEL_TOGGLE);
 }
 
 void WM_operator_properties_border(wmOperatorType *ot)
@@ -1891,19 +1916,26 @@ static void WM_OT_read_factory_settings(wmOperatorType *ot)
 
 /* *************** open file **************** */
 
-static void open_set_load_ui(wmOperator *op)
+static void open_set_load_ui(wmOperator *op, bool use_prefs)
 {
-	if (!RNA_struct_property_is_set(op->ptr, "load_ui"))
-		RNA_boolean_set(op->ptr, "load_ui", !(U.flag & USER_FILENOUI));
+	PropertyRNA *prop = RNA_struct_find_property(op->ptr, "load_ui");
+	if (!RNA_property_is_set(op->ptr, prop)) {
+		RNA_property_boolean_set(op->ptr, prop, use_prefs ?
+		                         (U.flag & USER_FILENOUI) == 0 :
+		                         (G.fileflags & G_FILE_NO_UI) == 0);
+	}
 }
 
-static void open_set_use_scripts(wmOperator *op)
+static void open_set_use_scripts(wmOperator *op, bool use_prefs)
 {
-	if (!RNA_struct_property_is_set(op->ptr, "use_scripts")) {
+	PropertyRNA *prop = RNA_struct_find_property(op->ptr, "use_scripts");
+	if (!RNA_property_is_set(op->ptr, prop)) {
 		/* use G_SCRIPT_AUTOEXEC rather than the userpref because this means if
 		 * the flag has been disabled from the command line, then opening
 		 * from the menu wont enable this setting. */
-		RNA_boolean_set(op->ptr, "use_scripts", (G.f & G_SCRIPT_AUTOEXEC));
+		RNA_property_boolean_set(op->ptr, prop, use_prefs ?
+		                         (U.flag & USER_SCRIPT_AUTOEXEC_DISABLE) == 0 :
+		                         (G.f & G_SCRIPT_AUTOEXEC) != 0);
 	}
 }
 
@@ -1926,8 +1958,8 @@ static int wm_open_mainfile_invoke(bContext *C, wmOperator *op, const wmEvent *U
 	}
 
 	RNA_string_set(op->ptr, "filepath", openname);
-	open_set_load_ui(op);
-	open_set_use_scripts(op);
+	open_set_load_ui(op, true);
+	open_set_use_scripts(op, true);
 
 	WM_event_add_fileselect(C, op);
 
@@ -1939,8 +1971,10 @@ static int wm_open_mainfile_exec(bContext *C, wmOperator *op)
 	char path[FILE_MAX];
 
 	RNA_string_get(op->ptr, "filepath", path);
-	open_set_load_ui(op);
-	open_set_use_scripts(op);
+
+	/* re-use last loaded setting so we can reload a file without changing */
+	open_set_load_ui(op, false);
+	open_set_use_scripts(op, false);
 
 	if (RNA_boolean_get(op->ptr, "load_ui"))
 		G.fileflags &= ~G_FILE_NO_UI;
@@ -4050,6 +4084,7 @@ static void gesture_circle_modal_keymap(wmKeyConfig *keyconf)
 		{0, NULL, 0, NULL, NULL}
 	};
 
+	/* WARNING - name is incorrect, use for non-3d views */
 	wmKeyMap *keymap = WM_modalkeymap_get(keyconf, "View3D Gesture Circle");
 
 	/* this function is called for each spacetype, only needs to add map once */

@@ -77,8 +77,9 @@ class NODE_HT_header(Header):
                 layout.prop(snode_id, "use_nodes")
 
         elif snode.tree_type == 'CompositorNodeTree':
-            layout.prop(snode_id, "use_nodes")
-            layout.prop(snode_id.render, "use_free_unused_nodes", text="Free Unused")
+            if snode_id:
+                layout.prop(snode_id, "use_nodes")
+                layout.prop(snode_id.render, "use_free_unused_nodes", text="Free Unused")
             layout.prop(snode, "show_backdrop")
             if snode.show_backdrop:
                 row = layout.row(align=True)
@@ -106,6 +107,20 @@ class NODE_HT_header(Header):
         row.operator("node.clipboard_paste", text="", icon='PASTEDOWN')
 
         layout.template_running_jobs()
+
+
+class NODE_MT_add(bpy.types.Menu):
+    bl_space_type = 'NODE_EDITOR'
+    bl_label = "Add"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator_context = 'INVOKE_DEFAULT'
+        props = layout.operator("node.add_search", text="Search ...")
+        props.use_transform = True
+
+        # actual node submenus are added by draw functions from node categories
 
 
 class NODE_MT_view(Menu):
@@ -216,8 +231,106 @@ class NODE_MT_node(Menu):
         layout.operator("node.read_fullsamplelayers")
 
 
+class NODE_MT_node_color_presets(Menu):
+    """Predefined node color"""
+    bl_label = "Color Presets"
+    preset_subdir = "node_color"
+    preset_operator = "script.execute_preset"
+    draw = Menu.draw_preset
+
+
+class NODE_MT_node_color_specials(Menu):
+    bl_label = "Node Color Specials"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator("node.node_copy_color", icon='COPY_ID')
+
+
+class NODE_PT_active_node_generic(Panel):
+    bl_space_type = 'NODE_EDITOR'
+    bl_region_type = 'UI'
+    bl_label = "Node"
+#    bl_options = {'HIDE_HEADER'}
+
+    @classmethod
+    def poll(cls, context):
+        space = context.space_data
+        return context.active_node is not None
+
+    def draw(self, context):
+        layout = self.layout
+        node = context.active_node
+
+        layout.prop(node, "name", icon='NODE')
+        layout.prop(node, "label", icon='NODE')
+
+
+class NODE_PT_active_node_color(Panel):
+    bl_space_type = 'NODE_EDITOR'
+    bl_region_type = 'UI'
+    bl_label = "Color"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    @classmethod
+    def poll(cls, context):
+        space = context.space_data
+        return context.active_node is not None
+
+    def draw_header(self, context):
+        node = context.active_node
+        self.layout.prop(node, "use_custom_color", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        node = context.active_node
+
+        layout.enabled = node.use_custom_color
+
+        row = layout.row()
+        col = row.column()
+        col.menu("NODE_MT_node_color_presets")
+        col.prop(node, "color", text="")
+        col = row.column(align=True)
+        col.operator("node.node_color_preset_add", text="", icon='ZOOMIN').remove_active = False
+        col.operator("node.node_color_preset_add", text="", icon='ZOOMOUT').remove_active = True
+        col.menu("NODE_MT_node_color_specials", text="", icon='DOWNARROW_HLT')
+
+
+class NODE_PT_active_node_properties(Panel):
+    bl_space_type = 'NODE_EDITOR'
+    bl_region_type = 'UI'
+    bl_label = "Properties"
+
+    @classmethod
+    def poll(cls, context):
+        space = context.space_data
+        return context.active_node is not None
+
+    def draw(self, context):
+        layout = self.layout
+        node = context.active_node
+        # set "node" context pointer for the panel layout
+        layout.context_pointer_set("node", node)
+
+        if hasattr(node, "draw_buttons_ext"):
+            node.draw_buttons_ext(context, layout)
+        elif hasattr(node, "draw_buttons"):
+            node.draw_buttons(context, layout)
+
+        # XXX this could be filtered further to exclude socket types which don't have meaningful input values (e.g. cycles shader)
+        value_inputs = [socket for socket in node.inputs if socket.enabled and not socket.is_linked]
+        if value_inputs:
+            layout.separator()
+            layout.label("Inputs:")
+            for socket in value_inputs:
+                row = layout.row()
+                socket.draw(context, row, node, socket.name)
+
+
 # Node Backdrop options
-class NODE_PT_properties(Panel):
+class NODE_PT_backdrop(Panel):
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
     bl_label = "Backdrop"
@@ -270,27 +383,10 @@ class NODE_PT_quality(bpy.types.Panel):
         col = layout.column()
         col.prop(tree, "use_opencl")
         col.prop(tree, "use_groupnode_buffer")
-        col.prop(tree, "two_pass")
+        col.prop(tree, "use_two_pass")
         col.prop(tree, "use_viewer_border")
         col.prop(snode, "show_highlight")
         col.prop(snode, "use_hidden_preview")
-
-
-class NODE_MT_node_color_presets(Menu):
-    """Predefined node color"""
-    bl_label = "Color Presets"
-    preset_subdir = "node_color"
-    preset_operator = "script.execute_preset"
-    draw = Menu.draw_preset
-
-
-class NODE_MT_node_color_specials(Menu):
-    bl_label = "Node Color Specials"
-
-    def draw(self, context):
-        layout = self.layout
-
-        layout.operator("node.node_copy_color", icon='COPY_ID')
 
 
 class NODE_UL_interface_sockets(bpy.types.UIList):
@@ -314,6 +410,10 @@ class NODE_UL_interface_sockets(bpy.types.UIList):
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
             layout.template_node_socket(color)
+
+
+def node_draw_tree_view(layout, context):
+    pass
 
 
 if __name__ == "__main__":  # only for live edit.

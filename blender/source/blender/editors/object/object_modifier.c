@@ -304,9 +304,6 @@ static int object_modifier_remove(Main *bmain, Object *ob, ModifierData *md,
 
 		*sort_depsgraph = 1;
 	}
-	else if (md->type == eModifierType_Smoke) {
-		ob->dt = OB_TEXTURE;
-	}
 	else if (md->type == eModifierType_Multires) {
 		/* Delete MDisps layer if not used by another multires modifier */
 		if (object_modifier_safe_to_delete(bmain, ob, md, eModifierType_Multires))
@@ -619,7 +616,7 @@ static int modifier_apply_obdata(ReportList *reports, Scene *scene, Object *ob, 
 				return 0;
 			}
 
-			DM_to_mesh(dm, me, ob);
+			DM_to_mesh(dm, me, ob, CD_MASK_MESH);
 
 			dm->release(dm);
 
@@ -1530,7 +1527,7 @@ static int skin_root_mark_exec(bContext *C, wmOperator *UNUSED(op))
 
 	BM_ITER_MESH (bm_vert, &bm_iter, bm, BM_VERTS_OF_MESH) {
 		if (!BLI_ghash_lookup(visited, bm_vert) &&
-		    bm_vert->head.hflag & BM_ELEM_SELECT)
+		    BM_elem_flag_test(bm_vert, BM_ELEM_SELECT))
 		{
 			MVertSkin *vs = CustomData_bmesh_get(&bm->vdata,
 			                                     bm_vert->head.data,
@@ -1585,7 +1582,7 @@ static int skin_loose_mark_clear_exec(bContext *C, wmOperator *op)
 	}
 
 	BM_ITER_MESH (bm_vert, &bm_iter, bm, BM_VERTS_OF_MESH) {
-		if (bm_vert->head.hflag & BM_ELEM_SELECT) {
+		if (BM_elem_flag_test(bm_vert, BM_ELEM_SELECT)) {
 			MVertSkin *vs = CustomData_bmesh_get(&bm->vdata,
 			                                     bm_vert->head.data,
 			                                     CD_MVERT_SKIN);
@@ -1642,7 +1639,7 @@ static int skin_radii_equalize_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 
 	BM_ITER_MESH (bm_vert, &bm_iter, bm, BM_VERTS_OF_MESH) {
-		if (bm_vert->head.hflag & BM_ELEM_SELECT) {
+		if (BM_elem_flag_test(bm_vert, BM_ELEM_SELECT)) {
 			MVertSkin *vs = CustomData_bmesh_get(&bm->vdata,
 			                                     bm_vert->head.data,
 			                                     CD_MVERT_SKIN);

@@ -179,7 +179,10 @@ void RE_AcquireResultImage(struct Render *re, struct RenderResult *rr);
 void RE_ReleaseResultImage(struct Render *re);
 void RE_SwapResult(struct Render *re, struct RenderResult **rr);
 struct RenderStats *RE_GetStats(struct Render *re);
+
 void RE_ResultGet32(struct Render *re, unsigned int *rect);
+void RE_AcquiredResultGet32(struct Render *re, struct RenderResult *result, unsigned int *rect);
+
 struct RenderLayer *RE_GetRenderLayer(struct RenderResult *rr, const char *name);
 float *RE_RenderLayerGetPass(struct RenderLayer *rl, int passtype);
 
@@ -223,7 +226,7 @@ void RE_TileProcessor(struct Render *re);
 void RE_BlenderFrame(struct Render *re, struct Main *bmain, struct Scene *scene, struct SceneRenderLayer *srl, struct Object *camera_override, unsigned int lay, int frame, const short write_still);
 void RE_BlenderAnim(struct Render *re, struct Main *bmain, struct Scene *scene, struct Object *camera_override, unsigned int lay, int sfra, int efra, int tfra);
 #ifdef WITH_FREESTYLE
-void RE_RenderFreestyleStrokes(struct Render *re, struct Main *bmain, struct Scene *scene);
+void RE_RenderFreestyleStrokes(struct Render *re, struct Main *bmain, struct Scene *scene, int render);
 #endif
 
 /* error reporting */

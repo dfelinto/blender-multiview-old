@@ -341,7 +341,7 @@ int join_mesh_exec(bContext *C, wmOperator *op)
 				/* if this is the object we're merging into, no need to do anything */
 				if (base->object != ob) {
 					/* watch this: switch matmul order really goes wrong */
-					mult_m4_m4m4(cmat, imat, base->object->obmat);
+					mul_m4_m4m4(cmat, imat, base->object->obmat);
 					
 					/* transform vertex coordinates into new space */
 					for (a = 0, mv = mvert; a < me->totvert; a++, mv++) {
@@ -507,7 +507,7 @@ int join_mesh_exec(bContext *C, wmOperator *op)
 	BKE_mesh_update_customdata_pointers(me, false);
 
 	/* update normals in case objects with non-uniform scale are joined */
-	ED_mesh_calc_normals(me);
+	BKE_mesh_calc_normals(me);
 	
 	/* old material array */
 	for (a = 1; a <= ob->totcol; a++) {
@@ -1047,7 +1047,7 @@ static float *editmesh_get_mirror_uv(BMEditMesh *em, int axis, float *uv, float 
 		BMFace *efa;
 		
 		BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
-			uv_poly_center(em, efa, cent);
+			uv_poly_center(efa, cent, cd_loop_uv_offset);
 			
 			if ( (fabsf(cent[0] - cent_vec[0]) < 0.001f) && (fabsf(cent[1] - cent_vec[1]) < 0.001f) ) {
 				BMIter liter;

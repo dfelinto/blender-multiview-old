@@ -61,6 +61,7 @@ bool    BM_edge_is_wire(BMEdge *e);
 
 bool    BM_vert_is_manifold(BMVert *v);
 bool    BM_edge_is_manifold(BMEdge *e);
+bool    BM_vert_is_boundary(BMVert *v);
 bool    BM_edge_is_boundary(BMEdge *e);
 bool    BM_edge_is_contiguous(BMEdge *e);
 bool    BM_edge_is_convex(BMEdge *e);
@@ -113,6 +114,9 @@ bool BM_edge_is_any_vert_flag_test(BMEdge *e, const char hflag);
 bool BM_face_is_any_vert_flag_test(BMFace *f, const char hflag);
 bool BM_face_is_any_edge_flag_test(BMFace *f, const char hflag);
 
-float BM_mesh_calc_volume(BMesh *bm);
+float BM_mesh_calc_volume(BMesh *bm, bool is_signed);
+
+/* not really any good place  to put this */
+float bmesh_subd_falloff_calc(const int falloff, float val);
 
 #endif /* __BMESH_QUERIES_H__ */

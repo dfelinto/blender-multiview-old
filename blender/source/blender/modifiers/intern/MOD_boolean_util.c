@@ -362,9 +362,9 @@ static DerivedMesh *ConvertCSGDescriptorsToDerivedMesh(
 
 	/* create a new DerivedMesh */
 	result = CDDM_new(vertex_it->num_elements, 0, face_it->num_elements, 0, 0);
-	CustomData_merge(&dm1->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~(CD_MASK_NORMAL | CD_MASK_ORIGINDEX),
+	CustomData_merge(&dm1->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~CD_MASK_ORIGINDEX,
 	                 CD_DEFAULT, face_it->num_elements);
-	CustomData_merge(&dm2->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~(CD_MASK_NORMAL | CD_MASK_ORIGINDEX),
+	CustomData_merge(&dm2->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~CD_MASK_ORIGINDEX,
 	                 CD_DEFAULT, face_it->num_elements);
 
 	/* step through the vertex iterators: */
@@ -485,7 +485,7 @@ static DerivedMesh *ConvertCSGDescriptorsToDerivedMesh(
 	DM_ensure_tessface(result);
 #endif
 
-	CDDM_calc_normals(result);
+	result->dirty |= DM_DIRTY_NORMALS;
 
 	return result;
 }
@@ -526,7 +526,7 @@ static DerivedMesh *NewBooleanDerivedMesh_intern(
 	 * we need to compute the inverse transform from global to ob (inv_mat),
 	 * and the transform from ob to ob_select for use in interpolation (map_mat) */
 	invert_m4_m4(inv_mat, ob->obmat);
-	mult_m4_m4m4(map_mat, inv_mat, ob_select->obmat);
+	mul_m4_m4m4(map_mat, inv_mat, ob_select->obmat);
 	invert_m4_m4(inv_mat, ob_select->obmat);
 
 	{
@@ -625,7 +625,7 @@ int NewBooleanMesh(Scene *scene, Base *base, Base *base_select, int int_op_type)
 	ob_new = AddNewBlenderMesh(scene, base_select);
 	me_new = ob_new->data;
 
-	DM_to_mesh(result, me_new, ob_new);
+	DM_to_mesh(result, me_new, ob_new, CD_MASK_MESH);
 	result->release(result);
 
 	dm->release(dm);

@@ -64,13 +64,11 @@
 
 /* XXX Does some additional initialization on top of nodeAddNode
  * Can be used with both custom and static nodes, if idname==NULL the static int type will be used instead.
- * Can be called from menus too, but they should do own undopush and redraws.
  */
 bNode *node_add_node(const bContext *C, const char *idname, int type, float locx, float locy)
 {
 	SpaceNode *snode = CTX_wm_space_node(C);
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	bNode *node = NULL;
 	
 	node_deselect_all(snode);
@@ -93,22 +91,8 @@ bNode *node_add_node(const bContext *C, const char *idname, int type, float locx
 	node->locx = locx;
 	node->locy = locy + 60.0f;
 	
-	ntreeUpdateTree(snode->edittree);
+	ntreeUpdateTree(bmain, snode->edittree);
 	ED_node_set_active(bmain, snode->edittree, node);
-	
-	if (snode->nodetree->type == NTREE_COMPOSIT) {
-		if (ELEM4(node->type, CMP_NODE_R_LAYERS, CMP_NODE_COMPOSITE, CMP_NODE_DEFOCUS, CMP_NODE_OUTPUT_FILE)) {
-			node->id = &scene->id;
-		}
-		else if (ELEM3(node->type, CMP_NODE_MOVIECLIP, CMP_NODE_MOVIEDISTORTION, CMP_NODE_STABILIZE2D)) {
-			node->id = (ID *)scene->clip;
-		}
-		
-		ntreeCompositForceHidden(snode->edittree, scene);
-	}
-	
-	if (node->id)
-		id_us_plus(node->id);
 	
 	if (snode->flag & SNODE_USE_HIDDEN_PREVIEW)
 		node->flag &= ~NODE_PREVIEW;
@@ -149,7 +133,7 @@ typedef struct bNodeSocketLink {
 	float point[2];
 } bNodeSocketLink;
 
-static bNodeSocketLink *add_reroute_insert_socket_link(ListBase *lb, bNodeSocket *sock, bNodeLink *link, float point[2])
+static bNodeSocketLink *add_reroute_insert_socket_link(ListBase *lb, bNodeSocket *sock, bNodeLink *link, const float point[2])
 {
 	bNodeSocketLink *socklink, *prev;
 	
@@ -285,7 +269,7 @@ static int add_reroute_exec(bContext *C, wmOperator *op)
 		BLI_freelistN(&input_links);
 		
 		/* always last */
-		ntreeUpdateTree(ntree);
+		ntreeUpdateTree(CTX_data_main(C), ntree);
 		snode_notify(C, snode);
 		snode_dag_update(C, snode);
 		
@@ -308,7 +292,7 @@ void NODE_OT_add_reroute(wmOperatorType *ot)
 	ot->exec = add_reroute_exec;
 	ot->cancel = WM_gesture_lines_cancel;
 
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -416,7 +400,7 @@ void NODE_OT_add_file(wmOperatorType *ot)
 	/* callbacks */
 	ot->exec = node_add_file_exec;
 	ot->invoke = node_add_file_invoke;
-	ot->poll = ED_operator_node_active;
+	ot->poll = ED_operator_node_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;

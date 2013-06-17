@@ -38,7 +38,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BLF_translation.h"
@@ -46,6 +45,9 @@
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_screen.h"
+
+#include "RNA_access.h"
+#include "RNA_types.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -148,25 +150,6 @@ void ED_area_do_refresh(bContext *C, ScrArea *sa)
 		sa->type->refresh(C, sa);
 	}
 	sa->do_refresh = FALSE;
-}
-
-/* based on screen region draw tags, set draw tags in azones, and future region tabs etc */
-/* only exported for WM */
-void ED_area_overdraw_flush(ScrArea *sa, ARegion *ar)
-{
-	AZone *az;
-	
-	for (az = sa->actionzones.first; az; az = az->next) {
-		int xs, ys;
-		
-		xs = (az->x1 + az->x2) / 2;
-		ys = (az->y1 + az->y2) / 2;
-
-		/* test if inside */
-		if (BLI_rcti_isect_pt(&ar->winrct, xs, ys)) {
-			az->do_draw = TRUE;
-		}
-	}
 }
 
 /**
@@ -348,49 +331,50 @@ static void region_draw_azone_tria(AZone *az)
 	glDisable(GL_BLEND);
 }
 
-/* only exported for WM */
-void ED_area_overdraw(bContext *C)
+static void region_draw_azones(ScrArea *sa, ARegion *ar)
 {
-	wmWindow *win = CTX_wm_window(C);
-	bScreen *screen = CTX_wm_screen(C);
-	ScrArea *sa;
-	
-	/* Draw AZones, in screenspace */
-	wmSubWindowSet(win, screen->mainwin);
+	AZone *az;
+
+	if (!sa)
+		return;
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glPushMatrix();
+	glTranslatef(-ar->winrct.xmin, -ar->winrct.ymin, 0.0f);
 	
-	for (sa = screen->areabase.first; sa; sa = sa->next) {
-		AZone *az;
-		for (az = sa->actionzones.first; az; az = az->next) {
-			if (az->do_draw) {
-				if (az->type == AZONE_AREA) {
-					area_draw_azone(az->x1, az->y1, az->x2, az->y2);
-				}
-				else if (az->type == AZONE_REGION) {
-					
-					if (az->ar) {
-						/* only display tab or icons when the region is hidden */
-						if (az->ar->flag & (RGN_FLAG_HIDDEN | RGN_FLAG_TOO_SMALL)) {
-							if (G.debug_value == 3)
-								region_draw_azone_icon(az);
-							else if (G.debug_value == 2)
-								region_draw_azone_tria(az);
-							else if (G.debug_value == 1)
-								region_draw_azone_tab(az);
-							else
-								region_draw_azone_tab_plus(az);
-						}
+	for (az = sa->actionzones.first; az; az = az->next) {
+		/* test if action zone is over this region */
+		rcti azrct;
+		BLI_rcti_init(&azrct, az->x1, az->x2, az->y1, az->y2);
+
+		if (BLI_rcti_isect(&ar->drawrct, &azrct, NULL)) {
+			if (az->type == AZONE_AREA) {
+				area_draw_azone(az->x1, az->y1, az->x2, az->y2);
+			}
+			else if (az->type == AZONE_REGION) {
+				
+				if (az->ar) {
+					/* only display tab or icons when the region is hidden */
+					if (az->ar->flag & (RGN_FLAG_HIDDEN | RGN_FLAG_TOO_SMALL)) {
+						if (G.debug_value == 3)
+							region_draw_azone_icon(az);
+						else if (G.debug_value == 2)
+							region_draw_azone_tria(az);
+						else if (G.debug_value == 1)
+							region_draw_azone_tab(az);
+						else
+							region_draw_azone_tab_plus(az);
 					}
 				}
-				
-				az->do_draw = FALSE;
 			}
 		}
 	}
+
+	glPopMatrix();
+
 	glDisable(GL_BLEND);
-	
 }
 
 /* only exported for WM */
@@ -454,6 +438,17 @@ void ED_region_do_draw(bContext *C, ARegion *ar)
 	ED_region_pixelspace(ar);
 
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_PIXEL);
+
+	region_draw_azones(sa, ar);
+
+	/* for debugging unneeded area redraws and partial redraw */
+#if 0
+	glEnable(GL_BLEND);
+	glColor4f(drand48(), drand48(), drand48(), 0.1f);
+	glRectf(ar->drawrct.xmin - ar->winrct.xmin, ar->drawrct.ymin - ar->winrct.ymin,
+	        ar->drawrct.xmax - ar->winrct.xmin, ar->drawrct.ymax - ar->winrct.ymin);
+	glDisable(GL_BLEND);
+#endif
 
 	ar->do_draw = FALSE;
 	memset(&ar->drawrct, 0, sizeof(ar->drawrct));
@@ -581,8 +576,8 @@ static void area_azone_initialize(bScreen *screen, ScrArea *sa)
 	az = (AZone *)MEM_callocN(sizeof(AZone), "actionzone");
 	BLI_addtail(&(sa->actionzones), az);
 	az->type = AZONE_AREA;
-	az->x1 = sa->totrct.xmax + 1;
-	az->y1 = sa->totrct.ymax + 1;
+	az->x1 = sa->totrct.xmax;
+	az->y1 = sa->totrct.ymax;
 	az->x2 = sa->totrct.xmax - (AZONESPOT - 1);
 	az->y2 = sa->totrct.ymax - (AZONESPOT - 1);
 	BLI_rcti_init(&az->rect, az->x1, az->x2, az->y1, az->y2);
@@ -1344,6 +1339,7 @@ void area_copy_data(ScrArea *sa1, ScrArea *sa2, int swap_space)
 	
 	sa1->headertype = sa2->headertype;
 	sa1->spacetype = sa2->spacetype;
+	sa1->type = sa2->type;
 	sa1->butspacetype = sa2->butspacetype;
 	
 	if (swap_space == 1) {
@@ -1502,71 +1498,19 @@ void ED_area_prevspace(bContext *C, ScrArea *sa)
 	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_CHANGED, sa);
 }
 
-static const char *editortype_pup(void)
-{
-	const char *types = N_(
-	    "Editor type: %t"
-	    "|3D View %x1"
-
-	    "|%l"
-
-	    "|Timeline %x15"
-	    "|Graph Editor %x2"
-	    "|DopeSheet %x12"
-	    "|NLA Editor %x13"
-
-	    "|%l"
-
-	    "|UV/Image Editor %x6"
-
-	    "|Video Sequence Editor %x8"
-	    "|Movie Clip Editor %x20"
-	    "|Text Editor %x9"
-	    "|Node Editor %x16"
-	    "|Logic Editor %x17"
-
-	    "|%l"
-
-	    "|Properties %x4"
-	    "|Outliner %x3"
-	    "|User Preferences %x19"
-	    "|Info %x7"
-
-	    "|%l"
-
-	    "|File Browser %x5"
-
-	    "|%l"
-
-	    "|Python Console %x18"
-	    );
-
-	return IFACE_(types);
-}
-
-static void spacefunc(struct bContext *C, void *UNUSED(arg1), void *UNUSED(arg2))
-{
-	ED_area_newspace(C, CTX_wm_area(C), CTX_wm_area(C)->butspacetype);
-	ED_area_tag_redraw(CTX_wm_area(C));
-
-	/* send space change notifier */
-	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_CHANGED, CTX_wm_area(C));
-}
-
 /* returns offset for next button in header */
 int ED_area_header_switchbutton(const bContext *C, uiBlock *block, int yco)
 {
 	ScrArea *sa = CTX_wm_area(C);
-	uiBut *but;
+	bScreen *scr = CTX_wm_screen(C);
+	PointerRNA areaptr;
 	int xco = 0.4 * U.widget_unit;
-	
-	but = uiDefIconTextButC(block, ICONTEXTROW, 0, ICON_VIEW3D, 
-	                        editortype_pup(), xco, yco, 1.5 * U.widget_unit, U.widget_unit,
-	                        &(sa->butspacetype), 1.0, SPACEICONMAX, 0, 0,
-	                        TIP_("Display current editor type (click for a menu of available types)"));
-	uiButSetFunc(but, spacefunc, NULL, NULL);
-	uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
-	
+
+	RNA_pointer_create(&(scr->id), &RNA_Area, sa, &areaptr);
+
+	uiDefButR(block, MENU, 0, NULL, xco, yco, 1.5 * U.widget_unit, U.widget_unit,
+	          &areaptr, "type", 0, 0.0f, 0.0f, 0.0f, 0.0f, "");
+
 	return xco + 1.7 * U.widget_unit;
 }
 

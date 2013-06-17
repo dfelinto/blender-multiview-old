@@ -32,7 +32,7 @@
 #ifndef __UI_INTERFACE_H__
 #define __UI_INTERFACE_H__
 
-#include "BLO_sys_types.h" /* size_t */
+#include "BLI_sys_types.h" /* size_t */
 #include "RNA_types.h"
 #include "DNA_userdef_types.h"
 
@@ -149,7 +149,7 @@ typedef struct uiLayout uiLayout;
 #define UI_TEXT_RIGHT       1024
 #define UI_BUT_NODE_LINK    2048
 #define UI_BUT_NODE_ACTIVE  4096
-#define UI_FLAG_UNUSED      8192
+#define UI_BUT_DRAG_LOCK    8192
 
 /* button align flag, for drawing groups together */
 #define UI_BUT_ALIGN        (UI_BUT_ALIGN_TOP | UI_BUT_ALIGN_LEFT | UI_BUT_ALIGN_RIGHT | UI_BUT_ALIGN_DOWN)
@@ -210,20 +210,14 @@ typedef enum {
 	BUT           = (1 << 9),
 	ROW           = (2 << 9),
 	TOG           = (3 << 9),
-	SLI           = (4 << 9),
 	NUM           = (5 << 9),
 	TEX           = (6 << 9),
-	TOG3          = (7 << 9),
-	TOGR          = (8 << 9),
 	TOGN          = (9 << 9),
 	LABEL         = (10 << 9),
-	MENU          = (11 << 9),
-	ICONROW       = (12 << 9),
+	MENU          = (11 << 9),  /* Dropdown list, actually! */
 	ICONTOG       = (13 << 9),
 	NUMSLI        = (14 << 9),
 	COLOR         = (15 << 9),
-	IDPOIN        = (16 << 9),
-	/* HSVSLI     = (17 << 9), */  /* UNUSED */
 	SCROLL        = (18 << 9),
 	BLOCK         = (19 << 9),
 	BUTM          = (20 << 9),
@@ -231,18 +225,13 @@ typedef enum {
 	LINK          = (22 << 9),
 	INLINK        = (23 << 9),
 	KEYEVT        = (24 << 9),
-	ICONTEXTROW   = (25 << 9),
 	HSVCUBE       = (26 << 9),
-	PULLDOWN      = (27 << 9),
+	PULLDOWN      = (27 << 9),  /* Menu, actually! */
 	ROUNDBOX      = (28 << 9),
-	CHARTAB       = (29 << 9),
 	BUT_COLORBAND = (30 << 9),
 	BUT_NORMAL    = (31 << 9),
 	BUT_CURVE     = (32 << 9),
-	BUT_TOGDUAL   = (33 << 9),
 	ICONTOGN      = (34 << 9),
-	/* FTPREVIEW  = (35 << 9), */  /* UNUSED */
-	NUMABS        = (36 << 9),
 	TOGBUT        = (37 << 9),
 	OPTION        = (38 << 9),
 	OPTIONN       = (39 << 9),
@@ -333,7 +322,7 @@ typedef void (*uiMenuHandleFunc)(struct bContext *C, void *arg, int event);
 
 typedef struct uiPopupMenu uiPopupMenu;
 
-uiPopupMenu *uiPupMenuBegin(struct bContext *C, const char *title, int icon);
+struct uiPopupMenu *uiPupMenuBegin(struct bContext *C, const char *title, int icon);
 void uiPupMenuEnd(struct bContext *C, struct uiPopupMenu *head);
 struct uiLayout *uiPupMenuLayout(uiPopupMenu *head);
 
@@ -560,7 +549,6 @@ void uiButGetStrInfo(struct bContext *C, uiBut *but, ...);
 /* Special Buttons
  *
  * Buttons with a more specific purpose:
- * - IDPoinBut: for creating buttons that work on a pointer to an ID block.
  * - MenuBut: buttons that popup a menu (in headers usually).
  * - PulldownBut: like MenuBut, but creating a uiBlock (for compatibility).
  * - BlockBut: buttons that popup a block with more buttons.
@@ -581,12 +569,6 @@ void uiButGetStrInfo(struct bContext *C, uiBut *but, ...);
 #define UI_ID_BROWSE_RENDER 1024
 #define UI_ID_PREVIEWS      2048
 #define UI_ID_FULL          (UI_ID_RENAME | UI_ID_BROWSE | UI_ID_ADD_NEW | UI_ID_OPEN | UI_ID_ALONE | UI_ID_DELETE | UI_ID_LOCAL)
-
-typedef void (*uiIDPoinFuncFP)(struct bContext *C, const char *str, struct ID **idpp);
-typedef void (*uiIDPoinFunc)(struct bContext *C, struct ID *id, int event);
-
-uiBut *uiDefIDPoinBut(uiBlock *block, uiIDPoinFuncFP func, short blocktype, int retval, const char *str,
-                      int x, int y, short width, short height, void *idpp, const char *tip);
 
 int uiIconFromID(struct ID *id);
 
@@ -629,6 +611,8 @@ void    uiButSetSearchFunc(uiBut *but,        uiButSearchFunc sfunc, void *arg1,
 /* height in pixels, it's using hardcoded values still */
 int     uiSearchBoxHeight(void);
 int     uiSearchBoxWidth(void);
+/* check if a string is in an existing search box */
+int     uiSearchItemFindIndex(uiSearchItems *items, const char *name);
 
 void    uiBlockSetHandleFunc(uiBlock *block,    uiBlockHandleFunc func, void *arg);
 void    uiBlockSetButmFunc(uiBlock *block,    uiMenuHandleFunc func, void *arg);
@@ -685,6 +669,7 @@ void uiScalePanels(struct ARegion *ar, float new_width);
 void UI_add_region_handlers(struct ListBase *handlers);
 void UI_add_popup_handlers(struct bContext *C, struct ListBase *handlers, uiPopupBlockHandle *popup);
 void UI_remove_popup_handlers(struct ListBase *handlers, uiPopupBlockHandle *popup);
+void UI_remove_popup_handlers_all(struct bContext *C, struct ListBase *handlers);
 
 /* Module
  *
@@ -855,6 +840,7 @@ void uiTemplateTextureShow(uiLayout *layout, struct bContext *C, struct PointerR
 void uiTemplateMovieClip(struct uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, const char *propname, int compact);
 void uiTemplateTrack(struct uiLayout *layout, struct PointerRNA *ptr, const char *propname);
 void uiTemplateMarker(struct uiLayout *layout, struct PointerRNA *ptr, const char *propname, PointerRNA *userptr, PointerRNA *trackptr, int cmpact);
+void uiTemplateMovieclipInformation(struct uiLayout *layout, struct PointerRNA *ptr, const char *propname, struct PointerRNA *userptr);
 
 void uiTemplateColorspaceSettings(struct uiLayout *layout, struct PointerRNA *ptr, const char *propname);
 void uiTemplateColormanagedViewSettings(struct uiLayout *layout, struct bContext *C, struct PointerRNA *ptr, const char *propname);
@@ -889,7 +875,7 @@ void uiItemV(uiLayout *layout, const char *name, int icon, int argval); /* value
 void uiItemS(uiLayout *layout); /* separator */
 
 void uiItemMenuF(uiLayout *layout, const char *name, int icon, uiMenuCreateFunc func, void *arg);
-void uiItemMenuEnumO(uiLayout *layout, const char *opname, const char *propname, const char *name, int icon);
+void uiItemMenuEnumO(uiLayout *layout, struct bContext *C, const char *opname, const char *propname, const char *name, int icon);
 void uiItemMenuEnumR(uiLayout *layout, struct PointerRNA *ptr, const char *propname, const char *name, int icon);
 
 /* UI Operators */

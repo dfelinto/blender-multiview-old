@@ -64,6 +64,8 @@
 #include "ED_screen.h"
 #include "ED_armature.h"
 
+#include "RE_engine.h"
+
 #ifdef WITH_GAMEENGINE
 #include "BL_System.h"
 #endif
@@ -606,9 +608,7 @@ void ED_view3d_clipping_calc(BoundBox *bb, float planes[4][4], bglMats *mats, co
 		if (flip_sign)
 			negate_v3(planes[val]);
 
-		planes[val][3] = -planes[val][0] * bb->vec[val][0] -
-		                  planes[val][1] * bb->vec[val][1] -
-		                  planes[val][2] * bb->vec[val][2];
+		planes[val][3] = -dot_v3v3(planes[val], bb->vec[val]);
 	}
 }
 
@@ -624,7 +624,7 @@ bool ED_view3d_boundbox_clip(RegionView3D *rv3d, float obmat[4][4], const BoundB
 	if (bb == NULL) return true;
 	if (bb->flag & OB_BB_DISABLED) return true;
 
-	mult_m4_m4m4(mat, rv3d->persmat, obmat);
+	mul_m4_m4m4(mat, rv3d->persmat, obmat);
 
 	for (a = 0; a < 8; a++) {
 		copy_v3_v3(vec, bb->vec[a]);
@@ -690,7 +690,7 @@ bool ED_view3d_clip_range_get(View3D *v3d, RegionView3D *rv3d, float *r_clipsta,
 
 /* also exposed in previewrender.c */
 bool ED_view3d_viewplane_get(View3D *v3d, RegionView3D *rv3d, int winx, int winy,
-                             rctf *r_viewplane, float *r_clipsta, float *r_clipend)
+                             rctf *r_viewplane, float *r_clipsta, float *r_clipend, float *r_pixsize)
 {
 	CameraParams params;
 
@@ -701,6 +701,7 @@ bool ED_view3d_viewplane_get(View3D *v3d, RegionView3D *rv3d, int winx, int winy
 	if (r_viewplane) *r_viewplane = params.viewplane;
 	if (r_clipsta) *r_clipsta = params.clipsta;
 	if (r_clipend) *r_clipend = params.clipend;
+	if (r_pixsize) *r_pixsize = params.viewdx;
 	
 	return params.is_ortho;
 }
@@ -715,7 +716,7 @@ void setwinmatrixview3d(ARegion *ar, View3D *v3d, rctf *rect)
 	float clipsta, clipend, x1, y1, x2, y2;
 	int orth;
 	
-	orth = ED_view3d_viewplane_get(v3d, rv3d, ar->winx, ar->winy, &viewplane, &clipsta, &clipend);
+	orth = ED_view3d_viewplane_get(v3d, rv3d, ar->winx, ar->winy, &viewplane, &clipsta, &clipend, NULL);
 	rv3d->is_persp = !orth;
 
 #if 0
@@ -906,7 +907,7 @@ short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int b
 	}
 	
 	setwinmatrixview3d(ar, v3d, &rect);
-	mult_m4_m4m4(vc->rv3d->persmat, vc->rv3d->winmat, vc->rv3d->viewmat);
+	mul_m4_m4m4(vc->rv3d->persmat, vc->rv3d->winmat, vc->rv3d->viewmat);
 	
 	if (v3d->drawtype > OB_WIRE) {
 		v3d->zbuf = TRUE;
@@ -984,7 +985,7 @@ short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int b
 	
 	G.f &= ~G_PICKSEL;
 	setwinmatrixview3d(ar, v3d, NULL);
-	mult_m4_m4m4(vc->rv3d->persmat, vc->rv3d->winmat, vc->rv3d->viewmat);
+	mul_m4_m4m4(vc->rv3d->persmat, vc->rv3d->winmat, vc->rv3d->viewmat);
 	
 	if (v3d->drawtype > OB_WIRE) {
 		v3d->zbuf = 0;
@@ -1215,6 +1216,13 @@ static void restore_localviewdata(ScrArea *sa, int free)
 				if (free) {
 					MEM_freeN(rv3d->localvd);
 					rv3d->localvd = NULL;
+				}
+			}
+
+			if (v3d->drawtype != OB_RENDER) {
+				if (rv3d->render_engine) {
+					RE_engine_free(rv3d->render_engine);
+					rv3d->render_engine = NULL;
 				}
 			}
 		}

@@ -1276,7 +1276,7 @@ struct GPU_Buffers {
 	unsigned int tot_tri, tot_quad;
 
 	/* The PBVH ensures that either all faces in the node are
-	   smooth-shaded or all faces are flat-shaded */
+	 * smooth-shaded or all faces are flat-shaded */
 	int smooth;
 
 	int show_diffuse_color;
@@ -1392,8 +1392,8 @@ void GPU_update_mesh_buffers(GPU_Buffers *buffers, MVert *mvert,
 
 		if (vert_data) {
 			/* Vertex data is shared if smooth-shaded, but separate
-			   copies are made for flat shading because normals
-			   shouldn't be shared. */
+			 * copies are made for flat shading because normals
+			 * shouldn't be shared. */
 			if (buffers->smooth) {
 				for (i = 0; i < totvert; ++i) {
 					MVert *v = mvert + vert_indices[i];
@@ -1518,8 +1518,8 @@ GPU_Buffers *GPU_build_mesh_buffers(int (*face_vert_indices)[4],
 	}
 
 	/* An element index buffer is used for smooth shading, but flat
-	   shading requires separate vertex normals so an index buffer is
-	   can't be used there. */
+	 * shading requires separate vertex normals so an index buffer is
+	 * can't be used there. */
 	if (gpu_vbo_enabled() && buffers->smooth)
 		glGenBuffersARB(1, &buffers->index_buf);
 
@@ -1872,26 +1872,28 @@ GPU_Buffers *GPU_build_grid_buffers(int *grid_indices, int totgrid,
  * index '*v_index' in the 'vert_data' array and '*v_index' is
  * incremented.
  */
-static void gpu_bmesh_vert_to_buffer_copy(BMVert *v, BMesh *bm,
-										  VertexBufferFormat *vert_data,
-										  int *v_index,
-										  const float fno[3],
-										  const float *fmask)
+static void gpu_bmesh_vert_to_buffer_copy(BMVert *v,
+                                          VertexBufferFormat *vert_data,
+                                          int *v_index,
+                                          const float fno[3],
+                                          const float *fmask,
+                                          const int cd_vert_mask_offset)
 {
-	VertexBufferFormat *vd = &vert_data[*v_index];
-	float *mask;
-
 	if (!BM_elem_flag_test(v, BM_ELEM_HIDDEN)) {
+		VertexBufferFormat *vd = &vert_data[*v_index];
+
 		/* TODO: should use material color */
 		float diffuse_color[4] = {0.8f, 0.8f, 0.8f, 1.0f};
 
 		/* Set coord, normal, and mask */
 		copy_v3_v3(vd->co, v->co);
 		normal_float_to_short_v3(vd->no, fno ? fno : v->no);
-		mask = CustomData_bmesh_get(&bm->vdata, v->head.data, CD_PAINT_MASK);
-		gpu_color_from_mask_copy(fmask ? *fmask : *mask,
-								 diffuse_color,
-								 vd->color);
+
+		gpu_color_from_mask_copy(
+		        fmask ? *fmask :
+		                BM_ELEM_CD_GET_FLOAT(v, cd_vert_mask_offset),
+		        diffuse_color,
+		        vd->color);
 		
 
 		/* Assign index for use in the triangle index buffer */
@@ -1939,7 +1941,7 @@ static int gpu_bmesh_face_visible_count(GHash *bm_faces)
 }
 
 /* Creates a vertex buffer (coordinate, normal, color) and, if smooth
-   shading, an element index buffer. */
+ * shading, an element index buffer. */
 void GPU_update_bmesh_buffers(GPU_Buffers *buffers,
 							  BMesh *bm,
 							  GHash *bm_faces,
@@ -1949,6 +1951,9 @@ void GPU_update_bmesh_buffers(GPU_Buffers *buffers,
 	VertexBufferFormat *vert_data;
 	void *tri_data;
 	int tottri, totvert, maxvert = 0;
+
+	/* TODO, make mask layer optional for bmesh buffer */
+	const int cd_vert_mask_offset = CustomData_get_offset(&bm->vdata, CD_PAINT_MASK);
 
 	if (!buffers->vert_buf || (buffers->smooth && !buffers->index_buf))
 		return;
@@ -1977,17 +1982,19 @@ void GPU_update_bmesh_buffers(GPU_Buffers *buffers,
 
 		if (buffers->smooth) {
 			/* Vertices get an index assigned for use in the triangle
-			   index buffer */
+			 * index buffer */
 			bm->elem_index_dirty |= BM_VERT;
 
 			GHASH_ITER (gh_iter, bm_unique_verts) {
 				gpu_bmesh_vert_to_buffer_copy(BLI_ghashIterator_getKey(&gh_iter),
-											  bm, vert_data, &v_index, NULL, NULL);
+				                              vert_data, &v_index, NULL, NULL,
+				                              cd_vert_mask_offset);
 			}
 
 			GHASH_ITER (gh_iter, bm_other_verts) {
 				gpu_bmesh_vert_to_buffer_copy(BLI_ghashIterator_getKey(&gh_iter),
-											  bm, vert_data, &v_index, NULL, NULL);
+				                              vert_data, &v_index, NULL, NULL,
+				                              cd_vert_mask_offset);
 			}
 
 			maxvert = v_index;
@@ -2008,15 +2015,14 @@ void GPU_update_bmesh_buffers(GPU_Buffers *buffers,
 
 					/* Average mask value */
 					for (i = 0; i < 3; i++) {
-						fmask += *((float*)CustomData_bmesh_get(&bm->vdata,
-						                                        v[i]->head.data,
-						                                        CD_PAINT_MASK));
+						fmask += BM_ELEM_CD_GET_FLOAT(v[i], cd_vert_mask_offset);
 					}
 					fmask /= 3.0f;
 					
 					for (i = 0; i < 3; i++) {
-						gpu_bmesh_vert_to_buffer_copy(v[i], bm, vert_data,
-						                              &v_index, f->no, &fmask);
+						gpu_bmesh_vert_to_buffer_copy(v[i], vert_data,
+						                              &v_index, f->no, &fmask,
+						                              cd_vert_mask_offset);
 					}
 				}
 			}
@@ -2305,15 +2311,23 @@ static void gpu_draw_buffers_legacy_grids(GPU_Buffers *buffers)
 void GPU_draw_buffers(GPU_Buffers *buffers, DMSetMaterial setMaterial,
 					  int wireframe)
 {
-	if (buffers->totface) {
-		const MFace *f = &buffers->mface[buffers->face_indices[0]];
-		if (!setMaterial(f->mat_nr + 1, NULL))
-			return;
-	}
-	else if (buffers->totgrid) {
-		const DMFlagMat *f = &buffers->grid_flag_mats[buffers->grid_indices[0]];
-		if (!setMaterial(f->mat_nr + 1, NULL))
-			return;
+	/* sets material from the first face, to solve properly face would need to
+	 * be sorted in buckets by materials */
+	if (setMaterial) {
+		if (buffers->totface) {
+			const MFace *f = &buffers->mface[buffers->face_indices[0]];
+			if (!setMaterial(f->mat_nr + 1, NULL))
+				return;
+		}
+		else if (buffers->totgrid) {
+			const DMFlagMat *f = &buffers->grid_flag_mats[buffers->grid_indices[0]];
+			if (!setMaterial(f->mat_nr + 1, NULL))
+				return;
+		}
+		else {
+			if (!setMaterial(1, NULL))
+				return;
+		}
 	}
 
 	glShadeModel((buffers->smooth || buffers->totface) ? GL_SMOOTH : GL_FLAT);

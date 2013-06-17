@@ -1067,12 +1067,10 @@ static float *get_weights_array(Object *ob, char *vgroup)
 		weights = MEM_callocN(totvert * sizeof(float), "weights");
 
 		if (em) {
+			const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
 			BM_ITER_MESH_INDEX (eve, &iter, em->bm, BM_VERTS_OF_MESH, i) {
-				dvert = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
-
-				if (dvert) {
-					weights[i] = defvert_find_weight(dvert, defgrp_index);
-				}
+				dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
+				weights[i] = defvert_find_weight(dvert, defgrp_index);
 			}
 		}
 		else {
@@ -1389,10 +1387,6 @@ float *BKE_key_evaluate_object(Scene *scene, Object *ob, int *r_totelem)
 			cp_cu_key(ob->data, key, actkb, kb, 0, tot, out, tot);
 	}
 	else {
-		/* do shapekey local drivers */
-		float ctime = BKE_scene_frame_get(scene);
-
-		BKE_animsys_evaluate_animdata(scene, &key->id, key->adt, ctime, ADT_RECALC_DRIVERS);
 		
 		if (ob->type == OB_MESH) do_mesh_key(scene, ob, key, out, tot);
 		else if (ob->type == OB_LATTICE) do_latt_key(scene, ob, key, out, tot);

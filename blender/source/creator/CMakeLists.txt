@@ -423,11 +423,15 @@ if(UNIX AND NOT APPLE)
 			# on some platforms (like openSUSE) Python is linked
 			# to be used from lib64 folder.
 			# determine this from Python's libraries path
-			if(${PYTHON_LIBPATH} MATCHES "lib64$")
+			#
+			# ugh, its possible 'lib64' is just a symlink to 'lib' which causes incorrect use of 'lib64'
+			get_filename_component(_pypath_real ${PYTHON_LIBPATH} REALPATH)
+			if(${_pypath_real} MATCHES "lib64$")
 				set(_target_LIB "lib64")
 			else()
 				set(_target_LIB "lib")
 			endif()
+			unset(_pypath_real)
 
 			# Copy the systems python into the install directory
 			# Scons copy in tools/Blender.py
@@ -534,23 +538,6 @@ elseif(WIN32)
 		unset(_PYTHON_VERSION_NO_DOTS)
 	endif()
 
-	if(CMAKE_CL_64)
-		# png is statically linked on win64
-		install(
-			FILES ${LIBDIR}/zlib/lib/zlib.dll
-			DESTINATION ${TARGETDIR}
-		)
-	else()
-		#not needed since we link statically, maybe also unneeded for MinGW?
-		if(NOT WITH_MINGW64)
-			install(
-				FILES
-					${LIBDIR}/zlib/lib/zlib.dll
-				DESTINATION ${TARGETDIR}
-			)
-		endif()
-	endif()
-
 	if(MSVC)
 		install(
 			FILES ${LIBDIR}/pthreads/lib/pthreadVC2.dll
@@ -583,15 +570,29 @@ elseif(WIN32)
 	endif()
 
 	if(WITH_CODEC_FFMPEG)
-		install(
-			FILES
-				${LIBDIR}/ffmpeg/lib/avcodec-53.dll
-				${LIBDIR}/ffmpeg/lib/avformat-53.dll
-				${LIBDIR}/ffmpeg/lib/avdevice-53.dll
-				${LIBDIR}/ffmpeg/lib/avutil-51.dll
-				${LIBDIR}/ffmpeg/lib/swscale-2.dll
-			DESTINATION ${TARGETDIR}
-		)
+		if(MSVC11)
+			install(
+				FILES
+					${LIBDIR}/ffmpeg/lib/avcodec-54.dll
+					${LIBDIR}/ffmpeg/lib/avformat-54.dll
+					${LIBDIR}/ffmpeg/lib/avdevice-54.dll
+					${LIBDIR}/ffmpeg/lib/avutil-52.dll
+					${LIBDIR}/ffmpeg/lib/avfilter-3.dll
+					${LIBDIR}/ffmpeg/lib/swresample-0.dll
+					${LIBDIR}/ffmpeg/lib/swscale-2.dll
+				DESTINATION ${TARGETDIR}
+			)
+		else()
+			install(
+				FILES
+					${LIBDIR}/ffmpeg/lib/avcodec-53.dll
+					${LIBDIR}/ffmpeg/lib/avformat-53.dll
+					${LIBDIR}/ffmpeg/lib/avdevice-53.dll
+					${LIBDIR}/ffmpeg/lib/avutil-51.dll
+					${LIBDIR}/ffmpeg/lib/swscale-2.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 		if(WITH_MINGW64)
 		install(
 			FILES
@@ -610,13 +611,37 @@ elseif(WIN32)
 	endif()
 
 	if(WITH_OPENAL)
-		install(
-			FILES
-				${LIBDIR}/openal/lib/OpenAL32.dll
-				${LIBDIR}/openal/lib/wrap_oal.dll
-			DESTINATION ${TARGETDIR}
-		)
+		if(MSVC11)
+			install(
+				FILES
+					${LIBDIR}/openal/lib/OpenAL32.dll
+				DESTINATION ${TARGETDIR}
+			)
+		else()
+			install(
+				FILES
+					${LIBDIR}/openal/lib/OpenAL32.dll
+					${LIBDIR}/openal/lib/wrap_oal.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 	endif()
+
+#	if(WITH_JACK AND MSVC11)
+#		if(CMAKE_CL_64)
+#			install(
+#				FILES
+#					${LIBDIR}/jack/lib/libjack64.dll
+#				DESTINATION ${TARGETDIR}
+#			)
+#		else()
+#			install(
+#				FILES
+#					${LIBDIR}/jack/lib/libjack.dll
+#				DESTINATION ${TARGETDIR}
+#			)
+#		endif()
+#	endif()
 
 	if(WITH_SDL)
 		if(NOT CMAKE_CL_64)
@@ -928,6 +953,7 @@ endif()
 		bf_intern_opencolorio
 		extern_rangetree
 		extern_wcwidth
+		extern_libmv
 	)
 
 	if(WITH_COMPOSITOR)
@@ -937,7 +963,6 @@ endif()
 	endif()
 
 	if(WITH_LIBMV)
-		list(APPEND BLENDER_SORTED_LIBS extern_libmv)
 		list(APPEND BLENDER_SORTED_LIBS extern_ceres)
 	endif()
 

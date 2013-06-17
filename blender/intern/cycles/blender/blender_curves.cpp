@@ -73,31 +73,35 @@ ParticleCurveData::~ParticleCurveData()
 void interp_weights(float t, float data[4], int type)
 {
 	float t2, t3, fc;
+	
+	switch (type) {
+		case CURVE_LINEAR:
+			data[0] =          0.0f;
+			data[1] = -t     + 1.0f;
+			data[2] =  t;
+			data[3] =          0.0f;
+			break;
+		case CURVE_CARDINAL:
+			t2 = t * t;
+			t3 = t2 * t;
+			fc = 0.71f;
 
-	if(type == CURVE_LINEAR) {
-		data[0] =          0.0f;
-		data[1] = -t     + 1.0f;
-		data[2] =  t;
-		data[3] =          0.0f;
-	}
-	else if(type == CURVE_CARDINAL) {
-		t2 = t * t;
-		t3 = t2 * t;
-		fc = 0.71f;
+			data[0] = -fc          * t3  + 2.0f * fc          * t2 - fc * t;
+			data[1] =  (2.0f - fc) * t3  + (fc - 3.0f)        * t2 + 1.0f;
+			data[2] =  (fc - 2.0f) * t3  + (3.0f - 2.0f * fc) * t2 + fc * t;
+			data[3] =  fc          * t3  - fc * t2;
+			break;
+		case CURVE_BSPLINE:
+			t2 = t * t;
+			t3 = t2 * t;
 
-		data[0] = -fc          * t3  + 2.0f * fc          * t2 - fc * t;
-		data[1] =  (2.0f - fc) * t3  + (fc - 3.0f)        * t2 + 1.0f;
-		data[2] =  (fc - 2.0f) * t3  + (3.0f - 2.0f * fc) * t2 + fc * t;
-		data[3] =  fc          * t3  - fc * t2;
-	}
-	else if(type == CURVE_BSPLINE) {
-		t2 = t * t;
-		t3 = t2 * t;
-
-		data[0] = -0.16666666f * t3  + 0.5f * t2   - 0.5f * t    + 0.16666666f;
-		data[1] =  0.5f        * t3  - t2                        + 0.66666666f;
-		data[2] = -0.5f        * t3  + 0.5f * t2   + 0.5f * t    + 0.16666666f;
-		data[3] =  0.16666666f * t3;
+			data[0] = -0.16666666f * t3  + 0.5f * t2   - 0.5f * t    + 0.16666666f;
+			data[1] =  0.5f        * t3  - t2                        + 0.66666666f;
+			data[2] = -0.5f        * t3  + 0.5f * t2   + 0.5f * t    + 0.16666666f;
+			data[3] =  0.16666666f * t3;
+			break;
+		default:
+			break;
 	}
 }
 
@@ -111,11 +115,12 @@ void curveinterp_v3_v3v3v3v3(float3 *p, float3 *v1, float3 *v2, float3 *v3, floa
 float shaperadius(float shape, float root, float tip, float time)
 {
 	float radius = 1.0f - time;
+	
 	if(shape != 0.0f) {
 		if(shape < 0.0f)
-			radius = (float)pow(1.0f - time, 1.f + shape);
+			radius = powf(radius, 1.0f + shape);
 		else
-			radius = (float)pow(1.0f - time, 1.f / (1.f - shape));
+			radius = powf(radius, 1.0f / (1.0f - shape));
 	}
 	return (radius * (root - tip)) + tip;
 }
@@ -665,7 +670,7 @@ void ExportCurveTriangleGeometry(Mesh *mesh, ParticleCurveData *CData, int inter
 					if(CData->psys_closetip[sys] && (subv == segments) && (curvekey == CData->curve_firstkey[curve] + CData->curve_keynum[curve] - 2))
 						radius = shaperadius(CData->psys_shape[sys], CData->psys_rootradius[sys], 0.0f, 0.95f);
 
-					float angle = 2 * M_PI_F / (float)resolution;
+					float angle = M_2PI_F / (float)resolution;
 					for(int section = 0 ; section < resolution; section++) {
 						float3 ickey_loc_shf = ickey_loc + radius * (cosf(angle * section) * xbasis + sinf(angle * section) * ybasis);
 						mesh->verts.push_back(ickey_loc_shf);

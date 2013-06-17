@@ -531,10 +531,6 @@ int Trackball(TransInfo *t, const int mval[2]);
 void initPushPull(TransInfo *t);
 int PushPull(TransInfo *t, const int mval[2]);
 
-void initBevel(TransInfo *t);
-int handleEventBevel(TransInfo *t, const struct wmEvent *event);
-int Bevel(TransInfo *t, const int mval[2]);
-
 void initBevelWeight(TransInfo *t);
 int BevelWeight(TransInfo *t, const int mval[2]);
 
@@ -622,6 +618,7 @@ void drawConstraint(TransInfo *t);
 
 void getConstraintMatrix(TransInfo *t);
 void setConstraint(TransInfo *t, float space[3][3], int mode, const char text[]);
+void setAxisMatrixConstraint(TransInfo *t, int mode, const char text[]);
 void setLocalConstraint(TransInfo *t, int mode, const char text[]);
 void setUserConstraint(TransInfo *t, short orientation, int mode, const char text[]);
 
@@ -697,6 +694,7 @@ void setInputPostFct(MouseInput *mi, void	(*post)(struct TransInfo *t, float val
 
 int initTransInfo(struct bContext *C, TransInfo *t, struct wmOperator *op, const struct wmEvent *event);
 void postTrans(struct bContext *C, TransInfo *t);
+void resetTransModal(TransInfo *t);
 void resetTransRestrictions(TransInfo *t);
 
 void drawLine(TransInfo *t, const float center[3], const float dir[3], char axis, short options);
@@ -723,10 +721,6 @@ void getViewVector(TransInfo *t, float coord[3], float vec[3]);
 
 void initTransformOrientation(struct bContext *C, TransInfo *t);
 
-struct TransformOrientation *createObjectSpace(struct bContext *C, struct ReportList *reports, char *name, int overwrite);
-struct TransformOrientation *createMeshSpace(struct bContext *C, struct ReportList *reports, char *name, int overwrite);
-struct TransformOrientation *createBoneSpace(struct bContext *C, struct ReportList *reports, char *name, int overwrite);
-
 /* Those two fill in mat and return non-zero on success */
 bool createSpaceNormal(float mat[3][3], const float normal[3]);
 bool createSpaceNormalTangent(float mat[3][3], float normal[3], float tangent[3]);
@@ -751,5 +745,6 @@ void freeVertSlideVerts(TransInfo *t);
 
 /* TODO. transform_queries.c */
 bool checkUseLocalCenter_GraphEdit(TransInfo *t);
+bool checkUseAxisMatrix(TransInfo *t);
 
 #endif

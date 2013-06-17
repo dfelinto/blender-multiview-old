@@ -40,7 +40,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -227,8 +226,8 @@ bool ED_view3d_context_user_region(bContext *C, View3D **r_v3d, ARegion **r_ar)
 void ED_view3d_init_mats_rv3d(struct Object *ob, struct RegionView3D *rv3d)
 {
 	/* local viewmat and persmat, to calculate projections */
-	mult_m4_m4m4(rv3d->viewmatob, rv3d->viewmat, ob->obmat);
-	mult_m4_m4m4(rv3d->persmatob, rv3d->persmat, ob->obmat);
+	mul_m4_m4m4(rv3d->viewmatob, rv3d->viewmat, ob->obmat);
+	mul_m4_m4m4(rv3d->persmatob, rv3d->persmat, ob->obmat);
 
 	/* initializes object space clipping, speeds up clip tests */
 	ED_view3d_clipping_local(rv3d, ob->obmat);
@@ -243,6 +242,21 @@ void ED_view3d_init_mats_rv3d_gl(struct Object *ob, struct RegionView3D *rv3d)
 	 * override the dupli-matrix */
 	glMultMatrixf(ob->obmat);
 }
+
+#ifdef DEBUG
+/* ensure we correctly initialize */
+void ED_view3d_clear_mats_rv3d(struct RegionView3D *rv3d)
+{
+	zero_m4(rv3d->viewmatob);
+	zero_m4(rv3d->persmatob);
+}
+
+void ED_view3d_check_mats_rv3d(struct RegionView3D *rv3d)
+{
+	BLI_ASSERT_ZERO_M4(rv3d->viewmatob);
+	BLI_ASSERT_ZERO_M4(rv3d->persmatob);
+}
+#endif
 
 /* ******************** default callbacks for view3d space ***************** */
 

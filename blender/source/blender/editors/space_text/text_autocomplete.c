@@ -220,7 +220,7 @@ static GHash *text_autocomplete_build(Text *text)
 			TextFormatType *tft;
 			tft = ED_text_format_get(text);
 
-			for (; BLI_ghashIterator_notDone(iter); BLI_ghashIterator_step(iter)) {
+			for (; !BLI_ghashIterator_done(iter); BLI_ghashIterator_step(iter)) {
 				const char *s = BLI_ghashIterator_getValue(iter);
 				texttool_suggest_add(s, tft->format_identifier(s));
 			}
@@ -521,7 +521,7 @@ static void text_autocomplete_free(bContext *C, wmOperator *op)
 {
 	GHash *gh = op->customdata;
 	if (gh) {
-		BLI_ghash_free(gh, NULL, (GHashValFreeFP)MEM_freeN);
+		BLI_ghash_free(gh, NULL, MEM_freeN);
 		op->customdata = NULL;
 	}
 

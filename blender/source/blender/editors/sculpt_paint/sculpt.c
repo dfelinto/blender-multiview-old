@@ -41,10 +41,10 @@
 #include "BLI_dynstr.h"
 #include "BLI_ghash.h"
 #include "BLI_threads.h"
-#include "BLI_rand.h"
 
 #include "BLF_translation.h"
 
+#include "DNA_customdata_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_node_types.h"
@@ -116,6 +116,17 @@ void ED_sculpt_force_update(bContext *C)
 float *ED_sculpt_get_last_stroke(struct Object *ob)
 {
 	return (ob && ob->sculpt && ob->sculpt->last_stroke_valid) ? ob->sculpt->last_stroke : NULL;
+}
+
+void ED_sculpt_get_average_stroke(Object *ob, float stroke[3])
+{
+	if (ob->sculpt->last_stroke_valid && ob->sculpt->average_stroke_counter > 0) {
+		float fac = 1.0f / ob->sculpt->average_stroke_counter;
+		mul_v3_v3fl(stroke, ob->sculpt->average_stroke_accum, fac);
+	}
+	else {
+		copy_v3_v3(stroke, ob->obmat[3]);
+	}
 }
 
 int ED_sculpt_minmax(bContext *C, float min[3], float max[3])
@@ -490,11 +501,26 @@ static void paint_mesh_restore_co(Sculpt *sd, Object *ob)
 
 /*** BVH Tree ***/
 
+static void sculpt_extend_redraw_rect_previous(Object *ob, rcti *rect)
+{
+	/* expand redraw rect with redraw rect from previous step to
+	 * prevent partial-redraw issues caused by fast strokes. This is
+	 * needed here (not in sculpt_flush_update) as it was before
+	 * because redraw rectangle should be the same in both of
+	 * optimized PBVH draw function and 3d view redraw (if not -- some
+	 * mesh parts could disappear from screen (sergey) */
+	SculptSession *ss = ob->sculpt;
+
+	if (ss->cache) {
+		if (!BLI_rcti_is_empty(&ss->cache->previous_r))
+			BLI_rcti_union(rect, &ss->cache->previous_r);
+	}
+}
+
 /* Get a screen-space rectangle of the modified area */
 static int sculpt_get_redraw_rect(ARegion *ar, RegionView3D *rv3d,
                                   Object *ob, rcti *rect)
 {
-	SculptSession *ss;
 	PBVH *pbvh = ob->sculpt->pbvh;
 	float bb_min[3], bb_max[3];
 
@@ -514,17 +540,6 @@ static int sculpt_get_redraw_rect(ARegion *ar, RegionView3D *rv3d,
 		return 0;
 	}
 
-	/* expand redraw rect with redraw rect from previous step to
-	 * prevent partial-redraw issues caused by fast strokes. This is
-	 * needed here (not in sculpt_flush_update) as it was before
-	 * because redraw rectangle should be the same in both of
-	 * optimized PBVH draw function and 3d view redraw (if not -- some
-	 * mesh parts could disappear from screen (sergey) */
-	ss = ob->sculpt;
-	if (ss->cache) {
-		if (!BLI_rcti_is_empty(&ss->cache->previous_r))
-			BLI_rcti_union(rect, &ss->cache->previous_r);
-	}
 
 	return 1;
 }
@@ -536,6 +551,7 @@ void sculpt_get_redraw_planes(float planes[4][4], ARegion *ar,
 	rcti rect;
 
 	sculpt_get_redraw_rect(ar, rv3d, ob, &rect);
+	sculpt_extend_redraw_rect_previous(ob, &rect);
 
 	paint_calc_redraw_planes(planes, ar, rv3d, ob, &rect);
 
@@ -1241,7 +1257,7 @@ static void calc_brush_local_mat(const Brush *brush, Object *ob,
 	/* Scale by brush radius */
 	normalize_m4(mat);
 	scale_m4_fl(scale, cache->radius);
-	mult_m4_m4m4(tmat, mat, scale);
+	mul_m4_m4m4(tmat, mat, scale);
 
 	/* Return inverse (for converting from modelspace coords to local
 	 * area coords) */
@@ -2714,7 +2730,7 @@ static void do_clay_strips_brush(Sculpt *sd, Object *ob, PBVHNode **nodes, int t
 
 	/* scale mat */
 	scale_m4_fl(scale, ss->cache->radius);
-	mult_m4_m4m4(tmat, mat, scale);
+	mul_m4_m4m4(tmat, mat, scale);
 	invert_m4_m4(mat, tmat);
 
 	#pragma omp parallel for schedule(guided) if (sd->flags & SCULPT_USE_OPENMP)
@@ -2927,9 +2943,7 @@ void sculpt_vertcos_to_key(Object *ob, KeyBlock *kb, float (*vertCos)[3])
 		for (a = 0; a < me->totvert; a++, mvert++)
 			copy_v3_v3(mvert->co, vertCos[a]);
 
-		BKE_mesh_calc_normals_mapping(me->mvert, me->totvert, me->mloop,
-		                              me->mpoly, me->totloop, me->totpoly,
-		                              NULL, NULL, 0, NULL, NULL);
+		BKE_mesh_calc_normals(me);
 	}
 
 	/* apply new coords on active key block */
@@ -2966,6 +2980,7 @@ static void sculpt_topology_update(Sculpt *sd, Object *ob, Brush *brush)
 	/* Only act if some verts are inside the brush area */
 	if (totnode) {
 		PBVHTopologyUpdateMode mode = PBVH_Subdivide;
+		float location[3];
 
 		if ((sd->flags & SCULPT_DYNTOPO_COLLAPSE) ||
 			(brush->sculpt_tool == SCULPT_TOOL_SIMPLIFY))
@@ -2992,6 +3007,13 @@ static void sculpt_topology_update(Sculpt *sd, Object *ob, Brush *brush)
 		}
 
 		MEM_freeN(nodes);
+
+		/* update average stroke position */
+		copy_v3_v3(location, ss->cache->true_location);
+		mul_m4_v3(ob->obmat, location);
+
+		add_v3_v3(ob->sculpt->average_stroke_accum, location);
+		ob->sculpt->average_stroke_counter++;
 	}
 }
 
@@ -3015,6 +3037,8 @@ static void do_brush_action(Sculpt *sd, Object *ob, Brush *brush)
 
 	/* Only act if some verts are inside the brush area */
 	if (totnode) {
+		float location[3];
+
 		#pragma omp parallel for schedule(guided) if (sd->flags & SCULPT_USE_OPENMP)
 		for (n = 0; n < totnode; n++) {
 			sculpt_undo_push_node(ob, nodes[n],
@@ -3099,6 +3123,13 @@ static void do_brush_action(Sculpt *sd, Object *ob, Brush *brush)
 		}
 
 		MEM_freeN(nodes);
+
+		/* update average stroke position */
+		copy_v3_v3(location, ss->cache->true_location);
+		mul_m4_v3(ob->obmat, location);
+
+		add_v3_v3(ob->sculpt->average_stroke_accum, location);
+		ob->sculpt->average_stroke_counter++;
 	}
 }
 
@@ -3254,7 +3285,7 @@ static void sculpt_flush_stroke_deform(Sculpt *sd, Object *ob)
 		/* Modifiers could depend on mesh normals, so we should update them/
 		 * Note, then if sculpting happens on locked key, normals should be re-calculated
 		 * after applying coords from keyblock on base mesh */
-		BKE_mesh_calc_normals(me->mvert, me->totvert, me->mloop, me->mpoly, me->totloop, me->totpoly, NULL);
+		BKE_mesh_calc_normals(me);
 	}
 	else if (ss->kb) {
 		sculpt_update_keyblock(ob);
@@ -4082,7 +4113,7 @@ int sculpt_stroke_get_location(bContext *C, float out[3], const float mouse[2])
 	sculpt_stroke_modifiers_check(C, ob);
 
 	/* TODO: what if the segment is totally clipped? (return == 0) */
-	ED_view3d_win_to_segment_clip(vc.ar, vc.v3d, mouse, ray_start, ray_end);
+	ED_view3d_win_to_segment(vc.ar, vc.v3d, mouse, ray_start, ray_end, true);
 
 	invert_m4_m4(obimat, ob->obmat);
 	mul_m4_v3(obimat, ray_start);
@@ -4143,6 +4174,9 @@ static int sculpt_brush_stroke_init(bContext *C, wmOperator *op)
 	is_smooth = sculpt_any_smooth_mode(brush, NULL, mode);
 	sculpt_update_mesh_elements(scene, sd, ob, is_smooth, need_mask);
 
+	zero_v3(ob->sculpt->average_stroke_accum);
+	ob->sculpt->average_stroke_counter = 0;
+
 	return 1;
 }
 
@@ -4200,6 +4234,8 @@ static void sculpt_flush_update(bContext *C)
 		if (sculpt_get_redraw_rect(ar, CTX_wm_region_view3d(C), ob, &r)) {
 			if (ss->cache)
 				ss->cache->previous_r = r;
+
+			sculpt_extend_redraw_rect_previous(ob, &r);
 
 			r.xmin += ar->winrct.xmin + 1;
 			r.xmax += ar->winrct.xmin - 1;
@@ -4370,7 +4406,7 @@ static int sculpt_brush_stroke_invoke(bContext *C, wmOperator *op, const wmEvent
 
 	stroke = paint_stroke_new(C, sculpt_stroke_get_location,
 	                          sculpt_stroke_test_start,
-	                          sculpt_stroke_update_step,
+	                          sculpt_stroke_update_step, NULL,
 	                          sculpt_stroke_done, event->type);
 
 	op->customdata = stroke;
@@ -4399,7 +4435,7 @@ static int sculpt_brush_stroke_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 
 	op->customdata = paint_stroke_new(C, sculpt_stroke_get_location, sculpt_stroke_test_start,
-	                                  sculpt_stroke_update_step, sculpt_stroke_done, 0);
+	                                  sculpt_stroke_update_step, NULL, sculpt_stroke_done, 0);
 
 	/* frees op->customdata */
 	paint_stroke_exec(C, op);
@@ -4513,7 +4549,7 @@ void sculpt_pbvh_clear(Object *ob)
 	ss->pbvh = NULL;
 	if (dm)
 		dm->getPBVH(NULL, dm);
-	BKE_object_free_display(ob);
+	BKE_object_free_derived_caches(ob);
 }
 
 void sculpt_update_after_dynamic_topology_toggle(bContext *C)
@@ -4542,11 +4578,10 @@ void sculpt_dynamic_topology_enable(bContext *C)
 	/* Create triangles-only BMesh */
 	ss->bm = BM_mesh_create(&bm_mesh_allocsize_default);
 
-	BM_mesh_bm_from_me(ss->bm, me, TRUE, ob->shapenr);
-	BM_mesh_normals_update(ss->bm, false);
+	BM_mesh_bm_from_me(ss->bm, me, true, true, ob->shapenr);
 	sculpt_dynamic_topology_triangulate(ss->bm);
 	BM_data_layer_add(ss->bm, &ss->bm->vdata, CD_PAINT_MASK);
-	BM_mesh_normals_update(ss->bm, TRUE);
+	BM_mesh_normals_update(ss->bm);
 
 	/* Enable dynamic topology */
 	me->flag |= ME_SCULPT_DYNAMIC_TOPOLOGY;
@@ -4906,7 +4941,7 @@ static int sculpt_toggle_mode(bContext *C, wmOperator *UNUSED(op))
 
 		BKE_paint_init(&ts->sculpt->paint, PAINT_CURSOR_SCULPT);
 
-		paint_cursor_start(C, sculpt_poll);
+		paint_cursor_start(C, sculpt_mode_poll_view3d);
 	}
 
 	WM_event_add_notifier(C, NC_SCENE | ND_MODE, scene);

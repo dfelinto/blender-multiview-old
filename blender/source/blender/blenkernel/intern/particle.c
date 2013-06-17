@@ -264,12 +264,11 @@ static void psys_create_frand(ParticleSystem *psys)
 {
 	int i;
 	float *rand = psys->frand = MEM_callocN(PSYS_FRAND_COUNT * sizeof(float), "particle randoms");
-	RNG *rng = BLI_rng_new_srandom(psys->seed);
+
+	BLI_srandom(psys->seed);
 
 	for (i = 0; i < 1024; i++, rand++)
-		*rand = BLI_rng_get_float(rng);
-
-	BLI_rng_free(rng);
+		*rand = BLI_frand();
 }
 int psys_check_enabled(Object *ob, ParticleSystem *psys)
 {
@@ -717,8 +716,8 @@ void psys_render_set(Object *ob, ParticleSystem *psys, float viewmat[4][4], floa
 	psys->childcachebufs.first = psys->childcachebufs.last = NULL;
 
 	copy_m4_m4(data->winmat, winmat);
-	mult_m4_m4m4(data->viewmat, viewmat, ob->obmat);
-	mult_m4_m4m4(data->mat, winmat, data->viewmat);
+	mul_m4_m4m4(data->viewmat, viewmat, ob->obmat);
+	mul_m4_m4m4(data->mat, winmat, data->viewmat);
 	data->winx = winx;
 	data->winy = winy;
 
@@ -3303,11 +3302,8 @@ void psys_cache_edit_paths(Scene *scene, Object *ob, PTCacheEdit *edit, float cf
 		sim.ob = ob;
 		sim.psys = psys;
 		sim.psmd = psys_get_modifier(ob, psys);
-		sim.rng = BLI_rng_new(0);
 
 		psys_cache_child_paths(&sim, cfra, 1);
-
-		BLI_rng_free(sim.rng);
 	}
 
 	/* clear recalc flag if set here */
@@ -3471,7 +3467,7 @@ void psys_mat_hair_to_global(Object *ob, DerivedMesh *dm, short from, ParticleDa
 
 	psys_mat_hair_to_object(ob, dm, from, pa, facemat);
 
-	mult_m4_m4m4(hairmat, ob->obmat, facemat);
+	mul_m4_m4m4(hairmat, ob->obmat, facemat);
 }
 
 /************************************************/
@@ -3640,6 +3636,8 @@ static void default_particle_settings(ParticleSettings *part)
 
 	if (!part->effector_weights)
 		part->effector_weights = BKE_add_effector_weights(NULL);
+
+	part->use_modifier_stack = false;
 }
 
 
@@ -4664,7 +4662,6 @@ void psys_apply_hair_lattice(Scene *scene, Object *ob, ParticleSystem *psys)
 	sim.ob = ob;
 	sim.psys = psys;
 	sim.psmd = psys_get_modifier(ob, psys);
-	sim.rng = BLI_rng_new(0);
 
 	psys->lattice = psys_get_lattice(&sim);
 
@@ -4692,6 +4689,4 @@ void psys_apply_hair_lattice(Scene *scene, Object *ob, ParticleSystem *psys)
 		/* protect the applied shape */
 		psys->flag |= PSYS_EDITED;
 	}
-
-	BLI_rng_free(sim.rng);
 }

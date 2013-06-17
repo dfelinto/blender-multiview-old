@@ -47,7 +47,7 @@
 #include "GPU_material.h"
 #include "GPU_extensions.h"
 
-#include "BLO_sys_types.h" // for intptr_t support
+#include "BLI_sys_types.h" // for intptr_t support
 
 #include "gpu_codegen.h"
 
@@ -197,7 +197,7 @@ static char *gpu_generate_function_prototyps(GHash *hash)
 	 * generated code, to avoid have to add the actual code & recompile all */
 	ghi = BLI_ghashIterator_new(hash);
 
-	for (; BLI_ghashIterator_notDone(ghi); BLI_ghashIterator_step(ghi)) {
+	for (; !BLI_ghashIterator_done(ghi); BLI_ghashIterator_step(ghi)) {
 		name = BLI_ghashIterator_getValue(ghi);
 		function = BLI_ghashIterator_getValue(ghi);
 
@@ -255,7 +255,7 @@ void GPU_codegen_exit(void)
 		GPU_material_free(&defmaterial);
 
 	if (FUNCTION_HASH) {
-		BLI_ghash_free(FUNCTION_HASH, NULL, (GHashValFreeFP)MEM_freeN);
+		BLI_ghash_free(FUNCTION_HASH, NULL, MEM_freeN);
 		FUNCTION_HASH = NULL;
 	}
 

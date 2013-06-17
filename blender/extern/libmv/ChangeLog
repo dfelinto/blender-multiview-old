@@ -1,3 +1,239 @@
+commit 2cd653e2952379da7daf56edcd9e71b0aa929f90
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Sat Jun 1 16:20:35 2013 +0600
+
+    Pass vectors by a reference
+    
+    Saves couple of time which used to waste on copying objects,
+    also solves win32 compilation errors caused by alignment.
+
+commit f61b8198b9bddd8d2fa53feae7924aa23df48cbd
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Thu May 30 18:00:03 2013 +0600
+
+    Code cleanup
+    
+    - Made some arguments passing to detector const.
+    - Remove unneeded include from track_region header.
+
+commit 61ac890908a397860cabc60207500039876532cc
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Mon May 13 04:44:14 2013 +0600
+
+    Pass ApplyRadialDistortionCameraIntrinsics input arguments by reference
+    
+    This shall save some CPU time on calling copy constructor and give
+    some boost of bundle adjuster (where jet could take some time to
+    be passed by value).
+
+commit 4d005ff0771e0e28159be25f8da69d983641384f
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Mon May 13 04:22:05 2013 +0600
+
+    Minor code style cleanup.
+
+commit f003b9e3031db4592c2d91b1ea2538c73b7e767d
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Sun May 12 22:34:54 2013 +0600
+
+    Cleanup in simple pipeline's bundler
+    
+    - Better match Google's code style conventions.
+    - Move evaluation part into own function, makes
+      bundling itself easier to follow.
+    - Made evaluation an optional parameter.
+    - Removed note about unsupported camera intrinsics
+      refining flags. Technically, all combinations
+      are possible.
+
+commit f0e68f69e5c5f0fd82334246d382e59f1eb20164
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Sun May 12 22:19:31 2013 +0600
+
+    Remove check for zero focal length in BA cost functor
+    
+    This check is actually redundant, because empty intrinsics
+    will have focal length of 1.0, which means original comment
+    about BundleIntrinsics was not truth.
+    
+    It is possible that external user will send focal length of
+    zero to be refined, but blender prevents this from happening.
+
+commit 7ed5e4da65d2c0df63a08b1e1f4b4de1855f1bf0
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Sat May 11 20:33:54 2013 +0600
+
+    Fix compilation error with msvc2012
+    
+    Using change from glog's upstream for this.
+
+commit 7e162266f96abc25d80e2352cd77f21ed93593b7
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Sat May 11 19:50:57 2013 +0600
+
+    Style cleanup, mainly pointed by Sameer in Ceres's codereview
+
+commit 42da053c6410b4f3fb13798c7e9c5f4a861b6825
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Fri May 10 18:30:40 2013 +0600
+
+    Keyframe selection improvements
+    
+    Added additional criteria, which ignores
+    keyframe pair if success intersection factor
+    is lower than current candidate pair factor.
+    
+    This solves issue with keyframe pair at which
+    most of the tracks are intersecting behind the
+    camera is accepted (because variance in this
+    case is really small),
+    
+    Also tweaked generalized inverse function,
+    which now doesn't scale epsilon by maximal
+    matrix element. This gave issues at really bad
+    candidates with unstable covariance. In this
+    case almost all eigen values getting zeroed
+    on inverse leading to small expected error.
+
+commit f3eb090f7240f86799099fe86ce9386eb2bd3007
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Fri May 10 17:59:40 2013 +0600
+
+    Keyframe selection code cleanup
+    
+    - Updated comments in code.
+    - Removed currently unused functions.
+      Actually, they'd better be moved to some generic
+      logging module, but we don't have it now so was
+      lazy to create one now. Could happen later using
+      code from git history
+    - Renamed function to match better to what's going
+      on in it.
+
+commit b917b48bd877eedd17dec907cacf0b27a36e717d
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Fri May 10 17:44:49 2013 +0600
+
+    Optimization for reconstruction variance
+    
+    Achieved by replacing SVD-based pseudo-inverse with
+    an eigen solver pseudo inverse.
+    
+    New function works in the same way: it decomposes
+    matrix to V*D*V^-1, then inverts diagonal of D
+    and composes matrix back.
+    
+    The same way is used to deal with gauges - last
+    7 eigen values are getting zeroed.
+    
+    In own tests gives approx 2x boost, without
+    visible affect on selected keyframe quality.
+
+commit 041b4b54fff66311347a307a5922c2516c76ee44
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Thu Mar 14 14:53:42 2013 +0600
+
+    Initial commit of reconstruction variance criteria
+    which is an addition for GRIC-based keyframe selection.
+    
+    Uses paper Keyframe Selection for Camera Motion and Structure
+    Estimation from Multiple Views,
+    ftp://ftp.tnt.uni-hannover.de/pub/papers/2004/ECCV2004-TTHBAW.pdf
+    as a basis.
+    
+    Currently implemented camera positions reconstructions,
+    bundle positions estimation and bundle adjustment step.
+    
+    Covariance matrix is estimating using generalized inverse
+    with 7 (by the number of gauge freedoms) zeroed eigen values
+    of J^T * J.
+    
+    Additional changes:
+    - Added utility function FundamentalToEssential to extract
+      E from F matrix, used by both final reconstruction pipeline
+      and reconstruction variance code.
+    
+    - Refactored bundler a bit, so now it's possible to return
+      different evaluation data, such as number of cameras and
+      points being minimized and also jacobian.
+    
+      Jacobian currently contains only camera and points columns,
+      no intrinsics there yet. It is also currently converting to
+      an Eigen dense matrix. A bit weak, but speed is nice for
+      tests.
+    
+      Columns in jacobian are ordered in the following way:
+      first columns are cameras (3 cols for rotation and 3 cols
+      for translation), then goes 3D point columns.
+    
+    - Switched F and H refining to normalized space. Apparently,
+      refining F in pixel space squeezes it a lot making it wrong.
+    
+    - EuclideanIntersect will not add point to reconstruction if
+      it happened to be behind the camera.
+    
+    - Cleaned style a bit.
+
+commit 94c4654f1145f86779bd0a7e8cda1fd2c751d27d
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Fri May 10 13:27:21 2013 +0600
+
+    Left extra debugging print in reconstruction scale by accident.
+
+commit 3886b488575ec5e79debce7b9f2e9824f5297c0f
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Fri May 10 12:23:03 2013 +0600
+
+    Add check for points behind camera in euclidan BA cost functor
+    
+    In cases keyframes are no so good, algebraic two frames construction
+    could produce result, for which more aggressive Ceres-based BA code
+    will fall to a solution for which points goes behind the camera,
+    which is not so nice.
+    
+    Seems in newer Ceres returning false from cost functor wouldn't
+    abort solution, but will restrict solver from moving points behind
+    the camera.
+    
+    Works fine in own tests, but requires more tests.
+
+commit a5699d7dbe126024673f51aaa570f9f244f8da2f
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Wed Apr 24 22:06:38 2013 +0600
+
+    Forgot to add reconstruction scale to CMakeLists
+
+commit 2b7d2b44e6446bbcc23038f5dbb824feca888069
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Wed Apr 24 19:40:39 2013 +0600
+
+    Reconstructed scene scale ambiguity improvement
+    
+    Added a function EuclideanScaleToUnity() which is
+    aimed to solve scale ambiguity by scaling solution
+    in a way cameras centers variance in unity.
+    
+    Currently only available for euclidean pipeline,
+    projective one is not finished anyway.
+
+commit ed1f650576dc6f5b648a026a2861c54827b0f5c9
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Tue Apr 23 01:41:29 2013 +0600
+
+    Use epsilon in modal solver test
+    
+    Default epsilon for isApprox was too small,
+    leading to some false test failures.
+
+commit c44679a9a0fafdde6a0a22e7e5c8496fc9c93cd0
+Author: Sergey Sharybin <sergey.vfx@gmail.com>
+Date:   Tue Apr 23 01:35:56 2013 +0600
+
+    Update Ceres to current HEAD
+    
+    Brings optimization for DENSE_NORMAL_CHOLESKY and
+    also fixes threading issues with BLAS.
+
 commit 03cbc88ce7f51aa26ba503acea2e984bcb78873c
 Author: Sergey Sharybin <sergey.vfx@gmail.com>
 Date:   Mon Apr 15 05:35:33 2013 +0600
@@ -366,328 +602,3 @@ Date:   Fri Mar 1 17:44:54 2013 +0600
 
     Fixed incorrect order of arguments passing
     to EXPECT_EQ in keyframe selection tests.
-
-commit d38ebb74693fdf5b8f0fecf62a3d8c9c53b0b84a
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Fri Mar 1 17:40:38 2013 +0600
-
-    Modal (aka tripod) solver rework
-    
-    Several major things are done in this commit:
-    
-    - First of all, logic of modal solver was changed.
-      We do not rely on only minimizer to take care of
-      guessing rotation for frame, but we're using
-      analytical rotation computation for point clouds
-      to obtain initial rotation.
-    
-      Then this rotation is being refined using Ceres
-      minimizer and now instead of minimizing average
-      distance between points of point of two clouds,
-      minimization of reprojection error of point
-      cloud onto frame happens.
-    
-      This gives quite a bit of precision improvement.
-    
-    - Second bigger improvement here is using bundle
-      adjustment for a result of first step when we're
-      only estimating rotation between neighbor images
-      and reprojecting markers.
-    
-      This averages error across the image sequence
-      avoiding error accumulation. Also, this will
-      tweak bundles themselves a bit for better match.
-    
-    - And last bigger improvement here is support of
-      camera intrinsics refirenment.
-    
-    This allowed to significantly improve solution
-    for real-life footage and results after such
-    refining are much more usable than it were before.
-    
-    Thanks to Keir for the help and code review!
-
-commit 5d6c2e7a27bdd1a1b23bf289d70a9b8f62514c9a
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Fri Mar 1 17:37:35 2013 +0600
-
-    Increase verbosity level for reprojected markers info
-    
-    This information is useful, but in cases when you, say,
-    working on a bundler it's annoying to scroll all the
-    information up.
-
-commit ac252bb1250b3028b9c94736b644e7ab4e7b14b8
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Fri Mar 1 17:36:19 2013 +0600
-
-    Move radial distortion code to own templated function
-    
-    This shall not lead to any functional changes, just
-    avoids radial distortion code duplicated in camera
-    intrinsics and bundling code.
-    
-    For fancier bundle adjustment support of  different
-    distortion models this is not actually enough and
-    would need to make some bigger changes, but this
-    changes makes code a bit easier to maintain already.
-
-commit c253b794612dd529e1d3a9bd7a7c41c32c9a9abb
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Fri Mar 1 17:33:27 2013 +0600
-
-    Use threaded cost function, jacobian and linear solver
-    computation, so bundling is as fast as it could be with
-    current parameter block structure.
-
-commit 931fe37a10212b91b525d4f6eb753990a338b471
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Fri Mar 1 17:29:21 2013 +0600
-
-    Fixed comment for euclidean bundling,
-    which is now supports raidal bundling independently
-    from other intrinsics.
-
-commit 217d8e6edc3de1a853fb84275d2d2dd898e7529c
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Tue Feb 26 18:19:01 2013 +0600
-
-    Allow K1,K2 refirement combination
-    
-    It is now possible to refine only radial distortion
-    with new Ceres based bundler and this new combination
-    is already used in Blender.
-
-commit d8850addc944d400f7a9c358396c437d9e4acc70
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Tue Feb 26 18:17:09 2013 +0600
-
-    Switch euclidean intersection code to use Ceres
-    
-    Would not expect any significant changes in solver
-    behavior, but it could be more accurate in some cases.
-    
-    Switching projective intersection to ceres is marked
-    as a TODO for now.
-
-commit 6990b7946ec96b3cb2dcfc8a1beaaba9538b0802
-Author: Keir Mierle <mierle@gmail.com>
-Date:   Mon Feb 25 20:00:48 2013 +0000
-
-    Switch motion tracker bundle adjustment to Ceres.
-    
-    Patch originally written by me, then finished by Sergey. Big
-    thanks to Sergey for troopering through and fixing the many issues
-    with my original (not compilable) patch.
-    
-    The Ceres implementation uses 2 parameter blocks for each camera
-    (1 for rotation and 1 for translation), 1 parameter block for
-    common intrinsics (focal length etc) and 1 parameter block for
-    each track (e.g. bundle or 3D point).
-    
-    We turn on some fancy optimizer options to get better performance,
-    in particular:
-    
-      options.preconditioner_type = ceres::SCHUR_JACOBI;
-      options.linear_solver_type = ceres::ITERATIVE_SCHUR;
-      options.use_inner_iterations = true;
-      options.use_nonmonotonic_steps = true;
-      options.max_num_iterations = 100;
-    
-    Special thanks to Sameer Agarwal of Ceres fame for splitting out
-    the SCHUR_JACOBI preconditioner so that it didn't depend on
-    CHOLMOD.  Previously we could not use that preconditioner in
-    Blender because CHOLMOD is too large of a dependency for Blender.
-    
-    BundleIntrinsicsLogMessage:
-    - Moved bunch of if(foo) LG << "bar" into this function, to make
-      EuclideanBundleCommonIntrinsics a little bit easier to follow.
-    
-    EuclideanBundle:
-    - Fix RMSE logging.
-
-commit 1696342954614b54133780d74d6ee0fbcbe224f0
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Tue Feb 26 18:10:33 2013 +0600
-
-    Upgrade ceres to latest upstream version
-    
-    This is needed because of some features of new Ceres
-    for further development.
-
-commit 575336f794841ada90aacd783285014081b8318c
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Mon Jan 7 15:58:40 2013 +0600
-
-    Fixed for keyframe selection
-    
-    - Calculate residuals for GRIC in pixel space rather than
-      in normalized space.
-    
-      This seems to be how it's intended to be used.
-    
-      Algebraic H and F will still use normalized coordinates which
-      are more stable, after this matrices are converted to pixel
-      space and Ceres refinement happens in pixel space.
-    
-    - Standard deviation calculation was wrong in GRIC. It shouldn't
-      be deviation of residuals, but as per Torr it should be deviation
-      of measurement error, which is constant (in our case 0.1)
-    
-      Not sure if using squared cost function is correct for GRIC,
-      but cost function is indeed squared and in most papers cost
-      function is used for GRIC. After some further tests we could
-      switch GRIC residuals to non-squared distance.
-    
-    - Bring back rho part of GRIC, in unit tests it doesn't make
-      sense whether it's enabled or not, lets see how it'll behave
-      in real-life footage.
-    
-    - Added one more unit test based on elevator scene and manual
-      keyframe selection.
-
-commit 24117f3c3fc5531beb6497d79bb6f1780a998081
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Sun Jan 6 19:07:06 2013 +0600
-
-    Added test for keyframe selection based on manual selection
-    
-    Additional changes:
-    
-    - Reduce minimal correspondence to match real-world manually
-      tracked footage
-    
-    - Returned back squares to SymmetricEpipolarDistance and
-      SymmetricGeometricDistance -- this is actually a cost
-      functions, not distances and they shall be squared.
-
-commit 770eb0293b881c4c419c587a6cdb062c47ab6e44
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Fri Dec 21 00:43:30 2012 +0600
-
-    Improvements for keyframe selection
-    
-    - Changed main keyframe selection cycle, so in cases there're no
-      more next keyframes for current keyframe could be found in the
-      image sequence, current keyframe would be moved forward and
-      search continues.
-    
-      This helps in cases when there's poor motion in the beginning
-      of the sequence, then markers becomes occluded. There could be
-      good keyframes in the middle of the shot still.
-    
-    - Extended keyframe_selection_test with real world cases.
-    
-    - Moved correspondences constraint to the top, so no H/F estimation
-      happens if there's bad correspondence. Makes algorithm go a bit
-      faster.
-    
-    Strangely, but using non-squared distances makes neighbor frames
-    test fail, using squared distances makes this tests pass.
-    
-    However, using non-squared distances seems to be working better
-    in real tests i've been doing. So this requires more investigation/
-
-commit 7415c62fbda36c5bd1c291bc94d535a66da896d0
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Thu Dec 20 18:46:09 2012 +0600
-
-    Cosmetic change to correspondences reports in keyframe selection
-
-commit ceaf80c987ec0338e7e83965bc808411453eb755
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Thu Dec 20 18:08:03 2012 +0600
-
-    Various fixes:
-    
-    - That was a typo in symmetric geometric cost functor, which
-      computed inverse distance in a wrong way.
-    
-    - Fixed compilation of unit tests
-    
-    - Added simple test for keyframe selection. Currently only
-      covers case that neighbor frames with only translation
-      (homography should be better than fundamental) are not
-      considered a keyframes.
-    
-      Still need to be investigated why it only works if tracks
-      are in pixel space and why doesn't work in normalized space.
-
-commit cfabdfe48df2add3d1f30cf4370efd0b31990ab0
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Thu Dec 20 05:46:53 2012 +0600
-
-    Assorted fixes for keyframe selection:
-    
-    - Biggest error was in cost functors used for F and H refirement,
-      they were just wrong.
-    
-    - Use natural logarithms, since it's actually makes sense from
-      math papers point of view and error is somewhere else.
-    
-    - Disabled rho for GRIC, for now use non-clamped error for tests.
-    
-    - Made SymmetricEpipolarDistance returning non-squared distance
-      Keyframe selection is currently the only used of this function
-      and it seems using non-squared distance makes much more sense.
-    
-      Also would think to append suffix "Squared" to functions which
-      returns squared distances.
-    
-    - Removed templated version of SymmetricEpipolarDistance, since
-      it's not needed actually.
-    
-    This is actually even worse working than previous implementation,
-    but commit it needed for further review.
-
-commit 35d8c57626ad74818f155e6e5960c663ea84e032
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Thu Dec 20 03:00:40 2012 +0600
-
-    Euclidean resection cost function didn't use correct constructor
-    
-    It was storing a reference to initial rotation passed by value,
-    leading to pointer being pointing to a stack variable, leading to
-    wrong memory access in residuals computing.
-    
-    Apparently was visible in optimized builds only with inline
-    substitution allowed.
-
-commit 0798d3162bb49cee7e1c423ceccbca1326ad5650
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Thu Dec 20 02:50:52 2012 +0600
-
-    Automatic keyframe selection based on Pollefeys's criteria
-    
-    This commit implements automatic keyframe selection algorithm
-    based on Pollefeys's criteria (F-GRIC is smaller than H-GRIC
-    and correspondence ratio is more then 90%).
-    
-    It is implemented as a part of simple pipeline and returns
-    vector of keyframe images for a given Tracks structure.
-    
-    For simple pipeline reconstruction two best keyframes are
-    expected to be selected from all detected candidates.
-    Criteria for this selection could be reprojection error of
-    solution from two candidate keyfames.
-    
-    Unfortunately, it's not fully workable yet, hopefully would
-    be fixed soon.
-
-commit e943985552f0598ae122252876f305d72c25c2f9
-Author: Sergey Sharybin <sergey.vfx@gmail.com>
-Date:   Thu Dec 6 17:47:11 2012 +0600
-
-    Camera Tracking: allow fallback to reprojection resection
-    by user demand
-    
-    This fixes some "regressions" introduced in previous commit
-    which lead to much worse solution in some cases. Now it's
-    possible to bring old behavior back.
-    
-    Perhaps it's more like temporal solution for time being smarter
-    solution is found. But finding such a solution isn't so fast,
-    so let's bring manual control over reprojection usage.
-    
-    But anyway, imo it's now nice to have a structure which could
-    be used to pass different settings to the solver.

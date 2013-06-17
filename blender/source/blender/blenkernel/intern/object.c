@@ -87,7 +87,6 @@
 #include "BKE_fcurve.h"
 #include "BKE_group.h"
 #include "BKE_icons.h"
-#include "BKE_image.h"
 #include "BKE_key.h"
 #include "BKE_lamp.h"
 #include "BKE_lattice.h"
@@ -242,108 +241,44 @@ void BKE_object_link_modifiers(struct Object *ob_dst, struct Object *ob_src)
 	/* TODO: smoke?, cloth? */
 }
 
-/* here we will collect all local displist stuff */
-/* also (ab)used in depsgraph */
-void BKE_object_free_display(Object *ob)
+/* free data derived from mesh, called when mesh changes or is freed */
+void BKE_object_free_derived_caches(Object *ob)
 {
-	if (ob->derivedDeform) {
-		ob->derivedDeform->needsFree = 1;
-		ob->derivedDeform->release(ob->derivedDeform);
-		ob->derivedDeform = NULL;
+	/* also serves as signal to remake texspace */
+	if (ob->type == OB_MESH) {
+		Mesh *me = ob->data;
+
+		if (me->bb) {
+			MEM_freeN(me->bb);
+			me->bb = NULL;
+		}
 	}
+
+	if (ob->bb) {
+		MEM_freeN(ob->bb);
+		ob->bb = NULL;
+	}
+
 	if (ob->derivedFinal) {
 		ob->derivedFinal->needsFree = 1;
 		ob->derivedFinal->release(ob->derivedFinal);
 		ob->derivedFinal = NULL;
 	}
+	if (ob->derivedDeform) {
+		ob->derivedDeform->needsFree = 1;
+		ob->derivedDeform->release(ob->derivedDeform);
+		ob->derivedDeform = NULL;
+	}
 	
 	BKE_displist_free(&ob->disp);
 }
-
-void free_sculptsession_deformMats(SculptSession *ss)
-{
-	if (ss->orig_cos) MEM_freeN(ss->orig_cos);
-	if (ss->deform_cos) MEM_freeN(ss->deform_cos);
-	if (ss->deform_imats) MEM_freeN(ss->deform_imats);
-
-	ss->orig_cos = NULL;
-	ss->deform_cos = NULL;
-	ss->deform_imats = NULL;
-}
-
-/* Write out the sculpt dynamic-topology BMesh to the Mesh */
-void sculptsession_bm_to_me(struct Object *ob, int reorder)
-{
-	if (ob && ob->sculpt) {
-		SculptSession *ss = ob->sculpt;
-
-		if (ss->bm) {
-			if (ob->data) {
-				BMIter iter;
-				BMFace *efa;
-				BM_ITER_MESH (efa, &iter, ss->bm, BM_FACES_OF_MESH) {
-					BM_elem_flag_set(efa, BM_ELEM_SMOOTH,
-					                 ss->bm_smooth_shading);
-				}
-				if (reorder)
-					BM_log_mesh_elems_reorder(ss->bm, ss->bm_log);
-				BM_mesh_bm_to_me(ss->bm, ob->data, FALSE);
-			}
-		}
-
-		/* ensure the objects DerivedMesh mesh doesn't hold onto arrays now realloc'd in the mesh [#34473] */
-		DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-	}
-}
-
-void free_sculptsession(Object *ob)
-{
-	if (ob && ob->sculpt) {
-		SculptSession *ss = ob->sculpt;
-		DerivedMesh *dm = ob->derivedFinal;
-
-		if (ss->bm) {
-			sculptsession_bm_to_me(ob, TRUE);
-			BM_mesh_free(ss->bm);
-		}
-
-		if (ss->pbvh)
-			BKE_pbvh_free(ss->pbvh);
-		if (ss->bm_log)
-			BM_log_free(ss->bm_log);
-
-		if (dm && dm->getPBVH)
-			dm->getPBVH(NULL, dm);  /* signal to clear */
-
-		if (ss->texcache)
-			MEM_freeN(ss->texcache);
-
-		if (ss->tex_pool)
-			BKE_image_pool_free(ss->tex_pool);
-
-		if (ss->layer_co)
-			MEM_freeN(ss->layer_co);
-
-		if (ss->orig_cos)
-			MEM_freeN(ss->orig_cos);
-		if (ss->deform_cos)
-			MEM_freeN(ss->deform_cos);
-		if (ss->deform_imats)
-			MEM_freeN(ss->deform_imats);
-
-		MEM_freeN(ss);
-
-		ob->sculpt = NULL;
-	}
-}
-
 
 /* do not free object itself */
 void BKE_object_free(Object *ob)
 {
 	int a;
 	
-	BKE_object_free_display(ob);
+	BKE_object_free_derived_caches(ob);
 	
 	/* disconnect specific data, but not for lib data (might be indirect data, can get relinked) */
 	if (ob->data) {
@@ -947,7 +882,7 @@ Object *BKE_object_add_only_object(Main *bmain, int type, const char *name)
 	ob->anisotropicFriction[1] = 1.0f;
 	ob->anisotropicFriction[2] = 1.0f;
 	ob->gameflag = OB_PROP | OB_COLLISION;
-	ob->margin = 0.0;
+	ob->margin = 0.04f;
 	ob->init_state = 1;
 	ob->state = 1;
 	/* ob->pad3 == Contact Processing Threshold */
@@ -1204,7 +1139,7 @@ static void copy_object_pose(Object *obn, Object *ob)
 	}
 }
 
-int BKE_object_pose_context_check(Object *ob)
+bool BKE_object_pose_context_check(Object *ob)
 {
 	if ((ob) &&
 	    (ob->type == OB_ARMATURE) &&
@@ -1509,7 +1444,7 @@ void BKE_object_make_proxy(Object *ob, Object *target, Object *gob)
 	 *   this is closer to making a copy of the object - in-place. */
 	if (gob) {
 		ob->rotmode = target->rotmode;
-		mult_m4_m4m4(ob->obmat, gob->obmat, target->obmat);
+		mul_m4_m4m4(ob->obmat, gob->obmat, target->obmat);
 		if (gob->dup_group) { /* should always be true */
 			float tvec[3];
 			copy_v3_v3(tvec, gob->dup_group->dupli_ofs);
@@ -1738,9 +1673,9 @@ void BKE_object_apply_mat4(Object *ob, float mat[4][4], const bool use_compat, c
 
 	if (use_parent && ob->parent) {
 		float rmat[4][4], diff_mat[4][4], imat[4][4];
-		mult_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
+		mul_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
 		invert_m4_m4(imat, diff_mat);
-		mult_m4_m4m4(rmat, imat, mat); /* get the parent relative matrix */
+		mul_m4_m4m4(rmat, imat, mat); /* get the parent relative matrix */
 		BKE_object_apply_mat4(ob, rmat, use_compat, FALSE);
 		
 		/* same as below, use rmat rather than mat */
@@ -1864,7 +1799,7 @@ static void ob_parcurve(Scene *scene, Object *ob, Object *par, float mat[4][4])
 		if (cu->flag & CU_PATH_RADIUS) {
 			float tmat[4][4], rmat[4][4];
 			scale_m4_fl(tmat, radius);
-			mult_m4_m4m4(rmat, tmat, mat);
+			mul_m4_m4m4(rmat, tmat, mat);
 			copy_m4_m4(mat, rmat);
 		}
 
@@ -2288,7 +2223,7 @@ void BKE_object_workob_calc_parent(Scene *scene, Object *ob, Object *workob)
 BoundBox *BKE_boundbox_alloc_unit(void)
 {
 	BoundBox *bb;
-	float min[3] = {-1.0f, -1.0f, -1.0f}, max[3] = {-1.0f, -1.0f, -1.0f};
+	const float min[3] = {-1.0f, -1.0f, -1.0f}, max[3] = {-1.0f, -1.0f, -1.0f};
 
 	bb = MEM_callocN(sizeof(BoundBox), "OB-BoundBox");
 	BKE_boundbox_init_from_minmax(bb, min, max);
@@ -2296,7 +2231,7 @@ BoundBox *BKE_boundbox_alloc_unit(void)
 	return bb;
 }
 
-void BKE_boundbox_init_from_minmax(BoundBox *bb, float min[3], float max[3])
+void BKE_boundbox_init_from_minmax(BoundBox *bb, const float min[3], const float max[3])
 {
 	bb->vec[0][0] = bb->vec[1][0] = bb->vec[2][0] = bb->vec[3][0] = min[0];
 	bb->vec[4][0] = bb->vec[5][0] = bb->vec[6][0] = bb->vec[7][0] = max[0];
@@ -2477,9 +2412,9 @@ void BKE_object_minmax(Object *ob, float min_r[3], float max_r[3], const bool us
 	}
 }
 
-int BKE_object_minmax_dupli(Scene *scene, Object *ob, float r_min[3], float r_max[3], const bool use_hidden)
+bool BKE_object_minmax_dupli(Scene *scene, Object *ob, float r_min[3], float r_max[3], const bool use_hidden)
 {
-	int ok = FALSE;
+	bool ok = false;
 	if ((ob->transflag & OB_DUPLI) == 0) {
 		return ok;
 	}
@@ -2685,7 +2620,7 @@ void BKE_object_handle_update_ex(Scene *scene, Object *ob,
 				if (ob->proxy_from->proxy_group) { /* transform proxy into group space */
 					Object *obg = ob->proxy_from->proxy_group;
 					invert_m4_m4(obg->imat, obg->obmat);
-					mult_m4_m4m4(ob->obmat, obg->imat, ob->proxy_from->obmat);
+					mul_m4_m4m4(ob->obmat, obg->imat, ob->proxy_from->obmat);
 					if (obg->dup_group) { /* should always be true */
 						add_v3_v3(ob->obmat[3], obg->dup_group->dupli_ofs);
 					}
@@ -2700,6 +2635,7 @@ void BKE_object_handle_update_ex(Scene *scene, Object *ob,
 		if (ob->recalc & OB_RECALC_DATA) {
 			ID *data_id = (ID *)ob->data;
 			AnimData *adt = BKE_animdata_from_id(data_id);
+			Key *key;
 			float ctime = BKE_scene_frame_get(scene);
 			
 			if (G.debug & G_DEBUG)
@@ -2709,6 +2645,12 @@ void BKE_object_handle_update_ex(Scene *scene, Object *ob,
 				/* evaluate drivers - datalevel */
 				/* XXX: for mesh types, should we push this to derivedmesh instead? */
 				BKE_animsys_evaluate_animdata(scene, data_id, adt, ctime, ADT_RECALC_DRIVERS);
+			}
+			
+			key = BKE_key_from_object(ob);
+			if (key && key->block.first) {
+				if (!(ob->shapeflag & OB_SHAPE_LOCK))
+					BKE_animsys_evaluate_animdata(scene, &key->id, key->adt, ctime, ADT_RECALC_DRIVERS);
 			}
 
 			/* includes all keys and modifiers */
@@ -2727,7 +2669,7 @@ void BKE_object_handle_update_ex(Scene *scene, Object *ob,
 
 #else               /* ensure CD_MASK_BAREMESH for now */
 					BMEditMesh *em = (ob == scene->obedit) ? BKE_editmesh_from_object(ob) : NULL;
-					uint64_t data_mask = scene->customdata_mask | ob->customdata_mask | CD_MASK_BAREMESH;
+					uint64_t data_mask = scene->customdata_mask | CD_MASK_BAREMESH;
 					if (em) {
 						makeDerivedMesh(scene, ob, em,  data_mask, 0); /* was CD_MASK_BAREMESH */
 					}
@@ -2862,27 +2804,29 @@ void BKE_object_sculpt_modifiers_changed(Object *ob)
 {
 	SculptSession *ss = ob->sculpt;
 
-	if (!ss->cache) {
-		/* we free pbvh on changes, except during sculpt since it can't deal with
-		 * changing PVBH node organization, we hope topology does not change in
-		 * the meantime .. weak */
-		if (ss->pbvh) {
-			BKE_pbvh_free(ss->pbvh);
-			ss->pbvh = NULL;
+	if (ss) {
+		if (!ss->cache) {
+			/* we free pbvh on changes, except during sculpt since it can't deal with
+			 * changing PVBH node organization, we hope topology does not change in
+			 * the meantime .. weak */
+			if (ss->pbvh) {
+				BKE_pbvh_free(ss->pbvh);
+				ss->pbvh = NULL;
+			}
+
+			free_sculptsession_deformMats(ob->sculpt);
 		}
+		else {
+			PBVHNode **nodes;
+			int n, totnode;
 
-		free_sculptsession_deformMats(ob->sculpt);
-	}
-	else {
-		PBVHNode **nodes;
-		int n, totnode;
+			BKE_pbvh_search_gather(ss->pbvh, NULL, NULL, &nodes, &totnode);
 
-		BKE_pbvh_search_gather(ss->pbvh, NULL, NULL, &nodes, &totnode);
+			for (n = 0; n < totnode; n++)
+				BKE_pbvh_node_mark_update(nodes[n]);
 
-		for (n = 0; n < totnode; n++)
-			BKE_pbvh_node_mark_update(nodes[n]);
-
-		MEM_freeN(nodes);
+			MEM_freeN(nodes);
+		}
 	}
 }
 
@@ -2930,15 +2874,17 @@ int BKE_object_obdata_texspace_get(Object *ob, short **r_texflag, float **r_loc,
  * Test a bounding box for ray intersection
  * assumes the ray is already local to the boundbox space
  */
-int BKE_boundbox_ray_hit_check(struct BoundBox *bb, float ray_start[3], float ray_normal[3])
+bool BKE_boundbox_ray_hit_check(struct BoundBox *bb, const float ray_start[3], const float ray_normal[3])
 {
-	static int triangle_indexes[12][3] = {{0, 1, 2}, {0, 2, 3},
-	                                      {3, 2, 6}, {3, 6, 7},
-	                                      {1, 2, 6}, {1, 6, 5},
-	                                      {5, 6, 7}, {4, 5, 7},
-	                                      {0, 3, 7}, {0, 4, 7},
-	                                      {0, 1, 5}, {0, 4, 5}};
-	int result = 0;
+	const int triangle_indexes[12][3] = {
+	    {0, 1, 2}, {0, 2, 3},
+	    {3, 2, 6}, {3, 6, 7},
+	    {1, 2, 6}, {1, 6, 5},
+	    {5, 6, 7}, {4, 5, 7},
+	    {0, 3, 7}, {0, 4, 7},
+	    {0, 1, 5}, {0, 4, 5}};
+
+	bool result = false;
 	int i;
 	
 	for (i = 0; i < 12 && result == 0; i++) {

@@ -159,6 +159,12 @@ void BlenderSync::sync_light(BL::Object b_parent, int persistent_id[OBJECT_PERSI
 	light->use_mis = get_boolean(clamp, "use_multiple_importance_sampling");
 	light->samples = get_int(clamp, "samples");
 
+	/* visibility */
+	uint visibility = object_ray_visibility(b_ob);
+	light->use_diffuse = (visibility & PATH_RAY_DIFFUSE) != 0;
+	light->use_glossy = (visibility & PATH_RAY_GLOSSY) != 0;
+	light->use_transmission = (visibility & PATH_RAY_TRANSMIT) != 0;
+
 	/* tag */
 	light->tag_update(scene);
 }
@@ -353,6 +359,13 @@ static bool object_render_hide(BL::Object b_ob, bool top_level, bool parent_hide
 	return hide && !show_emitter;
 }
 
+static bool object_render_hide_duplis(BL::Object b_ob)
+{
+	BL::Object parent = b_ob.parent();
+
+	return (parent && object_render_hide_original(parent.dupli_type()));
+}
+
 /* Object Loop */
 
 void BlenderSync::sync_objects(BL::SpaceView3D b_v3d, int motion)
@@ -387,7 +400,7 @@ void BlenderSync::sync_objects(BL::SpaceView3D b_v3d, int motion)
 			if(!hide) {
 				progress.set_sync_status("Synchronizing object", (*b_ob).name());
 
-				if(b_ob->is_duplicator()) {
+				if(b_ob->is_duplicator() && !object_render_hide_duplis(*b_ob)) {
 					/* dupli objects */
 					b_ob->dupli_list_create(b_scene, 2);
 

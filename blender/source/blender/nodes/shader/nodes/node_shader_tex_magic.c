@@ -54,7 +54,7 @@ static void node_shader_init_tex_magic(bNodeTree *UNUSED(ntree), bNode *node)
 
 static int node_shader_gpu_tex_magic(GPUMaterial *mat, bNode *node, bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
 {
-	NodeTexMagic *tex = (NodeTexMagic*)node->storage;
+	NodeTexMagic *tex = (NodeTexMagic *)node->storage;
 	float depth = tex->depth;
 
 	if (!in[0].link)
@@ -70,10 +70,9 @@ void register_node_type_sh_tex_magic(void)
 {
 	static bNodeType ntype;
 
-	sh_node_type_base(&ntype, SH_NODE_TEX_MAGIC, "Magic Texture", NODE_CLASS_TEXTURE, NODE_OPTIONS);
+	sh_node_type_base(&ntype, SH_NODE_TEX_MAGIC, "Magic Texture", NODE_CLASS_TEXTURE, 0);
 	node_type_compatibility(&ntype, NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, sh_node_tex_magic_in, sh_node_tex_magic_out);
-	node_type_size(&ntype, 150, 60, 200);
 	node_type_init(&ntype, node_shader_init_tex_magic);
 	node_type_storage(&ntype, "NodeTexMagic", node_free_standard_storage, node_copy_standard_storage);
 	node_type_gpu(&ntype, node_shader_gpu_tex_magic);

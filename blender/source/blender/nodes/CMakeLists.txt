@@ -32,7 +32,6 @@ set(INC
 	../blenfont
 	../blenkernel
 	../blenlib
-	../blenloader
 	../gpu
 	../imbuf
 	../makesdna
@@ -145,6 +144,8 @@ set(SRC
 	shader/nodes/node_shader_texture.c
 	shader/nodes/node_shader_valToRgb.c
 	shader/nodes/node_shader_value.c
+	shader/nodes/node_shader_wireframe.c
+	shader/nodes/node_shader_wavelength.c
 	shader/nodes/node_shader_vectMath.c
 	shader/nodes/node_shader_add_shader.c
 	shader/nodes/node_shader_ambient_occlusion.c
@@ -154,6 +155,7 @@ set(SRC
 	shader/nodes/node_shader_bsdf_diffuse.c
 	shader/nodes/node_shader_bsdf_glass.c
 	shader/nodes/node_shader_bsdf_glossy.c
+	shader/nodes/node_shader_bsdf_toon.c
 	shader/nodes/node_shader_bsdf_refraction.c
 	shader/nodes/node_shader_bsdf_translucent.c
 	shader/nodes/node_shader_bsdf_transparent.c

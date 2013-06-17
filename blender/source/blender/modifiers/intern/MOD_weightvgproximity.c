@@ -34,6 +34,7 @@
 #include "BLI_ghash.h"
 #include "BLI_math.h"
 #include "BLI_string.h"
+#include "BLI_rand.h"
 
 #if DO_PROFILE
 	#include "PIL_time.h"
@@ -46,6 +47,7 @@
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_deform.h"
+#include "BKE_library.h"
 #include "BKE_mesh.h"
 #include "BKE_modifier.h"
 #include "BKE_shrinkwrap.h"       /* For SpaceTransform stuff. */
@@ -241,6 +243,14 @@ static void initData(ModifierData *md)
 	wmd->max_dist             = 1.0f; /* vert arbitrary distance, but don't use 0 */
 }
 
+static void freeData(ModifierData *md)
+{
+	WeightVGProximityModifierData *wmd = (WeightVGProximityModifierData *) md;
+	if (wmd->mask_texture) {
+		id_us_min(&wmd->mask_texture->id);
+	}
+}
+
 static void copyData(ModifierData *md, ModifierData *target)
 {
 	WeightVGProximityModifierData *wmd  = (WeightVGProximityModifierData *) md;
@@ -262,6 +272,10 @@ static void copyData(ModifierData *md, ModifierData *target)
 	BLI_strncpy(twmd->mask_tex_uvlayer_name, wmd->mask_tex_uvlayer_name, sizeof(twmd->mask_tex_uvlayer_name));
 	twmd->min_dist               = wmd->min_dist;
 	twmd->max_dist               = wmd->max_dist;
+
+	if (twmd->mask_texture) {
+		id_us_plus(&twmd->mask_texture->id);
+	}
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
@@ -281,7 +295,7 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	return dataMask;
 }
 
-static int dependsOnTime(ModifierData *md)
+static bool dependsOnTime(ModifierData *md)
 {
 	WeightVGProximityModifierData *wmd = (WeightVGProximityModifierData *) md;
 
@@ -337,7 +351,7 @@ static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *UN
 		                 "WeightVGProximity Modifier");
 }
 
-static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
+static bool isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 {
 	WeightVGProximityModifierData *wmd = (WeightVGProximityModifierData *) md;
 	/* If no vertex group, bypass. */
@@ -542,13 +556,6 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	return dm;
 }
 
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
-}
-
 
 ModifierTypeInfo modifierType_WeightVGProximity = {
 	/* name */              "VertexWeightProximity",
@@ -566,10 +573,10 @@ ModifierTypeInfo modifierType_WeightVGProximity = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          NULL,
+	/* freeData */          freeData,
 	/* isDisabled */        isDisabled,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     dependsOnTime,

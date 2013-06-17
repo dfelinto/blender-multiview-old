@@ -49,8 +49,8 @@ OSL::ClosureParam *closure_holdout_params();
 OSL::ClosureParam *closure_ambient_occlusion_params();
 OSL::ClosureParam *closure_bsdf_diffuse_ramp_params();
 OSL::ClosureParam *closure_bsdf_phong_ramp_params();
-OSL::ClosureParam *closure_bsdf_diffuse_toon_params();
-OSL::ClosureParam *closure_bsdf_specular_toon_params();
+OSL::ClosureParam *closure_westin_backscatter_params();
+OSL::ClosureParam *closure_westin_sheen_params();
 OSL::ClosureParam *closure_bssrdf_params();
 
 void closure_emission_prepare(OSL::RendererServices *, int id, void *data);
@@ -59,8 +59,8 @@ void closure_holdout_prepare(OSL::RendererServices *, int id, void *data);
 void closure_ambient_occlusion_prepare(OSL::RendererServices *, int id, void *data);
 void closure_bsdf_diffuse_ramp_prepare(OSL::RendererServices *, int id, void *data);
 void closure_bsdf_phong_ramp_prepare(OSL::RendererServices *, int id, void *data);
-void closure_bsdf_diffuse_toon_prepare(OSL::RendererServices *, int id, void *data);
-void closure_bsdf_specular_toon_prepare(OSL::RendererServices *, int id, void *data);
+void closure_westin_backscatter_prepare(OSL::RendererServices *, int id, void *data);
+void closure_westin_sheen_prepare(OSL::RendererServices *, int id, void *data);
 void closure_bssrdf_prepare(OSL::RendererServices *, int id, void *data);
 
 enum {

@@ -1186,6 +1186,10 @@ static PyObject *gPySetGLSLMaterialSetting(PyObject *,
 	else
 		gs->glslflag |= flag;
 
+	/* temporarily store the glsl settings in the scene for the GLSL materials */
+	GameData *gm= &(gp_KetsjiScene->GetBlenderScene()->gm);
+	gm->flag = gs->glslflag;
+
 	/* display lists and GLSL materials need to be remade */
 	if (sceneflag != gs->glslflag) {
 		GPU_materials_free();

@@ -247,12 +247,16 @@ if(WITH_BULLET)
 	add_definitions(-DWITH_BULLET)
 endif()
 
+# for mallocn.c
+if (WITH_GUARDEDALLOC)
+	add_definitions(-DWITH_GUARDEDALLOC)
+endif()
+
 # Build makesrna executable
 blender_include_dirs(
 	.
 	..
 	../../blenkernel
-	../../blenloader
 	../../blenlib
 	../../bmesh
 	../../blenfont

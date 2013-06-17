@@ -72,6 +72,8 @@
 #include "RNA_access.h"
 #include "RNA_define.h"
 
+#include "BLF_translation.h"
+
 #include "PIL_time.h"
 
 #include "UI_view2d.h"
@@ -80,7 +82,7 @@
 
 /********************** add marker operator *********************/
 
-static void add_marker(const bContext *C, float x, float y)
+static bool add_marker(const bContext *C, float x, float y)
 {
 	SpaceClip *sc = CTX_wm_space_clip(C);
 	MovieClip *clip = ED_space_clip_get_clip(sc);
@@ -92,11 +94,17 @@ static void add_marker(const bContext *C, float x, float y)
 
 	ED_space_clip_get_size(sc, &width, &height);
 
+	if (width == 0 || height == 0) {
+		return false;
+	}
+
 	track = BKE_tracking_track_add(tracking, tracksbase, x, y, framenr, width, height);
 
 	BKE_tracking_track_select(tracksbase, track, TRACK_AREA_ALL, 0);
 
 	clip->tracking.act_track = track;
+
+	return true;
 }
 
 static int add_marker_exec(bContext *C, wmOperator *op)
@@ -104,16 +112,12 @@ static int add_marker_exec(bContext *C, wmOperator *op)
 	SpaceClip *sc = CTX_wm_space_clip(C);
 	MovieClip *clip = ED_space_clip_get_clip(sc);
 	float pos[2];
-	int width, height;
-
-	ED_space_clip_get_size(sc, &width, &height);
-
-	if (!width || !height)
-		return OPERATOR_CANCELLED;
 
 	RNA_float_get_array(op->ptr, "location", pos);
 
-	add_marker(C, pos[0], pos[1]);
+	if (!add_marker(C, pos[0], pos[1])) {
+		return OPERATOR_CANCELLED;
+	}
 
 	/* reset offset from locked position, so frame jumping wouldn't be so confusing */
 	sc->xlockof = 0;
@@ -129,11 +133,12 @@ static int add_marker_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 	SpaceClip *sc = CTX_wm_space_clip(C);
 	ARegion *ar = CTX_wm_region(C);
 
-	float co[2];
-
-	ED_clip_mouse_pos(sc, ar, event->mval, co);
-
-	RNA_float_set_array(op->ptr, "location", co);
+	if (!RNA_struct_property_is_set(op->ptr, "location")) {
+		/* If location is not set, use mouse positio nas default. */
+		float co[2];
+		ED_clip_mouse_pos(sc, ar, event->mval, co);
+		RNA_float_set_array(op->ptr, "location", co);
+	}
 
 	return add_marker_exec(C, op);
 }
@@ -156,6 +161,69 @@ void CLIP_OT_add_marker(wmOperatorType *ot)
 	/* properties */
 	RNA_def_float_vector(ot->srna, "location", 2, NULL, -FLT_MAX, FLT_MAX,
 	                     "Location", "Location of marker on frame", -1.0f, 1.0f);
+}
+
+/********************** add marker operator *********************/
+
+static int add_marker_at_click_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
+{
+	ED_area_headerprint(CTX_wm_area(C), IFACE_("Use LMB click to define location where place the marker"));
+
+	/* add modal handler for ESC */
+	WM_event_add_modal_handler(C, op);
+
+	return OPERATOR_RUNNING_MODAL;
+}
+
+static int add_marker_at_click_modal(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
+{
+	SpaceClip *sc = CTX_wm_space_clip(C);
+	MovieClip *clip = ED_space_clip_get_clip(sc);
+	ARegion *ar = CTX_wm_region(C);
+	float pos[2];
+
+	switch (event->type) {
+		case MOUSEMOVE:
+			return OPERATOR_RUNNING_MODAL;
+			break;
+
+		case LEFTMOUSE:
+			ED_area_headerprint(CTX_wm_area(C), NULL);
+
+			ED_clip_point_stable_pos(sc, ar,
+			                         event->x - ar->winrct.xmin,
+			                         event->y - ar->winrct.ymin,
+			                         &pos[0], &pos[1]);
+
+			if (!add_marker(C, pos[0], pos[1]))
+				return OPERATOR_CANCELLED;
+
+			WM_event_add_notifier(C, NC_MOVIECLIP | NA_EDITED, clip);
+			return OPERATOR_FINISHED;
+			break;
+
+		case ESCKEY:
+			ED_area_headerprint(CTX_wm_area(C), NULL);
+			return OPERATOR_CANCELLED;
+	}
+
+	return OPERATOR_PASS_THROUGH;
+}
+
+void CLIP_OT_add_marker_at_click(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Add Marker at Click";
+	ot->idname = "CLIP_OT_add_marker_at_click";
+	ot->description = "Place new marker at the desired (clicked) position";
+
+	/* api callbacks */
+	ot->invoke = add_marker_at_click_invoke;
+	ot->poll = ED_space_clip_tracking_poll;
+	ot->modal = add_marker_at_click_modal;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_BLOCKING;
 }
 
 /********************** delete track operator *********************/
@@ -1323,6 +1391,50 @@ void CLIP_OT_track_markers(wmOperatorType *ot)
 	RNA_def_boolean(ot->srna, "sequence", 0, "Track Sequence", "Track marker during image sequence rather than single image");
 }
 
+/********************** refine track position operator *********************/
+
+static int refine_marker_exec(bContext *C, wmOperator *op)
+{
+	SpaceClip *sc = CTX_wm_space_clip(C);
+	MovieClip *clip = ED_space_clip_get_clip(sc);
+	MovieTracking *tracking = &clip->tracking;
+	ListBase *tracksbase = BKE_tracking_get_active_tracks(tracking);
+	MovieTrackingTrack *track;
+	bool backwards = RNA_boolean_get(op->ptr, "backwards");
+	int framenr = ED_space_clip_get_clip_frame_number(sc);
+
+	for (track = tracksbase->first; track; track = track->next) {
+		if (TRACK_VIEW_SELECTED(sc, track)) {
+			MovieTrackingMarker *marker = BKE_tracking_marker_get(track, framenr);
+
+			BKE_tracking_refine_marker(clip, track, marker, backwards);
+		}
+	}
+
+	WM_event_add_notifier(C, NC_MOVIECLIP | NA_EVALUATED, clip);
+
+	return OPERATOR_FINISHED;
+}
+
+void CLIP_OT_refine_markers(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Refine Markers";
+	ot->description = "Refine selected markers positions "
+	                  "by running the tracker from track's reference to current frame";
+	ot->idname = "CLIP_OT_refine_markers";
+
+	/* api callbacks */
+	ot->exec = refine_marker_exec;
+	ot->poll = ED_space_clip_tracking_poll;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+	/* properties */
+	RNA_def_boolean(ot->srna, "backwards", 0, "Backwards", "Do backwards tracking");
+}
+
 /********************** solve camera operator *********************/
 
 typedef struct {
@@ -1815,7 +1927,7 @@ static void object_solver_inverted_matrix(Scene *scene, Object *ob, float invmat
 				BKE_object_where_is_calc_mat4(scene, cam, invmat);
 			}
 
-			mult_m4_m4m4(invmat, invmat, data->invmat);
+			mul_m4_m4m4(invmat, invmat, data->invmat);
 
 			found = TRUE;
 		}
@@ -2019,7 +2131,7 @@ static void set_axis(Scene *scene,  Object *ob, MovieClip *clip, MovieTrackingOb
 	if (is_camera) {
 		invert_m4(mat);
 
-		mult_m4_m4m4(mat, mat, obmat);
+		mul_m4_m4m4(mat, mat, obmat);
 	}
 	else {
 		if (!flip) {
@@ -2036,7 +2148,7 @@ static void set_axis(Scene *scene,  Object *ob, MovieClip *clip, MovieTrackingOb
 			mul_serie_m4(mat, lmat, mat, ilmat, obmat, NULL, NULL, NULL, NULL);
 		}
 		else {
-			mult_m4_m4m4(mat, obmat, mat);
+			mul_m4_m4m4(mat, obmat, mat);
 		}
 	}
 
@@ -2128,14 +2240,14 @@ static int set_plane_exec(bContext *C, wmOperator *op)
 		invert_m4(mat);
 
 		BKE_object_to_mat4(object, obmat);
-		mult_m4_m4m4(mat, mat, obmat);
-		mult_m4_m4m4(newmat, rot, mat);
+		mul_m4_m4m4(mat, mat, obmat);
+		mul_m4_m4m4(newmat, rot, mat);
 		BKE_object_apply_mat4(object, newmat, 0, 0);
 
 		/* make camera have positive z-coordinate */
 		if (object->loc[2] < 0) {
 			invert_m4(rot);
-			mult_m4_m4m4(newmat, rot, mat);
+			mul_m4_m4m4(newmat, rot, mat);
 			BKE_object_apply_mat4(object, newmat, 0, 0);
 		}
 	}
@@ -2253,7 +2365,7 @@ void CLIP_OT_set_axis(wmOperatorType *ot)
 
 /********************** set scale operator *********************/
 
-static int do_set_scale(bContext *C, wmOperator *op, int scale_solution)
+static int do_set_scale(bContext *C, wmOperator *op, bool scale_solution, bool apply_scale)
 {
 	SpaceClip *sc = CTX_wm_space_clip(C);
 	MovieClip *clip = ED_space_clip_get_clip(sc);
@@ -2274,11 +2386,13 @@ static int do_set_scale(bContext *C, wmOperator *op, int scale_solution)
 		return OPERATOR_CANCELLED;
 	}
 
-	object = get_orientation_object(C);
-	if (!object) {
-		BKE_report(op->reports, RPT_ERROR, "No object to apply orientation on");
+	if (!scale_solution && !apply_scale) {
+		object = get_orientation_object(C);
+		if (!object) {
+			BKE_report(op->reports, RPT_ERROR, "No object to apply orientation on");
 
-		return OPERATOR_CANCELLED;
+			return OPERATOR_CANCELLED;
+		}
 	}
 
 	BKE_tracking_get_camera_object_matrix(scene, camera, mat);
@@ -2298,32 +2412,52 @@ static int do_set_scale(bContext *C, wmOperator *op, int scale_solution)
 	if (len_v3(vec[0]) > 1e-5f) {
 		scale = dist / len_v3(vec[0]);
 
-		if (tracking_object->flag & TRACKING_OBJECT_CAMERA) {
-			mul_v3_fl(object->size, scale);
-			mul_v3_fl(object->loc, scale);
-		}
-		else if (!scale_solution) {
-			Object *solver_camera = object_solver_camera(scene, object);
+		if (apply_scale) {
+			/* Apply scale on reconstructed scene itself */
+			MovieTrackingReconstruction *reconstruction = BKE_tracking_get_active_reconstruction(tracking);
+			MovieReconstructedCamera *reconstructed_cameras;
+			int i;
 
-			object->size[0] = object->size[1] = object->size[2] = 1.0f / scale;
-
-			if (solver_camera) {
-				object->size[0] /= solver_camera->size[0];
-				object->size[1] /= solver_camera->size[1];
-				object->size[2] /= solver_camera->size[2];
+			for (track = tracksbase->first; track; track = track->next) {
+				mul_v3_fl(track->bundle_pos, scale);
 			}
+
+			reconstructed_cameras = reconstruction->cameras;
+			for (i = 0; i < reconstruction->camnr; i++) {
+				mul_v3_fl(reconstructed_cameras[i].mat[3], scale);
+			}
+
+			WM_event_add_notifier(C, NC_MOVIECLIP | NA_EVALUATED, clip);
+			WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 		}
 		else {
-			tracking_object->scale = scale;
+			if (tracking_object->flag & TRACKING_OBJECT_CAMERA) {
+				mul_v3_fl(object->size, scale);
+				mul_v3_fl(object->loc, scale);
+			}
+			else if (!scale_solution) {
+				Object *solver_camera = object_solver_camera(scene, object);
+
+				object->size[0] = object->size[1] = object->size[2] = 1.0f / scale;
+
+				if (solver_camera) {
+					object->size[0] /= solver_camera->size[0];
+					object->size[1] /= solver_camera->size[1];
+					object->size[2] /= solver_camera->size[2];
+				}
+			}
+			else {
+				tracking_object->scale = scale;
+			}
+
+			DAG_id_tag_update(&clip->id, 0);
+
+			if (object)
+				DAG_id_tag_update(&object->id, OB_RECALC_OB);
+
+			WM_event_add_notifier(C, NC_MOVIECLIP | NA_EVALUATED, clip);
+			WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 		}
-
-		DAG_id_tag_update(&clip->id, 0);
-
-		if (object)
-			DAG_id_tag_update(&object->id, OB_RECALC_OB);
-
-		WM_event_add_notifier(C, NC_MOVIECLIP | NA_EVALUATED, clip);
-		WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	}
 
 	return OPERATOR_FINISHED;
@@ -2331,7 +2465,7 @@ static int do_set_scale(bContext *C, wmOperator *op, int scale_solution)
 
 static int set_scale_exec(bContext *C, wmOperator *op)
 {
-	return do_set_scale(C, op, 0);
+	return do_set_scale(C, op, false, false);
 }
 
 static int set_scale_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
@@ -2387,7 +2521,7 @@ static int set_solution_scale_poll(bContext *C)
 
 static int set_solution_scale_exec(bContext *C, wmOperator *op)
 {
-	return do_set_scale(C, op, 1);
+	return do_set_scale(C, op, true, false);
 }
 
 static int set_solution_scale_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
@@ -2412,6 +2546,62 @@ void CLIP_OT_set_solution_scale(wmOperatorType *ot)
 	ot->exec = set_solution_scale_exec;
 	ot->invoke = set_solution_scale_invoke;
 	ot->poll = set_solution_scale_poll;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+	/* properties */
+	RNA_def_float(ot->srna, "distance", 0.0f, -FLT_MAX, FLT_MAX,
+	              "Distance", "Distance between selected tracks", -100.0f, 100.0f);
+}
+
+/********************** apply solution scale operator *********************/
+
+static int apply_solution_scale_poll(bContext *C)
+{
+	SpaceClip *sc = CTX_wm_space_clip(C);
+
+	if (sc) {
+		MovieClip *clip = ED_space_clip_get_clip(sc);
+
+		if (clip) {
+			MovieTracking *tracking = &clip->tracking;
+			MovieTrackingObject *tracking_object = BKE_tracking_object_get_active(tracking);
+
+			return tracking_object->flag & TRACKING_OBJECT_CAMERA;
+		}
+	}
+
+	return FALSE;
+}
+
+static int apply_solution_scale_exec(bContext *C, wmOperator *op)
+{
+	return do_set_scale(C, op, false, true);
+}
+
+static int apply_solution_scale_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
+{
+	SpaceClip *sc = CTX_wm_space_clip(C);
+	MovieClip *clip = ED_space_clip_get_clip(sc);
+
+	if (!RNA_struct_property_is_set(op->ptr, "distance"))
+		RNA_float_set(op->ptr, "distance", clip->tracking.settings.dist);
+
+	return apply_solution_scale_exec(C, op);
+}
+
+void CLIP_OT_apply_solution_scale(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Apply Solution Scale";
+	ot->description = "Apply scale on solution itself to make distance between selected tracks equals to desired";
+	ot->idname = "CLIP_OT_apply_solution_scale";
+
+	/* api callbacks */
+	ot->exec = apply_solution_scale_exec;
+	ot->invoke = apply_solution_scale_invoke;
+	ot->poll = apply_solution_scale_poll;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;

@@ -50,6 +50,7 @@
 #include "UI_resources.h"
 
 #include "ED_screen.h"
+#include "ED_mesh.h"
 
 #include "transform.h"
 
@@ -146,7 +147,6 @@ EnumPropertyItem transform_mode_types[] =
 	{TFM_TIME_SCALE, "TIME_SCALE", 0, "Time_Scale", ""},
 	{TFM_TIME_EXTEND, "TIME_EXTEND", 0, "Time_Extend", ""},
 	{TFM_BAKE_TIME, "BAKE_TIME", 0, "Bake_Time", ""},
-	{TFM_BEVEL, "BEVEL", 0, "Bevel", ""},
 	{TFM_BWEIGHT, "BWEIGHT", 0, "Bweight", ""},
 	{TFM_ALIGN, "ALIGN", 0, "Align", ""},
 	{TFM_EDGE_SLIDE, "EDGESLIDE", 0, "Edge Slide", ""},
@@ -252,7 +252,8 @@ static int create_orientation_exec(bContext *C, wmOperator *op)
 	char name[MAX_NAME];
 	int use = RNA_boolean_get(op->ptr, "use");
 	int overwrite = RNA_boolean_get(op->ptr, "overwrite");
-	
+	int use_view = RNA_boolean_get(op->ptr, "use_view");
+
 	RNA_string_get(op->ptr, "name", name);
 
 	if (use && !CTX_wm_view3d(C)) {
@@ -260,17 +261,12 @@ static int create_orientation_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 
-	BIF_createTransformOrientation(C, op->reports, name, use, overwrite);
+	BIF_createTransformOrientation(C, op->reports, name, use_view, use, overwrite);
 
 	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, CTX_wm_view3d(C));
 	WM_event_add_notifier(C, NC_SCENE | NA_EDITED, CTX_data_scene(C));
 	
 	return OPERATOR_FINISHED;
-}
-
-static int create_orientation_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
-{
-	return create_orientation_exec(C, op);
 }
 
 static void TRANSFORM_OT_create_orientation(struct wmOperatorType *ot)
@@ -282,18 +278,59 @@ static void TRANSFORM_OT_create_orientation(struct wmOperatorType *ot)
 	ot->flag   = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	/* api callbacks */
-	ot->invoke = create_orientation_invoke;
 	ot->exec   = create_orientation_exec;
 	ot->poll   = ED_operator_areaactive;
-	ot->flag   = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-	RNA_def_string(ot->srna, "name", "", MAX_NAME, "Name", "Text to insert at the cursor position");
-	RNA_def_boolean(ot->srna, "use", 0, "Use after creation", "Select orientation after its creation");
-	RNA_def_boolean(ot->srna, "overwrite", 0, "Overwrite previous", "Overwrite previously created orientation with same name");
+	RNA_def_string(ot->srna, "name", "", MAX_NAME, "Name", "Name of the new custom orientation");
+	RNA_def_boolean(ot->srna, "use_view", FALSE, "Use View",
+	                "Use the current view instead of the active object to create the new orientation");
+	RNA_def_boolean(ot->srna, "use", FALSE, "Use after creation", "Select orientation after its creation");
+	RNA_def_boolean(ot->srna, "overwrite", FALSE, "Overwrite previous",
+	                "Overwrite previously created orientation with same name");
 }
+
+
+#ifdef USE_LOOPSLIDE_HACK
+/**
+ * Special hack for MESH_OT_loopcut_slide so we get back to the selection mode
+ */
+static void transformops_loopsel_hack(bContext *C, wmOperator *op)
+{
+	if (op->type->idname == OP_EDGE_SLIDE) {
+		if (op->opm && op->opm->opm && op->opm->opm->prev) {
+			wmOperator *op_prev = op->opm->opm->prev;
+			Scene *scene = CTX_data_scene(C);
+			int mesh_select_mode[3];
+			PropertyRNA *prop = RNA_struct_find_property(op_prev->ptr, "mesh_select_mode_init");
+
+			if (prop && RNA_property_is_set(op_prev->ptr, prop)) {
+				ToolSettings *ts = scene->toolsettings;
+				short selectmode_orig;
+
+				RNA_property_boolean_get_array(op_prev->ptr, prop, mesh_select_mode);
+				selectmode_orig = ((mesh_select_mode[0] ? SCE_SELECT_VERTEX : 0) |
+				                   (mesh_select_mode[1] ? SCE_SELECT_EDGE   : 0) |
+				                   (mesh_select_mode[2] ? SCE_SELECT_FACE   : 0));
+
+				/* still switch if we were originally in face select mode */
+				if ((ts->selectmode != selectmode_orig) && (selectmode_orig != SCE_SELECT_FACE)) {
+					BMEditMesh *em = BKE_editmesh_from_object(scene->obedit);
+					em->selectmode = ts->selectmode = selectmode_orig;
+					EDBM_selectmode_set(em);
+				}
+			}
+		}
+	}
+}
+#endif  /* USE_LOOPSLIDE_HACK */
+
 
 static void transformops_exit(bContext *C, wmOperator *op)
 {
+#ifdef USE_LOOPSLIDE_HACK
+	transformops_loopsel_hack(C, op);
+#endif
+
 	saveTransform(C, op->customdata, op);
 	MEM_freeN(op->customdata);
 	op->customdata = NULL;
@@ -339,6 +376,7 @@ static int transform_modal(bContext *C, wmOperator *op, const wmEvent *event)
 	int exit_code;
 
 	TransInfo *t = op->customdata;
+	const enum TfmMode mode_prev = t->mode;
 
 #if 0
 	// stable 2D mouse coords map to different 3D coords while the 3D mouse is active
@@ -361,6 +399,28 @@ static int transform_modal(bContext *C, wmOperator *op, const wmEvent *event)
 	if ((exit_code & OPERATOR_RUNNING_MODAL) == 0) {
 		transformops_exit(C, op);
 		exit_code &= ~OPERATOR_PASS_THROUGH; /* preventively remove passthrough */
+	}
+	else {
+		if (mode_prev != t->mode) {
+			/* WARNING: this is not normal to switch operator types
+			 * normally it would not be supported but transform happens
+			 * to share callbacks between differernt operators. */
+			wmOperatorType *ot_new = NULL;
+			TransformModeItem *item = transform_modes;
+			while (item->idname) {
+				if (item->mode == t->mode) {
+					ot_new = WM_operatortype_find(item->idname, false);
+					break;
+				}
+				item++;
+			}
+
+			BLI_assert(ot_new != NULL);
+			if (ot_new) {
+				WM_operator_type_set(op, ot_new);
+			}
+			/* end suspicious code */
+		}
 	}
 
 	return exit_code;
@@ -990,6 +1050,15 @@ void transform_keymap_for_space(wmKeyConfig *keyconf, wmKeyMap *keymap, int spac
 			WM_keymap_add_item(keymap, "NODE_OT_translate_attach", GKEY, KM_PRESS, 0, 0);
 			WM_keymap_add_item(keymap, "NODE_OT_translate_attach", EVT_TWEAK_A, KM_ANY, 0, 0);
 			WM_keymap_add_item(keymap, "NODE_OT_translate_attach", EVT_TWEAK_S, KM_ANY, 0, 0);
+			/* NB: small trick: macro operator poll may fail due to library data edit,
+			 * in that case the secondary regular operators are called with same keymap.
+			 */
+			kmi = WM_keymap_add_item(keymap, "TRANSFORM_OT_translate", GKEY, KM_PRESS, 0, 0);
+			RNA_boolean_set(kmi->ptr, "release_confirm", TRUE);
+			kmi = WM_keymap_add_item(keymap, "TRANSFORM_OT_translate", EVT_TWEAK_A, KM_ANY, 0, 0);
+			RNA_boolean_set(kmi->ptr, "release_confirm", TRUE);
+			kmi = WM_keymap_add_item(keymap, "TRANSFORM_OT_translate", EVT_TWEAK_S, KM_ANY, 0, 0);
+			RNA_boolean_set(kmi->ptr, "release_confirm", TRUE);
 
 			WM_keymap_add_item(keymap, OP_ROTATION, RKEY, KM_PRESS, 0, 0);
 

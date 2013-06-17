@@ -351,6 +351,7 @@ static void UI_OT_eyedropper(wmOperatorType *ot)
 static int reset_default_theme_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	ui_theme_init_default();
+	ui_style_init_default();
 	WM_event_add_notifier(C, NC_WINDOW, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -551,7 +552,7 @@ static int copy_to_selected_button_poll(bContext *C)
 					if (use_path) {
 						lprop = NULL;
 						RNA_id_pointer_create(link->ptr.id.data, &idptr);
-						RNA_path_resolve(&idptr, path, &lptr, &lprop);
+						RNA_path_resolve_property(&idptr, path, &lptr, &lprop);
 					}
 					else {
 						lptr = link->ptr;
@@ -601,7 +602,7 @@ static int copy_to_selected_button_exec(bContext *C, wmOperator *op)
 					if (use_path) {
 						lprop = NULL;
 						RNA_id_pointer_create(link->ptr.id.data, &idptr);
-						RNA_path_resolve(&idptr, path, &lptr, &lprop);
+						RNA_path_resolve_property(&idptr, path, &lptr, &lprop);
 					}
 					else {
 						lptr = link->ptr;
@@ -733,7 +734,7 @@ static void ui_editsource_active_but_set(uiBut *but)
 
 static void ui_editsource_active_but_clear(void)
 {
-	BLI_ghash_free(ui_editsource_info->hash, NULL, (GHashValFreeFP)MEM_freeN);
+	BLI_ghash_free(ui_editsource_info->hash, NULL, MEM_freeN);
 	MEM_freeN(ui_editsource_info);
 	ui_editsource_info = NULL;
 }
@@ -853,7 +854,7 @@ static int editsource_exec(bContext *C, wmOperator *op)
 		ED_region_do_draw(C, ar);
 
 		for (BLI_ghashIterator_init(&ghi, ui_editsource_info->hash);
-		     BLI_ghashIterator_notDone(&ghi);
+		     BLI_ghashIterator_done(&ghi) == false;
 		     BLI_ghashIterator_step(&ghi))
 		{
 			uiBut *but_key = BLI_ghashIterator_getKey(&ghi);

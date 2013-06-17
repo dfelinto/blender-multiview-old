@@ -58,6 +58,7 @@
 #include "BKE_multires.h"
 #include "BKE_armature.h"
 #include "BKE_lattice.h"
+#include "BKE_tracking.h"
 
 #include "RNA_define.h"
 #include "RNA_access.h"
@@ -502,7 +503,7 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 			}
 			
 			/* update normals */
-			BKE_mesh_calc_normals_mapping(me->mvert, me->totvert, me->mloop, me->mpoly, me->totloop, me->totpoly, NULL, NULL, 0, NULL, NULL);
+			BKE_mesh_calc_normals(me);
 		}
 		else if (ob->type == OB_ARMATURE) {
 			ED_armature_apply_transform(ob, mat);
@@ -549,8 +550,21 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 				}
 			}
 		}
-		else
+		else if (ob->type == OB_CAMERA) {
+			MovieClip *clip = BKE_object_movieclip_get(scene, ob, FALSE);
+
+			/* applying scale on camera actually scales clip's reconstruction.
+			 * of there's clip assigned to camera nothing to do actually.
+			 */
+			if (!clip)
+				continue;
+
+			if (apply_scale)
+				BKE_tracking_reconstruction_scale(&clip->tracking, ob->size);
+		}
+		else {
 			continue;
+		}
 
 		if (apply_loc)
 			zero_v3(ob->loc);

@@ -672,7 +672,7 @@ void IMB_colormanagement_display_settings_from_ctx(const bContext *C,
 	*view_settings_r = &scene->view_settings;
 	*display_settings_r = &scene->display_settings;
 
-	if (sima) {
+	if (sima && sima->image) {
 		if ((sima->image->flag & IMA_VIEW_AS_RENDER) == 0)
 			*view_settings_r = NULL;
 	}
@@ -1274,8 +1274,10 @@ static float *display_buffer_apply_get_linear_buffer(DisplayBufferThread *handle
 
 		memcpy(linear_buffer, handle->buffer, buffer_size * sizeof(float));
 
-		IMB_colormanagement_transform(linear_buffer, width, height, channels,
-		                              from_colorspace, to_colorspace, TRUE);
+		if (!is_data && !is_data_display) {
+			IMB_colormanagement_transform(linear_buffer, width, height, channels,
+			                              from_colorspace, to_colorspace, TRUE);
+		}
 
 		*is_straight_alpha = false;
 	}
@@ -1859,6 +1861,30 @@ ImBuf *IMB_colormanagement_imbuf_for_write(ImBuf *ibuf, int save_as_render, int 
 	}
 
 	return colormanaged_ibuf;
+}
+
+void IMB_colormanagement_buffer_make_display_space(float *buffer, unsigned char *display_buffer,
+                                                   int width, int height, int channels, float dither,
+                                                   const ColorManagedViewSettings *view_settings,
+                                                   const ColorManagedDisplaySettings *display_settings)
+{
+	ColormanageProcessor *cm_processor;
+	size_t float_buffer_size = width * height * channels * sizeof(float);
+	float *display_buffer_float = MEM_mallocN(float_buffer_size, "byte_buffer_make_display_space");
+
+	memcpy(display_buffer_float, buffer, float_buffer_size);
+
+	cm_processor = IMB_colormanagement_display_processor_new(view_settings, display_settings);
+
+	processor_transform_apply_threaded(display_buffer_float, width, height, channels,
+	                                   cm_processor, TRUE);
+
+	IMB_buffer_byte_from_float(display_buffer, display_buffer_float,
+	                           channels, dither, IB_PROFILE_SRGB, IB_PROFILE_SRGB,
+	                           TRUE, width, height, width, width);
+
+	MEM_freeN(display_buffer_float);
+	IMB_colormanagement_processor_free(cm_processor);
 }
 
 static void imbuf_verify_float(ImBuf *ibuf)

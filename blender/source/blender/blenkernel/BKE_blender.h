@@ -41,8 +41,8 @@ extern "C" {
 /* these lines are grep'd, watch out for our not-so-awesome regex
  * and keep comment above the defines.
  * Use STRINGIFY() rather than defining with quotes */
-#define BLENDER_VERSION         266
-#define BLENDER_SUBVERSION      6
+#define BLENDER_VERSION         267
+#define BLENDER_SUBVERSION      1
 
 /* 262 was the last editmesh release but it has compatibility code for bmesh data */
 #define BLENDER_MINVERSION      262
@@ -50,7 +50,7 @@ extern "C" {
 
 /* used by packaging tools */
 /* can be left blank, otherwise a,b,c... etc with no quotes */
-#define BLENDER_VERSION_CHAR    a
+#define BLENDER_VERSION_CHAR    b
 /* alpha/beta/rc/release, docs use this */
 #define BLENDER_VERSION_CYCLE   alpha
 
@@ -96,7 +96,6 @@ extern void BKE_undo_step(struct bContext *C, int step);
 extern void BKE_undo_name(struct bContext *C, const char *name);
 extern int BKE_undo_valid(const char *name);
 extern void BKE_reset_undo(void);
-extern char *BKE_undo_menu_string(void);
 extern void BKE_undo_number(struct bContext *C, int nr);
 extern const char *BKE_undo_get_name(int nr, int *active);
 extern int BKE_undo_save_file(const char *filename);

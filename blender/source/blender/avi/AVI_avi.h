@@ -53,7 +53,7 @@
 #ifndef __AVI_AVI_H__
 #define __AVI_AVI_H__
 
-#include "MEM_sys_types.h"
+#include "BLI_sys_types.h"
 #include <stdio.h> /* for FILE */
 
 typedef struct _AviChunk {
@@ -257,7 +257,7 @@ AviError AVI_set_compress_option(AviMovie *movie,
                                  int stream,
                                  AviOption option,
                                  void *opt_data);
-/* Hmmm... there should be some explanantion about what these mean */
+/* Hmmm... there should be some explanation about what these mean */
 /**
  * Compression option, for use in avi_set_compress_option
  */

@@ -53,7 +53,11 @@
 #  include <sys/time.h>
 #endif
 
-#if defined(__APPLE__) && (PARALLEL == 1) && (__GNUC__ == 4) && (__GNUC_MINOR__ == 2)
+#if defined(__APPLE__) && defined(_OPENMP) && (__GNUC__ == 4) && (__GNUC_MINOR__ == 2)
+#  define USE_APPLE_OMP_FIX
+#endif
+
+#ifdef USE_APPLE_OMP_FIX
 /* ************** libgomp (Apple gcc 4.2.1) TLS bug workaround *************** */
 extern pthread_key_t gomp_tls_key;
 static void *thread_tls_data;
@@ -115,6 +119,7 @@ static pthread_mutex_t _movieclip_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _colormanage_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t mainid;
 static int thread_levels = 0;  /* threads can be invoked inside threads */
+static int num_threads_override = 0;
 
 /* just a max for security reasons */
 #define RE_MAX_THREAD BLENDER_MAX_THREADS
@@ -167,7 +172,7 @@ void BLI_init_threads(ListBase *threadbase, void *(*do_thread)(void *), int tot)
 	if (thread_levels == 0) {
 		MEM_set_lock_callback(BLI_lock_malloc_thread, BLI_unlock_malloc_thread);
 
-#if defined(__APPLE__) && (PARALLEL == 1) && (__GNUC__ == 4) && (__GNUC_MINOR__ == 2)
+#ifdef USE_APPLE_OMP_FIX
 		/* workaround for Apple gcc 4.2.1 omp vs background thread bug,
 		 * we copy gomp thread local storage pointer to setting it again
 		 * inside the thread that we start */
@@ -208,7 +213,7 @@ static void *tslot_thread_start(void *tslot_p)
 {
 	ThreadSlot *tslot = (ThreadSlot *)tslot_p;
 
-#if defined(__APPLE__) && (PARALLEL == 1) && (__GNUC__ == 4) && (__GNUC_MINOR__ == 2)
+#ifdef USE_APPLE_OMP_FIX
 	/* workaround for Apple gcc 4.2.1 omp vs background thread bug,
 	 * set gomp thread local storage pointer which was copied beforehand */
 	pthread_setspecific(gomp_tls_key, thread_tls_data);
@@ -322,6 +327,9 @@ int BLI_system_thread_count(void)
 	t = (int)sysconf(_SC_NPROCESSORS_ONLN);
 #   endif
 #endif
+
+	if (num_threads_override > 0)
+		return num_threads_override;
 	
 	if (t > RE_MAX_THREAD)
 		return RE_MAX_THREAD;
@@ -329,6 +337,16 @@ int BLI_system_thread_count(void)
 		return 1;
 	
 	return t;
+}
+
+void BLI_system_num_threads_override_set(int num)
+{
+	num_threads_override = num;
+}
+
+int BLI_system_num_threads_override_get(void)
+{
+	return num_threads_override;
 }
 
 /* Global Mutex Locks */
@@ -399,6 +417,19 @@ void BLI_mutex_end(ThreadMutex *mutex)
 	pthread_mutex_destroy(mutex);
 }
 
+ThreadMutex *BLI_mutex_alloc(void)
+{
+	ThreadMutex *mutex = MEM_callocN(sizeof(ThreadMutex), "ThreadMutex");
+	BLI_mutex_init(mutex);
+	return mutex;
+}
+
+void BLI_mutex_free(ThreadMutex *mutex)
+{
+	BLI_mutex_end(mutex);
+	MEM_freeN(mutex);
+}
+
 /* Spin Locks */
 
 void BLI_spin_init(SpinLock *spin)
@@ -462,6 +493,19 @@ void BLI_rw_mutex_unlock(ThreadRWMutex *mutex)
 void BLI_rw_mutex_end(ThreadRWMutex *mutex)
 {
 	pthread_rwlock_destroy(mutex);
+}
+
+ThreadRWMutex *BLI_rw_mutex_alloc(void)
+{
+	ThreadRWMutex *mutex = MEM_callocN(sizeof(ThreadRWMutex), "ThreadRWMutex");
+	BLI_rw_mutex_init(mutex);
+	return mutex;
+}
+
+void BLI_rw_mutex_free(ThreadRWMutex *mutex)
+{
+	BLI_rw_mutex_end(mutex);
+	MEM_freeN(mutex);
 }
 
 /* ************************************************ */

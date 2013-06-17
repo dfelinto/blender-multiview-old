@@ -710,7 +710,7 @@ void MeshImporter::bmeshConversion()
 		if ((*m).second) {
 			Mesh *me = (*m).second;
 			BKE_mesh_tessface_clear(me);
-			BKE_mesh_calc_normals_mapping(me->mvert, me->totvert, me->mloop, me->mpoly, me->totloop, me->totpoly, NULL, NULL, 0, NULL, NULL);
+			BKE_mesh_calc_normals(me);
 			//BKE_mesh_validate(me, 1);
 		}
 	}
@@ -1033,7 +1033,8 @@ Object *MeshImporter::create_mesh_object(COLLADAFW::Node *node, COLLADAFW::Insta
 	Mesh *new_mesh = uid_mesh_map[*geom_uid];
 
 	BKE_mesh_assign_object(ob, new_mesh);
-	
+	BKE_mesh_calc_normals(new_mesh);
+
 	if (old_mesh->id.us == 0) BKE_libblock_free(&G.main->mesh, old_mesh);
 	
 	char layername[100];

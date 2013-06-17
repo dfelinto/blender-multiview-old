@@ -60,7 +60,7 @@ static void copy_stack(bNodeStack *to, bNodeStack *from)
 
 static void *group_initexec(bNodeExecContext *context, bNode *node, bNodeInstanceKey key)
 {
-	bNodeTree *ngroup= (bNodeTree*)node->id;
+	bNodeTree *ngroup = (bNodeTree *)node->id;
 	void *exec;
 	
 	if (!ngroup)
@@ -74,7 +74,7 @@ static void *group_initexec(bNodeExecContext *context, bNode *node, bNodeInstanc
 
 static void group_freeexec(bNode *UNUSED(node), void *nodedata)
 {
-	bNodeTreeExec*gexec= (bNodeTreeExec*)nodedata;
+	bNodeTreeExec *gexec = (bNodeTreeExec *)nodedata;
 	
 	ntreeTexEndExecTree_internal(gexec);
 }
@@ -84,7 +84,7 @@ static void group_freeexec(bNode *UNUSED(node), void *nodedata)
  */
 static void group_copy_inputs(bNode *gnode, bNodeStack **in, bNodeStack *gstack)
 {
-	bNodeTree *ngroup = (bNodeTree*)gnode->id;
+	bNodeTree *ngroup = (bNodeTree *)gnode->id;
 	bNode *node;
 	bNodeSocket *sock;
 	bNodeStack *ns;
@@ -105,7 +105,7 @@ static void group_copy_inputs(bNode *gnode, bNodeStack **in, bNodeStack *gstack)
  */
 static void group_copy_outputs(bNode *gnode, bNodeStack **out, bNodeStack *gstack)
 {
-	bNodeTree *ngroup = (bNodeTree*)gnode->id;
+	bNodeTree *ngroup = (bNodeTree *)gnode->id;
 	bNode *node;
 	bNodeSocket *sock;
 	bNodeStack *ns;
@@ -118,14 +118,14 @@ static void group_copy_outputs(bNode *gnode, bNodeStack **out, bNodeStack *gstac
 				if (ns)
 					copy_stack(out[a], ns);
 			}
-			break;	/* only one active output node */
+			break;  /* only one active output node */
 		}
 	}
 }
 
 static void group_execute(void *data, int thread, struct bNode *node, bNodeExecData *execdata, struct bNodeStack **in, struct bNodeStack **out)
 {
-	bNodeTreeExec *exec= execdata->data;
+	bNodeTreeExec *exec = execdata->data;
 	bNodeThreadStack *nts;
 	
 	if (!exec)
@@ -136,7 +136,7 @@ static void group_execute(void *data, int thread, struct bNode *node, bNodeExecD
 	 */
 	{
 		bNode *inode;
-		for (inode=exec->nodetree->nodes.first; inode; inode=inode->next)
+		for (inode = exec->nodetree->nodes.first; inode; inode = inode->next)
 			inode->need_exec = 1;
 	}
 	
@@ -156,7 +156,7 @@ void register_node_type_tex_group(void)
 	/* NB: cannot use sh_node_type_base for node group, because it would map the node type
 	 * to the shared NODE_GROUP integer type id.
 	 */
-	node_type_base_custom(&ntype, "TextureNodeGroup", "Group", NODE_CLASS_GROUP, NODE_OPTIONS | NODE_CONST_OUTPUT);
+	node_type_base_custom(&ntype, "TextureNodeGroup", "Group", NODE_CLASS_GROUP, NODE_CONST_OUTPUT);
 	ntype.type = NODE_GROUP;
 	ntype.poll = tex_node_poll_default;
 	ntype.poll_instance = node_group_poll_instance;
@@ -166,10 +166,9 @@ void register_node_type_tex_group(void)
 	RNA_struct_blender_type_set(ntype.ext.srna, &ntype);
 	
 	node_type_socket_templates(&ntype, NULL, NULL);
-	node_type_size(&ntype, 120, 60, 200);
+	node_type_size(&ntype, 120, 60, 400);
 	node_type_label(&ntype, node_group_label);
 	node_type_update(&ntype, NULL, node_group_verify);
-	strcpy(ntype.group_tree_idname, "TextureNodeTree");
 	node_type_exec(&ntype, group_initexec, group_freeexec, group_execute);
 	
 	nodeRegisterType(&ntype);

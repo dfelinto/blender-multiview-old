@@ -101,7 +101,7 @@ static void special_transvert_update(Object *obedit)
 		
 		if (obedit->type == OB_MESH) {
 			BMEditMesh *em = BKE_editmesh_from_object(obedit);
-			BM_mesh_normals_update(em->bm, true);  /* does face centers too */
+			BM_mesh_normals_update(em->bm);
 		}
 		else if (ELEM(obedit->type, OB_CURVE, OB_SURF)) {
 			Curve *cu = obedit->data;
@@ -862,7 +862,7 @@ static void bundle_midpoint(Scene *scene, Object *ob, float vec[3])
 			BKE_tracking_camera_get_reconstructed_interpolate(tracking, object, scene->r.cfra, imat);
 			invert_m4(imat);
 
-			mult_m4_m4m4(obmat, cammat, imat);
+			mul_m4_m4m4(obmat, cammat, imat);
 		}
 
 		while (track) {
@@ -1014,6 +1014,14 @@ static int snap_curs_to_active(bContext *C, wmOperator *UNUSED(op))
 			}
 			
 			mul_m4_v3(obedit->obmat, curs);
+		}
+		else if (obedit->type == OB_LATTICE) {
+			BPoint *actbp = BKE_lattice_active_point_get(obedit->data);
+
+			if (actbp) {
+				copy_v3_v3(curs, actbp->vec);
+				mul_m4_v3(obedit->obmat, curs);
+			}
 		}
 	}
 	else {

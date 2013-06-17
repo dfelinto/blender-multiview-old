@@ -150,7 +150,7 @@ static BMOpDefine bmo_recalc_face_normals_def = {
 	"recalc_face_normals",
 	/* slots_in */
 	{{"faces", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}},
-	 {"use_flip", BMO_OP_SLOT_BOOL},  /* Reverse the result */
+	 {"use_face_tag", BMO_OP_SLOT_BOOL},  /* Tag faces that have been flipped */
 	 {{'\0'}},
 	},
 	{{{'\0'}}},  /* no output */
@@ -233,6 +233,7 @@ static BMOpDefine bmo_bisect_edges_def = {
 	/* slots_in */
 	{{"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* input edges */
 	 {"cuts", BMO_OP_SLOT_INT}, /* number of cuts */
+	 {"edge_percents", BMO_OP_SLOT_MAPPING, {BMO_OP_SLOT_SUBTYPE_MAP_FLT}},
 	 {{'\0'}},
 	},
 	/* slots_out */
@@ -514,15 +515,41 @@ static BMOpDefine bmo_bridge_loops_def = {
 	"bridge_loops",
 	/* slots_in */
 	{{"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* input edges */
-	 {"use_merge",        BMO_OP_SLOT_BOOL},
-	 {"merge_factor",         BMO_OP_SLOT_FLT},
+	 {"use_pairs",          BMO_OP_SLOT_BOOL},
+	 {"use_cyclic",         BMO_OP_SLOT_BOOL},
+	 {"use_merge",          BMO_OP_SLOT_BOOL},
+	 {"merge_factor",       BMO_OP_SLOT_FLT},
 	 {{'\0'}},
 	},
 	/* slots_out */
 	{{"faces.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}}, /* new faces */
+	 {"edges.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* new edges */
 	 {{'\0'}},
 	},
 	bmo_bridge_loops_exec,
+	BMO_OPTYPE_FLAG_NORMALS_CALC | BMO_OPTYPE_FLAG_SELECT_FLUSH,
+};
+
+/*
+ * Grid Fill.
+ *
+ * Create faces defined by 2 disconnected edge loops (which share edges).
+ */
+static BMOpDefine bmo_grid_fill_def = {
+	"grid_fill",
+	/* slots_in */
+	{{"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* input edges */
+	/* restricts edges to groups.  maps edges to integer */
+	 {"mat_nr",         BMO_OP_SLOT_INT},      /* material to use */
+	 {"use_smooth",     BMO_OP_SLOT_BOOL},     /* smooth state to use */
+	 {{'\0'}},
+	},
+	/* slots_out */
+	/* maps new faces to the group numbers they came from */
+	{{"faces.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}},     /* new faces */
+	 {{'\0'}},
+	},
+	bmo_grid_fill_exec,
 	BMO_OPTYPE_FLAG_NORMALS_CALC | BMO_OPTYPE_FLAG_SELECT_FLUSH,
 };
 
@@ -841,6 +868,7 @@ static BMOpDefine bmo_dissolve_verts_def = {
 	"dissolve_verts",
 	/* slots_in */
 	{{"verts", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT}},
+	 {"use_face_split", BMO_OP_SLOT_BOOL},
 	 {{'\0'}},
 	},
 	{{{'\0'}}},  /* no output */
@@ -913,6 +941,7 @@ static BMOpDefine bmo_dissolve_limit_def = {
 	 {"use_dissolve_boundaries", BMO_OP_SLOT_BOOL},
 	 {"verts", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT}},
 	 {"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}},
+	 {"delimit", BMO_OP_SLOT_INT},
 	 {{'\0'}},
 	},
 	{{{'\0'}}},  /* no output */
@@ -968,6 +997,7 @@ static BMOpDefine bmo_subdivide_edges_def = {
 	/* slots_in */
 	{{"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}},
 	 {"smooth", BMO_OP_SLOT_FLT},
+	 {"smooth_falloff", BMO_OP_SLOT_INT}, /* SUBD_FALLOFF_ROOT and friends */
 	 {"fractal", BMO_OP_SLOT_FLT},
 	 {"along_normal", BMO_OP_SLOT_FLT},
 	 {"cuts", BMO_OP_SLOT_INT},
@@ -980,6 +1010,7 @@ static BMOpDefine bmo_subdivide_edges_def = {
 	 {"use_single_edge", BMO_OP_SLOT_BOOL}, /* tessellate the case of one edge selected in a quad or triangle */
 	 {"use_only_quads", BMO_OP_SLOT_BOOL},  /* only subdivide quads (for loopcut) */
 	 {"use_sphere", BMO_OP_SLOT_BOOL},     /* for making new primitives only */
+	 {"use_smooth_even", BMO_OP_SLOT_BOOL},  /* maintain even offset when smoothing */
 	 {{'\0'}},
 	},
 	/* slots_out */
@@ -990,6 +1021,28 @@ static BMOpDefine bmo_subdivide_edges_def = {
 	 {{'\0'}},
 	},
 	bmo_subdivide_edges_exec,
+	BMO_OPTYPE_FLAG_UNTAN_MULTIRES | BMO_OPTYPE_FLAG_NORMALS_CALC | BMO_OPTYPE_FLAG_SELECT_FLUSH,
+};
+
+/*
+ * Subdivide Edge-Ring.
+ *
+ * Take an edge-ring, and supdivide with interpolation options.
+ */
+static BMOpDefine bmo_subdivide_edgering_def = {
+	"subdivide_edgering",
+	/* slots_in */
+	{{"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* input vertices */
+	 {"interp_mode", BMO_OP_SLOT_INT},
+	 {"smooth", BMO_OP_SLOT_FLT},
+	 {"cuts", BMO_OP_SLOT_INT},
+	 {"profile_shape", BMO_OP_SLOT_INT},
+	 {"profile_shape_factor", BMO_OP_SLOT_FLT},
+	 {{'\0'}},
+	},
+	{{"faces.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}}, /* output faces */
+	 {{'\0'}}},  /* no output */
+	bmo_subdivide_edgering_exec,
 	BMO_OPTYPE_FLAG_UNTAN_MULTIRES | BMO_OPTYPE_FLAG_NORMALS_CALC | BMO_OPTYPE_FLAG_SELECT_FLUSH,
 };
 
@@ -1224,27 +1277,6 @@ static BMOpDefine bmo_reverse_colors_def = {
 };
 
 /*
- * Shortest Path.
- *
- * Select the shortest path between 2 verts.
- */
-static BMOpDefine bmo_shortest_path_def = {
-	"shortest_path",
-	/* slots_in */
-	{{"vert_start", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE}},   /* start vertex */
-	 {"vert_end", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BMO_OP_SLOT_SUBTYPE_ELEM_IS_SINGLE}},     /* end vertex */
-	 {"type", BMO_OP_SLOT_INT},             /* type of selection */
-	 {{'\0'}},
-	},
-	/* slots_out */
-	{{"verts.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT}}, /* output vertices */
-	 {{'\0'}},
-	},
-	bmo_shortest_path_exec,
-	BMO_OPTYPE_FLAG_SELECT_FLUSH,
-};
-
-/*
  * Edge Split.
  *
  * Disconnects faces along input edges.
@@ -1449,6 +1481,7 @@ static BMOpDefine bmo_beautify_fill_def = {
 	/* slots_in */
 	{{"faces", BMO_OP_SLOT_ELEMENT_BUF, {BM_FACE}}, /* input faces */
 	 {"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}}, /* edges that can be flipped */
+	 {"use_restrict_tag", BMO_OP_SLOT_BOOL}, /* restrict edge rotation to mixed tagged vertices */
 	 {{'\0'}},
 	},
 	/* slots_out */
@@ -1512,6 +1545,7 @@ static BMOpDefine bmo_inset_individual_def = {
 	 {"depth", BMO_OP_SLOT_FLT},
 	 {"use_even_offset", BMO_OP_SLOT_BOOL},
 	 {"use_interpolate", BMO_OP_SLOT_BOOL},
+	 {"use_relative_offset", BMO_OP_SLOT_BOOL},
 	 {{'\0'}},
 	},
 	/* slots_out */
@@ -1694,6 +1728,7 @@ const BMOpDefine *bmo_opdefines[] = {
 	&bmo_extrude_face_region_def,
 	&bmo_extrude_vert_indiv_def,
 	&bmo_find_doubles_def,
+	&bmo_grid_fill_def,
 	&bmo_inset_individual_def,
 	&bmo_inset_region_def,
 	&bmo_join_triangles_def,
@@ -1714,7 +1749,6 @@ const BMOpDefine *bmo_opdefines[] = {
 	&bmo_rotate_edges_def,
 	&bmo_rotate_uvs_def,
 	&bmo_scale_def,
-	&bmo_shortest_path_def,
 	&bmo_similar_edges_def,
 	&bmo_similar_faces_def,
 	&bmo_similar_verts_def,
@@ -1725,6 +1759,7 @@ const BMOpDefine *bmo_opdefines[] = {
 	&bmo_split_def,
 	&bmo_split_edges_def,
 	&bmo_subdivide_edges_def,
+	&bmo_subdivide_edgering_def,
 	&bmo_symmetrize_def,
 	&bmo_transform_def,
 	&bmo_translate_def,

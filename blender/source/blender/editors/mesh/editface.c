@@ -179,23 +179,6 @@ void paintface_reveal(Object *ob)
 
 /* Set tface seams based on edge data, uses hash table to find seam edges. */
 
-static void hash_add_face(EdgeHash *ehash, MPoly *mp, MLoop *mloop)
-{
-	MLoop *ml, *ml_next;
-	int i = mp->totloop;
-
-	ml_next = mloop;       /* first loop */
-	ml = &ml_next[i - 1];  /* last loop */
-
-	while (i-- != 0) {
-		BLI_edgehash_insert(ehash, ml->v, ml_next->v, NULL);
-
-		ml = ml_next;
-		ml_next++;
-	}
-}
-
-
 static void select_linked_tfaces_with_seams(int mode, Mesh *me, unsigned int index)
 {
 	EdgeHash *ehash, *seamhash;
@@ -217,7 +200,7 @@ static void select_linked_tfaces_with_seams(int mode, Mesh *me, unsigned int ind
 	if (mode == 0 || mode == 1) {
 		/* only put face under cursor in array */
 		mp = ((MPoly *)me->mpoly) + index;
-		hash_add_face(ehash, mp, me->mloop + mp->loopstart);
+		BKE_mesh_poly_edgehash_insert(ehash, mp, me->mloop + mp->loopstart);
 		linkflag[index] = 1;
 	}
 	else {
@@ -228,7 +211,7 @@ static void select_linked_tfaces_with_seams(int mode, Mesh *me, unsigned int ind
 				/* pass */
 			}
 			else if (mp->flag & ME_FACE_SEL) {
-				hash_add_face(ehash, mp, me->mloop + mp->loopstart);
+				BKE_mesh_poly_edgehash_insert(ehash, mp, me->mloop + mp->loopstart);
 				linkflag[a] = 1;
 			}
 		}
@@ -257,7 +240,7 @@ static void select_linked_tfaces_with_seams(int mode, Mesh *me, unsigned int ind
 
 				if (mark) {
 					linkflag[a] = 1;
-					hash_add_face(ehash, mp, me->mloop + mp->loopstart);
+					BKE_mesh_poly_edgehash_insert(ehash, mp, me->mloop + mp->loopstart);
 					do_it = true;
 				}
 			}
@@ -411,79 +394,6 @@ bool paintface_minmax(Object *ob, float r_min[3], float r_max[3])
 
 	return ok;
 }
-
-/* *************************************** */
-#if 0
-static void seam_edgehash_insert_face(EdgeHash *ehash, MPoly *mp, MLoop *loopstart)
-{
-	MLoop *ml1, *ml2;
-	int a;
-
-	for (a = 0; a < mp->totloop; a++) {
-		ml1 = loopstart + a;
-		ml2 = loopstart + (a + 1) % mp->totloop;
-
-		BLI_edgehash_insert(ehash, ml1->v, ml2->v, NULL);
-	}
-}
-
-void seam_mark_clear_tface(Scene *scene, short mode)
-{
-	Mesh *me;
-	MPoly *mp;
-	MLoop *ml1, *ml2;
-	MEdge *med;
-	int a, b;
-	
-	me = BKE_mesh_from_object(OBACT);
-	if (me == 0 ||  me->totpoly == 0) return;
-
-	if (mode == 0)
-		mode = pupmenu(IFACE_("Seams %t|Mark Border Seam %x1|Clear Seam %x2"));
-
-	if (mode != 1 && mode != 2)
-		return;
-
-	if (mode == 2) {
-		EdgeHash *ehash = BLI_edgehash_new();
-
-		for (a = 0, mp = me->mpoly; a < me->totpoly; a++, mp++)
-			if (!(mp->flag & ME_HIDE) && (mp->flag & ME_FACE_SEL))
-				seam_edgehash_insert_face(ehash, mp, me->mloop + mp->loopstart);
-
-		for (a = 0, med = me->medge; a < me->totedge; a++, med++)
-			if (BLI_edgehash_haskey(ehash, med->v1, med->v2))
-				med->flag &= ~ME_SEAM;
-
-		BLI_edgehash_free(ehash, NULL);
-	}
-	else {
-		/* mark edges that are on both selected and deselected faces */
-		EdgeHash *ehash1 = BLI_edgehash_new();
-		EdgeHash *ehash2 = BLI_edgehash_new();
-
-		for (a = 0, mp = me->mpoly; a < me->totpoly; a++, mp++) {
-			if ((mp->flag & ME_HIDE) || !(mp->flag & ME_FACE_SEL))
-				seam_edgehash_insert_face(ehash1, mp, me->mloop + mp->loopstart);
-			else
-				seam_edgehash_insert_face(ehash2, mp, me->mloop + mp->loopstart);
-		}
-
-		for (a = 0, med = me->medge; a < me->totedge; a++, med++)
-			if (BLI_edgehash_haskey(ehash1, med->v1, med->v2) &&
-			    BLI_edgehash_haskey(ehash2, med->v1, med->v2))
-				med->flag |= ME_SEAM;
-
-		BLI_edgehash_free(ehash1, NULL);
-		BLI_edgehash_free(ehash2, NULL);
-	}
-
-// XXX	if (G.debug_value == 8)
-//		unwrap_lscm(1);
-
-	me->drawflag |= ME_DRAWSEAMS;
-}
-#endif
 
 bool paintface_mouse_select(struct bContext *C, Object *ob, const int mval[2], bool extend, bool deselect, bool toggle)
 {
@@ -750,7 +660,7 @@ void paintvert_select_ungrouped(Object *ob, bool extend, bool flush_flags)
 /* note, this is not the best place for the function to be but moved
  * here to for the purpose of syncing with bmesh */
 
-typedef int MirrTopoHash_t;
+typedef unsigned int MirrTopoHash_t;
 
 typedef struct MirrTopoVert_t {
 	MirrTopoHash_t hash;
@@ -815,6 +725,7 @@ void ED_mesh_mirrtopo_init(Mesh *me, const int ob_mode, MirrTopoStore_t *mesh_to
 	MirrTopoHash_t *topo_hash = NULL;
 	MirrTopoHash_t *topo_hash_prev = NULL;
 	MirrTopoVert_t *topo_pairs;
+	MirrTopoHash_t  topo_pass = 1;
 
 	intptr_t *index_lookup; /* direct access to mesh_topo_store->index_lookup */
 
@@ -860,15 +771,15 @@ void ED_mesh_mirrtopo_init(Mesh *me, const int ob_mode, MirrTopoStore_t *mesh_to
 
 		if (em) {
 			BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
-				topo_hash[BM_elem_index_get(eed->v1)] += topo_hash_prev[BM_elem_index_get(eed->v2)];
-				topo_hash[BM_elem_index_get(eed->v2)] += topo_hash_prev[BM_elem_index_get(eed->v1)];
+				topo_hash[BM_elem_index_get(eed->v1)] += topo_hash_prev[BM_elem_index_get(eed->v2)] * topo_pass;
+				topo_hash[BM_elem_index_get(eed->v2)] += topo_hash_prev[BM_elem_index_get(eed->v1)] * topo_pass;
 			}
 		}
 		else {
 			for (a = 0, medge = me->medge; a < me->totedge; a++, medge++) {
 				/* This can make really big numbers, wrapping around here is fine */
-				topo_hash[medge->v1] += topo_hash_prev[medge->v2];
-				topo_hash[medge->v2] += topo_hash_prev[medge->v1];
+				topo_hash[medge->v1] += topo_hash_prev[medge->v2] * topo_pass;
+				topo_hash[medge->v2] += topo_hash_prev[medge->v1] * topo_pass;
 			}
 		}
 		memcpy(topo_hash_prev, topo_hash, sizeof(MirrTopoHash_t) * totvert);
@@ -893,6 +804,8 @@ void ED_mesh_mirrtopo_init(Mesh *me, const int ob_mode, MirrTopoStore_t *mesh_to
 		}
 		/* Copy the hash calculated this iter, so we can use them next time */
 		memcpy(topo_hash_prev, topo_hash, sizeof(MirrTopoHash_t) * totvert);
+
+		topo_pass++;
 	}
 
 	/* Hash/Index pairs are needed for sorting to find index pairs */

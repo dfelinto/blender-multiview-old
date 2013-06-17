@@ -59,6 +59,7 @@ public:
 	{
 		_language = "Python";
 		_context = 0;
+		memset(&_freestyle_bmain, 0, sizeof(Main));
 		//Py_Initialize();
 	}
 
@@ -109,7 +110,8 @@ public:
 		return 0;
 	}
 
-	int interpretText(struct Text *text, const string& name) {
+	int interpretText(struct Text *text, const string& name)
+	{
 		initPath();
 
 		ReportList *reports = CTX_wm_reports(_context);
@@ -181,7 +183,6 @@ private:
 		BKE_text_unlink(&_freestyle_bmain, text);
 		BKE_libblock_free(&_freestyle_bmain.text, text);
 
-		//PyRun_SimpleString("from Freestyle import *");
 		_initialized = true;
 	}
 

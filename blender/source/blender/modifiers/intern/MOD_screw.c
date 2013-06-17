@@ -202,7 +202,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 		/* calc the matrix relative to the axis object */
 		invert_m4_m4(mtx_tmp_a, ob->obmat);
 		copy_m4_m4(mtx_tx_inv, ltmd->ob_axis->obmat);
-		mult_m4_m4m4(mtx_tx, mtx_tmp_a, mtx_tx_inv);
+		mul_m4_m4m4(mtx_tx, mtx_tmp_a, mtx_tx_inv);
 
 		/* calc the axis vec */
 		mul_mat3_m4_v3(mtx_tx, axis_vec); /* only rotation component */
@@ -897,8 +897,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 #endif
 
 	if ((ltmd->flag & MOD_SCREW_NORMAL_CALC) == 0) {
-		/* BMESH_TODO, we only need to get vertex normals here, this is way overkill */
-		CDDM_calc_normals(result);
+		result->dirty |= DM_DIRTY_NORMALS;
 	}
 
 	return result;
@@ -931,22 +930,6 @@ static void foreachObjectLink(
 	walk(userData, ob, &ltmd->ob_axis);
 }
 
-/* This dosnt work with material*/
-static DerivedMesh *applyModifierEM(
-        ModifierData *md,
-        Object *ob,
-        struct BMEditMesh *UNUSED(editData),
-        DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
-}
-
-static int dependsOnTime(ModifierData *UNUSED(md))
-{
-	return 0;
-}
-
-
 ModifierTypeInfo modifierType_Screw = {
 	/* name */              "Screw",
 	/* structName */        "ScrewModifierData",
@@ -964,13 +947,13 @@ ModifierTypeInfo modifierType_Screw = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  NULL,
 	/* freeData */          NULL,
 	/* isDisabled */        NULL,
 	/* updateDepgraph */    updateDepgraph,
-	/* dependsOnTime */     dependsOnTime,
+	/* dependsOnTime */     NULL,
 	/* dependsOnNormals */	NULL,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     NULL,

@@ -1133,8 +1133,8 @@ void material_drivers_update(Scene *scene, Material *ma, float ctime)
 	 */
 	if (ma->id.flag & LIB_DOIT)
 		return;
-	else
-		ma->id.flag |= LIB_DOIT;
+
+	ma->id.flag |= LIB_DOIT;
 	
 	/* material itself */
 	if (ma->adt && ma->adt->drivers.first) {
@@ -1145,6 +1145,8 @@ void material_drivers_update(Scene *scene, Material *ma, float ctime)
 	if (ma->nodetree) {
 		material_node_drivers_update(scene, ma->nodetree, ctime);
 	}
+
+	ma->id.flag &= ~LIB_DOIT;
 }
 	
 /* ****************** */
@@ -1595,7 +1597,15 @@ void paste_matcopybuf(Material *ma)
 		mtex = ma->mtex[a];
 		if (mtex) {
 			ma->mtex[a] = MEM_dupallocN(mtex);
-			if (mtex->tex) id_us_plus((ID *)mtex->tex);
+			if (mtex->tex) {
+				/* first check this is in main (we may have loaded another file) [#35500] */
+				if (BLI_findindex(&G.main->tex, mtex->tex) != -1) {
+					id_us_plus((ID *)mtex->tex);
+				}
+				else {
+					ma->mtex[a]->tex = NULL;
+				}
+			}
 		}
 	}
 

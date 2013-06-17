@@ -77,12 +77,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tpimd->random_position = pimd->random_position;
 }
 
-static int dependsOnTime(ModifierData *UNUSED(md))
-{
-	return 0;
-}
-
-static int isDisabled(ModifierData *md, int useRenderParams)
+static bool isDisabled(ModifierData *md, int useRenderParams)
 {
 	ParticleInstanceModifierData *pimd = (ParticleInstanceModifierData *)md;
 	ParticleSystem *psys;
@@ -391,17 +386,10 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	if (size)
 		MEM_freeN(size);
 
-	CDDM_calc_normals(result);
+	result->dirty |= DM_DIRTY_NORMALS;
 
 	return result;
 }
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
-}
-
 ModifierTypeInfo modifierType_ParticleInstance = {
 	/* name */              "ParticleInstance",
 	/* structName */        "ParticleInstanceModifierData",
@@ -418,13 +406,13 @@ ModifierTypeInfo modifierType_ParticleInstance = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  NULL,
 	/* freeData */          NULL,
 	/* isDisabled */        isDisabled,
 	/* updateDepgraph */    updateDepgraph,
-	/* dependsOnTime */     dependsOnTime,
+	/* dependsOnTime */     NULL,
 	/* dependsOnNormals */  NULL,
 	/* foreachObjectLink */ foreachObjectLink,
 	/* foreachIDLink */     NULL,

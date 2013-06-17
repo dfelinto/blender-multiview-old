@@ -180,6 +180,7 @@ void BKE_tracking_context_free(struct MovieTrackingContext *context);
 void BKE_tracking_context_sync(struct MovieTrackingContext *context);
 void BKE_tracking_context_sync_user(const struct MovieTrackingContext *context, struct MovieClipUser *user);
 int BKE_tracking_context_step(struct MovieTrackingContext *context);
+void BKE_tracking_refine_marker(struct MovieClip *clip, struct MovieTrackingTrack *track, struct MovieTrackingMarker *marker, int backwards);
 
 /* **** Camera solving **** */
 int BKE_tracking_reconstruction_check(struct MovieTracking *tracking, struct MovieTrackingObject *object,
@@ -194,6 +195,8 @@ void BKE_tracking_reconstruction_solve(struct MovieReconstructContext *context, 
                                        float *progress, char *stats_message, int message_size);
 int BKE_tracking_reconstruction_finish(struct MovieReconstructContext *context, struct MovieTracking *tracking);
 
+void BKE_tracking_reconstruction_scale(struct MovieTracking *tracking, float scale[3]);
+
 /* **** Feature detection **** */
 void BKE_tracking_detect_fast(struct MovieTracking *tracking, struct ListBase *tracksbase, struct ImBuf *imbuf,
                               int framenr, int margin, int min_trackness, int min_distance, struct bGPDlayer *layer,
@@ -201,10 +204,10 @@ void BKE_tracking_detect_fast(struct MovieTracking *tracking, struct ListBase *t
 
 /* **** 2D stabilization **** */
 void BKE_tracking_stabilization_data_get(struct MovieTracking *tracking, int framenr, int width, int height,
-                                         float loc[2], float *scale, float *angle);
+                                         float translation[2], float *scale, float *angle);
 struct ImBuf *BKE_tracking_stabilize_frame(struct MovieTracking *tracking, int framenr, struct ImBuf *ibuf,
-                                           float loc[2], float *scale, float *angle);
-void BKE_tracking_stabilization_data_to_mat4(int width, int height, float aspect, float loc[2],
+                                           float translation[2], float *scale, float *angle);
+void BKE_tracking_stabilization_data_to_mat4(int width, int height, float aspect, float translation[2],
                                              float scale, float angle, float mat[4][4]);
 
 /* Dopesheet */

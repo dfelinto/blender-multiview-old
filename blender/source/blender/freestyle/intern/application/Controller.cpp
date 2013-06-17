@@ -165,6 +165,11 @@ Controller::~Controller()
 		_inter = NULL;
 	}
 
+	if (_ProgressBar) {
+		delete _ProgressBar;
+		_ProgressBar = NULL;
+	}
+
 	//delete _current_dirs;
 }
 
@@ -280,7 +285,7 @@ int Controller::LoadMesh(Render *re, SceneRenderLayer *srl)
 	char cleaned[FILE_MAX];
 	BLI_strncpy(cleaned, iFileName, FILE_MAX);
 	BLI_cleanup_file(NULL, cleaned);
-	string basename = StringUtils::toAscii(string(cleaned));
+	string basename = string(cleaned);
 #endif
 
 	_ListOfModels.push_back("Blender_models");
@@ -828,17 +833,18 @@ void Controller::ResetRenderCount()
 	_render_count = 0;
 }
 
-Render *Controller::RenderStrokes(Render *re)
+Render *Controller::RenderStrokes(Render *re, bool render)
 {
 	_Chrono.start();
 	BlenderStrokeRenderer *blenderRenderer = new BlenderStrokeRenderer(re, ++_render_count);
-	_Canvas->Render(blenderRenderer);
+	if (render)
+		_Canvas->Render(blenderRenderer);
 	real d = _Chrono.stop();
 	if (G.debug & G_DEBUG_FREESTYLE) {
 		cout << "Temporary scene generation: " << d << endl;
 	}
 	_Chrono.start();
-	Render *freestyle_render = blenderRenderer->RenderScene(re);
+	Render *freestyle_render = blenderRenderer->RenderScene(re, render);
 	d = _Chrono.stop();
 	if (G.debug & G_DEBUG_FREESTYLE) {
 		cout << "Stroke rendering  : " << d << endl;
@@ -851,7 +857,7 @@ Render *Controller::RenderStrokes(Render *re)
 void Controller::InsertStyleModule(unsigned index, const char *iFileName)
 {
 	if (!BLI_testextensie(iFileName, ".py")) {
-		cerr << "Error: Cannot load \"" << StringUtils::toAscii(string(iFileName)) << "\", unknown extension" << endl;
+		cerr << "Error: Cannot load \"" << string(iFileName) << "\", unknown extension" << endl;
 		return;
 	}
 
@@ -1015,10 +1021,10 @@ void Controller::init_options()
 	Config::Path * cpath = Config::Path::getInstance();
 
 	// Directories
-	ViewMapIO::Options::setModelsPath(StringUtils::toAscii(cpath->getModelsPath()));
-	PythonInterpreter::Options::setPythonPath(StringUtils::toAscii(cpath->getPythonPath()));
-	TextureManager::Options::setPatternsPath(StringUtils::toAscii(cpath->getPatternsPath()));
-	TextureManager::Options::setBrushesPath(StringUtils::toAscii(cpath->getModelsPath()));
+	ViewMapIO::Options::setModelsPath(cpath->getModelsPath());
+	PythonInterpreter::Options::setPythonPath(cpath->getPythonPath());
+	TextureManager::Options::setPatternsPath(cpath->getPatternsPath());
+	TextureManager::Options::setBrushesPath(cpath->getModelsPath());
 
 	// ViewMap Format
 	ViewMapIO::Options::rmFlags(ViewMapIO::Options::FLOAT_VECTORS);

@@ -62,6 +62,7 @@
 #include "DNA_ipo_types.h" // XXX old animation system stuff... to be removed!
 #include "DNA_listBase.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_edgehash.h"
 #include "BLI_rand.h"
 #include "BLI_jitter.h"
@@ -70,7 +71,6 @@
 #include "BLI_kdtree.h"
 #include "BLI_kdopbvh.h"
 #include "BLI_threads.h"
-#include "BLI_utildefines.h"
 #include "BLI_linklist.h"
 
 #include "BKE_main.h"
@@ -341,6 +341,7 @@ void psys_calc_dmcache(Object *ob, DerivedMesh *dm, ParticleSystem *psys)
 	 *            each original elements can reference its derived elements
 	 */
 	Mesh *me= (Mesh*)ob->data;
+	bool use_modifier_stack= psys->part->use_modifier_stack;
 	PARTICLE_P;
 	
 	/* CACHE LOCATIONS */
@@ -351,17 +352,33 @@ void psys_calc_dmcache(Object *ob, DerivedMesh *dm, ParticleSystem *psys)
 
 		if (psys->part->from == PART_FROM_VERT) {
 			totdmelem= dm->getNumVerts(dm);
-			totelem= me->totvert;
-			origindex= dm->getVertDataArray(dm, CD_ORIGINDEX);
+
+			if (use_modifier_stack) {
+				totelem= totdmelem;
+				origindex= NULL;
+			}
+			else {
+				totelem= me->totvert;
+				origindex= dm->getVertDataArray(dm, CD_ORIGINDEX);
+			}
 		}
 		else { /* FROM_FACE/FROM_VOLUME */
 			totdmelem= dm->getNumTessFaces(dm);
-			totelem= me->totpoly;
-			origindex = dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
-			/* for face lookups we need the poly origindex too */
-			origindex_poly = dm->getPolyDataArray(dm, CD_ORIGINDEX);
-			if (origindex_poly == NULL) {
-				origindex = NULL;
+
+			if (use_modifier_stack) {
+				totelem= totdmelem;
+				origindex= NULL;
+				origindex_poly= NULL;
+			}
+			else {
+				totelem= me->totpoly;
+				origindex= dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
+
+				/* for face lookups we need the poly origindex too */
+				origindex_poly= dm->getPolyDataArray(dm, CD_ORIGINDEX);
+				if (origindex_poly == NULL) {
+					origindex= NULL;
+				}
 			}
 		}
 	
@@ -373,11 +390,16 @@ void psys_calc_dmcache(Object *ob, DerivedMesh *dm, ParticleSystem *psys)
 			node->link = SET_INT_IN_POINTER(i);
 
 			/* may be vertex or face origindex */
-			origindex_final = origindex ? origindex[i] : ORIGINDEX_NONE;
+			if (use_modifier_stack) {
+				origindex_final = i;
+			}
+			else {
+				origindex_final = origindex ? origindex[i] : ORIGINDEX_NONE;
 
-			/* if we have a poly source, do an index lookup */
-			if (origindex_poly && origindex_final != ORIGINDEX_NONE) {
-				origindex_final = origindex_poly[origindex_final];
+				/* if we have a poly source, do an index lookup */
+				if (origindex_poly && origindex_final != ORIGINDEX_NONE) {
+					origindex_final = origindex_poly[origindex_final];
+				}
 			}
 
 			if (origindex_final != ORIGINDEX_NONE) {
@@ -395,18 +417,27 @@ void psys_calc_dmcache(Object *ob, DerivedMesh *dm, ParticleSystem *psys)
 		/* cache the verts/faces! */
 		LOOP_PARTICLES {
 			if (pa->num < 0) {
-				pa->num_dmcache = -1;
+				pa->num_dmcache = DMCACHE_NOTFOUND;
 				continue;
 			}
 
 			if (psys->part->from == PART_FROM_VERT) {
-				if (nodearray[pa->num])
+				if (pa->num < totelem && nodearray[pa->num])
 					pa->num_dmcache= GET_INT_FROM_POINTER(nodearray[pa->num]->link);
+				else
+					pa->num_dmcache = DMCACHE_NOTFOUND;
 			}
 			else { /* FROM_FACE/FROM_VOLUME */
 				/* Note that sometimes the pa->num is over the nodearray size, this is bad, maybe there is a better place to fix this,
 				 * but for now passing NULL is OK. every face will be searched for the particle so its slower - Campbell */
-				pa->num_dmcache= psys_particle_dm_face_lookup(ob, dm, pa->num, pa->fuv, pa->num < totelem ? nodearray[pa->num] : NULL);
+				if (use_modifier_stack) {
+					if (pa->num < totelem && nodearray[pa->num])
+						pa->num_dmcache = GET_INT_FROM_POINTER(nodearray[pa->num]->link);
+					else
+						pa->num_dmcache = DMCACHE_NOTFOUND;
+				}
+				else
+					pa->num_dmcache= psys_particle_dm_face_lookup(ob, dm, pa->num, pa->fuv, pa->num < totelem ? nodearray[pa->num] : NULL);
 			}
 		}
 
@@ -419,11 +450,11 @@ void psys_calc_dmcache(Object *ob, DerivedMesh *dm, ParticleSystem *psys)
 		 * an invalid value, just in case */
 		
 		LOOP_PARTICLES
-			pa->num_dmcache = -1;
+			pa->num_dmcache = DMCACHE_NOTFOUND;
 	}
 }
 
-static void distribute_simple_children(Scene *scene, Object *ob, DerivedMesh *finaldm, ParticleSystem *psys, RNG *rng)
+static void distribute_simple_children(Scene *scene, Object *ob, DerivedMesh *finaldm, ParticleSystem *psys)
 {
 	ChildParticle *cpa = NULL;
 	int i, p;
@@ -440,9 +471,9 @@ static void distribute_simple_children(Scene *scene, Object *ob, DerivedMesh *fi
 					
 			/* create even spherical distribution inside unit sphere */
 			while (length>=1.0f) {
-				cpa->fuv[0]=2.0f*BLI_rng_get_float(rng)-1.0f;
-				cpa->fuv[1]=2.0f*BLI_rng_get_float(rng)-1.0f;
-				cpa->fuv[2]=2.0f*BLI_rng_get_float(rng)-1.0f;
+				cpa->fuv[0]=2.0f*BLI_frand()-1.0f;
+				cpa->fuv[1]=2.0f*BLI_frand()-1.0f;
+				cpa->fuv[2]=2.0f*BLI_frand()-1.0f;
 				length=len_v3(cpa->fuv);
 			}
 
@@ -872,7 +903,7 @@ static void distribute_threads_exec(ParticleThread *thread, ParticleData *pa, Ch
 						pa->foffset *= ctx->jit[p % (2 * ctx->jitlevel)];
 						break;
 					case PART_DISTR_RAND:
-						pa->foffset *= BLI_rng_get_float(ctx->sim.rng);
+						pa->foffset *= BLI_frand();
 						break;
 				}
 			}
@@ -1065,15 +1096,15 @@ static int distribute_threads_init_data(ParticleThread *threads, Scene *scene, D
 	if (from == PART_FROM_CHILD) {
 		/* Simple children */
 		if (part->childtype != PART_CHILD_FACES) {
-			BLI_rng_srandom(ctx->sim.rng, 31415926 + psys->seed + psys->child_seed);
-			distribute_simple_children(scene, ob, finaldm, psys, ctx->sim.rng);
+			BLI_srandom(31415926 + psys->seed + psys->child_seed);
+			distribute_simple_children(scene, ob, finaldm, psys);
 			return 0;
 		}
 	}
 	else {
 		/* Grid distribution */
 		if (part->distr==PART_DISTR_GRID && from != PART_FROM_VERT) {
-			BLI_rng_srandom(ctx->sim.rng, 31415926 + psys->seed);
+			BLI_srandom(31415926 + psys->seed);
 			dm= CDDM_from_mesh((Mesh*)ob->data, ob);
 			DM_ensure_tessface(dm);
 			distribute_grid(dm,psys);
@@ -1085,7 +1116,7 @@ static int distribute_threads_init_data(ParticleThread *threads, Scene *scene, D
 	/* Create trees and original coordinates if needed */
 	if (from == PART_FROM_CHILD) {
 		distr=PART_DISTR_RAND;
-		BLI_rng_srandom(ctx->sim.rng, 31415926 + psys->seed + psys->child_seed);
+		BLI_srandom(31415926 + psys->seed + psys->child_seed);
 		dm= finaldm;
 
 		/* BMESH ONLY */
@@ -1108,9 +1139,12 @@ static int distribute_threads_init_data(ParticleThread *threads, Scene *scene, D
 	}
 	else {
 		distr = part->distr;
-		BLI_rng_srandom(ctx->sim.rng, 31415926 + psys->seed);
+		BLI_srandom(31415926 + psys->seed);
 		
-		dm= CDDM_from_mesh((Mesh*)ob->data, ob);
+		if (psys->part->use_modifier_stack)
+			dm = finaldm;
+		else
+			dm= CDDM_from_mesh((Mesh*)ob->data, ob);
 
 		/* BMESH ONLY, for verts we don't care about tessfaces */
 		if (from != PART_FROM_VERT) {
@@ -1118,7 +1152,8 @@ static int distribute_threads_init_data(ParticleThread *threads, Scene *scene, D
 		}
 
 		/* we need orco for consistent distributions */
-		DM_add_vert_layer(dm, CD_ORCO, CD_ASSIGN, BKE_mesh_orco_verts_get(ob));
+		if (!CustomData_has_layer(&dm->vertData, CD_ORCO))
+			DM_add_vert_layer(dm, CD_ORCO, CD_ASSIGN, BKE_mesh_orco_verts_get(ob));
 
 		if (from == PART_FROM_VERT) {
 			MVert *mv= dm->getVertDataArray(dm, CD_MVERT);
@@ -1264,7 +1299,7 @@ static int distribute_threads_init_data(ParticleThread *threads, Scene *scene, D
 
 		for (p=0; p<totpart; p++) {
 			/* In theory element_sum[totelem] should be 1.0, but due to float errors this is not necessarily always true, so scale pos accordingly. */
-			pos= BLI_rng_get_float(ctx->sim.rng) * element_sum[totelem];
+			pos= BLI_frand() * element_sum[totelem];
 			particle_element[p] = distribute_binary_search(element_sum, totelem, pos);
 			particle_element[p] = MIN2(totelem-1, particle_element[p]);
 			jitter_offset[particle_element[p]] = pos;
@@ -1439,12 +1474,7 @@ ParticleThread *psys_threads_create(ParticleSimulationData *sim)
 {
 	ParticleThread *threads;
 	ParticleThreadContext *ctx;
-	int i, totthread;
-
-	if (sim->scene->r.mode & R_FIXED_THREADS)
-		totthread= sim->scene->r.threads;
-	else
-		totthread= BLI_system_thread_count();
+	int i, totthread = BKE_scene_num_threads(sim->scene);
 	
 	threads= MEM_callocN(sizeof(ParticleThread)*totthread, "ParticleThread");
 	ctx= MEM_callocN(sizeof(ParticleThreadContext), "ParticleThreadContext");
@@ -2916,9 +2946,9 @@ static void basic_force_cb(void *efdata_v, ParticleKey *state, float *force, flo
 
 	/* brownian force */
 	if (part->brownfac != 0.0f) {
-		force[0] += (BLI_rng_get_float(sim->rng)-0.5f) * part->brownfac;
-		force[1] += (BLI_rng_get_float(sim->rng)-0.5f) * part->brownfac;
-		force[2] += (BLI_rng_get_float(sim->rng)-0.5f) * part->brownfac;
+		force[0] += (BLI_frand()-0.5f) * part->brownfac;
+		force[1] += (BLI_frand()-0.5f) * part->brownfac;
+		force[2] += (BLI_frand()-0.5f) * part->brownfac;
 	}
 
 	if (part->flag & PART_ROT_DYN && epoint.ave)
@@ -3497,7 +3527,7 @@ static int collision_detect(ParticleData *pa, ParticleCollision *col, BVHTreeRay
 
 	return hit->index >= 0;
 }
-static int collision_response(ParticleData *pa, ParticleCollision *col, BVHTreeRayHit *hit, int kill, int dynamic_rotation, RNG *rng)
+static int collision_response(ParticleData *pa, ParticleCollision *col, BVHTreeRayHit *hit, int kill, int dynamic_rotation)
 {
 	ParticleCollisionElement *pce = &col->pce;
 	PartDeflect *pd = col->hit->pd;
@@ -3506,7 +3536,7 @@ static int collision_response(ParticleData *pa, ParticleCollision *col, BVHTreeR
 	float f = col->f + x * (1.0f - col->f);				/* time factor of collision between timestep */
 	float dt1 = (f - col->f) * col->total_time;			/* time since previous collision (in seconds) */
 	float dt2 = (1.0f - f) * col->total_time;			/* time left after collision (in seconds) */
-	int through = (BLI_rng_get_float(rng) < pd->pdef_perm) ? 1 : 0; /* did particle pass through the collision surface? */
+	int through = (BLI_frand() < pd->pdef_perm) ? 1 : 0; /* did particle pass through the collision surface? */
 
 	/* calculate exact collision location */
 	interp_v3_v3v3(co, col->co1, col->co2, x);
@@ -3531,8 +3561,8 @@ static int collision_response(ParticleData *pa, ParticleCollision *col, BVHTreeR
 		float v0_tan[3];/* tangential component of v0 */
 		float vc_tan[3];/* tangential component of collision surface velocity */
 		float v0_dot, vc_dot;
-		float damp = pd->pdef_damp + pd->pdef_rdamp * 2 * (BLI_rng_get_float(rng) - 0.5f);
-		float frict = pd->pdef_frict + pd->pdef_rfrict * 2 * (BLI_rng_get_float(rng) - 0.5f);
+		float damp = pd->pdef_damp + pd->pdef_rdamp * 2 * (BLI_frand() - 0.5f);
+		float frict = pd->pdef_frict + pd->pdef_rfrict * 2 * (BLI_frand() - 0.5f);
 		float distance, nor[3], dot;
 
 		CLAMP(damp,0.0f, 1.0f);
@@ -3740,7 +3770,7 @@ static void collision_check(ParticleSimulationData *sim, int p, float dfra, floa
 
 			if (collision_count == COLLISION_MAX_COLLISIONS)
 				collision_fail(pa, &col);
-			else if (collision_response(pa, &col, &hit, part->flag & PART_DIE_ON_COL, part->flag & PART_ROT_DYN, sim->rng)==0)
+			else if (collision_response(pa, &col, &hit, part->flag & PART_DIE_ON_COL, part->flag & PART_ROT_DYN)==0)
 				return;
 		}
 		else
@@ -4127,6 +4157,8 @@ static void dynamics_step(ParticleSimulationData *sim, float cfra)
 		return;
 	}
 
+	BLI_srandom(31415926 + (int)cfra + psys->seed);
+	/* for now do both, boids us 'rng' */
 	rng = BLI_rng_new_srandom(31415926 + (int)cfra + psys->seed);
 
 	psys_update_effectors(sim);
@@ -4825,8 +4857,6 @@ void particle_system_update(Scene *scene, Object *ob, ParticleSystem *psys)
 	if (!sim.psmd->dm)
 		return;
 
-	sim.rng = BLI_rng_new(0);
-
 	if (part->from != PART_FROM_VERT) {
 		DM_ensure_tessface(sim.psmd->dm);
 	}
@@ -4967,7 +4997,5 @@ void particle_system_update(Scene *scene, Object *ob, ParticleSystem *psys)
 	/* save matrix for duplicators, at rendertime the actual dupliobject's matrix is used so don't update! */
 	if (psys->renderdata==0)
 		invert_m4_m4(psys->imat, ob->obmat);
-	
-	BLI_rng_free(sim.rng);
 }
 

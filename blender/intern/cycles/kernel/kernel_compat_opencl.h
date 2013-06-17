@@ -26,6 +26,10 @@
 #define CCL_NAMESPACE_BEGIN
 #define CCL_NAMESPACE_END
 
+#ifdef __KERNEL_OPENCL_AMD__
+#define __CL_NO_FLOAT3__
+#endif
+
 #ifdef __CL_NO_FLOAT3__
 #define float3 float4
 #endif
@@ -94,11 +98,13 @@
 #define tanf(x) tan(((float)x))
 #define logf(x) log(((float)x))
 #define floorf(x) floor(((float)x))
+#define ceilf(x) ceil(((float)x))
 #define expf(x) exp(((float)x))
 #define hypotf(x, y) hypot(((float)x), ((float)y))
 #define atan2f(x, y) atan2(((float)x), ((float)y))
 #define fmaxf(x, y) fmax(((float)x), ((float)y))
 #define fminf(x, y) fmin(((float)x), ((float)y))
+#define fmodf(x, y) fmod((float)x, (float)y)
 
 /* data lookup defines */
 #define kernel_data (*kg->data)

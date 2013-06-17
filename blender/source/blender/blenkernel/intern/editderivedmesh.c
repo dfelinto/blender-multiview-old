@@ -74,10 +74,11 @@ typedef struct EditDerivedBMesh {
 	float (*polyNos)[3];
 } EditDerivedBMesh;
 
-static void emDM_calcNormals(DerivedMesh *UNUSED(dm))
+static void emDM_calcNormals(DerivedMesh *dm)
 {
 	/* Nothing to do: normals are already calculated and stored on the
 	 * BMVerts and BMFaces */
+	dm->dirty &= ~DM_DIRTY_NORMALS;
 }
 
 static void emDM_recalcTessellation(DerivedMesh *UNUSED(dm))
@@ -221,33 +222,28 @@ static void emDM_drawUVEdges(DerivedMesh *dm)
 	BMFace *efa;
 	BMIter iter;
 
+	const int cd_loop_uv_offset = CustomData_get_offset(&bm->ldata, CD_MLOOPUV);
+
+	if (UNLIKELY(cd_loop_uv_offset == -1)) {
+		return;
+	}
+
 	glBegin(GL_LINES);
 	BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
-		BMIter liter;
-		BMLoop *l;
-		MLoopUV *lastluv = NULL, *firstluv = NULL;
+		BMLoop *l_iter, *l_first;
+		const float *uv, *uv_prev;
 
 		if (BM_elem_flag_test(efa, BM_ELEM_HIDDEN))
 			continue;
 
-		BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
-			MLoopUV *luv = CustomData_bmesh_get(&bm->ldata, l->head.data, CD_MLOOPUV);
-
-			if (luv) {
-				if (lastluv)
-					glVertex2fv(luv->uv);
-				glVertex2fv(luv->uv);
-
-				lastluv = luv;
-				if (!firstluv)
-					firstluv = luv;
-			}
-		}
-
-		if (lastluv) {
-			glVertex2fv(lastluv->uv);
-			glVertex2fv(firstluv->uv);
-		}
+		l_iter = l_first = BM_FACE_FIRST_LOOP(efa);
+		uv_prev = ((MLoopUV *)BM_ELEM_CD_GET_VOID_P(l_iter->prev, cd_loop_uv_offset))->uv;
+		do {
+			uv = ((MLoopUV *)BM_ELEM_CD_GET_VOID_P(l_iter, cd_loop_uv_offset))->uv;
+			glVertex2fv(uv);
+			glVertex2fv(uv_prev);
+			uv_prev = uv;
+		} while ((l_iter = l_iter->next) != l_first);
 	}
 	glEnd();
 }
@@ -1312,6 +1308,7 @@ static void *emDM_getTessFaceDataArray(DerivedMesh *dm, int type)
 
 		if (index != -1) {
 			/* offset = bm->pdata.layers[index].offset; */ /* UNUSED */
+			BMLoop *(*looptris)[3] = bmdm->em->looptris;
 			const int size = CustomData_sizeof(type);
 			int i, j;
 
@@ -1322,20 +1319,29 @@ static void *emDM_getTessFaceDataArray(DerivedMesh *dm, int type)
 			data = datalayer = DM_get_tessface_data_layer(dm, type);
 
 			if (type == CD_MTFACE) {
+				const int cd_loop_uv_offset  = CustomData_get_offset(&bm->ldata, CD_MLOOPUV);
+				const int cd_poly_tex_offset = CustomData_get_offset(&bm->pdata, CD_MTEXPOLY);
+
 				for (i = 0; i < bmdm->em->tottri; i++, data += size) {
-					BMFace *efa = bmdm->em->looptris[i][0]->f;
-					bmdata = CustomData_bmesh_get(&bm->pdata, efa->head.data, CD_MTEXPOLY);
+					BMFace *efa = looptris[i][0]->f;
+
+					// bmdata = CustomData_bmesh_get(&bm->pdata, efa->head.data, CD_MTEXPOLY);
+					bmdata = BM_ELEM_CD_GET_VOID_P(efa, cd_poly_tex_offset);
+
 					ME_MTEXFACE_CPY(((MTFace *)data), ((MTexPoly *)bmdata));
 					for (j = 0; j < 3; j++) {
-						bmdata = CustomData_bmesh_get(&bm->ldata, bmdm->em->looptris[i][j]->head.data, CD_MLOOPUV);
+						// bmdata = CustomData_bmesh_get(&bm->ldata, looptris[i][j]->head.data, CD_MLOOPUV);
+						bmdata = BM_ELEM_CD_GET_VOID_P(looptris[i][j], cd_loop_uv_offset);
 						copy_v2_v2(((MTFace *)data)->uv[j], ((MLoopUV *)bmdata)->uv);
 					}
 				}
 			}
 			else {
+				const int cd_loop_color_offset  = CustomData_get_offset(&bm->ldata, CD_MLOOPCOL);
 				for (i = 0; i < bmdm->em->tottri; i++, data += size) {
 					for (j = 0; j < 3; j++) {
-						bmdata = CustomData_bmesh_get(&bm->ldata, bmdm->em->looptris[i][j]->head.data, CD_MLOOPCOL);
+						// bmdata = CustomData_bmesh_get(&bm->ldata, looptris[i][j]->head.data, CD_MLOOPCOL);
+						bmdata = BM_ELEM_CD_GET_VOID_P(looptris[i][j], cd_loop_color_offset);
 						MESH_MLOOPCOL_TO_MCOL(((MLoopCol *)bmdata), (((MCol *)data) + j));
 					}
 				}
@@ -1423,6 +1429,8 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 {
 	EditDerivedBMesh *bmdm = MEM_callocN(sizeof(*bmdm), __func__);
 	BMesh *bm = em->bm;
+	const int cd_dvert_offset = CustomData_get_offset(&bm->vdata, CD_MDEFORMVERT);
+	const int cd_skin_offset = CustomData_get_offset(&bm->vdata, CD_MVERT_SKIN);
 
 	bmdm->em = em;
 
@@ -1480,7 +1488,7 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 
 	bmdm->vertexCos = vertexCos;
 
-	if (CustomData_has_layer(&bm->vdata, CD_MDEFORMVERT)) {
+	if (cd_dvert_offset != -1) {
 		BMIter iter;
 		BMVert *eve;
 		int i;
@@ -1489,11 +1497,11 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 
 		BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
 			DM_set_vert_data(&bmdm->dm, i, CD_MDEFORMVERT,
-			                 CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MDEFORMVERT));
+			                 BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset));
 		}
 	}
 
-	if (CustomData_has_layer(&bm->vdata, CD_MVERT_SKIN)) {
+	if (cd_skin_offset != -1) {
 		BMIter iter;
 		BMVert *eve;
 		int i;
@@ -1502,8 +1510,7 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 
 		BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
 			DM_set_vert_data(&bmdm->dm, i, CD_MVERT_SKIN,
-			                 CustomData_bmesh_get(&bm->vdata, eve->head.data,
-			                                      CD_MVERT_SKIN));
+			                 BM_ELEM_CD_GET_VOID_P(eve, cd_skin_offset));
 		}
 	}
 
@@ -1533,9 +1540,8 @@ DerivedMesh *getEditDerivedBMesh(BMEditMesh *em,
 
 			/* following Mesh convention; we use vertex coordinate itself
 			 * for normal in this case */
-			if (normalize_v3(no) == 0.0f) {
-				copy_v3_v3(no, vertexCos[i]);
-				normalize_v3(no);
+			if (UNLIKELY(normalize_v3(no) == 0.0f)) {
+				normalize_v3_v3(no, vertexCos[i]);
 			}
 		}
 	}
@@ -1623,7 +1629,7 @@ static void statvis_calc_thickness(
         /* result */
         unsigned char (*r_face_colors)[4])
 {
-	const float eps_offset = 0.00001f;
+	const float eps_offset = 0.00002f;  /* values <= 0.00001 give errors */
 	float *face_dists = (float *)r_face_colors;  /* cheating */
 	const bool use_jit = samples < 32;
 	float jit_ofs[32][2];
@@ -1681,32 +1687,36 @@ static void statvis_calc_thickness(
 
 		normal_tri_v3(ray_no, cos[2], cos[1], cos[0]);
 
+#define FACE_RAY_TEST_ANGLE \
+		f_hit = BKE_bmbvh_ray_cast(bmtree, ray_co, ray_no, \
+		                           &dist, NULL, NULL); \
+		if (f_hit && dist < face_dists[index]) { \
+			float angle_fac = fabsf(dot_v3v3(ltri[0]->f->no, f_hit->no)); \
+			angle_fac = 1.0f - angle_fac; \
+			angle_fac = angle_fac * angle_fac * angle_fac; \
+			angle_fac = 1.0f - angle_fac; \
+			dist /= angle_fac; \
+			if (dist < face_dists[index]) { \
+				face_dists[index] = dist; \
+			} \
+		} (void)0
+
 		if (use_jit) {
 			int j;
 			for (j = 0; j < samples; j++) {
+				float dist = face_dists[index];
 				interp_v3_v3v3v3_uv(ray_co, cos[0], cos[1], cos[2], jit_ofs[j]);
 				madd_v3_v3fl(ray_co, ray_no, eps_offset);
 
-				f_hit = BKE_bmbvh_ray_cast(bmtree, ray_co, ray_no,
-				                           &face_dists[index], NULL, NULL);
-				/* duplicate */
-				if (f_hit) {
-					const int index_hit = BM_elem_index_get(f_hit);
-					face_dists[index] = face_dists[index_hit] = min_ff(face_dists[index], face_dists[index_hit]);
-				}
+				FACE_RAY_TEST_ANGLE;
 			}
 		}
 		else {
+			float dist = face_dists[index];
 			mid_v3_v3v3v3(ray_co, cos[0], cos[1], cos[2]);
 			madd_v3_v3fl(ray_co, ray_no, eps_offset);
 
-			f_hit = BKE_bmbvh_ray_cast(bmtree, ray_co, ray_no,
-			                           &face_dists[index], NULL, NULL);
-			/* duplicate */
-			if (f_hit) {
-				const int index_hit = BM_elem_index_get(f_hit);
-				face_dists[index] = face_dists[index_hit] = min_ff(face_dists[index], face_dists[index_hit]);
-			}
+			FACE_RAY_TEST_ANGLE;
 		}
 	}
 
@@ -1761,6 +1771,9 @@ static void statvis_calc_intersect(
 		float cos[2][3];
 		float cos_mid[3];
 		float ray_no[3];
+
+		if (e->l == NULL)
+			continue;
 
 		if (vertexCos) {
 			copy_v3_v3(cos[0], vertexCos[BM_elem_index_get(e->v1)]);

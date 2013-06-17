@@ -75,10 +75,13 @@ extern void ui_dropshadow(const rctf *rct, float radius, float aspect, float alp
 void ED_node_tree_update(const bContext *C)
 {
 	SpaceNode *snode = CTX_wm_space_node(C);
-	snode_set_context(C);
-	
-	if (snode->nodetree && snode->nodetree->id.us == 0)
-		snode->nodetree->id.us = 1;
+	if (snode) {
+		snode_set_context(C);
+
+		if (snode->nodetree && snode->nodetree->id.us == 0) {
+			snode->nodetree->id.us = 1;
+		}
+	}
 }
 
 /* id is supposed to contain a node tree */
@@ -109,7 +112,7 @@ static bNodeTree *node_tree_from_ID(ID *id)
 void ED_node_tag_update_id(ID *id)
 {
 	bNodeTree *ntree = node_tree_from_ID(id);
-	if (id == NULL)
+	if (id == NULL || ntree == NULL)
 		return;
 	
 	if (ntree->type == NTREE_SHADER) {
@@ -348,13 +351,13 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 		row = uiLayoutRow(layout, 1);
 		uiLayoutSetAlignment(row, UI_LAYOUT_ALIGN_RIGHT);
 		
-		node->typeinfo->drawoutputfunc((bContext *)C, row, &sockptr, &nodeptr, (nsock->flag & SOCK_IN_USE));
+		node->typeinfo->drawoutputfunc((bContext *)C, row, &sockptr, &nodeptr);
 		
 		uiBlockEndAlign(node->block);
 		uiBlockLayoutResolve(node->block, NULL, &buty);
 		
 		/* ensure minimum socket height in case layout is empty */
-		buty = MIN2(buty, dy - NODE_DY);
+		buty = min_ii(buty, dy - NODE_DY);
 		
 		nsock->locx = locx + NODE_WIDTH(node);
 		/* place the socket circle in the middle of the layout */
@@ -399,8 +402,7 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 	}
 
 	/* buttons rect? */
-	/* TODO: NODE_OPTION shall be cleaned up */
-	if (/*(node->flag & NODE_OPTIONS) && */node->typeinfo->uifunc) {
+	if (node->typeinfo->uifunc && (node->flag & NODE_OPTIONS)) {
 		dy -= NODE_DYS / 2;
 
 		/* set this for uifunc() that don't use layout engine yet */
@@ -435,13 +437,13 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 		uiLayoutSetContextPointer(layout, "node", &nodeptr);
 		uiLayoutSetContextPointer(layout, "socket", &sockptr);
 		
-		node->typeinfo->drawinputfunc((bContext *)C, layout, &sockptr, &nodeptr, (nsock->flag & SOCK_IN_USE));
+		node->typeinfo->drawinputfunc((bContext *)C, layout, &sockptr, &nodeptr);
 		
 		uiBlockEndAlign(node->block);
 		uiBlockLayoutResolve(node->block, NULL, &buty);
 		
 		/* ensure minimum socket height in case layout is empty */
-		buty = MIN2(buty, dy - NODE_DY);
+		buty = min_ii(buty, dy - NODE_DY);
 		
 		nsock->locx = locx;
 		/* place the socket circle in the middle of the layout */
@@ -775,9 +777,12 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 	/* shadow */
 	node_draw_shadow(snode, node, BASIS_RAD, 1.0f);
 	
-	/* header */
-	if (color_id == TH_NODE)
-		UI_ThemeColorShade(color_id, -20);
+	/* header uses color from backdrop, but we make it opaqie */
+	if (color_id == TH_NODE) {
+		float col[3];
+		UI_GetThemeColorShade3fv(color_id, -20, col);
+		glColor4f(col[0], col[1], col[2], 1.0f);
+	}
 	else
 		UI_ThemeColor(color_id);
 	
@@ -1191,10 +1196,10 @@ static void draw_tree_path(SpaceNode *snode)
 	ED_node_tree_path_get_fixedbuf(snode, info, sizeof(info));
 	
 	UI_ThemeColor(TH_TEXT_HI);
-	BLF_draw_default(30, 30, 0.0f, info, sizeof(info));
+	BLF_draw_default(1.5f * UI_UNIT_X, 1.5f * UI_UNIT_Y, 0.0f, info, sizeof(info));
 }
 
-static void snode_setup_v2d(SpaceNode *snode, ARegion *ar, float center[2])
+static void snode_setup_v2d(SpaceNode *snode, ARegion *ar, const float center[2])
 {
 	View2D *v2d = &ar->v2d;
 	
@@ -1311,7 +1316,7 @@ void drawnodespace(const bContext *C, ARegion *ar)
 			UI_view2d_multi_grid_draw(v2d, (depth > 0 ? TH_NODE_GROUP : TH_BACK), U.widget_unit, 5, 2);
 			
 			/* backdrop */
-			draw_nodespace_back_pix(C, ar, snode);
+			draw_nodespace_back_pix(C, ar, snode, path->parent_key);
 			
 			draw_nodetree(C, ar, ntree, path->parent_key);
 		}
@@ -1336,7 +1341,7 @@ void drawnodespace(const bContext *C, ARegion *ar)
 		UI_view2d_multi_grid_draw(v2d, TH_BACK, U.widget_unit, 5, 2);
 		
 		/* backdrop */
-		draw_nodespace_back_pix(C, ar, snode);
+		draw_nodespace_back_pix(C, ar, snode, NODE_INSTANCE_KEY_NONE);
 	}
 	
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_VIEW);

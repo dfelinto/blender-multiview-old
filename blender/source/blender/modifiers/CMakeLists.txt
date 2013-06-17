@@ -30,7 +30,6 @@ set(INC
 	../blenkernel
 	../blenlib
 	../blenfont
-	../blenloader
 	../makesdna
 	../makesrna
 	../bmesh
@@ -144,10 +143,6 @@ endif()
 
 if(WITH_INTERNATIONAL)
 	add_definitions(-DWITH_INTERNATIONAL)
-endif()
-
-if(WITH_OPENMP)
-	add_definitions(-DPARALLEL=1)
 endif()
 
 blender_add_lib(bf_modifiers "${SRC}" "${INC}" "${INC_SYS}")

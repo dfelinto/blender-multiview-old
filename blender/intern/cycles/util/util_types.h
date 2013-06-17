@@ -59,6 +59,8 @@
 
 /* SIMD Types */
 
+#ifndef __KERNEL_GPU__
+
 /* not enabled, globally applying it just gives slowdown,
  * but useful for testing. */
 //#define __KERNEL_SSE__
@@ -70,14 +72,35 @@
 #include <tmmintrin.h> /* SSE 3 */
 #include <smmintrin.h> /* SSE 4 */
 
+#define __KERNEL_SSE2__
+#define __KERNEL_SSE3__
+#define __KERNEL_SSE4__
+
+#else
+
+#ifdef __x86_64__
+
+/* MinGW64 has conflicting declarations for these SSE headers in <windows.h>.
+ * Since we can't avoid including <windows.h>, better only include that */
+#ifdef FREE_WINDOWS64
+#include <windows.h>
+#else
+#include <xmmintrin.h> /* SSE 1 */
+#include <emmintrin.h> /* SSE 2 */
+#endif
+
+#define __KERNEL_SSE2__
+
+#endif
+
 #endif
 
 #ifndef _WIN32
-#ifndef __KERNEL_GPU__
 
 #include <stdint.h>
 
 #endif
+
 #endif
 
 CCL_NAMESPACE_BEGIN

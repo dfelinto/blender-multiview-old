@@ -232,6 +232,12 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 }
 #endif /* WITH_OCEANSIM */
 
+static bool dependsOnNormals(ModifierData *md)
+{
+	OceanModifierData *omd = (OceanModifierData *)md;
+	return (omd->geometry_mode != MOD_OCEAN_GEOM_GENERATE);
+}
+
 #if 0
 static void dm_get_bounds(DerivedMesh *dm, float *sx, float *sy, float *ox, float *oy)
 {
@@ -266,8 +272,10 @@ static void dm_get_bounds(DerivedMesh *dm, float *sx, float *sy, float *ox, floa
 
 #ifdef WITH_OCEANSIM
 
-
+#ifdef _OPENMP
 #define OMP_MIN_RES 18
+#endif
+
 static DerivedMesh *generate_ocean_geometry(OceanModifierData *omd)
 {
 	DerivedMesh *result;
@@ -386,6 +394,8 @@ static DerivedMesh *generate_ocean_geometry(OceanModifierData *omd)
 		}
 	}
 
+	result->dirty |= DM_DIRTY_NORMALS;
+
 	return result;
 }
 
@@ -435,8 +445,10 @@ static DerivedMesh *doOcean(ModifierData *md, Object *ob,
 		simulate_ocean_modifier(omd);
 	}
 
-	if (omd->geometry_mode == MOD_OCEAN_GEOM_GENERATE)
+	if (omd->geometry_mode == MOD_OCEAN_GEOM_GENERATE) {
 		dm = generate_ocean_geometry(omd);
+		DM_ensure_normals(dm);
+	}
 	else if (omd->geometry_mode == MOD_OCEAN_GEOM_DISPLACE) {
 		dm = CDDM_copy(derivedData);
 	}
@@ -540,21 +552,15 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 {
 	DerivedMesh *result;
 
+	CDDM_calc_normals(derivedData);
+
 	result = doOcean(md, ob, derivedData, 0);
 
 	if (result != derivedData)
-		CDDM_calc_normals(result);
+		result->dirty |= DM_DIRTY_NORMALS;
 
 	return result;
 }
-
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
-}
-
 
 
 ModifierTypeInfo modifierType_Ocean = {
@@ -572,14 +578,14 @@ ModifierTypeInfo modifierType_Ocean = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
 	/* freeData */          freeData,
 	/* isDisabled */        NULL,
 	/* updateDepgraph */    NULL,
 	/* dependsOnTime */     NULL,
-	/* dependsOnNormals */	NULL,
+	/* dependsOnNormals */	dependsOnNormals,
 	/* foreachObjectLink */ NULL,
 	/* foreachIDLink */     NULL,
 };

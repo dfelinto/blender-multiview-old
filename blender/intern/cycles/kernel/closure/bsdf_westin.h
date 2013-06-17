@@ -91,7 +91,7 @@ __device int bsdf_westin_backscatter_sample(const ShaderClosure *sc, float3 Ng, 
 #endif
 		float3 T, B;
 		make_orthonormals (I, &T, &B);
-		float phi = 2 * M_PI_F * randu;
+		float phi = M_2PI_F * randu;
 		float cosTheta = powf(randv, 1 / (m_invroughness + 1));
 		float sinTheta2 = 1 - cosTheta * cosTheta;
 		float sinTheta = sinTheta2 > 0 ? sqrtf(sinTheta2) : 0;
@@ -118,9 +118,8 @@ __device int bsdf_westin_backscatter_sample(const ShaderClosure *sc, float3 Ng, 
 
 __device int bsdf_westin_sheen_setup(ShaderClosure *sc)
 {
-	float edginess = sc->data0;
+	/* float edginess = sc->data0; */
 	sc->type = CLOSURE_BSDF_WESTIN_SHEEN_ID;
-	sc->data0 = edginess;
 	return SD_BSDF|SD_BSDF_HAS_EVAL|SD_BSDF_GLOSSY;
 }
 

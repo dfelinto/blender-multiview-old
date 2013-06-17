@@ -39,6 +39,10 @@
 #include "../system/FreestyleConfig.h"
 #include "../system/StringUtils.h"
 
+#ifdef WITH_CXX_GUARDEDALLOC
+#include "MEM_guardedalloc.h"
+#endif
+
 namespace Freestyle {
 
 //
@@ -297,6 +301,11 @@ private:
 	realMap *_userAttributesReal;
 	Vec2fMap *_userAttributesVec2f;
 	Vec3fMap *_userAttributesVec3f;
+
+#ifdef WITH_CXX_GUARDEDALLOC
+public:
+	MEM_CXX_CLASS_ALLOC_FUNCS("Freestyle:StrokeAttribute")
+#endif
 };
 
 
@@ -579,6 +588,10 @@ public:
 	 *    The new sampling value.  
 	 */
 	void Resample(float iSampling);
+
+    /*! Removes all vertices from the Stroke.
+     */
+    void RemoveAllVertices();
 
 	/*! Removes the stroke vertex iVertex 
 	*  from the stroke.

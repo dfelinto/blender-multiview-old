@@ -146,8 +146,8 @@ int ED_object_add_generic_get_opts(struct bContext *C, struct wmOperator *op,  f
 struct Object *ED_object_add_type(struct bContext *C, int type, const float loc[3], const float rot[3],
                                   int enter_editmode, unsigned int layer);
 
-void ED_object_single_users(struct Main *bmain, struct Scene *scene, int full);
-void ED_object_single_user(struct Scene *scene, struct Object *ob);
+void ED_object_single_users(struct Main *bmain, struct Scene *scene, bool full, bool copy_groups);
+void ED_object_single_user(struct Main *bmain, struct Scene *scene, struct Object *ob);
 
 /* object motion paths */
 void ED_objects_clear_paths(struct bContext *C);
@@ -199,6 +199,22 @@ int ED_object_multires_update_totlevels_cb(struct Object *ob, void *totlevel_v);
 
 /* object_select.c */
 void ED_object_select_linked_by_id(struct bContext *C, struct ID *id);
+
+/* object_vgroup.c */
+typedef enum eVGroupSelect {
+	WT_VGROUP_ACTIVE = 1,
+	WT_VGROUP_BONE_SELECT = 2,
+	WT_VGROUP_BONE_DEFORM = 3,
+	WT_VGROUP_ALL = 4,
+} eVGroupSelect;
+
+#define WT_VGROUP_MASK_ALL \
+	((1 << WT_VGROUP_ACTIVE) | \
+	 (1 << WT_VGROUP_BONE_SELECT) | \
+	 (1 << WT_VGROUP_BONE_DEFORM) | \
+	 (1 << WT_VGROUP_ALL))
+
+bool *ED_vgroup_subset_from_select_type(struct Object *ob, eVGroupSelect subset_type, int *r_vgroup_tot, int *r_subset_count);
 
 #ifdef __cplusplus
 }

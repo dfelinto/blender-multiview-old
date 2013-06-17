@@ -32,6 +32,8 @@
 
 #include "node_composite_util.h"
 
+#include "BKE_image.h"
+
 
 /* **************** VIEWER ******************** */
 static bNodeSocketTemplate cmp_node_viewer_in[] = {
@@ -50,13 +52,15 @@ static void node_composit_init_viewer(bNodeTree *UNUSED(ntree), bNode *node)
 	iuser->ok = 1;
 	node->custom3 = 0.5f;
 	node->custom4 = 0.5f;
+	
+	node->id = (ID *)BKE_image_verify_viewer(IMA_TYPE_COMPOSITE, "Viewer Node");
 }
 
 void register_node_type_cmp_viewer(void)
 {
 	static bNodeType ntype;
 
-	cmp_node_type_base(&ntype, CMP_NODE_VIEWER, "Viewer", NODE_CLASS_OUTPUT, NODE_OPTIONS | NODE_PREVIEW);
+	cmp_node_type_base(&ntype, CMP_NODE_VIEWER, "Viewer", NODE_CLASS_OUTPUT, NODE_PREVIEW);
 	node_type_socket_templates(&ntype, cmp_node_viewer_in, NULL);
 	node_type_init(&ntype, node_composit_init_viewer);
 	node_type_storage(&ntype, "ImageUser", node_free_standard_storage, node_copy_standard_storage);

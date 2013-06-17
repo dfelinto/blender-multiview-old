@@ -117,7 +117,7 @@ static void node_init(const struct bContext *C, bNodeTree *ntree, bNode *node)
 	if (node->flag & NODE_INIT)
 		return;
 	
-	node->flag = NODE_SELECT | ntype->flag;
+	node->flag = NODE_SELECT | NODE_OPTIONS | ntype->flag;
 	node->width = ntype->width;
 	node->miniwidth = 42.0f;
 	node->height = ntype->height;
@@ -149,6 +149,9 @@ static void node_init(const struct bContext *C, bNodeTree *ntree, bNode *node)
 		BLI_assert(C != NULL);
 		ntype->initfunc_api(C, &ptr);
 	}
+	
+	if (node->id)
+		id_us_plus(node->id);
 	
 	node->flag |= NODE_INIT;
 }
@@ -475,7 +478,7 @@ static bNodeSocket *make_socket(bNodeTree *ntree, bNode *UNUSED(node), int in_ou
 		BLI_strncpy(auto_identifier, name, sizeof(auto_identifier));
 	}
 	/* make the identifier unique */
-	BLI_uniquename_cb(unique_identifier_check, lb, NULL, '.', auto_identifier, sizeof(auto_identifier));
+	BLI_uniquename_cb(unique_identifier_check, lb, "socket", '.', auto_identifier, sizeof(auto_identifier));
 	
 	sock = MEM_callocN(sizeof(bNodeSocket), "sock");
 	sock->in_out = in_out;
@@ -1124,6 +1127,7 @@ static bNodeTree *ntreeCopyTree_internal(bNodeTree *ntree, const short do_id_use
 	}
 	else {
 		newtree = MEM_dupallocN(ntree);
+		newtree->id.lib = NULL;	/* same as owning datablock id.lib */
 		BKE_libblock_copy_data(&newtree->id, &ntree->id, true); /* copy animdata and ID props */
 	}
 
@@ -2278,28 +2282,39 @@ bNode *nodeGetActive(bNodeTree *ntree)
 	return node;
 }
 
-/* two active flags, ID nodes have special flag for buttons display */
-bNode *nodeGetActiveID(bNodeTree *ntree, short idtype)
+static bNode *node_get_active_id_recursive(bNodeInstanceKey active_key, bNodeInstanceKey parent_key, bNodeTree *ntree, short idtype)
 {
-	bNode *node, *tnode;
-	
-	if (ntree == NULL) return NULL;
-
-	for (node = ntree->nodes.first; node; node = node->next)
-		if (node->id && GS(node->id->name) == idtype)
-			if (node->flag & NODE_ACTIVE_ID)
-				return node;
-	
-	/* no node with active ID in this tree, look inside groups */
-	for (node = ntree->nodes.first; node; node = node->next) {
-		if (node->type == NODE_GROUP) {
-			tnode = nodeGetActiveID((bNodeTree *)node->id, idtype);
-			if (tnode)
-				return tnode;
+	if (parent_key.value == active_key.value) {
+		bNode *node;
+		for (node = ntree->nodes.first; node; node = node->next)
+			if (node->id && GS(node->id->name) == idtype)
+				if (node->flag & NODE_ACTIVE_ID)
+					return node;
+	}
+	else {
+		bNode *node, *tnode;
+		/* no node with active ID in this tree, look inside groups */
+		for (node = ntree->nodes.first; node; node = node->next) {
+			if (node->type == NODE_GROUP) {
+				bNodeTree *group = (bNodeTree *)node->id;
+				bNodeInstanceKey group_key = BKE_node_instance_key(parent_key, ntree, node);
+				tnode = node_get_active_id_recursive(active_key, group_key, group, idtype);
+				if (tnode)
+					return tnode;
+			}
 		}
 	}
 	
 	return NULL;
+}
+
+/* two active flags, ID nodes have special flag for buttons display */
+bNode *nodeGetActiveID(bNodeTree *ntree, short idtype)
+{
+	if (ntree)
+		return node_get_active_id_recursive(ntree->active_viewer_key, NODE_INSTANCE_KEY_BASE, ntree, idtype);
+	else
+		return NULL;
 }
 
 bool nodeSetActiveID(bNodeTree *ntree, short idtype, ID *id)
@@ -2562,6 +2577,7 @@ int BKE_node_clipboard_get_type(void)
 
 /* magic number for initial hash key */
 const bNodeInstanceKey NODE_INSTANCE_KEY_BASE = {5381};
+const bNodeInstanceKey NODE_INSTANCE_KEY_NONE = {0};
 
 /* Generate a hash key from ntree and node names
  * Uses the djb2 algorithm with xor by Bernstein:
@@ -2847,7 +2863,7 @@ void ntreeVerifyNodes(struct Main *main, struct ID *id)
 	} FOREACH_NODETREE_END
 }
 
-void ntreeUpdateTree(bNodeTree *ntree)
+void ntreeUpdateTree(Main *bmain, bNodeTree *ntree)
 {
 	bNode *node;
 	
@@ -2885,8 +2901,8 @@ void ntreeUpdateTree(bNodeTree *ntree)
 		ntreeInterfaceTypeUpdate(ntree);
 	
 	/* XXX hack, should be done by depsgraph!! */
-	if (G.main)
-		ntreeVerifyNodes(G.main, &ntree->id);
+	if (bmain)
+		ntreeVerifyNodes(bmain, &ntree->id);
 	
 	if (ntree->update & (NTREE_UPDATE_LINKS | NTREE_UPDATE_NODES)) {
 		/* node updates can change sockets or links, repeat link pointer update afterward */
@@ -3192,8 +3208,11 @@ void node_type_size_preset(struct bNodeType *ntype, eNodeSizePreset size)
 		case NODE_SIZE_SMALL:
 			node_type_size(ntype, 100, 80, 320);
 			break;
+		case NODE_SIZE_MIDDLE:
+			node_type_size(ntype, 150, 120, 320);
+			break;
 		case NODE_SIZE_LARGE:
-			node_type_size(ntype, 140, 120, 500);
+			node_type_size(ntype, 240, 140, 320);
 			break;
 	}
 }
@@ -3382,6 +3401,8 @@ static void registerShaderNodes(void)
 	register_node_type_sh_brightcontrast();
 	register_node_type_sh_value();
 	register_node_type_sh_rgb();
+	register_node_type_sh_wireframe();
+	register_node_type_sh_wavelength();
 	register_node_type_sh_mix_rgb();
 	register_node_type_sh_valtorgb();
 	register_node_type_sh_rgbtobw();
@@ -3419,6 +3440,7 @@ static void registerShaderNodes(void)
 	register_node_type_sh_bsdf_translucent();
 	register_node_type_sh_bsdf_transparent();
 	register_node_type_sh_bsdf_velvet();
+	register_node_type_sh_bsdf_toon();
 	register_node_type_sh_emission();
 	register_node_type_sh_holdout();
 	//register_node_type_sh_volume_transparent();

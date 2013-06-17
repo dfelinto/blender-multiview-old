@@ -31,14 +31,20 @@ sources = env.Glob('intern/*.c')
 
 cflags=''
 # don't add ../blenkernel back!
-incs = '. ../makesdna #/intern/guardedalloc #/intern/ghost #/extern/wcwidth'
+incs = [
+    '.',
+    '#/extern/wcwidth',
+    '#/intern/ghost',
+    '#/intern/guardedalloc',
+    '../makesdna',
+    env['BF_FREETYPE_INC'],
+    env['BF_ZLIB_INC'],
+    ]
+incs = ' '.join(incs)
 
-incs += ' ' + env['BF_FREETYPE_INC']
-incs += ' ' + env['BF_ZLIB_INC']
 defs = []
 
 if env['WITH_BF_BINRELOC']:
-    cflags='-pthread'
     incs += ' ../../../extern/binreloc/include'
     defs.append('WITH_BINRELOC')
 
@@ -49,9 +55,5 @@ if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', '
 if env['OURPLATFORM'] == 'linuxcross':
     if env['WITH_BF_OPENMP']:
         incs += ' ' + env['BF_OPENMP_INC']
-
-if env['OURPLATFORM'] == 'darwin':
-    if env['WITH_BF_OPENMP']:
-       env.Append(CFLAGS=['-DPARALLEL=1'])
 
 env.BlenderLib ( 'bf_blenlib', sources, Split(incs), Split(defs), libtype=['core','player'], priority = [370,230], compileflags =cflags )

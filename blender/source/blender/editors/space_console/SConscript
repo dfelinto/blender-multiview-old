@@ -32,7 +32,7 @@ defs = []
 
 incs = [
     '../include',
-    '#extern/glew/include',
+    '#/extern/glew/include',
     '#/intern/guardedalloc',
     '../../makesdna',
     '../../makesrna',
@@ -40,8 +40,7 @@ incs = [
     '../../blenlib',
     '../../windowmanager',
     '../../blenfont',
-    '../../blenloader',
-]
+    ]
 
 if env['WITH_BF_PYTHON']:
     defs.append('WITH_PYTHON')

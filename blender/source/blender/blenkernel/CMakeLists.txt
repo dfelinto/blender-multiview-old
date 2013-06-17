@@ -44,6 +44,7 @@ set(INC
 	../../../intern/opennl/extern
 	../../../intern/raskter
 	../../../intern/smoke/extern
+	../../../extern/libmv
 
 	# XXX - BAD LEVEL CALL WM_api.h
 	../windowmanager
@@ -356,10 +357,6 @@ if(WITH_PYTHON)
 	endif()
 endif()
 
-if(WITH_OPENMP)
-	add_definitions(-DPARALLEL=1)
-endif()
-
 if(WITH_MOD_FLUID)
 	list(APPEND INC
 		../../../intern/elbeem/extern
@@ -412,9 +409,6 @@ if(WITH_GAMEENGINE)
 endif()
 
 if(WITH_LIBMV)
-	list(APPEND INC
-		../../../extern/libmv
-	)
 	add_definitions(-DWITH_LIBMV)
 endif()
 

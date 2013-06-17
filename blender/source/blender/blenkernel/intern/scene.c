@@ -56,6 +56,7 @@
 #include "BLI_utildefines.h"
 #include "BLI_callbacks.h"
 #include "BLI_string.h"
+#include "BLI_threads.h"
 
 #include "BLF_translation.h"
 
@@ -69,6 +70,7 @@
 #include "BKE_global.h"
 #include "BKE_group.h"
 #include "BKE_idprop.h"
+#include "BKE_image.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_mask.h"
@@ -176,7 +178,9 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 		scen->obedit = NULL;
 		scen->stats = NULL;
 		scen->fps_info = NULL;
-		scen->rigidbody_world = NULL; /* RB_TODO figure out a way of copying the rigid body world */
+
+		if (sce->rigidbody_world)
+			scen->rigidbody_world = BKE_rigidbody_world_copy(sce->rigidbody_world);
 
 		BLI_duplicatelist(&(scen->markers), &(sce->markers));
 		BLI_duplicatelist(&(scen->transform_spaces), &(sce->transform_spaces));
@@ -293,6 +297,12 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 	}
 
 	return scen;
+}
+
+void BKE_scene_groups_relink(Scene *sce)
+{
+	if (sce->rigidbody_world)
+		BKE_rigidbody_world_groups_relink(sce->rigidbody_world);
 }
 
 /* do not free scene itself */
@@ -1171,7 +1181,7 @@ static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scen
 	sound_update_scene(scene);
 
 	/* update masking curves */
-	BKE_mask_update_scene(bmain, scene, FALSE);
+	BKE_mask_update_scene(bmain, scene);
 	
 }
 
@@ -1227,16 +1237,20 @@ void BKE_scene_update_for_newframe(Main *bmain, Scene *sce, unsigned int lay)
 {
 	float ctime = BKE_scene_frame_get(sce);
 	Scene *sce_iter;
+
+	/* keep this first */
+	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_FRAME_CHANGE_PRE);
+	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_SCENE_UPDATE_PRE);
+
+	/* update animated image textures for particles, modifiers, gpu, etc,
+	 * call this at the start so modifiers with textures don't lag 1 frame */
+	BKE_image_update_frame(bmain, sce->r.cfra);
 	
 	/* rebuild rigid body worlds before doing the actual frame update
 	 * this needs to be done on start frame but animation playback usually starts one frame later
 	 * we need to do it here to avoid rebuilding the world on every simulation change, which can be very expensive
 	 */
 	scene_rebuild_rbw_recursive(sce, ctime);
-
-	/* keep this first */
-	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_FRAME_CHANGE_PRE);
-	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_SCENE_UPDATE_PRE);
 
 	sound_set_cfra(sce->r.cfra);
 	
@@ -1461,3 +1475,28 @@ int BKE_scene_check_rigidbody_active(const Scene *scene)
 {
 	return scene && scene->rigidbody_world && scene->rigidbody_world->group && !(scene->rigidbody_world->flag & RBW_FLAG_MUTED);
 }
+
+int BKE_render_num_threads(const RenderData *rd)
+{
+	int threads;
+
+	/* override set from command line? */
+	threads = BLI_system_num_threads_override_get();
+
+	if (threads > 0)
+		return threads;
+
+	/* fixed number of threads specified in scene? */
+	if (rd->mode & R_FIXED_THREADS)
+		threads = rd->threads;
+	else
+		threads = BLI_system_thread_count();
+	
+	return max_ii(threads, 1);
+}
+
+int BKE_scene_num_threads(const Scene *scene)
+{
+	return BKE_render_num_threads(&scene->r);
+}
+

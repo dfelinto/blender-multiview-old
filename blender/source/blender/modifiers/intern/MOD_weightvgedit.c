@@ -32,6 +32,7 @@
 #include "BLI_ghash.h"
 #include "BLI_math.h"
 #include "BLI_string.h"
+#include "BLI_rand.h"
 
 #include "DNA_color_types.h"      /* CurveMapping. */
 #include "DNA_mesh_types.h"
@@ -42,6 +43,7 @@
 #include "BKE_cdderivedmesh.h"
 #include "BKE_colortools.h"       /* CurveMapping. */
 #include "BKE_deform.h"
+#include "BKE_library.h"
 #include "BKE_mesh.h"
 #include "BKE_modifier.h"
 #include "BKE_texture.h"          /* Texture masking. */
@@ -76,6 +78,10 @@ static void freeData(ModifierData *md)
 {
 	WeightVGEditModifierData *wmd = (WeightVGEditModifierData *) md;
 	curvemapping_free(wmd->cmap_curve);
+
+	if (wmd->mask_texture) {
+		id_us_min(&wmd->mask_texture->id);
+	}
 }
 
 static void copyData(ModifierData *md, ModifierData *target)
@@ -101,6 +107,10 @@ static void copyData(ModifierData *md, ModifierData *target)
 	twmd->mask_tex_mapping       = wmd->mask_tex_mapping;
 	twmd->mask_tex_map_obj       = wmd->mask_tex_map_obj;
 	BLI_strncpy(twmd->mask_tex_uvlayer_name, wmd->mask_tex_uvlayer_name, sizeof(twmd->mask_tex_uvlayer_name));
+
+	if (twmd->mask_texture) {
+		id_us_plus(&twmd->mask_texture->id);
+	}
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
@@ -120,13 +130,13 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	return dataMask;
 }
 
-static int dependsOnTime(ModifierData *md)
+static bool dependsOnTime(ModifierData *md)
 {
 	WeightVGEditModifierData *wmd = (WeightVGEditModifierData *) md;
 
 	if (wmd->mask_texture)
 		return BKE_texture_dependsOnTime(wmd->mask_texture);
-	return 0;
+	return false;
 }
 
 static void foreachObjectLink(ModifierData *md, Object *ob,
@@ -169,7 +179,7 @@ static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *UN
 		                 "WeightVGEdit Modifier");
 }
 
-static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
+static bool isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 {
 	WeightVGEditModifierData *wmd = (WeightVGEditModifierData *) md;
 	/* If no vertex group, bypass. */
@@ -276,13 +286,6 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	return dm;
 }
 
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
-}
-
 
 ModifierTypeInfo modifierType_WeightVGEdit = {
 	/* name */              "VertexWeightEdit",
@@ -300,7 +303,7 @@ ModifierTypeInfo modifierType_WeightVGEdit = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
 	/* freeData */          freeData,

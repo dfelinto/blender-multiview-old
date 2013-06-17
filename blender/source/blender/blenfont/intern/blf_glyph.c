@@ -55,9 +55,11 @@
 #include "blf_internal_types.h"
 #include "blf_internal.h"
 
-#include "GPU_extensions.h"
+#ifdef __GNUC__
+#  pragma GCC diagnostic error "-Wsign-conversion"
+#endif
 
-GlyphCacheBLF *blf_glyph_cache_find(FontBLF *font, int size, int dpi)
+GlyphCacheBLF *blf_glyph_cache_find(FontBLF *font, unsigned int size, unsigned int dpi)
 {
 	GlyphCacheBLF *p;
 
@@ -168,18 +170,18 @@ static void blf_glyph_cache_texture(FontBLF *font, GlyphCacheBLF *gc)
 		gc->textures = (GLuint *)realloc((void *)gc->textures, sizeof(GLuint) * gc->ntex);
 	}
 
-	gc->p2_width = blf_next_p2((gc->rem_glyphs * gc->max_glyph_width) + (gc->pad * 2));
+	gc->p2_width = (int)blf_next_p2((unsigned int)((gc->rem_glyphs * gc->max_glyph_width) + (gc->pad * 2)));
 	if (gc->p2_width > font->max_tex_size)
 		gc->p2_width = font->max_tex_size;
 
 	i = (int)((gc->p2_width - (gc->pad * 2)) / gc->max_glyph_width);
-	gc->p2_height = blf_next_p2(((gc->num_glyphs / i) + 1) * gc->max_glyph_height);
+	gc->p2_height = (int)blf_next_p2((unsigned int)(((gc->num_glyphs / i) + 1) * gc->max_glyph_height));
 
 	if (gc->p2_height > font->max_tex_size)
 		gc->p2_height = font->max_tex_size;
 
 	tot_mem = gc->p2_width * gc->p2_height;
-	buf = (unsigned char *)MEM_callocN(tot_mem, __func__);
+	buf = (unsigned char *)MEM_callocN((size_t)tot_mem, __func__);
 
 	glGenTextures(1, &gc->textures[gc->cur_tex]);
 	glBindTexture(GL_TEXTURE_2D, (font->tex_bind_state = gc->textures[gc->cur_tex]));
@@ -270,8 +272,8 @@ GlyphBLF *blf_glyph_add(FontBLF *font, unsigned int index, unsigned int c)
 			}
 		}
 
-		g->bitmap = (unsigned char *)MEM_mallocN(g->width * g->height, "glyph bitmap");
-		memcpy((void *)g->bitmap, (void *)bitmap.buffer, g->width * g->height);
+		g->bitmap = (unsigned char *)MEM_mallocN((size_t)(g->width * g->height), "glyph bitmap");
+		memcpy((void *)g->bitmap, (void *)bitmap.buffer, (size_t)(g->width * g->height));
 	}
 
 	g->advance = ((float)slot->advance.x) / 64.0f;
@@ -369,20 +371,26 @@ static void blf_texture3_draw(const float shadow_col[4], float uv[2][2], float x
 	glColor4fv(color);
 }
 
-int blf_glyph_render(FontBLF *font, GlyphBLF *g, float x, float y)
+static void blf_glyph_calc_rect(rctf *rect, GlyphBLF *g, float x, float y)
 {
-	float dx, dx1;
-	float y1, y2;
-	float xo, yo;
+	rect->xmin = floor(x + g->pos_x);
+	rect->xmax = rect->xmin + g->width;
+	rect->ymin = y + g->pos_y;
+	rect->ymax = y + g->pos_y - g->height;
+}
+
+void blf_glyph_render(FontBLF *font, GlyphBLF *g, float x, float y)
+{
+	rctf rect;
 
 	if ((!g->width) || (!g->height))
-		return 1;
+		return;
 
 	if (g->build_tex == 0) {
 		GlyphCacheBLF *gc = font->glyph_cache;
 
 		if (font->max_tex_size == -1)
-			font->max_tex_size = GPU_max_texture_size();
+			glGetIntegerv(GL_MAX_TEXTURE_SIZE, (GLint *)&font->max_tex_size);
 
 		if (gc->cur_tex == -1) {
 			blf_glyph_cache_texture(font, gc);
@@ -438,30 +446,16 @@ int blf_glyph_render(FontBLF *font, GlyphBLF *g, float x, float y)
 		g->build_tex = 1;
 	}
 
-	xo = 0.0f;
-	yo = 0.0f;
-
-	if (font->flags & BLF_SHADOW) {
-		xo = x;
-		yo = y;
-		x += font->shadow_x;
-		y += font->shadow_y;
-	}
-
-	dx = floor(x + g->pos_x);
-	dx1 = dx + g->width;
-	y1 = y + g->pos_y;
-	y2 = y + g->pos_y - g->height;
+	blf_glyph_calc_rect(&rect, g, x, y);
 
 	if (font->flags & BLF_CLIPPING) {
-		if (!BLI_rctf_isect_pt(&font->clip_rec, dx + font->pos[0], y1 + font->pos[1]))
-			return 0;
-		if (!BLI_rctf_isect_pt(&font->clip_rec, dx + font->pos[0], y2 + font->pos[1]))
-			return 0;
-		if (!BLI_rctf_isect_pt(&font->clip_rec, dx1 + font->pos[0], y2 + font->pos[1]))
-			return 0;
-		if (!BLI_rctf_isect_pt(&font->clip_rec, dx1 + font->pos[0], y1 + font->pos[1]))
-			return 0;
+		/* intentionally check clipping without shadow offset */
+		rctf rect_test = rect;
+		BLI_rctf_translate(&rect_test, font->pos[0], font->pos[1]);
+
+		if (!BLI_rctf_inside_rctf(&font->clip_rec, &rect_test)) {
+			return;
+		}
 	}
 
 	if (font->tex_bind_state != g->tex) {
@@ -469,42 +463,36 @@ int blf_glyph_render(FontBLF *font, GlyphBLF *g, float x, float y)
 	}
 
 	if (font->flags & BLF_SHADOW) {
+		rctf rect_ofs;
+		blf_glyph_calc_rect(&rect_ofs, g, x + font->shadow_x, y + font->shadow_y);
 
 		switch (font->shadow) {
 			case 3:
-				blf_texture3_draw(font->shadow_col, g->uv, dx, y1, dx1, y2);
+				blf_texture3_draw(font->shadow_col, g->uv, rect_ofs.xmin, rect_ofs.ymin, rect_ofs.xmax, rect_ofs.ymax);
 				break;
 			case 5:
-				blf_texture5_draw(font->shadow_col, g->uv, dx, y1, dx1, y2);
+				blf_texture5_draw(font->shadow_col, g->uv, rect_ofs.xmin, rect_ofs.ymin, rect_ofs.xmax, rect_ofs.ymax);
 				break;
 			default:
 				glColor4fv(font->shadow_col);
-				blf_texture_draw(g->uv, dx, y1, dx1, y2);
+				blf_texture_draw(g->uv, rect_ofs.xmin, rect_ofs.ymin, rect_ofs.xmax, rect_ofs.ymax);
 				break;
 		}
 
 		glColor4fv(font->orig_col);
-
-		x = xo;
-		y = yo;
-
-		dx = floor(x + g->pos_x);
-		dx1 = dx + g->width;
-		y1 = y + g->pos_y;
-		y2 = y + g->pos_y - g->height;
 	}
 
 	switch (font->blur) {
 		case 3:
-			blf_texture3_draw(font->orig_col, g->uv, dx, y1, dx1, y2);
+			blf_texture3_draw(font->orig_col, g->uv, rect.xmin, rect.ymin, rect.xmax, rect.ymax);
 			break;
 		case 5:
-			blf_texture5_draw(font->orig_col, g->uv, dx, y1, dx1, y2);
+			blf_texture5_draw(font->orig_col, g->uv, rect.xmin, rect.ymin, rect.xmax, rect.ymax);
 			break;
 		default:
-			blf_texture_draw(g->uv, dx, y1, dx1, y2);
+			blf_texture_draw(g->uv, rect.xmin, rect.ymin, rect.xmax, rect.ymax);
 			break;
 	}
 
-	return 1;
+	return;
 }

@@ -310,12 +310,12 @@ void bmo_recalc_face_normals_exec(BMesh *bm, BMOperator *op)
 {
 	BMIter liter, liter2;
 	BMOIter siter;
-	BMFace *f, *startf, **fstack = NULL;
-	BLI_array_declare(fstack);
+	BMFace *f, *startf;
+	BMFace **fstack;
+	STACK_DECLARE(fstack);
 	BMLoop *l, *l2;
 	float maxx, maxx_test, cent[3];
-	int i, i_max;
-	const bool use_flip = BMO_slot_bool_get(op->slots_in, "use_flip");
+	const bool use_flip = BMO_slot_bool_get(op->slots_in, "use_face_tag");
 
 	startf = NULL;
 	maxx = -1.0e10;
@@ -358,17 +358,12 @@ void bmo_recalc_face_normals_exec(BMesh *bm, BMOperator *op)
 	 * have the same winding.  this is done recursively, using a manual
 	 * stack (if we use simple function recursion, we'd end up overloading
 	 * the stack on large meshes). */
-
-	BLI_array_grow_one(fstack);
-	fstack[0] = startf;
+	fstack = MEM_mallocN(sizeof(*fstack) * BMO_slot_buffer_count(op->slots_in, "faces"), __func__);
+	STACK_INIT(fstack);
+	STACK_PUSH(fstack, startf);
 	BMO_elem_flag_enable(bm, startf, FACE_VIS);
 
-	i = 0;
-	i_max = 1;
-	while (i >= 0) {
-		f = fstack[i];
-		i--;
-
+	while ((f = STACK_POP(fstack))) {
 		BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
 			BM_ITER_ELEM (l2, &liter2, l, BM_LOOPS_OF_LOOP) {
 				if (!BMO_elem_flag_test(bm, l2->f, FACE_FLAG) || l2 == l)
@@ -376,8 +371,7 @@ void bmo_recalc_face_normals_exec(BMesh *bm, BMOperator *op)
 
 				if (!BMO_elem_flag_test(bm, l2->f, FACE_VIS)) {
 					BMO_elem_flag_enable(bm, l2->f, FACE_VIS);
-					i++;
-					
+
 					if (l2->v == l->v) {
 						BM_face_normal_flip(bm, l2->f);
 						
@@ -392,18 +386,13 @@ void bmo_recalc_face_normals_exec(BMesh *bm, BMOperator *op)
 						}
 					}
 					
-					if (i == i_max) {
-						BLI_array_grow_one(fstack);
-						i_max++;
-					}
-
-					fstack[i] = l2->f;
+					STACK_PUSH(fstack, l2->f);
 				}
 			}
 		}
 	}
 
-	BLI_array_free(fstack);
+	MEM_freeN(fstack);
 
 	/* check if we have faces yet to do.  if so, recurse */
 	BMO_ITER (f, &siter, op->slots_in, "faces", BM_FACE) {
@@ -420,8 +409,7 @@ void bmo_smooth_vert_exec(BMesh *UNUSED(bm), BMOperator *op)
 	BMIter iter;
 	BMVert *v;
 	BMEdge *e;
-	BLI_array_declare(cos);
-	float (*cos)[3] = NULL;
+	float (*cos)[3] = MEM_mallocN(sizeof(*cos) * BMO_slot_buffer_count(op->slots_in, "verts"), __func__);
 	float *co, *co2, clip_dist = BMO_slot_float_get(op->slots_in, "clip_dist");
 	int i, j, clipx, clipy, clipz;
 	int xaxis, yaxis, zaxis;
@@ -436,7 +424,6 @@ void bmo_smooth_vert_exec(BMesh *UNUSED(bm), BMOperator *op)
 
 	i = 0;
 	BMO_ITER (v, &siter, op->slots_in, "verts", BM_VERT) {
-		BLI_array_grow_one(cos);
 
 		co = cos[i];
 		zero_v3(co);
@@ -479,7 +466,7 @@ void bmo_smooth_vert_exec(BMesh *UNUSED(bm), BMOperator *op)
 		i++;
 	}
 
-	BLI_array_free(cos);
+	MEM_freeN(cos);
 }
 
 /**************************************************************************** *
@@ -493,9 +480,10 @@ void bmo_rotate_uvs_exec(BMesh *bm, BMOperator *op)
 	BMIter l_iter;    /* iteration loop */
 
 	const bool use_ccw = BMO_slot_bool_get(op->slots_in, "use_ccw");
+	const int cd_loop_uv_offset = CustomData_get_offset(&bm->ldata, CD_MLOOPUV);
 
-	BMO_ITER (fs, &fs_iter, op->slots_in, "faces", BM_FACE) {
-		if (CustomData_has_layer(&(bm->ldata), CD_MLOOPUV)) {
+	if (cd_loop_uv_offset != -1) {
+		BMO_ITER (fs, &fs_iter, op->slots_in, "faces", BM_FACE) {
 			if (use_ccw == false) {  /* same loops direction */
 				BMLoop *lf;	/* current face loops */
 				MLoopUV *f_luv; /* first face loop uv */
@@ -505,7 +493,7 @@ void bmo_rotate_uvs_exec(BMesh *bm, BMOperator *op)
 				int n = 0;
 				BM_ITER_ELEM (lf, &l_iter, fs, BM_LOOPS_OF_FACE) {
 					/* current loop uv is the previous loop uv */
-					MLoopUV *luv = CustomData_bmesh_get(&bm->ldata, lf->head.data, CD_MLOOPUV);
+					MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(lf, cd_loop_uv_offset);
 					if (n == 0) {
 						f_luv = luv;
 						copy_v2_v2(p_uv, luv->uv);
@@ -529,7 +517,7 @@ void bmo_rotate_uvs_exec(BMesh *bm, BMOperator *op)
 				int n = 0;
 				BM_ITER_ELEM (lf, &l_iter, fs, BM_LOOPS_OF_FACE) {
 					/* previous loop uv is the current loop uv */
-					luv = CustomData_bmesh_get(&bm->ldata, lf->head.data, CD_MLOOPUV);
+					luv = BM_ELEM_CD_GET_VOID_P(lf, cd_loop_uv_offset);
 					if (n == 0) {
 						p_luv = luv;
 						copy_v2_v2(t_uv, luv->uv);
@@ -551,39 +539,37 @@ void bmo_rotate_uvs_exec(BMesh *bm, BMOperator *op)
  * Reverse UVs for a face
  **************************************************************************** */
 
-void bmo_reverse_uvs_exec(BMesh *bm, BMOperator *op)
+static void bm_face_reverse_uvs(BMFace *f, const int cd_loop_uv_offset)
 {
-	BMOIter fs_iter;	/* selected faces iterator */
-	BMFace *fs;		/* current face */
-	BMIter l_iter;		/* iteration loop */
-	BLI_array_declare(uvs);
-	float (*uvs)[2] = NULL;
+	BMIter iter;
+	BMLoop *l;
+	int i;
 
-	BMO_ITER (fs, &fs_iter, op->slots_in, "faces", BM_FACE) {
-		if (CustomData_has_layer(&(bm->ldata), CD_MLOOPUV)) {
-			BMLoop *lf;	/* current face loops */
-			int i;
+	float (*uvs)[2] = BLI_array_alloca(uvs, f->len);
 
-			BLI_array_empty(uvs);
-			BLI_array_grow_items(uvs, fs->len);
-
-			BM_ITER_ELEM_INDEX (lf, &l_iter, fs, BM_LOOPS_OF_FACE, i) {
-				MLoopUV *luv = CustomData_bmesh_get(&bm->ldata, lf->head.data, CD_MLOOPUV);
-
-				/* current loop uv is the previous loop uv */
-				copy_v2_v2(uvs[i], luv->uv);
-			}
-
-			/* now that we have the uvs in the array, reverse! */
-			BM_ITER_ELEM_INDEX (lf, &l_iter, fs, BM_LOOPS_OF_FACE, i) {
-				/* current loop uv is the previous loop uv */
-				MLoopUV *luv = CustomData_bmesh_get(&bm->ldata, lf->head.data, CD_MLOOPUV);
-				copy_v2_v2(luv->uv, uvs[(fs->len - i - 1)]);
-			}
-		}
+	BM_ITER_ELEM_INDEX (l, &iter, f, BM_LOOPS_OF_FACE, i) {
+		MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
+		copy_v2_v2(uvs[i], luv->uv);
 	}
 
-	BLI_array_free(uvs);
+	/* now that we have the uvs in the array, reverse! */
+	BM_ITER_ELEM_INDEX (l, &iter, f, BM_LOOPS_OF_FACE, i) {
+		/* current loop uv is the previous loop uv */
+		MLoopUV *luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
+		copy_v2_v2(luv->uv, uvs[(f->len - i - 1)]);
+	}
+}
+void bmo_reverse_uvs_exec(BMesh *bm, BMOperator *op)
+{
+	BMOIter iter;
+	BMFace *f;
+	const int cd_loop_uv_offset = CustomData_get_offset(&bm->ldata, CD_MLOOPUV);
+
+	if (cd_loop_uv_offset != -1) {
+		BMO_ITER (f, &iter, op->slots_in, "faces", BM_FACE) {
+			bm_face_reverse_uvs(f, cd_loop_uv_offset);
+		}
+	}
 }
 
 /**************************************************************************** *
@@ -597,9 +583,10 @@ void bmo_rotate_colors_exec(BMesh *bm, BMOperator *op)
 	BMIter l_iter;    /* iteration loop */
 
 	const bool use_ccw = BMO_slot_bool_get(op->slots_in, "use_ccw");
+	const int cd_loop_color_offset = CustomData_get_offset(&bm->ldata, CD_MLOOPCOL);
 
-	BMO_ITER (fs, &fs_iter, op->slots_in, "faces", BM_FACE) {
-		if (CustomData_has_layer(&(bm->ldata), CD_MLOOPCOL)) {
+	if (cd_loop_color_offset != -1) {
+		BMO_ITER (fs, &fs_iter, op->slots_in, "faces", BM_FACE) {
 			if (use_ccw == false) {  /* same loops direction */
 				BMLoop *lf;	/* current face loops */
 				MLoopCol *f_lcol; /* first face loop color */
@@ -609,14 +596,14 @@ void bmo_rotate_colors_exec(BMesh *bm, BMOperator *op)
 				int n = 0;
 				BM_ITER_ELEM (lf, &l_iter, fs, BM_LOOPS_OF_FACE) {
 					/* current loop color is the previous loop color */
-					MLoopCol *luv = CustomData_bmesh_get(&bm->ldata, lf->head.data, CD_MLOOPCOL);
+					MLoopCol *lcol = BM_ELEM_CD_GET_VOID_P(lf, cd_loop_color_offset);
 					if (n == 0) {
-						f_lcol = luv;
-						p_col = *luv;
+						f_lcol = lcol;
+						p_col = *lcol;
 					}
 					else {
-						t_col = *luv;
-						*luv = p_col;
+						t_col = *lcol;
+						*lcol = p_col;
 						p_col = t_col;
 					}
 					n++;
@@ -633,7 +620,7 @@ void bmo_rotate_colors_exec(BMesh *bm, BMOperator *op)
 				int n = 0;
 				BM_ITER_ELEM (lf, &l_iter, fs, BM_LOOPS_OF_FACE) {
 					/* previous loop color is the current loop color */
-					lcol = CustomData_bmesh_get(&bm->ldata, lf->head.data, CD_MLOOPCOL);
+					lcol = BM_ELEM_CD_GET_VOID_P(lf, cd_loop_color_offset);
 					if (n == 0) {
 						p_lcol = lcol;
 						t_col = *lcol;
@@ -654,143 +641,35 @@ void bmo_rotate_colors_exec(BMesh *bm, BMOperator *op)
 /*************************************************************************** *
  * Reverse colors for a face
  *************************************************************************** */
+static void bm_face_reverse_colors(BMFace *f, const int cd_loop_color_offset)
+{
+	BMIter iter;
+	BMLoop *l;
+	int i;
 
+	MLoopCol *cols = BLI_array_alloca(cols, f->len);
+
+	BM_ITER_ELEM_INDEX (l, &iter, f, BM_LOOPS_OF_FACE, i) {
+		MLoopCol *lcol = BM_ELEM_CD_GET_VOID_P(l, cd_loop_color_offset);
+		cols[i] = *lcol;
+	}
+
+	/* now that we have the uvs in the array, reverse! */
+	BM_ITER_ELEM_INDEX (l, &iter, f, BM_LOOPS_OF_FACE, i) {
+		/* current loop uv is the previous loop color */
+		MLoopCol *lcol = BM_ELEM_CD_GET_VOID_P(l, cd_loop_color_offset);
+		*lcol = cols[(f->len - i - 1)];
+	}
+}
 void bmo_reverse_colors_exec(BMesh *bm, BMOperator *op)
 {
-	BMOIter fs_iter;	/* selected faces iterator */
-	BMFace *fs;		/* current face */
-	BMIter l_iter;		/* iteration loop */
-	BLI_array_declare(cols);
-	MLoopCol *cols = NULL;
+	BMOIter iter;
+	BMFace *f;
+	const int cd_loop_color_offset = CustomData_get_offset(&bm->ldata, CD_MLOOPCOL);
 
-	BMO_ITER (fs, &fs_iter, op->slots_in, "faces", BM_FACE) {
-		if (CustomData_has_layer(&(bm->ldata), CD_MLOOPCOL)) {
-			BMLoop *lf;	/* current face loops */
-			int i;
-
-			BLI_array_empty(cols);
-			BLI_array_grow_items(cols, fs->len);
-
-			BM_ITER_ELEM_INDEX (lf, &l_iter, fs, BM_LOOPS_OF_FACE, i) {
-				cols[i] = *((MLoopCol *)CustomData_bmesh_get(&bm->ldata, lf->head.data, CD_MLOOPCOL));
-			}
-
-			/* now that we have the uvs in the array, reverse! */
-			BM_ITER_ELEM_INDEX (lf, &l_iter, fs, BM_LOOPS_OF_FACE, i) {
-				/* current loop uv is the previous loop color */
-				MLoopCol *lcol = CustomData_bmesh_get(&bm->ldata, lf->head.data, CD_MLOOPCOL);
-				*lcol = cols[(fs->len - i - 1)];
-			}
+	if (cd_loop_color_offset != -1) {
+		BMO_ITER (f, &iter, op->slots_in, "faces", BM_FACE) {
+			bm_face_reverse_colors(f, cd_loop_color_offset);
 		}
 	}
-
-	BLI_array_free(cols);
-}
-
-
-/*************************************************************************** *
- * shortest vertex path select
- *************************************************************************** */
-
-typedef struct ElemNode {
-	BMVert *v;	/* vertex */
-	BMVert *parent;	/* node parent id */
-	float weight;	/* node weight */
-	HeapNode *hn;	/* heap node */
-} ElemNode;
-
-#define VERT_MARK	1
-
-void bmo_shortest_path_exec(BMesh *bm, BMOperator *op)
-{
-	BMIter v_iter;		/* mesh verts iterator */
-	BMVert *sv, *ev;	/* starting vertex, ending vertex */
-	BMVert *v;		/* mesh vertex */
-	Heap *h = NULL;
-
-	ElemNode *vert_list = NULL;
-
-	int num_total = 0 /*, num_sels = 0 */, i = 0;
-	const int type = BMO_slot_int_get(op->slots_in, "type");
-
-	sv = BMO_slot_buffer_get_single(BMO_slot_get(op->slots_in, "vert_start"));
-	ev = BMO_slot_buffer_get_single(BMO_slot_get(op->slots_in, "vert_end"));
-
-	num_total = BM_mesh_elem_count(bm, BM_VERT);
-
-	/* allocate memory for the nodes */
-	vert_list = (ElemNode *)MEM_mallocN(sizeof(ElemNode) * num_total, "vertex nodes");
-
-	/* iterate through all the mesh vertices */
-	/* loop through all the vertices and fill the vertices/indices structure */
-	i = 0;
-	BM_ITER_MESH (v, &v_iter, bm, BM_VERTS_OF_MESH) {
-		vert_list[i].v = v;
-		vert_list[i].parent = NULL;
-		vert_list[i].weight = FLT_MAX;
-		BM_elem_index_set(v, i); /* set_inline */
-		i++;
-	}
-	bm->elem_index_dirty &= ~BM_VERT;
-
-	/*
-	 * we now have everything we need, start Dijkstra path finding algorithm
-	 */
-
-	/* set the distance/weight of the start vertex to 0 */
-	vert_list[BM_elem_index_get(sv)].weight = 0.0f;
-
-	h = BLI_heap_new();
-
-	for (i = 0; i < num_total; i++) {
-		vert_list[i].hn = BLI_heap_insert(h, vert_list[i].weight, vert_list[i].v);
-	}
-
-	while (!BLI_heap_is_empty(h)) {
-		BMEdge *e;
-		BMIter e_i;
-		float v_weight;
-
-		/* take the vertex with the lowest weight out of the heap */
-		BMVert *v = (BMVert *)BLI_heap_popmin(h);
-
-		if (vert_list[BM_elem_index_get(v)].weight == FLT_MAX) /* this means that there is no path */
-			break;
-
-		v_weight = vert_list[BM_elem_index_get(v)].weight;
-
-		BM_ITER_ELEM (e, &e_i, v, BM_EDGES_OF_VERT) {
-			BMVert *u;
-			float e_weight = v_weight;
-
-			if (type == VPATH_SELECT_EDGE_LENGTH)
-				e_weight += len_v3v3(e->v1->co, e->v2->co);
-			else e_weight += 1.0f;
-
-			u = (e->v1 == v) ? e->v2 : e->v1;
-
-			if (e_weight < vert_list[BM_elem_index_get(u)].weight) { /* is this path shorter ? */
-				/* add it if so */
-				vert_list[BM_elem_index_get(u)].parent = v;
-				vert_list[BM_elem_index_get(u)].weight = e_weight;
-
-				/* we should do a heap update node function!!! :-/ */
-				BLI_heap_remove(h, vert_list[BM_elem_index_get(u)].hn);
-				BLI_heap_insert(h, e_weight, u);
-			}
-		}
-	}
-
-	/* now we trace the path (if it exists) */
-	v = ev;
-
-	while (vert_list[BM_elem_index_get(v)].parent != NULL) {
-		BMO_elem_flag_enable(bm, v, VERT_MARK);
-		v = vert_list[BM_elem_index_get(v)].parent;
-	}
-
-	BLI_heap_free(h, NULL);
-	MEM_freeN(vert_list);
-
-	BMO_slot_buffer_from_enabled_flag(bm, op, op->slots_out, "verts.out", BM_VERT, VERT_MARK);
 }

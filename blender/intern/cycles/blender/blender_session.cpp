@@ -46,11 +46,12 @@ BlenderSession::BlenderSession(BL::RenderEngine b_engine_, BL::UserPreferences b
 {
 	/* offline render */
 
-	width = (int)(b_render.resolution_x()*b_render.resolution_percentage()/100);
-	height = (int)(b_render.resolution_y()*b_render.resolution_percentage()/100);
+	width = render_resolution_x(b_render);
+	height = render_resolution_y(b_render);
 
 	background = true;
-	last_redraw_time = 0.0f;
+	last_redraw_time = 0.0;
+	start_resize_time = 0.0;
 
 	create_session();
 }
@@ -66,7 +67,8 @@ BlenderSession::BlenderSession(BL::RenderEngine b_engine_, BL::UserPreferences b
 	width = width_;
 	height = height_;
 	background = false;
-	last_redraw_time = 0.0f;
+	last_redraw_time = 0.0;
+	start_resize_time = 0.0;
 
 	create_session();
 	session->start();
@@ -85,6 +87,7 @@ void BlenderSession::create_session()
 	/* reset status/progress */
 	last_status = "";
 	last_progress = -1.0f;
+	start_resize_time = 0.0;
 
 	/* create scene */
 	scene = new Scene(scene_params, session_params.device);
@@ -98,12 +101,19 @@ void BlenderSession::create_session()
 
 	/* create sync */
 	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress, session_params.device.type == DEVICE_CPU);
-	sync->sync_data(b_v3d, b_engine.camera_override());
 
-	if(b_rv3d)
+	if(b_v3d) {
+		/* full data sync */
+		sync->sync_data(b_v3d, b_engine.camera_override());
 		sync->sync_view(b_v3d, b_rv3d, width, height);
-	else
+	}
+	else {
+		/* for final render we will do full data sync per render layer, only
+		 * do some basic syncing here, no objects or materials for speed */
+		sync->sync_render_layers(b_v3d, NULL);
+		sync->sync_integrator();
 		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
+	}
 
 	/* set buffer parameters */
 	BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, b_v3d, b_rv3d, scene->camera, width, height);
@@ -126,8 +136,8 @@ void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
 	SceneParams scene_params = BlenderSync::get_scene_params(b_scene, background);
 	SessionParams session_params = BlenderSync::get_session_params(b_engine, b_userpref, b_scene, background);
 
-	width = (int)(b_render.resolution_x()*b_render.resolution_percentage()/100);
-	height = (int)(b_render.resolution_y()*b_render.resolution_percentage()/100);
+	width = render_resolution_x(b_render);
+	height = render_resolution_y(b_render);
 
 	if(scene->params.modified(scene_params) ||
 	   session->params.modified(session_params) ||
@@ -156,13 +166,19 @@ void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
 
 	/* sync object should be re-created */
 	sync = new BlenderSync(b_engine, b_data, b_scene, scene, !background, session->progress, session_params.device.type == DEVICE_CPU);
-	sync->sync_data(b_v3d, b_engine.camera_override());
-	sync->sync_camera(b_render, b_engine.camera_override(), width, height);
+
+	if(b_rv3d) {
+		sync->sync_data(b_v3d, b_engine.camera_override());
+		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
+	}
 
 	BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, PointerRNA_NULL, PointerRNA_NULL, scene->camera, width, height);
 	session->reset(buffer_params, session_params.samples);
 
 	b_engine.use_highlight_tiles(session_params.progressive_refine == false);
+
+	/* reset time */
+	start_resize_time = 0.0;
 }
 
 void BlenderSession::free_session()
@@ -181,6 +197,8 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 
 		case BL::RenderPass::type_Z:
 			return PASS_DEPTH;
+		case BL::RenderPass::type_MIST:
+			return PASS_MIST;
 		case BL::RenderPass::type_NORMAL:
 			return PASS_NORMAL;
 		case BL::RenderPass::type_OBJECT_INDEX:
@@ -227,7 +245,6 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 		case BL::RenderPass::type_REFRACTION:
 		case BL::RenderPass::type_SPECULAR:
 		case BL::RenderPass::type_REFLECTION:
-		case BL::RenderPass::type_MIST:
 			return PASS_NONE;
 	}
 	
@@ -360,6 +377,7 @@ void BlenderSession::render()
 		scene->integrator->tag_update(scene);
 
 		/* update scene */
+		sync->sync_camera(b_render, b_engine.camera_override(), width, height);
 		sync->sync_data(b_v3d, b_engine.camera_override(), b_rlay_name.c_str());
 
 		/* update number of samples per layer */
@@ -445,6 +463,10 @@ void BlenderSession::update_render_result(BL::RenderResult b_rr, BL::RenderLayer
 
 void BlenderSession::synchronize()
 {
+	/* only used for viewport render */
+	if(!b_v3d)
+		return;
+
 	/* on session/scene parameter changes, we recreate session entirely */
 	SceneParams scene_params = BlenderSync::get_scene_params(b_scene, background);
 	SessionParams session_params = BlenderSync::get_session_params(b_engine, b_userpref, b_scene, background);
@@ -487,15 +509,40 @@ void BlenderSession::synchronize()
 	if(scene->need_reset()) {
 		BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, b_v3d, b_rv3d, scene->camera, width, height);
 		session->reset(buffer_params, session_params.samples);
+
+		/* reset time */
+		start_resize_time = 0.0;
 	}
 }
 
 bool BlenderSession::draw(int w, int h)
 {
+	/* pause in redraw in case update is not being called due to final render */
+	session->set_pause(BlenderSync::get_session_pause(b_scene, background));
+
 	/* before drawing, we verify camera and viewport size changes, because
 	 * we do not get update callbacks for those, we must detect them here */
 	if(session->ready_to_reset()) {
 		bool reset = false;
+
+		/* if dimensions changed, reset */
+		if(width != w || height != h) {
+			if(start_resize_time == 0.0) {
+				/* don't react immediately to resizes to avoid flickery resizing
+				 * of the viewport, and some window managers changing the window
+				 * size temporarily on unminimize */
+				start_resize_time = time_dt();
+				tag_redraw();
+			}
+			else if(time_dt() - start_resize_time < 0.2) {
+				tag_redraw();
+			}
+			else {
+				width = w;
+				height = h;
+				reset = true;
+			}
+		}
 
 		/* try to acquire mutex. if we can't, come back later */
 		if(!session->scene->mutex.try_lock()) {
@@ -504,7 +551,7 @@ bool BlenderSession::draw(int w, int h)
 		else {
 			/* update camera from 3d view */
 
-			sync->sync_view(b_v3d, b_rv3d, w, h);
+			sync->sync_view(b_v3d, b_rv3d, width, height);
 
 			if(scene->camera->need_update)
 				reset = true;
@@ -512,19 +559,14 @@ bool BlenderSession::draw(int w, int h)
 			session->scene->mutex.unlock();
 		}
 
-		/* if dimensions changed, reset */
-		if(width != w || height != h) {
-			width = w;
-			height = h;
-			reset = true;
-		}
-
 		/* reset if requested */
 		if(reset) {
 			SessionParams session_params = BlenderSync::get_session_params(b_engine, b_userpref, b_scene, background);
-			BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, b_v3d, b_rv3d, scene->camera, w, h);
+			BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, b_v3d, b_rv3d, scene->camera, width, height);
 
 			session->reset(buffer_params, session_params.samples);
+
+			start_resize_time = 0.0;
 		}
 	}
 	else {

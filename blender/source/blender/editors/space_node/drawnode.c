@@ -80,24 +80,22 @@
 
 /* ****************** SOCKET BUTTON DRAW FUNCTIONS ***************** */
 
-static void node_socket_button_label(bContext *UNUSED(C), uiLayout *layout, PointerRNA *ptr, PointerRNA *UNUSED(node_ptr))
+static void node_socket_button_label(bContext *UNUSED(C), uiLayout *layout, PointerRNA *UNUSED(ptr), PointerRNA *UNUSED(node_ptr),
+                                     const char *text)
 {
-	bNodeSocket *sock = (bNodeSocket *)ptr->data;
-	uiItemL(layout, sock->name, 0);
+	uiItemL(layout, text, 0);
 }
 
-static void node_draw_input_default(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr, int linked)
+static void node_draw_input_default(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr)
 {
 	bNodeSocket *sock = (bNodeSocket *)ptr->data;
-	if (linked || (sock->flag & SOCK_HIDE_VALUE))
-		node_socket_button_label(C, layout, ptr, node_ptr);
-	else
-		sock->typeinfo->draw(C, layout, ptr, node_ptr);
+	sock->typeinfo->draw(C, layout, ptr, node_ptr, IFACE_(sock->name));
 }
 
-static void node_draw_output_default(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr, int UNUSED(linked))
+static void node_draw_output_default(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr)
 {
-	node_socket_button_label(C, layout, ptr, node_ptr);
+	bNodeSocket *sock = ptr->data;
+	node_socket_button_label(C, layout, ptr, node_ptr, IFACE_(sock->name));
 }
 
 
@@ -179,7 +177,7 @@ static void node_buts_mix_rgb(uiLayout *layout, bContext *UNUSED(C), PointerRNA 
 	col = uiLayoutColumn(layout, FALSE);
 	row = uiLayoutRow(col, TRUE);
 	uiItemR(row, ptr, "blend_type", 0, "", ICON_NONE);
-	if (ntree->type == NTREE_COMPOSIT)
+	if (ELEM(ntree->type, NTREE_COMPOSIT, NTREE_TEXTURE))
 		uiItemR(row, ptr, "use_alpha", 0, "", ICON_IMAGE_RGB_ALPHA);
 
 	uiItemR(col, ptr, "use_clamp", 0, NULL, ICON_NONE);
@@ -761,6 +759,11 @@ static void node_shader_buts_attribute(uiLayout *layout, bContext *UNUSED(C), Po
 	uiItemR(layout, ptr, "attribute_name", 0, IFACE_("Name"), ICON_NONE);
 }
 
+static void node_shader_buts_wireframe(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "use_pixel_size", 0, NULL, 0);
+}
+
 static void node_shader_buts_tex_image(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
 	PointerRNA imaptr = RNA_pointer_get(ptr, "image");
@@ -841,6 +844,11 @@ static void node_shader_buts_tex_coord(uiLayout *layout, bContext *UNUSED(C), Po
 	uiItemR(layout, ptr, "from_dupli", 0, NULL, 0);
 }
 
+static void node_shader_buts_bump(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "invert", 0, NULL, 0);
+}
+
 static void node_shader_buts_normal_map(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
 	uiItemR(layout, ptr, "space", 0, "", 0);
@@ -884,6 +892,11 @@ static void node_shader_buts_tangent(uiLayout *layout, bContext *C, PointerRNA *
 static void node_shader_buts_glossy(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
 	uiItemR(layout, ptr, "distribution", 0, "", ICON_NONE);
+}
+
+static void node_shader_buts_toon(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "component", 0, "", ICON_NONE);
 }
 
 static void node_shader_buts_script(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
@@ -962,6 +975,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 		case SH_NODE_ATTRIBUTE:
 			ntype->uifunc = node_shader_buts_attribute;
 			break;
+		case SH_NODE_WIREFRAME:
+			ntype->uifunc = node_shader_buts_wireframe;
+			break;
 		case SH_NODE_TEX_SKY:
 			ntype->uifunc = node_shader_buts_tex_sky;
 			break;
@@ -992,6 +1008,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 		case SH_NODE_TEX_COORD:
 			ntype->uifunc = node_shader_buts_tex_coord;
 			break;
+		case SH_NODE_BUMP:
+			ntype->uifunc = node_shader_buts_bump;
+			break;
 		case SH_NODE_NORMAL_MAP:
 			ntype->uifunc = node_shader_buts_normal_map;
 			break;
@@ -1002,6 +1021,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 		case SH_NODE_BSDF_GLASS:
 		case SH_NODE_BSDF_REFRACTION:
 			ntype->uifunc = node_shader_buts_glossy;
+			break;
+		case SH_NODE_BSDF_TOON:
+			ntype->uifunc = node_shader_buts_toon;
 			break;
 		case SH_NODE_SCRIPT:
 			ntype->uifunc = node_shader_buts_script;
@@ -1518,7 +1540,7 @@ static void node_composit_buts_id_mask(uiLayout *layout, bContext *UNUSED(C), Po
 }
 
 /* draw function for file output node sockets, displays only sub-path and format, no value button */
-static void node_draw_input_file_output(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr, int UNUSED(linked))
+static void node_draw_input_file_output(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr)
 {
 	bNodeTree *ntree = ptr->id.data;
 	bNodeSocket *sock = ptr->data;
@@ -2194,7 +2216,7 @@ static void node_composit_buts_trackpos(uiLayout *layout, bContext *C, PointerRN
 
 		uiItemR(layout, ptr, "position", 0, NULL, ICON_NONE);
 
-		if (node->custom1 == 2) {
+		if (ELEM(node->custom1, CMP_TRACKPOS_RELATIVE_FRAME, CMP_TRACKPOS_ABSOLUTE_FRAME)) {
 			uiItemR(layout, ptr, "frame_relative", 0, NULL, ICON_NONE);
 		}
 	}
@@ -2606,7 +2628,8 @@ static void node_template_properties_update(bNodeType *ntype)
 	}
 }
 
-static void node_socket_undefined_draw(bContext *UNUSED(C), uiLayout *layout, PointerRNA *UNUSED(ptr), PointerRNA *UNUSED(node_ptr))
+static void node_socket_undefined_draw(bContext *UNUSED(C), uiLayout *layout, PointerRNA *UNUSED(ptr), PointerRNA *UNUSED(node_ptr),
+                                       const char *UNUSED(text))
 {
 	uiItemL(layout, "Undefined Socket Type", ICON_ERROR);
 }
@@ -2730,39 +2753,44 @@ static void std_node_socket_interface_draw_color(bContext *UNUSED(C), PointerRNA
 	copy_v4_v4(r_color, std_node_socket_colors[type]);
 }
 
-static void std_node_socket_draw(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr)
+static void std_node_socket_draw(bContext *C, uiLayout *layout, PointerRNA *ptr, PointerRNA *node_ptr, const char *text)
 {
 	bNodeSocket *sock = ptr->data;
 	int type = sock->typeinfo->type;
 	/*int subtype = sock->typeinfo->subtype;*/
 	
+	if ((sock->flag & SOCK_IN_USE) || (sock->flag & SOCK_HIDE_VALUE)) {
+		node_socket_button_label(C, layout, ptr, node_ptr, text);
+		return;
+	}
+	
 	switch (type) {
 		case SOCK_FLOAT:
 		case SOCK_INT:
 		case SOCK_BOOLEAN:
-			uiItemR(layout, ptr, "default_value", 0, sock->name, 0);
+			uiItemR(layout, ptr, "default_value", 0, text, 0);
 			break;
 		case SOCK_VECTOR:
-			uiTemplateComponentMenu(layout, ptr, "default_value", sock->name);
+			uiTemplateComponentMenu(layout, ptr, "default_value", text);
 			break;
 		case SOCK_RGBA: {
 			uiLayout *row = uiLayoutRow(layout, false);
 			uiLayoutSetAlignment(row, UI_LAYOUT_ALIGN_LEFT);
 			/* draw the socket name right of the actual button */
 			uiItemR(row, ptr, "default_value", 0, "", 0);
-			uiItemL(row, sock->name, 0);
+			uiItemL(row, text, 0);
 			break;
 		}
 		case SOCK_STRING: {
 			uiLayout *row = uiLayoutRow(layout, true);
 			/* draw the socket name right of the actual button */
 			uiItemR(row, ptr, "default_value", 0, "", 0);
-			uiItemL(row, sock->name, 0);
+			uiItemL(row, text, 0);
 			break;
 		}
 		
 		default:
-			node_socket_button_label(C, layout, ptr, node_ptr);
+			node_socket_button_label(C, layout, ptr, node_ptr, text);
 			break;
 	}
 }
@@ -2835,135 +2863,143 @@ void ED_init_node_socket_type_virtual(bNodeSocketType *stype)
 
 /* ************** Generic drawing ************** */
 
-void draw_nodespace_back_pix(const bContext *C, ARegion *ar, SpaceNode *snode)
+void draw_nodespace_back_pix(const bContext *C, ARegion *ar, SpaceNode *snode, bNodeInstanceKey parent_key)
 {
-	if ((snode->flag & SNODE_BACKDRAW) && ED_node_is_compositor(snode)) {
-		Image *ima = BKE_image_verify_viewer(IMA_TYPE_COMPOSITE, "Viewer Node");
-		void *lock;
-		ImBuf *ibuf = BKE_image_acquire_ibuf(ima, NULL, &lock);
-		if (ibuf) {
-			float x, y; 
+	bNodeInstanceKey active_viewer_key = (snode->nodetree ? snode->nodetree->active_viewer_key : NODE_INSTANCE_KEY_NONE);
+	Image *ima;
+	void *lock;
+	ImBuf *ibuf;
+	
+	if (!(snode->flag & SNODE_BACKDRAW) || !ED_node_is_compositor(snode))
+		return;
+	
+	if (parent_key.value != active_viewer_key.value)
+		return;
+	
+	ima = BKE_image_verify_viewer(IMA_TYPE_COMPOSITE, "Viewer Node");
+	ibuf = BKE_image_acquire_ibuf(ima, NULL, &lock);
+	if (ibuf) {
+		float x, y; 
+		
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		
+		/* keep this, saves us from a version patch */
+		if (snode->zoom == 0.0f) snode->zoom = 1.0f;
+		
+		/* somehow the offset has to be calculated inverse */
+		
+		glaDefine2DArea(&ar->winrct);
+		/* ortho at pixel level curarea */
+		wmOrtho2(-GLA_PIXEL_OFS, ar->winx - GLA_PIXEL_OFS, -GLA_PIXEL_OFS, ar->winy - GLA_PIXEL_OFS);
+		
+		x = (ar->winx - snode->zoom * ibuf->x) / 2 + snode->xof;
+		y = (ar->winy - snode->zoom * ibuf->y) / 2 + snode->yof;
+		
+		if (ibuf->rect || ibuf->rect_float) {
+			unsigned char *display_buffer = NULL;
+			void *cache_handle = NULL;
 			
-			glMatrixMode(GL_PROJECTION);
-			glPushMatrix();
-			glMatrixMode(GL_MODELVIEW);
-			glPushMatrix();
-
-			/* keep this, saves us from a version patch */
-			if (snode->zoom == 0.0f) snode->zoom = 1.0f;
-			
-			/* somehow the offset has to be calculated inverse */
-			
-			glaDefine2DArea(&ar->winrct);
-			/* ortho at pixel level curarea */
-			wmOrtho2(-GLA_PIXEL_OFS, ar->winx - GLA_PIXEL_OFS, -GLA_PIXEL_OFS, ar->winy - GLA_PIXEL_OFS);
-			
-			x = (ar->winx - snode->zoom * ibuf->x) / 2 + snode->xof;
-			y = (ar->winy - snode->zoom * ibuf->y) / 2 + snode->yof;
-
-			if (ibuf->rect || ibuf->rect_float) {
-				unsigned char *display_buffer = NULL;
-				void *cache_handle = NULL;
-
-				if (snode->flag & (SNODE_SHOW_R | SNODE_SHOW_G | SNODE_SHOW_B)) {
-					int ofs;
-
-					display_buffer = IMB_display_buffer_acquire_ctx(C, ibuf, &cache_handle);
-
+			if (snode->flag & (SNODE_SHOW_R | SNODE_SHOW_G | SNODE_SHOW_B)) {
+				int ofs;
+				
+				display_buffer = IMB_display_buffer_acquire_ctx(C, ibuf, &cache_handle);
+				
 #ifdef __BIG_ENDIAN__
-					if      (snode->flag & SNODE_SHOW_R) ofs = 2;
-					else if (snode->flag & SNODE_SHOW_G) ofs = 1;
-					else                                 ofs = 0;
+				if      (snode->flag & SNODE_SHOW_R) ofs = 2;
+				else if (snode->flag & SNODE_SHOW_G) ofs = 1;
+				else                                 ofs = 0;
 #else
-					if      (snode->flag & SNODE_SHOW_R) ofs = 1;
-					else if (snode->flag & SNODE_SHOW_G) ofs = 2;
-					else                                 ofs = 3;
+				if      (snode->flag & SNODE_SHOW_R) ofs = 1;
+				else if (snode->flag & SNODE_SHOW_G) ofs = 2;
+				else                                 ofs = 3;
 #endif
-
-					glPixelZoom(snode->zoom, snode->zoom);
-					/* swap bytes, so alpha is most significant one, then just draw it as luminance int */
-
-					glaDrawPixelsSafe(x, y, ibuf->x, ibuf->y, ibuf->x, GL_LUMINANCE, GL_UNSIGNED_INT,
-					                  display_buffer + ofs);
-
-					glPixelZoom(1.0f, 1.0f);
-				}
-				else if (snode->flag & SNODE_SHOW_ALPHA) {
-					display_buffer = IMB_display_buffer_acquire_ctx(C, ibuf, &cache_handle);
-
-					glPixelZoom(snode->zoom, snode->zoom);
-					/* swap bytes, so alpha is most significant one, then just draw it as luminance int */
-#ifdef __BIG_ENDIAN__
-					glPixelStorei(GL_UNPACK_SWAP_BYTES, 1);
-#endif
-					glaDrawPixelsSafe(x, y, ibuf->x, ibuf->y, ibuf->x, GL_LUMINANCE, GL_UNSIGNED_INT, display_buffer);
-
-#ifdef __BIG_ENDIAN__
-					glPixelStorei(GL_UNPACK_SWAP_BYTES, 0);
-#endif
-					glPixelZoom(1.0f, 1.0f);
-				}
-				else if (snode->flag & SNODE_USE_ALPHA) {
-					glEnable(GL_BLEND);
-					glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-					glPixelZoom(snode->zoom, snode->zoom);
-					
-					glaDrawImBuf_glsl_ctx(C, ibuf, x, y, GL_NEAREST);
-					
-					glPixelZoom(1.0f, 1.0f);
-					glDisable(GL_BLEND);
-				}
-				else {
-					glPixelZoom(snode->zoom, snode->zoom);
-
-					glaDrawImBuf_glsl_ctx(C, ibuf, x, y, GL_NEAREST);
-					
-					glPixelZoom(1.0f, 1.0f);
-				}
-
-				if (cache_handle)
-					IMB_display_buffer_release(cache_handle);
+				
+				glPixelZoom(snode->zoom, snode->zoom);
+				/* swap bytes, so alpha is most significant one, then just draw it as luminance int */
+				
+				glaDrawPixelsSafe(x, y, ibuf->x, ibuf->y, ibuf->x, GL_LUMINANCE, GL_UNSIGNED_INT,
+				                  display_buffer + ofs);
+				
+				glPixelZoom(1.0f, 1.0f);
 			}
-
-			/** @note draw selected info on backdrop */
-			if (snode->edittree) {
-				bNode *node = snode->edittree->nodes.first;
-				rctf *viewer_border = &snode->edittree->viewer_border;
-				while (node) {
-					if (node->flag & NODE_SELECT) {
-						if (node->typeinfo->uibackdropfunc) {
-							node->typeinfo->uibackdropfunc(snode, ibuf, node, x, y);
-						}
-					}
-					node = node->next;
-				}
-
-				if ((snode->edittree->flag & NTREE_VIEWER_BORDER) &&
-				    viewer_border->xmin < viewer_border->xmax &&
-				    viewer_border->ymin < viewer_border->ymax)
-				{
-					glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-					setlinestyle(3);
-					cpack(0x4040FF);
-
-					glRectf(x + snode->zoom * viewer_border->xmin * ibuf->x,
-					        y + snode->zoom * viewer_border->ymin * ibuf->y,
-					        x + snode->zoom * viewer_border->xmax * ibuf->x,
-					        y + snode->zoom * viewer_border->ymax * ibuf->y);
-
-					setlinestyle(0);
-					glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-				}
+			else if (snode->flag & SNODE_SHOW_ALPHA) {
+				display_buffer = IMB_display_buffer_acquire_ctx(C, ibuf, &cache_handle);
+				
+				glPixelZoom(snode->zoom, snode->zoom);
+				/* swap bytes, so alpha is most significant one, then just draw it as luminance int */
+#ifdef __BIG_ENDIAN__
+				glPixelStorei(GL_UNPACK_SWAP_BYTES, 1);
+#endif
+				glaDrawPixelsSafe(x, y, ibuf->x, ibuf->y, ibuf->x, GL_LUMINANCE, GL_UNSIGNED_INT, display_buffer);
+				
+#ifdef __BIG_ENDIAN__
+				glPixelStorei(GL_UNPACK_SWAP_BYTES, 0);
+#endif
+				glPixelZoom(1.0f, 1.0f);
+			}
+			else if (snode->flag & SNODE_USE_ALPHA) {
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+				glPixelZoom(snode->zoom, snode->zoom);
+				
+				glaDrawImBuf_glsl_ctx(C, ibuf, x, y, GL_NEAREST);
+				
+				glPixelZoom(1.0f, 1.0f);
+				glDisable(GL_BLEND);
+			}
+			else {
+				glPixelZoom(snode->zoom, snode->zoom);
+				
+				glaDrawImBuf_glsl_ctx(C, ibuf, x, y, GL_NEAREST);
+				
+				glPixelZoom(1.0f, 1.0f);
 			}
 			
-			glMatrixMode(GL_PROJECTION);
-			glPopMatrix();
-			glMatrixMode(GL_MODELVIEW);
-			glPopMatrix();
+			if (cache_handle)
+				IMB_display_buffer_release(cache_handle);
 		}
-
-		BKE_image_release_ibuf(ima, ibuf, lock);
+		
+		/** @note draw selected info on backdrop */
+		if (snode->edittree) {
+			bNode *node = snode->edittree->nodes.first;
+			rctf *viewer_border = &snode->nodetree->viewer_border;
+			while (node) {
+				if (node->flag & NODE_SELECT) {
+					if (node->typeinfo->uibackdropfunc) {
+						node->typeinfo->uibackdropfunc(snode, ibuf, node, x, y);
+					}
+				}
+				node = node->next;
+			}
+			
+			if ((snode->nodetree->flag & NTREE_VIEWER_BORDER) &&
+			        viewer_border->xmin < viewer_border->xmax &&
+			        viewer_border->ymin < viewer_border->ymax)
+			{
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+				setlinestyle(3);
+				cpack(0x4040FF);
+				
+				glRectf(x + snode->zoom * viewer_border->xmin * ibuf->x,
+				        y + snode->zoom * viewer_border->ymin * ibuf->y,
+				        x + snode->zoom * viewer_border->xmax * ibuf->x,
+				        y + snode->zoom * viewer_border->ymax * ibuf->y);
+				
+				setlinestyle(0);
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			}
+		}
+		
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
 	}
+	
+	BKE_image_release_ibuf(ima, ibuf, lock);
 }
 
 

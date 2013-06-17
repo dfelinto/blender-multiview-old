@@ -28,7 +28,7 @@
  *  \ingroup edanimation
  */
 
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_object_types.h"
@@ -251,7 +251,7 @@ void ANIM_draw_cfra(const bContext *C, View2D *v2d, short flag)
 /* Note: 'Preview Range' tools are defined in anim_ops.c */
 
 /* Draw preview range 'curtains' for highlighting where the animation data is */
-void ANIM_draw_previewrange(const bContext *C, View2D *v2d)
+void ANIM_draw_previewrange(const bContext *C, View2D *v2d, int end_frame_width)
 {
 	Scene *scene = CTX_data_scene(C);
 	
@@ -262,9 +262,9 @@ void ANIM_draw_previewrange(const bContext *C, View2D *v2d)
 		glColor4f(0.0f, 0.0f, 0.0f, 0.4f);
 		
 		/* only draw two separate 'curtains' if there's no overlap between them */
-		if (PSFRA < PEFRA) {
+		if (PSFRA < PEFRA + end_frame_width) {
 			glRectf(v2d->cur.xmin, v2d->cur.ymin, (float)PSFRA, v2d->cur.ymax);
-			glRectf((float)PEFRA, v2d->cur.ymin, v2d->cur.xmax, v2d->cur.ymax);
+			glRectf((float)(PEFRA + end_frame_width), v2d->cur.ymin, v2d->cur.xmax, v2d->cur.ymax);
 		}
 		else {
 			glRectf(v2d->cur.xmin, v2d->cur.ymin, v2d->cur.xmax, v2d->cur.ymax);
@@ -373,7 +373,7 @@ float ANIM_unit_mapping_get_factor(Scene *scene, ID *id, FCurve *fcu, short rest
 		
 		/* get RNA property that F-Curve affects */
 		RNA_id_pointer_create(id, &id_ptr);
-		if (RNA_path_resolve(&id_ptr, fcu->rna_path, &ptr, &prop)) {
+		if (RNA_path_resolve_property(&id_ptr, fcu->rna_path, &ptr, &prop)) {
 			/* rotations: radians <-> degrees? */
 			if (RNA_SUBTYPE_UNIT(RNA_property_subtype(prop)) == PROP_UNIT_ROTATION) {
 				/* if the radians flag is not set, default to using degrees which need conversions */
@@ -399,9 +399,9 @@ float ANIM_unit_mapping_get_factor(Scene *scene, ID *id, FCurve *fcu, short rest
 static short bezt_unit_mapping_apply(KeyframeEditData *ked, BezTriple *bezt)
 {
 	/* mapping factor is stored in f1, flags are stored in i1 */
-	const bool only_keys = (ked->i1 & ANIM_UNITCONV_ONLYKEYS);
-	const bool sel_vs = (ked->i1 & ANIM_UNITCONV_SELVERTS);
-	const bool skip_knot = (ked->i1 & ANIM_UNITCONV_SKIPKNOTS);
+	const bool only_keys = (ked->i1 & ANIM_UNITCONV_ONLYKEYS) != 0;
+	const bool sel_vs = (ked->i1 & ANIM_UNITCONV_SELVERTS) != 0;
+	const bool skip_knot = (ked->i1 & ANIM_UNITCONV_SKIPKNOTS) != 0;
 	float fac = ked->f1;
 	
 	/* adjust BezTriple handles only if allowed to */

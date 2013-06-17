@@ -30,7 +30,6 @@ set(INC
 	../blenfont
 	../blenkernel
 	../blenlib
-	../blenloader
 	../imbuf
 	../makesdna
 	../makesrna
@@ -129,10 +128,6 @@ if(WITH_PYTHON)
 	add_definitions(-DWITH_PYTHON)
 	list(APPEND INC
 		../python
-	)
-
-	list(APPEND INC_SYS
-		${PYTHON_INCLUDE_DIRS}
 	)
 endif()
 

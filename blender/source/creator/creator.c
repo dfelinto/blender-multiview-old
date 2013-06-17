@@ -333,7 +333,7 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	printf("\t...will ignore 8 because there is no space between the -f and the frame value\n\n");
 
 	printf("Argument Order:\n");
-	printf("Arguments are executed in the order they are given. eg\n");
+	printf("\targuments are executed in the order they are given. eg\n");
 	printf("\t\t\"blender --background test.blend --render-frame 1 --render-output /tmp\"\n");
 	printf("\t...will not render to /tmp because '--render-frame 1' renders before the output path is set\n");
 	printf("\t\t\"blender --background --render-output /tmp test.blend --render-frame 1\"\n");
@@ -344,7 +344,7 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	printf("  $BLENDER_USER_CONFIG      Directory for user configuration files.\n");
 	printf("  $BLENDER_USER_SCRIPTS     Directory for user scripts.\n");
 	printf("  $BLENDER_SYSTEM_SCRIPTS   Directory for system wide scripts.\n");
-	printf("  $Directory for user data files (icons, translations, ..).\n");
+	printf("  Directory for user data files (icons, translations, ..).\n");
 	printf("  $BLENDER_SYSTEM_DATAFILES Directory for system wide data files.\n");
 	printf("  $BLENDER_SYSTEM_PYTHON    Directory for system python libraries.\n");
 #ifdef WIN32
@@ -634,6 +634,11 @@ static int playback_mode(int argc, const char **argv, void *UNUSED(data))
 {
 	/* not if -b was given first */
 	if (G.background == 0) {
+#ifdef WITH_FFMPEG
+		/* Setup FFmpeg with current debug flags. */
+		IMB_ffmpeg_init();
+#endif
+
 		WM_main_playanim(argc, argv); /* not the same argc and argv as before */
 		exit(0); /* 2.4x didn't do this */
 	}
@@ -821,11 +826,13 @@ static int set_image_type(int argc, const char **argv, void *data)
 static int set_threads(int argc, const char **argv, void *UNUSED(data))
 {
 	if (argc > 1) {
-		if (G.background) {
-			RE_set_max_threads(atoi(argv[1]));
+		int threads = atoi(argv[1]);
+
+		if (threads >= 0 && threads <= BLENDER_MAX_THREADS) {
+			BLI_system_num_threads_override_set(threads);
 		}
 		else {
-			printf("Warning: threads can only be set in background mode\n");
+			printf("Error, threads has to be in range 0-%d\n", BLENDER_MAX_THREADS);
 		}
 		return 1;
 	}
@@ -1243,9 +1250,7 @@ static int load_file(int UNUSED(argc), const char **argv, void *data)
 		/* WM_file_read() runs normally but since we're in background mode do here */
 #ifdef WITH_PYTHON
 		/* run any texts that were loaded in and flagged as modules */
-		BPY_driver_reset();
-		BPY_app_handlers_reset(FALSE);
-		BPY_modules_load_user(C);
+		BPY_python_reset(C);
 #endif
 
 		/* happens for the UI on file reading too (huh? (ton))*/
@@ -1406,7 +1411,7 @@ static void setupArguments(bContext *C, bArgs *ba, SYS_SystemHandle *syshandle)
 	BLI_argsAdd(ba, 4, "-E", "--engine", "<engine>\n\tSpecify the render engine\n\tuse -E help to list available engines", set_engine, C);
 
 	BLI_argsAdd(ba, 4, "-F", "--render-format", format_doc, set_image_type, C);
-	BLI_argsAdd(ba, 4, "-t", "--threads", "<threads>\n\tUse amount of <threads> for rendering in background\n\t[1-" STRINGIFY(BLENDER_MAX_THREADS) "], 0 for systems processor count.", set_threads, NULL);
+	BLI_argsAdd(ba, 4, "-t", "--threads", "<threads>\n\tUse amount of <threads> for rendering and other operations\n\t[1-" STRINGIFY(BLENDER_MAX_THREADS) "], 0 for systems processor count.", set_threads, NULL);
 	BLI_argsAdd(ba, 4, "-x", "--use-extension", "<bool>\n\tSet option to add the file extension to the end of the file", set_extension, C);
 
 }
@@ -1500,10 +1505,6 @@ int main(int argc, const char **argv)
 
 	BKE_brush_system_init();
 
-#ifdef WITH_FFMPEG
-	IMB_ffmpeg_init();
-#endif
-
 	BLI_callback_global_init();
 
 #ifdef WITH_GAMEENGINE
@@ -1526,6 +1527,10 @@ int main(int argc, const char **argv)
 #else
 	G.factory_startup = true;  /* using preferences or user startup makes no sense for py-as-module */
 	(void)syshandle;
+#endif
+
+#ifdef WITH_FFMPEG
+	IMB_ffmpeg_init();
 #endif
 
 	/* after level 1 args, this is so playanim skips RNA init */
@@ -1634,11 +1639,21 @@ int main(int argc, const char **argv)
 		WM_exit(C);
 	}
 	else {
-		if ((G.fileflags & G_FILE_AUTOPLAY) && (G.f & G_SCRIPT_AUTOEXEC)) {
-			if (WM_init_game(C))
-				return 0;
+		if (G.fileflags & G_FILE_AUTOPLAY) {
+			if (G.f & G_SCRIPT_AUTOEXEC) {
+				if (WM_init_game(C)) {
+					return 0;
+				}
+			}
+			else {
+				if (!(G.f & G_SCRIPT_AUTOEXEC_FAIL_QUIET)) {
+					G.f |= G_SCRIPT_AUTOEXEC_FAIL;
+					BLI_snprintf(G.autoexec_fail, sizeof(G.autoexec_fail), "Game AutoStart");
+				}
+			}
 		}
-		else if (!G.file_loaded) {
+
+		if (!G.file_loaded) {
 			WM_init_splash(C);
 		}
 	}

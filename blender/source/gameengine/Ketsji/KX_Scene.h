@@ -345,7 +345,6 @@ public:
 	                 void* meshob, bool use_gfx, bool use_phys);
 
 	void AddAnimatedObject(CValue* gameobj);
-	void RemoveAnimatedObject(CValue* gameobj);
 
 	/**
 	 * \section Logic stuff

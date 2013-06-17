@@ -110,9 +110,10 @@ static DerivedMesh *applyModifier(ModifierData *md, struct Object *ob,
 	MDeformVert *dvert = NULL;
 	BevelModifierData *bmd = (BevelModifierData *) md;
 	const float threshold = cosf((bmd->bevel_angle + 0.00001f) * (float)M_PI / 180.0f);
-	const bool vertex_only = bmd->flags & BME_BEVEL_VERT;
+	const bool vertex_only = (bmd->flags & BME_BEVEL_VERT) != 0;
+	const bool do_clamp = !(bmd->flags & BME_BEVEL_OVERLAP_OK);
 
-	bm = DM_to_bmesh(dm);
+	bm = DM_to_bmesh(dm, true);
 
 	if (vertex_only) {
 		if ((bmd->lim_flags & BME_BEVEL_VGROUP) && bmd->defgrp_name[0]) {
@@ -160,7 +161,7 @@ static DerivedMesh *applyModifier(ModifierData *md, struct Object *ob,
 	}
 
 	BM_mesh_bevel(bm, bmd->value, bmd->res,
-	              vertex_only, bmd->lim_flags & BME_BEVEL_WEIGHT, true,
+	              vertex_only, bmd->lim_flags & BME_BEVEL_WEIGHT, do_clamp,
 	              dvert, vgroup);
 
 	result = CDDM_from_bmesh(bm, TRUE);
@@ -170,7 +171,7 @@ static DerivedMesh *applyModifier(ModifierData *md, struct Object *ob,
 	           bm->ftoolflagpool == NULL);  /* make sure we never alloc'd these */
 	BM_mesh_free(bm);
 
-	CDDM_calc_normals(result);
+	result->dirty |= DM_DIRTY_NORMALS;
 
 	return result;
 }
@@ -207,19 +208,12 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
 
 	/* until we allow for dirty normal flag, always calc,
 	 * note: calculating on the CDDM is faster then the BMesh equivalent */
-	CDDM_calc_normals(result);
+	result->dirty |= DM_DIRTY_NORMALS;
 
 	return result;
 }
 
 #endif
-
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
-}
 
 
 ModifierTypeInfo modifierType_Bevel = {
@@ -237,7 +231,7 @@ ModifierTypeInfo modifierType_Bevel = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
 	/* freeData */          NULL,

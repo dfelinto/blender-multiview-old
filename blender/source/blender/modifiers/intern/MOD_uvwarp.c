@@ -98,14 +98,17 @@ static void matrix_from_obj_pchan(float mat[4][4], Object *ob, const char *bonen
 {
 	bPoseChannel *pchan = BKE_pose_channel_find_name(ob->pose, bonename);
 	if (pchan) {
-		mult_m4_m4m4(mat, ob->obmat, pchan->pose_mat);
+		mul_m4_m4m4(mat, ob->obmat, pchan->pose_mat);
 	}
 	else {
 		copy_m4_m4(mat, ob->obmat);
 	}
 }
 
-#define OMP_LIMIT 1000
+#ifdef _OPENMP
+#  define OMP_LIMIT 1000
+#endif
+
 static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
                                   DerivedMesh *dm,
                                   ModifierApplyFlag UNUSED(flag))
@@ -139,7 +142,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	matrix_from_obj_pchan(mat_dst, umd->object_dst, umd->bone_dst);
 
 	invert_m4_m4(imat_dst, mat_dst);
-	mult_m4_m4m4(warp_mat, imat_dst, mat_src);
+	mul_m4_m4m4(warp_mat, imat_dst, mat_src);
 
 	/* apply warp */
 	if (!is_zero_v2(umd->center)) {
@@ -152,8 +155,8 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 		invert_m4_m4(imat_cent, mat_cent);
 
-		mult_m4_m4m4(warp_mat, warp_mat, imat_cent);
-		mult_m4_m4m4(warp_mat, mat_cent, warp_mat);
+		mul_m4_m4m4(warp_mat, warp_mat, imat_cent);
+		mul_m4_m4m4(warp_mat, mat_cent, warp_mat);
 	}
 
 	/* make sure we're using an existing layer */
@@ -199,13 +202,6 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	dm->dirty |= DM_DIRTY_TESS_CDLAYERS;
 
 	return dm;
-}
-
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
 }
 
 static void foreachObjectLink(ModifierData *md, Object *ob, ObjectWalkFunc walk, void *userData)
@@ -254,7 +250,7 @@ ModifierTypeInfo modifierType_UVWarp = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
 	/* freeData */          NULL,

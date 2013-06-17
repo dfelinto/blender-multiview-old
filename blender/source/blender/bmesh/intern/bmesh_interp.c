@@ -55,7 +55,7 @@ static void bm_data_interp_from_elem(CustomData *data_layer, BMElem *ele1, BMEle
 				/* do nothing */
 			}
 			else {
-				CustomData_bmesh_free_block(data_layer, &ele_dst->head.data);
+				CustomData_bmesh_free_block_data(data_layer, &ele_dst->head.data);
 				CustomData_bmesh_copy_data(data_layer, data_layer, ele1->head.data, &ele_dst->head.data);
 			}
 		}
@@ -64,7 +64,7 @@ static void bm_data_interp_from_elem(CustomData *data_layer, BMElem *ele1, BMEle
 				/* do nothing */
 			}
 			else {
-				CustomData_bmesh_free_block(data_layer, &ele_dst->head.data);
+				CustomData_bmesh_free_block_data(data_layer, &ele_dst->head.data);
 				CustomData_bmesh_copy_data(data_layer, data_layer, ele2->head.data, &ele_dst->head.data);
 			}
 		}
@@ -432,10 +432,8 @@ static void bm_loop_flip_disp(float source_axis_x[3], float source_axis_y[3],
 static void bm_loop_interp_mdisps(BMesh *bm, BMLoop *target, BMFace *source)
 {
 	MDisps *mdisps;
-	BMLoop *l_iter;
-	BMLoop *l_first;
-	float x, y, d, v1[3], v2[3], v3[3], v4[3] = {0.0f, 0.0f, 0.0f}, e1[3], e2[3];
-	int ix, iy, res;
+	float d, v1[3], v2[3], v3[3], v4[3] = {0.0f, 0.0f, 0.0f}, e1[3], e2[3];
+	int ix, res;
 	float axis_x[3], axis_y[3];
 	
 	/* ignore 2-edged faces */
@@ -467,10 +465,15 @@ static void bm_loop_interp_mdisps(BMesh *bm, BMLoop *target, BMFace *source)
 
 	res = (int)sqrt(mdisps->totdisp);
 	d = 1.0f / (float)(res - 1);
-	for (x = 0.0f, ix = 0; ix < res; x += d, ix++) {
+	#pragma omp parallel for if(res > 3)
+	for (ix = 0; ix < res; ix++) {
+		float x = d * ix, y;
+		int iy;
 		for (y = 0.0f, iy = 0; iy < res; y += d, iy++) {
+			BMLoop *l_iter;
+			BMLoop *l_first;
 			float co1[3], co2[3], co[3];
-			
+
 			copy_v3_v3(co1, e1);
 			
 			mul_v3_fl(co1, y);
@@ -804,6 +807,7 @@ void BM_data_layer_add_named(BMesh *bm, CustomData *data, int type, const char *
 void BM_data_layer_free(BMesh *bm, CustomData *data, int type)
 {
 	CustomData olddata;
+	bool has_layer;
 
 	olddata = *data;
 	olddata.layers = (olddata.layers) ? MEM_dupallocN(olddata.layers): NULL;
@@ -811,7 +815,9 @@ void BM_data_layer_free(BMesh *bm, CustomData *data, int type)
 	/* the pool is now owned by olddata and must not be shared */
 	data->pool = NULL;
 
-	CustomData_free_layer_active(data, type, 0);
+	has_layer = CustomData_free_layer_active(data, type, 0);
+	/* assert because its expensive to realloc - better not do if layer isnt present */
+	BLI_assert(has_layer != false);
 
 	update_data_blocks(bm, &olddata, data);
 	if (olddata.layers) MEM_freeN(olddata.layers);
@@ -820,6 +826,7 @@ void BM_data_layer_free(BMesh *bm, CustomData *data, int type)
 void BM_data_layer_free_n(BMesh *bm, CustomData *data, int type, int n)
 {
 	CustomData olddata;
+	bool has_layer;
 
 	olddata = *data;
 	olddata.layers = (olddata.layers) ? MEM_dupallocN(olddata.layers): NULL;
@@ -827,7 +834,9 @@ void BM_data_layer_free_n(BMesh *bm, CustomData *data, int type, int n)
 	/* the pool is now owned by olddata and must not be shared */
 	data->pool = NULL;
 
-	CustomData_free_layer(data, type, 0, CustomData_get_layer_index_n(data, type, n));
+	has_layer = CustomData_free_layer(data, type, 0, CustomData_get_layer_index_n(data, type, n));
+	/* assert because its expensive to realloc - better not do if layer isnt present */
+	BLI_assert(has_layer != false);
 	
 	update_data_blocks(bm, &olddata, data);
 	if (olddata.layers) MEM_freeN(olddata.layers);

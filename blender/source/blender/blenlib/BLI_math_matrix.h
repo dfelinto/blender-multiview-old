@@ -74,10 +74,8 @@ void sub_m4_m4m4(float R[4][4], float A[4][4], float B[4][4]);
 void mul_m3_m3m3(float R[3][3], float A[3][3], float B[3][3]);
 void mul_m4_m3m4(float R[4][4], float A[3][3], float B[4][4]);
 void mul_m4_m4m3(float R[4][4], float A[4][4], float B[3][3]);
-/* note: the A,B arguments are reversed compared to previous mul_m4_m4m4
- * function, for consistency with above functions & math notation. */
-void mult_m4_m4m4(float R[4][4], float A[4][4], float B[4][4]);
-void mult_m3_m3m4(float R[3][3], float A[4][4], float B[3][3]);
+void mul_m4_m4m4(float R[4][4], float A[4][4], float B[4][4]);
+void mul_m3_m3m4(float R[3][3], float A[4][4], float B[3][3]);
 
 void mul_serie_m3(float R[3][3],
                   float M1[3][3], float M2[3][3], float M3[3][3], float M4[3][3],
@@ -88,11 +86,13 @@ void mul_serie_m4(float R[4][4],
 
 void mul_m4_v3(float M[4][4], float r[3]);
 void mul_v3_m4v3(float r[3], float M[4][4], const float v[3]);
+void mul_v2_m4v3(float r[2], float M[4][4], const float v[3]);
 void mul_v2_m2v2(float r[2], float M[2][2], const float v[2]);
 void mul_mat3_m4_v3(float M[4][4], float r[3]);
 void mul_m4_v4(float M[4][4], float r[4]);
 void mul_v4_m4v4(float r[4], float M[4][4], const float v[4]);
 void mul_project_m4_v3(float M[4][4], float vec[3]);
+void mul_v2_project_m4_v3(float r[2], float M[4][4], const float vec[3]);
 
 void mul_m3_v3(float M[3][3], float r[3]);
 void mul_v3_m3v3(float r[3], float M[3][3], const float a[3]);

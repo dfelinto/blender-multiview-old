@@ -370,6 +370,11 @@ typedef struct bNodeTree {
 	 * Only available in base node trees (e.g. scene->node_tree)
 	 */
 	struct bNodeInstanceHash *previews;
+	/* Defines the node tree instance to use for the "active" context,
+	 * in case multiple different editors are used and make context ambiguous.
+	 */
+	bNodeInstanceKey active_viewer_key;
+	int pad;
 	
 	/* execution data */
 	/* XXX It would be preferable to completely move this data out of the underlying node tree,
@@ -403,7 +408,7 @@ typedef struct bNodeTree {
 #define NTREE_COM_OPENCL			2	/* use opencl */
 #define NTREE_TWO_PASS				4	/* two pass */
 #define NTREE_COM_GROUPNODE_BUFFER	8	/* use groupnode buffers */
-#define NTREE_VIEWER_BORDER		16	/* use a border for viewer nodes */
+#define NTREE_VIEWER_BORDER			16	/* use a border for viewer nodes */
 
 /* XXX not nice, but needed as a temporary flags
  * for group updates after library linking.
@@ -864,6 +869,10 @@ typedef struct NodeShaderNormalMap {
 #define SHD_GLOSSY_SHARP	1
 #define SHD_GLOSSY_GGX		2
 
+/* toon modes */
+#define SHD_TOON_DIFFUSE	0
+#define SHD_TOON_GLOSSY		1
+
 /* blend texture */
 #define SHD_BLEND_LINEAR			0
 #define SHD_BLEND_QUADRATIC			1
@@ -935,9 +944,11 @@ typedef struct NodeShaderNormalMap {
 #define SHD_TANGENT_AXIS_Z			2
 
 /* normal map space */
-#define SHD_NORMAL_MAP_TANGENT		0
-#define SHD_NORMAL_MAP_OBJECT		1
-#define SHD_NORMAL_MAP_WORLD		2
+#define SHD_NORMAL_MAP_TANGENT			0
+#define SHD_NORMAL_MAP_OBJECT			1
+#define SHD_NORMAL_MAP_WORLD			2
+#define SHD_NORMAL_MAP_BLENDER_OBJECT	3
+#define SHD_NORMAL_MAP_BLENDER_WORLD	4
 
 /* blur node */
 #define CMP_NODE_BLUR_ASPECT_NONE		0

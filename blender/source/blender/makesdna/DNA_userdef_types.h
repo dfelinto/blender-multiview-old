@@ -226,8 +226,8 @@ typedef struct ThemeSpace {
 	char hilite[4];
 	char grid[4]; 
 	
-	char wire[4], select[4];
-	char lamp[4], speaker[4], empty[4], camera[4], pad[8];
+	char wire[4], wire_edit[4], select[4];
+	char lamp[4], speaker[4], empty[4], camera[4], pad[4];
 	char active[4], group[4], group_active[4], transform[4];
 	char vertex[4], vertex_select[4], vertex_unreferenced[4];
 	char edge[4], edge_select[4];
@@ -754,7 +754,7 @@ typedef enum eMultiSample_Type {
 } eMultiSample_Type;
 	
 typedef enum eImageDrawMethod {
-	IMAGE_DRAW_METHOD_AUTO = 0,
+	/* IMAGE_DRAW_METHOD_AUTO = 0, */ /* Currently unused */
 	IMAGE_DRAW_METHOD_GLSL = 1,
 	IMAGE_DRAW_METHOD_2DTEXTURE = 2,
 	IMAGE_DRAW_METHOD_DRAWPIXELS = 3,

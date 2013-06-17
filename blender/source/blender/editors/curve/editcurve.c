@@ -402,7 +402,7 @@ static void keyIndex_delCV(EditNurb *editnurb, void *cv)
 		return;
 	}
 
-	BLI_ghash_remove(editnurb->keyindex, cv, NULL, (GHashValFreeFP)MEM_freeN);
+	BLI_ghash_remove(editnurb->keyindex, cv, NULL, MEM_freeN);
 }
 
 static void keyIndex_delBezt(EditNurb *editnurb, BezTriple *bezt)
@@ -428,7 +428,7 @@ static void keyIndex_delNurb(EditNurb *editnurb, Nurb *nu)
 		a = nu->pntsu;
 
 		while (a--) {
-			BLI_ghash_remove(editnurb->keyindex, bezt, NULL, (GHashValFreeFP)MEM_freeN);
+			BLI_ghash_remove(editnurb->keyindex, bezt, NULL, MEM_freeN);
 			bezt++;
 		}
 	}
@@ -437,7 +437,7 @@ static void keyIndex_delNurb(EditNurb *editnurb, Nurb *nu)
 		a = nu->pntsu * nu->pntsv;
 
 		while (a--) {
-			BLI_ghash_remove(editnurb->keyindex, bp, NULL, (GHashValFreeFP)MEM_freeN);
+			BLI_ghash_remove(editnurb->keyindex, bp, NULL, MEM_freeN);
 			bp++;
 		}
 	}
@@ -676,7 +676,7 @@ static GHash *dupli_keyIndexHash(GHash *keyindex)
 	gh = BLI_ghash_ptr_new("dupli_keyIndex gh");
 
 	for (hashIter = BLI_ghashIterator_new(keyindex);
-	     BLI_ghashIterator_notDone(hashIter);
+	     BLI_ghashIterator_done(hashIter) == false;
 	     BLI_ghashIterator_step(hashIter))
 	{
 		void *cv = BLI_ghashIterator_getKey(hashIter);
@@ -1177,6 +1177,10 @@ static void curve_rename_fcurves(Curve *cu, ListBase *orig_curves)
 int ED_curve_updateAnimPaths(Curve *cu)
 {
 	AnimData *adt = BKE_animdata_from_id(&cu->id);
+	EditNurb *editnurb = cu->editnurb;
+
+	if (!editnurb->keyindex)
+		return 0;
 
 	if (!curve_is_animated(cu)) return 0;
 
@@ -1416,12 +1420,14 @@ static int separate_exec(bContext *C, wmOperator *op)
 	newedit = newcu->editnurb;
 	BKE_nurbList_free(&newedit->nurbs);
 	BKE_curve_editNurb_keyIndex_free(newedit);
+	newedit->keyindex = NULL;
 
 	/* 3. move over parts from old object */
 	for (nu = oldedit->nurbs.first; nu; nu = nu1) {
 		nu1 = nu->next;
 
 		if (isNurbsel(nu)) {
+			keyIndex_delNurb(oldedit, nu);
 			BLI_remlink(&oldedit->nurbs, nu);
 			BLI_addtail(&newedit->nurbs, nu);
 		}
@@ -4618,18 +4624,19 @@ static int add_vertex_exec(bContext *C, wmOperator *op)
 
 static int add_vertex_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
-	RegionView3D *rv3d = CTX_wm_region_view3d(C);
+	ViewContext vc;
 
-	if (rv3d && !RNA_struct_property_is_set(op->ptr, "location")) {
+	view3d_set_viewcontext(C, &vc);
+
+	if (vc.rv3d && !RNA_struct_property_is_set(op->ptr, "location")) {
 		Curve *cu;
-		ViewContext vc;
 		float location[3];
+		const bool use_proj = ((vc.scene->toolsettings->snap_flag & SCE_SNAP) &&
+		                       (vc.scene->toolsettings->snap_mode == SCE_SNAP_MODE_FACE));
 
 		Nurb *nu;
 		BezTriple *bezt;
 		BPoint *bp;
-
-		view3d_set_viewcontext(C, &vc);
 
 		cu = vc.obedit->data;
 
@@ -4646,6 +4653,14 @@ static int add_vertex_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 		}
 
 		ED_view3d_win_to_3d_int(vc.ar, location, event->mval, location);
+
+		if (use_proj) {
+			const float mval[2] = {UNPACK2(event->mval)};
+			float no_dummy[3];
+			float dist_px_dummy;
+			snapObjectsContext(C, mval, &dist_px_dummy, location, no_dummy, SNAP_NOT_OBEDIT);
+		}
+
 		RNA_float_set_array(op->ptr, "location", location);
 	}
 
@@ -6088,7 +6103,7 @@ int join_curve_exec(bContext *C, wmOperator *UNUSED(op))
 			
 				if (cu->nurb.first) {
 					/* watch it: switch order here really goes wrong */
-					mult_m4_m4m4(cmat, imat, base->object->obmat);
+					mul_m4_m4m4(cmat, imat, base->object->obmat);
 					
 					nu = cu->nurb.first;
 					while (nu) {
@@ -6951,7 +6966,7 @@ static void undoCurve_to_editCurve(void *ucu, void *UNUSED(edata), void *cu_v)
 	BKE_nurbList_free(editbase);
 
 	if (undoCurve->undoIndex) {
-		BLI_ghash_free(editnurb->keyindex, NULL, (GHashValFreeFP)MEM_freeN);
+		BLI_ghash_free(editnurb->keyindex, NULL, MEM_freeN);
 		editnurb->keyindex = dupli_keyIndexHash(undoCurve->undoIndex);
 	}
 
@@ -7037,7 +7052,7 @@ static void free_undoCurve(void *ucv)
 	BKE_nurbList_free(&undoCurve->nubase);
 
 	if (undoCurve->undoIndex)
-		BLI_ghash_free(undoCurve->undoIndex, NULL, (GHashValFreeFP)MEM_freeN);
+		BLI_ghash_free(undoCurve->undoIndex, NULL, MEM_freeN);
 
 	free_fcurves(&undoCurve->fcurves);
 	free_fcurves(&undoCurve->drivers);

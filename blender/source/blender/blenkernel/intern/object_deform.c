@@ -45,12 +45,12 @@
  * gets the status of "flag" for each bDeformGroup
  * in ob->defbase and returns an array containing them
  */
-char *BKE_objdef_lock_flags_get(Object *ob, const int defbase_tot)
+bool *BKE_objdef_lock_flags_get(Object *ob, const int defbase_tot)
 {
-	char is_locked = FALSE;
+	bool is_locked = false;
 	int i;
 	//int defbase_tot = BLI_countlist(&ob->defbase);
-	char *lock_flags = MEM_mallocN(defbase_tot * sizeof(char), "defflags");
+	bool *lock_flags = MEM_mallocN(defbase_tot * sizeof(bool), "defflags");
 	bDeformGroup *defgroup;
 
 	for (i = 0, defgroup = ob->defbase.first; i < defbase_tot && defgroup; defgroup = defgroup->next, i++) {
@@ -65,11 +65,11 @@ char *BKE_objdef_lock_flags_get(Object *ob, const int defbase_tot)
 	return NULL;
 }
 
-char *BKE_objdef_validmap_get(Object *ob, const int defbase_tot)
+bool *BKE_objdef_validmap_get(Object *ob, const int defbase_tot)
 {
 	bDeformGroup *dg;
 	ModifierData *md;
-	char *vgroup_validmap;
+	bool *vgroup_validmap;
 	GHash *gh;
 	int i, step1 = 1;
 	//int defbase_tot = BLI_countlist(&ob->defbase);
@@ -111,7 +111,7 @@ char *BKE_objdef_validmap_get(Object *ob, const int defbase_tot)
 		}
 	}
 
-	vgroup_validmap = MEM_mallocN(defbase_tot, "wpaint valid map");
+	vgroup_validmap = MEM_mallocN(sizeof(*vgroup_validmap) * defbase_tot, "wpaint valid map");
 
 	/* add all names to a hash table */
 	for (dg = ob->defbase.first, i = 0; dg; dg = dg->next, i++) {
@@ -127,9 +127,9 @@ char *BKE_objdef_validmap_get(Object *ob, const int defbase_tot)
 
 /* Returns total selected vgroups,
  * wpi.defbase_sel is assumed malloc'd, all values are set */
-char *BKE_objdef_selected_get(Object *ob, int defbase_tot, int *r_dg_flags_sel_tot)
+bool *BKE_objdef_selected_get(Object *ob, int defbase_tot, int *r_dg_flags_sel_tot)
 {
-	char *dg_selection = MEM_mallocN(defbase_tot * sizeof(char), __func__);
+	bool *dg_selection = MEM_mallocN(defbase_tot * sizeof(bool), __func__);
 	bDeformGroup *defgroup;
 	unsigned int i;
 	Object *armob = BKE_object_pose_armature_get(ob);
@@ -149,7 +149,7 @@ char *BKE_objdef_selected_get(Object *ob, int defbase_tot, int *r_dg_flags_sel_t
 		}
 	}
 	else {
-		memset(dg_selection, FALSE, sizeof(char) * defbase_tot);
+		memset(dg_selection, FALSE, sizeof(*dg_selection) * defbase_tot);
 	}
 
 	return dg_selection;

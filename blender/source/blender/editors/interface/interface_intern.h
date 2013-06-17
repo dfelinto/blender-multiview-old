@@ -230,10 +230,6 @@ struct uiBut {
 	short modifier_key;
 	short iconadd;
 
-	/* IDPOIN data */
-	uiIDPoinFuncFP idpoin_func;
-	ID **idpoin_idpp;
-
 	/* BLOCK data */
 	uiBlockCreateFunc block_create_func;
 
@@ -370,6 +366,7 @@ extern void ui_delete_linkline(uiLinkLine *line, uiBut *but);
 
 void ui_fontscale(short *points, float aspect);
 
+extern bool ui_block_is_menu(const uiBlock *block);
 extern void ui_block_to_window_fl(const struct ARegion *ar, uiBlock *block, float *x, float *y);
 extern void ui_block_to_window(const struct ARegion *ar, uiBlock *block, int *x, int *y);
 extern void ui_block_to_window_rct(const struct ARegion *ar, uiBlock *block, const rctf *graph, rcti *winr);
@@ -385,6 +382,8 @@ extern void ui_set_but_vectorf(uiBut *but, const float vec[3]);
 
 extern void ui_hsvcircle_vals_from_pos(float *val_rad, float *val_dist, const rcti *rect,
                                        const float mx, const float my);
+extern void ui_hsvcircle_pos_from_vals(struct uiBut *but, const rcti *rect, float *hsv, float *xpos, float *ypos);
+extern void ui_hsvcube_pos_from_vals(struct uiBut *but, const rcti *rect, float *hsv, float *xp, float *yp);
 
 extern void ui_get_but_string_ex(uiBut *but, char *str, const size_t maxlen, const int float_precision);
 extern void ui_get_but_string(uiBut *but, char *str, const size_t maxlen);
@@ -457,8 +456,6 @@ struct uiPopupBlockHandle {
 };
 
 uiBlock *ui_block_func_COLOR(struct bContext *C, uiPopupBlockHandle *handle, void *arg_but);
-void ui_block_func_ICONROW(struct bContext *C, uiLayout *layout, void *arg_but);
-void ui_block_func_ICONTEXTROW(struct bContext *C, uiLayout *layout, void *arg_but);
 
 struct ARegion *ui_tooltip_create(struct bContext *C, struct ARegion *butregion, uiBut *but);
 void ui_tooltip_free(struct bContext *C, struct ARegion *ar);
@@ -472,10 +469,11 @@ void ui_popup_block_scrolltest(struct uiBlock *block);
 /* searchbox for string button */
 ARegion *ui_searchbox_create(struct bContext *C, struct ARegion *butregion, uiBut *but);
 bool ui_searchbox_inside(struct ARegion *ar, int x, int y);
+int  ui_searchbox_find_index(struct ARegion *ar, const char *name);
 void ui_searchbox_update(struct bContext *C, struct ARegion *ar, uiBut *but, const bool reset);
 void ui_searchbox_autocomplete(struct bContext *C, struct ARegion *ar, uiBut *but, char *str);
 void ui_searchbox_event(struct bContext *C, struct ARegion *ar, uiBut *but, const struct wmEvent *event);
-void ui_searchbox_apply(uiBut *but, struct ARegion *ar);
+bool ui_searchbox_apply(uiBut *but, struct ARegion *ar);
 void ui_searchbox_free(struct bContext *C, struct ARegion *ar);
 void ui_but_search_test(uiBut *but);
 
@@ -540,7 +538,7 @@ void ui_widget_color_init(struct ThemeUI *tui);
 void ui_draw_menu_item(struct uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state);
 void ui_draw_preview_item(struct uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state);
 
-extern unsigned char checker_stipple_sml[32 * 32 / 8];
+extern const unsigned char checker_stipple_sml[32 * 32 / 8];
 /* used for transp checkers */
 #define UI_TRANSP_DARK 100
 #define UI_TRANSP_LIGHT 160
@@ -556,6 +554,7 @@ int ui_id_icon_get(struct bContext *C, struct ID *id, const bool big);
 /* resources.c */
 void init_userdef_do_versions(void);
 void ui_theme_init_default(void);
+void ui_style_init_default(void);
 void ui_resources_init(void);
 void ui_resources_free(void);
 

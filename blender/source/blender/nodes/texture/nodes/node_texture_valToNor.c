@@ -71,9 +71,9 @@ static void normalfn(float *out, TexParams *p, bNode *UNUSED(node), bNodeStack *
 	new_co[2] = co[2] + nabla;
 	nor[2] = tex_input_value(in[0], &np, thread);
 
-	out[0] = val-nor[0];
-	out[1] = val-nor[1];
-	out[2] = val-nor[2];
+	out[0] = val - nor[0];
+	out[1] = val - nor[1];
+	out[2] = val - nor[2];
 }
 static void exec(void *data, int UNUSED(thread), bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack **out) 
 {
@@ -84,9 +84,8 @@ void register_node_type_tex_valtonor(void)
 {
 	static bNodeType ntype;
 	
-	tex_node_type_base(&ntype, TEX_NODE_VALTONOR, "Value to Normal", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_VALTONOR, "Value to Normal", NODE_CLASS_CONVERTOR, 0);
 	node_type_socket_templates(&ntype, inputs, outputs);
-	node_type_size(&ntype, 90, 80, 100);
 	node_type_exec(&ntype, NULL, NULL, exec);
 	
 	nodeRegisterType(&ntype);

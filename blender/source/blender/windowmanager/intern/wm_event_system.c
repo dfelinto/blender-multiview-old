@@ -247,6 +247,11 @@ void wm_event_do_notifiers(bContext *C)
 			if (note->window == win) {
 				if (note->category == NC_SCREEN) {
 					if (note->data == ND_SCREENBROWSE) {
+						/* free popup handlers only [#35434] */
+						wmWindow *win = CTX_wm_window(C);
+						UI_remove_popup_handlers_all(C, &win->modalhandlers);
+
+
 						ED_screen_set(C, note->reference);  // XXX hrms, think this over!
 						if (G.debug & G_DEBUG_EVENTS)
 							printf("%s: screen set %p\n", __func__, note->reference);
@@ -375,8 +380,8 @@ static int wm_handler_ui_call(bContext *C, wmEventHandler *handler, wmEvent *eve
 	int retval;
 	
 	/* UI code doesn't handle return values - it just always returns break. 
-	 * to make the DBL_CLICK conversion work, we just don't send this to UI */
-	if (event->val == KM_DBL_CLICK)
+	 * to make the DBL_CLICK conversion work, we just don't send this to UI, except mouse clicks */
+	if (event->type != LEFTMOUSE && event->val == KM_DBL_CLICK)
 		return WM_HANDLER_CONTINUE;
 	
 	/* UI is quite aggressive with swallowing events, like scrollwheel */
@@ -711,7 +716,22 @@ int WM_operator_repeat(bContext *C, wmOperator *op)
  * checks if WM_operator_repeat() can run at all, not that it WILL run at any time. */
 int WM_operator_repeat_check(const bContext *UNUSED(C), wmOperator *op)
 {
-	return op->type->exec != NULL;
+	if (op->type->exec != NULL) {
+		return true;
+	}
+	else if (op->opm) {
+		/* for macros, check all have exec() we can call */
+		wmOperatorTypeMacro *otmacro;
+		for (otmacro = op->opm->type->macro.first; otmacro; otmacro = otmacro->next) {
+			wmOperatorType *otm = WM_operatortype_find(otmacro->idname, 0);
+			if (otm && otm->exec == NULL) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	return false;
 }
 
 static wmOperator *wm_operator_create(wmWindowManager *wm, wmOperatorType *ot,
@@ -1370,9 +1390,9 @@ static int wm_eventmatch(wmEvent *winevent, wmKeyMapItem *kmi)
 	if (kmi->oskey != KM_ANY)
 		if (winevent->oskey != kmi->oskey && !(winevent->oskey & kmi->oskey)) return 0;
 	
-	/* key modifiers always check when event has it */
-	/* otherwise regular keypresses with keymodifier still work */
-	if (winevent->keymodifier || kmi->keymodifier)
+	/* only keymap entry with keymodifier is checked, means all keys without modifier get handled too. */
+	/* that is currently needed to make overlapping events work (when you press A - G fast or so). */
+	if (kmi->keymodifier)
 		if (winevent->keymodifier != kmi->keymodifier) return 0;
 	
 	return 1;
@@ -1988,8 +2008,7 @@ static void wm_paintcursor_tag(bContext *C, wmPaintCursor *pc, ARegion *ar)
 		for (; pc; pc = pc->next) {
 			if (pc->poll == NULL || pc->poll(C)) {
 				wmWindow *win = CTX_wm_window(C);
-				win->screen->do_draw_paintcursor = TRUE;
-				wm_tag_redraw_overlay(win, ar);
+				WM_paint_cursor_tag_redraw(win, ar);
 			}
 		}
 	}
@@ -2242,7 +2261,7 @@ void wm_event_do_handlers(bContext *C)
 		/* only add mousemove when queue was read entirely */
 		if (win->addmousemove && win->eventstate) {
 			wmEvent tevent = *(win->eventstate);
-			//printf("adding MOUSEMOVE %d %d\n", tevent.x, tevent.y);
+			// printf("adding MOUSEMOVE %d %d\n", tevent.x, tevent.y);
 			tevent.type = MOUSEMOVE;
 			tevent.prevx = tevent.x;
 			tevent.prevy = tevent.y;
@@ -2463,6 +2482,21 @@ void WM_event_remove_ui_handler(ListBase *handlers,
 	}
 }
 
+void WM_event_free_ui_handler_all(bContext *C, ListBase *handlers,
+                                  wmUIHandlerFunc func, wmUIHandlerRemoveFunc remove)
+{
+	wmEventHandler *handler, *handler_next;
+
+	for (handler = handlers->first; handler; handler = handler_next) {
+		handler_next = handler->next;
+		if (handler->ui_handle == func && handler->ui_remove == remove) {
+			remove(C, handler->ui_userdata);
+			BLI_remlink(handlers, handler);
+			wm_event_free_handler(handler);
+		}
+	}
+}
+
 wmEventHandler *WM_event_add_dropbox_handler(ListBase *handlers, ListBase *dropboxes)
 {
 	wmEventHandler *handler;
@@ -2512,10 +2546,6 @@ void WM_event_add_mousemove(bContext *C)
 	window->addmousemove = 1;
 }
 
-void WM_event_add_mousemove_window(wmWindow *window)
-{
-	window->addmousemove = 1;
-}
 
 /* for modal callbacks, check configuration for how to interpret exit with tweaks  */
 int WM_modal_tweak_exit(const wmEvent *event, int tweak_event)

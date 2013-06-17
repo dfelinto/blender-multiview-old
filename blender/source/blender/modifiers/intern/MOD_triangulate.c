@@ -40,7 +40,7 @@ static DerivedMesh *triangulate_dm(DerivedMesh *dm, const int flag)
 	int total_edges, i;
 	MEdge *me;
 
-	bm = DM_to_bmesh(dm);
+	bm = DM_to_bmesh(dm, true);
 
 	BM_mesh_triangulate(bm, (flag & MOD_TRIANGULATE_BEAUTY), false, NULL, NULL);
 
@@ -54,7 +54,7 @@ static DerivedMesh *triangulate_dm(DerivedMesh *dm, const int flag)
 	for (i = 0; i < total_edges; i++, me++)
 		me->flag |= ME_EDGEDRAW | ME_EDGERENDER;
 
-	CDDM_calc_normals(result);
+	result->dirty |= DM_DIRTY_NORMALS;
 
 	return result;
 }
@@ -76,20 +76,6 @@ static void copyData(ModifierData *md, ModifierData *target)
 	TriangulateModifierData *tsmd = (TriangulateModifierData *) target;
 
 	*tsmd = *smd;
-}
-
-static DerivedMesh *applyModifierEM(ModifierData *md,
-                                    Object *UNUSED(ob),
-                                    struct BMEditMesh *UNUSED(em),
-                                    DerivedMesh *dm)
-{
-	TriangulateModifierData *tmd = (TriangulateModifierData *)md;
-	DerivedMesh *result;
-	if (!(result = triangulate_dm(dm, tmd->flag))) {
-		return dm;
-	}
-
-	return result;
 }
 
 static DerivedMesh *applyModifier(ModifierData *md,
@@ -123,7 +109,7 @@ ModifierTypeInfo modifierType_Triangulate = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  NULL, //requiredDataMask,
 	/* freeData */          NULL,

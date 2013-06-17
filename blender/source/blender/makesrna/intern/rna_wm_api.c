@@ -45,6 +45,7 @@
 
 #ifdef RNA_RUNTIME
 
+#include "UI_interface.h"
 #include "BKE_context.h"
 
 static wmKeyMap *rna_keymap_active(wmKeyMap *km, bContext *C)
@@ -84,6 +85,44 @@ static wmTimer *rna_event_timer_add(struct wmWindowManager *wm, float time_step,
 static void rna_event_timer_remove(struct wmWindowManager *wm, wmTimer *timer)
 {
 	WM_event_remove_timer(wm, timer->win, timer);
+}
+
+/* placeholder data for final implementation of a true progressbar */
+struct wmStaticProgress {
+	float min;
+	float max;
+	bool  is_valid;
+} wm_progress_state = {0, 0, false};
+
+
+static void rna_progress_begin(struct wmWindowManager *wm, float min, float max)
+{
+	float range = max - min;
+	if (range != 0) {
+		wm_progress_state.min = min;
+		wm_progress_state.max = max;
+		wm_progress_state.is_valid = true;
+	}
+	else {
+		wm_progress_state.is_valid = false;
+	}
+}
+
+static void rna_progress_update(struct wmWindowManager *wm, float value)
+{
+	if (wm_progress_state.is_valid) {
+		/* Map to cursor_time range [0,9999] */
+		int val = (int)(10000 * (value - wm_progress_state.min) / (wm_progress_state.max - wm_progress_state.min));
+		WM_cursor_time(wm->winactive, val);
+	}
+}
+
+static void rna_progress_end(struct wmWindowManager *wm)
+{
+	if (wm_progress_state.is_valid) {
+		WM_cursor_restore(wm->winactive);
+		wm_progress_state.is_valid = false;
+	}
 }
 
 /* wrap these because of 'const wmEvent *' */
@@ -212,6 +251,24 @@ static void rna_KeyConfig_remove(wmWindowManager *wm, ReportList *reports, Point
 	RNA_POINTER_INVALIDATE(keyconf_ptr);
 }
 
+/* popup menu wrapper */
+static PointerRNA rna_PupMenuBegin(bContext *C, const char *title, int icon)
+{
+	PointerRNA r_ptr;
+	void *data;
+
+	data = (void *)uiPupMenuBegin(C, title, icon);
+
+	RNA_pointer_create(NULL, &RNA_UIPopupMenu, data, &r_ptr);
+
+	return r_ptr;
+}
+
+static void rna_PupMenuEnd(bContext *C, PointerRNA *handle)
+{
+	uiPupMenuEnd(C, handle->data);
+}
+
 #else
 
 #define WM_GEN_INVOKE_EVENT (1 << 0)
@@ -274,6 +331,19 @@ void RNA_api_wm(StructRNA *srna)
 	parm = RNA_def_pointer(func, "timer", "Timer", "", "");
 	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL);
 
+	/* Progress bar interface */
+	func = RNA_def_function(srna, "progress_begin", "rna_progress_begin");
+	parm = RNA_def_property(func, "min", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm = RNA_def_property(func, "max", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+
+	func = RNA_def_function(srna, "progress_update", "rna_progress_update");
+	parm = RNA_def_property(func, "value", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	RNA_def_property_ui_text(parm, "value", "any value between min and max as set in progress_init()");
+
+	func = RNA_def_function(srna, "progress_end", "rna_progress_end");
 
 	/* invoke functions, for use with python */
 	func = RNA_def_function(srna, "invoke_props_popup", "rna_Operator_props_popup");
@@ -297,7 +367,25 @@ void RNA_api_wm(StructRNA *srna)
 	func = RNA_def_function(srna, "invoke_confirm", "rna_Operator_confirm");
 	RNA_def_function_ui_description(func, "Operator confirmation");
 	rna_generic_op_invoke(func, WM_GEN_INVOKE_EVENT | WM_GEN_INVOKE_RETURN);
-	
+
+
+	/* wrap uiPupMenuBegin */
+	func = RNA_def_function(srna, "pupmenu_begin__internal", "rna_PupMenuBegin");
+	RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
+	parm = RNA_def_string(func, "title", "", 0, "", "");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm = RNA_def_property(func, "icon", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_items(parm, icon_items);
+	/* return */
+	parm = RNA_def_pointer(func, "menu", "UIPopupMenu", "", "");
+	RNA_def_property_flag(parm, PROP_RNAPTR | PROP_NEVER_NULL);
+	RNA_def_function_return(func, parm);
+
+	/* wrap uiPupMenuEnd */
+	func = RNA_def_function(srna, "pupmenu_end__internal", "rna_PupMenuEnd");
+	RNA_def_function_flag(func, FUNC_NO_SELF | FUNC_USE_CONTEXT);
+	parm = RNA_def_pointer(func, "menu", "UIPopupMenu", "", "");
+	RNA_def_property_flag(parm, PROP_RNAPTR | PROP_NEVER_NULL);
 }
 
 void RNA_api_operator(StructRNA *srna)

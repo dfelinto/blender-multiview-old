@@ -107,6 +107,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
+#include "BLI_threads.h"
 
 #include "BLF_translation.h"
 
@@ -1315,6 +1316,8 @@ void blo_make_image_pointer_map(FileData *fd, Main *oldmain)
 			oldnewmap_insert(fd->imamap, ibuf, ibuf, 0);
 		if (ima->gputexture)
 			oldnewmap_insert(fd->imamap, ima->gputexture, ima->gputexture, 0);
+		if (ima->rr)
+			oldnewmap_insert(fd->imamap, ima->rr, ima->rr, 0);
 		for (a=0; a < IMA_MAX_RENDER_SLOT; a++)
 			if (ima->renders[a])
 				oldnewmap_insert(fd->imamap, ima->renders[a], ima->renders[a], 0);
@@ -1356,12 +1359,14 @@ void blo_end_image_pointer_map(FileData *fd, Main *oldmain)
 				ima->bindcode = 0;
 				ima->tpageflag &= ~IMA_GLBIND_IS_DATA;
 				ima->gputexture = NULL;
+				ima->rr = NULL;
 			}
 		}
 		for (i = 0; i < IMA_MAX_RENDER_SLOT; i++)
 			ima->renders[i] = newimaadr(fd, ima->renders[i]);
 		
 		ima->gputexture = newimaadr(fd, ima->gputexture);
+		ima->rr = newimaadr(fd, ima->rr);
 	}
 	for (; sce; sce = sce->id.next) {
 		if (sce->nodetree && sce->nodetree->previews) {
@@ -2521,9 +2526,11 @@ static void lib_verify_nodetree(Main *main, int UNUSED(open))
 							link->fromsock = node_group_input_find_socket(input_node, link->fromsock->identifier);
 							++num_inputs;
 							
-							if (input_locx > link->tonode->locx - offsetx)
-								input_locx = link->tonode->locx - offsetx;
-							input_locy += link->tonode->locy;
+							if (link->tonode) {
+								if (input_locx > link->tonode->locx - offsetx)
+									input_locx = link->tonode->locx - offsetx;
+								input_locy += link->tonode->locy;
+							}
 						}
 						else
 							free_link = TRUE;
@@ -2535,9 +2542,11 @@ static void lib_verify_nodetree(Main *main, int UNUSED(open))
 							link->tosock = node_group_output_find_socket(output_node, link->tosock->identifier);
 							++num_outputs;
 							
-							if (output_locx < link->fromnode->locx + offsetx)
-								output_locx = link->fromnode->locx + offsetx;
-							output_locy += link->fromnode->locy;
+							if (link->fromnode) {
+								if (output_locx < link->fromnode->locx + offsetx)
+									output_locx = link->fromnode->locx + offsetx;
+								output_locy += link->fromnode->locy;
+							}
 						}
 						else
 							free_link = TRUE;
@@ -2574,7 +2583,7 @@ static void lib_verify_nodetree(Main *main, int UNUSED(open))
 	{
 		FOREACH_NODETREE(main, ntree, id) {
 			/* make an update call for the tree */
-			ntreeUpdateTree(ntree);
+			ntreeUpdateTree(main, ntree);
 		} FOREACH_NODETREE_END
 	}
 }
@@ -2958,8 +2967,10 @@ static void lib_link_lamp(FileData *fd, Main *main)
 			
 			la->ipo = newlibadr_us(fd, la->id.lib, la->ipo); // XXX deprecated - old animation system
 			
-			if (la->nodetree)
+			if (la->nodetree) {
 				lib_link_ntree(fd, &la->id, la->nodetree);
+				la->nodetree->id.lib = la->id.lib;
+			}
 			
 			la->id.flag -= LIB_NEED_LINK;
 		}
@@ -3131,8 +3142,10 @@ static void lib_link_world(FileData *fd, Main *main)
 				}
 			}
 			
-			if (wrld->nodetree)
+			if (wrld->nodetree) {
 				lib_link_ntree(fd, &wrld->id, wrld->nodetree);
+				wrld->nodetree->id.lib = wrld->id.lib;
+			}
 			
 			wrld->id.flag -= LIB_NEED_LINK;
 		}
@@ -3278,10 +3291,10 @@ static void direct_link_image(FileData *fd, Image *ima)
 		ima->bindcode = 0;
 		ima->tpageflag &= ~IMA_GLBIND_IS_DATA;
 		ima->gputexture = NULL;
+		ima->rr = NULL;
 	}
 	
 	ima->anim = NULL;
-	ima->rr = NULL;
 	ima->repbind = NULL;
 	
 	/* undo system, try to restore render buffers */
@@ -3420,8 +3433,10 @@ static void lib_link_texture(FileData *fd, Main *main)
 			if (tex->ot)
 				tex->ot->object = newlibadr(fd, tex->id.lib, tex->ot->object);
 			
-			if (tex->nodetree)
+			if (tex->nodetree) {
 				lib_link_ntree(fd, &tex->id, tex->nodetree);
+				tex->nodetree->id.lib = tex->id.lib;
+			}
 			
 			tex->id.flag -= LIB_NEED_LINK;
 		}
@@ -3502,8 +3517,10 @@ static void lib_link_material(FileData *fd, Main *main)
 				}
 			}
 			
-			if (ma->nodetree)
+			if (ma->nodetree) {
 				lib_link_ntree(fd, &ma->id, ma->nodetree);
+				ma->nodetree->id.lib = ma->id.lib;
+			}
 			
 			ma->id.flag -= LIB_NEED_LINK;
 		}
@@ -4591,6 +4608,7 @@ static void direct_link_modifiers(FileData *fd, ListBase *lb)
 				smd->domain->smd = smd;
 				
 				smd->domain->fluid = NULL;
+				smd->domain->fluid_mutex = BLI_rw_mutex_alloc();
 				smd->domain->wt = NULL;
 				smd->domain->shadow = NULL;
 				smd->domain->tex = NULL;
@@ -5150,6 +5168,7 @@ static void lib_link_scene(FileData *fd, Main *main)
 			
 			if (sce->nodetree) {
 				lib_link_ntree(fd, &sce->id, sce->nodetree);
+				sce->nodetree->id.lib = sce->id.lib;
 				composite_patch(sce->nodetree, sce);
 			}
 			
@@ -6142,11 +6161,12 @@ void blo_do_versions_view3d_split_250(View3D *v3d, ListBase *regions)
 		v3d->twtype = V3D_MANIP_TRANSLATE;
 }
 
-static void direct_link_screen(FileData *fd, bScreen *sc)
+static bool direct_link_screen(FileData *fd, bScreen *sc)
 {
 	ScrArea *sa;
 	ScrVert *sv;
 	ScrEdge *se;
+	bool wrong_id = false;
 	
 	link_list(fd, &(sc->vertbase));
 	link_list(fd, &(sc->edgebase));
@@ -6168,8 +6188,9 @@ static void direct_link_screen(FileData *fd, bScreen *sc)
 		}
 		
 		if (se->v1 == NULL) {
-			printf("error reading screen... file corrupt\n");
-			se->v1 = se->v2;
+			printf("Error reading Screen %s... removing it.\n", sc->id.name+2);
+			BLI_remlink(&sc->edgebase, se);
+			wrong_id = true;
 		}
 	}
 	
@@ -6403,6 +6424,8 @@ static void direct_link_screen(FileData *fd, bScreen *sc)
 		sa->v3 = newdataadr(fd, sa->v3);
 		sa->v4 = newdataadr(fd, sa->v4);
 	}
+	
+	return wrong_id;
 }
 
 /* ********** READ LIBRARY *************** */
@@ -6623,7 +6646,6 @@ static void direct_link_movieclip(FileData *fd, MovieClip *clip)
 	clip->tracking.stats = NULL;
 
 	clip->tracking.stabilization.ok = 0;
-	clip->tracking.stabilization.scaleibuf = NULL;
 	clip->tracking.stabilization.rot_track = newdataadr(fd, clip->tracking.stabilization.rot_track);
 
 	clip->tracking.dopesheet.ok = 0;
@@ -7010,6 +7032,7 @@ static BHead *read_libblock(FileData *fd, Main *main, BHead *bhead, int flag, ID
 	ID *id;
 	ListBase *lb;
 	const char *allocname;
+	bool wrong_id = false;
 	
 	/* read libblock */
 	id = read_struct(fd, bhead, "lib block");
@@ -7057,7 +7080,7 @@ static BHead *read_libblock(FileData *fd, Main *main, BHead *bhead, int flag, ID
 			direct_link_windowmanager(fd, (wmWindowManager *)id);
 			break;
 		case ID_SCR:
-			direct_link_screen(fd, (bScreen *)id);
+			wrong_id = direct_link_screen(fd, (bScreen *)id);
 			break;
 		case ID_SCE:
 			direct_link_scene(fd, (Scene *)id);
@@ -7153,6 +7176,10 @@ static BHead *read_libblock(FileData *fd, Main *main, BHead *bhead, int flag, ID
 	
 	oldnewmap_free_unused(fd->datamap);
 	oldnewmap_clear(fd->datamap);
+	
+	if (wrong_id) {
+		BKE_libblock_free(lb, id);
+	}
 	
 	return (bhead);
 }
@@ -7752,20 +7779,20 @@ static void do_versions_nodetree_customnodes(bNodeTree *ntree, int UNUSED(is_gro
 		for (node=ntree->nodes.first; node; node=node->next) {
 			for (sock = node->inputs.first; sock; sock = sock->next) {
 				BLI_strncpy(sock->identifier, sock->name, sizeof(sock->identifier));
-				BLI_uniquename(&node->inputs, sock, sock->identifier, '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
+				BLI_uniquename(&node->inputs, sock, "socket", '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
 			}
 			for (sock = node->outputs.first; sock; sock = sock->next) {
 				BLI_strncpy(sock->identifier, sock->name, sizeof(sock->identifier));
-				BLI_uniquename(&node->outputs, sock, sock->identifier, '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
+				BLI_uniquename(&node->outputs, sock, "socket", '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
 			}
 		}
 		for (sock = ntree->inputs.first; sock; sock = sock->next) {
 			BLI_strncpy(sock->identifier, sock->name, sizeof(sock->identifier));
-			BLI_uniquename(&ntree->inputs, sock, sock->identifier, '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
+			BLI_uniquename(&ntree->inputs, sock, "socket", '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
 		}
 		for (sock = ntree->outputs.first; sock; sock = sock->next) {
 			BLI_strncpy(sock->identifier, sock->name, sizeof(sock->identifier));
-			BLI_uniquename(&ntree->outputs, sock, sock->identifier, '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
+			BLI_uniquename(&ntree->outputs, sock, "socket", '.', offsetof(bNodeSocket, identifier), sizeof(sock->identifier));
 		}
 	}
 }
@@ -9314,19 +9341,25 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				brush->stencil_pos[0] = 256;
 				brush->stencil_pos[1] = 256;
 			}
+			if (brush->mask_stencil_dimension[0] == 0) {
+				brush->mask_stencil_dimension[0] = 256;
+				brush->mask_stencil_dimension[1] = 256;
+				brush->mask_stencil_pos[0] = 256;
+				brush->mask_stencil_pos[1] = 256;
+			}
 		}
 
 		/* TIP: to initialize new variables added, use the new function
-		   DNA_struct_elem_find(fd->filesdna, "structname", "typename", "varname")
-		   example: 
-				if (!DNA_struct_elem_find(fd->filesdna, "UserDef", "short", "image_gpubuffer_limit"))
-					user->image_gpubuffer_limit = 10;
+		 * DNA_struct_elem_find(fd->filesdna, "structname", "typename", "varname")
+		 * example:
+		 * if (!DNA_struct_elem_find(fd->filesdna, "UserDef", "short", "image_gpubuffer_limit"))
+		 *     user->image_gpubuffer_limit = 10;
 		 */
 		
 	}
 	
 	/* default values in Freestyle settings */
-	{
+	if (main->versionfile < 267) {
 		Scene *sce;
 		SceneRenderLayer *srl;
 		FreestyleLineStyle *linestyle;
@@ -9381,6 +9414,82 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				linestyle->chaining = LS_CHAINING_PLAIN;
 			if (linestyle->rounds == 0)
 				linestyle->rounds = 3;
+		}
+	}
+
+	if (main->versionfile < 267) {
+		/* Initialize the active_viewer_key for compositing */
+		bScreen *screen;
+		Scene *scene;
+		bNodeInstanceKey active_viewer_key = {0};
+		/* simply pick the first node space and use that for the active viewer key */
+		for (screen = main->screen.first; screen; screen = screen->id.next) {
+			ScrArea *sa;
+			for (sa = screen->areabase.first; sa; sa = sa->next) {
+				SpaceLink *sl;
+				for (sl = sa->spacedata.first; sl; sl= sl->next) {
+					if (sl->spacetype == SPACE_NODE) {
+						SpaceNode *snode = (SpaceNode *)sl;
+						bNodeTreePath *path = snode->treepath.last;
+						if (!path)
+							continue;
+						
+						active_viewer_key = path->parent_key;
+						break;
+					}
+				}
+				if (active_viewer_key.value != 0)
+					break;
+			}
+			if (active_viewer_key.value != 0)
+				break;
+		}
+		
+		for (scene = main->scene.first; scene; scene = scene->id.next) {
+			/* NB: scene->nodetree is a local ID block, has been direct_link'ed */
+			if (scene->nodetree)
+				scene->nodetree->active_viewer_key = active_viewer_key;
+		}
+	}
+
+	if (MAIN_VERSION_OLDER(main, 267, 1))
+	{
+		Object *ob;
+
+		for (ob = main->object.first; ob; ob = ob->id.next) {
+			ModifierData *md;
+			for (md = ob->modifiers.first; md; md = md->next) {
+				if (md->type == eModifierType_Smoke) {
+					SmokeModifierData *smd = (SmokeModifierData *)md;
+					if ((smd->type & MOD_SMOKE_TYPE_DOMAIN) && smd->domain) {
+						if (smd->domain->flags & MOD_SMOKE_HIGH_SMOOTH) {
+							smd->domain->highres_sampling = SM_HRES_LINEAR;
+						}
+						else {
+							smd->domain->highres_sampling = SM_HRES_NEAREST;
+						}
+					}
+				}
+			}
+		}
+	}
+
+
+	{
+		Object *ob;
+
+		for (ob = main->object.first; ob; ob = ob->id.next) {
+			ModifierData *md;
+			for (md = ob->modifiers.first; md; md = md->next) {
+				if (md->type == eModifierType_Smoke) {
+					SmokeModifierData *smd = (SmokeModifierData *)md;
+					if ((smd->type & MOD_SMOKE_TYPE_FLOW) && smd->flow) {
+						if (!smd->flow->particle_size) {
+							smd->flow->particle_size = 1.0f;
+						}
+					}
+				}
+			}
 		}
 	}
 

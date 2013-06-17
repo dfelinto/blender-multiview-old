@@ -406,7 +406,7 @@ Object *DocumentImporter::create_instance_node(Object *source_ob, COLLADAFW::Nod
 				}
 			}
 			// calc new matrix and apply
-			mult_m4_m4m4(obn->obmat, obn->obmat, mat);
+			mul_m4_m4m4(obn->obmat, obn->obmat, mat);
 			BKE_object_apply_mat4(obn, obn->obmat, 0, 0);
 		}
 	}
@@ -477,7 +477,7 @@ std::vector<Object *> *DocumentImporter::write_node(COLLADAFW::Node *node, COLLA
 			// Here we add the armature "on the fly":
 			par = bc_add_object(sce, OB_ARMATURE, std::string("Armature").c_str());
 			objects_done->push_back(par);
-			object_map.insert(std::make_pair<COLLADAFW::UniqueId, Object *>(node->getUniqueId(), par));
+			object_map.insert(std::pair<COLLADAFW::UniqueId, Object *>(node->getUniqueId(), par));
 			node_map[node->getUniqueId()] = node;
 		}
 		armature_importer.add_joint(node, parent_node == NULL || parent_node->getType() != COLLADAFW::Node::JOINT, par, sce);
@@ -582,7 +582,7 @@ std::vector<Object *> *DocumentImporter::write_node(COLLADAFW::Node *node, COLLA
 			ob = *it;
 			std::string nodename = node->getName().size() ? node->getName() : node->getOriginalId();
 			rename_id(&ob->id, (char *)nodename.c_str());
-			object_map.insert(std::make_pair<COLLADAFW::UniqueId, Object *>(node->getUniqueId(), ob));
+			object_map.insert(std::pair<COLLADAFW::UniqueId, Object *>(node->getUniqueId(), ob));
 			node_map[node->getUniqueId()] = node;
 
 			if (is_library_node)

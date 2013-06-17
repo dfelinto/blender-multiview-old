@@ -45,6 +45,10 @@ extern "C" {
 #include "DNA_scene_types.h"
 }
 
+#ifdef WITH_CXX_GUARDEDALLOC
+#include "MEM_guardedalloc.h"
+#endif
+
 namespace Freestyle {
 
 class AppView;
@@ -82,7 +86,7 @@ public:
 	void toggleEdgeTesselationNature(Nature::EdgeNature iNature);
 	void DrawStrokes();
 	void ResetRenderCount();
-	Render *RenderStrokes(Render *re);
+	Render *RenderStrokes(Render *re, bool render);
 	void SwapStyleModules(unsigned i1, unsigned i2);
 	void InsertStyleModule(unsigned index, const char *iFileName);
 	void InsertStyleModule(unsigned index, const char *iName, struct Text *iText);
@@ -238,6 +242,11 @@ private:
 	bool _ComputeSteerableViewMap;
 
 	FEdgeXDetector edgeDetector;
+
+#ifdef WITH_CXX_GUARDEDALLOC
+public:
+	MEM_CXX_CLASS_ALLOC_FUNCS("Freestyle:Controller")
+#endif
 };
 
 extern Controller *g_pController;

@@ -39,9 +39,9 @@ float *BKE_image_get_float_pixels_for_frame(void *image, int frame);
 
 CCL_NAMESPACE_BEGIN
 
-static inline BL::Mesh object_to_mesh(BL::BlendData data, BL::Object object, BL::Scene scene, bool apply_modifiers, bool render)
+static inline BL::Mesh object_to_mesh(BL::BlendData data, BL::Object object, BL::Scene scene, bool apply_modifiers, bool render, bool calc_undeformed)
 {
-	return data.meshes.new_from_object(scene, object, apply_modifiers, (render)? 2: 1, true);
+	return data.meshes.new_from_object(scene, object, apply_modifiers, (render)? 2: 1, true, calc_undeformed);
 }
 
 static inline void colorramp_to_array(BL::ColorRamp ramp, float4 *data, int size)
@@ -92,6 +92,16 @@ static inline bool BKE_object_is_modified(BL::Object self, BL::Scene scene, bool
 static inline bool BKE_object_is_deform_modified(BL::Object self, BL::Scene scene, bool preview)
 {
 	return self.is_deform_modified(scene, (preview)? (1<<0): (1<<1))? true: false;
+}
+
+static inline int render_resolution_x(BL::RenderSettings b_render)
+{
+	return b_render.resolution_x()*b_render.resolution_percentage()/100;
+}
+
+static inline int render_resolution_y(BL::RenderSettings b_render)
+{
+	return b_render.resolution_y()*b_render.resolution_percentage()/100;
 }
 
 static inline string image_user_file_path(BL::ImageUser iuser, BL::Image ima, int cfra)

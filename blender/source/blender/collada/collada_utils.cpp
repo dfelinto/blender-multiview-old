@@ -102,7 +102,7 @@ int bc_set_parent(Object *ob, Object *par, bContext *C, bool is_parent_space)
 		BKE_object_where_is_calc(sce, par);
 
 		// move child obmat into world space
-		mult_m4_m4m4(mat, par->obmat, ob->obmat);
+		mul_m4_m4m4(mat, par->obmat, ob->obmat);
 		copy_m4_m4(ob->obmat, mat);
 	}
 	
@@ -160,7 +160,7 @@ Mesh *bc_get_mesh_copy(Scene *scene, Object *ob, BC_export_mesh_type export_mesh
 	}
 
 	tmpmesh = BKE_mesh_add(G.main, "ColladaMesh"); // name is not important here
-	DM_to_mesh(dm, tmpmesh, ob);
+	DM_to_mesh(dm, tmpmesh, ob, CD_MASK_MESH);
 	dm->release(dm);
 
 	if (triangulate) {
@@ -376,19 +376,20 @@ void bc_match_scale(std::vector<Object *> *objects_done,
 			++it) 
 	{
 		ob = *it;
-		mult_m4_m4m4(ob->obmat, size_mat4, ob->obmat);
-		mult_m4_m4m4(ob->obmat, bc_unit.get_rotation(), ob->obmat);
+		mul_m4_m4m4(ob->obmat, size_mat4, ob->obmat);
+		mul_m4_m4m4(ob->obmat, bc_unit.get_rotation(), ob->obmat);
 		BKE_object_apply_mat4(ob, ob->obmat, 0, 0);
 	}
 
 }
 
-void bc_triangulate_mesh(Mesh *me) {
+void bc_triangulate_mesh(Mesh *me)
+{
 	bool use_beauty = false;
 	bool tag_only   = false;
 	 
 	BMesh *bm = BM_mesh_create(&bm_mesh_allocsize_default);
-	BM_mesh_bm_from_me(bm, me, FALSE, 0);
+	BM_mesh_bm_from_me(bm, me, true, false, 0);
 	BM_mesh_triangulate(bm, use_beauty, tag_only, NULL, NULL);
 	BM_mesh_bm_to_me(bm, me, FALSE);
 	BM_mesh_free(bm);

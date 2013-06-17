@@ -42,6 +42,7 @@
 
 #include "BKE_freestyle.h"
 #include "BKE_editmesh.h"
+#include "BKE_paint.h"
 
 #include "RNA_define.h"
 #include "RNA_enum_types.h"
@@ -452,6 +453,9 @@ static void rna_Scene_set_set(PointerRNA *ptr, PointerRNA value)
 	for (nested_set = set; nested_set; nested_set = nested_set->set) {
 		if (nested_set == scene)
 			return;
+		/* prevent eternal loops, set can point to next, and next to set, without problems usually */
+		if (nested_set->set == set)
+			return;
 	}
 
 	scene->set = set;
@@ -670,11 +674,18 @@ static char *rna_RenderSettings_path(PointerRNA *UNUSED(ptr))
 static int rna_RenderSettings_threads_get(PointerRNA *ptr)
 {
 	RenderData *rd = (RenderData *)ptr->data;
+	return BKE_render_num_threads(rd);
+}
 
-	if (rd->mode & R_FIXED_THREADS)
-		return rd->threads;
+static int rna_RenderSettings_threads_mode_get(PointerRNA *ptr)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	int override = BLI_system_num_threads_override_get();
+
+	if (override > 0)
+		return R_FIXED_THREADS;
 	else
-		return BLI_system_thread_count();
+		return (rd->mode & R_FIXED_THREADS);
 }
 
 static int rna_RenderSettings_is_movie_fomat_get(PointerRNA *ptr)
@@ -1118,6 +1129,10 @@ static void rna_SceneRenderLayer_name_set(PointerRNA *ptr, const char *value)
 {
 	Scene *scene = (Scene *)ptr->id.data;
 	SceneRenderLayer *rl = (SceneRenderLayer *)ptr->data;
+	char oldname[sizeof(rl->name)];
+
+	BLI_strncpy(oldname, rl->name, sizeof(rl->name));
+
 	BLI_strncpy_utf8(rl->name, value, sizeof(rl->name));
 	BLI_uniquename(&scene->r.layers, rl, DATA_("RenderLayer"), '.', offsetof(SceneRenderLayer, name), sizeof(rl->name));
 
@@ -1132,12 +1147,18 @@ static void rna_SceneRenderLayer_name_set(PointerRNA *ptr, const char *value)
 			}
 		}
 	}
+
+	/* fix all the animation data which may link to this */
+	BKE_all_animdata_fix_paths_rename(NULL, "render.layers", oldname, rl->name);
 }
 
 static char *rna_SceneRenderLayer_path(PointerRNA *ptr)
 {
 	SceneRenderLayer *srl = (SceneRenderLayer *)ptr->data;
-	return BLI_sprintfN("render.layers[\"%s\"]", srl->name);
+	char name_esc[sizeof(srl->name) * 2];
+
+	BLI_strescape(name_esc, srl->name, sizeof(name_esc));
+	return BLI_sprintfN("render.layers[\"%s\"]", name_esc);
 }
 
 static int rna_RenderSettings_multiple_engines_get(PointerRNA *UNUSED(ptr))
@@ -1174,7 +1195,7 @@ static void rna_SceneRenderLayer_pass_update(Main *bmain, Scene *activescene, Po
 	Scene *scene = (Scene *)ptr->id.data;
 
 	if (scene->nodetree)
-		ntreeCompositForceHidden(scene->nodetree, scene);
+		ntreeCompositForceHidden(scene->nodetree);
 	
 	rna_Scene_glsl_update(bmain, activescene, ptr);
 }
@@ -1234,6 +1255,12 @@ static void object_simplify_update(Object *ob)
 	ModifierData *md;
 	ParticleSystem *psys;
 
+	if ((ob->id.flag & LIB_DOIT) == 0) {
+		return;
+	}
+
+	ob->id.flag &= ~LIB_DOIT;
+
 	for (md = ob->modifiers.first; md; md = md->next) {
 		if (ELEM3(md->type, eModifierType_Subsurf, eModifierType_Multires, eModifierType_ParticleSystem)) {
 			ob->recalc |= PSYS_RECALC_CHILD;
@@ -1258,6 +1285,7 @@ static void rna_Scene_use_simplify_update(Main *bmain, Scene *UNUSED(scene), Poi
 	Scene *sce_iter;
 	Base *base;
 
+	tag_main_lb(&bmain->object, TRUE);
 	for (SETLOOPER(sce, sce_iter, base))
 		object_simplify_update(base->object);
 	
@@ -1419,6 +1447,12 @@ static void rna_UnifiedPaintSettings_unprojected_radius_set(PointerRNA *ptr, flo
 	/* scale brush size so it stays consistent with unprojected_radius */
 	BKE_brush_scale_size(&ups->size, value, ups->unprojected_radius);
 	ups->unprojected_radius = value;
+}
+
+static void rna_UnifiedPaintSettings_radius_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+{
+	/* changing the unified size should invalidate */
+	BKE_paint_invalidate_overlay_all();
 }
 
 static char *rna_UnifiedPaintSettings_path(PointerRNA *ptr)
@@ -1842,7 +1876,7 @@ static void rna_def_tool_settings(BlenderRNA  *brna)
 	RNA_def_property_float_sdna(prop, NULL, "vgroup_weight");
 	RNA_def_property_ui_text(prop, "Vertex Group Weight", "Weight to assign in vertex groups");
 
-	/* use with MESH_OT_select_shortest_path */
+	/* use with MESH_OT_shortest_path_pick */
 	prop = RNA_def_property(srna, "edge_path_mode", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "edge_mode");
 	RNA_def_property_enum_items(prop, edge_tag_items);
@@ -1962,12 +1996,14 @@ static void rna_def_unified_paint_settings(BlenderRNA  *brna)
 	RNA_def_property_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS * 10);
 	RNA_def_property_ui_range(prop, 1, MAX_BRUSH_PIXEL_RADIUS, 1, -1);
 	RNA_def_property_ui_text(prop, "Radius", "Radius of the brush in pixels");
+	RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_radius_update");
 
 	prop = RNA_def_property(srna, "unprojected_radius", PROP_FLOAT, PROP_DISTANCE);
 	RNA_def_property_float_funcs(prop, NULL, "rna_UnifiedPaintSettings_unprojected_radius_set", NULL);
 	RNA_def_property_range(prop, 0.001, FLT_MAX);
 	RNA_def_property_ui_range(prop, 0.001, 1, 0, -1);
 	RNA_def_property_ui_text(prop, "Unprojected Radius", "Radius of brush in Blender units");
+	RNA_def_property_update(prop, 0, "rna_UnifiedPaintSettings_radius_update");
 
 	prop = RNA_def_property(srna, "strength", PROP_FLOAT, PROP_FACTOR);
 	RNA_def_property_float_sdna(prop, NULL, "alpha");
@@ -3355,7 +3391,7 @@ static void rna_def_scene_game_data(BlenderRNA *brna)
 	RNA_def_property_boolean_funcs(prop, "rna_GameSettings_auto_start_get", "rna_GameSettings_auto_start_set");
 	RNA_def_property_ui_text(prop, "Auto Start", "Automatically start game at load time");
 
-	prop = RNA_def_property(srna, "restrict_animation_updates", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_restrict_animation_updates", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", GAME_RESTRICT_ANIM_UPDATES);
 	RNA_def_property_ui_text(prop, "Restrict Animation Updates",
 	                         "Restrict the number of animation updates to the animation FPS (this is "
@@ -3461,7 +3497,7 @@ static void rna_def_scene_render_layer(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Freestyle Settings", "");
 }
 
-/* curve.splines */
+/* Render Layers */
 static void rna_def_render_layers(BlenderRNA *brna, PropertyRNA *cprop)
 {
 	StructRNA *srna;
@@ -3494,7 +3530,7 @@ static void rna_def_render_layers(BlenderRNA *brna, PropertyRNA *cprop)
 	func = RNA_def_function(srna, "new", "rna_RenderLayer_new");
 	RNA_def_function_ui_description(func, "Add a render layer to scene");
 	RNA_def_function_flag(func, FUNC_USE_SELF_ID);
-	parm = RNA_def_string(func, "name", "RenderLayer", 0, "", "New name for the marker (not unique)");
+	parm = RNA_def_string(func, "name", "RenderLayer", 0, "", "New name for the render layer (not unique)");
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 	parm = RNA_def_pointer(func, "result", "SceneRenderLayer", "", "Newly created render layer");
 	RNA_def_function_return(func, parm);
@@ -3502,7 +3538,7 @@ static void rna_def_render_layers(BlenderRNA *brna, PropertyRNA *cprop)
 	func = RNA_def_function(srna, "remove", "rna_RenderLayer_remove");
 	RNA_def_function_ui_description(func, "Remove a render layer");
 	RNA_def_function_flag(func, FUNC_USE_MAIN | FUNC_USE_REPORTS | FUNC_USE_SELF_ID);
-	parm = RNA_def_pointer(func, "layer", "SceneRenderLayer", "", "Timeline marker to remove");
+	parm = RNA_def_pointer(func, "layer", "SceneRenderLayer", "", "Render layer to remove");
 	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
 	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 }
@@ -4315,6 +4351,7 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "threads_mode", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_bitflag_sdna(prop, NULL, "mode");
 	RNA_def_property_enum_items(prop, threads_mode_items);
+	RNA_def_property_enum_funcs(prop, "rna_RenderSettings_threads_mode_get", NULL, NULL);
 	RNA_def_property_ui_text(prop, "Threads Mode", "Determine the amount of render threads used");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 	

@@ -160,7 +160,10 @@ typedef enum DMDirtyFlag {
 	 * without actually rebuilding dm (hence by defautl keeping same GPUDrawObject, and same colors
 	 * buffer, which prevents update during a stroke!). */
 	DM_DIRTY_MCOL_UPDATE_DRAW = 1 << 1,
-} DMDirtyFlag;
+
+	/* check this with modifier dependsOnNormals callback to see if normals need recalculation */
+	DM_DIRTY_NORMALS = 1 << 2,
+}  DMDirtyFlag;
 
 typedef struct DerivedMesh DerivedMesh;
 struct DerivedMesh {
@@ -468,14 +471,14 @@ int DM_release(DerivedMesh *dm);
 
 /** utility function to convert a DerivedMesh to a Mesh
  */
-void DM_to_mesh(DerivedMesh *dm, struct Mesh *me, struct Object *ob);
+void DM_to_mesh(DerivedMesh *dm, struct Mesh *me, struct Object *ob, CustomDataMask mask);
 
 struct BMEditMesh *DM_to_editbmesh(struct DerivedMesh *dm,
-                                   struct BMEditMesh *existing, int do_tessellate);
+                                   struct BMEditMesh *existing, const bool do_tessellate);
 
 /* conversion to bmesh only */
-void          DM_to_bmesh_ex(struct DerivedMesh *dm, struct BMesh *bm);
-struct BMesh *DM_to_bmesh(struct DerivedMesh *dm);
+void          DM_to_bmesh_ex(struct DerivedMesh *dm, struct BMesh *bm, const bool calc_face_normal);
+struct BMesh *DM_to_bmesh(struct DerivedMesh *dm, const bool calc_face_normal);
 
 
 /** Utility function to convert a DerivedMesh to a shape key block */
@@ -560,6 +563,7 @@ void DM_free_poly_data(struct DerivedMesh *dm, int index, int count);
 /*sets up mpolys for a DM based on face iterators in source*/
 void DM_DupPolys(DerivedMesh *source, DerivedMesh *target);
 
+void DM_ensure_normals(DerivedMesh *dm);
 void DM_ensure_tessface(DerivedMesh *dm);
 
 void DM_update_tessface_data(DerivedMesh *dm);

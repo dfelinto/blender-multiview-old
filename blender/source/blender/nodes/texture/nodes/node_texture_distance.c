@@ -65,9 +65,8 @@ void register_node_type_tex_distance(void)
 {
 	static bNodeType ntype;
 	
-	tex_node_type_base(&ntype, TEX_NODE_DISTANCE, "Distance", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_DISTANCE, "Distance", NODE_CLASS_CONVERTOR, 0);
 	node_type_socket_templates(&ntype, inputs, outputs);
-	node_type_size(&ntype, 120, 110, 160);
 	node_type_storage(&ntype, "node_distance", NULL, NULL);
 	node_type_exec(&ntype, NULL, NULL, exec);
 	

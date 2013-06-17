@@ -82,9 +82,10 @@ static void rna_tracking_defaultSettings_searchUpdate(Main *UNUSED(bmain), Scene
 
 static char *rna_trackingTrack_path(PointerRNA *ptr)
 {
-	MovieTrackingTrack *track = (MovieTrackingTrack *) ptr->data;
-
-	return BLI_sprintfN("tracking.tracks[\"%s\"]", track->name);
+	MovieTrackingTrack *track = (MovieTrackingTrack *)ptr->data;
+	char name_esc[sizeof(track->name) * 2];
+	BLI_strescape(name_esc, track->name, sizeof(name_esc));
+	return BLI_sprintfN("tracking.tracks[\"%s\"]", name_esc);
 }
 
 static void rna_trackingTracks_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
@@ -612,6 +613,13 @@ static void rna_def_trackingSettings(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Use Fallback",
 	                         "Use fallback reconstruction algorithm in cases main reconstruction algorithm failed "
 	                         "(could give better solution with bad tracks)");
+
+	/* use keyframe selection */
+	prop = RNA_def_property(srna, "use_keyframe_selection", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+	RNA_def_property_boolean_sdna(prop, NULL, "reconstruction_flag", TRACKING_USE_KEYFRAME_SELECTION);
+	RNA_def_property_ui_text(prop, "Keyframe Selection",
+	                         "Automatically select keyframes when solving camera/object motion");
 
 	/* intrinsics refinement during bundle adjustment */
 	prop = RNA_def_property(srna, "refine_intrinsics", PROP_ENUM, PROP_NONE);

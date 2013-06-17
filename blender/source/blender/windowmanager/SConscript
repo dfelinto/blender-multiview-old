@@ -30,19 +30,29 @@ import os
 
 sources = env.Glob('intern/*.c')
 
-#incs = '#/intern/guardedalloc ../blenlib ../makesdna ../blenkernel'
-#incs += ' ../imbuf ../editors/include ../render/extern/include ../render/intern/include'
-
-incs = '. ../editors/include ../python ../makesdna ../blenlib ../blenkernel'
-incs += ' ../nodes ../imbuf ../blenloader ../render/extern/include'
-incs += ' ../radiosity/extern/include'
-incs += ' ../makesrna ../gpu ../blenfont ../bmesh ../compositor'
-
-incs += ' #/intern/guardedalloc #/intern/memutil #/intern/ghost'
-incs += ' #/intern/elbeem #/extern/glew/include'
-incs += ' #source/gameengine/BlenderRoutines'
-
-incs += ' ' + env['BF_ZLIB_INC']
+incs = [
+    '.',
+    '#/intern/ghost',
+    '#/intern/guardedalloc',
+    '#/intern/memutil',
+    '#/source/gameengine/BlenderRoutines',
+    '#/extern/glew/include',
+    '../blenfont',
+    '../blenkernel',
+    '../blenlib',
+    '../blenloader',
+    '../compositor',
+    '../editors/include',
+    '../gpu',
+    '../imbuf',
+    '../makesdna',
+    '../makesrna',
+    '../nodes',
+    '../python',
+    '../render/extern/include',
+    env['BF_ZLIB_INC'],
+    ]
+incs = ' '.join(incs)
 
 defs = [ 'GLEW_STATIC' ]
 
@@ -51,10 +61,6 @@ if env['WITH_BF_PYTHON']:
 
 if env['WITH_BF_COLLADA']:
     defs.append('WITH_COLLADA')
-
-if env['OURPLATFORM'] == 'linux':
-    cflags='-pthread'
-    incs += ' ../../../extern/binreloc/include'
 
 if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
     incs += ' ' + env['BF_PTHREADS_INC']
@@ -71,5 +77,8 @@ if env['WITH_BF_INTERNATIONAL']:
 
 if env['WITH_BF_COMPOSITOR']:
     defs.append("WITH_COMPOSITOR")
+
+if env['WITH_BF_PYTHON_SECURITY']:
+    defs.append("WITH_PYTHON_SECURITY")
 
 env.BlenderLib ( 'bf_windowmanager', sources, Split(incs), defines=defs, libtype=['core'], priority=[5] )

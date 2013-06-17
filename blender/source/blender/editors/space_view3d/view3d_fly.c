@@ -227,6 +227,9 @@ typedef struct FlyInfo {
 	/* use for some lag */
 	float dvec_prev[3]; /* old for some lag */
 
+	/* for parenting calculation */
+	float view_mat_prev[4][4];
+
 } FlyInfo;
 
 static void drawFlyPixel(const struct bContext *UNUSED(C), ARegion *UNUSED(ar), void *arg)
@@ -304,8 +307,8 @@ static bool initFlyInfo(bContext *C, FlyInfo *fly, wmOperator *op, const wmEvent
 		return false;
 	}
 
-	if (fly->v3d->ob_centre) {
-		BKE_report(op->reports, RPT_ERROR, "Cannot fly when the view is locked to an object");
+	if (ED_view3d_offset_lock_check(fly->v3d, fly->rv3d)) {
+		BKE_report(op->reports, RPT_ERROR, "Cannot fly when the view offset is locked");
 		return false;
 	}
 
@@ -408,6 +411,8 @@ static bool initFlyInfo(bContext *C, FlyInfo *fly, wmOperator *op, const wmEvent
 		sub_v3_v3(fly->rv3d->ofs, upvec);
 		/* Done with correcting for the dist */
 	}
+
+	ED_view3d_to_m4(fly->view_mat_prev, fly->rv3d->ofs, fly->rv3d->viewquat, fly->rv3d->dist);
 
 	/* center the mouse, probably the UI mafia are against this but without its quite annoying */
 	WM_cursor_warp(win, fly->ar->winrct.xmin + fly->ar->winx / 2, fly->ar->winrct.ymin + fly->ar->winy / 2);
@@ -731,20 +736,14 @@ static void flyMoveCamera(bContext *C, RegionView3D *rv3d, FlyInfo *fly,
 		Object *ob_update;
 
 		float view_mat[4][4];
-		float prev_view_mat[4][4];
 		float prev_view_imat[4][4];
 		float diff_mat[4][4];
 		float parent_mat[4][4];
-		float size_mat[4][4];
 
-		ED_view3d_to_m4(prev_view_mat, fly->rv3d->ofs, fly->rv3d->viewquat, fly->rv3d->dist);
-		invert_m4_m4(prev_view_imat, prev_view_mat);
+		invert_m4_m4(prev_view_imat, fly->view_mat_prev);
 		ED_view3d_to_m4(view_mat, rv3d->ofs, rv3d->viewquat, rv3d->dist);
-		mult_m4_m4m4(diff_mat, view_mat, prev_view_imat);
-		mult_m4_m4m4(parent_mat, diff_mat, fly->root_parent->obmat);
-
-		size_to_mat4(size_mat, fly->root_parent->size);
-		mult_m4_m4m4(parent_mat, parent_mat, size_mat);
+		mul_m4_m4m4(diff_mat, view_mat, prev_view_imat);
+		mul_m4_m4m4(parent_mat, diff_mat, fly->root_parent->obmat);
 
 		BKE_object_apply_mat4(fly->root_parent, parent_mat, true, false);
 
@@ -756,6 +755,8 @@ static void flyMoveCamera(bContext *C, RegionView3D *rv3d, FlyInfo *fly,
 			ob_update = ob_update->parent;
 		}
 
+		copy_m4_m4(fly->view_mat_prev, view_mat);
+
 		id_key = &fly->root_parent->id;
 	}
 	else {
@@ -764,9 +765,9 @@ static void flyMoveCamera(bContext *C, RegionView3D *rv3d, FlyInfo *fly,
 
 		ED_view3d_to_m4(view_mat, rv3d->ofs, rv3d->viewquat, rv3d->dist);
 		size_to_mat4(size_mat, v3d->camera->size);
-		mult_m4_m4m4(view_mat, view_mat, size_mat);
+		mul_m4_m4m4(view_mat, view_mat, size_mat);
 
-		BKE_object_apply_mat4(v3d->camera, view_mat, true, false);
+		BKE_object_apply_mat4(v3d->camera, view_mat, true, true);
 
 		id_key = &v3d->camera->id;
 	}
@@ -1086,7 +1087,7 @@ static int flyApply_ndof(bContext *C, FlyInfo *fly)
 
 #if 0
 	bool do_rotate = (flag & NDOF_SHOULD_ROTATE) && (fly->pan_view == false);
-	bool do_translate = (flag & (NDOF_SHOULD_PAN | NDOF_SHOULD_ZOOM));
+	bool do_translate = (flag & (NDOF_SHOULD_PAN | NDOF_SHOULD_ZOOM)) != 0;
 #endif
 
 	bool do_rotate = (fly->pan_view == false);

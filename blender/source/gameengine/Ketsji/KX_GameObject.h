@@ -53,7 +53,6 @@
 #include "DNA_object_types.h"
 #include "SCA_LogicManager.h" /* for ConvertPythonToGameObject to search object names */
 #include "KX_PythonUniforms.h"
-#define KX_OB_DYNAMIC 1
 
 //Forward declarations.
 struct KX_ClientObjectInfo;
