@@ -84,7 +84,7 @@ typedef struct RenderPass {
 	struct RenderPass *next, *prev;
 	int passtype, channels;
 	char name[64];		/* amount defined in openexr_multi.h */
-	char chan_id[24];	/* amount defined in openexr_multi.h */
+	char chan_id[8];	/* amount defined in openexr_multi.h */
 	float *rect;
 	int rectx, recty;
 
