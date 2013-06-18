@@ -456,7 +456,7 @@ static void set_pass_name(char *passname, int passtype, int channel, const char 
 	const char *passtype_name = name_from_passtype(passtype, channel);
 
 	if (view == NULL || view[0] == '\0') {
-		BLI_strncpy(passname, passtype_name, sizeof(passname));
+		BLI_strncpy(passname, passtype_name, EXR_PASS_MAXNAME);
 		return;
 	}
 
