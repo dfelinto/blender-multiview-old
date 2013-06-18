@@ -273,6 +273,8 @@ struct Render
 	struct ImagePool *pool;
 
 	int actview;
+
+	char *viewname;
 };
 
 /* ------------------------------------------------------------------------- */

@@ -1093,13 +1093,14 @@ void IMB_exr_write_channels(void *handle)
 
 /* temporary function, used for FSA and Save Buffers */
 /* called once per tile * view */
-void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, int view)
+void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, const char *viewname)
 {
 	ExrHandle *data = (ExrHandle *)handle;
 	FrameBuffer frameBuffer;
 	ExrChannel *echan;
+	int view_id = imb_exr_get_multiView_id(*data->multiView, viewname);
 
-	exr_printf("\nIMB_exrtile_write_channels(view: %d)\n", view);
+	exr_printf("\nIMB_exrtile_write_channels(view: %s)\n", viewname);
 	exr_printf("%s %-6s %-22s \"%s\"\n", "p", "view", "name", "internal_name");
 	exr_printf("---------------------------------------------------------------------\n");
 
@@ -1107,7 +1108,7 @@ void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, i
 
 		/* eventually we can make the parts' channels to include
 		   only the current view TODO */
-		if (view != echan->view_id)
+		if (view_id != echan->view_id)
 			continue;
 
 		exr_printf("%d %-6s %-22s \"%s\"\n",
@@ -1127,7 +1128,7 @@ void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, i
 		                  );
 	}
 
-	TiledOutputPart out (*data->mpofile, view);
+	TiledOutputPart out (*data->mpofile, view_id);
 	out.setFrameBuffer(frameBuffer);
 
 	try {

@@ -183,7 +183,7 @@ static RenderPart *get_part_from_result(Render *re, RenderResult *result)
 	return NULL;
 }
 
-RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h, const char *layername, int view)
+RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h, const char *layername, const char *viewname)
 {
 	Render *re = engine->re;
 	RenderResult *result;
@@ -206,7 +206,7 @@ RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, 
 	disprect.ymin = y;
 	disprect.ymax = y + h;
 
-	result = render_result_new(re, &disprect, 0, RR_USE_MEM, layername, view);
+	result = render_result_new(re, &disprect, 0, RR_USE_MEM, layername, viewname);
 
 	/* todo: make this thread safe */
 
@@ -257,7 +257,7 @@ void RE_engine_end_result(RenderEngine *engine, RenderResult *result, int cancel
 			pa->status = PART_STATUS_READY;
 
 		if (re->result->do_exr_tile)
-			render_result_exr_file_merge(re->result, result, re->actview);
+			render_result_exr_file_merge(re->result, result, re->viewname);
 		else if (!(re->test_break(re->tbh) && (re->r.scemode & R_BUTS_PREVIEW)))
 			render_result_merge(re->result, result);
 
@@ -344,10 +344,10 @@ void RE_engine_report(RenderEngine *engine, int type, const char *msg)
 		BKE_report(engine->reports, type, msg);
 }
 
-void RE_engine_actview_set(RenderEngine *engine, int view)
+void RE_engine_actview_set(RenderEngine *engine, const char *viewname)
 {
 	Render *re = engine->re;
-	re->actview = view;
+	re->viewname = viewname;
 }
 
 void RE_engine_get_current_tiles(Render *re, int *total_tiles_r, rcti **tiles_r)
@@ -450,7 +450,7 @@ int RE_engine_render(Render *re, int do_all)
 			render_result_free(re->result);
 
 		savebuffers = (re->r.scemode & R_EXR_TILE_FILE) ? RR_USE_EXR : RR_USE_MEM;
-		re->result = render_result_new(re, &re->disprect, 0, savebuffers, RR_ALL_LAYERS, -1);
+		re->result = render_result_new(re, &re->disprect, 0, savebuffers, RR_ALL_LAYERS, RR_ALL_VIEWS);
 	}
 	BLI_rw_mutex_unlock(&re->resultmutex);
 
