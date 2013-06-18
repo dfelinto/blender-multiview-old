@@ -579,8 +579,7 @@ void *IMB_exr_get_handle(void)
 
 void *IMB_exr_get_handle_name(const char *name)
 {
-	int offset = 2 * sizeof(ExrHandle *);
-	ExrHandle *data = (ExrHandle *) BLI_rfindstring(&exrhandles, name, offset);
+	ExrHandle *data = (ExrHandle *) BLI_rfindstring(&exrhandles, name, offsetof(ExrHandle, name));
 
 	if (data==NULL) {
 		data = (ExrHandle *)IMB_exr_get_handle();
@@ -611,9 +610,9 @@ void IMB_exr_add_view(void *handle, const char *name)
 void IMB_exr_get_multiView_name(void *handle, int view_id, char *view)
 {
 	StringVector *views = imb_exr_multiView(handle);
-	std::string retstr ( view_id >= views->size() ? "" : &((*views)[view_id])[0] );
+	std::string retstr ( view_id >= views->size() ? "" : (*views)[view_id].c_str() );
 
-	BLI_strncpy(view, &(retstr)[0], sizeof(view));
+	BLI_strncpy(view, retstr.c_str(), sizeof(view));
 }
 
 int IMB_exr_get_multiView_count(void *handle)
@@ -622,10 +621,10 @@ int IMB_exr_get_multiView_count(void *handle)
 	return data->multiView->size();
 }
 
-static int imb_exr_get_multiView_id(StringVector *views, const std::string name)
+static int imb_exr_get_multiView_id(StringVector& views, const std::string& name)
 {
 	int count = 0;
-	for (StringVector::const_iterator i = (*views).begin(); count < (*views).size(); ++i) {
+	for (StringVector::const_iterator i = views.begin(); count < views.size(); ++i) {
 		if (name == *i)
 			return count;
 		else
@@ -636,13 +635,13 @@ static int imb_exr_get_multiView_id(StringVector *views, const std::string name)
 	return -1;
 }
 
-static void imb_exr_get_views(MultiPartInputFile *file, StringVector *views)
+static void imb_exr_get_views(MultiPartInputFile *file, StringVector& views)
 {
 	if(file->parts() == 1) {
 		if(hasMultiView(file->header(0))) {
 			StringVector sv = multiView(file->header(0));
 			for (StringVector::const_iterator i = sv.begin(); i != sv.end(); ++i)
-				views->push_back(*i);
+				views.push_back(*i);
 		}
 	}
 
@@ -653,7 +652,7 @@ static void imb_exr_get_views(MultiPartInputFile *file, StringVector *views)
 				view=file->header(p).view();
 
 			if (imb_exr_get_multiView_id(views, view) == -1)
-				(*views).push_back(view);
+				views.push_back(view);
 		}
 	}
 }
@@ -734,15 +733,15 @@ void IMB_exr_add_channel(void *handle, const char *layname, const char *passname
 	echan->m->view.assign(view ? view : "");
 
 	/* name has to be unique, thus it's a combination of layer, pass, view, and channel */
-	std::string raw_name = imb_exr_insert_view_name(&(echan->m->name)[0], &(echan->m->view)[0]);
-	BLI_strncpy(echan->name, &raw_name[0], EXR_TOT_MAXNAME - raw_name.size());
+	std::string raw_name = imb_exr_insert_view_name(echan->m->name.c_str(), echan->m->view.c_str());
+	BLI_strncpy(echan->name, raw_name.c_str(), EXR_TOT_MAXNAME - raw_name.size());
 
 	echan->xstride = xstride;
 	echan->ystride = ystride;
 	echan->rect = rect;
 
 	/* quick look up */
-	echan->view_id = std::max(0, imb_exr_get_multiView_id(data->multiView, echan->m->view));
+	echan->view_id = std::max(0, imb_exr_get_multiView_id(*data->multiView, echan->m->view));
 
 	exr_printf("added channel %s\n", echan->name);
 	BLI_addtail(&data->channels, echan);
@@ -829,7 +828,7 @@ void IMB_exrtile_begin_write(void *handle, const char *filename, int mipmap, int
 		echan->m->part_number = echan->view_id;
 
 		headers[echan->view_id].channels().insert(echan->m->internal_name, Channel(Imf::FLOAT));
-		exr_printf("%d %-6s %-22s \"%s\"\n", echan->m->part_number, &(echan->m->view)[0], &(echan->m->name)[0], &(echan->m->internal_name)[0]);
+		exr_printf("%d %-6s %-22s \"%s\"\n", echan->m->part_number, echan->m->view.c_str(), echan->m->name.c_str(), echan->m->internal_name.c_str());
 	}
 
 	/* avoid crash/abort when we don't have permission to write here */
@@ -941,7 +940,7 @@ int IMB_exrmultiview_begin_write(void *handle, const char *filename, int width, 
 	exr_printf("---------------------------------------------------------------------\n");
 
 	for (size_t i=0; i < channels.size(); i++) {
-		exr_printf("channel[%2d]: %d %-6s %-22s \"%s\"\n", int(i), channels[i].part_number, &(channels[i].view)[0], &(channels[i].name)[0], &(channels[i].internal_name)[0]);
+		exr_printf("channel[%2d]: %d %-6s %-22s \"%s\"\n", int(i), channels[i].part_number, channels[i].view.c_str(), channels[i].name.c_str(), channels[i].internal_name.c_str());
 	}
 	
 	/* initialize the header */
@@ -1003,13 +1002,13 @@ int IMB_exr_begin_read(void *handle, const char *filename, int *width, int *heig
 			data->width = *width  = dw.max.x - dw.min.x + 1;
 			data->height = *height = dw.max.y - dw.min.y + 1;
 
-			imb_exr_get_views(data->ifile, data->multiView);
+			imb_exr_get_views(data->ifile, *data->multiView);
 
 			std::vector<MultiViewChannelName> channels;
 			GetChannelsInMultiPartFile(*data->ifile, channels);
 
 			for(size_t i = 0; i < channels.size(); i++) {
-				IMB_exr_add_channel(data, NULL, &(channels[i].name)[0], &(channels[i].view)[0], 0, 0, NULL);
+				IMB_exr_add_channel(data, NULL, channels[i].name.c_str(), channels[i].view.c_str(), 0, 0, NULL);
 		
 				echan = (ExrChannel *)data->channels.last;
 				echan->m->name = channels[i].name;
@@ -1113,9 +1112,9 @@ void IMB_exrtile_write_channels(void *handle, int partx, int party, int level, i
 
 		exr_printf("%d %-6s %-22s \"%s\"\n",
 				echan->m->part_number,
-				&(echan->m->view)[0],
-				&(echan->m->name)[0],
-				&(echan->m->internal_name)[0]
+				echan->m->view.c_str(),
+				echan->m->name.c_str(),
+				echan->m->internal_name.c_str()
 			   );
 
 		float *rect = echan->rect - echan->xstride * partx - echan->ystride * party;
@@ -1206,7 +1205,7 @@ void IMB_exr_read_channels(void *handle)
 	exr_printf("\nIMB_exr_read_channels\n%s %-6s %-22s \"%s\"\n---------------------------------------------------------------------\n", "p", "view", "name", "internal_name");
 
 	for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next) {
-		exr_printf("%d %-6s %-22s \"%s\"\n", echan->m->part_number, &(echan->m->view)[0], &(echan->m->name)[0], &(echan->m->internal_name)[0]);
+		exr_printf("%d %-6s %-22s \"%s\"\n", echan->m->part_number, echan->m->view.c_str(), echan->m->name.c_str(), echan->m->internal_name.c_str());
 
 		if (echan->rect) {
 			if (flip)
@@ -1217,7 +1216,7 @@ void IMB_exr_read_channels(void *handle)
 				                                      echan->xstride * sizeof(float), -echan->ystride * sizeof(float)));
 		}
 		else
-			printf("warning, channel with no rect set %s\n", &(echan->m->internal_name)[0]);
+			printf("warning, channel with no rect set %s\n", echan->m->internal_name.c_str());
 	}
 
 	for (int i = 0; i < numparts; i++) {
@@ -1252,7 +1251,7 @@ void IMB_exr_multilayer_convert(void *handle, void *base,
 
 	/* add views to RenderResult */
 	for (StringVector::const_iterator i = data->multiView->begin(); i != data->multiView->end(); ++i) {
-		addview(base, &(*i)[0]);
+		addview(base, (*i).c_str());
 	}
 
 	if (data->layers.first == NULL) {
@@ -1324,7 +1323,7 @@ int IMB_exr_split_token(const char *str, const char *end, const char **token)
 
 static int imb_exr_split_channel_name(ExrChannel *echan, char *layname, char *passname)
 {
-	const char *name = &(echan->m->name)[0];
+	const char *name = echan->m->name.c_str();
 	const char *end = name + strlen(name);
 	const char *token;
 	char tokenbuf[EXR_TOT_MAXNAME];
@@ -1444,10 +1443,10 @@ static ExrHandle *imb_exr_begin_read_mem(MultiPartInputFile *file, int width, in
 	GetChannelsInMultiPartFile(*data->ifile, channels);
 
 	data->multiView = new StringVector();
-	imb_exr_get_views(data->ifile, data->multiView);
+	imb_exr_get_views(data->ifile, *data->multiView);
 
 	for(size_t i = 0; i < channels.size(); i++) {
-		IMB_exr_add_channel(data, NULL, &(channels[i].name)[0], &(channels[i].view)[0], 0, 0, NULL);
+		IMB_exr_add_channel(data, NULL, channels[i].name.c_str(), channels[i].view.c_str(), 0, 0, NULL);
 
 		echan = (ExrChannel *)data->channels.last;
 		echan->m->name = channels[i].name;
@@ -1461,7 +1460,7 @@ static ExrHandle *imb_exr_begin_read_mem(MultiPartInputFile *file, int width, in
 	for (echan = (ExrChannel *)data->channels.first; echan; echan = echan->next) {
 		if (imb_exr_split_channel_name(echan, layname, passname)) {
 
-			const char *view= &(echan->m->view)[0];
+			const char *view= echan->m->view.c_str();
 			char internal_name[EXR_PASS_MAXNAME];
 
 			BLI_strncpy(internal_name, passname, EXR_PASS_MAXNAME);
@@ -1483,7 +1482,7 @@ static ExrHandle *imb_exr_begin_read_mem(MultiPartInputFile *file, int width, in
 		}
 	}
 	if (echan) {
-		printf("error, too many channels in one pass: %s\n", &(echan->m->name)[0]);
+		printf("error, too many channels in one pass: %s\n", echan->m->name.c_str());
 		IMB_exr_close(data);
 		return NULL;
 	}
@@ -1571,16 +1570,16 @@ static void exr_print_filecontents(MultiPartInputFile *file)
 	if (numparts == 1 && hasMultiView(file->header(0))) {
 		const StringVector views = multiView(file->header(0));
 		printf("OpenEXR-load: MultiView file\n");
-		printf("OpenEXR-load: Default view: %s\n", &defaultViewName(views)[0]);
+		printf("OpenEXR-load: Default view: %s\n", defaultViewName(views).c_str());
 		for (StringVector::const_iterator i = views.begin(); i != views.end(); ++i) {
-			printf("OpenEXR-load: Found view %s\n", &(*i)[0]);
+			printf("OpenEXR-load: Found view %s\n", (*i).c_str());
 		}
 	}
 	else if (numparts > 1) {
 		printf("OpenEXR-load: MultiPart file\n");
 		for (int i = 0; i < numparts; i++) {
 			if (file->header(i).hasView())
-				printf("OpenEXR-load: Part %d: view = \"%s\"\n", i, &(file->header(i).view())[0]);
+				printf("OpenEXR-load: Part %d: view = \"%s\"\n", i, file->header(i).view().c_str());
 		}
 	}
 
