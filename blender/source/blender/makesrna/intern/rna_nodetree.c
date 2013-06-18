@@ -2571,13 +2571,10 @@ static void rna_Node_image_view_update(Main *bmain, Scene *scene, PointerRNA *pt
 static EnumPropertyItem *renderresult_views_add_enum(RenderView *rv)
 {
 	EnumPropertyItem *item = NULL;
-	EnumPropertyItem tmp = {0, "", 0, "", ""};
-	int i = 0, totitem = 0;
+	EnumPropertyItem tmp = {0, "ALL", 0, "All", ""};
+	int i = 1, totitem = 0;
 
 	/* option to use all views */
-	tmp.identifier = "All";
-	tmp.name  = "All";
-	tmp.value = i++;
 	RNA_enum_item_add(&item, &totitem, &tmp);
 
 	while (rv) {
@@ -2598,7 +2595,7 @@ static EnumPropertyItem *renderresult_views_add_enum(RenderView *rv)
 }
 
 static EnumPropertyItem *rna_Node_image_view_itemf(bContext *UNUSED(C), PointerRNA *ptr,
-												   PropertyRNA *UNUSED(prop), int *free)
+                                                   PropertyRNA *UNUSED(prop), int *free)
 {
 	bNode *node = (bNode *)ptr->data;
 	Image *ima = (Image *)node->id;
@@ -2856,7 +2853,7 @@ static EnumPropertyItem prop_image_layer_items[] = {
 };
 
 static EnumPropertyItem prop_image_view_items[] = {
-	{ 0, "PLACEHOLDER",          0, "Placeholder",          ""},
+	{ 0, "ALL", 0, "All", ""},
 	{0, NULL, 0, NULL, NULL}
 };
 
