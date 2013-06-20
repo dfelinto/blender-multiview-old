@@ -59,10 +59,10 @@ static char *view_name(const RenderData *rd, int actview)
 		numviews ++;
 
 		if (actview == nr) {
-			if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
-				BLI_strncpy(name, srv->name, sizeof(name));
+			if ((srv->viewflag & SCE_VIEW_CUSTOMSUFFIX))
+				BLI_strncpy(name, srv->suffix, sizeof(name));
 			else
-				BLI_strncpy(name, srv->label, sizeof(name));
+				BLI_strncpy(name, srv->name, sizeof(name));
 		}
 	}
 

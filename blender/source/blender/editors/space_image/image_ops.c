@@ -1447,20 +1447,20 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 					SceneRenderView *srv;
 					RenderView *rv;
 					char view[FILE_MAX];
-					char label[FILE_MAX];
+					char suffix[FILE_MAX];
 
 					for (rv = (RenderView *) rr->views.first; rv; rv = rv->next) {
 						srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
 
 						BLI_strncpy(view, srv->name, sizeof(view));
 
-						if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
-							BLI_strncpy(label, srv->name, sizeof(label));
+						if ((srv->viewflag & SCE_VIEW_CUSTOMSUFFIX))
+							BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
 						else
-							BLI_strncpy(label, srv->label, sizeof(label));
+							BLI_strncpy(suffix, srv->name, sizeof(suffix));
 
 						BLI_strncpy(filepath, simopts->filepath, sizeof(filepath));
-						BLI_path_view(filepath, label);
+						BLI_path_view(filepath, suffix);
 
 						ok = RE_WriteRenderResult(op->reports, rr, filepath, simopts->im_format.quality, FALSE, view);
 						save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, filepath);
@@ -1477,7 +1477,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 		/* multiview - individual images */
 		else if (rr && BLI_countlist(&rr->views) > 1) {
 			char filepath[FILE_MAX];
-			char label[FILE_MAX];
+			char suffix[FILE_MAX];
 			SceneRenderView *srv;
 			RenderView *rv;
 			int i, orig_multi_index = sima->iuser.multi_index;
@@ -1494,13 +1494,13 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 
 				srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
 
-				if ((srv->viewflag & SCE_VIEW_NAMEASLABEL))
-					BLI_strncpy(label, srv->name, sizeof(label));
+				if ((srv->viewflag & SCE_VIEW_CUSTOMSUFFIX))
+					BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
 				else
-					BLI_strncpy(label, srv->label, sizeof(label));
+					BLI_strncpy(suffix, srv->name, sizeof(suffix));
 
 				BLI_strncpy(filepath, simopts->filepath, sizeof(filepath));
-				BLI_path_view(filepath, label);
+				BLI_path_view(filepath, suffix);
 
 				ibuf = ED_space_image_acquire_buffer(sima, &lock);
 				ibuf->planes = planes;
