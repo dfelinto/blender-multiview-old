@@ -3642,8 +3642,9 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	RNA_def_struct_name_property(srna, prop);
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-	prop = RNA_def_property(srna, "label", PROP_STRING, PROP_NONE);
-	RNA_def_property_ui_text(prop, "Label", "Text used to save the individual view files");
+	prop = RNA_def_property(srna, "file_suffix", PROP_STRING, PROP_NONE);
+	RNA_def_property_string_sdna(prop, NULL, "suffix");
+	RNA_def_property_ui_text(prop, "File Suffix", "Suffix added to the render images for this view");
 	RNA_def_struct_name_property(srna, prop);
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
@@ -3658,9 +3659,9 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Enabled", "Disable or enable the render view");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-	prop = RNA_def_property(srna, "use_name_as_label", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "viewflag", SCE_VIEW_NAMEASLABEL);
-	RNA_def_property_ui_text(prop, "Name as Label", "Use the view name as label when saving individual view files (it replaces the special char % in the file string)");
+	prop = RNA_def_property(srna, "use_custom_suffix", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "viewflag", SCE_VIEW_CUSTOMSUFFIX);
+	RNA_def_property_ui_text(prop, "Custom Suffix", "Use the view name as label when saving individual view files (it replaces the special char % in the file string)");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
 }

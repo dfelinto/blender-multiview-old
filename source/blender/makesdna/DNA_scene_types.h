@@ -245,7 +245,7 @@ typedef struct SceneRenderView {
 	struct SceneRenderView *next, *prev;
 
 	char name[64];	/* MAX_NAME */
-	char label[64];	/* MAX_NAME */
+	char suffix[64];	/* MAX_NAME */
 
 	int viewflag;
 	int pad[3];
@@ -255,7 +255,7 @@ typedef struct SceneRenderView {
 
 /* srv->viewflag */
 #define SCE_VIEW_DISABLE		(1<<0)
-#define SCE_VIEW_NAMEASLABEL	(1<<1)
+#define SCE_VIEW_CUSTOMSUFFIX	(1<<1)
 
 /* *************************************************************** */
 
