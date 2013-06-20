@@ -65,6 +65,10 @@ void *BKE_camera_add(Main *bmain, const char *name)
 	cam->ortho_scale = 6.0;
 	cam->flag |= CAM_SHOWPASSEPARTOUT;
 	cam->passepartalpha = 0.5f;
+
+	/* stereoscopy 3d */
+	cam->stereo.interocular_distance = 0.065;
+	cam->stereo.convergence_distance = 30.f * 0.065;
 	
 	return cam;
 }
@@ -580,4 +584,75 @@ int BKE_camera_view_frame_fit_to_scene(Scene *scene, struct View3D *v3d, Object 
 			return TRUE;
 		}
 	}
+}
+
+/* return the eye (left/right/center) for the given view
+   actview is numbered from a list of the active SceneRenderViews only */
+StereoViews BKE_getStereoView(RenderData *rd, int actview) {
+	SceneRenderView *srv;
+	int nr, view_id;
+
+	/* check renderdata for amount of views */
+	view_id = 0;
+	for (nr = 0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
+
+		if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
+			continue;
+
+		if (srv->viewflag & SCE_VIEW_DISABLE)
+			continue;
+
+		if (actview == view_id++)
+			return srv->stereo_camera;
+	}
+
+	return STEREO_CENTER_ID;
+}
+
+/* creates a new camera Object to use for the render and view */
+static Object *stereoscopy_camera(Object *ob, bool left)
+{
+	Object *stereo_camera;
+	float interocular_distance, convergence_distance;
+	short convergence_mode;
+	Camera *data;
+
+	stereo_camera = BKE_object_copy(ob);
+
+	data = (Camera *)stereo_camera->data;
+
+	interocular_distance = data->stereo.interocular_distance;
+	convergence_distance = data->stereo.convergence_distance;
+	convergence_mode = data->stereo.convergence_mode;
+
+	/* XXX pseudo math right now, only to show some difference.
+	   but here comes the real calculation later */
+	if (left) {
+		stereo_camera->obmat[0][0] += interocular_distance * 0.5;
+		data->shiftx += interocular_distance * 0.5;
+	}
+	else {
+		stereo_camera->obmat[0][0] -= interocular_distance * 0.5;
+		data->shiftx -= interocular_distance * 0.5;
+	}
+
+	return stereo_camera;
+}
+
+/* returns the camera to use for the stereo render/view  */
+Object *BKE_camera_from_stereoscopy(Object *ob, StereoViews view)
+{
+	switch (view) {
+		case STEREO_LEFT_ID:
+			return stereoscopy_camera(ob, TRUE);
+			break;
+		case STEREO_RIGHT_ID:
+			return stereoscopy_camera(ob, FALSE);
+			break;
+		case STEREO_CENTER_ID:
+		default:
+			break;
+	}
+
+	return ob;
 }

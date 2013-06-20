@@ -68,6 +68,7 @@
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
 #include "BKE_writeavi.h"  /* <------ should be replaced once with generic movie module */
+#include "BKE_object.h"
 
 #include "PIL_time.h"
 #include "IMB_colormanagement.h"
@@ -560,6 +561,8 @@ Render *RE_NewRender(const char *name)
 
 	/* init some variables */
 	re->ycor = 1.0f;
+
+	re->stereo_camera = NULL;
 	
 	return re;
 }
@@ -598,6 +601,11 @@ void RE_FreeRender(Render *re)
 	
 	render_result_free(re->result);
 	render_result_free(re->pushedresult);
+
+	if (re->stereo_camera) {
+		BKE_object_free(re->stereo_camera);
+		re->stereo_camera = NULL;
+	}
 	
 	BLI_remlink(&RenderGlobal.renderlist, re);
 	MEM_freeN(re);

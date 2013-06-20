@@ -273,6 +273,7 @@ struct Render
 	struct ImagePool *pool;
 
 	int actview;
+	struct Object *stereo_camera; /* temporary camera object, created on-the-fly */
 };
 
 /* ------------------------------------------------------------------------- */
