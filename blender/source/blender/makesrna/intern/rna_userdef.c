@@ -3396,13 +3396,13 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	};
 
 	static EnumPropertyItem stereo_display_items[] = {
-		{S3D_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", ""},
+		{S3D_DISPLAY_ANAGLYPH, "ANAGLYPH", 0, "Anaglyph", "Render two differently filtered colored images for each eye. Anaglyph glasses are required"},
 /*		{S3D_DISPLAY_BLURAY, "BLURAY", 0, "Blu-ray", ""}, */
-		{S3D_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Dr. Epilepsy", ""},
-		{S3D_DISPLAY_INTERLACE, "INTERLACE", 0, "Interlace", ""},
+		{S3D_DISPLAY_EPILEPSY, "EPILEPSY", 0, "Dr. Epilepsy", "Wiggle stereoscopy. Quickly alternate between images for left and right eye"},
+		{S3D_DISPLAY_INTERLACE, "INTERLACE", 0, "Interlace", "Render two images for each eye into one interlaced image. 3D-ready monitor is requiered"},
 		{S3D_DISPLAY_PAGEFLIP, "TIMESEQUENTIAL", 0, "Time Sequential", "Renders alternate eyes (also known as pageflip). It requires Quadbuffer support in the graphic card"},
-		{S3D_DISPLAY_SIDEBYSIDE, "SIDEBYSIDE", 0, "Side-by-Side", ""},
-		{S3D_DISPLAY_TOPBOTTOM, "TOPBOTTOM", 0, "Top-Bottom", ""},
+		{S3D_DISPLAY_SIDEBYSIDE, "SIDEBYSIDE", 0, "Side-by-Side", "Render images for left and right eye side-by-side"},
+		{S3D_DISPLAY_TOPBOTTOM, "TOPBOTTOM", 0, "Top-Bottom", "Render images for left and right eye one above another"},
 		{0, NULL, 0, NULL, NULL}
 	};
 
