@@ -1269,6 +1269,7 @@ def get_panels():
         types.DATA_PT_vertex_colors,
         types.DATA_PT_camera,
         types.DATA_PT_camera_display,
+        types.DATA_PT_camera_stereoscopy,
         types.DATA_PT_lens,
         types.DATA_PT_speaker,
         types.DATA_PT_distance,

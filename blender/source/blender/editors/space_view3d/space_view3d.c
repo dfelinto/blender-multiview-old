@@ -296,6 +296,9 @@ static SpaceLink *view3d_new(const bContext *C)
 	
 	v3d->bundle_size = 0.2f;
 	v3d->bundle_drawtype = OB_PLAINAXES;
+
+	/* stereo */
+	v3d->stereo_camera = STEREO_3D_ID;
 	
 	/* header */
 	ar = MEM_callocN(sizeof(ARegion), "header for view3d");
@@ -340,7 +343,7 @@ static SpaceLink *view3d_new(const bContext *C)
 	rv3d->persp = RV3D_PERSP;
 	rv3d->view = RV3D_VIEW_PERSPORTHO;
 	rv3d->dist = 10.0;
-	
+
 	return (SpaceLink *)v3d;
 }
 
