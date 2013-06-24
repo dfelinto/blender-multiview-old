@@ -514,9 +514,6 @@ static int buttons_context_path(const bContext *C, ButsContextPath *path, int ma
 		case BCONTEXT_SCENE:
 		case BCONTEXT_RENDER:
 		case BCONTEXT_RENDER_LAYER:
-		case BCONTEXT_RENDER_VIEW:
-			found = buttons_context_path_scene(path);
-			break;
 		case BCONTEXT_WORLD:
 			found = buttons_context_path_world(path);
 			break;
@@ -1024,7 +1021,7 @@ void buttons_context_draw(const bContext *C, uiLayout *layout)
 			name = RNA_struct_name_get_alloc(ptr, namebuf, sizeof(namebuf), NULL);
 
 			if (name) {
-				if (!ELEM4(sbuts->mainb, BCONTEXT_RENDER, BCONTEXT_SCENE, BCONTEXT_RENDER_LAYER, BCONTEXT_RENDER_VIEW) && ptr->type == &RNA_Scene)
+				if (!ELEM3(sbuts->mainb, BCONTEXT_RENDER, BCONTEXT_SCENE, BCONTEXT_RENDER_LAYER) && ptr->type == &RNA_Scene)
 					uiItemLDrag(row, ptr, "", icon);  /* save some space */
 				else
 					uiItemLDrag(row, ptr, name, icon);
