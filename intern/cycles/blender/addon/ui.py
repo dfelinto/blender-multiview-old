@@ -359,6 +359,56 @@ class CyclesRender_PT_layer_passes(CyclesButtonsPanel, Panel):
         col.prop(rl, "use_pass_ambient_occlusion")
 
 
+class CyclesRender_PT_views(CyclesButtonsPanel, Panel):
+    bl_label = "Views"
+    bl_context = "render_layer"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        rd = scene.render
+
+        row = layout.row()
+        row.template_list("RENDERLAYER_UL_renderviews", "", rd, "views", rd.views, "active_index", rows=2)
+
+        col = row.column(align=True)
+        col.operator("scene.render_view_add", icon='ZOOMIN', text="")
+        col.operator("scene.render_view_remove", icon='ZOOMOUT', text="")
+
+        row = layout.row()
+        rv = rd.views.active
+        if rv and rv.name not in ('left', 'right'):
+            row.prop(rv, "name")
+        else:
+            row.label()
+        row.prop(rd, "use_single_view", text="", icon_only=True)
+
+
+class CyclesRender_PT_view_options(CyclesButtonsPanel, Panel):
+    bl_label = "View"
+    bl_context = "render_layer"
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        rd = scene.render
+        rv = rd.views.active
+
+        split = layout.split()
+
+        col = split.column()
+        col.prop(rv, "camera")
+
+        col.separator()
+        col.prop(rv, "use_custom_suffix")
+
+        sub = col.column()
+        sub.active = rv.use_custom_suffix
+        sub.prop(rv, "file_suffix")
+
+
 class Cycles_PT_post_processing(CyclesButtonsPanel, Panel):
     bl_label = "Post Processing"
     bl_options = {'DEFAULT_CLOSED'}
@@ -1244,8 +1294,6 @@ def get_panels():
         types.RENDER_PT_encoding,
         types.RENDER_PT_dimensions,
         types.RENDER_PT_stamp,
-        types.RENDERLAYER_PT_views,
-        types.RENDERLAYER_PT_view_options,
         types.SCENE_PT_scene,
         types.SCENE_PT_color_management,
         types.SCENE_PT_custom_props,
