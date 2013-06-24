@@ -221,11 +221,11 @@ class RENDERLAYER_PT_view_options(RenderLayerButtonsPanel, Panel):
         col.prop(rv, "camera")
 
         col.separator()
-        col.prop(rv, "use_name_as_label")
+        col.prop(rv, "use_custom_suffix")
 
         sub = col.column()
-        sub.active = not rv.use_name_as_label
-        sub.prop(rv, "label")
+        sub.active = rv.use_custom_suffix
+        sub.prop(rv, "file_suffix")
 
 
 if __name__ == "__main__":  # only for live edit.
