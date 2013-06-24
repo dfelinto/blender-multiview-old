@@ -54,7 +54,6 @@ _modules = [
     "properties_physics_softbody",
     "properties_render",
     "properties_render_layer",
-    "properties_render_view",
     "properties_scene",
     "properties_texture",
     "properties_world",
