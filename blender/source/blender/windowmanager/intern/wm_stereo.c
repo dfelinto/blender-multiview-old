@@ -368,15 +368,56 @@ void wm_method_draw_stereo(bContext *UNUSED(C), wmWindow *win)
 	}
 }
 
+static bool wm_stereo_need_fullscreen(eStereoDisplayMode stereo_display)
+{
+	return ELEM4(stereo_display,
+	             S3D_DISPLAY_INTERLACE,
+	             S3D_DISPLAY_SIDEBYSIDE,
+	             S3D_DISPLAY_TOPBOTTOM,
+	             S3D_DISPLAY_PAGEFLIP);
+}
+
+bool wm_stereo_enabled(wmWindow *win)
+{
+	bScreen *screen = win->screen;
+
+	if (win->flag & WM_STEREO)
+		return TRUE;
+
+	if (wm_stereo_need_fullscreen(U.stereo_display) == FALSE) {
+
+		/* where there is no */
+		ScrArea *sa;
+		for (sa = screen->areabase.first; sa; sa = sa->next) {
+			SpaceLink *sl;
+			for (sl = sa->spacedata.first; sl; sl= sl->next) {
+
+#if 0 // waiting for multiview_s3d merge
+				if (sl->spacetype == SPACE_VIEW3D) {
+					View3D *v3d = (View3D*) sl;
+					if (v3d->stereo_camera == STEREO_3D_ID)
+						return TRUE;
+				}
+#endif
+#if 0 // waiting to image editor refactor
+				if (sl->spacetype == SPACE_IMAGE) {
+					SpaceImage *sima = (SpaceImage *) sl;
+//					if (sima->iuser.view == STEREO_3D_ID)
+						return TRUE;
+				}
+			}
+		}
+#endif
+	}
+
+	return FALSE;
+}
+
 int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	wmWindow *win = CTX_wm_window(C);
 	GHOST_TWindowState state;
-	int need_fullscreen = ELEM3(U.stereo_display,
-	                            S3D_DISPLAY_INTERLACE,
-	                            S3D_DISPLAY_SIDEBYSIDE,
-	                            S3D_DISPLAY_TOPBOTTOM);
 
 	if (G.background)
 		return OPERATOR_CANCELLED;
@@ -399,25 +440,12 @@ int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
 		}
 	}
 
-	/* at least for testing this is really annoying, disabling for now. It could be a user preference option (force fullscreen) */
-#if 0
-	/* some modes only make sense in fullscreen, try to restore previous
-	   fullscreen/windowed state after disabling stereo */
-	if (need_fullscreen) {
+	if (wm_stereo_need_fullscreen(U.stereo_display)) {
 		if ((win->flag & WM_STEREO)) {
-			if (state == GHOST_kWindowStateFullScreen)
-				win->flag |= WM_WASFULLSCREEN;
-			else {
-				win->flag &= ~WM_WASFULLSCREEN;
+			if (state != GHOST_kWindowStateFullScreen)
 				GHOST_SetWindowState(win->ghostwin, GHOST_kWindowStateFullScreen);
-			}
-		}
-		else {
-			if (state == GHOST_kWindowStateFullScreen && ((win->flag & WM_WASFULLSCREEN)==0))
-				GHOST_SetWindowState(win->ghostwin, GHOST_kWindowStateNormal);
 		}
 	}
-#endif
 
 	WM_event_add_notifier(C, NC_WINDOW, NULL);
 	return OPERATOR_FINISHED;
