@@ -251,9 +251,9 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 	return PASS_NONE;
 }
 
-static BL::RenderResult begin_render_result(BL::RenderEngine b_engine, int x, int y, int w, int h, const char *layername, int view)
+static BL::RenderResult begin_render_result(BL::RenderEngine b_engine, int x, int y, int w, int h, const char *layername, const char *viewname)
 {
-	return b_engine.begin_result(x, y, w, h, layername, view);
+	return b_engine.begin_result(x, y, w, h, layername, viewname);
 }
 
 static void end_render_result(BL::RenderEngine b_engine, BL::RenderResult b_rr, bool cancel = false)
@@ -270,7 +270,7 @@ void BlenderSession::do_write_update_render_tile(RenderTile& rtile, bool do_upda
 	int h = params.height;
 
 	/* get render result */
-	BL::RenderResult b_rr = begin_render_result(b_engine, x, y, w, h, b_rlay_name.c_str(), b_rview_id);
+	BL::RenderResult b_rr = begin_render_result(b_engine, x, y, w, h, b_rlay_name.c_str(), b_rview_name.c_str());
 
 	/* can happen if the intersected rectangle gives 0 width or height */
 	if (b_rr.ptr.data == NULL) {
@@ -336,9 +336,11 @@ void BlenderSession::render()
 	for(r.layers.begin(b_iter); b_iter != r.layers.end(); ++b_iter) {
 		b_rlay_name = b_iter->name();
 
-		for(r.views.begin(b_iterv), b_rview_id=0; b_iterv != r.views.end(); ++b_iterv, b_rview_id++) {
+		int b_rview_id=0;
+		for(r.views.begin(b_iterv); b_iterv != r.views.end(); ++b_iterv, ++b_rview_id) {
+			b_rview_name = b_iterv->name();
 			/* temporary render result to find needed passes */
-			BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str(), -1);
+			BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str(), NULL);
 			BL::RenderResult::layers_iterator b_single_rlay;
 			b_rr.layers.begin(b_single_rlay);
 
@@ -349,7 +351,7 @@ void BlenderSession::render()
 			}
 
 			/* set the current view */
-			b_engine.active_view_set(b_rview_id);
+			b_engine.active_view_set(b_rview_name.c_str());
 
 			BL::RenderLayer b_rlay = *b_single_rlay;
 

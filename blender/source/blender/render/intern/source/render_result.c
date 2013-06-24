@@ -518,7 +518,7 @@ static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channel
 /* will read info from Render *re to define layers */
 /* called in threads */
 /* re->winx,winy is coordinate space of entire image, partrct the part within */
-RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuffers, const char *layername, int view)
+RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuffers, const char *layername, const char *viewname)
 {
 	RenderResult *rr;
 	RenderLayer *rl;
@@ -607,8 +607,9 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 
 		for (nr = 0, rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
 
-			if (view != -1 && view != nr)
-				continue;
+			if (viewname && viewname[0])
+				if (strcmp(rv->name, viewname) != 0)
+					continue;
 
 			if (rr->do_exr_tile)
 				IMB_exr_add_view(rl->exrhandle, rv->name);
@@ -687,8 +688,9 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		nr = 0;
 		for (rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
 
-			if (view != -1 && view != nr)
-				continue;
+			if (viewname && viewname[0])
+				if (strcmp(rv->name, viewname))
+					continue;
 
 			if (rr->do_exr_tile) {
 				IMB_exr_add_view(rl->exrhandle, rv->name);
@@ -718,15 +720,15 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 }
 
 /* allocate osa new results for samples */
-RenderResult *render_result_new_full_sample(Render *re, ListBase *lb, rcti *partrct, int crop, int savebuffers, int view)
+RenderResult *render_result_new_full_sample(Render *re, ListBase *lb, rcti *partrct, int crop, int savebuffers, const char *viewname)
 {
 	int a;
 	
 	if (re->osa == 0)
-		return render_result_new(re, partrct, crop, savebuffers, RR_ALL_LAYERS, view);
+		return render_result_new(re, partrct, crop, savebuffers, RR_ALL_LAYERS, viewname);
 	
 	for (a = 0; a < re->osa; a++) {
-		RenderResult *rr = render_result_new(re, partrct, crop, savebuffers, RR_ALL_LAYERS, view);
+		RenderResult *rr = render_result_new(re, partrct, crop, savebuffers, RR_ALL_LAYERS, viewname);
 		BLI_addtail(lb, rr);
 		rr->sample_nr = a;
 	}
@@ -1045,7 +1047,7 @@ void render_result_single_layer_end(Render *re)
 
 /************************* EXR Tile File Rendering ***************************/
 
-static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int view_id)
+static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, const char *viewname)
 {
 	RenderLayer *rlp, *rl;
 	RenderPass *rpassp;
@@ -1072,11 +1074,11 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int 
 		/* passes are allocated in sync */
 		for (rpassp = rlp->passes.first; rpassp; rpassp = rpassp->next) {
 			int a, xstride = rpassp->channels;
-			const char *viewname = get_view_name(&rr->views, rpassp->view_id);
+			const char *passviewname = get_view_name(&rr->views, rpassp->view_id);
 			char passname[EXR_PASS_MAXNAME];
 
 			for (a = 0; a < xstride; a++) {
-				set_pass_name(passname, rpassp->passtype, a, viewname);
+				set_pass_name(passname, rpassp->passtype, a, passviewname);
 
 				IMB_exr_set_channel(rl->exrhandle, rlp->name, passname,
 				                    xstride, xstride * rrpart->rectx, rpassp->rect + a + xstride * offs);
@@ -1097,7 +1099,7 @@ static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart, int 
 			continue;
 		}
 
-		IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, view_id);
+		IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, viewname);
 	}
 
 	BLI_unlock_thread(LOCK_IMAGE);
@@ -1117,7 +1119,7 @@ static void save_empty_result_tiles(Render *re)
 				if (pa->status != PART_STATUS_READY) {
 					int party = pa->disprect.ymin - re->disprect.ymin + pa->crop;
 					int partx = pa->disprect.xmin - re->disprect.xmin + pa->crop;
-					IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, re->actview);
+					IMB_exrtile_write_channels(rl->exrhandle, partx, party, 0, re->viewname);
 				}
 			}
 		}
@@ -1164,10 +1166,10 @@ void render_result_exr_file_end(Render *re)
 }
 
 /* save part into exr file */
-void render_result_exr_file_merge(RenderResult *rr, RenderResult *rrpart, int view)
+void render_result_exr_file_merge(RenderResult *rr, RenderResult *rrpart, const char *viewname)
 {
 	for (; rr && rrpart; rr = rr->next, rrpart = rrpart->next)
-		save_render_result_tile(rr, rrpart, view);
+		save_render_result_tile(rr, rrpart, viewname);
 }
 
 /* path to temporary exr file */
@@ -1192,7 +1194,7 @@ int render_result_exr_file_read(Render *re, int sample)
 	int success = TRUE;
 
 	RE_FreeRenderResult(re->result);
-	re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
+	re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, RR_ALL_VIEWS);
 
 	for (rl = re->result->layers.first; rl; rl = rl->next) {
 

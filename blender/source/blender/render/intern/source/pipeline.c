@@ -926,9 +926,9 @@ static void *do_part_thread(void *pa_v)
 	if (R.test_break(R.tbh) == 0) {
 		
 		if (!R.sss_points && (R.r.scemode & R_FULL_SAMPLE))
-			pa->result = render_result_new_full_sample(&R, &pa->fullresult, &pa->disprect, pa->crop, RR_USE_MEM, R.actview);
+			pa->result = render_result_new_full_sample(&R, &pa->fullresult, &pa->disprect, pa->crop, RR_USE_MEM, R.viewname);
 		else
-			pa->result = render_result_new(&R, &pa->disprect, pa->crop, RR_USE_MEM, RR_ALL_LAYERS, R.actview);
+			pa->result = render_result_new(&R, &pa->disprect, pa->crop, RR_USE_MEM, RR_ALL_LAYERS, R.viewname);
 
 		if (R.sss_points)
 			zbufshade_sss_tile(pa);
@@ -943,7 +943,7 @@ static void *do_part_thread(void *pa_v)
 		
 		/* merge too on break! */
 		if (R.result->do_exr_tile) {
-			render_result_exr_file_merge(R.result, pa->result, R.actview);
+			render_result_exr_file_merge(R.result, pa->result, R.viewname);
 		}
 		else if (render_display_draw_enabled(&R)) {
 			/* on break, don't merge in result for preview renders, looks nicer */
@@ -1133,12 +1133,12 @@ static void main_render_result_new(Render *re)
 		render_result_free(re->result);
 
 		if (re->sss_points && render_display_draw_enabled(re))
-			re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
+			re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, RR_ALL_VIEWS);
 		else if (re->r.scemode & R_FULL_SAMPLE)
-			re->result = render_result_new_full_sample(re, &re->fullresult, &re->disprect, 0, RR_USE_EXR, -1);
+			re->result = render_result_new_full_sample(re, &re->fullresult, &re->disprect, 0, RR_USE_EXR, RR_ALL_VIEWS);
 		else
 			re->result = render_result_new(re, &re->disprect, 0,
-				(re->r.scemode & R_EXR_TILE_FILE) ? RR_USE_EXR : RR_USE_MEM, RR_ALL_LAYERS, -1);
+				(re->r.scemode & R_EXR_TILE_FILE) ? RR_USE_EXR : RR_USE_MEM, RR_ALL_LAYERS, RR_ALL_VIEWS);
 	}
 
 	BLI_rw_mutex_unlock(&re->resultmutex);
@@ -1324,7 +1324,8 @@ static void do_render_3d(Render *re)
 	/* we need a new database for each view */
 	numviews = BLI_countlist(&re->result->views);
 	for (view = 0; view < numviews; view++) {
-
+		RenderView *rv = BLI_findlink(&re->result->views, view);
+		re->viewname = rv->name;
 		re->actview = view;
 
 		/* lock drawing in UI during data phase */
@@ -1452,7 +1453,7 @@ static void do_render_blur_3d(Render *re)
 	int blur = re->r.mblur_samples;
 	
 	/* create accumulation render result */
-	rres = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
+	rres = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, RR_ALL_VIEWS);
 	
 	/* do the blur steps */
 	while (blur--) {
@@ -1577,7 +1578,7 @@ static void do_render_fields_3d(Render *re)
 	re->disprect.ymax *= 2;
 
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
+	re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, RR_ALL_VIEWS);
 
 	if (rr2) {
 		if (re->r.mode & R_ODDFIELD)
@@ -1640,7 +1641,7 @@ static void do_render_fields_blur_3d(Render *re)
 				re->rectx = re->winx;
 				re->recty = re->winy;
 				
-				rres = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
+				rres = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, RR_ALL_VIEWS);
 				
 				render_result_merge(rres, re->result);
 				render_result_free(re->result);
@@ -2143,7 +2144,7 @@ static void do_render_composite_fields_blur_3d(Render *re)
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 		
 		render_result_free(re->result);
-		re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, -1);
+		re->result = render_result_new(re, &re->disprect, 0, RR_USE_MEM, RR_ALL_LAYERS, RR_ALL_VIEWS);
 
 		BLI_rw_mutex_unlock(&re->resultmutex);
 		
@@ -2736,7 +2737,7 @@ void RE_RenderFreestyleStrokes(Render *re, Main *bmain, Scene *scene, int render
 }
 #endif
 
-static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovieHandle *mh, const char *name_override, const char *view)
+static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovieHandle *mh, const char *name_override, const char *viewname)
 {
 	char name[FILE_MAX];
 	RenderResult rres;
@@ -2744,8 +2745,8 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 	double render_time;
 	int ok = TRUE;
 	int view_id;
-	
-	view_id = render_result_get_view_id(re, view);
+
+	view_id = render_result_get_view_id(re, viewname);
 	RE_AcquireResultImage(re, &rres, view_id);
 
 	/* write movie or image */
@@ -2782,11 +2783,11 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 		if (name_override)
 			BLI_strncpy(name, name_override, sizeof(name));
 		else
-			BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, "");
+			BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, RR_ALL_VIEWS);
 		
 		if (ELEM(re->r.im_format.imtype, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW)) {
 			if (re->result) {
-				RE_WriteRenderResult(re->reports, re->result, name, scene->r.im_format.exr_codec, (re->r.im_format.imtype == R_IMF_IMTYPE_MULTIVIEW), view);
+				RE_WriteRenderResult(re->reports, re->result, name, scene->r.im_format.exr_codec, (re->r.im_format.imtype == R_IMF_IMTYPE_MULTIVIEW), viewname);
 				printf("Saved: %s", name);
 			}
 		}

@@ -61,7 +61,7 @@ void    IMB_exr_set_channel(void *handle, const char *layname, const char *passn
 
 void    IMB_exr_read_channels(void *handle);
 void    IMB_exr_write_channels(void *handle);
-void    IMB_exrtile_write_channels(void *handle, int partx, int party, int level, int view);
+void    IMB_exrtile_write_channels(void *handle, int partx, int party, int level, const char *viewname);
 void    IMB_exrmultiview_write_channels(void *handle, int view_id);
 void    IMB_exr_clear_channels(void *handle);
 
