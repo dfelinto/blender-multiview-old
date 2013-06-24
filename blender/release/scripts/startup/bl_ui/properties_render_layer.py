@@ -179,7 +179,7 @@ class RENDERLAYER_UL_renderviews(UIList):
 
 
 class RENDERLAYER_PT_views(RenderLayerButtonsPanel, Panel):
-    bl_label     = "View List"
+    bl_label     = "Views"
     COMPAT_ENGINES = {'BLENDER_RENDER'}
 
     def draw(self, context):
