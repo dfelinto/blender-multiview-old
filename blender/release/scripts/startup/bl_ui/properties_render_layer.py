@@ -166,5 +166,70 @@ class RENDERLAYER_PT_layer_passes(RenderLayerButtonsPanel, Panel):
         self.draw_pass_type_buttons(col, rl, "refraction")
 
 
+class RENDERLAYER_UL_renderviews(UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # assert(isinstance(item, bpy.types.SceneRenderView)
+        view = item
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            layout.label(view.name, icon_value=icon + (not view.use))
+            layout.prop(view, "use", text="", index=index)
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label("", icon_value=icon + (not view.use))
+
+
+class RENDERLAYER_PT_views(RenderLayerButtonsPanel, Panel):
+    bl_label     = "Views"
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        rd = scene.render
+
+        row = layout.row()
+        row.template_list("RENDERLAYER_UL_renderviews", "", rd, "views", rd.views, "active_index", rows=2)
+
+        col = row.column(align=True)
+        col.operator("scene.render_view_add", icon='ZOOMIN', text="")
+        col.operator("scene.render_view_remove", icon='ZOOMOUT', text="")
+
+        row = layout.row()
+        rv = rd.views.active
+        if rv and rv.name not in ('left', 'right'):
+            row.prop(rv, "name")
+        else:
+            row.label()
+        row.prop(rd, "use_single_view", text="", icon_only=True)
+
+
+class RENDERLAYER_PT_view_options(RenderLayerButtonsPanel, Panel):
+    bl_label = "View"
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        rd = scene.render
+        rv = rd.views.active
+
+        split = layout.split()
+
+        col = split.column()
+        col.prop(rv, "camera")
+
+        if rv.camera and rv.camera.data.use_stereoscopy:
+            col.prop(rv, "stereoscopy_camera")
+
+        col.separator()
+        col.prop(rv, "use_custom_suffix")
+
+        sub = col.column()
+        sub.active = rv.use_custom_suffix
+        sub.prop(rv, "file_suffix")
+
+
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)
