@@ -2313,8 +2313,8 @@ static void project_paint_face_init(const ProjPaintState *ps, const int thread_i
 
 						has_x_isect = has_isect = 1;
 
-						if (is_clone_other) screen_px_from_persp_ortho_weights(uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
-						else if (is_ortho) screen_px_from_ortho(uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
+						if (is_ortho) screen_px_from_ortho(uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
+						else if (is_clone_other) screen_px_from_persp_ortho_weights(uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
 						else screen_px_from_persp(uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
 
 						/* a pity we need to get the worldspace pixel location here */
