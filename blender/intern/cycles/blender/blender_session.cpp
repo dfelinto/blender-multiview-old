@@ -331,14 +331,15 @@ void BlenderSession::render()
 	/* render each layer */
 	BL::RenderSettings r = b_scene.render();
 	BL::RenderSettings::layers_iterator b_iter;
-	BL::RenderSettings::views_iterator b_iterv;
+	BL::RenderResult::views_iterator b_iterv;
 	
 	for(r.layers.begin(b_iter); b_iter != r.layers.end(); ++b_iter) {
 		b_rlay_name = b_iter->name();
 
-		for(r.views.begin(b_iterv), b_rview_id=0; b_iterv != r.views.end(); ++b_iterv, b_rview_id++) {
-			/* temporary render result to find needed passes */
-			BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str(), -1);
+		/* temporary render result to find needed passes and views */
+		BL::RenderResult b_rr = begin_render_result(b_engine, 0, 0, 1, 1, b_rlay_name.c_str(), -1);
+		for(b_rr.views.begin(b_iterv), b_rview_id=0; b_iterv != b_rr.views.end(); ++b_iterv, b_rview_id++) {
+
 			BL::RenderResult::layers_iterator b_single_rlay;
 			b_rr.layers.begin(b_single_rlay);
 
@@ -373,9 +374,6 @@ void BlenderSession::render()
 				}
 			}
 
-			/* free result without merging */
-			end_render_result(b_engine, b_rr, true);
-
 			buffer_params.passes = passes;
 			scene->film->tag_passes_update(scene, passes);
 			scene->film->tag_update(scene);
@@ -401,6 +399,9 @@ void BlenderSession::render()
 			if(session->progress.get_cancel())
 				break;
 		}
+
+		/* free result without merging */
+		end_render_result(b_engine, b_rr, true);
 	}
 
 	/* clear callback */
