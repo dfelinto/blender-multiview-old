@@ -625,7 +625,7 @@ bool BLI_parent_dir(char *path)
  * returning the indexes of the first and one past the last character in the sequence in
  * *char_start and *char_end respectively. Returns true if such a sequence was found.
  */
-static bool stringspecial_chars(const char *path, int *char_start, int *char_end, char *chr)
+static bool stringspecial_chars(const char *path, int *char_start, int *char_end, const char chr)
 {
 	int ch_sta, ch_end, i;
 	/* Insert current frame: file### -> file001 */
@@ -786,13 +786,14 @@ bool BLI_path_view(char *path, const char *view)
 
 	if (stringspecial_chars(path, &ch_sta, &ch_end, '%')) { /* warning, ch_end is the last # +1 */
 		char tmp[FILE_MAX];
+		const int len = BLI_snprintf(tmp, sizeof(tmp) - 1, "%.*s%s%s", ch_sta, path, view, path + ch_end);
 
-		sprintf(tmp, "%.*s%s%s", ch_sta, path, view, path + ch_end);
-		strcpy(path, tmp);
+		BLI_strncpy(path, tmp, len+1);
+		strip_view_char((char *) BLI_last_slash(path));
 
-		strip_view_char(path);
 		return true;
 	}
+
 	return false;
 }
 
