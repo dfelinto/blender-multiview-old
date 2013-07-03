@@ -621,11 +621,11 @@ bool BLI_parent_dir(char *path)
 }
 
 /**
- * Looks for a sequence of "#" characters in the last slash-separated component of *path,
+ * Looks for a sequence of special characters (e.g., #, %) in the last slash-separated component of *path,
  * returning the indexes of the first and one past the last character in the sequence in
  * *char_start and *char_end respectively. Returns true if such a sequence was found.
  */
-static bool stringframe_chars(const char *path, int *char_start, int *char_end)
+static bool stringspecial_chars(const char *path, int *char_start, int *char_end, const char chr)
 {
 	int ch_sta, ch_end, i;
 	/* Insert current frame: file### -> file001 */
@@ -634,10 +634,10 @@ static bool stringframe_chars(const char *path, int *char_start, int *char_end)
 		if (path[i] == '\\' || path[i] == '/') {
 			ch_end = 0; /* this is a directory name, don't use any hashes we found */
 		}
-		else if (path[i] == '#') {
+		else if (path[i] == chr) {
 			ch_sta = i;
 			ch_end = ch_sta + 1;
-			while (path[ch_end] == '#') {
+			while (path[ch_end] == chr) {
 				ch_end++;
 			}
 			i = ch_end - 1; /* keep searching */
@@ -690,7 +690,7 @@ bool BLI_path_frame(char *path, int frame, int digits)
 	if (digits)
 		ensure_digits(path, digits);
 
-	if (stringframe_chars(path, &ch_sta, &ch_end)) { /* warning, ch_end is the last # +1 */
+	if (stringspecial_chars(path, &ch_sta, &ch_end, '#')) { /* warning, ch_end is the last # +1 */
 		char tmp[FILE_MAX];
 		sprintf(tmp, "%.*s%.*d%s", ch_sta, path, ch_end - ch_sta, frame, path + ch_end);
 		strcpy(path, tmp);
@@ -711,7 +711,7 @@ bool BLI_path_frame_range(char *path, int sta, int end, int digits)
 	if (digits)
 		ensure_digits(path, digits);
 
-	if (stringframe_chars(path, &ch_sta, &ch_end)) { /* warning, ch_end is the last # +1 */
+	if (stringspecial_chars(path, &ch_sta, &ch_end, '#')) { /* warning, ch_end is the last # +1 */
 		char tmp[FILE_MAX];
 		BLI_snprintf(tmp, sizeof(tmp),
 		             "%.*s%.*d-%.*d%s",
@@ -723,44 +723,6 @@ bool BLI_path_frame_range(char *path, int sta, int end, int digits)
 }
 
 /********************* multiview utils ********************/
-
-/**
- * Looks for a sequence of "%" characters in the last slash-separated component of *path,
- * returning the indexes of the first and one past the last character in the sequence in
- * *char_start and *char_end respectively. Returns true if such a sequence was found.
- */
-static bool stringview_chars(const char *path, int *char_start, int *char_end)
-{
-	int ch_sta, ch_end, i;
-	/* Insert current frame: file%%% -> file_L */
-	ch_sta = ch_end = 0;
-	for (i = 0; path[i] != '\0'; i++) {
-		if (path[i] == '\\' || path[i] == '/') {
-			ch_end = 0; /* this is a directory name, don't use any hashes we found */
-		}
-		else if (path[i] == '%') {
-			ch_sta = i;
-			ch_end = ch_sta + 1;
-			while (path[ch_end] == '%') {
-				ch_end++;
-			}
-			i = ch_end - 1; /* keep searching */
-
-			/* don't break, there may be a slash after this that invalidates the previous #'s */
-		}
-	}
-
-	if (ch_end) {
-		*char_start = ch_sta;
-		*char_end = ch_end;
-		return true;
-	}
-	else {
-		*char_start = -1;
-		*char_end = -1;
-		return false;
-	}
-}
 
 /**
  * Ensure *path contains at least one "%" character in its last slash-separated
@@ -822,15 +784,16 @@ bool BLI_path_view(char *path, const char *view)
 	if (view && view[0] != '\0')
 		ensure_view(path);
 
-	if (stringview_chars(path, &ch_sta, &ch_end)) { /* warning, ch_end is the last # +1 */
+	if (stringspecial_chars(path, &ch_sta, &ch_end, '%')) { /* warning, ch_end is the last # +1 */
 		char tmp[FILE_MAX];
+		const int len = BLI_snprintf(tmp, sizeof(tmp) - 1, "%.*s%s%s", ch_sta, path, view, path + ch_end);
 
-		sprintf(tmp, "%.*s%s%s", ch_sta, path, view, path + ch_end);
-		strcpy(path, tmp);
+		BLI_strncpy(path, tmp, len+1);
+		strip_view_char((char *) BLI_last_slash(path));
 
-		strip_view_char(path);
 		return true;
 	}
+
 	return false;
 }
 
