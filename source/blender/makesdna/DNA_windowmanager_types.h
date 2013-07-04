@@ -253,7 +253,6 @@ typedef struct wmKeyMapDiffItem {
 
 /* wmWindow.flag */
 #define WM_STEREO			1
-#define WM_WASFULLSCREEN	2 /* temporary flag */
 
 /* wmKeyMapItem.flag */
 #define KMI_INACTIVE		1

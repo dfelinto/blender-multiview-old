@@ -609,50 +609,60 @@ StereoViews BKE_getStereoView(RenderData *rd, int actview) {
 	return STEREO_CENTER_ID;
 }
 
-/* creates a new camera Object to use for the render and view */
-static Object *stereoscopy_camera(Object *ob, bool left)
+static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *shift, bool left)
 {
-	Object *stereo_camera;
+	/* viewmat = MODELVIEW_MATRIX */
+	Camera *data = (Camera *)camera->data;
 	float interocular_distance, convergence_distance;
 	short convergence_mode;
-	Camera *data;
-
-	stereo_camera = BKE_object_copy(ob);
-
-	data = (Camera *)stereo_camera->data;
+	float tmpviewmat[4][4];
 
 	interocular_distance = data->stereo.interocular_distance;
 	convergence_distance = data->stereo.convergence_distance;
 	convergence_mode = data->stereo.convergence_mode;
 
+	copy_m4_m4(tmpviewmat, camera->obmat);
+
+	/* move */
 	/* XXX pseudo math right now, only to show some difference.
 	   but here comes the real calculation later */
 	if (left) {
-		stereo_camera->obmat[0][0] += interocular_distance * 0.5;
-		data->shiftx += interocular_distance * 0.5;
+		tmpviewmat[0][0] += interocular_distance * 0.5;
 	}
 	else {
-		stereo_camera->obmat[0][0] -= interocular_distance * 0.5;
-		data->shiftx -= interocular_distance * 0.5;
+		tmpviewmat[0][0] -= interocular_distance * 0.5;
 	}
 
-	return stereo_camera;
+	/* copy  */
+	normalize_m4(tmpviewmat);
+	invert_m4_m4(viewmat, tmpviewmat);
+
+	/* prepare the camera shift for the projection matrix */
+	if (convergence_mode == CAM_S3D_OFFAXIS) {
+		/* XXX pseudo math right now, only to show some difference.
+		   but here comes the real calculation later */
+		if (left)
+			*shift += interocular_distance * 0.5;
+		else
+			*shift -= interocular_distance * 0.5;
+	}
 }
 
-/* returns the camera to use for the stereo render/view  */
-Object *BKE_camera_from_stereoscopy(Object *ob, StereoViews view)
+void BKE_camera_stereo_matrix_shift(Object *camera, float viewmat[4][4], float *shift, StereoViews view)
 {
+	/* set the modelview matrix and return the new camera shift */
+	*shift = ((Camera *)camera->data)->shiftx;
+
 	switch (view) {
 		case STEREO_LEFT_ID:
-			return stereoscopy_camera(ob, TRUE);
+			camera_stereo_matrices(camera, viewmat, shift, TRUE);
 			break;
 		case STEREO_RIGHT_ID:
-			return stereoscopy_camera(ob, FALSE);
+			camera_stereo_matrices(camera, viewmat, shift, FALSE);
 			break;
-		case STEREO_CENTER_ID:
+		/* case STEREO_CENTER_ID: */
 		default:
 			break;
 	}
-
-	return ob;
 }
+

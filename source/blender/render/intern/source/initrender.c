@@ -453,26 +453,9 @@ struct Object *RE_GetViewCamera(Render *re)
 
 	for (rv=(RenderView *)re->result->views.first; rv; rv=rv->next, nr++) {
 		if (actview == nr) {
-			camera = rv->camera;
+			return rv->camera;
 			break;
 		}
-	}
-
-	if (re->stereo_camera) {
-		BKE_object_free(re->stereo_camera);
-		re->stereo_camera = NULL;
-	}
-
-	if (camera) {
-		if (((Camera *)camera->data)->flag & CAM_STEREOSCOPY) {
-
-			stereo_view = BKE_getStereoView(&re->scene->r, actview);
-			re->stereo_camera = BKE_camera_from_stereoscopy(camera, stereo_view);
-
-			return re->stereo_camera;
-		}
-		else
-			return rv->camera;
 	}
 
 	return RE_GetCamera(re);

@@ -68,7 +68,6 @@
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
 #include "BKE_writeavi.h"  /* <------ should be replaced once with generic movie module */
-#include "BKE_object.h"
 
 #include "PIL_time.h"
 #include "IMB_colormanagement.h"
@@ -203,6 +202,9 @@ int RE_HasFakeLayer(RenderResult *res)
 		return FALSE;
 
 	rv = (RenderView *)res->views.first;
+	if (rv == NULL)
+		return FALSE;
+
 	return (rv->rect32 || rv->rectf);
 }
 
@@ -488,22 +490,22 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
 			if (rv == NULL)
 				rv = (RenderView *)re->result->views.first;
 
-			rr->rectf = rv->rectf;
-			rr->rectz = rv->rectz;
-			rr->rect32 = rv->rect32;
+			rr->rectf = rv?rv->rectf:NULL;
+			rr->rectz = rv?rv->rectz:NULL;
+			rr->rect32 = rv?rv->rect32:NULL;
 
 			/* active layer */
 			rl = render_get_active_layer(re, re->result);
 
 			if (rl) {
-				if (rv->rectf == NULL)
+				if (rv == NULL || rv->rectf == NULL)
 					rr->rectf = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, view_id);
 
-				if (rv->rectz == NULL)
+				if (rv == NULL || rv->rectz == NULL)
 					rr->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, view_id);
 			}
 
-			rr->have_combined = (rv->rectf != NULL);
+			rr->have_combined = rv?(rv->rectf != NULL):FALSE;
 			rr->layers = re->result->layers;
 			rr->views = re->result->views;
 
@@ -561,8 +563,6 @@ Render *RE_NewRender(const char *name)
 
 	/* init some variables */
 	re->ycor = 1.0f;
-
-	re->stereo_camera = NULL;
 	
 	return re;
 }
@@ -601,11 +601,6 @@ void RE_FreeRender(Render *re)
 	
 	render_result_free(re->result);
 	render_result_free(re->pushedresult);
-
-	if (re->stereo_camera) {
-		BKE_object_free(re->stereo_camera);
-		re->stereo_camera = NULL;
-	}
 	
 	BLI_remlink(&RenderGlobal.renderlist, re);
 	MEM_freeN(re);

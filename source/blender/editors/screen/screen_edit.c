@@ -1801,7 +1801,7 @@ ScrArea *ED_screen_clean_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 
 		/* restore the old side panels/header visibility */
 		for (ar = sa->regionbase.first; ar; ar = ar->next)
-			ar->flag = ar->flagtmp;
+			ar->flag = ar->flagclean;
 
 		area_copy_data(old, sa, 1); /*  1 = swap spacelist */
 		old->fullclean = NULL;
@@ -1839,7 +1839,7 @@ ScrArea *ED_screen_clean_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 
 		/* temporarily hide the side panels/header */
 		for (ar = newa->regionbase.first; ar; ar = ar->next) {
-			ar->flagtmp = ar->flag;
+			ar->flagclean = ar->flag;
 
 			if (ELEM4(ar->regiontype,
 					  RGN_TYPE_UI,

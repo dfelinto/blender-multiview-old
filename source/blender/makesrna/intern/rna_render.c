@@ -254,6 +254,12 @@ static PointerRNA rna_RenderEngine_camera_override_get(PointerRNA *ptr)
 	}
 }
 
+static void rna_RenderResult_views_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+{
+	RenderResult *rr = (RenderResult *)ptr->data;
+	rna_iterator_listbase_begin(iter, &rr->views, NULL);
+}
+
 static void rna_RenderResult_layers_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
 	RenderResult *rr = (RenderResult *)ptr->data;
@@ -526,6 +532,24 @@ static void rna_def_render_result(BlenderRNA *brna)
 	                                  "rna_iterator_listbase_end", "rna_iterator_listbase_get",
 	                                  NULL, NULL, NULL, NULL);
 
+	parm = RNA_def_property(srna, "views", PROP_COLLECTION, PROP_NONE);
+	RNA_def_property_struct_type(parm, "RenderView");
+	RNA_def_property_collection_funcs(parm, "rna_RenderResult_views_begin", "rna_iterator_listbase_next",
+	                                  "rna_iterator_listbase_end", "rna_iterator_listbase_get",
+	                                  NULL, NULL, NULL, NULL);
+
+	RNA_define_verify_sdna(1);
+}
+
+static void rna_def_render_view(BlenderRNA *brna)
+{
+	StructRNA *srna;
+	PropertyRNA *prop;
+	FunctionRNA *func;
+
+	srna = RNA_def_struct(brna, "RenderView", NULL);
+	RNA_def_struct_ui_text(srna, "Render View", "");
+
 	RNA_define_verify_sdna(1);
 }
 
@@ -645,6 +669,7 @@ void RNA_def_render(BlenderRNA *brna)
 {
 	rna_def_render_engine(brna);
 	rna_def_render_result(brna);
+	rna_def_render_view(brna);
 	rna_def_render_layer(brna);
 	rna_def_render_pass(brna);
 }
