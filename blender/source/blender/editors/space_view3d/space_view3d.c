@@ -343,7 +343,7 @@ static SpaceLink *view3d_new(const bContext *C)
 	rv3d->persp = RV3D_PERSP;
 	rv3d->view = RV3D_VIEW_PERSPORTHO;
 	rv3d->dist = 10.0;
-
+	
 	return (SpaceLink *)v3d;
 }
 

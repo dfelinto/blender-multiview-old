@@ -4908,11 +4908,6 @@ void RE_Database_Free(Render *re)
 		BLI_memarena_free(re->memArena);
 		re->memArena = NULL;
 	}
-
-	if (re->stereo_camera) {
-		BKE_object_free(re->stereo_camera);
-		re->stereo_camera = NULL;
-	}
 }
 
 static int allow_render_object(Render *re, Object *ob, int nolamps, int onlyselected, Object *actob)
