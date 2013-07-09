@@ -123,7 +123,7 @@ static int particles_are_dynamic(ParticleSystem *psys)
 		return ELEM3(psys->part->phystype, PART_PHYS_NEWTON, PART_PHYS_BOIDS, PART_PHYS_FLUID);
 }
 
-static int psys_get_current_display_percentage(ParticleSystem *psys)
+float psys_get_current_display_percentage(ParticleSystem *psys)
 {
 	ParticleSettings *part=psys->part;
 
@@ -131,10 +131,10 @@ static int psys_get_current_display_percentage(ParticleSystem *psys)
 	    (part->child_nbr && part->childtype)  ||    /* display percentage applies to children */
 	    (psys->pointcache->flag & PTCACHE_BAKING))  /* baking is always done with full amount */
 	{
-		return 100;
+		return 1.0f;
 	}
 
-	return psys->part->disp;
+	return psys->part->disp/100.0f;
 }
 
 static int tot_particles(ParticleSystem *psys, PTCacheID *pid)
@@ -421,23 +421,24 @@ void psys_calc_dmcache(Object *ob, DerivedMesh *dm, ParticleSystem *psys)
 				continue;
 			}
 
-			if (psys->part->from == PART_FROM_VERT) {
-				if (pa->num < totelem && nodearray[pa->num])
-					pa->num_dmcache= GET_INT_FROM_POINTER(nodearray[pa->num]->link);
+			if (use_modifier_stack) {
+				if (pa->num < totelem)
+					pa->num_dmcache = DMCACHE_ISCHILD;
 				else
 					pa->num_dmcache = DMCACHE_NOTFOUND;
 			}
-			else { /* FROM_FACE/FROM_VOLUME */
-				/* Note that sometimes the pa->num is over the nodearray size, this is bad, maybe there is a better place to fix this,
-				 * but for now passing NULL is OK. every face will be searched for the particle so its slower - Campbell */
-				if (use_modifier_stack) {
+			else {
+				if (psys->part->from == PART_FROM_VERT) {
 					if (pa->num < totelem && nodearray[pa->num])
-						pa->num_dmcache = GET_INT_FROM_POINTER(nodearray[pa->num]->link);
+						pa->num_dmcache= GET_INT_FROM_POINTER(nodearray[pa->num]->link);
 					else
 						pa->num_dmcache = DMCACHE_NOTFOUND;
 				}
-				else
+				else { /* FROM_FACE/FROM_VOLUME */
+					/* Note that sometimes the pa->num is over the nodearray size, this is bad, maybe there is a better place to fix this,
+					 * but for now passing NULL is OK. every face will be searched for the particle so its slower - Campbell */
 					pa->num_dmcache= psys_particle_dm_face_lookup(ob, dm, pa->num, pa->fuv, pa->num < totelem ? nodearray[pa->num] : NULL);
+				}
 			}
 		}
 
@@ -3984,7 +3985,7 @@ static void hair_step(ParticleSimulationData *sim, float cfra)
 	ParticleSystem *psys = sim->psys;
 	ParticleSettings *part = psys->part;
 	PARTICLE_P;
-	float disp = (float)psys_get_current_display_percentage(psys)/100.0f;
+	float disp = psys_get_current_display_percentage(psys);
 
 	LOOP_PARTICLES {
 		pa->size = part->size;
@@ -4312,7 +4313,7 @@ static void dynamics_step(ParticleSimulationData *sim, float cfra)
 				/* SPH_SOLVER_CLASSICAL */
 				/* Apply SPH forces using classical algorithm (due to Gingold
 				 * and Monaghan). Note that, unlike double-density relaxation,
-				 * this algorthim is separated into distinct loops. */
+				 * this algorithm is separated into distinct loops. */
 
 				#pragma omp parallel for firstprivate (sphdata) private (pa) schedule(dynamic,5)
 				LOOP_DYNAMIC_PARTICLES {
@@ -4388,7 +4389,7 @@ static void cached_step(ParticleSimulationData *sim, float cfra)
 
 	psys_update_effectors(sim);
 	
-	disp= (float)psys_get_current_display_percentage(psys)/100.0f;
+	disp= psys_get_current_display_percentage(psys);
 
 	LOOP_PARTICLES {
 		psys_get_texture(sim, pa, &ptex, PAMAP_SIZE, cfra);
@@ -4637,7 +4638,7 @@ static void system_step(ParticleSimulationData *sim, float cfra)
 
 /* 3. do dynamics */
 	/* set particles to be not calculated TODO: can't work with pointcache */
-	disp= (float)psys_get_current_display_percentage(psys)/100.0f;
+	disp= psys_get_current_display_percentage(psys);
 
 	LOOP_PARTICLES {
 		if (PSYS_FRAND(p) > disp)
@@ -4933,7 +4934,7 @@ void particle_system_update(Scene *scene, Object *ob, ParticleSystem *psys)
 				case PART_PHYS_KEYED:
 				{
 					PARTICLE_P;
-					float disp = (float)psys_get_current_display_percentage(psys)/100.0f;
+					float disp = psys_get_current_display_percentage(psys);
 
 					/* Particles without dynamics haven't been reset yet because they don't use pointcache */
 					if (psys->recalc & PSYS_RECALC_RESET)

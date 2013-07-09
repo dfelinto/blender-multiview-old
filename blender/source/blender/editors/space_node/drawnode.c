@@ -1047,7 +1047,7 @@ static void node_buts_image_views(uiLayout *layout, bContext *UNUSED(C), Pointer
 
 	if (RNA_boolean_get(ptr, "has_views")) {
 		if(RNA_enum_get(ptr, "view") == 0)
-			uiItemR(col, ptr, "view", 0, NULL, ICON_RENDERVIEWS);
+			uiItemR(col, ptr, "view", 0, NULL, ICON_CAMERA_STEREO);
 		else
 			uiItemR(col, ptr, "view", 0, NULL, ICON_SCENE);
 	}
@@ -2054,9 +2054,6 @@ static void node_composit_backdrop_boxmask(SpaceNode *snode, ImBuf *backdrop, bN
 	float y1, y2, y3, y4;
 
 
-	/* keep this, saves us from a version patch */
-	if (snode->zoom == 0.0f) snode->zoom = 1.0f;
-
 	glColor3f(1.0, 1.0, 1.0);
 
 	cx  = x + snode->zoom * backdropWidth * boxmask->x;
@@ -2094,9 +2091,6 @@ static void node_composit_backdrop_ellipsemask(SpaceNode *snode, ImBuf *backdrop
 	float cx, cy, x1, x2, x3, x4;
 	float y1, y2, y3, y4;
 
-
-	/* keep this, saves us from a version patch */
-	if (snode->zoom == 0.0f) snode->zoom = 1.0f;
 
 	glColor3f(1.0, 1.0, 1.0);
 
@@ -2921,9 +2915,6 @@ void draw_nodespace_back_pix(const bContext *C, ARegion *ar, SpaceNode *snode, b
 		glPushMatrix();
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		
-		/* keep this, saves us from a version patch */
-		if (snode->zoom == 0.0f) snode->zoom = 1.0f;
 		
 		/* somehow the offset has to be calculated inverse */
 		

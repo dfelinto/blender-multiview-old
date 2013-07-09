@@ -29,24 +29,11 @@
  *  \ingroup edsculpt
  */
 
-
-#include <math.h>
-#include <string.h>
-
-#ifdef WIN32
-#include <io.h>
-#else
-#include <unistd.h>
-#endif   
-
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_math_color.h"
 #include "BLI_memarena.h"
-#include "BLI_utildefines.h"
-#include "BLI_ghash.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -57,14 +44,12 @@
 #include "DNA_scene_types.h"
 #include "DNA_brush_types.h"
 #include "DNA_object_types.h"
-#include "DNA_meshdata_types.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
 #include "RNA_enum_types.h"
 
 #include "BKE_DerivedMesh.h"
-#include "BKE_armature.h"
 #include "BKE_action.h"
 #include "BKE_brush.h"
 #include "BKE_context.h"
@@ -87,7 +72,7 @@
 #include "ED_screen.h"
 #include "ED_view3d.h"
 
-#include "paint_intern.h"
+#include "paint_intern.h"  /* own include */
 
 /* check if we can do partial updates and have them draw realtime
  * (without rebuilding the 'derivedFinal') */
@@ -395,11 +380,9 @@ static int wpaint_mirror_vgroup_ensure(Object *ob, const int vgroup_active)
 		flip_side_name(name, defgroup->name, FALSE);
 		mirrdef = defgroup_name_index(ob, name);
 		if (mirrdef == -1) {
-			int olddef = ob->actdef;  /* tsk, ED_vgroup_add sets the active defgroup */
-			if (ED_vgroup_add_name(ob, name)) {
+			if (BKE_defgroup_new(ob, name)) {
 				mirrdef = BLI_countlist(&ob->defbase) - 1;
 			}
-			ob->actdef = olddef;
 		}
 
 		/* curdef should never be NULL unless this is
@@ -497,6 +480,7 @@ bool ED_wpaint_fill(VPaint *wp, Object *ob, float paintweight)
 	MDeformWeight *dw, *dw_prev;
 	int vgroup_active, vgroup_mirror = -1;
 	unsigned int index;
+	const bool topology = (me->editflag & ME_EDIT_MIRROR_TOPO) != 0;
 
 	/* mutually exclusive, could be made into a */
 	const short paint_selmode = ME_EDIT_PAINT_SEL_MODE(me);
@@ -536,7 +520,7 @@ bool ED_wpaint_fill(VPaint *wp, Object *ob, float paintweight)
 					dw->weight = paintweight;
 
 					if (me->editflag & ME_EDIT_MIRROR_X) {  /* x mirror painting */
-						int j = mesh_get_x_mirror_vert(ob, vidx);
+						int j = mesh_get_x_mirror_vert(ob, vidx, topology);
 						if (j >= 0) {
 							/* copy, not paint again */
 							if (vgroup_mirror != -1) {
@@ -1805,6 +1789,7 @@ static void do_weight_paint_vertex(
 {
 	Mesh *me = ob->data;
 	MDeformVert *dv = &me->dvert[index];
+	bool topology = (me->editflag & ME_EDIT_MIRROR_TOPO) != 0;
 	
 	MDeformWeight *dw, *dw_prev;
 
@@ -1833,7 +1818,7 @@ static void do_weight_paint_vertex(
 
 	/* from now on we can check if mirrors enabled if this var is -1 and not bother with the flag */
 	if (me->editflag & ME_EDIT_MIRROR_X) {
-		index_mirr = mesh_get_x_mirror_vert(ob, index);
+		index_mirr = mesh_get_x_mirror_vert(ob, index, topology);
 		vgroup_mirr = (wpi->vgroup_mirror != -1) ? wpi->vgroup_mirror : wpi->vgroup_active;
 
 		/* another possible error - mirror group _and_ active group are the same (which is fine),
@@ -2062,8 +2047,6 @@ static int set_wpaint(bContext *C, wmOperator *UNUSED(op))  /* toggle */
 	DAG_id_tag_update(&me->id, 0);
 	
 	if (ob->mode & OB_MODE_WEIGHT_PAINT) {
-		Object *par;
-		
 		if (wp == NULL)
 			wp = scene->toolsettings->wpaint = new_vpaint(1);
 
@@ -2072,14 +2055,7 @@ static int set_wpaint(bContext *C, wmOperator *UNUSED(op))  /* toggle */
 		
 		mesh_octree_table(ob, NULL, NULL, 's');
 		
-		/* verify if active weight group is also active bone */
-		par = modifiers_isDeformedByArmature(ob);
-		if (par && (par->mode & OB_MODE_POSE)) {
-			bArmature *arm = par->data;
-
-			if (arm->act_bone)
-				ED_vgroup_select_by_name(ob, arm->act_bone->name);
-		}
+		ED_vgroup_sync_from_pose(ob);
 	}
 	else {
 		mesh_octree_table(NULL, NULL, NULL, 'e');
@@ -2135,7 +2111,10 @@ struct WPaintData {
 	int *indexar;
 	int vgroup_active;
 	int vgroup_mirror;
+
+	void *vp_handle;
 	DMCoNo *vertexcosnos;
+
 	float wpimat[3][3];
 
 	/* variables for auto normalize */
@@ -2145,7 +2124,7 @@ struct WPaintData {
 };
 
 /* ensure we have data on wpaint start, add if needed */
-static int wpaint_ensure_data(bContext *C, wmOperator *op)
+static bool wpaint_ensure_data(bContext *C, wmOperator *op)
 {
 	Scene *scene = CTX_data_scene(C);
 	Object *ob = CTX_data_active_object(C);
@@ -2244,7 +2223,8 @@ static int wpaint_stroke_test_start(bContext *C, wmOperator *op, const float UNU
 	}
 
 	/* painting on subsurfs should give correct points too, this returns me->totvert amount */
-	wpd->vertexcosnos = mesh_get_mapped_verts_nors(scene, ob);
+	wpd->vp_handle = ED_vpaint_proj_handle_create(scene, ob, &wpd->vertexcosnos);
+
 	wpd->indexar = get_indexarray(me);
 	copy_wpaint_prev(wp, me->dvert, me->totvert);
 
@@ -2346,15 +2326,21 @@ static void wpaint_stroke_update_step(bContext *C, struct PaintStroke *stroke, P
 
 	use_vert_sel = (me->editflag & ME_EDIT_PAINT_VERT_SEL) != 0;
 	use_face_sel = (me->editflag & ME_EDIT_PAINT_FACE_SEL) != 0;
-	use_depth = (vc->v3d->flag & V3D_ZBUF_SELECT);
+	use_depth = (vc->v3d->flag & V3D_ZBUF_SELECT) != 0;
 
 	/* which faces are involved */
 	if (use_depth) {
 		if (wp->flag & VP_AREA) {
+			char editflag_prev = me->editflag;
+
 			/* Ugly hack, to avoid drawing vertex index when getting the face index buffer - campbell */
 			me->editflag &= ~ME_EDIT_PAINT_VERT_SEL;
+			if (use_vert_sel) {
+				/* Ugly x2, we need this so hidden faces don't draw */
+				me->editflag |= ME_EDIT_PAINT_FACE_SEL;
+			}
 			totindex = sample_backbuf_area(vc, indexar, me->totpoly, mval[0], mval[1], brush_size_pressure);
-			me->editflag |= use_vert_sel ? ME_EDIT_PAINT_VERT_SEL : 0;
+			me->editflag = editflag_prev;
 		}
 		else {
 			indexar[0] = view3d_sample_backbuf(vc, mval[0], mval[1]);
@@ -2377,6 +2363,9 @@ static void wpaint_stroke_update_step(bContext *C, struct PaintStroke *stroke, P
 	else {
 		indexar = NULL;
 	}
+
+	/* incase we have modifiers */
+	ED_vpaint_proj_handle_update(wpd->vp_handle, vc->ar, mval);
 
 	/* make sure each vertex gets treated only once */
 	/* and calculate filter weight */
@@ -2516,8 +2505,7 @@ static void wpaint_stroke_done(const bContext *C, struct PaintStroke *stroke)
 	struct WPaintData *wpd = paint_stroke_mode_data(stroke);
 	
 	if (wpd) {
-		if (wpd->vertexcosnos)
-			MEM_freeN(wpd->vertexcosnos);
+		ED_vpaint_proj_handle_free(wpd->vp_handle);
 		MEM_freeN(wpd->indexar);
 		
 		if (wpd->vgroup_validmap)
@@ -2750,7 +2738,10 @@ typedef struct VPaintData {
 	ViewContext vc;
 	unsigned int paintcol;
 	int *indexar;
+
+	struct VertProjHandle *vp_handle;
 	DMCoNo *vertexcosnos;
+
 	float vpimat[3][3];
 
 	/* modify 'me->mcol' directly, since the derived mesh is drawing from this
@@ -2829,7 +2820,8 @@ static int vpaint_stroke_test_start(bContext *C, struct wmOperator *op, const fl
 	paint_stroke_set_mode_data(stroke, vpd);
 	view3d_set_viewcontext(C, &vpd->vc);
 	
-	vpd->vertexcosnos = mesh_get_mapped_verts_nors(vpd->vc.scene, ob);
+	vpd->vp_handle = ED_vpaint_proj_handle_create(vpd->vc.scene, ob, &vpd->vertexcosnos);
+
 	vpd->indexar = get_indexarray(me);
 	vpd->paintcol = vpaint_get_current_col(vp);
 
@@ -3027,6 +3019,9 @@ static void vpaint_stroke_update_step(bContext *C, struct PaintStroke *stroke, P
 	
 	swap_m4m4(vc->rv3d->persmat, mat);
 
+	/* incase we have modifiers */
+	ED_vpaint_proj_handle_update(vpd->vp_handle, vc->ar, mval);
+
 	/* clear modified tag for blur tool */
 	if (vpd->mlooptag)
 		memset(vpd->mlooptag, 0, sizeof(bool) * me->totloop);
@@ -3072,8 +3067,7 @@ static void vpaint_stroke_done(const bContext *C, struct PaintStroke *stroke)
 	ViewContext *vc = &vpd->vc;
 	Object *ob = vc->obact;
 	
-	if (vpd->vertexcosnos)
-		MEM_freeN(vpd->vertexcosnos);
+	ED_vpaint_proj_handle_free(vpd->vp_handle);
 	MEM_freeN(vpd->indexar);
 	
 	/* frees prev buffer */
@@ -3390,6 +3384,10 @@ static int paint_weight_gradient_exec(bContext *C, wmOperator *op)
 		vert_cache = gesture->userdata;
 	}
 	else {
+		if (wpaint_ensure_data(C, op) == FALSE) {
+			return OPERATOR_CANCELLED;
+		}
+
 		data.is_init = true;
 		vert_cache = MEM_mallocN(sizeof(DMGradient_vertStore) * me->totvert, __func__);
 	}

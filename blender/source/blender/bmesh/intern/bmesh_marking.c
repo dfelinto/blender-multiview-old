@@ -498,6 +498,8 @@ static int bm_mesh_flag_count(BMesh *bm, const char htype, const char hflag,
 	BMIter iter;
 	int tot = 0;
 
+	BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
+
 	if (htype & BM_VERT) {
 		for (ele = BM_iter_new(&iter, bm, BM_VERTS_OF_MESH, NULL); ele; ele = BM_iter_step(&iter)) {
 			if (respecthide && BM_elem_flag_test(ele, BM_ELEM_HIDDEN)) continue;
@@ -553,12 +555,12 @@ void BM_elem_select_set(BMesh *bm, BMElem *ele, const bool select)
 }
 
 /* this replaces the active flag used in uv/face mode */
-void BM_active_face_set(BMesh *bm, BMFace *efa)
+void BM_mesh_active_face_set(BMesh *bm, BMFace *efa)
 {
 	bm->act_face = efa;
 }
 
-BMFace *BM_active_face_get(BMesh *bm, const bool is_sloppy, const bool is_selected)
+BMFace *BM_mesh_active_face_get(BMesh *bm, const bool is_sloppy, const bool is_selected)
 {
 	if (bm->act_face && (!is_selected || BM_elem_flag_test(bm->act_face, BM_ELEM_SELECT))) {
 		return bm->act_face;
@@ -595,6 +597,45 @@ BMFace *BM_active_face_get(BMesh *bm, const bool is_sloppy, const bool is_select
 		}
 		return f; /* can still be null */
 	}
+	return NULL;
+}
+
+BMEdge *BM_mesh_active_edge_get(BMesh *bm)
+{
+	if (bm->selected.last) {
+		BMEditSelection *ese = bm->selected.last;
+
+		if (ese && ese->htype == BM_EDGE) {
+			return (BMEdge *)ese->ele;
+		}
+	}
+
+	return NULL;
+}
+
+BMVert *BM_mesh_active_vert_get(BMesh *bm)
+{
+	if (bm->selected.last) {
+		BMEditSelection *ese = bm->selected.last;
+
+		if (ese && ese->htype == BM_VERT) {
+			return (BMVert *)ese->ele;
+		}
+	}
+
+	return NULL;
+}
+
+BMElem *BM_mesh_active_elem_get(BMesh *bm)
+{
+	if (bm->selected.last) {
+		BMEditSelection *ese = bm->selected.last;
+
+		if (ese) {
+			return ese->ele;
+		}
+	}
+
 	return NULL;
 }
 
@@ -680,17 +721,23 @@ void BM_editselection_plane(BMEditSelection *ese, float r_plane[3])
 	else if (ese->htype == BM_EDGE) {
 		BMEdge *eed = (BMEdge *)ese->ele;
 
-		/* the plane is simple, it runs along the edge
-		 * however selecting different edges can swap the direction of the y axis.
-		 * this makes it less likely for the y axis of the manipulator
-		 * (running along the edge).. to flip less often.
-		 * at least its more predictable */
-		if (eed->v2->co[1] > eed->v1->co[1]) {  /* check which to do first */
-			sub_v3_v3v3(r_plane, eed->v2->co, eed->v1->co);
+		if (BM_edge_is_boundary(eed)) {
+			sub_v3_v3v3(r_plane, eed->l->v->co, eed->l->next->v->co);
 		}
 		else {
-			sub_v3_v3v3(r_plane, eed->v1->co, eed->v2->co);
+			/* the plane is simple, it runs along the edge
+			 * however selecting different edges can swap the direction of the y axis.
+			 * this makes it less likely for the y axis of the manipulator
+			 * (running along the edge).. to flip less often.
+			 * at least its more predictable */
+			if (eed->v2->co[1] > eed->v1->co[1]) {  /* check which to do first */
+				sub_v3_v3v3(r_plane, eed->v2->co, eed->v1->co);
+			}
+			else {
+				sub_v3_v3v3(r_plane, eed->v1->co, eed->v2->co);
+			}
 		}
+
 		normalize_v3(r_plane);
 	}
 	else if (ese->htype == BM_FACE) {
@@ -761,7 +808,7 @@ void BM_select_history_validate(BMesh *bm)
 bool BM_select_history_active_get(BMesh *bm, BMEditSelection *ese)
 {
 	BMEditSelection *ese_last = bm->selected.last;
-	BMFace *efa = BM_active_face_get(bm, false, false);
+	BMFace *efa = BM_mesh_active_face_get(bm, false, false);
 
 	ese->next = ese->prev = NULL;
 
@@ -802,6 +849,8 @@ void BM_mesh_elem_hflag_disable_test(BMesh *bm, const char htype, const char hfl
 	const char flag_types[3] = {BM_VERT, BM_EDGE, BM_FACE};
 
 	int i;
+
+	BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
 
 	if (hflag & BM_ELEM_SELECT) {
 		BM_select_history_clear(bm);
@@ -871,6 +920,8 @@ void BM_mesh_elem_hflag_enable_test(BMesh *bm, const char htype, const char hfla
 	BMIter iter;
 	BMElem *ele;
 	int i;
+
+	BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
 
 	if (hflag & BM_ELEM_SELECT) {
 		BM_select_history_clear(bm);

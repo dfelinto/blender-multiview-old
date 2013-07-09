@@ -48,6 +48,7 @@
 
 #include "BKE_colortools.h"
 #include "BKE_context.h"
+#include "BKE_icons.h"
 #include "BKE_image.h"
 #include "BKE_global.h"
 #include "BKE_library.h"
@@ -1122,6 +1123,7 @@ static int image_replace_exec(bContext *C, wmOperator *op)
 	/* XXX unpackImage frees image buffers */
 	ED_preview_kill_jobs(C);
 	
+	BKE_icon_changed(BKE_icon_getid(&sima->image->id));
 	BKE_image_signal(sima->image, &sima->iuser, IMA_SIGNAL_RELOAD);
 	WM_event_add_notifier(C, NC_IMAGE | NA_EDITED, sima->image);
 
@@ -1251,13 +1253,8 @@ static int save_image_options_init(SaveImageOptions *simopts, SpaceImage *sima, 
 
 		/* check for empty path */
 		if (guess_path && simopts->filepath[0] == 0) {
-			if ((G.ima[0] == '/') && (G.ima[1] == '/') && (G.ima[2] == '\0')) {
-				BLI_strncpy(simopts->filepath, "//untitled", FILE_MAX);
-			}
-			else {
-				BLI_strncpy(simopts->filepath, G.ima, FILE_MAX);
-			}
-			BLI_path_abs(simopts->filepath, G.main->name);
+			BLI_snprintf(simopts->filepath, sizeof(simopts->filepath), "//%s", ima->id.name + 2);
+			BLI_path_abs(simopts->filepath, STREQ(G.ima, "//") ? G.main->name : G.ima);
 		}
 
 		/* color management */
@@ -1423,7 +1420,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 		rr = BKE_image_acquire_renderresult(scene, ima);
 
 		if (simopts->im_format.imtype == R_IMF_IMTYPE_MULTIVIEW) {
-			ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.quality, TRUE, "");
+			ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.exr_codec, TRUE, "");
 
 			save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, simopts->filepath);
 			ED_space_image_release_buffer(sima, ibuf, lock);
@@ -1435,7 +1432,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 
 				/* monoview */
 				if (numviews < 2) {
-					ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.quality, FALSE, "");
+					ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.exr_codec, FALSE, "");
 
 					save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, simopts->filepath);
 					ED_space_image_release_buffer(sima, ibuf, lock);
@@ -1462,7 +1459,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 						BLI_strncpy(filepath, simopts->filepath, sizeof(filepath));
 						BLI_path_view(filepath, suffix);
 
-						ok = RE_WriteRenderResult(op->reports, rr, filepath, simopts->im_format.quality, FALSE, view);
+						ok = RE_WriteRenderResult(op->reports, rr, filepath, simopts->im_format.exr_codec, FALSE, view);
 						save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, filepath);
 					}
 					ED_space_image_release_buffer(sima, ibuf, lock);
@@ -1570,7 +1567,7 @@ static int image_save_as_exec(bContext *C, wmOperator *op)
 }
 
 
-static int image_save_as_check(bContext *UNUSED(C), wmOperator *op)
+static bool image_save_as_check(bContext *UNUSED(C), wmOperator *op)
 {
 	ImageFormatData *imf = op->customdata;
 	return WM_operator_filesel_ensure_ext_imtype(op, imf);

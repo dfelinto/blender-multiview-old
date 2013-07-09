@@ -43,6 +43,7 @@ set(SRC
 	operators/bmo_bevel.c
 	operators/bmo_bridge.c
 	operators/bmo_connect.c
+	operators/bmo_connect_pair.c
 	operators/bmo_create.c
 	operators/bmo_dissolve.c
 	operators/bmo_dupe.c
@@ -55,6 +56,7 @@ set(SRC
 	operators/bmo_join_triangles.c
 	operators/bmo_mesh_conv.c
 	operators/bmo_mirror.c
+	operators/bmo_normals.c
 	operators/bmo_poke.c
 	operators/bmo_primitive.c
 	operators/bmo_removedoubles.c

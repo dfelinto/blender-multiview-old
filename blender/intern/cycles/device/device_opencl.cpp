@@ -85,7 +85,7 @@ static string opencl_kernel_build_options(const string& platform, const string *
 	string build_options = " -cl-fast-relaxed-math ";
 
 	if(platform == "NVIDIA CUDA")
-		build_options += "-D__KERNEL_OPENCL_NVIDIA__ -cl-nv-maxrregcount=24 -cl-nv-verbose ";
+		build_options += "-D__KERNEL_OPENCL_NVIDIA__ -cl-nv-maxrregcount=32 -cl-nv-verbose ";
 
 	else if(platform == "Apple")
 		build_options += "-D__KERNEL_OPENCL_APPLE__ -Wno-missing-prototypes ";
@@ -241,6 +241,9 @@ public:
 	{
 		cl_context context = get_something<cl_context>(platform, device, &Slot::context, slot_locker);
 
+		if(!context)
+			return NULL;
+
 		/* caller is going to release it when done with it, so retain it */
 		cl_int ciErr = clRetainContext(context);
 		assert(ciErr == CL_SUCCESS);
@@ -254,6 +257,9 @@ public:
 		thread_scoped_lock &slot_locker)
 	{
 		cl_program program = get_something<cl_program>(platform, device, &Slot::program, slot_locker);
+
+		if(!program)
+			return NULL;
 
 		/* caller is going to release it when done with it, so retain it */
 		cl_int ciErr = clRetainProgram(program);
@@ -318,6 +324,7 @@ public:
 	cl_program cpProgram;
 	cl_kernel ckPathTraceKernel;
 	cl_kernel ckFilmConvertKernel;
+	cl_kernel ckShaderKernel;
 	cl_int ciErr;
 
 	typedef map<string, device_vector<uchar>*> ConstMemMap;
@@ -427,6 +434,7 @@ public:
 		cpProgram = NULL;
 		ckPathTraceKernel = NULL;
 		ckFilmConvertKernel = NULL;
+		ckShaderKernel = NULL;
 		null_mem = 0;
 		device_initialized = false;
 
@@ -760,6 +768,10 @@ public:
 		if(opencl_error(ciErr))
 			return false;
 
+		ckShaderKernel = clCreateKernel(cpProgram, "kernel_ocl_shader", &ciErr);
+		if(opencl_error(ciErr))
+			return false;
+
 		return true;
 	}
 
@@ -1009,10 +1021,44 @@ public:
 		enqueue_kernel(ckFilmConvertKernel, d_w, d_h);
 	}
 
+	void shader(DeviceTask& task)
+	{
+		/* cast arguments to cl types */
+		cl_mem d_data = CL_MEM_PTR(const_mem_map["__data"]->device_pointer);
+		cl_mem d_input = CL_MEM_PTR(task.shader_input);
+		cl_mem d_output = CL_MEM_PTR(task.shader_output);
+		cl_int d_shader_eval_type = task.shader_eval_type;
+		cl_int d_shader_x = task.shader_x;
+		cl_int d_shader_w = task.shader_w;
+
+		/* sample arguments */
+		cl_uint narg = 0;
+		ciErr = 0;
+
+		ciErr |= clSetKernelArg(ckShaderKernel, narg++, sizeof(d_data), (void*)&d_data);
+		ciErr |= clSetKernelArg(ckShaderKernel, narg++, sizeof(d_input), (void*)&d_input);
+		ciErr |= clSetKernelArg(ckShaderKernel, narg++, sizeof(d_output), (void*)&d_output);
+
+#define KERNEL_TEX(type, ttype, name) \
+	ciErr |= set_kernel_arg_mem(ckShaderKernel, &narg, #name);
+#include "kernel_textures.h"
+
+		ciErr |= clSetKernelArg(ckShaderKernel, narg++, sizeof(d_shader_eval_type), (void*)&d_shader_eval_type);
+		ciErr |= clSetKernelArg(ckShaderKernel, narg++, sizeof(d_shader_x), (void*)&d_shader_x);
+		ciErr |= clSetKernelArg(ckShaderKernel, narg++, sizeof(d_shader_w), (void*)&d_shader_w);
+
+		opencl_assert(ciErr);
+
+		enqueue_kernel(ckShaderKernel, task.shader_w, 1);
+	}
+
 	void thread_run(DeviceTask *task)
 	{
 		if(task->type == DeviceTask::TONEMAP) {
 			tonemap(*task, task->buffer, task->rgba);
+		}
+		else if(task->type == DeviceTask::SHADER) {
+			shader(*task);
 		}
 		else if(task->type == DeviceTask::PATH_TRACE) {
 			RenderTile tile;
