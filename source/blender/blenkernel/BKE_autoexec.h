@@ -15,31 +15,17 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * This is a new part of Blender.
- *
- * Contributor(s): Willian P. Germano.
+ * Contributor(s): Blender Foundation 2013
  *
  * ***** END GPL LICENSE BLOCK *****
  */
+#ifndef __BKE_AUTOEXEC_H__
+#define __BKE_AUTOEXEC_H__
 
-/** \file blender/blenkernel/intern/script.c
+/** \file BKE_autoexec.h
  *  \ingroup bke
  */
 
+bool BKE_autoexec_match(const char *path);
 
-
-#include "MEM_guardedalloc.h"
-
-#if 0
-#ifdef WITH_PYTHON
-#include "BPY_extern.h" // Blender Python library
-#endif
-#endif
-
-/* XXX this function and so also the file should not be needed anymore,
- * since we have to force clearing all Python related data before freeing
- * Blender's library. Still testing, will decide later (Willian). */
-
+#endif  /* __BKE_AUTOEXEC_H__ */

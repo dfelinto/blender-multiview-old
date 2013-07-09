@@ -15,9 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
  * The Original Code is: all of this file.
  *
  * Contributor(s): none yet.
@@ -371,11 +368,12 @@ typedef struct CDMaskLink {
  * evaluation, assuming the data indicated by dataMask is required at the
  * end of the stack.
  */
-struct CDMaskLink *modifiers_calcDataMasks(struct Scene *scene, 
+struct CDMaskLink *modifiers_calcDataMasks(struct Scene *scene,
                                            struct Object *ob,
                                            struct ModifierData *md,
                                            CustomDataMask dataMask,
-                                           int required_mode);
+                                           int required_mode,
+                                           ModifierData *previewmd, CustomDataMask previewmask);
 struct ModifierData *modifiers_getLastPreview(struct Scene *scene,
                                               struct ModifierData *md,
                                               int required_mode);
@@ -389,6 +387,31 @@ void modifier_mdef_compact_influences(struct ModifierData *md);
 
 void        modifier_path_init(char *path, int path_maxlen, const char *name);
 const char *modifier_path_relbase(struct Object *ob);
+
+
+/* wrappers for modifier callbacks */
+
+struct DerivedMesh *modwrap_applyModifier(
+        ModifierData *md, struct Object *ob,
+        struct DerivedMesh *dm,
+        ModifierApplyFlag flag);
+
+struct DerivedMesh *modwrap_applyModifierEM(
+        ModifierData *md, struct Object *ob,
+        struct BMEditMesh *em,
+        struct DerivedMesh *dm,
+        ModifierApplyFlag flag);
+
+void modwrap_deformVerts(
+        ModifierData *md, struct Object *ob,
+        struct DerivedMesh *dm,
+        float (*vertexCos)[3], int numVerts,
+        ModifierApplyFlag flag);
+
+void modwrap_deformVertsEM(
+        ModifierData *md, struct Object *ob,
+        struct BMEditMesh *em, struct DerivedMesh *dm,
+        float (*vertexCos)[3], int numVerts);
 
 #endif
 

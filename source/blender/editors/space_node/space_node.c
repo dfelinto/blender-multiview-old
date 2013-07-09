@@ -41,6 +41,7 @@
 #include "BLI_math.h"
 
 #include "BKE_context.h"
+#include "BKE_library.h"
 #include "BKE_screen.h"
 #include "BKE_node.h"
 
@@ -83,6 +84,8 @@ void ED_node_tree_start(SpaceNode *snode, bNodeTree *ntree, ID *id, ID *from)
 			BLI_strncpy(path->node_name, id->name + 2, sizeof(path->node_name));
 		
 		BLI_addtail(&snode->treepath, path);
+		
+		id_us_ensure_real(&ntree->id);
 	}
 	
 	/* update current tree */
@@ -115,6 +118,8 @@ void ED_node_tree_push(SpaceNode *snode, bNodeTree *ntree, bNode *gnode)
 	copy_v2_v2(path->view_center, ntree->view_center);
 	
 	BLI_addtail(&snode->treepath, path);
+	
+	id_us_ensure_real(&ntree->id);
 	
 	/* update current tree */
 	snode->edittree = ntree;
@@ -377,7 +382,7 @@ static void node_init(struct wmWindowManager *UNUSED(wm), ScrArea *UNUSED(sa))
 
 }
 
-static void node_area_listener(ScrArea *sa, wmNotifier *wmn)
+static void node_area_listener(bScreen *UNUSED(sc), ScrArea *sa, wmNotifier *wmn)
 {
 	/* note, ED_area_tag_refresh will re-execute compositor */
 	SpaceNode *snode = sa->spacedata.first;
@@ -682,7 +687,7 @@ static void node_header_area_draw(const bContext *C, ARegion *ar)
 }
 
 /* used for header + main area */
-static void node_region_listener(ARegion *ar, wmNotifier *wmn)
+static void node_region_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {

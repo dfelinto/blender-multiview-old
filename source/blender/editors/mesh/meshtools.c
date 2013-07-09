@@ -939,15 +939,14 @@ static int mesh_get_x_mirror_vert_topo(Object *ob, int index)
 	return mesh_topo_store.index_lookup[index];
 }
 
-int mesh_get_x_mirror_vert(Object *ob, int index)
+int mesh_get_x_mirror_vert(Object *ob, int index, const bool use_topology)
 {
-	if (((Mesh *)ob->data)->editflag & ME_EDIT_MIRROR_TOPO) {
+	if (use_topology) {
 		return mesh_get_x_mirror_vert_topo(ob, index);
 	}
 	else {
 		return mesh_get_x_mirror_vert_spatial(ob, index);
 	}
-	return 0;
 }
 
 static BMVert *editbmesh_get_x_mirror_vert_spatial(Object *ob, BMEditMesh *em, const float co[3])
@@ -1002,9 +1001,9 @@ static BMVert *editbmesh_get_x_mirror_vert_topo(Object *ob, struct BMEditMesh *e
 	return NULL;
 }	
 
-BMVert *editbmesh_get_x_mirror_vert(Object *ob, struct BMEditMesh *em, BMVert *eve, const float co[3], int index)
+BMVert *editbmesh_get_x_mirror_vert(Object *ob, struct BMEditMesh *em, BMVert *eve, const float co[3], int index, const bool use_topology)
 {
-	if (((Mesh *)ob->data)->editflag & ME_EDIT_MIRROR_TOPO) {
+	if (use_topology) {
 		return editbmesh_get_x_mirror_vert_topo(ob, em, eve, index);
 	}
 	else {
@@ -1122,6 +1121,7 @@ int *mesh_get_x_mirror_faces(Object *ob, BMEditMesh *em)
 	MVert *mv, *mvert = me->mvert;
 	MFace mirrormf, *mf, *hashmf, *mface = me->mface;
 	GHash *fhash;
+	const bool use_topology = (me->editflag & ME_EDIT_MIRROR_TOPO) != 0;
 	int *mirrorverts, *mirrorfaces;
 	int a;
 
@@ -1131,7 +1131,7 @@ int *mesh_get_x_mirror_faces(Object *ob, BMEditMesh *em)
 	mesh_octree_table(ob, em, NULL, 's');
 
 	for (a = 0, mv = mvert; a < me->totvert; a++, mv++)
-		mirrorverts[a] = mesh_get_x_mirror_vert(ob, a);
+		mirrorverts[a] = mesh_get_x_mirror_vert(ob, a, use_topology);
 
 	mesh_octree_table(ob, em, NULL, 'e');
 
@@ -1362,4 +1362,54 @@ bool ED_mesh_pick_vert(bContext *C, Object *ob, const int mval[2], unsigned int 
 	}
 
 	return true;
+}
+
+
+MDeformVert *ED_mesh_active_dvert_get_em(Object *ob, BMVert **r_eve)
+{
+	if (ob->mode & OB_MODE_EDIT && ob->type == OB_MESH && ob->defbase.first) {
+		Mesh *me = ob->data;
+		BMesh *bm = me->edit_btmesh->bm;
+		const int cd_dvert_offset = CustomData_get_offset(&bm->vdata, CD_MDEFORMVERT);
+
+		if (cd_dvert_offset != -1) {
+			BMVert *eve = BM_mesh_active_vert_get(bm);
+
+			if (eve) {
+				if (r_eve) *r_eve = eve;
+				return BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
+			}
+		}
+	}
+
+	if (r_eve) *r_eve = NULL;
+	return NULL;
+}
+
+MDeformVert *ED_mesh_active_dvert_get_ob(Object *ob, int *r_index)
+{
+	Mesh *me = ob->data;
+	int index = BKE_mesh_mselect_active_get(me, ME_VSEL);
+	if (r_index) *r_index = index;
+	if (index == -1 || me->dvert == NULL) {
+		return NULL;
+	}
+	else {
+		return me->dvert + index;
+	}
+}
+
+MDeformVert *ED_mesh_active_dvert_get_only(Object *ob)
+{
+	if (ob->type == OB_MESH) {
+		if (ob->mode & OB_MODE_EDIT) {
+			return ED_mesh_active_dvert_get_em(ob, NULL);
+		}
+		else {
+			return ED_mesh_active_dvert_get_ob(ob, NULL);
+		}
+	}
+	else {
+		return NULL;
+	}
 }

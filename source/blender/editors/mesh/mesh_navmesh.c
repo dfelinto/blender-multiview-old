@@ -384,7 +384,8 @@ static Object *createRepresentation(bContext *C, struct recast_polyMesh *pmesh, 
 			BM_vert_create(em->bm, co, NULL, 0);
 		}
 
-		EDBM_index_arrays_ensure(em, BM_VERT);
+		/* need to rebuild entirely because array size changes */
+		EDBM_index_arrays_init(em, BM_VERT);
 
 		/* create faces */
 		for (j = 0; j < trinum; j++) {
@@ -501,7 +502,7 @@ static int navmesh_face_copy_exec(bContext *C, wmOperator *op)
 	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 
 	/* do work here */
-	BMFace *efa_act = BM_active_face_get(em->bm, false, false);
+	BMFace *efa_act = BM_mesh_active_face_get(em->bm, false, false);
 
 	if (efa_act) {
 		if (CustomData_has_layer(&em->bm->pdata, CD_RECAST)) {

@@ -51,6 +51,22 @@
 
 #include "BKE_deform.h"  /* own include */
 
+bDeformGroup *BKE_defgroup_new(Object *ob, const char *name)
+{
+	bDeformGroup *defgroup;
+
+	BLI_assert(OB_TYPE_SUPPORT_VGROUP(ob->type));
+
+	defgroup = MEM_callocN(sizeof(bDeformGroup), __func__);
+
+	BLI_strncpy(defgroup->name, name, sizeof(defgroup->name));
+
+	BLI_addtail(&ob->defbase, defgroup);
+	defgroup_unique_name(defgroup, ob);
+
+	return defgroup;
+}
+
 void defgroup_copy_list(ListBase *outbase, ListBase *inbase)
 {
 	bDeformGroup *defgroup, *defgroupn;
@@ -80,7 +96,21 @@ bDeformGroup *defgroup_duplicate(bDeformGroup *ingroup)
 	return outgroup;
 }
 
-/* copy & overwrite weights */
+/* overwrite weights filtered by vgroup_subset
+ * - do nothing if neither are set.
+ * - add destination weight if needed
+ */
+void defvert_copy_subset(MDeformVert *dvert_dst, const MDeformVert *dvert_src,
+                         const bool *vgroup_subset, const int vgroup_tot)
+{
+	int defgroup;
+	for (defgroup = 0; defgroup < vgroup_tot; defgroup++) {
+		if (vgroup_subset[defgroup]) {
+			defvert_copy_index(dvert_dst, dvert_src, defgroup);
+		}
+	}
+}
+
 void defvert_copy(MDeformVert *dvert_dst, const MDeformVert *dvert_src)
 {
 	if (dvert_dst->totweight == dvert_src->totweight) {
@@ -177,6 +207,35 @@ void defvert_remap(MDeformVert *dvert, int *map, const int map_len)
 
 			/* just in case */
 			BLI_assert(dw->def_nr >= 0);
+		}
+	}
+}
+
+/**
+ * Same as #defvert_normalize but takes a bool array.
+ */
+void defvert_normalize_subset(MDeformVert *dvert,
+                              const bool *vgroup_subset, const int vgroup_tot)
+{
+	MDeformWeight *dw;
+	unsigned int i;
+	float tot_weight = 0.0f;
+
+	for (i = dvert->totweight, dw = dvert->dw; i != 0; i--, dw++) {
+		if ((dw->def_nr < vgroup_tot) && vgroup_subset[dw->def_nr]) {
+			tot_weight += dw->weight;
+		}
+	}
+
+	if (tot_weight > 0.0f) {
+		float scalar = 1.0f / tot_weight;
+		for (i = dvert->totweight, dw = dvert->dw; i != 0; i--, dw++) {
+			if ((dw->def_nr < vgroup_tot) && vgroup_subset[dw->def_nr]) {
+				dw->weight *= scalar;
+				
+				/* in case of division errors with very low weights */
+				CLAMP(dw->weight, 0.0f, 1.0f);
+			}
 		}
 	}
 }

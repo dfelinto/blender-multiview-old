@@ -24,18 +24,42 @@
 #include <string.h>
 #include <vector>
 
+#include "util_types.h"
+
 CCL_NAMESPACE_BEGIN
 
 using std::vector;
 
+static inline void *malloc_aligned(size_t size, size_t alignment)
+{
+	void *data = (void*)malloc(size + sizeof(void*) + alignment - 1);
+
+	union { void *ptr; size_t offset; } u;
+	u.ptr = (char*)data + sizeof(void*);
+	u.offset = (u.offset + alignment - 1) & ~(alignment - 1);
+	*(((void**)u.ptr) - 1) = data;
+
+	return u.ptr;
+}
+
+static inline void free_aligned(void *ptr)
+{
+	if(ptr) {
+		void *data = *(((void**)ptr) - 1);
+		free(data);
+	}
+}
+
 /* Array
  *
- * Simplified version of vector, serving two purposes:
+ * Simplified version of vector, serving multiple purposes:
  * - somewhat faster in that it does not clear memory on resize/alloc,
- *   this was actually showing up in profiles quite significantly
- * - if this is used, we are not tempted to use inefficient operations */
+ *   this was actually showing up in profiles quite significantly. it
+ *   also does not run any constructors/destructors
+ * - if this is used, we are not tempted to use inefficient operations
+ * - aligned allocation for SSE data types */
 
-template<typename T>
+template<typename T, size_t alignment = 16>
 class array
 {
 public:
@@ -52,7 +76,7 @@ public:
 			datasize = 0;
 		}
 		else {
-			data = new T[newsize];
+			data = (T*)malloc_aligned(sizeof(T)*newsize, alignment);
 			datasize = newsize;
 		}
 	}
@@ -69,7 +93,7 @@ public:
 			datasize = 0;
 		}
 		else {
-			data = new T[from.datasize];
+			data = (T*)malloc_aligned(sizeof(T)*from.datasize, alignment);
 			memcpy(data, from.data, from.datasize*sizeof(T));
 			datasize = from.datasize;
 		}
@@ -83,7 +107,10 @@ public:
 		data = NULL;
 
 		if(datasize > 0) {
-			data = new T[datasize];
+			data = (T*)malloc_aligned(sizeof(T)*datasize, alignment);
+			memcpy(data, &from[0], datasize*sizeof(T));
+			free_aligned(data);
+			data = (T*)malloc_aligned(sizeof(T)*datasize, alignment);
 			memcpy(data, &from[0], datasize*sizeof(T));
 		}
 
@@ -92,7 +119,7 @@ public:
 
 	~array()
 	{
-		delete [] data;
+		free_aligned(data);
 	}
 
 	void resize(size_t newsize)
@@ -100,10 +127,10 @@ public:
 		if(newsize == 0) {
 			clear();
 		}
-		else {
-			T *newdata = new T[newsize];
+		else if(newsize != datasize) {
+			T *newdata = (T*)malloc_aligned(sizeof(T)*newsize, alignment);
 			memcpy(newdata, data, ((datasize < newsize)? datasize: newsize)*sizeof(T));
-			delete [] data;
+			free_aligned(data);
 
 			data = newdata;
 			datasize = newsize;
@@ -112,7 +139,7 @@ public:
 
 	void clear()
 	{
-		delete [] data;
+		free_aligned(data);
 		data = NULL;
 		datasize = 0;
 	}

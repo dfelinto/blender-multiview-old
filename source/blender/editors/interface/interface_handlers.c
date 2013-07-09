@@ -108,6 +108,9 @@ static bool ui_mouse_motion_keynav_test(struct uiKeyNavLock *keynav, const wmEve
 /* pixels to move the cursor to get out of keyboard navigation */
 #define BUTTON_KEYNAV_PX_LIMIT      4
 
+#define MENU_TOWARDS_MARGIN 20  /* margin in pixels */
+#define MENU_TOWARDS_WIGGLE_ROOM 64  /* tolerance in pixels */
+
 typedef enum uiButtonActivateType {
 	BUTTON_ACTIVATE_OVER,
 	BUTTON_ACTIVATE,
@@ -273,7 +276,7 @@ void ui_pan_to_scroll(const wmEvent *event, int *type, int *val)
 
 static bool ui_but_editable(uiBut *but)
 {
-	return ELEM5(but->type, LABEL, SEPR, ROUNDBOX, LISTBOX, PROGRESSBAR);
+	return ELEM6(but->type, LABEL, LISTLABEL, SEPR, ROUNDBOX, LISTBOX, PROGRESSBAR);
 }
 
 static uiBut *ui_but_prev(uiBut *but)
@@ -1825,20 +1828,19 @@ static bool ui_textedit_delete(uiBut *but, uiHandleButtonData *data, int directi
 static bool ui_textedit_autocomplete(bContext *C, uiBut *but, uiHandleButtonData *data)
 {
 	char *str;
-	/* TODO, should return false if it cant autocomp. */
-	bool changed = true;
+	bool change = true;
 
 	str = data->str;
 
 	if (data->searchbox)
-		ui_searchbox_autocomplete(C, data->searchbox, but, data->str);
+		change = ui_searchbox_autocomplete(C, data->searchbox, but, data->str);
 	else
-		but->autocomplete_func(C, str, but->autofunc_arg);
+		change = but->autocomplete_func(C, str, but->autofunc_arg);
 
 	but->pos = strlen(str);
 	but->selsta = but->selend = but->pos;
 
-	return changed;
+	return change;
 }
 
 /* mode for ui_textedit_copypaste() */
@@ -1850,7 +1852,6 @@ enum {
 
 static bool ui_textedit_copypaste(uiBut *but, uiHandleButtonData *data, const int mode)
 {
-	char buf[UI_MAX_DRAW_STR] = {0};
 	char *str, *p, *pbuf;
 	int x;
 	bool changed = false;
@@ -1866,6 +1867,7 @@ static bool ui_textedit_copypaste(uiBut *but, uiHandleButtonData *data, const in
 		p = pbuf = WM_clipboard_text_get(0);
 
 		if (p && p[0]) {
+			char buf[UI_MAX_DRAW_STR] = {0};
 			unsigned int y;
 			buf_len = 0;
 			while (*p && *p != '\r' && *p != '\n' && buf_len < UI_MAX_DRAW_STR - 1) {
@@ -1902,14 +1904,12 @@ static bool ui_textedit_copypaste(uiBut *but, uiHandleButtonData *data, const in
 	/* cut & copy */
 	else if (ELEM(mode, UI_TEXTEDIT_COPY, UI_TEXTEDIT_CUT)) {
 		/* copy the contents to the copypaste buffer */
-		for (x = but->selsta; x <= but->selend; x++) {
-			if (x == but->selend)
-				buf[x] = '\0';
-			else
-				buf[(x - but->selsta)] = str[x];
-		}
+		int sellen = but->selend - but->selsta;
+		char *buf = MEM_mallocN(sizeof(char) * (sellen + 1), "ui_textedit_copypaste");
 
+		BLI_strncpy(buf, str + but->selsta, sellen + 1);
 		WM_clipboard_text_set(buf, 0);
+		MEM_freeN(buf);
 		
 		/* for cut only, delete the selection afterwards */
 		if (mode == UI_TEXTEDIT_CUT) {
@@ -2008,7 +2008,7 @@ static void ui_textedit_next_but(uiBlock *block, uiBut *actbut, uiHandleButtonDa
 	uiBut *but;
 
 	/* label and roundbox can overlap real buttons (backdrops...) */
-	if (ELEM4(actbut->type, LABEL, SEPR, ROUNDBOX, LISTBOX))
+	if (ELEM5(actbut->type, LABEL, LISTLABEL, SEPR, ROUNDBOX, LISTBOX))
 		return;
 
 	for (but = actbut->next; but; but = but->next) {
@@ -2036,7 +2036,7 @@ static void ui_textedit_prev_but(uiBlock *block, uiBut *actbut, uiHandleButtonDa
 	uiBut *but;
 
 	/* label and roundbox can overlap real buttons (backdrops...) */
-	if (ELEM4(actbut->type, LABEL, SEPR, ROUNDBOX, LISTBOX))
+	if (ELEM5(actbut->type, LABEL, LISTLABEL, SEPR, ROUNDBOX, LISTBOX))
 		return;
 
 	for (but = actbut->prev; but; but = but->prev) {
@@ -2128,8 +2128,11 @@ static void ui_do_but_textedit(bContext *C, uiBlock *block, uiBut *but, uiHandle
 				changed = true;
 			}
 			else if (inbox) {
-				button_activate_state(C, but, BUTTON_STATE_EXIT);
-				retval = WM_UI_HANDLER_BREAK;
+				/* if we allow activation on key press, it gives problems launching operators [#35713] */
+				if (event->val == KM_RELEASE) {
+					button_activate_state(C, but, BUTTON_STATE_EXIT);
+					retval = WM_UI_HANDLER_BREAK;
+				}
 			}
 			break;
 		}
@@ -5312,7 +5315,7 @@ static int ui_do_button(bContext *C, uiBlock *block, uiBut *but, const wmEvent *
 		/* this should become disabled button .. */
 		if (but->lock == true) {
 			if (but->lockstr) {
-				BKE_report(NULL, RPT_WARNING, but->lockstr);
+				WM_report(C, RPT_INFO, but->lockstr);
 				button_activate_state(C, but, BUTTON_STATE_EXIT);
 				return WM_UI_HANDLER_BREAK;
 			}
@@ -5356,6 +5359,7 @@ static int ui_do_button(bContext *C, uiBlock *block, uiBut *but, const wmEvent *
 		case ROUNDBOX:
 		case LISTBOX:
 		case LABEL:
+		case LISTLABEL:
 		case ROW:
 		case LISTROW:
 		case BUT_IMAGE:
@@ -5553,7 +5557,7 @@ static bool ui_mouse_inside_button(ARegion *ar, uiBut *but, int x, int y)
 bool ui_is_but_interactive(uiBut *but)
 {
 	/* note, LABEL is included for highlights, this allows drags */
-	if (but->type == LABEL && but->dragpoin == NULL)
+	if (ELEM(but->type, LABEL, LISTLABEL) && but->dragpoin == NULL)
 		return false;
 	if (ELEM3(but->type, ROUNDBOX, SEPR, LISTBOX))
 		return false;
@@ -5734,6 +5738,10 @@ static void button_activate_state(bContext *C, uiBut *but, uiHandleButtonState s
 	}
 	else if (data->state == BUTTON_STATE_NUM_EDITING) {
 		ui_numedit_end(but, data);
+
+		if (but->flag & UI_BUT_DRIVEN)
+			WM_report(C, RPT_INFO, "Can't edit driven number value, see graph editor for the driver setup.");
+
 		if (ui_is_a_warp_but(but)) {
 
 #ifdef USE_CONT_MOUSE_CORRECT
@@ -6551,12 +6559,12 @@ static void ui_handle_button_return_submenu(bContext *C, const wmEvent *event, u
  * - only for 1 second
  */
 
-static void ui_mouse_motion_towards_init(uiPopupBlockHandle *menu, int mx, int my, const bool force)
+static void ui_mouse_motion_towards_init_ex(uiPopupBlockHandle *menu, const int xy[2], const bool force)
 {
 	if (!menu->dotowards || force) {
 		menu->dotowards = true;
-		menu->towardsx = mx;
-		menu->towardsy = my;
+		menu->towards_xy[0] = xy[0];
+		menu->towards_xy[1] = xy[1];
 
 		if (force)
 			menu->towardstime = DBL_MAX;  /* unlimited time */
@@ -6565,38 +6573,63 @@ static void ui_mouse_motion_towards_init(uiPopupBlockHandle *menu, int mx, int m
 	}
 }
 
-static bool ui_mouse_motion_towards_check(uiBlock *block, uiPopupBlockHandle *menu, int mx, int my)
+static void ui_mouse_motion_towards_init(uiPopupBlockHandle *menu, const int xy[2])
 {
-	float p1[2], p2[2], p3[2], p4[2], oldp[2], newp[2];
+	ui_mouse_motion_towards_init_ex(menu, xy, false);
+}
+
+static void ui_mouse_motion_towards_reinit(uiPopupBlockHandle *menu, const int xy[2])
+{
+	ui_mouse_motion_towards_init_ex(menu, xy, true);
+}
+
+static bool ui_mouse_motion_towards_check(uiBlock *block, uiPopupBlockHandle *menu, const int xy[2],
+                                          const bool use_wiggle_room)
+{
+	float p1[2], p2[2], p3[2], p4[2];
+	float oldp[2] = {menu->towards_xy[0], menu->towards_xy[1]};
+	const float newp[2] = {xy[0], xy[1]};
 	bool closer;
+	const float margin = MENU_TOWARDS_MARGIN;
+	rctf rect_px;
 
 	if (!menu->dotowards) {
-		return 0;
+		return false;
 	}
+
+	if (len_squared_v2v2(oldp, newp) < (4.0f * 4.0f))
+		return menu->dotowards;
 
 	/* verify that we are moving towards one of the edges of the
 	 * menu block, in other words, in the triangle formed by the
 	 * initial mouse location and two edge points. */
-	p1[0] = block->rect.xmin - 20;
-	p1[1] = block->rect.ymin - 20;
+	ui_block_to_window_rctf(menu->region, block, &rect_px, &block->rect);
 
-	p2[0] = block->rect.xmax + 20;
-	p2[1] = block->rect.ymin - 20;
+	p1[0] = rect_px.xmin - margin;
+	p1[1] = rect_px.ymin - margin;
+
+	p2[0] = rect_px.xmax + margin;
+	p2[1] = rect_px.ymin - margin;
 	
-	p3[0] = block->rect.xmax + 20;
-	p3[1] = block->rect.ymax + 20;
+	p3[0] = rect_px.xmax + margin;
+	p3[1] = rect_px.ymax + margin;
 
-	p4[0] = block->rect.xmin - 20;
-	p4[1] = block->rect.ymax + 20;
+	p4[0] = rect_px.xmin - margin;
+	p4[1] = rect_px.ymax + margin;
 
-	oldp[0] = menu->towardsx;
-	oldp[1] = menu->towardsy;
+	/* allow for some wiggle room, if the user moves a few pixels away,
+	 * don't immediately quit (only for top level menus) */
+	if (use_wiggle_room) {
+		const float cent[2] = {
+		    BLI_rctf_cent_x(&rect_px),
+		    BLI_rctf_cent_y(&rect_px)};
+		float delta[2];
 
-	newp[0] = mx;
-	newp[1] = my;
-
-	if (len_squared_v2v2(oldp, newp) < (4.0f * 4.0f))
-		return menu->dotowards;
+		sub_v2_v2v2(delta, oldp, cent);
+		normalize_v2(delta);
+		mul_v2_fl(delta, MENU_TOWARDS_WIGGLE_ROOM);
+		add_v2_v2(oldp, delta);
+	}
 
 	closer = (isect_point_tri_v2(newp, oldp, p1, p2) ||
 	          isect_point_tri_v2(newp, oldp, p2, p3) ||
@@ -6759,7 +6792,8 @@ static int ui_handle_menu_button(bContext *C, const wmEvent *event, uiPopupBlock
 	return retval;
 }
 
-static int ui_handle_menu_event(bContext *C, const wmEvent *event, uiPopupBlockHandle *menu, int level)
+static int ui_handle_menu_event(bContext *C, const wmEvent *event, uiPopupBlockHandle *menu,
+                                int level, const bool is_parent_inside)
 {
 	ARegion *ar;
 	uiBlock *block;
@@ -6786,7 +6820,7 @@ static int ui_handle_menu_event(bContext *C, const wmEvent *event, uiPopupBlockH
 		/* if a button is activated modal, always reset the start mouse
 		 * position of the towards mechanism to avoid loosing focus,
 		 * and don't handle events */
-		ui_mouse_motion_towards_init(menu, mx, my, true);
+		ui_mouse_motion_towards_reinit(menu, &event->x);
 	}
 	else if (event->type == TIMER) {
 		if (event->customdata == menu->scrolltimer)
@@ -6795,7 +6829,7 @@ static int ui_handle_menu_event(bContext *C, const wmEvent *event, uiPopupBlockH
 	else {
 		/* for ui_mouse_motion_towards_block */
 		if (event->type == MOUSEMOVE) {
-			ui_mouse_motion_towards_init(menu, mx, my, false);
+			ui_mouse_motion_towards_init(menu, &event->x);
 			
 			/* add menu scroll timer, if needed */
 			if (ui_menu_scroll_test(block, my))
@@ -6964,7 +6998,7 @@ static int ui_handle_menu_event(bContext *C, const wmEvent *event, uiPopupBlockH
 						for (but = block->buttons.first; but; but = but->next) {
 							int doit = FALSE;
 							
-							if (but->type != LABEL && but->type != SEPR)
+							if (but->type != LABEL && but->type != LISTLABEL && but->type != SEPR)
 								count++;
 							
 							/* exception for rna layer buts */
@@ -7100,7 +7134,7 @@ static int ui_handle_menu_event(bContext *C, const wmEvent *event, uiPopupBlockH
 					menu->menuretval = UI_RETURN_CANCEL | UI_RETURN_POPUP_OK;
 			}
 			else {
-				ui_mouse_motion_towards_check(block, menu, mx, my);
+				ui_mouse_motion_towards_check(block, menu, &event->x, is_parent_inside == false);
 
 				/* check mouse moving outside of the menu */
 				if (inside == 0 && (block->flag & UI_BLOCK_MOVEMOUSE_QUIT)) {
@@ -7163,7 +7197,6 @@ static int ui_handle_menu_return_submenu(bContext *C, const wmEvent *event, uiPo
 	uiBlock *block;
 	uiHandleButtonData *data;
 	uiPopupBlockHandle *submenu;
-	int mx, my, update;
 
 	ar = menu->region;
 	block = ar->uiblocks.first;
@@ -7173,6 +7206,8 @@ static int ui_handle_menu_return_submenu(bContext *C, const wmEvent *event, uiPo
 	submenu = data->menu;
 
 	if (submenu->menuretval) {
+		bool update;
+
 		/* first decide if we want to close our own menu cascading, if
 		 * so pass on the sub menu return value to our own menu handle */
 		if ((submenu->menuretval & UI_RETURN_OK) || (submenu->menuretval & UI_RETURN_CANCEL)) {
@@ -7182,7 +7217,7 @@ static int ui_handle_menu_return_submenu(bContext *C, const wmEvent *event, uiPo
 			}
 		}
 
-		update = (submenu->menuretval & UI_RETURN_UPDATE);
+		update = (submenu->menuretval & UI_RETURN_UPDATE) != 0;
 
 		/* now let activated button in this menu exit, which
 		 * will actually close the submenu too */
@@ -7194,10 +7229,7 @@ static int ui_handle_menu_return_submenu(bContext *C, const wmEvent *event, uiPo
 
 	/* for cases where close does not cascade, allow the user to
 	 * move the mouse back towards the menu without closing */
-	mx = event->x;
-	my = event->y;
-	ui_window_to_block(ar, block, &mx, &my);
-	ui_mouse_motion_towards_init(menu, mx, my, true);
+	ui_mouse_motion_towards_reinit(menu, &event->x);
 
 	if (menu->menuretval)
 		return WM_UI_HANDLER_CONTINUE;
@@ -7205,20 +7237,35 @@ static int ui_handle_menu_return_submenu(bContext *C, const wmEvent *event, uiPo
 		return WM_UI_HANDLER_BREAK;
 }
 
-static int ui_handle_menus_recursive(bContext *C, const wmEvent *event, uiPopupBlockHandle *menu, int level)
+static int ui_handle_menus_recursive(bContext *C, const wmEvent *event, uiPopupBlockHandle *menu,
+                                     int level, const bool is_parent_inside)
 {
 	uiBut *but;
 	uiHandleButtonData *data;
 	uiPopupBlockHandle *submenu;
 	int retval = WM_UI_HANDLER_CONTINUE;
+	bool do_towards_reinit = false;
 
 	/* check if we have a submenu, and handle events for it first */
 	but = ui_but_find_activated(menu->region);
 	data = (but) ? but->active : NULL;
 	submenu = (data) ? data->menu : NULL;
 
-	if (submenu)
-		retval = ui_handle_menus_recursive(C, event, submenu, level + 1);
+	if (submenu) {
+		bool inside = false;
+
+		if (is_parent_inside == false) {
+			int mx, my;
+			uiBlock *block = menu->region->uiblocks.first;
+
+			mx = event->x;
+			my = event->y;
+			ui_window_to_block(menu->region, block, &mx, &my);
+			inside = BLI_rctf_isect_pt(&block->rect, mx, my);
+		}
+
+		retval = ui_handle_menus_recursive(C, event, submenu, level + 1, is_parent_inside || inside);
+	}
 
 	/* now handle events for our own menu */
 	if (retval == WM_UI_HANDLER_CONTINUE || event->type == TIMER) {
@@ -7238,10 +7285,20 @@ static int ui_handle_menus_recursive(bContext *C, const wmEvent *event, uiPopupB
 
 		if (do_but_search) {
 			retval = ui_handle_menu_button(C, event, menu);
+
+			/* when there is a active search button and we close it,
+			 * we need to reinit the mouse coords [#35346] */
+			if (ui_but_find_activated(menu->region) != but) {
+				do_towards_reinit = true;
+			}
 		}
 		else {
-			retval = ui_handle_menu_event(C, event, menu, level);
+			retval = ui_handle_menu_event(C, event, menu, level, is_parent_inside);
 		}
+	}
+
+	if (do_towards_reinit) {
+		ui_mouse_motion_towards_reinit(menu, &event->x);
 	}
 
 	return retval;
@@ -7332,7 +7389,7 @@ static int ui_handler_region_menu(bContext *C, const wmEvent *event, void *UNUSE
 			/* handle events for menus and their buttons recursively,
 			 * this will handle events from the top to the bottom menu */
 			if (data->menu)
-				retval = ui_handle_menus_recursive(C, event, data->menu, 0);
+				retval = ui_handle_menus_recursive(C, event, data->menu, 0, false);
 
 			/* handle events for the activated button */
 			if ((data->menu && (retval == WM_UI_HANDLER_CONTINUE)) ||
@@ -7378,7 +7435,7 @@ static int ui_handler_popup(bContext *C, const wmEvent *event, void *userdata)
 		retval = WM_UI_HANDLER_CONTINUE;
 	}
 
-	ui_handle_menus_recursive(C, event, menu, 0);
+	ui_handle_menus_recursive(C, event, menu, 0, false);
 
 	/* free if done, does not free handle itself */
 	if (menu->menuretval) {

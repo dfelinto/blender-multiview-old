@@ -189,7 +189,10 @@ static void graph_init(struct wmWindowManager *UNUSED(wm), ScrArea *sa)
 	}
 	
 	/* force immediate init of any invalid F-Curve colors */
-	sipo->flag |= SIPO_TEMP_NEEDCHANSYNC;
+	/* XXX: but, don't do SIPO_TEMP_NEEDCHANSYNC (i.e. channel select state sync)
+	 * as this is run on each region resize; setting this here will cause selection
+	 * state to be lost on area/region resizing. [#35744]
+	 */
 	ED_area_tag_refresh(sa);
 }
 
@@ -384,7 +387,7 @@ static void graph_buttons_area_draw(const bContext *C, ARegion *ar)
 	ED_region_panels(C, ar, 1, NULL, -1);
 }
 
-static void graph_region_listener(ARegion *ar, wmNotifier *wmn)
+static void graph_region_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
@@ -438,7 +441,7 @@ static void graph_region_listener(ARegion *ar, wmNotifier *wmn)
 }
 
 /* editor level listener */
-static void graph_listener(ScrArea *sa, wmNotifier *wmn)
+static void graph_listener(bScreen *UNUSED(sc), ScrArea *sa, wmNotifier *wmn)
 {
 	SpaceIpo *sipo = (SpaceIpo *)sa->spacedata.first;
 	

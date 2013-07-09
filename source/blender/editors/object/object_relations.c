@@ -1430,12 +1430,13 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 	const int type = RNA_enum_get(op->ptr, "type");
 	Object *ob_src;
-	ID *id;
+	ID *obdata_id;
 	int a;
 
 	/* group */
 	LinkNode *ob_groups = NULL;
-	int is_cycle = FALSE;
+	bool is_cycle = false;
+	bool is_lib = false;
 
 	ob_src = ED_object_active_context(C);
 
@@ -1450,14 +1451,15 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 
 		if (ob_src != ob_dst) {
 			if (allow_make_links_data(type, ob_src, ob_dst)) {
+				obdata_id = ob_dst->data;
+
 				switch (type) {
 					case MAKE_LINKS_OBDATA: /* obdata */
-						id = ob_dst->data;
-						id->us--;
+						obdata_id->us--;
 
-						id = ob_src->data;
-						id_us_plus(id);
-						ob_dst->data = id;
+						obdata_id = ob_src->data;
+						id_us_plus(obdata_id);
+						ob_dst->data = obdata_id;
 
 						/* if amount of material indices changed: */
 						test_object_materials(bmain, ob_dst->data);
@@ -1470,10 +1472,18 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 							Material *ma = give_current_material(ob_src, a + 1);
 							assign_material(ob_dst, ma, a + 1, BKE_MAT_ASSIGN_USERPREF); /* also works with ma==NULL */
 						}
+						DAG_id_tag_update(&ob_dst->id, 0);
 						break;
 					case MAKE_LINKS_ANIMDATA:
 						BKE_copy_animdata_id((ID *)ob_dst, (ID *)ob_src, FALSE);
-						BKE_copy_animdata_id((ID *)ob_dst->data, (ID *)ob_src->data, FALSE);
+						if (ob_dst->data && ob_src->data) {
+							if (obdata_id->lib) {
+								is_lib = true;
+								break;
+							}
+							BKE_copy_animdata_id((ID *)ob_dst->data, (ID *)ob_src->data, FALSE);
+						}
+						DAG_id_tag_update(&ob_dst->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 						break;
 					case MAKE_LINKS_GROUP:
 					{
@@ -1491,6 +1501,7 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 								is_cycle = TRUE;
 							}
 						}
+						break;
 					}
 					case MAKE_LINKS_DUPLIGROUP:
 						ob_dst->dup_group = ob_src->dup_group;
@@ -1507,6 +1518,11 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 					{
 						Curve *cu_src = ob_src->data;
 						Curve *cu_dst = ob_dst->data;
+
+						if (obdata_id->lib) {
+							is_lib = true;
+							break;
+						}
 
 						if (cu_dst->vfont) cu_dst->vfont->id.us--;
 						cu_dst->vfont = cu_src->vfont;
@@ -1538,6 +1554,10 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 		if (is_cycle) {
 			BKE_report(op->reports, RPT_WARNING, "Skipped some groups because of cycle detected");
 		}
+	}
+
+	if (is_lib) {
+		BKE_report(op->reports, RPT_WARNING, "Skipped editing library object data");
 	}
 
 	DAG_relations_tag_update(bmain);

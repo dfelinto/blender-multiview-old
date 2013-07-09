@@ -175,6 +175,7 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_vertex_group_add);
 	WM_operatortype_append(OBJECT_OT_vertex_group_remove);
 	WM_operatortype_append(OBJECT_OT_vertex_group_assign);
+	WM_operatortype_append(OBJECT_OT_vertex_group_assign_new);
 	WM_operatortype_append(OBJECT_OT_vertex_group_remove_from);
 	WM_operatortype_append(OBJECT_OT_vertex_group_select);
 	WM_operatortype_append(OBJECT_OT_vertex_group_deselect);
@@ -195,6 +196,11 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_vertex_group_set_active);
 	WM_operatortype_append(OBJECT_OT_vertex_group_sort);
 	WM_operatortype_append(OBJECT_OT_vertex_group_move);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_paste);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_delete);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_set_active);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_normalize_active_vertex);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_copy);
 
 	WM_operatortype_append(OBJECT_OT_game_property_new);
 	WM_operatortype_append(OBJECT_OT_game_property_remove);
