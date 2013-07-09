@@ -530,6 +530,7 @@ void BLI_path_rel(char *file, const char *relfile)
 		 * This is replaced by the two slashes at the beginning */
 		char *p = temp;
 		char *q = file;
+		char *r = res;
 
 #ifdef WIN32
 		while (tolower(*p) == tolower(*q))
@@ -557,20 +558,23 @@ void BLI_path_rel(char *file, const char *relfile)
 			while ( (p >= temp) && (*p != '/') ) { --p; --q; }
 		}
 		
-		strcpy(res, "//");
+		r += BLI_strcpy_rlen(r, "//");
 
 		/* p now points to the slash that is at the beginning of the part
 		 * where the path is different from the relative path. 
 		 * We count the number of directories we need to go up in the
 		 * hierarchy to arrive at the common 'prefix' of the path
 		 */
+		if (p < temp) p = temp;
 		while (p && p < lslash) {
-			if (*p == '/') 
-				strcat(res, "../");
+			if (*p == '/') {
+				r += BLI_strcpy_rlen(r, "../");
+			}
 			p++;
 		}
 
-		strcat(res, q + 1); /* don't copy the slash at the beginning */
+		/* don't copy the slash at the beginning */
+		r += BLI_strcpy_rlen(r, q + 1);
 		
 #ifdef  WIN32
 		BLI_char_switch(res + 2, '/', '\\');
@@ -1222,6 +1226,9 @@ const char *BLI_get_folder(int folder_id, const char *subfolder)
 			if (get_path_local(path, "python", subfolder, ver)) break;
 			if (get_path_system(path, "python", subfolder, "BLENDER_SYSTEM_PYTHON", ver)) break;
 			return NULL;
+
+		default:
+			BLI_assert(0);
 	}
 	
 	return path;
@@ -1248,6 +1255,8 @@ const char *BLI_get_user_folder_notest(int folder_id, const char *subfolder)
 		case BLENDER_USER_SCRIPTS:
 			get_path_user(path, "scripts", subfolder, "BLENDER_USER_SCRIPTS", ver);
 			break;
+		default:
+			BLI_assert(0);
 	}
 	if ('\0' == path[0]) {
 		return NULL;

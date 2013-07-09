@@ -139,6 +139,13 @@ size_t BLI_strncpy_rlen(char *__restrict dst, const char *__restrict src, const 
 	return srclen;
 }
 
+size_t BLI_strcpy_rlen(char *__restrict dst, const char *__restrict src)
+{
+	size_t srclen = strlen(src);
+	memcpy(dst, src, srclen + 1);
+	return srclen;
+}
+
 /**
  * Portable replacement for #vsnprintf
  */
@@ -549,7 +556,7 @@ void BLI_timestr(double _time, char *str, size_t maxlen)
 }
 
 /* determine the length of a fixed-size string */
-size_t BLI_strnlen(const char *s, size_t maxlen)
+size_t BLI_strnlen(const char *s, const size_t maxlen)
 {
 	size_t len;
 

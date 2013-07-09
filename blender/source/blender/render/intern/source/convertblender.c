@@ -4149,10 +4149,15 @@ static void set_renderlayer_lightgroups(Render *re, Scene *sce)
 
 void init_render_world(Render *re)
 {
+	void *wrld_prev[2] = {
+	    re->wrld.aotables,
+	    re->wrld.aosphere,
+	};
+
 	int a;
 	
 	if (re->scene && re->scene->world) {
-		re->wrld= *(re->scene->world);
+		re->wrld = *(re->scene->world);
 
 		copy_v3_v3(re->grvec, re->viewmat[2]);
 		normalize_v3(re->grvec);
@@ -4181,6 +4186,10 @@ void init_render_world(Render *re)
 	
 	re->wrld.linfac= 1.0f + powf((2.0f*re->wrld.exp + 0.5f), -10);
 	re->wrld.logfac= logf((re->wrld.linfac-1.0f)/re->wrld.linfac) / re->wrld.range;
+
+	/* restore runtime vars, needed for viewport rendering [#36005] */
+	re->wrld.aotables = wrld_prev[0];
+	re->wrld.aosphere = wrld_prev[1];
 }
 
 
@@ -4563,7 +4572,7 @@ static int render_object_type(short type)
 	return OB_TYPE_SUPPORT_MATERIAL(type);
 }
 
-static void find_dupli_instances(Render *re, ObjectRen *obr)
+static void find_dupli_instances(Render *re, ObjectRen *obr, DupliObject *dob)
 {
 	ObjectInstanceRen *obi;
 	float imat[4][4], obmat[4][4], obimat[4][4], nmat[3][3];
@@ -4588,6 +4597,12 @@ static void find_dupli_instances(Render *re, ObjectRen *obr)
 			invert_m3_m3(obi->nmat, nmat);
 			transpose_m3(obi->nmat);
 
+			if (dob) {
+				copy_v3_v3(obi->dupliorco, dob->orco);
+				obi->dupliuv[0]= dob->uv[0];
+				obi->dupliuv[1]= dob->uv[1];
+			}
+
 			if (!first) {
 				re->totvert += obr->totvert;
 				re->totvlak += obr->totvlak;
@@ -4600,7 +4615,7 @@ static void find_dupli_instances(Render *re, ObjectRen *obr)
 	}
 }
 
-static void assign_dupligroup_dupli(Render *re, ObjectInstanceRen *obi, ObjectRen *obr)
+static void assign_dupligroup_dupli(Render *re, ObjectInstanceRen *obi, ObjectRen *obr, DupliObject *dob)
 {
 	float imat[4][4], obmat[4][4], obimat[4][4], nmat[3][3];
 
@@ -4617,6 +4632,12 @@ static void assign_dupligroup_dupli(Render *re, ObjectInstanceRen *obi, ObjectRe
 	copy_m3_m4(nmat, obi->mat);
 	invert_m3_m3(obi->nmat, nmat);
 	transpose_m3(obi->nmat);
+
+	if (dob) {
+		copy_v3_v3(obi->dupliorco, dob->orco);
+		obi->dupliuv[0]= dob->uv[0];
+		obi->dupliuv[1]= dob->uv[1];
+	}
 
 	re->totvert += obr->totvert;
 	re->totvlak += obr->totvlak;
@@ -4681,6 +4702,12 @@ static void set_dupli_tex_mat(Render *re, ObjectInstanceRen *obi, DupliObject *d
 		obi->duplitexmat= BLI_memarena_alloc(re->memArena, sizeof(float)*4*4);
 		invert_m4_m4(imat, dob->mat);
 		mul_serie_m4(obi->duplitexmat, re->viewmat, dob->omat, imat, re->viewinv, 0, 0, 0, 0);
+	}
+
+	if (dob) {
+		copy_v3_v3(obi->dupliorco, dob->orco);
+		obi->dupliuv[0]= dob->uv[0];
+		obi->dupliuv[1]= dob->uv[1];
 	}
 }
 
@@ -4765,7 +4792,7 @@ static void add_render_object(Render *re, Object *ob, Object *par, DupliObject *
 			if (dob) set_dupli_tex_mat(re, obi, dob);
 		}
 		else
-			find_dupli_instances(re, obr);
+			find_dupli_instances(re, obr, dob);
 			
 		for (i=1; i<=ob->totcol; i++) {
 			Material* ma = give_render_material(re, ob, i);
@@ -4796,7 +4823,7 @@ static void add_render_object(Render *re, Object *ob, Object *par, DupliObject *
 				if (dob) set_dupli_tex_mat(re, obi, dob);
 			}
 			else
-				find_dupli_instances(re, obr);
+				find_dupli_instances(re, obr, dob);
 		}
 	}
 }
@@ -4836,7 +4863,11 @@ static void init_render_object(Render *re, Object *ob, Object *par, DupliObject 
 void RE_Database_Free(Render *re)
 {
 	LampRen *lar;
-	
+
+	/* will crash if we try to free empty database */
+	if (!re->i.convertdone)
+		return;
+
 	/* statistics for debugging render memory usage */
 	if ((G.debug & G_DEBUG) && (G.is_rendering)) {
 		if ((re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW))==0) {
@@ -4876,13 +4907,13 @@ void RE_Database_Free(Render *re)
 	if (re->wrld.aosphere) {
 		MEM_freeN(re->wrld.aosphere);
 		re->wrld.aosphere= NULL;
-		if (re->scene)
+		if (re->scene && re->scene->world)
 			re->scene->world->aosphere= NULL;
 	}
 	if (re->wrld.aotables) {
 		MEM_freeN(re->wrld.aotables);
 		re->wrld.aotables= NULL;
-		if (re->scene)
+		if (re->scene && re->scene->world)
 			re->scene->world->aotables= NULL;
 	}
 	if (re->r.mode & R_RAYTRACE)
@@ -5154,9 +5185,9 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 								 * created object, and possibly setup instances if this object
 								 * itself was duplicated. for the first case find_dupli_instances
 								 * will be called later. */
-								assign_dupligroup_dupli(re, obi, obr);
+								assign_dupligroup_dupli(re, obi, obr, dob);
 								if (obd->transflag & OB_RENDER_DUPLI)
-									find_dupli_instances(re, obr);
+									find_dupli_instances(re, obr, dob);
 							}
 						}
 
@@ -5176,9 +5207,9 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 									obi->dupliuv[1]= dob->uv[1];
 								}
 								else {
-									assign_dupligroup_dupli(re, obi, obr);
+									assign_dupligroup_dupli(re, obi, obr, dob);
 									if (obd->transflag & OB_RENDER_DUPLI)
-										find_dupli_instances(re, obr);
+										find_dupli_instances(re, obr, dob);
 								}
 							}
 						}
@@ -5229,6 +5260,9 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 	re->main= bmain;
 	re->scene= scene;
 	re->lay= lay;
+
+	if (re->r.scemode & R_VIEWPORT_PREVIEW)
+		re->scene_color_manage = BKE_scene_check_color_management_enabled(scene);
 	
 	/* scene needs to be set to get camera */
 	camera= RE_GetCamera(re);
@@ -5291,13 +5325,9 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 	database_init_objects(re, lay, 0, 0, 0, 0);
 	
 	if (!re->test_break(re->tbh)) {
-		int tothalo;
-
 		set_material_lightgroups(re);
 		for (sce= re->scene; sce; sce= sce->set)
 			set_renderlayer_lightgroups(re, sce);
-		
-		slurph_opt= 1;
 		
 		/* for now some clumsy copying still */
 		re->i.totvert= re->totvert;
@@ -5306,7 +5336,16 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 		re->i.tothalo= re->tothalo;
 		re->i.totlamp= re->totlamp;
 		re->stats_draw(re->sdh, &re->i);
-		
+	}
+
+	slurph_opt= 1;
+}
+
+void RE_Database_Preprocess(Render *re)
+{
+	if (!re->test_break(re->tbh)) {
+		int tothalo;
+
 		/* don't sort stars */
 		tothalo= re->tothalo;
 		if (!re->test_break(re->tbh)) {
@@ -5362,11 +5401,12 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 		if (!re->test_break(re->tbh))
 			if (re->r.mode & R_RAYTRACE)
 				volume_precache(re);
-		
 	}
 	
-	if (re->test_break(re->tbh))
+	if (re->test_break(re->tbh)) {
+		re->i.convertdone = TRUE;
 		RE_Database_Free(re);
+	}
 	else
 		re->i.convertdone = TRUE;
 	
@@ -5394,6 +5434,10 @@ void RE_DataBase_IncrementalView(Render *re, float viewmat[4][4], int restore)
 	invert_m4_m4(re->viewinv, re->viewmat);
 	
 	env_rotate_scene(re, tmat, !restore);
+
+	/* SSS points distribution depends on view */
+	if ((re->r.mode & R_SSS) && !re->test_break(re->tbh))
+		make_sss_tree(re);
 }
 
 
@@ -5832,8 +5876,10 @@ void RE_Database_FromScene_Vectors(Render *re, Main *bmain, Scene *sce, unsigned
 	RE_Database_Free(re);
 	re->strandsurface= strandsurface;
 	
-	if (!re->test_break(re->tbh))
+	if (!re->test_break(re->tbh)) {
 		RE_Database_FromScene(re, bmain, sce, lay, 1);
+		RE_Database_Preprocess(re);
+	}
 	
 	if (!re->test_break(re->tbh)) {
 		int vectorlay= get_vector_renderlayers(re->scene);

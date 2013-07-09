@@ -1121,6 +1121,44 @@ static void screen_px_from_persp(
 	interp_v3_v3v3v3(pixelScreenCo, v1co, v2co, v3co, w);
 }
 
+
+/* same as screen_px_from_persp except we return ortho weights back to the caller.
+ * These weights will be used to determine correct interpolation of uvs in cloned uv layer */
+static void screen_px_from_persp_ortho_weights(
+        float uv[2],
+        float v1co[4], float v2co[4], float v3co[4],  /* screenspace coords */
+        float uv1co[2], float uv2co[2], float uv3co[2],
+        float pixelScreenCo[4],
+        float w[3])
+{
+	float w_int[3];
+	float wtot_inv, wtot;
+	barycentric_weights_v2(uv1co, uv2co, uv3co, uv, w);
+
+	/* re-weight from the 4th coord of each screen vert */
+	w_int[0] = w[0] * v1co[3];
+	w_int[1] = w[1] * v2co[3];
+	w_int[2] = w[2] * v3co[3];
+
+	wtot = w_int[0] + w_int[1] + w_int[2];
+
+	if (wtot > 0.0f) {
+		wtot_inv = 1.0f / wtot;
+		w_int[0] *= wtot_inv;
+		w_int[1] *= wtot_inv;
+		w_int[2] *= wtot_inv;
+	}
+	else {
+		w[0] = w[1] = w[2] =
+		w_int[0] = w_int[1] = w_int[2] = 1.0f / 3.0f;  /* dummy values for zero area face */
+	}
+	/* done re-weighting */
+
+	/* do interpolation based on projected weight */
+	interp_v3_v3v3v3(pixelScreenCo, v1co, v2co, v3co, w_int);
+}
+
+
 static void project_face_pixel(const MTFace *tf_other, ImBuf *ibuf_other, const float w[3],
                                int side, unsigned char rgba_ub[4], float rgba_f[4])
 {
@@ -2168,6 +2206,7 @@ static void project_paint_face_init(const ProjPaintState *ps, const int thread_i
 	float uv_clip[8][2];
 	int uv_clip_tot;
 	const short is_ortho = ps->is_ortho;
+	const short is_clone_other = ((ps->brush->imagepaint_tool == PAINT_TOOL_CLONE) && ps->dm_mtface_clone);
 	const short do_backfacecull = ps->do_backfacecull;
 	const short do_clip = ps->rv3d ? ps->rv3d->rflag & RV3D_CLIPPING : 0;
 
@@ -2190,8 +2229,6 @@ static void project_paint_face_init(const ProjPaintState *ps, const int thread_i
 	 * This workaround can be removed and painting will still work on most cases
 	 * but since the first thing most people try is painting onto a quad- better make it work.
 	 */
-
-
 
 	tf_uv_pxoffset[0][0] = tf->uv[0][0] - xhalfpx;
 	tf_uv_pxoffset[0][1] = tf->uv[0][1] - yhalfpx;
@@ -2277,7 +2314,8 @@ static void project_paint_face_init(const ProjPaintState *ps, const int thread_i
 						has_x_isect = has_isect = 1;
 
 						if (is_ortho) screen_px_from_ortho(uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
-						else          screen_px_from_persp(uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
+						else if (is_clone_other) screen_px_from_persp_ortho_weights(uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
+						else screen_px_from_persp(uv, v1coSS, v2coSS, v3coSS, uv1co, uv2co, uv3co, pixelScreenCo, w);
 
 						/* a pity we need to get the worldspace pixel location here */
 						if (do_clip || do_3d_mapping) {
@@ -2782,6 +2820,8 @@ static void project_paint_begin(ProjPaintState *ps)
 
 	const int diameter = 2 * BKE_brush_size_get(ps->scene, ps->brush);
 
+	bool reset_threads = false;
+
 	/* ---- end defines ---- */
 
 	if (ps->source == PROJ_SRC_VIEW)
@@ -2827,20 +2867,19 @@ static void project_paint_begin(ProjPaintState *ps)
 	 * this avoids re-generating the derived mesh just to get the new index */
 	if (ps->do_layer_clone) {
 		//int layer_num = CustomData_get_clone_layer(&ps->dm->faceData, CD_MTFACE);
-		int layer_num = CustomData_get_clone_layer(&((Mesh *)ps->ob->data)->fdata, CD_MTFACE);
+		int layer_num = CustomData_get_clone_layer(&((Mesh *)ps->ob->data)->pdata, CD_MTEXPOLY);
 		if (layer_num != -1)
 			ps->dm_mtface_clone = CustomData_get_layer_n(&ps->dm->faceData, CD_MTFACE, layer_num);
 
 		if (ps->dm_mtface_clone == NULL || ps->dm_mtface_clone == ps->dm_mtface) {
 			ps->do_layer_clone = FALSE;
 			ps->dm_mtface_clone = NULL;
-			printf("ACK!\n");
 		}
 	}
 
 	if (ps->do_layer_stencil) {
 		//int layer_num = CustomData_get_stencil_layer(&ps->dm->faceData, CD_MTFACE);
-		int layer_num = CustomData_get_stencil_layer(&((Mesh *)ps->ob->data)->fdata, CD_MTFACE);
+		int layer_num = CustomData_get_stencil_layer(&((Mesh *)ps->ob->data)->pdata, CD_MTEXPOLY);
 		if (layer_num != -1)
 			ps->dm_mtface_stencil = CustomData_get_layer_n(&ps->dm->faceData, CD_MTFACE, layer_num);
 
@@ -3027,6 +3066,10 @@ static void project_paint_begin(ProjPaintState *ps)
 
 	/* printf("\tscreenspace bucket division x:%d y:%d\n", ps->buckets_x, ps->buckets_y); */
 
+	if (ps->buckets_x > PROJ_BUCKET_RECT_MAX || ps->buckets_y > PROJ_BUCKET_RECT_MAX) {
+		reset_threads = true;
+	}
+
 	/* really high values could cause problems since it has to allocate a few
 	 * (ps->buckets_x*ps->buckets_y) sized arrays  */
 	CLAMP(ps->buckets_x, PROJ_BUCKET_RECT_MIN, PROJ_BUCKET_RECT_MAX);
@@ -3051,6 +3094,11 @@ static void project_paint_begin(ProjPaintState *ps)
 	 * Only use threads for bigger brushes. */
 
 	ps->thread_tot = BKE_scene_num_threads(ps->scene);
+
+	/* workaround for #35057, disable threading if diameter is less than is possible for
+	 * optimum bucket number generation */
+	if (reset_threads)
+		ps->thread_tot = 1;
 
 	for (a = 0; a < ps->thread_tot; a++) {
 		ps->arena_mt[a] = BLI_memarena_new(1 << 16, "project paint arena");
@@ -3525,7 +3573,7 @@ static void do_projectpaint_clone(ProjPaintState *ps, ProjPixel *projPixel, floa
 		clone_rgba[0] = clone_pt[0];
 		clone_rgba[1] = clone_pt[1];
 		clone_rgba[2] = clone_pt[2];
-		clone_rgba[3] = clone_pt[3] * mask;
+		clone_rgba[3] = (unsigned char)(clone_pt[3] * mask);
 
 		if (ps->do_masking) {
 			IMB_blend_color_byte(projPixel->pixel.ch_pt, projPixel->origColor.ch, clone_rgba, ps->blend);

@@ -229,7 +229,7 @@ LLVM_FORCE_REBUILD=false
 LLVM_SKIP=false
 
 # OSL needs to be compiled for now!
-OSL_VERSION="1.3.0"
+OSL_VERSION="1.3.2"
 OSL_SOURCE="https://github.com/imageworks/OpenShadingLanguage/archive/Release-$OSL_VERSION.tar.gz"
 OSL_FORCE_REBUILD=false
 OSL_SKIP=false
@@ -1142,6 +1142,9 @@ EOF
   fi
 
   _with_built_openexr=true
+
+  # Just always run it, much simpler this way!
+  _need_openexr_ldconfig=true
 }
 
 #### Build OIIO ####
@@ -1158,7 +1161,7 @@ clean_OIIO() {
 
 compile_OIIO() {
   # To be changed each time we make edits that would modify the compiled result!
-  oiio_magic=11
+  oiio_magic=12
   _init_oiio
 
   # Clean install if needed!
@@ -1352,6 +1355,7 @@ EOF
 
     # Optional tests and cmd tools
     cmake_d="$cmake_d -D USE_QT=OFF"
+    cmake_d="$cmake_d -D USE_PYTHON=OFF"
     cmake_d="$cmake_d -D BUILD_TESTING=OFF"
     #cmake_d="$cmake_d -D CMAKE_EXPORT_COMPILE_COMMANDS=ON"
     #cmake_d="$cmake_d -D CMAKE_VERBOSE_MAKEFILE=ON"
@@ -1373,6 +1377,7 @@ EOF
 #    if [ -d $INST/ocio ]; then
 #      cmake_d="$cmake_d -D OCIO_PATH=$INST/ocio"
 #    fi
+    cmake_d="$cmake_d -D USE_OCIO=OFF"
 
     if file /bin/cp | grep -q '32-bit'; then
       cflags="-fPIC -m32 -march=i686"
@@ -1525,7 +1530,7 @@ clean_OSL() {
 
 compile_OSL() {
   # To be changed each time we make edits that would modify the compiled result!
-  osl_magic=9
+  osl_magic=10
   _init_osl
 
   # Clean install if needed!
@@ -1548,7 +1553,7 @@ compile_OSL() {
       tar -C $SRC --transform "s,(.*/?)OpenShadingLanguage-[^/]*(.*),\1OpenShadingLanguage-$OSL_VERSION\2,x" \
           -xf $_src.tar.gz
       cd $_src
-      git checkout blender-fixes
+      #git checkout blender-fixes
       cd $CWD
     fi
 
@@ -2276,8 +2281,18 @@ install_RPM() {
     fi
 
     _suse_rel="`grep VERSION /etc/SuSE-release | gawk '{print $3}'`"
-    sudo zypper ar -f http://packman.inode.at/suse/openSUSE_$_suse_rel/ packman
 
+    INFO ""
+    INFO "About to add 'packman' repository from http://packman.inode.at/suse/openSUSE_$_suse_rel/"
+    INFO "This is only needed if you do not already have a packman repository enabled..."
+    read -p "Do you want to add this repo (Y/n)?"
+    if [ "$(echo ${REPLY:=Y} | tr [:upper:] [:lower:])" == "y" ]; then
+      INFO "    Installing packman..."
+      sudo zypper ar --refresh --name 'Packman Repository' http://ftp.gwdg.de/pub/linux/packman/suse/openSUSE_$_suse_rel/ ftp.gwdg.de-suse
+      INFO "    Done."
+    else
+      INFO "    Skipping packman installation."
+    fi
     sudo zypper --non-interactive --gpg-auto-import-keys update --auto-agree-with-licenses
   fi
 
@@ -3122,6 +3137,9 @@ if [ $_need_boost_ldconfig == true ]; then
 fi
 if [ $_need_oiio_ldconfig == true ]; then
   sudo sh -c "echo \"$INST/oiio/lib\" > /etc/ld.so.conf.d/oiio.conf"
+fi
+if [ $_need_openexr_ldconfig == true ]; then
+  sudo sh -c "echo \"$INST/openexr/lib\" > /etc/ld.so.conf.d/openexr.conf"
 fi
 sudo /sbin/ldconfig  # XXX OpenSuse does not include sbin in command path with sudo!!!
 INFO ""

@@ -792,7 +792,7 @@ const char *WM_key_event_string(short type)
 	return "";
 }
 
-int WM_keymap_item_to_string(wmKeyMapItem *kmi, char *str, int len)
+int WM_keymap_item_to_string(wmKeyMapItem *kmi, char *str, const int len)
 {
 	char buf[128];
 
@@ -1297,7 +1297,11 @@ wmKeyMap *WM_keymap_guess_opname(const bContext *C, const char *opname)
 		km = WM_keymap_find_all(C, "3D View", sl->spacetype, 0);
 	}
 	else if (strstr(opname, "OBJECT_OT")) {
-		km = WM_keymap_find_all(C, "Object Mode", 0, 0);
+		/* exception, this needs to work outside object mode too */
+		if (strstr(opname, "OBJECT_OT_mode_set"))
+			km = WM_keymap_find_all(C, "Object Non-modal", 0, 0);
+		else
+			km = WM_keymap_find_all(C, "Object Mode", 0, 0);
 	}
 
 	

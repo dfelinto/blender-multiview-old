@@ -383,6 +383,8 @@ class IMAGE_HT_header(Header):
 
             if show_uvedit:
                 sub.menu("IMAGE_MT_select")
+            if show_maskedit:
+                sub.menu("MASK_MT_select")
 
             if ima and ima.is_dirty:
                 sub.menu("IMAGE_MT_image", text="Image*")
@@ -391,6 +393,8 @@ class IMAGE_HT_header(Header):
 
             if show_uvedit:
                 sub.menu("IMAGE_MT_uvs")
+            if show_maskedit:
+                sub.menu("MASK_MT_mask")
 
         layout.template_ID(sima, "image", new="image.new")
         if not show_render:
@@ -752,7 +756,6 @@ class IMAGE_PT_tools_brush_texture(BrushButtonsPanel, Panel):
         sub.prop(brush, "use_primary_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
 
 
-
 class IMAGE_PT_tools_mask_texture(BrushButtonsPanel, Panel):
     bl_label = "Texture Mask"
     bl_options = {'DEFAULT_CLOSED'}
@@ -779,7 +782,7 @@ class IMAGE_PT_tools_mask_texture(BrushButtonsPanel, Panel):
                 row.prop(brush, "use_secondary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
             else:
                 row.prop(brush, "use_secondary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
-        
+
         sub = row.row()
         sub.prop(brush, "mask_overlay_alpha", text="Alpha")
         sub.prop(brush, "use_secondary_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
@@ -897,7 +900,7 @@ class IMAGE_PT_tools_brush_appearance(BrushButtonsPanel, Panel):
             return
 
         col = layout.column()
-        col.prop(toolsettings, "show_brush");
+        col.prop(toolsettings, "show_brush")
 
         col = col.column()
         col.prop(brush, "cursor_color_add", text="")

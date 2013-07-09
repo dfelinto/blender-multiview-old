@@ -116,7 +116,7 @@ void ED_region_pixelspace(ARegion *ar)
 }
 
 /* only exported for WM */
-void ED_region_do_listen(ARegion *ar, wmNotifier *note)
+void ED_region_do_listen(bScreen *sc, ScrArea *sa, ARegion *ar, wmNotifier *note)
 {
 	/* generic notes first */
 	switch (note->category) {
@@ -130,15 +130,15 @@ void ED_region_do_listen(ARegion *ar, wmNotifier *note)
 	}
 
 	if (ar->type && ar->type->listener)
-		ar->type->listener(ar, note);
+		ar->type->listener(sc, sa, ar, note);
 }
 
 /* only exported for WM */
-void ED_area_do_listen(ScrArea *sa, wmNotifier *note)
+void ED_area_do_listen(bScreen *sc, ScrArea *sa, wmNotifier *note)
 {
 	/* no generic notes? */
 	if (sa->type && sa->type->listener) {
-		sa->type->listener(sa, note);
+		sa->type->listener(sc, sa, note);
 	}
 }
 
@@ -908,11 +908,19 @@ static void region_overlap_fix(ScrArea *sa, ARegion *ar)
 /* overlapping regions only in the following restricted cases */
 static int region_is_overlap(wmWindow *win, ScrArea *sa, ARegion *ar)
 {
-	if (U.uiflag2 & USER_REGION_OVERLAP)
-		if (WM_is_draw_triple(win))
-			if (ELEM4(sa->spacetype, SPACE_VIEW3D, SPACE_IMAGE, SPACE_SEQ, SPACE_CLIP))
+	if (U.uiflag2 & USER_REGION_OVERLAP) {
+		if (WM_is_draw_triple(win)) {
+			if (ELEM(sa->spacetype, SPACE_VIEW3D, SPACE_SEQ)) {
 				if (ELEM3(ar->regiontype, RGN_TYPE_TOOLS, RGN_TYPE_UI, RGN_TYPE_TOOL_PROPS))
 					return 1;
+			}
+			else if (ELEM(sa->spacetype, SPACE_IMAGE, SPACE_CLIP)) {
+				if (ELEM4(ar->regiontype, RGN_TYPE_TOOLS, RGN_TYPE_UI, RGN_TYPE_TOOL_PROPS, RGN_TYPE_PREVIEW))
+					return 1;
+			}
+		}
+	}
+
 	return 0;
 }
 

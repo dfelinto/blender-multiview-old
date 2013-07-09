@@ -63,6 +63,7 @@ set(SRC
 	intern/anim.c
 	intern/anim_sys.c
 	intern/armature.c
+	intern/autoexec.c
 	intern/blender.c
 	intern/bmfont.c
 	intern/boids.c
@@ -136,7 +137,6 @@ set(SRC
 	intern/sca.c
 	intern/scene.c
 	intern/screen.c
-	intern/script.c
 	intern/seqcache.c
 	intern/seqeffects.c
 	intern/seqmodifier.c
@@ -163,6 +163,7 @@ set(SRC
 	BKE_anim.h
 	BKE_animsys.h
 	BKE_armature.h
+	BKE_autoexec.h
 	BKE_blender.h
 	BKE_bmesh.h
 	BKE_bmfont.h
@@ -229,7 +230,6 @@ set(SRC
 	BKE_sca.h
 	BKE_scene.h
 	BKE_screen.h
-	BKE_script.h
 	BKE_sequencer.h
 	BKE_shrinkwrap.h
 	BKE_sketch.h

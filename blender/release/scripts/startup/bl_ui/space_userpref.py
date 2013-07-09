@@ -734,8 +734,9 @@ class USERPREF_PT_theme(Panel):
             padding = subsplit.split(percentage=0.15)
             colsub = padding.column()
             colsub = padding.column()
-            colsub.active = False
-            colsub.row().prop(ui, "icon_file")
+            # Not working yet.
+            #~ colsub.active = False
+            #~ colsub.row().prop(ui, "icon_file")
 
             subsplit = row.split(percentage=0.85)
 
@@ -867,8 +868,21 @@ class USERPREF_PT_file(Panel):
 
         colsplit = col.split(percentage=0.95)
         sub = colsplit.column()
-        sub.label(text="Author:")
-        sub.prop(system, "author", text="")
+
+        row = sub.split(percentage=0.3)
+        row.label(text="Auto Execution:")
+        row.prop(system, "use_scripts_auto_execute")
+
+        if system.use_scripts_auto_execute:
+            box = sub.box()
+            row = box.row()
+            row.label(text="Excluded Paths:")
+            row.operator("wm.userpref_autoexec_path_add", text="", icon='ZOOMIN', emboss=False)
+            for i, path_cmp in enumerate(userpref.autoexec_paths):
+                row = box.row()
+                row.prop(path_cmp, "path", text="")
+                row.prop(path_cmp, "use_glob", text="", icon='FILTER')
+                row.operator("wm.userpref_autoexec_path_remove", text="", icon='X', emboss=False).index = i
 
         col = split.column()
         col.label(text="Save & Load:")
@@ -896,12 +910,11 @@ class USERPREF_PT_file(Panel):
 
         col.separator()
 
-        col.label(text="Scripts:")
-        col.prop(system, "use_scripts_auto_execute")
+        col.label(text="Text Editor:")
         col.prop(system, "use_tabs_as_spaces")
 
-
-from bl_ui.space_userpref_keymap import InputKeyMapPanel
+        col.label(text="Author:")
+        col.prop(system, "author", text="")
 
 
 class USERPREF_MT_ndof_settings(Menu):
@@ -944,9 +957,25 @@ class USERPREF_MT_ndof_settings(Menu):
             layout.prop(input_prefs, "ndof_lock_horizon", icon='NDOF_DOM')
 
 
-class USERPREF_PT_input(Panel, InputKeyMapPanel):
+class USERPREF_MT_keyconfigs(Menu):
+    bl_label = "KeyPresets"
+    preset_subdir = "keyconfig"
+    preset_operator = "wm.keyconfig_activate"
+
+    def draw(self, context):
+        props = self.layout.operator("wm.context_set_value", text="Blender (default)")
+        props.data_path = "window_manager.keyconfigs.active"
+        props.value = "context.window_manager.keyconfigs.default"
+
+        # now draw the presets
+        Menu.draw_preset(self, context)
+
+
+class USERPREF_PT_input(Panel):
     bl_space_type = 'USER_PREFERENCES'
     bl_label = "Input"
+    bl_region_type = 'WINDOW'
+    bl_options = {'HIDE_HEADER'}
 
     @classmethod
     def poll(cls, context):
@@ -1023,6 +1052,8 @@ class USERPREF_PT_input(Panel, InputKeyMapPanel):
         row.separator()
 
     def draw(self, context):
+        from rna_keymap_ui import draw_keymaps
+
         layout = self.layout
 
         #import time
@@ -1039,7 +1070,7 @@ class USERPREF_PT_input(Panel, InputKeyMapPanel):
         self.draw_input_prefs(inputs, split)
 
         # Keymap Settings
-        self.draw_keymaps(context, split)
+        draw_keymaps(context, split)
 
         #print("runtime", time.time() - start)
 
@@ -1155,12 +1186,12 @@ class USERPREF_PT_addons(Panel):
                 continue
 
             # check if addon should be visible with current filters
-            if     ((filter == "All") or
-                    (filter == info["category"]) or
-                    (filter == "Enabled" and is_enabled) or
-                    (filter == "Disabled" and not is_enabled) or
-                    (filter == "User" and (mod.__file__.startswith((scripts_addons_folder, userpref_addons_folder))))
-                    ):
+            if ((filter == "All") or
+                (filter == info["category"]) or
+                (filter == "Enabled" and is_enabled) or
+                (filter == "Disabled" and not is_enabled) or
+                (filter == "User" and (mod.__file__.startswith((scripts_addons_folder, userpref_addons_folder))))
+                ):
 
                 if search and search not in info["name"].lower():
                     if info["author"]:

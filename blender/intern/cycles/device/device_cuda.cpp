@@ -271,11 +271,53 @@ public:
 			return "";
 		}
 
+		int cuda_version = cuCompilerVersion();
+
+		if(cuda_version == 0) {
+			cuda_error_message("CUDA nvcc compiler version could not be parsed.");
+			return "";
+		}
+
+		if(cuda_version != 50)
+			printf("CUDA version %d.%d detected, build may succeed but only CUDA 5.0 is officially supported.\n", cuda_version/10, cuda_version%10);
+
 		/* compile */
 		string kernel = path_join(kernel_path, "kernel.cu");
 		string include = kernel_path;
 		const int machine = system_cpu_bits();
-		const int maxreg = 24;
+		string arch_flags;
+
+		/* build flags depending on CUDA version and arch */
+		if(cuda_version < 50) {
+			/* CUDA 4.x */
+			if(major == 1) {
+				/* sm_1x */
+				arch_flags = "--maxrregcount=24 --opencc-options -OPT:Olimit=0";
+			}
+			else if(major == 2) {
+				/* sm_2x */
+				arch_flags = "--maxrregcount=24";
+			}
+			else {
+				/* sm_3x */
+				arch_flags = "--maxrregcount=32";
+			}
+		}
+		else {
+			/* CUDA 5.x */
+			if(major == 1) {
+				/* sm_1x */
+				arch_flags = "--maxrregcount=24 --opencc-options -OPT:Olimit=0 --use_fast_math";
+			}
+			else if(major == 2) {
+				/* sm_2x */
+				arch_flags = "--maxrregcount=32 --use_fast_math";
+			}
+			else {
+				/* sm_3x */
+				arch_flags = "--maxrregcount=32 --use_fast_math";
+			}
+		}
 
 		double starttime = time_dt();
 		printf("Compiling CUDA kernel ...\n");
@@ -283,8 +325,10 @@ public:
 		path_create_directories(cubin);
 
 		string command = string_printf("\"%s\" -arch=sm_%d%d -m%d --cubin \"%s\" "
-			"-o \"%s\" --ptxas-options=\"-v\" --maxrregcount=%d --opencc-options -OPT:Olimit=0 -I\"%s\" -DNVCC",
-			nvcc.c_str(), major, minor, machine, kernel.c_str(), cubin.c_str(), maxreg, include.c_str());
+			"-o \"%s\" --ptxas-options=\"-v\" %s -I\"%s\" -DNVCC -D__KERNEL_CUDA_VERSION__=%d",
+			nvcc.c_str(), major, minor, machine, kernel.c_str(), cubin.c_str(), arch_flags.c_str(), include.c_str(), cuda_version);
+
+		printf("%s\n", command.c_str());
 
 		if(system(command.c_str()) == -1) {
 			cuda_error_message("Failed to execute compilation command, see console for details.");
@@ -563,13 +607,8 @@ public:
 		cuda_assert(cuParamSetSize(cuPathTrace, offset))
 
 		/* launch kernel: todo find optimal size, cache config for fermi */
-#ifndef __APPLE__
 		int xthreads = 16;
 		int ythreads = 16;
-#else
-		int xthreads = 8;
-		int ythreads = 8;
-#endif
 		int xblocks = (rtile.w + xthreads - 1)/xthreads;
 		int yblocks = (rtile.h + ythreads - 1)/ythreads;
 
@@ -632,13 +671,8 @@ public:
 		cuda_assert(cuParamSetSize(cuFilmConvert, offset))
 
 		/* launch kernel: todo find optimal size, cache config for fermi */
-#ifndef __APPLE__
 		int xthreads = 16;
 		int ythreads = 16;
-#else
-		int xthreads = 8;
-		int ythreads = 8;
-#endif
 		int xblocks = (task.w + xthreads - 1)/xthreads;
 		int yblocks = (task.h + ythreads - 1)/ythreads;
 
@@ -660,7 +694,7 @@ public:
 
 		CUfunction cuDisplace;
 		CUdeviceptr d_input = cuda_device_ptr(task.shader_input);
-		CUdeviceptr d_offset = cuda_device_ptr(task.shader_output);
+		CUdeviceptr d_output = cuda_device_ptr(task.shader_output);
 
 		/* get kernel function */
 		cuda_assert(cuModuleGetFunction(&cuDisplace, cuModule, "kernel_cuda_shader"))
@@ -671,8 +705,8 @@ public:
 		cuda_assert(cuParamSetv(cuDisplace, offset, &d_input, sizeof(d_input)))
 		offset += sizeof(d_input);
 
-		cuda_assert(cuParamSetv(cuDisplace, offset, &d_offset, sizeof(d_offset)))
-		offset += sizeof(d_offset);
+		cuda_assert(cuParamSetv(cuDisplace, offset, &d_output, sizeof(d_output)))
+		offset += sizeof(d_output);
 
 		int shader_eval_type = task.shader_eval_type;
 		offset = align_up(offset, __alignof(shader_eval_type));
@@ -686,11 +720,7 @@ public:
 		cuda_assert(cuParamSetSize(cuDisplace, offset))
 
 		/* launch kernel: todo find optimal size, cache config for fermi */
-#ifndef __APPLE__
 		int xthreads = 16;
-#else
-		int xthreads = 8;
-#endif
 		int xblocks = (task.shader_w + xthreads - 1)/xthreads;
 
 		cuda_assert(cuFuncSetCacheConfig(cuDisplace, CU_FUNC_CACHE_PREFER_L1))

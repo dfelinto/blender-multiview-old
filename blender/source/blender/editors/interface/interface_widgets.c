@@ -883,7 +883,8 @@ static void widget_draw_icon(uiBut *but, BIFIconID icon, float alpha, const rcti
 	}
 	
 	/* extra feature allows more alpha blending */
-	if (but->type == LABEL && but->a1 == 1.0f) alpha *= but->a2;
+	if (ELEM(but->type, LABEL, LISTLABEL) && but->a1 == 1.0f)
+		alpha *= but->a2;
 	
 	glEnable(GL_BLEND);
 	
@@ -1732,33 +1733,18 @@ static void widget_state_numslider(uiWidgetType *wt, int state)
 }
 
 /* labels use theme colors for text */
-static void widget_state_label(uiWidgetType *wt, int state)
-{
-	/* call this for option button */
-	widget_state(wt, state);
-
-	if (state & UI_SELECT)
-		UI_GetThemeColor3ubv(TH_TEXT_HI, (unsigned char *)wt->wcol.text);
-	else
-		UI_GetThemeColor3ubv(TH_TEXT, (unsigned char *)wt->wcol.text);
-	
-}
-
-/* labels use theme colors for text */
 static void widget_state_option_menu(uiWidgetType *wt, int state)
 {
+	bTheme *btheme = UI_GetTheme(); /* XXX */
 	
 	/* call this for option button */
 	widget_state(wt, state);
 	
 	/* if not selected we get theme from menu back */
 	if (state & UI_SELECT)
-		UI_GetThemeColor4ubv(TH_TEXT_HI, (unsigned char *)wt->wcol.text);
-	else {
-		bTheme *btheme = UI_GetTheme(); /* XXX */
-
+		copy_v3_v3_char(wt->wcol.text, btheme->tui.wcol_menu_back.text_sel);
+	else
 		copy_v3_v3_char(wt->wcol.text, btheme->tui.wcol_menu_back.text);
-	}
 }
 
 
@@ -2286,8 +2272,7 @@ static void ui_draw_separator(const rcti *rect,  uiWidgetColors *wcol)
 }
 
 /* ************ button callbacks, draw ***************** */
-
-static void widget_numbut(uiWidgetColors *wcol, rcti *rect, int state, int roundboxalign)
+static void widget_numbut_draw(uiWidgetColors *wcol, rcti *rect, int state, int roundboxalign, bool emboss)
 {
 	uiWidgetBase wtb;
 	const float rad = 0.5f * BLI_rcti_size_y(rect);
@@ -2298,9 +2283,10 @@ static void widget_numbut(uiWidgetColors *wcol, rcti *rect, int state, int round
 	
 	widget_init(&wtb);
 	
-	/* fully rounded */
-	round_box_edges(&wtb, roundboxalign, rect, rad);
-	
+	if (!emboss) {
+		round_box_edges(&wtb, roundboxalign, rect, rad);
+	}
+
 	/* decoration */
 	if (!(state & UI_TEXTINPUT)) {
 		widget_num_tria(&wtb.tria1, rect, 0.6f, 'l');
@@ -2312,6 +2298,19 @@ static void widget_numbut(uiWidgetColors *wcol, rcti *rect, int state, int round
 	/* text space */
 	rect->xmin += textofs;
 	rect->xmax -= textofs;
+}
+
+static void widget_numbut(uiWidgetColors *wcol, rcti *rect, int state, int roundboxalign)
+{
+	widget_numbut_draw(wcol, rect, state, roundboxalign, false);
+}
+
+/*
+ * Draw number buttons still with triangles when field is not embossed
+*/
+static void widget_numbut_embossn(uiBut *UNUSED(but), uiWidgetColors *wcol, rcti *rect, int state, int roundboxalign)
+{
+	widget_numbut_draw(wcol, rect, state, roundboxalign, true);
 }
 
 int ui_link_bezier_points(const rcti *rect, float coord_array[][2], int resol)
@@ -2671,7 +2670,7 @@ static void widget_normal(uiBut *but, uiWidgetColors *wcol, rcti *rect, int UNUS
 	ui_draw_but_NORMAL(but, wcol, rect);
 }
 
-static void widget_icon_has_anim(uiBut *UNUSED(but), uiWidgetColors *wcol, rcti *rect, int state, int UNUSED(roundboxalign))
+static void widget_icon_has_anim(uiBut *but, uiWidgetColors *wcol, rcti *rect, int state, int roundboxalign)
 {
 	if (state & (UI_BUT_ANIMATED | UI_BUT_ANIMATED_KEY | UI_BUT_DRIVEN | UI_BUT_REDALERT)) {
 		uiWidgetBase wtb;
@@ -2684,6 +2683,11 @@ static void widget_icon_has_anim(uiBut *UNUSED(but), uiWidgetColors *wcol, rcti 
 		rad = 0.5f * BLI_rcti_size_y(rect);
 		round_box_edges(&wtb, UI_CNR_ALL, rect, rad);
 		widgetbase_draw(&wtb, wcol);
+	}
+	else if (but->type == NUM) {
+		/* Draw number buttons still with left/right 
+		 * triangles when field is not embossed */
+		widget_numbut_embossn(but, wcol, rect, state, roundboxalign);
 	}
 }
 
@@ -2962,9 +2966,11 @@ static uiWidgetType *widget_type(uiWidgetTypeEnum type)
 		case UI_WTYPE_REGULAR:
 			break;
 
+		case UI_WTYPE_LISTLABEL:
+			wt.wcol_theme = &btheme->tui.wcol_list_item;
+			/* No break, we use usual label code too. */
 		case UI_WTYPE_LABEL:
 			wt.draw = NULL;
-			wt.state = widget_state_label;
 			break;
 			
 		case UI_WTYPE_TOGGLE:
@@ -3212,6 +3218,11 @@ void ui_draw_but(const bContext *C, ARegion *ar, uiStyle *style, uiBut *but, rct
 				}
 				break;
 				
+			case LISTLABEL:
+				wt = widget_type(UI_WTYPE_LISTLABEL);
+				fstyle = &style->widgetlabel;
+				break;
+
 			case SEPR:
 				break;
 				

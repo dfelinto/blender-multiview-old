@@ -84,8 +84,8 @@
 #include "uvedit_intern.h"
 
 static void uv_select_all_perform(Scene *scene, Image *ima, BMEditMesh *em, int action);
-static void uv_select_flush_from_tag_face(SpaceImage *sima, Scene *scene, Object *obedit, bool select);
-static void uv_select_flush_from_tag_loop(SpaceImage *sima, Scene *scene, Object *obedit, bool select);
+static void uv_select_flush_from_tag_face(SpaceImage *sima, Scene *scene, Object *obedit, const bool select);
+static void uv_select_flush_from_tag_loop(SpaceImage *sima, Scene *scene, Object *obedit, const bool select);
 
 /************************* state testing ************************/
 
@@ -2098,7 +2098,7 @@ static int uv_mouse_select(bContext *C, const float co[2], bool extend, bool loo
 		}
 		
 		/* make active */
-		BM_active_face_set(em->bm, hit.efa);
+		BM_mesh_active_face_set(em->bm, hit.efa);
 
 		/* mark all face vertices as being hit */
 
@@ -2113,7 +2113,7 @@ static int uv_mouse_select(bContext *C, const float co[2], bool extend, bool loo
 		hitlen = hit.efa->len;
 	}
 	else if (selectmode == UV_SELECT_ISLAND) {
-		uv_find_nearest_vert(scene, ima, em, co, NULL, &hit);
+		uv_find_nearest_edge(scene, ima, em, co, &hit);
 
 		if (hit.efa == NULL) {
 			return OPERATOR_CANCELLED;
@@ -2378,7 +2378,7 @@ static int uv_select_linked_internal(bContext *C, wmOperator *op, const wmEvent 
 			RNA_float_get_array(op->ptr, "location", co);
 		}
 
-		uv_find_nearest_vert(scene, ima, em, co, NULL, &hit);
+		uv_find_nearest_edge(scene, ima, em, co, &hit);
 		hit_p = &hit;
 	}
 
@@ -2694,7 +2694,7 @@ static void uv_select_flush_from_tag_face(SpaceImage *sima, Scene *scene, Object
  *
  * \note! This function is very similar to #uv_select_flush_from_tag_loop, be sure to update both upon changing.
  */
-static void uv_select_flush_from_tag_loop(SpaceImage *sima, Scene *scene, Object *obedit, bool select)
+static void uv_select_flush_from_tag_loop(SpaceImage *sima, Scene *scene, Object *obedit, const bool select)
 {
 	/* Selecting UV Loops with some modes requires us to change
 	 * the selection in other faces (depending on the sticky mode).
