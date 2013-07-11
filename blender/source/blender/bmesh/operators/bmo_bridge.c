@@ -219,7 +219,7 @@ static void bridge_loop_pair(BMesh *bm,
 			BM_edgeloop_flip(bm, el_store_b);
 		}
 	}
-	else if ((dot_a < 0.0f) != (dot_a < 0.0f)) {
+	else if ((dot_a < 0.0f) != (dot_b < 0.0f)) {
 		BM_edgeloop_flip(bm, el_store_b);
 	}
 
