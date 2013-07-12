@@ -1847,6 +1847,9 @@ void psys_get_birth_coordinates(ParticleSimulationData *sim, ParticleData *pa, P
 					copy_v3_v3(rot_vec, ob->obmat[part->rotmode - PART_ROT_OB_X]);
 					use_global_space = false;
 					break;
+				default:
+					use_global_space = true;
+					break;
 			}
 			
 			/* create rotation quat */
