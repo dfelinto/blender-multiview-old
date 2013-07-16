@@ -392,22 +392,22 @@ bool wm_stereo_enabled(wmWindow *win)
 			SpaceLink *sl;
 			for (sl = sa->spacedata.first; sl; sl= sl->next) {
 
-#if 0 // waiting for multiview_s3d merge
 				if (sl->spacetype == SPACE_VIEW3D) {
 					View3D *v3d = (View3D*) sl;
-					if (v3d->stereo_camera == STEREO_3D_ID)
+					if ((v3d->flag2 & V3D_SHOW_STEREOSCOPY) &&
+							(v3d->stereo_camera == STEREO_3D_ID))
 						return TRUE;
 				}
-#endif
+
 #if 0 // waiting to image editor refactor
 				if (sl->spacetype == SPACE_IMAGE) {
 					SpaceImage *sima = (SpaceImage *) sl;
 //					if (sima->iuser.view == STEREO_3D_ID)
 						return TRUE;
 				}
+#endif
 			}
 		}
-#endif
 	}
 
 	return FALSE;
