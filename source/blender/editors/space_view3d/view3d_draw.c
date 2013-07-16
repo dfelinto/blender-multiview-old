@@ -3223,13 +3223,17 @@ static void view3d_main_area_clear(Scene *scene, View3D *v3d, ARegion *ar)
 	}
 }
 
-static int view3d_stereo(const bContext *C, Scene *scene)
+static bool view3d_stereo(const bContext *C, Scene *scene)
 {
 	SceneRenderView *srv;
 	wmWindow *win = CTX_wm_window(C);
+	View3D *v3d = CTX_wm_view3d(C);
 	int has_left = FALSE, has_right = FALSE;
 
-	if ((win->flag & WM_STEREO) == 0)
+	if (wm_stereo_enabled(win) == FALSE)
+		return FALSE;
+
+	if ((v3d->flag2 & V3D_SHOW_STEREOSCOPY) == FALSE)
 		return FALSE;
 
 	/* check renderdata for amount of views */
@@ -3285,6 +3289,10 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 		Camera *data;
 		Object *orig_cam = v3d->camera;
 		float orig_shift;
+
+		/* show only left or right camera */
+		if (v3d->stereo_camera != STEREO_3D_ID)
+			v3d->eye = v3d->stereo_camera;
 
 		if (v3d->eye == STEREO_LEFT_ID)
 			srv = BLI_findstring(&scene->r.views, STEREO_LEFT_NAME, offsetof(SceneRenderView, name));
