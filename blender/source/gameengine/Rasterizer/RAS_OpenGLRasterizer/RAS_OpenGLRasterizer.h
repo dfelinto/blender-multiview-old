@@ -87,6 +87,9 @@ class RAS_OpenGLRasterizer : public RAS_IRasterizer
 	MT_Point3		m_campos;
 	bool			m_camortho;
 
+	bool m_anaglyphleft  [3];
+	bool m_anaglyphright [3];
+
 	StereoMode		m_stereomode;
 	StereoEye		m_curreye;
 	float			m_eyeseparation;
@@ -141,6 +144,7 @@ public:
 	virtual void	EndFrame();
 	virtual void	SetRenderArea();
 
+	virtual void	SetAnaglyphColor(const int anaglyph_mode);
 	virtual void	SetStereoMode(const StereoMode stereomode);
     virtual RAS_IRasterizer::StereoMode GetStereoMode();
 	virtual bool	Stereo();

@@ -231,25 +231,11 @@ void KX_Dome::CalculateImageSize(void)
 - reduce the buffer for better performace
 - create a power of 2 texture bigger than the buffer
 */
-/*
-Blender handles Canvas size differently when in fullscreen mode.
-We are manually checking for that. Although it's a hack, it works.
-
-Bug reported here: #18655 - Inconsistency of pixels in canvas dimensions when in maximized mode (affecting BGE Dome)
-http://projects.blender.org/tracker/?func=detail&aid=18655&group_id=9&atid=125
-*/
-
 	canvaswidth = m_canvas->GetWidth();
 	canvasheight = m_canvas->GetHeight();
 
-	bool fullscreen(false); //XXX HACK
-	fullscreen = (canvaswidth != m_viewport.GetWidth());
-
 	m_buffersize = (canvaswidth > canvasheight?canvasheight:canvaswidth);
 	m_buffersize = (int)(m_buffersize*m_resbuffer); //reduce buffer size for better performance
-	
-	if (fullscreen) //XXX HACK
-		m_buffersize --;
 
 	int i = 0;
 	while ((1 << i) <= m_buffersize)
@@ -267,9 +253,11 @@ http://projects.blender.org/tracker/?func=detail&aid=18655&group_id=9&atid=125
 		warp.bufferheight = canvasheight;
 	}
 
-	//XXX HACK
-	canvaswidth  = m_viewport.GetWidth();
-	canvasheight = m_viewport.GetHeight();
+	//XXX - there is a bug where the viewport is not set
+	m_viewport.SetLeft(0.0);
+	m_viewport.SetBottom(0.0);
+	m_viewport.SetRight(canvaswidth);
+	m_viewport.SetTop(canvasheight);
 }
 
 bool KX_Dome::CreateDL(){

@@ -99,6 +99,9 @@ RAS_OpenGLRasterizer::RAS_OpenGLRasterizer(RAS_ICanvas* canvas)
 		hinterlace_mask[i] = (i&1)*0xFFFFFFFF;
 	}
 	hinterlace_mask[32] = 0;
+
+	/* initialize the anaglyph mode to red-cyan*/
+	SetAnaglyphColor(0);
 }
 
 
@@ -455,7 +458,42 @@ void RAS_OpenGLRasterizer::SetRenderArea()
 			break;
 	}
 }
-	
+
+
+void RAS_OpenGLRasterizer::SetAnaglyphColor(const int anaglyph_mode)
+{
+	switch(anaglyph_mode) {
+		case 1: // Green-Magenta
+			m_anaglyphleft[0] = GL_FALSE;
+			m_anaglyphleft[1] = GL_TRUE;
+			m_anaglyphleft[2] = GL_FALSE;
+
+			m_anaglyphright[0] = GL_TRUE;
+			m_anaglyphright[1] = GL_FALSE;
+			m_anaglyphright[2] = GL_TRUE;
+			break;
+		case 2: // Magenta-Green
+			m_anaglyphleft[0] = GL_TRUE;
+			m_anaglyphleft[1] = GL_FALSE;
+			m_anaglyphleft[2] = GL_TRUE;
+
+			m_anaglyphright[0] = GL_FALSE;
+			m_anaglyphright[1] = GL_TRUE;
+			m_anaglyphright[2] = GL_FALSE;
+			break;
+		case 0: // Red-Cyan
+		default:
+			m_anaglyphleft[0] = GL_TRUE;
+			m_anaglyphleft[1] = GL_FALSE;
+			m_anaglyphleft[2] = GL_FALSE;
+
+			m_anaglyphright[0] = GL_FALSE;
+			m_anaglyphright[1] = GL_TRUE;
+			m_anaglyphright[2] = GL_TRUE;
+			break;
+	}
+}
+
 void RAS_OpenGLRasterizer::SetStereoMode(const StereoMode stereomode)
 {
 	m_stereomode = stereomode;
@@ -490,10 +528,9 @@ void RAS_OpenGLRasterizer::SetEye(const StereoEye eye)
 		case RAS_STEREO_ANAGLYPH:
 			if (m_curreye == RAS_STEREO_LEFTEYE)
 			{
-				glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_FALSE);
+				glColorMask(m_anaglyphleft[0], m_anaglyphleft[1], m_anaglyphleft[2], GL_FALSE);
 			} else {
-				//glAccum(GL_LOAD, 1.0);
-				glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
+				glColorMask(m_anaglyphright[0], m_anaglyphright[1], m_anaglyphright[2], GL_FALSE);
 				ClearDepthBuffer();
 			}
 			break;

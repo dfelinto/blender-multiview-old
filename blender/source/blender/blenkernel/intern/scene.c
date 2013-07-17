@@ -487,6 +487,7 @@ Scene *add_scene(const char *name)
 	/* game data */
 	sce->gm.stereoflag = STEREO_NOSTEREO;
 	sce->gm.stereomode = STEREO_ANAGLYPH;
+	sce->gm.anaglyphmode = ANAGLYPH_REDCYAN;
 	sce->gm.eyeseparation = 0.10;
 
 	sce->gm.dome.angle = 180;

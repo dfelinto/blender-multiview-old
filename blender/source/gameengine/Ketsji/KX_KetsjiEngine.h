@@ -42,6 +42,7 @@
 #include "KX_Scene.h"
 #include "KX_Python.h"
 #include "KX_WorldInfo.h"
+#include "DNA_Scene_types.h"
 #include <vector>
 #include <set>
 
@@ -61,6 +62,15 @@ enum KX_ExitRequestMode
 	KX_EXIT_REQUEST_OUTSIDE,
 	KX_EXIT_REQUEST_MAX
 };
+
+typedef struct {
+	short matmode;
+	short glslflag;
+	short stereoflag;
+	short stereomode;
+	short anaglyphmode;
+	struct GameDome dome;
+} GlobalSettings;
 
 /**
  * KX_KetsjiEngine is the core game engine class.
@@ -189,6 +199,9 @@ private:
 	float					m_overrideFrameColorG;
 	/** Blue component of framing bar color. */
 	float					m_overrideFrameColorB;
+	
+	/** Settings that doesn't go away with Game Actuator */
+	GlobalSettings m_globalsettings;
 
 	void					RenderFrame(KX_Scene* scene, KX_Camera* cam);
 	void					PostRenderScene(KX_Scene* scene);
@@ -392,6 +405,9 @@ public:
 
 	KX_Scene*		CreateScene(const STR_String& scenename);
 	KX_Scene*		CreateScene(Scene *scene);
+	
+	GlobalSettings* GetGlobalSettings(void);
+	void SetGlobalSettings(GlobalSettings* gs);
 	
 protected:
 	/**

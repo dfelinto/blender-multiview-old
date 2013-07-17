@@ -131,6 +131,7 @@ extern "C" {
 #include "BLI_blenlib.h"
 #include "GPU_material.h"
 #include "MEM_guardedalloc.h"
+#include "BKE_text.h"
 
 /* for converting new scenes */
 #include "KX_BlenderSceneConverter.h"
@@ -1103,7 +1104,7 @@ static PyObject* gPySetGLSLMaterialSetting(PyObject*,
 											PyObject* args,
 											PyObject*)
 {
-	GameData *gm= &(gp_KetsjiScene->GetBlenderScene()->gm);
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
 	char *setting;
 	int enable, flag, sceneflag;
 
@@ -1117,15 +1118,15 @@ static PyObject* gPySetGLSLMaterialSetting(PyObject*,
 		return NULL;
 	}
 
-	sceneflag= gm->flag;
+	sceneflag= gs->glslflag;
 	
 	if (enable)
-		gm->flag &= ~flag;
+		gs->glslflag &= ~flag;
 	else
-		gm->flag |= flag;
+		gs->glslflag |= flag;
 
 	/* display lists and GLSL materials need to be remade */
-	if(sceneflag != gm->flag) {
+	if(sceneflag != gs->glslflag) {
 		GPU_materials_free();
 		if(gp_KetsjiEngine) {
 			KX_SceneList *scenes = gp_KetsjiEngine->CurrentScenes();
@@ -1146,7 +1147,7 @@ static PyObject* gPyGetGLSLMaterialSetting(PyObject*,
 									 PyObject* args, 
 									 PyObject*)
 {
-	GameData *gm= &(gp_KetsjiScene->GetBlenderScene()->gm);
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
 	char *setting;
 	int enabled = 0, flag;
 
@@ -1160,7 +1161,7 @@ static PyObject* gPyGetGLSLMaterialSetting(PyObject*,
 		return NULL;
 	}
 
-	enabled = ((gm->flag & flag) != 0);
+	enabled = ((gs->glslflag & flag) != 0);
 	return PyLong_FromSsize_t(enabled);
 }
 
@@ -1172,18 +1173,18 @@ static PyObject* gPySetMaterialType(PyObject*,
 									PyObject* args,
 									PyObject*)
 {
-	GameData *gm= &(gp_KetsjiScene->GetBlenderScene()->gm);
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
 	int type;
 
 	if (!PyArg_ParseTuple(args,"i:setMaterialType",&type))
 		return NULL;
 
 	if(type == KX_BLENDER_GLSL_MATERIAL)
-		gm->matmode= GAME_MAT_GLSL;
+		gs->matmode= GAME_MAT_GLSL;
 	else if(type == KX_BLENDER_MULTITEX_MATERIAL)
-		gm->matmode= GAME_MAT_MULTITEX;
+		gs->matmode= GAME_MAT_MULTITEX;
 	else if(type == KX_TEXFACE_MATERIAL)
-		gm->matmode= GAME_MAT_TEXFACE;
+		gs->matmode= GAME_MAT_TEXFACE;
 	else {
 		PyErr_SetString(PyExc_ValueError, "Rasterizer.setMaterialType(int): material type is not known");
 		return NULL;
@@ -1194,18 +1195,143 @@ static PyObject* gPySetMaterialType(PyObject*,
 
 static PyObject* gPyGetMaterialType(PyObject*)
 {
-	GameData *gm= &(gp_KetsjiScene->GetBlenderScene()->gm);
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
 	int flag;
 
-	if(gm->matmode == GAME_MAT_GLSL)
+	if(gs->matmode == GAME_MAT_GLSL)
 		flag = KX_BLENDER_GLSL_MATERIAL;
-	else if(gm->matmode == GAME_MAT_MULTITEX)
+	else if(gs->matmode == GAME_MAT_MULTITEX)
 		flag = KX_BLENDER_MULTITEX_MATERIAL;
 	else
 		flag = KX_TEXFACE_MATERIAL;
 	
 	return PyLong_FromSsize_t(flag);
 }
+
+
+#define KX_STEREO_NOSTEREO	0
+#define KX_STEREO_ENABLED	1
+#define KX_STEREO_DOME	2
+
+static PyObject* gPySetRenderMode(PyObject*,
+									PyObject* args,
+									PyObject*)
+{
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
+	int type;
+
+	if (!PyArg_ParseTuple(args,"i:setRenderMode",&type))
+		return NULL;
+
+	if(type == KX_STEREO_NOSTEREO)
+		gs->stereoflag= STEREO_NOSTEREO;
+	else if(type == KX_STEREO_ENABLED)
+		gs->stereoflag= STEREO_ENABLED;
+	else if(type == KX_STEREO_DOME)
+		gs->stereoflag= STEREO_DOME;
+	else {
+		PyErr_SetString(PyExc_ValueError, "Rasterizer.setRenderMode(int): render mode is not known");
+		return NULL;
+	}
+
+	Py_RETURN_NONE;
+}
+
+static PyObject* gPyGetRenderMode(PyObject*)
+{
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
+	int flag;
+
+	if(gs->stereoflag == STEREO_NOSTEREO)
+		flag = KX_STEREO_NOSTEREO;
+	else if(gs->stereoflag == STEREO_ENABLED)
+		flag = KX_STEREO_ENABLED;
+	else
+		flag = KX_STEREO_DOME;
+	
+	return PyLong_FromSsize_t(flag);
+}
+
+
+
+
+#define KX_ANAGLYPH_REDCYAN		0
+#define KX_ANAGLYPH_GREENMAGENTA	1
+#define KX_ANAGLYPH_MAGENTA_GREEN	2
+
+static PyObject* gPySetAnaglyphMode(PyObject*,
+									PyObject* args,
+									PyObject*)
+{
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
+	int type;
+
+	if (!PyArg_ParseTuple(args,"i:setAnaglyphMode",&type))
+		return NULL;
+
+	gs->anaglyphmode = type;
+
+	Py_RETURN_NONE;
+}
+
+static PyObject* gPySetStereoMode(PyObject*,
+									PyObject* args,
+									PyObject*)
+{
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
+	int type;
+
+	if (!PyArg_ParseTuple(args,"i:setStereoMode",&type))
+		return NULL;
+
+	gs->stereomode = type;
+
+	Py_RETURN_NONE;
+}
+
+static PyObject* gPySetDomeAngle(PyObject*,
+									PyObject* args,
+									PyObject*)
+{
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
+	int angle;
+
+	if (!PyArg_ParseTuple(args,"i:setDomeAngle",&angle))
+		return NULL;
+
+	gs->dome.angle=angle;
+
+	Py_RETURN_NONE;
+}
+
+static PyObject* gPyGetDomeAngle(PyObject*)
+{
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
+	return PyLong_FromSsize_t(gs->dome.angle);
+}
+
+static PyObject* gPySetDomeWarpData(PyObject*,
+									PyObject* args,
+									PyObject*)
+{
+	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
+	char* filename;
+	Text *domeText  = NULL;
+
+	if (!PyArg_ParseTuple(args,"s:setDomeWarpData",&filename) || (filename[0] == '\0')){
+		if (gs->dome.warptext) gs->dome.warptext=NULL;
+		return NULL;
+	}
+
+	domeText= add_text(filename, "");
+	if(!domeText)
+		printf("error: invalid warpdata text file - %s\n", filename);
+	else
+		gs->dome.warptext = domeText;
+
+	Py_RETURN_NONE;
+}
+
 
 static PyObject* gPyDrawLine(PyObject*, PyObject* args)
 {
@@ -1271,7 +1397,21 @@ static struct PyMethodDef rasterizer_methods[] = {
    METH_VARARGS, "set the state of a GLSL material setting"},
   {"getGLSLMaterialSetting",(PyCFunction) gPyGetGLSLMaterialSetting,
    METH_VARARGS, "get the state of a GLSL material setting"},
-  {"drawLine", (PyCFunction) gPyDrawLine,
+  {"setRenderMode",(PyCFunction) gPySetRenderMode,
+   METH_VARARGS, "NORMAL, STEREO, DOME"},
+  {"getRenderMode",(PyCFunction) gPyGetRenderMode,
+   METH_NOARGS, ""},
+  {"setStereoMode",(PyCFunction) gPySetStereoMode,
+   METH_VARARGS, "set the stereo render to use"},
+  {"setAnaglyphMode",(PyCFunction) gPySetAnaglyphMode,
+   METH_VARARGS, "set the anaglyph mode (e.g. Red-Cyan)"},
+  {"setDomeAngle",(PyCFunction) gPySetDomeAngle,
+   METH_VARARGS, ""},
+  {"getDomeAngle",(PyCFunction) gPyGetDomeAngle,
+   METH_NOARGS, ""},
+  {"setDomeWarpData",(PyCFunction) gPySetDomeWarpData,
+   METH_VARARGS, ""},
+   {"drawLine", (PyCFunction) gPyDrawLine,
    METH_VARARGS, "draw a line on the screen"},
   { NULL, (PyCFunction) NULL, 0, NULL }
 };

@@ -322,6 +322,8 @@ void KX_KetsjiEngine::RenderDome()
 		
 				// do the rendering
 				m_dome->RenderDomeFrame(scene,cam, i);
+				//render all the font objects for this scene
+				RenderFonts(scene);
 			}
 			
 			list<class KX_Camera*>* cameras = scene->GetCameras();
@@ -339,6 +341,8 @@ void KX_KetsjiEngine::RenderDome()
 			
 					// do the rendering
 					m_dome->RenderDomeFrame(scene, (*it),i);
+					//render all the font objects for this scene
+					RenderFonts(scene);
 				}
 				
 				it++;
@@ -1920,4 +1924,19 @@ void KX_KetsjiEngine::GetOverrideFrameColor(float& r, float& g, float& b) const
 	b = m_overrideFrameColorB;
 }
 
+
+void KX_KetsjiEngine::SetGlobalSettings(GlobalSettings* gs)
+{
+	m_globalsettings.matmode = gs->matmode;
+	m_globalsettings.glslflag = gs->glslflag;
+	m_globalsettings.stereoflag = gs->stereoflag;
+	m_globalsettings.stereomode = gs->stereomode;
+	m_globalsettings.anaglyphmode = gs->anaglyphmode;
+	m_globalsettings.dome = gs->dome;
+}
+
+GlobalSettings* KX_KetsjiEngine::GetGlobalSettings(void)
+{
+	return &m_globalsettings;
+}
 

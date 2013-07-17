@@ -214,6 +214,10 @@ public:
     virtual StereoMode GetStereoMode()=0;
 	virtual bool	InterlacedStereo()=0;
 	/**
+	 * SetAnaglyphColor will set the anaglyph color (e.g. red-cyan)
+	 */
+	virtual void	SetAnaglyphColor(const int anaglyphmode)=0;
+	/**
 	 * Sets which eye buffer subsequent primitives will be rendered to.
 	 */
 	virtual void	SetEye(const StereoEye eye)=0;

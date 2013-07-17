@@ -1674,6 +1674,12 @@ static void rna_def_scene_game_data(BlenderRNA *brna)
 		{STEREO_DOME, "DOME", 0, "Dome", "Enable Dome environment"},
 		{0, NULL, 0, NULL, NULL}};
 
+	static EnumPropertyItem anaglyph_items[] ={
+		{ANAGLYPH_REDCYAN, "REDCYAN", 0, "Red-Cyan", ""},
+		{ANAGLYPH_GREENMAGENTA, "GREENMAGENTA", 0, "Green-Magenta", ""},
+		{ANAGLYPH_MAGENTAGREEN, "MAGENTAGREEN", 0, "Magenta-Green", ""},
+		{0, NULL, 0, NULL, NULL}};
+
 	static EnumPropertyItem physics_engine_items[] = {
 		{WOPHY_NONE, "NONE", 0, "None", "Don't use a physics engine"},
 		//{WOPHY_ENJI, "ENJI", 0, "Enji", ""},
@@ -1724,6 +1730,11 @@ static void rna_def_scene_game_data(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Fullscreen", "Starts player in a new fullscreen display");
 	RNA_def_property_update(prop, NC_SCENE, NULL);
 
+	prop= RNA_def_property(srna, "use_desktop", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "use_desktop", 1.0);
+	RNA_def_property_ui_text(prop, "Desktop", "Uses the current desktop resultion in fullscreen mode");
+	RNA_def_property_update(prop, NC_SCENE, NULL);
+	
 	/* Framing */
 	prop= RNA_def_property(srna, "frame_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "framing.type");
@@ -1755,6 +1766,12 @@ static void rna_def_scene_game_data(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "eyeseparation");
 	RNA_def_property_range(prop, 0.01, 5.0);
 	RNA_def_property_ui_text(prop, "Eye Separation", "Set the distance between the eyes - the camera focal length/30 should be fine");
+	RNA_def_property_update(prop, NC_SCENE, NULL);
+
+	prop= RNA_def_property(srna, "anaglyph_mode", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_sdna(prop, NULL, "anaglyphmode");
+	RNA_def_property_enum_items(prop, anaglyph_items);
+	RNA_def_property_ui_text(prop, "Anaglyph Mode", "");
 	RNA_def_property_update(prop, NC_SCENE, NULL);
 	
 	/* Dome */

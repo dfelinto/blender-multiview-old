@@ -227,8 +227,6 @@ class RENDER_PT_game_player(RenderButtonsPanel, bpy.types.Panel):
 
         gs = context.scene.game_settings
 
-        layout.prop(gs, "show_fullscreen")
-
         split = layout.split()
 
         col = split.column()
@@ -236,6 +234,13 @@ class RENDER_PT_game_player(RenderButtonsPanel, bpy.types.Panel):
         sub = col.column(align=True)
         sub.prop(gs, "resolution_x", slider=False, text="X")
         sub.prop(gs, "resolution_y", slider=False, text="Y")
+
+        row = layout.row()
+        col = row.column()
+        col.prop(gs, "show_fullscreen")
+        col = row.column()
+        col.prop(gs, "use_desktop")
+        col.active = gs.show_fullscreen
 
         col = split.column()
         col.label(text="Quality:")
@@ -267,6 +272,8 @@ class RENDER_PT_game_stereo(RenderButtonsPanel, bpy.types.Panel):
         # stereo:
         if stereo_mode == 'STEREO':
             layout.prop(gs, "stereo_mode")
+            if gs.stereo_mode == 'ANAGLYPH':
+                layout.prop(gs, "anaglyph_mode")
             layout.prop(gs, "stereo_eye_separation")
 
         # dome:

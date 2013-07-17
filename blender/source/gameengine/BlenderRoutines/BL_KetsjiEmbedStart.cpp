@@ -168,6 +168,13 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 	int disableVBO = (U.gameflags & USER_DISABLE_VBO);
 	U.gameflags |= USER_DISABLE_VBO;
 
+	// Globals to be carried on over blender files
+	GlobalSettings gs;
+	gs.matmode= startscene->gm.matmode;
+	gs.glslflag= startscene->gm.flag;
+	gs.stereoflag= startscene->gm.stereoflag;
+	gs.dome= startscene->gm.dome;
+	
 	do
 	{
 		View3D *v3d= CTX_wm_view3d(C);
@@ -240,6 +247,9 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 #ifdef WITH_PYTHON
 		CValue::SetDeprecationWarnings(nodepwarnings);
 #endif
+
+		//set the global settings (carried over if restart/load new files)
+		ketsjiengine->SetGlobalSettings(&gs);
 
 		//lock frame and camera enabled - storing global values
 		int tmp_lay= startscene->lay;
@@ -332,9 +342,11 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 			ketsjiengine->SetAnimRecordMode(animation_record, startFrame);
 			
 			// Quad buffered needs a special window.
-			if(scene->gm.stereoflag == STEREO_ENABLED){
+			if(gs.stereoflag == STEREO_ENABLED){
 				if (scene->gm.stereomode != RAS_IRasterizer::RAS_STEREO_QUADBUFFERED)
 					rasterizer->SetStereoMode((RAS_IRasterizer::StereoMode) scene->gm.stereomode);
+				
+				rasterizer->SetAnaglyphColor(scene->gm.anaglyphmode);
 
 				rasterizer->SetEyeSeparation(scene->gm.eyeseparation);
 			}
@@ -368,12 +380,12 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 
 			if(GPU_glsl_support())
 				useglslmat = true;
-			else if(scene->gm.matmode == GAME_MAT_GLSL)
+			else if(gs.matmode == GAME_MAT_GLSL)
 				usemat = false;
 
-			if(usemat && (scene->gm.matmode != GAME_MAT_TEXFACE))
+			if(usemat && (gs.matmode != GAME_MAT_TEXFACE))
 				sceneconverter->SetMaterials(true);
-			if(useglslmat && (scene->gm.matmode == GAME_MAT_GLSL))
+			if(useglslmat && (gs.matmode == GAME_MAT_GLSL))
 				sceneconverter->SetGLSLMaterials(true);
 					
 			KX_Scene* startscene = new KX_Scene(keyboarddevice,
@@ -390,8 +402,8 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 #endif // WITH_PYTHON
 
 			//initialize Dome Settings
-			if(scene->gm.stereoflag == STEREO_DOME)
-				ketsjiengine->InitDome(scene->gm.dome.res, scene->gm.dome.mode, scene->gm.dome.angle, scene->gm.dome.resbuf, scene->gm.dome.tilt, scene->gm.dome.warptext);
+			if(gs.stereoflag == STEREO_DOME)
+				ketsjiengine->InitDome(gs.dome.res, gs.dome.mode, gs.dome.angle, gs.dome.resbuf, gs.dome.tilt, gs.dome.warptext);
 
 			// initialize 3D Audio Settings
 			AUD_setSpeedOfSound(scene->audio.speed_of_sound);
@@ -488,6 +500,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 				}
 				printf("Blender Game Engine Finished\n");
 				exitstring = ketsjiengine->GetExitString();
+				gs = *(ketsjiengine->GetGlobalSettings());
 
 
 				// when exiting the mainloop

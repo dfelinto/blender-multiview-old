@@ -449,7 +449,7 @@ typedef struct GameData {
 	/* stereo/dome mode */
 	struct GameDome dome;
 	short stereoflag, stereomode;
-	short pad2, pad3;
+	short anaglyphmode, use_desktop;
 	float eyeseparation, pad1;
 } GameData;
 
@@ -465,6 +465,11 @@ typedef struct GameData {
 #define STEREO_SIDEBYSIDE	6
 #define STEREO_VINTERLACE	7
 //#define STEREO_DOME		8
+
+/* anaglyph */
+#define ANAGLYPH_REDCYAN		0
+#define ANAGLYPH_GREENMAGENTA	1
+#define ANAGLYPH_MAGENTAGREEN	2
 
 /* physicsEngine */
 #define WOPHY_NONE		0

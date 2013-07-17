@@ -151,7 +151,7 @@ GPG_Application::~GPG_Application(void)
 
 
 
-bool GPG_Application::SetGameEngineData(struct Main* maggie, Scene *scene, int argc, char **argv)
+bool GPG_Application::SetGameEngineData(struct Main* maggie, Scene *scene, GlobalSettings *gs, int argc, char **argv)
 {
 	bool result = false;
 
@@ -167,6 +167,9 @@ bool GPG_Application::SetGameEngineData(struct Main* maggie, Scene *scene, int a
 	/* Python needs these */
 	m_argc= argc;
 	m_argv= argv;
+
+	/* Global Settings */
+	m_globalSettings= gs;
 
 	return result;
 }
@@ -370,13 +373,17 @@ bool GPG_Application::startFullScreen(
 		int bpp,int frequency,
 		const bool stereoVisual,
 		const int stereoMode,
-		const GHOST_TUns16 samples)
+		const GHOST_TUns16 samples,
+		bool useDesktop)
 {
 	bool success;
+	GHOST_TUns32 sysWidth=0, sysHeight=0;
+	fSystem->getMainDisplayDimensions(sysWidth, sysHeight);
+	
 	// Create the main window
 	GHOST_DisplaySetting setting;
-	setting.xPixels = width;
-	setting.yPixels = height;
+	setting.xPixels = (useDesktop) ? sysWidth : width;
+	setting.yPixels = (useDesktop) ? sysHeight : height;
 	setting.bpp = bpp;
 	setting.frequency = frequency;
 
@@ -511,6 +518,12 @@ int GPG_Application::getExitRequested(void)
 }
 
 
+GlobalSettings* GPG_Application::getGlobalSettings(void)
+{
+	return m_ketsjiengine->GetGlobalSettings();
+}
+
+
 
 const STR_String& GPG_Application::getExitString(void)
 {
@@ -551,7 +564,7 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 
 		if(GPU_glsl_support())
 			m_blenderglslmat = (SYS_GetCommandLineInt(syshandle, "blender_glsl_material", 1) != 0);
-		else if(gm->matmode == GAME_MAT_GLSL)
+		else if(m_globalSettings->matmode == GAME_MAT_GLSL)
 			m_blendermat = false;
 
 		// create the canvas, rasterizer and rendertools
@@ -580,7 +593,8 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 
 		/* Stereo parameters - Eye Separation from the UI - stereomode from the command-line/UI */
 		m_rasterizer->SetStereoMode((RAS_IRasterizer::StereoMode) stereoMode);
-		m_rasterizer->SetEyeSeparation(m_startScene->gm.eyeseparation);
+		m_rasterizer->SetAnaglyphColor(gm->anaglyphmode);
+		m_rasterizer->SetEyeSeparation(gm->eyeseparation);
 		
 		if (!m_rasterizer)
 			goto initFailed;
@@ -627,6 +641,9 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 
 		m_ketsjiengine->SetUseFixedTime(fixed_framerate);
 		m_ketsjiengine->SetTimingDisplay(frameRate, profile, properties);
+
+		//set the global settings (carried over if restart/load new files)
+		m_ketsjiengine->SetGlobalSettings(m_globalSettings);
 
 		m_engineInitialized = true;
 	}
@@ -684,9 +701,9 @@ bool GPG_Application::startEngine(void)
 
 		//	if (always_use_expand_framing)
 		//		sceneconverter->SetAlwaysUseExpandFraming(true);
-		if(m_blendermat && (m_startScene->gm.matmode != GAME_MAT_TEXFACE))
+		if(m_blendermat && (m_globalSettings->matmode != GAME_MAT_TEXFACE))
 			m_sceneconverter->SetMaterials(true);
-		if(m_blenderglslmat && (m_startScene->gm.matmode == GAME_MAT_GLSL))
+		if(m_blenderglslmat && (m_globalSettings->matmode == GAME_MAT_GLSL))
 			m_sceneconverter->SetGLSLMaterials(true);
 
 		KX_Scene* startscene = new KX_Scene(m_keyboard,
@@ -703,8 +720,8 @@ bool GPG_Application::startEngine(void)
 #endif // WITH_PYTHON
 
 		//initialize Dome Settings
-		if(m_startScene->gm.stereoflag == STEREO_DOME)
-			m_ketsjiengine->InitDome(m_startScene->gm.dome.res, m_startScene->gm.dome.mode, m_startScene->gm.dome.angle, m_startScene->gm.dome.resbuf, m_startScene->gm.dome.tilt, m_startScene->gm.dome.warptext);
+		if(m_globalSettings->stereoflag == STEREO_DOME)
+			m_ketsjiengine->InitDome(m_globalSettings->dome.res, m_globalSettings->dome.mode, m_globalSettings->dome.angle, m_globalSettings->dome.resbuf, m_globalSettings->dome.tilt, m_globalSettings->dome.warptext);
 
 #ifdef WITH_PYTHON
 		// Set the GameLogic.globalDict from marshal'd data, so we can
